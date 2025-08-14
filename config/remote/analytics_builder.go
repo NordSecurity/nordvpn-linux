@@ -28,18 +28,18 @@ type Event struct {
 	RolloutPerformed bool   `json:"-"`
 }
 
-func NewDownloadSuccessEvent(rolloutGroup int, client string, featureName string) Event {
+func NewDownloadSuccessEvent(userRolloutGroup int, client string, featureName string) Event {
 	return Event{
-		RolloutGroup: rolloutGroup,
+		RolloutGroup: userRolloutGroup,
 		Client:       client,
 		FeatureName:  featureName,
 		Event:        DownloadSuccess.String(),
 	}
 }
 
-func NewDownloadFailureEvent(rolloutGroup int, client string, featureName string, errorKind DownloadErrorKind, errorMessage string) Event {
+func NewDownloadFailureEvent(userRolloutGroup int, client string, featureName string, errorKind DownloadErrorKind, errorMessage string) Event {
 	return Event{
-		RolloutGroup: rolloutGroup,
+		RolloutGroup: userRolloutGroup,
 		Client:       client,
 		FeatureName:  featureName,
 		Event:        DownloadFailure.String(),
@@ -50,14 +50,14 @@ func NewDownloadFailureEvent(rolloutGroup int, client string, featureName string
 	}
 }
 
-func NewLocalUseEvent(rolloutGroup int, client, featureName, errorKind, errorMessage string) Event {
+func NewLocalUseEvent(userRolloutGroup int, client, featureName, errorKind, errorMessage string) Event {
 	details := EventDetails{}
 	if errorKind != "" {
 		details.Error = errorKind
 		details.Message = errorMessage
 	}
 	return Event{
-		RolloutGroup: rolloutGroup,
+		RolloutGroup: userRolloutGroup,
 		Client:       client,
 		FeatureName:  featureName,
 		Event:        LocalUse.String(),
@@ -65,14 +65,14 @@ func NewLocalUseEvent(rolloutGroup int, client, featureName, errorKind, errorMes
 	}
 }
 
-func NewJSONParseEventFailure(rolloutGroup int, client string, featureName string, errorKind LoadErrorKind, errorMessage string) Event {
+func NewJSONParseEventFailure(userRolloutGroup int, client string, featureName string, errorKind LoadErrorKind, errorMessage string) Event {
 	details := EventDetails{
 		Error:   errorKind.String(),
 		Message: errorMessage,
 	}
 
 	return Event{
-		RolloutGroup: rolloutGroup,
+		RolloutGroup: userRolloutGroup,
 		Client:       client,
 		FeatureName:  featureName,
 		Event:        JSONParseFailure.String(),
@@ -80,14 +80,14 @@ func NewJSONParseEventFailure(rolloutGroup int, client string, featureName strin
 	}
 }
 
-func NewRolloutEvent(rolloutGroup int, client string, featureName string, featureRollout int, rolloutPerformed bool) Event {
+func NewRolloutEvent(userRolloutGroup int, client string, featureName string, featureRollout int, rolloutPerformed bool) Event {
 	details := EventDetails{
-		Error:   fmt.Sprintf("%s %d / %d", featureName, rolloutGroup, featureRollout),
+		Error:   fmt.Sprintf("%s %d / %d", featureName, userRolloutGroup, featureRollout),
 		Message: featureName,
 	}
 
 	return Event{
-		RolloutGroup:     rolloutGroup,
+		RolloutGroup:     userRolloutGroup,
 		Client:           client,
 		FeatureName:      featureName,
 		Event:            Rollout.String(),
