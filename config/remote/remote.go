@@ -238,11 +238,11 @@ func (c *CdnRemoteConfig) findMatchingRecord(ss []ParamValue, featureName string
 	// as a last step, check if app's rollout group matches feature's rollout value
 	// (do not try to use other match with lesser weight)
 	if match != nil {
-		if match.Rollout < c.appRolloutGroup {
-			c.analytics.EmitPartialRolloutEvent(ClientCli, featureName, match.Rollout, partialRolloutPerformedFailure)
+		if match.TargetRollout > c.appRolloutGroup {
+			c.analytics.EmitPartialRolloutEvent(ClientCli, featureName, match.TargetRollout, partialRolloutPerformedFailure)
 			match = nil
 		} else {
-			c.analytics.EmitPartialRolloutEvent(ClientCli, featureName, match.Rollout, partialRolloutPerformedSuccess)
+			c.analytics.EmitPartialRolloutEvent(ClientCli, featureName, match.TargetRollout, partialRolloutPerformedSuccess)
 		}
 	} else {
 		//when there's no match (eg., due to a version value mismatch) emit the partial rollout event failure

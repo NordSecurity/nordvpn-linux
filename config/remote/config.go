@@ -215,7 +215,7 @@ func (f *Feature) load(sourcePath string, fr fileReader, jv validator) error {
 			}
 			// store valid values in the map
 			params[cfgItem.Name].Settings = append(params[cfgItem.Name].Settings,
-				ParamValue{Value: param.Value, incValue: string(incVal), AppVersion: param.AppVersion, Weight: param.Weight})
+				NewParamValue(param.Value, string(incVal), param.AppVersion, param.Weight, param.TargetRollout))
 		}
 	}
 	// set new params and hash

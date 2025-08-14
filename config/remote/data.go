@@ -16,11 +16,21 @@ const (
 )
 
 type ParamValue struct {
-	Value      any    `json:"value"`
-	incValue   string // include file content, unexported, ingnored by json.unmarshal
-	AppVersion string `json:"app_version"`
-	Weight     int    `json:"weight"`
-	Rollout    int    `json:"rollout"`
+	Value         any    `json:"value"`
+	incValue      string // include file content, unexported, ingnored by json.unmarshal
+	AppVersion    string `json:"app_version"`
+	Weight        int    `json:"weight"`
+	TargetRollout int    `json:"rollout"`
+}
+
+func NewParamValue(value any, incValue string, appVersion string, weight int, targetRollout int) ParamValue {
+	return ParamValue{
+		Value:         value,
+		incValue:      incValue,
+		AppVersion:    appVersion,
+		Weight:        weight,
+		TargetRollout: targetRollout,
+	}
 }
 
 func (pv ParamValue) AsString() (string, error) {

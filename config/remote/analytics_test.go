@@ -264,10 +264,10 @@ func TestFindMatchingRecord_EmitsOneEvent(t *testing.T) {
 					Type: fieldTypeBool,
 					Settings: []ParamValue{
 						{
-							AppVersion: "^1.0.0",
-							Value:      true,
-							Weight:     100,
-							Rollout:    featureRollout,
+							AppVersion:    "^1.0.0",
+							Value:         true,
+							Weight:        100,
+							TargetRollout: featureRollout,
 						},
 					},
 				},
