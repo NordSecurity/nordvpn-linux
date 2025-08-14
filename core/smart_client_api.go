@@ -2,7 +2,6 @@ package core
 
 import (
 	"errors"
-	"log"
 	"net/http"
 
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
@@ -42,16 +41,12 @@ func callWithToken[T any](store session.TokenSessionStore, call func(token strin
 		return res, nil
 	}
 
-	log.Println("API CALL ERR:", err)
 	if errors.Is(err, ErrUnauthorized) {
-		log.Println("API CALL UNAUTH ERR (+renew):", err)
 		if err := store.Renew(); err != nil {
-			log.Println("API CALL ERR -> renew ERR:", err)
 			var zero T
 			return zero, err
 		}
 		res, err = callAPIWithToken()
-		log.Println("API CALL ERR -> renew ok -> call ERR?:", err)
 
 		// if unauthorized again -> user token invalidation
 		if errors.Is(err, ErrUnauthorized) {
