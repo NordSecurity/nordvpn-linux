@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -134,7 +133,6 @@ func (b *SessionStoresBuilder) registerAccessTokenHandlers(logoutHandler *daemon
 	}
 
 	logoutHandler.Register(b.registries.accessToken, errs, func(reason error) events.ReasonCode {
-		log.Println("ACCESS TOKEN: reason:", reason)
 		for err, code := range handlers {
 			if errors.Is(reason, err) {
 				return code
@@ -159,32 +157,23 @@ func (b *SessionStoresBuilder) registerVPNCredsHandlers(logoutHandler *daemon.Lo
 		if errors.Is(reason, session.ErrMissingVPNCredsResponse) ||
 			errors.Is(reason, session.ErrMissingVPNCredentials) ||
 			errors.Is(reason, session.ErrMissingNordLynxPrivateKey) {
-
 			// Attempt to renew access token silently to avoid duplicate logout calls
 			// We use SilentRenewal() to prevent the access token error handler from triggering
 			if err := b.stores.accessToken.Renew(session.SilentRenewal(), session.ForceRenewal()); err != nil {
-				// If access token renewal fails, return combined reason codes
 				switch {
 				case errors.Is(err, core.ErrBadRequest):
 					return events.ReasonCorruptedVPNCredsAuthBad
 				case errors.Is(err, core.ErrNotFound):
 					return events.ReasonCorruptedVPNCredsAuthMissing
 				default:
-					// For other errors, still return the appropriate composite code
-					// based on the original VPN error
-					if errors.Is(reason, session.ErrMissingVPNCredsResponse) {
-						return events.ReasonNone
-					}
 					return events.ReasonCorruptedVPNCreds
 				}
 			}
 
-			// If access token renewal succeeded
 			if errors.Is(reason, session.ErrMissingVPNCredsResponse) {
 				return events.ReasonNone
 			}
 
-			// For other VPN credential errors, return the corrupted VPN creds reason
 			return events.ReasonCorruptedVPNCreds
 		}
 
