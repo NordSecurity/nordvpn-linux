@@ -136,15 +136,23 @@ type ForceLogoutWithoutTokenInput struct {
 	PublishLogoutEventFunc func(events.DataAuthorization)
 	DebugPublisherFunc     func(string)
 	DisconnectFunc         func() (bool, error)
+	Reason                 events.ReasonCode
 }
 
 // ForceLogoutWithoutToken performs user logout operation without using login toking
 func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult LogoutResult) {
 	logoutStartTime := time.Now()
+
+	// Log the reason if provided
+	if input.Reason != events.ReasonNone {
+		log.Printf("%s Forcing logout due to: %v", internal.DebugPrefix, input.Reason)
+	}
+
 	input.PublishLogoutEventFunc(events.DataAuthorization{
 		DurationMs:   -1,
 		EventTrigger: events.TriggerApp,
 		EventStatus:  events.StatusAttempt,
+		Reason:       input.Reason,
 	})
 
 	defer func() {
@@ -160,6 +168,7 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 			DurationMs:   max(int(time.Since(logoutStartTime).Milliseconds()), 1),
 			EventTrigger: events.TriggerApp,
 			EventStatus:  status,
+			Reason:       input.Reason,
 		})
 	}()
 

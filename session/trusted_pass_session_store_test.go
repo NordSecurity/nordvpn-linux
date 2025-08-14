@@ -12,15 +12,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// testValidate is a test helper that tests the validation logic of TrustedPassSessionStore
-// without going through the full Renew flow
 func testValidate(store SessionStore) error {
-	// Type assert to access the unexported validate method
 	tpStore, ok := store.(*TrustedPassSessionStore)
 	if !ok {
 		return errors.New("not a TrustedPassSessionStore")
 	}
-	return tpStore.validate()
+	return tpStore.validate(false)
 }
 
 func TestTrustedPassSessionStore_Validate(t *testing.T) {
@@ -111,7 +108,6 @@ func TestTrustedPassSessionStore_Validate(t *testing.T) {
 				tt.externalValidator,
 			)
 
-			// Test validation directly using the test helper
 			err := testValidate(store)
 
 			if tt.wantErr != nil {
@@ -236,12 +232,12 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 				IsOAuth:                true,
 			},
 			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
-				assert.Fail(t, "Renew API should not be called for valid session")
+				t.Fatal("Renew API should not be called for valid session")
 				return nil, nil
 			},
 			wantErr: false,
 			checkRenewCall: func(t *testing.T, renewCalled bool) {
-				assert.False(t, renewCalled, "Renew API should not be called for valid session")
+				assert.False(t, renewCalled)
 			},
 		},
 		{
@@ -260,7 +256,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 			},
 			wantErr: false,
 			checkRenewCall: func(t *testing.T, renewCalled bool) {
-				assert.True(t, renewCalled, "Renew API should be called for invalid session")
+				assert.True(t, renewCalled)
 			},
 		},
 		{
@@ -272,7 +268,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 				IsOAuth:                true,
 			},
 			renewAPICall: nil,
-			wantErr:      false, // HandleError returns nil when no handlers are registered
+			wantErr:      false,
 		},
 		{
 			name: "renewal API returns nil response",
@@ -285,7 +281,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
 				return nil, nil
 			},
-			wantErr: false, // HandleError returns nil when no handlers are registered
+			wantErr: false,
 		},
 		{
 			name: "renewal API returns empty token",
@@ -301,7 +297,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 					OwnerID: "nordvpn",
 				}, nil
 			},
-			wantErr: false, // HandleError returns nil when no handlers are registered
+			wantErr: false,
 		},
 		{
 			name: "renewal API error",
@@ -314,7 +310,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 			renewAPICall: func(token string) (*TrustedPassAccessTokenResponse, error) {
 				return nil, errors.New("API error")
 			},
-			wantErr: false, // HandleError returns nil when no handlers are registered
+			wantErr: false,
 		},
 	}
 

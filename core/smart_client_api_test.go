@@ -316,10 +316,10 @@ func (m *mockAccessTokenStoreWrapper) IsExpired() bool {
 	return time.Now().After(m.cfgManager.expiry)
 }
 
-func (m *mockAccessTokenStoreWrapper) Renew() error {
+func (m *mockAccessTokenStoreWrapper) Renew(opts ...session.RenewalOption) error {
 	m.mock.RenewCallCount++
 	if m.mock.RenewFunc != nil {
-		return m.mock.RenewFunc()
+		return m.mock.RenewFunc(opts...)
 	}
 	return nil
 }
@@ -378,7 +378,7 @@ func Test_NotificationCredentials_TokenRenewalScenarios(t *testing.T) {
 				}
 				return renewedToken
 			},
-			RenewFunc: func() error { return nil },
+			RenewFunc: func(opts ...session.RenewalOption) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -405,7 +405,7 @@ func Test_NotificationCredentials_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc:    func() error { return errors.New("renew failed") },
+			RenewFunc:    func(opts ...session.RenewalOption) error { return errors.New("renew failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -426,7 +426,7 @@ func Test_NotificationCredentials_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal is triggered but api still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc:    func() string { return initialToken },
-			RenewFunc:       func() error { return nil },
+			RenewFunc:       func(opts ...session.RenewalOption) error { return nil },
 			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
@@ -483,7 +483,7 @@ func Test_NotificationCredentialsRevoke_TokenRenewalScenarios(t *testing.T) {
 				}
 				return renewedToken
 			},
-			RenewFunc: func() error { return nil },
+			RenewFunc: func(opts ...session.RenewalOption) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -510,7 +510,7 @@ func Test_NotificationCredentialsRevoke_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc:    func() error { return errors.New("renewal failed") },
+			RenewFunc:    func(opts ...session.RenewalOption) error { return errors.New("renewal failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -531,7 +531,7 @@ func Test_NotificationCredentialsRevoke_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc:    func() string { return initialToken },
-			RenewFunc:       func() error { return nil },
+			RenewFunc:       func(opts ...session.RenewalOption) error { return nil },
 			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
@@ -594,7 +594,7 @@ func Test_ServiceCredentials_TokenRenewalScenarios(t *testing.T) {
 				}
 				return renewedToken
 			},
-			RenewFunc: func() error { return nil },
+			RenewFunc: func(opts ...session.RenewalOption) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -617,7 +617,7 @@ func Test_ServiceCredentials_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal is never triggered but api fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc:    func() error { return errors.New("renew failed") },
+			RenewFunc:    func(opts ...session.RenewalOption) error { return errors.New("renew failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -649,7 +649,7 @@ func Test_TokenRenew_TokenRenewalScenarios(t *testing.T) {
 
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -678,7 +678,7 @@ func Test_TokenRenew_TokenRenewalScenarios(t *testing.T) {
 
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return "" },
-			RenewFunc:    func() error { return nil },
+			RenewFunc:    func(opts ...session.RenewalOption) error { return nil },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -705,7 +705,7 @@ func Test_Services_TokenRenewalScenarios(t *testing.T) {
 
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -751,7 +751,7 @@ func Test_Services_TokenRenewalScenarios(t *testing.T) {
 				}
 				return renewedToken
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				return nil
 			},
 		}
@@ -779,7 +779,7 @@ func Test_Services_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc:    func() error { return errors.New("renewal failed") },
+			RenewFunc:    func(opts ...session.RenewalOption) error { return errors.New("renewal failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -800,7 +800,7 @@ func Test_Services_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc:    func() string { return initialToken },
-			RenewFunc:       func() error { return nil },
+			RenewFunc:       func(opts ...session.RenewalOption) error { return nil },
 			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
@@ -826,7 +826,7 @@ func Test_CurrentUser_TokenRenewalScenarios(t *testing.T) {
 
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -859,7 +859,7 @@ func Test_CurrentUser_TokenRenewalScenarios(t *testing.T) {
 				}
 				return renewedToken
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				return nil
 			},
 		}
@@ -887,7 +887,7 @@ func Test_CurrentUser_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc:    func() error { return errors.New("renewal failed") },
+			RenewFunc:    func(opts ...session.RenewalOption) error { return errors.New("renewal failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -908,7 +908,7 @@ func Test_CurrentUser_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc:    func() string { return initialToken },
-			RenewFunc:       func() error { return nil },
+			RenewFunc:       func(opts ...session.RenewalOption) error { return nil },
 			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
@@ -932,7 +932,7 @@ func Test_DeleteToken_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Valid token, no renewal", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -963,7 +963,7 @@ func Test_DeleteToken_TokenRenewalScenarios(t *testing.T) {
 				}
 				return renewedToken
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				return nil
 			},
 		}
@@ -990,7 +990,7 @@ func Test_DeleteToken_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc:    func() error { return errors.New("renewal failed") },
+			RenewFunc:    func(opts ...session.RenewalOption) error { return errors.New("renewal failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1010,7 +1010,7 @@ func Test_DeleteToken_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc:    func() string { return initialToken },
-			RenewFunc:       func() error { return nil },
+			RenewFunc:       func(opts ...session.RenewalOption) error { return nil },
 			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
@@ -1035,7 +1035,7 @@ func Test_TrustedPassToken_TokenRenewalScenarios(t *testing.T) {
 
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -1068,7 +1068,7 @@ func Test_TrustedPassToken_TokenRenewalScenarios(t *testing.T) {
 				}
 				return renewedToken
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				return nil
 			},
 		}
@@ -1096,7 +1096,7 @@ func Test_TrustedPassToken_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc:    func() error { return errors.New("renewal failed") },
+			RenewFunc:    func(opts ...session.RenewalOption) error { return errors.New("renewal failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1117,7 +1117,7 @@ func Test_TrustedPassToken_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc:    func() string { return initialToken },
-			RenewFunc:       func() error { return nil },
+			RenewFunc: func(opts ...session.RenewalOption) error { return nil },
 			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
@@ -1145,7 +1145,7 @@ func Test_MultifactorAuthStatus_TokenRenewalScenarios(t *testing.T) {
 
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -1180,7 +1180,7 @@ func Test_MultifactorAuthStatus_TokenRenewalScenarios(t *testing.T) {
 				}
 				return renewedToken
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				return nil
 			},
 		}
@@ -1208,7 +1208,7 @@ func Test_MultifactorAuthStatus_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc:    func() error { return errors.New("renewal failed") },
+			RenewFunc:    func(opts ...session.RenewalOption) error { return errors.New("renewal failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1229,7 +1229,7 @@ func Test_MultifactorAuthStatus_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc:    func() string { return initialToken },
-			RenewFunc:       func() error { return nil },
+			RenewFunc:       func(opts ...session.RenewalOption) error { return nil },
 			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
@@ -1253,7 +1253,7 @@ func Test_Logout_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Valid token, no renewal", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -1284,7 +1284,7 @@ func Test_Logout_TokenRenewalScenarios(t *testing.T) {
 				}
 				return renewedToken
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				return nil
 			},
 		}
@@ -1311,7 +1311,7 @@ func Test_Logout_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc:    func() error { return errors.New("renewal failed") },
+			RenewFunc:    func(opts ...session.RenewalOption) error { return errors.New("renewal failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1331,7 +1331,7 @@ func Test_Logout_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc:    func() string { return initialToken },
-			RenewFunc:       func() error { return nil },
+			RenewFunc:       func(opts ...session.RenewalOption) error { return nil },
 			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
@@ -1368,7 +1368,7 @@ func Test_Insights_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -1400,7 +1400,7 @@ func Test_Servers_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -1452,7 +1452,7 @@ func Test_RecommendedServers_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -1487,7 +1487,7 @@ func Test_Server_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -1523,7 +1523,7 @@ func Test_ServerCountries_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -1555,7 +1555,7 @@ func Test_Base_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -1588,7 +1588,7 @@ func Test_Plans_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -1625,7 +1625,7 @@ func Test_CreateUser_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -1657,7 +1657,7 @@ func Test_Orders_TokenRenewalScenarios(t *testing.T) {
 		}
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -1693,7 +1693,7 @@ func Test_Orders_TokenRenewalScenarios(t *testing.T) {
 				}
 				return renewedToken
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				return nil
 			},
 		}
@@ -1721,7 +1721,7 @@ func Test_Orders_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc:    func() error { return errors.New("renewal failed") },
+			RenewFunc:    func(opts ...session.RenewalOption) error { return errors.New("renewal failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1742,7 +1742,7 @@ func Test_Orders_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc:    func() string { return initialToken },
-			RenewFunc:       func() error { return nil },
+			RenewFunc:       func(opts ...session.RenewalOption) error { return nil },
 			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
@@ -1770,7 +1770,7 @@ func Test_Payments_TokenRenewalScenarios(t *testing.T) {
 		}
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -1806,7 +1806,7 @@ func Test_Payments_TokenRenewalScenarios(t *testing.T) {
 				}
 				return renewedToken
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				return nil
 			},
 		}
@@ -1834,7 +1834,7 @@ func Test_Payments_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal is triggered but fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc: func() string { return initialToken },
-			RenewFunc:    func() error { return errors.New("renewal failed") },
+			RenewFunc:    func(opts ...session.RenewalOption) error { return errors.New("renewal failed") },
 		}
 
 		mockAPI := &mockSimpleClientAPI{
@@ -1855,7 +1855,7 @@ func Test_Payments_TokenRenewalScenarios(t *testing.T) {
 	t.Run("Token renewal succeeds but API still fails", func(t *testing.T) {
 		mockSessionStore := &mocksession.MockAccessTokenSessionStore{
 			GetTokenFunc:    func() string { return initialToken },
-			RenewFunc:       func() error { return nil },
+			RenewFunc:       func(opts ...session.RenewalOption) error { return nil },
 			HandleErrorFunc: func(reason error) error { return nil },
 		}
 
@@ -1883,7 +1883,7 @@ func Test_Register_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -1916,7 +1916,7 @@ func Test_Update_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -1950,7 +1950,7 @@ func Test_Configure_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -1983,7 +1983,7 @@ func Test_Unregister_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -2017,7 +2017,7 @@ func Test_Map_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -2050,7 +2050,7 @@ func Test_Unpair_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -2083,7 +2083,7 @@ func Test_Received_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -2116,7 +2116,7 @@ func Test_Sent_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -2153,7 +2153,7 @@ func Test_Accept_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -2198,7 +2198,7 @@ func Test_Reject_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -2231,7 +2231,7 @@ func Test_Revoke_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
@@ -2267,7 +2267,7 @@ func Test_NotifyNewTransfer_TokenRenewalScenarios(t *testing.T) {
 				t.Fatal("GetToken should not be called")
 				return ""
 			},
-			RenewFunc: func() error {
+			RenewFunc: func(opts ...session.RenewalOption) error {
 				t.Fatal("Renew should not be called")
 				return nil
 			},
