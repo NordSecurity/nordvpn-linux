@@ -74,8 +74,6 @@ func ExtractError(resp *http.Response) error {
 		)
 	}
 
-	fmt.Printf("ERR HTTP: Code=%d, Message=%s\n", info.Errors.Code, info.Errors.Message)
-
 	switch resp.StatusCode {
 	case http.StatusBadRequest:
 		if err := extractErrorForMeshnet(info); err != nil {

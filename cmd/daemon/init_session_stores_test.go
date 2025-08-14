@@ -592,7 +592,7 @@ func TestLogoutReasonCodeSelectionWithProductionCode(t *testing.T) {
 			name:               "vpn creds - missing vpn creds response",
 			sessionStore:       "vpnCreds",
 			apiError:           session.ErrMissingVPNCredsResponse,
-			expectedReasonCode: events.ReasonNone,
+			expectedReasonCode: events.ReasonCorruptedVPNCreds,
 		},
 		{
 			name:               "vpn creds - bad request error",
@@ -646,7 +646,16 @@ func TestLogoutReasonCodeSelectionWithProductionCode(t *testing.T) {
 
 			builder := NewSessionStoresBuilder(cfgManager)
 
-			mockRawAPI := &mockRawClientAPI{}
+			// Set up mock API with default successful token renewal
+			mockRawAPI := &mockRawClientAPI{
+				tokenRenewFunc: func(token string, idempotencyKey uuid.UUID) (*core.TokenRenewResponse, error) {
+					return &core.TokenRenewResponse{
+						Token:      "ab78bb36299d442fa0715fb53b5e3e58",
+						RenewToken: "cd89cc47300e553fb1826fc64c6f4f69",
+						ExpiresAt:  time.Now().Add(24 * time.Hour).Format(internal.ServerDateFormat),
+					}, nil
+				},
+			}
 			mockAPI := &mockClientAPI{mockRawClientAPI: mockRawAPI}
 
 			builder.BuildAccessTokenStore(mockRawAPI)
@@ -674,6 +683,7 @@ func TestLogoutReasonCodeSelectionWithProductionCode(t *testing.T) {
 			case "accessToken":
 				builder.registerAccessTokenHandlers(logoutHandler)
 			case "vpnCreds":
+				builder.registerAccessTokenHandlers(logoutHandler)
 				builder.registerVPNCredsHandlers(logoutHandler)
 			case "trustedPass":
 				builder.registerTrustedPassHandlers(logoutHandler)

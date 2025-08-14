@@ -687,6 +687,7 @@ func TestAccessTokenSessionStore_Renew_ForceRenewal(t *testing.T) {
 		{
 			name: "valid token with force renewal - triggers renewal",
 			setupConfig: func() *config.Config {
+				key := uuid.New()
 				cfg := &config.Config{
 					AutoConnectData: config.AutoConnectData{ID: 123},
 					TokensData: map[int64]config.TokenData{
@@ -694,7 +695,7 @@ func TestAccessTokenSessionStore_Renew_ForceRenewal(t *testing.T) {
 							Token:          "abc123def456789012345678901234567890",
 							RenewToken:     "def456abc123789012345678901234567890",
 							TokenExpiry:    time.Now().Add(24 * time.Hour).Format(internal.ServerDateFormat),
-							IdempotencyKey: &uuid.Nil,
+							IdempotencyKey: &key,
 						},
 					},
 				}
@@ -735,6 +736,7 @@ func TestAccessTokenSessionStore_Renew_ForceRenewal(t *testing.T) {
 		{
 			name: "force renewal with API error - no handler",
 			setupConfig: func() *config.Config {
+				key := uuid.New()
 				cfg := &config.Config{
 					AutoConnectData: config.AutoConnectData{ID: 123},
 					TokensData: map[int64]config.TokenData{
@@ -742,7 +744,7 @@ func TestAccessTokenSessionStore_Renew_ForceRenewal(t *testing.T) {
 							Token:          "abc123def456789012345678901234567890",
 							RenewToken:     "def456abc123789012345678901234567890",
 							TokenExpiry:    time.Now().Add(24 * time.Hour).Format(internal.ServerDateFormat),
-							IdempotencyKey: &uuid.Nil,
+							IdempotencyKey: &key,
 						},
 					},
 				}

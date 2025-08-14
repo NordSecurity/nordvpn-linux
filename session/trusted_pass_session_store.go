@@ -72,8 +72,8 @@ func (s *TrustedPassSessionStore) Renew(opts ...RenewalOption) error {
 	}
 
 	// check if everything is valid or data renewal is required
-	if err := s.validate(options.forceRenewal); err != nil {
-		if err = s.renewIfOAuth(uid, &data, options.skipErrorHandlers); err != nil {
+	if options.forceRenewal || s.validate(false) != nil {
+		if err := s.renewIfOAuth(uid, &data, options.skipErrorHandlers); err != nil {
 			return err
 		}
 	}
