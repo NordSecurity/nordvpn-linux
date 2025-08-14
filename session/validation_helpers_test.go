@@ -408,13 +408,13 @@ func TestValidateOpenVPNCredentials(t *testing.T) {
 			name:     "whitespace username",
 			username: "   ",
 			password: "pass456",
-			wantErr:  nil, // whitespace is considered valid
+			wantErr:  nil,
 		},
 		{
 			name:     "whitespace password",
 			username: "user123",
 			password: "   ",
-			wantErr:  nil, // whitespace is considered valid
+			wantErr:  nil,
 		},
 		{
 			name:     "username with newline",
@@ -470,12 +470,12 @@ func TestValidateNordLynxPrivateKey(t *testing.T) {
 		{
 			name:    "whitespace key",
 			key:     "   ",
-			wantErr: nil, // whitespace is considered valid
+			wantErr: nil,
 		},
 		{
 			name:    "key with special characters",
 			key:     "key-with-special-chars!@#",
-			wantErr: nil, // any non-empty string is valid
+			wantErr: nil,
 		},
 		{
 			name:    "base64-like key",
@@ -520,7 +520,6 @@ func TestValidateNordLynxPrivateKey(t *testing.T) {
 func TestValidateExpiry_TimeBoundary(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	// Test edge cases with deterministic time boundaries
 	tests := []struct {
 		name        string
 		expiry      time.Time
@@ -529,37 +528,37 @@ func TestValidateExpiry_TimeBoundary(t *testing.T) {
 	}{
 		{
 			name:        "far past expiry",
-			expiry:      time.Now().Add(-365 * 24 * time.Hour), // 1 year ago
+			expiry:      time.Now().Add(-365 * 24 * time.Hour),
 			wantErr:     ErrSessionExpired,
 			description: "Should fail for time far in the past",
 		},
 		{
 			name:        "just expired",
-			expiry:      time.Now().Add(-1 * time.Second), // 1 second ago
+			expiry:      time.Now().Add(-1 * time.Second),
 			wantErr:     ErrSessionExpired,
 			description: "Should fail for recently expired time",
 		},
 		{
 			name:        "future expiry short duration",
-			expiry:      time.Now().Add(1 * time.Second), // 1 second from now
+			expiry:      time.Now().Add(1 * time.Second),
 			wantErr:     nil,
 			description: "Should pass for near future time",
 		},
 		{
 			name:        "future expiry medium duration",
-			expiry:      time.Now().Add(1 * time.Hour), // 1 hour from now
+			expiry:      time.Now().Add(1 * time.Hour),
 			wantErr:     nil,
 			description: "Should pass for medium future time",
 		},
 		{
 			name:        "zero time",
-			expiry:      time.Time{}, // Zero value of time.Time
+			expiry:      time.Time{},
 			wantErr:     ErrSessionExpired,
 			description: "Should fail for zero time value",
 		},
 		{
 			name:        "unix epoch",
-			expiry:      time.Unix(0, 0), // January 1, 1970
+			expiry:      time.Unix(0, 0),
 			wantErr:     ErrSessionExpired,
 			description: "Should fail for Unix epoch time",
 		},
@@ -583,12 +582,10 @@ func TestValidateExpiry_TimeBoundary(t *testing.T) {
 		})
 	}
 
-	// Test concurrent access to ensure thread safety
 	t.Run("concurrent validation", func(t *testing.T) {
 		futureTime := time.Now().Add(time.Hour)
 		pastTime := time.Now().Add(-time.Hour)
 
-		// Run multiple goroutines to test concurrent access
 		done := make(chan bool, 10)
 		for i := 0; i < 10; i++ {
 			go func(i int) {
@@ -603,7 +600,6 @@ func TestValidateExpiry_TimeBoundary(t *testing.T) {
 			}(i)
 		}
 
-		// Wait for all goroutines to complete
 		for i := 0; i < 10; i++ {
 			<-done
 		}
@@ -613,18 +609,17 @@ func TestValidateExpiry_TimeBoundary(t *testing.T) {
 func TestValidateAccessTokenFormat_ExactLengthBoundaries(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	// Test with various hex string lengths
 	testCases := []struct {
 		length  int
 		wantErr bool
 	}{
-		{0, true},   // empty
-		{1, false},  // valid hex of any length
-		{8, false},  // valid hex of any length
-		{16, false}, // valid hex of any length
-		{32, false}, // typical MD5 length
-		{40, false}, // typical SHA1 length
-		{64, false}, // typical SHA256 length
+		{0, true},
+		{1, false},
+		{8, false},
+		{16, false},
+		{32, false},
+		{40, false},
+		{64, false},
 	}
 
 	for _, tc := range testCases {
@@ -679,13 +674,13 @@ func TestValidateNCCredentials(t *testing.T) {
 			name:     "whitespace username",
 			username: "   ",
 			password: "ncpass456",
-			wantErr:  nil, // whitespace is considered valid
+			wantErr:  nil,
 		},
 		{
 			name:     "whitespace password",
 			username: "ncuser123",
 			password: "   ",
-			wantErr:  nil, // whitespace is considered valid
+			wantErr:  nil,
 		},
 		{
 			name:     "username with special chars",
@@ -756,17 +751,17 @@ func TestValidateEndpoint(t *testing.T) {
 		{
 			name:     "empty endpoint",
 			endpoint: "",
-			wantErr:  ErrInvalidEndpoint,
+			wantErr:  ErrMissingEndpoint,
 		},
 		{
 			name:     "whitespace endpoint",
 			endpoint: "   ",
-			wantErr:  nil, // whitespace is considered valid
+			wantErr:  nil,
 		},
 		{
 			name:     "endpoint without protocol",
 			endpoint: "example.com",
-			wantErr:  nil, // any non-empty string is valid
+			wantErr:  nil,
 		},
 		{
 			name:     "localhost endpoint",
@@ -796,25 +791,24 @@ func TestValidateEndpoint(t *testing.T) {
 func TestValidateTrustedPassTokenFormat_EdgeCharacters(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	// Test boundary characters
 	testCases := []struct {
 		token   string
 		wantErr bool
 	}{
-		{"0", false}, // start of numbers
-		{"9", false}, // end of numbers
-		{"A", false}, // start of uppercase
-		{"Z", false}, // end of uppercase
-		{"a", false}, // start of lowercase
-		{"z", false}, // end of lowercase
-		{"_", false}, // underscore
-		{"-", false}, // hyphen
-		{"@", true},  // before uppercase A
-		{"[", true},  // after uppercase Z
-		{"`", true},  // before lowercase a
-		{"{", true},  // after lowercase z
-		{"/", true},  // before 0
-		{":", true},  // after 9
+		{"0", false},
+		{"9", false},
+		{"A", false},
+		{"Z", false},
+		{"a", false},
+		{"z", false},
+		{"_", false},
+		{"-", false},
+		{"@", true},
+		{"[", true},
+		{"`", true},
+		{"{", true},
+		{"/", true},
+		{":", true},
 	}
 
 	for _, tc := range testCases {

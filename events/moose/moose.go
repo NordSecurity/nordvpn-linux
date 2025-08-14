@@ -334,7 +334,7 @@ func (s *Subscriber) NotifyLogout(data events.DataAuthorization) error {
 		eventTriggerDomainToInternalType(data.EventTrigger),
 		eventStatusToInternalType(data.EventStatus),
 		moose.NordvpnappOptBoolNone,
-		-1,
+		int32(data.Reason),
 		nil,
 	)); err != nil {
 		return err

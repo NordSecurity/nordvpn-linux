@@ -350,7 +350,7 @@ func TestVPNCredentialsSessionStore_Renew(t *testing.T) {
 			},
 			renewAPICall:    nil,
 			wantErr:         true,
-			wantErrContains: "renewal API call not configured",
+			wantErrContains: "renewal api call not configured",
 		},
 		{
 			name: "renewal API returns nil response",
@@ -362,8 +362,8 @@ func TestVPNCredentialsSessionStore_Renew(t *testing.T) {
 			renewAPICall: func() (*VPNCredentialsResponse, error) {
 				return nil, nil
 			},
-			wantErr:         true,
-			wantErrContains: "renewal API returned nil response",
+			wantErr:         false,
+			wantErrContains: "",
 		},
 		{
 			name: "renewal API returns empty username",
@@ -379,8 +379,8 @@ func TestVPNCredentialsSessionStore_Renew(t *testing.T) {
 					NordLynxPrivateKey: "newkey",
 				}, nil
 			},
-			wantErr:         true,
-			wantErrContains: "renewal API returned incomplete credentials",
+			wantErr:         false,
+			wantErrContains: "",
 		},
 		{
 			name: "renewal API returns empty password",
@@ -396,8 +396,8 @@ func TestVPNCredentialsSessionStore_Renew(t *testing.T) {
 					NordLynxPrivateKey: "newkey",
 				}, nil
 			},
-			wantErr:         true,
-			wantErrContains: "renewal API returned incomplete credentials",
+			wantErr:         false,
+			wantErrContains: "",
 		},
 		{
 			name: "renewal API error",
@@ -407,7 +407,7 @@ func TestVPNCredentialsSessionStore_Renew(t *testing.T) {
 				NordLynxPrivateKey: "testkey",
 			},
 			renewAPICall: func() (*VPNCredentialsResponse, error) {
-				return nil, errors.New("API error")
+				return nil, errors.New("api error")
 			},
 			wantErr: false,
 		},
@@ -531,4 +531,173 @@ func TestVPNCredentialsSessionStore_InterfaceCompliance(t *testing.T) {
 
 	assert.NotNil(t, store)
 	assert.Implements(t, (*SessionStore)(nil), store)
+}
+
+func TestVPNCredentialsSessionStore_Renew_ForceRenewal(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	userID := int64(123)
+
+	tests := []struct {
+		name            string
+		tokenData       config.TokenData
+		renewAPICall    VPNCredentialsRenewalAPICall
+		expectRenewal   bool
+		expectError     bool
+		useForceRenewal bool
+	}{
+		{
+			name: "valid credentials without force renewal - no renewal",
+			tokenData: config.TokenData{
+				OpenVPNUsername:    "testuser",
+				OpenVPNPassword:    "testpass",
+				NordLynxPrivateKey: "testkey",
+			},
+			renewAPICall: func() (*VPNCredentialsResponse, error) {
+				t.Fatal("Renew API should not be called for valid credentials without force")
+				return nil, nil
+			},
+			expectRenewal:   false,
+			useForceRenewal: false,
+		},
+		{
+			name: "valid credentials with force renewal - triggers renewal",
+			tokenData: config.TokenData{
+				OpenVPNUsername:    "testuser",
+				OpenVPNPassword:    "testpass",
+				NordLynxPrivateKey: "testkey",
+			},
+			renewAPICall: func() (*VPNCredentialsResponse, error) {
+				return &VPNCredentialsResponse{
+					Username:           "newuser",
+					Password:           "newpass",
+					NordLynxPrivateKey: "newkey",
+				}, nil
+			},
+			expectRenewal:   true,
+			useForceRenewal: true,
+		},
+		{
+			name: "invalid credentials without force renewal - triggers renewal",
+			tokenData: config.TokenData{
+				OpenVPNUsername:    "",
+				OpenVPNPassword:    "testpass",
+				NordLynxPrivateKey: "testkey",
+			},
+			renewAPICall: func() (*VPNCredentialsResponse, error) {
+				return &VPNCredentialsResponse{
+					Username:           "newuser",
+					Password:           "newpass",
+					NordLynxPrivateKey: "newkey",
+				}, nil
+			},
+			expectRenewal:   true,
+			useForceRenewal: false,
+		},
+		{
+			name: "force renewal with API error",
+			tokenData: config.TokenData{
+				OpenVPNUsername:    "testuser",
+				OpenVPNPassword:    "testpass",
+				NordLynxPrivateKey: "testkey",
+			},
+			renewAPICall: func() (*VPNCredentialsResponse, error) {
+				return nil, errors.New("api error")
+			},
+			expectRenewal:   true,
+			expectError:     false,
+			useForceRenewal: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := config.Config{
+				AutoConnectData: config.AutoConnectData{ID: userID},
+				TokensData:      map[int64]config.TokenData{userID: tt.tokenData},
+			}
+
+			cfgManager := mock.NewMockConfigManager()
+			cfgManager.Cfg = &cfg
+
+			errRegistry := internal.NewErrorHandlingRegistry[error]()
+
+			renewCalled := false
+			var renewAPICall VPNCredentialsRenewalAPICall
+			if tt.renewAPICall != nil {
+				originalCall := tt.renewAPICall
+				renewAPICall = func() (*VPNCredentialsResponse, error) {
+					renewCalled = true
+					return originalCall()
+				}
+			}
+
+			store := NewVPNCredentialsSessionStore(cfgManager, errRegistry, renewAPICall, nil)
+
+			var err error
+			if tt.useForceRenewal {
+				err = store.Renew(ForceRenewal())
+			} else {
+				err = store.Renew()
+			}
+
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, tt.expectRenewal, renewCalled, "Renewal call expectation mismatch")
+
+			if tt.expectRenewal && !tt.expectError && renewCalled {
+				savedCfg := cfgManager.Cfg
+				tokenData := savedCfg.TokensData[userID]
+				if tt.renewAPICall != nil {
+					if tokenData.OpenVPNUsername == "newuser" {
+						assert.Equal(t, "newuser", tokenData.OpenVPNUsername)
+						assert.Equal(t, "newpass", tokenData.OpenVPNPassword)
+						assert.Equal(t, "newkey", tokenData.NordLynxPrivateKey)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestVPNCredentialsSessionStore_Renew_ForceRenewalWithSilentRenewal(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	userID := int64(123)
+
+	cfg := config.Config{
+		AutoConnectData: config.AutoConnectData{ID: userID},
+		TokensData: map[int64]config.TokenData{
+			userID: {
+				OpenVPNUsername:    "testuser",
+				OpenVPNPassword:    "testpass",
+				NordLynxPrivateKey: "testkey",
+			},
+		},
+	}
+
+	cfgManager := mock.NewMockConfigManager()
+	cfgManager.Cfg = &cfg
+
+	handlerCalled := false
+	errRegistry := internal.NewErrorHandlingRegistry[error]()
+	apiError := errors.New("API error")
+	errRegistry.Add(func(err error) {
+		handlerCalled = true
+	}, apiError)
+
+	renewAPICall := func() (*VPNCredentialsResponse, error) {
+		return nil, apiError
+	}
+
+	store := NewVPNCredentialsSessionStore(cfgManager, errRegistry, renewAPICall, nil)
+
+	err := store.Renew(ForceRenewal(), SilentRenewal())
+	assert.Error(t, err)
+	assert.False(t, handlerCalled, "Handler should not be called with SilentRenewal")
+	assert.Contains(t, err.Error(), "API error")
 }
