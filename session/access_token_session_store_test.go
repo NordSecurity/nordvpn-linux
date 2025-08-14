@@ -25,8 +25,8 @@ func TestAccessTokenSessionStore_Renew_NotExpired(t *testing.T) {
 		AutoConnectData: config.AutoConnectData{ID: uid},
 		TokensData: map[int64]config.TokenData{
 			uid: {
-				Token:       "ab78bb36299d442fa0715fb53b5e3e57", // valid hex token
-				RenewToken:  "renew",
+				Token:       "ab78bb36299d442fa0715fb53b5e3e57",
+				RenewToken:  "deadbeef1234567890abcdef1234567890abcdef",
 				TokenExpiry: futureTime.Format(internal.ServerDateFormat),
 			},
 		},
@@ -99,8 +99,8 @@ func TestAccessTokenSessionStore_Renew_ExternalValidatorError(t *testing.T) {
 	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
 		renewalCalled = true
 		return &session.AccessTokenResponse{
-			Token:      "new-token",
-			RenewToken: "new-renew",
+			Token:      "ab78bb36299d442fa0715fb53b5e3e58",
+			RenewToken: "ab78bb36299d442fa0715fb53b5e3e59",
 			ExpiresAt:  futureTime.Format(internal.ServerDateFormat),
 		}, nil
 	}
@@ -143,8 +143,8 @@ func TestAccessTokenSessionStore_Renew_ExpiredToken(t *testing.T) {
 		assert.Equal(t, "old-token", token)
 		assert.Equal(t, idempotencyKey, key)
 		return &session.AccessTokenResponse{
-			Token:      "new-token",
-			RenewToken: "new-renew",
+			Token:      "ab78bb36299d442fa0715fb53b5e3e58",
+			RenewToken: "ab78bb36299d442fa0715fb53b5e3e59",
 			ExpiresAt:  futureTime.Format(internal.ServerDateFormat),
 		}, nil
 	}
@@ -153,8 +153,8 @@ func TestAccessTokenSessionStore_Renew_ExpiredToken(t *testing.T) {
 	err := store.Renew()
 
 	assert.NoError(t, err)
-	assert.Equal(t, "new-token", cfgManager.Cfg.TokensData[uid].Token)
-	assert.Equal(t, "new-renew", cfgManager.Cfg.TokensData[uid].RenewToken)
+	assert.Equal(t, "ab78bb36299d442fa0715fb53b5e3e58", cfgManager.Cfg.TokensData[uid].Token)
+	assert.Equal(t, "ab78bb36299d442fa0715fb53b5e3e59", cfgManager.Cfg.TokensData[uid].RenewToken)
 	assert.Equal(t, futureTime.Format(internal.ServerDateFormat), cfgManager.Cfg.TokensData[uid].TokenExpiry)
 }
 
@@ -172,7 +172,7 @@ func TestAccessTokenSessionStore_Renew_SetIdempotencyKey(t *testing.T) {
 				Token:          "old-token",
 				RenewToken:     "old-renew",
 				TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
-				IdempotencyKey: nil, // No idempotency key
+				IdempotencyKey: nil,
 			},
 		},
 	}
@@ -182,8 +182,8 @@ func TestAccessTokenSessionStore_Renew_SetIdempotencyKey(t *testing.T) {
 
 	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
 		return &session.AccessTokenResponse{
-			Token:      "new-token",
-			RenewToken: "new-renew",
+			Token:      "ab78bb36299d442fa0715fb53b5e3e58",
+			RenewToken: "ab78bb36299d442fa0715fb53b5e3e59",
 			ExpiresAt:  futureTime.Format(internal.ServerDateFormat),
 		}, nil
 	}
@@ -324,8 +324,8 @@ func TestAccessTokenSessionStore_Renew_InvalidExpiryFormat(t *testing.T) {
 
 	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
 		return &session.AccessTokenResponse{
-			Token:      "new-token",
-			RenewToken: "new-renew",
+			Token:      "ab78bb36299d442fa0715fb53b5e3e58",
+			RenewToken: "ab78bb36299d442fa0715fb53b5e3e59",
 			ExpiresAt:  "invalid-date-format",
 		}, nil
 	}
@@ -348,7 +348,7 @@ func TestAccessTokenSessionStore_Renew_ExternalValidatorSuccess(t *testing.T) {
 		TokensData: map[int64]config.TokenData{
 			uid: {
 				Token:       "de62575eaaa54ca8bd9416d98bdc9c1c",
-				RenewToken:  "renew",
+				RenewToken:  "abcdef1234567890abcdef1234567890",
 				TokenExpiry: futureTime.Format(internal.ServerDateFormat),
 			},
 		},
@@ -397,8 +397,8 @@ func TestAccessTokenSessionStore_Renew_ExternalValidatorFailure(t *testing.T) {
 
 	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
 		return &session.AccessTokenResponse{
-			Token:      "new-token",
-			RenewToken: "new-renew",
+			Token:      "ab78bb36299d442fa0715fb53b5e3e58",
+			RenewToken: "ab78bb36299d442fa0715fb53b5e3e59",
 			ExpiresAt:  futureTime.Format(internal.ServerDateFormat),
 		}, nil
 	}
@@ -407,7 +407,7 @@ func TestAccessTokenSessionStore_Renew_ExternalValidatorFailure(t *testing.T) {
 	err := store.Renew()
 
 	assert.NoError(t, err)
-	assert.Equal(t, "new-token", cfgManager.Cfg.TokensData[uid].Token)
+	assert.Equal(t, "ab78bb36299d442fa0715fb53b5e3e58", cfgManager.Cfg.TokensData[uid].Token)
 }
 
 func TestAccessTokenSessionStore_Renew_ErrNotFoundWithHandler(t *testing.T) {
@@ -640,6 +640,85 @@ func TestAccessTokenSessionStore_GetToken_NoData(t *testing.T) {
 	assert.Equal(t, "", token)
 }
 
+func TestAccessTokenSessionStore_Renew_SilentRenewal_NoHandlerInvocation(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	uid := int64(123)
+	idempotencyKey := uuid.New()
+	pastTime := time.Now().UTC().Add(-24 * time.Hour)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:          "old-token",
+				RenewToken:     "old-renew",
+				TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
+				IdempotencyKey: &idempotencyKey,
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	handlerCalled := false
+	errorRegistry.Add(func(reason error) {
+		handlerCalled = true
+	}, core.ErrBadRequest)
+
+	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+		return nil, core.ErrBadRequest
+	}
+
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	err := store.Renew(session.SilentRenewal())
+
+	assert.Error(t, err)
+	assert.True(t, errors.Is(err, core.ErrBadRequest))
+
+	assert.False(t, handlerCalled)
+}
+
+func TestAccessTokenSessionStore_Renew_SilentRenewal_Success(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	uid := int64(123)
+	idempotencyKey := uuid.New()
+	pastTime := time.Now().UTC().Add(-24 * time.Hour)
+	futureTime := time.Now().UTC().Add(24 * time.Hour)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:          "old-token",
+				RenewToken:     "old-renew",
+				TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
+				IdempotencyKey: &idempotencyKey,
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+		return &session.AccessTokenResponse{
+			Token:      "ab78bb36299d442fa0715fb53b5e3e58",
+			RenewToken: "deadbeef",
+			ExpiresAt:  futureTime.Format(internal.ServerDateFormat),
+		}, nil
+	}
+
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	err := store.Renew(session.SilentRenewal())
+
+	assert.NoError(t, err)
+	assert.Equal(t, "ab78bb36299d442fa0715fb53b5e3e58", cfgManager.Cfg.TokensData[uid].Token)
+	assert.Equal(t, "deadbeef", cfgManager.Cfg.TokensData[uid].RenewToken)
+}
+
 func TestAccessTokenSessionStore_GetToken_ConfigError(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -651,4 +730,181 @@ func TestAccessTokenSessionStore_GetToken_ConfigError(t *testing.T) {
 
 	token := store.GetToken()
 	assert.Equal(t, "", token)
+}
+
+func TestAccessTokenSessionStore_Renew_ForceRenewal(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name             string
+		setupConfig      func() *config.Config
+		renewAPIResponse *session.AccessTokenResponse
+		renewAPIError    error
+		expectRenewal    bool
+		expectError      bool
+		useForceRenewal  bool
+	}{
+		{
+			name: "valid token without force renewal - no renewal",
+			setupConfig: func() *config.Config {
+				cfg := &config.Config{
+					AutoConnectData: config.AutoConnectData{ID: 123},
+					TokensData: map[int64]config.TokenData{
+						123: {
+							Token:          "abc123def456789012345678901234567890",
+							RenewToken:     "def456abc123789012345678901234567890",
+							TokenExpiry:    time.Now().Add(24 * time.Hour).Format(internal.ServerDateFormat),
+							IdempotencyKey: &uuid.Nil,
+						},
+					},
+				}
+				return cfg
+			},
+			expectRenewal:   false,
+			useForceRenewal: false,
+		},
+		{
+			name: "valid token with force renewal - triggers renewal",
+			setupConfig: func() *config.Config {
+				cfg := &config.Config{
+					AutoConnectData: config.AutoConnectData{ID: 123},
+					TokensData: map[int64]config.TokenData{
+						123: {
+							Token:          "abc123def456789012345678901234567890",
+							RenewToken:     "def456abc123789012345678901234567890",
+							TokenExpiry:    time.Now().Add(24 * time.Hour).Format(internal.ServerDateFormat),
+							IdempotencyKey: &uuid.Nil,
+						},
+					},
+				}
+				return cfg
+			},
+			renewAPIResponse: &session.AccessTokenResponse{
+				Token:      "1234567890abcdef1234567890abcdef",
+				RenewToken: "abcdef1234567890abcdef1234567890",
+				ExpiresAt:  time.Now().Add(48 * time.Hour).Format(internal.ServerDateFormat),
+			},
+			expectRenewal:   true,
+			useForceRenewal: true,
+		},
+		{
+			name: "expired token without force renewal - triggers renewal",
+			setupConfig: func() *config.Config {
+				cfg := &config.Config{
+					AutoConnectData: config.AutoConnectData{ID: 123},
+					TokensData: map[int64]config.TokenData{
+						123: {
+							Token:          "abc123def456789012345678901234567890",
+							RenewToken:     "def456abc123789012345678901234567890",
+							TokenExpiry:    time.Now().Add(-24 * time.Hour).Format(internal.ServerDateFormat),
+							IdempotencyKey: &uuid.Nil,
+						},
+					},
+				}
+				return cfg
+			},
+			renewAPIResponse: &session.AccessTokenResponse{
+				Token:      "1234567890abcdef1234567890abcdef",
+				RenewToken: "abcdef1234567890abcdef1234567890",
+				ExpiresAt:  time.Now().Add(48 * time.Hour).Format(internal.ServerDateFormat),
+			},
+			expectRenewal:   true,
+			useForceRenewal: false,
+		},
+		{
+			name: "force renewal with API error - no handler",
+			setupConfig: func() *config.Config {
+				cfg := &config.Config{
+					AutoConnectData: config.AutoConnectData{ID: 123},
+					TokensData: map[int64]config.TokenData{
+						123: {
+							Token:          "abc123def456789012345678901234567890",
+							RenewToken:     "def456abc123789012345678901234567890",
+							TokenExpiry:    time.Now().Add(24 * time.Hour).Format(internal.ServerDateFormat),
+							IdempotencyKey: &uuid.Nil,
+						},
+					},
+				}
+				return cfg
+			},
+			renewAPIError:   core.ErrBadRequest,
+			expectRenewal:   true,
+			useForceRenewal: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := tt.setupConfig()
+			cfgManager := &mock.ConfigManager{Cfg: cfg}
+
+			renewCalled := false
+			renewAPICall := func(token string, idempotencyKey uuid.UUID) (*session.AccessTokenResponse, error) {
+				renewCalled = true
+				if tt.renewAPIError != nil {
+					return nil, tt.renewAPIError
+				}
+				return tt.renewAPIResponse, nil
+			}
+
+			registry := internal.NewErrorHandlingRegistry[error]()
+			store := session.NewAccessTokenSessionStore(cfgManager, registry, renewAPICall, nil)
+
+			var err error
+			if tt.useForceRenewal {
+				err = store.Renew(session.ForceRenewal())
+			} else {
+				err = store.Renew()
+			}
+
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, tt.expectRenewal, renewCalled, "Renewal call expectation mismatch")
+
+			if tt.expectRenewal && !tt.expectError && tt.renewAPIResponse != nil {
+				savedCfg := cfgManager.Cfg
+				tokenData := savedCfg.TokensData[savedCfg.AutoConnectData.ID]
+				assert.Equal(t, tt.renewAPIResponse.Token, tokenData.Token)
+				assert.Equal(t, tt.renewAPIResponse.RenewToken, tokenData.RenewToken)
+			}
+		})
+	}
+}
+
+func TestAccessTokenSessionStore_Renew_ForceRenewalWithSilentRenewal(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: 123},
+		TokensData: map[int64]config.TokenData{
+			123: {
+				Token:          "abc123def456789012345678901234567890",
+				RenewToken:     "def456abc123789012345678901234567890",
+				TokenExpiry:    time.Now().Add(24 * time.Hour).Format(internal.ServerDateFormat),
+				IdempotencyKey: &uuid.Nil,
+			},
+		},
+	}
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+
+	handlerCalled := false
+	registry := internal.NewErrorHandlingRegistry[error]()
+	registry.Add(func(err error) {
+		handlerCalled = true
+	}, core.ErrBadRequest)
+
+	renewAPICall := func(token string, idempotencyKey uuid.UUID) (*session.AccessTokenResponse, error) {
+		return nil, core.ErrBadRequest
+	}
+
+	store := session.NewAccessTokenSessionStore(cfgManager, registry, renewAPICall, nil)
+
+	err := store.Renew(session.ForceRenewal(), session.SilentRenewal())
+	assert.Error(t, err)
+	assert.False(t, handlerCalled)
+	assert.ErrorIs(t, err, core.ErrBadRequest)
 }

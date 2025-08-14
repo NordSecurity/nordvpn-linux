@@ -70,7 +70,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 	norduserservice "github.com/NordSecurity/nordvpn-linux/norduser/service"
 	"github.com/NordSecurity/nordvpn-linux/request"
-	"github.com/NordSecurity/nordvpn-linux/session"
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo"
@@ -318,19 +317,23 @@ func main() {
 		machineIdGenerator.GetUsedInformationMask(),
 	)
 
-	invalidSessionErrHandlingReg := internal.NewErrorHandlingRegistry[error]()
-
-	// encapsulating initialization logic
-	clientAPI, accessTokenSessionStore := func() (core.ClientAPI, session.SessionStore) {
-		api := core.NewSimpleAPI(
+	// Build client API and session stores
+	clientAPI, sessionBuilder := func() (core.ClientAPI, *SessionStoresBuilder) {
+		simpleAPI := core.NewSimpleAPI(
 			userAgent,
 			daemon.BaseURL,
 			httpClientWithRotator,
 			validator,
 		)
 
-		sessionStore := buildAccessTokenSessionStore(fsystem, invalidSessionErrHandlingReg, api)
-		return core.NewSmartClientAPI(api, sessionStore), sessionStore
+		builder := NewSessionStoresBuilder(fsystem)
+		smartAPI := core.NewSmartClientAPI(simpleAPI, builder.BuildAccessTokenStore(simpleAPI))
+
+		builder.BuildVPNCredsStore(smartAPI)
+		builder.BuildTrustedPassStore(smartAPI)
+		builder.BuildNCCredsStore(smartAPI)
+
+		return smartAPI, builder
 	}()
 
 	// populate build target configuration
@@ -521,9 +524,7 @@ func main() {
 	accountUpdateEvents := daemonevents.NewAccountUpdateEvents()
 	accountUpdateEvents.Subscribe(statePublisher)
 
-	ncCredentialsSessionStore := buildNCCredentialsSessionStore(fsystem, invalidSessionErrHandlingReg, clientAPI)
-	trustedPassSessionStore := buildTrustedPassSessionStore(fsystem, invalidSessionErrHandlingReg, clientAPI)
-	vpnCredentialsSessionStore := buildVPNCredentialsSessionStore(fsystem, invalidSessionErrHandlingReg, clientAPI)
+	// Create auth checker with all session stores
 	authChecker := auth.NewRenewingChecker(
 		fsystem,
 		clientAPI,
@@ -531,8 +532,7 @@ func main() {
 		daemonEvents.User.Logout,
 		errSubject,
 		accountUpdateEvents,
-		// checks are processing in the provided order
-		accessTokenSessionStore, ncCredentialsSessionStore, trustedPassSessionStore, vpnCredentialsSessionStore,
+		sessionBuilder.GetStores()...,
 	)
 
 	endpointResolver := network.NewDefaultResolverChain(fw)
@@ -544,18 +544,18 @@ func main() {
 		nc.NewCredsFetcher(clientAPI, fsystem))
 
 	// on session unrecoverable error perform user log-out action
-	daemon.RegisterSessionErrorHandler(
-		invalidSessionErrHandlingReg,
-		daemon.SessionErrorHandlerDependencies{
-			AuthChecker:            authChecker,
-			Networker:              netw,
-			NotificationClient:     notificationClient,
-			ConfigManager:          fsystem,
-			PublishLogoutEventFunc: daemonEvents.User.Logout.Publish,
-			PublishDisconnectFunc:  daemonEvents.Service.Disconnect.Publish,
-			DebugPublisherFunc:     debugSubject.Publish,
-		},
-	)
+	logoutHandler := daemon.NewLogoutHandler(daemon.LogoutHandlerDependencies{
+		AuthChecker:            authChecker,
+		Networker:              netw,
+		NotificationClient:     notificationClient,
+		ConfigManager:          fsystem,
+		PublishLogoutEventFunc: daemonEvents.User.Logout.Publish,
+		PublishDisconnectFunc:  daemonEvents.Service.Disconnect.Publish,
+		DebugPublisherFunc:     debugSubject.Publish,
+	})
+
+	// Configure error handlers for all session stores
+	sessionBuilder.ConfigureErrorHandlers(logoutHandler)
 
 	dataUpdateEvents := daemonevents.NewDataUpdateEvents()
 	dataUpdateEvents.Subscribe(statePublisher)
