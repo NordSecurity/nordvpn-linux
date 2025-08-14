@@ -30,9 +30,9 @@ func TestEventJSONOutput(t *testing.T) {
 		},
 		{
 			name:            "Rollout Failure",
-			event:           NewRolloutEvent(rolloutGroup, "test-client", FeatureMeshnet, 50, false),
+			event:           NewRolloutEvent(rolloutGroup, "test-client", FeatureMeshnet, 20, false),
 			expectedResult:  rolloutNo,
-			expectedError:   "meshnet 42 / 50",
+			expectedError:   "meshnet 42 / 20",
 			expectedMessage: FeatureMeshnet,
 		},
 		{
