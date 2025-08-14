@@ -46,33 +46,36 @@ type RemoteConfigNotifier interface {
 }
 
 type CdnRemoteConfig struct {
-	appVersion     string
-	appEnvironment string
-	localCachePath string
-	remotePath     string
-	cdn            core.RemoteStorage
-	features       FeatureMap
-	rolloutGroup   int
-	initOnce       sync.Once
-	mu             sync.RWMutex
-	notifier       events.PublishSubcriber[RemoteConfigEvent]
+	appVersion      string
+	appEnvironment  string
+	localCachePath  string
+	remotePath      string
+	cdn             core.RemoteStorage
+	features        *FeatureMap
+	appRolloutGroup int
+	analytics       Analytics
+	initOnce        sync.Once
+	mu              sync.RWMutex
+	notifier        events.PublishSubcriber[RemoteConfigEvent]
 }
 
 // NewCdnRemoteConfig setup RemoteStorage based remote config loaded/getter
-func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath string, cdn core.RemoteStorage, appRollout int) *CdnRemoteConfig {
+func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath string,
+	cdn core.RemoteStorage, analytics Analytics, appRollout int) *CdnRemoteConfig {
 	rc := &CdnRemoteConfig{
-		appVersion:     buildTarget.Version,
-		appEnvironment: buildTarget.Environment,
-		remotePath:     remotePath,
-		localCachePath: localPath,
-		cdn:            cdn,
-		rolloutGroup:   appRollout,
-		features:       make(FeatureMap),
-		notifier:       &subs.Subject[RemoteConfigEvent]{},
+		appVersion:      buildTarget.Version,
+		appEnvironment:  buildTarget.Environment,
+		remotePath:      remotePath,
+		localCachePath:  localPath,
+		cdn:             cdn,
+		appRolloutGroup: appRollout,
+		analytics:       analytics,
+		features:        NewFeatureMap(),
+		notifier:        &subs.Subject[RemoteConfigEvent]{},
 	}
-	rc.features.Add(FeatureMain.String())
-	rc.features.Add(FeatureLibtelio.String())
-	rc.features.Add(FeatureMeshnet.String())
+	rc.features.add(FeatureMain)
+	rc.features.add(FeatureLibtelio)
+	rc.features.add(FeatureMeshnet)
 	return rc
 }
 
@@ -153,7 +156,7 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 
 	if reloadDone {
 		// notify what is current state after config reload
-		c.notifier.Publish(RemoteConfigEvent{MeshnetFeatureEnabled: c.IsFeatureEnabled(FeatureMeshnet.String())})
+		c.notifier.Publish(RemoteConfigEvent{MeshnetFeatureEnabled: c.IsFeatureEnabled(FeatureMeshnet)})
 	}
 
 	return nil
@@ -165,10 +168,16 @@ func (c *CdnRemoteConfig) download() (bool, error) {
 
 	newChangesDownloaded := false
 
-	for _, f := range c.features {
-		dnld, err := f.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
+	for _, f := range c.features.keys() {
+		feature := c.features.get(f)
+		dnld, err := feature.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "failed downloading feature [", f.name, "] remote config:", err)
+			log.Println(internal.ErrorPrefix, "failed downloading feature [", feature, "] remote config:", err)
+
+			var downloadErr *DownloadError
+			if errors.As(err, &downloadErr) {
+				c.analytics.EmitDownloadFailureEvent(ClientCli, feature.name, *downloadErr)
+			}
 			if isNetworkRetryable(err) {
 				return false, err
 			}
@@ -176,7 +185,8 @@ func (c *CdnRemoteConfig) download() (bool, error) {
 		}
 		if dnld {
 			// only if remote config was really downloaded
-			log.Println(internal.InfoPrefix, "feature [", f.name, "] remote config downloaded to:", c.localCachePath)
+			log.Println(internal.InfoPrefix, "feature [", feature, "] remote config downloaded to:", c.localCachePath)
+			c.analytics.EmitDownloadEvent(ClientCli, feature.name)
 			newChangesDownloaded = true
 		}
 	}
@@ -187,19 +197,29 @@ func (c *CdnRemoteConfig) load() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	for _, f := range c.features {
-		if err := f.load(c.localCachePath, jsonFileReaderWriter{}, jsonValidator{}); err != nil {
-			log.Println(internal.ErrorPrefix, "failed loading feature [", f.name, "] config from the disk:", err)
+	for _, f := range c.features.keys() {
+		feature := c.features.get(f)
+		if err := feature.load(c.localCachePath, jsonFileReaderWriter{}, jsonValidator{}); err != nil {
+			var loadErr *LoadError
+			if errors.As(err, &loadErr) {
+				// only specific load errors are used for JSON related failures
+				if loadErr.Kind == LoadErrorParsing || loadErr.Kind == LoadErrorParsingIncludeFile || loadErr.Kind == LoadErrorMainHashJsonParsing || loadErr.Kind == LoadErrorMainJsonValidationFailure {
+					c.analytics.EmitJsonParseFailureEvent(ClientCli, feature.name, *loadErr)
+				}
+			}
+			log.Println(internal.ErrorPrefix, "failed loading feature [", feature.name, "] config from the disk:", err)
+			c.analytics.EmitLocalUseEvent(ClientCli, feature.name, err)
 			continue
 		}
-		log.Println(internal.InfoPrefix, "feature [", f.name, "] config loaded from:", c.localCachePath)
+		log.Println(internal.InfoPrefix, "feature [", feature.name, "] config loaded from:", c.localCachePath)
+		c.analytics.EmitLocalUseEvent(ClientCli, feature.name, nil)
 	}
 }
 
-func findMatchingRecord(ss []ParamValue, ver string, rollout int) (match *ParamValue) {
+func (c *CdnRemoteConfig) findMatchingRecord(ss []ParamValue, featureName string) (match *ParamValue) {
 	for _, s := range ss {
 		// find my version matching records
-		ok, err := isVersionMatching(ver, s.AppVersion)
+		ok, err := isVersionMatching(c.appVersion, s.AppVersion)
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "invalid version:", err)
 			continue
@@ -217,14 +237,22 @@ func findMatchingRecord(ss []ParamValue, ver string, rollout int) (match *ParamV
 	}
 	// as a last step, check if app's rollout group matches feature's rollout value
 	// (do not try to use other match with lesser weight)
-	if match != nil && match.Rollout > rollout {
-		match = nil
+	if match != nil {
+		if match.TargetRollout < c.appRolloutGroup {
+			c.analytics.EmitPartialRolloutEvent(ClientCli, featureName, match.TargetRollout, partialRolloutPerformedFailure)
+			match = nil
+		} else {
+			c.analytics.EmitPartialRolloutEvent(ClientCli, featureName, match.TargetRollout, partialRolloutPerformedSuccess)
+		}
+	} else {
+		//when there's no match (eg., due to a version value mismatch) emit the partial rollout event failure
+		c.analytics.EmitPartialRolloutEvent(ClientCli, featureName, 0, partialRolloutPerformedFailure)
 	}
 	return match
 }
 
 func (c *CdnRemoteConfig) GetTelioConfig() (string, error) {
-	return c.GetFeatureParam(FeatureLibtelio.String(), FeatureLibtelio.String())
+	return c.GetFeatureParam(FeatureLibtelio, FeatureLibtelio)
 }
 
 func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
@@ -232,8 +260,8 @@ func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
 	defer c.mu.RUnlock()
 
 	// find by name, expect param name to be the same as feature name and expect boolean type
-	f, found := c.features[featureName]
-	if !found {
+	f := c.features.get(featureName)
+	if f == nil {
 		return defaultFeatureState
 	}
 	p, found := f.params[featureName]
@@ -242,7 +270,7 @@ func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
 	}
 	switch p.Type {
 	case fieldTypeBool:
-		if item := findMatchingRecord(p.Settings, c.appVersion, c.rolloutGroup); item != nil {
+		if item := c.findMatchingRecord(p.Settings, featureName); item != nil {
 			val, _ := item.AsBool()
 			return val
 		}
@@ -254,15 +282,15 @@ func (c *CdnRemoteConfig) GetFeatureParam(featureName, paramName string) (string
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	f, found := c.features[featureName]
-	if !found {
+	f := c.features.get(featureName)
+	if f == nil {
 		return "", fmt.Errorf("feature [%s] not found", featureName)
 	}
 	p, found := f.params[paramName]
 	if !found {
 		return "", fmt.Errorf("feature [%s] param [%s] not found", featureName, paramName)
 	}
-	if item := findMatchingRecord(p.Settings, c.appVersion, c.rolloutGroup); item != nil {
+	if item := c.findMatchingRecord(p.Settings, featureName); item != nil {
 		switch p.Type {
 		case fieldTypeBool:
 			val, err := item.AsBool()
