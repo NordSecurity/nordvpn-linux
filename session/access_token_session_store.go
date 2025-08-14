@@ -64,13 +64,8 @@ func (s *AccessTokenSessionStore) Renew(opts ...RenewalOption) error {
 	}
 
 	if !options.forceRenewal {
-		if err := s.validate(false); err == nil {
+		if err := s.validate(); err == nil {
 			return nil
-		}
-	} else {
-		// With force renewal, we still need to validate tokens but skip expiry
-		if err := s.validate(true); err != nil {
-			return err
 		}
 	}
 
@@ -93,24 +88,18 @@ func (s *AccessTokenSessionStore) Renew(opts ...RenewalOption) error {
 	return nil
 }
 
-func (s *AccessTokenSessionStore) validate(skipExpiry bool) error {
+func (s *AccessTokenSessionStore) validate() error {
 	cfg, err := s.getConfig()
 	if err != nil {
 		return err
 	}
 
-	if !skipExpiry {
-		if err := ValidateExpiry(cfg.ExpiresAt); err != nil {
-			return fmt.Errorf("validating access token: %w", err)
-		}
+	if err := ValidateExpiry(cfg.ExpiresAt); err != nil {
+		return fmt.Errorf("validating access token: %w", err)
 	}
 
 	if err := ValidateAccessTokenFormat(cfg.Token); err != nil {
 		return fmt.Errorf("validating access token format: %w", err)
-	}
-
-	if err := ValidateRenewToken(cfg.RenewToken); err != nil {
-		return fmt.Errorf("validating renew token: %w", err)
 	}
 
 	if s.externalValidator != nil {
@@ -220,7 +209,7 @@ func (s *AccessTokenSessionStore) getConfig() (accessTokenConfig, error) {
 
 	data, ok := cfg.TokensData[cfg.AutoConnectData.ID]
 	if !ok {
-		return accessTokenConfig{}, errors.New("non existing data")
+		return accessTokenConfig{}, errors.New("non existing data for access token session store")
 	}
 
 	expiryTime, err := time.Parse(internal.ServerDateFormat, data.TokenExpiry)

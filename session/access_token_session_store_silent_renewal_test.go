@@ -142,7 +142,7 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_ValidationError(t *testing.
 	assert.False(t, handlerCalled, "Error handler should not be invoked when using Renew with SilentRenewal")
 }
 
-func TestAccessTokenSessionStore_Renew_SilentRenewal_InvalidRenewTokenWithForceRenewal(t *testing.T) {
+func TestAccessTokenSessionStore_Renew_SilentRenewal_InvalidRenewTokenResponseWithForceRenewal(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	userID := int64(123)
@@ -153,7 +153,7 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_InvalidRenewTokenWithForceR
 		TokensData: map[int64]config.TokenData{
 			userID: {
 				Token:          "ab78bb36299d442fa0715fb53b5e3e57",
-				RenewToken:     "INVALID-RENEW-TOKEN",
+				RenewToken:     "deadbeef", // Valid format
 				TokenExpiry:    futureTime.Format(internal.ServerDateFormat),
 				IdempotencyKey: &idempotencyKey,
 			},
@@ -169,18 +169,32 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_InvalidRenewTokenWithForceR
 		handlerCalled = true
 	}, ErrInvalidRenewToken)
 
+	renewAPICallCount := 0
 	renewAPICall := func(token string, key uuid.UUID) (*AccessTokenResponse, error) {
-		// This should not be called because validation fails even with force renewal
-		t.Fatal("Renewal API should not be called when renew token validation fails")
-		return nil, nil
+		renewAPICallCount++
+		assert.Equal(t, "ab78bb36299d442fa0715fb53b5e3e57", token)
+		assert.Equal(t, idempotencyKey, key)
+		// API returns invalid token in response (checked before renew token)
+		return &AccessTokenResponse{
+			Token:      "INVALID-TOKEN-FORMAT",
+			RenewToken: "INVALID-RENEW-TOKEN",
+			ExpiresAt:  futureTime.Add(24 * time.Hour).Format(internal.ServerDateFormat),
+		}, nil
 	}
 
 	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
-	// Even with ForceRenewal, invalid token format causes validation error
+	// With ForceRenewal, renewal is attempted but fails due to invalid response
 	err := store.Renew(ForceRenewal(), SilentRenewal())
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "validating renew token")
+	assert.Equal(t, ErrInvalidToken, err) // Token is validated before renew token
+	assert.Equal(t, 1, renewAPICallCount, "Renewal API should be called with ForceRenewal")
+
+	// Verify the token was NOT updated due to invalid response
+	savedData := cfg.TokensData[userID]
+	assert.Equal(t, "ab78bb36299d442fa0715fb53b5e3e57", savedData.Token)
+	assert.Equal(t, "deadbeef", savedData.RenewToken)
+	assert.Equal(t, futureTime.Format(internal.ServerDateFormat), savedData.TokenExpiry)
 
 	assert.False(t, handlerCalled, "Error handler should not be invoked when using Renew with SilentRenewal")
 }
@@ -327,7 +341,7 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_InvalidResponseRenewToken(t
 	assert.Equal(t, ErrInvalidRenewToken, err)
 }
 
-func TestAccessTokenSessionStore_Renew_SilentRenewal_InvalidTokenFormatWithForceRenewal(t *testing.T) {
+func TestAccessTokenSessionStore_Renew_SilentRenewal_InvalidTokenResponseWithForceRenewal(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	userID := int64(123)
@@ -337,9 +351,9 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_InvalidTokenFormatWithForce
 		AutoConnectData: config.AutoConnectData{ID: userID},
 		TokensData: map[int64]config.TokenData{
 			userID: {
-				Token:          "invalid", // Invalid token format
+				Token:          "ab78bb36299d442fa0715fb53b5e3e57", // Valid token format
 				RenewToken:     "deadbeef",
-				TokenExpiry:    futureTime.Format(internal.ServerDateFormat), // Not expired
+				TokenExpiry:    futureTime.Format(internal.ServerDateFormat),
 				IdempotencyKey: &idempotencyKey,
 			},
 		},
@@ -354,24 +368,32 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_InvalidTokenFormatWithForce
 		handlerCalled = true
 	}, ErrInvalidToken)
 
+	renewAPICallCount := 0
 	renewAPICall := func(token string, key uuid.UUID) (*AccessTokenResponse, error) {
-		// This should not be called because validation fails even with force renewal
-		t.Fatal("Renewal API should not be called when token format validation fails")
-		return nil, nil
+		renewAPICallCount++
+		assert.Equal(t, "ab78bb36299d442fa0715fb53b5e3e57", token)
+		assert.Equal(t, idempotencyKey, key)
+		// API returns invalid token in response
+		return &AccessTokenResponse{
+			Token:      "INVALID-TOKEN-FORMAT", // Invalid format in response
+			RenewToken: "newrenew1234567890abcdef1234567890",
+			ExpiresAt:  futureTime.Add(24 * time.Hour).Format(internal.ServerDateFormat),
+		}, nil
 	}
 
-	externalValidator := func(token string) error {
-		// External validator won't be called because token format validation fails first
-		t.Fatal("External validator should not be called when token format is invalid")
-		return errors.New("external validation failed")
-	}
-
-	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, externalValidator)
-	// Even with ForceRenewal, invalid token format causes validation error
+	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	// With ForceRenewal, renewal is attempted but fails due to invalid response
 	err := store.Renew(ForceRenewal(), SilentRenewal())
 
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "validating access token format")
+	assert.Equal(t, ErrInvalidToken, err)
+	assert.Equal(t, 1, renewAPICallCount, "Renewal API should be called with ForceRenewal")
+
+	// Verify the token was NOT updated due to invalid response
+	savedData := cfg.TokensData[userID]
+	assert.Equal(t, "ab78bb36299d442fa0715fb53b5e3e57", savedData.Token)
+	assert.Equal(t, "deadbeef", savedData.RenewToken)
+	assert.Equal(t, futureTime.Format(internal.ServerDateFormat), savedData.TokenExpiry)
 
 	assert.False(t, handlerCalled, "Error handler should not be invoked when using Renew with SilentRenewal")
 }
@@ -382,6 +404,7 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_ForceRenewal(t *testing.T) 
 	userID := int64(123)
 	idempotencyKey := uuid.New()
 	futureTime := time.Now().UTC().Add(24 * time.Hour)
+	newFutureTime := futureTime.Add(24 * time.Hour)
 	cfg := config.Config{
 		AutoConnectData: config.AutoConnectData{ID: userID},
 		TokensData: map[int64]config.TokenData{
@@ -403,15 +426,30 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_ForceRenewal(t *testing.T) 
 		handlerCalled = true
 	}, errors.New("api-error"))
 
+	renewAPICallCount := 0
 	renewAPICall := func(token string, key uuid.UUID) (*AccessTokenResponse, error) {
-		return nil, errors.New("api-error")
+		renewAPICallCount++
+		assert.Equal(t, "ab78bb36299d442fa0715fb53b5e3e57", token)
+		assert.Equal(t, idempotencyKey, key)
+		return &AccessTokenResponse{
+			Token:      "1234567890abcdef1234567890abcdef",
+			RenewToken: "abcdef1234567890abcdef1234567890",
+			ExpiresAt:  newFutureTime.Format(internal.ServerDateFormat),
+		}, nil
 	}
 
 	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
 	err := store.Renew(ForceRenewal(), SilentRenewal())
 
-	assert.Error(t, err)
-	assert.Equal(t, "api-error", err.Error())
+	// ForceRenewal should trigger renewal
+	assert.NoError(t, err)
+	assert.Equal(t, 1, renewAPICallCount, "Renewal API should be called with ForceRenewal")
+
+	// Verify the token was updated
+	savedData := cfg.TokensData[userID]
+	assert.Equal(t, "1234567890abcdef1234567890abcdef", savedData.Token)
+	assert.Equal(t, "abcdef1234567890abcdef1234567890", savedData.RenewToken)
+	assert.Equal(t, newFutureTime.Format(internal.ServerDateFormat), savedData.TokenExpiry)
 
 	assert.False(t, handlerCalled, "Error handler should not be invoked when using Renew with SilentRenewal")
 }
