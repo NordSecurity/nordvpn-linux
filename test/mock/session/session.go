@@ -1,5 +1,7 @@
 package session
 
+import "github.com/NordSecurity/nordvpn-linux/session"
+
 type MockSessionStore struct {
 	RenewErr             error
 	HandleErrorErr       error
@@ -7,7 +9,7 @@ type MockSessionStore struct {
 	HandleErrorCallCount int
 }
 
-func (m *MockSessionStore) Renew() error {
+func (m *MockSessionStore) Renew(opts ...session.RenewalOption) error {
 	m.RenewCallCount++
 	return m.RenewErr
 }
@@ -22,7 +24,7 @@ func (m *MockSessionStore) GetToken() string {
 }
 
 type MockAccessTokenSessionStore struct {
-	RenewFunc       func() error
+	RenewFunc       func(opts ...session.RenewalOption) error
 	HandleErrorFunc func(reason error) error
 	GetTokenFunc    func() string
 
@@ -31,9 +33,12 @@ type MockAccessTokenSessionStore struct {
 	GetTokenCallCount    int
 }
 
-func (m *MockAccessTokenSessionStore) Renew() error {
+func (m *MockAccessTokenSessionStore) Renew(opts ...session.RenewalOption) error {
 	m.RenewCallCount++
-	return m.RenewFunc()
+	if m.RenewFunc != nil {
+		return m.RenewFunc(opts...)
+	}
+	return nil
 }
 
 func (m *MockAccessTokenSessionStore) HandleError(reason error) error {
@@ -46,5 +51,8 @@ func (m *MockAccessTokenSessionStore) HandleError(reason error) error {
 
 func (m *MockAccessTokenSessionStore) GetToken() string {
 	m.GetTokenCallCount++
-	return m.GetTokenFunc()
+	if m.GetTokenFunc != nil {
+		return m.GetTokenFunc()
+	}
+	return ""
 }

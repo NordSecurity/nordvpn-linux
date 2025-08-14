@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"sync"
 
@@ -163,6 +164,7 @@ func (api *SimpleClientAPI) ServiceCredentials(token string) (*CredentialsRespon
 		return nil, err
 	}
 	defer resp.Body.Close()
+	log.Println("ServiceCredentials resp:", resp.Body)
 
 	var ret *CredentialsResponse
 	if err = json.NewDecoder(resp.Body).Decode(&ret); err != nil {
@@ -218,6 +220,7 @@ func (api *SimpleClientAPI) CreateUser(email, password string) (*UserCreateRespo
 // CurrentUser returns metadata of current user
 func (api *SimpleClientAPI) CurrentUser(token string) (*CurrentUserResponse, error) {
 	resp, err := api.request(CurrentUserURL, http.MethodGet, nil, token)
+	log.Println("CurrentUser resp:", "err:", err)
 	if err != nil {
 		return nil, err
 	}

@@ -6,7 +6,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/access"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -14,8 +13,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/networker"
 )
 
-// SessionErrorHandlerDependencies contains all dependencies needed for session error handling
-type SessionErrorHandlerDependencies struct {
+// LogoutHandlerDependencies contains all dependencies needed for session error handling
+type LogoutHandlerDependencies struct {
 	AuthChecker            auth.Checker
 	Networker              networker.Networker
 	NotificationClient     nc.NotificationClient
@@ -25,76 +24,88 @@ type SessionErrorHandlerDependencies struct {
 	DebugPublisherFunc     func(string)
 }
 
-// sessionErrorHandlerState maintains the state for preventing concurrent logouts
-type sessionErrorHandlerState struct {
-	mu               sync.Mutex
+// LogoutHandler provides a simple way to register session error handlers
+type LogoutHandler struct {
+	deps             LogoutHandlerDependencies
+	state            *sync.Mutex
 	logoutInProgress bool
 }
 
-// RegisterSessionErrorHandler registers the error handler for session-related errors
-func RegisterSessionErrorHandler(
-	registry *internal.ErrorHandlingRegistry[error],
-	deps SessionErrorHandlerDependencies,
-) {
-	state := &sessionErrorHandlerState{}
-	handler := createSessionErrorHandler(deps, state)
-	registry.Add(
-		handler,
-		core.ErrUnauthorized,
-		core.ErrNotFound,
-		core.ErrBadRequest,
-	)
+// NewLogoutHandler creates a new session error handler
+func NewLogoutHandler(deps LogoutHandlerDependencies) *LogoutHandler {
+	return &LogoutHandler{
+		deps:  deps,
+		state: &sync.Mutex{},
+	}
 }
 
-// createSessionErrorHandler creates the error handler function
-func createSessionErrorHandler(
-	deps SessionErrorHandlerDependencies,
-	state *sessionErrorHandlerState,
-) func(error) {
+// Register adds error handlers to the given registry for the specified session store
+func (h *LogoutHandler) Register(
+	registry *internal.ErrorHandlingRegistry[error],
+	errors []error,
+	clientHook func(reason error) events.ReasonCode,
+) *LogoutHandler {
+	handler := h.makeHandler(clientHook)
+	registry.Add(handler, errors...)
+	return h
+}
+
+// makeHandler creates the actual error handler function
+func (h *LogoutHandler) makeHandler(clientHook func(reason error) events.ReasonCode) func(error) {
 	return func(reason error) {
-		// Prevent concurrent logout attempts
-		state.mu.Lock()
-		if state.logoutInProgress {
-			state.mu.Unlock()
-			log.Printf(
-				"%s Session error detected but logout already in progress, ignoring: %v",
-				internal.DebugPrefix,
-				reason)
+		// Prevent concurrent logouts
+		h.state.Lock()
+		if h.logoutInProgress {
+			h.state.Unlock()
+			log.Printf("%s session error detected but logout already in progress, ignoring: %v",
+				internal.DebugPrefix, reason)
 			return
 		}
-		state.logoutInProgress = true
-		state.mu.Unlock()
+		h.logoutInProgress = true
+		h.state.Unlock()
 
 		defer func() {
-			state.mu.Lock()
-			state.logoutInProgress = false
-			state.mu.Unlock()
+			h.state.Lock()
+			h.logoutInProgress = false
+			h.state.Unlock()
 		}()
 
-		log.Printf("%s Session error detected: %v. Forcing logout.\n", internal.DebugPrefix, reason)
+		log.Printf("%s session error detected: %v. Forcing logout.",
+			internal.DebugPrefix, reason)
 
-		discArgs := access.DisconnectInput{
-			Networker:                  deps.Networker,
-			ConfigManager:              deps.ConfigManager,
-			PublishDisconnectEventFunc: deps.PublishDisconnectFunc,
-		}
+		logoutReason := clientHook(reason)
 
-		result := access.ForceLogoutWithoutToken(access.ForceLogoutWithoutTokenInput{
-			AuthChecker:            deps.AuthChecker,
-			Netw:                   deps.Networker,
-			NcClient:               deps.NotificationClient,
-			ConfigManager:          deps.ConfigManager,
-			PublishLogoutEventFunc: deps.PublishLogoutEventFunc,
-			DebugPublisherFunc:     deps.DebugPublisherFunc,
-			DisconnectFunc:         func() (bool, error) { return access.Disconnect(discArgs) },
-		})
+		// Perform logout
+		h.forceLogout(logoutReason)
+	}
+}
 
-		if result.Err != nil {
-			log.Printf("%s logging out on invalid session hook: %v", internal.ErrorPrefix, result.Err)
-		}
+// forceLogout performs the actual logout operation
+func (h *LogoutHandler) forceLogout(sessionErr events.ReasonCode) {
+	discArgs := access.DisconnectInput{
+		Networker:                  h.deps.Networker,
+		ConfigManager:              h.deps.ConfigManager,
+		PublishDisconnectEventFunc: h.deps.PublishDisconnectFunc,
+	}
 
-		if result.Status == internal.CodeSuccess {
-			log.Println(internal.DebugPrefix, "successfully logged out after detecting invalid session")
-		}
+	result := access.ForceLogoutWithoutToken(access.ForceLogoutWithoutTokenInput{
+		AuthChecker:            h.deps.AuthChecker,
+		Netw:                   h.deps.Networker,
+		NcClient:               h.deps.NotificationClient,
+		ConfigManager:          h.deps.ConfigManager,
+		PublishLogoutEventFunc: h.deps.PublishLogoutEventFunc,
+		DebugPublisherFunc:     h.deps.DebugPublisherFunc,
+		DisconnectFunc:         func() (bool, error) { return access.Disconnect(discArgs) },
+		Reason:                 sessionErr,
+	})
+
+	if result.Err != nil {
+		log.Printf("%s logging out  invalid session hook: %v",
+			internal.ErrorPrefix, result.Err)
+	}
+
+	if result.Status == internal.CodeSuccess {
+		log.Printf("%s successfully logged out after detecting invalid session",
+			internal.DebugPrefix)
 	}
 }

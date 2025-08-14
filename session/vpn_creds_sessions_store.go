@@ -40,26 +40,51 @@ func NewVPNCredentialsSessionStore(
 }
 
 // Renew VPN credentials if they have expired.
-func (s *VPNCredentialsSessionStore) Renew() error {
-	if err := s.validate(); err == nil {
-		return nil
+// Use SilentRenewal() option to perform renewal without triggering side effects.
+// Use ForceRenewal() option to force renewal even if the credentials are valid.
+func (s *VPNCredentialsSessionStore) Renew(opts ...RenewalOption) error {
+	options := &renewalOptions{}
+	for _, opt := range opts {
+		opt(options)
+	}
+
+	if !options.forceRenewal {
+		if err := s.validate(); err == nil {
+			return nil
+		}
 	}
 
 	if s.renewAPICall == nil {
-		return errors.New("renewal API call not configured")
+		return errors.New("vpn creds renewal api call not configured")
 	}
 
 	resp, err := s.renewAPICall()
 	if err != nil {
+		if options.skipErrorHandlers {
+			return err
+		}
 		return s.HandleError(err)
 	}
 
 	if resp == nil {
-		return errors.New("renewal API returned nil response")
+		if options.skipErrorHandlers {
+			return ErrMissingVPNCredsResponse
+		}
+		return s.HandleError(ErrMissingVPNCredsResponse)
 	}
 
-	if resp.Username == "" || resp.Password == "" {
-		return errors.New("renewal API returned incomplete credentials")
+	if err := ValidateOpenVPNCredentialsPresence(resp.Username, resp.Password); err != nil {
+		if options.skipErrorHandlers {
+			return ErrMissingVPNCredsResponse
+		}
+		return s.HandleError(ErrMissingVPNCredsResponse)
+	}
+
+	if err := ValidateNordLynxPrivateKeyPresence(resp.NordLynxPrivateKey); err != nil {
+		if options.skipErrorHandlers {
+			return ErrMissingVPNCredsResponse
+		}
+		return s.HandleError(ErrMissingVPNCredsResponse)
 	}
 
 	err = s.cfgManager.SaveWith(func(c config.Config) config.Config {
@@ -79,7 +104,7 @@ func (s *VPNCredentialsSessionStore) Renew() error {
 }
 
 // HandleError processes errors that occur during session operations.
-// It returns nil if the error was not handled, or the error itself if it was.
+// It returns nil if no handlers are registered, or a wrapped error if handlers were called.
 func (s *VPNCredentialsSessionStore) HandleError(reason error) error {
 	handlers := s.errHandlerRegistry.GetHandlers(reason)
 	if len(handlers) == 0 {
@@ -100,7 +125,6 @@ func (s *VPNCredentialsSessionStore) validate() error {
 		return err
 	}
 
-	// Use validation helpers
 	if err := ValidateOpenVPNCredentialsPresence(cfg.Username, cfg.Password); err != nil {
 		return err
 	}
@@ -109,7 +133,6 @@ func (s *VPNCredentialsSessionStore) validate() error {
 		return err
 	}
 
-	// Run external validation if available
 	if s.externalValidator != nil {
 		if err := s.externalValidator(cfg.Username, cfg.Password, cfg.NordLynxPrivateKey); err != nil {
 			return err

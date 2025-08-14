@@ -114,9 +114,9 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 			AutoConnectData: config.AutoConnectData{ID: uid},
 			TokensData: map[int64]config.TokenData{
 				uid: {
-					Token:              "someExpiredToken",
+					Token:              "ab78bb36299d442fa0715fb53b5e3e57",
 					TokenExpiry:        expiredDate.Format(internal.ServerDateFormat),
-					RenewToken:         "renew-token",
+					RenewToken:         "cd89cc47388e553fb1826fc64c6f4f68",
 					IdempotencyKey:     &idempotencyKey,
 					NordLynxPrivateKey: "nordlynx-pkey",
 					OpenVPNUsername:    "openvpn-username",
@@ -168,8 +168,8 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 	resetExpiryDateToOriginal()
 	assert.True(t, expirationChecker.IsExpired(cm.c.TokensData[cm.c.AutoConnectData.ID].TokenExpiry))
 	rt.resp = &core.TokenRenewResponse{
-		Token:      uuid.New().String(),
-		RenewToken: "renewed-token",
+		Token:      "ef34ab56cd78901234567890123456ef",
+		RenewToken: "ab12cd34ef56789012345678901234ab",
 		ExpiresAt:  validDate.Format(internal.ServerDateFormat),
 	}
 	isLoggedIn, err := rc.IsLoggedIn()
@@ -178,9 +178,9 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 	assert.Equal(t, rt.resp.Token, cm.c.TokensData[uid].Token, "token should be updated in the configuration")
 	assert.Equal(t, rt.resp.RenewToken, cm.c.TokensData[uid].RenewToken, "renew-token should be updated in the configuration")
 
-	cm.c.TokensData[0] = config.TokenData{
-		Token:              "expired-token",
-		RenewToken:         "expired-renew-token",
+	cm.c.TokensData[uid] = config.TokenData{
+		Token:              "ef01dd58499f664ac2937ad75d7a5a79",
+		RenewToken:         "ab12ee69500a775bd3048be86e8b6b80",
 		TokenExpiry:        expiredDate.Format(internal.ServerDateFormat),
 		IdempotencyKey:     &idempotencyKey,
 		NordLynxPrivateKey: "nordlynx-pkey",
@@ -210,9 +210,9 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 	assert.Equal(t, lastExpiredToken, cm.c.TokensData[uid].Token, "token should not be updated in the configuration after a failed request")
 	assert.Equal(t, lastExpiredRenewToken, cm.c.TokensData[uid].RenewToken, "renew-token should not be updated in the configuration after a failed request")
 
-	cm.c.TokensData[0] = config.TokenData{
-		Token:              "expired-token",
-		RenewToken:         "expired-renew-token",
+	cm.c.TokensData[uid] = config.TokenData{
+		Token:              "ef01dd58499f664ac2937ad75d7a5a79",
+		RenewToken:         "ab12ee69500a775bd3048be86e8b6b80",
 		TokenExpiry:        expiredDate.Format(internal.ServerDateFormat),
 		IdempotencyKey:     &idempotencyKey,
 		NordLynxPrivateKey: "nordlynx-pkey",
@@ -230,8 +230,8 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 	rc.IsLoggedIn()
 
 	rt.resp = &core.TokenRenewResponse{
-		Token:      uuid.New().String(),
-		RenewToken: "renew-token",
+		Token:      "cd56ef78ab90123456789012345678cd",
+		RenewToken: "ab23ff70611a886be4159bf97f9b7b91",
 		ExpiresAt:  validDate.Format(internal.ServerDateFormat),
 	}
 	isLoggedIn, _ = rc.IsLoggedIn()
@@ -311,8 +311,8 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 		// so the next IsLoggedIn() request should attempt a token renewal
 		cm.c.AutoConnectData.ID = uid
 		cm.c.TokensData[uid] = config.TokenData{
-			Token:              "expired-token",
-			RenewToken:         "expired-renew-token",
+			Token:              "ab34aa81722b997af5260aa08a0b8b02",
+			RenewToken:         "bc45bb92833c008ca6371cb19b1c9c13",
 			TokenExpiry:        expiredDate.Format(internal.ServerDateFormat),
 			IdempotencyKey:     &idempotencyKey,
 			NordLynxPrivateKey: "nordlynx-pkey",
@@ -338,8 +338,8 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 
 	badConnErrHandled = false
 	cm.c.TokensData[uid] = config.TokenData{
-		Token:              "expired-token",
-		RenewToken:         "expired-renew-token",
+		Token:              "cd56bb03944a119ca7482cb20b2c0c24",
+		RenewToken:         "de67cc14055d220db8593dc31c3d1d35",
 		TokenExpiry:        expiredDate.Format(internal.ServerDateFormat),
 		IdempotencyKey:     &idempotencyKey,
 		NordLynxPrivateKey: "nordlynx-pkey",

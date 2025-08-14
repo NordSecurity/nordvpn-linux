@@ -156,11 +156,50 @@ type DataDisconnect struct {
 	Error                 error
 }
 
+type ReasonCode int32
+
+const (
+	// no exceptions
+	ReasonNone                         ReasonCode = 0
+	ReasonCorruptedVPNCredsAuthBad     ReasonCode = 3010400
+	ReasonCorruptedVPNCredsAuthMissing ReasonCode = 3020400
+	ReasonAuthTokenBad                 ReasonCode = 3010000
+	ReasonTokenMissing                 ReasonCode = 3020000 // Renew token endpoint returned 404
+	ReasonAuthTokenInvalidated         ReasonCode = 3030100
+	ReasonCorruptedVPNCreds            ReasonCode = 3000400
+
+	ReasonTokenCorrupted ReasonCode = 3040000
+
+	ReasonAuthTokenMissing ReasonCode = 3020100 // 401 from authorized API request
+
+	ReasonIdempotentDataFailedAuthMissing ReasonCode = 3020005
+
+	// Renew token endpoint returned 400, 401 response from authorized API request
+	// ReasonUnauthorized ReasonCode = 3010100
+
+	// Credential/generic errors
+	ReasonResourceMissing ReasonCode = 3000004 // Could Not Find Credentials on VPN Creation [unexpected]
+
+	// Notification
+	ReasonSilentEvent ReasonCode = 3000200 // Silent in app notification [expected]
+
+	// Endpoint/idempotency/generic flows
+
+	ReasonKeyExpired ReasonCode = 3020002 // Idempotency Key Expired After 30 Minutes [unexpected]
+	ReasonOpTimeout  ReasonCode = 3020005 // Failed to Fetch Idempotent Data [unexpected]
+
+	// Authorization/error chains
+
+	AuthReasonKeyExpired ReasonCode = 3020102 // Idempotency Key Expired, plus 401
+	AuthReasonOpFailure  ReasonCode = 3020105 // Idempotency/authorization/data fetch [unexpected]
+)
+
 type DataAuthorization struct {
 	DurationMs   int
 	EventTrigger TypeEventTrigger
 	EventStatus  TypeEventStatus
 	EventType    TypeLoginType
+	Reason       ReasonCode
 }
 
 type DataRequestAPI struct {

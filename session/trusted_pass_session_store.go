@@ -51,8 +51,15 @@ func NewTrustedPassSessionStore(
 	}
 }
 
-// Renew renews the session if invalid or expired
-func (s *TrustedPassSessionStore) Renew() error {
+// Renew renews the session if invalid or expired.
+// Use SilentRenewal() option to perform renewal without triggering side effects.
+// Use ForceRenewal() option to force renewal even if the session is valid.
+func (s *TrustedPassSessionStore) Renew(opts ...RenewalOption) error {
+	options := &renewalOptions{}
+	for _, opt := range opts {
+		opt(options)
+	}
+
 	var cfg config.Config
 	if err := s.cfgManager.Load(&cfg); err != nil {
 		return err
@@ -61,12 +68,12 @@ func (s *TrustedPassSessionStore) Renew() error {
 	uid := cfg.AutoConnectData.ID
 	data, ok := cfg.TokensData[uid]
 	if !ok {
-		return fmt.Errorf("there is no data")
+		return fmt.Errorf("there is no data during during trusted pass session renewal")
 	}
 
 	// check if everything is valid or data renewal is required
-	if err := s.validate(); err != nil {
-		if err = s.renewIfOAuth(uid, &data); err != nil {
+	if err := s.validate(options.forceRenewal); err != nil {
+		if err = s.renewIfOAuth(uid, &data, options.skipErrorHandlers); err != nil {
 			return err
 		}
 	}
@@ -76,7 +83,7 @@ func (s *TrustedPassSessionStore) Renew() error {
 	// is still valid. In such cases we need to hit the api to get the initial value.
 	isNotValid := (data.TrustedPassToken == "" || data.TrustedPassOwnerID == "")
 	if isNotValid {
-		if err := s.renewIfOAuth(uid, &data); err != nil {
+		if err := s.renewIfOAuth(uid, &data, options.skipErrorHandlers); err != nil {
 			return err
 		}
 	}
@@ -100,18 +107,19 @@ func (s *TrustedPassSessionStore) HandleError(reason error) error {
 	return fmt.Errorf("handling session error: %w", reason)
 }
 
-// validate performs validation on the TrustedPass session
-func (s *TrustedPassSessionStore) validate() error {
+func (s *TrustedPassSessionStore) validate(skipExpiry bool) error {
 	cfg, err := s.getConfig()
 	if err != nil {
 		return err
 	}
 
-	if err := ValidateTrustedPassTokenFormat(cfg.Token); err != nil {
-		return err
+	if !skipExpiry {
+		if err := ValidateExpiry(cfg.ExpiresAt); err != nil {
+			return err
+		}
 	}
 
-	if err := ValidateExpiry(cfg.ExpiresAt); err != nil {
+	if err := ValidateTrustedPassTokenFormat(cfg.Token); err != nil {
 		return err
 	}
 
@@ -125,26 +133,42 @@ func (s *TrustedPassSessionStore) validate() error {
 	return nil
 }
 
-func (s *TrustedPassSessionStore) renewToken(uid int64, data *config.TokenData) error {
+func (s *TrustedPassSessionStore) renewToken(uid int64, data *config.TokenData, skipErrorHandlers bool) error {
 	if s.renewAPICall == nil {
-		return errors.New("renewal API call not configured")
+		return errors.New("renewal api call not configured")
 	}
 
 	resp, err := s.renewAPICall(data.Token)
 	if err != nil {
-		return fmt.Errorf("getting trusted pass token data: %w", err)
+		if skipErrorHandlers {
+			return err
+		}
+		return s.HandleError(err)
 	}
 
 	if resp == nil {
-		return errors.New("renewal API returned nil response")
+		if skipErrorHandlers {
+			return ErrMissingTrustedPassResponse
+		}
+		return s.HandleError(ErrMissingTrustedPassResponse)
 	}
 
-	if resp.Token == "" {
-		return errors.New("renewal API returned empty token")
+	if err := ValidateTrustedPassTokenFormat(resp.Token); err != nil {
+		if skipErrorHandlers {
+			return ErrMissingTrustedPassResponse
+		}
+		return s.HandleError(ErrMissingTrustedPassResponse)
 	}
 
-	expiryTime := time.Now().Add(trustedPassExpiryPeriod)
+	if err := ValidateTrustedPassOwnerID(resp.OwnerID); err != nil {
+		if skipErrorHandlers {
+			return ErrMissingTrustedPassResponse
+		}
+		return s.HandleError(ErrMissingTrustedPassResponse)
+	}
+
 	err = s.cfgManager.SaveWith(func(c config.Config) config.Config {
+		expiryTime := time.Now().Add(trustedPassExpiryPeriod)
 		data := c.TokensData[uid]
 		data.TrustedPassToken = resp.Token
 		data.TrustedPassOwnerID = resp.OwnerID
@@ -154,18 +178,21 @@ func (s *TrustedPassSessionStore) renewToken(uid int64, data *config.TokenData) 
 	})
 
 	if err != nil {
-		return err
+		return fmt.Errorf("saving trusted pass session config: %w", err)
 	}
 
 	return nil
 }
 
-func (s *TrustedPassSessionStore) renewIfOAuth(uid int64, data *config.TokenData) error {
+func (s *TrustedPassSessionStore) renewIfOAuth(uid int64, data *config.TokenData, skipErrorHandlers bool) error {
 	if !data.IsOAuth {
 		return nil
 	}
 
-	if err := s.renewToken(uid, data); err != nil {
+	if err := s.renewToken(uid, data, skipErrorHandlers); err != nil {
+		if skipErrorHandlers {
+			return err
+		}
 		return s.HandleError(err)
 	}
 
