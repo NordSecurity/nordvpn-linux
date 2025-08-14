@@ -127,6 +127,8 @@ func initializeStaticConfig(machineID uuid.UUID) config.StaticConfigManager {
 	return staticCfgManager
 }
 
+type resolverGetter func() network.Resolver
+
 func main() {
 	// pprof
 	if internal.IsDevEnv(Environment) {
@@ -235,33 +237,33 @@ func main() {
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 
+	var cdnAPI *core.CDNAPI
+
+	var threatProtectionLiteServers *dns.NameServers
+	resolver := func() network.Resolver {
+		nameservers, err := cdnAPI.ThreatProtectionLite()
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "error retrieving nameservers:", err)
+			threatProtectionLiteServers = dns.NewNameServers(nil)
+		} else {
+			threatProtectionLiteServers = dns.NewNameServers(nameservers.Servers)
+		}
+		return *network.NewResolver(fw, threatProtectionLiteServers)
+	}
 	// simple standard http client with dialer wrapped inside
 	httpClientSimple := request.NewStdHTTP()
 	httpClientSimple.Transport = request.NewHTTPReTransport(
-		1, 1, "HTTP/1.1", func() http.RoundTripper {
-			return request.NewPublishingRoundTripper(
-				request.NewContextRoundTripper(request.NewStdTransport(), httpGlobalCtx),
-				httpCallsSubject,
-			)
-		}, nil)
+		1, 1, "HTTP/1.1",
+		createH1Transport(resolver, cfg.FirewallMark),
+		nil,
+	)
 
-	cdnAPI := core.NewCDNAPI(
+	cdnAPI = core.NewCDNAPI(
 		userAgent,
 		core.CDNURL,
 		httpClientSimple,
 		validator,
 	)
-
-	var threatProtectionLiteServers *dns.NameServers
-	nameservers, err := cdnAPI.ThreatProtectionLite()
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "error retrieving nameservers:", err)
-		threatProtectionLiteServers = dns.NewNameServers(nil)
-	} else {
-		threatProtectionLiteServers = dns.NewNameServers(nameservers.Servers)
-	}
-
-	resolver := network.NewResolver(fw, threatProtectionLiteServers)
 
 	if err := SetBufferSizeForHTTP3(); err != nil {
 		log.Println(internal.WarningPrefix, "failed to set buffer size for HTTP/3:", err)

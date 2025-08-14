@@ -16,7 +16,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/kernel"
-	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/request"
 
 	"github.com/quic-go/quic-go"
@@ -44,7 +43,7 @@ func SetBufferSizeForHTTP3() error {
 	return nil
 }
 
-func createH1Transport(resolver network.DNSResolver, fwmark uint32) func() http.RoundTripper {
+func createH1Transport(resolver resolverGetter, fwmark uint32) func() http.RoundTripper {
 	return func() http.RoundTripper {
 		var operr error
 		fwmark := func(fd uintptr) {
@@ -71,7 +70,8 @@ func createH1Transport(resolver network.DNSResolver, fwmark uint32) func() http.
 					return nil, fmt.Errorf("malformed address: %s", addr)
 				}
 
-				ips, err := resolver.Resolve(domain)
+				n := resolver()
+				ips, err := n.Resolve(domain)
 				if err != nil {
 					return nil, err
 				}
@@ -136,7 +136,7 @@ func validateHTTPTransportsString(val string) []string {
 
 // createTimedOutTransports provides transports to APIs' client
 func createTimedOutTransport(
-	resolver network.DNSResolver,
+	resolver resolverGetter,
 	fwmark uint32,
 	httpCallsSubject events.Publisher[events.DataRequestAPI],
 	connectSubject events.PublishSubcriber[events.DataConnect],
