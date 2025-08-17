@@ -127,7 +127,7 @@ func initializeStaticConfig(machineID uuid.UUID) config.StaticConfigManager {
 	return staticCfgManager
 }
 
-type resolverGetter func() network.Resolver
+type resolverGetter func() network.DNSResolver
 
 func main() {
 	// pprof
@@ -240,7 +240,7 @@ func main() {
 	var cdnAPI *core.CDNAPI
 
 	var threatProtectionLiteServers *dns.NameServers
-	resolver := func() network.Resolver {
+	resolver := func() network.DNSResolver {
 		nameservers, err := cdnAPI.ThreatProtectionLite()
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "error retrieving nameservers:", err)
@@ -248,7 +248,7 @@ func main() {
 		} else {
 			threatProtectionLiteServers = dns.NewNameServers(nameservers.Servers)
 		}
-		return *network.NewResolver(fw, threatProtectionLiteServers)
+		return network.NewResolver(fw, threatProtectionLiteServers)
 	}
 	// simple standard http client with dialer wrapped inside
 	httpClientSimple := request.NewStdHTTP()

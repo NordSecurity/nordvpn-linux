@@ -8,6 +8,7 @@ import (
 	"net/netip"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
@@ -66,13 +67,13 @@ func TestTransports(t *testing.T) {
 		{
 			comment:     "test older transport small req/resp",
 			inputURL:    serverListSmallURL,
-			transport:   createH1Transport(&workingResolver{}, 0)(),
+			transport:   createH1Transport(func() network.DNSResolver { return workingResolver{} }, 0)(),
 			expectError: false,
 		},
 		{
 			comment:     "test older transport large resp",
 			inputURL:    serverListLargeURL,
-			transport:   createH1Transport(&workingResolver{}, 0)(),
+			transport:   createH1Transport(func() network.DNSResolver { return workingResolver{} }, 0)(),
 			expectError: false,
 		},
 		{
@@ -90,7 +91,7 @@ func TestTransports(t *testing.T) {
 		{
 			comment:     "test non quic/H3 url with H1 transport",
 			inputURL:    nonH3serverURL,
-			transport:   createH1Transport(&workingResolver{}, 0)(),
+			transport:   createH1Transport(func() network.DNSResolver { return workingResolver{} }, 0)(),
 			expectError: false,
 		},
 		{
@@ -125,7 +126,7 @@ func TestH1Transport_RoundTrip(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.ip, func(t *testing.T) {
-			transport := createH1Transport(&workingResolver{IP: test.ip}, 0)()
+			transport := createH1Transport(func() network.DNSResolver { return workingResolver{IP: test.ip} }, 0)()
 			req, err := http.NewRequest(http.MethodGet, serverListSmallURL, nil)
 			assert.NoError(t, err)
 			resp, err := transport.RoundTrip(req)
