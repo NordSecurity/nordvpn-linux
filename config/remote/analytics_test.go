@@ -2,6 +2,7 @@ package remote
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -93,7 +94,7 @@ func setupAnalyticsTest(rolloutGroup int) *analyticsTestFixture {
 	}
 }
 
-// The tests verify that MooseAnalytics correctly publishes analytics events
+// The tests verify that Analytics correctly publishes analytics events
 // for various scenarios, including:
 // - Successful and failed downloads
 // - Local feature usage
@@ -101,7 +102,7 @@ func setupAnalyticsTest(rolloutGroup int) *analyticsTestFixture {
 // - Partial rollout notifications
 // Each test checks that the appropriate event name and details are included
 // in the published event data.
-func TestMooseAnalytics(t *testing.T) {
+func TestAnalytics(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	const (
@@ -121,63 +122,63 @@ func TestMooseAnalytics(t *testing.T) {
 			action: func(a Analytics) {
 				a.EmitDownloadEvent(client, feature)
 			},
-			expectedEventName: `"event":"rc_download_success"`,
-			expectedResult:    `"result":"success"`,
+			expectedEventName: fmt.Sprintf(`"event":"%s"`, DownloadSuccess),
+			expectedResult:    fmt.Sprintf(`"result":"%s"`, rcSuccess),
 		},
 		{
 			name: "EmitDownloadEvent failure",
 			action: func(a Analytics) {
 				a.EmitDownloadFailureEvent(client, feature, *NewDownloadError(DownloadErrorFileDownload, errors.New("fail")))
 			},
-			expectedEventName: `"event":"rc_download_failure"`,
+			expectedEventName: fmt.Sprintf(`"event":"%s"`, DownloadFailure),
 			expectedDetails:   `"message":"file_download_error: fail"`,
-			expectedResult:    `"result":"failure"`,
+			expectedResult:    fmt.Sprintf(`"result":"%s"`, rcFailure),
 		},
 		{
 			name: "EmitLocalUseEvent",
 			action: func(a Analytics) {
 				a.EmitLocalUseEvent(client, feature, nil)
 			},
-			expectedEventName: `"event":"rc_local_use"`,
-			expectedResult:    `"result":"success"`,
+			expectedEventName: fmt.Sprintf(`"event":"%s"`, LocalUse),
+			expectedResult:    fmt.Sprintf(`"result":"%s"`, rcSuccess),
 		},
 		{
 			name: "EmitLocalUseEvent_failure",
 			action: func(a Analytics) {
 				a.EmitLocalUseEvent(client, feature, errors.New("local-use-test-error"))
 			},
-			expectedEventName: `"event":"rc_local_use"`,
+			expectedEventName: fmt.Sprintf(`"event":"%s"`, LocalUse),
 			expectedDetails:   `"message":"local-use-test-error"`,
-			expectedResult:    `"result":"failure"`,
+			expectedResult:    fmt.Sprintf(`"result":"%s"`, rcFailure),
 		},
 		{
 			name: "EmitJsonParseEvent failure",
 			action: func(a Analytics) {
 				a.EmitJsonParseFailureEvent(client, feature, *NewLoadError(LoadErrorValidation, errors.New("parse error")))
 			},
-			expectedEventName: `"event":"rc_json_parse_failure"`,
+			expectedEventName: fmt.Sprintf(`"event":"%s"`, JSONParseFailure),
 			expectedDetails:   `"message":"validation_error: parse error"`,
-			expectedResult:    `"result":"failure"`,
+			expectedResult:    fmt.Sprintf(`"result":"%s"`, rcFailure),
 		},
 		{
 			name: "EmitPartialRolloutEvent",
 			action: func(a Analytics) {
-				a.EmitPartialRolloutEvent(client, feature, 7, true)
+				a.EmitPartialRolloutEvent(client, feature, 52, true)
 			},
-			expectedEventName: `"event":"rc_rollout"`,
-			expectedDetails:   `"error":"meshnet 42 / 7"`,
+			expectedEventName: fmt.Sprintf(`"event":"%s"`, Rollout),
+			expectedDetails:   `"error":"meshnet 42 / 52"`,
 			//rollout uses different expected results - yes|no
-			expectedResult: `"result":"yes"`,
+			expectedResult: fmt.Sprintf(`"result":"%s"`, rolloutYes),
 		},
 		{
 			name: "EmitPartialRolloutEvent failure",
 			action: func(a Analytics) {
 				a.EmitPartialRolloutEvent(client, feature, 7, false)
 			},
-			expectedEventName: `"event":"rc_rollout"`,
+			expectedEventName: fmt.Sprintf(`"event":"%s"`, Rollout),
 			expectedDetails:   `"error":"meshnet 42 / 7"`,
 			//rollout uses different expected results - yes|no
-			expectedResult: `"result":"no"`,
+			expectedResult: fmt.Sprintf(`"result":"%s"`, rolloutNo),
 		},
 	}
 
