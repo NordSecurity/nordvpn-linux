@@ -111,11 +111,13 @@ func TestAnalytics(t *testing.T) {
 	)
 
 	testCases := []struct {
-		name              string
-		action            func(a Analytics)
-		expectedEventName string
-		expectedDetails   string
-		expectedResult    string
+		name                string
+		action              func(a Analytics)
+		expectedEventName   string
+		expectedDetails     string
+		expectedResult      string
+		expectedRolloutInfo string
+		expectedFeatureName string
 	}{
 		{
 			name: "EmitDownloadEvent success",
@@ -165,8 +167,9 @@ func TestAnalytics(t *testing.T) {
 			action: func(a Analytics) {
 				a.EmitPartialRolloutEvent(client, feature, 52, true)
 			},
-			expectedEventName: fmt.Sprintf(`"event":"%s"`, Rollout),
-			expectedDetails:   `"error":"meshnet 42 / 52"`,
+			expectedEventName:   fmt.Sprintf(`"event":"%s"`, Rollout),
+			expectedRolloutInfo: `"rollout_info":"meshnet 42 / app 52"`,
+			expectedFeatureName: `"feature_name":"meshnet"`,
 			//rollout uses different expected results - yes|no
 			expectedResult: fmt.Sprintf(`"result":"%s"`, rolloutYes),
 		},
@@ -175,8 +178,9 @@ func TestAnalytics(t *testing.T) {
 			action: func(a Analytics) {
 				a.EmitPartialRolloutEvent(client, feature, 7, false)
 			},
-			expectedEventName: fmt.Sprintf(`"event":"%s"`, Rollout),
-			expectedDetails:   `"error":"meshnet 42 / 7"`,
+			expectedEventName:   fmt.Sprintf(`"event":"%s"`, Rollout),
+			expectedRolloutInfo: `"rollout_info":"meshnet 42 / app 7"`,
+			expectedFeatureName: `"feature_name":"meshnet"`,
 			//rollout uses different expected results - yes|no
 			expectedResult: fmt.Sprintf(`"result":"%s"`, rolloutNo),
 		},
@@ -200,6 +204,14 @@ func TestAnalytics(t *testing.T) {
 			if tc.expectedResult != "" {
 				assert.Contains(t, event, tc.expectedResult)
 			}
+
+			if tc.expectedRolloutInfo != "" {
+				assert.Contains(t, event, tc.expectedRolloutInfo)
+			}
+
+			if tc.expectedFeatureName != "" {
+				assert.Contains(t, event, tc.expectedFeatureName)
+			}
 		})
 	}
 }
@@ -215,32 +227,36 @@ func TestFindMatchingRecord_EmitsOneEvent(t *testing.T) {
 	)
 
 	testCases := []struct {
-		name              string
-		userRolloutGroup  int
-		expectedEventName string
-		expectedDetails   string
-		expectedResult    string
+		name                string
+		userRolloutGroup    int
+		expectedEventName   string
+		expectedRolloutInfo string
+		expectedResult      string
+		expectedFeatureName string
 	}{
 		{
-			name:              "Partiall Rollout failed - rollout group above limit",
-			userRolloutGroup:  60,
-			expectedEventName: `"event":"rc_rollout"`,
-			expectedDetails:   `"error":"meshnet 60 / 50"`,
-			expectedResult:    `"result":"no"`,
+			name:                "Partiall Rollout failed - rollout group above limit",
+			userRolloutGroup:    60,
+			expectedEventName:   `"event":"rc_rollout"`,
+			expectedRolloutInfo: `"rollout_info":"meshnet 60 / app 50"`,
+			expectedResult:      `"result":"no"`,
+			expectedFeatureName: `"feature_name":"meshnet"`,
 		},
 		{
-			name:              "Rollout success - rollout group under the limit",
-			userRolloutGroup:  40,
-			expectedEventName: `"event":"rc_rollout"`,
-			expectedDetails:   `"error":"meshnet 40 / 50"`,
-			expectedResult:    `"result":"yes"`,
+			name:                "Rollout success - rollout group under the limit",
+			userRolloutGroup:    40,
+			expectedEventName:   `"event":"rc_rollout"`,
+			expectedRolloutInfo: `"rollout_info":"meshnet 40 / app 50"`,
+			expectedResult:      `"result":"yes"`,
+			expectedFeatureName: `"feature_name":"meshnet"`,
 		},
 		{
-			name:              "Rollout success - rollout group same as the limit",
-			userRolloutGroup:  50,
-			expectedEventName: `"event":"rc_rollout"`,
-			expectedDetails:   `"error":"meshnet 50 / 50"`,
-			expectedResult:    `"result":"yes"`,
+			name:                "Rollout success - rollout group same as the limit",
+			userRolloutGroup:    50,
+			expectedEventName:   `"event":"rc_rollout"`,
+			expectedRolloutInfo: `"rollout_info":"meshnet 50 / app 50"`,
+			expectedResult:      `"result":"yes"`,
+			expectedFeatureName: `"feature_name":"meshnet"`,
 		},
 	}
 
@@ -284,8 +300,9 @@ func TestFindMatchingRecord_EmitsOneEvent(t *testing.T) {
 
 			event := fixture.subscriber.events[0]
 			assert.Contains(t, event, tc.expectedEventName)
-			assert.Contains(t, event, tc.expectedDetails)
+			assert.Contains(t, event, tc.expectedRolloutInfo)
 			assert.Contains(t, event, tc.expectedResult)
+			assert.Contains(t, event, tc.expectedFeatureName)
 		})
 	}
 }

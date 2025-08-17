@@ -15,25 +15,27 @@ func TestEventJSONOutput(t *testing.T) {
 	rolloutGroup := 42
 
 	testCases := []struct {
-		name            string
-		event           Event
-		expectedResult  string
-		expectedError   string
-		expectedMessage string
+		name                string
+		event               Event
+		expectedResult      string
+		expectedError       string
+		expectedMessage     string
+		expectedRolloutInfo string
+		expectedFeatureName string
 	}{
 		{
-			name:            "Rollout Success",
-			event:           NewRolloutEvent(rolloutGroup, "test-client", FeatureMeshnet, 50, true),
-			expectedResult:  rolloutYes,
-			expectedError:   "meshnet 42 / 50",
-			expectedMessage: FeatureMeshnet,
+			name:                "Rollout Success",
+			event:               NewRolloutEvent(rolloutGroup, "test-client", FeatureMeshnet, 50, true),
+			expectedResult:      rolloutYes,
+			expectedRolloutInfo: "meshnet 42 / app 50",
+			expectedFeatureName: FeatureMeshnet,
 		},
 		{
-			name:            "Rollout Failure",
-			event:           NewRolloutEvent(rolloutGroup, "test-client", FeatureMeshnet, 20, false),
-			expectedResult:  rolloutNo,
-			expectedError:   "meshnet 42 / 20",
-			expectedMessage: FeatureMeshnet,
+			name:                "Rollout Failure",
+			event:               NewRolloutEvent(rolloutGroup, "test-client", FeatureMeshnet, 20, false),
+			expectedResult:      rolloutNo,
+			expectedRolloutInfo: "meshnet 42 / app 20",
+			expectedFeatureName: FeatureMeshnet,
 		},
 		{
 			name:            "Download Success",
@@ -53,7 +55,7 @@ func TestEventJSONOutput(t *testing.T) {
 			name:            "JSON Parse Failure",
 			event:           NewJSONParseEventFailure(rolloutGroup, "client", FeatureLibtelio, LoadErrorMainHashJsonParsing, "bad hash"),
 			expectedResult:  rcFailure,
-			expectedError:   "main_hash_json_parsing_error",
+			expectedError:   LoadErrorMainHashJsonParsing.String(),
 			expectedMessage: "bad hash",
 		},
 		{
@@ -78,6 +80,8 @@ func TestEventJSONOutput(t *testing.T) {
 			assert.Equal(t, tc.expectedResult, decodedEvent.Result, "result should match expected")
 			assert.Equal(t, tc.expectedError, decodedEvent.Error, "error message should match expected")
 			assert.Equal(t, tc.expectedMessage, decodedEvent.Message, "message content should match expected")
+			assert.Equal(t, tc.expectedRolloutInfo, decodedEvent.RolloutInfo, "rollout info should match expected")
+			assert.Equal(t, tc.expectedFeatureName, decodedEvent.RolloutFeatureName, "feature name should match expected")
 		})
 	}
 }
@@ -132,6 +136,8 @@ func TestDebuggerEventContainsOnlyDesignedFields(t *testing.T) {
 		"result",
 		"error",
 		"message",
+		"feature_name",
+		"rollout_info",
 	}
 
 	// Check that the keys match exactly

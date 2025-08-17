@@ -11,8 +11,10 @@ import (
 
 // EventDetails holds optional details for an event.
 type EventDetails struct {
-	Error   string `json:"error"`
-	Message string `json:"message"`
+	Error              string `json:"error"`
+	Message            string `json:"message"`
+	RolloutFeatureName string `json:"feature_name"`
+	RolloutInfo        string `json:"rollout_info"`
 }
 
 // Event is the main analytics event structure.
@@ -82,8 +84,8 @@ func NewJSONParseEventFailure(userRolloutGroup int, client string, featureName s
 
 func NewRolloutEvent(userRolloutGroup int, client string, featureName string, featureRollout int, rolloutPerformed bool) Event {
 	details := EventDetails{
-		Error:   fmt.Sprintf("%s %d / %d", featureName, userRolloutGroup, featureRollout),
-		Message: featureName,
+		RolloutFeatureName: featureName,
+		RolloutInfo:        fmt.Sprintf("%s %d / app %d", featureName, userRolloutGroup, featureRollout),
 	}
 
 	return Event{
