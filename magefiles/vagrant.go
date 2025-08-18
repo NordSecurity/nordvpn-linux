@@ -142,8 +142,7 @@ func buildVagrantEnv() (VagrantEnv, error) {
 
 	boxName := env["SNAP_TEST_BOX_NAME"]
 	if boxName == "" {
-		fmt.Println("Missing env var SNAP_TEST_BOX_NAME")
-		return VagrantEnv{}, fmt.Errorf("Missing SNAP_TEST_BOX_NAME")
+		return VagrantEnv{}, fmt.Errorf("Missing env var SNAP_TEST_BOX_NAME for box config. Check ci/snap/vagrant/Vagrantfile for available config names")
 	}
 	// store folder that contains Vagrantfile used to create and run the box
 	vagrantFileDir := path.Join(cwd, "ci", "snap", "vagrant")
@@ -155,7 +154,7 @@ func buildVagrantEnv() (VagrantEnv, error) {
 	if val, ok := env["SNAP_TEST_DESTROY_VM_ON_EXIT"]; ok {
 		shouldDestroyVM, err = nstrings.BoolFromString(val)
 		if err != nil {
-			return VagrantEnv{}, fmt.Errorf("Invalid value for SNAP_TEST_DESTROY_VM_ON_EXIT", err)
+			return VagrantEnv{}, fmt.Errorf("Invalid value for SNAP_TEST_DESTROY_VM_ON_EXIT. It must be a boolean value", err)
 		}
 	}
 

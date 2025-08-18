@@ -8,8 +8,14 @@ if ! "${WORKDIR}"/ci/install_snap.sh; then
     exit 1
 fi
 
-# cover dir is not configured for now because of snap confinement, it is a bit more complicated,
-# and it cannot be set anywhere
+# because of snap confinement is not possible to save anywhere the cover files
+# for now set the cover dir to /tmp to prevent CLI errors.
+# If later this will be needed also the snap nordvpn service file needs to be changed.
 rm -fr "${GOCOVERDIR}"
+ORIG_COVERDIR="$GOCOVERDIR"
+GOCOVERDIR="/tmp/"
 
 "${WORKDIR}/ci/qa_run_tests.sh" "$@"
+
+# restore to original value
+GOCOVERDIR="$ORIG_COVERDIR"

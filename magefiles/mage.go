@@ -620,9 +620,9 @@ func (Test) QASnapFast(ctx context.Context, testGroup, testPattern string) error
 }
 
 // Build the snap application and run the QA tests in a VM (arguments: {testGroup} {testPattern})
-func (Test) QASnapVM(ctx context.Context, testGroup, testPattern string) error {
+func (t Test) QASnapVM(ctx context.Context, testGroup, testPattern string) error {
 	mg.Deps(mg.F(buildPackageDocker, packageTypeSnap, "-cover"))
-	return qaSnap(ctx, testGroup, testPattern)
+	return t.QASnapVMFast(ctx, testGroup, testPattern)
 }
 
 // Run QA tests in VM, without building the application (arguments: {testGroup} {testPattern})
