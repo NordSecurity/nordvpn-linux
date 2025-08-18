@@ -7,19 +7,19 @@ import (
 // Analytics defines an interface for reporting various analytics related to remote config
 // including: download, RC local usage, JSON parsing, and partial rollouts event.
 type Analytics interface {
-	EmitDownloadEvent(string, string)
-	EmitDownloadFailureEvent(string, string, DownloadError)
-	EmitLocalUseEvent(string, string, error)
-	EmitJsonParseFailureEvent(string, string, LoadError)
-	EmitPartialRolloutEvent(string, string, int, bool)
+	EmitDownloadEvent(client string, featureName string)
+	EmitDownloadFailureEvent(client string, featureName string, err DownloadError)
+	EmitLocalUseEvent(client string, featureName string, err error)
+	EmitJsonParseFailureEvent(client string, featureName string, err LoadError)
+	EmitPartialRolloutEvent(client string, featureName string, frg int, rolloutPerformed bool)
 }
 type RemoteConfigAnalytics struct {
 	publisher        events.PublishSubcriber[events.DebuggerEvent]
 	userRolloutGroup int
 }
 
-func NewRemoteConfigAnalytics(publisher events.PublishSubcriber[events.DebuggerEvent], rg int) *RemoteConfigAnalytics {
-	return &RemoteConfigAnalytics{publisher: publisher, userRolloutGroup: rg}
+func NewRemoteConfigAnalytics(publisher events.PublishSubcriber[events.DebuggerEvent], rolloutGroup int) *RemoteConfigAnalytics {
+	return &RemoteConfigAnalytics{publisher: publisher, userRolloutGroup: rolloutGroup}
 }
 func (rca *RemoteConfigAnalytics) EmitDownloadEvent(client, featureName string) {
 	rca.publisher.Publish(*NewDownloadSuccessEvent(rca.userRolloutGroup, client, featureName).ToDebuggerEvent())
