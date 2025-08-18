@@ -237,9 +237,18 @@ func main() {
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 
-	var cdnAPI *core.CDNAPI
-
 	var threatProtectionLiteServers *dns.NameServers
+
+	// simple standard http client with dialer wrapped inside
+	httpClientSimple := request.NewStdHTTP()
+
+	cdnAPI := core.NewCDNAPI(
+		userAgent,
+		core.CDNURL,
+		httpClientSimple,
+		validator,
+	)
+
 	resolver := func() network.DNSResolver {
 		nameservers, err := cdnAPI.ThreatProtectionLite()
 		if err != nil {
@@ -250,15 +259,6 @@ func main() {
 		}
 		return network.NewResolver(fw, threatProtectionLiteServers)
 	}
-	// simple standard http client with dialer wrapped inside
-	httpClientSimple := request.NewStdHTTP()
-
-	cdnAPI = core.NewCDNAPI(
-		userAgent,
-		core.CDNURL,
-		httpClientSimple,
-		validator,
-	)
 
 	httpClientSimple.Transport = request.NewHTTPReTransport(
 		1, 1, "HTTP/1.1",
