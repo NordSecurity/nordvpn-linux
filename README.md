@@ -35,7 +35,7 @@ For installing an already released version please follow the instructions on our
 * Kali
 * OpenSUSE
 * Raspbian
-
+#test
 Distributions are not supported after their end of life.
 
 This project is licensed under the terms of the [GNU General Public License v3.0](./LICENSE.md) only.
