@@ -236,34 +236,32 @@ func main() {
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 
-	var threatProtectionLiteServers *dns.NameServers
-
 	// simple standard http client with dialer wrapped inside
 	httpClientSimple := request.NewStdHTTP()
+	httpClientSimple.Transport = request.NewHTTPReTransport(
+		1, 1, "HTTP/1.1", func() http.RoundTripper {
+			return request.NewPublishingRoundTripper(
+				request.NewContextRoundTripper(request.NewStdTransport(), httpGlobalCtx),
+				httpCallsSubject,
+			)
+		}, nil)
 
-	cdnAPI := core.NewCDNAPI(
-		userAgent,
-		core.CDNURL,
-		httpClientSimple,
-		validator,
-	)
-
-	resolver := func() network.DNSResolver {
-		nameservers, err := cdnAPI.ThreatProtectionLite()
+	threatProtectionLiteServers := func() *dns.NameServers {
+		cdn := core.NewCDNAPI(
+			userAgent,
+			core.CDNURL,
+			httpClientSimple,
+			validator,
+		)
+		nameservers, err := cdn.ThreatProtectionLite()
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "error retrieving nameservers:", err)
-			threatProtectionLiteServers = dns.NewNameServers(nil)
-		} else {
-			threatProtectionLiteServers = dns.NewNameServers(nameservers.Servers)
+			return dns.NewNameServers(nil)
 		}
-		return network.NewResolver(fw, threatProtectionLiteServers)
-	}
+		return dns.NewNameServers(nameservers.Servers)
+	}()
 
-	httpClientSimple.Transport = request.NewHTTPReTransport(
-		1, 1, "HTTP/1.1",
-		createH1Transport(resolver, cfg.FirewallMark),
-		nil,
-	)
+	resolver := network.NewResolver(fw, threatProtectionLiteServers)
 
 	if err := SetBufferSizeForHTTP3(); err != nil {
 		log.Println(internal.WarningPrefix, "failed to set buffer size for HTTP/3:", err)
@@ -276,6 +274,13 @@ func main() {
 		httpCallsSubject,
 		daemonEvents.Service.Connect,
 		httpGlobalCtx,
+	)
+
+	cdnAPI := core.NewCDNAPI(
+		userAgent,
+		core.CDNURL,
+		httpClientWithRotator,
+		validator,
 	)
 
 	defaultAPI := core.NewDefaultAPI(
