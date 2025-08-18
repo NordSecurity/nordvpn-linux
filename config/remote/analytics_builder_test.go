@@ -38,32 +38,36 @@ func TestEventJSONOutput(t *testing.T) {
 			expectedFeatureName: FeatureMeshnet,
 		},
 		{
-			name:            "Download Success",
-			event:           NewDownloadSuccessEvent(rolloutGroup, "client", FeatureMeshnet),
-			expectedResult:  rcSuccess,
-			expectedError:   "",
-			expectedMessage: "",
+			name:                "Download Success",
+			event:               NewDownloadSuccessEvent(rolloutGroup, "client", FeatureMeshnet),
+			expectedResult:      rcSuccess,
+			expectedError:       "",
+			expectedMessage:     "",
+			expectedFeatureName: FeatureMeshnet,
 		},
 		{
-			name:            "Download Failure",
-			event:           NewDownloadFailureEvent(rolloutGroup, "client", FeatureMain, DownloadErrorNetwork, "timeout"),
-			expectedResult:  rcFailure,
-			expectedError:   DownloadErrorNetwork.String(),
-			expectedMessage: "timeout",
+			name:                "Download Failure",
+			event:               NewDownloadFailureEvent(rolloutGroup, "client", FeatureMain, DownloadErrorNetwork, "timeout"),
+			expectedResult:      rcFailure,
+			expectedError:       DownloadErrorNetwork.String(),
+			expectedMessage:     "timeout",
+			expectedFeatureName: FeatureMain,
 		},
 		{
-			name:            "JSON Parse Failure",
-			event:           NewJSONParseEventFailure(rolloutGroup, "client", FeatureLibtelio, LoadErrorMainHashJsonParsing, "bad hash"),
-			expectedResult:  rcFailure,
-			expectedError:   LoadErrorMainHashJsonParsing.String(),
-			expectedMessage: "bad hash",
+			name:                "JSON Parse Failure",
+			event:               NewJSONParseEventFailure(rolloutGroup, "client", FeatureLibtelio, LoadErrorMainHashJsonParsing, "bad hash"),
+			expectedResult:      rcFailure,
+			expectedError:       LoadErrorMainHashJsonParsing.String(),
+			expectedMessage:     "bad hash",
+			expectedFeatureName: FeatureLibtelio,
 		},
 		{
-			name:            "Local Use",
-			event:           NewLocalUseEvent(rolloutGroup, "client", FeatureLibtelio, "", ""),
-			expectedResult:  rcSuccess,
-			expectedError:   "",
-			expectedMessage: "",
+			name:                "Local Use",
+			event:               NewLocalUseEvent(rolloutGroup, "client", FeatureLibtelio, "", ""),
+			expectedResult:      rcSuccess,
+			expectedError:       "",
+			expectedMessage:     "",
+			expectedFeatureName: FeatureLibtelio,
 		},
 	}
 
@@ -81,7 +85,7 @@ func TestEventJSONOutput(t *testing.T) {
 			assert.Equal(t, tc.expectedError, decodedEvent.Error, "error message should match expected")
 			assert.Equal(t, tc.expectedMessage, decodedEvent.Message, "message content should match expected")
 			assert.Equal(t, tc.expectedRolloutInfo, decodedEvent.RolloutInfo, "rollout info should match expected")
-			assert.Equal(t, tc.expectedFeatureName, decodedEvent.RolloutFeatureName, "feature name should match expected")
+			assert.Equal(t, tc.expectedFeatureName, decodedEvent.FeatureName, "feature name should match expected")
 		})
 	}
 }

@@ -9,25 +9,19 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-// EventDetails holds optional details for an event.
-type EventDetails struct {
-	Error              string `json:"error"`
-	Message            string `json:"message"`
-	RolloutFeatureName string `json:"feature_name"`
-	RolloutInfo        string `json:"rollout_info"`
-}
-
 // Event is the main analytics event structure.
 type Event struct {
-	EventDetails
-	RolloutGroup     int    `json:"-"`
-	MessageNamespace string `json:"namespace"`
-	Subscope         string `json:"subscope"`
 	Client           string `json:"client"`
+	Error            string `json:"error"`
 	Event            string `json:"event"`
+	FeatureName      string `json:"feature_name"`
+	Message          string `json:"message"`
+	MessageNamespace string `json:"namespace"`
 	Result           string `json:"result"`
-	FeatureName      string `json:"-"`
+	RolloutGroup     int    `json:"-"`
+	RolloutInfo      string `json:"rollout_info"`
 	RolloutPerformed bool   `json:"-"`
+	Subscope         string `json:"subscope"`
 }
 
 func NewDownloadSuccessEvent(userRolloutGroup int, client string, featureName string) Event {
@@ -45,55 +39,40 @@ func NewDownloadFailureEvent(userRolloutGroup int, client string, featureName st
 		Client:       client,
 		FeatureName:  featureName,
 		Event:        DownloadFailure.String(),
-		EventDetails: EventDetails{
-			Error:   errorKind.String(),
-			Message: errorMessage,
-		},
+		Error:        errorKind.String(),
+		Message:      errorMessage,
 	}
 }
 
 func NewLocalUseEvent(userRolloutGroup int, client, featureName, errorKind, errorMessage string) Event {
-	details := EventDetails{}
-	if errorKind != "" {
-		details.Error = errorKind
-		details.Message = errorMessage
-	}
 	return Event{
 		RolloutGroup: userRolloutGroup,
 		Client:       client,
 		FeatureName:  featureName,
 		Event:        LocalUse.String(),
-		EventDetails: details,
+		Error:        errorKind,
+		Message:      errorMessage,
 	}
 }
 
 func NewJSONParseEventFailure(userRolloutGroup int, client string, featureName string, errorKind LoadErrorKind, errorMessage string) Event {
-	details := EventDetails{
-		Error:   errorKind.String(),
-		Message: errorMessage,
-	}
-
 	return Event{
 		RolloutGroup: userRolloutGroup,
 		Client:       client,
 		FeatureName:  featureName,
 		Event:        JSONParseFailure.String(),
-		EventDetails: details,
+		Error:        errorKind.String(),
+		Message:      errorMessage,
 	}
 }
 
 func NewRolloutEvent(userRolloutGroup int, client string, featureName string, featureRollout int, rolloutPerformed bool) Event {
-	details := EventDetails{
-		RolloutFeatureName: featureName,
-		RolloutInfo:        fmt.Sprintf("%s %d / app %d", featureName, userRolloutGroup, featureRollout),
-	}
-
 	return Event{
 		RolloutGroup:     userRolloutGroup,
 		Client:           client,
 		FeatureName:      featureName,
 		Event:            Rollout.String(),
-		EventDetails:     details,
+		RolloutInfo:      fmt.Sprintf("%s %d / app %d", featureName, userRolloutGroup, featureRollout),
 		RolloutPerformed: rolloutPerformed,
 	}
 }
