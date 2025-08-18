@@ -17,7 +17,7 @@ const (
 
 type ParamValue struct {
 	Value         any    `json:"value"`
-	incValue      string // include file content, unexported, ingnored by json.unmarshal
+	incValue      string // include file content, unexported, ignored by json.unmarshal
 	AppVersion    string `json:"app_version"`
 	Weight        int    `json:"weight"`
 	TargetRollout int    `json:"rollout"`
