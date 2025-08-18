@@ -349,8 +349,16 @@ func main() {
 		log.Println(internal.ErrorPrefix, "getting rollout group:", err)
 		// in case of error, rollout group is `0`
 	}
-	rcAnalytics := remote.NewRemoteConfigAnalytics(daemonEvents.Debugger.DebuggerEvents, rolloutGroup)
-	rcConfig := getRemoteConfigGetter(buildTarget, RemotePath, cdnAPI, rcAnalytics, rolloutGroup)
+	rcConfig := getRemoteConfigGetter(
+		buildTarget,
+		RemotePath,
+		cdnAPI,
+		remote.NewRemoteConfigAnalytics(
+			daemonEvents.Debugger.DebuggerEvents,
+			rolloutGroup,
+		),
+		rolloutGroup,
+	)
 
 	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem, rcConfig)
 
