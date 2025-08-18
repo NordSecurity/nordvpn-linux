@@ -193,6 +193,33 @@ func (c *CdnRemoteConfig) download() (bool, error) {
 	return newChangesDownloaded, nil
 }
 
+// isJsonParsingError checks if reported LoadError is related to JSON parsing
+func isJsonParsingError(errKind LoadErrorKind) bool {
+	return errKind == LoadErrorParsing ||
+		errKind == LoadErrorParsingIncludeFile ||
+		errKind == LoadErrorMainHashJsonParsing ||
+		errKind == LoadErrorMainJsonValidationFailure
+}
+
+// reportLoadError emits the appropriate analytics event based on the error type
+func (c *CdnRemoteConfig) reportLoadError(featureName string, err error) {
+	var loadErr *LoadError
+	if !errors.As(err, &loadErr) {
+		// For non-LoadError types, use the default event
+		c.analytics.EmitLocalUseEvent(ClientCli, featureName, err)
+		return
+	}
+
+	if isJsonParsingError(loadErr.Kind) {
+		// For JSON parsing errors, emit the specialized event
+		c.analytics.EmitJsonParseFailureEvent(ClientCli, featureName, *loadErr)
+		return
+	}
+
+	// For all other error types, emit the local use error event
+	c.analytics.EmitLocalUseEvent(ClientCli, featureName, err)
+}
+
 func (c *CdnRemoteConfig) load() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -200,15 +227,8 @@ func (c *CdnRemoteConfig) load() {
 	for _, f := range c.features.keys() {
 		feature := c.features.get(f)
 		if err := feature.load(c.localCachePath, jsonFileReaderWriter{}, jsonValidator{}); err != nil {
-			var loadErr *LoadError
-			if errors.As(err, &loadErr) {
-				// only specific load errors are used for JSON related failures
-				if loadErr.Kind == LoadErrorParsing || loadErr.Kind == LoadErrorParsingIncludeFile || loadErr.Kind == LoadErrorMainHashJsonParsing || loadErr.Kind == LoadErrorMainJsonValidationFailure {
-					c.analytics.EmitJsonParseFailureEvent(ClientCli, feature.name, *loadErr)
-				}
-			}
+			c.reportLoadError(feature.name, err)
 			log.Println(internal.ErrorPrefix, "failed loading feature [", feature.name, "] config from the disk:", err)
-			c.analytics.EmitLocalUseEvent(ClientCli, feature.name, err)
 			continue
 		}
 		log.Println(internal.InfoPrefix, "feature [", feature.name, "] config loaded from:", c.localCachePath)
