@@ -86,7 +86,7 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		ServerGroup: serverGroup,
 	})
 	if err != nil {
-		return formatError(fmt.Errorf("c.client.Connect: %w", err))
+		return formatError(err)
 	}
 
 	var rpcErr error
@@ -156,7 +156,7 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		}
 	}
 
-	return formatError(fmt.Errorf("Connect: %w", rpcErr))
+	return formatError(rpcErr)
 }
 
 func (c *cmd) ConnectAutoComplete(ctx *cli.Context) {
