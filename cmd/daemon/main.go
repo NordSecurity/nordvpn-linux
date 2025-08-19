@@ -249,7 +249,7 @@ func main() {
 	if !internal.IsProdEnv(Environment) && os.Getenv(EnvNordCdnUrl) != "" {
 		cdnUrl = os.Getenv(EnvNordCdnUrl)
 	}
-	log.Println("CDN URL:", cdnUrl)
+	log.Println(internal.InfoPrefix, "CDN URL:", cdnUrl)
 
 	cdnAPI := core.NewCDNAPI(
 		userAgent,

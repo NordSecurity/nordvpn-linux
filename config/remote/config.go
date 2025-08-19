@@ -76,10 +76,6 @@ func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBaseP
 		return false, fmt.Errorf("feature name is not set")
 	}
 
-	if err = internal.EnsureDirFull(targetPath); err != nil {
-		return false, fmt.Errorf("setting-up target dir: %w", err)
-	}
-
 	mainJsonHashStr, err := cdn.readFile(f.HashFilePath(cdnBasePath))
 	if err != nil {
 		return false, fmt.Errorf("downloading main hash file: %w", err)
