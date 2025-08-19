@@ -1,4 +1,4 @@
-# TEST another test
+# TEST TEST another test
 # NordVPN for Linux
 
 ![icon](./assets/icon.svg)
