@@ -700,7 +700,7 @@ func (l *Libtelio) openTunnel(prefix netip.Prefix, privateKey string) (err error
 		return fmt.Errorf("upping the interface: %w", err)
 	}
 
-	err = nordlynx.SetMTU(tun.Interface())
+	err = vpn.SetMTU(tun.Interface(), nordlynx.WireguardHeaderSize)
 	if err != nil {
 		return fmt.Errorf("setting mtu for the interface: %w", err)
 	}
