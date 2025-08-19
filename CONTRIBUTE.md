@@ -25,7 +25,7 @@ NordVPN Linux® is released under GPL-3.0 License. For more details please refer
 [DCO](https://probot.github.io/apps/dco/) sign off is enforced for all commits. Be sure to use the `-s` option to add a `Signed-off-by` line to your commit messages.
 ```
 git commit -s -m 'This is my commit message'
-
+TEST
 TEST
 ```
 ## Contributor License Agreement
