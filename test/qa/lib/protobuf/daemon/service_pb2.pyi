@@ -2,6 +2,7 @@ import account_pb2 as _account_pb2
 import cities_pb2 as _cities_pb2
 import common_pb2 as _common_pb2
 import connect_pb2 as _connect_pb2
+import features_pb2 as _features_pb2
 import login_pb2 as _login_pb2
 import logout_pb2 as _logout_pb2
 import login_with_token_pb2 as _login_with_token_pb2
