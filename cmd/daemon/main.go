@@ -98,6 +98,7 @@ const (
 	// API client to ignore X-headers. This makes setting up MITM proxies up possible. This
 	// should not be used for regular usage.
 	EnvIgnoreHeaderValidation = "IGNORE_HEADER_VALIDATION"
+	EnvNordCdnUrl             = "NORD_CDN_URL"
 )
 
 func init() {
@@ -244,9 +245,15 @@ func main() {
 			)
 		}, nil)
 
+	cdnUrl := core.CDNURL
+	if !internal.IsProdEnv(Environment) && os.Getenv(EnvNordCdnUrl) != "" {
+		cdnUrl = os.Getenv(EnvNordCdnUrl)
+	}
+	log.Println("CDN URL:", cdnUrl)
+
 	cdnAPI := core.NewCDNAPI(
 		userAgent,
-		core.CDNURL,
+		cdnUrl,
 		httpClientSimple,
 		validator,
 	)
