@@ -59,7 +59,10 @@ mkdir -p "${WORKDIR}"/"${COVERDIR}"
 
 if ! sudo grep -q "export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
     sudo sed -i "1a export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"
+    sudo sed -i "1a export GRPC_GO_LOG_VERBOSITY_LEVEL=99 GRPC_GO_LOG_SEVERITY_LEVEL=info" "/etc/init.d/nordvpn"
 fi
+
+
 
 if [[ -n ${LATTE:-} ]]; then
     if ! sudo grep -q "export IGNORE_HEADER_VALIDATION=1" "/etc/init.d/nordvpn"; then
