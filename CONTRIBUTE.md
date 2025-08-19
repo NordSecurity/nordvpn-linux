@@ -26,7 +26,7 @@ NordVPN Linux® is released under GPL-3.0 License. For more details please refer
 ```
 git commit -s -m 'This is my commit message'
 TEST
-TEST
+TEST TEST
 ```
 ## Contributor License Agreement
 To accept your pull request, we need you to agree with the Nord Security Contributor License Agreement (CLA).
