@@ -592,6 +592,8 @@ func main() {
 
 	opts = append(opts, grpc.StreamInterceptor(middleware.StreamIntercept))
 	opts = append(opts, grpc.UnaryInterceptor(middleware.UnaryIntercept))
+	opts = append(opts, grpc.StatsHandler(&norduser.ConnTagger{}))
+
 	s := grpc.NewServer(opts...)
 
 	pb.RegisterDaemonServer(s, rpc)
