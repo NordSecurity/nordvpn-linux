@@ -989,7 +989,7 @@ func (i *LoaderInterceptor) UnaryInterceptor(ctx context.Context, method string,
 		loader.Start()
 		err := invoker(ctx, method, req, reply, cc, opts...)
 		loader.Stop()
-		return err
+		return fmt.Errorf("UnaryInterceptor: %w", err)
 	}
 	return invoker(ctx, method, req, reply, cc, opts...)
 }
@@ -997,6 +997,9 @@ func (i *LoaderInterceptor) UnaryInterceptor(ctx context.Context, method string,
 func (i *LoaderInterceptor) StreamInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string,
 	streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 	stream, err := streamer(ctx, desc, cc, method, opts...)
+	if err != nil {
+		err = fmt.Errorf("StreamInterceptor: %w", err)
+	}
 	return loaderStream{ClientStream: stream, loaderEnabled: i.enabled}, err
 }
 
@@ -1041,7 +1044,7 @@ func (s loaderStream) RecvMsg(m interface{}) error {
 		loader.Start()
 		err := s.ClientStream.RecvMsg(m)
 		loader.Stop()
-		return err
+		return fmt.Errorf("RecvMsg: %w", err)
 	}
 	return s.ClientStream.RecvMsg(m)
 }
@@ -1109,7 +1112,7 @@ func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) e
 				color.Red(MsgMeshnetVersionNotSupported)
 				os.Exit(1)
 			}
-			return err
+			return fmt.Errorf("action: %w", err)
 		}
 		return nil
 	}
