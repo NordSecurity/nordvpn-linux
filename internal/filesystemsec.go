@@ -27,6 +27,7 @@ func SecureFileRead(path string) ([]byte, error) {
 	}
 
 	fd, err := unix.Open(cleanPath, unix.O_RDONLY|unix.O_NOFOLLOW, 0)
+	defer unix.Close(fd)
 	if err != nil {
 		// on some systems O_NOFOLLOW is not supported
 		if !errors.Is(err, unix.EINVAL) {
@@ -39,7 +40,6 @@ func SecureFileRead(path string) ([]byte, error) {
 			return nil, fmt.Errorf("fallback open failed: %w", err)
 		}
 	}
-	defer unix.Close(fd)
 
 	// get file info from already open file descriptor
 	var stat unix.Stat_t
