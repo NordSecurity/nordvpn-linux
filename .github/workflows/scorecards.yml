@@ -18,10 +18,10 @@ jobs:
     name: Scorecard analysis
     runs-on: ubuntu-22.04
     permissions:
-    # Needed if using Code scanning alerts
-    security-events: write
-    # Needed for GitHub OIDC token if publish_results is true
-    id-token: write
+      # Needed if using Code scanning alerts
+      security-events: write
+      # Needed for GitHub OIDC token if publish_results is true
+      id-token: write
 
     steps:
     - name: "Checkout code"
