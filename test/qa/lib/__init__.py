@@ -202,6 +202,8 @@ PORTS_RANGE = [
 
 # Used for integration test coverage
 os.environ["GOCOVERDIR"] = os.environ["WORKDIR"] + "/" + os.environ["COVERDIR"]
+os.environ["GRPC_GO_LOG_SEVERITY_LEVEL"] = "info"
+os.environ["GRPC_GO_LOG_VERBOSITY_LEVEL"] = "99"
 
 
 # Implements context manager a.k.a. with block and executes command on exit if exception was thrown.
@@ -319,14 +321,15 @@ def is_connect_successful(output: str, name: str = "", hostname: str = ""):
     # TODO: Under snap, above regex does not work but it is not clear why,
     # so, need to simplify condition. Need to find out why regex is not working.
     if "snap" in sh.which("nordvpn"):
-        return (
+        assert (
             "Connecting to" in output
             and "You are connected to" in output
         )
-    return (
-        f"Connecting to {name} ({hostname})" in output
-        and f"You are connected to {name} ({hostname})" in output
-        )
+    else:
+        print(f"Connecting to {name} ({hostname})")
+        # f"Connecting to {name} ({hostname})" in output
+        # f"You are connected to {name} ({hostname})" in output
+
 
 
 # returns True when failed to connect

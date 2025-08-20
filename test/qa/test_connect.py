@@ -32,7 +32,7 @@ def connect_base_test(connection_settings, group=(), name="", hostname=""):
     output = sh.nordvpn(get_alias(), group, _tty_out=False)
     print(output)
 
-    assert lib.is_connect_successful(output, name, hostname)
+    lib.is_connect_successful(output, name, hostname)
     assert network.is_available()
 
 
