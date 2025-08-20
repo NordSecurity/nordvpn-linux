@@ -5,7 +5,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/config"
 	"gotest.tools/v3/assert"
@@ -24,7 +23,7 @@ func TestTryInitConfigState(t *testing.T) {
 		{
 			name:          "init success",
 			expectedState: staticConfigState_initialized,
-			filename:      internal.StaticConfigFilename,
+			filename:      staticConfigFilename,
 			fileContents:  []byte("{}"),
 		},
 		{
@@ -35,7 +34,7 @@ func TestTryInitConfigState(t *testing.T) {
 		{
 			name:          "invalid json",
 			expectedState: staticConfigState_failedToInitialize,
-			filename:      internal.StaticConfigFilename,
+			filename:      staticConfigFilename,
 			fileContents:  []byte("{"),
 		},
 		{
@@ -198,7 +197,7 @@ func TestSetRolloutGroup(t *testing.T) {
 			cfgJson, _ := json.Marshal(test.currentConfig)
 
 			fsMock := config.NewFilesystemMock(t)
-			fsMock.AddFile(internal.StaticConfigFilename, cfgJson)
+			fsMock.AddFile(staticConfigFilename, cfgJson)
 			fsMock.ReadErr = test.readErr
 			fsMock.WriteErr = test.writeErr
 
@@ -213,7 +212,7 @@ func TestSetRolloutGroup(t *testing.T) {
 			assert.Equal(t, test.expectedRolloutGroup, manager.cfg.RolloutGroup,
 				"Invalid rollout group saved in config.")
 
-			cfgJson, _ = fsMock.ReadFile(internal.StaticConfigFilename)
+			cfgJson, _ = fsMock.ReadFile(staticConfigFilename)
 			var cfg StaticConfig
 			json.Unmarshal(cfgJson, &cfg)
 
