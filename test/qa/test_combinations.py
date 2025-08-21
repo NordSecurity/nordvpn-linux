@@ -39,6 +39,8 @@ def test_reconnect_matrix(
         source_obfuscated,
         target_obfuscated,
 ):
+    """Manual TC: LVPN-8674"""
+
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
     connect_base_test()
 
@@ -51,6 +53,8 @@ def test_reconnect_matrix(
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize(("country", "city"), list(zip(lib.COUNTRIES, lib.CITIES, strict=False)))
 def test_connect_country_and_city(tech, proto, obfuscated, country, city):
+    """Manual TC: LVPN-8610"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test(country)
