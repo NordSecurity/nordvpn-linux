@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/signal"
 	"strings"
@@ -93,14 +92,14 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 	var rpcErr error
 	for {
 		out, err := resp.Recv()
-		log.Println("RECV:", out, err)
+		fmt.Println("RECV:", out, err)
 		if err != nil {
 			if err == io.EOF {
 				break
 			}
 			// No race condition here as `canceled` is always set before `cancel()`
 			if !canceled {
-				log.Println("RECV ERROR:", out, err)
+				fmt.Println("RECV ERROR:", out, err)
 
 				return formatError(err)
 			}
