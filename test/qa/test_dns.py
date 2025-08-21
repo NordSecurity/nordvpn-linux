@@ -11,6 +11,8 @@ pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs", "d
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_set_tpl_on_off_connected(tech, proto, obfuscated):
+    """Manual TC: LVPN-8718"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     # Make sure, that DNS is unset before we connect to VPN server
@@ -39,6 +41,8 @@ def test_set_tpl_on_off_connected(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_set_tpl_on_and_connect(tech, proto, obfuscated):
+    """Manual TC: LVPN-1603"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     tpl_alias = dns.get_tpl_alias()
@@ -58,6 +62,8 @@ def test_set_tpl_on_and_connect(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_set_tpl_off_and_connect(tech, proto, obfuscated):
+    """Manual TC: LVPN-1606"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     tpl_alias = dns.get_tpl_alias()
@@ -80,6 +86,8 @@ def test_set_tpl_off_and_connect(tech, proto, obfuscated):
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_tpl_on_set_custom_dns_disconnected(tech, proto, obfuscated, nameserver):
+    """Manual TC: LVPN-6803"""
+
     nameserver = nameserver.split(" ")
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -99,6 +107,8 @@ def test_tpl_on_set_custom_dns_disconnected(tech, proto, obfuscated, nameserver)
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_tpl_on_set_custom_dns_connected(tech, proto, obfuscated, nameserver):
+    """Manual TC: LVPN-6802"""
+
     nameserver = nameserver.split(" ")
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -121,6 +131,8 @@ def test_tpl_on_set_custom_dns_connected(tech, proto, obfuscated, nameserver):
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_custom_dns_connect(tech, proto, obfuscated, nameserver):
+    """Manual TC: LVPN-6793"""
+
     nameserver = nameserver.split(" ")
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -141,6 +153,8 @@ def test_custom_dns_connect(tech, proto, obfuscated, nameserver):
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_custom_dns_off_connect(tech, proto, obfuscated, nameserver):
+    """Manual TC: LVPN-6796"""
+
     nameserver = nameserver.split(" ")
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -163,6 +177,8 @@ def test_custom_dns_off_connect(tech, proto, obfuscated, nameserver):
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_set_custom_dns_connected(tech, proto, obfuscated, nameserver):
+    """Manual TC: LVPN-6790"""
+
     nameserver = nameserver.split(" ")
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -180,6 +196,8 @@ def test_set_custom_dns_connected(tech, proto, obfuscated, nameserver):
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_set_custom_dns_off_connected(tech, proto, obfuscated, nameserver):
+    """Manual TC: LVPN-1637"""
+
     nameserver = nameserver.split(" ")
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -201,6 +219,8 @@ def test_set_custom_dns_off_connected(tech, proto, obfuscated, nameserver):
 @pytest.mark.parametrize(("nameserver", "expected_error"), dns.DNS_CASES_ERROR)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_custom_dns_errors_disconnected(tech, proto, obfuscated, nameserver, expected_error):
+    """Manual TC: LVPN-6799"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -214,6 +234,8 @@ def test_custom_dns_errors_disconnected(tech, proto, obfuscated, nameserver, exp
 @pytest.mark.parametrize(("nameserver", "expected_error"), dns.DNS_CASES_ERROR)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_custom_dns_errors_connected(tech, proto, obfuscated, nameserver, expected_error):
+    """Manual TC: LVPN-6798"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with lib.Defer(sh.nordvpn.disconnect):
@@ -232,6 +254,8 @@ def test_custom_dns_errors_connected(tech, proto, obfuscated, nameserver, expect
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_custom_dns_already_set_disconnected(tech, proto, obfuscated, nameserver):
+    """Manual TC: LVPN-8755"""
+
     nameserver = nameserver.split(" ")
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -251,6 +275,8 @@ def test_custom_dns_already_set_disconnected(tech, proto, obfuscated, nameserver
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_custom_dns_already_set_connected(tech, proto, obfuscated, nameserver):
+    """Manual TC: LVPN-8754"""
+
     nameserver = nameserver.split(" ")
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -274,6 +300,8 @@ def test_custom_dns_already_set_connected(tech, proto, obfuscated, nameserver):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_custom_dns_already_disabled_disconnected(tech, proto, obfuscated):
+    """Manual TC: LVPN-8757"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -286,6 +314,8 @@ def test_custom_dns_already_disabled_disconnected(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_custom_dns_already_disabled_connected(tech, proto, obfuscated):
+    """Manual TC: LVPN-8756"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with lib.Defer(sh.nordvpn.disconnect):
@@ -303,6 +333,8 @@ def test_custom_dns_already_disabled_connected(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_custom_dns_order_is_kept(tech, proto, obfuscated):
+    """Manual TC is unavailable because resolver settings and DNS order cannot be reliably verified without automation."""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     nameserver_list = ["8.8.8.8", "1.1.1.1"]
     sh.nordvpn.set.dns(nameserver_list)

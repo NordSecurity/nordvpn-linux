@@ -20,6 +20,8 @@ MSG_KILLSWITCH_OFF = "Kill Switch is set to 'disabled' successfully."
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_killswitch_on_disconnected(tech, proto, obfuscated):
+    """Manual TC: LVPN-419"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     assert network.is_available()
 
@@ -36,6 +38,8 @@ def test_killswitch_on_disconnected(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_killswitch_on_connect(tech, proto, obfuscated):
+    """Manual TC: LVPN-8707"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     assert network.is_available()
 
@@ -63,6 +67,8 @@ def test_killswitch_on_connect(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_killswitch_on_connected(tech, proto, obfuscated):
+    """Manual TC: LVPN-1394"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     assert network.is_available()
 
@@ -84,6 +90,8 @@ def test_killswitch_on_connected(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_killswitch_off_connected(tech, proto, obfuscated):
+    """Manual TC: LVPN-2195"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     assert network.is_available()
 
@@ -108,6 +116,8 @@ def test_killswitch_off_connected(tech, proto, obfuscated):
 @pytest.mark.parametrize(("tech_from", "proto_from", "obfuscated_from"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize(("tech_to", "proto_to", "obfuscated_to"), lib.TECHNOLOGIES)
 def test_killswitch_reconnect(tech_from, proto_from, obfuscated_from, tech_to, proto_to, obfuscated_to):
+    """Manual TC: LVPN-8716"""
+
     lib.set_technology_and_protocol(tech_from, proto_from, obfuscated_from)
     assert network.is_available()
 
@@ -143,6 +153,8 @@ def test_killswitch_reconnect(tech_from, proto_from, obfuscated_from, tech_to, p
 # Test for 3.8.7 hotfix. Account and login commands would not work when killswitch is on
 # Issue 441
 def test_fancy_transport():
+    """Manual TC: LVPN-8717"""
+
     sh.nordvpn.logout("--persist-token")
     output = sh.nordvpn.set.killswitch("on")
     assert MSG_KILLSWITCH_ON in output
