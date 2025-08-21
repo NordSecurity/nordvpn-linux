@@ -68,19 +68,12 @@ func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBaseP
 
 	defer func() {
 		if err != nil {
-			validDir, err := internal.IsValidExistingDir(targetPath)
-			if err == nil && validDir {
-				internal.CleanupTmpFiles(targetPath, tmpExt)
-			}
+			internal.CleanupTmpFiles(targetPath, tmpExt)
 		}
 	}()
 
 	if f.name == "" {
 		return false, NewDownloadError(DownloadErrorOther, fmt.Errorf("feature name is not set"))
-	}
-
-	if err = internal.EnsureDirFull(targetPath); err != nil {
-		return false, NewDownloadError(DownloadErrorLocalFS, fmt.Errorf("setting-up target dir: %w", err))
 	}
 
 	mainJsonHashStr, err := cdn.readFile(f.HashFilePath(cdnBasePath))
@@ -164,6 +157,10 @@ func (f *Feature) load(sourcePath string, fr fileReader, jv validator) error {
 	}
 
 	mainJsonFileName := f.FilePath(sourcePath)
+	if err := internal.IsFileTooBig(mainJsonFileName); err != nil {
+		return fmt.Errorf("reading main file: %w", err)
+	}
+
 	mainJsonStr, err := fr.readFile(mainJsonFileName)
 	if err != nil {
 		return NewLoadError(LoadErrorFileNotFound, fmt.Errorf("reading config file: %w", err))

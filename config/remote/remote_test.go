@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -236,6 +237,33 @@ func TestFeatureOnOff(t *testing.T) {
 			assert.Equal(t, test.featureEnabledExpected, isFeatureEnabled)
 		})
 	}
+}
+
+func TestMultiAccess(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	stop := setupMockCdnWebServer(false)
+	defer stop()
+
+	cdn, cancel := setupMockCdnClient()
+	defer cancel()
+
+	rc := newTestRemoteConfig("3.20.1", "dev", cdn)
+
+	cnt := 10
+	wg := sync.WaitGroup{}
+	wg.Add(cnt)
+
+	for i := 0; i < cnt; i++ {
+		go func() {
+			err := rc.LoadConfig()
+			assert.NoError(t, err)
+			on := rc.IsFeatureEnabled(testFeatureWithRc)
+			assert.True(t, on)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
 }
 
 func TestGetTelioConfig(t *testing.T) {

@@ -82,10 +82,14 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 type jsonFileReaderWriter struct{}
 
 func (w jsonFileReaderWriter) writeFile(name string, content []byte, mode os.FileMode) error {
-	return internal.SecureFileWrite(name, content, mode)
+	return internal.FileWrite(name, content, mode)
 }
 func (w jsonFileReaderWriter) readFile(name string) ([]byte, error) {
-	return internal.SecureFileRead(name)
+	// try to prevent overloading
+	if err := internal.IsFileTooBig(name); err != nil {
+		return nil, fmt.Errorf("reading file: %w", err)
+	}
+	return internal.FileRead(name)
 }
 
 type noopWriter struct{}
@@ -125,22 +129,13 @@ func isNetworkRetryable(err error) bool {
 
 // LoadConfig download from remote or load from disk
 func (c *CdnRemoteConfig) LoadConfig() error {
-	var initErr error
-	var reloadDone bool
-	c.initOnce.Do(func() {
-		validDir, err := internal.IsValidExistingDir(c.localCachePath)
-		if err != nil {
-			initErr = fmt.Errorf("accessing config path on init: %w", err)
-		} else if validDir {
-			c.load() // on start init cache from disk
-			reloadDone = true
-		}
-	})
-	if initErr != nil {
-		return initErr
-	}
 	var err error
-	var needReload bool
+	reloadDone := false
+	c.initOnce.Do(func() {
+		c.load() // on start init cache from disk
+		reloadDone = true
+	})
+	needReload := false
 	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
 	if !useOnlyLocalConfig {
 		if needReload, err = c.download(); err != nil {
