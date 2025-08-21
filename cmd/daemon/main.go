@@ -128,8 +128,6 @@ func initializeStaticConfig(machineID uuid.UUID) config.StaticConfigManager {
 	return staticCfgManager
 }
 
-type resolverGetter func() network.DNSResolver
-
 func main() {
 	// pprof
 	if internal.IsDevEnv(Environment) {
