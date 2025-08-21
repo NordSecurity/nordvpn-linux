@@ -16,6 +16,8 @@ pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connected_firewall_disable(tech, proto, obfuscated):
+    """Manual TC: LVPN-688"""
+
     with lib.Defer(sh.nordvpn.disconnect):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -34,6 +36,8 @@ def test_connected_firewall_disable(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connected_firewall_enable(tech, proto, obfuscated):
+    """Manual TC: LVPN-693"""
+
     with lib.Defer(sh.nordvpn.disconnect):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -52,6 +56,8 @@ def test_connected_firewall_enable(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_firewall_disable_connect(tech, proto, obfuscated):
+    """Manual TC: LVPN-598"""
+
     with lib.Defer(sh.nordvpn.disconnect):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -67,6 +73,8 @@ def test_firewall_disable_connect(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_firewall_enable_connect(tech, proto, obfuscated):
+    """Manual TC: LVPN-593"""
+
     with lib.Defer(sh.nordvpn.disconnect):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -83,6 +91,8 @@ def test_firewall_enable_connect(tech, proto, obfuscated):
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("port", lib.PORTS)
 def test_firewall_02_allowlist_port(tech, proto, obfuscated, port):
+    """Manual TC: LVPN-8722"""
+
     with lib.Defer(lib.flush_allowlist):
         with lib.Defer(sh.nordvpn.disconnect):
             lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -104,6 +114,8 @@ def test_firewall_02_allowlist_port(tech, proto, obfuscated, port):
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("ports", lib.PORTS_RANGE)
 def test_firewall_03_allowlist_ports_range(tech, proto, obfuscated, ports):
+    """Manual TC: LVPN-8725"""
+
     with lib.Defer(lib.flush_allowlist):
         with lib.Defer(sh.nordvpn.disconnect):
             lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -125,6 +137,8 @@ def test_firewall_03_allowlist_ports_range(tech, proto, obfuscated, ports):
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
 def test_firewall_05_allowlist_subnet(tech, proto, obfuscated, subnet):
+    """Manual TC: LVPN-8724"""
+
     with lib.Defer(lib.flush_allowlist):
         with lib.Defer(sh.nordvpn.disconnect):
             lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -145,6 +159,8 @@ def test_firewall_05_allowlist_subnet(tech, proto, obfuscated, subnet):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_firewall_06_with_killswitch(tech, proto, obfuscated):
+    """Manual TC: LVPN-8726"""
+
     with lib.Defer(sh.nordvpn.set.killswitch.off):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -158,6 +174,8 @@ def test_firewall_06_with_killswitch(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_firewall_07_with_killswitch_while_connected(tech, proto, obfuscated):
+    """Manual TC: LVPN-8727"""
+
     with lib.Defer(sh.nordvpn.set.killswitch.off):
         with lib.Defer(sh.nordvpn.disconnect):
             lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -181,6 +199,8 @@ def test_firewall_07_with_killswitch_while_connected(tech, proto, obfuscated):
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("before_connect", [True, False])
 def test_firewall_lan_discovery(tech, proto, obfuscated, before_connect):
+    """Manual TC: LVPN-8947"""
+
     with lib.Defer(lambda: sh.nordvpn.set("lan-discovery", "off", _ok_code=(0, 1))):
         with lib.Defer(sh.nordvpn.disconnect):
             lib.set_technology_and_protocol(tech, proto, obfuscated)
@@ -214,6 +234,8 @@ def test_firewall_lan_discovery(tech, proto, obfuscated, before_connect):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_firewall_lan_allowlist_interaction(tech, proto, obfuscated):
+    """Manual TC: LVPN-8941"""
+
     with lib.Defer(lambda: sh.nordvpn.set("lan-discovery", "off", _ok_code=(0, 1))):
         with lib.Defer(sh.nordvpn.disconnect):
             lib.set_technology_and_protocol(tech, proto, obfuscated)
