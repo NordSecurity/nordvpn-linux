@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -61,7 +60,7 @@ func ExtractError(resp *http.Response) error {
 	}
 
 	var info apiError
-	body, err := io.ReadAll(resp.Body)
+	body, err := MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
