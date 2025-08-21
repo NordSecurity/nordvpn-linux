@@ -26,16 +26,15 @@ type LogoutHandlerDependencies struct {
 
 // LogoutHandler provides a simple way to register session error handlers
 type LogoutHandler struct {
-	deps             LogoutHandlerDependencies
-	state            *sync.Mutex
-	logoutInProgress bool
+	deps        LogoutHandlerDependencies
+	logoutMutex *sync.Mutex
 }
 
 // NewLogoutHandler creates a new session error handler
 func NewLogoutHandler(deps LogoutHandlerDependencies) *LogoutHandler {
 	return &LogoutHandler{
-		deps:  deps,
-		state: &sync.Mutex{},
+		deps:        deps,
+		logoutMutex: &sync.Mutex{},
 	}
 }
 
@@ -53,22 +52,12 @@ func (h *LogoutHandler) Register(
 // makeHandler creates the actual error handler function
 func (h *LogoutHandler) makeHandler(clientHook func(reason error) events.ReasonCode) func(error) {
 	return func(reason error) {
-		// Prevent concurrent logouts
-		h.state.Lock()
-		if h.logoutInProgress {
-			h.state.Unlock()
+		if !h.logoutMutex.TryLock() {
 			log.Printf("%s session error detected but logout already in progress, ignoring: %v",
 				internal.DebugPrefix, reason)
 			return
 		}
-		h.logoutInProgress = true
-		h.state.Unlock()
-
-		defer func() {
-			h.state.Lock()
-			h.logoutInProgress = false
-			h.state.Unlock()
-		}()
+		defer h.logoutMutex.Unlock()
 
 		log.Printf("%s session error detected: %v. Forcing logout.",
 			internal.DebugPrefix, reason)
