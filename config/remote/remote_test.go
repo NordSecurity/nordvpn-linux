@@ -248,7 +248,7 @@ func TestMultiAccess(t *testing.T) {
 	cdn, cancel := setupMockCdnClient()
 	defer cancel()
 
-	rc := newTestRemoteConfig("3.20.1", "dev", cdn)
+	rc := newTestRemoteConfig("3.20.1", "dev", cdn, defaultRolloutGroup)
 
 	cnt := 10
 	wg := sync.WaitGroup{}
