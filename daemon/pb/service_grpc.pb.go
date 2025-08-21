@@ -56,7 +56,6 @@ const (
 	Daemon_SettingsProtocols_FullMethodName       = "/pb.Daemon/SettingsProtocols"
 	Daemon_SettingsTechnologies_FullMethodName    = "/pb.Daemon/SettingsTechnologies"
 	Daemon_Status_FullMethodName                  = "/pb.Daemon/Status"
-	Daemon_SetIpv6_FullMethodName                 = "/pb.Daemon/SetIpv6"
 	Daemon_ClaimOnlinePurchase_FullMethodName     = "/pb.Daemon/ClaimOnlinePurchase"
 	Daemon_SetVirtualLocation_FullMethodName      = "/pb.Daemon/SetVirtualLocation"
 	Daemon_SubscribeToStateChanges_FullMethodName = "/pb.Daemon/SubscribeToStateChanges"
@@ -107,7 +106,6 @@ type DaemonClient interface {
 	SettingsProtocols(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	SettingsTechnologies(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	Status(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StatusResponse, error)
-	SetIpv6(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	ClaimOnlinePurchase(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClaimOnlinePurchaseResponse, error)
 	SetVirtualLocation(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	SubscribeToStateChanges(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[AppState], error)
@@ -513,16 +511,6 @@ func (c *daemonClient) Status(ctx context.Context, in *Empty, opts ...grpc.CallO
 	return out, nil
 }
 
-func (c *daemonClient) SetIpv6(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_SetIpv6_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *daemonClient) ClaimOnlinePurchase(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClaimOnlinePurchaseResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ClaimOnlinePurchaseResponse)
@@ -643,7 +631,6 @@ type DaemonServer interface {
 	SettingsProtocols(context.Context, *Empty) (*Payload, error)
 	SettingsTechnologies(context.Context, *Empty) (*Payload, error)
 	Status(context.Context, *Empty) (*StatusResponse, error)
-	SetIpv6(context.Context, *SetGenericRequest) (*Payload, error)
 	ClaimOnlinePurchase(context.Context, *Empty) (*ClaimOnlinePurchaseResponse, error)
 	SetVirtualLocation(context.Context, *SetGenericRequest) (*Payload, error)
 	SubscribeToStateChanges(*Empty, grpc.ServerStreamingServer[AppState]) error
@@ -771,9 +758,6 @@ func (UnimplementedDaemonServer) SettingsTechnologies(context.Context, *Empty) (
 }
 func (UnimplementedDaemonServer) Status(context.Context, *Empty) (*StatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Status not implemented")
-}
-func (UnimplementedDaemonServer) SetIpv6(context.Context, *SetGenericRequest) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetIpv6 not implemented")
 }
 func (UnimplementedDaemonServer) ClaimOnlinePurchase(context.Context, *Empty) (*ClaimOnlinePurchaseResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ClaimOnlinePurchase not implemented")
@@ -1469,24 +1453,6 @@ func _Daemon_Status_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Daemon_SetIpv6_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetGenericRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).SetIpv6(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_SetIpv6_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SetIpv6(ctx, req.(*SetGenericRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Daemon_ClaimOnlinePurchase_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
@@ -1752,10 +1718,6 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Status",
 			Handler:    _Daemon_Status_Handler,
-		},
-		{
-			MethodName: "SetIpv6",
-			Handler:    _Daemon_SetIpv6_Handler,
 		},
 		{
 			MethodName: "ClaimOnlinePurchase",

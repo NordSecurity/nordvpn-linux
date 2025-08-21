@@ -13,6 +13,8 @@ excluded_packages=$excluded_packages"\|pb\|magefiles"
 excluded_packages=$excluded_packages"\|daemon\/vpn\/quench"
 excluded_categories="root,link,firewall,route,file,integration"
 
+included_packages="internal"
+
 tags="internal"
 parallel=""
 
@@ -41,7 +43,7 @@ mkdir -p "${WORKDIR}"/coverage/unit
 export LD_LIBRARY_PATH="${WORKDIR}/bin/deps/lib/current/amd64"
 
 # shellcheck disable=SC2046
-go test ${parallel:+${parallel}} -tags "$tags" -race $(go list -tags "$tags" -buildvcs=false ./... | grep -v "${excluded_packages}") \
+go test ${parallel:+${parallel}} -tags "$tags" -race $(go list -tags "$tags" -buildvcs=false ./... | grep -v "${excluded_packages}" | grep "${included_packages}") \
 	-coverprofile "${WORKDIR}"/coverage.txt \
 	-exclude "${excluded_categories}" \
 	-args -test.gocoverdir="${WORKDIR}/coverage/unit"

@@ -83,6 +83,11 @@ if [[ $tags == *"quench"* ]]; then
 	source "${WORKDIR}"/ci/add_private_bindings.sh quench ./third-party/libquench-go
 fi
 
+if [[ "${ENVIRONMENT}" != "prod" ]]; then
+	export GRPC_GO_LOG_VERBOSITY_LEVEL=99
+	export GRPC_GO_LOG_SEVERITY_LEVEL=info
+fi
+
 for program in ${!names_map[*]}; do # looping over keys
 	pushd "${WORKDIR}/cmd/${program}"
 	# BUILDMODE can be no value and `go` does not like empty parameter ''
