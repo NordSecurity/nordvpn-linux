@@ -1,6 +1,16 @@
 import os
 
 import sh
+import requests
+
+
+def fetch(url: str) -> str:
+    try:
+        resp = requests.get(url, timeout=2)
+        resp.raise_for_status()  # raise if not 2xx
+        return resp.text
+    except requests.RequestException as e:
+        return f"{e}"
 
 
 def collect():
@@ -13,6 +23,8 @@ def collect():
 
     # without `ww` we cannot see full process lines, as it is cut off early
     processes = sh.ps("-ef", "ww")
+    goroutines = fetch("http://localhost:6960/debug/pprof/goroutine?debug=1")
+    ls = os.popen("sudo ls -lah /var/lib/nordvpn/data/").read()
 
     return "\n".join(
         [
@@ -29,6 +41,9 @@ def collect():
             str(nameserver_info),
             "Processes:",
             str(processes),
+            "Goroutines",
+            goroutines,
+            ls,
             "-------------------end of system-information--------------------",
         ]
     )

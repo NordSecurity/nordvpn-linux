@@ -54,18 +54,27 @@ func (dm *DataManager) LoadData() error {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
 	// TODO: after Go 1.20, rewrite using error joining
+	log.Println("countries")
 	if err := dm.countryData.load(); err != nil {
 		return fmt.Errorf("loading country data: %w", err)
 	}
+	log.Println("insights")
+
 	if err := dm.insightsData.load(); err != nil {
 		return fmt.Errorf("loading insights data: %w", err)
 	}
+	log.Println("servers data")
+
 	if err := dm.serversData.load(); err != nil {
 		return fmt.Errorf("loading servers data: %w", err)
 	}
+	log.Println("version data")
+
 	if err := dm.versionData.load(); err != nil {
 		return fmt.Errorf("loading version data: %w", err)
 	}
+	log.Println("finish")
+
 	return nil
 }
 
