@@ -318,23 +318,12 @@ func main() {
 	)
 
 	// Build client API and session stores
-	clientAPI, sessionBuilder := func() (core.ClientAPI, *SessionStoresBuilder) {
-		simpleAPI := core.NewSimpleAPI(
-			userAgent,
-			daemon.BaseURL,
-			httpClientWithRotator,
-			validator,
-		)
-
-		builder := NewSessionStoresBuilder(fsystem)
-		smartAPI := core.NewSmartClientAPI(simpleAPI, builder.BuildAccessTokenStore(simpleAPI))
-
-		builder.BuildVPNCredsStore(smartAPI)
-		builder.BuildTrustedPassStore(smartAPI)
-		builder.BuildNCCredsStore(smartAPI)
-
-		return smartAPI, builder
-	}()
+	clientAPI, sessionBuilder := buildClientAPIAndSessionStores(
+		userAgent,
+		httpClientWithRotator,
+		validator,
+		fsystem,
+	)
 
 	// populate build target configuration
 	buildTarget := config.BuildTarget{
@@ -817,4 +806,28 @@ func removeIPv6Remains(c config.Config) config.Config {
 	c.AutoConnectData.Allowlist.Subnets = allowList
 
 	return c
+}
+
+// buildClientAPIAndSessionStores creates and configures the client API and session stores
+func buildClientAPIAndSessionStores(
+	userAgent string,
+	httpClient *http.Client,
+	validator response.Validator,
+	fsystem config.Manager,
+) (core.ClientAPI, *SessionStoresBuilder) {
+	simpleAPI := core.NewSimpleAPI(
+		userAgent,
+		daemon.BaseURL,
+		httpClient,
+		validator,
+	)
+
+	builder := NewSessionStoresBuilder(fsystem)
+	smartAPI := core.NewSmartClientAPI(simpleAPI, builder.BuildAccessTokenStore(simpleAPI))
+
+	builder.BuildVPNCredsStore(smartAPI)
+	builder.BuildTrustedPassStore(smartAPI)
+	builder.BuildNCCredsStore(smartAPI)
+
+	return smartAPI, builder
 }
