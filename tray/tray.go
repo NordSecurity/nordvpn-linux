@@ -20,11 +20,12 @@ import (
 )
 
 const (
-	NotifierStartDelay        = 3 * time.Second
-	PollingUpdateInterval     = 5 * time.Second
-	PollingFullUpdateInterval = 60 * time.Second
-	CountryListUpdateInterval = 60 * time.Minute
-	AccountInfoUpdateInterval = 24 * time.Hour
+	NotifierStartDelay                = 3 * time.Second
+	PollingUpdateInterval             = 5 * time.Second
+	PollingFullUpdateInterval         = 60 * time.Second
+	CountryListUpdateInterval         = 60 * time.Minute
+	SpecialtyServerListUpdateInterval = 60 * time.Minute
+	AccountInfoUpdateInterval         = 24 * time.Hour
 )
 
 const (
@@ -65,37 +66,63 @@ func (ai *accountInfo) reset() {
 	ai.accountInfo = nil
 }
 
-type CountryPicker struct {
-	mu         sync.RWMutex
-	countries  []string
-	updateTime time.Time
+type ConnectionSelector struct {
+	mu                         sync.RWMutex
+	countries                  []string
+	specialtyServers           []string
+	countriesUpdateTime        time.Time
+	specialtyServersUpdateTime time.Time
 }
 
-func (cp *CountryPicker) list(client pb.DaemonClient) ([]string, error) {
-	cp.mu.RLock()
-	canUpdate := time.Since(cp.updateTime) > CountryListUpdateInterval
-	cp.mu.RUnlock()
-
-	if canUpdate {
-		resp, err := client.Countries(context.Background(), &pb.Empty{})
-		if err != nil {
-			return nil, err
-		}
-		result := sortedCountries(resp.Servers)
-
-		cp.mu.Lock()
-		cp.countries = result
-		cp.updateTime = time.Now()
+func (cp *ConnectionSelector) listCountries(client pb.DaemonClient) ([]string, error) {
+	cp.mu.Lock()
+	needsUpdate := time.Since(cp.countriesUpdateTime) > CountryListUpdateInterval
+	if !needsUpdate {
+		out := append([]string(nil), cp.countries...)
 		cp.mu.Unlock()
+		return out, nil
 	}
+	cp.mu.Unlock()
 
-	cp.mu.RLock()
+	resp, err := client.Countries(context.Background(), &pb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+	result := sortedConnections(resp.Servers)
+
+	cp.mu.Lock()
+	cp.countries = result
+	cp.countriesUpdateTime = time.Now()
 	out := append([]string(nil), cp.countries...)
-	cp.mu.RUnlock()
+	cp.mu.Unlock()
 	return out, nil
 }
 
-func sortedCountries(sgs []*pb.ServerGroup) []string {
+func (cp *ConnectionSelector) listSpecialtyServer(client pb.DaemonClient) ([]string, error) {
+	cp.mu.Lock()
+	needsUpdate := time.Since(cp.specialtyServersUpdateTime) > SpecialtyServerListUpdateInterval
+	if !needsUpdate {
+		out := append([]string(nil), cp.specialtyServers...)
+		cp.mu.Unlock()
+		return out, nil
+	}
+	cp.mu.Unlock()
+
+	resp, err := client.Groups(context.Background(), &pb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+	result := sortedConnections(resp.Servers)
+
+	cp.mu.Lock()
+	cp.specialtyServers = result
+	cp.specialtyServersUpdateTime = time.Now()
+	out := append([]string(nil), cp.specialtyServers...)
+	cp.mu.Unlock()
+	return out, nil
+}
+
+func sortedConnections(sgs []*pb.ServerGroup) []string {
 	set := make(map[string]struct{}, len(sgs))
 	for _, sg := range sgs {
 		if c := strings.TrimSpace(sg.Name); c != "" {
@@ -140,8 +167,7 @@ type trayState struct {
 	vpnCity             string
 	vpnCountry          string
 	vpnVirtualLocation  bool
-	countries           CountryPicker
-	recent              *RecentConnections
+	connSelector        ConnectionSelector
 	mu                  sync.RWMutex
 }
 
@@ -218,9 +244,6 @@ func (ti *Instance) OnExit() {
 func (ti *Instance) OnReady() {
 	systray.SetTitle("NordVPN")
 	systray.SetTooltip("NordVPN")
-
-	ti.state.recent = NewRecentConnections()
-	_ = ti.state.recent.Load()
 
 	ti.state.mu.Lock()
 	if ti.state.vpnStatus == pb.ConnectionState_DISCONNECTED {
