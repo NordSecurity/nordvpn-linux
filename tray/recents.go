@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -12,14 +13,46 @@ import (
 )
 
 const (
-	// Timeouts
 	recentConnectionsTimeout = 2 * time.Second
-
-	// Limit
-	maxRecentConnections = 3
+	maxRecentConnections     = 3
 )
 
-func makeDisplayLabel(conn *pb.RecentConnectionModel) string {
+// RecentConnection represents a recent VPN connection
+type RecentConnection struct {
+	Country            string
+	City               string
+	Group              config.ServerGroup
+	CountryCode        string
+	SpecificServerName string
+	SpecificServer     string
+	ConnectionType     config.ServerSelectionRule
+}
+
+var groupTitles = map[config.ServerGroup]string{
+	config.ServerGroup_DOUBLE_VPN:                       "Double VPN",
+	config.ServerGroup_ONION_OVER_VPN:                   "Onion Over VPN",
+	config.ServerGroup_STANDARD_VPN_SERVERS:             "Standard VPN Servers",
+	config.ServerGroup_P2P:                              "P2P",
+	config.ServerGroup_OBFUSCATED:                       "Obfuscated",
+	config.ServerGroup_DEDICATED_IP:                     "Dedicated IP",
+	config.ServerGroup_ULTRA_FAST_TV:                    "Ultra Fast TV",
+	config.ServerGroup_ANTI_DDOS:                        "Anti DDOS",
+	config.ServerGroup_NETFLIX_USA:                      "Netflix USA",
+	config.ServerGroup_EUROPE:                           "Europe",
+	config.ServerGroup_THE_AMERICAS:                     "The Americas",
+	config.ServerGroup_ASIA_PACIFIC:                     "Asia Pacific",
+	config.ServerGroup_AFRICA_THE_MIDDLE_EAST_AND_INDIA: "Africa The Middle East and India",
+}
+
+func formatGroupTitle(group config.ServerGroup) string {
+	value, ok := groupTitles[group]
+	if !ok {
+		return ""
+	}
+	return value
+}
+
+func makeDisplayLabel(conn *RecentConnection) string {
 	switch conn.ConnectionType {
 	case config.ServerSelectionRule_CITY:
 		if conn.Country != "" && conn.City != "" {
@@ -34,18 +67,18 @@ func makeDisplayLabel(conn *pb.RecentConnectionModel) string {
 		return conn.SpecificServerName
 
 	case config.ServerSelectionRule_GROUP:
-		return strings.ReplaceAll(conn.Group.String(), "_", " ")
+		return formatGroupTitle(conn.Group)
 
 	case config.ServerSelectionRule_COUNTRY_WITH_GROUP:
-		if conn.Group != config.ServerGroup_UNDEFINED && conn.Country != "" {
-			group := strings.ReplaceAll(conn.Group.String(), "_", " ")
-			return fmt.Sprintf("%s (%s)", group, conn.Country)
+		if conn.Group == config.ServerGroup_UNDEFINED || conn.Country == "" {
+			return ""
 		}
-		return ""
+		group := formatGroupTitle(conn.Group)
+		return fmt.Sprintf("%s (%s)", group, conn.Country)
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
 		if conn.Group != config.ServerGroup_UNDEFINED {
-			group := strings.ReplaceAll(conn.Group.String(), "_", " ")
+			group := formatGroupTitle(conn.Group)
 			if conn.Country != "" && conn.City != "" {
 				return fmt.Sprintf("%s (%s, %s)", group, conn.Country, conn.City)
 			} else if conn.Country != "" {
@@ -61,25 +94,7 @@ func makeDisplayLabel(conn *pb.RecentConnectionModel) string {
 	return ""
 }
 
-func fetchRecentConnections(ti *Instance) []*pb.RecentConnectionModel {
-	ctx, cancel := context.WithTimeout(context.Background(), recentConnectionsTimeout)
-	defer cancel()
-
-	limit := int64(maxRecentConnections)
-	resp, err := ti.client.GetRecentConnections(
-		ctx,
-		&pb.RecentConnectionsRequest{Limit: &limit},
-		grpc.WaitForReady(true),
-	)
-
-	if err != nil || resp == nil {
-		return nil
-	}
-
-	return resp.Connections
-}
-
-func connectByConnectionModel(ti *Instance, model *pb.RecentConnectionModel) bool {
+func connectByConnectionModel(ti *Instance, model *RecentConnection) bool {
 	if model == nil {
 		return false
 	}
@@ -89,24 +104,42 @@ func connectByConnectionModel(ti *Instance, model *pb.RecentConnectionModel) boo
 		return ti.connect("", "")
 
 	case config.ServerSelectionRule_CITY:
+		if model.City == "" {
+			return false
+		}
 		city_str := strings.ReplaceAll(model.City, " ", "_")
 		return ti.connect(city_str, "")
 
 	case config.ServerSelectionRule_COUNTRY:
+		if model.CountryCode == "" {
+			return false
+		}
 		return ti.connect(model.CountryCode, "")
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER:
+		if model.SpecificServer == "" {
+			return false
+		}
 		return ti.connect(model.SpecificServer, "")
 
 	case config.ServerSelectionRule_GROUP:
+		if model.Group == config.ServerGroup_UNDEFINED {
+			return false
+		}
 		group_str := strings.ReplaceAll(model.Group.String(), "_", " ")
 		return ti.connect("", group_str)
 
 	case config.ServerSelectionRule_COUNTRY_WITH_GROUP:
+		if model.CountryCode == "" || model.Group == config.ServerGroup_UNDEFINED {
+			return false
+		}
 		group_str := strings.ReplaceAll(model.Group.String(), "_", " ")
 		return ti.connect(model.CountryCode, group_str)
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
+		if model.SpecificServer == "" || model.Group == config.ServerGroup_UNDEFINED {
+			return false
+		}
 		group_str := strings.ReplaceAll(model.Group.String(), "_", " ")
 		return ti.connect(model.SpecificServer, group_str)
 
@@ -115,4 +148,61 @@ func connectByConnectionModel(ti *Instance, model *pb.RecentConnectionModel) boo
 	}
 
 	return false
+}
+
+type recentConnectionsManager struct {
+	mu          sync.RWMutex
+	connections []RecentConnection
+	client      pb.DaemonClient
+}
+
+// newRecentConnectionsManager created new recent VPN connection manager
+func newRecentConnectionsManager(client pb.DaemonClient) *recentConnectionsManager {
+	return &recentConnectionsManager{
+		connections: make([]RecentConnection, 0),
+		client:      client,
+	}
+}
+
+// UpdateRecentConnections updates local list of recent VPN connections
+func (m *recentConnectionsManager) UpdateRecentConnections() error {
+	ctx, cancel := context.WithTimeout(context.Background(), recentConnectionsTimeout)
+	defer cancel()
+
+	limit := int64(maxRecentConnections)
+	resp, err := m.client.GetRecentConnections(
+		ctx,
+		&pb.RecentConnectionsRequest{Limit: &limit},
+		grpc.WaitForReady(true),
+	)
+
+	if err != nil || resp == nil {
+		return err
+	}
+
+	// Convert gRPC models to tray models
+	connections := make([]RecentConnection, 0, len(resp.Connections))
+	for _, conn := range resp.Connections {
+		connections = append(connections, RecentConnection{
+			Country:            conn.Country,
+			City:               conn.City,
+			Group:              conn.Group,
+			CountryCode:        conn.CountryCode,
+			SpecificServerName: conn.SpecificServerName,
+			SpecificServer:     conn.SpecificServer,
+			ConnectionType:     conn.ConnectionType,
+		})
+	}
+
+	m.mu.Lock()
+	m.connections = connections
+	m.mu.Unlock()
+	return nil
+}
+
+// GetRecentConnections returns recent VPN connections
+func (m *recentConnectionsManager) GetRecentConnections() []RecentConnection {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.connections
 }
