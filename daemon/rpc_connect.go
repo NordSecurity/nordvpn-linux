@@ -285,6 +285,16 @@ func (r *RPC) connect(
 	event.EventStatus = events.StatusSuccess
 	event.DurationMs = getElapsedTime(connectingStartTime)
 	r.events.Service.Connect.Publish(event)
+	r.recentVPNConnStore.Add(recents.NewVPNConnection(
+		recents.Model{
+			Country:            country.Name,
+			City:               city,
+			SpecificServer:     strings.Split(server.Hostname, ".")[0],
+			SpecificServerName: server.Name,
+			Group:              event.TargetServerGroup,
+			ConnectionType:     event.TargetServerSelection,
+		}),
+	)
 
 	if isRecentConnectionSupported(event.TargetServerSelection) {
 		var serverTechs []core.ServerTechnology
