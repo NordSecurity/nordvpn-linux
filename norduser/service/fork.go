@@ -145,7 +145,7 @@ func (c *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err 
 
 	err = mergeUserSessionEnv(uid, gid, &cmd.Env, NewSystemEnvConfigurator())
 	if err != nil {
-		log.Println(internal.WarningPrefix, "failed to retrieve user session's environment: %v", err)
+		log.Println(internal.WarningPrefix, "failed to retrieve user session's environment:", err)
 	}
 
 	if err := cmd.Start(); err != nil {
