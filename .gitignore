@@ -46,3 +46,6 @@ parts
 prime
 stage
 *.snap
+
+# CDN files used in mockcdn docker image
+ci/docker/mockcdn/configs

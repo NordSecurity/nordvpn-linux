@@ -71,6 +71,15 @@ if [[ -n ${LATTE:-} ]]; then
     fi
 fi
 
+if [[ -n ${NORD_CDN_URL:-} ]]; then
+    if ! sudo grep -q "export NORD_CDN_URL=$NORD_CDN_URL" "/etc/init.d/nordvpn"; then
+        sudo sed -i "1a export NORD_CDN_URL=$NORD_CDN_URL" "/etc/init.d/nordvpn"
+    fi
+    if ! sudo grep -q "export IGNORE_HEADER_VALIDATION=1" "/etc/init.d/nordvpn"; then
+        sudo sed -i "1a export IGNORE_HEADER_VALIDATION=1" "/etc/init.d/nordvpn"
+    fi
+fi
+
 # Disable the TUI loader indicator to prevent interference during automated tests
 export DISABLE_TUI_LOADER=1
 

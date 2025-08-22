@@ -29,6 +29,7 @@ const (
 	imageTester            = registryPrefix + "tester:1.6.0"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.4"
 	imageRuster            = registryPrefix + "ruster:1.4.0"
+	imageMockcdn           = registryPrefix + "mockcdn:0.0.2"
 
 	dockerWorkDir  = "/opt"
 	devPackageType = "source"
@@ -681,6 +682,15 @@ func qaDocker(ctx context.Context, testGroup, testPattern string) (err error) {
 	)
 	if err != nil {
 		return fmt.Errorf("%w (while starting qa-peer)", err)
+	}
+
+	err = RunDockerWithSettings(ctx, env,
+		imageMockcdn,
+		[]string{},
+		DockerSettings{Privileged: true, Daemonize: true, Network: networkID, DaemonizeStopChan: containerStoppedChan},
+	)
+	if err != nil {
+		return fmt.Errorf("%w (while starting mockcdn)", err)
 	}
 
 	return RunDockerWithSettings(ctx, env,
