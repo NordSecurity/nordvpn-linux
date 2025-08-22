@@ -10,7 +10,7 @@ import (
 
 type Publisher interface {
 	LoginPublisher
-	MooseDebuggerPublisher
+	DebuggerPublisher
 	SettingsPublisher
 	ServicePublisher
 }
@@ -43,7 +43,7 @@ func NewEventsEmpty() *Events {
 		&subs.Subject[events.DataAuthorization]{},
 		&subs.Subject[events.DataAuthorization]{},
 		&subs.Subject[bool]{},
-		&subs.Subject[events.MooseDebuggerEvent]{},
+		&subs.Subject[events.DebuggerEvent]{},
 	)
 }
 
@@ -74,7 +74,7 @@ func NewEvents(
 	login events.PublishSubcriber[events.DataAuthorization],
 	logout events.PublishSubcriber[events.DataAuthorization],
 	mfa events.PublishSubcriber[bool],
-	mooseDevLogs events.PublishSubcriber[events.MooseDebuggerEvent],
+	devLogs events.PublishSubcriber[events.DebuggerEvent],
 ) *Events {
 	return &Events{
 		Settings: &SettingsEvents{
@@ -107,24 +107,24 @@ func NewEvents(
 			Logout: logout,
 			MFA:    mfa,
 		},
-		MooseDebugger: &MooseDebuggerEvents{
-			DebuggerEvents: mooseDevLogs,
+		Debugger: &DebuggerEvents{
+			DebuggerEvents: devLogs,
 		},
 	}
 }
 
 type Events struct {
-	Settings      *SettingsEvents
-	Service       *ServiceEvents
-	User          *LoginEvents
-	MooseDebugger *MooseDebuggerEvents
+	Settings *SettingsEvents
+	Service  *ServiceEvents
+	User     *LoginEvents
+	Debugger *DebuggerEvents
 }
 
 func (e *Events) Subscribe(to Publisher) {
 	e.Settings.Subscribe(to)
 	e.Service.Subscribe(to)
 	e.User.Subscribe(to)
-	e.MooseDebugger.Subscribe(to)
+	e.Debugger.Subscribe(to)
 }
 
 type SettingsPublisher interface {
@@ -230,16 +230,16 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 	s.PostquantumVPN.Publish(cfg.AutoConnectData.PostquantumVpn)
 }
 
-// moose debugger events
-type MooseDebuggerPublisher interface {
-	NotifyDebuggerEvent(events.MooseDebuggerEvent) error
+// debugger events
+type DebuggerPublisher interface {
+	NotifyDebuggerEvent(events.DebuggerEvent) error
 }
 
-type MooseDebuggerEvents struct {
-	DebuggerEvents events.PublishSubcriber[events.MooseDebuggerEvent]
+type DebuggerEvents struct {
+	DebuggerEvents events.PublishSubcriber[events.DebuggerEvent]
 }
 
-func (m *MooseDebuggerEvents) Subscribe(to MooseDebuggerPublisher) {
+func (m *DebuggerEvents) Subscribe(to DebuggerPublisher) {
 	m.DebuggerEvents.Subscribe(to.NotifyDebuggerEvent)
 }
 

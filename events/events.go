@@ -95,9 +95,9 @@ type ContextValue struct {
 	Value any
 }
 
-// MooseDebuggerEvent represents a debugging event to be sent to the moose library.
+// DebuggerEvent represents a debugging event to be sent to the moose library.
 // It contains data and context information needed for debugging purposes.
-type MooseDebuggerEvent struct {
+type DebuggerEvent struct {
 	// JsonData contains a custom payload to be carried within a debugger event to moose.
 	// This allows for attaching specialized information relevant to the specific event.
 	JsonData string
@@ -113,31 +113,31 @@ type MooseDebuggerEvent struct {
 }
 
 // WithJsonData adds JSON payload to the event
-func (e *MooseDebuggerEvent) WithJsonData(json string) *MooseDebuggerEvent {
+func (e *DebuggerEvent) WithJsonData(json string) *DebuggerEvent {
 	e.JsonData = json
 	return e
 }
 
 // WithKeyBasedContextPaths adds arbitrary number of key-based context paths to the event
-func (e *MooseDebuggerEvent) WithKeyBasedContextPaths(paths ...ContextValue) *MooseDebuggerEvent {
+func (e *DebuggerEvent) WithKeyBasedContextPaths(paths ...ContextValue) *DebuggerEvent {
 	e.KeyBasedContextPaths = append(e.KeyBasedContextPaths, paths...)
 	return e
 }
 
 // WithGlobalContextPaths adds arbitrary number of global context paths to the event
-func (e *MooseDebuggerEvent) WithGlobalContextPaths(paths ...string) *MooseDebuggerEvent {
+func (e *DebuggerEvent) WithGlobalContextPaths(paths ...string) *DebuggerEvent {
 	e.GeneralContextPaths = append(e.GeneralContextPaths, paths...)
 	return e
 }
 
-// NewMooseDebuggerEvent creates and initializes a new MooseDebuggerEvent instance.
+// NewDebuggerEvent creates and initializes a new DebuggerEvent instance.
 // It takes a JSON data string as input and initializes the event with empty slices
 // for GeneralContextPaths and KeyBasedContextPaths.
 //
 // Parameters:
 //   - jsonData: A string containing JSON data to be associated with the event
-func NewMooseDebuggerEvent(jsonData string) *MooseDebuggerEvent {
-	return &MooseDebuggerEvent{
+func NewDebuggerEvent(jsonData string) *DebuggerEvent {
+	return &DebuggerEvent{
 		JsonData:             jsonData,
 		GeneralContextPaths:  make([]string, 0),
 		KeyBasedContextPaths: make([]ContextValue, 0),

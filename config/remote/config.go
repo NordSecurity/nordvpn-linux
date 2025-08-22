@@ -73,17 +73,17 @@ func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBaseP
 	}()
 
 	if f.name == "" {
-		return false, fmt.Errorf("feature name is not set")
+		return false, NewDownloadError(DownloadErrorOther, fmt.Errorf("feature name is not set"))
 	}
 
 	mainJsonHashStr, err := cdn.readFile(f.HashFilePath(cdnBasePath))
 	if err != nil {
-		return false, fmt.Errorf("downloading main hash file: %w", err)
+		return false, NewDownloadError(DownloadErrorRemoteHashNotFound, fmt.Errorf("downloading main hash file: %w", err))
 	}
 
 	var mainJsonHash jsonHash
 	if err = json.Unmarshal(mainJsonHashStr, &mainJsonHash); err != nil {
-		return false, fmt.Errorf("parsing main hash file: %w", err)
+		return false, NewDownloadError(DownloadErrorHashParsing, fmt.Errorf("parsing main hash file: %w", err))
 	}
 
 	if f.hash == mainJsonHash.Hash {
@@ -93,41 +93,41 @@ func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBaseP
 	// main hash covers the include files as well
 	mainJsonStr, err := cdn.readFile(f.FilePath(cdnBasePath))
 	if err != nil {
-		return false, fmt.Errorf("downloading main file: %w", err)
+		return false, NewDownloadError(DownloadErrorRemoteFileNotFound, fmt.Errorf("downloading main file: %w", err))
 	}
 
 	// validate json against predefined schema
 	if err = jv.validate(mainJsonStr); err != nil {
-		return false, fmt.Errorf("validating main: %w", err)
+		return false, NewDownloadError(DownloadErrorParsing, fmt.Errorf("validating main: %w", err))
 	}
 
 	incFiles, err := walkIncludeFiles(mainJsonStr, cdnBasePath, targetPath, cdn, fw)
 	if err != nil {
-		return false, fmt.Errorf("downloading include files: %w", err)
+		return false, NewDownloadError(DownloadErrorIncludeFile, fmt.Errorf("downloading include files: %w", err))
 	}
 
 	// verify content integrity
-	// if main json has include failes - hash should cover whole content
+	// if main json has include files - hash should cover whole content
 	if !isHashEqual(mainJsonHash.Hash, mainJsonStr, incFiles) {
-		return false, fmt.Errorf("main file integrity problem")
+		return false, NewDownloadError(DownloadErrorHashIntegrity, fmt.Errorf("main file integrity problem"))
 	}
 
 	// write main json to file
 	localFileName := f.FilePath(targetPath) + tmpExt
 	if err = fw.writeFile(localFileName, mainJsonStr, internal.PermUserRW); err != nil {
-		return false, fmt.Errorf("writing main file: %w", err)
+		return false, NewDownloadError(DownloadErrorWriteJson, fmt.Errorf("writing main file: %w", err))
 	}
 	// write main hash to file
 	localFileName = f.HashFilePath(targetPath) + tmpExt
 	if err = fw.writeFile(localFileName, mainJsonHashStr, internal.PermUserRW); err != nil {
-		return false, fmt.Errorf("writing main hash file: %w", err)
+		return false, NewDownloadError(DownloadErrorWriteHash, fmt.Errorf("writing main hash file: %w", err))
 	}
 
 	// while processing, save files with special extension '*.bu'
 	// if download or handling would fail in the middle - previous files are left intact,
 	// also need to cleanup tmp files (see above)
 	if err = internal.RenameTmpFiles(targetPath, tmpExt); err != nil {
-		return false, fmt.Errorf("writing/renaming files: %w", err)
+		return false, NewDownloadError(DownloadErrorFileRename, fmt.Errorf("writing/renaming files: %w", err))
 	}
 
 	return true, nil
@@ -136,24 +136,24 @@ func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBaseP
 // load feature config from JSON file
 func (f *Feature) load(sourcePath string, fr fileReader, jv validator) error {
 	if f.name == "" {
-		return fmt.Errorf("feature name is not set")
+		return NewLoadError(LoadErrorOther, fmt.Errorf("feature name is not set"))
 	}
 
 	validDir, err := internal.IsValidExistingDir(sourcePath)
 	if err != nil {
-		return fmt.Errorf("accessing source path: %w", err)
+		return NewLoadError(LoadErrorOther, fmt.Errorf("accessing source path: %w", err))
 	}
 	if !validDir {
-		return fmt.Errorf("config source path is not valid")
+		return NewLoadError(LoadErrorOther, fmt.Errorf("config source path is not valid"))
 	}
 
 	mainJsonHashStr, err := fr.readFile(f.HashFilePath(sourcePath))
 	if err != nil {
-		return fmt.Errorf("reading hash file: %w", err)
+		return NewLoadError(LoadErrorFileNotFound, fmt.Errorf("reading hash file: %w", err))
 	}
 	var mainJsonHash jsonHash
 	if err = json.Unmarshal(mainJsonHashStr, &mainJsonHash); err != nil {
-		return fmt.Errorf("parsing main hash file: %w", err)
+		return NewLoadError(LoadErrorMainHashJsonParsing, fmt.Errorf("parsing main hash file: %w", err))
 	}
 
 	mainJsonFileName := f.FilePath(sourcePath)
@@ -163,28 +163,28 @@ func (f *Feature) load(sourcePath string, fr fileReader, jv validator) error {
 
 	mainJsonStr, err := fr.readFile(mainJsonFileName)
 	if err != nil {
-		return fmt.Errorf("reading config file: %w", err)
+		return NewLoadError(LoadErrorFileNotFound, fmt.Errorf("reading config file: %w", err))
 	}
 	// validate json by predefined schema
 	if err := jv.validate(mainJsonStr); err != nil {
-		return fmt.Errorf("validating json: %w", err)
+		return NewLoadError(LoadErrorMainJsonValidationFailure, fmt.Errorf("validating json: %w", err))
 	}
 
 	incFiles, err := walkIncludeFiles(mainJsonStr, sourcePath, "", fr, noopWriter{})
 	if err != nil {
-		return fmt.Errorf("loading include files: %w", err)
+		return NewLoadError(LoadErrorIncludeFile, fmt.Errorf("loading include files: %w", err))
 	}
 
 	// verify content integrity
 	// if main json has include files - hash should cover whole content
 	if !isHashEqual(mainJsonHash.Hash, mainJsonStr, incFiles) {
-		return fmt.Errorf("main file integrity problem")
+		return NewLoadError(LoadErrorIntegrity, fmt.Errorf("main file integrity problem"))
 	}
 
 	// load json into structures
 	var temp Feature
 	if err := json.Unmarshal(mainJsonStr, &temp); err != nil {
-		return err
+		return NewLoadError(LoadErrorParsing, err)
 	}
 
 	params := make(map[string]*Param)
@@ -208,11 +208,11 @@ func (f *Feature) load(sourcePath string, fr fileReader, jv validator) error {
 			// validate field
 			incVal, err := validateField(cfgItem, param, fileReadFunc)
 			if err != nil {
-				return err
+				return NewLoadError(LoadErrorParsingIncludeFile, err)
 			}
 			// store valid values in the map
 			params[cfgItem.Name].Settings = append(params[cfgItem.Name].Settings,
-				ParamValue{Value: param.Value, incValue: string(incVal), AppVersion: param.AppVersion, Weight: param.Weight})
+				NewParamValue(param.Value, string(incVal), param.AppVersion, param.Weight, param.TargetRollout))
 		}
 	}
 	// set new params and hash

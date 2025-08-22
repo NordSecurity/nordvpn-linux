@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
+	devents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
@@ -31,6 +32,8 @@ const (
 	httpServerWaitTimeout = 2 * time.Second
 	testFeatureNoRc       = "feature1"
 	testFeatureWithRc     = "nordwhisper"
+
+	defaultRolloutGroup = 10
 )
 
 func cleanLocalPath(t *testing.T) {
@@ -76,42 +79,42 @@ func TestFindMatchingRecord(t *testing.T) {
 	// ss []ParamValue, ver string
 	input1 := []ParamValue{
 		{
-			Value:      "val1",
-			AppVersion: ">=3.3.3",
-			Weight:     10,
-			Rollout:    10,
+			Value:         "val1",
+			AppVersion:    ">=3.3.3",
+			Weight:        10,
+			TargetRollout: 10,
 		},
 		{
-			Value:      "val2",
-			AppVersion: ">=3.3.3",
-			Weight:     20,
-			Rollout:    10,
+			Value:         "val2",
+			AppVersion:    ">=3.3.3",
+			Weight:        20,
+			TargetRollout: 10,
 		},
 		{
-			Value:      "val3",
-			AppVersion: ">=3.3.3",
-			Weight:     10,
-			Rollout:    10,
+			Value:         "val3",
+			AppVersion:    ">=3.3.3",
+			Weight:        10,
+			TargetRollout: 10,
 		},
 	}
 	input2 := []ParamValue{
 		{
-			Value:      "val1",
-			AppVersion: "3.3.3",
-			Weight:     10,
-			Rollout:    10,
+			Value:         "val1",
+			AppVersion:    "3.3.3",
+			Weight:        10,
+			TargetRollout: 10,
 		},
 		{
-			Value:      "val2",
-			AppVersion: "3.3.3",
-			Weight:     10,
-			Rollout:    10,
+			Value:         "val2",
+			AppVersion:    "3.3.3",
+			Weight:        10,
+			TargetRollout: 10,
 		},
 		{
-			Value:      "val3",
-			AppVersion: "3.3.3",
-			Weight:     10,
-			Rollout:    10,
+			Value:         "val3",
+			AppVersion:    "3.3.3",
+			Weight:        10,
+			TargetRollout: 10,
 		},
 	}
 	input3 := []ParamValue{}
@@ -123,11 +126,11 @@ func TestFindMatchingRecord(t *testing.T) {
 		matchValue   string
 	}{
 		{
-			name:         "match1",
+			name:         "match1 - no rollout / no match",
 			input:        input1,
 			myAppVer:     "3.3.3",
 			myAppRollout: 30,
-			matchValue:   "val2",
+			matchValue:   "",
 		},
 		{
 			name:         "match1 - no match by lesser version",
@@ -137,38 +140,42 @@ func TestFindMatchingRecord(t *testing.T) {
 			matchValue:   "",
 		},
 		{
-			name:         "match1 - no rollout / no match",
+			name:         "match1",
 			input:        input1,
 			myAppVer:     "3.3.3",
 			myAppRollout: 3,
-			matchValue:   "",
+			matchValue:   "val2",
 		},
 		{
 			name:         "match2 - match by greater version",
 			input:        input1,
 			myAppVer:     "3.3.4",
-			myAppRollout: 30,
+			myAppRollout: 9,
 			matchValue:   "val2",
 		},
 		{
 			name:         "match3 - equal weights, first match used",
 			input:        input2,
 			myAppVer:     "3.3.3",
-			myAppRollout: 30,
+			myAppRollout: 10,
 			matchValue:   "val1",
 		},
 		{
 			name:         "match4 - empty list, no matches",
 			input:        input3,
 			myAppVer:     "3.3.3",
-			myAppRollout: 30,
+			myAppRollout: 19,
 			matchValue:   "",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			match := findMatchingRecord(test.input, test.myAppVer, test.myAppRollout)
+			cdn, cancel := setupMockCdnClient()
+			defer cancel()
+			rc := newTestRemoteConfig(test.myAppVer, "dev", cdn, test.myAppRollout)
+			match := rc.findMatchingRecord(test.input, test.myAppVer)
+
 			if test.matchValue != "" {
 				assert.NotNil(t, match)
 				assert.Equal(t, test.matchValue, match.Value)
@@ -189,45 +196,45 @@ func TestFeatureOnOff(t *testing.T) {
 	defer cancel()
 
 	tests := []struct {
-		name    string
-		ver     string
-		env     string
-		feature string
-		on      bool
+		name                   string
+		ver                    string
+		env                    string
+		feature                string
+		featureEnabledExpected bool
 	}{
 		{
-			name:    "feature1 no rc - off by default",
-			ver:     "",
-			env:     "dev",
-			feature: testFeatureNoRc,
-			on:      true,
+			name:                   "feature1 no rc - off by default",
+			ver:                    "",
+			env:                    "dev",
+			feature:                testFeatureNoRc,
+			featureEnabledExpected: true,
 		},
 		{
-			name:    "feature2 1",
-			ver:     "1.1.1",
-			env:     "dev",
-			feature: testFeatureWithRc,
-			on:      false,
+			name:                   "feature2 1",
+			ver:                    "1.1.1",
+			env:                    "dev",
+			feature:                testFeatureWithRc,
+			featureEnabledExpected: false,
 		},
 		{
-			name:    "feature2 2",
-			ver:     "4.1.1",
-			env:     "dev",
-			feature: testFeatureWithRc,
-			on:      true,
+			name:                   "feature2 2",
+			ver:                    "4.1.1",
+			env:                    "dev",
+			feature:                testFeatureWithRc,
+			featureEnabledExpected: true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			eh := newTestRemoteConfigEventHandler()
-			rc := newTestRemoteConfig(test.ver, test.env, cdn)
+			rc := newTestRemoteConfig(test.ver, test.env, cdn, defaultRolloutGroup)
 			rc.Subscribe(eh)
 			err := rc.LoadConfig()
 			assert.True(t, eh.notified)
 			assert.NoError(t, err)
-			on := rc.IsFeatureEnabled(test.feature)
-			assert.Equal(t, test.on, on)
+			isFeatureEnabled := rc.IsFeatureEnabled(test.feature)
+			assert.Equal(t, test.featureEnabledExpected, isFeatureEnabled)
 		})
 	}
 }
@@ -241,7 +248,7 @@ func TestMultiAccess(t *testing.T) {
 	cdn, cancel := setupMockCdnClient()
 	defer cancel()
 
-	rc := newTestRemoteConfig("3.20.1", "dev", cdn)
+	rc := newTestRemoteConfig("3.20.1", "dev", cdn, defaultRolloutGroup)
 
 	cnt := 10
 	wg := sync.WaitGroup{}
@@ -281,7 +288,7 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.20.1",
 			env:         "dev",
 			fromDisk:    false,
-			feature:     FeatureLibtelio.String(),
+			feature:     FeatureLibtelio,
 			expectError: false,
 		},
 		{
@@ -289,7 +296,7 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.1.1",
 			env:         "dev",
 			fromDisk:    false,
-			feature:     FeatureLibtelio.String(),
+			feature:     FeatureLibtelio,
 			expectError: true,
 		},
 		{
@@ -297,7 +304,7 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.20.1",
 			env:         "dev",
 			fromDisk:    true,
-			feature:     FeatureLibtelio.String(),
+			feature:     FeatureLibtelio,
 			expectError: false,
 		},
 	}
@@ -311,7 +318,7 @@ func TestGetTelioConfig(t *testing.T) {
 				err := os.Unsetenv(envUseLocalConfig)
 				assert.NoError(t, err)
 			}
-			rc := newTestRemoteConfig(test.ver, test.env, cdn)
+			rc := newTestRemoteConfig(test.ver, test.env, cdn, defaultRolloutGroup)
 			err := rc.LoadConfig()
 			assert.NoError(t, err)
 			telioCfg, err := rc.GetTelioConfig()
@@ -340,7 +347,7 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	libtelioInc1ConfigFile := filepath.Join(localPath, "include/libtelio1.json")
 	libtelioInc2ConfigFile := filepath.Join(localPath, "include/libtelio2.json")
 
-	rc := newTestRemoteConfig("3.4.1", "dev", cdn)
+	rc := newTestRemoteConfig("3.4.1", "dev", cdn, defaultRolloutGroup)
 
 	log.Println("~~~~ first attempt to load - should load whole config from web server")
 
@@ -425,20 +432,26 @@ func (e *RemoteConfigEventHandler) RemoteConfigUpdate(c RemoteConfigEvent) error
 	return nil
 }
 
-func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage) *CdnRemoteConfig {
-	rc := &CdnRemoteConfig{
-		appVersion:     ver,
-		appEnvironment: env,
-		remotePath:     httpPath,
-		localCachePath: localPath,
-		cdn:            cdn,
-		features:       make(FeatureMap),
-		notifier:       &subs.Subject[RemoteConfigEvent]{},
+func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage, rolloutGroup int) *CdnRemoteConfig {
+	testSubject := subs.Subject[events.DebuggerEvent]{}
+	ve := devents.DebuggerEvents{
+		DebuggerEvents: &testSubject,
 	}
-	rc.features.Add(FeatureMain.String())
-	rc.features.Add(FeatureLibtelio.String())
-	rc.features.Add(testFeatureNoRc)
-	rc.features.Add(testFeatureWithRc)
+	rc := &CdnRemoteConfig{
+		appVersion:      ver,
+		appEnvironment:  env,
+		remotePath:      httpPath,
+		localCachePath:  localPath,
+		cdn:             cdn,
+		features:        NewFeatureMap(),
+		analytics:       NewRemoteConfigAnalytics(ve.DebuggerEvents, rolloutGroup),
+		notifier:        &subs.Subject[RemoteConfigEvent]{},
+		appRolloutGroup: rolloutGroup,
+	}
+	rc.features.add(FeatureMain)
+	rc.features.add(FeatureLibtelio)
+	rc.features.add(testFeatureNoRc)
+	rc.features.add(testFeatureWithRc)
 	return rc
 }
 
@@ -575,7 +588,8 @@ var nordwhisperJsonConfFile = `
                 {
                     "value": false,
                     "app_version": "*",
-                    "weight": 1
+                    "weight": 1,
+					"rollout": 20
                 },
                 {
                     "value": true,
@@ -627,12 +641,14 @@ var libtelioJsonConfFile = `
                 {
                     "value": "include/libtelio1.json",
                     "app_version": ">=3.19.0",
-                    "weight": 1
+                    "weight": 1,
+                    "rollout": 20
                 },
                 {
                     "value": "include/libtelio2.json",
                     "app_version": ">=3.18.3",
-                    "weight": 3
+                    "weight": 3,
+                    "rollout": 20
                 }
             ]
         }
@@ -680,12 +696,14 @@ var libtelioUpdatedJsonConfFile = `
                 {
                     "value": "include/libtelio1.json",
                     "app_version": ">=3.19.0",
-                    "weight": 1
+                    "weight": 1,
+                    "rollout": 20
                 },
                 {
                     "value": "include/libtelio2.json",
                     "app_version": ">=3.18.3",
-                    "weight": 3
+                    "weight": 3,
+                    "rollout": 20
                 }
             ]
         }
