@@ -20,9 +20,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
-	"os/exec"
+	"reflect"
 	"slices"
 	"strconv"
 	"strings"
@@ -31,21 +32,24 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
-	"github.com/NordSecurity/nordvpn-linux/distro"
+	telemetrypb "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1"
+	"github.com/NordSecurity/nordvpn-linux/daemon/telemetry"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
+	"github.com/NordSecurity/nordvpn-linux/sysinfo"
 
 	moose "moose/events"
 	worker "moose/worker"
 )
 
+type mooseConsentFunc func(bool) uint32
+
 // Subscriber listen events, send to moose engine
 type Subscriber struct {
 	EventsDbPath            string
 	Config                  config.Manager
-	Version                 string
-	Environment             string
+	BuildTarget             config.BuildTarget
 	Domain                  string
 	Subdomain               string
 	DeviceID                string
@@ -53,37 +57,62 @@ type Subscriber struct {
 	currentDomain           string
 	connectionStartTime     time.Time
 	connectionToMeshnetPeer bool
-	enabled                 bool
+	consent                 config.AnalyticsConsent
 	initialHeartbeatSent    bool
+	mooseOptInFunc          mooseConsentFunc
+	mooseConsentLevelFunc   mooseConsentFunc
 	mux                     sync.RWMutex
+}
+
+func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error {
+	if s.consent == newState {
+		return nil
+	}
+
+	if newState == config.ConsentUndefined {
+		return fmt.Errorf("analytics consent cannot be set to and undefined state")
+	}
+
+	if s.consent == config.ConsentUndefined {
+		log.Println(internal.DebugPrefix, "enabling analytics")
+		if err := s.response(s.mooseOptInFunc(true)); err != nil {
+			return fmt.Errorf("enabling essential analytics: %w", err)
+		}
+	}
+
+	enabled := false
+	if newState == config.ConsentGranted {
+		enabled = true
+	}
+
+	if err := s.response(s.mooseConsentLevelFunc(enabled)); err != nil {
+		s.consent = config.ConsentDenied
+		return fmt.Errorf("setting new consent level: %w", err)
+	}
+
+	s.consent = newState
+
+	return nil
 }
 
 // Enable moose analytics engine
 func (s *Subscriber) Enable() error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	if s.enabled {
-		return nil
-	}
-	s.enabled = true
-	return s.response(moose.MooseNordvpnappSetOptIn(true))
+	return s.changeConsentState(config.ConsentGranted)
 }
 
 // Disable moose analytics engine
 func (s *Subscriber) Disable() error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	if !s.enabled {
-		return nil
-	}
-	s.enabled = false
-	return s.response(moose.MooseNordvpnappSetOptIn(false))
+	return s.changeConsentState(config.ConsentDenied)
 }
 
 func (s *Subscriber) isEnabled() bool {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
-	return s.enabled
+	return s.consent == config.ConsentGranted
 }
 
 // Init initializes moose libs. It has to be done before usage regardless of the enabled state.
@@ -91,14 +120,13 @@ func (s *Subscriber) isEnabled() bool {
 func (s *Subscriber) Init(httpClient http.Client) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
+
+	s.mooseConsentLevelFunc = moose.MooseNordvpnappSetConsentLevel
+	s.mooseOptInFunc = moose.MooseNordvpnappSetOptIn
+
 	var cfg config.Config
 	if err := s.Config.Load(&cfg); err != nil {
 		return err
-	}
-
-	deviceType := "server"
-	if _, err := exec.LookPath("xrandr"); err == nil {
-		deviceType = "desktop"
 	}
 
 	err := s.updateEventDomain()
@@ -127,18 +155,30 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("starting worker: %w", err)
 	}
 
-	s.enabled = cfg.Analytics.Get()
+	sendAllEvents := cfg.AnalyticsConsent == config.ConsentGranted
+
 	if err := s.response(moose.MooseNordvpnappInit(
 		s.EventsDbPath,
-		internal.IsProdEnv(s.Environment),
+		internal.IsProdEnv(s.BuildTarget.Environment),
 		s,
 		s,
-		s.enabled,
+		sendAllEvents,
 	)); err != nil {
 		if !strings.Contains(err.Error(), "moose: already initiated") {
 			return fmt.Errorf("starting tracker: %w", err)
 		}
 	}
+
+	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
+		log.Println(internal.WarningPrefix, "failed to flush changes before setting analytics opt in: %w", err)
+	}
+	if cfg.AnalyticsConsent == config.ConsentUndefined {
+		if err := s.response(s.mooseOptInFunc(false)); err != nil {
+			return fmt.Errorf("failed to opt out of analytics: %w", err)
+		}
+	}
+
+	s.consent = cfg.AnalyticsConsent
 
 	applicationName := "linux-app"
 	if snapconf.IsUnderSnap() {
@@ -149,7 +189,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("setting application name: %w", err)
 	}
 
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappVersion(s.Version)); err != nil {
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappVersion(s.BuildTarget.Version)); err != nil {
 		return fmt.Errorf("setting application version: %w", err)
 	}
 
@@ -157,9 +197,9 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("setting moose time zone: %w", err)
 	}
 
-	distroVersion, err := distro.ReleasePrettyName()
+	distroVersion, err := sysinfo.GetHostOSPrettyName()
 	if err != nil {
-		return fmt.Errorf("determining device os: %w", err)
+		return fmt.Errorf("determining device os 'pretty-name'")
 	}
 	if err := s.response(moose.NordvpnappSetContextDeviceOs(distroVersion)); err != nil {
 		return fmt.Errorf("setting moose device os: %w", err)
@@ -167,16 +207,9 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 	if err := s.response(moose.NordvpnappSetContextDeviceFp(s.DeviceID)); err != nil {
 		return fmt.Errorf("setting moose device: %w", err)
 	}
-	var deviceT moose.NordvpnappDeviceType
-	switch deviceType {
-	case "desktop":
-		deviceT = moose.NordvpnappDeviceTypeDesktop
-	case "server":
-		deviceT = moose.NordvpnappDeviceTypeServer
-	default:
-		deviceT = moose.NordvpnappDeviceTypeUndefined
-	}
-	if err := s.response(moose.NordvpnappSetContextDeviceType(deviceT)); err != nil {
+
+	dt := deviceTypeToInternalType(sysinfo.GetDeviceType())
+	if err := s.response(moose.NordvpnappSetContextDeviceType(dt)); err != nil {
 		return fmt.Errorf("setting moose device type: %w", err)
 	}
 
@@ -196,6 +229,11 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 	if err := sub.NotifyTechnology(cfg.Technology); err != nil {
 		return fmt.Errorf("setting moose technology: %w", err)
 	}
+
+	if err := s.response(moose.NordvpnappSetContextDeviceCpuArchitecture(s.BuildTarget.Architecture)); err != nil {
+		return fmt.Errorf("setting device architecture: %w", err)
+	}
+
 	return nil
 }
 
@@ -205,7 +243,6 @@ func (s *Subscriber) Stop() error {
 		return fmt.Errorf("flushing changes: %w", err)
 	}
 
-	log.Println(internal.DebugPrefix, "stopping worker")
 	if err := s.response(worker.Stop()); err != nil {
 		return fmt.Errorf("stopping moose worker: %w", err)
 	}
@@ -444,7 +481,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		serverListOriginToInternalType(data.ServerFromAPI),
 		data.TargetServerGroup,
 		data.TargetServerDomain,
-		data.TargetServerIP,
+		data.TargetServerIP.String(),
 		data.TargetServerCountryCode,
 		data.TargetServerCity,
 		connectionProtocolToInternalType(data.Protocol),
@@ -579,8 +616,80 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 	))
 }
 
+// NotifyDebuggerEvent processes a MooseDebuggerEvent to emit a moose debugger log.
+// It allows providing a custom JSON payload and context paths for the event.
+// For custom context paths, corresponding values must be of any of the following types: bool, float32, int32, int64, string.
+// Unsupported types are discarded.
+//
+// Parameters:
+//   - e: The MooseDebuggerEvent containing JSON data and context paths to process
+func (s *Subscriber) NotifyDebuggerEvent(e events.MooseDebuggerEvent) error {
+	combinedPaths := append([]string{}, e.GeneralContextPaths...)
+	key := moose.MooseNordvpnappGetDeveloperContextKey()
+	for _, ctx := range e.KeyBasedContextPaths {
+		path := fmt.Sprintf("%s.%s", key, ctx.Path)
+		switch v := ctx.Value.(type) {
+		case bool:
+			moose.MooseNordvpnappSetDeveloperEventContextBool(ctx.Path, v)
+			combinedPaths = append(combinedPaths, path)
+		case float32:
+			moose.MooseNordvpnappSetDeveloperEventContextFloat(ctx.Path, v)
+			combinedPaths = append(combinedPaths, path)
+		//deliberately omitted uint64
+		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32:
+			val := reflect.ValueOf(v).Int()
+			if val > math.MaxInt32 {
+				moose.MooseNordvpnappSetDeveloperEventContextLong(ctx.Path, int64(val))
+			} else {
+				moose.MooseNordvpnappSetDeveloperEventContextInt(ctx.Path, int32(val))
+			}
+			combinedPaths = append(combinedPaths, path)
+		case string:
+			moose.MooseNordvpnappSetDeveloperEventContextString(ctx.Path, v)
+			combinedPaths = append(combinedPaths, path)
+		default:
+			log.Printf("%s Discarding unsupported type (%T) on path: %s\n", internal.WarningPrefix, ctx.Value, path)
+		}
+	}
+	return s.response(moose.NordvpnappSendDebuggerLoggingLog(e.JsonData, combinedPaths, nil))
+}
+
+func (s *Subscriber) OnTelemetry(metric telemetry.Metric, value any) error {
+	switch metric {
+	case telemetry.MetricDesktopEnvironment:
+		if value.(string) == "" {
+			if err := s.response(moose.NordvpnappUnsetContextDeviceDesktopEnvironment()); err != nil {
+				return fmt.Errorf("unsetting desktop-environment: %w", err)
+			}
+		} else {
+			if err := s.response(moose.NordvpnappSetContextDeviceDesktopEnvironment(value.(string))); err != nil {
+				return fmt.Errorf("setting desktop-environment: %w", err)
+			}
+		}
+
+	case telemetry.MetricDisplayProtocol:
+		// TODO: missing moose metric support (e.g. NordvpnappSetContextDeviceDisplayProtocol)
+		switch value.(telemetrypb.DisplayProtocol) {
+		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_UNSPECIFIED:
+			// unset display protocol
+		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_WAYLAND:
+			// set 'wayland' metric
+		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_X11:
+			// set 'x11' metric
+		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_UNKNOWN:
+		default:
+			// set 'unknown' metric (e.g. NordvpnappUnsetContextDeviceDisplayProtocol)
+		}
+
+	default:
+		return fmt.Errorf("unsupported metric received (id=%d)", metric)
+	}
+
+	return nil
+}
+
 func (s *Subscriber) fetchSubscriptions() error {
-	if !s.enabled {
+	if s.consent == config.ConsentUndefined {
 		return nil
 	}
 	var cfg config.Config
@@ -933,4 +1042,19 @@ func threatProtectionLiteToInternalType(enabled bool) moose.NordvpnappOptBool {
 
 	return moose.NordvpnappOptBoolFalse
 
+}
+
+func deviceTypeToInternalType(deviceType sysinfo.SystemDeviceType) moose.NordvpnappDeviceType {
+	var dt moose.NordvpnappDeviceType
+
+	switch deviceType {
+	case sysinfo.SystemDeviceTypeDesktop:
+		dt = moose.NordvpnappDeviceTypeDesktop
+	case sysinfo.SystemDeviceTypeServer:
+		dt = moose.NordvpnappDeviceTypeServer
+	default:
+		dt = moose.NordvpnappDeviceTypeUndefined
+	}
+
+	return dt
 }

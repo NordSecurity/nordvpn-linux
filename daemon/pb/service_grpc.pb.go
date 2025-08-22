@@ -63,6 +63,7 @@ const (
 	Daemon_GetServers_FullMethodName              = "/pb.Daemon/GetServers"
 	Daemon_SetPostQuantum_FullMethodName          = "/pb.Daemon/SetPostQuantum"
 	Daemon_GetDaemonApiVersion_FullMethodName     = "/pb.Daemon/GetDaemonApiVersion"
+	Daemon_GetFeatureToggles_FullMethodName       = "/pb.Daemon/GetFeatureToggles"
 )
 
 // DaemonClient is the client API for Daemon service.
@@ -77,10 +78,10 @@ type DaemonClient interface {
 	Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
 	Disconnect(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Payload], error)
 	Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
-	IsLoggedIn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Bool, error)
+	IsLoggedIn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*IsLoggedInResponse, error)
 	LoginWithToken(ctx context.Context, in *LoginWithTokenRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	LoginOAuth2(ctx context.Context, in *LoginOAuth2Request, opts ...grpc.CallOption) (*LoginOAuth2Response, error)
-	LoginOAuth2Callback(ctx context.Context, in *LoginOAuth2CallbackRequest, opts ...grpc.CallOption) (*Empty, error)
+	LoginOAuth2Callback(ctx context.Context, in *LoginOAuth2CallbackRequest, opts ...grpc.CallOption) (*LoginOAuth2CallbackResponse, error)
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*Payload, error)
 	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error)
 	RateConnection(ctx context.Context, in *RateRequest, opts ...grpc.CallOption) (*Payload, error)
@@ -113,6 +114,7 @@ type DaemonClient interface {
 	GetServers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServersResponse, error)
 	SetPostQuantum(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	GetDaemonApiVersion(ctx context.Context, in *GetDaemonApiVersionRequest, opts ...grpc.CallOption) (*GetDaemonApiVersionResponse, error)
+	GetFeatureToggles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*FeatureToggles, error)
 }
 
 type daemonClient struct {
@@ -221,9 +223,9 @@ func (c *daemonClient) Groups(ctx context.Context, in *Empty, opts ...grpc.CallO
 	return out, nil
 }
 
-func (c *daemonClient) IsLoggedIn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Bool, error) {
+func (c *daemonClient) IsLoggedIn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*IsLoggedInResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Bool)
+	out := new(IsLoggedInResponse)
 	err := c.cc.Invoke(ctx, Daemon_IsLoggedIn_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -251,9 +253,9 @@ func (c *daemonClient) LoginOAuth2(ctx context.Context, in *LoginOAuth2Request, 
 	return out, nil
 }
 
-func (c *daemonClient) LoginOAuth2Callback(ctx context.Context, in *LoginOAuth2CallbackRequest, opts ...grpc.CallOption) (*Empty, error) {
+func (c *daemonClient) LoginOAuth2Callback(ctx context.Context, in *LoginOAuth2CallbackRequest, opts ...grpc.CallOption) (*LoginOAuth2CallbackResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Empty)
+	out := new(LoginOAuth2CallbackResponse)
 	err := c.cc.Invoke(ctx, Daemon_LoginOAuth2Callback_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -590,6 +592,16 @@ func (c *daemonClient) GetDaemonApiVersion(ctx context.Context, in *GetDaemonApi
 	return out, nil
 }
 
+func (c *daemonClient) GetFeatureToggles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*FeatureToggles, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FeatureToggles)
+	err := c.cc.Invoke(ctx, Daemon_GetFeatureToggles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DaemonServer is the server API for Daemon service.
 // All implementations must embed UnimplementedDaemonServer
 // for forward compatibility.
@@ -602,10 +614,10 @@ type DaemonServer interface {
 	Countries(context.Context, *Empty) (*ServerGroupsList, error)
 	Disconnect(*Empty, grpc.ServerStreamingServer[Payload]) error
 	Groups(context.Context, *Empty) (*ServerGroupsList, error)
-	IsLoggedIn(context.Context, *Empty) (*Bool, error)
+	IsLoggedIn(context.Context, *Empty) (*IsLoggedInResponse, error)
 	LoginWithToken(context.Context, *LoginWithTokenRequest) (*LoginResponse, error)
 	LoginOAuth2(context.Context, *LoginOAuth2Request) (*LoginOAuth2Response, error)
-	LoginOAuth2Callback(context.Context, *LoginOAuth2CallbackRequest) (*Empty, error)
+	LoginOAuth2Callback(context.Context, *LoginOAuth2CallbackRequest) (*LoginOAuth2CallbackResponse, error)
 	Logout(context.Context, *LogoutRequest) (*Payload, error)
 	Ping(context.Context, *Empty) (*PingResponse, error)
 	RateConnection(context.Context, *RateRequest) (*Payload, error)
@@ -638,6 +650,7 @@ type DaemonServer interface {
 	GetServers(context.Context, *Empty) (*ServersResponse, error)
 	SetPostQuantum(context.Context, *SetGenericRequest) (*Payload, error)
 	GetDaemonApiVersion(context.Context, *GetDaemonApiVersionRequest) (*GetDaemonApiVersionResponse, error)
+	GetFeatureToggles(context.Context, *Empty) (*FeatureToggles, error)
 	mustEmbedUnimplementedDaemonServer()
 }
 
@@ -672,7 +685,7 @@ func (UnimplementedDaemonServer) Disconnect(*Empty, grpc.ServerStreamingServer[P
 func (UnimplementedDaemonServer) Groups(context.Context, *Empty) (*ServerGroupsList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Groups not implemented")
 }
-func (UnimplementedDaemonServer) IsLoggedIn(context.Context, *Empty) (*Bool, error) {
+func (UnimplementedDaemonServer) IsLoggedIn(context.Context, *Empty) (*IsLoggedInResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsLoggedIn not implemented")
 }
 func (UnimplementedDaemonServer) LoginWithToken(context.Context, *LoginWithTokenRequest) (*LoginResponse, error) {
@@ -681,7 +694,7 @@ func (UnimplementedDaemonServer) LoginWithToken(context.Context, *LoginWithToken
 func (UnimplementedDaemonServer) LoginOAuth2(context.Context, *LoginOAuth2Request) (*LoginOAuth2Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginOAuth2 not implemented")
 }
-func (UnimplementedDaemonServer) LoginOAuth2Callback(context.Context, *LoginOAuth2CallbackRequest) (*Empty, error) {
+func (UnimplementedDaemonServer) LoginOAuth2Callback(context.Context, *LoginOAuth2CallbackRequest) (*LoginOAuth2CallbackResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginOAuth2Callback not implemented")
 }
 func (UnimplementedDaemonServer) Logout(context.Context, *LogoutRequest) (*Payload, error) {
@@ -779,6 +792,9 @@ func (UnimplementedDaemonServer) SetPostQuantum(context.Context, *SetGenericRequ
 }
 func (UnimplementedDaemonServer) GetDaemonApiVersion(context.Context, *GetDaemonApiVersionRequest) (*GetDaemonApiVersionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDaemonApiVersion not implemented")
+}
+func (UnimplementedDaemonServer) GetFeatureToggles(context.Context, *Empty) (*FeatureToggles, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFeatureToggles not implemented")
 }
 func (UnimplementedDaemonServer) mustEmbedUnimplementedDaemonServer() {}
 func (UnimplementedDaemonServer) testEmbeddedByValue()                {}
@@ -1572,6 +1588,24 @@ func _Daemon_GetDaemonApiVersion_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Daemon_GetFeatureToggles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).GetFeatureToggles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_GetFeatureToggles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).GetFeatureToggles(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Daemon_ServiceDesc is the grpc.ServiceDesc for Daemon service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1742,6 +1776,10 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetDaemonApiVersion",
 			Handler:    _Daemon_GetDaemonApiVersion_Handler,
+		},
+		{
+			MethodName: "GetFeatureToggles",
+			Handler:    _Daemon_GetFeatureToggles_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

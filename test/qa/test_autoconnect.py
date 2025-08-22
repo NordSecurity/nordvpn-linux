@@ -4,23 +4,11 @@ import pytest
 import sh
 
 import lib
-from lib import daemon, info, logging, login, network, server, settings
+from lib import daemon, network, server, settings
 from lib.shell import sh_no_tty
 
 
-def setup_function(function):  # noqa: ARG001
-    daemon.start()
-    login.login_as("default")
-    logging.log()
-
-
-def teardown_function(function):  # noqa: ARG001
-    logging.log(data=info.collect())
-    logging.log()
-
-    sh.nordvpn.logout("--persist-token")
-    sh.nordvpn.set.defaults()
-    daemon.stop()
+pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
 
 
 def autoconnect_base_test(group):
@@ -133,11 +121,14 @@ def test_autoconnect_virtual_country(tech, proto, obfuscated):
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
 def test_autoconnect_virtual_country_disabled(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
-    sh.nordvpn.set("virtual-location", "on")
 
-    virtual_countries = lib.get_virtual_countries()
-    assert len(virtual_countries) > 0
-    country = random.choice(virtual_countries)
+    # fix in LVPN-8449
+    # sh.nordvpn.set("virtual-location", "on")
+    # virtual_countries = lib.get_virtual_countries()
+    # assert len(virtual_countries) > 0
+    # country = random.choice(virtual_countries)
+    # until then chose a country that has only virtual server locations
+    country = "AF"
 
     sh.nordvpn.set("virtual-location", "off")
 
@@ -167,7 +158,7 @@ def test_prevent_autoconnect_enable_to_non_obfuscated_servers_when_obfuscation_i
     unavailable_groups = daemon.get_unavailable_groups()
 
     for group in unavailable_groups:
-        server_name = server.get_hostname_by(group_id=group).hostname.split(".")[0]
+        server_name = server.get_hostname_by(group_name=group).hostname.split(".")[0]
 
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh.nordvpn.set.autoconnect.on(server_name)
@@ -203,7 +194,7 @@ def test_prevent_autoconnect_enable_to_obfuscated_servers_when_obfuscation_is_of
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        server_name = server.get_hostname_by(group_id="Obfuscated_Servers").hostname.split(".")[0]
+        server_name = server.get_hostname_by(group_name="Obfuscated_Servers").hostname.split(".")[0]
         sh.nordvpn.set.autoconnect.on(server_name)
     print(ex.value)
     error_message = "Turn on obfuscation to connect to obfuscated servers."
@@ -222,7 +213,7 @@ def test_prevent_obfuscate_enable_with_autoconnect_set_to_nonobfuscated(tech, pr
 
     for group in available_groups:
         if group == "Dedicated_IP":
-            server_name = server.get_dedicated_ip()
+            server_name = server.get_dedicated_ip().hostname.split(".")[0]
         else:
             server_name = server.get_hostname_by(tech, proto, obfuscated, group).hostname.split(".")[0]
 

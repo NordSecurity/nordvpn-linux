@@ -26,6 +26,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
+	testevents "github.com/NordSecurity/nordvpn-linux/test/mock/events"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 
@@ -76,10 +77,14 @@ func testRPC() *RPC {
 	)
 	dm := testNewDataManager()
 	dm.SetServersData(time.Now(), serversList(), "")
+
+	cm := newMockConfigManager()
+	analytics := testevents.NewAnalytics(config.ConsentUndefined)
+
 	return NewRPC(
 		internal.Development,
 		&workingLoginChecker{},
-		newMockConfigManager(),
+		cm,
 		dm,
 		api,
 		&mockServersAPI{},
@@ -102,8 +107,8 @@ func testRPC() *RPC {
 		nil,
 		sharedctx.New(),
 		mock.NewRemoteConfigMock(),
-		vpn.NewInternalVPNEvents(),
 		state.NewConnectionInfo(),
+		NewConsentChecker(false, cm, api, &workingLoginChecker{}, &analytics),
 	)
 }
 
@@ -278,6 +283,7 @@ func testNewCDNAPI() *core.CDNAPI {
 // ready for use in tests RepoAPI
 func testNewRepoAPI() *RepoAPI {
 	return NewRepoAPI(
+		"TestNordApp Linux/4.5.6 (Ubuntu 24.04.2 LTS)",
 		localServerPath(GeneralInfo),
 		"",
 		"",

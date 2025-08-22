@@ -162,7 +162,6 @@ def test_set_defaults_when_connected_2nd_set(tech, proto, obfuscated):
 
     sh_no_tty.nordvpn.set.firewall("off")
     sh_no_tty.nordvpn.set.tpl("on")
-    sh_no_tty.nordvpn.set.ipv6("on")
 
     sh_no_tty.nordvpn.connect()
     assert "Status: Connected" in sh_no_tty.nordvpn.status()
@@ -170,14 +169,13 @@ def test_set_defaults_when_connected_2nd_set(tech, proto, obfuscated):
     assert not settings.is_firewall_enabled()
     assert settings.is_meshnet_enabled()
     assert settings.is_tpl_enabled()
-    assert settings.is_ipv6_enabled()
 
     if obfuscated == "on":
         assert settings.is_obfuscated_enabled()
     else:
         assert not settings.is_obfuscated_enabled()
 
-    assert "Settings were successfully restored to defaults." in sh_no_tty.nordvpn.set.defaults()
+    assert "Settings were successfully restored to defaults." in sh_no_tty.nordvpn.set.defaults("--logout")
 
     assert "Status: Disconnected" in sh_no_tty.nordvpn.status()
 

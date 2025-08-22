@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
@@ -1872,16 +1874,20 @@ func (s *Server) connect(
 	} else {
 		nameservers = s.nameservers.Get(
 			cfg.AutoConnectData.ThreatProtectionLite,
-			false,
 		)
 	}
 
 	// Measure the time it takes to obtain tokens as the connection attempt event duration
 	connectingStartTime := time.Now()
 	event := events.DataConnect{
-		IsMeshnetPeer: true,
-		DurationMs:    -1,
-		EventStatus:   events.StatusAttempt,
+		Technology:         cfg.Technology,
+		Protocol:           cfg.AutoConnectData.Protocol,
+		IsMeshnetPeer:      true,
+		TargetServerIP:     peer.Address,
+		TargetServerDomain: peer.Hostname,
+		TargetServerName:   peer.Nickname,
+		DurationMs:         -1,
+		EventStatus:        events.StatusAttempt,
 	}
 
 	// Send the connection attempt event
@@ -1899,7 +1905,6 @@ func (s *Server) connect(
 		vpn.ServerData{
 			IP:                peer.Address,
 			Hostname:          peer.Hostname,
-			Name:              peer.Nickname,
 			Protocol:          config.Protocol_UDP,
 			NordLynxPublicKey: peer.PublicKey,
 		},
@@ -1992,6 +1997,15 @@ func (s *Server) getPeerWithIdentifier(id string, peers mesh.MachinePeers) *mesh
 	}
 
 	return &peers[index]
+}
+
+func (s *Server) RemoteConfigUpdate(config remote.RemoteConfigEvent) error {
+	if !config.MeshnetFeatureEnabled {
+		if _, err := s.DisableMeshnet(context.Background(), &pb.Empty{}); err != nil {
+			log.Println(internal.WarningPrefix, "Failed to disable meshnet after remote config update:", err)
+		}
+	}
+	return nil
 }
 
 func MakePeerMaps(peers *pb.PeerList) (map[string]*pb.Peer, map[string]*pb.Peer) {

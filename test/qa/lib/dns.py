@@ -5,11 +5,9 @@ import sh
 
 # Used for test parametrization.
 DNS_NORD = ["103.86.96.100", "103.86.99.100"]
-DNS_NORD_IPV6 = ["2400:bb40:4444::100", "2400:bb40:8888::100"]
 
 # Used for test parametrization.
 DNS_TPL = ["103.86.96.96", "103.86.99.99"]
-DNS_TPL_IPV6 = ["2400:bb40:4444::103", "2400:bb40:8888::103"]
 
 # Used for test parametrization, when the same test has to be run with different Threat Protection Lite alias.
 TPL_ALIAS = [
@@ -27,9 +25,7 @@ DNS_CASES_CUSTOM = [DNS_CASE_CUSTOM_SINGLE, DNS_CASE_CUSTOM_DOUBLE, DNS_CASE_CUS
 
 ALL_TEST_DNS_ADDRESSES = \
     DNS_NORD + \
-    DNS_NORD_IPV6 + \
     DNS_TPL + \
-    DNS_TPL_IPV6 + \
     DNS_CASE_CUSTOM_SINGLE.split(" ") + \
     DNS_CASE_CUSTOM_DOUBLE.split(" ") + \
     DNS_CASE_CUSTOM_TRIPLE.split(" ")

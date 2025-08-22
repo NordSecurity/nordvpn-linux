@@ -22,6 +22,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
@@ -34,6 +35,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/notables"
 	"github.com/NordSecurity/nordvpn-linux/daemon/netstate"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	telemetrypb "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/ifgroup"
@@ -42,10 +44,10 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/norouter"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/norule"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
+	"github.com/NordSecurity/nordvpn-linux/daemon/telemetry"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/openvpn"
-	"github.com/NordSecurity/nordvpn-linux/distro"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/firstopen"
 	"github.com/NordSecurity/nordvpn-linux/events/logger"
@@ -69,6 +71,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
+	"github.com/NordSecurity/nordvpn-linux/sysinfo"
+	"github.com/google/uuid"
 
 	"google.golang.org/grpc"
 )
@@ -83,6 +87,7 @@ var (
 	Port        = 6960
 	ConnType    = "unix"
 	ConnURL     = internal.DaemonSocket
+	RemotePath  = ""
 )
 
 // Environment constants
@@ -112,6 +117,16 @@ const (
 	sockTCP socketType = "tcp"
 )
 
+func initializeStaticConfig(machineID uuid.UUID) config.StaticConfigManager {
+	staticCfgManager := config.NewFilesystemStaticConfigManager()
+	if err := staticCfgManager.SetRolloutGroup(remote.GenerateRolloutGroup(machineID)); err != nil {
+		if !errors.Is(err, config.ErrStaticValueAlreadySet) {
+			log.Println(internal.ErrorPrefix, "failed to configure rollout group:", err)
+		}
+	}
+	return staticCfgManager
+}
+
 func main() {
 	// pprof
 	if internal.IsDevEnv(Environment) {
@@ -140,15 +155,19 @@ func main() {
 		config.StdFilesystemHandle{},
 		configEvents.Config,
 	)
+
+	// Remove any remains of IPv6 settings
+	if err := fsystem.SaveWith(removeIPv6Remains); err != nil {
+		log.Println(internal.ErrorPrefix, "failed to remove IPv6 entries from settings ", err)
+	}
+
 	var cfg config.Config
 	if err := fsystem.Load(&cfg); err != nil {
 		log.Println(err)
-		if err := fsystem.Reset(false); err != nil {
+		if err := fsystem.Reset(false, false); err != nil {
 			log.Fatalln(err)
 		}
 	}
-
-	rcConfig := getRemoteConfigGetter(Version)
 
 	// Events
 
@@ -186,7 +205,7 @@ func main() {
 		stateModule,
 		stateFlag,
 		chainPrefix,
-		iptables.FilterSupportedIPTables(internal.GetSupportedIPTables()),
+		iptables.FilterSupportedIPTables([]string{"iptables", "ip6tables"}),
 	)
 	fw := firewall.NewFirewall(
 		&notables.Facade{},
@@ -207,7 +226,11 @@ func main() {
 		}
 	}
 
-	userAgent := fmt.Sprintf("NordApp Linux %s %s", Version, distro.KernelName())
+	userAgent, err := request.GetUserAgentValue(Version, sysinfo.GetHostOSPrettyName)
+	if err != nil {
+		userAgent = fmt.Sprintf("%s/%s (unknown)", request.AppName, Version)
+		log.Printf("Error while constructing UA value: %s. Falls back to default: %s\n", err, userAgent)
+	}
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 
@@ -231,7 +254,7 @@ func main() {
 	var threatProtectionLiteServers *dns.NameServers
 	nameservers, err := cdnAPI.ThreatProtectionLite()
 	if err != nil {
-		log.Printf("error retrieving nameservers: %s", err)
+		log.Println(internal.ErrorPrefix, "error retrieving nameservers:", err)
 		threatProtectionLiteServers = dns.NewNameServers(nil)
 	} else {
 		threatProtectionLiteServers = dns.NewNameServers(nameservers.Servers)
@@ -268,6 +291,7 @@ func main() {
 	meshRegistry := registry.NewNotifyingRegistry(defaultAPI, meshnetEvents.PeerUpdate)
 
 	repoAPI := daemon.NewRepoAPI(
+		userAgent,
 		daemon.RepoURL,
 		Version,
 		internal.Environment(Environment),
@@ -279,40 +303,34 @@ func main() {
 	dnsSetter := dns.NewSetter(infoSubject)
 	dnsHostSetter := dns.NewHostsFileSetter(dns.HostsFilePath)
 
-	eventsDbPath := filepath.Join(internal.DatFilesPath, "moose.db")
-	// TODO: remove once this is fixed: https://github.com/ziglang/zig/issues/11878
-	// P.S. this issue does not happen with Zig 0.10.0, but it requires Go 1.19+
-	if !internal.FileExists(eventsDbPath) {
-		_, err := internal.FileCreate(eventsDbPath, internal.PermUserRWGroupRWOthersR)
-		if err != nil {
-			log.Fatalln(err)
-		}
-	} else {
-		// Previously we created this file only with R permission for group, but fileshare daemon
-		// which runs with user permissions also needs to write to it. Need to always rewrite permission
-		// because of users updating from older version.
-		err = os.Chmod(eventsDbPath, internal.PermUserRWGroupRWOthersR)
-		if err != nil {
-			log.Println(err)
-		}
-
-		gid, err := internal.GetNordvpnGid()
-		if err != nil {
-			log.Println(err)
-		}
-
-		err = os.Chown(eventsDbPath, os.Getuid(), gid)
-		if err != nil {
-			log.Println(err)
-		}
+	eventsDbPath := filepath.Join(internal.DatFilesPathCommon, "moose.db")
+	if err := assignMooseDBPermissions(eventsDbPath); err != nil {
+		log.Fatalln(err)
 	}
 
 	machineID := machineIdGenerator.GetMachineID()
+	staticCfg := initializeStaticConfig(machineID)
 
 	// obfuscated machineID and add the mask to identify how the ID was generated
 	deviceID := fmt.Sprintf("%x_%d", sha256.Sum256([]byte(machineID.String()+Salt)), machineIdGenerator.GetUsedInformationMask())
 
-	analytics := newAnalytics(eventsDbPath, fsystem, defaultAPI, *httpClientSimple, Version, Environment, deviceID)
+	// populate build target configuration
+	buildTarget := config.BuildTarget{
+		Version:      Version,
+		Environment:  Environment,
+		Architecture: Arch}
+	if archVariant, err := machineIdGenerator.GetArchitectureVariantName(sysinfo.GetHostArchitecture()); err == nil {
+		buildTarget.Architecture = archVariant
+	}
+
+	analytics := newAnalytics(
+		eventsDbPath,
+		fsystem,
+		defaultAPI,
+		*httpClientSimple,
+		buildTarget,
+		deviceID)
+
 	heartBeatSubject.Subscribe(analytics.NotifyHeartBeat)
 	httpCallsSubject.Subscribe(analytics.NotifyRequestAPI)
 	daemonEvents.Subscribe(analytics)
@@ -325,6 +343,13 @@ func main() {
 
 	daemonEvents.Service.Connect.Subscribe(loggerSubscriber.NotifyConnect)
 	daemonEvents.Settings.Publish(cfg)
+
+	rolloutGroup, err := staticCfg.GetRolloutGroup()
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "getting rollout group:", err)
+		// in case of error, rollout group is `0`
+	}
+	rcConfig := getRemoteConfigGetter(buildTarget, RemotePath, cdnAPI, rolloutGroup)
 
 	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem, rcConfig)
 
@@ -379,6 +404,8 @@ func main() {
 	statePublisher := state.NewState()
 	internalVpnEvents.Subscribe(connectionInfo)
 	connectionInfo.Subscribe(statePublisher)
+	daemonEvents.Service.Connect.Subscribe(connectionInfo.ConnectionStatusNotifyConnect)
+	daemonEvents.Service.Disconnect.Subscribe(connectionInfo.ConnectionStatusNotifyDisconnect)
 	daemonEvents.User.Subscribe(statePublisher)
 	configEvents.Subscribe(statePublisher)
 
@@ -389,7 +416,6 @@ func main() {
 		infoSubject,
 		allowlistRouter,
 		dnsSetter,
-		ipv6.NewIpv6(),
 		fw,
 		allowlist.NewAllowlistRouting(func(command string, arg ...string) ([]byte, error) {
 			arg = append(arg, "-w", internal.SecondsToWaitForIptablesLock)
@@ -419,6 +445,7 @@ func main() {
 			)),
 		cfg.FirewallMark,
 		cfg.LanDiscovery,
+		ipv6.NewIpv6(),
 	)
 
 	keygen, err := keygenImplementation(vpnFactory)
@@ -481,6 +508,15 @@ func main() {
 		dataUpdateEvents,
 	)
 
+	consentChecker := newConsentChecker(
+		internal.IsDevEnv(Environment),
+		fsystem,
+		defaultAPI,
+		authChecker,
+		analytics,
+	)
+	consentChecker.PrepareDaemonIfConsentNotCompleted()
+
 	sharedContext := sharedctx.New()
 	rpc := daemon.NewRPC(
 		internal.Environment(Environment),
@@ -506,8 +542,8 @@ func main() {
 		statePublisher,
 		sharedContext,
 		rcConfig,
-		internalVpnEvents,
 		connectionInfo,
+		consentChecker,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,
@@ -523,6 +559,7 @@ func main() {
 		norduserClient,
 		sharedContext,
 	)
+	rcConfig.Subscribe(meshService)
 
 	opts := []grpc.ServerOption{
 		grpc.Creds(internal.NewUnixSocketCredentials(internal.NewDaemonAuthenticator())),
@@ -559,8 +596,12 @@ func main() {
 
 	pb.RegisterDaemonServer(s, rpc)
 	meshpb.RegisterMeshnetServer(s, meshService)
-	// Start jobs
 
+	// initialize and register telemetry service with grpc server
+	telemetryService := telemetry.New(analytics.OnTelemetry)
+	telemetrypb.RegisterTelemetryServiceServer(s, telemetryService)
+
+	// Start jobs
 	go func() {
 		var (
 			listener net.Listener
@@ -608,6 +649,7 @@ func main() {
 		}
 	}()
 	rpc.StartJobs(statePublisher, heartBeatSubject)
+	rpc.StartRemoteConfigLoaderJob(rcConfig)
 	meshService.StartJobs()
 	rpc.StartKillSwitch()
 	if internal.IsSystemd() {
@@ -655,4 +697,61 @@ func main() {
 	if err := analytics.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping analytics:", err)
 	}
+}
+
+// assignMooseDBPermissions updates moose DB permissions.
+// If the file doesn't exist it will be created withe the desired permissions.
+func assignMooseDBPermissions(eventsDbPath string) error {
+	const permissions os.FileMode = internal.PermUserRWGroupRW
+
+	if !internal.FileExists(eventsDbPath) {
+		_, err := internal.FileCreate(eventsDbPath, permissions)
+		return err
+	}
+	// Change permission of the existing DB, because older versions had read for everyone
+	if err := os.Chmod(eventsDbPath, permissions); err != nil {
+		log.Println(err)
+	}
+
+	if gid, err := internal.GetNordvpnGid(); err == nil {
+		if err := os.Chown(eventsDbPath, os.Getuid(), gid); err != nil {
+			log.Println(err)
+		}
+	} else {
+		log.Println(err)
+	}
+	return nil
+}
+
+func removeIPv6Remains(c config.Config) config.Config {
+	// Remove all nameservers with IPv6 addresses
+	var dnsList []string
+	for _, addr := range c.AutoConnectData.DNS {
+		ip := net.ParseIP(addr)
+		if ip == nil {
+			continue
+		}
+		if ip.To4() != nil {
+			dnsList = append(dnsList, addr)
+		}
+	}
+
+	c.AutoConnectData.DNS = dnsList
+
+	// Remove all IPv6 subnets from AllowList
+	var allowList []string
+	for _, addr := range c.AutoConnectData.Allowlist.Subnets {
+		_, subnet, err := net.ParseCIDR(addr)
+		if err != nil {
+			continue
+		}
+
+		if subnet.IP.To4() != nil {
+			allowList = append(allowList, addr)
+		}
+	}
+
+	c.AutoConnectData.Allowlist.Subnets = allowList
+
+	return c
 }

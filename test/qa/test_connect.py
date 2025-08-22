@@ -6,26 +6,15 @@ import pytest
 import sh
 
 import lib
-from lib import daemon, info, logging, login, network, server
+from lib import daemon, info, logging, network, server
+
+pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
+
 
 CONNECT_ALIAS = [
     "connect",
     "c"
 ]
-
-def setup_function(function):  # noqa: ARG001
-    daemon.start()
-    login.login_as("default")
-    logging.log()
-
-
-def teardown_function(function):  # noqa: ARG001
-    logging.log(data=info.collect())
-    logging.log()
-
-    sh.nordvpn.logout("--persist-token")
-    sh.nordvpn.set.defaults()
-    daemon.stop()
 
 
 def get_alias() -> str:
@@ -122,7 +111,7 @@ def test_connect_to_group_random_server_by_name_standard(tech, proto, obfuscated
 def test_connect_to_group_random_server_by_name_obfuscated(tech, proto, obfuscated, group):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    server_info = server.get_hostname_by(group_id=group)
+    server_info = server.get_hostname_by(group_name=group)
     connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
     disconnect_base_test()
 
@@ -377,7 +366,7 @@ def test_connect_to_unavailable_servers(tech, proto, obfuscated):
     unavailable_groups = daemon.get_unavailable_groups()
 
     for group in unavailable_groups:
-        server_info = server.get_hostname_by(group_id=group)
+        server_info = server.get_hostname_by(group_name=group)
         name = server_info.hostname.split(".")[0]
 
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -509,22 +498,14 @@ def test_check_routing_table_for_lan():
     disconnect_base_test()
 
 
-@pytest.mark.parametrize("group", lib.DEDICATED_IP_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
-def test_connect_to_dedicated_ip(tech, proto, obfuscated, group):
+def test_connect_to_dedicated_ip(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    server_info = server.get_hostname_by(group_id=group)
+    server_info = server.get_dedicated_ip()
 
-    if server.get_dedicated_ip() in server_info.hostname:
-        connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
-        disconnect_base_test()
-    else:
-        with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
-
-        print(ex.value)
-        assert "This server isn't currently included in your dedicated IP subscription." in str(ex.value)
+    connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
+    disconnect_base_test()
 
     assert network.is_disconnected()
     assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a()

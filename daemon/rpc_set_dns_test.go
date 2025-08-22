@@ -16,15 +16,12 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	configMock "github.com/NordSecurity/nordvpn-linux/test/mock/config"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 )
 
 var dnsMock config.DNS = config.DNS{"0.0.0.0", "8.8.8.8", "1.1.1.1"}
 var currentDNSMock config.DNS = config.DNS{"131.244.140.126", "194.182.108.28", "124.83.117.225"}
-var dnsV6Mock config.DNS = config.DNS{
-	"93c2:2773:ef6c:6a9b:9d92:1349:bd4e:c11d",
-	"9198:0c8e:0d72:6081:9c47:b378:916c:8d5c",
-	"4aac:965f:f4fc:ae1d:2213:92e6:c6aa:3fcf"}
 
 type mockPublisherSubscriberDNS struct {
 	eventPublished bool
@@ -45,7 +42,6 @@ func TestSetDNS_Success(t *testing.T) {
 		expectedDNS         config.DNS
 		expectedDNSInConfig config.DNS
 		tpl                 bool
-		ipv6                bool
 		expectedTPL         bool
 	}{
 		{
@@ -76,12 +72,6 @@ func TestSetDNS_Success(t *testing.T) {
 			expectedDNSInConfig: currentDNSMock,
 		},
 		{
-			name:                "set new DNS ipv6",
-			requestedDNS:        dnsV6Mock,
-			expectedDNS:         dnsV6Mock,
-			expectedDNSInConfig: dnsV6Mock,
-		},
-		{
 			name:                "remove custom dns ipv4",
 			requestedDNS:        nil,
 			currentDNS:          dnsMock,
@@ -98,24 +88,6 @@ func TestSetDNS_Success(t *testing.T) {
 			expectedTPL:         true,
 		},
 		{
-			name:                "remove custom dns ipv6",
-			requestedDNS:        nil,
-			currentDNS:          dnsMock,
-			expectedDNS:         append(mock.DefaultNameserversV4, mock.DefaultNameserversV6...),
-			expectedDNSInConfig: nil,
-			ipv6:                true,
-		},
-		{
-			name:                "remove custom dns ipv6 tpl",
-			requestedDNS:        nil,
-			currentDNS:          dnsMock,
-			expectedDNS:         append(mock.TplNameserversV4, mock.TplNameserversV6...),
-			expectedDNSInConfig: nil,
-			tpl:                 true,
-			ipv6:                true,
-			expectedTPL:         true,
-		},
-		{
 			name:                "overwrite tpl ipv4",
 			requestedDNS:        dnsMock,
 			expectedDNS:         dnsMock,
@@ -128,12 +100,9 @@ func TestSetDNS_Success(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ipv4Endpoint := netip.MustParseAddr("142.114.71.151")
-			ipv6Endpoint := []netip.Addr{
-				netip.MustParseAddr("cfa2:f822:e7fb:20a6:d4c0:b9fd:2901:95f0"),
-			}
 
 			uuid, _ := uuid.NewUUID()
-			filesystem := newFilesystemMock(t)
+			filesystem := configMock.NewFilesystemMock(t)
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",
 				&machineIDGetterMock{machineID: uuid},
@@ -145,7 +114,6 @@ func TestSetDNS_Success(t *testing.T) {
 					DNS:                  test.currentDNS,
 					ThreatProtectionLite: test.tpl,
 				}
-				c.IPv6 = test.ipv6
 
 				return c
 			})
@@ -154,12 +122,7 @@ func TestSetDNS_Success(t *testing.T) {
 			publisher := mockPublisherSubscriberDNS{}
 			dnsGetter := mock.DNSGetter{}
 
-			var endpoint network.Endpoint
-			if test.ipv6 {
-				endpoint = network.NewIPv6Endpoint(ipv6Endpoint)
-			} else {
-				endpoint = network.NewIPv4Endpoint(ipv4Endpoint)
-			}
+			endpoint := network.NewIPv4Endpoint(ipv4Endpoint)
 
 			rpc := RPC{
 				cm:          configManager,
@@ -242,7 +205,7 @@ func TestSetDNS_Errors(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			uuid, _ := uuid.NewUUID()
-			filesystem := newFilesystemMock(t)
+			filesystem := configMock.NewFilesystemMock(t)
 			filesystem.WriteErr = test.writeConfigErr
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",

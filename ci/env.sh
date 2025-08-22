@@ -28,6 +28,7 @@ else
   export REVISION
 
   # '+' character is chosen because '_' is not allowed in .deb packages and '-' is not allowed in .rpm packages
-  VERSION="$(git tag -l --sort=-v:refname | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$" | sed -n 1p)+${REVISION}"
+  # shellcheck disable=SC2012
+  VERSION="${VERSION:-$(ls contrib/changelog/prod | sed -E 's/_.*//; s/\.md$//' | sort -V | tail -n1)}+${REVISION}"
   export VERSION
 fi

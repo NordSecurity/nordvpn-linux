@@ -6,6 +6,7 @@ option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
 import "common.proto";
 import "config/technology.proto";
+import "config/analytics_consent.proto";
 import "config/protocol.proto";
 import "config/group.proto";
 
@@ -26,11 +27,10 @@ message Settings {
   bool firewall = 2;
   bool kill_switch = 3;
   AutoconnectData auto_connect_data = 4;
-  bool ipv6 = 5;
   bool meshnet = 6;
   bool routing = 7;
   uint32 fwmark = 8;
-  bool analytics = 9;
+  consent.ConsentMode analytics_consent = 9;
   repeated string dns = 10;
   bool threat_protection_lite = 11;
   config.Protocol protocol = 12;

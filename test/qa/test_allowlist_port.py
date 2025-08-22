@@ -4,29 +4,31 @@ import pytest
 import sh
 
 import lib
-from lib import allowlist, daemon, firewall, info, logging, login
+from lib import allowlist, firewall
 from lib.dynamic_parametrize import dynamic_parametrize
 
 
-def setup_module(module):  # noqa: ARG001
-    firewall.add_and_delete_random_route()
+pytestmark = pytest.mark.usefixtures("add_and_delete_random_route", "nordvpnd_scope_function")
 
 
-def setup_function(function):  # noqa: ARG001
-    daemon.start()
-    login.login_as("default")
+def test_allowlist_add_multiple_ports_cli_output():
+    """Test adding multiple ports to allowlist and verify CLI output reflects the changes."""
+    allowlist.add_ports_to_allowlist([lib.Port("3000", lib.Protocol.UDP)])
+    allowlist.add_ports_to_allowlist([lib.Port("5000", lib.Protocol.TCP)])
+    allowlist.add_ports_to_allowlist([lib.Port("6000", lib.Protocol.ALL)])
 
-    logging.log()
+    port_list = allowlist.get_allow_list_ports()
+    assert len(port_list) == 3
 
 
-def teardown_function(function):  # noqa: ARG001
-    logging.log(data=info.collect())
-    logging.log()
+def test_allowlist_add_multiple_port_ranges_cli_output():
+    """Test adding multiple port ranges to allowlist and verify CLI output reflects the changes."""
+    allowlist.add_ports_to_allowlist([lib.Port("3000:3010", lib.Protocol.UDP)])
+    allowlist.add_ports_to_allowlist([lib.Port("5000:5010", lib.Protocol.TCP)])
+    allowlist.add_ports_to_allowlist([lib.Port("6000:6010", lib.Protocol.ALL)])
 
-    sh.nordvpn.logout("--persist-token")
-    sh.nordvpn.set.defaults()
-    daemon.stop()
-
+    port_list = allowlist.get_allow_list_ports()
+    assert len(port_list) == 3
 
 @dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS + lib.PORTS_RANGE,
                      id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}", always_pair=lib.TECHNOLOGIES_BASIC1[0])

@@ -11,19 +11,21 @@ class LoginType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     LoginType_LOGIN: _ClassVar[LoginType]
     LoginType_SIGNUP: _ClassVar[LoginType]
 
-class LoginOAuth2Status(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+class LoginStatus(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
-    SUCCESS: _ClassVar[LoginOAuth2Status]
-    UNKNOWN_OAUTH2_ERROR: _ClassVar[LoginOAuth2Status]
-    ALREADY_LOGGED_IN: _ClassVar[LoginOAuth2Status]
-    NO_NET: _ClassVar[LoginOAuth2Status]
+    SUCCESS: _ClassVar[LoginStatus]
+    UNKNOWN_OAUTH2_ERROR: _ClassVar[LoginStatus]
+    ALREADY_LOGGED_IN: _ClassVar[LoginStatus]
+    NO_NET: _ClassVar[LoginStatus]
+    CONSENT_MISSING: _ClassVar[LoginStatus]
 LoginType_UNKNOWN: LoginType
 LoginType_LOGIN: LoginType
 LoginType_SIGNUP: LoginType
-SUCCESS: LoginOAuth2Status
-UNKNOWN_OAUTH2_ERROR: LoginOAuth2Status
-ALREADY_LOGGED_IN: LoginOAuth2Status
-NO_NET: LoginOAuth2Status
+SUCCESS: LoginStatus
+UNKNOWN_OAUTH2_ERROR: LoginStatus
+ALREADY_LOGGED_IN: LoginStatus
+NO_NET: LoginStatus
+CONSENT_MISSING: LoginStatus
 
 class LoginOAuth2Request(_message.Message):
     __slots__ = ("type",)
@@ -51,6 +53,20 @@ class LoginOAuth2Response(_message.Message):
     __slots__ = ("status", "url")
     STATUS_FIELD_NUMBER: _ClassVar[int]
     URL_FIELD_NUMBER: _ClassVar[int]
-    status: LoginOAuth2Status
+    status: LoginStatus
     url: str
-    def __init__(self, status: _Optional[_Union[LoginOAuth2Status, str]] = ..., url: _Optional[str] = ...) -> None: ...
+    def __init__(self, status: _Optional[_Union[LoginStatus, str]] = ..., url: _Optional[str] = ...) -> None: ...
+
+class LoginOAuth2CallbackResponse(_message.Message):
+    __slots__ = ("status",)
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    status: LoginStatus
+    def __init__(self, status: _Optional[_Union[LoginStatus, str]] = ...) -> None: ...
+
+class IsLoggedInResponse(_message.Message):
+    __slots__ = ("is_logged_in", "status")
+    IS_LOGGED_IN_FIELD_NUMBER: _ClassVar[int]
+    STATUS_FIELD_NUMBER: _ClassVar[int]
+    is_logged_in: bool
+    status: LoginStatus
+    def __init__(self, is_logged_in: bool = ..., status: _Optional[_Union[LoginStatus, str]] = ...) -> None: ...

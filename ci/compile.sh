@@ -15,18 +15,19 @@ else
 	TRIMPATH="-trimpath"
 fi
 
+# SALT is deprecated, therefore, example value can safely be used
 ldflags="-X 'main.Version=${VERSION}' \
 	-X 'main.Environment=${ENVIRONMENT}' \
 	-X 'main.Hash=${HASH}' \
 	-X 'main.Arch=${ARCH}' \
+	-X 'main.RemotePath=${REMOTE_PATH:-rc}' \
 	-X 'main.PackageType=${PACKAGE:-deb}' \
-	-X 'main.Salt=${SALT}'"
+	-X 'main.Salt=${SALT:-f1nd1ngn3m0}'"
 
 declare -A names_map=(
 	[cli]=nordvpn
 	[daemon]=nordvpnd
 	[downloader]=downloader
-	[pulp]=pulp
 	[fileshare]=nordfileshare
 	[norduser]=norduserd
 )
@@ -56,7 +57,7 @@ export CGO_LDFLAGS="${CGO_LDFLAGS:-""} -Wl,-z,relro,-z,now"
 [ "${ARCH}" == "armhf" ] && export GOARM=7
 
 # In order to enable additional features, provide `FEATURES` environment variable
-tags="${FEATURES:-"telio drop"}"
+tags="${FEATURES:-"none"}"
 
 source "${WORKDIR}"/ci/set_bindings_version.sh libtelio
 source "${WORKDIR}"/ci/set_bindings_version.sh libdrop
@@ -74,8 +75,8 @@ if [[ $tags == *"moose"* ]]; then
 		-X 'main.EventsDomain=${events_domain:-""}' \
 		-X 'main.EventsSubdomain=${EVENTS_SUBDOMAIN:-""}'"
 
-	source "${WORKDIR}"/ci/add_private_bindings.sh moose/events ./third-party/moose-events/moosenordvpnappgo/v15
-	source "${WORKDIR}"/ci/add_private_bindings.sh moose/worker ./third-party/moose-worker/mooseworkergo/v14
+	source "${WORKDIR}"/ci/add_private_bindings.sh moose/events ./third-party/moose-events/moosenordvpnappgo/v16
+	source "${WORKDIR}"/ci/add_private_bindings.sh moose/worker ./third-party/moose-worker/mooseworkergo/v16
 fi
 
 if [[ $tags == *"quench"* ]]; then

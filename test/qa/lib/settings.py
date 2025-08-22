@@ -2,25 +2,43 @@ import random
 
 import sh
 
+from . import UserConsentMode
+
 
 MSG_AUTOCONNECT_ENABLE_SUCCESS = "Auto-connect is set to 'enabled' successfully."
 MSG_AUTOCONNECT_DISABLE_SUCCESS = "Auto-connect is set to 'disabled' successfully."
 MSG_AUTOCONNECT_DISABLE_FAIL = "Auto-connect is already set to 'disabled'."
 
+MULTI_LINE_PARAM_SEP = "#"
+
 class Settings:
     def __init__(self):
-        output = sh.nordvpn("settings").strip(" \r-\n")
+        output = sh.nordvpn("settings")
 
-        self.settings={}
-        previous_key=""
+        self.settings = {}
+        prev_key = ""
         for line in output.split("\n"):
-            values = line.split(":")
-            if len(values) == 2:
-                previous_key = values[0].lower().strip()
-                self.settings[previous_key] = values[1].strip()
-            elif len(previous_key) > 0:
-                # for allow list the values are on a different line
-                self.settings[previous_key] += line.strip() + " "
+            if not line.strip():
+                continue  # skip empty lines
+
+            # this is a main setting line with a colon
+            if ":" in line:
+                pair = line.split(":", 1)
+                prev_key = pair[0].lower().strip()
+                value = pair[1].strip().lower()
+                self.settings[prev_key] = value
+
+            # this is a continuation line for a previous key (multi-line-value)
+            elif prev_key:
+                stripped_line = line.strip().lower()
+                # check if this is a continuation line for the current key
+                if prev_key in self.settings:
+                    prev_value = self.settings[prev_key]
+                    if not prev_value:
+                        new_value = stripped_line
+                    else:
+                        new_value = prev_value + MULTI_LINE_PARAM_SEP + stripped_line
+                    self.settings[prev_key] = new_value
 
     def get(self, key: str) -> str:
         key = key.lower()
@@ -109,14 +127,25 @@ def is_dns_disabled():
     return Settings().get("DNS") == "disabled"
 
 
-def are_analytics_enabled():
-    """Returns True, if Analytics are enabled in application settings."""
-    return Settings().get("Analytics") == "enabled"
+def is_user_consent_granted():
+    """
+    Returns True, if User Consent is enabled, False if it's disabled.
+
+    If the consent was not declared. It raises an exception.
+    """
+    user_consent = Settings().get("user consent")
+    if user_consent == UserConsentMode.ENABLED:
+        return True
+
+    if user_consent == UserConsentMode.DISABLED:
+        return False
+
+    raise Exception("user consent is undefined")
 
 
-def is_ipv6_enabled():
-    """Returns True, if IPv6 is enabled in application settings."""
-    return Settings().get("IPv6") == "enabled"
+def is_user_consent_declared():
+    """Returns True, if User Consent is enabled or disabled, False if it is undefined in application settings."""
+    return Settings().get("user consent") != UserConsentMode.UNDEFINED
 
 
 def is_virtual_location_enabled():
@@ -129,7 +158,8 @@ def is_post_quantum_disabled():
     return Settings().get("Post-quantum VPN") == "disabled"
 
 
-def app_has_defaults_settings():
+def app_has_defaults_settings(expectedKillswitch = False):
+    expected_killswitch_string = "enabled" if expectedKillswitch else "disabled"
     """Returns True, if application settings match the default settings."""
     settings = sh.nordvpn.settings()
     return (
@@ -137,13 +167,13 @@ def app_has_defaults_settings():
         "Firewall: enabled" in settings and
         "Firewall Mark: 0xe1f1" in settings and
         "Routing: enabled" in settings and
-        "Analytics: enabled" in settings and
-        "Kill Switch: disabled" in settings and
+        # User Consent is not restored to default on reset
+        ("User Consent: enabled" in settings or "User Consent: disabled" in settings) and
+        f"Kill Switch: {expected_killswitch_string}" in settings and
         "Threat Protection Lite: disabled" in settings and
         "Notify: enabled" in settings and
         "Tray: enabled" in settings and
         "Auto-connect: disabled" in settings and
-        "IPv6: disabled" in settings and
         "Meshnet: disabled" in settings and
         "DNS: disabled" in settings and
         "LAN Discovery: disabled" in settings and

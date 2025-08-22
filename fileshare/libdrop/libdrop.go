@@ -18,8 +18,6 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-var ErrLAddressAlreadyInUse = errors.New("address already in use")
-
 // Fileshare is the main functional filesharing implementation using norddrop library.
 // Thread safe.
 type Fileshare struct {
@@ -226,7 +224,7 @@ func (f *Fileshare) Enable(listenAddr netip.Addr) (err error) {
 
 	if err = f.start(listenAddr, f.eventsDbPath, f.isProd, f.storagePath); err != nil {
 		if errors.Is(err, norddrop.ErrLibdropErrorAddrInUse) {
-			return ErrLAddressAlreadyInUse
+			return fileshare.ErrAddressAlreadyInUse
 		}
 		return fmt.Errorf("starting drop: %w", err)
 	}

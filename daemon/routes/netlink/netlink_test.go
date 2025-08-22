@@ -22,7 +22,7 @@ func TestRouter_Add(t *testing.T) {
 	bits := gateway.As4()
 	bits[3]++
 
-	defaultRoute := route(t, gateway, netip.AddrFrom4([4]byte{bits[0], bits[1], bits[2], 0}), 24)
+	defaultRoute := route(t, gateway, netip.AddrFrom4([4]byte{bits[0], bits[1], bits[2], 0}), 32)
 	defaultRoute.Device = iface
 
 	tests := []struct {
@@ -105,57 +105,6 @@ func TestRouter_Add(t *testing.T) {
 	}
 }
 
-func TestRouterAddIPv6(t *testing.T) {
-	//@TODO gitlab runner sysctl flag has no effect
-	category.Set(t, category.Link)
-
-	ip := "2a01:7e00::f13c:92ff:fe7d:d4d/128"
-	name := "netlinkdummy1"
-	link := &netlink.Dummy{LinkAttrs: netlink.LinkAttrs{Name: name}}
-	addr, err := netlink.ParseAddr(ip)
-	require.NoError(t, err)
-
-	// Assert here on setup as failure in `require` would cause defer to be skipped
-	assert.NoError(t, netlink.LinkAdd(link))
-	defer netlink.LinkDel(link)
-
-	require.NoError(t, netlink.AddrAdd(link, addr))
-	require.NoError(t, netlink.LinkSetUp(link))
-	iface, err := net.InterfaceByIndex(link.Index)
-	require.NoError(t, err)
-	require.NotNil(t, iface)
-
-	newRoutes := []routes.Route{
-		{
-			Subnet: netip.MustParsePrefix("2000::/3"),
-			Device: *iface,
-		},
-		{
-			Gateway: netip.MustParseAddr("fe80::1"),
-			Subnet:  netip.MustParsePrefix("2606:4700:4700::1111/128"),
-			Device:  *iface,
-		},
-	}
-
-	router := Router{}
-	defer router.Flush()
-
-	for _, route := range newRoutes {
-		err = router.Add(route)
-		assert.NoError(t, err)
-		routeList, err := netlink.RouteList(link, netlink.FAMILY_V6)
-		assert.NoError(t, err)
-		assert.Contains(t, routeList, toNetlinkRoute(route))
-	}
-
-	// missing interface/destination
-	route := routes.Route{
-		Subnet: netip.MustParsePrefix("fe80::34be:67ff:fef4:3505/128"),
-	}
-	err = router.Add(route)
-	assert.Error(t, err)
-}
-
 func TestRouter_Has(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -165,7 +114,6 @@ func TestRouter_Has(t *testing.T) {
 
 	existingRoutes := []routes.Route{
 		{Device: lo, Subnet: netip.MustParsePrefix("127.0.0.1/32")},
-		{Device: lo, Subnet: netip.MustParsePrefix("::1/128")},
 	}
 
 	tests := []struct {
@@ -209,15 +157,6 @@ func TestRouter_Has(t *testing.T) {
 				Subnet: netip.MustParsePrefix("127.0.0.1/24"),
 			},
 			contains: false,
-		},
-		{
-			name: "found ipv6 in table with multiple routes",
-			list: existingRoutes,
-			route: routes.Route{
-				Device: lo,
-				Subnet: netip.MustParsePrefix("::1/128"),
-			},
-			contains: true,
 		},
 		{
 			name:     "found in table with one empty route",

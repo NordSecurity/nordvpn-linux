@@ -1,3 +1,5 @@
+//go:build mage
+
 package main
 
 import (
@@ -18,20 +20,27 @@ import (
 
 const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
-	imageBuilder           = registryPrefix + "builder:1.3.4"
-	imagePackager          = registryPrefix + "packager:1.3.1"
-	imageSnapPackager      = registryPrefix + "snaper:1.0.0"
-	imageProtobufGenerator = registryPrefix + "generator:1.4.1"
+	imageBuilder           = registryPrefix + "builder:1.4.1"
+	imagePackager          = registryPrefix + "packager:1.3.2"
+	imageDepender          = registryPrefix + "depender:1.3.2"
+	imageSnapPackager      = registryPrefix + "snaper:1.1.0"
+	imageProtobufGenerator = registryPrefix + "generator:1.4.2"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
-	imageTester            = registryPrefix + "tester:1.3.6"
+	imageTester            = registryPrefix + "tester:1.6.0"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.4"
-	imageRuster            = registryPrefix + "ruster:1.3.1"
+	imageRuster            = registryPrefix + "ruster:1.4.0"
 
 	dockerWorkDir  = "/opt"
 	devPackageType = "source"
 
 	qaPeerAddress = "http://qa-peer:8000/exec"
 	covDir        = "covdatafiles"
+)
+
+const (
+	packageTypeSnap = "snap"
+	packageTypeRPM  = "rpm"
+	packageTypeDeb  = "deb"
 )
 
 // Aliases shorthands for daily commands
@@ -229,12 +238,32 @@ func (Build) Notices() error {
 	return sh.RunWith(env, "ci/licenses.sh")
 }
 
+// Notices for third party dependencies
+func (Build) NoticesDocker(ctx context.Context) error {
+	if internal.FileExists("dist/THIRD-PARTY-NOTICES.md") {
+		return nil
+	}
+
+	env, err := getEnv()
+	if err != nil {
+		return err
+	}
+	env["WORKDIR"] = dockerWorkDir
+	env["GOCACHE"] = "/tmp/go-cache"
+
+	return RunDocker(
+		ctx,
+		env,
+		imageDepender,
+		[]string{"ci/licenses.sh"},
+	)
+}
+
 func buildPackage(packageType string, buildFlags string) error {
 	env, err := getEnv()
 	if err != nil {
 		return err
 	}
-	env["GOPATH"] = build.Default.GOPATH
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -249,25 +278,29 @@ func buildPackage(packageType string, buildFlags string) error {
 	}
 
 	env["WORKDIR"] = cwd
-	if packageType == "snap" {
-		return sh.RunWith(env, "ci/build_snap.sh")
+	switch packageType {
+	case packageTypeSnap:
+		return sh.RunWithV(env, "ci/build_snap.sh")
+	case packageTypeDeb, packageTypeRPM:
+		return sh.RunWithV(env, "ci/nfpm/build_packages_resources.sh", packageType)
 	}
-	return sh.RunWith(env, "ci/nfpm/build_packages_resources.sh", packageType)
+
+	return fmt.Errorf("unsupported package type: %s", packageType)
 }
 
 // Deb package for the host architecture
 func (Build) Deb() error {
-	return buildPackage("deb", "")
+	return buildPackage(packageTypeDeb, "")
 }
 
 // Rpm package for the host architecture
 func (Build) Rpm() error {
-	return buildPackage("rpm", "")
+	return buildPackage(packageTypeRPM, "")
 }
 
 // Snap package for the host architecture
 func (Build) Snap() error {
-	return buildPackage("snap", "")
+	return buildPackage(packageTypeSnap, "")
 }
 
 func buildPackageDocker(ctx context.Context, packageType string, buildFlags string) error {
@@ -277,55 +310,52 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	}
 	mg.Deps(Build.Data)
 	mg.Deps(mg.F(buildBinariesDocker, buildFlags))
-	mg.Deps(Build.Notices)
+	mg.Deps(Build.NoticesDocker)
 
 	// do not build openvpn dependency if it already exists
 	if !internal.FileExists(fmt.Sprintf("./bin/deps/openvpn/current/%s/openvpn", env["ARCH"])) {
 		mg.Deps(Build.OpenvpnDocker)
 	}
 
-	git, err := getGitInfo()
-	if err != nil {
-		return err
-	}
-
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
-	env["HASH"] = git.commitHash
 	env["PACKAGE"] = devPackageType
-	env["VERSION"] = git.versionTag
-	if packageType == "snap" {
+
+	switch packageType {
+	case packageTypeSnap:
+		env["DOCKER_ENV"] = "1"
 		return RunDockerWithSettings(
 			ctx,
 			env,
 			imageSnapPackager,
 			[]string{"ci/build_snap.sh"},
-			// snapcraft needs to be run as privileged, because it's
-			// installing packages and has access to apt sources
 			DockerSettings{Privileged: true},
 		)
+	case packageTypeDeb, packageTypeRPM:
+		return RunDocker(
+			ctx,
+			env,
+			imagePackager,
+			[]string{"ci/nfpm/build_packages_resources.sh", packageType},
+		)
 	}
-	return RunDocker(
-		ctx,
-		env,
-		imagePackager,
-		[]string{"ci/nfpm/build_packages_resources.sh", packageType},
-	)
+
+	return fmt.Errorf("unsupported package type: %s", packageType)
 }
 
 // DebDocker package using Docker builder
 func (Build) DebDocker(ctx context.Context) error {
-	return buildPackageDocker(ctx, "deb", "")
+	return buildPackageDocker(ctx, packageTypeDeb, "")
 }
 
 // RpmDocker package using Docker builder
 func (Build) RpmDocker(ctx context.Context) error {
-	return buildPackageDocker(ctx, "rpm", "")
+	return buildPackageDocker(ctx, packageTypeRPM, "")
 }
 
 // SnapDocker package using Docker builder
 func (Build) SnapDocker(ctx context.Context) error {
-	return buildPackageDocker(ctx, "snap", "")
+	return buildPackageDocker(ctx, packageTypeSnap, "")
 }
 
 func buildBinaries(buildFlags string) error {
@@ -349,14 +379,8 @@ func buildBinaries(buildFlags string) error {
 		mg.Deps(Build.Rust)
 	}
 
-	git, err := getGitInfo()
-	if err != nil {
-		return err
-	}
 	env["WORKDIR"] = cwd
-	env["HASH"] = git.commitHash
 	env["PACKAGE"] = devPackageType
-	env["VERSION"] = git.versionTag
 	env["ENVIRONMENT"] = string(internal.Development)
 	env["BUILD_FLAGS"] = buildFlags
 
@@ -384,15 +408,9 @@ func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 		mg.Deps(Build.RustDocker)
 	}
 
-	git, err := getGitInfo()
-	if err != nil {
-		return err
-	}
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
-	env["HASH"] = git.commitHash
 	env["PACKAGE"] = devPackageType
-	env["VERSION"] = git.versionTag
 	env["BUILD_FLAGS"] = buildFlags
 
 	return RunDocker(
@@ -436,11 +454,12 @@ func (Build) OpenvpnDocker(ctx context.Context) error {
 	}
 
 	env["WORKDIR"] = dockerWorkDir
-	return RunDocker(
+	return RunDockerWithSettings(
 		ctx,
 		env,
 		imageBuilder,
-		[]string{"ci/openvpn/build.sh"},
+		[]string{"sh", "-c", "ci/openvpn/fix_dependencies.sh; ci/openvpn/build.sh"},
+		DockerSettings{Privileged: true},
 	)
 }
 
@@ -457,9 +476,22 @@ func (Build) Rust(ctx context.Context) error {
 	}
 
 	env["WORKDIR"] = cwd
-	env["ARCHS_RUST"] = env["ARCH"]
+	features, ok := env["FEATURES"]
+	if !ok {
+		features = "telio drop"
+	}
 
-	return sh.RunWith(env, "ci/build_rust.sh")
+	if strings.Contains(features, "telio") {
+		if err := sh.RunWith(env, "ci/build_libtelio.sh"); err != nil {
+			return err
+		}
+	}
+	if strings.Contains(features, "drop") {
+		if err := sh.RunWith(env, "ci/build_libdrop.sh"); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Builds rust dependencies using Docker builder
@@ -470,15 +502,22 @@ func (Build) RustDocker(ctx context.Context) error {
 	}
 
 	// build only for host architecture by default
-	env["ARCHS_RUST"] = env["ARCH"]
 	env["WORKDIR"] = dockerWorkDir
-	if err := RunDocker(
-		ctx,
-		env,
-		imageRuster,
-		[]string{"ci/build_rust.sh"},
-	); err != nil {
-		return err
+
+	features, ok := env["FEATURES"]
+	if !ok {
+		features = "telio drop"
+	}
+
+	if strings.Contains(features, "telio") {
+		if err := RunDocker(ctx, env, imageRuster, []string{"ci/build_libtelio.sh"}); err != nil {
+			return err
+		}
+	}
+	if strings.Contains(features, "drop") {
+		if err := RunDocker(ctx, env, imageRuster, []string{"ci/build_libdrop.sh"}); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -566,13 +605,13 @@ func (Test) Hardening(ctx context.Context) error {
 
 // Run QA tests (arguments: {testGroup} {testPattern})
 func (Test) QA(ctx context.Context, testGroup, testPattern string) error {
-	mg.Deps(mg.F(buildPackage, "deb", "-cover"))
+	mg.Deps(mg.F(buildPackage, packageTypeDeb, "-cover"))
 	return qa(ctx, testGroup, testPattern)
 }
 
 // Run QA tests (arguments: {testGroup} {testPattern})
 func (Test) QASnap(ctx context.Context, testGroup, testPattern string) error {
-	mg.Deps(mg.F(buildPackageDocker, "deb", "-cover"))
+	mg.Deps(mg.F(buildPackageDocker, packageTypeDeb, "-cover"))
 	return qaSnap(ctx, testGroup, testPattern)
 }
 
@@ -583,7 +622,7 @@ func (Test) QASnapFast(ctx context.Context, testGroup, testPattern string) error
 
 // Run QA tests in Docker container (arguments: {testGroup} {testPattern})
 func (Test) QADocker(ctx context.Context, testGroup, testPattern string) error {
-	mg.Deps(mg.F(buildPackageDocker, "deb", "-cover"))
+	mg.Deps(mg.F(buildPackageDocker, packageTypeDeb, "-cover"))
 	return qaDocker(ctx, testGroup, testPattern)
 }
 
@@ -594,7 +633,7 @@ func (Test) QADockerFast(ctx context.Context, testGroup, testPattern string) err
 	matches, err := filepath.Glob(debPath)
 
 	if len(matches) == 0 || err != nil {
-		mg.Deps(mg.F(buildPackage, "deb", "-cover"))
+		mg.Deps(mg.F(buildPackage, packageTypeDeb, "-cover"))
 	}
 
 	return qaDocker(ctx, testGroup, testPattern)
@@ -695,7 +734,7 @@ func qaSnap(_ context.Context, testGroup, testPattern string) error {
 
 // Performs linter check against Go codebase
 func (Test) Lint() error {
-	return sh.Run("golangci-lint", "run", "-v", "--config=.golangci-lint.yml")
+	return sh.RunV("golangci-lint", "run", "-v", "--config=.golangci-lint.yml")
 }
 
 // Binaries to their respective locations and restart

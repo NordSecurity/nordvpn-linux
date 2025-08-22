@@ -75,11 +75,6 @@ func (l *DaemonSettingsSubscriber) NotifyAllowlist(data events.DataAllowlist) er
 	return nil
 }
 
-func (l *DaemonSettingsSubscriber) NotifyIpv6(data bool) error {
-	printSettingsChange("IPv6", boolToString(data))
-	return nil
-}
-
 func (l *DaemonSettingsSubscriber) NotifyDefaults(any) error {
 	log.Printf("Settings have been restored to their default values")
 	return nil

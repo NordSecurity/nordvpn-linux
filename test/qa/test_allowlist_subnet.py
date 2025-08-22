@@ -7,35 +7,13 @@ import sh
 import lib
 from lib import (
     allowlist,
-    daemon,
     firewall,
-    info,
-    logging,
-    login,
     network,
 )
 
+pytestmark = pytest.mark.usefixtures("add_and_delete_random_route", "nordvpnd_scope_function")
+
 CIDR_32 = "/32"
-
-
-def setup_module(module):  # noqa: ARG001
-    firewall.add_and_delete_random_route()
-
-
-def setup_function(function):  # noqa: ARG001
-    daemon.start()
-    login.login_as("default")
-
-    logging.log()
-
-
-def teardown_function(function):  # noqa: ARG001
-    logging.log(data=info.collect())
-    logging.log()
-
-    sh.nordvpn.logout("--persist-token")
-    sh.nordvpn.set.defaults()
-    daemon.stop()
 
 
 @pytest.mark.parametrize("subnet", lib.SUBNETS)

@@ -13,7 +13,6 @@ import (
 
 	quenchBindigns "quench"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -88,7 +87,7 @@ func (o *observer) SubscribeToEvents(ctx context.Context) <-chan vpn.State {
 func (o *observer) notifyConnectionStateChange(state vpn.State) {
 	o.currentState = state
 	if o.eventsChan != nil {
-		log.Println(internal.DebugPrefix, quenchPrefix, "unsubscribing from quench state changes")
+		log.Println(internal.DebugPrefix, quenchPrefix, "notifying about connection state change")
 		select {
 		case o.eventsChan <- state:
 		case <-o.eventsSubscribtionContext.Done():
@@ -97,19 +96,7 @@ func (o *observer) notifyConnectionStateChange(state vpn.State) {
 	}
 }
 
-func (o *observer) getConnectEvent(status events.TypeEventStatus) events.DataConnect {
-	event := vpn.GetDataConnectEvent(config.Technology_NORDWHISPER,
-		config.Protocol_Webtunnel,
-		status,
-		o.currentServer,
-		false)
-
-	event.TunnelName = o.nicName
-
-	return event
-}
-
-func (o *observer) Connecting() {
+func (o *observer) Connecting(uint32) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -120,20 +107,26 @@ func (o *observer) Connecting() {
 	}
 
 	o.notifyConnectionStateChange(vpn.ConnectingState)
-	o.eventNotifier.Connected.Publish(o.getConnectEvent(events.StatusAttempt))
+	o.eventNotifier.Connected.Publish(vpn.ConnectEvent{
+		Status:     events.StatusAttempt,
+		TunnelName: o.nicName,
+	})
 }
 
-func (o *observer) Connected() {
+func (o *observer) Connected(uint32) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
 	o.notifyConnectionStateChange(vpn.ConnectedState)
 
 	log.Println(internal.DebugPrefix, quenchPrefix, "connected")
-	o.eventNotifier.Connected.Publish(o.getConnectEvent(events.StatusSuccess))
+	o.eventNotifier.Connected.Publish(vpn.ConnectEvent{
+		Status:     events.StatusSuccess,
+		TunnelName: o.nicName,
+	})
 }
 
-func (o *observer) Disconnected(reason quenchBindigns.DisconnectReason) {
+func (o *observer) Disconnected(_ uint32, reason quenchBindigns.DisconnectReason) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -141,16 +134,7 @@ func (o *observer) Disconnected(reason quenchBindigns.DisconnectReason) {
 
 	log.Println(internal.DebugPrefix, quenchPrefix, "disconnected:", reason)
 
-	byUser := false
-	if reason == quenchBindigns.DisconnectReasonDisconnectRequested {
-		byUser = true
-	}
-
-	o.eventNotifier.Disconnected.Publish(events.DataDisconnect{
-		ByUser:     byUser,
-		Technology: config.Technology_NORDWHISPER,
-		Protocol:   config.Protocol_Webtunnel,
-	})
+	o.eventNotifier.Disconnected.Publish(events.StatusSuccess)
 }
 
 type Quench struct {
@@ -239,7 +223,7 @@ func (q *Quench) Start(ctx context.Context, creds vpn.Credentials, server vpn.Se
 
 	q.observer.SetServerData(server)
 
-	err = vnic.Connect(string(jsonConfig), &quenchCreds)
+	_, err = vnic.Connect(string(jsonConfig), &quenchCreds)
 	if err != nil {
 		return fmt.Errorf("connecting to a quench server: %w", err)
 	}
@@ -285,9 +269,7 @@ func (q *Quench) Stop() error {
 	q.state = vpn.ExitingState
 
 	if q.vnic != nil {
-		if err := q.vnic.Disconnect(); err != nil {
-			return fmt.Errorf("disconnecting from a quench server: %w", err)
-		}
+		q.vnic.Disconnect()
 
 		for {
 			ev := <-eventsChan

@@ -508,6 +508,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		})
 	}
 }
+
 func Test_determineServerGroup(t *testing.T) {
 	tests := []struct {
 		name   string

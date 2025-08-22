@@ -40,10 +40,10 @@ const (
 	// PermUserRWGroupROthersR user permission type for user to read and write to it, everyone else can only read it.
 	PermUserRWGroupROthersR = 0644
 
-	// PermUserRWGroupROthersR allows user and group to read and write, other only read
+	// PermUserRWGroupRWOthersR allows user and group to read and write, other only read
 	PermUserRWGroupRWOthersR = 0664
 
-	// PermUserRWGroupROthersR user permission type for everyone to read and write to it.
+	// PermUserRWGroupRWOthersRW user permission type for everyone to read and write to it.
 	PermUserRWGroupRWOthersRW = 0666
 
 	// PermUserRWXGroupRXOthersRX forbidding group and others to write to it
@@ -102,11 +102,6 @@ const (
 )
 
 var (
-	PlatformSupportsIPv4 = true
-	PlatformSupportsIPv6 = true
-)
-
-var (
 	// RunDir defines default socket directory
 	RunDir = PrefixCommonPath("/run/nordvpn")
 
@@ -125,7 +120,9 @@ var (
 
 	DatFilesPath = filepath.Join(AppDataPath, "data")
 
-	DatFilesPathCommon = filepath.Join(AppDataPathCommon, "data")
+	DatFilesPathCommon    = filepath.Join(AppDataPathCommon, "data")
+	ConfigFilesPathCommon = filepath.Join(DatFilesPath, "conf")
+	StaticConfigFilename  = filepath.Join(DatFilesPathCommon, "install_static.dat")
 
 	BakFilesPath = filepath.Join(AppDataPath, "backup")
 
@@ -145,17 +142,6 @@ var (
 
 	NorduserdBinaryPath = filepath.Join(AppDataPathStatic, Norduserd)
 )
-
-func GetSupportedIPTables() []string {
-	var iptables []string
-	if PlatformSupportsIPv4 {
-		iptables = append(iptables, "iptables")
-	}
-	if PlatformSupportsIPv6 {
-		iptables = append(iptables, "ip6tables")
-	}
-	return iptables
-}
 
 func GetNorduserSocketSnap(uid int) string {
 	return fmt.Sprintf("%s%d-%s.sock", TmpDir, uid, Norduserd)

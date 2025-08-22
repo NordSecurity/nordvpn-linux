@@ -661,15 +661,6 @@ func TestServerGroupsString(t *testing.T) {
 	assert.True(t, slices.Equal([]int64{11, 15, 19}, groupIDs))
 }
 
-func TestServer_SupportsIPv6(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	var server Server
-	err := json.Unmarshal([]byte(inputTest), &server)
-	assert.NoError(t, err)
-	assert.True(t, server.SupportsIPv6())
-}
-
 func TestServer_IPs(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -975,6 +966,18 @@ func TestNordWhisperPort_UnmarshalJSON(t *testing.T) {
 			err := server.UnmarshalJSON([]byte(serverJson + test.technologyJson))
 			assert.Nil(t, err, "Unexpected error when deserializing server json.")
 			assert.Equal(t, test.expectedPort, server.NordWhisperPort)
+		})
+	}
+}
+
+func TestNewCountryCode_SetsCountryCodeToLowercase(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	codes := []string{"US", "Us", "uS"}
+	for _, codeStr := range codes {
+		t.Run(codeStr, func(t *testing.T) {
+			cc := NewCountryCode(codeStr)
+			assert.Equal(t, cc.cc, "us")
 		})
 	}
 }

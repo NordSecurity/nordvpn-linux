@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
@@ -55,9 +56,9 @@ func (c *cmd) Click(ctx *cli.Context) (err error) {
 			return formatError(err)
 		}
 
-		if strings.ToLower(url.Scheme) == "nordvpn" {
+		if strings.ToLower(url.Scheme) == internal.NordVPNScheme {
 			switch strings.ToLower(url.Host) {
-			case "claim-online-purchase":
+			case internal.ClaimOnlinePurchaseSubcommand:
 				resp, err := c.client.ClaimOnlinePurchase(context.Background(), &pb.Empty{})
 				if err != nil {
 					return formatError(err)
@@ -70,7 +71,7 @@ func (c *cmd) Click(ctx *cli.Context) (err error) {
 				color.Green(ClaimOnlinePurchaseSuccess)
 				return nil
 
-			case "login":
+			case internal.LoginSubcommand:
 				// login can be regular, or after new account setup & vpn service purchase (signup)
 				regularLogin := true
 				if strings.ToLower(url.Query().Get("action")) == "signup" {
@@ -83,6 +84,10 @@ func (c *cmd) Click(ctx *cli.Context) (err error) {
 					return formatError(err)
 				}
 				return nil
+
+			case internal.ConsentSubcommand:
+				// login takes care of the analytics consent flow and continues with login
+				return c.Login(ctx)
 			}
 		}
 	}

@@ -14,6 +14,13 @@ libmoose_nordvpnapp_artifact_url="${LIBMOOSE_NORDVPNAPP_ARTIFACTS_URL}/${LIBMOOS
 libmoose_worker_artifact_url="${LIBMOOSE_WORKER_ARTIFACTS_URL}/${LIBMOOSE_WORKER_VERSION}/linux.zip"
 libquench_artifact_url="${LIBQUENCH_ARTIFACTS_URL}/${LIBQUENCH_VERSION}/linux.zip"
 
+# Uncomment this when all libraries migrate artifacts
+# if [[ ${CI+x} ]]; then
+#   header="JOB-TOKEN:${CI_JOB_TOKEN}"
+# else
+#   header="PRIVATE-TOKEN:${GL_ACCESS_TOKEN}"
+# fi
+
 mkdir -p "${temp_dir}"
 
 function fetch_gitlab_artifact() {
@@ -31,13 +38,24 @@ function fetch_gitlab_artifact() {
   echo "Downloading artifact from ${artifact_url} to ${out_file}"
   # disable tracing - don't show the token
   set +x
-  curl \
-    --retry 3 \
-    --retry-delay 2 \
-    --fail \
-    --header "PRIVATE-TOKEN: ${GL_ACCESS_TOKEN}" \
-    -o "${out_file}" \
-    -L "${artifact_url}"
+  if [[ ${CI+x} ]]; then
+    header="JOB-TOKEN:${CI_JOB_TOKEN}"
+  else
+    # Need two tokens while the dependency migration is not fully done
+    # set CI_JOB_TOKEN as a token that can reach new GL if running locally
+    header="PRIVATE-TOKEN:${CI_JOB_TOKEN}"
+  fi
+  for _ in $(seq 1 2)
+  do
+    curl \
+      --retry 3 \
+      --retry-delay 2 \
+      --fail \
+      --header "$header" \
+      -o "${out_file}" \
+      -L "${artifact_url}" && break || echo "Token failed"
+    header="PRIVATE-TOKEN:${GL_ACCESS_TOKEN}"
+  done
   # re-enable tracing
   set -x
 }
@@ -130,12 +148,6 @@ if [[ "${FEATURES:-""}" == *moose* ]]; then
 
   fetch_dependency "libmoose-nordvpnapp" "${libmoose_nordvpnapp_artifact_url}" \
   "libmoosenordvpnapp.so" "out/nordvpnapp/bin/nordvpnapp/linux" "${LIBMOOSE_NORDVPNAPP_VERSION}"
-
-  zipfile="${temp_dir}/libmoose-nordvpnapp-${LIBMOOSE_NORDVPNAPP_VERSION}.zip"
-  if [[ -e "${zipfile}" ]]; then
-    copy_to_libs "${zipfile}" "libsqlite3.so" "out/nordvpnapp/bin/common/linux" "${lib_root}/${name}/${LIBMOOSE_NORDVPNAPP_VERSION}"
-  fi
-  populate_current_ver "${lib_root}/current" "${lib_root}/libmoose-nordvpnapp/current" "libsqlite3.so"
 fi
 
 # remove leftovers

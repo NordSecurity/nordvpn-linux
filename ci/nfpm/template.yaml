@@ -50,6 +50,7 @@ depends:
   - zlib1g
   - libnl-genl-3-200
   - libc6 (>= 2.29)
+  - libsqlite3-0
 
 # Basic file that applies to all packagers
 contents:
@@ -151,6 +152,7 @@ overrides:
       - zlib
       - (libnl3 or libnl3-200)
       - glibc >= 2.29
+      - (libsqlite3-0 or sqlite-libs)
     # RPM specific scripts.
     scripts:
       preinstall: ${WORKDIR}/contrib/scriptlets/rpm/preinst

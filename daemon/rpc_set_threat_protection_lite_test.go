@@ -13,6 +13,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	configMock "github.com/NordSecurity/nordvpn-linux/test/mock/config"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 )
 
@@ -23,7 +24,6 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 
 	tests := []struct {
 		testName       string
-		ipv6           bool
 		desiredTpl     bool
 		currentTpl     bool
 		currentDNS     []string
@@ -37,25 +37,10 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 			expectedStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED,
 		},
 		{
-			testName:       "set tpl ipv6",
-			ipv6:           true,
-			desiredTpl:     true,
-			expectedDNS:    append(mock.TplNameserversV4, mock.TplNameserversV6...),
-			expectedStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED,
-		},
-		{
 			testName:       "set tpl reset dns ipv4",
 			desiredTpl:     true,
 			currentDNS:     dns,
 			expectedDNS:    mock.TplNameserversV4,
-			expectedStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED_DNS_RESET,
-		},
-		{
-			testName:       "set tpl reset dns ipv6",
-			ipv6:           true,
-			desiredTpl:     true,
-			currentDNS:     dns,
-			expectedDNS:    append(mock.TplNameserversV4, mock.TplNameserversV6...),
 			expectedStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED_DNS_RESET,
 		},
 		{
@@ -66,21 +51,12 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 			expectedDNS:    mock.DefaultNameserversV4,
 			expectedStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED,
 		},
-		{
-			testName:       "set tpl on ipv6",
-			ipv6:           true,
-			desiredTpl:     false,
-			currentTpl:     true,
-			currentDNS:     mock.TplNameserversV4,
-			expectedDNS:    append(mock.DefaultNameserversV4, mock.DefaultNameserversV6...),
-			expectedStatus: pb.SetThreatProtectionLiteStatus_TPL_CONFIGURED,
-		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
 			uuid, _ := uuid.NewUUID()
-			filesystem := newFilesystemMock(t)
+			filesystem := configMock.NewFilesystemMock(t)
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",
 				&machineIDGetterMock{machineID: uuid},
@@ -92,7 +68,6 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 					ThreatProtectionLite: test.currentTpl,
 					DNS:                  test.currentDNS,
 				}
-				c.IPv6 = test.ipv6
 
 				return c
 			})
@@ -181,7 +156,7 @@ func TestSetThreatProtectionLite_Error(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
 			uuid, _ := uuid.NewUUID()
-			filesystem := newFilesystemMock(t)
+			filesystem := configMock.NewFilesystemMock(t)
 			filesystem.WriteErr = test.writeConfigErr
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",

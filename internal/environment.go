@@ -6,11 +6,11 @@ const (
 	// Development defines development environment
 	Development Environment = "dev"
 	// QA defines qa environment
-	QA = "qa"
+	QA Environment = "qa"
 	// Production defines production environment
-	Production = "prod"
+	Production Environment = "prod"
 	// Downloader modifies configs and servers jobs
-	Downloader = "downloader"
+	Downloader Environment = "downloader"
 )
 
 // IsProdEnv short hand of condition check, for clear reading

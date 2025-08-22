@@ -9,6 +9,7 @@ type ConfigManager struct {
 	Cfg     *config.Config
 	SaveErr error
 	LoadErr error
+	Saved   bool
 }
 
 func NewMockConfigManager() *ConfigManager {
@@ -29,6 +30,7 @@ func (m *ConfigManager) SaveWith(fn config.SaveFunc) error {
 	}
 	cfg := fn(*m.Cfg)
 	*m.Cfg = cfg
+	m.Saved = true
 	return nil
 }
 
@@ -44,7 +46,7 @@ func (m *ConfigManager) Load(c *config.Config) error {
 	return nil
 }
 
-func (m *ConfigManager) Reset(bool) error {
+func (m *ConfigManager) Reset(bool, bool) error {
 	*m.Cfg = config.Config{}
 	return nil
 }

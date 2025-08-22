@@ -1,6 +1,8 @@
 import contextlib
 import os
 import re
+
+import requests
 import subprocess
 import time
 from enum import Enum
@@ -13,6 +15,9 @@ from lib import network
 from . import daemon, info, logging, login, ssh
 
 PEER_USERNAME = login.get_credentials("qa-peer").email
+LOCAL_TOKEN = login.get_credentials("default").token
+PEER_TOKEN = login.get_credentials("qa-peer").token
+BASE_API = "https://api.nordvpn.com/v1"
 
 TELIO_EXPECTED_RELAY_TO_DIRECT_TIME = 5.0
 TELIO_EXPECTED_RTT = 5.0
@@ -51,6 +56,9 @@ class TestUtils:
     def setup_function(ssh_client: ssh.Ssh):
         logging.log()
 
+        delete_machines_by_identifier(token=LOCAL_TOKEN)
+        delete_machines_by_identifier(token=PEER_TOKEN)
+
         # if setup_function fails, teardown won't be executed, so daemon is not stopped
         if daemon.is_running():
             daemon.stop()
@@ -61,8 +69,6 @@ class TestUtils:
         login.login_as("qa-peer", ssh_client)
         sh_no_tty.nordvpn.set.meshnet.on()
         ssh_client.exec_command("nordvpn set mesh on")
-        remove_all_peers()
-        remove_all_peers_in_peer(ssh_client)
         revoke_all_invites()
         revoke_all_invites_in_peer(ssh_client)
         add_peer(ssh_client)
@@ -72,8 +78,8 @@ class TestUtils:
     def teardown_function(ssh_client: ssh.Ssh):
         logging.log(data=info.collect())
         logging.log()
-        ssh_client.exec_command("nordvpn set defaults")
-        sh_no_tty.nordvpn.set.defaults()
+        ssh_client.exec_command("nordvpn set defaults --logout --off-killswitch")
+        sh_no_tty.nordvpn.set.defaults("--logout", "--off-killswitch")
         daemon.stop_peer(ssh_client)
         daemon.stop()
         sh_no_tty.sudo.iptables("-F")
@@ -722,3 +728,78 @@ def download_remote_peer_logs(ssh_client: ssh.Ssh, dest_logs_path: str) -> None:
         ssh_client.download_file("/root/.cache/nordvpn/nordfileshare.log", f"{dest_logs_path}/nordfileshare-other.log")
     except Exception as e: # noqa: BLE001
         logging.log(f"failed to download peer logs: {e}")
+
+def create_session(token: str) -> requests.Session:
+    """
+    Creates and returns a `requests.Session` object with persistent authentication headers.
+
+    Args:
+        token (str): The API token used for authentication.
+
+    Returns:
+        requests.Session: A session object configured with the token.
+    """
+    session = requests.Session()
+    session.auth = ("token", token)
+    session.headers.update({
+        "Authorization": f"token:{token}",
+        "Content-Type": "application/json",
+    })
+    return session
+
+def get_machine_identifiers(token: str) -> list:
+    """
+    Fetches the list of machines and returns all 'identifier' values from the JSON response.
+
+    Args:
+        token (str): The API token used for authentication.
+
+    Returns:
+        list: A list of machine identifiers (values of the 'identifier' key).
+    """
+    url = f"{BASE_API}/meshnet/machines"
+    identifiers = []
+    session = create_session(token)
+
+    try:
+        response = session.get(url)
+        response.raise_for_status()
+
+        machines = response.json()
+        identifiers = [machine["identifier"] for machine in machines]
+        logging.log(f'Identifiers: {identifiers}')
+    except requests.RequestException as e:
+        logging.log(f"Got an error during GET request to fetch list of identifiers: {e}")
+    except KeyError:
+        logging.log("Error: Unable to find 'identifier' in the response.")
+    session.close()
+    return identifiers
+
+def delete_machines_by_identifier(token: str, identifiers: list | None = None) -> None:
+    """
+    Deletes all machines using the provided list of identifiers.
+
+    Args:
+        token (str): The API token used for authentication.
+        identifiers (list): A list of machine identifiers to delete.
+
+    Returns:
+        None
+    """
+    identifiers = identifiers or get_machine_identifiers(token)
+    base_url = f"{BASE_API}/meshnet/machines"
+    session = create_session(token)
+
+    for identifier in identifiers:
+        url = f"{base_url}/{identifier}"
+        try:
+            response = session.delete(url)
+            if response.status_code == 204:
+                logging.log(f"Successfully deleted machine with identifier: {identifier}")
+            elif response.status_code == 404:
+                logging.log(f"Machine with identifier {identifier} not found.")
+            else:
+                logging.log(f"Failed to delete machine {identifier}: {response.status_code} {response.reason}")
+        except requests.RequestException as e:
+            logging.log(f"Got an error during DELETE request for {identifier}: {e}")
+    session.close()

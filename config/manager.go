@@ -45,7 +45,7 @@ type Manager interface {
 	// Load config into a given struct.
 	Load(*Config) error
 	// Reset config to default values.
-	Reset(preserveLoginData bool) error
+	Reset(preserveLoginData bool, disableKillswitch bool) error
 }
 
 type FilesystemHandle interface {
@@ -166,33 +166,41 @@ func (f *FilesystemConfigManager) save(c Config) error {
 // Reset config values to defaults.
 //
 // Thread-safe.
-func (f *FilesystemConfigManager) Reset(preserveLoginData bool) (retErr error) {
+func (f *FilesystemConfigManager) Reset(preserveLoginData bool, disableKillswitch bool) (retErr error) {
 	// We want to publish the setting changes after the config change mutex is unlocked. Otherwise it could cause a
 	// deadlock when conifg change subscriber tries to read the config with the same manager when the change is
 	// published. The assumption here is that publisher is protected with it's own lock.
 	caller := getCaller()
-	var c Config
+	var newCfg Config
 	defer func() {
 		if retErr == nil && f.configPublisher != nil {
 			f.configPublisher.Publish(DataConfigChange{
-				Config: &c,
+				Config: &newCfg,
 				Caller: caller,
 			})
 		}
 	}()
 
-	if preserveLoginData {
-		var cfg Config
-		retErr = f.load(&cfg)
-		if retErr != nil {
-			return fmt.Errorf("loading old config: %w", retErr)
-		}
-		c = *newConfigWithLoginData(f.machineIDGetter, cfg)
-		retErr = f.save(c)
-		return
+	var current Config
+	retErr = f.load(&current)
+	if retErr != nil {
+		return fmt.Errorf("loading old config: %w", retErr)
 	}
-	c = *newConfig(f.machineIDGetter)
-	retErr = f.save(c)
+
+	newCfg = *newConfig(f.machineIDGetter)
+
+	// never reset analytics consent to default if it was set already
+	newCfg = newCfg.withAnalyticsConsent(current.AnalyticsConsent)
+
+	if preserveLoginData {
+		newCfg = newCfg.withLoginData(&current)
+	}
+
+	if !disableKillswitch {
+		newCfg.KillSwitch = current.KillSwitch
+	}
+
+	retErr = f.save(newCfg)
 	return
 }
 
@@ -235,14 +243,6 @@ func (f *FilesystemConfigManager) load(c *Config) error {
 	// this overrides default values
 	if err := json.Unmarshal(decrypted, c); err != nil {
 		return err
-	}
-
-	// Translate old 'notify' setting to the new 'notify_off'
-	// To be removed in a new major version
-	for uid, val := range c.UsersData.Notify {
-		if !val {
-			c.UsersData.NotifyOff[uid] = true
-		}
 	}
 
 	return nil

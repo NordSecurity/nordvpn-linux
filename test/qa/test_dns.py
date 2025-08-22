@@ -3,31 +3,10 @@ import sh
 import dns.resolver as dnspy
 
 import lib
-from lib import daemon, dns, info, logging, login, settings
+from lib import dns, settings
 
 
-def setup_module(module):  # noqa: ARG001
-    daemon.start()
-    login.login_as("default")
-
-
-def teardown_module(module):  # noqa: ARG001
-    sh.nordvpn.logout("--persist-token")
-    daemon.stop()
-
-
-def setup_function(function):  # noqa: ARG001
-    logging.log()
-
-    # Make sure that Custom DNS, IPv6 and Threat Protection Lite are disabled before we execute each test
-    lib.set_dns("off")
-    lib.set_ipv6("off")
-    lib.set_threat_protection_lite("off")
-
-
-def teardown_function(function):  # noqa: ARG001
-    logging.log(data=info.collect())
-    logging.log()
+pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs", "disable_dns_and_threat_protection")
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)

@@ -3,8 +3,11 @@ package cli
 import (
 	"context"
 	"flag"
+	"io"
+	"strings"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 	"github.com/urfave/cli/v2"
@@ -183,6 +186,181 @@ func Test_removeFlagFromArgs(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result := removeFlagFromArgs(test.args, flagName)
 			assert.Equal(t, test.expectedArgs, result)
+		})
+	}
+}
+
+func TestReadForConfirmation(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name           string
+		input          io.Reader
+		expectedOutput bool
+		expectedStatus bool
+	}{
+		{
+			name:           "no input",
+			input:          strings.NewReader(""),
+			expectedOutput: false,
+			expectedStatus: false,
+		},
+		{
+			name:           "a newline",
+			input:          strings.NewReader("\n"),
+			expectedOutput: false,
+			expectedStatus: false,
+		},
+		{
+			name:           "a number",
+			input:          strings.NewReader("5"),
+			expectedOutput: false,
+			expectedStatus: false,
+		},
+		{
+			name:           "predicting Anton's input",
+			input:          strings.NewReader("\\"),
+			expectedOutput: false,
+			expectedStatus: false,
+		},
+		{
+			name:           "lowercase n",
+			input:          strings.NewReader("n"),
+			expectedOutput: false,
+			expectedStatus: true,
+		},
+		{
+			name:           "uppercase n",
+			input:          strings.NewReader("N"),
+			expectedOutput: false,
+			expectedStatus: true,
+		},
+		{
+			name:           "lowercase y",
+			input:          strings.NewReader("y"),
+			expectedOutput: true,
+			expectedStatus: true,
+		},
+		{
+			name:           "uppercase y",
+			input:          strings.NewReader("Y"),
+			expectedOutput: true,
+			expectedStatus: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			answer, ok := readForConfirmation(test.input, test.name)
+			assert.Equal(t, test.expectedOutput, answer)
+			assert.Equal(t, test.expectedStatus, ok)
+		})
+	}
+}
+
+func TestReadForConfirmationDefaultValue(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name         string
+		input        io.Reader
+		defaultValue bool
+	}{
+		{
+			name:         "no input, default to true",
+			input:        strings.NewReader(""),
+			defaultValue: true,
+		},
+		{
+			name:         "no input, default to false",
+			input:        strings.NewReader(""),
+			defaultValue: false,
+		},
+		{
+			name:         "a newline, default to true",
+			input:        strings.NewReader("\n"),
+			defaultValue: true,
+		},
+		{
+			name:         "a newline, default to false",
+			input:        strings.NewReader("\n"),
+			defaultValue: false,
+		},
+		{
+			name:         "a number, default to true",
+			input:        strings.NewReader("5"),
+			defaultValue: true,
+		},
+		{
+			name:         "a number, default to false",
+			input:        strings.NewReader("5"),
+			defaultValue: false,
+		},
+		{
+			name:         "predicting Anton's input, default to true",
+			input:        strings.NewReader("\\"),
+			defaultValue: true,
+		},
+		{
+			name:         "predicting Anton's input, default to false",
+			input:        strings.NewReader("\\"),
+			defaultValue: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			answer := readForConfirmationDefaultValue(test.input, test.name, test.defaultValue)
+			assert.Equal(t, test.defaultValue, answer)
+		})
+	}
+}
+
+// TestVersion checks how the version member for App.Version is constructed
+func TestComposeAppVersion(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name         string
+		buildVersion string
+		env          string
+		isUnderSnap  bool
+		expected     string
+	}{
+		{
+			name:         "version for deb/rpm production build",
+			buildVersion: "1.2.3",
+			env:          string(internal.Production),
+			isUnderSnap:  false,
+			expected:     "1.2.3",
+		},
+		{
+			name:         "version for deb/rpm development build",
+			buildVersion: "1.2.3",
+			env:          string(internal.Development),
+			isUnderSnap:  false,
+			expected:     "1.2.3 - dev",
+		},
+		{
+			name:         "version for snap production build",
+			buildVersion: "1.2.3",
+			env:          string(internal.Production),
+			isUnderSnap:  true,
+			expected:     "1.2.3 [snap]",
+		},
+		{
+			name:         "version for snap development build",
+			buildVersion: "1.2.3",
+			env:          string(internal.Development),
+			isUnderSnap:  true,
+			expected:     "1.2.3 [snap] - dev",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			version := composeAppVersion(test.buildVersion, test.env, test.isUnderSnap)
+			assert.Equal(t, test.expected, version)
 		})
 	}
 }

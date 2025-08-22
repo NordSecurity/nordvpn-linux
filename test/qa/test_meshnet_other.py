@@ -62,9 +62,9 @@ def test_set_defaults_when_logged_in_2nd_set(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled()
 
-    assert "Settings were successfully restored to defaults." in  sh_no_tty.nordvpn.set.defaults()
+    assert "Settings were successfully restored to defaults." in  sh_no_tty.nordvpn.set.defaults("--logout")
 
-    assert settings.app_has_defaults_settings()
+    assert settings.app_has_defaults_settings(True)
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -82,7 +82,7 @@ def test_set_defaults_when_logged_out_1st_set(tech, proto, obfuscated):
     assert "0xe1f1" not in  sh_no_tty.nordvpn.settings()
     assert daemon.is_killswitch_on()
     assert settings.is_lan_discovery_enabled()
-    assert not settings.are_analytics_enabled()
+    assert settings.is_user_consent_declared()
     assert settings.is_tpl_enabled()
 
     if obfuscated == "on":
@@ -92,9 +92,9 @@ def test_set_defaults_when_logged_out_1st_set(tech, proto, obfuscated):
 
     sh_no_tty.nordvpn.logout("--persist-token")
 
-    assert "Settings were successfully restored to defaults." in  sh_no_tty.nordvpn.set.defaults()
+    assert "Settings were successfully restored to defaults." in  sh_no_tty.nordvpn.set.defaults("--logout")
 
-    assert settings.app_has_defaults_settings()
+    assert settings.app_has_defaults_settings(True)
 
 
 # This doesn't directly test meshnet, but it uses it

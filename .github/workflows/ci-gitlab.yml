@@ -3,7 +3,7 @@ on:
   pull_request_target:
     types: [labeled]
   push:
-    branches-ignore: 
+    branches-ignore:
       - 'main'
     tags:
       - '[0-9]+.[0-9]+.[0-9]+'
@@ -18,4 +18,4 @@ jobs:
       project-id: ${{ secrets.PROJECT_ID }}
     with:
       cancel-outdated-pipelines: ${{ github.ref_name != 'main' }}
-      triggered-ref: v1.0.0
+      triggered-ref: v1.2.2

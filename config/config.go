@@ -19,19 +19,11 @@ func newConfig(machineIDGetter MachineIDGetter) *Config {
 		AutoConnectData: AutoConnectData{
 			Protocol: Protocol_UDP,
 		},
-		MachineID:  machineIDGetter.GetMachineID(),
-		UsersData:  &UsersData{Notify: UidBoolMap{}, NotifyOff: UidBoolMap{}, TrayOff: UidBoolMap{}},
-		TokensData: map[int64]TokenData{},
+		MachineID:        machineIDGetter.GetMachineID(),
+		UsersData:        &UsersData{NotifyOff: UidBoolMap{}, TrayOff: UidBoolMap{}},
+		TokensData:       map[int64]TokenData{},
+		AnalyticsConsent: ConsentUndefined,
 	}
-}
-
-// newConfigWithLoginData returns a clean/default config where login data(TokensData and AutoconnectData.ID) is
-// initialized to values from the parrentConfig.
-func newConfigWithLoginData(machineIDGetter MachineIDGetter, parrentConfig Config) *Config {
-	cfg := newConfig(machineIDGetter)
-	cfg.AutoConnectData.ID = parrentConfig.AutoConnectData.ID
-	cfg.TokensData = parrentConfig.TokensData
-	return cfg
 }
 
 // Config stores application settings and tokens.
@@ -43,14 +35,15 @@ type Config struct {
 	Firewall     bool       `json:"firewall"` // omitempty breaks this
 	FirewallMark uint32     `json:"fwmark"`
 	Routing      TrueField  `json:"routing"`
-	Analytics    TrueField  `json:"analytics"`
-	Mesh         bool       `json:"mesh"`
+	// AnalyticsConsent describes user decision about extra analytics.
+	// If `ConsentMode_NONE`, the consent flow was not yet completed by user.
+	AnalyticsConsent AnalyticsConsent `json:"analytics_consent"`
+	Mesh             bool             `json:"mesh"`
 	// MeshPrivateKey is base64 encoded
 	MeshPrivateKey  string              `json:"mesh_private_key"`
 	MeshDevice      *mesh.Machine       `json:"mesh_device"`
 	KillSwitch      bool                `json:"kill_switch,omitempty"`
 	AutoConnect     bool                `json:"auto_connect,omitempty"`
-	IPv6            bool                `json:"ipv6"`
 	Meshnet         meshnet             `json:"meshnet"`
 	AutoConnectData AutoConnectData     `json:"auto_connect_data"` // omitempty breaks this
 	UsersData       *UsersData          `json:"users_data,omitempty"`
@@ -61,6 +54,21 @@ type Config struct {
 	RCLastUpdate    time.Time           `json:"rc_last_update,omitempty"`
 	// Indicates whether the virtual servers are used. True by default
 	VirtualLocation TrueField `json:"virtual_location,omitempty"`
+}
+
+// withLoginData makes a copy of current configuration
+// with login data values from `other` configuration.
+func (c Config) withLoginData(other *Config) Config {
+	c.AutoConnectData.ID = other.AutoConnectData.ID
+	c.TokensData = other.TokensData
+	return c
+}
+
+// withAnalyticsConsent makes a copy of current configuration
+// with analytics consent values from `other` configuration.
+func (c Config) withAnalyticsConsent(value AnalyticsConsent) Config {
+	c.AnalyticsConsent = value
+	return c
 }
 
 type AutoConnectData struct {
@@ -106,3 +114,11 @@ type meshnet struct {
 func (d *NCData) IsUserIDEmpty() bool {
 	return d.UserID == uuid.Nil
 }
+
+type AnalyticsConsent uint32
+
+const (
+	ConsentUndefined AnalyticsConsent = iota
+	ConsentGranted
+	ConsentDenied
+)

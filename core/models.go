@@ -423,15 +423,6 @@ func (s *Server) getSpecificationsForIdentifier(identifier string) []string {
 	return nil
 }
 
-func (s *Server) SupportsIPv6() bool {
-	for _, ip := range s.IPs() {
-		if ip.Is6() {
-			return true
-		}
-	}
-	return false
-}
-
 func (s *Server) IPs() []netip.Addr {
 	var serverIPs []netip.Addr
 	for _, record := range s.IPRecords {
@@ -584,4 +575,17 @@ type Insights struct {
 
 type NameServers struct {
 	Servers []string `json:"servers"`
+}
+
+type CountryCode struct {
+	cc string
+}
+
+func NewCountryCode(code string) CountryCode {
+	cc := strings.ToLower(code)
+	return CountryCode{cc}
+}
+
+func (cc CountryCode) String() string {
+	return cc.cc
 }

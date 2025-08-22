@@ -2,8 +2,6 @@ package cli
 
 import (
 	"errors"
-	"io"
-	"strings"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -19,61 +17,6 @@ import (
 const itsUsMsg = "It's not you, it's us. We're having trouble with " +
 	"our servers. If the issue persists, please contact " +
 	"our customer support."
-
-func TestReadForConfirmation(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	tests := []struct {
-		name   string
-		input  io.Reader
-		output bool
-	}{
-		{
-			name:   "no input",
-			input:  strings.NewReader(""),
-			output: true,
-		},
-		{
-			name:   "a newline",
-			input:  strings.NewReader("\n"),
-			output: true,
-		},
-		{
-			name:   "a number",
-			input:  strings.NewReader("5"),
-			output: true,
-		},
-		{
-			name:   "predicting Anton's input",
-			input:  strings.NewReader("\\"),
-			output: true,
-		},
-		{
-			name:  "lowercase n",
-			input: strings.NewReader("n"),
-		},
-		{
-			name:  "uppercase n",
-			input: strings.NewReader("N"),
-		},
-		{
-			name:   "lowercase y",
-			input:  strings.NewReader("y"),
-			output: true,
-		},
-		{
-			name:   "uppercase y",
-			input:  strings.NewReader("Y"),
-			output: true,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			assert.Equal(t, readForConfirmation(test.input, test.name, test.output), test.output)
-		})
-	}
-}
 
 func TestRespondToInviteResponseToError(t *testing.T) {
 	category.Set(t, category.Unit)

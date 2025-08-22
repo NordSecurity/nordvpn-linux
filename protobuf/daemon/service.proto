@@ -8,6 +8,7 @@ import "account.proto";
 import "cities.proto";
 import "common.proto";
 import "connect.proto";
+import "features.proto";
 import "login.proto";
 import "logout.proto";
 import "login_with_token.proto";
@@ -31,10 +32,10 @@ service Daemon {
   rpc Countries(Empty) returns (ServerGroupsList);
   rpc Disconnect(Empty) returns (stream Payload);
   rpc Groups(Empty) returns (ServerGroupsList);
-  rpc IsLoggedIn(Empty) returns (Bool);
+  rpc IsLoggedIn(Empty) returns (IsLoggedInResponse);
   rpc LoginWithToken(LoginWithTokenRequest) returns (LoginResponse);
   rpc LoginOAuth2(LoginOAuth2Request) returns (LoginOAuth2Response);
-  rpc LoginOAuth2Callback(LoginOAuth2CallbackRequest) returns (Empty);
+  rpc LoginOAuth2Callback(LoginOAuth2CallbackRequest) returns (LoginOAuth2CallbackResponse);
   rpc Logout(LogoutRequest) returns (Payload);
   rpc Ping(Empty) returns (PingResponse);
   rpc RateConnection(RateRequest) returns (Payload);
@@ -60,11 +61,11 @@ service Daemon {
   rpc SettingsProtocols(Empty) returns (Payload);
   rpc SettingsTechnologies(Empty) returns (Payload);
   rpc Status(Empty) returns (StatusResponse);
-  rpc SetIpv6(SetGenericRequest) returns (Payload);
   rpc ClaimOnlinePurchase(Empty) returns(ClaimOnlinePurchaseResponse);
   rpc SetVirtualLocation(SetGenericRequest) returns (Payload);
   rpc SubscribeToStateChanges(Empty) returns (stream AppState);
   rpc GetServers(Empty) returns (ServersResponse);
   rpc SetPostQuantum(SetGenericRequest) returns (Payload);
   rpc GetDaemonApiVersion(GetDaemonApiVersionRequest) returns (GetDaemonApiVersionResponse);
+  rpc GetFeatureToggles(Empty) returns (FeatureToggles);
 }

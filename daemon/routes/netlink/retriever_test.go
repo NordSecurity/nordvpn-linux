@@ -226,9 +226,6 @@ func TestIsSubnet(t *testing.T) {
 		{"subnet equal to network", "192.168.1.0/24", "192.168.1.0/24", true},
 		{"default route covers subnet", "0.0.0.0/0", "192.168.1.0/24", true},
 		{"default route is not within any subnet", "192.168.1.0/24", "0.0.0.0/0", false},
-		{"IPv6 subnet within network", "2001:db8::/32", "2001:db8::/48", true},
-		{"IPv6 subnet outside network", "2001:db8::/32", "2001:db9::/48", false},
-		{"IPv6 subnet larger than network", "2001:db8::/48", "2001:db8::/32", false},
 		{"nil network (default route)", "", "192.168.1.0/24", true},
 		{"nil subnet", "192.168.1.0/24", "", false},
 	}

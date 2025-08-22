@@ -1,18 +1,14 @@
+//go:build mage
+
 package main
 
 import (
+	"errors"
 	"go/build"
 	"log"
 	"os"
 	"strings"
-
-	"github.com/magefile/mage/sh"
 )
-
-type gitInfo struct {
-	commitHash string
-	versionTag string
-}
 
 func getEnv() (map[string]string, error) {
 	env, err := readVarsFromFile(".env")
@@ -21,13 +17,14 @@ func getEnv() (map[string]string, error) {
 	}
 	if env["ARCH"] == "" {
 		env["ARCH"] = build.Default.GOARCH
+		env["ARCHS"] = build.Default.GOARCH
 	}
 	return env, nil
 }
 
 func readVarsFromFile(filename string) (map[string]string, error) {
 	content, err := os.ReadFile(filename)
-	if err != nil {
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return nil, err
 	}
 
@@ -49,24 +46,6 @@ func getVersions() (map[string]string, error) {
 		return nil, err
 	}
 	return versions, nil
-}
-
-// TODO: replace with information coming from the Go toolchain
-func getGitInfo() (*gitInfo, error) {
-	hash, err := sh.Output("git", "rev-parse", "--short", "HEAD")
-	if err != nil {
-		return nil, err
-	}
-
-	version, err := sh.Output("git", "describe", "--tags", "--abbrev=0")
-	if err != nil {
-		return nil, err
-	}
-
-	return &gitInfo{
-		commitHash: hash,
-		versionTag: version,
-	}, nil
 }
 
 func mergeMaps(m1, m2 map[string]string) map[string]string {

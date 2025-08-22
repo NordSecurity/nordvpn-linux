@@ -14,6 +14,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 	"github.com/NordSecurity/nordvpn-linux/notify"
+	"github.com/NordSecurity/nordvpn-linux/sysinfo"
 
 	"github.com/NordSecurity/systray"
 )
@@ -24,6 +25,13 @@ const (
 	PollingFullUpdateInterval = 60 * time.Second
 	CountryListUpdateInterval = 60 * time.Minute
 	AccountInfoUpdateInterval = 24 * time.Hour
+)
+
+const (
+	IconBlack string = "nordvpn-tray-black"
+	IconGray  string = "nordvpn-tray-gray"
+	IconWhite string = "nordvpn-tray-white"
+	IconBlue  string = "nordvpn-tray-blue"
 )
 
 type Status int
@@ -162,24 +170,33 @@ func (ti *Instance) WaitInitialTrayStatus() Status {
 	return ti.state.trayStatus
 }
 
+// selectIcon determines the icon color based on the desktop environment.
+func selectIcon(desktopEnv string) string {
+	switch desktopEnv {
+	case "kde":
+		// Kubuntu uses a dark tray background instead of KDE's default white.
+		return IconBlack
+	case "mate":
+		return IconGray
+	default:
+		return IconWhite
+	}
+}
+
+// updateIconsSelection selects the most appropriate icon based on the desktop environment.
+func (ti *Instance) updateIconsSelection() {
+	ti.iconDisconnected = notify.GetIconPath(selectIcon(sysinfo.GetDisplayDesktopEnvironment()))
+	ti.iconConnected = notify.GetIconPath(IconBlue)
+}
+
+// configureDebugMode configures debug mode based on the environment variable.
+func (ti *Instance) configureDebugMode() {
+	ti.debugMode = os.Getenv("NORDVPN_TRAY_DEBUG") == "1"
+}
+
 func (ti *Instance) Start() {
-	if os.Getenv("NORDVPN_TRAY_DEBUG") == "1" {
-		ti.debugMode = true
-	} else {
-		ti.debugMode = false
-	}
-
-	ti.iconConnected = notify.GetIconPath("nordvpn-tray-blue")
-	ti.iconDisconnected = notify.GetIconPath("nordvpn-tray-white")
-
-	currentDesktop := strings.ToLower(os.Getenv("XDG_CURRENT_DESKTOP"))
-	if strings.Contains(currentDesktop, "kde") {
-		// TODO: Kubuntu uses dark tray background instead KDE default white
-		ti.iconDisconnected = notify.GetIconPath("nordvpn-tray-black")
-	}
-	if strings.Contains(currentDesktop, "mate") {
-		ti.iconDisconnected = notify.GetIconPath("nordvpn-tray-gray")
-	}
+	ti.configureDebugMode()
+	ti.updateIconsSelection()
 
 	ti.state.vpnStatus = pb.ConnectionState_DISCONNECTED
 	ti.state.notificationsStatus = Invalid

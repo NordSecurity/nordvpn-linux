@@ -89,7 +89,7 @@ type mockConfigManager struct {
 func newMockConfigManager() *mockConfigManager {
 	return &mockConfigManager{c: config.Config{
 		Firewall:  true,
-		UsersData: &config.UsersData{Notify: config.UidBoolMap{}, NotifyOff: config.UidBoolMap{}, TrayOff: config.UidBoolMap{}},
+		UsersData: &config.UsersData{NotifyOff: config.UidBoolMap{}, TrayOff: config.UidBoolMap{}},
 		TokensData: map[int64]config.TokenData{
 			1337: {
 				OpenVPNUsername: "bad",
@@ -121,7 +121,6 @@ func (m *mockConfigManager) Load(c *config.Config) error {
 	c.Routing = m.c.Routing
 	c.KillSwitch = m.c.KillSwitch
 	c.AutoConnect = m.c.AutoConnect
-	c.IPv6 = m.c.IPv6
 	c.AutoConnectData = m.c.AutoConnectData
 	c.UsersData = m.c.UsersData
 	c.TokensData = m.c.TokensData
@@ -134,7 +133,7 @@ func (m *mockConfigManager) Load(c *config.Config) error {
 	return nil
 }
 
-func (m *mockConfigManager) Reset(bool) error {
+func (m *mockConfigManager) Reset(bool, bool) error {
 	*m = *newMockConfigManager()
 	return nil
 }
@@ -149,7 +148,7 @@ func (failingConfigManager) Load(c *config.Config) error {
 	return errors.New("failed")
 }
 
-func (failingConfigManager) Reset(bool) error {
+func (failingConfigManager) Reset(bool, bool) error {
 	return errors.New("failed")
 }
 

@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0blogin.proto\x12\x02pb\"1\n\x12LoginOAuth2Request\x12\x1b\n\x04type\x18\x01 \x01(\x0e\x32\r.pb.LoginType\"H\n\x1aLoginOAuth2CallbackRequest\x12\r\n\x05token\x18\x01 \x01(\t\x12\x1b\n\x04type\x18\x02 \x01(\x0e\x32\r.pb.LoginType\"*\n\rLoginResponse\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12\x0b\n\x03url\x18\x05 \x01(\t\"I\n\x13LoginOAuth2Response\x12%\n\x06status\x18\x01 \x01(\x0e\x32\x15.pb.LoginOAuth2Status\x12\x0b\n\x03url\x18\x02 \x01(\t*M\n\tLoginType\x12\x15\n\x11LoginType_UNKNOWN\x10\x00\x12\x13\n\x0fLoginType_LOGIN\x10\x01\x12\x14\n\x10LoginType_SIGNUP\x10\x02*]\n\x11LoginOAuth2Status\x12\x0b\n\x07SUCCESS\x10\x00\x12\x18\n\x14UNKNOWN_OAUTH2_ERROR\x10\x01\x12\x15\n\x11\x41LREADY_LOGGED_IN\x10\x02\x12\n\n\x06NO_NET\x10\x03\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0blogin.proto\x12\x02pb\"1\n\x12LoginOAuth2Request\x12\x1b\n\x04type\x18\x01 \x01(\x0e\x32\r.pb.LoginType\"H\n\x1aLoginOAuth2CallbackRequest\x12\r\n\x05token\x18\x01 \x01(\t\x12\x1b\n\x04type\x18\x02 \x01(\x0e\x32\r.pb.LoginType\"*\n\rLoginResponse\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12\x0b\n\x03url\x18\x05 \x01(\t\"C\n\x13LoginOAuth2Response\x12\x1f\n\x06status\x18\x01 \x01(\x0e\x32\x0f.pb.LoginStatus\x12\x0b\n\x03url\x18\x02 \x01(\t\">\n\x1bLoginOAuth2CallbackResponse\x12\x1f\n\x06status\x18\x01 \x01(\x0e\x32\x0f.pb.LoginStatus\"K\n\x12IsLoggedInResponse\x12\x14\n\x0cis_logged_in\x18\x01 \x01(\x08\x12\x1f\n\x06status\x18\x02 \x01(\x0e\x32\x0f.pb.LoginStatus*M\n\tLoginType\x12\x15\n\x11LoginType_UNKNOWN\x10\x00\x12\x13\n\x0fLoginType_LOGIN\x10\x01\x12\x14\n\x10LoginType_SIGNUP\x10\x02*l\n\x0bLoginStatus\x12\x0b\n\x07SUCCESS\x10\x00\x12\x18\n\x14UNKNOWN_OAUTH2_ERROR\x10\x01\x12\x15\n\x11\x41LREADY_LOGGED_IN\x10\x02\x12\n\n\x06NO_NET\x10\x03\x12\x13\n\x0f\x43ONSENT_MISSING\x10\x04\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,10 +32,10 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'login_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z/github.com/NordSecurity/nordvpn-linux/daemon/pb'
-  _globals['_LOGINTYPE']._serialized_start=263
-  _globals['_LOGINTYPE']._serialized_end=340
-  _globals['_LOGINOAUTH2STATUS']._serialized_start=342
-  _globals['_LOGINOAUTH2STATUS']._serialized_end=435
+  _globals['_LOGINTYPE']._serialized_start=398
+  _globals['_LOGINTYPE']._serialized_end=475
+  _globals['_LOGINSTATUS']._serialized_start=477
+  _globals['_LOGINSTATUS']._serialized_end=585
   _globals['_LOGINOAUTH2REQUEST']._serialized_start=19
   _globals['_LOGINOAUTH2REQUEST']._serialized_end=68
   _globals['_LOGINOAUTH2CALLBACKREQUEST']._serialized_start=70
@@ -43,5 +43,9 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_LOGINRESPONSE']._serialized_start=144
   _globals['_LOGINRESPONSE']._serialized_end=186
   _globals['_LOGINOAUTH2RESPONSE']._serialized_start=188
-  _globals['_LOGINOAUTH2RESPONSE']._serialized_end=261
+  _globals['_LOGINOAUTH2RESPONSE']._serialized_end=255
+  _globals['_LOGINOAUTH2CALLBACKRESPONSE']._serialized_start=257
+  _globals['_LOGINOAUTH2CALLBACKRESPONSE']._serialized_end=319
+  _globals['_ISLOGGEDINRESPONSE']._serialized_start=321
+  _globals['_ISLOGGEDINRESPONSE']._serialized_end=396
 # @@protoc_insertion_point(module_scope)
