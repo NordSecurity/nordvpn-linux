@@ -9,9 +9,9 @@ from lib import ssh
 import os
 
 RC_REMOTE_MESSAGES = [
-    "[Info] feature [ meshnet ] remote config downloaded to: /var/lib/nordvpn/conf",
-    "[Info] feature [ libtelio ] remote config downloaded to: /var/lib/nordvpn/conf",
-    "[Info] feature [ nordvpn ] remote config downloaded to: /var/lib/nordvpn/conf",
+    "[Info] feature [meshnet] remote config downloaded to: /var/lib/nordvpn/conf",
+    "[Info] feature [libtelio] remote config downloaded to: /var/lib/nordvpn/conf",
+    "[Info] feature [nordvpn] remote config downloaded to: /var/lib/nordvpn/conf",
 ]
 
 RC_LOCAL_MESSAGES = [
