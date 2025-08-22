@@ -1,4 +1,3 @@
-import os
 import re
 import time
 from collections.abc import Callable
@@ -199,9 +198,6 @@ PORTS_RANGE = [
     Port("3000:3100", Protocol.TCP),
     Port("3000:3100", Protocol.ALL),
 ]
-
-# Used for integration test coverage
-os.environ["GOCOVERDIR"] = os.environ["WORKDIR"] + "/" + os.environ["COVERDIR"]
 
 
 # Implements context manager a.k.a. with block and executes command on exit if exception was thrown.

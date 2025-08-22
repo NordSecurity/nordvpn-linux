@@ -1,65 +1,21 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euxo pipefail
 
-category="${1}"
-pattern="${2}"
-
-export COVERDIR="covdatafiles"
+source "${WORKDIR}/ci/qa_tests_env.sh"
 
 if ! "${WORKDIR}"/ci/install_snap.sh; then
     echo "failed to install snap"
     exit 1
 fi
 
-mkdir -p "${WORKDIR}"/dist/logs
+# because of snap confinement is not possible to save anywhere the cover files
+# for now set the cover dir to /tmp to prevent CLI errors.
+# If later this will be needed also the snap nordvpn service file needs to be changed.
+rm -fr "${GOCOVERDIR}"
+ORIG_COVERDIR="$GOCOVERDIR"
+GOCOVERDIR="/tmp/"
 
-cd "${WORKDIR}"/test/qa || exit
+"${WORKDIR}/ci/qa_run_tests.sh" "$@"
 
-args=()
-
-case "${category}" in
-    "all")
-        ;;
-    *)
-	args+=("test_${category}.py")
-        ;;
-esac
-
-case "${pattern}" in
-    "")
-        ;;
-    *)
-	args+=("-k ${pattern}")
-        ;;
-esac
-
-
-# mkdir -p "${WORKDIR}"/"${COVERDIR}" 
-
-# if ! sudo grep -q "export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
-#     sudo sed -i "1a export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"
-# fi
-
-# if [[ -n ${LATTE:-} ]]; then
-#     if ! sudo grep -q "export IGNORE_HEADER_VALIDATION=1" "/etc/init.d/nordvpn"; then
-#         sudo sed -i "1a export IGNORE_HEADER_VALIDATION=1" "/etc/init.d/nordvpn"
-#     fi
-
-#     if ! sudo grep -q "export HTTP_TRANSPORTS=http1" "/etc/init.d/nordvpn"; then
-#         sudo sed -i "1a export HTTP_TRANSPORTS=http1" "/etc/init.d/nordvpn"
-#     fi
-# fi
-
-python3 -m pytest -v --disable-pytest-warnings --timeout 180 -x -rsx --timeout-method=signal -o log_cli=true \
---html="${WORKDIR}"/dist/test_artifacts/report.html --self-contained-html  --junitxml="${WORKDIR}"/dist/test_artifacts/report.xml "${args[@]}"
-
-# if ! sudo grep -q "export GOCOVERDIR=${WORKDIR}/${COVERDIR}" "/etc/init.d/nordvpn"; then
-#     sudo sed -i "2d" "/etc/init.d/nordvpn"
-# fi
-
-# # To print goroutine profile when debugging:
-# RET=$?
-# if [ $RET != 0 ]; then
-#     curl http://localhost:6960/debug/pprof/goroutine?debug=1
-# fi
-# exit $RET
+# restore to original value
+GOCOVERDIR="$ORIG_COVERDIR"
