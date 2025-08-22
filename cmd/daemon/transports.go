@@ -75,7 +75,6 @@ func createH1Transport(resolver network.DNSResolver, fwmark uint32) func() http.
 				if err != nil {
 					return nil, err
 				}
-
 				var newAddr string
 				if ip := ips[0]; ip.Is6() {
 					newAddr = fmt.Sprintf("[%s]", ip.String())

@@ -251,21 +251,20 @@ func main() {
 	}
 	log.Println(internal.InfoPrefix, "CDN URL:", cdnUrl)
 
-	cdnAPI := core.NewCDNAPI(
-		userAgent,
-		cdnUrl,
-		httpClientSimple,
-		validator,
-	)
-
-	var threatProtectionLiteServers *dns.NameServers
-	nameservers, err := cdnAPI.ThreatProtectionLite()
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "error retrieving nameservers:", err)
-		threatProtectionLiteServers = dns.NewNameServers(nil)
-	} else {
-		threatProtectionLiteServers = dns.NewNameServers(nameservers.Servers)
-	}
+	threatProtectionLiteServers := func() *dns.NameServers {
+		cdn := core.NewCDNAPI(
+			userAgent,
+			cdnUrl,
+			httpClientSimple,
+			validator,
+		)
+		nameservers, err := cdn.ThreatProtectionLite()
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "error retrieving nameservers:", err)
+			return dns.NewNameServers(nil)
+		}
+		return dns.NewNameServers(nameservers.Servers)
+	}()
 
 	resolver := network.NewResolver(fw, threatProtectionLiteServers)
 
@@ -280,6 +279,13 @@ func main() {
 		httpCallsSubject,
 		daemonEvents.Service.Connect,
 		httpGlobalCtx,
+	)
+
+	cdnAPI := core.NewCDNAPI(
+		userAgent,
+		cdnUrl,
+		httpClientWithRotator,
+		validator,
 	)
 
 	defaultAPI := core.NewDefaultAPI(
