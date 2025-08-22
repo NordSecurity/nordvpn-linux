@@ -64,6 +64,7 @@ func makeDisplayLabel(conn Model) string {
 	}
 }
 
+// NewVPNConnection creates new a VPN connection
 func NewVPNConnection(conn Model) VPNConnection {
 	return VPNConnection{
 		Connection:   conn,
@@ -77,6 +78,7 @@ type RecentConnectionsStore struct {
 	mu       sync.Mutex
 }
 
+// NewRecentConnectionsStore creates a recent VPN connection store
 func NewRecentConnectionsStore(
 	path string,
 	fsHandle config.FilesystemHandle,
@@ -87,6 +89,7 @@ func NewRecentConnectionsStore(
 	}
 }
 
+// Get retrieves all stored VPN connections from the store
 func (r *RecentConnectionsStore) Get() ([]VPNConnection, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -107,6 +110,8 @@ func (r *RecentConnectionsStore) find(conn VPNConnection, list []VPNConnection) 
 	})
 }
 
+// Add adds a new VPN connection to store if it does not exist yet
+// New connections are placed at the beginning of the store
 func (r *RecentConnectionsStore) Add(conn VPNConnection) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -135,6 +140,7 @@ func (r *RecentConnectionsStore) Add(conn VPNConnection) error {
 	return r.saveLocked(connections)
 }
 
+// Clean removes all stored connection information
 func (r *RecentConnectionsStore) Clean() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
