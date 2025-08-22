@@ -5,11 +5,13 @@ import (
 	"errors"
 	"log"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/features"
@@ -275,6 +277,16 @@ func (r *RPC) connect(
 	event.EventStatus = events.StatusSuccess
 	event.DurationMs = getElapsedTime(connectingStartTime)
 	r.events.Service.Connect.Publish(event)
+	r.recentVPNConnStore.Add(recents.NewVPNConnection(
+		recents.Model{
+			Country:            country.Name,
+			City:               city,
+			SpecificServer:     strings.Split(server.Hostname, ".")[0],
+			SpecificServerName: server.Name,
+			Group:              event.TargetServerGroup,
+			ConnectionType:     event.TargetServerSelection,
+		}),
+	)
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnected, Data: data}); err != nil {
 		log.Println(internal.ErrorPrefix, err)
