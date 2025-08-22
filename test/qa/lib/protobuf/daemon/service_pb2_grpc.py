@@ -15,6 +15,7 @@ import logout_pb2 as logout__pb2
 import ping_pb2 as ping__pb2
 import purchase_pb2 as purchase__pb2
 import rate_pb2 as rate__pb2
+import recent_connections_pb2 as recent__connections__pb2
 import servers_pb2 as servers__pb2
 import set_pb2 as set__pb2
 import settings_pb2 as settings__pb2
@@ -51,46 +52,6 @@ class DaemonStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.AccountInfo = channel.unary_unary(
-                '/pb.Daemon/AccountInfo',
-                request_serializer=account__pb2.AccountRequest.SerializeToString,
-                response_deserializer=account__pb2.AccountResponse.FromString,
-                _registered_method=True)
-        self.TokenInfo = channel.unary_unary(
-                '/pb.Daemon/TokenInfo',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=token__pb2.TokenInfoResponse.FromString,
-                _registered_method=True)
-        self.Cities = channel.unary_unary(
-                '/pb.Daemon/Cities',
-                request_serializer=cities__pb2.CitiesRequest.SerializeToString,
-                response_deserializer=common__pb2.ServerGroupsList.FromString,
-                _registered_method=True)
-        self.Connect = channel.unary_stream(
-                '/pb.Daemon/Connect',
-                request_serializer=connect__pb2.ConnectRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
-                _registered_method=True)
-        self.ConnectCancel = channel.unary_unary(
-                '/pb.Daemon/ConnectCancel',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
-                _registered_method=True)
-        self.Countries = channel.unary_unary(
-                '/pb.Daemon/Countries',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=common__pb2.ServerGroupsList.FromString,
-                _registered_method=True)
-        self.Disconnect = channel.unary_stream(
-                '/pb.Daemon/Disconnect',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
-                _registered_method=True)
-        self.Groups = channel.unary_unary(
-                '/pb.Daemon/Groups',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=common__pb2.ServerGroupsList.FromString,
-                _registered_method=True)
         self.IsLoggedIn = channel.unary_unary(
                 '/pb.Daemon/IsLoggedIn',
                 request_serializer=common__pb2.Empty.SerializeToString,
@@ -116,14 +77,74 @@ class DaemonStub(object):
                 request_serializer=logout__pb2.LogoutRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
-        self.Ping = channel.unary_unary(
-                '/pb.Daemon/Ping',
+        self.AccountInfo = channel.unary_unary(
+                '/pb.Daemon/AccountInfo',
+                request_serializer=account__pb2.AccountRequest.SerializeToString,
+                response_deserializer=account__pb2.AccountResponse.FromString,
+                _registered_method=True)
+        self.TokenInfo = channel.unary_unary(
+                '/pb.Daemon/TokenInfo',
                 request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=ping__pb2.PingResponse.FromString,
+                response_deserializer=token__pb2.TokenInfoResponse.FromString,
+                _registered_method=True)
+        self.ClaimOnlinePurchase = channel.unary_unary(
+                '/pb.Daemon/ClaimOnlinePurchase',
+                request_serializer=common__pb2.Empty.SerializeToString,
+                response_deserializer=purchase__pb2.ClaimOnlinePurchaseResponse.FromString,
+                _registered_method=True)
+        self.Connect = channel.unary_stream(
+                '/pb.Daemon/Connect',
+                request_serializer=connect__pb2.ConnectRequest.SerializeToString,
+                response_deserializer=common__pb2.Payload.FromString,
+                _registered_method=True)
+        self.ConnectCancel = channel.unary_unary(
+                '/pb.Daemon/ConnectCancel',
+                request_serializer=common__pb2.Empty.SerializeToString,
+                response_deserializer=common__pb2.Payload.FromString,
+                _registered_method=True)
+        self.Disconnect = channel.unary_stream(
+                '/pb.Daemon/Disconnect',
+                request_serializer=common__pb2.Empty.SerializeToString,
+                response_deserializer=common__pb2.Payload.FromString,
+                _registered_method=True)
+        self.Status = channel.unary_unary(
+                '/pb.Daemon/Status',
+                request_serializer=common__pb2.Empty.SerializeToString,
+                response_deserializer=status__pb2.StatusResponse.FromString,
                 _registered_method=True)
         self.RateConnection = channel.unary_unary(
                 '/pb.Daemon/RateConnection',
                 request_serializer=rate__pb2.RateRequest.SerializeToString,
+                response_deserializer=common__pb2.Payload.FromString,
+                _registered_method=True)
+        self.GetServers = channel.unary_unary(
+                '/pb.Daemon/GetServers',
+                request_serializer=common__pb2.Empty.SerializeToString,
+                response_deserializer=servers__pb2.ServersResponse.FromString,
+                _registered_method=True)
+        self.Countries = channel.unary_unary(
+                '/pb.Daemon/Countries',
+                request_serializer=common__pb2.Empty.SerializeToString,
+                response_deserializer=common__pb2.ServerGroupsList.FromString,
+                _registered_method=True)
+        self.Cities = channel.unary_unary(
+                '/pb.Daemon/Cities',
+                request_serializer=cities__pb2.CitiesRequest.SerializeToString,
+                response_deserializer=common__pb2.ServerGroupsList.FromString,
+                _registered_method=True)
+        self.Groups = channel.unary_unary(
+                '/pb.Daemon/Groups',
+                request_serializer=common__pb2.Empty.SerializeToString,
+                response_deserializer=common__pb2.ServerGroupsList.FromString,
+                _registered_method=True)
+        self.Settings = channel.unary_unary(
+                '/pb.Daemon/Settings',
+                request_serializer=common__pb2.Empty.SerializeToString,
+                response_deserializer=settings__pb2.SettingsResponse.FromString,
+                _registered_method=True)
+        self.SetDefaults = channel.unary_unary(
+                '/pb.Daemon/SetDefaults',
+                request_serializer=defaults__pb2.SetDefaultsRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SetAutoConnect = channel.unary_unary(
@@ -131,15 +152,30 @@ class DaemonStub(object):
                 request_serializer=set__pb2.SetAutoconnectRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
-        self.SetThreatProtectionLite = channel.unary_unary(
-                '/pb.Daemon/SetThreatProtectionLite',
-                request_serializer=set__pb2.SetThreatProtectionLiteRequest.SerializeToString,
-                response_deserializer=set__pb2.SetThreatProtectionLiteResponse.FromString,
+        self.SetProtocol = channel.unary_unary(
+                '/pb.Daemon/SetProtocol',
+                request_serializer=set__pb2.SetProtocolRequest.SerializeToString,
+                response_deserializer=set__pb2.SetProtocolResponse.FromString,
                 _registered_method=True)
-        self.SetDefaults = channel.unary_unary(
-                '/pb.Daemon/SetDefaults',
-                request_serializer=defaults__pb2.SetDefaultsRequest.SerializeToString,
+        self.SetTechnology = channel.unary_unary(
+                '/pb.Daemon/SetTechnology',
+                request_serializer=set__pb2.SetTechnologyRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
+                _registered_method=True)
+        self.SetObfuscate = channel.unary_unary(
+                '/pb.Daemon/SetObfuscate',
+                request_serializer=set__pb2.SetGenericRequest.SerializeToString,
+                response_deserializer=common__pb2.Payload.FromString,
+                _registered_method=True)
+        self.SetPostQuantum = channel.unary_unary(
+                '/pb.Daemon/SetPostQuantum',
+                request_serializer=set__pb2.SetGenericRequest.SerializeToString,
+                response_deserializer=common__pb2.Payload.FromString,
+                _registered_method=True)
+        self.GetRecentConnections = channel.unary_unary(
+                '/pb.Daemon/GetRecentConnections',
+                request_serializer=recent__connections__pb2.RecentConnectionsRequest.SerializeToString,
+                response_deserializer=recent__connections__pb2.RecentConnectionsResponse.FromString,
                 _registered_method=True)
         self.SetDNS = channel.unary_unary(
                 '/pb.Daemon/SetDNS',
@@ -161,14 +197,19 @@ class DaemonStub(object):
                 request_serializer=set__pb2.SetGenericRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
-        self.SetAnalytics = channel.unary_unary(
-                '/pb.Daemon/SetAnalytics',
-                request_serializer=set__pb2.SetGenericRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
-                _registered_method=True)
         self.SetKillSwitch = channel.unary_unary(
                 '/pb.Daemon/SetKillSwitch',
                 request_serializer=set__pb2.SetKillSwitchRequest.SerializeToString,
+                response_deserializer=common__pb2.Payload.FromString,
+                _registered_method=True)
+        self.SetLANDiscovery = channel.unary_unary(
+                '/pb.Daemon/SetLANDiscovery',
+                request_serializer=set__pb2.SetLANDiscoveryRequest.SerializeToString,
+                response_deserializer=set__pb2.SetLANDiscoveryResponse.FromString,
+                _registered_method=True)
+        self.SetVirtualLocation = channel.unary_unary(
+                '/pb.Daemon/SetVirtualLocation',
+                request_serializer=set__pb2.SetGenericRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
         self.SetNotify = channel.unary_unary(
@@ -181,25 +222,20 @@ class DaemonStub(object):
                 request_serializer=set__pb2.SetTrayRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
-        self.SetObfuscate = channel.unary_unary(
-                '/pb.Daemon/SetObfuscate',
-                request_serializer=set__pb2.SetGenericRequest.SerializeToString,
+        self.SettingsProtocols = channel.unary_unary(
+                '/pb.Daemon/SettingsProtocols',
+                request_serializer=common__pb2.Empty.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
-        self.SetProtocol = channel.unary_unary(
-                '/pb.Daemon/SetProtocol',
-                request_serializer=set__pb2.SetProtocolRequest.SerializeToString,
-                response_deserializer=set__pb2.SetProtocolResponse.FromString,
-                _registered_method=True)
-        self.SetTechnology = channel.unary_unary(
-                '/pb.Daemon/SetTechnology',
-                request_serializer=set__pb2.SetTechnologyRequest.SerializeToString,
+        self.SettingsTechnologies = channel.unary_unary(
+                '/pb.Daemon/SettingsTechnologies',
+                request_serializer=common__pb2.Empty.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
-        self.SetLANDiscovery = channel.unary_unary(
-                '/pb.Daemon/SetLANDiscovery',
-                request_serializer=set__pb2.SetLANDiscoveryRequest.SerializeToString,
-                response_deserializer=set__pb2.SetLANDiscoveryResponse.FromString,
+        self.GetFeatureToggles = channel.unary_unary(
+                '/pb.Daemon/GetFeatureToggles',
+                request_serializer=common__pb2.Empty.SerializeToString,
+                response_deserializer=features__pb2.FeatureToggles.FromString,
                 _registered_method=True)
         self.SetAllowlist = channel.unary_unary(
                 '/pb.Daemon/SetAllowlist',
@@ -216,50 +252,25 @@ class DaemonStub(object):
                 request_serializer=common__pb2.Empty.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
-        self.Settings = channel.unary_unary(
-                '/pb.Daemon/Settings',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=settings__pb2.SettingsResponse.FromString,
-                _registered_method=True)
-        self.SettingsProtocols = channel.unary_unary(
-                '/pb.Daemon/SettingsProtocols',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
-                _registered_method=True)
-        self.SettingsTechnologies = channel.unary_unary(
-                '/pb.Daemon/SettingsTechnologies',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
-                _registered_method=True)
-        self.Status = channel.unary_unary(
-                '/pb.Daemon/Status',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=status__pb2.StatusResponse.FromString,
-                _registered_method=True)
-        self.ClaimOnlinePurchase = channel.unary_unary(
-                '/pb.Daemon/ClaimOnlinePurchase',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=purchase__pb2.ClaimOnlinePurchaseResponse.FromString,
-                _registered_method=True)
-        self.SetVirtualLocation = channel.unary_unary(
-                '/pb.Daemon/SetVirtualLocation',
+        self.SetAnalytics = channel.unary_unary(
+                '/pb.Daemon/SetAnalytics',
                 request_serializer=set__pb2.SetGenericRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
+                _registered_method=True)
+        self.SetThreatProtectionLite = channel.unary_unary(
+                '/pb.Daemon/SetThreatProtectionLite',
+                request_serializer=set__pb2.SetThreatProtectionLiteRequest.SerializeToString,
+                response_deserializer=set__pb2.SetThreatProtectionLiteResponse.FromString,
+                _registered_method=True)
+        self.Ping = channel.unary_unary(
+                '/pb.Daemon/Ping',
+                request_serializer=common__pb2.Empty.SerializeToString,
+                response_deserializer=ping__pb2.PingResponse.FromString,
                 _registered_method=True)
         self.SubscribeToStateChanges = channel.unary_stream(
                 '/pb.Daemon/SubscribeToStateChanges',
                 request_serializer=common__pb2.Empty.SerializeToString,
                 response_deserializer=state__pb2.AppState.FromString,
-                _registered_method=True)
-        self.GetServers = channel.unary_unary(
-                '/pb.Daemon/GetServers',
-                request_serializer=common__pb2.Empty.SerializeToString,
-                response_deserializer=servers__pb2.ServersResponse.FromString,
-                _registered_method=True)
-        self.SetPostQuantum = channel.unary_unary(
-                '/pb.Daemon/SetPostQuantum',
-                request_serializer=set__pb2.SetGenericRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
         self.GetDaemonApiVersion = channel.unary_unary(
                 '/pb.Daemon/GetDaemonApiVersion',
@@ -276,56 +287,9 @@ class DaemonStub(object):
 class DaemonServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def AccountInfo(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def TokenInfo(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def Cities(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def Connect(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def ConnectCancel(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def Countries(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def Disconnect(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def Groups(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
     def IsLoggedIn(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """==================== Authentication ====================
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -354,7 +318,45 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def Ping(self, request, context):
+    def AccountInfo(self, request, context):
+        """==================== Account Management ====================
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def TokenInfo(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ClaimOnlinePurchase(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Connect(self, request, context):
+        """==================== Connection Operations ====================
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ConnectCancel(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Disconnect(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Status(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -366,14 +368,34 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SetAutoConnect(self, request, context):
+    def GetServers(self, request, context):
+        """==================== Server Discovery ====================
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Countries(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SetThreatProtectionLite(self, request, context):
+    def Cities(self, request, context):
         """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Groups(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def Settings(self, request, context):
+        """==================== General Settings ====================
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -384,8 +406,46 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SetDNS(self, request, context):
+    def SetAutoConnect(self, request, context):
+        """==================== Connection Settings ====================
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SetProtocol(self, request, context):
         """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SetTechnology(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SetObfuscate(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SetPostQuantum(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetRecentConnections(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SetDNS(self, request, context):
+        """==================== Network Settings ====================
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -408,43 +468,7 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SetAnalytics(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
     def SetKillSwitch(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def SetNotify(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def SetTray(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def SetObfuscate(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def SetProtocol(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def SetTechnology(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -456,8 +480,47 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SetAllowlist(self, request, context):
+    def SetVirtualLocation(self, request, context):
         """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SetNotify(self, request, context):
+        """==================== UI Settings ====================
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SetTray(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SettingsProtocols(self, request, context):
+        """==================== Configuration Info ====================
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SettingsTechnologies(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetFeatureToggles(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SetAllowlist(self, request, context):
+        """==================== Allowlist Management ====================
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -474,55 +537,27 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def Settings(self, request, context):
+    def SetAnalytics(self, request, context):
+        """==================== Privacy & Security ====================
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SetThreatProtectionLite(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SettingsProtocols(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def SettingsTechnologies(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def Status(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def ClaimOnlinePurchase(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def SetVirtualLocation(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+    def Ping(self, request, context):
+        """==================== System & Monitoring ====================
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def SubscribeToStateChanges(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def GetServers(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def SetPostQuantum(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -543,46 +578,6 @@ class DaemonServicer(object):
 
 def add_DaemonServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'AccountInfo': grpc.unary_unary_rpc_method_handler(
-                    servicer.AccountInfo,
-                    request_deserializer=account__pb2.AccountRequest.FromString,
-                    response_serializer=account__pb2.AccountResponse.SerializeToString,
-            ),
-            'TokenInfo': grpc.unary_unary_rpc_method_handler(
-                    servicer.TokenInfo,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=token__pb2.TokenInfoResponse.SerializeToString,
-            ),
-            'Cities': grpc.unary_unary_rpc_method_handler(
-                    servicer.Cities,
-                    request_deserializer=cities__pb2.CitiesRequest.FromString,
-                    response_serializer=common__pb2.ServerGroupsList.SerializeToString,
-            ),
-            'Connect': grpc.unary_stream_rpc_method_handler(
-                    servicer.Connect,
-                    request_deserializer=connect__pb2.ConnectRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
-            ),
-            'ConnectCancel': grpc.unary_unary_rpc_method_handler(
-                    servicer.ConnectCancel,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
-            ),
-            'Countries': grpc.unary_unary_rpc_method_handler(
-                    servicer.Countries,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=common__pb2.ServerGroupsList.SerializeToString,
-            ),
-            'Disconnect': grpc.unary_stream_rpc_method_handler(
-                    servicer.Disconnect,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
-            ),
-            'Groups': grpc.unary_unary_rpc_method_handler(
-                    servicer.Groups,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=common__pb2.ServerGroupsList.SerializeToString,
-            ),
             'IsLoggedIn': grpc.unary_unary_rpc_method_handler(
                     servicer.IsLoggedIn,
                     request_deserializer=common__pb2.Empty.FromString,
@@ -608,14 +603,74 @@ def add_DaemonServicer_to_server(servicer, server):
                     request_deserializer=logout__pb2.LogoutRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
             ),
-            'Ping': grpc.unary_unary_rpc_method_handler(
-                    servicer.Ping,
+            'AccountInfo': grpc.unary_unary_rpc_method_handler(
+                    servicer.AccountInfo,
+                    request_deserializer=account__pb2.AccountRequest.FromString,
+                    response_serializer=account__pb2.AccountResponse.SerializeToString,
+            ),
+            'TokenInfo': grpc.unary_unary_rpc_method_handler(
+                    servicer.TokenInfo,
                     request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=ping__pb2.PingResponse.SerializeToString,
+                    response_serializer=token__pb2.TokenInfoResponse.SerializeToString,
+            ),
+            'ClaimOnlinePurchase': grpc.unary_unary_rpc_method_handler(
+                    servicer.ClaimOnlinePurchase,
+                    request_deserializer=common__pb2.Empty.FromString,
+                    response_serializer=purchase__pb2.ClaimOnlinePurchaseResponse.SerializeToString,
+            ),
+            'Connect': grpc.unary_stream_rpc_method_handler(
+                    servicer.Connect,
+                    request_deserializer=connect__pb2.ConnectRequest.FromString,
+                    response_serializer=common__pb2.Payload.SerializeToString,
+            ),
+            'ConnectCancel': grpc.unary_unary_rpc_method_handler(
+                    servicer.ConnectCancel,
+                    request_deserializer=common__pb2.Empty.FromString,
+                    response_serializer=common__pb2.Payload.SerializeToString,
+            ),
+            'Disconnect': grpc.unary_stream_rpc_method_handler(
+                    servicer.Disconnect,
+                    request_deserializer=common__pb2.Empty.FromString,
+                    response_serializer=common__pb2.Payload.SerializeToString,
+            ),
+            'Status': grpc.unary_unary_rpc_method_handler(
+                    servicer.Status,
+                    request_deserializer=common__pb2.Empty.FromString,
+                    response_serializer=status__pb2.StatusResponse.SerializeToString,
             ),
             'RateConnection': grpc.unary_unary_rpc_method_handler(
                     servicer.RateConnection,
                     request_deserializer=rate__pb2.RateRequest.FromString,
+                    response_serializer=common__pb2.Payload.SerializeToString,
+            ),
+            'GetServers': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetServers,
+                    request_deserializer=common__pb2.Empty.FromString,
+                    response_serializer=servers__pb2.ServersResponse.SerializeToString,
+            ),
+            'Countries': grpc.unary_unary_rpc_method_handler(
+                    servicer.Countries,
+                    request_deserializer=common__pb2.Empty.FromString,
+                    response_serializer=common__pb2.ServerGroupsList.SerializeToString,
+            ),
+            'Cities': grpc.unary_unary_rpc_method_handler(
+                    servicer.Cities,
+                    request_deserializer=cities__pb2.CitiesRequest.FromString,
+                    response_serializer=common__pb2.ServerGroupsList.SerializeToString,
+            ),
+            'Groups': grpc.unary_unary_rpc_method_handler(
+                    servicer.Groups,
+                    request_deserializer=common__pb2.Empty.FromString,
+                    response_serializer=common__pb2.ServerGroupsList.SerializeToString,
+            ),
+            'Settings': grpc.unary_unary_rpc_method_handler(
+                    servicer.Settings,
+                    request_deserializer=common__pb2.Empty.FromString,
+                    response_serializer=settings__pb2.SettingsResponse.SerializeToString,
+            ),
+            'SetDefaults': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetDefaults,
+                    request_deserializer=defaults__pb2.SetDefaultsRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
             ),
             'SetAutoConnect': grpc.unary_unary_rpc_method_handler(
@@ -623,15 +678,30 @@ def add_DaemonServicer_to_server(servicer, server):
                     request_deserializer=set__pb2.SetAutoconnectRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
             ),
-            'SetThreatProtectionLite': grpc.unary_unary_rpc_method_handler(
-                    servicer.SetThreatProtectionLite,
-                    request_deserializer=set__pb2.SetThreatProtectionLiteRequest.FromString,
-                    response_serializer=set__pb2.SetThreatProtectionLiteResponse.SerializeToString,
+            'SetProtocol': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetProtocol,
+                    request_deserializer=set__pb2.SetProtocolRequest.FromString,
+                    response_serializer=set__pb2.SetProtocolResponse.SerializeToString,
             ),
-            'SetDefaults': grpc.unary_unary_rpc_method_handler(
-                    servicer.SetDefaults,
-                    request_deserializer=defaults__pb2.SetDefaultsRequest.FromString,
+            'SetTechnology': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetTechnology,
+                    request_deserializer=set__pb2.SetTechnologyRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
+            ),
+            'SetObfuscate': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetObfuscate,
+                    request_deserializer=set__pb2.SetGenericRequest.FromString,
+                    response_serializer=common__pb2.Payload.SerializeToString,
+            ),
+            'SetPostQuantum': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetPostQuantum,
+                    request_deserializer=set__pb2.SetGenericRequest.FromString,
+                    response_serializer=common__pb2.Payload.SerializeToString,
+            ),
+            'GetRecentConnections': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetRecentConnections,
+                    request_deserializer=recent__connections__pb2.RecentConnectionsRequest.FromString,
+                    response_serializer=recent__connections__pb2.RecentConnectionsResponse.SerializeToString,
             ),
             'SetDNS': grpc.unary_unary_rpc_method_handler(
                     servicer.SetDNS,
@@ -653,14 +723,19 @@ def add_DaemonServicer_to_server(servicer, server):
                     request_deserializer=set__pb2.SetGenericRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
             ),
-            'SetAnalytics': grpc.unary_unary_rpc_method_handler(
-                    servicer.SetAnalytics,
-                    request_deserializer=set__pb2.SetGenericRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
-            ),
             'SetKillSwitch': grpc.unary_unary_rpc_method_handler(
                     servicer.SetKillSwitch,
                     request_deserializer=set__pb2.SetKillSwitchRequest.FromString,
+                    response_serializer=common__pb2.Payload.SerializeToString,
+            ),
+            'SetLANDiscovery': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetLANDiscovery,
+                    request_deserializer=set__pb2.SetLANDiscoveryRequest.FromString,
+                    response_serializer=set__pb2.SetLANDiscoveryResponse.SerializeToString,
+            ),
+            'SetVirtualLocation': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetVirtualLocation,
+                    request_deserializer=set__pb2.SetGenericRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
             ),
             'SetNotify': grpc.unary_unary_rpc_method_handler(
@@ -673,25 +748,20 @@ def add_DaemonServicer_to_server(servicer, server):
                     request_deserializer=set__pb2.SetTrayRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
             ),
-            'SetObfuscate': grpc.unary_unary_rpc_method_handler(
-                    servicer.SetObfuscate,
-                    request_deserializer=set__pb2.SetGenericRequest.FromString,
+            'SettingsProtocols': grpc.unary_unary_rpc_method_handler(
+                    servicer.SettingsProtocols,
+                    request_deserializer=common__pb2.Empty.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
             ),
-            'SetProtocol': grpc.unary_unary_rpc_method_handler(
-                    servicer.SetProtocol,
-                    request_deserializer=set__pb2.SetProtocolRequest.FromString,
-                    response_serializer=set__pb2.SetProtocolResponse.SerializeToString,
-            ),
-            'SetTechnology': grpc.unary_unary_rpc_method_handler(
-                    servicer.SetTechnology,
-                    request_deserializer=set__pb2.SetTechnologyRequest.FromString,
+            'SettingsTechnologies': grpc.unary_unary_rpc_method_handler(
+                    servicer.SettingsTechnologies,
+                    request_deserializer=common__pb2.Empty.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
             ),
-            'SetLANDiscovery': grpc.unary_unary_rpc_method_handler(
-                    servicer.SetLANDiscovery,
-                    request_deserializer=set__pb2.SetLANDiscoveryRequest.FromString,
-                    response_serializer=set__pb2.SetLANDiscoveryResponse.SerializeToString,
+            'GetFeatureToggles': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetFeatureToggles,
+                    request_deserializer=common__pb2.Empty.FromString,
+                    response_serializer=features__pb2.FeatureToggles.SerializeToString,
             ),
             'SetAllowlist': grpc.unary_unary_rpc_method_handler(
                     servicer.SetAllowlist,
@@ -708,50 +778,25 @@ def add_DaemonServicer_to_server(servicer, server):
                     request_deserializer=common__pb2.Empty.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
             ),
-            'Settings': grpc.unary_unary_rpc_method_handler(
-                    servicer.Settings,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=settings__pb2.SettingsResponse.SerializeToString,
-            ),
-            'SettingsProtocols': grpc.unary_unary_rpc_method_handler(
-                    servicer.SettingsProtocols,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
-            ),
-            'SettingsTechnologies': grpc.unary_unary_rpc_method_handler(
-                    servicer.SettingsTechnologies,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
-            ),
-            'Status': grpc.unary_unary_rpc_method_handler(
-                    servicer.Status,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=status__pb2.StatusResponse.SerializeToString,
-            ),
-            'ClaimOnlinePurchase': grpc.unary_unary_rpc_method_handler(
-                    servicer.ClaimOnlinePurchase,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=purchase__pb2.ClaimOnlinePurchaseResponse.SerializeToString,
-            ),
-            'SetVirtualLocation': grpc.unary_unary_rpc_method_handler(
-                    servicer.SetVirtualLocation,
+            'SetAnalytics': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetAnalytics,
                     request_deserializer=set__pb2.SetGenericRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
+            ),
+            'SetThreatProtectionLite': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetThreatProtectionLite,
+                    request_deserializer=set__pb2.SetThreatProtectionLiteRequest.FromString,
+                    response_serializer=set__pb2.SetThreatProtectionLiteResponse.SerializeToString,
+            ),
+            'Ping': grpc.unary_unary_rpc_method_handler(
+                    servicer.Ping,
+                    request_deserializer=common__pb2.Empty.FromString,
+                    response_serializer=ping__pb2.PingResponse.SerializeToString,
             ),
             'SubscribeToStateChanges': grpc.unary_stream_rpc_method_handler(
                     servicer.SubscribeToStateChanges,
                     request_deserializer=common__pb2.Empty.FromString,
                     response_serializer=state__pb2.AppState.SerializeToString,
-            ),
-            'GetServers': grpc.unary_unary_rpc_method_handler(
-                    servicer.GetServers,
-                    request_deserializer=common__pb2.Empty.FromString,
-                    response_serializer=servers__pb2.ServersResponse.SerializeToString,
-            ),
-            'SetPostQuantum': grpc.unary_unary_rpc_method_handler(
-                    servicer.SetPostQuantum,
-                    request_deserializer=set__pb2.SetGenericRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
             ),
             'GetDaemonApiVersion': grpc.unary_unary_rpc_method_handler(
                     servicer.GetDaemonApiVersion,
@@ -773,222 +818,6 @@ def add_DaemonServicer_to_server(servicer, server):
  # This class is part of an EXPERIMENTAL API.
 class Daemon(object):
     """Missing associated documentation comment in .proto file."""
-
-    @staticmethod
-    def AccountInfo(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/AccountInfo',
-            account__pb2.AccountRequest.SerializeToString,
-            account__pb2.AccountResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def TokenInfo(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/TokenInfo',
-            common__pb2.Empty.SerializeToString,
-            token__pb2.TokenInfoResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def Cities(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/Cities',
-            cities__pb2.CitiesRequest.SerializeToString,
-            common__pb2.ServerGroupsList.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def Connect(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_stream(
-            request,
-            target,
-            '/pb.Daemon/Connect',
-            connect__pb2.ConnectRequest.SerializeToString,
-            common__pb2.Payload.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def ConnectCancel(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/ConnectCancel',
-            common__pb2.Empty.SerializeToString,
-            common__pb2.Payload.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def Countries(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/Countries',
-            common__pb2.Empty.SerializeToString,
-            common__pb2.ServerGroupsList.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def Disconnect(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_stream(
-            request,
-            target,
-            '/pb.Daemon/Disconnect',
-            common__pb2.Empty.SerializeToString,
-            common__pb2.Payload.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def Groups(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/Groups',
-            common__pb2.Empty.SerializeToString,
-            common__pb2.ServerGroupsList.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
 
     @staticmethod
     def IsLoggedIn(request,
@@ -1126,7 +955,7 @@ class Daemon(object):
             _registered_method=True)
 
     @staticmethod
-    def Ping(request,
+    def AccountInfo(request,
             target,
             options=(),
             channel_credentials=None,
@@ -1139,9 +968,171 @@ class Daemon(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/pb.Daemon/Ping',
+            '/pb.Daemon/AccountInfo',
+            account__pb2.AccountRequest.SerializeToString,
+            account__pb2.AccountResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def TokenInfo(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/TokenInfo',
             common__pb2.Empty.SerializeToString,
-            ping__pb2.PingResponse.FromString,
+            token__pb2.TokenInfoResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ClaimOnlinePurchase(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/ClaimOnlinePurchase',
+            common__pb2.Empty.SerializeToString,
+            purchase__pb2.ClaimOnlinePurchaseResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Connect(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/pb.Daemon/Connect',
+            connect__pb2.ConnectRequest.SerializeToString,
+            common__pb2.Payload.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ConnectCancel(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/ConnectCancel',
+            common__pb2.Empty.SerializeToString,
+            common__pb2.Payload.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Disconnect(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/pb.Daemon/Disconnect',
+            common__pb2.Empty.SerializeToString,
+            common__pb2.Payload.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Status(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/Status',
+            common__pb2.Empty.SerializeToString,
+            status__pb2.StatusResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1168,6 +1159,168 @@ class Daemon(object):
             target,
             '/pb.Daemon/RateConnection',
             rate__pb2.RateRequest.SerializeToString,
+            common__pb2.Payload.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetServers(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/GetServers',
+            common__pb2.Empty.SerializeToString,
+            servers__pb2.ServersResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Countries(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/Countries',
+            common__pb2.Empty.SerializeToString,
+            common__pb2.ServerGroupsList.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Cities(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/Cities',
+            cities__pb2.CitiesRequest.SerializeToString,
+            common__pb2.ServerGroupsList.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Groups(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/Groups',
+            common__pb2.Empty.SerializeToString,
+            common__pb2.ServerGroupsList.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Settings(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/Settings',
+            common__pb2.Empty.SerializeToString,
+            settings__pb2.SettingsResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetDefaults(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/SetDefaults',
+            defaults__pb2.SetDefaultsRequest.SerializeToString,
             common__pb2.Payload.FromString,
             options,
             channel_credentials,
@@ -1207,7 +1360,7 @@ class Daemon(object):
             _registered_method=True)
 
     @staticmethod
-    def SetThreatProtectionLite(request,
+    def SetProtocol(request,
             target,
             options=(),
             channel_credentials=None,
@@ -1220,9 +1373,9 @@ class Daemon(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/pb.Daemon/SetThreatProtectionLite',
-            set__pb2.SetThreatProtectionLiteRequest.SerializeToString,
-            set__pb2.SetThreatProtectionLiteResponse.FromString,
+            '/pb.Daemon/SetProtocol',
+            set__pb2.SetProtocolRequest.SerializeToString,
+            set__pb2.SetProtocolResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1234,7 +1387,7 @@ class Daemon(object):
             _registered_method=True)
 
     @staticmethod
-    def SetDefaults(request,
+    def SetTechnology(request,
             target,
             options=(),
             channel_credentials=None,
@@ -1247,9 +1400,90 @@ class Daemon(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/pb.Daemon/SetDefaults',
-            defaults__pb2.SetDefaultsRequest.SerializeToString,
+            '/pb.Daemon/SetTechnology',
+            set__pb2.SetTechnologyRequest.SerializeToString,
             common__pb2.Payload.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetObfuscate(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/SetObfuscate',
+            set__pb2.SetGenericRequest.SerializeToString,
+            common__pb2.Payload.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetPostQuantum(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/SetPostQuantum',
+            set__pb2.SetGenericRequest.SerializeToString,
+            common__pb2.Payload.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetRecentConnections(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/GetRecentConnections',
+            recent__connections__pb2.RecentConnectionsRequest.SerializeToString,
+            recent__connections__pb2.RecentConnectionsResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1369,33 +1603,6 @@ class Daemon(object):
             _registered_method=True)
 
     @staticmethod
-    def SetAnalytics(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/SetAnalytics',
-            set__pb2.SetGenericRequest.SerializeToString,
-            common__pb2.Payload.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
     def SetKillSwitch(request,
             target,
             options=(),
@@ -1411,6 +1618,60 @@ class Daemon(object):
             target,
             '/pb.Daemon/SetKillSwitch',
             set__pb2.SetKillSwitchRequest.SerializeToString,
+            common__pb2.Payload.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetLANDiscovery(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/SetLANDiscovery',
+            set__pb2.SetLANDiscoveryRequest.SerializeToString,
+            set__pb2.SetLANDiscoveryResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetVirtualLocation(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/SetVirtualLocation',
+            set__pb2.SetGenericRequest.SerializeToString,
             common__pb2.Payload.FromString,
             options,
             channel_credentials,
@@ -1477,7 +1738,7 @@ class Daemon(object):
             _registered_method=True)
 
     @staticmethod
-    def SetObfuscate(request,
+    def SettingsProtocols(request,
             target,
             options=(),
             channel_credentials=None,
@@ -1490,8 +1751,8 @@ class Daemon(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/pb.Daemon/SetObfuscate',
-            set__pb2.SetGenericRequest.SerializeToString,
+            '/pb.Daemon/SettingsProtocols',
+            common__pb2.Empty.SerializeToString,
             common__pb2.Payload.FromString,
             options,
             channel_credentials,
@@ -1504,7 +1765,7 @@ class Daemon(object):
             _registered_method=True)
 
     @staticmethod
-    def SetProtocol(request,
+    def SettingsTechnologies(request,
             target,
             options=(),
             channel_credentials=None,
@@ -1517,35 +1778,8 @@ class Daemon(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/pb.Daemon/SetProtocol',
-            set__pb2.SetProtocolRequest.SerializeToString,
-            set__pb2.SetProtocolResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def SetTechnology(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/SetTechnology',
-            set__pb2.SetTechnologyRequest.SerializeToString,
+            '/pb.Daemon/SettingsTechnologies',
+            common__pb2.Empty.SerializeToString,
             common__pb2.Payload.FromString,
             options,
             channel_credentials,
@@ -1558,7 +1792,7 @@ class Daemon(object):
             _registered_method=True)
 
     @staticmethod
-    def SetLANDiscovery(request,
+    def GetFeatureToggles(request,
             target,
             options=(),
             channel_credentials=None,
@@ -1571,9 +1805,9 @@ class Daemon(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/pb.Daemon/SetLANDiscovery',
-            set__pb2.SetLANDiscoveryRequest.SerializeToString,
-            set__pb2.SetLANDiscoveryResponse.FromString,
+            '/pb.Daemon/GetFeatureToggles',
+            common__pb2.Empty.SerializeToString,
+            features__pb2.FeatureToggles.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1666,7 +1900,7 @@ class Daemon(object):
             _registered_method=True)
 
     @staticmethod
-    def Settings(request,
+    def SetAnalytics(request,
             target,
             options=(),
             channel_credentials=None,
@@ -1679,144 +1913,63 @@ class Daemon(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/pb.Daemon/Settings',
-            common__pb2.Empty.SerializeToString,
-            settings__pb2.SettingsResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def SettingsProtocols(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/SettingsProtocols',
-            common__pb2.Empty.SerializeToString,
-            common__pb2.Payload.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def SettingsTechnologies(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/SettingsTechnologies',
-            common__pb2.Empty.SerializeToString,
-            common__pb2.Payload.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def Status(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/Status',
-            common__pb2.Empty.SerializeToString,
-            status__pb2.StatusResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def ClaimOnlinePurchase(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/ClaimOnlinePurchase',
-            common__pb2.Empty.SerializeToString,
-            purchase__pb2.ClaimOnlinePurchaseResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def SetVirtualLocation(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/SetVirtualLocation',
+            '/pb.Daemon/SetAnalytics',
             set__pb2.SetGenericRequest.SerializeToString,
             common__pb2.Payload.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetThreatProtectionLite(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/SetThreatProtectionLite',
+            set__pb2.SetThreatProtectionLiteRequest.SerializeToString,
+            set__pb2.SetThreatProtectionLiteResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def Ping(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/Ping',
+            common__pb2.Empty.SerializeToString,
+            ping__pb2.PingResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -1844,60 +1997,6 @@ class Daemon(object):
             '/pb.Daemon/SubscribeToStateChanges',
             common__pb2.Empty.SerializeToString,
             state__pb2.AppState.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def GetServers(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/GetServers',
-            common__pb2.Empty.SerializeToString,
-            servers__pb2.ServersResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def SetPostQuantum(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/SetPostQuantum',
-            set__pb2.SetGenericRequest.SerializeToString,
-            common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,

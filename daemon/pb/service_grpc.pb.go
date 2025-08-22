@@ -8,6 +8,7 @@ package pb
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -19,100 +20,114 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Daemon_AccountInfo_FullMethodName             = "/pb.Daemon/AccountInfo"
-	Daemon_TokenInfo_FullMethodName               = "/pb.Daemon/TokenInfo"
-	Daemon_Cities_FullMethodName                  = "/pb.Daemon/Cities"
-	Daemon_Connect_FullMethodName                 = "/pb.Daemon/Connect"
-	Daemon_ConnectCancel_FullMethodName           = "/pb.Daemon/ConnectCancel"
-	Daemon_Countries_FullMethodName               = "/pb.Daemon/Countries"
-	Daemon_Disconnect_FullMethodName              = "/pb.Daemon/Disconnect"
-	Daemon_Groups_FullMethodName                  = "/pb.Daemon/Groups"
 	Daemon_IsLoggedIn_FullMethodName              = "/pb.Daemon/IsLoggedIn"
 	Daemon_LoginWithToken_FullMethodName          = "/pb.Daemon/LoginWithToken"
 	Daemon_LoginOAuth2_FullMethodName             = "/pb.Daemon/LoginOAuth2"
 	Daemon_LoginOAuth2Callback_FullMethodName     = "/pb.Daemon/LoginOAuth2Callback"
 	Daemon_Logout_FullMethodName                  = "/pb.Daemon/Logout"
-	Daemon_Ping_FullMethodName                    = "/pb.Daemon/Ping"
+	Daemon_AccountInfo_FullMethodName             = "/pb.Daemon/AccountInfo"
+	Daemon_TokenInfo_FullMethodName               = "/pb.Daemon/TokenInfo"
+	Daemon_ClaimOnlinePurchase_FullMethodName     = "/pb.Daemon/ClaimOnlinePurchase"
+	Daemon_Connect_FullMethodName                 = "/pb.Daemon/Connect"
+	Daemon_ConnectCancel_FullMethodName           = "/pb.Daemon/ConnectCancel"
+	Daemon_Disconnect_FullMethodName              = "/pb.Daemon/Disconnect"
+	Daemon_Status_FullMethodName                  = "/pb.Daemon/Status"
 	Daemon_RateConnection_FullMethodName          = "/pb.Daemon/RateConnection"
-	Daemon_SetAutoConnect_FullMethodName          = "/pb.Daemon/SetAutoConnect"
-	Daemon_SetThreatProtectionLite_FullMethodName = "/pb.Daemon/SetThreatProtectionLite"
+	Daemon_GetServers_FullMethodName              = "/pb.Daemon/GetServers"
+	Daemon_Countries_FullMethodName               = "/pb.Daemon/Countries"
+	Daemon_Cities_FullMethodName                  = "/pb.Daemon/Cities"
+	Daemon_Groups_FullMethodName                  = "/pb.Daemon/Groups"
+	Daemon_Settings_FullMethodName                = "/pb.Daemon/Settings"
 	Daemon_SetDefaults_FullMethodName             = "/pb.Daemon/SetDefaults"
+	Daemon_SetAutoConnect_FullMethodName          = "/pb.Daemon/SetAutoConnect"
+	Daemon_SetProtocol_FullMethodName             = "/pb.Daemon/SetProtocol"
+	Daemon_SetTechnology_FullMethodName           = "/pb.Daemon/SetTechnology"
+	Daemon_SetObfuscate_FullMethodName            = "/pb.Daemon/SetObfuscate"
+	Daemon_SetPostQuantum_FullMethodName          = "/pb.Daemon/SetPostQuantum"
+	Daemon_GetRecentConnections_FullMethodName    = "/pb.Daemon/GetRecentConnections"
 	Daemon_SetDNS_FullMethodName                  = "/pb.Daemon/SetDNS"
 	Daemon_SetFirewall_FullMethodName             = "/pb.Daemon/SetFirewall"
 	Daemon_SetFirewallMark_FullMethodName         = "/pb.Daemon/SetFirewallMark"
 	Daemon_SetRouting_FullMethodName              = "/pb.Daemon/SetRouting"
-	Daemon_SetAnalytics_FullMethodName            = "/pb.Daemon/SetAnalytics"
 	Daemon_SetKillSwitch_FullMethodName           = "/pb.Daemon/SetKillSwitch"
+	Daemon_SetLANDiscovery_FullMethodName         = "/pb.Daemon/SetLANDiscovery"
+	Daemon_SetVirtualLocation_FullMethodName      = "/pb.Daemon/SetVirtualLocation"
 	Daemon_SetNotify_FullMethodName               = "/pb.Daemon/SetNotify"
 	Daemon_SetTray_FullMethodName                 = "/pb.Daemon/SetTray"
-	Daemon_SetObfuscate_FullMethodName            = "/pb.Daemon/SetObfuscate"
-	Daemon_SetProtocol_FullMethodName             = "/pb.Daemon/SetProtocol"
-	Daemon_SetTechnology_FullMethodName           = "/pb.Daemon/SetTechnology"
-	Daemon_SetLANDiscovery_FullMethodName         = "/pb.Daemon/SetLANDiscovery"
+	Daemon_SettingsProtocols_FullMethodName       = "/pb.Daemon/SettingsProtocols"
+	Daemon_SettingsTechnologies_FullMethodName    = "/pb.Daemon/SettingsTechnologies"
+	Daemon_GetFeatureToggles_FullMethodName       = "/pb.Daemon/GetFeatureToggles"
 	Daemon_SetAllowlist_FullMethodName            = "/pb.Daemon/SetAllowlist"
 	Daemon_UnsetAllowlist_FullMethodName          = "/pb.Daemon/UnsetAllowlist"
 	Daemon_UnsetAllAllowlist_FullMethodName       = "/pb.Daemon/UnsetAllAllowlist"
-	Daemon_Settings_FullMethodName                = "/pb.Daemon/Settings"
-	Daemon_SettingsProtocols_FullMethodName       = "/pb.Daemon/SettingsProtocols"
-	Daemon_SettingsTechnologies_FullMethodName    = "/pb.Daemon/SettingsTechnologies"
-	Daemon_Status_FullMethodName                  = "/pb.Daemon/Status"
-	Daemon_ClaimOnlinePurchase_FullMethodName     = "/pb.Daemon/ClaimOnlinePurchase"
-	Daemon_SetVirtualLocation_FullMethodName      = "/pb.Daemon/SetVirtualLocation"
+	Daemon_SetAnalytics_FullMethodName            = "/pb.Daemon/SetAnalytics"
+	Daemon_SetThreatProtectionLite_FullMethodName = "/pb.Daemon/SetThreatProtectionLite"
+	Daemon_Ping_FullMethodName                    = "/pb.Daemon/Ping"
 	Daemon_SubscribeToStateChanges_FullMethodName = "/pb.Daemon/SubscribeToStateChanges"
-	Daemon_GetServers_FullMethodName              = "/pb.Daemon/GetServers"
-	Daemon_SetPostQuantum_FullMethodName          = "/pb.Daemon/SetPostQuantum"
 	Daemon_GetDaemonApiVersion_FullMethodName     = "/pb.Daemon/GetDaemonApiVersion"
-	Daemon_GetFeatureToggles_FullMethodName       = "/pb.Daemon/GetFeatureToggles"
 )
 
 // DaemonClient is the client API for Daemon service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DaemonClient interface {
-	AccountInfo(ctx context.Context, in *AccountRequest, opts ...grpc.CallOption) (*AccountResponse, error)
-	TokenInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*TokenInfoResponse, error)
-	Cities(ctx context.Context, in *CitiesRequest, opts ...grpc.CallOption) (*ServerGroupsList, error)
-	Connect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Payload], error)
-	ConnectCancel(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
-	Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
-	Disconnect(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Payload], error)
-	Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
+	// ==================== Authentication ====================
 	IsLoggedIn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*IsLoggedInResponse, error)
 	LoginWithToken(ctx context.Context, in *LoginWithTokenRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 	LoginOAuth2(ctx context.Context, in *LoginOAuth2Request, opts ...grpc.CallOption) (*LoginOAuth2Response, error)
 	LoginOAuth2Callback(ctx context.Context, in *LoginOAuth2CallbackRequest, opts ...grpc.CallOption) (*LoginOAuth2CallbackResponse, error)
 	Logout(ctx context.Context, in *LogoutRequest, opts ...grpc.CallOption) (*Payload, error)
-	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error)
+	// ==================== Account Management ====================
+	AccountInfo(ctx context.Context, in *AccountRequest, opts ...grpc.CallOption) (*AccountResponse, error)
+	TokenInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*TokenInfoResponse, error)
+	ClaimOnlinePurchase(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClaimOnlinePurchaseResponse, error)
+	// ==================== Connection Operations ====================
+	Connect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Payload], error)
+	ConnectCancel(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
+	Disconnect(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Payload], error)
+	Status(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StatusResponse, error)
 	RateConnection(ctx context.Context, in *RateRequest, opts ...grpc.CallOption) (*Payload, error)
-	SetAutoConnect(ctx context.Context, in *SetAutoconnectRequest, opts ...grpc.CallOption) (*Payload, error)
-	SetThreatProtectionLite(ctx context.Context, in *SetThreatProtectionLiteRequest, opts ...grpc.CallOption) (*SetThreatProtectionLiteResponse, error)
+	// ==================== Server Discovery ====================
+	GetServers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServersResponse, error)
+	Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
+	Cities(ctx context.Context, in *CitiesRequest, opts ...grpc.CallOption) (*ServerGroupsList, error)
+	Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
+	// ==================== General Settings ====================
+	Settings(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SettingsResponse, error)
 	SetDefaults(ctx context.Context, in *SetDefaultsRequest, opts ...grpc.CallOption) (*Payload, error)
+	// ==================== Connection Settings ====================
+	SetAutoConnect(ctx context.Context, in *SetAutoconnectRequest, opts ...grpc.CallOption) (*Payload, error)
+	SetProtocol(ctx context.Context, in *SetProtocolRequest, opts ...grpc.CallOption) (*SetProtocolResponse, error)
+	SetTechnology(ctx context.Context, in *SetTechnologyRequest, opts ...grpc.CallOption) (*Payload, error)
+	SetObfuscate(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
+	SetPostQuantum(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
+	GetRecentConnections(ctx context.Context, in *RecentConnectionsRequest, opts ...grpc.CallOption) (*RecentConnectionsResponse, error)
+	// ==================== Network Settings ====================
 	SetDNS(ctx context.Context, in *SetDNSRequest, opts ...grpc.CallOption) (*SetDNSResponse, error)
 	SetFirewall(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetFirewallMark(ctx context.Context, in *SetUint32Request, opts ...grpc.CallOption) (*Payload, error)
 	SetRouting(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
-	SetAnalytics(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetKillSwitch(ctx context.Context, in *SetKillSwitchRequest, opts ...grpc.CallOption) (*Payload, error)
+	SetLANDiscovery(ctx context.Context, in *SetLANDiscoveryRequest, opts ...grpc.CallOption) (*SetLANDiscoveryResponse, error)
+	SetVirtualLocation(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
+	// ==================== UI Settings ====================
 	SetNotify(ctx context.Context, in *SetNotifyRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetTray(ctx context.Context, in *SetTrayRequest, opts ...grpc.CallOption) (*Payload, error)
-	SetObfuscate(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
-	SetProtocol(ctx context.Context, in *SetProtocolRequest, opts ...grpc.CallOption) (*SetProtocolResponse, error)
-	SetTechnology(ctx context.Context, in *SetTechnologyRequest, opts ...grpc.CallOption) (*Payload, error)
-	SetLANDiscovery(ctx context.Context, in *SetLANDiscoveryRequest, opts ...grpc.CallOption) (*SetLANDiscoveryResponse, error)
+	// ==================== Configuration Info ====================
+	SettingsProtocols(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
+	SettingsTechnologies(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
+	GetFeatureToggles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*FeatureToggles, error)
+	// ==================== Allowlist Management ====================
 	SetAllowlist(ctx context.Context, in *SetAllowlistRequest, opts ...grpc.CallOption) (*Payload, error)
 	UnsetAllowlist(ctx context.Context, in *SetAllowlistRequest, opts ...grpc.CallOption) (*Payload, error)
 	UnsetAllAllowlist(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
-	Settings(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SettingsResponse, error)
-	SettingsProtocols(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
-	SettingsTechnologies(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
-	Status(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StatusResponse, error)
-	ClaimOnlinePurchase(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClaimOnlinePurchaseResponse, error)
-	SetVirtualLocation(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
+	// ==================== Privacy & Security ====================
+	SetAnalytics(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
+	SetThreatProtectionLite(ctx context.Context, in *SetThreatProtectionLiteRequest, opts ...grpc.CallOption) (*SetThreatProtectionLiteResponse, error)
+	// ==================== System & Monitoring ====================
+	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error)
 	SubscribeToStateChanges(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[AppState], error)
-	GetServers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServersResponse, error)
-	SetPostQuantum(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	GetDaemonApiVersion(ctx context.Context, in *GetDaemonApiVersionRequest, opts ...grpc.CallOption) (*GetDaemonApiVersionResponse, error)
-	GetFeatureToggles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*FeatureToggles, error)
 }
 
 type daemonClient struct {
@@ -121,104 +136,6 @@ type daemonClient struct {
 
 func NewDaemonClient(cc grpc.ClientConnInterface) DaemonClient {
 	return &daemonClient{cc}
-}
-
-func (c *daemonClient) AccountInfo(ctx context.Context, in *AccountRequest, opts ...grpc.CallOption) (*AccountResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(AccountResponse)
-	err := c.cc.Invoke(ctx, Daemon_AccountInfo_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) TokenInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*TokenInfoResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(TokenInfoResponse)
-	err := c.cc.Invoke(ctx, Daemon_TokenInfo_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) Cities(ctx context.Context, in *CitiesRequest, opts ...grpc.CallOption) (*ServerGroupsList, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ServerGroupsList)
-	err := c.cc.Invoke(ctx, Daemon_Cities_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) Connect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Payload], error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &Daemon_ServiceDesc.Streams[0], Daemon_Connect_FullMethodName, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &grpc.GenericClientStream[ConnectRequest, Payload]{ClientStream: stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Daemon_ConnectClient = grpc.ServerStreamingClient[Payload]
-
-func (c *daemonClient) ConnectCancel(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_ConnectCancel_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ServerGroupsList)
-	err := c.cc.Invoke(ctx, Daemon_Countries_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) Disconnect(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Payload], error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &Daemon_ServiceDesc.Streams[1], Daemon_Disconnect_FullMethodName, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &grpc.GenericClientStream[Empty, Payload]{ClientStream: stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Daemon_DisconnectClient = grpc.ServerStreamingClient[Payload]
-
-func (c *daemonClient) Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ServerGroupsList)
-	err := c.cc.Invoke(ctx, Daemon_Groups_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *daemonClient) IsLoggedIn(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*IsLoggedInResponse, error) {
@@ -271,10 +188,88 @@ func (c *daemonClient) Logout(ctx context.Context, in *LogoutRequest, opts ...gr
 	return out, nil
 }
 
-func (c *daemonClient) Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error) {
+func (c *daemonClient) AccountInfo(ctx context.Context, in *AccountRequest, opts ...grpc.CallOption) (*AccountResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(PingResponse)
-	err := c.cc.Invoke(ctx, Daemon_Ping_FullMethodName, in, out, cOpts...)
+	out := new(AccountResponse)
+	err := c.cc.Invoke(ctx, Daemon_AccountInfo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) TokenInfo(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*TokenInfoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TokenInfoResponse)
+	err := c.cc.Invoke(ctx, Daemon_TokenInfo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) ClaimOnlinePurchase(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClaimOnlinePurchaseResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ClaimOnlinePurchaseResponse)
+	err := c.cc.Invoke(ctx, Daemon_ClaimOnlinePurchase_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) Connect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Payload], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Daemon_ServiceDesc.Streams[0], Daemon_Connect_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[ConnectRequest, Payload]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Daemon_ConnectClient = grpc.ServerStreamingClient[Payload]
+
+func (c *daemonClient) ConnectCancel(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, Daemon_ConnectCancel_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) Disconnect(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Payload], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Daemon_ServiceDesc.Streams[1], Daemon_Disconnect_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[Empty, Payload]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Daemon_DisconnectClient = grpc.ServerStreamingClient[Payload]
+
+func (c *daemonClient) Status(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StatusResponse)
+	err := c.cc.Invoke(ctx, Daemon_Status_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -291,20 +286,50 @@ func (c *daemonClient) RateConnection(ctx context.Context, in *RateRequest, opts
 	return out, nil
 }
 
-func (c *daemonClient) SetAutoConnect(ctx context.Context, in *SetAutoconnectRequest, opts ...grpc.CallOption) (*Payload, error) {
+func (c *daemonClient) GetServers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServersResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_SetAutoConnect_FullMethodName, in, out, cOpts...)
+	out := new(ServersResponse)
+	err := c.cc.Invoke(ctx, Daemon_GetServers_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *daemonClient) SetThreatProtectionLite(ctx context.Context, in *SetThreatProtectionLiteRequest, opts ...grpc.CallOption) (*SetThreatProtectionLiteResponse, error) {
+func (c *daemonClient) Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SetThreatProtectionLiteResponse)
-	err := c.cc.Invoke(ctx, Daemon_SetThreatProtectionLite_FullMethodName, in, out, cOpts...)
+	out := new(ServerGroupsList)
+	err := c.cc.Invoke(ctx, Daemon_Countries_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) Cities(ctx context.Context, in *CitiesRequest, opts ...grpc.CallOption) (*ServerGroupsList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ServerGroupsList)
+	err := c.cc.Invoke(ctx, Daemon_Cities_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ServerGroupsList)
+	err := c.cc.Invoke(ctx, Daemon_Groups_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) Settings(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SettingsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SettingsResponse)
+	err := c.cc.Invoke(ctx, Daemon_Settings_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -315,6 +340,66 @@ func (c *daemonClient) SetDefaults(ctx context.Context, in *SetDefaultsRequest, 
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Payload)
 	err := c.cc.Invoke(ctx, Daemon_SetDefaults_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) SetAutoConnect(ctx context.Context, in *SetAutoconnectRequest, opts ...grpc.CallOption) (*Payload, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, Daemon_SetAutoConnect_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) SetProtocol(ctx context.Context, in *SetProtocolRequest, opts ...grpc.CallOption) (*SetProtocolResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetProtocolResponse)
+	err := c.cc.Invoke(ctx, Daemon_SetProtocol_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) SetTechnology(ctx context.Context, in *SetTechnologyRequest, opts ...grpc.CallOption) (*Payload, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, Daemon_SetTechnology_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) SetObfuscate(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, Daemon_SetObfuscate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) SetPostQuantum(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, Daemon_SetPostQuantum_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) GetRecentConnections(ctx context.Context, in *RecentConnectionsRequest, opts ...grpc.CallOption) (*RecentConnectionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RecentConnectionsResponse)
+	err := c.cc.Invoke(ctx, Daemon_GetRecentConnections_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -361,20 +446,30 @@ func (c *daemonClient) SetRouting(ctx context.Context, in *SetGenericRequest, op
 	return out, nil
 }
 
-func (c *daemonClient) SetAnalytics(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
+func (c *daemonClient) SetKillSwitch(ctx context.Context, in *SetKillSwitchRequest, opts ...grpc.CallOption) (*Payload, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_SetAnalytics_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Daemon_SetKillSwitch_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *daemonClient) SetKillSwitch(ctx context.Context, in *SetKillSwitchRequest, opts ...grpc.CallOption) (*Payload, error) {
+func (c *daemonClient) SetLANDiscovery(ctx context.Context, in *SetLANDiscoveryRequest, opts ...grpc.CallOption) (*SetLANDiscoveryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SetLANDiscoveryResponse)
+	err := c.cc.Invoke(ctx, Daemon_SetLANDiscovery_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) SetVirtualLocation(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_SetKillSwitch_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Daemon_SetVirtualLocation_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -401,40 +496,30 @@ func (c *daemonClient) SetTray(ctx context.Context, in *SetTrayRequest, opts ...
 	return out, nil
 }
 
-func (c *daemonClient) SetObfuscate(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
+func (c *daemonClient) SettingsProtocols(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_SetObfuscate_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Daemon_SettingsProtocols_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *daemonClient) SetProtocol(ctx context.Context, in *SetProtocolRequest, opts ...grpc.CallOption) (*SetProtocolResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SetProtocolResponse)
-	err := c.cc.Invoke(ctx, Daemon_SetProtocol_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) SetTechnology(ctx context.Context, in *SetTechnologyRequest, opts ...grpc.CallOption) (*Payload, error) {
+func (c *daemonClient) SettingsTechnologies(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_SetTechnology_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Daemon_SettingsTechnologies_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *daemonClient) SetLANDiscovery(ctx context.Context, in *SetLANDiscoveryRequest, opts ...grpc.CallOption) (*SetLANDiscoveryResponse, error) {
+func (c *daemonClient) GetFeatureToggles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*FeatureToggles, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SetLANDiscoveryResponse)
-	err := c.cc.Invoke(ctx, Daemon_SetLANDiscovery_FullMethodName, in, out, cOpts...)
+	out := new(FeatureToggles)
+	err := c.cc.Invoke(ctx, Daemon_GetFeatureToggles_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -471,60 +556,30 @@ func (c *daemonClient) UnsetAllAllowlist(ctx context.Context, in *Empty, opts ..
 	return out, nil
 }
 
-func (c *daemonClient) Settings(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SettingsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SettingsResponse)
-	err := c.cc.Invoke(ctx, Daemon_Settings_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) SettingsProtocols(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
+func (c *daemonClient) SetAnalytics(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_SettingsProtocols_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Daemon_SetAnalytics_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *daemonClient) SettingsTechnologies(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
+func (c *daemonClient) SetThreatProtectionLite(ctx context.Context, in *SetThreatProtectionLiteRequest, opts ...grpc.CallOption) (*SetThreatProtectionLiteResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_SettingsTechnologies_FullMethodName, in, out, cOpts...)
+	out := new(SetThreatProtectionLiteResponse)
+	err := c.cc.Invoke(ctx, Daemon_SetThreatProtectionLite_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *daemonClient) Status(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StatusResponse, error) {
+func (c *daemonClient) Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(StatusResponse)
-	err := c.cc.Invoke(ctx, Daemon_Status_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) ClaimOnlinePurchase(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ClaimOnlinePurchaseResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ClaimOnlinePurchaseResponse)
-	err := c.cc.Invoke(ctx, Daemon_ClaimOnlinePurchase_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) SetVirtualLocation(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_SetVirtualLocation_FullMethodName, in, out, cOpts...)
+	out := new(PingResponse)
+	err := c.cc.Invoke(ctx, Daemon_Ping_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -550,26 +605,6 @@ func (c *daemonClient) SubscribeToStateChanges(ctx context.Context, in *Empty, o
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Daemon_SubscribeToStateChangesClient = grpc.ServerStreamingClient[AppState]
 
-func (c *daemonClient) GetServers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServersResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ServersResponse)
-	err := c.cc.Invoke(ctx, Daemon_GetServers_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *daemonClient) SetPostQuantum(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_SetPostQuantum_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *daemonClient) GetDaemonApiVersion(ctx context.Context, in *GetDaemonApiVersionRequest, opts ...grpc.CallOption) (*GetDaemonApiVersionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetDaemonApiVersionResponse)
@@ -580,64 +615,67 @@ func (c *daemonClient) GetDaemonApiVersion(ctx context.Context, in *GetDaemonApi
 	return out, nil
 }
 
-func (c *daemonClient) GetFeatureToggles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*FeatureToggles, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(FeatureToggles)
-	err := c.cc.Invoke(ctx, Daemon_GetFeatureToggles_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // DaemonServer is the server API for Daemon service.
 // All implementations must embed UnimplementedDaemonServer
 // for forward compatibility.
 type DaemonServer interface {
-	AccountInfo(context.Context, *AccountRequest) (*AccountResponse, error)
-	TokenInfo(context.Context, *Empty) (*TokenInfoResponse, error)
-	Cities(context.Context, *CitiesRequest) (*ServerGroupsList, error)
-	Connect(*ConnectRequest, grpc.ServerStreamingServer[Payload]) error
-	ConnectCancel(context.Context, *Empty) (*Payload, error)
-	Countries(context.Context, *Empty) (*ServerGroupsList, error)
-	Disconnect(*Empty, grpc.ServerStreamingServer[Payload]) error
-	Groups(context.Context, *Empty) (*ServerGroupsList, error)
+	// ==================== Authentication ====================
 	IsLoggedIn(context.Context, *Empty) (*IsLoggedInResponse, error)
 	LoginWithToken(context.Context, *LoginWithTokenRequest) (*LoginResponse, error)
 	LoginOAuth2(context.Context, *LoginOAuth2Request) (*LoginOAuth2Response, error)
 	LoginOAuth2Callback(context.Context, *LoginOAuth2CallbackRequest) (*LoginOAuth2CallbackResponse, error)
 	Logout(context.Context, *LogoutRequest) (*Payload, error)
-	Ping(context.Context, *Empty) (*PingResponse, error)
+	// ==================== Account Management ====================
+	AccountInfo(context.Context, *AccountRequest) (*AccountResponse, error)
+	TokenInfo(context.Context, *Empty) (*TokenInfoResponse, error)
+	ClaimOnlinePurchase(context.Context, *Empty) (*ClaimOnlinePurchaseResponse, error)
+	// ==================== Connection Operations ====================
+	Connect(*ConnectRequest, grpc.ServerStreamingServer[Payload]) error
+	ConnectCancel(context.Context, *Empty) (*Payload, error)
+	Disconnect(*Empty, grpc.ServerStreamingServer[Payload]) error
+	Status(context.Context, *Empty) (*StatusResponse, error)
 	RateConnection(context.Context, *RateRequest) (*Payload, error)
-	SetAutoConnect(context.Context, *SetAutoconnectRequest) (*Payload, error)
-	SetThreatProtectionLite(context.Context, *SetThreatProtectionLiteRequest) (*SetThreatProtectionLiteResponse, error)
+	// ==================== Server Discovery ====================
+	GetServers(context.Context, *Empty) (*ServersResponse, error)
+	Countries(context.Context, *Empty) (*ServerGroupsList, error)
+	Cities(context.Context, *CitiesRequest) (*ServerGroupsList, error)
+	Groups(context.Context, *Empty) (*ServerGroupsList, error)
+	// ==================== General Settings ====================
+	Settings(context.Context, *Empty) (*SettingsResponse, error)
 	SetDefaults(context.Context, *SetDefaultsRequest) (*Payload, error)
+	// ==================== Connection Settings ====================
+	SetAutoConnect(context.Context, *SetAutoconnectRequest) (*Payload, error)
+	SetProtocol(context.Context, *SetProtocolRequest) (*SetProtocolResponse, error)
+	SetTechnology(context.Context, *SetTechnologyRequest) (*Payload, error)
+	SetObfuscate(context.Context, *SetGenericRequest) (*Payload, error)
+	SetPostQuantum(context.Context, *SetGenericRequest) (*Payload, error)
+	GetRecentConnections(context.Context, *RecentConnectionsRequest) (*RecentConnectionsResponse, error)
+	// ==================== Network Settings ====================
 	SetDNS(context.Context, *SetDNSRequest) (*SetDNSResponse, error)
 	SetFirewall(context.Context, *SetGenericRequest) (*Payload, error)
 	SetFirewallMark(context.Context, *SetUint32Request) (*Payload, error)
 	SetRouting(context.Context, *SetGenericRequest) (*Payload, error)
-	SetAnalytics(context.Context, *SetGenericRequest) (*Payload, error)
 	SetKillSwitch(context.Context, *SetKillSwitchRequest) (*Payload, error)
+	SetLANDiscovery(context.Context, *SetLANDiscoveryRequest) (*SetLANDiscoveryResponse, error)
+	SetVirtualLocation(context.Context, *SetGenericRequest) (*Payload, error)
+	// ==================== UI Settings ====================
 	SetNotify(context.Context, *SetNotifyRequest) (*Payload, error)
 	SetTray(context.Context, *SetTrayRequest) (*Payload, error)
-	SetObfuscate(context.Context, *SetGenericRequest) (*Payload, error)
-	SetProtocol(context.Context, *SetProtocolRequest) (*SetProtocolResponse, error)
-	SetTechnology(context.Context, *SetTechnologyRequest) (*Payload, error)
-	SetLANDiscovery(context.Context, *SetLANDiscoveryRequest) (*SetLANDiscoveryResponse, error)
+	// ==================== Configuration Info ====================
+	SettingsProtocols(context.Context, *Empty) (*Payload, error)
+	SettingsTechnologies(context.Context, *Empty) (*Payload, error)
+	GetFeatureToggles(context.Context, *Empty) (*FeatureToggles, error)
+	// ==================== Allowlist Management ====================
 	SetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error)
 	UnsetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error)
 	UnsetAllAllowlist(context.Context, *Empty) (*Payload, error)
-	Settings(context.Context, *Empty) (*SettingsResponse, error)
-	SettingsProtocols(context.Context, *Empty) (*Payload, error)
-	SettingsTechnologies(context.Context, *Empty) (*Payload, error)
-	Status(context.Context, *Empty) (*StatusResponse, error)
-	ClaimOnlinePurchase(context.Context, *Empty) (*ClaimOnlinePurchaseResponse, error)
-	SetVirtualLocation(context.Context, *SetGenericRequest) (*Payload, error)
+	// ==================== Privacy & Security ====================
+	SetAnalytics(context.Context, *SetGenericRequest) (*Payload, error)
+	SetThreatProtectionLite(context.Context, *SetThreatProtectionLiteRequest) (*SetThreatProtectionLiteResponse, error)
+	// ==================== System & Monitoring ====================
+	Ping(context.Context, *Empty) (*PingResponse, error)
 	SubscribeToStateChanges(*Empty, grpc.ServerStreamingServer[AppState]) error
-	GetServers(context.Context, *Empty) (*ServersResponse, error)
-	SetPostQuantum(context.Context, *SetGenericRequest) (*Payload, error)
 	GetDaemonApiVersion(context.Context, *GetDaemonApiVersionRequest) (*GetDaemonApiVersionResponse, error)
-	GetFeatureToggles(context.Context, *Empty) (*FeatureToggles, error)
 	mustEmbedUnimplementedDaemonServer()
 }
 
@@ -648,30 +686,6 @@ type DaemonServer interface {
 // pointer dereference when methods are called.
 type UnimplementedDaemonServer struct{}
 
-func (UnimplementedDaemonServer) AccountInfo(context.Context, *AccountRequest) (*AccountResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AccountInfo not implemented")
-}
-func (UnimplementedDaemonServer) TokenInfo(context.Context, *Empty) (*TokenInfoResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TokenInfo not implemented")
-}
-func (UnimplementedDaemonServer) Cities(context.Context, *CitiesRequest) (*ServerGroupsList, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Cities not implemented")
-}
-func (UnimplementedDaemonServer) Connect(*ConnectRequest, grpc.ServerStreamingServer[Payload]) error {
-	return status.Errorf(codes.Unimplemented, "method Connect not implemented")
-}
-func (UnimplementedDaemonServer) ConnectCancel(context.Context, *Empty) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ConnectCancel not implemented")
-}
-func (UnimplementedDaemonServer) Countries(context.Context, *Empty) (*ServerGroupsList, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Countries not implemented")
-}
-func (UnimplementedDaemonServer) Disconnect(*Empty, grpc.ServerStreamingServer[Payload]) error {
-	return status.Errorf(codes.Unimplemented, "method Disconnect not implemented")
-}
-func (UnimplementedDaemonServer) Groups(context.Context, *Empty) (*ServerGroupsList, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Groups not implemented")
-}
 func (UnimplementedDaemonServer) IsLoggedIn(context.Context, *Empty) (*IsLoggedInResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsLoggedIn not implemented")
 }
@@ -687,20 +701,65 @@ func (UnimplementedDaemonServer) LoginOAuth2Callback(context.Context, *LoginOAut
 func (UnimplementedDaemonServer) Logout(context.Context, *LogoutRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Logout not implemented")
 }
-func (UnimplementedDaemonServer) Ping(context.Context, *Empty) (*PingResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
+func (UnimplementedDaemonServer) AccountInfo(context.Context, *AccountRequest) (*AccountResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AccountInfo not implemented")
+}
+func (UnimplementedDaemonServer) TokenInfo(context.Context, *Empty) (*TokenInfoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TokenInfo not implemented")
+}
+func (UnimplementedDaemonServer) ClaimOnlinePurchase(context.Context, *Empty) (*ClaimOnlinePurchaseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ClaimOnlinePurchase not implemented")
+}
+func (UnimplementedDaemonServer) Connect(*ConnectRequest, grpc.ServerStreamingServer[Payload]) error {
+	return status.Errorf(codes.Unimplemented, "method Connect not implemented")
+}
+func (UnimplementedDaemonServer) ConnectCancel(context.Context, *Empty) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConnectCancel not implemented")
+}
+func (UnimplementedDaemonServer) Disconnect(*Empty, grpc.ServerStreamingServer[Payload]) error {
+	return status.Errorf(codes.Unimplemented, "method Disconnect not implemented")
+}
+func (UnimplementedDaemonServer) Status(context.Context, *Empty) (*StatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Status not implemented")
 }
 func (UnimplementedDaemonServer) RateConnection(context.Context, *RateRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RateConnection not implemented")
 }
-func (UnimplementedDaemonServer) SetAutoConnect(context.Context, *SetAutoconnectRequest) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetAutoConnect not implemented")
+func (UnimplementedDaemonServer) GetServers(context.Context, *Empty) (*ServersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetServers not implemented")
 }
-func (UnimplementedDaemonServer) SetThreatProtectionLite(context.Context, *SetThreatProtectionLiteRequest) (*SetThreatProtectionLiteResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetThreatProtectionLite not implemented")
+func (UnimplementedDaemonServer) Countries(context.Context, *Empty) (*ServerGroupsList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Countries not implemented")
+}
+func (UnimplementedDaemonServer) Cities(context.Context, *CitiesRequest) (*ServerGroupsList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Cities not implemented")
+}
+func (UnimplementedDaemonServer) Groups(context.Context, *Empty) (*ServerGroupsList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Groups not implemented")
+}
+func (UnimplementedDaemonServer) Settings(context.Context, *Empty) (*SettingsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Settings not implemented")
 }
 func (UnimplementedDaemonServer) SetDefaults(context.Context, *SetDefaultsRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetDefaults not implemented")
+}
+func (UnimplementedDaemonServer) SetAutoConnect(context.Context, *SetAutoconnectRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetAutoConnect not implemented")
+}
+func (UnimplementedDaemonServer) SetProtocol(context.Context, *SetProtocolRequest) (*SetProtocolResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetProtocol not implemented")
+}
+func (UnimplementedDaemonServer) SetTechnology(context.Context, *SetTechnologyRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetTechnology not implemented")
+}
+func (UnimplementedDaemonServer) SetObfuscate(context.Context, *SetGenericRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetObfuscate not implemented")
+}
+func (UnimplementedDaemonServer) SetPostQuantum(context.Context, *SetGenericRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetPostQuantum not implemented")
+}
+func (UnimplementedDaemonServer) GetRecentConnections(context.Context, *RecentConnectionsRequest) (*RecentConnectionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRecentConnections not implemented")
 }
 func (UnimplementedDaemonServer) SetDNS(context.Context, *SetDNSRequest) (*SetDNSResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetDNS not implemented")
@@ -714,11 +773,14 @@ func (UnimplementedDaemonServer) SetFirewallMark(context.Context, *SetUint32Requ
 func (UnimplementedDaemonServer) SetRouting(context.Context, *SetGenericRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetRouting not implemented")
 }
-func (UnimplementedDaemonServer) SetAnalytics(context.Context, *SetGenericRequest) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetAnalytics not implemented")
-}
 func (UnimplementedDaemonServer) SetKillSwitch(context.Context, *SetKillSwitchRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetKillSwitch not implemented")
+}
+func (UnimplementedDaemonServer) SetLANDiscovery(context.Context, *SetLANDiscoveryRequest) (*SetLANDiscoveryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetLANDiscovery not implemented")
+}
+func (UnimplementedDaemonServer) SetVirtualLocation(context.Context, *SetGenericRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetVirtualLocation not implemented")
 }
 func (UnimplementedDaemonServer) SetNotify(context.Context, *SetNotifyRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetNotify not implemented")
@@ -726,17 +788,14 @@ func (UnimplementedDaemonServer) SetNotify(context.Context, *SetNotifyRequest) (
 func (UnimplementedDaemonServer) SetTray(context.Context, *SetTrayRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetTray not implemented")
 }
-func (UnimplementedDaemonServer) SetObfuscate(context.Context, *SetGenericRequest) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetObfuscate not implemented")
+func (UnimplementedDaemonServer) SettingsProtocols(context.Context, *Empty) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SettingsProtocols not implemented")
 }
-func (UnimplementedDaemonServer) SetProtocol(context.Context, *SetProtocolRequest) (*SetProtocolResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetProtocol not implemented")
+func (UnimplementedDaemonServer) SettingsTechnologies(context.Context, *Empty) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SettingsTechnologies not implemented")
 }
-func (UnimplementedDaemonServer) SetTechnology(context.Context, *SetTechnologyRequest) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetTechnology not implemented")
-}
-func (UnimplementedDaemonServer) SetLANDiscovery(context.Context, *SetLANDiscoveryRequest) (*SetLANDiscoveryResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetLANDiscovery not implemented")
+func (UnimplementedDaemonServer) GetFeatureToggles(context.Context, *Empty) (*FeatureToggles, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFeatureToggles not implemented")
 }
 func (UnimplementedDaemonServer) SetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetAllowlist not implemented")
@@ -747,38 +806,20 @@ func (UnimplementedDaemonServer) UnsetAllowlist(context.Context, *SetAllowlistRe
 func (UnimplementedDaemonServer) UnsetAllAllowlist(context.Context, *Empty) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnsetAllAllowlist not implemented")
 }
-func (UnimplementedDaemonServer) Settings(context.Context, *Empty) (*SettingsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Settings not implemented")
+func (UnimplementedDaemonServer) SetAnalytics(context.Context, *SetGenericRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetAnalytics not implemented")
 }
-func (UnimplementedDaemonServer) SettingsProtocols(context.Context, *Empty) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SettingsProtocols not implemented")
+func (UnimplementedDaemonServer) SetThreatProtectionLite(context.Context, *SetThreatProtectionLiteRequest) (*SetThreatProtectionLiteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetThreatProtectionLite not implemented")
 }
-func (UnimplementedDaemonServer) SettingsTechnologies(context.Context, *Empty) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SettingsTechnologies not implemented")
-}
-func (UnimplementedDaemonServer) Status(context.Context, *Empty) (*StatusResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Status not implemented")
-}
-func (UnimplementedDaemonServer) ClaimOnlinePurchase(context.Context, *Empty) (*ClaimOnlinePurchaseResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ClaimOnlinePurchase not implemented")
-}
-func (UnimplementedDaemonServer) SetVirtualLocation(context.Context, *SetGenericRequest) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetVirtualLocation not implemented")
+func (UnimplementedDaemonServer) Ping(context.Context, *Empty) (*PingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedDaemonServer) SubscribeToStateChanges(*Empty, grpc.ServerStreamingServer[AppState]) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeToStateChanges not implemented")
 }
-func (UnimplementedDaemonServer) GetServers(context.Context, *Empty) (*ServersResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetServers not implemented")
-}
-func (UnimplementedDaemonServer) SetPostQuantum(context.Context, *SetGenericRequest) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetPostQuantum not implemented")
-}
 func (UnimplementedDaemonServer) GetDaemonApiVersion(context.Context, *GetDaemonApiVersionRequest) (*GetDaemonApiVersionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDaemonApiVersion not implemented")
-}
-func (UnimplementedDaemonServer) GetFeatureToggles(context.Context, *Empty) (*FeatureToggles, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetFeatureToggles not implemented")
 }
 func (UnimplementedDaemonServer) mustEmbedUnimplementedDaemonServer() {}
 func (UnimplementedDaemonServer) testEmbeddedByValue()                {}
@@ -799,136 +840,6 @@ func RegisterDaemonServer(s grpc.ServiceRegistrar, srv DaemonServer) {
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&Daemon_ServiceDesc, srv)
-}
-
-func _Daemon_AccountInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AccountRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).AccountInfo(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_AccountInfo_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).AccountInfo(ctx, req.(*AccountRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_TokenInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).TokenInfo(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_TokenInfo_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).TokenInfo(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_Cities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CitiesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).Cities(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_Cities_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).Cities(ctx, req.(*CitiesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_Connect_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ConnectRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(DaemonServer).Connect(m, &grpc.GenericServerStream[ConnectRequest, Payload]{ServerStream: stream})
-}
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Daemon_ConnectServer = grpc.ServerStreamingServer[Payload]
-
-func _Daemon_ConnectCancel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).ConnectCancel(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_ConnectCancel_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).ConnectCancel(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_Countries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).Countries(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_Countries_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).Countries(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_Disconnect_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(Empty)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(DaemonServer).Disconnect(m, &grpc.GenericServerStream[Empty, Payload]{ServerStream: stream})
-}
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type Daemon_DisconnectServer = grpc.ServerStreamingServer[Payload]
-
-func _Daemon_Groups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).Groups(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_Groups_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).Groups(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Daemon_IsLoggedIn_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -1021,20 +932,114 @@ func _Daemon_Logout_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Daemon_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Daemon_AccountInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AccountRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).AccountInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_AccountInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).AccountInfo(ctx, req.(*AccountRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_TokenInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DaemonServer).Ping(ctx, in)
+		return srv.(DaemonServer).TokenInfo(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Daemon_Ping_FullMethodName,
+		FullMethod: Daemon_TokenInfo_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).Ping(ctx, req.(*Empty))
+		return srv.(DaemonServer).TokenInfo(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_ClaimOnlinePurchase_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).ClaimOnlinePurchase(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_ClaimOnlinePurchase_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).ClaimOnlinePurchase(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_Connect_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ConnectRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(DaemonServer).Connect(m, &grpc.GenericServerStream[ConnectRequest, Payload]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Daemon_ConnectServer = grpc.ServerStreamingServer[Payload]
+
+func _Daemon_ConnectCancel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).ConnectCancel(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_ConnectCancel_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).ConnectCancel(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_Disconnect_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(DaemonServer).Disconnect(m, &grpc.GenericServerStream[Empty, Payload]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Daemon_DisconnectServer = grpc.ServerStreamingServer[Payload]
+
+func _Daemon_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).Status(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_Status_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).Status(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1057,38 +1062,92 @@ func _Daemon_RateConnection_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Daemon_SetAutoConnect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetAutoconnectRequest)
+func _Daemon_GetServers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DaemonServer).SetAutoConnect(ctx, in)
+		return srv.(DaemonServer).GetServers(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Daemon_SetAutoConnect_FullMethodName,
+		FullMethod: Daemon_GetServers_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SetAutoConnect(ctx, req.(*SetAutoconnectRequest))
+		return srv.(DaemonServer).GetServers(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Daemon_SetThreatProtectionLite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetThreatProtectionLiteRequest)
+func _Daemon_Countries_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DaemonServer).SetThreatProtectionLite(ctx, in)
+		return srv.(DaemonServer).Countries(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Daemon_SetThreatProtectionLite_FullMethodName,
+		FullMethod: Daemon_Countries_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SetThreatProtectionLite(ctx, req.(*SetThreatProtectionLiteRequest))
+		return srv.(DaemonServer).Countries(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_Cities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CitiesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).Cities(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_Cities_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).Cities(ctx, req.(*CitiesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_Groups_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).Groups(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_Groups_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).Groups(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_Settings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).Settings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_Settings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).Settings(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1107,6 +1166,114 @@ func _Daemon_SetDefaults_Handler(srv interface{}, ctx context.Context, dec func(
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DaemonServer).SetDefaults(ctx, req.(*SetDefaultsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_SetAutoConnect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetAutoconnectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).SetAutoConnect(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_SetAutoConnect_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).SetAutoConnect(ctx, req.(*SetAutoconnectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_SetProtocol_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetProtocolRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).SetProtocol(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_SetProtocol_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).SetProtocol(ctx, req.(*SetProtocolRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_SetTechnology_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetTechnologyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).SetTechnology(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_SetTechnology_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).SetTechnology(ctx, req.(*SetTechnologyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_SetObfuscate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetGenericRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).SetObfuscate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_SetObfuscate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).SetObfuscate(ctx, req.(*SetGenericRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_SetPostQuantum_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetGenericRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).SetPostQuantum(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_SetPostQuantum_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).SetPostQuantum(ctx, req.(*SetGenericRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_GetRecentConnections_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RecentConnectionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).GetRecentConnections(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_GetRecentConnections_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).GetRecentConnections(ctx, req.(*RecentConnectionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1183,24 +1350,6 @@ func _Daemon_SetRouting_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Daemon_SetAnalytics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetGenericRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).SetAnalytics(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_SetAnalytics_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SetAnalytics(ctx, req.(*SetGenericRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Daemon_SetKillSwitch_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetKillSwitchRequest)
 	if err := dec(in); err != nil {
@@ -1215,6 +1364,42 @@ func _Daemon_SetKillSwitch_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DaemonServer).SetKillSwitch(ctx, req.(*SetKillSwitchRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_SetLANDiscovery_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetLANDiscoveryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).SetLANDiscovery(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_SetLANDiscovery_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).SetLANDiscovery(ctx, req.(*SetLANDiscoveryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_SetVirtualLocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetGenericRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).SetVirtualLocation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_SetVirtualLocation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).SetVirtualLocation(ctx, req.(*SetGenericRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1255,74 +1440,56 @@ func _Daemon_SetTray_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Daemon_SetObfuscate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetGenericRequest)
+func _Daemon_SettingsProtocols_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DaemonServer).SetObfuscate(ctx, in)
+		return srv.(DaemonServer).SettingsProtocols(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Daemon_SetObfuscate_FullMethodName,
+		FullMethod: Daemon_SettingsProtocols_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SetObfuscate(ctx, req.(*SetGenericRequest))
+		return srv.(DaemonServer).SettingsProtocols(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Daemon_SetProtocol_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetProtocolRequest)
+func _Daemon_SettingsTechnologies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DaemonServer).SetProtocol(ctx, in)
+		return srv.(DaemonServer).SettingsTechnologies(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Daemon_SetProtocol_FullMethodName,
+		FullMethod: Daemon_SettingsTechnologies_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SetProtocol(ctx, req.(*SetProtocolRequest))
+		return srv.(DaemonServer).SettingsTechnologies(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Daemon_SetTechnology_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetTechnologyRequest)
+func _Daemon_GetFeatureToggles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DaemonServer).SetTechnology(ctx, in)
+		return srv.(DaemonServer).GetFeatureToggles(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Daemon_SetTechnology_FullMethodName,
+		FullMethod: Daemon_GetFeatureToggles_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SetTechnology(ctx, req.(*SetTechnologyRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_SetLANDiscovery_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetLANDiscoveryRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).SetLANDiscovery(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_SetLANDiscovery_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SetLANDiscovery(ctx, req.(*SetLANDiscoveryRequest))
+		return srv.(DaemonServer).GetFeatureToggles(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1381,110 +1548,56 @@ func _Daemon_UnsetAllAllowlist_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Daemon_Settings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).Settings(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_Settings_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).Settings(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_SettingsProtocols_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).SettingsProtocols(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_SettingsProtocols_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SettingsProtocols(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_SettingsTechnologies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).SettingsTechnologies(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_SettingsTechnologies_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SettingsTechnologies(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).Status(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_Status_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).Status(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_ClaimOnlinePurchase_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).ClaimOnlinePurchase(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_ClaimOnlinePurchase_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).ClaimOnlinePurchase(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_SetVirtualLocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Daemon_SetAnalytics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetGenericRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DaemonServer).SetVirtualLocation(ctx, in)
+		return srv.(DaemonServer).SetAnalytics(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Daemon_SetVirtualLocation_FullMethodName,
+		FullMethod: Daemon_SetAnalytics_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SetVirtualLocation(ctx, req.(*SetGenericRequest))
+		return srv.(DaemonServer).SetAnalytics(ctx, req.(*SetGenericRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_SetThreatProtectionLite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetThreatProtectionLiteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).SetThreatProtectionLite(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_SetThreatProtectionLite_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).SetThreatProtectionLite(ctx, req.(*SetThreatProtectionLiteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).Ping(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_Ping_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).Ping(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1499,42 +1612,6 @@ func _Daemon_SubscribeToStateChanges_Handler(srv interface{}, stream grpc.Server
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Daemon_SubscribeToStateChangesServer = grpc.ServerStreamingServer[AppState]
-
-func _Daemon_GetServers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).GetServers(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_GetServers_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).GetServers(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Daemon_SetPostQuantum_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetGenericRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).SetPostQuantum(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_SetPostQuantum_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SetPostQuantum(ctx, req.(*SetGenericRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
 
 func _Daemon_GetDaemonApiVersion_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetDaemonApiVersionRequest)
@@ -1554,24 +1631,6 @@ func _Daemon_GetDaemonApiVersion_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Daemon_GetFeatureToggles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).GetFeatureToggles(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_GetFeatureToggles_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).GetFeatureToggles(ctx, req.(*Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // Daemon_ServiceDesc is the grpc.ServiceDesc for Daemon service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1579,30 +1638,6 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "pb.Daemon",
 	HandlerType: (*DaemonServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "AccountInfo",
-			Handler:    _Daemon_AccountInfo_Handler,
-		},
-		{
-			MethodName: "TokenInfo",
-			Handler:    _Daemon_TokenInfo_Handler,
-		},
-		{
-			MethodName: "Cities",
-			Handler:    _Daemon_Cities_Handler,
-		},
-		{
-			MethodName: "ConnectCancel",
-			Handler:    _Daemon_ConnectCancel_Handler,
-		},
-		{
-			MethodName: "Countries",
-			Handler:    _Daemon_Countries_Handler,
-		},
-		{
-			MethodName: "Groups",
-			Handler:    _Daemon_Groups_Handler,
-		},
 		{
 			MethodName: "IsLoggedIn",
 			Handler:    _Daemon_IsLoggedIn_Handler,
@@ -1624,24 +1659,76 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Daemon_Logout_Handler,
 		},
 		{
-			MethodName: "Ping",
-			Handler:    _Daemon_Ping_Handler,
+			MethodName: "AccountInfo",
+			Handler:    _Daemon_AccountInfo_Handler,
+		},
+		{
+			MethodName: "TokenInfo",
+			Handler:    _Daemon_TokenInfo_Handler,
+		},
+		{
+			MethodName: "ClaimOnlinePurchase",
+			Handler:    _Daemon_ClaimOnlinePurchase_Handler,
+		},
+		{
+			MethodName: "ConnectCancel",
+			Handler:    _Daemon_ConnectCancel_Handler,
+		},
+		{
+			MethodName: "Status",
+			Handler:    _Daemon_Status_Handler,
 		},
 		{
 			MethodName: "RateConnection",
 			Handler:    _Daemon_RateConnection_Handler,
 		},
 		{
-			MethodName: "SetAutoConnect",
-			Handler:    _Daemon_SetAutoConnect_Handler,
+			MethodName: "GetServers",
+			Handler:    _Daemon_GetServers_Handler,
 		},
 		{
-			MethodName: "SetThreatProtectionLite",
-			Handler:    _Daemon_SetThreatProtectionLite_Handler,
+			MethodName: "Countries",
+			Handler:    _Daemon_Countries_Handler,
+		},
+		{
+			MethodName: "Cities",
+			Handler:    _Daemon_Cities_Handler,
+		},
+		{
+			MethodName: "Groups",
+			Handler:    _Daemon_Groups_Handler,
+		},
+		{
+			MethodName: "Settings",
+			Handler:    _Daemon_Settings_Handler,
 		},
 		{
 			MethodName: "SetDefaults",
 			Handler:    _Daemon_SetDefaults_Handler,
+		},
+		{
+			MethodName: "SetAutoConnect",
+			Handler:    _Daemon_SetAutoConnect_Handler,
+		},
+		{
+			MethodName: "SetProtocol",
+			Handler:    _Daemon_SetProtocol_Handler,
+		},
+		{
+			MethodName: "SetTechnology",
+			Handler:    _Daemon_SetTechnology_Handler,
+		},
+		{
+			MethodName: "SetObfuscate",
+			Handler:    _Daemon_SetObfuscate_Handler,
+		},
+		{
+			MethodName: "SetPostQuantum",
+			Handler:    _Daemon_SetPostQuantum_Handler,
+		},
+		{
+			MethodName: "GetRecentConnections",
+			Handler:    _Daemon_GetRecentConnections_Handler,
 		},
 		{
 			MethodName: "SetDNS",
@@ -1660,12 +1747,16 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Daemon_SetRouting_Handler,
 		},
 		{
-			MethodName: "SetAnalytics",
-			Handler:    _Daemon_SetAnalytics_Handler,
-		},
-		{
 			MethodName: "SetKillSwitch",
 			Handler:    _Daemon_SetKillSwitch_Handler,
+		},
+		{
+			MethodName: "SetLANDiscovery",
+			Handler:    _Daemon_SetLANDiscovery_Handler,
+		},
+		{
+			MethodName: "SetVirtualLocation",
+			Handler:    _Daemon_SetVirtualLocation_Handler,
 		},
 		{
 			MethodName: "SetNotify",
@@ -1676,20 +1767,16 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Daemon_SetTray_Handler,
 		},
 		{
-			MethodName: "SetObfuscate",
-			Handler:    _Daemon_SetObfuscate_Handler,
+			MethodName: "SettingsProtocols",
+			Handler:    _Daemon_SettingsProtocols_Handler,
 		},
 		{
-			MethodName: "SetProtocol",
-			Handler:    _Daemon_SetProtocol_Handler,
+			MethodName: "SettingsTechnologies",
+			Handler:    _Daemon_SettingsTechnologies_Handler,
 		},
 		{
-			MethodName: "SetTechnology",
-			Handler:    _Daemon_SetTechnology_Handler,
-		},
-		{
-			MethodName: "SetLANDiscovery",
-			Handler:    _Daemon_SetLANDiscovery_Handler,
+			MethodName: "GetFeatureToggles",
+			Handler:    _Daemon_GetFeatureToggles_Handler,
 		},
 		{
 			MethodName: "SetAllowlist",
@@ -1704,44 +1791,20 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Daemon_UnsetAllAllowlist_Handler,
 		},
 		{
-			MethodName: "Settings",
-			Handler:    _Daemon_Settings_Handler,
+			MethodName: "SetAnalytics",
+			Handler:    _Daemon_SetAnalytics_Handler,
 		},
 		{
-			MethodName: "SettingsProtocols",
-			Handler:    _Daemon_SettingsProtocols_Handler,
+			MethodName: "SetThreatProtectionLite",
+			Handler:    _Daemon_SetThreatProtectionLite_Handler,
 		},
 		{
-			MethodName: "SettingsTechnologies",
-			Handler:    _Daemon_SettingsTechnologies_Handler,
-		},
-		{
-			MethodName: "Status",
-			Handler:    _Daemon_Status_Handler,
-		},
-		{
-			MethodName: "ClaimOnlinePurchase",
-			Handler:    _Daemon_ClaimOnlinePurchase_Handler,
-		},
-		{
-			MethodName: "SetVirtualLocation",
-			Handler:    _Daemon_SetVirtualLocation_Handler,
-		},
-		{
-			MethodName: "GetServers",
-			Handler:    _Daemon_GetServers_Handler,
-		},
-		{
-			MethodName: "SetPostQuantum",
-			Handler:    _Daemon_SetPostQuantum_Handler,
+			MethodName: "Ping",
+			Handler:    _Daemon_Ping_Handler,
 		},
 		{
 			MethodName: "GetDaemonApiVersion",
 			Handler:    _Daemon_GetDaemonApiVersion_Handler,
-		},
-		{
-			MethodName: "GetFeatureToggles",
-			Handler:    _Daemon_GetFeatureToggles_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
