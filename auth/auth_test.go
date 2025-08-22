@@ -13,6 +13,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	mocksession "github.com/NordSecurity/nordvpn-linux/test/mock/session"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -43,8 +44,8 @@ func TestIsTokenExpired(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		expirationChecker := systemTimeExpirationChecker{}
-		got := expirationChecker.isExpired(tt.input)
+		expirationChecker := NewTokenExpirationChecker()
+		got := expirationChecker.IsExpired(tt.input)
 		assert.Equal(t, tt.expected, got)
 	}
 }
@@ -54,6 +55,7 @@ type authConfigManager struct {
 	serviceExpiry string
 	loadErr       error
 	saveErr       error
+	resetErr      error
 }
 
 func (cm *authConfigManager) Load(c *config.Config) error {
@@ -70,19 +72,34 @@ func (cm *authConfigManager) SaveWith(config.SaveFunc) error {
 	return cm.saveErr
 }
 
+func (cm *authConfigManager) Reset(preserveLoginData bool, disableKillswitch bool) error {
+	return cm.resetErr
+}
+
 type authAPI struct {
 	core.CredentialsAPI
 	resp    core.ServicesResponse
 	mfaResp core.MultifactorAuthStatusResponse
 	err     error
+
+	respNC    core.NotificationCredentialsResponse
+	respCreds core.CredentialsResponse
 }
 
-func (api *authAPI) Services(string) (core.ServicesResponse, error) {
+func (api *authAPI) Services() (core.ServicesResponse, error) {
 	return api.resp, api.err
 }
 
-func (api *authAPI) MultifactorAuthStatus(string) (*core.MultifactorAuthStatusResponse, error) {
+func (api *authAPI) MultifactorAuthStatus() (*core.MultifactorAuthStatusResponse, error) {
 	return &api.mfaResp, api.err
+}
+
+func (api *authAPI) NotificationCredentials(appUserID string) (core.NotificationCredentialsResponse, error) {
+	return api.respNC, api.err
+}
+
+func (api *authAPI) ServiceCredentials(token string) (*core.CredentialsResponse, error) {
+	return &api.respCreds, api.err
 }
 
 type mockExpirationChecker struct {
@@ -95,7 +112,7 @@ func newMockExpirationChecker(expiredDates ...string) mockExpirationChecker {
 	}
 }
 
-func (m mockExpirationChecker) isExpired(expiryTime string) bool {
+func (m mockExpirationChecker) IsExpired(expiryTime string) bool {
 	if idx := slices.Index(m.expiredDates, expiryTime); idx != -1 {
 		return true
 	}
@@ -183,7 +200,7 @@ func TestIsMFAEnabled(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rc := NewRenewingChecker(test.cm, test.api, test.mfaPub, test.loutPub, test.errPub, daemonevents.NewAccountUpdateEvents())
+			rc := NewRenewingChecker(test.cm, test.api, test.mfaPub, test.loutPub, test.errPub, daemonevents.NewAccountUpdateEvents(), &mocksession.MockSessionStore{})
 			enabled, err := rc.isMFAEnabled()
 			assert.Equal(t, test.isEnabled, enabled)
 
@@ -242,9 +259,10 @@ func TestIsVPNExpired(t *testing.T) {
 			isError: true,
 		},
 		{
-			name:    "config save error",
-			cm:      &authConfigManager{saveErr: testErr},
-			api:     &authAPI{},
+			name: "config save error",
+			cm:   &authConfigManager{saveErr: testErr},
+			api: &authAPI{resp: core.ServicesResponse{core.ServiceData{Service: core.Service{ID: VPNServiceID},
+				ExpiresAt: "1990-01-01 09:18:53"}}},
 			accPub:  &daemonevents.MockPublisherSubscriber[*pb.AccountModification]{},
 			isError: true,
 		},
@@ -266,7 +284,9 @@ func TestIsVPNExpired(t *testing.T) {
 				&mockAuthPublisher{},
 				&mockErrPublisher{},
 				&daemonevents.AccountUpdateEvents{SubscriptionUpdate: test.accPub},
+				&mocksession.MockSessionStore{},
 			)
+
 			expired, err := rc.IsVPNExpired()
 			if test.isError {
 				assert.ErrorIs(t, err, testErr)
@@ -282,6 +302,22 @@ func TestIsVPNExpired(t *testing.T) {
 			}
 		})
 	}
+
+	accPub := &daemonevents.MockPublisherSubscriber[*pb.AccountModification]{}
+
+	rc := NewRenewingChecker(
+		&authConfigManager{},
+		&authAPI{},
+		&mockBoolPublisher{},
+		&mockAuthPublisher{},
+		&mockErrPublisher{},
+		&daemonevents.AccountUpdateEvents{SubscriptionUpdate: accPub},
+		nil,
+	)
+
+	_, err := rc.IsVPNExpired()
+	assert.Error(t, err)
+	assert.False(t, accPub.EventPublished)
 }
 
 func TestGetDedicatedIPServices(t *testing.T) {
@@ -446,12 +482,6 @@ func TestGetDedicatedIPServices(t *testing.T) {
 			shouldBeErr:         true,
 		},
 		{
-			name:                "config error",
-			configLoadErr:       fmt.Errorf("config load error"),
-			expectedDIPSerivces: []DedicatedIPService{},
-			shouldBeErr:         true,
-		},
-		{
 			name: "no server associated with DIP service",
 			servicesResponse: []core.ServiceData{
 				dipServiceNoServer,
@@ -481,11 +511,91 @@ func TestGetDedicatedIPServices(t *testing.T) {
 
 			dipServices, err := rc.GetDedicatedIPServices()
 			if test.shouldBeErr {
-				assert.NotNil(t, err, "GetDedicatedIPServices didn't return an error when errror was expected.")
+				assert.NotNil(t, err, "GetDedicatedIPServices didn't return an error when error was expected.")
 				return
 			}
 			assert.Equal(t, test.expectedDIPSerivces, dipServices,
 				"Invalid services returned by GetDedicatedIPServices.")
 		})
 	}
+}
+
+func TestIsLoggedIn_Success(t *testing.T) {
+	mockSS := &mocksession.MockSessionStore{}
+	mockCM := &authConfigManager{}
+
+	checker := NewRenewingChecker(
+		mockCM,
+		&authAPI{},
+		&mockBoolPublisher{},
+		&mockAuthPublisher{},
+		&mockErrPublisher{},
+		&daemonevents.AccountUpdateEvents{},
+		mockSS)
+
+	yes, err := checker.IsLoggedIn()
+	assert.True(t, yes, "must be logged in")
+	assert.NoError(t, err, "there should be no errors")
+}
+
+func TestIsLoggedIn_InvalidToken(t *testing.T) {
+	expectedRenewErr := errors.New("renew error")
+	mockSS := &mocksession.MockSessionStore{RenewErr: expectedRenewErr}
+	mockCM := &authConfigManager{}
+
+	checker := NewRenewingChecker(
+		mockCM,
+		&authAPI{},
+		&mockBoolPublisher{},
+		&mockAuthPublisher{},
+		&mockErrPublisher{},
+		&daemonevents.AccountUpdateEvents{},
+		mockSS)
+
+	yes, err := checker.IsLoggedIn()
+	assert.False(t, yes, "must not be logged in")
+	assert.Error(t, err, "there should be an error")
+	assert.ErrorIs(t, err, expectedRenewErr)
+}
+
+func TestIsLoggedIn_ConfigLoadFailed(t *testing.T) {
+	expectedLoadErr := errors.New("load error")
+	mockSS := &mocksession.MockSessionStore{}
+	mockCM := &authConfigManager{loadErr: expectedLoadErr}
+
+	checker := NewRenewingChecker(
+		mockCM,
+		&authAPI{},
+		&mockBoolPublisher{},
+		&mockAuthPublisher{},
+		&mockErrPublisher{},
+		&daemonevents.AccountUpdateEvents{},
+		mockSS)
+
+	yes, err := checker.IsLoggedIn()
+	assert.False(t, yes, "must not be logged in")
+	assert.Error(t, err, "there should be an error")
+	assert.Equal(t, expectedLoadErr, err)
+}
+
+func TestIsLoggedIn_CheckerRenewFailed(t *testing.T) {
+	expectedErr := errors.New("error")
+	mockSS := &mocksession.MockSessionStore{
+		RenewErr: expectedErr,
+	}
+
+	checker := NewRenewingChecker(
+		&authConfigManager{},
+		&authAPI{},
+		&mockBoolPublisher{},
+		&mockAuthPublisher{},
+		&mockErrPublisher{},
+		&daemonevents.AccountUpdateEvents{},
+		mockSS)
+
+	yes, err := checker.IsLoggedIn()
+	assert.False(t, yes, "must not be logged in")
+	assert.Error(t, err, "there should be an error")
+	assert.ErrorIs(t, err, expectedErr)
+	assert.Equal(t, 1, mockSS.RenewCallCount)
 }
