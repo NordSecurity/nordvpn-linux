@@ -31,6 +31,8 @@ MSG_ROUTING_USED_BY_MESH = "Routing is currently used by Meshnet. Disable it fir
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_routing_enabled_connect(tech, proto, obfuscated):
+    """Manual TC: LVPN-898"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     allowlist.add_subnet_to_allowlist([f"{SUBNET_1}/32", f"{SUBNET_2}/32", f"{SUBNET_3}/32"])
@@ -54,6 +56,8 @@ def test_routing_enabled_connect(tech, proto, obfuscated):
 @pytest.mark.skip("LVPN-3273; LVPN-1574")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_routing_disabled_connect(tech, proto, obfuscated):
+    """Manual TC: LVPN-900"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     allowlist.add_subnet_to_allowlist([f"{SUBNET_1}/32"])
@@ -77,6 +81,8 @@ def test_routing_disabled_connect(tech, proto, obfuscated):
 @pytest.mark.skip("LVPN-3273")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connected_routing_disable_enable(tech, proto, obfuscated):
+    """Manual TC: LVPN-714"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     print(sh.nordvpn.connect())
@@ -98,6 +104,8 @@ def test_connected_routing_disable_enable(tech, proto, obfuscated):
 @pytest.mark.skip("LVPN-3273; LVPN-1574")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connected_routing_enable_disable(tech, proto, obfuscated):
+    """Manual TC: LVPN-716"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     assert MSG_ROUTING_OFF in sh.nordvpn.set.routing.off()
@@ -122,6 +130,8 @@ def test_connected_routing_enable_disable(tech, proto, obfuscated):
 @pytest.mark.skip("LVPN-4360")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1)
 def test_meshnet_on_routing_disable(tech, proto, obfuscated):
+    """Manual TC: LVPN-892"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.set.mesh.on()
@@ -131,6 +141,8 @@ def test_meshnet_on_routing_disable(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_routing_already_enabled(tech, proto, obfuscated):
+    """Manual TC: LVPN-8758"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     lib.set_routing("on")
 
@@ -140,6 +152,8 @@ def test_routing_already_enabled(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_routing_already_disabled(tech, proto, obfuscated):
+    """Manual TC: LVPN-8759"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     lib.set_routing("off")
 
@@ -150,6 +164,8 @@ def test_routing_already_disabled(tech, proto, obfuscated):
 @pytest.mark.skip("LVPN-3273")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_toggle_routing_in_the_middle_of_the_connection(tech, proto, obfuscated):
+    """"Manual TC is unavailable since toggling routing mid-connection and validating dynamic ip rule/routing table changes requires automation to observe state transitions accurately."""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     print(sh.nordvpn.connect())
@@ -177,6 +193,8 @@ def test_toggle_routing_in_the_middle_of_the_connection(tech, proto, obfuscated)
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_routing_when_iprule_already_exists(tech, proto, obfuscated):
+    """"Manual TC is unavailable since this test manipulates low-level ip rule and routing table entries that cannot be reliably reproduced or validated without automation."""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     print(sh.nordvpn.connect())
