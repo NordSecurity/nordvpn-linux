@@ -83,7 +83,7 @@ func determineServerSelectionRule(params ServerParameters) config.ServerSelectio
 	case !hasCountry && !hasCity && !hasGroup && hasServer:
 		return config.ServerSelectionRuleSpecificServer
 
-	case !hasCountry && !hasCity && hasGroup && hasServer:
+	case hasGroup && (hasServer || hasCity):
 		return config.ServerSelectionRuleSpecificServerWithGroup
 
 	case !hasCountry && !hasCity && hasGroup && !hasServer:
