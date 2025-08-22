@@ -52,6 +52,15 @@ mkdir -p "${LOGS_FOLDER}"
 mkdir -p "${ARTIFACTS_FOLDER}"
 mkdir -p "${GOCOVERDIR}"
 
+if [[ -n ${NORD_CDN_URL:-} ]]; then
+    if ! sudo grep -q "export NORD_CDN_URL=$NORD_CDN_URL" "/etc/init.d/nordvpn"; then
+        sudo sed -i "1a export NORD_CDN_URL=$NORD_CDN_URL" "/etc/init.d/nordvpn"
+    fi
+    if ! sudo grep -q "export IGNORE_HEADER_VALIDATION=1" "/etc/init.d/nordvpn"; then
+        sudo sed -i "1a export IGNORE_HEADER_VALIDATION=1" "/etc/init.d/nordvpn"
+    fi
+fi
+
 python3 -m pytest -v -x -rsx --setup-timeout 60 --execution-timeout 180 --teardown-timeout 25 -o log_cli=true \
 --html="${WORKDIR}"/dist/test_artifacts/report.html --self-contained-html  --junitxml="${WORKDIR}"/dist/test_artifacts/report.xml "${args[@]}"
 
