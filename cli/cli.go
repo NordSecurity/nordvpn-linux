@@ -100,6 +100,8 @@ func NewApp(version, environment, hash, salt string,
 		cmd.fileshareClient = filesharepb.NewFileshareClient(fileshareConn)
 	}
 
+	fmt.Println("step 1")
+
 	cli.AppHelpTemplate = AppHelpTemplate
 	cli.SubcommandHelpTemplate = SubcommandHelpTemplate
 	cli.CommandHelpTemplate = CommandHelpTemplate
@@ -121,7 +123,9 @@ func NewApp(version, environment, hash, salt string,
 	cli.HelpFlag.(*cli.BoolFlag).Usage = "Show help"
 	cli.VersionFlag.(*cli.BoolFlag).Usage = "Print the version"
 
+	fmt.Println("call isMeshnetEnabled")
 	isMeshnetEnabled := isMeshnetEnabled(cmd)
+	fmt.Println("finish isMeshnetEnabled", isMeshnetEnabled)
 
 	setCommand := cli.Command{
 		Name:        "set",
@@ -130,6 +134,7 @@ func NewApp(version, environment, hash, salt string,
 		Subcommands: getSetSubcommands(cmd, isMeshnetEnabled),
 	}
 
+	fmt.Println("before create NewApp")
 	app := cli.NewApp()
 	app.EnableBashCompletion = true
 	status.Code(err)

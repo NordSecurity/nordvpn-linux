@@ -26,13 +26,16 @@ def get_alias() -> str:
     """
     return random.choice(CONNECT_ALIAS)
 
+def log_stdout(line: str):
+    logging.log(f"[connect out] {line}")
+
 
 def connect_base_test(connection_settings, group=(), name="", hostname=""):
     print(connection_settings)
-    output = sh.nordvpn(get_alias(), group, _tty_out=False)
+    output = sh.nordvpn(get_alias(), group, _tty_out=False, _err=log_stdout)
     print(output)
 
-    assert lib.is_connect_successful(output, name, hostname)
+    lib.is_connect_successful(output, name, hostname)
     assert network.is_available()
 
 

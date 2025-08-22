@@ -145,14 +145,21 @@ def wait_for_autoconnect():
     while not is_connected():
         time.sleep(1)
 
+def log_stdout(line: str):
+    logging.log(f"Checking [out] {line}")
+
 
 # returns True when daemon is running
 def is_running():
     try:
-        sh.nordvpn.status()
+        logging.log("Checking status")
+        v = sh.nordvpn.status(_out=log_stdout, _err=log_stdout)
+        logging.log(f"Checking status result {v}")
     except sh.ErrorReturnCode_1:
+        logging.log("Checking NOT running status")
         return False
     else:
+        logging.log("Checking Running status")
         return True
 
 

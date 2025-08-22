@@ -238,7 +238,7 @@ func (r *RPC) connect(
 	data := []string{r.lastServer.Name, r.lastServer.Hostname, virtualServer}
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnecting, Data: data}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Println(internal.ErrorPrefix, "send", err)
 	}
 
 	err = r.netw.Start(
@@ -263,11 +263,13 @@ func (r *RPC) connect(
 			event.Error = nil
 		}
 		r.events.Service.Connect.Publish(event)
+		log.Println(internal.ErrorPrefix, "send error state", err)
+
 		if err := srv.Send(&pb.Payload{
 			Type: t,
 			Data: data,
 		}); err != nil {
-			log.Println(internal.ErrorPrefix, err)
+			log.Println(internal.ErrorPrefix, "send", err)
 		}
 		return false, nil
 	}
@@ -275,9 +277,9 @@ func (r *RPC) connect(
 	event.EventStatus = events.StatusSuccess
 	event.DurationMs = getElapsedTime(connectingStartTime)
 	r.events.Service.Connect.Publish(event)
-
+	log.Println("send connected")
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnected, Data: data}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Println(internal.ErrorPrefix, "send", err)
 	}
 
 	return false, nil

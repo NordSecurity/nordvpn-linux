@@ -3,6 +3,7 @@ package grpcmiddleware
 
 import (
 	"context"
+	"log"
 
 	"google.golang.org/grpc"
 )
@@ -43,7 +44,11 @@ func (m *Middleware) StreamIntercept(srv interface{},
 			return err
 		}
 	}
-	return handler(srv, ss)
+	err := handler(srv, ss)
+	if err != nil {
+		log.Println("StreamIntercept handle", info.FullMethod, err)
+	}
+	return err
 }
 
 // UnaryIntercept method can be provided to gRPC server options as a grpc.UnaryInterceptor
@@ -59,9 +64,14 @@ func (m *Middleware) UnaryIntercept(
 ) (interface{}, error) {
 	for _, m := range m.unaryMiddleware {
 		if _, err := m(ctx, req, info); err != nil {
+			log.Println("unaryMiddleware", info.FullMethod, err)
 			return nil, err
 		}
 	}
 
-	return handler(ctx, req)
+	v, err := handler(ctx, req)
+	if err != nil {
+		log.Println("UnaryIntercept error", info.FullMethod, err)
+	}
+	return v, err
 }

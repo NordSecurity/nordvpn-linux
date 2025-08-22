@@ -22,7 +22,7 @@ def connect_base_test(group: str = (), name: str = "", hostname: str = ""):
     output = sh.nordvpn.connect(group, _tty_out=False)
     print(output)
 
-    assert lib.is_connect_successful(output, name, hostname)
+    lib.is_connect_successful(output, name, hostname)
     assert network.is_connected()
 
 

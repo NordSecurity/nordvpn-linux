@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"unicode"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -53,6 +54,15 @@ func (Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 	return nil
 }
 
+func IsAsciiPrintable(s string) bool {
+	for _, r := range s {
+		if r > unicode.MaxASCII || !unicode.IsPrint(r) {
+			return false
+		}
+	}
+	return true
+}
+
 func (Subscriber) NotifyRequestAPIVerbose(data events.DataRequestAPI) error {
 	// do not log attempt events
 	if data.IsAttempt {
@@ -74,7 +84,10 @@ func (Subscriber) NotifyRequestAPIVerbose(data events.DataRequestAPI) error {
 		if data.Response.Header.Get("Content-Encoding") == "gzip" {
 			gReader, err := gzip.NewReader(io.NopCloser(reader))
 			if err == nil {
+				log.Println(internal.InfoPrefix, "Gzip reader")
 				reader = gReader
+			} else {
+				log.Println(internal.ErrorPrefix, "Failed to create gzip reader", err)
 			}
 		}
 		data.Response.Body = io.NopCloser(bytes.NewBuffer(rawRespBodyBytes))
@@ -114,12 +127,16 @@ func dataRequestAPIToString(
 	headers := processHeaders(hideSensitiveHeaders, data.Request.Header)
 	b.WriteString(fmt.Sprintf("Duration: %s\n", data.Duration))
 	if data.Request != nil {
+		request := string(reqBody)
+		if !IsAsciiPrintable(request) {
+			request = "(binary data)"
+		}
 		b.WriteString(fmt.Sprintf("Request: %s %s %s %s %s\n",
 			data.Request.Proto,
 			data.Request.Method,
 			data.Request.URL,
 			headers,
-			string(reqBody),
+			request,
 		))
 	}
 	if data.Error != nil {
@@ -130,6 +147,9 @@ func dataRequestAPIToString(
 		// do not print binary data
 		if !slices.Contains(data.Response.Header.Values("Content-Type"), "application/octet-stream") {
 			tmpBody = string(respBody)
+			if !IsAsciiPrintable(tmpBody) {
+				tmpBody = "(binary data)"
+			}
 		}
 		b.WriteString(fmt.Sprintf("Response: %s %d - %s %s\n",
 			data.Response.Proto,

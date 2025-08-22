@@ -92,12 +92,15 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 	var rpcErr error
 	for {
 		out, err := resp.Recv()
+		fmt.Println("RECV:", out, err)
 		if err != nil {
 			if err == io.EOF {
 				break
 			}
 			// No race condition here as `canceled` is always set before `cancel()`
 			if !canceled {
+				fmt.Println("RECV ERROR:", out, err)
+
 				return formatError(err)
 			}
 		}

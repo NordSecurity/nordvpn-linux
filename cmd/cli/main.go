@@ -97,12 +97,16 @@ func main() {
 		grpc.WithUnaryInterceptor(loaderInterceptor.UnaryInterceptor),
 		grpc.WithStreamInterceptor(loaderInterceptor.StreamInterceptor),
 	)
+	fmt.Println("daemon ", err)
+
 	fileshareConn, err := grpc.Dial(
 		fileshare_process.FileshareURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(loaderInterceptor.UnaryInterceptor),
 		grpc.WithStreamInterceptor(loaderInterceptor.StreamInterceptor),
 	)
+
+	fmt.Println("fileshare ", err)
 
 	cmd, err := cli.NewApp(
 		Version, Environment, Hash, Salt, err, conn, fileshareConn, &loaderInterceptor)
