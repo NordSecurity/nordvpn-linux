@@ -97,14 +97,38 @@ func (ti *Instance) updateVpnStatus() bool {
 	return ti.setVpnStatus(vpnStatus, vpnName, vpnHostname, vpnCity, vpnCountry, resp.VirtualLocation) || changed
 }
 
-func (ti *Instance) updateCountriesList() bool {
+
+func (ti *Instance) updateCountryList() bool {
 	ti.state.mu.Lock()
-	oldList := append([]string(nil), ti.state.countries.countries...)
+	oldCountryList := append([]string(nil), ti.state.connSelector.countries...)
 	ti.state.mu.Unlock()
 
-	newList, err := ti.state.countries.list(ti.client)
+	newList, err := ti.state.connSelector.listCountries(ti.client)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "Error retrieving available country list:", err)
+		return false
+	}
+
+	if len(oldCountryList) != len(newList) {
+		return true
+	}
+	for i := range oldCountryList {
+		if oldCountryList[i] != newList[i] {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (ti *Instance) updateSpecialtyServersList() bool {
+	ti.state.mu.Lock()
+	oldList := append([]string(nil), ti.state.connSelector.specialtyServers...)
+	ti.state.mu.Unlock()
+
+	newList, err := ti.state.connSelector.listSpecialtyServer(ti.client)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "Error retrieving available specialty server list:", err)
 		return false
 	}
 
@@ -272,7 +296,8 @@ func (ti *Instance) pollingMonitor() {
 					ti.redraw(ti.updateAccountInfo())
 				}
 				ti.redraw(ti.updateVpnStatus())
-				ti.redraw(ti.updateCountriesList())
+				ti.redraw(ti.updateCountryList())
+				ti.redraw(ti.updateSpecialtyServersList())
 				if fullUpdate {
 					fullUpdateLast = time.Now()
 				}
