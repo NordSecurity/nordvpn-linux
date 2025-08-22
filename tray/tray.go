@@ -21,11 +21,12 @@ import (
 )
 
 const (
-	NotifierStartDelay        = 3 * time.Second
-	PollingUpdateInterval     = 5 * time.Second
-	PollingFullUpdateInterval = 60 * time.Second
-	CountryListUpdateInterval = 60 * time.Minute
-	AccountInfoUpdateInterval = 24 * time.Hour
+	NotifierStartDelay                = 3 * time.Second
+	PollingUpdateInterval             = 5 * time.Second
+	PollingFullUpdateInterval         = 60 * time.Second
+	CountryListUpdateInterval         = 60 * time.Minute
+	SpecialtyServerListUpdateInterval = 60 * time.Minute
+	AccountInfoUpdateInterval         = 24 * time.Hour
 )
 
 const (
@@ -218,9 +219,6 @@ func (ti *Instance) OnExit() {
 func (ti *Instance) OnReady() {
 	systray.SetTitle("NordVPN")
 	systray.SetTooltip("NordVPN")
-
-	ti.state.recent = NewRecentConnections()
-	_ = ti.state.recent.Load()
 
 	ti.state.mu.Lock()
 	if ti.state.vpnStatus == pb.ConnectionState_DISCONNECTED {
