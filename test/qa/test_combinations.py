@@ -39,6 +39,8 @@ def test_reconnect_matrix(
         source_obfuscated,
         target_obfuscated,
 ):
+    """Manual TC: LVPN-8674"""
+
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
     connect_base_test()
 
@@ -51,6 +53,8 @@ def test_reconnect_matrix(
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize(("country", "city"), list(zip(lib.COUNTRIES, lib.CITIES, strict=False)))
 def test_connect_country_and_city(tech, proto, obfuscated, country, city):
+    """Manual TC: LVPN-8610"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test(country)
@@ -70,6 +74,8 @@ def test_status_change_technology_and_protocol(
         source_obfuscated,
         target_obfuscated,
 ):
+    """Manual TC: LVPN-666"""
+
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
     sh.nordvpn(get_alias())
@@ -107,9 +113,10 @@ def test_status_change_technology_and_protocol_reconnect(
         source_obfuscated,
         target_obfuscated,
 ):
+    """Manual TC: LVPN-8694"""
+
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
     sh.nordvpn(get_alias())
-    disconnect_base_test()
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
 
@@ -142,6 +149,7 @@ def test_reconnect_to_standard_group(
     source_group,
     target_group,
 ):
+    """Manual TC: LVPN-8681"""
 
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
@@ -168,6 +176,7 @@ def test_reconnect_to_additional_group(
     source_group,
     target_group,
 ):
+    """Manual TC: LVPN-8682"""
 
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
@@ -194,6 +203,7 @@ def test_reconnect_to_server_by_country_name(
     source_country,
     target_country,
 ):
+    """Manual TC: LVPN-8689"""
 
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
 
