@@ -30,6 +30,7 @@ type FeatureConfig interface {
 
 type ConfigLoader interface {
 	LoadConfig() error
+	LoadConfigFromDisk()
 }
 
 const (
@@ -54,7 +55,6 @@ type CdnRemoteConfig struct {
 	features        *FeatureMap
 	appRolloutGroup int
 	analytics       Analytics
-	initOnce        sync.Once
 	mu              sync.RWMutex
 	notifier        events.PublishSubcriber[RemoteConfigEvent]
 }
@@ -127,15 +127,18 @@ func isNetworkRetryable(err error) bool {
 		errors.Is(err, core.ErrTooManyRequests)
 }
 
+// LoadConfigFromDisk load config from disk
+func (c *CdnRemoteConfig) LoadConfigFromDisk() {
+	c.load()
+}
+
 // LoadConfig download from remote or load from disk
 func (c *CdnRemoteConfig) LoadConfig() error {
 	var err error
+
 	reloadDone := false
-	c.initOnce.Do(func() {
-		c.load() // on start init cache from disk
-		reloadDone = true
-	})
 	needReload := false
+
 	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
 	if !useOnlyLocalConfig {
 		if needReload, err = c.download(); err != nil {
@@ -144,7 +147,7 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 	}
 
 	// remote config files were downloaded and need to be reloaded?
-	if needReload {
+	if needReload || useOnlyLocalConfig {
 		c.load()
 		reloadDone = true
 	}
@@ -223,10 +226,10 @@ func (c *CdnRemoteConfig) load() {
 		feature := c.features.get(f)
 		if err := feature.load(c.localCachePath, jsonFileReaderWriter{}, jsonValidator{}); err != nil {
 			c.reportLoadError(feature.name, err)
-			log.Println(internal.ErrorPrefix, "failed loading feature [", feature.name, "] config from the disk:", err)
+			log.Printf("%s failed loading feature [%s] config from the disk: %s\n", internal.ErrorPrefix, feature.name, err)
 			continue
 		}
-		log.Println(internal.InfoPrefix, "feature [", feature.name, "] config loaded from:", c.localCachePath)
+		log.Printf("%s feature [%s] config loaded from: %s\n", internal.InfoPrefix, feature.name, c.localCachePath)
 		c.analytics.EmitLocalUseEvent(ClientCli, feature.name, nil)
 	}
 }
@@ -236,7 +239,7 @@ func (c *CdnRemoteConfig) findMatchingRecord(ss []ParamValue, featureName string
 		// find my version matching records
 		ok, err := isVersionMatching(c.appVersion, s.AppVersion)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "invalid version:", err)
+			log.Printf("%s invalid version: %s\n", internal.ErrorPrefix, err)
 			continue
 		}
 		if ok {
@@ -253,7 +256,7 @@ func (c *CdnRemoteConfig) findMatchingRecord(ss []ParamValue, featureName string
 	// as a last step, check if app's rollout group matches feature's rollout value
 	// (do not try to use other match with lesser weight)
 	if match != nil {
-		if match.TargetRollout < c.appRolloutGroup {
+		if match.TargetRollout > 0 && match.TargetRollout < c.appRolloutGroup {
 			c.analytics.EmitPartialRolloutEvent(ClientCli, featureName, match.TargetRollout, partialRolloutPerformedFailure)
 			match = nil
 		} else {
@@ -267,7 +270,7 @@ func (c *CdnRemoteConfig) findMatchingRecord(ss []ParamValue, featureName string
 }
 
 func (c *CdnRemoteConfig) GetTelioConfig() (string, error) {
-	return c.GetFeatureParam(FeatureLibtelio, FeatureLibtelio)
+	return c.GetFeatureParam(FeatureLibtelio, "libtelio_config")
 }
 
 func (c *CdnRemoteConfig) IsFeatureEnabled(featureName string) bool {
