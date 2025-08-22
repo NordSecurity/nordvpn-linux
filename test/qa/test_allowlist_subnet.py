@@ -19,6 +19,8 @@ CIDR_32 = "/32"
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets_disconnected(tech, proto, obfuscated, subnet):
+    """Manual TC: LVPN-8789"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
@@ -35,6 +37,8 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets_disco
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connect_allowlist_subnet(tech, proto, obfuscated):
+    """Manual TC: LVPN-801"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     my_ip = network.get_external_device_ip()
@@ -55,6 +59,8 @@ def test_connect_allowlist_subnet(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_allowlist_subnet_connect(tech, proto, obfuscated):
+    """Manual TC: LVPN-8785"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     my_ip = network.get_external_device_ip()
@@ -76,6 +82,8 @@ def test_allowlist_subnet_connect(tech, proto, obfuscated):
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_allowlist_subnet_twice_disconnected(tech, proto, obfuscated, subnet):
+    """Manual TC: LVPN-3766"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     allowlist.add_subnet_to_allowlist([subnet])
@@ -92,6 +100,8 @@ def test_allowlist_subnet_twice_disconnected(tech, proto, obfuscated, subnet):
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_allowlist_subnet_twice_connected(tech, proto, obfuscated, subnet):
+    """Manual TC: LVPN-8786"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.connect()
@@ -112,6 +122,8 @@ def test_allowlist_subnet_twice_connected(tech, proto, obfuscated, subnet):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_allowlist_subnet_and_remove_disconnected(tech, proto, obfuscated):
+    """Manual TC: LVPN-8788"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     ip_provider_addresses = socket.gethostbyname_ex(urlparse(lib.API_EXTERNAL_IP).netloc)[2]
@@ -126,6 +138,8 @@ def test_allowlist_subnet_and_remove_disconnected(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_allowlist_subnet_and_remove_connected(tech, proto, obfuscated):
+    """Manual TC: LVPN-786"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     my_ip = network.get_external_device_ip()
@@ -148,6 +162,8 @@ def test_allowlist_subnet_and_remove_connected(tech, proto, obfuscated):
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
 def test_allowlist_subnet_remove_nonexistent_disconnected(tech, proto, obfuscated, subnet):
+    """Manual TC: LVPN-3768"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -160,6 +176,8 @@ def test_allowlist_subnet_remove_nonexistent_disconnected(tech, proto, obfuscate
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
 def test_allowlist_subnet_remove_nonexistent_connected(tech, proto, obfuscated, subnet):
+    """Manual TC: LVPN-8787"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.connect()
