@@ -635,7 +635,7 @@ var libtelioJsonConfFile = `
     "version": 1,
     "configs": [
         {
-            "name": "libtelio",
+            "name": "libtelio_config",
             "value_type": "file",
             "settings": [
                 {
@@ -690,7 +690,7 @@ var libtelioUpdatedJsonConfFile = `
     "version": 1,
     "configs": [
         {
-            "name": "libtelio",
+            "name": "libtelio_config",
             "value_type": "file",
             "settings": [
                 {

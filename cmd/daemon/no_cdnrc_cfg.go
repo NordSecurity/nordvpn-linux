@@ -22,4 +22,5 @@ func getRemoteConfigGetter(_ config.BuildTarget, _ string, _ core.RemoteStorage,
 func (r RemoteConfigGetterStub) IsFeatureEnabled(string) bool                { return false }
 func (r RemoteConfigGetterStub) GetFeatureParam(_, _ string) (string, error) { return "", nil }
 func (r RemoteConfigGetterStub) LoadConfig() error                           { return nil }
+func (r RemoteConfigGetterStub) LoadConfigFromDisk()                         {}
 func (r RemoteConfigGetterStub) Subscribe(remote.RemoteConfigNotifier)       {}

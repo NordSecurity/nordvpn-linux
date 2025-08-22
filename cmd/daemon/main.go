@@ -373,6 +373,9 @@ func main() {
 		rolloutGroup,
 	)
 
+	// try to load config from disk if it was previously downloaded
+	rcConfig.LoadConfigFromDisk()
+
 	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem, rcConfig)
 
 	internalVpnEvents := vpn.NewInternalVPNEvents()
