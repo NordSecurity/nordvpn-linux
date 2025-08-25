@@ -34,7 +34,7 @@ func TestAccessTokenSessionStore_Renew_NotExpired(t *testing.T) {
 
 	cfgManager := &mock.ConfigManager{Cfg: cfg}
 	errorRegistry := internal.NewErrorHandlingRegistry[error]()
-	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil)
 
 	err := store.Renew()
 	assert.NoError(t, err)
@@ -52,7 +52,7 @@ func TestAccessTokenSessionStore_Renew_NoTokenData(t *testing.T) {
 
 	cfgManager := &mock.ConfigManager{Cfg: cfg}
 	errorRegistry := internal.NewErrorHandlingRegistry[error]()
-	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil)
 
 	err := store.Renew()
 	assert.Error(t, err)
@@ -67,53 +67,11 @@ func TestAccessTokenSessionStore_Renew_ConfigLoadError(t *testing.T) {
 	}
 
 	errorRegistry := internal.NewErrorHandlingRegistry[error]()
-	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil)
 
 	err := store.Renew()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "config load error")
-}
-
-func TestAccessTokenSessionStore_Renew_ExternalValidatorError(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	uid := int64(123)
-	futureTime := time.Now().UTC().Add(24 * time.Hour)
-	validHexToken := "ab78bb36299d442fa0715fb53b5e3e57"
-
-	cfg := &config.Config{
-		AutoConnectData: config.AutoConnectData{ID: uid},
-		TokensData: map[int64]config.TokenData{
-			uid: {
-				Token:       validHexToken,
-				RenewToken:  "renew",
-				TokenExpiry: futureTime.Format(internal.ServerDateFormat),
-			},
-		},
-	}
-
-	cfgManager := &mock.ConfigManager{Cfg: cfg}
-	errorRegistry := internal.NewErrorHandlingRegistry[error]()
-
-	renewalCalled := false
-	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
-		renewalCalled = true
-		return &session.AccessTokenResponse{
-			Token:      "ab78bb36299d442fa0715fb53b5e3e58",
-			RenewToken: "ab78bb36299d442fa0715fb53b5e3e59",
-			ExpiresAt:  futureTime.Format(internal.ServerDateFormat),
-		}, nil
-	}
-
-	externalValidator := func(token string) error {
-		return errors.New("external validation failed")
-	}
-
-	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, externalValidator)
-	err := store.Renew()
-
-	assert.NoError(t, err)
-	assert.True(t, renewalCalled, "Should renew because external validation failed")
 }
 
 func TestAccessTokenSessionStore_Renew_ExpiredToken(t *testing.T) {
@@ -149,7 +107,7 @@ func TestAccessTokenSessionStore_Renew_ExpiredToken(t *testing.T) {
 		}, nil
 	}
 
-	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew()
 
 	assert.NoError(t, err)
@@ -188,7 +146,7 @@ func TestAccessTokenSessionStore_Renew_SetIdempotencyKey(t *testing.T) {
 		}, nil
 	}
 
-	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew()
 
 	assert.NoError(t, err)
@@ -227,7 +185,7 @@ func TestAccessTokenSessionStore_Renew_APIErrorWithHandler(t *testing.T) {
 		return nil, apiError
 	}
 
-	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew()
 
 	assert.Error(t, err)
@@ -261,7 +219,7 @@ func TestAccessTokenSessionStore_Renew_APIErrorNoHandler(t *testing.T) {
 		return nil, errors.New("unhandled-api-error")
 	}
 
-	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew()
 
 	assert.NoError(t, err)
@@ -293,7 +251,7 @@ func TestAccessTokenSessionStore_Renew_NilAPIResponse(t *testing.T) {
 		return nil, nil
 	}
 
-	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew()
 
 	assert.Error(t, err)
@@ -330,84 +288,11 @@ func TestAccessTokenSessionStore_Renew_InvalidExpiryFormat(t *testing.T) {
 		}, nil
 	}
 
-	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew()
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "parsing expiry time")
-}
-
-func TestAccessTokenSessionStore_Renew_ExternalValidatorSuccess(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	uid := int64(123)
-	futureTime := time.Now().UTC().Add(24 * time.Hour)
-
-	cfg := &config.Config{
-		AutoConnectData: config.AutoConnectData{ID: uid},
-		TokensData: map[int64]config.TokenData{
-			uid: {
-				Token:       "de62575eaaa54ca8bd9416d98bdc9c1c",
-				RenewToken:  "abcdef1234567890abcdef1234567890",
-				TokenExpiry: futureTime.Format(internal.ServerDateFormat),
-			},
-		},
-	}
-
-	cfgManager := &mock.ConfigManager{Cfg: cfg}
-	errorRegistry := internal.NewErrorHandlingRegistry[error]()
-
-	validatorCalled := false
-	externalValidator := func(token string) error {
-		validatorCalled = true
-		assert.Equal(t, "de62575eaaa54ca8bd9416d98bdc9c1c", token)
-		return nil
-	}
-
-	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, externalValidator)
-	err := store.Renew()
-
-	assert.NoError(t, err)
-	assert.True(t, validatorCalled)
-}
-
-func TestAccessTokenSessionStore_Renew_ExternalValidatorFailure(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	uid := int64(123)
-	futureTime := time.Now().UTC().Add(24 * time.Hour)
-
-	cfg := &config.Config{
-		AutoConnectData: config.AutoConnectData{ID: uid},
-		TokensData: map[int64]config.TokenData{
-			uid: {
-				Token:       "de62575eaaa54ca8bd9416d98bdc9c1c",
-				RenewToken:  "renew",
-				TokenExpiry: futureTime.Format(internal.ServerDateFormat),
-			},
-		},
-	}
-
-	cfgManager := &mock.ConfigManager{Cfg: cfg}
-	errorRegistry := internal.NewErrorHandlingRegistry[error]()
-
-	externalValidator := func(token string) error {
-		return errors.New("token validation failed")
-	}
-
-	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
-		return &session.AccessTokenResponse{
-			Token:      "ab78bb36299d442fa0715fb53b5e3e58",
-			RenewToken: "ab78bb36299d442fa0715fb53b5e3e59",
-			ExpiresAt:  futureTime.Format(internal.ServerDateFormat),
-		}, nil
-	}
-
-	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, externalValidator)
-	err := store.Renew()
-
-	assert.NoError(t, err)
-	assert.Equal(t, "ab78bb36299d442fa0715fb53b5e3e58", cfgManager.Cfg.TokensData[uid].Token)
 }
 
 func TestAccessTokenSessionStore_Renew_ErrNotFoundWithHandler(t *testing.T) {
@@ -441,7 +326,7 @@ func TestAccessTokenSessionStore_Renew_ErrNotFoundWithHandler(t *testing.T) {
 		return nil, core.ErrNotFound
 	}
 
-	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew()
 
 	assert.Error(t, err)
@@ -480,7 +365,7 @@ func TestAccessTokenSessionStore_Renew_ErrBadRequestWithHandler(t *testing.T) {
 		return nil, core.ErrBadRequest
 	}
 
-	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew()
 
 	assert.Error(t, err)
@@ -514,7 +399,7 @@ func TestAccessTokenSessionStore_Renew_ErrNotFoundNoHandler(t *testing.T) {
 		return nil, core.ErrNotFound
 	}
 
-	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew()
 
 	assert.NoError(t, err)
@@ -546,7 +431,7 @@ func TestAccessTokenSessionStore_Renew_ErrBadRequestNoHandler(t *testing.T) {
 		return nil, core.ErrBadRequest
 	}
 
-	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew()
 
 	assert.NoError(t, err)
@@ -571,7 +456,7 @@ func TestAccessTokenSessionStore_HandleError_WithHandler(t *testing.T) {
 		handlerCalled = true
 	}, testError)
 
-	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil)
 	err := store.HandleError(testError)
 
 	assert.Error(t, err)
@@ -593,7 +478,7 @@ func TestAccessTokenSessionStore_HandleError_NoHandler(t *testing.T) {
 	cfgManager := &mock.ConfigManager{Cfg: cfg}
 	errorRegistry := internal.NewErrorHandlingRegistry[error]()
 
-	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil, nil)
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, nil)
 	err := store.HandleError(testError)
 
 	assert.NoError(t, err)
@@ -617,7 +502,7 @@ func TestAccessTokenSessionStore_GetToken(t *testing.T) {
 	}
 
 	cfgManager := &mock.ConfigManager{Cfg: cfg}
-	store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
+	store := session.NewAccessTokenSessionStore(cfgManager, nil, nil)
 
 	token := store.GetToken()
 	assert.Equal(t, "test-token", token)
@@ -634,7 +519,7 @@ func TestAccessTokenSessionStore_GetToken_NoData(t *testing.T) {
 	}
 
 	cfgManager := &mock.ConfigManager{Cfg: cfg}
-	store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
+	store := session.NewAccessTokenSessionStore(cfgManager, nil, nil)
 
 	token := store.GetToken()
 	assert.Equal(t, "", token)
@@ -647,7 +532,7 @@ func TestAccessTokenSessionStore_GetToken_ConfigError(t *testing.T) {
 		LoadErr: errors.New("config error"),
 	}
 
-	store := session.NewAccessTokenSessionStore(cfgManager, nil, nil, nil)
+	store := session.NewAccessTokenSessionStore(cfgManager, nil, nil)
 
 	token := store.GetToken()
 	assert.Equal(t, "", token)
@@ -771,7 +656,7 @@ func TestAccessTokenSessionStore_Renew_ForceRenewal(t *testing.T) {
 			}
 
 			registry := internal.NewErrorHandlingRegistry[error]()
-			store := session.NewAccessTokenSessionStore(cfgManager, registry, renewAPICall, nil)
+			store := session.NewAccessTokenSessionStore(cfgManager, registry, renewAPICall)
 
 			var err error
 			if tt.useForceRenewal {

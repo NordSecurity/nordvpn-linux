@@ -23,12 +23,11 @@ func TestVPNCredentialsSessionStore_Validate(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name              string
-		username          string
-		password          string
-		nordLynxKey       string
-		externalValidator VPNCredentialsExternalValidator
-		wantErr           error
+		name        string
+		username    string
+		password    string
+		nordLynxKey string
+		wantErr     error
 	}{
 		{
 			name:        "valid credentials",
@@ -65,29 +64,6 @@ func TestVPNCredentialsSessionStore_Validate(t *testing.T) {
 			nordLynxKey: "",
 			wantErr:     ErrMissingVPNCredentials,
 		},
-		{
-			name:        "external validator success",
-			username:    "testuser",
-			password:    "testpass",
-			nordLynxKey: "testkey",
-			externalValidator: func(username, password, nordlynxKey string) error {
-				assert.Equal(t, "testuser", username)
-				assert.Equal(t, "testpass", password)
-				assert.Equal(t, "testkey", nordlynxKey)
-				return nil
-			},
-			wantErr: nil,
-		},
-		{
-			name:        "external validator failure",
-			username:    "testuser",
-			password:    "testpass",
-			nordLynxKey: "testkey",
-			externalValidator: func(username, password, nordlynxKey string) error {
-				return errors.New("external validation failed")
-			},
-			wantErr: errors.New("external validation failed"),
-		},
 	}
 
 	for _, tt := range tests {
@@ -112,7 +88,6 @@ func TestVPNCredentialsSessionStore_Validate(t *testing.T) {
 				cfgManager,
 				errRegistry,
 				nil,
-				tt.externalValidator,
 			)
 
 			err := testVPNCredsValidate(store)
@@ -266,7 +241,7 @@ func TestVPNCredentialsSessionStore_HandleError(t *testing.T) {
 				}
 			}
 
-			store := NewVPNCredentialsSessionStore(cfgManager, errRegistry, nil, nil)
+			store := NewVPNCredentialsSessionStore(cfgManager, errRegistry, nil)
 			err := store.HandleError(tt.testError)
 
 			if tt.wantErr {
@@ -456,7 +431,7 @@ func TestVPNCredentialsSessionStore_Renew(t *testing.T) {
 				}
 			}
 
-			store := NewVPNCredentialsSessionStore(cfgManager, errRegistry, renewAPICall, nil)
+			store := NewVPNCredentialsSessionStore(cfgManager, errRegistry, renewAPICall)
 
 			err := store.Renew()
 
@@ -512,7 +487,7 @@ func TestVPNCredentialsSessionStore_RenewWithErrorHandler(t *testing.T) {
 		return nil, apiError
 	}
 
-	store := NewVPNCredentialsSessionStore(cfgManager, errRegistry, renewAPICall, nil)
+	store := NewVPNCredentialsSessionStore(cfgManager, errRegistry, renewAPICall)
 
 	err := store.Renew()
 
@@ -527,7 +502,7 @@ func TestVPNCredentialsSessionStore_InterfaceCompliance(t *testing.T) {
 	cfgManager := mock.NewMockConfigManager()
 	errRegistry := internal.NewErrorHandlingRegistry[error]()
 
-	var store SessionStore = NewVPNCredentialsSessionStore(cfgManager, errRegistry, nil, nil)
+	var store SessionStore = NewVPNCredentialsSessionStore(cfgManager, errRegistry, nil)
 
 	assert.NotNil(t, store)
 	assert.Implements(t, (*SessionStore)(nil), store)
@@ -632,7 +607,7 @@ func TestVPNCredentialsSessionStore_Renew_ForceRenewal(t *testing.T) {
 				}
 			}
 
-			store := NewVPNCredentialsSessionStore(cfgManager, errRegistry, renewAPICall, nil)
+			store := NewVPNCredentialsSessionStore(cfgManager, errRegistry, renewAPICall)
 
 			var err error
 			if tt.useForceRenewal {
@@ -694,7 +669,7 @@ func TestVPNCredentialsSessionStore_Renew_ForceRenewalWithSilentRenewal(t *testi
 		return nil, apiError
 	}
 
-	store := NewVPNCredentialsSessionStore(cfgManager, errRegistry, renewAPICall, nil)
+	store := NewVPNCredentialsSessionStore(cfgManager, errRegistry, renewAPICall)
 
 	err := store.Renew(ForceRenewal(), SilentRenewal())
 	assert.Error(t, err)

@@ -223,7 +223,6 @@ func setupTestEnvironment(
 
 			return nil, err
 		},
-		nil, // no external validator needed for this test
 	)
 
 	return core.NewSmartClientAPI(simpleApi, sessionStore), rt, mockCfg
@@ -310,7 +309,6 @@ func Test_TokenRenewalWithNetworkError(t *testing.T) {
 			}
 			return nil, err
 		},
-		nil,
 	)
 
 	api := core.NewSmartClientAPI(simpleApi, sessionStore)
@@ -391,7 +389,6 @@ func Test_TokenRenewalWithInvalidToken(t *testing.T) {
 			}
 			return nil, err
 		},
-		nil,
 	)
 
 	api := core.NewSmartClientAPI(simpleApi, sessionStore)

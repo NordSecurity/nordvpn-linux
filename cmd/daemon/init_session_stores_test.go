@@ -22,6 +22,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	expectedToken      = "ab78bb36299d442fa0715fb53b5e3e57"
+	expectedRenewToken = "cd89cc47300e553fb1826fc64c6f4f68"
+)
+
 type mockRawClientAPI struct {
 	tokenRenewFunc              func(token string, idempotencyKey uuid.UUID) (*core.TokenRenewResponse, error)
 	serviceCredentialsFunc      func(token string) (*core.CredentialsResponse, error)
@@ -210,8 +215,8 @@ func setupTestConfig() *config.Config {
 		AutoConnectData: config.AutoConnectData{ID: uid},
 		TokensData: map[int64]config.TokenData{
 			uid: {
-				Token:          "ab78bb36299d442fa0715fb53b5e3e57",
-				RenewToken:     "cd89cc47300e553fb1826fc64c6f4f68",
+				Token:          expectedToken,
+				RenewToken:     expectedRenewToken,
 				TokenExpiry:    time.Now().Add(24 * time.Hour).Format(internal.ServerDateFormat),
 				IdempotencyKey: &idempotencyKey,
 				NCData: config.NCData{
@@ -380,7 +385,7 @@ func TestRenewalFunctions_AccessToken(t *testing.T) {
 
 	mockAPI := &mockRawClientAPI{
 		tokenRenewFunc: func(token string, idempotencyKey uuid.UUID) (*core.TokenRenewResponse, error) {
-			assert.Equal(t, "ab78bb36299d442fa0715fb53b5e3e57", token)
+			assert.Equal(t, expectedToken, token)
 			assert.NotEqual(t, uuid.Nil, idempotencyKey)
 
 			return &core.TokenRenewResponse{
@@ -394,7 +399,7 @@ func TestRenewalFunctions_AccessToken(t *testing.T) {
 	renewFunc := renewAccessToken(mockAPI)
 
 	key := uuid.New()
-	resp, err := renewFunc("ab78bb36299d442fa0715fb53b5e3e57", key)
+	resp, err := renewFunc(expectedToken, key)
 
 	require.NoError(t, err)
 	assert.Equal(t, "renewed-token", resp.Token)
@@ -434,7 +439,7 @@ func TestRenewalFunctions_VPNCredentials(t *testing.T) {
 	mockAPI := &mockClientAPI{
 		mockRawClientAPI: &mockRawClientAPI{
 			serviceCredentialsFunc: func(token string) (*core.CredentialsResponse, error) {
-				assert.Equal(t, "ab78bb36299d442fa0715fb53b5e3e57", token)
+				assert.Equal(t, expectedToken, token)
 
 				return &core.CredentialsResponse{
 					Username:           "vpn-user",
@@ -497,8 +502,8 @@ func TestGetTokenData_Success(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.NotNil(t, data)
-	assert.Equal(t, "ab78bb36299d442fa0715fb53b5e3e57", data.Token)
-	assert.Equal(t, "cd89cc47300e553fb1826fc64c6f4f68", data.RenewToken)
+	assert.Equal(t, expectedToken, data.Token)
+	assert.Equal(t, expectedRenewToken, data.RenewToken)
 }
 
 func TestGetTokenData_NoTokenData(t *testing.T) {
@@ -574,7 +579,7 @@ func TestLogoutReasonCodeSelectionWithProductionCode(t *testing.T) {
 			name:               "access token - unauthorized error",
 			sessionStore:       "accessToken",
 			apiError:           core.ErrUnauthorized,
-			expectedReasonCode: events.ReasonNone,
+			expectedReasonCode: events.ReasonNotSpecified,
 		},
 		{
 			name:               "vpn creds - missing vpn credentials",
@@ -598,43 +603,43 @@ func TestLogoutReasonCodeSelectionWithProductionCode(t *testing.T) {
 			name:               "vpn creds - bad request error",
 			sessionStore:       "vpnCreds",
 			apiError:           core.ErrBadRequest,
-			expectedReasonCode: events.ReasonNone,
+			expectedReasonCode: events.ReasonNotSpecified,
 		},
 		{
 			name:               "vpn creds - unauthorized error",
 			sessionStore:       "vpnCreds",
 			apiError:           core.ErrUnauthorized,
-			expectedReasonCode: events.ReasonNone,
+			expectedReasonCode: events.ReasonNotSpecified,
 		},
 		{
 			name:               "trusted pass - bad request error",
 			sessionStore:       "trustedPass",
 			apiError:           core.ErrBadRequest,
-			expectedReasonCode: events.ReasonNone,
+			expectedReasonCode: events.ReasonNotSpecified,
 		},
 		{
 			name:               "trusted pass - unauthorized error",
 			sessionStore:       "trustedPass",
 			apiError:           core.ErrUnauthorized,
-			expectedReasonCode: events.ReasonNone,
+			expectedReasonCode: events.ReasonNotSpecified,
 		},
 		{
 			name:               "trusted pass - not found error",
 			sessionStore:       "trustedPass",
 			apiError:           core.ErrNotFound,
-			expectedReasonCode: events.ReasonNone,
+			expectedReasonCode: events.ReasonNotSpecified,
 		},
 		{
 			name:               "nc creds - bad request error",
 			sessionStore:       "ncCreds",
 			apiError:           core.ErrBadRequest,
-			expectedReasonCode: events.ReasonNone,
+			expectedReasonCode: events.ReasonNotSpecified,
 		},
 		{
 			name:               "nc creds - unauthorized error",
 			sessionStore:       "ncCreds",
 			apiError:           core.ErrUnauthorized,
-			expectedReasonCode: events.ReasonNone,
+			expectedReasonCode: events.ReasonNotSpecified,
 		},
 	}
 
@@ -745,13 +750,13 @@ func TestVPNCredsReasonCodeWithAccessTokenRenewal(t *testing.T) {
 			name:                    "vpn creds missing response with successful access token",
 			vpnCredsError:           session.ErrMissingVPNCredsResponse,
 			accessTokenRenewalError: nil,
-			expectedReasonCode:      events.ReasonNone, // Note: should probably be ReasonCorruptedVPNCreds (double check)
+			expectedReasonCode:      events.ReasonNotSpecified, // Note: should probably be ReasonCorruptedVPNCreds (double check)
 		},
 		{
 			name:                    "vpn creds missing response with other error",
 			vpnCredsError:           session.ErrMissingVPNCredsResponse,
 			accessTokenRenewalError: errors.New("other error"),
-			expectedReasonCode:      events.ReasonNone, // Access token renewal fails with unhandled error, no logout happens (double check)
+			expectedReasonCode:      events.ReasonNotSpecified, // Access token renewal fails with unhandled error, no logout happens (double check)
 		},
 	}
 

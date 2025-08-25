@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// CodedError wraps internal code value for the error
 type CodedError struct {
 	Code    int
 	Message string

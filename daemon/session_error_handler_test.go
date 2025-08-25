@@ -34,7 +34,7 @@ func RegisterSessionErrorHandler(registry *internal.ErrorHandlingRegistry[error]
 		session.ErrSessionInvalidated,
 		session.ErrInvalidToken,
 	}, func(error) events.ReasonCode {
-		return events.ReasonNone
+		return events.ReasonNotSpecified
 	})
 }
 
@@ -117,7 +117,7 @@ func TestRegisterSessionErrorHandler(t *testing.T) {
 			logoutHandler := NewLogoutHandler(deps)
 			if tt.expectHandled {
 				logoutHandler.Register(registry, []error{tt.triggeredError}, func(error) events.ReasonCode {
-					return events.ReasonNone
+					return events.ReasonNotSpecified
 				})
 			}
 			handlers := registry.GetHandlers(tt.triggeredError)
@@ -182,7 +182,6 @@ func TestSessionErrorHandler_IntegrationWithAccessTokenStore(t *testing.T) {
 			renewalFailed = true
 			return nil, core.ErrUnauthorized // This should trigger the error handler
 		},
-		nil,
 	)
 
 	err := store.Renew()
@@ -242,11 +241,6 @@ func TestSessionErrorHandler_APIErrorToLogoutFlow(t *testing.T) {
 			flowSteps = append(flowSteps, "renewal_attempted")
 			// Simulate API returning unauthorized error
 			return nil, core.ErrUnauthorized
-		},
-		func(token string) error {
-			flowSteps = append(flowSteps, "external_validation")
-			// Token is expired, so external validation is skipped
-			return nil
 		},
 	)
 
@@ -681,7 +675,6 @@ func TestSessionErrorHandler_SmartClientAPIIntegration(t *testing.T) {
 				cfgManager,
 				errorRegistry,
 				renewalAPICall,
-				nil, // No external validator for these tests
 			)
 
 			smartAPI := core.NewSmartClientAPI(mockAPI, sessionStore)
@@ -787,7 +780,6 @@ func TestSessionErrorHandler_ServicesAPIWithSmartClient(t *testing.T) {
 		cfgManager,
 		errorRegistry,
 		renewalAPICall,
-		nil, // No external validator for this test
 	)
 
 	smartAPI := core.NewSmartClientAPI(mockAPI, sessionStore)
@@ -979,7 +971,6 @@ func TestSessionErrorHandler_ConcurrentAPICallsWithErrors(t *testing.T) {
 		cfgManager,
 		errorRegistry,
 		renewalAPICall,
-		nil,
 	)
 
 	smartAPI := core.NewSmartClientAPI(mockAPI, sessionStore)
@@ -1080,7 +1071,6 @@ func TestSessionErrorHandler_NetworkErrorDuringRenewal(t *testing.T) {
 		cfgManager,
 		errorRegistry,
 		renewalAPICall,
-		nil,
 	)
 
 	smartAPI := core.NewSmartClientAPI(mockAPI, sessionStore)
@@ -1186,7 +1176,6 @@ func TestSessionErrorHandler_EmptyTokenScenarios(t *testing.T) {
 				cfgManager,
 				errorRegistry,
 				renewalAPICall,
-				nil,
 			)
 
 			err := sessionStore.Renew()
@@ -1263,7 +1252,6 @@ func TestSessionErrorHandler_MalformedTokenExpiry(t *testing.T) {
 		cfgManager,
 		errorRegistry,
 		renewalAPICall,
-		nil,
 	)
 
 	err := sessionStore.Renew()
@@ -1328,19 +1316,10 @@ func TestSessionErrorHandler_LogoutClearsUserData(t *testing.T) {
 		}, nil
 	}
 
-	externalValidator := func(token string) error {
-		_, err := mockAPI.CurrentUser(token)
-		if errors.Is(err, core.ErrUnauthorized) {
-			return session.ErrInvalidToken
-		}
-		return err
-	}
-
 	sessionStore := session.NewAccessTokenSessionStore(
 		cfgManager,
 		errorRegistry,
 		renewalAPICall,
-		externalValidator,
 	)
 
 	smartAPI := core.NewSmartClientAPI(mockAPI, sessionStore)
@@ -1415,7 +1394,6 @@ func TestSessionErrorHandler_InvalidRenewalResponse(t *testing.T) {
 		cfgManager,
 		errorRegistry,
 		renewalAPICall,
-		nil,
 	)
 
 	err := sessionStore.Renew()
