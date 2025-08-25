@@ -20,12 +20,11 @@ import (
 )
 
 const (
-	NotifierStartDelay                = 3 * time.Second
-	PollingUpdateInterval             = 5 * time.Second
-	PollingFullUpdateInterval         = 60 * time.Second
-	CountryListUpdateInterval         = 60 * time.Minute
-	SpecialtyServerListUpdateInterval = 60 * time.Minute
-	AccountInfoUpdateInterval         = 24 * time.Hour
+	NotifierStartDelay        = 3 * time.Second
+	PollingUpdateInterval     = 5 * time.Second
+	PollingFullUpdateInterval = 60 * time.Second
+	CountryListUpdateInterval = 60 * time.Minute
+	AccountInfoUpdateInterval = 24 * time.Hour
 )
 
 const (

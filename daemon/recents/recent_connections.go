@@ -3,7 +3,6 @@ package recents
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"slices"
 	"sync"
 
@@ -117,8 +116,6 @@ func (r *RecentConnectionsStore) find(conn VPNConnection, list []VPNConnection) 
 func (r *RecentConnectionsStore) Add(conn VPNConnection) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-
-	log.Println("RECENTS:", conn)
 
 	if err := r.checkExistence(); err != nil {
 		return err
