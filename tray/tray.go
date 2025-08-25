@@ -69,7 +69,6 @@ func (ai *accountInfo) reset() {
 type ConnectionSelector struct {
 	mu                         sync.RWMutex
 	countries                  []string
-	specialtyServers           []string
 	countriesUpdateTime        time.Time
 	specialtyServersUpdateTime time.Time
 }
@@ -94,30 +93,6 @@ func (cp *ConnectionSelector) listCountries(client pb.DaemonClient) ([]string, e
 	cp.countries = result
 	cp.countriesUpdateTime = time.Now()
 	out := append([]string(nil), cp.countries...)
-	cp.mu.Unlock()
-	return out, nil
-}
-
-func (cp *ConnectionSelector) listSpecialtyServer(client pb.DaemonClient) ([]string, error) {
-	cp.mu.Lock()
-	needsUpdate := time.Since(cp.specialtyServersUpdateTime) > SpecialtyServerListUpdateInterval
-	if !needsUpdate {
-		out := append([]string(nil), cp.specialtyServers...)
-		cp.mu.Unlock()
-		return out, nil
-	}
-	cp.mu.Unlock()
-
-	resp, err := client.Groups(context.Background(), &pb.Empty{})
-	if err != nil {
-		return nil, err
-	}
-	result := sortedConnections(resp.Servers)
-
-	cp.mu.Lock()
-	cp.specialtyServers = result
-	cp.specialtyServersUpdateTime = time.Now()
-	out := append([]string(nil), cp.specialtyServers...)
 	cp.mu.Unlock()
 	return out, nil
 }
