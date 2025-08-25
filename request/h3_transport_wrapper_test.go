@@ -51,9 +51,9 @@ func TestHTTP3TransportRaceCondition(t *testing.T) {
 
 			for j := 0; j < numRequestsPerGoroutine; j++ {
 				// create requests to different hosts to trigger the dial race
-				host := "example.com"
+				host := "nordcdn.com"
 				if goroutineID%2 == 0 {
-					host = "api.example.com"
+					host = "api.nordvpn.com"
 				}
 
 				req, err := http.NewRequestWithContext(

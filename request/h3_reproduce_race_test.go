@@ -66,7 +66,7 @@ func TestReproduceHTTP3DataRace(t *testing.T) {
 		defer wg.Done()
 		for i := 0; i < 10; i++ {
 			// note: no need for real url, we are testing initialization logic only
-			req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "https://rc.example.com", nil)
+			req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "https://rc.nordvpn.com", nil)
 			// this will trigger the race in http3.Transport.dial() at line 308 (in v0.48.2)
 			_, _ = cdnTransport.RoundTrip(req)
 			time.Sleep(10 * time.Millisecond)
@@ -78,7 +78,7 @@ func TestReproduceHTTP3DataRace(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		for i := 0; i < 10; i++ {
-			req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.example.com", nil)
+			req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.nordvpn.com", nil)
 			// this will trigger the race in http3.Transport.dial() at line 313 (in v0.48.2)
 			_, _ = apiTransport.RoundTrip(req)
 			time.Sleep(10 * time.Millisecond)
@@ -91,7 +91,7 @@ func TestReproduceHTTP3DataRace(t *testing.T) {
 		go func(id int) {
 			defer wg.Done()
 			for j := 0; j < 5; j++ {
-				req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "https://www.example.com", nil)
+				req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "https://www.nordvpn.com", nil)
 				_, _ = h3Transport.RoundTrip(req)
 				time.Sleep(5 * time.Millisecond)
 			}
@@ -130,10 +130,10 @@ func TestDirectHTTP3TransportRace(t *testing.T) {
 
 			// use different hosts to trigger new dial operations
 			hosts := []string{
-				"host1.example.com",
-				"host2.example.com",
-				"host3.example.com",
-				"host4.example.com",
+				"host1.nordpnv.com",
+				"host2.nordvpn.com",
+				"host3.nordvpn.com",
+				"host4.nordvpn.com",
 			}
 			host := hosts[id%len(hosts)]
 
