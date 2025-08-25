@@ -101,7 +101,7 @@ func createH3Transport() http.RoundTripper {
 	// as of quic-go 0.40.1, GSO handling causes race conditions
 	_ = os.Setenv("QUIC_GO_DISABLE_GSO", "1")
 	// #nosec G402 -- minimum tls version is controlled by the standard library
-	return &http3.Transport{
+	h3Transport := &http3.Transport{
 		QUICConfig: &quic.Config{
 			MaxIdleTimeout: request.TransportTimeout,
 		},
@@ -109,6 +109,10 @@ func createH3Transport() http.RoundTripper {
 			RootCAs: pool,
 		},
 	}
+
+	// wrap the transport to prevent data races during concurrent connection establishment
+	// TODO: remove when `quic-go` issue is resolved: https://github.com/quic-go/quic-go/issues/5307
+	return request.NewH3TransportWrapper(h3Transport)
 }
 
 var validTransportTypes = []string{"http1", "http3"}
