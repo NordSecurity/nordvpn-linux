@@ -1,5 +1,6 @@
 import datetime
 import io
+import re
 from urllib.parse import urlparse
 
 import lib
@@ -21,12 +22,13 @@ from lib.remote_config_manager import RemoteConfigManager, LOCAL_CACHE_DIR, REMO
 from lib.logging import FILE
 from lib.log_reader import LogReader
 
-pytest_plugins = ("lib.pytest_timeouts.pytest_timeouts")
+pytest_plugins = "lib.pytest_timeouts.pytest_timeouts"
 
-_CHECK_FREQUENCY=5
+_CHECK_FREQUENCY = 5
+RC_TIMEOUT = 1
 
-sys.path.append(os.path.abspath(os.path.join(
-    os.path.dirname(__file__), 'lib/protobuf/daemon')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "lib/protobuf/daemon")))
+
 
 def print_to_string(*args, **kwargs):
     output = io.StringIO()
@@ -37,16 +39,19 @@ def print_to_string(*args, **kwargs):
 
 
 _original_print = print
+
+
 def _print_with_timestamp(*args, **kwargs):
     # Get the current time and format it
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     # Prepend the timestamp to the original print arguments
     _original_print(timestamp, *args, **kwargs)
     logging.log(data=print_to_string(timestamp, *args, **kwargs))
 
 
 # Replace the built-in print with our custom version
-print = _print_with_timestamp # noqa: A001
+print = _print_with_timestamp  # noqa: A001
+
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_check_internet_connection():
@@ -64,7 +69,9 @@ def start_system_monitoring():
     threads = []
 
     threads.append(threading.Thread(target=_check_connection_to_ip, args=["1.1.1.1", stop_event], daemon=True))
-    threads.append(threading.Thread(target=_check_connection_to_ip_outside_vpn, args=["1.1.1.1", stop_event], daemon=True))
+    threads.append(
+        threading.Thread(target=_check_connection_to_ip_outside_vpn, args=["1.1.1.1", stop_event], daemon=True)
+    )
     threads.append(threading.Thread(target=_check_dns_resolution, args=["nordvpn.com", stop_event], daemon=True))
     threads.append(threading.Thread(target=_capture_traffic, args=[stop_event], daemon=True))
     print(threads)
@@ -80,12 +87,13 @@ def start_system_monitoring():
     for thread in threads:
         thread.join()
 
+
 def _check_connection_to_ip(ip_address, stop_event):
     print("Start _check_connection_to_ip")
     while not stop_event.is_set():
         try:
             network.is_internet_reachable(ip_address=ip_address, retry=1)
-        except Exception as e: # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             print(f"_check_connection_to_ip: FAILURE for {ip_address}: {e}.")
         stop_event.wait(_CHECK_FREQUENCY)
 
@@ -95,7 +103,7 @@ def _check_connection_to_ip_outside_vpn(ip_address, stop_event):
     while not stop_event.is_set():
         try:
             network.is_internet_reachable_outside_vpn(ip_address=ip_address, retry=1)
-        except Exception as e: # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             print(f"~~~_check_connection_to_ip_outside_vpn: {ip_address} FAILURE: {e}.")
         stop_event.wait(_CHECK_FREQUENCY)
 
@@ -105,8 +113,8 @@ def _check_dns_resolution(domain, stop_event):
     while not stop_event.is_set():
         try:
             resolver = dns.resolver.Resolver()
-            resolver.nameservers = ['8.8.8.8']
-            resolver.resolve(domain, 'A')  # 'A' for IPv4
+            resolver.nameservers = ["8.8.8.8"]
+            resolver.resolve(domain, "A")  # 'A' for IPv4
         except Exception as e:  # noqa: BLE001
             print(f"~~~_check_dns_resolution: DNS {domain} FAILURE. Error: {e}")
         stop_event.wait(_CHECK_FREQUENCY)
@@ -115,7 +123,17 @@ def _check_dns_resolution(domain, stop_event):
 def _capture_traffic(stop_event):
     print("Start _capture_traffic")
     # use circular log files, keep only 2 latest each 10MB size
-    command = ["tshark", "-a", "filesize:10240", "-b", "files:2", "-i", "any", "-w", os.environ["WORKDIR"] + "/dist/logs/tshark_capture.pcap"]
+    command = [
+        "tshark",
+        "-a",
+        "filesize:10240",
+        "-b",
+        "files:2",
+        "-i",
+        "any",
+        "-w",
+        os.environ["WORKDIR"] + "/dist/logs/tshark_capture.pcap",
+    ]
     print("Starting tshark")
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     stop_event.wait()
@@ -153,7 +171,7 @@ def nordvpnd_scope_function(collect_logs):  # noqa: ARG001
     daemon.stop()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def nordvpnd_scope_module():
     """Manage the NordVPN daemon start/stop and login/logout states in a module scope."""
     daemon.start()
@@ -174,7 +192,7 @@ def unblock_network(nordvpnd_scope_module):  # noqa: ARG001
     network.unblock()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def add_and_delete_random_route():
     """Add and delete a random network route."""
     firewall.add_and_delete_random_route()
@@ -200,8 +218,7 @@ def default_config() -> dict:
 
 
 @pytest.fixture
-def rc_config_manager(default_config: dict
-) -> RemoteConfigManager:
+def rc_config_manager(default_config: dict) -> RemoteConfigManager:
     """
     Fixture to create and provide an instance of "RemoteConfigManager".
 
@@ -209,11 +226,7 @@ def rc_config_manager(default_config: dict
 
     :return: An instance of the "RemoteConfigManager".
     """
-    return RemoteConfigManager(
-        env="dev",
-        cache_dir=LOCAL_CACHE_DIR,
-        default_config=default_config
-    )
+    yield RemoteConfigManager(env="dev", cache_dir=LOCAL_CACHE_DIR, default_config=default_config)
 
 
 @pytest.fixture
@@ -292,6 +305,82 @@ def disable_remote_endpoint():
         subprocess.run(["sudo", "cp", hosts_backup, hosts_original], check=True)
         subprocess.run(["sudo", "chmod", "644", hosts_original], check=True)
         print(f"{hosts_original} restored from {hosts_backup}.")
-    except Exception as e: # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
         print(f"Got an error during restoring {hosts_original} from {hosts_backup}: {e}")
         raise
+
+
+@pytest.fixture
+def set_custom_timeout_for_rc_retry_scheme():
+    """Fixture for setting a custom timeout for the NordVPN daemon's rc retry scheme."""
+    daemon_path = "/usr/lib/systemd/system/nordvpnd.service"
+    default_config = None
+    try:
+        with open(daemon_path, "r") as f:
+            default_config = f.read()
+
+            pattern = r'(Environment="RC_LOAD_TIME_MIN=)(\d+)( RC_USE_LOCAL_CONFIG=.*?")'
+            updated_content = re.sub(pattern, rf"\g<1>{RC_TIMEOUT}\g<3>", default_config)
+
+        with open(daemon_path, "w") as f:
+            f.write(updated_content)
+
+            subprocess.run(["sudo", "systemctl", "restart", "nordvpnd.service"], check=True)
+    except FileNotFoundError:
+        print(f"Couldn't find {daemon_path}")
+    except PermissionError:
+        print(f"Doesn't have permission to read/write for {daemon_path}")
+    except Exception as e:
+        print(f"Got an error during setting up nordvpnd.service: {e}")
+
+    yield
+
+    try:
+        with open(daemon_path, "w") as f:
+            f.write(default_config)
+
+        subprocess.run(["sudo", "systemctl", "restart", "nordvpnd.service"], check=True)
+    except FileNotFoundError:
+        print(f"Couldn't find {daemon_path}")
+    except PermissionError:
+        print(f"Doesn't have permission to read/write for {daemon_path}")
+    except Exception as e:
+        print(f"Got an error during setting up nordvpnd.service: {e}")
+
+
+@pytest.fixture
+def stop_nordvpnd():
+    """Fixture to stop nordvpnd before tests and start it after"""
+    subprocess.run(["sudo", "systemct", "stop", "nordvpnd"], check=True)
+
+    yield
+
+    subprocess.run(["sudo", "systemct", "start", "nordvpnd"], check=True)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def get_package_system():
+    """Fixture to set in env variable system version of package"""
+    try:
+        dpkg_result = subprocess.run(["dpkg", "-l", "nordvpn"], capture_output=True, text=True)
+        if dpkg_result.returncode == 0 and "nordvpn" in dpkg_result.stdout:
+            os.environ["NORDVPN_TYPE"] = "deb"
+    except FileNotFoundError:
+        # dpkg command not found - might not be a Debian-based system
+        pass
+
+    try:
+        snap_result = subprocess.run(["snap", "list", "nordvpn"], capture_output=True, text=True)
+        if snap_result.returncode == 0 and "nordvpn" in snap_result.stdout:
+            os.environ["NORDVPN_TYPE"] = "deb"
+    except FileNotFoundError:
+        # snap command not found
+        pass
+
+
+@pytest.fixture
+def backup_restore_rc_config_files():
+    """Fixture to backup original config for remote config, and restore it after tests."""
+    subprocess.run(f"sudo cp -r {LOCAL_CACHE_DIR} {os.getcwd()}/tmp/", check=True, shell=True)
+    yield
+    subprocess.run(f"sudo cp -r {os.getcwd()}/tmp/ {LOCAL_CACHE_DIR} ", check=True, shell=True)
