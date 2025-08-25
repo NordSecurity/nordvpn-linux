@@ -59,9 +59,11 @@ func makeDisplayLabel(conn Model) string {
 		}
 		return labelUnidentified
 
-	default:
+	case config.ServerSelectionRuleNone:
 		return labelUnidentified
 	}
+
+	return labelUnidentified
 }
 
 // NewVPNConnection creates new a VPN connection
