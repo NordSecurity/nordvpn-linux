@@ -29,7 +29,6 @@ const (
 	labelReconnectTo           = "Reconnect to "
 	labelConnectTo             = "Connect to "
 	labelCountries             = "Countries:"
-	labelSpecialtyServers      = "Specialty Servers:"
 	labelActiveGoroutines      = "Active goroutines"
 	labelActiveGoroutinesCount = "Active goroutines: %d"
 	labelRedraw                = "Redraw"
@@ -48,7 +47,6 @@ const (
 	tooltipConnectionSelection = "Choose connection type"
 	tooltipRecentConnections   = "Select recent connection"
 	tooltipCountries           = "Select Country"
-	tooltipSpecialServers      = "Select specialty server"
 	tooltipActiveGoroutines    = "Shows number of active background processes"
 	tooltipRedraw              = "Force refresh the tray menu"
 	tooltipUpdate              = "Refresh menu with latest status"
@@ -223,7 +221,6 @@ func addConnectionSelector(ti *Instance) {
 
 	ti.state.mu.RLock()
 	countries := append([]string(nil), ti.state.connSelector.countries...)
-	specialtyServers := append([]string(nil), ti.state.connSelector.specialtyServers...)
 	ti.state.mu.RUnlock()
 
 	recentConnections := fetchRecentConnections(ti)
@@ -233,8 +230,6 @@ func addConnectionSelector(ti *Instance) {
 		connectionSelector.AddSubMenuItem("", "").Disable()
 	}
 
-	addSpecialtyServersSection(ti, connectionSelector, specialtyServers, addedConnections)
-	connectionSelector.AddSubMenuItem("", "").Disable()
 	addCountriesSection(ti, connectionSelector, countries, addedConnections)
 }
 
@@ -261,7 +256,7 @@ func addRecentConnectionsSection(
 	connections []*pb.RecentConnection,
 	addedConnections map[string]bool,
 ) {
-	parent.AddSubMenuItem(labelRecentConnections, tooltipRecentConnections).Disabled()
+	parent.AddSubMenuItem(labelRecentConnections, tooltipRecentConnections).Disable()
 	for _, conn := range connections {
 		if conn == nil || conn.DisplayLabel == "" {
 			continue
@@ -274,26 +269,6 @@ func addRecentConnectionsSection(
 		item := parent.AddSubMenuItem(label, tooltip)
 
 		go handleRecentConnectionClick(ti, item, conn)
-	}
-}
-
-func addSpecialtyServersSection(
-	ti *Instance,
-	parent *systray.MenuItem,
-	servers []string,
-	addedConnections map[string]bool,
-) {
-	parent.AddSubMenuItem(labelSpecialtyServers, tooltipSpecialServers).Disable()
-	for _, server := range servers {
-		if addedConnections[server] {
-			continue
-		}
-
-		title := strings.ReplaceAll(server, "_", " ")
-		tooltip := labelConnectTo + server
-		item := parent.AddSubMenuItem(title, tooltip)
-
-		go handleSpecialtyServerClick(ti, item, server)
 	}
 }
 
