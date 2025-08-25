@@ -261,7 +261,7 @@ func addRecentConnectionsSection(
 	connections []*pb.RecentConnection,
 	addedConnections map[string]bool,
 ) {
-	parent.AddSubMenuItem(labelRecentConnections, tooltipRecentConnections).Disabled()
+	parent.AddSubMenuItem(labelRecentConnections, tooltipRecentConnections).Disable()
 	for _, conn := range connections {
 		if conn == nil || conn.DisplayLabel == "" {
 			continue
@@ -387,9 +387,11 @@ func connectByConnectionModel(
 	case pb.ServerSelectionRule_SERVER_SELECTION_RULE_SPECIFIC_SERVER_WITH_GROUP:
 		return ti.connect(model.SpecificServer, model.Group)
 
-	default:
+	case pb.ServerSelectionRule_SERVER_SELECTION_RULE_NONE:
 		return false
 	}
+
+	return false
 }
 
 func addAccountSection(ti *Instance) {
