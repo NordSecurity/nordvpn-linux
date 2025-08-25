@@ -4,6 +4,8 @@ import subprocess
 import requests
 from lib.remote_config import RemoteConfig
 
+from lib.daemon import Env
+
 LOCAL_CACHE_DIR = "/var/lib/nordvpn/conf"
 REMOTE_DIR = os.environ.get("REMOTE_DIR")
 REMOTE_FILES = os.environ.get("REMOTE_FILES")
@@ -46,10 +48,11 @@ class RemoteConfigManager:
         self.set_permissions_cache_dir()
         config_files = os.listdir(self.cache_dir)
         full_file_paths = [
-            os.path.join(self.cache_dir, filename) for filename in config_files
+            os.path.join(self.cache_dir, filename) for filename in config_files if
+            os.path.isfile(os.path.join(self.cache_dir, filename))
         ]
 
-        print(f"Local files: {config_files}")
+        print(f"Local files: {full_file_paths}")
         return full_file_paths
 
     def get_local_hash_files(self):
@@ -105,7 +108,7 @@ class RemoteConfigManager:
             data = json.load(f)
         return RemoteConfig(data)
 
-    def get_remote_configs(self) -> dict:
+    def get_remote_config_files(self, env: str = Env.DEV) -> dict:
         """
         Downloads remote config JSONs by concatenating REMOTE_DIR with each file in REMOTE_FILES.
 
@@ -113,6 +116,8 @@ class RemoteConfigManager:
         (REMOTE_DIR + REMOTE_FILE). The function then fetches the corresponding JSON
         data for each URL and returns a dictionary where the key is the full URL and
         the value is the parsed RemoteConfig instance.
+
+        :param env: The environment to download remote configs for. Default is DEV.
 
         :raises ValueError: If REMOTE_DIR is not set.
         :raises requests.RequestException: For network-related issues.
@@ -128,6 +133,7 @@ class RemoteConfigManager:
             raise ValueError("REMOTE_FILES environment variable is not set.")
 
         remote_files = REMOTE_FILES.split(",")
+        remote_files = [file for file in remote_files if file.startswith(env)]
         configs = {}
 
         for rc_file in remote_files:
