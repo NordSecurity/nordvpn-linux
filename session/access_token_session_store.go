@@ -21,9 +21,6 @@ type AccessTokenResponse struct {
 // AccessTokenRenewalAPICall is a function type for renewing access tokens
 type AccessTokenRenewalAPICall func(token string, idempotencyKey uuid.UUID) (*AccessTokenResponse, error)
 
-// AccessTokenExternalValidator is a function type for external validation of access tokens
-type AccessTokenExternalValidator func(token string) error
-
 type accessTokenConfig struct {
 	Token      string
 	RenewToken string
@@ -35,7 +32,6 @@ type AccessTokenSessionStore struct {
 	cfgManager         config.Manager
 	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
 	renewAPICall       AccessTokenRenewalAPICall
-	externalValidator  AccessTokenExternalValidator
 }
 
 // NewAccessTokenSessionStore creates a new AccessTokenSessionStore instance
@@ -43,13 +39,11 @@ func NewAccessTokenSessionStore(
 	cfgManager config.Manager,
 	errorHandlingRegistry *internal.ErrorHandlingRegistry[error],
 	renewAPICall AccessTokenRenewalAPICall,
-	externalValidator AccessTokenExternalValidator,
 ) *AccessTokenSessionStore {
 	return &AccessTokenSessionStore{
 		cfgManager:         cfgManager,
 		errHandlerRegistry: errorHandlingRegistry,
 		renewAPICall:       renewAPICall,
-		externalValidator:  externalValidator,
 	}
 }
 
@@ -102,11 +96,6 @@ func (s *AccessTokenSessionStore) validate() error {
 		return fmt.Errorf("validating access token format: %w", err)
 	}
 
-	if s.externalValidator != nil {
-		if err := s.externalValidator(cfg.Token); err != nil {
-			return fmt.Errorf("validating access token with external validator: %w", err)
-		}
-	}
 	return nil
 }
 

@@ -158,17 +158,17 @@ type DataDisconnect struct {
 
 type ReasonCode int32
 
+// Used to provide 'exception reason' why logout was initiated
 const (
 	// no exceptions
-	ReasonNone                         ReasonCode = -1
+	ReasonNotSpecified                 ReasonCode = -1
 	ReasonCorruptedVPNCredsAuthBad     ReasonCode = 3010400
 	ReasonCorruptedVPNCredsAuthMissing ReasonCode = 3020400
 	ReasonAuthTokenBad                 ReasonCode = 3010000
-	ReasonTokenMissing                 ReasonCode = 3020000 // Renew token endpoint returned 404
+	ReasonTokenMissing                 ReasonCode = 3020000
 	ReasonAuthTokenInvalidated         ReasonCode = 3030100
 	ReasonCorruptedVPNCreds            ReasonCode = 3000400
-
-	ReasonTokenCorrupted ReasonCode = 3040000
+	ReasonTokenCorrupted               ReasonCode = 3040000
 )
 
 type DataAuthorization struct {

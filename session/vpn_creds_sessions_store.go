@@ -21,7 +21,6 @@ type VPNCredentialsSessionStore struct {
 	cfgManager         config.Manager
 	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
 	renewAPICall       VPNCredentialsRenewalAPICall
-	externalValidator  VPNCredentialsExternalValidator
 }
 
 // NewVPNCredentialsSessionStore create new VPN credential session store
@@ -29,13 +28,11 @@ func NewVPNCredentialsSessionStore(
 	cfgManager config.Manager,
 	errorHandlingRegistry *internal.ErrorHandlingRegistry[error],
 	renewAPICall VPNCredentialsRenewalAPICall,
-	externalValidator VPNCredentialsExternalValidator,
 ) SessionStore {
 	return &VPNCredentialsSessionStore{
 		cfgManager:         cfgManager,
 		errHandlerRegistry: errorHandlingRegistry,
 		renewAPICall:       renewAPICall,
-		externalValidator:  externalValidator,
 	}
 }
 
@@ -131,12 +128,6 @@ func (s *VPNCredentialsSessionStore) validate() error {
 
 	if err := ValidateNordLynxPrivateKeyPresence(cfg.NordLynxPrivateKey); err != nil {
 		return err
-	}
-
-	if s.externalValidator != nil {
-		if err := s.externalValidator(cfg.Username, cfg.Password, cfg.NordLynxPrivateKey); err != nil {
-			return err
-		}
 	}
 
 	return nil

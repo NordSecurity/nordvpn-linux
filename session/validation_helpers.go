@@ -79,9 +79,3 @@ func ValidateEndpointPresence(endpoint string) error {
 	}
 	return nil
 }
-
-// Type-safe external validators for each session type
-type TrustedPassExternalValidator func(token string, ownerID string) error
-type CredentialsExternalValidator func(username, password string) error
-type VPNCredentialsExternalValidator func(username, password, nordlynxKey string) error
-type NCCredentialsExternalValidator func(username, password, endpoint string) error
