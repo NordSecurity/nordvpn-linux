@@ -144,8 +144,8 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 	logoutStartTime := time.Now()
 
 	// Log the reason if provided
-	if input.Reason != events.ReasonNone {
-		log.Printf("%s Forcing logout due to: %v", internal.DebugPrefix, input.Reason)
+	if input.Reason != events.ReasonNotSpecified {
+		log.Printf("%s Forcing logout due to: %v\n", internal.DebugPrefix, input.Reason)
 	}
 
 	input.PublishLogoutEventFunc(events.DataAuthorization{

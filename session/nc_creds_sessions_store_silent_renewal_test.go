@@ -43,7 +43,7 @@ func TestNCCredentialsSessionStore_Renew_SilentRenewal_NoHandlerInvocation(t *te
 		return nil, errors.New("api-error")
 	}
 
-	store := NewNCCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := NewNCCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew(SilentRenewal())
 
 	assert.Error(t, err)
@@ -84,7 +84,7 @@ func TestNCCredentialsSessionStore_Renew_SilentRenewal_Success(t *testing.T) {
 		}, nil
 	}
 
-	store := NewNCCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := NewNCCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew(SilentRenewal())
 
 	assert.NoError(t, err)

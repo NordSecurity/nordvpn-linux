@@ -22,7 +22,6 @@ type NCCredentialsSessionStore struct {
 	cfgManager         config.Manager
 	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
 	renewAPICall       NCCredentialsRenewalAPICall
-	externalValidator  NCCredentialsExternalValidator
 }
 
 // NewNCCredentialsSessionStore creates a new NC credentials session store
@@ -30,13 +29,11 @@ func NewNCCredentialsSessionStore(
 	cfgManager config.Manager,
 	errorHandlingRegistry *internal.ErrorHandlingRegistry[error],
 	renewAPICall NCCredentialsRenewalAPICall,
-	externalValidator NCCredentialsExternalValidator,
 ) SessionStore {
 	return &NCCredentialsSessionStore{
 		cfgManager:         cfgManager,
 		errHandlerRegistry: errorHandlingRegistry,
 		renewAPICall:       renewAPICall,
-		externalValidator:  externalValidator,
 	}
 }
 
@@ -145,12 +142,6 @@ func (s *NCCredentialsSessionStore) validate() error {
 
 	if err := ValidateEndpointPresence(cfg.Endpoint); err != nil {
 		return err
-	}
-
-	if s.externalValidator != nil {
-		if err := s.externalValidator(cfg.Username, cfg.Password, cfg.Endpoint); err != nil {
-			return err
-		}
 	}
 
 	return nil

@@ -39,7 +39,7 @@ func TestVPNCredentialsSessionStore_Renew_SilentRenewal_NoHandlerInvocation(t *t
 		return nil, errors.New("api-error")
 	}
 
-	store := NewVPNCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := NewVPNCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew(SilentRenewal())
 
 	assert.Error(t, err)
@@ -76,7 +76,7 @@ func TestVPNCredentialsSessionStore_Renew_SilentRenewal_Success(t *testing.T) {
 		}, nil
 	}
 
-	store := NewVPNCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := NewVPNCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew(SilentRenewal())
 
 	assert.NoError(t, err)

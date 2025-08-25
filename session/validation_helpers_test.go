@@ -1,7 +1,6 @@
 package session
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -282,88 +281,6 @@ func TestValidateRenewToken(t *testing.T) {
 			if tt.wantErr != nil {
 				assert.Error(t, err)
 				assert.Equal(t, tt.wantErr, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
-}
-
-func TestTrustedPassExternalValidator(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	tests := []struct {
-		name      string
-		token     string
-		ownerID   string
-		validator TrustedPassExternalValidator
-		wantErr   bool
-		errMsg    string
-	}{
-		{
-			name:      "nil validator",
-			token:     "token",
-			ownerID:   "owner",
-			validator: nil,
-			wantErr:   false,
-		},
-		{
-			name:    "validator returns nil",
-			token:   "token",
-			ownerID: "owner",
-			validator: func(token, ownerID string) error {
-				return nil
-			},
-			wantErr: false,
-		},
-		{
-			name:    "validator returns error",
-			token:   "token",
-			ownerID: "owner",
-			validator: func(token, ownerID string) error {
-				return errors.New("validation failed")
-			},
-			wantErr: true,
-			errMsg:  "validation failed",
-		},
-		{
-			name:    "validator checks token",
-			token:   "expected-token",
-			ownerID: "owner",
-			validator: func(token, ownerID string) error {
-				if token != "expected-token" {
-					return errors.New("unexpected token")
-				}
-				return nil
-			},
-			wantErr: false,
-		},
-		{
-			name:    "validator checks ownerID",
-			token:   "token",
-			ownerID: "expected-owner",
-			validator: func(token, ownerID string) error {
-				if ownerID != "expected-owner" {
-					return errors.New("unexpected owner")
-				}
-				return nil
-			},
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var err error
-			if tt.validator != nil {
-				err = tt.validator(tt.token, tt.ownerID)
-			}
-
-			if tt.wantErr {
-				assert.Error(t, err)
-				if tt.errMsg != "" {
-					assert.Contains(t, err.Error(), tt.errMsg)
-				}
 			} else {
 				assert.NoError(t, err)
 			}

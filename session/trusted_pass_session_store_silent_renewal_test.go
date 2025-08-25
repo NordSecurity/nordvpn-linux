@@ -42,7 +42,7 @@ func TestTrustedPassSessionStore_Renew_SilentRenewal_NoHandlerInvocation(t *test
 		return nil, errors.New("api-error")
 	}
 
-	store := NewTrustedPassSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := NewTrustedPassSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew(SilentRenewal())
 
 	assert.Error(t, err)
@@ -81,7 +81,7 @@ func TestTrustedPassSessionStore_Renew_SilentRenewal_Success(t *testing.T) {
 		}, nil
 	}
 
-	store := NewTrustedPassSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := NewTrustedPassSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew(SilentRenewal())
 
 	assert.NoError(t, err)
@@ -128,7 +128,7 @@ func TestTrustedPassSessionStore_Renew_SilentRenewal_ValidationError(t *testing.
 		}, nil
 	}
 
-	store := NewTrustedPassSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := NewTrustedPassSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew(SilentRenewal())
 
 	assert.Error(t, err)

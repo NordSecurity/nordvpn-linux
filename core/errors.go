@@ -108,9 +108,9 @@ func extractErrorForMeshnet(info apiError) error {
 		invalidPrefixOrSuffixCode            = 101130 // nickname contains invalid prefix or suffix
 		nicknameHasDoubleHyphensCode         = 101131 // nickname contains double hyphens
 		invalidCharsCode                     = 101132 // nickname contains invalid characters
-		maxMachineCountReached               = 101120
-		maxMachinePerPeerCountReached        = 101121
-		maxPeerCountReachedOnExternalMachine = 101122
+		maxMachineCountReached               = 101120 // maximum machine count reached
+		maxMachinePerPeerCountReached        = 101121 // maximum machine per peer count reached
+		maxPeerCountReachedOnExternalMachine = 101122 // maximum peerp count reach on external machine
 	)
 
 	switch info.Errors.Code {

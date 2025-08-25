@@ -56,7 +56,6 @@ func (b *SessionStoresBuilder) BuildAccessTokenStore(rawClientAPI core.RawClient
 		b.confman,
 		b.registries.accessToken,
 		renewAccessToken(rawClientAPI),
-		nil,
 	)
 	return b.stores.accessToken
 }
@@ -67,7 +66,6 @@ func (b *SessionStoresBuilder) BuildVPNCredsStore(clientAPI core.ClientAPI) sess
 		b.confman,
 		b.registries.vpnCreds,
 		renewVPNCredentials(b.confman, clientAPI),
-		nil,
 	)
 	return b.stores.vpnCreds
 }
@@ -78,7 +76,6 @@ func (b *SessionStoresBuilder) BuildTrustedPassStore(clientAPI core.ClientAPI) s
 		b.confman,
 		b.registries.trustedPass,
 		renewTrustedPass(clientAPI),
-		nil,
 	)
 	return b.stores.trustedPass
 }
@@ -89,7 +86,6 @@ func (b *SessionStoresBuilder) BuildNCCredsStore(clientAPI core.ClientAPI) sessi
 		b.confman,
 		b.registries.ncCreds,
 		renewNCCredentials(b.confman, clientAPI),
-		nil,
 	)
 	return b.stores.ncCreds
 }
@@ -120,7 +116,7 @@ func (b *SessionStoresBuilder) registerAccessTokenHandlers(logoutHandler *daemon
 		session.ErrInvalidRenewToken:          events.ReasonTokenCorrupted,
 		session.ErrSessionInvalidated:         events.ReasonAuthTokenInvalidated,
 		session.ErrMissingAccessTokenResponse: events.ReasonTokenMissing,
-		core.ErrUnauthorized:                  events.ReasonNone, // no dedicated exception code
+		core.ErrUnauthorized:                  events.ReasonNotSpecified, // no dedicated exception code
 	}
 
 	errs := []error{
@@ -138,7 +134,7 @@ func (b *SessionStoresBuilder) registerAccessTokenHandlers(logoutHandler *daemon
 				return code
 			}
 		}
-		return events.ReasonNone
+		return events.ReasonNotSpecified
 	})
 }
 
@@ -166,7 +162,7 @@ func (b *SessionStoresBuilder) registerVPNCredsHandlers(logoutHandler *daemon.Lo
 				case errors.Is(err, core.ErrNotFound):
 					return events.ReasonCorruptedVPNCredsAuthMissing
 				default:
-					return events.ReasonNone
+					return events.ReasonNotSpecified
 				}
 			}
 
@@ -179,7 +175,7 @@ func (b *SessionStoresBuilder) registerVPNCredsHandlers(logoutHandler *daemon.Lo
 			return events.ReasonCorruptedVPNCreds
 		}
 
-		return events.ReasonNone
+		return events.ReasonNotSpecified
 	})
 }
 
@@ -210,9 +206,9 @@ func (b *SessionStoresBuilder) registerNCCredsHandlers(logoutHandler *daemon.Log
 	logoutHandler.Register(b.registries.ncCreds, errs, alwaysReasonNone)
 }
 
-// alwaysReasonNone is a helper function that always returns ReasonNone
+// alwaysReasonNone is a helper function that always returns ReasonNotSpecified
 func alwaysReasonNone(error) events.ReasonCode {
-	return events.ReasonNone
+	return events.ReasonNotSpecified
 }
 
 // Renewal functions
