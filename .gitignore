@@ -23,6 +23,7 @@ build
 bin
 dist
 linux
+!gui/linux
 
 # Python
 .venv

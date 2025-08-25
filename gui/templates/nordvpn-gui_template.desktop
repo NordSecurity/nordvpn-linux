@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=NordVPN
+Comment=${PKG_DESCRIPTION}
+Exec=${NAME}
+Icon=${NAME}
+Terminal=false
+Type=Application
+Categories=Network;Security;
