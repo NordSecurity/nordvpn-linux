@@ -68,8 +68,7 @@ scripts:
       protobuf:
         $description: Regenerate protobufs using docker image
         $script: |
-          IMAGE_NAME_AND_VERSION="${1}" # specify this in a format <name>:<version>
-          docker run -v `pwd`:/code/app ${IMAGE_NAME_AND_VERSION} scripts/generate_protobuf.sh
+          docker run -v `pwd`/../:/code/app ghcr.io/nordsecurity/nordvpn-linux/protobuf_dart-3.8.1:1.0.1 ./gui/scripts/generate_protobuf.sh
 
     build:
       package:
@@ -93,18 +92,15 @@ scripts:
             set -eux
             # build application
             APP_DIR=/code/app
-            IMAGE_VERSION=0.0.2
-            IMAGE_NAME=flutter
             flutter clean
             PLATFORM="${2}"
             ARCH=${PLATFORM#"linux/"}
-            docker/generate_docker_image.sh ${IMAGE_NAME} ${IMAGE_VERSION} ${PLATFORM} docker/flutter
-            docker run -v `pwd`:/code/app --platform ${PLATFORM} --workdir ${APP_DIR} ${IMAGE_NAME}:${IMAGE_VERSION} scripts/build_application.sh ${1}
+            docker run -v `pwd`/../:/code/app --platform ${PLATFORM} --workdir ${APP_DIR}  ghcr.io/nordsecurity/nordvpn-linux/flutter-3.32.8:1.0.1 gui/scripts/build_application.sh ${1}
             # Generate package
-            docker run -v `pwd`:${APP_DIR} \
+            docker run -v `pwd`/../:${APP_DIR} \
                     --workdir ${APP_DIR} \
                     --user 1000:1000 \
                     ghcr.io/nordsecurity/nordvpn-linux/packager:1.3.0 \
-                    ${APP_DIR}/scripts/build_package.sh ${1} ${0} ${ARCH}
+                    ${APP_DIR}/gui/scripts/build_package.sh ${1} ${0} ${ARCH}
             # clean the build folder otherwise local builds will not work because of CMake error
             flutter clean
