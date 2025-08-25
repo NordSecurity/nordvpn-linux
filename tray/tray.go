@@ -67,10 +67,9 @@ func (ai *accountInfo) reset() {
 }
 
 type ConnectionSelector struct {
-	mu                         sync.RWMutex
-	countries                  []string
-	countriesUpdateTime        time.Time
-	specialtyServersUpdateTime time.Time
+	mu                  sync.RWMutex
+	countries           []string
+	countriesUpdateTime time.Time
 }
 
 func (cp *ConnectionSelector) listCountries(client pb.DaemonClient) ([]string, error) {

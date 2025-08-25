@@ -306,19 +306,6 @@ func handleRecentConnectionClick(ti *Instance, item *systray.MenuItem, conn *pb.
 	}
 }
 
-func handleSpecialtyServerClick(ti *Instance, item *systray.MenuItem, specialtyServer string) {
-	for {
-		_, open := <-item.ClickedCh
-		if !open {
-			return
-		}
-
-		if ti.connect("", specialtyServer) {
-			ti.updateChan <- true
-		}
-	}
-}
-
 func handleCountryClick(ti *Instance, item *systray.MenuItem, country string) {
 	for {
 		_, open := <-item.ClickedCh
@@ -362,9 +349,11 @@ func connectByConnectionModel(
 	case pb.ServerSelectionRule_SERVER_SELECTION_RULE_SPECIFIC_SERVER_WITH_GROUP:
 		return ti.connect(model.SpecificServer, model.Group)
 
-	default:
+	case pb.ServerSelectionRule_SERVER_SELECTION_RULE_NONE:
 		return false
 	}
+
+	return false
 }
 
 func addAccountSection(ti *Instance) {
