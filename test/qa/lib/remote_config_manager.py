@@ -128,9 +128,11 @@ class RemoteConfigManager:
 
         if not REMOTE_DIR:
             raise ValueError("REMOTE_DIR environment variable is not set.")
+        print(f"REMOTE_DIR: {REMOTE_DIR}")
 
         if not REMOTE_FILES:
             raise ValueError("REMOTE_FILES environment variable is not set.")
+        print(f"REMOTE_FILES: {REMOTE_FILES}")
 
         remote_files = REMOTE_FILES.split(",")
         remote_files = [file for file in remote_files if file.startswith(env)]
