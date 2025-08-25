@@ -2,7 +2,6 @@
 import glob
 import os
 import socket
-import subprocess
 import time
 
 import sh
@@ -202,12 +201,7 @@ def get_env() ->str:
 
     :return: the active environment (DEV or PROD)
     """
-    result = subprocess.run(
-        ["nordvpn", "--version"],
-        check=True,
-        stdout=subprocess.PIPE,
-        text=True
-    )
-    if Env.DEV in result.stdout:
+    result = sh.nordvpn("--version")
+    if Env.DEV in result:
         return Env.DEV
     return Env.PROD

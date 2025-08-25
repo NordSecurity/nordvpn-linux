@@ -3,6 +3,7 @@ import subprocess
 import uuid
 
 import pytest
+import sh
 
 from lib import daemon
 from lib.log_reader import LogReader
@@ -20,7 +21,7 @@ RC_LOCAL_MESSAGES = [
     f"[Info] feature [nordvpn] config loaded from: {LOCAL_CACHE_DIR}",
 ]
 
-RC_USE_LOCAL_CONFIG_MESSAGE = ["[Info]Ignoring remote config, using only local"]
+RC_USE_LOCAL_CONFIG_MESSAGE = ["[Info] Ignoring remote config, using only local"]
 
 RC_INITIAL_RUN_MESSAGES = RC_REMOTE_MESSAGES + RC_LOCAL_MESSAGES
 
@@ -53,48 +54,31 @@ def enable_local_config_in_service():
     """
     Pytest fixture to temporarily inject 'RC_USE_LOCAL_CONFIG=1' environment variable into the 'nordvpnd' service file.
 
-    This fixture injects 'export RC_USE_LOCAL_CONFIG=1' into the 'nordvpnd' service file, simulating enabling the local config usage for tests.
+    This fixture injects 'export RC_USE_LOCAL_CONFIG=1' into the 'nordvpn' service file, simulating enabling the local config usage for tests.
     After the test, it removes the injected line and reloads the systemd daemon to restore the initial system state.
     """
     service_path = "/etc/init.d/nordvpn"
 
     # Print original service file for reference
-    print(
-        "Service original:\n"
-        + subprocess.run(
-            ["cat", service_path], check=True, stdout=subprocess.PIPE, text=True
-        ).stdout
-    )
+    print(f"Service original:\n {sh.cat(service_path)}")
 
     # Insert environment variable into systemd service file
-    subprocess.run(
-        ["sudo", "sed", "-i", r"1a export RC_USE_LOCAL_CONFIG=1", service_path]
-    )
+    sh.sudo("sed", "-i", r"1a export RC_USE_LOCAL_CONFIG=1", service_path)
+
+    sh.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
 
     # Print service file after modification
-    print(
-        "Service after:\n"
-        + subprocess.run(
-            ["cat", service_path], check=True, stdout=subprocess.PIPE, text=True
-        ).stdout
-    )
+    print(f"Service after:\n {sh.cat(service_path)}")
 
     yield
 
     # Cleanup: remove the injected environment variable line
-    subprocess.run(
-        ["sudo", "sed", "-i", r"/^export RC_USE_LOCAL_CONFIG=1$/d", service_path]
-    )
+    sh.sudo("sed", "-i", r"/^export RC_USE_LOCAL_CONFIG=1$/d", service_path)
 
-    subprocess.run(["sudo", "systemctl", "daemon-reload"])
+    sh.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
 
     # Print restored service file for verification
-    print(
-        "Service restored:\n"
-        + subprocess.run(
-            ["cat", service_path], check=True, stdout=subprocess.PIPE, text=True
-        ).stdout
-    )
+    print(f"Service restored:\n {sh.cat(service_path)}")
 
 
 def test_remote_config_consumed_and_logged(initialized_app_with_remote_config) -> None:
@@ -206,7 +190,8 @@ def test_restart_causes_daemon_to_consume_local_files(
     5. Verify that RC_REMOTE_MESSAGES messages are not found,
     confirming the remote files were used from local.
 
-    :raises AssertionError: If the missing log messages do not match RC_REMOTE_MESSAGES.
+    :raises AssertionError: If any of the RC_INITIAL_RUN_MESSAGES are found in the daemon.log after daemon restart or
+    if the missing log messages do not match RC_REMOTE_MESSAGES.
     """
 
     cursor = daemon_log_reader.get_cursor()
@@ -218,6 +203,8 @@ def test_restart_causes_daemon_to_consume_local_files(
         cursor=cursor,
         return_not_found=True,
     )
+
+    assert not res, "Some of the RC_INITIAL_RUN_MESSAGES are found in the daemon.log after daemon restart"
 
     assert set(not_found) == set(
         RC_REMOTE_MESSAGES
@@ -436,7 +423,6 @@ def test_meshnet_feature_availability_based_on_remote_config(
             ), f"Command {command} output is not as expected for disabled meshnet. Output:\n{output}"
 
 
-@pytest.mark.local_config_only
 def test_local_config_usage_via_systemd_env(
     initialized_app_with_remote_config, # noqa: ARG001
     daemon_log_reader,
@@ -459,7 +445,6 @@ def test_local_config_usage_via_systemd_env(
 
     cursor = daemon_log_reader.get_cursor()
 
-    subprocess.run(["sudo", "systemctl", "daemon-reload"])
     daemon.restart()
 
     assert daemon_log_reader.wait_for_messages(

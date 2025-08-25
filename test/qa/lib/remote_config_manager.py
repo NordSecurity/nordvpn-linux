@@ -1,7 +1,7 @@
 import os
 import json
-import subprocess
 import requests
+import sh
 from lib.remote_config import RemoteConfig
 
 from lib.daemon import Env
@@ -32,7 +32,7 @@ class RemoteConfigManager:
         if not os.path.exists(self.cache_dir):
             print(f"Directory '{self.cache_dir}' does not exist.")
             return False
-        subprocess.run(["sudo", "chmod", "-R", "775", self.cache_dir], check=True)
+        sh.sudo.chmod("-R", "775", self.cache_dir)
         print(f"Permissions set recursively to 775 for {self.cache_dir}.")
         return True
 
@@ -47,10 +47,12 @@ class RemoteConfigManager:
         """
         self.set_permissions_cache_dir()
         config_files = os.listdir(self.cache_dir)
-        full_file_paths = [
-            os.path.join(self.cache_dir, filename) for filename in config_files if
-            os.path.isfile(os.path.join(self.cache_dir, filename))
-        ]
+
+        full_file_paths = []
+        for filename in config_files:
+            full_path = os.path.join(self.cache_dir, filename)
+            if os.path.isfile(full_path):
+                full_file_paths.append(full_path)
 
         print(f"Local files: {full_file_paths}")
         return full_file_paths
@@ -128,9 +130,11 @@ class RemoteConfigManager:
 
         if not REMOTE_DIR:
             raise ValueError("REMOTE_DIR environment variable is not set.")
+        print(f"REMOTE_DIR: {REMOTE_DIR}")
 
         if not REMOTE_FILES:
             raise ValueError("REMOTE_FILES environment variable is not set.")
+        print(f"REMOTE_FILES: {REMOTE_FILES}")
 
         remote_files = REMOTE_FILES.split(",")
         remote_files = [file for file in remote_files if file.startswith(env)]
@@ -160,10 +164,10 @@ class RemoteConfigManager:
 
         :param file_path: The path to the file to delete.
 
-        :raises subprocess.CalledProcessError: If file deletion fails.
+        :raises sh.ErrorReturnCode: If file deletion fails.
         """
         print(f"Deleting file: {file_path}")
         try:
-            subprocess.run(["sudo", "rm", file_path], check=True)
-        except subprocess.CalledProcessError as e:
+            sh.sudo.rm(file_path)
+        except sh.ErrorReturnCode as e:
             print(f"Got an error while deleting {file_path}: {e}")
