@@ -3,7 +3,6 @@ package recents
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"slices"
 	"sync"
 
@@ -59,9 +58,11 @@ func makeDisplayLabel(conn Model) string {
 		}
 		return labelUnidentified
 
-	default:
+	case config.ServerSelectionRuleNone:
 		return labelUnidentified
 	}
+
+	return labelUnidentified
 }
 
 // NewVPNConnection creates new a VPN connection
@@ -115,8 +116,6 @@ func (r *RecentConnectionsStore) find(conn VPNConnection, list []VPNConnection) 
 func (r *RecentConnectionsStore) Add(conn VPNConnection) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-
-	log.Println("RECENTS:", conn)
 
 	if err := r.checkExistence(); err != nil {
 		return err
