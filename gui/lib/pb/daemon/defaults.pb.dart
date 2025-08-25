@@ -19,9 +19,11 @@ export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 class SetDefaultsRequest extends $pb.GeneratedMessage {
   factory SetDefaultsRequest({
     $core.bool? noLogout,
+    $core.bool? offKillswitch,
   }) {
     final result = create();
     if (noLogout != null) result.noLogout = noLogout;
+    if (offKillswitch != null) result.offKillswitch = offKillswitch;
     return result;
   }
 
@@ -39,6 +41,7 @@ class SetDefaultsRequest extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
     ..aOB(1, _omitFieldNames ? '' : 'noLogout')
+    ..aOB(2, _omitFieldNames ? '' : 'offKillswitch')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -70,6 +73,15 @@ class SetDefaultsRequest extends $pb.GeneratedMessage {
   $core.bool hasNoLogout() => $_has(0);
   @$pb.TagNumber(1)
   void clearNoLogout() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.bool get offKillswitch => $_getBF(1);
+  @$pb.TagNumber(2)
+  set offKillswitch($core.bool value) => $_setBool(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasOffKillswitch() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearOffKillswitch() => $_clearField(2);
 }
 
 const $core.bool _omitFieldNames =
