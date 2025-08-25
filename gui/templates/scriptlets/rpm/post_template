@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+${INSTALL_SCRIPT}
+
+case "$1" in
+    1)
+        echo "${SUCCESS_INSTALL_MESSAGE}"
+    ;;
+    2)
+    ;;
+esac
+
+exit 0
