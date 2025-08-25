@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=NordVPN GUI
+Comment=NordVPN GUI Application
+Exec=nordvpn-gui
+Icon=${SNAP}/meta/gui/nordvpn-gui.svg
+Terminal=false
+Type=Application
