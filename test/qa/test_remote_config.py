@@ -5,11 +5,13 @@ import pytest
 
 from lib import daemon
 from lib.log_reader import LogReader
+from lib import ssh
+import os
 
 RC_REMOTE_MESSAGES = [
-    "[Info] feature [ meshnet ] remote config downloaded to: /var/lib/nordvpn/conf",
-    "[Info] feature [ libtelio ] remote config downloaded to: /var/lib/nordvpn/conf",
-    "[Info] feature [ nordvpn ] remote config downloaded to: /var/lib/nordvpn/conf",
+    "[Info] feature [meshnet] remote config downloaded to: /var/lib/nordvpn/conf",
+    "[Info] feature [libtelio] remote config downloaded to: /var/lib/nordvpn/conf",
+    "[Info] feature [nordvpn] remote config downloaded to: /var/lib/nordvpn/conf",
 ]
 
 RC_LOCAL_MESSAGES = [
@@ -20,6 +22,33 @@ RC_LOCAL_MESSAGES = [
 
 RC_INITIAL_RUN_MESSAGES = RC_REMOTE_MESSAGES + RC_LOCAL_MESSAGES
 
+ssh_client = ssh.Ssh("mockcdn", "root", "root")
+ssh_client.connect()
+
+
+# Example on how to download and upload files to mockcdn
+# this should be used as a guideline and reworked properly to fit the needs of the tests
+ENV = "dev"
+CONFIG_BASE = os.path.join("/apps/linux/config", ENV)
+DIRS_TO_MAKE = os.path.join(CONFIG_BASE, "include")
+CDN_BASE = f"https://downloads.nordcdn.com{CONFIG_BASE}"
+
+CDN_FILES = ["nordvpn-hash.json", "nordvpn.json", "libtelio-hash.json", "libtelio.json", "include/libtelio-3.19.0-hash.json", 
+             "include/libtelio-3.19.0.json", "include/libtelio-3.18.3-hash.json", "include/libtelio-3.18.3.json",
+             "meshnet.json", "meshnet-hash.json"]
+
+ssh_client.exec_command(f"mkdir -p {DIRS_TO_MAKE}")
+import requests
+for file in CDN_FILES:
+    if "/" in file:
+        dirs = file.split("/")[:-1]
+        os.makedirs("/".join(dirs))
+    with open(file, "wb") as f:
+        f.write(requests.get(os.path.join(CDN_BASE, file)).content)
+    ssh_client.send_file(file, os.path.join(CONFIG_BASE, file))
+    os.remove(file)
+    if "/" in file:
+        os.rmdir(file.split("/")[0])
 
 @pytest.fixture
 def initialized_app_with_remote_config(
