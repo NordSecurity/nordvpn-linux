@@ -159,7 +159,6 @@ func TestTokenRenewWithBadConnection(t *testing.T) {
 					ExpiresAt:  resp.ExpiresAt,
 				}, nil
 			},
-			nil,
 		)},
 	}
 
@@ -283,7 +282,6 @@ func Test_TokenRenewForcesUserLogout(t *testing.T) {
 					ExpiresAt:  resp.ExpiresAt,
 				}, nil
 			},
-			nil,
 		)},
 	}
 

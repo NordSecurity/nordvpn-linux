@@ -43,7 +43,7 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_NoHandlerInvocation(t *test
 		return nil, errors.New("api-error")
 	}
 
-	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew(SilentRenewal())
 
 	assert.Error(t, err)
@@ -85,7 +85,7 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_Success(t *testing.T) {
 		}, nil
 	}
 
-	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew(SilentRenewal())
 
 	assert.NoError(t, err)
@@ -132,7 +132,7 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_ValidationError(t *testing.
 		}, nil
 	}
 
-	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew(SilentRenewal())
 
 	assert.NoError(t, err)
@@ -182,7 +182,7 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_InvalidRenewTokenResponseWi
 		}, nil
 	}
 
-	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	// With ForceRenewal, renewal is attempted but fails due to invalid response
 	err := store.Renew(ForceRenewal(), SilentRenewal())
 
@@ -219,7 +219,7 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_MissingTokenData(t *testing
 		return nil, nil
 	}
 
-	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew(SilentRenewal())
 
 	assert.Error(t, err)
@@ -256,7 +256,7 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_NilResponse(t *testing.T) {
 		return nil, nil // Return nil response
 	}
 
-	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew(SilentRenewal())
 
 	assert.Error(t, err)
@@ -296,7 +296,7 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_InvalidResponseToken(t *tes
 		}, nil
 	}
 
-	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew(SilentRenewal())
 
 	assert.Error(t, err)
@@ -334,7 +334,7 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_InvalidResponseRenewToken(t
 		}, nil
 	}
 
-	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew(SilentRenewal())
 
 	assert.Error(t, err)
@@ -381,7 +381,7 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_InvalidTokenResponseWithFor
 		}, nil
 	}
 
-	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	// With ForceRenewal, renewal is attempted but fails due to invalid response
 	err := store.Renew(ForceRenewal(), SilentRenewal())
 
@@ -438,7 +438,7 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_ForceRenewal(t *testing.T) 
 		}, nil
 	}
 
-	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall, nil)
+	store := NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
 	err := store.Renew(ForceRenewal(), SilentRenewal())
 
 	// ForceRenewal should trigger renewal

@@ -31,9 +31,6 @@ type TrustedPassSessionStore struct {
 	cfgManager         config.Manager
 	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
 	renewAPICall       TrustedPassRenewalAPICall
-
-	// optional external validator
-	externalValidator TrustedPassExternalValidator
 }
 
 // NewTrustedPassSessionStore creates a new TrustedPassSessionStore instance
@@ -41,13 +38,11 @@ func NewTrustedPassSessionStore(
 	cfgManager config.Manager,
 	errHandlerRegistry *internal.ErrorHandlingRegistry[error],
 	renewAPICall TrustedPassRenewalAPICall,
-	externalValidator TrustedPassExternalValidator,
 ) SessionStore {
 	return &TrustedPassSessionStore{
 		cfgManager:         cfgManager,
 		renewAPICall:       renewAPICall,
 		errHandlerRegistry: errHandlerRegistry,
-		externalValidator:  externalValidator,
 	}
 }
 
@@ -60,6 +55,12 @@ func (s *TrustedPassSessionStore) Renew(opts ...RenewalOption) error {
 		opt(options)
 	}
 
+	if !options.forceRenewal {
+		if err := s.validate(); err == nil {
+			return nil
+		}
+	}
+
 	var cfg config.Config
 	if err := s.cfgManager.Load(&cfg); err != nil {
 		return err
@@ -68,14 +69,12 @@ func (s *TrustedPassSessionStore) Renew(opts ...RenewalOption) error {
 	uid := cfg.AutoConnectData.ID
 	data, ok := cfg.TokensData[uid]
 	if !ok {
-		return fmt.Errorf("there is no data during during trusted pass session renewal")
+		return fmt.Errorf("there is no data during trusted pass session renewal")
 	}
 
 	// check if everything is valid or data renewal is required
-	if options.forceRenewal || s.validate(false) != nil {
-		if err := s.renewIfOAuth(uid, &data, options.skipErrorHandlers); err != nil {
-			return err
-		}
+	if err := s.renewIfOAuth(uid, &data, options.skipErrorHandlers); err != nil {
+		return err
 	}
 
 	// TODO: is this still necessary?
@@ -107,16 +106,14 @@ func (s *TrustedPassSessionStore) HandleError(reason error) error {
 	return fmt.Errorf("handling session error: %w", reason)
 }
 
-func (s *TrustedPassSessionStore) validate(skipExpiry bool) error {
+func (s *TrustedPassSessionStore) validate() error {
 	cfg, err := s.getConfig()
 	if err != nil {
 		return err
 	}
 
-	if !skipExpiry {
-		if err := ValidateExpiry(cfg.ExpiresAt); err != nil {
-			return err
-		}
+	if err := ValidateExpiry(cfg.ExpiresAt); err != nil {
+		return err
 	}
 
 	if err := ValidateTrustedPassTokenFormat(cfg.Token); err != nil {
@@ -127,13 +124,14 @@ func (s *TrustedPassSessionStore) validate(skipExpiry bool) error {
 		return err
 	}
 
-	if s.externalValidator != nil {
-		return s.externalValidator(cfg.Token, cfg.OwnerID)
-	}
 	return nil
 }
 
-func (s *TrustedPassSessionStore) renewToken(uid int64, data *config.TokenData, skipErrorHandlers bool) error {
+func (s *TrustedPassSessionStore) renewToken(
+	uid int64,
+	data *config.TokenData,
+	skipErrorHandlers bool,
+) error {
 	if s.renewAPICall == nil {
 		return errors.New("renewal api call not configured")
 	}
@@ -184,7 +182,11 @@ func (s *TrustedPassSessionStore) renewToken(uid int64, data *config.TokenData, 
 	return nil
 }
 
-func (s *TrustedPassSessionStore) renewIfOAuth(uid int64, data *config.TokenData, skipErrorHandlers bool) error {
+func (s *TrustedPassSessionStore) renewIfOAuth(
+	uid int64,
+	data *config.TokenData,
+	skipErrorHandlers bool,
+) error {
 	if !data.IsOAuth {
 		return nil
 	}

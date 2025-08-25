@@ -17,19 +17,18 @@ func testValidate(store SessionStore) error {
 	if !ok {
 		return errors.New("not a TrustedPassSessionStore")
 	}
-	return tpStore.validate(false)
+	return tpStore.validate()
 }
 
 func TestTrustedPassSessionStore_Validate(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name              string
-		token             string
-		ownerID           string
-		expiry            time.Time
-		externalValidator TrustedPassExternalValidator
-		wantErr           error
+		name    string
+		token   string
+		ownerID string
+		expiry  time.Time
+		wantErr error
 	}{
 		{
 			name:    "valid session",
@@ -59,28 +58,6 @@ func TestTrustedPassSessionStore_Validate(t *testing.T) {
 			expiry:  time.Now().UTC().Add(time.Hour),
 			wantErr: ErrInvalidOwnerID,
 		},
-		{
-			name:    "external validator success",
-			token:   "valid-token",
-			ownerID: "nordvpn",
-			expiry:  time.Now().UTC().Add(time.Hour),
-			externalValidator: func(token string, ownerID string) error {
-				assert.Equal(t, "valid-token", token)
-				assert.Equal(t, "nordvpn", ownerID)
-				return nil
-			},
-			wantErr: nil,
-		},
-		{
-			name:    "external validator failure",
-			token:   "valid-token",
-			ownerID: "nordvpn",
-			expiry:  time.Now().UTC().Add(time.Hour),
-			externalValidator: func(token string, ownerID string) error {
-				return errors.New("external validation failed")
-			},
-			wantErr: errors.New("external validation failed"),
-		},
 	}
 
 	for _, tt := range tests {
@@ -105,7 +82,6 @@ func TestTrustedPassSessionStore_Validate(t *testing.T) {
 				cfgManager,
 				errRegistry,
 				nil,
-				tt.externalValidator,
 			)
 
 			err := testValidate(store)
@@ -163,7 +139,7 @@ func TestTrustedPassSessionStore_Invalidate(t *testing.T) {
 				}, tt.testError)
 			}
 
-			store := NewTrustedPassSessionStore(cfgManager, errRegistry, nil, nil)
+			store := NewTrustedPassSessionStore(cfgManager, errRegistry, nil)
 			err := store.HandleError(tt.testError)
 
 			if tt.wantErr {
@@ -294,7 +270,7 @@ func TestTrustedPassSessionStore_Renew_ForceRenewal(t *testing.T) {
 				}
 			}
 
-			store := NewTrustedPassSessionStore(cfgManager, errRegistry, renewAPICall, nil)
+			store := NewTrustedPassSessionStore(cfgManager, errRegistry, renewAPICall)
 
 			var err error
 			if tt.forceRenewal {
@@ -338,7 +314,7 @@ func TestTrustedPassSessionStore_ValidateWithInvalidExpiryFormat(t *testing.T) {
 	cfgManager.Cfg = &cfg
 	errRegistry := internal.NewErrorHandlingRegistry[error]()
 
-	store := NewTrustedPassSessionStore(cfgManager, errRegistry, nil, nil)
+	store := NewTrustedPassSessionStore(cfgManager, errRegistry, nil)
 
 	err := testValidate(store)
 
@@ -471,7 +447,7 @@ func TestTrustedPassSessionStore_Renew(t *testing.T) {
 				}
 			}
 
-			store := NewTrustedPassSessionStore(cfgManager, errRegistry, renewAPICall, nil)
+			store := NewTrustedPassSessionStore(cfgManager, errRegistry, renewAPICall)
 
 			err := store.Renew()
 
