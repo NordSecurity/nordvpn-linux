@@ -23,6 +23,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Helper function to mimic the old RegisterSessionErrorHandler behavior
+func RegisterSessionErrorHandler(registry *internal.ErrorHandlingRegistry[error], deps LogoutHandlerDependencies) {
+	logoutHandler := NewLogoutHandler(deps)
+	// Register all the errors that were previously handled
+	logoutHandler.Register(registry, []error{
+		core.ErrUnauthorized,
+		core.ErrNotFound,
+		core.ErrBadRequest,
+		session.ErrSessionInvalidated,
+		session.ErrInvalidToken,
+	}, func(error) events.ReasonCode {
+		return events.ReasonNotSpecified
+	})
+}
+
 type capturedEvents struct {
 	logoutEvents     []events.DataAuthorization
 	disconnectEvents []events.DataDisconnect
@@ -83,7 +98,7 @@ func TestRegisterSessionErrorHandler(t *testing.T) {
 			registry := internal.NewErrorHandlingRegistry[error]()
 			captured := &capturedEvents{}
 
-			deps := SessionErrorHandlerDependencies{
+			deps := LogoutHandlerDependencies{
 				AuthChecker:        &mockauth.AuthCheckerMock{LoggedIn: true},
 				Networker:          &mocknetworker.Mock{},
 				NotificationClient: &mockNotificationClient{},
@@ -99,7 +114,12 @@ func TestRegisterSessionErrorHandler(t *testing.T) {
 				},
 			}
 
-			RegisterSessionErrorHandler(registry, deps)
+			logoutHandler := NewLogoutHandler(deps)
+			if tt.expectHandled {
+				logoutHandler.Register(registry, []error{tt.triggeredError}, func(error) events.ReasonCode {
+					return events.ReasonNotSpecified
+				})
+			}
 			handlers := registry.GetHandlers(tt.triggeredError)
 
 			if tt.expectHandled {
@@ -139,7 +159,7 @@ func TestSessionErrorHandler_IntegrationWithAccessTokenStore(t *testing.T) {
 	handlerCalled := false
 
 	// Create a simple handler that sets a flag
-	deps := SessionErrorHandlerDependencies{
+	deps := LogoutHandlerDependencies{
 		AuthChecker:        &mockauth.AuthCheckerMock{LoggedIn: true},
 		Networker:          &mocknetworker.Mock{},
 		NotificationClient: &mockNotificationClient{},
@@ -162,7 +182,6 @@ func TestSessionErrorHandler_IntegrationWithAccessTokenStore(t *testing.T) {
 			renewalFailed = true
 			return nil, core.ErrUnauthorized // This should trigger the error handler
 		},
-		nil,
 	)
 
 	err := store.Renew()
@@ -197,7 +216,7 @@ func TestSessionErrorHandler_APIErrorToLogoutFlow(t *testing.T) {
 	flowSteps := []string{}
 
 	// Create dependencies with tracking
-	deps := SessionErrorHandlerDependencies{
+	deps := LogoutHandlerDependencies{
 		AuthChecker:        &mockauth.AuthCheckerMock{LoggedIn: true},
 		Networker:          &mocknetworker.Mock{},
 		NotificationClient: &mockNotificationClient{},
@@ -222,11 +241,6 @@ func TestSessionErrorHandler_APIErrorToLogoutFlow(t *testing.T) {
 			flowSteps = append(flowSteps, "renewal_attempted")
 			// Simulate API returning unauthorized error
 			return nil, core.ErrUnauthorized
-		},
-		func(token string) error {
-			flowSteps = append(flowSteps, "external_validation")
-			// Token is expired, so external validation is skipped
-			return nil
 		},
 	)
 
@@ -259,7 +273,7 @@ func TestSessionErrorHandler_HandlesProperlyWrappedErrors(t *testing.T) {
 	registry := internal.NewErrorHandlingRegistry[error]()
 	handlerCalled := false
 
-	deps := SessionErrorHandlerDependencies{
+	deps := LogoutHandlerDependencies{
 		AuthChecker:        &mockauth.AuthCheckerMock{LoggedIn: true},
 		Networker:          &mocknetworker.Mock{},
 		NotificationClient: &mockNotificationClient{},
@@ -292,7 +306,7 @@ func TestSessionErrorHandler_DoesNotHandleIncorrectlyWrappedErrors(t *testing.T)
 	registry := internal.NewErrorHandlingRegistry[error]()
 	handlerCalled := false
 
-	deps := SessionErrorHandlerDependencies{
+	deps := LogoutHandlerDependencies{
 		AuthChecker:        &mockauth.AuthCheckerMock{LoggedIn: true},
 		Networker:          &mocknetworker.Mock{},
 		NotificationClient: &mockNotificationClient{},
@@ -356,8 +370,8 @@ func (m *mockRawClientAPI) TokenRenew(token string, idempotencyKey uuid.UUID) (*
 		return m.tokenRenewResponse, nil
 	}
 	return &core.TokenRenewResponse{
-		Token:      "new-token",
-		RenewToken: "new-renew-token",
+		Token:      "1234567890abcdef1234567890abcdef", // Valid hex format
+		RenewToken: "fedcba0987654321fedcba0987654321", // Valid hex format
 		ExpiresAt:  "2025-01-01 00:00:00",
 	}, nil
 }
@@ -536,7 +550,7 @@ func TestSessionErrorHandler_SmartClientAPIIntegration(t *testing.T) {
 		},
 		{
 			name:                   "unauthorized triggers renewal then success",
-			initialTokenExpired:    false, // Token not expired, but API returns unauthorized
+			initialTokenExpired:    false, // Token should NOT be expired so GetToken() succeeds
 			currentUserFirstError:  core.ErrUnauthorized,
 			tokenRenewError:        nil,
 			currentUserSecondError: nil,
@@ -581,10 +595,10 @@ func TestSessionErrorHandler_SmartClientAPIIntegration(t *testing.T) {
 			currentUserFirstError:  core.ErrUnauthorized,
 			tokenRenewError:        nil,
 			currentUserSecondError: core.ErrUnauthorized,
-			expectLogout:           true,
+			expectLogout:           true, // Logout IS triggered because session.ErrSessionInvalidated is handled
 			expectRenewal:          true,
 			expectError:            true,
-			expectedAPICalls:       "CurrentUser fails -> TokenRenew succeeds -> CurrentUser still fails -> Logout",
+			expectedAPICalls:       "CurrentUser fails -> TokenRenew succeeds -> CurrentUser fails again -> SessionInvalidated",
 		},
 	}
 
@@ -603,8 +617,8 @@ func TestSessionErrorHandler_SmartClientAPIIntegration(t *testing.T) {
 				AutoConnectData: config.AutoConnectData{ID: uid},
 				TokensData: map[int64]config.TokenData{
 					uid: {
-						Token:          "test-token",
-						RenewToken:     "renew-token",
+						Token:          "ab78bb36299d442fa0715fb53b5e3e57", // Valid hex format
+						RenewToken:     "cd89cc47300e553fb1826fc64c6f4f68", // Valid hex format
 						TokenExpiry:    tokenExpiry,
 						IdempotencyKey: &idempotencyKey,
 					},
@@ -628,7 +642,7 @@ func TestSessionErrorHandler_SmartClientAPIIntegration(t *testing.T) {
 
 			// Create error registry and register handlers
 			errorRegistry := internal.NewErrorHandlingRegistry[error]()
-			deps := SessionErrorHandlerDependencies{
+			deps := LogoutHandlerDependencies{
 				AuthChecker:        &mockauth.AuthCheckerMock{LoggedIn: true},
 				Networker:          &mocknetworker.Mock{},
 				NotificationClient: &mockNotificationClient{},
@@ -661,7 +675,6 @@ func TestSessionErrorHandler_SmartClientAPIIntegration(t *testing.T) {
 				cfgManager,
 				errorRegistry,
 				renewalAPICall,
-				nil,
 			)
 
 			smartAPI := core.NewSmartClientAPI(mockAPI, sessionStore)
@@ -737,7 +750,7 @@ func TestSessionErrorHandler_ServicesAPIWithSmartClient(t *testing.T) {
 	// Track events
 	logoutCalled := false
 	errorRegistry := internal.NewErrorHandlingRegistry[error]()
-	deps := SessionErrorHandlerDependencies{
+	deps := LogoutHandlerDependencies{
 		AuthChecker:        &mockauth.AuthCheckerMock{LoggedIn: true},
 		Networker:          &mocknetworker.Mock{},
 		NotificationClient: &mockNotificationClient{},
@@ -767,7 +780,6 @@ func TestSessionErrorHandler_ServicesAPIWithSmartClient(t *testing.T) {
 		cfgManager,
 		errorRegistry,
 		renewalAPICall,
-		nil, // No external validator for this test
 	)
 
 	smartAPI := core.NewSmartClientAPI(mockAPI, sessionStore)
@@ -810,7 +822,7 @@ func TestSessionErrorHandler_ConcurrentLogoutPrevention(t *testing.T) {
 	logoutCompleted := make(chan struct{})
 
 	errorRegistry := internal.NewErrorHandlingRegistry[error]()
-	deps := SessionErrorHandlerDependencies{
+	deps := LogoutHandlerDependencies{
 		AuthChecker:        &mockauth.AuthCheckerMock{LoggedIn: true},
 		Networker:          &mocknetworker.Mock{},
 		NotificationClient: &mockNotificationClient{},
@@ -918,7 +930,7 @@ func TestSessionErrorHandler_ConcurrentAPICallsWithErrors(t *testing.T) {
 	logoutDone := make(chan struct{})
 
 	errorRegistry := internal.NewErrorHandlingRegistry[error]()
-	deps := SessionErrorHandlerDependencies{
+	deps := LogoutHandlerDependencies{
 		AuthChecker:        &mockauth.AuthCheckerMock{LoggedIn: true},
 		Networker:          &mocknetworker.Mock{},
 		NotificationClient: &mockNotificationClient{},
@@ -959,7 +971,6 @@ func TestSessionErrorHandler_ConcurrentAPICallsWithErrors(t *testing.T) {
 		cfgManager,
 		errorRegistry,
 		renewalAPICall,
-		nil,
 	)
 
 	smartAPI := core.NewSmartClientAPI(mockAPI, sessionStore)
@@ -1031,7 +1042,7 @@ func TestSessionErrorHandler_NetworkErrorDuringRenewal(t *testing.T) {
 
 	logoutCalled := false
 	errorRegistry := internal.NewErrorHandlingRegistry[error]()
-	deps := SessionErrorHandlerDependencies{
+	deps := LogoutHandlerDependencies{
 		AuthChecker:        &mockauth.AuthCheckerMock{LoggedIn: true},
 		Networker:          &mocknetworker.Mock{},
 		NotificationClient: &mockNotificationClient{},
@@ -1060,7 +1071,6 @@ func TestSessionErrorHandler_NetworkErrorDuringRenewal(t *testing.T) {
 		cfgManager,
 		errorRegistry,
 		renewalAPICall,
-		nil,
 	)
 
 	smartAPI := core.NewSmartClientAPI(mockAPI, sessionStore)
@@ -1134,7 +1144,7 @@ func TestSessionErrorHandler_EmptyTokenScenarios(t *testing.T) {
 
 			logoutCalled := false
 			errorRegistry := internal.NewErrorHandlingRegistry[error]()
-			deps := SessionErrorHandlerDependencies{
+			deps := LogoutHandlerDependencies{
 				AuthChecker:        &mockauth.AuthCheckerMock{LoggedIn: true},
 				Networker:          &mocknetworker.Mock{},
 				NotificationClient: &mockNotificationClient{},
@@ -1166,7 +1176,6 @@ func TestSessionErrorHandler_EmptyTokenScenarios(t *testing.T) {
 				cfgManager,
 				errorRegistry,
 				renewalAPICall,
-				nil,
 			)
 
 			err := sessionStore.Renew()
@@ -1214,7 +1223,7 @@ func TestSessionErrorHandler_MalformedTokenExpiry(t *testing.T) {
 
 	logoutCalled := false
 	errorRegistry := internal.NewErrorHandlingRegistry[error]()
-	deps := SessionErrorHandlerDependencies{
+	deps := LogoutHandlerDependencies{
 		AuthChecker:        &mockauth.AuthCheckerMock{LoggedIn: true},
 		Networker:          &mocknetworker.Mock{},
 		NotificationClient: &mockNotificationClient{},
@@ -1243,7 +1252,6 @@ func TestSessionErrorHandler_MalformedTokenExpiry(t *testing.T) {
 		cfgManager,
 		errorRegistry,
 		renewalAPICall,
-		nil,
 	)
 
 	err := sessionStore.Renew()
@@ -1285,7 +1293,7 @@ func TestSessionErrorHandler_LogoutClearsUserData(t *testing.T) {
 	}
 
 	errorRegistry := internal.NewErrorHandlingRegistry[error]()
-	deps := SessionErrorHandlerDependencies{
+	deps := LogoutHandlerDependencies{
 		AuthChecker:            &mockauth.AuthCheckerMock{LoggedIn: true},
 		Networker:              &mocknetworker.Mock{},
 		NotificationClient:     &mockNotificationClient{},
@@ -1308,19 +1316,10 @@ func TestSessionErrorHandler_LogoutClearsUserData(t *testing.T) {
 		}, nil
 	}
 
-	externalValidator := func(token string) error {
-		_, err := mockAPI.CurrentUser(token)
-		if errors.Is(err, core.ErrUnauthorized) {
-			return session.ErrInvalidToken
-		}
-		return err
-	}
-
 	sessionStore := session.NewAccessTokenSessionStore(
 		cfgManager,
 		errorRegistry,
 		renewalAPICall,
-		externalValidator,
 	)
 
 	smartAPI := core.NewSmartClientAPI(mockAPI, sessionStore)
@@ -1363,7 +1362,7 @@ func TestSessionErrorHandler_InvalidRenewalResponse(t *testing.T) {
 
 	errorRegistry := internal.NewErrorHandlingRegistry[error]()
 	logoutCalled := false
-	deps := SessionErrorHandlerDependencies{
+	deps := LogoutHandlerDependencies{
 		AuthChecker:        &mockauth.AuthCheckerMock{LoggedIn: true},
 		Networker:          &mocknetworker.Mock{},
 		NotificationClient: &mockNotificationClient{},
@@ -1395,7 +1394,6 @@ func TestSessionErrorHandler_InvalidRenewalResponse(t *testing.T) {
 		cfgManager,
 		errorRegistry,
 		renewalAPICall,
-		nil,
 	)
 
 	err := sessionStore.Renew()
@@ -1432,7 +1430,7 @@ func TestSessionErrorHandler_LogoutEventAlwaysPublished(t *testing.T) {
 	logoutEventPublished := false
 
 	errorRegistry := internal.NewErrorHandlingRegistry[error]()
-	deps := SessionErrorHandlerDependencies{
+	deps := LogoutHandlerDependencies{
 		AuthChecker:        &mockauth.AuthCheckerMock{LoggedIn: true},
 		Networker:          failingNetworker,
 		NotificationClient: notificationClient,

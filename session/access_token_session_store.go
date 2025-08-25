@@ -21,9 +21,6 @@ type AccessTokenResponse struct {
 // AccessTokenRenewalAPICall is a function type for renewing access tokens
 type AccessTokenRenewalAPICall func(token string, idempotencyKey uuid.UUID) (*AccessTokenResponse, error)
 
-// AccessTokenExternalValidator is a function type for external validation of access tokens
-type AccessTokenExternalValidator func(token string) error
-
 type accessTokenConfig struct {
 	Token      string
 	RenewToken string
@@ -35,7 +32,6 @@ type AccessTokenSessionStore struct {
 	cfgManager         config.Manager
 	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
 	renewAPICall       AccessTokenRenewalAPICall
-	externalValidator  AccessTokenExternalValidator
 }
 
 // NewAccessTokenSessionStore creates a new AccessTokenSessionStore instance
@@ -43,36 +39,42 @@ func NewAccessTokenSessionStore(
 	cfgManager config.Manager,
 	errorHandlingRegistry *internal.ErrorHandlingRegistry[error],
 	renewAPICall AccessTokenRenewalAPICall,
-	externalValidator AccessTokenExternalValidator,
 ) *AccessTokenSessionStore {
 	return &AccessTokenSessionStore{
 		cfgManager:         cfgManager,
 		errHandlerRegistry: errorHandlingRegistry,
 		renewAPICall:       renewAPICall,
-		externalValidator:  externalValidator,
 	}
 }
 
-// Renew checks if the access token needs renewal and renews it if necessary
-func (s *AccessTokenSessionStore) Renew() error {
-	// Check if token needs renewal
-	if err := s.validate(); err == nil {
-		return nil
+// Renew checks if the access token needs renewal and renews it if necessary.
+// By default, errors are processed through the error handling registry.
+// Use SilentRenewal() option to perform renewal without triggering side effects.
+// Use ForceRenewal() option to force renewal even if the token is valid.
+func (s *AccessTokenSessionStore) Renew(opts ...RenewalOption) error {
+	options := renewalOptions{}
+	for _, opt := range opts {
+		opt(&options)
 	}
 
-	// Token is invalid or expired, proceed with renewal
-	var fullCfg config.Config
-	if err := s.cfgManager.Load(&fullCfg); err != nil {
+	if !options.forceRenewal {
+		if err := s.validate(); err == nil {
+			return nil
+		}
+	}
+
+	var cfg config.Config
+	if err := s.cfgManager.Load(&cfg); err != nil {
 		return err
 	}
 
-	uid := fullCfg.AutoConnectData.ID
-	data, ok := fullCfg.TokensData[uid]
+	uid := cfg.AutoConnectData.ID
+	data, ok := cfg.TokensData[uid]
 	if !ok {
-		return errors.New("no token data")
+		return errors.New("no token data during access token session renewal")
 	}
 
-	if err := s.renewToken(uid, data); err != nil {
+	if err := s.renewToken(uid, data, options.skipErrorHandlers); err != nil {
 		log.Printf("[auth] %s Renewing token for uid(%v): %s\n", internal.ErrorPrefix, uid, err)
 		return err
 	}
@@ -80,32 +82,25 @@ func (s *AccessTokenSessionStore) Renew() error {
 	return nil
 }
 
-// validate checks if the access token is valid
 func (s *AccessTokenSessionStore) validate() error {
 	cfg, err := s.getConfig()
 	if err != nil {
 		return err
 	}
 
-	if err := ValidateAccessTokenFormat(cfg.Token); err != nil {
-		return fmt.Errorf("invalid access token format: %w", err)
-	}
-
 	if err := ValidateExpiry(cfg.ExpiresAt); err != nil {
 		return fmt.Errorf("validating access token: %w", err)
 	}
 
-	// Run external validation if available
-	if s.externalValidator != nil {
-		if err := s.externalValidator(cfg.Token); err != nil {
-			return fmt.Errorf("validating access token with external validator: %w", err)
-		}
+	if err := ValidateAccessTokenFormat(cfg.Token); err != nil {
+		return fmt.Errorf("validating access token format: %w", err)
 	}
+
 	return nil
 }
 
 // HandleError processes errors that occur during session operations.
-// It returns nil if the error was not handled, or the error itself if it was.
+// It returns nil if no handlers are registered, or a wrapped error if handlers were called.
 func (s *AccessTokenSessionStore) HandleError(reason error) error {
 	handlers := s.errHandlerRegistry.GetHandlers(reason)
 	if len(handlers) == 0 {
@@ -120,9 +115,13 @@ func (s *AccessTokenSessionStore) HandleError(reason error) error {
 	return fmt.Errorf("handling session error: %w", reason)
 }
 
-func (s *AccessTokenSessionStore) renewToken(uid int64, data config.TokenData) error {
+func (s *AccessTokenSessionStore) renewToken(
+	uid int64,
+	data config.TokenData,
+	skipErrorHandlers bool,
+) error {
 	if s.renewAPICall == nil {
-		return errors.New("renewal API call not configured")
+		return errors.New("renewal api call not configured")
 	}
 
 	if err := s.tryUpdateIdempotencyKey(uid, &data); err != nil {
@@ -131,11 +130,22 @@ func (s *AccessTokenSessionStore) renewToken(uid int64, data config.TokenData) e
 
 	resp, err := s.renewAPICall(data.Token, *data.IdempotencyKey)
 	if err != nil {
+		if skipErrorHandlers {
+			return err
+		}
 		return s.HandleError(err)
 	}
 
 	if resp == nil {
-		return errors.New("renewal API returned nil response")
+		return ErrMissingAccessTokenResponse
+	}
+
+	if err := ValidateAccessTokenFormat(resp.Token); err != nil {
+		return err
+	}
+
+	if err := ValidateRenewToken(resp.RenewToken); err != nil {
+		return err
 	}
 
 	expTime, err := time.Parse(internal.ServerDateFormat, resp.ExpiresAt)
@@ -188,7 +198,7 @@ func (s *AccessTokenSessionStore) getConfig() (accessTokenConfig, error) {
 
 	data, ok := cfg.TokensData[cfg.AutoConnectData.ID]
 	if !ok {
-		return accessTokenConfig{}, errors.New("non existing data")
+		return accessTokenConfig{}, errors.New("non existing data for access token session store")
 	}
 
 	expiryTime, err := time.Parse(internal.ServerDateFormat, data.TokenExpiry)

@@ -46,12 +46,12 @@ func callWithToken[T any](store session.TokenSessionStore, call func(token strin
 			var zero T
 			return zero, err
 		}
-
 		res, err = callAPIWithToken()
-	}
 
-	if errors.Is(err, ErrUnauthorized) {
-		store.HandleError(ErrUnauthorized)
+		// if unauthorized again -> user token invalidation
+		if errors.Is(err, ErrUnauthorized) {
+			_ = store.HandleError(session.ErrSessionInvalidated)
+		}
 	}
 
 	return res, err

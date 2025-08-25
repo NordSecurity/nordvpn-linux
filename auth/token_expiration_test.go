@@ -22,8 +22,8 @@ import (
 )
 
 const (
-	defaultTokenValue     = "valid-token"
-	renewedTokenValue     = "new-token-value"
+	defaultTokenValue     = "ab78bb36299d442fa0715fb53b5e3e57"
+	renewedTokenValue     = "cd89cc47388e553fb1826fc64c6f4f68"
 	testUsername          = "testuser"
 	testEmail             = "test@example.com"
 	defaultExpirationDays = 24 * time.Hour
@@ -169,8 +169,9 @@ func setupTestEnvironment(
 	saveError error,
 ) (core.ClientAPI, *mockRoundTripperWithExpiration, *mockConfigManager) {
 	renewResp := &core.TokenRenewResponse{
-		Token:     renewedTokenValue,
-		ExpiresAt: time.Now().UTC().Add(defaultExpirationDays).Format(internal.ServerDateFormat),
+		Token:      renewedTokenValue,
+		RenewToken: "ef12ab34cd56789012345678901234ef",
+		ExpiresAt:  time.Now().UTC().Add(defaultExpirationDays).Format(internal.ServerDateFormat),
 	}
 
 	currentUserResp := &core.CurrentUserResponse{
@@ -194,6 +195,7 @@ func setupTestEnvironment(
 			TokensData: map[int64]config.TokenData{
 				1: {
 					Token:          defaultTokenValue,
+					RenewToken:     "ab34cd56ef78901234567890123456ab",
 					TokenExpiry:    tokenExpiry,
 					IdempotencyKey: &idempotencyKey,
 				},
@@ -221,7 +223,6 @@ func setupTestEnvironment(
 
 			return nil, err
 		},
-		nil, // no external validator needed for this test
 	)
 
 	return core.NewSmartClientAPI(simpleApi, sessionStore), rt, mockCfg
@@ -282,6 +283,7 @@ func Test_TokenRenewalWithNetworkError(t *testing.T) {
 			TokensData: map[int64]config.TokenData{
 				1: {
 					Token:          defaultTokenValue,
+					RenewToken:     "cd56ef78ab90123456789012345678cd",
 					TokenExpiry:    pastExpiry,
 					IdempotencyKey: &idempotencyKey,
 				},
@@ -307,7 +309,6 @@ func Test_TokenRenewalWithNetworkError(t *testing.T) {
 			}
 			return nil, err
 		},
-		nil,
 	)
 
 	api := core.NewSmartClientAPI(simpleApi, sessionStore)
@@ -333,6 +334,7 @@ func Test_TokenRenewalWithInvalidToken(t *testing.T) {
 			TokensData: map[int64]config.TokenData{
 				1: {
 					Token:          defaultTokenValue,
+					RenewToken:     "ef78ab90cd12345678901234567890ef",
 					TokenExpiry:    pastExpiry,
 					IdempotencyKey: &idempotencyKey,
 				},
@@ -387,7 +389,6 @@ func Test_TokenRenewalWithInvalidToken(t *testing.T) {
 			}
 			return nil, err
 		},
-		nil,
 	)
 
 	api := core.NewSmartClientAPI(simpleApi, sessionStore)

@@ -75,13 +75,7 @@ func ValidateNCCredentialsPresence(username, password string) error {
 // ValidateEndpointPresence checks if the endpoint is valid
 func ValidateEndpointPresence(endpoint string) error {
 	if endpoint == "" {
-		return ErrInvalidEndpoint
+		return ErrMissingEndpoint
 	}
 	return nil
 }
-
-// Type-safe external validators for each session type
-type TrustedPassExternalValidator func(token string, ownerID string) error
-type CredentialsExternalValidator func(username, password string) error
-type VPNCredentialsExternalValidator func(username, password, nordlynxKey string) error
-type NCCredentialsExternalValidator func(username, password, endpoint string) error
