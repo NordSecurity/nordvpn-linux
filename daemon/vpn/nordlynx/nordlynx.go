@@ -17,7 +17,6 @@ const (
 	// InterfaceName for various NordLynx implementations
 	InterfaceName       = "nordlynx"
 	defaultPort         = 51820
-	defaultMTU          = 1500
 	WireguardHeaderSize = 80
 )
 
