@@ -286,15 +286,23 @@ func (r *RPC) connect(
 	r.events.Service.Connect.Publish(event)
 
 	if isRecentConnectionSupported(event.TargetServerSelection) {
-		r.recentVPNConnStore.Add(recents.Model{
-			CountryCode:        parameters.CountryCode,
-			Country:            parameters.Country,
-			City:               parameters.City,
-			SpecificServer:     strings.Split(server.Hostname, ".")[0],
-			SpecificServerName: server.Name,
+		recentModel := recents.Model{
+			CountryCode:        event.TargetServerCountryCode,
+			Country:            event.TargetServerCountry,
+			City:               event.TargetServerCity,
+			SpecificServer:     strings.Split(event.TargetServerDomain, ".")[0],
+			SpecificServerName: event.TargetServerName,
 			Group:              parameters.Group,
 			ConnectionType:     event.TargetServerSelection,
-		})
+		}
+
+		// do not add anything unrelated to connection type
+		if recentModel.ConnectionType == config.ServerSelectionRule_COUNTRY ||
+			recentModel.ConnectionType == config.ServerSelectionRule_COUNTRY_WITH_GROUP {
+			recentModel.City = ""
+		}
+
+		r.recentVPNConnStore.Add(recentModel)
 	}
 
 	if isRecentConnectionSupported(event.TargetServerSelection) {
