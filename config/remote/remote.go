@@ -30,7 +30,7 @@ type FeatureConfig interface {
 
 type ConfigLoader interface {
 	LoadConfig() error
-	LoadConfigFromDisk()
+	TryPreloadConfig()
 }
 
 const (
@@ -127,9 +127,11 @@ func isNetworkRetryable(err error) bool {
 		errors.Is(err, core.ErrTooManyRequests)
 }
 
-// LoadConfigFromDisk load config from disk
-func (c *CdnRemoteConfig) LoadConfigFromDisk() {
-	c.load()
+// TryPreloadConfig load config from disk
+func (c *CdnRemoteConfig) TryPreloadConfig() {
+	// try preload config from disk - but do not complain if anything wrong
+	// as this happens on early run and config on disk maybe does not exist yet
+	c.load(false) // `false` do not report errors
 }
 
 // LoadConfig download from remote or load from disk
@@ -148,7 +150,7 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 
 	// remote config files were downloaded and need to be reloaded?
 	if needReload || useOnlyLocalConfig {
-		c.load()
+		c.load(true) // `true` report errors if they happen
 		reloadDone = true
 	}
 
@@ -218,15 +220,17 @@ func (c *CdnRemoteConfig) reportLoadError(featureName string, err error) {
 	c.analytics.EmitLocalUseEvent(ClientCli, featureName, err)
 }
 
-func (c *CdnRemoteConfig) load() {
+func (c *CdnRemoteConfig) load(reportErrors bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	for _, f := range c.features.keys() {
 		feature := c.features.get(f)
 		if err := feature.load(c.localCachePath, jsonFileReaderWriter{}, jsonValidator{}); err != nil {
-			c.reportLoadError(feature.name, err)
-			log.Printf("%s failed loading feature [%s] config from the disk: %s\n", internal.ErrorPrefix, feature.name, err)
+			if reportErrors {
+				c.reportLoadError(feature.name, err)
+				log.Printf("%s failed loading feature [%s] config from the disk: %s\n", internal.ErrorPrefix, feature.name, err)
+			}
 			continue
 		}
 		log.Printf("%s feature [%s] config loaded from: %s\n", internal.InfoPrefix, feature.name, c.localCachePath)
