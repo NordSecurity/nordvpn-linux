@@ -69,34 +69,34 @@ func determineServerSelectionRule(params ServerParameters) config.ServerSelectio
 
 	switch {
 	case params.Undefined():
-		return config.ServerSelectionRuleRecommended
+		return config.ServerSelectionRule_RECOMMENDED
 
 	case hasCountry && hasCity && !hasGroup && !hasServer:
-		return config.ServerSelectionRuleCity
+		return config.ServerSelectionRule_CITY
 
 	case hasCountry && !hasCity && !hasGroup && !hasServer:
-		return config.ServerSelectionRuleCountry
+		return config.ServerSelectionRule_COUNTRY
 
 	case hasCountry && !hasCity && hasGroup && !hasServer:
-		return config.ServerSelectionRuleCountryWithGroup
+		return config.ServerSelectionRule_COUNTRY_WITH_GROUP
 
 	case !hasCountry && !hasCity && !hasGroup && hasServer:
-		return config.ServerSelectionRuleSpecificServer
+		return config.ServerSelectionRule_SPECIFIC_SERVER
 
-	case hasGroup && !hasCountry && ((!hasServer && hasCity) || (hasServer && !hasCity)):
-		return config.ServerSelectionRuleSpecificServerWithGroup
+	case hasGroup && ((!hasServer && hasCity && hasCountry) || (hasServer && !hasCity && !hasCountry)):
+		return config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP
 
 	case !hasCountry && !hasCity && hasGroup && !hasServer:
 		if _, ok := config.ServerGroup_name[int32(params.Group.Number())]; ok {
-			return config.ServerSelectionRuleGroup
+			return config.ServerSelectionRule_GROUP
 		}
 	}
 
 	// Fallback for any unexpected combination
 	log.Println(internal.WarningPrefix,
-		"Failed to determine 'ServerSelectionRule':", params,
-		". Defaulting to :", config.ServerSelectionRuleNone)
-	return config.ServerSelectionRuleNone
+		"Failed to determine 'server-selection-rule':", params,
+		". Defaulting to :", config.ServerSelectionRule_NONE)
+	return config.ServerSelectionRule_NONE
 }
 
 func (r *RPC) connect(
@@ -277,22 +277,30 @@ func (r *RPC) connect(
 	event.EventStatus = events.StatusSuccess
 	event.DurationMs = getElapsedTime(connectingStartTime)
 	r.events.Service.Connect.Publish(event)
-	r.recentVPNConnStore.Add(recents.NewVPNConnection(
-		recents.Model{
-			Country:            country.Name,
-			City:               city,
+
+	if isRecentConnectionSupported(event.TargetServerSelection) {
+		r.recentVPNConnStore.Add(recents.Model{
+			CountryCode:        parameters.CountryCode,
+			Country:            parameters.Country,
+			City:               parameters.City,
 			SpecificServer:     strings.Split(server.Hostname, ".")[0],
 			SpecificServerName: server.Name,
-			Group:              event.TargetServerGroup,
+			Group:              parameters.Group,
 			ConnectionType:     event.TargetServerSelection,
-		}),
-	)
+		})
+	}
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnected, Data: data}); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 	}
 
 	return false, nil
+}
+
+// isRecentConnectionSupported returns true if server connection can be used for reconnection,
+// otherwise returns false
+func isRecentConnectionSupported(rule config.ServerSelectionRule) bool {
+	return rule != config.ServerSelectionRule_RECOMMENDED && rule != config.ServerSelectionRule_NONE
 }
 
 // getElapsedTime calculates the time elapsed since the given start time in milliseconds.

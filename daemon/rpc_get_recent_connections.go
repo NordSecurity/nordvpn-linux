@@ -22,19 +22,15 @@ func (r *RPC) GetRecentConnections(
 		values = values[:in.Limit]
 	}
 
-	rcValues := make([]*pb.RecentConnection, len(values))
+	rcValues := make([]*pb.RecentConnectionModel, len(values))
 	for i, v := range values {
-		conn := &v.Connection
-		rcValues[i] = &pb.RecentConnection{
-			ConnectionModel: &pb.RecentConnectionModel{
-				Country:            conn.Country,
-				City:               conn.City,
-				SpecificServer:     conn.SpecificServer,
-				SpecificServerName: conn.SpecificServerName,
-				Group:              conn.Group,
-				ConnectionType:     pb.ServerSelectionRule(conn.ConnectionType),
-			},
-			DisplayLabel: v.DisplayLabel,
+		rcValues[i] = &pb.RecentConnectionModel{
+			Country:            v.Country,
+			City:               v.City,
+			SpecificServer:     v.SpecificServer,
+			SpecificServerName: v.SpecificServerName,
+			Group:              v.Group,
+			ConnectionType:     v.ConnectionType,
 		}
 	}
 

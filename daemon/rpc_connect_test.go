@@ -330,7 +330,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		{
 			name:   "All empty params returns RECOMMENDED",
 			params: ServerParameters{},
-			want:   config.ServerSelectionRuleRecommended,
+			want:   config.ServerSelectionRule_RECOMMENDED,
 		},
 		{
 			name: "Country, country-code, city is set returns CITY",
@@ -339,7 +339,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				City:        "Berlin",
 				CountryCode: "DE",
 			},
-			want: config.ServerSelectionRuleCity,
+			want: config.ServerSelectionRule_CITY,
 		},
 		{
 			name: "Country, country-code set, group undefined returns COUNTRY",
@@ -348,7 +348,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				Group:       config.ServerGroup_UNDEFINED,
 				CountryCode: "LT",
 			},
-			want: config.ServerSelectionRuleCountry,
+			want: config.ServerSelectionRule_COUNTRY,
 		},
 		{
 			name: "Country, country code, group set returns COUNTRY_WITH_GROUP",
@@ -357,7 +357,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				Group:       config.ServerGroup_OBFUSCATED,
 				CountryCode: "LT",
 			},
-			want: config.ServerSelectionRuleCountryWithGroup,
+			want: config.ServerSelectionRule_COUNTRY_WITH_GROUP,
 		},
 		{
 			name: "ServerName set, group undefined returns SPECIFIC_SERVER",
@@ -365,7 +365,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				ServerName: "lt11",
 				Group:      config.ServerGroup_UNDEFINED,
 			},
-			want: config.ServerSelectionRuleSpecificServer,
+			want: config.ServerSelectionRule_SPECIFIC_SERVER,
 		},
 		{
 			name: "ServerName set, group set returns SPECIFIC_SERVER_WITH_GROUP",
@@ -373,14 +373,14 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				ServerName: "lt11",
 				Group:      config.ServerGroup_OBFUSCATED,
 			},
-			want: config.ServerSelectionRuleSpecificServerWithGroup,
+			want: config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 		},
 		{
 			name: "Group set returns GROUP",
 			params: ServerParameters{
 				Group: config.ServerGroup_OBFUSCATED,
 			},
-			want: config.ServerSelectionRuleGroup,
+			want: config.ServerSelectionRule_GROUP,
 		},
 		{
 			name: "Unknown combination returns RECOMMENDED",
@@ -391,7 +391,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				CountryCode: "",
 				ServerName:  "",
 			},
-			want: config.ServerSelectionRuleRecommended,
+			want: config.ServerSelectionRule_RECOMMENDED,
 		},
 		{
 			name: "All fields set (should not match anything)",
@@ -402,7 +402,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				CountryCode: "DE",
 				ServerName:  "de123",
 			},
-			want: config.ServerSelectionRuleNone,
+			want: config.ServerSelectionRule_NONE,
 		},
 		{
 			name: "Only ServerName set, others empty/undefined",
@@ -410,14 +410,14 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				ServerName: "us123",
 				Group:      config.ServerGroup_UNDEFINED,
 			},
-			want: config.ServerSelectionRuleSpecificServer,
+			want: config.ServerSelectionRule_SPECIFIC_SERVER,
 		},
 		{
 			name: "Only Group set, others empty/undefined",
 			params: ServerParameters{
 				Group: config.ServerGroup_DOUBLE_VPN,
 			},
-			want: config.ServerSelectionRuleGroup,
+			want: config.ServerSelectionRule_GROUP,
 		},
 		{
 			name: "Country and ServerName set, group undefined",
@@ -426,7 +426,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				ServerName: "fr123",
 				Group:      config.ServerGroup_UNDEFINED,
 			},
-			want: config.ServerSelectionRuleNone,
+			want: config.ServerSelectionRule_NONE,
 		},
 		{
 			name: "Country, City, ServerName, group undefined",
@@ -436,7 +436,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				ServerName: "fr123",
 				Group:      config.ServerGroup_UNDEFINED,
 			},
-			want: config.ServerSelectionRuleNone,
+			want: config.ServerSelectionRule_NONE,
 		},
 		{
 			name: "Country, City, ServerName, group set",
@@ -446,7 +446,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				ServerName: "fr123",
 				Group:      config.ServerGroup_OBFUSCATED,
 			},
-			want: config.ServerSelectionRuleNone,
+			want: config.ServerSelectionRule_NONE,
 		},
 		{
 			name: "Country set, group set to UNDEFINED, ServerName set",
@@ -455,7 +455,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				Group:      config.ServerGroup_UNDEFINED,
 				ServerName: "it123",
 			},
-			want: config.ServerSelectionRuleNone,
+			want: config.ServerSelectionRule_NONE,
 		},
 		{
 			name: "Country set, group set, ServerName set",
@@ -464,7 +464,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				Group:      config.ServerGroup_DOUBLE_VPN,
 				ServerName: "it123",
 			},
-			want: config.ServerSelectionRuleNone,
+			want: config.ServerSelectionRule_NONE,
 		},
 		{
 			name: "ServerName set, group set to undefined, City set",
@@ -473,7 +473,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				Group:      config.ServerGroup_UNDEFINED,
 				City:       "Madrid",
 			},
-			want: config.ServerSelectionRuleNone,
+			want: config.ServerSelectionRule_NONE,
 		},
 		{
 			name: "ServerName set, group set, City set",
@@ -482,21 +482,21 @@ func Test_determineServerSelectionRule(t *testing.T) {
 				Group:      config.ServerGroup_DOUBLE_VPN,
 				City:       "Madrid",
 			},
-			want: config.ServerSelectionRuleNone,
+			want: config.ServerSelectionRule_NONE,
 		},
 		{
 			name: "Group is UNDEFINED, all other fields empty",
 			params: ServerParameters{
 				Group: config.ServerGroup_UNDEFINED,
 			},
-			want: config.ServerSelectionRuleRecommended,
+			want: config.ServerSelectionRule_RECOMMENDED,
 		},
 		{
 			name: "Edge: Group is invalid (not in enum), should fallback to invalid/empty",
 			params: ServerParameters{
 				Group: config.ServerGroup(9999),
 			},
-			want: config.ServerSelectionRuleNone,
+			want: config.ServerSelectionRule_NONE,
 		},
 	}
 	for _, tt := range tests {

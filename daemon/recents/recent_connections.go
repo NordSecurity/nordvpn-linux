@@ -3,6 +3,7 @@ package recents
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"slices"
 	"sync"
 
@@ -13,65 +14,8 @@ import (
 const (
 	// maxRecentConnections defines the maximum number of recent connections to store
 	maxRecentConnections = 10
-	labelUnidentified    = "Unidentified"
-	labelRecommended     = "Recommended"
+	logTag               = "[recents]"
 )
-
-type VPNConnection struct {
-	Connection   Model  `json:"model"` // Represents the connection
-	DisplayLabel string `json:"label"` // Human-friendly name for UI
-}
-
-func makeDisplayLabel(conn Model) string {
-	switch conn.ConnectionType {
-	case config.ServerSelectionRuleRecommended:
-		return labelRecommended
-
-	case config.ServerSelectionRuleCity:
-		if conn.Country != "" && conn.City != "" {
-			return fmt.Sprintf("%s, %s", conn.Country, conn.City)
-		}
-		return labelUnidentified
-
-	case config.ServerSelectionRuleCountry:
-		return conn.Country
-
-	case config.ServerSelectionRuleSpecificServer:
-		return conn.SpecificServerName
-
-	case config.ServerSelectionRuleGroup:
-		return conn.Group
-
-	case config.ServerSelectionRuleCountryWithGroup:
-		if conn.Group != "" && conn.Country != "" {
-			return fmt.Sprintf("%s (%s)", conn.Group, conn.Country)
-		}
-		return labelUnidentified
-
-	case config.ServerSelectionRuleSpecificServerWithGroup:
-		if conn.Group != "" {
-			if conn.Country != "" && conn.City != "" {
-				return fmt.Sprintf("%s (%s, %s)", conn.Group, conn.Country, conn.City)
-			} else if conn.Country != "" {
-				return fmt.Sprintf("%s (%s)", conn.Group, conn.Country)
-			}
-		}
-		return labelUnidentified
-
-	case config.ServerSelectionRuleNone:
-		return labelUnidentified
-	}
-
-	return labelUnidentified
-}
-
-// NewVPNConnection creates new a VPN connection
-func NewVPNConnection(conn Model) VPNConnection {
-	return VPNConnection{
-		Connection:   conn,
-		DisplayLabel: makeDisplayLabel(conn),
-	}
-}
 
 type RecentConnectionsStore struct {
 	path     string
@@ -91,52 +35,64 @@ func NewRecentConnectionsStore(
 }
 
 // Get retrieves all stored VPN connections from the store
-func (r *RecentConnectionsStore) Get() ([]VPNConnection, error) {
+func (r *RecentConnectionsStore) Get() ([]Model, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	if err := r.checkExistence(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s %s getting recent connections: %w\n", logTag, internal.ErrorPrefix, err)
 	}
 
-	return r.loadLocked()
+	conns, err := r.load()
+	if err != nil {
+		return nil, fmt.Errorf("%s %s getting recent vpn connections: %w", logTag, internal.ErrorPrefix, err)
+	}
+
+	return conns, nil
 }
 
-func (r *RecentConnectionsStore) find(conn VPNConnection, list []VPNConnection) int {
-	return slices.IndexFunc(list, func(c VPNConnection) bool {
-		// Compare by display label to handle cases where different servers
-		// lead to the same destination (city, country, group, etc.)
-		// This ensures we don't have duplicate entries with identical labels
-		return c.DisplayLabel == conn.DisplayLabel
+func (r *RecentConnectionsStore) find(model Model, list []Model) int {
+	return slices.IndexFunc(list, func(m Model) bool {
+		return m.Country == model.Country &&
+			m.City == model.City &&
+			m.Group == model.Group &&
+			m.CountryCode == model.CountryCode &&
+			m.SpecificServerName == model.SpecificServerName &&
+			m.SpecificServer == model.SpecificServer &&
+			m.ConnectionType == model.ConnectionType
 	})
 }
 
 // Add adds a new VPN connection to store if it does not exist yet
 // New connections are placed at the beginning of the store
-func (r *RecentConnectionsStore) Add(conn VPNConnection) error {
+func (r *RecentConnectionsStore) Add(model Model) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	if err := r.checkExistence(); err != nil {
-		return err
+		return fmt.Errorf("%s %s adding new vpn connection: %w\n", logTag, internal.ErrorPrefix, err)
 	}
 
-	connections, err := r.loadLocked()
+	connections, err := r.load()
 	if err != nil {
-		return fmt.Errorf("adding new recent vpn connection: %w", err)
+		return fmt.Errorf("%s %s adding new recent vpn connection: %w\n", logTag, internal.ErrorPrefix, err)
 	}
 
-	index := r.find(conn, connections)
+	index := r.find(model, connections)
 	if index != -1 {
 		connections = slices.Delete(connections, index, index+1)
 	}
 
-	connections = slices.Insert(connections, 0, conn)
+	connections = slices.Insert(connections, 0, model)
 	if len(connections) > maxRecentConnections {
 		connections = connections[:maxRecentConnections]
 	}
 
-	return r.saveLocked(connections)
+	if err := r.save(connections); err != nil {
+		return fmt.Errorf("%s %s adding new recent vpn connection: %w\n", logTag, internal.ErrorPrefix, err)
+	}
+
+	return nil
 }
 
 // Clean removes all stored connection information
@@ -144,10 +100,14 @@ func (r *RecentConnectionsStore) Clean() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	return r.saveLocked([]VPNConnection{})
+	if err := r.save([]Model{}); err != nil {
+		return fmt.Errorf("%s %s cleaning existing recent vpn connections: %w\n", logTag, internal.ErrorPrefix, err)
+	}
+
+	return nil
 }
 
-func (r *RecentConnectionsStore) saveLocked(values []VPNConnection) error {
+func (r *RecentConnectionsStore) save(values []Model) error {
 	data, err := json.Marshal(values)
 	if err != nil {
 		return fmt.Errorf("marshaling vpn connections store: %w", err)
@@ -156,16 +116,17 @@ func (r *RecentConnectionsStore) saveLocked(values []VPNConnection) error {
 	if err := r.fsHandle.WriteFile(r.path, data, internal.PermUserRW); err != nil {
 		return fmt.Errorf("writing vpn connections store: %w", err)
 	}
+	defer log.Println("saved recent conns:", values)
 	return nil
 }
 
-func (r *RecentConnectionsStore) loadLocked() ([]VPNConnection, error) {
+func (r *RecentConnectionsStore) load() ([]Model, error) {
 	data, err := r.fsHandle.ReadFile(r.path)
 	if err != nil {
 		return nil, fmt.Errorf("reading recent connections store: %w", err)
 	}
 
-	var connections []VPNConnection
+	var connections []Model
 	if err := json.Unmarshal(data, &connections); err != nil {
 		return nil, fmt.Errorf("unmarshaling vpn connections store: %w", err)
 	}
@@ -175,7 +136,7 @@ func (r *RecentConnectionsStore) loadLocked() ([]VPNConnection, error) {
 
 func (r *RecentConnectionsStore) checkExistence() error {
 	if !r.fsHandle.FileExists(r.path) {
-		if err := r.saveLocked([]VPNConnection{}); err != nil {
+		if err := r.save([]Model{}); err != nil {
 			return fmt.Errorf("creating new recent vpn connections store: %w", err)
 		}
 	}
