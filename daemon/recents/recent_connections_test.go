@@ -136,6 +136,77 @@ func TestRecentConnectionsStore_Add_RespectsCapacityLimit(t *testing.T) {
 	assert.Equal(t, string(rune('A'+maxRecentConnections+4)), connections[0].Country)
 }
 
+func TestRecentConnectionsStore_Add_SingleConnection(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	newConn := Model{
+		Country:        "Spain",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+
+	err := store.Add(newConn)
+	require.NoError(t, err)
+
+	connections, err := store.Get()
+	require.NoError(t, err)
+	require.Len(t, connections, 1)
+	assert.Equal(t, newConn, connections[0])
+}
+
+func TestRecentConnectionsStore_Add_MovesExistingToFront(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	conn1 := Model{
+		Country:        "Italy",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+	conn2 := Model{
+		Country:        "France",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+
+	err := store.Add(conn1)
+	require.NoError(t, err)
+	err = store.Add(conn2)
+	require.NoError(t, err)
+
+	err = store.Add(conn1)
+	require.NoError(t, err)
+
+	connections, err := store.Get()
+	require.NoError(t, err)
+	require.Len(t, connections, 2)
+	assert.Equal(t, conn1, connections[0])
+	assert.Equal(t, conn2, connections[1])
+}
+
+func TestRecentConnectionsStore_Add_RespectsCapacityLimit(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	for i := 0; i < maxRecentConnections+5; i++ {
+		conn := Model{
+			Country:        string(rune('A' + i)),
+			ConnectionType: config.ServerSelectionRule_COUNTRY,
+		}
+		err := store.Add(conn)
+		require.NoError(t, err)
+	}
+
+	connections, err := store.Get()
+	require.NoError(t, err)
+	assert.Len(t, connections, maxRecentConnections)
+	assert.Equal(t, string(rune('A'+maxRecentConnections+4)), connections[0].Country)
+}
+
 func TestRecentConnectionsStore_Add_WriteError(t *testing.T) {
 	category.Set(t, category.Unit)
 
