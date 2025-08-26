@@ -3,6 +3,7 @@ package daemon
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -107,6 +108,10 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (payload *pb.Pay
 		return c
 	}); err != nil {
 		return nil, err
+	}
+
+	if err := r.recentVPNConnStore.Clean(); err != nil {
+		return nil, fmt.Errorf("executing logout operation: %w\n", err)
 	}
 
 	r.publisher.Publish("user logged out")

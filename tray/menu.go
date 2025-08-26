@@ -1,7 +1,6 @@
 package tray
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"runtime"
@@ -9,7 +8,6 @@ import (
 	"time"
 
 	"github.com/NordSecurity/systray"
-	"google.golang.org/grpc"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -59,9 +57,6 @@ const (
 	tooltipSettings            = "Configure application preferences"
 	tooltipNotifications       = "Toggle desktop notifications"
 	tooltipTrayIcon            = "Show or hide tray icon"
-
-	// Timeouts
-	recentConnectionsTimeout = 2 * time.Second
 
 	// Limits
 	maxRecentConnections = 3
@@ -224,49 +219,32 @@ func addConnectionSelector(ti *Instance) {
 	ti.state.mu.RUnlock()
 
 	recentConnections := fetchRecentConnections(ti)
-	addedConnections := make(map[string]bool)
 	if len(recentConnections) > 0 {
-		addRecentConnectionsSection(ti, connectionSelector, recentConnections, addedConnections)
-		connectionSelector.AddSubMenuItem("", "").Disable()
+		addRecentConnectionsSection(ti, connectionSelector, recentConnections)
+		connectionSelector.AddSeparator()
 	}
 
-	addCountriesSection(ti, connectionSelector, countries, addedConnections)
-}
-
-func fetchRecentConnections(ti *Instance) []*pb.RecentConnection {
-	ctx, cancel := context.WithTimeout(context.Background(), recentConnectionsTimeout)
-	defer cancel()
-
-	resp, err := ti.client.GetRecentConnections(
-		ctx,
-		&pb.RecentConnectionsRequest{Limit: maxRecentConnections},
-		grpc.WaitForReady(true),
-	)
-
-	if err != nil || resp == nil {
-		return nil
-	}
-
-	return resp.Connections
+	addCountriesSection(ti, connectionSelector, countries)
 }
 
 func addRecentConnectionsSection(
 	ti *Instance,
 	parent *systray.MenuItem,
-	connections []*pb.RecentConnection,
-	addedConnections map[string]bool,
+	connections []*pb.RecentConnectionModel,
 ) {
 	parent.AddSubMenuItem(labelRecentConnections, tooltipRecentConnections).Disable()
 	for _, conn := range connections {
-		if conn == nil || conn.DisplayLabel == "" {
+		if conn == nil {
 			continue
 		}
 
-		addedConnections[conn.DisplayLabel] = true
+		displayLabel := makeDisplayLabel(conn)
+		if displayLabel == "" {
+			continue
+		}
 
-		label := conn.DisplayLabel
-		tooltip := labelReconnectTo + conn.DisplayLabel
-		item := parent.AddSubMenuItem(label, tooltip)
+		tooltip := labelReconnectTo + displayLabel
+		item := parent.AddSubMenuItem(displayLabel, tooltip)
 
 		go handleRecentConnectionClick(ti, item, conn)
 	}
@@ -276,14 +254,9 @@ func addCountriesSection(
 	ti *Instance,
 	parent *systray.MenuItem,
 	countries []string,
-	addedConnections map[string]bool,
 ) {
 	parent.AddSubMenuItem(labelCountries, tooltipCountries).Disable()
 	for _, country := range countries {
-		if addedConnections[country] {
-			continue
-		}
-
 		title := strings.ReplaceAll(country, "_", " ")
 		tooltip := labelConnectTo + country
 		item := parent.AddSubMenuItem(title, tooltip)
@@ -292,14 +265,18 @@ func addCountriesSection(
 	}
 }
 
-func handleRecentConnectionClick(ti *Instance, item *systray.MenuItem, conn *pb.RecentConnection) {
+func handleRecentConnectionClick(
+	ti *Instance,
+	item *systray.MenuItem,
+	model *pb.RecentConnectionModel,
+) {
 	for {
 		_, open := <-item.ClickedCh
 		if !open {
 			return
 		}
 
-		success := connectByConnectionModel(ti, conn.ConnectionModel)
+		success := connectByConnectionModel(ti, model)
 		if success {
 			ti.updateChan <- true
 		}
@@ -313,47 +290,11 @@ func handleCountryClick(ti *Instance, item *systray.MenuItem, country string) {
 			return
 		}
 
-		if ti.connect(country, "") {
+		success := ti.connect(country, "")
+		if success {
 			ti.updateChan <- true
 		}
 	}
-}
-
-func connectByConnectionModel(
-	ti *Instance,
-	model *pb.RecentConnectionModel,
-) bool {
-	if model == nil {
-		return false
-	}
-
-	switch model.ConnectionType {
-	case pb.ServerSelectionRule_SERVER_SELECTION_RULE_RECOMMENDED:
-		return ti.connect("", "")
-
-	case pb.ServerSelectionRule_SERVER_SELECTION_RULE_CITY:
-		return ti.connect(model.City, "")
-
-	case pb.ServerSelectionRule_SERVER_SELECTION_RULE_COUNTRY:
-		return ti.connect(model.Country, "")
-
-	case pb.ServerSelectionRule_SERVER_SELECTION_RULE_SPECIFIC_SERVER:
-		return ti.connect(model.SpecificServer, "")
-
-	case pb.ServerSelectionRule_SERVER_SELECTION_RULE_GROUP:
-		return ti.connect("", model.Group)
-
-	case pb.ServerSelectionRule_SERVER_SELECTION_RULE_COUNTRY_WITH_GROUP:
-		return ti.connect(model.Country, model.Group)
-
-	case pb.ServerSelectionRule_SERVER_SELECTION_RULE_SPECIFIC_SERVER_WITH_GROUP:
-		return ti.connect(model.SpecificServer, model.Group)
-
-	case pb.ServerSelectionRule_SERVER_SELECTION_RULE_NONE:
-		return false
-	}
-
-	return false
 }
 
 func addAccountSection(ti *Instance) {

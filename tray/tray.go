@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -75,7 +76,7 @@ func (cp *ConnectionSelector) listCountries(client pb.DaemonClient) ([]string, e
 	cp.mu.Lock()
 	needsUpdate := time.Since(cp.countriesUpdateTime) > CountryListUpdateInterval
 	if !needsUpdate {
-		out := append([]string(nil), cp.countries...)
+		out := slices.Clone(cp.countries)
 		cp.mu.Unlock()
 		return out, nil
 	}
@@ -90,7 +91,7 @@ func (cp *ConnectionSelector) listCountries(client pb.DaemonClient) ([]string, e
 	cp.mu.Lock()
 	cp.countries = result
 	cp.countriesUpdateTime = time.Now()
-	out := append([]string(nil), cp.countries...)
+	out := slices.Clone(cp.countries)
 	cp.mu.Unlock()
 	return out, nil
 }
@@ -102,10 +103,12 @@ func sortedConnections(sgs []*pb.ServerGroup) []string {
 			set[c] = struct{}{}
 		}
 	}
+
 	list := make([]string, 0, len(set))
 	for k := range set {
 		list = append(list, k)
 	}
+
 	sort.Strings(list)
 	return list
 }

@@ -4,18 +4,21 @@ package pb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
+import "server_selection_rule.proto";
+import "config/group.proto";
+
 message RecentConnectionsResponse {
   // List of recent connections information
-  repeated RecentConnection connections = 1;
+  repeated RecentConnectionModel connections = 1;
 }
 
-message RecentConnection {
-  // Connection model
-  RecentConnectionModel connection_model = 1;
+// message RecentConnection {
+//   // Connection model
+//   RecentConnectionModel connection_model = 1;
 
-  // Human readable connection label
-  string display_label = 2;
-}
+//   // Human readable connection label
+//   string display_label = 2;
+// }
 
 message RecentConnectionModel {
   // Country name
@@ -24,28 +27,20 @@ message RecentConnectionModel {
   // City name
   string city = 2;
 
-  // Specific server identifier
-  string specific_server = 3;
+  // Group name
+  config.ServerGroup group = 3;
+
+  // Country code (2 characters)
+  string country_code = 4;
 
   // Human-readable server name
-  string specific_server_name = 4;
+  string specific_server_name = 5;
 
-  // Group name
-  string group = 5;
+  // Specific server identifier
+  string specific_server = 6;
 
   // Connection type enum
-  ServerSelectionRule connection_type = 6;
-}
-
-enum ServerSelectionRule {
-  SERVER_SELECTION_RULE_NONE = 0;
-  SERVER_SELECTION_RULE_RECOMMENDED = 1;
-  SERVER_SELECTION_RULE_CITY = 2;
-  SERVER_SELECTION_RULE_COUNTRY = 3;
-  SERVER_SELECTION_RULE_SPECIFIC_SERVER = 4;
-  SERVER_SELECTION_RULE_GROUP = 5;
-  SERVER_SELECTION_RULE_COUNTRY_WITH_GROUP = 6;
-  SERVER_SELECTION_RULE_SPECIFIC_SERVER_WITH_GROUP = 7;
+  ServerSelectionRule connection_type = 7;
 }
 
 message RecentConnectionsRequest {

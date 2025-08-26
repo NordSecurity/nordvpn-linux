@@ -263,21 +263,23 @@ func (ti *Instance) pollingMonitor() {
 	fullUpdate := true
 	fullUpdateLast := time.Time{}
 	for {
-		ti.redraw(ti.ping())
+		var shouldRedraw bool
+
+		shouldRedraw = ti.ping()
 		if ti.state.daemonAvailable {
-			ti.redraw(ti.updateLoginStatus())
-			ti.redraw(ti.updateSettings())
+			shouldRedraw = shouldRedraw || ti.updateLoginStatus() || ti.updateSettings()
 			if ti.state.loggedIn {
 				if fullUpdate {
-					ti.redraw(ti.updateAccountInfo())
+					shouldRedraw = shouldRedraw || ti.updateAccountInfo()
 				}
-				ti.redraw(ti.updateVpnStatus())
-				ti.redraw(ti.updateCountryList())
+				shouldRedraw = shouldRedraw || ti.updateVpnStatus() || ti.updateCountryList()
 				if fullUpdate {
 					fullUpdateLast = time.Now()
 				}
 			}
 		}
+
+		ti.redraw(shouldRedraw)
 
 		// while the settings were not fetch don't unblock the tray loop
 		if ti.state.trayStatus != Invalid && initialChan != nil {
