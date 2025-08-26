@@ -52,6 +52,7 @@ const (
 	TestUserCreateJSON      = "usercreate.json"
 	TestUserCredentialsJSON = "usercredentials.json"
 	TestPlansJSON           = "plans.json"
+	TestRecentConnFile      = "recent_connections.dat"
 )
 
 const (
@@ -110,7 +111,7 @@ func testRPC() *RPC {
 		mock.NewRemoteConfigMock(),
 		state.NewConnectionInfo(),
 		NewConsentChecker(false, cm, api, &workingLoginChecker{}, &analytics),
-		recents.NewRecentConnectionsStore("/storage/data.dat", &config.StdFilesystemHandle{}),
+		recents.NewRecentConnectionsStore(TestdataPath+TestRecentConnFile, &config.StdFilesystemHandle{}),
 	)
 }
 
