@@ -374,7 +374,7 @@ func main() {
 	)
 
 	// try to load config from disk if it was previously downloaded
-	rcConfig.TryPreloadConfig()
+	rcConfig.TryPreload()
 
 	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem, rcConfig)
 

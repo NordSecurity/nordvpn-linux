@@ -29,8 +29,8 @@ type FeatureConfig interface {
 }
 
 type ConfigLoader interface {
-	LoadConfig() error
-	TryPreloadConfig()
+	Load() error
+	TryPreload()
 }
 
 const (
@@ -127,15 +127,15 @@ func isNetworkRetryable(err error) bool {
 		errors.Is(err, core.ErrTooManyRequests)
 }
 
-// TryPreloadConfig load config from disk
-func (c *CdnRemoteConfig) TryPreloadConfig() {
+// TryPreload load config from disk
+func (c *CdnRemoteConfig) TryPreload() {
 	// try preload config from disk - but do not complain if anything wrong
 	// as this happens on early run and config on disk maybe does not exist yet
-	c.load(false) // `false` do not report errors
+	c.loadSilent()
 }
 
-// LoadConfig download from remote or load from disk
-func (c *CdnRemoteConfig) LoadConfig() error {
+// Load download from remote or load from disk
+func (c *CdnRemoteConfig) Load() error {
 	var err error
 
 	reloadDone := false
@@ -150,7 +150,7 @@ func (c *CdnRemoteConfig) LoadConfig() error {
 
 	// remote config files were downloaded and need to be reloaded?
 	if needReload || useOnlyLocalConfig {
-		c.load(true) // `true` report errors if they happen
+		c.load()
 		reloadDone = true
 	}
 
@@ -220,10 +220,21 @@ func (c *CdnRemoteConfig) reportLoadError(featureName string, err error) {
 	c.analytics.EmitLocalUseEvent(ClientCli, featureName, err)
 }
 
-func (c *CdnRemoteConfig) load(reportErrors bool) {
+func (c *CdnRemoteConfig) loadSilent() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	c._load(false)
+}
+
+func (c *CdnRemoteConfig) load() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c._load(true)
+}
+
+func (c *CdnRemoteConfig) _load(reportErrors bool) {
 	for _, f := range c.features.keys() {
 		feature := c.features.get(f)
 		if err := feature.load(c.localCachePath, jsonFileReaderWriter{}, jsonValidator{}); err != nil {
