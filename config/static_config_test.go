@@ -221,3 +221,105 @@ func TestSetRolloutGroup(t *testing.T) {
 		})
 	}
 }
+
+// countingFilesystem wraps a FilesystemHandle to count method calls
+type countingFilesystem struct {
+	FilesystemHandle
+	readCallCount int
+}
+
+func (c *countingFilesystem) ReadFile(location string) ([]byte, error) {
+	c.readCallCount++
+	return c.FilesystemHandle.ReadFile(location)
+}
+
+func TestGetConfigInitializesOnlyOnce(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name               string
+		initialState       configState
+		initialConfig      StaticConfig
+		readCallsExpected  int
+		expectedFinalState configState
+		readErr            error
+	}{
+		{
+			name:               "already initialized - should not read file",
+			initialState:       staticConfigState_initialized,
+			initialConfig:      StaticConfig{RolloutGroup: 42},
+			readCallsExpected:  0,
+			expectedFinalState: staticConfigState_initialized,
+		},
+		{
+			name:               "failed state - should not retry",
+			initialState:       staticConfigState_failedToInitialize,
+			initialConfig:      StaticConfig{},
+			readCallsExpected:  0,
+			expectedFinalState: staticConfigState_failedToInitialize,
+		},
+		{
+			name:               "no file state - should try once and succeed",
+			initialState:       staticConfigState_noFile,
+			initialConfig:      StaticConfig{},
+			readCallsExpected:  1,
+			expectedFinalState: staticConfigState_initialized,
+		},
+		{
+			name:               "no file state - should try once and fail",
+			initialState:       staticConfigState_noFile,
+			initialConfig:      StaticConfig{},
+			readCallsExpected:  1,
+			expectedFinalState: staticConfigState_failedToInitialize,
+			readErr:            os.ErrPermission,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fsMock := config.NewFilesystemMock(t)
+			fsMock.ReadErr = test.readErr
+			if test.readErr == nil {
+				fsMock.AddFile(staticConfigFilename, []byte(`{"rollout_group": 99}`))
+			}
+
+			countingFS := &countingFilesystem{
+				FilesystemHandle: &fsMock,
+			}
+
+			manager := &FilesystemStaticConfigManager{
+				fs:    countingFS,
+				state: test.initialState,
+				cfg:   test.initialConfig,
+			}
+
+			// Call getConfig multiple times
+			for i := 0; i < 3; i++ {
+				cfg, err := manager.getConfig()
+
+				if test.readErr != nil && test.initialState == staticConfigState_noFile {
+					assert.ErrorIs(t, err, ErrFailedToReadConfigFile)
+				} else if test.initialState == staticConfigState_failedToInitialize {
+					assert.ErrorIs(t, err, ErrFailedToReadConfigFile)
+				} else {
+					assert.NilError(t, err)
+				}
+
+				// Verify config is returned correctly
+				if test.initialState == staticConfigState_initialized {
+					assert.Equal(t, test.initialConfig.RolloutGroup, cfg.RolloutGroup)
+				} else if test.readErr == nil && test.initialState == staticConfigState_noFile {
+					assert.Equal(t, 99, cfg.RolloutGroup)
+				}
+			}
+
+			// Verify read was called expected number of times
+			assert.Equal(t, test.readCallsExpected, countingFS.readCallCount,
+				"Expected %d read calls but got %d", test.readCallsExpected, countingFS.readCallCount)
+
+			// Verify final state
+			assert.Equal(t, test.expectedFinalState, manager.state,
+				"Expected final state %v but got %v", test.expectedFinalState, manager.state)
+		})
+	}
+}

@@ -51,10 +51,11 @@ type FilesystemStaticConfigManager struct {
 func tryInitStaticConfig(fs FilesystemHandle) (StaticConfig, configState) {
 	cfgFile, err := fs.ReadFile(staticConfigFilename)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to load static config:", err)
 		if errors.Is(err, os.ErrNotExist) {
+			// file not existing is normal on first start, dont log as error
 			return StaticConfig{}, staticConfigState_noFile
 		}
+		log.Println(internal.ErrorPrefix, "failed to load static config:", err)
 		return StaticConfig{}, staticConfigState_failedToInitialize
 	}
 
@@ -84,12 +85,19 @@ func (s *FilesystemStaticConfigManager) getConfig() (StaticConfig, error) {
 		return s.cfg, nil
 	}
 
-	cfg, state := tryInitStaticConfig(s.fs)
-	if state == staticConfigState_failedToInitialize {
-		return cfg, ErrFailedToReadConfigFile
+	if s.state == staticConfigState_failedToInitialize {
+		return s.cfg, ErrFailedToReadConfigFile
 	}
-	s.cfg = cfg
-	s.state = state
+
+	if s.state == staticConfigState_noFile {
+		cfg, state := tryInitStaticConfig(s.fs)
+		s.cfg = cfg
+		s.state = state
+
+		if state == staticConfigState_failedToInitialize {
+			return cfg, ErrFailedToReadConfigFile
+		}
+	}
 
 	return s.cfg, nil
 }
@@ -142,5 +150,6 @@ func (s *FilesystemStaticConfigManager) SetRolloutGroup(rolloutGroup int) error 
 	}
 
 	s.cfg = cfg
+	s.state = staticConfigState_initialized
 	return nil
 }
