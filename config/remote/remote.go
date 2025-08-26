@@ -224,17 +224,17 @@ func (c *CdnRemoteConfig) loadSilent() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c._load(false)
+	c.doLoad(false)
 }
 
 func (c *CdnRemoteConfig) load() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c._load(true)
+	c.doLoad(true)
 }
 
-func (c *CdnRemoteConfig) _load(reportErrors bool) {
+func (c *CdnRemoteConfig) doLoad(reportErrors bool) {
 	for _, f := range c.features.keys() {
 		feature := c.features.get(f)
 		if err := feature.load(c.localCachePath, jsonFileReaderWriter{}, jsonValidator{}); err != nil {
