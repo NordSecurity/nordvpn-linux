@@ -110,7 +110,7 @@ func (r *RPC) StartRemoteConfigLoaderJob(
 	go func(rcl remote.ConfigLoader) {
 		// try to load remote config 5 times with exponential backoff
 		for i := 0; i < 5; i++ {
-			err := rcl.LoadConfig()
+			err := rcl.Load()
 			if err == nil {
 				return
 			}
@@ -135,7 +135,7 @@ func (r *RPC) StartRemoteConfigLoaderJob(
 	}
 	log.Println(internal.InfoPrefix, "remote config download job time period:", rcLoadTime)
 	_, err := r.scheduler.NewJob(gocron.DurationJob(rcLoadTime), gocron.NewTask(func() {
-		if err := remoteConfigLoader.LoadConfig(); err != nil {
+		if err := remoteConfigLoader.Load(); err != nil {
 			log.Println(internal.ErrorPrefix, "remote config load error:", err)
 		}
 	}), gocron.WithName("job config loader"))

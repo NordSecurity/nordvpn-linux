@@ -7,15 +7,15 @@ from lib import daemon
 from lib.log_reader import LogReader
 
 RC_REMOTE_MESSAGES = [
-    "[Info] feature [ meshnet ] remote config downloaded to: /var/lib/nordvpn/conf",
-    "[Info] feature [ libtelio ] remote config downloaded to: /var/lib/nordvpn/conf",
-    "[Info] feature [ nordvpn ] remote config downloaded to: /var/lib/nordvpn/conf",
+    "[Info] feature [meshnet] remote config downloaded to: /var/lib/nordvpn/conf",
+    "[Info] feature [libtelio] remote config downloaded to: /var/lib/nordvpn/conf",
+    "[Info] feature [nordvpn] remote config downloaded to: /var/lib/nordvpn/conf",
 ]
 
 RC_LOCAL_MESSAGES = [
-    "[Info] feature [ meshnet ] config loaded from: /var/lib/nordvpn/conf",
-    "[Info] feature [ libtelio ] config loaded from: /var/lib/nordvpn/conf",
-    "[Info] feature [ nordvpn ] config loaded from: /var/lib/nordvpn/conf",
+    "[Info] feature [meshnet] config loaded from: /var/lib/nordvpn/conf",
+    "[Info] feature [libtelio] config loaded from: /var/lib/nordvpn/conf",
+    "[Info] feature [nordvpn] config loaded from: /var/lib/nordvpn/conf",
 ]
 
 RC_INITIAL_RUN_MESSAGES = RC_REMOTE_MESSAGES + RC_LOCAL_MESSAGES

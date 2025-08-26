@@ -230,7 +230,7 @@ func TestFeatureOnOff(t *testing.T) {
 			eh := newTestRemoteConfigEventHandler()
 			rc := newTestRemoteConfig(test.ver, test.env, cdn, defaultRolloutGroup)
 			rc.Subscribe(eh)
-			err := rc.LoadConfig()
+			err := rc.Load()
 			assert.True(t, eh.notified)
 			assert.NoError(t, err)
 			isFeatureEnabled := rc.IsFeatureEnabled(test.feature)
@@ -256,7 +256,7 @@ func TestMultiAccess(t *testing.T) {
 
 	for i := 0; i < cnt; i++ {
 		go func() {
-			err := rc.LoadConfig()
+			err := rc.Load()
 			assert.NoError(t, err)
 			on := rc.IsFeatureEnabled(testFeatureWithRc)
 			assert.True(t, on)
@@ -319,7 +319,7 @@ func TestGetTelioConfig(t *testing.T) {
 				assert.NoError(t, err)
 			}
 			rc := newTestRemoteConfig(test.ver, test.env, cdn, defaultRolloutGroup)
-			err := rc.LoadConfig()
+			err := rc.Load()
 			assert.NoError(t, err)
 			telioCfg, err := rc.GetTelioConfig()
 			if test.expectError {
@@ -351,7 +351,7 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 
 	log.Println("~~~~ first attempt to load - should load whole config from web server")
 
-	err := rc.LoadConfig()
+	err := rc.Load()
 	assert.NoError(t, err)
 
 	info1, err := os.Stat(libtelioMainConfigFile)
@@ -366,7 +366,7 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 
 	log.Println("~~~~ second attempt to load - should check hash is the same and should not load main config from web server")
 
-	err = rc.LoadConfig()
+	err = rc.Load()
 	assert.NoError(t, err)
 
 	info2, err := os.Stat(libtelioMainConfigFile)
@@ -393,7 +393,7 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 
 	log.Println("~~~~ try to load again - libtelio config hash is not the same, should try to load whole libtelio config from web server")
 
-	err = rc.LoadConfig()
+	err = rc.Load()
 	assert.NoError(t, err)
 
 	info3, err := os.Stat(libtelioMainConfigFile)
@@ -635,7 +635,7 @@ var libtelioJsonConfFile = `
     "version": 1,
     "configs": [
         {
-            "name": "libtelio",
+            "name": "libtelio_config",
             "value_type": "file",
             "settings": [
                 {
@@ -690,7 +690,7 @@ var libtelioUpdatedJsonConfFile = `
     "version": 1,
     "configs": [
         {
-            "name": "libtelio",
+            "name": "libtelio_config",
             "value_type": "file",
             "settings": [
                 {
