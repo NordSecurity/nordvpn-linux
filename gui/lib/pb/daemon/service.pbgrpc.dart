@@ -21,6 +21,7 @@ import 'cities.pb.dart' as $3;
 import 'common.pb.dart' as $1;
 import 'connect.pb.dart' as $4;
 import 'defaults.pb.dart' as $11;
+import 'features.pb.dart' as $17;
 import 'login.pb.dart' as $5;
 import 'login_with_token.pb.dart' as $6;
 import 'logout.pb.dart' as $7;
@@ -313,13 +314,6 @@ class DaemonClient extends $grpc.Client {
     return $createUnaryCall(_$status, request, options: options);
   }
 
-  $grpc.ResponseFuture<$1.Payload> setIpv6(
-    $10.SetGenericRequest request, {
-    $grpc.CallOptions? options,
-  }) {
-    return $createUnaryCall(_$setIpv6, request, options: options);
-  }
-
   $grpc.ResponseFuture<$14.ClaimOnlinePurchaseResponse> claimOnlinePurchase(
     $1.Empty request, {
     $grpc.CallOptions? options,
@@ -362,6 +356,13 @@ class DaemonClient extends $grpc.Client {
     $grpc.CallOptions? options,
   }) {
     return $createUnaryCall(_$getDaemonApiVersion, request, options: options);
+  }
+
+  $grpc.ResponseFuture<$17.FeatureToggles> getFeatureToggles(
+    $1.Empty request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$getFeatureToggles, request, options: options);
   }
 
   // method descriptors
@@ -539,11 +540,6 @@ class DaemonClient extends $grpc.Client {
       '/pb.Daemon/Status',
       ($1.Empty value) => value.writeToBuffer(),
       $13.StatusResponse.fromBuffer);
-  static final _$setIpv6 =
-      $grpc.ClientMethod<$10.SetGenericRequest, $1.Payload>(
-          '/pb.Daemon/SetIpv6',
-          ($10.SetGenericRequest value) => value.writeToBuffer(),
-          $1.Payload.fromBuffer);
   static final _$claimOnlinePurchase =
       $grpc.ClientMethod<$1.Empty, $14.ClaimOnlinePurchaseResponse>(
           '/pb.Daemon/ClaimOnlinePurchase',
@@ -573,6 +569,11 @@ class DaemonClient extends $grpc.Client {
       '/pb.Daemon/GetDaemonApiVersion',
       ($1.GetDaemonApiVersionRequest value) => value.writeToBuffer(),
       $1.GetDaemonApiVersionResponse.fromBuffer);
+  static final _$getFeatureToggles =
+      $grpc.ClientMethod<$1.Empty, $17.FeatureToggles>(
+          '/pb.Daemon/GetFeatureToggles',
+          ($1.Empty value) => value.writeToBuffer(),
+          $17.FeatureToggles.fromBuffer);
 }
 
 @$pb.GrpcServiceName('pb.Daemon')
@@ -860,14 +861,6 @@ abstract class DaemonServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) => $1.Empty.fromBuffer(value),
         ($13.StatusResponse value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$10.SetGenericRequest, $1.Payload>(
-        'SetIpv6',
-        setIpv6_Pre,
-        false,
-        false,
-        ($core.List<$core.int> value) =>
-            $10.SetGenericRequest.fromBuffer(value),
-        ($1.Payload value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$1.Empty, $14.ClaimOnlinePurchaseResponse>(
         'ClaimOnlinePurchase',
         claimOnlinePurchase_Pre,
@@ -914,6 +907,13 @@ abstract class DaemonServiceBase extends $grpc.Service {
         ($core.List<$core.int> value) =>
             $1.GetDaemonApiVersionRequest.fromBuffer(value),
         ($1.GetDaemonApiVersionResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$1.Empty, $17.FeatureToggles>(
+        'GetFeatureToggles',
+        getFeatureToggles_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $1.Empty.fromBuffer(value),
+        ($17.FeatureToggles value) => value.writeToBuffer()));
   }
 
   $async.Future<$0.AccountResponse> accountInfo_Pre($grpc.ServiceCall $call,
@@ -1215,14 +1215,6 @@ abstract class DaemonServiceBase extends $grpc.Service {
   $async.Future<$13.StatusResponse> status(
       $grpc.ServiceCall call, $1.Empty request);
 
-  $async.Future<$1.Payload> setIpv6_Pre($grpc.ServiceCall $call,
-      $async.Future<$10.SetGenericRequest> $request) async {
-    return setIpv6($call, await $request);
-  }
-
-  $async.Future<$1.Payload> setIpv6(
-      $grpc.ServiceCall call, $10.SetGenericRequest request);
-
   $async.Future<$14.ClaimOnlinePurchaseResponse> claimOnlinePurchase_Pre(
       $grpc.ServiceCall $call, $async.Future<$1.Empty> $request) async {
     return claimOnlinePurchase($call, await $request);
@@ -1271,4 +1263,12 @@ abstract class DaemonServiceBase extends $grpc.Service {
 
   $async.Future<$1.GetDaemonApiVersionResponse> getDaemonApiVersion(
       $grpc.ServiceCall call, $1.GetDaemonApiVersionRequest request);
+
+  $async.Future<$17.FeatureToggles> getFeatureToggles_Pre(
+      $grpc.ServiceCall $call, $async.Future<$1.Empty> $request) async {
+    return getFeatureToggles($call, await $request);
+  }
+
+  $async.Future<$17.FeatureToggles> getFeatureToggles(
+      $grpc.ServiceCall call, $1.Empty request);
 }

@@ -19,10 +19,11 @@ const SetDefaultsRequest$json = {
   '1': 'SetDefaultsRequest',
   '2': [
     {'1': 'no_logout', '3': 1, '4': 1, '5': 8, '10': 'noLogout'},
+    {'1': 'off_killswitch', '3': 2, '4': 1, '5': 8, '10': 'offKillswitch'},
   ],
 };
 
 /// Descriptor for `SetDefaultsRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List setDefaultsRequestDescriptor =
-    $convert.base64Decode(
-        'ChJTZXREZWZhdWx0c1JlcXVlc3QSGwoJbm9fbG9nb3V0GAEgASgIUghub0xvZ291dA==');
+final $typed_data.Uint8List setDefaultsRequestDescriptor = $convert.base64Decode(
+    'ChJTZXREZWZhdWx0c1JlcXVlc3QSGwoJbm9fbG9nb3V0GAEgASgIUghub0xvZ291dBIlCg5vZm'
+    'Zfa2lsbHN3aXRjaBgCIAEoCFINb2ZmS2lsbHN3aXRjaA==');

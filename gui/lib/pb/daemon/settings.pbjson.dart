@@ -74,7 +74,6 @@ const Settings$json = {
       '6': '.pb.AutoconnectData',
       '10': 'autoConnectData'
     },
-    {'1': 'ipv6', '3': 5, '4': 1, '5': 8, '10': 'ipv6'},
     {'1': 'meshnet', '3': 6, '4': 1, '5': 8, '10': 'meshnet'},
     {'1': 'routing', '3': 7, '4': 1, '5': 8, '10': 'routing'},
     {'1': 'fwmark', '3': 8, '4': 1, '5': 13, '10': 'fwmark'},
@@ -130,17 +129,16 @@ final $typed_data.Uint8List settingsDescriptor = $convert.base64Decode(
     'CghTZXR0aW5ncxIyCgp0ZWNobm9sb2d5GAEgASgOMhIuY29uZmlnLlRlY2hub2xvZ3lSCnRlY2'
     'hub2xvZ3kSGgoIZmlyZXdhbGwYAiABKAhSCGZpcmV3YWxsEh8KC2tpbGxfc3dpdGNoGAMgASgI'
     'UgpraWxsU3dpdGNoEj8KEWF1dG9fY29ubmVjdF9kYXRhGAQgASgLMhMucGIuQXV0b2Nvbm5lY3'
-    'REYXRhUg9hdXRvQ29ubmVjdERhdGESEgoEaXB2NhgFIAEoCFIEaXB2NhIYCgdtZXNobmV0GAYg'
-    'ASgIUgdtZXNobmV0EhgKB3JvdXRpbmcYByABKAhSB3JvdXRpbmcSFgoGZndtYXJrGAggASgNUg'
-    'Zmd21hcmsSQQoRYW5hbHl0aWNzX2NvbnNlbnQYCSABKA4yFC5jb25zZW50LkNvbnNlbnRNb2Rl'
-    'UhBhbmFseXRpY3NDb25zZW50EhAKA2RucxgKIAMoCVIDZG5zEjQKFnRocmVhdF9wcm90ZWN0aW'
-    '9uX2xpdGUYCyABKAhSFHRocmVhdFByb3RlY3Rpb25MaXRlEiwKCHByb3RvY29sGAwgASgOMhAu'
-    'Y29uZmlnLlByb3RvY29sUghwcm90b2NvbBIjCg1sYW5fZGlzY292ZXJ5GA0gASgIUgxsYW5EaX'
-    'Njb3ZlcnkSKwoJYWxsb3dsaXN0GA4gASgLMg0ucGIuQWxsb3dsaXN0UglhbGxvd2xpc3QSHAoJ'
-    'b2JmdXNjYXRlGA8gASgIUglvYmZ1c2NhdGUSKAoPdmlydHVhbExvY2F0aW9uGBAgASgIUg92aX'
-    'J0dWFsTG9jYXRpb24SJwoPcG9zdHF1YW50dW1fdnBuGBEgASgIUg5wb3N0cXVhbnR1bVZwbhI9'
-    'Cg11c2VyX3NldHRpbmdzGBIgASgLMhgucGIuVXNlclNwZWNpZmljU2V0dGluZ3NSDHVzZXJTZX'
-    'R0aW5ncw==');
+    'REYXRhUg9hdXRvQ29ubmVjdERhdGESGAoHbWVzaG5ldBgGIAEoCFIHbWVzaG5ldBIYCgdyb3V0'
+    'aW5nGAcgASgIUgdyb3V0aW5nEhYKBmZ3bWFyaxgIIAEoDVIGZndtYXJrEkEKEWFuYWx5dGljc1'
+    '9jb25zZW50GAkgASgOMhQuY29uc2VudC5Db25zZW50TW9kZVIQYW5hbHl0aWNzQ29uc2VudBIQ'
+    'CgNkbnMYCiADKAlSA2RucxI0ChZ0aHJlYXRfcHJvdGVjdGlvbl9saXRlGAsgASgIUhR0aHJlYX'
+    'RQcm90ZWN0aW9uTGl0ZRIsCghwcm90b2NvbBgMIAEoDjIQLmNvbmZpZy5Qcm90b2NvbFIIcHJv'
+    'dG9jb2wSIwoNbGFuX2Rpc2NvdmVyeRgNIAEoCFIMbGFuRGlzY292ZXJ5EisKCWFsbG93bGlzdB'
+    'gOIAEoCzINLnBiLkFsbG93bGlzdFIJYWxsb3dsaXN0EhwKCW9iZnVzY2F0ZRgPIAEoCFIJb2Jm'
+    'dXNjYXRlEigKD3ZpcnR1YWxMb2NhdGlvbhgQIAEoCFIPdmlydHVhbExvY2F0aW9uEicKD3Bvc3'
+    'RxdWFudHVtX3ZwbhgRIAEoCFIOcG9zdHF1YW50dW1WcG4SPQoNdXNlcl9zZXR0aW5ncxgSIAEo'
+    'CzIYLnBiLlVzZXJTcGVjaWZpY1NldHRpbmdzUgx1c2VyU2V0dGluZ3M=');
 
 @$core.Deprecated('Use userSpecificSettingsDescriptor instead')
 const UserSpecificSettings$json = {
