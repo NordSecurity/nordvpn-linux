@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/config";
+
+enum ServerSelectionRule {
+  NONE = 0;
+  RECOMMENDED = 1;
+  CITY = 2;
+  COUNTRY = 3;
+  SPECIFIC_SERVER = 4;
+  GROUP = 5;
+  COUNTRY_WITH_GROUP = 6;
+  SPECIFIC_SERVER_WITH_GROUP = 7;
+}

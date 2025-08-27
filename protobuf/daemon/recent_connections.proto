@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
+
+import "server_selection_rule.proto";
+import "config/group.proto";
+
+message RecentConnectionsResponse {
+  // List of recent connections information
+  repeated RecentConnectionModel connections = 1;
+}
+
+// message RecentConnection {
+//   // Connection model
+//   RecentConnectionModel connection_model = 1;
+
+//   // Human readable connection label
+//   string display_label = 2;
+// }
+
+message RecentConnectionModel {
+  // Country name
+  string country = 1;
+
+  // City name
+  string city = 2;
+
+  // Group name
+  config.ServerGroup group = 3;
+
+  // Country code (2 characters)
+  string country_code = 4;
+
+  // Human-readable server name
+  string specific_server_name = 5;
+
+  // Specific server identifier
+  string specific_server = 6;
+
+  // Connection type enum
+  ServerSelectionRule connection_type = 7;
+}
+
+message RecentConnectionsRequest {
+  // Limit maximum entries to be returned, 0 - no limit
+  int64 limit = 1;
+}
