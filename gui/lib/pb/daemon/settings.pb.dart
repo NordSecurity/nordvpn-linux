@@ -196,7 +196,6 @@ class Settings extends $pb.GeneratedMessage {
     $core.bool? firewall,
     $core.bool? killSwitch,
     AutoconnectData? autoConnectData,
-    $core.bool? ipv6,
     $core.bool? meshnet,
     $core.bool? routing,
     $core.int? fwmark,
@@ -216,7 +215,6 @@ class Settings extends $pb.GeneratedMessage {
     if (firewall != null) result.firewall = firewall;
     if (killSwitch != null) result.killSwitch = killSwitch;
     if (autoConnectData != null) result.autoConnectData = autoConnectData;
-    if (ipv6 != null) result.ipv6 = ipv6;
     if (meshnet != null) result.meshnet = meshnet;
     if (routing != null) result.routing = routing;
     if (fwmark != null) result.fwmark = fwmark;
@@ -256,7 +254,6 @@ class Settings extends $pb.GeneratedMessage {
     ..aOB(3, _omitFieldNames ? '' : 'killSwitch')
     ..aOM<AutoconnectData>(4, _omitFieldNames ? '' : 'autoConnectData',
         subBuilder: AutoconnectData.create)
-    ..aOB(5, _omitFieldNames ? '' : 'ipv6')
     ..aOB(6, _omitFieldNames ? '' : 'meshnet')
     ..aOB(7, _omitFieldNames ? '' : 'routing')
     ..a<$core.int>(8, _omitFieldNames ? '' : 'fwmark', $pb.PbFieldType.OU3)
@@ -339,129 +336,120 @@ class Settings extends $pb.GeneratedMessage {
   @$pb.TagNumber(4)
   AutoconnectData ensureAutoConnectData() => $_ensure(3);
 
-  @$pb.TagNumber(5)
-  $core.bool get ipv6 => $_getBF(4);
-  @$pb.TagNumber(5)
-  set ipv6($core.bool value) => $_setBool(4, value);
-  @$pb.TagNumber(5)
-  $core.bool hasIpv6() => $_has(4);
-  @$pb.TagNumber(5)
-  void clearIpv6() => $_clearField(5);
-
   @$pb.TagNumber(6)
-  $core.bool get meshnet => $_getBF(5);
+  $core.bool get meshnet => $_getBF(4);
   @$pb.TagNumber(6)
-  set meshnet($core.bool value) => $_setBool(5, value);
+  set meshnet($core.bool value) => $_setBool(4, value);
   @$pb.TagNumber(6)
-  $core.bool hasMeshnet() => $_has(5);
+  $core.bool hasMeshnet() => $_has(4);
   @$pb.TagNumber(6)
   void clearMeshnet() => $_clearField(6);
 
   @$pb.TagNumber(7)
-  $core.bool get routing => $_getBF(6);
+  $core.bool get routing => $_getBF(5);
   @$pb.TagNumber(7)
-  set routing($core.bool value) => $_setBool(6, value);
+  set routing($core.bool value) => $_setBool(5, value);
   @$pb.TagNumber(7)
-  $core.bool hasRouting() => $_has(6);
+  $core.bool hasRouting() => $_has(5);
   @$pb.TagNumber(7)
   void clearRouting() => $_clearField(7);
 
   @$pb.TagNumber(8)
-  $core.int get fwmark => $_getIZ(7);
+  $core.int get fwmark => $_getIZ(6);
   @$pb.TagNumber(8)
-  set fwmark($core.int value) => $_setUnsignedInt32(7, value);
+  set fwmark($core.int value) => $_setUnsignedInt32(6, value);
   @$pb.TagNumber(8)
-  $core.bool hasFwmark() => $_has(7);
+  $core.bool hasFwmark() => $_has(6);
   @$pb.TagNumber(8)
   void clearFwmark() => $_clearField(8);
 
   @$pb.TagNumber(9)
-  $3.ConsentMode get analyticsConsent => $_getN(8);
+  $3.ConsentMode get analyticsConsent => $_getN(7);
   @$pb.TagNumber(9)
   set analyticsConsent($3.ConsentMode value) => $_setField(9, value);
   @$pb.TagNumber(9)
-  $core.bool hasAnalyticsConsent() => $_has(8);
+  $core.bool hasAnalyticsConsent() => $_has(7);
   @$pb.TagNumber(9)
   void clearAnalyticsConsent() => $_clearField(9);
 
   @$pb.TagNumber(10)
-  $pb.PbList<$core.String> get dns => $_getList(9);
+  $pb.PbList<$core.String> get dns => $_getList(8);
 
   @$pb.TagNumber(11)
-  $core.bool get threatProtectionLite => $_getBF(10);
+  $core.bool get threatProtectionLite => $_getBF(9);
   @$pb.TagNumber(11)
-  set threatProtectionLite($core.bool value) => $_setBool(10, value);
+  set threatProtectionLite($core.bool value) => $_setBool(9, value);
   @$pb.TagNumber(11)
-  $core.bool hasThreatProtectionLite() => $_has(10);
+  $core.bool hasThreatProtectionLite() => $_has(9);
   @$pb.TagNumber(11)
   void clearThreatProtectionLite() => $_clearField(11);
 
   @$pb.TagNumber(12)
-  $4.Protocol get protocol => $_getN(11);
+  $4.Protocol get protocol => $_getN(10);
   @$pb.TagNumber(12)
   set protocol($4.Protocol value) => $_setField(12, value);
   @$pb.TagNumber(12)
-  $core.bool hasProtocol() => $_has(11);
+  $core.bool hasProtocol() => $_has(10);
   @$pb.TagNumber(12)
   void clearProtocol() => $_clearField(12);
 
   @$pb.TagNumber(13)
-  $core.bool get lanDiscovery => $_getBF(12);
+  $core.bool get lanDiscovery => $_getBF(11);
   @$pb.TagNumber(13)
-  set lanDiscovery($core.bool value) => $_setBool(12, value);
+  set lanDiscovery($core.bool value) => $_setBool(11, value);
   @$pb.TagNumber(13)
-  $core.bool hasLanDiscovery() => $_has(12);
+  $core.bool hasLanDiscovery() => $_has(11);
   @$pb.TagNumber(13)
   void clearLanDiscovery() => $_clearField(13);
 
   @$pb.TagNumber(14)
-  $0.Allowlist get allowlist => $_getN(13);
+  $0.Allowlist get allowlist => $_getN(12);
   @$pb.TagNumber(14)
   set allowlist($0.Allowlist value) => $_setField(14, value);
   @$pb.TagNumber(14)
-  $core.bool hasAllowlist() => $_has(13);
+  $core.bool hasAllowlist() => $_has(12);
   @$pb.TagNumber(14)
   void clearAllowlist() => $_clearField(14);
   @$pb.TagNumber(14)
-  $0.Allowlist ensureAllowlist() => $_ensure(13);
+  $0.Allowlist ensureAllowlist() => $_ensure(12);
 
   @$pb.TagNumber(15)
-  $core.bool get obfuscate => $_getBF(14);
+  $core.bool get obfuscate => $_getBF(13);
   @$pb.TagNumber(15)
-  set obfuscate($core.bool value) => $_setBool(14, value);
+  set obfuscate($core.bool value) => $_setBool(13, value);
   @$pb.TagNumber(15)
-  $core.bool hasObfuscate() => $_has(14);
+  $core.bool hasObfuscate() => $_has(13);
   @$pb.TagNumber(15)
   void clearObfuscate() => $_clearField(15);
 
   @$pb.TagNumber(16)
-  $core.bool get virtualLocation => $_getBF(15);
+  $core.bool get virtualLocation => $_getBF(14);
   @$pb.TagNumber(16)
-  set virtualLocation($core.bool value) => $_setBool(15, value);
+  set virtualLocation($core.bool value) => $_setBool(14, value);
   @$pb.TagNumber(16)
-  $core.bool hasVirtualLocation() => $_has(15);
+  $core.bool hasVirtualLocation() => $_has(14);
   @$pb.TagNumber(16)
   void clearVirtualLocation() => $_clearField(16);
 
   @$pb.TagNumber(17)
-  $core.bool get postquantumVpn => $_getBF(16);
+  $core.bool get postquantumVpn => $_getBF(15);
   @$pb.TagNumber(17)
-  set postquantumVpn($core.bool value) => $_setBool(16, value);
+  set postquantumVpn($core.bool value) => $_setBool(15, value);
   @$pb.TagNumber(17)
-  $core.bool hasPostquantumVpn() => $_has(16);
+  $core.bool hasPostquantumVpn() => $_has(15);
   @$pb.TagNumber(17)
   void clearPostquantumVpn() => $_clearField(17);
 
   @$pb.TagNumber(18)
-  UserSpecificSettings get userSettings => $_getN(17);
+  UserSpecificSettings get userSettings => $_getN(16);
   @$pb.TagNumber(18)
   set userSettings(UserSpecificSettings value) => $_setField(18, value);
   @$pb.TagNumber(18)
-  $core.bool hasUserSettings() => $_has(17);
+  $core.bool hasUserSettings() => $_has(16);
   @$pb.TagNumber(18)
   void clearUserSettings() => $_clearField(18);
   @$pb.TagNumber(18)
-  UserSpecificSettings ensureUserSettings() => $_ensure(17);
+  UserSpecificSettings ensureUserSettings() => $_ensure(16);
 }
 
 class UserSpecificSettings extends $pb.GeneratedMessage {
