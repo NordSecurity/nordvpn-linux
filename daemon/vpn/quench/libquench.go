@@ -20,8 +20,9 @@ import (
 )
 
 const (
-	quenchPrefix        = "[quench]"
-	quenchInterfaceAddr = "10.3.0.2/16"
+	quenchPrefix          = "[quench]"
+	quenchInterfaceAddr   = "10.3.0.2/16"
+	nordWhisperHeaderSize = 80
 )
 
 type Logger struct{}
@@ -192,6 +193,10 @@ func (q *Quench) Start(ctx context.Context, creds vpn.Credentials, server vpn.Se
 
 	if err := tun.Up(); err != nil {
 		return fmt.Errorf("adding ip address to vnic: %w", err)
+	}
+
+	if err := vpn.SetMTU(tun.Interface(), nordWhisperHeaderSize); err != nil {
+		return fmt.Errorf("setting MTU for the interface: %w", err)
 	}
 
 	addr := fmt.Sprintf("wt://%s:%d/", server.IP, server.NordWhisperPort)

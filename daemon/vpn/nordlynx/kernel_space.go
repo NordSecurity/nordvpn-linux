@@ -107,7 +107,7 @@ func (k *KernelSpace) Start(
 		return err
 	}
 
-	if err := SetMTU(tun.Interface()); err != nil {
+	if err := vpn.SetMTU(tun.Interface(), WireguardHeaderSize); err != nil {
 		if err := k.stop(); err != nil {
 			log.Println(internal.WarningPrefix, err)
 		}
