@@ -46,6 +46,8 @@ def disconnect_base_test():
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_quick_connect(tech, proto, obfuscated):
+    """Manual TC: LVPN-559"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test((tech, proto, obfuscated))
@@ -54,6 +56,8 @@ def test_quick_connect(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connect_to_server_absent(tech, proto, obfuscated):
+    """Manual TC: LVPN-8668"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -66,6 +70,8 @@ def test_connect_to_server_absent(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connect_to_server_random_by_name(tech, proto, obfuscated):
+    """Manual TC: LVPN-5800"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     server_info = server.get_hostname_by(tech, proto, obfuscated)
@@ -76,6 +82,8 @@ def test_connect_to_server_random_by_name(tech, proto, obfuscated):
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
 def test_connect_to_group_random_server_by_name_additional(tech, proto, obfuscated, group):
+    """Manual TC: LVPN-8847"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     server_info = server.get_hostname_by(tech, proto, obfuscated, group)
@@ -87,6 +95,8 @@ def test_connect_to_group_random_server_by_name_additional(tech, proto, obfuscat
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS_NORDWHISPER)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.NORDWHISPER_TECHNOLOGY)
 def test_nordwhisper_connect_to_group_random_server_by_name_additional(tech, proto, obfuscated, group):
+    """Manual TC: LVPN-8855"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     server_info = server.get_hostname_by(tech, proto, obfuscated, group)
@@ -98,6 +108,8 @@ def test_nordwhisper_connect_to_group_random_server_by_name_additional(tech, pro
 @pytest.mark.parametrize("group", lib.STANDARD_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connect_to_group_random_server_by_name_standard(tech, proto, obfuscated, group):
+    """Manual TC: LVPN-8864"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     server_info = server.get_hostname_by(tech, proto, obfuscated, group)
@@ -109,6 +121,8 @@ def test_connect_to_group_random_server_by_name_standard(tech, proto, obfuscated
 @pytest.mark.parametrize("group", lib.OVPN_OBFUSCATED_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 def test_connect_to_group_random_server_by_name_obfuscated(tech, proto, obfuscated, group):
+    """Manual TC: LVPN-8665"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     server_info = server.get_hostname_by(group_name=group)
@@ -120,6 +134,8 @@ def test_connect_to_group_random_server_by_name_obfuscated(tech, proto, obfuscat
 # the tun interface is recreated only for OpenVPN
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 def test_connect_network_restart_recreates_tun_interface(tech, proto, obfuscated):
+    """Manual TC is unavailable because reconnection timing and interface changes can’t be reliably checked without automation."""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test((tech, proto, obfuscated))
@@ -138,6 +154,8 @@ def test_connect_network_restart_recreates_tun_interface(tech, proto, obfuscated
 # for Nordlynx normally the tunnel is not recreated
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1)
 def test_connect_network_restart_nordlynx(tech, proto, obfuscated):
+    """Manual TC is unavailable because reconnection timing and interface changes can’t be reliably checked without automation."""
+
     if daemon.is_init_systemd():
         pytest.skip("LVPN-5733")
 
@@ -163,6 +181,8 @@ def test_connect_network_restart_nordlynx(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_quick_connect_double_disconnect(tech, proto, obfuscated):
+    """Manual TC: LVPN-1058"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     for _ in range(2):
@@ -172,6 +192,8 @@ def test_quick_connect_double_disconnect(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connect_network_gone(tech, proto, obfuscated):
+    """Manual TC: LVPN-5796"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     default_gateway = network.stop()
@@ -184,6 +206,8 @@ def test_connect_network_gone(tech, proto, obfuscated):
 @pytest.mark.parametrize("group", lib.STANDARD_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connect_to_group_standard(tech, proto, obfuscated, group):
+    """Manual TC: LVPN-809"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test((tech, proto, obfuscated), group)
@@ -193,6 +217,8 @@ def test_connect_to_group_standard(tech, proto, obfuscated, group):
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
 def test_connect_to_group_additional(tech, proto, obfuscated, group):
+    """Manual TC: LVPN-838"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test((tech, proto, obfuscated), group)
@@ -202,6 +228,8 @@ def test_connect_to_group_additional(tech, proto, obfuscated, group):
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS_NORDWHISPER)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.NORDWHISPER_TECHNOLOGY)
 def test_nordwhisper_connect_to_group_additional(tech, proto, obfuscated, group):
+    """Manual TC: LVPN-8069"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test((tech, proto, obfuscated), group)
@@ -211,6 +239,8 @@ def test_nordwhisper_connect_to_group_additional(tech, proto, obfuscated, group)
 @pytest.mark.parametrize("group", lib.DEDICATED_IP_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
 def test_connect_to_group_ovpn(tech, proto, obfuscated, group):
+    """Manual TC: LVPN-668"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test((tech, proto, obfuscated), group)
@@ -220,6 +250,8 @@ def test_connect_to_group_ovpn(tech, proto, obfuscated, group):
 @pytest.mark.parametrize("group", lib.OVPN_OBFUSCATED_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 def test_connect_to_group_obfuscated(tech, proto, obfuscated, group):
+    """Manual TC: LVPN-762"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test((tech, proto, obfuscated), group)
@@ -229,6 +261,8 @@ def test_connect_to_group_obfuscated(tech, proto, obfuscated, group):
 @pytest.mark.parametrize("group", lib.STANDARD_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connect_to_flag_group_standard(tech, proto, obfuscated, group):
+    """Manual TC: LVPN-8620"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test((tech, proto, obfuscated), ["--group", group])
@@ -244,6 +278,8 @@ def test_connect_to_flag_group_standard(tech, proto, obfuscated, group):
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
 def test_connect_to_flag_group_additional(tech, proto, obfuscated, group):
+    """Manual TC: LVPN-8615"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test((tech, proto, obfuscated), ["--group", group])
@@ -259,6 +295,8 @@ def test_connect_to_flag_group_additional(tech, proto, obfuscated, group):
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS_NORDWHISPER)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.NORDWHISPER_TECHNOLOGY)
 def test_nordwhisper_connect_to_flag_group_additional(tech, proto, obfuscated, group):
+    """Manual TC: LVPN-8614"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test((tech, proto, obfuscated), ["--group", group])
@@ -274,6 +312,8 @@ def test_nordwhisper_connect_to_flag_group_additional(tech, proto, obfuscated, g
 @pytest.mark.parametrize("group", lib.DEDICATED_IP_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
 def test_connect_to_flag_group_ovpn(tech, proto, obfuscated, group):
+    """Manual TC: LVPN-8623"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test((tech, proto, obfuscated), ["--group", group])
@@ -289,6 +329,8 @@ def test_connect_to_flag_group_ovpn(tech, proto, obfuscated, group):
 @pytest.mark.parametrize("group", lib.OVPN_OBFUSCATED_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 def test_connect_to_flag_group_obfuscated(tech, proto, obfuscated, group):
+    """Manual TC: LVPN-8629"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test((tech, proto, obfuscated), ["--group", group])
@@ -303,6 +345,8 @@ def test_connect_to_flag_group_obfuscated(tech, proto, obfuscated, group):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connect_to_group_invalid(tech, proto, obfuscated):
+    """Manual TC: LVPN-8633"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -315,6 +359,8 @@ def test_connect_to_group_invalid(tech, proto, obfuscated):
 @pytest.mark.parametrize("country", lib.COUNTRIES)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connect_to_country(tech, proto, obfuscated, country):
+    """Manual TC: LVPN-489"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test((tech, proto, obfuscated), country)
@@ -324,6 +370,8 @@ def test_connect_to_country(tech, proto, obfuscated, country):
 @pytest.mark.parametrize("country_code", lib.COUNTRY_CODES)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connect_to_country_code(tech, proto, obfuscated, country_code):
+    """Manual TC: LVPN-843"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test((tech, proto, obfuscated), country_code)
@@ -333,6 +381,8 @@ def test_connect_to_country_code(tech, proto, obfuscated, country_code):
 @pytest.mark.parametrize("city", lib.CITIES)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connect_to_city(tech, proto, obfuscated, city):
+    """Manual TC: LVPN-815"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     connect_base_test((tech, proto, obfuscated), city)
@@ -341,6 +391,8 @@ def test_connect_to_city(tech, proto, obfuscated, city):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connect_to_unavailable_groups(tech, proto, obfuscated):
+    """Manual TC: LVPN-8517"""
+
     # TODO: LVPN-257
     time.sleep(3)
 
@@ -358,6 +410,8 @@ def test_connect_to_unavailable_groups(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
 def test_connect_to_unavailable_servers(tech, proto, obfuscated):
+    """Manual TC: LVPN-422"""
+
     # TODO: LVPN-257
     time.sleep(3)
 
@@ -378,6 +432,8 @@ def test_connect_to_unavailable_servers(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_status_connected(tech, proto, obfuscated):
+    """Manual TC: LVPN-676"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     assert network.is_disconnected()
@@ -434,6 +490,8 @@ def test_status_connected(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
 def test_connect_to_virtual_server(tech, proto, obfuscated):
+    """Manual TC: LVPN-5316"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     sh.nordvpn.set("virtual-location", "on")
     virtual_countries = lib.get_virtual_countries()
@@ -447,6 +505,7 @@ def test_connect_to_virtual_server(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1)
 def test_connect_to_post_quantum_server(tech, proto, obfuscated):
+    """Manual TC: LVPN-5794"""
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -460,6 +519,8 @@ def test_connect_to_post_quantum_server(tech, proto, obfuscated):
 
 
 def test_check_routing_table_for_lan():
+    """Manual TC: LVPN-8728"""
+
     # check that the routing table is correctly configured when LAN is enabled and that the tunnel IP is correct
     lib.set_technology_and_protocol("nordlynx", "", "")
 
@@ -500,6 +561,8 @@ def test_check_routing_table_for_lan():
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
 def test_connect_to_dedicated_ip(tech, proto, obfuscated):
+    """Manual TC: LVPN-651"""
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     server_info = server.get_dedicated_ip()
