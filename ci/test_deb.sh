@@ -41,4 +41,14 @@ if ! sudo grep -q "export GOCOVERDIR=${GOCOVERDIR}" "/etc/init.d/nordvpn"; then
     trap revert_go_cov EXIT INT TERM
 fi
 
+if [[ -n ${NORD_CDN_URL:-} ]]; then
+    if ! sudo grep -q "export NORD_CDN_URL=$NORD_CDN_URL" "/etc/init.d/nordvpn"; then
+        sudo sed -i "1a export NORD_CDN_URL=$NORD_CDN_URL" "/etc/init.d/nordvpn"
+    fi
+    if ! sudo grep -q "export IGNORE_HEADER_VALIDATION=1" "/etc/init.d/nordvpn"; then
+        sudo sed -i "1a export IGNORE_HEADER_VALIDATION=1" "/etc/init.d/nordvpn"
+    fi
+fi
+
+
 "${WORKDIR}/ci/qa_run_tests.sh" "$@"
