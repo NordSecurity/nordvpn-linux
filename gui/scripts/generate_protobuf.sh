@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e 
-OUT="${PWD}/lib/pb"
+OUT="${PWD}/gui/lib/pb"
 echo $OUT
 rm -fr "$OUT"
 mkdir -p "$OUT"
@@ -14,7 +14,6 @@ for FILE in "timestamp.proto"; do
     protoc -I="$GOOGLE_PROTO_ROOT_DIR" --dart_out="$OUT" "$GOOGLE_PROTO_ROOT_DIR/google/protobuf/$FILE"
 done
 
-pushd nordvpn-linux > /dev/null
 # used GRPC files
 GRPC_FILES=(
     "protobuf/daemon/service.proto"
@@ -35,11 +34,13 @@ for i in "${GRPC_FILES[@]}"; do
     popd >/dev/null
 done
 
+PROTO_FILES=$(find ../ -name "*.proto" ! -name service.proto -not -path "*/snapconf/*" -not -path "*/norduser/*" -not -path "*/libtelio/*" -not -path "*/parts/*")
+
 echo "**** Generate files *****"
-for i in $(find . -name "*.proto" ! -name service.proto  -not -path "*/snapconf/*" -not -path "*/norduser/*" ); do
+for i in ${PROTO_FILES}; do
     DIR=$(dirname "$i")
     FILE=$(basename "$i")
-    DIR_NAME_WITHOUT_PROTOBUF=$(echo $DIR | cut -d'/' -f3-)
+    DIR_NAME_WITHOUT_PROTOBUF=$(echo $DIR | cut -d'/' -f4-)
     PROTO_OUT="$OUT/$DIR_NAME_WITHOUT_PROTOBUF"
 
     FILENAME="${FILE%.*}"
@@ -57,7 +58,7 @@ for i in $(find . -name "*.proto" ! -name service.proto  -not -path "*/snapconf/
     if [ ! -L "$PROTO_OUT/google" ]; then
         ln -s "../google" "$PROTO_OUT/google"
     fi
-    
+
     # using protoc --dart_out="$PROTO_OUT" "$FILE" "$GOOGLE_PROTO_ROOT_DIR/google/protobuf/timestamp.proto" creates google multiple times
     protoc --dart_out="$PROTO_OUT" "$FILE"
 
@@ -65,5 +66,3 @@ for i in $(find . -name "*.proto" ! -name service.proto  -not -path "*/snapconf/
 
     popd > /dev/null
 done
-
-popd > /dev/null
