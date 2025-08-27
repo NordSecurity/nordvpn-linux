@@ -16,6 +16,7 @@ RUN apt-get update && \
 RUN echo 'root:root' | chpasswd
 RUN ssh-keygen -t ed25519 -f /etc/ssh/ssh_host_ed25519_key -N ''
 
+ENV MOCKCDN_PORT=8000
 EXPOSE 22
 EXPOSE 8000
 

@@ -1,7 +1,8 @@
 import http.server
 import socketserver
+import os
 
-PORT = 8000
+PORT = int(os.getenv("MOCKCDN_PORT", 8000))
 
 Handler = http.server.SimpleHTTPRequestHandler
 
