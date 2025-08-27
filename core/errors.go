@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
 )
@@ -61,7 +60,7 @@ func ExtractError(resp *http.Response) error {
 	}
 
 	var info apiError
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := MaxBytesReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
