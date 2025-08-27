@@ -131,16 +131,7 @@ def test_fileshare_available_after_update():
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_quick_connect_after_update(tech, proto, obfuscated):
-    """
-    Manual TCs:
-
-        [openvpn-udp-on] - LVPN-8505
-        [openvpn-tcp-on] - LVPN-8506
-        [openvpn-udp-off] - LVPN-3208
-        [openvpn-tcp-off] - LVPN-3209
-        [nordlynx--] - LVPN-3207
-        [nordwhisper--] - LVPN-8507
-    """
+    """Manual TC: LVPN-8506"""
 
     if tech == "openvpn" and proto == "udp" and obfuscated == "on":
         tech_name = lib.technology_to_upper_camel_case(tech)
