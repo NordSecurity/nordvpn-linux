@@ -1,0 +1,7 @@
+name: GUI CI
+on:
+  workflow_call:
+
+jobs:
+  tests:
+    uses: ./.github/workflows/_gui_tests.yml

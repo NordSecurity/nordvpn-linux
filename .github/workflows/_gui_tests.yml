@@ -1,0 +1,50 @@
+name: GUI tests
+on: [workflow_call]
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./gui
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends curl git unzip xz-utils xvfb ninja-build pkg-config zip libglu1-mesa
+          sudo apt-get install -y libgtk-3-dev libx11-dev libxcb1-dev libxrandr-dev libxrender-dev libxext-dev libxi-dev cmake liblzma-dev libstdc++-12-dev
+
+      - name: Install flutter
+        uses: ./.github/workflows/actions/install-flutter
+        id: flutter
+
+      - name: Get dependencies
+        run: |
+          flutter pub get
+
+      - name: Start Xvfb manually
+        run: |
+          Xvfb :99 -screen 0 1024x768x24 > /tmp/xvfb.log 2>&1 &
+          export DISPLAY=:99
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+
+      - name: Run unit-tests
+        run: |
+          flutter test --fail-fast -d linux --verbose
+
+      - name: Run integration tests
+        run: |
+          flutter test --fail-fast integration_test/e2e_tests/app_test.dart -d linux --verbose
+
+      - name: Run smoke tests
+        run: |
+          flutter test --fail-fast integration_test/smoke_tests/smoke_tests.dart -d linux --verbose

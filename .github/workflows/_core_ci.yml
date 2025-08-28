@@ -1,23 +1,7 @@
-<<<<<<<< HEAD:.github/workflows/core/_ci.yml
-name: CLI CI
-on: [workflow_call]
-
-|||||||| parent of 9a5a541f (LVPN-8657: Initial implementation):.github/workflows/ci.yml
-name: CI
-on: 
-  pull_request:
-  push:
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
-========
 name: CLI CI
 on:
-  pull_request:
-    paths: ["**", "!gui/**"] # anything except gui/
-  push:
-    paths: ["**", "!gui/**"]
+  workflow_call:
 
->>>>>>>> 9a5a541f (LVPN-8657: Initial implementation):.github/workflows/_core_ci.yml
 permissions: {}
 
 jobs:

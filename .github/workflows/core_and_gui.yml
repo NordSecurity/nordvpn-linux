@@ -1,0 +1,20 @@
+name: Core + GUI CI
+on:
+  pull_request:
+    paths: ["**", "!gui/**"] # any non-GUI change
+  push:
+    paths: ["**", "!gui/**"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  both:
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [core, gui] # run both suites
+    uses: ./.github/workflows/_suite.yml
+    with:
+      suite: ${{ matrix.suite }}
