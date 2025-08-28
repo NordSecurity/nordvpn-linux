@@ -1,0 +1,10 @@
+name: GUI CI
+on: [workflow_call]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration_tests:
+    uses: ./.github/workflows/gui/_integration_tests.yml
