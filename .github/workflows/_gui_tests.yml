@@ -1,7 +1,8 @@
 name: GUI tests
 on: [workflow_call]
 
-permissions: {}
+permissions:
+  packages: read
 
 defaults:
   run:
