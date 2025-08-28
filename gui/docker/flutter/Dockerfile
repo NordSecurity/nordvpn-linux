@@ -1,28 +1,37 @@
 # Used to create the image for building a Flutter application
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 
 # this is needed for dpkg not to be interactive
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
-    apt-get -y --no-install-recommends upgrade && \
-    apt-get -y --no-install-recommends install \
-        bash \
-        ca-certificates \
-        clang \
-        cmake \
-        git \
-        libgtk-3-dev \
-        ninja-build \
-        pkg-config \
-        sudo \
-        unzip \
-        curl \
-        xz-utils && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-ENV DOCKER_FILE="https://github.com/NordSecurity/nordvpn-linux-gui/docker/flutter/Dockerfile"
+  apt-get -y --no-install-recommends upgrade && \
+  apt-get -y --no-install-recommends install \
+  bash \
+  ca-certificates \
+  clang \
+  cmake \
+  git \
+  libgtk-3-dev \
+  ninja-build \
+  pkg-config \
+  sudo \
+  unzip \
+  curl \
+  xvfb \
+  libglu1-mesa \
+  libgtk-3-dev \
+  libx11-dev \
+  libxcb1-dev \
+  libxrandr-dev \
+  libxrender-dev \
+  libxext-dev \
+  libxi-dev \
+  liblzma-dev \
+  libstdc++-12-dev \
+  xz-utils && \
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/*
 
 ARG USER_ID=1000
 ARG GROUP_ID=1000
@@ -39,11 +48,11 @@ ENV PATH="${PATH}:${HOME}/.pub-cache/bin:${HOME}/flutter/bin"
 # install flutter from source code. flutter doctor will fetch the needed files based on the platform ARM64 or x64
 # create and build a project to ensure everything works
 RUN git clone https://github.com/flutter/flutter.git && \
-    cd flutter && \
-    git checkout -f tags/${FLUTTER_VERSION} && \
-    flutter doctor -v && \
-    flutter config --no-enable-android --no-enable-windows-desktop --no-enable-macos-desktop --no-enable-ios --no-enable-fuchsia --no-enable-swift-package-manager && \
-    rm -rf flutter/dev flutter/docs flutter/examples flutter/.github flutter/.vscode flutter/.idea && \
-    rm -rf ${HOME}/flutter/bin/cache/artifacts/engine/android-* && \
-    cd ~ && flutter create tst_build && cd tst_build && flutter build linux && cd .. && rm -fr tst_build && \
-    flutter doctor
+  cd flutter && \
+  git checkout -f tags/${FLUTTER_VERSION} && \
+  flutter doctor -v && \
+  flutter config --no-enable-android --no-enable-windows-desktop --no-enable-macos-desktop --no-enable-ios --no-enable-fuchsia --no-enable-swift-package-manager && \
+  rm -rf flutter/dev flutter/docs flutter/examples flutter/.github flutter/.vscode flutter/.idea && \
+  rm -rf ${HOME}/flutter/bin/cache/artifacts/engine/android-* && \
+  cd ~ && flutter create tst_build && cd tst_build && flutter build linux && cd .. && rm -fr tst_build && \
+  flutter doctor
