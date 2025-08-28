@@ -32,12 +32,7 @@ def test_obfuscate_nonobfucated(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC2 + lib.TECHNOLOGIES_BASIC1)
 def test_set_technology(tech, proto, obfuscated):  # noqa: ARG001
-    """
-    Manual TCs:
-
-        [openvpn-udp-off] - LVPN-615
-        [nordlynx--] - LVPN-601
-    """
+    """Manual TC: LVPN-601"""
 
     if tech == "nordlynx":
         sh.nordvpn.set.technology("OPENVPN")
@@ -49,12 +44,7 @@ def test_set_technology(tech, proto, obfuscated):  # noqa: ARG001
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
 def test_protocol_in_settings(tech, proto, obfuscated):
-    """
-    Manual TCs:
-
-        [openvpn-udp-off] - LVPN-8793
-        [openvpn-tcp-off] - LVPN-8704
-    """
+    """Manual TC: LVPN-8793"""
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     assert proto.upper() in sh.nordvpn.settings()
@@ -62,16 +52,7 @@ def test_protocol_in_settings(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_technology_set_options(tech, proto, obfuscated):
-    """
-    Manual TCs:
-
-        [openvpn-udp-on] - LVPN-8795
-        [openvpn-tcp-on] - LVPN-8794
-        [openvpn-udp-off] - LVPN-772
-        [openvpn-tcp-off] - LVPN- 8796
-        [nordlynx--] - LVPN-577
-        [nordwhisper--] - LVPN-6816
-    """
+    """Manual TC: LVPN-6816"""
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -85,16 +66,7 @@ def test_technology_set_options(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
-    """
-    Manual TCs:
-
-        [openvpn-udp-on] - LVPN-8836
-        [openvpn-tcp-on] - LVPN-8737
-        [openvpn-udp-off] - LVPN-8834
-        [openvpn-tcp-off] - LVPN-8835
-        [nordlynx--] - LVPN-8837
-        [nordwhisper--] - LVPN-8833
-    """
+    """Manual TC: LVPN-8737"""
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -132,16 +104,7 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
-    """
-    Manual TCs:
-
-        [openvpn-udp-on] - LVPN-8828
-        [openvpn-tcp-on] - LVPN-8740
-        [openvpn-udp-off] - LVPN-8830
-        [openvpn-tcp-off] - LVPN-8829
-        [nordlynx--] - LVPN-8832
-        [nordwhisper--] - LVPN-8831
-    """
+    """Manual TC: LVPN-8829"""
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -181,16 +144,7 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
-    """
-    Manual TCs:
-
-        [openvpn-udp-on] - LVPN-8826
-        [openvpn-tcp-on] - LVPN-8741
-        [openvpn-udp-off] - LVPN-8825
-        [openvpn-tcp-off] - LVPN-8823
-        [nordlynx--] - LVPN-8827
-        [nordwhisper--] - LVPN-8824
-    """
+    """Manual TC: LVPN-8741"""
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -229,16 +183,7 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
-    """
-    Manual TCs:
-
-        [openvpn-udp-on] - LVPN-8838
-        [openvpn-tcp-on] - LVPN-8749
-        [openvpn-udp-off] - LVPN-8840
-        [openvpn-tcp-off] - LVPN-8839
-        [nordlynx--] - LVPN-8842
-        [nordwhisper--] - LVPN-8841
-    """
+    """Manual TC: LVPN-8749"""
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -267,16 +212,7 @@ def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
 @pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_is_custom_dns_removed_after_setting_defaults(tech, proto, obfuscated, nameserver):
-    """
-    Manual TCs:
-
-        [openvpn-udp-on] - LVPN-8818
-        [openvpn-tcp-on] - LVPN-8747
-        [openvpn-udp-off] - LVPN-8820
-        [openvpn-tcp-off] - LVPN-8819
-        [nordlynx--] - LVPN-8822
-        [nordwhisper--] - LVPN-8821
-    """
+    """Manual TC: LVPN-8747"""
 
     nameserver = nameserver.split(" ")
 
@@ -339,12 +275,7 @@ def test_set_defaults_no_logout():
 
 
 def test_set_analytics_off_on():
-    """
-    Manual TCs:
-
-        Enable - LVPN-510
-        Disable - LVPN-508
-    """
+    """Manual TC: LVPN-510"""
 
     assert "Analytics is set to 'disabled' successfully." in sh.nordvpn.set.analytics("off")
     assert not settings.is_user_consent_granted()
@@ -354,12 +285,7 @@ def test_set_analytics_off_on():
 
 
 def test_set_analytics_on_off_repeated():
-    """
-    Manual TCs:
-
-        Enable - LVPN-509
-        Disable - LVPN-507
-    """
+    """Manual TC: LVPN-509"""
 
     assert "Analytics is already set to 'enabled'." in sh.nordvpn.set.analytics("on")
 
@@ -368,12 +294,7 @@ def test_set_analytics_on_off_repeated():
 
 
 def test_set_virtual_location_off_on():
-    """
-    Manual TCs:
-
-        Enable - LVPN-5253
-        Disable - LVPN-5252
-    """
+    """Manual TC: LVPN-5253"""
 
     assert "Virtual location is set to 'disabled' successfully." in sh.nordvpn.set("virtual-location", "off")
     assert not settings.is_virtual_location_enabled()
@@ -383,12 +304,7 @@ def test_set_virtual_location_off_on():
 
 
 def test_set_virtual_location_on_off_repeated():
-    """
-    Manual TCs:
-
-        Enable - LVPN-5254
-        Disable - LVPN-5255
-    """
+    """Manual TC: LVPN-5254"""
 
     assert "Virtual location is already set to 'enabled'." in sh.nordvpn.set("virtual-location", "on")
 
@@ -397,12 +313,7 @@ def test_set_virtual_location_on_off_repeated():
 
 
 def test_set_post_quantum_on_off():
-    """
-    Manual TCs:
-
-        Enable - LVPN-5774; LVPN-5783
-        Disable - LVPN-5775; LVPN-5785
-    """
+    """Manual TC: LVPN-5774"""
 
     pq_alias = settings.get_pq_alias()
 
@@ -414,12 +325,7 @@ def test_set_post_quantum_on_off():
 
 
 def test_set_post_quantum_off_on_repeated():
-    """
-    Manual TCs:
-
-        Enable - LVPN-5777
-        Disable - LVPN-5778
-    """
+    """Manual TC: LVPN-5774"""
 
     pq_alias = settings.get_pq_alias()
 
@@ -431,14 +337,7 @@ def test_set_post_quantum_off_on_repeated():
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES + lib.OBFUSCATED_TECHNOLOGIES)
 def test_set_post_quantum_on_open_vpn(tech, proto, obfuscated):
-    """
-    Manual TCs:
-
-        [openvpn-udp-on] - LVPN-5788
-        [openvpn-tcp-on] - LVPN-5787
-        [openvpn-udp-off] - LVPN-5781
-        [openvpn-tcp-off] - LVPN-5786
-    """
+    """Manual TC: LVPN-5787"""
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -484,16 +383,7 @@ def test_set_technology_nordwhisper_post_quantum_enabled():
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_autoconnect_enable_twice(tech, proto, obfuscated):
-    """
-    Manual TCs:
-
-        [openvpn-udp-on] - LVPN-8600
-        [openvpn-tcp-on] - LVPN-8601
-        [openvpn-udp-off] - LVPN-8596
-        [openvpn-tcp-off] - LVPN-8595
-        [nordlynx--] - LVPN-8594
-        [nordwhisper--] - LVPN-8597
-    """
+    """Manual TC: LVPN-8597"""
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -505,16 +395,7 @@ def test_autoconnect_enable_twice(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_autoconnect_disable_twice(tech, proto, obfuscated):
-    """
-    Manual TCs:
-
-        [openvpn-udp-on] - LVPN-8586
-        [openvpn-tcp-on] - LVPN-8585
-        [openvpn-udp-off] - LVPN-8584
-        [openvpn-tcp-off] - LVPN-8587
-        [nordlynx--] - LVPN-8582
-        [nordwhisper--] - LVPN-8583
-    """
+    """Manual TC: LVPN-8583"""
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
