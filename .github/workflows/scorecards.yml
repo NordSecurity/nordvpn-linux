@@ -9,7 +9,7 @@ on:
   #   branches: [ main ]
   push:
     branches:
-      - "LVPN-8938_add_scorecard"
+      - "skubiak/LVPN-8938-add-scorecard"
 
 # Declare default permissions as read only.
 permissions: read-all
