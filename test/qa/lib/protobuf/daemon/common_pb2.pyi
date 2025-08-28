@@ -16,11 +16,22 @@ class TriState(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     UNKNOWN: _ClassVar[TriState]
     DISABLED: _ClassVar[TriState]
     ENABLED: _ClassVar[TriState]
+
+class ClientID(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    UNKNOWN_CLIENT: _ClassVar[ClientID]
+    CLI: _ClassVar[ClientID]
+    GUI: _ClassVar[ClientID]
+    TRAY: _ClassVar[ClientID]
 UNKNOWN_VERSION: DaemonApiVersion
 CURRENT_VERSION: DaemonApiVersion
 UNKNOWN: TriState
 DISABLED: TriState
 ENABLED: TriState
+UNKNOWN_CLIENT: ClientID
+CLI: ClientID
+GUI: ClientID
+TRAY: ClientID
 
 class GetDaemonApiVersionRequest(_message.Message):
     __slots__ = ()
