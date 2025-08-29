@@ -358,3 +358,55 @@ def test_custom_dns_order_is_kept(tech, proto, obfuscated):
         else:
             assert nameserver_list == resolver.nameservers
     assert dns.is_unset()
+
+
+@pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_custom_dns_removed_when_tpl_enabled_disconnected(tech, proto, obfuscated, nameserver):
+    """Manual TC: LVPN-8439"""
+
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    nameserver = nameserver.split(" ")
+
+    sh.nordvpn.set.dns(nameserver)
+
+    assert settings.dns_visible_in_settings(nameserver)
+
+    tpl_alias = dns.get_tpl_alias()
+    output = sh.nordvpn.set(tpl_alias, "on")
+
+    assert dns.DNS_MSG_WARNING_DISABLING in output
+    assert settings.is_tpl_enabled()
+    assert not settings.dns_visible_in_settings(nameserver)
+    assert dns.is_unset()
+
+
+@pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_custom_dns_removed_when_tpl_enabled_connected(tech, proto, obfuscated, nameserver):
+    """Manual TC: LVPN-8444"""
+
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    nameserver = nameserver.split(" ")
+
+    sh.nordvpn.set.dns(nameserver)
+
+    assert settings.dns_visible_in_settings(nameserver)
+    assert dns.is_unset()
+
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+
+        assert dns.is_set_for(nameserver)
+
+        tpl_alias = dns.get_tpl_alias()
+        output = sh.nordvpn.set(tpl_alias, "on")
+
+        assert dns.DNS_MSG_WARNING_DISABLING in output
+        assert settings.is_tpl_enabled()
+        assert not settings.dns_visible_in_settings(nameserver)
+        assert dns.is_set_for(dns.DNS_TPL)
+
+    assert dns.is_unset()
