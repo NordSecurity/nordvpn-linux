@@ -54,5 +54,27 @@ class TriState extends $pb.ProtobufEnum {
   const TriState._(super.value, super.name);
 }
 
+class ClientID extends $pb.ProtobufEnum {
+  static const ClientID UNKNOWN_CLIENT =
+      ClientID._(0, _omitEnumNames ? '' : 'UNKNOWN_CLIENT');
+  static const ClientID CLI = ClientID._(1, _omitEnumNames ? '' : 'CLI');
+  static const ClientID GUI = ClientID._(2, _omitEnumNames ? '' : 'GUI');
+  static const ClientID TRAY = ClientID._(3, _omitEnumNames ? '' : 'TRAY');
+
+  static const $core.List<ClientID> values = <ClientID>[
+    UNKNOWN_CLIENT,
+    CLI,
+    GUI,
+    TRAY,
+  ];
+
+  static final $core.List<ClientID?> _byValue =
+      $pb.ProtobufEnum.$_initByValueList(values, 3);
+  static ClientID? valueOf($core.int value) =>
+      value < 0 || value >= _byValue.length ? null : _byValue[value];
+
+  const ClientID._(super.value, super.name);
+}
+
 const $core.bool _omitEnumNames =
     $core.bool.fromEnvironment('protobuf.omit_enum_names');

@@ -217,6 +217,7 @@ class TranslationsCitiesEn {
 	String get kabul => 'Kabul';
 	String get mogadishu => 'Mogadishu';
 	String get nouakchott => 'Nouakchott';
+	String get ashburn => 'Ashburn';
 }
 
 // Path: countries
@@ -859,6 +860,7 @@ extension on Translations {
 			case 'cities.kabul': return 'Kabul';
 			case 'cities.mogadishu': return 'Mogadishu';
 			case 'cities.nouakchott': return 'Nouakchott';
+			case 'cities.ashburn': return 'Ashburn';
 			case 'countries.AL': return 'Albania';
 			case 'countries.DZ': return 'Algeria';
 			case 'countries.AD': return 'Andorra';

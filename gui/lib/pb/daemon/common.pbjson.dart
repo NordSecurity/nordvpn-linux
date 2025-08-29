@@ -42,6 +42,22 @@ const TriState$json = {
 final $typed_data.Uint8List triStateDescriptor = $convert.base64Decode(
     'CghUcmlTdGF0ZRILCgdVTktOT1dOEAASDAoIRElTQUJMRUQQARILCgdFTkFCTEVEEAI=');
 
+@$core.Deprecated('Use clientIDDescriptor instead')
+const ClientID$json = {
+  '1': 'ClientID',
+  '2': [
+    {'1': 'UNKNOWN_CLIENT', '2': 0},
+    {'1': 'CLI', '2': 1},
+    {'1': 'GUI', '2': 2},
+    {'1': 'TRAY', '2': 3},
+  ],
+};
+
+/// Descriptor for `ClientID`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List clientIDDescriptor = $convert.base64Decode(
+    'CghDbGllbnRJRBISCg5VTktOT1dOX0NMSUVOVBAAEgcKA0NMSRABEgcKA0dVSRACEggKBFRSQV'
+    'kQAw==');
+
 @$core.Deprecated('Use getDaemonApiVersionRequestDescriptor instead')
 const GetDaemonApiVersionRequest$json = {
   '1': 'GetDaemonApiVersionRequest',
