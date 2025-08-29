@@ -1,4 +1,4 @@
-name: CLI CI
+name: Core CI
 on:
   workflow_call:
 
