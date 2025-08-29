@@ -281,7 +281,7 @@ func walkIncludeFiles(mainJason []byte, srcBasePath, trgBasePath string, fr file
 				}
 				incFile, err := handleIncludeFiles(srcBasePath, trgBasePath, incFileName, fr, fw)
 				if err != nil {
-					return nil, fmt.Errorf("downloading include file [%s]: %w", incFileName, err)
+					return nil, fmt.Errorf("handling include file [%s]: %w", incFileName, err)
 				}
 				incFilesJson = append(incFilesJson, incFile...)
 			}
@@ -300,7 +300,7 @@ func handleIncludeFiles(srcBasePath, trgBasePath, incFileName string, fr fileRea
 	// get include file
 	incJsonStr, err := fr.readFile(filepath.Join(srcBasePath, incFileName))
 	if err != nil {
-		return nil, fmt.Errorf("downloading include file: %w", err)
+		return nil, fmt.Errorf("handling include file: %w", err)
 	}
 	// do basic json validation
 	var tmpJson any
@@ -311,7 +311,7 @@ func handleIncludeFiles(srcBasePath, trgBasePath, incFileName string, fr fileRea
 	incHashFileName := strings.ReplaceAll(incFileName, ".json", "-hash.json")
 	incHashStr, err := fr.readFile(filepath.Join(srcBasePath, incHashFileName))
 	if err != nil {
-		return nil, fmt.Errorf("downloading include file hash: %w", err)
+		return nil, fmt.Errorf("handling include file hash: %w", err)
 	}
 	var incJsonHash jsonHash
 	if err = json.Unmarshal(incHashStr, &incJsonHash); err != nil {

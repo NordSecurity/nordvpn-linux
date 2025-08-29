@@ -128,7 +128,7 @@ func (r *RPC) StartRemoteConfigLoaderJob(
 		if err != nil {
 			log.Println(internal.WarningPrefix, "converting remote config load time:", err)
 		} else {
-			if tm > 3 && tm < 100 {
+			if tm >= 1 && tm < 100 {
 				rcLoadTime = time.Duration(tm) * time.Minute
 			}
 		}
