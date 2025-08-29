@@ -26,66 +26,75 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - id: diff
-        shell: bash
-        run: |
-          set -euo pipefail
+      - name: Decide
+        id: decide
+        run: python3 ci/detect_changes.py --gui-dir gui
 
-          # Tag push? Build everything.
-          if [[ "${GITHUB_REF:-}" == refs/tags/* ]]; then
-            echo "gui_changed=true"  >> "${GITHUB_OUTPUT}"
-            echo "core_changed=true" >> "${GITHUB_OUTPUT}"
-            exit 0
-          fi
-
-          # Establish BASE/HEAD for PR vs push
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BASE="${{ github.event.pull_request.base.sha }}"
-            HEAD="${{ github.event.pull_request.head.sha }}"
-          else
-            BASE="${{ github.event.before }}"
-            HEAD="${{ github.sha }}"
-            # First push on a branch? 'before' may be empty/zeros.
-            if [ -z "${BASE:-}" ] || [ "${BASE}" = "0000000000000000000000000000000000000000" ]; then
-              BASE="$(git rev-list -n 1 "${HEAD}^" 2>/dev/null || true)"
-            fi
-          fi
-
-          # Ensure commits exist locally (handles shallow, rebases)
-          function ensure_commit() {
-            local c="${1:-}"
-            [ -z "$c" ] && return 0
-            git rev-parse --verify "${c}^{commit}" >/dev/null 2>&1 || \
-              git fetch --no-tags --depth=1 origin "${c}" || true
-          }
-          ensure_commit "${BASE}"
-          ensure_commit "${HEAD}"
-
-          GUI_CHANGED=false
-          CORE_CHANGED=false
-
-          # Compute diff range
-          if [ -z "${BASE:-}" ]; then
-            RANGE="${HEAD}^!"
-          else
-            RANGE="${BASE}..${HEAD}"
-          fi
-
-          # Classify changed files
-          while IFS= read -r f; do
-            [ -z "${f}" ] && continue
-            f="${f#./}"                 # normalize
-            if [[ "${f}" == gui/* ]]; then
-              GUI_CHANGED=true
-            else
-              CORE_CHANGED=true
-            fi
-          done < <(git diff --name-only "${RANGE}" || true)
-
-          echo "gui_changed=${GUI_CHANGED}"
-          echo "core_changed=${CORE_CHANGED}"
-          echo "gui_changed=${GUI_CHANGED}" >> "${GITHUB_OUTPUT}"
-          echo "core_changed=${CORE_CHANGED}" >> "${GITHUB_OUTPUT}"
+      # - id: diff
+      #   shell: bash
+      #   run: |
+      #     set -euo pipefail
+      #
+      #     GUI_STATUS="gui_changed"
+      #     CORE_STATUS="core_changed"
+      #
+      #     # Tag push? Build everything.
+      #     if [[ "${GITHUB_REF:-}" == refs/tags/* ]]; then
+      #       echo "${GUI_STATUS}=true"  >> "${GITHUB_OUTPUT}"
+      #       echo "${CORE_STATUS}=true" >> "${GITHUB_OUTPUT}"
+      #       exit 0
+      #     fi
+      #
+      #     # Establish BASE/HEAD for PR vs push
+      #     if [ "${{ github.event_name }}" = "pull_request" ]; then
+      #       BASE="${{ github.event.pull_request.base.sha }}"
+      #       HEAD="${{ github.event.pull_request.head.sha }}"
+      #     else
+      #       BASE="${{ github.event.before }}"
+      #       HEAD="${{ github.sha }}"
+      #       # First push on a branch? 'before' may be empty/zeros.
+      #       if [ -z "${BASE:-}" ] || [ "${BASE}" = "0000000000000000000000000000000000000000" ]; then
+      #         BASE="$(git rev-list -n 1 "${HEAD}^" 2>/dev/null || true)"
+      #       fi
+      #     fi
+      #
+      #     # Ensure commits exist locally (handles shallow, rebases)
+      #     function ensure_commit() {
+      #       local c="${1:-}"
+      #       [ -z "$c" ] && return 0
+      #       git rev-parse --verify "${c}^{commit}" >/dev/null 2>&1 || \
+      #         git fetch --no-tags --depth=1 origin "${c}" || true
+      #     }
+      #     ensure_commit "${BASE}"
+      #     ensure_commit "${HEAD}"
+      #
+      #     GUI_CHANGED=false
+      #     CORE_CHANGED=false
+      #
+      #     # Compute diff range
+      #     if [ -z "${BASE:-}" ]; then
+      #       RANGE="${HEAD}^!"
+      #     else
+      #       RANGE="${BASE}..${HEAD}"
+      #     fi
+      #
+      #     # Classify changed files
+      #     while IFS= read -r f; do
+      #       [ -z "${f}" ] && continue
+      #       f="${f#./}"                 # normalize
+      #       if [[ "${f}" == gui/* ]]; then
+      #         GUI_CHANGED=true
+      #       else
+      #         CORE_CHANGED=true
+      #       fi
+      #     done < <(git diff --name-only "${RANGE}" || true)
+      #
+      #     echo "Results:"
+      #     echo "${GUI_STATUS}=${GUI_CHANGED}"
+      #     echo "${CORE_STATUS}=${CORE_CHANGED}"
+      #
+      #     echo "${GUI_STATUS}=${GUI_CHANGED}" >> "${GITHUB_OUTPUT}"
+      #     echo "${CORE_STATUS}=${CORE_CHANGED}" >> "${GITHUB_OUTPUT}"
 
   # Run core CI when any non-GUI file changed
   core_ci:
