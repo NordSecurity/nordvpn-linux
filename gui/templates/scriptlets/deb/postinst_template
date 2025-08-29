@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+${INSTALL_SCRIPT}
+
+case "$1" in
+    configure)
+        if [[ ! "$2" ]]; then
+            echo "${SUCCESS_INSTALL_MESSAGE}"
+        fi
+    ;;
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+    *)
+        echo "[ERROR] postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+exit 0

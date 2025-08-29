@@ -1,0 +1,128 @@
+{
+    "code_2002_title": "Reconnect to VPN to apply changes",
+    "code_2002_msg": "You are connected to NordVPN. Please reconnect to apply changes.",
+
+    "code_3001_title": "Unauthorized",
+    "code_3001_msg": "We couldn't log you in. Make sure your credentials are correct. If you have turned on MFA, log in using the 'nordvpn login' command.",
+
+    "code_3003_title": "Format error",
+    "code_3003_msg": "The command is not valid.",
+
+    "code_3004_title": "Config error",
+    "code_3004_msg": "It seems there's an issue with the config file. If the issue persists, please contact our customer support.",
+
+    "code_3005_title": "Empty payload",
+    "code_3005_msg": "Something went wrong. Please try again. If the problem persists, contact our customer support.",
+
+    "code_3007_title": "You're offline",
+    "code_3007_msg": "Please check your internet connection and try again.",
+
+    "code_3008_title": "Account expired",
+    "code_3008_msg": "Your account has expired. Renew your subscription now to continue enjoying the ultimate privacy and security with NordVPN.",
+
+    "code_3010_title": "VPN misconfigured",
+    "code_3010_msg": "Something went wrong. Please try again. If the problem persists, contact our customer support.",
+
+    "code_3013_title": "Daemon offline",
+    "code_3013_msg": "Cannot reach system daemon.",
+
+    "code_3014_title": "Gateway error",
+    "code_3014_msg": "It's not you, it's us. We're having trouble reaching our servers. If the issue persists, please contact our customer support.",
+
+    "code_3015_title": "Outdated",
+    "code_3015_msg": "A new version of NordVPN is available! Please update the application.",
+
+    "code_3017_title": "Dependency error",
+    "code_3017_msg": "Currently in use.",
+
+    "code_3019_title": "No new data error",
+    "code_3019_msg": "You have already provided a rating for your active/previous connection.",
+
+    "code_3021_title": "Expired renew token",
+    "code_3021_msg": "For security purposes, please log in again.",
+
+    "code_3022_title": "Token renew error",
+    "code_3022_msg": "We couldn't load your account data. Check your internet connection and try again. If the issue persists, please contact our customer support.",
+
+    "code_3023_title": "Kill switch error",
+    "code_3023_msg": "Something went wrong. Please try again. If the problem persists, contact our customer support.",
+
+    "code_3024_title": "Bad request",
+    "code_3024_msg": "Username or password is not correct. Please try again.",
+
+    "code_3026_title": "Internal daemon error",
+    "code_3026_msg": "Something went wrong. Please try again. If the problem persists, contact our customer support.",
+
+    "code_3032_title": "Server not available",
+    "code_3032_msg": "The specified server is not available at the moment or does not support your connection settings.",
+
+    "code_3033_title": "Inexistent tag",
+    "code_3033_msg": "The specified server does not exist.",
+
+    "code_3034_title": "Double group error",
+    "code_3034_msg": "You cannot connect to a group and set the group option at the same time.",
+
+    "code_3035_title": "Token login error",
+    "code_3035_msg": "Token parameter value is missing.",
+
+    "code_3036_title": "Inexistent group",
+    "code_3036_msg": "The specified group does not exist.",
+
+    "code_3037_title": "Not obfuscated auto connect server",
+    "code_3037_msg": "Your selected server doesn't support obfuscation. Choose a different server or turn off obfuscation.",
+
+    "code_3038_title": "Obfuscated auto connect server",
+    "code_3038_msg": "Turn on obfuscation to connect to obfuscated servers.",
+
+    "code_3039_title": "Invalid token",
+    "code_3039_msg": "We couldn't log you in - the access token is not valid. Please check if you've entered the token correctly. If the issue persists, contact our customer support.",
+
+    "code_3040_title": "Private subnet LAN discovery",
+    "code_3040_msg": "Allowlisting a private subnet is not available while local network discovery is enabled.",
+
+    "code_3041_title": "Dedicated IP renew error",
+    "code_3041_msg": "You don't have a dedicated IP subscription. To get a personal IP address that belongs only to you, continue in the browser.",
+
+    "code_3042_title": "Dedicated IP no server",
+    "code_3042_msg": "This server isn't currently included in your dedicated IP subscription.",
+
+    "code_3043_title": "Dedicated IP service but on server",
+    "code_3043_msg": "It looks like you haven't selected the preferred server location for your dedicated IP. Please head over to Nord Account and set up your dedicated IP server.",
+
+    "code_3044_title": "Allow list invalid subnet",
+    "code_3044_msg": "The command is not valid.",
+
+    "code_3047_title": "Allow list port noop",
+    "code_3047_msg": "Port is already allowlisted.",
+
+    "code_3048_title": "Here's what to know",
+    "code_3048_msg": "The post-quantum encryption and Meshnet can't run at the same time. Please turn off one feature to use the other.",
+
+    "code_3049_title": "Here's what to know",
+    "code_3049_msg": "This setting is not compatible with post-quantum encryption. Turn off post-quantum encryption first.",
+
+    "code_3051_title": "Disabled technology",
+    "code_3051_msg": "Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.",
+
+    "code_5007_title": "Restart daemon to apply setting",
+    "code_5007_msg": "Please restart the NordVPN daemon in the terminal. For example, run: sudo systemctl restart nordvpnd.",
+
+    "code_5008_title": "gRPC timeout error",
+    "code_5008_msg": "Request time out.",
+
+    "code_5010_title": "Missing exchange token",
+    "code_5010_msg": "Exchange token not provided.",
+
+    "code_5013_title": "Failed to open the browser",
+    "code_5013_msg": "We couldn't open the browser for you to log in.",
+
+    "code_5014_title": "Failed to open the browser",
+    "code_5014_msg": "We couldn't open the browser for you to create an account.",
+
+    "code_5015_title": "It didn't work this time",
+    "code_5015_msg": "The VPN connection has failed. Please check your internet connection and try connecting to the VPN again. If the issue persists, contact our customer support.",
+
+    "genericErrorTitle": "It didn't work this time",
+    "genericErrorMessage": "Something went wrong. Please try again. If the problem persists, contact our customer support."
+
+}
