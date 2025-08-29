@@ -18,7 +18,7 @@ def teardown_function(function):  # noqa: ARG001
     daemon.stop()
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1 + lib.NORDWHISPER_TECHNOLOGY)
 def test_obfuscate_nonobfucated(tech, proto, obfuscated):
     """Manual TC: LVPN-788"""
 
@@ -30,7 +30,7 @@ def test_obfuscate_nonobfucated(tech, proto, obfuscated):
         assert "Obfuscation is not available with the current technology. Change the technology to OpenVPN to use obfuscation." in str(ex.value)
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC2 + lib.TECHNOLOGIES_BASIC1)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC2 + lib.TECHNOLOGIES_BASIC1 + lib.NORDWHISPER_TECHNOLOGY)
 def test_set_technology(tech, proto, obfuscated):  # noqa: ARG001
     """Manual TC: LVPN-601"""
 
@@ -266,11 +266,21 @@ def test_set_analytics_starts_prompt_even_if_completed_before():
     cli2.expect(pexpect.EOF)
 
 
-def test_set_defaults_no_logout():
-    """Manual TC: LVPN-1966"""
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_set_defaults_no_logout(tech, proto, obfuscated):
+    """Manual TC: LVPN-9029"""
 
-    sh.nordvpn.set.defaults()
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
 
+    sh.nordvpn.set("virtual-location", "off")
+    sh.nordvpn.set("lan-discovery", "on")
+
+    assert not settings.is_virtual_location_enabled()
+    assert settings.is_lan_discovery_enabled()
+
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+
+    assert settings.app_has_defaults_settings()
     assert "Account Information" in sh.nordvpn.account()
 
 
@@ -423,3 +433,89 @@ def test_set_defaults_killswitch_interaction(killswitch_initial, killswitch_flag
 
     assert daemon.is_killswitch_on() is expected_killswitch_state
     assert network.is_not_available(2) is expected_killswitch_state
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1 + lib.NORDWHISPER_TECHNOLOGY)
+def test_set_protocol_openvpn_only(tech, proto, obfuscated):
+    """Manual TC: LVPN-8537"""
+
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.set.protocol("TCP")
+        assert "Protocol setting is not available when the set technology is not OpenVPN" in str(ex.value)
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_set_defaults_no_logout_connected(tech, proto, obfuscated):
+    """Manual TC: LVPN-9014"""
+
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    sh.nordvpn.set("notify", "off")
+    sh.nordvpn.set("tpl", "on")
+
+    sh.nordvpn.connect()
+
+    assert "Status: Connected" in sh.nordvpn.status()
+    assert not settings.is_notify_enabled()
+    assert settings.is_tpl_enabled()
+
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+
+    assert "Status: Disconnected" in sh.nordvpn.status()
+    assert settings.app_has_defaults_settings()
+    assert "Account Information" in sh.nordvpn.account()
+
+
+@pytest.mark.parametrize("nameserver", (dns.DNS_CASE_CUSTOM_SINGLE,))
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_is_custom_dns_removed_after_setting_defaults_no_logout(tech, proto, obfuscated, nameserver):
+    """Manual TC: LVPN-8748"""
+
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    sh.nordvpn.set.dns([nameserver])
+    assert settings.dns_visible_in_settings([nameserver])
+
+    sh.nordvpn.connect()
+
+    assert dns.is_set_for([nameserver])
+
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+
+    assert settings.app_has_defaults_settings()
+
+    sh.nordvpn.connect()
+
+    assert not dns.is_set_for(nameserver)
+
+
+def test_tray_off_on():
+    """Manual TC: LVPN-8776"""
+
+    assert "Tray set to 'disabled' successfully." in sh.nordvpn.set.tray("off")
+    assert not settings.is_tray_enabled()
+
+    assert "Tray set to 'enabled' successfully." in sh.nordvpn.set.tray("on")
+    assert settings.is_tray_enabled()
+
+
+def test_tray_on_off_repeated():
+    """Manual TC: LVPN-8778"""
+
+    assert "Tray is already set to 'enabled'." in sh.nordvpn.set.tray("on")
+
+    sh.nordvpn.set.tray("off")
+
+    assert "Tray is already set to 'disabled'." in sh.nordvpn.set.tray("off")
+
+
+def test_lan_discovery_on_off():
+    """Manual TC: LVPN-8448"""
+
+    assert "LAN Discovery is set to 'enabled' successfully." in sh.nordvpn.set("lan-discovery", "on")
+    assert settings.is_lan_discovery_enabled()
+
+    assert "LAN Discovery is set to 'disabled' successfully." in sh.nordvpn.set("lan-discovery", "off")
+    assert not settings.is_lan_discovery_enabled()
