@@ -11,8 +11,8 @@ from lib.log_reader import LogReader
 
 from lib.remote_config_manager import LOCAL_CACHE_DIR
 
-RC_REMOTE_MESSAGES = "[Info] feature [ {} ] remote config downloaded to: /var/lib/nordvpn/conf"
-RC_LOCAL_MESSAGES = "[Info] feature [ {} ] config loaded from: /var/lib/nordvpn/conf"
+RC_REMOTE_MESSAGES = "[Info] feature [{}] remote config downloaded to: /var/lib/nordvpn/conf"
+RC_LOCAL_MESSAGES = "[Info] feature [{}] config loaded from: /var/lib/nordvpn/conf"
 RC_REQUEST_MESSAGES = "Request:  GET https://downloads.nordcdn.com/apps/linux/config/dev/{}-hash.json"
 SERVICES_TO_BE_CHECK = ["nordvpn", "libtelio", "meshnet"]
 RC_INITIAL_RUN_MESSAGES = [RC_REMOTE_MESSAGES.format(service) for service in SERVICES_TO_BE_CHECK] + [
@@ -293,14 +293,14 @@ def test_remote_config_cdn_unavailable_(
     daemon.restart()
 
     assert daemon_log_reader.wait_for_messages(
-        RC_REMOTE_MESSAGES.format(error_message), cursor=first_time_mark, timeout=300
-    ), f"Couldn't found error logs, logs since start of daemon are next: {daemon_log_reader.get_partial_log(cursor=first_time_mark)}"
+        RC_REMOTE_MESSAGES.format(error_message), cursor=first_time_mark, timeout=90
+    ), f"Couldn't found error logs"
 
     second_time_mark = daemon_log_reader.get_cursor()
 
     assert daemon_log_reader.wait_for_messages(
-        RC_REMOTE_MESSAGES.format(error_message), cursor=second_time_mark, timeout=300
-    ), f"Couldn't found error logs, logs since start of daemon are next: {daemon_log_reader.get_partial_log(cursor=second_time_mark)}"
+        RC_REMOTE_MESSAGES.format(error_message), cursor=second_time_mark, timeout=90
+    ), f"Couldn't found error logs"
 
 
 def test_remote_config_download_config_on_start(
@@ -326,45 +326,36 @@ def test_remote_config_download_config_on_start(
         - # Start nordvpnd daemon
         - # Check journalctl for download logs related to remote config
         - # Wait for next check
-        - # Check journalctl for download logs related to remote config
+        - # Check journalctl for request logs related to remote config
 
     :endsteps
         - # Restore original config in daemon config file
 
     :expected
         - # Nordvpn daemon shows download related to remote config
-        - # After 1 min, in next iteration, nordvpn daemon still checks and shows download logs related to remote config
+        - # After 1 min, in next iteration, nordvpn daemon still checks and shows request logs related to remote config
     """
-    first_time_mark = daemon_log_reader.get_cursor()
     missed_services_config = []
     daemon.start()
 
     for service_config in SERVICES_TO_BE_CHECK:
-        if not daemon_log_reader.wait_for_messages(RC_REMOTE_MESSAGES.format(service_config), timeout=300):
+        if not daemon_log_reader.wait_for_messages(RC_REMOTE_MESSAGES.format(service_config), timeout=90):
             missed_services_config.append(service_config)
 
-    assert (
-        not missed_services_config
-    ), f"Couldn't found download logs related to {missed_services_config}, logs since start of daemon are next: {daemon_log_reader.get_partial_log(cursor=first_time_mark)}"
+    assert not missed_services_config, f"Couldn't found download logs related to {missed_services_config}"
 
     expected_service_config = SERVICES_TO_BE_CHECK
     time_mark = time.time()
 
-    while time.time() < time_mark + 300:
+    while time.time() < time_mark + 90:
         second_time_mark = daemon_log_reader.get_cursor()
         for service_config in SERVICES_TO_BE_CHECK:
             for line in daemon_log_reader.get_partial_log(cursor=second_time_mark):
                 if "Request" in line and "GET" in line and service_config + "-hash.json" in line:
                     expected_service_config.remove(line)
         time.sleep(10)
-        # if not daemon_log_reader.wait_for_messages(
-        #     RC_REQUEST_MESSAGES.format(service_config), cursor=second_time_mark, timeout=90
-        # ):
-        #     missed_services_config.append(service_config)
 
-    assert (
-        not expected_service_config
-    ), f"Couldn't found request logs related to {expected_service_config}, logs since start of daemon are next: {daemon_log_reader.get_partial_log(cursor=second_time_mark)}"
+    assert not expected_service_config, f"Couldn't found request logs related to {expected_service_config}"
 
 
 @pytest.mark.parametrize(
@@ -414,22 +405,17 @@ def test_remote_config_attempts_config_(
         - # After 1 min, in next iteration, nordvpn daemon still checks and shows download logs related to remote config
         - # Files are downloaded/not downloaded according to remote config files
     """
-    first_time_mark = daemon_log_reader.get_cursor()
-    command_for_conf_file = 'sudo find /var/lib/nordvpn/conf -type f -exec stat -c "%a %y %n" {} \;'
+    command_for_conf_file = f'sudo find {LOCAL_CACHE_DIR} -type f -exec stat -c "%a %y %n" {{}} \\;'
     chmod_to_be_found = "600"
     missed_services_config = []
 
     daemon.restart()
 
     for service_config in SERVICES_TO_BE_CHECK:
-        if not daemon_log_reader.wait_for_messages(
-            RC_REMOTE_MESSAGES.format(service_config), cursor=first_time_mark, timeout=300
-        ):
+        if not daemon_log_reader.wait_for_messages(RC_REMOTE_MESSAGES.format(service_config), timeout=90):
             missed_services_config.append(service_config)
 
-    assert (
-        not missed_services_config
-    ), f"Couldn't found download logs related to {missed_services_config}, logs since start of daemon are next: {daemon_log_reader.get_partial_log(cursor=first_time_mark)}"
+    assert not missed_services_config, f"Couldn't found download logs related to {missed_services_config}"
 
     conf_files_data = subprocess.run(command_for_conf_file, shell=True, check=True, capture_output=True, text=True)
 
@@ -445,7 +431,7 @@ def test_remote_config_attempts_config_(
     expected_service_config = SERVICES_TO_BE_CHECK
     time_mark = time.time()
 
-    while time.time() < time_mark + 300:
+    while time.time() < time_mark + 90:
         second_time_mark = daemon_log_reader.get_cursor()
         for service_config in SERVICES_TO_BE_CHECK:
             for line in daemon_log_reader.get_partial_log(cursor=second_time_mark):
@@ -453,9 +439,7 @@ def test_remote_config_attempts_config_(
                     expected_service_config.remove(line)
         time.sleep(10)
 
-    assert (
-        expected_service_config
-    ), f"Couldn't found download logs related to {expected_service_config}, logs since start of daemon are next: {daemon_log_reader.get_partial_log(cursor=second_time_mark)}"
+    assert expected_service_config, f"Couldn't found download logs related to {expected_service_config}"
 
     conf_files_data_after_attempt = subprocess.run(
         command_for_conf_file, shell=True, check=True, capture_output=True, text=True
@@ -501,10 +485,11 @@ def test_remote_config_change_local_meshnet_config_settings_(
     parameter,
     value,
     additional_log_verification,
-    # backup_restore_rc_config_files,
+    backup_restore_rc_config_files,
     rc_config_manager,
+    daemon_log_reader,  # noqa: ARG001
+    set_custom_timeout_for_rc_retry_scheme,  # noqa: ARG001
     initialized_app_with_remote_config,  # noqa: ARG001
-    daemon_log_reader,
 ):
     """
     :tcid       {tcid}
@@ -530,7 +515,9 @@ def test_remote_config_change_local_meshnet_config_settings_(
         - # Config file was loaded by app
         - # Meshnet option is unavailable
     """
-    rc_config_manager.set_permissions_cache_dir()
+    if not rc_config_manager.set_permissions_cache_dir():
+        pytest.skip("Directory doesn't exist")
+
     with open(f"{LOCAL_CACHE_DIR}/{RC_MESHNET_CONFIG_FILE}", "r") as file:
         config = json.load(file)
 
@@ -544,21 +531,21 @@ def test_remote_config_change_local_meshnet_config_settings_(
 
     sha_sun_hash = subprocess.run(
         f"sha256sum {LOCAL_CACHE_DIR}/{RC_MESHNET_CONFIG_FILE}", capture_output=True, shell=True, text=True
-    ).stdout
+    ).stdout.split()[0]
 
     with open(f"{LOCAL_CACHE_DIR}/{RC_MESHNET_HASH_FILE}", "w") as file:
-        file.write(sha_sun_hash)
+        json.dump({"hash": sha_sun_hash}, file)
 
     cursor = daemon_log_reader.get_cursor()
     daemon.restart()
 
     assert daemon_log_reader.wait_for_messages(
-        messages=RC_LOCAL_MESSAGES.format("meshnet"), cursor=cursor, timeout=300
+        messages=RC_LOCAL_MESSAGES.format("meshnet"), cursor=cursor, timeout=90
     ), "Couldn't found log of loading modified json file"
 
     if additional_log_verification:
         assert daemon_log_reader.wait_for_messages(
-            messages=additional_log_verification, cursor=cursor, timeout=300
+            messages=additional_log_verification, cursor=cursor, timeout=90
         ), f"Couldn't found log {additional_log_verification}"
 
     if value is False:

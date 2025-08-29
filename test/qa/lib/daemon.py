@@ -84,6 +84,9 @@ def start():
     else:
         # call to init.d returns before the daemon is actually started
         _rewrite_log_path()
+        if is_running():
+            print("Nordvpn is already running")
+            return True
         try:
             print("Starting NordVPN service...")
             # Use the init.d script as recommended in the error message

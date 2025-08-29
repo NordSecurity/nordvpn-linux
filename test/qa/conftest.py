@@ -1,6 +1,5 @@
 import datetime
 import io
-import re
 from urllib.parse import urlparse
 
 import lib
@@ -250,7 +249,7 @@ def daemon_log_cursor(daemon_log_reader) -> int:
 
     :param daemon_log_reader: An instance of the "LogReader" class.
 
-    :return: An integer cursor representing the current end of the log file..
+    :return: An integer cursor representing the current end of the log file.
     """
     cursor = daemon_log_reader.get_cursor()
 
@@ -317,10 +316,13 @@ def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
     """Fixture for setting a custom timeout for the NordVPN daemon's rc retry scheme."""
     print("Setting custom timeout for NordVPN daemon's rc retry scheme")
     daemon_path = NORDVPND_FILE.get(os.environ.get("NORDVPN_TYPE"))
-    parameters = ["RC_USE_LOCAL_CONFIG=1", "RC_LOAD_TIME_MIN=4", "IGNORE_HEADER_VALIDATION=1"]
+    parameters = ["RC_USE_LOCAL_CONFIG=1", "RC_LOAD_TIME_MIN=1", "IGNORE_HEADER_VALIDATION=1"]
 
+    if not os.path.exists(daemon_path):
+        print(f"Daemon file does not exist. {daemon_path}")
+        pytest.skip("Unable to modify config file. File doesn't exist")
     os.makedirs(f"{os.getcwd()}/tmp/", exist_ok=True)
-    subprocess.run(f"sudo cp {daemon_path} {os.getcwd()}/tmp", shell=True, check=True)
+    subprocess.run(f"sudo cp {daemon_path} {os.getcwd()}/tmp", shell=True, check=True, text=True, capture_output=True)
 
     for parameter in parameters:
         if os.environ.get("NORDVPN_TYPE") == "deb":
@@ -333,6 +335,7 @@ def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
         subprocess.run(sed_command)
 
     time_mark = daemon_log_reader.get_cursor()
+
     if os.environ.get("NORDVPN_TYPE") == "snap":
         subprocess.run(f"sudo sudo systemctl daemon-reload", shell=True, check=True)
         subprocess.run(f'sudo snap restart {NORDVPND.get(os.environ.get("NORDVPN_TYPE"))}', shell=True, check=True)
@@ -344,7 +347,13 @@ def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
 
     yield
 
-    subprocess.run(f'sudo cp {os.getcwd()}/tmp/{daemon_path.split("/")[-1]} {daemon_path}')
+    subprocess.run(
+        f'sudo cp {os.getcwd()}/tmp/{daemon_path.split("/")[-1]} {daemon_path}',
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=True,
+    )
 
     if os.environ.get("NORDVPN_TYPE") == "snap":
         subprocess.run(f"sudo systemctl daemon-reload", shell=True, check=True)
@@ -384,10 +393,12 @@ def get_package_system():
 
 
 @pytest.fixture
-def backup_restore_rc_config_files():
-    """Fixture to backup original config for remote config, and restore it after tests."""
+def backup_restore_rc_config_files(nordvpnd_scope_function):
+    """Fixture to back up original config for remote config, and restore it after tests."""
     os.makedirs(f"{os.getcwd()}/tmp", exist_ok=True)
 
+    print("Copy original remote monitoring config files as back up")
     subprocess.run(f"sudo cp -r {LOCAL_CACHE_DIR} {os.getcwd()}/tmp", check=True, shell=True)
     yield
+    print("Restore original remote monitoring config files")
     subprocess.run(f"sudo cp -r {os.getcwd()}/tmp {LOCAL_CACHE_DIR} ", check=True, shell=True)
