@@ -316,11 +316,12 @@ def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
     """Fixture for setting a custom timeout for the NordVPN daemon's rc retry scheme."""
     print("Setting custom timeout for NordVPN daemon's rc retry scheme")
     daemon_path = NORDVPND_FILE.get(os.environ.get("NORDVPN_TYPE"))
-    parameters = ["RC_USE_LOCAL_CONFIG=1", "RC_LOAD_TIME_MIN=1", "IGNORE_HEADER_VALIDATION=1"]
+    parameters = ["RC_USE_LOCAL_CONFIG=1", f"RC_LOAD_TIME_MIN={RC_TIMEOUT}", "IGNORE_HEADER_VALIDATION=1"]
 
     if not os.path.exists(daemon_path):
         print(f"Daemon file does not exist. {daemon_path}")
         pytest.skip("Unable to modify config file. File doesn't exist")
+
     os.makedirs(f"{os.getcwd()}/tmp/", exist_ok=True)
     subprocess.run(f"sudo cp {daemon_path} {os.getcwd()}/tmp", shell=True, check=True, text=True, capture_output=True)
 
@@ -342,7 +343,9 @@ def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
     else:
         daemon.restart()
 
-    if not daemon_log_reader.wait_for_messages("[Info] remote config download job time period: 4m0s", cursor=time_mark):
+    if not daemon_log_reader.wait_for_messages(
+        f"[Info] remote config download job time period: {RC_TIMEOUT}m0s", cursor=time_mark
+    ):
         print("Service doesn't applied new time period.")
 
     yield

@@ -103,7 +103,7 @@ def start():
             start_time = time.time()
             socket_path = "/run/nordvpn/nordvpnd.sock"
 
-            while not os.path.exists(socket_path) and (time.time() - start_time < max_wait):
+            while not os.path.exists(socket_path) and (time.time() < start_time + max_wait):
                 print(f"Waiting for socket file {socket_path}...")
                 time.sleep(1)
 
