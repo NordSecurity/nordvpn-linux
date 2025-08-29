@@ -43,5 +43,7 @@ def search_journalctl_logs(search_pattern: str, since: str, service: str, timeou
         except subprocess.CalledProcessError as e:
             print(f"Failed to get service logs for {service}: {e}")
             return []
-    print(f"Couldn't find service logs for {service} in {timeout} seconds")
+    print(
+        f"Couldn't find service logs for {service} in {timeout} seconds. Logs from that time are next: {result.stdout.splitlines()}"
+    )
     return []

@@ -21,6 +21,7 @@ from lib import logging, network, daemon, login, info, firewall
 from lib.remote_config_manager import RemoteConfigManager, LOCAL_CACHE_DIR, REMOTE_DIR
 from lib.logging import FILE
 from lib.log_reader import LogReader
+from constants import NORDVPND, NORDVPND_FILE
 
 pytest_plugins = "lib.pytest_timeouts.pytest_timeouts"
 
@@ -264,6 +265,7 @@ def clean_cache_files(rc_config_manager):
 
     :param rc_config_manager: An instance of the "RemoteConfigManager" class.
     """
+    print("Clearing local cache file")
     if rc_config_manager.set_permissions_cache_dir():
         subprocess.run(["sudo", "rm", "-rf", LOCAL_CACHE_DIR], check=True)
     else:
@@ -311,51 +313,54 @@ def disable_remote_endpoint():
 
 
 @pytest.fixture
-def set_custom_timeout_for_rc_retry_scheme():
+def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
     """Fixture for setting a custom timeout for the NordVPN daemon's rc retry scheme."""
-    daemon_path = "/usr/lib/systemd/system/nordvpnd.service"
-    default_config = None
-    try:
-        with open(daemon_path, "r") as f:
-            default_config = f.read()
+    print("Setting custom timeout for NordVPN daemon's rc retry scheme")
+    daemon_path = NORDVPND_FILE.get(os.environ.get("NORDVPN_TYPE"))
+    parameters = ["RC_USE_LOCAL_CONFIG=1", "RC_LOAD_TIME_MIN=4", "IGNORE_HEADER_VALIDATION=1"]
 
-            pattern = r'(Environment="RC_LOAD_TIME_MIN=)(\d+)( RC_USE_LOCAL_CONFIG=.*?")'
-            updated_content = re.sub(pattern, rf"\g<1>{RC_TIMEOUT}\g<3>", default_config)
+    os.makedirs(f"{os.getcwd()}/tmp/", exist_ok=True)
+    subprocess.run(f"sudo cp {daemon_path} {os.getcwd()}/tmp", shell=True, check=True)
 
-        with open(daemon_path, "w") as f:
-            f.write(updated_content)
+    for parameter in parameters:
+        if os.environ.get("NORDVPN_TYPE") == "deb":
+            # For container
+            sed_command = ["sudo", "sed", "-i", f"1a export {parameter}", daemon_path]
+        else:
+            # For VM
+            sed_command = ["sudo", "sed", "-i", f'/$$Service$$/a Environment="{parameter}"']
 
-            subprocess.run(["sudo", "systemctl", "restart", "nordvpnd.service"], check=True)
-    except FileNotFoundError:
-        print(f"Couldn't find {daemon_path}")
-    except PermissionError:
-        print(f"Doesn't have permission to read/write for {daemon_path}")
-    except Exception as e:
-        print(f"Got an error during setting up nordvpnd.service: {e}")
+        subprocess.run(sed_command)
+
+    time_mark = daemon_log_reader.get_cursor()
+    if os.environ.get("NORDVPN_TYPE") == "snap":
+        subprocess.run(f"sudo sudo systemctl daemon-reload", shell=True, check=True)
+        subprocess.run(f'sudo snap restart {NORDVPND.get(os.environ.get("NORDVPN_TYPE"))}', shell=True, check=True)
+    else:
+        daemon.restart()
+
+    if not daemon_log_reader.wait_for_messages("[Info] remote config download job time period: 4m0s", cursor=time_mark):
+        print("Service doesn't applied new time period.")
 
     yield
 
-    try:
-        with open(daemon_path, "w") as f:
-            f.write(default_config)
+    subprocess.run(f'sudo cp {os.getcwd()}/tmp/{daemon_path.split("/")[-1]} {daemon_path}')
 
-        subprocess.run(["sudo", "systemctl", "restart", "nordvpnd.service"], check=True)
-    except FileNotFoundError:
-        print(f"Couldn't find {daemon_path}")
-    except PermissionError:
-        print(f"Doesn't have permission to read/write for {daemon_path}")
-    except Exception as e:
-        print(f"Got an error during setting up nordvpnd.service: {e}")
+    if os.environ.get("NORDVPN_TYPE") == "snap":
+        subprocess.run(f"sudo systemctl daemon-reload", shell=True, check=True)
+        subprocess.run(f'sudo snap restart {NORDVPND.get(os.environ.get("NORDVPN_TYPE"))}', shell=True, check=True)
+    else:
+        daemon.restart()
 
 
 @pytest.fixture
 def stop_nordvpnd():
     """Fixture to stop nordvpnd before tests and start it after"""
-    subprocess.run(["sudo", "systemct", "stop", "nordvpnd"], check=True)
+    daemon.stop()
 
     yield
 
-    subprocess.run(["sudo", "systemct", "start", "nordvpnd"], check=True)
+    daemon.start()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -372,7 +377,7 @@ def get_package_system():
     try:
         snap_result = subprocess.run(["snap", "list", "nordvpn"], capture_output=True, text=True)
         if snap_result.returncode == 0 and "nordvpn" in snap_result.stdout:
-            os.environ["NORDVPN_TYPE"] = "deb"
+            os.environ["NORDVPN_TYPE"] = "snap"
     except FileNotFoundError:
         # snap command not found
         pass
@@ -381,6 +386,8 @@ def get_package_system():
 @pytest.fixture
 def backup_restore_rc_config_files():
     """Fixture to backup original config for remote config, and restore it after tests."""
-    subprocess.run(f"sudo cp -r {LOCAL_CACHE_DIR} {os.getcwd()}/tmp/", check=True, shell=True)
+    os.makedirs(f"{os.getcwd()}/tmp", exist_ok=True)
+
+    subprocess.run(f"sudo cp -r {LOCAL_CACHE_DIR} {os.getcwd()}/tmp", check=True, shell=True)
     yield
-    subprocess.run(f"sudo cp -r {os.getcwd()}/tmp/ {LOCAL_CACHE_DIR} ", check=True, shell=True)
+    subprocess.run(f"sudo cp -r {os.getcwd()}/tmp {LOCAL_CACHE_DIR} ", check=True, shell=True)

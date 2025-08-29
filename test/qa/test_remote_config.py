@@ -1,33 +1,25 @@
 import hashlib
 import json
-import os
 import subprocess
+import time
 import uuid
-from datetime import datetime
 
 import pytest
 
 from lib import daemon
 from lib.log_reader import LogReader
-from helpers import search_journalctl_logs
 
-from constants import NORDVPND
 from lib.remote_config_manager import LOCAL_CACHE_DIR
 
-RC_REMOTE_MESSAGES = [
-    "[Info] feature [ meshnet ] remote config downloaded to: /var/lib/nordvpn/conf",
-    "[Info] feature [ libtelio ] remote config downloaded to: /var/lib/nordvpn/conf",
-    "[Info] feature [ nordvpn ] remote config downloaded to: /var/lib/nordvpn/conf",
+RC_REMOTE_MESSAGES = "[Info] feature [ {} ] remote config downloaded to: /var/lib/nordvpn/conf"
+RC_LOCAL_MESSAGES = "[Info] feature [ {} ] config loaded from: /var/lib/nordvpn/conf"
+RC_REQUEST_MESSAGES = "Request:  GET https://downloads.nordcdn.com/apps/linux/config/dev/{}-hash.json"
+SERVICES_TO_BE_CHECK = ["nordvpn", "libtelio", "meshnet"]
+RC_INITIAL_RUN_MESSAGES = [RC_REMOTE_MESSAGES.format(service) for service in SERVICES_TO_BE_CHECK] + [
+    RC_LOCAL_MESSAGES.format(service) for service in SERVICES_TO_BE_CHECK
 ]
-
-RC_LOCAL_MESSAGES = [
-    "[Info] feature [ meshnet ] config loaded from: /var/lib/nordvpn/conf",
-    "[Info] feature [ libtelio ] config loaded from: /var/lib/nordvpn/conf",
-    "[Info] feature [ nordvpn ] config loaded from: /var/lib/nordvpn/conf",
-]
-
-RC_INITIAL_RUN_MESSAGES = RC_REMOTE_MESSAGES + RC_LOCAL_MESSAGES
-SERVICES_TO_BE_CHECK = ("nordvpn", "libtelio", "meshnet")
+RC_MESHNET_CONFIG_FILE = "meshnet.json"
+RC_MESHNET_HASH_FILE = "meshnet-hash.json"
 
 
 @pytest.fixture
@@ -270,6 +262,7 @@ def test_remote_config_cdn_unavailable_(
     set_custom_timeout_for_rc_retry_scheme,  # noqa: ARG001
     clean_cache_files,  # noqa: ARG001
     stop_nordvpnd,  # noqa: ARG001
+    daemon_log_reader,
 ):
     """
     :tcid       {tcid}
@@ -296,30 +289,18 @@ def test_remote_config_cdn_unavailable_(
         - # Nordvpn daemon shows error related to remote config
         - # After 1 min, in next iteration, nordvpn daemon still checks and shows error related to remote config
     """
-    first_time_mark = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    subprocess.run(["sudo", "systemct", "start", "nordvpnd"], check=True)
+    first_time_mark = daemon_log_reader.get_cursor()
+    daemon.restart()
 
-    assert search_journalctl_logs(
-        search_pattern=error_message,
-        since=first_time_mark,
-        service=NORDVPND.get(os.environ.get("NORDVPN_TYPE")),
-    ), (
-        f"Couldn't found error logs, logs since start of daemon are next: "
-        f"{search_journalctl_logs(since=first_time_mark, 
-                                 service=NORDVPND.get(os.environ.get("NORDVPN_TYPE")))}"
-    )
+    assert daemon_log_reader.wait_for_messages(
+        RC_REMOTE_MESSAGES.format(error_message), cursor=first_time_mark, timeout=300
+    ), f"Couldn't found error logs, logs since start of daemon are next: {daemon_log_reader.get_partial_log(cursor=first_time_mark)}"
 
-    second_time_mark = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    second_time_mark = daemon_log_reader.get_cursor()
 
-    assert search_journalctl_logs(
-        search_pattern=error_message,
-        since=second_time_mark,
-        service=NORDVPND.get(os.environ.get("NORDVPN_TYPE")),
-    ), (
-        f"Couldn't found error logs for second time, logs of daemon are next: "
-        f"{search_journalctl_logs(since=second_time_mark, 
-                                 service=NORDVPND.get(os.environ.get("NORDVPN_TYPE")))}"
-    )
+    assert daemon_log_reader.wait_for_messages(
+        RC_REMOTE_MESSAGES.format(error_message), cursor=second_time_mark, timeout=300
+    ), f"Couldn't found error logs, logs since start of daemon are next: {daemon_log_reader.get_partial_log(cursor=second_time_mark)}"
 
 
 def test_remote_config_download_config_on_start(
@@ -327,6 +308,7 @@ def test_remote_config_download_config_on_start(
     set_custom_timeout_for_rc_retry_scheme,  # noqa: ARG001
     clean_cache_files,  # noqa: ARG001
     stop_nordvpnd,  # noqa: ARG001
+    daemon_log_reader,
 ):
     """
     :tcid       LVPN-8456
@@ -353,58 +335,55 @@ def test_remote_config_download_config_on_start(
         - # Nordvpn daemon shows download related to remote config
         - # After 1 min, in next iteration, nordvpn daemon still checks and shows download logs related to remote config
     """
-    first_time_mark = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    first_time_mark = daemon_log_reader.get_cursor()
     missed_services_config = []
-
-    subprocess.run(["sudo", "systemct", "start", "nordvpnd"], check=True)
-
-    for service_config in SERVICES_TO_BE_CHECK:
-        if not search_journalctl_logs(
-            search_pattern=f"feature [ {service_config} ] remote config downloaded to:",
-            since=first_time_mark,
-            service=NORDVPND.get(os.environ.get("NORDVPN_TYPE")),
-        ):
-            missed_services_config.append(service_config)
-
-    assert not missed_services_config, (
-        f"Couldn't found download logs related to {missed_services_config}, logs since start of daemon are next: "
-        f"{search_journalctl_logs(since=first_time_mark, 
-                                 service=NORDVPND.get(os.environ.get("NORDVPN_TYPE")))}"
-    )
-
-    second_time_mark = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    daemon.start()
 
     for service_config in SERVICES_TO_BE_CHECK:
-        if not search_journalctl_logs(
-            search_pattern=f"feature [ {service_config} ] remote config downloaded to:",
-            since=second_time_mark,
-            service=NORDVPND.get(os.environ.get("NORDVPN_TYPE")),
-        ):
+        if not daemon_log_reader.wait_for_messages(RC_REMOTE_MESSAGES.format(service_config), timeout=300):
             missed_services_config.append(service_config)
 
-    assert not missed_services_config, (
-        f"Couldn't found download logs related to {missed_services_config}, logs since start of daemon are next: "
-        f"{search_journalctl_logs(since=second_time_mark, 
-                                 service=NORDVPND.get(os.environ.get("NORDVPN_TYPE")))}"
-    )
+    assert (
+        not missed_services_config
+    ), f"Couldn't found download logs related to {missed_services_config}, logs since start of daemon are next: {daemon_log_reader.get_partial_log(cursor=first_time_mark)}"
+
+    expected_service_config = SERVICES_TO_BE_CHECK
+    time_mark = time.time()
+
+    while time.time() < time_mark + 300:
+        second_time_mark = daemon_log_reader.get_cursor()
+        for service_config in SERVICES_TO_BE_CHECK:
+            for line in daemon_log_reader.get_partial_log(cursor=second_time_mark):
+                if "Request" in line and "GET" in line and service_config + "-hash.json" in line:
+                    expected_service_config.remove(line)
+        time.sleep(10)
+        # if not daemon_log_reader.wait_for_messages(
+        #     RC_REQUEST_MESSAGES.format(service_config), cursor=second_time_mark, timeout=90
+        # ):
+        #     missed_services_config.append(service_config)
+
+    assert (
+        not expected_service_config
+    ), f"Couldn't found request logs related to {expected_service_config}, logs since start of daemon are next: {daemon_log_reader.get_partial_log(cursor=second_time_mark)}"
 
 
-@pytest.mark.skip(reason="Not implemented mock CDN")
 @pytest.mark.parametrize(
     "tcid, is_config_different",
     [
         pytest.param("LVPN-8477", False, id="equal_remote_config"),
-        pytest.param("LVPN-8500", True, id="different_remote_config"),
+        pytest.param(
+            "LVPN-8500", True, id="different_remote_config", marks=pytest.mark.skip(reason="Not implemented mock CDN")
+        ),
     ],
 )
 def test_remote_config_attempts_config_(
     tcid,  # noqa: ARG001
     is_config_different,  # noqa: ARG001
     initialized_app_with_remote_config,  # noqa: ARG001
-    disable_remote_endpoint,  # noqa: ARG001
     set_custom_timeout_for_rc_retry_scheme,  # noqa: ARG001
     clean_cache_files,  # noqa: ARG001
     stop_nordvpnd,  # noqa: ARG001
+    daemon_log_reader,
 ):
     """
     :tcid       {tcid}
@@ -435,26 +414,22 @@ def test_remote_config_attempts_config_(
         - # After 1 min, in next iteration, nordvpn daemon still checks and shows download logs related to remote config
         - # Files are downloaded/not downloaded according to remote config files
     """
-    first_time_mark = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    first_time_mark = daemon_log_reader.get_cursor()
     command_for_conf_file = 'sudo find /var/lib/nordvpn/conf -type f -exec stat -c "%a %y %n" {} \;'
     chmod_to_be_found = "600"
     missed_services_config = []
 
-    subprocess.run(f"sudo systemctl start {NORDVPND.get(os.environ.get("NORDVPN_TYPE"))}", shell=True, check=True)
+    daemon.restart()
 
     for service_config in SERVICES_TO_BE_CHECK:
-        if not search_journalctl_logs(
-            search_pattern=f"feature [ {service_config} ] remote config downloaded to:",
-            since=first_time_mark,
-            service=NORDVPND.get(os.environ.get("NORDVPN_TYPE")),
+        if not daemon_log_reader.wait_for_messages(
+            RC_REMOTE_MESSAGES.format(service_config), cursor=first_time_mark, timeout=300
         ):
             missed_services_config.append(service_config)
 
-    assert not missed_services_config, (
-        f"Couldn't found download logs related to {missed_services_config}, logs since start of daemon are next: "
-        f"{search_journalctl_logs(since=first_time_mark, 
-                                 service=NORDVPND.get(os.environ.get("NORDVPN_TYPE")))}"
-    )
+    assert (
+        not missed_services_config
+    ), f"Couldn't found download logs related to {missed_services_config}, logs since start of daemon are next: {daemon_log_reader.get_partial_log(cursor=first_time_mark)}"
 
     conf_files_data = subprocess.run(command_for_conf_file, shell=True, check=True, capture_output=True, text=True)
 
@@ -467,21 +442,20 @@ def test_remote_config_attempts_config_(
         not missed_services_config
     ), f"Found files that do not have {chmod_to_be_found} chmod: {wrong_permissions_files}"
 
-    second_time_mark = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    expected_service_config = SERVICES_TO_BE_CHECK
+    time_mark = time.time()
 
-    for service_config in SERVICES_TO_BE_CHECK:
-        if not search_journalctl_logs(
-            search_pattern=f"feature [ {service_config} ] remote config downloaded to:",
-            since=second_time_mark,
-            service=NORDVPND.get(os.environ.get("NORDVPN_TYPE")),
-        ):
-            missed_services_config.append(service_config)
+    while time.time() < time_mark + 300:
+        second_time_mark = daemon_log_reader.get_cursor()
+        for service_config in SERVICES_TO_BE_CHECK:
+            for line in daemon_log_reader.get_partial_log(cursor=second_time_mark):
+                if "Request" in line and "GET" in line and service_config + "-hash.json" in line:
+                    expected_service_config.remove(line)
+        time.sleep(10)
 
-    assert not missed_services_config, (
-        f"Couldn't found download logs related to {missed_services_config}, logs since start of daemon are next: "
-        f"{search_journalctl_logs(since=second_time_mark, 
-                                 service=NORDVPND.get(os.environ.get("NORDVPN_TYPE")))}"
-    )
+    assert (
+        expected_service_config
+    ), f"Couldn't found download logs related to {expected_service_config}, logs since start of daemon are next: {daemon_log_reader.get_partial_log(cursor=second_time_mark)}"
 
     conf_files_data_after_attempt = subprocess.run(
         command_for_conf_file, shell=True, check=True, capture_output=True, text=True
@@ -506,9 +480,34 @@ def test_remote_config_attempts_config_(
     assert not different_files, f"Found some files mismatch: {different_files}"
 
 
-def test_remote_config_change_local_config(backup_restore_rc_config_files, rc_config_manager):
+@pytest.mark.parametrize(
+    "tcid, parameter, value, additional_log_verification",
+    [
+        pytest.param("LVPN-8544", "value", False, False, id="set_value_false"),
+        pytest.param("LVPN-8522", "rollout", None, False, id="remove_rollout"),
+        pytest.param("LVPN-8782", "app_version", "*", False, id="set_app_version_any"),
+        pytest.param("LVPN-8518", "app_version", "", False, id="set_app_version_empty"),
+        pytest.param(
+            "LVPN-8519",
+            "app_version",
+            "y",
+            "invalid version constraint: improper constraint: y",
+            id="set_app_version_invalid_version",
+        ),
+    ],
+)
+def test_remote_config_change_local_meshnet_config_settings_(
+    tcid,  # noqa: ARG001
+    parameter,
+    value,
+    additional_log_verification,
+    # backup_restore_rc_config_files,
+    rc_config_manager,
+    initialized_app_with_remote_config,  # noqa: ARG001
+    daemon_log_reader,
+):
     """
-    :tcid       LVPN-8544
+    :tcid       {tcid}
 
     :details    Verify that app change behavior according to config
 
@@ -531,26 +530,42 @@ def test_remote_config_change_local_config(backup_restore_rc_config_files, rc_co
         - # Config file was loaded by app
         - # Meshnet option is unavailable
     """
-    rc_meshnet_config_file = "meshnet.json"
     rc_config_manager.set_permissions_cache_dir()
-    with open(f"{LOCAL_CACHE_DIR}/{rc_meshnet_config_file}", "r") as file:
+    with open(f"{LOCAL_CACHE_DIR}/{RC_MESHNET_CONFIG_FILE}", "r") as file:
         config = json.load(file)
 
-    config["configs"][0]["settings"][0]["value"] = False
+    if value is not None:
+        config["configs"][0]["settings"][0][parameter] = value
+    elif value is None:
+        del config["configs"][0]["settings"][0][parameter]
 
-    with open(f"f{LOCAL_CACHE_DIR}/{rc_meshnet_config_file}", "w") as file:
+    with open(f"{LOCAL_CACHE_DIR}/{RC_MESHNET_CONFIG_FILE}", "w") as file:
         json.dump(config, file, indent=4)
 
-    subprocess.run(f"sudo systemctl start {NORDVPND.get(os.environ.get("NORDVPN_TYPE"))}", shell=True, text=True)
+    sha_sun_hash = subprocess.run(
+        f"sha256sum {LOCAL_CACHE_DIR}/{RC_MESHNET_CONFIG_FILE}", capture_output=True, shell=True, text=True
+    ).stdout
 
-    assert (
-        search_journalctl_logs(
-            search_pattern=f"feature [ meshnet ] config loaded from: /var/lib/nordvpn/conf",
-            since=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            service=NORDVPND.get(os.environ.get("NORDVPN_TYPE")),
-        ),
-        "Couldn't found log of loading modified json file",
-    )
+    with open(f"{LOCAL_CACHE_DIR}/{RC_MESHNET_HASH_FILE}", "w") as file:
+        file.write(sha_sun_hash)
 
-    with pytest.raises(subprocess.CalledProcessError):
-        subprocess.run("nordvpn meshnet", shell=True, text=True, check=True)
+    cursor = daemon_log_reader.get_cursor()
+    daemon.restart()
+
+    assert daemon_log_reader.wait_for_messages(
+        messages=RC_LOCAL_MESSAGES.format("meshnet"), cursor=cursor, timeout=300
+    ), "Couldn't found log of loading modified json file"
+
+    if additional_log_verification:
+        assert daemon_log_reader.wait_for_messages(
+            messages=additional_log_verification, cursor=cursor, timeout=300
+        ), f"Couldn't found log {additional_log_verification}"
+
+    if value is False:
+        with pytest.raises(subprocess.CalledProcessError):
+            subprocess.run("nordvpn meshnet", shell=True, text=True, check=True)
+    elif value is None:
+        try:
+            subprocess.run("nordvpn meshnet", shell=True, text=True, check=True)
+        except subprocess.CalledProcessError:
+            pytest.fail(reason="nordvpn meshnet is not enabled")
