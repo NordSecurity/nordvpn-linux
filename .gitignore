@@ -6,6 +6,7 @@
 *.dylib
 contrib/manual/*.[0-9]
 *.txt
+!gui/linux/CMakeLists.txt
 
 build
 
