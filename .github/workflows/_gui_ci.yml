@@ -1,10 +1,16 @@
-name: GUI tests
-on: [workflow_call]
+name: GUI CI
+on:
+  workflow_call:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./gui
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+  tests:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
 
     steps:
       - name: Checkout code
@@ -32,12 +38,12 @@ jobs:
 
       - name: Run unit-tests
         run: |
-          flutter test --fail-fast -d linux --verbose
+          flutter test --fail-fast --verbose
 
       - name: Run integration tests
         run: |
-          flutter test --fail-fast integration_test/e2e_tests/app_test.dart -d linux --verbose --machine
+          flutter test --fail-fast integration_test/e2e_tests/app_test.dart -d linux --verbose
 
       - name: Run smoke tests
         run: |
-          flutter test --fail-fast integration_test/smoke_tests/smoke_tests.dart -d linux --verbose --machine
+          flutter test --fail-fast integration_test/smoke_tests/smoke_tests.dart -d linux --verbose

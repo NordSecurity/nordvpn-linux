@@ -1,0 +1,43 @@
+name: GUI-only CI
+on:
+  pull_request:
+    paths: ["gui/**"]
+  push:
+    paths: ["gui/**"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      only_gui: ${{ steps.chk.outputs.only_gui }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - id: chk
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEAD="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE="${{ github.event.before }}"
+            HEAD="${{ github.sha }}"
+          fi
+          # Any file NOT under gui/ ?
+          NON_GUI=$(git diff --name-only "$BASE" "$HEAD" | grep -v '^gui/' || true)
+          if [ -z "$NON_GUI" ]; then
+            echo "only_gui=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "only_gui=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  gui:
+    needs: gate
+    if: needs.gate.outputs.only_gui == 'true'
+    uses: ./.github/workflows/_suite.yml
+    with:
+      suite: gui
