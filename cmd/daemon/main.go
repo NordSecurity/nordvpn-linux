@@ -21,11 +21,11 @@ import (
 	"golang.org/x/net/netutil"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
+	"github.com/NordSecurity/nordvpn-linux/clientid"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
-	"github.com/NordSecurity/nordvpn-linux/daemon/clientid"
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
