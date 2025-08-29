@@ -6,7 +6,6 @@
 *.dylib
 contrib/manual/*.[0-9]
 *.txt
-!gui/linux/CMakeLists.txt
 
 build
 
@@ -24,7 +23,6 @@ build
 bin
 dist
 linux
-!gui/linux
 
 # Python
 .venv
@@ -49,3 +47,6 @@ parts
 prime
 stage
 *.snap
+
+# GUI has its own .gitignore
+!gui/**
