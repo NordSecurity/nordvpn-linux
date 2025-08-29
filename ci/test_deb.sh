@@ -41,4 +41,14 @@ if ! sudo grep -q "export GOCOVERDIR=${GOCOVERDIR}" "/etc/init.d/nordvpn"; then
     trap revert_go_cov EXIT INT TERM
 fi
 
+if [[ -n ${RC_FILES:-} ]]; then
+    if ! sudo grep -q "export RC_USE_LOCAL_CONFIG=1" "/etc/init.d/nordvpn"; then
+        sudo sed -i "1a export RC_USE_LOCAL_CONFIG=1" "/etc/init.d/nordvpn"
+    fi
+    sudo mkdir /var/lib/nordvpn/conf
+    # Config directory is only created on usage, we need to put files on install
+    sudo cp -r $RC_FILES '/var/lib/nordvpn/conf/'
+fi
+
+
 "${WORKDIR}/ci/qa_run_tests.sh" "$@"
