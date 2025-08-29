@@ -127,6 +127,11 @@ def is_dns_disabled():
     return Settings().get("DNS") == "disabled"
 
 
+def is_tray_enabled():
+    """Returns True, if Tray is enabled in application settings."""
+    return Settings().get("Tray") == "enabled"
+
+
 def is_user_consent_granted():
     """
     Returns True, if User Consent is enabled, False if it's disabled.
