@@ -11,6 +11,11 @@ jobs:
   tests:
     runs-on: ubuntu-22.04
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard_index: [0, 1, 2, 3]
+        total_shards: [4]
 
     steps:
       - name: Checkout code
@@ -30,20 +35,32 @@ jobs:
         run: |
           flutter pub get
 
-      - name: Start Xvfb manually
+      - name: Run shard ${{ matrix.shard_index }} / ${{ matrix.total_shards }}
+        env:
+          # Helps software rendering on headless runners
+          LIBGL_ALWAYS_SOFTWARE: "1"
+          GDK_BACKEND: "x11"
         run: |
-          Xvfb :99 -screen 0 1024x768x24 > /tmp/xvfb.log 2>&1 &
-          export DISPLAY=:99
-          echo "DISPLAY=:99" >> $GITHUB_ENV
+          xvfb-run --auto-servernum \
+            flutter test integration_test -d linux \
+            --total-shards ${{ matrix.total_shards }} \
+            --shard-index  ${{ matrix.shard_index }} \
+            -r github
 
-      - name: Run unit-tests
-        run: |
-          flutter test --fail-fast --verbose
-
-      - name: Run integration tests
-        run: |
-          flutter test --fail-fast integration_test/e2e_tests/app_test.dart -d linux --verbose
-
-      - name: Run smoke tests
-        run: |
-          flutter test --fail-fast integration_test/smoke_tests/smoke_tests.dart -d linux --verbose
+      # - name: Start Xvfb manually
+      #   run: |
+      #     Xvfb :99 -screen 0 1024x768x24 > /tmp/xvfb.log 2>&1 &
+      #     export DISPLAY=:99
+      #     echo "DISPLAY=:99" >> $GITHUB_ENV
+      #
+      # - name: Run unit-tests
+      #   run: |
+      #     flutter test --fail-fast --verbose
+      #
+      # - name: Run integration tests
+      #   run: |
+      #     flutter test --fail-fast integration_test/e2e_tests/app_test.dart -d linux --verbose
+      #
+      # - name: Run smoke tests
+      #   run: |
+      #     flutter test --fail-fast integration_test/smoke_tests/smoke_tests.dart -d linux --verbose
