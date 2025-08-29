@@ -13,11 +13,12 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import subprocess
 import sys
-from typing import Iterable, Optional, Tuple
+from collections.abc import Iterable
 
 
 def sh(*cmd: str, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -39,18 +40,17 @@ def git_fetch_commit(sha: str) -> None:
         return
     # Fetch that single object if it’s not present (handles shallow/rewrites)
     if not git_has_commit(sha):
-        try:
+        with contextlib.suppress(subprocess.CalledProcessError):
             sh("git", "fetch", "--no-tags", "--depth=1", "origin", sha, check=True)
-        except subprocess.CalledProcessError:
-            # Non-fatal: if fetch fails, let later git commands surface errors.
-            pass
 
 
-def determine_base_head(event_name: str, event_path: str, head_sha: str) -> Tuple[Optional[str], str]:
-    """
-    Returns (BASE, HEAD). BASE may be None for new branches / first commit.
-    """
-    with open(event_path, "r", encoding="utf-8") as f:
+def determine_base_head(
+    event_name: str,
+    event_path: str,
+    head_sha: str,
+) -> tuple[str | None, str]:
+    """Return (BASE, HEAD). BASE may be None for new branches / first commit."""
+    with open(event_path, encoding="utf-8") as f:  # UP015: omit default "r"
         payload = json.load(f)
 
     if event_name == "pull_request":
@@ -72,10 +72,8 @@ def determine_base_head(event_name: str, event_path: str, head_sha: str) -> Tupl
     return (base or None), head
 
 
-def changed_files(base: Optional[str], head: str) -> Iterable[str]:
-    """
-    Yields paths changed between BASE..HEAD (or just HEAD if BASE is None).
-    """
+def changed_files(base: str | None, head: str) -> Iterable[str]:
+    """Yield paths changed between BASE..HEAD (or just HEAD if BASE is None)."""
     if base:
         # Ensure both commits exist locally
         git_fetch_commit(base)
@@ -104,10 +102,8 @@ def changed_files(base: Optional[str], head: str) -> Iterable[str]:
             yield p
 
 
-def classify_changes(paths: Iterable[str], gui_dir: str) -> Tuple[bool, bool]:
-    """
-    Returns (gui_changed, core_changed).
-    """
+def classify_changes(paths: Iterable[str], gui_dir: str) -> tuple[bool, bool]:
+    """Return (gui_changed, core_changed)."""
     gui_prefix = f"{gui_dir.rstrip('/')}/"
     gui_changed = False
     core_changed = False
@@ -166,4 +162,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-
