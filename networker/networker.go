@@ -752,6 +752,14 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 			}
 		}
 	}
+	// if port 53 is whitelisted - do not add drop-dns rules
+	if !allowlist.Ports.TCP[53] && !allowlist.Ports.UDP[53] {
+		// disable DNS traffic to private LAN ranges - to prevent DNS leaks
+		// when /etc/resolv.conf has nameserver default gateway
+		if err := netw.denyDNS(); err != nil {
+			return err
+		}
+	}
 	if err := netw.fw.Add(rules); err != nil {
 		return err
 	}
@@ -761,15 +769,6 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 		netw.isKillSwitchSet,
 		allowlist); err != nil {
 		return fmt.Errorf("resseting forward firewall: %w", err)
-	}
-
-	// if port 53 is whitelisted - do not add drop-dns rules
-	if !allowlist.Ports.TCP[53] && !allowlist.Ports.UDP[53] {
-		// disable DNS traffic to private LAN ranges - to prevent DNS leaks
-		// when /etc/resolv.conf has nameserver default gateway
-		if err := netw.denyDNS(); err != nil {
-			return err
-		}
 	}
 
 	netw.allowlist = allowlist
@@ -1351,7 +1350,7 @@ func (netw *Combined) allowFileshareAll() error {
 
 func (netw *Combined) undenyDNS() error {
 	if !netw.dnsDenied {
-		log.Println(internal.DebugPrefix, "attemtpt to undeny dns when it was not previously denied")
+		log.Println(internal.DebugPrefix, "attempt to undeny dns when it was not previously denied")
 		return nil
 	}
 
@@ -1366,7 +1365,7 @@ func (netw *Combined) undenyDNS() error {
 
 func (netw *Combined) denyDNS() error {
 	if netw.dnsDenied {
-		log.Println(internal.DebugPrefix, "attemtpt to deny dns when it was already denied")
+		log.Println(internal.DebugPrefix, "attempt to deny dns when it was already denied")
 		return nil
 	}
 
@@ -1382,8 +1381,9 @@ func (netw *Combined) denyDNS() error {
 			netip.MustParsePrefix("192.168.0.0/16"),
 			netip.MustParsePrefix("169.254.0.0/16"),
 		},
-		Allow:    false,
-		Physical: true,
+		Allow: false,
+		// We want this to be in filter table so we process the drops earlier
+		Physical: false,
 	}}
 
 	if err := netw.fw.Add(rules); err != nil {

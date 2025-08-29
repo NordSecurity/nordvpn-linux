@@ -107,14 +107,14 @@ def __rules_connmark_chain_input(interface: str):
 def __rules_block_dns_port():
     return \
         [
-            "-A POSTROUTING -d 169.254.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
-            "-A POSTROUTING -d 169.254.0.0/16 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
-            "-A POSTROUTING -d 192.168.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
-            "-A POSTROUTING -d 192.168.0.0/16 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
-            "-A POSTROUTING -d 172.16.0.0/12 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
-            "-A POSTROUTING -d 172.16.0.0/12 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
-            "-A POSTROUTING -d 10.0.0.0/8 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
-            "-A POSTROUTING -d 10.0.0.0/8 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP"
+            "-A OUTPUT -d 169.254.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
+            "-A OUTPUT -d 169.254.0.0/16 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
+            "-A OUTPUT -d 192.168.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
+            "-A OUTPUT -d 192.168.0.0/16 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
+            "-A OUTPUT -d 172.16.0.0/12 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
+            "-A OUTPUT -d 172.16.0.0/12 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
+            "-A OUTPUT -d 10.0.0.0/8 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
+            "-A OUTPUT -d 10.0.0.0/8 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP"
         ]
 
 
@@ -179,12 +179,12 @@ def __rules_allowlist_port_chain_output(ports_udp: list[Port], ports_tcp: list[P
 
 def _get_rules_killswitch_on(interface: str):
     result = []
-
+    # mangle table rules
     result.extend(__rules_connmark_chain_input(interface))
 
-    result.extend(__rules_block_dns_port())
-
     result.extend(__rules_connmark_chain_output(interface))
+    # filter table rules
+    result.extend(__rules_block_dns_port())
 
     return result
 
@@ -195,14 +195,14 @@ def _get_rules_connected_to_vpn_server(interface: str):
 
 def _get_rules_allowlist_subnet_on(interface: str, subnets: list[str]):
     result = []
-
+    # mangle table rules
     result.extend(__rules_allowlist_subnet_chain_input(interface, subnets))
     result.extend(__rules_connmark_chain_input(interface))
 
-    result.extend(__rules_block_dns_port())
-
     result.extend(__rules_allowlist_subnet_chain_output(interface, subnets))
     result.extend(__rules_connmark_chain_output(interface))
+    # filter table rules
+    result.extend(__rules_block_dns_port())
 
     return result
 
@@ -213,13 +213,15 @@ def _get_rules_allowlist_port_on(interface: str, ports: list[Port]):
     ports_udp, ports_tcp = _sort_ports_by_protocol(ports)
 
     result = []
+    # mangle table rules
     result.extend(__rules_allowlist_port_chain_input(interface, ports_udp, ports_tcp))
     result.extend(__rules_connmark_chain_input(interface))
 
     result.extend(__rules_allowlist_port_chain_output(ports_udp, ports_tcp))
-    result.extend(__rules_block_dns_port())
 
     result.extend(__rules_connmark_chain_output(interface))
+    # filter table rules
+    result.extend(__rules_block_dns_port())
 
     return result
 
@@ -228,15 +230,17 @@ def _get_rules_allowlist_subnet_and_port_on(interface: str, subnets: list[str], 
     ports_udp, ports_tcp = _sort_ports_by_protocol(ports)
 
     result = []
+    # mangle table rules
     result.extend(__rules_allowlist_port_chain_input(interface, ports_udp, ports_tcp))
     result.extend(__rules_allowlist_subnet_chain_input(interface, subnets))
     result.extend(__rules_connmark_chain_input(interface))
 
     result.extend(__rules_allowlist_port_chain_output(ports_udp, ports_tcp))
-    result.extend(__rules_block_dns_port())
 
     result.extend(__rules_allowlist_subnet_chain_output(interface, subnets))
     result.extend(__rules_connmark_chain_output(interface))
+    # filter table rules
+    result.extend(__rules_block_dns_port())
 
     return result
 
