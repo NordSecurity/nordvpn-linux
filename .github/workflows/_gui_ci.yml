@@ -26,6 +26,11 @@ jobs:
         uses: ./.github/workflows/actions/install-flutter
         id: flutter
 
+      - name: Enable Linux desktop
+        run: |
+          flutter config --enable-linux-desktop
+          ls -la ./linux
+
       - name: Get dependencies
         run: |
           flutter pub get
