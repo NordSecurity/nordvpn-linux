@@ -25,6 +25,7 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
+// test
 var (
 	Salt        = ""
 	Version     = "0.0.0"

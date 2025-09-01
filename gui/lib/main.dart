@@ -20,6 +20,7 @@ void main() async {
     "starting nordvpn gui ${packageInfo.version}+${packageInfo.buildNumber}",
   );
 
+// test
   PlatformDispatcher.instance.onError = (error, stack) {
     logger.e("$error: $stack");
     return true;
