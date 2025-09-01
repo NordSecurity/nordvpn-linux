@@ -2,14 +2,15 @@
 
 ## Overview
 
-- **ci-orchestrator.yml**: decides whether to run `_core_ci.yml`, `_gui_ci.yml`,
-  or both.
-- **\_core_ci.yml**: reusable workflow for CLI/Tray/Daemon.
-- **\_gui_ci.yml**: reusable workflow for GUI.
+- **\core_ci.yml**: workflow for CLI/Tray/Daemon.
+- **\gui_ci.yml**: workflow for GUI.
 
 ## Triggers
 
-- PRs, branch pushes, semver tags (`X.Y.Z`)
+- **\core_ci.yml**: workflow for CLI/Tray/Daemon.
+  - PRs, branch pushes, semver tags (`X.Y.Z`) - **for any file except `./gui/**`**
+- **\gui_ci.yml**: workflow for GUI.
+  - PRs, branch pushes, semver tags (`X.Y.Z`) - **for any file (including core files)**
 
 ## Rules
 
