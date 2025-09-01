@@ -26,7 +26,7 @@ func (i *SetClientIDInterceptor) SetMetadataUnaryInterceptor(ctx context.Context
 	req, reply any, cc *grpc.ClientConn,
 	invoker grpc.UnaryInvoker,
 	opts ...grpc.CallOption) error {
-	metadataCtx := metadata.AppendToOutgoingContext(ctx, "client-id", strconv.Itoa(int(i.clientID.Number())))
+	metadataCtx := metadata.AppendToOutgoingContext(ctx, clientIDMetadataKey, strconv.Itoa(int(i.clientID.Number())))
 	return invoker(metadataCtx, method, req, reply, cc, opts...)
 }
 
@@ -37,6 +37,6 @@ func (i *SetClientIDInterceptor) SetMetadataStreamInterceptor(ctx context.Contex
 	method string,
 	streamer grpc.Streamer,
 	opts ...grpc.CallOption) (grpc.ClientStream, error) {
-	metadataCtx := metadata.AppendToOutgoingContext(ctx, "client-id", strconv.Itoa(int(i.clientID.Number())))
+	metadataCtx := metadata.AppendToOutgoingContext(ctx, clientIDMetadataKey, strconv.Itoa(int(i.clientID.Number())))
 	return streamer(metadataCtx, desc, cc, method, opts...)
 }
