@@ -1,6 +1,12 @@
 name: Core CI
+
 on:
-  workflow_call:
+  pull_request:
+    paths: ["**", "!gui/**"] # any non-GUI change
+  push:
+    paths: ["**", "!gui/**"]
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
 
 permissions: {}
 

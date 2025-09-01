@@ -1,10 +1,10 @@
 name: CI orchestrator
 
 on:
-  pull_request:
-  push:
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
+  # pull_request:
+  # push:
+  #   tags:
+  #     - '[0-9]+.[0-9]+.[0-9]+'
   workflow_dispatch:
 
 permissions: {}
