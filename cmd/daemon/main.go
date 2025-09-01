@@ -138,6 +138,13 @@ func main() {
 				log.Println(internal.ErrorPrefix, err)
 			}
 		}()
+	} else {
+		// Ensure that there is no commit SHA added to the version string in prod.
+		var err error
+		Version, err = internal.CleanUpVersionString(Version)
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "failed to clean up version string:", err)
+		}
 	}
 
 	// Logging
