@@ -104,6 +104,7 @@ func main() {
 		grpc.WithStreamInterceptor(loaderInterceptor.StreamInterceptor),
 	)
 
+	// test
 	cmd, err := cli.NewApp(
 		Version, Environment, Hash, Salt, err, conn, fileshareConn, &loaderInterceptor)
 	if err != nil {
