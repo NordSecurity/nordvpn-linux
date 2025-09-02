@@ -208,7 +208,7 @@ func (f *Feature) load(sourcePath string, fr fileReader, jv validator) error {
 			// validate field
 			incVal, err := validateField(cfgItem, param, fileReadFunc)
 			if err != nil {
-				return NewLoadError(LoadErrorParsingIncludeFile, err)
+				return NewLoadError(LoadErrorFieldValidation, err)
 			}
 			// store valid values in the map
 			params[cfgItem.Name].Settings = append(params[cfgItem.Name].Settings,

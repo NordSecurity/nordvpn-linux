@@ -196,7 +196,6 @@ func (c *CdnRemoteConfig) download() (bool, error) {
 // isJsonParsingError checks if reported LoadError is related to JSON parsing
 func isJsonParsingError(errKind LoadErrorKind) bool {
 	return errKind == LoadErrorParsing ||
-		errKind == LoadErrorParsingIncludeFile ||
 		errKind == LoadErrorMainHashJsonParsing ||
 		errKind == LoadErrorMainJsonValidationFailure
 }
