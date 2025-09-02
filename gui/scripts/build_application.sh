@@ -11,8 +11,6 @@ fi
 # NOTE: Updating of the app version should happen before `scripts/env.sh`
 # is sourced to export updated version
 
-pushd ./gui
-
 # update version info in pubspec.yaml
 scripts/update_app_version.sh
 
@@ -23,7 +21,6 @@ cleanup() {
 		mv -f "${file}.bak" "${file}"
 		echo "Reverted changes to ${file}"
 	fi
-  popd
 }
 trap cleanup EXIT ERR INT TERM
 

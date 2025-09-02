@@ -91,16 +91,16 @@ scripts:
           $script: |
             set -eux
             # build application
-            APP_DIR=/code/app
+            APP_DIR=/code/app/gui
             flutter clean
             PLATFORM="${2}"
             ARCH=${PLATFORM#"linux/"}
-            docker run -v `pwd`/../:/code/app --platform ${PLATFORM} --workdir ${APP_DIR}  ghcr.io/nordsecurity/nordvpn-linux/flutter-3.32.8:1.0.1 gui/scripts/build_application.sh ${1}
+            docker run -v `pwd`/../:/code/app --platform ${PLATFORM} --workdir ${APP_DIR}  ghcr.io/nordsecurity/nordvpn-linux/flutter-3.32.8:1.0.1 scripts/build_application.sh ${1}
             # Generate package
-            docker run -v `pwd`/../:${APP_DIR} \
+            docker run -v `pwd`/../:/code/app \
                     --workdir ${APP_DIR} \
                     --user 1000:1000 \
                     ghcr.io/nordsecurity/nordvpn-linux/packager:1.3.0 \
-                    ${APP_DIR}/gui/scripts/build_package.sh ${1} ${0} ${ARCH}
+                    ${APP_DIR}/scripts/build_package.sh ${1} ${0} ${ARCH}
             # clean the build folder otherwise local builds will not work because of CMake error
             flutter clean
