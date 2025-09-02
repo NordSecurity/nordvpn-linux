@@ -150,7 +150,9 @@ def wait_for_autoconnect():
 def is_running():
     try:
         sh.nordvpn.status()
-    except sh.ErrorReturnCode_1:
+    except sh.ErrorReturnCode_1 as ex:
+        # if user is not part of the nordvpn group assert
+        assert "Permission needed" not in ex.stdout.decode()
         return False
     else:
         return True
