@@ -254,22 +254,122 @@ func TestValidateField(t *testing.T) {
 	}
 }
 
-type mockReaderWriter struct {
-	readCnt, writeCnt  int
-	readErr, writeErr  error
-	mainJson, hashJson string
+// mockFileSystem implements both fileReader and fileWriter interfaces for testing
+type mockFileSystem struct {
+	// File storage
+	files map[string][]byte
+
+	// Error simulation
+	readErr     error            // General read error for all files
+	writeErr    error            // General write error for all files
+	fileSizeErr map[string]error // Per-file size errors
+
+	// Custom behavior
+	readFn  func(string) ([]byte, error)
+	writeFn func(string, []byte, os.FileMode) error
+
+	// Statistics
+	readCalls  int
+	writeCalls int
 }
 
-func (w *mockReaderWriter) writeFile(name string, content []byte, mode os.FileMode) error {
-	w.writeCnt++
-	return w.writeErr
-}
-func (w *mockReaderWriter) readFile(name string) ([]byte, error) {
-	w.readCnt++
-	if strings.Contains(name, "-hash") {
-		return []byte(w.hashJson), w.readErr
+func (m *mockFileSystem) readFile(name string) ([]byte, error) {
+	m.readCalls++
+
+	// Use custom function if provided
+	if m.readFn != nil {
+		return m.readFn(name)
 	}
-	return []byte(w.mainJson), w.readErr
+
+	// Check for general read error
+	if m.readErr != nil {
+		return nil, m.readErr
+	}
+
+	// Check for file size error
+	if m.fileSizeErr != nil {
+		if err, ok := m.fileSizeErr[name]; ok && err != nil {
+			return nil, err
+		}
+		// Also check by filename only
+		filename := filepath.Base(name)
+		if err, ok := m.fileSizeErr[filename]; ok && err != nil {
+			return nil, err
+		}
+	}
+
+	// Try exact match first
+	if content, ok := m.files[name]; ok {
+		return content, nil
+	}
+
+	// Try base name
+	baseName := filepath.Base(name)
+	if content, ok := m.files[baseName]; ok {
+		return content, nil
+	}
+
+	// Try removing directory prefix for paths like "testdir/include/file.json"
+	parts := strings.Split(name, string(filepath.Separator))
+	for i := 1; i < len(parts); i++ {
+		subPath := filepath.Join(parts[i:]...)
+		if content, ok := m.files[subPath]; ok {
+			return content, nil
+		}
+	}
+
+	return nil, fmt.Errorf("file not found: %s", name)
+}
+
+func (m *mockFileSystem) writeFile(name string, content []byte, mode os.FileMode) error {
+	m.writeCalls++
+
+	// Use custom function if provided
+	if m.writeFn != nil {
+		return m.writeFn(name, content, mode)
+	}
+
+	// Check for general write error
+	if m.writeErr != nil {
+		return m.writeErr
+	}
+
+	// Initialize map if needed
+	if m.files == nil {
+		m.files = make(map[string][]byte)
+	}
+
+	// Store the file
+	m.files[name] = content
+	return nil
+}
+
+// Legacy constructor for backward compatibility with mockReaderWriter tests
+func newMockReaderWriter(mainJson, hashJson string, readErr, writeErr error) *mockFileSystem {
+	files := make(map[string][]byte)
+	if mainJson != "" || hashJson != "" {
+		// This mimics the old behavior where it returns mainJson for non-hash files
+		// and hashJson for hash files
+		return &mockFileSystem{
+			files:    files,
+			readErr:  readErr,
+			writeErr: writeErr,
+			readFn: func(name string) ([]byte, error) {
+				if readErr != nil {
+					return nil, readErr
+				}
+				if strings.Contains(name, "-hash") {
+					return []byte(hashJson), nil
+				}
+				return []byte(mainJson), nil
+			},
+		}
+	}
+	return &mockFileSystem{
+		files:    files,
+		readErr:  readErr,
+		writeErr: writeErr,
+	}
 }
 
 func TestHandleIncludeFiles(t *testing.T) {
@@ -378,20 +478,15 @@ func TestHandleIncludeFiles(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			frw := mockReaderWriter{
-				mainJson: test.mainJson,
-				hashJson: test.hashJson,
-				readErr:  test.readErr,
-				writeErr: test.writeErr,
-			}
-			incf, err := handleIncludeFiles(test.srcBasePath, test.trgBasePath, test.fileName, &frw, &frw)
+			frw := newMockReaderWriter(test.mainJson, test.hashJson, test.readErr, test.writeErr)
+			incf, err := handleIncludeFiles(test.srcBasePath, test.trgBasePath, test.fileName, frw, frw)
 			if test.expectError {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, len(test.mainJson), len(incf))
-				assert.Equal(t, 2, frw.readCnt)
-				assert.Equal(t, 2, frw.writeCnt)
+				assert.Equal(t, 2, frw.readCalls)
+				assert.Equal(t, 2, frw.writeCalls)
 			}
 		})
 	}
@@ -404,37 +499,6 @@ type mockValidator struct {
 
 func (v *mockValidator) validate(content []byte) error {
 	return v.validateErr
-}
-
-// mockFileReader implements the fileReader interface for testing
-type mockFileReader struct {
-	files map[string][]byte
-	err   error
-}
-
-func (r *mockFileReader) readFile(name string) ([]byte, error) {
-	if r.err != nil {
-		return nil, r.err
-	}
-	// Try exact match first
-	if content, ok := r.files[name]; ok {
-		return content, nil
-	}
-	// Try with just the base name for backward compatibility
-	baseName := filepath.Base(name)
-	if content, ok := r.files[baseName]; ok {
-		return content, nil
-	}
-	// Try removing the directory prefix for paths like "testdir/include/file.json"
-	// when the mock has "include/file.json"
-	parts := strings.Split(name, string(filepath.Separator))
-	for i := 1; i < len(parts); i++ {
-		subPath := filepath.Join(parts[i:]...)
-		if content, ok := r.files[subPath]; ok {
-			return content, nil
-		}
-	}
-	return nil, fmt.Errorf("file not found: %s", name)
 }
 
 func TestFeatureLoad(t *testing.T) {
@@ -496,7 +560,7 @@ func TestFeatureLoad(t *testing.T) {
 				name: "test",
 			},
 			sourcePath: "testdir",
-			fileReader: &mockFileReader{
+			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test.json":      []byte(validMainJson),
 					"test-hash.json": []byte(validHashJson),
@@ -511,7 +575,7 @@ func TestFeatureLoad(t *testing.T) {
 				name: "",
 			},
 			sourcePath:    "testdir",
-			fileReader:    &mockFileReader{},
+			fileReader:    &mockFileSystem{},
 			validator:     &mockValidator{},
 			errorContains: "feature name is not set",
 			errorKind:     LoadErrorOther,
@@ -522,7 +586,7 @@ func TestFeatureLoad(t *testing.T) {
 				name: "test",
 			},
 			sourcePath:    "/nonexistent/path",
-			fileReader:    &mockFileReader{},
+			fileReader:    &mockFileSystem{},
 			validator:     &mockValidator{},
 			errorContains: "config source path is not valid",
 			errorKind:     LoadErrorOther,
@@ -533,7 +597,7 @@ func TestFeatureLoad(t *testing.T) {
 				name: "test",
 			},
 			sourcePath: "testdir",
-			fileReader: &mockFileReader{
+			fileReader: &mockFileSystem{
 				files: map[string][]byte{},
 			},
 			validator:     &mockValidator{},
@@ -546,7 +610,7 @@ func TestFeatureLoad(t *testing.T) {
 				name: "test",
 			},
 			sourcePath: "testdir",
-			fileReader: &mockFileReader{
+			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test-hash.json": []byte("invalid json"),
 				},
@@ -561,7 +625,7 @@ func TestFeatureLoad(t *testing.T) {
 				name: "test",
 			},
 			sourcePath: "testdir",
-			fileReader: &mockFileReader{
+			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test-hash.json": []byte(validHashJson),
 				},
@@ -576,7 +640,7 @@ func TestFeatureLoad(t *testing.T) {
 				name: "test",
 			},
 			sourcePath: "testdir",
-			fileReader: &mockFileReader{
+			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test.json":      []byte(validMainJson),
 					"test-hash.json": []byte(validHashJson),
@@ -594,7 +658,7 @@ func TestFeatureLoad(t *testing.T) {
 				name: "test",
 			},
 			sourcePath: "testdir",
-			fileReader: &mockFileReader{
+			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test.json":      []byte(validMainJson),
 					"test-hash.json": []byte(`{"hash": "wrong_hash"}`),
@@ -610,7 +674,7 @@ func TestFeatureLoad(t *testing.T) {
 				name: "test",
 			},
 			sourcePath: "testdir",
-			fileReader: &mockFileReader{
+			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test.json":      []byte("invalid json"),
 					"test-hash.json": []byte(`{"hash": "some_hash"}`),
@@ -626,7 +690,7 @@ func TestFeatureLoad(t *testing.T) {
 				name: "test",
 			},
 			sourcePath: "testdir",
-			fileReader: &mockFileReader{
+			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test.json":      []byte(invalidFieldJson),
 					"test-hash.json": []byte(invalidFieldHashJson),
@@ -635,6 +699,39 @@ func TestFeatureLoad(t *testing.T) {
 			validator:     &mockValidator{},
 			errorContains: "loading string value",
 			errorKind:     LoadErrorFieldValidation,
+		},
+		{
+			name: "file too big error on hash file",
+			feature: &Feature{
+				name: "test",
+			},
+			sourcePath: "testdir",
+			fileReader: &mockFileSystem{
+				fileSizeErr: map[string]error{
+					"test-hash.json": fmt.Errorf("file [test-hash.json] is too big, size [10485761]"),
+				},
+			},
+			validator:     &mockValidator{},
+			errorContains: "reading hash file",
+			errorKind:     LoadErrorFileNotFound,
+		},
+		{
+			name: "file too big error on main file",
+			feature: &Feature{
+				name: "test",
+			},
+			sourcePath: "testdir",
+			fileReader: &mockFileSystem{
+				files: map[string][]byte{
+					"test-hash.json": []byte(validHashJson),
+				},
+				fileSizeErr: map[string]error{
+					"test.json": fmt.Errorf("file [test.json] is too big, size [10485761]"),
+				},
+			},
+			validator:     &mockValidator{},
+			errorContains: "reading config file",
+			errorKind:     LoadErrorFileNotFound,
 		},
 	}
 
@@ -759,12 +856,12 @@ func TestFeatureLoadWithIncludeFiles(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			fileReader: &mockFileReader{
+			fileReader: &mockFileSystem{
 				files: map[string][]byte{
-					"test.json":                        []byte(mainJsonWithInclude),
-					"test-hash.json":                   []byte(mainHashJson),
-					"include/settings.json":            []byte(includeFileContent),
-					"include/settings-hash.json":       []byte(includeFileHashJson),
+					"test.json":                  []byte(mainJsonWithInclude),
+					"test-hash.json":             []byte(mainHashJson),
+					"include/settings.json":      []byte(includeFileContent),
+					"include/settings-hash.json": []byte(includeFileHashJson),
 				},
 			},
 			validator:     &mockValidator{},
@@ -775,7 +872,7 @@ func TestFeatureLoadWithIncludeFiles(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			fileReader: &mockFileReader{
+			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test.json":      []byte(mainJsonWithInclude),
 					"test-hash.json": []byte(mainHashJson),
@@ -791,7 +888,7 @@ func TestFeatureLoadWithIncludeFiles(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			fileReader: &mockFileReader{
+			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test.json":                  []byte(mainJsonWithInclude),
 					"test-hash.json":             []byte(mainHashJson),
@@ -808,7 +905,7 @@ func TestFeatureLoadWithIncludeFiles(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			fileReader: &mockFileReader{
+			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test.json":                   []byte(mainJsonMultipleIncludes),
 					"test-hash.json":              []byte(multiHashJson),
@@ -826,7 +923,7 @@ func TestFeatureLoadWithIncludeFiles(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			fileReader: &mockFileReader{
+			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test.json": []byte(`{
 						"version": 1,
@@ -857,7 +954,7 @@ func TestFeatureLoadWithIncludeFiles(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotNil(t, test.feature.params)
 				assert.NotEmpty(t, test.feature.hash)
-				
+
 				// Verify file type parameters were loaded
 				for _, param := range test.feature.params {
 					if param.Type == fieldTypeFile {
@@ -890,10 +987,23 @@ func TestHandleIncludeFilesEdgeCases(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.RemoveAll(tempDir)
 
+	mainJson := `{
+				"version": 1,
+				"configs": [{
+					"name": "config",
+					"value_type": "file",
+					"settings": [{
+						"value": "include/settings.json",
+						"app_version": "*",
+						"weight": 1
+					}]
+				}]
+			}`
+	mainHash := hash([]byte(mainJson))
+
 	tests := []struct {
 		name          string
 		feature       *Feature
-		mainJson      string
 		fileReader    fileReader
 		validator     validator
 		errorContains string
@@ -904,24 +1014,28 @@ func TestHandleIncludeFilesEdgeCases(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			mainJson: `{
-				"version": 1,
-				"configs": [{
-					"name": "config",
-					"value_type": "file",
-					"settings": [{
-						"value": "include/settings.txt",
-						"app_version": "*",
-						"weight": 1
+			fileReader: func() fileReader {
+				// Create a JSON with non-.json include file
+				nonJsonInclude := `{
+					"version": 1,
+					"configs": [{
+						"name": "config",
+						"value_type": "file",
+						"settings": [{
+							"value": "include/settings.txt",
+							"app_version": "*",
+							"weight": 1
+						}]
 					}]
-				}]
-			}`,
-			fileReader: &mockFileReader{
-				files: map[string][]byte{
-					"test.json":      []byte("dummy"),
-					"test-hash.json": []byte(`{"hash": "somehash"}`),
-				},
-			},
+				}`
+				nonJsonHash := hash([]byte(nonJsonInclude))
+				return &mockFileSystem{
+					files: map[string][]byte{
+						"test.json":      []byte(nonJsonInclude),
+						"test-hash.json": []byte(fmt.Sprintf(`{"hash": "%s"}`, nonJsonHash)),
+					},
+				}
+			}(),
 			validator:     &mockValidator{},
 			errorContains: "only json files are allowed to include",
 			errorKind:     LoadErrorIncludeFile,
@@ -931,26 +1045,16 @@ func TestHandleIncludeFilesEdgeCases(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			mainJson: `{
-				"version": 1,
-				"configs": [{
-					"name": "config",
-					"value_type": "file",
-					"settings": [{
-						"value": "include/settings.json",
-						"app_version": "*",
-						"weight": 1
-					}]
-				}]
-			}`,
-			fileReader: &mockFileReader{
-				files: map[string][]byte{
-					"test.json":             []byte("dummy"),
-					"test-hash.json":        []byte(`{"hash": "somehash"}`),
-					"include/settings.json": []byte(`{"key": "value"}`),
-					// Missing include/settings-hash.json
-				},
-			},
+			fileReader: func() fileReader {
+				return &mockFileSystem{
+					files: map[string][]byte{
+						"test.json":             []byte(mainJson),
+						"test-hash.json":        []byte(fmt.Sprintf(`{"hash": "%s"}`, mainHash)),
+						"include/settings.json": []byte(`{"key": "value"}`),
+						// Missing include/settings-hash.json
+					},
+				}
+			}(),
 			validator:     &mockValidator{},
 			errorContains: "handling include file hash",
 			errorKind:     LoadErrorIncludeFile,
@@ -960,26 +1064,16 @@ func TestHandleIncludeFilesEdgeCases(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			mainJson: `{
-				"version": 1,
-				"configs": [{
-					"name": "config",
-					"value_type": "file",
-					"settings": [{
-						"value": "include/settings.json",
-						"app_version": "*",
-						"weight": 1
-					}]
-				}]
-			}`,
-			fileReader: &mockFileReader{
-				files: map[string][]byte{
-					"test.json":                  []byte("dummy"),
-					"test-hash.json":             []byte(`{"hash": "somehash"}`),
-					"include/settings.json":      []byte(`{"key": "value"}`),
-					"include/settings-hash.json": []byte("invalid json"),
-				},
-			},
+			fileReader: func() fileReader {
+				return &mockFileSystem{
+					files: map[string][]byte{
+						"test.json":                  []byte(mainJson),
+						"test-hash.json":             []byte(fmt.Sprintf(`{"hash": "%s"}`, mainHash)),
+						"include/settings.json":      []byte(`{"key": "value"}`),
+						"include/settings-hash.json": []byte("invalid json"),
+					},
+				}
+			}(),
 			validator:     &mockValidator{},
 			errorContains: "parsing include file hash",
 			errorKind:     LoadErrorIncludeFile,
@@ -989,26 +1083,16 @@ func TestHandleIncludeFilesEdgeCases(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			mainJson: `{
-				"version": 1,
-				"configs": [{
-					"name": "config",
-					"value_type": "file",
-					"settings": [{
-						"value": "include/settings.json",
-						"app_version": "*",
-						"weight": 1
-					}]
-				}]
-			}`,
-			fileReader: &mockFileReader{
-				files: map[string][]byte{
-					"test.json":                  []byte("dummy"),
-					"test-hash.json":             []byte(`{"hash": "somehash"}`),
-					"include/settings.json":      []byte(`{"key": "value"}`),
-					"include/settings-hash.json": []byte(`{"hash": "wronghash"}`),
-				},
-			},
+			fileReader: func() fileReader {
+				return &mockFileSystem{
+					files: map[string][]byte{
+						"test.json":                  []byte(mainJson),
+						"test-hash.json":             []byte(fmt.Sprintf(`{"hash": "%s"}`, mainHash)),
+						"include/settings.json":      []byte(`{"key": "value"}`),
+						"include/settings-hash.json": []byte(`{"hash": "wronghash"}`),
+					},
+				}
+			}(),
 			validator:     &mockValidator{},
 			errorContains: "include file integrity problem",
 			errorKind:     LoadErrorIncludeFile,
@@ -1017,14 +1101,6 @@ func TestHandleIncludeFilesEdgeCases(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			// Update file reader with the test's main JSON
-			fr := test.fileReader.(*mockFileReader)
-			fr.files["test.json"] = []byte(test.mainJson)
-			
-			// Calculate proper hash for the main file
-			mainHash := hash([]byte(test.mainJson))
-			fr.files["test-hash.json"] = []byte(fmt.Sprintf(`{"hash": "%s"}`, mainHash))
-
 			err := test.feature.load(tempDir, test.fileReader, test.validator)
 
 			assert.Error(t, err)
@@ -1033,6 +1109,314 @@ func TestHandleIncludeFilesEdgeCases(t *testing.T) {
 			var loadErr *LoadError
 			if errors.As(err, &loadErr) {
 				assert.Equal(t, test.errorKind, loadErr.Kind)
+			}
+		})
+	}
+}
+
+// Test for download function error paths
+func TestFeatureDownloadErrors(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	// Create test data
+	validMainJson := `{
+		"version": 1,
+		"configs": [
+			{
+				"name": "test_param",
+				"value_type": "string",
+				"settings": [
+					{
+						"value": "test_value",
+						"app_version": "*",
+						"weight": 1
+					}
+				]
+			}
+		]
+	}`
+	validHash := hash([]byte(validMainJson))
+	validHashJson := fmt.Sprintf(`{"hash": "%s"}`, validHash)
+
+	// JSON with include file
+	mainJsonWithInclude := `{
+		"version": 1,
+		"configs": [
+			{
+				"name": "config_with_file",
+				"value_type": "file",
+				"settings": [
+					{
+						"value": "include/settings.json",
+						"app_version": "*",
+						"weight": 1
+					}
+				]
+			}
+		]
+	}`
+	includeFileContent := `{"setting1": "value1"}`
+	// includeFileHash := hash([]byte(includeFileContent))
+	// includeFileHashJson := fmt.Sprintf(`{"hash": "%s"}`, includeFileHash)
+	mainWithIncludeHash := hash([]byte(mainJsonWithInclude + includeFileContent))
+	mainWithIncludeHashJson := fmt.Sprintf(`{"hash": "%s"}`, mainWithIncludeHash)
+
+	tests := []struct {
+		name          string
+		feature       *Feature
+		cdnReader     fileReader
+		fileWriter    fileWriter
+		validator     validator
+		cdnBasePath   string
+		targetPath    string
+		errorContains string
+		errorKind     DownloadErrorKind
+		skipHashCheck bool
+	}{
+		{
+			name: "empty feature name",
+			feature: &Feature{
+				name: "",
+			},
+			cdnReader:     &mockFileSystem{},
+			fileWriter:    &mockFileSystem{},
+			validator:     &mockValidator{},
+			cdnBasePath:   "cdn",
+			targetPath:    "local",
+			errorContains: "feature name is not set",
+			errorKind:     DownloadErrorOther,
+		},
+		{
+			name: "hash file not found",
+			feature: &Feature{
+				name: "test",
+			},
+			cdnReader: &mockFileSystem{
+				files: map[string][]byte{},
+			},
+			fileWriter:    &mockFileSystem{},
+			validator:     &mockValidator{},
+			cdnBasePath:   "cdn",
+			targetPath:    "local",
+			errorContains: "downloading main hash file",
+			errorKind:     DownloadErrorRemoteHashNotFound,
+		},
+		{
+			name: "invalid hash json",
+			feature: &Feature{
+				name: "test",
+			},
+			cdnReader: &mockFileSystem{
+				files: map[string][]byte{
+					"test-hash.json": []byte("invalid json"),
+				},
+			},
+			fileWriter:    &mockFileSystem{},
+			validator:     &mockValidator{},
+			cdnBasePath:   "cdn",
+			targetPath:    "local",
+			errorContains: "parsing main hash file",
+			errorKind:     DownloadErrorHashParsing,
+		},
+		{
+			name: "no download when hash matches",
+			feature: &Feature{
+				name: "test",
+				hash: validHash,
+			},
+			cdnReader: &mockFileSystem{
+				files: map[string][]byte{
+					"test.json":      []byte(validMainJson),
+					"test-hash.json": []byte(validHashJson),
+				},
+			},
+			fileWriter:    &mockFileSystem{},
+			validator:     &mockValidator{},
+			cdnBasePath:   "cdn",
+			targetPath:    "local",
+			skipHashCheck: true, // This case returns success = false, err = nil
+		},
+		{
+			name: "main file not found",
+			feature: &Feature{
+				name: "test",
+			},
+			cdnReader: &mockFileSystem{
+				files: map[string][]byte{
+					"test-hash.json": []byte(validHashJson),
+				},
+			},
+			fileWriter:    &mockFileSystem{},
+			validator:     &mockValidator{},
+			cdnBasePath:   "cdn",
+			targetPath:    "local",
+			errorContains: "downloading main file",
+			errorKind:     DownloadErrorRemoteFileNotFound,
+		},
+		{
+			name: "validation failure",
+			feature: &Feature{
+				name: "test",
+			},
+			cdnReader: &mockFileSystem{
+				files: map[string][]byte{
+					"test.json":      []byte(validMainJson),
+					"test-hash.json": []byte(validHashJson),
+				},
+			},
+			fileWriter: &mockFileSystem{},
+			validator: &mockValidator{
+				validateErr: fmt.Errorf("validation failed"),
+			},
+			cdnBasePath:   "cdn",
+			targetPath:    "local",
+			errorContains: "validating main",
+			errorKind:     DownloadErrorParsing,
+		},
+		{
+			name: "integrity check failure",
+			feature: &Feature{
+				name: "test",
+			},
+			cdnReader: &mockFileSystem{
+				files: map[string][]byte{
+					"test.json":      []byte(validMainJson),
+					"test-hash.json": []byte(`{"hash": "wrong_hash"}`),
+				},
+			},
+			fileWriter:    &mockFileSystem{},
+			validator:     &mockValidator{},
+			cdnBasePath:   "cdn",
+			targetPath:    "local",
+			errorContains: "main file integrity problem",
+			errorKind:     DownloadErrorHashIntegrity,
+		},
+		{
+			name: "include file download error",
+			feature: &Feature{
+				name: "test",
+			},
+			cdnReader: &mockFileSystem{
+				files: map[string][]byte{
+					"test.json":      []byte(mainJsonWithInclude),
+					"test-hash.json": []byte(mainWithIncludeHashJson),
+					// Missing include file
+				},
+			},
+			fileWriter:    &mockFileSystem{},
+			validator:     &mockValidator{},
+			cdnBasePath:   "cdn",
+			targetPath:    "local",
+			errorContains: "downloading include files",
+			errorKind:     DownloadErrorIncludeFile,
+		},
+		{
+			name: "write main file error",
+			feature: &Feature{
+				name: "test",
+			},
+			cdnReader: &mockFileSystem{
+				files: map[string][]byte{
+					"test.json":      []byte(validMainJson),
+					"test-hash.json": []byte(validHashJson),
+				},
+			},
+			fileWriter: &mockFileSystem{
+				writeErr: fmt.Errorf("write error"),
+			},
+			validator:     &mockValidator{},
+			cdnBasePath:   "cdn",
+			targetPath:    "local",
+			errorContains: "writing main file",
+			errorKind:     DownloadErrorWriteJson,
+		},
+		{
+			name: "write hash file error",
+			feature: &Feature{
+				name: "test",
+			},
+			cdnReader: &mockFileSystem{
+				files: map[string][]byte{
+					"test.json":      []byte(validMainJson),
+					"test-hash.json": []byte(validHashJson),
+				},
+			},
+			fileWriter: &mockFileSystem{
+				writeFn: func(name string, content []byte, mode os.FileMode) error {
+					if strings.Contains(name, "-hash.json") {
+						return fmt.Errorf("write hash error")
+					}
+					return nil
+				},
+			},
+			validator:     &mockValidator{},
+			cdnBasePath:   "cdn",
+			targetPath:    "local",
+			errorContains: "writing main hash file",
+			errorKind:     DownloadErrorWriteHash,
+		},
+		{
+			name: "file too big error on main file",
+			feature: &Feature{
+				name: "test",
+			},
+			cdnReader: &mockFileSystem{
+				files: map[string][]byte{
+					"test-hash.json": []byte(validHashJson),
+				},
+				fileSizeErr: map[string]error{
+					"test.json": fmt.Errorf("file [test.json] is too big, size [10485761]"),
+				},
+			},
+			fileWriter:    &mockFileSystem{},
+			validator:     &mockValidator{},
+			cdnBasePath:   "cdn",
+			targetPath:    "local",
+			errorContains: "downloading main file",
+			errorKind:     DownloadErrorRemoteFileNotFound,
+		},
+		{
+			name: "file too big error on hash file",
+			feature: &Feature{
+				name: "test",
+			},
+			cdnReader: &mockFileSystem{
+				fileSizeErr: map[string]error{
+					"test-hash.json": fmt.Errorf("file [test-hash.json] is too big, size [10485761]"),
+				},
+			},
+			fileWriter:    &mockFileSystem{},
+			validator:     &mockValidator{},
+			cdnBasePath:   "cdn",
+			targetPath:    "local",
+			errorContains: "downloading main hash file",
+			errorKind:     DownloadErrorRemoteHashNotFound,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			success, err := test.feature.download(
+				test.cdnReader,
+				test.fileWriter,
+				test.validator,
+				test.cdnBasePath,
+				test.targetPath,
+			)
+
+			if test.skipHashCheck {
+				assert.False(t, success)
+				assert.NoError(t, err)
+			} else {
+				assert.False(t, success)
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), test.errorContains)
+
+				// Check if it's a DownloadError and verify the error type
+				var downloadErr *DownloadError
+				if errors.As(err, &downloadErr) {
+					assert.Equal(t, test.errorKind, downloadErr.Kind)
+				}
 			}
 		})
 	}
@@ -1134,7 +1518,7 @@ func TestFeatureLoadFieldValidationErrors(t *testing.T) {
 			testHash := hash([]byte(test.configJson))
 			hashJson := fmt.Sprintf(`{"hash": "%s"}`, testHash)
 
-			fileReader := &mockFileReader{
+			fileReader := &mockFileSystem{
 				files: map[string][]byte{
 					"test.json":      []byte(test.configJson),
 					"test-hash.json": []byte(hashJson),
