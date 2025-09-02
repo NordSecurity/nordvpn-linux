@@ -1,0 +1,14 @@
+name: "Install flutter"
+description: "Downloads and installs flutter"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Download flutter
+      run: |
+        curl -fSL https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.32.8-stable.tar.xz -o flutter.tar.xz
+        tar xf flutter.tar.xz -C $HOME
+        echo "$HOME/flutter/bin" >> $GITHUB_PATH
+        export PATH="$PATH:$HOME/flutter/bin"
+        flutter doctor
+      shell: bash
