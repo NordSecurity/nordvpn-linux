@@ -13,6 +13,7 @@ import 'package:nordvpn/pb/daemon/common.pb.dart';
 import 'package:nordvpn/pb/daemon/config/analytics_consent.pb.dart';
 import 'package:nordvpn/pb/daemon/connect.pb.dart';
 import 'package:nordvpn/pb/daemon/defaults.pb.dart';
+import 'package:nordvpn/pb/daemon/features.pb.dart';
 import 'package:nordvpn/pb/daemon/login.pb.dart' as grpc;
 import 'package:nordvpn/pb/daemon/login_with_token.pb.dart';
 import 'package:nordvpn/pb/daemon/logout.pb.dart';
@@ -204,11 +205,6 @@ final class MockDaemon extends DaemonServiceBase {
   }
 
   @override
-  Future<Payload> setIpv6(ServiceCall call, SetGenericRequest request) {
-    throw UnimplementedError();
-  }
-
-  @override
   Future<Payload> setKillSwitch(
     ServiceCall call,
     SetKillSwitchRequest request,
@@ -340,5 +336,11 @@ final class MockDaemon extends DaemonServiceBase {
     return GetDaemonApiVersionResponse(
       apiVersion: DaemonApiVersion.CURRENT_VERSION.value,
     );
+  }
+
+  @override
+  Future<FeatureToggles> getFeatureToggles(ServiceCall call, Empty request) {
+    // not used
+    throw UnimplementedError();
   }
 }
