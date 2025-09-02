@@ -316,7 +316,6 @@ def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
     """Fixture for setting a custom timeout for the NordVPN daemon's rc retry scheme."""
     print("Setting custom timeout for NordVPN daemon's rc retry scheme")
     daemon_path = NORDVPND_FILE.get(os.environ.get("NORDVPN_TYPE"))
-    parameters = ["RC_USE_LOCAL_CONFIG=1", f"RC_LOAD_TIME_MIN={RC_TIMEOUT}", "IGNORE_HEADER_VALIDATION=1"]
 
     if not os.path.exists(daemon_path):
         print(f"Daemon file does not exist. {daemon_path}")
@@ -325,20 +324,19 @@ def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
     os.makedirs(f"{os.getcwd()}/tmp/", exist_ok=True)
     subprocess.run(f"sudo cp {daemon_path} {os.getcwd()}/tmp", shell=True, check=True, text=True, capture_output=True)
 
-    for parameter in parameters:
-        if os.environ.get("NORDVPN_TYPE") == "deb":
-            # For container
-            sed_command = ["sudo", "sed", "-i", f"1a export {parameter}", daemon_path]
-        else:
-            # For VM
-            sed_command = ["sudo", "sed", "-i", f'/$$Service$$/a Environment="{parameter}"']
+    if os.environ.get("NORDVPN_TYPE") == "deb":
+        # For container
+        sed_command = ["sudo", "sed", "-i", f"1a export RC_LOAD_TIME_MIN={RC_TIMEOUT}", daemon_path]
+    else:
+        # For VM
+        sed_command = ["sudo", "sed", "-i", f'/$$Service$$/a Environment="RC_LOAD_TIME_MIN={RC_TIMEOUT}"', daemon_path]
 
-        subprocess.run(sed_command)
+    subprocess.run(sed_command)
 
     time_mark = daemon_log_reader.get_cursor()
 
     if os.environ.get("NORDVPN_TYPE") == "snap":
-        subprocess.run(f"sudo sudo systemctl daemon-reload", shell=True, check=True)
+        subprocess.run(f"sudo systemctl daemon-reload", shell=True, check=True)
         subprocess.run(f'sudo snap restart {NORDVPND.get(os.environ.get("NORDVPN_TYPE"))}', shell=True, check=True)
     else:
         daemon.restart()
@@ -347,6 +345,53 @@ def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
         f"[Info] remote config download job time period: {RC_TIMEOUT}m0s", cursor=time_mark
     ):
         print("Service doesn't applied new time period.")
+
+    yield
+
+    subprocess.run(
+        f'sudo cp {os.getcwd()}/tmp/{daemon_path.split("/")[-1]} {daemon_path}',
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=True,
+    )
+
+    if os.environ.get("NORDVPN_TYPE") == "snap":
+        subprocess.run(f"sudo systemctl daemon-reload", shell=True, check=True)
+        subprocess.run(f'sudo snap restart {NORDVPND.get(os.environ.get("NORDVPN_TYPE"))}', shell=True, check=True)
+    else:
+        daemon.restart()
+
+
+@pytest.fixture
+def set_use_local_config_for_rc(daemon_log_reader):
+    """Fixture to set parameter RC_USE_LOCAL_CONFIG in config for not overwriting local config by remote.
+    (Log about downloading config still persist)
+    """
+    print("Setting 'use local config' for NordVPN daemon's rc")
+    daemon_path = NORDVPND_FILE.get(os.environ.get("NORDVPN_TYPE"))
+
+    if not os.path.exists(daemon_path):
+        print(f"Daemon file does not exist. {daemon_path}")
+        pytest.skip("Unable to modify config file. File doesn't exist")
+
+    os.makedirs(f"{os.getcwd()}/tmp/", exist_ok=True)
+    subprocess.run(f"sudo cp {daemon_path} {os.getcwd()}/tmp", shell=True, check=True, text=True, capture_output=True)
+
+    if os.environ.get("NORDVPN_TYPE") == "deb":
+        # For container
+        sed_command = ["sudo", "sed", "-i", f"1a export RC_USE_LOCAL_CONFIG=1", daemon_path]
+    else:
+        # For VM
+        sed_command = ["sudo", "sed", "-i", f'/$$Service$$/a Environment="RC_USE_LOCAL_CONFIG=1"']
+
+    subprocess.run(sed_command)
+
+    if os.environ.get("NORDVPN_TYPE") == "snap":
+        subprocess.run(f"sudo sudo systemctl daemon-reload", shell=True, check=True)
+        subprocess.run(f'sudo snap restart {NORDVPND.get(os.environ.get("NORDVPN_TYPE"))}', shell=True, check=True)
+    else:
+        daemon.restart()
 
     yield
 

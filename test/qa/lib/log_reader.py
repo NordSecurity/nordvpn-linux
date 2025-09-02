@@ -97,7 +97,7 @@ class LogReader:
 
         print(f"Waiting for messages: {messages_to_find}")
 
-        while time.time() < start_time + timeout:
+        while time.time() - start_time < timeout:
             try:
                 partial_log = self.get_partial_log(cursor)
                 log_lines = partial_log.splitlines()

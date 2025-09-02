@@ -45,6 +45,33 @@ def initialized_app_with_remote_config(
     ), "Expected 'RC_INITIAL_RUN_MESSAGES' to appear in the daemon logs."
 
 
+def check_log_for_request_get_messages(daemon_log_reader: LogReader) -> None:
+    """Function to verify that nordvpn daemon attempts to do get request for hash files"""
+    expected_service_config = SERVICES_TO_BE_CHECK.copy()
+    cursor = daemon_log_reader.get_cursor()
+    time_mark = time.time()
+
+    while time.time() < time_mark + 90:
+        log_content = daemon_log_reader.get_partial_log(cursor=cursor)
+        cursor = daemon_log_reader.get_cursor()
+
+        if not log_content:
+            time.sleep(2)
+            continue
+        for service_config in SERVICES_TO_BE_CHECK:
+            for line in log_content.splitlines():
+                if "Request" in line and "GET" in line and f"{service_config}-hash.json" in line:
+                    try:
+                        print(f"Found {service_config}-hash.json in line")
+                        expected_service_config.remove(service_config)
+                        break
+                    except ValueError:
+                        break
+        time.sleep(2)
+
+    assert not expected_service_config, f"Couldn't found request logs related to {expected_service_config}"
+
+
 def test_remote_config_consumed_and_logged(initialized_app_with_remote_config) -> None:
     """
     Verify that the remote config is consumed and relevant log messages are recorded.
@@ -278,9 +305,9 @@ def test_remote_config_cdn_unavailable_(
 
     :steps
         - # Start nordvpnd daemon
-        - # Check journalctl for error logs related to remote config
+        - # Check daemon logs for error logs related to remote config
         - # Wait for next check
-        - # Check journalctl for error logs related to remote config
+        - # Check daemon logs for error logs related to remote config
 
     :endsteps
         - # Restore original config in daemon config file
@@ -290,7 +317,7 @@ def test_remote_config_cdn_unavailable_(
         - # After 1 min, in next iteration, nordvpn daemon still checks and shows error related to remote config
     """
     first_time_mark = daemon_log_reader.get_cursor()
-    daemon.restart()
+    daemon.start()
 
     assert daemon_log_reader.wait_for_messages(
         RC_REMOTE_MESSAGES.format(error_message), cursor=first_time_mark, timeout=90
@@ -307,26 +334,24 @@ def test_remote_config_download_config_on_start(
     initialized_app_with_remote_config,  # noqa: ARG001
     set_custom_timeout_for_rc_retry_scheme,  # noqa: ARG001
     clean_cache_files,  # noqa: ARG001
-    stop_nordvpnd,  # noqa: ARG001
     daemon_log_reader,
 ):
     """
     :tcid       LVPN-8456
 
-    :details    Verify that app verifies local config files and download then
+    :details    Verify that app download config files, set them 600 chmod
     :keywords   RC
 
     :preconditions
         - # Config files are available on CDN
         - # No remote config files are cached on local disk
-        - # nordvpnd is stopped
         - # Timeout in daemon service is set to 1 min
 
     :steps
         - # Start nordvpnd daemon
-        - # Check journalctl for download logs related to remote config
+        - # Check daemon logs for download logs related to remote config
         - # Wait for next check
-        - # Check journalctl for request logs related to remote config
+        - # Check daemon logs for request logs related to remote config
 
     :endsteps
         - # Restore original config in daemon config file
@@ -335,6 +360,8 @@ def test_remote_config_download_config_on_start(
         - # Nordvpn daemon shows download related to remote config
         - # After 1 min, in next iteration, nordvpn daemon still checks and shows request logs related to remote config
     """
+    command_for_conf_file = f'sudo find {LOCAL_CACHE_DIR} -type f -exec stat -c "%a %y %n" {{}} \\;'
+    chmod_to_be_found = "600"
     missed_services_config = []
     daemon.start()
 
@@ -344,18 +371,24 @@ def test_remote_config_download_config_on_start(
 
     assert not missed_services_config, f"Couldn't found download logs related to {missed_services_config}"
 
-    expected_service_config = SERVICES_TO_BE_CHECK
-    time_mark = time.time()
+    for service_config in SERVICES_TO_BE_CHECK:
+        if not daemon_log_reader.wait_for_messages(RC_LOCAL_MESSAGES.format(service_config), timeout=90):
+            missed_services_config.append(service_config)
 
-    while time.time() < time_mark + 90:
-        second_time_mark = daemon_log_reader.get_cursor()
-        for service_config in SERVICES_TO_BE_CHECK:
-            for line in daemon_log_reader.get_partial_log(cursor=second_time_mark):
-                if "Request" in line and "GET" in line and service_config + "-hash.json" in line:
-                    expected_service_config.remove(line)
-        time.sleep(10)
+    assert not missed_services_config, f"Couldn't found download logs related to {missed_services_config}"
 
-    assert not expected_service_config, f"Couldn't found request logs related to {expected_service_config}"
+    conf_files_data = subprocess.run(command_for_conf_file, shell=True, check=True, capture_output=True, text=True)
+
+    wrong_permissions_files = []
+    for line in conf_files_data.stdout.splitlines():
+        if chmod_to_be_found not in line:
+            wrong_permissions_files.append(line)
+
+    assert (
+        not missed_services_config
+    ), f"Found files that do not have {chmod_to_be_found} chmod: {wrong_permissions_files}"
+
+    check_log_for_request_get_messages(daemon_log_reader)
 
 
 @pytest.mark.parametrize(
@@ -390,11 +423,11 @@ def test_remote_config_attempts_config_(
 
     :steps
         - # Start nordvpnd daemon
-        - # Check journalctl for download logs related to remote config
+        - # Check daemon log for download logs related to remote config
         - # Check date of config files
         - # Wait for next check
-        - # Check journalctl for download logs related to remote config
-        - # Check date of config files
+        - # Check daemon log for download logs related to remote config
+        - # Check date time of config files
 
     :endsteps
         - # Restore original config in daemon config file
@@ -407,15 +440,17 @@ def test_remote_config_attempts_config_(
     """
     command_for_conf_file = f'sudo find {LOCAL_CACHE_DIR} -type f -exec stat -c "%a %y %n" {{}} \\;'
     chmod_to_be_found = "600"
-    missed_services_config = []
+    missed_local_config = []
 
-    daemon.restart()
+    daemon.start()
 
     for service_config in SERVICES_TO_BE_CHECK:
-        if not daemon_log_reader.wait_for_messages(RC_REMOTE_MESSAGES.format(service_config), timeout=90):
-            missed_services_config.append(service_config)
+        if not daemon_log_reader.wait_for_messages(RC_LOCAL_MESSAGES.format(service_config), timeout=90):
+            missed_local_config.append(service_config)
 
-    assert not missed_services_config, f"Couldn't found download logs related to {missed_services_config}"
+    assert not missed_local_config, f"Couldn't found download logs related to {missed_local_config}"
+
+    check_log_for_request_get_messages(daemon_log_reader)
 
     conf_files_data = subprocess.run(command_for_conf_file, shell=True, check=True, capture_output=True, text=True)
 
@@ -425,21 +460,10 @@ def test_remote_config_attempts_config_(
             wrong_permissions_files.append(line)
 
     assert (
-        not missed_services_config
+        not wrong_permissions_files
     ), f"Found files that do not have {chmod_to_be_found} chmod: {wrong_permissions_files}"
 
-    expected_service_config = SERVICES_TO_BE_CHECK
-    time_mark = time.time()
-
-    while time.time() < time_mark + 90:
-        second_time_mark = daemon_log_reader.get_cursor()
-        for service_config in SERVICES_TO_BE_CHECK:
-            for line in daemon_log_reader.get_partial_log(cursor=second_time_mark):
-                if "Request" in line and "GET" in line and service_config + "-hash.json" in line:
-                    expected_service_config.remove(line)
-        time.sleep(10)
-
-    assert expected_service_config, f"Couldn't found download logs related to {expected_service_config}"
+    check_log_for_request_get_messages(daemon_log_reader)
 
     conf_files_data_after_attempt = subprocess.run(
         command_for_conf_file, shell=True, check=True, capture_output=True, text=True
@@ -481,7 +505,7 @@ def test_remote_config_attempts_config_(
     ],
 )
 def test_remote_config_change_local_meshnet_config_settings_(
-    tcid,  # noqa: ARG001
+    tcid,
     parameter,
     value,
     additional_log_verification,
@@ -490,6 +514,7 @@ def test_remote_config_change_local_meshnet_config_settings_(
     daemon_log_reader,  # noqa: ARG001
     set_custom_timeout_for_rc_retry_scheme,  # noqa: ARG001
     initialized_app_with_remote_config,  # noqa: ARG001
+    set_use_local_config_for_rc,  # noqa: ARG001
 ):
     """
     :tcid       {tcid}
@@ -503,8 +528,9 @@ def test_remote_config_change_local_meshnet_config_settings_(
 
     :steps
         - # Change in meshnet.json file "value": false
+        - # Change hash sum in meshnet-hash.json file
         - # Start nordvpnd daemon
-        - # Check journalctl for loading config logs
+        - # Check daemon for loading config logs
         - # Check that command "nordvpn meshnet" returns "Command 'meshnet' doesn't exist."
 
     :endsteps
@@ -529,12 +555,12 @@ def test_remote_config_change_local_meshnet_config_settings_(
     with open(f"{LOCAL_CACHE_DIR}/{RC_MESHNET_CONFIG_FILE}", "w") as file:
         json.dump(config, file, indent=4)
 
-    sha_sun_hash = subprocess.run(
+    sha_sum_hash = subprocess.run(
         f"sha256sum {LOCAL_CACHE_DIR}/{RC_MESHNET_CONFIG_FILE}", capture_output=True, shell=True, text=True
     ).stdout.split()[0]
 
     with open(f"{LOCAL_CACHE_DIR}/{RC_MESHNET_HASH_FILE}", "w") as file:
-        json.dump({"hash": sha_sun_hash}, file)
+        json.dump({"hash": sha_sum_hash}, file)
 
     cursor = daemon_log_reader.get_cursor()
     daemon.restart()

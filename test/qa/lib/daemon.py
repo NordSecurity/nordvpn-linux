@@ -2,7 +2,6 @@
 
 import glob
 import os
-import signal
 import socket
 import subprocess
 import time
@@ -11,8 +10,6 @@ import sh
 
 from . import logging, ssh
 from lib.shell import sh_no_tty
-
-from .logging import FILE
 
 
 def _rewrite_log_path():
@@ -201,8 +198,7 @@ def wait_for_autoconnect():
 # returns True when daemon is running
 def is_running():
     try:
-        result = subprocess.run(["pgrep", "nordvpnd"], capture_output=True, check=False)
-        return result.returncode == 0
+        return subprocess.run(["pgrep", "nordvpnd"], capture_output=True, check=False).returncode == 0
     except Exception as ex:
         print(f"Got error: {ex}")
         return False
