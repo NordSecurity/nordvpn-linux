@@ -157,10 +157,6 @@ func (f *Feature) load(sourcePath string, fr fileReader, jv validator) error {
 	}
 
 	mainJsonFileName := f.FilePath(sourcePath)
-	if err := internal.IsFileTooBig(mainJsonFileName); err != nil {
-		return fmt.Errorf("reading main file: %w", err)
-	}
-
 	mainJsonStr, err := fr.readFile(mainJsonFileName)
 	if err != nil {
 		return NewLoadError(LoadErrorFileNotFound, fmt.Errorf("reading config file: %w", err))
