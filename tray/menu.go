@@ -289,7 +289,6 @@ func buildConnectToItem(ti *Instance) {
 	if ti == nil {
 		return
 	}
-
 	connectionSelector := systray.AddMenuItem(labelConnectionSelection, tooltipConnectionSelection)
 	countries := append([]string(nil), ti.state.connSelector.countries...)
 	recentConnections := ti.recentConnections.GetRecentConnections()
@@ -330,7 +329,7 @@ func buildCountriesSection(ti *Instance, parent *systray.MenuItem, countries []s
 	parent.AddSubMenuItem(labelCountries, tooltipCountries).Disable()
 	for _, country := range countries {
 		title := strings.ReplaceAll(country, "_", " ")
-		tooltip := fmt.Sprintf("%s %s", labelConnectTo, country)
+		tooltip := fmt.Sprintf("%s %s", labelConnectTo, title)
 		item := parent.AddSubMenuItem(title, tooltip)
 
 		go handleCountryClick(ti, item, country)

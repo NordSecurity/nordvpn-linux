@@ -197,8 +197,8 @@ func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
 	case *pb.AppState_ConnectionStatus:
 		log.Println(logTag, "Received connection status event")
 		changed := ti.updateVpnStatus()
+		changed = changed || ti.updateRecentConnections()
 		ti.redraw(changed)
-		ti.updateRecentConnections()
 
 	case *pb.AppState_LoginEvent:
 		changed := ti.updateLoginStatus()
