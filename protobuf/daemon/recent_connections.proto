@@ -7,9 +7,6 @@ import "server_selection_rule.proto";
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
-import "server_selection_rule.proto";
-import "config/group.proto";
-
 message RecentConnectionsResponse {
   // List of recent connections information
   repeated RecentConnectionModel connections = 1;
