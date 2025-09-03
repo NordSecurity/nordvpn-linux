@@ -429,6 +429,7 @@ func buildSettingsSubitems(ti *Instance, menu *systray.MenuItem) {
 	if ti == nil || menu == nil {
 		return
 	}
+
 	ti.state.mu.RLock()
 	notificationsEnabled := ti.state.notificationsStatus == Enabled
 	trayEnabled := ti.state.trayStatus == Enabled
