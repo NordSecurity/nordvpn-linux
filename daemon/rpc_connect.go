@@ -279,11 +279,19 @@ func (r *RPC) connect(
 	r.events.Service.Connect.Publish(event)
 
 	if isRecentConnectionSupported(event.TargetServerSelection) {
+		getSpecificServer := func(domain string) string {
+			parts := strings.Split(domain, ".")
+			if len(parts) > 0 {
+				return parts[0]
+			}
+			return ""
+		}
+
 		recentModel := recents.Model{
 			CountryCode:        event.TargetServerCountryCode,
 			Country:            event.TargetServerCountry,
 			City:               event.TargetServerCity,
-			SpecificServer:     strings.Split(event.TargetServerDomain, ".")[0],
+			SpecificServer:     getSpecificServer(event.TargetServerDomain),
 			SpecificServerName: event.TargetServerName,
 			Group:              parameters.Group,
 			ConnectionType:     event.TargetServerSelection,
