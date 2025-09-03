@@ -54,6 +54,9 @@ if ! getent group "$GROUP" > /dev/null; then
 	exit 1
 fi
 
+# if user variable is not set, set it with whoami result
+: "${USER:=$(whoami)}"
+
 # add current user into nordvpn group if needed
 if id -nG "$USER" | grep -qw "$GROUP"; then
 	echo "User '$USER' is part of the in group '$GROUP'."
