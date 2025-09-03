@@ -422,6 +422,8 @@ func buildRecentConnectionModel(
 		recentModel.CountryCode = event.TargetServerCountryCode
 		recentModel.Country = event.TargetServerCountry
 
+	case config.ServerSelectionRule_NONE, config.ServerSelectionRule_RECOMMENDED:
+		fallthrough
 	default:
 		log.Printf("%s unexpected connection type in recent connections: %v",
 			internal.WarningPrefix, recentModel.ConnectionType)
