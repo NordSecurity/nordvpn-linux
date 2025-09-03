@@ -12,14 +12,6 @@ message RecentConnectionsResponse {
   repeated RecentConnectionModel connections = 1;
 }
 
-// message RecentConnection {
-//   // Connection model
-//   RecentConnectionModel connection_model = 1;
-
-//   // Human readable connection label
-//   string display_label = 2;
-// }
-
 message RecentConnectionModel {
   // Country name
   string country = 1;
