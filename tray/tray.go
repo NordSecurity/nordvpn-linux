@@ -22,16 +22,11 @@ import (
 )
 
 const (
-	// CountryListUpdateInterval = 60 * time.Minute
-	// AccountInfoUpdateInterval = 24 * time.Hour
-	logTag = "[systray]"
-)
-
-const (
 	IconBlack string = "nordvpn-tray-black"
 	IconGray  string = "nordvpn-tray-gray"
 	IconWhite string = "nordvpn-tray-white"
 	IconBlue  string = "nordvpn-tray-blue"
+	logTag           = "[systray]"
 )
 
 type Status int
