@@ -286,30 +286,7 @@ func (r *RPC) connect(
 	r.events.Service.Connect.Publish(event)
 
 	if isRecentConnectionSupported(event.TargetServerSelection) {
-		getSpecificServer := func(domain string) string {
-			parts := strings.Split(domain, ".")
-			if len(parts) > 0 {
-				return parts[0]
-			}
-			return ""
-		}
-
-		recentModel := recents.Model{
-			CountryCode:        event.TargetServerCountryCode,
-			Country:            event.TargetServerCountry,
-			City:               event.TargetServerCity,
-			SpecificServer:     getSpecificServer(event.TargetServerDomain),
-			SpecificServerName: event.TargetServerName,
-			Group:              parameters.Group,
-			ConnectionType:     event.TargetServerSelection,
-		}
-
-		// do not add anything unrelated to connection type
-		if recentModel.ConnectionType == config.ServerSelectionRule_COUNTRY ||
-			recentModel.ConnectionType == config.ServerSelectionRule_COUNTRY_WITH_GROUP {
-			recentModel.City = ""
-		}
-
+		recentModel := buildRecentConnectionModel(event, parameters)
 		r.recentVPNConnStore.Add(recentModel)
 	}
 
@@ -386,6 +363,71 @@ func determineTargetServerGroup(server *core.Server, parameters ServerParameters
 	}
 
 	return ""
+}
+
+// buildRecentConnectionModel creates a recent connection model
+func buildRecentConnectionModel(
+	event events.DataConnect,
+	parameters ServerParameters,
+) recents.Model {
+	extractSpecificServerName := func(domain string) string {
+		var name string
+		if domain != "" {
+			parts := strings.Split(domain, ".")
+			if len(parts) > 0 && parts[0] != "" {
+				name = parts[0]
+			}
+		}
+		return name
+	}
+
+	recentModel := recents.Model{
+		ConnectionType: event.TargetServerSelection,
+	}
+
+	switch recentModel.ConnectionType {
+	case config.ServerSelectionRule_GROUP:
+		// No geographic data needed
+		recentModel.Group = parameters.Group
+
+	case config.ServerSelectionRule_CITY:
+		// Needs city, country info
+		recentModel.City = event.TargetServerCity
+		recentModel.CountryCode = event.TargetServerCountryCode
+		recentModel.Country = event.TargetServerCountry
+
+	case config.ServerSelectionRule_COUNTRY:
+		// Needs just country info
+		recentModel.CountryCode = event.TargetServerCountryCode
+		recentModel.Country = event.TargetServerCountry
+
+	case config.ServerSelectionRule_COUNTRY_WITH_GROUP:
+		// Needs group, country info
+		recentModel.Group = parameters.Group
+		recentModel.CountryCode = event.TargetServerCountryCode
+		recentModel.Country = event.TargetServerCountry
+
+	case config.ServerSelectionRule_SPECIFIC_SERVER:
+		// Needs server, country info
+		recentModel.SpecificServer = extractSpecificServerName(event.TargetServerDomain)
+		recentModel.SpecificServerName = event.TargetServerName
+		recentModel.CountryCode = event.TargetServerCountryCode
+		recentModel.Country = event.TargetServerCountry
+
+	case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
+		// Needs server, group, country info
+		recentModel.Group = parameters.Group
+		recentModel.SpecificServer = extractSpecificServerName(event.TargetServerDomain)
+		recentModel.SpecificServerName = event.TargetServerName
+		recentModel.CountryCode = event.TargetServerCountryCode
+		recentModel.Country = event.TargetServerCountry
+
+	default:
+		log.Printf("%s unexpected connection type in recent connections: %v",
+			internal.WarningPrefix, recentModel.ConnectionType)
+	}
+
+	return recentModel
 }
 
 type FactoryFunc func(config.Technology) (vpn.VPN, error)

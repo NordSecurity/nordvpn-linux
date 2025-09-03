@@ -113,14 +113,16 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 	}
 
 	trayStatus := ti.WaitInitialTrayStatus()
-	if trayStatus == tray.Enabled {
-		for {
-			if systray.IsAvailable() {
-				systray.Run(onReady, onExit)
-				break
-			}
-			<-time.After(10 * time.Second)
+	if trayStatus != tray.Enabled {
+		return
+	}
+
+	for {
+		if systray.IsAvailable() {
+			systray.Run(onReady, onExit)
+			break
 		}
+		<-time.After(10 * time.Second)
 	}
 }
 

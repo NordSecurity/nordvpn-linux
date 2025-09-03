@@ -84,6 +84,7 @@ func statusStream(stateChan <-chan any,
 	for {
 		select {
 		case <-srv.Context().Done():
+			log.Println(internal.InfoPrefix, "Subscription has been cancelled.")
 			close(stopChan)
 			return
 		case ev := <-stateChan:
