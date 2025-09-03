@@ -287,30 +287,7 @@ func (r *RPC) connect(
 	r.events.Service.Connect.Publish(event)
 
 	if isRecentConnectionSupported(event.TargetServerSelection) {
-		getSpecificServer := func(domain string) string {
-			parts := strings.Split(domain, ".")
-			if len(parts) > 0 {
-				return parts[0]
-			}
-			return ""
-		}
-
-		recentModel := recents.Model{
-			CountryCode:        event.TargetServerCountryCode,
-			Country:            event.TargetServerCountry,
-			City:               event.TargetServerCity,
-			SpecificServer:     getSpecificServer(event.TargetServerDomain),
-			SpecificServerName: event.TargetServerName,
-			Group:              parameters.Group,
-			ConnectionType:     event.TargetServerSelection,
-		}
-
-		// do not add anything unrelated to connection type
-		if recentModel.ConnectionType == config.ServerSelectionRule_COUNTRY ||
-			recentModel.ConnectionType == config.ServerSelectionRule_COUNTRY_WITH_GROUP {
-			recentModel.City = ""
-		}
-
+		recentModel := buildRecentConnectionModel(event, parameters)
 		r.recentVPNConnStore.Add(recentModel)
 	}
 
