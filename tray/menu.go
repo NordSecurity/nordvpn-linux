@@ -293,9 +293,9 @@ func buildConnectToItem(ti *Instance) {
 
 	ti.state.mu.RLock()
 	countries := append([]string(nil), ti.state.connSelector.countries...)
+	recentConnections := ti.recentConnections.GetRecentConnections()
 	ti.state.mu.RUnlock()
 
-	recentConnections := fetchRecentConnections(ti)
 	if len(recentConnections) > 0 {
 		buildRecentConnectionsSection(ti, connectionSelector, recentConnections)
 	}
@@ -306,18 +306,14 @@ func buildConnectToItem(ti *Instance) {
 func buildRecentConnectionsSection(
 	ti *Instance,
 	parent *systray.MenuItem,
-	connections []*pb.RecentConnectionModel,
+	connections []RecentConnection,
 ) {
 	if ti == nil || parent == nil {
 		return
 	}
 	parent.AddSubMenuItem(labelRecentConnections, tooltipRecentConnections).Disable()
 	for _, conn := range connections {
-		if conn == nil {
-			continue
-		}
-
-		displayLabel := makeDisplayLabel(conn)
+		displayLabel := makeDisplayLabel(&conn)
 		if displayLabel == "" {
 			continue
 		}
@@ -325,7 +321,7 @@ func buildRecentConnectionsSection(
 		tooltip := fmt.Sprintf("%s%s", labelReconnectTo, displayLabel)
 		item := parent.AddSubMenuItem(displayLabel, tooltip)
 
-		go handleRecentConnectionClick(ti, item, conn)
+		go handleRecentConnectionClick(ti, item, &conn)
 	}
 }
 
@@ -343,11 +339,7 @@ func buildCountriesSection(ti *Instance, parent *systray.MenuItem, countries []s
 	}
 }
 
-func handleRecentConnectionClick(
-	ti *Instance,
-	item *systray.MenuItem,
-	model *pb.RecentConnectionModel,
-) {
+func handleRecentConnectionClick(ti *Instance, item *systray.MenuItem, model *RecentConnection) {
 	if ti == nil || model == nil {
 		return
 	}

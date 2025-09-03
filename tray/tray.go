@@ -110,6 +110,7 @@ type Instance struct {
 	quitChan            chan<- norduser.StopRequest
 	stateListener       *stateListener
 	connSensor          *connectionSettingsChangeSensor
+	recentConnections   *recentConnectionsManager
 }
 
 type trayState struct {
@@ -147,10 +148,11 @@ func (state *trayState) serverName() string {
 
 func NewTrayInstance(client pb.DaemonClient, fileshareClient filesharepb.FileshareClient, quitChan chan<- norduser.StopRequest) *Instance {
 	obj := &Instance{
-		client:          client,
-		fileshareClient: fileshareClient,
-		quitChan:        quitChan,
-		connSensor:      newConnectionSettingsChangeSensor(),
+		client:            client,
+		fileshareClient:   fileshareClient,
+		quitChan:          quitChan,
+		connSensor:        newConnectionSettingsChangeSensor(),
+		recentConnections: newRecentConnectionsManager(client),
 	}
 	obj.stateListener = newStateListener(client, obj.onDaemonStateEvent)
 	return obj
@@ -195,6 +197,7 @@ func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
 
 	case *pb.AppState_ConnectionStatus:
 		ti.updateVpnStatus()
+		ti.updateRecentConnections()
 
 	case *pb.AppState_LoginEvent:
 		ti.updateLoginStatus()
@@ -211,6 +214,7 @@ func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
 
 		if ti.connSensor.Detected() {
 			ti.updateCountryList()
+			ti.updateRecentConnections()
 		}
 
 	case *pb.AppState_UpdateEvent:
