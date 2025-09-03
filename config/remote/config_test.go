@@ -504,6 +504,11 @@ func (v *mockValidator) validate(content []byte) error {
 func TestFeatureLoad(t *testing.T) {
 	category.Set(t, category.Unit)
 
+	// Create a temporary directory just for the path validation tests
+	tempDir, err := os.MkdirTemp("", "test_path_validation_*")
+	assert.NoError(t, err)
+	defer os.RemoveAll(tempDir)
+
 	// Create a valid hash for test data
 	validMainJson := `{
 		"version": 1,
@@ -559,7 +564,7 @@ func TestFeatureLoad(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			sourcePath: "testdir",
+			sourcePath: tempDir,
 			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test.json":      []byte(validMainJson),
@@ -574,7 +579,7 @@ func TestFeatureLoad(t *testing.T) {
 			feature: &Feature{
 				name: "",
 			},
-			sourcePath:    "testdir",
+			sourcePath:    tempDir,
 			fileReader:    &mockFileSystem{},
 			validator:     &mockValidator{},
 			errorContains: "feature name is not set",
@@ -596,7 +601,7 @@ func TestFeatureLoad(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			sourcePath: "testdir",
+			sourcePath: tempDir,
 			fileReader: &mockFileSystem{
 				files: map[string][]byte{},
 			},
@@ -609,7 +614,7 @@ func TestFeatureLoad(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			sourcePath: "testdir",
+			sourcePath: tempDir,
 			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test-hash.json": []byte("invalid json"),
@@ -624,7 +629,7 @@ func TestFeatureLoad(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			sourcePath: "testdir",
+			sourcePath: tempDir,
 			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test-hash.json": []byte(validHashJson),
@@ -639,7 +644,7 @@ func TestFeatureLoad(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			sourcePath: "testdir",
+			sourcePath: tempDir,
 			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test.json":      []byte(validMainJson),
@@ -657,7 +662,7 @@ func TestFeatureLoad(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			sourcePath: "testdir",
+			sourcePath: tempDir,
 			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test.json":      []byte(validMainJson),
@@ -673,7 +678,7 @@ func TestFeatureLoad(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			sourcePath: "testdir",
+			sourcePath: tempDir,
 			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test.json":      []byte("invalid json"),
@@ -689,7 +694,7 @@ func TestFeatureLoad(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			sourcePath: "testdir",
+			sourcePath: tempDir,
 			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test.json":      []byte(invalidFieldJson),
@@ -705,7 +710,7 @@ func TestFeatureLoad(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			sourcePath: "testdir",
+			sourcePath: tempDir,
 			fileReader: &mockFileSystem{
 				fileSizeErr: map[string]error{
 					"test-hash.json": fmt.Errorf("file [test-hash.json] is too big, size [10485761]"),
@@ -720,7 +725,7 @@ func TestFeatureLoad(t *testing.T) {
 			feature: &Feature{
 				name: "test",
 			},
-			sourcePath: "testdir",
+			sourcePath: tempDir,
 			fileReader: &mockFileSystem{
 				files: map[string][]byte{
 					"test-hash.json": []byte(validHashJson),
@@ -735,20 +740,8 @@ func TestFeatureLoad(t *testing.T) {
 		},
 	}
 
-	// Create a temporary directory just for the path validation tests
-	tempDir, err := os.MkdirTemp("", "test_path_validation_*")
-	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
-
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			// For path validation tests, use the actual temp directory
-			if test.name == "invalid source path" {
-				test.sourcePath = "/nonexistent/path"
-			} else if test.sourcePath == "testdir" {
-				test.sourcePath = tempDir
-			}
-
 			err := test.feature.load(test.sourcePath, test.fileReader, test.validator)
 
 			if test.expectedError != nil {
@@ -1156,8 +1149,6 @@ func TestFeatureDownloadErrors(t *testing.T) {
 		]
 	}`
 	includeFileContent := `{"setting1": "value1"}`
-	// includeFileHash := hash([]byte(includeFileContent))
-	// includeFileHashJson := fmt.Sprintf(`{"hash": "%s"}`, includeFileHash)
 	mainWithIncludeHash := hash([]byte(mainJsonWithInclude + includeFileContent))
 	mainWithIncludeHashJson := fmt.Sprintf(`{"hash": "%s"}`, mainWithIncludeHash)
 
