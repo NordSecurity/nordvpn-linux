@@ -279,7 +279,12 @@ func (r *RPC) connect(
 	r.events.Service.Connect.Publish(event)
 
 	if isRecentConnectionSupported(event.TargetServerSelection) {
-		recentModel := buildRecentConnectionModel(event, parameters)
+		var serverTechs []core.ServerTechnology
+		for _, v := range server.Technologies {
+			serverTechs = append(serverTechs, v.ID)
+		}
+
+		recentModel := buildRecentConnectionModel(serverTechs, event, parameters)
 		r.recentVPNConnStore.Add(recentModel)
 	}
 
@@ -360,6 +365,7 @@ func determineTargetServerGroup(server *core.Server, parameters ServerParameters
 
 // buildRecentConnectionModel creates a recent connection model
 func buildRecentConnectionModel(
+	serverTechs []core.ServerTechnology,
 	event events.DataConnect,
 	parameters ServerParameters,
 ) recents.Model {
@@ -375,7 +381,8 @@ func buildRecentConnectionModel(
 	}
 
 	recentModel := recents.Model{
-		ConnectionType: event.TargetServerSelection,
+		ConnectionType:     event.TargetServerSelection,
+		ServerTechnologies: serverTechs,
 	}
 
 	switch recentModel.ConnectionType {
