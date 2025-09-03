@@ -297,13 +297,13 @@ func buildConnectToItem(ti *Instance) {
 
 	recentConnections := fetchRecentConnections(ti)
 	if len(recentConnections) > 0 {
-		addRecentConnectionsSection(ti, connectionSelector, recentConnections)
+		buildRecentConnectionsSection(ti, connectionSelector, recentConnections)
 	}
 
-	addCountriesSection(ti, connectionSelector, countries)
+	buildCountriesSection(ti, connectionSelector, countries)
 }
 
-func addRecentConnectionsSection(
+func buildRecentConnectionsSection(
 	ti *Instance,
 	parent *systray.MenuItem,
 	connections []*pb.RecentConnectionModel,
@@ -329,7 +329,7 @@ func addRecentConnectionsSection(
 	}
 }
 
-func addCountriesSection(ti *Instance, parent *systray.MenuItem, countries []string) {
+func buildCountriesSection(ti *Instance, parent *systray.MenuItem, countries []string) {
 	if ti == nil || parent == nil {
 		return
 	}
