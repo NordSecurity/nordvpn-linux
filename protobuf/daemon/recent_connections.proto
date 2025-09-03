@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package pb;
 
-option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
-
-import "server_selection_rule.proto";
 import "config/group.proto";
+import "server_selection_rule.proto";
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
 message RecentConnectionsResponse {
   // List of recent connections information
@@ -36,6 +36,6 @@ message RecentConnectionModel {
 }
 
 message RecentConnectionsRequest {
-  // Limit maximum entries to be returned, 0 - no limit
-  int64 limit = 1;
+  // Limit maximum entries to be returned
+  optional int64 limit = 1;
 }

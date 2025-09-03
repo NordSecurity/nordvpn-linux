@@ -14,6 +14,9 @@ import (
 const (
 	// Timeouts
 	recentConnectionsTimeout = 2 * time.Second
+
+	// Limit
+	maxRecentConnections = 3
 )
 
 func makeDisplayLabel(conn *pb.RecentConnectionModel) string {
@@ -62,9 +65,10 @@ func fetchRecentConnections(ti *Instance) []*pb.RecentConnectionModel {
 	ctx, cancel := context.WithTimeout(context.Background(), recentConnectionsTimeout)
 	defer cancel()
 
+	limit := int64(maxRecentConnections)
 	resp, err := ti.client.GetRecentConnections(
 		ctx,
-		&pb.RecentConnectionsRequest{Limit: maxRecentConnections},
+		&pb.RecentConnectionsRequest{Limit: &limit},
 		grpc.WaitForReady(true),
 	)
 
@@ -89,8 +93,7 @@ func connectByConnectionModel(ti *Instance, model *pb.RecentConnectionModel) boo
 		return ti.connect(city_str, "")
 
 	case config.ServerSelectionRule_COUNTRY:
-		country_str := strings.ReplaceAll(model.Country, " ", "_")
-		return ti.connect(country_str, "")
+		return ti.connect(model.CountryCode, "")
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER:
 		return ti.connect(model.SpecificServer, "")
@@ -101,8 +104,7 @@ func connectByConnectionModel(ti *Instance, model *pb.RecentConnectionModel) boo
 
 	case config.ServerSelectionRule_COUNTRY_WITH_GROUP:
 		group_str := strings.ReplaceAll(model.Group.String(), "_", " ")
-		country_str := strings.ReplaceAll(model.Country, " ", "_")
-		return ti.connect(country_str, group_str)
+		return ti.connect(model.CountryCode, group_str)
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
 		group_str := strings.ReplaceAll(model.Group.String(), "_", " ")

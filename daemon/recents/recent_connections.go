@@ -3,7 +3,6 @@ package recents
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"slices"
 	"sync"
 
@@ -14,7 +13,6 @@ import (
 const (
 	// maxRecentConnections defines the maximum number of recent connections to store
 	maxRecentConnections = 10
-	logTag               = "[recents]"
 )
 
 type RecentConnectionsStore struct {
@@ -40,12 +38,13 @@ func (r *RecentConnectionsStore) Get() ([]Model, error) {
 	defer r.mu.Unlock()
 
 	if err := r.checkExistence(); err != nil {
-		return nil, fmt.Errorf("%s %s getting recent connections: %w\n", logTag, internal.ErrorPrefix, err)
+		return nil, fmt.Errorf("getting recent connections: %w", err)
 	}
 
 	conns, err := r.load()
 	if err != nil {
-		return nil, fmt.Errorf("%s %s getting recent vpn connections: %w", logTag, internal.ErrorPrefix, err)
+		_ = r.save([]Model{}) // recreate file without content on reading errors
+		return nil, fmt.Errorf("getting recent vpn connections: %w", err)
 	}
 
 	return conns, nil
@@ -53,13 +52,7 @@ func (r *RecentConnectionsStore) Get() ([]Model, error) {
 
 func (r *RecentConnectionsStore) find(model Model, list []Model) int {
 	return slices.IndexFunc(list, func(m Model) bool {
-		return m.Country == model.Country &&
-			m.City == model.City &&
-			m.Group == model.Group &&
-			m.CountryCode == model.CountryCode &&
-			m.SpecificServerName == model.SpecificServerName &&
-			m.SpecificServer == model.SpecificServer &&
-			m.ConnectionType == model.ConnectionType
+		return m == model
 	})
 }
 
@@ -70,12 +63,13 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 	defer r.mu.Unlock()
 
 	if err := r.checkExistence(); err != nil {
-		return fmt.Errorf("%s %s adding new vpn connection: %w\n", logTag, internal.ErrorPrefix, err)
+		return fmt.Errorf("adding new vpn connection: %w", err)
 	}
 
 	connections, err := r.load()
 	if err != nil {
-		return fmt.Errorf("%s %s adding new recent vpn connection: %w\n", logTag, internal.ErrorPrefix, err)
+		_ = r.save([]Model{}) // recreate file without content on reading errors
+		return fmt.Errorf("adding new recent vpn connection: %w", err)
 	}
 
 	index := r.find(model, connections)
@@ -89,7 +83,7 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 	}
 
 	if err := r.save(connections); err != nil {
-		return fmt.Errorf("%s %s adding new recent vpn connection: %w\n", logTag, internal.ErrorPrefix, err)
+		return fmt.Errorf("adding new recent vpn connection: %w", err)
 	}
 
 	return nil
@@ -101,7 +95,7 @@ func (r *RecentConnectionsStore) Clean() error {
 	defer r.mu.Unlock()
 
 	if err := r.save([]Model{}); err != nil {
-		return fmt.Errorf("%s %s cleaning existing recent vpn connections: %w\n", logTag, internal.ErrorPrefix, err)
+		return fmt.Errorf("cleaning existing recent vpn connections: %w", err)
 	}
 
 	return nil
@@ -116,7 +110,7 @@ func (r *RecentConnectionsStore) save(values []Model) error {
 	if err := r.fsHandle.WriteFile(r.path, data, internal.PermUserRW); err != nil {
 		return fmt.Errorf("writing vpn connections store: %w", err)
 	}
-	defer log.Println("saved recent conns:", values)
+
 	return nil
 }
 

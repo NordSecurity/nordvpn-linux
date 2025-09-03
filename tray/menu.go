@@ -57,9 +57,6 @@ const (
 	tooltipSettings            = "Configure application preferences"
 	tooltipNotifications       = "Toggle desktop notifications"
 	tooltipTrayIcon            = "Show or hide tray icon"
-
-	// Limits
-	maxRecentConnections = 3
 )
 
 func addDebugSection(ti *Instance) {
@@ -146,7 +143,7 @@ func addVpnSection(ti *Instance) {
 		addQuickConnectButton(ti)
 	}
 
-	addConnectionSelector(ti)
+	addConnectToItem(ti)
 	systray.AddSeparator()
 }
 
@@ -211,7 +208,7 @@ func handleQuickConnectClick(ti *Instance, item *systray.MenuItem) {
 	}
 }
 
-func addConnectionSelector(ti *Instance) {
+func addConnectToItem(ti *Instance) {
 	connectionSelector := systray.AddMenuItem(labelConnectionSelection, tooltipConnectionSelection)
 
 	ti.state.mu.RLock()

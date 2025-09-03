@@ -22,11 +22,11 @@ _runtime_version.ValidateProtobufRuntimeVersion(
 _sym_db = _symbol_database.Default()
 
 
-import server_selection_rule_pb2 as server__selection__rule__pb2
 from config import group_pb2 as config_dot_group__pb2
+import server_selection_rule_pb2 as server__selection__rule__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18recent_connections.proto\x12\x02pb\x1a\x1bserver_selection_rule.proto\x1a\x12\x63onfig/group.proto\"K\n\x19RecentConnectionsResponse\x12.\n\x0b\x63onnections\x18\x01 \x03(\x0b\x32\x19.pb.RecentConnectionModel\"\xd9\x01\n\x15RecentConnectionModel\x12\x0f\n\x07\x63ountry\x18\x01 \x01(\t\x12\x0c\n\x04\x63ity\x18\x02 \x01(\t\x12\"\n\x05group\x18\x03 \x01(\x0e\x32\x13.config.ServerGroup\x12\x14\n\x0c\x63ountry_code\x18\x04 \x01(\t\x12\x1c\n\x14specific_server_name\x18\x05 \x01(\t\x12\x17\n\x0fspecific_server\x18\x06 \x01(\t\x12\x30\n\x0f\x63onnection_type\x18\x07 \x01(\x0e\x32\x17.pb.ServerSelectionRule\")\n\x18RecentConnectionsRequest\x12\r\n\x05limit\x18\x01 \x01(\x03\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x18recent_connections.proto\x12\x02pb\x1a\x12\x63onfig/group.proto\x1a\x1bserver_selection_rule.proto\"K\n\x19RecentConnectionsResponse\x12.\n\x0b\x63onnections\x18\x01 \x03(\x0b\x32\x19.pb.RecentConnectionModel\"\xd9\x01\n\x15RecentConnectionModel\x12\x0f\n\x07\x63ountry\x18\x01 \x01(\t\x12\x0c\n\x04\x63ity\x18\x02 \x01(\t\x12\"\n\x05group\x18\x03 \x01(\x0e\x32\x13.config.ServerGroup\x12\x14\n\x0c\x63ountry_code\x18\x04 \x01(\t\x12\x1c\n\x14specific_server_name\x18\x05 \x01(\t\x12\x17\n\x0fspecific_server\x18\x06 \x01(\t\x12\x30\n\x0f\x63onnection_type\x18\x07 \x01(\x0e\x32\x17.pb.ServerSelectionRule\"8\n\x18RecentConnectionsRequest\x12\x12\n\x05limit\x18\x01 \x01(\x03H\x00\x88\x01\x01\x42\x08\n\x06_limitB1Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -39,5 +39,5 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_RECENTCONNECTIONMODEL']._serialized_start=159
   _globals['_RECENTCONNECTIONMODEL']._serialized_end=376
   _globals['_RECENTCONNECTIONSREQUEST']._serialized_start=378
-  _globals['_RECENTCONNECTIONSREQUEST']._serialized_end=419
+  _globals['_RECENTCONNECTIONSREQUEST']._serialized_end=434
 # @@protoc_insertion_point(module_scope)
