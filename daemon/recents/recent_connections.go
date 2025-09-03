@@ -52,7 +52,14 @@ func (r *RecentConnectionsStore) Get() ([]Model, error) {
 
 func (r *RecentConnectionsStore) find(model Model, list []Model) int {
 	return slices.IndexFunc(list, func(m Model) bool {
-		return m == model
+		return m.Country == model.Country &&
+			m.City == model.City &&
+			m.Group == model.Group &&
+			m.CountryCode == model.CountryCode &&
+			m.SpecificServerName == model.SpecificServerName &&
+			m.SpecificServer == model.SpecificServer &&
+			m.ConnectionType == model.ConnectionType &&
+			slices.Equal(m.ServerTechnologies, model.ServerTechnologies)
 	})
 }
 
