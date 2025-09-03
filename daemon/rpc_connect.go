@@ -287,11 +287,6 @@ func (r *RPC) connect(
 	r.events.Service.Connect.Publish(event)
 
 	if isRecentConnectionSupported(event.TargetServerSelection) {
-		recentModel := buildRecentConnectionModel(event, parameters)
-		r.recentVPNConnStore.Add(recentModel)
-	}
-
-	if isRecentConnectionSupported(event.TargetServerSelection) {
 		var serverTechs []core.ServerTechnology
 		for _, v := range server.Technologies {
 			serverTechs = append(serverTechs, v.ID)
