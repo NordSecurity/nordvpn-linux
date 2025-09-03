@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"slices"
 	"strings"
 	"time"
 
@@ -64,6 +65,7 @@ func (ti *Instance) update() {
 	ti.updateCountryList()
 	ti.updateAccountInfo()
 	ti.updateLoginStatus()
+	ti.updateRecentConnections()
 }
 
 func (ti *Instance) updateLoginStatus() {
@@ -134,20 +136,27 @@ func (ti *Instance) updateCountryList() {
 
 	newList, err := ti.state.connSelector.listCountries(ti.client)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "Error retrieving available country list:", err)
+		log.Println(logTag, internal.ErrorPrefix, "Error retrieving available country list:", err)
 		return
 	}
 
-	if len(oldCountryList) != len(newList) {
+	if !slices.Equal(oldCountryList, newList) {
 		ti.redraw(true)
+	}
+}
+
+func (ti *Instance) updateRecentConnections() {
+	oldConnectionsList := slices.Clone(ti.recentConnections.GetRecentConnections())
+
+	err := ti.recentConnections.UpdateRecentConnections()
+	if err != nil {
+		log.Println(logTag, internal.ErrorPrefix, "Error retrieving recent connections:", err)
 		return
 	}
 
-	for i := range oldCountryList {
-		if oldCountryList[i] != newList[i] {
-			ti.redraw(true)
-			return
-		}
+	newConnectionsList := ti.recentConnections.GetRecentConnections()
+	if !slices.Equal(oldConnectionsList, newConnectionsList) {
+		ti.redraw(true)
 	}
 }
 
