@@ -2,7 +2,9 @@ package recents
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"slices"
 	"sync"
 
@@ -13,6 +15,8 @@ import (
 const (
 	// maxRecentConnections defines the maximum number of recent connections to store
 	maxRecentConnections = 10
+
+	logTag = "[recents]"
 )
 
 type RecentConnectionsStore struct {
@@ -43,8 +47,13 @@ func (r *RecentConnectionsStore) Get() ([]Model, error) {
 
 	conns, err := r.load()
 	if err != nil {
-		_ = r.save([]Model{}) // recreate file without content on reading errors
-		return nil, fmt.Errorf("getting recent vpn connections: %w", err)
+		log.Printf("%s %s Getting recent VPN connections: %s\n", logTag, internal.WarningPrefix, err)
+		if saveErr := r.save([]Model{}); saveErr != nil {
+			return nil, errors.Join(
+				fmt.Errorf("getting recent vpn connections: %w", err),
+				fmt.Errorf("recreating recent connections file: %w", saveErr))
+		}
+		return []Model{}, nil
 	}
 
 	return conns, nil
@@ -75,8 +84,13 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 
 	connections, err := r.load()
 	if err != nil {
-		_ = r.save([]Model{}) // recreate file without content on reading errors
-		return fmt.Errorf("adding new recent vpn connection: %w", err)
+		log.Printf("%s %s Adding new recent VPN connection: %s\n", logTag, internal.WarningPrefix, err)
+		if saveErr := r.save([]Model{}); saveErr != nil {
+			return errors.Join(
+				fmt.Errorf("adding new recent vpn connection: %w", err),
+				fmt.Errorf("recreating recent connections file: %w", saveErr))
+		}
+		connections = []Model{}
 	}
 
 	index := r.find(model, connections)
