@@ -17,11 +17,26 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const (
+	// Notification messages
+	labelLoginSuccess       = "You've successfully logged in"
+	labelLogout             = "You've logged out"
+	labelNotificationsOn    = "Notifications for NordVPN turned on"
+	labelNotificationsOff   = "Notifications for NordVPN turned off"
+	labelDaemonReconnected  = "Reconnected to NordVPN's background service"
+	labelDaemonDisconnected = "Couldn't connect to NordVPN's background service. Please ensure the service is running."
+	labelConnectedFormat    = "Connected to %s"
+	labelDisconnectedFormat = "Disconnected from %s"
+)
+
 // The pattern is to return 'true' if something has changed and 'false' when no changes were detected
-func (ti *Instance) ping() bool {
+func (ti *Instance) ping() error {
 	daemonError := ""
 
-	resp, err := ti.client.Ping(context.Background(), &pb.Empty{})
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	resp, err := ti.client.Ping(ctx, &pb.Empty{})
 	if err != nil {
 		daemonError = messageForDaemonError(err)
 	} else {
@@ -35,14 +50,28 @@ func (ti *Instance) ping() bool {
 		}
 	}
 
-	return ti.updateDaemonConnectionStatus(daemonError)
+	ti.redraw(ti.updateDaemonConnectionStatus(daemonError))
+	if daemonError != "" {
+		return fmt.Errorf(daemonError)
+	}
+
+	return nil
 }
 
-func (ti *Instance) updateLoginStatus() bool {
+func (ti *Instance) update() {
+	ti.updateSettings()
+	ti.updateVpnStatus()
+	ti.updateCountryList()
+	ti.updateAccountInfo()
+	ti.updateLoginStatus()
+}
+
+func (ti *Instance) updateLoginStatus() {
 	changed := false
 	resp, err := ti.client.IsLoggedIn(context.Background(), &pb.Empty{})
 	if err != nil {
-		return ti.updateDaemonConnectionStatus(messageForDaemonError(err))
+		ti.redraw(ti.updateDaemonConnectionStatus(messageForDaemonError(err)))
+		return
 	}
 
 	loggedIn := resp.GetIsLoggedIn()
@@ -57,24 +86,25 @@ func (ti *Instance) updateLoginStatus() bool {
 	if !ti.state.loggedIn && loggedIn {
 		ti.state.loggedIn = true
 		changed = true
-		defer ti.notify("You've successfully logged in")
+		defer ti.notify(labelLoginSuccess)
 	} else if ti.state.loggedIn && !loggedIn {
 		ti.state.loggedIn = false
 		ti.accountInfo.reset()
 		ti.state.accountName = ""
 		changed = true
-		defer ti.notify("You've logged out")
+		defer ti.notify(labelLogout)
 	}
 
 	ti.state.mu.Unlock()
-	return changed
+	ti.redraw(changed)
 }
 
-func (ti *Instance) updateVpnStatus() bool {
+func (ti *Instance) updateVpnStatus() {
 	changed := false
 	resp, err := ti.client.Status(context.Background(), &pb.Empty{})
 	if err != nil {
-		return ti.updateDaemonConnectionStatus(messageForDaemonError(err))
+		ti.redraw(ti.updateDaemonConnectionStatus(messageForDaemonError(err)))
+		return
 	}
 
 	vpnStatus := resp.State
@@ -90,14 +120,14 @@ func (ti *Instance) updateVpnStatus() bool {
 
 	if shouldDisplayNotification {
 		// update daemon settings before notifications are shown
-		changed = ti.updateAccountInfo()
-		changed = ti.updateSettings() || changed
+		ti.updateAccountInfo()
+		ti.updateSettings()
 	}
 
-	return ti.setVpnStatus(vpnStatus, vpnName, vpnHostname, vpnCity, vpnCountry, resp.VirtualLocation) || changed
+	ti.redraw(ti.setVpnStatus(vpnStatus, vpnName, vpnHostname, vpnCity, vpnCountry, resp.VirtualLocation) || changed)
 }
 
-func (ti *Instance) updateCountryList() bool {
+func (ti *Instance) updateCountryList() {
 	ti.state.mu.Lock()
 	oldCountryList := append([]string(nil), ti.state.connSelector.countries...)
 	ti.state.mu.Unlock()
@@ -105,49 +135,37 @@ func (ti *Instance) updateCountryList() bool {
 	newList, err := ti.state.connSelector.listCountries(ti.client)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "Error retrieving available country list:", err)
-		return false
+		return
 	}
 
 	if len(oldCountryList) != len(newList) {
-		return true
+		ti.redraw(true)
+		return
 	}
+
 	for i := range oldCountryList {
 		if oldCountryList[i] != newList[i] {
-			return true
+			ti.redraw(true)
+			return
 		}
 	}
-
-	return false
 }
 
-func (ti *Instance) updateSettings() bool {
-	const errorRetrievingSettingsLog = "Error retrieving settings:"
-	changed := false
-
-	resp, err := ti.client.Settings(context.Background(), &pb.Empty{})
-	var settings *pb.UserSpecificSettings
-
-	if err != nil {
-		log.Println(internal.ErrorPrefix, errorRetrievingSettingsLog, err)
-	} else {
-		switch resp.Type {
-		case internal.CodeConfigError:
-			log.Println(internal.ErrorPrefix, errorRetrievingSettingsLog, client.ConfigMessage)
-		case internal.CodeSuccess:
-			settings = resp.Data.UserSettings
-		default:
-			log.Println(internal.ErrorPrefix, errorRetrievingSettingsLog, internal.ErrUnhandled)
-		}
-	}
-
+func (ti *Instance) setSettings(settings *pb.Settings) {
 	if settings == nil {
-		return false
+		return
 	}
 
+	userSettings := settings.UserSettings
+	if userSettings == nil {
+		return
+	}
+
+	changed := false
 	ti.state.mu.Lock()
 
 	var newNotificationsStatus Status
-	if settings.Notify {
+	if userSettings.Notify {
 		newNotificationsStatus = Enabled
 	} else {
 		newNotificationsStatus = Disabled
@@ -161,16 +179,16 @@ func (ti *Instance) updateSettings() bool {
 		ti.state.notificationsStatus = newNotificationsStatus
 
 		if newNotificationsStatus == Enabled {
-			defer ti.notifyForce("Notifications for NordVPN turned on")
+			defer ti.notifyForce(labelNotificationsOn)
 			defer log.Println(internal.InfoPrefix, "Notifications for NordVPN turned on")
 		} else {
-			defer ti.notifyForce("Notifications for NordVPN turned off")
+			defer ti.notifyForce(labelNotificationsOff)
 			defer log.Println(internal.InfoPrefix, "Notifications for NordVPN turned off")
 		}
 	}
 
 	var newTrayStatus Status
-	if settings.Tray {
+	if userSettings.Tray {
 		newTrayStatus = Enabled
 	} else {
 		newTrayStatus = Disabled
@@ -191,19 +209,38 @@ func (ti *Instance) updateSettings() bool {
 	}
 
 	ti.state.mu.Unlock()
-
-	return changed
+	ti.redraw(changed)
 }
 
-func (ti *Instance) updateAccountInfo() bool {
+func (ti *Instance) updateSettings() {
+	const errorRetrievingSettingsLog = "Error retrieving settings:"
+
+	resp, err := ti.client.Settings(context.Background(), &pb.Empty{})
+	if err != nil {
+		log.Println(internal.ErrorPrefix, errorRetrievingSettingsLog, err)
+	} else {
+		switch resp.Type {
+		case internal.CodeConfigError:
+			log.Println(internal.ErrorPrefix, errorRetrievingSettingsLog, client.ConfigMessage)
+		case internal.CodeSuccess:
+			ti.setSettings(resp.Data)
+		default:
+			log.Println(internal.ErrorPrefix, errorRetrievingSettingsLog, internal.ErrUnhandled)
+		}
+	}
+}
+
+func (ti *Instance) updateAccountInfo() {
 	payload, err := ti.accountInfo.getAccountInfo(ti.client)
 	if err != nil {
 		if errMessage := messageForDaemonError(err); errMessage != internal.ErrDaemonConnectionRefused.Error() {
 			ti.updateDaemonConnectionStatus(errMessage)
 		}
 		log.Println(internal.ErrorPrefix, "Error retrieving account info:", err)
-		return true
+		ti.redraw(true)
+		return
 	}
+
 	changed := false
 	vpnActive := ti.state.vpnActive
 	var accountName string
@@ -243,67 +280,14 @@ func (ti *Instance) updateAccountInfo() bool {
 	}
 
 	ti.state.mu.Unlock()
-	return changed
+	ti.redraw(changed)
 }
 
 func (ti *Instance) redraw(result bool) {
 	if result {
 		select {
-		case ti.redrawChan <- struct{}{}:
+		case ti.renderChan <- struct{}{}:
 		default:
-		}
-	}
-}
-
-func (ti *Instance) pollingMonitor() {
-	initialChan := ti.initialChan
-	ticker := time.NewTicker(PollingUpdateInterval)
-	defer ticker.Stop()
-
-	fullUpdate := true
-	fullUpdateLast := time.Time{}
-	for {
-		var shouldRedraw bool
-
-		shouldRedraw = ti.ping()
-		if ti.state.daemonAvailable {
-			shouldRedraw = shouldRedraw || ti.updateLoginStatus() || ti.updateSettings()
-			if ti.state.loggedIn {
-				if fullUpdate {
-					shouldRedraw = shouldRedraw || ti.updateAccountInfo()
-				}
-				shouldRedraw = shouldRedraw || ti.updateVpnStatus() || ti.updateCountryList()
-				if fullUpdate {
-					fullUpdateLast = time.Now()
-				}
-			}
-		}
-
-		ti.redraw(shouldRedraw)
-
-		// while the settings were not fetch don't unblock the tray loop
-		if ti.state.trayStatus != Invalid && initialChan != nil {
-			initialChan <- struct{}{}
-			close(initialChan)
-			initialChan = nil
-			if ti.debugMode {
-				log.Println(internal.DebugPrefix, "Initial retrieve")
-			}
-		}
-
-		select {
-		case fullUpdate = <-ti.updateChan:
-		case <-systray.TrayOpenedCh:
-			fullUpdate = true
-		case ts := <-ticker.C:
-			fullUpdate = ts.Sub(fullUpdateLast) >= PollingFullUpdateInterval
-		}
-		if ti.debugMode {
-			if fullUpdate {
-				log.Println(internal.DebugPrefix, "Full update")
-			} else {
-				log.Println(internal.DebugPrefix, "Update")
-			}
 		}
 	}
 }
@@ -362,9 +346,9 @@ func (ti *Instance) updateDaemonConnectionStatus(errorMessage string) bool {
 		changed = true
 		ti.state.daemonAvailable = daemonAvailable
 		if daemonAvailable {
-			defer ti.notify("Reconnected to NordVPN's background service")
+			defer ti.notify(labelDaemonReconnected)
 		} else {
-			defer ti.notify("Couldn't connect to NordVPN's background service. Please ensure the service is running.")
+			defer ti.notify(labelDaemonDisconnected)
 		}
 	}
 
@@ -372,7 +356,6 @@ func (ti *Instance) updateDaemonConnectionStatus(errorMessage string) bool {
 		ti.state.daemonError = errorMessage
 		changed = true
 	}
-
 	ti.state.mu.Unlock()
 	return changed
 }
@@ -390,7 +373,7 @@ func (ti *Instance) setVpnStatus(
 
 	notifyConnected := func() {
 		// use this helper function to ensure that the connected notification is displaying the latest info from ti.state on defer
-		ti.notify("Connected to %s", ti.state.serverName())
+		ti.notify(labelConnectedFormat, ti.state.serverName())
 	}
 
 	if ti.state.vpnStatus != vpnStatus {
@@ -409,7 +392,7 @@ func (ti *Instance) setVpnStatus(
 			// state, but we were not connected to anything at this point,so
 			// ignore the notification
 			if ti.state.serverName() != "" {
-				defer ti.notify(fmt.Sprintf("Disconnected from %s", ti.state.serverName()))
+				defer ti.notify(labelDisconnectedFormat, ti.state.serverName())
 			}
 		}
 		ti.state.vpnStatus = vpnStatus
