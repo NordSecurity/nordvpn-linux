@@ -408,7 +408,7 @@ def test_connect_to_unavailable_groups(tech, proto, obfuscated):
         assert lib.is_connect_unsuccessful(ex)
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_connect_to_unavailable_servers(tech, proto, obfuscated):
     """Manual TC: LVPN-422"""
 
@@ -572,3 +572,33 @@ def test_connect_to_dedicated_ip(tech, proto, obfuscated):
 
     assert network.is_disconnected()
     assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a()
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
+def test_connect_fails_virtual_location_disabled(tech, proto, obfuscated):
+    """Manual TC: LVPN-8533"""
+
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    virtual_country = lib.get_random_virtual_country()
+
+    sh.nordvpn.set("virtual-location", "off")
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn(get_alias(), virtual_country)
+
+    assert "Please enable virtual location access to connect to this server." in ex.value.stdout.decode()
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
+def test_obfuscation_prevents_virtual_location_connection(tech, proto, obfuscated):
+    """Manual TC: LVPN-5771"""
+
+    virtual_country = lib.get_random_virtual_country()
+
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn(get_alias(), virtual_country)
+
+    assert "The specified server is not available at the moment or does not support your connection settings." in ex.value.stdout.decode()
