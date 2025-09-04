@@ -13,6 +13,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -58,6 +59,7 @@ type RPC struct {
 	remoteConfigGetter  remote.ConfigGetter
 	connectionInfo      *state.ConnectionInfo
 	consentChecker      ConsentChecker
+	recentVPNConnStore  *recents.RecentConnectionsStore
 	pb.UnimplementedDaemonServer
 }
 
@@ -87,6 +89,7 @@ func NewRPC(
 	remoteConfigGetter remote.ConfigGetter,
 	connectionInfo *state.ConnectionInfo,
 	consentChecker ConsentChecker,
+	recentVPNConnStore *recents.RecentConnectionsStore,
 ) *RPC {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	return &RPC{
@@ -116,5 +119,6 @@ func NewRPC(
 		remoteConfigGetter: remoteConfigGetter,
 		connectionInfo:     connectionInfo,
 		consentChecker:     consentChecker,
+		recentVPNConnStore: recentVPNConnStore,
 	}
 }

@@ -50,6 +50,12 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 		}, nil
 	}
 
+	if err := r.recentVPNConnStore.Clean(); err != nil {
+		return &pb.Payload{
+			Type: internal.CodeCleanRecentConnectionError,
+		}, nil
+	}
+
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 	}
