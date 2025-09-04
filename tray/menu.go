@@ -65,7 +65,8 @@ const (
 	msgShutdownNotification = "Shutting down norduserd. To restart the process, run the \"nordvpn set tray on\" command."
 
 	// Timeouts
-	dbusWorkaroundDelay = 100 * time.Millisecond
+	// TEMP DISABLED until 'workaroud' is proven
+	// dbusWorkaroundDelay = 100 * time.Millisecond
 )
 
 func handleMenuItemClick(item *systray.MenuItem, action func()) {
