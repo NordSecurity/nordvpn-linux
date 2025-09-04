@@ -48,9 +48,9 @@ esac
 
 # check that the nordvpn group exists in the system and that the current user is part of it
 GROUP="nordvpn"
-if ! getent group "$GROUP" > /dev/null; then
+if ! getent group "${GROUP}" > /dev/null; then
 	# application installer must create the group
-	echo "Group '$GROUP' does not exist."
+	echo "Group '${GROUP}' does not exist."
 	exit 1
 fi
 
@@ -58,11 +58,11 @@ fi
 : "${USER:=$(whoami)}"
 
 # add current user into nordvpn group if needed
-if id -nG "$USER" | grep -qw "$GROUP"; then
-	echo "User '$USER' is part of the in group '$GROUP'."
+if id -nG "${USER}" | grep -qw "${GROUP}"; then
+	echo "User '${USER}' is part of the in group '${GROUP}'."
 else
-	echo "Adding user '$USER'to group '$GROUP'..."
-	sudo usermod -aG "$GROUP" "$USER"
+	echo "Adding user '${USER}'to group '${GROUP}'..."
+	sudo usermod -aG "${GROUP}" "${USER}"
 fi
 
 ARTIFACTS_FOLDER="${WORKDIR}"/dist/test_artifacts
