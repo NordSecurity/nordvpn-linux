@@ -52,8 +52,8 @@ func (r *RPC) GetRecentConnections(
 	// limit results if value is specified
 	if in.Limit != nil {
 		limit := int(*in.Limit)
-		if limit > 0 && limit < len(values) {
-			values = values[:limit]
+		if limit > 0 && limit < len(rcValues) {
+			rcValues = rcValues[:limit]
 		}
 	}
 
