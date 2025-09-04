@@ -5,11 +5,13 @@ import (
 	"errors"
 	"log"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/features"
@@ -67,34 +69,34 @@ func determineServerSelectionRule(params ServerParameters) config.ServerSelectio
 
 	switch {
 	case params.Undefined():
-		return config.ServerSelectionRuleRecommended
+		return config.ServerSelectionRule_RECOMMENDED
 
 	case hasCountry && hasCity && !hasGroup && !hasServer:
-		return config.ServerSelectionRuleCity
+		return config.ServerSelectionRule_CITY
 
 	case hasCountry && !hasCity && !hasGroup && !hasServer:
-		return config.ServerSelectionRuleCountry
+		return config.ServerSelectionRule_COUNTRY
 
 	case hasCountry && !hasCity && hasGroup && !hasServer:
-		return config.ServerSelectionRuleCountryWithGroup
+		return config.ServerSelectionRule_COUNTRY_WITH_GROUP
 
 	case !hasCountry && !hasCity && !hasGroup && hasServer:
-		return config.ServerSelectionRuleSpecificServer
+		return config.ServerSelectionRule_SPECIFIC_SERVER
 
-	case !hasCountry && !hasCity && hasGroup && hasServer:
-		return config.ServerSelectionRuleSpecificServerWithGroup
+	case hasGroup && ((!hasServer && hasCity && hasCountry) || (hasServer && !hasCity && !hasCountry)):
+		return config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP
 
 	case !hasCountry && !hasCity && hasGroup && !hasServer:
 		if _, ok := config.ServerGroup_name[int32(params.Group.Number())]; ok {
-			return config.ServerSelectionRuleGroup
+			return config.ServerSelectionRule_GROUP
 		}
 	}
 
 	// Fallback for any unexpected combination
 	log.Println(internal.WarningPrefix,
-		"Failed to determine 'ServerSelectionRule':", params,
-		". Defaulting to :", config.ServerSelectionRuleNone)
-	return config.ServerSelectionRuleNone
+		"Failed to determine 'server-selection-rule':", params,
+		". Defaulting to :", config.ServerSelectionRule_NONE)
+	return config.ServerSelectionRule_NONE
 }
 
 func (r *RPC) connect(
@@ -283,11 +285,45 @@ func (r *RPC) connect(
 	event.DurationMs = getElapsedTime(connectingStartTime)
 	r.events.Service.Connect.Publish(event)
 
+	if isRecentConnectionSupported(event.TargetServerSelection) {
+		getSpecificServer := func(domain string) string {
+			parts := strings.Split(domain, ".")
+			if len(parts) > 0 {
+				return parts[0]
+			}
+			return ""
+		}
+
+		recentModel := recents.Model{
+			CountryCode:        event.TargetServerCountryCode,
+			Country:            event.TargetServerCountry,
+			City:               event.TargetServerCity,
+			SpecificServer:     getSpecificServer(event.TargetServerDomain),
+			SpecificServerName: event.TargetServerName,
+			Group:              parameters.Group,
+			ConnectionType:     event.TargetServerSelection,
+		}
+
+		// do not add anything unrelated to connection type
+		if recentModel.ConnectionType == config.ServerSelectionRule_COUNTRY ||
+			recentModel.ConnectionType == config.ServerSelectionRule_COUNTRY_WITH_GROUP {
+			recentModel.City = ""
+		}
+
+		r.recentVPNConnStore.Add(recentModel)
+	}
+
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnected, Data: data}); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 	}
 
 	return false, nil
+}
+
+// isRecentConnectionSupported returns true if server connection can be used for reconnection,
+// otherwise returns false
+func isRecentConnectionSupported(rule config.ServerSelectionRule) bool {
+	return rule != config.ServerSelectionRule_RECOMMENDED && rule != config.ServerSelectionRule_NONE
 }
 
 // getElapsedTime calculates the time elapsed since the given start time in milliseconds.

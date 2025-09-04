@@ -97,6 +97,29 @@ func (ti *Instance) updateVpnStatus() bool {
 	return ti.setVpnStatus(vpnStatus, vpnName, vpnHostname, vpnCity, vpnCountry, resp.VirtualLocation) || changed
 }
 
+func (ti *Instance) updateCountryList() bool {
+	ti.state.mu.Lock()
+	oldCountryList := append([]string(nil), ti.state.connSelector.countries...)
+	ti.state.mu.Unlock()
+
+	newList, err := ti.state.connSelector.listCountries(ti.client)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "Error retrieving available country list:", err)
+		return false
+	}
+
+	if len(oldCountryList) != len(newList) {
+		return true
+	}
+	for i := range oldCountryList {
+		if oldCountryList[i] != newList[i] {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (ti *Instance) updateSettings() bool {
 	const errorRetrievingSettingsLog = "Error retrieving settings:"
 	changed := false
@@ -240,20 +263,23 @@ func (ti *Instance) pollingMonitor() {
 	fullUpdate := true
 	fullUpdateLast := time.Time{}
 	for {
-		ti.redraw(ti.ping())
+		var shouldRedraw bool
+
+		shouldRedraw = ti.ping()
 		if ti.state.daemonAvailable {
-			ti.redraw(ti.updateLoginStatus())
-			ti.redraw(ti.updateSettings())
+			shouldRedraw = shouldRedraw || ti.updateLoginStatus() || ti.updateSettings()
 			if ti.state.loggedIn {
 				if fullUpdate {
-					ti.redraw(ti.updateAccountInfo())
+					shouldRedraw = shouldRedraw || ti.updateAccountInfo()
 				}
-				ti.redraw(ti.updateVpnStatus())
+				shouldRedraw = shouldRedraw || ti.updateVpnStatus() || ti.updateCountryList()
 				if fullUpdate {
 					fullUpdateLast = time.Now()
 				}
 			}
 		}
+
+		ti.redraw(shouldRedraw)
 
 		// while the settings were not fetch don't unblock the tray loop
 		if ti.state.trayStatus != Invalid && initialChan != nil {

@@ -4,6 +4,9 @@ import (
 	"context"
 	"log"
 	"os"
+	"slices"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -21,6 +24,7 @@ const (
 	NotifierStartDelay        = 3 * time.Second
 	PollingUpdateInterval     = 5 * time.Second
 	PollingFullUpdateInterval = 60 * time.Second
+	CountryListUpdateInterval = 60 * time.Minute
 	AccountInfoUpdateInterval = 24 * time.Hour
 )
 
@@ -62,6 +66,53 @@ func (ai *accountInfo) reset() {
 	ai.accountInfo = nil
 }
 
+type ConnectionSelector struct {
+	mu                  sync.RWMutex
+	countries           []string
+	countriesUpdateTime time.Time
+}
+
+func (cp *ConnectionSelector) listCountries(client pb.DaemonClient) ([]string, error) {
+	cp.mu.Lock()
+	needsUpdate := time.Since(cp.countriesUpdateTime) > CountryListUpdateInterval
+	if !needsUpdate {
+		out := slices.Clone(cp.countries)
+		cp.mu.Unlock()
+		return out, nil
+	}
+	cp.mu.Unlock()
+
+	resp, err := client.Countries(context.Background(), &pb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+	result := sortedConnections(resp.Servers)
+
+	cp.mu.Lock()
+	cp.countries = result
+	cp.countriesUpdateTime = time.Now()
+	out := slices.Clone(cp.countries)
+	cp.mu.Unlock()
+	return out, nil
+}
+
+func sortedConnections(sgs []*pb.ServerGroup) []string {
+	set := make(map[string]struct{}, len(sgs))
+	for _, sg := range sgs {
+		if c := strings.TrimSpace(sg.Name); c != "" {
+			set[c] = struct{}{}
+		}
+	}
+
+	list := make([]string, 0, len(set))
+	for k := range set {
+		list = append(list, k)
+	}
+
+	sort.Strings(list)
+	return list
+}
+
 type Instance struct {
 	client           pb.DaemonClient
 	fileshareClient  filesharepb.FileshareClient
@@ -92,6 +143,7 @@ type trayState struct {
 	vpnCity             string
 	vpnCountry          string
 	vpnVirtualLocation  bool
+	connSelector        ConnectionSelector
 	mu                  sync.RWMutex
 }
 
