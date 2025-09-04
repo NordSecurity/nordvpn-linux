@@ -419,6 +419,7 @@ func buildSettingsSection(ti *Instance) {
 	}
 
 	item := systray.AddMenuItem(labelSettings, tooltipSettings)
+
 	// Workaround over the dbus issue described here: https://github.com/fyne-io/systray/issues/12
 	// (It affects not only XFCE, but also other desktop environments.)
 	time.AfterFunc(dbusWorkaroundDelay, func() { buildSettingsSubitems(ti, item) })
