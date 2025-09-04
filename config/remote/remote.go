@@ -117,14 +117,38 @@ func isNetworkRetryable(err error) bool {
 	if err == nil {
 		return false
 	}
+
+	// check for network timeout errors
 	var netErr net.Error
 	if errors.As(err, &netErr) && netErr.Timeout() {
 		return true
 	}
+
+	// check for network operation errors (includes DNS resolution failures)
 	var opErr *net.OpError
-	return errors.As(err, &opErr) ||
-		errors.Is(err, core.ErrServerInternal) ||
-		errors.Is(err, core.ErrTooManyRequests)
+	if errors.As(err, &opErr) {
+		return true
+	}
+
+	// check for DNS errors that may contain network errors in their message
+	var dnsErr *net.DNSError
+	if errors.As(err, &dnsErr) {
+		// check if the DNS error message contains network-related errors
+		errMsg := dnsErr.Error()
+		if strings.Contains(errMsg, "network is unreachable") ||
+			strings.Contains(errMsg, "connection refused") ||
+			strings.Contains(errMsg, "no route to host") {
+			return true
+		}
+	}
+
+	// check for specific server errors
+	if errors.Is(err, core.ErrServerInternal) ||
+		errors.Is(err, core.ErrTooManyRequests) {
+		return true
+	}
+
+	return false
 }
 
 // TryPreload load config from disk

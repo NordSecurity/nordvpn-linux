@@ -13,7 +13,6 @@ const (
 	DownloadErrorIncludeFile
 	DownloadErrorIntegrity
 	DownloadErrorLocalFS
-	DownloadErrorNetwork
 	DownloadErrorOther
 	DownloadErrorParsing
 	DownloadErrorRemoteFileNotFound
@@ -38,8 +37,6 @@ func (e DownloadErrorKind) String() string {
 		return "integrity_error"
 	case DownloadErrorLocalFS:
 		return "local_fs_error"
-	case DownloadErrorNetwork:
-		return "network_error"
 	case DownloadErrorOther:
 		return "other_error"
 	case DownloadErrorParsing:
