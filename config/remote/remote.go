@@ -118,41 +118,34 @@ func isNetworkRetryable(err error) bool {
 		return false
 	}
 
-	// check the entire error chain for network-related errors
-	var currentErr error = err
-	for currentErr != nil {
-		// check for network timeout errors
-		var netErr net.Error
-		if errors.As(currentErr, &netErr) && netErr.Timeout() {
+	// check for network timeout errors
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return true
+	}
+
+	// check for network operation errors (includes DNS resolution failures)
+	var opErr *net.OpError
+	if errors.As(err, &opErr) {
+		return true
+	}
+
+	// check for DNS errors that may contain network errors in their message
+	var dnsErr *net.DNSError
+	if errors.As(err, &dnsErr) {
+		// check if the DNS error message contains network-related errors
+		errMsg := dnsErr.Error()
+		if strings.Contains(errMsg, "network is unreachable") ||
+			strings.Contains(errMsg, "connection refused") ||
+			strings.Contains(errMsg, "no route to host") {
 			return true
 		}
+	}
 
-		// check for network operation errors (includes DNS resolution failures)
-		var opErr *net.OpError
-		if errors.As(currentErr, &opErr) {
-			return true
-		}
-
-		// check for DNS errors that may contain network errors in their message
-		var dnsErr *net.DNSError
-		if errors.As(currentErr, &dnsErr) {
-			// check if the DNS error message contains network-related errors
-			errMsg := dnsErr.Error()
-			if strings.Contains(errMsg, "network is unreachable") ||
-				strings.Contains(errMsg, "connection refused") ||
-				strings.Contains(errMsg, "no route to host") {
-				return true
-			}
-		}
-
-		// check for specific server errors
-		if errors.Is(currentErr, core.ErrServerInternal) ||
-			errors.Is(currentErr, core.ErrTooManyRequests) {
-			return true
-		}
-
-		// unwrap to check the next error in the chain
-		currentErr = errors.Unwrap(currentErr)
+	// check for specific server errors
+	if errors.Is(err, core.ErrServerInternal) ||
+		errors.Is(err, core.ErrTooManyRequests) {
+		return true
 	}
 
 	return false
