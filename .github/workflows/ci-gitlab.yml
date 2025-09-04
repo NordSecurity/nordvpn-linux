@@ -18,4 +18,4 @@ jobs:
       project-id: ${{ secrets.PROJECT_ID }}
     with:
       cancel-outdated-pipelines: ${{ github.ref_name != 'main' }}
-      triggered-ref: v1.2.2
+      triggered-ref: v1.2.3
