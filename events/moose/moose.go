@@ -1011,19 +1011,19 @@ func serverListOriginToInternalType(sourceFromApi bool) moose.NordvpnappServerLi
 // serverSelectionRuleToInternalType converts server selection rule to the internal representation
 func serverSelectionRuleToInternalType(rule config.ServerSelectionRule) moose.NordvpnappServerSelectionRule {
 	switch rule {
-	case config.ServerSelectionRuleRecommended:
+	case config.ServerSelectionRule_RECOMMENDED:
 		return moose.NordvpnappServerSelectionRuleRecommended
-	case config.ServerSelectionRuleCity:
+	case config.ServerSelectionRule_CITY:
 		return moose.NordvpnappServerSelectionRuleCity
-	case config.ServerSelectionRuleCountry:
+	case config.ServerSelectionRule_COUNTRY:
 		return moose.NordvpnappServerSelectionRuleCountry
-	case config.ServerSelectionRuleSpecificServer:
+	case config.ServerSelectionRule_SPECIFIC_SERVER:
 		return moose.NordvpnappServerSelectionRuleSpecificServer
-	case config.ServerSelectionRuleGroup:
+	case config.ServerSelectionRule_GROUP:
 		return moose.NordvpnappServerSelectionRuleSpecialtyServer
-	case config.ServerSelectionRuleCountryWithGroup:
+	case config.ServerSelectionRule_COUNTRY_WITH_GROUP:
 		return moose.NordvpnappServerSelectionRuleSpecialtyServerWithCountry
-	case config.ServerSelectionRuleSpecificServerWithGroup:
+	case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
 		return moose.NordvpnappServerSelectionRuleSpecialtyServerWithSpecificServer
 	default:
 		return moose.NordvpnappServerSelectionRuleNone
