@@ -103,6 +103,9 @@ func (ti *Instance) update() {
 	changed = ti.updateVpnStatus()
 	needsRedraw = needsRedraw || changed
 
+	changed = ti.updateSpecialtyServerList()
+	needsRedraw = needsRedraw || changed
+
 	changed = ti.updateLoginStatus()
 	needsRedraw = needsRedraw || changed
 
@@ -191,6 +194,20 @@ func (ti *Instance) updateCountryList() bool {
 	}
 
 	return !slices.Equal(oldCountryList, newList)
+}
+
+func (ti *Instance) updateSpecialtyServerList() bool {
+	ti.state.mu.Lock()
+	oldList := slices.Clone(ti.state.connSelector.specialtyServers)
+	ti.state.mu.Unlock()
+
+	newList, err := ti.state.connSelector.listSpecialtyServers(ti.client)
+	if err != nil {
+		log.Println(logTag, internal.ErrorPrefix, "Error retrieving available specialty server list:", err)
+		return false
+	}
+
+	return !slices.Equal(oldList, newList)
 }
 
 func (ti *Instance) updateRecentConnections() bool {

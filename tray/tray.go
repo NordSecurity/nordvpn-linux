@@ -57,8 +57,9 @@ func (ai *accountInfo) reset() {
 }
 
 type ConnectionSelector struct {
-	mu        sync.RWMutex
-	countries []string
+	mu               sync.RWMutex
+	countries        []string
+	specialtyServers []string
 }
 
 func (cp *ConnectionSelector) listCountries(client pb.DaemonClient) ([]string, error) {
@@ -71,6 +72,21 @@ func (cp *ConnectionSelector) listCountries(client pb.DaemonClient) ([]string, e
 	cp.mu.Lock()
 	cp.countries = result
 	out := slices.Clone(cp.countries)
+	cp.mu.Unlock()
+	return out, nil
+}
+
+func (cp *ConnectionSelector) listSpecialtyServers(client pb.DaemonClient) ([]string, error) {
+	resp, err := client.Groups(context.Background(), &pb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+	log.Println("GROUPS:", resp)
+	result := sortedConnections(resp.Servers)
+
+	cp.mu.Lock()
+	cp.specialtyServers = result
+	out := slices.Clone(cp.specialtyServers)
 	cp.mu.Unlock()
 	return out, nil
 }
@@ -217,12 +233,14 @@ func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
 
 		if ti.connSensor.ChangeDetected() {
 			ti.updateCountryList()
+			ti.updateSpecialtyServerList()
 			ti.updateRecentConnections()
 		}
 
 	case *pb.AppState_UpdateEvent:
 		if st.UpdateEvent == pb.UpdateEvent_SERVERS_LIST_UPDATE {
 			ti.updateCountryList()
+			ti.updateSpecialtyServerList()
 		}
 
 	case *pb.AppState_AccountModification:
