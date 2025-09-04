@@ -62,7 +62,7 @@ type ConnectionSelector struct {
 	specialtyServers []string
 }
 
-func (cp *ConnectionSelector) listCountries(client pb.DaemonClient) ([]string, error) {
+func (cp *ConnectionSelector) fetchCountries(client pb.DaemonClient) ([]string, error) {
 	resp, err := client.Countries(context.Background(), &pb.Empty{})
 	if err != nil {
 		return nil, err
@@ -71,24 +71,24 @@ func (cp *ConnectionSelector) listCountries(client pb.DaemonClient) ([]string, e
 
 	cp.mu.Lock()
 	cp.countries = result
-	out := slices.Clone(cp.countries)
 	cp.mu.Unlock()
-	return out, nil
+
+	return slices.Clone(cp.countries), nil
 }
 
-func (cp *ConnectionSelector) listSpecialtyServers(client pb.DaemonClient) ([]string, error) {
+func (cp *ConnectionSelector) fetchSpecialtyServers(client pb.DaemonClient) ([]string, error) {
 	resp, err := client.Groups(context.Background(), &pb.Empty{})
 	if err != nil {
 		return nil, err
 	}
-	log.Println("GROUPS:", resp)
+
 	result := sortedConnections(resp.Servers)
 
 	cp.mu.Lock()
 	cp.specialtyServers = result
-	out := slices.Clone(cp.specialtyServers)
 	cp.mu.Unlock()
-	return out, nil
+
+	return slices.Clone(cp.specialtyServers), nil
 }
 
 func sortedConnections(sgs []*pb.ServerGroup) []string {

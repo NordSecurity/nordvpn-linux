@@ -187,7 +187,7 @@ func (ti *Instance) updateCountryList() bool {
 	oldCountryList := slices.Clone(ti.state.connSelector.countries)
 	ti.state.connSelector.mu.RUnlock()
 
-	newList, err := ti.state.connSelector.listCountries(ti.client)
+	newList, err := ti.state.connSelector.fetchCountries(ti.client)
 	if err != nil {
 		log.Println(logTag, internal.ErrorPrefix, "Error retrieving available country list:", err)
 		return false
@@ -201,7 +201,7 @@ func (ti *Instance) updateSpecialtyServerList() bool {
 	oldList := slices.Clone(ti.state.connSelector.specialtyServers)
 	ti.state.mu.Unlock()
 
-	newList, err := ti.state.connSelector.listSpecialtyServers(ti.client)
+	newList, err := ti.state.connSelector.fetchSpecialtyServers(ti.client)
 	if err != nil {
 		log.Println(logTag, internal.ErrorPrefix, "Error retrieving available specialty server list:", err)
 		return false
