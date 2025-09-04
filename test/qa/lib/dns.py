@@ -42,6 +42,8 @@ DNS_MSG_ERROR_ALREADY_DISABLED = "DNS is already set to disabled."
 
 TPL_MSG_WARNING_DISABLING = "Disabling Threat Protection Lite."
 
+DNS_MSG_WARNING_DISABLING = "Disabling DNS."
+
 
 def is_unset() -> bool:
     """Returns True when NordVPN app has not modified the DNS."""

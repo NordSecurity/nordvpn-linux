@@ -4,6 +4,8 @@
 
 ---
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/NordSecurity/nordvpn-linux/badge)](https://scorecard.dev/viewer/?uri=github.com/NordSecurity/nordvpn-linux)
+
 The [NordVPN](https://nordvpn.com/features/) Linux application provides a simple and user-friendly command line interface for accessing all the different features of NordVPN.
 Users can choose from a list of server locations around the world, or let the application automatically select the best server for them.
 They can also customize their connection settings, such as choosing a specific protocol or enabling the kill switch feature.
