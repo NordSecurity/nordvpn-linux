@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	"slices"
 	"strings"
 	"time"
 
@@ -27,6 +28,7 @@ const (
 	labelReconnectTo           = "Reconnect to "
 	labelConnectTo             = "Connect to "
 	labelCountries             = "Countries:"
+	labelSpecialtyServers      = "Specialty servers:"
 	labelActiveGoroutines      = "Active goroutines"
 	labelActiveGoroutinesCount = "Active goroutines: %d"
 	labelRedraw                = "Redraw"
@@ -45,6 +47,7 @@ const (
 	tooltipConnectionSelection = "Choose connection type"
 	tooltipRecentConnections   = "Select recent connection"
 	tooltipCountries           = "Select Country"
+	tooltipSpecialtyServers    = "Select Specialty server"
 	tooltipActiveGoroutines    = "Shows number of active background processes"
 	tooltipRedraw              = "Force refresh the tray menu"
 	tooltipUpdate              = "Refresh menu with latest status"
@@ -292,7 +295,8 @@ func buildConnectToItem(ti *Instance) {
 	connectionSelector := systray.AddMenuItem(labelConnectionSelection, tooltipConnectionSelection)
 
 	ti.state.mu.RLock()
-	countries := append([]string(nil), ti.state.connSelector.countries...)
+	countries := slices.Clone(ti.state.connSelector.countries)
+	specialtyServers := slices.Clone(ti.state.connSelector.specialtyServers)
 	recentConnections := ti.recentConnections.GetRecentConnections()
 	ti.state.mu.RUnlock()
 
@@ -300,6 +304,7 @@ func buildConnectToItem(ti *Instance) {
 		buildRecentConnectionsSection(ti, connectionSelector, recentConnections)
 	}
 
+	buildSpecialtyServersSection(ti, connectionSelector, specialtyServers)
 	buildCountriesSection(ti, connectionSelector, countries)
 }
 
@@ -311,6 +316,7 @@ func buildRecentConnectionsSection(
 	if ti == nil || parent == nil {
 		return
 	}
+
 	parent.AddSubMenuItem(labelRecentConnections, tooltipRecentConnections).Disable()
 	for _, conn := range connections {
 		displayLabel := makeDisplayLabel(&conn)
@@ -329,13 +335,29 @@ func buildCountriesSection(ti *Instance, parent *systray.MenuItem, countries []s
 	if ti == nil || parent == nil {
 		return
 	}
+
 	parent.AddSubMenuItem(labelCountries, tooltipCountries).Disable()
 	for _, country := range countries {
 		title := strings.ReplaceAll(country, "_", " ")
-		tooltip := fmt.Sprintf("%s%s", labelConnectTo, country)
+		tooltip := fmt.Sprintf("%s%s", labelConnectTo, title)
 		item := parent.AddSubMenuItem(title, tooltip)
 
 		go handleCountryClick(ti, item, country)
+	}
+}
+
+func buildSpecialtyServersSection(ti *Instance, parent *systray.MenuItem, specialtyServers []string) {
+	if ti == nil || parent == nil {
+		return
+	}
+
+	parent.AddSubMenuItem(labelSpecialtyServers, tooltipSpecialtyServers).Disable()
+	for _, server := range specialtyServers {
+		title := strings.ReplaceAll(server, "_", " ")
+		tooltip := fmt.Sprintf("%s%s", labelConnectTo, title)
+		item := parent.AddSubMenuItem(title, tooltip)
+
+		go handleSpecialtyServerClick(ti, item, server)
 	}
 }
 
@@ -351,6 +373,14 @@ func handleCountryClick(ti *Instance, item *systray.MenuItem, country string) {
 		return
 	}
 	handleMenuItemClick(item, func() { ti.connect(country, "") })
+}
+
+func handleSpecialtyServerClick(ti *Instance, item *systray.MenuItem, server string) {
+	if ti == nil {
+		return
+	}
+
+	handleMenuItemClick(item, func() { _ = ti.connect("", server) })
 }
 
 func buildAccountSection(ti *Instance) {
