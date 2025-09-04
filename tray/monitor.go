@@ -158,6 +158,7 @@ func (ti *Instance) update() {
 	ti.updateSettings()
 	ti.updateCountryList()
 	ti.updateVpnStatus()
+	ti.updateSpecialtyServerList()
 	ti.updateLoginStatus()
 	ti.updateRecentConnections()
 	ti.updateAccountInfo()
@@ -226,7 +227,7 @@ func (ti *Instance) updateVpnStatus() {
 
 func (ti *Instance) updateCountryList() {
 	ti.state.mu.Lock()
-	oldCountryList := append([]string(nil), ti.state.connSelector.countries...)
+	oldList := slices.Clone(ti.state.connSelector.countries)
 	ti.state.mu.Unlock()
 
 	newList, err := ti.state.connSelector.listCountries(ti.client)
@@ -235,7 +236,23 @@ func (ti *Instance) updateCountryList() {
 		return
 	}
 
-	if !slices.Equal(oldCountryList, newList) {
+	if !slices.Equal(oldList, newList) {
+		ti.redraw(true)
+	}
+}
+
+func (ti *Instance) updateSpecialtyServerList() {
+	ti.state.mu.Lock()
+	oldList := slices.Clone(ti.state.connSelector.specialtyServers)
+	ti.state.mu.Unlock()
+
+	newList, err := ti.state.connSelector.listSpecialtyServers(ti.client)
+	if err != nil {
+		log.Println(logTag, internal.ErrorPrefix, "Error retrieving available specialty server list:", err)
+		return
+	}
+
+	if !slices.Equal(oldList, newList) {
 		ti.redraw(true)
 	}
 }
