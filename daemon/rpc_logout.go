@@ -109,6 +109,10 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (payload *pb.Pay
 		return nil, err
 	}
 
+	if err := r.recentVPNConnStore.Clean(); err != nil {
+		log.Println(internal.WarningPrefix, "Executing logout operation:", err)
+	}
+
 	r.publisher.Publish("user logged out")
 
 	// RenewToken being empty means user logged in using Access Token

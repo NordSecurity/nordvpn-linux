@@ -22,50 +22,79 @@ import "purchase.proto";
 import "state.proto";
 import "servers.proto";
 import "defaults.proto";
+import "recent_connections.proto";
 
 service Daemon {
-  rpc AccountInfo(AccountRequest) returns (AccountResponse);
-  rpc TokenInfo(Empty) returns (TokenInfoResponse);
-  rpc Cities(CitiesRequest) returns (ServerGroupsList);
-  rpc Connect(ConnectRequest) returns (stream Payload);
-  rpc ConnectCancel(Empty) returns (Payload);
-  rpc Countries(Empty) returns (ServerGroupsList);
-  rpc Disconnect(Empty) returns (stream Payload);
-  rpc Groups(Empty) returns (ServerGroupsList);
+  // ==================== Authentication ====================
   rpc IsLoggedIn(Empty) returns (IsLoggedInResponse);
   rpc LoginWithToken(LoginWithTokenRequest) returns (LoginResponse);
   rpc LoginOAuth2(LoginOAuth2Request) returns (LoginOAuth2Response);
-  rpc LoginOAuth2Callback(LoginOAuth2CallbackRequest) returns (LoginOAuth2CallbackResponse);
+  rpc LoginOAuth2Callback(LoginOAuth2CallbackRequest)
+      returns (LoginOAuth2CallbackResponse);
   rpc Logout(LogoutRequest) returns (Payload);
-  rpc Ping(Empty) returns (PingResponse);
+
+  // ==================== Account Management ====================
+  rpc AccountInfo(AccountRequest) returns (AccountResponse);
+  rpc TokenInfo(Empty) returns (TokenInfoResponse);
+  rpc ClaimOnlinePurchase(Empty) returns (ClaimOnlinePurchaseResponse);
+
+  // ==================== Connection Operations ====================
+  rpc Connect(ConnectRequest) returns (stream Payload);
+  rpc ConnectCancel(Empty) returns (Payload);
+  rpc Disconnect(Empty) returns (stream Payload);
+  rpc Status(Empty) returns (StatusResponse);
   rpc RateConnection(RateRequest) returns (Payload);
-  rpc SetAutoConnect(SetAutoconnectRequest) returns (Payload);
-  rpc SetThreatProtectionLite(SetThreatProtectionLiteRequest) returns (SetThreatProtectionLiteResponse);
+
+  // ==================== Server Discovery ====================
+  rpc GetServers(Empty) returns (ServersResponse);
+  rpc Countries(Empty) returns (ServerGroupsList);
+  rpc Cities(CitiesRequest) returns (ServerGroupsList);
+  rpc Groups(Empty) returns (ServerGroupsList);
+
+  // ==================== General Settings ====================
+  rpc Settings(Empty) returns (SettingsResponse);
   rpc SetDefaults(SetDefaultsRequest) returns (Payload);
+
+  // ==================== Connection Settings ====================
+  rpc SetAutoConnect(SetAutoconnectRequest) returns (Payload);
+  rpc SetProtocol(SetProtocolRequest) returns (SetProtocolResponse);
+  rpc SetTechnology(SetTechnologyRequest) returns (Payload);
+  rpc SetObfuscate(SetGenericRequest) returns (Payload);
+  rpc SetPostQuantum(SetGenericRequest) returns (Payload);
+  rpc GetRecentConnections(RecentConnectionsRequest)
+      returns (RecentConnectionsResponse);
+
+  // ==================== Network Settings ====================
   rpc SetDNS(SetDNSRequest) returns (SetDNSResponse);
   rpc SetFirewall(SetGenericRequest) returns (Payload);
   rpc SetFirewallMark(SetUint32Request) returns (Payload);
   rpc SetRouting(SetGenericRequest) returns (Payload);
-  rpc SetAnalytics(SetGenericRequest) returns (Payload);
   rpc SetKillSwitch(SetKillSwitchRequest) returns (Payload);
+  rpc SetLANDiscovery(SetLANDiscoveryRequest) returns (SetLANDiscoveryResponse);
+  rpc SetVirtualLocation(SetGenericRequest) returns (Payload);
+
+  // ==================== UI Settings ====================
   rpc SetNotify(SetNotifyRequest) returns (Payload);
   rpc SetTray(SetTrayRequest) returns (Payload);
-  rpc SetObfuscate(SetGenericRequest) returns (Payload);
-  rpc SetProtocol(SetProtocolRequest) returns (SetProtocolResponse);
-  rpc SetTechnology(SetTechnologyRequest) returns (Payload);
-  rpc SetLANDiscovery(SetLANDiscoveryRequest) returns (SetLANDiscoveryResponse);
+
+  // ==================== Configuration Info ====================
+  rpc SettingsProtocols(Empty) returns (Payload);
+  rpc SettingsTechnologies(Empty) returns (Payload);
+  rpc GetFeatureToggles(Empty) returns (FeatureToggles);
+
+  // ==================== Allowlist Management ====================
   rpc SetAllowlist(SetAllowlistRequest) returns (Payload);
   rpc UnsetAllowlist(SetAllowlistRequest) returns (Payload);
   rpc UnsetAllAllowlist(Empty) returns (Payload);
-  rpc Settings(Empty) returns (SettingsResponse);
-  rpc SettingsProtocols(Empty) returns (Payload);
-  rpc SettingsTechnologies(Empty) returns (Payload);
-  rpc Status(Empty) returns (StatusResponse);
-  rpc ClaimOnlinePurchase(Empty) returns(ClaimOnlinePurchaseResponse);
-  rpc SetVirtualLocation(SetGenericRequest) returns (Payload);
+
+  // ==================== Privacy & Security ====================
+  rpc SetAnalytics(SetGenericRequest) returns (Payload);
+  rpc SetThreatProtectionLite(SetThreatProtectionLiteRequest)
+      returns (SetThreatProtectionLiteResponse);
+
+  // ==================== System & Monitoring ====================
+  rpc Ping(Empty) returns (PingResponse);
   rpc SubscribeToStateChanges(Empty) returns (stream AppState);
-  rpc GetServers(Empty) returns (ServersResponse);
-  rpc SetPostQuantum(SetGenericRequest) returns (Payload);
-  rpc GetDaemonApiVersion(GetDaemonApiVersionRequest) returns (GetDaemonApiVersionResponse);
-  rpc GetFeatureToggles(Empty) returns (FeatureToggles);
+  rpc GetDaemonApiVersion(GetDaemonApiVersionRequest)
+      returns (GetDaemonApiVersionResponse);
 }
