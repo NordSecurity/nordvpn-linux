@@ -20,6 +20,7 @@ type secret string
 func newSecret(val string) secret {
 	return secret(val)
 }
+
 func (s secret) GoString() string {
 	return s.String()
 }
@@ -88,7 +89,6 @@ func streamLines(r io.Reader, out io.Writer) {
 	if err := sc.Err(); err != nil {
 		fmt.Printf("Scanner error: %s", err)
 	}
-
 }
 
 // runCommandInVM - runs a command using vagrant ssh inside the VM

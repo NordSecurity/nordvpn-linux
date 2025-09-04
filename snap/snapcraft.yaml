@@ -59,7 +59,6 @@ plugs:
 apps:
   nordvpn:
     command: bin/nordvpn
-    autostart: nordvpn.desktop
     environment:
       PREFIX_COMMON: $SNAP_COMMON
       PREFIX_DATA: $SNAP_DATA
@@ -78,7 +77,6 @@ apps:
     # sudo ln -s /snap/nordvpn/current/usr/share/zsh/functions/Completion/Unix/_nordvpn_auto_complete /usr/share/zsh/functions/Completion/Unix/_nordvpn_auto_complete
     # compinit
     #
-    desktop: usr/share/applications/nordvpn.desktop
   nordvpnd:
     command: bin/nordvpnd
     daemon: simple
@@ -95,6 +93,15 @@ apps:
       - sys-dbus
       - system-observe
       - hardware-observe
+
+  nordvpn-gui:
+    command: bin/gui/nordvpn-gui
+    desktop: usr/share/applications/nordvpn.desktop
+    extensions: [gnome]
+    environment:
+      LD_LIBRARY_PATH: "$SNAP/bin/gui/lib:$LD_LIBRARY_PATH"
+      NORDVPND_SOCKET: "$SNAP_COMMON/run/nordvpn/nordvpnd.sock"
+
 parts:
   nordvpn:
     plugin: nil
@@ -103,10 +110,11 @@ parts:
     override-build: |
       # When it is executed in git submodule and contents of `.` are copied to
       # `./parts/nordvpn/build`, .git file points to the invalid host repository
-      sed -i 's/\.\./..\/..\/..\/../g' .git || true
-      WORKDIR=$(pwd) source ./ci/env.sh
-      sed -i 's\VERSION\'"${VERSION}"'\g' contrib/snap/appdata.xml
-      cp contrib/snap/appdata.xml ${SNAPCRAFT_PART_BUILD}/com.nordsec.nordvpn.appdata.xml
+      git config --global --add safe.directory "*"
+      WORKDIR="$(pwd)"; source ./ci/env.sh
+      # Inject the computed ${VERSION} into appdata and hand it to parse-info
+      sed -i "s/VERSION/${VERSION}/g" contrib/snap/appdata.xml
+      cp contrib/snap/appdata.xml "${SNAPCRAFT_PART_BUILD}/com.nordsec.nordvpn.appdata.xml"    
     parse-info: [com.nordsec.nordvpn.appdata.xml]
 
   nordvpn-bin:
@@ -139,6 +147,17 @@ parts:
     stage:
       - bin/*
       - usr/*
+
+  nordvpn-gui-bin:
+    plugin: dump
+    source-type: local
+    source:
+      - on amd64: ./bin/amd64/gui
+      - on arm64: ./bin/arm64/gui
+    organize:
+      ./*: bin/gui/
+    stage:
+      - bin/gui/*
 
   nordfileshare:
     plugin: dump

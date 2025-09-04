@@ -3,8 +3,8 @@ set -euxo pipefail
 
 # configure git safe-directories when running in containerized environment
 if [[ -n ${DOCKER_ENV+x} ]]; then
-    git config --global --add safe.directory "${WORKDIR}"
-    git config --global --add safe.directory "${WORKDIR}/parts/nordvpn/build"
+  git config --global --add safe.directory "${WORKDIR}"
+  git config --global --add safe.directory "${WORKDIR}/parts/nordvpn/build"
 fi
 
 source "${WORKDIR}/ci/env.sh"
@@ -16,6 +16,8 @@ BASEDIR="bin/${ARCH}"
 "${STRIP}" "${BASEDIR}"/nordvpnd
 # shellcheck disable=SC2153
 "${STRIP}" "${BASEDIR}"/nordvpn
+# shellcheck disable=SC2153
+"${STRIP}" "${BASEDIR}"/gui/nordvpn-gui
 # shellcheck disable=SC2153
 "${STRIP}" "${BASEDIR}"/nordfileshare
 # shellcheck disable=SC2153
@@ -34,7 +36,7 @@ cp -rL "${WORKDIR}/bin/deps/lib/current" "${dump_dir}"
 trap 'rm -rf ${WORKDIR}/bin/deps/lib/current-dump' EXIT
 
 # build snap package
-snapcraft --destructive-mode
+snapcraft pack --destructive-mode
 
 # move snap package
 mkdir -p "${WORKDIR}"/dist/app/snap
