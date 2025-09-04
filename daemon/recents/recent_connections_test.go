@@ -60,8 +60,9 @@ func TestRecentConnectionsStore_Get_InvalidJSON(t *testing.T) {
 
 	connections, err := store.Get()
 
-	assert.Error(t, err)
-	assert.Nil(t, connections)
+	assert.NoError(t, err)
+	assert.NotNil(t, connections)
+	assert.Len(t, connections, 0)
 }
 
 func TestRecentConnectionsStore_Add_SingleConnection(t *testing.T) {
