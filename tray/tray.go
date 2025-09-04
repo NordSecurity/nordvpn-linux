@@ -91,21 +91,6 @@ func (cp *ConnectionSelector) fetchSpecialtyServers(client pb.DaemonClient) ([]s
 	return slices.Clone(cp.specialtyServers), nil
 }
 
-func (cp *ConnectionSelector) listSpecialtyServers(client pb.DaemonClient) ([]string, error) {
-	resp, err := client.Groups(context.Background(), &pb.Empty{})
-	if err != nil {
-		return nil, err
-	}
-	log.Println("GROUPS:", resp)
-	result := sortedConnections(resp.Servers)
-
-	cp.mu.Lock()
-	cp.specialtyServers = result
-	out := slices.Clone(cp.specialtyServers)
-	cp.mu.Unlock()
-	return out, nil
-}
-
 func sortedConnections(sgs []*pb.ServerGroup) []string {
 	set := make(map[string]struct{}, len(sgs))
 	for _, sg := range sgs {
