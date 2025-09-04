@@ -31,9 +31,20 @@ func RunDocker(
 	env map[string]string,
 	image string,
 	cmd []string,
+	workingDir string,
 ) error {
 	settings := DockerSettings{}
-	return runDocker(ctx, env, image, cmd, settings.Privileged, settings.Daemonize, nil, settings.Network)
+	return runDocker(
+		ctx,
+		env,
+		image,
+		cmd,
+		settings.Privileged,
+		settings.Daemonize,
+		nil,
+		settings.Network,
+		workingDir,
+	)
 }
 
 func RunDockerWithSettings(
@@ -43,7 +54,17 @@ func RunDockerWithSettings(
 	cmd []string,
 	settings DockerSettings,
 ) error {
-	return runDocker(ctx, env, image, cmd, settings.Privileged, settings.Daemonize, settings.DaemonizeStopChan, settings.Network)
+	return runDocker(
+		ctx,
+		env,
+		image,
+		cmd,
+		settings.Privileged,
+		settings.Daemonize,
+		settings.DaemonizeStopChan,
+		settings.Network,
+		dockerWorkDir,
+	)
 }
 
 // BuildDocker image with project root as context
@@ -68,6 +89,7 @@ func runDocker(
 	daemonize bool,
 	containerStoppedChan chan<- any,
 	network string,
+	workingDir string,
 ) error {
 	fmt.Println("creating docker client")
 	defer func() {
@@ -140,7 +162,7 @@ func runDocker(
 		Image:      img,
 		Cmd:        cmd,
 		Env:        envMapToList(env),
-		WorkingDir: dockerWorkDir,
+		WorkingDir: workingDir,
 		User:       user,
 	}
 

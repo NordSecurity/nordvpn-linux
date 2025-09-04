@@ -92,7 +92,6 @@ scripts:
             set -eux
             # build application
             APP_DIR=/code/app/gui
-            flutter clean
             PLATFORM="${2}"
             ARCH=${PLATFORM#"linux/"}
             docker run -v `pwd`/../:/code/app --platform ${PLATFORM} --workdir ${APP_DIR}  ghcr.io/nordsecurity/nordvpn-linux/flutter-3.32.8:1.0.1 scripts/build_application.sh ${1}
