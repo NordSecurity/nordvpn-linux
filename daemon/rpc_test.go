@@ -18,6 +18,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
+	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
@@ -51,6 +52,7 @@ const (
 	TestUserCreateJSON      = "usercreate.json"
 	TestUserCredentialsJSON = "usercredentials.json"
 	TestPlansJSON           = "plans.json"
+	TestRecentConnFile      = "recent_connections.dat"
 )
 
 const (
@@ -109,6 +111,7 @@ func testRPC() *RPC {
 		mock.NewRemoteConfigMock(),
 		state.NewConnectionInfo(),
 		NewConsentChecker(false, cm, api, &workingLoginChecker{}, &analytics),
+		recents.NewRecentConnectionsStore(TestdataPath+TestRecentConnFile, &config.StdFilesystemHandle{}),
 	)
 }
 
