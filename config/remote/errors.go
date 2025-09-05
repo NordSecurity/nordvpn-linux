@@ -13,7 +13,6 @@ const (
 	DownloadErrorIncludeFile
 	DownloadErrorIntegrity
 	DownloadErrorLocalFS
-	DownloadErrorNetwork
 	DownloadErrorOther
 	DownloadErrorParsing
 	DownloadErrorRemoteFileNotFound
@@ -38,8 +37,6 @@ func (e DownloadErrorKind) String() string {
 		return "integrity_error"
 	case DownloadErrorLocalFS:
 		return "local_fs_error"
-	case DownloadErrorNetwork:
-		return "network_error"
 	case DownloadErrorOther:
 		return "other_error"
 	case DownloadErrorParsing:
@@ -63,7 +60,7 @@ type LoadErrorKind int
 const (
 	LoadErrorFileNotFound LoadErrorKind = iota
 	LoadErrorParsing
-	LoadErrorParsingIncludeFile
+	LoadErrorFieldValidation
 	LoadErrorMainHashJsonParsing
 	LoadErrorIntegrity
 	LoadErrorValidation
@@ -78,8 +75,8 @@ func (e LoadErrorKind) String() string {
 		return "file_not_found_error"
 	case LoadErrorParsing:
 		return "parsing_error"
-	case LoadErrorParsingIncludeFile:
-		return "parsing_include_file_error"
+	case LoadErrorFieldValidation:
+		return "config_field_validation_error"
 	case LoadErrorMainHashJsonParsing:
 		return "main_hash_json_parsing_error"
 	case LoadErrorIntegrity:

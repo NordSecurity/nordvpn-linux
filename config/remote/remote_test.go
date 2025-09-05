@@ -36,6 +36,143 @@ const (
 	defaultRolloutGroup = 10
 )
 
+func TestIsNetworkRetryable(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	// create a DNS resolution error
+	dnsErr := &net.OpError{
+		Op:  "dial",
+		Net: "tcp",
+		Err: &net.DNSError{
+			Err:         "no such host",
+			Name:        "nonexistent.example.com",
+			Server:      "",
+			IsTimeout:   false,
+			IsTemporary: false,
+		},
+	}
+
+	// create a timeout error
+	timeoutErr := &net.OpError{
+		Op:  "dial",
+		Net: "tcp",
+		Err: &timeoutError{},
+	}
+
+	tests := []struct {
+		name     string
+		err      error
+		expected bool
+	}{
+		{
+			name:     "nil error",
+			err:      nil,
+			expected: false,
+		},
+		{
+			name:     "direct DNS error",
+			err:      dnsErr,
+			expected: true,
+		},
+		{
+			name:     "DNS error wrapped in DownloadError",
+			err:      NewDownloadError(DownloadErrorRemoteFileNotFound, dnsErr),
+			expected: true,
+		},
+		{
+			name:     "timeout error",
+			err:      timeoutErr,
+			expected: true,
+		},
+		{
+			name:     "timeout error wrapped in DownloadError",
+			err:      NewDownloadError(DownloadErrorFileDownload, timeoutErr),
+			expected: true,
+		},
+		{
+			name:     "server internal error",
+			err:      core.ErrServerInternal,
+			expected: true,
+		},
+		{
+			name:     "too many requests error",
+			err:      core.ErrTooManyRequests,
+			expected: true,
+		},
+		{
+			name:     "server error wrapped in DownloadError",
+			err:      NewDownloadError(DownloadErrorFileDownload, core.ErrServerInternal),
+			expected: true,
+		},
+		{
+			name:     "non-network error",
+			err:      fmt.Errorf("some other error"),
+			expected: false,
+		},
+		{
+			name:     "non-network error wrapped in DownloadError",
+			err:      NewDownloadError(DownloadErrorParsing, fmt.Errorf("json parsing error")),
+			expected: false,
+		},
+		{
+			name:     "deeply nested DNS error",
+			err:      fmt.Errorf("outer: %w", NewDownloadError(DownloadErrorRemoteHashNotFound, fmt.Errorf("middle: %w", dnsErr))),
+			expected: true,
+		},
+		{
+			name:     "connection refused error",
+			err:      &net.OpError{Op: "dial", Net: "tcp", Err: fmt.Errorf("connection refused")},
+			expected: true,
+		},
+		{
+			name:     "network unreachable error",
+			err:      &net.OpError{Op: "connect", Net: "tcp", Err: fmt.Errorf("network is unreachable")},
+			expected: true,
+		},
+		{
+			name:     "network unreachable wrapped in DownloadError",
+			err:      NewDownloadError(DownloadErrorRemoteFileNotFound, &net.OpError{Op: "connect", Net: "tcp", Err: fmt.Errorf("network is unreachable")}),
+			expected: true,
+		},
+		{
+			name: "DNS error with network unreachable",
+			err: &net.DNSError{
+				Err:         "dial udp 103.86.99.100:53: connect: network is unreachable",
+				Name:        "downloads.nordcdn.com",
+				Server:      "127.0.0.53:53",
+				IsTimeout:   false,
+				IsTemporary: false,
+			},
+			expected: true,
+		},
+		{
+			name: "DNS error with network unreachable wrapped in DownloadError",
+			err: NewDownloadError(DownloadErrorRemoteHashNotFound, &net.DNSError{
+				Err:         "dial udp 103.86.99.100:53: connect: network is unreachable",
+				Name:        "downloads.nordcdn.com",
+				Server:      "127.0.0.53:53",
+				IsTimeout:   false,
+				IsTemporary: false,
+			}),
+			expected: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := isNetworkRetryable(test.err)
+			assert.Equal(t, test.expected, result, "isNetworkRetryable(%v) = %v, want %v", test.err, result, test.expected)
+		})
+	}
+}
+
+// timeoutError is a mock error that implements net.Error interface
+type timeoutError struct{}
+
+func (e *timeoutError) Error() string   { return "timeout" }
+func (e *timeoutError) Timeout() bool   { return true }
+func (e *timeoutError) Temporary() bool { return true }
+
 func cleanLocalPath(t *testing.T) {
 	os.RemoveAll(localPath)
 	t.Cleanup(func() { os.RemoveAll(localPath) })

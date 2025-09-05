@@ -46,14 +46,6 @@ func TestEventJSONOutput(t *testing.T) {
 			expectedFeatureName: FeatureMeshnet,
 		},
 		{
-			name:                "Download Failure",
-			event:               NewDownloadFailureEvent(rolloutGroup, "client", FeatureMain, DownloadErrorNetwork, "timeout"),
-			expectedResult:      rcFailure,
-			expectedError:       DownloadErrorNetwork.String(),
-			expectedMessage:     "timeout",
-			expectedFeatureName: FeatureMain,
-		},
-		{
 			name:                "JSON Parse Failure",
 			event:               NewJSONParseEventFailure(rolloutGroup, "client", FeatureLibtelio, LoadErrorMainHashJsonParsing, "bad hash"),
 			expectedResult:      rcFailure,
@@ -100,7 +92,7 @@ func TestDebuggerEventContextPaths(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	rolloutGroup := 42
-	debugerEvent := NewDownloadFailureEvent(rolloutGroup, "test-client", FeatureLibtelio, DownloadErrorNetwork, "timeout").ToDebuggerEvent()
+	debugerEvent := NewDownloadFailureEvent(rolloutGroup, "test-client", FeatureLibtelio, DownloadErrorIntegrity, "timeout").ToDebuggerEvent()
 
 	expectedGeneralPaths := []string{
 		"device.*",
@@ -113,7 +105,7 @@ func TestDebuggerEventContextPaths(t *testing.T) {
 	// Assert: Verify the KeyBased context paths.
 	expectedKeyBasedPaths := []events.ContextValue{
 		{Path: debuggerEventBaseKey + ".type", Value: DownloadFailure.String()},
-		{Path: debuggerEventBaseKey + ".error", Value: DownloadErrorNetwork.String()},
+		{Path: debuggerEventBaseKey + ".error", Value: DownloadErrorIntegrity.String()},
 		{Path: debuggerEventBaseKey + ".feature_name", Value: FeatureLibtelio},
 		{Path: debuggerEventBaseKey + ".rollout_group", Value: 42},
 	}
