@@ -10,3 +10,4 @@ export DISABLE_TUI_LOADER=1
 # go code cover dir
 export COVERDIR="covdatafiles"
 export GOCOVERDIR="${WORKDIR}/$COVERDIR"
+export LOGS_FOLDER="${WORKDIR}"/dist/logs

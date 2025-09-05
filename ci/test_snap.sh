@@ -15,6 +15,19 @@ rm -fr "${GOCOVERDIR}"
 ORIG_COVERDIR="$GOCOVERDIR"
 GOCOVERDIR="/tmp/"
 
+add_daemon_logs() {
+    # append the snap daemon logs into the daemon.log file
+    {
+        echo "----------------------------------------- "
+        echo "----------- start daemon log ------------ "
+        echo "----------------------------------------- "
+    } >> "${LOGS_FOLDER}/daemon.log"
+
+    sudo journalctl -b -u snap.nordvpn.nordvpnd.service | tee -a "${LOGS_FOLDER}/daemon.log" > /dev/null
+}
+
+trap add_daemon_logs EXIT INT TERM
+
 "${WORKDIR}/ci/qa_run_tests.sh" "$@"
 
 # restore to original value
