@@ -14,11 +14,15 @@ RC_REMOTE_MESSAGES = [
 
 RC_LOCAL_MESSAGES = [
     "[Info] feature [meshnet] config loaded from: /var/lib/nordvpn/conf",
+    "[Info] feature [libvinis] config loaded from: /var/lib/nordvpn/conf"
     "[Info] feature [libtelio] config loaded from: /var/lib/nordvpn/conf",
     "[Info] feature [nordvpn] config loaded from: /var/lib/nordvpn/conf",
 ]
 
-RC_INITIAL_RUN_MESSAGES = RC_REMOTE_MESSAGES + RC_LOCAL_MESSAGES
+RC_INITIAL_RUN_MESSAGES = RC_LOCAL_MESSAGES
+import os
+if os.getenv("RC_USE_LOCAL_CONFIG") is None:
+    RC_INITIAL_RUN_MESSAGES = RC_REMOTE_MESSAGES + RC_LOCAL_MESSAGES
 
 
 @pytest.fixture
