@@ -62,11 +62,7 @@ const (
 	tooltipTrayIcon            = "Show or hide tray icon"
 
 	// System messages
-	msgShutdownNotification = "Shutting down norduserd. To restart the process, run the \"nordvpn set tray on\" command."
-
-	// Timeouts
-	// TEMP DISABLED until 'workaroud' is proven
-	// dbusWorkaroundDelay = 100 * time.Millisecond
+	msgShutdownNotification = "Shutting down norduserd. To restart the process, run the \"nordvpn set tray on command\"."
 )
 
 func handleMenuItemClick(item *systray.MenuItem, action func()) {
@@ -420,10 +416,7 @@ func buildSettingsSection(ti *Instance) {
 	}
 
 	item := systray.AddMenuItem(labelSettings, tooltipSettings)
-
-	// Workaround over the dbus issue described here: https://github.com/fyne-io/systray/issues/12
-	// (It affects not only XFCE, but also other desktop environments.)
-	time.AfterFunc(dbusWorkaroundDelay, func() { buildSettingsSubitems(ti, item) })
+	buildSettingsSubitems(ti, item)
 }
 
 func buildSettingsSubitems(ti *Instance, menu *systray.MenuItem) {
