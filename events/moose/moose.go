@@ -599,6 +599,7 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 	if !data.IsAttempt {
 		duration = int32(data.Duration.Milliseconds())
 	}
+
 	return s.response(notifierFunc(
 		duration,
 		eventStatus,
@@ -607,10 +608,10 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 		int32(responseCode),
 		data.Request.Proto,
 		0,
-		"",
-		"",
-		"",
-		"",
+		data.RequestFilters,
+		data.RequestFields,
+		data.Limits,
+		data.Offset,
 		"",
 		nil,
 	))
