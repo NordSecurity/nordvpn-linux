@@ -8,8 +8,10 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-func getURL(url string, parameters ...string) string {
-	url += "/?"
+const testEndpoint string = "https://test.api.com/endpoint"
+
+func getURL(parameters ...string) string {
+	url := testEndpoint + "/?"
 	parametersString := strings.Join(parameters, "&")
 
 	return url + parametersString
@@ -30,8 +32,6 @@ func areParametersEqual(a string, b string) bool {
 }
 
 func TestGetQueryParameters(t *testing.T) {
-	endpoint := "https://test.api.com/endpoint"
-
 	filter1 := "filters[filter1]=value"
 	field1 := "fields[field1]"
 	filter2 := "filters[filter2]=value"
@@ -50,18 +50,18 @@ func TestGetQueryParameters(t *testing.T) {
 	}{
 		{
 			name: "no parameters",
-			url:  endpoint,
+			url:  testEndpoint,
 		},
 		{
 			name: "only offset parameter",
-			url:  getURL(endpoint, offset),
+			url:  getURL(offset),
 			expectedParameters: urlParameters{
 				offset: offset,
 			},
 		},
 		{
 			name: "offset and limit parameters",
-			url:  getURL(endpoint, offset, limit),
+			url:  getURL(offset, limit),
 			expectedParameters: urlParameters{
 				offset: offset,
 				limit:  limit,
@@ -69,7 +69,7 @@ func TestGetQueryParameters(t *testing.T) {
 		},
 		{
 			name: "one filter and one field parameter",
-			url:  getURL(endpoint, offset, limit, filter1, field1),
+			url:  getURL(offset, limit, filter1, field1),
 			expectedParameters: urlParameters{
 				filters: filter1,
 				fields:  field1,
@@ -79,7 +79,7 @@ func TestGetQueryParameters(t *testing.T) {
 		},
 		{
 			name: "two filters and two field parameter",
-			url:  getURL(endpoint, offset, limit, filter1, filter2, field1, field2),
+			url:  getURL(offset, limit, filter1, filter2, field1, field2),
 			expectedParameters: urlParameters{
 				filters: filter1 + "&" + filter2,
 				fields:  field1 + "&" + field2,
@@ -89,7 +89,7 @@ func TestGetQueryParameters(t *testing.T) {
 		},
 		{
 			name: "filter and field parameters are not grouped together",
-			url:  getURL(endpoint, offset, limit, filter1, field1, filter2, field2),
+			url:  getURL(offset, limit, filter1, field1, filter2, field2),
 			expectedParameters: urlParameters{
 				filters: filter1 + "&" + filter2,
 				fields:  field1 + "&" + field2,
@@ -99,7 +99,7 @@ func TestGetQueryParameters(t *testing.T) {
 		},
 		{
 			name: "invalid offset and limit is ignored",
-			url:  getURL(endpoint, invalidOffset, invalidLimit),
+			url:  getURL(invalidOffset, invalidLimit),
 		},
 	}
 
