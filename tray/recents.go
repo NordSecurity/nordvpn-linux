@@ -3,6 +3,7 @@ package tray
 import (
 	"context"
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -70,10 +71,10 @@ func makeDisplayLabel(conn *RecentConnection) string {
 		return formatGroupTitle(conn.Group)
 
 	case config.ServerSelectionRule_COUNTRY_WITH_GROUP:
-		if conn.Group == config.ServerGroup_UNDEFINED || conn.Country == "" {
+		group := formatGroupTitle(conn.Group)
+		if group == "" || conn.Country == "" {
 			return ""
 		}
-		group := formatGroupTitle(conn.Group)
 		return fmt.Sprintf("%s (%s)", group, conn.Country)
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
@@ -94,60 +95,55 @@ func makeDisplayLabel(conn *RecentConnection) string {
 	return ""
 }
 
-func connectByConnectionModel(ti *Instance, model *RecentConnection) bool {
+func connectByConnectionModel(ti *Instance, model *RecentConnection) {
 	if model == nil {
-		return false
+		return
+	}
+
+	normalizeForAPI := func(text string) string {
+		return strings.ReplaceAll(text, " ", "_")
 	}
 
 	switch model.ConnectionType {
 	case config.ServerSelectionRule_RECOMMENDED:
-		return ti.connect("", "")
+		ti.connect("", "")
 
 	case config.ServerSelectionRule_CITY:
-		if model.City == "" {
-			return false
+		if model.City != "" {
+			cityString := normalizeForAPI(model.City)
+			ti.connect(cityString, "")
 		}
-		city_str := strings.ReplaceAll(model.City, " ", "_")
-		return ti.connect(city_str, "")
 
 	case config.ServerSelectionRule_COUNTRY:
-		if model.CountryCode == "" {
-			return false
+		if model.CountryCode != "" {
+			ti.connect(model.CountryCode, "")
 		}
-		return ti.connect(model.CountryCode, "")
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER:
-		if model.SpecificServer == "" {
-			return false
+		if model.SpecificServer != "" {
+			ti.connect(model.SpecificServer, "")
 		}
-		return ti.connect(model.SpecificServer, "")
 
 	case config.ServerSelectionRule_GROUP:
-		if model.Group == config.ServerGroup_UNDEFINED {
-			return false
+		if model.Group != config.ServerGroup_UNDEFINED {
+			group := normalizeForAPI(model.Group.String())
+			ti.connect("", group)
 		}
-		group_str := strings.ReplaceAll(model.Group.String(), "_", " ")
-		return ti.connect("", group_str)
 
 	case config.ServerSelectionRule_COUNTRY_WITH_GROUP:
-		if model.CountryCode == "" || model.Group == config.ServerGroup_UNDEFINED {
-			return false
+		if model.CountryCode != "" && model.Group != config.ServerGroup_UNDEFINED {
+			group := normalizeForAPI(model.Group.String())
+			ti.connect(model.CountryCode, group)
 		}
-		group_str := strings.ReplaceAll(model.Group.String(), "_", " ")
-		return ti.connect(model.CountryCode, group_str)
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
-		if model.SpecificServer == "" || model.Group == config.ServerGroup_UNDEFINED {
-			return false
+		if model.SpecificServer != "" && model.Group != config.ServerGroup_UNDEFINED {
+			group := normalizeForAPI(model.Group.String())
+			ti.connect(model.SpecificServer, group)
 		}
-		group_str := strings.ReplaceAll(model.Group.String(), "_", " ")
-		return ti.connect(model.SpecificServer, group_str)
 
 	case config.ServerSelectionRule_NONE:
-		return false
 	}
-
-	return false
 }
 
 type recentConnectionsManager struct {
@@ -156,7 +152,7 @@ type recentConnectionsManager struct {
 	client      pb.DaemonClient
 }
 
-// newRecentConnectionsManager created new recent VPN connection manager
+// newRecentConnectionsManager creates a new recent VPN connection manager
 func newRecentConnectionsManager(client pb.DaemonClient) *recentConnectionsManager {
 	return &recentConnectionsManager{
 		connections: make([]RecentConnection, 0),
@@ -204,5 +200,5 @@ func (m *recentConnectionsManager) UpdateRecentConnections() error {
 func (m *recentConnectionsManager) GetRecentConnections() []RecentConnection {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	return m.connections
+	return slices.Clone(m.connections)
 }

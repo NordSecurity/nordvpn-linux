@@ -2,6 +2,7 @@ package tray
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"slices"
@@ -24,6 +25,8 @@ const (
 	labelLogout             = "You've logged out"
 	labelNotificationsOn    = "Notifications for NordVPN turned on"
 	labelNotificationsOff   = "Notifications for NordVPN turned off"
+	labelTrayOn             = "Tray for NordVPN turned on"
+	labelTrayOff            = "Tray for NordVPN turned off"
 	labelDaemonReconnected  = "Reconnected to NordVPN's background service"
 	labelDaemonDisconnected = "Couldn't connect to NordVPN's background service. Please ensure the service is running."
 	labelConnectedFormat    = "Connected to %s"
@@ -53,7 +56,7 @@ func (ti *Instance) ping() error {
 
 	ti.redraw(ti.updateDaemonConnectionStatus(daemonError))
 	if daemonError != "" {
-		return fmt.Errorf(daemonError)
+		return errors.New(daemonError)
 	}
 
 	return nil
@@ -161,6 +164,7 @@ func (ti *Instance) updateRecentConnections() {
 }
 
 func (ti *Instance) setSettings(settings *pb.Settings) {
+	log.Println("SETTINGS: all:", settings)
 	if settings == nil {
 		return
 	}
@@ -170,6 +174,7 @@ func (ti *Instance) setSettings(settings *pb.Settings) {
 		return
 	}
 
+	log.Println("SETTINGS: user settings:", userSettings)
 	changed := false
 	ti.state.mu.Lock()
 
@@ -211,8 +216,10 @@ func (ti *Instance) setSettings(settings *pb.Settings) {
 		ti.state.trayStatus = newTrayStatus
 
 		if newTrayStatus == Enabled {
+			defer ti.notifyForce(labelTrayOn)
 			defer log.Println(internal.InfoPrefix, "Tray enabled")
 		} else {
+			defer ti.notifyForce(labelTrayOff)
 			defer log.Println(internal.InfoPrefix, "Tray disabled")
 		}
 	}

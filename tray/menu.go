@@ -17,15 +17,15 @@ import (
 const (
 	// Menu item labels
 	labelVPNStatus             = "VPN %s"
-	labelServerPrefix          = "Server: "
-	labelCityPrefix            = "City: "
-	labelCountryPrefix         = "Country: "
+	labelServerPrefix          = "Server:"
+	labelCityPrefix            = "City:"
+	labelCountryPrefix         = "Country:"
 	labelDisconnect            = "Disconnect"
 	labelQuickConnect          = "Quick Connect"
 	labelConnectionSelection   = "Connect to"
 	labelRecentConnections     = "Recent Connections:"
-	labelReconnectTo           = "Reconnect to "
-	labelConnectTo             = "Connect to "
+	labelReconnectTo           = "Reconnect to"
+	labelConnectTo             = "Connect to"
 	labelCountries             = "Countries:"
 	labelActiveGoroutines      = "Active goroutines"
 	labelActiveGoroutinesCount = "Active goroutines: %d"
@@ -223,19 +223,19 @@ func buildConnectedToSection(ti *Instance) {
 	}
 
 	if serverName := ti.state.serverName(); serverName != "" {
-		label := fmt.Sprintf("%s%s", labelServerPrefix, serverName)
+		label := fmt.Sprintf("%s %s", labelServerPrefix, serverName)
 		mHostname := systray.AddMenuItem(label, label)
 		mHostname.Disable()
 	}
 
 	if ti.state.vpnCity != "" {
-		label := fmt.Sprintf("%s%s", labelCityPrefix, ti.state.vpnCity)
+		label := fmt.Sprintf("%s %s", labelCityPrefix, ti.state.vpnCity)
 		mCity := systray.AddMenuItem(label, label)
 		mCity.Disable()
 	}
 
 	if ti.state.vpnCountry != "" {
-		label := fmt.Sprintf("%s%s", labelCountryPrefix, ti.state.vpnCountry)
+		label := fmt.Sprintf("%s %s", labelCountryPrefix, ti.state.vpnCountry)
 		mCountry := systray.AddMenuItem(label, label)
 		mCountry.Disable()
 	}
@@ -318,7 +318,7 @@ func buildRecentConnectionsSection(
 			continue
 		}
 
-		tooltip := fmt.Sprintf("%s%s", labelReconnectTo, displayLabel)
+		tooltip := fmt.Sprintf("%s %s", labelReconnectTo, displayLabel)
 		item := parent.AddSubMenuItem(displayLabel, tooltip)
 
 		go handleRecentConnectionClick(ti, item, &conn)
@@ -332,7 +332,7 @@ func buildCountriesSection(ti *Instance, parent *systray.MenuItem, countries []s
 	parent.AddSubMenuItem(labelCountries, tooltipCountries).Disable()
 	for _, country := range countries {
 		title := strings.ReplaceAll(country, "_", " ")
-		tooltip := fmt.Sprintf("%s%s", labelConnectTo, country)
+		tooltip := fmt.Sprintf("%s %s", labelConnectTo, country)
 		item := parent.AddSubMenuItem(title, tooltip)
 
 		go handleCountryClick(ti, item, country)
@@ -343,7 +343,7 @@ func handleRecentConnectionClick(ti *Instance, item *systray.MenuItem, model *Re
 	if ti == nil || model == nil {
 		return
 	}
-	handleMenuItemClick(item, func() { _ = connectByConnectionModel(ti, model) })
+	handleMenuItemClick(item, func() { connectByConnectionModel(ti, model) })
 }
 
 func handleCountryClick(ti *Instance, item *systray.MenuItem, country string) {

@@ -207,7 +207,7 @@ func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
 			VirtualLocation: st.SettingsChange.VirtualLocation,
 		})
 
-		if ti.connSensor.Detected() {
+		if ti.connSensor.ChangeDetected() {
 			ti.updateCountryList()
 			ti.updateRecentConnections()
 		}
@@ -266,7 +266,6 @@ func (ti *Instance) Start() {
 						// Channel already being processed or closed
 					}
 				}
-				cancel()
 				return nil
 			},
 		)

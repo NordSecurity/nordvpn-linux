@@ -3,6 +3,7 @@ package daemon
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"slices"
 	"strings"
@@ -291,8 +292,12 @@ func (r *RPC) connect(
 			serverTechs = append(serverTechs, v.ID)
 		}
 
-		recentModel := buildRecentConnectionModel(serverTechs, event, parameters)
-		r.recentVPNConnStore.Add(recentModel)
+		recentModel, err := buildRecentConnectionModel(serverTechs, event, parameters)
+		if err != nil {
+			log.Printf("%s Failed to build recent VPN connection model: %s", internal.WarningPrefix, err)
+		} else {
+			r.recentVPNConnStore.Add(recentModel)
+		}
 	}
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnected, Data: data}); err != nil {
@@ -347,7 +352,7 @@ func buildRecentConnectionModel(
 	serverTechs []core.ServerTechnology,
 	event events.DataConnect,
 	parameters ServerParameters,
-) recents.Model {
+) (recents.Model, error) {
 	extractSpecificServerName := func(domain string) string {
 		var name string
 		if domain != "" {
@@ -404,11 +409,10 @@ func buildRecentConnectionModel(
 	case config.ServerSelectionRule_NONE, config.ServerSelectionRule_RECOMMENDED:
 		fallthrough
 	default:
-		log.Printf("%s unexpected connection type in recent connections: %v",
-			internal.WarningPrefix, recentModel.ConnectionType)
+		return recents.Model{}, fmt.Errorf("unexpected connection type in recent connections: %w")
 	}
 
-	return recentModel
+	return recentModel, nil
 }
 
 type FactoryFunc func(config.Technology) (vpn.VPN, error)

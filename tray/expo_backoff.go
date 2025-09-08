@@ -9,11 +9,11 @@ import (
 
 type BackoffConfig struct {
 	// InitialDelay time for the first retry.
-	// Will defaul to 1 second if non-positive value is provided.
+	// Will default to 1 second if non-positive value is provided.
 	InitialDelay time.Duration
 
 	// MaxDelay maximum time between attempts.
-	// Will default to 1 minutes if non-positive value ir provided.
+	// Will default to 1 minute if non-positive value is provided.
 	MaxDelay time.Duration
 
 	// MaxRetries decides number of times operation will be attempted.
