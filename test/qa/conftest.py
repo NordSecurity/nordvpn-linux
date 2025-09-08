@@ -20,7 +20,12 @@ from lib import logging, network, daemon, login, info, firewall
 from lib.remote_config_manager import RemoteConfigManager, LOCAL_CACHE_DIR, REMOTE_DIR
 from lib.logging import FILE
 from lib.log_reader import LogReader
-from constants import NORDVPND, NORDVPND_FILE
+from constants import (
+    DEB,
+    NORDVPND,
+    NORDVPND_FILE,
+    SNAP,
+)
 
 pytest_plugins = "lib.pytest_timeouts.pytest_timeouts"
 
@@ -47,6 +52,45 @@ def _print_with_timestamp(*args, **kwargs):
     # Prepend the timestamp to the original print arguments
     _original_print(timestamp, *args, **kwargs)
     logging.log(data=print_to_string(timestamp, *args, **kwargs))
+
+
+def _is_installed_as(package_type: str) -> bool:
+    """
+    Function to verify if installed nordvpn package is installed as deb or snap.
+
+    :param package_type:    The type of the package to check (DEB or SNAP).
+    :returns:               True if the package is installed, False otherwise.
+    """
+    return os.environ.get("NORDVPN_TYPE") == package_type
+
+
+def _set_custom_config_for_rc(daemon_log_reader, string_to_be_added: str) -> int:
+    """
+    Function to set custom config parameter for rc's config
+
+    :param string_to_be_added:   Parameter with value to be set
+
+    :return                      Position of cursor in daemon log file
+    """
+    daemon_path = NORDVPND_FILE.get(os.environ.get("NORDVPN_TYPE"))
+    if _is_installed_as(DEB):
+        # For container
+        sed_command = ["sudo", "sed", "-i", f"1a export {string_to_be_added}", daemon_path]
+    else:
+        # For VM
+        sed_command = ["sudo", "sed", "-i", f'/^\[Service\]/a Environment="{string_to_be_added}"', daemon_path]
+
+    subprocess.run(sed_command)
+
+    time_mark = daemon_log_reader.get_cursor()
+
+    if _is_installed_as(SNAP):
+        subprocess.run(f"sudo systemctl daemon-reload", shell=True, check=True)
+        subprocess.run(f"sudo {SNAP} restart {NORDVPND.get(SNAP)}", shell=True, check=True)
+    else:
+        daemon.restart()
+
+    return time_mark
 
 
 # Replace the built-in print with our custom version
@@ -324,22 +368,7 @@ def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
     os.makedirs(f"{os.getcwd()}/tmp/", exist_ok=True)
     subprocess.run(f"sudo cp {daemon_path} {os.getcwd()}/tmp", shell=True, check=True, text=True, capture_output=True)
 
-    if os.environ.get("NORDVPN_TYPE") == "deb":
-        # For container
-        sed_command = ["sudo", "sed", "-i", f"1a export RC_LOAD_TIME_MIN={RC_TIMEOUT}", daemon_path]
-    else:
-        # For VM
-        sed_command = ["sudo", "sed", "-i", f'/$$Service$$/a Environment="RC_LOAD_TIME_MIN={RC_TIMEOUT}"', daemon_path]
-
-    subprocess.run(sed_command)
-
-    time_mark = daemon_log_reader.get_cursor()
-
-    if os.environ.get("NORDVPN_TYPE") == "snap":
-        subprocess.run(f"sudo systemctl daemon-reload", shell=True, check=True)
-        subprocess.run(f'sudo snap restart {NORDVPND.get(os.environ.get("NORDVPN_TYPE"))}', shell=True, check=True)
-    else:
-        daemon.restart()
+    time_mark = _set_custom_config_for_rc(daemon_log_reader, string_to_be_added=f"RC_LOAD_TIME_MIN={RC_TIMEOUT}")
 
     if not daemon_log_reader.wait_for_messages(
         f"[Info] remote config download job time period: {RC_TIMEOUT}m0s", cursor=time_mark
@@ -356,9 +385,9 @@ def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
         shell=True,
     )
 
-    if os.environ.get("NORDVPN_TYPE") == "snap":
+    if _is_installed_as(SNAP):
         subprocess.run(f"sudo systemctl daemon-reload", shell=True, check=True)
-        subprocess.run(f'sudo snap restart {NORDVPND.get(os.environ.get("NORDVPN_TYPE"))}', shell=True, check=True)
+        subprocess.run(f"sudo {SNAP} restart {NORDVPND.get(SNAP)}", shell=True, check=True)
     else:
         daemon.restart()
 
@@ -378,20 +407,7 @@ def set_use_local_config_for_rc(daemon_log_reader):
     os.makedirs(f"{os.getcwd()}/tmp/", exist_ok=True)
     subprocess.run(f"sudo cp {daemon_path} {os.getcwd()}/tmp", shell=True, check=True, text=True, capture_output=True)
 
-    if os.environ.get("NORDVPN_TYPE") == "deb":
-        # For container
-        sed_command = ["sudo", "sed", "-i", f"1a export RC_USE_LOCAL_CONFIG=1", daemon_path]
-    else:
-        # For VM
-        sed_command = ["sudo", "sed", "-i", f'/$$Service$$/a Environment="RC_USE_LOCAL_CONFIG=1"']
-
-    subprocess.run(sed_command)
-
-    if os.environ.get("NORDVPN_TYPE") == "snap":
-        subprocess.run(f"sudo sudo systemctl daemon-reload", shell=True, check=True)
-        subprocess.run(f'sudo snap restart {NORDVPND.get(os.environ.get("NORDVPN_TYPE"))}', shell=True, check=True)
-    else:
-        daemon.restart()
+    _set_custom_config_for_rc(daemon_log_reader, string_to_be_added="RC_USE_LOCAL_CONFIG=1")
 
     yield
 
@@ -403,9 +419,9 @@ def set_use_local_config_for_rc(daemon_log_reader):
         shell=True,
     )
 
-    if os.environ.get("NORDVPN_TYPE") == "snap":
+    if _is_installed_as(SNAP):
         subprocess.run(f"sudo systemctl daemon-reload", shell=True, check=True)
-        subprocess.run(f'sudo snap restart {NORDVPND.get(os.environ.get("NORDVPN_TYPE"))}', shell=True, check=True)
+        subprocess.run(f"sudo {SNAP} restart {NORDVPND.get(SNAP)}", shell=True, check=True)
     else:
         daemon.restart()
 
@@ -426,7 +442,7 @@ def get_package_system():
     try:
         dpkg_result = subprocess.run(["dpkg", "-l", "nordvpn"], capture_output=True, text=True)
         if dpkg_result.returncode == 0 and "nordvpn" in dpkg_result.stdout:
-            os.environ["NORDVPN_TYPE"] = "deb"
+            os.environ["NORDVPN_TYPE"] = DEB
     except FileNotFoundError:
         # dpkg command not found - might not be a Debian-based system
         pass
@@ -434,7 +450,7 @@ def get_package_system():
     try:
         snap_result = subprocess.run(["snap", "list", "nordvpn"], capture_output=True, text=True)
         if snap_result.returncode == 0 and "nordvpn" in snap_result.stdout:
-            os.environ["NORDVPN_TYPE"] = "snap"
+            os.environ["NORDVPN_TYPE"] = SNAP
     except FileNotFoundError:
         # snap command not found
         pass

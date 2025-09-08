@@ -1,2 +1,4 @@
-NORDVPND = {"deb": "nordvpnd.service", "snap": "snap.nordvpn.nordvpnd.service"}
-NORDVPND_FILE = {"deb": "/etc/init.d/nordvpn", "snap": "/usr/lib/systemd/system/nordvpnd.service"}
+DEB = "deb"
+SNAP = "snap"
+NORDVPND = {DEB: "nordvpnd.service", SNAP: "snap.nordvpn.nordvpnd.service"}
+NORDVPND_FILE = {DEB: "/etc/init.d/nordvpn", SNAP: "/usr/lib/systemd/system/nordvpnd.service"}
