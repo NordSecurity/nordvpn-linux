@@ -13,5 +13,5 @@ type Model struct {
 	SpecificServerName string                     `json:"specific-server-name"`
 	SpecificServer     string                     `json:"specific-server"`
 	ConnectionType     config.ServerSelectionRule `json:"connection-type"`
-	ServerTechnologies []core.ServerTechnology    `json:"server-technology"`
+	ServerTechnologies []core.ServerTechnology    `json:"server-technologies"`
 }

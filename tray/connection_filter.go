@@ -35,23 +35,15 @@ func (s *connectionSettingsChangeSensor) Set(settings connectionSettings) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.settings != settings {
+	s.changed = s.settings != settings
+	if s.changed {
 		s.settings = settings
-		s.changed = true
 	}
 }
 
 // Detected returns whether settings have changed since the last check
-func (s *connectionSettingsChangeSensor) Detected() bool {
+func (s *connectionSettingsChangeSensor) ChangeDetected() bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.changed
-}
-
-// Reset resets the sensor to its initial state
-func (s *connectionSettingsChangeSensor) Reset() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.settings = connectionSettings{}
-	s.changed = false
 }

@@ -21,9 +21,7 @@ func (r *RPC) GetRecentConnections(
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		return &pb.RecentConnectionsResponse{
-			Connections: nil,
-		}, fmt.Errorf("reading config for recent connections: %w\n", err)
+		return nil, fmt.Errorf("reading config for recent vpn connections: %w", err)
 	}
 
 	serverTech := techToServerTech(
@@ -50,11 +48,9 @@ func (r *RPC) GetRecentConnections(
 	}
 
 	// limit results if value is specified
-	if in.Limit != nil {
-		limit := int(*in.Limit)
-		if limit > 0 && limit < len(rcValues) {
-			rcValues = rcValues[:limit]
-		}
+	limit := int(in.GetLimit())
+	if limit > 0 && limit < len(rcValues) {
+		rcValues = rcValues[:limit]
 	}
 
 	return &pb.RecentConnectionsResponse{Connections: rcValues}, nil

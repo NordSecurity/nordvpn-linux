@@ -28,11 +28,11 @@ func newStateListener(client pb.DaemonClient, onDataFunc func(item *pb.AppState)
 
 func (l *stateListener) Start() {
 	if l.cancelFunc != nil {
-		log.Printf("%s %s Already listening to daemon events", logTag, internal.WarningPrefix)
+		log.Printf("%s %s Already listening to daemon events\n", logTag, internal.WarningPrefix)
 		return
 	}
 
-	log.Printf("%s %s Starting to listen to daemon events", logTag, internal.InfoPrefix)
+	log.Printf("%s %s Starting to listen to daemon events\n", logTag, internal.InfoPrefix)
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	l.cancelFunc = cancelFunc
 
@@ -41,7 +41,7 @@ func (l *stateListener) Start() {
 
 func (l *stateListener) Stop() {
 	if l.cancelFunc != nil {
-		log.Printf("%s %s Stopping from listening to daemon events", logTag, internal.InfoPrefix)
+		log.Printf("%s %s Stopping from listening to daemon events\n", logTag, internal.InfoPrefix)
 		l.cancelFunc()
 		l.cancelFunc = nil
 	}
@@ -61,7 +61,7 @@ func (l *stateListener) consumeStream(server grpc.ServerStreamingClient[pb.AppSt
 		select {
 		case l.queue <- state:
 		case <-time.After(time.Second):
-			log.Printf("%s %s App state consumer's queue is full, dropping", logTag, internal.WarningPrefix)
+			log.Printf("%s %s App state consumer's queue is full, dropping\n", logTag, internal.WarningPrefix)
 		}
 	}
 }
