@@ -23,7 +23,7 @@ const (
 )
 
 type StaticConfig struct {
-	RolloutGroup int `json:"rollout_group,omitempty"`
+	RolloutGroup int `json:"rollout_group"`
 }
 
 // StaticConfigManager stores values which remain constant throughout app's lifetime
@@ -45,19 +45,29 @@ func NewFilesystemStaticConfigManager() *FilesystemStaticConfigManager {
 }
 
 // loadConfig reads the config from disk
-func (s *FilesystemStaticConfigManager) loadConfig() (StaticConfig, error) {
-	data, err := s.fs.ReadFile(internal.StaticConfigFilename)
+func (s *FilesystemStaticConfigManager) loadConfig() (sc StaticConfig, err error) {
+	defer func() {
+		if err != nil {
+			// in case read/load fails, try to write default/empty values
+			if data, err := json.Marshal(StaticConfig{}); err == nil {
+				s.fs.WriteFile(internal.StaticConfigFilename, data, internal.PermUserRW)
+			}
+		}
+	}()
+
+	var data []byte
+	data, err = s.fs.ReadFile(internal.StaticConfigFilename)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			// file doesn't exist yet, return empty config
 			return StaticConfig{}, nil
 		}
-		return StaticConfig{}, fmt.Errorf("reading config file: %w", err)
+		return StaticConfig{}, fmt.Errorf("reading static config file: %w", err)
 	}
 
 	var cfg StaticConfig
-	if err := json.Unmarshal(data, &cfg); err != nil {
-		return StaticConfig{}, fmt.Errorf("unmarshaling config: %w", err)
+	if err = json.Unmarshal(data, &cfg); err != nil {
+		return StaticConfig{}, fmt.Errorf("unmarshaling static config: %w", err)
 	}
 
 	return cfg, nil
@@ -67,11 +77,11 @@ func (s *FilesystemStaticConfigManager) loadConfig() (StaticConfig, error) {
 func (s *FilesystemStaticConfigManager) saveConfig(cfg StaticConfig) error {
 	data, err := json.Marshal(cfg)
 	if err != nil {
-		return fmt.Errorf("marshaling config: %w", err)
+		return fmt.Errorf("marshaling static config: %w", err)
 	}
 
 	if err := s.fs.WriteFile(internal.StaticConfigFilename, data, internal.PermUserRW); err != nil {
-		return fmt.Errorf("writing config file: %w", err)
+		return fmt.Errorf("writing static config file: %w", err)
 	}
 
 	return nil
@@ -83,7 +93,7 @@ func (s *FilesystemStaticConfigManager) GetRolloutGroup() (int, error) {
 
 	cfg, err := s.loadConfig()
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("getting rollout group: %w", err)
 	}
 
 	if cfg.RolloutGroup == rolloutGroupUnsetValue {
@@ -103,7 +113,7 @@ func (s *FilesystemStaticConfigManager) SetRolloutGroup(rolloutGroup int) error 
 
 	cfg, err := s.loadConfig()
 	if err != nil {
-		return err
+		return fmt.Errorf("setting rollout group: %w", err)
 	}
 
 	if cfg.RolloutGroup != rolloutGroupUnsetValue {
@@ -111,5 +121,9 @@ func (s *FilesystemStaticConfigManager) SetRolloutGroup(rolloutGroup int) error 
 	}
 
 	cfg.RolloutGroup = rolloutGroup
-	return s.saveConfig(cfg)
+	if err = s.saveConfig(cfg); err != nil {
+		return fmt.Errorf("saving rollout group: %w", err)
+	}
+
+	return nil
 }

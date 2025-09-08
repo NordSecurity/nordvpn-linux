@@ -56,7 +56,7 @@ func TestGetRolloutGroup(t *testing.T) {
 			name:                 "invalid json",
 			fileContents:         []byte(`{invalid json`),
 			expectedRolloutGroup: 0,
-			expectedErr:          errors.New("unmarshaling config"),
+			expectedErr:          errors.New("unmarshaling static config"),
 		},
 	}
 
@@ -240,12 +240,12 @@ func TestLoadConfigErrorHandling(t *testing.T) {
 		{
 			name:         "malformed json",
 			fileContents: []byte(`{"rollout_group": "not a number"}`),
-			expectedErr:  "unmarshaling config",
+			expectedErr:  "unmarshaling static config",
 		},
 		{
 			name:        "permission denied",
 			readErr:     os.ErrPermission,
-			expectedErr: "reading config file",
+			expectedErr: "reading static config file",
 		},
 		{
 			name:        "file not found returns empty config",
@@ -289,5 +289,74 @@ func TestSaveConfigErrorHandling(t *testing.T) {
 	}
 
 	err := manager.saveConfig(StaticConfig{RolloutGroup: 42})
-	assert.ErrorContains(t, err, "writing config file")
+	assert.ErrorContains(t, err, "writing static config file")
+}
+
+func TestLoadConfigWritesDefaultOnError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                   string
+		fileContents           []byte
+		readErr                error
+		expectDefaultFileWrite bool
+	}{
+		{
+			name:                   "writes default config when unmarshaling fails",
+			fileContents:           []byte(`{invalid json`),
+			expectDefaultFileWrite: true,
+		},
+		{
+			name:                   "writes default config when read permission denied",
+			readErr:                os.ErrPermission,
+			expectDefaultFileWrite: true,
+		},
+		{
+			name:                   "does not write default config when file not found",
+			readErr:                os.ErrNotExist,
+			expectDefaultFileWrite: false,
+		},
+		{
+			name:                   "does not write default config when load succeeds",
+			fileContents:           []byte(`{"rollout_group": 42}`),
+			expectDefaultFileWrite: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			fsMock := config.NewFilesystemMock(t)
+			fsMock.ReadErr = test.readErr
+			if test.fileContents != nil {
+				fsMock.AddFile(internal.StaticConfigFilename, test.fileContents)
+			}
+
+			manager := FilesystemStaticConfigManager{
+				fs: &fsMock,
+			}
+
+			_, err := manager.loadConfig()
+
+			// check if default config was written
+			if test.expectDefaultFileWrite {
+				// after an error, the defer should have written an empty config
+				// clear the read error to check what was written
+				fsMock.ReadErr = nil
+				writtenData, readErr := fsMock.ReadFile(internal.StaticConfigFilename)
+
+				if readErr == nil && len(writtenData) > 0 {
+					var writtenConfig StaticConfig
+					json.Unmarshal(writtenData, &writtenConfig)
+					assert.Equal(t, 0, writtenConfig.RolloutGroup, "Expected empty config to be written")
+				}
+			}
+
+			// verify error is returned for failure cases
+			if test.readErr != nil && !errors.Is(test.readErr, os.ErrNotExist) {
+				assert.Assert(t, err != nil, "Expected error when read fails")
+			} else if test.fileContents != nil && string(test.fileContents) == "{invalid json" {
+				assert.Assert(t, err != nil, "Expected error when unmarshal fails")
+			}
+		})
+	}
 }
