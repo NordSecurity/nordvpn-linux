@@ -2,103 +2,61 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/config"
 	"gotest.tools/v3/assert"
 )
-
-func TestTryInitConfigState(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	tests := []struct {
-		name          string
-		expectedState configState
-		filename      string
-		fileContents  []byte
-		readErr       error
-	}{
-		{
-			name:          "init success",
-			expectedState: staticConfigState_initialized,
-			filename:      staticConfigFilename,
-			fileContents:  []byte("{}"),
-		},
-		{
-			name:          "no file",
-			expectedState: staticConfigState_noFile,
-			readErr:       os.ErrNotExist,
-		},
-		{
-			name:          "invalid json",
-			expectedState: staticConfigState_failedToInitialize,
-			filename:      staticConfigFilename,
-			fileContents:  []byte("{"),
-		},
-		{
-			name:          "failed to read file",
-			expectedState: staticConfigState_failedToInitialize,
-			readErr:       os.ErrPermission,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			fsMock := config.NewFilesystemMock(t)
-			fsMock.ReadErr = test.readErr
-			fsMock.AddFile(test.filename, test.fileContents)
-			_, state := tryInitStaticConfig(&fsMock)
-			assert.Equal(t, test.expectedState, state, "Unexpected state returned after config initialization")
-		})
-	}
-}
 
 func TestGetRolloutGroup(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
 		name                 string
-		currentConfigState   configState
-		currentConfig        StaticConfig
+		fileContents         []byte
 		readErr              error
 		expectedRolloutGroup int
 		expectedErr          error
 	}{
 		{
-			name:               "config initialized, rollout group is configured",
-			currentConfigState: staticConfigState_initialized,
-			currentConfig: StaticConfig{
-				RolloutGroup: 1,
-			},
-			expectedRolloutGroup: 1,
+			name:                 "rollout group is configured",
+			fileContents:         []byte(`{"rollout_group": 42}`),
+			expectedRolloutGroup: 42,
 			expectedErr:          nil,
 		},
 		{
-			name:               "config initialized, rollout group is not configured",
-			currentConfigState: staticConfigState_initialized,
-			currentConfig: StaticConfig{
-				RolloutGroup: 0,
-			},
+			name:                 "rollout group is not configured (zero value)",
+			fileContents:         []byte(`{"rollout_group": 0}`),
 			expectedRolloutGroup: 0,
 			expectedErr:          ErrStaticValueNotConfigured,
 		},
 		{
-			name:                 "config not initialized",
-			currentConfigState:   staticConfigState_noFile,
-			currentConfig:        StaticConfig{},
+			name:                 "empty config file",
+			fileContents:         []byte(`{}`),
+			expectedRolloutGroup: 0,
+			expectedErr:          ErrStaticValueNotConfigured,
+		},
+		{
+			name:                 "file does not exist",
 			readErr:              os.ErrNotExist,
 			expectedRolloutGroup: 0,
 			expectedErr:          ErrStaticValueNotConfigured,
 		},
 		{
 			name:                 "failed to read config file",
-			currentConfigState:   staticConfigState_noFile,
-			currentConfig:        StaticConfig{},
 			readErr:              os.ErrPermission,
 			expectedRolloutGroup: 0,
-			expectedErr:          ErrFailedToReadConfigFile,
+			expectedErr:          os.ErrPermission,
+		},
+		{
+			name:                 "invalid json",
+			fileContents:         []byte(`{invalid json`),
+			expectedRolloutGroup: 0,
+			expectedErr:          errors.New("unmarshaling config"),
 		},
 	}
 
@@ -106,16 +64,21 @@ func TestGetRolloutGroup(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			fsMock := config.NewFilesystemMock(t)
 			fsMock.ReadErr = test.readErr
+			if test.fileContents != nil {
+				fsMock.AddFile(internal.StaticConfigFilename, test.fileContents)
+			}
+
 			manager := FilesystemStaticConfigManager{
-				fs:    &fsMock,
-				state: test.currentConfigState,
-				cfg:   test.currentConfig,
+				fs: &fsMock,
 			}
 
 			rolloutGroup, err := manager.GetRolloutGroup()
 			assert.Equal(t, test.expectedRolloutGroup, rolloutGroup, "Unexpected rollout group value.")
+
 			if test.expectedErr != nil {
 				assert.ErrorContains(t, err, test.expectedErr.Error())
+			} else {
+				assert.NilError(t, err)
 			}
 		})
 	}
@@ -126,152 +89,168 @@ func TestSetRolloutGroup(t *testing.T) {
 
 	tests := []struct {
 		name                 string
-		currentConfig        StaticConfig
-		currentConfigState   configState
+		initialFileContents  []byte
 		targetRolloutGroup   int
 		readErr              error
 		writeErr             error
 		expectedErr          error
-		expectedRolloutGroup int
+		expectedFileContents string
 	}{
 		{
-			name: "config initialized, rollout group not initialized",
-			currentConfig: StaticConfig{
-				RolloutGroup: 0,
-			},
-			currentConfigState:   staticConfigState_initialized,
-			targetRolloutGroup:   1,
+			name:                 "set rollout group when not configured",
+			initialFileContents:  []byte(`{}`),
+			targetRolloutGroup:   42,
 			expectedErr:          nil,
-			expectedRolloutGroup: 1,
+			expectedFileContents: `{"rollout_group":42}`,
 		},
 		{
-			name: "config initialized, rollout group is initialized",
-			currentConfig: StaticConfig{
-				RolloutGroup: 20,
-			},
-			currentConfigState:   staticConfigState_initialized,
-			targetRolloutGroup:   1,
+			name:                 "set rollout group when file doesn't exist",
+			initialFileContents:  []byte(`{}`), // empty JSON instead of no file
+			targetRolloutGroup:   42,
+			expectedErr:          nil,
+			expectedFileContents: `{"rollout_group":42}`,
+		},
+		{
+			name:                 "rollout group already set",
+			initialFileContents:  []byte(`{"rollout_group": 20}`),
+			targetRolloutGroup:   42,
 			expectedErr:          ErrStaticValueAlreadySet,
-			expectedRolloutGroup: 20,
+			expectedFileContents: `{"rollout_group": 20}`, // unchanged
 		},
 		{
-			name:                 "config not initialized",
-			currentConfig:        StaticConfig{},
-			currentConfigState:   staticConfigState_noFile,
-			targetRolloutGroup:   20,
-			expectedErr:          nil,
-			expectedRolloutGroup: 20,
-		},
-		{
-			name:                 "config not initialized",
-			currentConfig:        StaticConfig{},
-			currentConfigState:   staticConfigState_noFile,
-			targetRolloutGroup:   20,
-			expectedErr:          nil,
-			expectedRolloutGroup: 20,
-		},
-		{
-			name: "rollout group is out of bounds upper",
-			currentConfig: StaticConfig{
-				RolloutGroup: 0,
-			},
-			currentConfigState:   staticConfigState_initialized,
+			name:                 "rollout group out of bounds (too high)",
+			initialFileContents:  []byte(`{}`),
 			targetRolloutGroup:   101,
 			expectedErr:          ErrRolloutGroupOutOfBounds,
-			expectedRolloutGroup: 0,
+			expectedFileContents: `{}`, // unchanged
 		},
 		{
-			name: "rollout group is out of bounds lower",
-			currentConfig: StaticConfig{
-				RolloutGroup: 0,
-			},
-			currentConfigState:   staticConfigState_initialized,
+			name:                 "rollout group out of bounds (too low)",
+			initialFileContents:  []byte(`{}`),
 			targetRolloutGroup:   0,
 			expectedErr:          ErrRolloutGroupOutOfBounds,
-			expectedRolloutGroup: 0,
+			expectedFileContents: `{}`, // unchanged
+		},
+		{
+			name:                 "rollout group at lower bound",
+			initialFileContents:  []byte(`{}`),
+			targetRolloutGroup:   1,
+			expectedErr:          nil,
+			expectedFileContents: `{"rollout_group":1}`,
+		},
+		{
+			name:                 "rollout group at upper bound",
+			initialFileContents:  []byte(`{}`),
+			targetRolloutGroup:   100,
+			expectedErr:          nil,
+			expectedFileContents: `{"rollout_group":100}`,
+		},
+		{
+			name:                 "failed to read config file",
+			readErr:              os.ErrPermission,
+			targetRolloutGroup:   42,
+			expectedErr:          os.ErrPermission,
+			expectedFileContents: ``, // no file written
+		},
+		{
+			name:                 "failed to write config file",
+			initialFileContents:  []byte(`{}`),
+			targetRolloutGroup:   42,
+			writeErr:             os.ErrPermission,
+			expectedErr:          os.ErrPermission,
+			expectedFileContents: `{}`, // unchanged
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cfgJson, _ := json.Marshal(test.currentConfig)
-
 			fsMock := config.NewFilesystemMock(t)
-			fsMock.AddFile(staticConfigFilename, cfgJson)
 			fsMock.ReadErr = test.readErr
 			fsMock.WriteErr = test.writeErr
+			if test.initialFileContents != nil {
+				fsMock.AddFile(internal.StaticConfigFilename, test.initialFileContents)
+			}
 
 			manager := FilesystemStaticConfigManager{
-				fs:    &fsMock,
-				state: test.currentConfigState,
-				cfg:   test.currentConfig,
+				fs: &fsMock,
 			}
 
 			err := manager.SetRolloutGroup(test.targetRolloutGroup)
-			assert.ErrorIs(t, err, test.expectedErr, "Unexpected error returned after setting the rollout group.")
-			assert.Equal(t, test.expectedRolloutGroup, manager.cfg.RolloutGroup,
-				"Invalid rollout group saved in config.")
 
-			cfgJson, _ = fsMock.ReadFile(staticConfigFilename)
-			var cfg StaticConfig
-			json.Unmarshal(cfgJson, &cfg)
+			if test.expectedErr != nil {
+				assert.ErrorContains(t, err, test.expectedErr.Error())
+			} else {
+				assert.NilError(t, err)
+			}
 
-			assert.Equal(t, test.expectedRolloutGroup, cfg.RolloutGroup,
-				"Rollout group was not saved in the config file.")
+			// Verify file contents if we expect a write
+			if test.expectedFileContents != "" && test.writeErr == nil && test.readErr != os.ErrPermission && err == nil {
+				fileContents, _ := fsMock.ReadFile(internal.StaticConfigFilename)
+				if len(fileContents) > 0 {
+					var actualConfig StaticConfig
+					json.Unmarshal(fileContents, &actualConfig)
+
+					var expectedConfig StaticConfig
+					json.Unmarshal([]byte(test.expectedFileContents), &expectedConfig)
+
+					assert.Equal(t, expectedConfig.RolloutGroup, actualConfig.RolloutGroup,
+						"Rollout group was not saved correctly in the config file.")
+				}
+			}
 		})
 	}
 }
 
-// countingFilesystem wraps a FilesystemHandle to count method calls
-type countingFilesystem struct {
-	FilesystemHandle
-	readCallCount int
+func TestConcurrentAccess(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fsMock := config.NewFilesystemMock(t)
+	fsMock.AddFile(internal.StaticConfigFilename, []byte(`{"rollout_group": 50}`))
+
+	manager := FilesystemStaticConfigManager{
+		fs: &fsMock,
+	}
+
+	// Test concurrent reads
+	done := make(chan bool, 10)
+	for i := 0; i < 10; i++ {
+		go func() {
+			rolloutGroup, err := manager.GetRolloutGroup()
+			assert.NilError(t, err)
+			assert.Equal(t, 50, rolloutGroup)
+			done <- true
+		}()
+	}
+
+	// Wait for all goroutines to complete
+	for i := 0; i < 10; i++ {
+		<-done
+	}
 }
 
-func (c *countingFilesystem) ReadFile(location string) ([]byte, error) {
-	c.readCallCount++
-	return c.FilesystemHandle.ReadFile(location)
-}
-
-func TestGetConfigInitializesOnlyOnce(t *testing.T) {
+func TestLoadConfigErrorHandling(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name               string
-		initialState       configState
-		initialConfig      StaticConfig
-		readCallsExpected  int
-		expectedFinalState configState
-		readErr            error
+		name         string
+		fileContents []byte
+		readErr      error
+		expectedErr  string
 	}{
 		{
-			name:               "already initialized - should not read file",
-			initialState:       staticConfigState_initialized,
-			initialConfig:      StaticConfig{RolloutGroup: 42},
-			readCallsExpected:  0,
-			expectedFinalState: staticConfigState_initialized,
+			name:         "malformed json",
+			fileContents: []byte(`{"rollout_group": "not a number"}`),
+			expectedErr:  "unmarshaling config",
 		},
 		{
-			name:               "failed state - should not retry",
-			initialState:       staticConfigState_failedToInitialize,
-			initialConfig:      StaticConfig{},
-			readCallsExpected:  0,
-			expectedFinalState: staticConfigState_failedToInitialize,
+			name:        "permission denied",
+			readErr:     os.ErrPermission,
+			expectedErr: "reading config file",
 		},
 		{
-			name:               "no file state - should try once and succeed",
-			initialState:       staticConfigState_noFile,
-			initialConfig:      StaticConfig{},
-			readCallsExpected:  1,
-			expectedFinalState: staticConfigState_initialized,
-		},
-		{
-			name:               "no file state - should try once and fail",
-			initialState:       staticConfigState_noFile,
-			initialConfig:      StaticConfig{},
-			readCallsExpected:  1,
-			expectedFinalState: staticConfigState_failedToInitialize,
-			readErr:            os.ErrPermission,
+			name:        "file not found returns empty config",
+			readErr:     os.ErrNotExist,
+			expectedErr: "", // No error, returns empty config
 		},
 	}
 
@@ -279,47 +258,36 @@ func TestGetConfigInitializesOnlyOnce(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			fsMock := config.NewFilesystemMock(t)
 			fsMock.ReadErr = test.readErr
-			if test.readErr == nil {
-				fsMock.AddFile(staticConfigFilename, []byte(`{"rollout_group": 99}`))
+			if test.fileContents != nil {
+				fsMock.AddFile(internal.StaticConfigFilename, test.fileContents)
 			}
 
-			countingFS := &countingFilesystem{
-				FilesystemHandle: &fsMock,
+			manager := FilesystemStaticConfigManager{
+				fs: &fsMock,
 			}
 
-			manager := &FilesystemStaticConfigManager{
-				fs:    countingFS,
-				state: test.initialState,
-				cfg:   test.initialConfig,
+			cfg, err := manager.loadConfig()
+
+			if test.expectedErr != "" {
+				assert.ErrorContains(t, err, test.expectedErr)
+			} else {
+				assert.NilError(t, err)
+				assert.Equal(t, 0, cfg.RolloutGroup)
 			}
-
-			// Call getConfig multiple times
-			for i := 0; i < 3; i++ {
-				cfg, err := manager.getConfig()
-
-				if test.readErr != nil && test.initialState == staticConfigState_noFile {
-					assert.ErrorIs(t, err, ErrFailedToReadConfigFile)
-				} else if test.initialState == staticConfigState_failedToInitialize {
-					assert.ErrorIs(t, err, ErrFailedToReadConfigFile)
-				} else {
-					assert.NilError(t, err)
-				}
-
-				// Verify config is returned correctly
-				if test.initialState == staticConfigState_initialized {
-					assert.Equal(t, test.initialConfig.RolloutGroup, cfg.RolloutGroup)
-				} else if test.readErr == nil && test.initialState == staticConfigState_noFile {
-					assert.Equal(t, 99, cfg.RolloutGroup)
-				}
-			}
-
-			// Verify read was called expected number of times
-			assert.Equal(t, test.readCallsExpected, countingFS.readCallCount,
-				"Expected %d read calls but got %d", test.readCallsExpected, countingFS.readCallCount)
-
-			// Verify final state
-			assert.Equal(t, test.expectedFinalState, manager.state,
-				"Expected final state %v but got %v", test.expectedFinalState, manager.state)
 		})
 	}
+}
+
+func TestSaveConfigErrorHandling(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fsMock := config.NewFilesystemMock(t)
+	fsMock.WriteErr = os.ErrPermission
+
+	manager := FilesystemStaticConfigManager{
+		fs: &fsMock,
+	}
+
+	err := manager.saveConfig(StaticConfig{RolloutGroup: 42})
+	assert.ErrorContains(t, err, "writing config file")
 }
