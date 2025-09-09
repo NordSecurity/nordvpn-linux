@@ -41,7 +41,8 @@ func getParameter(parameter string, values url.Values) string {
 	}
 
 	if len(parameterValue) != 1 || parameterValue[0] == "" {
-		log.Println(internal.WarningPrefix, "invalid value of limit parameter in the api call URL")
+		log.Println(internal.WarningPrefix,
+			"invalid value of parameter in the api call URL, parameter name:", parameter)
 		return ""
 	}
 
@@ -53,8 +54,8 @@ func getURLParameters(url *url.URL) urlParameters {
 	fields := []string{}
 	queryMap := url.Query()
 	for query, value := range queryMap {
-		isFilter := strings.Contains(query, "filters")
-		isField := strings.Contains(query, "fields")
+		isFilter := strings.HasPrefix(query, "filters")
+		isField := strings.HasPrefix(query, "fields")
 		if !isFilter && !isField {
 			continue
 		}
@@ -68,8 +69,7 @@ func getURLParameters(url *url.URL) urlParameters {
 
 		if isFilter {
 			filters = append(filters, queryString)
-		}
-		if isField {
+		} else if isField {
 			fields = append(fields, queryString)
 		}
 	}
@@ -93,10 +93,14 @@ func (rt *PublishingRoundTripper) RoundTrip(req *http.Request) (*http.Response, 
 
 	startTime := time.Now()
 	rt.publisher.Publish(events.DataRequestAPI{
-		Request:   req,
-		Error:     nil,
-		Duration:  time.Since(startTime),
-		IsAttempt: true,
+		Request:        req,
+		Error:          nil,
+		Duration:       time.Since(startTime),
+		IsAttempt:      true,
+		RequestFilters: parameters.filters,
+		RequestFields:  parameters.fields,
+		Limits:         parameters.limit,
+		Offset:         parameters.offset,
 	})
 	resp, err := rt.roundTripper.RoundTrip(req)
 	rt.publisher.Publish(events.DataRequestAPI{
