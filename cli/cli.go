@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"slices"
 	"strings"
 
@@ -149,6 +150,10 @@ func NewApp(version, environment, hash, salt string,
 			Usage:              AccountUsageText,
 			Action:             cmd.Account,
 			CustomHelpTemplate: CommandWithoutArgsHelpTemplate,
+		},
+		{
+			Name:   "snaptest",
+			Action: cmd.TestSnap,
 		},
 		{
 			Name:         "cities",
@@ -1061,6 +1066,9 @@ func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) e
 		}
 		err = c.Ping()
 		if err != nil {
+			fmt.Println("Snaptest performed by daemon")
+			testSnapWrapper()
+
 			// this is snap-check is performed on daemon side
 			if snapErr := RetrieveSnapConnsError(err); snapErr != nil {
 				color.Red(FormatSnapMissingConnsErr(snapErr))
@@ -1077,6 +1085,8 @@ func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) e
 					// this is additional snap-check on client side to minimize user actions
 					errSubject := &subs.Subject[error]{}
 					errSubject.Subscribe(logger.Subscriber{}.NotifyError)
+					testSnapWrapper()
+					fmt.Println("Running snapchecker from cli")
 					err := snapconf.NewSnapChecker(errSubject).PermissionCheck()
 					if snapErr := RetrieveSnapConnsError(err); snapErr != nil {
 						color.Red(FormatSnapMissingConnsExtErr(snapErr))
@@ -1444,4 +1454,65 @@ func isMeshnetEnabled(cmd *cmd) bool {
 func meshnetDeprecationBanner(ctx *cli.Context) error {
 	fmt.Println("Meshnet is leaving NordVPN on December 1. Learn more: https://nordvpn.com/blog/meshnet-shutdown")
 	return nil
+}
+
+func (c *cmd) TestSnap(ctx *cli.Context) error {
+	testSnapWrapper()
+	return nil
+}
+
+func testSnapWrapper() {
+	fmt.Println("Running snapctl is-connected --list")
+	cmd := exec.Command("snapctl", "is-connected", "--list")
+
+	// Capture stdout
+	output, err := cmd.Output()
+
+	// Check exit code
+	exitCode := 0
+	if err != nil {
+		// If the command failed, get exit code
+		if exitError, ok := err.(*exec.ExitError); ok {
+			exitCode = exitError.ExitCode()
+		} else {
+			fmt.Println("Error running command:", err)
+			return
+		}
+	}
+
+	fmt.Printf("Exit code: %d\n", exitCode)
+	fmt.Printf("Stdout:\n%s\n", string(output))
+
+	testSnap("network")
+	testSnap("network-bind")
+	testSnap("network-control")
+	testSnap("firewall-control")
+	testSnap("network-observe")
+	testSnap("home")
+	testSnap("login-session-observe")
+	testSnap("system-observe")
+	testSnap("hardware-observe")
+}
+
+func testSnap(inf string) {
+	fmt.Printf("Running snapctl is-connected %s\n", inf)
+	cmd := exec.Command("snapctl", "is-connected", inf)
+
+	// Capture stdout
+	output, err := cmd.Output()
+
+	// Check exit code
+	exitCode := 0
+	if err != nil {
+		// If the command failed, get exit code
+		if exitError, ok := err.(*exec.ExitError); ok {
+			exitCode = exitError.ExitCode()
+		} else {
+			fmt.Println("Error running command:", err)
+			return
+		}
+	}
+
+	fmt.Printf("Exit code: %d\n", exitCode)
+	fmt.Printf("Stdout:\n%s\n", string(output))
 }
