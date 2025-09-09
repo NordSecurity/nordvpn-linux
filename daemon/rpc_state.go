@@ -150,6 +150,11 @@ func statusStream(stateChan <-chan any,
 					&pb.AppState{State: &pb.AppState_AccountModification{AccountModification: e}}); err != nil {
 					log.Println(internal.ErrorPrefix, "account updated failed to send state update:", err)
 				}
+			case *pb.VersionHealthStatus:
+				if err := srv.Send(
+					&pb.AppState{State: &pb.AppState_VersionHealth{VersionHealth: e}}); err != nil {
+					log.Println(internal.ErrorPrefix, "version health failed to send state update:", err)
+				}
 			default:
 			}
 		}

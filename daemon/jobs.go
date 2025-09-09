@@ -60,7 +60,7 @@ func (r *RPC) StartJobs(
 		log.Println(internal.WarningPrefix, "job templates schedule error:", err)
 	}
 
-	if _, err := r.scheduler.NewJob(gocron.DurationJob(3*time.Hour), gocron.NewTask(JobVersionCheck(r.dm, r.repo)), gocron.WithName("job version")); err != nil {
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(3*time.Hour), gocron.NewTask(JobVersionCheck(r.dm, r.repo, r.statePublisher)), gocron.WithName("job version")); err != nil {
 		log.Println(internal.WarningPrefix, "job version schedule error:", err)
 	}
 

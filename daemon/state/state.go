@@ -125,6 +125,16 @@ func (s *StatePublisher) NotifySubscriptionChanged(e *pb.AccountModification) er
 	return nil
 }
 
+func (s *StatePublisher) NotifyVersionHealth(healthStatus *pb.VersionHealthStatus) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	log.Printf(internal.DebugPrefix+" notifying about version health change: status_code=%d", healthStatus.StatusCode)
+	s.notify(healthStatus)
+
+	return nil
+}
+
 func (s *StatePublisher) AddSubscriber() (<-chan any, chan<- struct{}) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

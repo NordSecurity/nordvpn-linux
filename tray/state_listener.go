@@ -3,7 +3,6 @@ package tray
 import (
 	"context"
 	"log"
-	"strings"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -52,9 +51,6 @@ func (l *stateListener) consumeStream(server grpc.ServerStreamingClient[pb.AppSt
 		state, err := server.Recv()
 		if err != nil {
 			log.Printf("%s %s Stream receive error: %v\n", logTag, internal.ErrorPrefix, err)
-			if strings.Contains(err.Error(), "EOF") {
-				l.cancelFunc()
-			}
 			return
 		}
 
@@ -73,7 +69,6 @@ func (c *stateListener) handleAppState(ctx context.Context) {
 			c.onDataFunc(item)
 
 		case <-ctx.Done():
-			log.Printf("%s %s exiting systray\n", logTag, internal.InfoPrefix)
 			defer close(c.queue)
 			return
 		}
@@ -94,12 +89,15 @@ func (l *stateListener) listen(ctx context.Context) {
 		}
 		return err
 	}
-	if err := RetryWithBackoff(ctx, backoffConfig, op); err != nil {
-		log.Printf("%s %s listen to daemon's state stream: %s\n", logTag, internal.ErrorPrefix, err)
-		return
-	}
 
 	go l.handleAppState(ctx)
 
-	l.consumeStream(server)
+	for {
+		if err := RetryWithBackoff(ctx, backoffConfig, op); err != nil {
+			log.Printf("%s %s listen to daemon's state stream: %s\n", logTag, internal.InfoPrefix, err)
+			return
+		}
+
+		l.consumeStream(server)
+	}
 }
