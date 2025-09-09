@@ -25,6 +25,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
+	"github.com/NordSecurity/nordvpn-linux/kernel"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	mapset "github.com/deckarep/golang-set/v2"
 	"golang.org/x/exp/slices"
@@ -64,6 +65,8 @@ const (
 	blockLanRule               = "-block-lan-rule-"
 	meshnetFirewallRuleComment = "nordvpn-meshnet"
 	denyPrivateDNSRule         = "deny-private-dns"
+
+	ArpIgnoreParamName = "net.ipv4.conf.all.arp_ignore"
 )
 
 // Networker configures networking for connections.
@@ -99,6 +102,7 @@ type Networker interface {
 	SetLanDiscovery(bool)
 	UnsetFirewall() error
 	GetConnectionParameters() (vpn.ServerData, bool)
+	SetARPIgnore(bool) error
 }
 
 // Combined configures networking for VPN connections.
@@ -146,6 +150,8 @@ type Combined struct {
 	isFilesharePermitted bool
 	dnsDenied            bool
 	ipv6Blocker          ipv6.Blocker
+	ignoreARP            bool
+	arpIgnoreSetter      kernel.SysctlSetter
 }
 
 // NewCombined returns a ready made version of
@@ -168,6 +174,8 @@ func NewCombined(
 	fwmark uint32,
 	lanDiscovery bool,
 	ipv6Blocker ipv6.Blocker,
+	ignoreARP bool,
+	arpIgnoreSetter kernel.SysctlSetter,
 ) *Combined {
 	return &Combined{
 		vpnet:              vpnet,
@@ -190,6 +198,8 @@ func NewCombined(
 		enableLocalTraffic: true,
 		interfaces:         mapset.NewSet[string](),
 		ipv6Blocker:        ipv6Blocker,
+		ignoreARP:          ignoreARP,
+		arpIgnoreSetter:    arpIgnoreSetter,
 	}
 }
 
@@ -235,6 +245,10 @@ func failureRecover(netw *Combined) {
 	}
 
 	netw.unblockIPv6()
+
+	if err := netw.arpIgnoreSetter.Unset(); err != nil {
+		log.Println(internal.DebugPrefix, "unsetting arp ignore when recovering from failure: ", err)
+	}
 
 	netw.isVpnSet = false
 }
@@ -291,6 +305,12 @@ func (netw *Combined) start(
 
 	if err = netw.configureNetwork(allowlist, serverData, nameservers); err != nil {
 		return err
+	}
+
+	if netw.ignoreARP {
+		if err := netw.arpIgnoreSetter.Set(); err != nil {
+			return fmt.Errorf("setting arp ignore:%w", err)
+		}
 	}
 
 	netw.isVpnSet = true
@@ -423,6 +443,12 @@ func (netw *Combined) restart(
 		return err
 	}
 
+	if netw.ignoreARP {
+		if err := netw.arpIgnoreSetter.Set(); err != nil {
+			return fmt.Errorf("setting arp ignore:%w", err)
+		}
+	}
+
 	netw.lastServer = serverData
 	netw.lastCreds = creds
 	return nil
@@ -485,6 +511,10 @@ func (netw *Combined) stop() error {
 		if err = netw.unsetNetwork(); err != nil {
 			return fmt.Errorf("unsetting network: %w", err)
 		}
+	}
+
+	if err := netw.arpIgnoreSetter.Unset(); err != nil {
+		return fmt.Errorf("unsetting arp ignore: %w", err)
 	}
 
 	netw.switchToNextVpn()
@@ -1602,4 +1632,30 @@ func (netw *Combined) GetConnectionParameters() (vpn.ServerData, bool) {
 	defer netw.mu.Unlock()
 
 	return netw.vpnet.GetConnectionParameters()
+}
+
+// SetARPIgnore sets arp ignore to the desired value if VPN connection is active. Networker will set arp ignore
+// ccordingly upon subsequent connections. Setting arp ignore to value previously configured is a noop.
+func (netw *Combined) SetARPIgnore(ignoreARP bool) error {
+	netw.mu.Lock()
+	defer netw.mu.Unlock()
+
+	if !netw.isConnectedToVPN() {
+		netw.ignoreARP = ignoreARP
+		return nil
+	}
+
+	if ignoreARP {
+		if err := netw.arpIgnoreSetter.Set(); err != nil {
+			return fmt.Errorf("setting arp ignore: %w", err)
+		}
+	} else {
+		if err := netw.arpIgnoreSetter.Unset(); err != nil {
+			return fmt.Errorf("unsetting arp ignore: %w", err)
+		}
+	}
+
+	netw.ignoreARP = ignoreARP
+
+	return nil
 }
