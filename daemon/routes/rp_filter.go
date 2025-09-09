@@ -23,7 +23,7 @@ type SysctlRPFilterManager struct {
 
 func NewSysctlRPFilterManager() *SysctlRPFilterManager {
 	return &SysctlRPFilterManager{
-		setter: kernel.NewSysctlSetter("net.ipv4.conf.all.rp_filter", 2, 1),
+		setter: kernel.NewSysctlSetter("net.ipv4.conf.all.rp_filter", 2),
 	}
 }
 
