@@ -929,6 +929,19 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 			),
 			Hidden: cmd.Except(config.Technology_NORDLYNX),
 		},
+		{
+			Name:         "arp-ignore",
+			Usage:        SetARPIgnoreUsageText,
+			Action:       cmd.SetARPIgnore,
+			BashComplete: cmd.SetBoolAutocomplete,
+			ArgsUsage:    MsgSetBoolArgsUsage,
+			Description: fmt.Sprintf(
+				MsgSetBoolDescription,
+				SetARPIgnoreUsageText,
+				"arp-ignore",
+				"arp-ignore",
+			),
+		},
 	}
 
 	setMeshCommand := cli.Command{
