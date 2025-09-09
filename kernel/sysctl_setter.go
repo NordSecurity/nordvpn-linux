@@ -22,13 +22,11 @@ type SysctlSetterImpl struct {
 func NewSysctlSetter(
 	paramName string,
 	desiredValue int,
-	unwantedValue int,
 ) *SysctlSetterImpl {
 	return &SysctlSetterImpl{
-		paramName:     paramName,
-		desiredValue:  desiredValue,
-		unwantedValue: unwantedValue,
-		changed:       false,
+		paramName:    paramName,
+		desiredValue: desiredValue,
+		changed:      false,
 	}
 }
 
@@ -44,6 +42,7 @@ func (s *SysctlSetterImpl) Set() error {
 		}
 
 		if values[s.paramName] != s.desiredValue {
+			s.unwantedValue = values[s.paramName]
 			s.changed = true
 		}
 	}

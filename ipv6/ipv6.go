@@ -24,7 +24,7 @@ const netIPv6KernelParameterName = "net.ipv6.conf.all.disable_ipv6"
 
 func NewIpv6() *Ipv6 {
 	return &Ipv6{
-		sysctlSetter: kernel.NewSysctlSetter(netIPv6KernelParameterName, 1, 0),
+		sysctlSetter: kernel.NewSysctlSetter(netIPv6KernelParameterName, 1),
 	}
 }
 
