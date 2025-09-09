@@ -56,6 +56,7 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 			Tray:   !trayOff,
 		},
 		PostquantumVpn: cfg.AutoConnectData.PostquantumVpn,
+		ArpIgnore:      cfg.ARPIgnore.Get(),
 	}
 
 	return &settings
