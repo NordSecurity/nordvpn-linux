@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
+	"os"
+	"os/exec"
 	"slices"
 	"strings"
 	"time"
@@ -33,42 +36,131 @@ const (
 	labelDisconnectedFormat = "Disconnected from %s"
 )
 
-// The pattern is to return 'true' if something has changed and 'false' when no changes were detected
-func (ti *Instance) ping() error {
+var (
+	daemonServiceNotActive        = errors.New("daemon service not active")
+	daemonConnectivityCheckPeriod = time.Second * 5
+)
+
+func (ti *Instance) handleVersionHealthChange(health *pb.VersionHealthStatus) {
 	daemonError := ""
+	switch int64(health.StatusCode) {
+	case internal.CodeOffline:
+		daemonError = cli.ErrInternetConnection.Error()
+	case internal.CodeOutdated:
+		daemonError = cli.ErrUpdateAvailable.Error()
+	case internal.CodeSuccess:
+		daemonError = ""
+	default:
+		// For unknown status codes, assume success (no error)
+		daemonError = ""
+	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	ti.redraw(ti.updateDaemonConnectionStatus(daemonError))
+}
 
-	resp, err := ti.client.Ping(ctx, &pb.Empty{})
+// checkDaemonConnectivity checks if daemon is running
+func (ti *Instance) checkDaemonConnectivity() error {
+	// Check if the daemon socket exists and is accessible
+	if err := ti.checkDaemonSocket(); err == nil { // exists
+		return nil
+	}
+
+	// If socket check fails, try to check if daemon is running
+	if err := ti.checkDaemonService(); err == nil {
+		return nil
+	}
+
+	return internal.ErrDaemonConnectionRefused
+}
+
+// checkDaemonSocket checks if the daemon socket is accessible
+func (ti *Instance) checkDaemonSocket() error {
+	conn, err := net.DialTimeout(internal.Proto, internal.DaemonSocket, time.Second)
 	if err != nil {
-		daemonError = messageForDaemonError(err)
+		return err
+	}
+	conn.Close()
+	return nil
+}
+
+func getServiceStatus() (string, error) {
+	var cmd *exec.Cmd
+	if snapconf.IsUnderSnap() {
+		cmd = exec.Command("snap", "services", "nordvpn.nordvpnd")
 	} else {
-		switch resp.Type {
-		case internal.CodeOffline:
-			daemonError = cli.ErrInternetConnection.Error()
-		case internal.CodeDaemonOffline:
+		cmd = exec.Command("systemctl", "is-active", "nordvpnd")
+	}
+
+	data, err := cmd.Output()
+	return string(data), err
+}
+
+func checkServiceActivity(status string) error {
+	if strings.Contains(status, "active") {
+		return nil
+	}
+	return daemonServiceNotActive
+}
+
+// checkDaemonService checks if daemon process is running via systemd/snap
+func (ti *Instance) checkDaemonService() error {
+	output, err := getServiceStatus()
+	if err != nil {
+		return err
+	}
+
+	status := strings.TrimSpace(output)
+	status = strings.ToLower(status)
+
+	return checkServiceActivity(status)
+}
+
+// startDaemonConnectivityMonitor starts periodic daemon connectivity monitoring
+func (ti *Instance) startDaemonConnectivityMonitor(ctx context.Context) {
+	ticker := time.NewTicker(daemonConnectivityCheckPeriod)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println(logTag, internal.InfoPrefix, "Daemon connectivity monitor: context cancelled, stopping monitor")
+			return
+		case <-ticker.C:
+			ti.performDaemonConnectivityCheck()
+		}
+	}
+}
+
+// performDaemonConnectivityCheck performs a single daemon connectivity check
+func (ti *Instance) performDaemonConnectivityCheck() {
+	err := ti.checkDaemonConnectivity()
+
+	var daemonError string
+	if err != nil {
+		// Daemon is not accessible - determine the appropriate error message
+		if os.IsNotExist(err) || strings.Contains(err.Error(), "no such file or directory") {
+			if snapconf.IsUnderSnap() {
+				daemonError = "NordVPN daemon is not running\n\nsudo snap start nordvpn"
+			} else {
+				daemonError = "NordVPN daemon is not running\n\nsudo systemctl enable --now nordvpnd"
+			}
+		} else if strings.Contains(err.Error(), "permission denied") {
+			daemonError = "Add the user to the nordvpn group and reboot the system\n\nsudo usermod -aG nordvpn $USER"
+		} else {
 			daemonError = internal.ErrDaemonConnectionRefused.Error()
-		case internal.CodeOutdated:
-			daemonError = cli.ErrUpdateAvailable.Error()
 		}
 	}
 
 	ti.redraw(ti.updateDaemonConnectionStatus(daemonError))
-	if daemonError != "" {
-		return errors.New(daemonError)
-	}
-
-	return nil
 }
 
 func (ti *Instance) update() {
 	ti.updateSettings()
-	ti.updateVpnStatus()
 	ti.updateCountryList()
-	ti.updateAccountInfo()
+	ti.updateVpnStatus()
 	ti.updateLoginStatus()
 	ti.updateRecentConnections()
+	ti.updateAccountInfo()
 }
 
 func (ti *Instance) updateLoginStatus() {
@@ -164,7 +256,6 @@ func (ti *Instance) updateRecentConnections() {
 }
 
 func (ti *Instance) setSettings(settings *pb.Settings) {
-	log.Println("SETTINGS: all:", settings)
 	if settings == nil {
 		return
 	}
@@ -174,7 +265,6 @@ func (ti *Instance) setSettings(settings *pb.Settings) {
 		return
 	}
 
-	log.Println("SETTINGS: user settings:", userSettings)
 	changed := false
 	ti.state.mu.Lock()
 

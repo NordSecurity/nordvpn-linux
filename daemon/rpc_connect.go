@@ -407,9 +407,7 @@ func buildRecentConnectionModel(
 		recentModel.Country = event.TargetServerCountry
 
 	case config.ServerSelectionRule_NONE, config.ServerSelectionRule_RECOMMENDED:
-		fallthrough
-	default:
-		return recents.Model{}, fmt.Errorf("unexpected connection type in recent connections: %w")
+		return recents.Model{}, fmt.Errorf("unexpected connection type in recent connections: %d", recentModel.ConnectionType)
 	}
 
 	return recentModel, nil

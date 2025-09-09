@@ -2,6 +2,7 @@ package tray
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -92,20 +93,21 @@ func sortedConnections(sgs []*pb.ServerGroup) []string {
 }
 
 type Instance struct {
-	client              pb.DaemonClient
-	fileshareClient     filesharepb.FileshareClient
-	accountInfo         accountInfo
-	debugMode           bool
-	notifier            dbusNotifier
-	renderChan          chan struct{}
-	initialDataLoadChan chan struct{}
-	iconConnected       string
-	iconDisconnected    string
-	state               trayState
-	quitChan            chan<- norduser.StopRequest
-	stateListener       *stateListener
-	connSensor          *connectionSettingsChangeSensor
-	recentConnections   *recentConnectionsManager
+	client                  pb.DaemonClient
+	fileshareClient         filesharepb.FileshareClient
+	accountInfo             accountInfo
+	debugMode               bool
+	notifier                dbusNotifier
+	renderChan              chan struct{}
+	initialDataLoadChan     chan struct{}
+	iconConnected           string
+	iconDisconnected        string
+	state                   trayState
+	quitChan                chan<- norduser.StopRequest
+	stateListener           *stateListener
+	connSensor              *connectionSettingsChangeSensor
+	recentConnections       *recentConnectionsManager
+	daemonMonitorCancelFunc context.CancelFunc
 }
 
 type trayState struct {
@@ -220,9 +222,78 @@ func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
 	case *pb.AppState_AccountModification:
 		ti.updateAccountInfo()
 
+	case *pb.AppState_VersionHealth:
+		ti.handleVersionHealthChange(st.VersionHealth)
+
 	default:
 		log.Printf("%s %s Unknown state type: %T\n", logTag, internal.WarningPrefix, item)
 	}
+}
+
+func waitUntilDaemonIsStarted(checkConnectivity func() error) error {
+	if checkConnectivity == nil {
+		return errors.New("no daemon connectivity checker provided")
+	}
+
+	return RetryWithBackoff(
+		context.Background(),
+		BackoffConfig{MaxDelay: time.Second},
+		func(ctx context.Context) error {
+			return checkConnectivity()
+		},
+	)
+}
+
+func waitUntilTrayStatusIsReceived(fetchTrayStatus func() Status, doneChan chan<- struct{}) error {
+	if fetchTrayStatus == nil || doneChan == nil {
+		return errors.New("invalid arguments")
+	}
+
+	return RetryWithBackoff(
+		context.Background(),
+		BackoffConfig{MaxDelay: time.Second, MaxRetries: 10},
+		func(ctx context.Context) error {
+			if fetchTrayStatus() == Invalid {
+				return fmt.Errorf("failed to get tray status")
+			}
+
+			select {
+			case doneChan <- struct{}{}:
+				close(doneChan)
+				doneChan = nil
+			default:
+				// Channel already being processed or closed
+			}
+
+			return nil
+		},
+	)
+}
+
+// syncWithDaemon performs processes needed before systray can be shown
+func (ti *Instance) syncWithDaemon() {
+	for {
+		err := waitUntilDaemonIsStarted(ti.checkDaemonConnectivity)
+		if err != nil {
+			log.Printf("%s %s Waiting until daemon is alive\n", logTag, internal.ErrorPrefix)
+			return
+		}
+
+		getTrayStatusFunc := func() Status {
+			ti.updateSettings()
+			return ti.state.trayStatus
+		}
+		err = waitUntilTrayStatusIsReceived(getTrayStatusFunc, ti.initialDataLoadChan)
+		if err != nil {
+			log.Printf("%s %s Waiting for tray state: %s. Retrying.\n", logTag, internal.ErrorPrefix, err)
+			continue
+		}
+
+		break
+	}
+
+	// fetch all data on init
+	ti.update()
 }
 
 func (ti *Instance) Start() {
@@ -234,49 +305,18 @@ func (ti *Instance) Start() {
 	ti.renderChan = make(chan struct{})
 	ti.initialDataLoadChan = make(chan struct{})
 
-	go func() {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
+	monitorCtx, cancel := context.WithCancel(context.Background())
+	ti.daemonMonitorCancelFunc = cancel
+	go ti.startDaemonConnectivityMonitor(monitorCtx)
 
-		// wait until we see the daemon alive
-		_ = RetryWithBackoff(
-			ctx,
-			DefaultBackoffConfig(),
-			func(ctx context.Context) error {
-				return ti.ping()
-			},
-		)
-
-		// wait until we know whether tray should be enabled
-		err := RetryWithBackoff(
-			ctx,
-			BackoffConfig{MaxDelay: time.Second, MaxRetries: 10},
-			func(ctx context.Context) error {
-				ti.update()
-				if ti.state.trayStatus == Invalid {
-					return fmt.Errorf("failed to get tray status")
-				}
-
-				if ti.initialDataLoadChan != nil {
-					select {
-					case ti.initialDataLoadChan <- struct{}{}:
-						close(ti.initialDataLoadChan)
-						ti.initialDataLoadChan = nil
-					default:
-						// Channel already being processed or closed
-					}
-				}
-				return nil
-			},
-		)
-		if err != nil {
-			log.Printf("%s %s waiting for tray state: %s\n", logTag, internal.ErrorPrefix, err)
-		}
-	}()
+	go ti.syncWithDaemon()
 }
 
 func (ti *Instance) OnExit() {
 	ti.stateListener.Stop()
+	if ti.daemonMonitorCancelFunc != nil {
+		ti.daemonMonitorCancelFunc()
+	}
 	ti.state.mu.Lock()
 	ti.state.systrayRunning = false
 	ti.state.mu.Unlock()
@@ -310,10 +350,10 @@ func (ti *Instance) renderLoop() {
 		buildSettingsSection(ti)
 		buildAccountSection(ti)
 		buildDaemonErrorSection(ti)
-		ti.state.mu.RUnlock()
 		addDebugSection(ti)
 		buildQuitButton(ti)
 		systray.Refresh()
+		ti.state.mu.RUnlock()
 		<-ti.renderChan
 
 		ti.state.mu.RLock()

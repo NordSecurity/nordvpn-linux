@@ -289,12 +289,10 @@ func buildConnectToItem(ti *Instance) {
 	if ti == nil {
 		return
 	}
-	connectionSelector := systray.AddMenuItem(labelConnectionSelection, tooltipConnectionSelection)
 
-	ti.state.mu.RLock()
+	connectionSelector := systray.AddMenuItem(labelConnectionSelection, tooltipConnectionSelection)
 	countries := append([]string(nil), ti.state.connSelector.countries...)
 	recentConnections := ti.recentConnections.GetRecentConnections()
-	ti.state.mu.RUnlock()
 
 	if len(recentConnections) > 0 {
 		buildRecentConnectionsSection(ti, connectionSelector, recentConnections)
@@ -394,25 +392,28 @@ func buildSettingsSection(ti *Instance) {
 	item := systray.AddMenuItem(labelSettings, tooltipSettings)
 	// Workaround over the dbus issue described here: https://github.com/fyne-io/systray/issues/12
 	// (It affects not only XFCE, but also other desktop environments.)
-	time.AfterFunc(dbusWorkaroundDelay, func() { addSettingsSubitems(ti, item) })
+	time.AfterFunc(dbusWorkaroundDelay, func() { buildSettingsSubitems(ti, item) })
 }
 
-func addSettingsSubitems(ti *Instance, menu *systray.MenuItem) {
+func buildSettingsSubitems(ti *Instance, menu *systray.MenuItem) {
 	if ti == nil || menu == nil {
 		return
 	}
 	ti.state.mu.RLock()
+	notificationsEnabled := ti.state.notificationsStatus == Enabled
+	trayEnabled := ti.state.trayStatus == Enabled
+	ti.state.mu.RUnlock()
+
 	notificationsCheckbox := menu.AddSubMenuItemCheckbox(
 		labelNotifications,
 		tooltipNotifications,
-		ti.state.notificationsStatus == Enabled,
+		notificationsEnabled,
 	)
 	trayCheckbox := menu.AddSubMenuItemCheckbox(
 		labelTrayIcon,
 		tooltipTrayIcon,
-		ti.state.trayStatus == Enabled,
+		trayEnabled,
 	)
-	ti.state.mu.RUnlock()
 
 	go handleNotificationsOption(ti, notificationsCheckbox)
 	go handleTrayOption(ti, trayCheckbox)
