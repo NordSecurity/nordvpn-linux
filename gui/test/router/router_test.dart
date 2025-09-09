@@ -15,6 +15,7 @@ void main() {
         hasError: false,
         isLoggedIn: false,
         displayConsent: false,
+        missingSnapPermissions: false,
       );
       expect(notificationCount, equals(0));
 
@@ -23,6 +24,7 @@ void main() {
         hasError: false,
         isLoggedIn: false,
         displayConsent: false,
+        missingSnapPermissions: false,
       );
 
       expect(notificationCount, equals(1));
@@ -37,6 +39,7 @@ void main() {
         hasError: false,
         isLoggedIn: false,
         displayConsent: false,
+        missingSnapPermissions: false,
       );
       redirectState.addListener(() => notificationCount++);
 
@@ -46,6 +49,7 @@ void main() {
         hasError: false,
         isLoggedIn: false,
         displayConsent: false,
+        missingSnapPermissions: false,
       );
 
       expect(notificationCount, equals(0));
@@ -60,6 +64,7 @@ void main() {
         hasError: false,
         isLoggedIn: false,
         displayConsent: false,
+        missingSnapPermissions: false,
       );
       final notImportant = Uri.parse(faker.lorem.word());
       expect(redirectState.route(notImportant), equals(AppRoute.loadingScreen));
@@ -72,6 +77,7 @@ void main() {
         hasError: true,
         isLoggedIn: false,
         displayConsent: false,
+        missingSnapPermissions: false,
       );
       final notImportant = Uri.parse(faker.lorem.word());
       expect(redirectState.route(notImportant), equals(AppRoute.errorScreen));
@@ -84,6 +90,7 @@ void main() {
         hasError: false,
         isLoggedIn: true,
         displayConsent: true,
+        missingSnapPermissions: false,
       );
       final consentUrl = Uri.parse(AppRoute.consentScreen.toString());
       expect(redirectState.route(consentUrl), equals(AppRoute.consentScreen));
@@ -96,6 +103,7 @@ void main() {
         hasError: false,
         isLoggedIn: false,
         displayConsent: false,
+        missingSnapPermissions: false,
       );
       final notImportant = Uri.parse(faker.lorem.word());
       expect(redirectState.route(notImportant), equals(AppRoute.login));
@@ -108,6 +116,7 @@ void main() {
         hasError: false,
         isLoggedIn: true,
         displayConsent: false,
+        missingSnapPermissions: false,
       );
       final loginUri = Uri.parse(AppRoute.login.toString());
       expect(redirectState.route(loginUri), equals(AppRoute.vpn));
@@ -120,9 +129,26 @@ void main() {
         hasError: false,
         isLoggedIn: true,
         displayConsent: false,
+        missingSnapPermissions: false,
       );
       final notLoginUri = Uri.parse(faker.lorem.word());
       expect(redirectState.route(notLoginUri), isNull);
+    });
+
+    test('returns snap when missing snap permissions', () {
+      final redirectState = RedirectState();
+      redirectState.update(
+        isLoading: false,
+        hasError: false,
+        isLoggedIn: false,
+        displayConsent: false,
+        missingSnapPermissions: true,
+      );
+      final notImportant = Uri.parse(faker.lorem.word());
+      expect(
+        redirectState.route(notImportant),
+        equals(AppRoute.missingSnapPermissions),
+      );
     });
   });
 }
