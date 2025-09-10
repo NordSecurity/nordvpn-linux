@@ -247,7 +247,7 @@ func failureRecover(netw *Combined) {
 	netw.unblockIPv6()
 
 	if err := netw.arpIgnoreSetter.Unset(); err != nil {
-		log.Println(internal.DebugPrefix, "unsetting arp ignore when recovering from failure: ", err)
+		log.Println(internal.DebugPrefix, "unsetting arp ignore when recovering from failure:", err)
 	}
 
 	netw.isVpnSet = false
@@ -309,7 +309,7 @@ func (netw *Combined) start(
 
 	if netw.ignoreARP {
 		if err := netw.arpIgnoreSetter.Set(); err != nil {
-			return fmt.Errorf("setting arp ignore:%w", err)
+			return fmt.Errorf("setting arp ignore: %w", err)
 		}
 	}
 
@@ -445,7 +445,7 @@ func (netw *Combined) restart(
 
 	if netw.ignoreARP {
 		if err := netw.arpIgnoreSetter.Set(); err != nil {
-			return fmt.Errorf("setting arp ignore:%w", err)
+			return fmt.Errorf("setting arp ignore: %w", err)
 		}
 	}
 

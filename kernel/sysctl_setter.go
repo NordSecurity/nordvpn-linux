@@ -13,10 +13,10 @@ type SysctlSetter interface {
 }
 
 type SysctlSetterImpl struct {
-	paramName     string
-	desiredValue  int
-	unwantedValue int
-	changed       bool
+	paramName    string
+	desiredValue int
+	intialValue  int
+	changed      bool
 }
 
 func NewSysctlSetter(
@@ -42,7 +42,7 @@ func (s *SysctlSetterImpl) Set() error {
 		}
 
 		if values[s.paramName] != s.desiredValue {
-			s.unwantedValue = values[s.paramName]
+			s.intialValue = values[s.paramName]
 			s.changed = true
 		}
 	}
@@ -64,12 +64,12 @@ func (s *SysctlSetterImpl) Set() error {
 
 func (s *SysctlSetterImpl) Unset() error {
 	if s.changed {
-		err := SetParameter(s.paramName, s.unwantedValue)
+		err := SetParameter(s.paramName, s.intialValue)
 		if err != nil {
 			return fmt.Errorf(
 				"setting the value of '%s' to '%d': %w",
 				s.paramName,
-				s.unwantedValue,
+				s.intialValue,
 				err,
 			)
 		}
