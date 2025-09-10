@@ -24,6 +24,7 @@ source "${WORKDIR}/ci/archs.sh"
 
 echo "Building on $(uname -m)"
 
+BUILD_TYPE="${BUILD_TYPE:-debug}"
 # convert build type to lower case
 BUILD_TYPE="${BUILD_TYPE,,}"
 
