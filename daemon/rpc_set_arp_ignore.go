@@ -28,7 +28,7 @@ func (r *RPC) SetARPIgnore(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 	if err := r.netw.SetARPIgnore(in.Enabled); err != nil {
 		log.Println(internal.ErrorPrefix, "failed to set ARP ignore:", err)
 		return &pb.Payload{
-			Type: internal.CodeConfigError,
+			Type: internal.CodeARPIgnoreError,
 		}, nil
 	}
 
