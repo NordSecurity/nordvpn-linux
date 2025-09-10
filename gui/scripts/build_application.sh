@@ -19,8 +19,8 @@ cleanup() {
 }
 trap cleanup EXIT ERR INT TERM
 
-source "scripts/env.sh"
-source "scripts/archs.sh"
+source "${WORKDIR}/ci/env.sh"
+source "${WORKDIR}/ci/archs.sh"
 
 echo "Building on $(uname -m)"
 
