@@ -31,6 +31,8 @@ func (c *cmd) SetARPIgnore(ctx *cli.Context) error {
 	switch resp.Type {
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
+	case internal.CodeARPIgnoreError:
+		return formatError(internal.ErrUnhandled)
 	case internal.CodeNothingToDo:
 		color.Yellow(fmt.Sprintf(SetARPIgnoreNothingToSet, nstrings.GetBoolLabel(flag)))
 	case internal.CodeSuccess:
