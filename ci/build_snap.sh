@@ -13,18 +13,6 @@ source "${WORKDIR}/ci/env.sh"
 STRIP="$(which eu-strip 2>/dev/null)"
 BASEDIR="bin/${ARCH}"
 
-echo "Current dir: "
-pwd
-
-echo "Listing contents of ${BASEDIR}:"
-ls -la "${BASEDIR}"
-
-echo "Listing contents of ${WORKDIR}:"
-ls -la "${WORKDIR}"
-
-echo "Listing contents of ${WORKDIR}/gui/nordvpn-gui"
-ls -la ${BASEDIR}/gui/nordvpn-gui
-
 # shellcheck disable=SC2153
 "${STRIP}" "${BASEDIR}"/nordvpnd
 # shellcheck disable=SC2153
