@@ -45,5 +45,14 @@ flutter build linux --"${BUILD_TYPE}" ${FLAGS}
 OUTPUT_DIR="${WORKDIR}/bin/${ARCH}/gui"
 mkdir -p "${OUTPUT_DIR}"
 echo "Copying bundle to ${OUTPUT_DIR}"
-cp -r "./build/linux/x64/${BUILD_TYPE}/bundle/"* "${OUTPUT_DIR}"
+# Select correct source path based on ARCH
+if [ "${ARCH}" = "amd64" ]; then
+  SRC_BUNDLE="./build/linux/x64/${BUILD_TYPE}/bundle/"*
+elif [ "${ARCH}" = "aarch64" ]; then
+  SRC_BUNDLE="./build/linux/arm64/${BUILD_TYPE}/bundle/"*
+else
+  echo "Unsupported architecture: ${ARCH}" >&2
+  exit 1
+fi
+cp -r ${SRC_BUNDLE} "${OUTPUT_DIR}"
 
