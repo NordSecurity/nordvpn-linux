@@ -7,6 +7,13 @@ if [[ -n ${DOCKER_ENV+x} ]]; then
   git config --global --add safe.directory "${WORKDIR}/parts/nordvpn/build"
 fi
 
+# XXX: remove
+function print_logs() {
+  echo "##################################### logs"
+  cat "/home/runner/.local/state/snapcraft/log/snapcraft-"*
+}
+trap print_logs EXIT ERR INT TERM
+
 source "${WORKDIR}/ci/env.sh"
 
 # snap package will have stripped binaries - same as deb/rpm
