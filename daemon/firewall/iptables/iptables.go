@@ -22,6 +22,8 @@ const (
 	defaultComment = "nordvpn"
 )
 
+var usedIPTables = [...]string{"mangle", "filter"}
+
 const (
 	accept   ruleTarget = "ACCEPT"
 	drop     ruleTarget = "DROP"
@@ -127,12 +129,12 @@ func (ipt *IPTables) applyRule(rule firewall.Rule, add bool) error {
 	return nil
 }
 
-func generateFlushRules(rules string) []string {
+func generateFlushRules(rules string, table string) []string {
 	re := regexp.MustCompile(fmt.Sprintf(`--comment\s+%s(?:\s|$)`, regexp.QuoteMeta(defaultComment)))
 	flushRules := []string{}
 	for _, rule := range strings.Split(rules, "\n") {
 		if re.MatchString(rule) {
-			newRule := strings.Replace(rule, "-A", "-D", 1)
+			newRule := fmt.Sprintf("-t %s %s", table, strings.Replace(rule, "-A", "-D", 1))
 			flushRules = append(flushRules, newRule)
 		}
 	}
@@ -142,18 +144,20 @@ func generateFlushRules(rules string) []string {
 
 func (ipt *IPTables) Flush() error {
 	var finalErr error = nil
-	for _, iptableVersion := range ipt.supportedIPTables {
-		out, err := exec.Command(iptableVersion, "-S").CombinedOutput()
-		if err != nil {
-			return fmt.Errorf("listing rules: %w", err)
-		}
-
-		rules := string(out)
-		for _, rule := range generateFlushRules(rules) {
-			err := exec.Command(iptableVersion, strings.Split(rule, " ")...).Run()
+	for _, table := range usedIPTables {
+		for _, iptableVersion := range ipt.supportedIPTables {
+			out, err := exec.Command(iptableVersion, "-t", table, "-S").CombinedOutput()
 			if err != nil {
-				log.Printf("%s failed to delete rule %s: %s", internal.ErrorPrefix, rule, err)
-				finalErr = fmt.Errorf("failed to delete all rules")
+				return fmt.Errorf("listing rules: %w", err)
+			}
+
+			rules := string(out)
+			for _, rule := range generateFlushRules(rules, table) {
+				err := exec.Command(iptableVersion, strings.Split(rule, " ")...).Run()
+				if err != nil {
+					log.Printf("%s failed to delete rule %s: %s", internal.ErrorPrefix, rule, err)
+					finalErr = fmt.Errorf("failed to delete all rules")
+				}
 			}
 		}
 	}
