@@ -10,6 +10,15 @@ ENV=$(ps --no-headers -o comm 1)
 export XDG_RUNTIME_DIR="/run/user/${DEFAULT_USER_ID}"
 export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
 
+ldconfig
+
+# move the symlink file creation later, otherwise the update scripts will delete it
+ln -sf $(ldconfig -p | awk '/libsqlite3.so.0/ && /=>/ {print $NF; exit}') /usr/lib/nordvpn/libsqlite3.so
+
+# ldconfig needs to be executed twice in case libsqlite3.so.0 was not available during a lookup
+ldconfig
+
+
 # cleanup files from older version 
 if [[ -f "/etc/systemd/system/nordvpnd.service" ]]; then
     rm -f /etc/systemd/system/nordvpnd.service || true
