@@ -43,9 +43,71 @@ func noSuchEndpoint(
 func pickNotifier(endpoint string) notifyRequest {
 	switch endpoint {
 	case "/v1/servers":
-		return moose.NordvpnappSendServiceQualityApiRequestRequestServers
+		return func(
+			eventDuration int32,
+			eventStatus moose.NordvpnappEventStatus,
+			eventTrigger moose.NordvpnappEventTrigger,
+			apiHostName string,
+			responseCode int32,
+			transferProtocol string,
+			dnsResolutionTime int32,
+			requestFilters string,
+			requestFields string,
+			limits string,
+			offset string,
+			responseSummary string,
+			debugJson *string,
+		) uint32 {
+			return moose.NordvpnappSendServiceQualityApiRequestRequestServers(
+				eventDuration,
+				eventStatus,
+				eventTrigger,
+				apiHostName,
+				responseCode,
+				transferProtocol,
+				dnsResolutionTime,
+				requestFilters,
+				requestFields,
+				limits,
+				offset,
+				responseSummary,
+				endpoint,
+				debugJson,
+			)
+		}
 	case "/v1/servers/recommendations":
-		return moose.NordvpnappSendServiceQualityApiRequestRequestServersRecommendations
+		return func(
+			eventDuration int32,
+			eventStatus moose.NordvpnappEventStatus,
+			eventTrigger moose.NordvpnappEventTrigger,
+			apiHostName string,
+			responseCode int32,
+			transferProtocol string,
+			dnsResolutionTime int32,
+			requestFilters string,
+			requestFields string,
+			limits string,
+			offset string,
+			responseSummary string,
+			debugJson *string,
+		) uint32 {
+			return moose.NordvpnappSendServiceQualityApiRequestRequestServersRecommendations(
+				eventDuration,
+				eventStatus,
+				eventTrigger,
+				apiHostName,
+				responseCode,
+				transferProtocol,
+				dnsResolutionTime,
+				requestFilters,
+				requestFields,
+				limits,
+				offset,
+				responseSummary,
+				endpoint,
+				debugJson,
+			)
+		}
 	case "/v1/users/current":
 		return moose.NordvpnappSendServiceQualityApiRequestRequestCurrentUser
 	case "/v1/users/services":

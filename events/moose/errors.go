@@ -12,7 +12,7 @@ import (
 	moose "moose/events"
 )
 
-func (s *Subscriber) PostInit(initResult moose.InitResult, errCode int32, errMsg string) *moose.ListenerError {
+func (s *Subscriber) PostInit(initResult moose.InitResult, errCode int32, errMsg string) error {
 	switch initResult {
 	case moose.InitResultOkEmptyContext,
 		moose.InitResultOkExistingContext,
@@ -29,7 +29,7 @@ func (s *Subscriber) PostInit(initResult moose.InitResult, errCode int32, errMsg
 	return nil
 }
 
-func (s *Subscriber) OnError(err moose.TrackerError, level uint32, code int32, msg string) *moose.ListenerError {
+func (s *Subscriber) OnError(err moose.TrackerError, level uint32, code int32, msg string) error {
 	if internal.IsProdEnv(s.BuildTarget.Environment) && level < 2 {
 		return nil
 	}

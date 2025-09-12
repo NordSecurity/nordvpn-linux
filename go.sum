@@ -6,10 +6,10 @@ github.com/Microsoft/go-winio v0.6.0 h1:slsWYD/zyx7lCXoZVlvQrj0hPTM1HI4+v1sIda2y
 github.com/Microsoft/go-winio v0.6.0/go.mod h1:cTAf44im0RAYeL23bpB+fzCyDH2MJiz2BO69KH/soAE=
 github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4 h1:2ozEjYEw4WzXAXe/t5rxnvcFytR8z/PA/Xrv3FpByng=
 github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4/go.mod h1:tguhorMSnkMcQExNIHWBX6TRhFeGYlERzbeAWZ4j9Uw=
-github.com/NordSecurity/libdrop-go/v8 v8.0.0-20241017064027-670787595588 h1:L/nAbQXJGCOFqw1eTTRYEBKmiuaQQeS7b863+0Ifevw=
-github.com/NordSecurity/libdrop-go/v8 v8.0.0-20241017064027-670787595588/go.mod h1:SRYI0D0K6hSMBskvcB2/t/5ktSTNLPGbOvLaQ5p/sAE=
-github.com/NordSecurity/libtelio-go/v5 v5.4.0 h1:6uxmql7tMMDlzfm2fRcwS6m6gqkbXKChepGBAJXhKog=
-github.com/NordSecurity/libtelio-go/v5 v5.4.0/go.mod h1:mnoTGgXOu8dBQgPxG8MBju4d9C+ljKIT2p8OX5GFom4=
+github.com/NordSecurity/libdrop-go/v9 v9.0.0 h1:Jk46jiQFWFS/9oXzKVLjoEYCCb18YchWtEtuoYmaymI=
+github.com/NordSecurity/libdrop-go/v9 v9.0.0/go.mod h1:EkRRrgEM+Lih3EssmSy4H9LO16NN3meqQsX5wbuIUjY=
+github.com/NordSecurity/libtelio-go/v6 v6.1.0 h1:C0EyCj3cJyyxfCe1udVkGOdTvH6+lENpODqkPHF1RTo=
+github.com/NordSecurity/libtelio-go/v6 v6.1.0/go.mod h1:Y68pMZmZ90NKt9veEjyDMZy7cecqoFJ7caHUf9dTebs=
 github.com/NordSecurity/systray v0.0.0-20240327004800-3e3b59c1b83d h1:oUEFXgFRa9Svcjr+O1stzR3vEXZ5OfQxLUcDjqFcOuo=
 github.com/NordSecurity/systray v0.0.0-20240327004800-3e3b59c1b83d/go.mod h1:PqJ9YgQXNUYUuoLvVrbMmZACufI5xM8JJ5aSuRX5ljg=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=

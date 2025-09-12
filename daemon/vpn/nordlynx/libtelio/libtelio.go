@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	teliogo "github.com/NordSecurity/libtelio-go/v5"
+	teliogo "github.com/NordSecurity/libtelio-go/v6"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
@@ -59,7 +59,7 @@ func maskPublicKey(event string) string {
 
 type eventCb func(teliogo.Event) *teliogo.TelioError
 
-func (cb eventCb) Event(payload teliogo.Event) *teliogo.TelioError {
+func (cb eventCb) Event(payload teliogo.Event) error {
 	return cb(payload)
 }
 
@@ -238,7 +238,7 @@ func handleTelioConfig(eventPath string, prod bool, vpnLibCfg vpn.LibConfigGette
 
 type telioLoggerCb struct{}
 
-func (cb *telioLoggerCb) Log(logLevel teliogo.TelioLogLevel, payload string) *teliogo.TelioError {
+func (cb *telioLoggerCb) Log(logLevel teliogo.TelioLogLevel, payload string) error {
 	log.Println(logLevelToPrefix(logLevel), "TELIO("+teliogo.GetVersionTag()+"): "+payload)
 	return nil
 }
