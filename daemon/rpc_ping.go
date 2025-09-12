@@ -12,18 +12,16 @@ import (
 func (r *RPC) Ping(ctx context.Context, in *pb.Empty) (*pb.PingResponse, error) {
 	versionData := r.dm.GetVersionData()
 	currentVersion := semver.New(r.version)
+
+	var responseType int64
 	if versionData.newerVersionAvailable {
-		return &pb.PingResponse{
-			Type:     internal.CodeOutdated,
-			Major:    currentVersion.Major,
-			Minor:    currentVersion.Minor,
-			Patch:    currentVersion.Patch,
-			Metadata: currentVersion.Metadata,
-		}, nil
+		responseType = internal.CodeOutdated
+	} else {
+		responseType = internal.CodeSuccess
 	}
 
 	return &pb.PingResponse{
-		Type:     internal.CodeSuccess,
+		Type:     responseType,
 		Major:    currentVersion.Major,
 		Minor:    currentVersion.Minor,
 		Patch:    currentVersion.Patch,

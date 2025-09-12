@@ -1,11 +1,20 @@
 package daemon
 
 import (
+	"log"
+	"sync"
+
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/state"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/coreos/go-semver/semver"
 )
 
-func JobVersionCheck(dm *DataManager, api *RepoAPI) func() {
+func JobVersionCheck(dm *DataManager, api *RepoAPI, statePublisher *state.StatePublisher) func() {
 	return func() {
+		// Always publish version status at the end
+		defer publishVersionHealthStatus(dm, statePublisher)
+
 		// if no currentVersion data is available, 0.0.0-0 currentVersion will be used.
 		currentVersion := semver.New(api.version)
 		vdata := dm.GetVersionData()
@@ -45,5 +54,36 @@ func JobVersionCheck(dm *DataManager, api *RepoAPI) func() {
 		if newerVersionAvailable || vdata.version.Major == 0 {
 			dm.SetVersionData(latestVersion, newerVersionAvailable)
 		}
+	}
+}
+
+var (
+	lastHealthStatusCode int32 = int32(internal.CodeSuccess)
+	versionHealthMutex   sync.Mutex
+)
+
+// publishVersionHealthStatus publishes version health status for version updates
+func publishVersionHealthStatus(dm *DataManager, statePublisher *state.StatePublisher) {
+	versionHealthMutex.Lock()
+	defer versionHealthMutex.Unlock()
+
+	versionData := dm.GetVersionData()
+
+	var healthStatusCode int32 = int32(internal.CodeSuccess)
+	if versionData.newerVersionAvailable {
+		healthStatusCode = int32(internal.CodeOutdated)
+	}
+
+	// Only publish if health status changed
+	if lastHealthStatusCode != healthStatusCode {
+		healthStatus := &pb.VersionHealthStatus{
+			StatusCode: healthStatusCode,
+		}
+
+		if err := statePublisher.NotifyVersionHealth(healthStatus); err != nil {
+			log.Printf("%s Failed to publish version health status: %v\n", internal.ErrorPrefix, err)
+		}
+
+		lastHealthStatusCode = healthStatusCode
 	}
 }
