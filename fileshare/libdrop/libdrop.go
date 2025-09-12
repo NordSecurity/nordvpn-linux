@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	norddrop "github.com/NordSecurity/libdrop-go/v8"
+	norddrop "github.com/NordSecurity/libdrop-go/v9"
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"

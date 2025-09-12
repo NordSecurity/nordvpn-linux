@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	teliogo "github.com/NordSecurity/libtelio-go/v5"
+	teliogo "github.com/NordSecurity/libtelio-go/v6"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
