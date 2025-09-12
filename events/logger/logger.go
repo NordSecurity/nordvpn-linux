@@ -110,10 +110,7 @@ func isBinary(contentEncoding string, contentType string) bool {
 		return true
 	}
 	ctype := strings.ToLower(contentType)
-	if strings.Contains(ctype, "application/octet-stream") {
-		return true
-	}
-	return false
+	return strings.Contains(ctype, "application/octet-stream")
 }
 
 func dataRequestAPIToString(
