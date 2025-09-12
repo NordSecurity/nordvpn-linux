@@ -200,6 +200,8 @@ func (c *ConnChecker) PermissionCheck() error {
 // getConnectedInterfaces returns list of connected snap interfaces for the current snap.
 func getConnectedInterfaces() ([]Interface, error) {
 	out, err := exec.Command("snapctl", "is-connected", "--list").CombinedOutput()
+
+	fmt.Printf("getConnectedInterfaces Stdout:\n%s\n", string(out))
 	if err != nil {
 		return nil, fmt.Errorf(
 			"executing `snapctl is-connected --list`: %w: %s", err, string(out),
