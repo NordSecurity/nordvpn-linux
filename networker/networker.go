@@ -1635,7 +1635,7 @@ func (netw *Combined) GetConnectionParameters() (vpn.ServerData, bool) {
 }
 
 // SetARPIgnore sets arp ignore to the desired value if VPN connection is active. Networker will set arp ignore
-// ccordingly upon subsequent connections. Setting arp ignore to value previously configured is a noop.
+// accordingly upon subsequent connections. Setting arp ignore to value previously configured is a noop.
 func (netw *Combined) SetARPIgnore(ignoreARP bool) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
