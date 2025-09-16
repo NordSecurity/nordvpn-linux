@@ -53,6 +53,10 @@ fi
 
 snapcraft --version
 
+id -u
+
+mount | grep ' /snap'
+
 snapcraft pack --destructive-mode
 
 # move snap package
