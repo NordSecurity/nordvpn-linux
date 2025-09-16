@@ -95,7 +95,7 @@ apps:
       - hardware-observe
 
   nordvpn-gui:
-    command: bin/gui/bundle/nordvpn-gui
+    command: bin/gui/nordvpn-gui
     desktop: usr/share/applications/nordvpn.desktop
     extensions: [gnome]
     environment:

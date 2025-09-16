@@ -45,6 +45,9 @@ flutter build linux --"${BUILD_TYPE}" ${FLAGS}
 
 OUTPUT_DIR="${WORKDIR}/bin/${ARCH}/gui"
 mkdir -p "${OUTPUT_DIR}"
-echo "Copying bundle to ${OUTPUT_DIR}"
-cp -r "./build/linux/${ARCH}/${BUILD_TYPE}/bundle/"* "${OUTPUT_DIR}"
+FLUTTER_ARCH="${ARCHS_FLUTTER[$ARCH]}"
+SRC_BUNDLE="./build/linux/${FLUTTER_ARCH}/${BUILD_TYPE}/bundle/"
+
+echo "Copying '${SRC_BUNDLE}/*' to ${OUTPUT_DIR}"
+cp -r "${SRC_BUNDLE}"* "${OUTPUT_DIR}"
 
