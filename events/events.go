@@ -171,7 +171,11 @@ type DataRequestAPI struct {
 	Duration time.Duration
 	Error    error
 	// IsAttempt indicates whether the event represents an attempt
-	IsAttempt bool
+	IsAttempt      bool
+	RequestFilters string
+	RequestFields  string
+	Limits         string
+	Offset         string
 }
 
 // Analytics analytics handling engine interface
