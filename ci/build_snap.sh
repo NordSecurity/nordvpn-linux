@@ -51,6 +51,8 @@ if [[ "${ARCH}" == "aarch64" ]]; then
     && rm -rf /tmp/snapcraft-src
 fi
 
+snapcraft --version
+
 snapcraft pack --destructive-mode
 
 # move snap package
