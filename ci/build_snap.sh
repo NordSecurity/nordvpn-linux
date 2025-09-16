@@ -36,6 +36,16 @@ cp -rL "${WORKDIR}/bin/deps/lib/current" "${dump_dir}"
 [ "$(ls -A "${dump_dir}/${ARCH}")" ] || touch "${dump_dir}/${ARCH}/empty"
 trap 'rm -rf ${WORKDIR}/bin/deps/lib/current-dump' EXIT
 
+# NOTE: for arm64 arch, we are using "bare" VM to build snap.
+# The build process for GUI requires to install additional dependencies
+# which fail to install during snaprcraft build process, so we are
+# installing them here before running snapcraft.
+if [[ "${ARCH}" == "aarch64" ]]; then
+  sudo snap install gnome-42-2204
+  sudo snap install gnome-42-2204-sdk
+  sudo snap install gtk-common-themes
+fi
+
 # build snap package
 snapcraft pack --destructive-mode
 
