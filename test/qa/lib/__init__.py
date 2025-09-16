@@ -307,7 +307,7 @@ def flush_allowlist():
 def is_connect_successful(output: str, name: str = "", hostname: str = ""):
     if not name and not hostname:
         pattern = r'Connecting to (.*?) \((.*?)\)'
-        match = re.match(pattern, str(output))
+        match = re.search(pattern, str(output))
 
         if match:
             name = match.group(1)
