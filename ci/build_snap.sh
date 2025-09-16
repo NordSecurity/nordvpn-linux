@@ -44,10 +44,12 @@ if [[ "${ARCH}" == "aarch64" ]]; then
   sudo snap install gnome-42-2204
   sudo snap install gnome-42-2204-sdk
   sudo snap install gtk-common-themes
-fi
 
-# build snap package
-snapcraft pack --destructive-mode
+  # running with sudo to give rights to snapcraft build process to install supporting tools
+  sudo snapcraft pack --destructive-mode
+else
+  snapcraft pack --destructive-mode
+fi
 
 # move snap package
 mkdir -p "${WORKDIR}"/dist/app/snap
