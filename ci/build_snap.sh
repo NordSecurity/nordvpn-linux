@@ -18,7 +18,7 @@ BASEDIR="bin/${ARCH}"
 # shellcheck disable=SC2153
 "${STRIP}" "${BASEDIR}"/nordvpn
 # shellcheck disable=SC2153
-"${STRIP}" "${BASEDIR}"/gui/bundle/nordvpn-gui
+"${STRIP}" "${BASEDIR}"/gui/nordvpn-gui
 # shellcheck disable=SC2153
 "${STRIP}" "${BASEDIR}"/nordfileshare
 # shellcheck disable=SC2153
