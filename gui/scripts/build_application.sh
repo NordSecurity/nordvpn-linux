@@ -45,5 +45,5 @@ flutter build linux --"${BUILD_TYPE}" ${FLAGS}
 OUTPUT_DIR="${WORKDIR}/bin/${ARCH}/gui"
 mkdir -p "${OUTPUT_DIR}"
 echo "Copying bundle to ${OUTPUT_DIR}"
-cp -r "./build/linux/x64/${BUILD_TYPE}/bundle/"* "${OUTPUT_DIR}"
+cp -r "./build/linux/${ARCH}/${BUILD_TYPE}/bundle/"* "${OUTPUT_DIR}"
 
