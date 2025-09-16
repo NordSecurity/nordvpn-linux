@@ -95,7 +95,7 @@ apps:
       - hardware-observe
 
   nordvpn-gui:
-    command: bin/gui/nordvpn-gui
+    command: bin/gui/bundle/nordvpn-gui
     desktop: usr/share/applications/nordvpn.desktop
     extensions: [gnome]
     environment:
@@ -153,7 +153,7 @@ parts:
     source-type: local
     source:
       - on amd64: ./bin/amd64/gui
-      - on arm64: ./bin/arm64/gui
+      - on arm64: ./bin/aarch64/gui
     organize:
       ./*: bin/gui/
     stage:
