@@ -121,9 +121,7 @@ parts:
     plugin: dump
     source-type: local
     source:
-      - on i386: ./bin/i386
       - on amd64: ./bin/amd64
-      - on armhf: ./bin/armhf
       - on arm64: ./bin/aarch64
     stage-packages:
       - wireguard-tools
@@ -163,9 +161,7 @@ parts:
     plugin: dump
     source-type: local
     source:
-      - on i386: ./bin/i386
       - on amd64: ./bin/amd64
-      - on armhf: ./bin/armhf
       - on arm64: ./bin/aarch64
     organize:
       nordfileshare: usr/lib/nordvpn/nordfileshare
@@ -176,9 +172,7 @@ parts:
     plugin: dump
     source-type: local
     source:
-      - on i386: ./bin/i386
       - on amd64: ./bin/amd64
-      - on armhf: ./bin/armhf
       - on arm64: ./bin/aarch64
     organize:
       norduserd: usr/lib/nordvpn/norduserd
@@ -189,9 +183,7 @@ parts:
     plugin: dump
     source-type: local
     source:
-      - on i386: ./bin/deps/openvpn/current/i386
       - on amd64: ./bin/deps/openvpn/current/amd64
-      - on armhf: ./bin/deps/openvpn/current/armhf
       - on arm64: ./bin/deps/openvpn/current/aarch64
     organize:
       openvpn: usr/lib/nordvpn/openvpn
@@ -202,9 +194,7 @@ parts:
     plugin: dump
     source-type: local
     source:
-      - on i386: ./bin/deps/lib/current-dump/i386/
       - on amd64: ./bin/deps/lib/current-dump/amd64/
-      - on armhf: ./bin/deps/lib/current-dump/armhf/
       - on arm64: ./bin/deps/lib/current-dump/aarch64/
     organize:
       ./*: usr/lib/
