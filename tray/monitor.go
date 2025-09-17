@@ -19,6 +19,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 
 	"github.com/NordSecurity/systray"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/status"
 )
 
@@ -127,6 +129,28 @@ func (ti *Instance) startDaemonConnectivityMonitor(ctx context.Context) {
 			return
 		case <-ticker.C:
 			ti.performDaemonConnectivityCheck()
+		}
+	}
+}
+
+func (ti *Instance) MonitorConnection(ctx context.Context, conn *grpc.ClientConn) {
+	for {
+		state := conn.GetState()
+
+		connExpired := !conn.WaitForStateChange(ctx, state)
+		if connExpired {
+			return // ctx cancelled
+		}
+
+		switch conn.GetState() {
+		case connectivity.Connecting:
+		case connectivity.Idle:
+		case connectivity.Ready:
+			// conn ready
+		case connectivity.Shutdown:
+			// conn terminated/shutdown
+		case connectivity.TransientFailure:
+			// server likely down
 		}
 	}
 }
