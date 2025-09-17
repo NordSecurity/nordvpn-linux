@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
-	"slices"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -104,6 +103,20 @@ func (s Subscriber) NotifyConnect(data events.DataConnect) error {
 	return nil
 }
 
+func isRequestBinary(req *http.Request) bool {
+	encoding := strings.ToLower(req.Header.Get("Content-Encoding"))
+	switch encoding {
+	case "gzip", "deflate", "br", "compress":
+		return true
+	}
+	return false
+}
+
+func isResponseBinary(res *http.Response) bool {
+	ctype := strings.ToLower(res.Header.Get("Content-Type"))
+	return strings.Contains(ctype, "application/octet-stream")
+}
+
 func dataRequestAPIToString(
 	data events.DataRequestAPI,
 	reqBody []byte,
@@ -114,12 +127,16 @@ func dataRequestAPIToString(
 	headers := processHeaders(hideSensitiveHeaders, data.Request.Header)
 	b.WriteString(fmt.Sprintf("Duration: %s\n", data.Duration))
 	if data.Request != nil {
+		tmpBody := "(binary data)"
+		if !isRequestBinary(data.Request) {
+			tmpBody = string(reqBody)
+		}
 		b.WriteString(fmt.Sprintf("Request: %s %s %s %s %s\n",
 			data.Request.Proto,
 			data.Request.Method,
 			data.Request.URL,
 			headers,
-			string(reqBody),
+			tmpBody,
 		))
 	}
 	if data.Error != nil {
@@ -128,7 +145,7 @@ func dataRequestAPIToString(
 	if data.Response != nil {
 		tmpBody := "(binary data)"
 		// do not print binary data
-		if !slices.Contains(data.Response.Header.Values("Content-Type"), "application/octet-stream") {
+		if !isResponseBinary(data.Response) {
 			tmpBody = string(respBody)
 		}
 		b.WriteString(fmt.Sprintf("Response: %s %d - %s %s\n",

@@ -28,7 +28,7 @@ const (
 	imageScanner           = registryPrefix + "scanner:1.1.0"
 	imageTester            = registryPrefix + "tester:1.6.0"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.4"
-	imageRuster            = registryPrefix + "ruster:1.4.0"
+	imageRuster            = registryPrefix + "ruster:1.4.1"
 
 	dockerWorkDir  = "/opt"
 	devPackageType = "source"

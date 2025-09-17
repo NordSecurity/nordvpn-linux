@@ -820,7 +820,7 @@ func (s *Subscriber) setSubscriptions(
 			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateMerchantId(payment.Subscription.MerchantID)
 		},
 		func() uint32 {
-			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStatePaymentAmount(payment.Amount)
+			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStatePaymentAmount(fmt.Sprintf("%g", payment.Amount))
 		},
 		func() uint32 {
 			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStatePaymentCurrency(payment.Currency)
