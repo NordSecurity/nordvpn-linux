@@ -45,17 +45,14 @@ if [[ "${ARCH}" == "aarch64" ]]; then
   sudo snap install gnome-42-2204-sdk
   sudo snap install gtk-common-themes
 
-  git clone --depth=1 https://github.com/canonical/snapcraft.git /tmp/snapcraft-src \
-    && sudo mkdir -p /usr/share/snapcraft/extensions \
-    && sudo cp -a /tmp/snapcraft-src/extensions/* /usr/share/snapcraft/extensions/ \
-    && rm -rf /tmp/snapcraft-src
+  git clone --depth=1 https://github.com/canonical/snapcraft.git /tmp/snapcraft-src &&
+    sudo mkdir -p /usr/share/snapcraft/extensions &&
+    sudo cp -a /tmp/snapcraft-src/extensions/* /usr/share/snapcraft/extensions/ &&
+    rm -rf /tmp/snapcraft-src
 fi
 
 snapcraft --version
-
-id -u
-
-mount | grep ' /snap'
+which snapcraft
 
 snapcraft pack --destructive-mode
 
