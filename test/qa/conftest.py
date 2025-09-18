@@ -295,3 +295,11 @@ def disable_remote_endpoint():
     except Exception as e: # noqa: BLE001
         print(f"Got an error during restoring {hosts_original} from {hosts_backup}: {e}")
         raise
+
+
+@pytest.fixture(scope="session")
+def env():
+    """Detects and returns the active environment (DEV or PROD) based on the NordVPN version output."""
+    env = daemon.get_env()
+    print(f"Current env: '{env}'")
+    return env

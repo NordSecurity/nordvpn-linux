@@ -10,6 +10,10 @@ from . import logging, ssh
 from lib.shell import sh_no_tty
 
 
+class Env:
+    DEV = "dev"
+    PROD = "prod"
+
 def _rewrite_log_path():
     project_root = os.environ["WORKDIR"].replace("/", "\\/")
     pattern = f"s/^LOGFILE=.*/LOGFILE={project_root}\\/dist\\/logs\\/daemon.log/"
@@ -190,3 +194,14 @@ def get_status_data() -> dict:
     colon_separated_pairs = (element.split(':') for element in lines)
     formatted_pairs = {(key.lower(), value.strip()) for key, value in colon_separated_pairs}
     return dict(formatted_pairs)
+
+def get_env() ->str:
+    """
+    Detects and returns the active environment (DEV or PROD) based on the NordVPN version output.
+
+    :return: the active environment (DEV or PROD)
+    """
+    result = sh.nordvpn("--version")
+    if Env.DEV in result:
+        return Env.DEV
+    return Env.PROD

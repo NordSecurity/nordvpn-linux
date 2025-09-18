@@ -166,12 +166,13 @@ func (c *CdnRemoteConfig) Load() error {
 	needReload := false
 
 	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
-	if !useOnlyLocalConfig {
+	if useOnlyLocalConfig {
+		log.Printf("%s Ignoring remote config, using only local\n", internal.InfoPrefix)
+	} else {
 		if needReload, err = c.download(); err != nil {
 			return fmt.Errorf("downloading remote config: %w", err)
 		}
 	}
-
 	// remote config files were downloaded and need to be reloaded?
 	if needReload || useOnlyLocalConfig {
 		c.load()
