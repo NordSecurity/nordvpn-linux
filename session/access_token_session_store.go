@@ -104,7 +104,7 @@ func (s *AccessTokenSessionStore) validate() error {
 func (s *AccessTokenSessionStore) HandleError(reason error) error {
 	handlers := s.errHandlerRegistry.GetHandlers(reason)
 	if len(handlers) == 0 {
-		log.Println(internal.InfoPrefix, "No handlers for access token session store is registered")
+		log.Println(internal.InfoPrefix, "No handlers for access token session store is registered with reason:", reason)
 		return nil
 	}
 
@@ -128,7 +128,7 @@ func (s *AccessTokenSessionStore) renewToken(
 		return err
 	}
 
-	resp, err := s.renewAPICall(data.Token, *data.IdempotencyKey)
+	resp, err := s.renewAPICall(data.RenewToken, *data.IdempotencyKey)
 	if err != nil {
 		if skipErrorHandlers {
 			return err

@@ -230,7 +230,7 @@ func (r *RenewingChecker) fetchSaveServices(userID int64, data *config.TokenData
 func (r *RenewingChecker) fetchServices() ([]core.ServiceData, error) {
 	services, err := r.creds.Services()
 	if err != nil {
-		return nil, fmt.Errorf("fetching available services: %w", err)
+		return nil, err
 	}
 	return services, nil
 }
