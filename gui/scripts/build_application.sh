@@ -24,9 +24,8 @@ source "${WORKDIR}/ci/archs.sh"
 
 echo "Building on $(uname -m)"
 
-BUILD_TYPE="${BUILD_TYPE:-debug}"
 # convert build type to lower case
-BUILD_TYPE="${BUILD_TYPE,,}"
+BUILD_TYPE="${1,,}"
 
 # for release builds save the build symbols to diffent location to reduce app size
 RELEASE_SYMBOLS=build/app/symbols/${NAME}_${VERSION}
