@@ -3,9 +3,7 @@ FROM debian:bullseye-slim
 ARG DEBIAN_FRONTEND=noninteractive
 
 COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.28.3-4 /bin/uniffi-bindgen /bin
-COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.28.3-4 /bin/uniffi-bindgen-cs /bin
 COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.28.3-4 /bin/uniffi-bindgen-go /bin
-COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.28.3-4 /bin/uniffi-bindgen-cpp /bin
 
 ENV QDK_TAG=v2.3.14
 

@@ -24,7 +24,7 @@ if [ "${1:-""}" = "full" ]; then
 	source "${WORKDIR}"/ci/add_private_bindings.sh moose/events ./third-party/moose-events/moosenordvpnappgo/v17
 	source "${WORKDIR}"/ci/add_private_bindings.sh moose/worker ./third-party/moose-worker/mooseworkergo/v17
 
-	# TODO/FIXME: workarround for the moose problem, remove this code after moose resolves this situation
+	# TODO/FIXME: workaround for the moose problem, remove this code after moose resolves this situation
 	ls -la ./third-party/moose-worker/mooseworkergo/
 	mooseFileToRemove="./third-party/moose-worker/mooseworkergo/httpclient.go"
 	if [ -f "${mooseFileToRemove}" ]; then
