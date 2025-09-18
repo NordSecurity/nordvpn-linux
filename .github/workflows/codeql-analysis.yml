@@ -36,6 +36,11 @@ jobs:
                   languages: ${{ matrix.language }}
                   queries: security-extended
 
+            - name: Install protoc
+              uses: arduino/setup-protoc@v2
+              with:
+                version: '3.20.1'
+
             - name: Build
               run: |
                   cd .github && go mod download && cd ..
