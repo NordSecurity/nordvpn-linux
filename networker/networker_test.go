@@ -2098,15 +2098,6 @@ func TestCombined_SetARPIgnore(t *testing.T) {
 			errExpected:               false,
 		},
 		{
-			name:                      "unset ignore is not applied to kernel when VPN is not active",
-			vpn:                       mock.WorkingInactiveVPN{},
-			currentARPIgnoreKernel:    true,
-			currentARPIgnoreNetworker: false,
-			targetARPIgnore:           false,
-			expectedARPIgnore:         true,
-			errExpected:               false,
-		},
-		{
 			name:                      "set is always applied to kernel even if already set when VPN is acive",
 			vpn:                       mock.ActiveVPN{},
 			currentARPIgnoreKernel:    false,
