@@ -2,6 +2,11 @@ FROM debian:bullseye-slim
 
 ARG DEBIAN_FRONTEND=noninteractive
 
+COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.28.3-4 /bin/uniffi-bindgen /bin
+COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.28.3-4 /bin/uniffi-bindgen-go /bin
+
+ENV QDK_TAG=v2.3.14
+
 # Rust installation borrowed from https://github.com/rust-lang/docker-rust/blob/47a11a42c5a321d688fae525eaa7f1cf9940198b/1.64.0/buster/slim/Dockerfile
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
@@ -16,6 +21,7 @@ RUN set -eux; \
         gcc \
         libc6-dev \
         wget \
+        unzip \
         ; \
     dpkgArch="$(dpkg --print-architecture)"; \
     # https://static.rust-lang.org/rustup/archive/{rustup-version}/{target-triple}/rustup-init.sha256
@@ -44,6 +50,8 @@ RUN set -eux; \
     armv7-unknown-linux-gnueabihf \
     aarch64-unknown-linux-gnu \
     arm-unknown-linux-gnueabi
+
+RUN rustup component add clippy rustfmt
 
 RUN set -eux; \
   mkdir -p /usr/lib/i386-linux-gnu \
@@ -78,6 +86,25 @@ RUN set -eux; \
         libsqlite3-dev:arm64; \
     ldconfig; \
     rm -rf /var/lib/apt/lists/*
+
+RUN ARCH=$(uname -m) && \
+    case $ARCH in \
+        x86_64) \
+            PROTOC_ARCH="x86_64" && \
+            CHECKSUM="96553041f1a91ea0efee963cb16f462f5985b4d65365f3907414c360044d8065" ;; \
+        aarch64|arm64) \
+            PROTOC_ARCH="aarch_64" && \
+            CHECKSUM="6c554de11cea04c56ebf8e45b54434019b1cd85223d4bbd25c282425e306ecc2" ;; \
+        *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
+    esac && \
+    curl -LO "https://github.com/protocolbuffers/protobuf/releases/download/v31.1/protoc-31.1-linux-${PROTOC_ARCH}.zip" && \
+    echo "${CHECKSUM}  protoc-31.1-linux-${PROTOC_ARCH}.zip" | sha256sum -c - && \
+    mkdir -p /root/.local && \
+    unzip "protoc-31.1-linux-${PROTOC_ARCH}.zip" -d /root/.local && \
+    chmod -R 777 /root && \
+    rm "protoc-31.1-linux-${PROTOC_ARCH}.zip"
+
+ENV PATH="$PATH:/root/.local/bin"
 
 # This is not a dangerous hack. `libsqlite3-dev:armel` package is broken on Debian 11. Therefore,
 # this symlink fakes the existence of armel build. The expected symbols in `libsqlite3.so` are no

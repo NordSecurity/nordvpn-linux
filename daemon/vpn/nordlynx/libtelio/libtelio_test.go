@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	teliogo "github.com/NordSecurity/libtelio-go/v5"
+	teliogo "github.com/NordSecurity/libtelio-go/v6"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -33,8 +33,8 @@ const (
 
 type callbackHandlerStub struct{}
 
-func (callbackHandlerStub) handleEvent(teliogo.Event) *teliogo.TelioError { return nil }
-func (callbackHandlerStub) setMonitoringContext(ctx context.Context)      {}
+func (callbackHandlerStub) handleEvent(teliogo.Event) error          { return nil }
+func (callbackHandlerStub) setMonitoringContext(ctx context.Context) {}
 
 type mockLib struct{}
 
