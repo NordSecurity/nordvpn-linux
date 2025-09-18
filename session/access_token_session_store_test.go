@@ -97,8 +97,8 @@ func TestAccessTokenSessionStore_Renew_ExpiredToken(t *testing.T) {
 	cfgManager := &mock.ConfigManager{Cfg: cfg}
 	errorRegistry := internal.NewErrorHandlingRegistry[error]()
 
-	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
-		assert.Equal(t, "old-token", token)
+	renewAPICall := func(renewToken string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+		assert.Equal(t, "old-renew", renewToken)
 		assert.Equal(t, idempotencyKey, key)
 		return &session.AccessTokenResponse{
 			Token:      "ab78bb36299d442fa0715fb53b5e3e58",

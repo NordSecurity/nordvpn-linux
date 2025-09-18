@@ -1099,21 +1099,21 @@ func TestSessionErrorHandler_EmptyTokenScenarios(t *testing.T) {
 			name:         "empty access token",
 			token:        "",
 			renewToken:   "valid-renew-token",
-			expectLogout: false,
+			expectLogout: true,
 			expectError:  true,
 		},
 		{
 			name:         "empty renew token",
 			token:        "valid-token",
 			renewToken:   "",
-			expectLogout: false,
+			expectLogout: true,
 			expectError:  true,
 		},
 		{
 			name:         "both tokens empty",
 			token:        "",
 			renewToken:   "",
-			expectLogout: false,
+			expectLogout: true,
 			expectError:  true,
 		},
 	}
@@ -1157,11 +1157,11 @@ func TestSessionErrorHandler_EmptyTokenScenarios(t *testing.T) {
 			}
 			RegisterSessionErrorHandler(errorRegistry, deps)
 
-			renewalAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
-				if token == "" || tt.renewToken == "" {
-					return nil, errors.New("invalid token")
+			renewalAPICall := func(renewToken string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+				if renewToken == "" {
+					return nil, session.ErrInvalidToken
 				}
-				resp, err := mockAPI.TokenRenew(token, key)
+				resp, err := mockAPI.TokenRenew(renewToken, key)
 				if err != nil {
 					return nil, err
 				}
@@ -1178,7 +1178,9 @@ func TestSessionErrorHandler_EmptyTokenScenarios(t *testing.T) {
 				renewalAPICall,
 			)
 
-			err := sessionStore.Renew()
+			smartAPI := core.NewSmartClientAPI(mockAPI, sessionStore)
+
+			_, err := smartAPI.CurrentUser()
 
 			if tt.expectLogout {
 				assert.True(t, logoutCalled, "Expected logout to be called")
@@ -1187,9 +1189,9 @@ func TestSessionErrorHandler_EmptyTokenScenarios(t *testing.T) {
 			}
 
 			if tt.expectError {
-				if err != nil {
-					assert.Error(t, err, "Should error with invalid tokens")
-				}
+				assert.Error(t, err, "Should error with invalid tokens")
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
