@@ -10,11 +10,13 @@ on:
 
 jobs:
     analyze:
+        name: Analyze (${{ matrix.language }})
         runs-on: ubuntu-latest
         permissions:
+            security-events: write
+            packages: read
             actions: read
             contents: read
-            security-events: write
 
         strategy:
             fail-fast: false
