@@ -37,7 +37,7 @@ jobs:
                   queries: security-extended
 
             - name: Install protoc
-              uses: arduino/setup-protoc@v2
+              uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b
               with:
                 version: '3.20.1'
 
