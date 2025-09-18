@@ -36,10 +36,23 @@ jobs:
                   languages: ${{ matrix.language }}
                   queries: security-extended
 
-            - name: Install protoc
-              uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b
+            - name: Cache protoc
+              id: cache-protoc
+              uses: actions/cache@v3
               with:
-                version: '3.20.1'
+                path: |
+                  /usr/local/bin/protoc
+                  /usr/local/include/google
+                key: ${{ runner.os }}-protoc-3.20.1
+
+            - name: Install protoc
+              if: steps.cache-protoc.outputs.cache-hit != 'true'
+              run: |
+                PB_VERSION="3.20.1"
+                PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+                curl -LO $PB_REL/download/v$PB_VERSION/protoc-$PB_VERSION-linux-x86_64.zip
+                sudo unzip protoc-$PB_VERSION-linux-x86_64.zip -d /usr/local
+                rm protoc-$PB_VERSION-linux-x86_64.zip
 
             - name: Build
               run: |
