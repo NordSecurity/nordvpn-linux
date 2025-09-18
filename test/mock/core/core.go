@@ -14,42 +14,42 @@ type CredentialsAPIMock struct {
 	CurrentUserErr      error
 }
 
-func (c *CredentialsAPIMock) NotificationCredentials(token, appUserID string) (core.NotificationCredentialsResponse, error) {
+func (c *CredentialsAPIMock) NotificationCredentials(appUserID string) (core.NotificationCredentialsResponse, error) {
 	return c.NotificationCredentialsResponse, c.NotificationCredentialsError
 }
 
-func (c *CredentialsAPIMock) NotificationCredentialsRevoke(token, appUserID string, purgeSession bool) (core.NotificationCredentialsRevokeResponse, error) {
+func (c *CredentialsAPIMock) NotificationCredentialsRevoke(appUserID string, purgeSession bool) (core.NotificationCredentialsRevokeResponse, error) {
 	return c.NotificationCredentialsRevokeResponse, nil
 }
 
-func (*CredentialsAPIMock) ServiceCredentials(string) (*core.CredentialsResponse, error) {
+func (*CredentialsAPIMock) ServiceCredentials(token string) (*core.CredentialsResponse, error) {
 	return nil, nil
 }
 
-func (*CredentialsAPIMock) TokenRenew(token string, idempotencyKey uuid.UUID) (*core.TokenRenewResponse, error) {
+func (*CredentialsAPIMock) TokenRenew(renewalToken string, idempotencyKey uuid.UUID) (*core.TokenRenewResponse, error) {
 	return nil, nil
 }
 
-func (*CredentialsAPIMock) MultifactorAuthStatus(string) (*core.MultifactorAuthStatusResponse, error) {
+func (*CredentialsAPIMock) MultifactorAuthStatus() (*core.MultifactorAuthStatusResponse, error) {
 	return nil, nil
 }
 
-func (*CredentialsAPIMock) Services(string) (core.ServicesResponse, error) {
+func (*CredentialsAPIMock) Services() (core.ServicesResponse, error) {
 	return core.ServicesResponse{}, nil
 }
 
-func (c *CredentialsAPIMock) CurrentUser(string) (*core.CurrentUserResponse, error) {
+func (c *CredentialsAPIMock) CurrentUser() (*core.CurrentUserResponse, error) {
 	return &c.CurrentUserResponse, c.CurrentUserErr
 }
 
-func (*CredentialsAPIMock) DeleteToken(string) error {
+func (*CredentialsAPIMock) DeleteToken() error {
 	return nil
 }
 
-func (*CredentialsAPIMock) TrustedPassToken(string) (*core.TrustedPassTokenResponse, error) {
+func (*CredentialsAPIMock) TrustedPassToken() (*core.TrustedPassTokenResponse, error) {
 	return nil, nil
 }
 
-func (*CredentialsAPIMock) Logout(string) error {
+func (*CredentialsAPIMock) Logout() error {
 	return nil
 }
