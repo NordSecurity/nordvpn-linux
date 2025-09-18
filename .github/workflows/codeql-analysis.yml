@@ -39,7 +39,7 @@ jobs:
             - name: Build
               run: |
                   cd .github && go mod download && cd ..
-                  go run github.com/magefile/mage/mage build:binaries
+                  go run github.com/magefile/mage build:binaries
 
             - name: Analyze
               uses: github/codeql-action/analyze@v3
