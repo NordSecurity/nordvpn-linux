@@ -38,13 +38,15 @@ jobs:
                   languages: ${{ matrix.language }}
                   queries: security-and-quality
 
+            - name: Set protoc path
+              id: protoc_path
+              run: echo "path=$HOME/.local" >> $GITHUB_OUTPUT
+
             - name: Cache protoc
               id: cache-protoc
               uses: actions/cache@v3
               with:
-                path: |
-                  /usr/local/bin/protoc
-                  /usr/local/include/google
+                path: ${{ steps.protoc_path.outputs.path }}
                 key: ${{ runner.os }}-protoc-3.20.1
 
             - name: Install protoc
@@ -53,8 +55,11 @@ jobs:
                 PB_VERSION="3.20.1"
                 PB_REL="https://github.com/protocolbuffers/protobuf/releases"
                 curl -LO $PB_REL/download/v$PB_VERSION/protoc-$PB_VERSION-linux-x86_64.zip
-                sudo unzip -o protoc-$PB_VERSION-linux-x86_64.zip -d /usr/local
+                unzip -n protoc-$PB_VERSION-linux-x86_64.zip -d ${{ steps.protoc_path.outputs.path }}
                 rm protoc-$PB_VERSION-linux-x86_64.zip
+
+            - name: Add protoc to path
+              run: echo "${{ steps.protoc_path.outputs.path }}/bin" >> $GITHUB_PATH
 
             - name: Build
               run: |
@@ -68,3 +73,4 @@ jobs:
 
             - name: Summary
               run: echo "CodeQL scan done for ${{ matrix.language }}"
+
