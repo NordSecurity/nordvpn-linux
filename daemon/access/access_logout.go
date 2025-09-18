@@ -14,6 +14,10 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/networker"
 )
 
+const (
+	logTag = "[access]"
+)
+
 // TODO: Refactor 'Logout' and 'ForceLogoutWithoutToken` functions to reuse core logic
 
 type LogoutInput struct {
@@ -33,9 +37,26 @@ type LogoutResult struct {
 	Err    error
 }
 
+// isLoggedIn check whether user is still logged in on this device bypassing expiration checks
+func isLoggedIn(api core.CredentialsAPI, cm config.Manager) bool {
+	if _, err := api.CurrentUser(); errors.Is(err, core.ErrUnauthorized) {
+		var cfg config.Config
+		err := cm.Load(&cfg)
+		if err == nil && len(cfg.TokensData) == 0 {
+			return false
+		}
+	}
+
+	return true
+}
+
 func Logout(input LogoutInput) (logoutResult LogoutResult) {
 	if ok, _ := input.AuthChecker.IsLoggedIn(); !ok {
 		return LogoutResult{Status: 0, Err: internal.ErrNotLoggedIn}
+	}
+
+	if isLoggedIn(input.CredentialsAPI, input.ConfigManager) {
+		return LogoutResult{Status: internal.CodeSuccess, Err: nil}
 	}
 
 	logoutStartTime := time.Now()
@@ -145,7 +166,7 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 
 	// Log the reason if provided
 	if input.Reason != events.ReasonNotSpecified {
-		log.Printf("%s Forcing logout due to: %v\n", internal.DebugPrefix, input.Reason)
+		log.Printf("%s %s Forcing logout. Reason: %v\n", logTag, internal.InfoPrefix, input.Reason)
 	}
 
 	input.PublishLogoutEventFunc(events.DataAuthorization{
@@ -173,7 +194,7 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 	}()
 
 	if _, err := input.DisconnectFunc(); err != nil {
-		log.Println(internal.ErrorPrefix, "disconnect failed:", err)
+		log.Println(logTag, internal.ErrorPrefix, "disconnect failed:", err)
 		return LogoutResult{Status: internal.CodeFailure, Err: nil}
 	}
 
@@ -187,6 +208,7 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 	}
 
 	if err := input.ConfigManager.SaveWith(clearConfigData()); err != nil {
+		log.Println(logTag, internal.ErrorPrefix, "Failed to wipe config on logout:", err)
 		return LogoutResult{Status: internal.CodeConfigError, Err: err}
 	}
 

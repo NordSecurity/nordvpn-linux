@@ -149,6 +149,10 @@ func (r *RPC) connect(
 			return true, srv.Send(&pb.Payload{Type: errorCode.Code})
 		}
 
+		if errors.Is(err, core.ErrUnauthorized) {
+			return true, srv.Send(&pb.Payload{Type: internal.CodeRevokedAccessToken})
+		}
+
 		return false, err
 	}
 
