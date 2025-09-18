@@ -426,14 +426,12 @@ func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 		return fmt.Errorf("error while compiling core: %w", err)
 	}
 
-	env["BUILD_TYPE"] = "release"
-
 	// XXX: should not be run for deb/rpm
 	return RunDocker(
 		ctx,
 		env,
 		imageGUIFlutter,
-		[]string{"scripts/build_application.sh"},
+		[]string{"scripts/build_application.sh", "release"},
 		dockerWorkDir+"/gui",
 	)
 }
