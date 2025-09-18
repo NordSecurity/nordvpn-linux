@@ -1,0 +1,76 @@
+name: CodeQL Security Scan
+
+on:
+    push:
+        branches: ["LVPN-*", "test-out-codeql"]
+    pull_request:
+        branches: ["main", "release/*"]
+    schedule:
+        - cron: "0 3 * * *" # nightly runs
+
+jobs:
+    analyze:
+        name: Analyze (${{ matrix.language }})
+        runs-on: ubuntu-latest
+        permissions:
+            security-events: write
+            packages: read
+            actions: read
+            contents: read
+
+        strategy:
+            fail-fast: false
+            matrix:
+                language: ["go"]
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - uses: actions/setup-go@v5
+              with:
+                  go-version: "1.22"
+                  cache-dependency-path: .github/go.mod
+
+            - name: Initialize CodeQL
+              uses: github/codeql-action/init@v3
+              with:
+                  languages: ${{ matrix.language }}
+                  queries: security-and-quality
+
+            - name: Set protoc path
+              id: protoc_path
+              run: echo "path=$HOME/.local" >> $GITHUB_OUTPUT
+
+            - name: Cache protoc
+              id: cache-protoc
+              uses: actions/cache@v3
+              with:
+                path: ${{ steps.protoc_path.outputs.path }}
+                key: ${{ runner.os }}-protoc-3.20.1
+
+            - name: Install protoc
+              if: steps.cache-protoc.outputs.cache-hit != 'true'
+              run: |
+                PB_VERSION="3.20.1"
+                PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+                curl -LO $PB_REL/download/v$PB_VERSION/protoc-$PB_VERSION-linux-x86_64.zip
+                unzip -n protoc-$PB_VERSION-linux-x86_64.zip -d ${{ steps.protoc_path.outputs.path }}
+                rm protoc-$PB_VERSION-linux-x86_64.zip
+
+            - name: Add protoc to path
+              run: echo "${{ steps.protoc_path.outputs.path }}/bin" >> $GITHUB_PATH
+
+            - name: Build
+              run: |
+                  cd .github && go mod download && cd ..
+                  go run github.com/magefile/mage build:binaries
+
+            - name: Analyze
+              uses: github/codeql-action/analyze@v3
+              with:
+                  category: "/language:${{ matrix.language }}"
+
+            - name: Summary
+              run: echo "CodeQL scan done for ${{ matrix.language }}"
+
