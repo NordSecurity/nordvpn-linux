@@ -467,11 +467,14 @@ func main() {
 			kernel.NewSysctlSetter(
 				forwarder.Ipv4fwdKernelParamName,
 				1,
-				0,
 			)),
 		cfg.FirewallMark,
 		cfg.LanDiscovery,
 		ipv6.NewIpv6(),
+		cfg.ARPIgnore.Get(),
+		kernel.NewSysctlSetter(
+			networker.ArpIgnoreParamName, 1,
+		),
 	)
 
 	keygen, err := keygenImplementation(vpnFactory)
