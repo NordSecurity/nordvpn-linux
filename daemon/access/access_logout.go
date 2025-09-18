@@ -55,7 +55,7 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 		return LogoutResult{Status: 0, Err: internal.ErrNotLoggedIn}
 	}
 
-	if isLoggedIn(input.CredentialsAPI, input.ConfigManager) {
+	if !isLoggedIn(input.CredentialsAPI, input.ConfigManager) {
 		return LogoutResult{Status: internal.CodeSuccess, Err: nil}
 	}
 

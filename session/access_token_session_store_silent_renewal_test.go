@@ -75,8 +75,8 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_Success(t *testing.T) {
 
 	errorRegistry := internal.NewErrorHandlingRegistry[error]()
 
-	renewAPICall := func(token string, key uuid.UUID) (*AccessTokenResponse, error) {
-		assert.Equal(t, "old-token", token)
+	renewAPICall := func(renewToken string, key uuid.UUID) (*AccessTokenResponse, error) {
+		assert.Equal(t, "old-renew", renewToken)
 		assert.Equal(t, idempotencyKey, key)
 		return &AccessTokenResponse{
 			Token:      "ab78bb36299d442fa0715fb53b5e3e58",
@@ -170,9 +170,9 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_InvalidRenewTokenResponseWi
 	}, ErrInvalidRenewToken)
 
 	renewAPICallCount := 0
-	renewAPICall := func(token string, key uuid.UUID) (*AccessTokenResponse, error) {
+	renewAPICall := func(renewToken string, key uuid.UUID) (*AccessTokenResponse, error) {
 		renewAPICallCount++
-		assert.Equal(t, "ab78bb36299d442fa0715fb53b5e3e57", token)
+		assert.Equal(t, "deadbeef", renewToken)
 		assert.Equal(t, idempotencyKey, key)
 		// API returns invalid token in response (checked before renew token)
 		return &AccessTokenResponse{
@@ -369,9 +369,9 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_InvalidTokenResponseWithFor
 	}, ErrInvalidToken)
 
 	renewAPICallCount := 0
-	renewAPICall := func(token string, key uuid.UUID) (*AccessTokenResponse, error) {
+	renewAPICall := func(renewToken string, key uuid.UUID) (*AccessTokenResponse, error) {
 		renewAPICallCount++
-		assert.Equal(t, "ab78bb36299d442fa0715fb53b5e3e57", token)
+		assert.Equal(t, "deadbeef", renewToken)
 		assert.Equal(t, idempotencyKey, key)
 		// API returns invalid token in response
 		return &AccessTokenResponse{
@@ -427,9 +427,9 @@ func TestAccessTokenSessionStore_Renew_SilentRenewal_ForceRenewal(t *testing.T) 
 	}, errors.New("api-error"))
 
 	renewAPICallCount := 0
-	renewAPICall := func(token string, key uuid.UUID) (*AccessTokenResponse, error) {
+	renewAPICall := func(renewToken string, key uuid.UUID) (*AccessTokenResponse, error) {
 		renewAPICallCount++
-		assert.Equal(t, "ab78bb36299d442fa0715fb53b5e3e57", token)
+		assert.Equal(t, "deadbeef", renewToken)
 		assert.Equal(t, idempotencyKey, key)
 		return &AccessTokenResponse{
 			Token:      "1234567890abcdef1234567890abcdef",
