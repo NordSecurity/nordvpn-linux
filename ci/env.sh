@@ -10,12 +10,6 @@ export NAME
 HASH=$(git rev-parse --short HEAD)
 export HASH
 
-NAME=nordvpn-gui
-export NAME
-
-DISPLAY_NAME="NordVPN GUI"
-export DISPLAY_NAME
-
 VERSION_PATTERN="^[0-9]+\.[0-9]+\.[0-9]+$"
 if [[ "${CI_COMMIT_TAG:-}" =~ ${VERSION_PATTERN} ]]; then
   ENVIRONMENT="prod"
