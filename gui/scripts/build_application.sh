@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euox pipefail
 
+if [ "$#" -ne 1 ]; then
+    echo "missing build type: debug or release"
+    exit 1
+fi
+
 # build the application
 
 # NOTE: Updating of the app version should happen before `scripts/env.sh`
