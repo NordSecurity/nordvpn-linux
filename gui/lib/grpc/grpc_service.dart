@@ -12,15 +12,6 @@ import 'package:nordvpn/service_locator.dart';
 const _socketEnvVar = 'NORDVPND_SOCKET';
 const String _defaultSocketPath = "/run/nordvpn/nordvpnd.sock";
 
-String _socketPath() {
-  final socketPath =
-      (Platform.environment[_socketEnvVar]?.trim().isNotEmpty ?? false)
-      ? Platform.environment[_socketEnvVar]!.trim()
-      : _defaultSocketPath;
-  logger.i("daemon socket path: $socketPath");
-  return socketPath;
-}
-
 /// Creates a new channel to the daemon.
 /// Preferably is to use the shared instance from sl() instead of creating a new one
 ClientChannel createNewChannel() {
@@ -39,6 +30,15 @@ ClientChannel createNewChannel() {
   );
 
   return channel;
+}
+
+String _socketPath() {
+  final socketEnvVar = Platform.environment[_socketEnvVar]?.trim();
+  final socketPath = socketEnvVar?.isNotEmpty ?? false
+      ? socketEnvVar!
+      : _defaultSocketPath;
+  logger.i("daemon socket path: $socketPath");
+  return socketPath;
 }
 
 // Creates a new DaemonClient and register the error interceptor for it.

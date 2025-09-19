@@ -56,9 +56,6 @@ else
   snapcraft pack --destructive-mode
 fi
 
-snapcraft --version
-which snapcraft
-
 # move snap package
 mkdir -p "${WORKDIR}"/dist/app/snap
 mv "${WORKDIR}"/*.snap "${WORKDIR}"/dist/app/snap/
