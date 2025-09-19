@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"golang.org/x/net/netutil"
+	"golang.org/x/sys/unix"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -706,7 +707,10 @@ func main() {
 
 	// Graceful stop
 
-	internal.WaitSignal()
+	// internal.WaitSignal()
+	signals := internal.GetSignalChan()
+	sig := <-signals
+	log.Println(internal.InfoPrefix, "Received signal:", sig)
 	s.Stop()
 	norduserService.StopAll()
 
@@ -721,8 +725,10 @@ func main() {
 	if err := netw.UnSetMesh(); err != nil && !errors.Is(err, networker.ErrMeshNotActive) {
 		log.Println(internal.ErrorPrefix, "disconnecting from meshnet:", err)
 	}
-	if err := rpc.StopKillSwitch(); err != nil {
-		log.Println(internal.ErrorPrefix, "stopping KillSwitch:", err)
+	if sig != unix.SIGUSR1 {
+		if err := rpc.StopKillSwitch(); err != nil {
+			log.Println(internal.ErrorPrefix, "stopping KillSwitch:", err)
+		}
 	}
 	if err := analytics.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping analytics:", err)

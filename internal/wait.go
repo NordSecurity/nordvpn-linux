@@ -9,7 +9,7 @@ import (
 
 func GetSignalChan() <-chan os.Signal {
 	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt, linux.SIGTERM, linux.SIGHUP)
+	signal.Notify(signals, os.Interrupt, linux.SIGTERM, linux.SIGHUP, linux.SIGUSR1)
 	return signals
 }
 
