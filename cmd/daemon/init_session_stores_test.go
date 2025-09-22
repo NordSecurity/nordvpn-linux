@@ -729,22 +729,22 @@ func TestVPNCredsReasonCodeWithAccessTokenRenewal(t *testing.T) {
 		expectedReasonCode      events.ReasonCode
 	}{
 		{
-			name:                    "vpn creds missing response with bad access token",
+			name:                    "vpn creds missing response with failed access token renewal",
 			vpnCredsError:           session.ErrMissingVPNCredsResponse,
 			accessTokenRenewalError: core.ErrBadRequest,
-			expectedReasonCode:      events.ReasonCorruptedVPNCredsAuthBad,
+			expectedReasonCode:      events.ReasonCorruptedVPNCreds,
 		},
 		{
-			name:                    "vpn creds missing credentials with missing access token",
+			name:                    "vpn creds missing credentials with failed access token renewal",
 			vpnCredsError:           session.ErrMissingVPNCredentials,
 			accessTokenRenewalError: core.ErrNotFound,
-			expectedReasonCode:      events.ReasonCorruptedVPNCredsAuthMissing,
+			expectedReasonCode:      events.ReasonCorruptedVPNCreds,
 		},
 		{
-			name:                    "vpn creds missing nordlynx with missing access token",
+			name:                    "vpn creds missing nordlynx with failed access token renewal",
 			vpnCredsError:           session.ErrMissingNordLynxPrivateKey,
 			accessTokenRenewalError: core.ErrNotFound,
-			expectedReasonCode:      events.ReasonCorruptedVPNCredsAuthMissing,
+			expectedReasonCode:      events.ReasonCorruptedVPNCreds,
 		},
 		{
 			name:                    "vpn creds missing response with successful access token",
@@ -756,7 +756,7 @@ func TestVPNCredsReasonCodeWithAccessTokenRenewal(t *testing.T) {
 			name:                    "vpn creds missing response with other error",
 			vpnCredsError:           session.ErrMissingVPNCredsResponse,
 			accessTokenRenewalError: errors.New("other error"),
-			expectedReasonCode:      events.ReasonNotSpecified, // Access token renewal fails with unhandled error, no logout happens (double check)
+			expectedReasonCode:      events.ReasonCorruptedVPNCreds,
 		},
 	}
 
