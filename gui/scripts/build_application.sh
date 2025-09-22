@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euox pipefail
 
+if [ "$#" -ne 1 ]; then
+    echo "missing build type: debug or release"
+    exit 1
+fi
+
 # build the application
 
 # NOTE: Updating of the app version should happen before `scripts/env.sh`
@@ -19,13 +24,13 @@ cleanup() {
 }
 trap cleanup EXIT ERR INT TERM
 
-source "scripts/env.sh"
-source "scripts/archs.sh"
+source "${WORKDIR}/ci/env.sh"
+source "${WORKDIR}/ci/archs.sh"
 
 echo "Building on $(uname -m)"
 
 # convert build type to lower case
-BUILD_TYPE="${BUILD_TYPE,,}"
+BUILD_TYPE="${1,,}"
 
 # for release builds save the build symbols to diffent location to reduce app size
 RELEASE_SYMBOLS=build/app/symbols/${NAME}_${VERSION}
@@ -44,6 +49,9 @@ flutter build linux --"${BUILD_TYPE}" ${FLAGS}
 
 OUTPUT_DIR="${WORKDIR}/bin/${ARCH}/gui"
 mkdir -p "${OUTPUT_DIR}"
-echo "Copying bundle to ${OUTPUT_DIR}"
-cp -r "./build/linux/${ARCH}/${BUILD_TYPE}/bundle/"* "${OUTPUT_DIR}"
+FLUTTER_ARCH="${ARCHS_FLUTTER[$ARCH]}"
+SRC_BUNDLE="./build/linux/${FLUTTER_ARCH}/${BUILD_TYPE}/bundle/"
+
+echo "Copying '${SRC_BUNDLE}/*' to ${OUTPUT_DIR}"
+cp -r "${SRC_BUNDLE}"* "${OUTPUT_DIR}"
 

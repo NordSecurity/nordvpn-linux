@@ -117,14 +117,38 @@ func isNetworkRetryable(err error) bool {
 	if err == nil {
 		return false
 	}
+
+	// check for network timeout errors
 	var netErr net.Error
 	if errors.As(err, &netErr) && netErr.Timeout() {
 		return true
 	}
+
+	// check for network operation errors (includes DNS resolution failures)
 	var opErr *net.OpError
-	return errors.As(err, &opErr) ||
-		errors.Is(err, core.ErrServerInternal) ||
-		errors.Is(err, core.ErrTooManyRequests)
+	if errors.As(err, &opErr) {
+		return true
+	}
+
+	// check for DNS errors that may contain network errors in their message
+	var dnsErr *net.DNSError
+	if errors.As(err, &dnsErr) {
+		// check if the DNS error message contains network-related errors
+		errMsg := dnsErr.Error()
+		if strings.Contains(errMsg, "network is unreachable") ||
+			strings.Contains(errMsg, "connection refused") ||
+			strings.Contains(errMsg, "no route to host") {
+			return true
+		}
+	}
+
+	// check for specific server errors
+	if errors.Is(err, core.ErrServerInternal) ||
+		errors.Is(err, core.ErrTooManyRequests) {
+		return true
+	}
+
+	return false
 }
 
 // TryPreload load config from disk
@@ -142,12 +166,13 @@ func (c *CdnRemoteConfig) Load() error {
 	needReload := false
 
 	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
-	if !useOnlyLocalConfig {
+	if useOnlyLocalConfig {
+		log.Printf("%s Ignoring remote config, using only local\n", internal.InfoPrefix)
+	} else {
 		if needReload, err = c.download(); err != nil {
 			return fmt.Errorf("downloading remote config: %w", err)
 		}
 	}
-
 	// remote config files were downloaded and need to be reloaded?
 	if needReload || useOnlyLocalConfig {
 		c.load()
@@ -196,7 +221,6 @@ func (c *CdnRemoteConfig) download() (bool, error) {
 // isJsonParsingError checks if reported LoadError is related to JSON parsing
 func isJsonParsingError(errKind LoadErrorKind) bool {
 	return errKind == LoadErrorParsing ||
-		errKind == LoadErrorParsingIncludeFile ||
 		errKind == LoadErrorMainHashJsonParsing ||
 		errKind == LoadErrorMainJsonValidationFailure
 }

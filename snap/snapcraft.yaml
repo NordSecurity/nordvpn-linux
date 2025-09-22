@@ -95,7 +95,7 @@ apps:
       - hardware-observe
 
   nordvpn-gui:
-    command: bin/gui/bundle/nordvpn-gui
+    command: bin/gui/nordvpn-gui
     desktop: usr/share/applications/nordvpn.desktop
     extensions: [gnome]
     environment:
@@ -226,8 +226,8 @@ parts:
     source-type: local
     source: contrib/desktop
     override-build: |
-      sed -i 's\Icon=nordvpn\Icon=${SNAP}/meta/icon.svg\g' nordvpn.desktop
-      cp nordvpn.desktop ${SNAPCRAFT_PART_INSTALL}/nordvpn.desktop
+      sed -i 's\Icon=nordvpn\Icon=${SNAP}/meta/icon.svg\g' snap.nordvpn.desktop
+      cp snap.nordvpn.desktop ${SNAPCRAFT_PART_INSTALL}/nordvpn.desktop
     organize:
       nordvpn.desktop: usr/share/applications/nordvpn.desktop
 
@@ -258,3 +258,4 @@ parts:
       tray-blue.svg: usr/share/icons/hicolor/scalable/apps/nordvpn-tray-blue.svg
       tray-black.svg: usr/share/icons/hicolor/scalable/apps/nordvpn-tray-black.svg
       tray-white.svg: usr/share/icons/hicolor/scalable/apps/nordvpn-tray-white.svg
+

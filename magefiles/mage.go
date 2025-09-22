@@ -29,10 +29,11 @@ const (
 	imageScanner           = registryPrefix + "scanner:1.1.0"
 	imageTester            = registryPrefix + "tester:1.6.0"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.4"
-	imageRuster            = registryPrefix + "ruster:1.4.0"
+	imageRuster            = registryPrefix + "ruster:1.4.1"
 
-	dockerWorkDir  = "/opt"
-	devPackageType = "source"
+	dockerWorkDir    = "/opt"
+	guiDockerWorkDir = dockerWorkDir + "/gui"
+	devPackageType   = "source"
 
 	qaPeerAddress = "http://qa-peer:8000/exec"
 )
@@ -426,15 +427,13 @@ func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 		return fmt.Errorf("error while compiling core: %w", err)
 	}
 
-	env["BUILD_TYPE"] = "release"
-
-	// XXX: should not be run for deb/rpm
+	// build GUI binaries
 	return RunDocker(
 		ctx,
 		env,
 		imageGUIFlutter,
-		[]string{"scripts/build_application.sh"},
-		dockerWorkDir+"/gui",
+		[]string{"scripts/build_application.sh", "release"},
+		guiDockerWorkDir,
 	)
 }
 

@@ -20,7 +20,6 @@ type secret string
 func newSecret(val string) secret {
 	return secret(val)
 }
-
 func (s secret) GoString() string {
 	return s.String()
 }
@@ -50,14 +49,22 @@ type VagrantEnv struct {
 	ShouldDestroyVM bool   // when true, the VM created will be destroyed after tests are executed
 	RemoteCwd       string // where was the project synced in VM, by default /vagrant
 	TestCredentials secret // testing credentials, env[NA_TESTS_CREDENTIALS]
+	CustomBoxUrl    string // the URL for a box when testing with custom build boxes
+	CustomBoxUser   secret // custom box username
+	CustomBoxPass   secret // custom box password
 }
 
 // runVagrantCmd - run vagrant commands
 func runVagrantCmd(vagrantEnv VagrantEnv, args ...string) error {
 	cmd := exec.Command("vagrant", args...)
 	cmd.Dir = vagrantEnv.VagrantFileDir
+
+	// add all the needed environment variables to run vagrant commands
 	cmd.Env = append(os.Environ(),
 		fmt.Sprintf("WORKDIR=%s", vagrantEnv.Cwd),
+		fmt.Sprintf("SNAP_TEST_BOX_URL=%s", vagrantEnv.CustomBoxUrl),
+		fmt.Sprintf("SNAP_TEST_BOX_USER=%s", vagrantEnv.CustomBoxUser.getValue()),
+		fmt.Sprintf("SNAP_TEST_BOX_PASS=%s", vagrantEnv.CustomBoxPass.getValue()),
 	)
 
 	stdout, err := cmd.StdoutPipe()
@@ -80,14 +87,22 @@ func runVagrantCmd(vagrantEnv VagrantEnv, args ...string) error {
 	return cmd.Wait()
 }
 
-func streamLines(r io.Reader, out io.Writer) {
-	sc := bufio.NewScanner(r)
-	for sc.Scan() {
-		fmt.Fprintln(out, sc.Text())
-	}
-
-	if err := sc.Err(); err != nil {
-		fmt.Printf("Scanner error: %s", err)
+func streamLines(reader io.Reader, out io.Writer) {
+	r := bufio.NewReader(reader)
+	for {
+		line, err := r.ReadString('\n')
+		if err == io.EOF {
+			// print last line if it didn't end with '\n'
+			if len(line) > 0 {
+				fmt.Print(line)
+			}
+			break
+		}
+		if err != nil {
+			fmt.Println("streamLines error:", err)
+			break
+		}
+		fmt.Print(line)
 	}
 }
 
@@ -165,6 +180,9 @@ func buildVagrantEnv() (VagrantEnv, error) {
 		ShouldDestroyVM: shouldDestroyVM,
 		RemoteCwd:       "/vagrant",
 		TestCredentials: newSecret(env["NA_TESTS_CREDENTIALS"]),
+		CustomBoxUrl:    env["SNAP_TEST_BOX_URL"],
+		CustomBoxUser:   newSecret(env["SNAP_TEST_BOX_USER"]),
+		CustomBoxPass:   newSecret(env["SNAP_TEST_BOX_PASS"]),
 	}
 	return vagrantEnv, nil
 }

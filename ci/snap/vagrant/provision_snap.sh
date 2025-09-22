@@ -30,5 +30,3 @@ done
 echo "Installing tester dependencies..."
 sudo pip3 install -r /vagrant/ci/docker/tester/requirements.txt
 
-sudo groupadd nordvpn
-sudo usermod -aG nordvpn vagrant

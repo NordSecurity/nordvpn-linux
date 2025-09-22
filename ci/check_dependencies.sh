@@ -14,6 +14,8 @@ libmoose_nordvpnapp_artifact_url="${LIBMOOSE_NORDVPNAPP_ARTIFACTS_URL}/${LIBMOOS
 libmoose_worker_artifact_url="${LIBMOOSE_WORKER_ARTIFACTS_URL}/${LIBMOOSE_WORKER_VERSION}/linux.zip"
 libquench_artifact_url="${LIBQUENCH_ARTIFACTS_URL}/${LIBQUENCH_VERSION}/linux.zip"
 
+echo "XXX ${libtelio_artifact_url}"
+
 # Uncomment this when all libraries migrate artifacts
 # if [[ ${CI+x} ]]; then
 #   header="JOB-TOKEN:${CI_JOB_TOKEN}"

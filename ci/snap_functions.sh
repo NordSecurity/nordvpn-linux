@@ -1,40 +1,39 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euxo pipefail
 
+# using nordvpn status connect the needed snap interfaces
 snap_connect_interfaces() {
-    local SNAP_NAME=nordvpn
-
     # List all connections for the Snap
-    echo "Checking connections for Snap package: ${SNAP_NAME}"
-    connections=$(snap connections "${SNAP_NAME}")
+    echo "Make the snap connections"
 
-    # Display and process unconnected interfaces
-    echo
-    echo "Unconnected connections for ${SNAP_NAME}:"
-    unconnected=$(echo "${connections}" | awk '
-    NR > 1 && $3 == "-" {
-        print $1
-    }')
+    wait_for_daemon
+    SNAP_CONNECT_CMDS=$(nordvpn status | grep -o '^sudo snap connect .*' || true)
 
-    if [ -z "${unconnected}" ]; then
-        echo "All connections are already connected."
-        return
-    fi
-
-    echo "${unconnected}"
-
-    # Attempt to connect each unconnected interface
-    echo
-    for interface in ${unconnected}; do
-        echo "Connecting interface: ${interface}"
-        if sudo snap connect "${SNAP_NAME}:${interface}"; then
-            echo "Successfully connected: ${interface}"
-        else
-            echo "Failed to connect: ${interface}"
-        fi
+    echo "${SNAP_CONNECT_CMDS}" | while read -r CMD; do
+        echo "Executing: ${CMD}"
+        # Run the command
+        ${CMD}
     done
+    echo "All permissions granted successfully."
 
-    echo
-    echo "Connection process completed for ${SNAP_NAME}."
-    # Show current connections state
-    snap connections "${SNAP_NAME}"
+    wait_for_daemon
+
+    # recheck that the nordvpn status is successful
+    nordvpn status
+
+    echo "Snap connection process completed."
+}
+
+# wait until daemon is running
+wait_for_daemon() {
+    for i in {1..10}; do
+        STATUS=$(nordvpn status || true)
+        # cannot use return code 0 because snap interfaces are not connected
+        # instead check that the output have "nordvpnd.sock not found"
+        if [[ "${STATUS}" != *"nordvpnd.sock"* ]]; then
+            return
+        fi
+        echo "Attempt ${i} failed: ${STATUS}"
+        sleep 1
+    done
 }
