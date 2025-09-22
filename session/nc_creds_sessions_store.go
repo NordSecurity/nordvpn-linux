@@ -132,15 +132,15 @@ func (s *NCCredentialsSessionStore) validate() error {
 		return err
 	}
 
-	if err := ValidateExpiry(cfg.ExpiresAt); err != nil {
-		return err
-	}
-
 	if err := ValidateNCCredentialsPresence(cfg.Username, cfg.Password); err != nil {
 		return err
 	}
 
 	if err := ValidateEndpointPresence(cfg.Endpoint); err != nil {
+		return err
+	}
+
+	if err := ValidateExpiry(cfg.ExpiresAt); err != nil {
 		return err
 	}
 

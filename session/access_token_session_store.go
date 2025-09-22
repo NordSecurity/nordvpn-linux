@@ -58,8 +58,16 @@ func (s *AccessTokenSessionStore) Renew(opts ...RenewalOption) error {
 	}
 
 	if !options.forceRenewal {
-		if err := s.validate(); err == nil {
+		err := s.validate()
+		if err == nil {
 			return nil
+		}
+
+		// [special case] without correct renewal token we cannot renew the access token
+		// we need to trigger error handlers directly without going through the normal flow
+		// to handle this case
+		if errors.Is(err, ErrInvalidRenewToken) {
+			return s.HandleError(err)
 		}
 	}
 
@@ -88,12 +96,16 @@ func (s *AccessTokenSessionStore) validate() error {
 		return err
 	}
 
-	if err := ValidateExpiry(cfg.ExpiresAt); err != nil {
-		return fmt.Errorf("validating access token: %w", err)
-	}
-
 	if err := ValidateAccessTokenFormat(cfg.Token); err != nil {
 		return fmt.Errorf("validating access token format: %w", err)
+	}
+
+	if err := ValidateRenewToken(cfg.RenewToken); err != nil {
+		return fmt.Errorf("validating renew token format: %w", err)
+	}
+
+	if err := ValidateExpiry(cfg.ExpiresAt); err != nil {
+		return fmt.Errorf("validating access token: %w", err)
 	}
 
 	return nil

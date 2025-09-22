@@ -112,15 +112,15 @@ func (s *TrustedPassSessionStore) validate() error {
 		return err
 	}
 
-	if err := ValidateExpiry(cfg.ExpiresAt); err != nil {
-		return err
-	}
-
 	if err := ValidateTrustedPassTokenFormat(cfg.Token); err != nil {
 		return err
 	}
 
 	if err := ValidateTrustedPassOwnerID(cfg.OwnerID); err != nil {
+		return err
+	}
+
+	if err := ValidateExpiry(cfg.ExpiresAt); err != nil {
 		return err
 	}
 
