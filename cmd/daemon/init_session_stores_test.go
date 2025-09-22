@@ -603,13 +603,13 @@ func TestLogoutReasonCodeSelectionWithProductionCode(t *testing.T) {
 			name:               "vpn creds - bad request error",
 			sessionStore:       "vpnCreds",
 			apiError:           core.ErrBadRequest,
-			expectedReasonCode: events.ReasonNotSpecified,
+			expectedReasonCode: events.ReasonCorruptedVPNCredsAuthBad,
 		},
 		{
 			name:               "vpn creds - unauthorized error",
 			sessionStore:       "vpnCreds",
 			apiError:           core.ErrUnauthorized,
-			expectedReasonCode: events.ReasonNotSpecified,
+			expectedReasonCode: events.ReasonCorruptedVPNCreds,
 		},
 		{
 			name:               "trusted pass - bad request error",
@@ -750,7 +750,7 @@ func TestVPNCredsReasonCodeWithAccessTokenRenewal(t *testing.T) {
 			name:                    "vpn creds missing response with successful access token",
 			vpnCredsError:           session.ErrMissingVPNCredsResponse,
 			accessTokenRenewalError: nil,
-			expectedReasonCode:      events.ReasonNotSpecified, // Note: should probably be ReasonCorruptedVPNCreds (double check)
+			expectedReasonCode:      events.ReasonCorruptedVPNCreds,
 		},
 		{
 			name:                    "vpn creds missing response with other error",
