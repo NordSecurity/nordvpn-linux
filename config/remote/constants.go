@@ -7,14 +7,16 @@ const (
 
 	// defaultMaxGroup represents the maximum value for a rollout group,
 	// effectively making the value to be in range of 1-100 (inclusive) to reflect percentage-based groups.
-	defaultMaxGroup  uint32 = 100
-	logPrefix               = "[Remote Config]"
-	messageNamespace        = "nordvpn-linux"
-	rcFailure               = "failure"
-	rcSuccess               = "success"
-	rolloutYes              = "yes"
-	rolloutNo               = "no"
-	subscope                = "linux-rc"
+	defaultMaxGroup                uint32 = 100
+	logPrefix                             = "[Remote Config]"
+	messageNamespace                      = "nordvpn-linux"
+	rcFailure                             = "failure"
+	rcSuccess                             = "success"
+	partialRolloutPerformedFailure        = false
+	partialRolloutPerformedSuccess        = true
+	rolloutNo                             = "no"
+	rolloutYes                            = "yes"
+	subscope                              = "linux-rc"
 )
 
 // EventType defines the type of remote config analytics event.
@@ -51,55 +53,12 @@ func (e EventType) String() string {
 	}
 }
 
-// DownloadErrorKind defines types of download errors for remote config.
-type DownloadErrorKind int
-
 const (
-	DownloadErrorRemoteHashNotFound DownloadErrorKind = iota
-	DownloadErrorRemoteFileNotFound
-	DownloadErrorIntegrity
-	DownloadErrorFileDownload
-	DownloadErrorNetwork
-	DownloadErrorOther
+	FeatureMain     = "nordvpn"
+	FeatureLibtelio = "libtelio"
+	FeatureMeshnet  = "meshnet"
 )
 
-func (e DownloadErrorKind) String() string {
-	switch e {
-	case DownloadErrorRemoteHashNotFound:
-		return "remote_hash_not_found"
-	case DownloadErrorRemoteFileNotFound:
-		return "remote_file_not_found"
-	case DownloadErrorIntegrity:
-		return "integrity_error"
-	case DownloadErrorFileDownload:
-		return "file_download_error"
-	case DownloadErrorNetwork:
-		return "network_error"
-	case DownloadErrorOther:
-		return "other_error"
-	default:
-		return fmt.Sprintf("%d", int(e))
-	}
-}
-
-// FeatureName defines the name of a feature for remote config.
-type FeatureName int
-
 const (
-	FeatureMain FeatureName = iota
-	FeatureLibtelio
-	FeatureMeshnet
+	ClientCli = "cli"
 )
-
-func (f FeatureName) String() string {
-	switch f {
-	case FeatureMain:
-		return "nordvpn"
-	case FeatureLibtelio:
-		return "libtelio"
-	case FeatureMeshnet:
-		return "meshnet"
-	default:
-		return fmt.Sprintf("%d", int(f))
-	}
-}

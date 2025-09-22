@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	teliogo "github.com/NordSecurity/libtelio-go/v5"
+	teliogo "github.com/NordSecurity/libtelio-go/v6"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
@@ -57,20 +57,20 @@ func maskPublicKey(event string) string {
 	return expr.ReplaceAllString(event, `"PublicKey":"***"`)
 }
 
-type eventCb func(teliogo.Event) *teliogo.TelioError
+type eventCb func(teliogo.Event) error
 
-func (cb eventCb) Event(payload teliogo.Event) *teliogo.TelioError {
+func (cb eventCb) Event(payload teliogo.Event) error {
 	return cb(payload)
 }
 
 func eventCallbackWrap(callbackHandler *telioCallbackHandler) eventCb {
-	return func(e teliogo.Event) *teliogo.TelioError {
+	return func(e teliogo.Event) error {
 		return callbackHandler.handleEvent(e)
 	}
 }
 
 type callbackHandler interface {
-	handleEvent(teliogo.Event) *teliogo.TelioError
+	handleEvent(teliogo.Event) error
 	setMonitoringContext(ctx context.Context)
 }
 
@@ -84,7 +84,7 @@ func newTelioCallbackHandler(statesChan chan<- state) *telioCallbackHandler {
 	return &telioCallbackHandler{statesChan: statesChan}
 }
 
-func (t *telioCallbackHandler) handleEvent(e teliogo.Event) *teliogo.TelioError {
+func (t *telioCallbackHandler) handleEvent(e teliogo.Event) error {
 	eventBytes, err := json.Marshal(&e)
 	if err != nil {
 		log.Printf(internal.WarningPrefix+" can't marshal telio Event %T: %s\n", e, err)
@@ -238,7 +238,7 @@ func handleTelioConfig(eventPath string, prod bool, vpnLibCfg vpn.LibConfigGette
 
 type telioLoggerCb struct{}
 
-func (cb *telioLoggerCb) Log(logLevel teliogo.TelioLogLevel, payload string) *teliogo.TelioError {
+func (cb *telioLoggerCb) Log(logLevel teliogo.TelioLogLevel, payload string) error {
 	log.Println(logLevelToPrefix(logLevel), "TELIO("+teliogo.GetVersionTag()+"): "+payload)
 	return nil
 }
@@ -700,7 +700,7 @@ func (l *Libtelio) openTunnel(prefix netip.Prefix, privateKey string) (err error
 		return fmt.Errorf("upping the interface: %w", err)
 	}
 
-	err = nordlynx.SetMTU(tun.Interface())
+	err = vpn.SetMTU(tun.Interface(), nordlynx.WireguardHeaderSize)
 	if err != nil {
 		return fmt.Errorf("setting mtu for the interface: %w", err)
 	}

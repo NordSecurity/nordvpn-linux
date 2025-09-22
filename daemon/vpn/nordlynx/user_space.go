@@ -138,7 +138,7 @@ func (u *UserSpace) Start(
 		return err
 	}
 
-	if err := SetMTU(tun.Interface()); err != nil {
+	if err := vpn.SetMTU(tun.Interface(), WireguardHeaderSize); err != nil {
 		if err := u.stop(); err != nil {
 			log.Println(internal.DeferPrefix, err)
 		}

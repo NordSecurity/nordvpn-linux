@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"sync"
 
@@ -14,25 +13,20 @@ import (
 var (
 	ErrStaticValueAlreadySet    = errors.New("static value already configured")
 	ErrStaticValueNotConfigured = errors.New("static value was not configured")
-	ErrFailedToReadConfigFile   = errors.New("failed to read static config file")
 	ErrRolloutGroupOutOfBounds  = errors.New("rollout group out of bounds")
 )
 
-type configState int
-
 const (
-	staticConfigState_noFile configState = iota
-	staticConfigState_failedToInitialize
-	staticConfigState_initialized
+	rolloutGroupUnsetValue = 0
+	rolloutGroupMin        = 1
+	rolloutGroupMax        = 100
 )
 
-const rolloutGroupUnsetValue = 0
-
 type StaticConfig struct {
-	RolloutGroup int `json:"rollout_group,omitempty"`
+	RolloutGroup int `json:"rollout_group"`
 }
 
-// StaticConfigManager stores values which remain constant thoroughout app's lifetime
+// StaticConfigManager stores values which remain constant throughout app's lifetime
 type StaticConfigManager interface {
 	GetRolloutGroup() (int, error)
 	SetRolloutGroup(int) error
@@ -40,65 +34,66 @@ type StaticConfigManager interface {
 
 // FilesystemStaticConfigManager saves and reads values to a config file
 type FilesystemStaticConfigManager struct {
-	fs    FilesystemHandle
-	state configState
-	cfg   StaticConfig
-	mu    sync.RWMutex
-}
-
-func tryInitStaticConfig(fs FilesystemHandle) (StaticConfig, configState) {
-	cfgFile, err := fs.ReadFile(internal.StaticConfigFilename)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to load static config:", err)
-		if errors.Is(err, os.ErrNotExist) {
-			return StaticConfig{}, staticConfigState_noFile
-		}
-		return StaticConfig{}, staticConfigState_failedToInitialize
-	}
-
-	var cfg StaticConfig
-	err = json.Unmarshal(cfgFile, &cfg)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to unmarshal static config:", err)
-		return cfg, staticConfigState_failedToInitialize
-	}
-
-	return cfg, staticConfigState_initialized
+	fs FilesystemHandle
+	mu sync.RWMutex
 }
 
 func NewFilesystemStaticConfigManager() *FilesystemStaticConfigManager {
-	fs := StdFilesystemHandle{}
-	cfg, state := tryInitStaticConfig(fs)
-
 	return &FilesystemStaticConfigManager{
-		fs:    fs,
-		state: state,
-		cfg:   cfg,
+		fs: StdFilesystemHandle{},
 	}
 }
 
-func (s *FilesystemStaticConfigManager) getConfig() (StaticConfig, error) {
-	if s.state == staticConfigState_initialized {
-		return s.cfg, nil
+// loadConfig reads the config from disk
+func (s *FilesystemStaticConfigManager) loadConfig() (sc StaticConfig, err error) {
+	defer func() {
+		if err != nil {
+			// in case read/load fails, try to write default/empty values
+			if data, err := json.Marshal(StaticConfig{}); err == nil {
+				s.fs.WriteFile(internal.StaticConfigFilename, data, internal.PermUserRW)
+			}
+		}
+	}()
+
+	var data []byte
+	data, err = s.fs.ReadFile(internal.StaticConfigFilename)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			// file doesn't exist yet, return empty config
+			return StaticConfig{}, nil
+		}
+		return StaticConfig{}, fmt.Errorf("reading static config file: %w", err)
 	}
 
-	cfg, state := tryInitStaticConfig(s.fs)
-	if state == staticConfigState_failedToInitialize {
-		return cfg, ErrFailedToReadConfigFile
+	var cfg StaticConfig
+	if err = json.Unmarshal(data, &cfg); err != nil {
+		return StaticConfig{}, fmt.Errorf("unmarshaling static config: %w", err)
 	}
-	s.cfg = cfg
-	s.state = state
 
-	return s.cfg, nil
+	return cfg, nil
+}
+
+// saveConfig writes the config to disk
+func (s *FilesystemStaticConfigManager) saveConfig(cfg StaticConfig) error {
+	data, err := json.Marshal(cfg)
+	if err != nil {
+		return fmt.Errorf("marshaling static config: %w", err)
+	}
+
+	if err := s.fs.WriteFile(internal.StaticConfigFilename, data, internal.PermUserRW); err != nil {
+		return fmt.Errorf("writing static config file: %w", err)
+	}
+
+	return nil
 }
 
 func (s *FilesystemStaticConfigManager) GetRolloutGroup() (int, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	cfg, err := s.getConfig()
+	cfg, err := s.loadConfig()
 	if err != nil {
-		return 0, fmt.Errorf("failed to read config: %w", err)
+		return 0, fmt.Errorf("getting rollout group: %w", err)
 	}
 
 	if cfg.RolloutGroup == rolloutGroupUnsetValue {
@@ -112,16 +107,13 @@ func (s *FilesystemStaticConfigManager) SetRolloutGroup(rolloutGroup int) error 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	const rolloutGroupMin = 1
-	const rolloutGroupMax = 100
-
 	if rolloutGroup < rolloutGroupMin || rolloutGroup > rolloutGroupMax {
 		return ErrRolloutGroupOutOfBounds
 	}
 
-	cfg, err := s.getConfig()
+	cfg, err := s.loadConfig()
 	if err != nil {
-		return fmt.Errorf("failed to read config: %w", err)
+		return fmt.Errorf("setting rollout group: %w", err)
 	}
 
 	if cfg.RolloutGroup != rolloutGroupUnsetValue {
@@ -129,16 +121,9 @@ func (s *FilesystemStaticConfigManager) SetRolloutGroup(rolloutGroup int) error 
 	}
 
 	cfg.RolloutGroup = rolloutGroup
-	json, err := json.Marshal(cfg)
-	if err != nil {
-		return fmt.Errorf("failed to serialize json: %w", err)
+	if err = s.saveConfig(cfg); err != nil {
+		return fmt.Errorf("saving rollout group: %w", err)
 	}
 
-	err = s.fs.WriteFile(internal.StaticConfigFilename, json, internal.PermUserRW)
-	if err != nil {
-		return fmt.Errorf("failed to save static config file: %w", err)
-	}
-
-	s.cfg = cfg
 	return nil
 }

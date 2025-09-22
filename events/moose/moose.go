@@ -599,6 +599,7 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 	if !data.IsAttempt {
 		duration = int32(data.Duration.Milliseconds())
 	}
+
 	return s.response(notifierFunc(
 		duration,
 		eventStatus,
@@ -607,23 +608,23 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 		int32(responseCode),
 		data.Request.Proto,
 		0,
-		"",
-		"",
-		"",
-		"",
+		data.RequestFilters,
+		data.RequestFields,
+		data.Limits,
+		data.Offset,
 		"",
 		nil,
 	))
 }
 
-// NotifyDebuggerEvent processes a MooseDebuggerEvent to emit a moose debugger log.
+// NotifyDebuggerEvent processes a DebuggerEvent to emit a moose debugger log.
 // It allows providing a custom JSON payload and context paths for the event.
 // For custom context paths, corresponding values must be of any of the following types: bool, float32, int32, int64, string.
 // Unsupported types are discarded.
 //
 // Parameters:
-//   - e: The MooseDebuggerEvent containing JSON data and context paths to process
-func (s *Subscriber) NotifyDebuggerEvent(e events.MooseDebuggerEvent) error {
+//   - e: The DebuggerEvent containing JSON data and context paths to process
+func (s *Subscriber) NotifyDebuggerEvent(e events.DebuggerEvent) error {
 	combinedPaths := append([]string{}, e.GeneralContextPaths...)
 	key := moose.MooseNordvpnappGetDeveloperContextKey()
 	for _, ctx := range e.KeyBasedContextPaths {
@@ -819,7 +820,7 @@ func (s *Subscriber) setSubscriptions(
 			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateMerchantId(payment.Subscription.MerchantID)
 		},
 		func() uint32 {
-			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStatePaymentAmount(payment.Amount)
+			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStatePaymentAmount(fmt.Sprintf("%g", payment.Amount))
 		},
 		func() uint32 {
 			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStatePaymentCurrency(payment.Currency)

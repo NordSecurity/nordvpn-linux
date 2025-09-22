@@ -5,14 +5,14 @@ import time
 import uuid
 
 import pytest
+import sh
 
 from lib import daemon
 from lib.log_reader import LogReader
-
 from lib.remote_config_manager import LOCAL_CACHE_DIR
 
-RC_REMOTE_MESSAGES = "[Info] feature [{}] remote config downloaded to: /var/lib/nordvpn/conf"
-RC_LOCAL_MESSAGES = "[Info] feature [{}] config loaded from: /var/lib/nordvpn/conf"
+RC_REMOTE_MESSAGES = f"[Info] feature [{{}}] remote config downloaded to: {LOCAL_CACHE_DIR}"
+RC_LOCAL_MESSAGES = f"[Info] feature [{{}}] config loaded from: {LOCAL_CACHE_DIR}"
 RC_REQUEST_MESSAGES = "Request:  GET https://downloads.nordcdn.com/apps/linux/config/dev/{}-hash.json"
 SERVICES_TO_BE_CHECK = ["nordvpn", "libtelio", "meshnet"]
 RC_INITIAL_RUN_MESSAGES = [RC_REMOTE_MESSAGES.format(service) for service in SERVICES_TO_BE_CHECK] + [
@@ -20,6 +20,8 @@ RC_INITIAL_RUN_MESSAGES = [RC_REMOTE_MESSAGES.format(service) for service in SER
 ]
 RC_MESHNET_CONFIG_FILE = "meshnet.json"
 RC_MESHNET_HASH_FILE = "meshnet-hash.json"
+
+RC_USE_LOCAL_CONFIG_MESSAGE = ["[Info] Ignoring remote config, using only local"]
 
 
 @pytest.fixture
@@ -42,7 +44,39 @@ def initialized_app_with_remote_config(
     """
     assert daemon_log_reader.wait_for_messages(
         messages=RC_INITIAL_RUN_MESSAGES, cursor=daemon_log_cursor
-    ), "Expected 'RC_INITIAL_RUN_MESSAGES' to appear in the daemon logs."
+    ), f"Expected all {RC_INITIAL_RUN_MESSAGES} to appear in the daemon log."
+
+
+@pytest.fixture
+def enable_local_config_in_service():
+    """
+    Pytest fixture to temporarily inject 'RC_USE_LOCAL_CONFIG=1' environment variable into the 'nordvpnd' service file.
+
+    This fixture injects 'export RC_USE_LOCAL_CONFIG=1' into the 'nordvpn' service file, simulating enabling the local config usage for tests.
+    After the test, it removes the injected line and reloads the systemd daemon to restore the initial system state.
+    """
+    service_path = "/etc/init.d/nordvpn"
+
+    # Print original service file for reference
+    print(f"Service original:\n {sh.cat(service_path)}")
+
+    # Insert environment variable into systemd service file
+    sh.sudo("sed", "-i", r"1a export RC_USE_LOCAL_CONFIG=1", service_path)
+
+    sh.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
+
+    # Print service file after modification
+    print(f"Service after:\n {sh.cat(service_path)}")
+
+    yield
+
+    # Cleanup: remove the injected environment variable line
+    sh.sudo("sed", "-i", r"/^export RC_USE_LOCAL_CONFIG=1$/d", service_path)
+
+    sh.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
+
+    # Print restored service file for verification
+    print(f"Service restored:\n {sh.cat(service_path)}")
 
 
 def check_log_for_request_get_messages(daemon_log_reader: LogReader) -> None:
@@ -159,8 +193,48 @@ def test_local_hash_files_removal_and_daemon_restart(
     assert daemon_log_reader.wait_for_messages(messages=RC_INITIAL_RUN_MESSAGES, cursor=cursor)
 
 
+def test_restart_causes_daemon_to_consume_local_files(
+    initialized_app_with_remote_config,  # noqa: ARG001
+    daemon_log_reader,
+) -> None:
+    """
+    Test that after a daemon restart, remote configuration files are consumed from the local cache.
+
+    This test verifies that when the daemon is restarted, it attempts to use locally cached
+    remote configuration files.
+
+    Test steps:
+    1. Verifies application initial run.
+    2. Record the current cursor position in the daemon.log.
+    3. Restart the daemon.
+    4. Wait for RC_INITIAL_RUN_MESSAGES in the daemon logs after restart.
+    5. Verify that RC_REMOTE_MESSAGES messages are not found,
+    confirming the remote files were used from local.
+
+    :raises AssertionError: If any of the RC_INITIAL_RUN_MESSAGES are found in the daemon.log after daemon restart or
+    if the missing log messages do not match RC_REMOTE_MESSAGES.
+    """
+
+    cursor = daemon_log_reader.get_cursor()
+
+    daemon.restart()
+
+    res, not_found = daemon_log_reader.wait_for_messages(
+        messages=RC_INITIAL_RUN_MESSAGES,
+        cursor=cursor,
+        return_not_found=True,
+    )
+
+    assert not res, "Some of the RC_INITIAL_RUN_MESSAGES are found in the daemon.log after daemon restart"
+
+    assert set(not_found) == set(
+        RC_REMOTE_MESSAGES
+    ), "The missing messages do not match the expected RC_REMOTE_MESSAGES."
+
+
 def test_disable_remote_config_download_and_verify_log_messages_not_found(
     initialized_app_with_remote_config,  # noqa: ARG001
+    clean_cache_files,  # noqa: ARG001
     disable_remote_endpoint,  # noqa: ARG001
     daemon_log_reader: LogReader,
 ) -> None:
@@ -269,6 +343,149 @@ def test_hash_modification_and_daemon_restart(
     assert daemon_log_reader.wait_for_messages(
         messages=RC_INITIAL_RUN_MESSAGES, cursor=cursor
     ), "Expected 'RC_INITIAL_RUN_MESSAGES' to appear in the daemon logs."
+
+
+def test_equivalence_of_local_and_remote_config_files(
+    initialized_app_with_remote_config, rc_config_manager, env  # noqa: ARG001
+):
+    """
+    Test that local config files and their corresponding remote config files are equivalent.
+
+    This test retrieves all remote and local configu files for the given environment.
+    For each local config file, it finds the corresponding remote config file by matching
+    filenames.
+
+    Test steps:
+    1. Verifies application initial run.
+    2. Retrieve remote and local config files for the specified environment.
+    3. For each local config, find the remote config with the same filename.
+    4. Compare their dictionary representations for equality.
+
+     :raises AssertionError: If any local config does not match the corresponding remote config, or if mapping is incomplete.
+    """
+    remote_configs = rc_config_manager.get_remote_config_files(env=env)
+    local_configs = rc_config_manager.get_local_config_files()
+
+    mapping = {}
+    for local_path in local_configs:
+        filename = local_path.split("/")[-1]
+        for remote_url in remote_configs:
+            if remote_url.endswith(filename):
+                mapping[local_path] = remote_url
+                break
+
+    assert len(local_configs) == len(mapping), (
+        "Not all local config files matched a remote config: "
+        f"{len(local_configs)} local, {len(mapping)} matched"
+    )
+
+    for local_path, remote_url in mapping.items():
+        print(f"Comparing local: {local_path} to remote: {remote_url}")
+        assert (
+            rc_config_manager.read_config(local_path).as_dict()
+            == remote_configs[remote_url].as_dict()
+        ), f"Mismatch between {local_path} and {remote_url}"
+
+
+def test_meshnet_feature_availability_based_on_remote_config(
+    initialized_app_with_remote_config, rc_config_manager, env  # noqa: ARG001
+):
+    """
+    Test that meshnet related CLI commands are unavailable when meshnet is disabled in the remote config and vice versa.
+
+    This test checks the meshnet feature flag in the remote config file and verifies that all meshnet related
+    CLI commands return the expected error message if the feature is disabled and do not return it when enabled.
+
+    Test steps:
+    1. Verifies application initial run.
+    2. Retrieve the remote meshnet config for the current environment.
+    3. Check if the meshnet feature is enabled using the remote configuration.
+    4. For a list of meshnet related CLI commands, run each command and capture the output.
+    5. Assert that the output contains (if disabled) or does not contain (if enabled) the expected error message.
+
+    :raises AssertionError: If the meshnet config cannot be found in the remote configs.
+    :raises AssertionError: If the CLI output does not match the expected result based on the meshnet flag.
+    """
+
+    remote_configs = rc_config_manager.get_remote_config_files(env=env)
+    meshnet_config = None
+
+    for url, config_obj in remote_configs.items():
+        if url.endswith("meshnet.json"):
+            meshnet_config = config_obj
+            break
+
+    assert (
+        meshnet_config is not None
+    ), "Meshnet config was not found in the remote configs."
+
+    is_meshnet_enabled = meshnet_config.as_dict()["configs"][0]["settings"][0]["value"]
+
+    print(f"is_meshnet_enabled: {is_meshnet_enabled}")
+
+    command_and_expected_message = [
+        (["nordvpn", "set", "meshnet", "on"], "Command 'meshnet' doesn't exist"),
+        (["nordvpn", "meshnet", "peer", "list"], "Command 'meshnet' doesn't exist"),
+        (["nordvpn", "fileshare", "list"], "Command 'fileshare' doesn't exist"),
+        (["nordvpn", "set", "meshnet", "off"], "Command 'meshnet' doesn't exist"),
+    ]
+
+    for command, expected_error in command_and_expected_message:
+        result = subprocess.run(command, stdout=subprocess.PIPE, text=True)
+        output = result.stdout
+        print(f"Command '{' '.join(command)}' returned: \n{output}")
+        if is_meshnet_enabled:
+            assert (
+                expected_error not in output
+            ), f"Command {command} output is not as expected for enabled meshnet. Output:\n{output}"
+        else:
+            assert (
+                expected_error in output
+            ), f"Command {command} output is not as expected for disabled meshnet. Output:\n{output}"
+
+
+def test_local_config_usage_via_systemd_env(
+    initialized_app_with_remote_config, # noqa: ARG001
+    daemon_log_reader,
+    enable_local_config_in_service, # noqa: ARG001
+):
+    """
+    Test that the environment variable 'RC_USE_LOCAL_CONFIG=1' into the 'nordvpnd' service causes the application to use only local config files.
+
+    Steps:
+      1. Verifies application initial run.
+      2. Inject the environment variable 'RC_USE_LOCAL_CONFIG=1' into the 'nordvpnd' service.
+      3. Reload the systemd daemon and restart the 'nordvpnd' to apply the change.
+      4. Record the current daemon log cursor to mark the log position before the restart.
+      5. Check the logs for the messages confirming local config usage.
+
+    :raises AssertionError: If a message indicating local config usage is not found in the logs,
+        if any remote initialization messages appear after enabling the local config environment variable,
+        or if the set of missing messages does not match RC_REMOTE_MESSAGES.
+    """
+
+    cursor = daemon_log_reader.get_cursor()
+
+    daemon.restart()
+
+    assert daemon_log_reader.wait_for_messages(
+        messages=RC_USE_LOCAL_CONFIG_MESSAGE,
+        cursor=cursor,
+    )
+
+    found_messages, missing_messages = daemon_log_reader.wait_for_messages(
+        messages=RC_INITIAL_RUN_MESSAGES,
+        cursor=cursor,
+        return_not_found=True,
+    )
+
+    assert (
+        not found_messages
+    ), "Expected initial run messages to NOT appear in the logs."
+
+    assert set(missing_messages) == set(
+        RC_REMOTE_MESSAGES
+    ), "The missing messages do not match the expected RC_REMOTE_MESSAGES."
 
 
 @pytest.mark.skip(reason="Not implemented mock CDN")

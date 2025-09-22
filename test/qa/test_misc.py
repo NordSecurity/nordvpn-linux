@@ -40,6 +40,8 @@ def test_static_install_file_creation():
 
 
 def test_api_call_after_vpn_connect():
+    """Manual TC: LVPN-8775"""
+
     # call api
     output = sh.nordvpn.account()
     print(output)
@@ -61,6 +63,8 @@ def test_api_call_after_vpn_connect():
 
 
 def test_daemon_socket_permissions():
+    """Manual TC: LVPN-8774"""
+
     socket_dir = "/run/nordvpn"
     check_info = "nordvpn 750"
     if daemon.is_under_snap():
@@ -72,6 +76,8 @@ def test_daemon_socket_permissions():
 
 
 def test_cmd_not_found_error():
+    """Manual TC: LVPN-8773"""
+
     invalid_cmd = "kinect"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:

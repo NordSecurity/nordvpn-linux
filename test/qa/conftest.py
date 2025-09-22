@@ -355,6 +355,14 @@ def disable_remote_endpoint():
         raise
 
 
+@pytest.fixture(scope="session")
+def env():
+    """Detects and returns the active environment (DEV or PROD) based on the NordVPN version output."""
+    env = daemon.get_env()
+    print(f"Current env: '{env}'")
+    return env
+
+
 @pytest.fixture
 def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
     """Fixture for setting a custom timeout for the NordVPN daemon's rc retry scheme."""

@@ -9,10 +9,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
+	devents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
@@ -30,7 +32,146 @@ const (
 	httpServerWaitTimeout = 2 * time.Second
 	testFeatureNoRc       = "feature1"
 	testFeatureWithRc     = "nordwhisper"
+
+	defaultRolloutGroup = 10
 )
+
+func TestIsNetworkRetryable(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	// create a DNS resolution error
+	dnsErr := &net.OpError{
+		Op:  "dial",
+		Net: "tcp",
+		Err: &net.DNSError{
+			Err:         "no such host",
+			Name:        "nonexistent.example.com",
+			Server:      "",
+			IsTimeout:   false,
+			IsTemporary: false,
+		},
+	}
+
+	// create a timeout error
+	timeoutErr := &net.OpError{
+		Op:  "dial",
+		Net: "tcp",
+		Err: &timeoutError{},
+	}
+
+	tests := []struct {
+		name     string
+		err      error
+		expected bool
+	}{
+		{
+			name:     "nil error",
+			err:      nil,
+			expected: false,
+		},
+		{
+			name:     "direct DNS error",
+			err:      dnsErr,
+			expected: true,
+		},
+		{
+			name:     "DNS error wrapped in DownloadError",
+			err:      NewDownloadError(DownloadErrorRemoteFileNotFound, dnsErr),
+			expected: true,
+		},
+		{
+			name:     "timeout error",
+			err:      timeoutErr,
+			expected: true,
+		},
+		{
+			name:     "timeout error wrapped in DownloadError",
+			err:      NewDownloadError(DownloadErrorFileDownload, timeoutErr),
+			expected: true,
+		},
+		{
+			name:     "server internal error",
+			err:      core.ErrServerInternal,
+			expected: true,
+		},
+		{
+			name:     "too many requests error",
+			err:      core.ErrTooManyRequests,
+			expected: true,
+		},
+		{
+			name:     "server error wrapped in DownloadError",
+			err:      NewDownloadError(DownloadErrorFileDownload, core.ErrServerInternal),
+			expected: true,
+		},
+		{
+			name:     "non-network error",
+			err:      fmt.Errorf("some other error"),
+			expected: false,
+		},
+		{
+			name:     "non-network error wrapped in DownloadError",
+			err:      NewDownloadError(DownloadErrorParsing, fmt.Errorf("json parsing error")),
+			expected: false,
+		},
+		{
+			name:     "deeply nested DNS error",
+			err:      fmt.Errorf("outer: %w", NewDownloadError(DownloadErrorRemoteHashNotFound, fmt.Errorf("middle: %w", dnsErr))),
+			expected: true,
+		},
+		{
+			name:     "connection refused error",
+			err:      &net.OpError{Op: "dial", Net: "tcp", Err: fmt.Errorf("connection refused")},
+			expected: true,
+		},
+		{
+			name:     "network unreachable error",
+			err:      &net.OpError{Op: "connect", Net: "tcp", Err: fmt.Errorf("network is unreachable")},
+			expected: true,
+		},
+		{
+			name:     "network unreachable wrapped in DownloadError",
+			err:      NewDownloadError(DownloadErrorRemoteFileNotFound, &net.OpError{Op: "connect", Net: "tcp", Err: fmt.Errorf("network is unreachable")}),
+			expected: true,
+		},
+		{
+			name: "DNS error with network unreachable",
+			err: &net.DNSError{
+				Err:         "dial udp 103.86.99.100:53: connect: network is unreachable",
+				Name:        "downloads.nordcdn.com",
+				Server:      "127.0.0.53:53",
+				IsTimeout:   false,
+				IsTemporary: false,
+			},
+			expected: true,
+		},
+		{
+			name: "DNS error with network unreachable wrapped in DownloadError",
+			err: NewDownloadError(DownloadErrorRemoteHashNotFound, &net.DNSError{
+				Err:         "dial udp 103.86.99.100:53: connect: network is unreachable",
+				Name:        "downloads.nordcdn.com",
+				Server:      "127.0.0.53:53",
+				IsTimeout:   false,
+				IsTemporary: false,
+			}),
+			expected: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			result := isNetworkRetryable(test.err)
+			assert.Equal(t, test.expected, result, "isNetworkRetryable(%v) = %v, want %v", test.err, result, test.expected)
+		})
+	}
+}
+
+// timeoutError is a mock error that implements net.Error interface
+type timeoutError struct{}
+
+func (e *timeoutError) Error() string   { return "timeout" }
+func (e *timeoutError) Timeout() bool   { return true }
+func (e *timeoutError) Temporary() bool { return true }
 
 func cleanLocalPath(t *testing.T) {
 	os.RemoveAll(localPath)
@@ -75,42 +216,42 @@ func TestFindMatchingRecord(t *testing.T) {
 	// ss []ParamValue, ver string
 	input1 := []ParamValue{
 		{
-			Value:      "val1",
-			AppVersion: ">=3.3.3",
-			Weight:     10,
-			Rollout:    10,
+			Value:         "val1",
+			AppVersion:    ">=3.3.3",
+			Weight:        10,
+			TargetRollout: 10,
 		},
 		{
-			Value:      "val2",
-			AppVersion: ">=3.3.3",
-			Weight:     20,
-			Rollout:    10,
+			Value:         "val2",
+			AppVersion:    ">=3.3.3",
+			Weight:        20,
+			TargetRollout: 10,
 		},
 		{
-			Value:      "val3",
-			AppVersion: ">=3.3.3",
-			Weight:     10,
-			Rollout:    10,
+			Value:         "val3",
+			AppVersion:    ">=3.3.3",
+			Weight:        10,
+			TargetRollout: 10,
 		},
 	}
 	input2 := []ParamValue{
 		{
-			Value:      "val1",
-			AppVersion: "3.3.3",
-			Weight:     10,
-			Rollout:    10,
+			Value:         "val1",
+			AppVersion:    "3.3.3",
+			Weight:        10,
+			TargetRollout: 10,
 		},
 		{
-			Value:      "val2",
-			AppVersion: "3.3.3",
-			Weight:     10,
-			Rollout:    10,
+			Value:         "val2",
+			AppVersion:    "3.3.3",
+			Weight:        10,
+			TargetRollout: 10,
 		},
 		{
-			Value:      "val3",
-			AppVersion: "3.3.3",
-			Weight:     10,
-			Rollout:    10,
+			Value:         "val3",
+			AppVersion:    "3.3.3",
+			Weight:        10,
+			TargetRollout: 10,
 		},
 	}
 	input3 := []ParamValue{}
@@ -122,11 +263,11 @@ func TestFindMatchingRecord(t *testing.T) {
 		matchValue   string
 	}{
 		{
-			name:         "match1",
+			name:         "match1 - no rollout / no match",
 			input:        input1,
 			myAppVer:     "3.3.3",
 			myAppRollout: 30,
-			matchValue:   "val2",
+			matchValue:   "",
 		},
 		{
 			name:         "match1 - no match by lesser version",
@@ -136,38 +277,42 @@ func TestFindMatchingRecord(t *testing.T) {
 			matchValue:   "",
 		},
 		{
-			name:         "match1 - no rollout / no match",
+			name:         "match1",
 			input:        input1,
 			myAppVer:     "3.3.3",
 			myAppRollout: 3,
-			matchValue:   "",
+			matchValue:   "val2",
 		},
 		{
 			name:         "match2 - match by greater version",
 			input:        input1,
 			myAppVer:     "3.3.4",
-			myAppRollout: 30,
+			myAppRollout: 9,
 			matchValue:   "val2",
 		},
 		{
 			name:         "match3 - equal weights, first match used",
 			input:        input2,
 			myAppVer:     "3.3.3",
-			myAppRollout: 30,
+			myAppRollout: 10,
 			matchValue:   "val1",
 		},
 		{
 			name:         "match4 - empty list, no matches",
 			input:        input3,
 			myAppVer:     "3.3.3",
-			myAppRollout: 30,
+			myAppRollout: 19,
 			matchValue:   "",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			match := findMatchingRecord(test.input, test.myAppVer, test.myAppRollout)
+			cdn, cancel := setupMockCdnClient()
+			defer cancel()
+			rc := newTestRemoteConfig(test.myAppVer, "dev", cdn, test.myAppRollout)
+			match := rc.findMatchingRecord(test.input, test.myAppVer)
+
 			if test.matchValue != "" {
 				assert.NotNil(t, match)
 				assert.Equal(t, test.matchValue, match.Value)
@@ -188,47 +333,74 @@ func TestFeatureOnOff(t *testing.T) {
 	defer cancel()
 
 	tests := []struct {
-		name    string
-		ver     string
-		env     string
-		feature string
-		on      bool
+		name                   string
+		ver                    string
+		env                    string
+		feature                string
+		featureEnabledExpected bool
 	}{
 		{
-			name:    "feature1 no rc - off by default",
-			ver:     "",
-			env:     "dev",
-			feature: testFeatureNoRc,
-			on:      true,
+			name:                   "feature1 no rc - off by default",
+			ver:                    "",
+			env:                    "dev",
+			feature:                testFeatureNoRc,
+			featureEnabledExpected: true,
 		},
 		{
-			name:    "feature2 1",
-			ver:     "1.1.1",
-			env:     "dev",
-			feature: testFeatureWithRc,
-			on:      false,
+			name:                   "feature2 1",
+			ver:                    "1.1.1",
+			env:                    "dev",
+			feature:                testFeatureWithRc,
+			featureEnabledExpected: false,
 		},
 		{
-			name:    "feature2 2",
-			ver:     "4.1.1",
-			env:     "dev",
-			feature: testFeatureWithRc,
-			on:      true,
+			name:                   "feature2 2",
+			ver:                    "4.1.1",
+			env:                    "dev",
+			feature:                testFeatureWithRc,
+			featureEnabledExpected: true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			eh := newTestRemoteConfigEventHandler()
-			rc := newTestRemoteConfig(test.ver, test.env, cdn)
+			rc := newTestRemoteConfig(test.ver, test.env, cdn, defaultRolloutGroup)
 			rc.Subscribe(eh)
-			err := rc.LoadConfig()
+			err := rc.Load()
 			assert.True(t, eh.notified)
 			assert.NoError(t, err)
-			on := rc.IsFeatureEnabled(test.feature)
-			assert.Equal(t, test.on, on)
+			isFeatureEnabled := rc.IsFeatureEnabled(test.feature)
+			assert.Equal(t, test.featureEnabledExpected, isFeatureEnabled)
 		})
 	}
+}
+
+func TestMultiAccess(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	stop := setupMockCdnWebServer(false)
+	defer stop()
+
+	cdn, cancel := setupMockCdnClient()
+	defer cancel()
+
+	rc := newTestRemoteConfig("3.20.1", "dev", cdn, defaultRolloutGroup)
+
+	cnt := 10
+	wg := sync.WaitGroup{}
+	wg.Add(cnt)
+
+	for i := 0; i < cnt; i++ {
+		go func() {
+			err := rc.Load()
+			assert.NoError(t, err)
+			on := rc.IsFeatureEnabled(testFeatureWithRc)
+			assert.True(t, on)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
 }
 
 func TestGetTelioConfig(t *testing.T) {
@@ -253,7 +425,7 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.20.1",
 			env:         "dev",
 			fromDisk:    false,
-			feature:     FeatureLibtelio.String(),
+			feature:     FeatureLibtelio,
 			expectError: false,
 		},
 		{
@@ -261,7 +433,7 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.1.1",
 			env:         "dev",
 			fromDisk:    false,
-			feature:     FeatureLibtelio.String(),
+			feature:     FeatureLibtelio,
 			expectError: true,
 		},
 		{
@@ -269,7 +441,7 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.20.1",
 			env:         "dev",
 			fromDisk:    true,
-			feature:     FeatureLibtelio.String(),
+			feature:     FeatureLibtelio,
 			expectError: false,
 		},
 	}
@@ -283,8 +455,8 @@ func TestGetTelioConfig(t *testing.T) {
 				err := os.Unsetenv(envUseLocalConfig)
 				assert.NoError(t, err)
 			}
-			rc := newTestRemoteConfig(test.ver, test.env, cdn)
-			err := rc.LoadConfig()
+			rc := newTestRemoteConfig(test.ver, test.env, cdn, defaultRolloutGroup)
+			err := rc.Load()
 			assert.NoError(t, err)
 			telioCfg, err := rc.GetTelioConfig()
 			if test.expectError {
@@ -312,11 +484,11 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	libtelioInc1ConfigFile := filepath.Join(localPath, "include/libtelio1.json")
 	libtelioInc2ConfigFile := filepath.Join(localPath, "include/libtelio2.json")
 
-	rc := newTestRemoteConfig("3.4.1", "dev", cdn)
+	rc := newTestRemoteConfig("3.4.1", "dev", cdn, defaultRolloutGroup)
 
 	log.Println("~~~~ first attempt to load - should load whole config from web server")
 
-	err := rc.LoadConfig()
+	err := rc.Load()
 	assert.NoError(t, err)
 
 	info1, err := os.Stat(libtelioMainConfigFile)
@@ -331,7 +503,7 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 
 	log.Println("~~~~ second attempt to load - should check hash is the same and should not load main config from web server")
 
-	err = rc.LoadConfig()
+	err = rc.Load()
 	assert.NoError(t, err)
 
 	info2, err := os.Stat(libtelioMainConfigFile)
@@ -358,7 +530,7 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 
 	log.Println("~~~~ try to load again - libtelio config hash is not the same, should try to load whole libtelio config from web server")
 
-	err = rc.LoadConfig()
+	err = rc.Load()
 	assert.NoError(t, err)
 
 	info3, err := os.Stat(libtelioMainConfigFile)
@@ -397,20 +569,26 @@ func (e *RemoteConfigEventHandler) RemoteConfigUpdate(c RemoteConfigEvent) error
 	return nil
 }
 
-func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage) *CdnRemoteConfig {
-	rc := &CdnRemoteConfig{
-		appVersion:     ver,
-		appEnvironment: env,
-		remotePath:     httpPath,
-		localCachePath: localPath,
-		cdn:            cdn,
-		features:       make(FeatureMap),
-		notifier:       &subs.Subject[RemoteConfigEvent]{},
+func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage, rolloutGroup int) *CdnRemoteConfig {
+	testSubject := subs.Subject[events.DebuggerEvent]{}
+	ve := devents.DebuggerEvents{
+		DebuggerEvents: &testSubject,
 	}
-	rc.features.Add(FeatureMain.String())
-	rc.features.Add(FeatureLibtelio.String())
-	rc.features.Add(testFeatureNoRc)
-	rc.features.Add(testFeatureWithRc)
+	rc := &CdnRemoteConfig{
+		appVersion:      ver,
+		appEnvironment:  env,
+		remotePath:      httpPath,
+		localCachePath:  localPath,
+		cdn:             cdn,
+		features:        NewFeatureMap(),
+		analytics:       NewRemoteConfigAnalytics(ve.DebuggerEvents, rolloutGroup),
+		notifier:        &subs.Subject[RemoteConfigEvent]{},
+		appRolloutGroup: rolloutGroup,
+	}
+	rc.features.add(FeatureMain)
+	rc.features.add(FeatureLibtelio)
+	rc.features.add(testFeatureNoRc)
+	rc.features.add(testFeatureWithRc)
 	return rc
 }
 
@@ -547,7 +725,8 @@ var nordwhisperJsonConfFile = `
                 {
                     "value": false,
                     "app_version": "*",
-                    "weight": 1
+                    "weight": 1,
+					"rollout": 20
                 },
                 {
                     "value": true,
@@ -593,18 +772,20 @@ var libtelioJsonConfFile = `
     "version": 1,
     "configs": [
         {
-            "name": "libtelio",
+            "name": "libtelio_config",
             "value_type": "file",
             "settings": [
                 {
                     "value": "include/libtelio1.json",
                     "app_version": ">=3.19.0",
-                    "weight": 1
+                    "weight": 1,
+                    "rollout": 20
                 },
                 {
                     "value": "include/libtelio2.json",
                     "app_version": ">=3.18.3",
-                    "weight": 3
+                    "weight": 3,
+                    "rollout": 20
                 }
             ]
         }
@@ -646,18 +827,20 @@ var libtelioUpdatedJsonConfFile = `
     "version": 1,
     "configs": [
         {
-            "name": "libtelio",
+            "name": "libtelio_config",
             "value_type": "file",
             "settings": [
                 {
                     "value": "include/libtelio1.json",
                     "app_version": ">=3.19.0",
-                    "weight": 1
+                    "weight": 1,
+                    "rollout": 20
                 },
                 {
                     "value": "include/libtelio2.json",
                     "app_version": ">=3.18.3",
-                    "weight": 3
+                    "weight": 3,
+                    "rollout": 20
                 }
             ]
         }

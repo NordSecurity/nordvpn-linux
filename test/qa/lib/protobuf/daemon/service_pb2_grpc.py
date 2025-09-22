@@ -8,6 +8,7 @@ import cities_pb2 as cities__pb2
 import common_pb2 as common__pb2
 import connect_pb2 as connect__pb2
 import defaults_pb2 as defaults__pb2
+import features_pb2 as features__pb2
 import login_pb2 as login__pb2
 import login_with_token_pb2 as login__with__token__pb2
 import logout_pb2 as logout__pb2
@@ -235,11 +236,6 @@ class DaemonStub(object):
                 request_serializer=common__pb2.Empty.SerializeToString,
                 response_deserializer=status__pb2.StatusResponse.FromString,
                 _registered_method=True)
-        self.SetIpv6 = channel.unary_unary(
-                '/pb.Daemon/SetIpv6',
-                request_serializer=set__pb2.SetGenericRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
-                _registered_method=True)
         self.ClaimOnlinePurchase = channel.unary_unary(
                 '/pb.Daemon/ClaimOnlinePurchase',
                 request_serializer=common__pb2.Empty.SerializeToString,
@@ -269,6 +265,11 @@ class DaemonStub(object):
                 '/pb.Daemon/GetDaemonApiVersion',
                 request_serializer=common__pb2.GetDaemonApiVersionRequest.SerializeToString,
                 response_deserializer=common__pb2.GetDaemonApiVersionResponse.FromString,
+                _registered_method=True)
+        self.GetFeatureToggles = channel.unary_unary(
+                '/pb.Daemon/GetFeatureToggles',
+                request_serializer=common__pb2.Empty.SerializeToString,
+                response_deserializer=features__pb2.FeatureToggles.FromString,
                 _registered_method=True)
 
 
@@ -497,12 +498,6 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SetIpv6(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
     def ClaimOnlinePurchase(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -534,6 +529,12 @@ class DaemonServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def GetDaemonApiVersion(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetFeatureToggles(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -727,11 +728,6 @@ def add_DaemonServicer_to_server(servicer, server):
                     request_deserializer=common__pb2.Empty.FromString,
                     response_serializer=status__pb2.StatusResponse.SerializeToString,
             ),
-            'SetIpv6': grpc.unary_unary_rpc_method_handler(
-                    servicer.SetIpv6,
-                    request_deserializer=set__pb2.SetGenericRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
-            ),
             'ClaimOnlinePurchase': grpc.unary_unary_rpc_method_handler(
                     servicer.ClaimOnlinePurchase,
                     request_deserializer=common__pb2.Empty.FromString,
@@ -761,6 +757,11 @@ def add_DaemonServicer_to_server(servicer, server):
                     servicer.GetDaemonApiVersion,
                     request_deserializer=common__pb2.GetDaemonApiVersionRequest.FromString,
                     response_serializer=common__pb2.GetDaemonApiVersionResponse.SerializeToString,
+            ),
+            'GetFeatureToggles': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetFeatureToggles,
+                    request_deserializer=common__pb2.Empty.FromString,
+                    response_serializer=features__pb2.FeatureToggles.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -1773,33 +1774,6 @@ class Daemon(object):
             _registered_method=True)
 
     @staticmethod
-    def SetIpv6(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/SetIpv6',
-            set__pb2.SetGenericRequest.SerializeToString,
-            common__pb2.Payload.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
     def ClaimOnlinePurchase(request,
             target,
             options=(),
@@ -1951,6 +1925,33 @@ class Daemon(object):
             '/pb.Daemon/GetDaemonApiVersion',
             common__pb2.GetDaemonApiVersionRequest.SerializeToString,
             common__pb2.GetDaemonApiVersionResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetFeatureToggles(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/GetFeatureToggles',
+            common__pb2.Empty.SerializeToString,
+            features__pb2.FeatureToggles.FromString,
             options,
             channel_credentials,
             insecure,

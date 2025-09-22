@@ -112,7 +112,7 @@ class LogReader:
 
                 if not messages_to_find:
                     print("All specified messages have been found in the log.")
-                    return True
+                    return True if not return_not_found else (True, messages_to_find)
 
             except FileNotFoundError:
                 print(f"Log file '{self.log_path}' not found. Retrying...")

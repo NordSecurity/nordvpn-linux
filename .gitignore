@@ -28,7 +28,8 @@ linux
 .venv
 __pycache__
 
-.vagrant
+**/.vagrant/
+**/.vagrant.d/
 .vscode/*
 !.vscode/settings.json
 !.vscode/launch.json
@@ -46,3 +47,6 @@ parts
 prime
 stage
 *.snap
+
+# GUI has its own .gitignore
+!gui/**

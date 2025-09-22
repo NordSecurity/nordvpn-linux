@@ -21,8 +21,16 @@ parallel=""
 if [ "${1:-""}" = "full" ]; then
 	# Apply moose patch in case compiling with moose
 	trap '${WORKDIR}/ci/remove_private_bindings.sh moose/events; ${WORKDIR}/ci/remove_private_bindings.sh moose/worker;' EXIT
-	source "${WORKDIR}"/ci/add_private_bindings.sh moose/events ./third-party/moose-events/moosenordvpnappgo/v16
-	source "${WORKDIR}"/ci/add_private_bindings.sh moose/worker ./third-party/moose-worker/mooseworkergo/v16
+	source "${WORKDIR}"/ci/add_private_bindings.sh moose/events ./third-party/moose-events/moosenordvpnappgo/v17
+	source "${WORKDIR}"/ci/add_private_bindings.sh moose/worker ./third-party/moose-worker/mooseworkergo/v17
+
+	# TODO/FIXME: workaround for the moose problem, remove this code after moose resolves this situation
+	ls -la ./third-party/moose-worker/mooseworkergo/
+	mooseFileToRemove="./third-party/moose-worker/mooseworkergo/httpclient.go"
+	if [ -f "${mooseFileToRemove}" ]; then
+		echo "Remove moose file which is in the wrong place: ${mooseFileToRemove}"
+		rm "${mooseFileToRemove}"
+	fi
 
 	excluded_packages="thisshouldneverexist"
 	excluded_categories="root,link"

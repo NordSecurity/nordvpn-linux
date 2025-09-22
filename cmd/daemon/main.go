@@ -21,6 +21,7 @@ import (
 	"golang.org/x/net/netutil"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
+	"github.com/NordSecurity/nordvpn-linux/clientid"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -98,6 +99,7 @@ const (
 	// API client to ignore X-headers. This makes setting up MITM proxies up possible. This
 	// should not be used for regular usage.
 	EnvIgnoreHeaderValidation = "IGNORE_HEADER_VALIDATION"
+	EnvNordCdnUrl             = "NORD_CDN_URL"
 )
 
 func init() {
@@ -244,21 +246,26 @@ func main() {
 			)
 		}, nil)
 
-	cdnAPI := core.NewCDNAPI(
-		userAgent,
-		core.CDNURL,
-		httpClientSimple,
-		validator,
-	)
-
-	var threatProtectionLiteServers *dns.NameServers
-	nameservers, err := cdnAPI.ThreatProtectionLite()
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "error retrieving nameservers:", err)
-		threatProtectionLiteServers = dns.NewNameServers(nil)
-	} else {
-		threatProtectionLiteServers = dns.NewNameServers(nameservers.Servers)
+	cdnUrl := core.CDNURL
+	if !internal.IsProdEnv(Environment) && os.Getenv(EnvNordCdnUrl) != "" {
+		cdnUrl = os.Getenv(EnvNordCdnUrl)
 	}
+	log.Println(internal.InfoPrefix, "CDN URL:", cdnUrl)
+
+	threatProtectionLiteServers := func() *dns.NameServers {
+		cdn := core.NewCDNAPI(
+			userAgent,
+			cdnUrl,
+			httpClientSimple,
+			validator,
+		)
+		nameservers, err := cdn.ThreatProtectionLite()
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "error retrieving nameservers:", err)
+			return dns.NewNameServers(nil)
+		}
+		return dns.NewNameServers(nameservers.Servers)
+	}()
 
 	resolver := network.NewResolver(fw, threatProtectionLiteServers)
 
@@ -273,6 +280,13 @@ func main() {
 		httpCallsSubject,
 		daemonEvents.Service.Connect,
 		httpGlobalCtx,
+	)
+
+	cdnAPI := core.NewCDNAPI(
+		userAgent,
+		cdnUrl,
+		httpClientWithRotator,
+		validator,
 	)
 
 	defaultAPI := core.NewDefaultAPI(
@@ -349,7 +363,19 @@ func main() {
 		log.Println(internal.ErrorPrefix, "getting rollout group:", err)
 		// in case of error, rollout group is `0`
 	}
-	rcConfig := getRemoteConfigGetter(buildTarget, RemotePath, cdnAPI, rolloutGroup)
+	rcConfig := getRemoteConfigGetter(
+		buildTarget,
+		RemotePath,
+		cdnAPI,
+		remote.NewRemoteConfigAnalytics(
+			daemonEvents.Debugger.DebuggerEvents,
+			rolloutGroup,
+		),
+		rolloutGroup,
+	)
+
+	// try to load config from disk if it was previously downloaded
+	rcConfig.TryPreload()
 
 	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem, rcConfig)
 
@@ -589,6 +615,10 @@ func main() {
 		middleware.AddStreamMiddleware(norduserMiddleware.StreamMiddleware)
 		middleware.AddUnaryMiddleware(norduserMiddleware.UnaryMiddleware)
 	}
+
+	clientIDMiddleware := clientid.NewClientIDMiddleware(daemonEvents.Service.UiItemsClick)
+	middleware.AddStreamMiddleware(clientIDMiddleware.StreamMiddleware)
+	middleware.AddUnaryMiddleware(clientIDMiddleware.UnaryMiddleware)
 
 	opts = append(opts, grpc.StreamInterceptor(middleware.StreamIntercept))
 	opts = append(opts, grpc.UnaryInterceptor(middleware.UnaryIntercept))

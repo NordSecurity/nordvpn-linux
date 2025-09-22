@@ -1,0 +1,52 @@
+Vagrant.configure("2") do |config|
+  # sync project folder in /vagrant folder
+  config.vm.synced_folder ENV["WORKDIR"], "/vagrant"
+
+  # libvirt uses rsync and there are issues with the snap folders
+  # Because of this for libvirt override sync to exclude problematic folders
+  config.vm.provider "libvirt" do |lv, override|
+    override.vm.synced_folder ENV["WORKDIR"], "/vagrant", type: "nfs", nfs_version: 4
+  end
+
+  config.vm.network "private_network", type: "dhcp"
+
+  # install dependencies
+  config.vm.provision "shell", path: "provision_snap.sh"
+
+  # Add support for a custom box that can be downloaded from an https server
+  config.vm.define "custom" do |box|
+    # only execute if custom configuration is used, e.g. vagrant up custom
+    if ARGV.include?("custom")
+      box_url = ENV["SNAP_TEST_BOX_URL"]
+      if box_url.nil? || box_url.empty?
+        abort "SNAP_TEST_BOX_URL must be set in .env or as an environment variable"
+      end
+
+      # set credentials to download the box, if needed
+      username = ENV["SNAP_TEST_BOX_USER"]
+      password=ENV["SNAP_TEST_BOX_PASS"]
+      puts "Using box: #{box_url}"
+
+      # set download options
+      box.vm.box_download_options = {
+        'user': "#{username}:#{password}",
+      }
+
+      box.vm.provider :libvirt do |libvirt|
+        libvirt.cpus = 3
+        libvirt.memory = 4096
+      end
+    
+      box.vm.box = "custom_snap"
+      box.vm.box_url = box_url
+    end 
+  end
+
+  config.vm.define "ubuntu2204", autostart: false do |ubuntu|
+    ubuntu.vm.box = "generic/ubuntu2204"
+  end
+
+  config.vm.define "default", primary: true  do |default|
+    default.vm.box = "generic/ubuntu2204"
+  end
+end
