@@ -164,7 +164,6 @@ func (b *SessionStoresBuilder) registerVPNCredsHandlers(logoutHandler *daemon.Lo
 		if errors.Is(reason, session.ErrMissingVPNCredsResponse) ||
 			errors.Is(reason, session.ErrMissingVPNCredentials) ||
 			errors.Is(reason, session.ErrMissingNordLynxPrivateKey) {
-
 			// For missing credentials or missing nordlynx key, return corrupted VPN creds
 			return events.ReasonCorruptedVPNCreds
 		}
