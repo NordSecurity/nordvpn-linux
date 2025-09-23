@@ -25,6 +25,7 @@ void main() async {
     return true;
   };
 
+  // some change
   WidgetsFlutterBinding.ensureInitialized();
   await initServiceLocator();
 
