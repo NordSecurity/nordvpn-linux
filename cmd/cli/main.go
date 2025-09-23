@@ -80,6 +80,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	// some change
 	// Setup logging
 	fileLogger := &lumberjack.Logger{
 		Filename:   filepath.Join(configDir, "cli.log"),
