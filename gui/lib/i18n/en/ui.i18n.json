@@ -239,5 +239,8 @@
   "confirmPreferences": "Confirm preferences",
   "analytics": "Analytics",
   "analyticsDescription": "Help us improve the app by sending aggregated usage data. We collect this data to keep our features relevant to your needs and to fix issues faster.",
-  "back": "Back"
+  "back": "Back",
+  "snapScreenTitle": "We need some permissions to connect to NordVPN service",
+  "snapScreenDescription": "Grant permission by running these commands in the terminal. Then refresh the screen.",
+  "refresh": "Refresh"
 }
