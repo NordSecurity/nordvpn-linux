@@ -730,7 +730,6 @@ def test_remote_config_change_local_meshnet_config_settings_(
     rc_config_manager,
     daemon_log_reader,  # noqa: ARG001
     set_custom_timeout_for_rc_retry_scheme,  # noqa: ARG001
-    initialized_app_with_remote_config,  # noqa: ARG001
     set_use_local_config_for_rc,  # noqa: ARG001
 ):
     """
