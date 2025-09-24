@@ -5,10 +5,12 @@ import 'package:grpc/grpc_or_grpcweb.dart';
 import 'package:nordvpn/constants.dart';
 import 'package:nordvpn/data/mocks/daemon/grpc_server.dart';
 import 'package:nordvpn/grpc/error_handling_interceptor.dart';
+import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/pb/daemon/service.pbgrpc.dart';
 import 'package:nordvpn/service_locator.dart';
 
-const String _socketPath = "/run/nordvpn/nordvpnd.sock";
+const _socketEnvVar = 'NORDVPND_SOCKET';
+const String _defaultSocketPath = "/run/nordvpn/nordvpnd.sock";
 
 /// Creates a new channel to the daemon.
 /// Preferably is to use the shared instance from sl() instead of creating a new one
@@ -22,12 +24,21 @@ ClientChannel createNewChannel() {
     );
   }
   final channel = GrpcOrGrpcWebClientChannel.grpc(
-    InternetAddress(_socketPath, type: InternetAddressType.unix),
+    InternetAddress(_socketPath(), type: InternetAddressType.unix),
     port: 0,
     options: const ChannelOptions(credentials: ChannelCredentials.insecure()),
   );
 
   return channel;
+}
+
+String _socketPath() {
+  final socketEnvVar = Platform.environment[_socketEnvVar]?.trim();
+  final socketPath = socketEnvVar?.isNotEmpty ?? false
+      ? socketEnvVar!
+      : _defaultSocketPath;
+  logger.i("daemon socket path: $socketPath");
+  return socketPath;
 }
 
 // Creates a new DaemonClient and register the error interceptor for it.

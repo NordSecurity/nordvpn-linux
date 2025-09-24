@@ -16,18 +16,18 @@ scripts/update_app_version.sh
 
 # This cleans up the version updates made in `scripts/build_application.sh`
 cleanup() {
-	local file="pubspec.yaml"
-	if [ -f "${file}.bak" ]; then
-		mv -f "${file}.bak" "${file}"
-		echo "Reverted changes to ${file}"
-	fi
+  local file="pubspec.yaml"
+  if [ -f "${file}.bak" ]; then
+    mv -f "${file}.bak" "${file}"
+    echo "Reverted changes to ${file}"
+  fi
 }
 trap cleanup EXIT ERR INT TERM
 
-source "scripts/env.sh"
-source "scripts/archs.sh"
+source "${WORKDIR}/ci/env.sh"
+source "${WORKDIR}/ci/archs.sh"
 
-echo Building on $(uname -m)
+echo "Building on $(uname -m)"
 
 # convert build type to lower case
 BUILD_TYPE="${1,,}"
@@ -38,9 +38,20 @@ rm -fr "${RELEASE_SYMBOLS}"
 
 FLAGS=""
 if [ "$BUILD_TYPE" == "release" ]; then
-    echo Save debug symbols into ${RELEASE_SYMBOLS}
-    FLAGS="--split-debug-info=${RELEASE_SYMBOLS}"
+  echo "Save debug symbols into ${RELEASE_SYMBOLS}"
+  FLAGS="--split-debug-info=${RELEASE_SYMBOLS}"
 fi
 
-echo Building application for ${BUILD_TYPE}
-flutter build linux --${BUILD_TYPE} ${FLAGS}
+echo "Building application for ${BUILD_TYPE}"
+flutter clean
+# shellcheck disable=SC2086
+flutter build linux --"${BUILD_TYPE}" ${FLAGS}
+
+OUTPUT_DIR="${WORKDIR}/bin/${ARCH}/gui"
+mkdir -p "${OUTPUT_DIR}"
+FLUTTER_ARCH="${ARCHS_FLUTTER[$ARCH]}"
+SRC_BUNDLE="./build/linux/${FLUTTER_ARCH}/${BUILD_TYPE}/bundle/"
+
+echo "Copying '${SRC_BUNDLE}/*' to ${OUTPUT_DIR}"
+cp -r "${SRC_BUNDLE}"* "${OUTPUT_DIR}"
+

@@ -73,6 +73,12 @@ declare -A ARCHS_RUST=(
     [aarch64]=arm64
 )
 
+# Key is one of ARCHS
+declare -A ARCHS_FLUTTER=(
+    [amd64]=x64
+    [aarch64]=arm64
+)
+
 export ARCHS
 export ARCHS_REVERSE
 export ARCHS_DEB
@@ -80,3 +86,4 @@ export ARCHS_RPM
 export ARCHS_GO
 export ARCHS_SO_REVERSE
 export ARCHS_RUST
+export ARCHS_FLUTTER
