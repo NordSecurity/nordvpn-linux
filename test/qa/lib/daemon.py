@@ -205,3 +205,38 @@ def get_env() ->str:
     if Env.DEV in result:
         return Env.DEV
     return Env.PROD
+
+def enable_rc_local_config_usage():
+    """
+    Modifies the nordvpn service file to enable usage of local remote config.
+
+    This function is typically used to force the application to use locally cached remote config files.
+    """
+    service_path = "/etc/init.d/nordvpn"
+
+    # Print original service file for reference
+    print(f"Service original:\n {sh.cat(service_path)}")
+
+    # Insert environment variable into systemd service file
+    sh.sudo("sed", "-i", r"1a export RC_USE_LOCAL_CONFIG=1", service_path)
+
+    sh.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
+
+    # Print service file after modification
+    print(f"Service after:\n {sh.cat(service_path)}")
+
+def disable_rc_local_config_usage():
+    """
+    Restores the original nordvpn service file by removing the forced local config env variable.
+
+    This function is typically used to clean up the service file after testing,
+    ensuring that the local remote config behavior is disabled.
+    """
+    service_path = "/etc/init.d/nordvpn"
+    # Cleanup: remove the injected environment variable line
+    sh.sudo("sed", "-i", r"/^export RC_USE_LOCAL_CONFIG=1$/d", service_path)
+
+    sh.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
+
+    # Print restored service file for verification
+    print(f"Service restored:\n {sh.cat(service_path)}")
