@@ -8,6 +8,12 @@ RUN apt-get update && \
   elfutils \
   git
 
+# Put the missing Snapcraft extension assets where the extension expects them
+RUN git clone --depth=1 https://github.com/canonical/snapcraft.git /tmp/snapcraft-src \
+ && mkdir -p /usr/share/snapcraft/extensions \
+ && cp -a /tmp/snapcraft-src/extensions/* /usr/share/snapcraft/extensions/ \
+ && rm -rf /tmp/snapcraft-src
+
 # This is a work around craftctl not available in docker
 ENV PATH="/usr/libexec/snapcraft:$PATH"
 
