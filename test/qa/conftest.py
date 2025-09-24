@@ -50,8 +50,9 @@ def pytest_configure(config):
     """
     desc = os.getenv("CI_PIPELINE_SCHEDULE_DESCRIPTION")
     if desc and desc.lower().strip() == "nightly":
-        config.option.maxfail=0
-        config.option.exitfirst=False
+        config.option.maxfail = 0
+        config.option.exitfirst = False
+
 
 def print_to_string(*args, **kwargs):
     output = io.StringIO()
@@ -422,6 +423,7 @@ def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
 def set_use_local_config_for_rc(daemon_log_reader):
     """
     Fixture to set parameter RC_USE_LOCAL_CONFIG in config for not overwriting local config by remote.
+
     (Log about downloading config still persist)
     """
     print("Setting 'use local config' for NordVPN daemon's rc")

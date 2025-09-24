@@ -490,7 +490,7 @@ def test_local_config_usage_via_systemd_env(
 
 @pytest.mark.skip(reason="Not implemented mock CDN")
 @pytest.mark.parametrize(
-    ("tcid, error_message"),
+    ("tcid", "error_message"),
     [
         pytest.param("LVPN-8452", "error: downloading main hash file:", id="no_cache"),
         pytest.param(
@@ -609,7 +609,7 @@ def test_remote_config_download_config_on_start(
 
 
 @pytest.mark.parametrize(
-    ("tcid, is_config_different"),
+    ("tcid", "is_config_different"),
     [
         pytest.param("LVPN-8477", False, id="equal_remote_config"),
         pytest.param(
@@ -687,25 +687,23 @@ def test_remote_config_attempts_config_(
     )
     different_files = []
 
-    for line in conf_files_data_after_attempt.stdout.splitlines():
-        if is_config_different:
-            for nordvpn_file in ("nordvpn.json", "nordvpn-hash.json"):
-                if nordvpn_file not in (
-                    list(
-                        set(conf_files_data_after_attempt.stdout.splitlines())
-                        - set(conf_files_data.stdout.splitlines())
-                    )
-                ):
-                    different_files.append(line)
-            break
-        elif line not in conf_files_data.stdout.splitlines():
-            different_files.append(line)
+    if is_config_different:
+        for nordvpn_file in ("nordvpn.json", "nordvpn-hash.json"):
+            if nordvpn_file not in (
+                list(set(conf_files_data_after_attempt.stdout.splitlines()) - set(conf_files_data.stdout.splitlines()))
+            ):
+                different_files.append(nordvpn_file)
+
+    else:
+        for line in conf_files_data_after_attempt.stdout.splitlines():
+            if line not in conf_files_data.stdout.splitlines():
+                different_files.append(line)
 
     assert not different_files, f"Found some files mismatch: {different_files}"
 
 
 @pytest.mark.parametrize(
-    ("tcid, parameter, value, additional_log_verification"),
+    ("tcid", "parameter", "value", "additional_log_verification"),
     [
         pytest.param("LVPN-8544", "value", False, False, id="set_value_false"),
         pytest.param("LVPN-8522", "rollout", None, False, id="remove_rollout"),
@@ -760,7 +758,7 @@ def test_remote_config_change_local_meshnet_config_settings_(
     if not rc_config_manager.set_permissions_cache_dir():
         pytest.skip("Directory doesn't exist")
 
-    with open(f"{LOCAL_CACHE_DIR}/{RC_MESHNET_CONFIG_FILE}", "r") as file:
+    with open(f"{LOCAL_CACHE_DIR}/{RC_MESHNET_CONFIG_FILE}") as file:
         config = json.load(file)
 
     if value is not None:
