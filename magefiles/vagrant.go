@@ -20,6 +20,7 @@ type secret string
 func newSecret(val string) secret {
 	return secret(val)
 }
+
 func (s secret) GoString() string {
 	return s.String()
 }
