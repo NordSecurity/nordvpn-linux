@@ -84,7 +84,9 @@ mkdir -p "${APP_DIR}/${PKG_TO_BUILD}"
 nfpm pkg --packager "${PKG_TO_BUILD}" -f "${BASEDIR}"/packages.yaml
 mv "${WORKDIR}"/*."${PKG_TO_BUILD}" "${APP_DIR}/${PKG_TO_BUILD}"
 
-#TODO: go to gui directory, and simply run nfpm from there?
+# remove leftovers
+rm -rf "${BASEDIR}"
+
 cleanup() {
   local file="${WORKDIR}/gui/pubspec.yaml"
   if [ -f "${file}.bak" ]; then
@@ -120,17 +122,9 @@ rm -fr /usr/bin/${NAME}
 # prepare folders structure for packaging
 DIST_DIR="dist"
 export APP_BUNDLE_DIR="$DIST_DIR/source/${NAME}_${VERSION}_${ARCH}"
-# export APP_BUNDLE_DIR="bin/${ARCH}/gui"
-
-# rm -fr "$DIST_DIR"
 
 export INSTALL_DIR="/opt/${NAME}"
 mkdir -p "${APP_BUNDLE_DIR}${INSTALL_DIR}"
-pwd
-ls -la ${WORKDIR}/
-ls -la ${WORKDIR}/bin/
-ls -la ${WORKDIR}/bin/${ARCH}
-ls -la ${WORKDIR}/bin/${ARCH}/gui/
 cp -r "${WORKDIR}/bin/${ARCH}/gui/"* "${APP_BUNDLE_DIR}${INSTALL_DIR}"
 
 
@@ -159,7 +153,6 @@ for filename in "${files[@]}"; do
 done
 
 # create nfpm package description
-# envsubst <gui/templates/nfpm_template.yaml >"${WORKDIR}"/gui/packages.yaml
 envsubst <gui/templates/nfpm_template.yaml >"${APP_BUNDLE_DIR}"/packages.yaml
 
 # create desktop file
@@ -175,11 +168,7 @@ envsubst <gui/templates/scriptlets/rpm/postun_template >"${APP_BUNDLE_DIR}"/scri
 OUT_PKG_DIR="${DIST_DIR}/${PKG_TO_BUILD}/gui"
 echo "Build ${PKG_TO_BUILD} for ${ARCHS_DEB[$ARCH]} in ${OUT_PKG_DIR}"
 mkdir -p "${OUT_PKG_DIR}"
-# nfpm pkg --packager "${PKG_TO_BUILD}" -f "${WORKDIR}/gui/packages.yaml" -t "${APP_DIR}/${PKG_TO_BUILD}"
+
 nfpm pkg --packager "${PKG_TO_BUILD}" -f "${APP_BUNDLE_DIR}/packages.yaml" -t "${APP_DIR}/${PKG_TO_BUILD}"
 
-# mv "${OUT_PKG_DIR}"/*."${PKG_TO_BUILD}" "
-
-# remove leftovers
-rm -rf "${BASEDIR}"
 rm -rf "${APP_BUNDLE_DIR}"
