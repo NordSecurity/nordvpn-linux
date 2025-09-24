@@ -22,7 +22,7 @@ from lib.logging import FILE
 from lib.log_reader import LogReader
 from constants import (
     DEB,
-    NORDVPND,
+    NORDVPND_SERVICE_NAME,
     NORDVPND_FILE,
     SNAP,
 )
@@ -105,7 +105,7 @@ def _set_custom_config_for_rc(daemon_log_reader, string_to_be_added: str) -> int
 
     if _is_installed_as(SNAP):
         subprocess.run("sudo systemctl daemon-reload", shell=True, check=True)
-        subprocess.run(f"sudo {SNAP} restart {NORDVPND.get(SNAP)}", shell=True, check=True)
+        subprocess.run(f"sudo {SNAP} restart {NORDVPND_SERVICE_NAME.get(SNAP)}", shell=True, check=True)
     else:
         daemon.restart()
 
@@ -414,7 +414,7 @@ def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
 
     if _is_installed_as(SNAP):
         subprocess.run("sudo systemctl daemon-reload", shell=True, check=True)
-        subprocess.run(f"sudo {SNAP} restart {NORDVPND.get(SNAP)}", shell=True, check=True)
+        subprocess.run(f"sudo {SNAP} restart {NORDVPND_SERVICE_NAME.get(SNAP)}", shell=True, check=True)
     else:
         daemon.restart()
 
@@ -450,7 +450,7 @@ def set_use_local_config_for_rc(daemon_log_reader):
 
     if _is_installed_as(SNAP):
         subprocess.run("sudo systemctl daemon-reload", shell=True, check=True)
-        subprocess.run(f"sudo {SNAP} restart {NORDVPND.get(SNAP)}", shell=True, check=True)
+        subprocess.run(f"sudo {SNAP} restart {NORDVPND_SERVICE_NAME.get(SNAP)}", shell=True, check=True)
     else:
         daemon.restart()
 

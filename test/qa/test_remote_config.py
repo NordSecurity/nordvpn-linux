@@ -101,6 +101,9 @@ def check_log_for_request_get_messages(daemon_log_reader: LogReader) -> None:
                         break
                     except ValueError:
                         break
+        if not expected_service_config:
+            print("Found all hash files in lines")
+            break
         time.sleep(2)
 
     assert not expected_service_config, f"Couldn't found request logs related to {expected_service_config}"
