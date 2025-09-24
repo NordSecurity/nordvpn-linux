@@ -6,7 +6,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # The version is replaced when the packages are build with the correct version
 # more info into the build scripts
-version: 0.0.1
+version: 4.1.1+ecb22e49+ecb22e49
 
 environment:
   sdk: ">=3.8.0 <4.0.0"
