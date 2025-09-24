@@ -191,6 +191,8 @@ def test_killswitch_enabled_does_not_affect_cdn_with_firewall_mark():
         "libtelio.json",
         "meshnet.json",
     ]
+    def printdir():
+        os.system(f"cd {conf_dir}/../ && ls -la && ls {conf_dir} -a")
 
     # enabling killswitch should not affect http transport of the remote config
     assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on")
@@ -198,6 +200,8 @@ def test_killswitch_enabled_does_not_affect_cdn_with_firewall_mark():
 
     sh.nordvpn.disconnect()
     assert daemon.is_disconnected()
+    print("--- before manual files removal")
+    printdir()
     # remove previously fetched files
     # upon restart, they should be loaded again
     os.system(f"sudo rm -rf {conf_dir}")
@@ -209,7 +213,12 @@ def test_killswitch_enabled_does_not_affect_cdn_with_firewall_mark():
         assert res == "missing", f"File {path} should not exist"
 
     daemon.restart()
-    time.sleep(3)
+    print("--- after restart")
+    printdir()
+
+    for _ in range(10):
+        time.sleep(1)
+        printdir()
 
     for fname in expected_files:
         path = os.path.join(conf_dir, fname)
