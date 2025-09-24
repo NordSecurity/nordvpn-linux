@@ -125,7 +125,12 @@ export APP_BUNDLE_DIR="$DIST_DIR/source/${NAME}_${VERSION}_${ARCH}"
 # rm -fr "$DIST_DIR"
 
 export INSTALL_DIR="/opt/${NAME}"
-mkdir -p "${APP_BUNDLE_DIR}/${INSTALL_DIR}"
+mkdir -p "${APP_BUNDLE_DIR}${INSTALL_DIR}"
+pwd
+ls -la ${WORKDIR}/
+ls -la ${WORKDIR}/bin/
+ls -la ${WORKDIR}/bin/${ARCH}
+ls -la ${WORKDIR}/bin/${ARCH}/gui/
 cp -r "${WORKDIR}/bin/${ARCH}/gui/"* "${APP_BUNDLE_DIR}${INSTALL_DIR}"
 
 

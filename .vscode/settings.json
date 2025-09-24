@@ -1,0 +1,19 @@
+{
+    "go.testFlags": ["-v"],
+    "go.testTimeout": "30s",
+    "go.coverOnSave": false,
+    "go.coverOnSingleTest": true,
+    "go.testExplorer.enable": true,
+    "go.testExplorer.showLineNumbers": true,
+    "go.testExplorer.packageDisplayMode": "flat",
+    "testing.automaticallyOpenPeekView": "failureInVisibleDocument",
+    "testing.followRunningTest": true,
+    "testing.openTesting": "openOnTestStart",
+    "testing.automaticallyOpenTestResults": "openOnTestStart",
+    "go.testExplorer.exclude": [
+        "**/third-party/**"
+    ],
+    "files.exclude": {
+        "**/third-party/**/go.mod": true
+    }
+}

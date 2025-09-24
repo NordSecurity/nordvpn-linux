@@ -1,0 +1,43 @@
+{
+  "name": "nordvpn-linux-dev",
+  "workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind,consistency=cached",
+  "workspaceFolder": "${localWorkspaceFolder}",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "args": {
+      "WORKSPACE_DIR": "/workspaces/${localWorkspaceFolderBasename}"
+    }
+  },
+  "runArgs": [
+    "--privileged",
+    "-v", "/var/run/docker.sock:/var/run/docker.sock"
+  ],
+  "postCreateCommand": "/usr/local/go/bin/go version && mage --version && rustc --version",
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.Go",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "timonwong.shellcheck",
+        "rust-lang.rust-analyzer",
+        "eamodio.gitlens",
+        "vscodevim.vim"
+      ],
+      "settings": {
+        "go.toolsManagement.autoUpdate": true,
+        "go.useLanguageServer": true,
+        "go.editor.formatOnSave": true,
+        "go.editor.defaultFormatter": "golang.go",
+        "go.formatTool": "gofmt",
+        "go.inlayHints.compositeLiteralFields": true,
+        "go.inlayHints.rangeVariableTypes": true,
+        "go.inlayHints.parameterNames": true,
+        "go.inlayHints.ignoredError": true,
+        "go.inlayHints.assignVariableTypes": true
+      }
+    }
+  }
+}
