@@ -85,7 +85,7 @@ def _set_custom_config_for_rc(daemon_log_reader, string_to_be_added: str) -> int
     time_mark = daemon_log_reader.get_cursor()
 
     if _is_installed_as(SNAP):
-        subprocess.run(f"sudo systemctl daemon-reload", shell=True, check=True)
+        subprocess.run("sudo systemctl daemon-reload", shell=True, check=True)
         subprocess.run(f"sudo {SNAP} restart {NORDVPND.get(SNAP)}", shell=True, check=True)
     else:
         daemon.restart()
@@ -394,7 +394,7 @@ def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
     )
 
     if _is_installed_as(SNAP):
-        subprocess.run(f"sudo systemctl daemon-reload", shell=True, check=True)
+        subprocess.run("sudo systemctl daemon-reload", shell=True, check=True)
         subprocess.run(f"sudo {SNAP} restart {NORDVPND.get(SNAP)}", shell=True, check=True)
     else:
         daemon.restart()
@@ -402,7 +402,8 @@ def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
 
 @pytest.fixture
 def set_use_local_config_for_rc(daemon_log_reader):
-    """Fixture to set parameter RC_USE_LOCAL_CONFIG in config for not overwriting local config by remote.
+    """
+    Fixture to set parameter RC_USE_LOCAL_CONFIG in config for not overwriting local config by remote.
     (Log about downloading config still persist)
     """
     print("Setting 'use local config' for NordVPN daemon's rc")
@@ -428,7 +429,7 @@ def set_use_local_config_for_rc(daemon_log_reader):
     )
 
     if _is_installed_as(SNAP):
-        subprocess.run(f"sudo systemctl daemon-reload", shell=True, check=True)
+        subprocess.run("sudo systemctl daemon-reload", shell=True, check=True)
         subprocess.run(f"sudo {SNAP} restart {NORDVPND.get(SNAP)}", shell=True, check=True)
     else:
         daemon.restart()
@@ -465,7 +466,7 @@ def get_package_system():
 
 
 @pytest.fixture
-def backup_restore_rc_config_files(nordvpnd_scope_function):
+def backup_restore_rc_config_files(nordvpnd_scope_function):  # noqa: ARG001
     """Fixture to back up original config for remote config, and restore it after tests."""
     os.makedirs(f"{os.getcwd()}/tmp", exist_ok=True)
 

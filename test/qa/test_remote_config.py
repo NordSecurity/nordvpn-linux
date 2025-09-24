@@ -11,13 +11,13 @@ from lib import daemon
 from lib.log_reader import LogReader
 from lib.remote_config_manager import LOCAL_CACHE_DIR
 
-RC_REMOTE_MESSAGES = f"[Info] feature [{{}}] remote config downloaded to: {LOCAL_CACHE_DIR}"
-RC_LOCAL_MESSAGES = f"[Info] feature [{{}}] config loaded from: {LOCAL_CACHE_DIR}"
+RC_REMOTE_MESSAGE = f"[Info] feature [{{}}] remote config downloaded to: {LOCAL_CACHE_DIR}"
+RC_LOCAL_MESSAGE = f"[Info] feature [{{}}] config loaded from: {LOCAL_CACHE_DIR}"
 RC_REQUEST_MESSAGES = "Request:  GET https://downloads.nordcdn.com/apps/linux/config/dev/{}-hash.json"
 SERVICES_TO_BE_CHECK = ["nordvpn", "libtelio", "meshnet"]
-RC_INITIAL_RUN_MESSAGES = [RC_REMOTE_MESSAGES.format(service) for service in SERVICES_TO_BE_CHECK] + [
-    RC_LOCAL_MESSAGES.format(service) for service in SERVICES_TO_BE_CHECK
-]
+RC_REMOTE_MESSAGES = [RC_REMOTE_MESSAGE.format(service) for service in SERVICES_TO_BE_CHECK]
+RC_LOCAL_MESSAGES = [RC_LOCAL_MESSAGE.format(service) for service in SERVICES_TO_BE_CHECK]
+RC_INITIAL_RUN_MESSAGES = RC_REMOTE_MESSAGES + RC_LOCAL_MESSAGES
 RC_MESHNET_CONFIG_FILE = "meshnet.json"
 RC_MESHNET_HASH_FILE = "meshnet-hash.json"
 
@@ -445,9 +445,9 @@ def test_meshnet_feature_availability_based_on_remote_config(
 
 
 def test_local_config_usage_via_systemd_env(
-    initialized_app_with_remote_config, # noqa: ARG001
+    initialized_app_with_remote_config,  # noqa: ARG001
     daemon_log_reader,
-    enable_local_config_in_service, # noqa: ARG001
+    enable_local_config_in_service,  # noqa: ARG001
 ):
     """
     Test that the environment variable 'RC_USE_LOCAL_CONFIG=1' into the 'nordvpnd' service causes the application to use only local config files.
@@ -490,7 +490,7 @@ def test_local_config_usage_via_systemd_env(
 
 @pytest.mark.skip(reason="Not implemented mock CDN")
 @pytest.mark.parametrize(
-    "tcid, error_message",
+    ("tcid, error_message"),
     [
         pytest.param("LVPN-8452", "error: downloading main hash file:", id="no_cache"),
         pytest.param(
@@ -499,8 +499,8 @@ def test_local_config_usage_via_systemd_env(
     ],
 )
 def test_remote_config_cdn_unavailable_(
-    tcid,
-    error_message,
+    tcid,  # noqa: ARG001
+    error_message,  # noqa: ARG001
     initialized_app_with_remote_config,  # noqa: ARG001
     disable_remote_endpoint,  # noqa: ARG001
     set_custom_timeout_for_rc_retry_scheme,  # noqa: ARG001
@@ -537,14 +537,14 @@ def test_remote_config_cdn_unavailable_(
     daemon.start()
 
     assert daemon_log_reader.wait_for_messages(
-        RC_REMOTE_MESSAGES.format(error_message), cursor=first_time_mark, timeout=90
-    ), f"Couldn't found error logs"
+        RC_REMOTE_MESSAGE.format(error_message), cursor=first_time_mark, timeout=90
+    ), "Couldn't found error logs"
 
     second_time_mark = daemon_log_reader.get_cursor()
 
     assert daemon_log_reader.wait_for_messages(
-        RC_REMOTE_MESSAGES.format(error_message), cursor=second_time_mark, timeout=90
-    ), f"Couldn't found error logs"
+        RC_REMOTE_MESSAGE.format(error_message), cursor=second_time_mark, timeout=90
+    ), "Couldn't found error logs"
 
 
 def test_remote_config_download_config_on_start(
@@ -583,13 +583,13 @@ def test_remote_config_download_config_on_start(
     daemon.start()
 
     for service_config in SERVICES_TO_BE_CHECK:
-        if not daemon_log_reader.wait_for_messages(RC_REMOTE_MESSAGES.format(service_config), timeout=90):
+        if not daemon_log_reader.wait_for_messages(RC_REMOTE_MESSAGE.format(service_config), timeout=90):
             missed_services_config.append(service_config)
 
     assert not missed_services_config, f"Couldn't found download logs related to {missed_services_config}"
 
     for service_config in SERVICES_TO_BE_CHECK:
-        if not daemon_log_reader.wait_for_messages(RC_LOCAL_MESSAGES.format(service_config), timeout=90):
+        if not daemon_log_reader.wait_for_messages(RC_LOCAL_MESSAGE.format(service_config), timeout=90):
             missed_services_config.append(service_config)
 
     assert not missed_services_config, f"Couldn't found download logs related to {missed_services_config}"
@@ -609,7 +609,7 @@ def test_remote_config_download_config_on_start(
 
 
 @pytest.mark.parametrize(
-    "tcid, is_config_different",
+    ("tcid, is_config_different"),
     [
         pytest.param("LVPN-8477", False, id="equal_remote_config"),
         pytest.param(
@@ -662,7 +662,7 @@ def test_remote_config_attempts_config_(
     daemon.start()
 
     for service_config in SERVICES_TO_BE_CHECK:
-        if not daemon_log_reader.wait_for_messages(RC_LOCAL_MESSAGES.format(service_config), timeout=90):
+        if not daemon_log_reader.wait_for_messages(RC_LOCAL_MESSAGE.format(service_config), timeout=90):
             missed_local_config.append(service_config)
 
     assert not missed_local_config, f"Couldn't found download logs related to {missed_local_config}"
@@ -698,15 +698,14 @@ def test_remote_config_attempts_config_(
                 ):
                     different_files.append(line)
             break
-        else:
-            if line not in conf_files_data.stdout.splitlines():
-                different_files.append(line)
+        elif line not in conf_files_data.stdout.splitlines():
+            different_files.append(line)
 
     assert not different_files, f"Found some files mismatch: {different_files}"
 
 
 @pytest.mark.parametrize(
-    "tcid, parameter, value, additional_log_verification",
+    ("tcid, parameter, value, additional_log_verification"),
     [
         pytest.param("LVPN-8544", "value", False, False, id="set_value_false"),
         pytest.param("LVPN-8522", "rollout", None, False, id="remove_rollout"),
@@ -722,11 +721,11 @@ def test_remote_config_attempts_config_(
     ],
 )
 def test_remote_config_change_local_meshnet_config_settings_(
-    tcid,
-    parameter,
-    value,
+    tcid,  # noqa: ARG001
+    parameter,  # noqa: ARG001
+    value,  # noqa: ARG001
     additional_log_verification,
-    backup_restore_rc_config_files,
+    backup_restore_rc_config_files,  # noqa: ARG001
     rc_config_manager,
     daemon_log_reader,  # noqa: ARG001
     set_custom_timeout_for_rc_retry_scheme,  # noqa: ARG001
@@ -783,7 +782,7 @@ def test_remote_config_change_local_meshnet_config_settings_(
     daemon.restart()
 
     assert daemon_log_reader.wait_for_messages(
-        messages=RC_LOCAL_MESSAGES.format("meshnet"), cursor=cursor, timeout=90
+        messages=RC_LOCAL_MESSAGE.format("meshnet"), cursor=cursor, timeout=90
     ), "Couldn't found log of loading modified json file"
 
     if additional_log_verification:

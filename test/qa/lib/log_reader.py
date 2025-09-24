@@ -68,7 +68,7 @@ class LogReader:
 
     def wait_for_messages(
         self,
-        messages: Union[list[str], str],
+        messages: Union[list[str] | str],
         cursor: int = 0,
         timeout: int = 30,
         interval: int = 1,

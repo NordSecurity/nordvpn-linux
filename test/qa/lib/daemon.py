@@ -16,6 +16,7 @@ class Env:
     DEV = "dev"
     PROD = "prod"
 
+
 def _rewrite_log_path():
     project_root = os.environ["WORKDIR"].replace("/", "\\/")
     pattern = f"s/^LOGFILE=.*/LOGFILE={project_root}\\/dist\\/logs\\/daemon.log/"
@@ -87,7 +88,6 @@ def start():
         _rewrite_log_path()
         if is_running():
             print("Nordvpn is already running")
-            return True
         try:
             print("Starting NordVPN service...")
             # Use the init.d script as recommended in the error message
@@ -97,7 +97,6 @@ def start():
 
             if result.returncode != 0:
                 print(f"Error starting NordVPN service: {result.stderr}")
-                return False
 
             # Wait for the socket file to appear
             max_wait = 30  # seconds
@@ -110,14 +109,11 @@ def start():
 
             if not os.path.exists(socket_path):
                 print(f"Socket file {socket_path} not created within timeout")
-                return False
 
             print("NordVPN service started successfully")
-            return True
 
         except Exception as e:
             print(f"Exception while starting NordVPN service: {e}")
-            return False
     while not is_running():
         time.sleep(1)
 
@@ -246,7 +242,8 @@ def get_status_data() -> dict:
     formatted_pairs = {(key.lower(), value.strip()) for key, value in colon_separated_pairs}
     return dict(formatted_pairs)
 
-def get_env() ->str:
+
+def get_env() -> str:
     """
     Detects and returns the active environment (DEV or PROD) based on the NordVPN version output.
 
