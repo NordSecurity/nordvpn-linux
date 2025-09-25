@@ -5,11 +5,11 @@ import time
 import uuid
 
 import pytest
-import sh
 
 from lib import daemon
 from lib.log_reader import LogReader
 from lib.remote_config_manager import LOCAL_CACHE_DIR
+from lib.daemon import enable_rc_local_config_usage, disable_rc_local_config_usage
 
 RC_REMOTE_MESSAGE = f"[Info] feature [{{}}] remote config downloaded to: {LOCAL_CACHE_DIR}"
 RC_LOCAL_MESSAGE = f"[Info] feature [{{}}] config loaded from: {LOCAL_CACHE_DIR}"
@@ -55,28 +55,11 @@ def enable_local_config_in_service():
     This fixture injects 'export RC_USE_LOCAL_CONFIG=1' into the 'nordvpn' service file, simulating enabling the local config usage for tests.
     After the test, it removes the injected line and reloads the systemd daemon to restore the initial system state.
     """
-    service_path = "/etc/init.d/nordvpn"
-
-    # Print original service file for reference
-    print(f"Service original:\n {sh.cat(service_path)}")
-
-    # Insert environment variable into systemd service file
-    sh.sudo("sed", "-i", r"1a export RC_USE_LOCAL_CONFIG=1", service_path)
-
-    sh.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
-
-    # Print service file after modification
-    print(f"Service after:\n {sh.cat(service_path)}")
+    enable_rc_local_config_usage()
 
     yield
 
-    # Cleanup: remove the injected environment variable line
-    sh.sudo("sed", "-i", r"/^export RC_USE_LOCAL_CONFIG=1$/d", service_path)
-
-    sh.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
-
-    # Print restored service file for verification
-    print(f"Service restored:\n {sh.cat(service_path)}")
+    disable_rc_local_config_usage()
 
 
 def check_log_for_request_get_messages(daemon_log_reader: LogReader) -> None:

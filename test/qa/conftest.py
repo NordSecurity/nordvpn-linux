@@ -20,6 +20,7 @@ from lib import logging, network, daemon, login, info, firewall
 from lib.remote_config_manager import RemoteConfigManager, LOCAL_CACHE_DIR, REMOTE_DIR
 from lib.logging import FILE
 from lib.log_reader import LogReader
+from lib.daemon import enable_rc_local_config_usage
 from constants import (
     DEB,
     NORDVPND_SERVICE_NAME,
@@ -42,16 +43,23 @@ def pytest_configure(config):
     If the CI_PIPELINE_SCHEDULE_DESCRIPTION environment variable is set to "Nightly":
       - Sets "maxfail" to 0 (disables the maximum failure limit, allowing all tests to run)
       - Sets "exitfirst" to False (prevents exiting after the first test failure)
-
     This ensures that on nightly scheduled CI runs, the test suite evaluates all test cases,
     rather than stopping early due to failures.
 
+    If the USE_LOCAL_CONFIG environment variable is set:
+      - Calls the enable_rc_local_config_usage() function
+    This enables usage of only local remote config files in tests.
+
     :param config: The pytest config object, which holds command-line options and internal state.
     """
-    desc = os.getenv("CI_PIPELINE_SCHEDULE_DESCRIPTION")
-    if desc and desc.lower().strip() == "nightly":
-        config.option.maxfail = 0
-        config.option.exitfirst = False
+    is_nightly = os.getenv("CI_PIPELINE_SCHEDULE_DESCRIPTION")
+    if is_nightly and is_nightly.lower().strip() == "nightly":
+        config.option.maxfail=0
+        config.option.exitfirst=False
+
+    is_local_rc_usage = os.getenv("USE_LOCAL_CONFIG")
+    if is_local_rc_usage:
+        enable_rc_local_config_usage()
 
 
 def print_to_string(*args, **kwargs):
@@ -186,17 +194,7 @@ def _check_dns_resolution(domain, stop_event):
 def _capture_traffic(stop_event):
     print("Start _capture_traffic")
     # use circular log files, keep only 2 latest each 10MB size
-    command = [
-        "tshark",
-        "-a",
-        "filesize:10240",
-        "-b",
-        "files:2",
-        "-i",
-        "any",
-        "-w",
-        os.environ["WORKDIR"] + "/dist/logs/tshark_capture.pcap",
-    ]
+    command = ["tshark", "-a", "filesize:10240", "-b", "files:2", "-i", "any", "-w", os.environ["WORKDIR"] + "/dist/logs/tshark_capture.pcap"]
     print("Starting tshark")
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     stop_event.wait()
