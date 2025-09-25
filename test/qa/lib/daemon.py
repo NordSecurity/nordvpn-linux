@@ -110,7 +110,7 @@ def start():
                 time.sleep(1)
 
             if not os.path.exists(socket_path):
-                print(f"Socket file {socket_path} not created within timeout")
+                raise TimeoutError(f"Socket file {socket_path} not created within timeout") # noqa: EM102
 
             print("NordVPN service started successfully")
 
@@ -140,7 +140,7 @@ def stop():
         # call to init.d returns before the daemon is actually stopped
         try:
             sh.sudo("/etc/init.d/nordvpn", "stop")
-        except (subprocess.SubprocessError, FileNotFoundError, TimeoutError):
+        except (OSError, FileNotFoundError, TimeoutError):
             if is_running():
                 print("Service still running, trying sudo pkill...")
                 subprocess.run(["sudo", "pkill", "nordvpnd"], capture_output=True, check=False)
@@ -150,7 +150,7 @@ def stop():
                 subprocess.run(["sudo", "pkill", "-9", "nordvpnd"], capture_output=True, check=False)
             time.sleep(3)
             if is_running():
-                print("Failed to stop nordvpn")
+                raise (subprocess.SubprocessError, "Failed to stop nordvpn") # noqa: B904
         while is_running():
             time.sleep(1)
 

@@ -26,6 +26,7 @@ from constants import (
     DEB,
     NORDVPND_SERVICE_NAME,
     NORDVPND_FILE,
+    NORDVPN_TYPE,
     SNAP,
 )
 
@@ -89,7 +90,7 @@ def _is_installed_as(package_type: str) -> bool:
     :param package_type:    The type of the package to check (DEB or SNAP).
     :returns:               True if the package is installed, False otherwise.
     """
-    return os.environ.get("NORDVPN_TYPE") == package_type
+    return os.environ.get(NORDVPN_TYPE) == package_type
 
 
 def _set_custom_config_for_rc(daemon_log_reader, string_to_be_added: str) -> int:
@@ -100,7 +101,7 @@ def _set_custom_config_for_rc(daemon_log_reader, string_to_be_added: str) -> int
 
     :return                      Position of cursor in daemon log file
     """
-    daemon_path = NORDVPND_FILE.get(os.environ.get("NORDVPN_TYPE"))
+    daemon_path = NORDVPND_FILE.get(os.environ.get(NORDVPN_TYPE))
     if _is_installed_as(DEB):
         # For container
         sed_command = ["sudo", "sed", "-i", f"1a export {string_to_be_added}", daemon_path]
@@ -112,11 +113,7 @@ def _set_custom_config_for_rc(daemon_log_reader, string_to_be_added: str) -> int
 
     time_mark = daemon_log_reader.get_cursor()
 
-    if _is_installed_as(SNAP):
-        subprocess.run("sudo systemctl daemon-reload", shell=True, check=True)
-        subprocess.run(f"sudo {SNAP} restart {NORDVPND_SERVICE_NAME.get(SNAP)}", shell=True, check=True)
-    else:
-        daemon.restart()
+    _restart_daemon_after_changing_config()
 
     return time_mark
 
@@ -208,6 +205,14 @@ def _capture_traffic(stop_event):
         process.kill()
     print(f"tshark out {process.stdout.read().strip()[-10:]} - {process.stderr.read().strip()[-10:]}")
     time.sleep(1)
+
+def _restart_daemon_after_changing_config():
+    """Method to restart daemon after changing config according to system"""
+    if _is_installed_as(SNAP):
+        subprocess.run("sudo systemctl daemon-reload", shell=True, check=True)
+        subprocess.run(f"sudo {SNAP} restart {NORDVPND_SERVICE_NAME.get(SNAP)}", shell=True, check=True)
+    else:
+        daemon.restart()
 
 
 @pytest.fixture
@@ -385,7 +390,7 @@ def env():
 def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
     """Fixture for setting a custom timeout for the NordVPN daemon's rc retry scheme."""
     print("Setting custom timeout for NordVPN daemon's rc retry scheme")
-    daemon_path = NORDVPND_FILE.get(os.environ.get("NORDVPN_TYPE"))
+    daemon_path = NORDVPND_FILE.get(os.environ.get(NORDVPN_TYPE))
 
     if not os.path.exists(daemon_path):
         print(f"Daemon file does not exist. {daemon_path}")
@@ -403,19 +408,18 @@ def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
 
     yield
 
-    subprocess.run(
+    try:
+        subprocess.run(
         f'sudo cp {os.getcwd()}/tmp/{daemon_path.split("/")[-1]} {daemon_path}',
         check=True,
         capture_output=True,
         text=True,
         shell=True,
-    )
+        )
+    except subprocess.CalledProcessError:
+        print("Folder doesn't exists")
 
-    if _is_installed_as(SNAP):
-        subprocess.run("sudo systemctl daemon-reload", shell=True, check=True)
-        subprocess.run(f"sudo {SNAP} restart {NORDVPND_SERVICE_NAME.get(SNAP)}", shell=True, check=True)
-    else:
-        daemon.restart()
+    _restart_daemon_after_changing_config()
 
     shutil.rmtree(f"{os.getcwd()}/tmp", ignore_errors=True)
 
@@ -428,7 +432,7 @@ def set_use_local_config_for_rc(daemon_log_reader):
     (Log about downloading config still persist)
     """
     print("Setting 'use local config' for NordVPN daemon's rc")
-    daemon_path = NORDVPND_FILE.get(os.environ.get("NORDVPN_TYPE"))
+    daemon_path = NORDVPND_FILE.get(os.environ.get(NORDVPN_TYPE))
 
     if not os.path.exists(daemon_path):
         print(f"Daemon file does not exist. {daemon_path}")
@@ -441,19 +445,18 @@ def set_use_local_config_for_rc(daemon_log_reader):
 
     yield
 
-    subprocess.run(
+    try:
+        subprocess.run(
         f'sudo cp {os.getcwd()}/tmp/{daemon_path.split("/")[-1]} {daemon_path}',
         check=True,
         capture_output=True,
         text=True,
         shell=True,
-    )
+        )
+    except subprocess.CalledProcessError:
+        print("Folder doesn't exists")
 
-    if _is_installed_as(SNAP):
-        subprocess.run("sudo systemctl daemon-reload", shell=True, check=True)
-        subprocess.run(f"sudo {SNAP} restart {NORDVPND_SERVICE_NAME.get(SNAP)}", shell=True, check=True)
-    else:
-        daemon.restart()
+    _restart_daemon_after_changing_config()
 
     shutil.rmtree(f"{os.getcwd()}/tmp", ignore_errors=True)
 
@@ -474,7 +477,7 @@ def get_package_system():
     try:
         dpkg_result = subprocess.run(["dpkg", "-l", "nordvpn"], capture_output=True, text=True)
         if dpkg_result.returncode == 0 and "nordvpn" in dpkg_result.stdout:
-            os.environ["NORDVPN_TYPE"] = DEB
+            os.environ[NORDVPN_TYPE] = DEB
     except FileNotFoundError:
         # dpkg command not found - might not be a Debian-based system
         pass
@@ -482,7 +485,7 @@ def get_package_system():
     try:
         snap_result = subprocess.run(["snap", "list", "nordvpn"], capture_output=True, text=True)
         if snap_result.returncode == 0 and "nordvpn" in snap_result.stdout:
-            os.environ["NORDVPN_TYPE"] = SNAP
+            os.environ[NORDVPN_TYPE] = SNAP
     except FileNotFoundError:
         # snap command not found
         pass

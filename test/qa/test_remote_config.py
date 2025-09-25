@@ -14,9 +14,9 @@ from lib.daemon import enable_rc_local_config_usage, disable_rc_local_config_usa
 RC_REMOTE_MESSAGE = f"[Info] feature [{{}}] remote config downloaded to: {LOCAL_CACHE_DIR}"
 RC_LOCAL_MESSAGE = f"[Info] feature [{{}}] config loaded from: {LOCAL_CACHE_DIR}"
 RC_REQUEST_MESSAGES = "Request:  GET https://downloads.nordcdn.com/apps/linux/config/dev/{}-hash.json"
-SERVICES_TO_BE_CHECK = ["nordvpn", "libtelio", "meshnet"]
-RC_REMOTE_MESSAGES = [RC_REMOTE_MESSAGE.format(service) for service in SERVICES_TO_BE_CHECK]
-RC_LOCAL_MESSAGES = [RC_LOCAL_MESSAGE.format(service) for service in SERVICES_TO_BE_CHECK]
+FEATURE_TO_BE_CHECK = ["nordvpn", "libtelio", "meshnet"]
+RC_REMOTE_MESSAGES = [RC_REMOTE_MESSAGE.format(service) for service in FEATURE_TO_BE_CHECK]
+RC_LOCAL_MESSAGES = [RC_LOCAL_MESSAGE.format(service) for service in FEATURE_TO_BE_CHECK]
 RC_INITIAL_RUN_MESSAGES = RC_REMOTE_MESSAGES + RC_LOCAL_MESSAGES
 RC_MESHNET_CONFIG_FILE = "meshnet.json"
 RC_MESHNET_HASH_FILE = "meshnet-hash.json"
@@ -64,7 +64,7 @@ def enable_local_config_in_service():
 
 def check_log_for_request_get_messages(daemon_log_reader: LogReader) -> None:
     """Function to verify that nordvpn daemon attempts to do get request for hash files"""
-    expected_service_config = SERVICES_TO_BE_CHECK.copy()
+    expected_service_config = FEATURE_TO_BE_CHECK.copy()
     cursor = daemon_log_reader.get_cursor()
     time_mark = time.time()
 
@@ -75,7 +75,7 @@ def check_log_for_request_get_messages(daemon_log_reader: LogReader) -> None:
         if not log_content:
             time.sleep(2)
             continue
-        for service_config in SERVICES_TO_BE_CHECK:
+        for service_config in FEATURE_TO_BE_CHECK:
             for line in log_content.splitlines():
                 if "Request" in line and "GET" in line and f"{service_config}-hash.json" in line:
                     try:
@@ -480,7 +480,7 @@ def test_local_config_usage_via_systemd_env(
     [
         pytest.param("LVPN-8452", "error: downloading main hash file:", id="no_cache"),
         pytest.param(
-            "LVPN-8453", "failed downloading feature [ nordvpn ] remote config: downloading main file", id="no_config"
+            "LVPN-8453", "failed downloading feature [nordvpn] remote config: downloading main file", id="no_config"
         ),
     ],
 )
@@ -504,7 +504,7 @@ def test_remote_config_cdn_unavailable_(
         - # remote file is removed from CDN according to use case
         - # No remote config files are cached on local disk
         - # nordvpnd is stopped
-        - # Timeout in daemon service is set to 1 min
+        - # RC retry scheme value is set to 1 min
 
     :steps
         - # Start nordvpnd daemon
@@ -542,13 +542,13 @@ def test_remote_config_download_config_on_start(
     """
     :tcid       LVPN-8456
 
-    :details    Verify that app download config files, set them 600 chmod
+    :details    Verify that app download config files and set file permissions to 600
     :keywords   RC
 
     :preconditions
         - # Config files are available on CDN
         - # No remote config files are cached on local disk
-        - # Timeout in daemon service is set to 1 min
+        - # RC retry scheme value is set to 1 min
 
     :steps
         - # Start nordvpnd daemon
@@ -565,20 +565,20 @@ def test_remote_config_download_config_on_start(
     """
     command_for_conf_file = f'sudo find {LOCAL_CACHE_DIR} -type f -exec stat -c "%a %y %n" {{}} \\;'
     chmod_to_be_found = "600"
-    missed_services_config = []
+    missed_feature_config = []
     daemon.start()
 
-    for service_config in SERVICES_TO_BE_CHECK:
+    for service_config in FEATURE_TO_BE_CHECK:
         if not daemon_log_reader.wait_for_messages(RC_REMOTE_MESSAGE.format(service_config), timeout=90):
-            missed_services_config.append(service_config)
+            missed_feature_config.append(service_config)
 
-    assert not missed_services_config, f"Couldn't found download logs related to {missed_services_config}"
+    assert not missed_feature_config, f"Couldn't found download logs related to {missed_feature_config}"
 
-    for service_config in SERVICES_TO_BE_CHECK:
+    for service_config in FEATURE_TO_BE_CHECK:
         if not daemon_log_reader.wait_for_messages(RC_LOCAL_MESSAGE.format(service_config), timeout=90):
-            missed_services_config.append(service_config)
+            missed_feature_config.append(service_config)
 
-    assert not missed_services_config, f"Couldn't found download logs related to {missed_services_config}"
+    assert not missed_feature_config, f"Couldn't found download logs related to {missed_feature_config}"
 
     conf_files_data = subprocess.run(command_for_conf_file, shell=True, check=True, capture_output=True, text=True)
 
@@ -588,7 +588,7 @@ def test_remote_config_download_config_on_start(
             wrong_permissions_files.append(line)
 
     assert (
-        not missed_services_config
+        not missed_feature_config
     ), f"Found files that do not have {chmod_to_be_found} chmod: {wrong_permissions_files}"
 
     check_log_for_request_get_messages(daemon_log_reader)
@@ -615,14 +615,14 @@ def test_remote_config_attempts_config_(
     """
     :tcid       {tcid}
 
-    :details    Verify that app verifies local config files and download then with additional verification of remote config
+    :details    Verify that app attempts to check for remote config files
     :keywords   RC
 
     :preconditions
         - # Config files are available on CDN
         - # No remote config files are cached on local disk
         - # nordvpnd is stopped
-        - # Timeout in daemon service is set to 1 min
+        - # RC retry scheme value is set to 1 min
 
     :steps
         - # Start nordvpnd daemon
@@ -647,7 +647,7 @@ def test_remote_config_attempts_config_(
 
     daemon.start()
 
-    for service_config in SERVICES_TO_BE_CHECK:
+    for service_config in FEATURE_TO_BE_CHECK:
         if not daemon_log_reader.wait_for_messages(RC_LOCAL_MESSAGE.format(service_config), timeout=90):
             missed_local_config.append(service_config)
 
@@ -718,12 +718,14 @@ def test_remote_config_change_local_meshnet_config_settings_(
     """
     :tcid       {tcid}
 
-    :details    Verify that app change behavior according to config
+    :details    Verify that application correctly responds to various remote configuration scenarios.
+                Tests that the app properly loads and applies remote configurations with different specifications
+                for app versions and rollout settings, ensuring features activate appropriately in each case.
 
     :preconditions
         - # No remote config files are cached on local disk
         - # nordvpnd is stopped
-        - # Timeout in daemon service is set to 1 min
+        - # RC retry scheme value is set to 1 min
 
     :steps
         - # Change in meshnet.json file "value": false
@@ -743,24 +745,30 @@ def test_remote_config_change_local_meshnet_config_settings_(
     if not rc_config_manager.set_permissions_cache_dir():
         pytest.skip("Directory doesn't exist")
 
+    # Read current one meshnet config
     with open(f"{LOCAL_CACHE_DIR}/{RC_MESHNET_CONFIG_FILE}") as file:
         config = json.load(file)
 
+    # Prepare config with changed value
     if value is not None:
         config["configs"][0]["settings"][0][parameter] = value
     elif value is None:
         del config["configs"][0]["settings"][0][parameter]
 
+    # Open file with write permission and write new meshnet config
     with open(f"{LOCAL_CACHE_DIR}/{RC_MESHNET_CONFIG_FILE}", "w") as file:
         json.dump(config, file, indent=4)
 
+    # Calculate new hash sum
     sha_sum_hash = subprocess.run(
         f"sha256sum {LOCAL_CACHE_DIR}/{RC_MESHNET_CONFIG_FILE}", capture_output=True, shell=True, text=True
     ).stdout.split()[0]
 
+    # Write new hash sum in meshnet hash file
     with open(f"{LOCAL_CACHE_DIR}/{RC_MESHNET_HASH_FILE}", "w") as file:
         json.dump({"hash": sha_sum_hash}, file)
 
+    # Save a timestamp and restart daemon for picking up config
     cursor = daemon_log_reader.get_cursor()
     daemon.restart()
 
