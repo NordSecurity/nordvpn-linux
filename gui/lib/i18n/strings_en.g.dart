@@ -59,6 +59,9 @@ class TranslationsCitiesEn {
 	/// en: 'Algiers'
 	String get algiers => 'Algiers';
 
+	/// en: 'Addis Ababa'
+	String get addis_ababa => 'Addis Ababa';
+
 	/// en: 'Andorra la Vella'
 	String get andorra_la_vella => 'Andorra la Vella';
 
@@ -1909,6 +1912,7 @@ extension on Translations {
 		switch (path) {
 			case 'cities.tirana': return 'Tirana';
 			case 'cities.algiers': return 'Algiers';
+			case 'cities.addis_ababa': return 'Addis Ababa';
 			case 'cities.andorra_la_vella': return 'Andorra la Vella';
 			case 'cities.buenos_aires': return 'Buenos Aires';
 			case 'cities.yerevan': return 'Yerevan';
