@@ -36,6 +36,7 @@ export PKG_TO_BUILD="${2,,}"
 ARCH="${3,,}"
 
 declare -A FLUTTER_FOLDER_NAME=(
+  [aarch64]=arm64
   [arm64]=arm64
   [x86_64]=x64
   [amd64]=x64
