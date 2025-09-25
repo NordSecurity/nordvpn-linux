@@ -112,7 +112,7 @@ def start():
 
             print("NordVPN service started successfully")
 
-        except Exception as e:
+        except (subprocess.SubprocessError, FileNotFoundError, TimeoutError) as e:
             print(f"Exception while starting NordVPN service: {e}")
     while not is_running():
         time.sleep(1)
@@ -138,7 +138,7 @@ def stop():
         # call to init.d returns before the daemon is actually stopped
         try:
             sh.sudo("/etc/init.d/nordvpn", "stop")
-        except Exception:
+        except (subprocess.SubprocessError, FileNotFoundError, TimeoutError):
             if is_running():
                 print("Service still running, trying sudo pkill...")
                 subprocess.run(["sudo", "pkill", "nordvpnd"], capture_output=True, check=False)

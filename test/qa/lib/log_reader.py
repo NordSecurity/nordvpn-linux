@@ -69,7 +69,7 @@ class LogReader:
         self,
         messages: list[str] | str,
         cursor: int = 0,
-        timeout: int = 40,
+        timeout: int = 30,
         interval: int = 1,
         return_not_found: bool = False,
     ) -> bool | tuple:
