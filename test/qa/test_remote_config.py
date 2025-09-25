@@ -491,7 +491,7 @@ def test_remote_config_cdn_unavailable_(
     disable_remote_endpoint,  # noqa: ARG001
     set_custom_timeout_for_rc_retry_scheme,  # noqa: ARG001
     clean_cache_files,  # noqa: ARG001
-    stop_nordvpnd,  # noqa: ARG001
+    pause_nordvpnd,  # noqa: ARG001
     daemon_log_reader,
 ):
     """
@@ -609,7 +609,7 @@ def test_remote_config_attempts_config_(
     initialized_app_with_remote_config,  # noqa: ARG001
     set_custom_timeout_for_rc_retry_scheme,  # noqa: ARG001
     clean_cache_files,  # noqa: ARG001
-    stop_nordvpnd,  # noqa: ARG001
+    pause_nordvpnd,  # noqa: ARG001
     daemon_log_reader,
 ):
     """

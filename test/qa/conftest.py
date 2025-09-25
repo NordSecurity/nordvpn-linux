@@ -416,6 +416,8 @@ def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
     else:
         daemon.restart()
 
+    os.rmdir(f"{os.getcwd()}/tmp")
+
 
 @pytest.fixture
 def set_use_local_config_for_rc(daemon_log_reader):
@@ -452,10 +454,12 @@ def set_use_local_config_for_rc(daemon_log_reader):
     else:
         daemon.restart()
 
+    os.rmdir(f"{os.getcwd()}/tmp")
+
 
 @pytest.fixture
-def stop_nordvpnd():
-    """Fixture to stop nordvpnd before tests and start it after"""
+def pause_nordvpnd():
+    """Fixture to pause nordvpnd before tests and start it after"""
     daemon.stop()
 
     yield
