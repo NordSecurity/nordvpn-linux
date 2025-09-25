@@ -1,5 +1,6 @@
 import datetime
 import io
+import shutil
 from urllib.parse import urlparse
 
 import lib
@@ -416,7 +417,7 @@ def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
     else:
         daemon.restart()
 
-    os.rmdir(f"{os.getcwd()}/tmp")
+    shutil.rmtree(f"{os.getcwd()}/tmp", ignore_errors=True)
 
 
 @pytest.fixture
@@ -454,7 +455,7 @@ def set_use_local_config_for_rc(daemon_log_reader):
     else:
         daemon.restart()
 
-    os.rmdir(f"{os.getcwd()}/tmp")
+    shutil.rmtree(f"{os.getcwd()}/tmp", ignore_errors=True)
 
 
 @pytest.fixture
