@@ -54,4 +54,3 @@ SRC_BUNDLE="./build/linux/${FLUTTER_ARCH}/${BUILD_TYPE}/bundle/"
 
 echo "Copying '${SRC_BUNDLE}/*' to ${OUTPUT_DIR}"
 cp -r "${SRC_BUNDLE}"* "${OUTPUT_DIR}"
-
