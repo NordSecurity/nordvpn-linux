@@ -226,7 +226,7 @@ def test_custom_dns_errors_disconnected(tech, proto, obfuscated, nameserver, exp
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set.dns(nameserver)
 
-    assert expected_error in str(ex)
+    assert expected_error in ex.value.stdout.decode("utf-8")
     assert settings.dns_visible_in_settings(["disabled"])
     assert dns.is_unset()
 
@@ -244,7 +244,7 @@ def test_custom_dns_errors_connected(tech, proto, obfuscated, nameserver, expect
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh.nordvpn.set.dns(nameserver)
 
-        assert expected_error in str(ex)
+        assert expected_error in ex.value.stdout.decode("utf-8")
         assert settings.dns_visible_in_settings(["disabled"])
         assert dns.is_set_for(dns.DNS_NORD)
 
@@ -267,7 +267,7 @@ def test_custom_dns_already_set_disconnected(tech, proto, obfuscated, nameserver
 
     full_error_message = dns.DNS_MSG_ERROR_ALREADY_SET % ", ".join(nameserver)
 
-    assert full_error_message in str(ex)
+    assert full_error_message in ex.value.stdout.decode("utf-8")
     assert settings.dns_visible_in_settings(nameserver)
     assert dns.is_unset()
 
@@ -291,7 +291,7 @@ def test_custom_dns_already_set_connected(tech, proto, obfuscated, nameserver):
             sh.nordvpn.set.dns(nameserver)
 
         full_error_message = dns.DNS_MSG_ERROR_ALREADY_SET % ", ".join(nameserver)
-        assert full_error_message in str(ex)
+        assert full_error_message in ex.value.stdout.decode("utf-8")
         assert settings.dns_visible_in_settings(nameserver)
         assert dns.is_set_for(nameserver)
 
@@ -307,7 +307,7 @@ def test_custom_dns_already_disabled_disconnected(tech, proto, obfuscated):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set.dns("off")
 
-    assert dns.DNS_MSG_ERROR_ALREADY_DISABLED in str(ex)
+    assert dns.DNS_MSG_ERROR_ALREADY_DISABLED in ex.value.stdout.decode("utf-8")
     assert settings.dns_visible_in_settings(["disabled"])
     assert dns.is_unset()
 
@@ -325,7 +325,7 @@ def test_custom_dns_already_disabled_connected(tech, proto, obfuscated):
             sh.nordvpn.set.dns("off")
 
         assert settings.dns_visible_in_settings(["disabled"])
-        assert dns.DNS_MSG_ERROR_ALREADY_DISABLED in str(ex)
+        assert dns.DNS_MSG_ERROR_ALREADY_DISABLED in ex.value.stdout.decode("utf-8")
         assert dns.is_set_for(dns.DNS_NORD)
 
     assert dns.is_unset()

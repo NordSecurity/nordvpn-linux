@@ -130,7 +130,7 @@ def test_route_to_nonexistant_node():
 
     expected_message = meshnet.MSG_PEER_UNKNOWN % nonexistant_node_name
 
-    assert expected_message in str(ex)
+    assert expected_message in ex.value.stdout.decode("utf-8")
 
 
 @pytest.mark.xfail
@@ -200,7 +200,7 @@ def test_route_to_peer_that_is_disconnected():
 
     expected_message = meshnet.MSG_PEER_OFFLINE % peer_hostname
 
-    assert expected_message in str(ex)
+    assert expected_message in ex.value.stdout.decode("utf-8")
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_NO_MESHNET)
@@ -212,4 +212,4 @@ def test_route_traffic_to_peer_wrong_tech(tech, proto, obfuscated):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh_no_tty.nordvpn.mesh.peer.connect(peer_hostname)
 
-    assert meshnet.MSG_ROUTING_NEED_NORDLYNX in str(ex)
+    assert meshnet.MSG_ROUTING_NEED_NORDLYNX in ex.value.stdout.decode("utf-8")

@@ -86,13 +86,13 @@ def test_allowlist_port_twice_disconnected(tech, proto, obfuscated, port):
             sh.nordvpn(allowlist.get_alias(), "add", "port", port.value, "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_ADD_ERROR % (port.value, port.protocol)
-    assert expected_message in str(ex)
+    assert expected_message in ex.value.stdout.decode("utf-8")
     assert str(sh.nordvpn.settings()).count(port.value) == 1
     assert not firewall.is_active([port])
 
 
-@dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS,
-                     id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}", always_pair=lib.TECHNOLOGIES_BASIC1[0])
+@dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES_BASIC2, ordered_source=lib.PORTS,
+                     id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}")
 def test_allowlist_port_twice_connected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8958"""
 
@@ -109,7 +109,7 @@ def test_allowlist_port_twice_connected(tech, proto, obfuscated, port):
             sh.nordvpn(allowlist.get_alias(), "add", "port", port.value, "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_ADD_ERROR % (port.value, port.protocol)
-    assert expected_message in str(ex)
+    assert expected_message in ex.value.stdout.decode("utf-8")
     assert str(sh.nordvpn.settings()).count(port.value) == 1
     assert firewall.is_active([port])
 
@@ -161,7 +161,7 @@ def test_allowlist_port_remove_nonexistent_disconnected(tech, proto, obfuscated,
             sh.nordvpn(allowlist.get_alias(), "remove", "port", port.value, "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_REMOVE_ERROR % (port.value, port.protocol)
-    assert expected_message in str(ex)
+    assert expected_message in ex.value.stdout.decode("utf-8")
 
 @dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS,
                      id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}", always_pair=lib.TECHNOLOGIES_BASIC1[0])
@@ -179,7 +179,7 @@ def test_allowlist_port_remove_nonexistent_connected(tech, proto, obfuscated, po
             sh.nordvpn(allowlist.get_alias(), "remove", "port", port.value, "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_REMOVE_ERROR % (port.value, port.protocol)
-    assert expected_message in str(ex)
+    assert expected_message in ex.value.stdout.decode("utf-8")
 
 
 @dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS_RANGE,
@@ -198,7 +198,7 @@ def test_allowlist_port_range_remove_nonexistent_disconnected(tech, proto, obfus
             sh.nordvpn(allowlist.get_alias(), "remove", "ports", port_range[0], port_range[1], "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_RANGE_REMOVE_ERROR % (port.value.replace(":", " - "), port.protocol)
-    assert expected_message in str(ex)
+    assert expected_message in ex.value.stdout.decode("utf-8")
 
 
 @dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS_RANGE,
@@ -219,7 +219,7 @@ def test_allowlist_port_range_remove_nonexistent_connected(tech, proto, obfuscat
             sh.nordvpn(allowlist.get_alias(), "remove", "ports", port_range[0], port_range[1], "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_RANGE_REMOVE_ERROR % (port.value.replace(":", " - "), port.protocol)
-    assert expected_message in str(ex)
+    assert expected_message in ex.value.stdout.decode("utf-8")
 
 @dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS_RANGE,
                      id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}", always_pair=lib.TECHNOLOGIES_BASIC1[0])
