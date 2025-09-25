@@ -81,7 +81,6 @@ def teardown_function(function):  # noqa: ARG001
     assert network.is_disconnected()
 
 
-@pytest.mark.xfail
 def test_meshnet_available_after_update():
     """Manual TC: LVPN-3204"""
 
@@ -106,7 +105,6 @@ def test_meshnet_available_after_update():
     assert network.is_available()
 
 
-@pytest.mark.xfail
 def test_fileshare_available_after_update():
     """Manual TC: LVPN-3205"""
 

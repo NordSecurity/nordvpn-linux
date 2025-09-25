@@ -133,7 +133,6 @@ def test_route_to_nonexistant_node():
     assert expected_message in str(ex)
 
 
-@pytest.mark.xfail
 def test_route_to_peer_status_valid():
     peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().hostname
 
