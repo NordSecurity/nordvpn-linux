@@ -100,8 +100,12 @@ func (s *AccessTokenSessionStore) validate() error {
 		return fmt.Errorf("validating access token format: %w", err)
 	}
 
-	if err := ValidateRenewToken(cfg.RenewToken); err != nil {
-		return fmt.Errorf("validating renew token format: %w", err)
+	// if expiry token is manually generated, then renew token might be empty
+	// so we skip the renew token validation in this case
+	if !cfg.ExpiresAt.Equal(ManualAccessTokenExpiryDate) {
+		if err := ValidateRenewToken(cfg.RenewToken); err != nil {
+			return fmt.Errorf("validating renew token format: %w", err)
+		}
 	}
 
 	if err := ValidateExpiry(cfg.ExpiresAt); err != nil {
