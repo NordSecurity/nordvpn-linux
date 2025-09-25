@@ -36,7 +36,6 @@ export PKG_TO_BUILD="${2,,}"
 ARCH="${3,,}"
 
 declare -A FLUTTER_FOLDER_NAME=(
-  [aarch64]=arm64
   [arm64]=arm64
   [x86_64]=x64
   [amd64]=x64
@@ -105,19 +104,14 @@ for filename in "${files[@]}"; do
 done
 
 # detect architecture type for packages
-echo "DEBUG: PKG_TO_BUILD = '${PKG_TO_BUILD}'"
-echo "DEBUG: ARCH = '${ARCH}'"
-echo "DEBUG: ARCHS_DEB keys:" "${!ARCHS_DEB[@]}"
-echo "DEBUG: ARCHS_RPM keys:" "${!ARCHS_RPM[@]}"
-
 case "$PKG_TO_BUILD" in
 "deb")
   # shellcheck disable=SC2153
-  export PKG_ARCH=${ARCHS_DEB[${ARCH}]}
+  export PKG_ARCH=${ARCHS_DEB[$ARCH]}
   ;;
 "rpm")
   # shellcheck disable=SC2153
-  export PKG_ARCH=${ARCHS_RPM[${ARCH}]}
+  export PKG_ARCH=${ARCHS_RPM[$ARCH]}
   ;;
 *)
   echo "unknown package type ${PKG_TO_BUILD}"

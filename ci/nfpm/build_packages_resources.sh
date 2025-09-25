@@ -105,8 +105,14 @@ if [[ -n "${ARCHS_FLUTTER[$ARCH]:-}" ]]; then
   export SKIP_DIST_CLEAN="true"  # Don't clean dist dir since we're integrating
   export CUSTOM_SOURCE_DIR="${WORKDIR}/bin/${ARCH}/gui"  # Use our built GUI binaries
 
+  # Convert aarch64 to arm64 for GUI script compatibility
+  GUI_ARCH="${ARCH}"
+  if [[ "${ARCH}" == "aarch64" ]]; then
+    GUI_ARCH="arm64"
+  fi
+  
   # Set the parameters the sourced script expects
-  set -- release "${PKG_TO_BUILD}" "${ARCH}"
+  set -- release "${PKG_TO_BUILD}" "${GUI_ARCH}"
 
   # Source the GUI build script (this will run in current directory context)
   (cd gui && source scripts/build_package.sh)
