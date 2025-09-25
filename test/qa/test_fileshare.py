@@ -822,7 +822,7 @@ def test_fileshare_cancel_file_not_in_flight(sender_cancels: bool):
     if sender_cancels:
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh.nordvpn.fileshare.cancel(local_transfer_id, file_to_cancel)
-        assert "This file is not in progress." in str(ex.value)
+        assert "This file is not in progress." in ex.value.stdout.decode("utf-8")
         sh.nordvpn.fileshare.cancel(local_transfer_id)
     else:  # receiver cancels
         with pytest.raises(RuntimeError) as ex:
@@ -852,7 +852,7 @@ def test_fileshare_file_limit_exceeded(background: bool, multiple_directories: b
         else:
             sh.nordvpn.fileshare.send(peer_address, *dirs)
 
-    assert "Number of files in a transfer cannot exceed 1000. Try archiving the directory." in str(ex.value)
+    assert "Number of files in a transfer cannot exceed 1000. Try archiving the directory." in ex.value.stdout.decode("utf-8")
 
     for directory_path in dirs:
         shutil.rmtree(directory_path)
@@ -873,7 +873,7 @@ def test_fileshare_file_directory_depth_exceeded(background: bool):
         else:
             sh.nordvpn.fileshare.send(peer_address, src_path)
 
-    assert "File depth cannot exceed 5 directories. Try archiving the directory." in str(ex.value)
+    assert "File depth cannot exceed 5 directories. Try archiving the directory." in ex.value.stdout.decode("utf-8")
 
     shutil.rmtree(src_path)
 
@@ -1048,7 +1048,7 @@ def test_permissions_send(peer_name, background):
         else:
             sh.nordvpn.fileshare.send(peer_address, filename).stdout.decode("utf-8")
 
-    assert "This peer does not allow file transfers from you." in str(ex.value)
+    assert "This peer does not allow file transfers from you." in ex.value.stdout.decode("utf-8")
 
     # Revert to the state before test
     fileshare_allowed_message = ssh_client.exec_command(f"nordvpn mesh peer fileshare allow {tester_address}")
@@ -1130,7 +1130,7 @@ def test_accept_destination_directory_does_not_exist():
         sh.nordvpn.fileshare.accept("--background", "--path", "invalid_dir", local_transfer_id).stdout.decode("utf-8")
 
     expected_dir = os.getcwd() + "/invalid_dir"
-    assert f"Download directory \"{expected_dir}\" does not exist. Make sure the directory exists or provide an alternative via --path" in str(ex.value)
+    assert f"Download directory \"{expected_dir}\" does not exist. Make sure the directory exists or provide an alternative via --path" in ex.value.stdout.decode("utf-8")
 
     sh.nordvpn.fileshare.cancel(local_transfer_id)
 
@@ -1159,7 +1159,7 @@ def test_accept_destination_directory_symlink():
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.fileshare.accept("--background", "--path", linkpath, local_transfer_id).stdout.decode("utf-8")
-    assert "A download path can’t be a symbolic link. Please provide a directory as a download path to accept the transfer" in str(ex.value)
+    assert "A download path can’t be a symbolic link. Please provide a directory as a download path to accept the transfer" in ex.value.stdout.decode("utf-8")
 
     sh.nordvpn.fileshare.cancel(local_transfer_id)
 
@@ -1184,7 +1184,7 @@ def test_accept_destination_directory_not_a_directory():
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.fileshare.accept("--background", "--path", path, local_transfer_id).stdout.decode("utf-8")
-    assert "Please provide a directory as a download path to accept the transfer" in str(ex.value)
+    assert "Please provide a directory as a download path to accept the transfer" in ex.value.stdout.decode("utf-8")
 
 
     sh.nordvpn.fileshare.cancel(local_transfer_id)

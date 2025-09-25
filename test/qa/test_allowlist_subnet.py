@@ -92,7 +92,7 @@ def test_allowlist_subnet_twice_disconnected(tech, proto, obfuscated, subnet):
         sh.nordvpn(allowlist.get_alias(), "add", "subnet", subnet)
 
     expected_message = allowlist.MSG_ALLOWLIST_SUBNET_ADD_ERROR % subnet
-    assert expected_message in str(ex)
+    assert expected_message in ex.value.stdout.decode("utf-8")
     assert str(sh.nordvpn.settings()).count(subnet) == 1
     assert not firewall.is_active(None, [subnet])
 
@@ -112,7 +112,7 @@ def test_allowlist_subnet_twice_connected(tech, proto, obfuscated, subnet):
         sh.nordvpn(allowlist.get_alias(), "add", "subnet", subnet)
 
     expected_message = allowlist.MSG_ALLOWLIST_SUBNET_ADD_ERROR % subnet
-    assert expected_message in str(ex)
+    assert expected_message in ex.value.stdout.decode("utf-8")
     assert str(sh.nordvpn.settings()).count(subnet) == 1
     assert firewall.is_active(None, [subnet])
 
@@ -170,7 +170,7 @@ def test_allowlist_subnet_remove_nonexistent_disconnected(tech, proto, obfuscate
         sh.nordvpn(allowlist.get_alias(), "remove", "subnet", subnet)
 
     expected_message = allowlist.MSG_ALLOWLIST_SUBNET_REMOVE_ERROR % subnet
-    assert expected_message in str(ex)
+    assert expected_message in ex.value.stdout.decode("utf-8")
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -186,4 +186,4 @@ def test_allowlist_subnet_remove_nonexistent_connected(tech, proto, obfuscated, 
         sh.nordvpn(allowlist.get_alias(), "remove", "subnet", subnet)
 
     expected_message = allowlist.MSG_ALLOWLIST_SUBNET_REMOVE_ERROR % subnet
-    assert expected_message in str(ex)
+    assert expected_message in ex.value.stdout.decode("utf-8")
