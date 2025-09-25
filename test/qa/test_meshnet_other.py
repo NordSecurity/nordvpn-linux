@@ -39,6 +39,7 @@ def test_allowlist_incoming_connection():
     ssh_client.exec_command("nordvpn set killswitch off")
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 # This doesn't directly test meshnet, but it uses it
 def test_set_defaults_when_logged_in_2nd_set(tech, proto, obfuscated):

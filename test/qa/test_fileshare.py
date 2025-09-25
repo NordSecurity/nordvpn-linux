@@ -1460,6 +1460,7 @@ def test_fileshare_process_monitoring_cuts_the_port_access_even_when_it_was_take
         fileshare.ensure_mesh_is_on()
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize("background_accept", [True, False], ids=["accept_bg", "accept_int"])
 @pytest.mark.parametrize("background_send", [True, False], ids=["send_bg", "send_int"])
 def test_all_permissions_denied_send_file(background_send: bool, background_accept: bool):

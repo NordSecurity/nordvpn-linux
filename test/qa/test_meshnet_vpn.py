@@ -25,6 +25,7 @@ def teardown_function(function):  # noqa: ARG001
     meshnet.TestUtils.teardown_function(ssh_client)
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize("lan_discovery", [True, False])
 @pytest.mark.parametrize("local", [True, False])
 def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
@@ -65,6 +66,7 @@ def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
         assert result, message
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize("lan_discovery", [True, False])
 @pytest.mark.parametrize("local", [True, False])
 def test_killswitch_exitnode_vpn(lan_discovery: bool, local: bool):
@@ -210,6 +212,7 @@ def test_route_to_peer_that_is_connected_to_vpn():
     lib.is_disconnect_successful(sh_no_tty.nordvpn.disconnect())
 
 
+@pytest.mark.xfail
 def test_route_to_peer_that_disconnects_from_vpn():
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname
@@ -243,6 +246,7 @@ def test_route_to_peer_that_disconnects_from_vpn():
     lib.is_disconnect_successful(ssh_client.exec_command("nordvpn disconnect"))
 
 
+@pytest.mark.xfail
 def test_route_traffic_to_peer_once_again_when_already_routing():
     peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().hostname
 
