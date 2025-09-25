@@ -87,88 +87,33 @@ mv "${WORKDIR}"/*."${PKG_TO_BUILD}" "${APP_DIR}/${PKG_TO_BUILD}"
 # remove leftovers
 rm -rf "${BASEDIR}"
 
-cleanup() {
-  local file="${WORKDIR}/gui/pubspec.yaml"
-  if [ -f "${file}.bak" ]; then
-    mv -f "${file}.bak" "${file}"
-    echo "Reverted changes to ${file}"
-  fi
-}
-trap cleanup EXIT ERR INT TERM
+# Only build GUI package if the architecture supports Flutter
+if [[ -n "${ARCHS_FLUTTER[$ARCH]:-}" ]]; then
+  echo "Building GUI package for Flutter-supported architecture: $ARCH"
+  
+  cleanup() {
+    local file="${WORKDIR}/gui/pubspec.yaml"
+    if [ -f "${file}.bak" ]; then
+      mv -f "${file}.bak" "${file}"
+      echo "Reverted changes to ${file}"
+    fi
+  }
+  trap cleanup EXIT ERR INT TERM
 
+  # Build GUI package using the existing GUI build script
+  # Set auxiliary environment variables for the GUI script
+  export SKIP_DIST_CLEAN="true"  # Don't clean dist dir since we're integrating
+  export CUSTOM_SOURCE_DIR="${WORKDIR}/bin/${ARCH}/gui"  # Use our built GUI binaries
 
-gui/scripts/update_app_version.sh
-source "gui/scripts/env.sh"
-# NAME=nordvpn-gui
-# export NAME
+  # Set the parameters the sourced script expects
+  set -- release "${PKG_TO_BUILD}" "${ARCH}"
 
-export PKG_DESCRIPTION="The NordVPN app for Linux now offers a visual interface for effortless online security. NordVPN protects your internet traffic with top-grade encryption and changes your IP address, so whatever you do online stays private and secure. Connect to over 7,100 high-speed servers covering 118 countries.\n\nYou can secure up to 10 devices with a single account. Enjoy a safer internet experience on all your devices."
-export PKG_VERSION=${VERSION}
+  # Source the GUI build script (this will run in current directory context)
+  (cd gui && source scripts/build_package.sh)
 
-# variables used into the package installation scripts
-export SUCCESS_INSTALL_MESSAGE="NordVPN GUI for Linux successfully installed!"
-export INSTALL_SCRIPT="
-# create symbolic link for the GUI executable
-ln -s /opt/${NAME}/${NAME} /usr/bin/${NAME}
-chmod +x /usr/bin/${NAME}
-"
-
-# used in package uninstall scripts
-export UNINSTALL_SCRIPT="
-# remove symbolic link for the GUI executable
-rm -fr /usr/bin/${NAME}
-"
-
-# prepare folders structure for packaging
-DIST_DIR="dist"
-export APP_BUNDLE_DIR="$DIST_DIR/source/${NAME}_${VERSION}_${ARCH}"
-
-export INSTALL_DIR="/opt/${NAME}"
-mkdir -p "${APP_BUNDLE_DIR}${INSTALL_DIR}"
-cp -r "${WORKDIR}/bin/${ARCH}/gui/"* "${APP_BUNDLE_DIR}${INSTALL_DIR}"
-
-
-# generate changelog
-readarray -d '' files < <(printf '%s\0' "gui/contrib/changelog/prod/"*.md | sort -rzV)
-for filename in "${files[@]}"; do
-  entry_name=$(basename "${filename}" .md)
-  entry_tag=${entry_name%_*}
-  entry_date=$(stat -c "%Y" "${filename}")
-
-  printf "\055 semver: %s
-  date: %s
-  packager: NordVPN Linux Team <linux@nordvpn.com>
-  deb:
-    urgency: medium
-    distributions:
-      - stable
-  changes:" \
-    "${entry_tag}" "$(date -d@"${entry_date}" +%Y-%m-%dT%H:%M:%SZ)" >>"${DIST_DIR}"/changelog.yml
-
-  while read -r line || [ -n "$line" ]; do
-    printf "\n   - note: |-\n      %s" "${line:1}" >>"${DIST_DIR}"/changelog.yml
-  done <"${filename}"
-
-  printf "\n\n" >>"${DIST_DIR}"/changelog.yml
-done
-
-# create nfpm package description
-envsubst <gui/templates/nfpm_template.yaml >"${APP_BUNDLE_DIR}"/packages.yaml
-
-# create desktop file
-envsubst <gui/templates/nordvpn-gui_template.desktop >"${APP_BUNDLE_DIR}/${NAME}.desktop"
-
-# create install scripts
-mkdir -p "${APP_BUNDLE_DIR}"/scriptlets/{deb,rpm}
-envsubst <gui/templates/scriptlets/deb/postinst_template >"${APP_BUNDLE_DIR}"/scriptlets/deb/postinst
-envsubst <gui/templates/scriptlets/deb/postrm_template >"${APP_BUNDLE_DIR}"/scriptlets/deb/postrm
-envsubst <gui/templates/scriptlets/rpm/post_template >"${APP_BUNDLE_DIR}"/scriptlets/rpm/post
-envsubst <gui/templates/scriptlets/rpm/postun_template >"${APP_BUNDLE_DIR}"/scriptlets/rpm/postun
-
-OUT_PKG_DIR="${DIST_DIR}/${PKG_TO_BUILD}/gui"
-echo "Build ${PKG_TO_BUILD} for ${ARCHS_DEB[$ARCH]} in ${OUT_PKG_DIR}"
-mkdir -p "${OUT_PKG_DIR}"
-
-nfpm pkg --packager "${PKG_TO_BUILD}" -f "${APP_BUNDLE_DIR}/packages.yaml" -t "${APP_DIR}/${PKG_TO_BUILD}"
-
-rm -rf "${APP_BUNDLE_DIR}"
+  # Move the generated GUI package to the expected location
+  mv gui/dist/${PKG_TO_BUILD}/*.${PKG_TO_BUILD} "${APP_DIR}/${PKG_TO_BUILD}/"
+  
+else
+  echo "Skipping GUI package build - architecture $ARCH not supported by Flutter"
+fi
