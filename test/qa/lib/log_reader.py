@@ -49,9 +49,7 @@ class LogReader:
 
                 # Validate the cursor (if greater than file size, cursor is invalid)
                 if cursor > file_size:
-                    print(
-                        f"Cursor ({cursor}) exceeds file size ({file_size}). Returning empty content."
-                    )
+                    print(f"Cursor ({cursor}) exceeds file size ({file_size}). Returning empty content.")
                     return ""
 
                 # Move to the specified cursor position
@@ -69,7 +67,7 @@ class LogReader:
 
     def wait_for_messages(
         self,
-        messages: list[str],
+        messages: list[str] | str,
         cursor: int = 0,
         timeout: int = 30,
         interval: int = 1,
@@ -94,7 +92,7 @@ class LogReader:
         :raises FileNotFoundError: If log file is not found.
         """
         start_time = time.time()
-        messages_to_find = list(messages)
+        messages_to_find = list(messages if type(messages) is list else [messages])
 
         print(f"Waiting for messages: {messages_to_find}")
 

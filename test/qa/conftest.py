@@ -1,5 +1,6 @@
 import datetime
 import io
+import shutil
 from urllib.parse import urlparse
 
 import lib
@@ -21,13 +22,21 @@ from lib.remote_config_manager import RemoteConfigManager, LOCAL_CACHE_DIR, REMO
 from lib.logging import FILE
 from lib.log_reader import LogReader
 from lib.daemon import enable_rc_local_config_usage
+from constants import (
+    DEB,
+    NORDVPND_SERVICE_NAME,
+    NORDVPND_FILE,
+    NORDVPN_TYPE,
+    SNAP,
+)
 
-pytest_plugins = ("lib.pytest_timeouts.pytest_timeouts")
+pytest_plugins = "lib.pytest_timeouts.pytest_timeouts"
 
-_CHECK_FREQUENCY=5
+_CHECK_FREQUENCY = 5
+RC_TIMEOUT = 1
 
-sys.path.append(os.path.abspath(os.path.join(
-    os.path.dirname(__file__), 'lib/protobuf/daemon')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "lib/protobuf/daemon")))
+
 
 def pytest_configure(config):
     """
@@ -64,16 +73,54 @@ def print_to_string(*args, **kwargs):
 
 
 _original_print = print
+
+
 def _print_with_timestamp(*args, **kwargs):
     # Get the current time and format it
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     # Prepend the timestamp to the original print arguments
     _original_print(timestamp, *args, **kwargs)
     logging.log(data=print_to_string(timestamp, *args, **kwargs))
 
 
+def _is_installed_as(package_type: str) -> bool:
+    """
+    Function to verify if installed nordvpn package is installed as deb or snap.
+
+    :param package_type:    The type of the package to check (DEB or SNAP).
+    :returns:               True if the package is installed, False otherwise.
+    """
+    return os.environ.get(NORDVPN_TYPE) == package_type
+
+
+def _set_custom_config_for_rc(daemon_log_reader, string_to_be_added: str) -> int:
+    """
+    Function to set custom config parameter for rc's config
+
+    :param string_to_be_added:   Parameter with value to be set
+
+    :return                      Position of cursor in daemon log file
+    """
+    daemon_path = NORDVPND_FILE.get(os.environ.get(NORDVPN_TYPE))
+    if _is_installed_as(DEB):
+        # For container
+        sed_command = ["sudo", "sed", "-i", f"1a export {string_to_be_added}", daemon_path]
+    else:
+        # For VM
+        sed_command = ["sudo", "sed", "-i", f'/^\[Service\]/a Environment="{string_to_be_added}"', daemon_path]
+
+    subprocess.run(sed_command)
+
+    time_mark = daemon_log_reader.get_cursor()
+
+    _restart_daemon_after_changing_config()
+
+    return time_mark
+
+
 # Replace the built-in print with our custom version
-print = _print_with_timestamp # noqa: A001
+print = _print_with_timestamp  # noqa: A001
+
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_check_internet_connection():
@@ -91,7 +138,9 @@ def start_system_monitoring():
     threads = []
 
     threads.append(threading.Thread(target=_check_connection_to_ip, args=["1.1.1.1", stop_event], daemon=True))
-    threads.append(threading.Thread(target=_check_connection_to_ip_outside_vpn, args=["1.1.1.1", stop_event], daemon=True))
+    threads.append(
+        threading.Thread(target=_check_connection_to_ip_outside_vpn, args=["1.1.1.1", stop_event], daemon=True)
+    )
     threads.append(threading.Thread(target=_check_dns_resolution, args=["nordvpn.com", stop_event], daemon=True))
     threads.append(threading.Thread(target=_capture_traffic, args=[stop_event], daemon=True))
     print(threads)
@@ -107,12 +156,13 @@ def start_system_monitoring():
     for thread in threads:
         thread.join()
 
+
 def _check_connection_to_ip(ip_address, stop_event):
     print("Start _check_connection_to_ip")
     while not stop_event.is_set():
         try:
             network.is_internet_reachable(ip_address=ip_address, retry=1)
-        except Exception as e: # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             print(f"_check_connection_to_ip: FAILURE for {ip_address}: {e}.")
         stop_event.wait(_CHECK_FREQUENCY)
 
@@ -122,7 +172,7 @@ def _check_connection_to_ip_outside_vpn(ip_address, stop_event):
     while not stop_event.is_set():
         try:
             network.is_internet_reachable_outside_vpn(ip_address=ip_address, retry=1)
-        except Exception as e: # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             print(f"~~~_check_connection_to_ip_outside_vpn: {ip_address} FAILURE: {e}.")
         stop_event.wait(_CHECK_FREQUENCY)
 
@@ -132,8 +182,8 @@ def _check_dns_resolution(domain, stop_event):
     while not stop_event.is_set():
         try:
             resolver = dns.resolver.Resolver()
-            resolver.nameservers = ['8.8.8.8']
-            resolver.resolve(domain, 'A')  # 'A' for IPv4
+            resolver.nameservers = ["8.8.8.8"]
+            resolver.resolve(domain, "A")  # 'A' for IPv4
         except Exception as e:  # noqa: BLE001
             print(f"~~~_check_dns_resolution: DNS {domain} FAILURE. Error: {e}")
         stop_event.wait(_CHECK_FREQUENCY)
@@ -155,6 +205,14 @@ def _capture_traffic(stop_event):
         process.kill()
     print(f"tshark out {process.stdout.read().strip()[-10:]} - {process.stderr.read().strip()[-10:]}")
     time.sleep(1)
+
+def _restart_daemon_after_changing_config():
+    """Method to restart daemon after changing config according to system"""
+    if _is_installed_as(SNAP):
+        subprocess.run("sudo systemctl daemon-reload", shell=True, check=True)
+        subprocess.run(f"sudo {SNAP} restart {NORDVPND_SERVICE_NAME.get(SNAP)}", shell=True, check=True)
+    else:
+        daemon.restart()
 
 
 @pytest.fixture
@@ -180,7 +238,7 @@ def nordvpnd_scope_function(collect_logs):  # noqa: ARG001
     daemon.stop()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def nordvpnd_scope_module():
     """Manage the NordVPN daemon start/stop and login/logout states in a module scope."""
     daemon.start()
@@ -201,7 +259,7 @@ def unblock_network(nordvpnd_scope_module):  # noqa: ARG001
     network.unblock()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def add_and_delete_random_route():
     """Add and delete a random network route."""
     firewall.add_and_delete_random_route()
@@ -227,8 +285,7 @@ def default_config() -> dict:
 
 
 @pytest.fixture
-def rc_config_manager(default_config: dict
-) -> RemoteConfigManager:
+def rc_config_manager(default_config: dict) -> RemoteConfigManager:
     """
     Fixture to create and provide an instance of "RemoteConfigManager".
 
@@ -236,11 +293,7 @@ def rc_config_manager(default_config: dict
 
     :return: An instance of the "RemoteConfigManager".
     """
-    return RemoteConfigManager(
-        env="dev",
-        cache_dir=LOCAL_CACHE_DIR,
-        default_config=default_config
-    )
+    yield RemoteConfigManager(env="dev", cache_dir=LOCAL_CACHE_DIR, default_config=default_config)
 
 
 @pytest.fixture
@@ -263,7 +316,7 @@ def daemon_log_cursor(daemon_log_reader) -> int:
 
     :param daemon_log_reader: An instance of the "LogReader" class.
 
-    :return: An integer cursor representing the current end of the log file..
+    :return: An integer cursor representing the current end of the log file.
     """
     cursor = daemon_log_reader.get_cursor()
 
@@ -278,6 +331,7 @@ def clean_cache_files(rc_config_manager):
 
     :param rc_config_manager: An instance of the "RemoteConfigManager" class.
     """
+    print("Clearing local cache file")
     if rc_config_manager.set_permissions_cache_dir():
         subprocess.run(["sudo", "rm", "-rf", LOCAL_CACHE_DIR], check=True)
     else:
@@ -319,7 +373,7 @@ def disable_remote_endpoint():
         subprocess.run(["sudo", "cp", hosts_backup, hosts_original], check=True)
         subprocess.run(["sudo", "chmod", "644", hosts_original], check=True)
         print(f"{hosts_original} restored from {hosts_backup}.")
-    except Exception as e: # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
         print(f"Got an error during restoring {hosts_original} from {hosts_backup}: {e}")
         raise
 
@@ -330,3 +384,120 @@ def env():
     env = daemon.get_env()
     print(f"Current env: '{env}'")
     return env
+
+
+@pytest.fixture
+def set_custom_timeout_for_rc_retry_scheme(daemon_log_reader):
+    """Fixture for setting a custom timeout for the NordVPN daemon's rc retry scheme."""
+    print("Setting custom timeout for NordVPN daemon's rc retry scheme")
+    daemon_path = NORDVPND_FILE.get(os.environ.get(NORDVPN_TYPE))
+
+    if not os.path.exists(daemon_path):
+        print(f"Daemon file does not exist. {daemon_path}")
+        pytest.skip("Unable to modify config file. File doesn't exist")
+
+    os.makedirs(f"{os.getcwd()}/tmp/", exist_ok=True)
+    subprocess.run(f"sudo cp {daemon_path} {os.getcwd()}/tmp", shell=True, check=True, text=True, capture_output=True)
+
+    time_mark = _set_custom_config_for_rc(daemon_log_reader, string_to_be_added=f"RC_LOAD_TIME_MIN={RC_TIMEOUT}")
+
+    if not daemon_log_reader.wait_for_messages(
+        f"[Info] remote config download job time period: {RC_TIMEOUT}m0s", cursor=time_mark
+    ):
+        print("Service doesn't applied new time period.")
+
+    yield
+
+    try:
+        subprocess.run(
+        f'sudo cp {os.getcwd()}/tmp/{daemon_path.split("/")[-1]} {daemon_path}',
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=True,
+        )
+    except subprocess.CalledProcessError:
+        print("Folder doesn't exists")
+
+    _restart_daemon_after_changing_config()
+
+    shutil.rmtree(f"{os.getcwd()}/tmp", ignore_errors=True)
+
+
+@pytest.fixture
+def set_use_local_config_for_rc(daemon_log_reader):
+    """
+    Fixture to set parameter RC_USE_LOCAL_CONFIG in config for not overwriting local config by remote.
+
+    (Log about downloading config still persist)
+    """
+    print("Setting 'use local config' for NordVPN daemon's rc")
+    daemon_path = NORDVPND_FILE.get(os.environ.get(NORDVPN_TYPE))
+
+    if not os.path.exists(daemon_path):
+        print(f"Daemon file does not exist. {daemon_path}")
+        pytest.skip("Unable to modify config file. File doesn't exist")
+
+    os.makedirs(f"{os.getcwd()}/tmp/", exist_ok=True)
+    subprocess.run(f"sudo cp {daemon_path} {os.getcwd()}/tmp", shell=True, check=True, text=True, capture_output=True)
+
+    _set_custom_config_for_rc(daemon_log_reader, string_to_be_added="RC_USE_LOCAL_CONFIG=1")
+
+    yield
+
+    try:
+        subprocess.run(
+        f'sudo cp {os.getcwd()}/tmp/{daemon_path.split("/")[-1]} {daemon_path}',
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=True,
+        )
+    except subprocess.CalledProcessError:
+        print("Folder doesn't exists")
+
+    _restart_daemon_after_changing_config()
+
+    shutil.rmtree(f"{os.getcwd()}/tmp", ignore_errors=True)
+
+
+@pytest.fixture
+def pause_nordvpnd():
+    """Fixture to pause nordvpnd before tests and start it after"""
+    daemon.stop()
+
+    yield
+
+    daemon.start()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def get_package_system():
+    """Fixture to set in env variable system version of package"""
+    try:
+        dpkg_result = subprocess.run(["dpkg", "-l", "nordvpn"], capture_output=True, text=True)
+        if dpkg_result.returncode == 0 and "nordvpn" in dpkg_result.stdout:
+            os.environ[NORDVPN_TYPE] = DEB
+    except FileNotFoundError:
+        # dpkg command not found - might not be a Debian-based system
+        pass
+
+    try:
+        snap_result = subprocess.run(["snap", "list", "nordvpn"], capture_output=True, text=True)
+        if snap_result.returncode == 0 and "nordvpn" in snap_result.stdout:
+            os.environ[NORDVPN_TYPE] = SNAP
+    except FileNotFoundError:
+        # snap command not found
+        pass
+
+
+@pytest.fixture
+def backup_restore_rc_config_files(nordvpnd_scope_function):  # noqa: ARG001
+    """Fixture to back up original config for remote config, and restore it after tests."""
+    os.makedirs(f"{os.getcwd()}/tmp", exist_ok=True)
+
+    print("Copy original remote monitoring config files as back up")
+    subprocess.run(f"sudo cp -r {LOCAL_CACHE_DIR} {os.getcwd()}/tmp", check=True, shell=True)
+    yield
+    print("Restore original remote monitoring config files")
+    subprocess.run(f"sudo cp -r {os.getcwd()}/tmp {LOCAL_CACHE_DIR} ", check=True, shell=True)
