@@ -162,7 +162,7 @@ def test_set_meshnet_on_when_logged_out(meshnet_allias):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh_no_tty.nordvpn.set(meshnet_allias, "on")
 
-    assert "You are not logged in." in str(ex.value)
+    assert "You are not logged in." in ex.value.stdout.decode("utf-8")
 
 
 @pytest.mark.skip(reason="LVPN-4590")
@@ -175,7 +175,7 @@ def test_set_meshnet_off_when_logged_out(meshnet_allias):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh_no_tty.nordvpn.set(meshnet_allias, "off")
 
-    assert "You are not logged in." in str(ex.value)
+    assert "You are not logged in." in ex.value.stdout.decode("utf-8")
 
 
 @pytest.mark.xfail
@@ -195,7 +195,7 @@ def test_set_meshnet_on_repeated(meshnet_allias):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh_no_tty.nordvpn.set(meshnet_allias, "on")
 
-    assert "Meshnet is already enabled." in str(ex.value)
+    assert "Meshnet is already enabled." in ex.value.stdout.decode("utf-8")
 
 
 @pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
@@ -206,7 +206,7 @@ def test_set_meshnet_off_repeated(meshnet_allias):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh_no_tty.nordvpn.set(meshnet_allias, "off")
 
-    assert "Meshnet is already disabled." in str(ex.value)
+    assert "Meshnet is already disabled." in ex.value.stdout.decode("utf-8")
 
 
 @pytest.mark.parametrize(("permission", "permission_state", "expected_message"), meshnet.PERMISSION_SUCCESS_MESSAGE_PARAMETER_SET, \
@@ -236,7 +236,7 @@ def test_permission_messages_error(permission, permission_state, expected_messag
 
     expected_message = expected_message % peer_hostname
 
-    assert expected_message in str(ex)
+    assert expected_message in ex.value.stdout.decode("utf-8")
 
 
 @pytest.mark.xfail
