@@ -1,0 +1,226 @@
+package access
+
+import (
+	"errors"
+	"log"
+	"time"
+
+	"github.com/NordSecurity/nordvpn-linux/auth"
+	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/nc"
+	"github.com/NordSecurity/nordvpn-linux/networker"
+)
+
+const (
+	logTag = "[access]"
+)
+
+// TODO: Refactor 'Logout' and 'ForceLogoutWithoutToken` functions to reuse core logic
+
+type LogoutInput struct {
+	AuthChecker                  auth.Checker
+	CredentialsAPI               core.CredentialsAPI
+	Netw                         networker.Networker
+	NcClient                     nc.NotificationClient
+	ConfigManager                config.Manager
+	UserLogoutEventPublisherFunc func(events.DataAuthorization)
+	DebugPublisherFunc           func(string)
+	PersistToken                 bool
+	DisconnectFunc               func() (bool, error)
+}
+
+type LogoutResult struct {
+	Status int64
+	Err    error
+}
+
+// isAlreadyLoggedOut checks whether the user is already logged out on this device
+func isAlreadyLoggedOut(api core.CredentialsAPI, cm config.Manager) bool {
+	if _, err := api.CurrentUser(); errors.Is(err, core.ErrUnauthorized) {
+		var cfg config.Config
+		if cm.Load(&cfg) == nil && len(cfg.TokensData) == 0 {
+			return true
+		}
+	}
+
+	return false
+}
+
+func Logout(input LogoutInput) (logoutResult LogoutResult) {
+	if ok, _ := input.AuthChecker.IsLoggedIn(); !ok {
+		return LogoutResult{Status: 0, Err: internal.ErrNotLoggedIn}
+	}
+
+	if isAlreadyLoggedOut(input.CredentialsAPI, input.ConfigManager) {
+		return LogoutResult{Status: internal.CodeSuccess, Err: nil}
+	}
+
+	logoutStartTime := time.Now()
+	input.UserLogoutEventPublisherFunc(events.DataAuthorization{
+		DurationMs:   -1,
+		EventTrigger: events.TriggerUser,
+		EventStatus:  events.StatusAttempt,
+	})
+
+	defer func() {
+		status := events.StatusSuccess
+		if logoutResult.Err != nil && logoutResult.Status != internal.CodeSuccess {
+			status = events.StatusFailure
+		}
+		input.UserLogoutEventPublisherFunc(events.DataAuthorization{
+			DurationMs:   max(int(time.Since(logoutStartTime).Milliseconds()), 1),
+			EventTrigger: events.TriggerUser,
+			EventStatus:  status,
+		})
+	}()
+
+	var cfg config.Config
+	if err := input.ConfigManager.Load(&cfg); err != nil {
+		log.Println(internal.ErrorPrefix, err)
+		return LogoutResult{Status: internal.CodeFailure, Err: nil}
+	}
+
+	if _, err := input.DisconnectFunc(); err != nil {
+		log.Println(internal.ErrorPrefix, "disconnect failed:", err)
+		return LogoutResult{Status: internal.CodeFailure, Err: nil}
+	}
+
+	if err := input.Netw.UnSetMesh(); err != nil && !errors.Is(err, networker.ErrMeshNotActive) {
+		log.Println(internal.ErrorPrefix, err)
+		return LogoutResult{Status: internal.CodeFailure, Err: nil}
+	}
+
+	if err := input.NcClient.Stop(); err != nil {
+		log.Println(internal.WarningPrefix, err)
+	}
+
+	tokenData, ok := cfg.TokensData[cfg.AutoConnectData.ID]
+	if !ok {
+		return LogoutResult{Status: internal.CodeFailure, Err: nil}
+	}
+
+	if !input.NcClient.Revoke() {
+		log.Println(internal.WarningPrefix, "error revoking NC token")
+	}
+
+	if !input.PersistToken {
+		if err := input.CredentialsAPI.DeleteToken(); err != nil {
+			log.Println(internal.ErrorPrefix, "deleting token:", err)
+			switch {
+			case errors.Is(err, core.ErrUnauthorized):
+			case errors.Is(err, core.ErrBadRequest):
+			case errors.Is(err, core.ErrServerInternal):
+				return LogoutResult{Status: internal.CodeInternalError, Err: nil}
+			default:
+				return LogoutResult{Status: internal.CodeFailure, Err: nil}
+			}
+		}
+
+		if err := input.CredentialsAPI.Logout(); err != nil {
+			log.Println(internal.ErrorPrefix, "logging out:", err)
+			switch {
+			// This means that token is invalid anyway
+			case errors.Is(err, core.ErrUnauthorized):
+			case errors.Is(err, core.ErrBadRequest):
+				// NordAccount tokens do not work with Logout endpoint and return ErrNotFound
+			case errors.Is(err, core.ErrNotFound):
+			case errors.Is(err, core.ErrServerInternal):
+				return LogoutResult{Status: internal.CodeInternalError, Err: nil}
+			default:
+				return LogoutResult{Status: internal.CodeFailure, Err: nil}
+			}
+		}
+	}
+
+	if err := input.ConfigManager.SaveWith(clearConfigData()); err != nil {
+		return LogoutResult{Status: internal.CodeConfigError, Err: err}
+	}
+
+	input.DebugPublisherFunc("user logged out")
+
+	if !input.PersistToken && tokenData.RenewToken == "" {
+		return LogoutResult{Status: internal.CodeTokenInvalidated, Err: nil}
+	}
+
+	return LogoutResult{Status: internal.CodeSuccess, Err: nil}
+}
+
+type ForceLogoutWithoutTokenInput struct {
+	AuthChecker            auth.Checker
+	Netw                   networker.Networker
+	NcClient               nc.NotificationClient
+	ConfigManager          config.Manager
+	PublishLogoutEventFunc func(events.DataAuthorization)
+	DebugPublisherFunc     func(string)
+	DisconnectFunc         func() (bool, error)
+	Reason                 events.ReasonCode
+}
+
+// ForceLogoutWithoutToken performs user logout operation without using login toking
+func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult LogoutResult) {
+	logoutStartTime := time.Now()
+
+	// Log the reason if provided
+	if input.Reason != events.ReasonNotSpecified {
+		log.Printf("%s %s Forcing logout. Reason: %v\n", logTag, internal.InfoPrefix, input.Reason)
+	}
+
+	input.PublishLogoutEventFunc(events.DataAuthorization{
+		DurationMs:   -1,
+		EventTrigger: events.TriggerApp,
+		EventStatus:  events.StatusAttempt,
+		Reason:       input.Reason,
+	})
+
+	defer func() {
+		status := events.StatusSuccess
+		if logoutResult.Err != nil &&
+			logoutResult.Status != 0 &&
+			logoutResult.Status != internal.CodeSuccess &&
+			logoutResult.Status != internal.CodeTokenInvalid {
+			status = events.StatusFailure
+		}
+
+		input.PublishLogoutEventFunc(events.DataAuthorization{
+			DurationMs:   max(int(time.Since(logoutStartTime).Milliseconds()), 1),
+			EventTrigger: events.TriggerApp,
+			EventStatus:  status,
+			Reason:       input.Reason,
+		})
+	}()
+
+	if _, err := input.DisconnectFunc(); err != nil {
+		log.Println(logTag, internal.ErrorPrefix, "disconnect failed:", err)
+		return LogoutResult{Status: internal.CodeFailure, Err: nil}
+	}
+
+	if err := input.Netw.UnSetMesh(); err != nil && !errors.Is(err, networker.ErrMeshNotActive) {
+		log.Println(internal.ErrorPrefix, err)
+		return LogoutResult{Status: internal.CodeFailure, Err: nil}
+	}
+
+	if err := input.NcClient.Stop(); err != nil {
+		log.Println(internal.WarningPrefix, err)
+	}
+
+	if err := input.ConfigManager.SaveWith(clearConfigData()); err != nil {
+		log.Println(logTag, internal.ErrorPrefix, "Failed to wipe config on logout:", err)
+		return LogoutResult{Status: internal.CodeConfigError, Err: err}
+	}
+
+	input.DebugPublisherFunc("user logged out")
+	return LogoutResult{Status: internal.CodeSuccess, Err: nil}
+}
+
+func clearConfigData() config.SaveFunc {
+	return func(c config.Config) config.Config {
+		delete(c.TokensData, c.AutoConnectData.ID)
+		c.AutoConnectData.ID = 0
+		c.Mesh = false
+		c.MeshPrivateKey = ""
+		return c
+	}
+}

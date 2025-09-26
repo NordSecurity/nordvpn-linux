@@ -1,0 +1,657 @@
+package session_test
+
+import (
+	"errors"
+	"testing"
+	"time"
+
+	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/session"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	"github.com/stretchr/testify/assert"
+)
+
+const (
+	testUserID          = int64(123)
+	testExpiredDuration = -24 * time.Hour
+	testValidDuration   = 24 * time.Hour
+)
+
+func TestNCCredentialsSessionStore_Renew_NotExpired(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	uid := testUserID
+	futureTime := time.Now().UTC().Add(testValidDuration)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				NCData: config.NCData{
+					Username:       "testuser",
+					Password:       "testpass",
+					Endpoint:       "https://api.example.com",
+					ExpirationDate: futureTime,
+				},
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	renewCalled := false
+	renewAPICall := func() (*session.NCCredentialsResponse, error) {
+		renewCalled = true
+		return &session.NCCredentialsResponse{
+			Username:  "newuser",
+			Password:  "newpass",
+			Endpoint:  "https://new.example.com",
+			ExpiresIn: 86400,
+		}, nil
+	}
+
+	store := session.NewNCCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall)
+
+	err := store.Renew()
+	assert.NoError(t, err)
+	assert.False(t, renewCalled)
+}
+
+func TestNCCredentialsSessionStore_Renew_NoTokenData(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	uid := testUserID
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData:      map[int64]config.TokenData{},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	renewCalled := false
+	renewAPICall := func() (*session.NCCredentialsResponse, error) {
+		renewCalled = true
+		return &session.NCCredentialsResponse{
+			Username:  "newuser",
+			Password:  "newpass",
+			Endpoint:  "https://new.example.com",
+			ExpiresIn: 86400,
+		}, nil
+	}
+
+	store := session.NewNCCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall)
+
+	err := store.Renew()
+	assert.NoError(t, err)
+	assert.True(t, renewCalled)
+
+	assert.Equal(t, "newuser", cfgManager.Cfg.TokensData[uid].NCData.Username)
+	assert.Equal(t, "newpass", cfgManager.Cfg.TokensData[uid].NCData.Password)
+	assert.Equal(t, "https://new.example.com", cfgManager.Cfg.TokensData[uid].NCData.Endpoint)
+}
+
+func TestNCCredentialsSessionStore_Renew_ConfigLoadError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	cfgManager := &mock.ConfigManager{
+		LoadErr: errors.New("config load error"),
+	}
+
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	renewCalled := false
+	renewAPICall := func() (*session.NCCredentialsResponse, error) {
+		renewCalled = true
+		return &session.NCCredentialsResponse{
+			Username:  "newuser",
+			Password:  "newpass",
+			Endpoint:  "https://new.example.com",
+			ExpiresIn: 86400,
+		}, nil
+	}
+
+	store := session.NewNCCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall)
+
+	err := store.Renew()
+	assert.NoError(t, err)
+	assert.True(t, renewCalled)
+
+	assert.Equal(t, "newuser", cfgManager.Cfg.TokensData[cfgManager.Cfg.AutoConnectData.ID].NCData.Username)
+}
+
+func TestNCCredentialsSessionStore_Renew_ExpiredCredentials(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	uid := testUserID
+	pastTime := time.Now().UTC().Add(testExpiredDuration)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				NCData: config.NCData{
+					Username:       "olduser",
+					Password:       "oldpass",
+					Endpoint:       "https://old.example.com",
+					ExpirationDate: pastTime,
+				},
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	renewAPICall := func() (*session.NCCredentialsResponse, error) {
+		return &session.NCCredentialsResponse{
+			Username:  "newuser",
+			Password:  "newpass",
+			Endpoint:  "https://new.example.com",
+			ExpiresIn: 86400 * time.Second,
+		}, nil
+	}
+
+	store := session.NewNCCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall)
+
+	beforeRenew := time.Now().UTC()
+	err := store.Renew()
+	afterRenew := time.Now().UTC()
+
+	assert.NoError(t, err)
+	assert.Equal(t, "newuser", cfgManager.Cfg.TokensData[uid].NCData.Username)
+	assert.Equal(t, "newpass", cfgManager.Cfg.TokensData[uid].NCData.Password)
+	assert.Equal(t, "https://new.example.com", cfgManager.Cfg.TokensData[uid].NCData.Endpoint)
+
+	actualExpiration := cfgManager.Cfg.TokensData[uid].NCData.ExpirationDate
+
+	assert.True(t, actualExpiration.After(beforeRenew.Add(23*time.Hour)),
+		"Expiration should be at least 23 hours from before renewal. Got: %v, Expected after: %v",
+		actualExpiration, beforeRenew.Add(23*time.Hour))
+	assert.True(t, actualExpiration.Before(afterRenew.Add(25*time.Hour)),
+		"Expiration should be at most 25 hours from after renewal. Got: %v, Expected before: %v",
+		actualExpiration, afterRenew.Add(25*time.Hour))
+}
+
+func TestNCCredentialsSessionStore_Renew_InvalidCredentials(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		response *session.NCCredentialsResponse
+		wantErr  string
+	}{
+		{
+			name: "empty username",
+			response: &session.NCCredentialsResponse{
+				Username:  "",
+				Password:  "pass",
+				Endpoint:  "https://api.example.com",
+				ExpiresIn: 3600,
+			},
+			wantErr: "missing nc credentials",
+		},
+		{
+			name: "empty password",
+			response: &session.NCCredentialsResponse{
+				Username:  "user",
+				Password:  "",
+				Endpoint:  "https://api.example.com",
+				ExpiresIn: 3600,
+			},
+			wantErr: "missing nc credentials",
+		},
+		{
+			name: "empty endpoint",
+			response: &session.NCCredentialsResponse{
+				Username:  "user",
+				Password:  "pass",
+				Endpoint:  "",
+				ExpiresIn: 3600,
+			},
+			wantErr: session.ErrMissingEndpoint.Error(),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			uid := testUserID
+			pastTime := time.Now().UTC().Add(testExpiredDuration)
+
+			cfg := &config.Config{
+				AutoConnectData: config.AutoConnectData{ID: uid},
+				TokensData: map[int64]config.TokenData{
+					uid: {
+						NCData: config.NCData{
+							Username:       "olduser",
+							Password:       "oldpass",
+							Endpoint:       "https://old.example.com",
+							ExpirationDate: pastTime,
+						},
+					},
+				},
+			}
+
+			cfgManager := &mock.ConfigManager{Cfg: cfg}
+			errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+			renewAPICall := func() (*session.NCCredentialsResponse, error) {
+				return tt.response, nil
+			}
+
+			store := session.NewNCCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall)
+			err := store.Renew()
+
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), tt.wantErr)
+		})
+	}
+}
+
+func TestNCCredentialsSessionStore_Renew_APIError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	uid := testUserID
+	pastTime := time.Now().UTC().Add(testExpiredDuration)
+	apiError := errors.New("api-error")
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				NCData: config.NCData{
+					Username:       "olduser",
+					Password:       "oldpass",
+					Endpoint:       "https://old.example.com",
+					ExpirationDate: pastTime,
+				},
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	handlerCalled := false
+	errorRegistry.Add(func(reason error) {
+		handlerCalled = true
+	}, apiError)
+
+	renewAPICall := func() (*session.NCCredentialsResponse, error) {
+		return nil, apiError
+	}
+
+	store := session.NewNCCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall)
+	err := store.Renew()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "api-error")
+	assert.True(t, handlerCalled)
+}
+
+func TestNCCredentialsSessionStore_Renew_SaveError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	uid := testUserID
+	pastTime := time.Now().UTC().Add(testExpiredDuration)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				NCData: config.NCData{
+					Username:       "olduser",
+					Password:       "oldpass",
+					Endpoint:       "https://old.example.com",
+					ExpirationDate: pastTime,
+				},
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{
+		Cfg:     cfg,
+		SaveErr: errors.New("save error"),
+	}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	renewAPICall := func() (*session.NCCredentialsResponse, error) {
+		return &session.NCCredentialsResponse{
+			Username:  "newuser",
+			Password:  "newpass",
+			Endpoint:  "https://new.example.com",
+			ExpiresIn: 86400,
+		}, nil
+	}
+
+	store := session.NewNCCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall)
+	err := store.Renew()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "saving renewed nc creds")
+}
+
+func TestNCCredentialsSessionStore_HandleError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name            string
+		testError       error
+		setupHandler    bool
+		wantErr         bool
+		wantErrContains string
+		wantHandlerCall bool
+	}{
+		{
+			name:            "with registered handler",
+			testError:       errors.New("test error"),
+			setupHandler:    true,
+			wantErr:         true,
+			wantErrContains: "test error",
+			wantHandlerCall: true,
+		},
+		{
+			name:            "no registered handler",
+			testError:       errors.New("unhandled error"),
+			setupHandler:    false,
+			wantErr:         false,
+			wantErrContains: "",
+			wantHandlerCall: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &config.Config{
+				TokensData: map[int64]config.TokenData{
+					testUserID: {},
+				},
+			}
+
+			cfgManager := &mock.ConfigManager{Cfg: cfg}
+			errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+			handlerCalled := false
+			if tt.setupHandler {
+				errorRegistry.Add(func(reason error) {
+					handlerCalled = true
+				}, tt.testError)
+			}
+
+			store := session.NewNCCredentialsSessionStore(cfgManager, errorRegistry, nil)
+			err := store.HandleError(tt.testError)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.wantErrContains)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, tt.wantHandlerCall, handlerCalled)
+		})
+	}
+}
+
+func TestNCCredentialsSessionStore_Validate(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name      string
+		ncData    config.NCData
+		wantValid bool
+	}{
+		{
+			name: "valid credentials",
+			ncData: config.NCData{
+				Username:       "testuser",
+				Password:       "testpass",
+				Endpoint:       "https://api.example.com",
+				ExpirationDate: time.Now().UTC().Add(time.Hour),
+			},
+			wantValid: true,
+		},
+		{
+			name: "expired credentials",
+			ncData: config.NCData{
+				Username:       "testuser",
+				Password:       "testpass",
+				Endpoint:       "https://api.example.com",
+				ExpirationDate: time.Now().UTC().Add(-time.Hour),
+			},
+			wantValid: false,
+		},
+		{
+			name: "empty username",
+			ncData: config.NCData{
+				Username:       "",
+				Password:       "testpass",
+				Endpoint:       "https://api.example.com",
+				ExpirationDate: time.Now().UTC().Add(time.Hour),
+			},
+			wantValid: false,
+		},
+		{
+			name: "empty password",
+			ncData: config.NCData{
+				Username:       "testuser",
+				Password:       "",
+				Endpoint:       "https://api.example.com",
+				ExpirationDate: time.Now().UTC().Add(time.Hour),
+			},
+			wantValid: false,
+		},
+		{
+			name: "empty endpoint",
+			ncData: config.NCData{
+				Username:       "testuser",
+				Password:       "testpass",
+				Endpoint:       "",
+				ExpirationDate: time.Now().UTC().Add(time.Hour),
+			},
+			wantValid: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			uid := testUserID
+
+			cfg := &config.Config{
+				AutoConnectData: config.AutoConnectData{ID: uid},
+				TokensData: map[int64]config.TokenData{
+					uid: {
+						NCData: tt.ncData,
+					},
+				},
+			}
+
+			cfgManager := &mock.ConfigManager{Cfg: cfg}
+			errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+			renewCalled := false
+			renewAPICall := func() (*session.NCCredentialsResponse, error) {
+				renewCalled = true
+				return &session.NCCredentialsResponse{
+					Username:  "newuser",
+					Password:  "newpass",
+					Endpoint:  "https://new.example.com",
+					ExpiresIn: 86400,
+				}, nil
+			}
+
+			store := session.NewNCCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall)
+			err := store.Renew()
+
+			assert.NoError(t, err)
+			assert.Equal(t, !tt.wantValid, renewCalled)
+		})
+	}
+}
+
+func TestNCCredentialsSessionStore_GetConfig(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	uid := testUserID
+	expectedTime := time.Now().UTC().Add(time.Hour)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				NCData: config.NCData{
+					Username:       "testuser",
+					Password:       "testpass",
+					Endpoint:       "https://api.example.com",
+					ExpirationDate: expectedTime,
+				},
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	renewCalled := false
+	renewAPICall := func() (*session.NCCredentialsResponse, error) {
+		renewCalled = true
+		return &session.NCCredentialsResponse{
+			Username:  "newuser",
+			Password:  "newpass",
+			Endpoint:  "https://new.example.com",
+			ExpiresIn: 86400,
+		}, nil
+	}
+
+	store := session.NewNCCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall)
+
+	err := store.Renew()
+	assert.NoError(t, err)
+	assert.False(t, renewCalled)
+}
+
+func TestNCCredentialsSessionStore_GetConfig_LoadError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	cfgManager := &mock.ConfigManager{
+		LoadErr: errors.New("load error"),
+	}
+
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	renewAPICall := func() (*session.NCCredentialsResponse, error) {
+		return &session.NCCredentialsResponse{
+			Username:  "newuser",
+			Password:  "newpass",
+			Endpoint:  "https://new.example.com",
+			ExpiresIn: 86400,
+		}, nil
+	}
+
+	store := session.NewNCCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall)
+
+	err := store.Renew()
+	assert.NoError(t, err)
+
+	assert.Equal(t, "newuser", cfgManager.Cfg.TokensData[cfgManager.Cfg.AutoConnectData.ID].NCData.Username)
+}
+
+func TestNCCredentialsSessionStore_GetConfig_NoTokenData(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	uid := testUserID
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData:      map[int64]config.TokenData{},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	renewAPICall := func() (*session.NCCredentialsResponse, error) {
+		return &session.NCCredentialsResponse{
+			Username:  "newuser",
+			Password:  "newpass",
+			Endpoint:  "https://new.example.com",
+			ExpiresIn: 86400,
+		}, nil
+	}
+
+	store := session.NewNCCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall)
+
+	err := store.Renew()
+	assert.NoError(t, err)
+
+	assert.Equal(t, "newuser", cfgManager.Cfg.TokensData[uid].NCData.Username)
+	assert.Equal(t, "newpass", cfgManager.Cfg.TokensData[uid].NCData.Password)
+	assert.Equal(t, "https://new.example.com", cfgManager.Cfg.TokensData[uid].NCData.Endpoint)
+}
+
+func TestNCCredentialsSessionStore_Renew_NilRenewalAPI(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	uid := testUserID
+	pastTime := time.Now().UTC().Add(testExpiredDuration)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				NCData: config.NCData{
+					Username:       "olduser",
+					Password:       "oldpass",
+					Endpoint:       "https://old.example.com",
+					ExpirationDate: pastTime,
+				},
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	store := session.NewNCCredentialsSessionStore(cfgManager, errorRegistry, nil)
+	err := store.Renew()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "renewal API not configured")
+}
+
+func TestNCCredentialsSessionStore_Renew_NilResponse(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	uid := testUserID
+	pastTime := time.Now().UTC().Add(testExpiredDuration)
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				NCData: config.NCData{
+					Username:       "olduser",
+					Password:       "oldpass",
+					Endpoint:       "https://old.example.com",
+					ExpirationDate: pastTime,
+				},
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	renewAPICall := func() (*session.NCCredentialsResponse, error) {
+		return nil, nil
+	}
+
+	store := session.NewNCCredentialsSessionStore(cfgManager, errorRegistry, renewAPICall)
+	err := store.Renew()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "renewal API returned nil response")
+}

@@ -289,21 +289,6 @@ func main() {
 		validator,
 	)
 
-	defaultAPI := core.NewDefaultAPI(
-		userAgent,
-		daemon.BaseURL,
-		httpClientWithRotator,
-		validator,
-	)
-
-	meshMapper := mapper.NewNotifyingMapper(
-		mapper.NewCachingMapper(defaultAPI, time.Minute*5),
-		meshnetEvents.SelfRemoved,
-		meshnetEvents.PeerUpdate,
-	)
-
-	meshRegistry := registry.NewNotifyingRegistry(defaultAPI, meshnetEvents.PeerUpdate)
-
 	repoAPI := daemon.NewRepoAPI(
 		userAgent,
 		daemon.RepoURL,
@@ -326,7 +311,19 @@ func main() {
 	staticCfg := initializeStaticConfig(machineID)
 
 	// obfuscated machineID and add the mask to identify how the ID was generated
-	deviceID := fmt.Sprintf("%x_%d", sha256.Sum256([]byte(machineID.String()+Salt)), machineIdGenerator.GetUsedInformationMask())
+	deviceID := fmt.Sprintf(
+		"%x_%d",
+		sha256.Sum256([]byte(machineID.String()+Salt)),
+		machineIdGenerator.GetUsedInformationMask(),
+	)
+
+	// Build client API and session stores
+	clientAPI, sessionBuilder := buildClientAPIAndSessionStores(
+		userAgent,
+		httpClientWithRotator,
+		validator,
+		fsystem,
+	)
 
 	// populate build target configuration
 	buildTarget := config.BuildTarget{
@@ -340,7 +337,7 @@ func main() {
 	analytics := newAnalytics(
 		eventsDbPath,
 		fsystem,
-		defaultAPI,
+		clientAPI,
 		*httpClientSimple,
 		buildTarget,
 		deviceID)
@@ -488,10 +485,17 @@ func main() {
 
 	norduserClient := norduserservice.NewNorduserGRPCClient()
 
+	meshRegistry := registry.NewNotifyingRegistry(clientAPI, meshnetEvents.PeerUpdate)
 	meshnetChecker := meshnet.NewRegisteringChecker(
 		fsystem,
 		keygen,
 		meshRegistry,
+	)
+
+	meshMapper := mapper.NewNotifyingMapper(
+		mapper.NewCachingMapper(clientAPI, time.Minute*5),
+		meshnetEvents.SelfRemoved,
+		meshnetEvents.PeerUpdate,
 	)
 
 	meshnetEvents.PeerUpdate.Subscribe(refresher.NewMeshnet(
@@ -508,21 +512,39 @@ func main() {
 
 	accountUpdateEvents := daemonevents.NewAccountUpdateEvents()
 	accountUpdateEvents.Subscribe(statePublisher)
+
+	// Create auth checker with all session stores
 	authChecker := auth.NewRenewingChecker(
 		fsystem,
-		defaultAPI,
+		clientAPI,
 		daemonEvents.User.MFA,
 		daemonEvents.User.Logout,
 		errSubject,
 		accountUpdateEvents,
+		sessionBuilder.GetStores()...,
 	)
+
 	endpointResolver := network.NewDefaultResolverChain(fw)
 	notificationClient := nc.NewClient(
 		nc.MqttClientBuilder{},
 		infoSubject,
 		errSubject,
 		meshnetEvents.PeerUpdate,
-		nc.NewCredsFetcher(defaultAPI, fsystem))
+		nc.NewCredsFetcher(clientAPI, fsystem))
+
+	// on session unrecoverable error perform user log-out action
+	logoutHandler := daemon.NewLogoutHandler(daemon.LogoutHandlerDependencies{
+		AuthChecker:            authChecker,
+		Networker:              netw,
+		NotificationClient:     notificationClient,
+		ConfigManager:          fsystem,
+		PublishLogoutEventFunc: daemonEvents.User.Logout.Publish,
+		PublishDisconnectFunc:  daemonEvents.Service.Disconnect.Publish,
+		DebugPublisherFunc:     debugSubject.Publish,
+	})
+
+	// Configure error handlers for all session stores
+	sessionBuilder.ConfigureErrorHandlers(logoutHandler)
 
 	dataUpdateEvents := daemonevents.NewDataUpdateEvents()
 	dataUpdateEvents.Subscribe(statePublisher)
@@ -537,7 +559,7 @@ func main() {
 	consentChecker := newConsentChecker(
 		internal.IsDevEnv(Environment),
 		fsystem,
-		defaultAPI,
+		clientAPI,
 		authChecker,
 		analytics,
 	)
@@ -549,9 +571,9 @@ func main() {
 		authChecker,
 		fsystem,
 		dm,
-		defaultAPI,
-		defaultAPI,
-		defaultAPI,
+		clientAPI,
+		clientAPI,
+		clientAPI,
 		cdnAPI,
 		repoAPI,
 		core.NewOAuth2(httpClientWithRotator, daemon.BaseURL),
@@ -575,7 +597,7 @@ func main() {
 		authChecker,
 		fsystem,
 		meshnetChecker,
-		inviter.NewNotifyingInviter(defaultAPI, meshnetEvents.PeerUpdate),
+		inviter.NewNotifyingInviter(clientAPI, meshnetEvents.PeerUpdate),
 		netw,
 		meshRegistry,
 		meshMapper,
@@ -696,7 +718,7 @@ func main() {
 	}
 	monitor.Start(netw)
 
-	if authChecker.IsLoggedIn() {
+	if ok, _ := authChecker.IsLoggedIn(); ok {
 		go daemon.StartNC("[startup]", notificationClient)
 	}
 
@@ -784,4 +806,28 @@ func removeIPv6Remains(c config.Config) config.Config {
 	c.AutoConnectData.Allowlist.Subnets = allowList
 
 	return c
+}
+
+// buildClientAPIAndSessionStores creates and configures the client API and session stores
+func buildClientAPIAndSessionStores(
+	userAgent string,
+	httpClient *http.Client,
+	validator response.Validator,
+	fsystem config.Manager,
+) (core.ClientAPI, *SessionStoresBuilder) {
+	simpleAPI := core.NewSimpleAPI(
+		userAgent,
+		daemon.BaseURL,
+		httpClient,
+		validator,
+	)
+
+	builder := NewSessionStoresBuilder(fsystem)
+	smartAPI := core.NewSmartClientAPI(simpleAPI, builder.BuildAccessTokenStore(simpleAPI))
+
+	builder.BuildVPNCredsStore(smartAPI)
+	builder.BuildTrustedPassStore(smartAPI)
+	builder.BuildNCCredsStore(smartAPI)
+
+	return smartAPI, builder
 }
