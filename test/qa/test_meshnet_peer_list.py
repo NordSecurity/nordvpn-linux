@@ -41,6 +41,8 @@ def base_test_peer_list(filter_list: list[str] | None = None) -> None:
 
     local_peer_list = meshnet.get_clean_peer_list(sh_no_tty.nordvpn.mesh.peer.list())
     local_formed_list = meshnet.PeerList.from_str(local_peer_list).parse_peer_list(filter_list)
+    local_formed_list.append("Meshnet is leaving NordVPN on December 1. Learn more: https://nordvpn.com/blog/meshnet-shutdown")
+
 
     if len(filter_list) != 0:
         local_peer_list_filtered = meshnet.get_clean_peer_list(str(sh_no_tty.nordvpn.mesh.peer.list("-f", ",".join(filter_list)))).split("\n")
@@ -78,7 +80,6 @@ def test_meshnet_peer_list_permission_filters(allows_incoming_traffic, allows_ro
     base_test_peer_list(filter_list)
 
 
-@pytest.mark.xfail
 def test_meshnet_peer_list_peer_connected():
     def is_peer_connected():
         local_peer_list = sh_no_tty.nordvpn.mesh.peer.list(_tty_out=False)
