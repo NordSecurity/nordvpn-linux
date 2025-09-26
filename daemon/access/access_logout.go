@@ -37,17 +37,16 @@ type LogoutResult struct {
 	Err    error
 }
 
-// isLoggedIn check whether user is still logged in on this device bypassing expiration checks
-func isLoggedIn(api core.CredentialsAPI, cm config.Manager) bool {
+// isAlreadyLoggedOut checks whether the user is already logged out on this device
+func isAlreadyLoggedOut(api core.CredentialsAPI, cm config.Manager) bool {
 	if _, err := api.CurrentUser(); errors.Is(err, core.ErrUnauthorized) {
 		var cfg config.Config
-		err := cm.Load(&cfg)
-		if err == nil && len(cfg.TokensData) == 0 {
-			return false
+		if cm.Load(&cfg) == nil && len(cfg.TokensData) == 0 {
+			return true
 		}
 	}
 
-	return true
+	return false
 }
 
 func Logout(input LogoutInput) (logoutResult LogoutResult) {
@@ -55,7 +54,7 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 		return LogoutResult{Status: 0, Err: internal.ErrNotLoggedIn}
 	}
 
-	if !isLoggedIn(input.CredentialsAPI, input.ConfigManager) {
+	if isAlreadyLoggedOut(input.CredentialsAPI, input.ConfigManager) {
 		return LogoutResult{Status: internal.CodeSuccess, Err: nil}
 	}
 
