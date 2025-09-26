@@ -182,6 +182,8 @@ func (c *CdnRemoteConfig) Load() error {
 	if reloadDone {
 		// notify what is current state after config reload
 		c.notifier.Publish(RemoteConfigEvent{MeshnetFeatureEnabled: c.IsFeatureEnabled(FeatureMeshnet)})
+		// reset event flags for some events to control emit frequency
+		c.analytics.ClearEventFlags()
 	}
 
 	return nil
