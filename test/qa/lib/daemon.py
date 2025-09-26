@@ -96,19 +96,29 @@ def start_peer(ssh_client: ssh.Ssh):
         time.sleep(1)
 
 
-def stop():
-    """Stops the daemon and blocks until it is actually stopped."""
-    if is_under_snap():
-        #sh.sudo.snap("stop", "nordvpn")
-        os.popen("sudo snap stop nordvpn").read()
-    elif is_init_systemd():
-        #sh.sudo.systemctl.stop.nordvpnd()
-        os.popen("sudo systemctl stop nordvpn").read()
-    else:
-        # call to init.d returns before the daemon is actually stopped
-        sh.sudo("/etc/init.d/nordvpn", "stop")
-        while is_running():
-            time.sleep(1)
+def stop(timeout: int = 10):
+    """
+    Stops the daemon and waits until it is actually stopped.
+
+    :param timeout: seconds to wait after stopping.
+
+    :raises TimeoutError: If the daemon does not stop within the given timeout.
+    """
+    if is_running():
+        if is_under_snap():
+            os.popen("sudo snap stop nordvpn").read()
+        elif is_init_systemd():
+            os.popen("sudo systemctl stop nordvpn").read()
+        else:
+            # call to init.d returns before the daemon is actually stopped
+            sh.sudo("/etc/init.d/nordvpn", "stop")
+
+    start_time = time.time()
+    while is_running():
+        if time.time() - start_time > timeout:
+            exc_msg = f"Operation timed out after {timeout} seconds. Daemon is not stopped!"
+            raise TimeoutError(exc_msg)
+        time.sleep(1)
 
 
 def stop_peer(ssh_client: ssh.Ssh):
