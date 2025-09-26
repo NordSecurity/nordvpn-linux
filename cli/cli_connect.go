@@ -113,6 +113,10 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 			rpcErr = c.Connect(ctx)
 		case internal.CodeTokenRenewError:
 			rpcErr = errors.New(client.AccountTokenRenewError)
+		case internal.CodeExpiredAccessToken:
+			fallthrough
+		case internal.CodeRevokedAccessToken:
+			return formatError(errors.New(client.AccessTokenExpired))
 		case internal.CodeAccountExpired:
 			link := client.SubscriptionURL
 			tokenData, err := c.getTrustedPassTokenData()

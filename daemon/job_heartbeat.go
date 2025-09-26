@@ -14,7 +14,7 @@ func JobHeartBeat(
 	period time.Duration,
 ) func() {
 	return func() {
-		if authChecker.IsLoggedIn() {
+		if ok, _ := authChecker.IsLoggedIn(); ok {
 			publisher.Publish(period)
 		}
 	}

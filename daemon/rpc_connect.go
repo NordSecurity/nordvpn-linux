@@ -103,7 +103,10 @@ func (r *RPC) connect(
 	srv pb.Daemon_ConnectServer,
 	source pb.ConnectionSource,
 ) (didFail bool, retErr error) {
-	if !r.ac.IsLoggedIn() {
+	if ok, err := r.ac.IsLoggedIn(); !ok {
+		if errors.Is(err, core.ErrUnauthorized) {
+			srv.Send(&pb.Payload{Type: internal.CodeRevokedAccessToken})
+		}
 		return false, internal.ErrNotLoggedIn
 	}
 
@@ -144,6 +147,10 @@ func (r *RPC) connect(
 		var errorCode *internal.ErrorWithCode
 		if errors.As(err, &errorCode) {
 			return true, srv.Send(&pb.Payload{Type: errorCode.Code})
+		}
+
+		if errors.Is(err, core.ErrUnauthorized) {
+			return true, srv.Send(&pb.Payload{Type: internal.CodeRevokedAccessToken})
 		}
 
 		return false, err

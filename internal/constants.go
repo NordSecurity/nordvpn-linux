@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"strconv"
 )
 
@@ -141,6 +142,12 @@ var (
 	FileshareBinaryPath = filepath.Join(AppDataPathStatic, Fileshare)
 
 	NorduserdBinaryPath = filepath.Join(AppDataPathStatic, Norduserd)
+)
+
+var (
+	AccessTokenFormatValidatorFunc      = regexp.MustCompile(`^[a-f0-9]+$`).MatchString
+	RenewalTokenFormatValidatorFunc     = regexp.MustCompile(`^[a-f0-9]+$`).MatchString
+	TrustedPassTokenFormatValidatorFunc = regexp.MustCompile(`^[A-Za-z0-9_-]+$`).MatchString
 )
 
 func GetNorduserSocketSnap(uid int) string {

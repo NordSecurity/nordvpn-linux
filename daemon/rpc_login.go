@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log"
-	"regexp"
 	"strings"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/session"
 )
 
 // ErrMissingExchangeToken is returned when login was successful but
@@ -20,8 +20,6 @@ import (
 var ErrMissingExchangeToken = errors.New("exchange token not provided")
 
 type customCallbackType func() (*core.LoginResponse, *pb.LoginResponse, error)
-
-var isTokenValid = regexp.MustCompile(`^[a-f0-9]*$`).MatchString
 
 var lastLoginAttemptTime time.Time
 
@@ -33,7 +31,7 @@ func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) 
 		}, nil
 	}
 
-	if !isTokenValid(in.GetToken()) {
+	if !internal.AccessTokenFormatValidatorFunc(in.GetToken()) {
 		return &pb.LoginResponse{
 			Type: internal.CodeTokenInvalid,
 		}, nil
@@ -43,14 +41,8 @@ func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) 
 	return r.loginCommon(func() (*core.LoginResponse, *pb.LoginResponse, error) {
 		if in.GetToken() != "" {
 			return &core.LoginResponse{
-				Token: in.GetToken(),
-				// Setting a very big expiration date here as real expiration date
-				// is unknown just from the token, and there is no way to check for
-				// it. In case token is used but expired, automatic logout will
-				// happen. See: auth/auth.go
-				// Note: bigger year cannot be used as time.Parse cannot parse year
-				// longer than 4 digits as of Go 1.21
-				ExpiresAt: time.Date(9999, time.December, 31, 0, 0, 0, 0, time.UTC).Format(internal.ServerDateFormat),
+				Token:     in.GetToken(),
+				ExpiresAt: session.ManualAccessTokenExpiryDateString,
 			}, nil, nil
 		}
 		return nil, &pb.LoginResponse{
@@ -61,7 +53,7 @@ func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) 
 
 // loginCommon common login
 func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginResponse, retErr error) {
-	if r.ac.IsLoggedIn() {
+	if ok, _ := r.ac.IsLoggedIn(); ok {
 		return nil, internal.ErrAlreadyLoggedIn
 	}
 
@@ -155,7 +147,7 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (*pb.L
 		}, nil
 	}
 
-	if r.ac.IsLoggedIn() {
+	if ok, _ := r.ac.IsLoggedIn(); ok {
 		return &pb.LoginOAuth2Response{
 			Status: pb.LoginStatus_ALREADY_LOGGED_IN,
 		}, nil
@@ -202,7 +194,7 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 			Status: pb.LoginStatus_CONSENT_MISSING,
 		}, nil
 	}
-	if r.ac.IsLoggedIn() {
+	if ok, _ := r.ac.IsLoggedIn(); ok {
 		return nil, internal.ErrAlreadyLoggedIn
 	}
 
@@ -270,12 +262,9 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 
 func (r *RPC) IsLoggedIn(ctx context.Context, _ *pb.Empty) (*pb.IsLoggedInResponse, error) {
 	if !r.consentChecker.IsConsentFlowCompleted() {
-		return &pb.IsLoggedInResponse{
-			Status: pb.LoginStatus_CONSENT_MISSING,
-		}, nil
+		return &pb.IsLoggedInResponse{Status: pb.LoginStatus_CONSENT_MISSING}, nil
 	}
 
-	return &pb.IsLoggedInResponse{
-		IsLoggedIn: r.ac.IsLoggedIn(),
-	}, nil
+	loggedIn, _ := r.ac.IsLoggedIn()
+	return &pb.IsLoggedInResponse{IsLoggedIn: loggedIn}, nil
 }
