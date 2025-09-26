@@ -115,10 +115,11 @@ if [[ -n "${ARCHS_FLUTTER[$ARCH]:-}" ]]; then
   set -- release "${PKG_TO_BUILD}" "${GUI_ARCH}"
 
   # Source the GUI build script (this will run in current directory context)
+  # shellcheck disable=SC1091
   (cd gui && source scripts/build_package.sh)
 
   # Move the generated GUI package to the expected location
-  mv gui/dist/${PKG_TO_BUILD}/*.${PKG_TO_BUILD} "${APP_DIR}/${PKG_TO_BUILD}/"
+  mv gui/dist/"${PKG_TO_BUILD}"/*."${PKG_TO_BUILD}" "${APP_DIR}/${PKG_TO_BUILD}/"
   
 else
   echo "Skipping GUI package build - architecture $ARCH not supported by Flutter"
