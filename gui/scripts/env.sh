@@ -9,7 +9,7 @@ DISPLAY_NAME="NordVPN GUI"
 export DISPLAY_NAME
 
 # Extracts the app version from pubspecs.yaml
-VERSION=$(grep 'version:' pubspec.yaml | cut -d ' ' -f 2)
+VERSION=$(grep 'version:' "${WORKDIR}"/gui/pubspec.yaml | cut -d ' ' -f 2)
 echo "Version: $VERSION"
 
 export VERSION

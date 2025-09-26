@@ -35,17 +35,28 @@ for idx in $(seq $LOOP_START $LOOP_COUNT); do
     echo "BUILD [$PACKAGE_TYPE][$ARCH] PACKAGE..."
     "$BASE_DIR"/ci/nfpm/build_packages_resources.sh "$PACKAGE_TYPE"
 
-    PACKAGE_FILE=$(find "$BASE_DIR/dist/app" -name "*.$PACKAGE_TYPE" -type f)
-    if [ -z "$PACKAGE_FILE" ]; then
-        echo "Package file not found!"
+    # Find all packages and handle multiple files
+    mapfile -t PACKAGE_FILES < <(find "$BASE_DIR/dist/app" -name "*.$PACKAGE_TYPE" -type f)
+    if [ ${#PACKAGE_FILES[@]} -eq 0 ]; then
+        echo "No package files found!"
         exit 1
     fi
-    echo "BUILT PACKAGE: $PACKAGE_FILE"
-    PACKAGE_NAME=$(basename -- "$PACKAGE_FILE")
 
-    echo "COPY [$PACKAGE_TYPE][$ARCH] PACKAGE..."
-    cp "$PACKAGE_FILE" "$TARGET_DIR"
-    TARGET_PACKAGE_SIZE=$(stat --printf="%s" "$TARGET_DIR/$PACKAGE_NAME")
+    echo "FOUND ${#PACKAGE_FILES[@]} PACKAGE(S):"
+    for PACKAGE_FILE in "${PACKAGE_FILES[@]}"; do
+        echo "  - $PACKAGE_FILE"
+    done
+
+    echo "COPY [$PACKAGE_TYPE][$ARCH] PACKAGES..."
+    TOTAL_SIZE=0
+    for PACKAGE_FILE in "${PACKAGE_FILES[@]}"; do
+        PACKAGE_NAME=$(basename -- "$PACKAGE_FILE")
+        cp "$PACKAGE_FILE" "$TARGET_DIR"
+        PACKAGE_SIZE=$(stat --printf="%s" "$TARGET_DIR/$PACKAGE_NAME")
+        echo "  $PACKAGE_NAME: $PACKAGE_SIZE bytes"
+        TOTAL_SIZE=$((TOTAL_SIZE + PACKAGE_SIZE))
+    done
+    TARGET_PACKAGE_SIZE=$TOTAL_SIZE
 
     echo "PACKAGE SIZE: $TARGET_PACKAGE_SIZE"
 

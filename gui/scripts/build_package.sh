@@ -64,13 +64,20 @@ rm -fr /usr/bin/${NAME}
 DIST_DIR="dist"
 export APP_BUNDLE_DIR="$DIST_DIR/source/${NAME}_${VERSION}_${ARCH}"
 
-rm -fr "$DIST_DIR"
+# Only clean DIST_DIR if SKIP_DIST_CLEAN is not set
+if [[ "${SKIP_DIST_CLEAN:-}" != "true" ]]; then
+  rm -fr "$DIST_DIR"
+fi
+
 # build package structure
 # the application expects to have the same "bundle" folder copied as it is somewhere
 # splitting in different location into the system would break the application.
 export INSTALL_DIR="/opt/${NAME}"
 mkdir -p "${APP_BUNDLE_DIR}/${INSTALL_DIR}"
-cp -r "build/linux/${ARCH_FOLDER_NAME}/${BUILD_TYPE}/bundle/"* "${APP_BUNDLE_DIR}${INSTALL_DIR}"
+
+# Use custom source dir if provided, otherwise use Flutter build
+SOURCE_DIR="${CUSTOM_SOURCE_DIR:-build/linux/${ARCH_FOLDER_NAME}/${BUILD_TYPE}/bundle}"
+cp -r "${SOURCE_DIR}/"* "${APP_BUNDLE_DIR}${INSTALL_DIR}"
 
 # generate changelog
 readarray -d '' files < <(printf '%s\0' "contrib/changelog/prod/"*.md | sort -rzV)
