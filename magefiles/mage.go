@@ -322,6 +322,7 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
 	env["PACKAGE"] = devPackageType
+	env["DOCKER_BUILD"] = "1"
 
 	switch packageType {
 	case packageTypeSnap:
