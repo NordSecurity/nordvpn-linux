@@ -87,6 +87,7 @@ mv "${WORKDIR}"/*."${PKG_TO_BUILD}" "${APP_DIR}/${PKG_TO_BUILD}"
 # remove leftovers
 rm -rf "${BASEDIR}"
 
+# TODO (LVPN-9228) remove usage of DOCKER_BUILD variable, once the way of building is unified
 # Only build GUI package if the architecture supports Flutter and Docker build is enabled
 if [[ -n "${ARCHS_FLUTTER[$ARCH]:-}" && -n "${DOCKER_BUILD:-}" ]]; then
   echo "Building GUI package for Flutter-supported architecture: $ARCH (Docker build)"

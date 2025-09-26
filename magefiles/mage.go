@@ -322,6 +322,7 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
 	env["PACKAGE"] = devPackageType
+	//TODO (LVPN-9228) remove usage of DOCKER_BUILD variable, once the way of building is unified
 	env["DOCKER_BUILD"] = "1"
 
 	switch packageType {
