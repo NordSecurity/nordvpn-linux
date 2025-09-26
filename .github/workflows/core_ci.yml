@@ -78,7 +78,7 @@ jobs:
       - name: Build clean DEB package
         run: |
           echo "FEATURES=" > .env
-          mage build:deb
+          mage build:debDocker
 
       - name: Cache Rust dependencies
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
@@ -92,7 +92,7 @@ jobs:
       - name: Build DEB package with default features
         run: |
           rm .env
-          mage build:deb
+          mage build:debDDocker
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
