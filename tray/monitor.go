@@ -2,12 +2,10 @@ package tray
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/cli"
 	"github.com/NordSecurity/nordvpn-linux/client"
@@ -32,11 +30,6 @@ const (
 	labelDaemonDisconnected = "Couldn't connect to NordVPN's background service. Please ensure the service is running."
 	labelConnectedFormat    = "Connected to %s"
 	labelDisconnectedFormat = "Disconnected from %s"
-)
-
-var (
-	daemonServiceNotActive        = errors.New("daemon service not active")
-	daemonConnectivityCheckPeriod = time.Second * 5
 )
 
 func (ti *Instance) handleVersionHealthChange(health *pb.VersionHealthStatus) {
@@ -95,7 +88,6 @@ func (ti *Instance) MonitorConnection(ctx context.Context, conn *grpc.ClientConn
 			changed := ti.updateDaemonConnectionStatus(err)
 			ti.redraw(changed)
 		}
-
 	}
 }
 
@@ -484,11 +476,10 @@ func (ti *Instance) setVpnStatus(
 
 		if statusChanged {
 			log.Printf("%s VPN status changed from %s to %s\n", logTag, oldVpnStatus, vpnStatus)
-			switch vpnStatus {
-			case pb.ConnectionState_CONNECTED:
+			if vpnStatus == pb.ConnectionState_CONNECTED {
 				notificationText = labelConnectedFormat
 				notificationArg = ti.state.serverName()
-			case pb.ConnectionState_DISCONNECTED:
+			} else if vpnStatus == pb.ConnectionState_DISCONNECTED {
 				if oldServerName != "" {
 					notificationText = labelDisconnectedFormat
 					notificationArg = oldServerName

@@ -236,20 +236,6 @@ func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
 	}
 }
 
-func waitUntilDaemonIsStarted(checkConnectivity func() error) error {
-	if checkConnectivity == nil {
-		return errors.New("no daemon connectivity checker provided")
-	}
-
-	return RetryWithBackoff(
-		context.Background(),
-		BackoffConfig{MaxDelay: time.Second},
-		func(ctx context.Context) error {
-			return checkConnectivity()
-		},
-	)
-}
-
 func waitUntilTrayStatusIsReceived(fetchTrayStatus func() Status, doneChan chan<- struct{}) error {
 	if fetchTrayStatus == nil || doneChan == nil {
 		return errors.New("invalid arguments")

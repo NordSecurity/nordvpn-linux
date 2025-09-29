@@ -122,4 +122,3 @@ const (
 	// Force indicates that the notification should be shown regardless of the user's settings.
 	Force NotificationType = true
 )
-
