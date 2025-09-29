@@ -188,7 +188,7 @@ func TestHandleCheckboxOptionChannelClosed(t *testing.T) {
 	case <-setterCalled:
 		t.Fatal("setter was called unexpectedly")
 	case <-time.After(50 * time.Millisecond):
-	// Test passed
+		// Test passed
 	}
 }
 
