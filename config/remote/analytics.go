@@ -79,14 +79,16 @@ func (rca *RemoteConfigAnalytics) EmitJsonParseFailureEvent(client, featureName 
 
 func (rca *RemoteConfigAnalytics) EmitPartialRolloutEvent(client, featureName string, frg int, rolloutPerformed bool) {
 	rca.mu.Lock()
-	defer rca.mu.Unlock()
-
-	if !rca.eventAlreadyEmitted(featureName, Rollout) {
-		rca.publisher.Publish(
-			*NewRolloutEvent(rca.userRolloutGroup, client, featureName, frg, rolloutPerformed).
-				ToDebuggerEvent())
-		rca.eventFlags.set(featureName, Rollout)
+	if rca.eventAlreadyEmitted(featureName, Rollout) {
+		rca.mu.Unlock()
+		return
 	}
+	rca.eventFlags.set(featureName, Rollout)
+	rca.mu.Unlock()
+
+	rca.publisher.Publish(
+		*NewRolloutEvent(rca.userRolloutGroup, client, featureName, frg, rolloutPerformed).
+			ToDebuggerEvent())
 }
 
 func (rca *RemoteConfigAnalytics) eventAlreadyEmitted(feature string, event EventType) bool {

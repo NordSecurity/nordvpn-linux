@@ -3,7 +3,6 @@ package remote
 import (
 	"sync"
 	"testing"
-	"time"
 
 	ev "github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -426,19 +425,9 @@ func TestConcurrentEventEmission(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create a custom event collector that doesn't use WaitGroup
-			var mu sync.Mutex
-			var collectedEvents []string
-
-			publisher := &MockDebuggerEvents{}
-			publisher.Subscribe(func(e ev.DebuggerEvent) error {
-				mu.Lock()
-				defer mu.Unlock()
-				collectedEvents = append(collectedEvents, e.JsonData)
-				return nil
-			})
-
-			analytics := NewRemoteConfigAnalytics(publisher, testRolloutGroup)
+			// Use the existing test infrastructure with MockSubscriber
+			fixture := setupAnalyticsTest(testRolloutGroup)
+			fixture.subscriber.ExpectEvents(tt.expectedEvents)
 
 			// Launch concurrent goroutines
 			var wg sync.WaitGroup
@@ -446,32 +435,28 @@ func TestConcurrentEventEmission(t *testing.T) {
 
 			features := []string{FeatureMeshnet, FeatureLibtelio, FeatureMain}
 
-			for i := 0; i < tt.concurrentEmits; i++ {
+			for i := range tt.concurrentEmits {
 				go func(idx int) {
 					defer wg.Done()
 					feature := FeatureMeshnet
 					if tt.multipleFeatures {
 						feature = features[idx%len(features)]
 					}
-					analytics.EmitPartialRolloutEvent(ClientCli, feature, 40+idx, true)
+					fixture.analytics.EmitPartialRolloutEvent(ClientCli, feature, 40+idx, true)
 					if tt.includeOtherTypes {
 						// These should not be deduplicated
-						analytics.EmitDownloadEvent(ClientCli, feature)
+						fixture.analytics.EmitDownloadEvent(ClientCli, feature)
 					}
 				}(i)
 			}
 
 			wg.Wait()
 
-			// Give a small delay for events to be processed
-			time.Sleep(10 * time.Millisecond)
+			// Wait for events with proper synchronization
+			fixture.subscriber.Wait(t)
 
-			// Check the collected events
-			mu.Lock()
-			eventCount := len(collectedEvents)
-			mu.Unlock()
-
-			assert.Equal(t, tt.expectedEvents, eventCount, "Expected %d events but got %d", tt.expectedEvents, eventCount)
+			assert.Equal(t, tt.expectedEvents, len(fixture.subscriber.events),
+				"Expected %d events but got %d", tt.expectedEvents, len(fixture.subscriber.events))
 		})
 	}
 }
@@ -591,4 +576,111 @@ func TestPerFeatureDeduplication(t *testing.T) {
 
 	assert.Contains(t, events[5], `"feature_name":"nordvpn"`)
 	assert.Contains(t, events[5], `"rollout_info":"nordvpn 42 / app 90"`)
+}
+
+// TestClearEventFlagsRaceCondition specifically tests for race conditions
+func TestClearEventFlagsRaceCondition(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	// Create a custom analytics setup
+	publisher := &MockDebuggerEvents{}
+	analytics := NewRemoteConfigAnalytics(publisher, testRolloutGroup)
+
+	// Track events manually
+	var eventsMu sync.Mutex
+	var events []string
+
+	publisher.Subscribe(func(e ev.DebuggerEvent) error {
+		eventsMu.Lock()
+		events = append(events, e.JsonData)
+		eventsMu.Unlock()
+		return nil
+	})
+
+	const iterations = 1000
+	features := []string{FeatureMeshnet, FeatureLibtelio, FeatureMain}
+
+	// Use channels to coordinate goroutines
+	startSignal := make(chan struct{})
+	var wg sync.WaitGroup
+
+	// Set up 3 goroutines that will all start at the same time
+	wg.Add(3)
+
+	// Goroutine 1: Continuously emit events
+	go func() {
+		defer wg.Done()
+		<-startSignal // Wait for signal to start
+		for i := range iterations {
+			feature := features[i%len(features)]
+			analytics.EmitPartialRolloutEvent(ClientCli, feature, i%100, true)
+		}
+	}()
+
+	// Goroutine 2: Continuously clear flags
+	go func() {
+		defer wg.Done()
+		<-startSignal // Wait for signal to start
+		for range iterations {
+			analytics.ClearEventFlags()
+		}
+	}()
+
+	// Goroutine 3: Mix of operations
+	go func() {
+		defer wg.Done()
+		<-startSignal // Wait for signal to start
+		for i := range iterations {
+			if i%2 == 0 {
+				analytics.ClearEventFlags()
+			} else {
+				feature := features[i%len(features)]
+				analytics.EmitPartialRolloutEvent(ClientCli, feature, i%100, false)
+			}
+		}
+	}()
+
+	// Start all goroutines at the same time
+	close(startSignal)
+
+	// Wait for all operations to complete
+	wg.Wait()
+
+	// The test passes if we don't panic or deadlock
+	// In a race condition test with concurrent clears and emissions,
+	// we can't predict the exact number of events that will be emitted
+
+	// Verify that all emitted events are valid
+	eventsMu.Lock()
+	for _, event := range events {
+		assert.Contains(t, event, `"event":"rc_rollout"`)
+	}
+	eventsMu.Unlock()
+
+	// Verify the system is still functional after stress test
+	// Clear and emit synchronously to ensure deterministic behavior
+	analytics.ClearEventFlags()
+
+	// Record the count before final emissions
+	eventsMu.Lock()
+	countBeforeFinal := len(events)
+	eventsMu.Unlock()
+
+	// These should all emit successfully since we just cleared
+	analytics.EmitPartialRolloutEvent(ClientCli, FeatureMeshnet, 9999, true)
+	analytics.EmitPartialRolloutEvent(ClientCli, FeatureLibtelio, 9999, true)
+	analytics.EmitPartialRolloutEvent(ClientCli, FeatureMain, 9999, true)
+
+	// In a synchronous context after the concurrent test, we can verify
+	// that the system is still working correctly. Since MockDebuggerEvents
+	// processes events synchronously in the Emit method, we don't need sleep.
+
+	eventsMu.Lock()
+	finalCount := len(events)
+	eventsMu.Unlock()
+
+	// We should have at least 3 more events (could be more if some events
+	// from the concurrent phase are still being processed)
+	assert.GreaterOrEqual(t, finalCount, countBeforeFinal+3,
+		"System should still be functional after stress test")
 }
