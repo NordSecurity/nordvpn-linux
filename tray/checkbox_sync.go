@@ -3,8 +3,6 @@ package tray
 import (
 	"sync"
 	"time"
-
-	"github.com/NordSecurity/systray"
 )
 
 // CheckboxSynchronizer manages synchronization between checkbox operations and menu rebuilding
@@ -46,14 +44,14 @@ func (cs *CheckboxSynchronizer) SetOperationInProgress(inProgress bool) {
 
 // HandleCheckboxOption provides a standardized way to handle checkbox menu items
 // with proper synchronization to prevent menu duplication issues.
-func (cs *CheckboxSynchronizer) HandleCheckboxOption(item *systray.MenuItem, setter func(bool) bool) {
+func (cs *CheckboxSynchronizer) HandleCheckboxOption(item CheckableMenuItem, setter func(bool) bool) {
 	if item == nil || setter == nil {
 		return
 	}
 	go func() {
 		success := false
 		for !success {
-			_, open := <-item.ClickedCh
+			_, open := <-item.ClickedCh()
 			if !open {
 				return
 			}
