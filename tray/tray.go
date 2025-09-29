@@ -124,6 +124,7 @@ type Instance struct {
 	connSensor              *connectionSettingsChangeSensor
 	recentConnections       *recentConnectionsManager
 	daemonMonitorCancelFunc context.CancelFunc
+	checkboxSync            *CheckboxSynchronizer
 }
 
 type trayState struct {
@@ -168,6 +169,7 @@ func NewTrayInstance(client pb.DaemonClient, fileshareClient filesharepb.Filesha
 		quitChan:          quitChan,
 		connSensor:        newConnectionSettingsChangeSensor(),
 		recentConnections: newRecentConnectionsManager(client),
+		checkboxSync:      NewCheckboxSynchronizer(),
 	}
 	obj.stateListener = newStateListener(client, obj.onDaemonStateEvent)
 	return obj
@@ -366,6 +368,9 @@ func (ti *Instance) updateIcon() {
 
 func (ti *Instance) renderLoop() {
 	for {
+		// Wait for any checkbox operations to complete before rebuilding menu
+		ti.checkboxSync.WaitForOperations()
+
 		systray.ResetMenu()
 		ti.updateIcon()
 
