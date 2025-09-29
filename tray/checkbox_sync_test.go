@@ -1,13 +1,56 @@
 package tray
 
 import (
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	"github.com/NordSecurity/systray"
 	"github.com/stretchr/testify/assert"
 )
+
+// mockCheckableMenuItem is a mock implementation of the CheckableMenuItem interface for testing.
+type mockCheckableMenuItem struct {
+	mu        sync.Mutex
+	clickedCh chan struct{}
+	checked   bool
+}
+
+func newMockCheckableMenuItem() *mockCheckableMenuItem {
+	return &mockCheckableMenuItem{
+		clickedCh: make(chan struct{}, 1),
+	}
+}
+
+func (m *mockCheckableMenuItem) ClickedCh() <-chan struct{} {
+	return m.clickedCh
+}
+
+func (m *mockCheckableMenuItem) Checked() bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.checked
+}
+
+func (m *mockCheckableMenuItem) Check() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.checked = true
+}
+
+func (m *mockCheckableMenuItem) Uncheck() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.checked = false
+}
+
+func (m *mockCheckableMenuItem) Click() {
+	m.clickedCh <- struct{}{}
+}
+
+func (m *mockCheckableMenuItem) Close() {
+	close(m.clickedCh)
+}
 
 func TestNewCheckboxSynchronizer(t *testing.T) {
 	category.Set(t, category.Unit)
@@ -50,14 +93,104 @@ func TestWaitForOperations(t *testing.T) {
 	assert.GreaterOrEqual(t, duration, 20*time.Millisecond, "WaitForOperations should wait for the operation to complete")
 }
 
-// Note: The success paths for HandleCheckboxOption (where the setter function
-// returns true) are not tested here. This is because they call item.Check()
-// or item.Uncheck() on a systray.MenuItem. These methods attempt to update
-// the UI and require the systray event loop to be running. In a unit test
-// environment, this loop is not active, and the underlying data structures
-// in the systray package are not initialized, leading to a panic.
-// Testing this behavior would require a significant refactoring or a dedicated
-// test harness that can mock the systray environment.
+func TestHandleCheckboxOptionSuccessfulCheck(t *testing.T) {
+	category.Set(t, category.Unit)
+	cs := NewCheckboxSynchronizer()
+	item := newMockCheckableMenuItem()
+	setterCalled := make(chan bool, 1)
+	setter := func(checked bool) bool {
+		assert.True(t, checked)
+		setterCalled <- true
+		return true
+	}
+
+	cs.HandleCheckboxOption(item, setter)
+	item.Click()
+
+	select {
+	case <-setterCalled:
+	// continue
+	case <-time.After(50 * time.Millisecond):
+		t.Fatal("setter was not called")
+	}
+
+	assert.True(t, item.Checked(), "item should be checked")
+	cs.WaitForOperations()
+	assert.False(t, cs.operationInProgress, "operation should be marked as complete")
+}
+
+func TestHandleCheckboxOptionSuccessfulUncheck(t *testing.T) {
+	category.Set(t, category.Unit)
+	cs := NewCheckboxSynchronizer()
+	item := newMockCheckableMenuItem()
+	item.Check()
+	setterCalled := make(chan bool, 1)
+	setter := func(checked bool) bool {
+		assert.False(t, checked)
+		setterCalled <- true
+		return true
+	}
+
+	cs.HandleCheckboxOption(item, setter)
+	item.Click()
+
+	select {
+	case <-setterCalled:
+	// continue
+	case <-time.After(50 * time.Millisecond):
+		t.Fatal("setter was not called")
+	}
+
+	assert.False(t, item.Checked(), "item should be unchecked")
+	cs.WaitForOperations()
+	assert.False(t, cs.operationInProgress, "operation should be marked as complete")
+}
+
+func TestHandleCheckboxOptionSetterFails(t *testing.T) {
+	category.Set(t, category.Unit)
+	cs := NewCheckboxSynchronizer()
+	item := newMockCheckableMenuItem()
+	setterCalled := make(chan bool, 1)
+	setter := func(checked bool) bool {
+		setterCalled <- true
+		return false // Simulate failure
+	}
+
+	cs.HandleCheckboxOption(item, setter)
+	item.Click()
+
+	select {
+	case <-setterCalled:
+	// continue
+	case <-time.After(50 * time.Millisecond):
+		t.Fatal("setter was not called")
+	}
+
+	assert.False(t, item.Checked(), "item should not be checked if setter fails")
+	cs.WaitForOperations()
+	assert.False(t, cs.operationInProgress, "operation should be marked as complete even if setter fails")
+}
+
+func TestHandleCheckboxOptionChannelClosed(t *testing.T) {
+	category.Set(t, category.Unit)
+	cs := NewCheckboxSynchronizer()
+	item := newMockCheckableMenuItem()
+	setterCalled := make(chan bool, 1)
+	setter := func(checked bool) bool {
+		setterCalled <- true
+		return true
+	}
+
+	cs.HandleCheckboxOption(item, setter)
+	item.Close()
+
+	select {
+	case <-setterCalled:
+		t.Fatal("setter was called unexpectedly")
+	case <-time.After(50 * time.Millisecond):
+	// Test passed
+	}
+}
 
 func TestHandleCheckboxOptionNilItem(t *testing.T) {
 	category.Set(t, category.Unit)
@@ -70,61 +203,8 @@ func TestHandleCheckboxOptionNilItem(t *testing.T) {
 func TestHandleCheckboxOptionNilSetter(t *testing.T) {
 	category.Set(t, category.Unit)
 	cs := NewCheckboxSynchronizer()
-	item := &systray.MenuItem{ClickedCh: make(chan struct{})}
+	item := newMockCheckableMenuItem()
 	assert.NotPanics(t, func() {
 		cs.HandleCheckboxOption(item, nil)
 	})
-}
-
-func TestHandleCheckboxOptionSetterFails(t *testing.T) {
-	category.Set(t, category.Unit)
-	cs := NewCheckboxSynchronizer()
-	item := &systray.MenuItem{ClickedCh: make(chan struct{}, 1)}
-	setterCalledCh := make(chan bool, 1)
-
-	setter := func(checked bool) bool {
-		setterCalledCh <- true
-		return false // Simulate failure
-	}
-
-	cs.HandleCheckboxOption(item, setter)
-
-	item.ClickedCh <- struct{}{}
-
-	select {
-	case <-setterCalledCh:
-		// Test passed
-	case <-time.After(50 * time.Millisecond):
-		t.Fatal("setter was not called")
-	}
-
-	assert.False(t, item.Checked(), "item should not be checked if setter fails")
-
-	// Wait for the operation to be marked as complete
-	cs.WaitForOperations()
-
-	assert.False(t, cs.operationInProgress, "operation should be marked as complete even if setter fails")
-}
-
-func TestHandleCheckboxOptionChannelClosed(t *testing.T) {
-	category.Set(t, category.Unit)
-	cs := NewCheckboxSynchronizer()
-	item := &systray.MenuItem{ClickedCh: make(chan struct{})}
-	setterCalledCh := make(chan bool, 1)
-
-	setter := func(checked bool) bool {
-		setterCalledCh <- true
-		return true
-	}
-
-	cs.HandleCheckboxOption(item, setter)
-
-	close(item.ClickedCh)
-
-	select {
-	case <-setterCalledCh:
-		t.Fatal("setter was called unexpectedly")
-	case <-time.After(50 * time.Millisecond):
-		// Test passed
-	}
 }

@@ -101,7 +101,32 @@ func handleCheckboxOption(ti *Instance, item *systray.MenuItem, setter func(bool
 		return
 	}
 
-	ti.checkboxSync.HandleCheckboxOption(item, setter)
+	ti.checkboxSync.HandleCheckboxOption(newSystrayMenuItemAdapter(item), setter)
+}
+
+// systrayMenuItemAdapter wraps a *systray.MenuItem to satisfy the CheckableMenuItem interface.
+type systrayMenuItemAdapter struct {
+	item *systray.MenuItem
+}
+
+func newSystrayMenuItemAdapter(item *systray.MenuItem) *systrayMenuItemAdapter {
+	return &systrayMenuItemAdapter{item: item}
+}
+
+func (a *systrayMenuItemAdapter) ClickedCh() <-chan struct{} {
+	return a.item.ClickedCh
+}
+
+func (a *systrayMenuItemAdapter) Checked() bool {
+	return a.item.Checked()
+}
+
+func (a *systrayMenuItemAdapter) Check() {
+	a.item.Check()
+}
+
+func (a *systrayMenuItemAdapter) Uncheck() {
+	a.item.Uncheck()
 }
 
 func addDebugSection(ti *Instance) {
