@@ -100,9 +100,9 @@ func makeDisplayLabel(conn *RecentConnection) string {
 	return ""
 }
 
-func connectByConnectionModel(ti *Instance, model *RecentConnection) {
+func connectByConnectionModel(ti *Instance, model *RecentConnection) bool {
 	if model == nil {
-		return
+		return false
 	}
 
 	normalizeForAPI := func(text string) string {
@@ -111,44 +111,45 @@ func connectByConnectionModel(ti *Instance, model *RecentConnection) {
 
 	switch model.ConnectionType {
 	case config.ServerSelectionRule_RECOMMENDED:
-		ti.connect("", "")
+		return ti.connect("", "")
 
 	case config.ServerSelectionRule_CITY:
 		if model.City != "" {
 			cityString := normalizeForAPI(model.City)
-			ti.connect(cityString, "")
+			return ti.connect(cityString, "")
 		}
 
 	case config.ServerSelectionRule_COUNTRY:
 		if model.CountryCode != "" {
-			ti.connect(model.CountryCode, "")
+			return ti.connect(model.CountryCode, "")
 		}
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER:
 		if model.SpecificServer != "" {
-			ti.connect(model.SpecificServer, "")
+			return ti.connect(model.SpecificServer, "")
 		}
 
 	case config.ServerSelectionRule_GROUP:
 		if model.Group != config.ServerGroup_UNDEFINED {
 			group := normalizeForAPI(model.Group.String())
-			ti.connect("", group)
+			return ti.connect("", group)
 		}
 
 	case config.ServerSelectionRule_COUNTRY_WITH_GROUP:
 		if model.CountryCode != "" && model.Group != config.ServerGroup_UNDEFINED {
 			group := normalizeForAPI(model.Group.String())
-			ti.connect(model.CountryCode, group)
+			return ti.connect(model.CountryCode, group)
 		}
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
 		if model.SpecificServer != "" && model.Group != config.ServerGroup_UNDEFINED {
 			group := normalizeForAPI(model.Group.String())
-			ti.connect(model.SpecificServer, group)
+			return ti.connect(model.SpecificServer, group)
 		}
 
 	case config.ServerSelectionRule_NONE:
 	}
+	return false
 }
 
 type recentConnectionsManager struct {

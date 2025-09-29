@@ -12,9 +12,6 @@ import (
 
 func JobVersionCheck(dm *DataManager, api *RepoAPI, statePublisher *state.StatePublisher) func() {
 	return func() {
-		// Always publish version status at the end
-		defer publishVersionHealthStatus(dm, statePublisher)
-
 		// if no currentVersion data is available, 0.0.0-0 currentVersion will be used.
 		currentVersion := semver.New(api.version)
 		vdata := dm.GetVersionData()
@@ -25,6 +22,7 @@ func JobVersionCheck(dm *DataManager, api *RepoAPI, statePublisher *state.StateP
 
 		// if vdata.version.Major == 0 that means the data is incorrect, possibly the file is missing
 		if vdata.newerVersionAvailable && vdata.version.Major != 0 {
+			publishVersionHealthStatus(dm, statePublisher)
 			return
 		}
 
@@ -35,6 +33,7 @@ func JobVersionCheck(dm *DataManager, api *RepoAPI, statePublisher *state.StateP
 			data, err := api.DebianFileList()
 			if err != nil {
 				dm.SetVersionData(vdata.version, false)
+				publishVersionHealthStatus(dm, statePublisher)
 				return
 			}
 			versionStrings = ParseDebianVersions(data)
@@ -42,6 +41,7 @@ func JobVersionCheck(dm *DataManager, api *RepoAPI, statePublisher *state.StateP
 			data, err := api.RpmFileList()
 			if err != nil {
 				dm.SetVersionData(vdata.version, false)
+				publishVersionHealthStatus(dm, statePublisher)
 				return
 			}
 			versionStrings = ParseRpmVersions(data)
@@ -54,6 +54,7 @@ func JobVersionCheck(dm *DataManager, api *RepoAPI, statePublisher *state.StateP
 		if newerVersionAvailable || vdata.version.Major == 0 {
 			dm.SetVersionData(latestVersion, newerVersionAvailable)
 		}
+		publishVersionHealthStatus(dm, statePublisher)
 	}
 }
 

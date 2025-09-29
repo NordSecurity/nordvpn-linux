@@ -59,7 +59,7 @@ const (
 	tooltipTrayIcon            = "Show or hide tray icon"
 
 	// System messages
-	msgShutdownNotification = "Shutting down norduserd. To restart the process, run the \"nordvpn set tray on command\"."
+	msgShutdownNotification = "Shutting down norduserd. To restart the process, run the \"nordvpn set tray on\" command."
 
 	// Timeouts
 	dbusWorkaroundDelay = 100 * time.Millisecond
@@ -161,7 +161,7 @@ func buildQuitButton(ti *Instance) {
 			return
 		}
 		log.Printf("%s %s", internal.InfoPrefix, msgShutdownNotification)
-		ti.notifyForce(msgShutdownNotification)
+		ti.notify(Force, msgShutdownNotification)
 		select {
 		case ti.quitChan <- norduser.StopRequest{}:
 		default:
@@ -282,7 +282,7 @@ func handleLoginClick(ti *Instance, item *systray.MenuItem) {
 	if ti == nil {
 		return
 	}
-	handleMenuItemClick(item, ti.login)
+	handleMenuItemClick(item, func() { ti.login() })
 }
 
 func buildConnectToItem(ti *Instance) {
@@ -424,12 +424,12 @@ func handleTrayOption(ti *Instance, item *systray.MenuItem) {
 	if ti == nil {
 		return
 	}
-	handleCheckboxOption(ti, item, ti.setTray)
+	handleCheckboxOption(ti, item, func(flag bool) bool { return ti.setTray(flag) })
 }
 
 func handleNotificationsOption(ti *Instance, item *systray.MenuItem) {
 	if ti == nil {
 		return
 	}
-	handleCheckboxOption(ti, item, ti.setNotify)
+	handleCheckboxOption(ti, item, func(flag bool) bool { return ti.setNotify(flag) })
 }
