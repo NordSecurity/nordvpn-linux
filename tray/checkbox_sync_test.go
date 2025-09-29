@@ -80,19 +80,29 @@ func TestHandleCheckboxOptionSetterFails(t *testing.T) {
 	category.Set(t, category.Unit)
 	cs := NewCheckboxSynchronizer()
 	item := &systray.MenuItem{ClickedCh: make(chan struct{}, 1)}
-	setterCalled := false
+	setterCalledCh := make(chan bool, 1)
+
 	setter := func(checked bool) bool {
-		setterCalled = true
+		setterCalledCh <- true
 		return false // Simulate failure
 	}
 
 	cs.HandleCheckboxOption(item, setter)
 
 	item.ClickedCh <- struct{}{}
-	time.Sleep(20 * time.Millisecond) // Allow goroutine to run
 
-	assert.True(t, setterCalled, "setter should have been called")
+	select {
+	case <-setterCalledCh:
+		// Test passed
+	case <-time.After(50 * time.Millisecond):
+		t.Fatal("setter was not called")
+	}
+
 	assert.False(t, item.Checked(), "item should not be checked if setter fails")
+
+	// Wait for the operation to be marked as complete
+	cs.WaitForOperations()
+
 	assert.False(t, cs.operationInProgress, "operation should be marked as complete even if setter fails")
 }
 
@@ -100,16 +110,21 @@ func TestHandleCheckboxOptionChannelClosed(t *testing.T) {
 	category.Set(t, category.Unit)
 	cs := NewCheckboxSynchronizer()
 	item := &systray.MenuItem{ClickedCh: make(chan struct{})}
-	setterCalled := false
+	setterCalledCh := make(chan bool, 1)
+
 	setter := func(checked bool) bool {
-		setterCalled = true
+		setterCalledCh <- true
 		return true
 	}
 
 	cs.HandleCheckboxOption(item, setter)
 
 	close(item.ClickedCh)
-	time.Sleep(20 * time.Millisecond) // Allow goroutine to exit
 
-	assert.False(t, setterCalled, "setter should not be called if channel is closed")
+	select {
+	case <-setterCalledCh:
+		t.Fatal("setter was called unexpectedly")
+	case <-time.After(50 * time.Millisecond):
+		// Test passed
+	}
 }
