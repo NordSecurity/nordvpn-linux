@@ -22,7 +22,6 @@ def teardown_function(function):  # noqa: ARG001
     meshnet.TestUtils.teardown_function(ssh_client)
 
 
-@pytest.mark.xfail
 def test_invite_send():
 
     assert "Meshnet invitation to 'test@test.com' was sent." in meshnet.send_meshnet_invite("test@test.com")
@@ -75,7 +74,6 @@ def test_invite_send_email_special_character():
     assert "It's not you, it's us. We're having trouble with our servers. If the issue persists, please contact our customer support." not in ex.value.stdout.decode("utf-8")
 
 
-@pytest.mark.xfail
 def test_invite_revoke():
 
     meshnet.send_meshnet_invite("test@test.com")
@@ -122,7 +120,6 @@ def test_invite_revoke_non_existent_special_character():
     assert "No invitation from '\u2222@test.com' was found." in ex.value.stdout.decode("utf-8")
 
 
-@pytest.mark.xfail
 def test_invite_deny():
 
     meshnet.remove_all_peers()
@@ -163,7 +160,6 @@ def test_invite_deny_non_existent_special_character():
     assert "No invitation from '\u2222@test.com' was found." in ex.value.stdout.decode("utf-8")
 
 
-@pytest.mark.xfail
 def test_invite_accept():
 
     meshnet.remove_all_peers()
