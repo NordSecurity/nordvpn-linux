@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os/exec"
 	"slices"
 	"strings"
 	"time"
@@ -56,38 +55,6 @@ func (ti *Instance) handleVersionHealthChange(health *pb.VersionHealthStatus) {
 
 	changed := ti.updateDaemonConnectionStatus(daemonError)
 	ti.redraw(changed)
-}
-
-func getServiceStatus() (string, error) {
-	var cmd *exec.Cmd
-	if snapconf.IsUnderSnap() {
-		cmd = exec.Command("snap", "services", "nordvpn.nordvpnd")
-	} else {
-		cmd = exec.Command("systemctl", "is-active", "nordvpnd")
-	}
-
-	data, err := cmd.Output()
-	return string(data), err
-}
-
-func checkServiceActivity(status string) error {
-	if strings.Contains(status, "active") {
-		return nil
-	}
-	return daemonServiceNotActive
-}
-
-// checkDaemonService checks if daemon process is running via systemd/snap
-func (ti *Instance) checkDaemonService() error {
-	output, err := getServiceStatus()
-	if err != nil {
-		return err
-	}
-
-	status := strings.TrimSpace(output)
-	status = strings.ToLower(status)
-
-	return checkServiceActivity(status)
 }
 
 func (ti *Instance) MonitorConnection(ctx context.Context, conn *grpc.ClientConn) {

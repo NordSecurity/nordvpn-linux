@@ -279,12 +279,6 @@ func waitUntilTrayStatusIsReceived(fetchTrayStatus func() Status, doneChan chan<
 // syncWithDaemon performs processes needed before systray can be shown
 func (ti *Instance) syncWithDaemon() {
 	for {
-		// err := waitUntilDaemonIsStarted(ti.checkDaemonConnectivity)
-		// if err != nil {
-		// 	log.Printf("%s %s Waiting until daemon is alive\n", logTag, internal.ErrorPrefix)
-		// 	return
-		// }
-
 		getTrayStatusFunc := func() Status {
 			changed := ti.updateSettings()
 			ti.redraw(changed)
