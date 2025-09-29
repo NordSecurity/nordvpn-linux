@@ -100,24 +100,8 @@ func handleCheckboxOption(ti *Instance, item *systray.MenuItem, setter func(bool
 	if ti == nil || item == nil || setter == nil {
 		return
 	}
-	go func() {
-		success := false
-		for !success {
-			_, open := <-item.ClickedCh
-			if !open {
-				return
-			}
-			unchecked := !item.Checked()
-			success = setter(unchecked)
-			if success {
-				if unchecked {
-					item.Check()
-				} else {
-					item.Uncheck()
-				}
-			}
-		}
-	}()
+
+	ti.checkboxSync.HandleCheckboxOption(item, setter)
 }
 
 func addDebugSection(ti *Instance) {
@@ -442,7 +426,6 @@ func buildSettingsSubitems(ti *Instance, menu *systray.MenuItem) {
 
 	go handleNotificationsOption(ti, notificationsCheckbox)
 	go handleTrayOption(ti, trayCheckbox)
-	systray.Refresh()
 }
 
 func handleTrayOption(ti *Instance, item *systray.MenuItem) {
