@@ -87,10 +87,10 @@ mv "${WORKDIR}"/*."${PKG_TO_BUILD}" "${APP_DIR}/${PKG_TO_BUILD}"
 # remove leftovers
 rm -rf "${BASEDIR}"
 
-# TODO (LVPN-9228) remove usage of DOCKER_BUILD variable, once the way of building is unified
-# Only build GUI package if the architecture supports Flutter and Docker build is enabled
-if [[ -n "${ARCHS_FLUTTER[$ARCH]:-}" && -n "${DOCKER_BUILD:-}" ]]; then
-  echo "Building GUI package for Flutter-supported architecture: $ARCH (Docker build)"
+# TODO (LVPN-9228) remove usage of ENABLE_GUI_BUILD variable, once the way of building is unified
+# Only build GUI package if GUI build is enabled and the architecture supports Flutter
+if [[ -n "${ENABLE_GUI_BUILD:-}" && -n "${ARCHS_FLUTTER[$ARCH]:-}" ]]; then
+  echo "Building GUI package for Flutter-supported architecture: $ARCH (GUI build)"
   
   cleanup() {
     local file="${WORKDIR}/gui/pubspec.yaml"
@@ -123,9 +123,9 @@ if [[ -n "${ARCHS_FLUTTER[$ARCH]:-}" && -n "${DOCKER_BUILD:-}" ]]; then
   mv gui/dist/"${PKG_TO_BUILD}"/*."${PKG_TO_BUILD}" "${APP_DIR}/${PKG_TO_BUILD}/"
   
 else
-  if [[ -z "${ARCHS_FLUTTER[$ARCH]:-}" ]]; then
+  if [[ -z "${ENABLE_GUI_BUILD:-}" ]]; then
+    echo "Skipping GUI package build - ENABLE_GUI_BUILD not set (required for GUI builds)"
+  elif [[ -z "${ARCHS_FLUTTER[$ARCH]:-}" ]]; then
     echo "Skipping GUI package build - architecture $ARCH not supported by Flutter"
-  elif [[ -z "${DOCKER_BUILD:-}" ]]; then
-    echo "Skipping GUI package build - DOCKER_BUILD not set (required for GUI builds)"
   fi
 fi
