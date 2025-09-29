@@ -88,7 +88,6 @@ func (ti *Instance) MonitorConnection(ctx context.Context, conn *grpc.ClientConn
 			changed := ti.updateDaemonConnectionStatus(err)
 			ti.redraw(changed)
 		}
-
 	}
 }
 
