@@ -204,25 +204,20 @@ func (ti *Instance) configureDebugMode() {
 }
 
 func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
+	changed := false
 	switch st := item.GetState().(type) {
 	case *pb.AppState_Error:
 		log.Printf("%s %s Received daemon error state\n", logTag, internal.ErrorPrefix)
-		changed := ti.updateDaemonConnectionStatus(internal.ErrDaemonConnectionRefused.Error())
-		ti.redraw(changed)
+		changed = ti.updateDaemonConnectionStatus(internal.ErrDaemonConnectionRefused.Error())
 
 	case *pb.AppState_ConnectionStatus:
-		log.Println(logTag, "Received connection status event")
-		changed := ti.updateVpnStatus()
-		changed = changed || ti.updateRecentConnections()
-		ti.redraw(changed)
+		changed = ti.updateVpnStatus() || ti.updateRecentConnections()
 
 	case *pb.AppState_LoginEvent:
-		changed := ti.updateLoginStatus()
-		ti.redraw(changed)
+		changed = ti.updateLoginStatus()
 
 	case *pb.AppState_SettingsChange:
-		changed := ti.setSettings(st.SettingsChange)
-		ti.redraw(changed)
+		changed = ti.setSettings(st.SettingsChange)
 		// identify whether we need to also update a country list
 		ti.connSensor.Set(connectionSettings{
 			Obfuscated:      st.SettingsChange.Obfuscate,
@@ -232,26 +227,26 @@ func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
 		})
 
 		if ti.connSensor.ChangeDetected() {
-			ti.updateCountryList()
-			ti.updateSpecialtyServerList()
-			ti.updateRecentConnections()
+			changed = changed || ti.updateCountryList() ||
+				ti.updateSpecialtyServerList() || ti.updateRecentConnections()
 		}
 
 	case *pb.AppState_UpdateEvent:
 		if st.UpdateEvent == pb.UpdateEvent_SERVERS_LIST_UPDATE {
-			ti.updateCountryList()
-			ti.updateSpecialtyServerList()
+			changed = ti.updateCountryList() || ti.updateSpecialtyServerList()
 		}
 
 	case *pb.AppState_AccountModification:
-		ti.updateAccountInfo()
+		changed = ti.updateAccountInfo()
 
 	case *pb.AppState_VersionHealth:
-		ti.handleVersionHealthChange(st.VersionHealth)
+		changed = ti.handleVersionHealthChange(st.VersionHealth)
 
 	default:
 		log.Printf("%s %s Unknown state type: %T\n", logTag, internal.WarningPrefix, item)
 	}
+
+	ti.redraw(changed)
 }
 
 func waitUntilTrayStatusIsReceived(fetchTrayStatus func() Status, doneChan chan<- struct{}) error {
@@ -333,10 +328,10 @@ func (ti *Instance) OnReady() {
 	go ti.renderLoop()
 
 	ti.state.mu.Lock()
-	if ti.state.vpnStatus == pb.ConnectionState_DISCONNECTED {
-		systray.SetIconName(ti.iconDisconnected)
-	} else {
+	if ti.state.vpnStatus == pb.ConnectionState_CONNECTED {
 		systray.SetIconName(ti.iconConnected)
+	} else {
+		systray.SetIconName(ti.iconDisconnected)
 	}
 	ti.state.systrayRunning = true
 	ti.state.mu.Unlock()

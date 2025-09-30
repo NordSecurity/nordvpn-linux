@@ -32,7 +32,7 @@ const (
 	labelDisconnectedFormat = "Disconnected from %s"
 )
 
-func (ti *Instance) handleVersionHealthChange(health *pb.VersionHealthStatus) {
+func (ti *Instance) handleVersionHealthChange(health *pb.VersionHealthStatus) bool {
 	daemonError := ""
 	switch int64(health.StatusCode) {
 	case internal.CodeOffline:
@@ -47,7 +47,7 @@ func (ti *Instance) handleVersionHealthChange(health *pb.VersionHealthStatus) {
 	}
 
 	changed := ti.updateDaemonConnectionStatus(daemonError)
-	ti.redraw(changed)
+	return changed
 }
 
 func (ti *Instance) MonitorConnection(ctx context.Context, conn *grpc.ClientConn) {
