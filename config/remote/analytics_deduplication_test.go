@@ -435,7 +435,7 @@ func TestConcurrentEventEmission(t *testing.T) {
 
 			features := []string{FeatureMeshnet, FeatureLibtelio, FeatureMain}
 
-			for i := range tt.concurrentEmits {
+			for i := 0; i < tt.concurrentEmits; i++ {
 				go func(idx int) {
 					defer wg.Done()
 					feature := FeatureMeshnet
@@ -611,7 +611,7 @@ func TestClearEventFlagsRaceCondition(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		<-startSignal // Wait for signal to start
-		for i := range iterations {
+		for i := 0; i < iterations; i++ {
 			feature := features[i%len(features)]
 			analytics.EmitPartialRolloutEvent(ClientCli, feature, i%100, true)
 		}
@@ -621,7 +621,7 @@ func TestClearEventFlagsRaceCondition(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		<-startSignal // Wait for signal to start
-		for range iterations {
+		for i := 0; i < iterations; i++ {
 			analytics.ClearEventFlags()
 		}
 	}()
@@ -630,7 +630,7 @@ func TestClearEventFlagsRaceCondition(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		<-startSignal // Wait for signal to start
-		for i := range iterations {
+		for i := 0; i < iterations; i++ {
 			if i%2 == 0 {
 				analytics.ClearEventFlags()
 			} else {
