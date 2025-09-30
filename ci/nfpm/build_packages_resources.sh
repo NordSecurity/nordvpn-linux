@@ -121,11 +121,4 @@ if [[ -n "${ENABLE_GUI_BUILD:-}" && -n "${ARCHS_FLUTTER[$ARCH]:-}" ]]; then
 
   # Move the generated GUI package to the expected location
   mv gui/dist/"${PKG_TO_BUILD}"/*."${PKG_TO_BUILD}" "${APP_DIR}/${PKG_TO_BUILD}/"
-  
-else
-  if [[ -z "${ENABLE_GUI_BUILD:-}" ]]; then
-    echo "Skipping GUI package build - ENABLE_GUI_BUILD not set (required for GUI builds)"
-  elif [[ -z "${ARCHS_FLUTTER[$ARCH]:-}" ]]; then
-    echo "Skipping GUI package build - architecture $ARCH not supported by Flutter"
-  fi
 fi
