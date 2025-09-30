@@ -294,7 +294,7 @@ func (r *RPC) connect(
 
 		recentModel, err := buildRecentConnectionModel(serverTechs, event, parameters)
 		if err != nil {
-			log.Printf("%s Failed to build recent VPN connection model: %s", internal.WarningPrefix, err)
+			log.Printf("%s Failed to build recent VPN connection model: %s\n", internal.WarningPrefix, err)
 		} else {
 			r.recentVPNConnStore.Add(recentModel)
 		}

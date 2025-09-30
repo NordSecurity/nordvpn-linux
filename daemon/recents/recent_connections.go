@@ -93,6 +93,8 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 		connections = []Model{}
 	}
 
+	// Sort server technologies, so that the order does not affect equality checks
+	slices.Sort(model.ServerTechnologies)
 	index := r.find(model, connections)
 	if index != -1 {
 		connections = slices.Delete(connections, index, index+1)
