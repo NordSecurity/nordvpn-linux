@@ -69,7 +69,7 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 	daemonURL := fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
 	cliendIDMetadataInterceptor := clientid.NewInsertClientIDInterceptor(daemonpb.ClientID_TRAY)
 
-	conn, err := grpc.Dial(
+	conn, err := grpc.NewClient(
 		daemonURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(cliendIDMetadataInterceptor.SetMetadataUnaryInterceptor),
@@ -109,18 +109,21 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 
 	onReady := func() {
 		log.Println(internal.InfoPrefix, "Starting systray")
+		go ti.MonitorConnection(context.Background(), conn)
 		ti.OnReady()
 	}
 
 	trayStatus := ti.WaitInitialTrayStatus()
-	if trayStatus == tray.Enabled {
-		for {
-			if systray.IsAvailable() {
-				systray.Run(onReady, onExit)
-				break
-			}
-			<-time.After(10 * time.Second)
+	if trayStatus != tray.Enabled {
+		return
+	}
+
+	for {
+		if systray.IsAvailable() {
+			systray.Run(onReady, onExit)
+			break
 		}
+		<-time.After(10 * time.Second)
 	}
 }
 

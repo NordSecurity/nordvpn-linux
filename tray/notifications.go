@@ -15,27 +15,21 @@ import (
 
 var dbusNotifierNotConnectedError = errors.New("dbus notifier not connected")
 
-func (ti *Instance) notify(text string, a ...any) {
-	text = fmt.Sprintf(text, a...)
+func (ti *Instance) notify(ntype NotificationType, text string, a ...any) {
 	ti.state.mu.RLock()
 	notificationsStatus := ti.state.notificationsStatus
 	ti.state.mu.RUnlock()
-	if notificationsStatus == Enabled {
+
+	if notificationsStatus == Enabled || ntype == Force {
+		text = fmt.Sprintf(text, a...)
+		log.Printf("%s Sending notification: %s\n", logTag, text)
 		if err := ti.notifier.sendNotification("NordVPN", text); err != nil {
 			if !errors.Is(err, dbusNotifierNotConnectedError) {
 				log.Println(internal.ErrorPrefix, "Failed to send notification:", err)
 			}
 		}
-	}
-}
-
-// notifyForce sends a notification, ignoring users notify setting
-func (ti *Instance) notifyForce(text string, a ...any) {
-	text = fmt.Sprintf(text, a...)
-	if err := ti.notifier.sendNotification("NordVPN", text); err != nil {
-		if !errors.Is(err, dbusNotifierNotConnectedError) {
-			log.Println(internal.ErrorPrefix, "Failed to send forced notification:", err)
-		}
+	} else {
+		log.Printf("%s Notification suppressed: %s (status: %d, force: %v)\n", logTag, text, notificationsStatus, ntype == Force)
 	}
 }
 
@@ -119,3 +113,12 @@ func newNotifier() (notify.Notifier, error) {
 
 	return ntf, nil
 }
+
+type NotificationType bool
+
+const (
+	// NoForce indicates that the notification should respect the user's settings.
+	NoForce NotificationType = false
+	// Force indicates that the notification should be shown regardless of the user's settings.
+	Force NotificationType = true
+)
