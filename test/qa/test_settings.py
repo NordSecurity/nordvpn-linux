@@ -27,7 +27,7 @@ def test_obfuscate_nonobfucated(tech, proto, obfuscated):
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set.obfuscate("on")
-        assert "Obfuscation is not available with the current technology. Change the technology to OpenVPN to use obfuscation." in str(ex.value)
+        assert "Obfuscation is not available with the current technology. Change the technology to OpenVPN to use obfuscation." in ex.value.stdout.decode("utf-8")
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC2 + lib.TECHNOLOGIES_BASIC1 + lib.NORDWHISPER_TECHNOLOGY)
@@ -354,7 +354,7 @@ def test_set_post_quantum_on_open_vpn(tech, proto, obfuscated):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set(settings.get_pq_alias(), "on")
 
-    assert "Post-quantum encryption is unavailable with OpenVPN. Switch to NordLynx to activate post-quantum protection." in str(ex.value)
+    assert "Post-quantum encryption is unavailable with OpenVPN. Switch to NordLynx to activate post-quantum protection." in ex.value.stdout.decode("utf-8")
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.NORDWHISPER_TECHNOLOGY)
@@ -366,7 +366,7 @@ def test_set_post_quantum_on_nordwhisper(tech, proto, obfuscated):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set(settings.get_pq_alias(), "on")
 
-    assert "Post-quantum encryption is unavailable with NordWhisper. Switch to NordLynx to activate post-quantum protection." in str(ex.value)
+    assert "Post-quantum encryption is unavailable with NordWhisper. Switch to NordLynx to activate post-quantum protection." in ex.value.stdout.decode("utf-8")
 
 
 def test_set_technology_openvpn_post_quantum_enabled():
@@ -377,7 +377,7 @@ def test_set_technology_openvpn_post_quantum_enabled():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set.technology("OPENVPN")
 
-    assert "This setting is not compatible with post-quantum encryption. To use OpenVPN, disable post-quantum encryption first." in str(ex.value)
+    assert "This setting is not compatible with post-quantum encryption. To use OpenVPN, disable post-quantum encryption first." in ex.value.stdout.decode("utf-8")
 
 
 def test_set_technology_nordwhisper_post_quantum_enabled():
@@ -388,7 +388,7 @@ def test_set_technology_nordwhisper_post_quantum_enabled():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set.technology("NORDWHISPER")
 
-    assert "This setting is not compatible with post-quantum encryption. To use NordWhisper, disable post-quantum encryption first." in str(ex.value)
+    assert "This setting is not compatible with post-quantum encryption. To use NordWhisper, disable post-quantum encryption first." in ex.value.stdout.decode("utf-8")
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -422,7 +422,7 @@ def test_set_defaults_killswitch_interaction(killswitch_initial, killswitch_flag
     try:
         sh.nordvpn.set.killswitch(str(killswitch_initial))
     except sh.ErrorReturnCode_1 as ex:
-        assert "Kill Switch is already set to" in str(ex.value), "Unexpected error returned by 'set killswitch'. Expected 'Killswitch already set to enabled/disabled."
+        assert "Kill Switch is already set to" in ex.value.stdout.decode("utf-8"), "Unexpected error returned by 'set killswitch'. Expected 'Killswitch already set to enabled/disabled."
 
     if killswitch_flag:
         sh.nordvpn.set.defaults("--off-killswitch")
@@ -443,7 +443,7 @@ def test_set_protocol_openvpn_only(tech, proto, obfuscated):
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set.protocol("TCP")
-        assert "Protocol setting is not available when the set technology is not OpenVPN" in str(ex.value)
+        assert "Protocol setting is not available when the set technology is not OpenVPN" in ex.value.stdout.decode("utf-8")
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
