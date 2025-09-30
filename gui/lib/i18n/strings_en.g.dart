@@ -1903,6 +1903,15 @@ class TranslationsUiEn {
 
 	/// en: 'Back'
 	String get back => 'Back';
+
+	/// en: 'We need some permissions to connect to NordVPN service'
+	String get snapScreenTitle => 'We need some permissions to connect to NordVPN service';
+
+	/// en: 'Grant permission by running these commands in the terminal. Then refresh the screen.'
+	String get snapScreenDescription => 'Grant permission by running these commands in the terminal. Then refresh the screen.';
+
+	/// en: 'Refresh'
+	String get refresh => 'Refresh';
 }
 
 /// Flat map(s) containing all translations.
@@ -2520,6 +2529,9 @@ extension on Translations {
 			case 'ui.analytics': return 'Analytics';
 			case 'ui.analyticsDescription': return 'Help us improve the app by sending aggregated usage data. We collect this data to keep our features relevant to your needs and to fix issues faster.';
 			case 'ui.back': return 'Back';
+			case 'ui.snapScreenTitle': return 'We need some permissions to connect to NordVPN service';
+			case 'ui.snapScreenDescription': return 'Grant permission by running these commands in the terminal. Then refresh the screen.';
+			case 'ui.refresh': return 'Refresh';
 			default: return null;
 		}
 	}

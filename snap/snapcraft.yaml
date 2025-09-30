@@ -59,6 +59,7 @@ plugs:
 apps:
   nordvpn:
     command: bin/nordvpn
+    desktop: usr/share/applications/nordvpn.desktop
     environment:
       PREFIX_COMMON: $SNAP_COMMON
       PREFIX_DATA: $SNAP_DATA
@@ -96,7 +97,7 @@ apps:
 
   nordvpn-gui:
     command: bin/gui/nordvpn-gui
-    desktop: usr/share/applications/nordvpn.desktop
+    desktop: usr/share/applications/nordvpn-gui.desktop
     extensions: [gnome]
     environment:
       LD_LIBRARY_PATH: "$SNAP/bin/gui/lib:$LD_LIBRARY_PATH"
@@ -226,9 +227,15 @@ parts:
     source-type: local
     source: contrib/desktop
     override-build: |
-      sed -i 's\Icon=nordvpn\Icon=${SNAP}/meta/icon.svg\g' snap.nordvpn.desktop
-      cp snap.nordvpn.desktop ${SNAPCRAFT_PART_INSTALL}/nordvpn.desktop
+      # this one is for triggering GUI application
+      sed -i 's\Icon=nordvpn\Icon=${SNAP}/meta/icon.svg\g' nordvpn-gui.desktop
+      cp nordvpn-gui.desktop ${SNAPCRAFT_PART_INSTALL}/nordvpn-gui.desktop
+
+      # this one is for opening terminal for login flow
+      sed -i 's\Icon=nordvpn\Icon=${SNAP}/meta/icon.svg\g' nordvpn.desktop
+      cp nordvpn.desktop ${SNAPCRAFT_PART_INSTALL}/nordvpn.desktop
     organize:
+      nordvpn-gui.desktop: usr/share/applications/nordvpn-gui.desktop
       nordvpn.desktop: usr/share/applications/nordvpn.desktop
 
   # Contents of this part are not affecting the functionality in any way but they are here for

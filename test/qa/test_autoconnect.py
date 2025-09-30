@@ -192,7 +192,7 @@ def test_prevent_autoconnect_enable_to_non_obfuscated_servers_when_obfuscation_i
             sh.nordvpn.set.autoconnect.on(server_name)
         print(ex.value)
         error_message = "Your selected server doesn’t support obfuscation. Choose a different server or turn off obfuscation."
-        assert error_message in str(ex.value)
+        assert error_message in ex.value.stdout.decode("utf-8")
         assert "Auto-connect: disabled" in sh.nordvpn.settings()
         daemon.restart()
         assert network.is_disconnected()
@@ -215,7 +215,7 @@ def test_prevent_obfuscate_disable_with_autoconnect_enabled_to_obfuscated_server
         print(ex.value)
         error_message = "We couldn’t turn off obfuscation because your current auto-connect server is obfuscated by default. " \
             + "Set a different server for auto-connect, then turn off obfuscation."
-        assert error_message in str(ex.value)
+        assert error_message in ex.value.stdout.decode("utf-8")
         assert "Obfuscate: enabled" in sh.nordvpn.settings()
 
 
@@ -230,7 +230,7 @@ def test_prevent_autoconnect_enable_to_obfuscated_servers_when_obfuscation_is_of
         sh.nordvpn.set.autoconnect.on(server_name)
     print(ex.value)
     error_message = "Turn on obfuscation to connect to obfuscated servers."
-    assert error_message in str(ex.value)
+    assert error_message in ex.value.stdout.decode("utf-8")
     assert "Auto-connect: disabled" in sh.nordvpn.settings()
 
     daemon.restart()
@@ -258,5 +258,5 @@ def test_prevent_obfuscate_enable_with_autoconnect_set_to_nonobfuscated(tech, pr
         print(ex.value)
         error_message = "We couldn’t turn on obfuscation because the current auto-connect server doesn’t support it. " \
             + "Set a different server for auto-connect to use obfuscation."
-        assert error_message in str(ex.value)
+        assert error_message in ex.value.stdout.decode("utf-8")
         assert "Obfuscate: disabled" in sh.nordvpn.settings()

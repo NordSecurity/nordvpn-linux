@@ -18,6 +18,7 @@ import 'package:nordvpn/settings/security_and_privacy_settings.dart';
 import 'package:nordvpn/settings/settings_home_screen.dart';
 import 'package:nordvpn/settings/threat_protection_settings.dart';
 import 'package:nordvpn/settings/vpn_connection_settings.dart';
+import 'package:nordvpn/snap/snap_screen.dart';
 import 'package:nordvpn/vpn/vpn.dart';
 import 'package:nordvpn/widgets/responsive_scaffold.dart';
 import 'package:nordvpn/widgets/widgets_showcase.dart';
@@ -44,7 +45,8 @@ enum AppRoute {
   login,
   loadingScreen,
   errorScreen,
-  consentScreen;
+  consentScreen,
+  missingSnapPermissions;
 
   @override
   String toString() {
@@ -65,6 +67,7 @@ enum AppRoute {
       AppRoute.loadingScreen => "/loading",
       AppRoute.errorScreen => "/error",
       AppRoute.consentScreen => "/consent",
+      AppRoute.missingSnapPermissions => "/snap",
     };
   }
 }
@@ -100,6 +103,7 @@ List<RouteBase> configureRoutes() {
     _route(AppRoute.errorScreen, const ErrorScreen()),
     _route(AppRoute.login, const LoginScreen()),
     _route(AppRoute.consentScreen, const ConsentScreen()),
+    _route(AppRoute.missingSnapPermissions, const SnapScreen()),
 
     _routeWithAppScaffold(
       RouteMetadata(route: AppRoute.vpn, screen: const VpnWidget()),
