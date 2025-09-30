@@ -11,9 +11,10 @@ if [[ "${CI_COMMIT_TAG:-}" =~ ${VERSION_PATTERN} ]]; then
   VERSION="${CI_COMMIT_TAG}"
 else
   # here add commit id to the version what is set as a last tag or default value
-  VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.1")
+  # VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.1")
   REVISION=$(git rev-parse --short HEAD)
-  VERSION="${VERSION}+${REVISION}"
+  # VERSION="${VERSION}+${REVISION}"
+  VERSION="${VERSION:-$(ls "${WORKDIR}"/contrib/changelog/prod | sed -E 's/_.*//; s/\.md$//' | sort -V | tail -n1)}+${REVISION}"
 fi
 
 # Extract current version number from pubspec.yaml
