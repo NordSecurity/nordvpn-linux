@@ -17,15 +17,15 @@ import (
 const (
 	// Menu item labels
 	labelVPNStatus             = "VPN %s"
-	labelServerPrefix          = "Server: "
-	labelCityPrefix            = "City: "
-	labelCountryPrefix         = "Country: "
+	labelServerPrefix          = "Server:"
+	labelCityPrefix            = "City:"
+	labelCountryPrefix         = "Country:"
 	labelDisconnect            = "Disconnect"
 	labelQuickConnect          = "Quick Connect"
 	labelConnectionSelection   = "Connect to"
 	labelRecentConnections     = "Recent Connections:"
-	labelReconnectTo           = "Reconnect to "
-	labelConnectTo             = "Connect to "
+	labelReconnectTo           = "Reconnect to"
+	labelConnectTo             = "Connect to"
 	labelCountries             = "Countries:"
 	labelActiveGoroutines      = "Active goroutines"
 	labelActiveGoroutinesCount = "Active goroutines: %d"
@@ -57,57 +57,101 @@ const (
 	tooltipSettings            = "Configure application preferences"
 	tooltipNotifications       = "Toggle desktop notifications"
 	tooltipTrayIcon            = "Show or hide tray icon"
+
+	// System messages
+	msgShutdownNotification = "Shutting down norduserd. To restart the process, run the \"nordvpn set tray on\" command."
+
+	// Timeouts
+	dbusWorkaroundDelay = 100 * time.Millisecond
 )
 
+func handleMenuItemClick(item *systray.MenuItem, action func()) {
+	if item == nil || action == nil {
+		return
+	}
+	go func() {
+		for {
+			_, open := <-item.ClickedCh
+			if !open {
+				return
+			}
+			action()
+		}
+	}()
+}
+
+func handleMenuItemClickWithRetry(item *systray.MenuItem, action func() bool) {
+	if item == nil || action == nil {
+		return
+	}
+	go func() {
+		success := false
+		for !success {
+			_, open := <-item.ClickedCh
+			if !open {
+				return
+			}
+			success = action()
+		}
+	}()
+}
+
+func handleCheckboxOption(ti *Instance, item *systray.MenuItem, setter func(bool) bool) {
+	if ti == nil || item == nil || setter == nil {
+		return
+	}
+	go func() {
+		success := false
+		for !success {
+			_, open := <-item.ClickedCh
+			if !open {
+				return
+			}
+			unchecked := !item.Checked()
+			success = setter(unchecked)
+			if success {
+				if unchecked {
+					item.Check()
+				} else {
+					item.Uncheck()
+				}
+			}
+		}
+	}()
+}
+
 func addDebugSection(ti *Instance) {
+	if ti == nil {
+		return
+	}
+	if !ti.debugMode {
+		return
+	}
+
 	systray.AddSeparator()
 	m := systray.AddMenuItem(labelActiveGoroutines, tooltipActiveGoroutines)
 	m.Disable()
 	go func() {
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+
 		for {
 			select {
 			case _, open := <-m.ClickedCh:
 				if !open {
 					return
 				}
-			case <-time.After(1 * time.Second):
+			case <-ticker.C:
 				m.SetTitle(fmt.Sprintf(labelActiveGoroutinesCount, runtime.NumGoroutine()))
 			}
 		}
 	}()
-	mRedraw := systray.AddMenuItem(labelRedraw, tooltipRedraw)
-	go func() {
-		for {
-			_, open := <-mRedraw.ClickedCh
-			if !open {
-				return
-			}
-			ti.redrawChan <- struct{}{}
-		}
-	}()
-	mUpdate := systray.AddMenuItem(labelUpdate, tooltipUpdate)
-	go func() {
-		for {
-			_, open := <-mUpdate.ClickedCh
-			if !open {
-				return
-			}
-			ti.updateChan <- false
-		}
-	}()
-	mUpdateFull := systray.AddMenuItem(labelFullUpdate, tooltipFullUpdate)
-	go func() {
-		for {
-			_, open := <-mUpdateFull.ClickedCh
-			if !open {
-				return
-			}
-			ti.updateChan <- true
-		}
-	}()
 }
 
-func addQuitItem(ti *Instance) {
+func buildQuitButton(ti *Instance) {
+	if ti == nil {
+		return
+	}
 	systray.AddSeparator()
 	m := systray.AddMenuItem(labelQuit, tooltipQuit)
 	m.Enable()
@@ -116,8 +160,8 @@ func addQuitItem(ti *Instance) {
 		if !open {
 			return
 		}
-		log.Printf("%s Shutting down norduserd. To restart the process, run the \"nordvpn set tray on command\".", internal.InfoPrefix)
-		ti.notifyForce("Shutting down norduserd. To restart the process, run the \"nordvpn set tray on command\".")
+		log.Printf("%s %s", internal.InfoPrefix, msgShutdownNotification)
+		ti.notify(Force, msgShutdownNotification)
 		select {
 		case ti.quitChan <- norduser.StopRequest{}:
 		default:
@@ -125,7 +169,14 @@ func addQuitItem(ti *Instance) {
 	}()
 }
 
-func addDaemonErrorSection(ti *Instance) {
+func buildDaemonErrorSection(ti *Instance) {
+	if ti == nil {
+		return
+	}
+	if ti.state.daemonError == "" {
+		return
+	}
+
 	if ti.state.daemonAvailable {
 		systray.AddSeparator()
 	}
@@ -133,270 +184,252 @@ func addDaemonErrorSection(ti *Instance) {
 	mError.Disable()
 }
 
-func addVpnSection(ti *Instance) {
-	addVPNStatusItem(ti)
-
-	if ti.state.vpnStatus == pb.ConnectionState_CONNECTED {
-		addConnectedInfo(ti)
-		addDisconnectButton(ti)
-	} else {
-		addQuickConnectButton(ti)
+func buildConnectionSection(ti *Instance) {
+	if ti == nil {
+		return
+	}
+	if !ti.state.daemonAvailable || !ti.state.loggedIn {
+		return
 	}
 
-	addConnectToItem(ti)
+	buildVPNStatusLabel(ti)
+	if ti.state.vpnStatus == pb.ConnectionState_CONNECTED {
+		buildConnectedToSection(ti)
+		buildDisconnectButton(ti)
+	} else {
+		buildQuickConnectButton(ti)
+	}
+
+	buildConnectToItem(ti)
 	systray.AddSeparator()
 }
 
-func addVPNStatusItem(ti *Instance) {
+func buildVPNStatusLabel(ti *Instance) {
+	if ti == nil {
+		return
+	}
 	status := strings.ToLower(ti.state.vpnStatus.String())
 	label := fmt.Sprintf(labelVPNStatus, status)
 	mStatus := systray.AddMenuItem(label, label)
 	mStatus.Disable()
 }
 
-func addConnectedInfo(ti *Instance) {
+func buildConnectedToSection(ti *Instance) {
+	if ti == nil {
+		return
+	}
+	if ti.state.vpnStatus != pb.ConnectionState_CONNECTED {
+		return
+	}
+
 	if serverName := ti.state.serverName(); serverName != "" {
-		label := labelServerPrefix + serverName
+		label := fmt.Sprintf("%s %s", labelServerPrefix, serverName)
 		mHostname := systray.AddMenuItem(label, label)
 		mHostname.Disable()
 	}
 
 	if ti.state.vpnCity != "" {
-		label := labelCityPrefix + ti.state.vpnCity
+		label := fmt.Sprintf("%s %s", labelCityPrefix, ti.state.vpnCity)
 		mCity := systray.AddMenuItem(label, label)
 		mCity.Disable()
 	}
 
 	if ti.state.vpnCountry != "" {
-		label := labelCountryPrefix + ti.state.vpnCountry
+		label := fmt.Sprintf("%s %s", labelCountryPrefix, ti.state.vpnCountry)
 		mCountry := systray.AddMenuItem(label, label)
 		mCountry.Disable()
 	}
 }
 
-func addDisconnectButton(ti *Instance) {
-	mDisconnect := systray.AddMenuItem(labelDisconnect, labelDisconnect)
-	go handleDisconnectClick(ti, mDisconnect)
+func buildDisconnectButton(ti *Instance) {
+	if ti == nil {
+		return
+	}
+	item := systray.AddMenuItem(labelDisconnect, labelDisconnect)
+	go handleDisconnectClick(ti, item)
 }
 
-func addQuickConnectButton(ti *Instance) {
-	mConnect := systray.AddMenuItem(labelQuickConnect, labelQuickConnect)
-	go handleQuickConnectClick(ti, mConnect)
+func buildQuickConnectButton(ti *Instance) {
+	if ti == nil {
+		return
+	}
+	item := systray.AddMenuItem(labelQuickConnect, labelQuickConnect)
+	go handleQuickConnectClick(ti, item)
 }
 
 func handleDisconnectClick(ti *Instance, item *systray.MenuItem) {
-	for {
-		_, open := <-item.ClickedCh
-		if !open {
-			return
-		}
-		if ti.disconnect() {
-			ti.updateChan <- true
-		}
+	if ti == nil {
+		return
 	}
+	handleMenuItemClick(item, func() { ti.disconnect() })
 }
 
 func handleQuickConnectClick(ti *Instance, item *systray.MenuItem) {
-	for {
-		_, open := <-item.ClickedCh
-		if !open {
-			return
-		}
-		if ti.connect("", "") {
-			ti.updateChan <- true
-		}
+	if ti == nil {
+		return
 	}
+	handleMenuItemClick(item, func() { ti.connect("", "") })
 }
 
-func addConnectToItem(ti *Instance) {
+func handleLogoutClick(ti *Instance, item *systray.MenuItem) {
+	if ti == nil {
+		return
+	}
+	handleMenuItemClickWithRetry(item, func() bool { return ti.logout(false) })
+}
+
+func handleLoginClick(ti *Instance, item *systray.MenuItem) {
+	if ti == nil {
+		return
+	}
+	handleMenuItemClick(item, func() { ti.login() })
+}
+
+func buildConnectToItem(ti *Instance) {
+	if ti == nil {
+		return
+	}
+
 	connectionSelector := systray.AddMenuItem(labelConnectionSelection, tooltipConnectionSelection)
-
-	ti.state.mu.RLock()
 	countries := append([]string(nil), ti.state.connSelector.countries...)
-	ti.state.mu.RUnlock()
+	recentConnections := ti.recentConnections.GetRecentConnections()
 
-	recentConnections := fetchRecentConnections(ti)
 	if len(recentConnections) > 0 {
-		addRecentConnectionsSection(ti, connectionSelector, recentConnections)
-		connectionSelector.AddSeparator()
+		buildRecentConnectionsSection(ti, connectionSelector, recentConnections)
 	}
 
-	addCountriesSection(ti, connectionSelector, countries)
+	buildCountriesSection(ti, connectionSelector, countries)
 }
 
-func addRecentConnectionsSection(
+func buildRecentConnectionsSection(
 	ti *Instance,
 	parent *systray.MenuItem,
-	connections []*pb.RecentConnectionModel,
+	connections []RecentConnection,
 ) {
+	if ti == nil || parent == nil {
+		return
+	}
 	parent.AddSubMenuItem(labelRecentConnections, tooltipRecentConnections).Disable()
 	for _, conn := range connections {
-		if conn == nil {
-			continue
-		}
-
-		displayLabel := makeDisplayLabel(conn)
+		displayLabel := makeDisplayLabel(&conn)
 		if displayLabel == "" {
 			continue
 		}
 
-		tooltip := labelReconnectTo + displayLabel
+		tooltip := fmt.Sprintf("%s %s", labelReconnectTo, displayLabel)
 		item := parent.AddSubMenuItem(displayLabel, tooltip)
 
-		go handleRecentConnectionClick(ti, item, conn)
+		go handleRecentConnectionClick(ti, item, &conn)
 	}
 }
 
-func addCountriesSection(
-	ti *Instance,
-	parent *systray.MenuItem,
-	countries []string,
-) {
+func buildCountriesSection(ti *Instance, parent *systray.MenuItem, countries []string) {
+	if ti == nil || parent == nil {
+		return
+	}
 	parent.AddSubMenuItem(labelCountries, tooltipCountries).Disable()
 	for _, country := range countries {
 		title := strings.ReplaceAll(country, "_", " ")
-		tooltip := labelConnectTo + country
+		tooltip := fmt.Sprintf("%s %s", labelConnectTo, country)
 		item := parent.AddSubMenuItem(title, tooltip)
 
 		go handleCountryClick(ti, item, country)
 	}
 }
 
-func handleRecentConnectionClick(
-	ti *Instance,
-	item *systray.MenuItem,
-	model *pb.RecentConnectionModel,
-) {
-	for {
-		_, open := <-item.ClickedCh
-		if !open {
-			return
-		}
-
-		success := connectByConnectionModel(ti, model)
-		if success {
-			ti.updateChan <- true
-		}
+func handleRecentConnectionClick(ti *Instance, item *systray.MenuItem, model *RecentConnection) {
+	if ti == nil || model == nil {
+		return
 	}
+	handleMenuItemClick(item, func() { connectByConnectionModel(ti, model) })
 }
 
 func handleCountryClick(ti *Instance, item *systray.MenuItem, country string) {
-	for {
-		_, open := <-item.ClickedCh
-		if !open {
-			return
-		}
-
-		success := ti.connect(country, "")
-		if success {
-			ti.updateChan <- true
-		}
+	if ti == nil {
+		return
 	}
+	handleMenuItemClick(item, func() { ti.connect(country, "") })
 }
 
-func addAccountSection(ti *Instance) {
-	systray.AddSeparator()
+func buildAccountSection(ti *Instance) {
+	if ti == nil {
+		return
+	}
+	if !ti.state.daemonAvailable {
+		return
+	}
 
+	systray.AddSeparator()
 	if ti.state.loggedIn {
 		if ti.state.accountName != "" {
 			m := systray.AddMenuItem(labelLoggedInAs, tooltipLoggedInAs)
 			m.Disable()
 
-			mName := systray.AddMenuItem(ti.state.accountName, ti.state.accountName)
-			mName.Disable()
+			item := systray.AddMenuItem(ti.state.accountName, ti.state.accountName)
+			item.Disable()
 		}
 
-		mLogout := systray.AddMenuItem(labelLogOut, tooltipLogOut)
-
-		go func() {
-			success := false
-			for !success {
-				_, open := <-mLogout.ClickedCh
-				if !open {
-					return
-				}
-				success = ti.logout(false)
-			}
-			ti.updateChan <- true
-		}()
-	} else {
-		m := systray.AddMenuItem(labelNotLoggedIn, tooltipNotLoggedIn)
-		m.Disable()
-
-		mLogin := systray.AddMenuItem(labelLogIn, tooltipLogIn)
-
-		go func() {
-			for {
-				_, open := <-mLogin.ClickedCh
-				if !open {
-					return
-				}
-				ti.login()
-			}
-		}()
+		item := systray.AddMenuItem(labelLogOut, tooltipLogOut)
+		go handleLogoutClick(ti, item)
+		return
 	}
+
+	loginTitle := systray.AddMenuItem(labelNotLoggedIn, tooltipNotLoggedIn)
+	loginTitle.Disable()
+
+	item := systray.AddMenuItem(labelLogIn, tooltipLogIn)
+	go handleLoginClick(ti, item)
 }
 
-func addSettingsSection(ti *Instance) {
-	mSettings := systray.AddMenuItem(labelSettings, tooltipSettings)
+func buildSettingsSection(ti *Instance) {
+	if ti == nil {
+		return
+	}
+	if !ti.state.daemonAvailable {
+		return
+	}
+
+	item := systray.AddMenuItem(labelSettings, tooltipSettings)
 	// Workaround over the dbus issue described here: https://github.com/fyne-io/systray/issues/12
 	// (It affects not only XFCE, but also other desktop environments.)
-	time.AfterFunc(100*time.Millisecond, func() { addSettingsSubitems(ti, mSettings) })
+	time.AfterFunc(dbusWorkaroundDelay, func() { buildSettingsSubitems(ti, item) })
 }
 
-func addSettingsSubitems(ti *Instance, mSettings *systray.MenuItem) {
+func buildSettingsSubitems(ti *Instance, menu *systray.MenuItem) {
+	if ti == nil || menu == nil {
+		return
+	}
 	ti.state.mu.RLock()
-	mNotifications := mSettings.AddSubMenuItemCheckbox(
-		labelNotifications,
-		tooltipNotifications,
-		ti.state.notificationsStatus == Enabled,
-	)
-	mTray := mSettings.AddSubMenuItemCheckbox(
-		labelTrayIcon,
-		tooltipTrayIcon,
-		ti.state.trayStatus == Enabled,
-	)
+	notificationsEnabled := ti.state.notificationsStatus == Enabled
+	trayEnabled := ti.state.trayStatus == Enabled
 	ti.state.mu.RUnlock()
 
-	go func() {
-		success := false
-		for !success {
-			_, open := <-mNotifications.ClickedCh
-			if !open {
-				return
-			}
-			action := !mNotifications.Checked()
-			success = ti.setNotify(action)
-			if success {
-				if action {
-					mNotifications.Check()
-				} else {
-					mNotifications.Uncheck()
-				}
-			}
-		}
-		ti.updateChan <- true
-	}()
+	notificationsCheckbox := menu.AddSubMenuItemCheckbox(
+		labelNotifications,
+		tooltipNotifications,
+		notificationsEnabled,
+	)
+	trayCheckbox := menu.AddSubMenuItemCheckbox(
+		labelTrayIcon,
+		tooltipTrayIcon,
+		trayEnabled,
+	)
 
-	go func() {
-		success := false
-		for !success {
-			_, open := <-mTray.ClickedCh
-			if !open {
-				return
-			}
-			action := !mTray.Checked()
-			success = ti.setTray(action)
-			if success {
-				if action {
-					mTray.Check()
-				} else {
-					mTray.Uncheck()
-				}
-			}
-		}
-		ti.updateChan <- true
-	}()
-
+	go handleNotificationsOption(ti, notificationsCheckbox)
+	go handleTrayOption(ti, trayCheckbox)
 	systray.Refresh()
+}
+
+func handleTrayOption(ti *Instance, item *systray.MenuItem) {
+	if ti == nil {
+		return
+	}
+	handleCheckboxOption(ti, item, func(flag bool) bool { return ti.setTray(flag) })
+}
+
+func handleNotificationsOption(ti *Instance, item *systray.MenuItem) {
+	if ti == nil {
+		return
+	}
+	handleCheckboxOption(ti, item, func(flag bool) bool { return ti.setNotify(flag) })
 }
