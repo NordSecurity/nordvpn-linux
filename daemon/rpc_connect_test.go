@@ -448,10 +448,11 @@ func TestRpcConnect_RecentConnections(t *testing.T) {
 			name:      "Country connection adds to recent",
 			serverTag: "germany",
 			expectedRecentConn: &recents.Model{
-				Country:        "Germany",
-				CountryCode:    "DE",
-				ConnectionType: config.ServerSelectionRule_COUNTRY,
-				Group:          config.ServerGroup_UNDEFINED,
+				Country:            "Germany",
+				CountryCode:        "DE",
+				ConnectionType:     config.ServerSelectionRule_COUNTRY,
+				Group:              config.ServerGroup_UNDEFINED,
+				ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
 			},
 			shouldAddToRecent: true,
 		},
@@ -459,11 +460,12 @@ func TestRpcConnect_RecentConnections(t *testing.T) {
 			name:      "City connection adds to recent",
 			serverTag: "germany berlin",
 			expectedRecentConn: &recents.Model{
-				Country:        "Germany",
-				CountryCode:    "DE",
-				City:           "Berlin",
-				ConnectionType: config.ServerSelectionRule_CITY,
-				Group:          config.ServerGroup_UNDEFINED,
+				Country:            "Germany",
+				CountryCode:        "DE",
+				City:               "Berlin",
+				ConnectionType:     config.ServerSelectionRule_CITY,
+				Group:              config.ServerGroup_UNDEFINED,
+				ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
 			},
 			shouldAddToRecent: true,
 		},
@@ -473,11 +475,11 @@ func TestRpcConnect_RecentConnections(t *testing.T) {
 			expectedRecentConn: &recents.Model{
 				Country:            "Germany",
 				CountryCode:        "DE",
-				City:               "Berlin",
 				SpecificServer:     "de3",
 				SpecificServerName: "Germany #3",
 				ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER,
 				Group:              config.ServerGroup_UNDEFINED,
+				ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
 			},
 			shouldAddToRecent: true,
 		},
@@ -485,10 +487,10 @@ func TestRpcConnect_RecentConnections(t *testing.T) {
 			name:        "Group connection adds to recent",
 			serverGroup: "P2P",
 			expectedRecentConn: &recents.Model{
-				// When connecting to a group, we still connect to a specific server
-				// The actual country/city/server details will be populated from the selected server
-				Group:          config.ServerGroup_P2P,
-				ConnectionType: config.ServerSelectionRule_GROUP,
+				// Group connections only store the group, no geographic data
+				Group:              config.ServerGroup_P2P,
+				ConnectionType:     config.ServerSelectionRule_GROUP,
+				ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
 			},
 			shouldAddToRecent: true,
 		},
@@ -503,10 +505,11 @@ func TestRpcConnect_RecentConnections(t *testing.T) {
 			serverTag:   "germany",
 			serverGroup: "P2P",
 			expectedRecentConn: &recents.Model{
-				Country:        "Germany",
-				CountryCode:    "DE",
-				Group:          config.ServerGroup_P2P,
-				ConnectionType: config.ServerSelectionRule_COUNTRY_WITH_GROUP,
+				Country:            "Germany",
+				CountryCode:        "DE",
+				Group:              config.ServerGroup_P2P,
+				ConnectionType:     config.ServerSelectionRule_COUNTRY_WITH_GROUP,
+				ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
 			},
 			shouldAddToRecent: true,
 		},
@@ -515,11 +518,11 @@ func TestRpcConnect_RecentConnections(t *testing.T) {
 			serverTag:   "germany berlin",
 			serverGroup: "P2P",
 			expectedRecentConn: &recents.Model{
-				Country:        "Germany",
-				CountryCode:    "DE",
-				City:           "Berlin",
-				Group:          config.ServerGroup_P2P,
-				ConnectionType: config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
+				Country:            "Germany",
+				CountryCode:        "DE",
+				Group:              config.ServerGroup_P2P,
+				ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
+				ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
 			},
 			shouldAddToRecent: true,
 		},
@@ -555,16 +558,9 @@ func TestRpcConnect_RecentConnections(t *testing.T) {
 				assert.Equal(t, test.expectedRecentConn.ConnectionType, recent.ConnectionType)
 				assert.Equal(t, test.expectedRecentConn.Group, recent.Group)
 
-				if test.expectedRecentConn.ConnectionType != config.ServerSelectionRule_GROUP {
-					assert.Equal(t, test.expectedRecentConn.Country, recent.Country)
-					assert.Equal(t, test.expectedRecentConn.CountryCode, recent.CountryCode)
-					assert.Equal(t, test.expectedRecentConn.City, recent.City)
-				} else {
-					assert.NotEmpty(t, recent.Country, "Country should be populated from selected server")
-					assert.NotEmpty(t, recent.CountryCode, "CountryCode should be populated from selected server")
-					assert.NotEmpty(t, recent.SpecificServer, "SpecificServer should be populated")
-					assert.NotEmpty(t, recent.SpecificServerName, "SpecificServerName should be populated")
-				}
+				assert.Equal(t, test.expectedRecentConn.Country, recent.Country)
+				assert.Equal(t, test.expectedRecentConn.CountryCode, recent.CountryCode)
+				assert.Equal(t, test.expectedRecentConn.City, recent.City)
 
 				if test.expectedRecentConn.SpecificServer != "" {
 					assert.Equal(t, test.expectedRecentConn.SpecificServer, recent.SpecificServer)

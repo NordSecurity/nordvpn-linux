@@ -2,7 +2,9 @@ package cli
 
 import (
 	"context"
+	"errors"
 
+	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 
@@ -33,6 +35,8 @@ func (c *cmd) SetDefaults(ctx *cli.Context) error {
 		return formatError(ErrConfig)
 	case internal.CodeSuccess:
 		color.Green(SetDefaultsSuccess)
+	case internal.CodeCleanRecentConnectionError:
+		return formatError(errors.New(client.RecentConnectionErrorMessage))
 	}
 	return nil
 }

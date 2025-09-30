@@ -57,7 +57,7 @@ func (s *StatePublisher) NotifyChangeState(e events.DataConnectChangeNotif) erro
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Printf(internal.DebugPrefix+" notifying about data connect change event: %+v", e)
+	log.Printf(internal.InfoPrefix+" notifying about data connect change event: %+v", e)
 	s.notify(e)
 	return nil
 }
@@ -75,7 +75,7 @@ func (s *StatePublisher) NotifyLogin(e events.DataAuthorization) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Println(internal.DebugPrefix, "notifying about login event")
+	log.Println(internal.InfoPrefix, "notifying about login event")
 	s.notifyLoginLogout(e.EventStatus, pb.LoginEventType_LOGIN)
 
 	return nil
@@ -85,7 +85,7 @@ func (s *StatePublisher) NotifyLogout(e events.DataAuthorization) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Println(internal.DebugPrefix, "notifying about logout event")
+	log.Println(internal.InfoPrefix, "notifying about logout event")
 	s.notifyLoginLogout(e.EventStatus, pb.LoginEventType_LOGOUT)
 	return nil
 }
@@ -98,7 +98,7 @@ func (s *StatePublisher) NotifyConfigChanged(e config.DataConfigChange) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Println(internal.DebugPrefix, "notifying about config change:", e.Caller)
+	log.Println(internal.InfoPrefix, "notifying about config change:", e.Caller)
 
 	s.notify(e.Config)
 
@@ -109,7 +109,7 @@ func (s *StatePublisher) NotifyServersListUpdate(any) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Println(internal.DebugPrefix, "notifying about servers list update")
+	log.Println(internal.InfoPrefix, "notifying about servers list update")
 	s.notify(pb.UpdateEvent_SERVERS_LIST_UPDATE)
 
 	return nil
@@ -119,8 +119,18 @@ func (s *StatePublisher) NotifySubscriptionChanged(e *pb.AccountModification) er
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Println(internal.DebugPrefix, "notifying about subscription update")
+	log.Println(internal.InfoPrefix, "notifying about subscription update")
 	s.notify(e)
+
+	return nil
+}
+
+func (s *StatePublisher) NotifyVersionHealth(healthStatus *pb.VersionHealthStatus) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	log.Printf(internal.InfoPrefix+"notifying about version health change: status_code=%d\n", healthStatus.StatusCode)
+	s.notify(healthStatus)
 
 	return nil
 }

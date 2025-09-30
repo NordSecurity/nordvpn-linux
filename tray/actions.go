@@ -24,8 +24,8 @@ import (
 func (ti *Instance) login() {
 	resp, err := ti.client.IsLoggedIn(context.Background(), &pb.Empty{})
 	if err != nil {
-		ti.notify("Login failed")
 		log.Println(internal.ErrorPrefix, "Failed to login:", err)
+		ti.notify(NoForce, "Login failed")
 		return
 	}
 	if resp.Status == pb.LoginStatus_CONSENT_MISSING {
@@ -35,7 +35,7 @@ func (ti *Instance) login() {
 	}
 
 	if resp.GetIsLoggedIn() {
-		ti.notify("You are already logged in")
+		ti.notify(NoForce, "You are already logged in")
 		return
 	}
 
@@ -46,22 +46,22 @@ func (ti *Instance) login() {
 		},
 	)
 	if err != nil {
-		ti.notify("Login error: %s", err)
+		ti.notify(NoForce, "Login error: %s", err)
 		return
 	}
 
 	switch loginResp.Status {
 	case pb.LoginStatus_UNKNOWN_OAUTH2_ERROR:
-		ti.notify("Login error: %s", internal.ErrUnhandled)
+		ti.notify(NoForce, "Login error: %s", internal.ErrUnhandled)
 	case pb.LoginStatus_NO_NET:
-		ti.notify(internal.ErrNoNetWhenLoggingIn.Error())
+		ti.notify(NoForce, internal.ErrNoNetWhenLoggingIn.Error())
 	case pb.LoginStatus_ALREADY_LOGGED_IN:
-		ti.notify(internal.ErrAlreadyLoggedIn.Error())
+		ti.notify(NoForce, internal.ErrAlreadyLoggedIn.Error())
 	case pb.LoginStatus_CONSENT_MISSING:
 		// NOTE: This should never happen, because analytics consent is
 		// triggered above, so at this point it should already be completed.
-		ti.notify(internal.ErrAnalyticsConsentMissing.Error())
 		log.Println(internal.ErrorPrefix, "analytics consent should be already completed at this point")
+		ti.notify(NoForce, internal.ErrAnalyticsConsentMissing.Error())
 	case pb.LoginStatus_SUCCESS:
 		if url := loginResp.Url; url != "" {
 			// #nosec G204 -- user input is not passed in
@@ -70,7 +70,7 @@ func (ti *Instance) login() {
 			if err != nil {
 				log.Println(internal.ErrorPrefix, "Failed to open login webpage:", err)
 				// we want to force a notification here, otherwise there will be no reaction to user action
-				ti.notifyForce("Continue log in in the browser: %s", url)
+				ti.notify(Force, "Continue log in in the browser: %s", url)
 			}
 		}
 	}
@@ -109,7 +109,7 @@ func (ti *Instance) logout(persistToken bool) bool {
 		PersistToken: persistToken,
 	})
 	if err != nil {
-		ti.notify("Logout error: %s", err)
+		ti.notify(NoForce, "Logout error: %s", err)
 		return false
 	}
 
@@ -119,7 +119,7 @@ func (ti *Instance) logout(persistToken bool) bool {
 	case internal.CodeTokenInvalidated:
 		return true
 	default:
-		ti.notify(cli.CheckYourInternetConnMessage)
+		ti.notify(NoForce, cli.CheckYourInternetConnMessage)
 		return false
 	}
 }
@@ -132,7 +132,7 @@ func (ti *Instance) notifyServiceExpired(url string, trustedPassURL string, mess
 		link = fmt.Sprintf(trustedPassURL, resp.TrustedPassToken, resp.TrustedPassOwnerId)
 	}
 
-	ti.notifyForce(message, link)
+	ti.notify(Force, message, link)
 }
 
 func (ti *Instance) connect(serverTag string, serverGroup string) bool {
@@ -151,7 +151,7 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 		ServerGroup: serverGroup,
 	})
 	if err != nil {
-		ti.notify("Connect error: %s", err)
+		ti.notify(NoForce, "Connect error: %s", err)
 		return false
 	}
 
@@ -161,39 +161,39 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 			if err == io.EOF {
 				break
 			}
-			ti.notify("Connect error: %s", err)
+			ti.notify(NoForce, "Connect error: %s", err)
 			return false
 		}
 
 		switch out.Type {
 		case internal.CodeFailure:
-			ti.notify("Connect error: %s", nordclient.ConnectCantConnect)
+			ti.notify(NoForce, "Connect error: %s", nordclient.ConnectCantConnect)
 		case internal.CodeExpiredRenewToken:
-			ti.notify(nordclient.RelogRequest)
+			ti.notify(NoForce, nordclient.RelogRequest)
 			ti.login()
 			return ti.connect(serverTag, serverGroup)
 		case internal.CodeTokenRenewError:
-			ti.notify(nordclient.AccountTokenRenewError)
+			ti.notify(NoForce, nordclient.AccountTokenRenewError)
 		case internal.CodeAccountExpired:
 			ti.notifyServiceExpired(client.SubscriptionURL, client.SubscriptionURLLogin, cli.ExpiredAccountMessage)
 		case internal.CodeDedicatedIPRenewError:
 			ti.notifyServiceExpired(client.SubscriptionDedicatedIPURL, client.SubscriptionDedicatedIPURLLogin, cli.NoDedicatedIPMessage)
 		case internal.CodeDisconnected:
-			ti.notify(fmt.Sprintf(client.ConnectCanceled, internal.StringsToInterfaces(out.Data)...))
+			ti.notify(NoForce, client.ConnectCanceled, internal.StringsToInterfaces(out.Data)...)
 		case internal.CodeTagNonexisting:
-			ti.notify(internal.TagNonexistentErrorMessage)
+			ti.notify(NoForce, internal.TagNonexistentErrorMessage)
 		case internal.CodeGroupNonexisting:
-			ti.notify(internal.GroupNonexistentErrorMessage)
+			ti.notify(NoForce, internal.GroupNonexistentErrorMessage)
 		case internal.CodeServerUnavailable:
-			ti.notify(internal.ServerUnavailableErrorMessage)
+			ti.notify(NoForce, internal.ServerUnavailableErrorMessage)
 		case internal.CodeDoubleGroupError:
-			ti.notify(internal.DoubleGroupErrorMessage)
+			ti.notify(NoForce, internal.DoubleGroupErrorMessage)
 		case internal.CodeVPNRunning:
-			ti.notify(nordclient.ConnectConnected)
+			ti.notify(NoForce, nordclient.ConnectConnected)
 		case internal.CodeNothingToDo:
-			ti.notify(nordclient.ConnectConnecting)
+			ti.notify(NoForce, nordclient.ConnectConnecting)
 		case internal.CodeUFWDisabled:
-			ti.notify(nordclient.UFWDisabledMessage)
+			ti.notify(NoForce, nordclient.UFWDisabledMessage)
 		case internal.CodeConnecting:
 		case internal.CodeConnected:
 			return true
@@ -206,7 +206,7 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 func (ti *Instance) disconnect() bool {
 	resp, err := ti.client.Disconnect(context.Background(), &pb.Empty{})
 	if err != nil {
-		ti.notify("Disconnect error: %s", err)
+		ti.notify(NoForce, "Disconnect error: %s", err)
 		return false
 	}
 
@@ -216,13 +216,14 @@ func (ti *Instance) disconnect() bool {
 			if err == io.EOF {
 				break
 			}
-			ti.notify("Disconnect error: %s", err)
+			ti.notify(NoForce, "Disconnect error: %s", err)
 			return false
 		}
 
 		switch out.Type {
 		case internal.CodeVPNNotRunning:
-			ti.notify(cli.DisconnectNotConnected)
+			ti.notify(NoForce, cli.DisconnectNotConnected)
+			return false
 		case internal.CodeDisconnected:
 		}
 	}
@@ -239,14 +240,14 @@ func (ti *Instance) setNotify(flag bool) bool {
 	})
 	if err != nil {
 		log.Printf("%s Setting notifications %s error: %s", internal.ErrorPrefix, flagText, err)
-		ti.notify("Setting notifications %s error: %s", flagText, err)
+		ti.notify(NoForce, "Setting notifications %s error: %s", flagText, err)
 		return false
 	}
 
 	switch resp.Type {
 	case internal.CodeConfigError:
 		log.Printf("%s Setting notifications %s error: %s", internal.ErrorPrefix, flagText, "Config file error")
-		ti.notify("Setting notifications %s error: %s", flagText, "Config file error")
+		ti.notify(NoForce, "Setting notifications %s error: %s", flagText, "Config file error")
 		return false
 	case internal.CodeNothingToDo:
 	case internal.CodeSuccess:
@@ -258,7 +259,7 @@ func (ti *Instance) setNotify(flag bool) bool {
 	}
 
 	if resp.Type == internal.CodeNothingToDo {
-		ti.notify("Notifications already %s", flagText)
+		ti.notify(NoForce, "Notifications already %s", flagText)
 	}
 
 	return true
@@ -272,7 +273,7 @@ func (ti *Instance) setTray(flag bool) bool {
 
 	if !flag {
 		log.Printf("%s Tray icon disabled. To enable it again, run the \"nordvpn set tray on command\".", internal.InfoPrefix)
-		ti.notifyForce("Tray icon disabled. To enable it again, run the \"nordvpn set tray on command\".")
+		ti.notify(Force, "Tray icon disabled. To enable it again, run the \"nordvpn set tray on command\".")
 	}
 
 	resp, err := ti.client.SetTray(context.Background(), &pb.SetTrayRequest{
@@ -281,17 +282,17 @@ func (ti *Instance) setTray(flag bool) bool {
 	})
 	if err != nil {
 		log.Printf("%s Setting tray %s error: %s", internal.ErrorPrefix, flagText, err)
-		ti.notify("Setting tray %s error: %s", flagText, err)
+		ti.notify(NoForce, "Setting tray %s error: %s", flagText, err)
 		return false
 	}
 
 	switch resp.Type {
 	case internal.CodeConfigError:
 		log.Printf("%s Setting tray %s error: %s", internal.ErrorPrefix, flagText, "Config file error")
-		ti.notify("Setting tray %s error: %s", flagText, "Config file error")
+		ti.notify(NoForce, "Setting tray %s error: %s", flagText, "Config file error")
 		return false
 	case internal.CodeNothingToDo:
-		ti.notify("Tray already %s", flagText)
+		ti.notify(NoForce, "Tray already %s", flagText)
 	case internal.CodeSuccess:
 	}
 
