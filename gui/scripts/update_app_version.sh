@@ -10,9 +10,10 @@ if [[ "${CI_COMMIT_TAG:-}" =~ ${VERSION_PATTERN} ]]; then
   # in this case expecting version to be e.g. 1.2.3
   VERSION="${CI_COMMIT_TAG}"
 else
-  # here add commit id to the version what is set as a last tag or default value
   REVISION=$(git rev-parse --short HEAD)
-  VERSION="$(ls "${WORKDIR}"/contrib/changelog/prod | sed -E 's/_.*//; s/\.md$//' | sort -V | tail -n1)+${REVISION}"
+  # use most recent core-app changelog version, fallback to 0.0.1 if no changelog file present (which should not happen)
+  CHANGELOG_VERSION=$(ls "${WORKDIR}"/contrib/changelog/prod 2>/dev/null | sed -E 's/_.*//; s/\.md$//' | sort -V | tail -n1)
+  VERSION="${CHANGELOG_VERSION:-0.0.1}+${REVISION}"
 fi
 
 # Extract current version number from pubspec.yaml
