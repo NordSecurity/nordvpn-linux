@@ -549,8 +549,6 @@ func main() {
 
 	dataUpdateEvents := daemonevents.NewDataUpdateEvents()
 	dataUpdateEvents.Subscribe(statePublisher)
-	dataUpdateEvents.RecentsUpdate.Subscribe(statePublisher.NotifyRecentsChanged)
-	dataUpdateEvents.RecentsUpdate.Subscribe(statePublisher.NotifyRecentsChanged)
 	dm := daemon.NewDataManager(
 		daemon.InsightsFilePath,
 		daemon.ServersDataFilePath,

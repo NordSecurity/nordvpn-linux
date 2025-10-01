@@ -23,7 +23,7 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, er
 	})
 
 	if err := r.recentVPNConnStore.Clean(); err != nil {
-		log.Printf("%s %s failed to clean recent connections on logout: %v", "[rpc]", internal.WarningPrefix, err)
+		log.Printf("%s [rpc] failed to clean recent connections on logout: %v\n", internal.WarningPrefix, err)
 	}
 
 	if result.Status == 0 {

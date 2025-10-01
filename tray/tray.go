@@ -212,7 +212,7 @@ func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
 		changed = ti.updateDaemonConnectionStatus(internal.ErrDaemonConnectionRefused.Error())
 
 	case *pb.AppState_ConnectionStatus:
-		log.Println("new connection status:", st.ConnectionStatus.GetState())
+		log.Printf("%s %s New connection status: %s\n", logTag, internal.InfoPrefix, st.ConnectionStatus.GetState())
 		vpnStatusChanged := ti.updateVpnStatus()
 		recentConnectionsChanged := ti.updateRecentConnections()
 		changed = vpnStatusChanged || recentConnectionsChanged
