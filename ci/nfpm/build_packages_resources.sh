@@ -86,3 +86,39 @@ mv "${WORKDIR}"/*."${PKG_TO_BUILD}" "${APP_DIR}/${PKG_TO_BUILD}"
 
 # remove leftovers
 rm -rf "${BASEDIR}"
+
+# TODO (LVPN-9228) remove usage of ENABLE_GUI_BUILD variable, once the way of building is unified
+# Only build GUI package if GUI build is enabled and the architecture supports Flutter
+if [[ -n "${ENABLE_GUI_BUILD:-}" && -n "${ARCHS_FLUTTER[$ARCH]:-}" ]]; then
+  echo "Building GUI package for Flutter-supported architecture: $ARCH (GUI build)"
+  
+  cleanup() {
+    local file="${WORKDIR}/gui/pubspec.yaml"
+    if [ -f "${file}.bak" ]; then
+      mv -f "${file}.bak" "${file}"
+      echo "Reverted changes to ${file}"
+    fi
+  }
+  trap cleanup EXIT ERR INT TERM
+
+  # Build GUI package using the existing GUI build script
+  # Set auxiliary environment variables for the GUI script
+  export SKIP_DIST_CLEAN="true"  # Don't clean dist dir since we're integrating
+  export CUSTOM_SOURCE_DIR="${WORKDIR}/bin/${ARCH}/gui"  # Use our built GUI binaries
+
+  # Convert aarch64 to arm64 for GUI script compatibility
+  GUI_ARCH="${ARCH}"
+  if [[ "${ARCH}" == "aarch64" ]]; then
+    GUI_ARCH="arm64"
+  fi
+
+  # Set the parameters the sourced script expects
+  set -- release "${PKG_TO_BUILD}" "${GUI_ARCH}"
+
+  # Source the GUI build script (this will run in current directory context)
+  # shellcheck disable=SC1091
+  (cd gui && source scripts/build_package.sh)
+
+  # Move the generated GUI package to the expected location
+  mv gui/dist/"${PKG_TO_BUILD}"/*."${PKG_TO_BUILD}" "${APP_DIR}/${PKG_TO_BUILD}/"
+fi

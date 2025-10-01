@@ -34,7 +34,7 @@ homepage: ${PKG_HOMEPAGE}
 license: GPL-3.0
 
 # Changelog YAML file, see: https://github.com/goreleaser/chglog
-changelog: "dist/changelog.yml"
+changelog: "${WORKDIR}/dist/changelog.yml"
 
 # Disables globbing for files, config_files, etc.
 disable_globbing: true
@@ -56,7 +56,7 @@ contents:
       mode: 0644
 
   # app icon
-  - src: linux/assets/${NAME}.svg
+  - src: ${WORKDIR}/gui/linux/assets/${NAME}.svg
     dst: /usr/share/icons/hicolor/scalable/apps/${NAME}.svg
     file_info:
       mode: 0644
