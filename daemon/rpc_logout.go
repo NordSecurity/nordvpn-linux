@@ -2,9 +2,11 @@ package daemon
 
 import (
 	"context"
+	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/access"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, error) {
@@ -19,6 +21,10 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, er
 		PersistToken:                 in.GetPersistToken(),
 		DisconnectFunc:               r.DoDisconnect,
 	})
+
+	if err := r.recentVPNConnStore.Clean(); err != nil {
+		log.Printf("%s [rpc] failed to clean recent connections on logout: %v\n", internal.WarningPrefix, err)
+	}
 
 	if result.Status == 0 {
 		return nil, result.Err

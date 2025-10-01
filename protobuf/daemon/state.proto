@@ -22,6 +22,7 @@ enum LoginEventType {
 
 enum UpdateEvent {
     SERVERS_LIST_UPDATE = 0;
+    RECENTS_LIST_UPDATE = 1;
 }
 
 message AccountModification {

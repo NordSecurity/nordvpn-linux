@@ -133,6 +133,7 @@ func (r *RecentConnectionsStore) save(values []Model) error {
 	if err := r.fsHandle.WriteFile(r.path, data, internal.PermUserRW); err != nil {
 		return fmt.Errorf("writing vpn connections store: %w", err)
 	}
+
 	return nil
 }
 

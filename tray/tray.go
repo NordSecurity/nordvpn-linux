@@ -57,11 +57,12 @@ func (ai *accountInfo) reset() {
 }
 
 type ConnectionSelector struct {
-	mu        sync.RWMutex
-	countries []string
+	mu               sync.RWMutex
+	countries        []string
+	specialtyServers []string
 }
 
-func (cp *ConnectionSelector) listCountries(client pb.DaemonClient) ([]string, error) {
+func (cp *ConnectionSelector) fetchCountries(client pb.DaemonClient) ([]string, error) {
 	resp, err := client.Countries(context.Background(), &pb.Empty{})
 	if err != nil {
 		return nil, err
@@ -70,9 +71,24 @@ func (cp *ConnectionSelector) listCountries(client pb.DaemonClient) ([]string, e
 
 	cp.mu.Lock()
 	cp.countries = result
-	out := slices.Clone(cp.countries)
 	cp.mu.Unlock()
-	return out, nil
+
+	return slices.Clone(cp.countries), nil
+}
+
+func (cp *ConnectionSelector) fetchSpecialtyServers(client pb.DaemonClient) ([]string, error) {
+	resp, err := client.Groups(context.Background(), &pb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+
+	result := sortedConnections(resp.Servers)
+
+	cp.mu.Lock()
+	cp.specialtyServers = result
+	cp.mu.Unlock()
+
+	return slices.Clone(cp.specialtyServers), nil
 }
 
 func sortedConnections(sgs []*pb.ServerGroup) []string {
@@ -126,6 +142,7 @@ type trayState struct {
 	vpnCity               string
 	vpnCountry            string
 	vpnVirtualLocation    bool
+	initialSyncCompleted  bool
 	connSelector          ConnectionSelector
 	mu                    sync.RWMutex
 }
@@ -188,25 +205,23 @@ func (ti *Instance) configureDebugMode() {
 }
 
 func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
+	changed := false
 	switch st := item.GetState().(type) {
 	case *pb.AppState_Error:
 		log.Printf("%s %s Received daemon error state\n", logTag, internal.ErrorPrefix)
-		changed := ti.updateDaemonConnectionStatus(internal.ErrDaemonConnectionRefused.Error())
-		ti.redraw(changed)
+		changed = ti.updateDaemonConnectionStatus(internal.ErrDaemonConnectionRefused.Error())
 
 	case *pb.AppState_ConnectionStatus:
-		log.Println(logTag, "Received connection status event")
-		changed := ti.updateVpnStatus()
-		ti.redraw(changed)
-		ti.updateRecentConnections()
+		log.Printf("%s %s New connection status: %s\n", logTag, internal.InfoPrefix, st.ConnectionStatus.GetState())
+		vpnStatusChanged := ti.updateVpnStatus()
+		recentConnectionsChanged := ti.updateRecentConnections()
+		changed = vpnStatusChanged || recentConnectionsChanged
 
 	case *pb.AppState_LoginEvent:
-		changed := ti.updateLoginStatus()
-		ti.redraw(changed)
+		changed = ti.updateLoginStatus()
 
 	case *pb.AppState_SettingsChange:
-		changed := ti.setSettings(st.SettingsChange)
-		ti.redraw(changed)
+		changed = ti.setSettings(st.SettingsChange)
 		// identify whether we need to also update a country list
 		ti.connSensor.Set(connectionSettings{
 			Obfuscated:      st.SettingsChange.Obfuscate,
@@ -216,24 +231,34 @@ func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
 		})
 
 		if ti.connSensor.ChangeDetected() {
-			ti.updateCountryList()
-			ti.updateRecentConnections()
+			countryListChanged := ti.updateCountryList()
+			specialtyServerListChanged := ti.updateSpecialtyServerList()
+			recentConnectionsChanged := ti.updateRecentConnections()
+			changed = changed || countryListChanged || specialtyServerListChanged || recentConnectionsChanged
 		}
 
 	case *pb.AppState_UpdateEvent:
-		if st.UpdateEvent == pb.UpdateEvent_SERVERS_LIST_UPDATE {
-			ti.updateCountryList()
+		switch st.UpdateEvent {
+		case pb.UpdateEvent_SERVERS_LIST_UPDATE:
+			countryListChanged := ti.updateCountryList()
+			specialtyServerListChanged := ti.updateSpecialtyServerList()
+			changed = countryListChanged || specialtyServerListChanged
+
+		case pb.UpdateEvent_RECENTS_LIST_UPDATE:
+			changed = ti.updateRecentConnections()
 		}
 
 	case *pb.AppState_AccountModification:
-		ti.updateAccountInfo()
+		changed = ti.updateAccountInfo()
 
 	case *pb.AppState_VersionHealth:
-		ti.handleVersionHealthChange(st.VersionHealth)
+		changed = ti.handleVersionHealthChange(st.VersionHealth)
 
 	default:
 		log.Printf("%s %s Unknown state type: %T\n", logTag, internal.WarningPrefix, item)
 	}
+
+	ti.redraw(changed)
 }
 
 func waitUntilTrayStatusIsReceived(fetchTrayStatus func() Status, doneChan chan<- struct{}) error {
@@ -277,9 +302,6 @@ func (ti *Instance) syncWithDaemon() {
 		}
 		break
 	}
-
-	// fetch all data on init
-	ti.update()
 }
 
 func (ti *Instance) Start() {
@@ -313,14 +335,16 @@ func (ti *Instance) OnReady() {
 	ti.stateListener.Start()
 
 	go ti.renderLoop()
+	ti.update()
 
 	ti.state.mu.Lock()
-	if ti.state.vpnStatus == pb.ConnectionState_DISCONNECTED {
-		systray.SetIconName(ti.iconDisconnected)
-	} else {
+	if ti.state.vpnStatus == pb.ConnectionState_CONNECTED {
 		systray.SetIconName(ti.iconConnected)
+	} else {
+		systray.SetIconName(ti.iconDisconnected)
 	}
 	ti.state.systrayRunning = true
+	ti.state.initialSyncCompleted = true
 	ti.state.mu.Unlock()
 }
 
