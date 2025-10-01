@@ -28,7 +28,6 @@ else
   export REVISION
 
   # '+' character is chosen because '_' is not allowed in .deb packages and '-' is not allowed in .rpm packages
-  # shellcheck disable=SC2012
-  VERSION="${VERSION:-$(ls contrib/changelog/prod | sed -E 's/_.*//; s/\.md$//' | sort -V | tail -n1)}+${REVISION}"
+  VERSION="$(find "${WORKDIR}"/contrib/changelog/prod -maxdepth 1 -type f -name '*.md' -printf '%f\n' | sed -E 's/_.*//; s/\.md$//' | sort -V | tail -n1)+${REVISION}"
   export VERSION
 fi
