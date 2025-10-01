@@ -19,10 +19,12 @@ class LoginEventType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
 class UpdateEvent(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
     SERVERS_LIST_UPDATE: _ClassVar[UpdateEvent]
+    RECENTS_LIST_UPDATE: _ClassVar[UpdateEvent]
 FAILED_TO_GET_UID: AppStateError
 LOGIN: LoginEventType
 LOGOUT: LoginEventType
 SERVERS_LIST_UPDATE: UpdateEvent
+RECENTS_LIST_UPDATE: UpdateEvent
 
 class LoginEvent(_message.Message):
     __slots__ = ("type",)

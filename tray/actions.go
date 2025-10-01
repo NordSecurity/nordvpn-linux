@@ -223,7 +223,6 @@ func (ti *Instance) disconnect() bool {
 		switch out.Type {
 		case internal.CodeVPNNotRunning:
 			ti.notify(NoForce, cli.DisconnectNotConnected)
-			return false
 		case internal.CodeDisconnected:
 		}
 	}

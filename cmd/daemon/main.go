@@ -597,6 +597,7 @@ func main() {
 			internal.RecentVPNConnectionsFilename,
 			&config.StdFilesystemHandle{},
 		),
+		dataUpdateEvents,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,
