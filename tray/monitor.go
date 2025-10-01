@@ -32,7 +32,7 @@ const (
 	labelDisconnectedFormat = "Disconnected from %s"
 )
 
-func (ti *Instance) handleVersionHealthChange(health *pb.VersionHealthStatus) {
+func (ti *Instance) handleVersionHealthChange(health *pb.VersionHealthStatus) bool {
 	daemonError := ""
 	switch int64(health.StatusCode) {
 	case internal.CodeOffline:
@@ -47,7 +47,7 @@ func (ti *Instance) handleVersionHealthChange(health *pb.VersionHealthStatus) {
 	}
 
 	changed := ti.updateDaemonConnectionStatus(daemonError)
-	ti.redraw(changed)
+	return changed
 }
 
 func (ti *Instance) MonitorConnection(ctx context.Context, conn *grpc.ClientConn) {
@@ -103,6 +103,9 @@ func (ti *Instance) update() {
 	changed = ti.updateVpnStatus()
 	needsRedraw = needsRedraw || changed
 
+	changed = ti.updateSpecialtyServerList()
+	needsRedraw = needsRedraw || changed
+
 	changed = ti.updateLoginStatus()
 	needsRedraw = needsRedraw || changed
 
@@ -141,13 +144,17 @@ func (ti *Instance) updateLoginStatus() bool {
 		if !ti.state.loggedIn && loggedIn {
 			ti.state.loggedIn = true
 			changed = true
-			notificationText = labelLoginSuccess
+			if ti.state.initialSyncCompleted {
+				notificationText = labelLoginSuccess
+			}
 		} else if ti.state.loggedIn && !loggedIn {
 			ti.state.loggedIn = false
 			ti.accountInfo.reset()
 			ti.state.accountName = ""
 			changed = true
-			notificationText = labelLogout
+			if ti.state.initialSyncCompleted {
+				notificationText = labelLogout
+			}
 		}
 	}()
 
@@ -184,13 +191,27 @@ func (ti *Instance) updateCountryList() bool {
 	oldCountryList := slices.Clone(ti.state.connSelector.countries)
 	ti.state.connSelector.mu.RUnlock()
 
-	newList, err := ti.state.connSelector.listCountries(ti.client)
+	newList, err := ti.state.connSelector.fetchCountries(ti.client)
 	if err != nil {
 		log.Println(logTag, internal.ErrorPrefix, "Error retrieving available country list:", err)
 		return false
 	}
 
 	return !slices.Equal(oldCountryList, newList)
+}
+
+func (ti *Instance) updateSpecialtyServerList() bool {
+	ti.state.mu.Lock()
+	oldList := slices.Clone(ti.state.connSelector.specialtyServers)
+	ti.state.mu.Unlock()
+
+	newList, err := ti.state.connSelector.fetchSpecialtyServers(ti.client)
+	if err != nil {
+		log.Println(logTag, internal.ErrorPrefix, "Error retrieving available specialty server list:", err)
+		return false
+	}
+
+	return !slices.Equal(oldList, newList)
 }
 
 func (ti *Instance) updateRecentConnections() bool {

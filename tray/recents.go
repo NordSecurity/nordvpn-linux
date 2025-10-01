@@ -36,7 +36,7 @@ var groupTitles = map[config.ServerGroup]string{
 	config.ServerGroup_ONION_OVER_VPN:                   "Onion Over VPN",
 	config.ServerGroup_STANDARD_VPN_SERVERS:             "Standard VPN Servers",
 	config.ServerGroup_P2P:                              "P2P",
-	config.ServerGroup_OBFUSCATED:                       "Obfuscated",
+	config.ServerGroup_OBFUSCATED:                       "Obfuscated Servers",
 	config.ServerGroup_DEDICATED_IP:                     "Dedicated IP",
 	config.ServerGroup_ULTRA_FAST_TV:                    "Ultra Fast TV",
 	config.ServerGroup_ANTI_DDOS:                        "Anti DDOS",

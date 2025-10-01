@@ -118,6 +118,7 @@ func testRPC() *RPC {
 		state.NewConnectionInfo(),
 		NewConsentChecker(false, cm, api, &workingLoginChecker{}, &analytics),
 		recents.NewRecentConnectionsStore(TestdataPath+TestRecentConnFile, &config.StdFilesystemHandle{}),
+		daemonevents.NewDataUpdateEvents(),
 	)
 }
 

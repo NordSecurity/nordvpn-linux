@@ -62,6 +62,15 @@ func (s *StatePublisher) NotifyChangeState(e events.DataConnectChangeNotif) erro
 	return nil
 }
 
+func (s *StatePublisher) NotifyRecentsChanged(e events.DataRecentsChanged) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	log.Println(internal.InfoPrefix, "notifying about recents change")
+	s.notify(pb.UpdateEvent_RECENTS_LIST_UPDATE)
+	return nil
+}
+
 func (s *StatePublisher) notifyLoginLogout(status events.TypeEventStatus, eventType pb.LoginEventType) {
 	// skip any event types other than success, as subscribers(GUI) do not care about them
 	if status != events.StatusSuccess {

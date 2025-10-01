@@ -60,6 +60,7 @@ type RPC struct {
 	connectionInfo      *state.ConnectionInfo
 	consentChecker      ConsentChecker
 	recentVPNConnStore  *recents.RecentConnectionsStore
+	dataUpdateEvents    *daemonevents.DataUpdateEvents
 	pb.UnimplementedDaemonServer
 }
 
@@ -90,6 +91,7 @@ func NewRPC(
 	connectionInfo *state.ConnectionInfo,
 	consentChecker ConsentChecker,
 	recentVPNConnStore *recents.RecentConnectionsStore,
+	dataUpdateEvents *daemonevents.DataUpdateEvents,
 ) *RPC {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	return &RPC{
@@ -120,5 +122,6 @@ func NewRPC(
 		connectionInfo:     connectionInfo,
 		consentChecker:     consentChecker,
 		recentVPNConnStore: recentVPNConnStore,
+		dataUpdateEvents:   dataUpdateEvents,
 	}
 }

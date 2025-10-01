@@ -284,7 +284,6 @@ func (r *RPC) connect(
 
 	event.EventStatus = events.StatusSuccess
 	event.DurationMs = getElapsedTime(connectingStartTime)
-	r.events.Service.Connect.Publish(event)
 
 	if isRecentConnectionSupported(event.TargetServerSelection) {
 		var serverTechs []core.ServerTechnology
@@ -297,8 +296,10 @@ func (r *RPC) connect(
 			log.Printf("%s Failed to build recent VPN connection model: %s\n", internal.WarningPrefix, err)
 		} else {
 			r.recentVPNConnStore.Add(recentModel)
+			r.dataUpdateEvents.RecentsUpdate.Publish(events.DataRecentsChanged{})
 		}
 	}
+	r.events.Service.Connect.Publish(event)
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnected, Data: data}); err != nil {
 		log.Println(internal.ErrorPrefix, err)
