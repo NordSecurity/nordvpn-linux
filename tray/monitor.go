@@ -56,7 +56,12 @@ func (ti *Instance) MonitorConnection(ctx context.Context, conn *grpc.ClientConn
 	// check if connection is already in ready state
 	if state == connectivity.Ready {
 		changed := ti.updateDaemonConnectionStatus("")
+		changed = ti.update() || changed
 		ti.redraw(changed)
+
+		ti.state.mu.Lock()
+		ti.state.initialSyncCompleted = true
+		ti.state.mu.Unlock()
 	}
 
 	cancelContext, cancelFunc := context.WithCancel(ctx)
@@ -69,29 +74,36 @@ func (ti *Instance) MonitorConnection(ctx context.Context, conn *grpc.ClientConn
 			return // ctx cancelled
 		}
 
-		switch conn.GetState() {
+		dataChanged := false
+		state = conn.GetState()
+		switch state {
 		case connectivity.Connecting:
 		case connectivity.Idle:
 		case connectivity.Ready:
 			log.Println(logTag, internal.InfoPrefix, "Daemon connection state changed to: READY")
-			// conn ready
-			changed := ti.updateDaemonConnectionStatus("")
-			ti.redraw(changed)
+			dataChanged = ti.updateDaemonConnectionStatus("")
+			dataChanged = ti.update() || dataChanged
+
 		case connectivity.Shutdown:
 			log.Println(logTag, internal.InfoPrefix, "Daemon connection state changed to: SHUTDOWN")
-			// conn terminated/shutdown
 			return
+
 		case connectivity.TransientFailure:
-			log.Println(logTag, internal.InfoPrefix, "Daemon connection state changed to: TRANSIENT_FAILURE")
 			// server likely down
+			log.Println(logTag, internal.InfoPrefix, "Daemon connection state changed to: TRANSIENT_FAILURE")
+			ti.state.mu.Lock()
+			ti.state.initialSyncCompleted = false
+			ti.state.mu.Unlock()
+
 			err := internal.ErrDaemonConnectionRefused.Error()
-			changed := ti.updateDaemonConnectionStatus(err)
-			ti.redraw(changed)
+			dataChanged = ti.updateDaemonConnectionStatus(err)
 		}
+
+		ti.redraw(dataChanged)
 	}
 }
 
-func (ti *Instance) update() {
+func (ti *Instance) update() bool {
 	needsRedraw := false
 
 	changed := ti.updateSettings()
@@ -115,7 +127,7 @@ func (ti *Instance) update() {
 	changed = ti.updateAccountInfo()
 	needsRedraw = needsRedraw || changed
 
-	ti.redraw(needsRedraw)
+	return needsRedraw
 }
 
 func (ti *Instance) updateLoginStatus() bool {
@@ -144,17 +156,13 @@ func (ti *Instance) updateLoginStatus() bool {
 		if !ti.state.loggedIn && loggedIn {
 			ti.state.loggedIn = true
 			changed = true
-			if ti.state.initialSyncCompleted {
-				notificationText = labelLoginSuccess
-			}
+			notificationText = labelLoginSuccess
 		} else if ti.state.loggedIn && !loggedIn {
 			ti.state.loggedIn = false
 			ti.accountInfo.reset()
 			ti.state.accountName = ""
 			changed = true
-			if ti.state.initialSyncCompleted {
-				notificationText = labelLogout
-			}
+			notificationText = labelLogout
 		}
 	}()
 
@@ -165,7 +173,6 @@ func (ti *Instance) updateLoginStatus() bool {
 }
 
 func (ti *Instance) updateVpnStatus() bool {
-	log.Println(logTag, "Updating VPN status")
 	resp, err := ti.client.Status(context.Background(), &pb.Empty{})
 	if err != nil {
 		log.Println(logTag, "Error getting VPN status:", err)
@@ -460,7 +467,7 @@ func (ti *Instance) updateDaemonConnectionStatus(errorMessage string) bool {
 	}
 	ti.state.mu.Unlock()
 
-	if notificationText != "" {
+	if ti.state.initialSyncCompleted && notificationText != "" {
 		ti.notify(NoForce, notificationText)
 	}
 	return changed
@@ -481,7 +488,6 @@ func (ti *Instance) setVpnStatus(
 		defer ti.state.mu.Unlock()
 
 		oldVpnStatus := ti.state.vpnStatus
-		oldVpnHostname := ti.state.vpnHostname
 		oldServerName := ti.state.serverName()
 
 		ti.state.vpnName = vpnName
@@ -492,23 +498,25 @@ func (ti *Instance) setVpnStatus(
 		ti.state.vpnStatus = vpnStatus
 
 		statusChanged := oldVpnStatus != vpnStatus
-		hostnameChanged := oldVpnHostname != vpnHostname
-		changed = statusChanged || hostnameChanged
+		serverNameChanged := oldServerName != ti.state.serverName()
+		changed = statusChanged || serverNameChanged
 
 		if statusChanged {
 			log.Printf("%s VPN status changed from %s to %s\n", logTag, oldVpnStatus, vpnStatus)
-			if vpnStatus == pb.ConnectionState_CONNECTED {
+			switch vpnStatus {
+			case pb.ConnectionState_CONNECTED:
 				notificationText = labelConnectedFormat
 				notificationArg = ti.state.serverName()
-			} else if vpnStatus == pb.ConnectionState_DISCONNECTED {
+			case pb.ConnectionState_DISCONNECTED:
 				if oldServerName != "" {
 					notificationText = labelDisconnectedFormat
 					notificationArg = oldServerName
 				}
+			case pb.ConnectionState_UNKNOWN_STATE, pb.ConnectionState_CONNECTING:
 			}
-		} else if hostnameChanged {
-			log.Printf("%s VPN hostname changed from %s to %s\n", logTag, oldVpnHostname, vpnHostname)
-			if vpnHostname != "" && oldVpnHostname != "" && vpnStatus == pb.ConnectionState_CONNECTED {
+		} else if serverNameChanged {
+			log.Printf("%s VPN server name changed from %s to %s\n", logTag, oldServerName, ti.state.serverName())
+			if ti.state.serverName() != "" && oldServerName != "" && vpnStatus == pb.ConnectionState_CONNECTED {
 				notificationText = labelConnectedFormat
 				notificationArg = ti.state.serverName()
 			}

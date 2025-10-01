@@ -337,7 +337,6 @@ func (ti *Instance) OnReady() {
 	ti.stateListener.Start()
 
 	go ti.renderLoop()
-	ti.update()
 
 	ti.state.mu.Lock()
 	if ti.state.vpnStatus == pb.ConnectionState_CONNECTED {
@@ -346,7 +345,6 @@ func (ti *Instance) OnReady() {
 		systray.SetIconName(ti.iconDisconnected)
 	}
 	ti.state.systrayRunning = true
-	ti.state.initialSyncCompleted = true
 	ti.state.mu.Unlock()
 }
 

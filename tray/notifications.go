@@ -20,7 +20,7 @@ func (ti *Instance) notify(ntype NotificationType, text string, a ...any) {
 	notificationsStatus := ti.state.notificationsStatus
 	ti.state.mu.RUnlock()
 
-	if notificationsStatus == Enabled || ntype == Force {
+	if ti.state.initialSyncCompleted && (notificationsStatus == Enabled || ntype == Force) {
 		text = fmt.Sprintf(text, a...)
 		log.Printf("%s Sending notification: %s\n", logTag, text)
 		if err := ti.notifier.sendNotification("NordVPN", text); err != nil {
@@ -29,7 +29,12 @@ func (ti *Instance) notify(ntype NotificationType, text string, a ...any) {
 			}
 		}
 	} else {
-		log.Printf("%s Notification suppressed: %s (status: %d, force: %v)\n", logTag, text, notificationsStatus, ntype == Force)
+		log.Printf(
+			"%s Notification suppressed: %s (status: %d, force: %v)\n",
+			logTag,
+			fmt.Sprintf(text, a...),
+			notificationsStatus,
+			ntype == Force)
 	}
 }
 
