@@ -142,6 +142,7 @@ type trayState struct {
 	vpnCity               string
 	vpnCountry            string
 	vpnVirtualLocation    bool
+	initialSyncCompleted  bool
 	connSelector          ConnectionSelector
 	mu                    sync.RWMutex
 }
@@ -211,7 +212,10 @@ func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
 		changed = ti.updateDaemonConnectionStatus(internal.ErrDaemonConnectionRefused.Error())
 
 	case *pb.AppState_ConnectionStatus:
-		changed = ti.updateVpnStatus() || ti.updateRecentConnections()
+		log.Println("new connection status:", st.ConnectionStatus.GetState())
+		vpnStatusChanged := ti.updateVpnStatus()
+		recentConnectionsChanged := ti.updateRecentConnections()
+		changed = vpnStatusChanged || recentConnectionsChanged
 
 	case *pb.AppState_LoginEvent:
 		changed = ti.updateLoginStatus()
@@ -227,13 +231,21 @@ func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
 		})
 
 		if ti.connSensor.ChangeDetected() {
-			changed = changed || ti.updateCountryList() ||
-				ti.updateSpecialtyServerList() || ti.updateRecentConnections()
+			countryListChanged := ti.updateCountryList()
+			specialtyServerListChanged := ti.updateSpecialtyServerList()
+			recentConnectionsChanged := ti.updateRecentConnections()
+			changed = changed || countryListChanged || specialtyServerListChanged || recentConnectionsChanged
 		}
 
 	case *pb.AppState_UpdateEvent:
-		if st.UpdateEvent == pb.UpdateEvent_SERVERS_LIST_UPDATE {
-			changed = ti.updateCountryList() || ti.updateSpecialtyServerList()
+		switch st.UpdateEvent {
+		case pb.UpdateEvent_SERVERS_LIST_UPDATE:
+			countryListChanged := ti.updateCountryList()
+			specialtyServerListChanged := ti.updateSpecialtyServerList()
+			changed = countryListChanged || specialtyServerListChanged
+
+		case pb.UpdateEvent_RECENTS_LIST_UPDATE:
+			changed = ti.updateRecentConnections()
 		}
 
 	case *pb.AppState_AccountModification:
@@ -290,9 +302,6 @@ func (ti *Instance) syncWithDaemon() {
 		}
 		break
 	}
-
-	// fetch all data on init
-	ti.update()
 }
 
 func (ti *Instance) Start() {
@@ -326,6 +335,7 @@ func (ti *Instance) OnReady() {
 	ti.stateListener.Start()
 
 	go ti.renderLoop()
+	ti.update()
 
 	ti.state.mu.Lock()
 	if ti.state.vpnStatus == pb.ConnectionState_CONNECTED {
@@ -334,6 +344,7 @@ func (ti *Instance) OnReady() {
 		systray.SetIconName(ti.iconDisconnected)
 	}
 	ti.state.systrayRunning = true
+	ti.state.initialSyncCompleted = true
 	ti.state.mu.Unlock()
 }
 

@@ -144,13 +144,17 @@ func (ti *Instance) updateLoginStatus() bool {
 		if !ti.state.loggedIn && loggedIn {
 			ti.state.loggedIn = true
 			changed = true
-			notificationText = labelLoginSuccess
+			if ti.state.initialSyncCompleted {
+				notificationText = labelLoginSuccess
+			}
 		} else if ti.state.loggedIn && !loggedIn {
 			ti.state.loggedIn = false
 			ti.accountInfo.reset()
 			ti.state.accountName = ""
 			changed = true
-			notificationText = labelLogout
+			if ti.state.initialSyncCompleted {
+				notificationText = labelLogout
+			}
 		}
 	}()
 
