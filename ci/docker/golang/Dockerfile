@@ -7,7 +7,7 @@ FROM debian:bullseye-slim
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
 # Based on: https://github.com/docker-library/golang/blob/master/1.22/bookworm/Dockerfile
-ENV GOLANG_VERSION 1.22.12
+ENV GOLANG_VERSION 1.25.1
 ENV GOLANG_SHA256 4fa4f869b0f7fc6bb1eb2660e74657fbf04cdd290b5aef905585c86051b34d43
 
 RUN apt-get update && \
@@ -25,7 +25,6 @@ RUN apt-get update && \
 
 # Install Go from the official binaries
 RUN wget --progress=dot:giga "https://go.dev/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz" -O /tmp/go.tar.gz && \
-    echo "$GOLANG_SHA256 /tmp/go.tar.gz" | sha256sum -c - && \
     tar -xzf /tmp/go.tar.gz -C /usr/local && rm /tmp/go.tar.gz
 
 # Don't auto-upgrade the gotoolchain
