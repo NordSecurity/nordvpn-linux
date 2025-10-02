@@ -271,8 +271,8 @@ func (ti *Instance) setTray(flag bool) bool {
 	}
 
 	if !flag {
-		log.Printf("%s Tray icon disabled. To enable it again, run the \"nordvpn set tray on command\".", internal.InfoPrefix)
-		ti.notifyForce("Tray icon disabled. To enable it again, run the \"nordvpn set tray on command\".")
+		log.Printf("%s Tray icon disabled. To enable it again, run the \"nordvpn set tray on\" command.", internal.InfoPrefix)
+		ti.notifyForce("Tray icon disabled. To enable it again, run the \"nordvpn set tray on\" command.")
 	}
 
 	resp, err := ti.client.SetTray(context.Background(), &pb.SetTrayRequest{
