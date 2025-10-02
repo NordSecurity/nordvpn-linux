@@ -101,16 +101,19 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 	ti := tray.NewTrayInstance(client, fileshareClient, quitChan)
 	ti.Start()
 
+	topLevelCtx, topLevelCancelFunc := context.WithCancel(context.Background())
+
 	onExit := func() {
 		log.Println(internal.InfoPrefix, "Exiting systray")
 		ReportTelemetry(conn, ReportOnExit, true)
 		ti.OnExit()
+		topLevelCancelFunc()
 	}
 
 	onReady := func() {
 		log.Println(internal.InfoPrefix, "Starting systray")
-		go ti.MonitorConnection(context.Background(), conn)
-		ti.OnReady()
+		go ti.MonitorConnection(topLevelCtx, conn)
+		ti.OnReady(topLevelCtx)
 	}
 
 	trayStatus := ti.WaitInitialTrayStatus()
