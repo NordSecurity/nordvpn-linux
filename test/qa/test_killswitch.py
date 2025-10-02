@@ -14,8 +14,8 @@ from lib import (
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
 
-MSG_KILLSWITCH_ON = "Kill Switch is set to 'enabled' successfully."
-MSG_KILLSWITCH_OFF = "Kill Switch is set to 'disabled' successfully."
+MSG_KILLSWITCH_ON = "Kill Switch has been successfully set to 'enabled'."
+MSG_KILLSWITCH_OFF = "Kill Switch has been successfully set to 'disabled'."
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)

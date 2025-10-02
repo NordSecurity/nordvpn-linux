@@ -71,7 +71,7 @@ func (c *cmd) SetFirewallMark(ctx *cli.Context) error {
 	case internal.CodeNothingToDo:
 		color.Yellow(fmt.Sprintf(MsgAlreadySet, "Firewall Mark", args.First()))
 	case internal.CodeSuccess:
-		color.Yellow("Restart daemon (e.g. `sudo systemctl restart nordvpnd` on systemd distros) for this setting to take an effect.")
+		color.Yellow("Restart the daemon to apply this setting. For example, use the command `sudo systemctl restart nordvpnd` on systemd distributions.")
 		color.Green(fmt.Sprintf(MsgSetSuccess, "Firewall Mark", args.First()))
 	}
 	return nil

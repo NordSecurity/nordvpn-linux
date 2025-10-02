@@ -33,14 +33,14 @@ ALL_TEST_DNS_ADDRESSES = \
 # Used for DNS test parametrization
 DNS_CASES_ERROR = [
     ("a", "The provided IP address is invalid."),
-    (["1.1.1.1", "1.1.1.1", "1.1.1.1", "1.1.1.1"], "More than 3 DNS addresses provided.")
+    (["1.1.1.1", "1.1.1.1", "1.1.1.1", "1.1.1.1"], "You can add up to 3 DNS addresses only.")
 ]
 
 # Used to check if error messages are correct
 DNS_MSG_ERROR_ALREADY_SET = "DNS is already set to %s."
 DNS_MSG_ERROR_ALREADY_DISABLED = "DNS is already set to disabled."
 
-TPL_MSG_WARNING_DISABLING = "Disabling Threat Protection Lite."
+TPL_MSG_WARNING_DISABLING = "Turning off Threat Protection"
 
 DNS_MSG_WARNING_DISABLING = "Disabling DNS."
 

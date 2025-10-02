@@ -112,7 +112,7 @@ func TestCLICommands(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			assert.Equal(t, test.expected, commandFullName(ctx, test.appArgs))
+			assert.Equal(t, test.expected, CommandFullName(ctx, test.appArgs))
 		})
 	}
 }

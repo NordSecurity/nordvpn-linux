@@ -22,14 +22,14 @@ def test_set_tpl_on_off_connected(tech, proto, obfuscated):
         sh.nordvpn.connect()
 
         tpl_alias = dns.get_tpl_alias()
-        assert "Threat Protection Lite is set to 'enabled' successfully." in sh.nordvpn.set(tpl_alias, "on")
+        assert "Threat Protection Lite has been successfully set to 'enabled'" in sh.nordvpn.set(tpl_alias, "on")
 
         assert settings.is_tpl_enabled()
         assert settings.dns_visible_in_settings(["disabled"])
         assert dns.is_set_for(dns.DNS_TPL)
 
         tpl_alias = dns.get_tpl_alias()
-        assert "Threat Protection Lite is set to 'disabled' successfully." in sh.nordvpn.set(tpl_alias, "off")
+        assert "Threat Protection Lite has been successfully set to 'disabled'." in sh.nordvpn.set(tpl_alias, "off")
 
         assert not settings.is_tpl_enabled()
         assert settings.dns_visible_in_settings(["disabled"])
@@ -46,7 +46,7 @@ def test_set_tpl_on_and_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     tpl_alias = dns.get_tpl_alias()
-    assert "Threat Protection Lite is set to 'enabled' successfully." in sh.nordvpn.set(tpl_alias, "on")
+    assert "Threat Protection Lite has been successfully set to 'enabled'." in sh.nordvpn.set(tpl_alias, "on")
 
     assert settings.is_tpl_enabled()
     assert settings.dns_visible_in_settings(["disabled"])
@@ -69,7 +69,7 @@ def test_set_tpl_off_and_connect(tech, proto, obfuscated):
     tpl_alias = dns.get_tpl_alias()
     sh.nordvpn.set(tpl_alias, "on")
 
-    assert "Threat Protection Lite is set to 'disabled' successfully." in sh.nordvpn.set(tpl_alias, "off")
+    assert "Threat Protection Lite has been successfully set to 'disabled'." in sh.nordvpn.set(tpl_alias, "off")
 
     assert not settings.is_tpl_enabled()
     assert settings.dns_visible_in_settings(["disabled"])
