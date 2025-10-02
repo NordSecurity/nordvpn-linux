@@ -2,8 +2,13 @@ package tray
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log"
 	"os"
+	"slices"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,17 +23,11 @@ import (
 )
 
 const (
-	NotifierStartDelay        = 3 * time.Second
-	PollingUpdateInterval     = 5 * time.Second
-	PollingFullUpdateInterval = 60 * time.Second
-	AccountInfoUpdateInterval = 24 * time.Hour
-)
-
-const (
 	IconBlack string = "nordvpn-tray-black"
 	IconGray  string = "nordvpn-tray-gray"
 	IconWhite string = "nordvpn-tray-white"
 	IconBlue  string = "nordvpn-tray-blue"
+	logTag           = "[systray]"
 )
 
 type Status int
@@ -41,58 +40,112 @@ const (
 
 type accountInfo struct {
 	accountInfo *pb.AccountResponse
-	updateTime  time.Time
 }
 
 // getAccountInfo use cache to not query API every time
 func (ai *accountInfo) getAccountInfo(client pb.DaemonClient) (*pb.AccountResponse, error) {
-	if time.Since(ai.updateTime) > AccountInfoUpdateInterval {
-		var err error
-		ai.accountInfo, err = client.AccountInfo(context.Background(), &pb.AccountRequest{Full: true})
-		if err != nil {
-			return nil, err
-		}
-		ai.updateTime = time.Now()
+	var err error
+	ai.accountInfo, err = client.AccountInfo(context.Background(), &pb.AccountRequest{Full: true})
+	if err != nil {
+		return nil, err
 	}
 	return ai.accountInfo, nil
 }
 
 func (ai *accountInfo) reset() {
-	ai.updateTime = time.Time{}
 	ai.accountInfo = nil
 }
 
+type ConnectionSelector struct {
+	mu               sync.RWMutex
+	countries        []string
+	specialtyServers []string
+}
+
+func (cp *ConnectionSelector) fetchCountries(client pb.DaemonClient) ([]string, error) {
+	resp, err := client.Countries(context.Background(), &pb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+	result := sortedConnections(resp.Servers)
+
+	cp.mu.Lock()
+	cp.countries = result
+	cp.mu.Unlock()
+
+	return slices.Clone(cp.countries), nil
+}
+
+func (cp *ConnectionSelector) fetchSpecialtyServers(client pb.DaemonClient) ([]string, error) {
+	resp, err := client.Groups(context.Background(), &pb.Empty{})
+	if err != nil {
+		return nil, err
+	}
+
+	result := sortedConnections(resp.Servers)
+
+	cp.mu.Lock()
+	cp.specialtyServers = result
+	cp.mu.Unlock()
+
+	return slices.Clone(cp.specialtyServers), nil
+}
+
+func sortedConnections(sgs []*pb.ServerGroup) []string {
+	set := make(map[string]struct{}, len(sgs))
+	for _, sg := range sgs {
+		if c := strings.TrimSpace(sg.Name); c != "" {
+			set[c] = struct{}{}
+		}
+	}
+
+	list := make([]string, 0, len(set))
+	for k := range set {
+		list = append(list, k)
+	}
+
+	sort.Strings(list)
+	return list
+}
+
 type Instance struct {
-	client           pb.DaemonClient
-	fileshareClient  filesharepb.FileshareClient
-	accountInfo      accountInfo
-	debugMode        bool
-	notifier         dbusNotifier
-	redrawChan       chan struct{}
-	initialChan      chan struct{}
-	updateChan       chan bool
-	iconConnected    string
-	iconDisconnected string
-	state            trayState
-	quitChan         chan<- norduser.StopRequest
+	client                  pb.DaemonClient
+	fileshareClient         filesharepb.FileshareClient
+	accountInfo             accountInfo
+	debugMode               bool
+	notifier                dbusNotifier
+	renderChan              chan struct{}
+	initialDataLoadChan     chan struct{}
+	iconConnected           string
+	iconDisconnected        string
+	state                   trayState
+	quitChan                chan<- norduser.StopRequest
+	stateListener           *stateListener
+	connSensor              *connectionSettingsChangeSensor
+	recentConnections       *recentConnectionsManager
+	daemonMonitorCancelFunc context.CancelFunc
+	checkboxSync            *CheckboxSynchronizer
 }
 
 type trayState struct {
-	systrayRunning      bool
-	daemonAvailable     bool
-	loggedIn            bool
-	vpnActive           bool
-	notificationsStatus Status
-	trayStatus          Status
-	daemonError         string
-	accountName         string
-	vpnStatus           pb.ConnectionState
-	vpnName             string
-	vpnHostname         string
-	vpnCity             string
-	vpnCountry          string
-	vpnVirtualLocation  bool
-	mu                  sync.RWMutex
+	systrayRunning        bool
+	daemonAvailable       bool
+	loggedIn              bool
+	vpnActive             bool
+	notificationsStatus   Status
+	trayStatus            Status
+	daemonError           string
+	accountName           string
+	vpnStatus             pb.ConnectionState
+	lastRenderedVpnStatus pb.ConnectionState
+	vpnName               string
+	vpnHostname           string
+	vpnCity               string
+	vpnCountry            string
+	vpnVirtualLocation    bool
+	initialSyncCompleted  bool
+	connSelector          ConnectionSelector
+	mu                    sync.RWMutex
 }
 
 // Not thread safe. Lock mu before using
@@ -110,11 +163,20 @@ func (state *trayState) serverName() string {
 }
 
 func NewTrayInstance(client pb.DaemonClient, fileshareClient filesharepb.FileshareClient, quitChan chan<- norduser.StopRequest) *Instance {
-	return &Instance{client: client, fileshareClient: fileshareClient, quitChan: quitChan}
+	obj := &Instance{
+		client:            client,
+		fileshareClient:   fileshareClient,
+		quitChan:          quitChan,
+		connSensor:        newConnectionSettingsChangeSensor(),
+		recentConnections: newRecentConnectionsManager(client),
+		checkboxSync:      NewCheckboxSynchronizer(),
+	}
+	obj.stateListener = newStateListener(client, obj.onDaemonStateEvent)
+	return obj
 }
 
 func (ti *Instance) WaitInitialTrayStatus() Status {
-	<-ti.initialChan
+	<-ti.initialDataLoadChan
 	ti.state.mu.RLock()
 	defer ti.state.mu.RUnlock()
 	return ti.state.trayStatus
@@ -144,22 +206,124 @@ func (ti *Instance) configureDebugMode() {
 	ti.debugMode = os.Getenv("NORDVPN_TRAY_DEBUG") == "1"
 }
 
+func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
+	changed := false
+	switch st := item.GetState().(type) {
+	case *pb.AppState_Error:
+		log.Printf("%s %s Received daemon error state\n", logTag, internal.ErrorPrefix)
+		changed = ti.updateDaemonConnectionStatus(internal.ErrDaemonConnectionRefused.Error())
+
+	case *pb.AppState_ConnectionStatus:
+		log.Printf("%s %s New connection status: %s\n", logTag, internal.InfoPrefix, st.ConnectionStatus.GetState())
+		vpnStatusChanged := ti.updateVpnStatus()
+		recentConnectionsChanged := ti.updateRecentConnections()
+		changed = vpnStatusChanged || recentConnectionsChanged
+
+	case *pb.AppState_LoginEvent:
+		changed = ti.updateLoginStatus()
+
+	case *pb.AppState_SettingsChange:
+		changed = ti.setSettings(st.SettingsChange)
+		// identify whether we need to also update a country list
+		ti.connSensor.Set(connectionSettings{
+			Obfuscated:      st.SettingsChange.Obfuscate,
+			Protocol:        st.SettingsChange.Protocol,
+			Technology:      st.SettingsChange.Technology,
+			VirtualLocation: st.SettingsChange.VirtualLocation,
+		})
+
+		if ti.connSensor.ChangeDetected() {
+			countryListChanged := ti.updateCountryList()
+			specialtyServerListChanged := ti.updateSpecialtyServerList()
+			recentConnectionsChanged := ti.updateRecentConnections()
+			changed = changed || countryListChanged || specialtyServerListChanged || recentConnectionsChanged
+		}
+
+	case *pb.AppState_UpdateEvent:
+		switch st.UpdateEvent {
+		case pb.UpdateEvent_SERVERS_LIST_UPDATE:
+			countryListChanged := ti.updateCountryList()
+			specialtyServerListChanged := ti.updateSpecialtyServerList()
+			changed = countryListChanged || specialtyServerListChanged
+
+		case pb.UpdateEvent_RECENTS_LIST_UPDATE:
+			changed = ti.updateRecentConnections()
+		}
+
+	case *pb.AppState_AccountModification:
+		changed = ti.updateAccountInfo()
+
+	case *pb.AppState_VersionHealth:
+		changed = ti.handleVersionHealthChange(st.VersionHealth)
+
+	default:
+		log.Printf("%s %s Unknown state type: %T\n", logTag, internal.WarningPrefix, item)
+	}
+
+	ti.redraw(changed)
+}
+
+func waitUntilTrayStatusIsReceived(fetchTrayStatus func() Status, doneChan chan<- struct{}) error {
+	if fetchTrayStatus == nil || doneChan == nil {
+		return errors.New("invalid arguments")
+	}
+
+	return RetryWithBackoff(
+		context.Background(),
+		BackoffConfig{MaxDelay: time.Second, MaxRetries: 10},
+		func(ctx context.Context) error {
+			if fetchTrayStatus() == Invalid {
+				return fmt.Errorf("failed to get tray status")
+			}
+
+			select {
+			case doneChan <- struct{}{}:
+				close(doneChan)
+				doneChan = nil
+			default:
+				// Channel already being processed or closed
+			}
+
+			return nil
+		},
+	)
+}
+
+// syncWithDaemon performs processes needed before systray can be shown
+func (ti *Instance) syncWithDaemon() {
+	for {
+		getTrayStatusFunc := func() Status {
+			changed := ti.updateSettings()
+			ti.redraw(changed)
+			return ti.state.trayStatus
+		}
+		err := waitUntilTrayStatusIsReceived(getTrayStatusFunc, ti.initialDataLoadChan)
+		if err != nil {
+			log.Printf("%s %s Waiting for tray state: %s. Retrying.\n", logTag, internal.ErrorPrefix, err)
+			continue
+		}
+		break
+	}
+}
+
 func (ti *Instance) Start() {
 	ti.configureDebugMode()
 	ti.updateIconsSelection()
 
 	ti.state.vpnStatus = pb.ConnectionState_DISCONNECTED
+	ti.state.lastRenderedVpnStatus = pb.ConnectionState_DISCONNECTED
 	ti.state.notificationsStatus = Invalid
-	ti.redrawChan = make(chan struct{})
-	ti.initialChan = make(chan struct{})
-	ti.updateChan = make(chan bool)
+	ti.renderChan = make(chan struct{})
+	ti.initialDataLoadChan = make(chan struct{})
 
-	time.AfterFunc(NotifierStartDelay, func() { ti.notifier.start() })
-
-	go ti.pollingMonitor()
+	go ti.syncWithDaemon()
 }
 
 func (ti *Instance) OnExit() {
+	ti.stateListener.Stop()
+	if ti.daemonMonitorCancelFunc != nil {
+		ti.daemonMonitorCancelFunc()
+	}
 	ti.state.mu.Lock()
 	ti.state.systrayRunning = false
 	ti.state.mu.Unlock()
@@ -169,45 +333,64 @@ func (ti *Instance) OnReady() {
 	systray.SetTitle("NordVPN")
 	systray.SetTooltip("NordVPN")
 
+	ti.notifier.start()
+	ti.stateListener.Start()
+
+	go ti.renderLoop()
+
 	ti.state.mu.Lock()
-	if ti.state.vpnStatus == pb.ConnectionState_DISCONNECTED {
-		systray.SetIconName(ti.iconDisconnected)
-	} else {
+	if ti.state.vpnStatus == pb.ConnectionState_CONNECTED {
 		systray.SetIconName(ti.iconConnected)
+	} else {
+		systray.SetIconName(ti.iconDisconnected)
 	}
 	ti.state.systrayRunning = true
 	ti.state.mu.Unlock()
+}
 
-	go func() {
-		for {
-			ti.state.mu.RLock()
-			if ti.state.daemonAvailable {
-				if ti.state.loggedIn {
-					addVpnSection(ti)
-				}
-				addSettingsSection(ti)
-				addAccountSection(ti)
-			}
-			if ti.state.daemonError != "" {
-				addDaemonErrorSection(ti)
-			}
-			ti.state.mu.RUnlock()
-			if ti.debugMode {
-				addDebugSection(ti)
-			}
-			addQuitItem(ti)
-			systray.Refresh()
-			<-ti.redrawChan
-			ti.state.mu.RLock()
-			if !ti.state.systrayRunning {
-				ti.state.mu.RUnlock()
-				break
-			}
-			ti.state.mu.RUnlock()
-			if ti.debugMode {
-				log.Println(internal.DebugPrefix, "Redraw")
-			}
-			systray.ResetMenu()
+func (ti *Instance) updateIcon() {
+	ti.state.mu.Lock()
+	defer ti.state.mu.Unlock()
+
+	if ti.state.lastRenderedVpnStatus == ti.state.vpnStatus {
+		return
+	}
+
+	if ti.state.vpnStatus == pb.ConnectionState_CONNECTED {
+		systray.SetIconName(ti.iconConnected)
+	} else {
+		systray.SetIconName(ti.iconDisconnected)
+	}
+	ti.state.lastRenderedVpnStatus = ti.state.vpnStatus
+}
+
+func (ti *Instance) renderLoop() {
+	for {
+		// Wait for any checkbox operations to complete before rebuilding menu
+		ti.checkboxSync.WaitForOperations()
+
+		systray.ResetMenu()
+		ti.updateIcon()
+
+		ti.state.mu.RLock()
+		buildConnectionSection(ti)
+		buildSettingsSection(ti)
+		buildAccountSection(ti)
+		buildDaemonErrorSection(ti)
+		addDebugSection(ti)
+		buildQuitButton(ti)
+		systray.Refresh()
+		ti.state.mu.RUnlock()
+		<-ti.renderChan
+
+		ti.state.mu.RLock()
+		keepRunning := ti.state.systrayRunning
+		ti.state.mu.RUnlock()
+		if !keepRunning {
+			break
 		}
-	}()
+		if ti.debugMode {
+			log.Println(internal.DebugPrefix, "Render")
+		}
+	}
 }

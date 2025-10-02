@@ -67,6 +67,7 @@ const (
 	CodeConsentMissing                 int64 = 3052
 	CodeExpiredAccessToken             int64 = 3053
 	CodeRevokedAccessToken             int64 = 3054
+	CodeCleanRecentConnectionError     int64 = 3055
 )
 
 type ErrorWithCode struct {

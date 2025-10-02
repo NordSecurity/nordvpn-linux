@@ -286,19 +286,23 @@ func NewConfigEvents() *ConfigEvents {
 
 type DataUpdatePublisher interface {
 	NotifyServersListUpdate(any) error
+	NotifyRecentsChanged(events.DataRecentsChanged) error
 }
 
 type DataUpdateEvents struct {
 	ServersUpdate events.PublishSubcriber[any]
+	RecentsUpdate events.PublishSubcriber[events.DataRecentsChanged]
 }
 
 func (d *DataUpdateEvents) Subscribe(to DataUpdatePublisher) {
 	d.ServersUpdate.Subscribe(to.NotifyServersListUpdate)
+	d.RecentsUpdate.Subscribe(to.NotifyRecentsChanged)
 }
 
 func NewDataUpdateEvents() *DataUpdateEvents {
 	return &DataUpdateEvents{
 		ServersUpdate: &subs.Subject[any]{},
+		RecentsUpdate: &subs.Subject[events.DataRecentsChanged]{},
 	}
 }
 

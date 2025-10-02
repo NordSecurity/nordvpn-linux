@@ -22,10 +22,15 @@ enum LoginEventType {
 
 enum UpdateEvent {
     SERVERS_LIST_UPDATE = 0;
+    RECENTS_LIST_UPDATE = 1;
 }
 
 message AccountModification {
   optional string expires_at = 1;
+}
+
+message VersionHealthStatus {
+    int32 status_code = 1;
 }
 
 message AppState {
@@ -36,6 +41,7 @@ message AppState {
         Settings settings_change = 4;
         UpdateEvent update_event = 5;
         AccountModification account_modification = 6;
+        VersionHealthStatus version_health = 7;
     }
 }
 

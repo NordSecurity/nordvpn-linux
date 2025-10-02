@@ -3,11 +3,12 @@ package client
 const (
 	ConfigMessage = "It seems there's an issue with the config file. If the issue persists, please contact our customer support."
 
-	LoginFailure       = "Username or password is not correct. Please try again."
-	LegacyLoginFailure = "We couldn't log you in. Make sure your credentials are correct. If you have MFA enabled, log in using the 'nordvpn login' command."
-	TokenLoginFailure  = "Token parameter value is missing." // #nosec
-	TokenInvalid       = "We couldn't log you in - the access token is not valid. Please check if you've entered the token correctly. If the issue persists, contact our customer support."
-	AccessTokenExpired = "Your current access token has expired or been revoked. Please request a new one to continue."
+	LoginFailure                 = "Username or password is not correct. Please try again."
+	LegacyLoginFailure           = "We couldn't log you in. Make sure your credentials are correct. If you have MFA enabled, log in using the 'nordvpn login' command."
+	TokenLoginFailure            = "Token parameter value is missing." // #nosec
+	TokenInvalid                 = "We couldn't log you in - the access token is not valid. Please check if you've entered the token correctly. If the issue persists, contact our customer support."
+	AccessTokenExpired           = "Your current access token has expired or been revoked. Please request a new one to continue."
+	RecentConnectionErrorMessage = "It seems there's an issue with the recent connections file. If the issue persists, please contact our customer support."
 
 	AccountTokenRenewError = "We were not able to fetch your account data. Please check your internet connection and try again. If the issue persists, please contact our customer support."
 	ConnectStart           = "Connecting to %v (%v)%v"
