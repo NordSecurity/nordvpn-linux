@@ -36,8 +36,8 @@ func NewCodedError(code int, message string, err error) error {
 
 var (
 	ErrDaemonConnectionRefused = errors.New(DaemonConnRefusedErrorMessage)
-	ErrSocketAccessDenied      = errors.New("Permission denied accessing " + DaemonSocket)
-	ErrSocketNotFound          = errors.New(DaemonSocket + " not found")
+	ErrSocketAccessDenied      = errors.New("Couldn't access " + DaemonSocket + ". To fix the issue, you may need to reinstall the app.")
+	ErrSocketNotFound          = errors.New("Couldn't find " + DaemonSocket + ". To fix the issue, you may need to reinstall the app.")
 	ErrUnhandled               = errors.New(UnhandledMessage)
 	ErrGateway                 = errors.New("can't find gateway")
 	ErrStdin                   = errors.New("Stdin: missing argument")
@@ -46,10 +46,10 @@ var (
 	ErrGroupDoesNotExist       = errors.New(GroupNonexistentErrorMessage)
 	ErrDoubleGroup             = errors.New(DoubleGroupErrorMessage)
 	// ErrAlreadyLoggedIn is returned on repeated logins
-	ErrAlreadyLoggedIn = errors.New("you are already logged in")
+	ErrAlreadyLoggedIn = errors.New("You're already logged in")
 	// ErrNotLoggedIn is returned when the caller is expected to be logged in
 	// but is not
-	ErrNotLoggedIn = errors.New("you are not logged in")
+	ErrNotLoggedIn = errors.New("You're not logged in")
 	// ErrAnalyticsConsentMissing is returned when user tries to login via tray
 	// but settings analytics consent failed for some reason. This should not happen.
 	ErrAnalyticsConsentMissing = errors.New("analytics consent is required before continuing")
