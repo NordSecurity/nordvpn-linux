@@ -71,8 +71,8 @@ func addQuitItem(ti *Instance) {
 		if !open {
 			return
 		}
-		log.Printf("%s Shutting down norduserd. To restart the process, run the \"nordvpn set tray on command\".", internal.InfoPrefix)
-		ti.notifyForce("Shutting down norduserd. To restart the process, run the \"nordvpn set tray on command\".")
+		log.Printf("%s Shutting down norduserd. To restart the process, run the \"nordvpn set tray on\" command.", internal.InfoPrefix)
+		ti.notifyForce("Shutting down norduserd. To restart the process, run the \"nordvpn set tray on\" command.")
 		select {
 		case ti.quitChan <- norduser.StopRequest{}:
 		default:
