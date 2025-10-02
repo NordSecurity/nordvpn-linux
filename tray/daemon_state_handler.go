@@ -50,7 +50,7 @@ func (ti *Instance) handleConnectionStatusState(st *pb.AppState_ConnectionStatus
 }
 
 // handleLoginEventState handles the login event state from the daemon.
-func (ti *Instance) handleLoginEventState() bool {
+func (ti *Instance) handleLoginEventState(st *pb.AppState_LoginEvent) bool {
 	return ti.updateLoginStatus()
 }
 
