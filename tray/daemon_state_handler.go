@@ -15,7 +15,7 @@ func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
 	case *pb.AppState_ConnectionStatus:
 		changed = ti.handleConnectionStatusState(st)
 	case *pb.AppState_LoginEvent:
-		changed = ti.handleLoginEventState(st)
+		changed = ti.handleLoginEventState()
 	case *pb.AppState_SettingsChange:
 		changed = ti.handleSettingsChangeState(st)
 	case *pb.AppState_UpdateEvent:
@@ -50,15 +50,8 @@ func (ti *Instance) handleConnectionStatusState(st *pb.AppState_ConnectionStatus
 }
 
 // handleLoginEventState handles the login event state from the daemon.
-func (ti *Instance) handleLoginEventState(st *pb.AppState_LoginEvent) bool {
-	changed := ti.updateLoginStatus()
-
-	// we also care about account information when user logs in, so update it as well
-	if st.LoginEvent.GetType() == pb.LoginEventType_LOGIN {
-		changed = ti.updateAccountInfo() || changed
-	}
-
-	return changed
+func (ti *Instance) handleLoginEventState() bool {
+	return ti.updateLoginStatus()
 }
 
 // handleSettingsChangeState handles the settings change state from the daemon.

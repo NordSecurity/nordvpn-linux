@@ -109,22 +109,21 @@ func sortedConnections(sgs []*pb.ServerGroup) []string {
 }
 
 type Instance struct {
-	client                  pb.DaemonClient
-	fileshareClient         filesharepb.FileshareClient
-	accountInfo             accountInfo
-	debugMode               bool
-	notifier                dbusNotifier
-	renderChan              chan struct{}
-	initialDataLoadChan     chan struct{}
-	iconConnected           string
-	iconDisconnected        string
-	state                   trayState
-	quitChan                chan<- norduser.StopRequest
-	stateListener           *stateListener
-	connSensor              *connectionSettingsChangeSensor
-	recentConnections       *recentConnectionsManager
-	daemonMonitorCancelFunc context.CancelFunc
-	checkboxSync            *CheckboxSynchronizer
+	client              pb.DaemonClient
+	fileshareClient     filesharepb.FileshareClient
+	accountInfo         accountInfo
+	debugMode           bool
+	notifier            dbusNotifier
+	renderChan          chan struct{}
+	initialDataLoadChan chan struct{}
+	iconConnected       string
+	iconDisconnected    string
+	state               trayState
+	quitChan            chan<- norduser.StopRequest
+	stateListener       *stateListener
+	connSensor          *connectionSettingsChangeSensor
+	recentConnections   *recentConnectionsManager
+	checkboxSync        *CheckboxSynchronizer
 }
 
 type trayState struct {
