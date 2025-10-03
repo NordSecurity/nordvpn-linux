@@ -27,15 +27,21 @@ func ParseDebianVersions(data []byte) []string {
 }
 
 func ParseRpmVersions(data []byte) []string {
-	// get release and version info
-	versionPattern := regexp.MustCompile(`rel="\d{1,3}" ver=".*"`)
+	// Position independent and case insensitive
+	versionPattern := regexp.MustCompile(`(?i)<version\b[^>]*\b(ver="[^"]*"[^>]*\brel="\d{1,3}"|rel="\d{1,3}"[^>]*\bver="[^"]*")[^>]*/?>`)
 	matches := versionPattern.FindAllString(string(data), -1)
 
-	for i := range matches {
-		// split to ["rel=", releaseInt, " ver=", versionString, ""]
-		quoteSplit := strings.Split(matches[i], "\"")
+	// Extract ver and rel values using regex capture groups
+	verPattern := regexp.MustCompile(`(?i)\bver="([^"]*)"`)
+	relPattern := regexp.MustCompile(`(?i)\brel="(\d{1,3})"`)
 
-		matches[i] = quoteSplit[3] + "-" + quoteSplit[1]
+	for i := range matches {
+		verMatch := verPattern.FindStringSubmatch(matches[i])
+		relMatch := relPattern.FindStringSubmatch(matches[i])
+
+		if len(verMatch) > 1 && len(relMatch) > 1 {
+			matches[i] = verMatch[1] + "-" + relMatch[1]
+		}
 	}
 
 	matches = validateVersionStrings(matches)
