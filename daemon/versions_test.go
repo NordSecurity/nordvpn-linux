@@ -1,7 +1,9 @@
 package daemon
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -60,4 +62,210 @@ func TestParseRpmVersions(t *testing.T) {
 	sort.Strings(expected)
 	sort.Strings(parsed)
 	assert.EqualValues(t, expected, parsed)
+}
+
+func TestParseRpmVersions_Unit(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		input    string
+		expected []string
+	}{
+		{
+			name: "single version",
+			input: `<?xml version="1.0" encoding="UTF-8"?>
+					<filelists xmlns="http://linux.duke.edu/metadata/filelists" packages="1">
+					<package arch="x86_64" name="nordvpn" pkgid="test">
+					<version epoch="0" rel="1" ver="3.14.0" />
+					</package>
+					</filelists>`,
+			expected: []string{"3.14.0-1"},
+		},
+		{
+			name: "multiple versions",
+			input: `<?xml version="1.0" encoding="UTF-8"?>
+					<filelists xmlns="http://linux.duke.edu/metadata/filelists" packages="3">
+					<package arch="x86_64" name="nordvpn" pkgid="test1">
+					<version epoch="0" rel="1" ver="3.14.0" />
+					</package>
+					<package arch="x86_64" name="nordvpn" pkgid="test2">
+					<version epoch="0" rel="2" ver="3.14.1" />
+					</package>
+					<package arch="x86_64" name="nordvpn" pkgid="test3">
+					<version epoch="0" rel="10" ver="3.15.0" />
+					</package>
+					</filelists>`,
+			expected: []string{"3.14.0-1", "3.14.1-2", "3.15.0-10"},
+		},
+		{
+			name: "versions with different formats",
+			input: `<version epoch="0" rel="1" ver="1.0.0" />
+					<version epoch="0" rel="99" ver="2.10.5" />
+					<version epoch="0" rel="123" ver="10.20.30" />`,
+			expected: []string{"1.0.0-1", "2.10.5-99", "10.20.30-123"},
+		},
+		{
+			name:     "empty input",
+			input:    "",
+			expected: []string{},
+		},
+		{
+			name: "no version tags",
+			input: `<?xml version="1.0" encoding="UTF-8"?>
+					<filelists xmlns="http://linux.duke.edu/metadata/filelists" packages="0">
+					</filelists>`,
+			expected: []string{},
+		},
+		{
+			name:     "malformed version - missing rel",
+			input:    `<version epoch="0" ver="3.14.0" />`,
+			expected: []string{},
+		},
+		{
+			name:     "malformed version - missing ver",
+			input:    `<version epoch="0" rel="1" />`,
+			expected: []string{},
+		},
+		{
+			name: "mixed valid and invalid versions",
+			input: `<version epoch="0" rel="1" ver="3.14.0" />
+					<version epoch="0" rel="2" />
+					<version epoch="0" ver="3.14.2" />
+					<version epoch="0" rel="3" ver="3.14.3" />`,
+			expected: []string{"3.14.0-1", "3.14.3-3"},
+		},
+		{
+			name: "version with invalid format after parsing",
+			input: `<version epoch="0" rel="1" ver="3.14.0" />
+					<version epoch="0" rel="2" ver="3.14" />
+					<version epoch="0" rel="3" ver="3.14.0.1" />
+					<version epoch="0" rel="4" ver="not-a-version" />`,
+			expected: []string{"3.14.0-1"},
+		},
+		{
+			name: "version attributes in different order",
+			input: `<version ver="3.14.0" rel="1" epoch="0" />
+					<version rel="2" epoch="0" ver="3.14.1" />`,
+			expected: []string{"3.14.0-1", "3.14.1-2"},
+		},
+		{
+			name:     "version with spaces",
+			input:    `<version epoch="0" rel="1" ver=" 3.14.0 " />`,
+			expected: []string{},
+		},
+		{
+			name:     "large release numbers",
+			input:    `<version epoch="0" rel="999" ver="1.0.0" />`,
+			expected: []string{"1.0.0-999"},
+		},
+		{
+			name:     "version tag with extra attributes",
+			input:    `<version epoch="0" rel="1" ver="3.14.0" extra="ignored" />`,
+			expected: []string{"3.14.0-1"},
+		},
+		{
+			name: "case sensitivity test",
+			input: `<version epoch="0" REL="1" VER="3.14.0" />
+					<Version epoch="0" rel="2" ver="3.14.1" />`,
+			expected: []string{"3.14.0-1", "3.14.1-2"}, // Both match now (case-insensitive)
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ParseRpmVersions([]byte(tt.input))
+			sort.Strings(result)
+			sort.Strings(tt.expected)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestParseRpmVersions_EdgeCases(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	t.Run("nil input", func(t *testing.T) {
+		result := ParseRpmVersions(nil)
+		assert.Empty(t, result)
+	})
+
+	t.Run("very large input", func(t *testing.T) {
+		// Create a large input with many versions
+		var builder strings.Builder
+		builder.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
+		for i := 0; i < 100; i++ {
+			builder.WriteString(fmt.Sprintf(`<version epoch="0" rel="%d" ver="1.0.%d" />`, i%100, i%100))
+		}
+
+		result := ParseRpmVersions([]byte(builder.String()))
+		assert.Greater(t, len(result), 0)
+		assert.LessOrEqual(t, len(result), 100)
+	})
+
+	t.Run("special characters in version", func(t *testing.T) {
+		input := `<version epoch="0" rel="1" ver="3.14.0-beta" />
+					<version epoch="0" rel="2" ver="3.14.0+build" />
+					<version epoch="0" rel="3" ver="3.14.0~rc1" />`
+
+		result := ParseRpmVersions([]byte(input))
+		assert.Empty(t, result) // None should match the validation pattern
+	})
+
+	t.Run("unicode in input", func(t *testing.T) {
+		input := `<version epoch="0" rel="1" ver="3.14.0" />
+					<version epoch="0" rel="2" ver="3.14.1" /> 中文
+					<version epoch="0" rel="3" ver="3.14.2" />`
+
+		result := ParseRpmVersions([]byte(input))
+		assert.Len(t, result, 3)
+	})
+}
+
+func TestValidateVersionStrings(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		input    []string
+		expected []string
+	}{
+		{
+			name:     "valid versions",
+			input:    []string{"1.0.0-1", "2.10.5-99", "10.20.30-123"},
+			expected: []string{"1.0.0-1", "2.10.5-99", "10.20.30-123"},
+		},
+		{
+			name:     "invalid versions filtered out",
+			input:    []string{"1.0.0-1", "1.0", "1.0.0", "1.0.0-", "-1", "1.0.0-1-2"},
+			expected: []string{"1.0.0-1"},
+		},
+		{
+			name:     "empty input",
+			input:    []string{},
+			expected: []string{},
+		},
+		{
+			name:     "all invalid",
+			input:    []string{"invalid", "1.2", "1.2.3.4", "abc-def"},
+			expected: []string{},
+		},
+		{
+			name:     "versions with leading zeros",
+			input:    []string{"01.02.03-04", "1.02.3-4", "1.2.03-4"},
+			expected: []string{"01.02.03-04", "1.02.3-4", "1.2.03-4"}, // The regex allows leading zeros
+		},
+		{
+			name:     "boundary values",
+			input:    []string{"0.0.0-0", "999.999.999-999", "1.1.1-1000"},
+			expected: []string{"0.0.0-0", "999.999.999-999"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := validateVersionStrings(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
 }
