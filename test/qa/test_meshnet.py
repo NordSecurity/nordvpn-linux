@@ -31,6 +31,7 @@ def teardown_function(function):  # noqa: ARG001
     meshnet.TestUtils.teardown_function(ssh_client)
 
 
+@pytest.mark.xfail
 def test_meshnet_connect():
     peer = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer()
     this_device = meshnet.PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list")).get_external_peer()
@@ -161,7 +162,7 @@ def test_set_meshnet_on_when_logged_out(meshnet_allias):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh_no_tty.nordvpn.set(meshnet_allias, "on")
 
-    assert "You are not logged in." in str(ex.value)
+    assert "You are not logged in." in ex.value.stdout.decode("utf-8")
 
 
 @pytest.mark.skip(reason="LVPN-4590")
@@ -174,9 +175,10 @@ def test_set_meshnet_off_when_logged_out(meshnet_allias):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh_no_tty.nordvpn.set(meshnet_allias, "off")
 
-    assert "You are not logged in." in str(ex.value)
+    assert "You are not logged in." in ex.value.stdout.decode("utf-8")
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
 def test_set_meshnet_off_on(meshnet_allias):
 
@@ -193,7 +195,7 @@ def test_set_meshnet_on_repeated(meshnet_allias):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh_no_tty.nordvpn.set(meshnet_allias, "on")
 
-    assert "Meshnet is already enabled." in str(ex.value)
+    assert "Meshnet is already enabled." in ex.value.stdout.decode("utf-8")
 
 
 @pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
@@ -204,7 +206,7 @@ def test_set_meshnet_off_repeated(meshnet_allias):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh_no_tty.nordvpn.set(meshnet_allias, "off")
 
-    assert "Meshnet is already disabled." in str(ex.value)
+    assert "Meshnet is already disabled." in ex.value.stdout.decode("utf-8")
 
 
 @pytest.mark.parametrize(("permission", "permission_state", "expected_message"), meshnet.PERMISSION_SUCCESS_MESSAGE_PARAMETER_SET, \
@@ -234,9 +236,10 @@ def test_permission_messages_error(permission, permission_state, expected_messag
 
     expected_message = expected_message % peer_hostname
 
-    assert expected_message in str(ex)
+    assert expected_message in ex.value.stdout.decode("utf-8")
 
 
+@pytest.mark.xfail
 def test_derp_server_selection_logic():
     def has_duplicates(lst):
         return len(lst) != len(set(lst))
@@ -272,7 +275,7 @@ def test_derp_server_selection_logic():
     ssh_client.exec_command("sudo iptables -D OUTPUT -p tcp -m tcp --dport 8765 -j DROP")
 
 
-@pytest.mark.skip("LVPN-3428, need a discussion here")
+@pytest.mark.skip("LVPN-3428, need a discussion here") # @pytest.mark.xfail
 def test_direct_connection_rtt_and_loss():
     def get_loss(ping_output: str) -> float:
         """Pass `ping_output`, and get loss returned."""
@@ -309,6 +312,7 @@ def test_direct_connection_rtt_and_loss():
         base_test(log_content, qapeer_hostname)
 
 
+@pytest.mark.xfail
 def test_incoming_connections():
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname

@@ -1,5 +1,6 @@
 import re
 import time
+import random
 from collections.abc import Callable
 from enum import Enum
 
@@ -306,7 +307,7 @@ def flush_allowlist():
 def is_connect_successful(output: str, name: str = "", hostname: str = ""):
     if not name and not hostname:
         pattern = r'Connecting to (.*?) \((.*?)\)'
-        match = re.match(pattern, str(output))
+        match = re.search(pattern, str(output))
 
         if match:
             name = match.group(1)
@@ -396,3 +397,11 @@ def technology_to_upper_camel_case(tech: str) -> str:
 def squash_whitespace(text: str) -> str:
     """Normalize whitespace by collapsing all sequences of whitespace into single spaces."""
     return ' '.join(text.split())
+
+
+def get_random_virtual_country() -> str:
+    """Return one random virtual country from `nordvpn countries` output."""
+    virtual_countries = get_virtual_countries()
+    assert len(virtual_countries) > 0
+    virtual_country = random.choice(virtual_countries)
+    return virtual_country

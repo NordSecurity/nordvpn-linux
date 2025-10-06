@@ -1,0 +1,109 @@
+# rps scripts, e.g. dart pub global activate rps --version 0.7.0
+scripts:
+  format:
+    $script: |
+      find . -name '*.dart' \
+      -not -name '*.tailor.dart' \
+      -not -name '*.freezed.dart' \
+      -not -name '*.g.dart' \
+      -not -path './lib/pb/*' \
+      -not -path './.dart_tool/*' \
+      -print0 \
+      | xargs -0 dart format
+
+  generate:
+    protobuf: # rps generate protobuf
+      $script: scripts/generate_protobuf.sh
+      $description: Regenerate protobufs
+
+    translations: # rps generate translations
+      $script: dart run slang -v
+      $description: Regenerate translation files
+
+    code:
+      $script: dart run build_runner build
+      $description: Regenerate code generators, e.g. riverpod, freezed
+
+  build:
+    binaries:
+      debug:
+        $description: Build application in debug
+        $script: flutter build linux --debug
+      release:
+        $description: Build application in release
+        $script: flutter build linux --release
+
+    package:
+      deb:
+        $description: Build debug deb package
+        $script: rps build package custom deb debug
+      rpm:
+        $description: Build debug rpm package
+        $script: rps build package custom rpm debug
+      custom:
+        $description: Build the application and create package. (deb|rpm) (debug|release)
+        $script: |
+          scripts/build_application.sh ${1}
+          WORKDIR=$(pwd) scripts/build_package.sh ${1} ${0} amd64
+
+  test:
+    all:
+      $description: Run all tests. First unit tests, then integration tests
+      $script: rps test int && rps test unit
+    int:
+      $description: Run all integration tests. Runs specified test if provided as argument like "--plain-name 'test-name'"
+      $script: flutter test integration_test -d linux
+    unit:
+      $description: Run all unit test. Runs specified test if provided as argument
+      $script: flutter test
+    cov:
+      $description: Run all unit tests with code coverage and open the report
+      $script: |
+        flutter test --coverage && \
+        genhtml coverage/lcov.info -o coverage/html && \
+        open coverage/html/index.html
+
+  docker: # execute commands using docker image instead of local system
+    generate:
+      protobuf:
+        $description: Regenerate protobufs using docker image
+        $script: |
+          docker run -v `pwd`/../:/code/app ghcr.io/nordsecurity/nordvpn-linux/protobuf_dart-3.8.1:1.0.1 ./gui/scripts/generate_protobuf.sh
+
+    build:
+      package:
+        deb: # rps docker build package deb
+          $description: Build debug deb package using docker image
+          $script: rps docker build package custom deb debug linux/amd64
+        rpm:
+          $description: Build debug rpm package using docker image
+          $script: rps docker build package custom rpm debug linux/amd64
+        arm:
+          deb: # rps docker build package arm deb
+            $description: Build debug deb package using docker image for ARM64
+            $script: rps docker build package custom deb debug linux/arm64
+          rpm:
+            $description: Build debug rpm package using docker image for ARM64
+            $script: rps docker build package custom rpm debug linux/arm64
+
+        custom:
+          $description: Build the application and create package in docker. (deb or rpm) (debug|release) (docker image platform)
+          $script: |
+            set -eux
+            # build application
+            APP_DIR=/code/app/gui
+            PLATFORM="${2}"
+            ARCH=${PLATFORM#"linux/"}
+            docker run -v `pwd`/../:/code/app \
+              --platform ${PLATFORM} \
+              --env WORKDIR=/code/app/ \
+              --env ARCH=amd64 \
+              --workdir ${APP_DIR} ghcr.io/nordsecurity/nordvpn-linux/flutter-3.32.8:1.0.1 scripts/build_application.sh ${1}
+            # Generate package
+            docker run -v `pwd`/../:/code/app \
+                    --workdir ${APP_DIR} \
+                    --user 1000:1000 \
+                    ghcr.io/nordsecurity/nordvpn-linux/packager:1.3.0 \
+                    ${APP_DIR}/scripts/build_package.sh ${1} ${0} ${ARCH}
+            # clean the build folder otherwise local builds will not work because of CMake error
+            flutter clean

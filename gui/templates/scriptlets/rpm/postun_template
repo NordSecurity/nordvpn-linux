@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+case "$1" in
+    0)
+    ${UNINSTALL_SCRIPT}
+    ;;
+esac
+
+exit 0

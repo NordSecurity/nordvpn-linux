@@ -21,17 +21,19 @@ import (
 const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
 	imageBuilder           = registryPrefix + "builder:1.4.1"
+	imageGUIFlutter        = registryPrefix + "flutter-3.32.8:1.1.0"
 	imagePackager          = registryPrefix + "packager:1.3.2"
 	imageDepender          = registryPrefix + "depender:1.3.2"
-	imageSnapPackager      = registryPrefix + "snaper:1.1.0"
+	imageSnapPackager      = registryPrefix + "snaper:1.2.0"
 	imageProtobufGenerator = registryPrefix + "generator:1.4.2"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
 	imageTester            = registryPrefix + "tester:1.6.0"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.4"
-	imageRuster            = registryPrefix + "ruster:1.4.0"
+	imageRuster            = registryPrefix + "ruster:1.4.1"
 
-	dockerWorkDir  = "/opt"
-	devPackageType = "source"
+	dockerWorkDir    = "/opt"
+	guiDockerWorkDir = dockerWorkDir + "/gui"
+	devPackageType   = "source"
 
 	qaPeerAddress = "http://qa-peer:8000/exec"
 )
@@ -255,6 +257,7 @@ func (Build) NoticesDocker(ctx context.Context) error {
 		env,
 		imageDepender,
 		[]string{"ci/licenses.sh"},
+		dockerWorkDir,
 	)
 }
 
@@ -319,6 +322,8 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
 	env["PACKAGE"] = devPackageType
+	//TODO (LVPN-9228) remove usage of ENABLE_GUI_BUILD variable, once the way of building is unified
+	env["ENABLE_GUI_BUILD"] = "1"
 
 	switch packageType {
 	case packageTypeSnap:
@@ -336,6 +341,7 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 			env,
 			imagePackager,
 			[]string{"ci/nfpm/build_packages_resources.sh", packageType},
+			dockerWorkDir,
 		)
 	}
 
@@ -412,11 +418,24 @@ func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 	env["PACKAGE"] = devPackageType
 	env["BUILD_FLAGS"] = buildFlags
 
-	return RunDocker(
+	// build core part
+	if err = RunDocker(
 		ctx,
 		env,
 		imageBuilder,
 		[]string{"ci/compile.sh"},
+		dockerWorkDir,
+	); err != nil {
+		return fmt.Errorf("error while compiling core: %w", err)
+	}
+
+	// build GUI binaries
+	return RunDocker(
+		ctx,
+		env,
+		imageGUIFlutter,
+		[]string{"scripts/build_application.sh", "release"},
+		guiDockerWorkDir,
 	)
 }
 
@@ -509,12 +528,12 @@ func (Build) RustDocker(ctx context.Context) error {
 	}
 
 	if strings.Contains(features, "telio") {
-		if err := RunDocker(ctx, env, imageRuster, []string{"ci/build_libtelio.sh"}); err != nil {
+		if err := RunDocker(ctx, env, imageRuster, []string{"ci/build_libtelio.sh"}, dockerWorkDir); err != nil {
 			return err
 		}
 	}
 	if strings.Contains(features, "drop") {
-		if err := RunDocker(ctx, env, imageRuster, []string{"ci/build_libdrop.sh"}); err != nil {
+		if err := RunDocker(ctx, env, imageRuster, []string{"ci/build_libdrop.sh"}, dockerWorkDir); err != nil {
 			return err
 		}
 	}
@@ -534,6 +553,7 @@ func (Generate) ProtobufDocker(ctx context.Context) error {
 		env,
 		imageProtobufGenerator,
 		[]string{"ci/generate_protobuf.sh"},
+		dockerWorkDir,
 	)
 }
 
@@ -599,6 +619,7 @@ func (Test) Hardening(ctx context.Context) error {
 		env,
 		imageScanner,
 		[]string{"ci/hardening.sh"},
+		dockerWorkDir,
 	)
 }
 

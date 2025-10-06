@@ -508,6 +508,9 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 		dedicatedIPServices, err := r.ac.GetDedicatedIPServices()
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "getting dedicated IP service data:", err)
+			if errors.Is(err, core.ErrUnauthorized) {
+				return nil, false, err
+			}
 			return nil, false, internal.ErrUnhandled
 		}
 
@@ -554,6 +557,9 @@ func selectDedicatedIPServer(authChecker auth.Checker, servers core.Servers) (*c
 	dedicatedIPServices, err := authChecker.GetDedicatedIPServices()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "getting dedicated IP service data:", err)
+		if errors.Is(err, core.ErrUnauthorized) {
+			return nil, internal.NewErrorWithCode(internal.CodeRevokedAccessToken)
+		}
 		return nil, internal.ErrUnhandled
 	}
 

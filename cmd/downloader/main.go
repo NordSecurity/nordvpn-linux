@@ -34,7 +34,7 @@ func main() {
 		log.Fatalln("creating nord validator:", err)
 	}
 
-	api := core.NewDefaultAPI(
+	api := core.NewSimpleAPI(
 		"",
 		daemon.BaseURL,
 		client,

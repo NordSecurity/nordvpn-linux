@@ -10,6 +10,10 @@ from . import logging, ssh
 from lib.shell import sh_no_tty
 
 
+class Env:
+    DEV = "dev"
+    PROD = "prod"
+
 def _rewrite_log_path():
     project_root = os.environ["WORKDIR"].replace("/", "\\/")
     pattern = f"s/^LOGFILE=.*/LOGFILE={project_root}\\/dist\\/logs\\/daemon.log/"
@@ -92,19 +96,29 @@ def start_peer(ssh_client: ssh.Ssh):
         time.sleep(1)
 
 
-def stop():
-    """Stops the daemon and blocks until it is actually stopped."""
-    if is_under_snap():
-        #sh.sudo.snap("stop", "nordvpn")
-        os.popen("sudo snap stop nordvpn").read()
-    elif is_init_systemd():
-        #sh.sudo.systemctl.stop.nordvpnd()
-        os.popen("sudo systemctl stop nordvpn").read()
-    else:
-        # call to init.d returns before the daemon is actually stopped
-        sh.sudo("/etc/init.d/nordvpn", "stop")
-        while is_running():
-            time.sleep(1)
+def stop(timeout: int = 10):
+    """
+    Stops the daemon and waits until it is actually stopped.
+
+    :param timeout: seconds to wait after stopping.
+
+    :raises TimeoutError: If the daemon does not stop within the given timeout.
+    """
+    if is_running():
+        if is_under_snap():
+            os.popen("sudo snap stop nordvpn").read()
+        elif is_init_systemd():
+            os.popen("sudo systemctl stop nordvpn").read()
+        else:
+            # call to init.d returns before the daemon is actually stopped
+            sh.sudo("/etc/init.d/nordvpn", "stop")
+
+    start_time = time.time()
+    while is_running():
+        if time.time() - start_time > timeout:
+            exc_msg = f"Operation timed out after {timeout} seconds. Daemon is not stopped!"
+            raise TimeoutError(exc_msg)
+        time.sleep(1)
 
 
 def stop_peer(ssh_client: ssh.Ssh):
@@ -150,7 +164,9 @@ def wait_for_autoconnect():
 def is_running():
     try:
         sh.nordvpn.status()
-    except sh.ErrorReturnCode_1:
+    except sh.ErrorReturnCode_1 as ex:
+        # if user is not part of the nordvpn group assert
+        assert "Permission needed" not in ex.stdout.decode()
         return False
     else:
         return True
@@ -188,3 +204,49 @@ def get_status_data() -> dict:
     colon_separated_pairs = (element.split(':') for element in lines)
     formatted_pairs = {(key.lower(), value.strip()) for key, value in colon_separated_pairs}
     return dict(formatted_pairs)
+
+def get_env() ->str:
+    """
+    Detects and returns the active environment (DEV or PROD) based on the NordVPN version output.
+
+    :return: the active environment (DEV or PROD)
+    """
+    result = sh.nordvpn("--version")
+    if Env.DEV in result:
+        return Env.DEV
+    return Env.PROD
+
+def enable_rc_local_config_usage():
+    """
+    Modifies the nordvpn service file to enable usage of local remote config.
+
+    This function is typically used to force the application to use locally cached remote config files.
+    """
+    service_path = "/etc/init.d/nordvpn"
+
+    # Print original service file for reference
+    print(f"Service original:\n {sh.cat(service_path)}")
+
+    # Insert environment variable into systemd service file
+    sh.sudo("sed", "-i", r"1a export RC_USE_LOCAL_CONFIG=1", service_path)
+
+    sh.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
+
+    # Print service file after modification
+    print(f"Service after:\n {sh.cat(service_path)}")
+
+def disable_rc_local_config_usage():
+    """
+    Restores the original nordvpn service file by removing the forced local config env variable.
+
+    This function is typically used to clean up the service file after testing,
+    ensuring that the local remote config behavior is disabled.
+    """
+    service_path = "/etc/init.d/nordvpn"
+    # Cleanup: remove the injected environment variable line
+    sh.sudo("sed", "-i", r"/^export RC_USE_LOCAL_CONFIG=1$/d", service_path)
+
+    sh.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
+
+    # Print restored service file for verification
+    print(f"Service restored:\n {sh.cat(service_path)}")

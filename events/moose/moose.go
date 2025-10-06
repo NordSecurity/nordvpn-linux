@@ -334,7 +334,7 @@ func (s *Subscriber) NotifyLogout(data events.DataAuthorization) error {
 		eventTriggerDomainToInternalType(data.EventTrigger),
 		eventStatusToInternalType(data.EventStatus),
 		moose.NordvpnappOptBoolNone,
-		-1,
+		int32(data.Reason),
 		nil,
 	)); err != nil {
 		return err
@@ -599,6 +599,7 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 	if !data.IsAttempt {
 		duration = int32(data.Duration.Milliseconds())
 	}
+
 	return s.response(notifierFunc(
 		duration,
 		eventStatus,
@@ -607,10 +608,10 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 		int32(responseCode),
 		data.Request.Proto,
 		0,
-		"",
-		"",
-		"",
-		"",
+		data.RequestFilters,
+		data.RequestFields,
+		data.Limits,
+		data.Offset,
 		"",
 		nil,
 	))
@@ -692,18 +693,13 @@ func (s *Subscriber) fetchSubscriptions() error {
 	if s.consent == config.ConsentUndefined {
 		return nil
 	}
-	var cfg config.Config
-	if err := s.Config.Load(&cfg); err != nil {
-		return fmt.Errorf("loading config: %w", err)
-	}
-	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
 
-	payments, err := s.SubscriptionAPI.Payments(token)
+	payments, err := s.SubscriptionAPI.Payments()
 	if err != nil {
 		return fmt.Errorf("fetching payments: %w", err)
 	}
 
-	orders, err := s.SubscriptionAPI.Orders(token)
+	orders, err := s.SubscriptionAPI.Orders()
 	if err != nil {
 		return fmt.Errorf("fetching orders: %w", err)
 	}
@@ -819,7 +815,7 @@ func (s *Subscriber) setSubscriptions(
 			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateMerchantId(payment.Subscription.MerchantID)
 		},
 		func() uint32 {
-			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStatePaymentAmount(payment.Amount)
+			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStatePaymentAmount(fmt.Sprintf("%g", payment.Amount))
 		},
 		func() uint32 {
 			return moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStatePaymentCurrency(payment.Currency)

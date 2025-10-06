@@ -27,7 +27,6 @@ func ParseDebianVersions(data []byte) []string {
 }
 
 func ParseRpmVersions(data []byte) []string {
-
 	// match <package ... name="nordvpn" ...> ... </package>
 	packageRe := regexp.MustCompile(`(?s)<package[^>]+name="nordvpn"[^>]*>(.*?)</package>`)
 	packageMatches := packageRe.FindAllStringSubmatch(string(data), -1)

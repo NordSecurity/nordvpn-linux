@@ -522,7 +522,7 @@ def send_meshnet_invite(email):
         if process.returncode != 0:
             raise sh.ErrorReturnCode_1(full_cmd="", stdout=b"", stderr=stdout.split('\n')[-2].encode('utf-8'))
 
-        return stdout.strip().split('\n')[-1]
+        return stdout.strip()
     except subprocess.CalledProcessError as e:
         print(f"Error occurred: {e}")
         raise sh.ErrorReturnCode_1 from None

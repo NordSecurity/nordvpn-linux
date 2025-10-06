@@ -54,7 +54,10 @@ func dipServicesToProtobuf(dipServices []auth.DedicatedIPService) []*pb.Dedidcat
 
 // AccountInfo returns user account information.
 func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.AccountResponse, error) {
-	if !r.ac.IsLoggedIn() {
+	if ok, err := r.ac.IsLoggedIn(); !ok {
+		if errors.Is(err, core.ErrUnauthorized) {
+			return &pb.AccountResponse{Type: internal.CodeRevokedAccessToken}, nil
+		}
 		return nil, internal.ErrNotLoggedIn
 	}
 
@@ -77,8 +80,12 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 	accountInfo.DedicatedIpStatus = internal.CodeSuccess
 	dipServices, err := r.ac.GetDedicatedIPServices()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "getting dedicated ip services: %w", err)
-		return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
+		log.Println(internal.ErrorPrefix, "getting dedicated ip services:", err)
+		if errors.Is(err, core.ErrUnauthorized) {
+			return &pb.AccountResponse{Type: internal.CodeExpiredAccessToken}, nil
+		} else {
+			return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
+		}
 	}
 
 	if len(dipServices) < 1 {
@@ -115,7 +122,7 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 	accountInfo.ExpiresAt = tokenData.ServiceExpiry
 	accountInfo.LastDedicatedIpExpiresAt = dedicatedIPExpirationDate
 
-	currentUser, err := r.credentialsAPI.CurrentUser(tokenData.Token)
+	currentUser, err := r.credentialsAPI.CurrentUser()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "retrieving user:", err)
 		switch {

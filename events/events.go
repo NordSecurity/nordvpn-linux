@@ -156,11 +156,27 @@ type DataDisconnect struct {
 	Error                 error
 }
 
+type ReasonCode int32
+
+// Used to provide 'exception reason' why logout was initiated
+const (
+	// no exceptions
+	ReasonNotSpecified                 ReasonCode = -1
+	ReasonCorruptedVPNCredsAuthBad     ReasonCode = 3010400
+	ReasonCorruptedVPNCredsAuthMissing ReasonCode = 3020400
+	ReasonAuthTokenBad                 ReasonCode = 3010000
+	ReasonTokenMissing                 ReasonCode = 3020000
+	ReasonAuthTokenInvalidated         ReasonCode = 3030100
+	ReasonCorruptedVPNCreds            ReasonCode = 3000400
+	ReasonTokenCorrupted               ReasonCode = 3040000
+)
+
 type DataAuthorization struct {
 	DurationMs   int
 	EventTrigger TypeEventTrigger
 	EventStatus  TypeEventStatus
 	EventType    TypeLoginType
+	Reason       ReasonCode
 }
 
 type DataRequestAPI struct {
@@ -171,7 +187,11 @@ type DataRequestAPI struct {
 	Duration time.Duration
 	Error    error
 	// IsAttempt indicates whether the event represents an attempt
-	IsAttempt bool
+	IsAttempt      bool
+	RequestFilters string
+	RequestFields  string
+	Limits         string
+	Offset         string
 }
 
 // Analytics analytics handling engine interface

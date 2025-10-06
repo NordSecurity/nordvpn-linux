@@ -93,7 +93,7 @@ func NewServer(
 
 // EnableMeshnet connects device to meshnet.
 func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetResponse, error) {
-	if !s.ac.IsLoggedIn() {
+	if ok, _ := s.ac.IsLoggedIn(); !ok {
 		return &pb.MeshnetResponse{
 			Response: &pb.MeshnetResponse_ServiceError{
 				ServiceError: pb.ServiceErrorCode_NOT_LOGGED_IN,
@@ -245,7 +245,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 
 // IsEnabled checks if meshnet is enabled
 func (s *Server) IsEnabled(context.Context, *pb.Empty) (*pb.IsEnabledResponse, error) {
-	if !s.ac.IsLoggedIn() {
+	if ok, _ := s.ac.IsLoggedIn(); !ok {
 		return &pb.IsEnabledResponse{
 			Response: &pb.IsEnabledResponse_ErrorCode{
 				ErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
@@ -281,7 +281,7 @@ var (
 )
 
 func (s *Server) StartMeshnet() error {
-	if !s.ac.IsLoggedIn() {
+	if ok, _ := s.ac.IsLoggedIn(); !ok {
 		return ErrNotLoggedIn
 	}
 
@@ -382,7 +382,7 @@ func (s *Server) DisableMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 
 // RefreshMeshnet updates peer configuration.
 func (s *Server) RefreshMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse, error) {
-	if !s.ac.IsLoggedIn() {
+	if ok, _ := s.ac.IsLoggedIn(); !ok {
 		return &pb.MeshnetResponse{
 			Response: &pb.MeshnetResponse_ServiceError{
 				ServiceError: pb.ServiceErrorCode_NOT_LOGGED_IN,
@@ -463,7 +463,7 @@ func (s *Server) Invite(
 ) (*pb.InviteResponse, error) {
 	s.daemonEvents.Service.UiItemsClick.Publish(events.UiItemsAction{ItemName: "send_invitation", ItemType: "textbox", ItemValue: "send_invitation", FormReference: "cli"})
 
-	if !s.ac.IsLoggedIn() {
+	if ok, _ := s.ac.IsLoggedIn(); !ok {
 		return &pb.InviteResponse{
 			Response: &pb.InviteResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
@@ -576,7 +576,7 @@ func (s *Server) AcceptInvite(
 	ctx context.Context,
 	req *pb.InviteRequest,
 ) (*pb.RespondToInviteResponse, error) {
-	if !s.ac.IsLoggedIn() {
+	if ok, _ := s.ac.IsLoggedIn(); !ok {
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
@@ -682,7 +682,7 @@ func (s *Server) DenyInvite(
 	ctx context.Context,
 	req *pb.DenyInviteRequest,
 ) (*pb.RespondToInviteResponse, error) {
-	if !s.ac.IsLoggedIn() {
+	if ok, _ := s.ac.IsLoggedIn(); !ok {
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
@@ -773,7 +773,7 @@ func (s *Server) RevokeInvite(
 	ctx context.Context,
 	req *pb.DenyInviteRequest,
 ) (*pb.RespondToInviteResponse, error) {
-	if !s.ac.IsLoggedIn() {
+	if ok, _ := s.ac.IsLoggedIn(); !ok {
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
@@ -861,7 +861,7 @@ func (s *Server) RevokeInvite(
 
 // GetInvites from the API
 func (s *Server) GetInvites(context.Context, *pb.Empty) (*pb.GetInvitesResponse, error) {
-	if !s.ac.IsLoggedIn() {
+	if ok, _ := s.ac.IsLoggedIn(); !ok {
 		return &pb.GetInvitesResponse{
 			Response: &pb.GetInvitesResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
@@ -1209,7 +1209,7 @@ func (s *Server) updatePeerPermissions(token string, deviceID uuid.UUID, peer me
 // list and information about self is enough. This function does a login check and requires meshnet
 // to be enabled
 func (s *Server) fetchCfg() (cfg config.Config, grpcErr *pb.Error) {
-	if !s.ac.IsLoggedIn() {
+	if ok, _ := s.ac.IsLoggedIn(); !ok {
 		grpcErr = generalServiceError(pb.ServiceErrorCode_NOT_LOGGED_IN)
 		return
 	}
@@ -1694,7 +1694,7 @@ func (s *Server) NotifyNewTransfer(
 	ctx context.Context,
 	req *pb.NewTransferNotification,
 ) (*pb.NotifyNewTransferResponse, error) {
-	if !s.ac.IsLoggedIn() {
+	if ok, _ := s.ac.IsLoggedIn(); !ok {
 		return &pb.NotifyNewTransferResponse{
 			Response: &pb.NotifyNewTransferResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,
@@ -1950,7 +1950,7 @@ func (s *Server) connect(
 
 // GetPrivateKey returns self private key
 func (s *Server) GetPrivateKey(ctx context.Context, _ *pb.Empty) (*pb.PrivateKeyResponse, error) {
-	if !s.ac.IsLoggedIn() {
+	if ok, _ := s.ac.IsLoggedIn(); !ok {
 		return &pb.PrivateKeyResponse{
 			Response: &pb.PrivateKeyResponse_ServiceErrorCode{
 				ServiceErrorCode: pb.ServiceErrorCode_NOT_LOGGED_IN,

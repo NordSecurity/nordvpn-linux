@@ -5,8 +5,8 @@ import sh
 from . import UserConsentMode
 
 
-MSG_AUTOCONNECT_ENABLE_SUCCESS = "Auto-connect is set to 'enabled' successfully."
-MSG_AUTOCONNECT_DISABLE_SUCCESS = "Auto-connect is set to 'disabled' successfully."
+MSG_AUTOCONNECT_ENABLE_SUCCESS = "Auto-connect has been successfully set to 'enabled'"
+MSG_AUTOCONNECT_DISABLE_SUCCESS = "Auto-connect has been successfully set to 'disabled'."
 MSG_AUTOCONNECT_DISABLE_FAIL = "Auto-connect is already set to 'disabled'."
 
 MULTI_LINE_PARAM_SEP = "#"
@@ -125,6 +125,11 @@ def is_firewall_enabled():
 def is_dns_disabled():
     """Returns True, if DNS is disabled in application settings."""
     return Settings().get("DNS") == "disabled"
+
+
+def is_tray_enabled():
+    """Returns True, if Tray is enabled in application settings."""
+    return Settings().get("Tray") == "enabled"
 
 
 def is_user_consent_granted():
