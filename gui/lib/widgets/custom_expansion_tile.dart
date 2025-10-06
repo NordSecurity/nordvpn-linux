@@ -91,6 +91,9 @@ class _CustomExpansionTileState extends State<CustomExpansionTile> {
           _isExpanded = !_isExpanded;
         });
       },
+      hoverColor: Colors.transparent,
+      splashColor: Colors.transparent,
+      highlightColor: Colors.transparent,
     );
   }
 }
