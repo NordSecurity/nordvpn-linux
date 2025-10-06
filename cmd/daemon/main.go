@@ -18,7 +18,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"golang.org/x/net/netutil"
+	"google.golang.org/grpc"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/clientid"
@@ -73,9 +75,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo"
-	"github.com/google/uuid"
-
-	"google.golang.org/grpc"
 )
 
 // Values set when building the application
@@ -83,7 +82,6 @@ var (
 	Salt        = ""
 	Version     = "0.0.0"
 	Environment = ""
-	PackageType = ""
 	Arch        = ""
 	Port        = 6960
 	ConnType    = "unix"
@@ -293,18 +291,12 @@ func main() {
 	detectedPackageManager := internal.DetectPackageManager()
 	log.Printf("%s Detected package manager: %s\n", internal.InfoPrefix, detectedPackageManager)
 
-	// Use detected package manager, fallback to build-time PackageType if detection fails
-	packageTypeToUse := PackageType // default is `deb`
-	if detectedPackageManager != internal.PackageManagerUnknown {
-		packageTypeToUse = detectedPackageManager.String()
-	}
-
 	repoAPI := daemon.NewRepoAPI(
 		userAgent,
 		daemon.RepoURL,
 		Version,
 		internal.Environment(Environment),
-		packageTypeToUse,
+		detectedPackageManager.String(),
 		Arch,
 		httpClientSimple,
 	)
