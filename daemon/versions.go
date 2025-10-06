@@ -27,19 +27,40 @@ func ParseDebianVersions(data []byte) []string {
 }
 
 func ParseRpmVersions(data []byte) []string {
-	// get release and version info
-	versionPattern := regexp.MustCompile(`rel="\d{1,3}" ver=".*"`)
-	matches := versionPattern.FindAllString(string(data), -1)
 
-	for i := range matches {
-		// split to ["rel=", releaseInt, " ver=", versionString, ""]
-		quoteSplit := strings.Split(matches[i], "\"")
+	// match <package ... name="nordvpn" ...> ... </package>
+	packageRe := regexp.MustCompile(`(?s)<package[^>]+name="nordvpn"[^>]*>(.*?)</package>`)
+	packageMatches := packageRe.FindAllStringSubmatch(string(data), -1)
 
-		matches[i] = quoteSplit[3] + "-" + quoteSplit[1]
+	versions := make([]string, 0, len(packageMatches))
+	for _, pkgMatch := range packageMatches {
+		pkgContent := pkgMatch[1]
+
+		// match <version ...> inside the package
+		versionTagRe := regexp.MustCompile(`<version\s+([^>]+)\/?>`)
+		versionTags := versionTagRe.FindAllStringSubmatch(pkgContent, -1)
+
+		for _, tagMatch := range versionTags {
+			attrs := tagMatch[1]
+
+			// extract key="value" pairs
+			kvRe := regexp.MustCompile(`(\w+)="([^"]+)"`)
+			kvPairs := kvRe.FindAllStringSubmatch(attrs, -1)
+
+			matchMap := make(map[string]string)
+			for _, kv := range kvPairs {
+				matchMap[kv[1]] = kv[2]
+			}
+
+			ver := matchMap["ver"]
+			rel := matchMap["rel"]
+			if ver != "" && rel != "" {
+				versions = append(versions, ver+"-"+rel)
+			}
+		}
 	}
 
-	matches = validateVersionStrings(matches)
-	return matches
+	return validateVersionStrings(versions)
 }
 
 func validateVersionStrings(versions []string) []string {

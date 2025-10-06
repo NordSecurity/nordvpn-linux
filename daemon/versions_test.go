@@ -50,8 +50,7 @@ func TestParseDebianVersions(t *testing.T) {
 func TestParseRpmVersions(t *testing.T) {
 	category.Set(t, category.File)
 
-	expected := []string{"2.2.0-2", "3.0.0-4", "2.1.0-5", "2.1.0-1", "2.1.0-3", "2.1.0-2", "2.1.0-4",
-		"2.2.0-3", "2.1.0-0", "3.0.0-3", "2.2.0-0", "2.2.0-1", "2.0.0-1", "3.0.0-1", "3.0.0-2"}
+	expected := []string{"3.20.0-1", "3.20.1-1", "3.20.2-1", "3.20.3-1", "4.0.0-1", "4.1.0-1", "4.1.1-1"}
 	data, err := internal.FileRead(TestdataPath + TestVersionRpm)
 	if err != nil {
 		t.Fatalf("ParseRpmVersions failed. Got error reading test file: %v.\n", err)
