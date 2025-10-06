@@ -289,12 +289,22 @@ func main() {
 		validator,
 	)
 
+	// Detect package manager at startup
+	detectedPackageManager := internal.DetectPackageManager()
+	log.Printf("%s Detected package manager: %s\n", internal.InfoPrefix, detectedPackageManager)
+
+	// Use detected package manager, fallback to build-time PackageType if detection fails
+	packageTypeToUse := PackageType // default is `deb`
+	if detectedPackageManager != internal.PackageManagerUnknown {
+		packageTypeToUse = detectedPackageManager.String()
+	}
+
 	repoAPI := daemon.NewRepoAPI(
 		userAgent,
 		daemon.RepoURL,
 		Version,
 		internal.Environment(Environment),
-		PackageType,
+		packageTypeToUse,
 		Arch,
 		httpClientSimple,
 	)

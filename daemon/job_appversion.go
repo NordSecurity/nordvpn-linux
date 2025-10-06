@@ -22,6 +22,8 @@ func JobVersionCheck(dm *DataManager, api *RepoAPI) func() {
 		// Get info from repo and convert data to strings
 		var versionStrings []string
 		switch api.packageType {
+		default: // default is `deb` e.g. if under Arch - check deb repo for new version
+			fallthrough
 		case "deb":
 			data, err := api.DebianFileList()
 			if err != nil {
@@ -29,7 +31,7 @@ func JobVersionCheck(dm *DataManager, api *RepoAPI) func() {
 				return
 			}
 			versionStrings = ParseDebianVersions(data)
-		default: // use this logic for RPM and unexpected cases
+		case "rpm":
 			data, err := api.RpmFileList()
 			if err != nil {
 				dm.SetVersionData(vdata.version, false)
