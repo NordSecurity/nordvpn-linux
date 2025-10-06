@@ -8,7 +8,7 @@ const (
 	ProtocolErrorMessage   = "protocol: failed to parse %s"
 	TechnologyErrorMessage = "technology: failed to parse %s"
 
-	DaemonConnRefusedErrorMessage = "Cannot reach System Daemon."
+	DaemonConnRefusedErrorMessage = "We couldn't reach System Daemon."
 
 	ServerUnavailableErrorMessage = "The specified server is not available at the moment or does not support your connection settings."
 	TagNonexistentErrorMessage    = "The specified server does not exist."

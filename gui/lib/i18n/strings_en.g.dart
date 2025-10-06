@@ -929,8 +929,8 @@ class TranslationsDaemonEn {
 	/// en: 'Reconnect to VPN to apply changes'
 	String get code_2002_title => 'Reconnect to VPN to apply changes';
 
-	/// en: 'You are connected to NordVPN. Please reconnect to apply changes.'
-	String get code_2002_msg => 'You are connected to NordVPN. Please reconnect to apply changes.';
+	/// en: 'You're connected to the VPN. Please reconnect to apply the setting.'
+	String get code_2002_msg => 'You\'re connected to the VPN. Please reconnect to apply the setting.';
 
 	/// en: 'Unauthorized'
 	String get code_3001_title => 'Unauthorized';
@@ -947,8 +947,8 @@ class TranslationsDaemonEn {
 	/// en: 'Config error'
 	String get code_3004_title => 'Config error';
 
-	/// en: 'It seems there's an issue with the config file. If the issue persists, please contact our customer support.'
-	String get code_3004_msg => 'It seems there\'s an issue with the config file. If the issue persists, please contact our customer support.';
+	/// en: 'We ran into an issue with the config file. If the problem persists, please contact our customer support.'
+	String get code_3004_msg => 'We ran into an issue with the config file. If the problem persists, please contact our customer support.';
 
 	/// en: 'Empty payload'
 	String get code_3005_title => 'Empty payload';
@@ -977,8 +977,8 @@ class TranslationsDaemonEn {
 	/// en: 'Daemon offline'
 	String get code_3013_title => 'Daemon offline';
 
-	/// en: 'Cannot reach system daemon.'
-	String get code_3013_msg => 'Cannot reach system daemon.';
+	/// en: 'We couldn't reach System Daemon.'
+	String get code_3013_msg => 'We couldn\'t reach System Daemon.';
 
 	/// en: 'Gateway error'
 	String get code_3014_title => 'Gateway error';
@@ -989,8 +989,8 @@ class TranslationsDaemonEn {
 	/// en: 'Outdated'
 	String get code_3015_title => 'Outdated';
 
-	/// en: 'A new version of NordVPN is available! Please update the application.'
-	String get code_3015_msg => 'A new version of NordVPN is available! Please update the application.';
+	/// en: 'A new version of NordVPN is available! Please update the app.'
+	String get code_3015_msg => 'A new version of NordVPN is available! Please update the app.';
 
 	/// en: 'Dependency error'
 	String get code_3017_title => 'Dependency error';
@@ -1085,14 +1085,14 @@ class TranslationsDaemonEn {
 	/// en: 'Private subnet LAN discovery'
 	String get code_3040_title => 'Private subnet LAN discovery';
 
-	/// en: 'Allowlisting a private subnet is not available while local network discovery is enabled.'
-	String get code_3040_msg => 'Allowlisting a private subnet is not available while local network discovery is enabled.';
+	/// en: 'Allowlisting a private subnet is not available while local network discovery is turned on.'
+	String get code_3040_msg => 'Allowlisting a private subnet is not available while local network discovery is turned on.';
 
 	/// en: 'Dedicated IP renew error'
 	String get code_3041_title => 'Dedicated IP renew error';
 
-	/// en: 'You don't have a dedicated IP subscription. To get a personal IP address that belongs only to you, continue in the browser.'
-	String get code_3041_msg => 'You don\'t have a dedicated IP subscription. To get a personal IP address that belongs only to you, continue in the browser.';
+	/// en: 'You don’t have a dedicated IP subscription. To get a personal IP address, continue in the browser.'
+	String get code_3041_msg => 'You don’t have a dedicated IP subscription. To get a personal IP address, continue in the browser.';
 
 	/// en: 'Dedicated IP no server'
 	String get code_3042_title => 'Dedicated IP no server';
@@ -1100,11 +1100,11 @@ class TranslationsDaemonEn {
 	/// en: 'This server isn't currently included in your dedicated IP subscription.'
 	String get code_3042_msg => 'This server isn\'t currently included in your dedicated IP subscription.';
 
-	/// en: 'Dedicated IP service but on server'
-	String get code_3043_title => 'Dedicated IP service but on server';
+	/// en: 'Dedicated IP service but no server'
+	String get code_3043_title => 'Dedicated IP service but no server';
 
-	/// en: 'It looks like you haven't selected the preferred server location for your dedicated IP. Please head over to Nord Account and set up your dedicated IP server.'
-	String get code_3043_msg => 'It looks like you haven\'t selected the preferred server location for your dedicated IP. Please head over to Nord Account and set up your dedicated IP server.';
+	/// en: 'Please select the preferred server location for your dedicated IP in Nord Account.'
+	String get code_3043_msg => 'Please select the preferred server location for your dedicated IP in Nord Account.';
 
 	/// en: 'Allow list invalid subnet'
 	String get code_3044_title => 'Allow list invalid subnet';
@@ -1115,20 +1115,20 @@ class TranslationsDaemonEn {
 	/// en: 'Allow list port noop'
 	String get code_3047_title => 'Allow list port noop';
 
-	/// en: 'Port is already allowlisted.'
-	String get code_3047_msg => 'Port is already allowlisted.';
+	/// en: 'Port is already on the allowlist.'
+	String get code_3047_msg => 'Port is already on the allowlist.';
 
 	/// en: 'Here's what to know'
 	String get code_3048_title => 'Here\'s what to know';
 
-	/// en: 'The post-quantum encryption and Meshnet can't run at the same time. Please turn off one feature to use the other.'
-	String get code_3048_msg => 'The post-quantum encryption and Meshnet can\'t run at the same time. Please turn off one feature to use the other.';
+	/// en: 'The post-quantum VPN and Meshnet can't run at the same time. Please turn off one feature to use the other.'
+	String get code_3048_msg => 'The post-quantum VPN and Meshnet can\'t run at the same time. Please turn off one feature to use the other.';
 
 	/// en: 'Here's what to know'
 	String get code_3049_title => 'Here\'s what to know';
 
-	/// en: 'This setting is not compatible with post-quantum encryption. Turn off post-quantum encryption first.'
-	String get code_3049_msg => 'This setting is not compatible with post-quantum encryption. Turn off post-quantum encryption first.';
+	/// en: 'This setting is not compatible with post-quantum encryption. To use it, turn off post-quantum encryption first.'
+	String get code_3049_msg => 'This setting is not compatible with post-quantum encryption. To use it, turn off post-quantum encryption first.';
 
 	/// en: 'Disabled technology'
 	String get code_3051_title => 'Disabled technology';
@@ -1139,8 +1139,8 @@ class TranslationsDaemonEn {
 	/// en: 'Restart daemon to apply setting'
 	String get code_5007_title => 'Restart daemon to apply setting';
 
-	/// en: 'Please restart the NordVPN daemon in the terminal. For example, run: sudo systemctl restart nordvpnd.'
-	String get code_5007_msg => 'Please restart the NordVPN daemon in the terminal. For example, run: sudo systemctl restart nordvpnd.';
+	/// en: 'Restart the daemon to apply this setting. For example, use the command `sudo systemctl restart nordvpnd` on systemd distributions.'
+	String get code_5007_msg => 'Restart the daemon to apply this setting. For example, use the command `sudo systemctl restart nordvpnd` on systemd distributions.';
 
 	/// en: 'gRPC timeout error'
 	String get code_5008_title => 'gRPC timeout error';
@@ -1151,8 +1151,8 @@ class TranslationsDaemonEn {
 	/// en: 'Missing exchange token'
 	String get code_5010_title => 'Missing exchange token';
 
-	/// en: 'Exchange token not provided.'
-	String get code_5010_msg => 'Exchange token not provided.';
+	/// en: 'The exchange token is missing. Please try logging in again. If the issue persists, contact our customer support.'
+	String get code_5010_msg => 'The exchange token is missing. Please try logging in again. If the issue persists, contact our customer support.';
 
 	/// en: 'Failed to open the browser'
 	String get code_5013_title => 'Failed to open the browser';
@@ -1169,8 +1169,8 @@ class TranslationsDaemonEn {
 	/// en: 'It didn't work this time'
 	String get code_5015_title => 'It didn\'t work this time';
 
-	/// en: 'The VPN connection has failed. Please check your internet connection and try connecting to the VPN again. If the issue persists, contact our customer support.'
-	String get code_5015_msg => 'The VPN connection has failed. Please check your internet connection and try connecting to the VPN again. If the issue persists, contact our customer support.';
+	/// en: 'We couldn't connect you to the VPN. Please check your internet connection and try again. If the issue persists, contact our customer support.'
+	String get code_5015_msg => 'We couldn\'t connect you to the VPN. Please check your internet connection and try again. If the issue persists, contact our customer support.';
 
 	/// en: 'It didn't work this time'
 	String get genericErrorTitle => 'It didn\'t work this time';
@@ -2205,13 +2205,13 @@ extension on Translations {
 			case 'countries.VE': return 'Venezuela';
 			case 'countries.VN': return 'Vietnam';
 			case 'daemon.code_2002_title': return 'Reconnect to VPN to apply changes';
-			case 'daemon.code_2002_msg': return 'You are connected to NordVPN. Please reconnect to apply changes.';
+			case 'daemon.code_2002_msg': return 'You\'re connected to the VPN. Please reconnect to apply the setting.';
 			case 'daemon.code_3001_title': return 'Unauthorized';
 			case 'daemon.code_3001_msg': return 'We couldn\'t log you in. Make sure your credentials are correct. If you have turned on MFA, log in using the \'nordvpn login\' command.';
 			case 'daemon.code_3003_title': return 'Format error';
 			case 'daemon.code_3003_msg': return 'The command is not valid.';
 			case 'daemon.code_3004_title': return 'Config error';
-			case 'daemon.code_3004_msg': return 'It seems there\'s an issue with the config file. If the issue persists, please contact our customer support.';
+			case 'daemon.code_3004_msg': return 'We ran into an issue with the config file. If the problem persists, please contact our customer support.';
 			case 'daemon.code_3005_title': return 'Empty payload';
 			case 'daemon.code_3005_msg': return 'Something went wrong. Please try again. If the problem persists, contact our customer support.';
 			case 'daemon.code_3007_title': return 'You\'re offline';
@@ -2221,11 +2221,11 @@ extension on Translations {
 			case 'daemon.code_3010_title': return 'VPN misconfigured';
 			case 'daemon.code_3010_msg': return 'Something went wrong. Please try again. If the problem persists, contact our customer support.';
 			case 'daemon.code_3013_title': return 'Daemon offline';
-			case 'daemon.code_3013_msg': return 'Cannot reach system daemon.';
+			case 'daemon.code_3013_msg': return 'We couldn\'t reach System Daemon.';
 			case 'daemon.code_3014_title': return 'Gateway error';
 			case 'daemon.code_3014_msg': return 'It\'s not you, it\'s us. We\'re having trouble reaching our servers. If the issue persists, please contact our customer support.';
 			case 'daemon.code_3015_title': return 'Outdated';
-			case 'daemon.code_3015_msg': return 'A new version of NordVPN is available! Please update the application.';
+			case 'daemon.code_3015_msg': return 'A new version of NordVPN is available! Please update the app.';
 			case 'daemon.code_3017_title': return 'Dependency error';
 			case 'daemon.code_3017_msg': return 'Currently in use.';
 			case 'daemon.code_3019_title': return 'No new data error';
@@ -2257,35 +2257,35 @@ extension on Translations {
 			case 'daemon.code_3039_title': return 'Invalid token';
 			case 'daemon.code_3039_msg': return 'We couldn\'t log you in - the access token is not valid. Please check if you\'ve entered the token correctly. If the issue persists, contact our customer support.';
 			case 'daemon.code_3040_title': return 'Private subnet LAN discovery';
-			case 'daemon.code_3040_msg': return 'Allowlisting a private subnet is not available while local network discovery is enabled.';
+			case 'daemon.code_3040_msg': return 'Allowlisting a private subnet is not available while local network discovery is turned on.';
 			case 'daemon.code_3041_title': return 'Dedicated IP renew error';
-			case 'daemon.code_3041_msg': return 'You don\'t have a dedicated IP subscription. To get a personal IP address that belongs only to you, continue in the browser.';
+			case 'daemon.code_3041_msg': return 'You don’t have a dedicated IP subscription. To get a personal IP address, continue in the browser.';
 			case 'daemon.code_3042_title': return 'Dedicated IP no server';
 			case 'daemon.code_3042_msg': return 'This server isn\'t currently included in your dedicated IP subscription.';
-			case 'daemon.code_3043_title': return 'Dedicated IP service but on server';
-			case 'daemon.code_3043_msg': return 'It looks like you haven\'t selected the preferred server location for your dedicated IP. Please head over to Nord Account and set up your dedicated IP server.';
+			case 'daemon.code_3043_title': return 'Dedicated IP service but no server';
+			case 'daemon.code_3043_msg': return 'Please select the preferred server location for your dedicated IP in Nord Account.';
 			case 'daemon.code_3044_title': return 'Allow list invalid subnet';
 			case 'daemon.code_3044_msg': return 'The command is not valid.';
 			case 'daemon.code_3047_title': return 'Allow list port noop';
-			case 'daemon.code_3047_msg': return 'Port is already allowlisted.';
+			case 'daemon.code_3047_msg': return 'Port is already on the allowlist.';
 			case 'daemon.code_3048_title': return 'Here\'s what to know';
-			case 'daemon.code_3048_msg': return 'The post-quantum encryption and Meshnet can\'t run at the same time. Please turn off one feature to use the other.';
+			case 'daemon.code_3048_msg': return 'The post-quantum VPN and Meshnet can\'t run at the same time. Please turn off one feature to use the other.';
 			case 'daemon.code_3049_title': return 'Here\'s what to know';
-			case 'daemon.code_3049_msg': return 'This setting is not compatible with post-quantum encryption. Turn off post-quantum encryption first.';
+			case 'daemon.code_3049_msg': return 'This setting is not compatible with post-quantum encryption. To use it, turn off post-quantum encryption first.';
 			case 'daemon.code_3051_title': return 'Disabled technology';
 			case 'daemon.code_3051_msg': return 'Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.';
 			case 'daemon.code_5007_title': return 'Restart daemon to apply setting';
-			case 'daemon.code_5007_msg': return 'Please restart the NordVPN daemon in the terminal. For example, run: sudo systemctl restart nordvpnd.';
+			case 'daemon.code_5007_msg': return 'Restart the daemon to apply this setting. For example, use the command `sudo systemctl restart nordvpnd` on systemd distributions.';
 			case 'daemon.code_5008_title': return 'gRPC timeout error';
 			case 'daemon.code_5008_msg': return 'Request time out.';
 			case 'daemon.code_5010_title': return 'Missing exchange token';
-			case 'daemon.code_5010_msg': return 'Exchange token not provided.';
+			case 'daemon.code_5010_msg': return 'The exchange token is missing. Please try logging in again. If the issue persists, contact our customer support.';
 			case 'daemon.code_5013_title': return 'Failed to open the browser';
 			case 'daemon.code_5013_msg': return 'We couldn\'t open the browser for you to log in.';
 			case 'daemon.code_5014_title': return 'Failed to open the browser';
 			case 'daemon.code_5014_msg': return 'We couldn\'t open the browser for you to create an account.';
 			case 'daemon.code_5015_title': return 'It didn\'t work this time';
-			case 'daemon.code_5015_msg': return 'The VPN connection has failed. Please check your internet connection and try connecting to the VPN again. If the issue persists, contact our customer support.';
+			case 'daemon.code_5015_msg': return 'We couldn\'t connect you to the VPN. Please check your internet connection and try again. If the issue persists, contact our customer support.';
 			case 'daemon.genericErrorTitle': return 'It didn\'t work this time';
 			case 'daemon.genericErrorMessage': return 'Something went wrong. Please try again. If the problem persists, contact our customer support.';
 			case 'ui.search': return 'Search';

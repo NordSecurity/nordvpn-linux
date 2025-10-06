@@ -9,8 +9,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 # Path where we save screenshots from browser, of Selenium tests, if they fail
 BROWSER_LOGS_PATH = f"{os.environ['WORKDIR']}/dist/logs/" #browser_tests/"
 
-LOGIN_MSG_SUCCESS = "Welcome to NordVPN! You can now connect to VPN by using 'nordvpn connect'."
-LOGOUT_MSG_SUCCESS = "You are logged out."
+LOGIN_MSG_SUCCESS = "Welcome to NordVPN! You can now connect to the VPN by using 'nordvpn connect'."
+LOGOUT_MSG_SUCCESS = "You're logged out."
 
 # environment variable, which we will use to specify location to temporary folder for Firefox
 ENV_FF_TMP = "TMPDIR"
