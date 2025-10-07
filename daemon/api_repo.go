@@ -119,7 +119,7 @@ func (api *RepoAPI) request(path string) (*RepoAPIResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	// resp body to be closed by invoking fn
 
 	if err := core.ExtractError(resp); err != nil {
 		return nil, err

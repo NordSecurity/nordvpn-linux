@@ -100,9 +100,9 @@ func TestParseRpmVersions_Unit(t *testing.T) {
 		},
 		{
 			name: "versions with different formats",
-			input: `<version epoch="0" rel="1" ver="1.0.0" />
-					<version epoch="0" rel="99" ver="2.10.5" />
-					<version epoch="0" rel="123" ver="10.20.30" />`,
+			input: `<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="1" ver="1.0.0" /></package>
+					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="99" ver="2.10.5" /></package>
+					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="123" ver="10.20.30" /></package>`,
 			expected: []string{"1.0.0-1", "2.10.5-99", "10.20.30-123"},
 		},
 		{
@@ -119,55 +119,55 @@ func TestParseRpmVersions_Unit(t *testing.T) {
 		},
 		{
 			name:     "malformed version - missing rel",
-			input:    `<version epoch="0" ver="3.14.0" />`,
+			input:    `<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" ver="3.14.0" /></package>`,
 			expected: []string{},
 		},
 		{
 			name:     "malformed version - missing ver",
-			input:    `<version epoch="0" rel="1" />`,
+			input:    `<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="1" /></package>`,
 			expected: []string{},
 		},
 		{
 			name: "mixed valid and invalid versions",
-			input: `<version epoch="0" rel="1" ver="3.14.0" />
-					<version epoch="0" rel="2" />
-					<version epoch="0" ver="3.14.2" />
-					<version epoch="0" rel="3" ver="3.14.3" />`,
+			input: `<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="1" ver="3.14.0" /></package>
+					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="2" /></package>
+					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" ver="3.14.2" /></package>
+					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="3" ver="3.14.3" /></package>`,
 			expected: []string{"3.14.0-1", "3.14.3-3"},
 		},
 		{
 			name: "version with invalid format after parsing",
-			input: `<version epoch="0" rel="1" ver="3.14.0" />
-					<version epoch="0" rel="2" ver="3.14" />
-					<version epoch="0" rel="3" ver="3.14.0.1" />
-					<version epoch="0" rel="4" ver="not-a-version" />`,
+			input: `<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="1" ver="3.14.0" /></package>
+					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="2" ver="3.14" /></package>
+					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="3" ver="3.14.0.1" /></package>
+					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="4" ver="not-a-version" /></package>`,
 			expected: []string{"3.14.0-1"},
 		},
 		{
 			name: "version attributes in different order",
-			input: `<version ver="3.14.0" rel="1" epoch="0" />
-					<version rel="2" epoch="0" ver="3.14.1" />`,
+			input: `<package arch="x86_64" name="nordvpn" pkgid="test1"><version ver="3.14.0" rel="1" epoch="0" /></package>
+					<package arch="x86_64" name="nordvpn" pkgid="test1"><version rel="2" epoch="0" ver="3.14.1" /></package>`,
 			expected: []string{"3.14.0-1", "3.14.1-2"},
 		},
 		{
 			name:     "version with spaces",
-			input:    `<version epoch="0" rel="1" ver=" 3.14.0 " />`,
+			input:    `<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="1" ver=" 3.14.0 " /></package>`,
 			expected: []string{},
 		},
 		{
 			name:     "large release numbers",
-			input:    `<version epoch="0" rel="999" ver="1.0.0" />`,
+			input:    `<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="999" ver="1.0.0" /></package>`,
 			expected: []string{"1.0.0-999"},
 		},
 		{
 			name:     "version tag with extra attributes",
-			input:    `<version epoch="0" rel="1" ver="3.14.0" extra="ignored" />`,
+			input:    `<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="1" ver="3.14.0" extra="ignored" /></package>`,
 			expected: []string{"3.14.0-1"},
 		},
 		{
 			name: "case sensitivity test",
-			input: `<version epoch="0" REL="1" VER="3.14.0" />
-					<Version epoch="0" rel="2" ver="3.14.1" />`,
+			input: `<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" REL="1" VER="3.14.0" /></package>
+					<package arch="x86_64" name="nordvpn" pkgid="test1"><Version epoch="0" rel="2" ver="3.14.1" /></package>`,
 			expected: []string{"3.14.0-1", "3.14.1-2"}, // Both match now (case-insensitive)
 		},
 	}
@@ -195,7 +195,7 @@ func TestParseRpmVersions_EdgeCases(t *testing.T) {
 		var builder strings.Builder
 		builder.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
 		for i := 0; i < 100; i++ {
-			builder.WriteString(fmt.Sprintf(`<version epoch="0" rel="%d" ver="1.0.%d" />`, i%100, i%100))
+			builder.WriteString(fmt.Sprintf(`<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="%d" ver="1.0.%d" /></package>`, i%100, i%100))
 		}
 
 		result := ParseRpmVersions([]byte(builder.String()))
@@ -204,18 +204,18 @@ func TestParseRpmVersions_EdgeCases(t *testing.T) {
 	})
 
 	t.Run("special characters in version", func(t *testing.T) {
-		input := `<version epoch="0" rel="1" ver="3.14.0-beta" />
-					<version epoch="0" rel="2" ver="3.14.0+build" />
-					<version epoch="0" rel="3" ver="3.14.0~rc1" />`
+		input := `<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="1" ver="3.14.0-beta" /></package>
+					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="2" ver="3.14.0+build" /></package>
+					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="3" ver="3.14.0~rc1" /></package>`
 
 		result := ParseRpmVersions([]byte(input))
 		assert.Empty(t, result) // None should match the validation pattern
 	})
 
 	t.Run("unicode in input", func(t *testing.T) {
-		input := `<version epoch="0" rel="1" ver="3.14.0" />
-					<version epoch="0" rel="2" ver="3.14.1" /> 中文
-					<version epoch="0" rel="3" ver="3.14.2" />`
+		input := `<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="1" ver="3.14.0" /></package>
+					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="2" ver="3.14.1" /> 中文</package>
+					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="3" ver="3.14.2" /></package>`
 
 		result := ParseRpmVersions([]byte(input))
 		assert.Len(t, result, 3)

@@ -27,9 +27,21 @@ func ParseDebianVersions(data []byte) []string {
 }
 
 func ParseRpmVersions(data []byte) []string {
-	// Position independent and case insensitive
-	versionPattern := regexp.MustCompile(`(?i)<version\b[^>]*\b(ver="[^"]*"[^>]*\brel="\d{1,3}"|rel="\d{1,3}"[^>]*\bver="[^"]*")[^>]*/?>`)
-	matches := versionPattern.FindAllString(string(data), -1)
+	// First, find all package blocks with name="nordvpn"
+	packagePattern := regexp.MustCompile(`(?is)<package\b[^>]*\bname="nordvpn"[^>]*>.*?</package>`)
+	packageMatches := packagePattern.FindAllString(string(data), -1)
+
+	var allVersionMatches []string
+
+	// For each nordvpn package, extract version information
+	for _, pkg := range packageMatches {
+		// Position independent and case insensitive
+		versionPattern := regexp.MustCompile(`(?i)<version\b[^>]*\b(ver="[^"]*"[^>]*\brel="\d{1,3}"|rel="\d{1,3}"[^>]*\bver="[^"]*")[^>]*/?>`)
+		versionMatches := versionPattern.FindAllString(pkg, -1)
+		allVersionMatches = append(allVersionMatches, versionMatches...)
+	}
+
+	matches := allVersionMatches
 
 	// Extract ver and rel values using regex capture groups
 	verPattern := regexp.MustCompile(`(?i)\bver="([^"]*)"`)
