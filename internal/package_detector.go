@@ -47,7 +47,10 @@ func isDebBasedSystem() bool {
 		return true
 	}
 
-	// Check multiple files
+	return checkOsReleaseFile([]string{"Ubuntu", "Debian"})
+}
+
+func checkOsReleaseFile(osKeywords []string) bool {
 	releaseFiles := []string{"/etc/os-release", "/etc/lsb-release"}
 
 	for _, file := range releaseFiles {
@@ -55,13 +58,14 @@ func isDebBasedSystem() bool {
 			data, err := FileRead(file)
 			if err == nil && len(data) > 0 {
 				content := string(data)
-				if strings.Contains(content, "Ubuntu") || strings.Contains(content, "Debian") {
-					return true
+				for _, keywrd := range osKeywords {
+					if strings.Contains(content, keywrd) {
+						return true
+					}
 				}
 			}
 		}
 	}
-
 	return false
 }
 
@@ -87,18 +91,7 @@ func isRpmBasedSystem() bool {
 		return true
 	}
 
-	// Check for openSUSE specific files
-	if FileExists("/etc/os-release") {
-		data, err := FileRead("/etc/os-release")
-		if err == nil && len(data) > 0 {
-			content := string(data)
-			if strings.Contains(content, "openSUSE") || strings.Contains(content, "SUSE") {
-				return true
-			}
-		}
-	}
-
-	return false
+	return checkOsReleaseFile([]string{"openSUSE", "SUSE"})
 }
 
 // String returns the string representation of the PackageType
