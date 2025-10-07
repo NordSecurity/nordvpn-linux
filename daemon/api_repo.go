@@ -115,7 +115,7 @@ func (api *RepoAPI) request(path string) (*RepoAPIResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	resp, err := api.client.Do(req)
+	resp, err := api.client.Do(req) //nolint:bodyclose
 	if err != nil {
 		return nil, err
 	}
