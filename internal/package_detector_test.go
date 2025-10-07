@@ -9,21 +9,21 @@ import (
 )
 
 // Integration tests that use real system calls
-func TestDetectPackageManagerIntegration(t *testing.T) {
+func TestDetectPackageTypeIntegration(t *testing.T) {
 	category.Set(t, category.Integration)
 
 	// This test will run on the actual system
-	result := DetectPackageManager()
+	result := DetectPackageType()
 
 	// We can't predict the result, but it should be one of the valid values
-	assert.Contains(t, []PackageManager{
-		PackageManagerDEB,
-		PackageManagerRPM,
-		PackageManagerUnknown,
+	assert.Contains(t, []PackageType{
+		PackageTypeDeb,
+		PackageTypeRpm,
+		PackageTypeUnknown,
 	}, result)
 
 	// The result should be consistent across multiple calls
-	result2 := DetectPackageManager()
+	result2 := DetectPackageType()
 	assert.Equal(t, result, result2)
 }
 
@@ -33,7 +33,7 @@ func TestIsDebBasedSystemIntegration(t *testing.T) {
 	// This test will run on the actual system
 	result := isDebBasedSystem()
 
-	// If we're on a DEB-based system, certain files or commands should exist
+	// If we're on a Deb-based system, certain files or commands should exist
 	if result {
 		// At least one of these should be true
 		hasDebIndicator := IsCommandAvailable("dpkg") ||
@@ -42,7 +42,7 @@ func TestIsDebBasedSystemIntegration(t *testing.T) {
 			FileExists("/etc/debian_version") ||
 			FileExists("/etc/lsb-release")
 
-		assert.True(t, hasDebIndicator, "DEB system detected but no DEB indicators found")
+		assert.True(t, hasDebIndicator, "Deb system detected but no Deb indicators found")
 	}
 }
 
@@ -52,7 +52,7 @@ func TestIsRpmBasedSystemIntegration(t *testing.T) {
 	// This test will run on the actual system
 	result := isRpmBasedSystem()
 
-	// If we're on an RPM-based system, certain files or commands should exist
+	// If we're on an Rpm-based system, certain files or commands should exist
 	if result {
 		// At least one of these should be true
 		hasRpmIndicator := IsCommandAvailable("rpm") ||
@@ -64,12 +64,12 @@ func TestIsRpmBasedSystemIntegration(t *testing.T) {
 			FileExists("/etc/SUSE-brand") ||
 			FileExists("/etc/os-release")
 
-		assert.True(t, hasRpmIndicator, "RPM system detected but no RPM indicators found")
+		assert.True(t, hasRpmIndicator, "Rpm system detected but no Rpm indicators found")
 	}
 }
 
 // Test edge cases and specific scenarios
-func TestDetectPackageManagerEdgeCases(t *testing.T) {
+func TestDetectPackageTypeEdgeCases(t *testing.T) {
 	category.Set(t, category.Integration)
 
 	// Create a temporary test directory
@@ -115,7 +115,7 @@ func TestDetectPackageManagerEdgeCases(t *testing.T) {
 
 			// The function should not panic
 			assert.NotPanics(t, func() {
-				_ = DetectPackageManager()
+				_ = DetectPackageType()
 			})
 		})
 	}

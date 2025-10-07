@@ -287,16 +287,16 @@ func main() {
 		validator,
 	)
 
-	// Detect package manager at startup
-	detectedPackageManager := internal.DetectPackageManager()
-	log.Printf("%s Detected package manager: %s\n", internal.InfoPrefix, detectedPackageManager)
+	// Detect package type at startup
+	detectedPackageType := internal.DetectPackageType()
+	log.Printf("%s Detected package type: %s\n", internal.InfoPrefix, detectedPackageType)
 
 	repoAPI := daemon.NewRepoAPI(
 		userAgent,
 		daemon.RepoURL,
 		Version,
 		internal.Environment(Environment),
-		detectedPackageManager.String(),
+		detectedPackageType.String(),
 		Arch,
 		httpClientSimple,
 	)
