@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/cli"
@@ -147,8 +148,8 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 	}(ch)
 
 	resp, err := ti.client.Connect(context.Background(), &pb.ConnectRequest{
-		ServerTag:   serverTag,
-		ServerGroup: serverGroup,
+		ServerTag:   strings.ToLower(serverTag),
+		ServerGroup: strings.ToLower(serverGroup),
 	})
 	if err != nil {
 		ti.notify(NoForce, "Connect error: %s", err)
