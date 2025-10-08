@@ -25,7 +25,7 @@ func JobVersionCheck(dm *DataManager, api *RepoAPI) func() {
 		switch api.packageType {
 		default: // default is `deb` e.g. if under Arch - check deb repo for new version
 			fallthrough
-		case internal.PackageTypeDeb:
+		case internal.PackageTypeDeb, internal.PackageTypeUnknown:
 			data, err := api.DebianFileList()
 			if err != nil {
 				dm.SetVersionData(vdata.version, false)
