@@ -54,15 +54,19 @@ func checkOsReleaseFile(osKeywords []string) bool {
 	releaseFiles := []string{"/etc/os-release", "/etc/lsb-release"}
 
 	for _, file := range releaseFiles {
-		if FileExists(file) {
-			data, err := FileRead(file)
-			if err == nil && len(data) > 0 {
-				content := string(data)
-				for _, keywrd := range osKeywords {
-					if strings.Contains(content, keywrd) {
-						return true
-					}
-				}
+		if !FileExists(file) {
+			continue
+		}
+
+		data, err := FileRead(file)
+		if err != nil || len(data) == 0 {
+			continue
+		}
+
+		content := string(data)
+		for _, keyword := range osKeywords {
+			if strings.Contains(content, keyword) {
+				return true
 			}
 		}
 	}

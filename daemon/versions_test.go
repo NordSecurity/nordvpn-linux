@@ -99,6 +99,28 @@ func TestParseRpmVersions_Unit(t *testing.T) {
 			expected: []string{"3.14.0-1", "3.14.1-2", "3.15.0-10"},
 		},
 		{
+			name: "multiple versions and multiple packages",
+			input: `<?xml version="1.0" encoding="UTF-8"?>
+					<filelists xmlns="http://linux.duke.edu/metadata/filelists" packages="3">
+					<package arch="x86_64" name="nordvpn" pkgid="test1">
+					<version epoch="0" rel="1" ver="3.14.0" />
+					</package>
+					<package arch="x86_64" name="nordvpn" pkgid="test2">
+					<version epoch="0" rel="2" ver="3.14.1" />
+					</package>
+					<package arch="x86_64" name="nordvpn-gui" pkgid="test2">
+					<version epoch="0" rel="2" ver="1.0.0" />
+					</package>
+					<package arch="x86_64" name="nordvpn" pkgid="test3">
+					<version epoch="0" rel="10" ver="3.15.0" />
+					</package>
+					<package arch="x86_64" name="nordvpn-gui" pkgid="test2">
+					<version epoch="0" rel="2" ver="2.0.0" />
+					</package>
+					</filelists>`,
+			expected: []string{"3.14.0-1", "3.14.1-2", "3.15.0-10"},
+		},
+		{
 			name: "versions with different formats",
 			input: `<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="1" ver="1.0.0" /></package>
 					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="99" ver="2.10.5" /></package>
@@ -185,41 +207,62 @@ func TestParseRpmVersions_Unit(t *testing.T) {
 func TestParseRpmVersions_EdgeCases(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	t.Run("nil input", func(t *testing.T) {
-		result := ParseRpmVersions(nil)
-		assert.Empty(t, result)
-	})
-
-	t.Run("very large input", func(t *testing.T) {
-		// Create a large input with many versions
-		var builder strings.Builder
-		builder.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
-		for i := 0; i < 100; i++ {
-			builder.WriteString(fmt.Sprintf(`<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="%d" ver="1.0.%d" /></package>`, i%100, i%100))
-		}
-
-		result := ParseRpmVersions([]byte(builder.String()))
-		assert.Greater(t, len(result), 0)
-		assert.LessOrEqual(t, len(result), 100)
-	})
-
-	t.Run("special characters in version", func(t *testing.T) {
-		input := `<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="1" ver="3.14.0-beta" /></package>
+	tests := []struct {
+		name      string
+		input     []byte
+		assertion func(t *testing.T, result []string)
+	}{
+		{
+			name:  "nil input",
+			input: nil,
+			assertion: func(t *testing.T, result []string) {
+				assert.Empty(t, result)
+			},
+		},
+		{
+			name: "very large input",
+			input: func() []byte {
+				// Create a large input with many versions
+				var builder strings.Builder
+				builder.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
+				for i := 0; i < 100; i++ {
+					builder.WriteString(fmt.Sprintf(`<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="%d" ver="1.0.%d" /></package>`, i%100, i%100))
+				}
+				return []byte(builder.String())
+			}(),
+			assertion: func(t *testing.T, result []string) {
+				assert.Greater(t, len(result), 0)
+				assert.LessOrEqual(t, len(result), 100)
+			},
+		},
+		{
+			name: "special characters in version",
+			input: []byte(`<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="1" ver="3.14.0-beta" /></package>
 					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="2" ver="3.14.0+build" /></package>
-					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="3" ver="3.14.0~rc1" /></package>`
-
-		result := ParseRpmVersions([]byte(input))
-		assert.Empty(t, result) // None should match the validation pattern
-	})
-
-	t.Run("unicode in input", func(t *testing.T) {
-		input := `<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="1" ver="3.14.0" /></package>
+					<package arch="x86_64" name="nordvpn-gui" pkgid="test1"><version epoch="0" rel="2" ver="3.14.0+build" /></package>
+					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="3" ver="3.14.0~rc1" /></package>`),
+			assertion: func(t *testing.T, result []string) {
+				assert.Empty(t, result) // None should match the validation pattern
+			},
+		},
+		{
+			name: "unicode in input",
+			input: []byte(`<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="1" ver="3.14.0" /></package>
 					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="2" ver="3.14.1" /> 中文</package>
-					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="3" ver="3.14.2" /></package>`
+					<package arch="x86_64" name="nordvpn-gui" pkgid="test1"><version epoch="0" rel="2" ver="3.14.1" /> 中文</package>
+					<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="3" ver="3.14.2" /></package>`),
+			assertion: func(t *testing.T, result []string) {
+				assert.Len(t, result, 3)
+			},
+		},
+	}
 
-		result := ParseRpmVersions([]byte(input))
-		assert.Len(t, result, 3)
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ParseRpmVersions(tt.input)
+			tt.assertion(t, result)
+		})
+	}
 }
 
 func TestValidateVersionStrings(t *testing.T) {

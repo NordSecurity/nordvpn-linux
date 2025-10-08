@@ -296,7 +296,7 @@ func main() {
 		daemon.RepoURL,
 		Version,
 		internal.Environment(Environment),
-		detectedPackageType.String(),
+		detectedPackageType,
 		Arch,
 		httpClientSimple,
 	)

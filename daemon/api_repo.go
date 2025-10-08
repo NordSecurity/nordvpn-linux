@@ -19,7 +19,7 @@ type RepoAPI struct {
 	baseURL     string
 	version     string
 	env         internal.Environment
-	packageType string
+	packageType internal.PackageType
 	arch        string
 	client      *http.Client
 	sync.Mutex
@@ -35,7 +35,7 @@ func NewRepoAPI(
 	baseURL string,
 	version string,
 	env internal.Environment,
-	packageType,
+	packageType internal.PackageType,
 	arch string,
 	client *http.Client,
 ) *RepoAPI {
