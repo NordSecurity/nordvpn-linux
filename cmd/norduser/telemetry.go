@@ -36,6 +36,8 @@ func ReportTelemetry(conn *grpc.ClientConn, evt ReportEvent, wait bool) {
 	client := telemetrypb.NewTelemetryServiceClient(conn)
 	submitEmptyMetrics := evt == ReportOnExit // skip gathering actual system info on exit
 
+	log.Printf("%s %s ReportTelemetry start: evt=%v wait=%t submitEmpty=%t", internal.InfoPrefix, tag, evt, wait, submitEmptyMetrics)
+
 	var wg *sync.WaitGroup
 	if wait {
 		wg = new(sync.WaitGroup)
@@ -46,13 +48,19 @@ func ReportTelemetry(conn *grpc.ClientConn, evt ReportEvent, wait bool) {
 	go sendDisplayProtocolMetric(client, submitEmptyMetrics, wg)
 
 	if wg != nil {
+		log.Printf("%s %s Waiting for telemetry goroutines to finish…", internal.InfoPrefix, tag)
 		wg.Wait()
+		log.Printf("%s %s Telemetry goroutines finished", internal.InfoPrefix, tag)
 	}
 }
 
 func logErrorMessage(metric string, value string, err error) {
 	log.Printf("%s %s Failed to send metric: metric=%s, value=%s, error=%v",
 		internal.WarningPrefix, tag, metric, value, err)
+}
+
+func logInfoMessage(metric string, value string) {
+	log.Printf("%s %s Sent metric: metric=%s, value=%s", internal.InfoPrefix, tag, metric, value)
 }
 
 // sendDesktopEnvironmentMetric sends the current desktop environment
@@ -69,15 +77,20 @@ func sendDesktopEnvironmentMetric(
 	ctx, cancel := context.WithTimeout(context.Background(), telemetryTimeout)
 	defer cancel()
 
+	log.Printf("%s %s DesktopEnvironment: submitEmpty=%t timeout=%s", internal.InfoPrefix, tag, submitEmpty, telemetryTimeout)
+
 	de := defaultDesktopEnv
 	if !submitEmpty {
 		de = sysinfo.GetDisplayDesktopEnvironment()
 	}
+	log.Printf("%s %s DesktopEnvironment detected=%q", internal.InfoPrefix, tag, de)
 
 	req := &telemetrypb.DesktopEnvironmentRequest{DesktopEnvName: de}
 	if _, err := client.SetDesktopEnvironment(ctx, req); err != nil {
 		logErrorMessage("DesktopEnvironment", de, err)
+		return
 	}
+	logInfoMessage("DesktopEnvironment", de)
 }
 
 // sendDisplayProtocolMetric sends the current display protocol (e.g., X11, Wayland)
@@ -94,6 +107,8 @@ func sendDisplayProtocolMetric(
 	ctx, cancel := context.WithTimeout(context.Background(), telemetryTimeout)
 	defer cancel()
 
+	log.Printf("%s %s DisplayProtocol: submitEmpty=%t timeout=%s", internal.InfoPrefix, tag, submitEmpty, telemetryTimeout)
+
 	protocol := telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_UNSPECIFIED
 	if !submitEmpty {
 		switch sysinfo.GetDisplayProtocol() {
@@ -105,9 +120,13 @@ func sendDisplayProtocolMetric(
 			protocol = telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_UNKNOWN
 		}
 	}
+	log.Printf("%s %s DisplayProtocol detected=%q", internal.InfoPrefix, tag, protocol.String())
 
 	req := &telemetrypb.DisplayProtocolRequest{Protocol: protocol}
 	if _, err := client.SetDisplayProtocol(ctx, req); err != nil {
 		logErrorMessage("DisplayProtocol", protocol.String(), err)
+		return
 	}
+	logInfoMessage("DisplayProtocol", protocol.String())
 }
+

@@ -46,29 +46,31 @@ func openLogFile(path string) (*os.File, error) {
 func addAutostart() (string, error) {
 	autostartDesktopFileContents := "[Desktop Entry]" +
 		"\nName=NordVPN" +
-		"\nExec=nordvpn user" +
+		"\nExec=env BAMF_DESKTOP_FILE_HINT=/var/lib/snapd/desktop/applications/nordvpn_nordvpn.desktop /snap/bin/nordvpn user" +
 		"\nTerminal=false" +
 		"\nType=Application" +
+		"\nX-SnapInstanceName=nordvpn" +
 		"\nX-GNOME-Autostart-enabled=true" +
-		"\nX-GNOME-Autostart-Delay=10" +
+		"\nX-GNOME-Autostart-Delay=20" +
 		"\nX-KDE-autostart-after=panel" +
-		"\nX-MATE-Autostart-Delay=10" +
+		"\nX-MATE-Autostart-Delay=20" +
 		"\nComment=This is an autostart for NordVPN user daemon" +
 		"\nCategories=Utility;"
 
 	dataDir := os.Getenv(snapconf.EnvSnapUserData)
-	path := path.Join(dataDir, ".config", "autostart", "nordvpn.desktop")
-	if err := internal.EnsureDir(path); err != nil {
+	p := path.Join(dataDir, ".config", "autostart", "nordvpn.desktop")
+	if err := internal.EnsureDir(p); err != nil {
 		return "", fmt.Errorf("ensuring path: %w", err)
 	}
 
-	return path, internal.FileWrite(path, []byte(autostartDesktopFileContents), internal.PermUserRW)
+	return p, internal.FileWrite(p, []byte(autostartDesktopFileContents), internal.PermUserRW)
 }
 
 func startTray(quitChan chan<- norduser.StopRequest) {
 	daemonURL := fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
 	cliendIDMetadataInterceptor := clientid.NewInsertClientIDInterceptor(daemonpb.ClientID_TRAY)
 
+	log.Printf("%s Tray: dialing daemon at %q", internal.InfoPrefix, daemonURL)
 	conn, err := grpc.Dial(
 		daemonURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -79,12 +81,14 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 	var client daemonpb.DaemonClient
 	if err == nil {
 		client = daemonpb.NewDaemonClient(conn)
+		log.Printf("%s Tray: connected to daemon", internal.InfoPrefix)
 	} else {
 		log.Println(internal.ErrorPrefix, "Error connecting to the NordVPN daemon:", err)
 		return
 	}
 	ReportTelemetry(conn, ReportOnStart, false)
 
+	log.Printf("%s Tray: dialing fileshare daemon at %q", internal.InfoPrefix, fileshare_process.FileshareURL)
 	fileshareConn, err := grpc.Dial(
 		fileshare_process.FileshareURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -93,12 +97,14 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 	var fileshareClient filesharepb.FileshareClient
 	if err == nil {
 		fileshareClient = filesharepb.NewFileshareClient(fileshareConn)
+		log.Printf("%s Tray: connected to fileshare daemon", internal.InfoPrefix)
 	} else {
 		log.Println(internal.ErrorPrefix, "Error connecting to the NordVPN fileshare daemon:", err)
 		return
 	}
 
 	ti := tray.NewTrayInstance(client, fileshareClient, quitChan)
+	log.Printf("%s Tray: starting tray instance", internal.InfoPrefix)
 	ti.Start()
 
 	onExit := func() {
@@ -113,19 +119,27 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 	}
 
 	trayStatus := ti.WaitInitialTrayStatus()
+	log.Printf("%s Tray: initial status %v", internal.InfoPrefix, trayStatus)
 	if trayStatus == tray.Enabled {
+		attempt := 0
 		for {
+			attempt++
 			if systray.IsAvailable() {
+				log.Printf("%s Tray: backend available, running systray (attempt %d)", internal.InfoPrefix, attempt)
 				systray.Run(onReady, onExit)
 				break
 			}
+			log.Printf("%s Tray: backend not yet available; retrying in 10s (attempt %d)", internal.InfoPrefix, attempt)
 			<-time.After(10 * time.Second)
 		}
+	} else {
+		log.Printf("%s Tray: disabled by initial status; systray will not start", internal.InfoPrefix)
 	}
 }
 
 func shouldEnableFileshare(uid uint32) (bool, error) {
 	daemonURL := fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
+	log.Printf("%s Fileshare: checking mesh status via %q for uid=%d", internal.InfoPrefix, daemonURL, uid)
 
 	grpcConn, err := grpc.Dial(
 		daemonURL,
@@ -149,8 +163,10 @@ func shouldEnableFileshare(uid uint32) (bool, error) {
 	}
 
 	meshStatus := resp.GetStatus()
+	enabled := meshStatus.GetUid() == uid && meshStatus.GetValue()
+	log.Printf("%s Fileshare: mesh enabled=%t (meshUid=%d reqUid=%d)", internal.InfoPrefix, enabled, meshStatus.GetUid(), uid)
 
-	return meshStatus.GetUid() == uid && meshStatus.GetValue(), nil
+	return enabled, nil
 }
 
 func setupLog() {
@@ -167,6 +183,14 @@ func setupLog() {
 		if logFile, err := openLogFile(filepath.Join(cacheDirPath, internal.NorduserdLogFileName)); err == nil {
 			log.SetOutput(logFile)
 			log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
+			// Startup banner
+			pid := os.Getpid()
+			euid := os.Geteuid()
+			log.Printf("%s ==== norduserd start pid=%d euid=%d time=%s ====", internal.InfoPrefix, pid, euid, time.Now().Format(time.RFC3339Nano))
+			log.Printf("%s Env: XDG_CURRENT_DESKTOP=%q DESKTOP_SESSION=%q WAYLAND_DISPLAY=%q DISPLAY=%q", internal.InfoPrefix,
+				os.Getenv("XDG_CURRENT_DESKTOP"), os.Getenv("DESKTOP_SESSION"), os.Getenv("WAYLAND_DISPLAY"), os.Getenv("DISPLAY"))
+			log.Printf("%s SNAP env: SNAP=%q SNAP_NAME=%q SNAP_INSTANCE_NAME=%q SNAP_USER_DATA=%q", internal.InfoPrefix,
+				os.Getenv("SNAP"), os.Getenv("SNAP_NAME"), os.Getenv("SNAP_INSTANCE_NAME"), os.Getenv(snapconf.EnvSnapUserData))
 		}
 	}
 }
@@ -188,6 +212,7 @@ func waitForShutdown(stopChan <-chan norduser.StopRequest,
 			restart = true
 		}
 	case stopRequest := <-stopChan:
+		log.Printf("%s Stop request received: restart=%t disableAutostart=%t", internal.InfoPrefix, stopRequest.Restart, stopRequest.DisableAutostart)
 		if stopRequest.DisableAutostart {
 			onShutdown(stopRequest.DisableAutostart)
 		}
@@ -198,11 +223,15 @@ func waitForShutdown(stopChan <-chan norduser.StopRequest,
 		log.Println(internal.InfoPrefix, "User has logged out")
 	}
 
+	log.Println(internal.InfoPrefix, "Stopping gRPC server…")
 	grpcServer.Stop()
+	log.Println(internal.InfoPrefix, "Signalling fileshare to shutdown…")
 	fileshareManagementChan <- norduser.Shutdown
 	// shutdownChan will be closed once the shutdown operation is finished
 	<-fileshareShutdownChan
+	log.Println(internal.InfoPrefix, "Fileshare shutdown completed")
 
+	log.Println(internal.InfoPrefix, "Stopping systray…")
 	systray.Quit()
 	// We need to give systray some time to clean up after quiting. Otherwise, when the main app is restarted
 	// two trays will be visible for a split second.
@@ -218,16 +247,22 @@ func waitForShutdown(stopChan <-chan norduser.StopRequest,
 			if err != nil {
 				log.Println(internal.InfoPrefix, "Norduser daemon restart error:", err)
 			}
+		} else {
+			log.Println(internal.ErrorPrefix, "Failed to resolve executable path for restart:", err)
 		}
 	}
 }
 
 func startFileshare(uid uint32) (chan<- norduser.FileshareManagementMsg, <-chan interface{}) {
+	log.Printf("%s Fileshare: start management loop for uid=%d", internal.InfoPrefix, uid)
 	fileshareManagementChan, fileshareShutdownChan := norduser.StartFileshareManagementLoop()
 	if enable, err := shouldEnableFileshare(uid); err != nil {
 		log.Println(internal.ErrorPrefix, "Failed to determine if fileshare should be enabled on startup:", err)
 	} else if enable {
+		log.Println(internal.InfoPrefix, "Fileshare: enabling on startup")
 		fileshareManagementChan <- norduser.Start
+	} else {
+		log.Println(internal.InfoPrefix, "Fileshare: not enabled for this user/session")
 	}
 
 	return fileshareManagementChan, fileshareShutdownChan
@@ -235,6 +270,7 @@ func startFileshare(uid uint32) (chan<- norduser.FileshareManagementMsg, <-chan 
 
 func startSnap() {
 	setupLog()
+	log.Println(internal.InfoPrefix, "Starting in SNAP environment")
 	group, err := user.LookupGroup(internal.NordvpnGroup)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "Unable to retrieve nordvpn group:", err)
@@ -258,10 +294,11 @@ func startSnap() {
 		os.Exit(int(childprocess.CodeUserNotInGroup))
 	}
 
-	// Always use real home dir here regardless of `$HOME` value
 	autostartFile, err := addAutostart()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "Failed to add autostart:", err)
+	} else {
+		log.Printf("%s Autostart desktop file ensured at %q", internal.InfoPrefix, autostartFile)
 	}
 
 	uid, err := strconv.Atoi(usr.Uid)
@@ -272,17 +309,20 @@ func startSnap() {
 
 	logoutChan := make(chan interface{})
 	go func() {
+		log.Println(internal.InfoPrefix, "Starting logout monitor…")
 		if err := norduser.WaitForLogout(usr.Username, logoutChan); err != nil {
 			log.Println(internal.ErrorPrefix, "failed to start logout monitor:", err)
 		}
 	}()
 
 	processStatus := process.NewNorduserGRPCProcessManager(uint32(uid)).ProcessStatus()
+	log.Printf("%s Process status: %v", internal.InfoPrefix, processStatus)
 	if processStatus == childprocess.Running {
 		os.Exit(int(childprocess.CodeAlreadyRunning))
 	}
 
 	socketPath := internal.GetNorduserSocketSnap(uid)
+	log.Printf("%s Opening UNIX socket at %q", internal.InfoPrefix, socketPath)
 
 	if err := os.Remove(socketPath); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Println(internal.ErrorPrefix, "Failed to remove old socket file:", err)
@@ -300,6 +340,7 @@ func startSnap() {
 	stopChan := make(chan norduser.StopRequest)
 	server := norduser.NewServer(fileshareManagementChan, stopChan)
 
+	log.Println(internal.InfoPrefix, "Starting gRPC server (snap)")
 	grpcServer := grpc.NewServer(
 		grpc.Creds(internal.NewUnixSocketCredentials(internal.NewFileshareAuthenticator(uint32(uid)))))
 	pb.RegisterNorduserServer(grpcServer, server)
@@ -323,6 +364,8 @@ func startSnap() {
 
 			if err := os.Remove(autostartFile); err != nil {
 				log.Println(internal.ErrorPrefix, "Failed to remove autostart file:", err)
+			} else {
+				log.Printf("%s Autostart file %q removed", internal.InfoPrefix, autostartFile)
 			}
 		})
 }
@@ -331,8 +374,10 @@ func start() {
 	listenerFunction := internal.SystemDListener
 
 	setupLog()
+	log.Println(internal.InfoPrefix, "Starting in non-snap environment")
 
 	connURL := internal.GetNorduserSocketFork(os.Geteuid())
+	log.Printf("%s Fork socket path: %q", internal.InfoPrefix, connURL)
 	if err := os.Remove(connURL); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Println(internal.ErrorPrefix, "Failed to remove old socket file:", err)
 	}
@@ -361,6 +406,7 @@ func start() {
 	stopChan := make(chan norduser.StopRequest)
 	server := norduser.NewServer(fileshareManagementChan, stopChan)
 
+	log.Println(internal.InfoPrefix, "Starting gRPC server (non-snap)")
 	grpcServer := grpc.NewServer()
 	pb.RegisterNorduserServer(grpcServer, server)
 

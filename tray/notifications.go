@@ -46,6 +46,7 @@ type dbusNotifier struct {
 }
 
 func (n *dbusNotifier) start() {
+	log.Println(internal.InfoPrefix, "Starting dbus notifier")
 	ntf, err := newNotifier()
 	if err == nil {
 		log.Println(internal.InfoPrefix, "Started dbus notifier")
@@ -83,8 +84,10 @@ func (n *dbusNotifier) sendNotification(summary string, body string) error {
 }
 
 func newNotifier() (notify.Notifier, error) {
+	log.Println(internal.ErrorPrefix, "######    creating new notifier")
 	dbusConn, err := dbus.SessionBusPrivate()
 	if err != nil {
+		log.Println(internal.ErrorPrefix, "######    error with getting dbus", err)
 		return nil, err
 	}
 
@@ -97,25 +100,31 @@ func newNotifier() (notify.Notifier, error) {
 	}()
 
 	if err = dbusConn.Auth(nil); err != nil {
+		log.Println(internal.ErrorPrefix, "######    Error in auth", err)
 		return nil, err
 	}
 
 	if err = dbusConn.Hello(); err != nil {
+		log.Println(internal.ErrorPrefix, "######    Error in hello", err)
 		return nil, err
 	}
 
 	ntf, err := notify.New(dbusConn)
 	if err != nil {
+		log.Println(internal.ErrorPrefix, "######    in newnotify", err)
 		return nil, err
 	}
 
 	defer func() {
 		if err != nil {
+			log.Println(internal.ErrorPrefix, "######    some error happened so closing", err)
 			if err := ntf.Close(); err != nil {
 				log.Println(internal.ErrorPrefix, "Failed to close notifier:", err)
 			}
 		}
+		log.Println(internal.ErrorPrefix, "######    creating new notifier finished with success in defer")
 	}()
 
+	log.Println(internal.ErrorPrefix, "######    creating new notifier finished")
 	return ntf, nil
 }
