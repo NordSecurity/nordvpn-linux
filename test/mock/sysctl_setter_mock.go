@@ -1,15 +1,23 @@
 package mock
 
 type SysctlSetterMock struct {
-	isSet bool
+	IsSet    bool
+	SetErr   error
+	UnsetErr error
 }
 
 func (s *SysctlSetterMock) Set() error {
-	s.isSet = true
+	if s.SetErr != nil {
+		return s.SetErr
+	}
+	s.IsSet = true
 	return nil
 }
 
 func (s *SysctlSetterMock) Unset() error {
-	s.isSet = false
+	if s.UnsetErr != nil {
+		return s.UnsetErr
+	}
+	s.IsSet = false
 	return nil
 }
