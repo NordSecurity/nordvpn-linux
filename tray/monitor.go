@@ -64,11 +64,8 @@ func (ti *Instance) MonitorConnection(ctx context.Context, conn *grpc.ClientConn
 		ti.state.mu.Unlock()
 	}
 
-	cancelContext, cancelFunc := context.WithCancel(ctx)
-	defer cancelFunc()
-
 	for {
-		connExpired := !conn.WaitForStateChange(cancelContext, state)
+		connExpired := !conn.WaitForStateChange(ctx, state)
 		if connExpired {
 			log.Println(logTag, internal.InfoPrefix, "Daemon connection state changed to: EXPIRED")
 			return // ctx cancelled
@@ -109,22 +106,22 @@ func (ti *Instance) update() bool {
 	changed := ti.updateSettings()
 	needsRedraw = changed
 
-	changed = ti.updateCountryList()
+	changed = ti.updateLoginStatus()
+	needsRedraw = needsRedraw || changed
+
+	changed = ti.updateAccountInfo()
 	needsRedraw = needsRedraw || changed
 
 	changed = ti.updateVpnStatus()
 	needsRedraw = needsRedraw || changed
 
+	changed = ti.updateCountryList()
+	needsRedraw = needsRedraw || changed
+
 	changed = ti.updateSpecialtyServerList()
 	needsRedraw = needsRedraw || changed
 
-	changed = ti.updateLoginStatus()
-	needsRedraw = needsRedraw || changed
-
 	changed = ti.updateRecentConnections()
-	needsRedraw = needsRedraw || changed
-
-	changed = ti.updateAccountInfo()
 	needsRedraw = needsRedraw || changed
 
 	return needsRedraw

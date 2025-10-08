@@ -382,8 +382,7 @@ func handleSpecialtyServerClick(ti *Instance, item *systray.MenuItem, server str
 	if ti == nil {
 		return
 	}
-
-	handleMenuItemClick(item, func() { _ = ti.connect("", server) })
+	handleMenuItemClick(item, func() { ti.connect("", server) })
 }
 
 func buildAccountSection(ti *Instance) {
