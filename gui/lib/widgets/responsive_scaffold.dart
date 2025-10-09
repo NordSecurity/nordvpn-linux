@@ -44,32 +44,39 @@ final class ResponsiveScaffold extends StatelessWidget {
 
   NavigationDestination _vpnDestination(BuildContext context) {
     return NavigationDestination(
-      icon: DynamicThemeImage("vpn_sidebar_off.svg"),
+      icon: DynamicThemeImage("home_off.svg"),
+      selectedIcon: DynamicThemeImage("home_on.svg"),
       label: context.isMediumScreen() ? "" : "VPN",
     );
   }
 
   NavigationDestination _settingsDestination(BuildContext context) {
     return NavigationDestination(
-      icon: DynamicThemeImage("settings_navigation.svg"),
+      icon: DynamicThemeImage("settings_navigation_off.svg"),
+      selectedIcon: DynamicThemeImage("settings_navigation_on.svg"),
       label: context.isMediumScreen() ? "" : t.ui.settings,
     );
   }
 
   NavigationDestination _widgetsShowcaseDestination(BuildContext context) {
     return NavigationDestination(
-      icon: Banner(
-        textStyle: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 8,
-          color: Colors.white,
-        ),
-        message: "DEBUG",
-        shadow: BoxShadow(color: Colors.transparent),
-        location: BannerLocation.bottomEnd,
-        child: DynamicThemeImage("notifications.svg"),
-      ),
+      icon: _buildBannerForWidgetShowcase("notifications_off.svg"),
+      selectedIcon: _buildBannerForWidgetShowcase("notifications_on.svg"),
       label: context.isMediumScreen() ? "" : "Widgets showcase",
     );
   }
+}
+
+Banner _buildBannerForWidgetShowcase(String icon) {
+  return Banner(
+      textStyle: const TextStyle(
+        fontWeight: FontWeight.bold,
+        fontSize: 8,
+        color: Colors.white,
+      ),
+      message: "DEBUG",
+      shadow: BoxShadow(color: Colors.transparent),
+      location: BannerLocation.bottomEnd,
+      child: DynamicThemeImage(icon),
+    );
 }
