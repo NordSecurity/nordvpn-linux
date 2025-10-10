@@ -32,6 +32,7 @@ final class VpnWidget extends ConsumerWidget {
               onSelected: (args) async {
                 await _connect(ref, args);
               },
+              withRecentConnectionsWidget: true,
             ),
           ),
         ),

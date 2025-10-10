@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/city.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
 import 'package:nordvpn/data/models/country.dart';
 import 'package:nordvpn/data/models/server_info.dart';
+import 'package:nordvpn/data/models/recent_connections.dart';
 import 'package:nordvpn/data/models/servers_list.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
-import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/images_manager.dart';
 import 'package:nordvpn/pb/daemon/config/group.pb.dart';
@@ -15,9 +14,9 @@ import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/i18n/string_translation_extension.dart';
 import 'package:nordvpn/theme/servers_list_theme.dart';
 import 'package:nordvpn/widgets/custom_expansion_tile.dart';
+import 'package:nordvpn/vpn/recent_server_list_item.dart';
+import 'package:nordvpn/vpn/server_item_image.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
-import 'package:nordvpn/widgets/loading_indicator.dart';
-import 'package:nordvpn/widgets/padded_circle_avatar.dart';
 
 // Factory for building the ListItem for servers
 final class ServerListItemFactory {
@@ -56,9 +55,7 @@ final class ServerListItemFactory {
     return CustomExpansionTile(
       minTileHeight: serversListThemeData.listItemHeight,
       childrenPadding: EdgeInsets.only(left: serversListThemeData.flagSize),
-      leading: _buildServerItemImage(
-        appTheme: appTheme,
-        serversListThemeData: serversListThemeData,
+      leading: ServerItemImage(
         image: imagesManager.forCountry(country.country),
         shouldHighlight: (status) =>
             _shouldHighlight(specialtyGroup, country, status),
@@ -85,9 +82,7 @@ final class ServerListItemFactory {
               for (final city in country.cities)
                 ListTile(
                   minTileHeight: serversListThemeData.listItemHeight,
-                  leading: _buildServerItemImage(
-                    appTheme: appTheme,
-                    serversListThemeData: serversListThemeData,
+                  leading: ServerItemImage(
                     image: DynamicThemeImage("city_pin.svg"),
                     shouldHighlight: (status) =>
                         _shouldHighlight(specialtyGroup, country, status) &&
@@ -130,46 +125,6 @@ final class ServerListItemFactory {
     return countryMatches || anyCityMatches;
   }
 
-  // Build the icon for a server. The icon reacts to VPN status changes
-  // TODO: check performance when all servers are added to the list
-  Widget _buildServerItemImage({
-    required AppTheme appTheme,
-    required ServersListTheme serversListThemeData,
-    required Widget image,
-    required bool Function(VpnStatus) shouldHighlight,
-  }) {
-    return Consumer(
-      builder: (context, ref, _) {
-        // when the border is missing use transparent color to ensure that the
-        // flag has always the same size
-        var borderColor = Colors.transparent;
-
-        // listen on the VPN status changes
-        final asyncStatus = ref.watch(vpnStatusControllerProvider);
-        if (asyncStatus.hasValue) {
-          final status = asyncStatus.value!;
-          if (shouldHighlight(status)) {
-            if (status.isConnecting()) {
-              // while connecting
-              return Padding(
-                padding: EdgeInsets.all(appTheme.flagsBorderSize),
-                child: LoadingIndicator(size: serversListThemeData.loaderSize),
-              );
-            } else if (status.isConnected()) {
-              borderColor = appTheme.successColor;
-            }
-          }
-        }
-        return PaddedCircleAvatar(
-          size: serversListThemeData.flagSize,
-          borderColor: borderColor,
-          borderSize: appTheme.flagsBorderSize,
-          child: image,
-        );
-      },
-    );
-  }
-
   // Build item for a specialty server
   Widget forSpecialtyServer({
     Key? key,
@@ -199,9 +154,7 @@ final class ServerListItemFactory {
       key: key,
       enabled: isEnabled,
       minTileHeight: serversListThemeData.listItemHeight,
-      leading: _buildServerItemImage(
-        appTheme: appTheme,
-        serversListThemeData: serversListThemeData,
+      leading: ServerItemImage(
         image: imagesManager.forSpecialtyServer(type),
         shouldHighlight: (status) =>
             status.connectionParameters.group == type.toServerGroup(),
@@ -240,9 +193,7 @@ final class ServerListItemFactory {
     return CustomExpansionTile(
       minTileHeight: serversListThemeData.listItemHeight,
       childrenPadding: EdgeInsets.only(left: serversListThemeData.flagSize),
-      leading: _buildServerItemImage(
-        appTheme: appTheme,
-        serversListThemeData: serversListThemeData,
+      leading: ServerItemImage(
         image: imagesManager.forCountry(country.country),
         shouldHighlight: (status) => city == status.city,
       ),
@@ -271,9 +222,7 @@ final class ServerListItemFactory {
 
     return CustomExpansionTile(
       minTileHeight: serversListTheme.listItemHeight,
-      leading: _buildServerItemImage(
-        appTheme: appTheme,
-        serversListThemeData: serversListTheme,
+      leading: ServerItemImage(
         image: imagesManager.forCountry(country),
         shouldHighlight: (status) => server.hostname == status.hostname,
       ),
@@ -281,6 +230,19 @@ final class ServerListItemFactory {
       subtitle: Text("#${server.serverNumber}", style: appTheme.caption),
       children: null,
       onTap: () => onTap(ConnectArguments(server: server)),
+    );
+  }
+
+  Widget forRecent({
+    required RecentConnection recentConnection,
+    required void Function(ConnectArguments) onTapFunc,
+    bool enabled = true,
+  }) {
+    return RecentServerListItem(
+      model: recentConnection,
+      onTap: onTapFunc,
+      enabled: enabled,
+      imagesManager: imagesManager,
     );
   }
 }

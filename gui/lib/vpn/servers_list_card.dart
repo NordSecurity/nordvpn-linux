@@ -23,6 +23,7 @@ import 'package:nordvpn/widgets/dialog_factory.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:nordvpn/widgets/loading_indicator.dart';
 import 'package:nordvpn/widgets/searchable_servers_list.dart';
+import 'package:nordvpn/vpn/recent_connections_list.dart';
 
 final class ServerListWidgetKeys {
   ServerListWidgetKeys._();
@@ -33,6 +34,8 @@ final class ServerListWidgetKeys {
   static const dedicatedIp = Key("serverListDedicatedIP");
   static const search = Key("serverListSearch");
   static const countriesServersList = Key("serverListCountries");
+  static const searchKey = ValueKey('servers-list-search-key');
+  static const countriesServersListKey = ValueKey('countries-servers-list-key');
 }
 
 // ServersListCard displays the list of servers from the VPN screen
@@ -43,6 +46,7 @@ final class ServersListCard extends StatefulWidget {
   final bool enabled;
   final bool allowServerNameSearch;
   final bool withQuickConnectTile;
+  final bool withRecentConnectionsWidget;
 
   ServersListCard({
     super.key,
@@ -52,6 +56,7 @@ final class ServersListCard extends StatefulWidget {
     this.enabled = true,
     this.allowServerNameSearch = true,
     this.withQuickConnectTile = false,
+    this.withRecentConnectionsWidget = false,
   }) : imagesManager = imagesManager ?? sl(),
        itemFactory = itemFactory ?? sl();
 
@@ -75,7 +80,7 @@ final class _ServersListCardState extends State<ServersListCard> {
             .watch(serversListControllerProvider)
             .when(
               loading: () => const LoadingIndicator(),
-              error: (_, __) => _buildError(context, ref),
+              error: (_, _) => _buildError(context, ref),
               data: (serversList) {
                 return Opacity(
                   opacity: widget.enabled ? 1.0 : 0.5,
@@ -128,12 +133,12 @@ final class _ServersListCardState extends State<ServersListCard> {
 
     return DefaultTabController(
       length: 2,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: TabBar(
+      child: NestedScrollView(
+        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+          final items = <Widget>[
+            SliverPersistentHeader(
+              delegate: _SliverAppBarDelegate(
+                TabBar(
                   isScrollable: true,
                   tabs: [
                     Tab(text: t.ui.countries),
@@ -143,6 +148,8 @@ final class _ServersListCardState extends State<ServersListCard> {
                     ),
                   ],
                 ),
+                appTheme,
+                () => setState(() => _showSearchView = true),
               ),
               Padding(
                 padding: EdgeInsets.only(right: appTheme.padding),
@@ -161,8 +168,19 @@ final class _ServersListCardState extends State<ServersListCard> {
               ref,
               isObfuscationEnabled,
             ),
-          ),
-        ],
+          ];
+
+          if (widget.withRecentConnectionsWidget) {
+            items.insert(
+              0,
+              SliverToBoxAdapter(
+                child: RecentConnectionsList(onSelected: widget.onSelected),
+              ),
+            );
+          }
+          return items;
+        },
+        body: _buildTabsWithServers(serversList, ref, isObfuscationEnabled),
       ),
     );
   }
@@ -194,8 +212,10 @@ final class _ServersListCardState extends State<ServersListCard> {
     final itemsCount = servers.length + (widget.withQuickConnectTile ? 1 : 0);
     final appTheme = context.appTheme;
 
-    return Column(
-      children: [
+    return CustomScrollView(
+      primary: true,
+      key: ServerListWidgetKeys.countriesServersListKey,
+      slivers: [
         if (isObfuscationEnabled)
           _showObfuscatedMessage(context, t.ui.turnOffObfuscationLocations),
         Expanded(
@@ -230,6 +250,34 @@ final class _ServersListCardState extends State<ServersListCard> {
               );
             },
           ),
+        SliverList(
+          delegate: SliverChildBuilderDelegate((context, index) {
+            // show additional quick connect tile if specified
+            if (widget.withQuickConnectTile && index == 0) {
+              return CustomExpansionTile(
+                leading: DynamicThemeImage("fastest_server.svg"),
+                title: Text(fastestServerLabel, style: appTheme.body),
+                onTap: () async => await widget.onSelected(
+                  ConnectArguments(
+                    specialtyGroup: isObfuscationEnabled
+                        ? ServerType.obfuscated
+                        : null,
+                  ),
+                ),
+              );
+            }
+            // adjust for additional quick connect tile if specified
+            final idx = index - (widget.withQuickConnectTile ? 1 : 0);
+            return widget.itemFactory.forCountry(
+              context: context,
+              country: servers[idx],
+              onTap: (args) async => await widget.onSelected(args),
+              enabled: widget.enabled,
+              specialtyGroup: isObfuscationEnabled
+                  ? ServerType.obfuscated
+                  : null,
+            );
+          }, childCount: itemsCount),
         ),
       ],
     );
@@ -264,8 +312,9 @@ final class _ServersListCardState extends State<ServersListCard> {
       ),
     ];
 
-    return Column(
-      children: [
+    return CustomScrollView(
+      primary: true,
+      slivers: [
         if (isObfuscatedOn)
           _showObfuscatedMessage(context, t.ui.turnOffObfuscationServerTypes),
         Expanded(
@@ -297,6 +346,30 @@ final class _ServersListCardState extends State<ServersListCard> {
               );
             },
           ),
+        SliverList(
+          delegate: SliverChildBuilderDelegate((context, index) {
+            final group = specialtyServersOrder[index];
+            final type = group.type;
+            final description = group.description;
+            if (type == ServerType.dedicatedIP) {
+              return _buildDipListItem(ref, serversList, isObfuscatedOn);
+            }
+            final servers = serversList.specialtyServersList(type);
+            return widget.itemFactory.forSpecialtyServer(
+              context: context,
+              type: type,
+              enabled: servers.isNotEmpty && !isObfuscatedOn,
+              servers: servers,
+              subtitle: description,
+              onTap: (args) => widget.onSelected(args),
+              showDetails: () => _showDetailsForSpecialtyServer(
+                context: context,
+                ref: ref,
+                type: type,
+                servers: servers,
+              ),
+            );
+          }, childCount: specialtyServersOrder.length),
         ),
       ],
     );
@@ -469,5 +542,53 @@ final class _ServersListCardState extends State<ServersListCard> {
         ],
       ),
     );
+  }
+}
+
+class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  _SliverAppBarDelegate(this._tabBar, this._theme, this._onSearchPressed);
+
+  final TabBar _tabBar;
+  final AppTheme _theme;
+  final VoidCallback _onSearchPressed;
+
+  @override
+  double get minExtent => kToolbarHeight;
+  @override
+  double get maxExtent => kToolbarHeight;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(
+      color: _theme.backgroundColor,
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(child: _tabBar),
+              Padding(
+                padding: EdgeInsets.only(right: _theme.padding),
+                child: IconButton(
+                  key: ServerListWidgetKeys.searchKey,
+                  tooltip: 'Search',
+                  icon: DynamicThemeImage("search.svg"),
+                  onPressed: _onSearchPressed,
+                ),
+              ),
+            ],
+          ),
+          Divider(height: 1, thickness: 1, color: _theme.dividerColor),
+        ],
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
+    return false;
   }
 }
