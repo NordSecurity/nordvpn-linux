@@ -60,6 +60,7 @@ apps:
   nordvpn:
     command: bin/nordvpn
     desktop: usr/share/applications/nordvpn.desktop
+    autostart: nordvpn.desktop
     environment:
       PREFIX_COMMON: $SNAP_COMMON
       PREFIX_DATA: $SNAP_DATA
