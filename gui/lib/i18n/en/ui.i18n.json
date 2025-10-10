@@ -253,5 +253,6 @@
   "manageSubscription": "Manage subscription",
   "changePassword": "Change password",
   "productHub": "Product Hub",
-  "subscriptionInactive": "Inactive"
+  "subscriptionInactive": "Inactive",
+  "recentConnections": "Recent connections"
 }
