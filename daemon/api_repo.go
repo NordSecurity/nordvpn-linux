@@ -19,7 +19,7 @@ type RepoAPI struct {
 	baseURL     string
 	version     string
 	env         internal.Environment
-	packageType string
+	packageType internal.PackageType
 	arch        string
 	client      *http.Client
 	sync.Mutex
@@ -35,7 +35,7 @@ func NewRepoAPI(
 	baseURL string,
 	version string,
 	env internal.Environment,
-	packageType,
+	packageType internal.PackageType,
 	arch string,
 	client *http.Client,
 ) *RepoAPI {
@@ -115,11 +115,11 @@ func (api *RepoAPI) request(path string) (*RepoAPIResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	resp, err := api.client.Do(req)
+	resp, err := api.client.Do(req) //nolint:bodyclose
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	// resp body to be closed by invoking fn
 
 	if err := core.ExtractError(resp); err != nil {
 		return nil, err

@@ -18,7 +18,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"golang.org/x/net/netutil"
+	"google.golang.org/grpc"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/clientid"
@@ -73,9 +75,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo"
-	"github.com/google/uuid"
-
-	"google.golang.org/grpc"
 )
 
 // Values set when building the application
@@ -83,7 +82,6 @@ var (
 	Salt        = ""
 	Version     = "0.0.0"
 	Environment = ""
-	PackageType = ""
 	Arch        = ""
 	Port        = 6960
 	ConnType    = "unix"
@@ -289,12 +287,16 @@ func main() {
 		validator,
 	)
 
+	// Detect package type at startup
+	detectedPackageType := internal.DetectPackageType()
+	log.Printf("%s Detected package type: %s\n", internal.InfoPrefix, detectedPackageType)
+
 	repoAPI := daemon.NewRepoAPI(
 		userAgent,
 		daemon.RepoURL,
 		Version,
 		internal.Environment(Environment),
-		PackageType,
+		detectedPackageType,
 		Arch,
 		httpClientSimple,
 	)
