@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:nordvpn/data/providers/app_state_provider.dart';
 import 'package:nordvpn/data/providers/grpc_connection_controller.dart';
 import 'package:nordvpn/data/repository/account_repository.dart';
@@ -16,13 +17,14 @@ part 'login_status_provider.g.dart';
 final class LoginStatus extends _$LoginStatus implements AccountObserver {
   @override
   FutureOr<bool> build() async {
-    final isConnected = ref.watch(grpcConnectionControllerProvider);
-    if (isConnected is! AsyncData) {
-      throw "grpc connect not established";
-    }
-    _registerNotifications();
-
-    return await _fetchLoginState();
+    return ref.watch(grpcConnectionControllerProvider).when(
+          data: (_) async {
+            _registerNotifications();
+            return await _fetchLoginState();
+          },
+          error: (error, stack) => Future.error(error, stack),
+          loading: () => Completer<bool>().future,
+        );
   }
 
   @override
