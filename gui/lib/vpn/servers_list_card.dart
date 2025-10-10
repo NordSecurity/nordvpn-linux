@@ -126,12 +126,13 @@ final class _ServersListCardState extends State<ServersListCard> {
 
     return DefaultTabController(
       length: 2,
-      child: NestedScrollView(
-        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-          final items = <Widget>[
-            SliverPersistentHeader(
-              delegate: _SliverAppBarDelegate(
-                TabBar(
+      child: Column(
+        children: [
+          RecentConnectionsList(onSelected: widget.onSelected),
+          Row(
+            children: [
+              Expanded(
+                child: TabBar(
                   isScrollable: true,
                   tabs: [
                     Tab(text: t.ui.countries),
