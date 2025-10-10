@@ -72,3 +72,16 @@ extension Daemon on ServerType {
     }
   }
 }
+
+const Map<config.ServerGroup, ServerType> _groupTitles = {
+  config.ServerGroup.DOUBLE_VPN: ServerType.doubleVpn,
+  config.ServerGroup.ONION_OVER_VPN: ServerType.onionOverVpn,
+  config.ServerGroup.STANDARD_VPN_SERVERS: ServerType.standardVpn,
+  config.ServerGroup.P2P: ServerType.p2p,
+  config.ServerGroup.OBFUSCATED: ServerType.obfuscated,
+  config.ServerGroup.DEDICATED_IP: ServerType.dedicatedIP,
+};
+
+ServerType? toServerType(config.ServerGroup group) {
+  return _groupTitles[group];
+}
