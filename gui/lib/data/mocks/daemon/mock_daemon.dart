@@ -29,7 +29,6 @@ import 'package:nordvpn/pb/daemon/settings.pb.dart';
 import 'package:nordvpn/pb/daemon/state.pb.dart';
 import 'package:nordvpn/pb/daemon/status.pb.dart';
 import 'package:nordvpn/pb/daemon/token.pb.dart';
-import 'package:nordvpn/pb/daemon/recent_connections.pb.dart';
 
 // The mocked implementation for the daemon. It is created by the GrpcServer.
 final class MockDaemon extends DaemonServiceBase {
@@ -283,10 +282,7 @@ final class MockDaemon extends DaemonServiceBase {
   }
 
   @override
-  Future<Payload> setARPIgnore(
-    ServiceCall call,
-    SetGenericRequest request,
-  ) {
+  Future<Payload> setARPIgnore(ServiceCall call, SetGenericRequest request) {
     throw UnimplementedError();
   }
 

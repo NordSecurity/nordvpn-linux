@@ -98,6 +98,7 @@ final class _ServersListCardState extends State<ServersListCard> {
       buttonText: t.ui.retry,
       onPressed: () async {
         await ref.read(serversListControllerProvider.notifier).refetch();
+        return;
       },
     );
   }
@@ -116,48 +117,60 @@ final class _ServersListCardState extends State<ServersListCard> {
         : _buildSearchList(context, serversList, ref, isObfuscationEnabled);
   }
 
-  DefaultTabController _buildTabBarView(
+  Widget _buildTabBarView(
     BuildContext context,
     ServersList serversList,
     WidgetRef ref,
     bool isObfuscationEnabled,
   ) {
-    final appTheme = context.appTheme;
-
-    return DefaultTabController(
-      length: 2,
-      child: NestedScrollView(
-        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-          final items = <Widget>[
-            SliverPersistentHeader(
-              delegate: _SliverAppBarDelegate(
-                TabBar(
-                  isScrollable: true,
-                  tabs: [
-                    Tab(text: t.ui.countries),
-                    Tab(text: t.ui.specialServers),
+    return Column(
+      children: [
+        if (widget.withRecentConnectionsWidget)
+          RecentConnectionsList(onSelected: widget.onSelected),
+        Expanded(
+          child: DefaultTabController(
+            length: 2,
+            child: Column(
+              spacing: context.appTheme.verticalSpaceSmall,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TabBar(
+                        isScrollable: true,
+                        tabs: [
+                          Tab(text: t.ui.countries),
+                          Tab(text: t.ui.specialServers),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(right: context.appTheme.padding),
+                      child: IconButton(
+                        key: ServersListKeys.searchKey,
+                        icon: DynamicThemeImage("search.svg"),
+                        onPressed: () => setState(() => _showSearchView = true),
+                      ),
+                    ),
                   ],
                 ),
-                appTheme,
-                () => setState(() => _showSearchView = true),
-              ),
-              pinned: true,
-              floating: true,
+                Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: context.appTheme.dividerColor,
+                ),
+                Expanded(
+                  child: _buildTabsWithServers(
+                    serversList,
+                    ref,
+                    isObfuscationEnabled,
+                  ),
+                ),
+              ],
             ),
-          ];
-
-          if (widget.withRecentConnectionsWidget) {
-            items.insert(
-              0,
-              SliverToBoxAdapter(
-                child: RecentConnectionsList(onSelected: widget.onSelected),
-              ),
-            );
-          }
-          return items;
-        },
-        body: _buildTabsWithServers(serversList, ref, isObfuscationEnabled),
-      ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -449,53 +462,5 @@ final class _ServersListCardState extends State<ServersListCard> {
         ],
       ),
     );
-  }
-}
-
-class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
-  _SliverAppBarDelegate(this._tabBar, this._theme, this._onSearchPressed);
-
-  final TabBar _tabBar;
-  final AppTheme _theme;
-  final VoidCallback _onSearchPressed;
-
-  @override
-  double get minExtent => kToolbarHeight;
-  @override
-  double get maxExtent => kToolbarHeight;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    return Container(
-      color: _theme.backgroundColor,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(child: _tabBar),
-              Padding(
-                padding: EdgeInsets.only(right: _theme.padding),
-                child: IconButton(
-                  key: ServersListKeys.searchKey,
-                  tooltip: 'Search',
-                  icon: DynamicThemeImage("search.svg"),
-                  onPressed: _onSearchPressed,
-                ),
-              ),
-            ],
-          ),
-          Divider(height: 1, thickness: 1, color: _theme.dividerColor),
-        ],
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
-    return false;
   }
 }
