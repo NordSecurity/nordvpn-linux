@@ -23,6 +23,7 @@ import 'package:nordvpn/widgets/dialog_factory.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:nordvpn/widgets/loading_indicator.dart';
 import 'package:nordvpn/widgets/searchable_servers_list.dart';
+import 'package:nordvpn/vpn/recent_connections_list.dart';
 
 // ServersListCard displays the list of servers from the VPN screen
 final class ServersListCard extends StatefulWidget {
@@ -70,7 +71,7 @@ final class _ServersListCardState extends State<ServersListCard> {
             .watch(serversListControllerProvider)
             .when(
               loading: () => const LoadingIndicator(),
-              error: (_, __) => _buildError(context, ref),
+              error: (_, _) => _buildError(context, ref),
               data: (serversList) {
                 return Opacity(
                   opacity: widget.enabled ? 1.0 : 0.5,
@@ -95,6 +96,7 @@ final class _ServersListCardState extends State<ServersListCard> {
       buttonText: t.ui.retry,
       onPressed: () async {
         await ref.read(serversListControllerProvider.notifier).refetch();
+        return;
       },
     );
   }
@@ -125,6 +127,7 @@ final class _ServersListCardState extends State<ServersListCard> {
       length: 2,
       child: Column(
         children: [
+          RecentConnectionsList(onSelected: widget.onSelected),
           Row(
             children: [
               Expanded(
