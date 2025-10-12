@@ -1,0 +1,26 @@
+name: "CodeQL config"
+version: 2
+paths-ignore:
+  - "**/*.html"
+  - "**/*.css"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.ts"
+  - "**/*.tsx"
+queries:
+  - name: "Security and Quality"
+    uses: security-and-quality
+  - name: "Security Extended"
+    uses: security-extended
+
+go:
+  paths:
+    exclude:
+      - gui
+      - test
+      - protobuf
+      - parts
+      - ci
+
+sarif:
+  add-baseline-file-info: true
