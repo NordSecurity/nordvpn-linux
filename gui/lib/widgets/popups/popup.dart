@@ -41,11 +41,14 @@ abstract class Popup extends ConsumerWidget {
 
   Widget _titleBar(BuildContext context, AppTheme appTheme) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          spacing: appTheme.horizontalSpace,
-          children: [if (leadingIcon != null) leadingIcon!, _title(appTheme)],
+        if (leadingIcon != null)
+          Padding(
+            padding: EdgeInsets.only(right: appTheme.horizontalSpace),
+            child: leadingIcon!,
+          ),
+        Expanded(
+          child: _title(appTheme),
         ),
         _closeIcon(context),
       ],
