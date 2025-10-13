@@ -43,6 +43,8 @@ class RecentServerListItem extends StatelessWidget {
       leading: ServerItemImage(image: image),
       title: title,
       onTap: enabled ? () => onTap(connectArgs) : null,
+      hideExpandButton: true,
+      expanded: false,
     );
   }
 
