@@ -105,7 +105,6 @@ final class _ServersListCardState extends State<ServersListCard> {
       buttonText: t.ui.retry,
       onPressed: () async {
         await ref.read(serversListControllerProvider.notifier).refetch();
-        return;
       },
     );
   }
