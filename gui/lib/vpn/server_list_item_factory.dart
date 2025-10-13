@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/city.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
 import 'package:nordvpn/data/models/country.dart';
@@ -8,11 +7,9 @@ import 'package:nordvpn/data/models/server_info.dart';
 import 'package:nordvpn/data/models/recent_connections.dart';
 import 'package:nordvpn/data/models/servers_list.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
-import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/images_manager.dart';
 import 'package:nordvpn/pb/daemon/config/group.pb.dart';
-import 'package:nordvpn/pb/daemon/server_selection_rule.pb.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/i18n/string_translation_extension.dart';
 import 'package:nordvpn/theme/servers_list_theme.dart';
@@ -20,8 +17,6 @@ import 'package:nordvpn/widgets/custom_expansion_tile.dart';
 import 'package:nordvpn/vpn/recent_server_list_item.dart';
 import 'package:nordvpn/vpn/server_item_image.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
-import 'package:nordvpn/widgets/loading_indicator.dart';
-import 'package:nordvpn/widgets/padded_circle_avatar.dart';
 
 // Factory for building the ListItem for servers
 final class ServerListItemFactory {
@@ -129,7 +124,6 @@ final class ServerListItemFactory {
 
     return countryMatches || anyCityMatches;
   }
-
 
   // Build item for a specialty server
   Widget forSpecialtyServer({

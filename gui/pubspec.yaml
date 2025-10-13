@@ -83,6 +83,7 @@ flutter:
     - assets/images/
     - assets/images/not_themed/
     - assets/images/flags/
+    - lib/i18n/en/
 
 fonts:
     - family: Inter
