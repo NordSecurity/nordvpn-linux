@@ -47,7 +47,7 @@ func (c *cmd) MeshGetInvites(ctx *cli.Context) error {
 	for _, invite := range invites.Sent {
 		str := fmt.Sprintf("%s: %s",
 			color.New(color.FgYellow, color.Bold).Sprintf("Email"),
-			color.New(color.FgYellow).Sprintf(invite.Email))
+			color.New(color.FgYellow).Sprintf("%s", invite.Email))
 		buf.WriteString(str + "\n")
 	}
 
@@ -62,8 +62,8 @@ func (c *cmd) MeshGetInvites(ctx *cli.Context) error {
 		}
 		str := fmt.Sprintf("%s: %s %s",
 			color.New(color.FgYellow, color.Bold).Sprintf("Email"),
-			color.New(color.FgYellow).Sprintf(invite.Email),
-			color.New(color.FgYellow).Sprintf(inviteOs))
+			color.New(color.FgYellow).Sprintf("%s", invite.Email),
+			color.New(color.FgYellow).Sprintf("%s", inviteOs))
 		buf.WriteString(str + "\n")
 	}
 

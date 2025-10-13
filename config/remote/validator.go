@@ -45,7 +45,7 @@ func validateJsonString(jsn []byte) error {
 				errStr = fmt.Sprintf("%s;; [%d] %s", errStr, idx, desc)
 			}
 		}
-		return fmt.Errorf(errStr)
+		return fmt.Errorf("%s", errStr)
 	}
 	return nil
 }
