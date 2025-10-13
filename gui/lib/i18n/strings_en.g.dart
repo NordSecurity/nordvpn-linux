@@ -1936,6 +1936,9 @@ class TranslationsUiEn {
 
 	/// en: 'Read more'
 	String get readMore => 'Read more';
+
+	/// en: 'Recent connections'
+	String get recentConnections => 'Recent connections';
 }
 
 /// Flat map(s) containing all translations.
@@ -2564,6 +2567,7 @@ extension on Translations {
 			case 'ui.termsSubtitle': return 'Learn about our legal terms.';
 			case 'ui.termsAgreementDescription': return 'By continuing to use this app, you agree to our terms and how we handle your data. To read the terms and privacy policy check the links below.';
 			case 'ui.readMore': return 'Read more';
+			case 'ui.recentConnections': return 'Recent connections';
 			default: return null;
 		}
 	}
