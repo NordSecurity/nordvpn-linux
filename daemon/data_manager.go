@@ -53,20 +53,20 @@ func NewDataManager(insightsFilePath,
 func (dm *DataManager) LoadData() error {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
-	// TODO: after Go 1.20, rewrite using error joining
+	var errs []error
 	if err := dm.countryData.load(); err != nil {
-		return fmt.Errorf("loading country data: %w", err)
+		errs = append(errs, fmt.Errorf("loading country data: %w", err))
 	}
 	if err := dm.insightsData.load(); err != nil {
-		return fmt.Errorf("loading insights data: %w", err)
+		errs = append(errs,fmt.Errorf("loading insights data: %w", err))
 	}
 	if err := dm.serversData.load(); err != nil {
-		return fmt.Errorf("loading servers data: %w", err)
+		errs = append(errs, fmt.Errorf("loading servers data: %w", err))
 	}
 	if err := dm.versionData.load(); err != nil {
-		return fmt.Errorf("loading version data: %w", err)
+		errs = append(errs, fmt.Errorf("loading version data: %w", err))
 	}
-	return nil
+	return errors.Join(errs...)
 }
 
 func (dm *DataManager) GetInsightsData() InsightsData {
@@ -79,6 +79,7 @@ func (dm *DataManager) SetInsightsData(insights core.Insights) error {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
 	dm.insightsData.Insights = insights
+	log.Printf("Saving insights to : %v", dm.insightsData.filePath)
 	return dm.insightsData.save()
 }
 
@@ -124,6 +125,11 @@ func (dm *DataManager) IsServersDataValid() bool {
 func (dm *DataManager) GetServersData() ServersData {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
+	log.Printf("Getting servers data from: %v", dm.serversData.filePath)
+	log.Printf("FULL SERVERS DATA: %v", dm.serversData)
+	// dm.serversData.load()
+	// log.Printf("Force loading one more time")
+	// log.Printf("FULL SERVERS DATA: %v", dm.serversData)
 	return dm.serversData
 }
 
