@@ -7,7 +7,7 @@ import 'package:nordvpn/theme/servers_list_theme.dart';
 import 'package:nordvpn/widgets/loading_indicator.dart';
 import 'package:nordvpn/widgets/padded_circle_avatar.dart';
 
-class ServerItemImage extends ConsumerWidget {
+final class ServerItemImage extends ConsumerWidget {
   final Widget image;
   final bool Function(VpnStatus) shouldHighlight;
 
