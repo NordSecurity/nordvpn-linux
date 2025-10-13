@@ -86,6 +86,8 @@ type Rule struct {
 	// Physical indicates rule being in mangle table, which prevents
 	// any leaks that are caused by rule changes in filter table done by other processes
 	Physical bool `json:"physical"`
+	// Simplified name is the name of the rule but simplified to be used as comment
+	SimplifiedName string `json:"simplified_name"`
 }
 
 func (r Rule) Equal(other Rule) bool {
@@ -104,7 +106,9 @@ func (r Rule) Equal(other Rule) bool {
 		r.HopLimit == other.HopLimit &&
 		slices.Equal(r.SourcePorts, other.SourcePorts) &&
 		slices.Equal(r.DestinationPorts, other.DestinationPorts) &&
-		r.Comment == other.Comment
+		r.Comment == other.Comment &&
+		r.Physical == other.Physical &&
+		r.SimplifiedName == other.SimplifiedName
 }
 
 // OrderedRules stores rules in an order they were added.

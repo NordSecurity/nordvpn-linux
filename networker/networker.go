@@ -65,6 +65,7 @@ const (
 	blockLanRule               = "-block-lan-rule-"
 	meshnetFirewallRuleComment = "nordvpn-meshnet"
 	denyPrivateDNSRule         = "deny-private-dns"
+	allowFileshareRule 		   = "-allow-fileshare-rule-"
 
 	ArpIgnoreParamName = "net.ipv4.conf.all.arp_ignore"
 )
@@ -582,14 +583,14 @@ func (netw *Combined) blockTraffic() error {
 	// block PREROUTING & POSTROUTING
 	return netw.fw.Add([]firewall.Rule{
 		{
-			Name:       "drop IPv4",
+			Name:       "drop-IPv4",
 			Direction:  firewall.TwoWay,
 			Interfaces: ifaces,
 			Allow:      false,
 			Physical:   true,
 		},
 		{
-			Name:       "drop IPv6",
+			Name:       "drop-IPv6",
 			Direction:  firewall.TwoWay,
 			Interfaces: ifaces,
 			Ipv6Only:   true,
@@ -600,7 +601,7 @@ func (netw *Combined) blockTraffic() error {
 }
 
 func (netw *Combined) unblockTraffic() error {
-	return netw.fw.Delete([]string{"drop IPv4", "drop IPv6"})
+	return netw.fw.Delete([]string{"drop-IPv4", "drop-IPv6"})
 }
 
 func (netw *Combined) resetAllowlist() error {
@@ -1280,6 +1281,7 @@ func (netw *Combined) allowIncoming(publicKey string, address netip.Addr, lanAll
 		},
 		Allow:   true,
 		Comment: meshnetFirewallRuleComment,
+		SimplifiedName: allowIncomingRule,
 	}
 	rules = append(rules, rule)
 
@@ -1305,6 +1307,7 @@ func (netw *Combined) allowIncoming(publicKey string, address netip.Addr, lanAll
 			},
 			Allow:   false,
 			Comment: meshnetFirewallRuleComment,
+			SimplifiedName: blockLanRule,
 		}
 
 		rules = append(rules, rule)
@@ -1331,7 +1334,7 @@ func (netw *Combined) allowFileshare(publicKey string, address netip.Addr) error
 		return nil
 	}
 
-	ruleName := publicKey + "-allow-fileshare-rule-" + address.String()
+	ruleName := publicKey + allowFileshareRule + address.String()
 	rules := []firewall.Rule{{
 		Name:           ruleName,
 		Direction:      firewall.Inbound,
@@ -1343,6 +1346,7 @@ func (netw *Combined) allowFileshare(publicKey string, address netip.Addr) error
 		},
 		Allow:   true,
 		Comment: meshnetFirewallRuleComment,
+		SimplifiedName: allowFileshareRule,
 	}}
 
 	ruleIndex := slices.Index(netw.rules, ruleName)
@@ -1444,7 +1448,7 @@ func (netw *Combined) blockFileshare(publicKey string, address netip.Addr) error
 		log.Println(internal.WarningPrefix, "fileshare is already forbidden")
 		return nil
 	}
-	ruleName := publicKey + "-allow-fileshare-rule-" + address.String()
+	ruleName := publicKey + allowFileshareRule + address.String()
 	return netw.removeRule(ruleName)
 }
 

@@ -2,6 +2,7 @@
 package iptables
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net"
@@ -146,12 +147,10 @@ func (ipt *IPTables) Flush() error {
 	var finalErr error = nil
 	for _, table := range usedIPTables {
 		for _, iptableVersion := range ipt.supportedIPTables {
-			// #nosec G204
-			out, err := exec.Command(iptableVersion, "-t", table, "-S").CombinedOutput()
+			out, err := getRuleOutput(iptableVersion, table)
 			if err != nil {
-				return fmt.Errorf("listing rules: %w", err)
+				return err
 			}
-
 			rules := string(out)
 			for _, rule := range generateFlushRules(rules, table) {
 				// #nosec G204
@@ -207,6 +206,10 @@ func ruleToIPTables(rule firewall.Rule, module string, stateFlag string, chainPr
 	rule = generateNonEmptyRule(rule)
 	var ipv4TableRules []string
 	var ipv6TableRules []string
+	nameComment := rule.Name
+	if len(rule.SimplifiedName) > 0 {
+		nameComment = rule.SimplifiedName
+	}
 	// n-fold Cartesian Product, where n stands for the level of for loop nesting
 	for _, iface := range rule.Interfaces {
 		for _, remoteNetwork := range rule.RemoteNetworks {
@@ -221,7 +224,7 @@ func ruleToIPTables(rule firewall.Rule, module string, stateFlag string, chainPr
 											newRule := generateIPTablesRule(
 												chain, target, iface, remoteNetwork, localNetwork, protocol, pRange,
 												module, stateFlag, rule.ConnectionStates, chainPrefix, portFlag,
-												rule.HopLimit, nil, nil, rule.Comment, mark,
+												rule.HopLimit, nil, nil, rule.Comment, mark, nameComment,
 											)
 											if rule.Ipv6Only {
 												// We should have just our block rule here
@@ -235,7 +238,7 @@ func ruleToIPTables(rule firewall.Rule, module string, stateFlag string, chainPr
 											chain, target, iface, remoteNetwork, localNetwork, protocol, pRange,
 											module, stateFlag, rule.ConnectionStates, chainPrefix, "",
 											rule.HopLimit, rule.SourcePorts, rule.DestinationPorts,
-											rule.Comment, mark,
+											rule.Comment, mark, nameComment,
 										)
 										if rule.Ipv6Only {
 											// We should have just our block rule here
@@ -354,6 +357,7 @@ func generateIPTablesRule(
 	dports []int,
 	comment string,
 	mark uint32,
+	nameComment string,
 ) string {
 	var chain, remoteAddrFlag, localAddrFlag, ifaceFlag string
 
@@ -442,7 +446,11 @@ func generateIPTablesRule(
 	if len(comment) > 0 {
 		acceptComment = " -m comment --comment " + comment
 	}
-	return rule + acceptComment + jump + string(target)
+	var ruleNameComment string
+	if len(nameComment) > 0 {
+		ruleNameComment = " -m comment --comment " + nameComment
+	}
+	return rule + acceptComment + ruleNameComment + jump + string(target)
 }
 
 // connectionStateToString converts package connection state to string
@@ -456,4 +464,49 @@ func connectionStateToString(state firewall.ConnectionState) string {
 		return "NEW"
 	}
 	return ""
+}
+
+func (ipt *IPTables) GetActiveRules() ([]string, error) {
+	ipt.Lock()
+	defer ipt.Unlock()
+	re, err := regexp.Compile(`--comment \S*`)
+	if err != nil {
+		return nil, fmt.Errorf("compiling regexp: %w", err)
+	}
+	rulesMap := make(map[string]bool)
+	for _, table := range usedIPTables {
+		for _, iptableVersion := range ipt.supportedIPTables {
+			rules, err := getRuleOutput(iptableVersion, table)
+			if err != nil {
+				return nil, err
+			}
+			for _, line := range bytes.Split(rules, []byte{'\n'}) {
+				if len(line) == 0 {
+					continue
+				}
+				// check for comment name in rule
+				matches := re.FindAll(line, -1)
+				if len(matches) > 0 {
+					log.Printf("printing matches: %v", matches)
+					formattedRuleName := strings.Split(string(matches[1]), " ")[1]
+					rulesMap[formattedRuleName] = true
+				}
+			}
+		}
+	}
+	var ruleList []string
+	for k := range rulesMap{
+		ruleList = append(ruleList, k)
+		log.Println("rule match added: " + k)
+	}
+	log.Printf("all rules: %v", ruleList)
+	return ruleList, nil
+}
+
+func getRuleOutput(iptableVersion string, table string) ([]byte, error){
+	out, err := exec.Command(iptableVersion, "-t", table, "-S").CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("listing rules: %w", err)
+	}
+	return out, nil
 }
