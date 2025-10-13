@@ -1912,6 +1912,9 @@ class TranslationsUiEn {
 
 	/// en: 'Refresh'
 	String get refresh => 'Refresh';
+
+	/// en: 'Recent connections'
+	String get recentConnections => 'Recent connections';
 }
 
 /// Flat map(s) containing all translations.
@@ -2532,6 +2535,7 @@ extension on Translations {
 			case 'ui.snapScreenTitle': return 'We need some permissions to connect to NordVPN service';
 			case 'ui.snapScreenDescription': return 'Grant permission by running these commands in the terminal. Then refresh the screen.';
 			case 'ui.refresh': return 'Refresh';
+			case 'ui.recentConnections': return 'Recent connections';
 			default: return null;
 		}
 	}
