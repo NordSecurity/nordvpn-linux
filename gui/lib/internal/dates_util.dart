@@ -5,7 +5,7 @@ DateTime? parseDate(String dateString) {
   try {
     return daemonDateFormat.parseStrict(dateString);
   } on Exception {
-    logger.e("failed to parse date $dateString");
+    logger.w("failed to parse date $dateString");
     return null;
   }
 }

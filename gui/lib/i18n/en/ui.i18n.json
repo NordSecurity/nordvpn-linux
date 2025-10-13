@@ -242,5 +242,6 @@
   "back": "Back",
   "snapScreenTitle": "We need some permissions to connect to NordVPN service",
   "snapScreenDescription": "Grant permission by running these commands in the terminal. Then refresh the screen.",
-  "refresh": "Refresh"
+  "refresh": "Refresh",
+  "recentConnections": "Recent connections"
 }
