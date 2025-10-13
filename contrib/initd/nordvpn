@@ -57,6 +57,19 @@ stop() {
   return "$RETVAL"
 }
 
+upgrade-stop() {
+  # Return
+  #   0 if daemon has been stopped
+  #   1 if daemon was already stopped
+  #   2 if daemon could not be stopped
+  #   other if a failure occurred
+  start-stop-daemon --stop --quiet --signal=USR1 --retry=USR1/30/KILL/5 --pidfile $PIDFILE --remove-pidfile
+  RETVAL="$?"
+  [ "$RETVAL" = 2 ] && return 2
+  return "$RETVAL"
+}
+# curl -s https://repo.nordvpn.com/gpg/nordvpn_public.asc | tee /etc/apt/trusted.gpg.d/nordvpn_public.asc > /dev/null
+# echo "deb https://repo.nordvpn.com/deb/nordvpn/debian stable main" | tee /etc/apt/sources.list.d/nordvpn.list
 #
 # Function that restarts the daemon
 #
@@ -89,6 +102,9 @@ case "$1" in
     ;;
   stop)
     stop
+    ;;
+  upgrade-stop)
+    upgrade-stop
     ;;
   restart)
     restart
