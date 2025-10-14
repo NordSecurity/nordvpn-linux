@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/app_settings.dart';
 import 'package:nordvpn/data/repository/app_state_repository.dart';
+import 'package:nordvpn/data/models/recent_connections.dart';
 import 'package:nordvpn/data/repository/vpn_repository.dart';
 import 'package:nordvpn/data/repository/vpn_settings_repository.dart';
 import 'package:nordvpn/logger.dart';
@@ -11,6 +12,7 @@ import 'package:nordvpn/pb/daemon/settings.pb.dart';
 import 'package:nordvpn/pb/daemon/state.pb.dart';
 import 'package:nordvpn/pb/daemon/status.pb.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:nordvpn/constants.dart';
 
 part 'app_state_provider.g.dart';
 
@@ -34,6 +36,10 @@ abstract class ServersListObserver {
   void onServersListChanged(ServersResponse servers);
 }
 
+abstract class RecentConnectionsListObserver {
+  void onRecentConnectionsListChanged(List<RecentConnection> recentConnections);
+}
+
 // This will observe the daemon changes and notify the observers
 // At the moment this will pull for status, in future the daemon will notify it instead
 class AppStateChange {
@@ -46,6 +52,7 @@ class AppStateChange {
   final Set<VpnStatusObserver> _vpnObservers = {};
   final Set<VpnSettingsObserver> _settingsObservers = {};
   final Set<ServersListObserver> _serversListObservers = {};
+  final Set<RecentConnectionsListObserver> _recentConnectionsListObservers = {};
 
   AppStateChange(
     AppStateRepository repository,
@@ -104,6 +111,18 @@ class AppStateChange {
     _serversListObservers.remove(observer);
   }
 
+  void addRecentConnectionsListObserver(
+    RecentConnectionsListObserver observer,
+  ) {
+    _recentConnectionsListObservers.add(observer);
+  }
+
+  void removeRecentConnectionsListObserver(
+    RecentConnectionsListObserver observer,
+  ) {
+    _recentConnectionsListObservers.remove(observer);
+  }
+
   void _startEventsListener() {
     _stateSubscription?.cancel();
     _stateSubscription = _appStateRepository.stream.listen(
@@ -121,6 +140,9 @@ class AppStateChange {
           switch (value.updateEvent) {
             case UpdateEvent.SERVERS_LIST_UPDATE:
               _notifyServersListChanged();
+              break;
+            case UpdateEvent.RECENTS_LIST_UPDATE:
+              _notifyRecentConnectionsListChanged();
               break;
           }
         }
@@ -193,6 +215,24 @@ class AppStateChange {
     _vpnRepository.fetchServers().then((servers) {
       for (final observer in _serversListObservers) {
         observer.onServersListChanged(servers);
+      }
+    });
+  }
+
+  void _notifyRecentConnectionsListChanged() async {
+    if (_recentConnectionsListObservers.isEmpty) {
+      return;
+    }
+
+    _vpnRepository.fetchRecentConnections(maxRecentConnections).then((
+      response,
+    ) {
+      final connections = response.connections
+          .map((pb) => RecentConnection.fromPb(pb))
+          .toList();
+
+      for (final obs in _recentConnectionsListObservers) {
+        obs.onRecentConnectionsListChanged(connections);
       }
     });
   }

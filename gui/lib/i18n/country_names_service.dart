@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:nordvpn/data/models/country.dart';
 import 'package:nordvpn/i18n/string_translation_extension.dart';
 import 'package:nordvpn/logger.dart';
@@ -11,6 +14,16 @@ import 'package:nordvpn/logger.dart';
 final class CountryNamesService {
   // map the country code and the country name to a Country object
   final Map<String, Country> _countries = {};
+
+  Future<void> init() async {
+    final countriesJson = await rootBundle.loadString(
+      'lib/i18n/en/countries.i18n.json',
+    );
+    final Map<String, dynamic> countriesMap = json.decode(countriesJson);
+    countriesMap.forEach((code, name) {
+      register(code: code, name: name as String);
+    });
+  }
 
   Country register({required String code, required String name}) {
     if (name.isEmpty) {

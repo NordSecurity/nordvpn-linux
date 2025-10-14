@@ -19,6 +19,7 @@ const loginTimeoutDuration = Duration(seconds: 10);
 const maxInt32 = 0xffffffff;
 const maxInt16 = 0xffff;
 const maxCustomDnsServers = 3;
+const maxRecentConnections = 3;
 // Maximum number of servers returned when searching after the server number '#'
 const maxNumberOfServersResults = 50;
 

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/config.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
+import 'package:nordvpn/pb/daemon/recent_connections.pb.dart';
 import 'package:nordvpn/grpc/grpc_service.dart';
 import 'package:nordvpn/grpc/protobuf_utils.dart';
 import 'package:nordvpn/logger.dart';
@@ -11,6 +12,7 @@ import 'package:nordvpn/pb/daemon/service.pbgrpc.dart';
 import 'package:nordvpn/pb/daemon/status.pb.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
+import 'package:fixnum/fixnum.dart' as $fixnum;
 
 part 'vpn_repository.g.dart';
 
@@ -79,6 +81,11 @@ class VpnRepository {
   Future<ServersResponse> fetchServers() async {
     final response = await _client.getServers(Empty());
     return response;
+  }
+
+  Future<RecentConnectionsResponse> fetchRecentConnections(int limit) async {
+    final request = RecentConnectionsRequest(limit: $fixnum.Int64(limit));
+    return await _client.getRecentConnections(request);
   }
 }
 

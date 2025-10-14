@@ -44,12 +44,14 @@ const UpdateEvent$json = {
   '1': 'UpdateEvent',
   '2': [
     {'1': 'SERVERS_LIST_UPDATE', '2': 0},
+    {'1': 'RECENTS_LIST_UPDATE', '2': 1},
   ],
 };
 
 /// Descriptor for `UpdateEvent`. Decode as a `google.protobuf.EnumDescriptorProto`.
-final $typed_data.Uint8List updateEventDescriptor = $convert
-    .base64Decode('CgtVcGRhdGVFdmVudBIXChNTRVJWRVJTX0xJU1RfVVBEQVRFEAA=');
+final $typed_data.Uint8List updateEventDescriptor = $convert.base64Decode(
+    'CgtVcGRhdGVFdmVudBIXChNTRVJWRVJTX0xJU1RfVVBEQVRFEAASFwoTUkVDRU5UU19MSVNUX1'
+    'VQREFURRAB');
 
 @$core.Deprecated('Use loginEventDescriptor instead')
 const LoginEvent$json = {
@@ -93,6 +95,18 @@ const AccountModification$json = {
 final $typed_data.Uint8List accountModificationDescriptor = $convert.base64Decode(
     'ChNBY2NvdW50TW9kaWZpY2F0aW9uEiIKCmV4cGlyZXNfYXQYASABKAlIAFIJZXhwaXJlc0F0iA'
     'EBQg0KC19leHBpcmVzX2F0');
+
+@$core.Deprecated('Use versionHealthStatusDescriptor instead')
+const VersionHealthStatus$json = {
+  '1': 'VersionHealthStatus',
+  '2': [
+    {'1': 'status_code', '3': 1, '4': 1, '5': 5, '10': 'statusCode'},
+  ],
+};
+
+/// Descriptor for `VersionHealthStatus`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List versionHealthStatusDescriptor = $convert.base64Decode(
+    'ChNWZXJzaW9uSGVhbHRoU3RhdHVzEh8KC3N0YXR1c19jb2RlGAEgASgFUgpzdGF0dXNDb2Rl');
 
 @$core.Deprecated('Use appStateDescriptor instead')
 const AppState$json = {
@@ -152,6 +166,15 @@ const AppState$json = {
       '9': 0,
       '10': 'accountModification'
     },
+    {
+      '1': 'version_health',
+      '3': 7,
+      '4': 1,
+      '5': 11,
+      '6': '.pb.VersionHealthStatus',
+      '9': 0,
+      '10': 'versionHealth'
+    },
   ],
   '8': [
     {'1': 'state'},
@@ -166,4 +189,5 @@ final $typed_data.Uint8List appStateDescriptor = $convert.base64Decode(
     'V2ZW50EjcKD3NldHRpbmdzX2NoYW5nZRgEIAEoCzIMLnBiLlNldHRpbmdzSABSDnNldHRpbmdz'
     'Q2hhbmdlEjQKDHVwZGF0ZV9ldmVudBgFIAEoDjIPLnBiLlVwZGF0ZUV2ZW50SABSC3VwZGF0ZU'
     'V2ZW50EkwKFGFjY291bnRfbW9kaWZpY2F0aW9uGAYgASgLMhcucGIuQWNjb3VudE1vZGlmaWNh'
-    'dGlvbkgAUhNhY2NvdW50TW9kaWZpY2F0aW9uQgcKBXN0YXRl');
+    'dGlvbkgAUhNhY2NvdW50TW9kaWZpY2F0aW9uEkAKDnZlcnNpb25faGVhbHRoGAcgASgLMhcucG'
+    'IuVmVyc2lvbkhlYWx0aFN0YXR1c0gAUg12ZXJzaW9uSGVhbHRoQgcKBXN0YXRl');
