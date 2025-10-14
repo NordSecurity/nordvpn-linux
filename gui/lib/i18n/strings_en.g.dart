@@ -1448,6 +1448,18 @@ class TranslationsUiEn {
 	/// en: 'P2P'
 	String get p2p => 'P2P';
 
+	/// en: 'Europe'
+	String get europe => 'Europe';
+
+	/// en: 'The Americas'
+	String get theAmericas => 'The Americas';
+
+	/// en: 'Asia Pacific'
+	String get asiaPacific => 'Asia Pacific';
+
+	/// en: 'Africa, the Middle East, and India'
+	String get africaTheMiddleEastAndIndia => 'Africa, the Middle East, and India';
+
 	/// en: 'Obfuscated'
 	String get obfuscated => 'Obfuscated';
 
@@ -2380,6 +2392,10 @@ extension on Translations {
 			case 'ui.doubleVpn': return 'Double VPN';
 			case 'ui.onionOverVpn': return 'Onion over VPN';
 			case 'ui.p2p': return 'P2P';
+			case 'ui.europe': return 'Europe';
+			case 'ui.theAmericas': return 'The Americas';
+			case 'ui.asiaPacific': return 'Asia Pacific';
+			case 'ui.africaTheMiddleEastAndIndia': return 'Africa, the Middle East, and India';
 			case 'ui.obfuscated': return 'Obfuscated';
 			case 'ui.selectServerForDip': return 'Pick a location for your IP';
 			case 'ui.selectLocation': return 'Select location';
