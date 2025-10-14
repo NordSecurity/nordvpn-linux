@@ -102,42 +102,79 @@ final class MockServersList {
           }
         : {
             "FR": [
-              {"Paris": standardGroups},
               {
-                "Marseille": [config.ServerGroup.ONION_OVER_VPN],
+                "Paris": [...standardGroups, config.ServerGroup.EUROPE]
+              },
+              {
+                "Marseille": [
+                  config.ServerGroup.ONION_OVER_VPN,
+                  config.ServerGroup.EUROPE
+                ],
               },
             ],
             "DE": [
-              {"Berlin": standardGroups},
-              {"Frankfurt": standardGroups},
-              {"Hamburg": standardGroups},
+              {
+                "Berlin": [...standardGroups, config.ServerGroup.EUROPE]
+              },
+              {
+                "Frankfurt": [...standardGroups, config.ServerGroup.EUROPE]
+              },
+              {
+                "Hamburg": [...standardGroups, config.ServerGroup.EUROPE]
+              },
             ],
             "LT": [
-              {"Vilnius": standardGroups},
+              {
+                "Vilnius": [...standardGroups, config.ServerGroup.EUROPE]
+              },
             ],
             "IN": [
-              {"Mumbai": standardGroups},
+              {
+                "Mumbai": [
+                  ...standardGroups,
+                  config.ServerGroup.AFRICA_THE_MIDDLE_EAST_AND_INDIA
+                ]
+              },
             ],
             "US": [
-              {"Los Angeles": standardGroups},
               {
-                "New York": [config.ServerGroup.DOUBLE_VPN],
+                "Los Angeles": [
+                  ...standardGroups,
+                  config.ServerGroup.THE_AMERICAS
+                ]
+              },
+              {
+                "New York": [
+                  config.ServerGroup.DOUBLE_VPN,
+                  config.ServerGroup.THE_AMERICAS
+                ],
               },
             ],
             "ES": [
               {
-                "Madrid": [config.ServerGroup.DOUBLE_VPN],
+                "Madrid": [
+                  config.ServerGroup.DOUBLE_VPN,
+                  config.ServerGroup.EUROPE
+                ]
               },
-              {"Barcelona": standardGroups},
+              {
+                "Barcelona": [...standardGroups, config.ServerGroup.EUROPE]
+              },
             ],
             "AT": [
               {
-                "Vienna": [config.ServerGroup.DEDICATED_IP],
+                "Vienna": [
+                  config.ServerGroup.DEDICATED_IP,
+                  config.ServerGroup.EUROPE
+                ]
               },
             ],
             "BE": [
               {
-                "Bruxelles": [config.ServerGroup.DEDICATED_IP],
+                "Bruxelles": [
+                  config.ServerGroup.DEDICATED_IP,
+                  config.ServerGroup.EUROPE
+                ]
               },
             ],
           };

@@ -48,5 +48,17 @@ String labelForServerType(ServerType type) {
 
     case ServerType.obfuscated:
       return t.ui.obfuscated;
+
+    case ServerType.europe:
+      return t.ui.europe;
+
+    case ServerType.theAmericas:
+      return t.ui.theAmericas;
+
+    case ServerType.asiaPacific:
+      return t.ui.asiaPacific;
+
+    case ServerType.africaTheMiddleEastAndIndia:
+      return t.ui.africaTheMiddleEastAndIndia;
   }
 }

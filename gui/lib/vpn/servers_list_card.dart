@@ -55,6 +55,7 @@ final class ServersListKeys {
   ServersListKeys._();
   static const searchKey = ValueKey('servers-list-search-key');
   static const countriesServersListKey = ValueKey('countries-servers-list-key');
+  static const specialtyServerKey = PageStorageKey('specialty');
 }
 
 final class _ServersListCardState extends State<ServersListCard> {
@@ -201,47 +202,54 @@ final class _ServersListCardState extends State<ServersListCard> {
     final itemsCount = servers.length + (widget.withQuickConnectTile ? 1 : 0);
     final appTheme = context.appTheme;
 
-    return CustomScrollView(
-      primary: true,
-      key: ServersListKeys.countriesServersListKey,
-      slivers: [
-        if (isObfuscationEnabled)
-          SliverToBoxAdapter(
-            child: _showObfuscatedMessage(
-              context,
-              t.ui.turnOffObfuscationLocations,
+    return Builder(
+      builder: (context) {
+        return CustomScrollView(
+          primary: false,
+          key: const PageStorageKey('countries'),
+          slivers: [
+            SliverOverlapInjector(
+              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
             ),
-          ),
-        SliverList(
-          delegate: SliverChildBuilderDelegate((context, index) {
-            // show additional quick connect tile if specified
-            if (widget.withQuickConnectTile && index == 0) {
-              return CustomExpansionTile(
-                leading: DynamicThemeImage("fastest_server.svg"),
-                title: Text(fastestServerLabel, style: appTheme.body),
-                onTap: () async => await widget.onSelected(
-                  ConnectArguments(
-                    specialtyGroup: isObfuscationEnabled
-                        ? ServerType.obfuscated
-                        : null,
-                  ),
+            if (isObfuscationEnabled)
+              SliverToBoxAdapter(
+                child: _showObfuscatedMessage(
+                  context,
+                  t.ui.turnOffObfuscationLocations,
                 ),
-              );
-            }
-            // adjust for additional quick connect tile if specified
-            final idx = index - (widget.withQuickConnectTile ? 1 : 0);
-            return widget.itemFactory.forCountry(
-              context: context,
-              country: servers[idx],
-              onTap: (args) async => await widget.onSelected(args),
-              enabled: widget.enabled,
-              specialtyGroup: isObfuscationEnabled
-                  ? ServerType.obfuscated
-                  : null,
-            );
-          }, childCount: itemsCount),
-        ),
-      ],
+              ),
+            SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                // show additional quick connect tile if specified
+                if (widget.withQuickConnectTile && index == 0) {
+                  return CustomExpansionTile(
+                    leading: DynamicThemeImage("fastest_server.svg"),
+                    title: Text(fastestServerLabel, style: appTheme.body),
+                    onTap: () async => await widget.onSelected(
+                      ConnectArguments(
+                        specialtyGroup: isObfuscationEnabled
+                            ? ServerType.obfuscated
+                            : null,
+                      ),
+                    ),
+                  );
+                }
+                // adjust for additional quick connect tile if specified
+                final idx = index - (widget.withQuickConnectTile ? 1 : 0);
+                return widget.itemFactory.forCountry(
+                  context: context,
+                  country: servers[idx],
+                  onTap: (args) async => await widget.onSelected(args),
+                  enabled: widget.enabled,
+                  specialtyGroup: isObfuscationEnabled
+                      ? ServerType.obfuscated
+                      : null,
+                );
+              }, childCount: itemsCount),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -256,44 +264,60 @@ final class _ServersListCardState extends State<ServersListCard> {
       (type: ServerType.doubleVpn, description: t.ui.doubleVpnDesc),
       (type: ServerType.onionOverVpn, description: t.ui.onionOverVpnDesc),
       (type: ServerType.p2p, description: t.ui.p2pDesc),
+      (type: ServerType.europe, description: t.ui.europe),
+      (type: ServerType.asiaPacific, description: t.ui.asiaPacific),
+      (type: ServerType.theAmericas, description: t.ui.theAmericas),
+      (
+        type: ServerType.africaTheMiddleEastAndIndia,
+        description: t.ui.africaTheMiddleEastAndIndia,
+      ),
     ];
-
-    return CustomScrollView(
-      primary: true,
-      slivers: [
-        if (isObfuscatedOn)
-          SliverToBoxAdapter(
-            child: _showObfuscatedMessage(
-              context,
-              t.ui.turnOffObfuscationServerTypes,
+    return Builder(
+      builder: (context) {
+        return CustomScrollView(
+          primary: false,
+          key: ServersListKeys.specialtyServerKey,
+          slivers: [
+            SliverOverlapInjector(
+              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
             ),
-          ),
-        SliverList(
-          delegate: SliverChildBuilderDelegate((context, index) {
-            final group = specialtyServersOrder[index];
-            final type = group.type;
-            final description = group.description;
-            if (type == ServerType.dedicatedIP) {
-              return _buildDipListItem(ref, serversList, isObfuscatedOn);
-            }
-            final servers = serversList.specialtyServersList(type);
-            return widget.itemFactory.forSpecialtyServer(
-              context: context,
-              type: type,
-              enabled: servers.isNotEmpty && !isObfuscatedOn,
-              servers: servers,
-              subtitle: description,
-              onTap: (args) => widget.onSelected(args),
-              showDetails: () => _showDetailsForSpecialtyServer(
-                context: context,
-                ref: ref,
-                type: type,
-                servers: servers,
+            if (isObfuscatedOn)
+              SliverToBoxAdapter(
+                child: _showObfuscatedMessage(
+                  context,
+                  t.ui.turnOffObfuscationServerTypes,
+                ),
               ),
-            );
-          }, childCount: specialtyServersOrder.length),
-        ),
-      ],
+            SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final group = specialtyServersOrder[index];
+                final type = group.type;
+                final description = group.description;
+                if (type == ServerType.dedicatedIP) {
+                  return _buildDipListItem(ref, serversList, isObfuscatedOn);
+                }
+                final servers = serversList.specialtyServersList(type);
+                return widget.itemFactory.forSpecialtyServer(
+                  context: context,
+                  type: type,
+                  enabled:
+                      (servers.isNotEmpty || group.type.isRegion) &&
+                      !isObfuscatedOn,
+                  servers: servers,
+                  subtitle: description,
+                  onTap: (args) => widget.onSelected(args),
+                  showDetails: () => _showDetailsForSpecialtyServer(
+                    context: context,
+                    ref: ref,
+                    type: type,
+                    servers: servers,
+                  ),
+                );
+              }, childCount: specialtyServersOrder.length),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -438,6 +462,7 @@ final class _ServersListCardState extends State<ServersListCard> {
         },
       ),
       serversList: serversList,
+      searchTextController: _searchTextController,
       specialtyServer: isObfuscationEnabled ? ServerType.obfuscated : null,
       onTap: (args) => widget.onSelected(args),
       allowServerNameSearch: widget.allowServerNameSearch,

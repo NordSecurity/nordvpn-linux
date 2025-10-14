@@ -1,4 +1,4 @@
-import 'package:grpc/grpc.dart';
+import 'package:grpc/grpc.dart' hide ConnectionState;
 import 'package:nordvpn/data/models/city.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
 import 'package:nordvpn/data/models/country.dart';
@@ -19,6 +19,7 @@ typedef _VpnRepoFn = Future<int> Function(VpnRepository);
 @riverpod
 class VpnStatusController extends _$VpnStatusController
     implements VpnStatusObserver {
+
   @override
   FutureOr<VpnStatus> build() async {
     final status = await ref.read(vpnRepositoryProvider).fetchStatus();
@@ -27,8 +28,9 @@ class VpnStatusController extends _$VpnStatusController
     return VpnStatus.fromStatusResponse(status);
   }
 
-  Future<void> connect(ConnectArguments? args) =>
-      _doAndShowPopup((vpn) => vpn.connect(args ?? ConnectArguments()));
+  Future<void> connect(ConnectArguments? args) {
+    return _doAndShowPopup((vpn) => vpn.connect(args ?? ConnectArguments()));
+  }
 
   Future<void> reconnect(ConnectionParameters args) =>
       _doAndShowPopup((vpn) => vpn.reconnect(args));

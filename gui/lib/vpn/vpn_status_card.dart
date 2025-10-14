@@ -183,8 +183,16 @@ final class VpnStatusIcon extends StatelessWidget {
     if (status.isMeshnetRouting) {
       return DynamicThemeImage("linux_peer.svg");
     }
+
+    // Prioritize showing the country flag if a country is available in the status
     if (status.country != null) {
       return imagesManager.forCountry(status.country!);
+    }
+
+    // Fallback to specialty group icon if no country is available
+    final serverType = status.connectionParameters.group.toSpecialtyType();
+    if (serverType != null && serverType != ServerType.standardVpn) {
+      return imagesManager.forSpecialtyServer(serverType);
     }
 
     return imagesManager.placeholderCountryFlag;
@@ -258,10 +266,12 @@ final class VpnServerInfo extends ConsumerWidget {
 
       if (vpnStatus.isMeshnetRouting) {
         label = vpnStatus.hostname ?? vpnStatus.ip ?? "";
-      } else {
-        final countryName = vpnStatus.country?.localizedName ?? "";
+      } else if (vpnStatus.country != null) {
+        final countryName = vpnStatus.country!.localizedName;
         label = "$countryName - ${vpnStatus.city ?? ""}";
         label += vpnStatus.isVirtualLocation ? " - ${t.ui.virtual}" : "";
+      } else {
+        label = t.ui.fastestServer;
       }
     } else if (vpnStatus.isConnecting()) {
       label = t.ui.findingServer;

@@ -35,6 +35,10 @@ enum ServerType {
   p2p,
   standardVpn,
   obfuscated,
+  europe,
+  theAmericas,
+  asiaPacific,
+  africaTheMiddleEastAndIndia,
 }
 
 extension Daemon on ServerType {
@@ -52,6 +56,14 @@ extension Daemon on ServerType {
         return obfuscatedServers;
       case ServerType.standardVpn:
         return null;
+      case ServerType.europe:
+        return europe;
+      case ServerType.theAmericas:
+        return theAmericas;
+      case ServerType.asiaPacific:
+        return asiaPacific;
+      case ServerType.africaTheMiddleEastAndIndia:
+        return africaTheMiddleEastAndIndia;
     }
   }
 
@@ -69,6 +81,26 @@ extension Daemon on ServerType {
         return config.ServerGroup.STANDARD_VPN_SERVERS;
       case ServerType.obfuscated:
         return config.ServerGroup.OBFUSCATED;
+      case ServerType.europe:
+        return config.ServerGroup.EUROPE;
+      case ServerType.theAmericas:
+        return config.ServerGroup.THE_AMERICAS;
+      case ServerType.asiaPacific:
+        return config.ServerGroup.ASIA_PACIFIC;
+      case ServerType.africaTheMiddleEastAndIndia:
+        return config.ServerGroup.AFRICA_THE_MIDDLE_EAST_AND_INDIA;
+    }
+  }
+
+  bool get isRegion {
+    switch (this) {
+      case ServerType.europe:
+      case ServerType.theAmericas:
+      case ServerType.asiaPacific:
+      case ServerType.africaTheMiddleEastAndIndia:
+        return true;
+      default:
+        return false;
     }
   }
 }
@@ -80,6 +112,11 @@ const Map<config.ServerGroup, ServerType> _groupTitles = {
   config.ServerGroup.P2P: ServerType.p2p,
   config.ServerGroup.OBFUSCATED: ServerType.obfuscated,
   config.ServerGroup.DEDICATED_IP: ServerType.dedicatedIP,
+  config.ServerGroup.EUROPE: ServerType.europe,
+  config.ServerGroup.THE_AMERICAS: ServerType.theAmericas,
+  config.ServerGroup.ASIA_PACIFIC: ServerType.asiaPacific,
+  config.ServerGroup.AFRICA_THE_MIDDLE_EAST_AND_INDIA:
+      ServerType.africaTheMiddleEastAndIndia,
 };
 
 ServerType? toServerType(config.ServerGroup group) {

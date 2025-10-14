@@ -52,3 +52,7 @@ const dedicatedIp = "Dedicated_IP";
 const onionOverVpn = "Onion_Over_VPN";
 const p2p = "p2p";
 const obfuscatedServers = "Obfuscated_Servers";
+const europe = "Europe";
+const theAmericas = "The_Americas";
+const asiaPacific = "Asia_Pacific";
+const africaTheMiddleEastAndIndia = "Africa_The_Middle_East_and_India";

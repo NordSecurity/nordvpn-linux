@@ -4,14 +4,14 @@ import 'package:nordvpn/data/models/connect_arguments.dart';
 import 'package:nordvpn/data/models/country.dart';
 import 'package:nordvpn/data/models/recent_connections.dart';
 import 'package:nordvpn/data/models/server_info.dart';
-import 'package:nordvpn/data/models/vpn_status.dart';
+import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/images_manager.dart';
 import 'package:nordvpn/pb/daemon/config/group.pb.dart';
 import 'package:nordvpn/pb/daemon/server_selection_rule.pb.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/servers_list_theme.dart';
 import 'package:nordvpn/vpn/server_item_image.dart';
-import 'package:nordvpn/widgets/custom_expansion_tile.dart';
+import 'package:nordvpn/widgets/custom_list_tile.dart';
 
 class RecentServerListItem extends StatelessWidget {
   final RecentConnection model;
@@ -37,35 +37,17 @@ class RecentServerListItem extends StatelessWidget {
     final title = _buildItemTitle(context, isSpecialtyServer);
     final connectArgs = _buildItemConnectArgs(isSpecialtyServer);
 
-    return CustomExpansionTile(
+    return CustomListTile(
       minTileHeight: context.serversListTheme.listItemHeight,
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: context.serversListTheme.flagSize,
+      ),
       leading: ServerItemImage(
         image: image,
-        shouldHighlight: (status) =>
-            _shouldHighlightItem(status, isSpecialtyServer),
       ),
       title: title,
       onTap: enabled ? () => onTap(connectArgs) : null,
-      hideExpandButton: true,
-      expanded: false,
     );
-  }
-
-  bool _shouldHighlightItem(VpnStatus status, bool isSpecialtyServer) {
-    if (isSpecialtyServer) {
-      return status.connectionParameters.group == model.group;
-    }
-
-    if (model.connectionType == ServerSelectionRule.SPECIFIC_SERVER) {
-      return status.hostname == model.specificServerName;
-    }
-
-    final countryMatches = status.country?.code == model.countryCode;
-    if (model.connectionType == ServerSelectionRule.CITY) {
-      return countryMatches && status.city?.name == model.city;
-    }
-
-    return countryMatches;
   }
 
   Widget _buildItemImage(bool isSpecialtyServer) {
@@ -109,7 +91,14 @@ class RecentServerListItem extends StatelessWidget {
         );
       }
 
-      return specialtyTitle;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          specialtyTitle,
+          Text(t.ui.fastestServer, style: appTheme.caption),
+        ],
+      );
     }
 
     final isCity =
@@ -127,18 +116,13 @@ class RecentServerListItem extends StatelessWidget {
       );
     }
 
-    String? subtitleText;
-    if (model.connectionType == ServerSelectionRule.SPECIFIC_SERVER) {
-      subtitleText = model.specificServerName;
-    }
-
     String titleText = model.country;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(titleText, style: appTheme.body),
-        if (subtitleText != null) Text(subtitleText, style: appTheme.caption),
+        Text(t.ui.fastestServer, style: appTheme.caption),
       ],
     );
   }
