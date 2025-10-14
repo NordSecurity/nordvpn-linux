@@ -75,10 +75,7 @@ class RecentConnection {
 
       case ServerSelectionRule.COUNTRY_WITH_GROUP:
         final ss = specialtyServer;
-        if (ss == "" || country == "") {
-          return "";
-        }
-        return "$ss ($country)";
+        return (ss == "" || country == "") ? "" : "$ss ($country)";
 
       case ServerSelectionRule.SPECIFIC_SERVER_WITH_GROUP:
         if (group != cfg.ServerGroup.UNDEFINED) {
