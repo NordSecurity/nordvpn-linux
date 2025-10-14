@@ -47,9 +47,6 @@ class RecentConnection {
     cfg.ServerGroup.P2P: "P2P",
     cfg.ServerGroup.OBFUSCATED: "Obfuscated Servers",
     cfg.ServerGroup.DEDICATED_IP: "Dedicated IP",
-    cfg.ServerGroup.ULTRA_FAST_TV: "Ultra Fast TV",
-    cfg.ServerGroup.ANTI_DDOS: "Anti DDOS",
-    cfg.ServerGroup.NETFLIX_USA: "Netflix USA",
     cfg.ServerGroup.EUROPE: "Europe",
     cfg.ServerGroup.THE_AMERICAS: "The Americas",
     cfg.ServerGroup.ASIA_PACIFIC: "Asia Pacific",
@@ -71,7 +68,7 @@ class RecentConnection {
         return specificServerName;
 
       case ServerSelectionRule.GROUP:
-        return specialtyServer;
+        return (country != "") ? "$specialtyServer ($country)" : specialtyServer;
 
       case ServerSelectionRule.COUNTRY_WITH_GROUP:
         final ss = specialtyServer;
