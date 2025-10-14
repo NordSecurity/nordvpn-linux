@@ -116,7 +116,7 @@ func newMockFilesystem() mockFilesystem {
 }
 
 func (mf mockFilesystem) Lstat(path string) (fs.FileInfo, error) {
-	fileInfo, err := mf.MapFS.Stat(path)
+	fileInfo, err := mf.MapFS.Lstat(path)
 	return fileInfo, err
 }
 
