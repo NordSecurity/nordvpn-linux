@@ -69,7 +69,7 @@ jobs:
                   go run github.com/magefile/mage build:binaries
 
             - name: Analyze
-              uses: github/codeql-action/analyze@242ca1c0a14abf04938300d4af4dd4e2b569f77d # 4.30.8
+              uses: github/codeql-action/analyze@f443b600d91635bebf5b0d9ebc620189c0d6fba5 # v4.30.8
               with:
                   category: "/language:${{ matrix.language }}/${{ matrix.query_suite }}"
 
