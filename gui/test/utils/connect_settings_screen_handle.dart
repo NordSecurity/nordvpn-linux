@@ -14,7 +14,7 @@ final class ConnectionSettingsScreenHandle extends ScreenHandle {
 
   bool isKillSwitchOn() {
     final widget = app.tester.widget<OnOffSwitch>(killSwitchToggle());
-    return  widget.value;
+    return widget.value;
   }
 
   Future<void> clickAutoConnectSwitch() async {

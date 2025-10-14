@@ -6,7 +6,7 @@ part of 'consent_status_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$consentStatusHash() => r'af4b886f9304aefb8af6fea995e5081a16e9082b';
+String _$consentStatusHash() => r'38fbe4b40cf9b9b876b3bf0b6f7aebe82fb36e5d';
 
 /// See also [ConsentStatus].
 @ProviderFor(ConsentStatus)

@@ -103,7 +103,7 @@ def test_set_post_quantum_on_meshnet_enabled():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh_no_tty.nordvpn.set(settings.get_pq_alias(), "on")
 
-    assert "Post-quantum encryption and Meshnet are not compatible. Please disable one feature to use the other." in str(ex.value)
+    assert "Post-quantum encryption and Meshnet are not compatible. Please disable one feature to use the other." in ex.value.stdout.decode("utf-8")
 
 
 # This doesn't directly test meshnet, but it uses it
@@ -116,4 +116,4 @@ def test_set_meshnet_on_post_quantum_enabled():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh_no_tty.nordvpn.set.meshnet("on")
 
-    assert "Post-quantum encryption and Meshnet are not compatible. Please disable one feature to use the other." in str(ex.value)
+    assert "Post-quantum encryption and Meshnet are not compatible. Please disable one feature to use the other." in ex.value.stdout.decode("utf-8")

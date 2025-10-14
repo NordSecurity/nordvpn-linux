@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/coreos/go-semver/semver"
 )
 
@@ -22,14 +23,16 @@ func JobVersionCheck(dm *DataManager, api *RepoAPI) func() {
 		// Get info from repo and convert data to strings
 		var versionStrings []string
 		switch api.packageType {
-		case "deb":
+		default: // default is `deb` e.g. if under Arch - check deb repo for new version
+			fallthrough
+		case internal.PackageTypeDeb, internal.PackageTypeUnknown:
 			data, err := api.DebianFileList()
 			if err != nil {
 				dm.SetVersionData(vdata.version, false)
 				return
 			}
 			versionStrings = ParseDebianVersions(data)
-		default: // use this logic for RPM and unexpected cases
+		case internal.PackageTypeRpm:
 			data, err := api.RpmFileList()
 			if err != nil {
 				dm.SetVersionData(vdata.version, false)

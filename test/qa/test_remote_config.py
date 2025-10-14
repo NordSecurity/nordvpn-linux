@@ -9,7 +9,7 @@ import pytest
 from lib import daemon
 from lib.log_reader import LogReader
 from lib.remote_config_manager import LOCAL_CACHE_DIR
-from lib.daemon import enable_rc_local_config_usage, disable_rc_local_config_usage
+from lib.daemon import enable_rc_local_config_usage, disable_rc_local_config_usage, Env
 
 RC_REMOTE_MESSAGE = f"[Info] feature [{{}}] remote config downloaded to: {LOCAL_CACHE_DIR}"
 RC_LOCAL_MESSAGE = f"[Info] feature [{{}}] config loaded from: {LOCAL_CACHE_DIR}"
@@ -430,6 +430,7 @@ def test_meshnet_feature_availability_based_on_remote_config(
             ), f"Command {command} output is not as expected for disabled meshnet. Output:\n{output}"
 
 
+@pytest.mark.skipif(daemon.get_env() == Env.PROD, reason="Not applicable in prod environment")
 def test_local_config_usage_via_systemd_env(
     initialized_app_with_remote_config,  # noqa: ARG001
     daemon_log_reader,

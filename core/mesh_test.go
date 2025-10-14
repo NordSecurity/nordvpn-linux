@@ -31,7 +31,7 @@ func TestMeshAPI_Register(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewDefaultAPI(
+			api := NewSimpleAPI(
 				"",
 				server.URL,
 				http.DefaultClient,
@@ -72,7 +72,7 @@ func TestMeshAPI_Update(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewDefaultAPI(
+			api := NewSimpleAPI(
 				"",
 				server.URL,
 				http.DefaultClient,
@@ -112,7 +112,7 @@ func TestMeshAPI_Configure(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewDefaultAPI(
+			api := NewSimpleAPI(
 				"",
 				server.URL,
 				http.DefaultClient,
@@ -147,43 +147,13 @@ func TestMeshAPI_Unregister(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewDefaultAPI(
+			api := NewSimpleAPI(
 				"",
 				server.URL,
 				http.DefaultClient,
 				response.NoopValidator{},
 			)
 			err := api.Unregister("bearer", id)
-			assert.ErrorIs(t, err, test.err)
-		})
-	}
-}
-
-func TestMeshAPI_List(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	id := uuid.New()
-	url := fmt.Sprintf(urlMeshPeers, id.String())
-	tests := []testCase{
-		testNewCase(t, http.StatusOK, url, "mesh_list", nil),
-		testNewCase(t, http.StatusBadRequest, url, "mesh_list", ErrBadRequest),
-		testNewCase(t, http.StatusUnauthorized, url, "mesh_list", ErrUnauthorized),
-		testNewCase(t, http.StatusForbidden, url, "mesh_list", ErrForbidden),
-		testNewCase(t, http.StatusNotFound, url, "mesh_list", ErrNotFound),
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(test.handler)
-			defer server.Close()
-
-			api := NewDefaultAPI(
-				"",
-				server.URL,
-				http.DefaultClient,
-				response.NoopValidator{},
-			)
-			_, err := api.List("bearer", id)
 			assert.ErrorIs(t, err, test.err)
 		})
 	}
@@ -210,7 +180,7 @@ func TestMeshAPI_Unpair(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewDefaultAPI(
+			api := NewSimpleAPI(
 				"",
 				server.URL,
 				http.DefaultClient,
@@ -243,7 +213,7 @@ func TestMeshAPI_Invite(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewDefaultAPI(
+			api := NewSimpleAPI(
 				"",
 				server.URL,
 				http.DefaultClient,
@@ -273,7 +243,7 @@ func TestMeshAPI_Received(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewDefaultAPI(
+			api := NewSimpleAPI(
 				"",
 				server.URL,
 				http.DefaultClient,
@@ -303,7 +273,7 @@ func TestMeshAPI_Sent(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewDefaultAPI(
+			api := NewSimpleAPI(
 				"",
 				server.URL,
 				http.DefaultClient,
@@ -335,7 +305,7 @@ func TestMeshAPI_Accept(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewDefaultAPI(
+			api := NewSimpleAPI(
 				"",
 				server.URL,
 				http.DefaultClient,
@@ -374,7 +344,7 @@ func TestMeshAPI_Reject(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewDefaultAPI(
+			api := NewSimpleAPI(
 				"",
 				server.URL,
 				http.DefaultClient,
@@ -405,7 +375,7 @@ func TestMeshAPI_Revoke(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewDefaultAPI(
+			api := NewSimpleAPI(
 				"",
 				server.URL,
 				http.DefaultClient,
