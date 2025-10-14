@@ -23,7 +23,10 @@ class CodeQLAnalyzer:
     def __init__(self, workdir):
         """Initializes the analyzer with the working directory."""
         if not workdir:
-            raise ValueError("WORKDIR environment variable is not set.")
+            raise EnvironmentError(
+                "The 'WORKDIR' environment variable is not set. "
+                "Please set it to the root of the checked-out repository."
+            )
         self.repo_path = Path(workdir).resolve()
         if not self.repo_path.is_dir():
             raise ValueError(f"WORKDIR '{self.repo_path}' is not a valid directory.")
@@ -71,7 +74,9 @@ class CodeQLAnalyzer:
             return 0
         except Exception as e:
             print(
-                colored(f"  An error occurred while printing the summary: {e}", "red"),
+                colored(
+                    f"  Error: An error occurred while printing the summary: {e}", "red"
+                ),
                 file=sys.stderr,
             )
             return 0
@@ -85,7 +90,9 @@ class CodeQLAnalyzer:
                 cwd=cwd,
             )
         except subprocess.CalledProcessError as e:
-            print(f"Command failed with exit code {e.returncode}", file=sys.stderr)
+            print(
+                f"Error: Command failed with exit code {e.returncode}", file=sys.stderr
+            )
             sys.exit(e.returncode)
         except FileNotFoundError:
             print(f"Error: Command '{command[0]}' not found.", file=sys.stderr)
@@ -181,7 +188,7 @@ def main():
         workdir = os.environ.get("WORKDIR")
         analyzer = CodeQLAnalyzer(workdir)
         analyzer.run()
-    except ValueError as e:
+    except (ValueError, EnvironmentError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
 
