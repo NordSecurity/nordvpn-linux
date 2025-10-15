@@ -673,7 +673,7 @@ func (Test) QADockerFast(ctx context.Context, testGroup, testPattern string) err
 }
 
 // Codeql Runs CodeQL analysis using Docker container
-func (Test) Codeql(ctx context.Context) error {
+func (Test) Codeql(ctx context.Context, language string) error {
 	env, err := getEnv()
 	if err != nil {
 		return err
@@ -684,7 +684,7 @@ func (Test) Codeql(ctx context.Context) error {
 		ctx,
 		env,
 		imageCodeQL,
-		[]string{"python3", "ci/test_codeql.py"},
+		[]string{"python3", "ci/test_codeql.py", "--language", language},
 		dockerWorkDir,
 	)
 }
