@@ -31,6 +31,7 @@ Example: 'nordvpn allowlist remove port 22 protocol TCP'`
 func (c *cmd) AllowlistRemovePort(ctx *cli.Context) error {
 	args := ctx.Args()
 
+	//nolint:staticcheck
 	if !(args.Len() == 1 || (args.Len() == 3 && args.Get(1) == AllowlistProtocol)) {
 		return formatError(argsCountError(ctx))
 	}

@@ -426,7 +426,7 @@ func (s *Server) getSpecificationsForIdentifier(identifier string) []string {
 func (s *Server) IPs() []netip.Addr {
 	var serverIPs []netip.Addr
 	for _, record := range s.IPRecords {
-		ip, err := netip.ParseAddr(record.ServerIP.IP)
+		ip, err := netip.ParseAddr(record.IP)
 		if err == nil {
 			serverIPs = append(serverIPs, ip)
 		}

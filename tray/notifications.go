@@ -13,7 +13,7 @@ import (
 	inotify "github.com/NordSecurity/nordvpn-linux/notify"
 )
 
-var dbusNotifierNotConnectedError = errors.New("dbus notifier not connected")
+var errDbusNotifierNotConnected = errors.New("dbus notifier not connected")
 
 func (ti *Instance) notify(text string, a ...any) {
 	text = fmt.Sprintf(text, a...)
@@ -22,7 +22,7 @@ func (ti *Instance) notify(text string, a ...any) {
 	ti.state.mu.RUnlock()
 	if notificationsStatus == Enabled {
 		if err := ti.notifier.sendNotification("NordVPN", text); err != nil {
-			if !errors.Is(err, dbusNotifierNotConnectedError) {
+			if !errors.Is(err, errDbusNotifierNotConnected) {
 				log.Println(internal.ErrorPrefix, "Failed to send notification:", err)
 			}
 		}
@@ -33,7 +33,7 @@ func (ti *Instance) notify(text string, a ...any) {
 func (ti *Instance) notifyForce(text string, a ...any) {
 	text = fmt.Sprintf(text, a...)
 	if err := ti.notifier.sendNotification("NordVPN", text); err != nil {
-		if !errors.Is(err, dbusNotifierNotConnectedError) {
+		if !errors.Is(err, errDbusNotifierNotConnected) {
 			log.Println(internal.ErrorPrefix, "Failed to send forced notification:", err)
 		}
 	}
@@ -78,7 +78,7 @@ func (n *dbusNotifier) sendNotification(summary string, body string) error {
 		}
 		return nil
 	} else {
-		return dbusNotifierNotConnectedError
+		return errDbusNotifierNotConnected
 	}
 }
 

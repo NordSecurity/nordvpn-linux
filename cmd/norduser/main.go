@@ -69,6 +69,7 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 	daemonURL := fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
 	cliendIDMetadataInterceptor := clientid.NewInsertClientIDInterceptor(daemonpb.ClientID_TRAY)
 
+	//nolint:staticcheck
 	conn, err := grpc.Dial(
 		daemonURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -85,6 +86,7 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 	}
 	ReportTelemetry(conn, ReportOnStart, false)
 
+	//nolint:staticcheck
 	fileshareConn, err := grpc.Dial(
 		fileshare_process.FileshareURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
@@ -127,6 +129,7 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 func shouldEnableFileshare(uid uint32) (bool, error) {
 	daemonURL := fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
 
+	//nolint:staticcheck
 	grpcConn, err := grpc.Dial(
 		daemonURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),

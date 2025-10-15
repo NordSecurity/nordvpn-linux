@@ -319,6 +319,7 @@ func calculateCustomTableID() (uint, error) {
 	// find table id not in use by others
 	tblID := routes.TableID()
 	for {
+		//nolint:staticcheck
 		if !allID[tblID] {
 			break
 		}

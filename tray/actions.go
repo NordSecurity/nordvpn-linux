@@ -12,7 +12,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/cli"
 	"github.com/NordSecurity/nordvpn-linux/client"
-	nordclient "github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -167,13 +166,13 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 
 		switch out.Type {
 		case internal.CodeFailure:
-			ti.notify("Connect error: %s", nordclient.ConnectCantConnect)
+			ti.notify("Connect error: %s", client.ConnectCantConnect)
 		case internal.CodeExpiredRenewToken:
-			ti.notify(nordclient.RelogRequest)
+			ti.notify(client.RelogRequest)
 			ti.login()
 			return ti.connect(serverTag, serverGroup)
 		case internal.CodeTokenRenewError:
-			ti.notify(nordclient.AccountTokenRenewError)
+			ti.notify(client.AccountTokenRenewError)
 		case internal.CodeAccountExpired:
 			ti.notifyServiceExpired(client.SubscriptionURL, client.SubscriptionURLLogin, cli.ExpiredAccountMessage)
 		case internal.CodeDedicatedIPRenewError:
@@ -189,11 +188,11 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 		case internal.CodeDoubleGroupError:
 			ti.notify(internal.DoubleGroupErrorMessage)
 		case internal.CodeVPNRunning:
-			ti.notify(nordclient.ConnectConnected)
+			ti.notify(client.ConnectConnected)
 		case internal.CodeNothingToDo:
-			ti.notify(nordclient.ConnectConnecting)
+			ti.notify(client.ConnectConnecting)
 		case internal.CodeUFWDisabled:
-			ti.notify(nordclient.UFWDisabledMessage)
+			ti.notify(client.UFWDisabledMessage)
 		case internal.CodeConnecting:
 		case internal.CodeConnected:
 			return true

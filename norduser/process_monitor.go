@@ -219,7 +219,8 @@ func (n *NorduserProcessMonitor) Start() error {
 				return fmt.Errorf("groupfile monitor channel closed")
 			}
 
-			if event.Name == groupFilePath {
+			switch event.Name {
+			case groupFilePath:
 				// Because utilities used to modify the group do so atomically, we also need to monitor for creation of
 				// the file instead of modifications.
 				if event.Has(fsnotify.Create) || event.Has(fsnotify.Write) {
@@ -229,7 +230,7 @@ func (n *NorduserProcessMonitor) Start() error {
 						currentGrupMembers = newGroupMembers
 					}
 				}
-			} else if event.Name == utmpFilePath {
+			case utmpFilePath:
 				if newGroupMembers, err := n.handleUTMPFileUpdate(currentGrupMembers); err != nil {
 					log.Println(internal.ErrorPrefix, "failed to handle change of utmp file:", err)
 				} else {
