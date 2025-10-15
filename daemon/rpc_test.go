@@ -19,7 +19,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
-	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
@@ -101,7 +100,7 @@ func testRPC() *RPC {
 		testNewRepoAPI(),
 		&mockAuthenticationAPI{},
 		"1.0.0",
-		daemonevents.NewEventsEmpty(),
+		events.NewEventsEmpty(),
 		func(config.Technology) (vpn.VPN, error) {
 			return &mock.WorkingVPN{}, nil
 		},
@@ -118,7 +117,7 @@ func testRPC() *RPC {
 		state.NewConnectionInfo(),
 		NewConsentChecker(false, cm, api, &workingLoginChecker{}, &analytics),
 		recents.NewRecentConnectionsStore(TestdataPath+TestRecentConnFile, &config.StdFilesystemHandle{}),
-		daemonevents.NewDataUpdateEvents(),
+		events.NewDataUpdateEvents(),
 	)
 }
 
@@ -247,6 +246,7 @@ func StartServer(port int, handlers []Handler) *http.Server {
 
 	go func() {
 		if err := srv.Serve(listener); err != nil && err != http.ErrServerClosed {
+			log.Printf("Server error: %v", err)
 		}
 	}()
 
