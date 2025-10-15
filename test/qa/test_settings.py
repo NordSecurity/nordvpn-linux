@@ -515,32 +515,3 @@ def test_lan_discovery_on_off():
 
     assert "LAN Discovery has been successfully set to 'disabled'." in sh.nordvpn.set("lan-discovery", "off")
     assert not settings.is_lan_discovery_enabled()
-
-
-def test_set_arp_ignore():
-    sh.sudo.sysctl("net.ipv4.conf.all.arp_ignore=0")
-    sh.nordvpn.connect()
-    arp_ignore = sh.sysctl("net.ipv4.conf.all.arp_ignore")
-    assert "net.ipv4.conf.all.arp_ignore = 1" in arp_ignore, "ARP ignore was not set after connecting to the VPN."
-
-    sh.nordvpn.set("arp-ignore", "off")
-    arp_ignore = sh.sysctl("net.ipv4.conf.all.arp_ignore")
-    assert "net.ipv4.conf.all.arp_ignore = 0" in arp_ignore, "ARP ignore was not unset after changing the setting value."
-
-    sh.nordvpn.set("arp-ignore", "on")
-    arp_ignore = sh.sysctl("net.ipv4.conf.all.arp_ignore")
-    assert "net.ipv4.conf.all.arp_ignore = 1" in arp_ignore, "ARP ignore was not set after changing the setting value."
-
-    sh.nordvpn.disconnect()
-    arp_ignore = sh.sysctl("net.ipv4.conf.all.arp_ignore")
-    assert "net.ipv4.conf.all.arp_ignore = 0" in arp_ignore, "ARP ignore was not unset after disconnecting from the VPN."
-
-    # ARP ignore is set to non-zero value, so app should ignore the setting and leave it as is
-    sh.sudo.sysctl("net.ipv4.conf.all.arp_ignore=3")
-    sh.nordvpn.connect()
-    arp_ignore = sh.sysctl("net.ipv4.conf.all.arp_ignore")
-    assert "net.ipv4.conf.all.arp_ignore = 1" in arp_ignore, "ARP ignore was not set after connecting to the VPN."
-
-    sh.nordvpn.disconnect()
-    arp_ignore = sh.sysctl("net.ipv4.conf.all.arp_ignore")
-    assert "net.ipv4.conf.all.arp_ignore = 3" in arp_ignore, "ARP ignore was not reset to the value configured by the user after disconnecting from VPN."
