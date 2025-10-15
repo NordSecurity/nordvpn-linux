@@ -53,6 +53,8 @@ func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse,
 			c.AutoConnectData.Country = cfg.AutoConnectData.Country
 			c.AutoConnectData.City = cfg.AutoConnectData.City
 			c.AutoConnectData.Group = cfg.AutoConnectData.Group
+			// resetting ServerTag - not supported anymore, to be removed in LVPN-9355
+			c.AutoConnectData.ServerTag = ""
 
 			return c
 		})
