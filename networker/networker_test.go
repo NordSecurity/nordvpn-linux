@@ -2098,7 +2098,7 @@ func TestCombined_SetARPIgnore(t *testing.T) {
 			errExpected:               false,
 		},
 		{
-			name:                      "set is always applied to kernel even if already set when VPN is acive",
+			name:                      "set is always applied to kernel even if already set when VPN is active",
 			vpn:                       mock.ActiveVPN{},
 			currentARPIgnoreKernel:    false,
 			currentARPIgnoreNetworker: true,
@@ -2107,7 +2107,7 @@ func TestCombined_SetARPIgnore(t *testing.T) {
 			errExpected:               false,
 		},
 		{
-			name:                      "unset is always applied to kernel even if already unset when VPN is acive",
+			name:                      "unset is always applied to kernel even if already unset when VPN is active",
 			vpn:                       mock.ActiveVPN{},
 			currentARPIgnoreKernel:    true,
 			currentARPIgnoreNetworker: false,
