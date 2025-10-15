@@ -172,11 +172,12 @@ const (
 )
 
 type DataAuthorization struct {
-	DurationMs   int
-	EventTrigger TypeEventTrigger
-	EventStatus  TypeEventStatus
-	EventType    TypeLoginType
-	Reason       ReasonCode
+	DurationMs                 int
+	EventTrigger               TypeEventTrigger
+	EventStatus                TypeEventStatus
+	EventType                  TypeLoginType
+	Reason                     ReasonCode
+	IsAlteredFlowOnNordAccount bool
 }
 
 type DataRequestAPI struct {
