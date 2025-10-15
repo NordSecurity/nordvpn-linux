@@ -10,6 +10,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	coremock "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 	"github.com/stretchr/testify/assert"
@@ -47,9 +49,9 @@ func TestRPCGroups(t *testing.T) {
 				dm:        test.dm,
 				norduser:  &testnorduser.MockNorduserCombinedService{},
 				netw:      &networker.Mock{},
-				ncClient:  mockNC{},
+				ncClient:  &mock.NotificationClientMock{},
 				publisher: &subs.Subject[string]{},
-				api:       mockApi{},
+				api:       &coremock.CredentialsAPIMock{},
 			}
 			payload, _ := rpc.Groups(context.Background(), &pb.Empty{})
 
@@ -125,9 +127,9 @@ func TestRPCGroups_Successful(t *testing.T) {
 				dm:        dm,
 				norduser:  &testnorduser.MockNorduserCombinedService{},
 				netw:      &networker.Mock{},
-				ncClient:  mockNC{},
+				ncClient:  &mock.NotificationClientMock{},
 				publisher: &subs.Subject[string]{},
-				api:       mockApi{},
+				api:       &coremock.CredentialsAPIMock{},
 			}
 			payload, _ := rpc.Groups(context.Background(), &pb.Empty{})
 

@@ -30,16 +30,6 @@ type mockRPCServer struct {
 
 func (m *mockRPCServer) Send(p *pb.Payload) error { m.msg = p; return nil }
 
-type mockAuthenticationAPI struct{}
-
-func (mockAuthenticationAPI) Login(bool) (string, error) {
-	return "", nil
-}
-
-func (mockAuthenticationAPI) Token(string) (*core.LoginResponse, error) {
-	return nil, nil
-}
-
 // deterministicServersAPI provides deterministic server selection for connect tests
 // while reusing the existing serversList() and countriesList() functions
 type deterministicServersAPI struct {
