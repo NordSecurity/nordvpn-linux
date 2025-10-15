@@ -46,11 +46,14 @@ final class DaemonStatusCode {
   // generic error when application is not able to connect to VPN, but it returns failure=3000
   static const failedToConnectToVpn = 5015;
 
+  static const notLoggedInErrorMsg = "You're not logged in";
+
   static final Map<String, int> _errorsMap = {
-    "exchange token not provided": missingExchangeToken,
-    "you are already logged in": alreadyLoggedIn,
+    "The exchange token is missing. Please try logging in again. If the issue persists, contact our customer support.":
+        missingExchangeToken,
+    "You're already logged in": alreadyLoggedIn,
     "Token parameter value is missing": tokenLoginFailure,
-    "you are not logged in": notLoggedIn,
+    notLoggedInErrorMsg: notLoggedIn,
     "Please check your internet connection and try again.": offline,
   };
 

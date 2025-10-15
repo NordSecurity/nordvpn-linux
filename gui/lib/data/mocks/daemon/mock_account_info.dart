@@ -28,7 +28,7 @@ final class MockAccountInfo extends CancelableDelayed {
     }
 
     if (!_isLoggedIn) {
-      throw error ?? "you are not logged in";
+      throw error ?? DaemonStatusCode.notLoggedInErrorMsg;
     }
     return _account!;
   }
