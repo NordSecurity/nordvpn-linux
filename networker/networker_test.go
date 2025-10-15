@@ -2,6 +2,7 @@ package networker
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/netip"
@@ -45,6 +46,8 @@ func GetTestCombined() *Combined {
 		0,
 		false,
 		&workingIpv6{},
+		false,
+		&mock.SysctlSetterMock{},
 	)
 }
 
@@ -255,16 +258,19 @@ func (h *workingHostSetter) UnsetHosts() error {
 func TestCombined_Start(t *testing.T) {
 	category.Set(t, category.Unit)
 	tests := []struct {
-		name            string
-		gateway         routes.GatewayRetriever
-		allowlistRouter routes.Service
-		dns             dns.Setter
-		vpn             vpn.VPN
-		fw              firewall.Service
-		allowlist       allowlist.Routing
-		devices         device.ListFunc
-		routing         routes.PolicyService
-		err             error
+		name              string
+		gateway           routes.GatewayRetriever
+		allowlistRouter   routes.Service
+		dns               dns.Setter
+		vpn               vpn.VPN
+		fw                firewall.Service
+		allowlist         allowlist.Routing
+		devices           device.ListFunc
+		routing           routes.PolicyService
+		arpIgnore         bool
+		expectedARPIgnore bool
+		err               error
+		setARPIgnoreErr   error
 	}{
 		{
 			name:            "nil vpn",
@@ -350,10 +356,69 @@ func TestCombined_Start(t *testing.T) {
 			routing:         &workingRoutingSetup{},
 			err:             nil,
 		},
+		{
+			name:              "start with arp ignore",
+			gateway:           workingGateway{},
+			allowlistRouter:   workingRouter{},
+			dns:               &workingDNS{},
+			vpn:               &mock.WorkingVPN{},
+			fw:                &workingFirewall{},
+			allowlist:         &workingAllowlistRouting{},
+			devices:           workingDeviceList,
+			routing:           &workingRoutingSetup{},
+			err:               nil,
+			arpIgnore:         true,
+			expectedARPIgnore: true,
+		},
+		{
+			name:              "restart with arp ignore",
+			gateway:           workingGateway{},
+			allowlistRouter:   workingRouter{},
+			dns:               &workingDNS{},
+			vpn:               &mock.ActiveVPN{},
+			fw:                &workingFirewall{},
+			allowlist:         &workingAllowlistRouting{},
+			devices:           workingDeviceList,
+			routing:           &workingRoutingSetup{},
+			err:               nil,
+			arpIgnore:         true,
+			expectedARPIgnore: true,
+		},
+		{
+			name:            "start with arp ignore set error",
+			gateway:         workingGateway{},
+			allowlistRouter: workingRouter{},
+			dns:             &workingDNS{},
+			vpn:             &mock.WorkingVPN{},
+			fw:              &workingFirewall{},
+			allowlist:       &workingAllowlistRouting{},
+			devices:         workingDeviceList,
+			routing:         &workingRoutingSetup{},
+			err:             mock.ErrOnPurpose,
+			arpIgnore:       true,
+			setARPIgnoreErr: mock.ErrOnPurpose,
+		},
+		{
+			name:            "restart with arp ignore set error",
+			gateway:         workingGateway{},
+			allowlistRouter: workingRouter{},
+			dns:             &workingDNS{},
+			vpn:             &mock.ActiveVPN{},
+			fw:              &workingFirewall{},
+			allowlist:       &workingAllowlistRouting{},
+			devices:         workingDeviceList,
+			routing:         &workingRoutingSetup{},
+			err:             mock.ErrOnPurpose,
+			arpIgnore:       true,
+			setARPIgnoreErr: mock.ErrOnPurpose,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			arpIgnoreSetter := mock.SysctlSetterMock{
+				SetErr: test.setARPIgnoreErr,
+			}
 			netw := NewCombined(
 				test.vpn,
 				nil,
@@ -372,6 +437,8 @@ func TestCombined_Start(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				test.arpIgnore,
+				&arpIgnoreSetter,
 			)
 			err := netw.Start(
 				context.Background(),
@@ -382,6 +449,7 @@ func TestCombined_Start(t *testing.T) {
 				true,
 			)
 			assert.ErrorIs(t, err, test.err, test.name)
+			assert.Equal(t, test.expectedARPIgnore, arpIgnoreSetter.IsSet, "ARP ignore not set to expected value.")
 		})
 	}
 }
@@ -390,10 +458,13 @@ func TestCombined_Stop(t *testing.T) {
 	category.Set(t, category.Link)
 
 	tests := []struct {
-		name string
-		vpn  vpn.VPN
-		dns  dns.Setter
-		err  error
+		name              string
+		vpn               vpn.VPN
+		dns               dns.Setter
+		arpIgnore         bool
+		expectedARPIgnore bool
+		arpIgnoreUnsetErr error
+		err               error
 	}{
 		{
 			name: "nil vpn",
@@ -408,6 +479,15 @@ func TestCombined_Stop(t *testing.T) {
 			err:  mock.ErrOnPurpose,
 		},
 		{
+			name:              "unset arp ignore failure",
+			vpn:               &mock.WorkingVPN{},
+			dns:               &workingDNS{},
+			arpIgnore:         true,
+			expectedARPIgnore: true,
+			arpIgnoreUnsetErr: mock.ErrOnPurpose,
+			err:               mock.ErrOnPurpose,
+		},
+		{
 			name: "vpn stop failure",
 			vpn:  mock.FailingVPN{},
 			dns:  &workingDNS{},
@@ -419,10 +499,23 @@ func TestCombined_Stop(t *testing.T) {
 			dns:  &workingDNS{},
 			err:  nil,
 		},
+		{
+			name:              "successful stop with ARP ignore",
+			vpn:               &mock.WorkingVPN{},
+			dns:               &workingDNS{},
+			arpIgnore:         true,
+			expectedARPIgnore: false,
+			err:               nil,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			arpIgnoreSetter := mock.SysctlSetterMock{
+				// set current ARP ignore to simulate config that would be applied when VPN was started
+				IsSet:    test.arpIgnore,
+				UnsetErr: test.arpIgnoreUnsetErr,
+			}
 			netw := NewCombined(
 				test.vpn,
 				nil,
@@ -441,10 +534,13 @@ func TestCombined_Stop(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				test.arpIgnore,
+				&arpIgnoreSetter,
 			)
 			netw.vpnet = test.vpn
 			err := netw.stop()
 			assert.ErrorIs(t, err, test.err)
+			assert.Equal(t, test.expectedARPIgnore, arpIgnoreSetter.IsSet, "ARP ignore not set to expected value.")
 		})
 	}
 }
@@ -504,6 +600,8 @@ func TestCombined_SetDNS(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				false,
+				&mock.SysctlSetterMock{},
 			)
 			netw.vpnet = &mock.WorkingVPN{}
 			err := netw.setDNS(test.nameservers)
@@ -552,6 +650,8 @@ func TestCombined_UnsetDNS(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				false,
+				&mock.SysctlSetterMock{},
 			)
 			err := netw.UnsetDNS()
 			assert.Equal(t, test.hasError, err != nil)
@@ -615,6 +715,8 @@ func TestCombined_ResetAllowlist(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				false,
+				&mock.SysctlSetterMock{},
 			)
 			assert.ErrorIs(t, netw.resetAllowlist(), test.err)
 		})
@@ -675,6 +777,8 @@ func TestCombined_BlockTraffic(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				false,
+				&mock.SysctlSetterMock{},
 			)
 			assert.ErrorIs(t, netw.blockTraffic(), test.err)
 		})
@@ -722,6 +826,8 @@ func TestCombined_UnblockTraffic(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				false,
+				&mock.SysctlSetterMock{},
 			)
 			assert.ErrorIs(t, netw.unblockTraffic(), test.err)
 		})
@@ -819,6 +925,8 @@ func TestCombined_SetAllowlist(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				false,
+				&mock.SysctlSetterMock{},
 			)
 			assert.ErrorIs(t, netw.setAllowlist(test.allowlist), test.err)
 		})
@@ -876,6 +984,8 @@ func TestCombined_UnsetAllowlist(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				false,
+				&mock.SysctlSetterMock{},
 			)
 			err := netw.unsetAllowlist()
 			assert.ErrorIs(t, err, test.err)
@@ -955,6 +1065,8 @@ func TestCombined_SetNetwork(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				false,
+				&mock.SysctlSetterMock{},
 			)
 			assert.False(t, netw.IsNetworkSet())
 			err := netw.setNetwork(
@@ -1019,6 +1131,8 @@ func TestCombined_UnsetNetwork(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				false,
+				&mock.SysctlSetterMock{},
 			)
 			assert.ErrorIs(t, netw.unsetNetwork(), test.err)
 		})
@@ -1067,6 +1181,8 @@ func TestCombined_SetMesh(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				false,
+				&mock.SysctlSetterMock{},
 			)
 			assert.ErrorIs(t, test.err, netw.SetMesh(
 				mesh.MachineMap{},
@@ -1119,6 +1235,8 @@ func TestCombined_UnSetMesh(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				false,
+				&mock.SysctlSetterMock{},
 			)
 			netw.isMeshnetSet = true
 			assert.ErrorIs(t, test.err, netw.UnSetMesh())
@@ -1176,6 +1294,8 @@ func TestCombined_Reconnect(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				false,
+				&mock.SysctlSetterMock{},
 			)
 			// activate meshnet
 			assert.ErrorIs(t, test.err, netw.SetMesh(
@@ -1256,6 +1376,8 @@ func TestCombined_allowIncoming(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				false,
+				&mock.SysctlSetterMock{},
 			)
 			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address), test.lanAllowed)
 
@@ -1326,6 +1448,8 @@ func TestCombined_blockIncoming(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				false,
+				&mock.SysctlSetterMock{},
 			)
 			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address), true)
 			assert.Nil(t, err)
@@ -1385,6 +1509,8 @@ func TestCombined_allowGeneratedRule(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				false,
+				&mock.SysctlSetterMock{},
 			)
 			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address), true)
 			assert.Equal(t, nil, err)
@@ -1428,6 +1554,8 @@ func TestCombined_BlockNonExistingRuleFail(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				false,
+				&mock.SysctlSetterMock{},
 			)
 			// Should fail to block rule non existing
 			expectedErrorMsg := fmt.Sprintf("allow rule does not exist for %s", test.ruleName)
@@ -1474,6 +1602,8 @@ func TestCombined_allowExistingRuleFail(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				false,
+				&mock.SysctlSetterMock{},
 			)
 			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address), false)
 			assert.Equal(t, nil, err)
@@ -1509,6 +1639,8 @@ func TestCombined_Refresh(t *testing.T) {
 		0,
 		false,
 		&workingIpv6{},
+		false,
+		&mock.SysctlSetterMock{},
 	)
 
 	machineHostName := "test-fuji.nord"
@@ -1694,6 +1826,8 @@ func TestDnsAfterVPNRefresh(t *testing.T) {
 		0,
 		false,
 		&workingIpv6{},
+		false,
+		&mock.SysctlSetterMock{},
 	)
 
 	ctx := context.Background()
@@ -1913,6 +2047,132 @@ func TestExitNodeLanAvailability(t *testing.T) {
 			combined := GetTestCombined()
 			test.actions(combined)
 			assert.Equal(t, test.lanAvailable, combined.exitNode.(*workingExitNode).LanAvailable)
+		})
+	}
+}
+
+func TestCombined_SetARPIgnore(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                      string
+		vpn                       vpn.VPN
+		currentARPIgnoreNetworker bool
+		currentARPIgnoreKernel    bool
+		targetARPIgnore           bool
+		setErr                    error
+		unsetErr                  error
+		expectedARPIgnore         bool
+		errExpected               bool
+	}{
+		{
+			name:              "unset ignore to set active VPN",
+			vpn:               mock.ActiveVPN{},
+			targetARPIgnore:   true,
+			expectedARPIgnore: true,
+			errExpected:       false,
+		},
+		{
+			name:                      "set ignore to unset active VPN",
+			vpn:                       mock.ActiveVPN{},
+			currentARPIgnoreKernel:    true,
+			currentARPIgnoreNetworker: true,
+			targetARPIgnore:           false,
+			expectedARPIgnore:         false,
+			errExpected:               false,
+		},
+		{
+			name:              "set ignore is not applied to kernel when VPN is not active",
+			vpn:               mock.WorkingInactiveVPN{},
+			targetARPIgnore:   true,
+			expectedARPIgnore: false,
+			errExpected:       false,
+		},
+		{
+			name:                      "unset ignore is not applied to kernel when VPN is not active",
+			vpn:                       mock.WorkingInactiveVPN{},
+			currentARPIgnoreKernel:    true,
+			currentARPIgnoreNetworker: false,
+			targetARPIgnore:           false,
+			expectedARPIgnore:         true,
+			errExpected:               false,
+		},
+		{
+			name:                      "set is always applied to kernel even if already set when VPN is active",
+			vpn:                       mock.ActiveVPN{},
+			currentARPIgnoreKernel:    false,
+			currentARPIgnoreNetworker: true,
+			targetARPIgnore:           true,
+			expectedARPIgnore:         true,
+			errExpected:               false,
+		},
+		{
+			name:                      "unset is always applied to kernel even if already unset when VPN is active",
+			vpn:                       mock.ActiveVPN{},
+			currentARPIgnoreKernel:    true,
+			currentARPIgnoreNetworker: false,
+			targetARPIgnore:           false,
+			expectedARPIgnore:         false,
+			errExpected:               false,
+		},
+		{
+			name:              "set ignore error",
+			vpn:               mock.ActiveVPN{},
+			targetARPIgnore:   true,
+			setErr:            errors.New("set err"),
+			expectedARPIgnore: false,
+			errExpected:       true,
+		},
+		{
+			name:                      "unset ignore error",
+			vpn:                       mock.ActiveVPN{},
+			currentARPIgnoreNetworker: true,
+			targetARPIgnore:           false,
+			unsetErr:                  errors.New("unset err"),
+			expectedARPIgnore:         false,
+			errExpected:               true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			arpIgnoreSetter := mock.SysctlSetterMock{}
+			arpIgnoreSetter.SetErr = test.setErr
+			arpIgnoreSetter.UnsetErr = test.unsetErr
+			arpIgnoreSetter.IsSet = test.currentARPIgnoreKernel
+
+			netw := NewCombined(
+				test.vpn,
+				nil,
+				nil,
+				nil,
+				nil,
+				nil,
+				nil,
+				nil,
+				nil,
+				nil,
+				nil,
+				nil,
+				nil,
+				nil,
+				0,
+				false,
+				nil,
+				false,
+				&arpIgnoreSetter,
+			)
+
+			netw.ignoreARP = test.currentARPIgnoreNetworker
+
+			err := netw.SetARPIgnore(test.targetARPIgnore)
+			if test.errExpected {
+				assert.Error(t, err, "Expected error not returned when setting ARP ignore.")
+			} else {
+				assert.NoError(t, err, "Unexpected error returned when setting ARP ignore.")
+			}
+
+			assert.Equal(t, test.expectedARPIgnore, arpIgnoreSetter.IsSet, "ARP ignore was set to unexpected value.")
 		})
 	}
 }
