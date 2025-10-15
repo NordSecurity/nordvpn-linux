@@ -26,6 +26,7 @@ const (
 	imageDepender          = registryPrefix + "depender:1.3.3"
 	imageSnapPackager      = registryPrefix + "snaper:1.2.0"
 	imageProtobufGenerator = registryPrefix + "generator:1.4.2"
+	imageProtobufGui       = registryPrefix + "protobuf_dart-3.8.1:1.0.1"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
 	imageTester            = registryPrefix + "tester:1.6.3"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.4"
@@ -543,20 +544,90 @@ func (Build) RustDocker(ctx context.Context) error {
 	return nil
 }
 
-// Generate Protobuf from protobuf/* definitions using Docker builder
+// Build GUI binaries (arguments: buildConfig {release/debug})
+func (Build) GuiBinaries(ctx context.Context, buildConfig string) error {
+	if buildConfig != "release" && buildConfig != "debug" {
+		return fmt.Errorf("invalid config: %q (expected 'debug' or 'release')", buildConfig)
+	}
+	config := "--" + buildConfig
+	cmd := exec.Command("flutter", "build", "linux", config)
+	cmd.Dir = "gui"
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
+// Build GUI package (arguments: packageType {deb/rpm/snap}, buildConfig {release/debug})
+func (Build) GuiPackage(ctx context.Context, packageType, buildConfig string) error {
+	if packageType != "deb" && packageType != "rpm" && packageType != "snap" {
+		return fmt.Errorf("invalid package: %q (expected 'deb' or 'rpm' or 'snap')", packageType)
+	}
+	if buildConfig != "release" && buildConfig != "debug" {
+		return fmt.Errorf("invalid config: %q (expected 'debug' or 'release')", buildConfig)
+	}
+
+	runCmd("gui", "scripts/build_application.sh", buildConfig)
+	runCmd("gui", "scripts/build_package.sh", buildConfig, packageType, "amd64")
+	return nil
+}
+
+func (Build) GuiPackageDocker(ctx context.Context) error {
+	env, err := getEnv()
+	if err != nil {
+		return err
+	}
+
+	env["WORKDIR"] = dockerWorkDir
+
+	return RunDocker(
+		ctx,
+		env,
+		imageGUIFlutter,
+		[]string{"cd", "gui"}, ///scripts/build_application.sh", "release"},
+		guiDockerWorkDir,
+	)
+}
+
+// Format GUI code using ci/format_gui.sh
+func FormatGui(ctx context.Context) error {
+	return runCmd("gui", "bash", "../ci/format_gui.sh")
+}
+
+// Generate Protobuf from protobuf/* definitions using Docker builder including GUI protobufs
 func (Generate) ProtobufDocker(ctx context.Context) error {
 	env, err := getEnv()
 	if err != nil {
 		return err
 	}
 
-	return RunDocker(
+	if err := RunDocker(
 		ctx,
 		env,
 		imageProtobufGenerator,
 		[]string{"ci/generate_protobuf.sh"},
 		dockerWorkDir,
+	); err != nil {
+		return err
+	}
+
+	// GUI protobuf
+	return RunDocker(
+		ctx,
+		env,
+		imageProtobufGui,
+		[]string{"gui/scripts/generate_protobuf.sh"},
+		guiDockerWorkDir,
 	)
+}
+
+// Generate GUI translations
+func (Generate) GuiTranslations(ctx context.Context) error {
+	return runCmd("dart", "run", "slang", "-v")
+}
+
+// Generate GUI code, e.g riverpod, freezed
+func (Generate) GuiCode(ctx context.Context) error {
+	return runCmd("dart", "run", "build_runner", "build")
 }
 
 // run unit tests
@@ -775,6 +846,35 @@ func (Test) Lint() error {
 	return sh.RunV("golangci-lint", "run", "-v", "--config=.golangci-lint.yml")
 }
 
+func (Test) GuiIntegration() error {
+	return runCmd("gui", "flutter", "test", "integration_test", "-d", "linux")
+}
+
+func (Test) GuiUnit() error {
+	return runCmd("gui", "flutter", "test")
+}
+
+func (Test) GuiAll() error {
+	if err := runCmd("gui", "flutter", "test", "integration_test", "-d", "linux"); err != nil {
+		return err
+	}
+	return runCmd("gui", "flutter", "test")
+}
+
+func (Test) GuiCoverage() error {
+	if err := runCmd("gui", "flutter", "test", "--coverage"); err != nil {
+		return err
+	}
+
+	if err := runCmd("gui", "genhtml", "coverage/lcov.info", "-o", "coverage/html"); err != nil {
+		return err
+	}
+
+	cmd := exec.Command("open", "coverage/html/index.html")
+	cmd.Dir = "gui"
+	return cmd.Start()
+}
+
 // Binaries to their respective locations and restart
 // the daemon along the way
 func (Install) Binaries() error {
@@ -913,4 +1013,14 @@ func getDefaultLoginToken(testsCredentials []byte) (string, error) {
 		return "", fmt.Errorf("parsing tests credentials: %w", err)
 	}
 	return c["default"].Token, nil
+}
+
+func runCmd(dir string, name string, args ...string) error {
+	fmt.Printf("Running in %s: %s %v\n", dir, name, args)
+	cmd := exec.Command(name, args...)
+	cmd.Dir = dir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	return cmd.Run()
 }
