@@ -47,6 +47,10 @@ func (m *mockAgent) Flush() error {
 	return nil
 }
 
+func (m *mockAgent) GetActiveRules() ([]string, error) {
+	return nil, nil
+}
+
 func (f *failingAgent) Add(rule Rule) error {
 	f.added++
 	return fmt.Errorf("adding")
@@ -59,6 +63,10 @@ func (f *failingAgent) Delete(rule Rule) error {
 
 func (m *failingAgent) Flush() error {
 	return nil
+}
+
+func (m *failingAgent) GetActiveRules() ([]string, error) {
+	return nil, nil
 }
 
 func TestFirewallAdd(t *testing.T) {

@@ -1,6 +1,7 @@
 import pytest
 import sh
 import os
+import glob
 
 import lib
 import time
@@ -13,7 +14,8 @@ from lib import (
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
-
+PROJECT_ROOT = os.environ['WORKDIR']
+DEB_PATH = glob.glob(f'{PROJECT_ROOT}/dist/app/deb/*amd64.deb')[0]
 MSG_KILLSWITCH_ON = "Kill Switch has been successfully set to 'enabled'."
 MSG_KILLSWITCH_OFF = "Kill Switch has been successfully set to 'disabled'."
 
@@ -226,3 +228,32 @@ def test_killswitch_enabled_does_not_affect_cdn_with_firewall_mark():
         assert res == "exists", f"File {os.path} should exist after kill-switch was enabled"
 
 
+# This test assumes being run on docker
+def test_killswitch_on_after_update():
+    # Mocking ps to pretend as if we are in an initd system
+    sh.sudo.mv("/usr/bin/ps", "/usr/bin/pso")
+    sh.sudo.cp("/etc/mock_ps.sh", "/usr/bin/ps")
+    
+    # Making a second deb package with increased version to upgrade to
+    sh.dpkg_deb("-R", DEB_PATH, "/tmp/")
+    ver = str(sh.dpkg_query("-f", '${VERSION}', "-W", "nordvpn"))
+    increased_ver = str(int(ver[0]) + 1) + ver[1:]
+    print(increased_ver)
+    with open("/tmp/DEBIAN/control", "rb") as f:
+        data = f.readlines()
+    data[1] = bytes("Version: " + increased_ver + "\n", "utf-8")
+    with open("/tmp/DEBIAN/control", "wb") as f:
+        f.writelines(data)
+    # Empty file with which dpkg-deb does not work, we remove it before repackaging
+    os.remove("/tmp/DEBIAN/conffiles")
+    sh.sudo("dpkg-deb", "-b", "/tmp/", "/opt/updated.deb")
+
+
+    sh.nordvpn.set.killswitch.on()
+    assert daemon.is_killswitch_on()
+    assert network.is_not_available(2)
+    sh.sudo.apt.install("/opt/updated.deb", "-y")
+    assert network.is_not_available(2)
+    assert daemon.is_killswitch_on()
+    sh.nordvpn.set.killswitch.off()
+    assert network.is_available()

@@ -485,9 +485,16 @@ func (ipt *IPTables) GetActiveRules() ([]string, error) {
 					continue
 				}
 				// check for comment name in rule
+				fmt.Println("Looking at line: " + string(line))
 				matches := re.FindAll(line, -1)
-				if len(matches) > 0 {
-					log.Printf("printing matches: %v", matches)
+				var stringMatches []string
+				for _, match := range matches {
+					fmt.Println("found match" + string(match))
+					stringMatches = append(stringMatches, string(match))
+				}
+				// first comment is the usual nordvpn, second is the name of the rule
+				// if there is only one, we skip as we don't have the rule name comment
+				if len(stringMatches) > 1 {
 					formattedRuleName := strings.Split(string(matches[1]), " ")[1]
 					rulesMap[formattedRuleName] = true
 				}
@@ -497,14 +504,12 @@ func (ipt *IPTables) GetActiveRules() ([]string, error) {
 	var ruleList []string
 	for k := range rulesMap{
 		ruleList = append(ruleList, k)
-		log.Println("rule match added: " + k)
 	}
-	log.Printf("all rules: %v", ruleList)
 	return ruleList, nil
 }
 
 func getRuleOutput(iptableVersion string, table string) ([]byte, error){
-	out, err := exec.Command(iptableVersion, "-t", table, "-S").CombinedOutput()
+	out, err := exec.Command(iptableVersion, "-t", table, "-S", "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("listing rules: %w", err)
 	}

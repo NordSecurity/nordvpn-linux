@@ -1705,6 +1705,7 @@ func TestCombined_Refresh(t *testing.T) {
 	// transform rules to rule names for printing in case of assertion failure
 	ruleNames := []string{}
 	for _, rule := range fw.rules {
+		fmt.Println(rule)
 		ruleNames = append(ruleNames, rule.Name)
 	}
 
@@ -1763,6 +1764,7 @@ func TestCombined_Refresh(t *testing.T) {
 		RemoteNetworks: []netip.Prefix{netip.PrefixFrom(machineAddress, machineAddress.BitLen())},
 		Allow:          true,
 		Comment:        "nordvpn-meshnet",
+		SimplifiedName: "-allow-rule-",
 	}
 
 	assert.Equal(t, expectedAllowMachineFwRule, fw.rules[machineFwAllowRuleName],
@@ -1776,6 +1778,7 @@ func TestCombined_Refresh(t *testing.T) {
 		RemoteNetworks: []netip.Prefix{netip.PrefixFrom(peer1Address, peer1Address.BitLen())},
 		Allow:          true,
 		Comment:        "nordvpn-meshnet",
+		SimplifiedName: "-allow-rule-",
 	}
 
 	assert.Equal(t, expectedAllowPeer1Rule, fw.rules[peer1FwAllowRuleName],
@@ -1793,6 +1796,7 @@ func TestCombined_Refresh(t *testing.T) {
 		RemoteNetworks: []netip.Prefix{netip.PrefixFrom(peer1Address, peer1Address.BitLen())},
 		Allow:          true,
 		Comment:        "nordvpn-meshnet",
+		SimplifiedName: "-allow-fileshare-rule-",
 	}
 
 	assert.Equal(t, expectedAllowFilesharePeer1Rule, fw.rules[peer1FwAllowFileshareRuleName],

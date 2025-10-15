@@ -63,6 +63,7 @@ func TestGenerateIPTablesRule(t *testing.T) {
 		sports      []int
 		comment     string
 		mark        uint32
+		nameComment string
 	}{
 		{
 			chain: chainOutput, target: drop, iface: "", remoteNet: "", protocol: "",
@@ -198,6 +199,9 @@ func TestGenerateIPTablesRule(t *testing.T) {
 		}, {
 			chain: chainPostrouting, target: connmark, mark: 0x123,
 			rule: "POSTROUTING -m mark --mark 0x123 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
+		}, {
+			chain: chainOutput, target: drop, nameComment: "ipv4-drop",
+			rule: "OUTPUT -m comment --comment nordvpn -m comment --comment ipv4-drop -j DROP",
 		},
 	}
 
@@ -224,6 +228,7 @@ func TestGenerateIPTablesRule(t *testing.T) {
 				tt.dports,
 				tt.comment,
 				tt.mark,
+				tt.nameComment,
 			)
 			assert.Equal(t, tt.rule, rule)
 		})
@@ -655,7 +660,7 @@ func TestRuleToIPTables(t *testing.T) {
 		{
 			name: "unblock destination ports rule",
 			rule: firewall.Rule{
-				Name:           "unblock source ports",
+				Name:           "unblock-source-ports",
 				Direction:      firewall.Inbound,
 				Protocols:      []string{"tcp"},
 				Ports:          []int{111},
@@ -666,13 +671,13 @@ func TestRuleToIPTables(t *testing.T) {
 				Allow: true,
 			},
 			ipv4TablesRules: []string{
-				"INPUT -s 1.1.1.1/32 -p tcp --dport 111:111 -m comment --comment nordvpn -j ACCEPT",
+				"INPUT -s 1.1.1.1/32 -p tcp --dport 111:111 -m comment --comment nordvpn -m comment --comment unblock-source-ports -j ACCEPT",
 			},
 		},
 		{
 			name: "unblock destination ports physical rule",
 			rule: firewall.Rule{
-				Name:           "unblock source ports",
+				Name:           "unblock-source-ports",
 				Direction:      firewall.Inbound,
 				Protocols:      []string{"tcp"},
 				Ports:          []int{111},
@@ -684,13 +689,13 @@ func TestRuleToIPTables(t *testing.T) {
 				Physical: true,
 			},
 			ipv4TablesRules: []string{
-				"PREROUTING -s 1.1.1.1/32 -p tcp --dport 111:111 -m comment --comment nordvpn -j ACCEPT",
+				"PREROUTING -s 1.1.1.1/32 -p tcp --dport 111:111 -m comment --comment nordvpn -m comment --comment unblock-source-ports -j ACCEPT",
 			},
 		},
 		{
 			name: "unblock source ports rule",
 			rule: firewall.Rule{
-				Name:           "unblock source ports",
+				Name:           "unblock-source-ports",
 				Direction:      firewall.Inbound,
 				Protocols:      []string{"tcp"},
 				Ports:          []int{111},
@@ -701,13 +706,13 @@ func TestRuleToIPTables(t *testing.T) {
 				Allow: true,
 			},
 			ipv4TablesRules: []string{
-				"INPUT -s 1.1.1.1/32 -p tcp --sport 111:111 -m comment --comment nordvpn -j ACCEPT",
+				"INPUT -s 1.1.1.1/32 -p tcp --sport 111:111 -m comment --comment nordvpn -m comment --comment unblock-source-ports -j ACCEPT",
 			},
 		},
 		{
 			name: "unblock source ports physical rule",
 			rule: firewall.Rule{
-				Name:           "unblock source ports",
+				Name:           "unblock-source-ports",
 				Direction:      firewall.Inbound,
 				Protocols:      []string{"tcp"},
 				Ports:          []int{111},
@@ -719,13 +724,13 @@ func TestRuleToIPTables(t *testing.T) {
 				Physical: true,
 			},
 			ipv4TablesRules: []string{
-				"PREROUTING -s 1.1.1.1/32 -p tcp --sport 111:111 -m comment --comment nordvpn -j ACCEPT",
+				"PREROUTING -s 1.1.1.1/32 -p tcp --sport 111:111 -m comment --comment nordvpn -m comment --comment unblock-source-ports -j ACCEPT",
 			},
 		},
 		{
 			name: "unblock source ports range rule",
 			rule: firewall.Rule{
-				Name:           "unblock source ports",
+				Name:           "unblock-source-ports",
 				Direction:      firewall.Inbound,
 				Protocols:      []string{"tcp"},
 				Ports:          []int{111, 112},
@@ -736,13 +741,13 @@ func TestRuleToIPTables(t *testing.T) {
 				Allow: true,
 			},
 			ipv4TablesRules: []string{
-				"INPUT -s 1.1.1.1/32 -p tcp --sport 111:112 -m comment --comment nordvpn -j ACCEPT",
+				"INPUT -s 1.1.1.1/32 -p tcp --sport 111:112 -m comment --comment nordvpn -m comment --comment unblock-source-ports -j ACCEPT",
 			},
 		},
 		{
 			name: "unblock source ports range physical rule",
 			rule: firewall.Rule{
-				Name:           "unblock source ports",
+				Name:           "unblock-source-ports",
 				Direction:      firewall.Inbound,
 				Protocols:      []string{"tcp"},
 				Ports:          []int{111, 112},
@@ -754,13 +759,13 @@ func TestRuleToIPTables(t *testing.T) {
 				Physical: true,
 			},
 			ipv4TablesRules: []string{
-				"PREROUTING -s 1.1.1.1/32 -p tcp --sport 111:112 -m comment --comment nordvpn -j ACCEPT",
+				"PREROUTING -s 1.1.1.1/32 -p tcp --sport 111:112 -m comment --comment nordvpn -m comment --comment unblock-source-ports -j ACCEPT",
 			},
 		},
 		{
 			name: "unblock multiple source ports rule",
 			rule: firewall.Rule{
-				Name:           "unblock source ports",
+				Name:           "unblock-source-ports",
 				Direction:      firewall.Inbound,
 				Protocols:      []string{"tcp"},
 				Ports:          []int{111, 222, 333},
@@ -771,15 +776,15 @@ func TestRuleToIPTables(t *testing.T) {
 				Allow: true,
 			},
 			ipv4TablesRules: []string{
-				"INPUT -s 1.1.1.1/32 -p tcp --sport 111:111 -m comment --comment nordvpn -j ACCEPT",
-				"INPUT -s 1.1.1.1/32 -p tcp --sport 222:222 -m comment --comment nordvpn -j ACCEPT",
-				"INPUT -s 1.1.1.1/32 -p tcp --sport 333:333 -m comment --comment nordvpn -j ACCEPT",
+				"INPUT -s 1.1.1.1/32 -p tcp --sport 111:111 -m comment --comment nordvpn -m comment --comment unblock-source-ports -j ACCEPT",
+				"INPUT -s 1.1.1.1/32 -p tcp --sport 222:222 -m comment --comment nordvpn -m comment --comment unblock-source-ports -j ACCEPT",
+				"INPUT -s 1.1.1.1/32 -p tcp --sport 333:333 -m comment --comment nordvpn -m comment --comment unblock-source-ports -j ACCEPT",
 			},
 		},
 		{
 			name: "unblock multiple source ports rule",
 			rule: firewall.Rule{
-				Name:           "unblock source ports",
+				Name:           "unblock-source-ports",
 				Direction:      firewall.Inbound,
 				Protocols:      []string{"tcp"},
 				Ports:          []int{111, 222, 333},
@@ -791,10 +796,20 @@ func TestRuleToIPTables(t *testing.T) {
 				Physical: true,
 			},
 			ipv4TablesRules: []string{
-				"PREROUTING -s 1.1.1.1/32 -p tcp --sport 111:111 -m comment --comment nordvpn -j ACCEPT",
-				"PREROUTING -s 1.1.1.1/32 -p tcp --sport 222:222 -m comment --comment nordvpn -j ACCEPT",
-				"PREROUTING -s 1.1.1.1/32 -p tcp --sport 333:333 -m comment --comment nordvpn -j ACCEPT",
+				"PREROUTING -s 1.1.1.1/32 -p tcp --sport 111:111 -m comment --comment nordvpn -m comment --comment unblock-source-ports -j ACCEPT",
+				"PREROUTING -s 1.1.1.1/32 -p tcp --sport 222:222 -m comment --comment nordvpn -m comment --comment unblock-source-ports -j ACCEPT",
+				"PREROUTING -s 1.1.1.1/32 -p tcp --sport 333:333 -m comment --comment nordvpn -m comment --comment unblock-source-ports -j ACCEPT",
 			},
+		},
+		{
+			name:            "empty outbound rule with comment",
+			rule:            firewall.Rule{Name: "drop-ipv4", Direction: firewall.Outbound},
+			ipv4TablesRules: []string{"OUTPUT -m comment --comment nordvpn -m comment --comment drop-ipv4 -j DROP"},
+		},
+		{
+			name:            "empty inbound rule with simplified comment",
+			rule:            firewall.Rule{Name: "accept-meshnet-key-=1fui421fiu31fedqe", Direction: firewall.Inbound, SimplifiedName: "accept-meshnet-key"},
+			ipv4TablesRules: []string{"INPUT -m comment --comment nordvpn -m comment --comment accept-meshnet-key -j DROP"},
 		},
 	}
 
@@ -879,7 +894,7 @@ func TestPortsToRanges(t *testing.T) {
 		ports  []int
 		ranges []PortRange
 	}{
-		{name: "empoty slice", ports: nil, ranges: nil},
+		{name: "empty slice", ports: nil, ranges: nil},
 		{name: "single port", ports: []int{1}, ranges: []PortRange{{Min: 1, Max: 1}}},
 		{name: "single range", ports: []int{1, 2}, ranges: []PortRange{{Min: 1, Max: 2}}},
 		{name: "unsorted range", ports: []int{2, 1, 3}, ranges: []PortRange{{Min: 1, Max: 3}}},
@@ -981,4 +996,48 @@ func getSystemRules(supportedIPTables []string) (map[string][]string, error) {
 		rules[cmd] = res
 	}
 	return rules, nil
+}
+
+func TestGetActiveRules(t *testing.T){
+	category.Set(t, category.Firewall)
+
+	tests := []struct {
+		name            string
+		rules            []string
+		expectedComments []string
+	} {
+		{
+			name : "two comments",
+			rules: []string{"-A OUTPUT -m comment --comment nordvpn -m comment --comment allow-ipv4 -j ACCEPT"},
+			expectedComments: []string{"allow-ipv4"},
+		},
+		{
+			name : "one comment",
+			rules: []string{"-A OUTPUT -m comment --comment nordvpn -j ACCEPT"},
+			expectedComments: nil,
+		},
+		{
+			name : "no comments",
+			rules: []string{"-A OUTPUT -j ACCEPT"},
+			expectedComments: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f := New("", "", "", []string{ipv4Table})
+			for _, rule := range tt.rules{
+				fmt.Println(rule)
+				args := strings.Split(fmt.Sprintf("-t filter %v -w %v", rule, internal.SecondsToWaitForIptablesLock), " ")
+				fmt.Println(args)
+				out, err := exec.Command("iptables", args...).CombinedOutput()
+				if err != nil{
+					fmt.Println("output: " + string(out))
+					fmt.Printf("error: %v", err)
+				}
+			}
+			ruleNames, _ := f.GetActiveRules()
+			f.Flush()
+			assert.ElementsMatch(t, ruleNames, tt.expectedComments)
+		})
+	}
 }
