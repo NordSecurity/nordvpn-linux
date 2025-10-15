@@ -1,38 +1,38 @@
-run:
-  timeout: 2m
-
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
-  - bodyclose
-  #- depguard
-  - dogsled
-  #- dupl
-  #- errcheck
-  - exhaustive
-  #- funlen
-  #- gochecknoinits
-  - goconst
-  #- gocritic
-  #- gocyclo
-  - gofmt
-  - goimports
-  #- gomnd
-  - goprintffuncname
-  #- gosec
-  - gosimple
-  - govet
-  #- ineffassign
-  #- lll
-  - misspell
-  #- nakedret
-  - rowserrcheck
-  #- scopelint
-  #- staticcheck
-  #- structcheck
-  #- stylecheck
-  - typecheck
-  - unconvert
-  - unparam
-  - unused
-  - whitespace
+    - bodyclose
+    - dogsled
+    - exhaustive
+    - goconst
+    - goprintffuncname
+    - govet
+    - misspell
+    - rowserrcheck
+    - staticcheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
