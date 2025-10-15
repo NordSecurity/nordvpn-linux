@@ -6,6 +6,8 @@ import (
 )
 
 type CredentialsAPIMock struct {
+	core.CombinedAPI
+
 	NotificationCredentialsResponse       core.NotificationCredentialsResponse
 	NotificationCredentialsRevokeResponse core.NotificationCredentialsRevokeResponse
 	NotificationCredentialsError          error
@@ -23,7 +25,12 @@ func (c *CredentialsAPIMock) NotificationCredentialsRevoke(appUserID string, pur
 }
 
 func (*CredentialsAPIMock) ServiceCredentials(token string) (*core.CredentialsResponse, error) {
-	return nil, nil
+	return &core.CredentialsResponse{
+		ID:                 1234,
+		Username:           "test-user",
+		Password:           "test-pass",
+		NordlynxPrivateKey: "test-key",
+	}, nil
 }
 
 func (*CredentialsAPIMock) TokenRenew(renewalToken string, idempotencyKey uuid.UUID) (*core.TokenRenewResponse, error) {

@@ -155,6 +155,8 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (*pb.L
 	if in.GetType() == pb.LoginType_LoginType_SIGNUP {
 		eventType = events.LoginSignUp
 	}
+	// memorize what login type started: Login or Signup
+	r.initialLoginType = in.GetType()
 
 	r.events.User.Login.Publish(events.DataAuthorization{
 		DurationMs:   -1,
@@ -205,10 +207,11 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 			eventStatus = events.StatusFailure
 		}
 		r.events.User.Login.Publish(events.DataAuthorization{
-			DurationMs:   max(int(time.Since(lastLoginAttemptTime).Milliseconds()), 1),
-			EventTrigger: events.TriggerUser,
-			EventStatus:  eventStatus,
-			EventType:    loginType,
+			DurationMs:                 max(int(time.Since(lastLoginAttemptTime).Milliseconds()), 1),
+			EventTrigger:               events.TriggerUser,
+			EventStatus:                eventStatus,
+			EventType:                  loginType,
+			IsAlteredFlowOnNordAccount: in.GetType() != r.initialLoginType,
 		})
 		lastLoginAttemptTime = time.Time{}
 	}()
