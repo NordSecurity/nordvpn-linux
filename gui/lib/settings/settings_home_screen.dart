@@ -23,7 +23,7 @@ final class SettingsHomeScreen extends StatelessWidget {
           case _SettingsGroups.general:
             return SettingsWrapperWidget.buildListItem(
               context,
-              iconName: "settings_navigation.svg",
+              iconName: "settings_navigation_off.svg",
               title: t.ui.general,
               subtitle: t.ui.generalSettingsSubtitle,
               trailing: trailing,
