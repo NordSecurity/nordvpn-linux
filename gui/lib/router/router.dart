@@ -71,7 +71,7 @@ final redirectStateProvider = ChangeNotifierProvider((ref) {
     grpcConnectionControllerProvider,
     accountControllerProvider,
     consentStatusProvider,
-    snapPermissionsProvider
+    snapPermissionsProvider,
   ]) {
     ref.listen(provider, (_, _) => updateRedirect());
   }
