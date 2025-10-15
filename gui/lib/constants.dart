@@ -41,7 +41,7 @@ const defaultTheme = ThemeMode.system;
 
 // Main window sizes
 final windowMinSize = Size(460, 574);
-final windowDefaultSize = Size(750, 574);
+final windowDefaultSize = Size(800, 600);
 final windowMaxSize = Size.fromWidth(1200);
 final fastestServerLabel = "${t.ui.fastestServer} (${t.ui.quickConnect})";
 
