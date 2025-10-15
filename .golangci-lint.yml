@@ -1,4 +1,6 @@
 version: "2"
+run:
+  timeout: 2m
 linters:
   default: none
   enable:
@@ -23,9 +25,11 @@ linters:
       - legacy
       - std-error-handling
     paths:
-      - third_party$
-      - builtin$
-      - examples$
+      - third-party
+    rules:
+      - linters: 
+        - staticcheck
+        text: "ST1005:" # systematically, disable all the linter issues on errors strings capitalization, or ending with a punctuation mark
 formatters:
   enable:
     - gofmt
@@ -33,6 +37,4 @@ formatters:
   exclusions:
     generated: lax
     paths:
-      - third_party$
-      - builtin$
-      - examples$
+      - third-party
