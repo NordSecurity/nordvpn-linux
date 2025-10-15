@@ -215,7 +215,7 @@ func maskIPRouteOutput(output string) string {
 		}
 
 		if !parsed.IsLinkLocalMulticast() && !parsed.IsLinkLocalUnicast() && !parsed.IsLoopback() && !parsed.IsPrivate() {
-			output = strings.Replace(output, ip, "***", -1)
+			output = strings.ReplaceAll(output, ip, "***")
 		}
 	}
 

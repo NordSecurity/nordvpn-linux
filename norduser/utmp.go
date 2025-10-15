@@ -65,9 +65,10 @@ type userData map[string]norduserState
 func isUserLoggedIn(username string) (bool, error) {
 	var usersCArray *C.user
 	size := C.get_utmp_user_processes(&usersCArray)
-	if size == C.ERROR_REALLOC {
+	switch size {
+	case C.ERROR_REALLOC:
 		return false, fmt.Errorf("failed to reallocate space for the users table")
-	} else if size == C.ERROR_MALLOC_USERNAME {
+	case C.ERROR_MALLOC_USERNAME:
 		return false, fmt.Errorf("failed to allocate space for new user in the users table")
 	}
 	defer C.free(unsafe.Pointer(usersCArray))
@@ -90,9 +91,10 @@ func isUserLoggedIn(username string) (bool, error) {
 func getActiveUsers() (userData, error) {
 	var usersCArray *C.user
 	size := C.get_utmp_user_processes(&usersCArray)
-	if size == C.ERROR_REALLOC {
+	switch size {
+	case C.ERROR_REALLOC:
 		return userData{}, fmt.Errorf("failed to reallocate space for the users table")
-	} else if size == C.ERROR_MALLOC_USERNAME {
+	case C.ERROR_MALLOC_USERNAME:
 		return userData{}, fmt.Errorf("failed to allocate space for new user in the users table")
 	}
 	defer C.free(unsafe.Pointer(usersCArray))

@@ -112,20 +112,20 @@ func statusLoop(fileshareClient pb.FileshareClient, client transferStatusClient,
 func (c *cmd) IsFileshareDaemonReachable(ctx *cli.Context) error {
 	resp, err := c.client.IsLoggedIn(context.Background(), &dpb.Empty{})
 	if err != nil {
-		return formatError(fmt.Errorf(internal.UnhandledMessage))
+		return formatError(errors.New(internal.UnhandledMessage))
 	}
 
 	if !resp.GetIsLoggedIn() {
-		return formatError(fmt.Errorf(MsgFileshareUserNotLoggedIn))
+		return formatError(errors.New(MsgFileshareUserNotLoggedIn))
 	}
 
 	meshResp, err := c.meshClient.IsEnabled(context.Background(), &mpb.Empty{})
 	if err != nil {
-		return formatError(fmt.Errorf(internal.UnhandledMessage))
+		return formatError(errors.New(internal.UnhandledMessage))
 	}
 
 	if !meshResp.GetStatus().GetValue() {
-		return formatError(fmt.Errorf(MsgMeshnetNotEnabled))
+		return formatError(errors.New(MsgMeshnetNotEnabled))
 	}
 
 	return nil
@@ -261,7 +261,7 @@ func (c *cmd) FileshareAccept(ctx *cli.Context) error {
 		path, err = fileshare.GetDefaultDownloadDirectory()
 		if err != nil {
 			log.Print("determining user home directory: " + err.Error())
-			return fmt.Errorf(MsgFileshareAcceptHomeError)
+			return errors.New(MsgFileshareAcceptHomeError)
 		}
 	}
 
@@ -435,9 +435,9 @@ func fileshareErrorCodeToError(code pb.FileshareErrorCode, params ...any) error 
 	case pb.FileshareErrorCode_ACCEPT_DIR_NOT_FOUND:
 		return fmt.Errorf(MsgFilesharePathNotFound, params...)
 	case pb.FileshareErrorCode_ACCEPT_DIR_IS_A_SYMLINK:
-		return fmt.Errorf(MsgFileshareAcceptPathIsASymlink)
+		return errors.New(MsgFileshareAcceptPathIsASymlink)
 	case pb.FileshareErrorCode_ACCEPT_DIR_IS_NOT_A_DIRECTORY:
-		return fmt.Errorf(MsgFileshareAcceptPathIsNotADirectory)
+		return errors.New(MsgFileshareAcceptPathIsNotADirectory)
 	case pb.FileshareErrorCode_NO_FILES:
 		return errors.New(MsgNoFiles)
 	case pb.FileshareErrorCode_ACCEPT_DIR_NO_PERMISSIONS:

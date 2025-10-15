@@ -22,6 +22,7 @@ func NewFileshareProcessClient() *FileshareProcessClient {
 }
 
 func getFileshareClient() (pb.FileshareClient, *grpc.ClientConn, error) {
+	//nolint:staticcheck
 	fileshareConn, err := grpc.Dial(
 		FileshareURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))

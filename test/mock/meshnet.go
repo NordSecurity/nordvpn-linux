@@ -48,8 +48,8 @@ func (r *RegistryMock) Configure(token string, id uuid.UUID, peerID uuid.UUID, p
 				v.DoIAllowInbound = peer.DoIAllowInbound
 				v.Nickname = peer.Nickname
 				r.Peers = slices.Replace(r.Peers, i, i+1, v)
+				return nil
 			}
-			return nil
 		}
 		return fmt.Errorf("not found")
 	}

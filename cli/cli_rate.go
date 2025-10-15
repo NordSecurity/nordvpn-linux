@@ -32,7 +32,7 @@ func (c *cmd) Rate(ctx *cli.Context) error {
 	var ratingInput string
 	switch ctx.NArg() {
 	case 0:
-		fmt.Printf(RateNoArgsMessage)
+		fmt.Print(RateNoArgsMessage)
 		reader := bufio.NewReader(os.Stdin)
 		var err error
 		ratingInput, err = reader.ReadString('\n')
