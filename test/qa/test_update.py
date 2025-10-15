@@ -11,6 +11,7 @@ from lib.shell import sh_no_tty
 from test_connect import connect_base_test, disconnect_base_test
 
 PROJECT_ROOT = os.environ['WORKDIR']
+DEB_PATH = glob.glob(f'{PROJECT_ROOT}/dist/app/deb/*amd64.deb')[0]
 
 class TestData:
     INVOLVES_MESHNET = None
@@ -38,8 +39,8 @@ def setup_function(function):  # noqa: ARG001
     daemon.start()
 
     daemon.stop() # TODO: LVPN-6403
-    deb_path = glob.glob(f'{PROJECT_ROOT}/dist/app/deb/*amd64.deb')[0]
-    sh.sudo.apt.install(deb_path, "-y")
+    sh.sudo.apt.install(DEB_PATH, "-y")
+    
     daemon.start() # TODO: LVPN-6403
 
     # login into the app after update, because if user didn't agree with the consent it will be logged out at update

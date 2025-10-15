@@ -194,7 +194,7 @@ func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
 	err := combined.refreshVPN(ctx)
 	assert.NoError(t, err)
 
-	dropRule := firewall.rules["drop IPv4"]
+	dropRule := firewall.rules["drop-IPv4"]
 	missingNICs := findMissingInterfacesFunc(dropRule.Interfaces, nic1Name, nic2Name)
 
 	assert.Len(t, missingNICs, 0, "Block rule was not added for the following interfaces: %s", missingNICs)
@@ -211,7 +211,7 @@ func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
 	err = combined.refreshVPN(ctx)
 	assert.NoError(t, err)
 
-	dropRule = firewall.rules["drop IPv4"]
+	dropRule = firewall.rules["drop-IPv4"]
 	missingNICs = findMissingInterfacesFunc(dropRule.Interfaces, nic1Name, nic2Name, nic3Name)
 
 	assert.Len(t, missingNICs, 0, "Block rule was not added for the following interfaces: %s", missingNICs)
@@ -226,7 +226,7 @@ func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
 	err = combined.refreshVPN(ctx)
 	assert.NoError(t, err)
 
-	dropRule = firewall.rules["drop IPv4"]
+	dropRule = firewall.rules["drop-IPv4"]
 	missingNICs = findMissingInterfacesFunc(dropRule.Interfaces, nic1Name, nic2Name, nic3Name)
 
 	assert.Len(t, missingNICs, 1, "Block rule was not updated properly when interface was removed: %s", missingNICs)
@@ -282,7 +282,7 @@ func TestNetworkChange(t *testing.T) {
 			}
 
 			assert.NoError(t, combined.refreshVPN(ctx))
-			assert.Equal(t, 1, test.vpn.ExecutionStats[mock.StatsNetworkChange])
+		assert.Equal(t, 1, test.vpn.ExecutionStats[mock.StatsNetworkChange])
 			assert.Equal(t, 1, test.vpn.ExecutionStats[mock.StatsStart])
 			assert.True(t, combined.isConnectedToVPN())
 
