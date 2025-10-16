@@ -231,13 +231,12 @@ func TestRpmFileList(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				requestCount++
 
-				switch requestCount {
-				case 1:
+				if requestCount == 1 {
 					// First request is always for repomd.xml
 					w.Header().Set("Content-Encoding", "gzip")
 					w.WriteHeader(http.StatusOK)
 					w.Write(createGzipResponse(repomdContent))
-				case 2:
+				} else if requestCount == 2 {
 					// Second request for filelists.xml.gz
 					assert.Contains(t, r.URL.Path, "filelists.xml.gz")
 

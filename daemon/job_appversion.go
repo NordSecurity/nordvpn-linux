@@ -72,7 +72,7 @@ func publishVersionHealthStatus(dm *DataManager, statePublisher *state.StatePubl
 
 	versionData := dm.GetVersionData()
 
-	var healthStatusCode = int32(internal.CodeSuccess)
+	var healthStatusCode int32 = int32(internal.CodeSuccess)
 	if versionData.newerVersionAvailable {
 		healthStatusCode = int32(internal.CodeOutdated)
 	}
