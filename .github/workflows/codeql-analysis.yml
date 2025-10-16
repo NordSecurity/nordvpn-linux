@@ -2,16 +2,18 @@ name: CodeQL Security Scan
 
 on:
     push:
-        branches: ["LVPN-*"]
+        branches: [main, "LVPN-*"]
     pull_request:
-        branches: ["main", "release/*"]
+        branches: [main]
     schedule:
-        - cron: "0 3 * * 1" # nightly runs o nMonday
+        - cron: "0 3 * * 1" # weekly on Monday
+    workflow_dispatch:
 
 jobs:
     analyze:
         name: Analyze (${{ matrix.language }}/${{ matrix.query_suite }})
         runs-on: ubuntu-latest
+
         permissions:
             security-events: write
             packages: read
@@ -38,7 +40,7 @@ jobs:
               with:
                   languages: ${{ matrix.language }}
                   queries: ${{ matrix.query_suite }}
-                  config-file: ./.github/codeql/codeql-config.yml
+                  build-mode: manual
 
             - name: Set protoc path
               id: protoc_path
