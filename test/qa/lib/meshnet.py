@@ -56,12 +56,15 @@ class TestUtils:
     def setup_function(ssh_client: ssh.Ssh):
         logging.log()
 
-        delete_machines_by_identifier(token=LOCAL_TOKEN)
-        delete_machines_by_identifier(token=PEER_TOKEN)
-
         # if setup_function fails, teardown won't be executed, so daemon is not stopped
         if daemon.is_running():
             daemon.stop()
+
+        if daemon.is_peer_running(ssh_client):
+            daemon.stop_peer(ssh_client)
+
+        delete_machines_by_identifier(token=LOCAL_TOKEN)
+        delete_machines_by_identifier(token=PEER_TOKEN)
 
         daemon.start()
         daemon.start_peer(ssh_client)
