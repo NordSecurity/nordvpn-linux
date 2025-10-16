@@ -103,7 +103,6 @@ func DefaultGateway() (net.Interface, error) {
 		if err != nil {
 			return net.Interface{}, fmt.Errorf("looking up the name of default gateway: %w", err)
 		}
-		//nolint:staticcheck
 		break
 	}
 

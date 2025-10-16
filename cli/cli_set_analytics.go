@@ -39,7 +39,7 @@ func (c *cmd) setAnalyticsFlag(flag bool) error {
 }
 
 func (c *cmd) setAnalyticsFlow() error {
-	fmt.Print(MsgConsentAgreement)
+	fmt.Printf(MsgConsentAgreement)
 	flag := readForConfirmationBlockUntilValid(os.Stdin, MsgConsentAgreementPrompt)
 
 	return c.setAnalyticsFlag(flag)

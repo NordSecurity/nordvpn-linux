@@ -258,9 +258,9 @@ func filterServers(
 }
 
 func serverTagToServerBy(serverTag string, srv core.Server) core.ServerBy {
-	countryName := strings.ReplaceAll(srv.Locations[0].Name, " ", "_")
-	countryCode := strings.ReplaceAll(srv.Locations[0].Code, " ", "_")
-	cityName := strings.ReplaceAll(srv.Locations[0].Name, " ", "_")
+	countryName := strings.ReplaceAll(srv.Locations[0].Country.Name, " ", "_")
+	countryCode := strings.ReplaceAll(srv.Locations[0].Country.Code, " ", "_")
+	cityName := strings.ReplaceAll(srv.Locations[0].Country.City.Name, " ", "_")
 	if strings.EqualFold(countryCode, "gb") {
 		countryCode = "uk"
 	}

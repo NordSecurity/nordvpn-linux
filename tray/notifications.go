@@ -13,7 +13,7 @@ import (
 	inotify "github.com/NordSecurity/nordvpn-linux/notify"
 )
 
-var errDbusNotifierNotConnected = errors.New("dbus notifier not connected")
+var dbusNotifierNotConnectedError = errors.New("dbus notifier not connected")
 
 func (ti *Instance) notify(ntype NotificationType, text string, a ...any) {
 	ti.state.mu.RLock()
@@ -24,7 +24,7 @@ func (ti *Instance) notify(ntype NotificationType, text string, a ...any) {
 		text = fmt.Sprintf(text, a...)
 		log.Printf("%s Sending notification: %s\n", logTag, text)
 		if err := ti.notifier.sendNotification("NordVPN", text); err != nil {
-			if !errors.Is(err, errDbusNotifierNotConnected) {
+			if !errors.Is(err, dbusNotifierNotConnectedError) {
 				log.Println(internal.ErrorPrefix, "Failed to send notification:", err)
 			}
 		}
@@ -77,7 +77,7 @@ func (n *dbusNotifier) sendNotification(summary string, body string) error {
 		}
 		return nil
 	} else {
-		return errDbusNotifierNotConnected
+		return dbusNotifierNotConnectedError
 	}
 }
 

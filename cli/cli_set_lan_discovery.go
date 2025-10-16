@@ -47,7 +47,7 @@ func (c *cmd) SetLANDiscovery(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
-	resp, _ := c.client.SetLANDiscovery(context.Background(), &pb.SetLANDiscoveryRequest{
+	resp, err := c.client.SetLANDiscovery(context.Background(), &pb.SetLANDiscoveryRequest{
 		Enabled: isEnabled,
 	})
 

@@ -502,7 +502,7 @@ func TestVPNCredentialsSessionStore_InterfaceCompliance(t *testing.T) {
 	cfgManager := mock.NewMockConfigManager()
 	errRegistry := internal.NewErrorHandlingRegistry[error]()
 
-	store := NewVPNCredentialsSessionStore(cfgManager, errRegistry, nil)
+	var store SessionStore = NewVPNCredentialsSessionStore(cfgManager, errRegistry, nil)
 
 	assert.NotNil(t, store)
 	assert.Implements(t, (*SessionStore)(nil), store)

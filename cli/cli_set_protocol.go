@@ -40,7 +40,7 @@ func setProtocolCommonErrorCodeToError(code pb.SetErrorCode, args ...any) error 
 func handleSetProtocolStatus(code pb.SetProtocolStatus, protocol config.Protocol) error {
 	switch code {
 	case pb.SetProtocolStatus_INVALID_TECHNOLOGY:
-		return errors.New(SetProtocolUnavailable)
+		return fmt.Errorf(SetProtocolUnavailable)
 	case pb.SetProtocolStatus_PROTOCOL_CONFIGURED_VPN_ON:
 		color.Yellow(SetReconnect)
 		fallthrough

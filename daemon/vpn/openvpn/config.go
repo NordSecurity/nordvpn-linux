@@ -74,7 +74,7 @@ func generateConfigFile(protocol config.Protocol, serverIP netip.Addr, obfuscate
 
 	template, err := internal.FileRead(templatePath)
 	if err != nil {
-		return fmt.Errorf("reading ovpn template file: %w", err)
+		return fmt.Errorf("reading ovpn template file")
 	}
 
 	out, err := generateConfig(serverIP, identifier, template)
@@ -82,8 +82,7 @@ func generateConfigFile(protocol config.Protocol, serverIP netip.Addr, obfuscate
 		return fmt.Errorf("generating OpenVPN config: %w", err)
 	}
 
-	out, err = addExtraParameters(out, serverIP, protocol)
-	if err != nil {
+	if err := addExtraParameters(out, serverIP, protocol); err != nil {
 		return fmt.Errorf("adding extra parameters to OpenVPN config: %w", err)
 	}
 
@@ -177,7 +176,7 @@ func getConfigIdentifier(protocol config.Protocol, obfuscated bool) (openvpnID, 
 	}
 }
 
-func addExtraParameters(data []byte, serverIP netip.Addr, protocol config.Protocol) ([]byte, error) {
+func addExtraParameters(data []byte, serverIP netip.Addr, protocol config.Protocol) error {
 	args := strings.Split(string(data), "\n")
 	if !serverIP.Is6() {
 		args = addOrReplaceArgument(args, "pull-filter ignore \"ifconfig-ipv6\"", "pull-filter ignore \"ifconfig-ipv6\".*$")
@@ -198,10 +197,11 @@ func addExtraParameters(data []byte, serverIP netip.Addr, protocol config.Protoc
 		case config.Protocol_UNKNOWN_PROTOCOL:
 			fallthrough
 		default:
-			return nil, errors.New("unknown protocol")
+			return errors.New("unknown protocol")
 		}
 	}
-	return []byte(strings.Join(args, "\n")), nil
+	data = []byte(strings.Join(args, "\n"))
+	return nil
 }
 
 func addOrReplaceArgument(args []string, newArg string, regex string) []string {

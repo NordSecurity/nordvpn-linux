@@ -371,7 +371,7 @@ func inviteErrorCodeToError(
 			email,
 		)
 	case pb.InviteResponseErrorCode_SAME_ACCOUNT_EMAIL:
-		return errors.New(MsgMeshnetInviteSendSameAccountEmail)
+		return fmt.Errorf(MsgMeshnetInviteSendSameAccountEmail)
 	case pb.InviteResponseErrorCode_PEER_COUNT:
 		return errors.New(MsgMeshnetInviteSendDeviceCount)
 	case pb.InviteResponseErrorCode_LIMIT_REACHED:

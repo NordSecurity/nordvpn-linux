@@ -70,16 +70,15 @@ func (api *RepoAPI) DebianFileList() ([]byte, error) {
 func (api *RepoAPI) RpmFileList() ([]byte, error) {
 	repoType := core.RepoTypeProduction
 	repoArch := "i386"
-	switch api.arch {
-	case "amd64":
+	if api.arch == "amd64" {
 		repoArch = "x86_64"
-	case "arm64":
+	} else if api.arch == "arm64" {
 		repoArch = "aarch64"
-	case "armel":
+	} else if api.arch == "armel" {
 		repoArch = "armv5f"
-	case "armhf":
+	} else if api.arch == "armhf" {
 		repoArch = "armhfp"
-	default:
+	} else {
 		return nil, fmt.Errorf("unsupported architecture: %s", api.arch)
 	}
 

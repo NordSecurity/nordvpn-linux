@@ -495,7 +495,7 @@ func TestAcceptTransfer(t *testing.T) {
 	mockSystemEnvironment := newMockSystemEnvironment(t)
 
 	for _, test := range tests {
-		mockSystemEnvironment.freeSpace = test.sizeLimit
+		mockSystemEnvironment.mockEventManagerFilesystem.freeSpace = test.sizeLimit
 
 		eventManager := NewEventManager(false,
 			&mockMeshClient{},

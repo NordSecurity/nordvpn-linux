@@ -420,12 +420,11 @@ func TestRpcConnect(t *testing.T) {
 					ServerGroup: test.serverGroup,
 					ServerTag:   test.serverTag,
 				}, server)
-				switch test.resp {
-				case internal.CodeConnected:
+				if test.resp == internal.CodeConnected {
 					assert.NoError(t, err)
-				case 0:
+				} else if test.resp == 0 {
 					assert.ErrorIs(t, internal.ErrUnhandled, err)
-				default:
+				} else {
 					assert.Equal(t, test.resp, server.msg.Type)
 				}
 			})

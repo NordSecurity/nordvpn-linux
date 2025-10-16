@@ -18,7 +18,7 @@ func (n *NorduserProcessMonitor) stopForDeletedGroupMembers(currentGroupMembers 
 			continue
 		}
 
-		userIDs, err := n.getUserID(username)
+		userIDs, err := n.userIDGetter.getUserID(username)
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "getting users ID:", err)
 			groupMembersUpdate = append(groupMembersUpdate, username)

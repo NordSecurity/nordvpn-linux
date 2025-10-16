@@ -36,7 +36,7 @@ func TestFind(t *testing.T) {
 	tun, err := Find(address)
 	assert.NoError(t, err)
 	assert.Equal(t, tunnelName, tun.iface.Name)
-	address, _ = tun.IP()
+	address, ok = tun.IP()
 	assert.Equal(t, ip, address)
 }
 

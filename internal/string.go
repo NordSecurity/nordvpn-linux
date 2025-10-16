@@ -63,7 +63,7 @@ func StringsGetNext(haystack []string, needle string) string {
 }
 
 func IntsToStrings(numbers []int) []string {
-	if len(numbers) == 0 {
+	if !(len(numbers) > 0) {
 		return nil
 	}
 	strs := make([]string, 0, len(numbers))

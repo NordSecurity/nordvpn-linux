@@ -38,7 +38,6 @@ func GetNorduserClientConnection(uid int) (*grpc.ClientConn, error) {
 	}
 
 	url := fmt.Sprintf("%s://%s", internal.Proto, socket)
-	//nolint:staticcheck
 	return grpc.Dial(url, grpc.WithTransportCredentials(insecure.NewCredentials()))
 }
 

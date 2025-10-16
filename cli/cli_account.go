@@ -76,13 +76,10 @@ func (c *cmd) Account(ctx *cli.Context) error {
 		return err
 	}
 
-	var mfa string
-	switch payload.MfaStatus {
-	case pb.TriState_ENABLED:
-		mfa = "enabled"
-	case pb.TriState_DISABLED:
+	mfa := "enabled"
+	if payload.MfaStatus == pb.TriState_DISABLED {
 		mfa = "disabled"
-	case pb.TriState_UNKNOWN:
+	} else if payload.MfaStatus == pb.TriState_UNKNOWN {
 		mfa = "unknown"
 	}
 

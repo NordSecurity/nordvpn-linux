@@ -549,7 +549,6 @@ func TestAccept(t *testing.T) {
 	mockFs.MapFS[directoryOtherWriteName] = &fstest.MapFile{Mode: os.ModeDir | 0002, Sys: statNoOwner}
 
 	directoryNoPermissionsName := "no_permissions"
-	//nolint:staticcheck
 	mockFs.MapFS[directoryNoPermissionsName] = &fstest.MapFile{Mode: os.ModeDir | 0000, Sys: statNoOwner}
 
 	fileshareTests := []struct {
