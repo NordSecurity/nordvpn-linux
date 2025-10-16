@@ -1191,19 +1191,19 @@ func meshnetErrorToError(code meshpb.MeshnetErrorCode) error {
 func argsCountError(ctx *cli.Context) error {
 	return fmt.Errorf(
 		ArgumentCountError,
-		commandFullName(ctx, os.Args),
+		CommandFullName(ctx, os.Args),
 	)
 }
 
 func argsParseError(ctx *cli.Context) error {
 	return fmt.Errorf(
 		ArgumentParsingError,
-		commandFullName(ctx, os.Args),
+		CommandFullName(ctx, os.Args),
 	)
 }
 
 // because ctx.Command.FullName() doesn't work: https://github.com/urfave/cli/issues/1859
-func commandFullName(ctx *cli.Context, args []string) string {
+func CommandFullName(ctx *cli.Context, args []string) string {
 	fullCommand := []string{ctx.App.Name}
 	if len(args) < 2 {
 		if ctx.Command.Name != "" {

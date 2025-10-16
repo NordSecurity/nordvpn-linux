@@ -28,7 +28,7 @@ abstract class Popup extends ConsumerWidget {
           borderRadius: BorderRadius.circular(appTheme.borderRadiusLarge),
         ),
         padding: EdgeInsets.all(appTheme.verticalSpaceMedium),
-        width: min(dynamicScale(470), screenSize.width * 0.8),
+        width: min(dynamicScale(500), screenSize.width * 0.8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,

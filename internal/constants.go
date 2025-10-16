@@ -121,9 +121,10 @@ var (
 
 	DatFilesPath = filepath.Join(AppDataPath, "data")
 
-	DatFilesPathCommon    = filepath.Join(AppDataPathCommon, "data")
-	ConfigFilesPathCommon = filepath.Join(AppDataPath, "conf")
-	StaticConfigFilename  = filepath.Join(DatFilesPathCommon, "install_static.dat")
+	DatFilesPathCommon           = filepath.Join(AppDataPathCommon, "data")
+	ConfigFilesPathCommon        = filepath.Join(AppDataPath, "conf")
+	StaticConfigFilename         = filepath.Join(DatFilesPathCommon, "install_static.dat")
+	RecentVPNConnectionsFilename = filepath.Join(DatFilesPathCommon, "recent_connections.dat")
 
 	BakFilesPath = filepath.Join(AppDataPath, "backup")
 

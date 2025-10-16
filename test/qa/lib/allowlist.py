@@ -5,19 +5,19 @@ import sh
 from . import Port, Protocol, daemon
 from lib import settings
 
-MSG_ALLOWLIST_SUBNET_ADD_SUCCESS = "Subnet %s is allowlisted successfully."
-MSG_ALLOWLIST_SUBNET_ADD_ERROR = "Subnet %s is already allowlisted."
-MSG_ALLOWLIST_SUBNET_REMOVE_SUCCESS = "Subnet %s is removed from the allowlist successfully."
-MSG_ALLOWLIST_SUBNET_REMOVE_ERROR = "Subnet %s is not allowlisted."
+MSG_ALLOWLIST_SUBNET_ADD_SUCCESS = "Subnet %s has been successfully added to the allowlist."
+MSG_ALLOWLIST_SUBNET_ADD_ERROR = "Subnet %s is already on the allowlist."
+MSG_ALLOWLIST_SUBNET_REMOVE_SUCCESS = "Subnet %s has been deleted from the allowlist."
+MSG_ALLOWLIST_SUBNET_REMOVE_ERROR = "Subnet %s is not on the allowlist."
 
-MSG_ALLOWLIST_PORT_ADD_SUCCESS = "Port %s (%s) is allowlisted successfully."
-MSG_ALLOWLIST_PORT_ADD_ERROR = "Port %s (%s) is already allowlisted."
-MSG_ALLOWLIST_PORT_REMOVE_SUCCESS = "Port %s (%s) is removed from the allowlist successfully."
-MSG_ALLOWLIST_PORT_REMOVE_ERROR = "Port %s (%s) is not allowlisted."
+MSG_ALLOWLIST_PORT_ADD_SUCCESS = "Port %s (%s) has been successfully added to the allowlist."
+MSG_ALLOWLIST_PORT_ADD_ERROR = "Port %s (%s) is already on the allowlist."
+MSG_ALLOWLIST_PORT_REMOVE_SUCCESS = "Port %s (%s) has been deleted from the allowlist."
+MSG_ALLOWLIST_PORT_REMOVE_ERROR = "Port %s (%s) is not on the allowlist."
 
-MSG_ALLOWLIST_PORT_RANGE_ADD_SUCCESS = "Ports %s (%s) are allowlisted successfully."
-MSG_ALLOWLIST_PORT_RANGE_REMOVE_SUCCESS = "Ports %s (%s) are removed from the allowlist successfully."
-MSG_ALLOWLIST_PORT_RANGE_REMOVE_ERROR = "Ports %s (%s) are not allowlisted."
+MSG_ALLOWLIST_PORT_RANGE_ADD_SUCCESS = "Ports %s (%s) have been successfully added to the allowlist."
+MSG_ALLOWLIST_PORT_RANGE_REMOVE_SUCCESS = "Ports %s (%s) have been deleted from the allowlist."
+MSG_ALLOWLIST_PORT_RANGE_REMOVE_ERROR = "Ports %s (%s) are not on the allowlist."
 
 ALLOWLIST_ALIAS = [
     "whitelist",

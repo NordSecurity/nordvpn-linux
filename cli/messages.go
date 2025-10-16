@@ -1,8 +1,8 @@
 package cli
 
 const (
-	ArgumentCountError   = "The command you entered has incorrect number of arguments. Enter '%s --help' to see the options."
-	ArgumentParsingError = "The command you entered is not valid. Enter '%s --help' to see the options."
+	ArgumentCountError   = "The command you entered has an incorrect number of arguments. Run '%s --help' to view available options."
+	ArgumentParsingError = "The command you entered is not valid. Run '%s --help' to view available options."
 	InputParsingError    = "Invalid response. Please answer with yes/no."
 
 	ClaimOnlinePurchaseSuccess = `You’re all set!
@@ -11,8 +11,8 @@ You can use NordVPN on 10 devices at the same time.`
 	ClaimOnlinePurchaseFailure = `Payment failed.
 We couldn’t process your payment. Please try again.`
 
-	LoginSuccess          = "Welcome to NordVPN! You can now connect to VPN by using '%s connect'."
-	LogoutSuccess         = "You are logged out."
+	LoginSuccess          = "Welcome to NordVPN! You can now connect to the VPN by using '%s connect'."
+	LogoutSuccess         = "You're logged out."
 	LogoutTokenSuccess    = "You have been logged out. To keep your account secure, we've revoked your current access token. If you want to reuse your next access token despite the potential risks, use the --" + flagPersistToken + " option when logging out."
 	LogoutUsageText       = "Logs you out"
 	PersistTokenUsageText = "Keep your current access token valid after logging out."
@@ -20,15 +20,15 @@ We couldn’t process your payment. Please try again.`
 	MsgNordVPNGroup = "By default, all users who are members of the 'nordvpn' group have permission to control the NordVPN application.\nTo limit access exclusively to the root user, remove all users from the 'nordvpn' group."
 
 	RateNoArgsMessage    = "Type [1–5] to rate your previous connection (1 – poor, 5 – great): "
-	RateNoConnectionMade = "It seems you haven’t connected to VPN yet. Please rate your experience after your first session."
+	RateNoConnectionMade = "It seems you haven’t connected to the VPN yet. Please rate your experience after your first connection."
 	RateAlreadyRated     = "You have already provided a rating for your active/previous connection."
 	RateSuccess          = "Thank you for your feedback!"
 
-	SetReconnect = "You are connected to NordVPN. Please reconnect to enable the setting."
+	SetReconnect = "You're connected to the VPN. Please reconnect to apply the setting."
 
-	MsgNothingToRate = "There was no connection - nothing to rate."
+	MsgNothingToRate = "To rate a connection, first connect to one of our servers."
 	// MsgSetSuccess is a generic success message template.
-	MsgSetSuccess = "%s is set to '%s' successfully."
+	MsgSetSuccess = "%s has been successfully set to '%s'."
 	// MsgAlreadySet is a generic noop message template.
 	MsgAlreadySet = "%s is already set to '%s'."
 	// MsgInUse is a generic dependency error message template.
@@ -46,10 +46,10 @@ Example: nordvpn set %s on`
 	ObfuscateOffServerObfuscated                = "We couldn’t turn off obfuscation because your current auto-connect server is obfuscated by default. Set a different server for auto-connect, then turn off obfuscation."
 	AutoConnectOnNonObfuscatedServerObfuscateOn = "Your selected server doesn’t support obfuscation. Choose a different server or turn off obfuscation."
 	AutoConnectOnObfuscatedServerObfuscateOff   = "Turn on obfuscation to connect to obfuscated servers."
-	SetAutoConnectForceOff                      = "auto-connect was turned off because the setting change is incompatible with current auto-connect options. If you wish to continue using auto-connect, please enable it again."
+	SetAutoConnectForceOff                      = "Auto-connect was turned off because the setting change is incompatible with your current auto-connect preferences. Please turn on auto-connect again if you wish to continue using it."
 
 	SetThreatProtectionLiteDisableDNS = "Disabling DNS."
-	SetThreatProtectionLiteAlreadySet = "Threat Protection Lite already set to %s."
+	SetThreatProtectionLiteAlreadySet = "Threat Protection is already set to %s."
 
 	SetDefaultsSuccess = "Settings were successfully restored to defaults."
 
@@ -63,41 +63,41 @@ Example: nordvpn set %s on`
 
 	SetObfuscateUnavailable = "Obfuscation is not available with the current technology. Change the technology to OpenVPN to use obfuscation."
 
-	SetProtocolUnavailable = "Protocol setting is not available when the set technology is not OpenVPN"
+	SetProtocolUnavailable = "This setting is only available when the selected protocol is OpenVPN."
 	SetProtocolAlreadySet  = "Protocol is already set to %s"
 
-	SetTechnologyDepsError = "Missing %s kernel module or configuration utility."
+	SetTechnologyDepsError = "%s kernel module or configuration utility is missing."
 
-	SetDNSDisableThreatProtectionLite = "Disabling Threat Protection Lite."
+	SetDNSDisableThreatProtectionLite = "Turning off Threat Protection"
 	SetDNSInvalidAddress              = "The provided IP address is invalid."
-	SetDNSTooManyValues               = "More than 3 DNS addresses provided."
+	SetDNSTooManyValues               = "You can add up to 3 DNS addresses only."
 	SetDNSAlreadySet                  = "DNS is already set to %s."
 
 	SetLANDiscoveryUsage          = "Access printers, TVs, and other devices on your local network while connected to a VPN."
 	SetLANDiscoveryAlreadyEnabled = "LAN discovery is already set to %s."
-	SetLANDiscoveryAllowlistReset = "Just a little heads-up: Enabling local network discovery will remove your private subnets from the allowlist."
+	SetLANDiscoveryAllowlistReset = "Turning on local network discovery will remove your private subnets from the allowlist."
 
-	AllowlistAddPortExistsError = "Port %d (%s) is already allowlisted."
-	AllowlistAddPortSuccess     = "Port %d (%s) is allowlisted successfully."
+	AllowlistAddPortExistsError = "Port %d (%s) is already on the allowlist."
+	AllowlistAddPortSuccess     = "Port %d (%s) has been successfully added to the allowlist."
 
-	AllowlistAddPortsExistsError = "Ports %d - %d (%s) are already allowlisted."
-	AllowlistAddPortsSuccess     = "Ports %d - %d (%s) are allowlisted successfully."
+	AllowlistAddPortsExistsError = "Ports %d - %d (%s) are already on the allowlist."
+	AllowlistAddPortsSuccess     = "Ports %d - %d (%s) have been successfully added to the allowlist."
 
-	AllowlistAddSubnetExistsError  = "Subnet %s is already allowlisted."
-	AllowlistAddSubnetSuccess      = "Subnet %s is allowlisted successfully."
-	AllowlistAddSubnetLANDiscovery = "Allowlisting a private subnet is not available while local network discovery is enabled."
+	AllowlistAddSubnetExistsError  = "Subnet %s is already on the allowlist."
+	AllowlistAddSubnetSuccess      = "Subnet %s has been successfully added to the allowlist."
+	AllowlistAddSubnetLANDiscovery = "Allowlisting a private subnet is not available while local network discovery is turned on."
 
-	AllowlistRemovePortExistsError = "Port %d (%s) is not allowlisted."
-	AllowlistRemovePortSuccess     = "Port %d (%s) is removed from the allowlist successfully."
+	AllowlistRemovePortExistsError = "Port %d (%s) is not on the allowlist."
+	AllowlistRemovePortSuccess     = "Port %d (%s) has been deleted from the allowlist."
 
-	AllowlistRemovePortsExistsError = "Ports %d - %d (%s) are not allowlisted."
-	AllowlistRemovePortsSuccess     = "Ports %d - %d (%s) are removed from the allowlist successfully."
+	AllowlistRemovePortsExistsError = "Ports %d - %d (%s) are not on the allowlist."
+	AllowlistRemovePortsSuccess     = "Ports %d - %d (%s) have been deleted from the allowlist."
 
-	AllowlistRemoveSubnetExistsError = "Subnet %s is not allowlisted."
-	AllowlistRemoveSubnetSuccess     = "Subnet %s is removed from the allowlist successfully."
+	AllowlistRemoveSubnetExistsError = "Subnet %s is not on the allowlist."
+	AllowlistRemoveSubnetSuccess     = "Subnet %s has been deleted from the allowlist."
 
 	AllowlistRemoveAllError   = "Allowlist elements could not be removed."
-	AllowlistRemoveAllSuccess = "All ports and subnets have been removed from the allowlist successfully."
+	AllowlistRemoveAllSuccess = "All ports and subnets have been deleted from the allowlist."
 
 	AllowlistPortRangeError  = "Port %d value is out of range [%d - %d]."
 	AllowlistPortsRangeError = "Ports %d - %d value is out of range [%d - %d]."
@@ -109,9 +109,9 @@ Example: nordvpn set %s on`
 	AccountEmailTaken = "User with the specified email address already exists."
 	// AccountInternalError is returned when backend returns internal error (500)
 	AccountInternalError          = "It's not you, it's us. We're having trouble with our servers. If the issue persists, please contact our customer support."
-	AccountTokenUnauthorizedError = "There was a problem with your credentials. Please try to log out and log back in again. If the issue persists, please contact our customer support."
-	AccountCantFetchVPNService    = "We were not able to fetch your %s service data. If the issue persists, please contact our customer support."
-	UpdateAvailableMessage        = "A new version of NordVPN is available!\nPlease update the application."
+	AccountTokenUnauthorizedError = "Your credentials did not work. Try logging out and back in again. If the issue persists, please contact our customer support."
+	AccountCantFetchVPNService    = "We couldn't load your %s service data. If the issue persists, please contact our customer support."
+	UpdateAvailableMessage        = "A new version of NordVPN is available!\nPlease update the app."
 	DisconnectNotConnected        = "You are not connected to NordVPN."
 	DisconnectConnectionRating    = "How would you rate your connection quality on a scale from 1 (poor) to 5 (excellent)? Type '%s rate [1-5]'."
 
@@ -119,12 +119,12 @@ Example: nordvpn set %s on`
 
 	CheckYourInternetConnMessage           = "Please check your internet connection and try again."
 	ExpiredAccountMessage                  = "Your account has expired. Renew your subscription now to continue enjoying the ultimate privacy and security with NordVPN. %s" // TODO: update once we get new error message.
-	NoDedicatedIPMessage                   = "You don’t have a dedicated IP subscription. To get a personal IP address that belongs only to you, continue in the browser: \n%s"
+	NoDedicatedIPMessage                   = "You don’t have a dedicated IP subscription. To get a personal IP address, continue in the browser: \n%s"
 	NoDedidcatedIPServerMessage            = "This server isn't currently included in your dedicated IP subscription."
-	NoPreferredDedicatedIPLocationSelected = "It looks like you haven’t selected the preferred server location for your dedicated IP. Please head over to Nord Account and set up your dedicated IP server."
+	NoPreferredDedicatedIPLocationSelected = "Please select the preferred server location for your dedicated IP in Nord Account."
 	NoSuchCommand                          = "Command '%s' doesn't exist."
 	MsgListIsEmpty                         = "We couldn’t load the list of %s. Please try again later."
-	TechnologyDisabledMessage              = "Unable to connect with the current technology. Please switch to a different one using the command \"nordvpn set technology.\""
+	TechnologyDisabledMessage              = "We couldn't connect with the selected protocol. Please try a different one using this command: nordvpn set technology."
 
 	// Meshnet
 	MsgSetMeshnetUsage       = "Enables or disables Meshnet on this device."
@@ -365,9 +365,9 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 
 	MsgShowListOfServers = "Shows a list of %s where servers are available.\n\nLocations marked with a different color in the list are virtual. Virtual location servers let you connect to more places worldwide. They run on dedicated physical servers, which are placed outside the intended location but configured to use its IP address."
 
-	SetPqUnavailable       = "Post-quantum encryption is unavailable with %s. Switch to NordLynx to activate post-quantum protection."
-	SetTechnologyDisablePQ = "This setting is not compatible with post-quantum encryption. To use %s, disable post-quantum encryption first."
-	SetPqAndMeshnet        = "Post-quantum encryption and Meshnet are not compatible. Please disable one feature to use the other."
+	SetPqUnavailable       = "Post-quantum encryption is not compatible with %s. Switch to NordLynx to use this encryption."
+	SetTechnologyDisablePQ = "This setting is not compatible with post-quantum encryption. To use %s, turn off post-quantum encryption first."
+	SetPqAndMeshnet        = "The post-quantum VPN and Meshnet can't run at the same time. Please turn off one feature to use the other."
 	SetPqAndMeshnetServer  = "Meshnet isn’t compatible with post-quantum encryption. Reconnect to the VPN to fully disable post-quantum protection and try again."
 	SetPqUsageText         = "Enables or disables post-quantum encryption. When enabled, the encryption protects your VPN connection against potential quantum computer attacks.\nNote: Currently, post-quantum encryption works only with standard NordLynx servers, so it won’t activate when you use a dedicated IP, OpenVPN, NordWhisper or obfuscated servers.\nThe feature is not compatible with Meshnet."
 

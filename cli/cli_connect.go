@@ -61,7 +61,7 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		}
 		// the exact error message returned by the lib, when incorrect flag
 		// is used, but in correct order
-		return fmt.Errorf("flag provided but not defined: %s", args.Get(1))
+		return fmt.Errorf("Unrecognized flag: '%s'. Run '%s --help' to view available options.", args.Get(1), CommandFullName(ctx, os.Args))
 	}
 
 	serverTag, serverGroup, err := parseConnectArgs(ctx)

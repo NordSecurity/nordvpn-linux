@@ -17,7 +17,7 @@ import (
 
 // ErrMissingExchangeToken is returned when login was successful but
 // there is not enough data to request the token
-var ErrMissingExchangeToken = errors.New("exchange token not provided")
+var ErrMissingExchangeToken = errors.New("The exchange token is missing. Please try logging in again. If the issue persists, contact our customer support.")
 
 type customCallbackType func() (*core.LoginResponse, *pb.LoginResponse, error)
 

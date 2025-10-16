@@ -38,7 +38,7 @@ def test_set_technology(tech, proto, obfuscated):  # noqa: ARG001
         sh.nordvpn.set.technology("OPENVPN")
 
     tech_name =  lib.technology_to_upper_camel_case(tech)
-    assert f"Technology is set to '{tech_name}' successfully." in sh.nordvpn.set.technology(tech)
+    assert f"Technology has been successfully set to '{tech_name}'." in sh.nordvpn.set.technology(tech)
     assert tech.upper() in sh.nordvpn.settings()
 
 
@@ -287,10 +287,10 @@ def test_set_defaults_no_logout(tech, proto, obfuscated):
 def test_set_analytics_off_on():
     """Manual TC: LVPN-510"""
 
-    assert "Analytics is set to 'disabled' successfully." in sh.nordvpn.set.analytics("off")
+    assert "Analytics has been successfully set to 'disabled'." in sh.nordvpn.set.analytics("off")
     assert not settings.is_user_consent_granted()
 
-    assert "Analytics is set to 'enabled' successfully." in sh.nordvpn.set.analytics("on")
+    assert "Analytics has been successfully set to 'enabled'." in sh.nordvpn.set.analytics("on")
     assert settings.is_user_consent_granted()
 
 
@@ -306,10 +306,10 @@ def test_set_analytics_on_off_repeated():
 def test_set_virtual_location_off_on():
     """Manual TC: LVPN-5253"""
 
-    assert "Virtual location is set to 'disabled' successfully." in sh.nordvpn.set("virtual-location", "off")
+    assert "Virtual location has been successfully set to 'disabled'." in sh.nordvpn.set("virtual-location", "off")
     assert not settings.is_virtual_location_enabled()
 
-    assert "Virtual location is set to 'enabled' successfully." in sh.nordvpn.set("virtual-location", "on")
+    assert "Virtual location has been successfully set to 'enabled'." in sh.nordvpn.set("virtual-location", "on")
     assert settings.is_virtual_location_enabled()
 
 
@@ -327,10 +327,10 @@ def test_set_post_quantum_on_off():
 
     pq_alias = settings.get_pq_alias()
 
-    assert "Post-quantum VPN is set to 'enabled' successfully." in sh.nordvpn.set(pq_alias, "on")
+    assert "Post-quantum VPN has been successfully set to 'enabled'." in sh.nordvpn.set(pq_alias, "on")
     assert not settings.is_post_quantum_disabled()
 
-    assert "Post-quantum VPN is set to 'disabled' successfully." in sh.nordvpn.set(pq_alias, "off")
+    assert "Post-quantum VPN has been successfully set to 'disabled'." in sh.nordvpn.set(pq_alias, "off")
     assert settings.is_post_quantum_disabled()
 
 
@@ -354,8 +354,7 @@ def test_set_post_quantum_on_open_vpn(tech, proto, obfuscated):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set(settings.get_pq_alias(), "on")
 
-    assert "Post-quantum encryption is unavailable with OpenVPN. Switch to NordLynx to activate post-quantum protection." in ex.value.stdout.decode("utf-8")
-
+    assert "Post-quantum encryption is not compatible with OpenVPN. Switch to NordLynx to use this encryption." in ex.value.stdout.decode("utf-8")
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.NORDWHISPER_TECHNOLOGY)
 def test_set_post_quantum_on_nordwhisper(tech, proto, obfuscated):
@@ -366,8 +365,7 @@ def test_set_post_quantum_on_nordwhisper(tech, proto, obfuscated):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set(settings.get_pq_alias(), "on")
 
-    assert "Post-quantum encryption is unavailable with NordWhisper. Switch to NordLynx to activate post-quantum protection." in ex.value.stdout.decode("utf-8")
-
+    assert "Post-quantum encryption is not compatible with NordWhisper. Switch to NordLynx to use this encryption." in ex.value.stdout.decode("utf-8")
 
 def test_set_technology_openvpn_post_quantum_enabled():
     """Manual TC: LVPN-8536"""
@@ -377,8 +375,7 @@ def test_set_technology_openvpn_post_quantum_enabled():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set.technology("OPENVPN")
 
-    assert "This setting is not compatible with post-quantum encryption. To use OpenVPN, disable post-quantum encryption first." in ex.value.stdout.decode("utf-8")
-
+    assert "This setting is not compatible with post-quantum encryption. To use OpenVPN, turn off post-quantum encryption first." in ex.value.stdout.decode("utf-8")
 
 def test_set_technology_nordwhisper_post_quantum_enabled():
     """Manual TC: LVPN-6835"""
@@ -388,8 +385,7 @@ def test_set_technology_nordwhisper_post_quantum_enabled():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set.technology("NORDWHISPER")
 
-    assert "This setting is not compatible with post-quantum encryption. To use NordWhisper, disable post-quantum encryption first." in ex.value.stdout.decode("utf-8")
-
+    assert "This setting is not compatible with post-quantum encryption. To use NordWhisper, turn off post-quantum encryption first." in ex.value.stdout.decode("utf-8")
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_autoconnect_enable_twice(tech, proto, obfuscated):
@@ -443,7 +439,7 @@ def test_set_protocol_openvpn_only(tech, proto, obfuscated):
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set.protocol("TCP")
-        assert "Protocol setting is not available when the set technology is not OpenVPN" in ex.value.stdout.decode("utf-8")
+        assert "This setting is only available when the selected protocol is OpenVPN." in ex.value.stdout.decode("utf-8")
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -514,8 +510,8 @@ def test_tray_on_off_repeated():
 def test_lan_discovery_on_off():
     """Manual TC: LVPN-8448"""
 
-    assert "LAN Discovery is set to 'enabled' successfully." in sh.nordvpn.set("lan-discovery", "on")
+    assert "LAN Discovery has been successfully set to 'enabled'." in sh.nordvpn.set("lan-discovery", "on")
     assert settings.is_lan_discovery_enabled()
 
-    assert "LAN Discovery is set to 'disabled' successfully." in sh.nordvpn.set("lan-discovery", "off")
+    assert "LAN Discovery has been successfully set to 'disabled'." in sh.nordvpn.set("lan-discovery", "off")
     assert not settings.is_lan_discovery_enabled()

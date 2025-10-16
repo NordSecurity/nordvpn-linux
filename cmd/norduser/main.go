@@ -69,8 +69,7 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 	daemonURL := fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
 	cliendIDMetadataInterceptor := clientid.NewInsertClientIDInterceptor(daemonpb.ClientID_TRAY)
 
-	//nolint:staticcheck
-	conn, err := grpc.Dial(
+	conn, err := grpc.NewClient(
 		daemonURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(cliendIDMetadataInterceptor.SetMetadataUnaryInterceptor),
@@ -103,26 +102,32 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 	ti := tray.NewTrayInstance(client, fileshareClient, quitChan)
 	ti.Start()
 
+	topLevelCtx, topLevelCancelFunc := context.WithCancel(context.Background())
+
 	onExit := func() {
 		log.Println(internal.InfoPrefix, "Exiting systray")
 		ReportTelemetry(conn, ReportOnExit, true)
 		ti.OnExit()
+		topLevelCancelFunc()
 	}
 
 	onReady := func() {
 		log.Println(internal.InfoPrefix, "Starting systray")
-		ti.OnReady()
+		go ti.MonitorConnection(topLevelCtx, conn)
+		ti.OnReady(topLevelCtx)
 	}
 
 	trayStatus := ti.WaitInitialTrayStatus()
-	if trayStatus == tray.Enabled {
-		for {
-			if systray.IsAvailable() {
-				systray.Run(onReady, onExit)
-				break
-			}
-			<-time.After(10 * time.Second)
+	if trayStatus != tray.Enabled {
+		return
+	}
+
+	for {
+		if systray.IsAvailable() {
+			systray.Run(onReady, onExit)
+			break
 		}
+		<-time.After(10 * time.Second)
 	}
 }
 

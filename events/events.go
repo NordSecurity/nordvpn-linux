@@ -207,3 +207,5 @@ type UiItemsAction struct {
 	ItemValue     string
 	FormReference string
 }
+
+type DataRecentsChanged struct{}

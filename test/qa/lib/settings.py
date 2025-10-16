@@ -5,8 +5,8 @@ import sh
 from . import UserConsentMode
 
 
-MSG_AUTOCONNECT_ENABLE_SUCCESS = "Auto-connect is set to 'enabled' successfully."
-MSG_AUTOCONNECT_DISABLE_SUCCESS = "Auto-connect is set to 'disabled' successfully."
+MSG_AUTOCONNECT_ENABLE_SUCCESS = "Auto-connect has been successfully set to 'enabled'"
+MSG_AUTOCONNECT_DISABLE_SUCCESS = "Auto-connect has been successfully set to 'disabled'."
 MSG_AUTOCONNECT_DISABLE_FAIL = "Auto-connect is already set to 'disabled'."
 
 MULTI_LINE_PARAM_SEP = "#"
