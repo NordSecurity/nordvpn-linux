@@ -45,14 +45,22 @@ var (
 	ErrTagDoesNotExist         = errors.New(TagNonexistentErrorMessage)
 	ErrGroupDoesNotExist       = errors.New(GroupNonexistentErrorMessage)
 	ErrDoubleGroup             = errors.New(DoubleGroupErrorMessage)
-	// ErrAlreadyLoggedIn is returned on repeated logins
-	ErrAlreadyLoggedIn = errors.New("You're already logged in")
-	// ErrNotLoggedIn is returned when the caller is expected to be logged in
-	// but is not
-	ErrNotLoggedIn = errors.New("You're not logged in")
 	// ErrAnalyticsConsentMissing is returned when user tries to login via tray
 	// but settings analytics consent failed for some reason. This should not happen.
 	ErrAnalyticsConsentMissing = errors.New("analytics consent is required before continuing")
 	ErrVirtualServerSelected   = errors.New(SpecifiedServerIsVirtualLocation)
 	ErrNoNetWhenLoggingIn      = errors.New("You’re offline.\nWe can’t run this action without an internet connection. Please check it and try again.")
+
+	// WARN: The error messages below are also used to detect error states in GUI.
+	// When updating, make sure to double check the GUI errors here:
+	// https://github.com/NordSecurity/nordvpn-linux/blob/main/gui/lib/data/repository/daemon_status_codes.dart#L49-L49
+
+	// ErrAlreadyLoggedIn is returned on repeated logins
+	ErrAlreadyLoggedIn = errors.New("You're already logged in")
+	// ErrNotLoggedIn is returned when the caller is expected to be logged in
+	// but is not
+	ErrNotLoggedIn = errors.New("You're not logged in")
+	// ErrMissingExchangeToken is returned when login was successful but
+	// there is not enough data to request the token
+	ErrMissingExchangeToken = errors.New("The exchange token is missing. Please try logging in again. If the issue persists, contact our customer support.")
 )
