@@ -39,6 +39,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/netstate"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	telemetrypb "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1"
+	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/ifgroup"
@@ -594,6 +595,11 @@ func main() {
 		rcConfig,
 		connectionInfo,
 		consentChecker,
+		recents.NewRecentConnectionsStore(
+			internal.RecentVPNConnectionsFilename,
+			&config.StdFilesystemHandle{},
+		),
+		dataUpdateEvents,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,
