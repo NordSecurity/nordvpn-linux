@@ -239,7 +239,7 @@ func (kv keyval) colored(attr color.Attribute) string {
 	return fmt.Sprintf(
 		"%s %s",
 		boldCol.Sprintf("%s:", kv.Key),
-		color.New(attr).Sprintf(kv.Value),
+		color.New(attr).Sprint(kv.Value),
 	)
 }
 
