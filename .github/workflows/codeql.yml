@@ -2,16 +2,19 @@ name: CodeQL Security Scan
 
 on:
     push:
-        branches: ["LVPN-*"]
+        branches:
+            - "**"
     pull_request:
-        branches: ["main", "release/*"]
+        branches: [main]
     schedule:
-        - cron: "0 3 * * 1" # nightly runs o nMonday
+        - cron: "0 3 * * 1" # weekly on Monday
+    workflow_dispatch:
 
 jobs:
     analyze:
         name: Analyze (${{ matrix.language }}/${{ matrix.query_suite }})
         runs-on: ubuntu-latest
+
         permissions:
             security-events: write
             packages: read
@@ -26,9 +29,9 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+              uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-            - uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v6.0.0
+            - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
               with:
                   go-version: "1.22"
                   cache-dependency-path: .github/go.mod
@@ -38,7 +41,7 @@ jobs:
               with:
                   languages: ${{ matrix.language }}
                   queries: ${{ matrix.query_suite }}
-                  config-file: ./.github/codeql/codeql-config.yml
+                  build-mode: manual
 
             - name: Set protoc path
               id: protoc_path
@@ -46,7 +49,7 @@ jobs:
 
             - name: Cache protoc
               id: cache-protoc
-              uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3.5.0
+              uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
               with:
                   path: ${{ steps.protoc_path.outputs.path }}
                   key: ${{ runner.os }}-protoc-3.20.1
