@@ -33,7 +33,7 @@ func (jf JsonFile) Load() (map[string]*pb.Transfer, error) {
 		return nil, fmt.Errorf("loading transfers history file: %w", err)
 	}
 
-	var transfers map[string]*pb.Transfer = make(map[string]*pb.Transfer)
+	transfers := make(map[string]*pb.Transfer)
 	if err := json.Unmarshal(jsonBytes, &transfers); err != nil {
 		return nil, fmt.Errorf("unmarshalling transfers history: %w", err)
 	}

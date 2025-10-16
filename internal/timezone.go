@@ -16,9 +16,9 @@ func Timezone() string {
 		if err != nil {
 			return "N/A"
 		}
-		zone := strings.TrimLeft(path, "/usr/share/zoneinfo/")
-		zone = strings.TrimLeft(zone, "posix/") // /usr/share/zoneinfo/posix/
-		zone = strings.TrimLeft(zone, "right/") // /usr/share/zoneinfo/right/
+		zone := strings.TrimPrefix(path, "/usr/share/zoneinfo/")
+		zone = strings.TrimPrefix(zone, "posix/") // /usr/share/zoneinfo/posix/
+		zone = strings.TrimPrefix(zone, "right/") // /usr/share/zoneinfo/right/
 		return zone
 	}
 

@@ -49,9 +49,9 @@ func setDNSCommonErrorCodeToError(code pb.SetErrorCode, args ...any) error {
 func handleSetDNSStatus(code pb.SetDNSStatus, dns []string) error {
 	switch code {
 	case pb.SetDNSStatus_INVALID_DNS_ADDRESS:
-		return fmt.Errorf(SetDNSInvalidAddress)
+		return errors.New(SetDNSInvalidAddress)
 	case pb.SetDNSStatus_TOO_MANY_VALUES:
-		return fmt.Errorf(SetDNSTooManyValues)
+		return errors.New(SetDNSTooManyValues)
 	case pb.SetDNSStatus_DNS_CONFIGURED_TPL_RESET:
 		color.Yellow(SetDNSDisableThreatProtectionLite)
 		fallthrough
