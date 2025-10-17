@@ -55,10 +55,6 @@ func RunDockerWithSettings(
 	cmd []string,
 	settings DockerSettings,
 ) error {
-	workDir := settings.WorkDir
-	if workDir == "" {
-		workDir = "/opt"
-	}
 	return runDocker(
 		ctx,
 		env,
@@ -68,7 +64,7 @@ func RunDockerWithSettings(
 		settings.Daemonize,
 		settings.DaemonizeStopChan,
 		settings.Network,
-		workDir,
+		settings.WorkDir,
 	)
 }
 
@@ -147,7 +143,7 @@ func runDocker(
 		{
 			Type:   mount.TypeBind,
 			Source: cwd,
-			Target: workingDir,
+			Target: dockerWorkDir,
 		},
 		{
 			Type:   mount.TypeBind,
