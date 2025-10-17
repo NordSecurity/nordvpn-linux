@@ -11,10 +11,13 @@ services:
     volumes:
       - ../../..:/src:ro
       - generated-repo:/repo
+    environment:
+      - USERID=${UID:-1000}
+      - GID=${GID:-1000}
 
   app-protobuf-gen:
     image: ghcr.io/nordsecurity/nordvpn-linux/generator:1.4.2
-    command: /bin/bash -c "ci/generate_protobuf.sh"
+    command: "ci/generate_protobuf.sh"
     depends_on:
       setup:
         condition: service_completed_successfully
@@ -25,7 +28,7 @@ services:
 
   gui-protobuf-gen:
     image: ghcr.io/nordsecurity/nordvpn-linux/protobuf_dart-3.8.1:1.0.1
-    command: /bin/bash -c "gui/scripts/generate_protobuf.sh"
+    command: "gui/scripts/generate_protobuf.sh"
     depends_on:
       setup:
         condition: service_completed_successfully
