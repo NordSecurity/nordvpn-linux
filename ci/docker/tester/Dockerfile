@@ -3,6 +3,7 @@ FROM ubuntu:22.04
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
 COPY requirements.txt /tmp/requirements.txt
+COPY mock_ps.sh /etc/mock_ps.sh
 
 # Install Debian packages
 RUN apt-get update && \
@@ -18,7 +19,9 @@ RUN apt-get update && \
         # install tshark  \
         tshark \
         # changelog parsing
-        dpkg-dev && \
+        dpkg-dev \
+        # deb package tools
+        devscripts && \
     # make sure, that Docker does not hang during installation, when we get TUI screen
     yes yes | DEBIAN_FRONTEND=teletype dpkg-reconfigure wireshark-common && \
     # cleanup
