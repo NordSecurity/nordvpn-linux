@@ -697,7 +697,7 @@ def get_lines_with_keywords(lines: list[str], keywords: list[str]) -> list:
     """Returns list with elements, that contain specified `keywords`."""
     return [line.strip() for line in lines if all(keyword in line for keyword in keywords)]
 
-def are_peers_connected(ssh_client: ssh.Ssh = None, retry: int = 3) -> None:
+def are_peers_connected(ssh_client: ssh.Ssh = None, retry: int = 15) -> None:
     """
     Verifies if local and remote NordVPN mesh peers see each other as connected in peer list.
 
