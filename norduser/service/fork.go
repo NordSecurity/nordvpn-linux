@@ -154,7 +154,7 @@ func (c *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err 
 
 	c.wg.Add(1)
 	go func() {
-		cmd.Wait()
+		_ = cmd.Wait()
 		c.wg.Done()
 	}()
 

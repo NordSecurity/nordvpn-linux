@@ -336,7 +336,7 @@ func (mp *MockPublisherSubscriber[T]) Publish(message T) {
 	mp.EventPublished = true
 	mp.Event = message
 	if mp.Handler != nil {
-		mp.Handler(message)
+		_ = mp.Handler(message)
 	}
 }
 

@@ -111,7 +111,7 @@ func NewApp(version, environment, hash, salt string,
 	}
 
 	cli.VersionPrinter = func(c *cli.Context) {
-		cmd.Version(c)
+		_ = cmd.Version(c)
 	}
 	cli.BashCompletionFlag = &cli.BoolFlag{
 		Name:   "complete",
