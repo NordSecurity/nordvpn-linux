@@ -998,39 +998,39 @@ func getSystemRules(supportedIPTables []string) (map[string][]string, error) {
 	return rules, nil
 }
 
-func TestGetActiveRules(t *testing.T){
+func TestGetActiveRules(t *testing.T) {
 	category.Set(t, category.Firewall)
 
 	tests := []struct {
-		name            string
+		name             string
 		rules            []string
 		expectedComments []string
-	} {
+	}{
 		{
-			name : "two comments",
-			rules: []string{"-A OUTPUT -m comment --comment nordvpn -m comment --comment allow-ipv4 -j ACCEPT"},
+			name:             "two comments",
+			rules:            []string{"-A OUTPUT -m comment --comment nordvpn -m comment --comment allow-ipv4 -j ACCEPT"},
 			expectedComments: []string{"allow-ipv4"},
 		},
 		{
-			name : "one comment",
-			rules: []string{"-A OUTPUT -m comment --comment nordvpn -j ACCEPT"},
+			name:             "one comment",
+			rules:            []string{"-A OUTPUT -m comment --comment nordvpn -j ACCEPT"},
 			expectedComments: nil,
 		},
 		{
-			name : "no comments",
-			rules: []string{"-A OUTPUT -j ACCEPT"},
+			name:             "no comments",
+			rules:            []string{"-A OUTPUT -j ACCEPT"},
 			expectedComments: nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f := New("", "", "", []string{ipv4Table})
-			for _, rule := range tt.rules{
+			for _, rule := range tt.rules {
 				fmt.Println(rule)
 				args := strings.Split(fmt.Sprintf("-t filter %v -w %v", rule, internal.SecondsToWaitForIptablesLock), " ")
 				fmt.Println(args)
 				out, err := exec.Command("iptables", args...).CombinedOutput()
-				if err != nil{
+				if err != nil {
 					fmt.Println("output: " + string(out))
 					fmt.Printf("error: %v", err)
 				}

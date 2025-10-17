@@ -65,11 +65,11 @@ func (fw *Firewall) Add(rules []Rule) error {
 		}
 		// dont add if already added
 		alreadyAddedRules, err := fw.current.GetActiveRules()
-		if err != nil{
+		if err != nil {
 			log.Printf("%v, unable to get already active rules: %v", internal.WarningPrefix, err)
 		}
 		log.Printf("checking if %v contains %v or %v", alreadyAddedRules, rule.Name, rule.SimplifiedName)
-		if !slices.Contains(alreadyAddedRules, rule.Name) && 
+		if !slices.Contains(alreadyAddedRules, rule.Name) &&
 			!slices.Contains(alreadyAddedRules, rule.SimplifiedName) {
 			log.Println("does not contain, adding")
 			if err := fw.current.Add(rule); err != nil {

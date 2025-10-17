@@ -502,13 +502,13 @@ func (ipt *IPTables) GetActiveRules() ([]string, error) {
 		}
 	}
 	var ruleList []string
-	for k := range rulesMap{
+	for k := range rulesMap {
 		ruleList = append(ruleList, k)
 	}
 	return ruleList, nil
 }
 
-func getRuleOutput(iptableVersion string, table string) ([]byte, error){
+func getRuleOutput(iptableVersion string, table string) ([]byte, error) {
 	out, err := exec.Command(iptableVersion, "-t", table, "-S", "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("listing rules: %w", err)

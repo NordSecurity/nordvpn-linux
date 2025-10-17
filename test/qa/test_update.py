@@ -40,7 +40,7 @@ def setup_function(function):  # noqa: ARG001
 
     daemon.stop() # TODO: LVPN-6403
     sh.sudo.apt.install(DEB_PATH, "-y")
-    
+
     daemon.start() # TODO: LVPN-6403
 
     # login into the app after update, because if user didn't agree with the consent it will be logged out at update

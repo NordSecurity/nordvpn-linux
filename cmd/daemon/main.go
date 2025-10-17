@@ -20,8 +20,8 @@ import (
 
 	"github.com/google/uuid"
 	"golang.org/x/net/netutil"
-	"google.golang.org/grpc"
 	"golang.org/x/sys/unix"
+	"google.golang.org/grpc"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/clientid"
