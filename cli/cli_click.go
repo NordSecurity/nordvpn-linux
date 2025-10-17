@@ -19,7 +19,7 @@ import (
 func waitForInput(timeout bool) {
 	inputChan := make(chan interface{})
 	go func() {
-		bufio.NewReader(os.Stdin).ReadBytes('\n')
+		_, _ = bufio.NewReader(os.Stdin).ReadBytes('\n')
 		close(inputChan)
 	}()
 
@@ -93,7 +93,7 @@ func (c *cmd) Click(ctx *cli.Context) (err error) {
 	}
 
 	// for all unhandled cases
-	cli.ShowAppHelp(ctx)
+	_ = cli.ShowAppHelp(ctx)
 
 	return nil
 }

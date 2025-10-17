@@ -146,7 +146,7 @@ func restoreFromBackup() error {
 	if internal.FileExists(resolvconfBackupPath) {
 		backup, err := internal.FileRead(resolvconfBackupPath)
 		// try to remove backup
-		internal.FileDelete(resolvconfBackupPath)
+		_ = internal.FileDelete(resolvconfBackupPath)
 		if err != nil {
 			return fmt.Errorf("reading backup resolv.conf: %w", err)
 		} else {
@@ -193,7 +193,7 @@ func discoverNameserverIp() (netip.Addr, error) {
 		return nsIp, nil
 	}
 	if err == nil && con != nil {
-		con.Close()
+		_ = con.Close()
 	}
 
 	ip, err := findGateway()
