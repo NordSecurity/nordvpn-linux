@@ -58,7 +58,7 @@ func (dm *DataManager) LoadData() error {
 		errs = append(errs, fmt.Errorf("loading country data: %w", err))
 	}
 	if err := dm.insightsData.load(); err != nil {
-		errs = append(errs,fmt.Errorf("loading insights data: %w", err))
+		errs = append(errs, fmt.Errorf("loading insights data: %w", err))
 	}
 	if err := dm.serversData.load(); err != nil {
 		errs = append(errs, fmt.Errorf("loading servers data: %w", err))

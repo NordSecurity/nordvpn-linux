@@ -233,7 +233,7 @@ def test_killswitch_on_after_update():
     # Mocking ps to pretend as if we are in an initd system
     sh.sudo.mv("/usr/bin/ps", "/usr/bin/pso")
     sh.sudo.cp("/etc/mock_ps.sh", "/usr/bin/ps")
-    
+
     # Making a second deb package with increased version to upgrade to
     sh.dpkg_deb("-R", DEB_PATH, "/tmp/")
     ver = str(sh.dpkg_query("-f", '${VERSION}', "-W", "nordvpn"))

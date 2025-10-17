@@ -14,17 +14,17 @@ import (
 
 type workingAgent struct{}
 
-func (workingAgent) Add(firewall.Rule) error    { return nil }
-func (workingAgent) Delete(firewall.Rule) error { return nil }
-func (workingAgent) Flush() error               { return nil }
-func (workingAgent) GetActiveRules() ([]string, error)               { return nil, nil }
+func (workingAgent) Add(firewall.Rule) error           { return nil }
+func (workingAgent) Delete(firewall.Rule) error        { return nil }
+func (workingAgent) Flush() error                      { return nil }
+func (workingAgent) GetActiveRules() ([]string, error) { return nil, nil }
 
 type failingAgent struct{}
 
-func (failingAgent) Add(firewall.Rule) error    { return mock.ErrOnPurpose }
-func (failingAgent) Delete(firewall.Rule) error { return mock.ErrOnPurpose }
-func (failingAgent) Flush() error               { return mock.ErrOnPurpose }
-func (failingAgent) GetActiveRules() ([]string, error)               { return nil, mock.ErrOnPurpose }
+func (failingAgent) Add(firewall.Rule) error           { return mock.ErrOnPurpose }
+func (failingAgent) Delete(firewall.Rule) error        { return mock.ErrOnPurpose }
+func (failingAgent) Flush() error                      { return mock.ErrOnPurpose }
+func (failingAgent) GetActiveRules() ([]string, error) { return nil, mock.ErrOnPurpose }
 
 func TestAllowlistIP(t *testing.T) {
 	category.Set(t, category.Route)
