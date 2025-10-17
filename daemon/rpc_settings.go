@@ -3,12 +3,15 @@ package daemon
 import (
 	"context"
 	"log"
+	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"google.golang.org/grpc/peer"
 )
+
+var adjustAutoconnectCfgOnce sync.Once
 
 // Settings returns system daemon settings
 func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse, error) {
@@ -35,34 +38,33 @@ func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse,
 
 	// Storing autoconnect parameters was introduced later on so they might not be save in a config yet. We need to
 	// perform an update in such cases to maintain compatibility.
-	autoconnectParamsNotSet := cfg.AutoConnectData.Country == "" &&
-		cfg.AutoConnectData.City == "" &&
-		cfg.AutoConnectData.Group == config.ServerGroup_UNDEFINED
-	if cfg.AutoConnect && cfg.AutoConnectData.ServerTag != "" && autoconnectParamsNotSet {
-		// use group tag as a second parameter once it is implemented
-		parameters := GetServerParameters(
-			cfg.AutoConnectData.ServerTag,
-			cfg.AutoConnectData.ServerTag,
-			r.dm.GetCountryData().Countries,
-		)
-		cfg.AutoConnectData.Country = parameters.Country
-		cfg.AutoConnectData.City = parameters.City
-		cfg.AutoConnectData.Group = parameters.Group
+	adjustAutoconnectCfgOnce.Do(func() {
+		autoconnectParamsNotSet := cfg.AutoConnectData.Country == "" &&
+			cfg.AutoConnectData.City == "" &&
+			cfg.AutoConnectData.Group == config.ServerGroup_UNDEFINED
+		if cfg.AutoConnect && cfg.AutoConnectData.ServerTag != "" && autoconnectParamsNotSet {
+			// use group tag as a second parameter once it is implemented
+			parameters := GetServerParameters(
+				cfg.AutoConnectData.ServerTag,
+				cfg.AutoConnectData.ServerTag,
+				r.dm.GetCountryData().Countries,
+			)
+			cfg.AutoConnectData.Country = parameters.Country
+			cfg.AutoConnectData.City = parameters.City
+			cfg.AutoConnectData.Group = parameters.Group
 
-		err := r.cm.SaveWith(func(c config.Config) config.Config {
-			c.AutoConnectData.Country = cfg.AutoConnectData.Country
-			c.AutoConnectData.City = cfg.AutoConnectData.City
-			c.AutoConnectData.Group = cfg.AutoConnectData.Group
-			// resetting ServerTag - not supported anymore, to be removed in LVPN-9355
-			c.AutoConnectData.ServerTag = ""
+			err := r.cm.SaveWith(func(c config.Config) config.Config {
+				c.AutoConnectData.Country = cfg.AutoConnectData.Country
+				c.AutoConnectData.City = cfg.AutoConnectData.City
+				c.AutoConnectData.Group = cfg.AutoConnectData.Group
 
-			return c
-		})
-
-		if err != nil {
-			log.Println(internal.WarningPrefix, "failed to set autoconnect parameters during the settings RPC:", err)
+				return c
+			})
+			if err != nil {
+				log.Println(internal.WarningPrefix, "failed to set autoconnect parameters during the settings RPC:", err)
+			}
 		}
-	}
+	})
 
 	settings := configToProtobuf(&cfg, uid)
 
