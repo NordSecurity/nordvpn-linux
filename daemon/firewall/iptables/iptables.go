@@ -485,11 +485,9 @@ func (ipt *IPTables) GetActiveRules() ([]string, error) {
 					continue
 				}
 				// check for comment name in rule
-				fmt.Println("Looking at line: " + string(line))
 				matches := re.FindAll(line, -1)
 				var stringMatches []string
 				for _, match := range matches {
-					fmt.Println("found match" + string(match))
 					stringMatches = append(stringMatches, string(match))
 				}
 				// first comment is the usual nordvpn, second is the name of the rule

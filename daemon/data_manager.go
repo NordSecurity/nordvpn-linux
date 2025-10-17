@@ -79,7 +79,6 @@ func (dm *DataManager) SetInsightsData(insights core.Insights) error {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
 	dm.insightsData.Insights = insights
-	log.Printf("Saving insights to : %v", dm.insightsData.filePath)
 	return dm.insightsData.save()
 }
 
@@ -125,11 +124,6 @@ func (dm *DataManager) IsServersDataValid() bool {
 func (dm *DataManager) GetServersData() ServersData {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
-	log.Printf("Getting servers data from: %v", dm.serversData.filePath)
-	log.Printf("FULL SERVERS DATA: %v", dm.serversData)
-	// dm.serversData.load()
-	// log.Printf("Force loading one more time")
-	// log.Printf("FULL SERVERS DATA: %v", dm.serversData)
 	return dm.serversData
 }
 
