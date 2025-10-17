@@ -286,7 +286,7 @@ func TestNetworkChange(t *testing.T) {
 			}
 
 			assert.NoError(t, combined.refreshVPN(ctx))
-		assert.Equal(t, 1, test.vpn.ExecutionStats[mock.StatsNetworkChange])
+			assert.Equal(t, 1, test.vpn.ExecutionStats[mock.StatsNetworkChange])
 			assert.Equal(t, 1, test.vpn.ExecutionStats[mock.StatsStart])
 			assert.True(t, combined.isConnectedToVPN())
 

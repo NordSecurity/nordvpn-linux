@@ -1277,8 +1277,8 @@ func (netw *Combined) allowIncoming(publicKey string, address netip.Addr, lanAll
 		RemoteNetworks: []netip.Prefix{
 			netip.PrefixFrom(address, address.BitLen()),
 		},
-		Allow:   true,
-		Comment: meshnetFirewallRuleComment,
+		Allow:          true,
+		Comment:        meshnetFirewallRuleComment,
 		SimplifiedName: allowIncomingRule,
 	}
 	rules = append(rules, rule)
@@ -1303,8 +1303,8 @@ func (netw *Combined) allowIncoming(publicKey string, address netip.Addr, lanAll
 			RemoteNetworks: []netip.Prefix{
 				netip.PrefixFrom(address, address.BitLen()),
 			},
-			Allow:   false,
-			Comment: meshnetFirewallRuleComment,
+			Allow:          false,
+			Comment:        meshnetFirewallRuleComment,
 			SimplifiedName: blockLanRule,
 		}
 
@@ -1342,8 +1342,8 @@ func (netw *Combined) allowFileshare(publicKey string, address netip.Addr) error
 		RemoteNetworks: []netip.Prefix{
 			netip.PrefixFrom(address, address.BitLen()),
 		},
-		Allow:   true,
-		Comment: meshnetFirewallRuleComment,
+		Allow:          true,
+		Comment:        meshnetFirewallRuleComment,
 		SimplifiedName: allowFileshareRule,
 	}}
 
