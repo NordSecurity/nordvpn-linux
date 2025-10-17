@@ -1,8 +1,8 @@
 #!/bin/sh
-set -e
+set -eux
 
 # take ownership
-chown "$(id -u):$(id -g)" /repo
+chown "${USERID:-1000}:${GID:-1000}" /repo
 
 # run the clone as the specified user.
-su-exec "$(id -u):$(id -g)" git clone /src /repo
+su-exec "${USERID:-1000}:${GID:-1000}" git -c safe.directory=/src clone /src /repo
