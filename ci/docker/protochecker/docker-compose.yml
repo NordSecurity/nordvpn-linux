@@ -1,0 +1,47 @@
+volumes:
+  generated-repo:
+
+
+services:
+  setup:
+    build:
+      context: .
+      dockerfile: Dockerfile.setup
+    image: protochecker-setup
+    volumes:
+      - ../../..:/src:ro
+      - generated-repo:/repo
+
+  app-protobuf-gen:
+    image: ghcr.io/nordsecurity/nordvpn-linux/generator:1.4.2
+    command: /bin/bash -c "ci/generate_protobuf.sh"
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    volumes:
+      - generated-repo:/work
+    working_dir: /work
+    user: "${UID:-1000}:${GID:-1000}"
+
+  gui-protobuf-gen:
+    image: ghcr.io/nordsecurity/nordvpn-linux/protobuf_dart-3.8.1:1.0.1
+    command: /bin/bash -c "gui/scripts/generate_protobuf.sh"
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    volumes:
+      - generated-repo:/code/app
+    working_dir: /code/app
+    user: "${UID:-1000}:${GID:-1000}"
+  protochecker:
+    image: alpine/git
+    command: [ "diff", "--quiet" ]
+    depends_on:
+      app-protobuf-gen:
+        condition: service_completed_successfully
+      gui-protobuf-gen:
+        condition: service_completed_successfully
+    volumes:
+      - generated-repo:/git
+    working_dir: /git
+    user: "${UID:-1000}:${GID:-1000}"
