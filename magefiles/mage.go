@@ -335,7 +335,7 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 			env,
 			imageSnapPackager,
 			[]string{"ci/build_snap.sh"},
-			DockerSettings{Privileged: true},
+			DockerSettings{Privileged: true, WorkDir: dockerWorkDir},
 		)
 	case packageTypeDeb, packageTypeRPM:
 		return RunDocker(
@@ -479,7 +479,7 @@ func (Build) OpenvpnDocker(ctx context.Context) error {
 		env,
 		imageBuilder,
 		[]string{"sh", "-c", "ci/openvpn/fix_dependencies.sh; ci/openvpn/build.sh"},
-		DockerSettings{Privileged: true},
+		DockerSettings{Privileged: true, WorkDir: dockerWorkDir},
 	)
 }
 
@@ -598,7 +598,7 @@ func (Test) CgoDocker(ctx context.Context) error {
 		env,
 		imageBuilder,
 		[]string{"ci/test.sh", "full"},
-		DockerSettings{Privileged: true},
+		DockerSettings{Privileged: true, WorkDir: dockerWorkDir},
 	)
 }
 
@@ -723,7 +723,7 @@ func qaDocker(ctx context.Context, testGroup, testPattern string) (err error) {
 	err = RunDockerWithSettings(ctx, env,
 		imageQAPeer,
 		[]string{},
-		DockerSettings{Privileged: true, Daemonize: true, Network: networkID, DaemonizeStopChan: containerStoppedChan},
+		DockerSettings{Privileged: true, Daemonize: true, Network: networkID, DaemonizeStopChan: containerStoppedChan, WorkDir: dockerWorkDir},
 	)
 	if err != nil {
 		return fmt.Errorf("%w (while starting qa-peer)", err)
@@ -732,7 +732,7 @@ func qaDocker(ctx context.Context, testGroup, testPattern string) (err error) {
 	return RunDockerWithSettings(ctx, env,
 		imageTester,
 		[]string{"ci/test_deb.sh", testGroup, testPattern},
-		DockerSettings{Privileged: true, Network: networkID},
+		DockerSettings{Privileged: true, Network: networkID, WorkDir: dockerWorkDir},
 	)
 }
 
