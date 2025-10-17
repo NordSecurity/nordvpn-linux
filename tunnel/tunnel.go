@@ -125,7 +125,7 @@ func addDelAddr(cmd string, ifaceName string, addr string) ([]byte, error) {
 }
 
 func (t *Tunnel) cmdAddrs(cmd string) error {
-	addDelAddr(cmd, t.iface.Name, t.prefix.String())
+	_, _ = addDelAddr(cmd, t.iface.Name, t.prefix.String())
 	return nil
 }
 

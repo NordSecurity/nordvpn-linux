@@ -50,7 +50,7 @@ func (s *FilesystemStaticConfigManager) loadConfig() (sc StaticConfig, err error
 		if err != nil {
 			// in case read/load fails, try to write default/empty values
 			if data, err := json.Marshal(StaticConfig{}); err == nil {
-				s.fs.WriteFile(internal.StaticConfigFilename, data, internal.PermUserRW)
+				_ = s.fs.WriteFile(internal.StaticConfigFilename, data, internal.PermUserRW)
 			}
 		}
 	}()
