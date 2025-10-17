@@ -140,7 +140,7 @@ def test_route_to_nonexistant_node():
 def test_route_to_peer_status_valid():
     peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().hostname
 
-    peer_nick = "a-A-a"
+    peer_nick = "random-penguin"
     sh_no_tty.nordvpn.mesh.peer.nick.set(peer_hostname, peer_nick)
     output = sh_no_tty.nordvpn.mesh.peer.connect(peer_nick)
     assert meshnet.is_connect_successful(output, peer_nick)
