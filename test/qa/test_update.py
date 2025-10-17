@@ -81,7 +81,6 @@ def teardown_function(function):  # noqa: ARG001
     assert network.is_disconnected()
 
 
-@pytest.mark.xfail
 def test_meshnet_available_after_update():
     """Manual TC: LVPN-3204"""
 
@@ -136,7 +135,7 @@ def test_quick_connect_after_update(tech, proto, obfuscated):
 
     if tech == "openvpn" and proto == "udp" and obfuscated == "on":
         tech_name = lib.technology_to_upper_camel_case(tech)
-        assert f"Technology is set to '{tech_name}' successfully." in sh.nordvpn.set.technology(tech)
+        assert f"Technology has been successfully set to '{tech_name}'." in sh.nordvpn.set.technology(tech)
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 

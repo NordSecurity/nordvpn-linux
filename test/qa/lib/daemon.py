@@ -59,7 +59,7 @@ def is_killswitch_on():
 def install_peer(ssh_client: ssh.Ssh):
     """Installs nordvpn in peer."""
     project_root = os.environ["WORKDIR"]
-    deb_path = glob.glob(f'{project_root}/dist/app/deb/*amd64.deb')[0]
+    deb_path = glob.glob(f'{project_root}/dist/app/deb/nordvpn_*amd64.deb')[0]
     ssh_client.send_file(deb_path, '/tmp/nordvpn.deb')
     # TODO: Install required dependencies during qa-peer image build, then replace with 'dpkg -i /tmp/nordvpn.deb'
     ssh_client.exec_command('sudo apt-get update')
@@ -121,10 +121,16 @@ def stop(timeout: int = 10):
         time.sleep(1)
 
 
-def stop_peer(ssh_client: ssh.Ssh):
+def stop_peer(ssh_client: ssh.Ssh, timeout=10):
     """Stops the daemon in peer and blocks until it is actually stopped."""
-    ssh_client.exec_command("sudo /etc/init.d/nordvpn stop")
+    if is_peer_running(ssh_client):
+        ssh_client.exec_command("sudo /etc/init.d/nordvpn stop")
+
+    start_time = time.time()
     while is_peer_running(ssh_client):
+        if time.time() - start_time > timeout:
+            exc_msg = f"Operation timed out after {timeout} seconds. Daemon is not stopped!"
+            raise TimeoutError(exc_msg)
         time.sleep(1)
 
 
