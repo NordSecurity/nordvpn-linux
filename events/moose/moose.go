@@ -311,11 +311,19 @@ func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error { // regul
 		mooseFn = moose.NordvpnappSendServiceQualityAuthorizationRegister
 	}
 
+	loginFlowAltered := moose.NordvpnappOptBoolNone
+	if data.EventStatus != events.StatusAttempt {
+		loginFlowAltered = moose.NordvpnappOptBoolFalse
+		if data.IsAlteredFlowOnNordAccount {
+			loginFlowAltered = moose.NordvpnappOptBoolTrue
+		}
+	}
+
 	if err := s.response(mooseFn(
 		int32(data.DurationMs),
 		eventTriggerDomainToInternalType(data.EventTrigger),
 		eventStatusToInternalType(data.EventStatus),
-		moose.NordvpnappOptBoolNone,
+		loginFlowAltered,
 		-1,
 		nil,
 	)); err != nil {

@@ -61,6 +61,7 @@ type RPC struct {
 	consentChecker      ConsentChecker
 	recentVPNConnStore  *recents.RecentConnectionsStore
 	dataUpdateEvents    *daemonevents.DataUpdateEvents
+	initialLoginType    pb.LoginType // memorize what action started: Login or Signup (Register)
 	pb.UnimplementedDaemonServer
 }
 
