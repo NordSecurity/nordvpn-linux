@@ -125,7 +125,7 @@ func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginRespons
 
 	// get user's current mfa status (should be invoked after config with creds are saved)
 	// (errors are checked and logged inside this fn, if any)
-	_ = r.ac.IsMFAEnabled()
+	_, _ = r.ac.IsMFAEnabled()
 
 	go StartNC("[login]", r.ncClient)
 	r.publisher.Publish("user logged in")

@@ -135,7 +135,7 @@ func (c *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err 
 	credential := &syscall.Credential{
 		Uid:    uid,
 		Gid:    gid,
-		Groups: []uint32{uint32(nordvpnGid)},
+		Groups: []uint32{uint32(nordvpnGid)}, // #nosec GG115 - GID is fetched from the system
 	}
 	cmd.SysProcAttr = &syscall.SysProcAttr{Credential: credential}
 	// os.UserHomeDir always returns value of $HOME and spawning child process copies
@@ -291,7 +291,7 @@ func (s *systemGIDProvider) GetNordvpnGid() (uint32, error) {
 		return 0, errors.New("negative gid cannot be converted to uint32")
 	}
 
-	if uint64(gid) > uint64(math.MaxUint32) {
+	if gid > math.MaxUint32 {
 		return 0, errors.New("gid exceeds uint32 maximum value")
 	}
 

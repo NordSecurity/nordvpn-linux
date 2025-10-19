@@ -48,7 +48,7 @@ func getNorduserManager() childprocess.ChildProcessManager {
 			os.Exit(int(childprocess.CodeFailedToEnable))
 		}
 
-		return process.NewNorduserGRPCProcessManager(uint32(uid))
+		return process.NewNorduserGRPCProcessManager(uint32(uid)) // #nosec G115
 	}
 
 	return childprocess.NoopChildProcessManager{}

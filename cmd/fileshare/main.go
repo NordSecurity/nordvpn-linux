@@ -234,7 +234,7 @@ func main() {
 
 	fileshareHandle := fileshare_startup.Startup(storagePath,
 		limitedListener,
-		internal.NewFileshareAuthenticator(uint32(os.Getuid())),
+		internal.NewFileshareAuthenticator(uint32(os.Getuid())), // #nosec G115
 		fileshareImplementation,
 		eventManager,
 		meshClient,

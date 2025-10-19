@@ -50,15 +50,17 @@ func last(slice []string, count uint) []string {
 		return []string{}
 	}
 
+	// #nosec G115
 	if int(count) > length {
 		dst := make([]string, length)
 		copy(dst, slice)
 		return dst
 	}
 
-	lastIndex := length - 1
+	// #nosec G115
+	lastIndex := uint(length - 1)
 	ret := []string{}
-	for i := 0; i < int(count); i++ {
+	for i := range count {
 		ret = append(ret, slice[lastIndex-i])
 	}
 	return ret
