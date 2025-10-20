@@ -52,13 +52,16 @@ class LoginEventType extends $pb.ProtobufEnum {
 class UpdateEvent extends $pb.ProtobufEnum {
   static const UpdateEvent SERVERS_LIST_UPDATE =
       UpdateEvent._(0, _omitEnumNames ? '' : 'SERVERS_LIST_UPDATE');
+  static const UpdateEvent RECENTS_LIST_UPDATE =
+      UpdateEvent._(1, _omitEnumNames ? '' : 'RECENTS_LIST_UPDATE');
 
   static const $core.List<UpdateEvent> values = <UpdateEvent>[
     SERVERS_LIST_UPDATE,
+    RECENTS_LIST_UPDATE,
   ];
 
   static final $core.List<UpdateEvent?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 0);
+      $pb.ProtobufEnum.$_initByValueList(values, 1);
   static UpdateEvent? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
