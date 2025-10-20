@@ -1,6 +1,6 @@
 module github.com/NordSecurity/nordvpn-linux
 
-go 1.25.1
+go 1.25.3
 
 // Bindings
 // NOTE: If you are chaning the binding versions here, keep in mind that you
