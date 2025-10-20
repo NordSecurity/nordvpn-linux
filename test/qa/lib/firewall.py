@@ -96,68 +96,105 @@ POSTROUTING_LAN_DISCOVERY_RULES = [
 ]
 
 
-def __rules_connmark_chain_input(interface: str):
-    return \
-        [
-            f"-A PREROUTING -i {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
-            f"-A PREROUTING -i {interface} -m comment --comment nordvpn -j DROP",
-        ]
+def __rules_connmark_chain_input(interfaces: list):
+    rules = []
+
+    """
+    Done separately for keeping ordering of rules:
+    Expected rules:
+    -A PREROUTING -i enp0s31f6 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+    -A PREROUTING -i enp0s31f6 -m comment --comment nordvpn -j DROP
+    Current rules:
+    -A PREROUTING -i wlp0s20f3 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+    -A PREROUTING -i enp0s31f6 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+    -A PREROUTING -i wlp0s20f3 -m comment --comment nordvpn -j DROP
+    -A PREROUTING -i enp0s31f6 -m comment --comment nordvpn -j DROP
+    """
+    # Add the ACCEPT rules for each interface
+    for interface in interfaces:
+        rules.append(f"-A PREROUTING -i {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT")
+
+    # Add the DROP rules for each interface
+    for interface in interfaces:
+        rules.append(f"-A PREROUTING -i {interface} -m comment --comment nordvpn -j DROP")
+
+    return rules
 
 
 def __rules_block_dns_port():
-    return \
-        [
-            "-A OUTPUT -d 169.254.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
-            "-A OUTPUT -d 169.254.0.0/16 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
-            "-A OUTPUT -d 192.168.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
-            "-A OUTPUT -d 192.168.0.0/16 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
-            "-A OUTPUT -d 172.16.0.0/12 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
-            "-A OUTPUT -d 172.16.0.0/12 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
-            "-A OUTPUT -d 10.0.0.0/8 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
-            "-A OUTPUT -d 10.0.0.0/8 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP"
-        ]
+    return [
+        "-A OUTPUT -d 169.254.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
+        "-A OUTPUT -d 169.254.0.0/16 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
+        "-A OUTPUT -d 192.168.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
+        "-A OUTPUT -d 192.168.0.0/16 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
+        "-A OUTPUT -d 172.16.0.0/12 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
+        "-A OUTPUT -d 172.16.0.0/12 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
+        "-A OUTPUT -d 10.0.0.0/8 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -j DROP",
+        "-A OUTPUT -d 10.0.0.0/8 -p udp -m udp --dport 53 -m comment --comment nordvpn -j DROP",
+    ]
 
 
-def __rules_connmark_chain_output(interface: str):
-    return \
-        [
+def __rules_connmark_chain_output(interfaces: list):
+    rules = []
+
+    for interface in interfaces:
+        rules.append(
             f"-A POSTROUTING -o {interface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
+        )
+        rules.append(
             f"-A POSTROUTING -o {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
-            f"-A POSTROUTING -o {interface} -m comment --comment nordvpn -j DROP"
-        ]
+        )
+
+    for interface in interfaces:
+        rules.append(
+            f"-A POSTROUTING -o {interface} -m comment --comment nordvpn -j DROP",
+        )
+    return rules
 
 
-def __rules_allowlist_subnet_chain_input(interface: str, subnets: list[str]):
+def __rules_allowlist_subnet_chain_input(interfaces: list, subnets: list[str]):
     result = []
 
     for subnet in subnets:
-        result += (f"-A PREROUTING -s {subnet} -i {interface} -m comment --comment nordvpn -j ACCEPT", )
-    result.reverse() # reverse() is needed because we always insert our rules, so newest one is always on top
+        for interface in interfaces:
+            result.append(
+                f"-A PREROUTING -s {subnet} -i {interface} -m comment --comment nordvpn -j ACCEPT",
+            )
+    result.reverse()  # reverse() is needed because we always insert our rules, so newest one is always on top
     return result
 
 
-def __rules_allowlist_subnet_chain_output(interface: str, subnets: list[str]):
+def __rules_allowlist_subnet_chain_output(interfaces: list, subnets: list[str]):
     result = []
 
     for subnet in subnets:
-        result += (f"-A POSTROUTING -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT", )
+        for interface in interfaces:
+            result.append(
+                f"-A POSTROUTING -d {subnet} -o {interface} -m comment --comment nordvpn -j ACCEPT",
+            )
     result.reverse()
     return result
 
 
-def __rules_allowlist_port_chain_input(interface: str, ports_udp: list[Port], ports_tcp: list[Port]):
+def __rules_allowlist_port_chain_input(interfaces: list, ports_udp: list[Port], ports_tcp: list[Port]):
     result = []
 
     for port in ports_udp:
-        result.extend([
-            f"-A PREROUTING -i {interface} -p udp -m udp --dport {port.value} -m comment --comment nordvpn -j ACCEPT",
-            f"-A PREROUTING -i {interface} -p udp -m udp --sport {port.value} -m comment --comment nordvpn -j ACCEPT",
-        ])
+        for interface in interfaces:
+            result.extend(
+                [
+                    f"-A PREROUTING -i {interface} -p udp -m udp --dport {port.value} -m comment --comment nordvpn -j ACCEPT",
+                    f"-A PREROUTING -i {interface} -p udp -m udp --sport {port.value} -m comment --comment nordvpn -j ACCEPT",
+                ]
+            )
     for port in ports_tcp:
-        result.extend([
-            f"-A PREROUTING -i {interface} -p tcp -m tcp --dport {port.value} -m comment --comment nordvpn -j ACCEPT",
-            f"-A PREROUTING -i {interface} -p tcp -m tcp --sport {port.value} -m comment --comment nordvpn -j ACCEPT",
-        ])
+        for interface in interfaces:
+            result.extend(
+                [
+                    f"-A PREROUTING -i {interface} -p tcp -m tcp --dport {port.value} -m comment --comment nordvpn -j ACCEPT",
+                    f"-A PREROUTING -i {interface} -p tcp -m tcp --sport {port.value} -m comment --comment nordvpn -j ACCEPT",
+                ]
+            )
 
     return result
 
@@ -166,18 +203,22 @@ def __rules_allowlist_port_chain_output(ports_udp: list[Port], ports_tcp: list[P
     result = []
 
     for port in ports_udp:
-        result.extend([
-            f"-A OUTPUT -p udp -m udp --sport {port.value} -m comment --comment nordvpn_allowlist -j MARK --set-xmark 0xe1f1/0xffffffff",
-        ])
+        result.extend(
+            [
+                f"-A OUTPUT -p udp -m udp --sport {port.value} -m comment --comment nordvpn_allowlist -j MARK --set-xmark 0xe1f1/0xffffffff",
+            ]
+        )
     for port in ports_tcp:
-        result.extend([
-            f"-A OUTPUT -p tcp -m tcp --sport {port.value} -m comment --comment nordvpn_allowlist -j MARK --set-xmark 0xe1f1/0xffffffff",
-        ])
+        result.extend(
+            [
+                f"-A OUTPUT -p tcp -m tcp --sport {port.value} -m comment --comment nordvpn_allowlist -j MARK --set-xmark 0xe1f1/0xffffffff",
+            ]
+        )
 
     return result
 
 
-def _get_rules_killswitch_on(interface: str):
+def _get_rules_killswitch_on(interface: list):
     result = []
     # mangle table rules
     result.extend(__rules_connmark_chain_input(interface))
@@ -189,11 +230,11 @@ def _get_rules_killswitch_on(interface: str):
     return result
 
 
-def _get_rules_connected_to_vpn_server(interface: str):
+def _get_rules_connected_to_vpn_server(interface: list):
     return _get_rules_killswitch_on(interface)
 
 
-def _get_rules_allowlist_subnet_on(interface: str, subnets: list[str]):
+def _get_rules_allowlist_subnet_on(interface: list, subnets: list[str]):
     result = []
     # mangle table rules
     result.extend(__rules_allowlist_subnet_chain_input(interface, subnets))
@@ -207,7 +248,7 @@ def _get_rules_allowlist_subnet_on(interface: str, subnets: list[str]):
     return result
 
 
-def _get_rules_allowlist_port_on(interface: str, ports: list[Port]):
+def _get_rules_allowlist_port_on(interface: list, ports: list[Port]):
     ports_udp: list[Port]
     ports_tcp: list[Port]
     ports_udp, ports_tcp = _sort_ports_by_protocol(ports)
@@ -226,7 +267,7 @@ def _get_rules_allowlist_port_on(interface: str, ports: list[Port]):
     return result
 
 
-def _get_rules_allowlist_subnet_and_port_on(interface: str, subnets: list[str], ports: list[Port]):
+def _get_rules_allowlist_subnet_and_port_on(interface: list, subnets: list[str], ports: list[Port]):
     ports_udp, ports_tcp = _sort_ports_by_protocol(ports)
 
     result = []
@@ -245,32 +286,70 @@ def _get_rules_allowlist_subnet_and_port_on(interface: str, subnets: list[str], 
     return result
 
 
-def _get_firewall_rules(ports: list[Port] | None = None, subnets: list[str] | None = None) -> list[str]:
-    # Default route interface
-    interface = sh.ip.route.show("default").split(None)[4]
+def _get_all_interfaces():
+    """
+    Extract interface names from 'ip a show dynamic' output
+    Returns list of interface names that have dynamic configuration
+    """
+    # Run the command
+    output = sh.ip("a", "show", "dynamic", "up")
 
-    print("Default gateway:", interface)
+    interfaces = []
+
+    # Parse the output line by line
+    for line in output:
+        # Look for lines that contain interface definitions
+        # These start with a number followed by a colon and the interface name
+        if line and line[0].isdigit() and ": " in line:
+            # Extract the interface name (between the colon and the colon or end of line)
+            # Example -> 1: enp0s31f6: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc fq_codel state DOWN group 78760 qlen 1000
+            parts = line.split(": ", 2)
+            interface_name = parts[1].split(":", 1)[0].strip()
+            interfaces.append(interface_name)
+
+    return interfaces if interfaces else [sh.ip.route.show("default").split(None)[4]]
+
+
+def _get_firewall_rules(ports: list[Port] | None = None, subnets: list[str] | None = None) -> dict:
+    # Default route interface
+    rules = []
+    categorized_rules = {"endpoints": []}
+    interfaces = _get_all_interfaces()
+
+    for interface in interfaces:
+        categorized_rules[interface] = []
+
+    print("Default gateway:", interfaces)
 
     # Disconnected & Kill Switch ON
     if not daemon.is_connected() and daemon.is_killswitch_on():
-        return _get_rules_killswitch_on(interface)
+        rules = _get_rules_killswitch_on(interfaces)
 
     # Connected
     if not ports and not subnets:
-        return _get_rules_connected_to_vpn_server(interface)
+        rules = _get_rules_connected_to_vpn_server(interfaces)
 
     # Connected & Subnet(s) and Port(s) allowlisted
     if subnets and ports:
-        return _get_rules_allowlist_subnet_and_port_on(interface, subnets, ports)
+        rules = _get_rules_allowlist_subnet_and_port_on(interfaces, subnets, ports)
 
     # Connected & Subnet(s) allowlisted
     if subnets and not ports:
-        return _get_rules_allowlist_subnet_on(interface, subnets)
+        rules = _get_rules_allowlist_subnet_on(interfaces, subnets)
 
     # Connected & Port(s) allowlisted
     if ports:
-        return _get_rules_allowlist_port_on(interface, ports)
-    return []
+        rules = _get_rules_allowlist_port_on(interfaces, ports)
+
+    for rule in rules:
+        interface_found = False
+        for interface in interfaces:
+            if interface in rule:
+                interface_found = True
+                categorized_rules[interface].append(rule)
+        if not interface_found:
+            categorized_rules["endpoints"].append(rule)
+    return categorized_rules
 
 
 def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None) -> bool:
@@ -280,20 +359,20 @@ def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None)
     expected_rules = _get_firewall_rules(ports, subnets)
     print("\nExpected rules:")
     logging.log("\nExpected rules:")
-    for rule in expected_rules:
-        print(rule)
+    for key, rule in expected_rules.items():
+        print(f"{key}: \n{rule}")
         logging.log(rule)
 
-    current_rules = _get_iptables_rules()
+    current_rules = _get_iptables_rules(_get_all_interfaces())
     print("\nCurrent rules:")
     logging.log("\nCurrent rules:")
-    for rule in current_rules:
-        print(rule)
+    for key, rule in current_rules.items():
+        print(f"{key}: \n{rule}")
         logging.log(rule)
 
     print()
     print(sh.nordvpn.settings())
-    return current_rules == expected_rules
+    return all(current_rules[key] == expected_rules[key] for key in expected_rules.keys())
 
 
 def is_empty() -> bool:
@@ -306,16 +385,31 @@ def is_empty() -> bool:
     return result
 
 
-def _get_iptables_rules() -> list[str]:
+def _get_iptables_rules(interfaces: list) -> dict:
     print("Using iptables")
-    mangle_fw_lines = os.popen("sudo iptables -S -t mangle").read()
-    mangle_fw_list = mangle_fw_lines.split('\n')[5:-1]
+    categorized_rules = {"endpoints": []}
+    for interface in interfaces:
+        categorized_rules[interface] = []
+
+    mangle_fw_lines = os.popen(f"sudo iptables -S -t mangle").read()
+    mangle_fw_list = mangle_fw_lines.split("\n")[5:-1]
+
     filter_fw_lines = os.popen("sudo iptables -S -t filter").read()
-    filter_fw_list = filter_fw_lines.split('\n')[3:-1]
+    filter_fw_list = filter_fw_lines.split("\n")[3:-1]
     fw_list = mangle_fw_list + filter_fw_list
 
     dns_full = dns.DNS_NORD + dns.DNS_TPL
-    return [rule for rule in fw_list if not any(dns in rule for dns in dns_full)]
+
+    for rule in fw_list:
+        interface_found = False
+        if not any(dns in rule for dns in dns_full):
+            for key in interfaces:
+                if key in rule:
+                    categorized_rules[key].append(rule)
+                    interface_found = True
+            if not interface_found:
+                categorized_rules["endpoints"].append(rule)
+    return categorized_rules
 
 
 def _sort_ports_by_protocol(ports: list[Port]) -> tuple[list[Port], list[Port]]:
@@ -334,8 +428,8 @@ def _sort_ports_by_protocol(ports: list[Port]) -> tuple[list[Port], list[Port]]:
             ports_tcp.append(port)
 
     # Sort lists in descending order, since app sort rules like this in iptables
-    ports_udp.sort(key=lambda x: [int(i) if i.isdigit() else i for i in re.split('(\\d+)', x.value)], reverse=True)
-    ports_tcp.sort(key=lambda x: [int(i) if i.isdigit() else i for i in re.split('(\\d+)', x.value)], reverse=True)
+    ports_udp.sort(key=lambda x: [int(i) if i.isdigit() else i for i in re.split("(\\d+)", x.value)], reverse=True)
+    ports_tcp.sort(key=lambda x: [int(i) if i.isdigit() else i for i in re.split("(\\d+)", x.value)], reverse=True)
 
     return ports_udp, ports_tcp
 
