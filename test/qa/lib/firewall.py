@@ -286,10 +286,11 @@ def _get_rules_allowlist_subnet_and_port_on(interface: list, subnets: list[str],
     return result
 
 
-def _get_all_interfaces():
+def _get_all_interfaces() -> list:
     """
     Extract interface names from 'ip a show dynamic' output
-    Returns list of interface names that have dynamic configuration
+
+    :returns: list of interface names that have dynamic configuration
     """
     # Run the command
     output = sh.ip("a", "show", "dynamic", "up")
@@ -372,7 +373,7 @@ def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None)
 
     print()
     print(sh.nordvpn.settings())
-    return all(current_rules[key] == expected_rules[key] for key in expected_rules.keys())
+    return all(current_rules[key] == expected_rules[key] for key in expected_rules)
 
 
 def is_empty() -> bool:
@@ -391,7 +392,7 @@ def _get_iptables_rules(interfaces: list) -> dict:
     for interface in interfaces:
         categorized_rules[interface] = []
 
-    mangle_fw_lines = os.popen(f"sudo iptables -S -t mangle").read()
+    mangle_fw_lines = os.popen("sudo iptables -S -t mangle").read()
     mangle_fw_list = mangle_fw_lines.split("\n")[5:-1]
 
     filter_fw_lines = os.popen("sudo iptables -S -t filter").read()
