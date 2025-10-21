@@ -38,7 +38,7 @@ func (r *RPC) GetRecentConnections(
 		}
 
 		// filter by virtual location setting
-		if cfg.VirtualLocation.Get() == false && v.IsVirtual {
+		if !cfg.VirtualLocation.Get() && v.IsVirtual {
 			continue
 		}
 
