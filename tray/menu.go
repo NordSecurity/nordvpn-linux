@@ -322,7 +322,7 @@ func buildRecentConnectionsSection(
 
 	parent.AddSubMenuItem(labelRecentConnections, tooltipRecentConnections).Disable()
 	for _, conn := range connections {
-		displayLabel := makeDisplayLabel(&conn)
+		displayLabel := addVirtualLocationSuffix(makeDisplayLabel(&conn), conn.VirtualLocation)
 		if displayLabel == "" {
 			continue
 		}
