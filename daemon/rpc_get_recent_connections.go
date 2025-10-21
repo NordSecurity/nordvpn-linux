@@ -27,24 +27,32 @@ func (r *RPC) GetRecentConnections(
 	serverTech := techToServerTech(
 		cfg.Technology,
 		cfg.AutoConnectData.Protocol,
-		cfg.AutoConnectData.Obfuscate)
+		cfg.AutoConnectData.Obfuscate,
+	)
 
 	var rcValues []*pb.RecentConnectionModel
 	// filter by server technology used
 	for _, v := range values {
-		if slices.Contains(v.ServerTechnologies, serverTech) {
-			item := &pb.RecentConnectionModel{
-				Country:            v.Country,
-				CountryCode:        v.CountryCode,
-				City:               v.City,
-				SpecificServer:     v.SpecificServer,
-				SpecificServerName: v.SpecificServerName,
-				Group:              v.Group,
-				ConnectionType:     v.ConnectionType,
-			}
-
-			rcValues = append(rcValues, item)
+		if !slices.Contains(v.ServerTechnologies, serverTech) {
+			continue
 		}
+
+		// filter by virtual location setting
+		if cfg.VirtualLocation.Get() == false && v.IsVirtual {
+			continue
+		}
+
+		item := &pb.RecentConnectionModel{
+			Country:            v.Country,
+			CountryCode:        v.CountryCode,
+			City:               v.City,
+			SpecificServer:     v.SpecificServer,
+			SpecificServerName: v.SpecificServerName,
+			Group:              v.Group,
+			ConnectionType:     v.ConnectionType,
+			IsVirtual:          v.IsVirtual,
+		}
+		rcValues = append(rcValues, item)
 	}
 
 	// limit results if value is specified

@@ -68,7 +68,8 @@ func (r *RecentConnectionsStore) find(model Model, list []Model) int {
 			m.SpecificServerName == model.SpecificServerName &&
 			m.SpecificServer == model.SpecificServer &&
 			m.ConnectionType == model.ConnectionType &&
-			slices.Equal(m.ServerTechnologies, model.ServerTechnologies)
+			slices.Equal(m.ServerTechnologies, model.ServerTechnologies) &&
+			m.IsVirtual == model.IsVirtual
 	})
 }
 
