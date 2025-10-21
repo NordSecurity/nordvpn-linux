@@ -56,7 +56,7 @@ func formatGroupTitle(group config.ServerGroup) string {
 	return value
 }
 
-func addVirtualLocationSuffix(label string, isVirtualLoc bool) string {
+func tryApplyVirtualLocationSuffix(label string, isVirtualLoc bool) string {
 	if label == "" || !isVirtualLoc {
 		return label
 	}
