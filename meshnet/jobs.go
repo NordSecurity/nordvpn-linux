@@ -1,6 +1,7 @@
 package meshnet
 
 import (
+	"context"
 	"log"
 	"time"
 
@@ -8,13 +9,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
-
-type NoopContext struct{}
-
-func (NoopContext) Deadline() (time.Time, bool) { return time.Time{}, false }
-func (NoopContext) Done() <-chan struct{}       { return nil }
-func (NoopContext) Err() error                  { return nil }
-func (NoopContext) Value(key any) any           { return nil }
 
 func (s *Server) StartJobs() {
 	if _, err := s.scheduler.NewJob(gocron.DurationJob(5*time.Minute), gocron.NewTask(JobRefreshMeshMap(s)), gocron.WithName("job refresh mesh map")); err != nil {
@@ -52,7 +46,7 @@ func JobRefreshMeshMap(s *Server) func() error {
 func JobRefreshMeshnet(s *Server) func() error {
 	return func() error {
 		// ignore what is returned, try to do it here as light as possible
-		_, _ = s.RefreshMeshnet(&NoopContext{}, nil)
+		_, _ = s.RefreshMeshnet(context.Background(), nil)
 		return nil
 	}
 }
