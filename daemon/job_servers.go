@@ -43,8 +43,8 @@ func JobServers(dm *DataManager, api core.ServersAPI, validate bool) func() erro
 		dist := distance(
 			geoInfoData.Insights.Latitude,
 			geoInfoData.Insights.Longitude,
-			servers[0].Locations[0].Latitude,
-			servers[0].Locations[0].Longitude,
+			servers[0].Locations[0].Country.City.Latitude,  //nolint:staticcheck
+			servers[0].Locations[0].Country.City.Longitude, //nolint:staticcheck
 		)
 		servers[0].Timestamp = timestamp
 		servers[0].Distance = dist
@@ -73,8 +73,8 @@ func JobServers(dm *DataManager, api core.ServersAPI, validate bool) func() erro
 			dist := distance(
 				geoInfoData.Insights.Latitude,
 				geoInfoData.Insights.Longitude,
-				country.Latitude,
-				country.Longitude,
+				country.City.Latitude,  //nolint:staticcheck
+				country.City.Longitude, //nolint:staticcheck
 			)
 			servers[idx].Timestamp = timestamp
 			servers[idx].Distance = dist
@@ -103,8 +103,8 @@ func JobServers(dm *DataManager, api core.ServersAPI, validate bool) func() erro
 				server.Distance, distanceMin, distanceMax,
 				server.Timestamp, timestampMin, timestampMax,
 				server.Load,
-				geoInfoData.Insights.CountryCode, server.Locations[0].Code,
-				server.Locations[0].HubScore,
+				geoInfoData.Insights.CountryCode, server.Locations[0].Country.Code, //nolint:staticcheck
+				server.Locations[0].Country.City.HubScore, //nolint:staticcheck
 				randomComponent,
 			)
 			servers[idx].Penalty = penal

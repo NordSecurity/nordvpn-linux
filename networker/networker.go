@@ -1081,11 +1081,11 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 	netw.cfg = cfg
 
 	var err error
-	if err = netw.defaultMeshBlock(cfg.Address); err != nil {
+	if err = netw.defaultMeshBlock(cfg.Machine.Address); err != nil { //nolint:staticcheck
 		return fmt.Errorf("adding default block rule: %w", err)
 	}
 
-	if err = netw.allowIncoming(cfg.PublicKey, cfg.Address, true); err != nil {
+	if err = netw.allowIncoming(cfg.PublicKey, cfg.Machine.Address, true); err != nil { //nolint:staticcheck
 		return fmt.Errorf("allowing to reach self via meshnet: %w", err)
 	}
 
@@ -1127,20 +1127,22 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 	var hostName string
 	var domainNames []string
 
-	if cfg.Nickname != "" {
-		hostName = cfg.Nickname
+	//nolint:staticcheck
+	if cfg.Machine.Nickname != "" {
+		hostName = cfg.Machine.Nickname
 		domainNames = []string{
-			cfg.Nickname + ".nord",
-			cfg.Hostname,
-			strings.TrimSuffix(cfg.Hostname, ".nord"),
+			cfg.Machine.Nickname + ".nord",
+			cfg.Machine.Hostname,
+			strings.TrimSuffix(cfg.Machine.Hostname, ".nord"),
 		}
 	} else {
-		hostName = cfg.Hostname
-		domainNames = []string{strings.TrimSuffix(cfg.Hostname, ".nord")}
+		hostName = cfg.Machine.Hostname
+		domainNames = []string{strings.TrimSuffix(cfg.Machine.Hostname, ".nord")}
 	}
 
+	//nolint:staticcheck
 	hosts := dns.Hosts{dns.Host{
-		IP:          cfg.Address,
+		IP:          cfg.Machine.Address,
 		FQDN:        hostName,
 		DomainNames: domainNames,
 	}}
