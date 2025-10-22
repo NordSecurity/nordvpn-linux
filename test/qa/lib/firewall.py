@@ -98,28 +98,17 @@ POSTROUTING_LAN_DISCOVERY_RULES = [
 
 
 def __rules_connmark_chain_prerouting(interfaces: list) -> list[str]:
-    rules = []
+    result = []
+    rules = [
+        "-A PREROUTING -i {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
+        "-A PREROUTING -i {interface} -m comment --comment nordvpn -j DROP",
+    ]
 
-    """
-    Done separately for keeping ordering of rules:
-    Expected rules:
-    -A PREROUTING -i enp0s31f6 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-    -A PREROUTING -i enp0s31f6 -m comment --comment nordvpn -j DROP
-    Current rules:
-    -A PREROUTING -i wlp0s20f3 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-    -A PREROUTING -i enp0s31f6 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-    -A PREROUTING -i wlp0s20f3 -m comment --comment nordvpn -j DROP
-    -A PREROUTING -i enp0s31f6 -m comment --comment nordvpn -j DROP
-    """
-    # Add the ACCEPT rules for each interface
-    for interface in interfaces:
-        rules.append(f"-A PREROUTING -i {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT")
+    for rule in rules:
+        for interface in interfaces:
+            result.append(rule.format(interface=interface))
 
-    # Add the DROP rules for each interface
-    for interface in interfaces:
-        rules.append(f"-A PREROUTING -i {interface} -m comment --comment nordvpn -j DROP")
-
-    return rules
+    return result
 
 
 def __rules_block_dns_port() -> list[str]:
@@ -136,25 +125,47 @@ def __rules_block_dns_port() -> list[str]:
 
 
 def __rules_connmark_chain_output(interfaces: list) -> list[str]:
-    rules = []
+    result = []
+    rules = [
+        "-A POSTROUTING -o {interface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
+        "-A POSTROUTING -o {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
+    ]
+    """
+    Need to separate preparing expected rules ordering due to that:
+    -A PREROUTING -i eth1 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+    -A PREROUTING -i eth0 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+    -A PREROUTING -i eth1 -m comment --comment nordvpn -j DROP
+    -A PREROUTING -i eth0 -m comment --comment nordvpn -j DROP
+    -A POSTROUTING -o eth1 -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
+    -A POSTROUTING -o eth1 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+    -A POSTROUTING -o eth0 -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
+    -A POSTROUTING -o eth0 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+    -A POSTROUTING -o eth1 -m comment --comment nordvpn -j DROP
+    -A POSTROUTING -o eth0 -m comment --comment nordvpn -j DROP
+    """
+    for interface in interfaces:
+        for rule in rules:
+            result.append(rule.format(interface=interface))
 
     for interface in interfaces:
-        rules.append(
-            f"-A POSTROUTING -o {interface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
-        )
-        rules.append(
-            f"-A POSTROUTING -o {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT",
-        )
+        result.append(f"-A POSTROUTING -o {interface} -m comment --comment nordvpn -j DROP")
 
-    for interface in interfaces:
-        rules.append(
-            f"-A POSTROUTING -o {interface} -m comment --comment nordvpn -j DROP",
-        )
-    return rules
+    return result
 
 
 def __rules_allowlist_subnet_chain_input(interfaces: list, subnets: list[str]) -> list[str]:
     result = []
+
+    """
+    Reverse is needed due to that:
+    Expected rules:
+    -A PREROUTING -s 192.168.1.1/32 -i eth0 -m comment --comment nordvpn -j ACCEPT
+    -A PREROUTING -s 192.168.1.1/32 -i eth1 -m comment --comment nordvpn -j ACCEPT
+    Current rules:
+    -A PREROUTING -s 192.168.1.1/32 -i eth1 -m comment --comment nordvpn -j ACCEPT
+    -A PREROUTING -s 192.168.1.1/32 -i eth0 -m comment --comment nordvpn -j ACCEPT
+    """
+    interfaces.reverse()
 
     for subnet in subnets:
         for interface in interfaces:
@@ -180,22 +191,28 @@ def __rules_allowlist_subnet_chain_output(interfaces: list, subnets: list[str]) 
 def __rules_allowlist_port_chain_input(interfaces: list, ports_udp: list[Port], ports_tcp: list[Port]) -> list[str]:
     result = []
 
-    for port in ports_udp:
-        for interface in interfaces:
-            result.extend(
-                [
-                    f"-A PREROUTING -i {interface} -p udp -m udp --dport {port.value} -m comment --comment nordvpn -j ACCEPT",
-                    f"-A PREROUTING -i {interface} -p udp -m udp --sport {port.value} -m comment --comment nordvpn -j ACCEPT",
-                ]
-            )
-    for port in ports_tcp:
-        for interface in interfaces:
-            result.extend(
-                [
-                    f"-A PREROUTING -i {interface} -p tcp -m tcp --dport {port.value} -m comment --comment nordvpn -j ACCEPT",
-                    f"-A PREROUTING -i {interface} -p tcp -m tcp --sport {port.value} -m comment --comment nordvpn -j ACCEPT",
-                ]
-            )
+    udp_rules = [
+        "-A PREROUTING -i {interface} -p udp -m udp --dport {port} -m comment --comment nordvpn -j ACCEPT",
+        "-A PREROUTING -i {interface} -p udp -m udp --sport {port} -m comment --comment nordvpn -j ACCEPT",
+    ]
+    tcp_rules = [
+        "-A PREROUTING -i {interface} -p tcp -m tcp --dport {port} -m comment --comment nordvpn -j ACCEPT",
+        "-A PREROUTING -i {interface} -p tcp -m tcp --sport {port} -m comment --comment nordvpn -j ACCEPT",
+    ]
+
+    for interface in interfaces:
+        for udp_rule in udp_rules:
+            for port in ports_udp:
+                result.append(
+                    udp_rule.format(interface=interface, port=port.value),
+                )
+
+    for interface in interfaces:
+        for tcp_rule in tcp_rules:
+            for port in ports_tcp:
+                result.append(
+                    tcp_rule.format(interface=interface, port=port.value),
+                )
 
     return result
 
@@ -312,14 +329,37 @@ def _get_all_interfaces() -> list[str]:
     return interfaces if interfaces else [sh.ip.route.show("default").split(None)[4]]
 
 
-def _get_firewall_rules(ports: list[Port] | None = None, subnets: list[str] | None = None) -> dict[str, list[str]]:
+def _get_firewall_rules(ports: list[Port] | None = None, subnets: list[str] | None = None) -> list[str]:
     # Default route interface
     rules = []
-    categorized_rules = {ENDPOINTS: []}
     interfaces = _get_all_interfaces()
+    """
+    Need reverse interfaces due to that
+    Expected rules:
+    -A PREROUTING -i eth0 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+    -A PREROUTING -i eth1 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+    -A PREROUTING -i eth0 -m comment --comment nordvpn -j DROP
+    -A PREROUTING -i eth1 -m comment --comment nordvpn -j DROP
+    -A POSTROUTING -o eth0 -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
+    -A POSTROUTING -o eth1 -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
+    -A POSTROUTING -o eth0 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+    -A POSTROUTING -o eth1 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+    -A POSTROUTING -o eth0 -m comment --comment nordvpn -j DROP
+    -A POSTROUTING -o eth1 -m comment --comment nordvpn -j DROP
 
-    for interface in interfaces:
-        categorized_rules[interface] = []
+    Current rules:
+    -A PREROUTING -i eth1 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+    -A PREROUTING -i eth0 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+    -A PREROUTING -i eth1 -m comment --comment nordvpn -j DROP
+    -A PREROUTING -i eth0 -m comment --comment nordvpn -j DROP
+    -A POSTROUTING -o eth1 -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
+    -A POSTROUTING -o eth1 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+    -A POSTROUTING -o eth0 -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
+    -A POSTROUTING -o eth0 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
+    -A POSTROUTING -o eth1 -m comment --comment nordvpn -j DROP
+    -A POSTROUTING -o eth0 -m comment --comment nordvpn -j DROP
+    """
+    interfaces.reverse()
 
     print("Default gateway:", interfaces)
 
@@ -343,15 +383,7 @@ def _get_firewall_rules(ports: list[Port] | None = None, subnets: list[str] | No
     if ports:
         rules = _get_rules_allowlist_port_on(interfaces, ports)
 
-    for rule in rules:
-        interface_found = False
-        for interface in interfaces:
-            if interface in rule:
-                interface_found = True
-                categorized_rules[interface].append(rule)
-        if not interface_found:
-            categorized_rules[ENDPOINTS].append(rule)
-    return categorized_rules
+    return rules
 
 
 def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None) -> bool:
@@ -361,20 +393,20 @@ def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None)
     expected_rules = _get_firewall_rules(ports, subnets)
     print("\nExpected rules:")
     logging.log("\nExpected rules:")
-    for key, rule in expected_rules.items():
-        print(f"{key}: \n{rule}")
+    for rule in expected_rules:
+        print(f"{rule}")
         logging.log(rule)
 
-    current_rules = _get_iptables_rules(_get_all_interfaces())
+    current_rules = _get_iptables_rules()
     print("\nCurrent rules:")
     logging.log("\nCurrent rules:")
-    for key, rule in current_rules.items():
-        print(f"{key}: \n{rule}")
+    for rule in current_rules:
+        print(f"{rule}")
         logging.log(rule)
 
     print()
     print(sh.nordvpn.settings())
-    return all(current_rules[key] == expected_rules[key] for key in expected_rules)
+    return current_rules == expected_rules
 
 
 def is_empty() -> bool:
@@ -387,11 +419,8 @@ def is_empty() -> bool:
     return result
 
 
-def _get_iptables_rules(interfaces: list) -> dict[str, list[str]]:
+def _get_iptables_rules() -> list[str]:
     print("Using iptables")
-    categorized_rules = {ENDPOINTS: []}
-    for interface in interfaces:
-        categorized_rules[interface] = []
 
     mangle_fw_lines = os.popen("sudo iptables -S -t mangle").read()
     mangle_fw_list = mangle_fw_lines.split("\n")[5:-1]
@@ -402,16 +431,7 @@ def _get_iptables_rules(interfaces: list) -> dict[str, list[str]]:
 
     dns_full = dns.DNS_NORD + dns.DNS_TPL
 
-    for rule in fw_list:
-        interface_found = False
-        if not any(dns in rule for dns in dns_full):
-            for key in interfaces:
-                if key in rule:
-                    categorized_rules[key].append(rule)
-                    interface_found = True
-            if not interface_found:
-                categorized_rules["endpoints"].append(rule)
-    return categorized_rules
+    return [rule for rule in fw_list if not any(dns in rule for dns in dns_full)]
 
 
 def _sort_ports_by_protocol(ports: list[Port]) -> tuple[list[Port], list[Port]]:
