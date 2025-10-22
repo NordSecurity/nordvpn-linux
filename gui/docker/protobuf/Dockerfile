@@ -5,7 +5,6 @@ FROM dart:3.10.0
 LABEL org.opencontainers.image.source="https://github.com/NordSecurity/nordvpn-linux/blob/main/gui/docker/protobuf/Dockerfile"
 LABEL org.opencontainers.image.description="Generates the protobuf to dart code, e.g. ./docker/generate_docker_image.sh ghcr.io/nordsecurity/nordvpn-linux/protobuf_dart-3.10.0 1.0.0 linux/amd64 docker/protobuf/"
 
-WORKDIR /code/app
 
 RUN apt-get update && \
     apt-get -y --no-install-recommends upgrade && \
@@ -32,5 +31,6 @@ RUN groupadd -g ${GROUP_ID} generator && useradd -l -m -u ${USER_ID} -g generato
 USER generator
 
 ENV PATH="${PATH}:/home/generator/.pub-cache/bin"
+WORKDIR /app
 
 RUN dart pub global activate protoc_plugin
