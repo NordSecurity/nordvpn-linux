@@ -122,7 +122,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 	defer s.mux.Unlock()
 
 	s.mooseConsentLevelFunc = moose.MooseNordvpnappSetConsentLevel
-	s.mooseOptInFunc = moose.MooseNordvpnappSetOptIn
+	s.mooseOptInFunc = worker.SetSendEvents
 
 	var cfg config.Config
 	if err := s.Config.Load(&cfg); err != nil {
@@ -136,9 +136,10 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 
 	singleInterval := time.Second
 	sequenceInterval := time.Second * 5
-	sendEvents := true
 	var batchSize uint32 = 20
 	compressRequest := true
+
+	sendEvents := cfg.AnalyticsConsent == config.ConsentGranted
 
 	client := worker.NewHttpClientContext(s.currentDomain)
 	client.Client = httpClient
@@ -155,14 +156,12 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("starting worker: %w", err)
 	}
 
-	sendAllEvents := cfg.AnalyticsConsent == config.ConsentGranted
-
 	if err := s.response(moose.MooseNordvpnappInit(
 		s.EventsDbPath,
 		internal.IsProdEnv(s.BuildTarget.Environment),
 		s,
 		s,
-		sendAllEvents,
+		sendEvents,
 	)); err != nil {
 		if !strings.Contains(err.Error(), "moose: already initiated") {
 			return fmt.Errorf("starting tracker: %w", err)
@@ -171,11 +170,6 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 
 	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
 		log.Println(internal.WarningPrefix, "failed to flush changes before setting analytics opt in: %w", err)
-	}
-	if cfg.AnalyticsConsent == config.ConsentUndefined {
-		if err := s.response(s.mooseOptInFunc(false)); err != nil {
-			return fmt.Errorf("failed to opt out of analytics: %w", err)
-		}
 	}
 
 	s.consent = cfg.AnalyticsConsent
