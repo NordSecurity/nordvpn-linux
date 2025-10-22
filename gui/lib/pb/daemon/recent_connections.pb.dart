@@ -221,6 +221,16 @@ class RecentConnectionModel extends $pb.GeneratedMessage {
   $core.bool hasConnectionType() => $_has(6);
   @$pb.TagNumber(7)
   void clearConnectionType() => $_clearField(7);
+
+  /// whether the server is virtual
+  @$pb.TagNumber(8)
+  $core.bool get isVirtual => $_getBF(7);
+  @$pb.TagNumber(8)
+  set isVirtual($core.bool value) => $_setBool(7, value);
+  @$pb.TagNumber(8)
+  $core.bool hasIsVirtual() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearIsVirtual() => $_clearField(8);
 }
 
 class RecentConnectionsRequest extends $pb.GeneratedMessage {
