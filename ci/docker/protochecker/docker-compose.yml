@@ -1,51 +1,100 @@
-volumes:
-  generated-repo:
-
-
 services:
-  setup:
-    build:
-      context: .
-      dockerfile: Dockerfile.setup
-    image: protochecker-setup
-    volumes:
-      - ../../..:/src:ro
-      - generated-repo:/repo
-    environment:
-      - USERID=${UID:-1000}
-      - GID=${GID:-1000}
-
+  # Generates Go protobuf files for the daemon and tray app
   app-protobuf-gen:
     image: ghcr.io/nordsecurity/nordvpn-linux/generator:1.4.2
-    command: "ci/generate_protobuf.sh"
-    depends_on:
-      setup:
-        condition: service_completed_successfully
     volumes:
-      - generated-repo:/work
-    working_dir: /work
-    user: "${UID:-1000}:${GID:-1000}"
+      - ../../..:/app
+    working_dir: /app
+    command:
+      - sh
+      - -c
+      - |
+        trap "exit 0" TERM
+        ci/generate_protobuf.sh
+        echo "app-protobuf-gen script finished successfully."
+        mkdir -p /app/gen_status
+        touch /app/gen_status/app_done
+        sleep infinity & wait
+    healthcheck:
+      test: ["CMD", "test", "-f", "/app/gen_status/app_done"]
+      interval: 5s
+      retries: 6
+      start_period: 30s
 
+  # Generates Dart protobuf files for the GUI
+  # Note: The generation script removes gui/lib/pb, so we backup before generation
   gui-protobuf-gen:
     image: ghcr.io/nordsecurity/nordvpn-linux/protobuf_dart-3.8.1:1.0.1
-    command: "gui/scripts/generate_protobuf.sh"
-    depends_on:
-      setup:
-        condition: service_completed_successfully
     volumes:
-      - generated-repo:/code/app
-    working_dir: /code/app
-    user: "${UID:-1000}:${GID:-1000}"
+      - ../../..:/app
+    working_dir: /app
+    command:
+      - sh
+      - -c
+      - |
+        trap "exit 0" TERM
+        rm -f /app/gen_status/gui_done
+        # Backup existing files before generation (script removes the directory)
+        cp -r /app/gui/lib/pb /app/gui/lib/pb.backup 2>/dev/null || true
+        gui/scripts/generate_protobuf.sh
+        echo "gui-protobuf-gen script finished successfully."
+        mkdir -p /app/gen_status
+        touch /app/gen_status/gui_done
+        sleep infinity & wait
+    healthcheck:
+      test: ["CMD", "test", "-f", "/app/gen_status/gui_done"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
 
+  # Verifies that generated protobuf files match committed versions
   protochecker:
     image: alpine/git
-    command: [ "diff", "--name-only", "--exit-code" ]
+    entrypoint: ["/bin/sh", "-c"]
+    volumes:
+      - ../../..:/app
+    working_dir: /app
     depends_on:
       app-protobuf-gen:
-        condition: service_completed_successfully
+        condition: service_healthy
       gui-protobuf-gen:
-        condition: service_completed_successfully
-    volumes:
-      - generated-repo:/git
-    working_dir: /git
-    user: "${UID:-1000}:${GID:-1000}"
+        condition: service_healthy
+    command:
+      - |
+        # Configure git to trust the workspace directory
+        git config --global --add safe.directory /app
+
+        echo "=== Checking for protobuf file changes ==="
+
+        # Check GUI protobuf files (compare backup with generated)
+        if [ -d /app/gui/lib/pb.backup ]; then
+          echo "Comparing GUI generated files with original committed files..."
+          DIFF_OUTPUT=$(diff -r /app/gui/lib/pb.backup /app/gui/lib/pb 2>&1 || true)
+
+          if [ -n "$DIFF_OUTPUT" ]; then
+            echo "ERROR: Generated GUI protobuf files differ from committed versions!"
+            echo "$DIFF_OUTPUT" | grep "^Only in\|^Files.*differ" | head -20
+            echo ""
+            echo "To fix this, regenerate protobuf files locally and commit the changes."
+            rm -rf /app/gui/lib/pb.backup
+            exit 1
+          fi
+
+          rm -rf /app/gui/lib/pb.backup
+          echo "✓ GUI protobuf files match"
+        fi
+
+        # Check daemon protobuf files (use git diff)
+        if ! git diff --quiet --exit-code daemon/pb/; then
+          echo "ERROR: Daemon protobuf files changed!"
+          echo "Changed files:"
+          git diff --name-only daemon/pb/
+          echo ""
+          echo "To fix this, regenerate protobuf files locally and commit the changes."
+          exit 1
+        fi
+        echo "✓ Daemon protobuf files match"
+
+        echo ""
+        echo "SUCCESS: All protobuf files match committed versions."
