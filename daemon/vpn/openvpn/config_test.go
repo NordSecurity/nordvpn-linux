@@ -83,7 +83,7 @@ func TestGenerateConfigXML(t *testing.T) {
 }
 
 func TestGenerateConfig(t *testing.T) {
-	category.Set(t, category.Unit)
+	category.Set(t, category.Integration)
 	tests := []struct {
 		name       string
 		ip         netip.Addr
