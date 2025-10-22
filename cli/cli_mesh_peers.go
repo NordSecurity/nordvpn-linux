@@ -280,6 +280,7 @@ func (c *cmd) MeshPeerDenyRouting(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
+	//TODO - LVPN-9412: reavaulate error handling
 	resp, _ := c.meshClient.DenyRouting(
 		context.Background(),
 		&pb.UpdatePeerRequest{
