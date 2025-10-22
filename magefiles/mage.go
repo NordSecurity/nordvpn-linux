@@ -30,6 +30,7 @@ const (
 	imageTester            = registryPrefix + "tester:1.6.0"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.4"
 	imageRuster            = registryPrefix + "ruster:1.4.1"
+	imageCodeQL            = registryPrefix + "codeql:1.0.0"
 
 	dockerWorkDir    = "/opt"
 	guiDockerWorkDir = dockerWorkDir + "/gui"
@@ -56,6 +57,7 @@ var Aliases = map[string]any{
 	"bsd": Build.SnapDocker,
 	"ib":  Install.Binaries,
 	"tg":  Test.Go,
+	"tql": Test.Codeql,
 }
 
 // Build is used for native builds.
@@ -333,7 +335,7 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 			env,
 			imageSnapPackager,
 			[]string{"ci/build_snap.sh"},
-			DockerSettings{Privileged: true},
+			DockerSettings{Privileged: true, WorkDir: dockerWorkDir},
 		)
 	case packageTypeDeb, packageTypeRPM:
 		return RunDocker(
@@ -477,7 +479,7 @@ func (Build) OpenvpnDocker(ctx context.Context) error {
 		env,
 		imageBuilder,
 		[]string{"sh", "-c", "ci/openvpn/fix_dependencies.sh; ci/openvpn/build.sh"},
-		DockerSettings{Privileged: true},
+		DockerSettings{Privileged: true, WorkDir: dockerWorkDir},
 	)
 }
 
@@ -596,7 +598,7 @@ func (Test) CgoDocker(ctx context.Context) error {
 		env,
 		imageBuilder,
 		[]string{"ci/test.sh", "full"},
-		DockerSettings{Privileged: true},
+		DockerSettings{Privileged: true, WorkDir: dockerWorkDir},
 	)
 }
 
@@ -670,6 +672,23 @@ func (Test) QADockerFast(ctx context.Context, testGroup, testPattern string) err
 	return qaDocker(ctx, testGroup, testPattern)
 }
 
+// Codeql Runs CodeQL analysis using Docker container
+func (Test) Codeql(ctx context.Context, language string) error {
+	env, err := getEnv()
+	if err != nil {
+		return err
+	}
+	env["WORKDIR"] = dockerWorkDir
+
+	return RunDocker(
+		ctx,
+		env,
+		imageCodeQL,
+		[]string{"python3", "ci/test_codeql.py", "--language", language},
+		dockerWorkDir,
+	)
+}
+
 func qaDocker(ctx context.Context, testGroup, testPattern string) (err error) {
 	env, err := getEnv()
 	if err != nil {
@@ -704,7 +723,7 @@ func qaDocker(ctx context.Context, testGroup, testPattern string) (err error) {
 	err = RunDockerWithSettings(ctx, env,
 		imageQAPeer,
 		[]string{},
-		DockerSettings{Privileged: true, Daemonize: true, Network: networkID, DaemonizeStopChan: containerStoppedChan},
+		DockerSettings{Privileged: true, Daemonize: true, Network: networkID, DaemonizeStopChan: containerStoppedChan, WorkDir: dockerWorkDir},
 	)
 	if err != nil {
 		return fmt.Errorf("%w (while starting qa-peer)", err)
@@ -713,7 +732,7 @@ func qaDocker(ctx context.Context, testGroup, testPattern string) (err error) {
 	return RunDockerWithSettings(ctx, env,
 		imageTester,
 		[]string{"ci/test_deb.sh", testGroup, testPattern},
-		DockerSettings{Privileged: true, Network: networkID},
+		DockerSettings{Privileged: true, Network: networkID, WorkDir: dockerWorkDir},
 	)
 }
 

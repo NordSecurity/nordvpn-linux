@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/service_locator.dart';
-import 'package:nordvpn/theme/ux_colors.dart';
+import 'package:nordvpn/theme/aurora_design.dart';
 import 'package:nordvpn/widgets/on_off_switch.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
@@ -14,7 +14,7 @@ void main() {
     SharedPreferencesAsyncPlatform.instance = store;
     await initServiceLocator();
   });
-  final uxColors = UXColors(ThemeMode.light);
+  final design = AppDesign(ThemeMode.light);
   group('OnOffSwitch Widget Tests', () {
     Future<void> noOp(bool _) async {}
     Future<void> longRunning(bool _) async {
@@ -38,7 +38,7 @@ void main() {
         isA<BoxDecoration>().having(
           (d) => d.color,
           'color',
-          uxColors.fillGreyPrimary,
+          design.semanticColors.bgSecondary,
         ),
       );
     });
@@ -63,7 +63,7 @@ void main() {
         isA<BoxDecoration>().having(
           (d) => d.color,
           'color',
-          uxColors.fillAccentPrimary,
+          design.semanticColors.bgAccent,
         ),
       );
     });
@@ -92,7 +92,7 @@ void main() {
         isA<BoxDecoration>().having(
           (d) => d.color,
           'color',
-          uxColors.fillGreyPrimary,
+          design.semanticColors.bgSecondary,
         ),
       );
     });
@@ -140,7 +140,7 @@ void main() {
         isA<BoxDecoration>().having(
           (d) => d.color,
           'color',
-          uxColors.fillAccentPrimary,
+          design.semanticColors.bgAccent,
         ),
       );
     });

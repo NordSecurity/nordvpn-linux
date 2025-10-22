@@ -214,6 +214,9 @@ final class ServerListItemFactory {
           ? IconButton(
               icon: DynamicThemeImage("three_dots.svg"),
               onPressed: () => showDetails(),
+              hoverColor: Colors.transparent,
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
             )
           : null,
     );

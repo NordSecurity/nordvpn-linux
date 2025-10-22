@@ -15,10 +15,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/session"
 )
 
-// ErrMissingExchangeToken is returned when login was successful but
-// there is not enough data to request the token
-var ErrMissingExchangeToken = errors.New("The exchange token is missing. Please try logging in again. If the issue persists, contact our customer support.")
-
 type customCallbackType func() (*core.LoginResponse, *pb.LoginResponse, error)
 
 var lastLoginAttemptTime time.Time
@@ -218,8 +214,8 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 	}()
 
 	if in.GetToken() == "" {
-		r.publisher.Publish(ErrMissingExchangeToken.Error())
-		return nil, ErrMissingExchangeToken
+		r.publisher.Publish(internal.ErrMissingExchangeToken.Error())
+		return nil, internal.ErrMissingExchangeToken
 	}
 
 	resp, err := r.authentication.Token(in.GetToken())

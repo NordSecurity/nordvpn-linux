@@ -24,6 +24,7 @@ type DockerSettings struct {
 	Daemonize         bool       // Container is run in background, output is not available then
 	DaemonizeStopChan chan<- any // Value will be sent on this channel when daemonized docker container is stopped
 	Network           string
+	WorkDir           string
 }
 
 func RunDocker(
@@ -63,7 +64,7 @@ func RunDockerWithSettings(
 		settings.Daemonize,
 		settings.DaemonizeStopChan,
 		settings.Network,
-		dockerWorkDir,
+		settings.WorkDir,
 	)
 }
 
@@ -80,6 +81,9 @@ func BuildDocker(dockerfile, tag string) error {
 	return cmd.Run()
 }
 
+// runDocker creates and runs a Docker container.
+// NOTE: This function always binds the current working directory (CWD) from the host
+// to the specified workingDir in the container.
 func runDocker(
 	ctx context.Context,
 	env map[string]string,
