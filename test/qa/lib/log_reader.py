@@ -92,7 +92,7 @@ class LogReader:
         :raises FileNotFoundError: If log file is not found.
         """
         start_time = time.time()
-        messages_to_find = list(messages if type(messages) is list else [messages])
+        messages_to_find = list(messages)
 
         print(f"Waiting for messages: {messages_to_find}")
 
