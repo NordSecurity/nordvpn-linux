@@ -18,7 +18,6 @@ jobs:
         run: |
           docker compose -f ci/docker/protochecker/docker-compose.yml up \
            --build \
-           --abort-on-container-exit \
            --exit-code-from protochecker
 
       - name: Clean up containers
