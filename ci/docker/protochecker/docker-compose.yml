@@ -36,9 +36,10 @@ services:
       - generated-repo:/code/app
     working_dir: /code/app
     user: "${UID:-1000}:${GID:-1000}"
+
   protochecker:
     image: alpine/git
-    command: [ "diff", "--quiet" ]
+    command: [ "diff", "--name-only", "--exit-code" ]
     depends_on:
       app-protobuf-gen:
         condition: service_completed_successfully
