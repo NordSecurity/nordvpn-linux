@@ -6,6 +6,7 @@ import sh
 from . import Port, Protocol, daemon, logging, dns
 
 IP_ROUTE_TABLE = 205
+ENDPOINTS = "endpoints"
 
 # Rules for killswitch
 # mangle
@@ -96,7 +97,7 @@ POSTROUTING_LAN_DISCOVERY_RULES = [
 ]
 
 
-def __rules_connmark_chain_input(interfaces: list):
+def __rules_connmark_chain_prerouting(interfaces: list):
     rules = []
 
     """
@@ -218,68 +219,68 @@ def __rules_allowlist_port_chain_output(ports_udp: list[Port], ports_tcp: list[P
     return result
 
 
-def _get_rules_killswitch_on(interface: list):
+def _get_rules_killswitch_on(interfaces: list):
     result = []
     # mangle table rules
-    result.extend(__rules_connmark_chain_input(interface))
+    result.extend(__rules_connmark_chain_prerouting(interfaces))
 
-    result.extend(__rules_connmark_chain_output(interface))
+    result.extend(__rules_connmark_chain_output(interfaces))
     # filter table rules
     result.extend(__rules_block_dns_port())
 
     return result
 
 
-def _get_rules_connected_to_vpn_server(interface: list):
-    return _get_rules_killswitch_on(interface)
+def _get_rules_connected_to_vpn_server(interfaces: list):
+    return _get_rules_killswitch_on(interfaces)
 
 
-def _get_rules_allowlist_subnet_on(interface: list, subnets: list[str]):
+def _get_rules_allowlist_subnet_on(interfaces: list, subnets: list[str]):
     result = []
     # mangle table rules
-    result.extend(__rules_allowlist_subnet_chain_input(interface, subnets))
-    result.extend(__rules_connmark_chain_input(interface))
+    result.extend(__rules_allowlist_subnet_chain_input(interfaces, subnets))
+    result.extend(__rules_connmark_chain_prerouting(interfaces))
 
-    result.extend(__rules_allowlist_subnet_chain_output(interface, subnets))
-    result.extend(__rules_connmark_chain_output(interface))
+    result.extend(__rules_allowlist_subnet_chain_output(interfaces, subnets))
+    result.extend(__rules_connmark_chain_output(interfaces))
     # filter table rules
     result.extend(__rules_block_dns_port())
 
     return result
 
 
-def _get_rules_allowlist_port_on(interface: list, ports: list[Port]):
+def _get_rules_allowlist_port_on(interfaces: list, ports: list[Port]):
     ports_udp: list[Port]
     ports_tcp: list[Port]
     ports_udp, ports_tcp = _sort_ports_by_protocol(ports)
 
     result = []
     # mangle table rules
-    result.extend(__rules_allowlist_port_chain_input(interface, ports_udp, ports_tcp))
-    result.extend(__rules_connmark_chain_input(interface))
+    result.extend(__rules_allowlist_port_chain_input(interfaces, ports_udp, ports_tcp))
+    result.extend(__rules_connmark_chain_prerouting(interfaces))
 
     result.extend(__rules_allowlist_port_chain_output(ports_udp, ports_tcp))
 
-    result.extend(__rules_connmark_chain_output(interface))
+    result.extend(__rules_connmark_chain_output(interfaces))
     # filter table rules
     result.extend(__rules_block_dns_port())
 
     return result
 
 
-def _get_rules_allowlist_subnet_and_port_on(interface: list, subnets: list[str], ports: list[Port]):
+def _get_rules_allowlist_subnet_and_port_on(interfaces: list, subnets: list[str], ports: list[Port]):
     ports_udp, ports_tcp = _sort_ports_by_protocol(ports)
 
     result = []
     # mangle table rules
-    result.extend(__rules_allowlist_port_chain_input(interface, ports_udp, ports_tcp))
-    result.extend(__rules_allowlist_subnet_chain_input(interface, subnets))
-    result.extend(__rules_connmark_chain_input(interface))
+    result.extend(__rules_allowlist_port_chain_input(interfaces, ports_udp, ports_tcp))
+    result.extend(__rules_allowlist_subnet_chain_input(interfaces, subnets))
+    result.extend(__rules_connmark_chain_prerouting(interfaces))
 
     result.extend(__rules_allowlist_port_chain_output(ports_udp, ports_tcp))
 
-    result.extend(__rules_allowlist_subnet_chain_output(interface, subnets))
-    result.extend(__rules_connmark_chain_output(interface))
+    result.extend(__rules_allowlist_subnet_chain_output(interfaces, subnets))
+    result.extend(__rules_connmark_chain_output(interfaces))
     # filter table rules
     result.extend(__rules_block_dns_port())
 
@@ -314,7 +315,7 @@ def _get_all_interfaces() -> list:
 def _get_firewall_rules(ports: list[Port] | None = None, subnets: list[str] | None = None) -> dict:
     # Default route interface
     rules = []
-    categorized_rules = {"endpoints": []}
+    categorized_rules = {ENDPOINTS: []}
     interfaces = _get_all_interfaces()
 
     for interface in interfaces:
@@ -349,7 +350,7 @@ def _get_firewall_rules(ports: list[Port] | None = None, subnets: list[str] | No
                 interface_found = True
                 categorized_rules[interface].append(rule)
         if not interface_found:
-            categorized_rules["endpoints"].append(rule)
+            categorized_rules[ENDPOINTS].append(rule)
     return categorized_rules
 
 
@@ -388,7 +389,7 @@ def is_empty() -> bool:
 
 def _get_iptables_rules(interfaces: list) -> dict:
     print("Using iptables")
-    categorized_rules = {"endpoints": []}
+    categorized_rules = {ENDPOINTS: []}
     for interface in interfaces:
         categorized_rules[interface] = []
 
