@@ -75,7 +75,7 @@ func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error 
 
 	if s.consent == config.ConsentUndefined {
 		log.Println(internal.DebugPrefix, "enabling analytics")
-		if err := s.response(worker.SetSendEvents(true)); err != nil {
+		if err := s.response(s.mooseOptInFunc(true)); err != nil {
 			return fmt.Errorf("enabling essential analytics: %w", err)
 		}
 	}
@@ -122,7 +122,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 	defer s.mux.Unlock()
 
 	s.mooseConsentLevelFunc = moose.MooseNordvpnappSetConsentLevel
-	s.mooseOptInFunc = moose.MooseNordvpnappSetOptIn
+	s.mooseOptInFunc = worker.SetSendEvents
 
 	var cfg config.Config
 	if err := s.Config.Load(&cfg); err != nil {
