@@ -127,11 +127,11 @@ parts:
       - on arm64: ./bin/aarch64
     stage-packages:
       - wireguard-tools
-      - libxml2
       - e2fsprogs
       - dbus-x11
       - libnl-genl-3-200
       - libsqlite3-0
+      - xsltproc
     organize:
       nordvpn: bin/nordvpn
       nordvpnd: bin/nordvpnd
