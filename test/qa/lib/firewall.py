@@ -333,6 +333,10 @@ def _get_firewall_rules(ports: list[Port] | None = None, subnets: list[str] | No
     # Default route interface
     rules = []
     interfaces = _get_all_interfaces()
+
+    print("Default gateway:", interfaces)
+
+    interfaces.reverse()
     """
     Need reverse interfaces due to that
     Expected rules:
@@ -359,10 +363,6 @@ def _get_firewall_rules(ports: list[Port] | None = None, subnets: list[str] | No
     -A POSTROUTING -o eth1 -m comment --comment nordvpn -j DROP
     -A POSTROUTING -o eth0 -m comment --comment nordvpn -j DROP
     """
-    interfaces.reverse()
-
-    print("Default gateway:", interfaces)
-
     # Disconnected & Kill Switch ON
     if not daemon.is_connected() and daemon.is_killswitch_on():
         rules = _get_rules_killswitch_on(interfaces)
