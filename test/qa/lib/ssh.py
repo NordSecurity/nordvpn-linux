@@ -7,6 +7,7 @@ import paramiko
 import pytest
 
 import lib
+from . import logging
 
 Directory = namedtuple("Directory", "dir_path paths transfer_paths filenames filehashes")
 
@@ -27,6 +28,7 @@ class Ssh:
         self.client.connect(self.hostname, 22, username=self.username, password=self.password)
 
     def exec_command(self, command: str) -> str:
+        start_time = time.time()
         _, stdout, stderr = self.client.exec_command(command, timeout=16)
         try:
             output = stdout.read().decode()
@@ -35,6 +37,10 @@ class Ssh:
             stdout.close()
             stderr.close()
             raise RuntimeError("Socket timed out.") from err
+
+        end_time = time.time()
+        exec_diff = end_time - start_time
+        logging.log(f"[TEST_SUITE] SSH '{command}' took {exec_diff:.3f} seconds")
 
         if stdout.channel.recv_exit_status() != 0:
             msg = f'{output} {error}'
