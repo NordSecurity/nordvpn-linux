@@ -8,10 +8,12 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetRecentConnections_Filtering(t *testing.T) {
+	category.Set(t, category.Unit)
 	r := testRPCLocal(t)
 
 	// Enable virtual locations
@@ -53,6 +55,7 @@ func TestGetRecentConnections_Filtering(t *testing.T) {
 }
 
 func TestGetRecentConnections_Limit(t *testing.T) {
+	category.Set(t, category.Unit)
 	r := testRPCLocal(t)
 
 	r.recentVPNConnStore.Add(recents.Model{
