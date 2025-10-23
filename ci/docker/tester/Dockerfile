@@ -10,7 +10,7 @@ RUN apt-get update && \
         # linux app
         apt-utils curl git iputils-ping sudo kmod systemd \
         # preinstall deps required by nordvpn
-        libxml2 iproute2 iptables \
+        xsltproc iproute2 iptables \
         # install wireguard tools for tests
         wireguard-tools \
         # install python for tests
