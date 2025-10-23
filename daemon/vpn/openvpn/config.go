@@ -74,7 +74,7 @@ func generateConfigFile(protocol config.Protocol, serverIP netip.Addr, obfuscate
 
 	template, err := internal.FileRead(templatePath)
 	if err != nil {
-		return fmt.Errorf("reading ovpn template file")
+		return fmt.Errorf("reading ovpn template file: %w", err)
 	}
 
 	out, err := generateConfig(serverIP, identifier, template)
@@ -82,6 +82,7 @@ func generateConfigFile(protocol config.Protocol, serverIP netip.Addr, obfuscate
 		return fmt.Errorf("generating OpenVPN config: %w", err)
 	}
 
+	//TODO: LVPN-9393 to decide if this bit of configuration is needed at all
 	if err := addExtraParameters(out, serverIP, protocol); err != nil {
 		return fmt.Errorf("adding extra parameters to OpenVPN config: %w", err)
 	}
@@ -200,6 +201,8 @@ func addExtraParameters(data []byte, serverIP netip.Addr, protocol config.Protoc
 			return errors.New("unknown protocol")
 		}
 	}
+
+	//nolint:staticcheck
 	data = []byte(strings.Join(args, "\n"))
 	return nil
 }

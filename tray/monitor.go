@@ -439,11 +439,7 @@ func messageForDaemonError(err error) string {
 }
 
 func (ti *Instance) updateDaemonConnectionStatus(errorMessage string) bool {
-	daemonAvailable := false
-
-	if (errorMessage == "") || (errorMessage == cli.ErrUpdateAvailable.Error()) {
-		daemonAvailable = true
-	}
+	daemonAvailable := errorMessage == "" || errorMessage == cli.ErrUpdateAvailable.Error()
 
 	var notificationText string
 	ti.state.mu.Lock()

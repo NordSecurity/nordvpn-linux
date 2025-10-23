@@ -1,6 +1,7 @@
 package meshnet
 
 import (
+	"context"
 	"log"
 	"time"
 
@@ -45,7 +46,7 @@ func JobRefreshMeshMap(s *Server) func() error {
 func JobRefreshMeshnet(s *Server) func() error {
 	return func() error {
 		// ignore what is returned, try to do it here as light as possible
-		_, _ = s.RefreshMeshnet(nil, nil)
+		_, _ = s.RefreshMeshnet(context.Background(), nil)
 		return nil
 	}
 }

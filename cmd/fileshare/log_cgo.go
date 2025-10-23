@@ -28,6 +28,6 @@ func logSetup(f *os.File) {
 	// Ignore default printing of go stack trace in case of SIGABRT in prod builds which may be
 	// produced by Rust panics
 	if internal.IsProdEnv(Environment) {
-		signal.Notify(make(chan os.Signal), syscall.SIGABRT)
+		signal.Notify(make(chan os.Signal, 1), syscall.SIGABRT)
 	}
 }
