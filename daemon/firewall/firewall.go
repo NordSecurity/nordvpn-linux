@@ -5,9 +5,12 @@ package firewall
 
 import (
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/internal"
+	"golang.org/x/exp/slices"
 )
 
 // Firewall is responsible for correctly changing one firewall agent over another.
@@ -60,9 +63,17 @@ func (fw *Firewall) Add(rules []Rule) error {
 			}
 			fw.publisher.Publish(fmt.Sprintf("replacing existing rule %s", rule.Name))
 		}
+		// dont add if already added
+		alreadyAddedRules, err := fw.current.GetActiveRules()
+		if err != nil {
+			log.Printf("%v, unable to get already active rules: %v", internal.WarningPrefix, err)
+		}
 
-		if err := fw.current.Add(rule); err != nil {
-			return NewError(fmt.Errorf("adding %s: %w", rule.Name, err))
+		if !slices.Contains(alreadyAddedRules, rule.Name) &&
+			!slices.Contains(alreadyAddedRules, rule.SimplifiedName) {
+			if err := fw.current.Add(rule); err != nil {
+				return NewError(fmt.Errorf("adding %s: %w", rule.Name, err))
+			}
 		}
 
 		if err := fw.rules.Add(rule); err != nil {
