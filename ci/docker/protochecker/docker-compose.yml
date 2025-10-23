@@ -1,7 +1,17 @@
+# Variables for reusability
+x-common-variables: &common-variables
+  WORKSPACE_DIR: /app
+  GEN_STATUS_DIR: /app/gen_status
+  GUI_PB_DIR: /app/gui/lib/pb
+  GUI_PB_BACKUP_DIR: /app/gui/lib/pb.backup
+  DAEMON_PB_DIR: daemon/pb/
+
 services:
-  # Generates Go protobuf files for the daemon and tray app
+  # Generates Go protobuf files for the daemon
   app-protobuf-gen:
     image: ghcr.io/nordsecurity/nordvpn-linux/generator:1.4.2
+    environment:
+      <<: *common-variables
     volumes:
       - ../../..:/app
     working_dir: /app
@@ -12,8 +22,8 @@ services:
         trap "exit 0" TERM
         ci/generate_protobuf.sh
         echo "app-protobuf-gen script finished successfully."
-        mkdir -p /app/gen_status
-        touch /app/gen_status/app_done
+        mkdir -p $${GEN_STATUS_DIR}
+        touch $${GEN_STATUS_DIR}/app_done
         sleep infinity & wait
     healthcheck:
       test: ["CMD", "test", "-f", "/app/gen_status/app_done"]
@@ -25,6 +35,8 @@ services:
   # Note: The generation script removes gui/lib/pb, so we backup before generation
   gui-protobuf-gen:
     image: ghcr.io/nordsecurity/nordvpn-linux/protobuf_dart-3.8.1:1.0.1
+    environment:
+      <<: *common-variables
     volumes:
       - ../../..:/app
     working_dir: /app
@@ -33,13 +45,13 @@ services:
       - -c
       - |
         trap "exit 0" TERM
-        rm -f /app/gen_status/gui_done
+        rm -f $${GEN_STATUS_DIR}/gui_done
         # Backup existing files before generation (script removes the directory)
-        cp -r /app/gui/lib/pb /app/gui/lib/pb.backup 2>/dev/null || true
+        cp -r $${GUI_PB_DIR} $${GUI_PB_BACKUP_DIR} 2>/dev/null || true
         gui/scripts/generate_protobuf.sh
         echo "gui-protobuf-gen script finished successfully."
-        mkdir -p /app/gen_status
-        touch /app/gen_status/gui_done
+        mkdir -p $${GEN_STATUS_DIR}
+        touch $${GEN_STATUS_DIR}/gui_done
         sleep infinity & wait
     healthcheck:
       test: ["CMD", "test", "-f", "/app/gen_status/gui_done"]
@@ -52,6 +64,8 @@ services:
   protochecker:
     image: alpine/git
     entrypoint: ["/bin/sh", "-c"]
+    environment:
+      <<: *common-variables
     volumes:
       - ../../..:/app
     working_dir: /app
@@ -63,33 +77,33 @@ services:
     command:
       - |
         # Configure git to trust the workspace directory
-        git config --global --add safe.directory /app
+        git config --global --add safe.directory $${WORKSPACE_DIR}
 
         echo "=== Checking for protobuf file changes ==="
 
         # Check GUI protobuf files (compare backup with generated)
-        if [ -d /app/gui/lib/pb.backup ]; then
+        if [ -d "$${GUI_PB_BACKUP_DIR}" ]; then
           echo "Comparing GUI generated files with original committed files..."
-          DIFF_OUTPUT=$(diff -r /app/gui/lib/pb.backup /app/gui/lib/pb 2>&1 || true)
+          DIFF_OUTPUT=$(diff -r $${GUI_PB_BACKUP_DIR} $${GUI_PB_DIR} 2>&1 || true)
 
           if [ -n "$DIFF_OUTPUT" ]; then
             echo "ERROR: Generated GUI protobuf files differ from committed versions!"
             echo "$DIFF_OUTPUT" | grep "^Only in\|^Files.*differ" | head -20
             echo ""
             echo "To fix this, regenerate protobuf files locally and commit the changes."
-            rm -rf /app/gui/lib/pb.backup
+            rm -rf $${GUI_PB_BACKUP_DIR}
             exit 1
           fi
 
-          rm -rf /app/gui/lib/pb.backup
+          rm -rf $${GUI_PB_BACKUP_DIR}
           echo "✓ GUI protobuf files match"
         fi
 
         # Check daemon protobuf files (use git diff)
-        if ! git diff --quiet --exit-code daemon/pb/; then
+        if ! git diff --quiet --exit-code $${DAEMON_PB_DIR}; then
           echo "ERROR: Daemon protobuf files changed!"
           echo "Changed files:"
-          git diff --name-only daemon/pb/
+          git diff --name-only $${DAEMON_PB_DIR}
           echo ""
           echo "To fix this, regenerate protobuf files locally and commit the changes."
           exit 1
