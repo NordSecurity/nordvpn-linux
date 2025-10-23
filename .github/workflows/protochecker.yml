@@ -4,6 +4,8 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions: {}
+
 jobs:
   protochecker:
     runs-on: ubuntu-latest
