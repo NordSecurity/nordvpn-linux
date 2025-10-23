@@ -268,3 +268,29 @@ def test_route_traffic_to_peer_once_again_when_already_routing():
     ssh_client.exec_command("nordvpn disconnect")
 
 
+
+def test_enable_mesh():
+    t = sh_no_tty.ssh("-i", "/home/qa/id_ed25519", "-o", "StrictHostKeyChecking=no", "root@qa-peer", "time nordvpn set mesh on", _err_to_out=True)
+    logging.log("[TEST_SUITE] " + str(t))
+
+    t1 = sh_no_tty.ssh("-i", "/home/qa/id_ed25519", "-o", "StrictHostKeyChecking=no", "root@qa-peer", "time nordvpn set mesh off", _err_to_out=True)
+    logging.log("[TEST_SUITE] " + str(t1))
+
+    t3 = sh_no_tty.ssh("-i", "/home/qa/id_ed25519", "-o", "StrictHostKeyChecking=no", "root@qa-peer", "time nordvpn set mesh on", _err_to_out=True)
+    logging.log("[TEST_SUITE] " + str(t3))
+
+    t4 = sh_no_tty.ssh("-i", "/home/qa/id_ed25519", "-o", "StrictHostKeyChecking=no", "root@qa-peer", "time nordvpn mesh peer list", _err_to_out=True)
+    logging.log("[TEST_SUITE] " + str(t4))
+
+    sh_no_tty.nordvpn.set.mesh.on()
+    sh_no_tty.nordvpn.mesh.peer.refresh()
+    peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
+    local_hostname = peer_list.get_this_device().hostname
+    remote_hostname = peer_list.get_internal_peer().hostname
+    sh_no_tty.nordvpn.mesh.peer.routing.allow(remote_hostname)
+
+    t5 = sh_no_tty.ssh("-i", "/home/qa/id_ed25519", "-o", "StrictHostKeyChecking=no", "root@qa-peer", f"time nordvpn mesh peer refresh", _err_to_out=True)
+    logging.log("[TEST_SUITE] " + str(t5))
+
+    t6 = sh_no_tty.ssh("-i", "/home/qa/id_ed25519", "-o", "StrictHostKeyChecking=no", "root@qa-peer", f"time nordvpn mesh peer connect {local_hostname}; time nordvpn disconnect", _err_to_out=True)
+    logging.log("[TEST_SUITE] " + str(t6))
