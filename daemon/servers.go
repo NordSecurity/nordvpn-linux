@@ -571,7 +571,9 @@ func selectDedicatedIPServer(authChecker auth.Checker, servers core.Servers) (*c
 		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPServiceButNoServers)
 	}
 
+	// #nosec G404 - math/rand is acceptable for a random server selection here
 	service := dedicatedIPServices[rand.Intn(len(dedicatedIPServices))]
+	// #nosec G404
 	serverID := service.ServerIDs[rand.Intn(len(service.ServerIDs))]
 	server, err := getServerByID(servers, serverID)
 	if err != nil {

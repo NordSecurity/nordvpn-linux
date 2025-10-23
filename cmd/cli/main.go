@@ -48,7 +48,7 @@ func getNorduserManager() childprocess.ChildProcessManager {
 			os.Exit(int(childprocess.CodeFailedToEnable))
 		}
 
-		return process.NewNorduserGRPCProcessManager(uint32(uid))
+		return process.NewNorduserGRPCProcessManager(uint32(uid)) // #nosec G115
 	}
 
 	return childprocess.NoopChildProcessManager{}
@@ -126,7 +126,7 @@ func main() {
 
 	// nolint:errcheck // we want to suppress errors in the cli app, as starting norduser is not strictly related to the
 	// running command. For startup details norduser logs could be checked.
-	getNorduserManager().StartProcess()
+	_, _ = getNorduserManager().StartProcess()
 
 	if err := cmd.Run(args); err != nil {
 		color.Red(err.Error())

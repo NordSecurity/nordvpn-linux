@@ -27,7 +27,7 @@ func SetMTU(iface net.Interface, headerSize int) error {
 	if err != nil {
 		return err
 	}
-	req.SetUint32(uint32(mtu))
+	req.SetUint32(uint32(mtu)) // #nosec G115 - MTU is OS/hardware specific, however is rather safe to assume it fits into uint32 range
 
 	return unix.IoctlIfreq(fd, unix.SIOCSIFMTU, req)
 }

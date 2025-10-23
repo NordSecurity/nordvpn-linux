@@ -222,6 +222,7 @@ func waitForShutdown(stopChan <-chan norduser.StopRequest,
 		log.Println(internal.InfoPrefix, "Norduser daemon restarting")
 		execpath, err := os.Executable()
 		if err == nil {
+			// #nosec G204 - restart, reusing arguments is acceptable
 			err = syscall.Exec(execpath, os.Args, os.Environ())
 			if err != nil {
 				log.Println(internal.InfoPrefix, "Norduser daemon restart error:", err)
@@ -285,6 +286,7 @@ func startSnap() {
 		}
 	}()
 
+	// #nosec G115
 	processStatus := process.NewNorduserGRPCProcessManager(uint32(uid)).ProcessStatus()
 	if processStatus == childprocess.Running {
 		os.Exit(int(childprocess.CodeAlreadyRunning))
@@ -303,11 +305,13 @@ func startSnap() {
 	}
 	limitedListener := netutil.LimitListener(listener, 100)
 
+	// #nosec G115
 	fileshareManagementChan, fileshareShutdownChan := startFileshare(uint32(uid))
 
 	stopChan := make(chan norduser.StopRequest)
 	server := norduser.NewServer(fileshareManagementChan, stopChan)
 
+	// #nosec G115
 	grpcServer := grpc.NewServer(
 		grpc.Creds(internal.NewUnixSocketCredentials(internal.NewFileshareAuthenticator(uint32(uid)))))
 	pb.RegisterNorduserServer(grpcServer, server)
@@ -364,6 +368,7 @@ func start() {
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
+	// #nosec G115
 	fileshareManagementChan, fileshareShutdownChan := startFileshare(uint32(uid))
 
 	stopChan := make(chan norduser.StopRequest)

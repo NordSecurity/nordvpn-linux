@@ -129,7 +129,7 @@ func (getter *MachineID) generateID() (uuid.UUID, error) {
 	for _, pair := range generators {
 		if val, err := pair.generatorFn(); err == nil {
 			machineId = uuid.NewSHA1(machineId, val)
-			getter.usedInfoMask |= int16(pair.mask)
+			getter.usedInfoMask |= int16(pair.mask) // #nosec G115
 		}
 	}
 
@@ -162,7 +162,7 @@ func (getter *MachineID) calculateMachineID() (uuid.UUID, error) {
 
 			machineUUID, err := uuid.Parse(value)
 			if err == nil {
-				getter.usedInfoMask |= int16(pair.mask)
+				getter.usedInfoMask |= int16(pair.mask) // #nosec G115
 
 				return uuid.NewSHA1(machineUUID, []byte(hostname)), nil
 			} else {

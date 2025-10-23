@@ -46,6 +46,7 @@ func (n *NameServers) LookupIP(host string) ([]net.IP, error) {
 }
 
 func shuffleNameservers(nameservers []string) []string {
+	// #nosec G404 - Using math/rand for nameserver shuffling is acceptable
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	r.Shuffle(len(nameservers), func(i, j int) {

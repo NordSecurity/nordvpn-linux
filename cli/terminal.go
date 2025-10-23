@@ -236,6 +236,7 @@ func cliDimensions() (int, int, error) {
 	log.Println(internal.InfoPrefix, "failed to get windows size, try stty")
 
 	// if getting the window size from stdout fails, usually when piped, try to execute stty
+	// #nosec G204
 	cmd := exec.Command(internal.SttyExec, "size")
 	cmd.Stdin = os.Stdin
 

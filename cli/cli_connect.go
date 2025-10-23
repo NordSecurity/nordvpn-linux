@@ -77,7 +77,7 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 	go func(ch chan os.Signal) {
 		for range ch {
 			canceled = true
-			c.client.ConnectCancel(context.Background(), &pb.Empty{})
+			_, _ = c.client.ConnectCancel(context.Background(), &pb.Empty{})
 		}
 	}(ch)
 

@@ -72,10 +72,10 @@ func (j *monitorFileshareProcessJob) run() error {
 	}
 
 	if j.processChecker.isFileshareRunning() {
-		j.rulesController.PermitFileshare()
+		_ = j.rulesController.PermitFileshare()
 		j.isFileshareAllowed = true
 	} else {
-		j.rulesController.ForbidFileshare()
+		_ = j.rulesController.ForbidFileshare()
 		j.isFileshareAllowed = false
 	}
 

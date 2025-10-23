@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"net"
 	"sync"
 
@@ -268,11 +269,11 @@ func calculateRulePriority() (uint, error) {
 	for _, rule := range rules {
 		mainRule := netlink.NewRule()
 		mainRule.Table = unix.RT_TABLE_MAIN
-		allID[uint(rule.Priority)] = true
+		allID[uint(rule.Priority)] = true // #nosec G115
 		if isRuleSame(rule, *mainRule) {
 			continue
 		}
-		prioID = uint(rule.Priority)
+		prioID = uint(rule.Priority) // #nosec G115
 	}
 
 	if prioID == 0 {
@@ -313,7 +314,7 @@ func calculateCustomTableID() (uint, error) {
 	allID := make(map[uint]bool)
 
 	for _, route := range routeList {
-		allID[uint(route.Table)] = true
+		allID[uint(route.Table)] = true // #nosec G115
 	}
 
 	// find table id not in use by others
@@ -341,6 +342,14 @@ func addFwmarkRule(
 
 	if fwMarkVal == 0 {
 		return fmt.Errorf("fwmark cannot be 0")
+	}
+
+	if prioID > math.MaxInt {
+		return fmt.Errorf("priority id %d exceeds max int value", prioID)
+	}
+
+	if tbldID > math.MaxInt {
+		return fmt.Errorf("tbldID id %d exceeds max int value", tbldID)
 	}
 
 	if err := netlink.RuleAdd(fwmarkRule(int(prioID), fwMarkVal, int(tbldID))); err != nil {
@@ -371,7 +380,7 @@ func findFwmarkRule(fwMarkVal uint32) (uint, error) {
 	for _, rule := range rules {
 		// Ignore table value
 		if isRuleSame(rule, *fwmarkRule(-1, fwMarkVal, rule.Table)) {
-			return uint(rule.Table), nil
+			return uint(rule.Table), nil // #nosec G115
 		}
 	}
 
@@ -391,6 +400,9 @@ func removeFwmarkRule(fwMarkVal uint32) error {
 
 // addAllowSubnetRule create/add allow subnet rule
 func addAllowSubnetRule(prioID uint, subnet *net.IPNet) error {
+	if prioID > math.MaxInt {
+		return fmt.Errorf("priority id %d exceeds max int value", prioID)
+	}
 	if err := netlink.RuleAdd(allowSubnetRule(int(prioID), subnet)); err != nil {
 		return fmt.Errorf("adding allow subnet rule: %w", err)
 	}
@@ -399,6 +411,9 @@ func addAllowSubnetRule(prioID uint, subnet *net.IPNet) error {
 
 // removeAllowSubnetRule remove allow subnet rule
 func removeAllowSubnetRule(prioID uint, subnet *net.IPNet) error {
+	if prioID > math.MaxInt {
+		return fmt.Errorf("priority id %d exceeds max int value", prioID)
+	}
 	if subnet == nil {
 		return fmt.Errorf("subnet cannot be nil")
 	}
@@ -410,6 +425,9 @@ func removeAllowSubnetRule(prioID uint, subnet *net.IPNet) error {
 
 // addSuppressRule create/add suppress rule
 func addSuppressRule(prioID uint, skipGroup bool) error {
+	if prioID > math.MaxInt {
+		return fmt.Errorf("priority id %d exceeds max int value", prioID)
+	}
 	// CMD: ip rule add priority $PRIOID from all lookup main suppress_prefixlength 0 suppress_ifgroup 444
 	if err := netlink.RuleAdd(suppressRule(int(prioID), skipGroup)); err != nil {
 		return fmt.Errorf("adding suppress rule: %s", err)

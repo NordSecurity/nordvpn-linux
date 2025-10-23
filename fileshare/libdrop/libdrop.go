@@ -424,6 +424,8 @@ func statusFromOutgoingPath(outPath *norddrop.OutgoingPath) pb.Status {
 		case norddrop.OutgoingPathStateKindStarted:
 			status = pb.Status_ONGOING
 		case norddrop.OutgoingPathStateKindFailed:
+			//no gosec violation, values from the enumeration are within the int32 max range
+			// #nosec G115
 			status = pb.Status(lastState.Status)
 		case norddrop.OutgoingPathStateKindCompleted:
 			status = pb.Status_SUCCESS
@@ -494,6 +496,8 @@ func statusFromIncomingPath(inPath *norddrop.IncomingPath) pb.Status {
 		case norddrop.IncomingPathStateKindCompleted:
 			status = pb.Status_SUCCESS
 		case norddrop.IncomingPathStateKindFailed:
+			//no gosec violation, values from the enumeration are within the int32 max range
+			// #nosec G115
 			status = pb.Status(lastState.Status)
 		case norddrop.IncomingPathStateKindPaused:
 			status = pb.Status_PAUSED
@@ -585,6 +589,8 @@ func determineTransferStatusAndAdjustFileStatuses(libdropTransfer *norddrop.Tran
 				}
 			}
 		case norddrop.TransferStateKindFailed:
+			//no gosec violation, values from the enumeration are within the int32 max range
+			// #nosec G115
 			status = pb.Status(lastState.Status)
 		}
 	} else {

@@ -80,7 +80,7 @@ func toNetlinkRoute(route routes.Route) netlink.Route {
 		LinkIndex: route.Device.Index,
 		Gw:        route.Gateway.AsSlice(),
 		Dst:       prefixToIPNet(route.Subnet),
-		Table:     int(tableID),
+		Table:     int(tableID), // #nosec G115
 		Scope:     scope,
 	}
 }

@@ -146,6 +146,7 @@ func (ipt *IPTables) Flush() error {
 	var finalErr error = nil
 	for _, table := range usedIPTables {
 		for _, iptableVersion := range ipt.supportedIPTables {
+			// #nosec G204
 			out, err := exec.Command(iptableVersion, "-t", table, "-S").CombinedOutput()
 			if err != nil {
 				return fmt.Errorf("listing rules: %w", err)
@@ -153,6 +154,7 @@ func (ipt *IPTables) Flush() error {
 
 			rules := string(out)
 			for _, rule := range generateFlushRules(rules, table) {
+				// #nosec G204
 				err := exec.Command(iptableVersion, strings.Split(rule, " ")...).Run()
 				if err != nil {
 					log.Printf("%s failed to delete rule %s: %s", internal.ErrorPrefix, rule, err)

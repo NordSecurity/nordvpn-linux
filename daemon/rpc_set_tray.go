@@ -52,6 +52,7 @@ func (r *RPC) SetTray(ctx context.Context, in *pb.SetTrayRequest) (*pb.Payload, 
 		}
 	}
 
+	// #nosec G115
 	if err := r.norduser.Restart(uint32(in.GetUid())); err != nil {
 		log.Println(internal.ErrorPrefix, "Cannot restart norduserd", err)
 	}

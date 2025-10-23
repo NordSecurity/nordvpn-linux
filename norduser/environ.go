@@ -30,6 +30,7 @@ func findVariable(name string, environment string) string {
 
 func findEnvVariableForPID(pid uint32, name string) (string, error) {
 	path := fmt.Sprintf("/proc/%d/environ", pid)
+	// #nosec G304 - reading proc info here is safe
 	environment, err := os.ReadFile(path)
 	if err != nil {
 		return "", fmt.Errorf("reading file: %w", err)

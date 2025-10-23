@@ -68,7 +68,7 @@ func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBaseP
 
 	defer func() {
 		if err != nil {
-			internal.CleanupTmpFiles(targetPath, tmpExt)
+			_ = internal.CleanupTmpFiles(targetPath, tmpExt)
 		}
 	}()
 

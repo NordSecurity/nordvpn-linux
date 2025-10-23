@@ -10,7 +10,7 @@ func uint64ToHumanBytes(bytes uint64) string {
 		return fmt.Sprintf("%d B", bytes)
 	}
 
-	base := uint(bits.Len64(bytes) / 10)
+	base := uint(bits.Len64(bytes) / 10) // #nosec G115
 	val := float64(bytes) / float64(uint64(1<<(base*10)))
 
 	return fmt.Sprintf("%.2f %ciB", val, " KMGTPE"[base])

@@ -36,6 +36,7 @@ func RetryWithBackoff(
 	cfg BackoffConfig,
 	op func(ctx context.Context) error,
 ) error {
+	// #nosec G404 - math/rand is acceptable for an exponential backoff impl here
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	retryDelay := cfg.InitialDelay
