@@ -15,16 +15,40 @@ jobs:
 
       - name: Set up Docker
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+        with:
+          driver-opts: |
+            image=moby/buildkit:v0.17.3
+            network=host
+
+      - name: Cache Docker layers
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Prepare directories
+        run: |
+          sudo rm -rf gen_status || true
+          # Backup GUI protobuf files before removal
+          if [ -d gui/lib/pb ]; then
+            cp -r gui/lib/pb gui/lib/pb.backup
+            echo "Backed up GUI protobuf files to gui/lib/pb.backup"
+          fi
+          # Remove the directory so containers can regenerate
+          sudo rm -rf gui/lib/pb || true
+          mkdir -p gen_status gui/lib
+          sudo chmod 777 . gui/lib gen_status || true
 
       - name: Run protochecker
         run: |
           docker compose -f ci/docker/protochecker/docker-compose.yml up \
-           --build \
-           --exit-code-from protochecker
+            --exit-code-from protochecker
 
       - name: Clean up containers
         if: always()
         run: |
           docker compose -f ci/docker/protochecker/docker-compose.yml down \
-          --volumes \
-          --remove-orphans
+            --volumes \
+            --remove-orphans

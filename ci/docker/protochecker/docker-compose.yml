@@ -1,51 +1,76 @@
-volumes:
-  generated-repo:
-
+# Variables for reusability
+x-common-variables: &common-variables
+  WORKSPACE_DIR: /app
+  GEN_STATUS_DIR: /app/gen_status
+  GUI_PB_DIR: /app/gui/lib/pb
+  GUI_PB_BACKUP_DIR: /app/gui/lib/pb.backup
+  DAEMON_PB_DIR: daemon/pb/
 
 services:
-  setup:
-    build:
-      context: .
-      dockerfile: Dockerfile.setup
-    image: protochecker-setup
-    volumes:
-      - ../../..:/src:ro
-      - generated-repo:/repo
-    environment:
-      - USERID=${UID:-1000}
-      - GID=${GID:-1000}
-
+  # Generates Go protobuf files for the daemon
   app-protobuf-gen:
     image: ghcr.io/nordsecurity/nordvpn-linux/generator:1.4.2
-    command: "ci/generate_protobuf.sh"
-    depends_on:
-      setup:
-        condition: service_completed_successfully
+    environment:
+      <<: *common-variables
     volumes:
-      - generated-repo:/work
-    working_dir: /work
-    user: "${UID:-1000}:${GID:-1000}"
+      - ../../..:/app
+    working_dir: /app
+    command:
+      - sh
+      - -c
+      - |
+        trap "exit 0" TERM
+        ci/generate_protobuf.sh
+        echo "app-protobuf-gen script finished successfully."
+        mkdir -p $${GEN_STATUS_DIR}
+        touch $${GEN_STATUS_DIR}/app_done
+        sleep infinity & wait
+    healthcheck:
+      test: [ "CMD", "test", "-f", "/app/gen_status/app_done" ]
+      interval: 5s
+      retries: 6
+      start_period: 30s
 
+  # Generates Dart protobuf files for the GUI
+  # Note: The generation script removes gui/lib/pb, so we backup before generation
   gui-protobuf-gen:
     image: ghcr.io/nordsecurity/nordvpn-linux/protobuf_dart-3.8.1:1.0.1
-    command: "gui/scripts/generate_protobuf.sh"
-    depends_on:
-      setup:
-        condition: service_completed_successfully
+    environment:
+      <<: *common-variables
     volumes:
-      - generated-repo:/code/app
-    working_dir: /code/app
-    user: "${UID:-1000}:${GID:-1000}"
+      - ../../..:/app
+    working_dir: /app
+    command:
+      - sh
+      - -c
+      - |
+        trap "exit 0" TERM
+        rm -f $${GEN_STATUS_DIR}/gui_done
+        # GitHub Actions already backed up and removed the directory
+        gui/scripts/generate_protobuf.sh
+        echo "gui-protobuf-gen script finished successfully."
+        mkdir -p $${GEN_STATUS_DIR}
+        touch $${GEN_STATUS_DIR}/gui_done
+        sleep infinity & wait
+    healthcheck:
+      test: [ "CMD", "test", "-f", "/app/gen_status/gui_done" ]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
 
+  # Verifies that generated protobuf files match committed versions
   protochecker:
-    image: alpine/git
-    command: [ "diff", "--name-only", "--exit-code" ]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      <<: *common-variables
+    volumes:
+      - ../../..:/app
+    working_dir: /app
     depends_on:
       app-protobuf-gen:
-        condition: service_completed_successfully
+        condition: service_healthy
       gui-protobuf-gen:
-        condition: service_completed_successfully
-    volumes:
-      - generated-repo:/git
-    working_dir: /git
-    user: "${UID:-1000}:${GID:-1000}"
+        condition: service_healthy
