@@ -53,9 +53,10 @@ func (ti *Instance) handleConnectionStatusState(st *pb.AppState_ConnectionStatus
 func (ti *Instance) handleLoginEventState(st *pb.AppState_LoginEvent) bool {
 	changed := ti.updateLoginStatus()
 
-	// we also care about account information when user logs in, so update it as well
+	// update all relevant information for a signed in user including account status, settings and
+	// available servers
 	if st.LoginEvent.GetType() == pb.LoginEventType_LOGIN {
-		changed = ti.updateAccountInfo() || changed
+		changed = ti.update() || changed
 	}
 
 	return changed
