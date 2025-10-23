@@ -19,7 +19,29 @@ import 'config/protocol.pbenum.dart' as $0;
 import 'config/technology.pbenum.dart' as $1;
 import 'set.pbenum.dart';
 
+export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
+export 'set.pbenum.dart';
+
+class SetAutoconnectRequest extends $pb.GeneratedMessage {
+  factory SetAutoconnectRequest({
+    $core.bool? enabled,
+    $core.String? serverTag,
+    $core.String? serverGroup,
+  }) {
+    final result = create();
+    if (enabled != null) result.enabled = enabled;
+    if (serverTag != null) result.serverTag = serverTag;
+    if (serverGroup != null) result.serverGroup = serverGroup;
+    return result;
+  }
+
+  SetAutoconnectRequest._();
+
+  factory SetAutoconnectRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory SetAutoconnectRequest.fromJson($core.String json,
           [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
       create()..mergeFromJson(json, registry);
 
