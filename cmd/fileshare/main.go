@@ -69,11 +69,14 @@ func main() {
 	}
 
 	processStatus := fileshare_process.NewFileshareGRPCProcessManager().ProcessStatus()
-	if processStatus == childprocess.Running {
+	switch processStatus {
+	case childprocess.Running:
 		os.Exit(int(childprocess.CodeAlreadyRunning))
-	} else if processStatus == childprocess.RunningForOtherUser {
+	case childprocess.RunningForOtherUser:
 		log.Println("Cannot start fileshare daemon, it is already running for another user.")
 		os.Exit(int(childprocess.CodeAlreadyRunningForOtherUser))
+	case childprocess.NotRunning:
+		// Continue with normal startup
 	}
 
 	eventsDBPath := filepath.Join(internal.DatFilesPath, "moose.db")
@@ -113,6 +116,7 @@ func main() {
 		}
 	}()
 
+	//nolint:staticcheck
 	grpcConn, err := grpc.Dial(
 		daemonURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),

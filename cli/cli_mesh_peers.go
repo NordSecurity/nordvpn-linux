@@ -280,7 +280,8 @@ func (c *cmd) MeshPeerDenyRouting(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	resp, err := c.meshClient.DenyRouting(
+	//TODO - LVPN-9412: reavaulate error handling
+	resp, _ := c.meshClient.DenyRouting(
 		context.Background(),
 		&pb.UpdatePeerRequest{
 			Identifier: peer.Identifier,
@@ -306,7 +307,7 @@ func (c *cmd) MeshPeerAllowIncoming(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	resp, err := c.meshClient.AllowIncoming(
+	resp, _ := c.meshClient.AllowIncoming(
 		context.Background(),
 		&pb.UpdatePeerRequest{
 			Identifier: peer.Identifier,
@@ -332,7 +333,7 @@ func (c *cmd) MeshPeerDenyIncoming(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	resp, err := c.meshClient.DenyIncoming(
+	resp, _ := c.meshClient.DenyIncoming(
 		context.Background(),
 		&pb.UpdatePeerRequest{
 			Identifier: peer.Identifier,
@@ -357,7 +358,7 @@ func (c *cmd) MeshPeerAllowLocalNetwork(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	resp, err := c.meshClient.AllowLocalNetwork(
+	resp, _ := c.meshClient.AllowLocalNetwork(
 		context.Background(),
 		&pb.UpdatePeerRequest{
 			Identifier: peer.Identifier,
@@ -382,7 +383,7 @@ func (c *cmd) MeshPeerDenyLocalNetwork(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	resp, err := c.meshClient.DenyLocalNetwork(
+	resp, _ := c.meshClient.DenyLocalNetwork(
 		context.Background(),
 		&pb.UpdatePeerRequest{
 			Identifier: peer.Identifier,
@@ -1276,7 +1277,7 @@ func connectErrorCodeToError(
 ) (error, bool) {
 	switch code {
 	case pb.ConnectErrorCode_ALREADY_CONNECTED:
-		return fmt.Errorf(
+		return errors.New(
 			MsgMeshnetPeerAlreadyConnected,
 		), false
 	case pb.ConnectErrorCode_PEER_DOES_NOT_ALLOW_ROUTING:
@@ -1290,7 +1291,7 @@ func connectErrorCodeToError(
 			identifier,
 		), false
 	case pb.ConnectErrorCode_ALREADY_CONNECTING:
-		return fmt.Errorf(MsgMeshnetPeerAlreadyConnecting), true
+		return errors.New(MsgMeshnetPeerAlreadyConnecting), true
 	case pb.ConnectErrorCode_CANCELED:
 		return fmt.Errorf(MsgMeshnetPeerConnectCancel, identifier), true
 	default:
@@ -1341,7 +1342,7 @@ func getChangeNicknameResponseToError(code pb.ChangeNicknameErrorCode, nickname 
 			return fmt.Errorf(MsgMeshnetSetSameNickname, nickname)
 		}
 	case pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS:
-		return fmt.Errorf(MsgMeshnetNicknameIsDomainName)
+		return errors.New(MsgMeshnetNicknameIsDomainName)
 	case pb.ChangeNicknameErrorCode_RATE_LIMIT_REACH:
 		return errors.New(MsgMeshnetRateLimitReach)
 	case pb.ChangeNicknameErrorCode_NICKNAME_TOO_LONG:

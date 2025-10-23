@@ -9,10 +9,10 @@ import (
 var timespanRegexp = regexp.MustCompile(`-?\d+\s*[A-Za-z]*\s*`)
 
 func parseTimespan(ts string) (int, int, int, int, error) {
-	var years int = 0
-	var months int = 0
-	var days int = 0
-	var seconds int = 0
+	var years = 0
+	var months = 0
+	var days = 0
+	var seconds = 0
 	matches := timespanRegexp.FindAllString(ts, -1)
 
 	if matches == nil {
