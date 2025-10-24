@@ -1,6 +1,7 @@
 import hashlib
 import subprocess
 import uuid
+import os
 
 import pytest
 
@@ -18,12 +19,15 @@ RC_REMOTE_MESSAGES = [
 RC_LOCAL_MESSAGES = [
     f"[Info] feature [meshnet] config loaded from: {LOCAL_CACHE_DIR}",
     f"[Info] feature [libtelio] config loaded from: {LOCAL_CACHE_DIR}",
+    f"[Info] feature [libvinis] config loaded from: {LOCAL_CACHE_DIR}",
     f"[Info] feature [nordvpn] config loaded from: {LOCAL_CACHE_DIR}",
 ]
 
 RC_USE_LOCAL_CONFIG_MESSAGE = ["[Info] Ignoring remote config, using only local"]
 
-RC_INITIAL_RUN_MESSAGES = RC_REMOTE_MESSAGES + RC_LOCAL_MESSAGES
+RC_INITIAL_RUN_MESSAGES = RC_LOCAL_MESSAGES
+if os.getenv("RC_FILES") is None:
+    RC_INITIAL_RUN_MESSAGES = RC_REMOTE_MESSAGES + RC_LOCAL_MESSAGES
 
 
 @pytest.fixture

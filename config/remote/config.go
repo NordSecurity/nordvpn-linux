@@ -144,7 +144,7 @@ func (f *Feature) load(sourcePath string, fr fileReader, jv validator) error {
 		return NewLoadError(LoadErrorOther, fmt.Errorf("accessing source path: %w", err))
 	}
 	if !validDir {
-		return NewLoadError(LoadErrorOther, fmt.Errorf("config source path is not valid"))
+		return NewLoadError(LoadErrorOther, fmt.Errorf("config source path is not valid: %v", sourcePath))
 	}
 
 	mainJsonHashStr, err := fr.readFile(f.HashFilePath(sourcePath))
