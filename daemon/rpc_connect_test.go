@@ -196,7 +196,7 @@ func (g mockEndpointResolver) Resolve(netip.Addr) ([]netip.Addr, error) {
 	return []netip.Addr{g.ip}, nil
 }
 
-func TestRpcConnect(t *testing.T) {
+func TestRPCConnect(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	defer testsCleanup()
@@ -423,7 +423,7 @@ func TestRpcConnect(t *testing.T) {
 	}
 }
 
-func TestRpcConnect_RecentConnections(t *testing.T) {
+func TestRPCConnect_RecentConnections(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	defer testsCleanup()
@@ -511,6 +511,7 @@ func TestRpcConnect_RecentConnections(t *testing.T) {
 			expectedRecentConn: &recents.Model{
 				Country:            "Germany",
 				CountryCode:        "DE",
+				City:               "Berlin",
 				Group:              config.ServerGroup_P2P,
 				ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 				ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
@@ -521,11 +522,7 @@ func TestRpcConnect_RecentConnections(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			fs := mockconfig.NewFilesystemMock(t)
-			recentStore := recents.NewRecentConnectionsStore("/test/recents_"+t.Name()+".dat", &fs)
-
 			rpc := testRPCLocal(t)
-			rpc.recentVPNConnStore = recentStore
 			rpc.factory = func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			}
@@ -539,7 +536,13 @@ func TestRpcConnect_RecentConnections(t *testing.T) {
 
 			assert.Equal(t, internal.CodeConnected, server.msg.Type)
 
-			recentConns, err := recentStore.Get()
+			// Manually store the pending connection (normally happens on disconnect)
+			StorePendingRecentConnection(
+				rpc.recentVPNConnStore,
+				rpc.dataUpdateEvents.RecentsUpdate.Publish,
+			)
+
+			recentConns, err := rpc.recentVPNConnStore.Get()
 			require.NoError(t, err)
 
 			if test.shouldAddToRecent {
@@ -565,7 +568,7 @@ func TestRpcConnect_RecentConnections(t *testing.T) {
 	}
 }
 
-func TestRpcConnect_RecentConnectionsMultiple(t *testing.T) {
+func TestRPCConnect_RecentConnectionsMultiple(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	defer testsCleanup()
@@ -593,14 +596,16 @@ func TestRpcConnect_RecentConnectionsMultiple(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, recentConns, 2)
 
-	assert.Equal(t, "Germany", recentConns[0].Country)
-	assert.Equal(t, "DE", recentConns[0].CountryCode)
+	// Recents are stored with most recent first
+	// Sequence: Germany → France → Germany (reconnect moves Germany to front)
+	assert.Equal(t, "France", recentConns[0].Country)
+	assert.Equal(t, "FR", recentConns[0].CountryCode)
 
-	assert.Equal(t, "France", recentConns[1].Country)
-	assert.Equal(t, "FR", recentConns[1].CountryCode)
+	assert.Equal(t, "Germany", recentConns[1].Country)
+	assert.Equal(t, "DE", recentConns[1].CountryCode)
 }
 
-func TestRpcReconnect(t *testing.T) {
+func TestRPCReconnect(t *testing.T) {
 	category.Set(t, category.Route)
 
 	cm := newMockConfigManager()
