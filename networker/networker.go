@@ -65,6 +65,8 @@ const (
 	meshnetFirewallRuleComment = "nordvpn-meshnet"
 	denyPrivateDNSRule         = "deny-private-dns"
 	allowFileshareRule         = "-allow-fileshare-rule-"
+	dropIpv4Rule			   = "drop-IPv4"
+	dropIpv6Rule			   = "drop-IPv6"
 )
 
 // Networker configures networking for connections.
@@ -553,14 +555,14 @@ func (netw *Combined) blockTraffic() error {
 	// block PREROUTING & POSTROUTING
 	return netw.fw.Add([]firewall.Rule{
 		{
-			Name:       "drop-IPv4",
+			Name:       dropIpv4Rule,
 			Direction:  firewall.TwoWay,
 			Interfaces: ifaces,
 			Allow:      false,
 			Physical:   true,
 		},
 		{
-			Name:       "drop-IPv6",
+			Name:       dropIpv6Rule,
 			Direction:  firewall.TwoWay,
 			Interfaces: ifaces,
 			Ipv6Only:   true,
@@ -571,7 +573,7 @@ func (netw *Combined) blockTraffic() error {
 }
 
 func (netw *Combined) unblockTraffic() error {
-	return netw.fw.Delete([]string{"drop-IPv4", "drop-IPv6"})
+	return netw.fw.Delete([]string{dropIpv4Rule, dropIpv6Rule})
 }
 
 func (netw *Combined) resetAllowlist() error {

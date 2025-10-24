@@ -15,7 +15,7 @@ from lib import (
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
 PROJECT_ROOT = os.environ['WORKDIR']
-DEB_PATH = glob.glob(f'{PROJECT_ROOT}/dist/app/deb/*amd64.deb')[0]
+DEB_PATH = glob.glob(f'{PROJECT_ROOT}/dist/app/deb/nordvpn_*amd64.deb')[0]
 MSG_KILLSWITCH_ON = "Kill Switch has been successfully set to 'enabled'."
 MSG_KILLSWITCH_OFF = "Kill Switch has been successfully set to 'disabled'."
 
