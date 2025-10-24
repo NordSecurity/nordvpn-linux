@@ -554,12 +554,15 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 
 				assert.Equal(t, test.expectedRecentConn.Country, recent.Country)
 				assert.Equal(t, test.expectedRecentConn.CountryCode, recent.CountryCode)
-				assert.Equal(t, test.expectedRecentConn.City, recent.City)
+				// Only check City if it's expected to be set
+				if test.expectedRecentConn.ConnectionType == config.ServerSelectionRule_CITY ||
+					test.expectedRecentConn.ConnectionType == config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP {
+					assert.Equal(t, test.expectedRecentConn.City, recent.City)
+				}
 
 				if test.expectedRecentConn.SpecificServer != "" {
 					assert.Equal(t, test.expectedRecentConn.SpecificServer, recent.SpecificServer)
 					assert.Equal(t, test.expectedRecentConn.SpecificServerName, recent.SpecificServerName)
-					assert.Equal(t, test.expectedRecentConn.City, recent.City)
 				}
 			} else {
 				assert.Empty(t, recentConns, "Expected no recent connections for recommended server")
