@@ -40,6 +40,7 @@ message Settings {
   bool virtualLocation = 16;
   bool postquantum_vpn = 17;
   UserSpecificSettings user_settings = 18;
+  bool arp_ignore = 19;
 }
 
 message UserSpecificSettings {

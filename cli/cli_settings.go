@@ -69,6 +69,7 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	if settings.Technology == config.Technology_NORDLYNX {
 		fmt.Printf("Post-quantum VPN: %+v\n", nstrings.GetBoolLabel(settings.PostquantumVpn))
 	}
+	fmt.Printf("ARP Ignore: %+v\n", nstrings.GetBoolLabel(settings.ArpIgnore))
 
 	displayAllowlist(settings.Allowlist)
 	return nil

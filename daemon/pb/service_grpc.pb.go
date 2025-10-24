@@ -57,6 +57,7 @@ const (
 	Daemon_SettingsTechnologies_FullMethodName    = "/pb.Daemon/SettingsTechnologies"
 	Daemon_GetFeatureToggles_FullMethodName       = "/pb.Daemon/GetFeatureToggles"
 	Daemon_SetAllowlist_FullMethodName            = "/pb.Daemon/SetAllowlist"
+	Daemon_SetARPIgnore_FullMethodName            = "/pb.Daemon/SetARPIgnore"
 	Daemon_UnsetAllowlist_FullMethodName          = "/pb.Daemon/UnsetAllowlist"
 	Daemon_UnsetAllAllowlist_FullMethodName       = "/pb.Daemon/UnsetAllAllowlist"
 	Daemon_SetAnalytics_FullMethodName            = "/pb.Daemon/SetAnalytics"
@@ -118,6 +119,7 @@ type DaemonClient interface {
 	GetFeatureToggles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*FeatureToggles, error)
 	// ==================== Allowlist Management ====================
 	SetAllowlist(ctx context.Context, in *SetAllowlistRequest, opts ...grpc.CallOption) (*Payload, error)
+	SetARPIgnore(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	UnsetAllowlist(ctx context.Context, in *SetAllowlistRequest, opts ...grpc.CallOption) (*Payload, error)
 	UnsetAllAllowlist(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
 	// ==================== Privacy & Security ====================
@@ -535,6 +537,16 @@ func (c *daemonClient) SetAllowlist(ctx context.Context, in *SetAllowlistRequest
 	return out, nil
 }
 
+func (c *daemonClient) SetARPIgnore(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, Daemon_SetARPIgnore_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *daemonClient) UnsetAllowlist(ctx context.Context, in *SetAllowlistRequest, opts ...grpc.CallOption) (*Payload, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Payload)
@@ -666,6 +678,7 @@ type DaemonServer interface {
 	GetFeatureToggles(context.Context, *Empty) (*FeatureToggles, error)
 	// ==================== Allowlist Management ====================
 	SetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error)
+	SetARPIgnore(context.Context, *SetGenericRequest) (*Payload, error)
 	UnsetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error)
 	UnsetAllAllowlist(context.Context, *Empty) (*Payload, error)
 	// ==================== Privacy & Security ====================
@@ -798,6 +811,9 @@ func (UnimplementedDaemonServer) GetFeatureToggles(context.Context, *Empty) (*Fe
 }
 func (UnimplementedDaemonServer) SetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetAllowlist not implemented")
+}
+func (UnimplementedDaemonServer) SetARPIgnore(context.Context, *SetGenericRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetARPIgnore not implemented")
 }
 func (UnimplementedDaemonServer) UnsetAllowlist(context.Context, *SetAllowlistRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnsetAllowlist not implemented")
@@ -1511,6 +1527,24 @@ func _Daemon_SetAllowlist_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Daemon_SetARPIgnore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetGenericRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).SetARPIgnore(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_SetARPIgnore_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).SetARPIgnore(ctx, req.(*SetGenericRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Daemon_UnsetAllowlist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetAllowlistRequest)
 	if err := dec(in); err != nil {
@@ -1780,6 +1814,10 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetAllowlist",
 			Handler:    _Daemon_SetAllowlist_Handler,
+		},
+		{
+			MethodName: "SetARPIgnore",
+			Handler:    _Daemon_SetARPIgnore_Handler,
 		},
 		{
 			MethodName: "UnsetAllowlist",

@@ -84,6 +84,7 @@ service Daemon {
 
   // ==================== Allowlist Management ====================
   rpc SetAllowlist(SetAllowlistRequest) returns (Payload);
+  rpc SetARPIgnore(SetGenericRequest) returns (Payload);
   rpc UnsetAllowlist(SetAllowlistRequest) returns (Payload);
   rpc UnsetAllAllowlist(Empty) returns (Payload);
 

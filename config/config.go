@@ -54,6 +54,7 @@ type Config struct {
 	RCLastUpdate    time.Time           `json:"rc_last_update,omitempty"`
 	// Indicates whether the virtual servers are used. True by default
 	VirtualLocation TrueField `json:"virtual_location,omitempty"`
+	ARPIgnore       TrueField `json:"arp_ignore,omitempty"`
 }
 
 // withLoginData makes a copy of current configuration
