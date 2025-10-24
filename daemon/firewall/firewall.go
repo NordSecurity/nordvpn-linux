@@ -49,6 +49,10 @@ func NewFirewall(noop, working Agent, publisher events.Publisher[string], enable
 func (fw *Firewall) Add(rules []Rule) error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
+	alreadyAddedRules, err := fw.current.GetActiveRules()
+		if err != nil {
+			log.Printf("%v, unable to get already active rules: %v", internal.WarningPrefix, err)
+		}
 	for _, rule := range rules {
 		fw.publisher.Publish(fmt.Sprintf("adding rule %s", rule.Name))
 		if rule.Name == "" {
@@ -64,11 +68,6 @@ func (fw *Firewall) Add(rules []Rule) error {
 			fw.publisher.Publish(fmt.Sprintf("replacing existing rule %s", rule.Name))
 		}
 		// dont add if already added
-		alreadyAddedRules, err := fw.current.GetActiveRules()
-		if err != nil {
-			log.Printf("%v, unable to get already active rules: %v", internal.WarningPrefix, err)
-		}
-
 		if !slices.Contains(alreadyAddedRules, rule.Name) &&
 			!slices.Contains(alreadyAddedRules, rule.SimplifiedName) {
 			if err := fw.current.Add(rule); err != nil {

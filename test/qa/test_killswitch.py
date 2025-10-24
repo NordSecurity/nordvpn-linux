@@ -15,7 +15,7 @@ from lib import (
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
 PROJECT_ROOT = os.environ['WORKDIR']
-DEB_PATH = glob.glob(f'{PROJECT_ROOT}/dist/app/deb/*amd64.deb')[0]
+DEB_PATH = glob.glob(f'{PROJECT_ROOT}/dist/app/deb/nordvpn_*amd64.deb')[0]
 MSG_KILLSWITCH_ON = "Kill Switch has been successfully set to 'enabled'."
 MSG_KILLSWITCH_OFF = "Kill Switch has been successfully set to 'disabled'."
 
@@ -257,3 +257,5 @@ def test_killswitch_on_after_update():
     assert daemon.is_killswitch_on()
     sh.nordvpn.set.killswitch.off()
     assert network.is_available()
+    # Restore to normal if more tests are run afterwards
+    sh.sudo.mv("/usr/bin/pso", "/usr/bin/ps")

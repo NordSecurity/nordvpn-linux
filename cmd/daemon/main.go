@@ -738,7 +738,6 @@ func main() {
 
 	// Graceful stop
 
-	// internal.WaitSignal()
 	signals := internal.GetSignalChan()
 	sig := <-signals
 	log.Println(internal.InfoPrefix, "Received signal:", sig)
