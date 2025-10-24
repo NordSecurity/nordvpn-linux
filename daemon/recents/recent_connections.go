@@ -24,7 +24,6 @@ type RecentConnectionsStore struct {
 	fsHandle          config.FilesystemHandle
 	mu                sync.Mutex
 	pendingConnection Model
-	// onDisconnectFunc  func(events.DataDisconnect) error
 }
 
 // NewRecentConnectionsStore creates a recent VPN connection store
