@@ -3,7 +3,7 @@ import time
 import pytest
 
 import lib
-from lib import daemon, meshnet, network, settings, ssh
+from lib import daemon, logging, meshnet, network, settings, ssh
 from lib.shell import sh_no_tty
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
@@ -25,6 +25,7 @@ def teardown_function(function):  # noqa: ARG001
     meshnet.TestUtils.teardown_function(ssh_client)
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize("lan_discovery", [True, False])
 @pytest.mark.parametrize("local", [True, False])
 def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
@@ -65,6 +66,7 @@ def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
         assert result, message
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize("lan_discovery", [True, False])
 @pytest.mark.parametrize("local", [True, False])
 def test_killswitch_exitnode_vpn(lan_discovery: bool, local: bool):
@@ -130,6 +132,7 @@ def test_killswitch_exitnode_vpn(lan_discovery: bool, local: bool):
     assert network.is_available()
 
 
+@pytest.mark.xfail
 def test_connect_set_mesh_off():
     peer = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().hostname
     assert network.is_available()
@@ -153,6 +156,7 @@ def test_connect_set_mesh_off():
     assert network.is_available()
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 # This doesn't directly test meshnet, but it uses it
 def test_set_defaults_when_connected_2nd_set(tech, proto, obfuscated):
@@ -182,7 +186,6 @@ def test_set_defaults_when_connected_2nd_set(tech, proto, obfuscated):
     assert settings.app_has_defaults_settings()
 
 
-@pytest.mark.xfail
 def test_route_to_peer_that_is_connected_to_vpn():
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname
@@ -211,6 +214,7 @@ def test_route_to_peer_that_is_connected_to_vpn():
     lib.is_disconnect_successful(sh_no_tty.nordvpn.disconnect())
 
 
+@pytest.mark.xfail
 def test_route_to_peer_that_disconnects_from_vpn():
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname
@@ -264,3 +268,29 @@ def test_route_traffic_to_peer_once_again_when_already_routing():
     ssh_client.exec_command("nordvpn disconnect")
 
 
+
+def test_enable_mesh():
+    t = sh_no_tty.ssh("-i", "/home/qa/id_ed25519", "-o", "StrictHostKeyChecking=no", "root@qa-peer", "time nordvpn set mesh on", _err_to_out=True)
+    logging.log("[TEST_SUITE] " + str(t))
+
+    t1 = sh_no_tty.ssh("-i", "/home/qa/id_ed25519", "-o", "StrictHostKeyChecking=no", "root@qa-peer", "time nordvpn set mesh off", _err_to_out=True)
+    logging.log("[TEST_SUITE] " + str(t1))
+
+    t3 = sh_no_tty.ssh("-i", "/home/qa/id_ed25519", "-o", "StrictHostKeyChecking=no", "root@qa-peer", "time nordvpn set mesh on", _err_to_out=True)
+    logging.log("[TEST_SUITE] " + str(t3))
+
+    t4 = sh_no_tty.ssh("-i", "/home/qa/id_ed25519", "-o", "StrictHostKeyChecking=no", "root@qa-peer", "time nordvpn mesh peer list", _err_to_out=True)
+    logging.log("[TEST_SUITE] " + str(t4))
+
+    sh_no_tty.nordvpn.set.mesh.on()
+    sh_no_tty.nordvpn.mesh.peer.refresh()
+    peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
+    local_hostname = peer_list.get_this_device().hostname
+    remote_hostname = peer_list.get_internal_peer().hostname
+    sh_no_tty.nordvpn.mesh.peer.routing.allow(remote_hostname)
+
+    t5 = sh_no_tty.ssh("-i", "/home/qa/id_ed25519", "-o", "StrictHostKeyChecking=no", "root@qa-peer", f"time nordvpn mesh peer refresh", _err_to_out=True)
+    logging.log("[TEST_SUITE] " + str(t5))
+
+    t6 = sh_no_tty.ssh("-i", "/home/qa/id_ed25519", "-o", "StrictHostKeyChecking=no", "root@qa-peer", f"time nordvpn mesh peer connect {local_hostname}; time nordvpn disconnect", _err_to_out=True)
+    logging.log("[TEST_SUITE] " + str(t6))

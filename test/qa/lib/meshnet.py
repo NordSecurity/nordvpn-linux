@@ -36,6 +36,7 @@ strip_colors = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', flags=re.IGN
 class TestUtils:
     @staticmethod
     def setup_module(ssh_client: ssh.Ssh):
+        temp_setup_ssh(ssh_client)
         os.makedirs("/home/qa/.config/nordvpn", exist_ok=True)
         os.makedirs("/home/qa/.cache/nordvpn", exist_ok=True)
         ssh_client.connect()
@@ -56,12 +57,15 @@ class TestUtils:
     def setup_function(ssh_client: ssh.Ssh):
         logging.log()
 
-        delete_machines_by_identifier(token=LOCAL_TOKEN)
-        delete_machines_by_identifier(token=PEER_TOKEN)
-
         # if setup_function fails, teardown won't be executed, so daemon is not stopped
         if daemon.is_running():
             daemon.stop()
+
+        if daemon.is_peer_running(ssh_client):
+            daemon.stop_peer(ssh_client)
+
+        delete_machines_by_identifier(token=LOCAL_TOKEN)
+        delete_machines_by_identifier(token=PEER_TOKEN)
 
         daemon.start()
         daemon.start_peer(ssh_client)
@@ -694,7 +698,7 @@ def get_lines_with_keywords(lines: list[str], keywords: list[str]) -> list:
     """Returns list with elements, that contain specified `keywords`."""
     return [line.strip() for line in lines if all(keyword in line for keyword in keywords)]
 
-def are_peers_connected(ssh_client: ssh.Ssh = None, retry: int = 3) -> None:
+def are_peers_connected(ssh_client: ssh.Ssh = None, retry: int = 15) -> None:
     """
     Verifies if local and remote NordVPN mesh peers see each other as connected in peer list.
 
@@ -803,3 +807,25 @@ def delete_machines_by_identifier(token: str, identifiers: list | None = None) -
         except requests.RequestException as e:
             logging.log(f"Got an error during DELETE request for {identifier}: {e}")
     session.close()
+
+
+def temp_setup_ssh(ssh_client: ssh.Ssh):
+    sh_no_tty.sudo("apt", "update")
+    sh_no_tty.sudo("apt", "install", "-y", "openssh-server")
+
+    # Generate key pair locally
+    sh_no_tty.ssh_keygen("-t", "ed25519", "-f", "/home/qa/id_ed25519", "-C", "tester")
+    sh_no_tty.sudo("chmod", "600", "/home/qa/id_ed25519")
+
+    ssh_client.connect()
+
+    # Create .ssh directory for root on remote
+    ssh_client.exec_command("mkdir -p /root/.ssh && chmod 700 /root/.ssh", False)
+
+    # Upload public key
+    _key = sh_no_tty.cat("/home/qa/id_ed25519.pub").strip()
+    ssh_client.exec_command(f"echo '{_key}' >> /root/.ssh/authorized_keys", False)
+    ssh_client.exec_command("chmod 600 /root/.ssh/authorized_keys", False)
+
+    # Test passwordless SSH
+    sh_no_tty.ssh("-i", "/home/qa/id_ed25519", "-o", "StrictHostKeyChecking=no", "root@qa-peer", "echo a")

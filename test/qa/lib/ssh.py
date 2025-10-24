@@ -7,6 +7,8 @@ import paramiko
 import pytest
 
 import lib
+from lib.shell import sh_no_tty
+from . import logging
 
 Directory = namedtuple("Directory", "dir_path paths transfer_paths filenames filehashes")
 
@@ -26,19 +28,30 @@ class Ssh:
     def connect(self):
         self.client.connect(self.hostname, 22, username=self.username, password=self.password)
 
-    def exec_command(self, command: str) -> str:
-        _, stdout, stderr = self.client.exec_command(command, timeout=10)
-        try:
-            output = stdout.read().decode()
-            error = stderr.read().decode()
-        except TimeoutError as err:
-            stdout.close()
-            stderr.close()
-            raise RuntimeError("Socket timed out.") from err
+    def exec_command(self, command: str, direct_ssh: bool = False) -> str:
+        start_time = time.time()
 
-        if stdout.channel.recv_exit_status() != 0:
-            msg = f'{output} {error}'
-            raise RuntimeError(msg)
+        if direct_ssh:
+            output = sh_no_tty.ssh("-i", "/home/qa/id_ed25519", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=10", "root@qa-peer", command)
+
+        if not direct_ssh:
+            _, stdout, stderr = self.client.exec_command(command, timeout=16)
+            try:
+                output = stdout.read().decode()
+                error = stderr.read().decode()
+            except TimeoutError as err:
+                stdout.close()
+                stderr.close()
+                raise RuntimeError("Socket timed out.") from err
+
+        end_time = time.time()
+        exec_diff = end_time - start_time
+        logging.log(f"[TEST_SUITE] SSH '{command}' took {exec_diff:.3f} seconds")
+
+        if not direct_ssh:
+            if stdout.channel.recv_exit_status() != 0:
+                msg = f'{output} {error}'
+                raise RuntimeError(msg)
         return output
 
     # Sends file in the provided path to the ssh peer
