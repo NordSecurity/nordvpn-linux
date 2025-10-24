@@ -243,16 +243,18 @@ func TestRecentConnectionsStore_Find_AllFieldsMustMatch(t *testing.T) {
 		SpecificServerName: "US #1234",
 		SpecificServer:     "us1234",
 		ConnectionType:     config.ServerSelectionRule_CITY,
+		IsVirtual:          false,
 	}
 
 	variations := []Model{
-		{Country: "Canada", City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType},
-		{Country: base.Country, City: "Los Angeles", Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType},
-		{Country: base.Country, City: base.City, Group: config.ServerGroup_DOUBLE_VPN, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType},
-		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: "CA", SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType},
-		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: "us #5678", SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType},
-		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: "us5678", ConnectionType: base.ConnectionType},
-		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: config.ServerSelectionRule_COUNTRY},
+		{Country: "Canada", City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType, IsVirtual: base.IsVirtual},
+		{Country: base.Country, City: "Los Angeles", Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType, IsVirtual: base.IsVirtual},
+		{Country: base.Country, City: base.City, Group: config.ServerGroup_DOUBLE_VPN, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType, IsVirtual: base.IsVirtual},
+		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: "CA", SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType, IsVirtual: base.IsVirtual},
+		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: "us #5678", SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType, IsVirtual: base.IsVirtual},
+		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: "us5678", ConnectionType: base.ConnectionType, IsVirtual: base.IsVirtual},
+		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: config.ServerSelectionRule_COUNTRY, IsVirtual: base.IsVirtual},
+		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType, IsVirtual: !base.IsVirtual},
 	}
 
 	err := store.Add(base)

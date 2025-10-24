@@ -14,4 +14,5 @@ type Model struct {
 	SpecificServer     string                     `json:"specific-server"`
 	ConnectionType     config.ServerSelectionRule `json:"connection-type"`
 	ServerTechnologies []core.ServerTechnology    `json:"server-technologies"`
+	IsVirtual          bool                       `json:"is-virtual"`
 }

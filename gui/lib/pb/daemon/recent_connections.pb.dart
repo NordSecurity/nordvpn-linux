@@ -84,6 +84,7 @@ class RecentConnectionModel extends $pb.GeneratedMessage {
     $core.String? specificServerName,
     $core.String? specificServer,
     $1.ServerSelectionRule? connectionType,
+    $core.bool? isVirtual,
   }) {
     final result = create();
     if (country != null) result.country = country;
@@ -94,6 +95,7 @@ class RecentConnectionModel extends $pb.GeneratedMessage {
       result.specificServerName = specificServerName;
     if (specificServer != null) result.specificServer = specificServer;
     if (connectionType != null) result.connectionType = connectionType;
+    if (isVirtual != null) result.isVirtual = isVirtual;
     return result;
   }
 
@@ -124,6 +126,7 @@ class RecentConnectionModel extends $pb.GeneratedMessage {
         defaultOrMaker: $1.ServerSelectionRule.NONE,
         valueOf: $1.ServerSelectionRule.valueOf,
         enumValues: $1.ServerSelectionRule.values)
+    ..aOB(8, _omitFieldNames ? '' : 'isVirtual')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -218,6 +221,16 @@ class RecentConnectionModel extends $pb.GeneratedMessage {
   $core.bool hasConnectionType() => $_has(6);
   @$pb.TagNumber(7)
   void clearConnectionType() => $_clearField(7);
+
+  /// whether the server is virtual
+  @$pb.TagNumber(8)
+  $core.bool get isVirtual => $_getBF(7);
+  @$pb.TagNumber(8)
+  set isVirtual($core.bool value) => $_setBool(7, value);
+  @$pb.TagNumber(8)
+  $core.bool hasIsVirtual() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearIsVirtual() => $_clearField(8);
 }
 
 class RecentConnectionsRequest extends $pb.GeneratedMessage {

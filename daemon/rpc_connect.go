@@ -368,6 +368,7 @@ func buildRecentConnectionModel(
 	recentModel := recents.Model{
 		ConnectionType:     event.TargetServerSelection,
 		ServerTechnologies: serverTechs,
+		IsVirtual:          event.IsVirtualLocation,
 	}
 
 	switch recentModel.ConnectionType {

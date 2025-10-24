@@ -344,6 +344,7 @@ final class MockDaemon extends DaemonServiceBase {
     // not used
     throw UnimplementedError();
   }
+
   @override
   Future<RecentConnectionsResponse> getRecentConnections(
     ServiceCall call,
