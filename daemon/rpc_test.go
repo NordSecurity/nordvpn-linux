@@ -196,6 +196,7 @@ func testsCleanup() {
 	internal.FileDelete(TestdataPath + TestCyberSecFile)
 	internal.FileDelete(TestdataPath + TestInsightsFile)
 	internal.FileDelete(TestdataPath + TestVersionFile)
+	internal.FileDelete(TestdataPath + TestRecentConnFile)
 }
 
 func waitPortForListener(port int, timeoutSec int) (net.Listener, error) {

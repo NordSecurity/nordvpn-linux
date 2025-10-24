@@ -33,6 +33,9 @@ message RecentConnectionModel {
 
   // Connection type enum
   ServerSelectionRule connection_type = 7;
+
+  // whether the server is virtual
+  bool is_virtual = 8;
 }
 
 message RecentConnectionsRequest {
