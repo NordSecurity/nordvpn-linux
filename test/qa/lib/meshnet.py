@@ -820,12 +820,12 @@ def temp_setup_ssh(ssh_client: ssh.Ssh):
     ssh_client.connect()
 
     # Create .ssh directory for root on remote
-    ssh_client.exec_command("mkdir -p /root/.ssh && chmod 700 /root/.ssh")
+    ssh_client.exec_command("mkdir -p /root/.ssh && chmod 700 /root/.ssh", False)
 
     # Upload public key
     _key = sh_no_tty.cat("/home/qa/id_ed25519.pub").strip()
-    ssh_client.exec_command(f"echo '{_key}' >> /root/.ssh/authorized_keys")
-    ssh_client.exec_command("chmod 600 /root/.ssh/authorized_keys")
+    ssh_client.exec_command(f"echo '{_key}' >> /root/.ssh/authorized_keys", False)
+    ssh_client.exec_command("chmod 600 /root/.ssh/authorized_keys", False)
 
     # Test passwordless SSH
     sh_no_tty.ssh("-i", "/home/qa/id_ed25519", "-o", "StrictHostKeyChecking=no", "root@qa-peer", "echo a")
