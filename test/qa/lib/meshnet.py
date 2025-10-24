@@ -36,6 +36,7 @@ strip_colors = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', flags=re.IGN
 class TestUtils:
     @staticmethod
     def setup_module(ssh_client: ssh.Ssh):
+        temp_setup_ssh(ssh_client)
         os.makedirs("/home/qa/.config/nordvpn", exist_ok=True)
         os.makedirs("/home/qa/.cache/nordvpn", exist_ok=True)
         ssh_client.connect()
@@ -806,3 +807,25 @@ def delete_machines_by_identifier(token: str, identifiers: list | None = None) -
         except requests.RequestException as e:
             logging.log(f"Got an error during DELETE request for {identifier}: {e}")
     session.close()
+
+
+def temp_setup_ssh(ssh_client: ssh.Ssh):
+    sh_no_tty.sudo("apt", "update")
+    sh_no_tty.sudo("apt", "install", "-y", "openssh-server")
+
+    # Generate key pair locally
+    sh_no_tty.ssh_keygen("-t", "ed25519", "-f", "/home/qa/id_ed25519", "-C", "tester")
+    sh_no_tty.sudo("chmod", "600", "/home/qa/id_ed25519")
+
+    ssh_client.connect()
+
+    # Create .ssh directory for root on remote
+    ssh_client.exec_command("mkdir -p /root/.ssh && chmod 700 /root/.ssh")
+
+    # Upload public key
+    _key = sh_no_tty.cat("/home/qa/id_ed25519.pub").strip()
+    ssh_client.exec_command(f"echo '{_key}' >> /root/.ssh/authorized_keys")
+    ssh_client.exec_command("chmod 600 /root/.ssh/authorized_keys")
+
+    # Test passwordless SSH
+    sh_no_tty.ssh("-i", "/home/qa/id_ed25519", "-o", "StrictHostKeyChecking=no", "root@qa-peer", "echo a")

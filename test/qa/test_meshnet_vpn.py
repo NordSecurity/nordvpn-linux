@@ -3,7 +3,7 @@ import time
 import pytest
 
 import lib
-from lib import daemon, meshnet, network, settings, ssh
+from lib import daemon, logging, meshnet, network, settings, ssh
 from lib.shell import sh_no_tty
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
