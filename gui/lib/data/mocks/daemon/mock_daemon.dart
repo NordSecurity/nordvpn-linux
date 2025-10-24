@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fixnum/fixnum.dart';
 import 'package:grpc/grpc.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_account_info.dart';
+import 'package:nordvpn/data/mocks/daemon/mock_recent_connections.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_servers_list.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_application_settings.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_vpn_status.dart';
@@ -28,6 +29,7 @@ import 'package:nordvpn/pb/daemon/settings.pb.dart';
 import 'package:nordvpn/pb/daemon/state.pb.dart';
 import 'package:nordvpn/pb/daemon/status.pb.dart';
 import 'package:nordvpn/pb/daemon/token.pb.dart';
+import 'package:nordvpn/pb/daemon/recent_connections.pb.dart';
 
 // The mocked implementation for the daemon. It is created by the GrpcServer.
 final class MockDaemon extends DaemonServiceBase {
@@ -36,12 +38,14 @@ final class MockDaemon extends DaemonServiceBase {
   late final MockServersList serversList;
   late final MockAccountInfo account;
   late final MockVpnStatus vpnStatus;
+  late final MockRecentConnections recentConnections;
 
   MockDaemon() {
     serversList = MockServersList(appStateStream);
     appSettings = MockApplicationSettings(appStateStream, serversList);
     account = MockAccountInfo(appStateStream, serversList);
     vpnStatus = MockVpnStatus(appStateStream, appSettings, serversList);
+    recentConnections = MockRecentConnections(serversList);
   }
 
   void dispose() {
@@ -344,11 +348,16 @@ final class MockDaemon extends DaemonServiceBase {
     // not used
     throw UnimplementedError();
   }
+
   @override
   Future<RecentConnectionsResponse> getRecentConnections(
     ServiceCall call,
     RecentConnectionsRequest request,
   ) {
-    throw UnimplementedError();
+    return Future.value(
+      RecentConnectionsResponse(
+        connections: recentConnections.getConnections(),
+      ),
+    );
   }
 }

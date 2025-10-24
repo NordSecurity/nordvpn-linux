@@ -2,7 +2,6 @@
 # Update this when flutter builder is updated or find a way to keep in sync
 FROM dart:3.8.1
 
-WORKDIR /code/app
 
 RUN apt-get update && \
     apt-get -y --no-install-recommends upgrade && \
@@ -29,5 +28,6 @@ RUN groupadd -g ${GROUP_ID} generator && useradd -l -m -u ${USER_ID} -g generato
 USER generator
 
 ENV PATH="${PATH}:/home/generator/.pub-cache/bin"
+WORKDIR /app
 
 RUN dart pub global activate protoc_plugin
