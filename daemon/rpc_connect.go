@@ -397,19 +397,21 @@ func buildRecentConnectionModel(
 		recentModel.Country = event.TargetServerCountry
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER:
-		// Needs server, country info
+		// Needs server, country, city info
 		recentModel.SpecificServer = extractSpecificServerName(event.TargetServerDomain)
 		recentModel.SpecificServerName = event.TargetServerName
 		recentModel.CountryCode = event.TargetServerCountryCode
 		recentModel.Country = event.TargetServerCountry
+		recentModel.City = event.TargetServerCity
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
-		// Needs server, group, country info
+		// Needs server, group, country, city info
 		recentModel.Group = parameters.Group
 		recentModel.SpecificServer = extractSpecificServerName(event.TargetServerDomain)
 		recentModel.SpecificServerName = event.TargetServerName
 		recentModel.CountryCode = event.TargetServerCountryCode
 		recentModel.Country = event.TargetServerCountry
+		recentModel.City = event.TargetServerCity
 
 	case config.ServerSelectionRule_NONE, config.ServerSelectionRule_RECOMMENDED:
 		return recents.Model{}, fmt.Errorf("unexpected connection type in recent connections: %d", recentModel.ConnectionType)
