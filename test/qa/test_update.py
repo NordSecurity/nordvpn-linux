@@ -11,7 +11,7 @@ from lib.shell import sh_no_tty
 from test_connect import connect_base_test, disconnect_base_test
 
 PROJECT_ROOT = os.environ['WORKDIR']
-DEB_PATH = glob.glob(f'{PROJECT_ROOT}/dist/app/deb/*amd64.deb')[0]
+DEB_PATH = glob.glob(f'{PROJECT_ROOT}/dist/app/deb/nordvpn_*amd64.deb')[0]
 
 class TestData:
     INVOLVES_MESHNET = None

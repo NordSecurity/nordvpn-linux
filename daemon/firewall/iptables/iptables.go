@@ -484,17 +484,19 @@ func (ipt *IPTables) GetActiveRules() ([]string, error) {
 				if len(line) == 0 {
 					continue
 				}
-				// check for comment name in rule
-				matches := re.FindAll(line, -1)
-				var stringMatches []string
-				for _, match := range matches {
-					stringMatches = append(stringMatches, string(match))
-				}
-				// first comment is the usual nordvpn, second is the name of the rule
-				// if there is only one, we skip as we don't have the rule name comment
-				if len(stringMatches) > 1 {
-					formattedRuleName := strings.Split(string(matches[1]), " ")[1]
-					rulesMap[formattedRuleName] = true
+				if strings.Contains(string(line), defaultComment){
+					// check for comment name in rule
+					matches := re.FindAll(line, -1)
+					var stringMatches []string
+					for _, match := range matches {
+						stringMatches = append(stringMatches, string(match))
+					}
+					// first comment is the usual nordvpn, second is the name of the rule
+					// if there is only one, we skip as we don't have the rule name comment
+					if len(stringMatches) > 1 {
+						formattedRuleName := strings.Split(string(matches[1]), " ")[1]
+						rulesMap[formattedRuleName] = true
+					}
 				}
 			}
 		}

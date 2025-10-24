@@ -68,8 +68,6 @@ upgrade-stop() {
   [ "$RETVAL" = 2 ] && return 2
   return "$RETVAL"
 }
-# curl -s https://repo.nordvpn.com/gpg/nordvpn_public.asc | tee /etc/apt/trusted.gpg.d/nordvpn_public.asc > /dev/null
-# echo "deb https://repo.nordvpn.com/deb/nordvpn/debian stable main" | tee /etc/apt/sources.list.d/nordvpn.list
 #
 # Function that restarts the daemon
 #
