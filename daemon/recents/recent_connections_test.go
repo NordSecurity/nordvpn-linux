@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	mockconfig "github.com/NordSecurity/nordvpn-linux/test/mock/config"
 	"github.com/stretchr/testify/assert"
@@ -543,4 +544,242 @@ func TestRecentConnectionsStore_Load_Error(t *testing.T) {
 	assert.Contains(t, err.Error(), "reading recent connections store")
 	assert.Contains(t, err.Error(), "file not found")
 	assert.Nil(t, connections)
+}
+
+func TestRecentConnectionsStore_AddPending_StoresPendingConnection(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	model := Model{
+		Country:        "Germany",
+		City:           "Berlin",
+		ConnectionType: config.ServerSelectionRule_CITY,
+		CountryCode:    "DE",
+	}
+
+	store.AddPending(model)
+
+	// Verify the pending connection is stored
+	err, retrieved := store.GetPending()
+	require.NoError(t, err)
+	assert.Equal(t, model, retrieved)
+}
+
+func TestRecentConnectionsStore_AddPending_OverwritesPreviousPending(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	model1 := Model{
+		Country:        "France",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+	model2 := Model{
+		Country:        "Spain",
+		City:           "Madrid",
+		ConnectionType: config.ServerSelectionRule_CITY,
+	}
+
+	store.AddPending(model1)
+	store.AddPending(model2)
+
+	err, retrieved := store.GetPending()
+	require.NoError(t, err)
+	assert.Equal(t, model2, retrieved)
+	assert.NotEqual(t, model1, retrieved)
+}
+
+func TestRecentConnectionsStore_AddPending_ConcurrentAccess(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	var wg sync.WaitGroup
+	const goroutines = 50
+
+	for i := 0; i < goroutines; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			model := Model{
+				Country:        fmt.Sprintf("Country%d", idx),
+				ConnectionType: config.ServerSelectionRule_COUNTRY,
+			}
+			store.AddPending(model)
+		}(i)
+	}
+
+	wg.Wait()
+
+	// Should have one pending connection (the last one written)
+	err, retrieved := store.GetPending()
+	require.NoError(t, err)
+	assert.NotEmpty(t, retrieved.Country)
+}
+
+func TestRecentConnectionsStore_GetPending_ReturnsAndClearsPending(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	model := Model{
+		Country:        "Italy",
+		City:           "Rome",
+		ConnectionType: config.ServerSelectionRule_CITY,
+		CountryCode:    "IT",
+	}
+
+	store.AddPending(model)
+
+	// First GetPending should return the model
+	err, retrieved := store.GetPending()
+	require.NoError(t, err)
+	assert.Equal(t, model, retrieved)
+
+	// Second GetPending should return error (no pending connection)
+	err, empty := store.GetPending()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "no pending recent connection")
+	assert.True(t, empty.IsEmpty())
+}
+
+func TestRecentConnectionsStore_GetPending_NoPendingConnection(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	err, model := store.GetPending()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "no pending recent connection")
+	assert.True(t, model.IsEmpty())
+}
+
+func TestRecentConnectionsStore_GetPending_ReturnsClone(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	original := Model{
+		Country:            "Netherlands",
+		City:               "Amsterdam",
+		ConnectionType:     config.ServerSelectionRule_CITY,
+		CountryCode:        "NL",
+		ServerTechnologies: []core.ServerTechnology{1, 2, 3},
+	}
+
+	store.AddPending(original)
+
+	err, retrieved := store.GetPending()
+	require.NoError(t, err)
+
+	// Modify the retrieved model
+	retrieved.Country = "Belgium"
+	retrieved.ServerTechnologies[0] = 999
+
+	// Add the same pending again and verify it wasn't affected
+	store.AddPending(original)
+	err, retrieved2 := store.GetPending()
+	require.NoError(t, err)
+	assert.Equal(t, original, retrieved2)
+	assert.NotEqual(t, retrieved, retrieved2)
+}
+
+func TestRecentConnectionsStore_GetPending_ConcurrentAccess(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	model := Model{
+		Country:        "Sweden",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+
+	store.AddPending(model)
+
+	var wg sync.WaitGroup
+	successCount := 0
+	errorCount := 0
+	var mu sync.Mutex
+
+	const goroutines = 10
+
+	for i := 0; i < goroutines; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err, _ := store.GetPending()
+			mu.Lock()
+			defer mu.Unlock()
+			if err == nil {
+				successCount++
+			} else {
+				errorCount++
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	// Only one goroutine should succeed in getting the pending connection
+	assert.Equal(t, 1, successCount, "Only one GetPending should succeed")
+	assert.Equal(t, goroutines-1, errorCount, "Other GetPending calls should fail")
+}
+
+func TestRecentConnectionsStore_AddPending_EmptyModel(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	emptyModel := Model{}
+	store.AddPending(emptyModel)
+
+	err, retrieved := store.GetPending()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "no pending recent connection")
+	assert.True(t, retrieved.IsEmpty())
+}
+
+func TestRecentConnectionsStore_PendingWorkflow_FullCycle(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	// Step 1: Add a pending connection
+	model := Model{
+		Country:        "Poland",
+		City:           "Warsaw",
+		ConnectionType: config.ServerSelectionRule_CITY,
+		CountryCode:    "PL",
+	}
+	store.AddPending(model)
+
+	// Step 2: Retrieve and clear the pending connection
+	err, retrieved := store.GetPending()
+	require.NoError(t, err)
+	assert.Equal(t, model, retrieved)
+
+	// Step 3: Add the retrieved connection to the store
+	err = store.Add(retrieved)
+	require.NoError(t, err)
+
+	// Step 4: Verify the connection is in the store
+	connections, err := store.Get()
+	require.NoError(t, err)
+	require.Len(t, connections, 1)
+	assert.Equal(t, model, connections[0])
+
+	// Step 5: Verify no pending connection remains
+	err, empty := store.GetPending()
+	assert.Error(t, err)
+	assert.True(t, empty.IsEmpty())
 }
