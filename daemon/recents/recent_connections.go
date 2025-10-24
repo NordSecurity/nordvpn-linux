@@ -20,9 +20,11 @@ const (
 )
 
 type RecentConnectionsStore struct {
-	path     string
-	fsHandle config.FilesystemHandle
-	mu       sync.Mutex
+	path              string
+	fsHandle          config.FilesystemHandle
+	mu                sync.Mutex
+	pendingConnection Model
+	// onDisconnectFunc  func(events.DataDisconnect) error
 }
 
 // NewRecentConnectionsStore creates a recent VPN connection store
@@ -111,6 +113,28 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 	}
 
 	return nil
+}
+
+// AddPending stores a recent connection model as pending to be added later
+func (r *RecentConnectionsStore) AddPending(model Model) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.pendingConnection = model
+}
+
+// GetPending retrieves and clears the pending recent connection model
+func (r *RecentConnectionsStore) GetPending() (error, Model) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.pendingConnection.IsEmpty() {
+		return fmt.Errorf("no pending recent connection"), Model{}
+	}
+
+	connection := r.pendingConnection.Clone()
+	r.pendingConnection = Model{}
+
+	return nil, connection
 }
 
 // Clean removes all stored connection information
