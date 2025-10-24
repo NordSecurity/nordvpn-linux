@@ -11,7 +11,7 @@ from lib.shell import sh_no_tty
 
 
 from .log_reader import LogReader
-from ..constants import (
+from constants import (
     DEB,
     NORDVPND_CONFIG_FILE,
     NORDVPND_SERVICE_NAME,
