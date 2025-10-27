@@ -330,6 +330,13 @@ class DaemonClient extends $grpc.Client {
     return $createUnaryCall(_$setAllowlist, request, options: options);
   }
 
+  $grpc.ResponseFuture<$0.Payload> setARPIgnore(
+    $14.SetGenericRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$setARPIgnore, request, options: options);
+  }
+
   $grpc.ResponseFuture<$0.Payload> unsetAllowlist(
     $14.SetAllowlistRequest request, {
     $grpc.CallOptions? options,
@@ -564,6 +571,11 @@ class DaemonClient extends $grpc.Client {
       $grpc.ClientMethod<$14.SetAllowlistRequest, $0.Payload>(
           '/pb.Daemon/SetAllowlist',
           ($14.SetAllowlistRequest value) => value.writeToBuffer(),
+          $0.Payload.fromBuffer);
+  static final _$setARPIgnore =
+      $grpc.ClientMethod<$14.SetGenericRequest, $0.Payload>(
+          '/pb.Daemon/SetARPIgnore',
+          ($14.SetGenericRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
   static final _$unsetAllowlist =
       $grpc.ClientMethod<$14.SetAllowlistRequest, $0.Payload>(
@@ -892,6 +904,14 @@ abstract class DaemonServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) =>
             $14.SetAllowlistRequest.fromBuffer(value),
+        ($0.Payload value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$14.SetGenericRequest, $0.Payload>(
+        'SetARPIgnore',
+        setARPIgnore_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) =>
+            $14.SetGenericRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$14.SetAllowlistRequest, $0.Payload>(
         'UnsetAllowlist',
@@ -1257,6 +1277,14 @@ abstract class DaemonServiceBase extends $grpc.Service {
 
   $async.Future<$0.Payload> setAllowlist(
       $grpc.ServiceCall call, $14.SetAllowlistRequest request);
+
+  $async.Future<$0.Payload> setARPIgnore_Pre($grpc.ServiceCall $call,
+      $async.Future<$14.SetGenericRequest> $request) async {
+    return setARPIgnore($call, await $request);
+  }
+
+  $async.Future<$0.Payload> setARPIgnore(
+      $grpc.ServiceCall call, $14.SetGenericRequest request);
 
   $async.Future<$0.Payload> unsetAllowlist_Pre($grpc.ServiceCall $call,
       $async.Future<$14.SetAllowlistRequest> $request) async {
