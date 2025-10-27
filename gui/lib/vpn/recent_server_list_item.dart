@@ -42,38 +42,35 @@ class RecentServerListItem extends StatelessWidget {
       contentPadding: EdgeInsets.symmetric(
         horizontal: context.serversListTheme.flagSize,
       ),
-      leading: ServerItemImage(
-        image: image,
-      ),
+      leading: ServerItemImage(image: image),
       title: title,
       onTap: enabled ? () => onTap(connectArgs) : null,
     );
   }
 
   Widget _buildItemImage(bool isSpecialtyServer) {
-    if (isSpecialtyServer) {
-      final serverType = toServerType(model.group);
-      if (serverType != null) {
-        return imagesManager.forSpecialtyServer(serverType);
-      }
-      return const Icon(Icons.history);
-    }
-
-    Country? country;
     final isCountry = model.countryCode.isNotEmpty && model.country.isNotEmpty;
+
+    // early return for specialty server without country
+    if (isSpecialtyServer && !isCountry) {
+      final serverType = toServerType(model.group);
+      return serverType != null
+          ? imagesManager.forSpecialtyServer(serverType)
+          : const Icon(Icons.history);
+    }
+
+    // handle country-based images (works for both specialty and standard servers)
     if (isCountry) {
-      country = Country(code: model.countryCode, name: model.country);
+      return imagesManager.forCountry(
+        Country(code: model.countryCode, name: model.country),
+      );
     }
 
-    if (country != null) {
-      return imagesManager.forCountry(country);
-    }
-
+    // fallback: try to get specialty server image or default icon
     final serverType = toServerType(model.group);
-    if (serverType != null) {
-      return imagesManager.forSpecialtyServer(serverType);
-    }
-    return const Icon(Icons.history);
+    return serverType != null
+        ? imagesManager.forSpecialtyServer(serverType)
+        : const Icon(Icons.history);
   }
 
   Widget _buildItemTitle(BuildContext context, bool isSpecialtyServer) {
@@ -81,12 +78,17 @@ class RecentServerListItem extends StatelessWidget {
     if (isSpecialtyServer) {
       var specialtyTitle = Text(model.specialtyServer, style: appTheme.body);
       if (model.country.isNotEmpty) {
+        var subtitle = model.country;
+        if (model.city.isNotEmpty) {
+          subtitle += " - ${model.city}";
+        }
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             specialtyTitle,
-            Text(model.country, style: appTheme.caption),
+            Text(subtitle, style: appTheme.caption),
           ],
         );
       }
@@ -112,6 +114,27 @@ class RecentServerListItem extends StatelessWidget {
         children: [
           Text(model.country, style: appTheme.body),
           Text(model.city, style: appTheme.caption),
+        ],
+      );
+    }
+
+    final isSpecificServer =
+        model.specificServerName.isNotEmpty &&
+        model.connectionType == ServerSelectionRule.SPECIFIC_SERVER;
+
+    if (isSpecificServer) {
+      // match only server id
+      final serverIdMatch = RegExp(
+        r'^[A-Za-z\s-]+(#\d+)$',
+      ).firstMatch(model.specificServerName);
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(model.country, style: appTheme.body),
+          if (serverIdMatch != null)
+            Text(serverIdMatch[1]!, style: appTheme.caption),
         ],
       );
     }
