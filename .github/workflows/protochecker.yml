@@ -1,0 +1,30 @@
+name: Protobuf Checker
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  protochecker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+
+      - name: Run protochecker
+        run: |
+          docker compose -f ci/docker/protochecker/docker-compose.yml up \
+           --build \
+           --exit-code-from protochecker
+
+      - name: Clean up containers
+        if: always()
+        run: |
+          docker compose -f ci/docker/protochecker/docker-compose.yml down \
+          --volumes \
+          --remove-orphans

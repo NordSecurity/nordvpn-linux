@@ -135,6 +135,62 @@ class AccountModification extends $pb.GeneratedMessage {
   void clearExpiresAt() => $_clearField(1);
 }
 
+class VersionHealthStatus extends $pb.GeneratedMessage {
+  factory VersionHealthStatus({
+    $core.int? statusCode,
+  }) {
+    final result = create();
+    if (statusCode != null) result.statusCode = statusCode;
+    return result;
+  }
+
+  VersionHealthStatus._();
+
+  factory VersionHealthStatus.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory VersionHealthStatus.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'VersionHealthStatus',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
+      createEmptyInstance: create)
+    ..a<$core.int>(1, _omitFieldNames ? '' : 'statusCode', $pb.PbFieldType.O3)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  VersionHealthStatus clone() => VersionHealthStatus()..mergeFromMessage(this);
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  VersionHealthStatus copyWith(void Function(VersionHealthStatus) updates) =>
+      super.copyWith((message) => updates(message as VersionHealthStatus))
+          as VersionHealthStatus;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static VersionHealthStatus create() => VersionHealthStatus._();
+  @$core.override
+  VersionHealthStatus createEmptyInstance() => create();
+  static $pb.PbList<VersionHealthStatus> createRepeated() =>
+      $pb.PbList<VersionHealthStatus>();
+  @$core.pragma('dart2js:noInline')
+  static VersionHealthStatus getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<VersionHealthStatus>(create);
+  static VersionHealthStatus? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.int get statusCode => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set statusCode($core.int value) => $_setSignedInt32(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasStatusCode() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearStatusCode() => $_clearField(1);
+}
+
 enum AppState_State {
   error,
   connectionStatus,
@@ -142,6 +198,7 @@ enum AppState_State {
   settingsChange,
   updateEvent,
   accountModification,
+  versionHealth,
   notSet
 }
 
@@ -153,6 +210,7 @@ class AppState extends $pb.GeneratedMessage {
     $1.Settings? settingsChange,
     UpdateEvent? updateEvent,
     AccountModification? accountModification,
+    VersionHealthStatus? versionHealth,
   }) {
     final result = create();
     if (error != null) result.error = error;
@@ -162,6 +220,7 @@ class AppState extends $pb.GeneratedMessage {
     if (updateEvent != null) result.updateEvent = updateEvent;
     if (accountModification != null)
       result.accountModification = accountModification;
+    if (versionHealth != null) result.versionHealth = versionHealth;
     return result;
   }
 
@@ -181,13 +240,14 @@ class AppState extends $pb.GeneratedMessage {
     4: AppState_State.settingsChange,
     5: AppState_State.updateEvent,
     6: AppState_State.accountModification,
+    7: AppState_State.versionHealth,
     0: AppState_State.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'AppState',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..oo(0, [1, 2, 3, 4, 5, 6])
+    ..oo(0, [1, 2, 3, 4, 5, 6, 7])
     ..e<AppStateError>(1, _omitFieldNames ? '' : 'error', $pb.PbFieldType.OE,
         defaultOrMaker: AppStateError.FAILED_TO_GET_UID,
         valueOf: AppStateError.valueOf,
@@ -205,6 +265,8 @@ class AppState extends $pb.GeneratedMessage {
         enumValues: UpdateEvent.values)
     ..aOM<AccountModification>(6, _omitFieldNames ? '' : 'accountModification',
         subBuilder: AccountModification.create)
+    ..aOM<VersionHealthStatus>(7, _omitFieldNames ? '' : 'versionHealth',
+        subBuilder: VersionHealthStatus.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -290,6 +352,17 @@ class AppState extends $pb.GeneratedMessage {
   void clearAccountModification() => $_clearField(6);
   @$pb.TagNumber(6)
   AccountModification ensureAccountModification() => $_ensure(5);
+
+  @$pb.TagNumber(7)
+  VersionHealthStatus get versionHealth => $_getN(6);
+  @$pb.TagNumber(7)
+  set versionHealth(VersionHealthStatus value) => $_setField(7, value);
+  @$pb.TagNumber(7)
+  $core.bool hasVersionHealth() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearVersionHealth() => $_clearField(7);
+  @$pb.TagNumber(7)
+  VersionHealthStatus ensureVersionHealth() => $_ensure(6);
 }
 
 const $core.bool _omitFieldNames =

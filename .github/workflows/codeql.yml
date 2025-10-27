@@ -1,5 +1,7 @@
 name: CodeQL Security Scan
 
+permissions: {}
+
 on:
     push:
         branches:

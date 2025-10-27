@@ -20,6 +20,7 @@ import 'package:nordvpn/pb/daemon/logout.pb.dart';
 import 'package:nordvpn/pb/daemon/ping.pb.dart';
 import 'package:nordvpn/pb/daemon/purchase.pb.dart';
 import 'package:nordvpn/pb/daemon/rate.pb.dart';
+import 'package:nordvpn/pb/daemon/recent_connections.pb.dart';
 import 'package:nordvpn/pb/daemon/servers.pb.dart';
 import 'package:nordvpn/pb/daemon/service.pbgrpc.dart';
 import 'package:nordvpn/pb/daemon/set.pb.dart';
@@ -341,6 +342,14 @@ final class MockDaemon extends DaemonServiceBase {
   @override
   Future<FeatureToggles> getFeatureToggles(ServiceCall call, Empty request) {
     // not used
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<RecentConnectionsResponse> getRecentConnections(
+    ServiceCall call,
+    RecentConnectionsRequest request,
+  ) {
     throw UnimplementedError();
   }
 }
