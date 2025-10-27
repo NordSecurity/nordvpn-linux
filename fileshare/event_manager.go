@@ -352,6 +352,8 @@ func (em *EventManager) handleFileFailedEvent(event EventKindFileFailed) {
 	}
 	file.Finished = true
 
+	//no gosec violation, values from the enumeration are within the int32 max range
+	// #nosec G115
 	fileStatusInNotification := pb.Status(event.Status.Status)
 	removeFileFromLiveTransfer(transfer, file)
 	if em.notificationManager != nil && file != nil {
@@ -598,6 +600,7 @@ func (em *EventManager) acceptTransfer(
 		return nil, ErrSizeLimitExceeded
 	}
 
+	// #nosec G115 - data returned by a OS filesystem call
 	if totalSize > statfs.Bavail*uint64(statfs.Bsize) {
 		return nil, ErrSizeLimitExceeded
 	}

@@ -2,6 +2,7 @@ package netlink
 
 import (
 	"fmt"
+	"math"
 	"net"
 	"net/netip"
 	"slices"
@@ -23,6 +24,11 @@ type Retriever struct{}
 //     can be applied, maintain the same order as defined in 3;
 //  6. First route in the list is chosen as the best match and used to determine a gateway.
 func (Retriever) Retrieve(prefix netip.Prefix, ignoreTable uint) (netip.Addr, net.Interface, error) {
+	if ignoreTable > math.MaxInt {
+		return netip.Addr{},
+			net.Interface{},
+			fmt.Errorf("ignore table value %d exceeds max int value", ignoreTable)
+	}
 	routeList, err := listRoutesForSubnet(prefixToIPNet(prefix), int(ignoreTable))
 	if err != nil {
 		return netip.Addr{},

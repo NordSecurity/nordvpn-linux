@@ -590,7 +590,7 @@ func (c *cmd) MeshPeerConnect(ctx *cli.Context) error {
 	for {
 		select {
 		case <-sigCh:
-			c.client.ConnectCancel(context.Background(), &daemonpb.Empty{})
+			_, _ = c.client.ConnectCancel(context.Background(), &daemonpb.Empty{})
 		case wErr := <-errCh:
 			err = wErr.err
 			if err != nil {
