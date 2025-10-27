@@ -3,6 +3,7 @@ package core
 const (
 	HeaderDigest = "x-digest"
 
+	//
 	// CDNURL is the url for NordCDN
 	CDNURL = "https://downloads.nordcdn.com"
 
