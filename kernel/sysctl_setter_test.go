@@ -21,7 +21,7 @@ func TestSet_rp_filter(t *testing.T) {
 	desiredVal := 2
 	unwantedVal := 0
 
-	setter := NewSysctlSetter(param, desiredVal, unwantedVal)
+	setter := NewSysctlSetter(param, desiredVal)
 
 	err = setter.Set()
 	assert.NoError(t, err)
