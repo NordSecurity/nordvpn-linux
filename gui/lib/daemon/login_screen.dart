@@ -16,7 +16,7 @@ final class LoginScreen extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            const Flexible(child: LoginForm()),
+            Flexible(child: LoginForm(key: LoginWidgetKeys.loginForm)),
             SizedBox(width: appTheme.verticalSpaceMedium),
             DynamicThemeImage("login_screen_image.svg"),
           ],

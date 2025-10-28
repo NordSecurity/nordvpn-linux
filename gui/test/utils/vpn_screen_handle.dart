@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/vpn/servers_list_card.dart';
+import 'package:nordvpn/vpn/vpn_status_card.dart';
 
 import 'finders.dart';
 import 'screen_handle.dart';
@@ -44,7 +45,7 @@ final class VpnScreenHandle extends ScreenHandle {
         virtualServersListItem(),
         100.0,
         scrollable: find.descendant(
-          of: find.byKey(ServersListKeys.countriesServersListKey),
+          of: find.byKey(ServerListWidgetKeys.countriesServersList),
           matching: find.byType(Scrollable),
         ),
       );
@@ -109,14 +110,14 @@ final class VpnScreenHandle extends ScreenHandle {
 
   // -------------- Finders -------
   Finder _searchButton() {
-    final finder = find.byKey(ServersListKeys.searchKey);
+    final finder = find.byKey(ServerListWidgetKeys.search);
     expect(finder, findsOne);
     return finder;
   }
 
   Finder _serversSearchTextField() {
     final finder = find.descendant(
-      of: find.byType(ServersListCard),
+      of: find.byKey(VpnWidgetKeys.vpnServersListCard),
       matching: find.byType(TextField),
     );
     expect(finder, findsOne);
@@ -125,14 +126,14 @@ final class VpnScreenHandle extends ScreenHandle {
 
   Finder _goToSettings() {
     final goToSettingsFinder = find.descendant(
-      of: find.byType(ServersListCard),
+      of: find.byKey(VpnWidgetKeys.vpnServersListCard),
       matching: find.byType(TextButton),
     );
     return goToSettingsFinder;
   }
 
   Finder disconnectButton() {
-    final disconnectFinder = find.text(t.ui.disconnect);
+    final disconnectFinder = find.byKey(VpnWidgetKeys.vpnDisconnectButton);
     expect(disconnectFinder, findsOneWidget);
     return disconnectFinder;
   }

@@ -69,14 +69,14 @@ final class ResponsiveScaffold extends StatelessWidget {
 
 Banner _buildBannerForWidgetShowcase(String icon) {
   return Banner(
-      textStyle: const TextStyle(
-        fontWeight: FontWeight.bold,
-        fontSize: 8,
-        color: Colors.white,
-      ),
-      message: "DEBUG",
-      shadow: BoxShadow(color: Colors.transparent),
-      location: BannerLocation.bottomEnd,
-      child: DynamicThemeImage(icon),
-    );
+    textStyle: const TextStyle(
+      fontWeight: FontWeight.bold,
+      fontSize: 8,
+      color: Colors.white,
+    ),
+    message: "DEBUG",
+    shadow: BoxShadow(color: Colors.transparent),
+    location: BannerLocation.bottomEnd,
+    child: DynamicThemeImage(icon),
+  );
 }

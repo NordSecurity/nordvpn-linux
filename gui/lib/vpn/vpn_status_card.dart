@@ -20,6 +20,16 @@ import 'package:nordvpn/widgets/loading_indicator.dart';
 import 'package:nordvpn/widgets/padded_circle_avatar.dart';
 import 'package:nordvpn/widgets/round_container.dart';
 
+final class VpnWidgetKeys {
+  VpnWidgetKeys._();
+  static const vpnStatusCard = Key("vpnStatusCard");
+  static const vpnServersListCard = Key("vpnServersListCard");
+  static const vpnQuickConnectButton = Key("vpnQuickConnectButton");
+  static const vpnStatusLabelText = Key("vpnStatusLabelText");
+  static const vpnServerInfoText = Key("vpnServerInfoText");
+  static const vpnDisconnectButton = Key("vpnDisconnectButton");
+}
+
 final class VpnStatusCard extends StatelessWidget {
   final ImagesManager imagesManager;
 
@@ -102,6 +112,7 @@ final class VpnStatusCard extends StatelessWidget {
       return [
         Expanded(
           child: OutlinedButton(
+            key: VpnWidgetKeys.vpnDisconnectButton,
             onPressed: () =>
                 ref.read(vpnStatusControllerProvider.notifier).disconnect(),
             child: Text(t.ui.disconnect),
@@ -119,6 +130,7 @@ final class VpnStatusCard extends StatelessWidget {
     return [
       Expanded(
         child: ElevatedButton(
+          key: VpnWidgetKeys.vpnQuickConnectButton,
           onPressed: () async {
             if (status.isDisconnected()) {
               // Quick connect
@@ -204,6 +216,7 @@ final class VpnStatusLabel extends ConsumerWidget {
 
     return Text(
       _constructLabel(settings),
+      key: VpnWidgetKeys.vpnStatusLabelText,
       overflow: TextOverflow.ellipsis,
       style: statusCardTheme.primaryFont.copyWith(
         color: vpnStatus.isDisconnected() || vpnStatus.isConnecting()
@@ -272,6 +285,7 @@ final class VpnServerInfo extends ConsumerWidget {
     }
     return Text(
       label,
+      key: VpnWidgetKeys.vpnServerInfoText,
       style: statusCardTheme.secondaryFont,
       overflow: TextOverflow.ellipsis,
     );

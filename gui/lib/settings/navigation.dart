@@ -3,6 +3,11 @@ import 'package:go_router/go_router.dart';
 import 'package:nordvpn/router/routes.dart';
 import 'package:nordvpn/theme/settings_theme.dart';
 
+final class NavWidgetKeys {
+  NavWidgetKeys._();
+  static const currentBreadcrumb = Key("navCurrentBreadcrumb");
+}
+
 final class NavBreadcrumbs extends StatelessWidget {
   const NavBreadcrumbs({super.key});
 
@@ -44,7 +49,12 @@ final class NavBreadcrumbs extends StatelessWidget {
 
                 // last breadcrumb is the current page, so no navigation here
                 if (idx == segments.length - 1) {
-                  return [Breadcrumb(name: displayName)];
+                  return [
+                    Breadcrumb(
+                      key: NavWidgetKeys.currentBreadcrumb,
+                      name: displayName,
+                    ),
+                  ];
                 }
 
                 return [

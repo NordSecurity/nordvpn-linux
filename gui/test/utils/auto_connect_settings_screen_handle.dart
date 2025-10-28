@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nordvpn/widgets/loading_button.dart';
 
 import 'finders.dart';
 import 'screen_handle.dart';
@@ -7,7 +8,7 @@ final class AutoConnectSettingsScreenHandle extends ScreenHandle {
   AutoConnectSettingsScreenHandle(super.app);
 
   bool isConnectNowButtonEnabled() {
-    final widget = app.tester.widget<ElevatedButton>(connectNowButton());
+    final widget = app.tester.widget<LoadingElevatedButton>(connectNowButton());
     return widget.onPressed != null;
   }
 
