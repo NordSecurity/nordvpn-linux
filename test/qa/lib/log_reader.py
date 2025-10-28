@@ -67,7 +67,7 @@ class LogReader:
 
     def wait_for_messages(
         self,
-        messages: list[str] | str,
+        messages: list[str],
         cursor: int = 0,
         timeout: int = 30,
         interval: int = 1,

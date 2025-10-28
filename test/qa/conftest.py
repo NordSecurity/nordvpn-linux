@@ -293,7 +293,7 @@ def rc_config_manager(default_config: dict) -> RemoteConfigManager:
 
     :return: An instance of the "RemoteConfigManager".
     """
-    yield RemoteConfigManager(env="dev", cache_dir=LOCAL_CACHE_DIR, default_config=default_config)
+    return RemoteConfigManager(env="dev", cache_dir=LOCAL_CACHE_DIR, default_config=default_config)
 
 
 @pytest.fixture
