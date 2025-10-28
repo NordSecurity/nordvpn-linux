@@ -227,10 +227,7 @@ class _AdaptiveLayoutState extends State<AdaptiveLayout>
         vsync: this,
       )..forward();
     } else {
-      _controller = AnimationController(
-        duration: Duration.zero,
-        vsync: this,
-      );
+      _controller = AnimationController(duration: Duration.zero, vsync: this);
     }
 
     for (final _SlotIds item in _SlotIds.values) {
@@ -274,23 +271,23 @@ class _AdaptiveLayoutState extends State<AdaptiveLayout>
     chosenWidgets = <String, SlotLayoutConfig?>{};
 
     slots.forEach((String key, SlotLayout? value) {
-      slots.update(
-        key,
-        (SlotLayout? val) => val,
-        ifAbsent: () => value,
-      );
+      slots.update(key, (SlotLayout? val) => val, ifAbsent: () => value);
       chosenWidgets.update(
         key,
         (SlotLayoutConfig? val) => val,
         ifAbsent: () => SlotLayout.pickWidget(
-            context, value?.config ?? <Breakpoint, SlotLayoutConfig?>{}),
+          context,
+          value?.config ?? <Breakpoint, SlotLayoutConfig?>{},
+        ),
       );
     });
     final List<Widget> entries = slots.entries
         .map((MapEntry<String, SlotLayout?> entry) {
           if (entry.value != null) {
             return LayoutId(
-                id: entry.key, child: entry.value ?? const SizedBox());
+              id: entry.key,
+              child: entry.value ?? const SizedBox(),
+            );
           }
         })
         .whereType<Widget>()
@@ -468,9 +465,7 @@ class _AdaptiveLayoutDelegate extends MultiChildLayoutDelegate {
         if (!textDirection) {
           currentBodySize = layoutChild(
             _SlotIds.body.name,
-            BoxConstraints.tight(
-              Size(remainingWidth, remainingHeight),
-            ),
+            BoxConstraints.tight(Size(remainingWidth, remainingHeight)),
           );
         } else if (bodyOrientation == Axis.horizontal) {
           double beginWidth;
@@ -522,15 +517,15 @@ class _AdaptiveLayoutDelegate extends MultiChildLayoutDelegate {
             currentBodySize = layoutChild(
               _SlotIds.body.name,
               BoxConstraints.tight(
-                Size(animatedSize(remainingWidth, finalBodySize),
-                    remainingHeight),
+                Size(
+                  animatedSize(remainingWidth, finalBodySize),
+                  remainingHeight,
+                ),
               ),
             );
             layoutChild(
               _SlotIds.secondaryBody.name,
-              BoxConstraints.tight(
-                Size(finalSBodySize, remainingHeight),
-              ),
+              BoxConstraints.tight(Size(finalSBodySize, remainingHeight)),
             );
           } else {
             // Take this path if the textDirection is RTL.
@@ -555,9 +550,7 @@ class _AdaptiveLayoutDelegate extends MultiChildLayoutDelegate {
             );
             layoutChild(
               _SlotIds.body.name,
-              BoxConstraints.tight(
-                Size(finalBodySize, remainingHeight),
-              ),
+              BoxConstraints.tight(Size(finalBodySize, remainingHeight)),
             );
           }
         } else {
@@ -599,14 +592,18 @@ class _AdaptiveLayoutDelegate extends MultiChildLayoutDelegate {
             Offset(currentSBodySize.width + leftMargin + hingeWidth, topMargin),
           );
           positionChild(
-              _SlotIds.secondaryBody.name, Offset(leftMargin, topMargin));
+            _SlotIds.secondaryBody.name,
+            Offset(leftMargin, topMargin),
+          );
         } else {
           positionChild(
             _SlotIds.body.name,
             Offset(currentSBodySize.width + leftMargin, topMargin),
           );
           positionChild(
-              _SlotIds.secondaryBody.name, Offset(leftMargin, topMargin));
+            _SlotIds.secondaryBody.name,
+            Offset(leftMargin, topMargin),
+          );
         }
       } else {
         positionChild(_SlotIds.body.name, Offset(leftMargin, topMargin));
@@ -615,7 +612,9 @@ class _AdaptiveLayoutDelegate extends MultiChildLayoutDelegate {
             positionChild(
               _SlotIds.secondaryBody.name,
               Offset(
-                  currentBodySize.width + leftMargin + hingeWidth, topMargin),
+                currentBodySize.width + leftMargin + hingeWidth,
+                topMargin,
+              ),
             );
           } else {
             positionChild(
@@ -633,17 +632,13 @@ class _AdaptiveLayoutDelegate extends MultiChildLayoutDelegate {
     } else if (hasChild(_SlotIds.body.name)) {
       layoutChild(
         _SlotIds.body.name,
-        BoxConstraints.tight(
-          Size(remainingWidth, remainingHeight),
-        ),
+        BoxConstraints.tight(Size(remainingWidth, remainingHeight)),
       );
       positionChild(_SlotIds.body.name, Offset(leftMargin, topMargin));
     } else if (hasChild(_SlotIds.secondaryBody.name)) {
       layoutChild(
         _SlotIds.secondaryBody.name,
-        BoxConstraints.tight(
-          Size(remainingWidth, remainingHeight),
-        ),
+        BoxConstraints.tight(Size(remainingWidth, remainingHeight)),
       );
     }
   }

@@ -4,65 +4,49 @@ import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/settings/account_details_screen.dart';
 import 'package:nordvpn/settings/autoconnect_settings.dart';
 import 'package:nordvpn/settings/navigation.dart';
+import 'package:nordvpn/settings/vpn_connection_settings.dart';
 import 'package:nordvpn/vpn/servers_list_card.dart';
 import 'package:nordvpn/vpn/vpn_status_card.dart';
-import 'package:nordvpn/widgets/advanced_list_tile.dart';
 import 'package:nordvpn/widgets/login_form.dart';
-import 'package:nordvpn/widgets/on_off_switch.dart';
 
 Finder serverInfoText() {
-  final serverInfoFinder = find.byType(VpnServerInfo);
-  expect(serverInfoFinder, findsOneWidget);
-  final serverInfoTextFinder = find.descendant(
-    of: serverInfoFinder,
-    matching: find.byType(Text),
-  );
+  final serverInfoTextFinder = find.byKey(VpnWidgetKeys.vpnServerInfoText);
   expect(serverInfoTextFinder, findsOneWidget);
   return serverInfoTextFinder;
 }
 
 Finder statusLabelText() {
-  final statusLabelFinder = find.byType(VpnStatusLabel);
-  expect(statusLabelFinder, findsOneWidget);
-  final statusInfoTextFinder = find.descendant(
-    of: statusLabelFinder,
-    matching: find.byType(Text),
-  );
+  final statusInfoTextFinder = find.byKey(VpnWidgetKeys.vpnStatusLabelText);
   expect(statusInfoTextFinder, findsOneWidget);
   return statusInfoTextFinder;
 }
 
 Finder loginButton() {
-  final loginButtonFinder = find.byType(LoginButton);
+  final loginButtonFinder = find.byKey(LoginWidgetKeys.loginButton);
   expect(loginButtonFinder, findsOneWidget);
   return loginButtonFinder;
 }
 
 Finder loginForm() {
-  final loginFormFinder = find.byType(LoginForm);
+  final loginFormFinder = find.byKey(LoginWidgetKeys.loginForm);
   expect(loginFormFinder, findsOneWidget);
   return loginFormFinder;
 }
 
 Finder loginButtonLoadingIndicator() {
-  final loginButtonFinder = loginButton();
-  expect(loginButtonFinder, findsOneWidget);
-  final loadingIndicatorFinder = find.descendant(
-    of: loginButtonFinder,
-    matching: find.byType(CircularProgressIndicator),
-  );
+  final loadingIndicatorFinder = find.byKey(LoginWidgetKeys.loadingIndicator);
   expect(loadingIndicatorFinder, findsOneWidget);
   return loadingIndicatorFinder;
 }
 
 Finder vpnStatusCard() {
-  final vpnStatusFinder = find.byType(VpnStatusCard);
+  final vpnStatusFinder = find.byKey(VpnWidgetKeys.vpnStatusCard);
   expect(vpnStatusFinder, findsOneWidget);
   return vpnStatusFinder;
 }
 
 Finder quickConnectButton() {
-  final quickConnectFinder = find.text(t.ui.quickConnect);
+  final quickConnectFinder = find.byKey(VpnWidgetKeys.vpnQuickConnectButton);
   expect(quickConnectFinder, findsOneWidget);
   return quickConnectFinder;
 }
@@ -72,7 +56,7 @@ Finder subscriptionPopupText() {
 }
 
 Finder userInfo() {
-  final userInfoFinder = find.byType(UserInfo);
+  final userInfoFinder = find.byKey(AccountWidgetKeys.userInfo);
   expect(userInfoFinder, findsOneWidget);
   return userInfoFinder;
 }
@@ -84,26 +68,28 @@ Finder parentNavigationBreadcrumb() {
 }
 
 Finder currentNavigationBreadcrumb() {
-  final currentNavigationBreadcrumb = find.byType(Breadcrumb);
+  final currentNavigationBreadcrumb = find.byKey(
+    NavWidgetKeys.currentBreadcrumb,
+  );
   expect(currentNavigationBreadcrumb, findsWidgets);
   return currentNavigationBreadcrumb.first;
 }
 
 Finder productsList() {
-  final productsListFinder = find.byType(ProductsList);
+  final productsListFinder = find.byKey(AccountWidgetKeys.productsList);
   expect(productsListFinder, findsOneWidget);
   return productsListFinder;
 }
 
 Finder footerLinks() {
-  final footerLinksFinder = find.byType(FooterLinks);
+  final footerLinksFinder = find.byKey(AccountWidgetKeys.footerLinks);
   expect(footerLinksFinder, findsOneWidget);
   return footerLinksFinder;
 }
 
 Finder virtualServersListItem() {
   final virtualListItemFinder = find.descendant(
-    of: find.byKey(ServersListKeys.countriesServersListKey),
+    of: find.byKey(ServerListWidgetKeys.countriesServersList),
     matching: find.textContaining(t.ui.virtual),
   );
   return virtualListItemFinder;
@@ -120,44 +106,36 @@ Finder vpnConnectionBreadcrumb() {
 }
 
 Finder autoConnectSwitch() {
-  final autoConnectSwitchFinder = find.descendant(
-    of: _settingsTileContaining(t.ui.autoConnect),
-    matching: find.byType(OnOffSwitch),
+  final autoConnectSwitchFinder = find.byKey(
+    VpnSettingsWidgetKeys.autoConnectSwitch,
   );
   expect(autoConnectSwitchFinder, findsOneWidget);
   return autoConnectSwitchFinder;
 }
 
 Finder killSwitchToggle() {
-  final killSwitchFinder = find.descendant(
-    of: _settingsTileContaining(t.ui.killSwitch),
-    matching: find.byType(OnOffSwitch),
-  );
+  final killSwitchFinder = find.byKey(VpnSettingsWidgetKeys.killSwitch);
   expect(killSwitchFinder, findsOneWidget);
   return killSwitchFinder;
 }
 
-Finder _settingsTileContaining(String text) {
-  return find.widgetWithText(AdvancedListTile, text);
-}
-
 Finder autoConnectTile() {
-  final autoConnectTile = _settingsTileContaining("${t.ui.autoConnectTo}:");
+  final autoConnectTile = find.byKey(VpnSettingsWidgetKeys.autoConnectTile);
   expect(autoConnectTile, findsOneWidget);
   return autoConnectTile;
 }
 
 Finder autoConnectPanel() {
-  final autoConnectPanelFinder = find.byType(AutoconnectPanel);
+  final autoConnectPanelFinder = find.byKey(
+    AutoConnectWidgetKeys.autoConnectPanel,
+  );
   expect(autoConnectPanelFinder, findsOneWidget);
   return autoConnectPanelFinder;
 }
 
 Finder connectNowButton() {
-  final autoConnectPanelFinder = autoConnectPanel();
-  final connectButtonFinder = find.descendant(
-    of: autoConnectPanelFinder,
-    matching: find.widgetWithText(ElevatedButton, t.ui.connectNow),
+  final connectButtonFinder = find.byKey(
+    AutoConnectWidgetKeys.connectNowButton,
   );
   expect(connectButtonFinder, findsOneWidget);
   return connectButtonFinder;
@@ -171,7 +149,7 @@ Finder serverTileWithText(String text) {
 }
 
 Finder serversList() {
-  final serversListFinder = find.byType(ServersListCard);
+  final serversListFinder = find.byKey(AutoConnectWidgetKeys.serversListCard);
   expect(serversListFinder, findsOneWidget);
   return find.descendant(
     of: serversListFinder,
@@ -189,31 +167,33 @@ Finder autoConnectServer() {
 }
 
 Finder autoConnectServerInfo() {
-  final autoConnectPanelFinder = find.byType(AutoConnectServerInfo);
+  final autoConnectPanelFinder = find.byKey(AutoConnectWidgetKeys.serverInfo);
   expect(autoConnectPanelFinder, findsOneWidget);
   return autoConnectPanelFinder;
 }
 
 Finder specialtyServersTab() {
-  final specialtyServersLabelFinder = find.text(t.ui.specialServers);
+  final specialtyServersLabelFinder = find.byKey(
+    ServerListWidgetKeys.specialtyServersTab,
+  );
   expect(specialtyServersLabelFinder, findsOne);
   return specialtyServersLabelFinder;
 }
 
 Finder doubleVpnGroupTile() {
-  final doubleVpnGroupTile = find.text(t.ui.doubleVpn);
+  final doubleVpnGroupTile = find.byKey(ServerListWidgetKeys.doubleVpn);
   expect(doubleVpnGroupTile, findsOne);
   return doubleVpnGroupTile;
 }
 
 Finder onionOverVpnGroupTile() {
-  final onionOverVpnGroupTile = find.text(t.ui.onionOverVpn);
+  final onionOverVpnGroupTile = find.byKey(ServerListWidgetKeys.onionOverVpn);
   expect(onionOverVpnGroupTile, findsOne);
   return onionOverVpnGroupTile;
 }
 
 Finder p2pGroupTile() {
-  final p2pGroupTile = find.text(t.ui.p2p);
+  final p2pGroupTile = find.byKey(ServerListWidgetKeys.p2p);
   expect(p2pGroupTile, findsOne);
   return p2pGroupTile;
 }
@@ -234,7 +214,7 @@ Finder killSwitchCheckBox() {
 }
 
 Finder logoutButtonFinder() {
-  final logoutButton = find.text(t.ui.logout);
+  final logoutButton = find.byKey(AccountWidgetKeys.logoutButton);
   expect(logoutButton, findsOne);
   return logoutButton;
 }
