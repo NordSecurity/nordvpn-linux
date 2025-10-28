@@ -18,6 +18,7 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
   TextStyle get obfuscationSearchWarningStyle;
   TextStyle get searchErrorStyle;
   Color get obfuscatedItemBackgroundColor;
+  double get horizontalSpace;
 
   @override
   ServersListTheme copyWith({
@@ -29,6 +30,7 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
     TextStyle? obfuscationSearchWarningStyle,
     TextStyle? searchErrorStyle,
     Color? obfuscatedItemBackgroundColor,
+    double? horizontalSpace,
   }) {
     return ServersListTheme(
       flagSize: flagSize ?? this.flagSize,
@@ -42,6 +44,7 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
       searchErrorStyle: searchErrorStyle ?? this.searchErrorStyle,
       obfuscatedItemBackgroundColor:
           obfuscatedItemBackgroundColor ?? this.obfuscatedItemBackgroundColor,
+      horizontalSpace: horizontalSpace ?? this.horizontalSpace,
     );
   }
 
@@ -78,6 +81,7 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
         other.obfuscatedItemBackgroundColor,
         t,
       )!,
+      horizontalSpace: t < 0.5 ? horizontalSpace : other.horizontalSpace,
     );
   }
 
@@ -114,6 +118,10 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
             const DeepCollectionEquality().equals(
               obfuscatedItemBackgroundColor,
               other.obfuscatedItemBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              horizontalSpace,
+              other.horizontalSpace,
             ));
   }
 
@@ -129,6 +137,7 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
       const DeepCollectionEquality().hash(obfuscationSearchWarningStyle),
       const DeepCollectionEquality().hash(searchErrorStyle),
       const DeepCollectionEquality().hash(obfuscatedItemBackgroundColor),
+      const DeepCollectionEquality().hash(horizontalSpace),
     );
   }
 }
@@ -147,4 +156,5 @@ extension ServersListThemeBuildContextProps on BuildContext {
   TextStyle get searchErrorStyle => serversListTheme.searchErrorStyle;
   Color get obfuscatedItemBackgroundColor =>
       serversListTheme.obfuscatedItemBackgroundColor;
+  double get horizontalSpace => serversListTheme.horizontalSpace;
 }

@@ -39,9 +39,7 @@ class RecentServerListItem extends StatelessWidget {
 
     return CustomListTile(
       minTileHeight: context.serversListTheme.listItemHeight,
-      contentPadding: EdgeInsets.symmetric(
-        horizontal: context.serversListTheme.flagSize,
-      ),
+      contentPadding: EdgeInsets.only(left: 0),
       leading: ServerItemImage(image: image),
       title: title,
       onTap: enabled ? () => onTap(connectArgs) : null,
