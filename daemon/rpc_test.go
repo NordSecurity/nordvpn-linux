@@ -99,7 +99,7 @@ func testRPC() *RPC {
 		&testcore.CredentialsAPIMock{},
 		testNewCDNAPI(),
 		testNewRepoAPI(),
-		&mockAuthenticationAPI{},
+		&testcore.AuthenticationAPImock{},
 		"1.0.0",
 		daemonevents.NewEventsEmpty(),
 		func(config.Technology) (vpn.VPN, error) {
