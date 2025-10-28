@@ -206,18 +206,11 @@ final class _ServersListCardState extends State<ServersListCard> {
       builder: (context) {
         return CustomScrollView(
           primary: false,
-          key: const PageStorageKey('countries'),
+          key: ServersListKeys.countriesServersListKey,
           slivers: [
             SliverOverlapInjector(
               handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
             ),
-            if (isObfuscationEnabled)
-              SliverToBoxAdapter(
-                child: _showObfuscatedMessage(
-                  context,
-                  t.ui.turnOffObfuscationLocations,
-                ),
-              ),
             SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
                 // show additional quick connect tile if specified
@@ -281,13 +274,6 @@ final class _ServersListCardState extends State<ServersListCard> {
             SliverOverlapInjector(
               handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
             ),
-            if (isObfuscatedOn)
-              SliverToBoxAdapter(
-                child: _showObfuscatedMessage(
-                  context,
-                  t.ui.turnOffObfuscationServerTypes,
-                ),
-              ),
             SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
                 final group = specialtyServersOrder[index];
@@ -473,15 +459,21 @@ final class _ServersListCardState extends State<ServersListCard> {
     final appTheme = context.appTheme;
     final serversListTheme = context.serversListTheme;
     return Container(
-      padding: EdgeInsets.all(appTheme.verticalSpaceMedium),
+      padding: EdgeInsets.symmetric(
+        horizontal: appTheme.horizontalSpace,
+        vertical: appTheme.verticalSpaceVerySmall,
+      ),
       color: serversListTheme.obfuscatedItemBackgroundColor,
       child: Row(
-        spacing: appTheme.verticalSpaceLarge,
+        spacing: appTheme.horizontalSpace,
         children: [
           Expanded(child: Text(message, style: appTheme.body)),
           TextButton(
             onPressed: () =>
                 context.navigateToRoute(AppRoute.settingsSecurityAndPrivacy),
+            style: ButtonStyle(
+              padding: WidgetStateProperty.all(const EdgeInsets.only(right: 4)),
+            ),
             child: Text(t.ui.goToSettings),
           ),
         ],

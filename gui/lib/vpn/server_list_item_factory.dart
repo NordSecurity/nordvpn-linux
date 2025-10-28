@@ -153,9 +153,6 @@ final class ServerListItemFactory {
     return CustomListTile(
       enabled: isEnabled,
       minTileHeight: serversListThemeData.listItemHeight,
-      contentPadding: EdgeInsets.symmetric(
-        horizontal: serversListThemeData.flagSize,
-      ),
       leading: ServerItemImage(
         image: imagesManager.forSpecialtyServer(type),
         shouldHighlight: (status) =>
