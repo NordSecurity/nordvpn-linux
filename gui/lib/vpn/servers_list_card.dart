@@ -287,8 +287,8 @@ final class _ServersListCardState extends State<ServersListCard> {
                   context: context,
                   type: type,
                   enabled:
-                      (servers.isNotEmpty || group.type.isRegion) &&
-                      !isObfuscatedOn,
+                      (servers.isNotEmpty && !isObfuscatedOn) ||
+                      group.type.isRegion,
                   servers: servers,
                   subtitle: description,
                   onTap: (args) => widget.onSelected(args),
