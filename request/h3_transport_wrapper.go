@@ -42,7 +42,7 @@ func (w *H3TransportWrapper) initializeQuicTransport() {
 			return
 		}
 		w.quicTransport = &quic.Transport{Conn: udpConn}
-		w.transport.Dial = func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlyConnection, error) {
+		w.transport.Dial = func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
 			udpAddr, err := net.ResolveUDPAddr("udp", addr)
 			if err != nil {
 				return nil, err
