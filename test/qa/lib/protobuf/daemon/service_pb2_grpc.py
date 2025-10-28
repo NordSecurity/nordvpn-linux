@@ -242,6 +242,11 @@ class DaemonStub(object):
                 request_serializer=set__pb2.SetAllowlistRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
+        self.SetARPIgnore = channel.unary_unary(
+                '/pb.Daemon/SetARPIgnore',
+                request_serializer=set__pb2.SetGenericRequest.SerializeToString,
+                response_deserializer=common__pb2.Payload.FromString,
+                _registered_method=True)
         self.UnsetAllowlist = channel.unary_unary(
                 '/pb.Daemon/UnsetAllowlist',
                 request_serializer=set__pb2.SetAllowlistRequest.SerializeToString,
@@ -520,6 +525,12 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SetARPIgnore(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def UnsetAllowlist(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -755,6 +766,11 @@ def add_DaemonServicer_to_server(servicer, server):
             'SetAllowlist': grpc.unary_unary_rpc_method_handler(
                     servicer.SetAllowlist,
                     request_deserializer=set__pb2.SetAllowlistRequest.FromString,
+                    response_serializer=common__pb2.Payload.SerializeToString,
+            ),
+            'SetARPIgnore': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetARPIgnore,
+                    request_deserializer=set__pb2.SetGenericRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
             ),
             'UnsetAllowlist': grpc.unary_unary_rpc_method_handler(
@@ -1818,6 +1834,33 @@ class Daemon(object):
             target,
             '/pb.Daemon/SetAllowlist',
             set__pb2.SetAllowlistRequest.SerializeToString,
+            common__pb2.Payload.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SetARPIgnore(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/SetARPIgnore',
+            set__pb2.SetGenericRequest.SerializeToString,
             common__pb2.Payload.FromString,
             options,
             channel_credentials,

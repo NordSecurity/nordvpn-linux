@@ -62,6 +62,8 @@ func TestVPNNetworker_IsVPNActive(t *testing.T) {
 				0,
 				false,
 				&workingIpv6{},
+				false,
+				&mock.SysctlSetterMock{},
 			)
 			// injecting VPN implementation without calling netw.Start
 			netw.vpnet = test.vpn
@@ -178,6 +180,8 @@ func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
 		0,
 		false,
 		&workingIpv6{},
+		false,
+		&mock.SysctlSetterMock{},
 	)
 
 	nic1Name := "nic1"

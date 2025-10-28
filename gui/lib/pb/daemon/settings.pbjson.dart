@@ -121,6 +121,7 @@ const Settings$json = {
       '6': '.pb.UserSpecificSettings',
       '10': 'userSettings'
     },
+    {'1': 'arp_ignore', '3': 19, '4': 1, '5': 8, '10': 'arpIgnore'},
   ],
 };
 
@@ -138,7 +139,8 @@ final $typed_data.Uint8List settingsDescriptor = $convert.base64Decode(
     'gOIAEoCzINLnBiLkFsbG93bGlzdFIJYWxsb3dsaXN0EhwKCW9iZnVzY2F0ZRgPIAEoCFIJb2Jm'
     'dXNjYXRlEigKD3ZpcnR1YWxMb2NhdGlvbhgQIAEoCFIPdmlydHVhbExvY2F0aW9uEicKD3Bvc3'
     'RxdWFudHVtX3ZwbhgRIAEoCFIOcG9zdHF1YW50dW1WcG4SPQoNdXNlcl9zZXR0aW5ncxgSIAEo'
-    'CzIYLnBiLlVzZXJTcGVjaWZpY1NldHRpbmdzUgx1c2VyU2V0dGluZ3M=');
+    'CzIYLnBiLlVzZXJTcGVjaWZpY1NldHRpbmdzUgx1c2VyU2V0dGluZ3MSHQoKYXJwX2lnbm9yZR'
+    'gTIAEoCFIJYXJwSWdub3Jl');
 
 @$core.Deprecated('Use userSpecificSettingsDescriptor instead')
 const UserSpecificSettings$json = {
