@@ -7,33 +7,19 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/core"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"github.com/NordSecurity/nordvpn-linux/nc"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	mockconfig "github.com/NordSecurity/nordvpn-linux/test/mock/config"
 	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
+
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 )
-
-type mockNC struct {
-	nc.NotificationClient
-}
-
-func (mockNC) Stop() error  { return nil }
-func (mockNC) Revoke() bool { return true }
-
-type mockApi struct {
-	core.CombinedAPI
-}
-
-func (mockApi) DeleteToken(token string) error { return nil }
-func (mockApi) Logout(token string) error      { return nil }
 
 func TestLogout_Token(t *testing.T) {
 	cfgManagerMock := newMockConfigManager()
@@ -44,7 +30,7 @@ func TestLogout_Token(t *testing.T) {
 		cm:             cfgManagerMock,
 		norduser:       &testnorduser.MockNorduserCombinedService{},
 		netw:           &networker.Mock{},
-		ncClient:       mockNC{},
+		ncClient:       &mock.NotificationClientMock{},
 		publisher:      &subs.Subject[string]{},
 		credentialsAPI: &testcore.CredentialsAPIMock{},
 		events: &daemonevents.Events{

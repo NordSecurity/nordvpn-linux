@@ -10,7 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	cfgmock "github.com/NordSecurity/nordvpn-linux/test/mock"
-	"github.com/NordSecurity/nordvpn-linux/test/mock/core"
+	coremock "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 	ncmock "github.com/NordSecurity/nordvpn-linux/test/mock/nc"
 	"github.com/stretchr/testify/assert"
 
@@ -163,7 +163,7 @@ func TestStartStopNotificationClient(t *testing.T) {
 			Client: &mockMqttClient,
 		}
 
-		credsFetcher := NewCredsFetcher(&core.CredentialsAPIMock{
+		credsFetcher := NewCredsFetcher(&coremock.CredentialsAPIMock{
 			NotificationCredentialsError: test.credentialsFetchError,
 		}, cfgManager)
 		notificationClient := NewClient(&clientBuilderMock,
@@ -243,7 +243,7 @@ func TestConnectionCancellation(t *testing.T) {
 			Client: &mockMqttClient,
 		}
 
-		credsFetcher := NewCredsFetcher(&core.CredentialsAPIMock{
+		credsFetcher := NewCredsFetcher(&coremock.CredentialsAPIMock{
 			NotificationCredentialsError: test.fetchCredentialsErr,
 		}, cfgManager)
 
