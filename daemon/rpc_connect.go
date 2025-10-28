@@ -397,6 +397,7 @@ func buildRecentConnectionModel(
 		// Needs server, country info
 		recentModel.SpecificServer = extractSpecificServerName(event.TargetServerDomain)
 		recentModel.SpecificServerName = event.TargetServerName
+		recentModel.City = event.TargetServerCity
 		recentModel.CountryCode = event.TargetServerCountryCode
 		recentModel.Country = event.TargetServerCountry
 
@@ -405,6 +406,7 @@ func buildRecentConnectionModel(
 		recentModel.Group = parameters.Group
 		recentModel.SpecificServer = extractSpecificServerName(event.TargetServerDomain)
 		recentModel.SpecificServerName = event.TargetServerName
+		recentModel.City = event.TargetServerCity
 		recentModel.CountryCode = event.TargetServerCountryCode
 		recentModel.Country = event.TargetServerCountry
 
