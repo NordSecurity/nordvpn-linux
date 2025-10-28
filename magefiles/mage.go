@@ -557,9 +557,9 @@ func (Build) GuiBinaries(ctx context.Context, buildConfig string) error {
 	return cmd.Run()
 }
 
-// Build GUI package (arguments: packageType {deb/rpm/snap}, buildConfig {release/debug})
+// Build GUI package (arguments: packageType {deb/rpm}, buildConfig {release/debug})
 func (Build) GuiPackage(ctx context.Context, packageType, buildConfig string) error {
-	if packageType != "deb" && packageType != "rpm" && packageType != "snap" {
+	if packageType != "deb" && packageType != "rpm" {
 		return fmt.Errorf("invalid package: %q (expected 'deb' or 'rpm' or 'snap')", packageType)
 	}
 	if buildConfig != "release" && buildConfig != "debug" {

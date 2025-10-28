@@ -43,7 +43,6 @@ if [ "$BUILD_TYPE" == "release" ]; then
 fi
 
 echo "Building application for ${BUILD_TYPE}"
-flutter clean
 # shellcheck disable=SC2086
 flutter build linux --"${BUILD_TYPE}" ${FLAGS}
 
