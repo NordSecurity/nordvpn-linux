@@ -7,11 +7,10 @@
 package config
 
 import (
-	reflect "reflect"
-	sync "sync"
-
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	reflect "reflect"
+	sync "sync"
 )
 
 const (
@@ -50,6 +49,7 @@ var (
 		7:  "ANTI_DDOS",
 		9:  "DEDICATED_IP",
 		11: "STANDARD_VPN_SERVERS",
+		13: "NETFLIX_USA",
 		15: "P2P",
 		17: "OBFUSCATED",
 		19: "EUROPE",
@@ -65,6 +65,7 @@ var (
 		"ANTI_DDOS":                        7,
 		"DEDICATED_IP":                     9,
 		"STANDARD_VPN_SERVERS":             11,
+		"NETFLIX_USA":                      13,
 		"P2P":                              15,
 		"OBFUSCATED":                       17,
 		"EUROPE":                           19,
