@@ -117,8 +117,9 @@ class _InteractiveListViewState extends State<InteractiveListView> {
   }
 
   Widget _emptyResultsWidget() {
+    final controller = widget.searchTextController ?? _searchController;
     if ((widget.showEmptyListAtStartup) &&
-        (_searchController.text.length < widget.beginSearchAfter)) {
+        (controller.text.length < widget.beginSearchAfter)) {
       return widget.emptyListWidget ?? const SizedBox.shrink();
     }
     return widget.noResultsFoundWidget;
