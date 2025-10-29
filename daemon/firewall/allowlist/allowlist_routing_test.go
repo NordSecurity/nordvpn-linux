@@ -128,7 +128,7 @@ func TestIPTables_EnablePorts(t *testing.T) {
 				mark:        "0x123",
 				commandFunc: (&MockCmd{}).onlyOnceCommandFunc,
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {

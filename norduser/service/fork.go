@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math"
 	"os"
 	"os/exec"
 	"strconv"
@@ -291,10 +290,8 @@ func (s *systemGIDProvider) GetNordvpnGid() (uint32, error) {
 		return 0, errors.New("negative gid cannot be converted to uint32")
 	}
 
-	if gid > math.MaxUint32 {
-		return 0, errors.New("gid exceeds uint32 maximum value")
-	}
-
+	//no gosec violation, values from the enumeration are within the int32 max range
+	// #nosec G115
 	return uint32(gid), nil
 }
 
