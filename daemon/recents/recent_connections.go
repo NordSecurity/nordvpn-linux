@@ -122,18 +122,18 @@ func (r *RecentConnectionsStore) AddPending(model Model) {
 }
 
 // GetPending retrieves and clears the pending recent connection model
-func (r *RecentConnectionsStore) GetPending() (error, Model) {
+func (r *RecentConnectionsStore) GetPending() (bool, Model) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	if r.pendingConnection.IsEmpty() {
-		return fmt.Errorf("no pending recent connection"), Model{}
+		return false, Model{}
 	}
 
 	connection := r.pendingConnection.Clone()
 	r.pendingConnection = Model{}
 
-	return nil, connection
+	return true, connection
 }
 
 // Clean removes all stored connection information

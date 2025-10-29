@@ -15,63 +15,85 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestStorePendingRecentConnection_WithPendingConnection(t *testing.T) {
+func TestStorePendingRecentConnection_BasicBehavior(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
-	store := recents.NewRecentConnectionsStore("/test/path", &fs)
-
-	model := recents.Model{
-		Country:        "Germany",
-		City:           "Berlin",
-		ConnectionType: config.ServerSelectionRule_CITY,
-		CountryCode:    "DE",
+	tests := []struct {
+		name            string
+		pendingModel    *recents.Model
+		expectedStored  int
+		expectedEvent   bool
+		expectedCleared bool
+		validateStored  func(*testing.T, []recents.Model)
+	}{
+		{
+			name: "with pending connection",
+			pendingModel: &recents.Model{
+				Country:        "Germany",
+				City:           "Berlin",
+				ConnectionType: config.ServerSelectionRule_CITY,
+				CountryCode:    "DE",
+			},
+			expectedStored:  1,
+			expectedEvent:   true,
+			expectedCleared: true,
+			validateStored: func(t *testing.T, connections []recents.Model) {
+				assert.Equal(t, "Germany", connections[0].Country)
+				assert.Equal(t, "Berlin", connections[0].City)
+			},
+		},
+		{
+			name:            "no pending connection",
+			pendingModel:    nil,
+			expectedStored:  0,
+			expectedEvent:   false,
+			expectedCleared: false,
+		},
+		{
+			name:            "empty model not stored",
+			pendingModel:    &recents.Model{},
+			expectedStored:  0,
+			expectedEvent:   false,
+			expectedCleared: false,
+		},
 	}
 
-	store.AddPending(model)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fs := mockconfig.NewFilesystemMock(t)
+			store := recents.NewRecentConnectionsStore("/test/path", &fs)
 
-	eventPublished := false
-	eventPublisher := func(data events.DataRecentsChanged) {
-		eventPublished = true
+			if tt.pendingModel != nil {
+				store.AddPending(*tt.pendingModel)
+			}
+
+			eventPublished := false
+			eventPublisher := func(data events.DataRecentsChanged) {
+				eventPublished = true
+			}
+
+			StorePendingRecentConnection(store, eventPublisher)
+
+			// Verify connections stored
+			connections, err := store.Get()
+			require.NoError(t, err)
+			assert.Len(t, connections, tt.expectedStored)
+
+			if tt.validateStored != nil && len(connections) > 0 {
+				tt.validateStored(t, connections)
+			}
+
+			// Verify event publication
+			assert.Equal(t, tt.expectedEvent, eventPublished)
+
+			// Verify pending was cleared if expected
+			if tt.expectedCleared {
+				exists, empty := store.GetPending()
+				assert.False(t, exists)
+				assert.True(t, empty.IsEmpty())
+			}
+		})
 	}
-
-	StorePendingRecentConnection(store, eventPublisher)
-
-	// Verify the connection was added to the store
-	connections, err := store.Get()
-	require.NoError(t, err)
-	require.Len(t, connections, 1)
-	assert.Equal(t, model, connections[0])
-
-	// Verify the event was published
-	assert.True(t, eventPublished, "RecentsChanged event should be published")
-
-	// Verify pending connection was cleared
-	err, empty := store.GetPending()
-	assert.Error(t, err)
-	assert.True(t, empty.IsEmpty())
-}
-
-func TestStorePendingRecentConnection_NoPendingConnection(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	fs := mockconfig.NewFilesystemMock(t)
-	store := recents.NewRecentConnectionsStore("/test/path", &fs)
-
-	eventPublished := false
-	eventPublisher := func(data events.DataRecentsChanged) {
-		eventPublished = true
-	}
-
-	StorePendingRecentConnection(store, eventPublisher)
-
-	// Verify no connection was added
-	connections, err := store.Get()
-	require.NoError(t, err)
-	assert.Empty(t, connections)
-
-	// Verify no event was published
-	assert.False(t, eventPublished, "RecentsChanged event should not be published when no pending connection")
 }
 
 func TestStorePendingRecentConnection_MultiplePendingConnections(t *testing.T) {
@@ -282,100 +304,89 @@ func TestStorePendingRecentConnection_FullWorkflow(t *testing.T) {
 	assert.Equal(t, 2, eventCount)
 }
 
-func TestStorePendingRecentConnection_EmptyModelNotStored(t *testing.T) {
+func TestStorePendingRecentConnection_ErrorHandling(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
-	store := recents.NewRecentConnectionsStore("/test/path", &fs)
-
-	emptyModel := recents.Model{}
-	store.AddPending(emptyModel)
-
-	eventPublished := false
-	eventPublisher := func(data events.DataRecentsChanged) {
-		eventPublished = true
+	tests := []struct {
+		name             string
+		writeError       error
+		existingModel    *recents.Model
+		pendingModel     recents.Model
+		expectedEvent    bool
+		expectedCleared  bool
+		validateExisting func(*testing.T, []recents.Model)
+	}{
+		{
+			name:       "add error clears pending but does not publish event",
+			writeError: errors.New("disk full"),
+			pendingModel: recents.Model{
+				Country:        "Austria",
+				ConnectionType: config.ServerSelectionRule_COUNTRY,
+			},
+			expectedEvent:   false,
+			expectedCleared: true,
+		},
+		{
+			name:       "add error does not affect existing connections",
+			writeError: errors.New("write error"),
+			existingModel: &recents.Model{
+				Country:        "Belgium",
+				ConnectionType: config.ServerSelectionRule_COUNTRY,
+			},
+			pendingModel: recents.Model{
+				Country:        "Luxembourg",
+				ConnectionType: config.ServerSelectionRule_COUNTRY,
+			},
+			expectedEvent:   false,
+			expectedCleared: true,
+			validateExisting: func(t *testing.T, connections []recents.Model) {
+				require.Len(t, connections, 1)
+				assert.Equal(t, "Belgium", connections[0].Country)
+			},
+		},
 	}
 
-	StorePendingRecentConnection(store, eventPublisher)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fs := mockconfig.NewFilesystemMock(t)
+			store := recents.NewRecentConnectionsStore("/test/path", &fs)
 
-	// Verify no connection was added
-	connections, err := store.Get()
-	require.NoError(t, err)
-	assert.Empty(t, connections)
+			// Add existing connection if specified
+			if tt.existingModel != nil {
+				err := store.Add(*tt.existingModel)
+				require.NoError(t, err)
+			}
 
-	// Verify no event was published
-	assert.False(t, eventPublished)
-}
+			// Set write error
+			fs.WriteErr = tt.writeError
 
-func TestStorePendingRecentConnection_AddError(t *testing.T) {
-	category.Set(t, category.Unit)
+			// Add pending connection
+			store.AddPending(tt.pendingModel)
 
-	fs := mockconfig.NewFilesystemMock(t)
-	fs.WriteErr = errors.New("disk full")
-	store := recents.NewRecentConnectionsStore("/test/path", &fs)
+			eventPublished := false
+			eventPublisher := func(data events.DataRecentsChanged) {
+				eventPublished = true
+			}
 
-	model := recents.Model{
-		Country:        "Austria",
-		ConnectionType: config.ServerSelectionRule_COUNTRY,
+			StorePendingRecentConnection(store, eventPublisher)
+
+			// Verify event was not published on error
+			assert.Equal(t, tt.expectedEvent, eventPublished)
+
+			// Verify pending was cleared
+			if tt.expectedCleared {
+				exists, empty := store.GetPending()
+				assert.False(t, exists)
+				assert.True(t, empty.IsEmpty())
+			}
+
+			// Validate existing connections if needed
+			if tt.validateExisting != nil {
+				fs.WriteErr = nil // Clear error to read
+				connections, err := store.Get()
+				require.NoError(t, err)
+				tt.validateExisting(t, connections)
+			}
+		})
 	}
-
-	store.AddPending(model)
-
-	eventPublished := false
-	eventPublisher := func(data events.DataRecentsChanged) {
-		eventPublished = true
-	}
-
-	StorePendingRecentConnection(store, eventPublisher)
-
-	// Verify event was NOT published due to Add error
-	assert.False(t, eventPublished, "RecentsChanged event should not be published when Add fails")
-
-	// Verify pending connection was still cleared (GetPending was called)
-	err, empty := store.GetPending()
-	assert.Error(t, err)
-	assert.True(t, empty.IsEmpty())
-}
-
-func TestStorePendingRecentConnection_AddErrorDoesNotAffectExisting(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	fs := mockconfig.NewFilesystemMock(t)
-	store := recents.NewRecentConnectionsStore("/test/path", &fs)
-
-	// Add an existing connection successfully
-	existingModel := recents.Model{
-		Country:        "Belgium",
-		ConnectionType: config.ServerSelectionRule_COUNTRY,
-	}
-	err := store.Add(existingModel)
-	require.NoError(t, err)
-
-	// Now simulate an error when adding new pending
-	fs.WriteErr = errors.New("write error")
-
-	newModel := recents.Model{
-		Country:        "Luxembourg",
-		ConnectionType: config.ServerSelectionRule_COUNTRY,
-	}
-	store.AddPending(newModel)
-
-	eventPublished := false
-	eventPublisher := func(data events.DataRecentsChanged) {
-		eventPublished = true
-	}
-
-	StorePendingRecentConnection(store, eventPublisher)
-
-	// Verify event was NOT published
-	assert.False(t, eventPublished)
-
-	// Clear the error to read existing connections
-	fs.WriteErr = nil
-
-	// Verify the existing connection is still there
-	connections, err := store.Get()
-	require.NoError(t, err)
-	require.Len(t, connections, 1)
-	assert.Equal(t, existingModel, connections[0])
 }

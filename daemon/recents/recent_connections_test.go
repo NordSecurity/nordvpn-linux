@@ -562,8 +562,8 @@ func TestRecentConnectionsStore_AddPending_StoresPendingConnection(t *testing.T)
 	store.AddPending(model)
 
 	// Verify the pending connection is stored
-	err, retrieved := store.GetPending()
-	require.NoError(t, err)
+	exists, retrieved := store.GetPending()
+	require.True(t, exists)
 	assert.Equal(t, model, retrieved)
 }
 
@@ -586,8 +586,8 @@ func TestRecentConnectionsStore_AddPending_OverwritesPreviousPending(t *testing.
 	store.AddPending(model1)
 	store.AddPending(model2)
 
-	err, retrieved := store.GetPending()
-	require.NoError(t, err)
+	exists, retrieved := store.GetPending()
+	require.True(t, exists)
 	assert.Equal(t, model2, retrieved)
 	assert.NotEqual(t, model1, retrieved)
 }
@@ -616,8 +616,8 @@ func TestRecentConnectionsStore_AddPending_ConcurrentAccess(t *testing.T) {
 	wg.Wait()
 
 	// Should have one pending connection (the last one written)
-	err, retrieved := store.GetPending()
-	require.NoError(t, err)
+	exists, retrieved := store.GetPending()
+	require.True(t, exists)
 	assert.NotEmpty(t, retrieved.Country)
 }
 
@@ -637,14 +637,13 @@ func TestRecentConnectionsStore_GetPending_ReturnsAndClearsPending(t *testing.T)
 	store.AddPending(model)
 
 	// First GetPending should return the model
-	err, retrieved := store.GetPending()
-	require.NoError(t, err)
+	exists, retrieved := store.GetPending()
+	require.True(t, exists)
 	assert.Equal(t, model, retrieved)
 
-	// Second GetPending should return error (no pending connection)
-	err, empty := store.GetPending()
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "no pending recent connection")
+	// Second GetPending should return false (no pending connection)
+	exists, empty := store.GetPending()
+	assert.False(t, exists)
 	assert.True(t, empty.IsEmpty())
 }
 
@@ -654,9 +653,8 @@ func TestRecentConnectionsStore_GetPending_NoPendingConnection(t *testing.T) {
 	fs := mockconfig.NewFilesystemMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs)
 
-	err, model := store.GetPending()
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "no pending recent connection")
+	exists, model := store.GetPending()
+	assert.False(t, exists)
 	assert.True(t, model.IsEmpty())
 }
 
@@ -676,8 +674,8 @@ func TestRecentConnectionsStore_GetPending_ReturnsClone(t *testing.T) {
 
 	store.AddPending(original)
 
-	err, retrieved := store.GetPending()
-	require.NoError(t, err)
+	exists, retrieved := store.GetPending()
+	require.True(t, exists)
 
 	// Modify the retrieved model
 	retrieved.Country = "Belgium"
@@ -685,8 +683,8 @@ func TestRecentConnectionsStore_GetPending_ReturnsClone(t *testing.T) {
 
 	// Add the same pending again and verify it wasn't affected
 	store.AddPending(original)
-	err, retrieved2 := store.GetPending()
-	require.NoError(t, err)
+	exists, retrieved2 := store.GetPending()
+	require.True(t, exists)
 	assert.Equal(t, original, retrieved2)
 	assert.NotEqual(t, retrieved, retrieved2)
 }
@@ -715,10 +713,10 @@ func TestRecentConnectionsStore_GetPending_ConcurrentAccess(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			err, _ := store.GetPending()
+			exists, _ := store.GetPending()
 			mu.Lock()
 			defer mu.Unlock()
-			if err == nil {
+			if exists {
 				successCount++
 			} else {
 				errorCount++
@@ -742,9 +740,8 @@ func TestRecentConnectionsStore_AddPending_EmptyModel(t *testing.T) {
 	emptyModel := Model{}
 	store.AddPending(emptyModel)
 
-	err, retrieved := store.GetPending()
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "no pending recent connection")
+	exists, retrieved := store.GetPending()
+	assert.False(t, exists)
 	assert.True(t, retrieved.IsEmpty())
 }
 
@@ -764,12 +761,12 @@ func TestRecentConnectionsStore_PendingWorkflow_FullCycle(t *testing.T) {
 	store.AddPending(model)
 
 	// Step 2: Retrieve and clear the pending connection
-	err, retrieved := store.GetPending()
-	require.NoError(t, err)
+	exists, retrieved := store.GetPending()
+	require.True(t, exists)
 	assert.Equal(t, model, retrieved)
 
 	// Step 3: Add the retrieved connection to the store
-	err = store.Add(retrieved)
+	err := store.Add(retrieved)
 	require.NoError(t, err)
 
 	// Step 4: Verify the connection is in the store
@@ -779,7 +776,7 @@ func TestRecentConnectionsStore_PendingWorkflow_FullCycle(t *testing.T) {
 	assert.Equal(t, model, connections[0])
 
 	// Step 5: Verify no pending connection remains
-	err, empty := store.GetPending()
-	assert.Error(t, err)
+	exists, empty := store.GetPending()
+	assert.False(t, exists)
 	assert.True(t, empty.IsEmpty())
 }
