@@ -121,8 +121,8 @@ func (r *RecentConnectionsStore) AddPending(model Model) {
 	r.pendingConnection = model
 }
 
-// GetPending retrieves and clears the pending recent connection model
-func (r *RecentConnectionsStore) GetPending() (bool, Model) {
+// PopPending retrieves and clears the pending recent connection model
+func (r *RecentConnectionsStore) PopPending() (bool, Model) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

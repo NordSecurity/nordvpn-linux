@@ -562,7 +562,7 @@ func TestRecentConnectionsStore_AddPending_StoresPendingConnection(t *testing.T)
 	store.AddPending(model)
 
 	// Verify the pending connection is stored
-	exists, retrieved := store.GetPending()
+	exists, retrieved := store.PopPending()
 	require.True(t, exists)
 	assert.Equal(t, model, retrieved)
 }
@@ -586,7 +586,7 @@ func TestRecentConnectionsStore_AddPending_OverwritesPreviousPending(t *testing.
 	store.AddPending(model1)
 	store.AddPending(model2)
 
-	exists, retrieved := store.GetPending()
+	exists, retrieved := store.PopPending()
 	require.True(t, exists)
 	assert.Equal(t, model2, retrieved)
 	assert.NotEqual(t, model1, retrieved)
@@ -616,12 +616,12 @@ func TestRecentConnectionsStore_AddPending_ConcurrentAccess(t *testing.T) {
 	wg.Wait()
 
 	// Should have one pending connection (the last one written)
-	exists, retrieved := store.GetPending()
+	exists, retrieved := store.PopPending()
 	require.True(t, exists)
 	assert.NotEmpty(t, retrieved.Country)
 }
 
-func TestRecentConnectionsStore_GetPending_ReturnsAndClearsPending(t *testing.T) {
+func TestRecentConnectionsStore_PopPending_ReturnsAndClearsPending(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
@@ -636,29 +636,29 @@ func TestRecentConnectionsStore_GetPending_ReturnsAndClearsPending(t *testing.T)
 
 	store.AddPending(model)
 
-	// First GetPending should return the model
-	exists, retrieved := store.GetPending()
+	// First PopPending should return the model
+	exists, retrieved := store.PopPending()
 	require.True(t, exists)
 	assert.Equal(t, model, retrieved)
 
-	// Second GetPending should return false (no pending connection)
-	exists, empty := store.GetPending()
+	// Second PopPending should return false (no pending connection)
+	exists, empty := store.PopPending()
 	assert.False(t, exists)
 	assert.True(t, empty.IsEmpty())
 }
 
-func TestRecentConnectionsStore_GetPending_NoPendingConnection(t *testing.T) {
+func TestRecentConnectionsStore_PopPending_NoPendingConnection(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs)
 
-	exists, model := store.GetPending()
+	exists, model := store.PopPending()
 	assert.False(t, exists)
 	assert.True(t, model.IsEmpty())
 }
 
-func TestRecentConnectionsStore_GetPending_ReturnsClone(t *testing.T) {
+func TestRecentConnectionsStore_PopPending_ReturnsClone(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
@@ -674,7 +674,7 @@ func TestRecentConnectionsStore_GetPending_ReturnsClone(t *testing.T) {
 
 	store.AddPending(original)
 
-	exists, retrieved := store.GetPending()
+	exists, retrieved := store.PopPending()
 	require.True(t, exists)
 
 	// Modify the retrieved model
@@ -683,13 +683,13 @@ func TestRecentConnectionsStore_GetPending_ReturnsClone(t *testing.T) {
 
 	// Add the same pending again and verify it wasn't affected
 	store.AddPending(original)
-	exists, retrieved2 := store.GetPending()
+	exists, retrieved2 := store.PopPending()
 	require.True(t, exists)
 	assert.Equal(t, original, retrieved2)
 	assert.NotEqual(t, retrieved, retrieved2)
 }
 
-func TestRecentConnectionsStore_GetPending_ConcurrentAccess(t *testing.T) {
+func TestRecentConnectionsStore_PopPending_ConcurrentAccess(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
@@ -713,7 +713,7 @@ func TestRecentConnectionsStore_GetPending_ConcurrentAccess(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			exists, _ := store.GetPending()
+			exists, _ := store.PopPending()
 			mu.Lock()
 			defer mu.Unlock()
 			if exists {
@@ -727,8 +727,8 @@ func TestRecentConnectionsStore_GetPending_ConcurrentAccess(t *testing.T) {
 	wg.Wait()
 
 	// Only one goroutine should succeed in getting the pending connection
-	assert.Equal(t, 1, successCount, "Only one GetPending should succeed")
-	assert.Equal(t, goroutines-1, errorCount, "Other GetPending calls should fail")
+	assert.Equal(t, 1, successCount, "Only one PopPending should succeed")
+	assert.Equal(t, goroutines-1, errorCount, "Other PopPending calls should fail")
 }
 
 func TestRecentConnectionsStore_AddPending_EmptyModel(t *testing.T) {
@@ -740,7 +740,7 @@ func TestRecentConnectionsStore_AddPending_EmptyModel(t *testing.T) {
 	emptyModel := Model{}
 	store.AddPending(emptyModel)
 
-	exists, retrieved := store.GetPending()
+	exists, retrieved := store.PopPending()
 	assert.False(t, exists)
 	assert.True(t, retrieved.IsEmpty())
 }
@@ -761,7 +761,7 @@ func TestRecentConnectionsStore_PendingWorkflow_FullCycle(t *testing.T) {
 	store.AddPending(model)
 
 	// Step 2: Retrieve and clear the pending connection
-	exists, retrieved := store.GetPending()
+	exists, retrieved := store.PopPending()
 	require.True(t, exists)
 	assert.Equal(t, model, retrieved)
 
@@ -776,7 +776,7 @@ func TestRecentConnectionsStore_PendingWorkflow_FullCycle(t *testing.T) {
 	assert.Equal(t, model, connections[0])
 
 	// Step 5: Verify no pending connection remains
-	exists, empty := store.GetPending()
+	exists, empty := store.PopPending()
 	assert.False(t, exists)
 	assert.True(t, empty.IsEmpty())
 }

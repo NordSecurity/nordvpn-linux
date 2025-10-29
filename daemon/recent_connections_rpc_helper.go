@@ -9,7 +9,7 @@ import (
 func StorePendingRecentConnection(
 	store *recents.RecentConnectionsStore,
 	eventPublisher func(events.DataRecentsChanged)) {
-	exists, recentModel := store.GetPending()
+	exists, recentModel := store.PopPending()
 	if !exists {
 		return
 	}
