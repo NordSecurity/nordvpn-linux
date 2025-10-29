@@ -465,6 +465,7 @@ func TestRpcConnect_RecentConnections(t *testing.T) {
 			expectedRecentConn: &recents.Model{
 				Country:            "Germany",
 				CountryCode:        "DE",
+				City:               "Berlin",
 				SpecificServer:     "de3",
 				SpecificServerName: "Germany #3",
 				ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER,
@@ -510,6 +511,7 @@ func TestRpcConnect_RecentConnections(t *testing.T) {
 			expectedRecentConn: &recents.Model{
 				Country:            "Germany",
 				CountryCode:        "DE",
+				City:               "Berlin",
 				Group:              config.ServerGroup_P2P,
 				ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 				ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
