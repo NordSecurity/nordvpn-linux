@@ -113,9 +113,18 @@ final class _ServersListCardState extends State<ServersListCard> {
         serversList.standardServersList.isEmpty &&
         serversList.obfuscatedServersList.isNotEmpty;
 
-    return (!_showSearchView)
+    final serverSelectionView = (!_showSearchView)
         ? _buildTabBarView(context, serversList, ref, isObfuscationEnabled)
         : _buildSearchList(context, serversList, ref, isObfuscationEnabled);
+
+    return Column(
+      spacing: context.appTheme.verticalSpaceSmall,
+      children: [
+        if (isObfuscationEnabled)
+          _showObfuscatedMessage(context, t.ui.turnOffObfuscationLocations),
+        Expanded(child: serverSelectionView),
+      ],
+    );
   }
 
   Widget _buildTabBarView(
@@ -202,47 +211,42 @@ final class _ServersListCardState extends State<ServersListCard> {
     final itemsCount = servers.length + (widget.withQuickConnectTile ? 1 : 0);
     final appTheme = context.appTheme;
 
-    return Builder(
-      builder: (context) {
-        return CustomScrollView(
-          primary: false,
-          key: ServersListKeys.countriesServersListKey,
-          slivers: [
-            SliverOverlapInjector(
-              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-            ),
-            SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                // show additional quick connect tile if specified
-                if (widget.withQuickConnectTile && index == 0) {
-                  return CustomExpansionTile(
-                    leading: DynamicThemeImage("fastest_server.svg"),
-                    title: Text(fastestServerLabel, style: appTheme.body),
-                    onTap: () async => await widget.onSelected(
-                      ConnectArguments(
-                        specialtyGroup: isObfuscationEnabled
-                            ? ServerType.obfuscated
-                            : null,
-                      ),
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            key: ServersListKeys.countriesServersListKey,
+            itemCount: itemsCount,
+            itemBuilder: (context, index) {
+              // show additional quick connect tile if specified
+              if (widget.withQuickConnectTile && index == 0) {
+                return CustomExpansionTile(
+                  leading: DynamicThemeImage("fastest_server.svg"),
+                  title: Text(fastestServerLabel, style: appTheme.body),
+                  onTap: () async => await widget.onSelected(
+                    ConnectArguments(
+                      specialtyGroup: isObfuscationEnabled
+                          ? ServerType.obfuscated
+                          : null,
                     ),
-                  );
-                }
-                // adjust for additional quick connect tile if specified
-                final idx = index - (widget.withQuickConnectTile ? 1 : 0);
-                return widget.itemFactory.forCountry(
-                  context: context,
-                  country: servers[idx],
-                  onTap: (args) async => await widget.onSelected(args),
-                  enabled: widget.enabled,
-                  specialtyGroup: isObfuscationEnabled
-                      ? ServerType.obfuscated
-                      : null,
+                  ),
                 );
-              }, childCount: itemsCount),
-            ),
-          ],
-        );
-      },
+              }
+              // adjust for additional quick connect tile if specified
+              final idx = index - (widget.withQuickConnectTile ? 1 : 0);
+              return widget.itemFactory.forCountry(
+                context: context,
+                country: servers[idx],
+                onTap: (args) async => await widget.onSelected(args),
+                enabled: widget.enabled,
+                specialtyGroup: isObfuscationEnabled
+                    ? ServerType.obfuscated
+                    : null,
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -265,45 +269,38 @@ final class _ServersListCardState extends State<ServersListCard> {
         description: t.ui.africaTheMiddleEastAndIndia,
       ),
     ];
-    return Builder(
-      builder: (context) {
-        return CustomScrollView(
-          primary: false,
-          key: ServersListKeys.specialtyServerKey,
-          slivers: [
-            SliverOverlapInjector(
-              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-            ),
-            SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final group = specialtyServersOrder[index];
-                final type = group.type;
-                final description = group.description;
-                if (type == ServerType.dedicatedIP) {
-                  return _buildDipListItem(ref, serversList, isObfuscatedOn);
-                }
-                final servers = serversList.specialtyServersList(type);
-                return widget.itemFactory.forSpecialtyServer(
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            itemCount: specialtyServersOrder.length,
+            itemBuilder: (context, index) {
+              final group = specialtyServersOrder[index];
+              final type = group.type;
+              final description = group.description;
+              if (type == ServerType.dedicatedIP) {
+                return _buildDipListItem(ref, serversList, isObfuscatedOn);
+              }
+              final servers = serversList.specialtyServersList(type);
+              return widget.itemFactory.forSpecialtyServer(
+                context: context,
+                type: type,
+                enabled:
+                    (servers.isNotEmpty && !isObfuscatedOn) || type.isRegion,
+                servers: servers,
+                subtitle: description,
+                onTap: (args) => widget.onSelected(args),
+                showDetails: () => _showDetailsForSpecialtyServer(
                   context: context,
+                  ref: ref,
                   type: type,
-                  enabled:
-                      (servers.isNotEmpty && !isObfuscatedOn) ||
-                      group.type.isRegion,
                   servers: servers,
-                  subtitle: description,
-                  onTap: (args) => widget.onSelected(args),
-                  showDetails: () => _showDetailsForSpecialtyServer(
-                    context: context,
-                    ref: ref,
-                    type: type,
-                    servers: servers,
-                  ),
-                );
-              }, childCount: specialtyServersOrder.length),
-            ),
-          ],
-        );
-      },
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
