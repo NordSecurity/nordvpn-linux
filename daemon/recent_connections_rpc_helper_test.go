@@ -88,7 +88,7 @@ func TestStorePendingRecentConnection_BasicBehavior(t *testing.T) {
 
 			// Verify pending was cleared if expected
 			if tt.expectedCleared {
-				exists, empty := store.GetPending()
+				exists, empty := store.PopPending()
 				assert.False(t, exists)
 				assert.True(t, empty.IsEmpty())
 			}
@@ -375,7 +375,7 @@ func TestStorePendingRecentConnection_ErrorHandling(t *testing.T) {
 
 			// Verify pending was cleared
 			if tt.expectedCleared {
-				exists, empty := store.GetPending()
+				exists, empty := store.PopPending()
 				assert.False(t, exists)
 				assert.True(t, empty.IsEmpty())
 			}
