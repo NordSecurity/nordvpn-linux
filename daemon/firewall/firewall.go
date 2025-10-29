@@ -50,9 +50,9 @@ func (fw *Firewall) Add(rules []Rule) error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 	alreadyAddedRules, err := fw.current.GetActiveRules()
-		if err != nil {
-			log.Printf("%v, unable to get already active rules: %v", internal.WarningPrefix, err)
-		}
+	if err != nil {
+		log.Printf("%v, unable to get already active rules: %v", internal.WarningPrefix, err)
+	}
 	for _, rule := range rules {
 		fw.publisher.Publish(fmt.Sprintf("adding rule %s", rule.Name))
 		if rule.Name == "" {

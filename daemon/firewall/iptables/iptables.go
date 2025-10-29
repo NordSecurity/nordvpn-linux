@@ -484,7 +484,7 @@ func (ipt *IPTables) GetActiveRules() ([]string, error) {
 				if len(line) == 0 {
 					continue
 				}
-				if strings.Contains(string(line), defaultComment){
+				if strings.Contains(string(line), defaultComment) {
 					// check for comment name in rule
 					matches := re.FindAll(line, -1)
 					var stringMatches []string

@@ -65,9 +65,9 @@ const (
 	blockLanRule               = "-block-lan-rule-"
 	meshnetFirewallRuleComment = "nordvpn-meshnet"
 	denyPrivateDNSRule         = "deny-private-dns"
-	allowFileshareRule 		   = "-allow-fileshare-rule-"
-	dropIpv4Rule			   = "drop-IPv4"
-	dropIpv6Rule			   = "drop-IPv6"
+	allowFileshareRule         = "-allow-fileshare-rule-"
+	dropIpv4Rule               = "drop-IPv4"
+	dropIpv6Rule               = "drop-IPv6"
 
 	ArpIgnoreParamName = "net.ipv4.conf.all.arp_ignore"
 )
