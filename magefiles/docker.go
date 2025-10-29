@@ -10,10 +10,10 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/stdcopy"
 	"golang.org/x/exp/slices"
@@ -112,7 +112,7 @@ func runDocker(
 
 	pullImage := true
 	if idempotent, ok := env["IDEMPOTENT_DOCKER"]; ok && idempotent == "1" {
-		list, err := docker.ImageList(context.Background(), types.ImageListOptions{})
+		list, err := docker.ImageList(context.Background(), image.ListOptions{})
 		if err != nil {
 			return err
 		}
@@ -272,11 +272,11 @@ func fixPermissions() error {
 func pullDocker(
 	ctx context.Context,
 	cli *client.Client,
-	image string,
+	imagePath string,
 ) error {
-	reader, err := cli.ImagePull(ctx, image, types.ImagePullOptions{})
+	reader, err := cli.ImagePull(ctx, imagePath, image.PullOptions{})
 	if err != nil {
-		return fmt.Errorf("pulling %s: %w", image, err)
+		return fmt.Errorf("pulling %s: %w", imagePath, err)
 	}
 	defer reader.Close()
 
@@ -305,7 +305,7 @@ func CreateDockerNetwork(ctx context.Context, name string) (string, error) {
 		return "", err
 	}
 
-	resp, err := docker.NetworkCreate(ctx, name, types.NetworkCreate{})
+	resp, err := docker.NetworkCreate(ctx, name, network.CreateOptions{})
 	return resp.ID, err
 }
 
