@@ -49,9 +49,7 @@ class LogReader:
 
                 # Validate the cursor (if greater than file size, cursor is invalid)
                 if cursor > file_size:
-                    print(
-                        f"Cursor ({cursor}) exceeds file size ({file_size}). Returning empty content."
-                    )
+                    print(f"Cursor ({cursor}) exceeds file size ({file_size}). Returning empty content.")
                     return ""
 
                 # Move to the specified cursor position

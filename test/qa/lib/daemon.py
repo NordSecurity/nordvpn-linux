@@ -10,6 +10,16 @@ from . import logging, ssh
 from lib.shell import sh_no_tty
 
 
+from .log_reader import LogReader
+from constants import (
+    DEB,
+    NORDVPND_CONFIG_FILE,
+    NORDVPND_SERVICE_NAME,
+    RC_TIMEOUT,
+    SNAP,
+)
+
+
 class Env:
     DEV = "dev"
     PROD = "prod"
@@ -222,16 +232,19 @@ def enable_rc_local_config_usage():
 
     This function is typically used to force the application to use locally cached remote config files.
     """
-    service_path = "/etc/init.d/nordvpn"
+    service_path = NORDVPND_CONFIG_FILE.get(SNAP) if is_under_snap() else NORDVPND_CONFIG_FILE.get(DEB)
 
     # Print original service file for reference
     print(f"Service original:\n {sh.cat(service_path)}")
 
+    sed_command = r'/^\[Service\]/a Environment="RC_USE_LOCAL_CONFIG=1"' if is_under_snap() else r"1a export RC_USE_LOCAL_CONFIG=1"
+
     # Insert environment variable into systemd service file
-    sh.sudo("sed", "-i", r"1a export RC_USE_LOCAL_CONFIG=1", service_path)
+    sh.sudo.sed("-i", sed_command, service_path)
 
     sh.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
 
+    sh.sudo(SNAP, "restart", NORDVPND_SERVICE_NAME.get(SNAP)) if is_under_snap() else restart()
     # Print service file after modification
     print(f"Service after:\n {sh.cat(service_path)}")
 
@@ -242,11 +255,52 @@ def disable_rc_local_config_usage():
     This function is typically used to clean up the service file after testing,
     ensuring that the local remote config behavior is disabled.
     """
-    service_path = "/etc/init.d/nordvpn"
+    service_path = NORDVPND_CONFIG_FILE.get(SNAP) if is_under_snap() else NORDVPND_CONFIG_FILE.get(DEB)
     # Cleanup: remove the injected environment variable line
-    sh.sudo("sed", "-i", r"/^export RC_USE_LOCAL_CONFIG=1$/d", service_path)
+    sed_command = r'/^$$Service$$/,/^Environment="RC_USE_LOCAL_CONFIG=1"$/d' if is_under_snap() else r"/^export RC_USE_LOCAL_CONFIG=1$/d"
+    sh.sudo.sed("-i", sed_command, service_path)
 
     sh.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
 
+    sh.sudo(SNAP, "restart", NORDVPND_SERVICE_NAME.get(SNAP)) if is_under_snap() else restart()
+    # Print restored service file for verification
+    print(f"Service restored:\n {sh.cat(service_path)}")
+
+def set_rc_retry_custom_time(daemon_log_reader: LogReader, timeout: int = RC_TIMEOUT) -> int:
+    """
+    Modifies the nordvpn service file to set a custom time for the NordVPN daemon's rc retry scheme.
+
+    This function is used to force the application to check remote config for specified time.
+
+    :return         Cursor when config was applied.
+    """
+    service_path = NORDVPND_CONFIG_FILE.get(SNAP) if is_under_snap() else NORDVPND_CONFIG_FILE.get(DEB)
+
+    # Print original service file for reference
+    print(f"Service original:\n {sh.cat(service_path)}")
+
+    sed_command = f'/^\[Service\]/a Environment="RC_LOAD_TIME_MIN={timeout}"' if is_under_snap() else f"1a export RC_LOAD_TIME_MIN={timeout}"
+    sh.sudo.sed("-i", sed_command, service_path)
+
+    cursor = daemon_log_reader.get_cursor()
+    sh.sudo.systemctl("daemon-reload", _ok_code=(0, 1))
+
+    sh.sudo(SNAP, "restart", NORDVPND_SERVICE_NAME.get(SNAP)) if is_under_snap() else restart()
+
+    return cursor
+
+def remove_rc_retry_custom_time(timeout: int = RC_TIMEOUT):
+    """
+    Restores the original nordvpn service file by removing the forced local config env variable.
+
+    This function is typically used to clean up the service file after testing,
+    ensuring that the retry time is set to default.
+    """
+    service_path = NORDVPND_CONFIG_FILE.get(SNAP) if is_under_snap() else NORDVPND_CONFIG_FILE.get(DEB)
+    # Cleanup: remove the injected environment variable line
+    sed_command = f'/^$$Service$$/,/^Environment="RC_LOAD_TIME_MIN={timeout}"$/d' if is_under_snap() else f"/^export RC_LOAD_TIME_MIN={timeout}$/d"
+
+    sh.sudo.sed("-i", sed_command, service_path)
+    sh.sudo(SNAP, "restart", NORDVPND_SERVICE_NAME.get(SNAP)) if is_under_snap() else restart()
     # Print restored service file for verification
     print(f"Service restored:\n {sh.cat(service_path)}")
