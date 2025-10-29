@@ -10,6 +10,9 @@ echo ""
 # Track overall status
 EXIT_CODE=0
 
+# Pattern for daemon protobuf files
+DAEMON_PB_PATTERN="**/*.pb.go"
+
 # Check GUI protobuf files
 # This is an ugly way to have comparison since GUI's protobuf generating image has
 # a complex way of regenerating files, which creates many permission related problems
@@ -25,6 +28,12 @@ if [ -d "${GUI_PB_BACKUP_DIR}" ]; then
 	if [ "$BACKUP_FILES" != "$GENERATED_FILES" ]; then
 		echo "ERROR: Generated GUI protobuf files differ from committed versions!"
 		echo "File list mismatch detected."
+		echo ""
+		echo "Files missing in generated (were in committed):"
+		comm -23 <(echo "$BACKUP_FILES") <(echo "$GENERATED_FILES") | sed 's/^/  /'
+		echo ""
+		echo "Extra files in generated (not in committed):"
+		comm -13 <(echo "$BACKUP_FILES") <(echo "$GENERATED_FILES") | sed 's/^/  /'
 		EXIT_CODE=1
 	else
 		# Compare each file's content
@@ -37,7 +46,9 @@ if [ -d "${GUI_PB_BACKUP_DIR}" ]; then
 						echo "Differences found:"
 						HAS_DIFF=1
 					fi
-					echo "  $file"
+					echo ""
+					echo "File: $file"
+					diff -u "${GUI_PB_BACKUP_DIR}/$file" "${GUI_PB_DIR}/$file" || true
 				fi
 			fi
 		done
@@ -58,10 +69,14 @@ echo ""
 
 # Check daemon protobuf files
 echo "Comparing generated daemon files with committed versions..."
-if ! git diff --quiet --exit-code "${DAEMON_PB_DIR}"; then
+if ! git diff --quiet --exit-code "${DAEMON_PB_PATTERN}"; then
 	echo "ERROR: Daemon protobuf files changed!"
 	echo "Changed files:"
-	git diff --name-only "${DAEMON_PB_DIR}"
+	git diff --name-only "${DAEMON_PB_PATTERN}"
+	echo ""
+	echo "Differences found:"
+	echo ""
+	git diff "${DAEMON_PB_PATTERN}"
 	EXIT_CODE=1
 else
 	echo "✓ Daemon protobuf files match"

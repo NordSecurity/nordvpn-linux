@@ -4,7 +4,6 @@ x-common-variables: &common-variables
   GEN_STATUS_DIR: /app/gen_status
   GUI_PB_DIR: /app/gui/lib/pb
   GUI_PB_BACKUP_DIR: /app/gui/lib/pb.backup
-  DAEMON_PB_DIR: daemon/pb/
 
 services:
   # Generates Go protobuf files for the daemon

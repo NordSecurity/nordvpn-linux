@@ -30,9 +30,6 @@ class SetAutoconnectRequest extends $pb.GeneratedMessage {
     $core.String? serverGroup,
   }) {
     final result = create();
-    if (enabled != null) result.enabled = enabled;
-    if (serverTag != null) result.serverTag = serverTag;
-    if (serverGroup != null) result.serverGroup = serverGroup;
     return result;
   }
 
