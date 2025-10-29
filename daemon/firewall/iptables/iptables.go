@@ -121,7 +121,7 @@ func (ipt *IPTables) applyRule(rule firewall.Rule, add bool) error {
 			out, err := exec.Command(iptableVersion, strings.Split(args, " ")...).CombinedOutput()
 			if err != nil {
 				if flag == "-D" && strings.Contains(string(out), "does a matching rule exist in that chain") {
-					return nil
+					continue
 				}
 				return fmt.Errorf("%s %s rule '%s': %w: %s", errStr, iptableVersion, ipTableRule, err, string(out))
 			}
