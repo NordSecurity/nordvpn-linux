@@ -79,11 +79,15 @@ func searchOptionsForConnectionType(connType config.ServerSelectionRule) SearchO
 	opts := SearchOptions{}
 
 	switch connType {
-	case config.ServerSelectionRule_SPECIFIC_SERVER:
+	case config.ServerSelectionRule_SPECIFIC_SERVER,
+		config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
 		// No exclusions
-	case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
-		// No exclusions
-	default:
+	case config.ServerSelectionRule_COUNTRY,
+		config.ServerSelectionRule_COUNTRY_WITH_GROUP,
+		config.ServerSelectionRule_GROUP,
+		config.ServerSelectionRule_NONE,
+		config.ServerSelectionRule_RECOMMENDED,
+		config.ServerSelectionRule_CITY:
 		// For non-specific server connections, exclude specific server fields
 		opts.ExcludeSpecificServer = true
 		opts.ExcludeSpecificServerName = true
