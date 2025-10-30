@@ -314,9 +314,11 @@ func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error { // regul
 	}
 
 	if err := s.response(mooseFn(
-		int32(data.DurationMs),
-		eventTriggerDomainToInternalType(data.EventTrigger),
-		eventStatusToInternalType(data.EventStatus),
+		moose.EventParams{
+			EventDuration: int32(data.DurationMs),
+			EventStatus: eventStatusToInternalType(data.EventStatus),
+			EventTrigger: eventTriggerDomainToInternalType(data.EventTrigger),
+		},
 		loginFlowAltered,
 		-1,
 		nil,
@@ -332,10 +334,11 @@ func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error { // regul
 
 func (s *Subscriber) NotifyLogout(data events.DataAuthorization) error {
 	if err := s.response(moose.NordvpnappSendServiceQualityAuthorizationLogout(
-		int32(data.DurationMs),
-		eventTriggerDomainToInternalType(data.EventTrigger),
-		eventStatusToInternalType(data.EventStatus),
-		moose.NordvpnappOptBoolNone,
+		moose.EventParams{
+			EventDuration: int32(data.DurationMs),
+			EventStatus: eventStatusToInternalType(data.EventStatus),
+			EventTrigger: eventTriggerDomainToInternalType(data.EventTrigger),
+		},
 		int32(data.Reason),
 		nil,
 	)); err != nil {
@@ -358,10 +361,12 @@ func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
 		itemType = moose.NordvpnappUserInterfaceItemTypeTextBox
 	}
 	return s.response(moose.NordvpnappSendUserInterfaceUiItemsClick(
-		data.ItemName,
-		itemType,
-		data.ItemValue,
-		data.FormReference,
+		moose.UiItemsParams{
+			FormReference: data.FormReference,
+			ItemName: data.ItemName,
+			ItemType: itemType,
+			ItemValue: data.ItemValue,
+		},
 		nil,
 	))
 }
@@ -464,9 +469,11 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 
 	if data.IsMeshnetPeer {
 		return s.response(moose.NordvpnappSendServiceQualityServersConnectToMeshnetDevice(
-			int32(data.DurationMs),
-			eventStatusToInternalType(data.EventStatus),
-			moose.NordvpnappEventTriggerUser,
+			moose.EventParams{
+				EventDuration: int32(data.DurationMs),
+				EventStatus: eventStatusToInternalType(data.EventStatus),
+				EventTrigger: moose.NordvpnappEventTriggerUser,
+			},
 			-1,
 			-1,
 			nil,
@@ -474,24 +481,30 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	}
 
 	if err := s.response(moose.NordvpnappSendServiceQualityServersConnect(
-		int32(data.DurationMs),
-		eventStatusToInternalType(data.EventStatus),
-		moose.NordvpnappEventTriggerUser,
-		moose.NordvpnappVpnConnectionTriggerNone,
-		moose.NordvpnappVpnConnectionPresetNone,
-		serverSelectionRuleToInternalType(data.TargetServerSelection),
-		serverListOriginToInternalType(data.ServerFromAPI),
-		data.TargetServerGroup,
-		data.TargetServerDomain,
-		data.TargetServerIP.String(),
-		data.TargetServerCountryCode,
-		data.TargetServerCity,
-		connectionProtocolToInternalType(data.Protocol),
-		connectionTechnologyToInternalType(data.Technology),
-		moose.NordvpnappServerTypeNone,
+		moose.EventParams{
+			EventDuration: int32(data.DurationMs),
+			EventStatus: eventStatusToInternalType(data.EventStatus),
+			EventTrigger: moose.NordvpnappEventTriggerUser,
+		},
+		moose.TargetConnectionParams{
+			TargetServerListSource: serverListOriginToInternalType(data.ServerFromAPI),
+			TargetServerSelectionRule: serverSelectionRuleToInternalType(data.TargetServerSelection),
+			TargetServerType: moose.NordvpnappServerTypeNone,
+		},
+		moose.TargetConnectionAdditionalParams{
+			TargetProtocol: connectionProtocolToInternalType(data.Protocol),
+			TargetServerCity: data.TargetServerCity,
+			TargetServerCountry: data.TargetServerCountryCode,
+			TargetServerDomain: data.TargetServerDomain,
+			TargetServerGroup: data.TargetServerGroup,
+			TargetServerIp: data.TargetServerIP.String(),
+			TargetTechnology: connectionTechnologyToInternalType(data.Technology),
+		},
+		moose.ConnectionParams{
+			ConnectionFunnel: "",
+			VpnConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone,
+		},
 		threatProtectionLiteToInternalType(data.ThreatProtectionLite),
-		-1,
-		"",
 		-1,
 		nil,
 	)); err != nil {
@@ -516,45 +529,44 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 
 func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 	s.mux.Lock()
-	connectionTime := int32(time.Since(s.connectionStartTime).Seconds())
-	if connectionTime <= 0 {
-		connectionTime = -1
+	connectionDuration := int32(time.Since(s.connectionStartTime).Seconds())
+	if connectionDuration <= 0 {
+		connectionDuration = -1
 	}
 	s.connectionStartTime = time.Time{}
 	s.mux.Unlock()
 
 	if s.connectionToMeshnetPeer {
 		return s.response(moose.NordvpnappSendServiceQualityServersDisconnectFromMeshnetDevice(
-			int32(data.Duration.Milliseconds()),
-			eventStatusToInternalType(data.EventStatus),
-			moose.NordvpnappEventTriggerUser,
-			connectionTime, // seconds
+			moose.EventParams{
+				EventDuration: int32(data.Duration.Milliseconds()),
+				EventStatus: eventStatusToInternalType(data.EventStatus),
+				EventTrigger: moose.NordvpnappEventTriggerUser,
+			},
+			connectionDuration, // seconds
 			-1,
 			nil,
 		))
 	}
 
 	if err := s.response(moose.NordvpnappSendServiceQualityServersDisconnect(
-		int32(data.Duration.Milliseconds()),
-		eventStatusToInternalType(data.EventStatus),
-		// App should never disconnect from VPN by itself. It has to receive either
-		// user command (logout, set defaults) or be shut down.
-		moose.NordvpnappEventTriggerUser,
-		moose.NordvpnappVpnConnectionTriggerNone, // pass proper trigger
-		moose.NordvpnappVpnConnectionPresetNone,
-		serverSelectionRuleToInternalType(data.TargetServerSelection),
-		serverListOriginToInternalType(data.ServerFromAPI),
-		"",
-		"",
-		"",
-		"",
-		"",
-		connectionProtocolToInternalType(data.Protocol),
-		connectionTechnologyToInternalType(data.Technology),
-		moose.NordvpnappServerTypeNone,
-		threatProtectionLiteToInternalType(data.ThreatProtectionLite),
-		connectionTime, // seconds
-		"",
+		moose.EventParams{
+			EventDuration: int32(data.Duration.Milliseconds()),
+			EventStatus: eventStatusToInternalType(data.EventStatus),
+			// App should never disconnect from VPN by itself. It has to receive either
+			// user command (logout, set defaults) or be shut down.
+			EventTrigger: moose.NordvpnappEventTriggerUser,
+		},
+		moose.TargetConnectionParams{
+			TargetServerListSource: serverListOriginToInternalType(data.ServerFromAPI),
+			TargetServerSelectionRule: serverSelectionRuleToInternalType(data.TargetServerSelection),
+			TargetServerType: moose.NordvpnappServerTypeNone,
+		},
+		moose.ConnectionParams{
+			ConnectionFunnel: "",
+			VpnConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone, // pass proper trigger
+		},
+		connectionDuration, // seconds
 		errToExceptionCode(data.Error),
 		nil,
 	)); err != nil {
@@ -603,18 +615,22 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 	}
 
 	return s.response(notifierFunc(
-		duration,
-		eventStatus,
-		moose.NordvpnappEventTriggerApp,
-		data.Request.URL.Host,
-		int32(responseCode),
-		data.Request.Proto,
-		0,
-		data.RequestFilters,
-		data.RequestFields,
-		data.Limits,
-		data.Offset,
-		"",
+		moose.EventParams{
+			EventDuration: duration,
+			EventStatus: eventStatus,
+			EventTrigger: moose.NordvpnappEventTriggerApp,
+		},
+		moose.ApiRequestParams{
+			ApiHostName: data.Request.URL.Host,
+			DnsResolutionTime: 0,
+			Limits: data.Limits,
+			Offset: data.Offset,
+			RequestFields: data.RequestFields,
+			RequestFilters: data.RequestFilters,
+			ResponseCode: int32(responseCode),
+			ResponseSummary: "",
+			TransferProtocol: data.Request.Proto,
+		},
 		nil,
 	))
 }
