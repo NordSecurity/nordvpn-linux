@@ -139,7 +139,7 @@ func applyXSLTWithXsltproc(xslBytes, xmlBytes []byte) ([]byte, error) {
 
 	// NOTE: We are calling a binary here instead of using libraries, because the libs
 	// are bindings for old libxml which on newer distributions is not available.
-	cmd := exec.Command("xsltproc", "--nonet", xslPath, xmlPath)
+	cmd := exec.Command("xsltproc", "--nonet", xslPath, xmlPath) // #nosec G204
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
