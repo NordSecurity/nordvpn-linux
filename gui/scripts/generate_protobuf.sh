@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e 
+set -euo pipefail
 OUT="${PWD}/gui/lib/pb"
 echo $OUT
 rm -fr "$OUT"
@@ -34,17 +34,17 @@ for i in "${GRPC_FILES[@]}"; do
     popd >/dev/null
 done
 
-PROTO_FILES=$(find ../ -name "*.proto" ! -name service.proto -not -path "*/snapconf/*" -not -path "*/norduser/*" -not -path "*/libtelio/*" -not -path "*/parts/*")
+PROTO_FILES=$(find ./protobuf -name "*.proto" ! -name service.proto -not -path "*/snapconf/*" -not -path "*/norduser/*" -not -path "*/libtelio/*" -not -path "*/parts/*")
 
 echo "**** Generate files *****"
 for i in ${PROTO_FILES}; do
     DIR=$(dirname "$i")
     FILE=$(basename "$i")
-    DIR_NAME_WITHOUT_PROTOBUF=$(echo $DIR | cut -d'/' -f4-)
+    DIR_NAME_WITHOUT_PROTOBUF=$(echo $DIR | cut -d'/' -f3-)
     PROTO_OUT="$OUT/$DIR_NAME_WITHOUT_PROTOBUF"
 
     FILENAME="${FILE%.*}"
-    echo "* $FILE -> $PROTO_OUT/$FILENAME.pb.dart" 
+    echo "* $FILE -> $PROTO_OUT/$FILENAME.pb.dart"
     if [ -f "$PROTO_OUT/$FILENAME.pb.dart" ]; then
         echo "---> Skipping $i, already created"
         continue

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -12,9 +14,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-
-	"github.com/jbowtie/gokogiri/xml"
-	"github.com/jbowtie/ratago/xslt"
 )
 
 const ovpnConfig = `<?xml version="1.0"?>
@@ -108,41 +107,47 @@ func generateConfigFile(protocol config.Protocol, serverIP netip.Addr, obfuscate
 	return ovpnConfig.Close()
 }
 
-func generateConfig(serverIP netip.Addr, identifier openvpnID, template []byte) ([]byte, error) {
+func generateConfig(serverIP netip.Addr, identifier openvpnID, xsl []byte) ([]byte, error) {
 	xmlConfig, err := generateConfigXML(serverIP, identifier)
 	if err != nil {
 		return nil, fmt.Errorf("generating config XML file: %w", err)
 	}
-
-	xmlDoc, err := xml.Parse(xmlConfig, nil, nil, 0, nil)
+	out, err := applyXSLTWithXsltproc(xsl, xmlConfig)
 	if err != nil {
-		return nil, fmt.Errorf("parsing XML config: %w", err)
+		return nil, fmt.Errorf("xslt transform: %w", err)
 	}
-
-	sheetXMLDoc, err := xml.Parse(template, nil, nil, 0, nil)
-	if err != nil {
-		return nil, fmt.Errorf("parsing XML template file: %w", err)
-	}
-
-	// OpenVPN Templates are single files, therefore fileurl can be empty
-	sheet, err := xslt.ParseStylesheet(sheetXMLDoc, "")
-	if err != nil {
-		return nil, fmt.Errorf("parsing stylesheet: %w", err)
-	}
-	out, err := sheet.Process(xmlDoc, xslt.StylesheetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("Processing XML config: %w", err)
-	}
-	return []byte(disableEscaping(out)), nil
+	return out, nil
 }
 
-func disableEscaping(out string) string {
-	out = strings.ReplaceAll(out, "&lt;", "<")
-	out = strings.ReplaceAll(out, "&gt;", ">")
-	out = strings.ReplaceAll(out, "&quot;", "\"")
-	out = strings.ReplaceAll(out, "&apos;", "'")
-	out = strings.ReplaceAll(out, "&amp;", "&")
-	return out
+// applyXSLTWithXsltproc runs `xsltproc --nonet` on xslBytes + xmlBytes and returns the transform's stdout.
+func applyXSLTWithXsltproc(xslBytes, xmlBytes []byte) ([]byte, error) {
+	tmpdir, err := os.MkdirTemp("", "xsltproc-*")
+	if err != nil {
+		return nil, fmt.Errorf("creating temp dir: %w", err)
+	}
+	defer os.RemoveAll(tmpdir)
+
+	xslPath := filepath.Join(tmpdir, "sheet.xsl")
+	xmlPath := filepath.Join(tmpdir, "input.xml")
+
+	if err := os.WriteFile(xslPath, xslBytes, internal.PermUserRW); err != nil {
+		return nil, fmt.Errorf("writing xsl: %w", err)
+	}
+	if err := os.WriteFile(xmlPath, xmlBytes, internal.PermUserRW); err != nil {
+		return nil, fmt.Errorf("writing xml: %w", err)
+	}
+
+	// NOTE: We are calling a binary here instead of using libraries, because the libs
+	// are bindings for old libxml which on newer distributions is not available.
+	cmd := exec.Command("xsltproc", "--nonet", xslPath, xmlPath)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("xsltproc failed: %v: %s", err, stderr.String())
+	}
+	return stdout.Bytes(), nil
 }
 
 func generateConfigXML(serverIP netip.Addr, identifier openvpnID) ([]byte, error) {

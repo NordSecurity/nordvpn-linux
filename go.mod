@@ -28,8 +28,6 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
-	github.com/jbowtie/gokogiri v0.0.0-20190301021639-37f655d3078f
-	github.com/jbowtie/ratago v0.0.0-20200401224626-3140c0a9b186
 	github.com/magefile/mage v1.14.0
 	github.com/milosgajdos/tenus v0.0.3
 	github.com/quic-go/quic-go v0.48.2
