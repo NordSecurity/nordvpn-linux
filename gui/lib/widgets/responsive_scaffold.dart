@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/router/routes.dart';
 import 'package:nordvpn/theme/breakpoints.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
+import 'package:nordvpn/widgets/adaptive_scaffold/flutter_adaptive_scaffold.dart';
 
 final class ResponsiveScaffold extends StatelessWidget {
   final Widget child;
