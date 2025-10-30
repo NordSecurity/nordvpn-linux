@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/uuid"
 	"golang.org/x/net/netutil"
+	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
@@ -722,7 +723,6 @@ func main() {
 	if cfg.AutoConnect {
 		go rpc.StartAutoConnect(network.ExponentialBackoff)
 	}
-
 	monitor, err := netstate.NewNetlinkMonitor([]string{openvpn.InterfaceName, nordlynx.InterfaceName})
 	if err != nil {
 		log.Fatalln(err)
@@ -732,14 +732,15 @@ func main() {
 	if ok, _ := authChecker.IsLoggedIn(); ok {
 		go daemon.StartNC("[startup]", notificationClient)
 	}
-
 	if cfg.Mesh {
 		go rpc.StartAutoMeshnet(meshService, network.ExponentialBackoff)
 	}
 
 	// Graceful stop
 
-	internal.WaitSignal()
+	signals := internal.GetSignalChan()
+	sig := <-signals
+	log.Println(internal.InfoPrefix, "Received signal:", sig)
 	s.Stop()
 	norduserService.StopAll()
 
@@ -754,8 +755,10 @@ func main() {
 	if err := netw.UnSetMesh(); err != nil && !errors.Is(err, networker.ErrMeshNotActive) {
 		log.Println(internal.ErrorPrefix, "disconnecting from meshnet:", err)
 	}
-	if err := rpc.StopKillSwitch(); err != nil {
-		log.Println(internal.ErrorPrefix, "stopping KillSwitch:", err)
+	if sig != unix.SIGUSR1 {
+		if err := rpc.StopKillSwitch(); err != nil {
+			log.Println(internal.ErrorPrefix, "stopping KillSwitch:", err)
+		}
 	}
 	if err := analytics.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping analytics:", err)

@@ -26,4 +26,6 @@ type Agent interface {
 	Delete(Rule) error
 	// Flush removes all nordvpn rules
 	Flush() error
+	// GetActiveRules gets currently active rules by name
+	GetActiveRules() ([]string, error)
 }
