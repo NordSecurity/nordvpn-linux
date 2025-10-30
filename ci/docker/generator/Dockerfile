@@ -11,12 +11,34 @@ RUN wget --progress=dot:giga https://github.com/protocolbuffers/protobuf/release
     ln -s /usr/bin/protoc-gen-go-grpc /usr/bin/protoc-gen-go_grpc && \
     go clean -cache -modcache
 
-FROM alpine:3.20.3
+FROM dart:3.8.1 AS dart-builder
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ca-certificates unzip python3 python3-pip bash libc6 libstdc++6 \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /usr/bin/protoc-gen-go /usr/bin/
 COPY --from=builder /usr/bin/protoc-gen-go_grpc /usr/bin/
 COPY --from=builder /tmp/protoc /usr/
+
+COPY --from=dart-builder /usr/lib/dart /usr/lib/dart
+
 COPY requirements.txt /tmp/requirements.txt
 
-RUN apk add --no-cache bash libc6-compat libstdc++ python3 py3-pip
 RUN python3 -m pip install --break-system-packages --no-cache-dir -r /tmp/requirements.txt && \
 	rm -rf /tmp/*
+
+ENV PATH="${PATH}:/usr/lib/dart/bin"
+
+ARG USER_ID=1000
+ARG GROUP_ID=1000
+
+RUN groupadd -g ${GROUP_ID} generator && useradd -l -m -u ${USER_ID} -g generator generator
+
+USER generator
+
+ENV PATH="${PATH}:/home/generator/.pub-cache/bin"
+
+RUN dart pub global activate protoc_plugin 22.5.0
+

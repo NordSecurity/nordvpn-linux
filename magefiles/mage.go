@@ -25,8 +25,7 @@ const (
 	imagePackager          = registryPrefix + "packager:1.3.2"
 	imageDepender          = registryPrefix + "depender:1.3.3"
 	imageSnapPackager      = registryPrefix + "snaper:1.2.0"
-	imageProtobufGenerator = registryPrefix + "generator:1.4.2"
-	imageProtobufGui       = registryPrefix + "protobuf_dart-3.8.1:1.0.1"
+	imageProtobufGenerator = registryPrefix + "generator:1.5.0"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
 	imageTester            = registryPrefix + "tester:1.6.3"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.4"
@@ -621,23 +620,12 @@ func (Generate) ProtobufDocker(ctx context.Context) error {
 		return err
 	}
 
-	if err := RunDocker(
+	return RunDocker(
 		ctx,
 		env,
 		imageProtobufGenerator,
 		[]string{"ci/generate_protobuf.sh"},
 		dockerWorkDir,
-	); err != nil {
-		return err
-	}
-
-	// GUI protobuf
-	return RunDocker(
-		ctx,
-		env,
-		imageProtobufGui,
-		[]string{"gui/scripts/generate_protobuf.sh"},
-		guiDockerWorkDir,
 	)
 }
 
