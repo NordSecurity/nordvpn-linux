@@ -23,6 +23,7 @@ import 'package:nordvpn/widgets/dialog_factory.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:nordvpn/widgets/loading_indicator.dart';
 import 'package:nordvpn/widgets/searchable_servers_list.dart';
+import 'package:nordvpn/vpn/recent_connections_list.dart';
 
 // ServersListCard displays the list of servers from the VPN screen
 final class ServersListCard extends StatefulWidget {
@@ -32,6 +33,7 @@ final class ServersListCard extends StatefulWidget {
   final bool enabled;
   final bool allowServerNameSearch;
   final bool withQuickConnectTile;
+  final bool withRecentConnectionsWidget;
 
   ServersListCard({
     super.key,
@@ -41,6 +43,7 @@ final class ServersListCard extends StatefulWidget {
     this.enabled = true,
     this.allowServerNameSearch = true,
     this.withQuickConnectTile = false,
+    this.withRecentConnectionsWidget = false,
   }) : imagesManager = imagesManager ?? sl(),
        itemFactory = itemFactory ?? sl();
 
@@ -50,8 +53,9 @@ final class ServersListCard extends StatefulWidget {
 
 final class ServersListKeys {
   ServersListKeys._();
-  static final searchKey = UniqueKey();
-  static final countriesServersListKey = UniqueKey();
+  static const searchKey = ValueKey('servers-list-search-key');
+  static const countriesServersListKey = ValueKey('countries-servers-list-key');
+  static const specialtyServerKey = PageStorageKey('specialty');
 }
 
 final class _ServersListCardState extends State<ServersListCard> {
@@ -70,7 +74,7 @@ final class _ServersListCardState extends State<ServersListCard> {
             .watch(serversListControllerProvider)
             .when(
               loading: () => const LoadingIndicator(),
-              error: (_, __) => _buildError(context, ref),
+              error: (_, _) => _buildError(context, ref),
               data: (serversList) {
                 return Opacity(
                   opacity: widget.enabled ? 1.0 : 0.5,
@@ -108,54 +112,74 @@ final class _ServersListCardState extends State<ServersListCard> {
         serversList.standardServersList.isEmpty &&
         serversList.obfuscatedServersList.isNotEmpty;
 
-    return (!_showSearchView)
+    final serverSelectionView = (!_showSearchView)
         ? _buildTabBarView(context, serversList, ref, isObfuscationEnabled)
         : _buildSearchList(context, serversList, ref, isObfuscationEnabled);
+
+    return Column(
+      spacing: context.appTheme.verticalSpaceSmall,
+      children: [
+        if (isObfuscationEnabled)
+          _showObfuscatedMessage(context, t.ui.turnOffObfuscationLocations),
+        Expanded(child: serverSelectionView),
+      ],
+    );
   }
 
-  DefaultTabController _buildTabBarView(
+  Widget _buildTabBarView(
     BuildContext context,
     ServersList serversList,
     WidgetRef ref,
     bool isObfuscationEnabled,
   ) {
-    final appTheme = context.appTheme;
-
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: TabBar(
-                  isScrollable: true,
-                  tabs: [
-                    Tab(text: t.ui.countries),
-                    Tab(text: t.ui.specialServers),
+    return Column(
+      children: [
+        if (widget.withRecentConnectionsWidget)
+          RecentConnectionsList(onSelected: widget.onSelected),
+        Expanded(
+          child: DefaultTabController(
+            length: 2,
+            child: Column(
+              spacing: context.appTheme.verticalSpaceSmall,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TabBar(
+                        isScrollable: true,
+                        tabs: [
+                          Tab(text: t.ui.countries),
+                          Tab(text: t.ui.specialServers),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(right: context.appTheme.padding),
+                      child: IconButton(
+                        key: ServersListKeys.searchKey,
+                        icon: DynamicThemeImage("search.svg"),
+                        onPressed: () => setState(() => _showSearchView = true),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-              Padding(
-                padding: EdgeInsets.only(right: appTheme.padding),
-                child: IconButton(
-                  key: ServersListKeys.searchKey,
-                  icon: DynamicThemeImage("search.svg"),
-                  onPressed: () => setState(() => _showSearchView = true),
+                Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: context.appTheme.dividerColor,
                 ),
-              ),
-            ],
-          ),
-          Divider(height: 1, thickness: 1, color: appTheme.dividerColor),
-          Expanded(
-            child: _buildTabsWithServers(
-              serversList,
-              ref,
-              isObfuscationEnabled,
+                Expanded(
+                  child: _buildTabsWithServers(
+                    serversList,
+                    ref,
+                    isObfuscationEnabled,
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -188,8 +212,6 @@ final class _ServersListCardState extends State<ServersListCard> {
 
     return Column(
       children: [
-        if (isObfuscationEnabled)
-          _showObfuscatedMessage(context, t.ui.turnOffObfuscationLocations),
         Expanded(
           child: ListView.builder(
             key: ServersListKeys.countriesServersListKey,
@@ -238,12 +260,16 @@ final class _ServersListCardState extends State<ServersListCard> {
       (type: ServerType.doubleVpn, description: t.ui.doubleVpnDesc),
       (type: ServerType.onionOverVpn, description: t.ui.onionOverVpnDesc),
       (type: ServerType.p2p, description: t.ui.p2pDesc),
+      (type: ServerType.europe, description: t.ui.europe),
+      (type: ServerType.asiaPacific, description: t.ui.asiaPacific),
+      (type: ServerType.theAmericas, description: t.ui.theAmericas),
+      (
+        type: ServerType.africaTheMiddleEastAndIndia,
+        description: t.ui.africaTheMiddleEastAndIndia,
+      ),
     ];
-
     return Column(
       children: [
-        if (isObfuscatedOn)
-          _showObfuscatedMessage(context, t.ui.turnOffObfuscationServerTypes),
         Expanded(
           child: ListView.builder(
             itemCount: specialtyServersOrder.length,
@@ -258,7 +284,8 @@ final class _ServersListCardState extends State<ServersListCard> {
               return widget.itemFactory.forSpecialtyServer(
                 context: context,
                 type: type,
-                enabled: servers.isNotEmpty && !isObfuscatedOn,
+                enabled:
+                    (servers.isNotEmpty && !isObfuscatedOn) || type.isRegion,
                 servers: servers,
                 subtitle: description,
                 onTap: (args) => widget.onSelected(args),
@@ -417,6 +444,7 @@ final class _ServersListCardState extends State<ServersListCard> {
         },
       ),
       serversList: serversList,
+      searchTextController: _searchTextController,
       specialtyServer: isObfuscationEnabled ? ServerType.obfuscated : null,
       onTap: (args) => widget.onSelected(args),
       allowServerNameSearch: widget.allowServerNameSearch,
@@ -427,15 +455,21 @@ final class _ServersListCardState extends State<ServersListCard> {
     final appTheme = context.appTheme;
     final serversListTheme = context.serversListTheme;
     return Container(
-      padding: EdgeInsets.all(appTheme.verticalSpaceMedium),
+      padding: EdgeInsets.symmetric(
+        horizontal: appTheme.horizontalSpace,
+        vertical: appTheme.verticalSpaceVerySmall,
+      ),
       color: serversListTheme.obfuscatedItemBackgroundColor,
       child: Row(
-        spacing: appTheme.verticalSpaceLarge,
+        spacing: appTheme.horizontalSpace,
         children: [
           Expanded(child: Text(message, style: appTheme.body)),
           TextButton(
             onPressed: () =>
                 context.navigateToRoute(AppRoute.settingsSecurityAndPrivacy),
+            style: ButtonStyle(
+              padding: WidgetStateProperty.all(const EdgeInsets.only(right: 4)),
+            ),
             child: Text(t.ui.goToSettings),
           ),
         ],
