@@ -68,7 +68,7 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 		}, nil
 	}
 	r.netw.SetVPN(v)
-	r.netw.SetARPIgnore(cfg.ARPIgnore.Get())
+	_ = r.netw.SetARPIgnore(cfg.ARPIgnore.Get())
 
 	r.events.Settings.Defaults.Publish(nil)
 	r.events.Settings.Publish(cfg)

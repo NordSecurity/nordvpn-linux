@@ -50,7 +50,7 @@ func (rt *RotatingRoundTripper) roundTripH3(req *http.Request) (*http.Response, 
 		return nil, err
 	}
 
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	resp.Body = io.NopCloser(&buf)
 	return resp, nil

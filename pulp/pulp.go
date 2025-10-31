@@ -181,7 +181,7 @@ func remove(client *http.Client, hostname string, repository string, criteria st
 	}
 
 	defer resp.Body.Close()
-	if !(resp.StatusCode < 400) {
+	if resp.StatusCode >= 400 {
 		return errors.New(http.StatusText(resp.StatusCode))
 	}
 	return nil

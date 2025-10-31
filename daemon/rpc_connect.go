@@ -108,7 +108,7 @@ func (r *RPC) connect(
 ) (didFail bool, retErr error) {
 	if ok, err := r.ac.IsLoggedIn(); !ok {
 		if errors.Is(err, core.ErrUnauthorized) {
-			srv.Send(&pb.Payload{Type: internal.CodeRevokedAccessToken})
+			_ = srv.Send(&pb.Payload{Type: internal.CodeRevokedAccessToken})
 		}
 		return false, internal.ErrNotLoggedIn
 	}
@@ -295,7 +295,7 @@ func (r *RPC) connect(
 		if err != nil {
 			log.Printf("%s Failed to build recent VPN connection model: %s\n", internal.WarningPrefix, err)
 		} else {
-			r.recentVPNConnStore.Add(recentModel)
+			_ = r.recentVPNConnStore.Add(recentModel)
 			r.dataUpdateEvents.RecentsUpdate.Publish(events.DataRecentsChanged{})
 		}
 	}

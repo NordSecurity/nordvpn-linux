@@ -21,6 +21,7 @@ var (
 
 // GetTransferRates retrieves tunnel statistics in a thread safe manner
 func GetTransferRates(nicName string) (Statistics, error) {
+	// #nosec G304 - reading transfer RX rates is safe here
 	out, err := os.ReadFile("/sys/class/net/" + nicName + "/statistics/rx_bytes")
 	if err != nil {
 		return Statistics{}, err
@@ -31,6 +32,7 @@ func GetTransferRates(nicName string) (Statistics, error) {
 		return Statistics{}, err
 	}
 
+	// #nosec G304 - reading transfer TX rates is safe here
 	out, err = os.ReadFile("/sys/class/net/" + nicName + "/statistics/tx_bytes")
 	if err != nil {
 		return Statistics{}, err
@@ -125,7 +127,7 @@ func addDelAddr(cmd string, ifaceName string, addr string) ([]byte, error) {
 }
 
 func (t *Tunnel) cmdAddrs(cmd string) error {
-	addDelAddr(cmd, t.iface.Name, t.prefix.String())
+	_, _ = addDelAddr(cmd, t.iface.Name, t.prefix.String())
 	return nil
 }
 
