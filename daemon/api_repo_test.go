@@ -231,6 +231,7 @@ func TestRpmFileList(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				requestCount++
 
+				//nolint:staticcheck
 				if requestCount == 1 {
 					// First request is always for repomd.xml
 					w.Header().Set("Content-Encoding", "gzip")

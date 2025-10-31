@@ -489,7 +489,7 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan any, error)
 				credsExpirationChan = nil
 				cancelConnectionFunc()
 				client.Disconnect(0)
-				c.credsFetcher.RevokeCredentials(false)
+				_, _ = c.credsFetcher.RevokeCredentials(false)
 				connectionContext, cancelConnectionFunc = context.WithCancel(ctx)
 				go c.connect(client, true, connectionContext, managementChan, connectedChan)
 			}
@@ -518,7 +518,7 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan any, error)
 				credsExpirationChan = nil
 				cancelConnectionFunc()
 				client.Disconnect(0)
-				c.credsFetcher.RevokeCredentials(false)
+				_, _ = c.credsFetcher.RevokeCredentials(false)
 				connectionContext, cancelConnectionFunc = context.WithCancel(ctx)
 				go c.connect(client, true, connectionContext, managementChan, connectedChan)
 			}

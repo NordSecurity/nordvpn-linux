@@ -118,7 +118,9 @@ func StartServer(port int, handlers []Handler) *http.Server {
 	srv.Handler = mux
 
 	go func() {
+		//nolint:staticcheck
 		if err := srv.Serve(listener); err != nil && err != http.ErrServerClosed {
+			//empty on purpose
 		}
 	}()
 

@@ -258,9 +258,9 @@ func filterServers(
 }
 
 func serverTagToServerBy(serverTag string, srv core.Server) core.ServerBy {
-	countryName := strings.ReplaceAll(srv.Locations[0].Country.Name, " ", "_")
-	countryCode := strings.ReplaceAll(srv.Locations[0].Country.Code, " ", "_")
-	cityName := strings.ReplaceAll(srv.Locations[0].Country.City.Name, " ", "_")
+	countryName := strings.ReplaceAll(srv.Locations[0].Country.Name, " ", "_")   //nolint:staticcheck
+	countryCode := strings.ReplaceAll(srv.Locations[0].Country.Code, " ", "_")   //nolint:staticcheck
+	cityName := strings.ReplaceAll(srv.Locations[0].Country.City.Name, " ", "_") //nolint:staticcheck
 	if strings.EqualFold(countryCode, "gb") {
 		countryCode = "uk"
 	}
@@ -571,7 +571,9 @@ func selectDedicatedIPServer(authChecker auth.Checker, servers core.Servers) (*c
 		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPServiceButNoServers)
 	}
 
+	// #nosec G404 - math/rand is acceptable for a random server selection here
 	service := dedicatedIPServices[rand.Intn(len(dedicatedIPServices))]
+	// #nosec G404
 	serverID := service.ServerIDs[rand.Intn(len(service.ServerIDs))]
 	server, err := getServerByID(servers, serverID)
 	if err != nil {

@@ -116,7 +116,7 @@ func newMockFilesystem() mockFilesystem {
 }
 
 func (mf mockFilesystem) Lstat(path string) (fs.FileInfo, error) {
-	fileInfo, err := mf.MapFS.Stat(path)
+	fileInfo, err := mf.MapFS.Lstat(path)
 	return fileInfo, err
 }
 
@@ -549,6 +549,7 @@ func TestAccept(t *testing.T) {
 	mockFs.MapFS[directoryOtherWriteName] = &fstest.MapFile{Mode: os.ModeDir | 0002, Sys: statNoOwner}
 
 	directoryNoPermissionsName := "no_permissions"
+	//nolint:staticcheck
 	mockFs.MapFS[directoryNoPermissionsName] = &fstest.MapFile{Mode: os.ModeDir | 0000, Sys: statNoOwner}
 
 	fileshareTests := []struct {

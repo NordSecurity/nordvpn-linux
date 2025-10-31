@@ -1,7 +1,7 @@
 FROM ubuntu:24.04
 
 ARG CODEQL_VERSION=v2.18.3
-ARG GO_VERSION=1.22.10
+ARG GO_VERSION=1.25.3
 ARG PB_VERSION=3.20.1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \

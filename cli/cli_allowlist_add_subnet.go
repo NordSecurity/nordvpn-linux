@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -49,7 +50,7 @@ func (c *cmd) AllowlistAddSubnet(ctx *cli.Context) error {
 	case internal.CodeVPNMisconfig:
 		return formatError(internal.ErrUnhandled)
 	case internal.CodePrivateSubnetLANDiscovery:
-		return formatError(fmt.Errorf(AllowlistAddSubnetLANDiscovery))
+		return formatError(errors.New(AllowlistAddSubnetLANDiscovery))
 	case internal.CodeAllowlistInvalidSubnet:
 		return formatError(argsParseError(ctx))
 	case internal.CodeAllowlistSubnetNoop:

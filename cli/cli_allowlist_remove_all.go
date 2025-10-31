@@ -2,7 +2,7 @@ package cli
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -24,11 +24,11 @@ func (c *cmd) AllowlistRemoveAll(ctx *cli.Context) error {
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
 	case internal.CodeFailure:
-		return formatError(fmt.Errorf(AllowlistRemoveAllError))
+		return formatError(errors.New(AllowlistRemoveAllError))
 	case internal.CodeVPNMisconfig:
 		return formatError(internal.ErrUnhandled)
 	case internal.CodeSuccess:
-		color.Green(fmt.Sprintf(AllowlistRemoveAllSuccess))
+		color.Green(AllowlistRemoveAllSuccess)
 	}
 
 	return nil

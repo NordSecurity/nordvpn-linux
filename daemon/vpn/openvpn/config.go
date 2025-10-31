@@ -73,7 +73,7 @@ func generateConfigFile(protocol config.Protocol, serverIP netip.Addr, obfuscate
 
 	template, err := internal.FileRead(templatePath)
 	if err != nil {
-		return fmt.Errorf("reading ovpn template file")
+		return fmt.Errorf("reading ovpn template file: %w", err)
 	}
 
 	out, err := generateConfig(serverIP, identifier, template)
@@ -81,6 +81,7 @@ func generateConfigFile(protocol config.Protocol, serverIP netip.Addr, obfuscate
 		return fmt.Errorf("generating OpenVPN config: %w", err)
 	}
 
+	//TODO: LVPN-9393 to decide if this bit of configuration is needed at all
 	if err := addExtraParameters(out, serverIP, protocol); err != nil {
 		return fmt.Errorf("adding extra parameters to OpenVPN config: %w", err)
 	}
@@ -138,7 +139,7 @@ func applyXSLTWithXsltproc(xslBytes, xmlBytes []byte) ([]byte, error) {
 
 	// NOTE: We are calling a binary here instead of using libraries, because the libs
 	// are bindings for old libxml which on newer distributions is not available.
-	cmd := exec.Command("xsltproc", "--nonet", xslPath, xmlPath)
+	cmd := exec.Command("xsltproc", "--nonet", xslPath, xmlPath) // #nosec G204
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -205,6 +206,8 @@ func addExtraParameters(data []byte, serverIP netip.Addr, protocol config.Protoc
 			return errors.New("unknown protocol")
 		}
 	}
+
+	//nolint:staticcheck
 	data = []byte(strings.Join(args, "\n"))
 	return nil
 }

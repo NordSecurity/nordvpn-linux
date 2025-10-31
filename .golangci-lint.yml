@@ -1,38 +1,40 @@
+version: "2"
 run:
   timeout: 2m
-
 linters:
-  disable-all: true
+  default: none
   enable:
-  - bodyclose
-  #- depguard
-  - dogsled
-  #- dupl
-  #- errcheck
-  - exhaustive
-  #- funlen
-  #- gochecknoinits
-  - goconst
-  #- gocritic
-  #- gocyclo
-  - gofmt
-  - goimports
-  #- gomnd
-  - goprintffuncname
-  #- gosec
-  - gosimple
-  - govet
-  #- ineffassign
-  #- lll
-  - misspell
-  #- nakedret
-  - rowserrcheck
-  #- scopelint
-  #- staticcheck
-  #- structcheck
-  #- stylecheck
-  - typecheck
-  - unconvert
-  - unparam
-  - unused
-  - whitespace
+    - bodyclose
+    - dogsled
+    - exhaustive
+    - goconst
+    - goprintffuncname
+    - govet
+    - misspell
+    - rowserrcheck
+    - staticcheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third-party
+    rules:
+      - linters: 
+        - staticcheck
+        text: "ST1005:" # systematically, disable all the linter issues on errors strings capitalization, or ending with a punctuation mark
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third-party

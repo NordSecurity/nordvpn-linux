@@ -241,7 +241,7 @@ func (s *Server) Send(req *pb.SendRequest, srv pb.Fileshare_SendServer) error {
 		Identifier: peer.Identifier,
 		Os:         peer.Os,
 		FileName:   fileName,
-		FileCount:  int32(len(req.Paths)),
+		FileCount:  int32(len(req.Paths)), // #nosec G115
 		TransferId: transferID,
 	})
 
