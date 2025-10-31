@@ -7,34 +7,14 @@ import (
 )
 
 type notifyRequest func(
-	eventDuration int32,
-	eventStatus moose.NordvpnappEventStatus,
-	eventTrigger moose.NordvpnappEventTrigger,
-	apiHostName string,
-	responseCode int32,
-	transferProtocol string,
-	dnsResolutionTime int32,
-	requestFilters string,
-	requestFields string,
-	limits string,
-	offset string,
-	responseSummary string,
+	eventParams moose.EventParams,
+	apiRequestParams moose.ApiRequestParams,
 	debugJson *string,
 ) uint32
 
 func noSuchEndpoint(
-	eventDuration int32,
-	eventStatus moose.NordvpnappEventStatus,
-	eventTrigger moose.NordvpnappEventTrigger,
-	apiHostName string,
-	responseCode int32,
-	transferProtocol string,
-	dnsResolutionTime int32,
-	requestFilters string,
-	requestFields string,
-	limits string,
-	offset string,
-	responseSummary string,
+	eventParams moose.EventParams,
+	apiRequestParams moose.ApiRequestParams,
 	debugJson *string,
 ) uint32 {
 	return 0
@@ -44,66 +24,26 @@ func pickNotifier(endpoint string) notifyRequest {
 	switch endpoint {
 	case "/v1/servers":
 		return func(
-			eventDuration int32,
-			eventStatus moose.NordvpnappEventStatus,
-			eventTrigger moose.NordvpnappEventTrigger,
-			apiHostName string,
-			responseCode int32,
-			transferProtocol string,
-			dnsResolutionTime int32,
-			requestFilters string,
-			requestFields string,
-			limits string,
-			offset string,
-			responseSummary string,
+			eventParams moose.EventParams,
+			apiRequestParams moose.ApiRequestParams,
 			debugJson *string,
 		) uint32 {
 			return moose.NordvpnappSendServiceQualityApiRequestRequestServers(
-				eventDuration,
-				eventStatus,
-				eventTrigger,
-				apiHostName,
-				responseCode,
-				transferProtocol,
-				dnsResolutionTime,
-				requestFilters,
-				requestFields,
-				limits,
-				offset,
-				responseSummary,
+				eventParams,
+				apiRequestParams,
 				endpoint,
 				debugJson,
 			)
 		}
 	case "/v1/servers/recommendations":
 		return func(
-			eventDuration int32,
-			eventStatus moose.NordvpnappEventStatus,
-			eventTrigger moose.NordvpnappEventTrigger,
-			apiHostName string,
-			responseCode int32,
-			transferProtocol string,
-			dnsResolutionTime int32,
-			requestFilters string,
-			requestFields string,
-			limits string,
-			offset string,
-			responseSummary string,
+			eventParams moose.EventParams,
+			apiRequestParams moose.ApiRequestParams,
 			debugJson *string,
 		) uint32 {
 			return moose.NordvpnappSendServiceQualityApiRequestRequestServersRecommendations(
-				eventDuration,
-				eventStatus,
-				eventTrigger,
-				apiHostName,
-				responseCode,
-				transferProtocol,
-				dnsResolutionTime,
-				requestFilters,
-				requestFields,
-				limits,
-				offset,
-				responseSummary,
+				eventParams,
+				apiRequestParams,
 				endpoint,
 				debugJson,
 			)
