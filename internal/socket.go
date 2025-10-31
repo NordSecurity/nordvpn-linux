@@ -181,6 +181,8 @@ func StringToUcred(ucredStr string) (unix.Ucred, error) {
 		return unix.Ucred{}, fmt.Errorf("invalid ucred string: %s", ucredStr)
 	}
 
+	//all of the conversion here happens on values parsed  within the 32 bits range
+	// #nosec G115
 	return unix.Ucred{Pid: int32(pid), Uid: uint32(uid), Gid: uint32(gid)}, nil
 }
 

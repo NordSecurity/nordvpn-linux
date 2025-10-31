@@ -111,7 +111,7 @@ func NewApp(version, environment, hash, salt string,
 	}
 
 	cli.VersionPrinter = func(c *cli.Context) {
-		cmd.Version(c)
+		_ = cmd.Version(c)
 	}
 	cli.BashCompletionFlag = &cli.BoolFlag{
 		Name:   "complete",
@@ -886,7 +886,7 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 			Action:       cmd.SetTechnology,
 			BashComplete: cmd.SetTechnologyAutoComplete,
 			ArgsUsage:    SetTechnologyArgsUsageText,
-			Description:  fmt.Sprintf(SetTechnologyDescription),
+			Description:  SetTechnologyDescription,
 		},
 		{
 			Name:      "lan-discovery",
@@ -1059,7 +1059,7 @@ func (s loaderStream) RecvMsg(m interface{}) error {
 
 func isLoaderEnabled() bool {
 	value, exists := os.LookupEnv("DISABLE_TUI_LOADER")
-	return !(exists && value == "1")
+	return !exists || value != "1"
 }
 
 func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) error {
@@ -1079,7 +1079,7 @@ func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) e
 			}
 			switch {
 			case errors.Is(err, ErrUpdateAvailable):
-				color.Yellow(fmt.Sprintf(UpdateAvailableMessage))
+				color.Yellow(UpdateAvailableMessage)
 			case errors.Is(err, ErrInternetConnection):
 				color.Red(ErrInternetConnection.Error())
 				os.Exit(1)

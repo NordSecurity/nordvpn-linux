@@ -55,12 +55,13 @@ func (c *cmd) SetFirewallMark(ctx *cli.Context) error {
 	}
 
 	args := ctx.Args()
-	mark, err := strconv.ParseUint(strings.TrimLeft(args.First(), "0x"), 16, 64)
+	mark, err := strconv.ParseUint(strings.TrimLeft(args.First(), "0x"), 16, 32)
 	if err != nil {
 		return formatError(err)
 	}
 
-	resp, err := c.client.SetFirewallMark(context.Background(), &pb.SetUint32Request{Value: uint32(mark)})
+	//below one is not a gosec violation, the parsed value is limited to 32bits only, thus no overflow should happen
+	resp, err := c.client.SetFirewallMark(context.Background(), &pb.SetUint32Request{Value: uint32(mark)}) //nosec
 	if err != nil {
 		return formatError(err)
 	}

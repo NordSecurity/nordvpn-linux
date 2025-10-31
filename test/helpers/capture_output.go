@@ -25,8 +25,8 @@ func CaptureOutput(f func()) (string, error) {
 
 	f()
 
-	writer.Close() // close to unblock io.Copy(&buf, reader)
+	_ = writer.Close() // close to unblock io.Copy(&buf, reader)
 	var buf bytes.Buffer
-	io.Copy(&buf, reader)
+	_, _ = io.Copy(&buf, reader)
 	return strings.TrimSuffix(buf.String(), "\n"), nil
 }

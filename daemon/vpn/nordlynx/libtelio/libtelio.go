@@ -397,10 +397,10 @@ func (l *Libtelio) connect(
 	// created within the timeout or until it was canceled.
 	select {
 	case <-connectCtx.Done():
-		l.disconnect()
+		_ = l.disconnect()
 		return connectCtx.Err()
 	case <-ctx.Done():
-		l.disconnect()
+		_ = l.disconnect()
 		return ctx.Err()
 	case <-isConnectedC: // isConnectedC will be closed once connection is established
 	}
@@ -675,7 +675,7 @@ func (l *Libtelio) openTunnel(prefix netip.Prefix, privateKey string) (err error
 
 	defer func() {
 		if err != nil {
-			l.lib.Stop()
+			_ = l.lib.Stop()
 		}
 	}()
 

@@ -30,7 +30,7 @@ type MockCmd struct {
 	called bool
 }
 
-func (m MockCmd) onlyOnceCommandFunc(string, ...string) ([]byte, error) {
+func (m *MockCmd) onlyOnceCommandFunc(string, ...string) ([]byte, error) {
 	if m.called {
 		return nil, errors.New("already called")
 	}
@@ -126,9 +126,9 @@ func TestIPTables_EnablePorts(t *testing.T) {
 				ports:       []int{33, 34, 35, 36, 37, 38, 39},
 				protocol:    "tcp",
 				mark:        "0x123",
-				commandFunc: MockCmd{}.onlyOnceCommandFunc,
+				commandFunc: (&MockCmd{}).onlyOnceCommandFunc,
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {

@@ -75,19 +75,20 @@ func (osGetter) getUserID(username string) (userIDs, error) {
 		return userIDs{}, fmt.Errorf("looking up user: %w", err)
 	}
 
-	uid, err := strconv.Atoi(user.Uid)
+	//both uid and gid are base-10 numbers
+	uid, err := strconv.ParseUint(user.Uid, 10, 32)
 	if err != nil {
 		return userIDs{}, fmt.Errorf("converting uid string to int: %w", err)
 	}
 
-	gid, err := strconv.Atoi(user.Gid)
+	gid, err := strconv.ParseUint(user.Gid, 10, 32)
 	if err != nil {
-		return userIDs{}, fmt.Errorf("converting uid string to int: %w", err)
+		return userIDs{}, fmt.Errorf("converting gid string to int: %w", err)
 	}
 
 	return userIDs{
-		uid:  uint32(uid),
-		gid:  uint32(gid),
+		uid:  uint32(uid), // #nosec G115 - uid converted within 32-bits value
+		gid:  uint32(gid), // #nosec G115 - gid converted within 32-bits value
 		home: user.HomeDir,
 	}, nil
 }

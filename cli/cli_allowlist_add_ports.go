@@ -29,6 +29,7 @@ Example: 'nordvpn allowlist add ports 3000 8000 protocol TCP'`
 
 func (c *cmd) AllowlistAddPorts(ctx *cli.Context) error {
 	args := ctx.Args()
+	//nolint:staticcheck
 	if !(args.Len() == 2 || (args.Len() == 4 && args.Get(2) == AllowlistProtocol)) {
 		return formatError(argsCountError(ctx))
 	}
