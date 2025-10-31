@@ -238,13 +238,9 @@ def is_disconnected(retry=5) -> bool:
 # start the networking and wait for completion
 def start(default_gateway: dict):
     """Must pass default_gateway returned from stop()."""
-    if daemon.is_init_systemd():
-        for interface, gateway in default_gateway.items():
-            sh.sudo.ip.route.add.default.via(gateway, "dev", interface)
-    else:
-        sh.sudo.ip.link.set.dev.eth0.up()
-        cmd = sh.sudo.ip.route.add.default.via.bake(default_gateway["eth0"])
-        cmd.dev.eth0()
+    for interface, gateway in default_gateway.items():
+        sh.sudo.ip.link.set.dev(interface, "up")
+        sh.sudo.ip.route.add.default.via(gateway, "dev", interface)
 
     logging.log("starting network")
     logging.log(f"State of default route after start: {sh.sudo.ip.route.show.default()}")
@@ -265,12 +261,13 @@ def stop() -> dict:
 
     logging.log(f"Default routing before stopping network {sh.sudo.ip.route.show.default()}")
     if daemon.is_init_systemd():
-        sh.sudo.ip.route("del", "default")
-        logging.log(f"State of default route after stop: {sh.ip.route.show.default()}")
+        for interface in default_gateway:
+            sh.sudo.ip.link.set.dev(interface, "down")
     else:
         sh.sudo.ip.link.set.dev.eth0.down()
 
     logging.log(f"stopping network {default_gateway}")
+    logging.log(f"State of default route after stop: {sh.ip.route.show.default()}")
     assert is_not_available()
     logging.log(info.collect())
     return default_gateway
