@@ -13,6 +13,13 @@ import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:nordvpn/widgets/loading_button.dart';
 import 'package:nordvpn/widgets/loading_checkbox.dart';
 
+final class LoginWidgetKeys {
+  LoginWidgetKeys._();
+  static const loginForm = Key("loginForm");
+  static const loginButton = Key("loginButton");
+  static const loadingIndicator = Key("loginLoadingIndicator");
+}
+
 final class LoginForm extends ConsumerStatefulWidget {
   const LoginForm({super.key});
 
@@ -54,7 +61,10 @@ class _LoginFormState extends ConsumerState<LoginForm> {
           IntrinsicWidth(
             child: Column(
               children: [
-                LoginButton(isDisabled: _isKillSwitchOn),
+                LoginButton(
+                  key: LoginWidgetKeys.loginButton,
+                  isDisabled: _isKillSwitchOn,
+                ),
                 SizedBox(height: appTheme.verticalSpaceMedium),
                 _createAccountButton(loginDialogTheme),
               ],
@@ -172,6 +182,7 @@ final class _LoginButtonState extends ConsumerState<LoginButton> {
       width: theme.width,
       height: theme.height,
       child: CircularProgressIndicator(
+        key: LoginWidgetKeys.loadingIndicator,
         color: theme.color,
         strokeWidth: theme.stroke,
       ),

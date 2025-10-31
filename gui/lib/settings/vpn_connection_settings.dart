@@ -21,6 +21,13 @@ import 'package:nordvpn/widgets/radio_button.dart';
 
 enum _VpnConnectionItems { autoConnect, killSwitch, protocol }
 
+final class VpnSettingsWidgetKeys {
+  VpnSettingsWidgetKeys._();
+  static const autoConnectTile = Key("vpnSettingsAutoConnectTile");
+  static const autoConnectSwitch = Key("vpnSettingsAutoConnectSwitch");
+  static const killSwitch = Key("vpnSettingsKillSwitch");
+}
+
 final class VpnConnectionSettings extends ConsumerWidget {
   final ImagesManager imagesManager;
 
@@ -55,6 +62,7 @@ final class VpnConnectionSettings extends ConsumerWidget {
               title: t.ui.killSwitch,
               subtitle: t.ui.killSwitchDescription,
               trailing: OnOffSwitch(
+                key: VpnSettingsWidgetKeys.killSwitch,
                 value: settings.killSwitch,
                 onChanged: (value) => ref
                     .read(vpnSettingsControllerProvider.notifier)
@@ -82,6 +90,7 @@ final class VpnConnectionSettings extends ConsumerWidget {
           title: t.ui.autoConnect,
           subtitle: t.ui.autoConnectDescription,
           trailing: OnOffSwitch(
+            key: VpnSettingsWidgetKeys.autoConnectSwitch,
             value: settings.autoConnect,
             onChanged: (value) => ref
                 .read(vpnSettingsControllerProvider.notifier)
@@ -89,6 +98,7 @@ final class VpnConnectionSettings extends ConsumerWidget {
           ),
         ),
         SettingsWrapperWidget.buildListItem(
+          key: VpnSettingsWidgetKeys.autoConnectTile,
           context,
           title: "${t.ui.autoConnectTo}:",
           titleStyle: panelTheme.primaryFont,

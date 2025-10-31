@@ -99,9 +99,11 @@ final class NordVpnTheme {
       indicatorColor: design.semanticColors.bgSecondary,
       backgroundColor: design.semanticColors.bgPrimary,
       surfaceTintColor: design.colors.transparent,
-      labelTextStyle: WidgetStateProperty.all(design.typography.body.copyWith(
-        color: design.semanticColors.textPrimary,
-      )),
+      labelTextStyle: WidgetStateProperty.all(
+        design.typography.body.copyWith(
+          color: design.semanticColors.textPrimary,
+        ),
+      ),
     );
   }
 
@@ -165,7 +167,10 @@ final class NordVpnTheme {
   InputDecorationTheme _inputDecorationTheme() {
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
-      borderSide: BorderSide(color: design.semanticColors.borderSecondary, width: 1.0),
+      borderSide: BorderSide(
+        color: design.semanticColors.borderSecondary,
+        width: 1.0,
+      ),
     );
 
     return InputDecorationTheme(
@@ -453,7 +458,7 @@ final class NordVpnTheme {
         ),
         bottomOffset: 2.1,
         topOffset: 2.1,
-         borderRadius: 999.0,
+        borderRadius: 999.0,
       ),
     );
   }

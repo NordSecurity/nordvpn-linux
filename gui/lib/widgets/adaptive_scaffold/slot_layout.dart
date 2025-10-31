@@ -18,9 +18,13 @@ class SlotLayout extends StatefulWidget {
   /// Given a context and a config, it returns the [SlotLayoutConfig] that will
   /// be chosen from the config under the context's conditions.
   static SlotLayoutConfig? pickWidget(
-      BuildContext context, Map<Breakpoint, SlotLayoutConfig?> config) {
-    final Breakpoint? breakpoint =
-        Breakpoint.activeBreakpointIn(context, config.keys.toList());
+    BuildContext context,
+    Map<Breakpoint, SlotLayoutConfig?> config,
+  ) {
+    final Breakpoint? breakpoint = Breakpoint.activeBreakpointIn(
+      context,
+      config.keys.toList(),
+    );
     return breakpoint != null && config.containsKey(breakpoint)
         ? config[breakpoint]
         : null;
@@ -77,17 +81,16 @@ class SlotLayout extends StatefulWidget {
     Curve? inCurve,
     Curve? outCurve,
     required Key key,
-  }) =>
-      SlotLayoutConfig._(
-        builder: builder,
-        inAnimation: inAnimation,
-        outAnimation: outAnimation,
-        inDuration: inDuration,
-        outDuration: outDuration,
-        inCurve: inCurve,
-        outCurve: outCurve,
-        key: key,
-      );
+  }) => SlotLayoutConfig._(
+    builder: builder,
+    inAnimation: inAnimation,
+    outAnimation: outAnimation,
+    inDuration: inDuration,
+    outDuration: outDuration,
+    inCurve: inCurve,
+    outCurve: outCurve,
+    key: key,
+  );
 
   @override
   State<SlotLayout> createState() => _SlotLayoutState();
@@ -102,37 +105,37 @@ class _SlotLayoutState extends State<SlotLayout>
     chosenWidget = SlotLayout.pickWidget(context, widget.config);
     bool hasAnimation = false;
     return AnimatedSwitcher(
-        duration:
-            chosenWidget?.inDuration ?? const Duration(milliseconds: 1000),
-        reverseDuration: chosenWidget?.outDuration,
-        switchInCurve: chosenWidget?.inCurve ?? Curves.linear,
-        switchOutCurve: chosenWidget?.outCurve ?? Curves.linear,
-        layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
-          final Stack elements = Stack(
-            children: <Widget>[
-              if (hasAnimation && previousChildren.isNotEmpty)
-                previousChildren.first,
-              if (currentChild != null) currentChild,
-            ],
-          );
-          return elements;
-        },
-        transitionBuilder: (Widget child, Animation<double> animation) {
-          final SlotLayoutConfig configChild = child as SlotLayoutConfig;
-          if (child.key == chosenWidget?.key) {
-            return (configChild.inAnimation != null)
-                ? child.inAnimation!(child, animation)
-                : child;
-          } else {
-            if (configChild.outAnimation != null) {
-              hasAnimation = true;
-            }
-            return (configChild.outAnimation != null)
-                ? child.outAnimation!(child, ReverseAnimation(animation))
-                : child;
+      duration: chosenWidget?.inDuration ?? const Duration(milliseconds: 1000),
+      reverseDuration: chosenWidget?.outDuration,
+      switchInCurve: chosenWidget?.inCurve ?? Curves.linear,
+      switchOutCurve: chosenWidget?.outCurve ?? Curves.linear,
+      layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
+        final Stack elements = Stack(
+          children: <Widget>[
+            if (hasAnimation && previousChildren.isNotEmpty)
+              previousChildren.first,
+            if (currentChild != null) currentChild,
+          ],
+        );
+        return elements;
+      },
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        final SlotLayoutConfig configChild = child as SlotLayoutConfig;
+        if (child.key == chosenWidget?.key) {
+          return (configChild.inAnimation != null)
+              ? child.inAnimation!(child, animation)
+              : child;
+        } else {
+          if (configChild.outAnimation != null) {
+            hasAnimation = true;
           }
-        },
-        child: chosenWidget ?? SlotLayoutConfig.empty());
+          return (configChild.outAnimation != null)
+              ? child.outAnimation!(child, ReverseAnimation(animation))
+              : child;
+        }
+      },
+      child: chosenWidget ?? SlotLayoutConfig.empty(),
+    );
   }
 }
 

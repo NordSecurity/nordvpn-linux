@@ -19,6 +19,14 @@ enum Products { nordPass, nordLocker, nordLayer }
 final _dateFormat = DateFormat('d MMM y');
 const products = [Products.nordPass, Products.nordLocker, Products.nordLayer];
 
+final class AccountWidgetKeys {
+  AccountWidgetKeys._();
+  static const userInfo = Key("accountUserInfo");
+  static const productsList = Key("accountProductsList");
+  static const footerLinks = Key("accountFooterLinks");
+  static const logoutButton = Key("logoutButton");
+}
+
 final class AccountDetailsSettings extends ConsumerWidget {
   const AccountDetailsSettings({super.key});
 
@@ -36,11 +44,13 @@ final class AccountDetailsSettings extends ConsumerWidget {
     return SettingsWrapperWidget(
       itemsCount: 1,
       stickyHeader: UserInfo(
+        key: AccountWidgetKeys.userInfo,
         userAccount: userAccount,
         onLogout: () => ref.read(accountControllerProvider.notifier).logout(),
       ),
-      itemBuilder: (context, _) => ProductsList(products: products),
-      stickyFooter: FooterLinks(),
+      itemBuilder: (context, _) =>
+          ProductsList(key: AccountWidgetKeys.productsList, products: products),
+      stickyFooter: FooterLinks(key: AccountWidgetKeys.footerLinks),
     );
   }
 }
@@ -84,7 +94,11 @@ final class UserInfo extends StatelessWidget {
       Text(_expirationDateFrom(userAccount), style: theme.caption);
 
   Widget _logoutButton() {
-    return LoadingOutlinedButton(onPressed: onLogout, child: Text(t.ui.logout));
+    return LoadingOutlinedButton(
+      key: AccountWidgetKeys.logoutButton,
+      onPressed: onLogout,
+      child: Text(t.ui.logout),
+    );
   }
 }
 
