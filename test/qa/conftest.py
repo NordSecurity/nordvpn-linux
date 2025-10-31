@@ -21,13 +21,20 @@ from lib.remote_config_manager import RemoteConfigManager, LOCAL_CACHE_DIR, REMO
 from lib.logging import FILE
 from lib.log_reader import LogReader
 from lib.daemon import enable_rc_local_config_usage
+from constants import (
+    DEB,
+    NORDVPND_SERVICE_NAME,
+    NORDVPND_CONFIG_FILE,
+    SNAP,
+)
 
-pytest_plugins = ("lib.pytest_timeouts.pytest_timeouts")
+pytest_plugins = "lib.pytest_timeouts.pytest_timeouts"
 
-_CHECK_FREQUENCY=5
+_CHECK_FREQUENCY = 5
+TMP_DAEMON_PATH_BACKUP = f"{os.getcwd()}/tmp"
 
-sys.path.append(os.path.abspath(os.path.join(
-    os.path.dirname(__file__), 'lib/protobuf/daemon')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "lib/protobuf/daemon")))
+
 
 def pytest_configure(config):
     """
@@ -47,8 +54,8 @@ def pytest_configure(config):
     """
     is_nightly = os.getenv("CI_PIPELINE_SCHEDULE_DESCRIPTION")
     if is_nightly and is_nightly.lower().strip() == "nightly":
-        config.option.maxfail=0
-        config.option.exitfirst=False
+        config.option.maxfail = 0
+        config.option.exitfirst = False
 
     is_local_rc_usage = os.getenv("USE_LOCAL_CONFIG")
     if is_local_rc_usage:
@@ -64,16 +71,45 @@ def print_to_string(*args, **kwargs):
 
 
 _original_print = print
+
+
 def _print_with_timestamp(*args, **kwargs):
     # Get the current time and format it
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     # Prepend the timestamp to the original print arguments
     _original_print(timestamp, *args, **kwargs)
     logging.log(data=print_to_string(timestamp, *args, **kwargs))
 
 
+def _set_custom_config_for_rc(daemon_log_reader, string_to_be_added: str) -> int:
+    """
+    Function to set custom config parameter for rc's config
+
+    :param string_to_be_added:   Parameter with value to be set
+
+    :return                      Position of cursor in daemon log file
+    """
+    if daemon.is_under_snap():
+        # For VM
+        sed_command = f'/^\[Service\]/a Environment="{string_to_be_added}"'
+        target_file = NORDVPND_CONFIG_FILE.get(SNAP)
+    else:
+        # For container
+        sed_command = f"1a export {string_to_be_added}"
+        target_file = NORDVPND_CONFIG_FILE.get(DEB)
+
+    sh.sudo.sed("-i", sed_command, target_file)
+
+    time_mark = daemon_log_reader.get_cursor()
+
+    _restart_daemon_after_changing_config()
+
+    return time_mark
+
+
 # Replace the built-in print with our custom version
-print = _print_with_timestamp # noqa: A001
+print = _print_with_timestamp  # noqa: A001
+
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_check_internet_connection():
@@ -91,7 +127,9 @@ def start_system_monitoring():
     threads = []
 
     threads.append(threading.Thread(target=_check_connection_to_ip, args=["1.1.1.1", stop_event], daemon=True))
-    threads.append(threading.Thread(target=_check_connection_to_ip_outside_vpn, args=["1.1.1.1", stop_event], daemon=True))
+    threads.append(
+        threading.Thread(target=_check_connection_to_ip_outside_vpn, args=["1.1.1.1", stop_event], daemon=True)
+    )
     threads.append(threading.Thread(target=_check_dns_resolution, args=["nordvpn.com", stop_event], daemon=True))
     threads.append(threading.Thread(target=_capture_traffic, args=[stop_event], daemon=True))
     print(threads)
@@ -107,12 +145,13 @@ def start_system_monitoring():
     for thread in threads:
         thread.join()
 
+
 def _check_connection_to_ip(ip_address, stop_event):
     print("Start _check_connection_to_ip")
     while not stop_event.is_set():
         try:
             network.is_internet_reachable(ip_address=ip_address, retry=1)
-        except Exception as e: # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             print(f"_check_connection_to_ip: FAILURE for {ip_address}: {e}.")
         stop_event.wait(_CHECK_FREQUENCY)
 
@@ -122,7 +161,7 @@ def _check_connection_to_ip_outside_vpn(ip_address, stop_event):
     while not stop_event.is_set():
         try:
             network.is_internet_reachable_outside_vpn(ip_address=ip_address, retry=1)
-        except Exception as e: # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             print(f"~~~_check_connection_to_ip_outside_vpn: {ip_address} FAILURE: {e}.")
         stop_event.wait(_CHECK_FREQUENCY)
 
@@ -132,8 +171,8 @@ def _check_dns_resolution(domain, stop_event):
     while not stop_event.is_set():
         try:
             resolver = dns.resolver.Resolver()
-            resolver.nameservers = ['8.8.8.8']
-            resolver.resolve(domain, 'A')  # 'A' for IPv4
+            resolver.nameservers = ["8.8.8.8"]
+            resolver.resolve(domain, "A")  # 'A' for IPv4
         except Exception as e:  # noqa: BLE001
             print(f"~~~_check_dns_resolution: DNS {domain} FAILURE. Error: {e}")
         stop_event.wait(_CHECK_FREQUENCY)
@@ -142,7 +181,17 @@ def _check_dns_resolution(domain, stop_event):
 def _capture_traffic(stop_event):
     print("Start _capture_traffic")
     # use circular log files, keep only 2 latest each 10MB size
-    command = ["tshark", "-a", "filesize:10240", "-b", "files:2", "-i", "any", "-w", os.environ["WORKDIR"] + "/dist/logs/tshark_capture.pcap"]
+    command = [
+        "tshark",
+        "-a",
+        "filesize:10240",
+        "-b",
+        "files:2",
+        "-i",
+        "any",
+        "-w",
+        os.environ["WORKDIR"] + "/dist/logs/tshark_capture.pcap",
+    ]
     print("Starting tshark")
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     stop_event.wait()
@@ -155,6 +204,15 @@ def _capture_traffic(stop_event):
         process.kill()
     print(f"tshark out {process.stdout.read().strip()[-10:]} - {process.stderr.read().strip()[-10:]}")
     time.sleep(1)
+
+
+def _restart_daemon_after_changing_config():
+    """Method to restart daemon after changing config according to system"""
+    if daemon.is_under_snap():
+        sh.sudo.systemctl("daemon-reload")
+        sh.sudo(SNAP, "restart", NORDVPND_SERVICE_NAME.get(SNAP))
+    else:
+        daemon.restart()
 
 
 @pytest.fixture
@@ -180,7 +238,7 @@ def nordvpnd_scope_function(collect_logs):  # noqa: ARG001
     daemon.stop()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def nordvpnd_scope_module():
     """Manage the NordVPN daemon start/stop and login/logout states in a module scope."""
     daemon.start()
@@ -201,7 +259,7 @@ def unblock_network(nordvpnd_scope_module):  # noqa: ARG001
     network.unblock()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def add_and_delete_random_route():
     """Add and delete a random network route."""
     firewall.add_and_delete_random_route()
@@ -227,8 +285,7 @@ def default_config() -> dict:
 
 
 @pytest.fixture
-def rc_config_manager(default_config: dict
-) -> RemoteConfigManager:
+def rc_config_manager(default_config: dict) -> RemoteConfigManager:
     """
     Fixture to create and provide an instance of "RemoteConfigManager".
 
@@ -236,11 +293,7 @@ def rc_config_manager(default_config: dict
 
     :return: An instance of the "RemoteConfigManager".
     """
-    return RemoteConfigManager(
-        env="dev",
-        cache_dir=LOCAL_CACHE_DIR,
-        default_config=default_config
-    )
+    return RemoteConfigManager(env="dev", cache_dir=LOCAL_CACHE_DIR, default_config=default_config)
 
 
 @pytest.fixture
@@ -263,7 +316,7 @@ def daemon_log_cursor(daemon_log_reader) -> int:
 
     :param daemon_log_reader: An instance of the "LogReader" class.
 
-    :return: An integer cursor representing the current end of the log file..
+    :return: An integer cursor representing the current end of the log file.
     """
     cursor = daemon_log_reader.get_cursor()
 
@@ -278,6 +331,7 @@ def clean_cache_files(rc_config_manager):
 
     :param rc_config_manager: An instance of the "RemoteConfigManager" class.
     """
+    print("Clearing local cache file")
     if rc_config_manager.set_permissions_cache_dir():
         subprocess.run(["sudo", "rm", "-rf", LOCAL_CACHE_DIR], check=True)
     else:
@@ -319,7 +373,7 @@ def disable_remote_endpoint():
         subprocess.run(["sudo", "cp", hosts_backup, hosts_original], check=True)
         subprocess.run(["sudo", "chmod", "644", hosts_original], check=True)
         print(f"{hosts_original} restored from {hosts_backup}.")
-    except Exception as e: # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
         print(f"Got an error during restoring {hosts_original} from {hosts_backup}: {e}")
         raise
 
@@ -330,3 +384,16 @@ def env():
     env = daemon.get_env()
     print(f"Current env: '{env}'")
     return env
+
+
+
+@pytest.fixture
+def backup_restore_rc_config_files(nordvpnd_scope_function):  # noqa: ARG001
+    """Fixture to back up original config for remote config, and restore it after tests."""
+    os.makedirs(TMP_DAEMON_PATH_BACKUP, exist_ok=True)
+
+    print("Copy original remote monitoring config files as back up")
+    sh.sudo.cp("-r", LOCAL_CACHE_DIR, TMP_DAEMON_PATH_BACKUP)
+    yield
+    print("Restore original remote monitoring config files")
+    sh.sudo.cp("-r", TMP_DAEMON_PATH_BACKUP, LOCAL_CACHE_DIR)
