@@ -155,7 +155,15 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (*pb.L
 	if in.GetType() == pb.LoginType_LoginType_SIGNUP {
 		eventType = events.LoginSignUp
 	}
+
+	// check if previous login/signup process was started
+	eventReason := events.ReasonNotSpecified
+	if r.initialLoginType != pb.LoginType_LoginType_UNKNOWN {
+		eventReason = events.ReasonUnfinishedPrevLogin
+	}
+
 	// memorize what login type started: Login or Signup
+	// (dont forget to reset it after login/signup is completed)
 	r.initialLoginType = in.GetType()
 
 	r.events.User.Login.Publish(events.DataAuthorization{
@@ -163,6 +171,7 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (*pb.L
 		EventTrigger: events.TriggerUser,
 		EventStatus:  events.StatusAttempt,
 		EventType:    eventType,
+		Reason:       eventReason,
 	})
 
 	url, err := r.authentication.Login(in.GetType() == pb.LoginType_LoginType_LOGIN)
@@ -214,6 +223,8 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 			IsAlteredFlowOnNordAccount: in.GetType() != r.initialLoginType,
 		})
 		lastLoginAttemptTime = time.Time{}
+		// at the end, reset initiated login type
+		r.initialLoginType = pb.LoginType_LoginType_UNKNOWN
 	}()
 
 	if in.GetToken() == "" {
