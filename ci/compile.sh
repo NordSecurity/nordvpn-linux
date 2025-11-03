@@ -75,7 +75,7 @@ if [[ $tags == *"moose"* ]]; then
 		-X 'main.EventsSubdomain=${EVENTS_SUBDOMAIN:-""}'"
 
 	source "${WORKDIR}"/ci/add_private_bindings.sh moose/events ./third-party/moose-events/moosenordvpnappgo/v18
-	source "${WORKDIR}"/ci/add_private_bindings.sh moose/worker ./third-party/moose-worker/mooseworkergo/v17
+	source "${WORKDIR}"/ci/add_private_bindings.sh moose/worker ./third-party/moose-worker/mooseworkergo/v18
 fi
 
 if [[ $tags == *"quench"* ]]; then
