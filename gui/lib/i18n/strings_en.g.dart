@@ -1927,6 +1927,9 @@ class TranslationsUiEn {
 
 	/// en: 'Recent connections'
 	String get recentConnections => 'Recent connections';
+
+	/// en: 'In order to select obfuscated server please enable 'Obfuscation' in the setting.'
+	String get obfuscatedSpecialtyServerSelectionTooltip => 'In order to select obfuscated server please enable \'Obfuscation\' in the setting.';
 }
 
 /// Flat map(s) containing all translations.
@@ -2552,6 +2555,7 @@ extension on Translations {
 			case 'ui.snapScreenDescription': return 'Grant permission by running these commands in the terminal. Then refresh the screen.';
 			case 'ui.refresh': return 'Refresh';
 			case 'ui.recentConnections': return 'Recent connections';
+			case 'ui.obfuscatedSpecialtyServerSelectionTooltip': return 'In order to select obfuscated server please enable \'Obfuscation\' in the setting.';
 			default: return null;
 		}
 	}

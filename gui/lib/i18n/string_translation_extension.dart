@@ -49,15 +49,19 @@ String labelForServerType(ServerType type) {
     case ServerType.obfuscated:
       return t.ui.obfuscated;
 
+    // [Deprecated] Region
     case ServerType.europe:
       return t.ui.europe;
 
+    // [Deprecated] Region
     case ServerType.theAmericas:
       return t.ui.theAmericas;
 
+    // [Deprecated] Region
     case ServerType.asiaPacific:
       return t.ui.asiaPacific;
 
+    // [Deprecated] Region
     case ServerType.africaTheMiddleEastAndIndia:
       return t.ui.africaTheMiddleEastAndIndia;
   }

@@ -13,12 +13,15 @@ extension Convert on ServerGroup {
       ServerGroup.P2P => ServerType.p2p,
       ServerGroup.STANDARD_VPN_SERVERS => ServerType.standardVpn,
       ServerGroup.OBFUSCATED => ServerType.obfuscated,
-      // regions
+      // [Deprecated] Region
       ServerGroup.EUROPE => ServerType.europe,
+      // [Deprecated] Region
       ServerGroup.THE_AMERICAS => ServerType.theAmericas,
+      // [Deprecated] Region
       ServerGroup.ASIA_PACIFIC => ServerType.asiaPacific,
+      // [Deprecated] Region
       ServerGroup.AFRICA_THE_MIDDLE_EAST_AND_INDIA =>
-          ServerType.africaTheMiddleEastAndIndia,
+        ServerType.africaTheMiddleEastAndIndia,
       _ => null,
     };
   }
