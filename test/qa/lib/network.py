@@ -261,7 +261,7 @@ def stop() -> dict:
     for line in sh.ip.route().split('\n'):
         if line.startswith('default'):
             default_gateway[line.split()[4]]=line.split()[2]
-    assert default_gateway is not None
+    assert default_gateway, f"Couldn't find default gateway. Ip route are next: {sh.ip.route()}"
 
     logging.log(f"Default routing before stopping network {sh.sudo.ip.route.show.default()}")
     if daemon.is_init_systemd():
