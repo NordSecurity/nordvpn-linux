@@ -622,12 +622,12 @@ func (Generate) ProtobufDocker(ctx context.Context) error {
 
 // Generate GUI translations
 func (Generate) GuiTranslations(ctx context.Context) error {
-	return runCmd("dart", "run", "slang", "-v")
+	return runCmd("gui", "dart", "run", "slang", "-v")
 }
 
 // Generate GUI code, e.g riverpod, freezed
 func (Generate) GuiCode(ctx context.Context) error {
-	return runCmd("dart", "run", "build_runner", "build")
+	return runCmd("gui", "dart", "run", "build_runner", "build")
 }
 
 // run unit tests
