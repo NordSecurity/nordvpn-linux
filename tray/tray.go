@@ -13,11 +13,14 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 	"github.com/NordSecurity/nordvpn-linux/notify"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/NordSecurity/systray"
 )
@@ -110,7 +113,7 @@ func sortedConnections(sgs []*pb.ServerGroup) []string {
 
 type Instance struct {
 	client              pb.DaemonClient
-	fileshareClient     filesharepb.FileshareClient
+	fileshare           FileshareManager
 	accountInfo         accountInfo
 	debugMode           bool
 	notifier            dbusNotifier
@@ -145,6 +148,39 @@ type trayState struct {
 	mu                   sync.RWMutex
 }
 
+type FileshareManager struct {
+	fileshareClient filesharepb.FileshareClient
+}
+
+func (fs *FileshareManager) UpdateFileshareConnection(meshnetEnabled bool) {
+	if !meshnetEnabled {
+		fs.fileshareClient = nil
+		return
+	}
+
+	if fs.fileshareClient == nil {
+		// Meshnet is enabled, we must connect to the fileshare daemon
+		fileShareConn, err := grpc.NewClient(
+			fileshare_process.FileshareURL,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+		)
+		if err == nil {
+			fs.fileshareClient = filesharepb.NewFileshareClient(fileShareConn)
+		} else {
+			log.Println(internal.ErrorPrefix, "Error connecting to the NordVPN fileshare daemon:", err)
+		}
+	}
+}
+
+func (fs *FileshareManager) SetNotifications(flag bool, flagText string) {
+	if fs.fileshareClient != nil {
+		_, err := fs.fileshareClient.SetNotifications(context.Background(), &filesharepb.SetNotificationsRequest{Enable: flag})
+		if err != nil {
+			log.Printf("%s Setting fileshare notifications %s error: %s", internal.ErrorPrefix, flagText, err)
+		}
+	}
+}
+
 // Not thread safe. Lock mu before using
 func (state *trayState) serverName() string {
 	vpnServerName := state.vpnName
@@ -159,10 +195,10 @@ func (state *trayState) serverName() string {
 	return vpnServerName
 }
 
-func NewTrayInstance(client pb.DaemonClient, fileshareClient filesharepb.FileshareClient, quitChan chan<- norduser.StopRequest) *Instance {
+func NewTrayInstance(client pb.DaemonClient, quitChan chan<- norduser.StopRequest) *Instance {
 	obj := &Instance{
 		client:            client,
-		fileshareClient:   fileshareClient,
+		fileshare:         FileshareManager{fileshareClient: nil},
 		quitChan:          quitChan,
 		connSensor:        newConnectionSettingsChangeSensor(),
 		recentConnections: newRecentConnectionsManager(client),
