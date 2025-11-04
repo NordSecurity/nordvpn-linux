@@ -50,14 +50,17 @@ class CustomListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: leading,
-      title: title,
-      subtitle: subtitle,
-      trailing: trailing,
-      onTap: enabled ? onTap : null,
-      minTileHeight: minTileHeight,
-      contentPadding: contentPadding,
+    return Material(
+      type: MaterialType.transparency,
+      child: ListTile(
+        leading: leading,
+        title: title,
+        subtitle: subtitle,
+        trailing: trailing,
+        onTap: enabled ? onTap : null,
+        minTileHeight: minTileHeight,
+        contentPadding: contentPadding,
+      ),
     );
   }
 }
