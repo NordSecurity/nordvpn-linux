@@ -687,17 +687,24 @@ func (s *Subscriber) OnTelemetry(metric telemetry.Metric, value any) error {
 		}
 
 	case telemetry.MetricDisplayProtocol:
-		// TODO: missing moose metric support (e.g. NordvpnappSetContextDeviceDisplayProtocol)
 		switch value.(telemetrypb.DisplayProtocol) {
 		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_UNSPECIFIED:
-			// unset display protocol
+			if err := s.response(moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateDisplayProtocol()); err != nil {
+				return fmt.Errorf("unsetting display protocol: %w", err)
+			}
 		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_WAYLAND:
-			// set 'wayland' metric
+			if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateDisplayProtocol("wayland")); err != nil {
+				return fmt.Errorf("setting display protocol: %w", err)
+			}
 		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_X11:
-			// set 'x11' metric
+			if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateDisplayProtocol("x11")); err != nil {
+				return fmt.Errorf("setting display protocol: %w", err)
+			}
 		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_UNKNOWN:
 		default:
-			// set 'unknown' metric (e.g. NordvpnappUnsetContextDeviceDisplayProtocol)
+			if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateDisplayProtocol("unknown")); err != nil {
+				return fmt.Errorf("setting display protocol: %w", err)
+			}
 		}
 
 	default:
