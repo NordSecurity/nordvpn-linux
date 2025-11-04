@@ -21,7 +21,7 @@ import (
 const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
 	imageBuilder           = registryPrefix + "builder:1.4.2"
-	imageGUIFlutter        = registryPrefix + "flutter-3.32.8:1.1.0"
+	imageGUIBuilder        = registryPrefix + "flutter-3.32.8:1.1.0"
 	imagePackager          = registryPrefix + "packager:1.3.2"
 	imageDepender          = registryPrefix + "depender:1.3.3"
 	imageSnapPackager      = registryPrefix + "snaper:1.2.0"
@@ -44,6 +44,9 @@ const (
 	packageTypeSnap = "snap"
 	packageTypeRPM  = "rpm"
 	packageTypeDeb  = "deb"
+
+	buildModeRelease = "release"
+	buildModeDebug   = "debug"
 )
 
 // Aliases shorthands for daily commands
@@ -325,7 +328,7 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
 	env["PACKAGE"] = devPackageType
-	//TODO (LVPN-9228) remove usage of ENABLE_GUI_BUILD variable, once the way of building is unified
+	// TODO (LVPN-9228) remove usage of ENABLE_GUI_BUILD variable, once the way of building is unified
 	env["ENABLE_GUI_BUILD"] = "1"
 
 	switch packageType {
@@ -433,13 +436,8 @@ func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 	}
 
 	// build GUI binaries
-	return RunDocker(
-		ctx,
-		env,
-		imageGUIFlutter,
-		[]string{"scripts/build_application.sh", "release"},
-		guiDockerWorkDir,
-	)
+	mg.Deps(mg.F(buildGuiBinariesDocker, buildModeRelease))
+	return nil
 }
 
 // Builds all binaries using Docker builder
@@ -544,34 +542,32 @@ func (Build) RustDocker(ctx context.Context) error {
 	return nil
 }
 
-// Build GUI binaries (arguments: buildConfig {release/debug})
-func (Build) GuiBinaries(ctx context.Context, buildConfig string) error {
-	if buildConfig != "release" && buildConfig != "debug" {
-		return fmt.Errorf("invalid config: %q (expected 'debug' or 'release')", buildConfig)
-	}
-	config := "--" + buildConfig
-	cmd := exec.Command("flutter", "build", "linux", config)
-	cmd.Dir = "gui"
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
-// Build GUI package (arguments: packageType {deb/rpm}, buildConfig {release/debug})
-func (Build) GuiPackage(ctx context.Context, packageType, buildConfig string) error {
-	if packageType != "deb" && packageType != "rpm" {
-		return fmt.Errorf("invalid package: %q (expected 'deb' or 'rpm' or 'snap')", packageType)
-	}
-	if buildConfig != "release" && buildConfig != "debug" {
-		return fmt.Errorf("invalid config: %q (expected 'debug' or 'release')", buildConfig)
-	}
-
-	runCmd("gui", "scripts/build_application.sh", buildConfig)
-	runCmd("gui", "scripts/build_package.sh", buildConfig, packageType, "amd64")
+func (Build) GuiRpmDocker(ctx context.Context) error {
+	mg.Deps(mg.F(buildGuiPackageDocker, packageTypeRPM, buildModeRelease))
 	return nil
 }
 
-func (Build) GuiPackageDocker(ctx context.Context) error {
+func (Build) GuiDebDocker(ctx context.Context) error {
+	mg.Deps(mg.F(buildGuiPackageDocker, packageTypeDeb, buildModeRelease))
+	return nil
+}
+
+func buildGuiPackageDocker(ctx context.Context, packageType, buildMode string) error {
+	if packageType != packageTypeDeb && packageType != packageTypeRPM {
+		return fmt.Errorf(
+			"invalid package: %q (expected '%s' or '%s')",
+			packageType, packageTypeDeb, packageTypeRPM,
+		)
+	}
+	if buildMode != buildModeRelease && buildMode != buildModeDebug {
+		return fmt.Errorf(
+			"invalid build mode: %q (expected '%s' or '%s')",
+			buildMode, buildModeDebug, buildModeRelease,
+		)
+	}
+
+	mg.Deps(mg.F(buildGuiBinariesDocker, buildMode))
+
 	env, err := getEnv()
 	if err != nil {
 		return err
@@ -582,8 +578,32 @@ func (Build) GuiPackageDocker(ctx context.Context) error {
 	return RunDocker(
 		ctx,
 		env,
-		imageGUIFlutter,
-		[]string{"cd", "gui"}, ///scripts/build_application.sh", "release"},
+		imagePackager,
+		[]string{"scripts/build_package.sh", buildMode, packageType, "amd64"},
+		guiDockerWorkDir,
+	)
+}
+
+func buildGuiBinariesDocker(ctx context.Context, buildMode string) error {
+	if buildMode != buildModeRelease && buildMode != buildModeDebug {
+		return fmt.Errorf(
+			"invalid build mode: %q (expected '%s' or '%s')",
+			buildMode, buildModeDebug, buildModeRelease,
+		)
+	}
+
+	env, err := getEnv()
+	if err != nil {
+		return err
+	}
+
+	env["WORKDIR"] = dockerWorkDir
+
+	return RunDocker(
+		ctx,
+		env,
+		imageGUIBuilder,
+		[]string{"scripts/build_application.sh", buildMode},
 		guiDockerWorkDir,
 	)
 }
