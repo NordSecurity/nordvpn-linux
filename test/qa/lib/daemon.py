@@ -131,10 +131,16 @@ def stop(timeout: int = 10):
         time.sleep(1)
 
 
-def stop_peer(ssh_client: ssh.Ssh):
+def stop_peer(ssh_client: ssh.Ssh, timeout=10):
     """Stops the daemon in peer and blocks until it is actually stopped."""
-    ssh_client.exec_command("sudo /etc/init.d/nordvpn stop")
+    if is_peer_running(ssh_client):
+        ssh_client.exec_command("sudo /etc/init.d/nordvpn stop")
+
+    start_time = time.time()
     while is_peer_running(ssh_client):
+        if time.time() - start_time > timeout:
+            exc_msg = f"Operation timed out after {timeout} seconds. Daemon is not stopped!"
+            raise TimeoutError(exc_msg)
         time.sleep(1)
 
 

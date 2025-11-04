@@ -236,16 +236,18 @@ def is_disconnected(retry=5) -> bool:
 
 
 # start the networking and wait for completion
-def start(default_gateway: str):
+def start(default_gateway: dict):
     """Must pass default_gateway returned from stop()."""
     if daemon.is_init_systemd():
-        sh.sudo.nmcli.networking.on()
+        for interface, gateway in default_gateway.items():
+            sh.sudo.ip.route.add.default.via(gateway, "dev", interface)
     else:
         sh.sudo.ip.link.set.dev.eth0.up()
-        cmd = sh.sudo.ip.route.add.default.via.bake(default_gateway)
+        cmd = sh.sudo.ip.route.add.default.via.bake(default_gateway["eth0"])
         cmd.dev.eth0()
 
     logging.log("starting network")
+    logging.log(f"State of default route after start: {sh.sudo.ip.route.show.default()}")
     while is_not_available():
         time.sleep(1)
 
@@ -253,16 +255,18 @@ def start(default_gateway: str):
 
 
 # stop the networking and wait for completion
-def stop() -> str:
+def stop() -> dict:
     """Returns default_gateway to be used when starting network again."""
-    default_gateway = None
+    default_gateway = {}
     for line in sh.ip.route().split('\n'):
         if line.startswith('default'):
-            default_gateway = line.split()[2]
-    assert default_gateway is not None
+            default_gateway[line.split()[4]]=line.split()[2]
+    assert default_gateway, f"Couldn't find default gateway. Ip route are next: {sh.ip.route()}"
 
+    logging.log(f"Default routing before stopping network {sh.sudo.ip.route.show.default()}")
     if daemon.is_init_systemd():
-        sh.sudo.nmcli.networking.off()
+        sh.sudo.ip.route("del", "default")
+        logging.log(f"State of default route after stop: {sh.ip.route.show.default()}")
     else:
         sh.sudo.ip.link.set.dev.eth0.down()
 

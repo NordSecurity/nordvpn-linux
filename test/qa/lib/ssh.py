@@ -27,7 +27,7 @@ class Ssh:
         self.client.connect(self.hostname, 22, username=self.username, password=self.password)
 
     def exec_command(self, command: str) -> str:
-        _, stdout, stderr = self.client.exec_command(command, timeout=16)
+        _, stdout, stderr = self.client.exec_command(command, timeout=16) # TODO: LVPN-9477
         try:
             output = stdout.read().decode()
             error = stderr.read().decode()

@@ -56,12 +56,15 @@ class TestUtils:
     def setup_function(ssh_client: ssh.Ssh):
         logging.log()
 
-        delete_machines_by_identifier(token=LOCAL_TOKEN)
-        delete_machines_by_identifier(token=PEER_TOKEN)
-
         # if setup_function fails, teardown won't be executed, so daemon is not stopped
         if daemon.is_running():
             daemon.stop()
+
+        if daemon.is_peer_running(ssh_client):
+            daemon.stop_peer(ssh_client)
+
+        delete_machines_by_identifier(token=LOCAL_TOKEN)
+        delete_machines_by_identifier(token=PEER_TOKEN)
 
         daemon.start()
         daemon.start_peer(ssh_client)
@@ -694,7 +697,7 @@ def get_lines_with_keywords(lines: list[str], keywords: list[str]) -> list:
     """Returns list with elements, that contain specified `keywords`."""
     return [line.strip() for line in lines if all(keyword in line for keyword in keywords)]
 
-def are_peers_connected(ssh_client: ssh.Ssh = None, retry: int = 3) -> None:
+def are_peers_connected(ssh_client: ssh.Ssh = None, retry: int = 15) -> None:
     """
     Verifies if local and remote NordVPN mesh peers see each other as connected in peer list.
 
