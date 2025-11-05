@@ -233,10 +233,16 @@ final class VpnStatusLabel extends ConsumerWidget {
       connectionStatus = t.ui.connecting;
     }
 
-    final serverGroup = vpnStatus.connectionParameters.group.toSpecialtyType();
-    // `standardVpn` is a regular VPN connection - no special label for it.
-    if (serverGroup != null && serverGroup != ServerType.standardVpn) {
-      connectionStatus += " ${t.ui.to} ${labelForServerType(serverGroup)}";
+    // Show obfuscated label if connection is obfuscated
+    if (vpnStatus.isObfuscated) {
+      connectionStatus += " ${t.ui.to} ${labelForServerType(ServerType.obfuscated)}";
+    } else {
+      // Otherwise show other specialty server types
+      final serverGroup = vpnStatus.connectionParameters.group.toSpecialtyType();
+      // `standardVpn` is a regular VPN connection - no special label for it.
+      if (serverGroup != null && serverGroup != ServerType.standardVpn) {
+        connectionStatus += " ${t.ui.to} ${labelForServerType(serverGroup)}";
+      }
     }
 
     if (vpnStatus.isConnecting()) {
