@@ -28,8 +28,8 @@ func (m Model) IsEmpty() bool {
 		m.SpecificServerName == "" &&
 		m.SpecificServer == "" &&
 		m.ConnectionType == config.ServerSelectionRule_NONE &&
-		len(m.ServerTechnologies) == 0 && 
-		m.IsVirtual == false
+		len(m.ServerTechnologies) == 0 &&
+		!m.IsVirtual
 }
 
 // Clone creates a deep copy of the recent connection model
@@ -43,6 +43,6 @@ func (m Model) Clone() Model {
 		SpecificServer:     m.SpecificServer,
 		ConnectionType:     m.ConnectionType,
 		ServerTechnologies: slices.Clone(m.ServerTechnologies),
-		IsVirtual: m.IsVirtual,
+		IsVirtual:          m.IsVirtual,
 	}
 }

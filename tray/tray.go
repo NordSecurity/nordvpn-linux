@@ -63,7 +63,7 @@ type ConnectionSelector struct {
 }
 
 type Country struct {
-	name string
+	name         string
 	displayLabel string
 }
 
@@ -110,14 +110,14 @@ func sortedConnections(sgs []*pb.ServerGroup) []Country {
 
 	list := make([]Country, 0, len(set))
 	for k, virtual := range set {
-		if virtual{
+		if virtual {
 			list = append(list, Country{name: k, displayLabel: fmt.Sprintf("%s - Virtual", k)})
 		} else {
 			list = append(list, Country{name: k, displayLabel: k})
 		}
 	}
 
-	sort.Slice(list, func(i int, j int) bool{
+	sort.Slice(list, func(i int, j int) bool {
 		return list[i].name < list[j].name
 	})
 	return list
