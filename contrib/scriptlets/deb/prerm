@@ -3,7 +3,7 @@
 ENV=$(ps --no-headers -o comm 1)
 
 case "$1" in
-    remove|upgrade|deconfigure)
+    remove|deconfigure)
         case "$ENV" in
             init)
                 /etc/init.d/nordvpn stop &>/dev/null || :
@@ -17,6 +17,28 @@ case "$1" in
                 systemctl disable nordvpnd.service &>/dev/null || :
                 systemctl disable nordvpnd.socket &>/dev/null || :
                 systemctl daemon-reload &>/dev/null || :
+            ;;
+            *)
+                echo "[ERROR] Unknown environment \`$ENV'"
+            ;;
+        esac
+    ;;
+    upgrade)
+        case "$ENV" in
+            init)
+                # Doesn't actually work on fedora as these are debian based commands
+                /etc/init.d/nordvpn upgrade-stop &>/dev/null || :
+                update-rc.d -f nordvpn remove &>/dev/null || :
+            ;;
+            *sh) # executed in docker
+            ;;
+            systemd)
+                sudo systemctl set-property nordvpnd.service Restart=no &>/dev/null || :
+                sudo systemctl kill --signal=SIGUSR1 nordvpnd.service &>/dev/null || :
+                sudo systemctl stop nordvpnd.socket &>/dev/null || :
+                sudo systemctl disable nordvpnd.service &>/dev/null || :
+                sudo systemctl disable nordvpnd.socket &>/dev/null || :
+                sudo systemctl daemon-reload &>/dev/null || :
             ;;
             *)
                 echo "[ERROR] Unknown environment \`$ENV'"

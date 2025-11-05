@@ -1,0 +1,3 @@
+#!/bin/sh
+
+kill -s USR1 $(ps aux | grep -e "snap.*nordvpn" | awk '{print $2}')
