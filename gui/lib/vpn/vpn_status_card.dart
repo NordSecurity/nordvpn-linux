@@ -124,7 +124,7 @@ final class VpnStatusCard extends StatelessWidget {
               // Quick connect
               ConnectArguments? args;
               if (settings?.obfuscatedServers == true) {
-                args = ConnectArguments(specialtyGroup: ServerType.obfuscated);
+                args = ConnectArguments();
               }
               ref.read(vpnStatusControllerProvider.notifier).connect(args);
             } else if (status.isConnecting()) {

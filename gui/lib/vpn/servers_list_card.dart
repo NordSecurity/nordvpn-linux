@@ -242,7 +242,9 @@ final class _ServersListCardState extends State<ServersListCard> {
                 country: servers[idx],
                 onTap: (args) async => await widget.onSelected(args),
                 enabled: widget.enabled,
-                specialtyGroup: null,
+                specialtyGroup: isObfuscationEnabled
+                    ? ServerType.obfuscated
+                    : null,
               );
             },
           ),
@@ -258,68 +260,39 @@ final class _ServersListCardState extends State<ServersListCard> {
     bool isObfuscatedOn,
   ) {
     final specialtyServersOrder = [
-      (type: ServerType.obfuscated, description: t.ui.obfuscated),
       (type: ServerType.dedicatedIP, description: t.ui.getYourDip),
       (type: ServerType.doubleVpn, description: t.ui.doubleVpnDesc),
       (type: ServerType.onionOverVpn, description: t.ui.onionOverVpnDesc),
       (type: ServerType.p2p, description: t.ui.p2pDesc),
     ];
+
     return Column(
       children: [
         Expanded(
           child: ListView.builder(
-            key: ServersListKeys.specialtyServerKey,
             itemCount: specialtyServersOrder.length,
             itemBuilder: (context, index) {
               final group = specialtyServersOrder[index];
               final type = group.type;
-
+              final description = group.description;
               if (type == ServerType.dedicatedIP) {
                 return _buildDipListItem(ref, serversList, isObfuscatedOn);
               }
-
               final servers = serversList.specialtyServersList(type);
-              final specialtyServerWidget = widget.itemFactory
-                  .forSpecialtyServer(
-                    context: context,
-                    type: type,
-                    enabled: type == ServerType.obfuscated
-                        ? isObfuscatedOn
-                        : servers.isNotEmpty && !isObfuscatedOn,
-                    servers: servers,
-                    subtitle: group.description,
-                    onTap: (args) => widget.onSelected(args),
-                    showDetails: () => _showDetailsForSpecialtyServer(
-                      context: context,
-                      ref: ref,
-                      type: type,
-                      servers: servers,
-                    ),
-                  );
-
-              // Wrap with tooltip only for obfuscated servers when obfuscation is off
-              if (type == ServerType.obfuscated && !isObfuscatedOn) {
-                return Tooltip(
-                  richMessage: TextSpan(
-                    text: t.ui.obfuscatedSpecialtyServerSelectionTooltip,
-                    children: [
-                      const TextSpan(text: ' '),
-                      TextSpan(
-                        text: t.ui.goToSettings,
-                        style: context.appTheme.linkSmall,
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () => context.navigateToRoute(
-                            AppRoute.settingsSecurityAndPrivacy,
-                          ),
-                      ),
-                    ],
-                  ),
-                  preferBelow: false,
-                  child: specialtyServerWidget,
-                );
-              }
-
-              return specialtyServerWidget;
+              return widget.itemFactory.forSpecialtyServer(
+                context: context,
+                type: type,
+                enabled: servers.isNotEmpty && !isObfuscatedOn,
+                servers: servers,
+                subtitle: description,
+                onTap: (args) => widget.onSelected(args),
+                showDetails: () => _showDetailsForSpecialtyServer(
+                  context: context,
+                  ref: ref,
+                  type: type,
+                  servers: servers,
+                ),
+              );
             },
           ),
         ),
