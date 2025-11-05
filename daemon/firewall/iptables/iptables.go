@@ -509,6 +509,7 @@ func (ipt *IPTables) GetActiveRules() ([]string, error) {
 }
 
 func getRuleOutput(iptableVersion string, table string) ([]byte, error) {
+	// #nosec G204
 	out, err := exec.Command(iptableVersion, "-t", table, "-S", "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
 	if err != nil {
 		return nil, fmt.Errorf("listing rules: %w", err)
