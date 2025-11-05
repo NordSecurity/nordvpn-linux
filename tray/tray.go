@@ -58,11 +58,16 @@ func (ai *accountInfo) reset() {
 
 type ConnectionSelector struct {
 	mu               sync.RWMutex
-	countries        []string
-	specialtyServers []string
+	countries        []Country
+	specialtyServers []Country
 }
 
-func (cp *ConnectionSelector) fetchCountries(client pb.DaemonClient) ([]string, error) {
+type Country struct {
+	name string
+	displayLabel string
+}
+
+func (cp *ConnectionSelector) fetchCountries(client pb.DaemonClient) ([]Country, error) {
 	resp, err := client.Countries(context.Background(), &pb.Empty{})
 	if err != nil {
 		return nil, err
@@ -76,7 +81,7 @@ func (cp *ConnectionSelector) fetchCountries(client pb.DaemonClient) ([]string, 
 	return slices.Clone(cp.countries), nil
 }
 
-func (cp *ConnectionSelector) fetchSpecialtyServers(client pb.DaemonClient) ([]string, error) {
+func (cp *ConnectionSelector) fetchSpecialtyServers(client pb.DaemonClient) ([]Country, error) {
 	resp, err := client.Groups(context.Background(), &pb.Empty{})
 	if err != nil {
 		return nil, err
@@ -91,20 +96,30 @@ func (cp *ConnectionSelector) fetchSpecialtyServers(client pb.DaemonClient) ([]s
 	return slices.Clone(cp.specialtyServers), nil
 }
 
-func sortedConnections(sgs []*pb.ServerGroup) []string {
-	set := make(map[string]struct{}, len(sgs))
+func sortedConnections(sgs []*pb.ServerGroup) []Country {
+	set := make(map[string]bool, len(sgs))
 	for _, sg := range sgs {
 		if c := strings.TrimSpace(sg.Name); c != "" {
-			set[c] = struct{}{}
+			if sg.VirtualLocation {
+				set[c] = true
+			} else {
+				set[c] = false
+			}
 		}
 	}
 
-	list := make([]string, 0, len(set))
-	for k := range set {
-		list = append(list, k)
+	list := make([]Country, 0, len(set))
+	for k, virtual := range set {
+		if virtual{
+			list = append(list, Country{name: k, displayLabel: fmt.Sprintf("%s - Virtual", k)})
+		} else {
+			list = append(list, Country{name: k, displayLabel: k})
+		}
 	}
 
-	sort.Strings(list)
+	sort.Slice(list, func(i int, j int) bool{
+		return list[i].name < list[j].name
+	})
 	return list
 }
 
