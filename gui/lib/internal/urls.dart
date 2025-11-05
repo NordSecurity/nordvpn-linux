@@ -28,11 +28,11 @@ final nordLayerProductUrl = Uri.parse(
   "https://nordlayer.com/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=settings_apps-explore_nordlayer&nm=app&ns=nordvpn-linux-gui&nc=settings-explore_nordlayer",
 );
 
-final termsOfServiceUrl = Uri.parse(
+final accountPagetermsOfServiceUrl = Uri.parse(
   "https://my.nordaccount.com/legal/terms-of-service/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=settings_account-terms_of_service&nm=app&ns=nordvpn-linux-gui&nc=settings-terms_of_service",
 );
 
-final privacyPolicyUrl = Uri.parse(
+final accountPagePrivacyPolicyUrl = Uri.parse(
   "https://my.nordaccount.com/legal/privacy-policy/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=settings_account-privacy_policy&nm=app&ns=nordvpn-linux-gui&nc=settings-privacy_policy",
 );
 
@@ -58,4 +58,16 @@ final loginUrl = UriWithToken.parse(
 
 final countriesApiUrl = Uri.parse(
   "https://api.nordvpn.com/v1/servers/countries",
+);
+
+final autoRenewalTermsUrl = Uri.parse(
+  "https://my.nordaccount.com/legal/terms-of-service/subscription/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=settings_terms-auto_renewal_terms&nm=app&ns=nordvpn-linux-gui&nc=settings-auto_renewal_terms",
+);
+
+final termsOfServiceUrl = Uri.parse(
+  "https://my.nordaccount.com/legal/terms-of-service/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=settings_terms-terms_of_service&nm=app&ns=nordvpn-linux-gui&nc=settings-terms_of_service",
+);
+
+final privacyPolicyUrl = Uri.parse(
+  "https://my.nordaccount.com/legal/privacy-policy/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=settings_terms-privacy_policy&nm=app&ns=nordvpn-linux-gui&nc=settings-privacy_policy",
 );

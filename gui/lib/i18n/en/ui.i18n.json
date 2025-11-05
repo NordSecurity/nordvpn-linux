@@ -51,8 +51,9 @@
   "addSubnet": "Add subnet",
   "loginToNordVpn": "Log in to NordVPN",
   "newHereMessage": "New here? Sign up for Nord Account to get started",
-  "termsOfService": "Terms of service",
+  "termsOfService": "Terms of Service",
   "privacyPolicy": "Privacy Policy",
+  "autoRenewalTerms": "Auto - renewal terms",
   "subscriptionInfo": "Subscription info",
   "logout": "Log out",
   "accountExpireIn": {
@@ -242,5 +243,8 @@
   "back": "Back",
   "snapScreenTitle": "We need some permissions to connect to NordVPN service",
   "snapScreenDescription": "Grant permission by running these commands in the terminal. Then refresh the screen.",
-  "refresh": "Refresh"
+  "refresh": "Refresh",
+  "terms": "Terms",
+  "termsSubtitle": "Learn about our legal terms.",
+  "termsAgreementDescription": "By continuing to use this app, you agree to our terms and how we handle your data. To read the terms and privacy policy check the links below."
 }

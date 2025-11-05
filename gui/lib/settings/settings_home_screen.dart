@@ -63,6 +63,16 @@ final class SettingsHomeScreen extends StatelessWidget {
               onTap: () =>
                   context.navigateToRoute(AppRoute.settingsThreatProtection),
             );
+          case _SettingsGroups.terms:
+            return SettingsWrapperWidget.buildListItem(
+              context,
+              iconName: "terms.svg",
+              title: t.ui.terms,
+              subtitle: t.ui.termsSubtitle,
+              trailing: trailing,
+              trailingLocation: TrailingLocation.center,
+              onTap: () => context.navigateToRoute(AppRoute.settingsTerms),
+            );
           case _SettingsGroups.account:
             return SettingsWrapperWidget.buildListItem(
               context,
@@ -106,5 +116,6 @@ enum _SettingsGroups {
   securityAndPrivacy,
   threatProtection,
   general,
+  terms,
   account,
 }
