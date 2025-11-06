@@ -3,6 +3,7 @@
 package daemon
 
 import (
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -62,6 +63,7 @@ type RPC struct {
 	recentVPNConnStore  *recents.RecentConnectionsStore
 	dataUpdateEvents    *daemonevents.DataUpdateEvents
 	initialLoginType    pb.LoginType // memorize what action started: Login or Signup (Register)
+	loginTypeMu         sync.Mutex   // protects initialLoginType
 	pb.UnimplementedDaemonServer
 }
 

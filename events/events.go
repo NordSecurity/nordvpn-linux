@@ -172,7 +172,11 @@ const (
 	ReasonCorruptedVPNCreds            ReasonCode = 3000400
 	ReasonTokenCorrupted               ReasonCode = 3040000
 	// login exceptions
-	ReasonUnfinishedPrevLogin ReasonCode = 1000096
+	ReasonUnfinishedPrevLogin       ReasonCode = 1000096
+	ReasonLoginURLRetrieveFailed    ReasonCode = 2000022
+	ReasonLoginExchangeTokenFailed  ReasonCode = 2000028
+	ReasonLoginExchangeTokenMissing ReasonCode = 2000037
+	ReasonLoginGetUserInfoFailed    ReasonCode = 2000038
 )
 
 type DataAuthorization struct {
