@@ -141,7 +141,7 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
               key: CustomDnsKeys.dnsWarningMessage,
               context,
               color: customDnsTheme.formBackground,
-              icon: DynamicThemeImage("warning_sign.svg"),
+              iconName: "warning_sign.svg",
               titleStyle: appTheme.caption,
               title: t.ui.customDnsWarning,
             );

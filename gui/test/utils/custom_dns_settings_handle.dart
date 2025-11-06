@@ -94,13 +94,11 @@ final class CustomDnsSettingsHandle extends ScreenHandle {
       of: finder,
       matching: app.tester.findSvgWithPath("warning_sign.svg"),
     );
-    expect(finderIcon, findsOneWidget);
 
     final finderMsg = find.descendant(
       of: finder,
       matching: find.text(t.ui.customDnsWarning),
     );
-    expect(finderMsg, findsOneWidget);
 
     return (finderMsg.evaluate().length == 1) &&
         (finderIcon.evaluate().length == 1);
