@@ -62,7 +62,7 @@ final class CustomDnsSettingsHandle extends ScreenHandle {
 
   // searches a server into the servers list and taps on its removes button
   Future<void> deleteServer(String server) async {
-    final loadingButton = find.byKey(CustomDnsKeys.removeButton(server));
+    final loadingButton = find.byKey(CustomDnsKeys.dnsRemoveButton(server));
     final button = find.descendant(
       of: loadingButton,
       matching: find.byType(IconButton),
@@ -92,8 +92,10 @@ final class CustomDnsSettingsHandle extends ScreenHandle {
 
   // find the Add button
   Finder addButton() {
+    final loadingButton = find.byKey(CustomDnsKeys.dnsAddButton);
+    expect(loadingButton, findsOne);
     return find.descendant(
-      of: _addDnsForm(),
+      of: loadingButton,
       matching: find.byType(TextButton),
     );
   }
@@ -105,7 +107,7 @@ final class CustomDnsSettingsHandle extends ScreenHandle {
 
   // find servers listview
   Finder serversList() {
-    return find.byKey(CustomDnsKeys.serversList);
+    return find.byKey(CustomDnsKeys.dnsServersList);
   }
 
   // find a server into the servers listview
@@ -115,20 +117,17 @@ final class CustomDnsSettingsHandle extends ScreenHandle {
 
   // find the switch to enabled/disable custom DNS
   Finder _onOnToggle() {
-    return find.byKey(CustomDnsKeys.onOffSwitch);
+    return find.byKey(CustomDnsKeys.dnsSwitch);
   }
 
   // find the form to used to add new server
   Finder _addDnsForm() {
-    return find.byKey(CustomDnsKeys.addDnsForm);
+    return find.byKey(CustomDnsKeys.dnsAddForm);
   }
 
   // find the opacity from the LoadingButton of the Add
   Finder _addButtonOpacity() {
-    final loadingButton = find.ancestor(
-      of: addButton(),
-      matching: find.byType(LoadingButton<TextButton>),
-    );
+    final loadingButton = find.byKey(CustomDnsKeys.dnsAddButton);
     expect(loadingButton, findsOne);
     return find.descendant(of: loadingButton, matching: find.byType(Opacity));
   }

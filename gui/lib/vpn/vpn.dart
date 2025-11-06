@@ -18,7 +18,7 @@ final class VpnWidget extends ConsumerWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       spacing: theme.verticalSpaceSmall,
       children: [
-        VpnStatusCard(),
+        VpnStatusCard(key: VpnWidgetKeys.vpnStatusCard),
         Expanded(
           child: RoundContainer(
             margin: EdgeInsets.only(
@@ -28,6 +28,7 @@ final class VpnWidget extends ConsumerWidget {
               left: theme.margin,
             ),
             child: ServersListCard(
+              key: VpnWidgetKeys.vpnServersListCard,
               onSelected: (args) async {
                 await _connect(ref, args);
               },

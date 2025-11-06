@@ -172,6 +172,7 @@ final class ServerListItemFactory {
 
   // Build item for a specialty server
   Widget forSpecialtyServer({
+    Key? key,
     required BuildContext context,
     required ServerType type,
     required List<CountryServersGroup> servers,
@@ -195,6 +196,7 @@ final class ServerListItemFactory {
         : appTheme.caption.copyWith(color: theme.disabledColor);
 
     return CustomExpansionTile(
+      key: key,
       enabled: isEnabled,
       minTileHeight: serversListThemeData.listItemHeight,
       leading: _buildServerItemImage(

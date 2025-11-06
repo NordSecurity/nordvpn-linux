@@ -24,6 +24,14 @@ import 'package:nordvpn/widgets/padded_circle_avatar.dart';
 
 typedef AutoconnectLocation = ConnectArguments;
 
+final class AutoConnectWidgetKeys {
+  AutoConnectWidgetKeys._();
+  static const autoConnectPanel = Key("autoConnectPanel");
+  static const connectNowButton = Key("autoConnectConnectNowButton");
+  static const serverInfo = Key("autoConnectServerInfo");
+  static const serversListCard = Key("autoConnectServersListCard");
+}
+
 final class AutoconnectSettings extends ConsumerStatefulWidget {
   const AutoconnectSettings({super.key});
 
@@ -61,6 +69,7 @@ final class AutoconnectSettingsState
               bottom: appTheme.outerPadding,
             ),
             child: AutoconnectPanel(
+              key: AutoConnectWidgetKeys.autoConnectPanel,
               settings: settings,
               isUpdating: !_isAutoconnectSet,
               clickedLocation: _clickedLocation,
@@ -73,6 +82,7 @@ final class AutoconnectSettingsState
                 right: appTheme.outerPadding,
               ),
               child: ServersListCard(
+                key: AutoConnectWidgetKeys.serversListCard,
                 onSelected: (location) async {
                   if (_isLocationAlreadySet(settings, location)) {
                     return;
@@ -189,7 +199,7 @@ final class _ConnectNowButton extends ConsumerWidget {
     final isEnabled =
         isUpdating || _isConnectedToSelectedLocation(vpnStatus, savedLocation);
     return LoadingElevatedButton(
-      key: ValueKey(isEnabled),
+      key: AutoConnectWidgetKeys.connectNowButton,
       onPressed: isEnabled
           ? null
           : () => ref
@@ -227,6 +237,7 @@ final class AutoconnectSelectionStatus extends StatelessWidget {
         SizedBox(width: theme.horizontalSpace),
         Expanded(
           child: AutoConnectServerInfo(
+            key: AutoConnectWidgetKeys.serverInfo,
             vpnStatus: vpnStatus,
             savedLocation: savedLocation,
             isUpdating: isUpdating,
