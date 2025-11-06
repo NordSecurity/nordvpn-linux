@@ -80,7 +80,7 @@ class _InteractiveListViewState extends State<InteractiveListView> {
       initialList: initialItems,
       filter: (query) {
         if (query.isEmpty || query.length < widget.beginSearchAfter) {
-          // Return all items when query is empty
+          // Return all items when query is not fulfilled
           setState(() {});
           return widget.items;
         }
