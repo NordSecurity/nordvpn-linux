@@ -154,8 +154,8 @@ extension Helper on WidgetTester {
       (widget) =>
           widget is SvgPicture &&
           widget.bytesLoader is SvgAssetLoader &&
-          (widget.bytesLoader as SvgAssetLoader).assetName ==
-              "assets/images/$path",
+          // check only the file name, because maybe the image is part of a subfolder from the assets
+          (widget.bytesLoader as SvgAssetLoader).assetName.endsWith("/$path"),
     );
   }
 }
