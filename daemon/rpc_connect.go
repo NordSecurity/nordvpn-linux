@@ -392,6 +392,12 @@ func applyObfuscationToRecentModel(
 	case config.ServerSelectionRule_SPECIFIC_SERVER:
 		model.ConnectionType = config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP
 		model.Group = config.ServerGroup_OBFUSCATED
+	case config.ServerSelectionRule_NONE,
+		config.ServerSelectionRule_RECOMMENDED,
+		config.ServerSelectionRule_GROUP,
+		config.ServerSelectionRule_COUNTRY_WITH_GROUP,
+		config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
+		// No obfuscation wrapping needed for these connection types
 	}
 
 	return model
