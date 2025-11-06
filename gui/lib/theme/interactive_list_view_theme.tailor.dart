@@ -15,6 +15,7 @@ mixin _$InteractiveListViewThemeTailorMixin
   Color get borderColor;
   Color get focusBorderColor;
   double get borderWidth;
+  double get verticalSpaceSmall;
 
   @override
   InteractiveListViewTheme copyWith({
@@ -22,12 +23,14 @@ mixin _$InteractiveListViewThemeTailorMixin
     Color? borderColor,
     Color? focusBorderColor,
     double? borderWidth,
+    double? verticalSpaceSmall,
   }) {
     return InteractiveListViewTheme(
       borderRadius: borderRadius ?? this.borderRadius,
       borderColor: borderColor ?? this.borderColor,
       focusBorderColor: focusBorderColor ?? this.focusBorderColor,
       borderWidth: borderWidth ?? this.borderWidth,
+      verticalSpaceSmall: verticalSpaceSmall ?? this.verticalSpaceSmall,
     );
   }
 
@@ -47,6 +50,9 @@ mixin _$InteractiveListViewThemeTailorMixin
         t,
       )!,
       borderWidth: t < 0.5 ? borderWidth : other.borderWidth,
+      verticalSpaceSmall: t < 0.5
+          ? verticalSpaceSmall
+          : other.verticalSpaceSmall,
     );
   }
 
@@ -70,6 +76,10 @@ mixin _$InteractiveListViewThemeTailorMixin
             const DeepCollectionEquality().equals(
               borderWidth,
               other.borderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              verticalSpaceSmall,
+              other.verticalSpaceSmall,
             ));
   }
 
@@ -81,6 +91,7 @@ mixin _$InteractiveListViewThemeTailorMixin
       const DeepCollectionEquality().hash(borderColor),
       const DeepCollectionEquality().hash(focusBorderColor),
       const DeepCollectionEquality().hash(borderWidth),
+      const DeepCollectionEquality().hash(verticalSpaceSmall),
     );
   }
 }
@@ -92,4 +103,5 @@ extension InteractiveListViewThemeBuildContextProps on BuildContext {
   Color get borderColor => interactiveListViewTheme.borderColor;
   Color get focusBorderColor => interactiveListViewTheme.focusBorderColor;
   double get borderWidth => interactiveListViewTheme.borderWidth;
+  double get verticalSpaceSmall => interactiveListViewTheme.verticalSpaceSmall;
 }
