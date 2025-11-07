@@ -30,6 +30,9 @@ final class ServersListTheme extends ThemeExtension<ServersListTheme>
   @override
   final Color obfuscatedItemBackgroundColor;
 
+  @override
+  final double horizontalSpace;
+
   ServersListTheme({
     required this.flagSize,
     required this.loaderSize,
@@ -39,5 +42,6 @@ final class ServersListTheme extends ThemeExtension<ServersListTheme>
     required this.searchErrorStyle,
     required this.obfuscationSearchWarningStyle,
     required this.obfuscatedItemBackgroundColor,
+    required this.horizontalSpace,
   });
 }

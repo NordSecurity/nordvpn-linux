@@ -14,6 +14,7 @@ import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/i18n/string_translation_extension.dart';
 import 'package:nordvpn/theme/servers_list_theme.dart';
 import 'package:nordvpn/widgets/custom_expansion_tile.dart';
+import 'package:nordvpn/widgets/custom_list_tile.dart';
 import 'package:nordvpn/vpn/recent_server_list_item.dart';
 import 'package:nordvpn/vpn/server_item_image.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
@@ -150,7 +151,7 @@ final class ServerListItemFactory {
         ? appTheme.caption
         : appTheme.caption.copyWith(color: theme.disabledColor);
 
-    return CustomExpansionTile(
+    return CustomListTile(
       key: key,
       enabled: isEnabled,
       minTileHeight: serversListThemeData.listItemHeight,
@@ -163,7 +164,6 @@ final class ServerListItemFactory {
       subtitle: (subtitle != null)
           ? Text(subtitle, style: styleSubtitle)
           : null,
-      children: null,
       onTap: () => onTap(ConnectArguments(specialtyGroup: type)),
       trailing: servers.isNotEmpty
           ? IconButton(
@@ -190,16 +190,18 @@ final class ServerListItemFactory {
 
     final city = country.cities.first.city;
 
-    return CustomExpansionTile(
+    return CustomListTile(
       minTileHeight: serversListThemeData.listItemHeight,
-      childrenPadding: EdgeInsets.only(left: serversListThemeData.flagSize),
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: serversListThemeData.flagSize,
+      ),
       leading: ServerItemImage(
         image: imagesManager.forCountry(country.country),
         shouldHighlight: (status) => city == status.city,
       ),
       title: Text(city.localizedName, style: appTheme.body),
       subtitle: Text(country.country.localizedName, style: appTheme.caption),
-      children: null,
+      // children: null,
       onTap: () => onTap(
         ConnectArguments(
           country: country.country,
@@ -220,15 +222,17 @@ final class ServerListItemFactory {
     final appTheme = context.appTheme;
     final serversListTheme = context.serversListTheme;
 
-    return CustomExpansionTile(
+    return CustomListTile(
       minTileHeight: serversListTheme.listItemHeight,
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: serversListTheme.flagSize,
+      ),
       leading: ServerItemImage(
         image: imagesManager.forCountry(country),
         shouldHighlight: (status) => server.hostname == status.hostname,
       ),
       title: Text(country.localizedName, style: appTheme.body),
       subtitle: Text("#${server.serverNumber}", style: appTheme.caption),
-      children: null,
       onTap: () => onTap(ConnectArguments(server: server)),
     );
   }
