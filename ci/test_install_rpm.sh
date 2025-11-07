@@ -4,7 +4,7 @@ set -euxo pipefail
 case "$1" in
     centos) yum -y install yum-utils createrepo ;;
     fedora) dnf -y install dnf-plugins-core createrepo ;;
-    opensuse) zypper -n install curl createrepo_c ;;
+    opensuse) zypper refresh && zypper -n install curl createrepo_c ;;
     *) echo "Can't recognise the OS" && exit 1 ;;
 esac
 

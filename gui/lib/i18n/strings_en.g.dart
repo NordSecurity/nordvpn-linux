@@ -553,6 +553,15 @@ class TranslationsCitiesEn {
 
 	/// en: 'Ashburn'
 	String get ashburn => 'Ashburn';
+
+	/// en: 'Port Louis'
+	String get port_louis => 'Port Louis';
+
+	/// en: 'Dushanbe'
+	String get dushanbe => 'Dushanbe';
+
+	/// en: 'Lewiston'
+	String get lewiston => 'Lewiston';
 }
 
 // Path: countries
@@ -2086,6 +2095,9 @@ extension on Translations {
 			case 'cities.mogadishu': return 'Mogadishu';
 			case 'cities.nouakchott': return 'Nouakchott';
 			case 'cities.ashburn': return 'Ashburn';
+			case 'cities.port_louis': return 'Port Louis';
+			case 'cities.dushanbe': return 'Dushanbe';
+			case 'cities.lewiston': return 'Lewiston';
 			case 'countries.AL': return 'Albania';
 			case 'countries.DZ': return 'Algeria';
 			case 'countries.AD': return 'Andorra';

@@ -19,10 +19,14 @@ final class InteractiveListViewTheme
   @override
   final double borderWidth;
 
+  @override
+  final double verticalSpaceSmall;
+
   InteractiveListViewTheme({
     required this.borderRadius,
     required this.borderColor,
     required this.focusBorderColor,
     required this.borderWidth,
+    required this.verticalSpaceSmall,
   });
 }

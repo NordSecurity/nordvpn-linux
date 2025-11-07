@@ -1,4 +1,4 @@
-FROM ghcr.io/nordsecurity/nordvpn-linux/tester:1.6.2
+FROM ghcr.io/nordsecurity/nordvpn-linux/tester:1.6.3
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 

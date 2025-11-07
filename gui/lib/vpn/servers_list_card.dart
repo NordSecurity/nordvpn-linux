@@ -24,6 +24,17 @@ import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:nordvpn/widgets/loading_indicator.dart';
 import 'package:nordvpn/widgets/searchable_servers_list.dart';
 
+final class ServerListWidgetKeys {
+  ServerListWidgetKeys._();
+  static const specialtyServersTab = Key("serverListSpecialtyServersTab");
+  static const doubleVpn = Key("serverListDoubleVpn");
+  static const onionOverVpn = Key("serverListOnionOverVpn");
+  static const p2p = Key("serverListP2P");
+  static const dedicatedIp = Key("serverListDedicatedIP");
+  static const search = Key("serverListSearch");
+  static const countriesServersList = Key("serverListCountries");
+}
+
 // ServersListCard displays the list of servers from the VPN screen
 final class ServersListCard extends StatefulWidget {
   final ImagesManager imagesManager;
@@ -46,12 +57,6 @@ final class ServersListCard extends StatefulWidget {
 
   @override
   State<ServersListCard> createState() => _ServersListCardState();
-}
-
-final class ServersListKeys {
-  ServersListKeys._();
-  static final searchKey = UniqueKey();
-  static final countriesServersListKey = UniqueKey();
 }
 
 final class _ServersListCardState extends State<ServersListCard> {
@@ -132,14 +137,17 @@ final class _ServersListCardState extends State<ServersListCard> {
                   isScrollable: true,
                   tabs: [
                     Tab(text: t.ui.countries),
-                    Tab(text: t.ui.specialServers),
+                    Tab(
+                      key: ServerListWidgetKeys.specialtyServersTab,
+                      text: t.ui.specialServers,
+                    ),
                   ],
                 ),
               ),
               Padding(
                 padding: EdgeInsets.only(right: appTheme.padding),
                 child: IconButton(
-                  key: ServersListKeys.searchKey,
+                  key: ServerListWidgetKeys.search,
                   icon: DynamicThemeImage("search.svg"),
                   onPressed: () => setState(() => _showSearchView = true),
                 ),
@@ -192,7 +200,7 @@ final class _ServersListCardState extends State<ServersListCard> {
           _showObfuscatedMessage(context, t.ui.turnOffObfuscationLocations),
         Expanded(
           child: ListView.builder(
-            key: ServersListKeys.countriesServersListKey,
+            key: ServerListWidgetKeys.countriesServersList,
             itemCount: itemsCount,
             itemBuilder: (context, index) {
               // show additional quick connect tile if specified
@@ -234,10 +242,26 @@ final class _ServersListCardState extends State<ServersListCard> {
     bool isObfuscatedOn,
   ) {
     final specialtyServersOrder = [
-      (type: ServerType.dedicatedIP, description: t.ui.getYourDip),
-      (type: ServerType.doubleVpn, description: t.ui.doubleVpnDesc),
-      (type: ServerType.onionOverVpn, description: t.ui.onionOverVpnDesc),
-      (type: ServerType.p2p, description: t.ui.p2pDesc),
+      (
+        type: ServerType.dedicatedIP,
+        description: t.ui.getYourDip,
+        key: ServerListWidgetKeys.dedicatedIp,
+      ),
+      (
+        type: ServerType.doubleVpn,
+        description: t.ui.doubleVpnDesc,
+        key: ServerListWidgetKeys.doubleVpn,
+      ),
+      (
+        type: ServerType.onionOverVpn,
+        description: t.ui.onionOverVpnDesc,
+        key: ServerListWidgetKeys.onionOverVpn,
+      ),
+      (
+        type: ServerType.p2p,
+        description: t.ui.p2pDesc,
+        key: ServerListWidgetKeys.p2p,
+      ),
     ];
 
     return Column(
@@ -251,11 +275,13 @@ final class _ServersListCardState extends State<ServersListCard> {
               final group = specialtyServersOrder[index];
               final type = group.type;
               final description = group.description;
+              final key = group.key;
               if (type == ServerType.dedicatedIP) {
-                return _buildDipListItem(ref, serversList, isObfuscatedOn);
+                return _buildDipListItem(key, ref, serversList, isObfuscatedOn);
               }
               final servers = serversList.specialtyServersList(type);
               return widget.itemFactory.forSpecialtyServer(
+                key: key,
                 context: context,
                 type: type,
                 enabled: servers.isNotEmpty && !isObfuscatedOn,
@@ -278,6 +304,7 @@ final class _ServersListCardState extends State<ServersListCard> {
 
   // Build the list item for dedicated IP
   Widget _buildDipListItem(
+    Key key,
     WidgetRef ref,
     ServersList serversList,
     bool isObfuscatedOn,
@@ -315,6 +342,7 @@ final class _ServersListCardState extends State<ServersListCard> {
             }
 
             return widget.itemFactory.forSpecialtyServer(
+              key: key,
               context: context,
               enabled: settings.areDipServersSupported(),
               type: ServerType.dedicatedIP,

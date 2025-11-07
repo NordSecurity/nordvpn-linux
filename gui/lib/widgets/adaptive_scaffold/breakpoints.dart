@@ -26,12 +26,14 @@ class Breakpoints {
   static const Breakpoint smallAndUp = Breakpoint.small(andUp: true);
 
   /// A desktop screen whose width is less than 600 dp and greater than 0 dp.
-  static const Breakpoint smallDesktop =
-      Breakpoint.small(platform: Breakpoint.desktop);
+  static const Breakpoint smallDesktop = Breakpoint.small(
+    platform: Breakpoint.desktop,
+  );
 
   /// A mobile screen whose width is less than 600 dp and greater than 0 dp.
-  static const Breakpoint smallMobile =
-      Breakpoint.small(platform: Breakpoint.mobile);
+  static const Breakpoint smallMobile = Breakpoint.small(
+    platform: Breakpoint.mobile,
+  );
 
   /// A window whose width is between 600 dp and 840 dp.
   static const Breakpoint medium = Breakpoint.medium();
@@ -40,27 +42,32 @@ class Breakpoints {
   static const Breakpoint mediumAndUp = Breakpoint.medium(andUp: true);
 
   /// A desktop window whose width is between 600 dp and 840 dp.
-  static const Breakpoint mediumDesktop =
-      Breakpoint.medium(platform: Breakpoint.desktop);
+  static const Breakpoint mediumDesktop = Breakpoint.medium(
+    platform: Breakpoint.desktop,
+  );
 
   /// A mobile window whose width is between 600 dp and 840 dp.
-  static const Breakpoint mediumMobile =
-      Breakpoint.medium(platform: Breakpoint.mobile);
+  static const Breakpoint mediumMobile = Breakpoint.medium(
+    platform: Breakpoint.mobile,
+  );
 
   /// A window whose width is between 840 dp and 1200 dp.
   static const Breakpoint mediumLarge = Breakpoint.mediumLarge();
 
   /// A window whose width is greater than 840 dp.
-  static const Breakpoint mediumLargeAndUp =
-      Breakpoint.mediumLarge(andUp: true);
+  static const Breakpoint mediumLargeAndUp = Breakpoint.mediumLarge(
+    andUp: true,
+  );
 
   /// A desktop window whose width is between 840 dp and 1200 dp.
-  static const Breakpoint mediumLargeDesktop =
-      Breakpoint.mediumLarge(platform: Breakpoint.desktop);
+  static const Breakpoint mediumLargeDesktop = Breakpoint.mediumLarge(
+    platform: Breakpoint.desktop,
+  );
 
   /// A mobile window whose width is between 840 dp and 1200 dp.
-  static const Breakpoint mediumLargeMobile =
-      Breakpoint.mediumLarge(platform: Breakpoint.mobile);
+  static const Breakpoint mediumLargeMobile = Breakpoint.mediumLarge(
+    platform: Breakpoint.mobile,
+  );
 
   /// A window whose width is between 1200 dp and 1600 dp.
   static const Breakpoint large = Breakpoint.large();
@@ -69,23 +76,27 @@ class Breakpoints {
   static const Breakpoint largeAndUp = Breakpoint.large(andUp: true);
 
   /// A desktop window whose width is between 1200 dp and 1600 dp.
-  static const Breakpoint largeDesktop =
-      Breakpoint.large(platform: Breakpoint.desktop);
+  static const Breakpoint largeDesktop = Breakpoint.large(
+    platform: Breakpoint.desktop,
+  );
 
   /// A mobile window whose width is between 1200 dp and 1600 dp.
-  static const Breakpoint largeMobile =
-      Breakpoint.large(platform: Breakpoint.mobile);
+  static const Breakpoint largeMobile = Breakpoint.large(
+    platform: Breakpoint.mobile,
+  );
 
   /// A window whose width is greater than 1600 dp.
   static const Breakpoint extraLarge = Breakpoint.extraLarge();
 
   /// A desktop window whose width is greater than 1600 dp.
-  static const Breakpoint extraLargeDesktop =
-      Breakpoint.extraLarge(platform: Breakpoint.desktop);
+  static const Breakpoint extraLargeDesktop = Breakpoint.extraLarge(
+    platform: Breakpoint.desktop,
+  );
 
   /// A mobile window whose width is greater than 1600 dp.
-  static const Breakpoint extraLargeMobile =
-      Breakpoint.extraLarge(platform: Breakpoint.mobile);
+  static const Breakpoint extraLargeMobile = Breakpoint.extraLarge(
+    platform: Breakpoint.mobile,
+  );
 
   /// A list of all the standard breakpoints.
   static const List<Breakpoint> all = <Breakpoint>[
@@ -150,83 +161,83 @@ class Breakpoint {
   /// Returns a [Breakpoint] that can be used as a fallthrough in the
   /// case that no other breakpoint is active.
   const Breakpoint.standard({this.platform})
-      : beginWidth = -1,
-        endWidth = null,
-        beginHeight = null,
-        endHeight = null,
-        spacing = kMaterialMediumAndUpSpacing,
-        margin = kMaterialMediumAndUpMargin,
-        padding = kMaterialPadding,
-        recommendedPanes = 1,
-        maxPanes = 1,
-        andUp = true;
+    : beginWidth = -1,
+      endWidth = null,
+      beginHeight = null,
+      endHeight = null,
+      spacing = kMaterialMediumAndUpSpacing,
+      margin = kMaterialMediumAndUpMargin,
+      padding = kMaterialPadding,
+      recommendedPanes = 1,
+      maxPanes = 1,
+      andUp = true;
 
   /// Returns a [Breakpoint] with the given constraints for a small screen.
   const Breakpoint.small({this.andUp = false, this.platform})
-      : beginWidth = 0,
-        endWidth = 600,
-        beginHeight = null,
-        endHeight = 480,
-        spacing = kMaterialCompactSpacing,
-        margin = kMaterialCompactMargin,
-        padding = kMaterialPadding,
-        recommendedPanes = 1,
-        maxPanes = 1;
+    : beginWidth = 0,
+      endWidth = 600,
+      beginHeight = null,
+      endHeight = 480,
+      spacing = kMaterialCompactSpacing,
+      margin = kMaterialCompactMargin,
+      padding = kMaterialPadding,
+      recommendedPanes = 1,
+      maxPanes = 1;
 
   /// Returns a [Breakpoint] with the given constraints for a medium screen.
   const Breakpoint.medium({this.andUp = false, this.platform})
-      : beginWidth = 600,
-        endWidth = 840,
-        beginHeight = 480,
-        endHeight = 900,
-        spacing = kMaterialMediumAndUpSpacing,
-        margin = kMaterialMediumAndUpMargin,
-        padding = kMaterialPadding * 2,
-        recommendedPanes = 1,
-        maxPanes = 2;
+    : beginWidth = 600,
+      endWidth = 840,
+      beginHeight = 480,
+      endHeight = 900,
+      spacing = kMaterialMediumAndUpSpacing,
+      margin = kMaterialMediumAndUpMargin,
+      padding = kMaterialPadding * 2,
+      recommendedPanes = 1,
+      maxPanes = 2;
 
   /// Returns a [Breakpoint] with the given constraints for a mediumLarge screen.
   const Breakpoint.mediumLarge({this.andUp = false, this.platform})
-      : beginWidth = 840,
-        endWidth = 1200,
-        beginHeight = 900,
-        endHeight = null,
-        spacing = kMaterialMediumAndUpSpacing,
-        margin = kMaterialMediumAndUpMargin,
-        padding = kMaterialPadding * 3,
-        recommendedPanes = 2,
-        maxPanes = 2;
+    : beginWidth = 840,
+      endWidth = 1200,
+      beginHeight = 900,
+      endHeight = null,
+      spacing = kMaterialMediumAndUpSpacing,
+      margin = kMaterialMediumAndUpMargin,
+      padding = kMaterialPadding * 3,
+      recommendedPanes = 2,
+      maxPanes = 2;
 
   /// Returns a [Breakpoint] with the given constraints for a large screen.
   const Breakpoint.large({this.andUp = false, this.platform})
-      : beginWidth = 1200,
-        endWidth = 1600,
-        beginHeight = 900,
-        endHeight = null,
-        spacing = kMaterialMediumAndUpSpacing,
-        margin = kMaterialMediumAndUpMargin,
-        padding = kMaterialPadding * 4,
-        recommendedPanes = 2,
-        maxPanes = 2;
+    : beginWidth = 1200,
+      endWidth = 1600,
+      beginHeight = 900,
+      endHeight = null,
+      spacing = kMaterialMediumAndUpSpacing,
+      margin = kMaterialMediumAndUpMargin,
+      padding = kMaterialPadding * 4,
+      recommendedPanes = 2,
+      maxPanes = 2;
 
   /// Returns a [Breakpoint] with the given constraints for an extraLarge screen.
   const Breakpoint.extraLarge({this.andUp = false, this.platform})
-      : beginWidth = 1600,
-        endWidth = null,
-        beginHeight = 900,
-        endHeight = null,
-        spacing = kMaterialMediumAndUpSpacing,
-        margin = kMaterialMediumAndUpMargin,
-        padding = kMaterialPadding * 5,
-        recommendedPanes = 2,
-        maxPanes = 3;
+    : beginWidth = 1600,
+      endWidth = null,
+      beginHeight = 900,
+      endHeight = null,
+      spacing = kMaterialMediumAndUpSpacing,
+      margin = kMaterialMediumAndUpMargin,
+      padding = kMaterialPadding * 5,
+      recommendedPanes = 2,
+      maxPanes = 3;
   // #enddocregion Breakpoints
 
   /// A set of [TargetPlatform]s that the [Breakpoint] will be active on desktop.
   static const Set<TargetPlatform> desktop = <TargetPlatform>{
     TargetPlatform.linux,
     TargetPlatform.macOS,
-    TargetPlatform.windows
+    TargetPlatform.windows,
   };
 
   /// A set of [TargetPlatform]s that the [Breakpoint] will be active on mobile.
@@ -306,8 +317,8 @@ class Breakpoint {
   /// Returns the currently active [Breakpoint] based on the [SlotLayout] in the
   /// context.
   static Breakpoint? maybeActiveBreakpointFromSlotLayout(BuildContext context) {
-    final SlotLayout? slotLayout =
-        context.findAncestorWidgetOfExactType<SlotLayout>();
+    final SlotLayout? slotLayout = context
+        .findAncestorWidgetOfExactType<SlotLayout>();
 
     return slotLayout != null
         ? activeBreakpointIn(context, slotLayout.config.keys.toList())
@@ -328,7 +339,9 @@ class Breakpoint {
   /// Returns the currently active [Breakpoint] based on the [BuildContext] and
   /// a list of [Breakpoint]s.
   static Breakpoint? activeBreakpointIn(
-      BuildContext context, List<Breakpoint> breakpoints) {
+    BuildContext context,
+    List<Breakpoint> breakpoints,
+  ) {
     Breakpoint? currentBreakpoint;
 
     for (final Breakpoint breakpoint in breakpoints) {

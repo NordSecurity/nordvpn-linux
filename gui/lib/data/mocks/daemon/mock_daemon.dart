@@ -279,10 +279,7 @@ final class MockDaemon extends DaemonServiceBase {
   }
 
   @override
-  Future<Payload> setARPIgnore(
-    ServiceCall call,
-    SetGenericRequest request,
-  ) {
+  Future<Payload> setARPIgnore(ServiceCall call, SetGenericRequest request) {
     throw UnimplementedError();
   }
 
