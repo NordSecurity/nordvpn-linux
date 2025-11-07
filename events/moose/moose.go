@@ -812,6 +812,10 @@ func (s *Subscriber) fetchAndSetVpnServiceExpiration() error {
 	return nil
 }
 
+func (s *Subscriber) OnFirstOpen() error {
+	return s.response(moose.NordvpnappSendServiceQualityStatusInstall(moose.NordvpnappEventStatusSuccess, nil))
+}
+
 func (s *Subscriber) fetchSubscriptions() error {
 	if s.consent == config.ConsentUndefined {
 		return nil
