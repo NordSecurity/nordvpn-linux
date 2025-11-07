@@ -330,7 +330,7 @@ final class AppSemanticColorsDark implements SemanticColors {
   Color get textSecondary => appCoreColors.neutral500;
 
   @override
-  Color get textAccent => appCoreColors.blue500;
+  Color get textAccent => appCoreColors.blue600;
 
   @override
   Color get textPrimaryOnColor => appCoreColors.neutral0;
