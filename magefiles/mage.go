@@ -21,11 +21,12 @@ import (
 const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
 	imageBuilder           = registryPrefix + "builder:1.4.2"
-	imageGUIFlutter        = registryPrefix + "flutter-3.32.8:1.1.0"
+	imageGUIBuilder        = registryPrefix + "flutter-3.32.8:1.1.0"
 	imagePackager          = registryPrefix + "packager:1.3.2"
 	imageDepender          = registryPrefix + "depender:1.3.3"
 	imageSnapPackager      = registryPrefix + "snaper:1.2.0"
 	imageProtobufGenerator = registryPrefix + "generator:1.4.2"
+	imageProtobufGui       = registryPrefix + "protobuf_dart-3.8.1:1.0.1"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
 	imageTester            = registryPrefix + "tester:1.6.3"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.4"
@@ -43,6 +44,9 @@ const (
 	packageTypeSnap = "snap"
 	packageTypeRPM  = "rpm"
 	packageTypeDeb  = "deb"
+
+	buildModeRelease = "release"
+	buildModeDebug   = "debug"
 )
 
 // Aliases shorthands for daily commands
@@ -324,7 +328,7 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
 	env["PACKAGE"] = devPackageType
-	//TODO (LVPN-9228) remove usage of ENABLE_GUI_BUILD variable, once the way of building is unified
+	// TODO (LVPN-9228) remove usage of ENABLE_GUI_BUILD variable, once the way of building is unified
 	env["ENABLE_GUI_BUILD"] = "1"
 
 	switch packageType {
@@ -432,13 +436,8 @@ func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 	}
 
 	// build GUI binaries
-	return RunDocker(
-		ctx,
-		env,
-		imageGUIFlutter,
-		[]string{"scripts/build_application.sh", "release"},
-		guiDockerWorkDir,
-	)
+	mg.Deps(mg.F(buildGuiBinariesDocker, buildModeRelease))
+	return nil
 }
 
 // Builds all binaries using Docker builder
@@ -543,20 +542,113 @@ func (Build) RustDocker(ctx context.Context) error {
 	return nil
 }
 
-// Generate Protobuf from protobuf/* definitions using Docker builder
+func (Build) GuiRpmDocker(ctx context.Context, buildMode string) error {
+	mg.Deps(mg.F(buildGuiPackageDocker, packageTypeRPM, buildMode))
+	return nil
+}
+
+func (Build) GuiDebDocker(ctx context.Context, buildMode string) error {
+	mg.Deps(mg.F(buildGuiPackageDocker, packageTypeDeb, buildMode))
+	return nil
+}
+
+func buildGuiPackageDocker(ctx context.Context, packageType, buildMode string) error {
+	if packageType != packageTypeDeb && packageType != packageTypeRPM {
+		return fmt.Errorf(
+			"invalid package: %q (expected '%s' or '%s')",
+			packageType, packageTypeDeb, packageTypeRPM,
+		)
+	}
+	if buildMode != buildModeRelease && buildMode != buildModeDebug {
+		return fmt.Errorf(
+			"invalid build mode: %q (expected '%s' or '%s')",
+			buildMode, buildModeDebug, buildModeRelease,
+		)
+	}
+
+	mg.Deps(Build.Data)
+	mg.Deps(mg.F(buildGuiBinariesDocker, buildMode))
+
+	env, err := getEnv()
+	if err != nil {
+		return err
+	}
+
+	env["WORKDIR"] = dockerWorkDir
+
+	return RunDocker(
+		ctx,
+		env,
+		imagePackager,
+		[]string{"scripts/build_package.sh", buildMode, packageType, "amd64"},
+		guiDockerWorkDir,
+	)
+}
+
+func buildGuiBinariesDocker(ctx context.Context, buildMode string) error {
+	if buildMode != buildModeRelease && buildMode != buildModeDebug {
+		return fmt.Errorf(
+			"invalid build mode: %q (expected '%s' or '%s')",
+			buildMode, buildModeDebug, buildModeRelease,
+		)
+	}
+
+	env, err := getEnv()
+	if err != nil {
+		return err
+	}
+
+	env["WORKDIR"] = dockerWorkDir
+
+	return RunDocker(
+		ctx,
+		env,
+		imageGUIBuilder,
+		[]string{"scripts/build_application.sh", buildMode},
+		guiDockerWorkDir,
+	)
+}
+
+// Format GUI code using ci/format_gui.sh
+func FormatGui(ctx context.Context) error {
+	return runCmd("gui", "bash", "../ci/format_gui.sh")
+}
+
+// Generate Protobuf from protobuf/* definitions using Docker builder including GUI protobufs
 func (Generate) ProtobufDocker(ctx context.Context) error {
 	env, err := getEnv()
 	if err != nil {
 		return err
 	}
 
-	return RunDocker(
+	if err := RunDocker(
 		ctx,
 		env,
 		imageProtobufGenerator,
 		[]string{"ci/generate_protobuf.sh"},
 		dockerWorkDir,
+	); err != nil {
+		return err
+	}
+
+	// GUI protobuf
+	return RunDocker(
+		ctx,
+		env,
+		imageProtobufGui,
+		[]string{"gui/scripts/generate_protobuf.sh"},
+		guiDockerWorkDir,
 	)
+}
+
+// Generate GUI translations
+func (Generate) GuiTranslations(ctx context.Context) error {
+	return runCmd("gui", "dart", "run", "slang", "-v")
+}
+
+// Generate GUI code, e.g riverpod, freezed
+func (Generate) GuiCode(ctx context.Context) error {
+	return runCmd("gui", "dart", "run", "build_runner", "build")
 }
 
 // run unit tests
@@ -775,6 +867,35 @@ func (Test) Lint() error {
 	return sh.RunV("golangci-lint", "run", "-v", "--config=.golangci-lint.yml")
 }
 
+func (Test) GuiIntegration() error {
+	return runCmd("gui", "flutter", "test", "integration_test", "-d", "linux")
+}
+
+func (Test) GuiUnit() error {
+	return runCmd("gui", "flutter", "test")
+}
+
+func (Test) GuiAll() error {
+	if err := runCmd("gui", "flutter", "test", "integration_test", "-d", "linux"); err != nil {
+		return err
+	}
+	return runCmd("gui", "flutter", "test")
+}
+
+func (Test) GuiCoverage() error {
+	if err := runCmd("gui", "flutter", "test", "--coverage"); err != nil {
+		return err
+	}
+
+	if err := runCmd("gui", "genhtml", "coverage/lcov.info", "-o", "coverage/html"); err != nil {
+		return err
+	}
+
+	cmd := exec.Command("open", "coverage/html/index.html")
+	cmd.Dir = "gui"
+	return cmd.Start()
+}
+
 // Binaries to their respective locations and restart
 // the daemon along the way
 func (Install) Binaries() error {
@@ -913,4 +1034,14 @@ func getDefaultLoginToken(testsCredentials []byte) (string, error) {
 		return "", fmt.Errorf("parsing tests credentials: %w", err)
 	}
 	return c["default"].Token, nil
+}
+
+func runCmd(dir string, name string, args ...string) error {
+	fmt.Printf("Running in %s: %s %v\n", dir, name, args)
+	cmd := exec.Command(name, args...)
+	cmd.Dir = dir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	return cmd.Run()
 }
