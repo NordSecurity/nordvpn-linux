@@ -18,14 +18,17 @@ func Test_NoPublish_WhenNotNewInstallation(t *testing.T) {
 
 	cm := &config.FilesystemConfigManager{NewInstallation: false}
 	sub := &stubSubscriber{}
-	pub := &stubPublisher{}
-	guard := &sync.Once{}
+	count := 0
+	testNotifier := func() error {
+		count++
+		return nil
+	}
 
-	registerNotifier(cm, sub, pub, guard)
+	RegisterNotifier(cm, sub, testNotifier)
 
 	sub.Publish(core.Insights{})
 
-	assert.Equal(t, pub.count(), 0)
+	assert.Equal(t, count, 0)
 }
 
 func Test_PublishesExactlyOnce_OnFirstEvent(t *testing.T) {
@@ -34,25 +37,20 @@ func Test_PublishesExactlyOnce_OnFirstEvent(t *testing.T) {
 
 	cm := &config.FilesystemConfigManager{NewInstallation: true}
 	sub := &stubSubscriber{}
-	pub := &stubPublisher{}
-	guard := &sync.Once{}
+	count := 0
+	testNotifier := func() error {
+		count++
+		return nil
+	}
 
-	registerNotifier(cm, sub, pub, guard)
+	RegisterNotifier(cm, sub, testNotifier)
 
 	sub.Publish(core.Insights{})
-	assert.Equal(t, pub.count(), 1)
+	assert.Equal(t, count, 1)
 
 	// second install event - no new publish
 	sub.Publish(core.Insights{})
-	assert.Equal(t, pub.count(), 1)
-
-	want := events.UiItemsAction{
-		ItemName:      "first_open",
-		ItemType:      "button",
-		ItemValue:     "first_open",
-		FormReference: "daemon",
-	}
-	assert.DeepEqual(t, pub.last(), want)
+	assert.Equal(t, count, 1)
 }
 
 func Test_NoResubscribe_AfterPublished(t *testing.T) {
@@ -61,41 +59,23 @@ func Test_NoResubscribe_AfterPublished(t *testing.T) {
 
 	cm := &config.FilesystemConfigManager{NewInstallation: true}
 	sub := &stubSubscriber{}
-	pub := &stubPublisher{}
-	guard := &sync.Once{}
+	count := 0
+	testNotifier := func() error {
+		count++
+		return nil
+	}
 
-	registerNotifier(cm, sub, pub, guard)
+	RegisterNotifier(cm, sub, testNotifier)
 	sub.Publish(core.Insights{})
-	assert.Equal(t, pub.count(), 1)
+	assert.Equal(t, count, 1)
 
 	// a second registration attempt should not add another handler
-	registerNotifier(cm, sub, pub, guard)
+	RegisterNotifier(cm, sub, testNotifier)
 	assert.Equal(t, len(sub.handlers), 1)
 
 	// even if we fire again, still only one publish
 	sub.Publish(core.Insights{})
-	assert.Equal(t, pub.count(), 1)
-}
-
-func Test_MultipleNotifiers_WithSingleGuard(t *testing.T) {
-	category.Set(t, category.Unit)
-	resetGlobals()
-
-	cm := &config.FilesystemConfigManager{NewInstallation: true}
-	sub := &stubSubscriber{}
-	pub := &stubPublisher{}
-
-	// two registrations, but both share defaultGuard
-	RegisterNotifier(cm, sub, pub)
-	RegisterNotifier(cm, sub, pub)
-
-	sub.Publish(core.Insights{})
-	// only one publish despite two handlers
-	assert.Equal(t, pub.count(), 1)
-
-	// next emits are no-ops
-	sub.Publish(core.Insights{})
-	assert.Equal(t, pub.count(), 1)
+	assert.Equal(t, count, 1)
 }
 
 func Test_ConcurrentInstallEvents_OnlyOnePublish(t *testing.T) {
@@ -104,15 +84,17 @@ func Test_ConcurrentInstallEvents_OnlyOnePublish(t *testing.T) {
 
 	cm := &config.FilesystemConfigManager{NewInstallation: true}
 	sub := &stubSubscriber{}
-	pub := &stubPublisher{}
-	guard := &sync.Once{}
+	count := 0
+	testNotifier := func() error {
+		count++
+		return nil
+	}
 
-	registerNotifier(cm, sub, pub, guard)
-
+	RegisterNotifier(cm, sub, testNotifier)
 	var wg sync.WaitGroup
 	const n = 20
 	wg.Add(n)
-	for i := 0; i < n; i++ {
+	for range n {
 		go func() {
 			defer wg.Done()
 			sub.Publish(core.Insights{})
@@ -120,7 +102,7 @@ func Test_ConcurrentInstallEvents_OnlyOnePublish(t *testing.T) {
 	}
 	wg.Wait()
 
-	assert.Equal(t, pub.count(), 1, "expected exactly 1 publish")
+	assert.Equal(t, count, 1, "expected exactly 1 publish")
 }
 
 type stubPublisher struct {
@@ -132,18 +114,6 @@ func (s *stubPublisher) Publish(a events.UiItemsAction) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.actions = append(s.actions, a)
-}
-
-func (s *stubPublisher) count() int {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return len(s.actions)
-}
-
-func (s *stubPublisher) last() events.UiItemsAction {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.actions[len(s.actions)-1]
 }
 
 type stubSubscriber struct {
