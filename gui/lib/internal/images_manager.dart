@@ -29,7 +29,7 @@ final class ImagesManager {
   Widget get placeholderCountryFlag =>
       SvgPicture.asset(_flagPath(placeholderFlag));
 
-  Widget forSpecialtyServer(ServerType type) {
+  Widget forSpecialtyServer(ServerType? type) {
     switch (type) {
       case ServerType.p2p:
         return DynamicThemeImage("p2p.svg");
@@ -48,6 +48,9 @@ final class ImagesManager {
 
       case ServerType.obfuscated:
         return DynamicThemeImage("obfuscated_servers.svg");
+
+      default:
+        return DynamicThemeImage("region_vpn.svg");
     }
   }
 }

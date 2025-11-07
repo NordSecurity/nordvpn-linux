@@ -293,6 +293,7 @@ final class NordVpnTheme {
       margin: 8,
       outerPadding: 16,
       borderColor: design.semanticColors.borderSecondary,
+      verticalSpaceVerySmall: 2,
       verticalSpaceSmall: 8,
       verticalSpaceMedium: 16,
       verticalSpaceLarge: 24,
@@ -382,6 +383,7 @@ final class NordVpnTheme {
         color: design.semanticColors.textSecondary,
       ),
       obfuscatedItemBackgroundColor: design.semanticColors.bgSecondaryActive,
+      horizontalSpace: 16,
     );
   }
 
