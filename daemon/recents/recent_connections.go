@@ -60,17 +60,68 @@ func (r *RecentConnectionsStore) Get() ([]Model, error) {
 	return conns, nil
 }
 
-func (r *RecentConnectionsStore) find(model Model, list []Model) int {
+// SearchOptions defines which fields to exclude from the search comparison.
+// By default (all false), all fields are compared. Set a field to true to exclude it from matching.
+type SearchOptions struct {
+	ExcludeCountry            bool
+	ExcludeCity               bool
+	ExcludeGroup              bool
+	ExcludeCountryCode        bool
+	ExcludeSpecificServerName bool
+	ExcludeSpecificServer     bool
+	ExcludeConnectionType     bool
+	ExcludeServerTechnologies bool
+	ExcludeIsVirtual          bool
+}
+
+// searchOptionsForConnectionType returns SearchOptions based on the connection type.
+func searchOptionsForConnectionType(connType config.ServerSelectionRule) SearchOptions {
+	opts := SearchOptions{}
+
+	if connType != config.ServerSelectionRule_SPECIFIC_SERVER &&
+		connType != config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP {
+		// For non-specific server connections, exclude specific server fields
+		opts.ExcludeSpecificServer = true
+		opts.ExcludeSpecificServerName = true
+	}
+
+	return opts
+}
+
+// find searches for a model in the list using configurable field matching.
+// Fields marked as true in SearchOptions will be excluded from comparison.
+// Returns the index of the first matching model, or -1 if not found.
+func (r *RecentConnectionsStore) find(model Model, list []Model, opts SearchOptions) int {
 	return slices.IndexFunc(list, func(m Model) bool {
-		return m.Country == model.Country &&
-			m.City == model.City &&
-			m.Group == model.Group &&
-			m.CountryCode == model.CountryCode &&
-			m.SpecificServerName == model.SpecificServerName &&
-			m.SpecificServer == model.SpecificServer &&
-			m.ConnectionType == model.ConnectionType &&
-			slices.Equal(m.ServerTechnologies, model.ServerTechnologies) &&
-			m.IsVirtual == model.IsVirtual
+		if !opts.ExcludeCountry && m.Country != model.Country {
+			return false
+		}
+		if !opts.ExcludeCity && m.City != model.City {
+			return false
+		}
+		if !opts.ExcludeGroup && m.Group != model.Group {
+			return false
+		}
+		if !opts.ExcludeCountryCode && m.CountryCode != model.CountryCode {
+			return false
+		}
+		if !opts.ExcludeSpecificServerName && m.SpecificServerName != model.SpecificServerName {
+			return false
+		}
+		if !opts.ExcludeSpecificServer && m.SpecificServer != model.SpecificServer {
+			return false
+		}
+		if !opts.ExcludeConnectionType && m.ConnectionType != model.ConnectionType {
+			return false
+		}
+		if !opts.ExcludeServerTechnologies && !slices.Equal(m.ServerTechnologies, model.ServerTechnologies) {
+			return false
+		}
+		if !opts.ExcludeIsVirtual && m.IsVirtual != model.IsVirtual {
+			return false
+		}
+
+		return true
 	})
 }
 
@@ -97,7 +148,8 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 
 	// Sort server technologies, so that the order does not affect equality checks
 	slices.Sort(model.ServerTechnologies)
-	index := r.find(model, connections)
+	opts := searchOptionsForConnectionType(model.ConnectionType)
+	index := r.find(model, connections, opts)
 	if index != -1 {
 		connections = slices.Delete(connections, index, index+1)
 	}
