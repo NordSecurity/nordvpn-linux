@@ -3,7 +3,16 @@ import 'package:nordvpn/internal/urls.dart';
 import 'package:nordvpn/settings/settings_wrapper_widget.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/theme/app_theme.dart';
+import 'package:nordvpn/theme/aurora_design.dart';
 import 'package:nordvpn/widgets/link.dart';
+
+final class LegalInformationKeys {
+  LegalInformationKeys._();
+  static const descriptionKey = Key("legalDescription");
+  static const termsOfServiceLinkKey = Key("legalTermsOfServiceLink");
+  static const autoRenewalTermsLinkKey = Key("legalAutoRenewalTermsKeyLink");
+  static const privacyPolicyLinkKey = Key("legalPrivacyPolicyLink");
+}
 
 class LegalInformation extends StatelessWidget {
   const LegalInformation({super.key});
@@ -17,37 +26,61 @@ class LegalInformation extends StatelessWidget {
   }
 
   Widget _build(BuildContext context) {
+    final appTheme = context.appTheme;
     final links = [
-      (t.ui.termsOfService, termsOfServiceUrl),
-      (t.ui.autoRenewalTerms, autoRenewalTermsUrl),
-      (t.ui.privacyPolicy, privacyPolicyUrl),
+      (
+        t.ui.termsOfService,
+        termsOfServiceUrl,
+        LegalInformationKeys.termsOfServiceLinkKey,
+      ),
+      (
+        t.ui.autoRenewalTerms,
+        autoRenewalTermsUrl,
+        LegalInformationKeys.autoRenewalTermsLinkKey,
+      ),
+      (
+        t.ui.privacyPolicy,
+        privacyPolicyUrl,
+        LegalInformationKeys.privacyPolicyLinkKey,
+      ),
     ];
 
     return Column(
+      spacing: appTheme.verticalSpaceMedium,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(t.ui.termsAgreementDescription, style: context.body),
-        SizedBox(height: 16),
+        Text(
+          key: LegalInformationKeys.descriptionKey,
+          t.ui.termsAgreementDescription,
+          style: appTheme.body,
+        ),
         ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: links.length,
           separatorBuilder: (context, index) => _buildDivider(context),
           itemBuilder: (context, index) {
-            final (title, uri) = links[index];
-            return _buildLinkEntry(context, title, uri);
+            final (title, uri, key) = links[index];
+            return _buildLinkEntry(context, title, uri, key);
           },
         ),
       ],
     );
   }
 
-  Widget _buildLinkEntry(BuildContext context, String title, Uri link) {
+  Widget _buildLinkEntry(
+    BuildContext context,
+    String title,
+    Uri link,
+    Key key,
+  ) {
+    final appTheme = context.appTheme;
     return Row(
       children: [
-        Expanded(child: Text(title, style: context.body)),
+        Expanded(child: Text(title, style: appTheme.body)),
         IconLink(
-          title: "Read more",
+          key: key,
+          title: t.ui.readMore,
           uri: link,
           iconPath: "external_link.svg",
           size: LinkSize.normal,
@@ -57,6 +90,7 @@ class LegalInformation extends StatelessWidget {
   }
 
   Widget _buildDivider(BuildContext context) {
-    return Divider(height: 13, thickness: 1, color: context.dividerColor);
+    final appTheme = context.appTheme;
+    return Divider(height: 13, thickness: 1, color: appTheme.dividerColor);
   }
 }

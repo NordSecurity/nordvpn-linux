@@ -553,6 +553,15 @@ class TranslationsCitiesEn {
 
 	/// en: 'Ashburn'
 	String get ashburn => 'Ashburn';
+
+	/// en: 'Port Louis'
+	String get port_louis => 'Port Louis';
+
+	/// en: 'Dushanbe'
+	String get dushanbe => 'Dushanbe';
+
+	/// en: 'Lewiston'
+	String get lewiston => 'Lewiston';
 }
 
 // Path: countries
@@ -1343,11 +1352,14 @@ class TranslationsUiEn {
 	/// en: 'New here? Sign up for Nord Account to get started'
 	String get newHereMessage => 'New here? Sign up for Nord Account to get started';
 
-	/// en: 'Terms of service'
-	String get termsOfService => 'Terms of service';
+	/// en: 'Terms of Service'
+	String get termsOfService => 'Terms of Service';
 
 	/// en: 'Privacy Policy'
 	String get privacyPolicy => 'Privacy Policy';
+
+	/// en: 'Auto - renewal terms'
+	String get autoRenewalTerms => 'Auto - renewal terms';
 
 	/// en: 'Subscription info'
 	String get subscriptionInfo => 'Subscription info';
@@ -1447,18 +1459,6 @@ class TranslationsUiEn {
 
 	/// en: 'P2P'
 	String get p2p => 'P2P';
-
-	/// en: 'Europe'
-	String get europe => 'Europe';
-
-	/// en: 'The Americas'
-	String get theAmericas => 'The Americas';
-
-	/// en: 'Asia Pacific'
-	String get asiaPacific => 'Asia Pacific';
-
-	/// en: 'Africa, the Middle East, and India'
-	String get africaTheMiddleEastAndIndia => 'Africa, the Middle East, and India';
 
 	/// en: 'Obfuscated'
 	String get obfuscated => 'Obfuscated';
@@ -1925,11 +1925,17 @@ class TranslationsUiEn {
 	/// en: 'Refresh'
 	String get refresh => 'Refresh';
 
-	/// en: 'Recent connections'
-	String get recentConnections => 'Recent connections';
+	/// en: 'Terms'
+	String get terms => 'Terms';
 
-	/// en: 'In order to select obfuscated server please enable 'Obfuscation' in the setting.'
-	String get obfuscatedSpecialtyServerSelectionTooltip => 'In order to select obfuscated server please enable \'Obfuscation\' in the setting.';
+	/// en: 'Learn about our legal terms.'
+	String get termsSubtitle => 'Learn about our legal terms.';
+
+	/// en: 'By continuing to use this app, you agree to our terms and how we handle your data. To read the terms and privacy policy check the links below.'
+	String get termsAgreementDescription => 'By continuing to use this app, you agree to our terms and how we handle your data. To read the terms and privacy policy check the links below.';
+
+	/// en: 'Read more'
+	String get readMore => 'Read more';
 }
 
 /// Flat map(s) containing all translations.
@@ -2104,6 +2110,9 @@ extension on Translations {
 			case 'cities.mogadishu': return 'Mogadishu';
 			case 'cities.nouakchott': return 'Nouakchott';
 			case 'cities.ashburn': return 'Ashburn';
+			case 'cities.port_louis': return 'Port Louis';
+			case 'cities.dushanbe': return 'Dushanbe';
+			case 'cities.lewiston': return 'Lewiston';
 			case 'countries.AL': return 'Albania';
 			case 'countries.DZ': return 'Algeria';
 			case 'countries.AD': return 'Andorra';
@@ -2358,8 +2367,9 @@ extension on Translations {
 			case 'ui.addSubnet': return 'Add subnet';
 			case 'ui.loginToNordVpn': return 'Log in to NordVPN';
 			case 'ui.newHereMessage': return 'New here? Sign up for Nord Account to get started';
-			case 'ui.termsOfService': return 'Terms of service';
+			case 'ui.termsOfService': return 'Terms of Service';
 			case 'ui.privacyPolicy': return 'Privacy Policy';
+			case 'ui.autoRenewalTerms': return 'Auto - renewal terms';
 			case 'ui.subscriptionInfo': return 'Subscription info';
 			case 'ui.logout': return 'Log out';
 			case 'ui.accountExpireIn': return ({required num n, required Object date}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
@@ -2395,10 +2405,6 @@ extension on Translations {
 			case 'ui.doubleVpn': return 'Double VPN';
 			case 'ui.onionOverVpn': return 'Onion over VPN';
 			case 'ui.p2p': return 'P2P';
-			case 'ui.europe': return 'Europe';
-			case 'ui.theAmericas': return 'The Americas';
-			case 'ui.asiaPacific': return 'Asia Pacific';
-			case 'ui.africaTheMiddleEastAndIndia': return 'Africa, the Middle East, and India';
 			case 'ui.obfuscated': return 'Obfuscated';
 			case 'ui.selectServerForDip': return 'Pick a location for your IP';
 			case 'ui.selectLocation': return 'Select location';
@@ -2554,8 +2560,10 @@ extension on Translations {
 			case 'ui.snapScreenTitle': return 'We need some permissions to connect to NordVPN service';
 			case 'ui.snapScreenDescription': return 'Grant permission by running these commands in the terminal. Then refresh the screen.';
 			case 'ui.refresh': return 'Refresh';
-			case 'ui.recentConnections': return 'Recent connections';
-			case 'ui.obfuscatedSpecialtyServerSelectionTooltip': return 'In order to select obfuscated server please enable \'Obfuscation\' in the setting.';
+			case 'ui.terms': return 'Terms';
+			case 'ui.termsSubtitle': return 'Learn about our legal terms.';
+			case 'ui.termsAgreementDescription': return 'By continuing to use this app, you agree to our terms and how we handle your data. To read the terms and privacy policy check the links below.';
+			case 'ui.readMore': return 'Read more';
 			default: return null;
 		}
 	}

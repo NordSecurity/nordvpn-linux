@@ -20,14 +20,10 @@ final class Link<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _buildClickableArea(context, _buildContent(context));
-  }
-
-  Widget _buildClickableArea(BuildContext context, Widget child) {
     return TextButton(
       style: TextButton.styleFrom(padding: EdgeInsets.zero),
       onPressed: () async => await launchableUri.launch(),
-      child: child,
+      child: _buildContent(context),
     );
   }
 
@@ -74,14 +70,12 @@ final class IconLink<T> extends Link<T> {
 
   @override
   Widget _buildContent(BuildContext context) {
+    final appTheme = context.appTheme;
     return Row(
+      spacing: appTheme.verticalSpaceSmall,
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        super._buildContent(context),
-        SizedBox(width: AppSpacing.spacing2),
-        _icon,
-      ],
+      children: [super._buildContent(context), _icon],
     );
   }
 }

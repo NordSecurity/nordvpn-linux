@@ -1,5 +1,3 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/settings/navigation.dart';
 
 import 'finders.dart';
@@ -29,18 +27,18 @@ final class LegalInformationScreenHandle extends ScreenHandle {
   }
 
   bool hasTermsAgreementDescription() {
-    return find.text(t.ui.termsAgreementDescription).evaluate().isNotEmpty;
+    return legalDescriptionFinder().evaluate().isNotEmpty;
   }
 
   bool hasTermsOfServiceLink() {
-    return find.text(t.ui.termsOfService).evaluate().isNotEmpty;
+    return legalTermsOfServiceLinkFinder().evaluate().isNotEmpty;
   }
 
   bool hasAutoRenewalTermsLink() {
-    return find.text(t.ui.autoRenewalTerms).evaluate().isNotEmpty;
+    return legalAutoRenewalTermsLinkFinder().evaluate().isNotEmpty;
   }
 
   bool hasPrivacyPolicyLink() {
-    return find.text(t.ui.privacyPolicy).evaluate().isNotEmpty;
+    return legalPrivacyPolicyLinkFinder().evaluate().isNotEmpty;
   }
 }
