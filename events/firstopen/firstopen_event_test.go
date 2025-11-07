@@ -105,17 +105,6 @@ func Test_ConcurrentInstallEvents_OnlyOnePublish(t *testing.T) {
 	assert.Equal(t, count, 1, "expected exactly 1 publish")
 }
 
-type stubPublisher struct {
-	mu      sync.Mutex
-	actions []events.UiItemsAction
-}
-
-func (s *stubPublisher) Publish(a events.UiItemsAction) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.actions = append(s.actions, a)
-}
-
 type stubSubscriber struct {
 	mu       sync.Mutex
 	handlers []events.Handler[core.Insights]
