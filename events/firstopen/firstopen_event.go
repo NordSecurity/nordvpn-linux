@@ -45,6 +45,9 @@ func (i *FirstOpenNotifier) notifyOnceAppJustInstalled(_ core.Insights) error {
 		return nil
 	}
 
+	if err := i.emitFirstTimeOpenEvent(); err != nil {
+		return err
+	}
 	published.Store(true)
-	return i.emitFirstTimeOpenEvent()
+	return nil
 }
