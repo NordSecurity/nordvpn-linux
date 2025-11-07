@@ -209,6 +209,7 @@ func (r *RPC) connect(
 		Protocol:                cfg.AutoConnectData.Protocol,
 		Technology:              cfg.Technology,
 		ThreatProtectionLite:    cfg.AutoConnectData.ThreatProtectionLite,
+		IsObfuscated:            cfg.AutoConnectData.Obfuscate,
 		IsPostQuantum:           cfg.AutoConnectData.PostquantumVpn,
 		DurationMs:              getElapsedTime(connectingStartTime),
 		EventStatus:             events.StatusAttempt,
@@ -298,7 +299,7 @@ func (r *RPC) connect(
 			serverTechs = append(serverTechs, v.ID)
 		}
 
-		recentModel, err := buildRecentConnectionModel(serverTechs, event, parameters)
+		recentModel, err := buildRecentConnectionModel(serverTechs, event, parameters, server)
 		if err != nil {
 			log.Printf("%s Failed to build recent VPN connection model: %s\n", internal.WarningPrefix, err)
 		} else {
@@ -358,11 +359,63 @@ func determineTargetServerGroup(server *core.Server, parameters ServerParameters
 	return ""
 }
 
+// applyObfuscationToRecentModel wraps the recent connection model with obfuscation handling.
+// When obfuscation is enabled and no explicit group was requested, it:
+//  1. Detects if the server has the OBFUSCATED group
+//  2. Upgrades the connection type to include the group (e.g., COUNTRY → COUNTRY_WITH_GROUP)
+//  3. Sets the group to OBFUSCATED to preserve obfuscation on reconnection
+//
+// When not applicable, the model is returned unchanged (ordinary flow).
+// This function isolates all obfuscation-specific logic for easy removal in the future.
+func applyObfuscationToRecentModel(
+	model recents.Model,
+	parameters ServerParameters,
+	event events.DataConnect,
+	server *core.Server,
+) recents.Model {
+	// If obfuscation is not enabled, use ordinary flow
+	if !event.IsObfuscated {
+		return model
+	}
+
+	// If user explicitly requested a group, use ordinary flow (no obfuscation wrapping needed)
+	if parameters.Group != config.ServerGroup_UNDEFINED {
+		return model
+	}
+
+	// Check if server has OBFUSCATED group
+	hasObfuscatedGroup := slices.ContainsFunc(server.Groups, func(g core.Group) bool {
+		return g.ID == config.ServerGroup_OBFUSCATED
+	})
+	if !hasObfuscatedGroup {
+		return model
+	}
+
+	// Apply obfuscation wrapping: upgrade connection type and set group
+	switch model.ConnectionType {
+	case config.ServerSelectionRule_CITY, config.ServerSelectionRule_COUNTRY:
+		model.ConnectionType = config.ServerSelectionRule_COUNTRY_WITH_GROUP
+		model.Group = config.ServerGroup_OBFUSCATED
+	case config.ServerSelectionRule_SPECIFIC_SERVER:
+		model.ConnectionType = config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP
+		model.Group = config.ServerGroup_OBFUSCATED
+	case config.ServerSelectionRule_NONE,
+		config.ServerSelectionRule_RECOMMENDED,
+		config.ServerSelectionRule_GROUP,
+		config.ServerSelectionRule_COUNTRY_WITH_GROUP,
+		config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
+		// No obfuscation wrapping needed for these connection types
+	}
+
+	return model
+}
+
 // buildRecentConnectionModel creates a recent connection model
 func buildRecentConnectionModel(
 	serverTechs []core.ServerTechnology,
 	event events.DataConnect,
 	parameters ServerParameters,
+	server *core.Server,
 ) (recents.Model, error) {
 	extractSpecificServerName := func(domain string) string {
 		var name string
@@ -383,47 +436,42 @@ func buildRecentConnectionModel(
 
 	switch recentModel.ConnectionType {
 	case config.ServerSelectionRule_GROUP:
-		// No geographic data needed
 		recentModel.Group = parameters.Group
 
 	case config.ServerSelectionRule_CITY:
-		// Needs city, country info
 		recentModel.City = event.TargetServerCity
 		recentModel.CountryCode = event.TargetServerCountryCode
 		recentModel.Country = event.TargetServerCountry
 
 	case config.ServerSelectionRule_COUNTRY:
-		// Needs just country info
 		recentModel.CountryCode = event.TargetServerCountryCode
 		recentModel.Country = event.TargetServerCountry
 
 	case config.ServerSelectionRule_COUNTRY_WITH_GROUP:
-		// Needs group, country info
 		recentModel.Group = parameters.Group
 		recentModel.CountryCode = event.TargetServerCountryCode
 		recentModel.Country = event.TargetServerCountry
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER:
-		// Needs server, country, city info
 		recentModel.SpecificServer = extractSpecificServerName(event.TargetServerDomain)
 		recentModel.SpecificServerName = event.TargetServerName
+		recentModel.City = event.TargetServerCity
 		recentModel.CountryCode = event.TargetServerCountryCode
 		recentModel.Country = event.TargetServerCountry
-		recentModel.City = event.TargetServerCity
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
-		// Needs server, group, country, city info
 		recentModel.Group = parameters.Group
 		recentModel.SpecificServer = extractSpecificServerName(event.TargetServerDomain)
 		recentModel.SpecificServerName = event.TargetServerName
+		recentModel.City = event.TargetServerCity
 		recentModel.CountryCode = event.TargetServerCountryCode
 		recentModel.Country = event.TargetServerCountry
-		recentModel.City = event.TargetServerCity
 
 	case config.ServerSelectionRule_NONE, config.ServerSelectionRule_RECOMMENDED:
 		return recents.Model{}, fmt.Errorf("unexpected connection type in recent connections: %d", recentModel.ConnectionType)
 	}
 
+	recentModel = applyObfuscationToRecentModel(recentModel, parameters, event, server)
 	return recentModel, nil
 }
 

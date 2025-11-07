@@ -9,12 +9,12 @@ import 'package:nordvpn/widgets/padded_circle_avatar.dart';
 
 final class ServerItemImage extends ConsumerWidget {
   final Widget image;
-  final bool Function(VpnStatus) shouldHighlight;
+  final bool Function(VpnStatus)? shouldHighlight;
 
   const ServerItemImage({
     super.key,
     required this.image,
-    required this.shouldHighlight,
+    this.shouldHighlight,
   });
 
   @override
@@ -32,7 +32,7 @@ final class ServerItemImage extends ConsumerWidget {
     final asyncStatus = ref.watch(vpnStatusControllerProvider);
     if (asyncStatus.hasValue) {
       final status = asyncStatus.value!;
-      if (shouldHighlight(status)) {
+      if (shouldHighlight?.call(status) ?? false) {
         if (status.isConnecting()) {
           // while connecting
           return Padding(
