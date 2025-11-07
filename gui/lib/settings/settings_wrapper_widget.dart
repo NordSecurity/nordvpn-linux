@@ -82,7 +82,6 @@ final class SettingsWrapperWidget extends StatelessWidget {
     BuildContext context, {
     Key? key,
     String? iconName,
-    Widget? icon,
     required String title,
     TextStyle? titleStyle,
     String? subtitle,
@@ -95,12 +94,11 @@ final class SettingsWrapperWidget extends StatelessWidget {
     EdgeInsetsGeometry? padding,
     Color? color,
   }) {
-    assert(icon == null || iconName == null, "can't set both: icon, iconName");
     final settingsTheme = context.settingsTheme;
 
     return AdvancedListTile(
       key: key ?? UniqueKey(),
-      leading: icon ?? (iconName != null ? DynamicThemeImage(iconName) : null),
+      leading: iconName != null ? DynamicThemeImage(iconName) : null,
       title: Text(title, style: titleStyle ?? settingsTheme.itemTitleStyle),
       subtitle: subtitle != null
           ? Text(subtitle, style: settingsTheme.itemSubtitleStyle)

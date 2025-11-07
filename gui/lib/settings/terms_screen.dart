@@ -82,7 +82,7 @@ class LegalInformation extends StatelessWidget {
           key: key,
           title: t.ui.readMore,
           uri: link,
-          iconPath: "external_link.svg",
+          iconName: "external_link.svg",
           size: LinkSize.normal,
         ),
       ],

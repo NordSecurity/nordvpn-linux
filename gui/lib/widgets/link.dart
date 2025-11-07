@@ -50,7 +50,7 @@ LaunchableUri _toLaunchable<T>(T uri) {
 /// The icon is positioned to the right of the text with [AppSpacing.spacing2] spacing.
 ///
 /// Accepts either a [DynamicThemeImage] object via [icon] or a string path
-/// via [iconPath]. Exactly one must be provided. Use [Link] directly if no
+/// via [iconName]. Exactly one must be provided. Use [Link] directly if no
 /// icon is needed.
 final class IconLink<T> extends Link<T> {
   final DynamicThemeImage _icon;
@@ -60,13 +60,8 @@ final class IconLink<T> extends Link<T> {
     required super.title,
     required super.uri,
     super.size,
-    DynamicThemeImage? icon,
-    String? iconPath,
-  }) : assert(
-         (icon != null) ^ (iconPath != null),
-         'Exactly one of icon or iconPath must be provided',
-       ),
-       _icon = icon ?? DynamicThemeImage(iconPath!);
+    required String iconName,
+  }) : _icon = DynamicThemeImage(iconName);
 
   @override
   Widget _buildContent(BuildContext context) {
