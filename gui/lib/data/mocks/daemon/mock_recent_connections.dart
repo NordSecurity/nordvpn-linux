@@ -40,32 +40,38 @@ class MockRecentConnections {
     if (country != null) {
       var city = _findCity(country, 'Vilnius');
       if (city != null) {
-        recentConnections.add(RecentConnectionModel(
-          city: city.cityName,
-          connectionType: ServerSelectionRule.CITY,
-          country: country.countryName,
-          countryCode: country.countryCode,
-          group: cfg.ServerGroup.UNDEFINED,
-        ));
+        recentConnections.add(
+          RecentConnectionModel(
+            city: city.cityName,
+            connectionType: ServerSelectionRule.CITY,
+            country: country.countryName,
+            countryCode: country.countryCode,
+            group: cfg.ServerGroup.UNDEFINED,
+          ),
+        );
       }
     }
 
     // 2. A country connection
     country = _findCountry(servers, 'JP');
     if (country != null) {
-      recentConnections.add(RecentConnectionModel(
-        connectionType: ServerSelectionRule.COUNTRY,
-        country: country.countryName,
-        countryCode: country.countryCode,
-        group: cfg.ServerGroup.UNDEFINED,
-      ));
+      recentConnections.add(
+        RecentConnectionModel(
+          connectionType: ServerSelectionRule.COUNTRY,
+          country: country.countryName,
+          countryCode: country.countryCode,
+          group: cfg.ServerGroup.UNDEFINED,
+        ),
+      );
     }
 
     // 3. A group connection
-    recentConnections.add(RecentConnectionModel(
-      connectionType: ServerSelectionRule.GROUP,
-      group: cfg.ServerGroup.ASIA_PACIFIC,
-    ));
+    recentConnections.add(
+      RecentConnectionModel(
+        connectionType: ServerSelectionRule.GROUP,
+        group: cfg.ServerGroup.ASIA_PACIFIC,
+      ),
+    );
 
     return recentConnections;
   }
