@@ -541,6 +541,20 @@ class TranslationsUiEn {
 	String get doubleVpn => 'Double VPN';
 	String get onionOverVpn => 'Onion over VPN';
 	String get p2p => 'P2P';
+
+	/// en: 'Europe'
+	String get europe => 'Europe';
+
+	/// en: 'The Americas'
+	String get theAmericas => 'The Americas';
+
+	/// en: 'Asia Pacific'
+	String get asiaPacific => 'Asia Pacific';
+
+	/// en: 'Africa, the Middle East, and India'
+	String get africaTheMiddleEastAndIndia => 'Africa, the Middle East, and India';
+
+	/// en: 'Obfuscated'
 	String get obfuscated => 'Obfuscated';
 	String get selectServerForDip => 'Pick a location for your IP';
 	String get selectLocation => 'Select location';
@@ -709,6 +723,9 @@ class TranslationsUiEn {
 
 	/// en: 'Recent connections'
 	String get recentConnections => 'Recent connections';
+
+	/// en: 'In order to select obfuscated server please enable 'Obfuscation' in the setting.'
+	String get obfuscatedSpecialtyServerSelectionTooltip => 'In order to select obfuscated server please enable \'Obfuscation\' in the setting.';
 }
 
 /// Flat map(s) containing all translations.
@@ -1178,6 +1195,10 @@ extension on Translations {
 			case 'ui.doubleVpn': return 'Double VPN';
 			case 'ui.onionOverVpn': return 'Onion over VPN';
 			case 'ui.p2p': return 'P2P';
+			case 'ui.europe': return 'Europe';
+			case 'ui.theAmericas': return 'The Americas';
+			case 'ui.asiaPacific': return 'Asia Pacific';
+			case 'ui.africaTheMiddleEastAndIndia': return 'Africa, the Middle East, and India';
 			case 'ui.obfuscated': return 'Obfuscated';
 			case 'ui.selectServerForDip': return 'Pick a location for your IP';
 			case 'ui.selectLocation': return 'Select location';
@@ -1346,7 +1367,11 @@ extension on Translations {
 			case 'ui.subscriptionInactive': return 'Inactive';
 =======
 			case 'ui.recentConnections': return 'Recent connections';
+<<<<<<< HEAD
 >>>>>>> d44ab456 (Fix issues)
+=======
+			case 'ui.obfuscatedSpecialtyServerSelectionTooltip': return 'In order to select obfuscated server please enable \'Obfuscation\' in the setting.';
+>>>>>>> 7ed38501 (LVPN-9315: Updated support for specialty servers (#1170))
 			default: return null;
 		}
 	}

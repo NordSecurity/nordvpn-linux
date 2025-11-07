@@ -35,6 +35,14 @@ enum ServerType {
   p2p,
   standardVpn,
   obfuscated,
+  // [Deprecated] Region
+  europe,
+  // [Deprecated] Region
+  theAmericas,
+  // [Deprecated] Region
+  asiaPacific,
+  // [Deprecated] Region
+  africaTheMiddleEastAndIndia,
 }
 
 extension Daemon on ServerType {
@@ -52,6 +60,18 @@ extension Daemon on ServerType {
         return obfuscatedServers;
       case ServerType.standardVpn:
         return null;
+      // [Deprecated] Regions
+      case ServerType.europe:
+        return europe;
+      // [Deprecated] Region
+      case ServerType.theAmericas:
+        return theAmericas;
+      // [Deprecated] Region
+      case ServerType.asiaPacific:
+        return asiaPacific;
+      // [Deprecated] Region
+      case ServerType.africaTheMiddleEastAndIndia:
+        return africaTheMiddleEastAndIndia;
     }
   }
 
@@ -69,6 +89,18 @@ extension Daemon on ServerType {
         return config.ServerGroup.STANDARD_VPN_SERVERS;
       case ServerType.obfuscated:
         return config.ServerGroup.OBFUSCATED;
+      // [Deprecated] Region
+      case ServerType.europe:
+        return config.ServerGroup.EUROPE;
+      // [Deprecated] Region
+      case ServerType.theAmericas:
+        return config.ServerGroup.THE_AMERICAS;
+      // [Deprecated] Region
+      case ServerType.asiaPacific:
+        return config.ServerGroup.ASIA_PACIFIC;
+      // [Deprecated] Region
+      case ServerType.africaTheMiddleEastAndIndia:
+        return config.ServerGroup.AFRICA_THE_MIDDLE_EAST_AND_INDIA;
     }
   }
 }
@@ -80,6 +112,15 @@ const Map<config.ServerGroup, ServerType> _groupTitles = {
   config.ServerGroup.P2P: ServerType.p2p,
   config.ServerGroup.OBFUSCATED: ServerType.obfuscated,
   config.ServerGroup.DEDICATED_IP: ServerType.dedicatedIP,
+  // [Deprecated] Region
+  config.ServerGroup.EUROPE: ServerType.europe,
+  // [Deprecated] Region
+  config.ServerGroup.THE_AMERICAS: ServerType.theAmericas,
+  // [Deprecated] Region
+  config.ServerGroup.ASIA_PACIFIC: ServerType.asiaPacific,
+  // [Deprecated] Region
+  config.ServerGroup.AFRICA_THE_MIDDLE_EAST_AND_INDIA:
+      ServerType.africaTheMiddleEastAndIndia,
 };
 
 ServerType? toServerType(config.ServerGroup group) {

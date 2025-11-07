@@ -37,7 +37,10 @@ final class RecentConnectionsList extends ConsumerWidget {
         }
 
         return Padding(
-          padding: EdgeInsets.symmetric(vertical: appTheme.verticalSpaceSmall),
+          padding: EdgeInsets.symmetric(
+            horizontal: appTheme.horizontalSpace,
+            vertical: appTheme.verticalSpaceSmall,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
