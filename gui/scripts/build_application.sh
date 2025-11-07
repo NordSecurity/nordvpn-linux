@@ -2,8 +2,8 @@
 set -euox pipefail
 
 if [ "$#" -ne 1 ]; then
-    echo "missing build type: debug or release"
-    exit 1
+  echo "missing build type: debug or release"
+  exit 1
 fi
 
 # build the application
@@ -49,7 +49,7 @@ flutter build linux --"${BUILD_TYPE}" ${FLAGS}
 OUTPUT_DIR="${WORKDIR}/bin/${ARCH}/gui"
 mkdir -p "${OUTPUT_DIR}"
 FLUTTER_ARCH="${ARCHS_FLUTTER[$ARCH]}"
-SRC_BUNDLE="./build/linux/${FLUTTER_ARCH}/${BUILD_TYPE}/bundle/"
+SRC_BUNDLE="./build/linux/${FLUTTER_ARCH}/${BUILD_TYPE}/bundle"
 
-echo "Copying '${SRC_BUNDLE}/*' to ${OUTPUT_DIR}"
+echo -e "Copying '${SRC_BUNDLE}/*' to ${OUTPUT_DIR}"
 cp -r "${SRC_BUNDLE}"* "${OUTPUT_DIR}"

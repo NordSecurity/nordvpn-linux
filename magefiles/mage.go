@@ -542,13 +542,13 @@ func (Build) RustDocker(ctx context.Context) error {
 	return nil
 }
 
-func (Build) GuiRpmDocker(ctx context.Context) error {
-	mg.Deps(mg.F(buildGuiPackageDocker, packageTypeRPM, buildModeRelease))
+func (Build) GuiRpmDocker(ctx context.Context, buildMode string) error {
+	mg.Deps(mg.F(buildGuiPackageDocker, packageTypeRPM, buildMode))
 	return nil
 }
 
-func (Build) GuiDebDocker(ctx context.Context) error {
-	mg.Deps(mg.F(buildGuiPackageDocker, packageTypeDeb, buildModeRelease))
+func (Build) GuiDebDocker(ctx context.Context, buildMode string) error {
+	mg.Deps(mg.F(buildGuiPackageDocker, packageTypeDeb, buildMode))
 	return nil
 }
 
@@ -566,6 +566,7 @@ func buildGuiPackageDocker(ctx context.Context, packageType, buildMode string) e
 		)
 	}
 
+	mg.Deps(Build.Data)
 	mg.Deps(mg.F(buildGuiBinariesDocker, buildMode))
 
 	env, err := getEnv()
