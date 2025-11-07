@@ -58,16 +58,16 @@ func (ai *accountInfo) reset() {
 
 type ConnectionSelector struct {
 	mu               sync.RWMutex
-	countries        []Country
-	specialtyServers []Country
+	countries        []Server
+	specialtyServers []Server
 }
 
-type Country struct {
+type Server struct {
 	name         string
 	displayLabel string
 }
 
-func (cp *ConnectionSelector) fetchCountries(client pb.DaemonClient) ([]Country, error) {
+func (cp *ConnectionSelector) fetchCountries(client pb.DaemonClient) ([]Server, error) {
 	resp, err := client.Countries(context.Background(), &pb.Empty{})
 	if err != nil {
 		return nil, err
@@ -81,7 +81,7 @@ func (cp *ConnectionSelector) fetchCountries(client pb.DaemonClient) ([]Country,
 	return slices.Clone(cp.countries), nil
 }
 
-func (cp *ConnectionSelector) fetchSpecialtyServers(client pb.DaemonClient) ([]Country, error) {
+func (cp *ConnectionSelector) fetchSpecialtyServers(client pb.DaemonClient) ([]Server, error) {
 	resp, err := client.Groups(context.Background(), &pb.Empty{})
 	if err != nil {
 		return nil, err
@@ -96,25 +96,19 @@ func (cp *ConnectionSelector) fetchSpecialtyServers(client pb.DaemonClient) ([]C
 	return slices.Clone(cp.specialtyServers), nil
 }
 
-func sortedConnections(sgs []*pb.ServerGroup) []Country {
+func sortedConnections(sgs []*pb.ServerGroup) []Server {
 	set := make(map[string]bool, len(sgs))
 	for _, sg := range sgs {
 		if c := strings.TrimSpace(sg.Name); c != "" {
-			if sg.VirtualLocation {
-				set[c] = true
-			} else {
-				set[c] = false
-			}
+			set[c] = sg.VirtualLocation
 		}
 	}
 
-	list := make([]Country, 0, len(set))
+	list := make([]Server, 0, len(set))
 	for k, virtual := range set {
-		if virtual {
-			list = append(list, Country{name: k, displayLabel: fmt.Sprintf("%s - Virtual", k)})
-		} else {
-			list = append(list, Country{name: k, displayLabel: k})
-		}
+		label := tryApplyVirtualLocationSuffix(k, virtual)
+		label = strings.ReplaceAll(label, "_", " ")
+		list = append(list, Server{name: k, displayLabel: label})
 	}
 
 	sort.Slice(list, func(i int, j int) bool {

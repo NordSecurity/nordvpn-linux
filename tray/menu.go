@@ -335,14 +335,14 @@ func buildRecentConnectionsSection(
 	}
 }
 
-func buildCountriesSection(ti *Instance, parent *systray.MenuItem, countries []Country) {
+func buildCountriesSection(ti *Instance, parent *systray.MenuItem, countries []Server) {
 	if ti == nil || parent == nil {
 		return
 	}
 
 	parent.AddSubMenuItem(labelCountries, tooltipCountries).Disable()
 	for _, country := range countries {
-		title := strings.ReplaceAll(country.displayLabel, "_", " ")
+		title := country.displayLabel
 		tooltip := fmt.Sprintf("%s %s", labelConnectTo, title)
 		item := parent.AddSubMenuItem(title, tooltip)
 
@@ -350,14 +350,14 @@ func buildCountriesSection(ti *Instance, parent *systray.MenuItem, countries []C
 	}
 }
 
-func buildSpecialtyServersSection(ti *Instance, parent *systray.MenuItem, specialtyServers []Country) {
+func buildSpecialtyServersSection(ti *Instance, parent *systray.MenuItem, specialtyServers []Server) {
 	if ti == nil || parent == nil {
 		return
 	}
 
 	parent.AddSubMenuItem(labelSpecialtyServers, tooltipSpecialtyServers).Disable()
 	for _, server := range specialtyServers {
-		title := strings.ReplaceAll(server.displayLabel, "_", " ")
+		title := server.displayLabel
 		tooltip := fmt.Sprintf("%s%s", labelConnectTo, title)
 		item := parent.AddSubMenuItem(title, tooltip)
 
