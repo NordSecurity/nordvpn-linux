@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-REPO_PATH="${REPO_DIR}/nordvpn"
+REPO_PATH="${REPO_DIR}"
 
 case "$1" in
     centos) yum -y install yum-utils createrepo ;;
