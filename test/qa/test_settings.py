@@ -4,6 +4,7 @@ import pexpect
 
 import lib
 from lib import daemon, dns, info, logging, login, network, settings
+from lib.shell import sh_no_tty
 
 def setup_function(function):  # noqa: ARG001
     logging.log()
@@ -515,3 +516,49 @@ def test_lan_discovery_on_off():
 
     assert "LAN Discovery has been successfully set to 'disabled'." in sh.nordvpn.set("lan-discovery", "off")
     assert not settings.is_lan_discovery_enabled()
+
+
+def test_login_mesh_on_set_defaults_mesh_on_sequence():
+    """Test the sequence: login -> set mesh on -> set defaults -> set mesh on"""
+
+    assert "Account Information" in sh_no_tty.nordvpn.account()
+
+    assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on()
+
+    assert settings.is_meshnet_enabled()
+
+    assert settings.MSG_SET_DEFAULTS in sh_no_tty.nordvpn.set.defaults()
+
+    assert not settings.is_meshnet_enabled()
+
+    assert "Account Information" in sh_no_tty.nordvpn.account()
+
+    assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on()
+
+    assert settings.is_meshnet_enabled()
+
+
+def test_login_mesh_on_set_defaults_logout_login_mesh_on():
+    """Test the sequence with logout: login -> set mesh on -> set defaults --logout -> login -> set mesh on"""
+
+    assert "Account Information" in sh_no_tty.nordvpn.account()
+
+    assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on()
+
+    assert settings.is_meshnet_enabled()
+
+    assert settings.MSG_SET_DEFAULTS in sh_no_tty.nordvpn.set.defaults("--logout")
+
+    assert not settings.is_meshnet_enabled()
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh_no_tty.nordvpn.account()
+        assert "You are not logged in." in ex.value.stdout.decode("utf-8")
+
+    login.login_as("default")
+
+    assert "Account Information" in sh_no_tty.nordvpn.account()
+
+    assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on()
+
+    assert settings.is_meshnet_enabled()

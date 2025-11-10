@@ -28,19 +28,17 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 		}
 	}
 
-	if !in.NoLogout {
-		// No error check in case mesh isn't even turned on
-		if err := r.netw.UnSetMesh(); err != nil {
-			log.Println(internal.WarningPrefix, err)
-		}
+	// No error check in case mesh isn't even turned on
+	if err := r.netw.UnSetMesh(); err != nil {
+		log.Println(internal.WarningPrefix, err)
+	}
 
-		if err := r.ncClient.Stop(); err != nil {
-			log.Println(internal.WarningPrefix, err)
-		}
+	if err := r.ncClient.Stop(); err != nil {
+		log.Println(internal.WarningPrefix, err)
+	}
 
-		if !r.ncClient.Revoke() {
-			log.Println(internal.WarningPrefix, "error revoking token")
-		}
+	if !r.ncClient.Revoke() {
+		log.Println(internal.WarningPrefix, "error revoking token")
 	}
 
 	if err := r.cm.Reset(in.NoLogout, in.OffKillswitch); err != nil {
