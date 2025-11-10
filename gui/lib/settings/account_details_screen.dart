@@ -186,12 +186,12 @@ final class FooterLinks extends StatelessWidget {
       children: [
         Link(
           title: t.ui.termsOfService,
-          uri: termsOfServiceUrl,
+          uri: accountPagetermsOfServiceUrl,
           size: LinkSize.small,
         ),
         Link(
           title: t.ui.privacyPolicy,
-          uri: privacyPolicyUrl,
+          uri: accountPagePrivacyPolicyUrl,
           size: LinkSize.small,
         ),
         Link(
