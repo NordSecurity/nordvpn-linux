@@ -50,7 +50,7 @@ func (*dummyAnalytics) OnTelemetry(telemetry.Metric, any) error        { return 
 func newAnalytics(
 	eventsDbPath string,
 	fs *config.FilesystemConfigManager,
-	subAPI core.SubscriptionAPI,
+	clientAPI core.ClientAPI,
 	httpClient http.Client,
 	buildTarget config.BuildTarget,
 	id string) *dummyAnalytics {

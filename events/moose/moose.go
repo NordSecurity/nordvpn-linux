@@ -30,6 +30,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	telemetrypb "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1"
@@ -53,7 +54,7 @@ type Subscriber struct {
 	Domain                  string
 	Subdomain               string
 	DeviceID                string
-	SubscriptionAPI         core.SubscriptionAPI
+	ClientAPI               core.ClientAPI
 	currentDomain           string
 	connectionStartTime     time.Time
 	connectionToMeshnetPeer bool
@@ -264,7 +265,7 @@ func (s *Subscriber) NotifyKillswitch(data bool) error {
 }
 
 func (s *Subscriber) NotifyAccountCheck(any) error {
-	return s.fetchSubscriptions()
+	return errors.Join(s.fetchSubscriptions(), s.fetchAndSetVpnServiceExpiration())
 }
 
 func (s *Subscriber) NotifyAutoconnect(data bool) error {
@@ -337,7 +338,7 @@ func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error { // regul
 	}
 
 	if data.EventStatus == events.StatusSuccess {
-		return s.fetchSubscriptions()
+		return errors.Join(s.fetchSubscriptions(), s.fetchAndSetVpnServiceExpiration())
 	}
 	return nil
 }
@@ -736,17 +737,44 @@ func (s *Subscriber) OnTelemetry(metric telemetry.Metric, value any) error {
 	return nil
 }
 
+func (s *Subscriber) fetchAndSetVpnServiceExpiration() error {
+	services, err := s.ClientAPI.Services()
+	if err != nil {
+		return fmt.Errorf("fetching services: %w", err)
+	}
+
+	// Will return in YYYY-MM-DD HH:MM:SS format
+	expiresAt, err := auth.FindVpnServiceExpiration(services)
+	if err != nil {
+		return err
+	}
+
+	// We must use YYYY-MM format
+	expiry, err := time.Parse(internal.ServerDateFormat, expiresAt)
+	if err != nil {
+		return fmt.Errorf("invalid date format")
+	}
+
+	date := expiry.Format(internal.YearMonthDateFormat)
+
+	if err := s.response(moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateServiceExpiresAt(date)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Subscriber) fetchSubscriptions() error {
 	if s.consent == config.ConsentUndefined {
 		return nil
 	}
 
-	payments, err := s.SubscriptionAPI.Payments()
+	payments, err := s.ClientAPI.Payments()
 	if err != nil {
 		return fmt.Errorf("fetching payments: %w", err)
 	}
 
-	orders, err := s.SubscriptionAPI.Orders()
+	orders, err := s.ClientAPI.Orders()
 	if err != nil {
 		return fmt.Errorf("fetching orders: %w", err)
 	}
@@ -767,7 +795,7 @@ func (s *Subscriber) fetchSubscriptions() error {
 		order,
 		countFunc(payments, isPaymentValid, 2),
 	); err != nil {
-		errors.Join(orderErr, fmt.Errorf("setting subscriptions: %w", err))
+		return errors.Join(orderErr, fmt.Errorf("setting subscriptions: %w", err))
 	}
 
 	return orderErr
@@ -936,6 +964,9 @@ func (s *Subscriber) clearSubscriptions() error {
 		},
 		func() uint32 {
 			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateSubscriptionStatus()
+		},
+		func() uint32 {
+			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateServiceExpiresAt()
 		},
 	} {
 		if err := s.response(fn()); err != nil {
