@@ -102,7 +102,7 @@ final class MockAccountInfo extends CancelableDelayed {
     _account = AccountResponse(
       type: type ?? oldAccount.type,
       email: email ?? oldAccount.email,
-      expiresAt: date ?? oldAccount.expiresAt,
+      subscriptionExpiresAt: date ?? oldAccount.subscriptionExpiresAt,
       username: username ?? oldAccount.username,
       dedicatedIpServices: dip,
       dedicatedIpStatus: (dip != null) ? Int64(DaemonStatusCode.success) : null,
@@ -113,7 +113,7 @@ final class MockAccountInfo extends CancelableDelayed {
       stream.add(
         AppState(
           accountModification: AccountModification(
-            expiresAt: _account!.expiresAt,
+            subscriptionExpiresAt: _account!.subscriptionExpiresAt,
           ),
         ),
       );
@@ -187,7 +187,7 @@ final class MockAccountInfo extends CancelableDelayed {
       return true;
     }
 
-    final date = parseDate(_account!.expiresAt);
+    final date = parseDate(_account!.subscriptionExpiresAt);
     if ((date == null) || date.isBefore(DateTime.now())) {
       return true;
     }

@@ -8,7 +8,7 @@ AccountResponse fakeAccount() {
   return AccountResponse(
     type: Int64(DaemonStatusCode.success),
     email: faker.internet.email(),
-    expiresAt: daemonDateFormat.format(
+    subscriptionExpiresAt: daemonDateFormat.format(
       DateTime.now().add(const Duration(days: 1)),
     ),
     username: faker.internet.userName(),

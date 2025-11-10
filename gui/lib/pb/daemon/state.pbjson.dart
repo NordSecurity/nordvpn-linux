@@ -77,24 +77,24 @@ const AccountModification$json = {
   '1': 'AccountModification',
   '2': [
     {
-      '1': 'expires_at',
+      '1': 'subscription_expires_at',
       '3': 1,
       '4': 1,
       '5': 9,
       '9': 0,
-      '10': 'expiresAt',
+      '10': 'subscriptionExpiresAt',
       '17': true
     },
   ],
   '8': [
-    {'1': '_expires_at'},
+    {'1': '_subscription_expires_at'},
   ],
 };
 
 /// Descriptor for `AccountModification`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List accountModificationDescriptor = $convert.base64Decode(
-    'ChNBY2NvdW50TW9kaWZpY2F0aW9uEiIKCmV4cGlyZXNfYXQYASABKAlIAFIJZXhwaXJlc0F0iA'
-    'EBQg0KC19leHBpcmVzX2F0');
+    'ChNBY2NvdW50TW9kaWZpY2F0aW9uEjsKF3N1YnNjcmlwdGlvbl9leHBpcmVzX2F0GAEgASgJSA'
+    'BSFXN1YnNjcmlwdGlvbkV4cGlyZXNBdIgBAUIaChhfc3Vic2NyaXB0aW9uX2V4cGlyZXNfYXQ=');
 
 @$core.Deprecated('Use versionHealthStatusDescriptor instead')
 const VersionHealthStatus$json = {

@@ -119,7 +119,7 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 	}
 
 	tokenData := cfg.TokensData[cfg.AutoConnectData.ID]
-	accountInfo.ExpiresAt = tokenData.ServiceExpiry
+	accountInfo.SubscriptionExpiresAt = tokenData.ServiceExpiry
 	accountInfo.LastDedicatedIpExpiresAt = dedicatedIPExpirationDate
 
 	currentUser, err := r.credentialsAPI.CurrentUser()
@@ -137,6 +137,7 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 		return nil, internal.ErrUnhandled
 	}
 
+	accountInfo.CreatedOn = currentUser.CreatedOn
 	accountInfo.Email = currentUser.Email
 	if currentUser.Username != currentUser.Email {
 		accountInfo.Username = currentUser.Username
