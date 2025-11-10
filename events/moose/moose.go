@@ -199,9 +199,11 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("setting application name: %w", err)
 	}
 
-	consentLevel := consentTypeToInternalType(s.consent)
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel(consentLevel)); err != nil {
-		return fmt.Errorf("setting user consent level: %w", err)
+	if s.consent != config.ConsentUndefined {
+		consentLevel := consentTypeToInternalType(s.consent)
+		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel(consentLevel)); err != nil {
+			return fmt.Errorf("setting user consent level: %w", err)
+		}
 	}
 
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappVersion(s.BuildTarget.Version)); err != nil {
