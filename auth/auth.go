@@ -227,7 +227,7 @@ func (r *RenewingChecker) fetchSaveServices(userID int64, data *config.TokenData
 		return fmt.Errorf("saving config: %w", err)
 	}
 	r.accountUpdateEvents.SubscriptionUpdate.Publish(&pb.AccountModification{
-		ExpiresAt: &data.ServiceExpiry,
+		SubscriptionExpiresAt: &data.ServiceExpiry,
 	})
 
 	return nil

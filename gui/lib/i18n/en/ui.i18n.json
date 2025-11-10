@@ -54,7 +54,7 @@
   "termsOfService": "Terms of Service",
   "privacyPolicy": "Privacy Policy",
   "autoRenewalTerms": "Auto - renewal terms",
-  "subscriptionInfo": "Subscription info",
+  "subscription": "Subscription",
   "logout": "Log out",
   "accountExpireIn": {
     "one": "Expires in $n day on $date",
@@ -154,7 +154,7 @@
   "turnOffCustomDns": "Turn off custom DNS?",
   "turnOffCustomDnsDescription": "This will remove all your previously added DNS servers.",
   "turnOff": "Turn off",
-  "subscriptionValidationDate": "Subscription active until ${expirationDate: String}",
+  "subscriptionValidationDate": "Active until ${expirationDate: String}",
   "logIn": "Log in",
   "createAccount": "Create account",
   "whatIsNordAccount": "What is a Nord Account?",
@@ -248,5 +248,9 @@
   "termsSubtitle": "Learn about our legal terms.",
   "termsAgreementDescription": "By continuing to use this app, you agree to our terms and how we handle your data. To read the terms and privacy policy check the links below.",
   "readMore": "Read more",
-  "customDnsWarning": "Using third-party DNS may limit website availability. For the best browsing experience, use our default settings."
+  "customDnsWarning": "Using third-party DNS may limit website availability. For the best browsing experience, use our default settings.",
+  "accountCreatedOn": "Account created: ${creation_date: String}",
+  "manageSubscription": "Manage subscription",
+  "changePassword": "Change password",
+  "productHub": "Product Hub"
 }
