@@ -6,7 +6,7 @@ import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 
 enum LinkSize { normal, small }
 
-final class Link<T> extends StatelessWidget {
+class Link<T> extends StatelessWidget {
   final String title;
   final LaunchableUri launchableUri;
   final LinkSize size;
@@ -21,7 +21,11 @@ final class Link<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextButton(
-      style: TextButton.styleFrom(padding: EdgeInsets.zero),
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.symmetric(vertical: 2),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
       onPressed: () async => await launchableUri.launch(),
       child: _buildContent(context),
     );
@@ -47,12 +51,12 @@ LaunchableUri _toLaunchable<T>(T uri) {
 /// A clickable link widget with a trailing icon.
 ///
 /// Extends [Link] to display a theme-aware icon alongside the link text.
-/// The icon is positioned to the right of the text with [AppSpacing.spacing2] spacing.
+/// The icon is positioned to  the right of the text with [AppSpacing.spacing2] spacing.
 ///
 /// Accepts either a [DynamicThemeImage] object via [icon] or a string path
 /// via [iconName]. Exactly one must be provided. Use [Link] directly if no
 /// icon is needed.
-final class IconLink<T> extends Link<T> {
+class IconLink<T> extends Link<T> {
   final DynamicThemeImage _icon;
 
   IconLink({
@@ -67,9 +71,8 @@ final class IconLink<T> extends Link<T> {
   Widget _buildContent(BuildContext context) {
     final appTheme = context.appTheme;
     return Row(
-      spacing: appTheme.verticalSpaceSmall,
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
+      spacing: appTheme.horizontalSpaceSmall,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [super._buildContent(context), _icon],
     );
   }

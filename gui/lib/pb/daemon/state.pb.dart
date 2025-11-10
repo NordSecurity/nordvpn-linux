@@ -81,10 +81,11 @@ class LoginEvent extends $pb.GeneratedMessage {
 
 class AccountModification extends $pb.GeneratedMessage {
   factory AccountModification({
-    $core.String? expiresAt,
+    $core.String? subscriptionExpiresAt,
   }) {
     final result = create();
-    if (expiresAt != null) result.expiresAt = expiresAt;
+    if (subscriptionExpiresAt != null)
+      result.subscriptionExpiresAt = subscriptionExpiresAt;
     return result;
   }
 
@@ -101,7 +102,7 @@ class AccountModification extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'AccountModification',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..aOS(1, _omitFieldNames ? '' : 'expiresAt')
+    ..aOS(1, _omitFieldNames ? '' : 'subscriptionExpiresAt')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -126,13 +127,13 @@ class AccountModification extends $pb.GeneratedMessage {
   static AccountModification? _defaultInstance;
 
   @$pb.TagNumber(1)
-  $core.String get expiresAt => $_getSZ(0);
+  $core.String get subscriptionExpiresAt => $_getSZ(0);
   @$pb.TagNumber(1)
-  set expiresAt($core.String value) => $_setString(0, value);
+  set subscriptionExpiresAt($core.String value) => $_setString(0, value);
   @$pb.TagNumber(1)
-  $core.bool hasExpiresAt() => $_has(0);
+  $core.bool hasSubscriptionExpiresAt() => $_has(0);
   @$pb.TagNumber(1)
-  void clearExpiresAt() => $_clearField(1);
+  void clearSubscriptionExpiresAt() => $_clearField(1);
 }
 
 class VersionHealthStatus extends $pb.GeneratedMessage {

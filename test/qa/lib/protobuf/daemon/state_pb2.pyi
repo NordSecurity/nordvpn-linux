@@ -33,10 +33,10 @@ class LoginEvent(_message.Message):
     def __init__(self, type: _Optional[_Union[LoginEventType, str]] = ...) -> None: ...
 
 class AccountModification(_message.Message):
-    __slots__ = ("expires_at",)
-    EXPIRES_AT_FIELD_NUMBER: _ClassVar[int]
-    expires_at: str
-    def __init__(self, expires_at: _Optional[str] = ...) -> None: ...
+    __slots__ = ("subscription_expires_at",)
+    SUBSCRIPTION_EXPIRES_AT_FIELD_NUMBER: _ClassVar[int]
+    subscription_expires_at: str
+    def __init__(self, subscription_expires_at: _Optional[str] = ...) -> None: ...
 
 class VersionHealthStatus(_message.Message):
     __slots__ = ("status_code",)

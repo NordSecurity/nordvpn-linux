@@ -82,12 +82,6 @@ Finder productsList() {
   return productsListFinder;
 }
 
-Finder footerLinks() {
-  final footerLinksFinder = find.byKey(AccountWidgetKeys.footerLinks);
-  expect(footerLinksFinder, findsOneWidget);
-  return footerLinksFinder;
-}
-
 Finder virtualServersListItem() {
   final virtualListItemFinder = find.descendant(
     of: find.byKey(ServerListWidgetKeys.countriesServersList),

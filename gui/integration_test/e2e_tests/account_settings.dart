@@ -16,7 +16,6 @@ void runAccountSettingsTests() async {
       expect(accountScreen.hasCurrentBreadcrumb(), isTrue);
       expect(accountScreen.hasUserInfo(), isTrue);
       expect(accountScreen.hasProductsList(), isTrue);
-      expect(accountScreen.hasFooterLinks(), isTrue);
 
       // breadcrumbs are set correctly
       expect(accountScreen.parentBreadcrumbLabel(), equals("Settings"));

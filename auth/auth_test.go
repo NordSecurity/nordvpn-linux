@@ -297,7 +297,7 @@ func TestIsVPNExpired(t *testing.T) {
 				if test.subRefreshed {
 					assert.Equal(t, test.accPub.EventPublished, test.subRefreshed)
 					assert.NotNil(t, test.accPub.Event)
-					assert.Equal(t, *test.accPub.Event.ExpiresAt, test.newExpiryDate)
+					assert.Equal(t, *test.accPub.Event.SubscriptionExpiresAt, test.newExpiryDate)
 				}
 			}
 		})

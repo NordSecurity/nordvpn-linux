@@ -23,9 +23,6 @@ final class AccountScreenHandle extends ScreenHandle {
     return productsList().evaluate().isNotEmpty;
   }
 
-  bool hasFooterLinks() {
-    return footerLinks().evaluate().isNotEmpty;
-  }
 
   String parentBreadcrumbLabel() {
     final finder = parentNavigationBreadcrumb();

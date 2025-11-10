@@ -66,7 +66,7 @@ func (c *cmd) Account(ctx *cli.Context) error {
 	}
 	fmt.Println("Email Address:", payload.Email)
 
-	if err := displayServiceStatus("VPN", payload.Type, payload.ExpiresAt); err != nil {
+	if err := displayServiceStatus("VPN", payload.Type, payload.SubscriptionExpiresAt); err != nil {
 		return err
 	}
 
