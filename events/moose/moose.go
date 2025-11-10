@@ -145,7 +145,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 	if cfg.AnalyticsConsent == config.ConsentUndefined {
 		canSendEvents = false
 	}
-	log.Println(internal.DebugPrefix, "allow moose to send events:", canSendEvents)
+	log.Println(internal.InfoPrefix, "[moose] configure to send events:", canSendEvents)
 
 	client := worker.NewHttpClientContext(s.currentDomain)
 	client.Client = httpClient
@@ -164,7 +164,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 
 	// can we send only essential or all?
 	sendAllEvents := cfg.AnalyticsConsent == config.ConsentGranted
-	log.Println(internal.DebugPrefix, "allow moose to send all events:", sendAllEvents)
+	log.Println(internal.InfoPrefix, "[moose] all events are sent:", sendAllEvents)
 
 	if err := s.response(moose.MooseNordvpnappInit(
 		s.EventsDbPath,
