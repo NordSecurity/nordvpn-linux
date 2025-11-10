@@ -51,7 +51,7 @@ if [[ "${ARCH}" == "aarch64" ]]; then
     sudo cp -a /tmp/snapcraft-src/extensions/* /usr/share/snapcraft/extensions/ &&
     rm -rf /tmp/snapcraft-src
 
-  sudo /snap/bin/snapcraft pack --destructive-mode
+  sudo -E /snap/bin/snapcraft pack --destructive-mode
 else
   snapcraft pack --destructive-mode
 fi
