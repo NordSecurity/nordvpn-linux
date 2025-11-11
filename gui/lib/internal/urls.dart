@@ -21,7 +21,7 @@ final nordPassProductUrl = Uri.parse(
 );
 
 final nordLockerProductUrl = Uri.parse(
-  "https://nordlocker.com/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=settings_apps-explore_nordlocke&nm=app&ns=nordvpn-linux-gui&nc=settings-explore_nordlocke",
+  "https://nordlocker.com/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=settings_apps-explore_nordlocker&nm=app&ns=nordvpn-linux-gui&nc=settings-explore_nordlocker",
 );
 
 final nordLayerProductUrl = Uri.parse(

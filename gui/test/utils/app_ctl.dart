@@ -132,7 +132,7 @@ final class AppCtl {
     await logIn(account: account);
     await goTo(AppRoute.settingsAccount).waitForUiUpdates();
     final accountScreenHandle = AccountScreenHandle(this);
-    await accountScreenHandle.waitUntilFound(userInfo());
+    await accountScreenHandle.waitUntilFound(accountUserInfo());
     return accountScreenHandle;
   }
 
