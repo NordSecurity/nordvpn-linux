@@ -26,6 +26,13 @@ for filename in "${files[@]}"; do
     entry_name=$(basename "${filename}" .md)
     entry_tag=${entry_name%_*}
     entry_date=${entry_name#*_}
+    
+    # Check if entry_date is the same as entry_tag (no timestamp in filename)
+    if [[ "${entry_date}" == "${entry_tag}" ]]; then
+        # Use file modification time as fallback
+        # stat -c %Y gets the modification time as Unix timestamp
+        entry_date=$(stat -c %Y "${filename}")
+    fi
 
     printf "\055 semver: %s
   date: %s
