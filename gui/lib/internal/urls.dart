@@ -28,14 +28,6 @@ final nordLayerProductUrl = Uri.parse(
   "https://nordlayer.com/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=settings_apps-explore_nordlayer&nm=app&ns=nordvpn-linux-gui&nc=settings-explore_nordlayer",
 );
 
-final accountPagetermsOfServiceUrl = Uri.parse(
-  "https://my.nordaccount.com/legal/terms-of-service/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=settings_account-terms_of_service&nm=app&ns=nordvpn-linux-gui&nc=settings-terms_of_service",
-);
-
-final accountPagePrivacyPolicyUrl = Uri.parse(
-  "https://my.nordaccount.com/legal/privacy-policy/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=settings_account-privacy_policy&nm=app&ns=nordvpn-linux-gui&nc=settings-privacy_policy",
-);
-
 final subscriptionInfoUrl = UriWithToken.parse(
   "https://my.nordaccount.com/billing/my-subscriptions/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=home-my_subscriptions&nm=app&ns=nordvpn-linux-gui&nc=home-my_subscriptions",
 );
