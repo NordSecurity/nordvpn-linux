@@ -1,7 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/settings/account_details_screen.dart';
-import 'package:nordvpn/widgets/link.dart';
+import 'package:nordvpn/widgets/link_types.dart';
 import 'package:nordvpn/settings/navigation.dart';
 
 import 'finders.dart';
@@ -59,7 +58,7 @@ final class AccountScreenHandle extends ScreenHandle {
   Future<void> clickManageSubscriptionLink() async {
     final linkFinder = find.descendant(
       of: serviceSubscriptionInfoFinder(),
-      matching: find.byType(Link<Uri>),
+      matching: find.byType(InternalLink<Uri>),
     );
     await app.tester.tap(linkFinder);
     await app.tester.pump();
@@ -87,7 +86,7 @@ final class AccountScreenHandle extends ScreenHandle {
   Future<void> clickChangePasswordLink() async {
     final linkFinder = find.descendant(
       of: accountInfoFinder(),
-      matching: find.byType(Link<Uri>),
+      matching: find.byType(InternalLink<Uri>),
     );
     await app.tester.tap(linkFinder);
     await app.tester.pump();
