@@ -1,4 +1,7 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/settings/account_details_screen.dart';
+import 'package:nordvpn/widgets/link.dart';
 import 'package:nordvpn/settings/navigation.dart';
 
 import 'finders.dart';
@@ -16,13 +19,12 @@ final class AccountScreenHandle extends ScreenHandle {
   }
 
   bool hasUserInfo() {
-    return userInfo().evaluate().isNotEmpty;
+    return accountUserInfo().evaluate().isNotEmpty;
   }
 
   bool hasProductsList() {
     return productsList().evaluate().isNotEmpty;
   }
-
 
   String parentBreadcrumbLabel() {
     final finder = parentNavigationBreadcrumb();
@@ -36,10 +38,59 @@ final class AccountScreenHandle extends ScreenHandle {
     return widget.name;
   }
 
-  String userEmail() {
-    final finder = userInfo();
-    final widget = app.tester.widget<UserInfo>(finder);
-    return widget.userAccount!.email;
+  bool hasSubscriptionInfo() {
+    return serviceSubscriptionInfoFinder().evaluate().isNotEmpty;
+  }
+
+  String subscriptionActiveUntil() {
+    final widget = app.tester.widget<UserInfoEntry>(
+      serviceSubscriptionInfoFinder(),
+    );
+    return widget.description;
+  }
+
+  Uri serviceSubscriptionLink() {
+    final widget = app.tester.widget<UserInfoEntry>(
+      serviceSubscriptionInfoFinder(),
+    );
+    return widget.link;
+  }
+
+  Future<void> clickManageSubscriptionLink() async {
+    final linkFinder = find.descendant(
+      of: serviceSubscriptionInfoFinder(),
+      matching: find.byType(Link<Uri>),
+    );
+    await app.tester.tap(linkFinder);
+    await app.tester.pump();
+  }
+
+  bool hasAccountInfo() {
+    return accountInfoFinder().evaluate().isNotEmpty;
+  }
+
+  String accountEmail() {
+    final widget = app.tester.widget<UserInfoEntry>(accountInfoFinder());
+    return widget.title;
+  }
+
+  String accountCreatedDate() {
+    final widget = app.tester.widget<UserInfoEntry>(accountInfoFinder());
+    return widget.description;
+  }
+
+  Uri accountChangePasswordLink() {
+    final widget = app.tester.widget<UserInfoEntry>(accountInfoFinder());
+    return widget.link;
+  }
+
+  Future<void> clickChangePasswordLink() async {
+    final linkFinder = find.descendant(
+      of: accountInfoFinder(),
+      matching: find.byType(Link<Uri>),
+    );
+    await app.tester.tap(linkFinder);
+    await app.tester.pump();
   }
 
   Future<void> clickLogOutButton() async {
