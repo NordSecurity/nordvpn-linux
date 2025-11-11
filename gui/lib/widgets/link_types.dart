@@ -15,5 +15,5 @@ final class InternalLink<T> extends Link<T> {
 /// The icon is automatically added to indicate an external destination.
 final class ExternalLink<T> extends IconLink<T> {
   ExternalLink({super.key, required super.title, required super.uri})
-      : super(iconPath: "external_link.svg");
+      : super(iconName: "external_link.svg");
 }
