@@ -9,16 +9,18 @@ import (
 )
 
 type ConfigManager struct {
-	mu      sync.RWMutex
-	Cfg     *config.Config
-	SaveErr error
-	LoadErr error
-	Saved   bool
+	mu            sync.RWMutex
+	Cfg           *config.Config
+	SaveCallCount int
+	SaveErr       error
+	LoadErr       error
+	Saved         bool
 }
 
 func NewMockConfigManager() *ConfigManager {
 	m := ConfigManager{}
 	m.Cfg = &config.Config{
+		UsersData: &config.UsersData{NotifyOff: config.UidBoolMap{}, TrayOff: config.UidBoolMap{}},
 		TokensData: map[int64]config.TokenData{
 			0: {
 				Token:              "",
@@ -73,6 +75,7 @@ func (m *ConfigManager) SaveWith(fn config.SaveFunc) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	m.SaveCallCount += 1
 	if m.SaveErr != nil {
 		return m.SaveErr
 	}

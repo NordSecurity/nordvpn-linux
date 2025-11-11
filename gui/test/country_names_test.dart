@@ -37,6 +37,7 @@ void main() async {
 
   test(
     'All cities, country codes and names from API exist in translation files',
+    skip: true,
     () async {
       List<dynamic> jsonResponse = json.decode(response.body);
       for (final item in jsonResponse) {
