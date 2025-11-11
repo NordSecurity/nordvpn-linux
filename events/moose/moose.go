@@ -118,6 +118,7 @@ func (s *Subscriber) isEnabled() bool {
 // Init initializes moose libs. It has to be done before usage regardless of the enabled state.
 // Disabled case should be handled by `set_opt_out` value.
 func (s *Subscriber) Init(httpClient http.Client) error {
+	log.Println(internal.InfoPrefix, "initializing moose")
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
@@ -139,7 +140,12 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 	var batchSize uint32 = 20
 	compressRequest := true
 
-	sendEvents := cfg.AnalyticsConsent == config.ConsentGranted
+	// can we send events at all? - if consent is undefined (not completed) - don't send
+	canSendEvents := true
+	if cfg.AnalyticsConsent == config.ConsentUndefined {
+		canSendEvents = false
+	}
+	log.Println(internal.InfoPrefix, "[moose] configure to send events:", canSendEvents)
 
 	client := worker.NewHttpClientContext(s.currentDomain)
 	client.Client = httpClient
@@ -148,7 +154,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		s.currentDomain,
 		uint64(singleInterval.Milliseconds()),
 		uint64(sequenceInterval.Milliseconds()),
-		sendEvents,
+		canSendEvents,
 		batchSize,
 		compressRequest,
 		&client,
@@ -156,12 +162,16 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("starting worker: %w", err)
 	}
 
+	// can we send only essential or all?
+	sendAllEvents := cfg.AnalyticsConsent == config.ConsentGranted
+	log.Println(internal.InfoPrefix, "[moose] all events are sent:", sendAllEvents)
+
 	if err := s.response(moose.MooseNordvpnappInit(
 		s.EventsDbPath,
 		internal.IsProdEnv(s.BuildTarget.Environment),
 		s,
 		s,
-		sendEvents,
+		sendAllEvents,
 	)); err != nil {
 		if !strings.Contains(err.Error(), "moose: already initiated") {
 			return fmt.Errorf("starting tracker: %w", err)

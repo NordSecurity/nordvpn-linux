@@ -3,9 +3,6 @@ name: CodeQL Security Scan
 permissions: {}
 
 on:
-    push:
-        branches:
-            - "**"
     pull_request:
         branches: [main]
     schedule:

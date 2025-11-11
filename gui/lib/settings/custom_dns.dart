@@ -31,10 +31,11 @@ final class CustomDns extends ConsumerStatefulWidget {
 // this are used for tests to easier identify the elements
 final class CustomDnsKeys {
   CustomDnsKeys._();
-  static final onOffSwitch = UniqueKey();
-  static final addDnsForm = UniqueKey();
-  static final serversList = UniqueKey();
-  static ValueKey removeButton(String server) => ValueKey("remove_$server");
+  static const dnsSwitch = Key("dnsSwitch");
+  static const dnsAddForm = Key("dnsAddForm");
+  static const dnsAddButton = Key("dnsAddButton");
+  static const dnsServersList = Key("dnsServersList");
+  static ValueKey dnsRemoveButton(String server) => ValueKey("remove_$server");
 }
 
 enum _CustomDnsSections { status, addForm, dnsList }
@@ -88,7 +89,7 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
               subtitle: t.ui.useCustomDnsDescription,
               trailingLocation: TrailingLocation.center,
               trailing: OnOffSwitch(
-                key: CustomDnsKeys.onOffSwitch,
+                key: CustomDnsKeys.dnsSwitch,
                 value: isCustomDnsEnabled,
                 shouldChange: (toValue) => _canChange(settings, toValue),
                 onChanged: (value) => _toggleCustomDns(value),
@@ -96,7 +97,7 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
             );
           case _CustomDnsSections.addForm:
             return SettingsWrapperWidget.buildListItem(
-              key: CustomDnsKeys.addDnsForm,
+              key: CustomDnsKeys.dnsAddForm,
               context,
               color: customDnsTheme.formBackground,
               title: "${t.ui.enterDnsAddress}:",
@@ -122,7 +123,7 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
                 builder: (context, value, child) {
                   final isValid = _isValid(settings);
                   return LoadingTextButton(
-                    key: ValueKey(isValid),
+                    key: CustomDnsKeys.dnsAddButton,
                     controller: _buttonController,
                     onPressed: isValid ? () => _addServer(settings) : null,
                     child: Text(t.ui.add),
@@ -160,7 +161,7 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
           color: customDnsTheme.dividerColor,
         ),
         ListView.builder(
-          key: CustomDnsKeys.serversList,
+          key: CustomDnsKeys.dnsServersList,
           shrinkWrap: true,
           itemCount: settings.customDnsServers.length,
           itemBuilder: (context, index) {
@@ -170,7 +171,7 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
                 Text(server, style: appTheme.body),
                 Spacer(),
                 BinButton(
-                  key: CustomDnsKeys.removeButton(server),
+                  key: CustomDnsKeys.dnsRemoveButton(server),
                   onPressed: () =>
                       _deleteServer(settings.customDnsServers[index]),
                 ),

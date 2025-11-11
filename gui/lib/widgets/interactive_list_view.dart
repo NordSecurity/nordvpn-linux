@@ -79,10 +79,10 @@ class _InteractiveListViewState extends State<InteractiveListView> {
       itemBuilder: (item) => widget.itemBuilder(context, item),
       initialList: initialItems,
       filter: (query) {
-        if (query.length < widget.beginSearchAfter) {
-          // rebuild the list with error
+        if (query.isEmpty || query.length < widget.beginSearchAfter) {
+          // Return all items when query is not fulfilled
           setState(() {});
-          return [];
+          return widget.items;
         }
         final filteredItems = widget.filter(query, widget.items);
 
@@ -112,6 +112,7 @@ class _InteractiveListViewState extends State<InteractiveListView> {
         hintText: widget.searchHintText,
         icon: widget.leadingWidget,
       ),
+      listViewPadding: EdgeInsets.only(top: theme.verticalSpaceSmall),
       closeKeyboardWhenScrolling: true,
     );
   }

@@ -19,6 +19,7 @@ import 'connect_settings_screen_handle.dart';
 import 'custom_dns_settings_handle.dart';
 import 'fakes.dart';
 import 'finders.dart';
+import 'legal_information_screen_handle.dart';
 import 'login_screen_handle.dart';
 import 'test_helpers.dart';
 import 'vpn_screen_handle.dart';
@@ -167,6 +168,16 @@ final class AppCtl {
     await goTo(AppRoute.settingsCustomDns).waitForUiUpdates();
     final handle = CustomDnsSettingsHandle(this);
     await handle.waitUntilVisible();
+    return handle;
+  }
+
+  Future<LegalInformationScreenHandle> goToLegalInformationScreen({
+    AccountResponse? account,
+  }) async {
+    await logIn(account: account);
+    await goTo(AppRoute.settingsTerms).waitForUiUpdates();
+    final handle = LegalInformationScreenHandle(this);
+    await handle.waitUntilFound(currentNavigationBreadcrumb());
     return handle;
   }
 }

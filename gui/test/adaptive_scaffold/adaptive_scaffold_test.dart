@@ -10,8 +10,9 @@ import 'simulated_layout.dart';
 import 'test_breakpoints.dart';
 
 void main() {
-  testWidgets('adaptive scaffold lays out slots as expected',
-      (WidgetTester tester) async {
+  testWidgets('adaptive scaffold lays out slots as expected', (
+    WidgetTester tester,
+  ) async {
     final Finder smallBody = find.byKey(const Key('smallBody'));
     final Finder body = find.byKey(const Key('body'));
     final Finder mediumLargeBody = find.byKey(const Key('mediumLargeBody'));
@@ -108,8 +109,9 @@ void main() {
     expect(tester.getBottomRight(primaryNav3), const Offset(208, 2000));
   });
 
-  testWidgets('adaptive scaffold animations work correctly',
-      (WidgetTester tester) async {
+  testWidgets('adaptive scaffold animations work correctly', (
+    WidgetTester tester,
+  ) async {
     final Finder b = find.byKey(const Key('body'));
     final Finder sBody = find.byKey(const Key('sBody'));
 
@@ -122,23 +124,35 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(tester.getTopLeft(b), const Offset(17.6, 0));
-    expect(tester.getBottomRight(b),
-        offsetMoreOrLessEquals(const Offset(778.2, 1936), epsilon: 1.0));
-    expect(tester.getTopLeft(sBody),
-        offsetMoreOrLessEquals(const Offset(778.2, 0), epsilon: 1.0));
-    expect(tester.getBottomRight(sBody),
-        offsetMoreOrLessEquals(const Offset(1178.2, 1936), epsilon: 1.0));
+    expect(
+      tester.getBottomRight(b),
+      offsetMoreOrLessEquals(const Offset(778.2, 1936), epsilon: 1.0),
+    );
+    expect(
+      tester.getTopLeft(sBody),
+      offsetMoreOrLessEquals(const Offset(778.2, 0), epsilon: 1.0),
+    );
+    expect(
+      tester.getBottomRight(sBody),
+      offsetMoreOrLessEquals(const Offset(1178.2, 1936), epsilon: 1.0),
+    );
 
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
 
     expect(tester.getTopLeft(b), const Offset(70.4, 0));
-    expect(tester.getBottomRight(b),
-        offsetMoreOrLessEquals(const Offset(416.0, 1984), epsilon: 1.0));
-    expect(tester.getTopLeft(sBody),
-        offsetMoreOrLessEquals(const Offset(416, 0), epsilon: 1.0));
-    expect(tester.getBottomRight(sBody),
-        offsetMoreOrLessEquals(const Offset(816, 1984), epsilon: 1.0));
+    expect(
+      tester.getBottomRight(b),
+      offsetMoreOrLessEquals(const Offset(416.0, 1984), epsilon: 1.0),
+    );
+    expect(
+      tester.getTopLeft(sBody),
+      offsetMoreOrLessEquals(const Offset(416, 0), epsilon: 1.0),
+    );
+    expect(
+      tester.getBottomRight(sBody),
+      offsetMoreOrLessEquals(const Offset(816, 1984), epsilon: 1.0),
+    );
 
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
@@ -149,18 +163,21 @@ void main() {
     expect(tester.getBottomRight(sBody), const Offset(800, 2000));
   });
 
-  testWidgets('adaptive scaffold animations can be disabled',
-      (WidgetTester tester) async {
+  testWidgets('adaptive scaffold animations can be disabled', (
+    WidgetTester tester,
+  ) async {
     final Finder b = find.byKey(const Key('body'));
     final Finder sBody = find.byKey(const Key('sBody'));
 
     await tester.binding.setSurfaceSize(SimulatedLayout.small.size);
-    await tester
-        .pumpWidget(SimulatedLayout.small.scaffold(tester, animations: false));
+    await tester.pumpWidget(
+      SimulatedLayout.small.scaffold(tester, animations: false),
+    );
 
     await tester.binding.setSurfaceSize(SimulatedLayout.medium.size);
-    await tester
-        .pumpWidget(SimulatedLayout.medium.scaffold(tester, animations: false));
+    await tester.pumpWidget(
+      SimulatedLayout.medium.scaffold(tester, animations: false),
+    );
 
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
@@ -174,15 +191,19 @@ void main() {
   // The goal of this test is to run through each of the navigation elements
   // and test whether tapping on that element will update the selected index
   // globally
-  testWidgets('tapping navigation elements calls onSelectedIndexChange',
-      (WidgetTester tester) async {
+  testWidgets('tapping navigation elements calls onSelectedIndexChange', (
+    WidgetTester tester,
+  ) async {
     // for each screen size there is a different navigational element that
     // we want to test tapping to set the selected index
-    await Future.forEach(SimulatedLayout.values,
-        (SimulatedLayout region) async {
+    await Future.forEach(SimulatedLayout.values, (
+      SimulatedLayout region,
+    ) async {
       int selectedIndex = 0;
-      final MaterialApp app =
-          region.scaffold(tester, initialIndex: selectedIndex);
+      final MaterialApp app = region.scaffold(
+        tester,
+        initialIndex: selectedIndex,
+      );
       await tester.binding.setSurfaceSize(region.size);
       await tester.pumpWidget(app);
       await tester.pumpAndSettle();
@@ -198,10 +219,13 @@ void main() {
       expect(icon.icon, isNotNull);
 
       // Find the icon in the application to tap
-      final Widget navigationSlot =
-          tester.widget(find.byKey(Key(region.navSlotKey)));
-      final Finder target =
-          find.widgetWithIcon(navigationSlot.runtimeType, icon.icon!);
+      final Widget navigationSlot = tester.widget(
+        find.byKey(Key(region.navSlotKey)),
+      );
+      final Finder target = find.widgetWithIcon(
+        navigationSlot.runtimeType,
+        icon.icon!,
+      );
       expect(target, findsOneWidget);
 
       await tester.tap(target);
@@ -215,10 +239,11 @@ void main() {
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/111008
-  testWidgets(
-    'appBar parameter should have the type PreferredSizeWidget',
-    (WidgetTester tester) async {
-      await tester.pumpWidget(MaterialApp(
+  testWidgets('appBar parameter should have the type PreferredSizeWidget', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
         home: MediaQuery(
           data: const MediaQueryData(size: Size(500, 800)),
           child: AdaptiveScaffold(
@@ -227,131 +252,126 @@ void main() {
             destinations: const <NavigationDestination>[
               NavigationDestination(icon: Icon(Icons.inbox), label: 'Inbox'),
               NavigationDestination(
-                  icon: Icon(Icons.video_call), label: 'Video'),
+                icon: Icon(Icons.video_call),
+                label: 'Video',
+              ),
             ],
             appBar: const PreferredSizeWidgetImpl(),
           ),
         ),
-      ));
+      ),
+    );
 
-      expect(find.byType(PreferredSizeWidgetImpl), findsOneWidget);
-    },
-  );
+    expect(find.byType(PreferredSizeWidgetImpl), findsOneWidget);
+  });
 
   // Verify that the leading navigation rail widget is displayed
   // based on the screen size
-  testWidgets(
-    'adaptive scaffold displays leading widget in navigation rail',
-    (WidgetTester tester) async {
-      await Future.forEach(SimulatedLayout.values,
-          (SimulatedLayout region) async {
-        final MaterialApp app = region.scaffold(tester);
-        await tester.binding.setSurfaceSize(region.size);
-        await tester.pumpWidget(app);
-        await tester.pumpAndSettle();
+  testWidgets('adaptive scaffold displays leading widget in navigation rail', (
+    WidgetTester tester,
+  ) async {
+    await Future.forEach(SimulatedLayout.values, (
+      SimulatedLayout region,
+    ) async {
+      final MaterialApp app = region.scaffold(tester);
+      await tester.binding.setSurfaceSize(region.size);
+      await tester.pumpWidget(app);
+      await tester.pumpAndSettle();
 
-        if (region.size == SimulatedLayout.mediumLarge.size) {
-          expect(find.text('leading_extended'), findsOneWidget);
-          expect(find.text('leading_unextended'), findsNothing);
-          expect(find.text('trailing'), findsOneWidget);
-        } else if (region.size == SimulatedLayout.medium.size) {
-          expect(find.text('leading_extended'), findsNothing);
-          expect(find.text('leading_unextended'), findsOneWidget);
-          expect(find.text('trailing'), findsOneWidget);
-        } else if (region.size == SimulatedLayout.small.size) {
-          expect(find.text('leading_extended'), findsNothing);
-          expect(find.text('leading_unextended'), findsNothing);
-          expect(find.text('trailing'), findsNothing);
-        }
-      });
-    },
-  );
+      if (region.size == SimulatedLayout.mediumLarge.size) {
+        expect(find.text('leading_extended'), findsOneWidget);
+        expect(find.text('leading_unextended'), findsNothing);
+        expect(find.text('trailing'), findsOneWidget);
+      } else if (region.size == SimulatedLayout.medium.size) {
+        expect(find.text('leading_extended'), findsNothing);
+        expect(find.text('leading_unextended'), findsOneWidget);
+        expect(find.text('trailing'), findsOneWidget);
+      } else if (region.size == SimulatedLayout.small.size) {
+        expect(find.text('leading_extended'), findsNothing);
+        expect(find.text('leading_unextended'), findsNothing);
+        expect(find.text('trailing'), findsNothing);
+      }
+    });
+  });
 
   /// Verify that selectedIndex of [AdaptiveScaffold.standardNavigationRail]
   /// and [AdaptiveScaffold] can be set to null
-  testWidgets(
-    'adaptive scaffold selectedIndex can be set to null',
-    (WidgetTester tester) async {
-      await Future.forEach(SimulatedLayout.values,
-          (SimulatedLayout region) async {
-        int? selectedIndex;
-        final MaterialApp app =
-            region.scaffold(tester, initialIndex: selectedIndex);
-        await tester.binding.setSurfaceSize(region.size);
-        await tester.pumpWidget(app);
-        await tester.pumpAndSettle();
-      });
-    },
-  );
+  testWidgets('adaptive scaffold selectedIndex can be set to null', (
+    WidgetTester tester,
+  ) async {
+    await Future.forEach(SimulatedLayout.values, (
+      SimulatedLayout region,
+    ) async {
+      int? selectedIndex;
+      final MaterialApp app = region.scaffold(
+        tester,
+        initialIndex: selectedIndex,
+      );
+      await tester.binding.setSurfaceSize(region.size);
+      await tester.pumpWidget(app);
+      await tester.pumpAndSettle();
+    });
+  });
 
-  testWidgets(
-    'when destinations passed with all data, it shall not be null',
-    (WidgetTester tester) async {
-      const List<NavigationDestination> destinations = <NavigationDestination>[
-        NavigationDestination(
-          icon: Icon(Icons.inbox_outlined),
-          selectedIcon: Icon(Icons.inbox),
-          label: 'Inbox',
+  testWidgets('when destinations passed with all data, it shall not be null', (
+    WidgetTester tester,
+  ) async {
+    const List<NavigationDestination> destinations = <NavigationDestination>[
+      NavigationDestination(
+        icon: Icon(Icons.inbox_outlined),
+        selectedIcon: Icon(Icons.inbox),
+        label: 'Inbox',
+      ),
+      NavigationDestination(
+        icon: Icon(Icons.video_call_outlined),
+        selectedIcon: Icon(Icons.video_call),
+        label: 'Video',
+      ),
+    ];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(size: Size(700, 900)),
+          child: AdaptiveScaffold(destinations: destinations),
         ),
-        NavigationDestination(
-          icon: Icon(Icons.video_call_outlined),
-          selectedIcon: Icon(Icons.video_call),
-          label: 'Video',
-        ),
-      ];
+      ),
+    );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: MediaQuery(
-            data: const MediaQueryData(size: Size(700, 900)),
-            child: AdaptiveScaffold(
-              destinations: destinations,
-            ),
-          ),
-        ),
-      );
+    final Finder fNavigationRail = find.descendant(
+      of: find.byType(AdaptiveScaffold),
+      matching: find.byType(NavigationRail),
+    );
+    final NavigationRail navigationRail = tester.firstWidget(fNavigationRail);
+    expect(navigationRail.destinations, isA<List<NavigationRailDestination>>());
+    expect(navigationRail.destinations.length, destinations.length);
 
-      final Finder fNavigationRail = find.descendant(
-        of: find.byType(AdaptiveScaffold),
-        matching: find.byType(NavigationRail),
-      );
-      final NavigationRail navigationRail = tester.firstWidget(fNavigationRail);
-      expect(
-        navigationRail.destinations,
-        isA<List<NavigationRailDestination>>(),
-      );
-      expect(
-        navigationRail.destinations.length,
-        destinations.length,
-      );
+    for (final NavigationRailDestination destination
+        in navigationRail.destinations) {
+      expect(destination.label, isNotNull);
+      expect(destination.icon, isA<Icon>());
+      expect(destination.icon, isNotNull);
+      expect(destination.selectedIcon, isA<Icon?>());
+      expect(destination.selectedIcon, isNotNull);
+    }
 
-      for (final NavigationRailDestination destination
-          in navigationRail.destinations) {
-        expect(destination.label, isNotNull);
-        expect(destination.icon, isA<Icon>());
-        expect(destination.icon, isNotNull);
-        expect(destination.selectedIcon, isA<Icon?>());
-        expect(destination.selectedIcon, isNotNull);
-      }
+    final NavigationDestination firstDestinationFromListPassed =
+        destinations.first;
+    final NavigationRailDestination firstDestinationFromFinderView =
+        navigationRail.destinations.first;
 
-      final NavigationDestination firstDestinationFromListPassed =
-          destinations.first;
-      final NavigationRailDestination firstDestinationFromFinderView =
-          navigationRail.destinations.first;
+    expect(firstDestinationFromListPassed, isNotNull);
+    expect(firstDestinationFromFinderView, isNotNull);
 
-      expect(firstDestinationFromListPassed, isNotNull);
-      expect(firstDestinationFromFinderView, isNotNull);
-
-      expect(
-        firstDestinationFromListPassed.icon,
-        equals(firstDestinationFromFinderView.icon),
-      );
-      expect(
-        firstDestinationFromListPassed.selectedIcon,
-        equals(firstDestinationFromFinderView.selectedIcon),
-      );
-    },
-  );
+    expect(
+      firstDestinationFromListPassed.icon,
+      equals(firstDestinationFromFinderView.icon),
+    );
+    expect(
+      firstDestinationFromListPassed.selectedIcon,
+      equals(firstDestinationFromFinderView.selectedIcon),
+    );
+  });
 
   testWidgets(
     'when tap happens on any destination, its selected icon shall be visible',
@@ -375,9 +395,7 @@ void main() {
       final Finder firstDestinationWithSelectedIcon = find.byKey(
         firstDestinationSelectedIconKey,
       );
-      final Finder lastDestinationWithIcon = find.byKey(
-        lastDestinationIconKey,
-      );
+      final Finder lastDestinationWithIcon = find.byKey(lastDestinationIconKey);
 
       final Finder firstDestinationWithIcon = find.byKey(
         firstDestinationIconKey,
@@ -390,21 +408,12 @@ void main() {
       int selectedDestination = 0;
       const List<NavigationDestination> destinations = <NavigationDestination>[
         NavigationDestination(
-          icon: Icon(
-            Icons.inbox_outlined,
-            key: firstDestinationIconKey,
-          ),
-          selectedIcon: Icon(
-            Icons.inbox,
-            key: firstDestinationSelectedIconKey,
-          ),
+          icon: Icon(Icons.inbox_outlined, key: firstDestinationIconKey),
+          selectedIcon: Icon(Icons.inbox, key: firstDestinationSelectedIconKey),
           label: 'Inbox',
         ),
         NavigationDestination(
-          icon: Icon(
-            Icons.video_call_outlined,
-            key: lastDestinationIconKey,
-          ),
+          icon: Icon(Icons.video_call_outlined, key: lastDestinationIconKey),
           selectedIcon: Icon(
             Icons.video_call,
             key: lastDestinationSelectedIconKey,
@@ -418,18 +427,21 @@ void main() {
           home: MediaQuery(
             data: const MediaQueryData(size: Size(700, 900)),
             child: StatefulBuilder(
-              builder: (BuildContext context,
-                  void Function(void Function()) setState) {
-                return AdaptiveScaffold(
-                  destinations: destinations,
-                  selectedIndex: selectedDestination,
-                  onSelectedIndexChange: (int value) {
-                    setState(() {
-                      selectedDestination = value;
-                    });
+              builder:
+                  (
+                    BuildContext context,
+                    void Function(void Function()) setState,
+                  ) {
+                    return AdaptiveScaffold(
+                      destinations: destinations,
+                      selectedIndex: selectedDestination,
+                      onSelectedIndexChange: (int value) {
+                        setState(() {
+                          selectedDestination = value;
+                        });
+                      },
+                    );
                   },
-                );
-              },
             ),
           ),
         ),
@@ -545,118 +557,107 @@ void main() {
     },
   );
 
-  testWidgets(
-    'when drawer item tap, it shall close the already open drawer',
-    (WidgetTester tester) async {
-      //region Keys
-      const ValueKey<String> firstDestinationIconKey = ValueKey<String>(
-        'first-normal-icon',
-      );
-      const ValueKey<String> firstDestinationSelectedIconKey = ValueKey<String>(
-        'first-selected-icon',
-      );
-      const ValueKey<String> lastDestinationIconKey = ValueKey<String>(
-        'last-normal-icon',
-      );
-      const ValueKey<String> lastDestinationSelectedIconKey = ValueKey<String>(
-        'last-selected-icon',
-      );
-      //endregion
+  testWidgets('when drawer item tap, it shall close the already open drawer', (
+    WidgetTester tester,
+  ) async {
+    //region Keys
+    const ValueKey<String> firstDestinationIconKey = ValueKey<String>(
+      'first-normal-icon',
+    );
+    const ValueKey<String> firstDestinationSelectedIconKey = ValueKey<String>(
+      'first-selected-icon',
+    );
+    const ValueKey<String> lastDestinationIconKey = ValueKey<String>(
+      'last-normal-icon',
+    );
+    const ValueKey<String> lastDestinationSelectedIconKey = ValueKey<String>(
+      'last-selected-icon',
+    );
+    //endregion
 
-      //region Finder for destinations as per its icon.
-      final Finder lastDestinationWithIcon = find.byKey(
-        lastDestinationIconKey,
-      );
-      final Finder lastDestinationWithSelectedIcon = find.byKey(
-        lastDestinationSelectedIconKey,
-      );
-      //endregion
+    //region Finder for destinations as per its icon.
+    final Finder lastDestinationWithIcon = find.byKey(lastDestinationIconKey);
+    final Finder lastDestinationWithSelectedIcon = find.byKey(
+      lastDestinationSelectedIconKey,
+    );
+    //endregion
 
-      const List<NavigationDestination> destinations = <NavigationDestination>[
-        NavigationDestination(
-          icon: Icon(
-            Icons.inbox_outlined,
-            key: firstDestinationIconKey,
-          ),
-          selectedIcon: Icon(
-            Icons.inbox,
-            key: firstDestinationSelectedIconKey,
-          ),
-          label: 'Inbox',
+    const List<NavigationDestination> destinations = <NavigationDestination>[
+      NavigationDestination(
+        icon: Icon(Icons.inbox_outlined, key: firstDestinationIconKey),
+        selectedIcon: Icon(Icons.inbox, key: firstDestinationSelectedIconKey),
+        label: 'Inbox',
+      ),
+      NavigationDestination(
+        icon: Icon(Icons.video_call_outlined, key: lastDestinationIconKey),
+        selectedIcon: Icon(
+          Icons.video_call,
+          key: lastDestinationSelectedIconKey,
         ),
-        NavigationDestination(
-          icon: Icon(
-            Icons.video_call_outlined,
-            key: lastDestinationIconKey,
-          ),
-          selectedIcon: Icon(
-            Icons.video_call,
-            key: lastDestinationSelectedIconKey,
-          ),
-          label: 'Video',
-        ),
-      ];
-      int selectedDestination = 0;
+        label: 'Video',
+      ),
+    ];
+    int selectedDestination = 0;
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: MediaQuery(
-            data: const MediaQueryData(size: Size(450, 900)),
-            child: StatefulBuilder(
-              builder: (
-                BuildContext context,
-                void Function(void Function()) setState,
-              ) {
-                return AdaptiveScaffold(
-                  destinations: destinations,
-                  selectedIndex: selectedDestination,
-                  smallBreakpoint: TestBreakpoint400(),
-                  drawerBreakpoint: TestBreakpoint400(),
-                  onSelectedIndexChange: (int value) {
-                    setState(() {
-                      selectedDestination = value;
-                    });
-                  },
-                );
-              },
-            ),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(size: Size(450, 900)),
+          child: StatefulBuilder(
+            builder:
+                (
+                  BuildContext context,
+                  void Function(void Function()) setState,
+                ) {
+                  return AdaptiveScaffold(
+                    destinations: destinations,
+                    selectedIndex: selectedDestination,
+                    smallBreakpoint: TestBreakpoint400(),
+                    drawerBreakpoint: TestBreakpoint400(),
+                    onSelectedIndexChange: (int value) {
+                      setState(() {
+                        selectedDestination = value;
+                      });
+                    },
+                  );
+                },
           ),
         ),
-      );
+      ),
+    );
 
-      expect(selectedDestination, 0);
-      Finder fDrawer = find.byType(Drawer);
-      Finder fNavigationRail = find.descendant(
-        of: fDrawer,
-        matching: find.byType(NavigationRail),
-      );
-      expect(fDrawer, findsNothing);
-      expect(fNavigationRail, findsNothing);
+    expect(selectedDestination, 0);
+    Finder fDrawer = find.byType(Drawer);
+    Finder fNavigationRail = find.descendant(
+      of: fDrawer,
+      matching: find.byType(NavigationRail),
+    );
+    expect(fDrawer, findsNothing);
+    expect(fNavigationRail, findsNothing);
 
-      final ScaffoldState state = tester.state(find.byType(Scaffold));
-      state.openDrawer();
-      await tester.pumpAndSettle(Durations.short4);
-      expect(state.isDrawerOpen, isTrue);
+    final ScaffoldState state = tester.state(find.byType(Scaffold));
+    state.openDrawer();
+    await tester.pumpAndSettle(Durations.short4);
+    expect(state.isDrawerOpen, isTrue);
 
-      // Need to find again as Scaffold's state has been updated
-      fDrawer = find.byType(Drawer);
-      fNavigationRail = find.descendant(
-        of: fDrawer,
-        matching: find.byType(NavigationRail),
-      );
-      expect(fDrawer, findsOneWidget);
-      expect(fNavigationRail, findsOneWidget);
+    // Need to find again as Scaffold's state has been updated
+    fDrawer = find.byType(Drawer);
+    fNavigationRail = find.descendant(
+      of: fDrawer,
+      matching: find.byType(NavigationRail),
+    );
+    expect(fDrawer, findsOneWidget);
+    expect(fNavigationRail, findsOneWidget);
 
-      expect(lastDestinationWithIcon, findsOneWidget);
-      expect(lastDestinationWithSelectedIcon, findsNothing);
+    expect(lastDestinationWithIcon, findsOneWidget);
+    expect(lastDestinationWithSelectedIcon, findsNothing);
 
-      await tester.ensureVisible(lastDestinationWithIcon);
-      await tester.tap(lastDestinationWithIcon);
-      await tester.pumpAndSettle(Durations.short4);
-      expect(selectedDestination, 1);
-      expect(state.isDrawerOpen, isFalse);
-    },
-  );
+    await tester.ensureVisible(lastDestinationWithIcon);
+    await tester.tap(lastDestinationWithIcon);
+    await tester.pumpAndSettle(Durations.short4);
+    expect(selectedDestination, 1);
+    expect(state.isDrawerOpen, isFalse);
+  });
 
   // This test checks whether AdaptiveScaffold.standardNavigationRail function
   // creates a NavigationRail widget as expected with groupAlignment provided,
@@ -666,19 +667,19 @@ void main() {
     (WidgetTester tester) async {
       const List<NavigationRailDestination> destinations =
           <NavigationRailDestination>[
-        NavigationRailDestination(
-          icon: Icon(Icons.home),
-          label: Text('Home'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.account_circle),
-          label: Text('Profile'),
-        ),
-        NavigationRailDestination(
-          icon: Icon(Icons.settings),
-          label: Text('Settings'),
-        ),
-      ];
+            NavigationRailDestination(
+              icon: Icon(Icons.home),
+              label: Text('Home'),
+            ),
+            NavigationRailDestination(
+              icon: Icon(Icons.account_circle),
+              label: Text('Profile'),
+            ),
+            NavigationRailDestination(
+              icon: Icon(Icons.settings),
+              label: Text('Settings'),
+            ),
+          ];
 
       const double groupAlignment = 1.0;
 
@@ -696,55 +697,51 @@ void main() {
           ),
         ),
       );
-      final NavigationRail rail =
-          tester.widget<NavigationRail>(find.byType(NavigationRail));
+      final NavigationRail rail = tester.widget<NavigationRail>(
+        find.byType(NavigationRail),
+      );
       expect(rail.groupAlignment, equals(groupAlignment));
     },
   );
 
-  testWidgets(
-    "doesn't override Directionality",
-    (WidgetTester tester) async {
-      const List<NavigationDestination> destinations = <NavigationDestination>[
-        NavigationDestination(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.account_circle),
-          label: 'Profile',
-        ),
-      ];
+  testWidgets("doesn't override Directionality", (WidgetTester tester) async {
+    const List<NavigationDestination> destinations = <NavigationDestination>[
+      NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+      NavigationDestination(icon: Icon(Icons.account_circle), label: 'Profile'),
+    ];
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Directionality(
-              textDirection: TextDirection.rtl,
-              child: AdaptiveScaffold(
-                destinations: destinations,
-                body: (BuildContext context) {
-                  return const SizedBox.shrink();
-                },
-              ),
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Directionality(
+            textDirection: TextDirection.rtl,
+            child: AdaptiveScaffold(
+              destinations: destinations,
+              body: (BuildContext context) {
+                return const SizedBox.shrink();
+              },
             ),
           ),
         ),
-      );
+      ),
+    );
 
-      final Finder body = find.byKey(const Key('body'));
-      expect(body, findsOneWidget);
-      final TextDirection dir = Directionality.of(body.evaluate().first);
-      expect(dir, TextDirection.rtl);
-    },
-  );
+    final Finder body = find.byKey(const Key('body'));
+    expect(body, findsOneWidget);
+    final TextDirection dir = Directionality.of(body.evaluate().first);
+    expect(dir, TextDirection.rtl);
+  });
 
   testWidgets(
     'when appBarBreakpoint is provided validate an AppBar is showing without Drawer on larger than mobile',
     (WidgetTester tester) async {
       await tester.binding.setSurfaceSize(SimulatedLayout.medium.size);
-      await tester.pumpWidget(SimulatedLayout.medium
-          .scaffold(tester, appBarBreakpoint: AppBarAlwaysOnBreakpoint()));
+      await tester.pumpWidget(
+        SimulatedLayout.medium.scaffold(
+          tester,
+          appBarBreakpoint: AppBarAlwaysOnBreakpoint(),
+        ),
+      );
       await tester.pumpAndSettle();
 
       final Finder appBar = find.byType(AppBar);
@@ -753,8 +750,12 @@ void main() {
       expect(drawer, findsNothing);
 
       await tester.binding.setSurfaceSize(SimulatedLayout.mediumLarge.size);
-      await tester.pumpWidget(SimulatedLayout.mediumLarge
-          .scaffold(tester, appBarBreakpoint: AppBarAlwaysOnBreakpoint()));
+      await tester.pumpWidget(
+        SimulatedLayout.mediumLarge.scaffold(
+          tester,
+          appBarBreakpoint: AppBarAlwaysOnBreakpoint(),
+        ),
+      );
       expect(drawer, findsNothing);
       await tester.pumpAndSettle();
 
@@ -762,49 +763,43 @@ void main() {
     },
   );
 
-  testWidgets(
-    'When only one destination passed, shall throw assertion error',
-    (WidgetTester tester) async {
-      const List<NavigationDestination> destinations = <NavigationDestination>[
-        NavigationDestination(
-          icon: Icon(Icons.inbox_outlined),
-          selectedIcon: Icon(Icons.inbox),
-          label: 'Inbox',
-        ),
-      ];
-
-      expect(
-        () => tester.pumpWidget(
-          MaterialApp(
-            home: MediaQuery(
-              data: const MediaQueryData(size: Size(700, 900)),
-              child: AdaptiveScaffold(
-                destinations: destinations,
-              ),
-            ),
-          ),
-        ),
-        throwsA(isA<AssertionError>()),
-      );
-    },
-  );
-
-  // Test for navigationRailDestinationBuilder parameter.
-  testWidgets('adaptive scaffold custom navigation rail destination mapping',
-      (WidgetTester tester) async {
+  testWidgets('When only one destination passed, shall throw assertion error', (
+    WidgetTester tester,
+  ) async {
     const List<NavigationDestination> destinations = <NavigationDestination>[
       NavigationDestination(
-        icon: Icon(Icons.home),
-        label: 'Home',
-      ),
-      NavigationDestination(
-        icon: Icon(Icons.account_circle),
-        label: 'Profile',
+        icon: Icon(Icons.inbox_outlined),
+        selectedIcon: Icon(Icons.inbox),
+        label: 'Inbox',
       ),
     ];
 
+    expect(
+      () => tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(size: Size(700, 900)),
+            child: AdaptiveScaffold(destinations: destinations),
+          ),
+        ),
+      ),
+      throwsA(isA<AssertionError>()),
+    );
+  });
+
+  // Test for navigationRailDestinationBuilder parameter.
+  testWidgets('adaptive scaffold custom navigation rail destination mapping', (
+    WidgetTester tester,
+  ) async {
+    const List<NavigationDestination> destinations = <NavigationDestination>[
+      NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+      NavigationDestination(icon: Icon(Icons.account_circle), label: 'Profile'),
+    ];
+
     NavigationRailDestination customMapping(
-        int index, NavigationDestination destination) {
+      int index,
+      NavigationDestination destination,
+    ) {
       return NavigationRailDestination(
         icon: destination.icon,
         label: Text('Custom ${destination.label}'),
@@ -828,68 +823,71 @@ void main() {
   });
 
   // Test for labelType setting through the navigation rail theme.
-  testWidgets(
-    'adaptive scaffold respects NavigationRailLabelType from theme',
-    (WidgetTester tester) async {
-      const List<NavigationDestination> destinations = <NavigationDestination>[
-        NavigationDestination(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.account_circle),
-          label: 'Profile',
-        ),
-      ];
+  testWidgets('adaptive scaffold respects NavigationRailLabelType from theme', (
+    WidgetTester tester,
+  ) async {
+    const List<NavigationDestination> destinations = <NavigationDestination>[
+      NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
+      NavigationDestination(icon: Icon(Icons.account_circle), label: 'Profile'),
+    ];
 
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(
+          navigationRailTheme: const NavigationRailThemeData(
+            labelType: NavigationRailLabelType.all,
+          ),
+        ),
+        home: MediaQuery(
+          data: const MediaQueryData(size: Size(800, 600)),
+          child: AdaptiveScaffold(destinations: destinations),
+        ),
+      ),
+    );
+
+    final NavigationRail rail = tester.widget<NavigationRail>(
+      find.byType(NavigationRail),
+    );
+    expect(rail.labelType, NavigationRailLabelType.all);
+  });
+
+  testWidgets(
+    'adaptive scaffold builds correctly with and without navigation rail padding specified',
+    (WidgetTester tester) async {
+      // without navigation rail padding specified
       await tester.pumpWidget(
         MaterialApp(
-          theme: ThemeData(
-            navigationRailTheme: const NavigationRailThemeData(
-              labelType: NavigationRailLabelType.all,
-            ),
-          ),
-          home: MediaQuery(
-            data: const MediaQueryData(size: Size(800, 600)),
-            child: AdaptiveScaffold(
-              destinations: destinations,
-            ),
+          home: AdaptiveScaffold(
+            destinations: const <NavigationDestination>[
+              NavigationDestination(icon: Icon(Icons.inbox), label: 'Inbox'),
+              NavigationDestination(
+                icon: Icon(Icons.article),
+                label: 'Articles',
+              ),
+            ],
           ),
         ),
       );
+      expect(tester.takeException(), isNull);
 
-      final NavigationRail rail =
-          tester.widget<NavigationRail>(find.byType(NavigationRail));
-      expect(rail.labelType, NavigationRailLabelType.all);
+      // with navigation rail padding specified
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AdaptiveScaffold(
+            destinations: const <NavigationDestination>[
+              NavigationDestination(icon: Icon(Icons.inbox), label: 'Inbox'),
+              NavigationDestination(
+                icon: Icon(Icons.article),
+                label: 'Articles',
+              ),
+            ],
+            navigationRailPadding: const EdgeInsets.only(left: 10),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
     },
   );
-
-  testWidgets(
-      'adaptive scaffold builds correctly with and without navigation rail padding specified',
-      (WidgetTester tester) async {
-    // without navigation rail padding specified
-    await tester.pumpWidget(MaterialApp(
-      home: AdaptiveScaffold(
-        destinations: const <NavigationDestination>[
-          NavigationDestination(icon: Icon(Icons.inbox), label: 'Inbox'),
-          NavigationDestination(icon: Icon(Icons.article), label: 'Articles'),
-        ],
-      ),
-    ));
-    expect(tester.takeException(), isNull);
-
-    // with navigation rail padding specified
-    await tester.pumpWidget(MaterialApp(
-      home: AdaptiveScaffold(
-        destinations: const <NavigationDestination>[
-          NavigationDestination(icon: Icon(Icons.inbox), label: 'Inbox'),
-          NavigationDestination(icon: Icon(Icons.article), label: 'Articles'),
-        ],
-        navigationRailPadding: const EdgeInsets.only(left: 10),
-      ),
-    ));
-    expect(tester.takeException(), isNull);
-  });
 }
 
 /// An empty widget that implements [PreferredSizeWidget] to ensure that
