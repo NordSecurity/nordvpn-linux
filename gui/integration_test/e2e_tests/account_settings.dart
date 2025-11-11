@@ -1,8 +1,9 @@
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/internal/urls.dart';
+import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import '../../test/utils/fakes.dart';
+import '../../test/utils/mock_url_launcher.dart';
 import '../../test/utils/test_helpers.dart';
 
 void runAccountSettingsTests() async {
@@ -57,57 +58,36 @@ void runAccountSettingsTests() async {
     });
 
     testWidgets("clicking links launches correct URLs", (tester) async {
+      final mockUrlLauncher = MockUrlLauncher();
+      UrlLauncherPlatform.instance = mockUrlLauncher;
+
       final app = await tester.setupIntegrationTests();
       final account = fakeAccount();
-
-      final List<String> launchedUrls = [];
-
-      // mock url_launcher method channel
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(
-            const MethodChannel('plugins.flutter.io/url_launcher'),
-            (MethodCall methodCall) async {
-              if (methodCall.method == 'canLaunch') {
-                return true;
-              } else if (methodCall.method == 'launch') {
-                final String url = methodCall.arguments['url'] as String;
-                launchedUrls.add(url);
-                return true;
-              }
-              return null;
-            },
-          );
 
       final accountScreen = await app.goToAccountScreen(account: account);
 
       await accountScreen.clickManageSubscriptionLink();
       await tester.pumpAndSettle();
 
-      expect(launchedUrls.length, 1);
+      expect(mockUrlLauncher.launchedUrls.length, 1);
       expect(
-        launchedUrls.first,
+        mockUrlLauncher.launchedUrls.first,
         equals(manageSubscriptionUrl.toString()),
         reason: 'Manage subscription link should launch correct URL',
       );
 
       // clear for next click
-      launchedUrls.clear();
+      mockUrlLauncher.launchedUrls.clear();
 
       await accountScreen.clickChangePasswordLink();
       await tester.pumpAndSettle();
 
-      expect(launchedUrls.length, 1);
+      expect(mockUrlLauncher.launchedUrls.length, 1);
       expect(
-        launchedUrls.first,
+        mockUrlLauncher.launchedUrls.first,
         equals(changePasswordUrl.toString()),
         reason: 'Change password link should launch correct URL',
       );
-
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(
-            const MethodChannel('plugins.flutter.io/url_launcher'),
-            null,
-          );
     });
   });
 }
