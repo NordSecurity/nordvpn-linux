@@ -5,6 +5,7 @@ import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/aurora_design.dart';
 import 'package:nordvpn/widgets/link.dart';
+import 'package:nordvpn/widgets/link_types.dart';
 
 final class LegalInformationKeys {
   LegalInformationKeys._();
@@ -78,13 +79,7 @@ class LegalInformation extends StatelessWidget {
     return Row(
       children: [
         Expanded(child: Text(title, style: appTheme.body)),
-        IconLink(
-          key: key,
-          title: t.ui.readMore,
-          uri: link,
-          iconName: "external_link.svg",
-          size: LinkSize.normal,
-        ),
+        InternalLink(key: key, title: t.ui.readMore, uri: link),
       ],
     );
   }
