@@ -56,7 +56,7 @@ Finder subscriptionPopupText() {
   return find.text(t.ui.subscriptionHasEnded);
 }
 
-Finder userInfo() {
+Finder accountUserInfo() {
   final userInfoFinder = find.byKey(AccountWidgetKeys.userInfo);
   expect(userInfoFinder, findsOneWidget);
   return userInfoFinder;
@@ -228,4 +228,12 @@ Finder legalAutoRenewalTermsLinkFinder() {
 
 Finder legalPrivacyPolicyLinkFinder() {
   return find.byKey(LegalInformationKeys.privacyPolicyLinkKey);
+}
+
+Finder serviceSubscriptionInfoFinder() {
+  return find.byKey(AccountWidgetKeys.subscriptionInfo);
+}
+
+Finder accountInfoFinder() {
+  return find.byKey(AccountWidgetKeys.accountInfo);
 }

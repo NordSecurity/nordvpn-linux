@@ -35,12 +35,14 @@ final class AccountWidgetKeys {
   static const userInfo = Key("accountUserInfo");
   static const productsList = Key("accountProductsList");
   static const logoutButton = Key("logoutButton");
+  static const subscriptionInfo = Key("subscriptionInfo");
+  static const accountInfo = Key("accountInfo");
 }
 
 final class AccountDetailsSettings extends ConsumerWidget {
   const AccountDetailsSettings({super.key});
 
-  static final products = [
+  static final _products = [
     ProductItem(
       title: t.ui.nordPass,
       subtitle: t.ui.nordPassDescription,
@@ -83,7 +85,10 @@ final class AccountDetailsSettings extends ConsumerWidget {
             onLogout: () =>
                 ref.read(accountControllerProvider.notifier).logout(),
           ),
-          ProductsList(key: AccountWidgetKeys.productsList, products: products),
+          ProductsList(
+            key: AccountWidgetKeys.productsList,
+            products: _products,
+          ),
         ],
       ),
       useSeparator: false,
@@ -148,12 +153,14 @@ final class UserInfo extends StatelessWidget {
         Column(
           children: [
             UserInfoEntry(
+              key: AccountWidgetKeys.subscriptionInfo,
               title: t.ui.subscription,
               description: _getSubscriptionExpirationDate(userAccount),
               linkText: t.ui.manageSubscription,
               link: manageSubscriptionUrl,
             ),
             UserInfoEntry(
+              key: AccountWidgetKeys.accountInfo,
               title: _getAccountEmail(userAccount),
               description: _getAccountCreationDate(userAccount),
               linkText: t.ui.changePassword,
@@ -199,7 +206,6 @@ final class UserInfo extends StatelessWidget {
       return "";
     }
 
-    print("created on: ${account.createdOn}");
     final date = _dateFormat.format(account.createdOn!);
     return t.ui.accountCreatedOn(creation_date: date);
   }
