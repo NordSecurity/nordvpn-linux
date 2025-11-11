@@ -11,6 +11,9 @@ AccountResponse fakeAccount() {
     subscriptionExpiresAt: daemonDateFormat.format(
       DateTime.now().add(const Duration(days: 1)),
     ),
+    createdOn: daemonDateFormat.format(
+      DateTime.now().subtract(const Duration(days: 365)),
+    ),
     username: faker.internet.userName(),
   );
 }
