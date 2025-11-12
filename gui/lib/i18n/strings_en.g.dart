@@ -188,7 +188,6 @@ class TranslationsCitiesEn {
 	String get miami => 'Miami';
 	String get new_york => 'New York';
 	String get phoenix => 'Phoenix';
-	String get pittsburgh => 'Pittsburgh';
 	String get saint_louis => 'Saint Louis';
 	String get salt_lake_city => 'Salt Lake City';
 	String get san_francisco => 'San Francisco';
@@ -507,7 +506,7 @@ class TranslationsUiEn {
 	String get termsOfService => 'Terms of Service';
 	String get privacyPolicy => 'Privacy Policy';
 	String get autoRenewalTerms => 'Auto - renewal terms';
-	String get subscription => 'Subscription';
+	String get subscriptionInfo => 'Subscription info';
 	String get logout => 'Log out';
 	String accountExpireIn({required num n, required Object date}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
 		one: 'Expires in ${n} day on ${date}',
@@ -547,7 +546,6 @@ class TranslationsUiEn {
 	String get asiaPacific => 'Asia Pacific';
 	String get africaTheMiddleEastAndIndia => 'Africa, the Middle East, and India';
 	String get obfuscated => 'Obfuscated';
-	String get obfuscatedServers => 'Obfuscated Servers';
 	String get selectServerForDip => 'Pick a location for your IP';
 	String get selectLocation => 'Select location';
 	String get dipSelectLocationDescription => 'You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.';
@@ -612,7 +610,7 @@ class TranslationsUiEn {
 	String get turnOffCustomDns => 'Turn off custom DNS?';
 	String get turnOffCustomDnsDescription => 'This will remove all your previously added DNS servers.';
 	String get turnOff => 'Turn off';
-	String subscriptionValidationDate({required String expirationDate}) => 'Active until ${expirationDate}';
+	String subscriptionValidationDate({required String expirationDate}) => 'Subscription active until ${expirationDate}';
 	String get logIn => 'Log in';
 	String get createAccount => 'Create account';
 	String get whatIsNordAccount => 'What is a Nord Account?';
@@ -707,13 +705,7 @@ class TranslationsUiEn {
 	String get termsAgreementDescription => 'By continuing to use this app, you agree to our terms and how we handle your data. To read the terms and privacy policy check the links below.';
 	String get readMore => 'Read more';
 	String get customDnsWarning => 'Using third-party DNS may limit website availability. For the best browsing experience, use our default settings.';
-	String accountCreatedOn({required String creation_date}) => 'Account created: ${creation_date}';
-	String get manageSubscription => 'Manage subscription';
-	String get changePassword => 'Change password';
-	String get productHub => 'Product Hub';
-	String get subscriptionInactive => 'Inactive';
 	String get recentConnections => 'Recent connections';
-	String get standardVpnServer => 'Standard VPN Servers';
 }
 
 /// Flat map(s) containing all translations.
@@ -857,7 +849,6 @@ extension on Translations {
 			case 'cities.miami': return 'Miami';
 			case 'cities.new_york': return 'New York';
 			case 'cities.phoenix': return 'Phoenix';
-			case 'cities.pittsburgh': return 'Pittsburgh';
 			case 'cities.saint_louis': return 'Saint Louis';
 			case 'cities.salt_lake_city': return 'Salt Lake City';
 			case 'cities.san_francisco': return 'San Francisco';
@@ -1149,7 +1140,7 @@ extension on Translations {
 			case 'ui.termsOfService': return 'Terms of Service';
 			case 'ui.privacyPolicy': return 'Privacy Policy';
 			case 'ui.autoRenewalTerms': return 'Auto - renewal terms';
-			case 'ui.subscription': return 'Subscription';
+			case 'ui.subscriptionInfo': return 'Subscription info';
 			case 'ui.logout': return 'Log out';
 			case 'ui.accountExpireIn': return ({required num n, required Object date}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
 				one: 'Expires in ${n} day on ${date}',
@@ -1189,7 +1180,6 @@ extension on Translations {
 			case 'ui.asiaPacific': return 'Asia Pacific';
 			case 'ui.africaTheMiddleEastAndIndia': return 'Africa, the Middle East, and India';
 			case 'ui.obfuscated': return 'Obfuscated';
-			case 'ui.obfuscatedServers': return 'Obfuscated Servers';
 			case 'ui.selectServerForDip': return 'Pick a location for your IP';
 			case 'ui.selectLocation': return 'Select location';
 			case 'ui.dipSelectLocationDescription': return 'You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.';
@@ -1254,7 +1244,7 @@ extension on Translations {
 			case 'ui.turnOffCustomDns': return 'Turn off custom DNS?';
 			case 'ui.turnOffCustomDnsDescription': return 'This will remove all your previously added DNS servers.';
 			case 'ui.turnOff': return 'Turn off';
-			case 'ui.subscriptionValidationDate': return ({required String expirationDate}) => 'Active until ${expirationDate}';
+			case 'ui.subscriptionValidationDate': return ({required String expirationDate}) => 'Subscription active until ${expirationDate}';
 			case 'ui.logIn': return 'Log in';
 			case 'ui.createAccount': return 'Create account';
 			case 'ui.whatIsNordAccount': return 'What is a Nord Account?';
@@ -1349,13 +1339,7 @@ extension on Translations {
 			case 'ui.termsAgreementDescription': return 'By continuing to use this app, you agree to our terms and how we handle your data. To read the terms and privacy policy check the links below.';
 			case 'ui.readMore': return 'Read more';
 			case 'ui.customDnsWarning': return 'Using third-party DNS may limit website availability. For the best browsing experience, use our default settings.';
-			case 'ui.accountCreatedOn': return ({required String creation_date}) => 'Account created: ${creation_date}';
-			case 'ui.manageSubscription': return 'Manage subscription';
-			case 'ui.changePassword': return 'Change password';
-			case 'ui.productHub': return 'Product Hub';
-			case 'ui.subscriptionInactive': return 'Inactive';
 			case 'ui.recentConnections': return 'Recent connections';
-			case 'ui.standardVpnServer': return 'Standard VPN Servers';
 			default: return null;
 		}
 	}
