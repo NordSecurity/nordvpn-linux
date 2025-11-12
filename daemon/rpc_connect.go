@@ -153,6 +153,10 @@ func (r *RPC) connect(
 			return true, srv.Send(&pb.Payload{Type: internal.CodeRevokedAccessToken})
 		}
 
+		if errors.Is(err, internal.ErrServerIsUnavailable) {
+			return true, srv.Send(&pb.Payload{Type: internal.CodeServerUnavailable})
+		}
+
 		return false, err
 	}
 
