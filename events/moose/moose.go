@@ -326,8 +326,8 @@ func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error { // regul
 	if err := s.response(mooseFn(
 		moose.EventParams{
 			EventDuration: int32(data.DurationMs),
-			EventStatus: eventStatusToInternalType(data.EventStatus),
-			EventTrigger: eventTriggerDomainToInternalType(data.EventTrigger),
+			EventStatus:   eventStatusToInternalType(data.EventStatus),
+			EventTrigger:  eventTriggerDomainToInternalType(data.EventTrigger),
 		},
 		loginFlowAltered,
 		-1,
@@ -346,8 +346,8 @@ func (s *Subscriber) NotifyLogout(data events.DataAuthorization) error {
 	if err := s.response(moose.NordvpnappSendServiceQualityAuthorizationLogout(
 		moose.EventParams{
 			EventDuration: int32(data.DurationMs),
-			EventStatus: eventStatusToInternalType(data.EventStatus),
-			EventTrigger: eventTriggerDomainToInternalType(data.EventTrigger),
+			EventStatus:   eventStatusToInternalType(data.EventStatus),
+			EventTrigger:  eventTriggerDomainToInternalType(data.EventTrigger),
 		},
 		int32(data.Reason),
 		nil,
@@ -373,9 +373,9 @@ func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
 	return s.response(moose.NordvpnappSendUserInterfaceUiItemsClick(
 		moose.UiItemsParams{
 			FormReference: data.FormReference,
-			ItemName: data.ItemName,
-			ItemType: itemType,
-			ItemValue: data.ItemValue,
+			ItemName:      data.ItemName,
+			ItemType:      itemType,
+			ItemValue:     data.ItemValue,
 		},
 		nil,
 	))
@@ -481,8 +481,8 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		return s.response(moose.NordvpnappSendServiceQualityServersConnectToMeshnetDevice(
 			moose.EventParams{
 				EventDuration: int32(data.DurationMs),
-				EventStatus: eventStatusToInternalType(data.EventStatus),
-				EventTrigger: moose.NordvpnappEventTriggerUser,
+				EventStatus:   eventStatusToInternalType(data.EventStatus),
+				EventTrigger:  moose.NordvpnappEventTriggerUser,
 			},
 			-1,
 			-1,
@@ -493,25 +493,25 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	if err := s.response(moose.NordvpnappSendServiceQualityServersConnect(
 		moose.EventParams{
 			EventDuration: int32(data.DurationMs),
-			EventStatus: eventStatusToInternalType(data.EventStatus),
-			EventTrigger: moose.NordvpnappEventTriggerUser,
+			EventStatus:   eventStatusToInternalType(data.EventStatus),
+			EventTrigger:  moose.NordvpnappEventTriggerUser,
 		},
 		moose.TargetConnectionParams{
-			TargetServerListSource: serverListOriginToInternalType(data.ServerFromAPI),
+			TargetServerListSource:    serverListOriginToInternalType(data.ServerFromAPI),
 			TargetServerSelectionRule: serverSelectionRuleToInternalType(data.TargetServerSelection),
-			TargetServerType: moose.NordvpnappServerTypeNone,
+			TargetServerType:          moose.NordvpnappServerTypeNone,
 		},
 		moose.TargetConnectionAdditionalParams{
-			TargetProtocol: connectionProtocolToInternalType(data.Protocol),
-			TargetServerCity: data.TargetServerCity,
+			TargetProtocol:      connectionProtocolToInternalType(data.Protocol),
+			TargetServerCity:    data.TargetServerCity,
 			TargetServerCountry: data.TargetServerCountryCode,
-			TargetServerDomain: data.TargetServerDomain,
-			TargetServerGroup: data.TargetServerGroup,
-			TargetServerIp: data.TargetServerIP.String(),
-			TargetTechnology: connectionTechnologyToInternalType(data.Technology),
+			TargetServerDomain:  data.TargetServerDomain,
+			TargetServerGroup:   data.TargetServerGroup,
+			TargetServerIp:      data.TargetServerIP.String(),
+			TargetTechnology:    connectionTechnologyToInternalType(data.Technology),
 		},
 		moose.ConnectionParams{
-			ConnectionFunnel: "",
+			ConnectionFunnel:     "",
 			VpnConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone,
 		},
 		threatProtectionLiteToInternalType(data.ThreatProtectionLite),
@@ -550,8 +550,8 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		return s.response(moose.NordvpnappSendServiceQualityServersDisconnectFromMeshnetDevice(
 			moose.EventParams{
 				EventDuration: int32(data.Duration.Milliseconds()),
-				EventStatus: eventStatusToInternalType(data.EventStatus),
-				EventTrigger: moose.NordvpnappEventTriggerUser,
+				EventStatus:   eventStatusToInternalType(data.EventStatus),
+				EventTrigger:  moose.NordvpnappEventTriggerUser,
 			},
 			connectionDuration, // seconds
 			-1,
@@ -562,18 +562,18 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 	if err := s.response(moose.NordvpnappSendServiceQualityServersDisconnect(
 		moose.EventParams{
 			EventDuration: int32(data.Duration.Milliseconds()),
-			EventStatus: eventStatusToInternalType(data.EventStatus),
+			EventStatus:   eventStatusToInternalType(data.EventStatus),
 			// App should never disconnect from VPN by itself. It has to receive either
 			// user command (logout, set defaults) or be shut down.
 			EventTrigger: moose.NordvpnappEventTriggerUser,
 		},
 		moose.TargetConnectionParams{
-			TargetServerListSource: serverListOriginToInternalType(data.ServerFromAPI),
+			TargetServerListSource:    serverListOriginToInternalType(data.ServerFromAPI),
 			TargetServerSelectionRule: serverSelectionRuleToInternalType(data.TargetServerSelection),
-			TargetServerType: moose.NordvpnappServerTypeNone,
+			TargetServerType:          moose.NordvpnappServerTypeNone,
 		},
 		moose.ConnectionParams{
-			ConnectionFunnel: "",
+			ConnectionFunnel:     "",
 			VpnConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone, // pass proper trigger
 		},
 		connectionDuration, // seconds
@@ -627,19 +627,19 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 	return s.response(notifierFunc(
 		moose.EventParams{
 			EventDuration: duration,
-			EventStatus: eventStatus,
-			EventTrigger: moose.NordvpnappEventTriggerApp,
+			EventStatus:   eventStatus,
+			EventTrigger:  moose.NordvpnappEventTriggerApp,
 		},
 		moose.ApiRequestParams{
-			ApiHostName: data.Request.URL.Host,
+			ApiHostName:       data.Request.URL.Host,
 			DnsResolutionTime: 0,
-			Limits: data.Limits,
-			Offset: data.Offset,
-			RequestFields: data.RequestFields,
-			RequestFilters: data.RequestFilters,
-			ResponseCode: int32(responseCode),
-			ResponseSummary: "",
-			TransferProtocol: data.Request.Proto,
+			Limits:            data.Limits,
+			Offset:            data.Offset,
+			RequestFields:     data.RequestFields,
+			RequestFilters:    data.RequestFilters,
+			ResponseCode:      int32(responseCode),
+			ResponseSummary:   "",
+			TransferProtocol:  data.Request.Proto,
 		},
 		nil,
 	))

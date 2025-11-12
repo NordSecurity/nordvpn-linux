@@ -335,33 +335,33 @@ func buildRecentConnectionsSection(
 	}
 }
 
-func buildCountriesSection(ti *Instance, parent *systray.MenuItem, countries []string) {
+func buildCountriesSection(ti *Instance, parent *systray.MenuItem, countries []Server) {
 	if ti == nil || parent == nil {
 		return
 	}
 
 	parent.AddSubMenuItem(labelCountries, tooltipCountries).Disable()
 	for _, country := range countries {
-		title := strings.ReplaceAll(country, "_", " ")
+		title := country.displayLabel
 		tooltip := fmt.Sprintf("%s %s", labelConnectTo, title)
 		item := parent.AddSubMenuItem(title, tooltip)
 
-		go handleCountryClick(ti, item, country)
+		go handleCountryClick(ti, item, country.name)
 	}
 }
 
-func buildSpecialtyServersSection(ti *Instance, parent *systray.MenuItem, specialtyServers []string) {
+func buildSpecialtyServersSection(ti *Instance, parent *systray.MenuItem, specialtyServers []Server) {
 	if ti == nil || parent == nil {
 		return
 	}
 
 	parent.AddSubMenuItem(labelSpecialtyServers, tooltipSpecialtyServers).Disable()
 	for _, server := range specialtyServers {
-		title := strings.ReplaceAll(server, "_", " ")
+		title := server.displayLabel
 		tooltip := fmt.Sprintf("%s%s", labelConnectTo, title)
 		item := parent.AddSubMenuItem(title, tooltip)
 
-		go handleSpecialtyServerClick(ti, item, server)
+		go handleSpecialtyServerClick(ti, item, server.name)
 	}
 }
 
