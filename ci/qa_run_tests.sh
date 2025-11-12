@@ -10,6 +10,8 @@ set -euxo pipefail
 #     - when missing is running all the tests in that categories
 #     - "test" - for running all the tests in that categories from mage command
 #     - "test_function_name" - to run a specific test function from the given categories, e.g.: test_check_routing_table_for_lan
+# 3. @pytest.mark - run particular test scope marked with @pytest.mark.mark_name
+#    - run with arguments "-m  mark_name"
 
 if [[ $# -gt 2 ]]; then
     echo "Usage: $0 \"<test_categories>\" \"<pattern>\""
@@ -25,26 +27,40 @@ pattern="${2:-}"
 cd "${WORKDIR}"/test/qa || exit
 
 args=()
-read -ra array <<< "$categories"
-for category in "${array[@]}"
-do
-    case "${category}" in
-        "all")
-            ;;
-        *)
-        args+=("test_${category}.py")
-            ;;
-    esac
+found_mark=0
+# Check if -m is present anywhere in the arguments
+for ((i=1; i<=$#; i++)); do
+    arg="${!i}"
+    if [[ "$found_mark" -eq 1 ]]; then
+        args+=("$arg")
+        break
+    fi
+    if [[ "$arg" == "-m" ]]; then
+        args+=("-m")
+        found_mark=1
+    fi
 done
 
-case "${pattern}" in
-    "")
-        ;;
-    *)
-	args+=("-k ${pattern}")
-        ;;
-esac
-
+if [[ "${#args[@]}" -eq 2 ]]; then
+    # Use only -m and its value, ignore all other logic and args
+    :
+else
+    args=()
+    read -ra array <<< "$categories"
+    for category in "${array[@]}"; do
+        case "${category}" in
+            "all")
+                ;;
+            *)
+                args+=("test_${category}.py")
+                ;;
+        esac
+    done
+    # Only add -k if pattern is not empty or whitespace
+    if [[ -n "$pattern" && ! "$pattern" =~ ^[[:space:]]*$ ]]; then
+        args+=("-k" "$pattern")
+    fi
+fi
 
 # check that the nordvpn group exists in the system and that the current user is part of it
 GROUP="nordvpn"
