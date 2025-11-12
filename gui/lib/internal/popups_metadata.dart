@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/data/providers/account_controller.dart';
 import 'package:nordvpn/data/providers/preferences_controller.dart';
 import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
+import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/i18n/daemon_code_messages.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
@@ -10,6 +12,7 @@ import 'package:nordvpn/internal/popup_codes.dart';
 import 'package:nordvpn/internal/uri_launch_extension.dart';
 import 'package:nordvpn/internal/urls.dart';
 import 'package:nordvpn/logger.dart';
+import 'package:nordvpn/router/routes.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -154,6 +157,44 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
       id: DaemonStatusCode.configError,
       title: t.ui.settingsWereNotSaved,
       message: (_) => t.ui.couldNotSave,
+    ),
+
+    // Reconnect to VPN to apply settings
+    DaemonStatusCode.vpnIsRunning => DecisionPopupMetadata(
+      id: DaemonStatusCode.vpnIsRunning,
+      title: t.daemon.code_2002_title,
+      message: (_) => t.daemon.code_2002_msg,
+      noButtonText: t.ui.cancel,
+      yesButtonText: t.ui.reconnectNow,
+      autoClose: true,
+      navigateToRoute: AppRoute.vpn.toString(),
+      yesAction: (ref) {
+        // capture all needed data BEFORE the widget is disposed
+        final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
+        if (vpnStatus == null) {
+          logger.e('Cannot reconnect: vpnStatus is null');
+          return;
+        }
+        final controller = ref.read(vpnStatusControllerProvider.notifier);
+        final connectionParams = vpnStatus.connectionParameters;
+
+        // run reconnection in background (widget will be disposed)
+        Future(() async {
+          await controller.disconnect();
+          // delay to ensure disconnect completes
+          await Future.delayed(const Duration(milliseconds: 500));
+          await controller.reconnect(connectionParams);
+          // Note: If reconnection fails due to server/technology incompatibility,
+          // the controller will automatically show error code 3032 (serverUnavailable)
+        });
+      },
+    ),
+
+    // Server unavailable error - may occur when connecting with incompatible settings
+    DaemonStatusCode.serverUnavailable => InfoPopupMetadata(
+      id: DaemonStatusCode.serverUnavailable,
+      title: t.daemon.code_3032_title,
+      message: (_) => t.daemon.code_3032_msg,
     ),
 
     // not matched, display generic error message
