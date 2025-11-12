@@ -1352,11 +1352,14 @@ class TranslationsUiEn {
 	/// en: 'New here? Sign up for Nord Account to get started'
 	String get newHereMessage => 'New here? Sign up for Nord Account to get started';
 
-	/// en: 'Terms of service'
-	String get termsOfService => 'Terms of service';
+	/// en: 'Terms of Service'
+	String get termsOfService => 'Terms of Service';
 
 	/// en: 'Privacy Policy'
 	String get privacyPolicy => 'Privacy Policy';
+
+	/// en: 'Auto - renewal terms'
+	String get autoRenewalTerms => 'Auto - renewal terms';
 
 	/// en: 'Subscription info'
 	String get subscriptionInfo => 'Subscription info';
@@ -1921,6 +1924,18 @@ class TranslationsUiEn {
 
 	/// en: 'Refresh'
 	String get refresh => 'Refresh';
+
+	/// en: 'Terms'
+	String get terms => 'Terms';
+
+	/// en: 'Learn about our legal terms.'
+	String get termsSubtitle => 'Learn about our legal terms.';
+
+	/// en: 'By continuing to use this app, you agree to our terms and how we handle your data. To read the terms and privacy policy check the links below.'
+	String get termsAgreementDescription => 'By continuing to use this app, you agree to our terms and how we handle your data. To read the terms and privacy policy check the links below.';
+
+	/// en: 'Read more'
+	String get readMore => 'Read more';
 }
 
 /// Flat map(s) containing all translations.
@@ -2352,8 +2367,9 @@ extension on Translations {
 			case 'ui.addSubnet': return 'Add subnet';
 			case 'ui.loginToNordVpn': return 'Log in to NordVPN';
 			case 'ui.newHereMessage': return 'New here? Sign up for Nord Account to get started';
-			case 'ui.termsOfService': return 'Terms of service';
+			case 'ui.termsOfService': return 'Terms of Service';
 			case 'ui.privacyPolicy': return 'Privacy Policy';
+			case 'ui.autoRenewalTerms': return 'Auto - renewal terms';
 			case 'ui.subscriptionInfo': return 'Subscription info';
 			case 'ui.logout': return 'Log out';
 			case 'ui.accountExpireIn': return ({required num n, required Object date}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
@@ -2544,6 +2560,10 @@ extension on Translations {
 			case 'ui.snapScreenTitle': return 'We need some permissions to connect to NordVPN service';
 			case 'ui.snapScreenDescription': return 'Grant permission by running these commands in the terminal. Then refresh the screen.';
 			case 'ui.refresh': return 'Refresh';
+			case 'ui.terms': return 'Terms';
+			case 'ui.termsSubtitle': return 'Learn about our legal terms.';
+			case 'ui.termsAgreementDescription': return 'By continuing to use this app, you agree to our terms and how we handle your data. To read the terms and privacy policy check the links below.';
+			case 'ui.readMore': return 'Read more';
 			default: return null;
 		}
 	}

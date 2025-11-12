@@ -4,6 +4,7 @@ import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/settings/account_details_screen.dart';
 import 'package:nordvpn/settings/autoconnect_settings.dart';
 import 'package:nordvpn/settings/navigation.dart';
+import 'package:nordvpn/settings/terms_screen.dart';
 import 'package:nordvpn/settings/vpn_connection_settings.dart';
 import 'package:nordvpn/vpn/servers_list_card.dart';
 import 'package:nordvpn/vpn/vpn_status_card.dart';
@@ -217,4 +218,20 @@ Finder logoutButtonFinder() {
   final logoutButton = find.byKey(AccountWidgetKeys.logoutButton);
   expect(logoutButton, findsOne);
   return logoutButton;
+}
+
+Finder legalDescriptionFinder() {
+  return find.byKey(LegalInformationKeys.descriptionKey);
+}
+
+Finder legalTermsOfServiceLinkFinder() {
+  return find.byKey(LegalInformationKeys.termsOfServiceLinkKey);
+}
+
+Finder legalAutoRenewalTermsLinkFinder() {
+  return find.byKey(LegalInformationKeys.autoRenewalTermsLinkKey);
+}
+
+Finder legalPrivacyPolicyLinkFinder() {
+  return find.byKey(LegalInformationKeys.privacyPolicyLinkKey);
 }

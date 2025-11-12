@@ -16,6 +16,7 @@ import 'package:nordvpn/settings/custom_dns.dart';
 import 'package:nordvpn/settings/general_settings.dart';
 import 'package:nordvpn/settings/security_and_privacy_settings.dart';
 import 'package:nordvpn/settings/settings_home_screen.dart';
+import 'package:nordvpn/settings/terms_screen.dart';
 import 'package:nordvpn/settings/threat_protection_settings.dart';
 import 'package:nordvpn/settings/vpn_connection_settings.dart';
 import 'package:nordvpn/snap/snap_screen.dart';
@@ -39,6 +40,7 @@ enum AppRoute {
   settingsCustomDns,
   settingsThreatProtection,
   settingsAccount,
+  settingsTerms,
 
   // non-direct navigation routes here
   root,
@@ -61,6 +63,7 @@ enum AppRoute {
       AppRoute.settingsCustomDns => "/settings/security-privacy/custom-dns",
       AppRoute.settingsThreatProtection => "/settings/threat-protection",
       AppRoute.settingsAccount => "/settings/account",
+      AppRoute.settingsTerms => "/settings/terms",
       AppRoute.showcase => "/showcase",
       AppRoute.root => "/root",
       AppRoute.login => "/login",
@@ -176,6 +179,13 @@ List<RouteBase> configureRoutes() {
         route: AppRoute.settingsThreatProtection,
         screen: const ThreatProtectionSettings(),
         displayName: t.ui.threatProtection,
+      ),
+    ),
+    _routeWithAppScaffold(
+      RouteMetadata(
+        route: AppRoute.settingsTerms,
+        screen: const LegalInformation(),
+        displayName: t.ui.terms,
       ),
     ),
     _routeWithAppScaffold(
