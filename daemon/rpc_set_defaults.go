@@ -33,11 +33,11 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 		log.Println(internal.WarningPrefix, err)
 	}
 
-	if err := r.ncClient.Stop(); err != nil {
-		log.Println(internal.WarningPrefix, "error stoping notification center client:", err)
-	}
-
 	if !in.NoLogout {
+		if err := r.ncClient.Stop(); err != nil {
+			log.Println(internal.WarningPrefix, "error stoping notification center client:", err)
+		}
+
 		if !r.ncClient.Revoke() {
 			log.Println(internal.WarningPrefix, "error revoking notification center token")
 		}

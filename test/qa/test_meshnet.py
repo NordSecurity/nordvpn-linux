@@ -333,3 +333,41 @@ def test_incoming_connections():
 
     ssh_client.exec_command(f"nordvpn mesh peer incoming deny {local_hostname}")
     assert not meshnet.is_peer_reachable(peer_list.get_external_peer(), retry=1)
+
+
+def test_login_mesh_on_set_defaults_mesh_on_sequence():
+    """Test the sequence: login -> set mesh on -> set defaults -> set mesh on"""
+
+    assert "Account Information" in sh_no_tty.nordvpn.account()
+    assert settings.is_meshnet_enabled()
+    assert settings.MSG_SET_DEFAULTS in sh_no_tty.nordvpn.set.defaults()
+
+    assert not settings.is_meshnet_enabled()
+
+    assert "Account Information" in sh_no_tty.nordvpn.account()
+
+    assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on()
+
+    assert settings.is_meshnet_enabled()
+
+
+def test_login_mesh_on_set_defaults_logout_login_mesh_on():
+    """Test the sequence with logout: login -> set mesh on -> set defaults --logout -> login -> set mesh on"""
+
+    assert "Account Information" in sh_no_tty.nordvpn.account()
+    assert settings.is_meshnet_enabled()
+    assert settings.MSG_SET_DEFAULTS in sh_no_tty.nordvpn.set.defaults("--logout")
+
+    assert not settings.is_meshnet_enabled()
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh_no_tty.nordvpn.account()
+        assert "You are not logged in." in ex.value.stdout.decode("utf-8")
+
+    login.login_as("default")
+
+    assert "Account Information" in sh_no_tty.nordvpn.account()
+
+    assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on()
+
+    assert settings.is_meshnet_enabled()
