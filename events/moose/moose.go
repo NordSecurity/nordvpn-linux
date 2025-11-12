@@ -683,6 +683,18 @@ func (s *Subscriber) NotifyDebuggerEvent(e events.DebuggerEvent) error {
 	return s.response(moose.NordvpnappSendDebuggerLoggingLog(e.JsonData, combinedPaths, nil))
 }
 
+func (s *Subscriber) NotifyAppStartTime(duration int64) error {
+	if duration > math.MaxInt32 || duration < 0 {
+		return fmt.Errorf("app start duration overflow")
+	}
+
+	if err := s.response(moose.NordvpnappSendServiceQualityStatusAppStart(int32(duration), moose.NordvpnappEventTriggerApp, nil)); err != nil {
+		return fmt.Errorf("setting app start time")
+	}
+
+	return nil
+}
+
 func (s *Subscriber) OnTelemetry(metric telemetry.Metric, value any) error {
 	switch metric {
 	case telemetry.MetricDesktopEnvironment:

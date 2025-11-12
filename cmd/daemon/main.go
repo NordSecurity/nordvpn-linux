@@ -130,6 +130,8 @@ func initializeStaticConfig(machineID uuid.UUID) config.StaticConfigManager {
 }
 
 func main() {
+	appStartTime := time.Now()
+
 	// pprof
 	if internal.IsDevEnv(Environment) {
 		go func() {
@@ -700,6 +702,11 @@ func main() {
 			}
 		default:
 			log.Fatalf("Invalid predefined connection type: %s", ConnType)
+		}
+
+		appStartDuration := time.Since(appStartTime).Milliseconds()
+		if err := analytics.NotifyAppStartTime(appStartDuration); err != nil {
+			log.Println(internal.ErrorPrefix, "setting app start time:", err)
 		}
 
 		if err := s.Serve(listener); err != nil {
