@@ -1,6 +1,6 @@
 {
-    "code_2002_title": "Reconnect to VPN to apply changes",
-    "code_2002_msg": "You're connected to the VPN. Please reconnect to apply the setting.",
+    "code_2002_title": "Reconnect to change protocol",
+    "code_2002_msg": "To apply this change, we’ll reconnect you to the VPN.",
 
     "code_3001_title": "Unauthorized",
     "code_3001_msg": "We couldn't log you in. Make sure your credentials are correct. If you have turned on MFA, log in using the 'nordvpn login' command.",
