@@ -17,7 +17,7 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 	}
 
 	if _, err := r.DoDisconnect(); err != nil {
-		log.Println(internal.ErrorPrefix, "Error while disconnecting:", err)
+		log.Println(internal.ErrorPrefix, "error while disconnecting:", err)
 		return &pb.Payload{Type: internal.CodeFailure}, nil
 	}
 
@@ -34,11 +34,13 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 	}
 
 	if err := r.ncClient.Stop(); err != nil {
-		log.Println(internal.WarningPrefix, err)
+		log.Println(internal.WarningPrefix, "error stoping notification center client:", err)
 	}
 
-	if !r.ncClient.Revoke() {
-		log.Println(internal.WarningPrefix, "error revoking token")
+	if !in.NoLogout {
+		if !r.ncClient.Revoke() {
+			log.Println(internal.WarningPrefix, "error revoking notification center token")
+		}
 	}
 
 	if err := r.cm.Reset(in.NoLogout, in.OffKillswitch); err != nil {
