@@ -550,6 +550,7 @@ def test_remote_config_cdn_unavailable(
         "Couldn't found error logs"
 
 
+@pytest.mark.skipif(daemon.get_env() == Env.PROD, reason="Not applicable in prod environment")
 def test_remote_config_download_config_on_start(
     initialized_app_with_remote_config,  # noqa: ARG001
     set_custom_rc_retry_time_in_service,  # noqa: ARG001
@@ -599,6 +600,7 @@ def test_remote_config_download_config_on_start(
     check_log_for_request_get_messages(daemon_log_reader)
 
 
+@pytest.mark.skipif(daemon.get_env() == Env.PROD, reason="Not applicable in prod environment")
 @pytest.mark.parametrize(
     ("tcid", "is_config_different"),
     [
@@ -680,6 +682,7 @@ def test_remote_config_attempts_config(
     assert not different_files, f"Found some files mismatch: {different_files}"
 
 
+@pytest.mark.skipif(daemon.get_env() == Env.PROD, reason="Not applicable in prod environment")
 @pytest.mark.parametrize(
     ("tcid", "parameter", "value", "verify_error_message", "error_message"),
     [
