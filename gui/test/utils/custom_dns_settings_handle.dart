@@ -88,6 +88,22 @@ final class CustomDnsSettingsHandle extends ScreenHandle {
     return strings.every((e) => find.text(e).evaluate().length == 1);
   }
 
+  bool isWarningMessageDisplayed() {
+    final finder = find.byKey(CustomDnsKeys.dnsWarningMessage);
+    final finderIcon = find.descendant(
+      of: finder,
+      matching: app.tester.findSvgWithPath("warning_sign.svg"),
+    );
+
+    final finderMsg = find.descendant(
+      of: finder,
+      matching: find.text(t.ui.customDnsWarning),
+    );
+
+    return (finderMsg.evaluate().length == 1) &&
+        (finderIcon.evaluate().length == 1);
+  }
+
   // ---------------------- finders --------------------------
 
   // find the Add button

@@ -1,8 +1,5 @@
 # NordVPN Linux GUI application
 
-![CI status](https://github.com/NordSecurity/nordvpn-linux-gui/actions/workflows/ci.yml/badge.svg)
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/NordSecurity/nordvpn-linux-gui/badge)](https://securityscorecards.dev/viewer/?uri=github.com/NordSecurity/nordvpn-linux-gui)
-
 ## Overview
 
 The [NordVPN](https://nordvpn.com/features/) Linux GUI application provides a
