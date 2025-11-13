@@ -344,7 +344,7 @@ func main() {
 		eventsDbPath,
 		fsystem,
 		clientAPI,
-		*httpClientSimple,
+		httpClientSimple,
 		buildTarget,
 		deviceID)
 

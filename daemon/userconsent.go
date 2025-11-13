@@ -75,7 +75,9 @@ func NewConsentChecker(
 //   - save consent as completed and accepted, no consent flow for standard mode countries
 func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 	if acc.IsConsentFlowCompleted() {
-		// nothing to do
+		if err := acc.analytics.Init(); err != nil {
+			log.Println(internal.ErrorPrefix, "moose failed to initialize with error:", err)
+		}
 		return
 	}
 
