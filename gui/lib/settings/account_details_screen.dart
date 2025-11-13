@@ -74,10 +74,11 @@ final class AccountDetailsSettings extends ConsumerWidget {
   }
 
   Widget _build(BuildContext context, WidgetRef ref, UserAccount? userAccount) {
+    final appTheme = context.appTheme;
     return SettingsWrapperWidget(
       itemsCount: 1,
       itemBuilder: (_, _) => Column(
-        spacing: 48,
+        spacing: appTheme.verticalSpaceExtraLarge,
         children: [
           UserInfo(
             key: AccountWidgetKeys.userInfo,
@@ -127,7 +128,7 @@ final class UserInfoEntry extends StatelessWidget {
               ],
             ),
           ),
-          InternalLink(title: linkText, uri: link),
+          FirstPartyLink(title: linkText, uri: link),
         ],
       ),
     );
@@ -306,9 +307,9 @@ final class ProductsList extends StatelessWidget {
                     appTheme.trailingIconSize +
                     iconSpacing +
                     itemTextHorizontalPadding,
-              ),
-              InternalLink(title: t.ui.learnMore, uri: product.uri),
-            ],
+             ),
+             FirstPartyLink(title: t.ui.learnMore, uri: product.uri),
+           ],
           ),
         ],
       ),

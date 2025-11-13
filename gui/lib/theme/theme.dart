@@ -296,6 +296,7 @@ final class NordVpnTheme {
       verticalSpaceSmall: 8,
       verticalSpaceMedium: 16,
       verticalSpaceLarge: 24,
+      verticalSpaceExtraLarge: 48,
       horizontalSpaceSmall: 8,
       horizontalSpace: 16,
       textErrorColor: design.semanticColors.textCritical,

@@ -20,6 +20,7 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
   double get verticalSpaceSmall;
   double get verticalSpaceMedium;
   double get verticalSpaceLarge;
+  double get verticalSpaceExtraLarge;
   double get horizontalSpaceSmall;
   double get horizontalSpace;
   Color get textErrorColor;
@@ -56,6 +57,7 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
     double? verticalSpaceSmall,
     double? verticalSpaceMedium,
     double? verticalSpaceLarge,
+    double? verticalSpaceExtraLarge,
     double? horizontalSpaceSmall,
     double? horizontalSpace,
     Color? textErrorColor,
@@ -91,6 +93,8 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
       verticalSpaceSmall: verticalSpaceSmall ?? this.verticalSpaceSmall,
       verticalSpaceMedium: verticalSpaceMedium ?? this.verticalSpaceMedium,
       verticalSpaceLarge: verticalSpaceLarge ?? this.verticalSpaceLarge,
+      verticalSpaceExtraLarge:
+          verticalSpaceExtraLarge ?? this.verticalSpaceExtraLarge,
       horizontalSpaceSmall: horizontalSpaceSmall ?? this.horizontalSpaceSmall,
       horizontalSpace: horizontalSpace ?? this.horizontalSpace,
       textErrorColor: textErrorColor ?? this.textErrorColor,
@@ -141,6 +145,9 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
       verticalSpaceLarge: t < 0.5
           ? verticalSpaceLarge
           : other.verticalSpaceLarge,
+      verticalSpaceExtraLarge: t < 0.5
+          ? verticalSpaceExtraLarge
+          : other.verticalSpaceExtraLarge,
       horizontalSpaceSmall: t < 0.5
           ? horizontalSpaceSmall
           : other.horizontalSpaceSmall,
@@ -219,6 +226,10 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
             const DeepCollectionEquality().equals(
               verticalSpaceLarge,
               other.verticalSpaceLarge,
+            ) &&
+            const DeepCollectionEquality().equals(
+              verticalSpaceExtraLarge,
+              other.verticalSpaceExtraLarge,
             ) &&
             const DeepCollectionEquality().equals(
               horizontalSpaceSmall,
@@ -313,6 +324,7 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
       const DeepCollectionEquality().hash(verticalSpaceSmall),
       const DeepCollectionEquality().hash(verticalSpaceMedium),
       const DeepCollectionEquality().hash(verticalSpaceLarge),
+      const DeepCollectionEquality().hash(verticalSpaceExtraLarge),
       const DeepCollectionEquality().hash(horizontalSpaceSmall),
       const DeepCollectionEquality().hash(horizontalSpace),
       const DeepCollectionEquality().hash(textErrorColor),
@@ -352,6 +364,7 @@ extension AppThemeBuildContextProps on BuildContext {
   double get verticalSpaceSmall => appTheme.verticalSpaceSmall;
   double get verticalSpaceMedium => appTheme.verticalSpaceMedium;
   double get verticalSpaceLarge => appTheme.verticalSpaceLarge;
+  double get verticalSpaceExtraLarge => appTheme.verticalSpaceExtraLarge;
   double get horizontalSpaceSmall => appTheme.horizontalSpaceSmall;
   double get horizontalSpace => appTheme.horizontalSpace;
   Color get textErrorColor => appTheme.textErrorColor;
