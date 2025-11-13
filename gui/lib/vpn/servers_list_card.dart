@@ -159,7 +159,10 @@ final class _ServersListCardState extends State<ServersListCard> {
                         isScrollable: true,
                         tabs: [
                           Tab(text: t.ui.countries),
-                          Tab(text: t.ui.specialServers),
+                          Tab(
+                            key: ServerListWidgetKeys.specialtyServersTab,
+                            text: t.ui.specialServers,
+                          ),
                         ],
                       ),
                     ),
@@ -303,6 +306,7 @@ final class _ServersListCardState extends State<ServersListCard> {
               }
               final servers = serversList.specialtyServersList(type);
               return widget.itemFactory.forSpecialtyServer(
+                key: key,
                 context: context,
                 type: type,
                 enabled: servers.isNotEmpty && !isObfuscatedOn,
