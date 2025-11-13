@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nordvpn/internal/uri_launch_extension.dart';
 import 'package:nordvpn/theme/app_theme.dart';
-import 'package:nordvpn/theme/aurora_design.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 
 enum LinkSize { normal, small }
@@ -48,14 +47,9 @@ LaunchableUri _toLaunchable<T>(T uri) {
   throw ArgumentError('Unsupported type $T: $uri');
 }
 
-/// A clickable link widget with a trailing icon.
+/// A clickable link with a trailing icon.
 ///
-/// Extends [Link] to display a theme-aware icon alongside the link text.
-/// The icon is positioned to  the right of the text with [AppSpacing.spacing2] spacing.
-///
-/// Accepts either a [DynamicThemeImage] object via [icon] or a string path
-/// via [iconName]. Exactly one must be provided. Use [Link] directly if no
-/// icon is needed.
+/// Use for links that need a visual indicator icon.
 class IconLink<T> extends Link<T> {
   final DynamicThemeImage _icon;
 

@@ -114,7 +114,12 @@ final class UserInfoEntry extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = context.appTheme;
     return Padding(
-      padding: EdgeInsetsGeometry.all(theme.verticalSpaceMedium),
+      padding: EdgeInsetsGeometry.fromLTRB(
+        0,
+        theme.verticalSpaceMedium,
+        theme.verticalSpaceMedium,
+        theme.verticalSpaceMedium,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -147,7 +152,6 @@ final class UserInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.appTheme;
     return Column(
       spacing: 12,
       children: [
@@ -169,14 +173,7 @@ final class UserInfo extends StatelessWidget {
             ),
           ],
         ),
-        Row(
-          children: [
-            Padding(
-              padding: EdgeInsets.only(left: theme.horizontalSpace),
-              child: _buildLogoutButton(),
-            ),
-          ],
-        ),
+        Row(children: [_buildLogoutButton()]),
       ],
     );
   }
@@ -222,21 +219,11 @@ final class ProductsList extends StatelessWidget {
     final appTheme = context.appTheme;
     return Column(
       children: [
-        Row(
-          children: [
-            Padding(
-              padding: EdgeInsets.only(left: appTheme.horizontalSpace),
-              child: Text(t.ui.productHub, style: appTheme.caption),
-            ),
-          ],
-        ),
-        Padding(
-          padding: EdgeInsetsGeometry.symmetric(horizontal: 12),
-          child: Column(
-            children: products
-                .map((product) => _buildProductHubItem(context, product))
-                .toList(),
-          ),
+        Row(children: [Text(t.ui.productHub, style: appTheme.caption)]),
+        Column(
+          children: products
+              .map((product) => _buildProductHubItem(context, product))
+              .toList(),
         ),
       ],
     );
@@ -307,9 +294,9 @@ final class ProductsList extends StatelessWidget {
                     appTheme.trailingIconSize +
                     iconSpacing +
                     itemTextHorizontalPadding,
-             ),
-             FirstPartyLink(title: t.ui.learnMore, uri: product.uri),
-           ],
+              ),
+              FirstPartyLink(title: t.ui.learnMore, uri: product.uri),
+            ],
           ),
         ],
       ),
