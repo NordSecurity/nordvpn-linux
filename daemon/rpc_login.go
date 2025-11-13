@@ -53,10 +53,11 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 		EventTrigger: events.TriggerUser,
 		EventStatus:  events.StatusAttempt,
 		EventType:    events.LoginLogin,
+		Reason:       events.ReasonNotSpecified,
 	})
 
 	// check if previous login/signup process was started
-	if r.lockGetInitialLoginType() != pb.LoginType_LoginType_UNKNOWN {
+	if r.initialLoginType.WasStarted() {
 		r.events.User.Login.Publish(events.DataAuthorization{
 			DurationMs:   -1,
 			EventTrigger: events.TriggerUser,
@@ -66,7 +67,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 		})
 	}
 
-	var eventReason events.ReasonCode
+	eventReason := events.ReasonNotSpecified
 
 	defer func() {
 		eventStatus := events.StatusSuccess
@@ -81,7 +82,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 			Reason:       eventReason,
 		})
 		// at the end, reset initiated login type
-		r.lockSetInitialLoginType(pb.LoginType_LoginType_UNKNOWN)
+		r.initialLoginType.Reset()
 	}()
 
 	credentials, err := r.credentialsAPI.ServiceCredentials(token)
@@ -164,7 +165,7 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (paylo
 	}
 
 	// check if previous login/signup process was started
-	if r.lockGetInitialLoginType() != pb.LoginType_LoginType_UNKNOWN {
+	if r.initialLoginType.WasStarted() {
 		r.events.User.Login.Publish(events.DataAuthorization{
 			DurationMs:   -1,
 			EventTrigger: events.TriggerUser,
@@ -174,7 +175,7 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (paylo
 		})
 	}
 
-	var eventReason events.ReasonCode
+	eventReason := events.ReasonNotSpecified
 
 	defer func() {
 		eventStatus := events.StatusAttempt
@@ -208,7 +209,7 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (paylo
 
 	// memorize what login type started: Login or Signup
 	// (dont forget to reset it after login/signup is completed)
-	r.lockSetInitialLoginType(in.GetType())
+	r.initialLoginType.Set(in.GetType())
 
 	return &pb.LoginOAuth2Response{
 		Status: pb.LoginStatus_SUCCESS,
@@ -232,7 +233,7 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 		loginType = events.LoginSignUp
 	}
 
-	var eventReason events.ReasonCode
+	eventReason := events.ReasonNotSpecified
 
 	defer func() {
 		eventStatus := events.StatusSuccess
@@ -240,19 +241,17 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 			eventStatus = events.StatusFailure
 		}
 
-		isAlteredFlow := in.GetType() != r.lockGetInitialLoginType()
-
 		r.events.User.Login.Publish(events.DataAuthorization{
 			DurationMs:                 max(int(time.Since(lastLoginAttemptTime).Milliseconds()), 1),
 			EventTrigger:               events.TriggerUser,
 			EventStatus:                eventStatus,
 			EventType:                  loginType,
-			IsAlteredFlowOnNordAccount: isAlteredFlow,
+			IsAlteredFlowOnNordAccount: r.initialLoginType.IsAltered(in.GetType()),
 			Reason:                     eventReason,
 		})
 		lastLoginAttemptTime = time.Time{}
 		// at the end, reset initiated login type
-		r.lockSetInitialLoginType(pb.LoginType_LoginType_UNKNOWN)
+		r.initialLoginType.Reset()
 	}()
 
 	if in.GetToken() == "" {
@@ -308,16 +307,4 @@ func (r *RPC) IsLoggedIn(ctx context.Context, _ *pb.Empty) (*pb.IsLoggedInRespon
 
 	loggedIn, _ := r.ac.IsLoggedIn()
 	return &pb.IsLoggedInResponse{IsLoggedIn: loggedIn}, nil
-}
-
-func (r *RPC) lockGetInitialLoginType() pb.LoginType {
-	r.loginTypeMu.Lock()
-	defer r.loginTypeMu.Unlock()
-	return r.initialLoginType
-}
-
-func (r *RPC) lockSetInitialLoginType(newType pb.LoginType) {
-	r.loginTypeMu.Lock()
-	defer r.loginTypeMu.Unlock()
-	r.initialLoginType = newType
 }

@@ -38,14 +38,15 @@ func TestLoginEvents(t *testing.T) {
 			name: "login attempt then login success",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					consentChecker: &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-					ac:             &testauth.AuthCheckerMock{LoggedIn: false},
-					cm:             mock.NewMockConfigManager(),
-					credentialsAPI: &testcore.CredentialsAPIMock{},
-					events:         &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					authentication: &testcore.AuthenticationAPImock{TokenValue: "token"},
-					publisher:      &subs.Subject[string]{},
-					ncClient:       &mock.NotificationClientMock{},
+					consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
+					cm:               mock.NewMockConfigManager(),
+					credentialsAPI:   &testcore.CredentialsAPIMock{},
+					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					authentication:   &testcore.AuthenticationAPImock{TokenValue: "token"},
+					publisher:        &subs.Subject[string]{},
+					ncClient:         &mock.NotificationClientMock{},
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			loginType1:      pb.LoginType_LoginType_LOGIN,
@@ -71,14 +72,15 @@ func TestLoginEvents(t *testing.T) {
 			name: "signup attempt then login success",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					consentChecker: &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-					ac:             &testauth.AuthCheckerMock{LoggedIn: false},
-					cm:             mock.NewMockConfigManager(),
-					credentialsAPI: &testcore.CredentialsAPIMock{},
-					events:         &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					authentication: &testcore.AuthenticationAPImock{TokenValue: "token"},
-					publisher:      &subs.Subject[string]{},
-					ncClient:       &mock.NotificationClientMock{},
+					consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
+					cm:               mock.NewMockConfigManager(),
+					credentialsAPI:   &testcore.CredentialsAPIMock{},
+					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					authentication:   &testcore.AuthenticationAPImock{TokenValue: "token"},
+					publisher:        &subs.Subject[string]{},
+					ncClient:         &mock.NotificationClientMock{},
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			loginType1:      pb.LoginType_LoginType_SIGNUP,
@@ -187,6 +189,7 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 					authentication: &testcore.AuthenticationAPImock{
 						LoginError: errors.New("network is unreachable"),
 					},
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			loginType:           pb.LoginType_LoginType_LOGIN,
@@ -210,6 +213,7 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 					authentication: &testcore.AuthenticationAPImock{
 						LoginError: errors.New("Client.Timeout exceeded while awaiting headers"),
 					},
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			loginType:           pb.LoginType_LoginType_SIGNUP,
@@ -232,6 +236,7 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 					authentication: &testcore.AuthenticationAPImock{
 						LoginError: errors.New("some other error"),
 					},
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			loginType:           pb.LoginType_LoginType_LOGIN,
@@ -250,7 +255,7 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
 					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
 					authentication:   &testcore.AuthenticationAPImock{},
-					initialLoginType: pb.LoginType_LoginType_LOGIN,
+					initialLoginType: NewAtomicLoginType(pb.LoginType_LoginType_LOGIN),
 				}
 			},
 			loginType:           pb.LoginType_LoginType_LOGIN,
@@ -268,7 +273,7 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 				assert.Equal(t, events.StatusAttempt, evts[1].EventStatus)
 				assert.Equal(t, events.TriggerUser, evts[1].EventTrigger)
 				assert.Equal(t, events.LoginLogin, evts[1].EventType)
-				assert.Equal(t, events.ReasonCode(0), evts[1].Reason)
+				assert.Equal(t, events.ReasonNotSpecified, evts[1].Reason)
 				assert.Equal(t, -1, evts[1].DurationMs)
 			},
 		},
@@ -280,7 +285,7 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
 					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
 					authentication:   &testcore.AuthenticationAPImock{},
-					initialLoginType: pb.LoginType_LoginType_SIGNUP,
+					initialLoginType: NewAtomicLoginType(pb.LoginType_LoginType_SIGNUP),
 				}
 			},
 			loginType:           pb.LoginType_LoginType_LOGIN,
@@ -302,10 +307,11 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 			name: "successful login without previous unfinished login",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					consentChecker: &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-					ac:             &testauth.AuthCheckerMock{LoggedIn: false},
-					events:         &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					authentication: &testcore.AuthenticationAPImock{},
+					consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
+					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					authentication:   &testcore.AuthenticationAPImock{},
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			loginType:           pb.LoginType_LoginType_LOGIN,
@@ -315,7 +321,7 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 				assert.Equal(t, events.StatusAttempt, evts[0].EventStatus)
 				assert.Equal(t, events.TriggerUser, evts[0].EventTrigger)
 				assert.Equal(t, events.LoginLogin, evts[0].EventType)
-				assert.Equal(t, events.ReasonCode(0), evts[0].Reason)
+				assert.Equal(t, events.ReasonNotSpecified, evts[0].Reason)
 				assert.Equal(t, -1, evts[0].DurationMs)
 			},
 		},
@@ -323,10 +329,11 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 			name: "successful signup without previous unfinished login",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					consentChecker: &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-					ac:             &testauth.AuthCheckerMock{LoggedIn: false},
-					events:         &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					authentication: &testcore.AuthenticationAPImock{},
+					consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
+					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					authentication:   &testcore.AuthenticationAPImock{},
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			loginType:           pb.LoginType_LoginType_SIGNUP,
@@ -336,7 +343,7 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 				assert.Equal(t, events.StatusAttempt, evts[0].EventStatus)
 				assert.Equal(t, events.TriggerUser, evts[0].EventTrigger)
 				assert.Equal(t, events.LoginSignUp, evts[0].EventType)
-				assert.Equal(t, events.ReasonCode(0), evts[0].Reason)
+				assert.Equal(t, events.ReasonNotSpecified, evts[0].Reason)
 			},
 		},
 	}
@@ -391,7 +398,7 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
 					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
 					publisher:        &subs.Subject[string]{},
-					initialLoginType: pb.LoginType_LoginType_LOGIN,
+					initialLoginType: NewAtomicLoginType(pb.LoginType_LoginType_LOGIN),
 				}
 			},
 			token:               "",
@@ -415,7 +422,7 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
 					authentication:   &testcore.AuthenticationAPImock{TokenError: errors.New("token exchange failed")},
 					publisher:        &subs.Subject[string]{},
-					initialLoginType: pb.LoginType_LoginType_LOGIN,
+					initialLoginType: NewAtomicLoginType(pb.LoginType_LoginType_LOGIN),
 				}
 			},
 			token:               "exchange-token",
@@ -437,7 +444,7 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 					authentication:   &testcore.AuthenticationAPImock{},
 					credentialsAPI:   &testcore.CredentialsAPIMock{ServiceCredentialsErr: errors.New("failed to get credentials")},
 					publisher:        &subs.Subject[string]{},
-					initialLoginType: pb.LoginType_LoginType_LOGIN,
+					initialLoginType: NewAtomicLoginType(pb.LoginType_LoginType_LOGIN),
 				}
 			},
 			token:               "exchange-token",
@@ -459,7 +466,7 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
 					authentication:   &testcore.AuthenticationAPImock{},
 					credentialsAPI:   &testcore.CredentialsAPIMock{},
-					initialLoginType: pb.LoginType_LoginType_LOGIN,
+					initialLoginType: NewAtomicLoginType(pb.LoginType_LoginType_LOGIN),
 					ncClient:         &mock.NotificationClientMock{},
 				}
 			},
@@ -471,7 +478,7 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 				assert.Equal(t, events.StatusSuccess, evts[0].EventStatus)
 				assert.Equal(t, events.TriggerUser, evts[0].EventTrigger)
 				assert.Equal(t, events.LoginLogin, evts[0].EventType)
-				assert.Equal(t, events.ReasonCode(0), evts[0].Reason)
+				assert.Equal(t, events.ReasonNotSpecified, evts[0].Reason)
 				assert.False(t, evts[0].IsAlteredFlowOnNordAccount)
 				assert.Greater(t, evts[0].DurationMs, 0)
 			},
@@ -486,7 +493,7 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
 					authentication:   &testcore.AuthenticationAPImock{},
 					credentialsAPI:   &testcore.CredentialsAPIMock{},
-					initialLoginType: pb.LoginType_LoginType_SIGNUP,
+					initialLoginType: NewAtomicLoginType(pb.LoginType_LoginType_SIGNUP),
 					ncClient:         &mock.NotificationClientMock{},
 				}
 			},
@@ -498,7 +505,7 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 				assert.Equal(t, events.StatusSuccess, evts[0].EventStatus)
 				assert.Equal(t, events.TriggerUser, evts[0].EventTrigger)
 				assert.Equal(t, events.LoginLogin, evts[0].EventType)
-				assert.Equal(t, events.ReasonCode(0), evts[0].Reason)
+				assert.Equal(t, events.ReasonNotSpecified, evts[0].Reason)
 				assert.True(t, evts[0].IsAlteredFlowOnNordAccount)
 			},
 		},
@@ -514,7 +521,7 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
 					authentication:   &testcore.AuthenticationAPImock{},
 					credentialsAPI:   &testcore.CredentialsAPIMock{},
-					initialLoginType: pb.LoginType_LoginType_LOGIN,
+					initialLoginType: NewAtomicLoginType(pb.LoginType_LoginType_LOGIN),
 					ncClient:         &mock.NotificationClientMock{},
 				}
 			},
@@ -524,7 +531,7 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 			expectedEventsCount: 1,
 			validateEvents: func(t *testing.T, evts []*events.DataAuthorization) {
 				assert.Equal(t, events.StatusFailure, evts[0].EventStatus)
-				assert.Equal(t, events.ReasonCode(0), evts[0].Reason)
+				assert.Equal(t, events.ReasonNotSpecified, evts[0].Reason)
 			},
 		},
 	}
@@ -564,7 +571,7 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 			}
 
 			// Verify that initialLoginType is reset at the end
-			assert.Equal(t, pb.LoginType_LoginType_UNKNOWN, r.initialLoginType)
+			assert.Equal(t, pb.LoginType_LoginType_UNKNOWN, r.initialLoginType.Get())
 		})
 	}
 }
@@ -617,13 +624,14 @@ func TestLoginWithTokenInputValidation(t *testing.T) {
 			setup: func() *RPC {
 				eventsMock := &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{}
 				return &RPC{
-					consentChecker: &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-					ac:             &testauth.AuthCheckerMock{LoggedIn: false},
-					cm:             mock.NewMockConfigManager(),
-					credentialsAPI: &testcore.CredentialsAPIMock{},
-					events:         &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
-					publisher:      &subs.Subject[string]{},
-					ncClient:       &mock.NotificationClientMock{},
+					consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
+					cm:               mock.NewMockConfigManager(),
+					credentialsAPI:   &testcore.CredentialsAPIMock{},
+					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
+					publisher:        &subs.Subject[string]{},
+					ncClient:         &mock.NotificationClientMock{},
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			token:           "abcdef123456",
@@ -672,8 +680,9 @@ func TestLoginWithToken(t *testing.T) {
 			name: "already logged in",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					ac:     &testauth.AuthCheckerMock{LoggedIn: true},
-					events: &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					ac:               &testauth.AuthCheckerMock{LoggedIn: true},
+					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			token:                  "test-token",
@@ -685,12 +694,13 @@ func TestLoginWithToken(t *testing.T) {
 			name: "successful login",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					ac:             &testauth.AuthCheckerMock{LoggedIn: false},
-					cm:             mock.NewMockConfigManager(),
-					credentialsAPI: &testcore.CredentialsAPIMock{},
-					events:         &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					publisher:      &subs.Subject[string]{},
-					ncClient:       &mock.NotificationClientMock{},
+					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
+					cm:               mock.NewMockConfigManager(),
+					credentialsAPI:   &testcore.CredentialsAPIMock{},
+					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					publisher:        &subs.Subject[string]{},
+					ncClient:         &mock.NotificationClientMock{},
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			token:                  "test-token",
@@ -703,23 +713,24 @@ func TestLoginWithToken(t *testing.T) {
 				assert.Equal(t, events.TriggerUser, evts[0].EventTrigger)
 				assert.Equal(t, events.LoginLogin, evts[0].EventType)
 				assert.Equal(t, -1, evts[0].DurationMs)
-				assert.Equal(t, events.ReasonCode(0), evts[0].Reason)
+				assert.Equal(t, events.ReasonNotSpecified, evts[0].Reason)
 
 				// Second event should be success
 				assert.Equal(t, events.StatusSuccess, evts[1].EventStatus)
 				assert.Equal(t, events.TriggerUser, evts[1].EventTrigger)
 				assert.Equal(t, events.LoginLogin, evts[1].EventType)
 				assert.GreaterOrEqual(t, evts[1].DurationMs, 0)
-				assert.Equal(t, events.ReasonCode(0), evts[1].Reason)
+				assert.Equal(t, events.ReasonNotSpecified, evts[1].Reason)
 			},
 		},
 		{
 			name: "credentials API returns server internal error",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					ac:             &testauth.AuthCheckerMock{LoggedIn: false},
-					credentialsAPI: &testcore.CredentialsAPIMock{ServiceCredentialsErr: core.ErrServerInternal},
-					events:         &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
+					credentialsAPI:   &testcore.CredentialsAPIMock{ServiceCredentialsErr: core.ErrServerInternal},
+					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			token:                  "test-token",
@@ -735,9 +746,10 @@ func TestLoginWithToken(t *testing.T) {
 			name: "credentials API returns unauthorized error",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					ac:             &testauth.AuthCheckerMock{LoggedIn: false},
-					credentialsAPI: &testcore.CredentialsAPIMock{ServiceCredentialsErr: core.ErrUnauthorized},
-					events:         &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
+					credentialsAPI:   &testcore.CredentialsAPIMock{ServiceCredentialsErr: core.ErrUnauthorized},
+					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			token:                  "test-token",
@@ -753,9 +765,10 @@ func TestLoginWithToken(t *testing.T) {
 			name: "credentials API returns generic error",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					ac:             &testauth.AuthCheckerMock{LoggedIn: false},
-					credentialsAPI: &testcore.CredentialsAPIMock{ServiceCredentialsErr: errors.New("generic error")},
-					events:         &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
+					credentialsAPI:   &testcore.CredentialsAPIMock{ServiceCredentialsErr: errors.New("generic error")},
+					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			token:                  "test-token",
@@ -773,10 +786,11 @@ func TestLoginWithToken(t *testing.T) {
 				cm := mock.NewMockConfigManager()
 				cm.LoadErr = errors.New("config load error")
 				return &RPC{
-					ac:             &testauth.AuthCheckerMock{LoggedIn: false},
-					cm:             cm,
-					credentialsAPI: &testcore.CredentialsAPIMock{},
-					events:         &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
+					cm:               cm,
+					credentialsAPI:   &testcore.CredentialsAPIMock{},
+					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			token:                  "test-token",
@@ -785,7 +799,7 @@ func TestLoginWithToken(t *testing.T) {
 			expectedPublishedCount: 2,
 			validateEvents: func(t *testing.T, evts []*events.DataAuthorization) {
 				assert.Equal(t, events.StatusFailure, evts[1].EventStatus)
-				assert.Equal(t, events.ReasonCode(0), evts[1].Reason)
+				assert.Equal(t, events.ReasonNotSpecified, evts[1].Reason)
 			},
 		},
 		{
@@ -794,10 +808,11 @@ func TestLoginWithToken(t *testing.T) {
 				cm := mock.NewMockConfigManager()
 				cm.SaveErr = errors.New("config save error")
 				return &RPC{
-					ac:             &testauth.AuthCheckerMock{LoggedIn: false},
-					cm:             cm,
-					credentialsAPI: &testcore.CredentialsAPIMock{},
-					events:         &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
+					cm:               cm,
+					credentialsAPI:   &testcore.CredentialsAPIMock{},
+					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			token:                  "test-token",
@@ -806,7 +821,7 @@ func TestLoginWithToken(t *testing.T) {
 			expectedPublishedCount: 2,
 			validateEvents: func(t *testing.T, evts []*events.DataAuthorization) {
 				assert.Equal(t, events.StatusFailure, evts[1].EventStatus)
-				assert.Equal(t, events.ReasonCode(0), evts[1].Reason)
+				assert.Equal(t, events.ReasonNotSpecified, evts[1].Reason)
 			},
 		},
 	}

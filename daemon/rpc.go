@@ -3,7 +3,6 @@
 package daemon
 
 import (
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -62,8 +61,7 @@ type RPC struct {
 	consentChecker      ConsentChecker
 	recentVPNConnStore  *recents.RecentConnectionsStore
 	dataUpdateEvents    *daemonevents.DataUpdateEvents
-	initialLoginType    pb.LoginType // memorize what action started: Login or Signup (Register)
-	loginTypeMu         sync.Mutex   // protects initialLoginType
+	initialLoginType    *AtomicLoginType // memorize what action started: Login or Signup (Register) - thread-safe
 	pb.UnimplementedDaemonServer
 }
 
@@ -126,5 +124,6 @@ func NewRPC(
 		consentChecker:     consentChecker,
 		recentVPNConnStore: recentVPNConnStore,
 		dataUpdateEvents:   dataUpdateEvents,
+		initialLoginType:   NewAtomicLoginType(),
 	}
 }
