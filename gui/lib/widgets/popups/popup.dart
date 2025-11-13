@@ -32,7 +32,6 @@ abstract class Popup extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
-          spacing: appTheme.verticalSpaceMedium,
           children: [_titleBar(context, appTheme), buildContent(context, ref)],
         ),
       ),
