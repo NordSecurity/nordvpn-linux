@@ -26,14 +26,12 @@ case "$1" in
     upgrade)
         case "$ENV" in
             init)
-                # Doesn't actually work on fedora as these are debian based commands
                 /etc/init.d/nordvpn upgrade-stop &>/dev/null || :
                 update-rc.d -f nordvpn remove &>/dev/null || :
             ;;
             *sh) # executed in docker
             ;;
             systemd)
-                sudo systemctl set-property nordvpnd.service Restart=no &>/dev/null || :
                 sudo systemctl kill --signal=SIGUSR1 nordvpnd.service &>/dev/null || :
                 sudo systemctl stop nordvpnd.socket &>/dev/null || :
                 sudo systemctl disable nordvpnd.service &>/dev/null || :
