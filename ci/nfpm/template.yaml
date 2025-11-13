@@ -51,6 +51,7 @@ depends:
   - libc6 (>= 2.29)
   - libsqlite3-0
   - xsltproc
+  - awk
 
 # Basic file that applies to all packagers
 contents:
@@ -153,6 +154,7 @@ overrides:
       - glibc >= 2.29
       - (libsqlite3-0 or sqlite-libs)
       - xsltproc
+      - awk
     # RPM specific scripts.
     scripts:
       preinstall: ${WORKDIR}/contrib/scriptlets/rpm/preinst
