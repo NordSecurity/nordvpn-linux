@@ -3,14 +3,12 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"os"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/events/moose"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 var (
@@ -22,22 +20,10 @@ func newAnalytics(
 	eventsDbPath string,
 	fs *config.FilesystemConfigManager,
 	clientAPI core.ClientAPI,
-	httpClient http.Client,
+	httpClient *http.Client,
 	buildTarget config.BuildTarget,
 	id string) *moose.Subscriber {
 	_ = os.Setenv("MOOSE_LOG_FILE", "Stdout")
 
-	sub := &moose.Subscriber{
-		EventsDbPath: eventsDbPath,
-		Config:       fs,
-		BuildTarget:  buildTarget,
-		Domain:       EventsDomain,
-		Subdomain:    EventsSubdomain,
-		DeviceID:     id,
-		ClientAPI:    clientAPI,
-	}
-	if err := sub.Init(httpClient); err != nil {
-		log.Println(internal.ErrorPrefix, "MOOSE: Initialization error:", err)
-	}
-	return sub
+	return moose.NewSubscriber(eventsDbPath, fs, clientAPI, httpClient, buildTarget, id, EventsDomain, EventsSubdomain)
 }
