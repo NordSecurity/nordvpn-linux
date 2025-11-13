@@ -515,3 +515,4 @@ def test_lan_discovery_on_off():
 
     assert "LAN Discovery has been successfully set to 'disabled'." in sh.nordvpn.set("lan-discovery", "off")
     assert not settings.is_lan_discovery_enabled()
+
