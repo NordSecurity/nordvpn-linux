@@ -118,7 +118,7 @@
   "vpnConnection": "VPN connection",
   "vpnConnectionSubtitle": "Auto-connect, Kill Switch, protocol",
   "autoConnectDescription": "Automatically connect to the fastest available server or your chosen server location when the app starts.",
-  "fastestServer": "Fastest server",
+  "fastestServer": "Fastest",
   "change": "Change",
   "nordLynx": "NordLynx",
   "openVpnTcp": "OpenVPN (TCP)",
