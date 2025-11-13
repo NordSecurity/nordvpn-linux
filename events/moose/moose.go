@@ -64,7 +64,31 @@ type Subscriber struct {
 	mooseOptInFunc             mooseConsentFunc
 	mooseConsentLevelFunc      mooseConsentFunc
 	mooseSetConsentIntoCtxFunc mooseSetConsentIntoContextFunc
+	httpClient                 *http.Client
 	mux                        sync.RWMutex
+}
+
+func NewSubscriber(
+	eventsDbPath string,
+	fs *config.FilesystemConfigManager,
+	clientAPI core.ClientAPI,
+	httpClient *http.Client,
+	buildTarget config.BuildTarget,
+	id string,
+	eventsDomain string,
+	eventsSubdomain string) *Subscriber {
+
+	sub := &Subscriber{
+		EventsDbPath: eventsDbPath,
+		Config:       fs,
+		BuildTarget:  buildTarget,
+		Domain:       eventsDomain,
+		Subdomain:    eventsSubdomain,
+		DeviceID:     id,
+		ClientAPI:    clientAPI,
+		httpClient:   httpClient,
+	}
+	return sub
 }
 
 func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error {
@@ -138,7 +162,7 @@ func (s *Subscriber) isEnabled() bool {
 
 // Init initializes moose libs. It has to be done before usage regardless of the enabled state.
 // Disabled case should be handled by `set_opt_out` value.
-func (s *Subscriber) Init(httpClient http.Client) error {
+func (s *Subscriber) Init() error {
 	log.Println(internal.InfoPrefix, "initializing moose")
 	s.mux.Lock()
 	defer s.mux.Unlock()
@@ -170,7 +194,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 	log.Println(internal.InfoPrefix, "[moose] configure to send events:", canSendEvents)
 
 	client := worker.NewHttpClientContext(s.currentDomain)
-	client.Client = httpClient
+	client.Client = *s.httpClient
 	if err := s.response(uint32(worker.StartWithClient(
 		s.EventsDbPath,
 		s.currentDomain,
