@@ -89,7 +89,7 @@ final class CustomDnsSettingsHandle extends ScreenHandle {
   }
 
   bool isWarningMessageDisplayed() {
-    final finder = find.byKey(CustomDnsKeys.warningMessage);
+    final finder = find.byKey(CustomDnsKeys.dnsWarningMessage);
     final finderIcon = find.descendant(
       of: finder,
       matching: app.tester.findSvgWithPath("warning_sign.svg"),
