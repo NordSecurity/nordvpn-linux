@@ -58,7 +58,7 @@ final class AccountScreenHandle extends ScreenHandle {
   Future<void> clickManageSubscriptionLink() async {
     final linkFinder = find.descendant(
       of: serviceSubscriptionInfoFinder(),
-      matching: find.byType(InternalLink<Uri>),
+      matching: find.byType(FirstPartyLink<Uri>),
     );
     await app.tester.tap(linkFinder);
     await app.tester.pump();
@@ -86,7 +86,7 @@ final class AccountScreenHandle extends ScreenHandle {
   Future<void> clickChangePasswordLink() async {
     final linkFinder = find.descendant(
       of: accountInfoFinder(),
-      matching: find.byType(InternalLink<Uri>),
+      matching: find.byType(FirstPartyLink<Uri>),
     );
     await app.tester.tap(linkFinder);
     await app.tester.pump();
