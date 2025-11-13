@@ -83,4 +83,17 @@ void runCustomDnsTests() async {
     await app.waitForUiUpdates();
     expect(dnsScreen.isDisableTpPopupDisplayed(), isTrue);
   });
+
+  testWidgets("check custom DNS warning message", (tester) async {
+    final app = await tester.setupIntegrationTests();
+    final dnsScreen = await app.goToCustomDnsSettingsScreen();
+
+    expect(dnsScreen.isDnsEnabled(), isFalse);
+    expect(dnsScreen.isWarningMessageDisplayed(), isTrue);
+
+    // enable DNS toggle
+    await dnsScreen.tapOnOffSwitch();
+    await app.waitForUiUpdates();
+    expect(dnsScreen.isWarningMessageDisplayed(), isTrue);
+  });
 }

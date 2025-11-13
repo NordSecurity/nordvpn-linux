@@ -17,6 +17,7 @@ final class SettingsWrapperWidget extends StatelessWidget {
   final Widget? stickyFooter;
   final Widget? breadcrumbsSubtitle;
   final bool useSeparator;
+  final double? spaceSize;
 
   const SettingsWrapperWidget({
     super.key,
@@ -26,6 +27,7 @@ final class SettingsWrapperWidget extends StatelessWidget {
     this.stickyFooter,
     this.useSeparator = true,
     this.breadcrumbsSubtitle,
+    this.spaceSize,
   });
 
   @override
@@ -57,14 +59,15 @@ final class SettingsWrapperWidget extends StatelessWidget {
   }
 
   Widget _pageContents(BuildContext context) {
-    if (useSeparator) {
+    if (useSeparator || (spaceSize != null)) {
       return ListView.separated(
         itemCount: itemsCount,
         padding: EdgeInsets.symmetric(
           horizontal: context.appTheme.outerPadding,
         ),
         itemBuilder: (context, index) => itemBuilder(context, index),
-        separatorBuilder: (_, __) => _divider(),
+        separatorBuilder: (_, _) =>
+            useSeparator ? _divider() : SizedBox(height: spaceSize),
       );
     } else {
       return ListView.builder(
@@ -99,7 +102,9 @@ final class SettingsWrapperWidget extends StatelessWidget {
     return AdvancedListTile(
       key: key ?? UniqueKey(),
       leading: iconName != null ? DynamicThemeImage(iconName) : null,
-      title: Text(title, style: titleStyle ?? settingsTheme.itemTitleStyle),
+      title: Expanded(
+        child: Text(title, style: titleStyle ?? settingsTheme.itemTitleStyle),
+      ),
       subtitle: subtitle != null
           ? Text(subtitle, style: settingsTheme.itemSubtitleStyle)
           : subtitleWidget,

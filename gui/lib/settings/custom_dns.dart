@@ -11,10 +11,10 @@ import 'package:nordvpn/internal/scaler_responsive_box.dart';
 import 'package:nordvpn/settings/settings_wrapper_widget.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/custom_dns_theme.dart';
-import 'package:nordvpn/theme/settings_theme.dart';
 import 'package:nordvpn/widgets/advanced_list_tile.dart';
 import 'package:nordvpn/widgets/bin_button.dart';
 import 'package:nordvpn/widgets/custom_error_widget.dart';
+import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:nordvpn/widgets/loading_button.dart';
 import 'package:nordvpn/widgets/loading_indicator.dart';
 import 'package:nordvpn/widgets/on_off_switch.dart';
@@ -36,9 +36,10 @@ final class CustomDnsKeys {
   static const dnsAddButton = Key("dnsAddButton");
   static const dnsServersList = Key("dnsServersList");
   static ValueKey dnsRemoveButton(String server) => ValueKey("remove_$server");
+  static final dnsWarningMessage = Key("dnsWarningMsg");
 }
 
-enum _CustomDnsSections { status, addForm, dnsList }
+enum _CustomDnsSections { status, addForm, warningMessage, dnsList }
 
 class _CustomDnsState extends ConsumerState<CustomDns> {
   final _controller = TextEditingController();
@@ -70,7 +71,7 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
 
   Widget _build(BuildContext context, ApplicationSettings settings) {
     final customDnsTheme = context.customDnsTheme;
-    final settingsTheme = context.settingsTheme;
+    final appTheme = context.appTheme;
 
     // NOTE: If the toggle was changed in UI, then it stays on even when user
     // clears Custom DNS by using daemon
@@ -79,6 +80,7 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
 
     return SettingsWrapperWidget(
       useSeparator: false,
+      spaceSize: appTheme.horizontalSpaceSmall,
       itemsCount: _CustomDnsSections.values.length,
       itemBuilder: (context, index) {
         switch (_CustomDnsSections.values[index]) {
@@ -101,7 +103,7 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
               context,
               color: customDnsTheme.formBackground,
               title: "${t.ui.enterDnsAddress}:",
-              titleStyle: settingsTheme.itemSubtitleStyle,
+              titleStyle: appTheme.caption,
               subtitleWidget: ScalerResponsiveBox(
                 maxWidth: customDnsTheme.dnsInputWidth,
                 child: Input(
@@ -126,13 +128,22 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
                     key: CustomDnsKeys.dnsAddButton,
                     controller: _buttonController,
                     onPressed: isValid ? () => _addServer(settings) : null,
-                    child: Text(t.ui.add),
+                    child: Text(t.ui.add, style: appTheme.body),
                   );
                 },
               ),
               enabled:
                   isCustomDnsEnabled &&
                   settings.customDnsServers.length < maxCustomDnsServers,
+            );
+          case _CustomDnsSections.warningMessage:
+            return SettingsWrapperWidget.buildListItem(
+              key: CustomDnsKeys.dnsWarningMessage,
+              context,
+              color: customDnsTheme.formBackground,
+              iconName: "warning_sign.svg",
+              titleStyle: appTheme.caption,
+              title: t.ui.customDnsWarning,
             );
           case _CustomDnsSections.dnsList:
             if (settings.customDnsServers.isEmpty) {
