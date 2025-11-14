@@ -241,6 +241,8 @@ func (ti *Instance) setSettings(settings *pb.Settings) bool {
 		return false
 	}
 
+	ti.fileshare.UpdateFileshareConnection(settings.Meshnet)
+
 	changed := false
 	var notificationsText, trayText string
 	var forceNotifications, forceTray bool

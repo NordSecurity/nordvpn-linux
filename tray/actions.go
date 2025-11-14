@@ -14,7 +14,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/cli"
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/godbus/dbus/v5"
 )
@@ -252,10 +251,7 @@ func (ti *Instance) setNotify(flag bool) bool {
 	case internal.CodeSuccess:
 	}
 
-	_, err = ti.fileshareClient.SetNotifications(context.Background(), &filesharepb.SetNotificationsRequest{Enable: flag})
-	if err != nil {
-		log.Printf("%s Setting fileshare notifications %s error: %s", internal.ErrorPrefix, flagText, err)
-	}
+	ti.fileshare.SetNotifications(flag, flagText)
 
 	if resp.Type == internal.CodeNothingToDo {
 		ti.notify(NoForce, "Notifications already %s", flagText)
