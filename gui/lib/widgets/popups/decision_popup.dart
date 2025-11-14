@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/widgets/popups/popup.dart';
@@ -33,20 +34,43 @@ final class DecisionPopup extends Popup {
   }
 
   Widget _noButton(BuildContext context) {
-    return OutlinedButton(
-      onPressed: () => closePopup(context),
-      child: Text(decisionMetadata.noButtonText),
+    return SizedBox(
+      height: 32,
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        ),
+        onPressed: () => closePopup(context),
+        child: Text(decisionMetadata.noButtonText),
+      ),
     );
   }
 
   Widget _yesButton(WidgetRef ref, BuildContext context) {
-    return ElevatedButton(
-      child: Text(decisionMetadata.yesButtonText),
-      onPressed: () async {
-        await decisionMetadata.yesAction(ref);
-        if (!context.mounted) return;
-        closePopup(context);
-      },
+    return SizedBox(
+      height: 32,
+      child: ElevatedButton(
+        onPressed: () async {
+          if (decisionMetadata.autoClose) {
+            // navigate if route is specified
+            if (decisionMetadata.navigateToRoute != null) {
+              context.go(decisionMetadata.navigateToRoute!);
+            }
+            // close popup immediately and run action in background
+            closePopup(context);
+            decisionMetadata.yesAction(ref);
+          } else {
+            // wait for action to complete before closing
+            await decisionMetadata.yesAction(ref);
+            if (!context.mounted) return;
+            closePopup(context);
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        ),
+        child: Text(decisionMetadata.yesButtonText),
+      ),
     );
   }
 }

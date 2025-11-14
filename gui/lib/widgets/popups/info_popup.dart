@@ -28,9 +28,16 @@ final class InfoPopup extends Popup {
   }
 
   Widget _closeButton(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () => closePopup(context),
-      child: Text(t.ui.close),
+    return SizedBox(
+      width: 120,
+      height: 32,
+      child: ElevatedButton(
+        onPressed: () => closePopup(context),
+        style: ElevatedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        ),
+        child: Text(t.ui.close),
+      ),
     );
   }
 }

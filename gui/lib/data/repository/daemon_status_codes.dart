@@ -19,6 +19,7 @@ final class DaemonStatusCode {
   static const noService = 3020;
   static const tokenRenewError = 3022;
   static const tokenLoginFailure = 3035;
+  static const serverUnavailable = 3032;
   static const serverNotObfuscated = 3037;
   static const serverObfuscated = 3038;
   static const privateSubnetLANDiscovery = 3040;
