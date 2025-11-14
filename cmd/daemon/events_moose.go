@@ -21,20 +21,20 @@ var (
 func newAnalytics(
 	eventsDbPath string,
 	fs *config.FilesystemConfigManager,
-	subAPI core.SubscriptionAPI,
+	clientAPI core.ClientAPI,
 	httpClient http.Client,
 	buildTarget config.BuildTarget,
 	id string) *moose.Subscriber {
 	_ = os.Setenv("MOOSE_LOG_FILE", "Stdout")
 
 	sub := &moose.Subscriber{
-		EventsDbPath:    eventsDbPath,
-		Config:          fs,
-		BuildTarget:     buildTarget,
-		Domain:          EventsDomain,
-		Subdomain:       EventsSubdomain,
-		DeviceID:        id,
-		SubscriptionAPI: subAPI,
+		EventsDbPath: eventsDbPath,
+		Config:       fs,
+		BuildTarget:  buildTarget,
+		Domain:       EventsDomain,
+		Subdomain:    EventsSubdomain,
+		DeviceID:     id,
+		ClientAPI:    clientAPI,
 	}
 	if err := sub.Init(httpClient); err != nil {
 		log.Println(internal.ErrorPrefix, "MOOSE: Initialization error:", err)
