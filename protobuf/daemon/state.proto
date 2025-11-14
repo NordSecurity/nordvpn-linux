@@ -2,46 +2,45 @@ syntax = "proto3";
 
 package pb;
 
-option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
-
 import "settings.proto";
 import "status.proto";
 
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
+
 enum AppStateError {
-    FAILED_TO_GET_UID = 0;
+  FAILED_TO_GET_UID = 0;
 }
 
 message LoginEvent {
-    LoginEventType type = 1;
+  LoginEventType type = 1;
 }
 
 enum LoginEventType {
-    LOGIN = 0;
-    LOGOUT = 1;
+  LOGIN = 0;
+  LOGOUT = 1;
 }
 
 enum UpdateEvent {
-    SERVERS_LIST_UPDATE = 0;
-    RECENTS_LIST_UPDATE = 1;
+  SERVERS_LIST_UPDATE = 0;
+  RECENTS_LIST_UPDATE = 1;
 }
 
 message AccountModification {
-  optional string expires_at = 1;
+  optional string subscription_expires_at = 1;
 }
 
 message VersionHealthStatus {
-    int32 status_code = 1;
+  int32 status_code = 1;
 }
 
 message AppState {
-    oneof state {
-        AppStateError error = 1;
-        StatusResponse connection_status = 2;
-        LoginEvent login_event = 3;
-        Settings settings_change = 4;
-        UpdateEvent update_event = 5;
-        AccountModification account_modification = 6;
-        VersionHealthStatus version_health = 7;
-    }
+  oneof state {
+    AppStateError error = 1;
+    StatusResponse connection_status = 2;
+    LoginEvent login_event = 3;
+    Settings settings_change = 4;
+    UpdateEvent update_event = 5;
+    AccountModification account_modification = 6;
+    VersionHealthStatus version_health = 7;
+  }
 }
-

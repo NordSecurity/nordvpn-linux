@@ -88,23 +88,26 @@ class AccountResponse extends $pb.GeneratedMessage {
     $fixnum.Int64? type,
     $core.String? username,
     $core.String? email,
-    $core.String? expiresAt,
+    $core.String? subscriptionExpiresAt,
     $fixnum.Int64? dedicatedIpStatus,
     $core.String? lastDedicatedIpExpiresAt,
     $core.Iterable<DedidcatedIPService>? dedicatedIpServices,
     $0.TriState? mfaStatus,
+    $core.String? createdOn,
   }) {
     final result = create();
     if (type != null) result.type = type;
     if (username != null) result.username = username;
     if (email != null) result.email = email;
-    if (expiresAt != null) result.expiresAt = expiresAt;
+    if (subscriptionExpiresAt != null)
+      result.subscriptionExpiresAt = subscriptionExpiresAt;
     if (dedicatedIpStatus != null) result.dedicatedIpStatus = dedicatedIpStatus;
     if (lastDedicatedIpExpiresAt != null)
       result.lastDedicatedIpExpiresAt = lastDedicatedIpExpiresAt;
     if (dedicatedIpServices != null)
       result.dedicatedIpServices.addAll(dedicatedIpServices);
     if (mfaStatus != null) result.mfaStatus = mfaStatus;
+    if (createdOn != null) result.createdOn = createdOn;
     return result;
   }
 
@@ -124,7 +127,7 @@ class AccountResponse extends $pb.GeneratedMessage {
     ..aInt64(1, _omitFieldNames ? '' : 'type')
     ..aOS(2, _omitFieldNames ? '' : 'username')
     ..aOS(3, _omitFieldNames ? '' : 'email')
-    ..aOS(4, _omitFieldNames ? '' : 'expiresAt')
+    ..aOS(4, _omitFieldNames ? '' : 'subscriptionExpiresAt')
     ..aInt64(5, _omitFieldNames ? '' : 'dedicatedIpStatus')
     ..aOS(6, _omitFieldNames ? '' : 'lastDedicatedIpExpiresAt')
     ..pc<DedidcatedIPService>(
@@ -134,6 +137,7 @@ class AccountResponse extends $pb.GeneratedMessage {
         defaultOrMaker: $0.TriState.UNKNOWN,
         valueOf: $0.TriState.valueOf,
         enumValues: $0.TriState.values)
+    ..aOS(9, _omitFieldNames ? '' : 'createdOn')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -185,13 +189,13 @@ class AccountResponse extends $pb.GeneratedMessage {
   void clearEmail() => $_clearField(3);
 
   @$pb.TagNumber(4)
-  $core.String get expiresAt => $_getSZ(3);
+  $core.String get subscriptionExpiresAt => $_getSZ(3);
   @$pb.TagNumber(4)
-  set expiresAt($core.String value) => $_setString(3, value);
+  set subscriptionExpiresAt($core.String value) => $_setString(3, value);
   @$pb.TagNumber(4)
-  $core.bool hasExpiresAt() => $_has(3);
+  $core.bool hasSubscriptionExpiresAt() => $_has(3);
   @$pb.TagNumber(4)
-  void clearExpiresAt() => $_clearField(4);
+  void clearSubscriptionExpiresAt() => $_clearField(4);
 
   @$pb.TagNumber(5)
   $fixnum.Int64 get dedicatedIpStatus => $_getI64(4);
@@ -222,6 +226,15 @@ class AccountResponse extends $pb.GeneratedMessage {
   $core.bool hasMfaStatus() => $_has(7);
   @$pb.TagNumber(8)
   void clearMfaStatus() => $_clearField(8);
+
+  @$pb.TagNumber(9)
+  $core.String get createdOn => $_getSZ(8);
+  @$pb.TagNumber(9)
+  set createdOn($core.String value) => $_setString(8, value);
+  @$pb.TagNumber(9)
+  $core.bool hasCreatedOn() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearCreatedOn() => $_clearField(9);
 }
 
 class AccountRequest extends $pb.GeneratedMessage {
