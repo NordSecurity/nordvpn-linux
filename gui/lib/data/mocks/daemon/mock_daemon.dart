@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:fixnum/fixnum.dart';
 import 'package:grpc/grpc.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_account_info.dart';
+import 'package:nordvpn/data/mocks/daemon/mock_recent_connections.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_servers_list.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_application_settings.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_vpn_status.dart';
@@ -36,12 +37,14 @@ final class MockDaemon extends DaemonServiceBase {
   late final MockServersList serversList;
   late final MockAccountInfo account;
   late final MockVpnStatus vpnStatus;
+  late final MockRecentConnections recentConnections;
 
   MockDaemon() {
     serversList = MockServersList(appStateStream);
     appSettings = MockApplicationSettings(appStateStream, serversList);
     account = MockAccountInfo(appStateStream, serversList);
     vpnStatus = MockVpnStatus(appStateStream, appSettings, serversList);
+    recentConnections = MockRecentConnections(serversList);
   }
 
   void dispose() {
@@ -355,6 +358,10 @@ final class MockDaemon extends DaemonServiceBase {
     ServiceCall call,
     RecentConnectionsRequest request,
   ) {
-    throw UnimplementedError();
+    return Future.value(
+      RecentConnectionsResponse(
+        connections: recentConnections.getConnections(),
+      ),
+    );
   }
 }
