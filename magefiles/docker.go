@@ -153,13 +153,17 @@ func runDocker(
 	}
 
 	user := ""
+	// Keeps a list with all tmpFs folders that need to be created.
+	// Only passing this into container.HostConfig can ensure the correct owner of the folder
+	var tmpFs map[string]string
+
 	if !isPrivileged {
 		user = fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid())
-		env["HOME"] = "/home/user"
-		mounts = append(mounts, mount.Mount{
-			Type:   mount.TypeTmpfs,
-			Target: "/home/user",
-		})
+		// configure /home/user to be owned by the dynamic user created
+		homeFolder := "/home/user"
+		permissions := fmt.Sprintf("uid=%d,gid=%d,mode=700", os.Getuid(), os.Getgid())
+		env["HOME"] = homeFolder
+		tmpFs = map[string]string{homeFolder: permissions}
 	}
 
 	containerConfig := container.Config{
@@ -187,6 +191,7 @@ func runDocker(
 		AutoRemove:  true,
 		Mounts:      mounts,
 		Privileged:  isPrivileged,
+		Tmpfs: 		 tmpFs,
 		Sysctls:     map[string]string{"net.ipv6.conf.all.disable_ipv6": "1"},
 		NetworkMode: container.NetworkMode(network),
 	}
