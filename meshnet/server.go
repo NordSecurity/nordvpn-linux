@@ -1897,6 +1897,12 @@ func (s *Server) connect(
 	// Reset the connecting start timer
 	connectingStartTime = time.Now()
 
+	disconnectSender := events.NewDisconnectSender(events.DataDisconnect{
+		Protocol:             cfg.AutoConnectData.Protocol,
+		Technology:           cfg.Technology,
+		ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
+	}, s.daemonEvents.Service.Disconnect.Publish)
+
 	if err := s.netw.Start(
 		ctx,
 		vpn.Credentials{
@@ -1911,6 +1917,7 @@ func (s *Server) connect(
 		cfg.AutoConnectData.Allowlist,
 		nameservers,
 		!peer.DoesPeerAllowLocalNetwork, // enableLocalTraffic if target peer does not permit its LAN access
+		disconnectSender.PublishDisconnect,
 	); err != nil {
 		// Send the connection failure event
 		event.EventStatus = events.StatusFailure
