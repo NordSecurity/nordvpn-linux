@@ -12,6 +12,7 @@ import (
 	"net/netip"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
@@ -83,6 +84,7 @@ type Networker interface {
 		config.Allowlist,
 		config.DNS,
 		bool, // in case mesh peer connect - route to remote peer's LAN or not
+		events.DisconnectCallback, // callback provided by the caller in case Networker disconnects internally
 	) error
 	// Cancel is created instead of using context.Context because `Start` is shared between VPN
 	// and meshnet networkers
@@ -214,13 +216,14 @@ func (netw *Combined) Start(
 	allowlist config.Allowlist,
 	nameservers config.DNS,
 	enableLocalTraffic bool,
+	disconnectCallback events.DisconnectCallback,
 ) (err error) {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
 	netw.enableLocalTraffic = enableLocalTraffic
 	if netw.isConnectedToVPN() {
-		return netw.restart(ctx, creds, serverData, nameservers)
+		return netw.restart(ctx, creds, serverData, nameservers, disconnectCallback)
 	}
 	return netw.start(ctx, creds, serverData, allowlist, nameservers)
 }
@@ -394,6 +397,7 @@ func (netw *Combined) restart(
 	creds vpn.Credentials,
 	serverData vpn.ServerData,
 	nameservers config.DNS,
+	disconnectCallback events.DisconnectCallback,
 ) (err error) {
 	if netw.vpnet == nil {
 		return errNilVPN
@@ -410,10 +414,13 @@ func (netw *Combined) restart(
 		log.Println(internal.WarningPrefix, err)
 	}
 
+	stopStartTime := time.Now()
 	err = netw.vpnet.Stop()
 	if err != nil {
+		disconnectCallback(stopStartTime, true, err)
 		return err
 	}
+	disconnectCallback(stopStartTime, true, nil)
 
 	netw.publisher.Publish("restarting vpn")
 

@@ -210,3 +210,32 @@ type UiItemsAction struct {
 }
 
 type DataRecentsChanged struct{}
+
+// DisconnectCallback is called when Networker needs to disconnect when establishing a connection. This usually happens
+// in case of a connection refresh.
+type DisconnectCallback func(startTime time.Time, success bool, err error)
+
+type DisconnectSender struct {
+	eventTemplate DataDisconnect
+	publishFunc   func(message DataDisconnect)
+}
+
+func NewDisconnectSender(eventTemplate DataDisconnect, publishFunc func(DataDisconnect)) DisconnectSender {
+	return DisconnectSender{
+		eventTemplate: eventTemplate,
+		publishFunc:   publishFunc,
+	}
+}
+
+func (d *DisconnectSender) PublishDisconnect(startTime time.Time, success bool, err error) {
+	status := StatusFailure
+	if success {
+		status = StatusSuccess
+	}
+
+	d.eventTemplate.EventStatus = status
+	d.eventTemplate.Duration = time.Since(startTime)
+	d.eventTemplate.Error = err
+
+	d.publishFunc(d.eventTemplate)
+}

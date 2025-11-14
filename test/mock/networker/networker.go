@@ -9,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 )
 
@@ -33,6 +34,7 @@ func (Mock) Start(
 	config.Allowlist,
 	config.DNS,
 	bool,
+	events.DisconnectCallback,
 ) error {
 	return nil
 }
@@ -110,6 +112,7 @@ func (Failing) Start(
 	config.Allowlist,
 	config.DNS,
 	bool,
+	events.DisconnectCallback,
 ) error {
 	return mock.ErrOnPurpose
 }

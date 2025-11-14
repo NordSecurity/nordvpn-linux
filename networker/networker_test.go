@@ -8,6 +8,7 @@ import (
 	"net/netip"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
@@ -258,19 +259,20 @@ func (h *workingHostSetter) UnsetHosts() error {
 func TestCombined_Start(t *testing.T) {
 	category.Set(t, category.Unit)
 	tests := []struct {
-		name              string
-		gateway           routes.GatewayRetriever
-		allowlistRouter   routes.Service
-		dns               dns.Setter
-		vpn               vpn.VPN
-		fw                firewall.Service
-		allowlist         allowlist.Routing
-		devices           device.ListFunc
-		routing           routes.PolicyService
-		arpIgnore         bool
-		expectedARPIgnore bool
-		err               error
-		setARPIgnoreErr   error
+		name                     string
+		gateway                  routes.GatewayRetriever
+		allowlistRouter          routes.Service
+		dns                      dns.Setter
+		vpn                      vpn.VPN
+		fw                       firewall.Service
+		allowlist                allowlist.Routing
+		devices                  device.ListFunc
+		routing                  routes.PolicyService
+		arpIgnore                bool
+		expectedARPIgnore        bool
+		disconnectCallbackCalled bool
+		err                      error
+		setARPIgnoreErr          error
 	}{
 		{
 			name:            "nil vpn",
@@ -345,16 +347,17 @@ func TestCombined_Start(t *testing.T) {
 			err:             nil,
 		},
 		{
-			name:            "restart",
-			gateway:         workingGateway{},
-			allowlistRouter: workingRouter{},
-			dns:             &workingDNS{},
-			vpn:             &mock.ActiveVPN{},
-			fw:              &workingFirewall{},
-			allowlist:       &workingAllowlistRouting{},
-			devices:         workingDeviceList,
-			routing:         &workingRoutingSetup{},
-			err:             nil,
+			name:                     "restart",
+			gateway:                  workingGateway{},
+			allowlistRouter:          workingRouter{},
+			dns:                      &workingDNS{},
+			vpn:                      &mock.ActiveVPN{},
+			fw:                       &workingFirewall{},
+			allowlist:                &workingAllowlistRouting{},
+			devices:                  workingDeviceList,
+			routing:                  &workingRoutingSetup{},
+			disconnectCallbackCalled: true,
+			err:                      nil,
 		},
 		{
 			name:              "start with arp ignore",
@@ -440,6 +443,9 @@ func TestCombined_Start(t *testing.T) {
 				test.arpIgnore,
 				&arpIgnoreSetter,
 			)
+
+			disconnectCallbackCalled := false
+
 			err := netw.Start(
 				context.Background(),
 				vpn.Credentials{},
@@ -447,7 +453,11 @@ func TestCombined_Start(t *testing.T) {
 				config.NewAllowlist(nil, nil, nil),
 				[]string{"1.1.1.1"},
 				true,
+				func(startTime time.Time, success bool, err error) {
+					disconnectCallbackCalled = true
+				},
 			)
+			assert.Equal(t, test.disconnectCallbackCalled, disconnectCallbackCalled)
 			assert.ErrorIs(t, err, test.err, test.name)
 			assert.Equal(t, test.expectedARPIgnore, arpIgnoreSetter.IsSet, "ARP ignore not set to expected value.")
 		})
@@ -1311,6 +1321,7 @@ func TestCombined_Reconnect(t *testing.T) {
 				config.NewAllowlist(nil, nil, nil),
 				[]string{"1.1.1.1"},
 				test.enableLan,
+				func(startTime time.Time, success bool, err error) {},
 			)
 
 			// simulate network change event and refreshVPN
@@ -1880,6 +1891,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
+					func(startTime time.Time, success bool, err error) {},
 				)
 			},
 			lanAvailable: false,
@@ -1914,6 +1926,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
+					func(startTime time.Time, success bool, err error) {},
 				)
 				c.SetLanDiscovery(true)
 			},
@@ -1930,6 +1943,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
+					func(startTime time.Time, success bool, err error) {},
 				)
 			},
 			lanAvailable: true,
@@ -1954,6 +1968,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
+					func(startTime time.Time, success bool, err error) {},
 				)
 				c.SetLanDiscovery(false)
 			},
@@ -1969,6 +1984,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
+					func(startTime time.Time, success bool, err error) {},
 				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 			},
@@ -1984,6 +2000,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
+					func(startTime time.Time, success bool, err error) {},
 				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)
@@ -2000,6 +2017,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
+					func(startTime time.Time, success bool, err error) {},
 				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)
@@ -2017,6 +2035,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
+					func(startTime time.Time, success bool, err error) {},
 				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)
@@ -2035,6 +2054,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
+					func(startTime time.Time, success bool, err error) {},
 				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)
