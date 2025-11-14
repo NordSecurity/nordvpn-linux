@@ -1283,7 +1283,7 @@ func (netw *Combined) allowIncoming(publicKey string, address netip.Addr, lanAll
 		},
 		Allow:          true,
 		Comment:        meshnetFirewallRuleComment,
-		SimplifiedName: allowIncomingRule,
+		SimplifiedName: allowIncomingRule + address.String(),
 	}
 	rules = append(rules, rule)
 
@@ -1309,7 +1309,7 @@ func (netw *Combined) allowIncoming(publicKey string, address netip.Addr, lanAll
 			},
 			Allow:          false,
 			Comment:        meshnetFirewallRuleComment,
-			SimplifiedName: blockLanRule,
+			SimplifiedName: blockLanRule + address.String(),
 		}
 
 		rules = append(rules, rule)
@@ -1348,7 +1348,7 @@ func (netw *Combined) allowFileshare(publicKey string, address netip.Addr) error
 		},
 		Allow:          true,
 		Comment:        meshnetFirewallRuleComment,
-		SimplifiedName: allowFileshareRule,
+		SimplifiedName: allowFileshareRule + address.String(),
 	}}
 
 	ruleIndex := slices.Index(netw.rules, ruleName)
