@@ -12,17 +12,17 @@ var (
 	published atomic.Bool // true only when first open event was actually published
 )
 
-// FirstOpenNotifier publishes a one-time `first_open` event when
+// firstOpenNotifier publishes a one-time `first_open` event when
 // `cm.NewInstallation` is true and the device location event fires.
 // It uses an `atomic.Bool` to enforce exactly-once behavior.
-type FirstOpenNotifier struct {
+type firstOpenNotifier struct {
 	cm                     *config.FilesystemConfigManager
 	emitFirstTimeOpenEvent func() error
 }
 
-// RegisterNotifier sets up a `FirstOpenNotifier`.
+// RegisterNotifier sets up a `firstOpenNotifier`.
 // If `cm.NewInstallation` is true and the first open event is not yet published, it subscribes
-// [firstopen.NotifyOnceAppJustInstalled] to the device location events stream.
+// [firstopen.notifyOnceAppJustInstalled] to the device location events stream.
 func RegisterNotifier(
 	cm *config.FilesystemConfigManager,
 	deviceLocation events.Subscriber[core.Insights],
@@ -31,23 +31,18 @@ func RegisterNotifier(
 	if !cm.NewInstallation || published.Load() {
 		return
 	}
-	n := FirstOpenNotifier{
+	n := firstOpenNotifier{
 		cm:                     cm,
 		emitFirstTimeOpenEvent: emitFirstTimeOpenEvent,
 	}
 	deviceLocation.Subscribe(n.notifyOnceAppJustInstalled)
 }
 
-// NotifyOnceAppJustInstalled checks whether this is a fresh installation,
+// notifyOnceAppJustInstalled checks whether this is a fresh installation,
 // and, if so, publishes a `first_open` event exactly once.
-func (i *FirstOpenNotifier) notifyOnceAppJustInstalled(_ core.Insights) error {
-	if !i.cm.NewInstallation || published.Load() {
+func (i *firstOpenNotifier) notifyOnceAppJustInstalled(_ core.Insights) error {
+	if !i.cm.NewInstallation || !published.CompareAndSwap(false, true) {
 		return nil
 	}
-
-	if err := i.emitFirstTimeOpenEvent(); err != nil {
-		return err
-	}
-	published.Store(true)
-	return nil
+	return i.emitFirstTimeOpenEvent()
 }

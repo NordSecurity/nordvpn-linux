@@ -78,6 +78,26 @@ func Test_NoResubscribe_AfterPublished(t *testing.T) {
 	assert.Equal(t, count, 1)
 }
 
+func Test_WithMultipleRegistrations_EventIsEmittedOnlyOnce(t *testing.T) {
+	category.Set(t, category.Unit)
+	resetGlobals()
+
+	cm := &config.FilesystemConfigManager{NewInstallation: true}
+	sub := &stubSubscriber{}
+	count := 0
+	testNotifier := func() error {
+		count++
+		return nil
+	}
+
+	RegisterNotifier(cm, sub, testNotifier)
+	RegisterNotifier(cm, sub, testNotifier)
+	RegisterNotifier(cm, sub, testNotifier)
+
+	sub.Publish(core.Insights{})
+	assert.Equal(t, count, 1)
+}
+
 func Test_ConcurrentInstallEvents_OnlyOnePublish(t *testing.T) {
 	category.Set(t, category.Unit)
 	resetGlobals()
