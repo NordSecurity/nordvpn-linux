@@ -2,7 +2,13 @@
 
 case "$1" in
     purge)
-        usrInfo=$(awk -F: '{if ($3 >= 1000 && $3 <= 2000) print $6}' < /etc/passwd)
+        usrInfo=$(
+        while IFS=: read -r user pass uid gid gecos home shell; do
+            if [ "$uid" -ge 1000 ] && [ "$uid" -le 2000 ]; then
+                echo "$home"
+            fi
+        done < /etc/passwd
+        )
         IFS=$'\n'
         for usrLine in $usrInfo; do
             # for each user remove user settings and logs dirs
