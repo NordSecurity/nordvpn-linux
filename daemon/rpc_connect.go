@@ -284,7 +284,7 @@ func (r *RPC) connect(
 	event.DurationMs = getElapsedTime(connectingStartTime)
 
 	if isRecentConnectionSupported(event.TargetServerSelection) {
-		recentModel, err := buildRecentConnectionModel(event, parameters, server, r.dm.GetCountryData().Countries)
+		recentModel, err := buildRecentConnectionModel(event, parameters, server, r.dm, cfg)
 		if err != nil {
 			log.Printf("%s Failed to build recent VPN connection model: %s\n", internal.WarningPrefix, err)
 		} else {
