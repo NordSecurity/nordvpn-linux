@@ -261,23 +261,23 @@ def test_repeated_login_callback_nordvpn_scheme_url():
 
         assert "You're already logged in." in ex.value.stdout.decode("utf-8")
 
-def test_logout_smoke():
+@pytest.mark.smoke
+def test_logout_not_connected():
     """
     :details    Verify that app has a possibility to logout
 
     :tcid       LVPN-465
 
     :steps
-        - # Login as default in nordvpn app
-        - # Logout from nordvpn
+        - # Login as default in NordVPN app
+        - # Logout from NordVPN app
         - # Verify that no error occurs
         - # Verify that output return correct message about logout
 
     :expected
         - # Successfully logged in app
         - # Successfully logged out
-        - # No error messages were found after logged out
-        - # Message about logged out is correct
+        - # "You're logged out." is in output after logging out
     """
     login.login_as("default")
 

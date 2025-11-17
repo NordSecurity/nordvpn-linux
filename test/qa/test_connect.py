@@ -44,6 +44,7 @@ def disconnect_base_test():
     assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a() and "qtun" not in sh.ip.a()
 
 
+@pytest.mark.smoke
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_quick_connect(tech, proto, obfuscated):
     """Manual TC: LVPN-559, LVPN-530"""
