@@ -196,6 +196,19 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 	return dipServices, nil
 }
 
+// FindVpnServiceExpiration returns VPN service expiration date in the format of YYY-MM-DD HH:MM:SS
+// if there is matching VPN service ID and an error otherwise
+func FindVpnServiceExpiration(services core.ServicesResponse) (string, error) {
+	for _, service := range services {
+		// VPN service ID
+		if service.Service.ID == VPNServiceID {
+			return service.ExpiresAt, nil
+		}
+	}
+
+	return "", fmt.Errorf("vpn service not found")
+}
+
 // fetchSaveServices fetches services and updates data appropriately
 func (r *RenewingChecker) fetchSaveServices(userID int64, data *config.TokenData) error {
 	services, err := r.creds.Services()
@@ -203,15 +216,8 @@ func (r *RenewingChecker) fetchSaveServices(userID int64, data *config.TokenData
 		return err
 	}
 
-	var vpnExpiry string
-	for _, service := range services {
-		if service.Service.ID == VPNServiceID {
-			vpnExpiry = service.ExpiresAt
-			break
-		}
-	}
-
-	if vpnExpiry == "" {
+	vpnExpiry, err := FindVpnServiceExpiration(services)
+	if err != nil {
 		return fmt.Errorf("vpn service not found for user %d", userID)
 	}
 
