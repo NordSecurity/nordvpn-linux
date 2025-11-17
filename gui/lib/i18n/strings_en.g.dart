@@ -580,7 +580,11 @@ class TranslationsUiEn {
 	String get vpnConnection => 'VPN connection';
 	String get vpnConnectionSubtitle => 'Auto-connect, Kill Switch, protocol';
 	String get autoConnectDescription => 'Automatically connect to the fastest available server or your chosen server location when the app starts.';
-	String get fastestServer => 'Fastest server';
+
+	/// en: 'Fastest'
+	String get fastestServer => 'Fastest';
+
+	/// en: 'Change'
 	String get change => 'Change';
 	String get nordLynx => 'NordLynx';
 	String get openVpnTcp => 'OpenVPN (TCP)';
@@ -723,9 +727,6 @@ class TranslationsUiEn {
 
 	/// en: 'Recent connections'
 	String get recentConnections => 'Recent connections';
-
-	/// en: 'In order to select obfuscated server please enable 'Obfuscation' in the setting.'
-	String get obfuscatedSpecialtyServerSelectionTooltip => 'In order to select obfuscated server please enable \'Obfuscation\' in the setting.';
 }
 
 /// Flat map(s) containing all translations.
@@ -1224,7 +1225,7 @@ extension on Translations {
 			case 'ui.vpnConnection': return 'VPN connection';
 			case 'ui.vpnConnectionSubtitle': return 'Auto-connect, Kill Switch, protocol';
 			case 'ui.autoConnectDescription': return 'Automatically connect to the fastest available server or your chosen server location when the app starts.';
-			case 'ui.fastestServer': return 'Fastest server';
+			case 'ui.fastestServer': return 'Fastest';
 			case 'ui.change': return 'Change';
 			case 'ui.nordLynx': return 'NordLynx';
 			case 'ui.openVpnTcp': return 'OpenVPN (TCP)';
@@ -1368,10 +1369,13 @@ extension on Translations {
 =======
 			case 'ui.recentConnections': return 'Recent connections';
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> d44ab456 (Fix issues)
 =======
 			case 'ui.obfuscatedSpecialtyServerSelectionTooltip': return 'In order to select obfuscated server please enable \'Obfuscation\' in the setting.';
 >>>>>>> 7ed38501 (LVPN-9315: Updated support for specialty servers (#1170))
+=======
+>>>>>>> bd87dbca (LVPN-9557: GUI fastest label issue (#1214))
 			default: return null;
 		}
 	}
