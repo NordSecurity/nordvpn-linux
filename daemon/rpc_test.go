@@ -18,11 +18,12 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
-	"github.com/NordSecurity/nordvpn-linux/daemon/events"
+	daemonEvents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
@@ -100,7 +101,7 @@ func testRPC() *RPC {
 		testNewRepoAPI(),
 		&testcore.AuthenticationAPImock{},
 		"1.0.0",
-		events.NewEventsEmpty(),
+		daemonEvents.NewEventsEmpty(),
 		func(config.Technology) (vpn.VPN, error) {
 			return &mock.WorkingVPN{}, nil
 		},
@@ -109,7 +110,7 @@ func testRPC() *RPC {
 		&subs.Subject[string]{},
 		&mock.DNSGetter{Names: []string{"1.1.1.1"}},
 		nil,
-		&mockAnalytics{},
+		func() events.Analytics { return &analytics }(),
 		&testnorduser.MockNorduserCombinedService{},
 		nil,
 		sharedctx.New(),
@@ -117,7 +118,7 @@ func testRPC() *RPC {
 		state.NewConnectionInfo(),
 		NewConsentChecker(false, cm, api, &workingLoginChecker{}, &analytics),
 		recents.NewRecentConnectionsStore(TestdataPath+TestRecentConnFile, &config.StdFilesystemHandle{}),
-		events.NewDataUpdateEvents(),
+		daemonEvents.NewDataUpdateEvents(),
 	)
 }
 
@@ -275,7 +276,7 @@ func testNewDataManager() *DataManager {
 		TestdataPath+TestServersFile,
 		TestdataPath+TestCountryFile,
 		TestdataPath+TestVersionFile,
-		events.NewDataUpdateEvents(),
+		daemonEvents.NewDataUpdateEvents(),
 	)
 }
 
