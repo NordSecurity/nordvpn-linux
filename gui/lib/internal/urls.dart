@@ -65,9 +65,9 @@ final privacyPolicyUrl = Uri.parse(
 );
 
 final manageSubscriptionUrl = Uri.parse(
-  "https://my.nordaccount.com/billing/my-subscriptions/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=settings_account-manage_subscription&nm=app&ns=nordvpn-linux-gui&nc=settings-manage_subscription&owner_id=nordvpn",
+  "https://my.nordaccount.com/billing/my-subscriptions/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=settings_account-manage_subscription&nm=app&ns=nordvpn-linux-gui&nc=settings-manage_subscription",
 );
 
 final changePasswordUrl = Uri.parse(
-  "https://my.nordaccount.com/account-settings/account-management/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=settings_account-change_password&nm=app&ns=nordvpn-linux-gui&nc=settings-change_password&owner_id=nordvpn",
+  "https://my.nordaccount.com/account-settings/account-management/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=settings_account-change_password&nm=app&ns=nordvpn-linux-gui&nc=settings-change_password",
 );
