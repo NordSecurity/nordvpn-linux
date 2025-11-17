@@ -14,7 +14,6 @@ void main() {
         path: 'billing/my-subscriptions',
         campaign: 'settings_account-manage_subscription',
         ncValue: 'settings-manage_subscription',
-        ownerId: 'nordvpn',
       ),
       (
         name: 'Change Password',
@@ -23,7 +22,6 @@ void main() {
         path: 'account-settings/account-management',
         campaign: 'settings_account-change_password',
         ncValue: 'settings-change_password',
-        ownerId: 'nordvpn',
       ),
       (
         name: 'NordPass',
@@ -32,7 +30,6 @@ void main() {
         path: null,
         campaign: 'settings_apps-explore_nordpass',
         ncValue: 'settings-explore_nordpass',
-        ownerId: null,
       ),
       (
         name: 'NordLocker',
@@ -41,7 +38,6 @@ void main() {
         path: null,
         campaign: 'settings_apps-explore_nordlocker',
         ncValue: 'settings-explore_nordlocker',
-        ownerId: null,
       ),
       (
         name: 'NordLayer',
@@ -50,7 +46,6 @@ void main() {
         path: null,
         campaign: 'settings_apps-explore_nordlayer',
         ncValue: 'settings-explore_nordlayer',
-        ownerId: null,
       ),
     ];
 
@@ -101,11 +96,6 @@ void main() {
           item.url.queryParameters['nc'],
           equals(item.ncValue),
           reason: '${item.name} should have correct nc parameter',
-        );
-        expect(
-          item.url.queryParameters['owner_id'],
-          equals(item.ownerId),
-          reason: '${item.name} should have owner_id=${item.ownerId}',
         );
       });
     }
