@@ -73,6 +73,8 @@ func (fw *Firewall) Add(rules []Rule) error {
 			if err := fw.current.Add(rule); err != nil {
 				return NewError(fmt.Errorf("adding %s: %w", rule.Name, err))
 			}
+		} else {
+			log.Printf("%s rule already exists: %v", internal.WarningPrefix, rule.Name)
 		}
 
 		if err := fw.rules.Add(rule); err != nil {
