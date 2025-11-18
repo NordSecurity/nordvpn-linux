@@ -1764,7 +1764,7 @@ func TestCombined_Refresh(t *testing.T) {
 		RemoteNetworks: []netip.Prefix{netip.PrefixFrom(machineAddress, machineAddress.BitLen())},
 		Allow:          true,
 		Comment:        "nordvpn-meshnet",
-		SimplifiedName: "-allow-rule-",
+		SimplifiedName: "-allow-rule-" + machineAddress.String(),
 	}
 
 	assert.Equal(t, expectedAllowMachineFwRule, fw.rules[machineFwAllowRuleName],
@@ -1778,7 +1778,7 @@ func TestCombined_Refresh(t *testing.T) {
 		RemoteNetworks: []netip.Prefix{netip.PrefixFrom(peer1Address, peer1Address.BitLen())},
 		Allow:          true,
 		Comment:        "nordvpn-meshnet",
-		SimplifiedName: "-allow-rule-",
+		SimplifiedName: "-allow-rule-" + peer1Address.String(),
 	}
 
 	assert.Equal(t, expectedAllowPeer1Rule, fw.rules[peer1FwAllowRuleName],
@@ -1796,7 +1796,7 @@ func TestCombined_Refresh(t *testing.T) {
 		RemoteNetworks: []netip.Prefix{netip.PrefixFrom(peer1Address, peer1Address.BitLen())},
 		Allow:          true,
 		Comment:        "nordvpn-meshnet",
-		SimplifiedName: "-allow-fileshare-rule-",
+		SimplifiedName: "-allow-fileshare-rule-" + peer1Address.String(),
 	}
 
 	assert.Equal(t, expectedAllowFilesharePeer1Rule, fw.rules[peer1FwAllowFileshareRuleName],
