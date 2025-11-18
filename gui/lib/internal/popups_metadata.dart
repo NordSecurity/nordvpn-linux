@@ -166,7 +166,6 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
       message: (_) => t.daemon.code_2002_msg,
       noButtonText: t.ui.cancel,
       yesButtonText: t.ui.reconnectNow,
-      autoClose: true,
       navigateToRoute: AppRoute.vpn,
       yesAction: (ref) {
         // capture all needed data BEFORE the widget is disposed
