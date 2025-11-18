@@ -91,7 +91,7 @@ func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error 
 		return fmt.Errorf("setting new consent level: %w", err)
 	}
 
-	if err := setUserConsentLevelIntoContext(s, s.consent); err != nil {
+	if err := setUserConsentLevelIntoContext(s, newState); err != nil {
 		return err
 	}
 
