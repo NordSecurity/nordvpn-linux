@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
+import 'package:nordvpn/router/routes.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/widgets/popups/popup.dart';
 
@@ -51,20 +52,18 @@ final class DecisionPopup extends Popup {
       height: 32,
       child: ElevatedButton(
         onPressed: () async {
-          if (decisionMetadata.autoClose) {
-            // navigate if route is specified
-            if (decisionMetadata.navigateToRoute != null) {
-              context.go(decisionMetadata.navigateToRoute!);
-            }
+          // navigate if route is specified
+          if (decisionMetadata.navigateToRoute != null) {
+            context.navigateToRoute(decisionMetadata.navigateToRoute!);
             // close popup immediately and run action in background
             closePopup(context);
             decisionMetadata.yesAction(ref);
-          } else {
-            // wait for action to complete before closing
-            await decisionMetadata.yesAction(ref);
-            if (!context.mounted) return;
-            closePopup(context);
+            return;
           }
+          // wait for action to complete before closing
+          await decisionMetadata.yesAction(ref);
+          if (!context.mounted) return;
+          closePopup(context);
         },
         style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

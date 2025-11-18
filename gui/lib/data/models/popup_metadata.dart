@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nordvpn/router/routes.dart';
 
 // Base class for popups metadata, specifies `id`, optional `title`
 // and popup `message`.
@@ -30,7 +31,7 @@ final class DecisionPopupMetadata extends PopupMetadata {
   final String yesButtonText;
   final Function(WidgetRef ref) yesAction;
   final bool autoClose;
-  final String? navigateToRoute;
+  final AppRoute? navigateToRoute;
 
   DecisionPopupMetadata({
     required super.id,

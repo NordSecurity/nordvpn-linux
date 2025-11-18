@@ -167,7 +167,7 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
       noButtonText: t.ui.cancel,
       yesButtonText: t.ui.reconnectNow,
       autoClose: true,
-      navigateToRoute: AppRoute.vpn.toString(),
+      navigateToRoute: AppRoute.vpn,
       yesAction: (ref) {
         // capture all needed data BEFORE the widget is disposed
         final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
@@ -181,20 +181,9 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
         // run reconnection in background (widget will be disposed)
         Future(() async {
           await controller.disconnect();
-          // delay to ensure disconnect completes
-          await Future.delayed(const Duration(milliseconds: 500));
           await controller.reconnect(connectionParams);
-          // Note: If reconnection fails due to server/technology incompatibility,
-          // the controller will automatically show error code 3032 (serverUnavailable)
         });
       },
-    ),
-
-    // Server unavailable error - may occur when connecting with incompatible settings
-    DaemonStatusCode.serverUnavailable => InfoPopupMetadata(
-      id: DaemonStatusCode.serverUnavailable,
-      title: t.daemon.code_3032_title,
-      message: (_) => t.daemon.code_3032_msg,
     ),
 
     // not matched, display generic error message
