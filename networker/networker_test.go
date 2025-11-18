@@ -256,6 +256,8 @@ func (h *workingHostSetter) UnsetHosts() error {
 	return nil
 }
 
+var noopNetworkerCallback = func(startTime time.Time, err error) {}
+
 func TestCombined_Start(t *testing.T) {
 	category.Set(t, category.Unit)
 	tests := []struct {
@@ -453,7 +455,7 @@ func TestCombined_Start(t *testing.T) {
 				config.NewAllowlist(nil, nil, nil),
 				[]string{"1.1.1.1"},
 				true,
-				func(startTime time.Time, success bool, err error) {
+				func(startTime time.Time, err error) {
 					disconnectCallbackCalled = true
 				},
 			)
@@ -1321,7 +1323,7 @@ func TestCombined_Reconnect(t *testing.T) {
 				config.NewAllowlist(nil, nil, nil),
 				[]string{"1.1.1.1"},
 				test.enableLan,
-				func(startTime time.Time, success bool, err error) {},
+				noopNetworkerCallback,
 			)
 
 			// simulate network change event and refreshVPN
@@ -1891,7 +1893,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
-					func(startTime time.Time, success bool, err error) {},
+					noopNetworkerCallback,
 				)
 			},
 			lanAvailable: false,
@@ -1926,7 +1928,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
-					func(startTime time.Time, success bool, err error) {},
+					noopNetworkerCallback,
 				)
 				c.SetLanDiscovery(true)
 			},
@@ -1943,7 +1945,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
-					func(startTime time.Time, success bool, err error) {},
+					noopNetworkerCallback,
 				)
 			},
 			lanAvailable: true,
@@ -1968,7 +1970,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
-					func(startTime time.Time, success bool, err error) {},
+					noopNetworkerCallback,
 				)
 				c.SetLanDiscovery(false)
 			},
@@ -1984,7 +1986,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
-					func(startTime time.Time, success bool, err error) {},
+					noopNetworkerCallback,
 				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 			},
@@ -2000,7 +2002,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
-					func(startTime time.Time, success bool, err error) {},
+					noopNetworkerCallback,
 				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)
@@ -2017,7 +2019,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
-					func(startTime time.Time, success bool, err error) {},
+					noopNetworkerCallback,
 				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)
@@ -2035,7 +2037,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
-					func(startTime time.Time, success bool, err error) {},
+					noopNetworkerCallback,
 				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)
@@ -2054,7 +2056,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
-					func(startTime time.Time, success bool, err error) {},
+					noopNetworkerCallback,
 				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)

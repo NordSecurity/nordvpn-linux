@@ -416,11 +416,10 @@ func (netw *Combined) restart(
 
 	stopStartTime := time.Now()
 	err = netw.vpnet.Stop()
+	disconnectCallback(stopStartTime, err)
 	if err != nil {
-		disconnectCallback(stopStartTime, true, err)
 		return err
 	}
-	disconnectCallback(stopStartTime, true, nil)
 
 	netw.publisher.Publish("restarting vpn")
 

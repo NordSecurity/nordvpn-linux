@@ -213,7 +213,7 @@ type DataRecentsChanged struct{}
 
 // DisconnectCallback is called when Networker needs to disconnect when establishing a connection. This usually happens
 // in case of a connection refresh.
-type DisconnectCallback func(startTime time.Time, success bool, err error)
+type DisconnectCallback func(startTime time.Time, err error)
 
 type DisconnectSender struct {
 	eventTemplate DataDisconnect
@@ -227,9 +227,9 @@ func NewDisconnectSender(eventTemplate DataDisconnect, publishFunc func(DataDisc
 	}
 }
 
-func (d *DisconnectSender) PublishDisconnect(startTime time.Time, success bool, err error) {
+func (d *DisconnectSender) PublishDisconnect(startTime time.Time, err error) {
 	status := StatusFailure
-	if success {
+	if err != nil {
 		status = StatusSuccess
 	}
 
