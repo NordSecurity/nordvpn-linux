@@ -4,6 +4,7 @@ package moose
 
 import (
 	"math"
+	moose "moose/events"
 	"testing"
 	"time"
 
@@ -251,10 +252,15 @@ func TestChangeConsentState(t *testing.T) {
 				return 0
 			}
 
+			setConsentToCtx := func(val moose.NordvpnappConsentLevel) uint32 {
+				return 0
+			}
+
 			s := &Subscriber{
-				consent:               test.currentConsentState,
-				mooseOptInFunc:        optInFunc,
-				mooseConsentLevelFunc: consentFunc,
+				consent:                    test.currentConsentState,
+				mooseOptInFunc:             optInFunc,
+				mooseConsentLevelFunc:      consentFunc,
+				mooseSetConsentIntoCtxFunc: setConsentToCtx,
 			}
 
 			err := s.changeConsentState(test.desiredConsentState)
