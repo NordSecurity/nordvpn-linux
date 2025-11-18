@@ -30,7 +30,6 @@ final class DecisionPopupMetadata extends PopupMetadata {
   final String noButtonText;
   final String yesButtonText;
   final Function(WidgetRef ref) yesAction;
-  final bool autoClose;
   final AppRoute? navigateToRoute;
 
   DecisionPopupMetadata({
@@ -40,7 +39,6 @@ final class DecisionPopupMetadata extends PopupMetadata {
     required this.yesButtonText,
     required this.yesAction,
     super.title,
-    this.autoClose = false,
     this.navigateToRoute,
   });
 }
