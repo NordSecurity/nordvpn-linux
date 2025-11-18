@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/router/routes.dart';
-import 'package:nordvpn/theme/app_theme.dart';
+import 'package:nordvpn/theme/popup_theme.dart';
 import 'package:nordvpn/widgets/popups/popup.dart';
 
 // Popup with title, message and two buttons (yes/no).
@@ -15,16 +14,15 @@ final class DecisionPopup extends Popup {
 
   @override
   Widget buildContent(BuildContext context, WidgetRef ref) {
-    final appTheme = context.appTheme;
-
+    final theme = context.popupTheme;
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: appTheme.horizontalSpace,
+      spacing: theme.verticalElementSpacing,
       children: [
-        Text(message(ref), style: appTheme.body),
+        Text(message(ref), style: theme.textSecondary),
         Row(
-          spacing: appTheme.verticalSpaceSmall,
+          spacing: theme.gapBetweenElements,
           children: [
             Expanded(child: _noButton(context)),
             Expanded(child: _yesButton(ref, context)),
@@ -35,11 +33,14 @@ final class DecisionPopup extends Popup {
   }
 
   Widget _noButton(BuildContext context) {
+    final theme = context.popupTheme;
     return SizedBox(
-      height: 32,
+      height: theme.buttonHeight,
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: theme.buttonPadding,
+          backgroundColor: theme.secondaryButtonBackgroundColor,
+          minimumSize: Size(theme.singleButtonMinWidth, theme.buttonHeight),
         ),
         onPressed: () => closePopup(context),
         child: Text(decisionMetadata.noButtonText),
@@ -48,8 +49,9 @@ final class DecisionPopup extends Popup {
   }
 
   Widget _yesButton(WidgetRef ref, BuildContext context) {
+    final theme = context.popupTheme;
     return SizedBox(
-      height: 32,
+      height: theme.buttonHeight,
       child: ElevatedButton(
         onPressed: () async {
           // navigate if route is specified
@@ -66,7 +68,9 @@ final class DecisionPopup extends Popup {
           closePopup(context);
         },
         style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: theme.buttonPadding,
+          backgroundColor: theme.primaryButtonBackgroundColor,
+          minimumSize: Size(theme.singleButtonMinWidth, theme.buttonHeight),
         ),
         child: Text(decisionMetadata.yesButtonText),
       ),
