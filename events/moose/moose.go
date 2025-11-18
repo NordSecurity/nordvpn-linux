@@ -93,11 +93,24 @@ func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error 
 
 	s.consent = newState
 
-	consentLevel := consentTypeToInternalType(s.consent)
+	if err := setUserConsentLevelIntoContext(s, s.consent); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func setUserConsentLevelIntoContext(s *Subscriber, consent config.AnalyticsConsent) error {
+	if consent == config.ConsentUndefined {
+		return nil
+	}
+	consentLevel := moose.NordvpnappConsentLevelEssential
+	if consent == config.ConsentGranted {
+		consentLevel = moose.NordvpnappConsentLevelAnalytics
+	}
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel(consentLevel)); err != nil {
 		return fmt.Errorf("setting user consent level: %w", err)
 	}
-
 	return nil
 }
 
@@ -199,11 +212,8 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("setting application name: %w", err)
 	}
 
-	if s.consent != config.ConsentUndefined {
-		consentLevel := consentTypeToInternalType(s.consent)
-		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel(consentLevel)); err != nil {
-			return fmt.Errorf("setting user consent level: %w", err)
-		}
+	if err := setUserConsentLevelIntoContext(s, s.consent); err != nil {
+		return err
 	}
 
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappVersion(s.BuildTarget.Version)); err != nil {
@@ -1143,17 +1153,4 @@ func deviceTypeToInternalType(deviceType sysinfo.SystemDeviceType) moose.Nordvpn
 	}
 
 	return dt
-}
-
-func consentTypeToInternalType(consent config.AnalyticsConsent) moose.NordvpnappConsentLevel {
-	var rc moose.NordvpnappConsentLevel
-	switch consent {
-	case config.ConsentGranted:
-		rc = moose.NordvpnappConsentLevelAnalytics
-	case config.ConsentDenied, config.ConsentUndefined:
-		fallthrough
-	default:
-		rc = moose.NordvpnappConsentLevelEssential
-	}
-	return rc
 }
