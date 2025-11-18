@@ -1,33 +1,43 @@
 package daemon
 
 import (
-	"sync/atomic"
+	"sync"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 )
 
+// AtomicLoginType manages login type and timing information with thread-safe access.
+// It uses a single RWMutex for synchronization of both the login type value and timestamp.
 type AtomicLoginType struct {
-	value atomic.Int32
+	loginType            pb.LoginType
+	lastLoginAttemptTime time.Time
+	mu                   sync.RWMutex
 }
 
-func NewAtomicLoginType(initialValue ...pb.LoginType) *AtomicLoginType {
-	alt := &AtomicLoginType{}
-	if len(initialValue) > 0 {
-		alt.Set(initialValue[0])
+func NewAtomicLoginType() *AtomicLoginType {
+	return &AtomicLoginType{
+		loginType: pb.LoginType_LoginType_UNKNOWN,
 	}
-	return alt
 }
 
 func (a *AtomicLoginType) Get() pb.LoginType {
-	return pb.LoginType(a.value.Load())
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.loginType
 }
 
 func (a *AtomicLoginType) Set(loginType pb.LoginType) {
-	a.value.Store(int32(loginType))
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.loginType = loginType
 }
 
 func (a *AtomicLoginType) Reset() {
-	a.Set(pb.LoginType_LoginType_UNKNOWN)
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.loginType = pb.LoginType_LoginType_UNKNOWN
+	a.lastLoginAttemptTime = time.Time{}
 }
 
 func (a *AtomicLoginType) IsUnknown() bool {
@@ -40,4 +50,16 @@ func (a *AtomicLoginType) WasStarted() bool {
 
 func (a *AtomicLoginType) IsAltered(loginType pb.LoginType) bool {
 	return a.Get() != loginType
+}
+
+func (a *AtomicLoginType) SetLoginAttemptTime(t time.Time) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.lastLoginAttemptTime = t
+}
+
+func (a *AtomicLoginType) GetLoginAttemptTime() time.Time {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.lastLoginAttemptTime
 }

@@ -15,8 +15,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/session"
 )
 
-var lastLoginAttemptTime time.Time
-
 // Login the user with given token
 func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) (*pb.LoginResponse, error) {
 	if !r.consentChecker.IsConsentFlowCompleted() {
@@ -157,7 +155,7 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (paylo
 		}, nil
 	}
 
-	lastLoginAttemptTime = time.Now()
+	r.initialLoginType.SetLoginAttemptTime(time.Now())
 
 	eventType := events.LoginLogin
 	if in.GetType() == pb.LoginType_LoginType_SIGNUP {
@@ -242,15 +240,14 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 		}
 
 		r.events.User.Login.Publish(events.DataAuthorization{
-			DurationMs:                 max(int(time.Since(lastLoginAttemptTime).Milliseconds()), 1),
+			DurationMs:                 max(int(time.Since(r.initialLoginType.GetLoginAttemptTime()).Milliseconds()), 1),
 			EventTrigger:               events.TriggerUser,
 			EventStatus:                eventStatus,
 			EventType:                  loginType,
 			IsAlteredFlowOnNordAccount: r.initialLoginType.IsAltered(in.GetType()),
 			Reason:                     eventReason,
 		})
-		lastLoginAttemptTime = time.Time{}
-		// at the end, reset initiated login type
+		// at the end, reset initiated login type and time
 		r.initialLoginType.Reset()
 	}()
 
