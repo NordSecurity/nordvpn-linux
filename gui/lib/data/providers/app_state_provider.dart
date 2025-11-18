@@ -188,6 +188,9 @@ class AppStateChange {
     if (_shouldRefreshServersList(appSettings)) {
       _notifyServersListChanged();
     }
+    if (_shouldRefreshRecentConnectionsList(appSettings)) {
+      _notifyRecentConnectionsListChanged();
+    }
     _appSettings = appSettings;
   }
 
@@ -218,6 +221,9 @@ class AppStateChange {
       }
     });
   }
+
+  bool _shouldRefreshRecentConnectionsList(ApplicationSettings settings) =>
+      _shouldRefreshServersList(settings);
 
   void _notifyRecentConnectionsListChanged() async {
     if (_recentConnectionsListObservers.isEmpty) {
