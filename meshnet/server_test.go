@@ -173,6 +173,7 @@ func newMockedServer(
 			Service: &daemonevents.ServiceEvents{
 				UiItemsClick: &daemonevents.MockPublisherSubscriber[events.UiItemsAction]{},
 				Connect:      &daemonevents.MockPublisherSubscriber[events.DataConnect]{},
+				Disconnect:   &daemonevents.MockPublisherSubscriber[events.DataDisconnect]{},
 			},
 		},
 		testnorduser.NewMockNorduserClient(nil),
