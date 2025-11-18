@@ -175,6 +175,7 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 		name                string
 		setup               func(*daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC
 		loginType           pb.LoginType
+		prevLoginType       pb.LoginType
 		expectedStatus      pb.LoginStatus
 		expectedEventsCount int
 		validateEvents      func(*testing.T, []*events.DataAuthorization)
@@ -193,6 +194,7 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 				}
 			},
 			loginType:           pb.LoginType_LoginType_LOGIN,
+			prevLoginType:       pb.LoginType_LoginType_UNKNOWN,
 			expectedStatus:      pb.LoginStatus_NO_NET,
 			expectedEventsCount: 1,
 			validateEvents: func(t *testing.T, evts []*events.DataAuthorization) {
@@ -217,6 +219,7 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 				}
 			},
 			loginType:           pb.LoginType_LoginType_SIGNUP,
+			prevLoginType:       pb.LoginType_LoginType_UNKNOWN,
 			expectedStatus:      pb.LoginStatus_NO_NET,
 			expectedEventsCount: 1,
 			validateEvents: func(t *testing.T, evts []*events.DataAuthorization) {
@@ -240,6 +243,7 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 				}
 			},
 			loginType:           pb.LoginType_LoginType_LOGIN,
+			prevLoginType:       pb.LoginType_LoginType_UNKNOWN,
 			expectedStatus:      pb.LoginStatus_UNKNOWN_OAUTH2_ERROR,
 			expectedEventsCount: 1,
 			validateEvents: func(t *testing.T, evts []*events.DataAuthorization) {
@@ -255,10 +259,11 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
 					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
 					authentication:   &testcore.AuthenticationAPImock{},
-					initialLoginType: NewAtomicLoginType(pb.LoginType_LoginType_LOGIN),
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			loginType:           pb.LoginType_LoginType_LOGIN,
+			prevLoginType:       pb.LoginType_LoginType_LOGIN,
 			expectedStatus:      pb.LoginStatus_SUCCESS,
 			expectedEventsCount: 2,
 			validateEvents: func(t *testing.T, evts []*events.DataAuthorization) {
@@ -285,10 +290,11 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
 					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
 					authentication:   &testcore.AuthenticationAPImock{},
-					initialLoginType: NewAtomicLoginType(pb.LoginType_LoginType_SIGNUP),
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			loginType:           pb.LoginType_LoginType_LOGIN,
+			prevLoginType:       pb.LoginType_LoginType_SIGNUP,
 			expectedStatus:      pb.LoginStatus_SUCCESS,
 			expectedEventsCount: 2,
 			validateEvents: func(t *testing.T, evts []*events.DataAuthorization) {
@@ -315,6 +321,7 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 				}
 			},
 			loginType:           pb.LoginType_LoginType_LOGIN,
+			prevLoginType:       pb.LoginType_LoginType_UNKNOWN,
 			expectedStatus:      pb.LoginStatus_SUCCESS,
 			expectedEventsCount: 1,
 			validateEvents: func(t *testing.T, evts []*events.DataAuthorization) {
@@ -337,6 +344,7 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 				}
 			},
 			loginType:           pb.LoginType_LoginType_SIGNUP,
+			prevLoginType:       pb.LoginType_LoginType_UNKNOWN,
 			expectedStatus:      pb.LoginStatus_SUCCESS,
 			expectedEventsCount: 1,
 			validateEvents: func(t *testing.T, evts []*events.DataAuthorization) {
@@ -360,6 +368,7 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 			}
 
 			r := tt.setup(eventsMock)
+			r.initialLoginType.Set(tt.prevLoginType)
 
 			resp, err := r.LoginOAuth2(context.Background(), &pb.LoginOAuth2Request{Type: tt.loginType})
 
@@ -385,6 +394,7 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 		setup               func(*daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC
 		token               string
 		loginType           pb.LoginType
+		prevLoginType       pb.LoginType
 		expectedStatus      pb.LoginStatus
 		expectedError       error
 		expectedEventsCount int
@@ -398,11 +408,12 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
 					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
 					publisher:        &subs.Subject[string]{},
-					initialLoginType: NewAtomicLoginType(pb.LoginType_LoginType_LOGIN),
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			token:               "",
 			loginType:           pb.LoginType_LoginType_LOGIN,
+			prevLoginType:       pb.LoginType_LoginType_LOGIN,
 			expectedError:       errors.New("The exchange token is missing. Please try logging in again. If the issue persists, contact our customer support."),
 			expectedEventsCount: 1,
 			validateEvents: func(t *testing.T, evts []*events.DataAuthorization) {
@@ -422,11 +433,12 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
 					authentication:   &testcore.AuthenticationAPImock{TokenError: errors.New("token exchange failed")},
 					publisher:        &subs.Subject[string]{},
-					initialLoginType: NewAtomicLoginType(pb.LoginType_LoginType_LOGIN),
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			token:               "exchange-token",
 			loginType:           pb.LoginType_LoginType_LOGIN,
+			prevLoginType:       pb.LoginType_LoginType_LOGIN,
 			expectedError:       errors.New("token exchange failed"),
 			expectedEventsCount: 1,
 			validateEvents: func(t *testing.T, evts []*events.DataAuthorization) {
@@ -444,11 +456,12 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 					authentication:   &testcore.AuthenticationAPImock{},
 					credentialsAPI:   &testcore.CredentialsAPIMock{ServiceCredentialsErr: errors.New("failed to get credentials")},
 					publisher:        &subs.Subject[string]{},
-					initialLoginType: NewAtomicLoginType(pb.LoginType_LoginType_LOGIN),
+					initialLoginType: NewAtomicLoginType(),
 				}
 			},
 			token:               "exchange-token",
 			loginType:           pb.LoginType_LoginType_LOGIN,
+			prevLoginType:       pb.LoginType_LoginType_LOGIN,
 			expectedError:       errors.New("failed to get credentials"),
 			expectedEventsCount: 1,
 			validateEvents: func(t *testing.T, evts []*events.DataAuthorization) {
@@ -466,12 +479,13 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
 					authentication:   &testcore.AuthenticationAPImock{},
 					credentialsAPI:   &testcore.CredentialsAPIMock{},
-					initialLoginType: NewAtomicLoginType(pb.LoginType_LoginType_LOGIN),
+					initialLoginType: NewAtomicLoginType(),
 					ncClient:         &mock.NotificationClientMock{},
 				}
 			},
 			token:               "exchange-token",
 			loginType:           pb.LoginType_LoginType_LOGIN,
+			prevLoginType:       pb.LoginType_LoginType_LOGIN,
 			expectedStatus:      pb.LoginStatus_SUCCESS,
 			expectedEventsCount: 1,
 			validateEvents: func(t *testing.T, evts []*events.DataAuthorization) {
@@ -493,12 +507,13 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
 					authentication:   &testcore.AuthenticationAPImock{},
 					credentialsAPI:   &testcore.CredentialsAPIMock{},
-					initialLoginType: NewAtomicLoginType(pb.LoginType_LoginType_SIGNUP),
+					initialLoginType: NewAtomicLoginType(),
 					ncClient:         &mock.NotificationClientMock{},
 				}
 			},
 			token:               "exchange-token",
 			loginType:           pb.LoginType_LoginType_LOGIN,
+			prevLoginType:       pb.LoginType_LoginType_SIGNUP,
 			expectedStatus:      pb.LoginStatus_SUCCESS,
 			expectedEventsCount: 1,
 			validateEvents: func(t *testing.T, evts []*events.DataAuthorization) {
@@ -521,12 +536,13 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
 					authentication:   &testcore.AuthenticationAPImock{},
 					credentialsAPI:   &testcore.CredentialsAPIMock{},
-					initialLoginType: NewAtomicLoginType(pb.LoginType_LoginType_LOGIN),
+					initialLoginType: NewAtomicLoginType(),
 					ncClient:         &mock.NotificationClientMock{},
 				}
 			},
 			token:               "exchange-token",
 			loginType:           pb.LoginType_LoginType_LOGIN,
+			prevLoginType:       pb.LoginType_LoginType_LOGIN,
 			expectedError:       errors.New("config save error"),
 			expectedEventsCount: 1,
 			validateEvents: func(t *testing.T, evts []*events.DataAuthorization) {
@@ -548,6 +564,7 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 			}
 
 			r := tt.setup(eventsMock)
+			r.initialLoginType.Set(tt.prevLoginType)
 
 			resp, err := r.LoginOAuth2Callback(context.Background(), &pb.LoginOAuth2CallbackRequest{
 				Token: tt.token,

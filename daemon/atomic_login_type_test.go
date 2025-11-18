@@ -58,42 +58,6 @@ func TestAtomicLoginTypeBasicOperations(t *testing.T) {
 	}
 }
 
-func TestAtomicLoginTypeConstructorWithInitialValue(t *testing.T) {
-	tests := []struct {
-		name          string
-		initialValues []pb.LoginType
-		expectedValue pb.LoginType
-	}{
-		{
-			name:          "no initial value defaults to UNKNOWN",
-			initialValues: []pb.LoginType{},
-			expectedValue: pb.LoginType_LoginType_UNKNOWN,
-		},
-		{
-			name:          "initial value LOGIN",
-			initialValues: []pb.LoginType{pb.LoginType_LoginType_LOGIN},
-			expectedValue: pb.LoginType_LoginType_LOGIN,
-		},
-		{
-			name:          "initial value SIGNUP",
-			initialValues: []pb.LoginType{pb.LoginType_LoginType_SIGNUP},
-			expectedValue: pb.LoginType_LoginType_SIGNUP,
-		},
-		{
-			name:          "multiple values uses first one",
-			initialValues: []pb.LoginType{pb.LoginType_LoginType_LOGIN, pb.LoginType_LoginType_SIGNUP},
-			expectedValue: pb.LoginType_LoginType_LOGIN,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			alt := NewAtomicLoginType(tt.initialValues...)
-			assert.Equal(t, tt.expectedValue, alt.Get())
-		})
-	}
-}
-
 func TestAtomicLoginTypeConcurrency(t *testing.T) {
 	alt := NewAtomicLoginType()
 
