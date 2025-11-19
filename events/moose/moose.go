@@ -49,13 +49,13 @@ type mooseSetConsentIntoContextFunc func(moose.NordvpnappConsentLevel) uint32
 
 // Subscriber listen events, send to moose engine
 type Subscriber struct {
-	EventsDbPath               string
-	Config                     config.Manager
-	BuildTarget                config.BuildTarget
-	Domain                     string
-	Subdomain                  string
-	DeviceID                   string
-	ClientAPI                  core.ClientAPI
+	eventsDbPath               string
+	config                     config.Manager
+	buildTarget                config.BuildTarget
+	domain                     string
+	subdomain                  string
+	deviceID                   string
+	clientAPI                  core.ClientAPI
 	currentDomain              string
 	connectionStartTime        time.Time
 	connectionToMeshnetPeer    bool
@@ -79,13 +79,13 @@ func NewSubscriber(
 	eventsSubdomain string) *Subscriber {
 
 	sub := &Subscriber{
-		EventsDbPath: eventsDbPath,
-		Config:       fs,
-		BuildTarget:  buildTarget,
-		Domain:       eventsDomain,
-		Subdomain:    eventsSubdomain,
-		DeviceID:     id,
-		ClientAPI:    clientAPI,
+		eventsDbPath: eventsDbPath,
+		config:       fs,
+		buildTarget:  buildTarget,
+		domain:       eventsDomain,
+		subdomain:    eventsSubdomain,
+		deviceID:     id,
+		clientAPI:    clientAPI,
 		httpClient:   httpClient,
 	}
 	return sub
@@ -172,7 +172,7 @@ func (s *Subscriber) Init() error {
 	s.mooseSetConsentIntoCtxFunc = moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel
 
 	var cfg config.Config
-	if err := s.Config.Load(&cfg); err != nil {
+	if err := s.config.Load(&cfg); err != nil {
 		return err
 	}
 
@@ -196,7 +196,7 @@ func (s *Subscriber) Init() error {
 	client := worker.NewHttpClientContext(s.currentDomain)
 	client.Client = *s.httpClient
 	if err := s.response(uint32(worker.StartWithClient(
-		s.EventsDbPath,
+		s.eventsDbPath,
 		s.currentDomain,
 		uint64(singleInterval.Milliseconds()),
 		uint64(sequenceInterval.Milliseconds()),
@@ -213,8 +213,8 @@ func (s *Subscriber) Init() error {
 	log.Println(internal.InfoPrefix, "[moose] all events are sent:", sendAllEvents)
 
 	if err := s.response(moose.MooseNordvpnappInit(
-		s.EventsDbPath,
-		internal.IsProdEnv(s.BuildTarget.Environment),
+		s.eventsDbPath,
+		internal.IsProdEnv(s.buildTarget.Environment),
 		s,
 		s,
 		sendAllEvents,
@@ -243,7 +243,7 @@ func (s *Subscriber) Init() error {
 		return err
 	}
 
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappVersion(s.BuildTarget.Version)); err != nil {
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappVersion(s.buildTarget.Version)); err != nil {
 		return fmt.Errorf("setting application version: %w", err)
 	}
 
@@ -258,7 +258,7 @@ func (s *Subscriber) Init() error {
 	if err := s.response(moose.NordvpnappSetContextDeviceOs(distroVersion)); err != nil {
 		return fmt.Errorf("setting moose device os: %w", err)
 	}
-	if err := s.response(moose.NordvpnappSetContextDeviceFp(s.DeviceID)); err != nil {
+	if err := s.response(moose.NordvpnappSetContextDeviceFp(s.deviceID)); err != nil {
 		return fmt.Errorf("setting moose device: %w", err)
 	}
 
@@ -284,7 +284,7 @@ func (s *Subscriber) Init() error {
 		return fmt.Errorf("setting moose technology: %w", err)
 	}
 
-	if err := s.response(moose.NordvpnappSetContextDeviceCpuArchitecture(s.BuildTarget.Architecture)); err != nil {
+	if err := s.response(moose.NordvpnappSetContextDeviceCpuArchitecture(s.buildTarget.Architecture)); err != nil {
 		return fmt.Errorf("setting device architecture: %w", err)
 	}
 
@@ -787,7 +787,7 @@ func (s *Subscriber) OnTelemetry(metric telemetry.Metric, value any) error {
 }
 
 func (s *Subscriber) fetchAndSetVpnServiceExpiration() error {
-	services, err := s.ClientAPI.Services()
+	services, err := s.clientAPI.Services()
 	if err != nil {
 		return fmt.Errorf("fetching services: %w", err)
 	}
@@ -818,12 +818,12 @@ func (s *Subscriber) fetchSubscriptions() error {
 		return nil
 	}
 
-	payments, err := s.ClientAPI.Payments()
+	payments, err := s.clientAPI.Payments()
 	if err != nil {
 		return fmt.Errorf("fetching payments: %w", err)
 	}
 
-	orders, err := s.ClientAPI.Orders()
+	orders, err := s.clientAPI.Orders()
 	if err != nil {
 		return fmt.Errorf("fetching orders: %w", err)
 	}
@@ -1027,13 +1027,13 @@ func (s *Subscriber) clearSubscriptions() error {
 }
 
 func (s *Subscriber) updateEventDomain() error {
-	domainUrl, err := url.Parse(s.Domain)
+	domainUrl, err := url.Parse(s.domain)
 	if err != nil {
 		return err
 	}
 	// TODO: Remove subdomain handling logic as it brings no value after domain rotation removal
-	if s.Subdomain != "" {
-		domainUrl.Host = s.Subdomain + "." + domainUrl.Host
+	if s.subdomain != "" {
+		domainUrl.Host = s.subdomain + "." + domainUrl.Host
 	}
 	s.currentDomain = domainUrl.String()
 	return nil
