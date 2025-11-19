@@ -62,7 +62,7 @@ class GetPeersResponse extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  GetPeersResponse clone() => GetPeersResponse()..mergeFromMessage(this);
+  GetPeersResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   GetPeersResponse copyWith(void Function(GetPeersResponse) updates) =>
       super.copyWith((message) => updates(message as GetPeersResponse))
@@ -75,15 +75,17 @@ class GetPeersResponse extends $pb.GeneratedMessage {
   static GetPeersResponse create() => GetPeersResponse._();
   @$core.override
   GetPeersResponse createEmptyInstance() => create();
-  static $pb.PbList<GetPeersResponse> createRepeated() =>
-      $pb.PbList<GetPeersResponse>();
   @$core.pragma('dart2js:noInline')
   static GetPeersResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<GetPeersResponse>(create);
   static GetPeersResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(4)
   GetPeersResponse_Response whichResponse() =>
       _GetPeersResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(4)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -137,14 +139,12 @@ class PeerList extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'meshpb'),
       createEmptyInstance: create)
     ..aOM<Peer>(1, _omitFieldNames ? '' : 'self', subBuilder: Peer.create)
-    ..pc<Peer>(2, _omitFieldNames ? '' : 'local', $pb.PbFieldType.PM,
-        subBuilder: Peer.create)
-    ..pc<Peer>(3, _omitFieldNames ? '' : 'external', $pb.PbFieldType.PM,
-        subBuilder: Peer.create)
+    ..pPM<Peer>(2, _omitFieldNames ? '' : 'local', subBuilder: Peer.create)
+    ..pPM<Peer>(3, _omitFieldNames ? '' : 'external', subBuilder: Peer.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  PeerList clone() => PeerList()..mergeFromMessage(this);
+  PeerList clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   PeerList copyWith(void Function(PeerList) updates) =>
       super.copyWith((message) => updates(message as PeerList)) as PeerList;
@@ -156,7 +156,6 @@ class PeerList extends $pb.GeneratedMessage {
   static PeerList create() => PeerList._();
   @$core.override
   PeerList createEmptyInstance() => create();
-  static $pb.PbList<PeerList> createRepeated() => $pb.PbList<PeerList>();
   @$core.pragma('dart2js:noInline')
   static PeerList getDefault() =>
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PeerList>(create);
@@ -257,9 +256,7 @@ class Peer extends $pb.GeneratedMessage {
     ..aOB(11, _omitFieldNames ? '' : 'isRoutable')
     ..aOB(12, _omitFieldNames ? '' : 'doIAllowInbound')
     ..aOB(13, _omitFieldNames ? '' : 'doIAllowRouting')
-    ..e<PeerStatus>(14, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE,
-        defaultOrMaker: PeerStatus.DISCONNECTED,
-        valueOf: PeerStatus.valueOf,
+    ..aE<PeerStatus>(14, _omitFieldNames ? '' : 'status',
         enumValues: PeerStatus.values)
     ..aOB(15, _omitFieldNames ? '' : 'isLocalNetworkAllowed')
     ..aOB(16, _omitFieldNames ? '' : 'doIAllowLocalNetwork')
@@ -270,7 +267,7 @@ class Peer extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  Peer clone() => Peer()..mergeFromMessage(this);
+  Peer clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   Peer copyWith(void Function(Peer) updates) =>
       super.copyWith((message) => updates(message as Peer)) as Peer;
@@ -282,7 +279,6 @@ class Peer extends $pb.GeneratedMessage {
   static Peer create() => Peer._();
   @$core.override
   Peer createEmptyInstance() => create();
-  static $pb.PbList<Peer> createRepeated() => $pb.PbList<Peer>();
   @$core.pragma('dart2js:noInline')
   static Peer getDefault() =>
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Peer>(create);
@@ -490,7 +486,7 @@ class UpdatePeerRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  UpdatePeerRequest clone() => UpdatePeerRequest()..mergeFromMessage(this);
+  UpdatePeerRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   UpdatePeerRequest copyWith(void Function(UpdatePeerRequest) updates) =>
       super.copyWith((message) => updates(message as UpdatePeerRequest))
@@ -503,8 +499,6 @@ class UpdatePeerRequest extends $pb.GeneratedMessage {
   static UpdatePeerRequest create() => UpdatePeerRequest._();
   @$core.override
   UpdatePeerRequest createEmptyInstance() => create();
-  static $pb.PbList<UpdatePeerRequest> createRepeated() =>
-      $pb.PbList<UpdatePeerRequest>();
   @$core.pragma('dart2js:noInline')
   static UpdatePeerRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<UpdatePeerRequest>(create);
@@ -553,20 +547,14 @@ class Error extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'meshpb'),
       createEmptyInstance: create)
     ..oo(0, [1, 2])
-    ..e<$1.ServiceErrorCode>(
-        1, _omitFieldNames ? '' : 'serviceErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: $1.ServiceErrorCode.NOT_LOGGED_IN,
-        valueOf: $1.ServiceErrorCode.valueOf,
+    ..aE<$1.ServiceErrorCode>(1, _omitFieldNames ? '' : 'serviceErrorCode',
         enumValues: $1.ServiceErrorCode.values)
-    ..e<$1.MeshnetErrorCode>(
-        2, _omitFieldNames ? '' : 'meshnetErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: $1.MeshnetErrorCode.NOT_REGISTERED,
-        valueOf: $1.MeshnetErrorCode.valueOf,
+    ..aE<$1.MeshnetErrorCode>(2, _omitFieldNames ? '' : 'meshnetErrorCode',
         enumValues: $1.MeshnetErrorCode.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  Error clone() => Error()..mergeFromMessage(this);
+  Error clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   Error copyWith(void Function(Error) updates) =>
       super.copyWith((message) => updates(message as Error)) as Error;
@@ -578,13 +566,16 @@ class Error extends $pb.GeneratedMessage {
   static Error create() => Error._();
   @$core.override
   Error createEmptyInstance() => create();
-  static $pb.PbList<Error> createRepeated() => $pb.PbList<Error>();
   @$core.pragma('dart2js:noInline')
   static Error getDefault() =>
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Error>(create);
   static Error? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   Error_Error whichError() => _Error_ErrorByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   void clearError() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -643,15 +634,12 @@ class UpdatePeerError extends $pb.GeneratedMessage {
     ..oo(0, [1, 2])
     ..aOM<Error>(1, _omitFieldNames ? '' : 'generalError',
         subBuilder: Error.create)
-    ..e<UpdatePeerErrorCode>(
-        2, _omitFieldNames ? '' : 'updatePeerErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: UpdatePeerErrorCode.PEER_NOT_FOUND,
-        valueOf: UpdatePeerErrorCode.valueOf,
+    ..aE<UpdatePeerErrorCode>(2, _omitFieldNames ? '' : 'updatePeerErrorCode',
         enumValues: UpdatePeerErrorCode.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  UpdatePeerError clone() => UpdatePeerError()..mergeFromMessage(this);
+  UpdatePeerError clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   UpdatePeerError copyWith(void Function(UpdatePeerError) updates) =>
       super.copyWith((message) => updates(message as UpdatePeerError))
@@ -664,15 +652,17 @@ class UpdatePeerError extends $pb.GeneratedMessage {
   static UpdatePeerError create() => UpdatePeerError._();
   @$core.override
   UpdatePeerError createEmptyInstance() => create();
-  static $pb.PbList<UpdatePeerError> createRepeated() =>
-      $pb.PbList<UpdatePeerError>();
   @$core.pragma('dart2js:noInline')
   static UpdatePeerError getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<UpdatePeerError>(create);
   static UpdatePeerError? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   UpdatePeerError_Error whichError() =>
       _UpdatePeerError_ErrorByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   void clearError() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -737,7 +727,7 @@ class RemovePeerResponse extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  RemovePeerResponse clone() => RemovePeerResponse()..mergeFromMessage(this);
+  RemovePeerResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   RemovePeerResponse copyWith(void Function(RemovePeerResponse) updates) =>
       super.copyWith((message) => updates(message as RemovePeerResponse))
@@ -750,15 +740,17 @@ class RemovePeerResponse extends $pb.GeneratedMessage {
   static RemovePeerResponse create() => RemovePeerResponse._();
   @$core.override
   RemovePeerResponse createEmptyInstance() => create();
-  static $pb.PbList<RemovePeerResponse> createRepeated() =>
-      $pb.PbList<RemovePeerResponse>();
   @$core.pragma('dart2js:noInline')
   static RemovePeerResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RemovePeerResponse>(create);
   static RemovePeerResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(5)
   RemovePeerResponse_Response whichResponse() =>
       _RemovePeerResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(5)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -814,8 +806,7 @@ class ChangePeerNicknameRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  ChangePeerNicknameRequest clone() =>
-      ChangePeerNicknameRequest()..mergeFromMessage(this);
+  ChangePeerNicknameRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   ChangePeerNicknameRequest copyWith(
           void Function(ChangePeerNicknameRequest) updates) =>
@@ -829,8 +820,6 @@ class ChangePeerNicknameRequest extends $pb.GeneratedMessage {
   static ChangePeerNicknameRequest create() => ChangePeerNicknameRequest._();
   @$core.override
   ChangePeerNicknameRequest createEmptyInstance() => create();
-  static $pb.PbList<ChangePeerNicknameRequest> createRepeated() =>
-      $pb.PbList<ChangePeerNicknameRequest>();
   @$core.pragma('dart2js:noInline')
   static ChangePeerNicknameRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ChangePeerNicknameRequest>(create);
@@ -882,8 +871,7 @@ class ChangeMachineNicknameRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  ChangeMachineNicknameRequest clone() =>
-      ChangeMachineNicknameRequest()..mergeFromMessage(this);
+  ChangeMachineNicknameRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   ChangeMachineNicknameRequest copyWith(
           void Function(ChangeMachineNicknameRequest) updates) =>
@@ -899,8 +887,6 @@ class ChangeMachineNicknameRequest extends $pb.GeneratedMessage {
       ChangeMachineNicknameRequest._();
   @$core.override
   ChangeMachineNicknameRequest createEmptyInstance() => create();
-  static $pb.PbList<ChangeMachineNicknameRequest> createRepeated() =>
-      $pb.PbList<ChangeMachineNicknameRequest>();
   @$core.pragma('dart2js:noInline')
   static ChangeMachineNicknameRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ChangeMachineNicknameRequest>(create);
@@ -961,18 +947,15 @@ class ChangeNicknameResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 5, 6])
     ..aOM<$0.Empty>(1, _omitFieldNames ? '' : 'empty',
         subBuilder: $0.Empty.create)
-    ..e<ChangeNicknameErrorCode>(
-        5, _omitFieldNames ? '' : 'changeNicknameErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: ChangeNicknameErrorCode.SAME_NICKNAME,
-        valueOf: ChangeNicknameErrorCode.valueOf,
+    ..aE<ChangeNicknameErrorCode>(
+        5, _omitFieldNames ? '' : 'changeNicknameErrorCode',
         enumValues: ChangeNicknameErrorCode.values)
     ..aOM<UpdatePeerError>(6, _omitFieldNames ? '' : 'updatePeerError',
         subBuilder: UpdatePeerError.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  ChangeNicknameResponse clone() =>
-      ChangeNicknameResponse()..mergeFromMessage(this);
+  ChangeNicknameResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   ChangeNicknameResponse copyWith(
           void Function(ChangeNicknameResponse) updates) =>
@@ -986,15 +969,19 @@ class ChangeNicknameResponse extends $pb.GeneratedMessage {
   static ChangeNicknameResponse create() => ChangeNicknameResponse._();
   @$core.override
   ChangeNicknameResponse createEmptyInstance() => create();
-  static $pb.PbList<ChangeNicknameResponse> createRepeated() =>
-      $pb.PbList<ChangeNicknameResponse>();
   @$core.pragma('dart2js:noInline')
   static ChangeNicknameResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ChangeNicknameResponse>(create);
   static ChangeNicknameResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(5)
+  @$pb.TagNumber(6)
   ChangeNicknameResponse_Response whichResponse() =>
       _ChangeNicknameResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(5)
+  @$pb.TagNumber(6)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -1075,18 +1062,15 @@ class AllowRoutingResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 3, 6])
     ..aOM<$0.Empty>(1, _omitFieldNames ? '' : 'empty',
         subBuilder: $0.Empty.create)
-    ..e<AllowRoutingErrorCode>(
-        3, _omitFieldNames ? '' : 'allowRoutingErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: AllowRoutingErrorCode.ROUTING_ALREADY_ALLOWED,
-        valueOf: AllowRoutingErrorCode.valueOf,
+    ..aE<AllowRoutingErrorCode>(
+        3, _omitFieldNames ? '' : 'allowRoutingErrorCode',
         enumValues: AllowRoutingErrorCode.values)
     ..aOM<UpdatePeerError>(6, _omitFieldNames ? '' : 'updatePeerError',
         subBuilder: UpdatePeerError.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  AllowRoutingResponse clone() =>
-      AllowRoutingResponse()..mergeFromMessage(this);
+  AllowRoutingResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   AllowRoutingResponse copyWith(void Function(AllowRoutingResponse) updates) =>
       super.copyWith((message) => updates(message as AllowRoutingResponse))
@@ -1099,15 +1083,19 @@ class AllowRoutingResponse extends $pb.GeneratedMessage {
   static AllowRoutingResponse create() => AllowRoutingResponse._();
   @$core.override
   AllowRoutingResponse createEmptyInstance() => create();
-  static $pb.PbList<AllowRoutingResponse> createRepeated() =>
-      $pb.PbList<AllowRoutingResponse>();
   @$core.pragma('dart2js:noInline')
   static AllowRoutingResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<AllowRoutingResponse>(create);
   static AllowRoutingResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   AllowRoutingResponse_Response whichResponse() =>
       _AllowRoutingResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -1188,17 +1176,14 @@ class DenyRoutingResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 3, 6])
     ..aOM<$0.Empty>(1, _omitFieldNames ? '' : 'empty',
         subBuilder: $0.Empty.create)
-    ..e<DenyRoutingErrorCode>(
-        3, _omitFieldNames ? '' : 'denyRoutingErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: DenyRoutingErrorCode.ROUTING_ALREADY_DENIED,
-        valueOf: DenyRoutingErrorCode.valueOf,
+    ..aE<DenyRoutingErrorCode>(3, _omitFieldNames ? '' : 'denyRoutingErrorCode',
         enumValues: DenyRoutingErrorCode.values)
     ..aOM<UpdatePeerError>(6, _omitFieldNames ? '' : 'updatePeerError',
         subBuilder: UpdatePeerError.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  DenyRoutingResponse clone() => DenyRoutingResponse()..mergeFromMessage(this);
+  DenyRoutingResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   DenyRoutingResponse copyWith(void Function(DenyRoutingResponse) updates) =>
       super.copyWith((message) => updates(message as DenyRoutingResponse))
@@ -1211,15 +1196,19 @@ class DenyRoutingResponse extends $pb.GeneratedMessage {
   static DenyRoutingResponse create() => DenyRoutingResponse._();
   @$core.override
   DenyRoutingResponse createEmptyInstance() => create();
-  static $pb.PbList<DenyRoutingResponse> createRepeated() =>
-      $pb.PbList<DenyRoutingResponse>();
   @$core.pragma('dart2js:noInline')
   static DenyRoutingResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<DenyRoutingResponse>(create);
   static DenyRoutingResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   DenyRoutingResponse_Response whichResponse() =>
       _DenyRoutingResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -1300,18 +1289,15 @@ class AllowIncomingResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 3, 6])
     ..aOM<$0.Empty>(1, _omitFieldNames ? '' : 'empty',
         subBuilder: $0.Empty.create)
-    ..e<AllowIncomingErrorCode>(
-        3, _omitFieldNames ? '' : 'allowIncomingErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: AllowIncomingErrorCode.INCOMING_ALREADY_ALLOWED,
-        valueOf: AllowIncomingErrorCode.valueOf,
+    ..aE<AllowIncomingErrorCode>(
+        3, _omitFieldNames ? '' : 'allowIncomingErrorCode',
         enumValues: AllowIncomingErrorCode.values)
     ..aOM<UpdatePeerError>(6, _omitFieldNames ? '' : 'updatePeerError',
         subBuilder: UpdatePeerError.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  AllowIncomingResponse clone() =>
-      AllowIncomingResponse()..mergeFromMessage(this);
+  AllowIncomingResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   AllowIncomingResponse copyWith(
           void Function(AllowIncomingResponse) updates) =>
@@ -1325,15 +1311,19 @@ class AllowIncomingResponse extends $pb.GeneratedMessage {
   static AllowIncomingResponse create() => AllowIncomingResponse._();
   @$core.override
   AllowIncomingResponse createEmptyInstance() => create();
-  static $pb.PbList<AllowIncomingResponse> createRepeated() =>
-      $pb.PbList<AllowIncomingResponse>();
   @$core.pragma('dart2js:noInline')
   static AllowIncomingResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<AllowIncomingResponse>(create);
   static AllowIncomingResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   AllowIncomingResponse_Response whichResponse() =>
       _AllowIncomingResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -1415,18 +1405,15 @@ class DenyIncomingResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 3, 6])
     ..aOM<$0.Empty>(1, _omitFieldNames ? '' : 'empty',
         subBuilder: $0.Empty.create)
-    ..e<DenyIncomingErrorCode>(
-        3, _omitFieldNames ? '' : 'denyIncomingErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: DenyIncomingErrorCode.INCOMING_ALREADY_DENIED,
-        valueOf: DenyIncomingErrorCode.valueOf,
+    ..aE<DenyIncomingErrorCode>(
+        3, _omitFieldNames ? '' : 'denyIncomingErrorCode',
         enumValues: DenyIncomingErrorCode.values)
     ..aOM<UpdatePeerError>(6, _omitFieldNames ? '' : 'updatePeerError',
         subBuilder: UpdatePeerError.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  DenyIncomingResponse clone() =>
-      DenyIncomingResponse()..mergeFromMessage(this);
+  DenyIncomingResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   DenyIncomingResponse copyWith(void Function(DenyIncomingResponse) updates) =>
       super.copyWith((message) => updates(message as DenyIncomingResponse))
@@ -1439,15 +1426,19 @@ class DenyIncomingResponse extends $pb.GeneratedMessage {
   static DenyIncomingResponse create() => DenyIncomingResponse._();
   @$core.override
   DenyIncomingResponse createEmptyInstance() => create();
-  static $pb.PbList<DenyIncomingResponse> createRepeated() =>
-      $pb.PbList<DenyIncomingResponse>();
   @$core.pragma('dart2js:noInline')
   static DenyIncomingResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<DenyIncomingResponse>(create);
   static DenyIncomingResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   DenyIncomingResponse_Response whichResponse() =>
       _DenyIncomingResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -1529,19 +1520,15 @@ class AllowLocalNetworkResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 3, 6])
     ..aOM<$0.Empty>(1, _omitFieldNames ? '' : 'empty',
         subBuilder: $0.Empty.create)
-    ..e<AllowLocalNetworkErrorCode>(3,
-        _omitFieldNames ? '' : 'allowLocalNetworkErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker:
-            AllowLocalNetworkErrorCode.LOCAL_NETWORK_ALREADY_ALLOWED,
-        valueOf: AllowLocalNetworkErrorCode.valueOf,
+    ..aE<AllowLocalNetworkErrorCode>(
+        3, _omitFieldNames ? '' : 'allowLocalNetworkErrorCode',
         enumValues: AllowLocalNetworkErrorCode.values)
     ..aOM<UpdatePeerError>(6, _omitFieldNames ? '' : 'updatePeerError',
         subBuilder: UpdatePeerError.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  AllowLocalNetworkResponse clone() =>
-      AllowLocalNetworkResponse()..mergeFromMessage(this);
+  AllowLocalNetworkResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   AllowLocalNetworkResponse copyWith(
           void Function(AllowLocalNetworkResponse) updates) =>
@@ -1555,15 +1542,19 @@ class AllowLocalNetworkResponse extends $pb.GeneratedMessage {
   static AllowLocalNetworkResponse create() => AllowLocalNetworkResponse._();
   @$core.override
   AllowLocalNetworkResponse createEmptyInstance() => create();
-  static $pb.PbList<AllowLocalNetworkResponse> createRepeated() =>
-      $pb.PbList<AllowLocalNetworkResponse>();
   @$core.pragma('dart2js:noInline')
   static AllowLocalNetworkResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<AllowLocalNetworkResponse>(create);
   static AllowLocalNetworkResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   AllowLocalNetworkResponse_Response whichResponse() =>
       _AllowLocalNetworkResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -1645,18 +1636,15 @@ class DenyLocalNetworkResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 3, 6])
     ..aOM<$0.Empty>(1, _omitFieldNames ? '' : 'empty',
         subBuilder: $0.Empty.create)
-    ..e<DenyLocalNetworkErrorCode>(3,
-        _omitFieldNames ? '' : 'denyLocalNetworkErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: DenyLocalNetworkErrorCode.LOCAL_NETWORK_ALREADY_DENIED,
-        valueOf: DenyLocalNetworkErrorCode.valueOf,
+    ..aE<DenyLocalNetworkErrorCode>(
+        3, _omitFieldNames ? '' : 'denyLocalNetworkErrorCode',
         enumValues: DenyLocalNetworkErrorCode.values)
     ..aOM<UpdatePeerError>(6, _omitFieldNames ? '' : 'updatePeerError',
         subBuilder: UpdatePeerError.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  DenyLocalNetworkResponse clone() =>
-      DenyLocalNetworkResponse()..mergeFromMessage(this);
+  DenyLocalNetworkResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   DenyLocalNetworkResponse copyWith(
           void Function(DenyLocalNetworkResponse) updates) =>
@@ -1670,15 +1658,19 @@ class DenyLocalNetworkResponse extends $pb.GeneratedMessage {
   static DenyLocalNetworkResponse create() => DenyLocalNetworkResponse._();
   @$core.override
   DenyLocalNetworkResponse createEmptyInstance() => create();
-  static $pb.PbList<DenyLocalNetworkResponse> createRepeated() =>
-      $pb.PbList<DenyLocalNetworkResponse>();
   @$core.pragma('dart2js:noInline')
   static DenyLocalNetworkResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<DenyLocalNetworkResponse>(create);
   static DenyLocalNetworkResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   DenyLocalNetworkResponse_Response whichResponse() =>
       _DenyLocalNetworkResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -1759,18 +1751,15 @@ class AllowFileshareResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 3, 6])
     ..aOM<$0.Empty>(1, _omitFieldNames ? '' : 'empty',
         subBuilder: $0.Empty.create)
-    ..e<AllowFileshareErrorCode>(
-        3, _omitFieldNames ? '' : 'allowSendErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: AllowFileshareErrorCode.SEND_ALREADY_ALLOWED,
-        valueOf: AllowFileshareErrorCode.valueOf,
+    ..aE<AllowFileshareErrorCode>(
+        3, _omitFieldNames ? '' : 'allowSendErrorCode',
         enumValues: AllowFileshareErrorCode.values)
     ..aOM<UpdatePeerError>(6, _omitFieldNames ? '' : 'updatePeerError',
         subBuilder: UpdatePeerError.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  AllowFileshareResponse clone() =>
-      AllowFileshareResponse()..mergeFromMessage(this);
+  AllowFileshareResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   AllowFileshareResponse copyWith(
           void Function(AllowFileshareResponse) updates) =>
@@ -1784,15 +1773,19 @@ class AllowFileshareResponse extends $pb.GeneratedMessage {
   static AllowFileshareResponse create() => AllowFileshareResponse._();
   @$core.override
   AllowFileshareResponse createEmptyInstance() => create();
-  static $pb.PbList<AllowFileshareResponse> createRepeated() =>
-      $pb.PbList<AllowFileshareResponse>();
   @$core.pragma('dart2js:noInline')
   static AllowFileshareResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<AllowFileshareResponse>(create);
   static AllowFileshareResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   AllowFileshareResponse_Response whichResponse() =>
       _AllowFileshareResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -1871,18 +1864,14 @@ class DenyFileshareResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 3, 6])
     ..aOM<$0.Empty>(1, _omitFieldNames ? '' : 'empty',
         subBuilder: $0.Empty.create)
-    ..e<DenyFileshareErrorCode>(
-        3, _omitFieldNames ? '' : 'denySendErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: DenyFileshareErrorCode.SEND_ALREADY_DENIED,
-        valueOf: DenyFileshareErrorCode.valueOf,
+    ..aE<DenyFileshareErrorCode>(3, _omitFieldNames ? '' : 'denySendErrorCode',
         enumValues: DenyFileshareErrorCode.values)
     ..aOM<UpdatePeerError>(6, _omitFieldNames ? '' : 'updatePeerError',
         subBuilder: UpdatePeerError.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  DenyFileshareResponse clone() =>
-      DenyFileshareResponse()..mergeFromMessage(this);
+  DenyFileshareResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   DenyFileshareResponse copyWith(
           void Function(DenyFileshareResponse) updates) =>
@@ -1896,15 +1885,19 @@ class DenyFileshareResponse extends $pb.GeneratedMessage {
   static DenyFileshareResponse create() => DenyFileshareResponse._();
   @$core.override
   DenyFileshareResponse createEmptyInstance() => create();
-  static $pb.PbList<DenyFileshareResponse> createRepeated() =>
-      $pb.PbList<DenyFileshareResponse>();
   @$core.pragma('dart2js:noInline')
   static DenyFileshareResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<DenyFileshareResponse>(create);
   static DenyFileshareResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   DenyFileshareResponse_Response whichResponse() =>
       _DenyFileshareResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -1987,21 +1980,15 @@ class EnableAutomaticFileshareResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 3, 6])
     ..aOM<$0.Empty>(1, _omitFieldNames ? '' : 'empty',
         subBuilder: $0.Empty.create)
-    ..e<EnableAutomaticFileshareErrorCode>(
-        3,
-        _omitFieldNames ? '' : 'enableAutomaticFileshareErrorCode',
-        $pb.PbFieldType.OE,
-        defaultOrMaker: EnableAutomaticFileshareErrorCode
-            .AUTOMATIC_FILESHARE_ALREADY_ENABLED,
-        valueOf: EnableAutomaticFileshareErrorCode.valueOf,
+    ..aE<EnableAutomaticFileshareErrorCode>(
+        3, _omitFieldNames ? '' : 'enableAutomaticFileshareErrorCode',
         enumValues: EnableAutomaticFileshareErrorCode.values)
     ..aOM<UpdatePeerError>(6, _omitFieldNames ? '' : 'updatePeerError',
         subBuilder: UpdatePeerError.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  EnableAutomaticFileshareResponse clone() =>
-      EnableAutomaticFileshareResponse()..mergeFromMessage(this);
+  EnableAutomaticFileshareResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   EnableAutomaticFileshareResponse copyWith(
           void Function(EnableAutomaticFileshareResponse) updates) =>
@@ -2017,16 +2004,20 @@ class EnableAutomaticFileshareResponse extends $pb.GeneratedMessage {
       EnableAutomaticFileshareResponse._();
   @$core.override
   EnableAutomaticFileshareResponse createEmptyInstance() => create();
-  static $pb.PbList<EnableAutomaticFileshareResponse> createRepeated() =>
-      $pb.PbList<EnableAutomaticFileshareResponse>();
   @$core.pragma('dart2js:noInline')
   static EnableAutomaticFileshareResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<EnableAutomaticFileshareResponse>(
           create);
   static EnableAutomaticFileshareResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   EnableAutomaticFileshareResponse_Response whichResponse() =>
       _EnableAutomaticFileshareResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -2112,21 +2103,15 @@ class DisableAutomaticFileshareResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 3, 6])
     ..aOM<$0.Empty>(1, _omitFieldNames ? '' : 'empty',
         subBuilder: $0.Empty.create)
-    ..e<DisableAutomaticFileshareErrorCode>(
-        3,
-        _omitFieldNames ? '' : 'disableAutomaticFileshareErrorCode',
-        $pb.PbFieldType.OE,
-        defaultOrMaker: DisableAutomaticFileshareErrorCode
-            .AUTOMATIC_FILESHARE_ALREADY_DISABLED,
-        valueOf: DisableAutomaticFileshareErrorCode.valueOf,
+    ..aE<DisableAutomaticFileshareErrorCode>(
+        3, _omitFieldNames ? '' : 'disableAutomaticFileshareErrorCode',
         enumValues: DisableAutomaticFileshareErrorCode.values)
     ..aOM<UpdatePeerError>(6, _omitFieldNames ? '' : 'updatePeerError',
         subBuilder: UpdatePeerError.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  DisableAutomaticFileshareResponse clone() =>
-      DisableAutomaticFileshareResponse()..mergeFromMessage(this);
+  DisableAutomaticFileshareResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   DisableAutomaticFileshareResponse copyWith(
           void Function(DisableAutomaticFileshareResponse) updates) =>
@@ -2142,16 +2127,20 @@ class DisableAutomaticFileshareResponse extends $pb.GeneratedMessage {
       DisableAutomaticFileshareResponse._();
   @$core.override
   DisableAutomaticFileshareResponse createEmptyInstance() => create();
-  static $pb.PbList<DisableAutomaticFileshareResponse> createRepeated() =>
-      $pb.PbList<DisableAutomaticFileshareResponse>();
   @$core.pragma('dart2js:noInline')
   static DisableAutomaticFileshareResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<DisableAutomaticFileshareResponse>(
           create);
   static DisableAutomaticFileshareResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   DisableAutomaticFileshareResponse_Response whichResponse() =>
       _DisableAutomaticFileshareResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -2232,17 +2221,14 @@ class ConnectResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 3, 6])
     ..aOM<$0.Empty>(1, _omitFieldNames ? '' : 'empty',
         subBuilder: $0.Empty.create)
-    ..e<ConnectErrorCode>(
-        3, _omitFieldNames ? '' : 'connectErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: ConnectErrorCode.PEER_DOES_NOT_ALLOW_ROUTING,
-        valueOf: ConnectErrorCode.valueOf,
+    ..aE<ConnectErrorCode>(3, _omitFieldNames ? '' : 'connectErrorCode',
         enumValues: ConnectErrorCode.values)
     ..aOM<UpdatePeerError>(6, _omitFieldNames ? '' : 'updatePeerError',
         subBuilder: UpdatePeerError.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  ConnectResponse clone() => ConnectResponse()..mergeFromMessage(this);
+  ConnectResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   ConnectResponse copyWith(void Function(ConnectResponse) updates) =>
       super.copyWith((message) => updates(message as ConnectResponse))
@@ -2255,15 +2241,19 @@ class ConnectResponse extends $pb.GeneratedMessage {
   static ConnectResponse create() => ConnectResponse._();
   @$core.override
   ConnectResponse createEmptyInstance() => create();
-  static $pb.PbList<ConnectResponse> createRepeated() =>
-      $pb.PbList<ConnectResponse>();
   @$core.pragma('dart2js:noInline')
   static ConnectResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ConnectResponse>(create);
   static ConnectResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   ConnectResponse_Response whichResponse() =>
       _ConnectResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(6)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -2340,20 +2330,14 @@ class PrivateKeyResponse extends $pb.GeneratedMessage {
       createEmptyInstance: create)
     ..oo(0, [1, 2, 3])
     ..aOS(1, _omitFieldNames ? '' : 'privateKey')
-    ..e<$1.ServiceErrorCode>(
-        2, _omitFieldNames ? '' : 'serviceErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: $1.ServiceErrorCode.NOT_LOGGED_IN,
-        valueOf: $1.ServiceErrorCode.valueOf,
+    ..aE<$1.ServiceErrorCode>(2, _omitFieldNames ? '' : 'serviceErrorCode',
         enumValues: $1.ServiceErrorCode.values)
-    ..e<$1.MeshnetErrorCode>(
-        3, _omitFieldNames ? '' : 'meshnetErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: $1.MeshnetErrorCode.NOT_REGISTERED,
-        valueOf: $1.MeshnetErrorCode.valueOf,
+    ..aE<$1.MeshnetErrorCode>(3, _omitFieldNames ? '' : 'meshnetErrorCode',
         enumValues: $1.MeshnetErrorCode.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  PrivateKeyResponse clone() => PrivateKeyResponse()..mergeFromMessage(this);
+  PrivateKeyResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   PrivateKeyResponse copyWith(void Function(PrivateKeyResponse) updates) =>
       super.copyWith((message) => updates(message as PrivateKeyResponse))
@@ -2366,15 +2350,19 @@ class PrivateKeyResponse extends $pb.GeneratedMessage {
   static PrivateKeyResponse create() => PrivateKeyResponse._();
   @$core.override
   PrivateKeyResponse createEmptyInstance() => create();
-  static $pb.PbList<PrivateKeyResponse> createRepeated() =>
-      $pb.PbList<PrivateKeyResponse>();
   @$core.pragma('dart2js:noInline')
   static PrivateKeyResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<PrivateKeyResponse>(create);
   static PrivateKeyResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
   PrivateKeyResponse_Response whichResponse() =>
       _PrivateKeyResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)

@@ -42,8 +42,7 @@ class LoginWithTokenRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  LoginWithTokenRequest clone() =>
-      LoginWithTokenRequest()..mergeFromMessage(this);
+  LoginWithTokenRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   LoginWithTokenRequest copyWith(
           void Function(LoginWithTokenRequest) updates) =>
@@ -57,8 +56,6 @@ class LoginWithTokenRequest extends $pb.GeneratedMessage {
   static LoginWithTokenRequest create() => LoginWithTokenRequest._();
   @$core.override
   LoginWithTokenRequest createEmptyInstance() => create();
-  static $pb.PbList<LoginWithTokenRequest> createRepeated() =>
-      $pb.PbList<LoginWithTokenRequest>();
   @$core.pragma('dart2js:noInline')
   static LoginWithTokenRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<LoginWithTokenRequest>(create);

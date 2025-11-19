@@ -46,8 +46,7 @@ class DesktopEnvironmentRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  DesktopEnvironmentRequest clone() =>
-      DesktopEnvironmentRequest()..mergeFromMessage(this);
+  DesktopEnvironmentRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   DesktopEnvironmentRequest copyWith(
           void Function(DesktopEnvironmentRequest) updates) =>
@@ -61,8 +60,6 @@ class DesktopEnvironmentRequest extends $pb.GeneratedMessage {
   static DesktopEnvironmentRequest create() => DesktopEnvironmentRequest._();
   @$core.override
   DesktopEnvironmentRequest createEmptyInstance() => create();
-  static $pb.PbList<DesktopEnvironmentRequest> createRepeated() =>
-      $pb.PbList<DesktopEnvironmentRequest>();
   @$core.pragma('dart2js:noInline')
   static DesktopEnvironmentRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<DesktopEnvironmentRequest>(create);
@@ -100,16 +97,12 @@ class DisplayProtocolRequest extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'DisplayProtocolRequest',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'telemetry.v1'),
       createEmptyInstance: create)
-    ..e<DisplayProtocol>(
-        1, _omitFieldNames ? '' : 'protocol', $pb.PbFieldType.OE,
-        defaultOrMaker: DisplayProtocol.DISPLAY_PROTOCOL_UNSPECIFIED,
-        valueOf: DisplayProtocol.valueOf,
+    ..aE<DisplayProtocol>(1, _omitFieldNames ? '' : 'protocol',
         enumValues: DisplayProtocol.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  DisplayProtocolRequest clone() =>
-      DisplayProtocolRequest()..mergeFromMessage(this);
+  DisplayProtocolRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   DisplayProtocolRequest copyWith(
           void Function(DisplayProtocolRequest) updates) =>
@@ -123,8 +116,6 @@ class DisplayProtocolRequest extends $pb.GeneratedMessage {
   static DisplayProtocolRequest create() => DisplayProtocolRequest._();
   @$core.override
   DisplayProtocolRequest createEmptyInstance() => create();
-  static $pb.PbList<DisplayProtocolRequest> createRepeated() =>
-      $pb.PbList<DisplayProtocolRequest>();
   @$core.pragma('dart2js:noInline')
   static DisplayProtocolRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<DisplayProtocolRequest>(create);

@@ -43,7 +43,7 @@ class RateRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  RateRequest clone() => RateRequest()..mergeFromMessage(this);
+  RateRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   RateRequest copyWith(void Function(RateRequest) updates) =>
       super.copyWith((message) => updates(message as RateRequest))
@@ -56,7 +56,6 @@ class RateRequest extends $pb.GeneratedMessage {
   static RateRequest create() => RateRequest._();
   @$core.override
   RateRequest createEmptyInstance() => create();
-  static $pb.PbList<RateRequest> createRepeated() => $pb.PbList<RateRequest>();
   @$core.pragma('dart2js:noInline')
   static RateRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RateRequest>(create);

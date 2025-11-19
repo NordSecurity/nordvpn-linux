@@ -42,7 +42,7 @@ class CitiesRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  CitiesRequest clone() => CitiesRequest()..mergeFromMessage(this);
+  CitiesRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   CitiesRequest copyWith(void Function(CitiesRequest) updates) =>
       super.copyWith((message) => updates(message as CitiesRequest))
@@ -55,8 +55,6 @@ class CitiesRequest extends $pb.GeneratedMessage {
   static CitiesRequest create() => CitiesRequest._();
   @$core.override
   CitiesRequest createEmptyInstance() => create();
-  static $pb.PbList<CitiesRequest> createRepeated() =>
-      $pb.PbList<CitiesRequest>();
   @$core.pragma('dart2js:noInline')
   static CitiesRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<CitiesRequest>(create);

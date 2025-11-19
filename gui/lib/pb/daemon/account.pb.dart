@@ -50,7 +50,7 @@ class DedidcatedIPService extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  DedidcatedIPService clone() => DedidcatedIPService()..mergeFromMessage(this);
+  DedidcatedIPService clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   DedidcatedIPService copyWith(void Function(DedidcatedIPService) updates) =>
       super.copyWith((message) => updates(message as DedidcatedIPService))
@@ -63,8 +63,6 @@ class DedidcatedIPService extends $pb.GeneratedMessage {
   static DedidcatedIPService create() => DedidcatedIPService._();
   @$core.override
   DedidcatedIPService createEmptyInstance() => create();
-  static $pb.PbList<DedidcatedIPService> createRepeated() =>
-      $pb.PbList<DedidcatedIPService>();
   @$core.pragma('dart2js:noInline')
   static DedidcatedIPService getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<DedidcatedIPService>(create);
@@ -130,18 +128,15 @@ class AccountResponse extends $pb.GeneratedMessage {
     ..aOS(4, _omitFieldNames ? '' : 'subscriptionExpiresAt')
     ..aInt64(5, _omitFieldNames ? '' : 'dedicatedIpStatus')
     ..aOS(6, _omitFieldNames ? '' : 'lastDedicatedIpExpiresAt')
-    ..pc<DedidcatedIPService>(
-        7, _omitFieldNames ? '' : 'dedicatedIpServices', $pb.PbFieldType.PM,
+    ..pPM<DedidcatedIPService>(7, _omitFieldNames ? '' : 'dedicatedIpServices',
         subBuilder: DedidcatedIPService.create)
-    ..e<$0.TriState>(8, _omitFieldNames ? '' : 'mfaStatus', $pb.PbFieldType.OE,
-        defaultOrMaker: $0.TriState.UNKNOWN,
-        valueOf: $0.TriState.valueOf,
+    ..aE<$0.TriState>(8, _omitFieldNames ? '' : 'mfaStatus',
         enumValues: $0.TriState.values)
     ..aOS(9, _omitFieldNames ? '' : 'createdOn')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  AccountResponse clone() => AccountResponse()..mergeFromMessage(this);
+  AccountResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   AccountResponse copyWith(void Function(AccountResponse) updates) =>
       super.copyWith((message) => updates(message as AccountResponse))
@@ -154,8 +149,6 @@ class AccountResponse extends $pb.GeneratedMessage {
   static AccountResponse create() => AccountResponse._();
   @$core.override
   AccountResponse createEmptyInstance() => create();
-  static $pb.PbList<AccountResponse> createRepeated() =>
-      $pb.PbList<AccountResponse>();
   @$core.pragma('dart2js:noInline')
   static AccountResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<AccountResponse>(create);
@@ -263,7 +256,7 @@ class AccountRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  AccountRequest clone() => AccountRequest()..mergeFromMessage(this);
+  AccountRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   AccountRequest copyWith(void Function(AccountRequest) updates) =>
       super.copyWith((message) => updates(message as AccountRequest))
@@ -276,8 +269,6 @@ class AccountRequest extends $pb.GeneratedMessage {
   static AccountRequest create() => AccountRequest._();
   @$core.override
   AccountRequest createEmptyInstance() => create();
-  static $pb.PbList<AccountRequest> createRepeated() =>
-      $pb.PbList<AccountRequest>();
   @$core.pragma('dart2js:noInline')
   static AccountRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<AccountRequest>(create);

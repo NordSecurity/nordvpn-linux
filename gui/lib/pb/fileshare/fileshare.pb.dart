@@ -42,7 +42,7 @@ class Empty extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  Empty clone() => Empty()..mergeFromMessage(this);
+  Empty clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   Empty copyWith(void Function(Empty) updates) =>
       super.copyWith((message) => updates(message as Empty)) as Empty;
@@ -54,7 +54,6 @@ class Empty extends $pb.GeneratedMessage {
   static Empty create() => Empty._();
   @$core.override
   Empty createEmptyInstance() => create();
-  static $pb.PbList<Empty> createRepeated() => $pb.PbList<Empty>();
   @$core.pragma('dart2js:noInline')
   static Empty getDefault() =>
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Empty>(create);
@@ -106,20 +105,14 @@ class Error extends $pb.GeneratedMessage {
       createEmptyInstance: create)
     ..oo(0, [1, 2, 3])
     ..aOM<Empty>(1, _omitFieldNames ? '' : 'empty', subBuilder: Empty.create)
-    ..e<ServiceErrorCode>(
-        2, _omitFieldNames ? '' : 'serviceError', $pb.PbFieldType.OE,
-        defaultOrMaker: ServiceErrorCode.MESH_NOT_ENABLED,
-        valueOf: ServiceErrorCode.valueOf,
+    ..aE<ServiceErrorCode>(2, _omitFieldNames ? '' : 'serviceError',
         enumValues: ServiceErrorCode.values)
-    ..e<FileshareErrorCode>(
-        3, _omitFieldNames ? '' : 'fileshareError', $pb.PbFieldType.OE,
-        defaultOrMaker: FileshareErrorCode.LIB_FAILURE,
-        valueOf: FileshareErrorCode.valueOf,
+    ..aE<FileshareErrorCode>(3, _omitFieldNames ? '' : 'fileshareError',
         enumValues: FileshareErrorCode.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  Error clone() => Error()..mergeFromMessage(this);
+  Error clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   Error copyWith(void Function(Error) updates) =>
       super.copyWith((message) => updates(message as Error)) as Error;
@@ -131,13 +124,18 @@ class Error extends $pb.GeneratedMessage {
   static Error create() => Error._();
   @$core.override
   Error createEmptyInstance() => create();
-  static $pb.PbList<Error> createRepeated() => $pb.PbList<Error>();
   @$core.pragma('dart2js:noInline')
   static Error getDefault() =>
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Error>(create);
   static Error? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
   Error_Response whichResponse() => _Error_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -202,7 +200,7 @@ class SendRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SendRequest clone() => SendRequest()..mergeFromMessage(this);
+  SendRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SendRequest copyWith(void Function(SendRequest) updates) =>
       super.copyWith((message) => updates(message as SendRequest))
@@ -215,7 +213,6 @@ class SendRequest extends $pb.GeneratedMessage {
   static SendRequest create() => SendRequest._();
   @$core.override
   SendRequest createEmptyInstance() => create();
-  static $pb.PbList<SendRequest> createRepeated() => $pb.PbList<SendRequest>();
   @$core.pragma('dart2js:noInline')
   static SendRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SendRequest>(create);
@@ -278,7 +275,7 @@ class AcceptRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  AcceptRequest clone() => AcceptRequest()..mergeFromMessage(this);
+  AcceptRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   AcceptRequest copyWith(void Function(AcceptRequest) updates) =>
       super.copyWith((message) => updates(message as AcceptRequest))
@@ -291,8 +288,6 @@ class AcceptRequest extends $pb.GeneratedMessage {
   static AcceptRequest create() => AcceptRequest._();
   @$core.override
   AcceptRequest createEmptyInstance() => create();
-  static $pb.PbList<AcceptRequest> createRepeated() =>
-      $pb.PbList<AcceptRequest>();
   @$core.pragma('dart2js:noInline')
   static AcceptRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<AcceptRequest>(create);
@@ -359,15 +354,13 @@ class StatusResponse extends $pb.GeneratedMessage {
       createEmptyInstance: create)
     ..aOM<Error>(1, _omitFieldNames ? '' : 'error', subBuilder: Error.create)
     ..aOS(2, _omitFieldNames ? '' : 'transferId')
-    ..a<$core.int>(3, _omitFieldNames ? '' : 'progress', $pb.PbFieldType.OU3)
-    ..e<$0.Status>(4, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE,
-        defaultOrMaker: $0.Status.SUCCESS,
-        valueOf: $0.Status.valueOf,
+    ..aI(3, _omitFieldNames ? '' : 'progress', fieldType: $pb.PbFieldType.OU3)
+    ..aE<$0.Status>(4, _omitFieldNames ? '' : 'status',
         enumValues: $0.Status.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  StatusResponse clone() => StatusResponse()..mergeFromMessage(this);
+  StatusResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   StatusResponse copyWith(void Function(StatusResponse) updates) =>
       super.copyWith((message) => updates(message as StatusResponse))
@@ -380,8 +373,6 @@ class StatusResponse extends $pb.GeneratedMessage {
   static StatusResponse create() => StatusResponse._();
   @$core.override
   StatusResponse createEmptyInstance() => create();
-  static $pb.PbList<StatusResponse> createRepeated() =>
-      $pb.PbList<StatusResponse>();
   @$core.pragma('dart2js:noInline')
   static StatusResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<StatusResponse>(create);
@@ -452,7 +443,7 @@ class CancelRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  CancelRequest clone() => CancelRequest()..mergeFromMessage(this);
+  CancelRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   CancelRequest copyWith(void Function(CancelRequest) updates) =>
       super.copyWith((message) => updates(message as CancelRequest))
@@ -465,8 +456,6 @@ class CancelRequest extends $pb.GeneratedMessage {
   static CancelRequest create() => CancelRequest._();
   @$core.override
   CancelRequest createEmptyInstance() => create();
-  static $pb.PbList<CancelRequest> createRepeated() =>
-      $pb.PbList<CancelRequest>();
   @$core.pragma('dart2js:noInline')
   static CancelRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<CancelRequest>(create);
@@ -507,12 +496,12 @@ class ListResponse extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'filesharepb'),
       createEmptyInstance: create)
     ..aOM<Error>(1, _omitFieldNames ? '' : 'error', subBuilder: Error.create)
-    ..pc<$0.Transfer>(2, _omitFieldNames ? '' : 'transfers', $pb.PbFieldType.PM,
+    ..pPM<$0.Transfer>(2, _omitFieldNames ? '' : 'transfers',
         subBuilder: $0.Transfer.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  ListResponse clone() => ListResponse()..mergeFromMessage(this);
+  ListResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   ListResponse copyWith(void Function(ListResponse) updates) =>
       super.copyWith((message) => updates(message as ListResponse))
@@ -525,8 +514,6 @@ class ListResponse extends $pb.GeneratedMessage {
   static ListResponse create() => ListResponse._();
   @$core.override
   ListResponse createEmptyInstance() => create();
-  static $pb.PbList<ListResponse> createRepeated() =>
-      $pb.PbList<ListResponse>();
   @$core.pragma('dart2js:noInline')
   static ListResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ListResponse>(create);
@@ -577,7 +564,7 @@ class CancelFileRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  CancelFileRequest clone() => CancelFileRequest()..mergeFromMessage(this);
+  CancelFileRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   CancelFileRequest copyWith(void Function(CancelFileRequest) updates) =>
       super.copyWith((message) => updates(message as CancelFileRequest))
@@ -590,8 +577,6 @@ class CancelFileRequest extends $pb.GeneratedMessage {
   static CancelFileRequest create() => CancelFileRequest._();
   @$core.override
   CancelFileRequest createEmptyInstance() => create();
-  static $pb.PbList<CancelFileRequest> createRepeated() =>
-      $pb.PbList<CancelFileRequest>();
   @$core.pragma('dart2js:noInline')
   static CancelFileRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<CancelFileRequest>(create);
@@ -642,8 +627,7 @@ class SetNotificationsRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetNotificationsRequest clone() =>
-      SetNotificationsRequest()..mergeFromMessage(this);
+  SetNotificationsRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetNotificationsRequest copyWith(
           void Function(SetNotificationsRequest) updates) =>
@@ -657,8 +641,6 @@ class SetNotificationsRequest extends $pb.GeneratedMessage {
   static SetNotificationsRequest create() => SetNotificationsRequest._();
   @$core.override
   SetNotificationsRequest createEmptyInstance() => create();
-  static $pb.PbList<SetNotificationsRequest> createRepeated() =>
-      $pb.PbList<SetNotificationsRequest>();
   @$core.pragma('dart2js:noInline')
   static SetNotificationsRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetNotificationsRequest>(create);
@@ -696,16 +678,12 @@ class SetNotificationsResponse extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'SetNotificationsResponse',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'filesharepb'),
       createEmptyInstance: create)
-    ..e<SetNotificationsStatus>(
-        1, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE,
-        defaultOrMaker: SetNotificationsStatus.SET_SUCCESS,
-        valueOf: SetNotificationsStatus.valueOf,
+    ..aE<SetNotificationsStatus>(1, _omitFieldNames ? '' : 'status',
         enumValues: SetNotificationsStatus.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetNotificationsResponse clone() =>
-      SetNotificationsResponse()..mergeFromMessage(this);
+  SetNotificationsResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetNotificationsResponse copyWith(
           void Function(SetNotificationsResponse) updates) =>
@@ -719,8 +697,6 @@ class SetNotificationsResponse extends $pb.GeneratedMessage {
   static SetNotificationsResponse create() => SetNotificationsResponse._();
   @$core.override
   SetNotificationsResponse createEmptyInstance() => create();
-  static $pb.PbList<SetNotificationsResponse> createRepeated() =>
-      $pb.PbList<SetNotificationsResponse>();
   @$core.pragma('dart2js:noInline')
   static SetNotificationsResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetNotificationsResponse>(create);
@@ -763,8 +739,7 @@ class PurgeTransfersUntilRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  PurgeTransfersUntilRequest clone() =>
-      PurgeTransfersUntilRequest()..mergeFromMessage(this);
+  PurgeTransfersUntilRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   PurgeTransfersUntilRequest copyWith(
           void Function(PurgeTransfersUntilRequest) updates) =>
@@ -779,8 +754,6 @@ class PurgeTransfersUntilRequest extends $pb.GeneratedMessage {
   static PurgeTransfersUntilRequest create() => PurgeTransfersUntilRequest._();
   @$core.override
   PurgeTransfersUntilRequest createEmptyInstance() => create();
-  static $pb.PbList<PurgeTransfersUntilRequest> createRepeated() =>
-      $pb.PbList<PurgeTransfersUntilRequest>();
   @$core.pragma('dart2js:noInline')
   static PurgeTransfersUntilRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<PurgeTransfersUntilRequest>(create);

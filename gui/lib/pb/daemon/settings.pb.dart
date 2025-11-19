@@ -53,7 +53,7 @@ class SettingsResponse extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SettingsResponse clone() => SettingsResponse()..mergeFromMessage(this);
+  SettingsResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SettingsResponse copyWith(void Function(SettingsResponse) updates) =>
       super.copyWith((message) => updates(message as SettingsResponse))
@@ -66,8 +66,6 @@ class SettingsResponse extends $pb.GeneratedMessage {
   static SettingsResponse create() => SettingsResponse._();
   @$core.override
   SettingsResponse createEmptyInstance() => create();
-  static $pb.PbList<SettingsResponse> createRepeated() =>
-      $pb.PbList<SettingsResponse>();
   @$core.pragma('dart2js:noInline')
   static SettingsResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SettingsResponse>(create);
@@ -125,15 +123,12 @@ class AutoconnectData extends $pb.GeneratedMessage {
     ..aOB(1, _omitFieldNames ? '' : 'enabled')
     ..aOS(2, _omitFieldNames ? '' : 'country')
     ..aOS(3, _omitFieldNames ? '' : 'city')
-    ..e<$1.ServerGroup>(
-        4, _omitFieldNames ? '' : 'serverGroup', $pb.PbFieldType.OE,
-        defaultOrMaker: $1.ServerGroup.UNDEFINED,
-        valueOf: $1.ServerGroup.valueOf,
+    ..aE<$1.ServerGroup>(4, _omitFieldNames ? '' : 'serverGroup',
         enumValues: $1.ServerGroup.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  AutoconnectData clone() => AutoconnectData()..mergeFromMessage(this);
+  AutoconnectData clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   AutoconnectData copyWith(void Function(AutoconnectData) updates) =>
       super.copyWith((message) => updates(message as AutoconnectData))
@@ -146,8 +141,6 @@ class AutoconnectData extends $pb.GeneratedMessage {
   static AutoconnectData create() => AutoconnectData._();
   @$core.override
   AutoconnectData createEmptyInstance() => create();
-  static $pb.PbList<AutoconnectData> createRepeated() =>
-      $pb.PbList<AutoconnectData>();
   @$core.pragma('dart2js:noInline')
   static AutoconnectData getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<AutoconnectData>(create);
@@ -247,10 +240,7 @@ class Settings extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'Settings',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..e<$2.Technology>(
-        1, _omitFieldNames ? '' : 'technology', $pb.PbFieldType.OE,
-        defaultOrMaker: $2.Technology.UNKNOWN_TECHNOLOGY,
-        valueOf: $2.Technology.valueOf,
+    ..aE<$2.Technology>(1, _omitFieldNames ? '' : 'technology',
         enumValues: $2.Technology.values)
     ..aOB(2, _omitFieldNames ? '' : 'firewall')
     ..aOB(3, _omitFieldNames ? '' : 'killSwitch')
@@ -258,17 +248,12 @@ class Settings extends $pb.GeneratedMessage {
         subBuilder: AutoconnectData.create)
     ..aOB(6, _omitFieldNames ? '' : 'meshnet')
     ..aOB(7, _omitFieldNames ? '' : 'routing')
-    ..a<$core.int>(8, _omitFieldNames ? '' : 'fwmark', $pb.PbFieldType.OU3)
-    ..e<$3.ConsentMode>(
-        9, _omitFieldNames ? '' : 'analyticsConsent', $pb.PbFieldType.OE,
-        defaultOrMaker: $3.ConsentMode.UNDEFINED,
-        valueOf: $3.ConsentMode.valueOf,
+    ..aI(8, _omitFieldNames ? '' : 'fwmark', fieldType: $pb.PbFieldType.OU3)
+    ..aE<$3.ConsentMode>(9, _omitFieldNames ? '' : 'analyticsConsent',
         enumValues: $3.ConsentMode.values)
     ..pPS(10, _omitFieldNames ? '' : 'dns')
     ..aOB(11, _omitFieldNames ? '' : 'threatProtectionLite')
-    ..e<$4.Protocol>(12, _omitFieldNames ? '' : 'protocol', $pb.PbFieldType.OE,
-        defaultOrMaker: $4.Protocol.UNKNOWN_PROTOCOL,
-        valueOf: $4.Protocol.valueOf,
+    ..aE<$4.Protocol>(12, _omitFieldNames ? '' : 'protocol',
         enumValues: $4.Protocol.values)
     ..aOB(13, _omitFieldNames ? '' : 'lanDiscovery')
     ..aOM<$0.Allowlist>(14, _omitFieldNames ? '' : 'allowlist',
@@ -283,7 +268,7 @@ class Settings extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  Settings clone() => Settings()..mergeFromMessage(this);
+  Settings clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   Settings copyWith(void Function(Settings) updates) =>
       super.copyWith((message) => updates(message as Settings)) as Settings;
@@ -295,7 +280,6 @@ class Settings extends $pb.GeneratedMessage {
   static Settings create() => Settings._();
   @$core.override
   Settings createEmptyInstance() => create();
-  static $pb.PbList<Settings> createRepeated() => $pb.PbList<Settings>();
   @$core.pragma('dart2js:noInline')
   static Settings getDefault() =>
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Settings>(create);
@@ -496,8 +480,7 @@ class UserSpecificSettings extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  UserSpecificSettings clone() =>
-      UserSpecificSettings()..mergeFromMessage(this);
+  UserSpecificSettings clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   UserSpecificSettings copyWith(void Function(UserSpecificSettings) updates) =>
       super.copyWith((message) => updates(message as UserSpecificSettings))
@@ -510,8 +493,6 @@ class UserSpecificSettings extends $pb.GeneratedMessage {
   static UserSpecificSettings create() => UserSpecificSettings._();
   @$core.override
   UserSpecificSettings createEmptyInstance() => create();
-  static $pb.PbList<UserSpecificSettings> createRepeated() =>
-      $pb.PbList<UserSpecificSettings>();
   @$core.pragma('dart2js:noInline')
   static UserSpecificSettings getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<UserSpecificSettings>(create);

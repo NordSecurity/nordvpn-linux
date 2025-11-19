@@ -54,13 +54,12 @@ class NewTransferNotification extends $pb.GeneratedMessage {
     ..aOS(1, _omitFieldNames ? '' : 'identifier')
     ..aOS(2, _omitFieldNames ? '' : 'os')
     ..aOS(3, _omitFieldNames ? '' : 'fileName')
-    ..a<$core.int>(4, _omitFieldNames ? '' : 'fileCount', $pb.PbFieldType.O3)
+    ..aI(4, _omitFieldNames ? '' : 'fileCount')
     ..aOS(5, _omitFieldNames ? '' : 'transferId')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  NewTransferNotification clone() =>
-      NewTransferNotification()..mergeFromMessage(this);
+  NewTransferNotification clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   NewTransferNotification copyWith(
           void Function(NewTransferNotification) updates) =>
@@ -74,8 +73,6 @@ class NewTransferNotification extends $pb.GeneratedMessage {
   static NewTransferNotification create() => NewTransferNotification._();
   @$core.override
   NewTransferNotification createEmptyInstance() => create();
-  static $pb.PbList<NewTransferNotification> createRepeated() =>
-      $pb.PbList<NewTransferNotification>();
   @$core.pragma('dart2js:noInline')
   static NewTransferNotification getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<NewTransferNotification>(create);
@@ -176,26 +173,17 @@ class NotifyNewTransferResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 2, 3, 4])
     ..aOM<$0.Empty>(1, _omitFieldNames ? '' : 'empty',
         subBuilder: $0.Empty.create)
-    ..e<$1.UpdatePeerErrorCode>(
-        2, _omitFieldNames ? '' : 'updatePeerErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: $1.UpdatePeerErrorCode.PEER_NOT_FOUND,
-        valueOf: $1.UpdatePeerErrorCode.valueOf,
+    ..aE<$1.UpdatePeerErrorCode>(
+        2, _omitFieldNames ? '' : 'updatePeerErrorCode',
         enumValues: $1.UpdatePeerErrorCode.values)
-    ..e<$2.ServiceErrorCode>(
-        3, _omitFieldNames ? '' : 'serviceErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: $2.ServiceErrorCode.NOT_LOGGED_IN,
-        valueOf: $2.ServiceErrorCode.valueOf,
+    ..aE<$2.ServiceErrorCode>(3, _omitFieldNames ? '' : 'serviceErrorCode',
         enumValues: $2.ServiceErrorCode.values)
-    ..e<$2.MeshnetErrorCode>(
-        4, _omitFieldNames ? '' : 'meshnetErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: $2.MeshnetErrorCode.NOT_REGISTERED,
-        valueOf: $2.MeshnetErrorCode.valueOf,
+    ..aE<$2.MeshnetErrorCode>(4, _omitFieldNames ? '' : 'meshnetErrorCode',
         enumValues: $2.MeshnetErrorCode.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  NotifyNewTransferResponse clone() =>
-      NotifyNewTransferResponse()..mergeFromMessage(this);
+  NotifyNewTransferResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   NotifyNewTransferResponse copyWith(
           void Function(NotifyNewTransferResponse) updates) =>
@@ -209,15 +197,21 @@ class NotifyNewTransferResponse extends $pb.GeneratedMessage {
   static NotifyNewTransferResponse create() => NotifyNewTransferResponse._();
   @$core.override
   NotifyNewTransferResponse createEmptyInstance() => create();
-  static $pb.PbList<NotifyNewTransferResponse> createRepeated() =>
-      $pb.PbList<NotifyNewTransferResponse>();
   @$core.pragma('dart2js:noInline')
   static NotifyNewTransferResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<NotifyNewTransferResponse>(create);
   static NotifyNewTransferResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(4)
   NotifyNewTransferResponse_Response whichResponse() =>
       _NotifyNewTransferResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(4)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
