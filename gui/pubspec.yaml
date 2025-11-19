@@ -8,8 +8,10 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # more info into the build scripts
 version: 0.0.1
 
+
 environment:
-  sdk: ">=3.8.0 <4.0.0"
+  sdk: ">=3.10.0 <3.10.1"
+  # flutter 3.38.1
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -28,14 +30,14 @@ dependencies:
   flutter_riverpod: ^2.4.10
   riverpod_annotation: ^2.3.4
   riverpod: ^2.5.1
-  protobuf: ^4.1.0
-  grpc: ^4.0.4
+  protobuf: ^5.1.0
+  grpc: ^5.0.0
   slang: ^4.7.3
   slang_flutter: ^4.7.0
   searchable_listview: ^2.19.3
   flutter_svg: ^2.0.17
   posix: ^6.0.1
-  fixnum: ^1.1.0
+  fixnum: ^1.1.1
   url_launcher: ^6.3.0
   logger: ^2.4.0
   path: ^1.9.0

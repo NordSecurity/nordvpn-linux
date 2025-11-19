@@ -63,20 +63,14 @@ class MeshnetResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 2, 3])
     ..aOM<$0.Empty>(1, _omitFieldNames ? '' : 'empty',
         subBuilder: $0.Empty.create)
-    ..e<ServiceErrorCode>(
-        2, _omitFieldNames ? '' : 'serviceError', $pb.PbFieldType.OE,
-        defaultOrMaker: ServiceErrorCode.NOT_LOGGED_IN,
-        valueOf: ServiceErrorCode.valueOf,
+    ..aE<ServiceErrorCode>(2, _omitFieldNames ? '' : 'serviceError',
         enumValues: ServiceErrorCode.values)
-    ..e<MeshnetErrorCode>(
-        3, _omitFieldNames ? '' : 'meshnetError', $pb.PbFieldType.OE,
-        defaultOrMaker: MeshnetErrorCode.NOT_REGISTERED,
-        valueOf: MeshnetErrorCode.valueOf,
+    ..aE<MeshnetErrorCode>(3, _omitFieldNames ? '' : 'meshnetError',
         enumValues: MeshnetErrorCode.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  MeshnetResponse clone() => MeshnetResponse()..mergeFromMessage(this);
+  MeshnetResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   MeshnetResponse copyWith(void Function(MeshnetResponse) updates) =>
       super.copyWith((message) => updates(message as MeshnetResponse))
@@ -89,15 +83,19 @@ class MeshnetResponse extends $pb.GeneratedMessage {
   static MeshnetResponse create() => MeshnetResponse._();
   @$core.override
   MeshnetResponse createEmptyInstance() => create();
-  static $pb.PbList<MeshnetResponse> createRepeated() =>
-      $pb.PbList<MeshnetResponse>();
   @$core.pragma('dart2js:noInline')
   static MeshnetResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<MeshnetResponse>(create);
   static MeshnetResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
   MeshnetResponse_Response whichResponse() =>
       _MeshnetResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -166,15 +164,12 @@ class ServiceResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 2])
     ..aOM<$0.Empty>(1, _omitFieldNames ? '' : 'empty',
         subBuilder: $0.Empty.create)
-    ..e<ServiceErrorCode>(
-        2, _omitFieldNames ? '' : 'errorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: ServiceErrorCode.NOT_LOGGED_IN,
-        valueOf: ServiceErrorCode.valueOf,
+    ..aE<ServiceErrorCode>(2, _omitFieldNames ? '' : 'errorCode',
         enumValues: ServiceErrorCode.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  ServiceResponse clone() => ServiceResponse()..mergeFromMessage(this);
+  ServiceResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   ServiceResponse copyWith(void Function(ServiceResponse) updates) =>
       super.copyWith((message) => updates(message as ServiceResponse))
@@ -187,15 +182,17 @@ class ServiceResponse extends $pb.GeneratedMessage {
   static ServiceResponse create() => ServiceResponse._();
   @$core.override
   ServiceResponse createEmptyInstance() => create();
-  static $pb.PbList<ServiceResponse> createRepeated() =>
-      $pb.PbList<ServiceResponse>();
   @$core.pragma('dart2js:noInline')
   static ServiceResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ServiceResponse>(create);
   static ServiceResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   ServiceResponse_Response whichResponse() =>
       _ServiceResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -254,15 +251,12 @@ class ServiceBoolResponse extends $pb.GeneratedMessage {
       createEmptyInstance: create)
     ..oo(0, [1, 2])
     ..aOB(1, _omitFieldNames ? '' : 'value')
-    ..e<ServiceErrorCode>(
-        2, _omitFieldNames ? '' : 'errorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: ServiceErrorCode.NOT_LOGGED_IN,
-        valueOf: ServiceErrorCode.valueOf,
+    ..aE<ServiceErrorCode>(2, _omitFieldNames ? '' : 'errorCode',
         enumValues: ServiceErrorCode.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  ServiceBoolResponse clone() => ServiceBoolResponse()..mergeFromMessage(this);
+  ServiceBoolResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   ServiceBoolResponse copyWith(void Function(ServiceBoolResponse) updates) =>
       super.copyWith((message) => updates(message as ServiceBoolResponse))
@@ -275,15 +269,17 @@ class ServiceBoolResponse extends $pb.GeneratedMessage {
   static ServiceBoolResponse create() => ServiceBoolResponse._();
   @$core.override
   ServiceBoolResponse createEmptyInstance() => create();
-  static $pb.PbList<ServiceBoolResponse> createRepeated() =>
-      $pb.PbList<ServiceBoolResponse>();
   @$core.pragma('dart2js:noInline')
   static ServiceBoolResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ServiceBoolResponse>(create);
   static ServiceBoolResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   ServiceBoolResponse_Response whichResponse() =>
       _ServiceBoolResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -330,11 +326,11 @@ class EnabledStatus extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'meshpb'),
       createEmptyInstance: create)
     ..aOB(1, _omitFieldNames ? '' : 'value')
-    ..a<$core.int>(2, _omitFieldNames ? '' : 'uid', $pb.PbFieldType.OU3)
+    ..aI(2, _omitFieldNames ? '' : 'uid', fieldType: $pb.PbFieldType.OU3)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  EnabledStatus clone() => EnabledStatus()..mergeFromMessage(this);
+  EnabledStatus clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   EnabledStatus copyWith(void Function(EnabledStatus) updates) =>
       super.copyWith((message) => updates(message as EnabledStatus))
@@ -347,8 +343,6 @@ class EnabledStatus extends $pb.GeneratedMessage {
   static EnabledStatus create() => EnabledStatus._();
   @$core.override
   EnabledStatus createEmptyInstance() => create();
-  static $pb.PbList<EnabledStatus> createRepeated() =>
-      $pb.PbList<EnabledStatus>();
   @$core.pragma('dart2js:noInline')
   static EnabledStatus getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<EnabledStatus>(create);
@@ -408,15 +402,12 @@ class IsEnabledResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 2])
     ..aOM<EnabledStatus>(1, _omitFieldNames ? '' : 'status',
         subBuilder: EnabledStatus.create)
-    ..e<ServiceErrorCode>(
-        2, _omitFieldNames ? '' : 'errorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: ServiceErrorCode.NOT_LOGGED_IN,
-        valueOf: ServiceErrorCode.valueOf,
+    ..aE<ServiceErrorCode>(2, _omitFieldNames ? '' : 'errorCode',
         enumValues: ServiceErrorCode.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  IsEnabledResponse clone() => IsEnabledResponse()..mergeFromMessage(this);
+  IsEnabledResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   IsEnabledResponse copyWith(void Function(IsEnabledResponse) updates) =>
       super.copyWith((message) => updates(message as IsEnabledResponse))
@@ -429,15 +420,17 @@ class IsEnabledResponse extends $pb.GeneratedMessage {
   static IsEnabledResponse create() => IsEnabledResponse._();
   @$core.override
   IsEnabledResponse createEmptyInstance() => create();
-  static $pb.PbList<IsEnabledResponse> createRepeated() =>
-      $pb.PbList<IsEnabledResponse>();
   @$core.pragma('dart2js:noInline')
   static IsEnabledResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<IsEnabledResponse>(create);
   static IsEnabledResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   IsEnabledResponse_Response whichResponse() =>
       _IsEnabledResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)

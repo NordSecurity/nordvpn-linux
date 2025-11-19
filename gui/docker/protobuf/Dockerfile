@@ -1,6 +1,9 @@
 # Build image to convert protobufs to dart code
 # Update this when flutter builder is updated or find a way to keep in sync
-FROM dart:3.8.1
+FROM dart:3.10.0
+
+LABEL org.opencontainers.image.source="https://github.com/NordSecurity/nordvpn-linux/blob/main/gui/docker/protobuf/Dockerfile"
+LABEL org.opencontainers.image.description="Generates the protobuf to dart code, e.g. ./docker/generate_docker_image.sh ghcr.io/nordsecurity/nordvpn-linux/protobuf_dart-3.10.0 1.0.0 linux/amd64 docker/protobuf/"
 
 WORKDIR /code/app
 
@@ -15,8 +18,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* && \
     dart --version && \
     # Install protoc
-    wget --progress=dot:giga https://github.com/protocolbuffers/protobuf/releases/download/v21.6/protoc-21.6-linux-x86_64.zip -O /tmp/protoc.zip && \
-    echo "6a9fc36363a2d05d73fc363a46cd57d849068d33305db39f77daac8ba073e818 /tmp/protoc.zip" | sha256sum -c - && \
+    wget --progress=dot:giga https://github.com/protocolbuffers/protobuf/releases/download/v33.1/protoc-33.1-linux-x86_64.zip -O /tmp/protoc.zip && \
+    echo "f3340e28a83d1c637d8bafdeed92b9f7db6a384c26bca880a6e5217b40a4328b /tmp/protoc.zip" | sha256sum -c - && \
     unzip /tmp/protoc.zip -d /usr/ && rm /tmp/protoc.zip
 
 ENV DOCKER_FILE="https://github.com/NordSecurity/nordvpn-linux-gui/docker/protobuf/Dockerfile"

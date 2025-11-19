@@ -68,7 +68,7 @@ scripts:
       protobuf:
         $description: Regenerate protobufs using docker image
         $script: |
-          docker run -v `pwd`/../:/code/app ghcr.io/nordsecurity/nordvpn-linux/protobuf_dart-3.8.1:1.0.1 ./gui/scripts/generate_protobuf.sh
+          docker run -v `pwd`/../:/code/app ghcr.io/nordsecurity/nordvpn-linux/protobuf_dart-3.10.0:1.0.0 ./gui/scripts/generate_protobuf.sh
 
     build:
       package:
@@ -98,7 +98,7 @@ scripts:
               --platform ${PLATFORM} \
               --env WORKDIR=/code/app/ \
               --env ARCH=amd64 \
-              --workdir ${APP_DIR} ghcr.io/nordsecurity/nordvpn-linux/flutter-3.32.8:1.0.1 scripts/build_application.sh ${1}
+              --workdir ${APP_DIR} ghcr.io/nordsecurity/nordvpn-linux/flutter-3.38.1:1.0.0 scripts/build_application.sh ${1}
             # Generate package
             docker run -v `pwd`/../:/code/app \
                     --workdir ${APP_DIR} \

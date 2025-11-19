@@ -68,7 +68,7 @@ class Server extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  Server clone() => Server()..mergeFromMessage(this);
+  Server clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   Server copyWith(void Function(Server) updates) =>
       super.copyWith((message) => updates(message as Server)) as Server;
@@ -80,7 +80,6 @@ class Server extends $pb.GeneratedMessage {
   static Server create() => Server._();
   @$core.override
   Server createEmptyInstance() => create();
-  static $pb.PbList<Server> createRepeated() => $pb.PbList<Server>();
   @$core.pragma('dart2js:noInline')
   static Server getDefault() =>
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Server>(create);
@@ -145,12 +144,12 @@ class ServerCity extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'cityName')
-    ..pc<Server>(2, _omitFieldNames ? '' : 'servers', $pb.PbFieldType.PM,
+    ..pPM<Server>(2, _omitFieldNames ? '' : 'servers',
         subBuilder: Server.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  ServerCity clone() => ServerCity()..mergeFromMessage(this);
+  ServerCity clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   ServerCity copyWith(void Function(ServerCity) updates) =>
       super.copyWith((message) => updates(message as ServerCity)) as ServerCity;
@@ -162,7 +161,6 @@ class ServerCity extends $pb.GeneratedMessage {
   static ServerCity create() => ServerCity._();
   @$core.override
   ServerCity createEmptyInstance() => create();
-  static $pb.PbList<ServerCity> createRepeated() => $pb.PbList<ServerCity>();
   @$core.pragma('dart2js:noInline')
   static ServerCity getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ServerCity>(create);
@@ -208,13 +206,13 @@ class ServerCountry extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'countryCode')
-    ..pc<ServerCity>(2, _omitFieldNames ? '' : 'cities', $pb.PbFieldType.PM,
+    ..pPM<ServerCity>(2, _omitFieldNames ? '' : 'cities',
         subBuilder: ServerCity.create)
     ..aOS(3, _omitFieldNames ? '' : 'countryName')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  ServerCountry clone() => ServerCountry()..mergeFromMessage(this);
+  ServerCountry clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   ServerCountry copyWith(void Function(ServerCountry) updates) =>
       super.copyWith((message) => updates(message as ServerCountry))
@@ -227,8 +225,6 @@ class ServerCountry extends $pb.GeneratedMessage {
   static ServerCountry create() => ServerCountry._();
   @$core.override
   ServerCountry createEmptyInstance() => create();
-  static $pb.PbList<ServerCountry> createRepeated() =>
-      $pb.PbList<ServerCountry>();
   @$core.pragma('dart2js:noInline')
   static ServerCountry getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ServerCountry>(create);
@@ -279,13 +275,12 @@ class ServersMap extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'ServersMap',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..pc<ServerCountry>(
-        1, _omitFieldNames ? '' : 'serversByCountry', $pb.PbFieldType.PM,
+    ..pPM<ServerCountry>(1, _omitFieldNames ? '' : 'serversByCountry',
         subBuilder: ServerCountry.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  ServersMap clone() => ServersMap()..mergeFromMessage(this);
+  ServersMap clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   ServersMap copyWith(void Function(ServersMap) updates) =>
       super.copyWith((message) => updates(message as ServersMap)) as ServersMap;
@@ -297,7 +292,6 @@ class ServersMap extends $pb.GeneratedMessage {
   static ServersMap create() => ServersMap._();
   @$core.override
   ServersMap createEmptyInstance() => create();
-  static $pb.PbList<ServersMap> createRepeated() => $pb.PbList<ServersMap>();
   @$core.pragma('dart2js:noInline')
   static ServersMap getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ServersMap>(create);
@@ -342,14 +336,12 @@ class ServersResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 2])
     ..aOM<ServersMap>(1, _omitFieldNames ? '' : 'servers',
         subBuilder: ServersMap.create)
-    ..e<ServersError>(2, _omitFieldNames ? '' : 'error', $pb.PbFieldType.OE,
-        defaultOrMaker: ServersError.NO_ERROR,
-        valueOf: ServersError.valueOf,
+    ..aE<ServersError>(2, _omitFieldNames ? '' : 'error',
         enumValues: ServersError.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  ServersResponse clone() => ServersResponse()..mergeFromMessage(this);
+  ServersResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   ServersResponse copyWith(void Function(ServersResponse) updates) =>
       super.copyWith((message) => updates(message as ServersResponse))
@@ -362,15 +354,17 @@ class ServersResponse extends $pb.GeneratedMessage {
   static ServersResponse create() => ServersResponse._();
   @$core.override
   ServersResponse createEmptyInstance() => create();
-  static $pb.PbList<ServersResponse> createRepeated() =>
-      $pb.PbList<ServersResponse>();
   @$core.pragma('dart2js:noInline')
   static ServersResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ServersResponse>(create);
   static ServersResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   ServersResponse_Response whichResponse() =>
       _ServersResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)

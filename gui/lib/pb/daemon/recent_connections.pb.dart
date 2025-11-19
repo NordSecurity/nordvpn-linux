@@ -42,14 +42,12 @@ class RecentConnectionsResponse extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'RecentConnectionsResponse',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..pc<RecentConnectionModel>(
-        1, _omitFieldNames ? '' : 'connections', $pb.PbFieldType.PM,
+    ..pPM<RecentConnectionModel>(1, _omitFieldNames ? '' : 'connections',
         subBuilder: RecentConnectionModel.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  RecentConnectionsResponse clone() =>
-      RecentConnectionsResponse()..mergeFromMessage(this);
+  RecentConnectionsResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   RecentConnectionsResponse copyWith(
           void Function(RecentConnectionsResponse) updates) =>
@@ -63,8 +61,6 @@ class RecentConnectionsResponse extends $pb.GeneratedMessage {
   static RecentConnectionsResponse create() => RecentConnectionsResponse._();
   @$core.override
   RecentConnectionsResponse createEmptyInstance() => create();
-  static $pb.PbList<RecentConnectionsResponse> createRepeated() =>
-      $pb.PbList<RecentConnectionsResponse>();
   @$core.pragma('dart2js:noInline')
   static RecentConnectionsResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RecentConnectionsResponse>(create);
@@ -114,24 +110,18 @@ class RecentConnectionModel extends $pb.GeneratedMessage {
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'country')
     ..aOS(2, _omitFieldNames ? '' : 'city')
-    ..e<$0.ServerGroup>(3, _omitFieldNames ? '' : 'group', $pb.PbFieldType.OE,
-        defaultOrMaker: $0.ServerGroup.UNDEFINED,
-        valueOf: $0.ServerGroup.valueOf,
+    ..aE<$0.ServerGroup>(3, _omitFieldNames ? '' : 'group',
         enumValues: $0.ServerGroup.values)
     ..aOS(4, _omitFieldNames ? '' : 'countryCode')
     ..aOS(5, _omitFieldNames ? '' : 'specificServerName')
     ..aOS(6, _omitFieldNames ? '' : 'specificServer')
-    ..e<$1.ServerSelectionRule>(
-        7, _omitFieldNames ? '' : 'connectionType', $pb.PbFieldType.OE,
-        defaultOrMaker: $1.ServerSelectionRule.NONE,
-        valueOf: $1.ServerSelectionRule.valueOf,
+    ..aE<$1.ServerSelectionRule>(7, _omitFieldNames ? '' : 'connectionType',
         enumValues: $1.ServerSelectionRule.values)
     ..aOB(8, _omitFieldNames ? '' : 'isVirtual')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  RecentConnectionModel clone() =>
-      RecentConnectionModel()..mergeFromMessage(this);
+  RecentConnectionModel clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   RecentConnectionModel copyWith(
           void Function(RecentConnectionModel) updates) =>
@@ -145,8 +135,6 @@ class RecentConnectionModel extends $pb.GeneratedMessage {
   static RecentConnectionModel create() => RecentConnectionModel._();
   @$core.override
   RecentConnectionModel createEmptyInstance() => create();
-  static $pb.PbList<RecentConnectionModel> createRepeated() =>
-      $pb.PbList<RecentConnectionModel>();
   @$core.pragma('dart2js:noInline')
   static RecentConnectionModel getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RecentConnectionModel>(create);
@@ -259,8 +247,7 @@ class RecentConnectionsRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  RecentConnectionsRequest clone() =>
-      RecentConnectionsRequest()..mergeFromMessage(this);
+  RecentConnectionsRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   RecentConnectionsRequest copyWith(
           void Function(RecentConnectionsRequest) updates) =>
@@ -274,8 +261,6 @@ class RecentConnectionsRequest extends $pb.GeneratedMessage {
   static RecentConnectionsRequest create() => RecentConnectionsRequest._();
   @$core.override
   RecentConnectionsRequest createEmptyInstance() => create();
-  static $pb.PbList<RecentConnectionsRequest> createRepeated() =>
-      $pb.PbList<RecentConnectionsRequest>();
   @$core.pragma('dart2js:noInline')
   static RecentConnectionsRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RecentConnectionsRequest>(create);

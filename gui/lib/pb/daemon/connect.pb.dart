@@ -45,7 +45,7 @@ class ConnectRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  ConnectRequest clone() => ConnectRequest()..mergeFromMessage(this);
+  ConnectRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   ConnectRequest copyWith(void Function(ConnectRequest) updates) =>
       super.copyWith((message) => updates(message as ConnectRequest))
@@ -58,8 +58,6 @@ class ConnectRequest extends $pb.GeneratedMessage {
   static ConnectRequest create() => ConnectRequest._();
   @$core.override
   ConnectRequest createEmptyInstance() => create();
-  static $pb.PbList<ConnectRequest> createRepeated() =>
-      $pb.PbList<ConnectRequest>();
   @$core.pragma('dart2js:noInline')
   static ConnectRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ConnectRequest>(create);
