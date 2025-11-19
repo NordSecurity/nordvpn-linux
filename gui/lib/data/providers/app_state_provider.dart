@@ -184,17 +184,16 @@ class AppStateChange {
     for (final observer in _settingsObservers) {
       observer.onSettingsChanged(appSettings);
     }
-    // for some user changes refresh servers list
-    if (_shouldRefreshServersList(appSettings)) {
+    // some user settings affect which connection items can be presented at the time
+    if (_shouldRefreshConnectionList(appSettings)) {
       _notifyServersListChanged();
-    }
-    if (_shouldRefreshRecentConnectionsList(appSettings)) {
       _notifyRecentConnectionsListChanged();
     }
+
     _appSettings = appSettings;
   }
 
-  bool _shouldRefreshServersList(ApplicationSettings appSettings) {
+  bool _shouldRefreshConnectionList(ApplicationSettings appSettings) {
     return (_appSettings?.obfuscatedServers != appSettings.obfuscatedServers) ||
         (_appSettings?.virtualServers != appSettings.virtualServers) ||
         (_appSettings?.protocol != appSettings.protocol);
@@ -221,9 +220,6 @@ class AppStateChange {
       }
     });
   }
-
-  bool _shouldRefreshRecentConnectionsList(ApplicationSettings settings) =>
-      _shouldRefreshServersList(settings);
 
   void _notifyRecentConnectionsListChanged() async {
     if (_recentConnectionsListObservers.isEmpty) {
