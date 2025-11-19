@@ -14,6 +14,7 @@ import sh
 
 from lib import daemon, fileshare, info, logging, login, meshnet, poll, ssh
 from lib.shell import sh_no_tty
+from lib.meshnet import delete_machines_by_identifier, LOCAL_TOKEN, PEER_TOKEN
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -26,6 +27,10 @@ default_download_directory = "/home/qa/Downloads"
 def setup_module(module):  # noqa: ARG001
     os.makedirs("/home/qa/.config/nordvpn", exist_ok=True)
     os.makedirs("/home/qa/.cache/nordvpn", exist_ok=True)
+
+    delete_machines_by_identifier(token=LOCAL_TOKEN)
+    delete_machines_by_identifier(token=PEER_TOKEN)
+
     daemon.start()
     login.login_as("default")
 
@@ -35,8 +40,6 @@ def setup_module(module):  # noqa: ARG001
 
     sh.nordvpn.set.notify.off()
     sh.nordvpn.set.meshnet.on()
-    # Ensure clean starting state
-    meshnet.remove_all_peers()
 
     ssh_client.connect()
     daemon.install_peer(ssh_client)
