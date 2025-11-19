@@ -135,10 +135,15 @@ func statusStream(stateChan <-chan any,
 					}}); err != nil {
 					log.Println(internal.ErrorPrefix, "login event failed to send state update:", err)
 				}
-			case *config.Config:
-				config := configToProtobuf(e, uid)
+			case config.DataConfigChange:
+				settings := configToProtobuf(e.Config, uid)
 				if err := srv.Send(
-					&pb.AppState{State: &pb.AppState_SettingsChange{SettingsChange: config}}); err != nil {
+					&pb.AppState{State: &pb.AppState_SettingsChange{
+						SettingsChange: &pb.SettingsUpdate{
+							Settings:          settings,
+							IsResetToDefaults: e.IsResetToDefaults,
+						},
+					}}); err != nil {
 					log.Println(internal.ErrorPrefix, "config change failed to send state update:", err)
 				}
 			case pb.UpdateEvent:

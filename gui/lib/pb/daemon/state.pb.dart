@@ -14,9 +14,9 @@ import 'dart:core' as $core;
 
 import 'package:protobuf/protobuf.dart' as $pb;
 
-import 'settings.pb.dart' as $1;
+import 'settings.pb.dart' as $0;
 import 'state.pbenum.dart';
-import 'status.pb.dart' as $0;
+import 'status.pb.dart' as $1;
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
@@ -191,6 +191,77 @@ class VersionHealthStatus extends $pb.GeneratedMessage {
   void clearStatusCode() => $_clearField(1);
 }
 
+class SettingsUpdate extends $pb.GeneratedMessage {
+  factory SettingsUpdate({
+    $0.Settings? settings,
+    $core.bool? isResetToDefaults,
+  }) {
+    final result = create();
+    if (settings != null) result.settings = settings;
+    if (isResetToDefaults != null) result.isResetToDefaults = isResetToDefaults;
+    return result;
+  }
+
+  SettingsUpdate._();
+
+  factory SettingsUpdate.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory SettingsUpdate.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'SettingsUpdate',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
+      createEmptyInstance: create)
+    ..aOM<$0.Settings>(1, _omitFieldNames ? '' : 'settings',
+        subBuilder: $0.Settings.create)
+    ..aOB(2, _omitFieldNames ? '' : 'isResetToDefaults')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SettingsUpdate clone() => SettingsUpdate()..mergeFromMessage(this);
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  SettingsUpdate copyWith(void Function(SettingsUpdate) updates) =>
+      super.copyWith((message) => updates(message as SettingsUpdate))
+          as SettingsUpdate;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static SettingsUpdate create() => SettingsUpdate._();
+  @$core.override
+  SettingsUpdate createEmptyInstance() => create();
+  static $pb.PbList<SettingsUpdate> createRepeated() =>
+      $pb.PbList<SettingsUpdate>();
+  @$core.pragma('dart2js:noInline')
+  static SettingsUpdate getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<SettingsUpdate>(create);
+  static SettingsUpdate? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $0.Settings get settings => $_getN(0);
+  @$pb.TagNumber(1)
+  set settings($0.Settings value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSettings() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSettings() => $_clearField(1);
+  @$pb.TagNumber(1)
+  $0.Settings ensureSettings() => $_ensure(0);
+
+  @$pb.TagNumber(2)
+  $core.bool get isResetToDefaults => $_getBF(1);
+  @$pb.TagNumber(2)
+  set isResetToDefaults($core.bool value) => $_setBool(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasIsResetToDefaults() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearIsResetToDefaults() => $_clearField(2);
+}
+
 enum AppState_State {
   error,
   connectionStatus,
@@ -205,9 +276,9 @@ enum AppState_State {
 class AppState extends $pb.GeneratedMessage {
   factory AppState({
     AppStateError? error,
-    $0.StatusResponse? connectionStatus,
+    $1.StatusResponse? connectionStatus,
     LoginEvent? loginEvent,
-    $1.Settings? settingsChange,
+    SettingsUpdate? settingsChange,
     UpdateEvent? updateEvent,
     AccountModification? accountModification,
     VersionHealthStatus? versionHealth,
@@ -252,12 +323,12 @@ class AppState extends $pb.GeneratedMessage {
         defaultOrMaker: AppStateError.FAILED_TO_GET_UID,
         valueOf: AppStateError.valueOf,
         enumValues: AppStateError.values)
-    ..aOM<$0.StatusResponse>(2, _omitFieldNames ? '' : 'connectionStatus',
-        subBuilder: $0.StatusResponse.create)
+    ..aOM<$1.StatusResponse>(2, _omitFieldNames ? '' : 'connectionStatus',
+        subBuilder: $1.StatusResponse.create)
     ..aOM<LoginEvent>(3, _omitFieldNames ? '' : 'loginEvent',
         subBuilder: LoginEvent.create)
-    ..aOM<$1.Settings>(4, _omitFieldNames ? '' : 'settingsChange',
-        subBuilder: $1.Settings.create)
+    ..aOM<SettingsUpdate>(4, _omitFieldNames ? '' : 'settingsChange',
+        subBuilder: SettingsUpdate.create)
     ..e<UpdateEvent>(
         5, _omitFieldNames ? '' : 'updateEvent', $pb.PbFieldType.OE,
         defaultOrMaker: UpdateEvent.SERVERS_LIST_UPDATE,
@@ -301,15 +372,15 @@ class AppState extends $pb.GeneratedMessage {
   void clearError() => $_clearField(1);
 
   @$pb.TagNumber(2)
-  $0.StatusResponse get connectionStatus => $_getN(1);
+  $1.StatusResponse get connectionStatus => $_getN(1);
   @$pb.TagNumber(2)
-  set connectionStatus($0.StatusResponse value) => $_setField(2, value);
+  set connectionStatus($1.StatusResponse value) => $_setField(2, value);
   @$pb.TagNumber(2)
   $core.bool hasConnectionStatus() => $_has(1);
   @$pb.TagNumber(2)
   void clearConnectionStatus() => $_clearField(2);
   @$pb.TagNumber(2)
-  $0.StatusResponse ensureConnectionStatus() => $_ensure(1);
+  $1.StatusResponse ensureConnectionStatus() => $_ensure(1);
 
   @$pb.TagNumber(3)
   LoginEvent get loginEvent => $_getN(2);
@@ -323,15 +394,15 @@ class AppState extends $pb.GeneratedMessage {
   LoginEvent ensureLoginEvent() => $_ensure(2);
 
   @$pb.TagNumber(4)
-  $1.Settings get settingsChange => $_getN(3);
+  SettingsUpdate get settingsChange => $_getN(3);
   @$pb.TagNumber(4)
-  set settingsChange($1.Settings value) => $_setField(4, value);
+  set settingsChange(SettingsUpdate value) => $_setField(4, value);
   @$pb.TagNumber(4)
   $core.bool hasSettingsChange() => $_has(3);
   @$pb.TagNumber(4)
   void clearSettingsChange() => $_clearField(4);
   @$pb.TagNumber(4)
-  $1.Settings ensureSettingsChange() => $_ensure(3);
+  SettingsUpdate ensureSettingsChange() => $_ensure(3);
 
   @$pb.TagNumber(5)
   UpdateEvent get updateEvent => $_getN(4);

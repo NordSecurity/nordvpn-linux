@@ -96,7 +96,7 @@ final class MockApplicationSettings extends CancelableDelayed {
     );
     _settings = SettingsResponse(data: s);
 
-    stream.add(AppState(settingsChange: s));
+    stream.add(AppState(settingsChange: SettingsUpdate(settings: s)));
     return Payload(type: Int64(DaemonStatusCode.success));
   }
 

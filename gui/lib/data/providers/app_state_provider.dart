@@ -8,7 +8,6 @@ import 'package:nordvpn/data/repository/vpn_repository.dart';
 import 'package:nordvpn/data/repository/vpn_settings_repository.dart';
 import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/pb/daemon/servers.pb.dart';
-import 'package:nordvpn/pb/daemon/settings.pb.dart';
 import 'package:nordvpn/pb/daemon/state.pb.dart';
 import 'package:nordvpn/pb/daemon/status.pb.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -178,25 +177,49 @@ class AppStateChange {
     }
   }
 
-  void _notifySettingsChanged(Settings settings) {
-    final appSettings = ApplicationSettings.fromSettings(settings);
+  void _notifySettingsChanged(SettingsUpdate update) {
+    final newSettings = ApplicationSettings.fromSettings(update.settings);
 
     for (final observer in _settingsObservers) {
-      observer.onSettingsChanged(appSettings);
+      observer.onSettingsChanged(newSettings);
     }
-    // some user settings affect which connection items can be presented at the time
-    if (_shouldRefreshConnectionList(appSettings)) {
+
+    // Check if connection lists need refresh
+    if (_shouldRefreshConnectionLists(newSettings, update.isResetToDefaults)) {
       _notifyServersListChanged();
       _notifyRecentConnectionsListChanged();
     }
 
-    _appSettings = appSettings;
+    _appSettings = newSettings;
   }
 
-  bool _shouldRefreshConnectionList(ApplicationSettings appSettings) {
-    return (_appSettings?.obfuscatedServers != appSettings.obfuscatedServers) ||
-        (_appSettings?.virtualServers != appSettings.virtualServers) ||
-        (_appSettings?.protocol != appSettings.protocol);
+  bool _shouldRefreshConnectionLists(
+    ApplicationSettings newSettings,
+    bool settingsWereReset,
+  ) {
+    if (settingsWereReset) {
+      return true;
+    }
+
+    // If no previous settings exist, no need to refresh
+    final currentSettings = _appSettings;
+    if (currentSettings == null) {
+      return false;
+    }
+
+    return _hasConnectionListsAffectingSettingsChanged(
+      currentSettings,
+      newSettings,
+    );
+  }
+
+  bool _hasConnectionListsAffectingSettingsChanged(
+    ApplicationSettings current,
+    ApplicationSettings incoming,
+  ) {
+    return current.obfuscatedServers != incoming.obfuscatedServers ||
+        current.virtualServers != incoming.virtualServers ||
+        current.protocol != incoming.protocol;
   }
 
   void _notifyVpnStatusChanged(StatusResponse state) async {

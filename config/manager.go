@@ -76,6 +76,8 @@ type DataConfigChange struct {
 	Config *Config
 	// Caller contains file and line number of the call to update the config
 	Caller string
+	// IsResetToDefaults indicates if this config change is from a reset operation
+	IsResetToDefaults bool
 }
 
 type ConfigPublisher interface {
@@ -125,8 +127,9 @@ func (f *FilesystemConfigManager) SaveWith(fn SaveFunc) error {
 	defer func() {
 		if err == nil && f.configPublisher != nil {
 			f.configPublisher.Publish(DataConfigChange{
-				Config: &c,
-				Caller: caller,
+				Config:            &c,
+				Caller:            caller,
+				IsResetToDefaults: false,
 			})
 		}
 	}()
@@ -175,8 +178,9 @@ func (f *FilesystemConfigManager) Reset(preserveLoginData bool, disableKillswitc
 	defer func() {
 		if retErr == nil && f.configPublisher != nil {
 			f.configPublisher.Publish(DataConfigChange{
-				Config: &newCfg,
-				Caller: caller,
+				Config:            &newCfg,
+				Caller:            caller,
+				IsResetToDefaults: true,
 			})
 		}
 	}()
