@@ -55,7 +55,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 	})
 
 	// check if previous login/signup process was started
-	if r.initialLoginType.WasStarted() {
+	if r.initialLoginType.wasStarted() {
 		r.events.User.Login.Publish(events.DataAuthorization{
 			DurationMs:   -1,
 			EventTrigger: events.TriggerUser,
@@ -80,7 +80,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 			Reason:       eventReason,
 		})
 		// at the end, reset initiated login type
-		r.initialLoginType.Reset()
+		r.initialLoginType.reset()
 	}()
 
 	credentials, err := r.credentialsAPI.ServiceCredentials(token)
@@ -155,7 +155,7 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (paylo
 		}, nil
 	}
 
-	r.initialLoginType.SetLoginAttemptTime(time.Now())
+	r.initialLoginType.setLoginAttemptTime(time.Now())
 
 	eventType := events.LoginLogin
 	if in.GetType() == pb.LoginType_LoginType_SIGNUP {
@@ -163,7 +163,7 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (paylo
 	}
 
 	// check if previous login/signup process was started
-	if r.initialLoginType.WasStarted() {
+	if r.initialLoginType.wasStarted() {
 		r.events.User.Login.Publish(events.DataAuthorization{
 			DurationMs:   -1,
 			EventTrigger: events.TriggerUser,
@@ -207,7 +207,7 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (paylo
 
 	// memorize what login type started: Login or Signup
 	// (dont forget to reset it after login/signup is completed)
-	r.initialLoginType.Set(in.GetType())
+	r.initialLoginType.set(in.GetType())
 
 	return &pb.LoginOAuth2Response{
 		Status: pb.LoginStatus_SUCCESS,
@@ -240,15 +240,15 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 		}
 
 		r.events.User.Login.Publish(events.DataAuthorization{
-			DurationMs:                 max(int(time.Since(r.initialLoginType.GetLoginAttemptTime()).Milliseconds()), 1),
+			DurationMs:                 max(int(time.Since(r.initialLoginType.getLoginAttemptTime()).Milliseconds()), 1),
 			EventTrigger:               events.TriggerUser,
 			EventStatus:                eventStatus,
 			EventType:                  loginType,
-			IsAlteredFlowOnNordAccount: r.initialLoginType.IsAltered(in.GetType()),
+			IsAlteredFlowOnNordAccount: r.initialLoginType.isAltered(in.GetType()),
 			Reason:                     eventReason,
 		})
 		// at the end, reset initiated login type and time
-		r.initialLoginType.Reset()
+		r.initialLoginType.reset()
 	}()
 
 	if in.GetToken() == "" {

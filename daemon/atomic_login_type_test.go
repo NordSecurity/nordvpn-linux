@@ -12,39 +12,39 @@ import (
 func TestAtomicLoginTypeBasicOperations(t *testing.T) {
 	tests := []struct {
 		name  string
-		setup func(*AtomicLoginType)
-		check func(*testing.T, *AtomicLoginType)
+		setup func(*atomicLoginType)
+		check func(*testing.T, *atomicLoginType)
 	}{
 		{
 			name:  "initial state is unknown",
-			setup: func(alt *AtomicLoginType) {},
-			check: func(t *testing.T, alt *AtomicLoginType) {
-				assert.Equal(t, pb.LoginType_LoginType_UNKNOWN, alt.Get())
-				assert.True(t, alt.IsUnknown())
-				assert.False(t, alt.WasStarted())
+			setup: func(alt *atomicLoginType) {},
+			check: func(t *testing.T, alt *atomicLoginType) {
+				assert.Equal(t, pb.LoginType_LoginType_UNKNOWN, alt.get())
+				assert.True(t, alt.isUnknown())
+				assert.False(t, alt.wasStarted())
 			},
 		},
 		{
 			name: "reset to unknown",
-			setup: func(alt *AtomicLoginType) {
-				alt.Set(pb.LoginType_LoginType_LOGIN)
-				alt.Reset()
+			setup: func(alt *atomicLoginType) {
+				alt.set(pb.LoginType_LoginType_LOGIN)
+				alt.reset()
 			},
-			check: func(t *testing.T, alt *AtomicLoginType) {
-				assert.Equal(t, pb.LoginType_LoginType_UNKNOWN, alt.Get())
-				assert.True(t, alt.IsUnknown())
-				assert.False(t, alt.WasStarted())
+			check: func(t *testing.T, alt *atomicLoginType) {
+				assert.Equal(t, pb.LoginType_LoginType_UNKNOWN, alt.get())
+				assert.True(t, alt.isUnknown())
+				assert.False(t, alt.wasStarted())
 			},
 		},
 		{
-			name: "IsAltered returns true when types differ",
-			setup: func(alt *AtomicLoginType) {
-				alt.Set(pb.LoginType_LoginType_LOGIN)
+			name: "isAltered returns true when types differ",
+			setup: func(alt *atomicLoginType) {
+				alt.set(pb.LoginType_LoginType_LOGIN)
 			},
-			check: func(t *testing.T, alt *AtomicLoginType) {
-				assert.True(t, alt.IsAltered(pb.LoginType_LoginType_SIGNUP))
-				assert.True(t, alt.IsAltered(pb.LoginType_LoginType_UNKNOWN))
-				assert.False(t, alt.IsAltered(pb.LoginType_LoginType_LOGIN))
+			check: func(t *testing.T, alt *atomicLoginType) {
+				assert.True(t, alt.isAltered(pb.LoginType_LoginType_SIGNUP))
+				assert.True(t, alt.isAltered(pb.LoginType_LoginType_UNKNOWN))
+				assert.False(t, alt.isAltered(pb.LoginType_LoginType_LOGIN))
 			},
 		},
 	}
@@ -72,9 +72,9 @@ func TestAtomicLoginTypeConcurrency(t *testing.T) {
 			defer wg.Done()
 			for j := 0; j < iterations; j++ {
 				if id%2 == 0 {
-					alt.Set(pb.LoginType_LoginType_LOGIN)
+					alt.set(pb.LoginType_LoginType_LOGIN)
 				} else {
-					alt.Set(pb.LoginType_LoginType_SIGNUP)
+					alt.set(pb.LoginType_LoginType_SIGNUP)
 				}
 			}
 		}(i)
@@ -86,9 +86,9 @@ func TestAtomicLoginTypeConcurrency(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for j := 0; j < iterations; j++ {
-				_ = alt.Get()
-				_ = alt.IsUnknown()
-				_ = alt.WasStarted()
+				_ = alt.get()
+				_ = alt.isUnknown()
+				_ = alt.wasStarted()
 			}
 		}()
 	}
@@ -99,7 +99,7 @@ func TestAtomicLoginTypeConcurrency(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for j := 0; j < iterations/10; j++ {
-				alt.Reset()
+				alt.reset()
 			}
 		}()
 	}
@@ -107,6 +107,6 @@ func TestAtomicLoginTypeConcurrency(t *testing.T) {
 	wg.Wait()
 
 	// Final state should be valid
-	finalValue := alt.Get()
+	finalValue := alt.get()
 	assert.Contains(t, []pb.LoginType{pb.LoginType_LoginType_UNKNOWN, pb.LoginType_LoginType_LOGIN, pb.LoginType_LoginType_SIGNUP}, finalValue)
 }

@@ -368,7 +368,7 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 			}
 
 			r := tt.setup(eventsMock)
-			r.initialLoginType.Set(tt.prevLoginType)
+			r.initialLoginType.set(tt.prevLoginType)
 
 			resp, err := r.LoginOAuth2(context.Background(), &pb.LoginOAuth2Request{Type: tt.loginType})
 
@@ -564,7 +564,7 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 			}
 
 			r := tt.setup(eventsMock)
-			r.initialLoginType.Set(tt.prevLoginType)
+			r.initialLoginType.set(tt.prevLoginType)
 
 			resp, err := r.LoginOAuth2Callback(context.Background(), &pb.LoginOAuth2CallbackRequest{
 				Token: tt.token,
@@ -588,7 +588,7 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 			}
 
 			// Verify that initialLoginType is reset at the end
-			assert.Equal(t, pb.LoginType_LoginType_UNKNOWN, r.initialLoginType.Get())
+			assert.Equal(t, pb.LoginType_LoginType_UNKNOWN, r.initialLoginType.get())
 		})
 	}
 }
