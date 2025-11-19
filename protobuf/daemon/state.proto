@@ -33,12 +33,17 @@ message VersionHealthStatus {
     int32 status_code = 1;
 }
 
+message SettingsUpdate {
+    Settings settings = 1;
+    bool is_reset_to_defaults = 2;
+}
+
 message AppState {
     oneof state {
         AppStateError error = 1;
         StatusResponse connection_status = 2;
         LoginEvent login_event = 3;
-        Settings settings_change = 4;
+        SettingsUpdate settings_change = 4;
         UpdateEvent update_event = 5;
         AccountModification account_modification = 6;
         VersionHealthStatus version_health = 7;

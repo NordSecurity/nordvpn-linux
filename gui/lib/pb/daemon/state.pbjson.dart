@@ -108,6 +108,33 @@ const VersionHealthStatus$json = {
 final $typed_data.Uint8List versionHealthStatusDescriptor = $convert.base64Decode(
     'ChNWZXJzaW9uSGVhbHRoU3RhdHVzEh8KC3N0YXR1c19jb2RlGAEgASgFUgpzdGF0dXNDb2Rl');
 
+@$core.Deprecated('Use settingsUpdateDescriptor instead')
+const SettingsUpdate$json = {
+  '1': 'SettingsUpdate',
+  '2': [
+    {
+      '1': 'settings',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.pb.Settings',
+      '10': 'settings'
+    },
+    {
+      '1': 'is_reset_to_defaults',
+      '3': 2,
+      '4': 1,
+      '5': 8,
+      '10': 'isResetToDefaults'
+    },
+  ],
+};
+
+/// Descriptor for `SettingsUpdate`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List settingsUpdateDescriptor = $convert.base64Decode(
+    'Cg5TZXR0aW5nc1VwZGF0ZRIoCghzZXR0aW5ncxgBIAEoCzIMLnBiLlNldHRpbmdzUghzZXR0aW'
+    '5ncxIvChRpc19yZXNldF90b19kZWZhdWx0cxgCIAEoCFIRaXNSZXNldFRvRGVmYXVsdHM=');
+
 @$core.Deprecated('Use appStateDescriptor instead')
 const AppState$json = {
   '1': 'AppState',
@@ -144,7 +171,7 @@ const AppState$json = {
       '3': 4,
       '4': 1,
       '5': 11,
-      '6': '.pb.Settings',
+      '6': '.pb.SettingsUpdate',
       '9': 0,
       '10': 'settingsChange'
     },
@@ -186,8 +213,8 @@ final $typed_data.Uint8List appStateDescriptor = $convert.base64Decode(
     'CghBcHBTdGF0ZRIpCgVlcnJvchgBIAEoDjIRLnBiLkFwcFN0YXRlRXJyb3JIAFIFZXJyb3ISQQ'
     'oRY29ubmVjdGlvbl9zdGF0dXMYAiABKAsyEi5wYi5TdGF0dXNSZXNwb25zZUgAUhBjb25uZWN0'
     'aW9uU3RhdHVzEjEKC2xvZ2luX2V2ZW50GAMgASgLMg4ucGIuTG9naW5FdmVudEgAUgpsb2dpbk'
-    'V2ZW50EjcKD3NldHRpbmdzX2NoYW5nZRgEIAEoCzIMLnBiLlNldHRpbmdzSABSDnNldHRpbmdz'
-    'Q2hhbmdlEjQKDHVwZGF0ZV9ldmVudBgFIAEoDjIPLnBiLlVwZGF0ZUV2ZW50SABSC3VwZGF0ZU'
-    'V2ZW50EkwKFGFjY291bnRfbW9kaWZpY2F0aW9uGAYgASgLMhcucGIuQWNjb3VudE1vZGlmaWNh'
-    'dGlvbkgAUhNhY2NvdW50TW9kaWZpY2F0aW9uEkAKDnZlcnNpb25faGVhbHRoGAcgASgLMhcucG'
-    'IuVmVyc2lvbkhlYWx0aFN0YXR1c0gAUg12ZXJzaW9uSGVhbHRoQgcKBXN0YXRl');
+    'V2ZW50Ej0KD3NldHRpbmdzX2NoYW5nZRgEIAEoCzISLnBiLlNldHRpbmdzVXBkYXRlSABSDnNl'
+    'dHRpbmdzQ2hhbmdlEjQKDHVwZGF0ZV9ldmVudBgFIAEoDjIPLnBiLlVwZGF0ZUV2ZW50SABSC3'
+    'VwZGF0ZUV2ZW50EkwKFGFjY291bnRfbW9kaWZpY2F0aW9uGAYgASgLMhcucGIuQWNjb3VudE1v'
+    'ZGlmaWNhdGlvbkgAUhNhY2NvdW50TW9kaWZpY2F0aW9uEkAKDnZlcnNpb25faGVhbHRoGAcgAS'
+    'gLMhcucGIuVmVyc2lvbkhlYWx0aFN0YXR1c0gAUg12ZXJzaW9uSGVhbHRoQgcKBXN0YXRl');
