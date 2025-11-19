@@ -8,8 +8,8 @@ from lib import (
     login,
     network,
     settings,
+    selenium,
 )
-
 
 pytestmark = pytest.mark.usefixtures("collect_logs")
 
@@ -260,3 +260,33 @@ def test_repeated_login_callback_nordvpn_scheme_url():
             sh.nordvpn.login("--callback", "nordvpn://")
 
         assert "You're already logged in." in ex.value.stdout.decode("utf-8")
+
+@pytest.mark.smoke
+def test_logout_not_connected():
+    """
+    :details    Verify that app has a possibility to logout
+
+    :tcid       LVPN-465
+
+    :steps
+        - # Login as default in NordVPN app
+        - # Logout from NordVPN app
+        - # Verify that no error occurs
+        - # Verify that output return correct message about logout
+
+    :expected
+        - # Successfully logged in app
+        - # Successfully logged out
+        - # "You're logged out." is in output after logging out
+    """
+    login.login_as("default")
+
+    result = sh.nordvpn.logout("--persist-token")
+
+    stderr = result.stderr.decode("utf-8")
+    stdout = result.stdout.decode("utf-8")
+
+    assert not stderr, f"Found some errors: {stderr}"
+
+    assert selenium.LOGOUT_MSG_SUCCESS in stdout, \
+        f"Couldn't find {selenium.LOGOUT_MSG_SUCCESS} in output. Output is a next: {stdout}"
