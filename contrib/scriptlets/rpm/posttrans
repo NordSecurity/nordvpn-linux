@@ -18,8 +18,10 @@ export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
 ldconfig
 
 # move the symlink file creation later, otherwise the update scripts will delete it
-ln -sf $(ldconfig -p | awk '/libsqlite3.so.0/ && /=>/ {print $NF; exit}') /usr/lib/nordvpn/libsqlite3.so
-
+set -e
+sqlite=$(ldconfig -p 2>/dev/null | grep 'libsqlite3.so.0' | sed -n 's/.*=>[[:space:]]*//p' | head -n1)
+ln -sf "${sqlite}" /usr/lib/nordvpn/libsqlite3.so
+set +e
 # ldconfig needs to be executed twice in case libsqlite3.so.0 was not available during a lookup
 ldconfig
 
