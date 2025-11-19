@@ -160,3 +160,38 @@ func Test_xdgSessionDetector_Get(t *testing.T) {
 	_, err := d.Get()
 	assert.NotNil(t, err, "must fail with always failing detector")
 }
+
+func Test_containerDetector_Get(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name        string
+		detectValue SystemDeviceType
+		detectError error
+		expected    SystemDeviceType
+		expectError bool
+	}{
+		{"Container", SystemDeviceTypeContainer, nil, SystemDeviceTypeContainer, false},
+		{"Unknown", SystemDeviceTypeUnknown, nil, SystemDeviceTypeUnknown, false},
+		{"Error", SystemDeviceTypeUnknown, fmt.Errorf("simulate error"), SystemDeviceTypeUnknown, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := containerDetector{
+				detectSession: func() (SystemDeviceType, error) {
+					return tt.detectValue, tt.detectError
+				},
+			}
+
+			devType, err := d.Get()
+			assert.Equal(t, tt.expected, devType)
+
+			if tt.expectError {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
