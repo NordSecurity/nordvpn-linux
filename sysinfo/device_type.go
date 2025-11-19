@@ -1,18 +1,22 @@
 package sysinfo
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 type SystemDeviceType string
 
 const (
-	SystemDeviceTypeUnknown SystemDeviceType = "unknown"
-	SystemDeviceTypeDesktop SystemDeviceType = "desktop"
-	SystemDeviceTypeServer  SystemDeviceType = "server"
+	SystemDeviceTypeUnknown   SystemDeviceType = "unknown"
+	SystemDeviceTypeDesktop   SystemDeviceType = "desktop"
+	SystemDeviceTypeServer    SystemDeviceType = "server"
+	SystemDeviceTypeContainer SystemDeviceType = "container"
 )
 
 const (
@@ -31,6 +35,7 @@ type deviceTypeDetector interface {
 // desktop environment presence, and session type, in that order.
 func GetDeviceType() SystemDeviceType {
 	detectors := []deviceTypeDetector{
+		newContainerDetector(),
 		newSystemdTargetDetector(),
 		newGraphicalEnvDetector(),
 		newXDGSessionDetector(),
@@ -154,4 +159,72 @@ func newXDGSessionDetector() deviceTypeDetector {
 			return getDisplayProtocol(os.Getenv), nil
 		},
 	}
+}
+
+// -------------------------------------
+// Container Detector
+// -------------------------------------
+
+type containerDetector struct {
+	checkIfFileExists    func(string) bool
+	readEnv              func(string) string
+	readEnvironAndCgroup func() ([]byte, []byte)
+}
+
+func (d containerDetector) Get() (SystemDeviceType, error) {
+	if d.isDocker() || d.isKubernetes() || d.isLXC() {
+		return SystemDeviceTypeContainer, nil
+	}
+
+	return SystemDeviceTypeUnknown, nil
+}
+
+func newContainerDetector() deviceTypeDetector {
+	return &containerDetector{
+		checkIfFileExists:    internal.FileExists,
+		readEnv:              os.Getenv,
+		readEnvironAndCgroup: readEnvironAndCgroup,
+	}
+}
+
+func readEnvironAndCgroup() ([]byte, []byte) {
+	environ, err := os.ReadFile("/proc/1/environ")
+	if err != nil {
+		return []byte{}, []byte{}
+	}
+
+	cgroup, err := os.ReadFile("/proc/1/cgroup")
+	if err != nil {
+		return environ, []byte{}
+	}
+
+	return environ, cgroup
+}
+
+// isDocker detects docker environment looking for /.dockerenv file
+func (d containerDetector) isDocker() bool {
+	// If /.dockerenv exists we are running inside docker
+	return d.checkIfFileExists("/.dockerenv")
+}
+
+// isKubernetes detects Kubernetes environment looking for KUBERNETES_SERVICE_HOST env
+func (d containerDetector) isKubernetes() bool {
+	return d.readEnv("KUBERNETES_SERVICE_HOST") != ""
+}
+
+// isLXC detects traditional LXC or LXD containers via cgroup or environment variables.
+func (d containerDetector) isLXC() bool {
+	// Some LXC containers may have container=lxc env variable
+	if val := d.readEnv("container"); strings.ToLower(val) == "lxc" {
+		return true
+	}
+
+	// Check /proc/1/environ for container=lxc or container=lxd and /proc/1/cgroup for lxc or lxd
+	environ, cgroup := d.readEnvironAndCgroup()
+	if bytes.Contains(environ, []byte("container=lxc")) || bytes.Contains(environ, []byte("container=lxd")) ||
+		bytes.Contains(cgroup, []byte("lxc")) || bytes.Contains(cgroup, []byte("lxd")) {
+		return true
+	}
+
+	return false
 }

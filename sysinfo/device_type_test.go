@@ -160,3 +160,68 @@ func Test_xdgSessionDetector_Get(t *testing.T) {
 	_, err := d.Get()
 	assert.NotNil(t, err, "must fail with always failing detector")
 }
+
+func Test_containerDetector_Get(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	returnTrue := func(string) bool {
+		return true
+	}
+
+	returnFalse := func(string) bool {
+		return false
+	}
+
+	returnEmptyString := func(string) string {
+		return ""
+	}
+
+	returnRandomString := func(string) string {
+		return "random"
+	}
+
+	returnLxcString := func(string) string {
+		return "lxc"
+	}
+
+	returnEmptyBytes := func() ([]byte, []byte) {
+		return []byte{}, []byte{}
+	}
+
+	returnRandomBytes := func() ([]byte, []byte) {
+		return []byte("random"), []byte("random")
+	}
+
+	returnLxcBytes := func() ([]byte, []byte) {
+		return []byte("container=lxc"), []byte("lxc")
+	}
+
+	tests := []struct {
+		name                 string
+		fileExists           func(string) bool
+		readEnv              func(string) string
+		readEnvironAndCgroup func() ([]byte, []byte)
+		expected             SystemDeviceType
+	}{
+		{"Not a container", returnFalse, returnEmptyString, returnEmptyBytes, SystemDeviceTypeUnknown},
+		{"Not a container", returnFalse, returnEmptyString, returnRandomBytes, SystemDeviceTypeUnknown},
+		{"Docker container", returnTrue, returnEmptyString, returnEmptyBytes, SystemDeviceTypeContainer},
+		{"Kubernetes container", returnFalse, returnRandomString, returnEmptyBytes, SystemDeviceTypeContainer},
+		{"LXC container with env detection", returnFalse, returnLxcString, returnEmptyBytes, SystemDeviceTypeContainer},
+		{"LXC container with file detection", returnFalse, returnEmptyString, returnLxcBytes, SystemDeviceTypeContainer},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			d := containerDetector{
+				checkIfFileExists:    tt.fileExists,
+				readEnv:              tt.readEnv,
+				readEnvironAndCgroup: tt.readEnvironAndCgroup,
+			}
+
+			devType, err := d.Get()
+			assert.Nil(t, err)
+			assert.Equal(t, tt.expected, devType)
+		})
+	}
+}
