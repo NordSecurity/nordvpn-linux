@@ -26,10 +26,10 @@ func NewFilter(target Model, candidates []Model) *Filter {
 	}
 }
 
-// WithoutSpecificServerFor excludes specific server fields from matching when the target
-// connection type is NOT one of the specified rules.
-// Use this to ignore specific server fields for location-based connections.
-func (f *Filter) WithoutSpecificServerFor(rules []config.ServerSelectionRule) *Filter {
+// WithSpecificServerOnlyFor configures the filter to match specific server fields (ID and name)
+// only when the target connection type is one of the specified rules.
+// For all other connection types, specific server fields are ignored during matching.
+func (f *Filter) WithSpecificServerOnlyFor(rules []config.ServerSelectionRule) *Filter {
 	matchesRule := slices.Contains(rules, f.target.ConnectionType)
 	if !matchesRule {
 		// Connection type is NOT in the list - exclude specific server fields

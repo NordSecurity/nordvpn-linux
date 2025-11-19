@@ -26,7 +26,7 @@ func StorePendingRecentConnection(
 }
 
 // isRecentConnectionSupported returns true if server connection can be used for reconnection,
-// otherwise returns false
+// otherwise false
 func isRecentConnectionSupported(rule config.ServerSelectionRule) bool {
 	return rule != config.ServerSelectionRule_RECOMMENDED && rule != config.ServerSelectionRule_NONE
 }

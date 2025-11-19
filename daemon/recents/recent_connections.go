@@ -87,7 +87,7 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 	// Find matches that have the same connection model with technologies and connection type
 	// considered
 	matches := NewFilter(model, connections).
-		WithoutSpecificServerFor([]config.ServerSelectionRule{
+		WithSpecificServerOnlyFor([]config.ServerSelectionRule{
 			config.ServerSelectionRule_SPECIFIC_SERVER,
 			config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 		}).
@@ -100,7 +100,7 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 		// Found existing entry - move it to the front
 		modelToInsert = matches[0]
 		index := slices.IndexFunc(connections, func(c Model) bool {
-			return r.modelEquals(c, modelToInsert)
+			return c.Equals(modelToInsert)
 		})
 		if index != -1 {
 			connections = slices.Delete(connections, index, index+1)
@@ -187,17 +187,4 @@ func (r *RecentConnectionsStore) checkExistence() error {
 		}
 	}
 	return nil
-}
-
-// modelEquals compares two models for equality
-func (r *RecentConnectionsStore) modelEquals(a, b Model) bool {
-	return a.Country == b.Country &&
-		a.City == b.City &&
-		a.Group == b.Group &&
-		a.CountryCode == b.CountryCode &&
-		a.SpecificServerName == b.SpecificServerName &&
-		a.SpecificServer == b.SpecificServer &&
-		a.ConnectionType == b.ConnectionType &&
-		slices.Equal(a.ServerTechnologies, b.ServerTechnologies) &&
-		a.IsVirtual == b.IsVirtual
 }
