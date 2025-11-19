@@ -49,6 +49,7 @@ func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "moose initialization failure:", err)
+		return &pb.Payload{Type: internal.CodeInternalError}, nil
 	}
 
 	if in.GetEnabled() {
