@@ -148,7 +148,7 @@ func testRPCLocal(t *testing.T) *RPC {
 	rpc := testRPC()
 
 	fs := mockconfig.NewFilesystemMock(t)
-	recentStore := recents.NewRecentConnectionsStore("/test/recents_"+t.Name()+".dat", &fs)
+	recentStore := recents.NewRecentConnectionsStore("/test/recents_"+t.Name()+".dat", &fs, nil)
 	rpc.recentVPNConnStore = recentStore
 
 	rpc.serversAPI = &deterministicServersAPI{}
@@ -540,10 +540,7 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 			assert.Equal(t, internal.CodeConnected, server.msg.Type)
 
 			// Manually store the pending connection (normally happens on disconnect)
-			StorePendingRecentConnection(
-				rpc.recentVPNConnStore,
-				rpc.dataUpdateEvents.RecentsUpdate.Publish,
-			)
+			StorePendingRecentConnection(rpc.recentVPNConnStore)
 
 			recentConns, err := rpc.recentVPNConnStore.Get()
 			require.NoError(t, err)

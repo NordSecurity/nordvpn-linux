@@ -8,21 +8,16 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
-	"github.com/NordSecurity/nordvpn-linux/events"
 )
 
 // StorePendingRecentConnection stores current pending recent connection to memory
-func StorePendingRecentConnection(
-	store *recents.RecentConnectionsStore,
-	eventPublisher func(events.DataRecentsChanged)) {
+func StorePendingRecentConnection(store *recents.RecentConnectionsStore) {
 	exists, recentModel := store.PopPending()
 	if !exists {
 		return
 	}
 
-	if store.Add(recentModel) == nil {
-		eventPublisher(events.DataRecentsChanged{})
-	}
+	_ = store.Add(recentModel)
 }
 
 // isRecentConnectionSupported returns true if server connection can be used for reconnection,

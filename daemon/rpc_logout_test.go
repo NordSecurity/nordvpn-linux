@@ -37,7 +37,7 @@ func TestLogout_Token(t *testing.T) {
 			User:    &daemonevents.LoginEvents{Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{}},
 			Service: &daemonevents.ServiceEvents{Disconnect: &daemonevents.MockPublisherSubscriber[events.DataDisconnect]{}},
 		},
-		recentVPNConnStore: recents.NewRecentConnectionsStore("/test/path", &fs),
+		recentVPNConnStore: recents.NewRecentConnectionsStore("/test/path", &fs, nil),
 	}
 
 	tests := []struct {
