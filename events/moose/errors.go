@@ -17,10 +17,11 @@ func (s *Subscriber) PostInit(initResult moose.InitResult, errCode int32, errMsg
 	case moose.InitResultOkEmptyContext,
 		moose.InitResultOkExistingContext,
 		moose.InitResultOkAlreadyStarted:
-		log.Println(internal.InfoPrefix, "MOOSE: Initialization OK:", initResult)
+		log.Println(internal.InfoPrefix, LogComponentPrefix, "Initialization OK:", initResult)
 	default:
-		log.Printf("%s MOOSE: Initialization error: %d: %d: %s\n",
+		log.Printf("%s %s Initialization error: %d: %d: %s\n",
 			internal.ErrorPrefix,
+			LogComponentPrefix,
 			initResult,
 			errCode,
 			errMsg,

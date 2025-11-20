@@ -113,7 +113,7 @@ func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error 
 	}
 
 	if cfg.AnalyticsConsent == config.ConsentUndefined {
-		log.Println(internal.DebugPrefix, "enabling analytics")
+		log.Println(internal.DebugPrefix, LogComponentPrefix, "enabling analytics")
 		if err := s.response(s.mooseOptInFunc(true)); err != nil {
 			return fmt.Errorf("enabling essential analytics: %w", err)
 		}
@@ -173,7 +173,7 @@ func (s *Subscriber) isEnabled() bool {
 // Init initializes moose libs. It has to be done before usage regardless of the enabled state.
 // Disabled case should be handled by `set_opt_out` value.
 func (s *Subscriber) Init() error {
-	log.Println(internal.InfoPrefix, "initializing moose")
+	log.Println(internal.InfoPrefix, LogComponentPrefix, "initializing")
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
@@ -201,7 +201,7 @@ func (s *Subscriber) Init() error {
 	if cfg.AnalyticsConsent == config.ConsentUndefined {
 		canSendEvents = false
 	}
-	log.Println(internal.InfoPrefix, "[moose] configure to send events:", canSendEvents)
+	log.Println(internal.InfoPrefix, LogComponentPrefix, "configure to send events:", canSendEvents)
 
 	client := worker.NewHttpClientContext(s.currentDomain)
 	client.Client = *s.httpClient
@@ -220,7 +220,7 @@ func (s *Subscriber) Init() error {
 
 	// can we send only essential or all?
 	s.canSendAllEvents = cfg.AnalyticsConsent == config.ConsentGranted
-	log.Println(internal.InfoPrefix, "[moose] all events are sent:", s.canSendAllEvents)
+	log.Println(internal.InfoPrefix, LogComponentPrefix, "all events are sent:", s.canSendAllEvents)
 
 	if err := s.response(moose.MooseNordvpnappInit(
 		s.eventsDbPath,
@@ -235,7 +235,7 @@ func (s *Subscriber) Init() error {
 	}
 
 	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
-		log.Println(internal.WarningPrefix, "failed to flush changes before setting analytics opt in: %w", err)
+		log.Println(internal.WarningPrefix, LogComponentPrefix, "failed to flush changes before setting analytics opt in: %w", err)
 	}
 
 	applicationName := "linux-app"
@@ -300,7 +300,7 @@ func (s *Subscriber) Init() error {
 }
 
 func (s *Subscriber) Stop() error {
-	log.Println(internal.DebugPrefix, "flushing changes")
+	log.Println(internal.DebugPrefix, LogComponentPrefix, "flushing changes")
 	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
 		return fmt.Errorf("flushing changes: %w", err)
 	}
@@ -309,7 +309,7 @@ func (s *Subscriber) Stop() error {
 		return fmt.Errorf("stopping moose worker: %w", err)
 	}
 
-	log.Println(internal.DebugPrefix, "deinitializing")
+	log.Println(internal.DebugPrefix, LogComponentPrefix, "deinitializing")
 	if err := s.response(moose.MooseNordvpnappDeinit()); err != nil {
 		return fmt.Errorf("deinitializing: %w", err)
 	}
@@ -735,7 +735,7 @@ func (s *Subscriber) NotifyDebuggerEvent(e events.DebuggerEvent) error {
 			moose.MooseNordvpnappSetDeveloperEventContextString(ctx.Path, v)
 			combinedPaths = append(combinedPaths, path)
 		default:
-			log.Printf("%s Discarding unsupported type (%T) on path: %s\n", internal.WarningPrefix, ctx.Value, path)
+			log.Printf("%s %s Discarding unsupported type (%T) on path: %s\n", internal.WarningPrefix, LogComponentPrefix, ctx.Value, path)
 		}
 	}
 	return s.response(moose.NordvpnappSendDebuggerLoggingLog(e.JsonData, combinedPaths, nil))
