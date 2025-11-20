@@ -371,3 +371,78 @@ def test_login_mesh_on_set_defaults_logout_login_mesh_on():
     assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on()
 
     assert settings.is_meshnet_enabled()
+
+
+@pytest.mark.smoke
+def test_derp_report_connect_events(daemon_log_reader):
+    """
+    :details    Verify that app reports about connection state to DERP server and no spurious requests were found
+
+    :tcid       LVPN-2647
+
+    :steps
+        - # Enable Meshnet in NordVPN app
+        - # Restart NordVPN's daemon
+        - # Wait 5 minutes
+        - # Restart NordVPN's daemon
+        - # Search in journalctl logs events related to the DERP connection state
+
+    :expected
+        - # Meshnet in NordVPN app is enabled
+        - # Daemon was restarted and time cursor was made
+        - # Event logs, related to connection state, were found in NordVPN's daemon after restart
+    """
+    assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on()
+
+    time_cursor = daemon_log_reader.get_cursor()
+    daemon.restart()
+
+    time.sleep(300)
+
+    daemon.restart()
+
+    logs = daemon_log_reader.get_partial_log(time_cursor)
+
+    """ 
+    Collect records of a connection states. In the end, will be a data collection with the next look:
+     [
+        [
+            {"disconnected": "Oct 08 10:29:04 NS-PF4HBBRP nordvpnd[2280202]: 2025/10/08 10:29:04 [Info] received event telio.EventRelay: {"Body":{"RegionCode":"de","Name":"de1.napps-6.com","Hostname":"de1.napps-6.com","Ipv4":"169.150.201.184","RelayPort":8765,"StunPort":3479,"StunPlaintextPort":3478,"PublicKey":"***","Weight":1,"UsePlainText":false,"ConnState":1}}"},
+            {"connecting": "Oct 08 10:29:04 NS-PF4HBBRP nordvpnd[2280202]: 2025/10/08 10:29:04 [Info] received event telio.EventRelay: {"Body":{"RegionCode":"de","Name":"de1.napps-6.com","Hostname":"de1.napps-6.com","Ipv4":"169.150.201.184","RelayPort":8765,"StunPort":3479,"StunPlaintextPort":3478,"PublicKey":"***","Weight":1,"UsePlainText":false,"ConnState":2}}"},
+            {"connected": "Oct 08 10:29:05 NS-PF4HBBRP nordvpnd[2280202]: 2025/10/08 10:29:05 [Info] received event telio.EventRelay: {"Body":{"RegionCode":"de","Name":"de1.napps-6.com","Hostname":"de1.napps-6.com","Ipv4":"169.150.201.184","RelayPort":8765,"StunPort":3479,"StunPlaintextPort":3478,"PublicKey":"***","Weight":1,"UsePlainText":false,"ConnState":3}}"},
+        ].
+        [
+            {"disconnected": ...},
+            {"connecting": ...},
+            {"connected": ...}
+        ]
+    ]
+     """
+    found_connection_state_logs = []
+    for log in logs.splitlines():
+        if '"ConnState":1' in log:
+            found_connection_state_logs.append({"disconnected": log})
+            index = len(found_connection_state_logs) - 1
+        elif '"ConnState":2' in log:
+            found_connection_state_logs[index]["connecting":] = log
+        elif '"ConnState":3' in log:
+            found_connection_state_logs[index]["connected":] = log
+
+    assert found_connection_state_logs[0]["disconnected"], "Didn't found log about disconnect event after restart of a daemon"
+
+    assert found_connection_state_logs[0]["connecting"], "Didn't found log about connecting event after restart of a daemon"
+
+    assert found_connection_state_logs[0]["connected"], "Didn't found log about connected event after restart of a daemon"
+
+    # Check if connection were made to other hostname
+    json_data = json.loads(found_connection_state_logs[0]["connecting"].split("{")[1])
+    hostname = json_data.get("body", {}).get("hostname", "")
+    for event in found_connection_state_logs:
+        if hostname not in event["connecting"]:
+            # Verify that time between disconnect and connected is not less than 10 sec
+            disconnect_time = datetime.strptime(event["disconnected"].split()[2], "%H:%M:%S")
+            connected_time = datetime.strptime(event["connected"].split()[2], "%H:%M:%S")
+            difference_time = (connected_time - disconnect_time).total_seconds()
+
+            assert difference_time >= 10, (f"Time between disconnect and connected events are less that 10 seconds. "
+                                           f"Time is next: {difference_time}")
