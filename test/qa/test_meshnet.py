@@ -31,7 +31,6 @@ def teardown_function(function):  # noqa: ARG001
     meshnet.TestUtils.teardown_function(ssh_client)
 
 
-@pytest.mark.core_meshnet
 def test_meshnet_connect():
     peer = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer()
     this_device = meshnet.PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list")).get_external_peer()
@@ -248,7 +247,6 @@ def test_permission_messages_error(permission, permission_state, expected_messag
     assert expected_message in ex.value.stdout.decode("utf-8")
 
 
-@pytest.mark.core_meshnet
 def test_derp_server_selection_logic():
     def has_duplicates(lst):
         return len(lst) != len(set(lst))
@@ -322,7 +320,6 @@ def test_direct_connection_rtt_and_loss():
         base_test(log_content, qapeer_hostname)
 
 
-@pytest.mark.core_meshnet
 def test_incoming_connections():
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname
