@@ -15,7 +15,7 @@ func NewAnalytics(currentState config.AnalyticsConsent) Analytics {
 	}
 }
 
-func (a *Analytics) Enable() error {
+func (a *Analytics) Enable(config.AnalyticsConsent) error {
 	if a.EnableErr != nil {
 		return a.EnableErr
 	}
@@ -25,7 +25,7 @@ func (a *Analytics) Enable() error {
 	return nil
 }
 
-func (a *Analytics) Disable() error {
+func (a *Analytics) Disable(config.AnalyticsConsent) error {
 	if a.DisablErr != nil {
 		return a.DisablErr
 	}

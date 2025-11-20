@@ -27,6 +27,7 @@ func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 		}
 	}
 
+	previousAnalyticsConsentState := cfg.AnalyticsConsent
 	// moose requires consent status updated in the config before triggering initialization
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
 		if in.GetEnabled() {
@@ -53,14 +54,14 @@ func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 	}
 
 	if in.GetEnabled() {
-		if err := r.analytics.Enable(); err != nil {
+		if err := r.analytics.Enable(previousAnalyticsConsentState); err != nil {
 			log.Println(internal.ErrorPrefix, err)
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil
 		}
 	} else {
-		if err := r.analytics.Disable(); err != nil {
+		if err := r.analytics.Disable(previousAnalyticsConsentState); err != nil {
 			log.Println(internal.ErrorPrefix, err)
 			return &pb.Payload{
 				Type: internal.CodeConfigError,

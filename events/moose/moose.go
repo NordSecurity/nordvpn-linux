@@ -98,21 +98,22 @@ func (s *Subscriber) getConfig() (config.Config, error) {
 	return cfg, err
 }
 
-func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error {
+// notfyAboutConsentChange requires AnalyticsConsent updated in the config
+func (s *Subscriber) notfyAboutConsentChange(previousState, newState config.AnalyticsConsent) error {
 	cfg, err := s.getConfig()
 	if err != nil {
 		return err
 	}
-
-	if cfg.AnalyticsConsent == newState {
-		return nil
+	if cfg.AnalyticsConsent != newState {
+		return fmt.Errorf("the AnalyticsConsent (%d) in config manager differs from the requested new state (%d)",
+			cfg.AnalyticsConsent,
+			newState)
 	}
-
 	if newState == config.ConsentUndefined {
 		return fmt.Errorf("analytics consent cannot be set to and undefined state")
 	}
 
-	if cfg.AnalyticsConsent == config.ConsentUndefined {
+	if previousState == config.ConsentUndefined {
 		log.Println(internal.DebugPrefix, LogComponentPrefix, "enabling analytics")
 		if err := s.response(s.mooseOptInFunc(true)); err != nil {
 			return fmt.Errorf("enabling essential analytics: %w", err)
@@ -125,13 +126,13 @@ func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error 
 	}
 
 	if err := s.response(s.mooseConsentLevelFunc(enabled)); err != nil {
-		cfg.AnalyticsConsent = config.ConsentDenied
 		return fmt.Errorf("setting new consent level: %w", err)
 	}
 
 	if err := setUserConsentLevelIntoContext(s, newState); err != nil {
 		return err
 	}
+	s.canSendAllEvents = newState == config.ConsentGranted
 
 	return nil
 }
@@ -151,17 +152,17 @@ func setUserConsentLevelIntoContext(s *Subscriber, consent config.AnalyticsConse
 }
 
 // Enable moose analytics engine
-func (s *Subscriber) Enable() error {
+func (s *Subscriber) Enable(previousState config.AnalyticsConsent) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	return s.changeConsentState(config.ConsentGranted)
+	return s.notfyAboutConsentChange(previousState, config.ConsentGranted)
 }
 
 // Disable moose analytics engine
-func (s *Subscriber) Disable() error {
+func (s *Subscriber) Disable(previousState config.AnalyticsConsent) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	return s.changeConsentState(config.ConsentDenied)
+	return s.notfyAboutConsentChange(previousState, config.ConsentDenied)
 }
 
 func (s *Subscriber) isEnabled() bool {
