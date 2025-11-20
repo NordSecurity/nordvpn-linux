@@ -403,7 +403,7 @@ def test_derp_report_connect_events(daemon_log_reader):
 
     logs = daemon_log_reader.get_partial_log(time_cursor)
 
-    """ 
+    """
     Collect records of a connection states. In the end, will be a data collection with the next look:
      [
         [
