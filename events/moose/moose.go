@@ -59,12 +59,12 @@ type Subscriber struct {
 	currentDomain              string
 	connectionStartTime        time.Time
 	connectionToMeshnetPeer    bool
-	consent                    config.AnalyticsConsent
 	initialHeartbeatSent       bool
 	mooseOptInFunc             mooseConsentFunc
 	mooseConsentLevelFunc      mooseConsentFunc
 	mooseSetConsentIntoCtxFunc mooseSetConsentIntoContextFunc
 	httpClient                 *http.Client
+	canSendAllEvents           bool
 	mux                        sync.RWMutex
 }
 
@@ -91,8 +91,20 @@ func NewSubscriber(
 	return sub
 }
 
+// getConfig fetches always the current config via config.Manager
+func (s *Subscriber) getConfig() (config.Config, error) {
+	var cfg config.Config
+	err := s.config.Load(&cfg)
+	return cfg, err
+}
+
 func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error {
-	if s.consent == newState {
+	cfg, err := s.getConfig()
+	if err != nil {
+		return err
+	}
+
+	if cfg.AnalyticsConsent == newState {
 		return nil
 	}
 
@@ -100,7 +112,7 @@ func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error 
 		return fmt.Errorf("analytics consent cannot be set to and undefined state")
 	}
 
-	if s.consent == config.ConsentUndefined {
+	if cfg.AnalyticsConsent == config.ConsentUndefined {
 		log.Println(internal.DebugPrefix, "enabling analytics")
 		if err := s.response(s.mooseOptInFunc(true)); err != nil {
 			return fmt.Errorf("enabling essential analytics: %w", err)
@@ -113,15 +125,13 @@ func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error 
 	}
 
 	if err := s.response(s.mooseConsentLevelFunc(enabled)); err != nil {
-		s.consent = config.ConsentDenied
+		cfg.AnalyticsConsent = config.ConsentDenied
 		return fmt.Errorf("setting new consent level: %w", err)
 	}
 
 	if err := setUserConsentLevelIntoContext(s, newState); err != nil {
 		return err
 	}
-
-	s.consent = newState
 
 	return nil
 }
@@ -157,7 +167,7 @@ func (s *Subscriber) Disable() error {
 func (s *Subscriber) isEnabled() bool {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
-	return s.consent == config.ConsentGranted
+	return s.canSendAllEvents
 }
 
 // Init initializes moose libs. It has to be done before usage regardless of the enabled state.
@@ -171,12 +181,12 @@ func (s *Subscriber) Init() error {
 	s.mooseOptInFunc = worker.SetSendEvents
 	s.mooseSetConsentIntoCtxFunc = moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel
 
-	var cfg config.Config
-	if err := s.config.Load(&cfg); err != nil {
+	cfg, err := s.getConfig()
+	if err != nil {
 		return err
 	}
 
-	err := s.updateEventDomain()
+	err = s.updateEventDomain()
 	if err != nil {
 		return fmt.Errorf("initializing event domain: %w", err)
 	}
@@ -209,15 +219,15 @@ func (s *Subscriber) Init() error {
 	}
 
 	// can we send only essential or all?
-	sendAllEvents := cfg.AnalyticsConsent == config.ConsentGranted
-	log.Println(internal.InfoPrefix, "[moose] all events are sent:", sendAllEvents)
+	s.canSendAllEvents = cfg.AnalyticsConsent == config.ConsentGranted
+	log.Println(internal.InfoPrefix, "[moose] all events are sent:", s.canSendAllEvents)
 
 	if err := s.response(moose.MooseNordvpnappInit(
 		s.eventsDbPath,
 		internal.IsProdEnv(s.buildTarget.Environment),
 		s,
 		s,
-		sendAllEvents,
+		s.canSendAllEvents,
 	)); err != nil {
 		if !strings.Contains(err.Error(), "moose: already initiated") {
 			return fmt.Errorf("starting tracker: %w", err)
@@ -228,8 +238,6 @@ func (s *Subscriber) Init() error {
 		log.Println(internal.WarningPrefix, "failed to flush changes before setting analytics opt in: %w", err)
 	}
 
-	s.consent = cfg.AnalyticsConsent
-
 	applicationName := "linux-app"
 	if snapconf.IsUnderSnap() {
 		applicationName = "linux-app-snap"
@@ -239,7 +247,7 @@ func (s *Subscriber) Init() error {
 		return fmt.Errorf("setting application name: %w", err)
 	}
 
-	if err := setUserConsentLevelIntoContext(s, s.consent); err != nil {
+	if err := setUserConsentLevelIntoContext(s, cfg.AnalyticsConsent); err != nil {
 		return err
 	}
 
@@ -814,7 +822,12 @@ func (s *Subscriber) fetchAndSetVpnServiceExpiration() error {
 }
 
 func (s *Subscriber) fetchSubscriptions() error {
-	if s.consent == config.ConsentUndefined {
+	cfg, err := s.getConfig()
+	if err != nil {
+		return err
+	}
+
+	if cfg.AnalyticsConsent == config.ConsentUndefined {
 		return nil
 	}
 
