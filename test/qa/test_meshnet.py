@@ -424,25 +424,42 @@ def test_derp_report_connect_events(daemon_log_reader):
             found_connection_state_logs.append({"disconnected": log})
             index = len(found_connection_state_logs) - 1
         elif '"ConnState":2' in log:
-            found_connection_state_logs[index]["connecting":] = log
+            found_connection_state_logs[index]["connecting"] = log
         elif '"ConnState":3' in log:
-            found_connection_state_logs[index]["connected":] = log
+            found_connection_state_logs[index]["connected"] = log
 
-    assert found_connection_state_logs[0]["disconnected"], "Didn't found log about disconnect event after restart of a daemon"
+    assert found_connection_state_logs[0][
+        "disconnected"
+    ], f"Didn't found log about disconnect event after restart of a daemon. Logs are next: {found_connection_state_logs[0]}"
 
-    assert found_connection_state_logs[0]["connecting"], "Didn't found log about connecting event after restart of a daemon"
+    assert found_connection_state_logs[0][
+        "connecting"
+    ], f"Didn't found log about connecting event after restart of a daemon. Logs are next: {found_connection_state_logs[0]}"
 
-    assert found_connection_state_logs[0]["connected"], "Didn't found log about connected event after restart of a daemon"
+    assert found_connection_state_logs[0][
+        "connected"
+    ], f"Didn't found log about connected event after restart of a daemon. Logs are next: {found_connection_state_logs[0]}"
 
     # Check if connection were made to other hostname
-    json_data = json.loads(found_connection_state_logs[0]["connecting"].split("{")[1])
-    hostname = json_data.get("body", {}).get("hostname", "")
-    for event in found_connection_state_logs:
-        if hostname not in event["connecting"]:
-            # Verify that time between disconnect and connected is not less than 10 sec
-            disconnect_time = datetime.strptime(event["disconnected"].split()[2], "%H:%M:%S")
-            connected_time = datetime.strptime(event["connected"].split()[2], "%H:%M:%S")
-            difference_time = (connected_time - disconnect_time).total_seconds()
+    json_data = json.loads(
+        found_connection_state_logs[0]["connecting"].split("telio.EventRelay: ")[1]
+    )
+    hostname = json_data.get("Body", {}).get("Hostname", "")
+    for connection_states in found_connection_state_logs:
+        # Can be a case when disconnect were made but no connection was done after
+        # {'disconnected': '2025/11/20 15:34:32 [Info] received event telio.EventRelay: {"Body":{"RegionCode":"de","Name":"de1.napps-6.com","Hostname":"de1.napps-6.com","Ipv4":"169.150.201.184","RelayPort":8765,"StunPort":3479,"StunPlaintextPort":3478,"PublicKey":"***","Weight":1,"UsePlainText":false,"ConnState":1}}'}
+        if "connecting" in connection_states:
+            if hostname not in connection_states.get("connecting"):
+                # Verify that time between disconnect and connected is not less than 10 sec
+                disconnect_time = datetime.strptime(
+                    connection_states["disconnected"].split()[1], "%H:%M:%S"
+                )
+                connected_time = datetime.strptime(
+                    connection_states["connected"].split()[1], "%H:%M:%S"
+                )
+                difference_time = (connected_time - disconnect_time).total_seconds()
 
-            assert difference_time >= 10, (f"Time between disconnect and connected events are less that 10 seconds. "
-                                           f"Time is next: {difference_time}")
+                assert difference_time >= 10, (
+                    f"Time between disconnected and connected events are less that 10 seconds. "
+                    f"Time is next: {difference_time}"
+                )
