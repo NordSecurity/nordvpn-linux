@@ -126,11 +126,15 @@ contents:
     file_info:
       mode: 0744
 
-  - src: ${WORKDIR}/bin/deps/lib/current-dump/${ARCH}
-    dst: /usr/lib/${NAME}
-    type: tree
+  - dst: /usr/lib/${NAME}
+    type: dir
     file_info:
       mode: 0755
+
+  - src: ${WORKDIR}/bin/deps/lib/current-dump/${ARCH}/
+    dst: /usr/lib/${NAME}/
+    file_info:
+      mode: 0644
 
 # All fields above marked as `overridable` can be overridden for a given package format in this section.
 overrides:
