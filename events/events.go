@@ -2,12 +2,14 @@
 package events
 
 import (
+	"log"
 	"net/http"
 	"net/netip"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state/types"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 // Handler is used to process messages.
@@ -227,7 +229,15 @@ func NewDisconnectSender(eventTemplate DataDisconnect, publishFunc func(DataDisc
 	}
 }
 
+// PublishDisconnect publishes a disconnect event. The event status is based on the provided err. If err is nil, event
+// status will be set to StatusSuccess.
 func (d *DisconnectSender) PublishDisconnect(startTime time.Time, err error) {
+	if startTime.After(time.Now()) {
+		log.Println(internal.ErrorPrefix,
+			"start time for disconnect event is greater than current time, will skip the event")
+		return
+	}
+
 	status := StatusFailure
 	if err != nil {
 		status = StatusSuccess
