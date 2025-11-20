@@ -44,14 +44,6 @@ class VersionHealthStatus(_message.Message):
     status_code: int
     def __init__(self, status_code: _Optional[int] = ...) -> None: ...
 
-class SettingsUpdate(_message.Message):
-    __slots__ = ("settings", "is_reset_to_defaults")
-    SETTINGS_FIELD_NUMBER: _ClassVar[int]
-    IS_RESET_TO_DEFAULTS_FIELD_NUMBER: _ClassVar[int]
-    settings: _settings_pb2.Settings
-    is_reset_to_defaults: bool
-    def __init__(self, settings: _Optional[_Union[_settings_pb2.Settings, _Mapping]] = ..., is_reset_to_defaults: bool = ...) -> None: ...
-
 class AppState(_message.Message):
     __slots__ = ("error", "connection_status", "login_event", "settings_change", "update_event", "account_modification", "version_health")
     ERROR_FIELD_NUMBER: _ClassVar[int]
@@ -64,8 +56,8 @@ class AppState(_message.Message):
     error: AppStateError
     connection_status: _status_pb2.StatusResponse
     login_event: LoginEvent
-    settings_change: SettingsUpdate
+    settings_change: _settings_pb2.Settings
     update_event: UpdateEvent
     account_modification: AccountModification
     version_health: VersionHealthStatus
-    def __init__(self, error: _Optional[_Union[AppStateError, str]] = ..., connection_status: _Optional[_Union[_status_pb2.StatusResponse, _Mapping]] = ..., login_event: _Optional[_Union[LoginEvent, _Mapping]] = ..., settings_change: _Optional[_Union[SettingsUpdate, _Mapping]] = ..., update_event: _Optional[_Union[UpdateEvent, str]] = ..., account_modification: _Optional[_Union[AccountModification, _Mapping]] = ..., version_health: _Optional[_Union[VersionHealthStatus, _Mapping]] = ...) -> None: ...
+    def __init__(self, error: _Optional[_Union[AppStateError, str]] = ..., connection_status: _Optional[_Union[_status_pb2.StatusResponse, _Mapping]] = ..., login_event: _Optional[_Union[LoginEvent, _Mapping]] = ..., settings_change: _Optional[_Union[_settings_pb2.Settings, _Mapping]] = ..., update_event: _Optional[_Union[UpdateEvent, str]] = ..., account_modification: _Optional[_Union[AccountModification, _Mapping]] = ..., version_health: _Optional[_Union[VersionHealthStatus, _Mapping]] = ...) -> None: ...

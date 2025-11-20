@@ -64,17 +64,16 @@ func (ti *Instance) handleLoginEventState(st *pb.AppState_LoginEvent) bool {
 
 // handleSettingsChangeState handles the settings change state from the daemon.
 func (ti *Instance) handleSettingsChangeState(st *pb.AppState_SettingsChange) bool {
-	settings := st.SettingsChange.Settings
-	changed := ti.setSettings(settings)
+	changed := ti.setSettings(st.SettingsChange)
 	// identify whether we need to also update connections
 	ti.connSensor.Set(connectionSettings{
-		Obfuscated:      settings.Obfuscate,
-		Protocol:        settings.Protocol,
-		Technology:      settings.Technology,
-		VirtualLocation: settings.VirtualLocation,
+		Obfuscated:      st.SettingsChange.Obfuscate,
+		Protocol:        st.SettingsChange.Protocol,
+		Technology:      st.SettingsChange.Technology,
+		VirtualLocation: st.SettingsChange.VirtualLocation,
 	})
 
-	if ti.connSensor.ChangeDetected() || st.SettingsChange.IsResetToDefaults {
+	if ti.connSensor.ChangeDetected() {
 		countryListChanged := ti.updateCountryList()
 		specialtyServerListChanged := ti.updateSpecialtyServerList()
 		recentsChanged := ti.updateRecentConnections()
