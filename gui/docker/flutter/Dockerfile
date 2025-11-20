@@ -21,6 +21,7 @@ RUN apt-get update && \
         sudo \
         unzip \
         curl \
+        xvfb \
         xz-utils && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
