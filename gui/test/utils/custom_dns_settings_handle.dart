@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/settings/custom_dns.dart';
 import 'package:nordvpn/widgets/advanced_list_tile.dart';
-import 'package:nordvpn/widgets/loading_button.dart';
 import 'package:nordvpn/widgets/on_off_switch.dart';
 
 import 'finders.dart';

@@ -201,7 +201,7 @@ List<RouteBase> configureRoutes() {
 // Helper function to make a blocking route.
 // It is a route without scaffold and without navigation.
 GoRoute _route(AppRoute route, Widget child) {
-  return GoRoute(path: route.toString(), builder: (_, __) => child);
+  return GoRoute(path: route.toString(), builder: (_, _) => child);
 }
 
 // Helper function to make a route for a path and a child widget.
