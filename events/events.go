@@ -205,8 +205,8 @@ type DataRequestAPI struct {
 
 // Analytics analytics handling engine interface
 type Analytics interface {
-	Enable() error
-	Disable() error
+	Enable(config.AnalyticsConsent) error
+	Disable(config.AnalyticsConsent) error
 	Init() error
 }
 

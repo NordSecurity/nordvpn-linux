@@ -121,7 +121,12 @@ func (acc *AnalyticsConsentChecker) IsConsentFlowCompleted() bool {
 }
 
 func (acc *AnalyticsConsentChecker) setConsentGranted() error {
-	if err := acc.analytics.Enable(); err != nil {
+	var cfg config.Config
+	if err := acc.cm.Load(&cfg); err != nil {
+		log.Println(internal.ErrorPrefix, "failed to load config while updating consent", err)
+		return err
+	}
+	if err := acc.analytics.Enable(cfg.AnalyticsConsent); err != nil {
 		return err
 	}
 	return acc.cm.SaveWith(func(c config.Config) config.Config {
