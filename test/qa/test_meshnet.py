@@ -445,18 +445,17 @@ def test_derp_report_connect_events(daemon_log_reader):
     for connection_states in found_connection_state_logs:
         # Can be a case when disconnect were made but no connection was done after
         # {'disconnected': '2025/11/20 15:34:32 [Info] received event telio.EventRelay: {"Body":{"RegionCode":"de","Name":"de1.napps-6.com","Hostname":"de1.napps-6.com","Ipv4":"169.150.201.184","RelayPort":8765,"StunPort":3479,"StunPlaintextPort":3478,"PublicKey":"***","Weight":1,"UsePlainText":false,"ConnState":1}}'}
-        if "connecting" in connection_states:
-            if hostname not in connection_states.get("connecting"):
-                # Verify that time between disconnect and connected is not less than 10 sec
-                disconnect_time = datetime.strptime(
-                    connection_states["disconnected"].split()[1], "%H:%M:%S"
-                )
-                connected_time = datetime.strptime(
-                    connection_states["connected"].split()[1], "%H:%M:%S"
-                )
-                difference_time = (connected_time - disconnect_time).total_seconds()
+        if "connecting" in connection_states and hostname not in connection_states.get("connecting"):
+            # Verify that time between disconnect and connected is not less than 10 sec
+            disconnect_time = datetime.strptime(
+                connection_states["disconnected"].split()[1], "%H:%M:%S"
+            )
+            connected_time = datetime.strptime(
+                connection_states["connected"].split()[1], "%H:%M:%S"
+            )
+            difference_time = (connected_time - disconnect_time).total_seconds()
 
-                assert difference_time >= 10, (
-                    f"Time between disconnected and connected events are less that 10 seconds. "
-                    f"Time is next: {difference_time}"
-                )
+            assert difference_time >= 10, (
+                f"Time between disconnected and connected events are less that 10 seconds. "
+                f"Time is next: {difference_time}"
+            )
