@@ -201,6 +201,7 @@ type DataRequestAPI struct {
 type Analytics interface {
 	Enable() error
 	Disable() error
+	Init(config.AnalyticsConsent) error
 }
 
 // UiItemsAction stores arguments to moose.NordvpnappSendUserInterfaceUiItemsClick

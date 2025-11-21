@@ -3,11 +3,14 @@ package daemon
 import (
 	"context"
 	"log"
+	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
+
+var callInitOnceGuard = sync.Once{}
 
 // SetAnalytics
 func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.Payload, error) {
@@ -27,8 +30,22 @@ func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 	newConsentLevel := config.ConsentDenied
 	if in.GetEnabled() {
 		newConsentLevel = config.ConsentGranted
+	}
+
+	var err error = nil
+	callInitOnceGuard.Do(func() {
+		err = r.analytics.Init(newConsentLevel)
+	})
+
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "moose initialization failure:", err)
+		return &pb.Payload{Type: internal.CodeInternalError}, nil
+	}
+
+	if in.GetEnabled() {
 		if err := r.analytics.Enable(); err != nil {
 			log.Println(internal.ErrorPrefix, err)
+
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil

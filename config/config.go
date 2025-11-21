@@ -123,3 +123,15 @@ const (
 	ConsentGranted
 	ConsentDenied
 )
+
+func (ac AnalyticsConsent) String() string {
+	//exhaustive:ignore
+	switch ac {
+	case ConsentGranted:
+		return "ConsentGranted"
+	case ConsentDenied:
+		return "ConsentDenied"
+	default:
+		return "ConsentUndefined"
+	}
+}
