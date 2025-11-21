@@ -16,7 +16,6 @@ type dummyAnalytics struct{}
 
 func (*dummyAnalytics) Enable() error                                  { return nil }
 func (*dummyAnalytics) Disable() error                                 { return nil }
-func (*dummyAnalytics) Init() error                                    { return nil }
 func (*dummyAnalytics) NotifyKillswitch(bool) error                    { return nil }
 func (*dummyAnalytics) NotifyAutoconnect(bool) error                   { return nil }
 func (*dummyAnalytics) NotifyDNS(events.DataDNS) error                 { return nil }
@@ -53,7 +52,7 @@ func newAnalytics(
 	eventsDbPath string,
 	fs *config.FilesystemConfigManager,
 	clientAPI core.ClientAPI,
-	httpClient *http.Client,
+	httpClient http.Client,
 	buildTarget config.BuildTarget,
 	id string) *dummyAnalytics {
 	return &dummyAnalytics{}

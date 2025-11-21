@@ -24,25 +24,9 @@ func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 		}
 	}
 
-	// moose requires consent status updated in the config before triggering initialization
-	if err := r.cm.SaveWith(func(c config.Config) config.Config {
-		if in.GetEnabled() {
-			c.AnalyticsConsent = config.ConsentGranted
-		} else {
-			c.AnalyticsConsent = config.ConsentDenied
-		}
-		return c
-	}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
-		return &pb.Payload{
-			Type: internal.CodeConfigError,
-		}, nil
-	}
-
-	if err := r.analytics.Init(); err != nil {
-		log.Println(internal.ErrorPrefix, "moose failed to initialize with error:", err)
-	}
+	newConsentLevel := config.ConsentDenied
 	if in.GetEnabled() {
+		newConsentLevel = config.ConsentGranted
 		if err := r.analytics.Enable(); err != nil {
 			log.Println(internal.ErrorPrefix, err)
 			return &pb.Payload{
@@ -56,6 +40,16 @@ func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 				Type: internal.CodeConfigError,
 			}, nil
 		}
+	}
+
+	if err := r.cm.SaveWith(func(c config.Config) config.Config {
+		c.AnalyticsConsent = newConsentLevel
+		return c
+	}); err != nil {
+		log.Println(internal.ErrorPrefix, err)
+		return &pb.Payload{
+			Type: internal.CodeConfigError,
+		}, nil
 	}
 
 	return &pb.Payload{Type: internal.CodeSuccess}, nil
