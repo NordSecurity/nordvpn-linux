@@ -10,6 +10,7 @@ class RecentConnection {
   final String specificServerName;
   final String specificServer;
   final ServerSelectionRule connectionType;
+  final bool isVirtual;
 
   RecentConnection({
     required this.country,
@@ -19,6 +20,7 @@ class RecentConnection {
     required this.specificServerName,
     required this.specificServer,
     required this.connectionType,
+    required this.isVirtual,
   });
 
   factory RecentConnection.fromPb(RecentConnectionModel pb) {
@@ -30,6 +32,7 @@ class RecentConnection {
       specificServerName: pb.specificServerName,
       specificServer: pb.specificServer,
       connectionType: pb.connectionType,
+      isVirtual: pb.isVirtual,
     );
   }
 
@@ -37,7 +40,7 @@ class RecentConnection {
   String toString() {
     return 'RecentConnection(country: $country, city: $city, group: $group, '
         'countryCode: $countryCode, specificServerName: $specificServerName, '
-        'specificServer: $specificServer, connectionType: $connectionType)';
+        'specificServer: $specificServer, connectionType: $connectionType, virtual: $isVirtual)';
   }
 
   static const Map<cfg.ServerGroup, String> _groupTitles = {
@@ -59,46 +62,6 @@ class RecentConnection {
   };
 
   String get specialtyServer => RecentConnection._groupTitles[group] ?? "";
-
-  String get displayName {
-    switch (connectionType) {
-      case ServerSelectionRule.CITY:
-        return (country != "" && city != "") ? "$country $city" : "";
-
-      case ServerSelectionRule.COUNTRY:
-        return country;
-
-      case ServerSelectionRule.SPECIFIC_SERVER:
-        return specificServerName;
-
-      case ServerSelectionRule.GROUP:
-        return (country != "")
-            ? "$specialtyServer ($country)"
-            : specialtyServer;
-
-      case ServerSelectionRule.COUNTRY_WITH_GROUP:
-        final ss = specialtyServer;
-        return (ss == "" || country == "") ? "" : "$ss ($country)";
-
-      case ServerSelectionRule.SPECIFIC_SERVER_WITH_GROUP:
-        if (group != cfg.ServerGroup.UNDEFINED) {
-          final ss = specialtyServer;
-          if (country != "" && city != "") {
-            return "$ss ($country, $city)";
-          } else if (country != "") {
-            return "$ss ($country)";
-          }
-        }
-        return "";
-
-      case ServerSelectionRule.NONE:
-      case ServerSelectionRule.RECOMMENDED:
-        return "";
-
-      default:
-        return "";
-    }
-  }
 
   bool get isSpecialtyServer {
     return connectionType == ServerSelectionRule.GROUP;
