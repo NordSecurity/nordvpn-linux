@@ -60,7 +60,6 @@ type Subscriber struct {
 	connectionStartTime        time.Time
 	connectionToMeshnetPeer    bool
 	initialHeartbeatSent       bool
-	mooseOptInFunc             mooseConsentFunc
 	mooseConsentLevelFunc      mooseConsentFunc
 	mooseSetConsentIntoCtxFunc mooseSetConsentIntoContextFunc
 	httpClient                 *http.Client
@@ -98,37 +97,26 @@ func (s *Subscriber) getConfig() (config.Config, error) {
 	return cfg, err
 }
 
-// notfyAboutConsentChange requires AnalyticsConsent updated in the config
-func (s *Subscriber) notfyAboutConsentChange(previousState, newState config.AnalyticsConsent) error {
+// notfyAboutConsentChange takes new consent state, compares it to the current one in the config
+// and after running some sanity checks, updates moose accordingly (enable or switch analytics on demand)
+func (s *Subscriber) notfyAboutConsentChange(newState config.AnalyticsConsent) error {
 	cfg, err := s.getConfig()
 	if err != nil {
 		return err
 	}
-	if cfg.AnalyticsConsent != newState {
-		return fmt.Errorf("the AnalyticsConsent (%d) in config manager differs from the requested new state (%d)",
-			cfg.AnalyticsConsent,
-			newState)
-	}
-	if newState == config.ConsentUndefined {
-		return fmt.Errorf("analytics consent cannot be set to and undefined state")
+
+	// the same state requested, no-op
+	if cfg.AnalyticsConsent == newState {
+		return nil
 	}
 
-	if previousState == config.ConsentUndefined {
-		log.Println(internal.DebugPrefix, LogComponentPrefix, "enabling analytics")
-		if err := s.response(s.mooseOptInFunc(true)); err != nil {
-			return fmt.Errorf("enabling essential analytics: %w", err)
-		}
-	}
-
-	enabled := false
-	if newState == config.ConsentGranted {
-		enabled = true
-	}
-
+	enabled := newState == config.ConsentGranted
+	log.Println(internal.InfoPrefix, LogComponentPrefix, "request to set consent level to", enabled)
 	if err := s.response(s.mooseConsentLevelFunc(enabled)); err != nil {
 		return fmt.Errorf("setting new consent level: %w", err)
 	}
 
+	log.Println(internal.InfoPrefix, LogComponentPrefix, "update consent level into contenxt with new value", newState.String())
 	if err := setUserConsentLevelIntoContext(s, newState); err != nil {
 		return err
 	}
@@ -152,17 +140,17 @@ func setUserConsentLevelIntoContext(s *Subscriber, consent config.AnalyticsConse
 }
 
 // Enable moose analytics engine
-func (s *Subscriber) Enable(previousState config.AnalyticsConsent) error {
+func (s *Subscriber) Enable() error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	return s.notfyAboutConsentChange(previousState, config.ConsentGranted)
+	return s.notfyAboutConsentChange(config.ConsentGranted)
 }
 
 // Disable moose analytics engine
-func (s *Subscriber) Disable(previousState config.AnalyticsConsent) error {
+func (s *Subscriber) Disable() error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	return s.notfyAboutConsentChange(previousState, config.ConsentDenied)
+	return s.notfyAboutConsentChange(config.ConsentDenied)
 }
 
 func (s *Subscriber) isEnabled() bool {
@@ -173,13 +161,12 @@ func (s *Subscriber) isEnabled() bool {
 
 // Init initializes moose libs. It has to be done before usage regardless of the enabled state.
 // Disabled case should be handled by `set_opt_out` value.
-func (s *Subscriber) Init() error {
+func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 	log.Println(internal.InfoPrefix, LogComponentPrefix, "initializing")
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
 	s.mooseConsentLevelFunc = moose.MooseNordvpnappSetConsentLevel
-	s.mooseOptInFunc = worker.SetSendEvents
 	s.mooseSetConsentIntoCtxFunc = moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel
 
 	cfg, err := s.getConfig()
@@ -197,13 +184,8 @@ func (s *Subscriber) Init() error {
 	var batchSize uint32 = 20
 	compressRequest := true
 
-	// can we send events at all? - if consent is undefined (not completed) - don't send
-	canSendEvents := true
-	if cfg.AnalyticsConsent == config.ConsentUndefined {
-		canSendEvents = false
-	}
-	log.Println(internal.InfoPrefix, LogComponentPrefix, "configure to send events:", canSendEvents)
-
+	// moose is now started always after user specifies analytics consent
+	// thus we enable events from the begining
 	client := worker.NewHttpClientContext(s.currentDomain)
 	client.Client = *s.httpClient
 	if err := s.response(uint32(worker.StartWithClient(
@@ -211,7 +193,7 @@ func (s *Subscriber) Init() error {
 		s.currentDomain,
 		uint64(singleInterval.Milliseconds()),
 		uint64(sequenceInterval.Milliseconds()),
-		canSendEvents,
+		true,
 		batchSize,
 		compressRequest,
 		&client,
@@ -220,7 +202,7 @@ func (s *Subscriber) Init() error {
 	}
 
 	// can we send only essential or all?
-	s.canSendAllEvents = cfg.AnalyticsConsent == config.ConsentGranted
+	s.canSendAllEvents = consent == config.ConsentGranted
 	log.Println(internal.InfoPrefix, LogComponentPrefix, "all events are sent:", s.canSendAllEvents)
 
 	if err := s.response(moose.MooseNordvpnappInit(
@@ -248,7 +230,7 @@ func (s *Subscriber) Init() error {
 		return fmt.Errorf("setting application name: %w", err)
 	}
 
-	if err := setUserConsentLevelIntoContext(s, cfg.AnalyticsConsent); err != nil {
+	if err := setUserConsentLevelIntoContext(s, consent); err != nil {
 		return err
 	}
 
