@@ -42,8 +42,7 @@ class ClaimOnlinePurchaseResponse extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  ClaimOnlinePurchaseResponse clone() =>
-      ClaimOnlinePurchaseResponse()..mergeFromMessage(this);
+  ClaimOnlinePurchaseResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   ClaimOnlinePurchaseResponse copyWith(
           void Function(ClaimOnlinePurchaseResponse) updates) =>
@@ -59,8 +58,6 @@ class ClaimOnlinePurchaseResponse extends $pb.GeneratedMessage {
       ClaimOnlinePurchaseResponse._();
   @$core.override
   ClaimOnlinePurchaseResponse createEmptyInstance() => create();
-  static $pb.PbList<ClaimOnlinePurchaseResponse> createRepeated() =>
-      $pb.PbList<ClaimOnlinePurchaseResponse>();
   @$core.pragma('dart2js:noInline')
   static ClaimOnlinePurchaseResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ClaimOnlinePurchaseResponse>(create);

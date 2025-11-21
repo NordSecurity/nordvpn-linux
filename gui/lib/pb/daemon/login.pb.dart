@@ -43,14 +43,12 @@ class LoginOAuth2Request extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'LoginOAuth2Request',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..e<LoginType>(1, _omitFieldNames ? '' : 'type', $pb.PbFieldType.OE,
-        defaultOrMaker: LoginType.LoginType_UNKNOWN,
-        valueOf: LoginType.valueOf,
+    ..aE<LoginType>(1, _omitFieldNames ? '' : 'type',
         enumValues: LoginType.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  LoginOAuth2Request clone() => LoginOAuth2Request()..mergeFromMessage(this);
+  LoginOAuth2Request clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   LoginOAuth2Request copyWith(void Function(LoginOAuth2Request) updates) =>
       super.copyWith((message) => updates(message as LoginOAuth2Request))
@@ -63,8 +61,6 @@ class LoginOAuth2Request extends $pb.GeneratedMessage {
   static LoginOAuth2Request create() => LoginOAuth2Request._();
   @$core.override
   LoginOAuth2Request createEmptyInstance() => create();
-  static $pb.PbList<LoginOAuth2Request> createRepeated() =>
-      $pb.PbList<LoginOAuth2Request>();
   @$core.pragma('dart2js:noInline')
   static LoginOAuth2Request getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<LoginOAuth2Request>(create);
@@ -105,15 +101,12 @@ class LoginOAuth2CallbackRequest extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'token')
-    ..e<LoginType>(2, _omitFieldNames ? '' : 'type', $pb.PbFieldType.OE,
-        defaultOrMaker: LoginType.LoginType_UNKNOWN,
-        valueOf: LoginType.valueOf,
+    ..aE<LoginType>(2, _omitFieldNames ? '' : 'type',
         enumValues: LoginType.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  LoginOAuth2CallbackRequest clone() =>
-      LoginOAuth2CallbackRequest()..mergeFromMessage(this);
+  LoginOAuth2CallbackRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   LoginOAuth2CallbackRequest copyWith(
           void Function(LoginOAuth2CallbackRequest) updates) =>
@@ -128,8 +121,6 @@ class LoginOAuth2CallbackRequest extends $pb.GeneratedMessage {
   static LoginOAuth2CallbackRequest create() => LoginOAuth2CallbackRequest._();
   @$core.override
   LoginOAuth2CallbackRequest createEmptyInstance() => create();
-  static $pb.PbList<LoginOAuth2CallbackRequest> createRepeated() =>
-      $pb.PbList<LoginOAuth2CallbackRequest>();
   @$core.pragma('dart2js:noInline')
   static LoginOAuth2CallbackRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<LoginOAuth2CallbackRequest>(create);
@@ -183,7 +174,7 @@ class LoginResponse extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  LoginResponse clone() => LoginResponse()..mergeFromMessage(this);
+  LoginResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   LoginResponse copyWith(void Function(LoginResponse) updates) =>
       super.copyWith((message) => updates(message as LoginResponse))
@@ -196,8 +187,6 @@ class LoginResponse extends $pb.GeneratedMessage {
   static LoginResponse create() => LoginResponse._();
   @$core.override
   LoginResponse createEmptyInstance() => create();
-  static $pb.PbList<LoginResponse> createRepeated() =>
-      $pb.PbList<LoginResponse>();
   @$core.pragma('dart2js:noInline')
   static LoginResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<LoginResponse>(create);
@@ -246,15 +235,13 @@ class LoginOAuth2Response extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'LoginOAuth2Response',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..e<LoginStatus>(1, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE,
-        defaultOrMaker: LoginStatus.SUCCESS,
-        valueOf: LoginStatus.valueOf,
+    ..aE<LoginStatus>(1, _omitFieldNames ? '' : 'status',
         enumValues: LoginStatus.values)
     ..aOS(2, _omitFieldNames ? '' : 'url')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  LoginOAuth2Response clone() => LoginOAuth2Response()..mergeFromMessage(this);
+  LoginOAuth2Response clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   LoginOAuth2Response copyWith(void Function(LoginOAuth2Response) updates) =>
       super.copyWith((message) => updates(message as LoginOAuth2Response))
@@ -267,8 +254,6 @@ class LoginOAuth2Response extends $pb.GeneratedMessage {
   static LoginOAuth2Response create() => LoginOAuth2Response._();
   @$core.override
   LoginOAuth2Response createEmptyInstance() => create();
-  static $pb.PbList<LoginOAuth2Response> createRepeated() =>
-      $pb.PbList<LoginOAuth2Response>();
   @$core.pragma('dart2js:noInline')
   static LoginOAuth2Response getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<LoginOAuth2Response>(create);
@@ -315,15 +300,12 @@ class LoginOAuth2CallbackResponse extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'LoginOAuth2CallbackResponse',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..e<LoginStatus>(1, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE,
-        defaultOrMaker: LoginStatus.SUCCESS,
-        valueOf: LoginStatus.valueOf,
+    ..aE<LoginStatus>(1, _omitFieldNames ? '' : 'status',
         enumValues: LoginStatus.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  LoginOAuth2CallbackResponse clone() =>
-      LoginOAuth2CallbackResponse()..mergeFromMessage(this);
+  LoginOAuth2CallbackResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   LoginOAuth2CallbackResponse copyWith(
           void Function(LoginOAuth2CallbackResponse) updates) =>
@@ -339,8 +321,6 @@ class LoginOAuth2CallbackResponse extends $pb.GeneratedMessage {
       LoginOAuth2CallbackResponse._();
   @$core.override
   LoginOAuth2CallbackResponse createEmptyInstance() => create();
-  static $pb.PbList<LoginOAuth2CallbackResponse> createRepeated() =>
-      $pb.PbList<LoginOAuth2CallbackResponse>();
   @$core.pragma('dart2js:noInline')
   static LoginOAuth2CallbackResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<LoginOAuth2CallbackResponse>(create);
@@ -381,14 +361,12 @@ class IsLoggedInResponse extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
     ..aOB(1, _omitFieldNames ? '' : 'isLoggedIn')
-    ..e<LoginStatus>(2, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE,
-        defaultOrMaker: LoginStatus.SUCCESS,
-        valueOf: LoginStatus.valueOf,
+    ..aE<LoginStatus>(2, _omitFieldNames ? '' : 'status',
         enumValues: LoginStatus.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  IsLoggedInResponse clone() => IsLoggedInResponse()..mergeFromMessage(this);
+  IsLoggedInResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   IsLoggedInResponse copyWith(void Function(IsLoggedInResponse) updates) =>
       super.copyWith((message) => updates(message as IsLoggedInResponse))
@@ -401,8 +379,6 @@ class IsLoggedInResponse extends $pb.GeneratedMessage {
   static IsLoggedInResponse create() => IsLoggedInResponse._();
   @$core.override
   IsLoggedInResponse createEmptyInstance() => create();
-  static $pb.PbList<IsLoggedInResponse> createRepeated() =>
-      $pb.PbList<IsLoggedInResponse>();
   @$core.pragma('dart2js:noInline')
   static IsLoggedInResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<IsLoggedInResponse>(create);

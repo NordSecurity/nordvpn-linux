@@ -55,8 +55,7 @@ class SetAutoconnectRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetAutoconnectRequest clone() =>
-      SetAutoconnectRequest()..mergeFromMessage(this);
+  SetAutoconnectRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetAutoconnectRequest copyWith(
           void Function(SetAutoconnectRequest) updates) =>
@@ -70,8 +69,6 @@ class SetAutoconnectRequest extends $pb.GeneratedMessage {
   static SetAutoconnectRequest create() => SetAutoconnectRequest._();
   @$core.override
   SetAutoconnectRequest createEmptyInstance() => create();
-  static $pb.PbList<SetAutoconnectRequest> createRepeated() =>
-      $pb.PbList<SetAutoconnectRequest>();
   @$core.pragma('dart2js:noInline')
   static SetAutoconnectRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetAutoconnectRequest>(create);
@@ -131,7 +128,7 @@ class SetGenericRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetGenericRequest clone() => SetGenericRequest()..mergeFromMessage(this);
+  SetGenericRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetGenericRequest copyWith(void Function(SetGenericRequest) updates) =>
       super.copyWith((message) => updates(message as SetGenericRequest))
@@ -144,8 +141,6 @@ class SetGenericRequest extends $pb.GeneratedMessage {
   static SetGenericRequest create() => SetGenericRequest._();
   @$core.override
   SetGenericRequest createEmptyInstance() => create();
-  static $pb.PbList<SetGenericRequest> createRepeated() =>
-      $pb.PbList<SetGenericRequest>();
   @$core.pragma('dart2js:noInline')
   static SetGenericRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetGenericRequest>(create);
@@ -183,11 +178,11 @@ class SetUint32Request extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'SetUint32Request',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..a<$core.int>(1, _omitFieldNames ? '' : 'value', $pb.PbFieldType.OU3)
+    ..aI(1, _omitFieldNames ? '' : 'value', fieldType: $pb.PbFieldType.OU3)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetUint32Request clone() => SetUint32Request()..mergeFromMessage(this);
+  SetUint32Request clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetUint32Request copyWith(void Function(SetUint32Request) updates) =>
       super.copyWith((message) => updates(message as SetUint32Request))
@@ -200,8 +195,6 @@ class SetUint32Request extends $pb.GeneratedMessage {
   static SetUint32Request create() => SetUint32Request._();
   @$core.override
   SetUint32Request createEmptyInstance() => create();
-  static $pb.PbList<SetUint32Request> createRepeated() =>
-      $pb.PbList<SetUint32Request>();
   @$core.pragma('dart2js:noInline')
   static SetUint32Request getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetUint32Request>(create);
@@ -244,8 +237,7 @@ class SetThreatProtectionLiteRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetThreatProtectionLiteRequest clone() =>
-      SetThreatProtectionLiteRequest()..mergeFromMessage(this);
+  SetThreatProtectionLiteRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetThreatProtectionLiteRequest copyWith(
           void Function(SetThreatProtectionLiteRequest) updates) =>
@@ -261,8 +253,6 @@ class SetThreatProtectionLiteRequest extends $pb.GeneratedMessage {
       SetThreatProtectionLiteRequest._();
   @$core.override
   SetThreatProtectionLiteRequest createEmptyInstance() => create();
-  static $pb.PbList<SetThreatProtectionLiteRequest> createRepeated() =>
-      $pb.PbList<SetThreatProtectionLiteRequest>();
   @$core.pragma('dart2js:noInline')
   static SetThreatProtectionLiteRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetThreatProtectionLiteRequest>(create);
@@ -316,22 +306,15 @@ class SetThreatProtectionLiteResponse extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
     ..oo(0, [1, 2])
-    ..e<SetErrorCode>(1, _omitFieldNames ? '' : 'errorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: SetErrorCode.FAILURE,
-        valueOf: SetErrorCode.valueOf,
+    ..aE<SetErrorCode>(1, _omitFieldNames ? '' : 'errorCode',
         enumValues: SetErrorCode.values)
-    ..e<SetThreatProtectionLiteStatus>(
-        2,
-        _omitFieldNames ? '' : 'setThreatProtectionLiteStatus',
-        $pb.PbFieldType.OE,
-        defaultOrMaker: SetThreatProtectionLiteStatus.TPL_CONFIGURED,
-        valueOf: SetThreatProtectionLiteStatus.valueOf,
+    ..aE<SetThreatProtectionLiteStatus>(
+        2, _omitFieldNames ? '' : 'setThreatProtectionLiteStatus',
         enumValues: SetThreatProtectionLiteStatus.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetThreatProtectionLiteResponse clone() =>
-      SetThreatProtectionLiteResponse()..mergeFromMessage(this);
+  SetThreatProtectionLiteResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetThreatProtectionLiteResponse copyWith(
           void Function(SetThreatProtectionLiteResponse) updates) =>
@@ -347,16 +330,18 @@ class SetThreatProtectionLiteResponse extends $pb.GeneratedMessage {
       SetThreatProtectionLiteResponse._();
   @$core.override
   SetThreatProtectionLiteResponse createEmptyInstance() => create();
-  static $pb.PbList<SetThreatProtectionLiteResponse> createRepeated() =>
-      $pb.PbList<SetThreatProtectionLiteResponse>();
   @$core.pragma('dart2js:noInline')
   static SetThreatProtectionLiteResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetThreatProtectionLiteResponse>(
           create);
   static SetThreatProtectionLiteResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   SetThreatProtectionLiteResponse_Response whichResponse() =>
       _SetThreatProtectionLiteResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -409,7 +394,7 @@ class SetDNSRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetDNSRequest clone() => SetDNSRequest()..mergeFromMessage(this);
+  SetDNSRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetDNSRequest copyWith(void Function(SetDNSRequest) updates) =>
       super.copyWith((message) => updates(message as SetDNSRequest))
@@ -422,8 +407,6 @@ class SetDNSRequest extends $pb.GeneratedMessage {
   static SetDNSRequest create() => SetDNSRequest._();
   @$core.override
   SetDNSRequest createEmptyInstance() => create();
-  static $pb.PbList<SetDNSRequest> createRepeated() =>
-      $pb.PbList<SetDNSRequest>();
   @$core.pragma('dart2js:noInline')
   static SetDNSRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetDNSRequest>(create);
@@ -475,19 +458,14 @@ class SetDNSResponse extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
     ..oo(0, [2, 3])
-    ..e<SetErrorCode>(2, _omitFieldNames ? '' : 'errorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: SetErrorCode.FAILURE,
-        valueOf: SetErrorCode.valueOf,
+    ..aE<SetErrorCode>(2, _omitFieldNames ? '' : 'errorCode',
         enumValues: SetErrorCode.values)
-    ..e<SetDNSStatus>(
-        3, _omitFieldNames ? '' : 'setDnsStatus', $pb.PbFieldType.OE,
-        defaultOrMaker: SetDNSStatus.DNS_CONFIGURED,
-        valueOf: SetDNSStatus.valueOf,
+    ..aE<SetDNSStatus>(3, _omitFieldNames ? '' : 'setDnsStatus',
         enumValues: SetDNSStatus.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetDNSResponse clone() => SetDNSResponse()..mergeFromMessage(this);
+  SetDNSResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetDNSResponse copyWith(void Function(SetDNSResponse) updates) =>
       super.copyWith((message) => updates(message as SetDNSResponse))
@@ -500,15 +478,17 @@ class SetDNSResponse extends $pb.GeneratedMessage {
   static SetDNSResponse create() => SetDNSResponse._();
   @$core.override
   SetDNSResponse createEmptyInstance() => create();
-  static $pb.PbList<SetDNSResponse> createRepeated() =>
-      $pb.PbList<SetDNSResponse>();
   @$core.pragma('dart2js:noInline')
   static SetDNSResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetDNSResponse>(create);
   static SetDNSResponse? _defaultInstance;
 
+  @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
   SetDNSResponse_Response whichResponse() =>
       _SetDNSResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(2)
@@ -556,8 +536,7 @@ class SetKillSwitchRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetKillSwitchRequest clone() =>
-      SetKillSwitchRequest()..mergeFromMessage(this);
+  SetKillSwitchRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetKillSwitchRequest copyWith(void Function(SetKillSwitchRequest) updates) =>
       super.copyWith((message) => updates(message as SetKillSwitchRequest))
@@ -570,8 +549,6 @@ class SetKillSwitchRequest extends $pb.GeneratedMessage {
   static SetKillSwitchRequest create() => SetKillSwitchRequest._();
   @$core.override
   SetKillSwitchRequest createEmptyInstance() => create();
-  static $pb.PbList<SetKillSwitchRequest> createRepeated() =>
-      $pb.PbList<SetKillSwitchRequest>();
   @$core.pragma('dart2js:noInline')
   static SetKillSwitchRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetKillSwitchRequest>(create);
@@ -613,7 +590,7 @@ class SetNotifyRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetNotifyRequest clone() => SetNotifyRequest()..mergeFromMessage(this);
+  SetNotifyRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetNotifyRequest copyWith(void Function(SetNotifyRequest) updates) =>
       super.copyWith((message) => updates(message as SetNotifyRequest))
@@ -626,8 +603,6 @@ class SetNotifyRequest extends $pb.GeneratedMessage {
   static SetNotifyRequest create() => SetNotifyRequest._();
   @$core.override
   SetNotifyRequest createEmptyInstance() => create();
-  static $pb.PbList<SetNotifyRequest> createRepeated() =>
-      $pb.PbList<SetNotifyRequest>();
   @$core.pragma('dart2js:noInline')
   static SetNotifyRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetNotifyRequest>(create);
@@ -672,7 +647,7 @@ class SetTrayRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetTrayRequest clone() => SetTrayRequest()..mergeFromMessage(this);
+  SetTrayRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetTrayRequest copyWith(void Function(SetTrayRequest) updates) =>
       super.copyWith((message) => updates(message as SetTrayRequest))
@@ -685,8 +660,6 @@ class SetTrayRequest extends $pb.GeneratedMessage {
   static SetTrayRequest create() => SetTrayRequest._();
   @$core.override
   SetTrayRequest createEmptyInstance() => create();
-  static $pb.PbList<SetTrayRequest> createRepeated() =>
-      $pb.PbList<SetTrayRequest>();
   @$core.pragma('dart2js:noInline')
   static SetTrayRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetTrayRequest>(create);
@@ -733,14 +706,12 @@ class SetProtocolRequest extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'SetProtocolRequest',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..e<$0.Protocol>(2, _omitFieldNames ? '' : 'protocol', $pb.PbFieldType.OE,
-        defaultOrMaker: $0.Protocol.UNKNOWN_PROTOCOL,
-        valueOf: $0.Protocol.valueOf,
+    ..aE<$0.Protocol>(2, _omitFieldNames ? '' : 'protocol',
         enumValues: $0.Protocol.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetProtocolRequest clone() => SetProtocolRequest()..mergeFromMessage(this);
+  SetProtocolRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetProtocolRequest copyWith(void Function(SetProtocolRequest) updates) =>
       super.copyWith((message) => updates(message as SetProtocolRequest))
@@ -753,8 +724,6 @@ class SetProtocolRequest extends $pb.GeneratedMessage {
   static SetProtocolRequest create() => SetProtocolRequest._();
   @$core.override
   SetProtocolRequest createEmptyInstance() => create();
-  static $pb.PbList<SetProtocolRequest> createRepeated() =>
-      $pb.PbList<SetProtocolRequest>();
   @$core.pragma('dart2js:noInline')
   static SetProtocolRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetProtocolRequest>(create);
@@ -803,19 +772,14 @@ class SetProtocolResponse extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
     ..oo(0, [1, 2])
-    ..e<SetErrorCode>(1, _omitFieldNames ? '' : 'errorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: SetErrorCode.FAILURE,
-        valueOf: SetErrorCode.valueOf,
+    ..aE<SetErrorCode>(1, _omitFieldNames ? '' : 'errorCode',
         enumValues: SetErrorCode.values)
-    ..e<SetProtocolStatus>(
-        2, _omitFieldNames ? '' : 'setProtocolStatus', $pb.PbFieldType.OE,
-        defaultOrMaker: SetProtocolStatus.PROTOCOL_CONFIGURED,
-        valueOf: SetProtocolStatus.valueOf,
+    ..aE<SetProtocolStatus>(2, _omitFieldNames ? '' : 'setProtocolStatus',
         enumValues: SetProtocolStatus.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetProtocolResponse clone() => SetProtocolResponse()..mergeFromMessage(this);
+  SetProtocolResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetProtocolResponse copyWith(void Function(SetProtocolResponse) updates) =>
       super.copyWith((message) => updates(message as SetProtocolResponse))
@@ -828,15 +792,17 @@ class SetProtocolResponse extends $pb.GeneratedMessage {
   static SetProtocolResponse create() => SetProtocolResponse._();
   @$core.override
   SetProtocolResponse createEmptyInstance() => create();
-  static $pb.PbList<SetProtocolResponse> createRepeated() =>
-      $pb.PbList<SetProtocolResponse>();
   @$core.pragma('dart2js:noInline')
   static SetProtocolResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetProtocolResponse>(create);
   static SetProtocolResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   SetProtocolResponse_Response whichResponse() =>
       _SetProtocolResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -880,16 +846,12 @@ class SetTechnologyRequest extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'SetTechnologyRequest',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..e<$1.Technology>(
-        2, _omitFieldNames ? '' : 'technology', $pb.PbFieldType.OE,
-        defaultOrMaker: $1.Technology.UNKNOWN_TECHNOLOGY,
-        valueOf: $1.Technology.valueOf,
+    ..aE<$1.Technology>(2, _omitFieldNames ? '' : 'technology',
         enumValues: $1.Technology.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetTechnologyRequest clone() =>
-      SetTechnologyRequest()..mergeFromMessage(this);
+  SetTechnologyRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetTechnologyRequest copyWith(void Function(SetTechnologyRequest) updates) =>
       super.copyWith((message) => updates(message as SetTechnologyRequest))
@@ -902,8 +864,6 @@ class SetTechnologyRequest extends $pb.GeneratedMessage {
   static SetTechnologyRequest create() => SetTechnologyRequest._();
   @$core.override
   SetTechnologyRequest createEmptyInstance() => create();
-  static $pb.PbList<SetTechnologyRequest> createRepeated() =>
-      $pb.PbList<SetTechnologyRequest>();
   @$core.pragma('dart2js:noInline')
   static SetTechnologyRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetTechnologyRequest>(create);
@@ -948,7 +908,7 @@ class PortRange extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  PortRange clone() => PortRange()..mergeFromMessage(this);
+  PortRange clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   PortRange copyWith(void Function(PortRange) updates) =>
       super.copyWith((message) => updates(message as PortRange)) as PortRange;
@@ -960,7 +920,6 @@ class PortRange extends $pb.GeneratedMessage {
   static PortRange create() => PortRange._();
   @$core.override
   PortRange createEmptyInstance() => create();
-  static $pb.PbList<PortRange> createRepeated() => $pb.PbList<PortRange>();
   @$core.pragma('dart2js:noInline')
   static PortRange getDefault() =>
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PortRange>(create);
@@ -1011,8 +970,7 @@ class SetAllowlistSubnetRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetAllowlistSubnetRequest clone() =>
-      SetAllowlistSubnetRequest()..mergeFromMessage(this);
+  SetAllowlistSubnetRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetAllowlistSubnetRequest copyWith(
           void Function(SetAllowlistSubnetRequest) updates) =>
@@ -1026,8 +984,6 @@ class SetAllowlistSubnetRequest extends $pb.GeneratedMessage {
   static SetAllowlistSubnetRequest create() => SetAllowlistSubnetRequest._();
   @$core.override
   SetAllowlistSubnetRequest createEmptyInstance() => create();
-  static $pb.PbList<SetAllowlistSubnetRequest> createRepeated() =>
-      $pb.PbList<SetAllowlistSubnetRequest>();
   @$core.pragma('dart2js:noInline')
   static SetAllowlistSubnetRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetAllowlistSubnetRequest>(create);
@@ -1076,8 +1032,7 @@ class SetAllowlistPortsRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetAllowlistPortsRequest clone() =>
-      SetAllowlistPortsRequest()..mergeFromMessage(this);
+  SetAllowlistPortsRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetAllowlistPortsRequest copyWith(
           void Function(SetAllowlistPortsRequest) updates) =>
@@ -1091,8 +1046,6 @@ class SetAllowlistPortsRequest extends $pb.GeneratedMessage {
   static SetAllowlistPortsRequest create() => SetAllowlistPortsRequest._();
   @$core.override
   SetAllowlistPortsRequest createEmptyInstance() => create();
-  static $pb.PbList<SetAllowlistPortsRequest> createRepeated() =>
-      $pb.PbList<SetAllowlistPortsRequest>();
   @$core.pragma('dart2js:noInline')
   static SetAllowlistPortsRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetAllowlistPortsRequest>(create);
@@ -1176,7 +1129,7 @@ class SetAllowlistRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetAllowlistRequest clone() => SetAllowlistRequest()..mergeFromMessage(this);
+  SetAllowlistRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetAllowlistRequest copyWith(void Function(SetAllowlistRequest) updates) =>
       super.copyWith((message) => updates(message as SetAllowlistRequest))
@@ -1189,15 +1142,17 @@ class SetAllowlistRequest extends $pb.GeneratedMessage {
   static SetAllowlistRequest create() => SetAllowlistRequest._();
   @$core.override
   SetAllowlistRequest createEmptyInstance() => create();
-  static $pb.PbList<SetAllowlistRequest> createRepeated() =>
-      $pb.PbList<SetAllowlistRequest>();
   @$core.pragma('dart2js:noInline')
   static SetAllowlistRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetAllowlistRequest>(create);
   static SetAllowlistRequest? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   SetAllowlistRequest_Request whichRequest() =>
       _SetAllowlistRequest_RequestByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   void clearRequest() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -1251,8 +1206,7 @@ class SetLANDiscoveryRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetLANDiscoveryRequest clone() =>
-      SetLANDiscoveryRequest()..mergeFromMessage(this);
+  SetLANDiscoveryRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetLANDiscoveryRequest copyWith(
           void Function(SetLANDiscoveryRequest) updates) =>
@@ -1266,8 +1220,6 @@ class SetLANDiscoveryRequest extends $pb.GeneratedMessage {
   static SetLANDiscoveryRequest create() => SetLANDiscoveryRequest._();
   @$core.override
   SetLANDiscoveryRequest createEmptyInstance() => create();
-  static $pb.PbList<SetLANDiscoveryRequest> createRepeated() =>
-      $pb.PbList<SetLANDiscoveryRequest>();
   @$core.pragma('dart2js:noInline')
   static SetLANDiscoveryRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetLANDiscoveryRequest>(create);
@@ -1321,20 +1273,15 @@ class SetLANDiscoveryResponse extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
     ..oo(0, [1, 2])
-    ..e<SetErrorCode>(1, _omitFieldNames ? '' : 'errorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: SetErrorCode.FAILURE,
-        valueOf: SetErrorCode.valueOf,
+    ..aE<SetErrorCode>(1, _omitFieldNames ? '' : 'errorCode',
         enumValues: SetErrorCode.values)
-    ..e<SetLANDiscoveryStatus>(
-        2, _omitFieldNames ? '' : 'setLanDiscoveryStatus', $pb.PbFieldType.OE,
-        defaultOrMaker: SetLANDiscoveryStatus.DISCOVERY_CONFIGURED,
-        valueOf: SetLANDiscoveryStatus.valueOf,
+    ..aE<SetLANDiscoveryStatus>(
+        2, _omitFieldNames ? '' : 'setLanDiscoveryStatus',
         enumValues: SetLANDiscoveryStatus.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetLANDiscoveryResponse clone() =>
-      SetLANDiscoveryResponse()..mergeFromMessage(this);
+  SetLANDiscoveryResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetLANDiscoveryResponse copyWith(
           void Function(SetLANDiscoveryResponse) updates) =>
@@ -1348,15 +1295,17 @@ class SetLANDiscoveryResponse extends $pb.GeneratedMessage {
   static SetLANDiscoveryResponse create() => SetLANDiscoveryResponse._();
   @$core.override
   SetLANDiscoveryResponse createEmptyInstance() => create();
-  static $pb.PbList<SetLANDiscoveryResponse> createRepeated() =>
-      $pb.PbList<SetLANDiscoveryResponse>();
   @$core.pragma('dart2js:noInline')
   static SetLANDiscoveryResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetLANDiscoveryResponse>(create);
   static SetLANDiscoveryResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   SetLANDiscoveryResponse_Response whichResponse() =>
       _SetLANDiscoveryResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)

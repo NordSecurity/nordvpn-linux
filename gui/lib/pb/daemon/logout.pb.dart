@@ -42,7 +42,7 @@ class LogoutRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  LogoutRequest clone() => LogoutRequest()..mergeFromMessage(this);
+  LogoutRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   LogoutRequest copyWith(void Function(LogoutRequest) updates) =>
       super.copyWith((message) => updates(message as LogoutRequest))
@@ -55,8 +55,6 @@ class LogoutRequest extends $pb.GeneratedMessage {
   static LogoutRequest create() => LogoutRequest._();
   @$core.override
   LogoutRequest createEmptyInstance() => create();
-  static $pb.PbList<LogoutRequest> createRepeated() =>
-      $pb.PbList<LogoutRequest>();
   @$core.pragma('dart2js:noInline')
   static LogoutRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<LogoutRequest>(create);
