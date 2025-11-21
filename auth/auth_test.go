@@ -316,7 +316,7 @@ func TestIsVPNExpired(t *testing.T) {
 	)
 
 	_, err := rc.IsVPNExpired()
-	assert.Error(t, err)
+	assert.NoError(t, err) // TODO: now new account no vpn service is treated as if vpn service is expired
 	assert.False(t, accPub.EventPublished)
 }
 

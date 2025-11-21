@@ -5,6 +5,7 @@ package auth
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -165,6 +166,10 @@ func (r *RenewingChecker) IsVPNExpired() (bool, error) {
 
 	if r.expChecker.IsExpired(data.ServiceExpiry) {
 		if err := r.fetchSaveServices(cfg.AutoConnectData.ID, &data); err != nil {
+			// TODO: now new account no vpn service is treated as if vpn service is expired
+			if strings.Contains(err.Error(), "vpn service not found") {
+				return true, nil
+			}
 			return true, fmt.Errorf("updating service expiry token: %w", err)
 		}
 	}
