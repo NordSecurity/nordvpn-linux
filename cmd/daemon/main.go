@@ -354,7 +354,7 @@ func main() {
 
 	firstopen.RegisterNotifier(
 		fsystem,
-		daemonEvents.Consent.AnalyticsConsent,
+		daemonEvents.Service.FirstTimeOpened,
 		analytics.OnFirstOpen,
 	)
 

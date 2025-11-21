@@ -24,7 +24,7 @@ type firstOpenNotifier struct {
 // [firstopen.notifyOnceAppJustInstalled] to the device location events stream.
 func RegisterNotifier(
 	cm *config.FilesystemConfigManager,
-	analyticsConsent events.PublishSubcriber[any],
+	firstTimeOpened events.PublishSubcriber[any],
 	emitFirstTimeOpenEvent func() error,
 ) {
 	if !cm.NewInstallation || published.Load() {
@@ -34,7 +34,7 @@ func RegisterNotifier(
 		cm:                     cm,
 		emitFirstTimeOpenEvent: emitFirstTimeOpenEvent,
 	}
-	analyticsConsent.Subscribe(n.notifyOnceAppJustInstalled)
+	firstTimeOpened.Subscribe(n.notifyOnceAppJustInstalled)
 }
 
 // notifyOnceAppJustInstalled checks whether this is a fresh installation,
