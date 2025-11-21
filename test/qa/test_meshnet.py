@@ -13,6 +13,11 @@ from lib import daemon, logging, login, meshnet, settings, ssh
 from lib.shell import sh_no_tty
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
+MESHNET_SUCCESSFULL_ENABLED_MSG = "Meshnet is set to 'enabled' successfully."
+STATE_DISCONNECTED = "disconnected"
+STATE_CONNECTING = "connecting"
+STATE_CONNECTED = "connected"
+DERP_CONN_ATTEMPT_WAIT_TIME = 300
 
 
 def setup_module(module):  # noqa: ARG001
@@ -189,7 +194,7 @@ def test_set_meshnet_off_on(meshnet_allias):
     assert "Meshnet is set to 'disabled' successfully." in sh_no_tty.nordvpn.set(meshnet_allias, "off")
     assert not settings.is_meshnet_enabled()
 
-    assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set(meshnet_allias, "on")
+    assert MESHNET_SUCCESSFULL_ENABLED_MSG in sh_no_tty.nordvpn.set(meshnet_allias, "on")
     assert settings.is_meshnet_enabled()
 
 
@@ -343,7 +348,7 @@ def test_login_mesh_on_set_defaults_mesh_on_sequence():
 
     assert "Account Information" in sh_no_tty.nordvpn.account()
 
-    assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on()
+    assert MESHNET_SUCCESSFULL_ENABLED_MSG in sh_no_tty.nordvpn.set.meshnet.on()
 
     assert settings.is_meshnet_enabled()
 
@@ -365,7 +370,7 @@ def test_login_mesh_on_set_defaults_logout_login_mesh_on():
 
     assert "Account Information" in sh_no_tty.nordvpn.account()
 
-    assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on()
+    assert MESHNET_SUCCESSFULL_ENABLED_MSG in sh_no_tty.nordvpn.set.meshnet.on()
 
     assert settings.is_meshnet_enabled()
 
@@ -375,7 +380,7 @@ def test_derp_report_connect_events(daemon_log_reader):
     """
     :details    Verify that app reports about connection state to DERP server and no spurious requests were found
 
-    :tcid       LVPN-2647
+    Manual TC      LVPN-2647
 
     :steps
         - # Enable Meshnet in NordVPN app
@@ -389,12 +394,12 @@ def test_derp_report_connect_events(daemon_log_reader):
         - # Daemon was restarted and time cursor was made
         - # Event logs, related to connection state, were found in NordVPN's daemon after restart
     """
-    assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on()
+    assert MESHNET_SUCCESSFULL_ENABLED_MSG in sh_no_tty.nordvpn.set.meshnet.on()
 
     time_cursor = daemon_log_reader.get_cursor()
     daemon.restart()
 
-    time.sleep(300)
+    time.sleep(DERP_CONN_ATTEMPT_WAIT_TIME)
 
     daemon.restart()
 
@@ -404,54 +409,49 @@ def test_derp_report_connect_events(daemon_log_reader):
     Collect records of a connection states. In the end, will be a data collection with the next look:
      [
         [
-            {"disconnected": "Oct 08 10:29:04 NS-PF4HBBRP nordvpnd[2280202]: 2025/10/08 10:29:04 [Info] received event telio.EventRelay: {"Body":{"RegionCode":"de","Name":"de1.napps-6.com","Hostname":"de1.napps-6.com","Ipv4":"169.150.201.184","RelayPort":8765,"StunPort":3479,"StunPlaintextPort":3478,"PublicKey":"***","Weight":1,"UsePlainText":false,"ConnState":1}}"},
-            {"connecting": "Oct 08 10:29:04 NS-PF4HBBRP nordvpnd[2280202]: 2025/10/08 10:29:04 [Info] received event telio.EventRelay: {"Body":{"RegionCode":"de","Name":"de1.napps-6.com","Hostname":"de1.napps-6.com","Ipv4":"169.150.201.184","RelayPort":8765,"StunPort":3479,"StunPlaintextPort":3478,"PublicKey":"***","Weight":1,"UsePlainText":false,"ConnState":2}}"},
-            {"connected": "Oct 08 10:29:05 NS-PF4HBBRP nordvpnd[2280202]: 2025/10/08 10:29:05 [Info] received event telio.EventRelay: {"Body":{"RegionCode":"de","Name":"de1.napps-6.com","Hostname":"de1.napps-6.com","Ipv4":"169.150.201.184","RelayPort":8765,"StunPort":3479,"StunPlaintextPort":3478,"PublicKey":"***","Weight":1,"UsePlainText":false,"ConnState":3}}"},
-        ].
+            {"disconnected": ..., "connecting": ..., "connected": ...}
+        ],
         [
-            {"disconnected": ...},
-            {"connecting": ...},
-            {"connected": ...}
-        ]
+            {"disconnected": ..., "connecting": ..., "connected": ...}
+        ],
     ]
      """
     found_connection_state_logs = []
     for log in logs.splitlines():
         if '"ConnState":1' in log:
-            found_connection_state_logs.append({"disconnected": log})
+            found_connection_state_logs.append({STATE_DISCONNECTED: log})
             index = len(found_connection_state_logs) - 1
         elif '"ConnState":2' in log:
-            found_connection_state_logs[index]["connecting"] = log
+            found_connection_state_logs[index][STATE_CONNECTING] = log
         elif '"ConnState":3' in log:
-            found_connection_state_logs[index]["connected"] = log
+            found_connection_state_logs[index][STATE_CONNECTED] = log
 
     assert found_connection_state_logs[0][
-        "disconnected"
+        STATE_DISCONNECTED
     ], f"Didn't found log about disconnect event after restart of a daemon. Logs are next: {found_connection_state_logs[0]}"
 
     assert found_connection_state_logs[0][
-        "connecting"
+        STATE_CONNECTING
     ], f"Didn't found log about connecting event after restart of a daemon. Logs are next: {found_connection_state_logs[0]}"
 
     assert found_connection_state_logs[0][
-        "connected"
+        STATE_CONNECTED
     ], f"Didn't found log about connected event after restart of a daemon. Logs are next: {found_connection_state_logs[0]}"
 
     # Check if connection were made to other hostname
     json_data = json.loads(
-        found_connection_state_logs[0]["connecting"].split("telio.EventRelay: ")[1]
+        found_connection_state_logs[0][STATE_CONNECTING].split("telio.EventRelay: ")[1]
     )
     hostname = json_data.get("Body", {}).get("Hostname", "")
     for connection_states in found_connection_state_logs:
         # Can be a case when disconnect were made but no connection was done after
-        # {'disconnected': '2025/11/20 15:34:32 [Info] received event telio.EventRelay: {"Body":{"RegionCode":"de","Name":"de1.napps-6.com","Hostname":"de1.napps-6.com","Ipv4":"169.150.201.184","RelayPort":8765,"StunPort":3479,"StunPlaintextPort":3478,"PublicKey":"***","Weight":1,"UsePlainText":false,"ConnState":1}}'}
-        if "connecting" in connection_states and hostname not in connection_states.get("connecting"):
+        if STATE_CONNECTING in connection_states and hostname not in connection_states.get(STATE_CONNECTING):
             # Verify that time between disconnect and connected is not less than 10 sec
             disconnect_time = datetime.strptime(
-                connection_states["disconnected"].split()[1], "%H:%M:%S"
+                connection_states[STATE_DISCONNECTED].split()[1], "%H:%M:%S"
             )
             connected_time = datetime.strptime(
-                connection_states["connected"].split()[1], "%H:%M:%S"
+                connection_states[STATE_CONNECTED].split()[1], "%H:%M:%S"
             )
             difference_time = (connected_time - disconnect_time).total_seconds()
 
