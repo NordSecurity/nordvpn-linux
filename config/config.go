@@ -125,6 +125,7 @@ const (
 )
 
 func (ac AnalyticsConsent) String() string {
+	//exhaustive:ignore
 	switch ac {
 	case ConsentGranted:
 		return "ConsentGranted"
