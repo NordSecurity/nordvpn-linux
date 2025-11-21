@@ -310,6 +310,7 @@ func (r *RPC) connect(
 		}
 	}
 	r.events.Service.Connect.Publish(event)
+	r.events.Service.FirstTimeOpened.Publish(struct{}{})
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnected, Data: data}); err != nil {
 		log.Println(internal.ErrorPrefix, err)

@@ -354,8 +354,8 @@ func main() {
 
 	firstopen.RegisterNotifier(
 		fsystem,
-		daemonEvents.Service.DeviceLocation,
-		daemonEvents.Service.UiItemsClick,
+		daemonEvents.Service.FirstTimeOpened,
+		analytics.OnFirstOpen,
 	)
 
 	daemonEvents.Service.Connect.Subscribe(loggerSubscriber.NotifyConnect)
