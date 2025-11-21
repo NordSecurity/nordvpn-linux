@@ -251,6 +251,12 @@ func (r *RPC) connect(
 		log.Println(internal.ErrorPrefix, err)
 	}
 
+	disconnectSender := events.NewDisconnectSender(events.DataDisconnect{
+		Protocol:             cfg.AutoConnectData.Protocol,
+		Technology:           cfg.Technology,
+		ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
+	}, r.events.Service.Disconnect.Publish)
+
 	err = r.netw.Start(
 		ctx,
 		creds,
@@ -260,6 +266,7 @@ func (r *RPC) connect(
 			cfg.AutoConnectData.ThreatProtectionLite,
 		)),
 		true, // here vpn connect - enable routing to local LAN
+		disconnectSender.PublishDisconnect,
 	)
 
 	if err != nil {
