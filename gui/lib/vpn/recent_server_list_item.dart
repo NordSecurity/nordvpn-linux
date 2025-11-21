@@ -101,6 +101,12 @@ class RecentServerListItem extends StatelessWidget {
       );
     }
 
+    Text maybeAddVirtualLabel(Text text) {
+      return model.isVirtual
+          ? Text("${text.data} - ${t.ui.virtual}", style: text.style)
+          : text;
+    }
+
     final isCity =
         model.city.isNotEmpty &&
         model.connectionType == ServerSelectionRule.CITY;
@@ -111,7 +117,7 @@ class RecentServerListItem extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(model.country, style: appTheme.body),
-          Text(model.city, style: appTheme.caption),
+          maybeAddVirtualLabel(Text(model.city, style: appTheme.caption)),
         ],
       );
     }
@@ -132,7 +138,9 @@ class RecentServerListItem extends StatelessWidget {
         children: [
           Text(model.country, style: appTheme.body),
           if (serverIdMatch != null)
-            Text(serverIdMatch[1]!, style: appTheme.caption),
+            maybeAddVirtualLabel(
+              Text(serverIdMatch[1]!, style: appTheme.caption),
+            ),
         ],
       );
     }
@@ -155,7 +163,7 @@ class RecentServerListItem extends StatelessWidget {
         server: ServerInfo(
           id: 0,
           hostname: model.specificServerName,
-          isVirtual: false,
+          isVirtual: model.isVirtual,
         ),
       );
     } else {
