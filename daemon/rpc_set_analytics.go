@@ -27,25 +27,14 @@ func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 		}
 	}
 
-	previousAnalyticsConsentState := cfg.AnalyticsConsent
-	// moose requires consent status updated in the config before triggering initialization
-	if err := r.cm.SaveWith(func(c config.Config) config.Config {
-		if in.GetEnabled() {
-			c.AnalyticsConsent = config.ConsentGranted
-		} else {
-			c.AnalyticsConsent = config.ConsentDenied
-		}
-		return c
-	}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
-		return &pb.Payload{
-			Type: internal.CodeConfigError,
-		}, nil
+	newConsentLevel := config.ConsentDenied
+	if in.GetEnabled() {
+		newConsentLevel = config.ConsentGranted
 	}
 
 	var err error = nil
 	callInitOnceGuard.Do(func() {
-		err = r.analytics.Init()
+		err = r.analytics.Init(newConsentLevel)
 	})
 
 	if err != nil {
@@ -54,19 +43,30 @@ func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 	}
 
 	if in.GetEnabled() {
-		if err := r.analytics.Enable(previousAnalyticsConsentState); err != nil {
+		if err := r.analytics.Enable(); err != nil {
 			log.Println(internal.ErrorPrefix, err)
+
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil
 		}
 	} else {
-		if err := r.analytics.Disable(previousAnalyticsConsentState); err != nil {
+		if err := r.analytics.Disable(); err != nil {
 			log.Println(internal.ErrorPrefix, err)
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil
 		}
+	}
+
+	if err := r.cm.SaveWith(func(c config.Config) config.Config {
+		c.AnalyticsConsent = newConsentLevel
+		return c
+	}); err != nil {
+		log.Println(internal.ErrorPrefix, err)
+		return &pb.Payload{
+			Type: internal.CodeConfigError,
+		}, nil
 	}
 
 	return &pb.Payload{Type: internal.CodeSuccess}, nil

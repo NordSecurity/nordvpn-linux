@@ -139,9 +139,7 @@ func TestChangeConsentState(t *testing.T) {
 		currentOptInState               bool
 		newConsentState                 config.AnalyticsConsent
 		consentErrCode                  uint32
-		optInErrCode                    uint32
 		expectedEssentialAnalyticsState bool
-		expectedOptInState              bool
 		shouldFail                      bool
 	}{
 		{
@@ -150,7 +148,6 @@ func TestChangeConsentState(t *testing.T) {
 			currentOptInState:               false,
 			newConsentState:                 config.ConsentGranted,
 			expectedEssentialAnalyticsState: true,
-			expectedOptInState:              true,
 		},
 		{
 			name:                            "undefined to disabled success",
@@ -158,7 +155,6 @@ func TestChangeConsentState(t *testing.T) {
 			currentOptInState:               false,
 			newConsentState:                 config.ConsentDenied,
 			expectedEssentialAnalyticsState: false,
-			expectedOptInState:              true,
 		},
 		{
 			name:                            "enabled to disabled success",
@@ -166,7 +162,6 @@ func TestChangeConsentState(t *testing.T) {
 			currentOptInState:               true,
 			newConsentState:                 config.ConsentDenied,
 			expectedEssentialAnalyticsState: false,
-			expectedOptInState:              true,
 		},
 		{
 			name:                            "disabled to enabled success",
@@ -174,25 +169,6 @@ func TestChangeConsentState(t *testing.T) {
 			currentOptInState:               true,
 			newConsentState:                 config.ConsentGranted,
 			expectedEssentialAnalyticsState: true,
-			expectedOptInState:              true,
-		},
-		{
-			name:                            "undefined to enabled failure to opt in",
-			currentConsentState:             config.ConsentUndefined,
-			currentOptInState:               false,
-			newConsentState:                 config.ConsentGranted,
-			optInErrCode:                    1,
-			expectedEssentialAnalyticsState: false,
-			expectedOptInState:              false,
-		},
-		{
-			name:                            "undefined to disabled failure to opt in",
-			currentConsentState:             config.ConsentUndefined,
-			currentOptInState:               false,
-			newConsentState:                 config.ConsentDenied,
-			optInErrCode:                    1,
-			expectedEssentialAnalyticsState: false,
-			expectedOptInState:              false,
 		},
 		{
 			name:                            "undefined to enabled failure to consent",
@@ -201,7 +177,6 @@ func TestChangeConsentState(t *testing.T) {
 			newConsentState:                 config.ConsentGranted,
 			consentErrCode:                  1,
 			expectedEssentialAnalyticsState: false,
-			expectedOptInState:              true,
 		},
 		{
 			name:                            "undefined to disabled failure to consent",
@@ -210,27 +185,16 @@ func TestChangeConsentState(t *testing.T) {
 			newConsentState:                 config.ConsentDenied,
 			consentErrCode:                  1,
 			expectedEssentialAnalyticsState: false,
-			expectedOptInState:              true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			optIn := test.currentOptInState
-			optInFunc := func(enable bool) uint32 {
-				if test.optInErrCode != 0 {
-					return test.optInErrCode
-				}
-				optIn = enable
-				return 0
-			}
 
-			actualCanSendAllEvents := false
 			consentFunc := func(enable bool) uint32 {
 				if test.consentErrCode != 0 {
 					return test.consentErrCode
 				}
-				actualCanSendAllEvents = enable
 				return 0
 			}
 
@@ -242,22 +206,18 @@ func TestChangeConsentState(t *testing.T) {
 			configManagerMock.Cfg.AnalyticsConsent = test.currentConsentState
 			s := &Subscriber{
 				config:                     configManagerMock,
-				mooseOptInFunc:             optInFunc,
 				mooseConsentLevelFunc:      consentFunc,
 				mooseSetConsentIntoCtxFunc: setConsentToCtx,
 				canSendAllEvents:           test.currentOptInState,
 			}
 
-			configManagerMock.Cfg.AnalyticsConsent = test.newConsentState
-			err := s.notfyAboutConsentChange(test.currentConsentState, test.newConsentState)
+			err := s.notfyAboutConsentChange(test.newConsentState)
 
-			if test.optInErrCode != 0 || test.consentErrCode != 0 || test.shouldFail {
+			if test.consentErrCode != 0 || test.shouldFail {
 				assert.Assert(t, err != nil)
 			}
 
 			assert.Equal(t, test.expectedEssentialAnalyticsState, s.canSendAllEvents, "Unexpected consent state saved.")
-			assert.Equal(t, test.expectedOptInState, optIn, "Unexpected opt in configuration.")
-			assert.Equal(t, actualCanSendAllEvents, s.canSendAllEvents, "Incorrect sendAllEvents value.")
 		})
 	}
 }

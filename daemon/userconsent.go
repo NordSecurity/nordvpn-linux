@@ -75,7 +75,11 @@ func NewConsentChecker(
 //   - save consent as completed and accepted, no consent flow for standard mode countries
 func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 	if acc.IsConsentFlowCompleted() {
-		if err := acc.analytics.Init(); err != nil {
+		var cfg config.Config
+		if err := acc.cm.Load(&cfg); err != nil {
+			log.Println(internal.ErrorPrefix, "failed to load config while running daemon preparation", err)
+		}
+		if err := acc.analytics.Init(cfg.AnalyticsConsent); err != nil {
 			log.Println(internal.ErrorPrefix, "moose failed to initialize with error:", err)
 		}
 		return
@@ -121,12 +125,7 @@ func (acc *AnalyticsConsentChecker) IsConsentFlowCompleted() bool {
 }
 
 func (acc *AnalyticsConsentChecker) setConsentGranted() error {
-	var cfg config.Config
-	if err := acc.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, "failed to load config while updating consent", err)
-		return err
-	}
-	if err := acc.analytics.Enable(cfg.AnalyticsConsent); err != nil {
+	if err := acc.analytics.Enable(); err != nil {
 		return err
 	}
 	return acc.cm.SaveWith(func(c config.Config) config.Config {

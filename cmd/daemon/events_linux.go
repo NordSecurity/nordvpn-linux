@@ -14,9 +14,9 @@ import (
 
 type dummyAnalytics struct{}
 
-func (*dummyAnalytics) Enable(config.AnalyticsConsent) error           { return nil }
-func (*dummyAnalytics) Disable(config.AnalyticsConsent) error          { return nil }
-func (*dummyAnalytics) Init() error                                    { return nil }
+func (*dummyAnalytics) Enable() error                                  { return nil }
+func (*dummyAnalytics) Disable() error                                 { return nil }
+func (*dummyAnalytics) Init(config.AnalyticsConsent) error             { return nil }
 func (*dummyAnalytics) NotifyKillswitch(bool) error                    { return nil }
 func (*dummyAnalytics) NotifyAutoconnect(bool) error                   { return nil }
 func (*dummyAnalytics) NotifyDNS(events.DataDNS) error                 { return nil }
