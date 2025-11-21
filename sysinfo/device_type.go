@@ -10,9 +10,10 @@ import (
 type SystemDeviceType string
 
 const (
-	SystemDeviceTypeUnknown SystemDeviceType = "unknown"
-	SystemDeviceTypeDesktop SystemDeviceType = "desktop"
-	SystemDeviceTypeServer  SystemDeviceType = "server"
+	SystemDeviceTypeUnknown   SystemDeviceType = "unknown"
+	SystemDeviceTypeDesktop   SystemDeviceType = "desktop"
+	SystemDeviceTypeServer    SystemDeviceType = "server"
+	SystemDeviceTypeContainer SystemDeviceType = "container"
 )
 
 const (
@@ -31,6 +32,7 @@ type deviceTypeDetector interface {
 // desktop environment presence, and session type, in that order.
 func GetDeviceType() SystemDeviceType {
 	detectors := []deviceTypeDetector{
+		newContainerDetector(),
 		newSystemdTargetDetector(),
 		newGraphicalEnvDetector(),
 		newXDGSessionDetector(),
@@ -152,6 +154,45 @@ func newXDGSessionDetector() deviceTypeDetector {
 	return &xdgSessionDetector{
 		detectSession: func() (string, error) {
 			return getDisplayProtocol(os.Getenv), nil
+		},
+	}
+}
+
+// -------------------------------------
+// Container Detector
+// -------------------------------------
+
+type containerDetector struct {
+	detectSession func() (SystemDeviceType, error)
+}
+
+func (d containerDetector) Get() (SystemDeviceType, error) {
+	return d.detectSession()
+}
+
+func newContainerDetector() deviceTypeDetector {
+	return &containerDetector{
+		detectSession: func() (SystemDeviceType, error) {
+			// If /.dockerenv exists we are running inside docker
+			if _, err := os.Stat("/.dockerenv"); err == nil {
+				return SystemDeviceTypeContainer, nil
+			}
+
+			// Check for specific keywords
+			if _, err := os.Stat("/proc/1/mountinfo"); err == nil {
+				if data, err := os.ReadFile("/proc/1/mountinfo"); err == nil {
+					s := string(data)
+					if strings.Contains(s, "docker") ||
+						strings.Contains(s, "containerd") ||
+						strings.Contains(s, "podman") ||
+						strings.Contains(s, "kubepods") ||
+						strings.Contains(s, "overlay") {
+						return SystemDeviceTypeContainer, nil
+					}
+				}
+			}
+
+			return SystemDeviceTypeUnknown, nil
 		},
 	}
 }
