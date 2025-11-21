@@ -97,9 +97,9 @@ func (s *Subscriber) getConfig() (config.Config, error) {
 	return cfg, err
 }
 
-// notfyAboutConsentChange takes new consent state, compares it to the current one in the config
+// changeConsentState takes new consent state, compares it to the current one in the config
 // and after running some sanity checks, updates moose accordingly (enable or switch analytics on demand)
-func (s *Subscriber) notfyAboutConsentChange(newState config.AnalyticsConsent) error {
+func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error {
 	cfg, err := s.getConfig()
 	if err != nil {
 		return err
@@ -143,14 +143,14 @@ func setUserConsentLevelIntoContext(s *Subscriber, consent config.AnalyticsConse
 func (s *Subscriber) Enable() error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	return s.notfyAboutConsentChange(config.ConsentGranted)
+	return s.changeConsentState(config.ConsentGranted)
 }
 
 // Disable moose analytics engine
 func (s *Subscriber) Disable() error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	return s.notfyAboutConsentChange(config.ConsentDenied)
+	return s.changeConsentState(config.ConsentDenied)
 }
 
 func (s *Subscriber) isEnabled() bool {

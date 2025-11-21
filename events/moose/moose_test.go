@@ -211,7 +211,7 @@ func TestChangeConsentState(t *testing.T) {
 				canSendAllEvents:           test.currentOptInState,
 			}
 
-			err := s.notfyAboutConsentChange(test.newConsentState)
+			err := s.changeConsentState(test.newConsentState)
 
 			if test.consentErrCode != 0 || test.shouldFail {
 				assert.Assert(t, err != nil)
