@@ -127,16 +127,16 @@ func Test_ConcurrentInstallEvents_OnlyOnePublish(t *testing.T) {
 
 type stubSubscriber struct {
 	mu       sync.Mutex
-	handlers []events.Handler[core.Insights]
+	handlers []events.Handler[any]
 }
 
-func (s *stubSubscriber) Subscribe(h events.Handler[core.Insights]) {
+func (s *stubSubscriber) Subscribe(h events.Handler[any]) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.handlers = append(s.handlers, h)
 }
 
-func (s *stubSubscriber) Publish(ins core.Insights) {
+func (s *stubSubscriber) Publish(ins any) {
 	s.mu.Lock()
 	hs := slices.Clone(s.handlers)
 	s.mu.Unlock()
