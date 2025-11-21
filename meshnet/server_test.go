@@ -19,6 +19,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -71,6 +72,7 @@ func (workingNetworker) Start(
 	config.Allowlist,
 	config.DNS,
 	bool,
+	events.DisconnectCallback,
 ) error {
 	return nil
 }
@@ -171,6 +173,7 @@ func newMockedServer(
 			Service: &daemonevents.ServiceEvents{
 				UiItemsClick: &daemonevents.MockPublisherSubscriber[events.UiItemsAction]{},
 				Connect:      &daemonevents.MockPublisherSubscriber[events.DataConnect]{},
+				Disconnect:   &daemonevents.MockPublisherSubscriber[events.DataDisconnect]{},
 			},
 		},
 		testnorduser.NewMockNorduserClient(nil),

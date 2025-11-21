@@ -7,6 +7,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	"github.com/NordSecurity/nordvpn-linux/events"
 )
 
 // Networker defines functions responsible for network configuration
@@ -33,6 +34,7 @@ type Networker interface {
 		config.Allowlist,
 		config.DNS,
 		bool, // enableLocalTraffic
+		events.DisconnectCallback,
 	) error
 	Stop() error
 	GetConnectionParameters() (vpn.ServerData, bool)
