@@ -72,7 +72,7 @@ func NewEvents(
 	logout events.PublishSubcriber[events.DataAuthorization],
 	mfa events.PublishSubcriber[bool],
 	devLogs events.PublishSubcriber[events.DebuggerEvent],
-	analyticsConsent events.PublishSubcriber[any],
+	appFirstTimeOpened events.PublishSubcriber[any],
 ) *Events {
 	return &Events{
 		Settings: &SettingsEvents{
@@ -94,11 +94,12 @@ func NewEvents(
 			PostquantumVPN:       postquantumVpn,
 		},
 		Service: &ServiceEvents{
-			Connect:        connect,
-			Disconnect:     disconnect,
-			AccountCheck:   accountCheck,
-			UiItemsClick:   uiItemsClick,
-			DeviceLocation: deviceLocation,
+			Connect:         connect,
+			Disconnect:      disconnect,
+			AccountCheck:    accountCheck,
+			UiItemsClick:    uiItemsClick,
+			DeviceLocation:  deviceLocation,
+			FirstTimeOpened: appFirstTimeOpened,
 		},
 		User: &LoginEvents{
 			Login:  login,
@@ -108,9 +109,6 @@ func NewEvents(
 		Debugger: &DebuggerEvents{
 			DebuggerEvents: devLogs,
 		},
-		Consent: &AnalyticsConsentEvent{
-			AnalyticsConsent: analyticsConsent,
-		},
 	}
 }
 
@@ -119,7 +117,6 @@ type Events struct {
 	Service  *ServiceEvents
 	User     *LoginEvents
 	Debugger *DebuggerEvents
-	Consent  *AnalyticsConsentEvent
 }
 
 func (e *Events) Subscribe(to Publisher) {
@@ -195,11 +192,12 @@ type ServicePublisher interface {
 }
 
 type ServiceEvents struct {
-	Connect        events.PublishSubcriber[events.DataConnect]
-	Disconnect     events.PublishSubcriber[events.DataDisconnect]
-	AccountCheck   events.PublishSubcriber[any]
-	UiItemsClick   events.PublishSubcriber[events.UiItemsAction]
-	DeviceLocation events.PublishSubcriber[core.Insights]
+	Connect         events.PublishSubcriber[events.DataConnect]
+	Disconnect      events.PublishSubcriber[events.DataDisconnect]
+	AccountCheck    events.PublishSubcriber[any]
+	UiItemsClick    events.PublishSubcriber[events.UiItemsAction]
+	DeviceLocation  events.PublishSubcriber[core.Insights]
+	FirstTimeOpened events.PublishSubcriber[any]
 }
 
 func (s *ServiceEvents) Subscribe(to ServicePublisher) {
@@ -243,15 +241,6 @@ type DebuggerEvents struct {
 
 func (m *DebuggerEvents) Subscribe(to DebuggerPublisher) {
 	m.DebuggerEvents.Subscribe(to.NotifyDebuggerEvent)
-}
-
-// analytics consent event
-type AnalyticsConsentPublisher interface {
-	NotifyAnalyticsConsent() error
-}
-
-type AnalyticsConsentEvent struct {
-	AnalyticsConsent events.PublishSubcriber[any]
 }
 
 // Login/logout changes

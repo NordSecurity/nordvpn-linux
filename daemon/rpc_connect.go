@@ -30,7 +30,6 @@ func isDedicatedIP(server core.Server) bool {
 
 // Connect initiates and handles the VPN connection process
 func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retErr error) {
-	r.events.Consent.AnalyticsConsent.Publish(struct{}{})
 	return r.connectWithContext(in, srv, pb.ConnectionSource_MANUAL)
 }
 
@@ -311,6 +310,7 @@ func (r *RPC) connect(
 		}
 	}
 	r.events.Service.Connect.Publish(event)
+	r.events.Service.FirstTimeOpened.Publish(struct{}{})
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnected, Data: data}); err != nil {
 		log.Println(internal.ErrorPrefix, err)
