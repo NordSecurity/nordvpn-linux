@@ -2,12 +2,14 @@
 package events
 
 import (
+	"log"
 	"net/http"
 	"net/netip"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state/types"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 // Handler is used to process messages.
@@ -210,3 +212,40 @@ type UiItemsAction struct {
 }
 
 type DataRecentsChanged struct{}
+
+// DisconnectCallback is called when Networker needs to disconnect when establishing a connection. This usually happens
+// in case of a connection refresh.
+type DisconnectCallback func(startTime time.Time, err error)
+
+type DisconnectSender struct {
+	eventTemplate DataDisconnect
+	publishFunc   func(message DataDisconnect)
+}
+
+func NewDisconnectSender(eventTemplate DataDisconnect, publishFunc func(DataDisconnect)) DisconnectSender {
+	return DisconnectSender{
+		eventTemplate: eventTemplate,
+		publishFunc:   publishFunc,
+	}
+}
+
+// PublishDisconnect publishes a disconnect event. The event status is based on the provided err. If err is nil, event
+// status will be set to StatusSuccess.
+func (d *DisconnectSender) PublishDisconnect(startTime time.Time, err error) {
+	if startTime.After(time.Now()) {
+		log.Println(internal.ErrorPrefix,
+			"start time for disconnect event is greater than current time, will skip the event")
+		return
+	}
+
+	status := StatusFailure
+	if err != nil {
+		status = StatusSuccess
+	}
+
+	d.eventTemplate.EventStatus = status
+	d.eventTemplate.Duration = time.Since(startTime)
+	d.eventTemplate.Error = err
+
+	d.publishFunc(d.eventTemplate)
+}

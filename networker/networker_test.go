@@ -8,6 +8,7 @@ import (
 	"net/netip"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
@@ -255,22 +256,25 @@ func (h *workingHostSetter) UnsetHosts() error {
 	return nil
 }
 
+var noopNetworkerCallback = func(startTime time.Time, err error) {}
+
 func TestCombined_Start(t *testing.T) {
 	category.Set(t, category.Unit)
 	tests := []struct {
-		name              string
-		gateway           routes.GatewayRetriever
-		allowlistRouter   routes.Service
-		dns               dns.Setter
-		vpn               vpn.VPN
-		fw                firewall.Service
-		allowlist         allowlist.Routing
-		devices           device.ListFunc
-		routing           routes.PolicyService
-		arpIgnore         bool
-		expectedARPIgnore bool
-		err               error
-		setARPIgnoreErr   error
+		name                     string
+		gateway                  routes.GatewayRetriever
+		allowlistRouter          routes.Service
+		dns                      dns.Setter
+		vpn                      vpn.VPN
+		fw                       firewall.Service
+		allowlist                allowlist.Routing
+		devices                  device.ListFunc
+		routing                  routes.PolicyService
+		arpIgnore                bool
+		expectedARPIgnore        bool
+		disconnectCallbackCalled bool
+		err                      error
+		setARPIgnoreErr          error
 	}{
 		{
 			name:            "nil vpn",
@@ -345,16 +349,17 @@ func TestCombined_Start(t *testing.T) {
 			err:             nil,
 		},
 		{
-			name:            "restart",
-			gateway:         workingGateway{},
-			allowlistRouter: workingRouter{},
-			dns:             &workingDNS{},
-			vpn:             &mock.ActiveVPN{},
-			fw:              &workingFirewall{},
-			allowlist:       &workingAllowlistRouting{},
-			devices:         workingDeviceList,
-			routing:         &workingRoutingSetup{},
-			err:             nil,
+			name:                     "restart",
+			gateway:                  workingGateway{},
+			allowlistRouter:          workingRouter{},
+			dns:                      &workingDNS{},
+			vpn:                      &mock.ActiveVPN{},
+			fw:                       &workingFirewall{},
+			allowlist:                &workingAllowlistRouting{},
+			devices:                  workingDeviceList,
+			routing:                  &workingRoutingSetup{},
+			disconnectCallbackCalled: true,
+			err:                      nil,
 		},
 		{
 			name:              "start with arp ignore",
@@ -371,18 +376,19 @@ func TestCombined_Start(t *testing.T) {
 			expectedARPIgnore: true,
 		},
 		{
-			name:              "restart with arp ignore",
-			gateway:           workingGateway{},
-			allowlistRouter:   workingRouter{},
-			dns:               &workingDNS{},
-			vpn:               &mock.ActiveVPN{},
-			fw:                &workingFirewall{},
-			allowlist:         &workingAllowlistRouting{},
-			devices:           workingDeviceList,
-			routing:           &workingRoutingSetup{},
-			err:               nil,
-			arpIgnore:         true,
-			expectedARPIgnore: true,
+			name:                     "restart with arp ignore",
+			gateway:                  workingGateway{},
+			allowlistRouter:          workingRouter{},
+			dns:                      &workingDNS{},
+			vpn:                      &mock.ActiveVPN{},
+			fw:                       &workingFirewall{},
+			allowlist:                &workingAllowlistRouting{},
+			devices:                  workingDeviceList,
+			routing:                  &workingRoutingSetup{},
+			err:                      nil,
+			arpIgnore:                true,
+			expectedARPIgnore:        true,
+			disconnectCallbackCalled: true,
 		},
 		{
 			name:            "start with arp ignore set error",
@@ -399,18 +405,19 @@ func TestCombined_Start(t *testing.T) {
 			setARPIgnoreErr: mock.ErrOnPurpose,
 		},
 		{
-			name:            "restart with arp ignore set error",
-			gateway:         workingGateway{},
-			allowlistRouter: workingRouter{},
-			dns:             &workingDNS{},
-			vpn:             &mock.ActiveVPN{},
-			fw:              &workingFirewall{},
-			allowlist:       &workingAllowlistRouting{},
-			devices:         workingDeviceList,
-			routing:         &workingRoutingSetup{},
-			err:             mock.ErrOnPurpose,
-			arpIgnore:       true,
-			setARPIgnoreErr: mock.ErrOnPurpose,
+			name:                     "restart with arp ignore set error",
+			gateway:                  workingGateway{},
+			allowlistRouter:          workingRouter{},
+			dns:                      &workingDNS{},
+			vpn:                      &mock.ActiveVPN{},
+			fw:                       &workingFirewall{},
+			allowlist:                &workingAllowlistRouting{},
+			devices:                  workingDeviceList,
+			routing:                  &workingRoutingSetup{},
+			err:                      mock.ErrOnPurpose,
+			arpIgnore:                true,
+			setARPIgnoreErr:          mock.ErrOnPurpose,
+			disconnectCallbackCalled: true,
 		},
 	}
 
@@ -440,6 +447,9 @@ func TestCombined_Start(t *testing.T) {
 				test.arpIgnore,
 				&arpIgnoreSetter,
 			)
+
+			disconnectCallbackCalled := false
+
 			err := netw.Start(
 				context.Background(),
 				vpn.Credentials{},
@@ -447,7 +457,11 @@ func TestCombined_Start(t *testing.T) {
 				config.NewAllowlist(nil, nil, nil),
 				[]string{"1.1.1.1"},
 				true,
+				func(startTime time.Time, err error) {
+					disconnectCallbackCalled = true
+				},
 			)
+			assert.Equal(t, test.disconnectCallbackCalled, disconnectCallbackCalled)
 			assert.ErrorIs(t, err, test.err, test.name)
 			assert.Equal(t, test.expectedARPIgnore, arpIgnoreSetter.IsSet, "ARP ignore not set to expected value.")
 		})
@@ -1311,6 +1325,7 @@ func TestCombined_Reconnect(t *testing.T) {
 				config.NewAllowlist(nil, nil, nil),
 				[]string{"1.1.1.1"},
 				test.enableLan,
+				noopNetworkerCallback,
 			)
 
 			// simulate network change event and refreshVPN
@@ -1880,6 +1895,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
+					noopNetworkerCallback,
 				)
 			},
 			lanAvailable: false,
@@ -1914,6 +1930,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
+					noopNetworkerCallback,
 				)
 				c.SetLanDiscovery(true)
 			},
@@ -1930,6 +1947,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
+					noopNetworkerCallback,
 				)
 			},
 			lanAvailable: true,
@@ -1954,6 +1972,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
+					noopNetworkerCallback,
 				)
 				c.SetLanDiscovery(false)
 			},
@@ -1969,6 +1988,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
+					noopNetworkerCallback,
 				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 			},
@@ -1984,6 +2004,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
+					noopNetworkerCallback,
 				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)
@@ -2000,6 +2021,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
+					noopNetworkerCallback,
 				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)
@@ -2017,6 +2039,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
+					noopNetworkerCallback,
 				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)
@@ -2035,6 +2058,7 @@ func TestExitNodeLanAvailability(t *testing.T) {
 					config.Allowlist{},
 					nil,
 					true,
+					noopNetworkerCallback,
 				)
 				_ = c.SetKillSwitch(config.Allowlist{})
 				c.SetLanDiscovery(true)

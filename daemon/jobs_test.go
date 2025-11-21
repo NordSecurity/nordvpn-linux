@@ -17,6 +17,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
@@ -186,6 +187,7 @@ func (meshNetworker) Start(
 	config.Allowlist,
 	config.DNS,
 	bool,
+	events.DisconnectCallback,
 ) error {
 	return nil
 }
