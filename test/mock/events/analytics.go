@@ -34,5 +34,3 @@ func (a *Analytics) Disable() error {
 
 	return nil
 }
-
-func (*Analytics) Init() error { return nil }

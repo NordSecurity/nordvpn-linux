@@ -181,6 +181,11 @@ func (c *workingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPServic
 	return c.dedicatedIPService, nil
 }
 
+type mockAnalytics struct{}
+
+func (*mockAnalytics) Enable() error  { return nil }
+func (*mockAnalytics) Disable() error { return nil }
+
 type mockEndpointResolver struct{ ip netip.Addr }
 
 func newEndpointResolverMock(ip netip.Addr) mockEndpointResolver {
