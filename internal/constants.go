@@ -99,7 +99,7 @@ const (
 
 	NordWhisperInterfaceName = "qtun"
 
-	MaxBytesLimit int64 = 1024*1024*10 + 1 // 10MB + 1 because we allow for values which are equal to the limit
+	MaxBytesLimit int64 = 1024*1024*20 + 1 // 10MB + 1 because we allow for values which are equal to the limit
 )
 
 var (
@@ -183,7 +183,6 @@ func getHomeDirPath(homeDirectory string) (string, error) {
 // GetConfigDirPath returns the directory used to store local user config
 func GetConfigDirPath(homeDirectory string) (string, error) {
 	homeDirectory, err := getHomeDirPath(homeDirectory)
-
 	if err != nil {
 		return "", err
 	}
@@ -199,7 +198,6 @@ func GetConfigDirPath(homeDirectory string) (string, error) {
 // GetCacheDirPath returns the directory used to store local user logs
 func GetCacheDirPath(homeDirectory string) (string, error) {
 	homeDirectory, err := getHomeDirPath(homeDirectory)
-
 	if err != nil {
 		return "", err
 	}
