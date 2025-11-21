@@ -3,14 +3,11 @@ package daemon
 import (
 	"context"
 	"log"
-	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
-
-var callInitOnceGuard sync.Once
 
 // SetAnalytics
 func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.Payload, error) {
