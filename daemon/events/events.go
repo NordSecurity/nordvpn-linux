@@ -42,6 +42,7 @@ func NewEventsEmpty() *Events {
 		&subs.Subject[events.DataAuthorization]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[events.DebuggerEvent]{},
+		&subs.Subject[any]{},
 	)
 }
 
@@ -71,6 +72,7 @@ func NewEvents(
 	logout events.PublishSubcriber[events.DataAuthorization],
 	mfa events.PublishSubcriber[bool],
 	devLogs events.PublishSubcriber[events.DebuggerEvent],
+	analyticsConsent events.PublishSubcriber[any],
 ) *Events {
 	return &Events{
 		Settings: &SettingsEvents{
@@ -106,6 +108,9 @@ func NewEvents(
 		Debugger: &DebuggerEvents{
 			DebuggerEvents: devLogs,
 		},
+		Consent: &AnalyticsConsentEvent{
+			AnalyticsConsent: analyticsConsent,
+		},
 	}
 }
 
@@ -114,6 +119,7 @@ type Events struct {
 	Service  *ServiceEvents
 	User     *LoginEvents
 	Debugger *DebuggerEvents
+	Consent  *AnalyticsConsentEvent
 }
 
 func (e *Events) Subscribe(to Publisher) {
@@ -237,6 +243,15 @@ type DebuggerEvents struct {
 
 func (m *DebuggerEvents) Subscribe(to DebuggerPublisher) {
 	m.DebuggerEvents.Subscribe(to.NotifyDebuggerEvent)
+}
+
+// analytics consent event
+type AnalyticsConsentPublisher interface {
+	NotifyAnalyticsConsent() error
+}
+
+type AnalyticsConsentEvent struct {
+	AnalyticsConsent events.PublishSubcriber[any]
 }
 
 // Login/logout changes

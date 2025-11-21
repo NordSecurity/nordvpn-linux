@@ -790,7 +790,7 @@ func (s *Subscriber) fetchAndSetVpnServiceExpiration() error {
 }
 
 func (s *Subscriber) OnFirstOpen() error {
-	return s.response(moose.NordvpnappSendServiceQualityStatusInstall(moose.NordvpnappEventStatusSuccess, nil))
+	return s.response(moose.NordvpnappSendServiceQualityStatusFirstOpenApp(-1, nil))
 }
 
 func (s *Subscriber) fetchSubscriptions() error {
