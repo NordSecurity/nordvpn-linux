@@ -60,20 +60,6 @@ func (r *RecentConnectionsStore) Get() ([]Model, error) {
 	return conns, nil
 }
 
-func (r *RecentConnectionsStore) find(model Model, list []Model) int {
-	return slices.IndexFunc(list, func(m Model) bool {
-		return m.Country == model.Country &&
-			m.City == model.City &&
-			m.Group == model.Group &&
-			m.CountryCode == model.CountryCode &&
-			m.SpecificServerName == model.SpecificServerName &&
-			m.SpecificServer == model.SpecificServer &&
-			m.ConnectionType == model.ConnectionType &&
-			slices.Equal(m.ServerTechnologies, model.ServerTechnologies) &&
-			m.IsVirtual == model.IsVirtual
-	})
-}
-
 // Add adds a new VPN connection to store if it does not exist yet
 // New connections are placed at the beginning of the store
 func (r *RecentConnectionsStore) Add(model Model) error {
@@ -97,12 +83,31 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 
 	// Sort server technologies, so that the order does not affect equality checks
 	slices.Sort(model.ServerTechnologies)
-	index := r.find(model, connections)
-	if index != -1 {
-		connections = slices.Delete(connections, index, index+1)
-	}
 
-	connections = slices.Insert(connections, 0, model)
+	// Find matches that have the same connection model with technologies and connection type
+	// considered
+	matches := NewFilter(model, connections).
+		WithSpecificServerOnlyFor([]config.ServerSelectionRule{
+			config.ServerSelectionRule_SPECIFIC_SERVER,
+			config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
+		}).
+		WithTechnologies(model.ServerTechnologies).
+		Apply()
+
+	// For now we select input model as the entry to insert
+	modelToInsert := model
+	if len(matches) > 0 {
+		// Found existing entry - move it to the front
+		modelToInsert = matches[0]
+		index := slices.IndexFunc(connections, func(c Model) bool {
+			return c.Equals(modelToInsert)
+		})
+		if index != -1 {
+			connections = slices.Delete(connections, index, index+1)
+		}
+	}
+	connections = slices.Insert(connections, 0, modelToInsert)
+
 	if len(connections) > maxRecentConnections {
 		connections = connections[:maxRecentConnections]
 	}

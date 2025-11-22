@@ -3,16 +3,13 @@ package daemon
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/features"
@@ -209,6 +206,7 @@ func (r *RPC) connect(
 		Protocol:                cfg.AutoConnectData.Protocol,
 		Technology:              cfg.Technology,
 		ThreatProtectionLite:    cfg.AutoConnectData.ThreatProtectionLite,
+		IsObfuscated:            cfg.AutoConnectData.Obfuscate,
 		IsPostQuantum:           cfg.AutoConnectData.PostquantumVpn,
 		DurationMs:              getElapsedTime(connectingStartTime),
 		EventStatus:             events.StatusAttempt,
@@ -293,12 +291,7 @@ func (r *RPC) connect(
 	event.DurationMs = getElapsedTime(connectingStartTime)
 
 	if isRecentConnectionSupported(event.TargetServerSelection) {
-		var serverTechs []core.ServerTechnology
-		for _, v := range server.Technologies {
-			serverTechs = append(serverTechs, v.ID)
-		}
-
-		recentModel, err := buildRecentConnectionModel(serverTechs, event, parameters)
+		recentModel, err := buildRecentConnectionModel(event, parameters, server, r.dm, cfg)
 		if err != nil {
 			log.Printf("%s Failed to build recent VPN connection model: %s\n", internal.WarningPrefix, err)
 		} else {
@@ -316,12 +309,6 @@ func (r *RPC) connect(
 	}
 
 	return false, nil
-}
-
-// isRecentConnectionSupported returns true if server connection can be used for reconnection,
-// otherwise returns false
-func isRecentConnectionSupported(rule config.ServerSelectionRule) bool {
-	return rule != config.ServerSelectionRule_RECOMMENDED && rule != config.ServerSelectionRule_NONE
 }
 
 // getElapsedTime calculates the time elapsed since the given start time in milliseconds.
@@ -356,75 +343,6 @@ func determineTargetServerGroup(server *core.Server, parameters ServerParameters
 	}
 
 	return ""
-}
-
-// buildRecentConnectionModel creates a recent connection model
-func buildRecentConnectionModel(
-	serverTechs []core.ServerTechnology,
-	event events.DataConnect,
-	parameters ServerParameters,
-) (recents.Model, error) {
-	extractSpecificServerName := func(domain string) string {
-		var name string
-		if domain != "" {
-			parts := strings.Split(domain, ".")
-			if len(parts) > 0 && parts[0] != "" {
-				name = parts[0]
-			}
-		}
-		return name
-	}
-
-	recentModel := recents.Model{
-		ConnectionType:     event.TargetServerSelection,
-		ServerTechnologies: serverTechs,
-		IsVirtual:          event.IsVirtualLocation,
-	}
-
-	switch recentModel.ConnectionType {
-	case config.ServerSelectionRule_GROUP:
-		// No geographic data needed
-		recentModel.Group = parameters.Group
-
-	case config.ServerSelectionRule_CITY:
-		// Needs city, country info
-		recentModel.City = event.TargetServerCity
-		recentModel.CountryCode = event.TargetServerCountryCode
-		recentModel.Country = event.TargetServerCountry
-
-	case config.ServerSelectionRule_COUNTRY:
-		// Needs just country info
-		recentModel.CountryCode = event.TargetServerCountryCode
-		recentModel.Country = event.TargetServerCountry
-
-	case config.ServerSelectionRule_COUNTRY_WITH_GROUP:
-		// Needs group, country info
-		recentModel.Group = parameters.Group
-		recentModel.CountryCode = event.TargetServerCountryCode
-		recentModel.Country = event.TargetServerCountry
-
-	case config.ServerSelectionRule_SPECIFIC_SERVER:
-		// Needs server, country, city info
-		recentModel.SpecificServer = extractSpecificServerName(event.TargetServerDomain)
-		recentModel.SpecificServerName = event.TargetServerName
-		recentModel.CountryCode = event.TargetServerCountryCode
-		recentModel.Country = event.TargetServerCountry
-		recentModel.City = event.TargetServerCity
-
-	case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
-		// Needs server, group, country, city info
-		recentModel.Group = parameters.Group
-		recentModel.SpecificServer = extractSpecificServerName(event.TargetServerDomain)
-		recentModel.SpecificServerName = event.TargetServerName
-		recentModel.CountryCode = event.TargetServerCountryCode
-		recentModel.Country = event.TargetServerCountry
-		recentModel.City = event.TargetServerCity
-
-	case config.ServerSelectionRule_NONE, config.ServerSelectionRule_RECOMMENDED:
-		return recents.Model{}, fmt.Errorf("unexpected connection type in recent connections: %d", recentModel.ConnectionType)
-	}
-
-	return recentModel, nil
 }
 
 type FactoryFunc func(config.Technology) (vpn.VPN, error)

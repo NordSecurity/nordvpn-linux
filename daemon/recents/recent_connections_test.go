@@ -176,58 +176,36 @@ func TestRecentConnectionsStore_Clean(t *testing.T) {
 	assert.Empty(t, connections)
 }
 
-func TestRecentConnectionsStore_Find_ExactMatch(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
-
-	models := []Model{
-		{Country: "USA", City: "New York", ConnectionType: config.ServerSelectionRule_CITY},
-		{Country: "Germany", ConnectionType: config.ServerSelectionRule_COUNTRY},
-		{ConnectionType: config.ServerSelectionRule_RECOMMENDED},
-		{SpecificServerName: "uk1234", ConnectionType: config.ServerSelectionRule_SPECIFIC_SERVER},
-	}
-
-	assert.Equal(t, 0, store.find(models[0], models))
-	assert.Equal(t, 1, store.find(models[1], models))
-	assert.Equal(t, 2, store.find(models[2], models))
-	assert.Equal(t, 3, store.find(models[3], models))
-
-	nonExisting := Model{
-		Country:        "France",
-		ConnectionType: config.ServerSelectionRule_COUNTRY,
-	}
-	assert.Equal(t, -1, store.find(nonExisting, models))
-}
-
 func TestRecentConnectionsStore_Find_DifferentServersAreDifferent(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs)
 
-	cityConn1 := Model{
-		Country:        "Germany",
-		City:           "Berlin",
-		SpecificServer: "de123",
-		ConnectionType: config.ServerSelectionRule_CITY,
+	// For SPECIFIC_SERVER connection type, different servers should be different
+	specificConn1 := Model{
+		Country:            "Germany",
+		City:               "Berlin",
+		SpecificServerName: "de123",
+		SpecificServer:     "de123",
+		ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER,
 	}
-	cityConn2 := Model{
-		Country:        "Germany",
-		City:           "Berlin",
-		SpecificServer: "de456",
-		ConnectionType: config.ServerSelectionRule_CITY,
+	specificConn2 := Model{
+		Country:            "Germany",
+		City:               "Berlin",
+		SpecificServerName: "de456",
+		SpecificServer:     "de456",
+		ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER,
 	}
 
-	err := store.Add(cityConn1)
+	err := store.Add(specificConn1)
 	require.NoError(t, err)
-	err = store.Add(cityConn2)
+	err = store.Add(specificConn2)
 	require.NoError(t, err)
 
 	connections, err := store.Get()
 	require.NoError(t, err)
-	assert.Len(t, connections, 2)
+	assert.Len(t, connections, 2, "Different specific servers should create separate entries")
 }
 
 func TestRecentConnectionsStore_Find_AllFieldsMustMatch(t *testing.T) {
@@ -236,6 +214,7 @@ func TestRecentConnectionsStore_Find_AllFieldsMustMatch(t *testing.T) {
 	fs := mockconfig.NewFilesystemMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs)
 
+	// Use SPECIFIC_SERVER connection type so all fields are compared
 	base := Model{
 		Country:            "USA",
 		City:               "New York",
@@ -243,7 +222,7 @@ func TestRecentConnectionsStore_Find_AllFieldsMustMatch(t *testing.T) {
 		CountryCode:        "US",
 		SpecificServerName: "US #1234",
 		SpecificServer:     "us1234",
-		ConnectionType:     config.ServerSelectionRule_CITY,
+		ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER,
 		IsVirtual:          false,
 	}
 
@@ -252,7 +231,7 @@ func TestRecentConnectionsStore_Find_AllFieldsMustMatch(t *testing.T) {
 		{Country: base.Country, City: "Los Angeles", Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType, IsVirtual: base.IsVirtual},
 		{Country: base.Country, City: base.City, Group: config.ServerGroup_DOUBLE_VPN, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType, IsVirtual: base.IsVirtual},
 		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: "CA", SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType, IsVirtual: base.IsVirtual},
-		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: "us #5678", SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType, IsVirtual: base.IsVirtual},
+		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: "US #5678", SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType, IsVirtual: base.IsVirtual},
 		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: "us5678", ConnectionType: base.ConnectionType, IsVirtual: base.IsVirtual},
 		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: config.ServerSelectionRule_COUNTRY, IsVirtual: base.IsVirtual},
 		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType, IsVirtual: !base.IsVirtual},
@@ -268,7 +247,7 @@ func TestRecentConnectionsStore_Find_AllFieldsMustMatch(t *testing.T) {
 
 	connections, err := store.Get()
 	require.NoError(t, err)
-	assert.Len(t, connections, len(variations)+1)
+	assert.Len(t, connections, len(variations)+1, "All variations should create separate entries when using SPECIFIC_SERVER type")
 }
 
 func TestRecentConnectionsStore_Persistence(t *testing.T) {
@@ -544,6 +523,333 @@ func TestRecentConnectionsStore_Load_Error(t *testing.T) {
 	assert.Contains(t, err.Error(), "reading recent connections store")
 	assert.Contains(t, err.Error(), "file not found")
 	assert.Nil(t, connections)
+}
+
+func TestRecentConnectionsStore_Add_ServerTechnologiesSorting(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	conn1 := Model{
+		Country:            "Germany",
+		ConnectionType:     config.ServerSelectionRule_COUNTRY,
+		ServerTechnologies: []core.ServerTechnology{3, 1, 2},
+	}
+
+	err := store.Add(conn1)
+	require.NoError(t, err)
+
+	connections, err := store.Get()
+	require.NoError(t, err)
+	require.Len(t, connections, 1)
+
+	assert.Equal(t, []core.ServerTechnology{1, 2, 3}, connections[0].ServerTechnologies, "ServerTechnologies should be sorted")
+
+	conn2 := Model{
+		Country:            "Germany",
+		ConnectionType:     config.ServerSelectionRule_COUNTRY,
+		ServerTechnologies: []core.ServerTechnology{2, 3, 1},
+	}
+
+	err = store.Add(conn2)
+	require.NoError(t, err)
+
+	connections, err = store.Get()
+	require.NoError(t, err)
+	require.Len(t, connections, 1, "Should have only one connection as they match after sorting")
+	assert.Equal(t, []core.ServerTechnology{1, 2, 3}, connections[0].ServerTechnologies)
+}
+
+func TestRecentConnectionsStore_Get_LoadErrorRecreatesFile(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	fs.AddFile("/test/path", []byte("corrupted data"))
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	connections, err := store.Get()
+
+	require.NoError(t, err, "Get should succeed after recreating file")
+	assert.Empty(t, connections)
+
+	data, err := fs.ReadFile("/test/path")
+	require.NoError(t, err)
+	assert.Equal(t, []byte("[]"), data, "File should be recreated with empty array")
+}
+
+func TestRecentConnectionsStore_Get_LoadErrorWithSaveError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	fs.AddFile("/test/path", []byte("corrupted data"))
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	fs.WriteErr = errors.New("write permission denied")
+
+	connections, err := store.Get()
+
+	assert.Error(t, err)
+	assert.Nil(t, connections)
+	assert.Contains(t, err.Error(), "getting recent vpn connections")
+	assert.Contains(t, err.Error(), "recreating recent connections file")
+}
+
+func TestRecentConnectionsStore_Add_LoadErrorRecreatesFile(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	fs.AddFile("/test/path", []byte("corrupted data"))
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	newConn := Model{
+		Country:        "Spain",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+
+	err := store.Add(newConn)
+	require.NoError(t, err, "Add should succeed after recreating file")
+
+	connections, err := store.Get()
+	require.NoError(t, err)
+	require.Len(t, connections, 1)
+	assert.Equal(t, newConn, connections[0])
+}
+
+func TestRecentConnectionsStore_Add_LoadErrorWithSaveError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	fs.AddFile("/test/path", []byte("corrupted data"))
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	fs.WriteErr = errors.New("write permission denied")
+
+	newConn := Model{
+		Country:        "Spain",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+
+	err := store.Add(newConn)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "adding new recent vpn connection")
+	assert.Contains(t, err.Error(), "recreating recent connections file")
+}
+
+func TestRecentConnectionsStore_Clean_WriteError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	conn := Model{
+		Country:        "Norway",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+	err := store.Add(conn)
+	require.NoError(t, err)
+
+	fs.WriteErr = errors.New("permission denied")
+
+	err = store.Clean()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "cleaning existing recent vpn connections")
+	assert.Contains(t, err.Error(), "permission denied")
+}
+
+func TestRecentConnectionsStore_Add_SpecificServerWithGroup(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	conn1 := Model{
+		SpecificServerName: "uk1234",
+		SpecificServer:     "uk1234",
+		Group:              config.ServerGroup_P2P,
+		ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
+	}
+
+	conn2 := Model{
+		SpecificServerName: "uk1234",
+		SpecificServer:     "uk1234",
+		Group:              config.ServerGroup_DOUBLE_VPN,
+		ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
+	}
+
+	err := store.Add(conn1)
+	require.NoError(t, err)
+
+	err = store.Add(conn2)
+	require.NoError(t, err)
+
+	connections, err := store.Get()
+	require.NoError(t, err)
+	assert.Len(t, connections, 2, "Different groups should create separate entries")
+}
+
+func TestRecentConnectionsStore_CheckExistence_WriteError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	fs.WriteErr = errors.New("permission denied")
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	err := store.checkExistence()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "creating new recent vpn connections store")
+	assert.Contains(t, err.Error(), "permission denied")
+}
+
+func TestRecentConnectionsStore_Get_CheckExistenceError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	// Set write error to make checkExistence fail when trying to create the file
+	fs.WriteErr = errors.New("permission denied")
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	connections, err := store.Get()
+
+	assert.Error(t, err)
+	assert.Nil(t, connections)
+	assert.Contains(t, err.Error(), "getting recent connections")
+	assert.Contains(t, err.Error(), "permission denied")
+}
+
+func TestRecentConnectionsStore_Add_CheckExistenceError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	fs.WriteErr = errors.New("permission denied")
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	conn := Model{
+		Country:        "Spain",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+
+	err := store.Add(conn)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "adding new vpn connection")
+	assert.Contains(t, err.Error(), "permission denied")
+}
+
+func TestRecentConnectionsStore_Add_SaveErrorAfterSuccessfulLoad(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	// First add a connection successfully
+	conn1 := Model{
+		Country:        "Germany",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+	err := store.Add(conn1)
+	require.NoError(t, err)
+
+	// Now set write error to fail on the next save
+	fs.WriteErr = errors.New("disk full")
+
+	conn2 := Model{
+		Country:        "France",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+
+	err = store.Add(conn2)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "adding new recent vpn connection")
+	assert.Contains(t, err.Error(), "disk full")
+}
+
+func TestRecentConnectionsStore_Add_DifferentConnectionTypes(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs)
+
+	tests := []struct {
+		name           string
+		conn1          Model
+		conn2          Model
+		expectSeparate bool
+		description    string
+	}{
+		{
+			name: "CITY connections with different specific servers are treated as same",
+			conn1: Model{
+				Country:        "Germany",
+				City:           "Berlin",
+				SpecificServer: "de123",
+				ConnectionType: config.ServerSelectionRule_CITY,
+			},
+			conn2: Model{
+				Country:        "Germany",
+				City:           "Berlin",
+				SpecificServer: "de456",
+				ConnectionType: config.ServerSelectionRule_CITY,
+			},
+			expectSeparate: false,
+			description:    "CITY type excludes specific server fields from matching",
+		},
+		{
+			name: "COUNTRY connections with different specific servers are treated as same",
+			conn1: Model{
+				Country:        "France",
+				SpecificServer: "fr123",
+				ConnectionType: config.ServerSelectionRule_COUNTRY,
+			},
+			conn2: Model{
+				Country:        "France",
+				SpecificServer: "fr456",
+				ConnectionType: config.ServerSelectionRule_COUNTRY,
+			},
+			expectSeparate: false,
+			description:    "COUNTRY type excludes specific server fields from matching",
+		},
+		{
+			name: "RECOMMENDED connections are all treated as same",
+			conn1: Model{
+				SpecificServer: "us123",
+				ConnectionType: config.ServerSelectionRule_RECOMMENDED,
+			},
+			conn2: Model{
+				SpecificServer: "uk456",
+				ConnectionType: config.ServerSelectionRule_RECOMMENDED,
+			},
+			expectSeparate: false,
+			description:    "RECOMMENDED type excludes specific server fields from matching",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Clean store before each test
+			err := store.Clean()
+			require.NoError(t, err)
+
+			err = store.Add(tt.conn1)
+			require.NoError(t, err)
+
+			err = store.Add(tt.conn2)
+			require.NoError(t, err)
+
+			connections, err := store.Get()
+			require.NoError(t, err)
+
+			if tt.expectSeparate {
+				assert.Len(t, connections, 2, tt.description)
+			} else {
+				assert.Len(t, connections, 1, tt.description)
+			}
+		})
+	}
 }
 
 func TestRecentConnectionsStore_AddPending_StoresPendingConnection(t *testing.T) {

@@ -441,7 +441,8 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 			expectedRecentConn: &recents.Model{
 				Country:            "Germany",
 				CountryCode:        "DE",
-				ConnectionType:     config.ServerSelectionRule_COUNTRY,
+				City:               "Berlin",
+				ConnectionType:     config.ServerSelectionRule_CITY,
 				Group:              config.ServerGroup_UNDEFINED,
 				ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
 			},
@@ -466,6 +467,7 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 			expectedRecentConn: &recents.Model{
 				Country:            "Germany",
 				CountryCode:        "DE",
+				City:               "Berlin",
 				SpecificServer:     "de3",
 				SpecificServerName: "Germany #3",
 				ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER,
@@ -498,8 +500,9 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 			expectedRecentConn: &recents.Model{
 				Country:            "Germany",
 				CountryCode:        "DE",
+				City:               "Berlin",
 				Group:              config.ServerGroup_P2P,
-				ConnectionType:     config.ServerSelectionRule_COUNTRY_WITH_GROUP,
+				ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 				ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
 			},
 			shouldAddToRecent: true,

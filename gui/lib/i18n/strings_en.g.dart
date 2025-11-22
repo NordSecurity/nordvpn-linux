@@ -1460,6 +1460,18 @@ class TranslationsUiEn {
 	/// en: 'P2P'
 	String get p2p => 'P2P';
 
+	/// en: 'Europe'
+	String get europe => 'Europe';
+
+	/// en: 'The Americas'
+	String get theAmericas => 'The Americas';
+
+	/// en: 'Asia Pacific'
+	String get asiaPacific => 'Asia Pacific';
+
+	/// en: 'Africa, the Middle East, and India'
+	String get africaTheMiddleEastAndIndia => 'Africa, the Middle East, and India';
+
 	/// en: 'Obfuscated'
 	String get obfuscated => 'Obfuscated';
 
@@ -1535,8 +1547,8 @@ class TranslationsUiEn {
 	/// en: 'Automatically connect to the fastest available server or your chosen server location when the app starts.'
 	String get autoConnectDescription => 'Automatically connect to the fastest available server or your chosen server location when the app starts.';
 
-	/// en: 'Fastest server'
-	String get fastestServer => 'Fastest server';
+	/// en: 'Fastest'
+	String get fastestServer => 'Fastest';
 
 	/// en: 'Change'
 	String get change => 'Change';
@@ -1939,6 +1951,9 @@ class TranslationsUiEn {
 
 	/// en: 'Using third-party DNS may limit website availability. For the best browsing experience, use our default settings.'
 	String get customDnsWarning => 'Using third-party DNS may limit website availability. For the best browsing experience, use our default settings.';
+
+	/// en: 'Recent connections'
+	String get recentConnections => 'Recent connections';
 }
 
 /// Flat map(s) containing all translations.
@@ -2408,6 +2423,10 @@ extension on Translations {
 			case 'ui.doubleVpn': return 'Double VPN';
 			case 'ui.onionOverVpn': return 'Onion over VPN';
 			case 'ui.p2p': return 'P2P';
+			case 'ui.europe': return 'Europe';
+			case 'ui.theAmericas': return 'The Americas';
+			case 'ui.asiaPacific': return 'Asia Pacific';
+			case 'ui.africaTheMiddleEastAndIndia': return 'Africa, the Middle East, and India';
 			case 'ui.obfuscated': return 'Obfuscated';
 			case 'ui.selectServerForDip': return 'Pick a location for your IP';
 			case 'ui.selectLocation': return 'Select location';
@@ -2433,7 +2452,7 @@ extension on Translations {
 			case 'ui.vpnConnection': return 'VPN connection';
 			case 'ui.vpnConnectionSubtitle': return 'Auto-connect, Kill Switch, protocol';
 			case 'ui.autoConnectDescription': return 'Automatically connect to the fastest available server or your chosen server location when the app starts.';
-			case 'ui.fastestServer': return 'Fastest server';
+			case 'ui.fastestServer': return 'Fastest';
 			case 'ui.change': return 'Change';
 			case 'ui.nordLynx': return 'NordLynx';
 			case 'ui.openVpnTcp': return 'OpenVPN (TCP)';
@@ -2568,6 +2587,7 @@ extension on Translations {
 			case 'ui.termsAgreementDescription': return 'By continuing to use this app, you agree to our terms and how we handle your data. To read the terms and privacy policy check the links below.';
 			case 'ui.readMore': return 'Read more';
 			case 'ui.customDnsWarning': return 'Using third-party DNS may limit website availability. For the best browsing experience, use our default settings.';
+			case 'ui.recentConnections': return 'Recent connections';
 			default: return null;
 		}
 	}

@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/constants.dart';
@@ -23,6 +24,7 @@ import 'package:nordvpn/widgets/dialog_factory.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:nordvpn/widgets/loading_indicator.dart';
 import 'package:nordvpn/widgets/searchable_servers_list.dart';
+import 'package:nordvpn/vpn/recent_connections_list.dart';
 
 final class ServerListWidgetKeys {
   ServerListWidgetKeys._();
@@ -33,6 +35,7 @@ final class ServerListWidgetKeys {
   static const dedicatedIp = Key("serverListDedicatedIP");
   static const search = Key("serverListSearch");
   static const countriesServersList = Key("serverListCountries");
+  static const recentConnections = Key("recentConnections");
 }
 
 // ServersListCard displays the list of servers from the VPN screen
@@ -43,6 +46,7 @@ final class ServersListCard extends StatefulWidget {
   final bool enabled;
   final bool allowServerNameSearch;
   final bool withQuickConnectTile;
+  final bool withRecentConnectionsWidget;
 
   ServersListCard({
     super.key,
@@ -52,6 +56,7 @@ final class ServersListCard extends StatefulWidget {
     this.enabled = true,
     this.allowServerNameSearch = true,
     this.withQuickConnectTile = false,
+    this.withRecentConnectionsWidget = false,
   }) : imagesManager = imagesManager ?? sl(),
        itemFactory = itemFactory ?? sl();
 
@@ -75,7 +80,7 @@ final class _ServersListCardState extends State<ServersListCard> {
             .watch(serversListControllerProvider)
             .when(
               loading: () => const LoadingIndicator(),
-              error: (_, __) => _buildError(context, ref),
+              error: (_, _) => _buildError(context, ref),
               data: (serversList) {
                 return Opacity(
                   opacity: widget.enabled ? 1.0 : 0.5,
@@ -100,6 +105,7 @@ final class _ServersListCardState extends State<ServersListCard> {
       buttonText: t.ui.retry,
       onPressed: () async {
         await ref.read(serversListControllerProvider.notifier).refetch();
+        return;
       },
     );
   }
@@ -113,57 +119,80 @@ final class _ServersListCardState extends State<ServersListCard> {
         serversList.standardServersList.isEmpty &&
         serversList.obfuscatedServersList.isNotEmpty;
 
-    return (!_showSearchView)
+    final serverSelectionView = (!_showSearchView)
         ? _buildTabBarView(context, serversList, ref, isObfuscationEnabled)
         : _buildSearchList(context, serversList, ref, isObfuscationEnabled);
+
+    return Column(
+      spacing: context.appTheme.verticalSpaceSmall,
+      children: [
+        if (isObfuscationEnabled)
+          _showObfuscatedMessage(context, t.ui.turnOffObfuscationLocations),
+        Expanded(child: serverSelectionView),
+      ],
+    );
   }
 
-  DefaultTabController _buildTabBarView(
+  Widget _buildTabBarView(
     BuildContext context,
     ServersList serversList,
     WidgetRef ref,
     bool isObfuscationEnabled,
   ) {
-    final appTheme = context.appTheme;
-
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: TabBar(
-                  isScrollable: true,
-                  tabs: [
-                    Tab(text: t.ui.countries),
-                    Tab(
-                      key: ServerListWidgetKeys.specialtyServersTab,
-                      text: t.ui.specialServers,
+    return Column(
+      children: [
+        if (widget.withRecentConnectionsWidget)
+          RecentConnectionsList(
+            key: ServerListWidgetKeys.recentConnections,
+            onSelected: widget.onSelected,
+          ),
+        Expanded(
+          child: DefaultTabController(
+            length: 2,
+            child: Column(
+              spacing: context.appTheme.verticalSpaceSmall,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TabBar(
+                        isScrollable: true,
+                        tabs: [
+                          Tab(text: t.ui.countries),
+                          Tab(
+                            key: ServerListWidgetKeys.specialtyServersTab,
+                            text: t.ui.specialServers,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(right: context.appTheme.padding),
+                      child: IconButton(
+                        key: ServerListWidgetKeys.search,
+                        icon: DynamicThemeImage("search.svg"),
+                        onPressed: () => setState(() => _showSearchView = true),
+                      ),
                     ),
                   ],
                 ),
-              ),
-              Padding(
-                padding: EdgeInsets.only(right: appTheme.padding),
-                child: IconButton(
-                  key: ServerListWidgetKeys.search,
-                  icon: DynamicThemeImage("search.svg"),
-                  onPressed: () => setState(() => _showSearchView = true),
+                Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: context.appTheme.dividerColor,
                 ),
-              ),
-            ],
-          ),
-          Divider(height: 1, thickness: 1, color: appTheme.dividerColor),
-          Expanded(
-            child: _buildTabsWithServers(
-              serversList,
-              ref,
-              isObfuscationEnabled,
+                Expanded(
+                  child: _buildTabsWithServers(
+                    serversList,
+                    ref,
+                    isObfuscationEnabled,
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -196,8 +225,6 @@ final class _ServersListCardState extends State<ServersListCard> {
 
     return Column(
       children: [
-        if (isObfuscationEnabled)
-          _showObfuscatedMessage(context, t.ui.turnOffObfuscationLocations),
         Expanded(
           child: ListView.builder(
             key: ServerListWidgetKeys.countriesServersList,
@@ -266,8 +293,6 @@ final class _ServersListCardState extends State<ServersListCard> {
 
     return Column(
       children: [
-        if (isObfuscatedOn)
-          _showObfuscatedMessage(context, t.ui.turnOffObfuscationServerTypes),
         Expanded(
           child: ListView.builder(
             itemCount: specialtyServersOrder.length,
@@ -445,6 +470,7 @@ final class _ServersListCardState extends State<ServersListCard> {
         },
       ),
       serversList: serversList,
+      searchTextController: _searchTextController,
       specialtyServer: isObfuscationEnabled ? ServerType.obfuscated : null,
       onTap: (args) => widget.onSelected(args),
       allowServerNameSearch: widget.allowServerNameSearch,
@@ -455,15 +481,21 @@ final class _ServersListCardState extends State<ServersListCard> {
     final appTheme = context.appTheme;
     final serversListTheme = context.serversListTheme;
     return Container(
-      padding: EdgeInsets.all(appTheme.verticalSpaceMedium),
+      padding: EdgeInsets.symmetric(
+        horizontal: appTheme.horizontalSpace,
+        vertical: appTheme.verticalSpaceVerySmall,
+      ),
       color: serversListTheme.obfuscatedItemBackgroundColor,
       child: Row(
-        spacing: appTheme.verticalSpaceLarge,
+        spacing: appTheme.horizontalSpace,
         children: [
           Expanded(child: Text(message, style: appTheme.body)),
           TextButton(
             onPressed: () =>
                 context.navigateToRoute(AppRoute.settingsSecurityAndPrivacy),
+            style: ButtonStyle(
+              padding: WidgetStateProperty.all(const EdgeInsets.only(right: 4)),
+            ),
             child: Text(t.ui.goToSettings),
           ),
         ],
