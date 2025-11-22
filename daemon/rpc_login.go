@@ -15,15 +15,17 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/session"
 )
 
-type customCallbackType func() (*core.LoginResponse, *pb.LoginResponse, error)
-
-var lastLoginAttemptTime time.Time
-
 // Login the user with given token
 func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) (*pb.LoginResponse, error) {
 	if !r.consentChecker.IsConsentFlowCompleted() {
 		return &pb.LoginResponse{
 			Type: internal.CodeConsentMissing,
+		}, nil
+	}
+
+	if in.GetToken() == "" {
+		return &pb.LoginResponse{
+			Type: internal.CodeTokenLoginFailure,
 		}, nil
 	}
 
@@ -34,21 +36,11 @@ func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) 
 	}
 
 	// login common with custom logic
-	return r.loginCommon(func() (*core.LoginResponse, *pb.LoginResponse, error) {
-		if in.GetToken() != "" {
-			return &core.LoginResponse{
-				Token:     in.GetToken(),
-				ExpiresAt: session.ManualAccessTokenExpiryDateString,
-			}, nil, nil
-		}
-		return nil, &pb.LoginResponse{
-			Type: internal.CodeTokenLoginFailure,
-		}, nil
-	})
+	return r.loginWithToken(in.GetToken())
 }
 
 // loginCommon common login
-func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginResponse, retErr error) {
+func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr error) {
 	if ok, _ := r.ac.IsLoggedIn(); ok {
 		return nil, internal.ErrAlreadyLoggedIn
 	}
@@ -59,7 +51,21 @@ func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginRespons
 		EventTrigger: events.TriggerUser,
 		EventStatus:  events.StatusAttempt,
 		EventType:    events.LoginLogin,
+		Reason:       events.ReasonNotSpecified,
 	})
+
+	// check if previous login/signup process was started
+	if r.initialLoginType.wasStarted() {
+		r.events.User.Login.Publish(events.DataAuthorization{
+			DurationMs:   -1,
+			EventTrigger: events.TriggerUser,
+			EventStatus:  events.StatusFailure, // emit failure event, but continue
+			EventType:    events.LoginLogin,
+			Reason:       events.ReasonUnfinishedPrevLogin,
+		})
+	}
+
+	eventReason := events.ReasonNotSpecified
 
 	defer func() {
 		eventStatus := events.StatusSuccess
@@ -71,16 +77,16 @@ func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginRespons
 			EventTrigger: events.TriggerUser,
 			EventStatus:  eventStatus,
 			EventType:    events.LoginLogin,
+			Reason:       eventReason,
 		})
+		// at the end, reset initiated login type
+		r.initialLoginType.reset()
 	}()
 
-	resp, pbresp, err := customCB()
-	if err != nil || pbresp != nil {
-		return pbresp, nil
-	}
-
-	credentials, err := r.credentialsAPI.ServiceCredentials(resp.Token)
+	credentials, err := r.credentialsAPI.ServiceCredentials(token)
 	if err != nil {
+		eventReason = events.ReasonLoginGetUserInfoFailed
+
 		log.Println(internal.ErrorPrefix, "retrieving credentials:", err)
 		if errors.Is(err, core.ErrServerInternal) {
 			return &pb.LoginResponse{
@@ -107,9 +113,9 @@ func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginRespons
 
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
 		c.TokensData[credentials.ID] = config.TokenData{
-			Token:              resp.Token,
-			RenewToken:         resp.RenewToken,
-			TokenExpiry:        resp.ExpiresAt,
+			Token:              token,
+			RenewToken:         "",
+			TokenExpiry:        session.ManualAccessTokenExpiryDateString,
 			NordLynxPrivateKey: credentials.NordlynxPrivateKey,
 			OpenVPNUsername:    credentials.Username,
 			OpenVPNPassword:    credentials.Password,
@@ -136,7 +142,7 @@ func (r *RPC) loginCommon(customCB customCallbackType) (payload *pb.LoginRespons
 }
 
 // LoginOAuth2 is called when logging in with OAuth2.
-func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (*pb.LoginOAuth2Response, error) {
+func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (payload *pb.LoginOAuth2Response, retErr error) {
 	if !r.consentChecker.IsConsentFlowCompleted() {
 		return &pb.LoginOAuth2Response{
 			Status: pb.LoginStatus_CONSENT_MISSING,
@@ -149,24 +155,44 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (*pb.L
 		}, nil
 	}
 
-	lastLoginAttemptTime = time.Now()
+	r.initialLoginType.setLoginAttemptTime(time.Now())
 
 	eventType := events.LoginLogin
 	if in.GetType() == pb.LoginType_LoginType_SIGNUP {
 		eventType = events.LoginSignUp
 	}
-	// memorize what login type started: Login or Signup
-	r.initialLoginType = in.GetType()
 
-	r.events.User.Login.Publish(events.DataAuthorization{
-		DurationMs:   -1,
-		EventTrigger: events.TriggerUser,
-		EventStatus:  events.StatusAttempt,
-		EventType:    eventType,
-	})
+	// check if previous login/signup process was started
+	if r.initialLoginType.wasStarted() {
+		r.events.User.Login.Publish(events.DataAuthorization{
+			DurationMs:   -1,
+			EventTrigger: events.TriggerUser,
+			EventStatus:  events.StatusFailure, // emit failure event, but continue
+			EventType:    eventType,
+			Reason:       events.ReasonUnfinishedPrevLogin,
+		})
+	}
+
+	eventReason := events.ReasonNotSpecified
+
+	defer func() {
+		eventStatus := events.StatusAttempt
+		if retErr != nil || (payload != nil && payload.Status != pb.LoginStatus_SUCCESS) {
+			eventStatus = events.StatusFailure
+		}
+		r.events.User.Login.Publish(events.DataAuthorization{
+			DurationMs:   -1,
+			EventTrigger: events.TriggerUser,
+			EventStatus:  eventStatus,
+			EventType:    eventType,
+			Reason:       eventReason,
+		})
+	}()
 
 	url, err := r.authentication.Login(in.GetType() == pb.LoginType_LoginType_LOGIN)
 	if err != nil {
+		eventReason = events.ReasonLoginURLRetrieveFailed
+
 		if strings.Contains(err.Error(), "network is unreachable") ||
 			strings.Contains(err.Error(), "Client.Timeout exceeded while awaiting headers") {
 			return &pb.LoginOAuth2Response{
@@ -178,6 +204,10 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (*pb.L
 			Status: pb.LoginStatus_UNKNOWN_OAUTH2_ERROR,
 		}, nil
 	}
+
+	// memorize what login type started: Login or Signup
+	// (dont forget to reset it after login/signup is completed)
+	r.initialLoginType.set(in.GetType())
 
 	return &pb.LoginOAuth2Response{
 		Status: pb.LoginStatus_SUCCESS,
@@ -201,34 +231,42 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 		loginType = events.LoginSignUp
 	}
 
+	eventReason := events.ReasonNotSpecified
+
 	defer func() {
 		eventStatus := events.StatusSuccess
 		if retErr != nil {
 			eventStatus = events.StatusFailure
 		}
+
 		r.events.User.Login.Publish(events.DataAuthorization{
-			DurationMs:                 max(int(time.Since(lastLoginAttemptTime).Milliseconds()), 1),
+			DurationMs:                 max(int(time.Since(r.initialLoginType.getLoginAttemptTime()).Milliseconds()), 1),
 			EventTrigger:               events.TriggerUser,
 			EventStatus:                eventStatus,
 			EventType:                  loginType,
-			IsAlteredFlowOnNordAccount: in.GetType() != r.initialLoginType,
+			IsAlteredFlowOnNordAccount: r.initialLoginType.isAltered(in.GetType()),
+			Reason:                     eventReason,
 		})
-		lastLoginAttemptTime = time.Time{}
+		// at the end, reset initiated login type and time
+		r.initialLoginType.reset()
 	}()
 
 	if in.GetToken() == "" {
+		eventReason = events.ReasonLoginExchangeTokenMissing
 		r.publisher.Publish(internal.ErrMissingExchangeToken.Error())
 		return nil, internal.ErrMissingExchangeToken
 	}
 
 	resp, err := r.authentication.Token(in.GetToken())
 	if err != nil {
+		eventReason = events.ReasonLoginExchangeTokenFailed
 		r.publisher.Publish(err.Error())
 		return nil, err
 	}
 
 	credentials, err := r.credentialsAPI.ServiceCredentials(resp.Token)
 	if err != nil {
+		eventReason = events.ReasonLoginGetUserInfoFailed
 		r.publisher.Publish(err.Error())
 		return nil, err
 	}

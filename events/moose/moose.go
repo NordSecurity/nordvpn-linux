@@ -356,7 +356,7 @@ func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error { // regul
 			EventTrigger:  eventTriggerDomainToInternalType(data.EventTrigger),
 		},
 		loginFlowAltered,
-		-1,
+		int32(data.Reason),
 		nil,
 	)); err != nil {
 		return err
