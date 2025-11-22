@@ -137,6 +137,13 @@ func (ti *Instance) updateLoginStatus() bool {
 
 	loggedIn := resp.GetIsLoggedIn()
 
+	if !loggedIn {
+		// If logged out, meshnet will be disabled
+		// therefore the communication with fileshare
+		// is not needed
+		ti.fileshare.UpdateFileshareConnection(false)
+	}
+
 	if !loggedIn && ti.state.loggedIn && ti.state.vpnStatus == pb.ConnectionState_CONNECTED {
 		// reset the VPN info if the user logs out while connected to VPN
 		changedVpn := ti.setVpnStatus(pb.ConnectionState_DISCONNECTED, "", "", "", "", false)
@@ -240,6 +247,8 @@ func (ti *Instance) setSettings(settings *pb.Settings) bool {
 	if userSettings == nil {
 		return false
 	}
+
+	ti.fileshare.UpdateFileshareConnection(settings.Meshnet)
 
 	changed := false
 	var notificationsText, trayText string
