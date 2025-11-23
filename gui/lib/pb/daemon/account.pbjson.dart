@@ -41,7 +41,13 @@ const AccountResponse$json = {
     {'1': 'type', '3': 1, '4': 1, '5': 3, '10': 'type'},
     {'1': 'username', '3': 2, '4': 1, '5': 9, '10': 'username'},
     {'1': 'email', '3': 3, '4': 1, '5': 9, '10': 'email'},
-    {'1': 'expires_at', '3': 4, '4': 1, '5': 9, '10': 'expiresAt'},
+    {
+      '1': 'subscription_expires_at',
+      '3': 4,
+      '4': 1,
+      '5': 9,
+      '10': 'subscriptionExpiresAt'
+    },
     {
       '1': 'dedicated_ip_status',
       '3': 5,
@@ -72,18 +78,20 @@ const AccountResponse$json = {
       '6': '.pb.TriState',
       '10': 'mfaStatus'
     },
+    {'1': 'created_on', '3': 9, '4': 1, '5': 9, '10': 'createdOn'},
   ],
 };
 
 /// Descriptor for `AccountResponse`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List accountResponseDescriptor = $convert.base64Decode(
     'Cg9BY2NvdW50UmVzcG9uc2USEgoEdHlwZRgBIAEoA1IEdHlwZRIaCgh1c2VybmFtZRgCIAEoCV'
-    'IIdXNlcm5hbWUSFAoFZW1haWwYAyABKAlSBWVtYWlsEh0KCmV4cGlyZXNfYXQYBCABKAlSCWV4'
-    'cGlyZXNBdBIuChNkZWRpY2F0ZWRfaXBfc3RhdHVzGAUgASgDUhFkZWRpY2F0ZWRJcFN0YXR1cx'
-    'I+ChxsYXN0X2RlZGljYXRlZF9pcF9leHBpcmVzX2F0GAYgASgJUhhsYXN0RGVkaWNhdGVkSXBF'
-    'eHBpcmVzQXQSSwoVZGVkaWNhdGVkX2lwX3NlcnZpY2VzGAcgAygLMhcucGIuRGVkaWRjYXRlZE'
-    'lQU2VydmljZVITZGVkaWNhdGVkSXBTZXJ2aWNlcxIrCgptZmFfc3RhdHVzGAggASgOMgwucGIu'
-    'VHJpU3RhdGVSCW1mYVN0YXR1cw==');
+    'IIdXNlcm5hbWUSFAoFZW1haWwYAyABKAlSBWVtYWlsEjYKF3N1YnNjcmlwdGlvbl9leHBpcmVz'
+    'X2F0GAQgASgJUhVzdWJzY3JpcHRpb25FeHBpcmVzQXQSLgoTZGVkaWNhdGVkX2lwX3N0YXR1cx'
+    'gFIAEoA1IRZGVkaWNhdGVkSXBTdGF0dXMSPgocbGFzdF9kZWRpY2F0ZWRfaXBfZXhwaXJlc19h'
+    'dBgGIAEoCVIYbGFzdERlZGljYXRlZElwRXhwaXJlc0F0EksKFWRlZGljYXRlZF9pcF9zZXJ2aW'
+    'NlcxgHIAMoCzIXLnBiLkRlZGlkY2F0ZWRJUFNlcnZpY2VSE2RlZGljYXRlZElwU2VydmljZXMS'
+    'KwoKbWZhX3N0YXR1cxgIIAEoDjIMLnBiLlRyaVN0YXRlUgltZmFTdGF0dXMSHQoKY3JlYXRlZF'
+    '9vbhgJIAEoCVIJY3JlYXRlZE9u');
 
 @$core.Deprecated('Use accountRequestDescriptor instead')
 const AccountRequest$json = {

@@ -16,6 +16,7 @@ abstract class UserAccount with _$UserAccount {
     required String email,
     required DateTime? vpnExpirationDate,
     required List<CountryServersGroup>? dedicatedIpServers,
+    required DateTime? createdOn,
   }) = _UserAccount;
 
   factory UserAccount.fromResponse(AccountResponse response) {
@@ -32,11 +33,12 @@ abstract class UserAccount with _$UserAccount {
       name: response.username,
       email: response.email,
       dedicatedIpServers: dedicatedIpServers,
-      vpnExpirationDate: parseDate(response.expiresAt),
+      vpnExpirationDate: parseDate(response.subscriptionExpiresAt),
+      createdOn: parseDate(response.createdOn),
     );
   }
 
   bool get hasDipServers => dedicatedIpServers?.isNotEmpty ?? false;
 
-  bool get isExpired => vpnExpirationDate?.isBefore(DateTime.now()) ?? false;
+  bool get isSubscriptionExpired => vpnExpirationDate?.isBefore(DateTime.now()) ?? false;
 }

@@ -15,11 +15,12 @@ message AccountResponse {
   int64 type = 1;
   string username = 2;
   string email = 3;
-  string expires_at = 4;
+  string subscription_expires_at = 4;
   int64 dedicated_ip_status = 5;
   string last_dedicated_ip_expires_at = 6;
   repeated DedidcatedIPService dedicated_ip_services = 7;
   TriState mfa_status = 8;
+  string created_on = 9;
 }
 
 message AccountRequest {

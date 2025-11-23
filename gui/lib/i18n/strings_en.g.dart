@@ -1361,8 +1361,8 @@ class TranslationsUiEn {
 	/// en: 'Auto - renewal terms'
 	String get autoRenewalTerms => 'Auto - renewal terms';
 
-	/// en: 'Subscription info'
-	String get subscriptionInfo => 'Subscription info';
+	/// en: 'Subscription'
+	String get subscription => 'Subscription';
 
 	/// en: 'Log out'
 	String get logout => 'Log out';
@@ -1655,8 +1655,8 @@ class TranslationsUiEn {
 	/// en: 'Turn off'
 	String get turnOff => 'Turn off';
 
-	/// en: 'Subscription active until ${expirationDate: String}'
-	String subscriptionValidationDate({required String expirationDate}) => 'Subscription active until ${expirationDate}';
+	/// en: 'Active until ${expirationDate: String}'
+	String subscriptionValidationDate({required String expirationDate}) => 'Active until ${expirationDate}';
 
 	/// en: 'Log in'
 	String get logIn => 'Log in';
@@ -1939,6 +1939,18 @@ class TranslationsUiEn {
 
 	/// en: 'Using third-party DNS may limit website availability. For the best browsing experience, use our default settings.'
 	String get customDnsWarning => 'Using third-party DNS may limit website availability. For the best browsing experience, use our default settings.';
+
+	/// en: 'Account created: ${creation_date: String}'
+	String accountCreatedOn({required String creation_date}) => 'Account created: ${creation_date}';
+
+	/// en: 'Manage subscription'
+	String get manageSubscription => 'Manage subscription';
+
+	/// en: 'Change password'
+	String get changePassword => 'Change password';
+
+	/// en: 'Product Hub'
+	String get productHub => 'Product Hub';
 }
 
 /// Flat map(s) containing all translations.
@@ -2373,7 +2385,7 @@ extension on Translations {
 			case 'ui.termsOfService': return 'Terms of Service';
 			case 'ui.privacyPolicy': return 'Privacy Policy';
 			case 'ui.autoRenewalTerms': return 'Auto - renewal terms';
-			case 'ui.subscriptionInfo': return 'Subscription info';
+			case 'ui.subscription': return 'Subscription';
 			case 'ui.logout': return 'Log out';
 			case 'ui.accountExpireIn': return ({required num n, required Object date}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
 				one: 'Expires in ${n} day on ${date}',
@@ -2473,7 +2485,7 @@ extension on Translations {
 			case 'ui.turnOffCustomDns': return 'Turn off custom DNS?';
 			case 'ui.turnOffCustomDnsDescription': return 'This will remove all your previously added DNS servers.';
 			case 'ui.turnOff': return 'Turn off';
-			case 'ui.subscriptionValidationDate': return ({required String expirationDate}) => 'Subscription active until ${expirationDate}';
+			case 'ui.subscriptionValidationDate': return ({required String expirationDate}) => 'Active until ${expirationDate}';
 			case 'ui.logIn': return 'Log in';
 			case 'ui.createAccount': return 'Create account';
 			case 'ui.whatIsNordAccount': return 'What is a Nord Account?';
@@ -2568,6 +2580,10 @@ extension on Translations {
 			case 'ui.termsAgreementDescription': return 'By continuing to use this app, you agree to our terms and how we handle your data. To read the terms and privacy policy check the links below.';
 			case 'ui.readMore': return 'Read more';
 			case 'ui.customDnsWarning': return 'Using third-party DNS may limit website availability. For the best browsing experience, use our default settings.';
+			case 'ui.accountCreatedOn': return ({required String creation_date}) => 'Account created: ${creation_date}';
+			case 'ui.manageSubscription': return 'Manage subscription';
+			case 'ui.changePassword': return 'Change password';
+			case 'ui.productHub': return 'Product Hub';
 			default: return null;
 		}
 	}
