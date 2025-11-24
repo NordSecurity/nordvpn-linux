@@ -48,7 +48,8 @@ if [[ -n ${RC_FILES:-} ]]; then
     sudo mkdir /var/lib/nordvpn/conf
     ls -lah /var/lib/nordvpn/conf
     # Config directory is only created on usage, we need to put files on install
-    sudo cp -r "$RC_FILES" '/var/lib/nordvpn/conf/'
+    # shellcheck disable=SC2086 # If quoted it will be a string literal of /path/to/files/* instead of expanding
+    sudo cp -r $RC_FILES '/var/lib/nordvpn/conf/'
     ls -lah /var/lib/nordvpn/conf
 fi
 
