@@ -188,7 +188,7 @@ def test_set_defaults_when_connected_2nd_set(tech, proto, obfuscated):
 
 @pytest.mark.smoke
 def test_route_to_peer_that_is_connected_to_vpn():
-    """ Manual TC: LVPN-426 """
+    """Manual TC: LVPN-426"""
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname
     peer_hostname = peer_list.get_external_peer().hostname
@@ -219,7 +219,7 @@ def test_route_to_peer_that_is_connected_to_vpn():
 @pytest.mark.smoke
 @pytest.mark.xfail
 def test_route_to_peer_that_disconnects_from_vpn():
-    """ Manual TC: LVPN-430 """
+    """Manual TC: LVPN-430"""
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname
     peer_hostname = peer_list.get_external_peer().hostname

@@ -33,7 +33,7 @@ def teardown_function(function):  # noqa: ARG001
 
 @pytest.mark.smoke
 def test_meshnet_connect():
-    """ Manual TC: LVPN-473 """
+    """Manual TC: LVPN-473"""
     peer = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer()
     this_device = meshnet.PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list")).get_external_peer()
 
@@ -103,7 +103,7 @@ def test_mesh_removed_machine_by_other():
 @pytest.mark.parametrize("incoming", [True, False])
 @pytest.mark.parametrize("fileshare", [True, False])
 def test_exitnode_permissions(routing: bool, local: bool, incoming: bool, fileshare: bool):
-    """ Manual TC: LVPN-922, LVPN-662, LVPN-656, LVPN-655 """
+    """Manual TC: LVPN-922, LVPN-662, LVPN-656, LVPN-655"""
     peer_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().ip
     meshnet.set_permissions(peer_ip, routing, local, incoming, fileshare)
 
@@ -190,7 +190,7 @@ def test_set_meshnet_off_when_logged_out(meshnet_allias):
 @pytest.mark.core_meshnet
 @pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
 def test_set_meshnet_off_on(meshnet_allias):
-    """ Manual TC: LVPN-490 """
+    """Manual TC: LVPN-490"""
 
     assert "Meshnet is set to 'disabled' successfully." in sh_no_tty.nordvpn.set(meshnet_allias, "off")
     assert not settings.is_meshnet_enabled()
@@ -226,7 +226,7 @@ def test_set_meshnet_off_repeated(meshnet_allias):
 @pytest.mark.parametrize(("permission", "permission_state", "expected_message"), meshnet.PERMISSION_SUCCESS_MESSAGE_PARAMETER_SET, \
                          ids=[f"{line[0]}-{line[1]}" for line in meshnet.PERMISSION_SUCCESS_MESSAGE_PARAMETER_SET])
 def test_permission_messages_success(permission, permission_state, expected_message):
-    """ Manual TC: LVPN-1262, LVPN-1261, LVPN-1260, LVPN1257 """
+    """Manual TC: LVPN-1262, LVPN-1261, LVPN-1260, LVPN1257"""
     peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().hostname
 
     reverse_permission_value = "allow" if permission_state == "deny" else "deny"
@@ -257,7 +257,7 @@ def test_permission_messages_error(permission, permission_state, expected_messag
 
 @pytest.mark.smoke
 def test_derp_server_selection_logic():
-    """ Manual TC: LVPN-2648"""
+    """Manual TC: LVPN-2648"""
     def has_duplicates(lst):
         return len(lst) != len(set(lst))
 
@@ -296,7 +296,7 @@ def test_derp_server_selection_logic():
 @pytest.mark.core_meshnet
 @pytest.mark.skip("LVPN-3428, need a discussion here") # @pytest.mark.xfail
 def test_direct_connection_rtt_and_loss():
-    """ Manual TC: LVPN-1561 """
+    """Manual TC: LVPN-1561"""
     def get_loss(ping_output: str) -> float:
         """Pass `ping_output`, and get loss returned."""
         return float(ping_output.split("\n")[-3].split(", ")[2].split("%")[0])
@@ -334,7 +334,7 @@ def test_direct_connection_rtt_and_loss():
 
 @pytest.mark.smoke
 def test_incoming_connections():
-    """ Manual TC: LVPN-1258 """
+    """Manual TC: LVPN-1258"""
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname
     peer_hostname = peer_list.get_external_peer().hostname

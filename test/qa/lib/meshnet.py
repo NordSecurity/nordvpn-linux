@@ -1,6 +1,7 @@
 import contextlib
 import os
 import re
+from typing import Optional
 
 import requests
 import subprocess
@@ -808,7 +809,7 @@ def delete_machines_by_identifier(token: str, identifiers: list | None = None) -
             logging.log(f"Got an error during DELETE request for {identifier}: {e}")
     session.close()
 
-def get_ping_latency(hostname: str = None, qa_peer: bool = False, ssh_client: ssh.Ssh = None) -> float | None:
+def get_ping_latency(hostname: str = None, qa_peer: bool = False, ssh_client: ssh.Ssh = None) -> Optional[float]:
     """
     Function to get latency of ping to hostname
 
