@@ -50,7 +50,6 @@ $Res call({
 });
 
 
-$AllowListCopyWith<$Res> get allowListData;
 
 }
 /// @nodoc
@@ -87,16 +86,7 @@ as bool,allowListData: null == allowListData ? _self.allowListData : allowListDa
 as AllowList,
   ));
 }
-/// Create a copy of ApplicationSettings
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$AllowListCopyWith<$Res> get allowListData {
-  
-  return $AllowListCopyWith<$Res>(_self.allowListData, (value) {
-    return _then(_self.copyWith(allowListData: value));
-  });
-}
+
 }
 
 
@@ -167,7 +157,6 @@ $Res call({
 });
 
 
-@override $AllowListCopyWith<$Res> get allowListData;
 
 }
 /// @nodoc
@@ -205,16 +194,7 @@ as AllowList,
   ));
 }
 
-/// Create a copy of ApplicationSettings
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$AllowListCopyWith<$Res> get allowListData {
-  
-  return $AllowListCopyWith<$Res>(_self.allowListData, (value) {
-    return _then(_self.copyWith(allowListData: value));
-  });
-}
+
 }
 
 // dart format on
