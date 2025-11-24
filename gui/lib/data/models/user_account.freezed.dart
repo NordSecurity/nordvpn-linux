@@ -51,7 +51,6 @@ $Res call({
 
 
 
-
 }
 /// @nodoc
 class _$UserAccountCopyWithImpl<$Res>
@@ -130,7 +129,6 @@ abstract mixin class _$UserAccountCopyWith<$Res> implements $UserAccountCopyWith
 $Res call({
  bool hasDipSubscription, String name, String email, DateTime? vpnExpirationDate, List<CountryServersGroup>? dedicatedIpServers
 });
-
 
 
 
