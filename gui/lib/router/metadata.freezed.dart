@@ -46,9 +46,8 @@ abstract mixin class $RouteMetadataCopyWith<$Res>  {
   factory $RouteMetadataCopyWith(RouteMetadata value, $Res Function(RouteMetadata) _then) = _$RouteMetadataCopyWithImpl;
 @useResult
 $Res call({
- AppRoute route, Widget screen, String? displayName,  Function(BuildContext)? onPressed
+ AppRoute route, Widget screen, String? displayName, dynamic Function(BuildContext)? onPressed
 });
-
 
 
 
@@ -68,8 +67,8 @@ class _$RouteMetadataCopyWithImpl<$Res>
 route: null == route ? _self.route : route // ignore: cast_nullable_to_non_nullable
 as AppRoute,screen: null == screen ? _self.screen : screen // ignore: cast_nullable_to_non_nullable
 as Widget,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
-as String?,onPressed: freezed == onPressed ? _self.onPressed : onPressed // ignore: cast_nullable_to_non_nullable
-as  Function(BuildContext)?,
+as String?,onPressed: freezed == onPressed ? _self.onPressed! : onPressed // ignore: cast_nullable_to_non_nullable
+as dynamic Function(BuildContext)?,
   ));
 }
 
@@ -86,7 +85,7 @@ class _RouteMetadata extends RouteMetadata {
 @override final  AppRoute route;
 @override final  Widget screen;
 @override final  String? displayName;
-@override final   Function(BuildContext)? onPressed;
+@override final  dynamic Function(BuildContext)? onPressed;
 
 /// Create a copy of RouteMetadata
 /// with the given fields replaced by the non-null parameter values.
@@ -118,9 +117,8 @@ abstract mixin class _$RouteMetadataCopyWith<$Res> implements $RouteMetadataCopy
   factory _$RouteMetadataCopyWith(_RouteMetadata value, $Res Function(_RouteMetadata) _then) = __$RouteMetadataCopyWithImpl;
 @override @useResult
 $Res call({
- AppRoute route, Widget screen, String? displayName,  Function(BuildContext)? onPressed
+ AppRoute route, Widget screen, String? displayName, dynamic Function(BuildContext)? onPressed
 });
-
 
 
 
@@ -141,7 +139,7 @@ route: null == route ? _self.route : route // ignore: cast_nullable_to_non_nulla
 as AppRoute,screen: null == screen ? _self.screen : screen // ignore: cast_nullable_to_non_nullable
 as Widget,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String?,onPressed: freezed == onPressed ? _self.onPressed : onPressed // ignore: cast_nullable_to_non_nullable
-as  Function(BuildContext)?,
+as dynamic Function(BuildContext)?,
   ));
 }
 
