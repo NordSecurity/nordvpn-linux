@@ -266,7 +266,7 @@ def test_logout_not_connected():
     """
     :details    Verify that app has a possibility to logout
 
-    :tcid       LVPN-465
+    Manual TC:   LVPN-465
 
     :steps
         - # Login as default in NordVPN app

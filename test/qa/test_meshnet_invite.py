@@ -22,8 +22,10 @@ def teardown_function(function):  # noqa: ARG001
     meshnet.TestUtils.teardown_function(ssh_client)
 
 
+@pytest.mark.smoke
 @pytest.mark.core_meshnet
 def test_invite_send():
+    """ Manual TC: LVPN-1254 """
 
     assert "Meshnet invitation to 'test@test.com' was sent." in meshnet.send_meshnet_invite("test@test.com")
 
@@ -75,8 +77,10 @@ def test_invite_send_email_special_character():
     assert "It's not you, it's us. We're having trouble with our servers. If the issue persists, please contact our customer support." not in ex.value.stdout.decode("utf-8")
 
 
+@pytest.mark.smoke
 @pytest.mark.core_meshnet
 def test_invite_revoke():
+    """ Manual TC: LVPN-1255 """
 
     meshnet.send_meshnet_invite("test@test.com")
 
@@ -122,8 +126,10 @@ def test_invite_revoke_non_existent_special_character():
     assert "No invitation from '\u2222@test.com' was found." in ex.value.stdout.decode("utf-8")
 
 
+@pytest.mark.smoke
 @pytest.mark.core_meshnet
 def test_invite_deny():
+    """ Manual TC: LVPN-536 """
 
     meshnet.remove_all_peers()
     meshnet.remove_all_peers_in_peer(ssh_client)
@@ -163,8 +169,10 @@ def test_invite_deny_non_existent_special_character():
     assert "No invitation from '\u2222@test.com' was found." in ex.value.stdout.decode("utf-8")
 
 
+@pytest.mark.smoke
 @pytest.mark.core_meshnet
 def test_invite_accept():
+    """ Manual TC: LVPN-553 """
 
     meshnet.remove_all_peers()
     meshnet.remove_all_peers_in_peer(ssh_client)
