@@ -39,6 +39,9 @@ changelog: "${WORKDIR}/dist/changelog.yml"
 # Disables globbing for files, config_files, etc.
 disable_globbing: true
 
+# internal created files make of this date/time always to have reproducible packages
+mtime: "2009-11-10T23:00:00Z"
+
 # Dependencies. (overridable)
 depends:
   - iptables
