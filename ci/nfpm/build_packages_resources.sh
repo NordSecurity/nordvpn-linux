@@ -78,6 +78,8 @@ case "$PKG_TO_BUILD" in
 	;;
 esac
 
+# value must be given from outside
+echo "${VERSION_DATE}"
 
 envsubst <"${WORKDIR}"/ci/nfpm/template.yaml >"${BASEDIR}"/packages.yaml
 mkdir -p "${APP_DIR}/${PKG_TO_BUILD}"
