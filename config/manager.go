@@ -217,7 +217,7 @@ func (f *FilesystemConfigManager) load(c *Config) error {
 	// always init with default settings and override later with the values from the file
 	*c = *newConfig(f.machineIDGetter)
 
-	// TODO(LVPN-9628): revisist how this mechanism works
+	// TODO(LVPN-9628): revisit how this mechanism works
 	if !f.fsHandle.FileExists(f.location) {
 		f.NewInstallation = true
 		return f.save(*c)
