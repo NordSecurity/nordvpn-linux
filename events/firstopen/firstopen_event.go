@@ -1,6 +1,7 @@
 package firstopen
 
 import (
+	"fmt"
 	"sync/atomic"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -12,7 +13,7 @@ var (
 )
 
 // firstOpenNotifier publishes a one-time `first_open` event when
-// `cm.NewInstallation` is true and the device location event fires.
+// `cm.NewInstallation` is true and the FirstTimeOpened event fires.
 // It uses an `atomic.Bool` to enforce exactly-once behavior.
 type firstOpenNotifier struct {
 	cm                     *config.FilesystemConfigManager
@@ -21,7 +22,7 @@ type firstOpenNotifier struct {
 
 // RegisterNotifier sets up a `firstOpenNotifier`.
 // If `cm.NewInstallation` is true and the first open event is not yet published, it subscribes
-// [firstopen.notifyOnceAppJustInstalled] to the device location events stream.
+// [firstopen.notifyOnceAppJustInstalled] to the FirstTimeOpened events stream.
 func RegisterNotifier(
 	cm *config.FilesystemConfigManager,
 	firstTimeOpened events.PublishSubcriber[any],
@@ -43,5 +44,8 @@ func (i *firstOpenNotifier) notifyOnceAppJustInstalled(any) error {
 	if !i.cm.NewInstallation || !published.CompareAndSwap(false, true) {
 		return nil
 	}
-	return i.emitFirstTimeOpenEvent()
+	if err := i.emitFirstTimeOpenEvent(); err != nil {
+		return fmt.Errorf("Failure upon emitting first open event: %w", err)
+	}
+	return nil
 }
