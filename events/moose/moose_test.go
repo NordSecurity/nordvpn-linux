@@ -5,6 +5,7 @@ package moose
 import (
 	"math"
 	moose "moose/events"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -208,16 +209,17 @@ func TestChangeConsentState(t *testing.T) {
 				config:                     configManagerMock,
 				mooseConsentLevelFunc:      consentFunc,
 				mooseSetConsentIntoCtxFunc: setConsentToCtx,
-				canSendAllEvents:           test.currentOptInState,
+				canSendAllEvents:           atomic.Bool{},
 			}
 
+			s.canSendAllEvents.Store(test.currentOptInState)
 			err := s.changeConsentState(test.newConsentState)
 
 			if test.consentErrCode != 0 || test.shouldFail {
 				assert.Assert(t, err != nil)
 			}
 
-			assert.Equal(t, test.expectedEssentialAnalyticsState, s.canSendAllEvents, "Unexpected consent state saved.")
+			assert.Equal(t, test.expectedEssentialAnalyticsState, s.canSendAllEvents.Load(), "Unexpected consent state saved.")
 		})
 	}
 }
