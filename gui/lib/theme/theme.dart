@@ -406,7 +406,7 @@ final class NordVpnTheme {
       otherProductsTitle: design.typography.body.copyWith(
         color: design.semanticColors.textPrimary,
       ),
-      otherProductsSubtitle: design.typography.subBody .copyWith(
+      otherProductsSubtitle: design.typography.subBody.copyWith(
         color: design.semanticColors.textSecondary,
       ),
       fwMarkInputSize: 250,
