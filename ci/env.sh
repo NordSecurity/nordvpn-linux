@@ -22,7 +22,7 @@ if [[ "${CI_COMMIT_TAG:-}" =~ ${VERSION_PATTERN} ]]; then
   export VERSION
 
   # version date should be always the same
-  VERSION_DATE="$(git log -1 --format=%aI ${CI_COMMIT_TAG} | xargs -I{} date -u -d "{}" +"%Y-%m-%dT%H:%M:%SZ")"
+  VERSION_DATE="$(git log -1 --format=%aI "${CI_COMMIT_TAG}" | xargs -I{} date -u -d "{}" +"%Y-%m-%dT%H:%M:%SZ")"
   export VERSION_DATE
 else
   ENVIRONMENT=${ENVIRONMENT:-"dev"}
