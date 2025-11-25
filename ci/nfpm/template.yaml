@@ -152,7 +152,7 @@ overrides:
       - (libnl3 or libnl3-200)
       - glibc >= 2.29
       - (libsqlite3-0 or sqlite-libs)
-      - xsltproc
+      - (xsltproc or libxslt)
     # RPM specific scripts.
     scripts:
       preinstall: ${WORKDIR}/contrib/scriptlets/rpm/preinst
