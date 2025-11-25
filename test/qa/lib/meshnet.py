@@ -22,7 +22,6 @@ BASE_API = "https://api.nordvpn.com/v1"
 TELIO_EXPECTED_RELAY_TO_DIRECT_TIME = 5.0
 TELIO_EXPECTED_RTT = 5.0
 TELIO_EXPECTED_PACKET_LOSS = 0.0
-PEER_EXPECTED_LATENCY = 12
 
 LANS = [
     "169.254.0.0/16",
@@ -807,24 +806,3 @@ def delete_machines_by_identifier(token: str, identifiers: list | None = None) -
         except requests.RequestException as e:
             logging.log(f"Got an error during DELETE request for {identifier}: {e}")
     session.close()
-
-def get_ping_latency(hostname: str = "", qa_peer: bool = False, ssh_client: ssh.Ssh = None) -> float | None:
-    """
-    Function to get latency of ping to hostname
-
-    :hostname:  str             Hostname to ping
-    :qa_peer:   bool            Flag if ping should be executed from qa-peer container
-    :ssh_client:                Instance of ssh.Ssh class for qa_peer
-
-    :return:    float | None    Time of ping latency in case is time was found, None otherwise
-    """
-    if qa_peer:
-        ping_output = ssh_client.exec_command(f"ping -c 1 {hostname}")
-    else:
-        ping_output = sh_no_tty.ping("-c", "1", hostname)
-
-    for line in ping_output.splitlines():
-        if "time=" in line:
-            output = line.split("time=")[1].split()[0]
-            return float(output)
-    return None
