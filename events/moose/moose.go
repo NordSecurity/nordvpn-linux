@@ -188,8 +188,10 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 	var batchSize uint32 = 20
 	compressRequest := true
 
-	// moose is now started always after user specifies analytics consent
-	// thus we enable events from the begining
+	// Moose is now started only when the user has specified analytics consent,
+	// so we can safely enable events from the very beginning.
+
+	const allowEventsFromBeginning = true
 	client := worker.NewHttpClientContext(s.currentDomain)
 	client.Client = *s.httpClient
 	if err := s.response(uint32(worker.StartWithClient(
@@ -197,7 +199,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		s.currentDomain,
 		uint64(singleInterval.Milliseconds()),
 		uint64(sequenceInterval.Milliseconds()),
-		true,
+		allowEventsFromBeginning,
 		batchSize,
 		compressRequest,
 		&client,
