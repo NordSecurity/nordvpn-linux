@@ -206,6 +206,7 @@ def test_accept(accept_directories):
     assert sender_files_status_ok is True, f"invalid file status on sender side, transfer {transfer}, files {accept_directories} should be uploaded"
 
 
+@pytest.mark.smoke
 @pytest.mark.core_meshnet
 @pytest.mark.parametrize("path_flag", [True, False], ids=["accept_custom_path", "accept_downloads"])
 @pytest.mark.parametrize("background_accept", ["", "--background"], ids=["accept_int", "accept_bg"])
@@ -554,6 +555,7 @@ def test_fileshare_transfer_multiple_files_selective_accept(background: bool, ac
     ssh_client.exec_command(f"sudo rm -rf {peer_filepath}/*tmp*")
 
 
+@pytest.mark.smoke
 @pytest.mark.core_meshnet
 @pytest.mark.parametrize("transfer_entity", list(fileshare.FileSystemEntity), ids = [f"send_{entity.value}" for entity in list(fileshare.FileSystemEntity)])
 def test_fileshare_graceful_cancel(transfer_entity: fileshare.FileSystemEntity):
@@ -727,6 +729,7 @@ def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transf
     shutil.rmtree(wdir.dir_path)
 
 
+@pytest.mark.smoke
 @pytest.mark.core_meshnet
 @pytest.mark.parametrize("background", [False, True], ids=["send_int", "send_bg"])
 @pytest.mark.parametrize("sender_cancels", [False, True], ids=["receiver_cancels", "sender_cancels"])
@@ -1198,6 +1201,7 @@ def test_accept_destination_directory_not_a_directory():
     sh.rm(path)
 
 
+@pytest.mark.smoke
 @pytest.mark.core_meshnet
 @pytest.mark.parametrize("transfer_entity", list(fileshare.FileSystemEntity), ids = [f"send_{entity.value}" for entity in list(fileshare.FileSystemEntity)])
 def test_autoaccept(transfer_entity: fileshare.FileSystemEntity):
