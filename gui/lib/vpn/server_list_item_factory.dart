@@ -240,12 +240,10 @@ final class ServerListItemFactory {
   Widget forRecent({
     required RecentConnection recentConnection,
     required void Function(ConnectArguments) onTapFunc,
-    bool enabled = true,
   }) {
     return RecentServerListItem(
       model: recentConnection,
       onTap: onTapFunc,
-      enabled: enabled,
       imagesManager: imagesManager,
     );
   }
