@@ -42,6 +42,7 @@ func NewEventsEmpty() *Events {
 		&subs.Subject[events.DataAuthorization]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[events.DebuggerEvent]{},
+		&subs.Subject[any]{},
 	)
 }
 
@@ -71,6 +72,7 @@ func NewEvents(
 	logout events.PublishSubcriber[events.DataAuthorization],
 	mfa events.PublishSubcriber[bool],
 	devLogs events.PublishSubcriber[events.DebuggerEvent],
+	appFirstTimeOpened events.PublishSubcriber[any],
 ) *Events {
 	return &Events{
 		Settings: &SettingsEvents{
@@ -92,11 +94,12 @@ func NewEvents(
 			PostquantumVPN:       postquantumVpn,
 		},
 		Service: &ServiceEvents{
-			Connect:        connect,
-			Disconnect:     disconnect,
-			AccountCheck:   accountCheck,
-			UiItemsClick:   uiItemsClick,
-			DeviceLocation: deviceLocation,
+			Connect:         connect,
+			Disconnect:      disconnect,
+			AccountCheck:    accountCheck,
+			UiItemsClick:    uiItemsClick,
+			DeviceLocation:  deviceLocation,
+			FirstTimeOpened: appFirstTimeOpened,
 		},
 		User: &LoginEvents{
 			Login:  login,
@@ -189,11 +192,12 @@ type ServicePublisher interface {
 }
 
 type ServiceEvents struct {
-	Connect        events.PublishSubcriber[events.DataConnect]
-	Disconnect     events.PublishSubcriber[events.DataDisconnect]
-	AccountCheck   events.PublishSubcriber[any]
-	UiItemsClick   events.PublishSubcriber[events.UiItemsAction]
-	DeviceLocation events.PublishSubcriber[core.Insights]
+	Connect         events.PublishSubcriber[events.DataConnect]
+	Disconnect      events.PublishSubcriber[events.DataDisconnect]
+	AccountCheck    events.PublishSubcriber[any]
+	UiItemsClick    events.PublishSubcriber[events.UiItemsAction]
+	DeviceLocation  events.PublishSubcriber[core.Insights]
+	FirstTimeOpened events.PublishSubcriber[any]
 }
 
 func (s *ServiceEvents) Subscribe(to ServicePublisher) {

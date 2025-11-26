@@ -310,6 +310,9 @@ func (r *RPC) connect(
 		}
 	}
 	r.events.Service.Connect.Publish(event)
+	// The "first time used" event correlates to the device location, which should already be known once a VPN connection is established.
+	// Hence, this event is emitted here.
+	r.events.Service.FirstTimeOpened.Publish(struct{}{})
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnected, Data: data}); err != nil {
 		log.Println(internal.ErrorPrefix, err)
