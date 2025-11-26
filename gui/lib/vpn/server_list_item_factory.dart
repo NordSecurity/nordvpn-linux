@@ -9,6 +9,7 @@ import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/images_manager.dart';
 import 'package:nordvpn/pb/daemon/config/group.pb.dart';
+import 'package:nordvpn/pb/daemon/server_selection_rule.pb.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/i18n/string_translation_extension.dart';
 import 'package:nordvpn/theme/servers_list_theme.dart';
