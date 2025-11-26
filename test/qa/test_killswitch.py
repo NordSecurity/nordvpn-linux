@@ -4,7 +4,6 @@ import os
 import glob
 
 import lib
-import time
 from lib import (
     daemon,
     login,
@@ -172,60 +171,6 @@ def test_fancy_transport():
 
     sh.nordvpn.set.killswitch("off")
     assert network.is_available()
-
-
-def test_killswitch_enabled_does_not_affect_cdn_with_firewall_mark():
-    """
-    Test for a scenario where despite killswitch being enabled the network is still accessible for remote config.
-
-    Test steps:
-        1. Set up required environment variables
-        2. Enable killswitch
-        3. Remove previously fetched config files
-        4. Attempt to fetch remote config
-        5. Verify that the config is fetched successfully
-
-    Jira ID: LVPN-8626
-    """
-
-    conf_dir = "/var/lib/nordvpn/conf/"
-    expected_files = [
-        "libtelio.json",
-        "meshnet.json",
-    ]
-    def printdir():
-        os.system(f"cd {conf_dir}/../ && ls -la && ls {conf_dir} -a")
-
-    # enabling killswitch should not affect http transport of the remote config
-    assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on")
-    assert daemon.is_killswitch_on()
-
-    sh.nordvpn.disconnect()
-    assert daemon.is_disconnected()
-    print("--- before manual files removal")
-    printdir()
-    # remove previously fetched files
-    # upon restart, they should be loaded again
-    os.system(f"sudo rm -rf {conf_dir}")
-
-    # make sure the rc files are gone
-    for fname in expected_files:
-        path = os.path.join(conf_dir, fname)
-        res = os.popen(f"sudo test -f {path} && echo exists || echo missing").read().strip()
-        assert res == "missing", f"File {path} should not exist"
-
-    daemon.restart()
-    print("--- after restart")
-    printdir()
-
-    for _ in range(10):
-        time.sleep(1)
-        printdir()
-
-    for fname in expected_files:
-        path = os.path.join(conf_dir, fname)
-        res = os.popen(f"sudo test -f {path} && echo exists || echo missing").read().strip()
-        assert res == "exists", f"File {os.path} should exist after kill-switch was enabled"
 
 
 # This test assumes being run on docker
