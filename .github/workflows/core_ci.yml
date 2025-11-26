@@ -73,7 +73,7 @@ jobs:
       - name: Install build utilities
         run: |
           go install github.com/magefile/mage@9e91a03eaa438d0d077aca5654c7757141536a60 # v1.15.0
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@2e47af64a3f33d32ec1395dbd56165c4feb2bc21 # v2.43.0
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@d0d484200d974e7ac6d06ed6d5f02d82d4952b3f # v2.43.4
           go install github.com/google/go-licenses@5348b744d0983d85713295ea08a20cca1654a45e # v1.6.0
 
       - name: Build clean DEB package
