@@ -1,4 +1,3 @@
-import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/pb/daemon/recent_connections.pb.dart';
 import 'package:nordvpn/pb/daemon/server_selection_rule.pb.dart';
 import 'package:nordvpn/pb/daemon/config/group.pb.dart' as cfg;
