@@ -24,7 +24,7 @@ final class RecentConnectionsList extends ConsumerWidget {
 
     return recentConnections.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, stack) => Center(child: Text('Error: $err')),
+      error: (err, stack) => const SizedBox.shrink(),
       data: (connections) {
         if (connections.isEmpty) {
           return const SizedBox.shrink();

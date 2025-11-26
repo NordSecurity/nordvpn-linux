@@ -31,9 +31,7 @@ Future<void> initServiceLocator() async {
   );
 
   sl.registerSingleton<SharedPreferencesAsync>(SharedPreferencesAsync());
-  final countryNamesService = CountryNamesService();
-  await countryNamesService.init();
-  sl.registerSingleton(countryNamesService);
+  sl.registerSingleton(CountryNamesService());
 
   sl.registerSingleton(
     ProviderContainer(),

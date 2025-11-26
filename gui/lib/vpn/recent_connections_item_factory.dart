@@ -57,9 +57,7 @@ final class RecentConnectionsItemFactory {
 
     // handle country-based images (works for both specialty and standard servers)
     if (isCountry) {
-      return imagesManager.forCountry(
-        Country(code: model.countryCode, name: model.country),
-      );
+      return imagesManager.forCountry(Country.fromCode(model.countryCode));
     }
 
     // fallback: try to get specialty server image or default icon
@@ -77,9 +75,12 @@ final class RecentConnectionsItemFactory {
     if (isSpecialtyServer) {
       var specialtyTitle = Text(model.specialtyServer, style: appTheme.body);
       if (model.country.isNotEmpty) {
-        var subtitle = model.country;
-        subtitle +=
-            " - ${model.city.isEmpty ? t.ui.fastestServer : model.city}";
+        final country = Country.fromCode(model.countryCode);
+        var subtitle = country.localizedName;
+        final city = model.city;
+        final cityLocalized = City(city).localizedName;
+        subtitle += " - ${city.isEmpty ? t.ui.fastestServer : cityLocalized}";
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -108,12 +109,17 @@ final class RecentConnectionsItemFactory {
         model.connectionType == ServerSelectionRule.CITY;
 
     if (isCity) {
-      final cityText = _maybeAddVirtualLabel(model.city, model.isVirtual);
+      final country = Country.fromCode(model.countryCode);
+      final city = City(model.city);
+      final cityText = _maybeAddVirtualLabel(
+        city.localizedName,
+        model.isVirtual,
+      );
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(model.country, style: appTheme.body),
+          Text(country.localizedName, style: appTheme.body),
           Text(cityText, style: appTheme.caption),
         ],
       );
@@ -124,12 +130,13 @@ final class RecentConnectionsItemFactory {
         model.connectionType == ServerSelectionRule.SPECIFIC_SERVER;
 
     if (isSpecificServer) {
+      final country = Country.fromCode(model.countryCode);
       final serverId = model.serverId;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(model.country, style: appTheme.body),
+          Text(country.localizedName, style: appTheme.body),
           if (serverId != null)
             Text(
               _maybeAddVirtualLabel(serverId, model.isVirtual),
@@ -139,11 +146,12 @@ final class RecentConnectionsItemFactory {
       );
     }
 
+    final country = Country.fromCode(model.countryCode);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(model.country, style: appTheme.body),
+        Text(country.localizedName, style: appTheme.body),
         Text(t.ui.fastestServer, style: appTheme.caption),
       ],
     );
@@ -168,8 +176,8 @@ final class RecentConnectionsItemFactory {
       );
     } else {
       Country? country;
-      if (model.countryCode.isNotEmpty && model.country.isNotEmpty) {
-        country = Country(code: model.countryCode, name: model.country);
+      if (model.countryCode.isNotEmpty) {
+        country = Country.fromCode(model.countryCode);
       }
       return ConnectArguments(
         country: country,
