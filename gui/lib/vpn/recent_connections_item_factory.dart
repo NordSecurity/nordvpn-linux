@@ -22,26 +22,24 @@ final class RecentConnectionsItemFactory {
   /// Build a list item for a recent connection
   Widget forRecentConnection({
     required BuildContext context,
-    required RecentConnection recentConnection,
+    required RecentConnection model,
     required void Function(ConnectArguments) onTap,
   }) {
     final appTheme = context.appTheme;
     final serversListTheme = context.serversListTheme;
 
     final isSpecialtyServer =
-        recentConnection.group != ServerGroup.UNDEFINED &&
-        recentConnection.group != ServerGroup.STANDARD_VPN_SERVERS;
+        model.group != ServerGroup.UNDEFINED &&
+        model.group != ServerGroup.STANDARD_VPN_SERVERS;
 
     // Pre-compute connect arguments to avoid recalculation on each tap
-    final connectArgs = _buildConnectArgs(recentConnection, isSpecialtyServer);
+    final connectArgs = _buildConnectArgs(model, isSpecialtyServer);
 
     return CustomListTile(
       minTileHeight: serversListTheme.listItemHeight,
       contentPadding: EdgeInsets.only(left: 0),
-      leading: ServerItemImage(
-        image: _buildImage(recentConnection, isSpecialtyServer),
-      ),
-      title: _buildTitle(appTheme, recentConnection, isSpecialtyServer),
+      leading: ServerItemImage(image: _buildImage(model, isSpecialtyServer)),
+      title: _buildTitle(appTheme, model, isSpecialtyServer),
       onTap: () => onTap(connectArgs),
     );
   }
@@ -80,10 +78,8 @@ final class RecentConnectionsItemFactory {
       var specialtyTitle = Text(model.specialtyServer, style: appTheme.body);
       if (model.country.isNotEmpty) {
         var subtitle = model.country;
-        if (model.city.isNotEmpty) {
-          subtitle += " - ${model.city}";
-        }
-
+        subtitle +=
+            " - ${model.city.isEmpty ? t.ui.fastestServer : model.city}";
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,

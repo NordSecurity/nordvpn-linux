@@ -46,7 +46,7 @@ final class RecentConnectionsList extends ConsumerWidget {
                     .map(
                       (connection) => _itemFactory.forRecentConnection(
                         context: context,
-                        recentConnection: connection,
+                        model: connection,
                         onTap: onSelected,
                       ),
                     )
