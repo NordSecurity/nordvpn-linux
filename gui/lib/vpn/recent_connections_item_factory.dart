@@ -33,10 +33,7 @@ final class RecentConnectionsItemFactory {
         recentConnection.group != ServerGroup.STANDARD_VPN_SERVERS;
 
     // Pre-compute connect arguments to avoid recalculation on each tap
-    final connectArgs = _buildConnectArgs(
-      recentConnection,
-      isSpecialtyServer,
-    );
+    final connectArgs = _buildConnectArgs(recentConnection, isSpecialtyServer);
 
     return CustomListTile(
       minTileHeight: serversListTheme.listItemHeight,
@@ -44,11 +41,7 @@ final class RecentConnectionsItemFactory {
       leading: ServerItemImage(
         image: _buildImage(recentConnection, isSpecialtyServer),
       ),
-      title: _buildTitle(
-        appTheme,
-        recentConnection,
-        isSpecialtyServer,
-      ),
+      title: _buildTitle(appTheme, recentConnection, isSpecialtyServer),
       onTap: () => onTap(connectArgs),
     );
   }
@@ -96,7 +89,10 @@ final class RecentConnectionsItemFactory {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             specialtyTitle,
-            Text(subtitle, style: appTheme.caption),
+            Text(
+              _maybeAddVirtualLabel(subtitle, model.isVirtual),
+              style: appTheme.caption,
+            ),
           ],
         );
       }
