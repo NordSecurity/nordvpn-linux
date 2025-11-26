@@ -83,7 +83,7 @@ extension Helper on WidgetTester {
     // ensure mock gRPC server is used
     expect(useMockDaemon, true);
     await GrpcServer.instance.start();
-    await binding.setSurfaceSize(windowSize ?? const Size(800, 1200));
+    await binding.setSurfaceSize(windowSize);
     GrpcServer.instance.account.delayDuration = skipLoadingScreen
         ? Duration.zero
         : Duration(seconds: 3);
