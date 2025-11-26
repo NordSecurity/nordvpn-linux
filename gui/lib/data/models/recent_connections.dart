@@ -1,8 +1,13 @@
+import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/pb/daemon/recent_connections.pb.dart';
 import 'package:nordvpn/pb/daemon/server_selection_rule.pb.dart';
 import 'package:nordvpn/pb/daemon/config/group.pb.dart' as cfg;
 
 class RecentConnection {
+  // Matches server id from specific server name
+  // e.g., "Lithuania #123" -> captures "#123"
+  static final _serverIdRegex = RegExp(r'^[A-Za-z\s-]+(#\d+)$');
+
   final String country;
   final String city;
   final cfg.ServerGroup group;
@@ -69,5 +74,22 @@ class RecentConnection {
 
   bool get isCountryBased {
     return !isSpecialtyServer;
+  }
+
+  /// Returns city name with virtual label if applicable
+  String get cityDisplay {
+    return _maybeAddVirtualLabel(city);
+  }
+
+  /// Returns server ID extracted from specific server name with virtual label if applicable
+  /// e.g., "Lithuania #123" -> "#123" or "#123 - Virtual"
+  String? get serverIdDisplay {
+    final match = _serverIdRegex.firstMatch(specificServerName);
+    if (match == null) return null;
+    return _maybeAddVirtualLabel(match[1]!);
+  }
+
+  String _maybeAddVirtualLabel(String text) {
+    return isVirtual ? "$text - ${t.ui.virtual}" : text;
   }
 }
