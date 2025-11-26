@@ -63,7 +63,7 @@ func NewConsentChecker(
 
 // PrepareDaemonIfConsentNotCompleted sets up the daemon for analytics consent flow.
 //
-// If consent flow was completed, this is no-op. Otherwise:
+// If consent flow was completed it performs moose library initialization. Otherwise:
 //
 // - using Insights API find user location
 // - based on the location determine if user is in standard consent mode or GDPR mode (more strict)
