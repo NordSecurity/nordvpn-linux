@@ -2,8 +2,10 @@ FROM ghcr.io/nordsecurity/nordvpn-linux/golang:debian-bullseye-20251014@sha256:a
 
 ENV GOBIN=/usr/bin
 
-RUN go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.43.4 && \
-    go install github.com/goreleaser/chglog/cmd/chglog@v0.7.3
+# nfpm version: v2.43.0 github.com/goreleaser/nfpm/v2/cmd/nfpm@2e47af64a3f33d32ec1395dbd56165c4feb2bc21
+# chglog version: v0.7.3 github.com/goreleaser/chglog/cmd/chglog@f22c2a6f688d1d20958839794c5d5b84ccfc9ef3
+RUN go install github.com/goreleaser/nfpm/v2/cmd/nfpm@2e47af64a3f33d32ec1395dbd56165c4feb2bc21 \
+    && go install github.com/goreleaser/chglog/cmd/chglog@f22c2a6f688d1d20958839794c5d5b84ccfc9ef3 
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
