@@ -132,7 +132,7 @@ envsubst <templates/scriptlets/deb/postrm_template >"${APP_BUNDLE_DIR}"/scriptle
 envsubst <templates/scriptlets/rpm/post_template >"${APP_BUNDLE_DIR}"/scriptlets/rpm/post
 envsubst <templates/scriptlets/rpm/postun_template >"${APP_BUNDLE_DIR}"/scriptlets/rpm/postun
 
-# value must be given from outside
+# value expected by `nfpm` template and must be given from outside, break here if not set
 echo "${VERSION_DATE}"
 
 # build package
