@@ -5,6 +5,7 @@ package auth
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"sync"
 	"time"
@@ -166,7 +167,9 @@ func (r *RenewingChecker) IsVPNExpired() (bool, error) {
 
 	if r.expChecker.IsExpired(data.ServiceExpiry) {
 		if err := r.fetchSaveServices(cfg.AutoConnectData.ID, &data); err != nil {
-			// TODO: now new account no vpn service is treated as if vpn service is expired
+			log.Println(internal.ErrorPrefix, "fetch services error:", err)
+			// Now new account without vpn service is treated as if vpn service is expired.
+			// TODO: need different treatment for account without vpn service
 			if strings.Contains(err.Error(), "vpn service not found") {
 				return true, nil
 			}
