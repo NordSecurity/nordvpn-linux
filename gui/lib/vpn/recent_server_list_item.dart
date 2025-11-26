@@ -86,7 +86,7 @@ class RecentServerListItem extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             specialtyTitle,
-            Text(subtitle, style: appTheme.caption),
+            Text(_maybeAddVirtualLabel(subtitle), style: appTheme.caption),
           ],
         );
       }
