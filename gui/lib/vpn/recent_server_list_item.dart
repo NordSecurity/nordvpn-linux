@@ -77,9 +77,8 @@ class RecentServerListItem extends StatelessWidget {
       var specialtyTitle = Text(model.specialtyServer, style: appTheme.body);
       if (model.country.isNotEmpty) {
         var subtitle = model.country;
-        if (model.city.isNotEmpty) {
-          subtitle += " - ${model.city}";
-        }
+        subtitle +=
+            " - ${model.city.isEmpty ? t.ui.fastestServer : model.city}";
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
