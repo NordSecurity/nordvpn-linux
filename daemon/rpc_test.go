@@ -23,7 +23,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
-	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
@@ -110,7 +109,7 @@ func testRPC() *RPC {
 		&subs.Subject[string]{},
 		&mock.DNSGetter{Names: []string{"1.1.1.1"}},
 		nil,
-		func() events.Analytics { return &analytics }(),
+		&analytics,
 		&testnorduser.MockNorduserCombinedService{},
 		nil,
 		sharedctx.New(),
