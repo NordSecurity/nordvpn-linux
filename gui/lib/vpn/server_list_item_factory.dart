@@ -234,5 +234,4 @@ final class ServerListItemFactory {
       onTap: () => onTap(ConnectArguments(server: server)),
     );
   }
-
 }
