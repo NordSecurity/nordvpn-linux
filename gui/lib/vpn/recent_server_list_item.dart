@@ -35,15 +35,12 @@ class RecentServerListItem extends StatelessWidget {
         model.group != ServerGroup.UNDEFINED &&
         model.group != ServerGroup.STANDARD_VPN_SERVERS;
 
-    // Pre-compute connect arguments to avoid recalculation on each tap
-    final connectArgs = _buildItemConnectArgs(isSpecialtyServer);
-
     return CustomListTile(
       minTileHeight: context.serversListTheme.listItemHeight,
       contentPadding: EdgeInsets.only(left: 0),
       leading: ServerItemImage(image: _buildItemImage(isSpecialtyServer)),
       title: _buildItemTitle(context, isSpecialtyServer),
-      onTap: () => onTap(connectArgs),
+      onTap: () => onTap(_buildItemConnectArgs(isSpecialtyServer)),
     );
   }
 
