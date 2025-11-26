@@ -76,8 +76,10 @@ func NewConsentChecker(
 func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 	if acc.IsConsentFlowCompleted() {
 		var cfg config.Config
+		// TODO(LVPN-9667): Error handling here should be revisited. Possibly, it should be promoted to the caller in order to properly handle it.
 		if err := acc.cm.Load(&cfg); err != nil {
 			log.Println(internal.ErrorPrefix, "failed to load config while running daemon preparation", err)
+			return
 		}
 		if err := acc.analytics.Init(cfg.AnalyticsConsent); err != nil {
 			log.Println(internal.ErrorPrefix, "moose failed to initialize with error:", err)
