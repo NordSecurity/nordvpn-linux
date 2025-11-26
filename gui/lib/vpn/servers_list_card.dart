@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/constants.dart';
@@ -105,7 +104,6 @@ final class _ServersListCardState extends State<ServersListCard> {
       buttonText: t.ui.retry,
       onPressed: () async {
         await ref.read(serversListControllerProvider.notifier).refetch();
-        return;
       },
     );
   }
