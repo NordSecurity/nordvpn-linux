@@ -1,27 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nordvpn/data/models/country.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
-import 'package:nordvpn/data/models/server_group_extension.dart';
 import 'package:nordvpn/data/providers/recent_connections_controller.dart';
-import 'package:nordvpn/data/models/recent_connections.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/vpn/server_list_item_factory.dart';
 import 'package:nordvpn/theme/app_theme.dart';
-import 'package:nordvpn/internal/images_manager.dart';
 import 'package:nordvpn/service_locator.dart';
 
 final class RecentConnectionsList extends ConsumerWidget {
   final Function(ConnectArguments) onSelected;
   final ServerListItemFactory _serverListItemFactory;
-  final ImagesManager _imagesManager;
+
   RecentConnectionsList({
     super.key,
     required this.onSelected,
     ServerListItemFactory? itemFactory,
-    ImagesManager? imagesManager,
-  }) : _serverListItemFactory = itemFactory ?? sl(),
-       _imagesManager = imagesManager ?? sl();
+  }) : _serverListItemFactory = itemFactory ?? sl();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -51,6 +45,7 @@ final class RecentConnectionsList extends ConsumerWidget {
                 children: connections
                     .map(
                       (connection) => _serverListItemFactory.forRecent(
+                        context: context,
                         recentConnection: connection,
                         onTapFunc: onSelected,
                       ),
@@ -62,22 +57,5 @@ final class RecentConnectionsList extends ConsumerWidget {
         );
       },
     );
-  }
-
-  Widget addModelBasedIcon(RecentConnection conn) {
-    if (conn.isSpecialtyServer) {
-      final specialtyType = conn.group.toSpecialtyType();
-      if (specialtyType == null) {
-        return const Icon(Icons.history);
-      }
-      return _imagesManager.forSpecialtyServer(specialtyType);
-    }
-
-    if (conn.isCountryBased) {
-      final country = Country(code: conn.countryCode, name: conn.country);
-      return _imagesManager.forCountry(country);
-    }
-
-    return const Icon(Icons.history);
   }
 }
