@@ -3,19 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
 import 'package:nordvpn/data/providers/recent_connections_controller.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
-import 'package:nordvpn/vpn/server_list_item_factory.dart';
+import 'package:nordvpn/vpn/recent_connections_item_factory.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/service_locator.dart';
 
 final class RecentConnectionsList extends ConsumerWidget {
   final Function(ConnectArguments) onSelected;
-  final ServerListItemFactory _serverListItemFactory;
+  final RecentConnectionsItemFactory _itemFactory;
 
   RecentConnectionsList({
     super.key,
     required this.onSelected,
-    ServerListItemFactory? itemFactory,
-  }) : _serverListItemFactory = itemFactory ?? sl();
+    RecentConnectionsItemFactory? itemFactory,
+  }) : _itemFactory = itemFactory ?? sl();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -44,10 +44,10 @@ final class RecentConnectionsList extends ConsumerWidget {
               Column(
                 children: connections
                     .map(
-                      (connection) => _serverListItemFactory.forRecent(
+                      (connection) => _itemFactory.forRecentConnection(
                         context: context,
                         recentConnection: connection,
-                        onTapFunc: onSelected,
+                        onTap: onSelected,
                       ),
                     )
                     .toList(),
