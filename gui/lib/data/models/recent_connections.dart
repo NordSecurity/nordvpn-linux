@@ -3,6 +3,10 @@ import 'package:nordvpn/pb/daemon/server_selection_rule.pb.dart';
 import 'package:nordvpn/pb/daemon/config/group.pb.dart' as cfg;
 
 class RecentConnection {
+  // Matches server id from specific server name
+  // e.g., "Lithuania #123" -> captures "#123"
+  static final _serverIdRegex = RegExp(r'^[A-Za-z\s-]+(#\d+)$');
+
   final String country;
   final String city;
   final cfg.ServerGroup group;
@@ -69,5 +73,12 @@ class RecentConnection {
 
   bool get isCountryBased {
     return !isSpecialtyServer;
+  }
+
+  /// Extracts server ID from specific server name
+  /// e.g., "Lithuania #123" -> "#123"
+  String? get serverId {
+    final match = _serverIdRegex.firstMatch(specificServerName);
+    return match?[1];
   }
 }

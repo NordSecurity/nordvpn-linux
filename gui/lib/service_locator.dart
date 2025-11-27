@@ -7,6 +7,7 @@ import 'package:nordvpn/grpc/grpc_service.dart';
 import 'package:nordvpn/i18n/country_names_service.dart';
 import 'package:nordvpn/internal/assets_manager.dart';
 import 'package:nordvpn/internal/images_manager.dart';
+import 'package:nordvpn/vpn/recent_connections_item_factory.dart';
 import 'package:nordvpn/vpn/server_list_item_factory.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -18,6 +19,9 @@ Future<void> initServiceLocator() async {
   sl.registerSingleton<ServerListItemFactory>(
     ServerListItemFactory(imagesManager: sl()),
   );
+  sl.registerSingleton<RecentConnectionsItemFactory>(
+    RecentConnectionsItemFactory(imagesManager: sl()),
+  );
 
   final assetManager = await AssetManager.create();
   sl.registerSingleton<AssetManager>(assetManager);
@@ -27,9 +31,7 @@ Future<void> initServiceLocator() async {
   );
 
   sl.registerSingleton<SharedPreferencesAsync>(SharedPreferencesAsync());
-  final countryNamesService = CountryNamesService();
-  await countryNamesService.init();
-  sl.registerSingleton(countryNamesService);
+  sl.registerSingleton(CountryNamesService());
 
   sl.registerSingleton(
     ProviderContainer(),

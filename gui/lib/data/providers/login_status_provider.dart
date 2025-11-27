@@ -17,14 +17,13 @@ part 'login_status_provider.g.dart';
 final class LoginStatus extends _$LoginStatus implements AccountObserver {
   @override
   FutureOr<bool> build() async {
-    return ref.watch(grpcConnectionControllerProvider).when(
-          data: (_) async {
-            _registerNotifications();
-            return await _fetchLoginState();
-          },
-          error: (error, stack) => Future.error(error, stack),
-          loading: () => Completer<bool>().future,
-        );
+    final isConnected = ref.watch(grpcConnectionControllerProvider);
+    if (isConnected is! AsyncData) {
+      throw "grpc connect not established";
+    }
+    _registerNotifications();
+
+    return await _fetchLoginState();
   }
 
   @override
