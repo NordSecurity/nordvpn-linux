@@ -541,20 +541,10 @@ class TranslationsUiEn {
 	String get doubleVpn => 'Double VPN';
 	String get onionOverVpn => 'Onion over VPN';
 	String get p2p => 'P2P';
-
-	/// en: 'Europe'
 	String get europe => 'Europe';
-
-	/// en: 'The Americas'
 	String get theAmericas => 'The Americas';
-
-	/// en: 'Asia Pacific'
 	String get asiaPacific => 'Asia Pacific';
-
-	/// en: 'Africa, the Middle East, and India'
 	String get africaTheMiddleEastAndIndia => 'Africa, the Middle East, and India';
-
-	/// en: 'Obfuscated'
 	String get obfuscated => 'Obfuscated';
 	String get selectServerForDip => 'Pick a location for your IP';
 	String get selectLocation => 'Select location';
@@ -580,11 +570,7 @@ class TranslationsUiEn {
 	String get vpnConnection => 'VPN connection';
 	String get vpnConnectionSubtitle => 'Auto-connect, Kill Switch, protocol';
 	String get autoConnectDescription => 'Automatically connect to the fastest available server or your chosen server location when the app starts.';
-
-	/// en: 'Fastest'
 	String get fastestServer => 'Fastest';
-
-	/// en: 'Change'
 	String get change => 'Change';
 	String get nordLynx => 'NordLynx';
 	String get openVpnTcp => 'OpenVPN (TCP)';
@@ -724,8 +710,6 @@ class TranslationsUiEn {
 	String get changePassword => 'Change password';
 	String get productHub => 'Product Hub';
 	String get subscriptionInactive => 'Inactive';
-
-	/// en: 'Recent connections'
 	String get recentConnections => 'Recent connections';
 }
 
@@ -1360,22 +1344,12 @@ extension on Translations {
 			case 'ui.termsAgreementDescription': return 'By continuing to use this app, you agree to our terms and how we handle your data. To read the terms and privacy policy check the links below.';
 			case 'ui.readMore': return 'Read more';
 			case 'ui.customDnsWarning': return 'Using third-party DNS may limit website availability. For the best browsing experience, use our default settings.';
-<<<<<<< HEAD
 			case 'ui.accountCreatedOn': return ({required String creation_date}) => 'Account created: ${creation_date}';
 			case 'ui.manageSubscription': return 'Manage subscription';
 			case 'ui.changePassword': return 'Change password';
 			case 'ui.productHub': return 'Product Hub';
 			case 'ui.subscriptionInactive': return 'Inactive';
-=======
 			case 'ui.recentConnections': return 'Recent connections';
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> d44ab456 (Fix issues)
-=======
-			case 'ui.obfuscatedSpecialtyServerSelectionTooltip': return 'In order to select obfuscated server please enable \'Obfuscation\' in the setting.';
->>>>>>> 7ed38501 (LVPN-9315: Updated support for specialty servers (#1170))
-=======
->>>>>>> bd87dbca (LVPN-9557: GUI fastest label issue (#1214))
 			default: return null;
 		}
 	}

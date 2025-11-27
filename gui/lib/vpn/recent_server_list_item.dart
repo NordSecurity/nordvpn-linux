@@ -14,16 +14,18 @@ import 'package:nordvpn/vpn/server_item_image.dart';
 import 'package:nordvpn/widgets/custom_list_tile.dart';
 
 class RecentServerListItem extends StatelessWidget {
+  // Matches server id from specific server name
+  // e.g., "Lithuania #123" -> captures "#123"
+  static final _serverIdRegex = RegExp(r'^[A-Za-z\s-]+(#\d+)$');
+
   final RecentConnection model;
   final void Function(ConnectArguments) onTap;
-  final bool enabled;
   final ImagesManager imagesManager;
 
   const RecentServerListItem({
     super.key,
     required this.model,
     required this.onTap,
-    this.enabled = true,
     required this.imagesManager,
   });
 
@@ -33,16 +35,15 @@ class RecentServerListItem extends StatelessWidget {
         model.group != ServerGroup.UNDEFINED &&
         model.group != ServerGroup.STANDARD_VPN_SERVERS;
 
-    final image = _buildItemImage(isSpecialtyServer);
-    final title = _buildItemTitle(context, isSpecialtyServer);
+    // Pre-compute connect arguments to avoid recalculation on each tap
     final connectArgs = _buildItemConnectArgs(isSpecialtyServer);
 
     return CustomListTile(
       minTileHeight: context.serversListTheme.listItemHeight,
       contentPadding: EdgeInsets.only(left: 0),
-      leading: ServerItemImage(image: image),
-      title: title,
-      onTap: enabled ? () => onTap(connectArgs) : null,
+      leading: ServerItemImage(image: _buildItemImage(isSpecialtyServer)),
+      title: _buildItemTitle(context, isSpecialtyServer),
+      onTap: () => onTap(connectArgs),
     );
   }
 
@@ -85,7 +86,7 @@ class RecentServerListItem extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             specialtyTitle,
-            Text(subtitle, style: appTheme.caption),
+            Text(_maybeAddVirtualLabel(subtitle), style: appTheme.caption),
           ],
         );
       }
@@ -105,12 +106,13 @@ class RecentServerListItem extends StatelessWidget {
         model.connectionType == ServerSelectionRule.CITY;
 
     if (isCity) {
+      final cityText = _maybeAddVirtualLabel(model.city);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(model.country, style: appTheme.body),
-          Text(model.city, style: appTheme.caption),
+          Text(cityText, style: appTheme.caption),
         ],
       );
     }
@@ -120,18 +122,14 @@ class RecentServerListItem extends StatelessWidget {
         model.connectionType == ServerSelectionRule.SPECIFIC_SERVER;
 
     if (isSpecificServer) {
-      // match only server id
-      final serverIdMatch = RegExp(
-        r'^[A-Za-z\s-]+(#\d+)$',
-      ).firstMatch(model.specificServerName);
-
+      final serverId = _extractServerId();
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(model.country, style: appTheme.body),
-          if (serverIdMatch != null)
-            Text(serverIdMatch[1]!, style: appTheme.caption),
+          if (serverId != null)
+            Text(_maybeAddVirtualLabel(serverId), style: appTheme.caption),
         ],
       );
     }
@@ -147,6 +145,18 @@ class RecentServerListItem extends StatelessWidget {
     );
   }
 
+  /// Adds virtual label to text if the server is virtual
+  String _maybeAddVirtualLabel(String text) {
+    return model.isVirtual ? "$text - ${t.ui.virtual}" : text;
+  }
+
+  /// Extracts server ID from specific server name
+  /// e.g., "Lithuania #123" -> "#123"
+  String? _extractServerId() {
+    final match = _serverIdRegex.firstMatch(model.specificServerName);
+    return match?[1];
+  }
+
   ConnectArguments _buildItemConnectArgs(bool isSpecialtyServer) {
     if (model.connectionType == ServerSelectionRule.SPECIFIC_SERVER &&
         model.specificServerName.isNotEmpty) {
@@ -154,7 +164,7 @@ class RecentServerListItem extends StatelessWidget {
         server: ServerInfo(
           id: 0,
           hostname: model.specificServerName,
-          isVirtual: false,
+          isVirtual: model.isVirtual,
         ),
       );
     } else {
