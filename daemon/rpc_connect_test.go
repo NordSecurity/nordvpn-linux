@@ -400,18 +400,28 @@ func TestRPCConnect(t *testing.T) {
 				if test.setup != nil {
 					test.setup(rpc)
 				}
+				firstOpenEventCouter := 0
+				firstOpenListener := func(any) error {
+					firstOpenEventCouter++
+					return nil
+				}
+				rpc.events.Service.FirstTimeOpened.Subscribe(firstOpenListener)
 				server := &mockRPCServer{}
 				err := rpc.Connect(&pb.ConnectRequest{
 					ServerGroup: test.serverGroup,
 					ServerTag:   test.serverTag,
 				}, server)
+
 				switch test.resp {
 				case internal.CodeConnected:
 					assert.NoError(t, err)
+					assert.Equal(t, firstOpenEventCouter, 1)
 				case 0:
 					assert.ErrorIs(t, internal.ErrUnhandled, err)
+					assert.Equal(t, firstOpenEventCouter, 0)
 				default:
 					assert.Equal(t, test.resp, server.msg.Type)
+					assert.Equal(t, firstOpenEventCouter, 0)
 				}
 			})
 		}

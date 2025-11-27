@@ -78,6 +78,8 @@ case "$PKG_TO_BUILD" in
 	;;
 esac
 
+# value expected by `nfpm` template and must be given from outside, break here if not set
+echo "${VERSION_DATE}"
 
 envsubst <"${WORKDIR}"/ci/nfpm/template.yaml >"${BASEDIR}"/packages.yaml
 mkdir -p "${APP_DIR}/${PKG_TO_BUILD}"
