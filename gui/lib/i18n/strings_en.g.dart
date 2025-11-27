@@ -188,6 +188,7 @@ class TranslationsCitiesEn {
 	String get miami => 'Miami';
 	String get new_york => 'New York';
 	String get phoenix => 'Phoenix';
+	String get pittsburgh => 'Pittsburgh';
 	String get saint_louis => 'Saint Louis';
 	String get salt_lake_city => 'Salt Lake City';
 	String get san_francisco => 'San Francisco';
@@ -854,6 +855,7 @@ extension on Translations {
 			case 'cities.miami': return 'Miami';
 			case 'cities.new_york': return 'New York';
 			case 'cities.phoenix': return 'Phoenix';
+			case 'cities.pittsburgh': return 'Pittsburgh';
 			case 'cities.saint_louis': return 'Saint Louis';
 			case 'cities.salt_lake_city': return 'Salt Lake City';
 			case 'cities.san_francisco': return 'San Francisco';

@@ -109,15 +109,14 @@ final class AccountController extends _$AccountController
 
       switch (loginData.status) {
         case LoginStatus.SUCCESS:
-          if (loginData.url.isNotEmpty) {
-            final uri = Uri.parse(loginData.url);
-            if (await uri.launch()) {
-              _startLoginTimer(config.loginTimeout);
-              return;
+          final uri = Uri.parse(loginData.url);
+          if (await uri.launch()) {
+            _startLoginTimer(config.loginTimeout);
+            return;
+          } else {
+            if (!useMockDaemon) {
+              status = DaemonStatusCode.failedToOpenBrowserToLogin;
             }
-          }
-          if (!useMockDaemon) {
-            status = DaemonStatusCode.failedToOpenBrowserToLogin;
           }
           break;
         case LoginStatus.ALREADY_LOGGED_IN:
