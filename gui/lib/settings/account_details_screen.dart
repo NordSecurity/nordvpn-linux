@@ -195,6 +195,10 @@ final class UserInfo extends StatelessWidget {
       return "";
     }
 
+    if (account.isSubscriptionExpired) {
+      return t.ui.subscriptionInactive;
+    }
+
     final date = _dateFormat.format(account.vpnExpirationDate!);
     return t.ui.subscriptionValidationDate(expirationDate: date);
   }

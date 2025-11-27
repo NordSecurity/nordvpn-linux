@@ -252,5 +252,6 @@
   "accountCreatedOn": "Account created: ${creation_date: String}",
   "manageSubscription": "Manage subscription",
   "changePassword": "Change password",
-  "productHub": "Product Hub"
+  "productHub": "Product Hub",
+  "subscriptionInactive": "Inactive"
 }
