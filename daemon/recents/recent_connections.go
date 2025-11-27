@@ -24,16 +24,23 @@ type RecentConnectionsStore struct {
 	fsHandle          config.FilesystemHandle
 	mu                sync.Mutex
 	pendingConnection Model
+	onDataChangedFunc func()
 }
 
-// NewRecentConnectionsStore creates a recent VPN connection store
+// NewRecentConnectionsStore creates a recent VPN connection store.
+// The path specifies where recent connections will be stored.
+// The fsHandle provides filesystem operations for reading and writing data.
+// The onDataChangedFunc is an optional callback invoked when data changes;
+// pass nil to disable event publishing.
 func NewRecentConnectionsStore(
 	path string,
 	fsHandle config.FilesystemHandle,
+	onDataChangedFunc func(),
 ) *RecentConnectionsStore {
 	return &RecentConnectionsStore{
-		path:     path,
-		fsHandle: fsHandle,
+		path:              path,
+		fsHandle:          fsHandle,
+		onDataChangedFunc: onDataChangedFunc,
 	}
 }
 
@@ -116,6 +123,10 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 		return fmt.Errorf("adding new recent vpn connection: %w", err)
 	}
 
+	if r.onDataChangedFunc != nil {
+		r.onDataChangedFunc()
+	}
+
 	return nil
 }
 
@@ -141,13 +152,18 @@ func (r *RecentConnectionsStore) PopPending() (bool, Model) {
 	return true, connection
 }
 
-// Clean removes all stored connection information
+// Clean removes all stored connection information.
+// On successful clean, the data change event will be published if configured.
 func (r *RecentConnectionsStore) Clean() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	if err := r.save([]Model{}); err != nil {
 		return fmt.Errorf("cleaning existing recent vpn connections: %w", err)
+	}
+
+	if r.onDataChangedFunc != nil {
+		r.onDataChangedFunc()
 	}
 
 	return nil

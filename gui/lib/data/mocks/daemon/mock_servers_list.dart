@@ -32,10 +32,11 @@ final class MockServersList {
     _serversList = _generateServersList();
     _appStateSub = stream.stream.listen((value) {
       if (value.hasSettingsChange()) {
-        if (_settings == value.settingsChange) {
+        final newSettings = value.settingsChange;
+        if (_settings == newSettings) {
           return;
         }
-        _settings = value.settingsChange;
+        _settings = newSettings;
         _serversList = _generateServersList(
           obfuscated: _settings!.obfuscate,
           hasVirtualServers: _settings!.virtualLocation,
