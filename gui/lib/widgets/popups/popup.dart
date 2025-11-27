@@ -43,9 +43,14 @@ abstract class Popup extends ConsumerWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          spacing: appTheme.horizontalSpace,
-          children: [if (leadingIcon != null) leadingIcon!, _title(appTheme)],
+        Expanded(
+          child: Row(
+            spacing: appTheme.horizontalSpace,
+            children: [
+              if (leadingIcon != null) leadingIcon!,
+              Flexible(child: _title(appTheme)),
+            ],
+          ),
         ),
         _closeIcon(context),
       ],
