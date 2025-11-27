@@ -63,7 +63,7 @@ func NewConsentChecker(
 
 // PrepareDaemonIfConsentNotCompleted sets up the daemon for analytics consent flow.
 //
-// If consent flow was completed, this is no-op. Otherwise:
+// If consent flow was completed it performs moose library initialization. Otherwise:
 //
 // - using Insights API find user location
 // - based on the location determine if user is in standard consent mode or GDPR mode (more strict)
@@ -75,7 +75,15 @@ func NewConsentChecker(
 //   - save consent as completed and accepted, no consent flow for standard mode countries
 func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 	if acc.IsConsentFlowCompleted() {
-		// nothing to do
+		var cfg config.Config
+		// TODO(LVPN-9667): Error handling here should be revisited. Possibly, it should be promoted to the caller in order to properly handle it.
+		if err := acc.cm.Load(&cfg); err != nil {
+			log.Println(internal.ErrorPrefix, "failed to load config while running daemon preparation", err)
+			return
+		}
+		if err := acc.analytics.Init(cfg.AnalyticsConsent); err != nil {
+			log.Println(internal.ErrorPrefix, "moose failed to initialize with error:", err)
+		}
 		return
 	}
 

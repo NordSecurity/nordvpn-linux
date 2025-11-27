@@ -34,3 +34,5 @@ func (a *Analytics) Disable() error {
 
 	return nil
 }
+
+func (*Analytics) Init(config.AnalyticsConsent) error { return nil }
