@@ -4,7 +4,6 @@ import 'package:nordvpn/data/models/city.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
 import 'package:nordvpn/data/models/country.dart';
 import 'package:nordvpn/data/models/server_info.dart';
-import 'package:nordvpn/data/models/recent_connections.dart';
 import 'package:nordvpn/data/models/servers_list.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
@@ -15,7 +14,6 @@ import 'package:nordvpn/i18n/string_translation_extension.dart';
 import 'package:nordvpn/theme/servers_list_theme.dart';
 import 'package:nordvpn/widgets/custom_expansion_tile.dart';
 import 'package:nordvpn/widgets/custom_list_tile.dart';
-import 'package:nordvpn/vpn/recent_server_list_item.dart';
 import 'package:nordvpn/vpn/server_item_image.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 
@@ -237,14 +235,4 @@ final class ServerListItemFactory {
     );
   }
 
-  Widget forRecent({
-    required RecentConnection recentConnection,
-    required void Function(ConnectArguments) onTapFunc,
-  }) {
-    return RecentServerListItem(
-      model: recentConnection,
-      onTap: onTapFunc,
-      imagesManager: imagesManager,
-    );
-  }
 }
