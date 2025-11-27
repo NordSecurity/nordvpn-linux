@@ -13,41 +13,38 @@ import 'package:nordvpn/theme/servers_list_theme.dart';
 import 'package:nordvpn/vpn/server_item_image.dart';
 import 'package:nordvpn/widgets/custom_list_tile.dart';
 
-class RecentServerListItem extends StatelessWidget {
-  // Matches server id from specific server name
-  // e.g., "Lithuania #123" -> captures "#123"
-  static final _serverIdRegex = RegExp(r'^[A-Za-z\s-]+(#\d+)$');
-
-  final RecentConnection model;
-  final void Function(ConnectArguments) onTap;
+/// Factory for building list items for recent connections
+final class RecentConnectionsItemFactory {
   final ImagesManager imagesManager;
 
-  const RecentServerListItem({
-    super.key,
-    required this.model,
-    required this.onTap,
-    required this.imagesManager,
-  });
+  RecentConnectionsItemFactory({required this.imagesManager});
 
-  @override
-  Widget build(BuildContext context) {
+  /// Build a list item for a recent connection
+  Widget forRecentConnection({
+    required BuildContext context,
+    required RecentConnection model,
+    required void Function(ConnectArguments) onTap,
+  }) {
+    final appTheme = context.appTheme;
+    final serversListTheme = context.serversListTheme;
+
     final isSpecialtyServer =
         model.group != ServerGroup.UNDEFINED &&
         model.group != ServerGroup.STANDARD_VPN_SERVERS;
 
     // Pre-compute connect arguments to avoid recalculation on each tap
-    final connectArgs = _buildItemConnectArgs(isSpecialtyServer);
+    final connectArgs = _buildConnectArgs(model, isSpecialtyServer);
 
     return CustomListTile(
-      minTileHeight: context.serversListTheme.listItemHeight,
+      minTileHeight: serversListTheme.listItemHeight,
       contentPadding: EdgeInsets.only(left: 0),
-      leading: ServerItemImage(image: _buildItemImage(isSpecialtyServer)),
-      title: _buildItemTitle(context, isSpecialtyServer),
+      leading: ServerItemImage(image: _buildImage(model, isSpecialtyServer)),
+      title: _buildTitle(appTheme, model, isSpecialtyServer),
       onTap: () => onTap(connectArgs),
     );
   }
 
-  Widget _buildItemImage(bool isSpecialtyServer) {
+  Widget _buildImage(RecentConnection model, bool isSpecialtyServer) {
     final isCountry = model.countryCode.isNotEmpty && model.country.isNotEmpty;
 
     // early return for specialty server without country
@@ -72,21 +69,26 @@ class RecentServerListItem extends StatelessWidget {
         : const Icon(Icons.history);
   }
 
-  Widget _buildItemTitle(BuildContext context, bool isSpecialtyServer) {
-    final appTheme = context.appTheme;
+  Widget _buildTitle(
+    AppTheme appTheme,
+    RecentConnection model,
+    bool isSpecialtyServer,
+  ) {
     if (isSpecialtyServer) {
       var specialtyTitle = Text(model.specialtyServer, style: appTheme.body);
       if (model.country.isNotEmpty) {
         var subtitle = model.country;
         subtitle +=
             " - ${model.city.isEmpty ? t.ui.fastestServer : model.city}";
-
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             specialtyTitle,
-            Text(_maybeAddVirtualLabel(subtitle), style: appTheme.caption),
+            Text(
+              _maybeAddVirtualLabel(subtitle, model.isVirtual),
+              style: appTheme.caption,
+            ),
           ],
         );
       }
@@ -106,7 +108,7 @@ class RecentServerListItem extends StatelessWidget {
         model.connectionType == ServerSelectionRule.CITY;
 
     if (isCity) {
-      final cityText = _maybeAddVirtualLabel(model.city);
+      final cityText = _maybeAddVirtualLabel(model.city, model.isVirtual);
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -122,42 +124,39 @@ class RecentServerListItem extends StatelessWidget {
         model.connectionType == ServerSelectionRule.SPECIFIC_SERVER;
 
     if (isSpecificServer) {
-      final serverId = _extractServerId();
+      final serverId = model.serverId;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(model.country, style: appTheme.body),
           if (serverId != null)
-            Text(_maybeAddVirtualLabel(serverId), style: appTheme.caption),
+            Text(
+              _maybeAddVirtualLabel(serverId, model.isVirtual),
+              style: appTheme.caption,
+            ),
         ],
       );
     }
 
-    String titleText = model.country;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(titleText, style: appTheme.body),
+        Text(model.country, style: appTheme.body),
         Text(t.ui.fastestServer, style: appTheme.caption),
       ],
     );
   }
 
-  /// Adds virtual label to text if the server is virtual
-  String _maybeAddVirtualLabel(String text) {
-    return model.isVirtual ? "$text - ${t.ui.virtual}" : text;
+  String _maybeAddVirtualLabel(String text, bool isVirtual) {
+    return isVirtual ? "$text - ${t.ui.virtual}" : text;
   }
 
-  /// Extracts server ID from specific server name
-  /// e.g., "Lithuania #123" -> "#123"
-  String? _extractServerId() {
-    final match = _serverIdRegex.firstMatch(model.specificServerName);
-    return match?[1];
-  }
-
-  ConnectArguments _buildItemConnectArgs(bool isSpecialtyServer) {
+  ConnectArguments _buildConnectArgs(
+    RecentConnection model,
+    bool isSpecialtyServer,
+  ) {
     if (model.connectionType == ServerSelectionRule.SPECIFIC_SERVER &&
         model.specificServerName.isNotEmpty) {
       return ConnectArguments(
