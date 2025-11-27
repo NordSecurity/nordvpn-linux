@@ -31,7 +31,7 @@ func (r *RPC) DoDisconnect() (bool, error) {
 	})
 
 	if wasConnected {
-		StorePendingRecentConnection(r.recentVPNConnStore, r.dataUpdateEvents.RecentsUpdate.Publish)
+		StorePendingRecentConnection(r.recentVPNConnStore)
 	}
 
 	return wasConnected, err

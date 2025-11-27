@@ -295,10 +295,7 @@ func (r *RPC) connect(
 		if err != nil {
 			log.Printf("%s Failed to build recent VPN connection model: %s\n", internal.WarningPrefix, err)
 		} else {
-			StorePendingRecentConnection(
-				r.recentVPNConnStore,
-				r.dataUpdateEvents.RecentsUpdate.Publish,
-			)
+			StorePendingRecentConnection(r.recentVPNConnStore)
 			r.recentVPNConnStore.AddPending(recentModel)
 		}
 	}

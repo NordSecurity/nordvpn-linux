@@ -604,6 +604,9 @@ func main() {
 		recents.NewRecentConnectionsStore(
 			internal.RecentVPNConnectionsFilename,
 			&config.StdFilesystemHandle{},
+			func() {
+				dataUpdateEvents.RecentsUpdate.Publish(events.DataRecentsChanged{})
+			},
 		),
 		dataUpdateEvents,
 	)
