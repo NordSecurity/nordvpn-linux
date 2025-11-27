@@ -145,6 +145,8 @@ def is_internet_reachable(ip_address="1.1.1.1", port=443, retry=5) -> bool:
     while i < retry:
         try:
             sock = socket.create_connection((ip_address, port), timeout=2)
+            print(sock)
+            print("sock connection created")
             sock.close()
             return True
         except Exception as e: # noqa: BLE001
@@ -192,7 +194,11 @@ def _is_dns_resolvable(domain = "nordvpn.com", retry=5) -> bool:
         try:
             resolver = dns.resolver.Resolver()
             resolver.nameservers = ["103.86.96.100"] # specify server so it will not get the result from the docker host
-            resolver.resolve(domain, 'A', lifetime=5)
+            answ = resolver.resolve(domain, 'A', lifetime=5)
+            print(answ.response)
+            print(answ.nameserver)
+            print(answ.port)
+            print("dns resolved")
             return True
         except Exception as e:  # noqa: BLE001
             print(f"_is_dns_resolvable: DNS {domain} FAILURE. Error: {e}")
@@ -209,7 +215,10 @@ def is_not_available(retry=5) -> bool:
 
     # If assert below fails, and you are running Kill Switch tests on your machine, inside of Docker,
     # set DNS in resolv.conf of your system to anything else but 127.0.0.53
-    return not is_internet_reachable(retry=retry, ip_address="8.8.8.8") and not _is_dns_resolvable(retry=retry)
+    internet = is_internet_reachable(retry=retry, ip_address="8.8.8.8")
+    dns = _is_dns_resolvable(retry=retry)
+    print(f"internet: {internet}, dns: {dns}")
+    return not internet and not dns 
 
 
 def is_available(retry=5) -> bool:
