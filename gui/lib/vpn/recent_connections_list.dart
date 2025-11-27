@@ -53,7 +53,6 @@ final class RecentConnectionsList extends ConsumerWidget {
                       (connection) => _serverListItemFactory.forRecent(
                         recentConnection: connection,
                         onTapFunc: onSelected,
-                        enabled: true,
                       ),
                     )
                     .toList(),
