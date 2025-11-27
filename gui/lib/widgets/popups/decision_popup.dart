@@ -34,8 +34,10 @@ final class DecisionPopup extends Popup {
 
   Widget _noButton(BuildContext context) {
     final theme = context.popupTheme;
-    return SizedBox(
-      height: theme.buttonHeight,
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        minHeight: theme.buttonHeight,
+      ),
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
           padding: theme.buttonPadding,
@@ -50,8 +52,10 @@ final class DecisionPopup extends Popup {
 
   Widget _yesButton(WidgetRef ref, BuildContext context) {
     final theme = context.popupTheme;
-    return SizedBox(
-      height: theme.buttonHeight,
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        minHeight: theme.buttonHeight,
+      ),
       child: ElevatedButton(
         onPressed: () async {
           // navigate if route is specified
