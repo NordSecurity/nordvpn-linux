@@ -1185,6 +1185,8 @@ func deviceTypeToInternalType(deviceType sysinfo.SystemDeviceType) moose.Nordvpn
 		dt = moose.NordvpnappDeviceTypeDesktop
 	case sysinfo.SystemDeviceTypeServer:
 		dt = moose.NordvpnappDeviceTypeServer
+	case sysinfo.SystemDeviceTypeContainer:
+		dt = moose.NordvpnappDeviceTypeVirtualMachine
 	default:
 		dt = moose.NordvpnappDeviceTypeUndefined
 	}
