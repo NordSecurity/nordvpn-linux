@@ -22,6 +22,7 @@ BASE_API = "https://api.nordvpn.com/v1"
 TELIO_EXPECTED_RELAY_TO_DIRECT_TIME = 5.0
 TELIO_EXPECTED_RTT = 5.0
 TELIO_EXPECTED_PACKET_LOSS = 0.0
+PEER_EXPECTED_LATENCY_MS = 12
 
 LANS = [
     "169.254.0.0/16",
@@ -806,3 +807,40 @@ def delete_machines_by_identifier(token: str, identifiers: list | None = None) -
         except requests.RequestException as e:
             logging.log(f"Got an error during DELETE request for {identifier}: {e}")
     session.close()
+
+
+def get_ping_latency(ip: str = "", qa_peer: bool = False, ssh_client: ssh.Ssh = None,
+                     sockperf_duration: int = 10) -> float | None:
+    """
+    Function to get latency of sockperf to hostname
+
+    :ip:                    Ip of host to ping/test
+    :qa_peer:               Flag if test should be executed from qa-peer container
+    :ssh_client:            Instance of ssh.Ssh class for qa_peer
+    :sockperf_duration:     Duration for sockperf test in seconds
+
+    :return:            float | None    Latency in milliseconds, None on failure
+    """
+    client_command = f"sockperf ping-pong -i {ip} -t {sockperf_duration}"
+    server_command = "nohup sockperf server > /dev/null 2>&1 & echo $!"
+    kill_server_command = "pkill -f 'sockperf server'"
+
+    if qa_peer:
+        sh_no_tty.bash("-c", server_command)
+        output = ssh_client.exec_command(client_command)
+        sh_no_tty.bash("-c", kill_server_command)
+    else:
+        # Assuming sh_no_tty can execute shell commands; adjust as needed
+        ssh_client.exec_command(server_command)
+        output = sh_no_tty.bash("-c", client_command)
+        ssh_client.exec_command(kill_server_command)
+
+    print(output)
+    # Parse sockperf output for average latency
+    for line in output.splitlines():
+        if "====> avg-latency=" in line:
+            # Extract the average latency value (in microseconds)
+            latency_part = line.split("avg-latency=")[1].split()[0]
+            # Convert microseconds to milliseconds (divide by 1000)
+            return float(latency_part) / 1000.0
+    return None

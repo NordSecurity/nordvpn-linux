@@ -21,7 +21,12 @@ RUN apt-get update && \
         # changelog parsing
         dpkg-dev \
         # deb package tools
-        devscripts && \
+        devscripts \
+        # sockperf for latency of traffic \
+        sockperf && \
+    # Adding license for sockperf
+    mkdir -p /usr/share/licenses/sockperf/ && \
+    curl -s https://raw.githubusercontent.com/Mellanox/sockperf/sockperf_v2/copying > /usr/share/licenses/sockperf/LICENSE && \
     # make sure, that Docker does not hang during installation, when we get TUI screen
     yes yes | DEBIAN_FRONTEND=teletype dpkg-reconfigure wireshark-common && \
     # cleanup
