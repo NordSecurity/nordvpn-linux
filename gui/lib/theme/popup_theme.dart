@@ -28,20 +28,7 @@ final class PopupTheme extends ThemeExtension<PopupTheme>
 
   // Button dimensions
   @override
-  final double buttonHeight;
-
-  @override
   final double singleButtonMinWidth;
-
-  @override
-  final EdgeInsetsGeometry buttonPadding;
-
-  // Button styling
-  @override
-  final Color primaryButtonBackgroundColor;
-
-  @override
-  final Color secondaryButtonBackgroundColor;
 
   // Text styles
   @override
@@ -60,12 +47,7 @@ final class PopupTheme extends ThemeExtension<PopupTheme>
     required this.gapBetweenElements,
     required this.verticalElementSpacing,
     // Button dimensions
-    required this.buttonHeight,
     required this.singleButtonMinWidth,
-    required this.buttonPadding,
-    // Button styling
-    required this.primaryButtonBackgroundColor,
-    required this.secondaryButtonBackgroundColor,
     // Text styles
     required this.textPrimary,
     required this.textSecondary,

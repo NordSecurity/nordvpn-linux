@@ -33,51 +33,29 @@ final class DecisionPopup extends Popup {
   }
 
   Widget _noButton(BuildContext context) {
-    final theme = context.popupTheme;
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        minHeight: theme.buttonHeight,
-      ),
-      child: OutlinedButton(
-        style: OutlinedButton.styleFrom(
-          padding: theme.buttonPadding,
-          backgroundColor: theme.secondaryButtonBackgroundColor,
-          minimumSize: Size(theme.singleButtonMinWidth, theme.buttonHeight),
-        ),
-        onPressed: () => closePopup(context),
-        child: Text(decisionMetadata.noButtonText),
-      ),
+    return OutlinedButton(
+      onPressed: () => closePopup(context),
+      child: Text(decisionMetadata.noButtonText),
     );
   }
 
   Widget _yesButton(WidgetRef ref, BuildContext context) {
-    final theme = context.popupTheme;
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        minHeight: theme.buttonHeight,
-      ),
-      child: ElevatedButton(
-        onPressed: () async {
-          // navigate if route is specified
-          if (decisionMetadata.navigateToRoute != null) {
-            context.navigateToRoute(decisionMetadata.navigateToRoute!);
-            // close popup immediately and run action in background
-            closePopup(context);
-            decisionMetadata.yesAction(ref);
-            return;
-          }
-          // wait for action to complete before closing
-          await decisionMetadata.yesAction(ref);
-          if (!context.mounted) return;
+    return ElevatedButton(
+      onPressed: () async {
+        // navigate if route is specified
+        if (decisionMetadata.navigateToRoute != null) {
+          context.navigateToRoute(decisionMetadata.navigateToRoute!);
+          // close popup immediately and run action in background
           closePopup(context);
-        },
-        style: ElevatedButton.styleFrom(
-          padding: theme.buttonPadding,
-          backgroundColor: theme.primaryButtonBackgroundColor,
-          minimumSize: Size(theme.singleButtonMinWidth, theme.buttonHeight),
-        ),
-        child: Text(decisionMetadata.yesButtonText),
-      ),
+          decisionMetadata.yesAction(ref);
+          return;
+        }
+        // wait for action to complete before closing
+        await decisionMetadata.yesAction(ref);
+        if (!context.mounted) return;
+        closePopup(context);
+      },
+      child: Text(decisionMetadata.yesButtonText),
     );
   }
 }
