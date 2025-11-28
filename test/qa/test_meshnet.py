@@ -382,3 +382,33 @@ def test_login_mesh_on_set_defaults_logout_login_mesh_on():
     assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on()
 
     assert settings.is_meshnet_enabled()
+
+
+@pytest.mark.smoke
+def test_meshnet_ping_peer_latency():
+    """
+    :details    Verify that latency of ping is significantly lower with direct connection
+
+    Manual TC:  LVPN-1491
+
+    :steps
+        - # Ping from tester container to qa-peer container
+        - # Ping from qa-peer container to tester container
+
+    :expected
+        - # Ping latency from tester container is below 12ms
+        - # Ping latency from qa-peer container is below 12ms
+    """
+
+    peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
+    host_address = peer_list.get_this_device().ip
+    peer_address = peer_list.get_external_peer().ip
+
+    # Need time for changing from DERP server to direct connection
+    time.sleep(15)
+
+    assert meshnet.get_ping_latency(peer_address, ssh_client=ssh_client) <= meshnet.PEER_EXPECTED_LATENCY_MS, \
+        f"Expected latency is above: {meshnet.PEER_EXPECTED_LATENCY_MS}. Ping was done from {host_address}"
+
+    assert meshnet.get_ping_latency(host_address, qa_peer=True, ssh_client=ssh_client) <= meshnet.PEER_EXPECTED_LATENCY_MS, \
+        f"Expected latency is above: {meshnet.PEER_EXPECTED_LATENCY_MS}, Ping was done from {peer_address}"
