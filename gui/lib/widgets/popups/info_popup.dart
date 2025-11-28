@@ -30,16 +30,9 @@ final class InfoPopup extends Popup {
   Widget _closeButton(BuildContext context) {
     final theme = context.popupTheme;
     return ConstrainedBox(
-      constraints: BoxConstraints(
-        minWidth: theme.singleButtonMinWidth,
-        minHeight: theme.buttonHeight,
-      ),
+      constraints: BoxConstraints(minWidth: theme.singleButtonMinWidth),
       child: ElevatedButton(
         onPressed: () => closePopup(context),
-        style: ElevatedButton.styleFrom(
-          padding: theme.buttonPadding,
-          backgroundColor: theme.primaryButtonBackgroundColor,
-        ),
         child: Text(t.ui.close),
       ),
     );
