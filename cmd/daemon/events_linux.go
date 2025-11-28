@@ -45,6 +45,7 @@ func (*dummyAnalytics) NotifyVirtualLocation(bool) error               { return 
 func (*dummyAnalytics) NotifyPostquantumVpn(bool) error                { return nil }
 func (*dummyAnalytics) NotifyAppStartTime(int64) error                 { return nil }
 func (*dummyAnalytics) Stop() error                                    { return nil }
+func (*dummyAnalytics) OnFirstOpen() error                             { return nil }
 func (*dummyAnalytics) OnTelemetry(telemetry.Metric, any) error        { return nil }
 
 func newAnalytics(

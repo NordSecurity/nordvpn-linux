@@ -61,7 +61,7 @@ type RPC struct {
 	consentChecker      ConsentChecker
 	recentVPNConnStore  *recents.RecentConnectionsStore
 	dataUpdateEvents    *daemonevents.DataUpdateEvents
-	initialLoginType    pb.LoginType // memorize what action started: Login or Signup (Register)
+	initialLoginType    *atomicLoginType // memorize what action started: Login or Signup (Register) - thread-safe
 	pb.UnimplementedDaemonServer
 }
 
@@ -124,5 +124,6 @@ func NewRPC(
 		consentChecker:     consentChecker,
 		recentVPNConnStore: recentVPNConnStore,
 		dataUpdateEvents:   dataUpdateEvents,
+		initialLoginType:   NewAtomicLoginType(),
 	}
 }
