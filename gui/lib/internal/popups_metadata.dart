@@ -149,6 +149,20 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
       message: (_) => t.ui.reconnectToApplyChangesDescription,
     ),
 
+    // Reconnect to apply post-quantum change (info popup only)
+    PopupCodes.reconnectToChangePostQuantum => InfoPopupMetadata(
+      id: PopupCodes.reconnectToChangePostQuantum,
+      title: t.ui.reconnectToApplyChanges,
+      message: (_) => t.ui.reconnectToApplyChangesDescription,
+    ),
+
+    // Reconnect to apply virtual location change (info popup only)
+    PopupCodes.reconnectToChangeVirtualLocation => InfoPopupMetadata(
+      id: PopupCodes.reconnectToChangeVirtualLocation,
+      title: t.ui.reconnectToApplyChanges,
+      message: (_) => t.ui.reconnectToApplyChangesDescription,
+    ),
+
     // ==============================    [ triggered by daemon ]    ==============================
 
     // Subscription expired
