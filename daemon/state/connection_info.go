@@ -123,14 +123,16 @@ func (c *ConnectionInfo) ConnectionStatusNotifyConnect(e events.DataConnect) err
 	return nil
 }
 
-func (c *ConnectionInfo) ConnectionStatusNotifyDisconnect(events.DataDisconnect) error {
+func (c *ConnectionInfo) ConnectionStatusNotifyDisconnect(e events.DataDisconnect) error {
 	status := types.ConnectionStatus{
 		State:      pb.ConnectionState_DISCONNECTED,
 		TunnelName: "",
 		StartTime:  nil,
 	}
-	c.setStatus(status, false)
-	c.internalNotif.Publish(events.DataConnectChangeNotif{Status: status})
+	if !e.IsRefresh {
+		c.setStatus(status, false)
+		c.internalNotif.Publish(events.DataConnectChangeNotif{Status: status})
+	}
 	return nil
 }
 
