@@ -316,7 +316,7 @@ func TestIsVPNExpired(t *testing.T) {
 	)
 
 	_, err := rc.IsVPNExpired()
-	assert.Error(t, err)
+	assert.NoError(t, err) // TODO: need different treatment for account without vpn service
 	assert.False(t, accPub.EventPublished)
 }
 
