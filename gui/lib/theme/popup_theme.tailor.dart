@@ -16,11 +16,7 @@ mixin _$PopupThemeTailorMixin on ThemeExtension<PopupTheme> {
   double get xButtonAllPadding;
   double get gapBetweenElements;
   double get verticalElementSpacing;
-  double get buttonHeight;
   double get singleButtonMinWidth;
-  EdgeInsetsGeometry get buttonPadding;
-  Color get primaryButtonBackgroundColor;
-  Color get secondaryButtonBackgroundColor;
   TextStyle get textPrimary;
   TextStyle get textSecondary;
 
@@ -32,11 +28,7 @@ mixin _$PopupThemeTailorMixin on ThemeExtension<PopupTheme> {
     double? xButtonAllPadding,
     double? gapBetweenElements,
     double? verticalElementSpacing,
-    double? buttonHeight,
     double? singleButtonMinWidth,
-    EdgeInsetsGeometry? buttonPadding,
-    Color? primaryButtonBackgroundColor,
-    Color? secondaryButtonBackgroundColor,
     TextStyle? textPrimary,
     TextStyle? textSecondary,
   }) {
@@ -48,13 +40,7 @@ mixin _$PopupThemeTailorMixin on ThemeExtension<PopupTheme> {
       gapBetweenElements: gapBetweenElements ?? this.gapBetweenElements,
       verticalElementSpacing:
           verticalElementSpacing ?? this.verticalElementSpacing,
-      buttonHeight: buttonHeight ?? this.buttonHeight,
       singleButtonMinWidth: singleButtonMinWidth ?? this.singleButtonMinWidth,
-      buttonPadding: buttonPadding ?? this.buttonPadding,
-      primaryButtonBackgroundColor:
-          primaryButtonBackgroundColor ?? this.primaryButtonBackgroundColor,
-      secondaryButtonBackgroundColor:
-          secondaryButtonBackgroundColor ?? this.secondaryButtonBackgroundColor,
       textPrimary: textPrimary ?? this.textPrimary,
       textSecondary: textSecondary ?? this.textSecondary,
     );
@@ -74,21 +60,9 @@ mixin _$PopupThemeTailorMixin on ThemeExtension<PopupTheme> {
       verticalElementSpacing: t < 0.5
           ? verticalElementSpacing
           : other.verticalElementSpacing,
-      buttonHeight: t < 0.5 ? buttonHeight : other.buttonHeight,
       singleButtonMinWidth: t < 0.5
           ? singleButtonMinWidth
           : other.singleButtonMinWidth,
-      buttonPadding: t < 0.5 ? buttonPadding : other.buttonPadding,
-      primaryButtonBackgroundColor: Color.lerp(
-        primaryButtonBackgroundColor,
-        other.primaryButtonBackgroundColor,
-        t,
-      )!,
-      secondaryButtonBackgroundColor: Color.lerp(
-        secondaryButtonBackgroundColor,
-        other.secondaryButtonBackgroundColor,
-        t,
-      )!,
       textPrimary: TextStyle.lerp(textPrimary, other.textPrimary, t)!,
       textSecondary: TextStyle.lerp(textSecondary, other.textSecondary, t)!,
     );
@@ -124,24 +98,8 @@ mixin _$PopupThemeTailorMixin on ThemeExtension<PopupTheme> {
               other.verticalElementSpacing,
             ) &&
             const DeepCollectionEquality().equals(
-              buttonHeight,
-              other.buttonHeight,
-            ) &&
-            const DeepCollectionEquality().equals(
               singleButtonMinWidth,
               other.singleButtonMinWidth,
-            ) &&
-            const DeepCollectionEquality().equals(
-              buttonPadding,
-              other.buttonPadding,
-            ) &&
-            const DeepCollectionEquality().equals(
-              primaryButtonBackgroundColor,
-              other.primaryButtonBackgroundColor,
-            ) &&
-            const DeepCollectionEquality().equals(
-              secondaryButtonBackgroundColor,
-              other.secondaryButtonBackgroundColor,
             ) &&
             const DeepCollectionEquality().equals(
               textPrimary,
@@ -163,11 +121,7 @@ mixin _$PopupThemeTailorMixin on ThemeExtension<PopupTheme> {
       const DeepCollectionEquality().hash(xButtonAllPadding),
       const DeepCollectionEquality().hash(gapBetweenElements),
       const DeepCollectionEquality().hash(verticalElementSpacing),
-      const DeepCollectionEquality().hash(buttonHeight),
       const DeepCollectionEquality().hash(singleButtonMinWidth),
-      const DeepCollectionEquality().hash(buttonPadding),
-      const DeepCollectionEquality().hash(primaryButtonBackgroundColor),
-      const DeepCollectionEquality().hash(secondaryButtonBackgroundColor),
       const DeepCollectionEquality().hash(textPrimary),
       const DeepCollectionEquality().hash(textSecondary),
     );
@@ -182,13 +136,7 @@ extension PopupThemeBuildContextProps on BuildContext {
   double get xButtonAllPadding => popupTheme.xButtonAllPadding;
   double get gapBetweenElements => popupTheme.gapBetweenElements;
   double get verticalElementSpacing => popupTheme.verticalElementSpacing;
-  double get buttonHeight => popupTheme.buttonHeight;
   double get singleButtonMinWidth => popupTheme.singleButtonMinWidth;
-  EdgeInsetsGeometry get buttonPadding => popupTheme.buttonPadding;
-  Color get primaryButtonBackgroundColor =>
-      popupTheme.primaryButtonBackgroundColor;
-  Color get secondaryButtonBackgroundColor =>
-      popupTheme.secondaryButtonBackgroundColor;
   TextStyle get textPrimary => popupTheme.textPrimary;
   TextStyle get textSecondary => popupTheme.textSecondary;
 }
