@@ -156,6 +156,7 @@ type DataDisconnect struct {
 	ByUser                bool
 	Duration              time.Duration
 	Error                 error
+	IsRefresh             bool
 }
 
 type ReasonCode int32
@@ -246,13 +247,14 @@ func (d *DisconnectSender) PublishDisconnect(startTime time.Time, err error) {
 	}
 
 	status := StatusFailure
-	if err != nil {
+	if err == nil {
 		status = StatusSuccess
 	}
 
 	d.eventTemplate.EventStatus = status
 	d.eventTemplate.Duration = time.Since(startTime)
 	d.eventTemplate.Error = err
+	d.eventTemplate.IsRefresh = true
 
 	d.publishFunc(d.eventTemplate)
 }
