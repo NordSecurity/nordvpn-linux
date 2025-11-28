@@ -57,25 +57,6 @@ class VpnStatusController extends _$VpnStatusController
       status = DaemonStatusCode.failedToConnectToVpn;
     }
 
-    if (status != DaemonStatusCode.success &&
-        status != DaemonStatusCode.connected &&
-        status != DaemonStatusCode.connecting &&
-        state.hasValue) {
-      // Update state to DISCONNECTED when connection fails
-      final currentStatus = state.value!;
-      state = AsyncData(
-        currentStatus.copyWith(
-          status: pb.ConnectionState.DISCONNECTED,
-          ip: null,
-          hostname: null,
-          country: null,
-          city: null,
-          isVirtualLocation: false,
-          isMeshnetRouting: false,
-        ),
-      );
-    }
-
     ref.read(popupsProvider.notifier).show(status);
     return status;
   }
