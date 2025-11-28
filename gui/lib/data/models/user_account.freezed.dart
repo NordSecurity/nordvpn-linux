@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$UserAccount {
 
- bool get hasDipSubscription; String get name; String get email; DateTime? get vpnExpirationDate; List<CountryServersGroup>? get dedicatedIpServers;
+ bool get hasDipSubscription; String get name; String get email; DateTime? get vpnExpirationDate; List<CountryServersGroup>? get dedicatedIpServers; DateTime? get createdOn;
 /// Create a copy of UserAccount
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -26,16 +26,16 @@ $UserAccountCopyWith<UserAccount> get copyWith => _$UserAccountCopyWithImpl<User
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserAccount&&(identical(other.hasDipSubscription, hasDipSubscription) || other.hasDipSubscription == hasDipSubscription)&&(identical(other.name, name) || other.name == name)&&(identical(other.email, email) || other.email == email)&&(identical(other.vpnExpirationDate, vpnExpirationDate) || other.vpnExpirationDate == vpnExpirationDate)&&const DeepCollectionEquality().equals(other.dedicatedIpServers, dedicatedIpServers));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserAccount&&(identical(other.hasDipSubscription, hasDipSubscription) || other.hasDipSubscription == hasDipSubscription)&&(identical(other.name, name) || other.name == name)&&(identical(other.email, email) || other.email == email)&&(identical(other.vpnExpirationDate, vpnExpirationDate) || other.vpnExpirationDate == vpnExpirationDate)&&const DeepCollectionEquality().equals(other.dedicatedIpServers, dedicatedIpServers)&&(identical(other.createdOn, createdOn) || other.createdOn == createdOn));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,hasDipSubscription,name,email,vpnExpirationDate,const DeepCollectionEquality().hash(dedicatedIpServers));
+int get hashCode => Object.hash(runtimeType,hasDipSubscription,name,email,vpnExpirationDate,const DeepCollectionEquality().hash(dedicatedIpServers),createdOn);
 
 @override
 String toString() {
-  return 'UserAccount(hasDipSubscription: $hasDipSubscription, name: $name, email: $email, vpnExpirationDate: $vpnExpirationDate, dedicatedIpServers: $dedicatedIpServers)';
+  return 'UserAccount(hasDipSubscription: $hasDipSubscription, name: $name, email: $email, vpnExpirationDate: $vpnExpirationDate, dedicatedIpServers: $dedicatedIpServers, createdOn: $createdOn)';
 }
 
 
@@ -46,7 +46,7 @@ abstract mixin class $UserAccountCopyWith<$Res>  {
   factory $UserAccountCopyWith(UserAccount value, $Res Function(UserAccount) _then) = _$UserAccountCopyWithImpl;
 @useResult
 $Res call({
- bool hasDipSubscription, String name, String email, DateTime? vpnExpirationDate, List<CountryServersGroup>? dedicatedIpServers
+ bool hasDipSubscription, String name, String email, DateTime? vpnExpirationDate, List<CountryServersGroup>? dedicatedIpServers, DateTime? createdOn
 });
 
 
@@ -62,14 +62,15 @@ class _$UserAccountCopyWithImpl<$Res>
 
 /// Create a copy of UserAccount
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? hasDipSubscription = null,Object? name = null,Object? email = null,Object? vpnExpirationDate = freezed,Object? dedicatedIpServers = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? hasDipSubscription = null,Object? name = null,Object? email = null,Object? vpnExpirationDate = freezed,Object? dedicatedIpServers = freezed,Object? createdOn = freezed,}) {
   return _then(_self.copyWith(
 hasDipSubscription: null == hasDipSubscription ? _self.hasDipSubscription : hasDipSubscription // ignore: cast_nullable_to_non_nullable
 as bool,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String,vpnExpirationDate: freezed == vpnExpirationDate ? _self.vpnExpirationDate : vpnExpirationDate // ignore: cast_nullable_to_non_nullable
 as DateTime?,dedicatedIpServers: freezed == dedicatedIpServers ? _self.dedicatedIpServers : dedicatedIpServers // ignore: cast_nullable_to_non_nullable
-as List<CountryServersGroup>?,
+as List<CountryServersGroup>?,createdOn: freezed == createdOn ? _self.createdOn : createdOn // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 
@@ -80,7 +81,7 @@ as List<CountryServersGroup>?,
 
 
 class _UserAccount extends UserAccount {
-  const _UserAccount({required this.hasDipSubscription, required this.name, required this.email, required this.vpnExpirationDate, required final  List<CountryServersGroup>? dedicatedIpServers}): _dedicatedIpServers = dedicatedIpServers,super._();
+  const _UserAccount({required this.hasDipSubscription, required this.name, required this.email, required this.vpnExpirationDate, required final  List<CountryServersGroup>? dedicatedIpServers, required this.createdOn}): _dedicatedIpServers = dedicatedIpServers,super._();
   
 
 @override final  bool hasDipSubscription;
@@ -96,6 +97,7 @@ class _UserAccount extends UserAccount {
   return EqualUnmodifiableListView(value);
 }
 
+@override final  DateTime? createdOn;
 
 /// Create a copy of UserAccount
 /// with the given fields replaced by the non-null parameter values.
@@ -107,16 +109,16 @@ _$UserAccountCopyWith<_UserAccount> get copyWith => __$UserAccountCopyWithImpl<_
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserAccount&&(identical(other.hasDipSubscription, hasDipSubscription) || other.hasDipSubscription == hasDipSubscription)&&(identical(other.name, name) || other.name == name)&&(identical(other.email, email) || other.email == email)&&(identical(other.vpnExpirationDate, vpnExpirationDate) || other.vpnExpirationDate == vpnExpirationDate)&&const DeepCollectionEquality().equals(other._dedicatedIpServers, _dedicatedIpServers));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserAccount&&(identical(other.hasDipSubscription, hasDipSubscription) || other.hasDipSubscription == hasDipSubscription)&&(identical(other.name, name) || other.name == name)&&(identical(other.email, email) || other.email == email)&&(identical(other.vpnExpirationDate, vpnExpirationDate) || other.vpnExpirationDate == vpnExpirationDate)&&const DeepCollectionEquality().equals(other._dedicatedIpServers, _dedicatedIpServers)&&(identical(other.createdOn, createdOn) || other.createdOn == createdOn));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,hasDipSubscription,name,email,vpnExpirationDate,const DeepCollectionEquality().hash(_dedicatedIpServers));
+int get hashCode => Object.hash(runtimeType,hasDipSubscription,name,email,vpnExpirationDate,const DeepCollectionEquality().hash(_dedicatedIpServers),createdOn);
 
 @override
 String toString() {
-  return 'UserAccount(hasDipSubscription: $hasDipSubscription, name: $name, email: $email, vpnExpirationDate: $vpnExpirationDate, dedicatedIpServers: $dedicatedIpServers)';
+  return 'UserAccount(hasDipSubscription: $hasDipSubscription, name: $name, email: $email, vpnExpirationDate: $vpnExpirationDate, dedicatedIpServers: $dedicatedIpServers, createdOn: $createdOn)';
 }
 
 
@@ -127,7 +129,7 @@ abstract mixin class _$UserAccountCopyWith<$Res> implements $UserAccountCopyWith
   factory _$UserAccountCopyWith(_UserAccount value, $Res Function(_UserAccount) _then) = __$UserAccountCopyWithImpl;
 @override @useResult
 $Res call({
- bool hasDipSubscription, String name, String email, DateTime? vpnExpirationDate, List<CountryServersGroup>? dedicatedIpServers
+ bool hasDipSubscription, String name, String email, DateTime? vpnExpirationDate, List<CountryServersGroup>? dedicatedIpServers, DateTime? createdOn
 });
 
 
@@ -143,14 +145,15 @@ class __$UserAccountCopyWithImpl<$Res>
 
 /// Create a copy of UserAccount
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? hasDipSubscription = null,Object? name = null,Object? email = null,Object? vpnExpirationDate = freezed,Object? dedicatedIpServers = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? hasDipSubscription = null,Object? name = null,Object? email = null,Object? vpnExpirationDate = freezed,Object? dedicatedIpServers = freezed,Object? createdOn = freezed,}) {
   return _then(_UserAccount(
 hasDipSubscription: null == hasDipSubscription ? _self.hasDipSubscription : hasDipSubscription // ignore: cast_nullable_to_non_nullable
 as bool,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,email: null == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
 as String,vpnExpirationDate: freezed == vpnExpirationDate ? _self.vpnExpirationDate : vpnExpirationDate // ignore: cast_nullable_to_non_nullable
 as DateTime?,dedicatedIpServers: freezed == dedicatedIpServers ? _self._dedicatedIpServers : dedicatedIpServers // ignore: cast_nullable_to_non_nullable
-as List<CountryServersGroup>?,
+as List<CountryServersGroup>?,createdOn: freezed == createdOn ? _self.createdOn : createdOn // ignore: cast_nullable_to_non_nullable
+as DateTime?,
   ));
 }
 

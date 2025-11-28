@@ -28,6 +28,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
@@ -49,55 +50,80 @@ type mooseSetConsentIntoContextFunc func(moose.NordvpnappConsentLevel) uint32
 
 // Subscriber listen events, send to moose engine
 type Subscriber struct {
-	EventsDbPath               string
-	Config                     config.Manager
-	BuildTarget                config.BuildTarget
-	Domain                     string
-	Subdomain                  string
-	DeviceID                   string
-	ClientAPI                  core.ClientAPI
+	eventsDbPath               string
+	config                     config.Manager
+	buildTarget                config.BuildTarget
+	domain                     string
+	subdomain                  string
+	deviceID                   string
+	clientAPI                  core.ClientAPI
 	currentDomain              string
 	connectionStartTime        time.Time
 	connectionToMeshnetPeer    bool
-	consent                    config.AnalyticsConsent
 	initialHeartbeatSent       bool
-	mooseOptInFunc             mooseConsentFunc
 	mooseConsentLevelFunc      mooseConsentFunc
 	mooseSetConsentIntoCtxFunc mooseSetConsentIntoContextFunc
+	httpClient                 *http.Client
+	canSendAllEvents           atomic.Bool
 	mux                        sync.RWMutex
+	isInitialized              bool
 }
 
+func NewSubscriber(
+	eventsDbPath string,
+	fs *config.FilesystemConfigManager,
+	clientAPI core.ClientAPI,
+	httpClient *http.Client,
+	buildTarget config.BuildTarget,
+	id string,
+	eventsDomain string,
+	eventsSubdomain string) *Subscriber {
+
+	sub := &Subscriber{
+		eventsDbPath:  eventsDbPath,
+		config:        fs,
+		buildTarget:   buildTarget,
+		domain:        eventsDomain,
+		subdomain:     eventsSubdomain,
+		deviceID:      id,
+		clientAPI:     clientAPI,
+		httpClient:    httpClient,
+		isInitialized: false,
+	}
+	return sub
+}
+
+// getConfig fetches always the current config via config.Manager
+func (s *Subscriber) getConfig() (config.Config, error) {
+	var cfg config.Config
+	err := s.config.Load(&cfg)
+	return cfg, err
+}
+
+// changeConsentState takes new consent state, compares it to the current one in the config
+// and after running some sanity checks, updates moose accordingly (enable or switch analytics on demand)
 func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error {
-	if s.consent == newState {
-		return nil
-	}
-
-	if newState == config.ConsentUndefined {
-		return fmt.Errorf("analytics consent cannot be set to and undefined state")
-	}
-
-	if s.consent == config.ConsentUndefined {
-		log.Println(internal.DebugPrefix, "enabling analytics")
-		if err := s.response(s.mooseOptInFunc(true)); err != nil {
-			return fmt.Errorf("enabling essential analytics: %w", err)
-		}
-	}
-
-	enabled := false
-	if newState == config.ConsentGranted {
-		enabled = true
-	}
-
-	if err := s.response(s.mooseConsentLevelFunc(enabled)); err != nil {
-		s.consent = config.ConsentDenied
-		return fmt.Errorf("setting new consent level: %w", err)
-	}
-
-	if err := setUserConsentLevelIntoContext(s, newState); err != nil {
+	cfg, err := s.getConfig()
+	if err != nil {
 		return err
 	}
 
-	s.consent = newState
+	// the same state requested, no-op
+	if cfg.AnalyticsConsent == newState {
+		return nil
+	}
+
+	enabled := newState == config.ConsentGranted
+	log.Println(internal.InfoPrefix, LogComponentPrefix, "request to set consent level to", enabled)
+	if err := s.response(s.mooseConsentLevelFunc(enabled)); err != nil {
+		return fmt.Errorf("setting new consent level: %w", err)
+	}
+
+	log.Println(internal.InfoPrefix, LogComponentPrefix, "update consent level into context with new value", newState.String())
+	if err := setUserConsentLevelIntoContext(s, newState); err != nil {
+		return err
+	}
+	s.canSendAllEvents.Store(newState == config.ConsentGranted)
 
 	return nil
 }
@@ -131,28 +157,28 @@ func (s *Subscriber) Disable() error {
 }
 
 func (s *Subscriber) isEnabled() bool {
-	s.mux.RLock()
-	defer s.mux.RUnlock()
-	return s.consent == config.ConsentGranted
+	return s.canSendAllEvents.Load()
 }
 
 // Init initializes moose libs. It has to be done before usage regardless of the enabled state.
 // Disabled case should be handled by `set_opt_out` value.
-func (s *Subscriber) Init(httpClient http.Client) error {
-	log.Println(internal.InfoPrefix, "initializing moose")
+func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
+	if s.isInitialized {
+		return nil
+	}
+	log.Println(internal.InfoPrefix, LogComponentPrefix, "initializing")
 
 	s.mooseConsentLevelFunc = moose.MooseNordvpnappSetConsentLevel
-	s.mooseOptInFunc = worker.SetSendEvents
 	s.mooseSetConsentIntoCtxFunc = moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel
 
-	var cfg config.Config
-	if err := s.Config.Load(&cfg); err != nil {
+	cfg, err := s.getConfig()
+	if err != nil {
 		return err
 	}
 
-	err := s.updateEventDomain()
+	err = s.updateEventDomain()
 	if err != nil {
 		return fmt.Errorf("initializing event domain: %w", err)
 	}
@@ -162,21 +188,18 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 	var batchSize uint32 = 20
 	compressRequest := true
 
-	// can we send events at all? - if consent is undefined (not completed) - don't send
-	canSendEvents := true
-	if cfg.AnalyticsConsent == config.ConsentUndefined {
-		canSendEvents = false
-	}
-	log.Println(internal.InfoPrefix, "[moose] configure to send events:", canSendEvents)
+	// Moose is now started only when the user has specified analytics consent,
+	// so we can safely enable events from the very beginning.
 
+	const allowEventsFromBeginning = true
 	client := worker.NewHttpClientContext(s.currentDomain)
-	client.Client = httpClient
+	client.Client = *s.httpClient
 	if err := s.response(uint32(worker.StartWithClient(
-		s.EventsDbPath,
+		s.eventsDbPath,
 		s.currentDomain,
 		uint64(singleInterval.Milliseconds()),
 		uint64(sequenceInterval.Milliseconds()),
-		canSendEvents,
+		allowEventsFromBeginning,
 		batchSize,
 		compressRequest,
 		&client,
@@ -185,26 +208,28 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 	}
 
 	// can we send only essential or all?
-	sendAllEvents := cfg.AnalyticsConsent == config.ConsentGranted
-	log.Println(internal.InfoPrefix, "[moose] all events are sent:", sendAllEvents)
+	s.canSendAllEvents.Store(consent == config.ConsentGranted)
+	log.Println(internal.InfoPrefix, LogComponentPrefix, "all events are sent:", s.canSendAllEvents.Load())
 
 	if err := s.response(moose.MooseNordvpnappInit(
-		s.EventsDbPath,
-		internal.IsProdEnv(s.BuildTarget.Environment),
+		s.eventsDbPath,
+		internal.IsProdEnv(s.buildTarget.Environment),
 		s,
 		s,
-		sendAllEvents,
+		s.canSendAllEvents.Load(),
 	)); err != nil {
 		if !strings.Contains(err.Error(), "moose: already initiated") {
 			return fmt.Errorf("starting tracker: %w", err)
 		}
 	}
 
-	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
-		log.Println(internal.WarningPrefix, "failed to flush changes before setting analytics opt in: %w", err)
-	}
+	// TODO (LVPN-9654): currently, it should be safe to assume moose got correctly initialized when both worker and the app got started properly
+	// however this mechanism of initialization might need to be revisited in the future
+	s.isInitialized = true
 
-	s.consent = cfg.AnalyticsConsent
+	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
+		log.Println(internal.WarningPrefix, LogComponentPrefix, "failed to flush changes before setting analytics opt in: %w", err)
+	}
 
 	applicationName := "linux-app"
 	if snapconf.IsUnderSnap() {
@@ -215,11 +240,11 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("setting application name: %w", err)
 	}
 
-	if err := setUserConsentLevelIntoContext(s, s.consent); err != nil {
+	if err := setUserConsentLevelIntoContext(s, consent); err != nil {
 		return err
 	}
 
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappVersion(s.BuildTarget.Version)); err != nil {
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappVersion(s.buildTarget.Version)); err != nil {
 		return fmt.Errorf("setting application version: %w", err)
 	}
 
@@ -234,7 +259,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 	if err := s.response(moose.NordvpnappSetContextDeviceOs(distroVersion)); err != nil {
 		return fmt.Errorf("setting moose device os: %w", err)
 	}
-	if err := s.response(moose.NordvpnappSetContextDeviceFp(s.DeviceID)); err != nil {
+	if err := s.response(moose.NordvpnappSetContextDeviceFp(s.deviceID)); err != nil {
 		return fmt.Errorf("setting moose device: %w", err)
 	}
 
@@ -260,7 +285,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 		return fmt.Errorf("setting moose technology: %w", err)
 	}
 
-	if err := s.response(moose.NordvpnappSetContextDeviceCpuArchitecture(s.BuildTarget.Architecture)); err != nil {
+	if err := s.response(moose.NordvpnappSetContextDeviceCpuArchitecture(s.buildTarget.Architecture)); err != nil {
 		return fmt.Errorf("setting device architecture: %w", err)
 	}
 
@@ -268,7 +293,7 @@ func (s *Subscriber) Init(httpClient http.Client) error {
 }
 
 func (s *Subscriber) Stop() error {
-	log.Println(internal.DebugPrefix, "flushing changes")
+	log.Println(internal.DebugPrefix, LogComponentPrefix, "flushing changes")
 	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
 		return fmt.Errorf("flushing changes: %w", err)
 	}
@@ -277,7 +302,7 @@ func (s *Subscriber) Stop() error {
 		return fmt.Errorf("stopping moose worker: %w", err)
 	}
 
-	log.Println(internal.DebugPrefix, "deinitializing")
+	log.Println(internal.DebugPrefix, LogComponentPrefix, "deinitializing")
 	if err := s.response(moose.MooseNordvpnappDeinit()); err != nil {
 		return fmt.Errorf("deinitializing: %w", err)
 	}
@@ -703,7 +728,7 @@ func (s *Subscriber) NotifyDebuggerEvent(e events.DebuggerEvent) error {
 			moose.MooseNordvpnappSetDeveloperEventContextString(ctx.Path, v)
 			combinedPaths = append(combinedPaths, path)
 		default:
-			log.Printf("%s Discarding unsupported type (%T) on path: %s\n", internal.WarningPrefix, ctx.Value, path)
+			log.Printf("%s %s Discarding unsupported type (%T) on path: %s\n", internal.WarningPrefix, LogComponentPrefix, ctx.Value, path)
 		}
 	}
 	return s.response(moose.NordvpnappSendDebuggerLoggingLog(e.JsonData, combinedPaths, nil))
@@ -763,7 +788,7 @@ func (s *Subscriber) OnTelemetry(metric telemetry.Metric, value any) error {
 }
 
 func (s *Subscriber) fetchAndSetVpnServiceExpiration() error {
-	services, err := s.ClientAPI.Services()
+	services, err := s.clientAPI.Services()
 	if err != nil {
 		return fmt.Errorf("fetching services: %w", err)
 	}
@@ -794,16 +819,21 @@ func (s *Subscriber) OnFirstOpen() error {
 }
 
 func (s *Subscriber) fetchSubscriptions() error {
-	if s.consent == config.ConsentUndefined {
+	cfg, err := s.getConfig()
+	if err != nil {
+		return err
+	}
+
+	if cfg.AnalyticsConsent == config.ConsentUndefined {
 		return nil
 	}
 
-	payments, err := s.ClientAPI.Payments()
+	payments, err := s.clientAPI.Payments()
 	if err != nil {
 		return fmt.Errorf("fetching payments: %w", err)
 	}
 
-	orders, err := s.ClientAPI.Orders()
+	orders, err := s.clientAPI.Orders()
 	if err != nil {
 		return fmt.Errorf("fetching orders: %w", err)
 	}
@@ -1007,13 +1037,13 @@ func (s *Subscriber) clearSubscriptions() error {
 }
 
 func (s *Subscriber) updateEventDomain() error {
-	domainUrl, err := url.Parse(s.Domain)
+	domainUrl, err := url.Parse(s.domain)
 	if err != nil {
 		return err
 	}
 	// TODO: Remove subdomain handling logic as it brings no value after domain rotation removal
-	if s.Subdomain != "" {
-		domainUrl.Host = s.Subdomain + "." + domainUrl.Host
+	if s.subdomain != "" {
+		domainUrl.Host = s.subdomain + "." + domainUrl.Host
 	}
 	s.currentDomain = domainUrl.String()
 	return nil

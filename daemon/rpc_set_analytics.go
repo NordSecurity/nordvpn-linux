@@ -27,8 +27,18 @@ func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 	newConsentLevel := config.ConsentDenied
 	if in.GetEnabled() {
 		newConsentLevel = config.ConsentGranted
+	}
+
+	// implementation of moose.Init guarantees it's called only once
+	if err := r.analytics.Init(newConsentLevel); err != nil {
+		log.Println(internal.ErrorPrefix, "moose initialization failure:", err)
+		return &pb.Payload{Type: internal.CodeInternalError}, nil
+	}
+
+	if in.GetEnabled() {
 		if err := r.analytics.Enable(); err != nil {
 			log.Println(internal.ErrorPrefix, err)
+
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil

@@ -142,8 +142,9 @@ type ServiceDetails struct {
 type ServicesResponse []ServiceData
 
 type CurrentUserResponse struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+	CreatedOn string `json:"created_at"`
 }
 
 type Order struct {

@@ -36,7 +36,7 @@ final class AccountRepository {
   }
 
   Future<AccountResponse> accountInfo() async {
-    return await _client.accountInfo(AccountRequest(full: false));
+    return await _client.accountInfo(AccountRequest(full: true));
   }
 
   Future<TokenInfoResponse> tokenInfo() async {

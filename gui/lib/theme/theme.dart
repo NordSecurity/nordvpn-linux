@@ -296,6 +296,7 @@ final class NordVpnTheme {
       verticalSpaceSmall: 8,
       verticalSpaceMedium: 16,
       verticalSpaceLarge: 24,
+      verticalSpaceExtraLarge: 48,
       horizontalSpaceSmall: 8,
       horizontalSpace: 16,
       textErrorColor: design.semanticColors.textCritical,
@@ -336,10 +337,10 @@ final class NordVpnTheme {
       area: design.semanticColors.bgSecondaryActive,
       dividerColor: design.semanticColors.borderSecondary,
       disabledOpacity: 0.5,
-      linkNormal: design.typography.body.copyWith(
+      linkNormal: design.typography.subBody.copyWith(
         color: design.semanticColors.textAccent,
       ),
-      linkSmall: design.typography.subBody.copyWith(
+      linkSmall: design.typography.caption.copyWith(
         color: design.semanticColors.textAccent,
       ),
       textDisabled: design.typography.body.copyWith(
@@ -405,7 +406,7 @@ final class NordVpnTheme {
       otherProductsTitle: design.typography.body.copyWith(
         color: design.semanticColors.textPrimary,
       ),
-      otherProductsSubtitle: design.typography.body.copyWith(
+      otherProductsSubtitle: design.typography.subBody .copyWith(
         color: design.semanticColors.textSecondary,
       ),
       fwMarkInputSize: 250,
