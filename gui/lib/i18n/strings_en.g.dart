@@ -188,6 +188,7 @@ class TranslationsCitiesEn {
 	String get miami => 'Miami';
 	String get new_york => 'New York';
 	String get phoenix => 'Phoenix';
+	String get pittsburgh => 'Pittsburgh';
 	String get saint_louis => 'Saint Louis';
 	String get salt_lake_city => 'Salt Lake City';
 	String get san_francisco => 'San Francisco';
@@ -541,6 +542,10 @@ class TranslationsUiEn {
 	String get doubleVpn => 'Double VPN';
 	String get onionOverVpn => 'Onion over VPN';
 	String get p2p => 'P2P';
+	String get europe => 'Europe';
+	String get theAmericas => 'The Americas';
+	String get asiaPacific => 'Asia Pacific';
+	String get africaTheMiddleEastAndIndia => 'Africa, the Middle East, and India';
 	String get obfuscated => 'Obfuscated';
 	String get selectServerForDip => 'Pick a location for your IP';
 	String get selectLocation => 'Select location';
@@ -566,7 +571,7 @@ class TranslationsUiEn {
 	String get vpnConnection => 'VPN connection';
 	String get vpnConnectionSubtitle => 'Auto-connect, Kill Switch, protocol';
 	String get autoConnectDescription => 'Automatically connect to the fastest available server or your chosen server location when the app starts.';
-	String get fastestServer => 'Fastest server';
+	String get fastestServer => 'Fastest';
 	String get change => 'Change';
 	String get nordLynx => 'NordLynx';
 	String get openVpnTcp => 'OpenVPN (TCP)';
@@ -706,6 +711,7 @@ class TranslationsUiEn {
 	String get changePassword => 'Change password';
 	String get productHub => 'Product Hub';
 	String get subscriptionInactive => 'Inactive';
+	String get recentConnections => 'Recent connections';
 }
 
 /// Flat map(s) containing all translations.
@@ -849,6 +855,7 @@ extension on Translations {
 			case 'cities.miami': return 'Miami';
 			case 'cities.new_york': return 'New York';
 			case 'cities.phoenix': return 'Phoenix';
+			case 'cities.pittsburgh': return 'Pittsburgh';
 			case 'cities.saint_louis': return 'Saint Louis';
 			case 'cities.salt_lake_city': return 'Salt Lake City';
 			case 'cities.san_francisco': return 'San Francisco';
@@ -1175,6 +1182,10 @@ extension on Translations {
 			case 'ui.doubleVpn': return 'Double VPN';
 			case 'ui.onionOverVpn': return 'Onion over VPN';
 			case 'ui.p2p': return 'P2P';
+			case 'ui.europe': return 'Europe';
+			case 'ui.theAmericas': return 'The Americas';
+			case 'ui.asiaPacific': return 'Asia Pacific';
+			case 'ui.africaTheMiddleEastAndIndia': return 'Africa, the Middle East, and India';
 			case 'ui.obfuscated': return 'Obfuscated';
 			case 'ui.selectServerForDip': return 'Pick a location for your IP';
 			case 'ui.selectLocation': return 'Select location';
@@ -1200,7 +1211,7 @@ extension on Translations {
 			case 'ui.vpnConnection': return 'VPN connection';
 			case 'ui.vpnConnectionSubtitle': return 'Auto-connect, Kill Switch, protocol';
 			case 'ui.autoConnectDescription': return 'Automatically connect to the fastest available server or your chosen server location when the app starts.';
-			case 'ui.fastestServer': return 'Fastest server';
+			case 'ui.fastestServer': return 'Fastest';
 			case 'ui.change': return 'Change';
 			case 'ui.nordLynx': return 'NordLynx';
 			case 'ui.openVpnTcp': return 'OpenVPN (TCP)';
@@ -1340,6 +1351,7 @@ extension on Translations {
 			case 'ui.changePassword': return 'Change password';
 			case 'ui.productHub': return 'Product Hub';
 			case 'ui.subscriptionInactive': return 'Inactive';
+			case 'ui.recentConnections': return 'Recent connections';
 			default: return null;
 		}
 	}

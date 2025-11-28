@@ -17,6 +17,7 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
   double get margin;
   double get outerPadding;
   Color get borderColor;
+  double get verticalSpaceVerySmall;
   double get verticalSpaceSmall;
   double get verticalSpaceMedium;
   double get verticalSpaceLarge;
@@ -54,6 +55,7 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
     double? margin,
     double? outerPadding,
     Color? borderColor,
+    double? verticalSpaceVerySmall,
     double? verticalSpaceSmall,
     double? verticalSpaceMedium,
     double? verticalSpaceLarge,
@@ -90,6 +92,8 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
       margin: margin ?? this.margin,
       outerPadding: outerPadding ?? this.outerPadding,
       borderColor: borderColor ?? this.borderColor,
+      verticalSpaceVerySmall:
+          verticalSpaceVerySmall ?? this.verticalSpaceVerySmall,
       verticalSpaceSmall: verticalSpaceSmall ?? this.verticalSpaceSmall,
       verticalSpaceMedium: verticalSpaceMedium ?? this.verticalSpaceMedium,
       verticalSpaceLarge: verticalSpaceLarge ?? this.verticalSpaceLarge,
@@ -136,6 +140,9 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
       margin: t < 0.5 ? margin : other.margin,
       outerPadding: t < 0.5 ? outerPadding : other.outerPadding,
       borderColor: Color.lerp(borderColor, other.borderColor, t)!,
+      verticalSpaceVerySmall: t < 0.5
+          ? verticalSpaceVerySmall
+          : other.verticalSpaceVerySmall,
       verticalSpaceSmall: t < 0.5
           ? verticalSpaceSmall
           : other.verticalSpaceSmall,
@@ -214,6 +221,10 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
             const DeepCollectionEquality().equals(
               borderColor,
               other.borderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              verticalSpaceVerySmall,
+              other.verticalSpaceVerySmall,
             ) &&
             const DeepCollectionEquality().equals(
               verticalSpaceSmall,
@@ -321,6 +332,7 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
       const DeepCollectionEquality().hash(margin),
       const DeepCollectionEquality().hash(outerPadding),
       const DeepCollectionEquality().hash(borderColor),
+      const DeepCollectionEquality().hash(verticalSpaceVerySmall),
       const DeepCollectionEquality().hash(verticalSpaceSmall),
       const DeepCollectionEquality().hash(verticalSpaceMedium),
       const DeepCollectionEquality().hash(verticalSpaceLarge),
@@ -361,6 +373,7 @@ extension AppThemeBuildContextProps on BuildContext {
   double get margin => appTheme.margin;
   double get outerPadding => appTheme.outerPadding;
   Color get borderColor => appTheme.borderColor;
+  double get verticalSpaceVerySmall => appTheme.verticalSpaceVerySmall;
   double get verticalSpaceSmall => appTheme.verticalSpaceSmall;
   double get verticalSpaceMedium => appTheme.verticalSpaceMedium;
   double get verticalSpaceLarge => appTheme.verticalSpaceLarge;

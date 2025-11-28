@@ -148,7 +148,7 @@ func testRPCLocal(t *testing.T) *RPC {
 	rpc := testRPC()
 
 	fs := mockconfig.NewFilesystemMock(t)
-	recentStore := recents.NewRecentConnectionsStore("/test/recents_"+t.Name()+".dat", &fs)
+	recentStore := recents.NewRecentConnectionsStore("/test/recents_"+t.Name()+".dat", &fs, nil)
 	rpc.recentVPNConnStore = recentStore
 
 	rpc.serversAPI = &deterministicServersAPI{}
@@ -446,7 +446,8 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 			expectedRecentConn: &recents.Model{
 				Country:            "Germany",
 				CountryCode:        "DE",
-				ConnectionType:     config.ServerSelectionRule_COUNTRY,
+				City:               "Berlin",
+				ConnectionType:     config.ServerSelectionRule_CITY,
 				Group:              config.ServerGroup_UNDEFINED,
 				ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
 			},
@@ -471,6 +472,7 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 			expectedRecentConn: &recents.Model{
 				Country:            "Germany",
 				CountryCode:        "DE",
+				City:               "Berlin",
 				SpecificServer:     "de3",
 				SpecificServerName: "Germany #3",
 				ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER,
@@ -503,8 +505,9 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 			expectedRecentConn: &recents.Model{
 				Country:            "Germany",
 				CountryCode:        "DE",
+				City:               "Berlin",
 				Group:              config.ServerGroup_P2P,
-				ConnectionType:     config.ServerSelectionRule_COUNTRY_WITH_GROUP,
+				ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 				ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
 			},
 			shouldAddToRecent: true,
@@ -542,10 +545,7 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 			assert.Equal(t, internal.CodeConnected, server.msg.Type)
 
 			// Manually store the pending connection (normally happens on disconnect)
-			StorePendingRecentConnection(
-				rpc.recentVPNConnStore,
-				rpc.dataUpdateEvents.RecentsUpdate.Publish,
-			)
+			StorePendingRecentConnection(rpc.recentVPNConnStore)
 
 			recentConns, err := rpc.recentVPNConnStore.Get()
 			require.NoError(t, err)

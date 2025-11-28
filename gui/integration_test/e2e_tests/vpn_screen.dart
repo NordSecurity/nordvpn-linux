@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 
+import '../../test/utils/finders.dart';
 import '../../test/utils/test_helpers.dart';
 
 void runVpnScreenTests() async {
@@ -14,6 +15,7 @@ void runVpnScreenTests() async {
       await app.expireSubscription();
 
       await mainScreen.quickConnect();
+      await tester.pumpUntilFound(subscriptionPopupText());
       expect(mainScreen.isSubscriptionPopupVisible(), isTrue);
 
       await app.renewSubscription();
