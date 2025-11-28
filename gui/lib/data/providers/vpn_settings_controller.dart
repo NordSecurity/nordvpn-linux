@@ -6,6 +6,7 @@ import 'package:nordvpn/data/providers/app_state_provider.dart';
 import 'package:nordvpn/data/providers/popups_provider.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/data/repository/vpn_settings_repository.dart';
+import 'package:nordvpn/internal/popup_codes.dart';
 import 'package:nordvpn/logger.dart';
 import 'package:grpc/grpc.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -37,7 +38,12 @@ class VpnSettingsController extends _$VpnSettingsController
   }
 
   Future<int> setVpnProtocol(VpnProtocol protocol) async {
-    return await _setValue((repository) => repository.setVpnProtocol(protocol));
+    return await _setValue(
+      (repository) => repository.setVpnProtocol(protocol),
+      popupCodeOverrides: {
+        DaemonStatusCode.vpnIsRunning: PopupCodes.reconnectToChangeProtocol,
+      },
+    );
   }
 
   Future<int> resetToDefaults() async {
@@ -45,7 +51,12 @@ class VpnSettingsController extends _$VpnSettingsController
   }
 
   Future<int> setObfuscated(bool value) async {
-    return await _setValue((repository) => repository.setObfuscated(value));
+    return await _setValue(
+      (repository) => repository.setObfuscated(value),
+      popupCodeOverrides: {
+        DaemonStatusCode.vpnIsRunning: PopupCodes.reconnectToChangeObfuscation,
+      },
+    );
   }
 
   Future<int> setAnalytics(bool value) async {
@@ -214,9 +225,25 @@ class VpnSettingsController extends _$VpnSettingsController
     return await repository.fetchSettings();
   }
 
+  /// Executes a repository callback and handles status codes and popups.
+  ///
+  /// The popupCodeOverrides map allows overriding daemon status codes with custom popup codes.
+  /// This is useful when different settings need specific popup messages for the same daemon code.
+  ///
+  /// Example: Both protocol and obfuscation changes return vpnIsRunning, but we want
+  /// different popup messages for each:
+  /// ```dart
+  /// _setValue(
+  ///   (repo) => repo.setVpnProtocol(protocol),
+  ///   popupCodeOverrides: {
+  ///     DaemonStatusCode.vpnIsRunning: PopupCodes.reconnectToChangeProtocol,
+  ///   },
+  /// );
+  /// ```
   Future<int> _setValue(
-    Future<int> Function(VpnSettingsRepository repository) callback,
-  ) async {
+    Future<int> Function(VpnSettingsRepository repository) callback, {
+    Map<int, int>? popupCodeOverrides,
+  }) async {
     final repository = ref.read(vpnSettingsProvider);
     int status = DaemonStatusCode.failure;
 
@@ -239,7 +266,11 @@ class VpnSettingsController extends _$VpnSettingsController
 
     // We do that to avoid the toggle of on/off button in case of failure
     state = state;
-    ref.read(popupsProvider.notifier).show(status);
+
+    // Use overridden popup code if provided, otherwise use the daemon status code
+    final popupCode = popupCodeOverrides?[status] ?? status;
+    ref.read(popupsProvider.notifier).show(popupCode);
+
     return status;
   }
 
