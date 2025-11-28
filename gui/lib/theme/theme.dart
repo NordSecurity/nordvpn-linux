@@ -705,14 +705,7 @@ final class NordVpnTheme {
       xButtonAllPadding: AppSpacing.spacing1,
       gapBetweenElements: AppSpacing.spacing2,
       verticalElementSpacing: AppSpacing.spacing4,
-      buttonHeight: AppSpacing.spacing8,
       singleButtonMinWidth: AppSpacing.spacing30,
-      buttonPadding: const EdgeInsetsGeometry.symmetric(
-        vertical: 6,
-        horizontal: AppSpacing.spacing3,
-      ),
-      primaryButtonBackgroundColor: design.semanticColors.bgAccent,
-      secondaryButtonBackgroundColor: design.semanticColors.bgSecondary,
       textPrimary: design.typography.subHeading.copyWith(
         color: design.semanticColors.textPrimary,
       ),
