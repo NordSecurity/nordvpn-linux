@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:nordvpn/grpc/grpc_service.dart';
+import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/pb/daemon/common.pb.dart';
 import 'package:nordvpn/pb/daemon/service.pbgrpc.dart';
 import 'package:nordvpn/pb/daemon/state.pb.dart';
@@ -14,6 +15,7 @@ class AppStateRepository {
   AppStateRepository(DaemonClient client) : _client = client;
 
   Stream<AppState> get stream {
+    logger.i("~~~subscribeToStateChanges");
     return _client.subscribeToStateChanges(Empty());
   }
 }
@@ -21,5 +23,5 @@ class AppStateRepository {
 // Registers to the daemon app state changes and forwards them
 @Riverpod(keepAlive: true)
 AppStateRepository appStateRepository(Ref ref) {
-  return AppStateRepository(createDaemonClient());
+  return AppStateRepository(createDaemonClient(createNewChannel()));
 }
