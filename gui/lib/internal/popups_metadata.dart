@@ -118,6 +118,37 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
       },
     ),
 
+    // Reconnect to apply protocol change
+    PopupCodes.reconnectToChangeProtocol => DecisionPopupMetadata(
+      id: PopupCodes.reconnectToChangeProtocol,
+      title: t.ui.reconnectToChangeProtocol,
+      message: (_) => t.ui.reconnectToChangeProtocolDescription,
+      noButtonText: t.ui.cancel,
+      yesButtonText: t.ui.reconnectNow,
+      navigateToRoute: AppRoute.vpn,
+      yesAction: (ref) {
+        final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
+        if (vpnStatus == null) {
+          logger.e('Cannot reconnect: vpnStatus is null');
+          return;
+        }
+        final controller = ref.read(vpnStatusControllerProvider.notifier);
+        final connectionParams = vpnStatus.connectionParameters;
+
+        Future(() async {
+          await controller.disconnect();
+          await controller.reconnect(connectionParams);
+        });
+      },
+    ),
+
+    // Reconnect to apply obfuscation change (info popup only)
+    PopupCodes.reconnectToChangeObfuscation => InfoPopupMetadata(
+      id: PopupCodes.reconnectToChangeObfuscation,
+      title: t.ui.reconnectToApplyChanges,
+      message: (_) => t.ui.reconnectToApplyChangesDescription,
+    ),
+
     // ==============================    [ triggered by daemon ]    ==============================
 
     // Subscription expired
@@ -157,32 +188,6 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
       id: DaemonStatusCode.configError,
       title: t.ui.settingsWereNotSaved,
       message: (_) => t.ui.couldNotSave,
-    ),
-
-    // Reconnect to VPN to apply settings
-    DaemonStatusCode.vpnIsRunning => DecisionPopupMetadata(
-      id: DaemonStatusCode.vpnIsRunning,
-      title: t.daemon.code_2002_title,
-      message: (_) => t.daemon.code_2002_msg,
-      noButtonText: t.ui.cancel,
-      yesButtonText: t.ui.reconnectNow,
-      navigateToRoute: AppRoute.vpn,
-      yesAction: (ref) {
-        // capture all needed data BEFORE the widget is disposed
-        final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
-        if (vpnStatus == null) {
-          logger.e('Cannot reconnect: vpnStatus is null');
-          return;
-        }
-        final controller = ref.read(vpnStatusControllerProvider.notifier);
-        final connectionParams = vpnStatus.connectionParameters;
-
-        // run reconnection in background (widget will be disposed)
-        Future(() async {
-          await controller.disconnect();
-          await controller.reconnect(connectionParams);
-        });
-      },
     ),
 
     // not matched, display generic error message
