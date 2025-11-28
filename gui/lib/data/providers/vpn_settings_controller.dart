@@ -191,11 +191,21 @@ class VpnSettingsController extends _$VpnSettingsController
   }
 
   Future<int> setPostQuantum(bool value) async {
-    return await _setValue((repository) => repository.setPostQuantum(value));
+    return await _setValue(
+      (repository) => repository.setPostQuantum(value),
+      popupCodeOverrides: {
+        DaemonStatusCode.vpnIsRunning: PopupCodes.reconnectToChangePostQuantum,
+      },
+    );
   }
 
   Future<int> useVirtualServers(bool value) async {
-    return await _setValue((repository) => repository.useVirtualServers(value));
+    return await _setValue(
+      (repository) => repository.useVirtualServers(value),
+      popupCodeOverrides: {
+        DaemonStatusCode.vpnIsRunning: PopupCodes.reconnectToChangeVirtualLocation,
+      },
+    );
   }
 
   @override
