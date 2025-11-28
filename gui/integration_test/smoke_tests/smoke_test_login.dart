@@ -54,7 +54,7 @@ void runLoginSmokeTests() {
       );
       await app.goTo(AppRoute.settingsAccount).waitForUiUpdates();
       final accountScreenHandle = AccountScreenHandle(app);
-      await accountScreenHandle.waitUntilFound(userInfo());
+      await accountScreenHandle.waitUntilFound(accountUserInfo());
       expect(accountScreenHandle.hasUserInfo(), isTrue);
     });
   });

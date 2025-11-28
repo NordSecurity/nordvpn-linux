@@ -28,7 +28,7 @@ final class _PopupsListenerState extends ConsumerState<PopupsListener> {
     ref.listen(accountControllerProvider, (_, next) {
       next.whenData((account) {
         if (account == null) return;
-        if (!account.isExpired &&
+        if (!account.isSubscriptionExpired &&
             _visiblePopup == DaemonStatusCode.accountExpired) {
           closeCurrentPopup();
         }

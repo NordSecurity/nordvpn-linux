@@ -19,6 +19,7 @@ final class AppTheme extends ThemeExtension<AppTheme>
     required this.verticalSpaceSmall,
     required this.verticalSpaceMedium,
     required this.verticalSpaceLarge,
+    required this.verticalSpaceExtraLarge,
     required this.horizontalSpaceSmall,
     required this.horizontalSpace,
     required this.textErrorColor,
@@ -73,6 +74,9 @@ final class AppTheme extends ThemeExtension<AppTheme>
 
   @override
   final double verticalSpaceLarge;
+
+  @override
+  final double verticalSpaceExtraLarge;
 
   @override
   final double horizontalSpaceSmall;
