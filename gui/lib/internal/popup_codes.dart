@@ -9,6 +9,8 @@ final class PopupCodes {
   static const chooseDip = 7006;
   static const removePrivateSubnetsFromAllowlist = 7007;
   static const resetSettingsAndDisconnect = 7008;
+  static const reconnectToChangeProtocol = 7009;
+  static const reconnectToChangeObfuscation = 7010;
 
   PopupCodes._();
 }
