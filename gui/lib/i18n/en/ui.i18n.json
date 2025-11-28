@@ -261,5 +261,9 @@
   "subscriptionInactive": "Inactive",
   "recentConnections": "Recent connections",
   "standardVpnServer": "Standard VPN Servers",
-  "reconnectNow": "Reconnect now"
+  "reconnectNow": "Reconnect now",
+  "reconnectToChangeProtocol": "Reconnect to change protocol",
+  "reconnectToChangeProtocolDescription": "To apply this change, we'll reconnect you to the VPN.",
+  "reconnectToApplyChanges": "Reconnect to VPN to apply changes",
+  "reconnectToApplyChangesDescription": "You are connected to NordVPN. Please reconnect to apply changes."
 }
