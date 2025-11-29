@@ -44,14 +44,12 @@ class LoginEvent extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'LoginEvent',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..e<LoginEventType>(1, _omitFieldNames ? '' : 'type', $pb.PbFieldType.OE,
-        defaultOrMaker: LoginEventType.LOGIN,
-        valueOf: LoginEventType.valueOf,
+    ..aE<LoginEventType>(1, _omitFieldNames ? '' : 'type',
         enumValues: LoginEventType.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  LoginEvent clone() => LoginEvent()..mergeFromMessage(this);
+  LoginEvent clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   LoginEvent copyWith(void Function(LoginEvent) updates) =>
       super.copyWith((message) => updates(message as LoginEvent)) as LoginEvent;
@@ -63,7 +61,6 @@ class LoginEvent extends $pb.GeneratedMessage {
   static LoginEvent create() => LoginEvent._();
   @$core.override
   LoginEvent createEmptyInstance() => create();
-  static $pb.PbList<LoginEvent> createRepeated() => $pb.PbList<LoginEvent>();
   @$core.pragma('dart2js:noInline')
   static LoginEvent getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<LoginEvent>(create);
@@ -106,7 +103,7 @@ class AccountModification extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  AccountModification clone() => AccountModification()..mergeFromMessage(this);
+  AccountModification clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   AccountModification copyWith(void Function(AccountModification) updates) =>
       super.copyWith((message) => updates(message as AccountModification))
@@ -119,8 +116,6 @@ class AccountModification extends $pb.GeneratedMessage {
   static AccountModification create() => AccountModification._();
   @$core.override
   AccountModification createEmptyInstance() => create();
-  static $pb.PbList<AccountModification> createRepeated() =>
-      $pb.PbList<AccountModification>();
   @$core.pragma('dart2js:noInline')
   static AccountModification getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<AccountModification>(create);
@@ -158,11 +153,11 @@ class VersionHealthStatus extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'VersionHealthStatus',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..a<$core.int>(1, _omitFieldNames ? '' : 'statusCode', $pb.PbFieldType.O3)
+    ..aI(1, _omitFieldNames ? '' : 'statusCode')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  VersionHealthStatus clone() => VersionHealthStatus()..mergeFromMessage(this);
+  VersionHealthStatus clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   VersionHealthStatus copyWith(void Function(VersionHealthStatus) updates) =>
       super.copyWith((message) => updates(message as VersionHealthStatus))
@@ -175,8 +170,6 @@ class VersionHealthStatus extends $pb.GeneratedMessage {
   static VersionHealthStatus create() => VersionHealthStatus._();
   @$core.override
   VersionHealthStatus createEmptyInstance() => create();
-  static $pb.PbList<VersionHealthStatus> createRepeated() =>
-      $pb.PbList<VersionHealthStatus>();
   @$core.pragma('dart2js:noInline')
   static VersionHealthStatus getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<VersionHealthStatus>(create);
@@ -249,9 +242,7 @@ class AppState extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
     ..oo(0, [1, 2, 3, 4, 5, 6, 7])
-    ..e<AppStateError>(1, _omitFieldNames ? '' : 'error', $pb.PbFieldType.OE,
-        defaultOrMaker: AppStateError.FAILED_TO_GET_UID,
-        valueOf: AppStateError.valueOf,
+    ..aE<AppStateError>(1, _omitFieldNames ? '' : 'error',
         enumValues: AppStateError.values)
     ..aOM<$0.StatusResponse>(2, _omitFieldNames ? '' : 'connectionStatus',
         subBuilder: $0.StatusResponse.create)
@@ -259,10 +250,7 @@ class AppState extends $pb.GeneratedMessage {
         subBuilder: LoginEvent.create)
     ..aOM<$1.Settings>(4, _omitFieldNames ? '' : 'settingsChange',
         subBuilder: $1.Settings.create)
-    ..e<UpdateEvent>(
-        5, _omitFieldNames ? '' : 'updateEvent', $pb.PbFieldType.OE,
-        defaultOrMaker: UpdateEvent.SERVERS_LIST_UPDATE,
-        valueOf: UpdateEvent.valueOf,
+    ..aE<UpdateEvent>(5, _omitFieldNames ? '' : 'updateEvent',
         enumValues: UpdateEvent.values)
     ..aOM<AccountModification>(6, _omitFieldNames ? '' : 'accountModification',
         subBuilder: AccountModification.create)
@@ -271,7 +259,7 @@ class AppState extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  AppState clone() => AppState()..mergeFromMessage(this);
+  AppState clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   AppState copyWith(void Function(AppState) updates) =>
       super.copyWith((message) => updates(message as AppState)) as AppState;
@@ -283,13 +271,26 @@ class AppState extends $pb.GeneratedMessage {
   static AppState create() => AppState._();
   @$core.override
   AppState createEmptyInstance() => create();
-  static $pb.PbList<AppState> createRepeated() => $pb.PbList<AppState>();
   @$core.pragma('dart2js:noInline')
   static AppState getDefault() =>
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<AppState>(create);
   static AppState? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(4)
+  @$pb.TagNumber(5)
+  @$pb.TagNumber(6)
+  @$pb.TagNumber(7)
   AppState_State whichState() => _AppState_StateByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(4)
+  @$pb.TagNumber(5)
+  @$pb.TagNumber(6)
+  @$pb.TagNumber(7)
   void clearState() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)

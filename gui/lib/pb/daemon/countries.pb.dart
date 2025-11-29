@@ -38,12 +38,12 @@ class CountriesResponse extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'CountriesResponse',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..pc<Country>(1, _omitFieldNames ? '' : 'countries', $pb.PbFieldType.PM,
+    ..pPM<Country>(1, _omitFieldNames ? '' : 'countries',
         subBuilder: Country.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  CountriesResponse clone() => CountriesResponse()..mergeFromMessage(this);
+  CountriesResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   CountriesResponse copyWith(void Function(CountriesResponse) updates) =>
       super.copyWith((message) => updates(message as CountriesResponse))
@@ -56,8 +56,6 @@ class CountriesResponse extends $pb.GeneratedMessage {
   static CountriesResponse create() => CountriesResponse._();
   @$core.override
   CountriesResponse createEmptyInstance() => create();
-  static $pb.PbList<CountriesResponse> createRepeated() =>
-      $pb.PbList<CountriesResponse>();
   @$core.pragma('dart2js:noInline')
   static CountriesResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<CountriesResponse>(create);
@@ -96,7 +94,7 @@ class Country extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  Country clone() => Country()..mergeFromMessage(this);
+  Country clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   Country copyWith(void Function(Country) updates) =>
       super.copyWith((message) => updates(message as Country)) as Country;
@@ -108,7 +106,6 @@ class Country extends $pb.GeneratedMessage {
   static Country create() => Country._();
   @$core.override
   Country createEmptyInstance() => create();
-  static $pb.PbList<Country> createRepeated() => $pb.PbList<Country>();
   @$core.pragma('dart2js:noInline')
   static Country getDefault() =>
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Country>(create);
