@@ -124,11 +124,17 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
       message: (_) => t.ui.reconnectToChangeProtocolDescription,
       noButtonText: t.ui.cancel,
       yesButtonText: t.ui.reconnectNow,
-      yesAction: (ref) async {
-        final vpnStatus = ref.read(vpnStatusControllerProvider).requireValue;
-        await ref
-            .read(vpnStatusControllerProvider.notifier)
-            .reconnect(vpnStatus.connectionParameters);
+      yesAction: (ref) {
+        Future(() async {
+          final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
+          if (vpnStatus == null) {
+            logger.e('Cannot reconnect: vpnStatus is null');
+            return;
+          }
+          await ref
+              .read(vpnStatusControllerProvider.notifier)
+              .reconnect(vpnStatus.connectionParameters);
+        });
       },
     ),
 
@@ -139,6 +145,7 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
       id: PopupCodes.reconnectToChangeObfuscation,
       title: t.ui.reconnectToApplyChanges,
       message: (_) => t.ui.reconnectToApplyChangesDescription,
+      buttonText: t.ui.gotIt,
     ),
 
     // ==============================    [ triggered by daemon ]    ==============================

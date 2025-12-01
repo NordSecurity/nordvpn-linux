@@ -706,6 +706,17 @@ class TranslationsUiEn {
 	String get readMore => 'Read more';
 	String get customDnsWarning => 'Using third-party DNS may limit website availability. For the best browsing experience, use our default settings.';
 	String get recentConnections => 'Recent connections';
+	String accountCreatedOn({required String creation_date}) => 'Account created: ${creation_date}';
+	String get manageSubscription => 'Manage subscription';
+	String get changePassword => 'Change password';
+	String get productHub => 'Product Hub';
+	String get subscriptionInactive => 'Inactive';
+	String get reconnectNow => 'Reconnect now';
+	String get reconnectToChangeProtocol => 'Reconnect to change protocol';
+	String get reconnectToChangeProtocolDescription => 'To apply this change, we\'ll reconnect you to the VPN.';
+	String get reconnectToApplyChanges => 'Reconnect to apply changes';
+	String get reconnectToApplyChangesDescription => 'Your new settings will take effect after you reconnect to the VPN.';
+	String get gotIt => 'Got it';
 }
 
 /// Flat map(s) containing all translations.
@@ -1340,6 +1351,17 @@ extension on Translations {
 			case 'ui.readMore': return 'Read more';
 			case 'ui.customDnsWarning': return 'Using third-party DNS may limit website availability. For the best browsing experience, use our default settings.';
 			case 'ui.recentConnections': return 'Recent connections';
+			case 'ui.accountCreatedOn': return ({required String creation_date}) => 'Account created: ${creation_date}';
+			case 'ui.manageSubscription': return 'Manage subscription';
+			case 'ui.changePassword': return 'Change password';
+			case 'ui.productHub': return 'Product Hub';
+			case 'ui.subscriptionInactive': return 'Inactive';
+			case 'ui.reconnectNow': return 'Reconnect now';
+			case 'ui.reconnectToChangeProtocol': return 'Reconnect to change protocol';
+			case 'ui.reconnectToChangeProtocolDescription': return 'To apply this change, we\'ll reconnect you to the VPN.';
+			case 'ui.reconnectToApplyChanges': return 'Reconnect to apply changes';
+			case 'ui.reconnectToApplyChangesDescription': return 'Your new settings will take effect after you reconnect to the VPN.';
+			case 'ui.gotIt': return 'Got it';
 			default: return null;
 		}
 	}

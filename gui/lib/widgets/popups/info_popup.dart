@@ -33,7 +33,7 @@ final class InfoPopup extends Popup {
       constraints: BoxConstraints(minWidth: theme.singleButtonMinWidth),
       child: ElevatedButton(
         onPressed: () => closePopup(context),
-        child: Text(t.ui.close),
+        child: Text(infoMetadata.buttonText ?? t.ui.close),
       ),
     );
   }
