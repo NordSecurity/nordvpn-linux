@@ -265,5 +265,6 @@
   "reconnectToChangeProtocol": "Reconnect to change protocol",
   "reconnectToChangeProtocolDescription": "To apply this change, we'll reconnect you to the VPN.",
   "reconnectToApplyChanges": "Reconnect to apply changes",
-  "reconnectToApplyChangesDescription": "Your new settings will take effect after you reconnect to the VPN."
+  "reconnectToApplyChangesDescription": "Your new settings will take effect after you reconnect to the VPN.",
+  "gotIt": "Got it"
 }
