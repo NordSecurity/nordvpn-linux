@@ -75,7 +75,7 @@ final class _ServersListCardState extends State<ServersListCard> {
             .watch(serversListControllerProvider)
             .when(
               loading: () => const LoadingIndicator(),
-              error: (_, __) => _buildError(context, ref),
+              error: (_, _) => _buildError(context, ref),
               data: (serversList) {
                 return Opacity(
                   opacity: widget.enabled ? 1.0 : 0.5,

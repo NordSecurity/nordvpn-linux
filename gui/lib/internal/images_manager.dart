@@ -15,7 +15,7 @@ final class ImagesManager {
       _flagPath(cc),
       width: width,
       height: height,
-      errorBuilder: (_, __, st) {
+      errorBuilder: (_, _, st) {
         logger.d("error loading '${_flagPath(cc)}': $st");
         logger.d("showing '${_flagPath(placeholderFlag)}' instead");
         return placeholderCountryFlag;
