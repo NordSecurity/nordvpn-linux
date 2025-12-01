@@ -12,7 +12,6 @@ import 'package:nordvpn/internal/popup_codes.dart';
 import 'package:nordvpn/internal/uri_launch_extension.dart';
 import 'package:nordvpn/internal/urls.dart';
 import 'package:nordvpn/logger.dart';
-import 'package:nordvpn/router/routes.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -125,40 +124,19 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
       message: (_) => t.ui.reconnectToChangeProtocolDescription,
       noButtonText: t.ui.cancel,
       yesButtonText: t.ui.reconnectNow,
-      navigateToRoute: AppRoute.vpn,
-      yesAction: (ref) {
-        final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
-        if (vpnStatus == null) {
-          logger.e('Cannot reconnect: vpnStatus is null');
-          return;
-        }
-        final controller = ref.read(vpnStatusControllerProvider.notifier);
-        final connectionParams = vpnStatus.connectionParameters;
-
-        Future(() async {
-          await controller.disconnect();
-          await controller.reconnect(connectionParams);
-        });
+      yesAction: (ref) async {
+        final vpnStatus = ref.read(vpnStatusControllerProvider).requireValue;
+        await ref
+            .read(vpnStatusControllerProvider.notifier)
+            .reconnect(vpnStatus.connectionParameters);
       },
     ),
 
-    // Reconnect to apply obfuscation change (info popup only)
-    PopupCodes.reconnectToChangeObfuscation => InfoPopupMetadata(
-      id: PopupCodes.reconnectToChangeObfuscation,
-      title: t.ui.reconnectToApplyChanges,
-      message: (_) => t.ui.reconnectToApplyChangesDescription,
-    ),
-
-    // Reconnect to apply post-quantum change (info popup only)
-    PopupCodes.reconnectToChangePostQuantum => InfoPopupMetadata(
-      id: PopupCodes.reconnectToChangePostQuantum,
-      title: t.ui.reconnectToApplyChanges,
-      message: (_) => t.ui.reconnectToApplyChangesDescription,
-    ),
-
-    // Reconnect to apply virtual location change (info popup only)
+    // Reconnect to apply obfuscation, post-quantum, virtual location changes
+    PopupCodes.reconnectToChangeObfuscation ||
+    PopupCodes.reconnectToChangePostQuantum ||
     PopupCodes.reconnectToChangeVirtualLocation => InfoPopupMetadata(
-      id: PopupCodes.reconnectToChangeVirtualLocation,
+      id: PopupCodes.reconnectToChangeObfuscation,
       title: t.ui.reconnectToApplyChanges,
       message: (_) => t.ui.reconnectToApplyChangesDescription,
     ),
