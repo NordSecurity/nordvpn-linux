@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
-import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/popup_theme.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 

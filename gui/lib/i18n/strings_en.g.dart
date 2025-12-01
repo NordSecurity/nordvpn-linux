@@ -707,8 +707,8 @@ class TranslationsUiEn {
 	String get reconnectNow => 'Reconnect now';
 	String get reconnectToChangeProtocol => 'Reconnect to change protocol';
 	String get reconnectToChangeProtocolDescription => 'To apply this change, we\'ll reconnect you to the VPN.';
-	String get reconnectToApplyChanges => 'Reconnect to VPN to apply changes';
-	String get reconnectToApplyChangesDescription => 'You are connected to NordVPN. Please reconnect to apply changes.';
+	String get reconnectToApplyChanges => 'Reconnect to apply changes';
+	String get reconnectToApplyChangesDescription => 'Your new settings will take effect after you reconnect to the VPN.';
 }
 
 /// Flat map(s) containing all translations.
@@ -1344,8 +1344,8 @@ extension on Translations {
 			case 'ui.reconnectNow': return 'Reconnect now';
 			case 'ui.reconnectToChangeProtocol': return 'Reconnect to change protocol';
 			case 'ui.reconnectToChangeProtocolDescription': return 'To apply this change, we\'ll reconnect you to the VPN.';
-			case 'ui.reconnectToApplyChanges': return 'Reconnect to VPN to apply changes';
-			case 'ui.reconnectToApplyChangesDescription': return 'You are connected to NordVPN. Please reconnect to apply changes.';
+			case 'ui.reconnectToApplyChanges': return 'Reconnect to apply changes';
+			case 'ui.reconnectToApplyChangesDescription': return 'Your new settings will take effect after you reconnect to the VPN.';
 			default: return null;
 		}
 	}
