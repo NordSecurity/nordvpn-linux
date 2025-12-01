@@ -56,7 +56,7 @@ class TokenInfoResponse extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  TokenInfoResponse clone() => TokenInfoResponse()..mergeFromMessage(this);
+  TokenInfoResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   TokenInfoResponse copyWith(void Function(TokenInfoResponse) updates) =>
       super.copyWith((message) => updates(message as TokenInfoResponse))
@@ -69,8 +69,6 @@ class TokenInfoResponse extends $pb.GeneratedMessage {
   static TokenInfoResponse create() => TokenInfoResponse._();
   @$core.override
   TokenInfoResponse createEmptyInstance() => create();
-  static $pb.PbList<TokenInfoResponse> createRepeated() =>
-      $pb.PbList<TokenInfoResponse>();
   @$core.pragma('dart2js:noInline')
   static TokenInfoResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<TokenInfoResponse>(create);

@@ -42,7 +42,7 @@ class FeatureToggles extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  FeatureToggles clone() => FeatureToggles()..mergeFromMessage(this);
+  FeatureToggles clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   FeatureToggles copyWith(void Function(FeatureToggles) updates) =>
       super.copyWith((message) => updates(message as FeatureToggles))
@@ -55,8 +55,6 @@ class FeatureToggles extends $pb.GeneratedMessage {
   static FeatureToggles create() => FeatureToggles._();
   @$core.override
   FeatureToggles createEmptyInstance() => create();
-  static $pb.PbList<FeatureToggles> createRepeated() =>
-      $pb.PbList<FeatureToggles>();
   @$core.pragma('dart2js:noInline')
   static FeatureToggles getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<FeatureToggles>(create);

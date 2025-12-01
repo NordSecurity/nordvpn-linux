@@ -40,5 +40,6 @@ abstract class UserAccount with _$UserAccount {
 
   bool get hasDipServers => dedicatedIpServers?.isNotEmpty ?? false;
 
-  bool get isSubscriptionExpired => vpnExpirationDate?.isBefore(DateTime.now()) ?? false;
+  bool get isSubscriptionExpired =>
+      vpnExpirationDate?.isBefore(DateTime.now()) ?? false;
 }

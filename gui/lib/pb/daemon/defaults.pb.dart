@@ -45,7 +45,7 @@ class SetDefaultsRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  SetDefaultsRequest clone() => SetDefaultsRequest()..mergeFromMessage(this);
+  SetDefaultsRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   SetDefaultsRequest copyWith(void Function(SetDefaultsRequest) updates) =>
       super.copyWith((message) => updates(message as SetDefaultsRequest))
@@ -58,8 +58,6 @@ class SetDefaultsRequest extends $pb.GeneratedMessage {
   static SetDefaultsRequest create() => SetDefaultsRequest._();
   @$core.override
   SetDefaultsRequest createEmptyInstance() => create();
-  static $pb.PbList<SetDefaultsRequest> createRepeated() =>
-      $pb.PbList<SetDefaultsRequest>();
   @$core.pragma('dart2js:noInline')
   static SetDefaultsRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<SetDefaultsRequest>(create);

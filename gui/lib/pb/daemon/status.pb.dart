@@ -56,24 +56,18 @@ class ConnectionParameters extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'ConnectionParameters',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..e<ConnectionSource>(
-        1, _omitFieldNames ? '' : 'source', $pb.PbFieldType.OE,
-        defaultOrMaker: ConnectionSource.UNKNOWN_SOURCE,
-        valueOf: ConnectionSource.valueOf,
+    ..aE<ConnectionSource>(1, _omitFieldNames ? '' : 'source',
         enumValues: ConnectionSource.values)
     ..aOS(2, _omitFieldNames ? '' : 'country')
     ..aOS(3, _omitFieldNames ? '' : 'city')
-    ..e<$0.ServerGroup>(4, _omitFieldNames ? '' : 'group', $pb.PbFieldType.OE,
-        defaultOrMaker: $0.ServerGroup.UNDEFINED,
-        valueOf: $0.ServerGroup.valueOf,
+    ..aE<$0.ServerGroup>(4, _omitFieldNames ? '' : 'group',
         enumValues: $0.ServerGroup.values)
     ..aOS(5, _omitFieldNames ? '' : 'serverName')
     ..aOS(6, _omitFieldNames ? '' : 'countryCode')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  ConnectionParameters clone() =>
-      ConnectionParameters()..mergeFromMessage(this);
+  ConnectionParameters clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   ConnectionParameters copyWith(void Function(ConnectionParameters) updates) =>
       super.copyWith((message) => updates(message as ConnectionParameters))
@@ -86,8 +80,6 @@ class ConnectionParameters extends $pb.GeneratedMessage {
   static ConnectionParameters create() => ConnectionParameters._();
   @$core.override
   ConnectionParameters createEmptyInstance() => create();
-  static $pb.PbList<ConnectionParameters> createRepeated() =>
-      $pb.PbList<ConnectionParameters>();
   @$core.pragma('dart2js:noInline')
   static ConnectionParameters getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<ConnectionParameters>(create);
@@ -204,18 +196,11 @@ class StatusResponse extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'StatusResponse',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..e<ConnectionState>(1, _omitFieldNames ? '' : 'state', $pb.PbFieldType.OE,
-        defaultOrMaker: ConnectionState.UNKNOWN_STATE,
-        valueOf: ConnectionState.valueOf,
+    ..aE<ConnectionState>(1, _omitFieldNames ? '' : 'state',
         enumValues: ConnectionState.values)
-    ..e<$1.Technology>(
-        2, _omitFieldNames ? '' : 'technology', $pb.PbFieldType.OE,
-        defaultOrMaker: $1.Technology.UNKNOWN_TECHNOLOGY,
-        valueOf: $1.Technology.valueOf,
+    ..aE<$1.Technology>(2, _omitFieldNames ? '' : 'technology',
         enumValues: $1.Technology.values)
-    ..e<$2.Protocol>(3, _omitFieldNames ? '' : 'protocol', $pb.PbFieldType.OE,
-        defaultOrMaker: $2.Protocol.UNKNOWN_PROTOCOL,
-        valueOf: $2.Protocol.valueOf,
+    ..aE<$2.Protocol>(3, _omitFieldNames ? '' : 'protocol',
         enumValues: $2.Protocol.values)
     ..aOS(4, _omitFieldNames ? '' : 'ip')
     ..aOS(5, _omitFieldNames ? '' : 'hostname')
@@ -240,7 +225,7 @@ class StatusResponse extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  StatusResponse clone() => StatusResponse()..mergeFromMessage(this);
+  StatusResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   StatusResponse copyWith(void Function(StatusResponse) updates) =>
       super.copyWith((message) => updates(message as StatusResponse))
@@ -253,8 +238,6 @@ class StatusResponse extends $pb.GeneratedMessage {
   static StatusResponse create() => StatusResponse._();
   @$core.override
   StatusResponse createEmptyInstance() => create();
-  static $pb.PbList<StatusResponse> createRepeated() =>
-      $pb.PbList<StatusResponse>();
   @$core.pragma('dart2js:noInline')
   static StatusResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<StatusResponse>(create);

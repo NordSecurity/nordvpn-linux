@@ -33,7 +33,7 @@ services:
   # Generates Dart protobuf files for the GUI
   # Note: The generation script removes gui/lib/pb, so we backup before generation
   gui-protobuf-gen:
-    image: ghcr.io/nordsecurity/nordvpn-linux/protobuf_dart-3.8.1:1.0.1
+    image: ghcr.io/nordsecurity/nordvpn-linux/protobuf_dart-3.10.0:1.0.0
     environment:
       <<: *common-variables
     volumes:

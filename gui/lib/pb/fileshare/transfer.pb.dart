@@ -61,19 +61,13 @@ class Transfer extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'filesharepb'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'id')
-    ..e<Direction>(2, _omitFieldNames ? '' : 'direction', $pb.PbFieldType.OE,
-        defaultOrMaker: Direction.UNKNOWN_DIRECTION,
-        valueOf: Direction.valueOf,
+    ..aE<Direction>(2, _omitFieldNames ? '' : 'direction',
         enumValues: Direction.values)
     ..aOS(3, _omitFieldNames ? '' : 'peer')
-    ..e<Status>(4, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE,
-        defaultOrMaker: Status.SUCCESS,
-        valueOf: Status.valueOf,
-        enumValues: Status.values)
+    ..aE<Status>(4, _omitFieldNames ? '' : 'status', enumValues: Status.values)
     ..aOM<$0.Timestamp>(5, _omitFieldNames ? '' : 'created',
         subBuilder: $0.Timestamp.create)
-    ..pc<File>(6, _omitFieldNames ? '' : 'files', $pb.PbFieldType.PM,
-        subBuilder: File.create)
+    ..pPM<File>(6, _omitFieldNames ? '' : 'files', subBuilder: File.create)
     ..aOS(7, _omitFieldNames ? '' : 'path')
     ..a<$fixnum.Int64>(
         8, _omitFieldNames ? '' : 'totalSize', $pb.PbFieldType.OU6,
@@ -84,7 +78,7 @@ class Transfer extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  Transfer clone() => Transfer()..mergeFromMessage(this);
+  Transfer clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   Transfer copyWith(void Function(Transfer) updates) =>
       super.copyWith((message) => updates(message as Transfer)) as Transfer;
@@ -96,7 +90,6 @@ class Transfer extends $pb.GeneratedMessage {
   static Transfer create() => Transfer._();
   @$core.override
   Transfer createEmptyInstance() => create();
-  static $pb.PbList<Transfer> createRepeated() => $pb.PbList<Transfer>();
   @$core.pragma('dart2js:noInline')
   static Transfer getDefault() =>
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Transfer>(create);
@@ -222,10 +215,7 @@ class File extends $pb.GeneratedMessage {
     ..a<$fixnum.Int64>(
         3, _omitFieldNames ? '' : 'transferred', $pb.PbFieldType.OU6,
         defaultOrMaker: $fixnum.Int64.ZERO)
-    ..e<Status>(4, _omitFieldNames ? '' : 'status', $pb.PbFieldType.OE,
-        defaultOrMaker: Status.SUCCESS,
-        valueOf: Status.valueOf,
-        enumValues: Status.values)
+    ..aE<Status>(4, _omitFieldNames ? '' : 'status', enumValues: Status.values)
     ..m<$core.String, File>(5, _omitFieldNames ? '' : 'children',
         entryClassName: 'File.ChildrenEntry',
         keyFieldType: $pb.PbFieldType.OS,
@@ -238,7 +228,7 @@ class File extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  File clone() => File()..mergeFromMessage(this);
+  File clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   File copyWith(void Function(File) updates) =>
       super.copyWith((message) => updates(message as File)) as File;
@@ -250,7 +240,6 @@ class File extends $pb.GeneratedMessage {
   static File create() => File._();
   @$core.override
   File createEmptyInstance() => create();
-  static $pb.PbList<File> createRepeated() => $pb.PbList<File>();
   @$core.pragma('dart2js:noInline')
   static File getDefault() =>
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<File>(create);

@@ -1,0 +1,9 @@
+*.freezed.dart linguist-generated=true
+*.g.dart linguist-generated=true
+*.tailor.dart linguist-generated=true
+
+# Ignore protobuf-generated Dart files
+*.pb.dart linguist-generated=true
+*.pbenum.dart linguist-generated=true
+*.pbjson.dart linguist-generated=true
+*.pbgrpc.dart linguist-generated=true

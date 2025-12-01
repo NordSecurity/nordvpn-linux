@@ -67,20 +67,14 @@ class GetInvitesResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 2, 3])
     ..aOM<InvitesList>(1, _omitFieldNames ? '' : 'invites',
         subBuilder: InvitesList.create)
-    ..e<$2.ServiceErrorCode>(
-        2, _omitFieldNames ? '' : 'serviceErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: $2.ServiceErrorCode.NOT_LOGGED_IN,
-        valueOf: $2.ServiceErrorCode.valueOf,
+    ..aE<$2.ServiceErrorCode>(2, _omitFieldNames ? '' : 'serviceErrorCode',
         enumValues: $2.ServiceErrorCode.values)
-    ..e<$2.MeshnetErrorCode>(
-        3, _omitFieldNames ? '' : 'meshnetErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: $2.MeshnetErrorCode.NOT_REGISTERED,
-        valueOf: $2.MeshnetErrorCode.valueOf,
+    ..aE<$2.MeshnetErrorCode>(3, _omitFieldNames ? '' : 'meshnetErrorCode',
         enumValues: $2.MeshnetErrorCode.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  GetInvitesResponse clone() => GetInvitesResponse()..mergeFromMessage(this);
+  GetInvitesResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   GetInvitesResponse copyWith(void Function(GetInvitesResponse) updates) =>
       super.copyWith((message) => updates(message as GetInvitesResponse))
@@ -93,15 +87,19 @@ class GetInvitesResponse extends $pb.GeneratedMessage {
   static GetInvitesResponse create() => GetInvitesResponse._();
   @$core.override
   GetInvitesResponse createEmptyInstance() => create();
-  static $pb.PbList<GetInvitesResponse> createRepeated() =>
-      $pb.PbList<GetInvitesResponse>();
   @$core.pragma('dart2js:noInline')
   static GetInvitesResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<GetInvitesResponse>(create);
   static GetInvitesResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
   GetInvitesResponse_Response whichResponse() =>
       _GetInvitesResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -159,14 +157,13 @@ class InvitesList extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'InvitesList',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'meshpb'),
       createEmptyInstance: create)
-    ..pc<Invite>(1, _omitFieldNames ? '' : 'sent', $pb.PbFieldType.PM,
-        subBuilder: Invite.create)
-    ..pc<Invite>(2, _omitFieldNames ? '' : 'received', $pb.PbFieldType.PM,
+    ..pPM<Invite>(1, _omitFieldNames ? '' : 'sent', subBuilder: Invite.create)
+    ..pPM<Invite>(2, _omitFieldNames ? '' : 'received',
         subBuilder: Invite.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  InvitesList clone() => InvitesList()..mergeFromMessage(this);
+  InvitesList clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   InvitesList copyWith(void Function(InvitesList) updates) =>
       super.copyWith((message) => updates(message as InvitesList))
@@ -179,7 +176,6 @@ class InvitesList extends $pb.GeneratedMessage {
   static InvitesList create() => InvitesList._();
   @$core.override
   InvitesList createEmptyInstance() => create();
-  static $pb.PbList<InvitesList> createRepeated() => $pb.PbList<InvitesList>();
   @$core.pragma('dart2js:noInline')
   static InvitesList getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<InvitesList>(create);
@@ -226,7 +222,7 @@ class Invite extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  Invite clone() => Invite()..mergeFromMessage(this);
+  Invite clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   Invite copyWith(void Function(Invite) updates) =>
       super.copyWith((message) => updates(message as Invite)) as Invite;
@@ -238,7 +234,6 @@ class Invite extends $pb.GeneratedMessage {
   static Invite create() => Invite._();
   @$core.override
   Invite createEmptyInstance() => create();
-  static $pb.PbList<Invite> createRepeated() => $pb.PbList<Invite>();
   @$core.pragma('dart2js:noInline')
   static Invite getDefault() =>
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Invite>(create);
@@ -322,7 +317,7 @@ class InviteRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  InviteRequest clone() => InviteRequest()..mergeFromMessage(this);
+  InviteRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   InviteRequest copyWith(void Function(InviteRequest) updates) =>
       super.copyWith((message) => updates(message as InviteRequest))
@@ -335,8 +330,6 @@ class InviteRequest extends $pb.GeneratedMessage {
   static InviteRequest create() => InviteRequest._();
   @$core.override
   InviteRequest createEmptyInstance() => create();
-  static $pb.PbList<InviteRequest> createRepeated() =>
-      $pb.PbList<InviteRequest>();
   @$core.pragma('dart2js:noInline')
   static InviteRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<InviteRequest>(create);
@@ -424,7 +417,7 @@ class DenyInviteRequest extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  DenyInviteRequest clone() => DenyInviteRequest()..mergeFromMessage(this);
+  DenyInviteRequest clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   DenyInviteRequest copyWith(void Function(DenyInviteRequest) updates) =>
       super.copyWith((message) => updates(message as DenyInviteRequest))
@@ -437,8 +430,6 @@ class DenyInviteRequest extends $pb.GeneratedMessage {
   static DenyInviteRequest create() => DenyInviteRequest._();
   @$core.override
   DenyInviteRequest createEmptyInstance() => create();
-  static $pb.PbList<DenyInviteRequest> createRepeated() =>
-      $pb.PbList<DenyInviteRequest>();
   @$core.pragma('dart2js:noInline')
   static DenyInviteRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<DenyInviteRequest>(create);
@@ -505,26 +496,17 @@ class RespondToInviteResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 2, 3, 4])
     ..aOM<$1.Empty>(1, _omitFieldNames ? '' : 'empty',
         subBuilder: $1.Empty.create)
-    ..e<RespondToInviteErrorCode>(2,
-        _omitFieldNames ? '' : 'respondToInviteErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: RespondToInviteErrorCode.UNKNOWN,
-        valueOf: RespondToInviteErrorCode.valueOf,
+    ..aE<RespondToInviteErrorCode>(
+        2, _omitFieldNames ? '' : 'respondToInviteErrorCode',
         enumValues: RespondToInviteErrorCode.values)
-    ..e<$2.ServiceErrorCode>(
-        3, _omitFieldNames ? '' : 'serviceErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: $2.ServiceErrorCode.NOT_LOGGED_IN,
-        valueOf: $2.ServiceErrorCode.valueOf,
+    ..aE<$2.ServiceErrorCode>(3, _omitFieldNames ? '' : 'serviceErrorCode',
         enumValues: $2.ServiceErrorCode.values)
-    ..e<$2.MeshnetErrorCode>(
-        4, _omitFieldNames ? '' : 'meshnetErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: $2.MeshnetErrorCode.NOT_REGISTERED,
-        valueOf: $2.MeshnetErrorCode.valueOf,
+    ..aE<$2.MeshnetErrorCode>(4, _omitFieldNames ? '' : 'meshnetErrorCode',
         enumValues: $2.MeshnetErrorCode.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  RespondToInviteResponse clone() =>
-      RespondToInviteResponse()..mergeFromMessage(this);
+  RespondToInviteResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   RespondToInviteResponse copyWith(
           void Function(RespondToInviteResponse) updates) =>
@@ -538,15 +520,21 @@ class RespondToInviteResponse extends $pb.GeneratedMessage {
   static RespondToInviteResponse create() => RespondToInviteResponse._();
   @$core.override
   RespondToInviteResponse createEmptyInstance() => create();
-  static $pb.PbList<RespondToInviteResponse> createRepeated() =>
-      $pb.PbList<RespondToInviteResponse>();
   @$core.pragma('dart2js:noInline')
   static RespondToInviteResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<RespondToInviteResponse>(create);
   static RespondToInviteResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(4)
   RespondToInviteResponse_Response whichResponse() =>
       _RespondToInviteResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(4)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -638,25 +626,17 @@ class InviteResponse extends $pb.GeneratedMessage {
     ..oo(0, [1, 2, 3, 4])
     ..aOM<$1.Empty>(1, _omitFieldNames ? '' : 'empty',
         subBuilder: $1.Empty.create)
-    ..e<InviteResponseErrorCode>(
-        2, _omitFieldNames ? '' : 'inviteResponseErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: InviteResponseErrorCode.ALREADY_EXISTS,
-        valueOf: InviteResponseErrorCode.valueOf,
+    ..aE<InviteResponseErrorCode>(
+        2, _omitFieldNames ? '' : 'inviteResponseErrorCode',
         enumValues: InviteResponseErrorCode.values)
-    ..e<$2.ServiceErrorCode>(
-        3, _omitFieldNames ? '' : 'serviceErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: $2.ServiceErrorCode.NOT_LOGGED_IN,
-        valueOf: $2.ServiceErrorCode.valueOf,
+    ..aE<$2.ServiceErrorCode>(3, _omitFieldNames ? '' : 'serviceErrorCode',
         enumValues: $2.ServiceErrorCode.values)
-    ..e<$2.MeshnetErrorCode>(
-        4, _omitFieldNames ? '' : 'meshnetErrorCode', $pb.PbFieldType.OE,
-        defaultOrMaker: $2.MeshnetErrorCode.NOT_REGISTERED,
-        valueOf: $2.MeshnetErrorCode.valueOf,
+    ..aE<$2.MeshnetErrorCode>(4, _omitFieldNames ? '' : 'meshnetErrorCode',
         enumValues: $2.MeshnetErrorCode.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  InviteResponse clone() => InviteResponse()..mergeFromMessage(this);
+  InviteResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   InviteResponse copyWith(void Function(InviteResponse) updates) =>
       super.copyWith((message) => updates(message as InviteResponse))
@@ -669,15 +649,21 @@ class InviteResponse extends $pb.GeneratedMessage {
   static InviteResponse create() => InviteResponse._();
   @$core.override
   InviteResponse createEmptyInstance() => create();
-  static $pb.PbList<InviteResponse> createRepeated() =>
-      $pb.PbList<InviteResponse>();
   @$core.pragma('dart2js:noInline')
   static InviteResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<InviteResponse>(create);
   static InviteResponse? _defaultInstance;
 
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(4)
   InviteResponse_Response whichResponse() =>
       _InviteResponse_ResponseByTag[$_whichOneof(0)]!;
+  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
+  @$pb.TagNumber(3)
+  @$pb.TagNumber(4)
   void clearResponse() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)

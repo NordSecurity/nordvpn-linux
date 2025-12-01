@@ -55,7 +55,7 @@ class PingResponse extends $pb.GeneratedMessage {
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  PingResponse clone() => PingResponse()..mergeFromMessage(this);
+  PingResponse clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   PingResponse copyWith(void Function(PingResponse) updates) =>
       super.copyWith((message) => updates(message as PingResponse))
@@ -68,8 +68,6 @@ class PingResponse extends $pb.GeneratedMessage {
   static PingResponse create() => PingResponse._();
   @$core.override
   PingResponse createEmptyInstance() => create();
-  static $pb.PbList<PingResponse> createRepeated() =>
-      $pb.PbList<PingResponse>();
   @$core.pragma('dart2js:noInline')
   static PingResponse getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<PingResponse>(create);
