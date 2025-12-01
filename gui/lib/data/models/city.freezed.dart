@@ -47,6 +47,7 @@ $Res call({
 
 
 
+
 }
 /// @nodoc
 class _$CityCopyWithImpl<$Res>
@@ -105,6 +106,7 @@ abstract mixin class _$CityCopyWith<$Res> implements $CityCopyWith<$Res> {
 $Res call({
  String name
 });
+
 
 
 
