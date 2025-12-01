@@ -377,3 +377,34 @@ func TestConnectionInfo_TunnelNameUpdatedByInternalEventsOnly(t *testing.T) {
 	tf.sut.ConnectionStatusNotifyInternalDisconnect(events.StatusSuccess)
 	assert.Empty(t, tf.sut.Status().TunnelName)
 }
+
+func TestConnectionInfo_RefreshDisconnectEventsAreIgnored(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                  string
+		disconnectEventStatus events.TypeEventStatus
+	}{
+		{
+			name:                  "disconnect success",
+			disconnectEventStatus: events.StatusSuccess,
+		},
+		{
+			name:                  "disconnect failure",
+			disconnectEventStatus: events.StatusFailure,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			tf := newTestFixture(t)
+			tf.subscriber.ExpectEvents(2)
+			tf.sut.ConnectionStatusNotifyConnect(events.DataConnect{EventStatus: events.StatusSuccess})
+			assert.Equal(t, pb.ConnectionState_CONNECTED, tf.sut.status.State,
+				"State was not changed to connected after receiving a connect event.")
+
+			tf.sut.ConnectionStatusNotifyDisconnect(events.DataDisconnect{EventStatus: events.StatusSuccess, IsRefresh: true})
+			assert.Equal(t, pb.ConnectionState_CONNECTED, tf.sut.status.State,
+				"State was changed after receiving a refresh disconnect events. Refresh events should be ignored.")
+		})
+	}
+}
