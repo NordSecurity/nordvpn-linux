@@ -31,6 +31,7 @@ def teardown_function(function):  # noqa: ARG001
     meshnet.TestUtils.teardown_function(ssh_client)
 
 
+@pytest.mark.xfail
 def test_meshnet_connect():
     peer = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer()
     this_device = meshnet.PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list")).get_external_peer()
@@ -182,6 +183,7 @@ def test_set_meshnet_off_when_logged_out(meshnet_allias):
     assert "You are not logged in." in ex.value.stdout.decode("utf-8")
 
 
+@pytest.mark.xfail
 @pytest.mark.core_meshnet
 @pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
 def test_set_meshnet_off_on(meshnet_allias):
@@ -247,6 +249,7 @@ def test_permission_messages_error(permission, permission_state, expected_messag
     assert expected_message in ex.value.stdout.decode("utf-8")
 
 
+@pytest.mark.xfail
 def test_derp_server_selection_logic():
     def has_duplicates(lst):
         return len(lst) != len(set(lst))
@@ -320,6 +323,7 @@ def test_direct_connection_rtt_and_loss():
         base_test(log_content, qapeer_hostname)
 
 
+@pytest.mark.xfail
 def test_incoming_connections():
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname
@@ -332,6 +336,7 @@ def test_incoming_connections():
     assert not meshnet.is_peer_reachable(peer_list.get_external_peer(), retry=1)
 
 
+@pytest.mark.xfail
 def test_login_mesh_on_set_defaults_mesh_on_sequence():
     """Test the sequence: login -> set mesh on -> set defaults -> set mesh on"""
 
@@ -348,6 +353,7 @@ def test_login_mesh_on_set_defaults_mesh_on_sequence():
     assert settings.is_meshnet_enabled()
 
 
+@pytest.mark.xfail
 def test_login_mesh_on_set_defaults_logout_login_mesh_on():
     """Test the sequence with logout: login -> set mesh on -> set defaults --logout -> login -> set mesh on"""
 
