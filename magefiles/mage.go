@@ -21,7 +21,7 @@ import (
 const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
 	imageBuilder           = registryPrefix + "builder:1.4.2"
-	imageGUIFlutter        = registryPrefix + "flutter-3.38.1:1.0.0"
+	imageGUIFlutter        = registryPrefix + "flutter-3.38.1:1.0.1"
 	imagePackager          = registryPrefix + "packager:1.3.3"
 	imageDepender          = registryPrefix + "depender:1.3.3"
 	imageSnapPackager      = registryPrefix + "snaper:1.2.0"
