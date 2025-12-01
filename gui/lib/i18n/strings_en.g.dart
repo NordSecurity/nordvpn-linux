@@ -709,6 +709,7 @@ class TranslationsUiEn {
 	String get reconnectToChangeProtocolDescription => 'To apply this change, we\'ll reconnect you to the VPN.';
 	String get reconnectToApplyChanges => 'Reconnect to apply changes';
 	String get reconnectToApplyChangesDescription => 'Your new settings will take effect after you reconnect to the VPN.';
+	String get gotIt => 'Got it';
 }
 
 /// Flat map(s) containing all translations.
@@ -1346,6 +1347,7 @@ extension on Translations {
 			case 'ui.reconnectToChangeProtocolDescription': return 'To apply this change, we\'ll reconnect you to the VPN.';
 			case 'ui.reconnectToApplyChanges': return 'Reconnect to apply changes';
 			case 'ui.reconnectToApplyChangesDescription': return 'Your new settings will take effect after you reconnect to the VPN.';
+			case 'ui.gotIt': return 'Got it';
 			default: return null;
 		}
 	}
