@@ -264,6 +264,6 @@
   "reconnectNow": "Reconnect now",
   "reconnectToChangeProtocol": "Reconnect to change protocol",
   "reconnectToChangeProtocolDescription": "To apply this change, we'll reconnect you to the VPN.",
-  "reconnectToApplyChanges": "Reconnect to VPN to apply changes",
-  "reconnectToApplyChangesDescription": "You are connected to NordVPN. Please reconnect to apply changes."
+  "reconnectToApplyChanges": "Reconnect to apply changes",
+  "reconnectToApplyChangesDescription": "Your new settings will take effect after you reconnect to the VPN."
 }

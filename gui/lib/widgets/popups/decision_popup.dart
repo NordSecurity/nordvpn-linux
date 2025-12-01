@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
-import 'package:nordvpn/router/routes.dart';
 import 'package:nordvpn/theme/popup_theme.dart';
 import 'package:nordvpn/widgets/popups/popup.dart';
 
@@ -42,14 +41,6 @@ final class DecisionPopup extends Popup {
   Widget _yesButton(WidgetRef ref, BuildContext context) {
     return ElevatedButton(
       onPressed: () async {
-        // navigate if route is specified
-        if (decisionMetadata.navigateToRoute != null) {
-          context.navigateToRoute(decisionMetadata.navigateToRoute!);
-          // close popup immediately and run action in background
-          closePopup(context);
-          decisionMetadata.yesAction(ref);
-          return;
-        }
         // wait for action to complete before closing
         await decisionMetadata.yesAction(ref);
         if (!context.mounted) return;
