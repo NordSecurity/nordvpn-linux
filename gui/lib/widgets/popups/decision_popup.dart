@@ -40,11 +40,9 @@ final class DecisionPopup extends Popup {
 
   Widget _yesButton(WidgetRef ref, BuildContext context) {
     return ElevatedButton(
-      onPressed: () async {
-        // wait for action to complete before closing
-        await decisionMetadata.yesAction(ref);
-        if (!context.mounted) return;
+      onPressed: () {
         closePopup(context);
+        decisionMetadata.yesAction(ref);
       },
       child: Text(decisionMetadata.yesButtonText),
     );
