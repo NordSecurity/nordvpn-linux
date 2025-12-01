@@ -8,7 +8,7 @@ import 'package:nordvpn/data/providers/popups_provider.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/data/repository/vpn_repository.dart';
 import 'package:nordvpn/logger.dart';
-import 'package:nordvpn/pb/daemon/status.pb.dart' as pb;
+import 'package:nordvpn/pb/daemon/status.pb.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'vpn_status_controller.g.dart';
@@ -30,7 +30,7 @@ class VpnStatusController extends _$VpnStatusController
   Future<void> connect(ConnectArguments? args) =>
       _doAndShowPopup((vpn) => vpn.connect(args ?? ConnectArguments()));
 
-  Future<void> reconnect(pb.ConnectionParameters args) =>
+  Future<void> reconnect(ConnectionParameters args) =>
       _doAndShowPopup((vpn) => vpn.reconnect(args));
 
   Future<void> disconnect() => _doAndShowPopup((vpn) => vpn.disconnect());
@@ -70,7 +70,7 @@ class VpnStatusController extends _$VpnStatusController
   }
 
   @override
-  void onVpnStatusChanged(pb.StatusResponse status) {
+  void onVpnStatusChanged(StatusResponse status) {
     if (!state.hasValue) {
       // if there is no status already fetched it is not possible to construct the status
       logger.d("ignore VPN status changed because app doesn't have a status");

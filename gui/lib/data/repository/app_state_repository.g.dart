@@ -7,7 +7,7 @@ part of 'app_state_repository.dart';
 // **************************************************************************
 
 String _$appStateRepositoryHash() =>
-    r'd7eeed5e7fb44a4aee82768303b470dc8766a28f';
+    r'c9e92c240bdb361eaeac15f5c7361055d9e4af6d';
 
 /// See also [appStateRepository].
 @ProviderFor(appStateRepository)
