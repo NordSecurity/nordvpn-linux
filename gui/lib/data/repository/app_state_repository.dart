@@ -21,5 +21,5 @@ class AppStateRepository {
 // Registers to the daemon app state changes and forwards them
 @Riverpod(keepAlive: true)
 AppStateRepository appStateRepository(Ref ref) {
-  return AppStateRepository(createDaemonClient());
+  return AppStateRepository(createDaemonClient(createNewChannel()));
 }
