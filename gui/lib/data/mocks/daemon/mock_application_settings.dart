@@ -4,6 +4,7 @@ import 'package:fixnum/fixnum.dart';
 import 'package:nordvpn/data/mocks/daemon/cancelable_delayed.dart';
 import 'package:nordvpn/data/mocks/daemon/connect_arguments_extension.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_servers_list.dart';
+import 'package:nordvpn/data/mocks/daemon/mock_vpn_status.dart';
 import 'package:nordvpn/data/models/allow_list.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/pb/daemon/common.pb.dart';
@@ -15,12 +16,14 @@ import 'package:nordvpn/pb/daemon/ping.pb.dart';
 import 'package:nordvpn/pb/daemon/set.pb.dart';
 import 'package:nordvpn/pb/daemon/settings.pb.dart';
 import 'package:nordvpn/pb/daemon/state.pb.dart';
+import 'package:nordvpn/pb/daemon/status.pb.dart';
 
 // Store information about the application settings for the mocked daemon
 final class MockApplicationSettings extends CancelableDelayed {
   final StreamController<AppState> stream;
   final MockServersList serversList;
-  MockApplicationSettings(this.stream, this.serversList) {
+  final MockVpnStatus vpnStatus;
+  MockApplicationSettings(this.stream, this.serversList, this.vpnStatus) {
     setDefaults();
   }
 
@@ -255,8 +258,13 @@ final class MockApplicationSettings extends CancelableDelayed {
       return SetProtocolResponse(errorCode: SetErrorCode.FAILURE);
     }
 
+    // Check if VPN is connected to determine whether to show reconnect popup
+    final isConnected = vpnStatus.status.state == ConnectionState.CONNECTED;
+
     return SetProtocolResponse(
-      setProtocolStatus: SetProtocolStatus.PROTOCOL_CONFIGURED,
+      setProtocolStatus: isConnected
+          ? SetProtocolStatus.PROTOCOL_CONFIGURED_VPN_ON  // Show reconnect popup
+          : SetProtocolStatus.PROTOCOL_CONFIGURED,         // No popup
     );
   }
 
