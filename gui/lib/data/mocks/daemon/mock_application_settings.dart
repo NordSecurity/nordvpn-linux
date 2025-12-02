@@ -100,7 +100,15 @@ final class MockApplicationSettings extends CancelableDelayed {
     _settings = SettingsResponse(data: s);
 
     stream.add(AppState(settingsChange: s));
-    return Payload(type: Int64(DaemonStatusCode.success));
+
+    // Check if VPN is active to return appropriate status
+    final isVpnActive = vpnStatus.status.state == ConnectionState.CONNECTED ||
+        vpnStatus.status.state == ConnectionState.CONNECTING;
+
+    return Payload(
+      type: Int64(DaemonStatusCode.success),
+      data: isVpnActive ? ['true'] : [],
+    );
   }
 
   PingResponse pingResponse = PingResponse(
