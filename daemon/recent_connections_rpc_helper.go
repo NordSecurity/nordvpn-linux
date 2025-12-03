@@ -11,8 +11,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 )
 
-// StorePendingRecentConnection stores current pending recent connection to memory
-func StorePendingRecentConnection(store *recents.RecentConnectionsStore) {
+// storePendingRecentConnection stores current pending recent connection to memory
+func storePendingRecentConnection(store *recents.RecentConnectionsStore) {
 	exists, recentModel := store.PopPending()
 	if !exists {
 		return

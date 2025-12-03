@@ -93,13 +93,13 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 
 	// Find matches that have the same connection model with technologies and connection type
 	// considered
-	matches := NewFilter(model, connections).
-		WithSpecificServerOnlyFor([]config.ServerSelectionRule{
+	matches := newFilter(model, connections).
+		withSpecificServerOnlyFor([]config.ServerSelectionRule{
 			config.ServerSelectionRule_SPECIFIC_SERVER,
 			config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 		}).
-		WithTechnologies(model.ServerTechnologies).
-		Apply()
+		withTechnologies(model.ServerTechnologies).
+		apply()
 
 	// For now we select input model as the entry to insert
 	modelToInsert := model

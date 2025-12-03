@@ -199,7 +199,6 @@ final class ServerListItemFactory {
       ),
       title: Text(city.localizedName, style: appTheme.body),
       subtitle: Text(country.country.localizedName, style: appTheme.caption),
-      // children: null,
       onTap: () => onTap(
         ConnectArguments(
           country: country.country,
