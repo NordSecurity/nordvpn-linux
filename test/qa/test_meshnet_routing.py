@@ -203,7 +203,6 @@ def test_route_to_peer_that_is_disconnected():
     assert expected_message in ex.value.stdout.decode("utf-8")
 
 
-@pytest.mark.xfail
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_NO_MESHNET)
 def test_route_traffic_to_peer_wrong_tech(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
