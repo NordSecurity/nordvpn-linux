@@ -545,7 +545,7 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 			assert.Equal(t, internal.CodeConnected, server.msg.Type)
 
 			// Manually store the pending connection (normally happens on disconnect)
-			StorePendingRecentConnection(rpc.recentVPNConnStore)
+			storePendingRecentConnection(rpc.recentVPNConnStore)
 
 			recentConns, err := rpc.recentVPNConnStore.Get()
 			require.NoError(t, err)

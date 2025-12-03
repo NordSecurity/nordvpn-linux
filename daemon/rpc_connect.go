@@ -268,7 +268,7 @@ func (r *RPC) connect(
 	)
 
 	defer func() {
-		StorePendingRecentConnection(r.recentVPNConnStore)
+		storePendingRecentConnection(r.recentVPNConnStore)
 		connectionEstablished := event.EventStatus == events.StatusSuccess
 		if connectionEstablished && isRecentConnectionSupported(event.TargetServerSelection) {
 			recentModel, err := buildRecentConnectionModel(event, parameters, server, r.dm, cfg)
