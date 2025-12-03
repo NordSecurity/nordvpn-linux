@@ -131,7 +131,7 @@ const (
 	ovpnTemplateURL = "/configs/templates/ovpn/1.0/template.xslt"
 
 	// ovpnObfsTemplateURL defines url to ovpn obfuscated server template
-	ovpnObfsTemplateURL = "/configs/templates/ovpn_xor/1.0/template.xslt"
+	ovpnObfsTemplateURL = "/configs/templates/ovpn_xor/1.1/template.xslt"
 
 	// threatProtectionLiteURL defines url of the cybersec file
 	threatProtectionLiteURL = "/configs/dns/cybersec.json"
