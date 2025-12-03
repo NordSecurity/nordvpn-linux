@@ -267,6 +267,19 @@ func (r *RPC) connect(
 		disconnectSender.PublishDisconnect,
 	)
 
+	defer func() {
+		storePendingRecentConnection(r.recentVPNConnStore)
+		connectionEstablished := event.EventStatus == events.StatusSuccess
+		if connectionEstablished && isRecentConnectionSupported(event.TargetServerSelection) {
+			recentModel, err := buildRecentConnectionModel(event, parameters, server, r.dm, cfg)
+			if err != nil {
+				log.Println(internal.WarningPrefix, "Failed to build recent VPN connection model:", err)
+				return
+			}
+			r.recentVPNConnStore.AddPending(recentModel)
+		}
+	}()
+
 	if err != nil {
 		event.DurationMs = getElapsedTime(connectingStartTime)
 		event.Error = err
@@ -290,15 +303,6 @@ func (r *RPC) connect(
 	event.EventStatus = events.StatusSuccess
 	event.DurationMs = getElapsedTime(connectingStartTime)
 
-	if isRecentConnectionSupported(event.TargetServerSelection) {
-		recentModel, err := buildRecentConnectionModel(event, parameters, server, r.dm, cfg)
-		if err != nil {
-			log.Printf("%s Failed to build recent VPN connection model: %s\n", internal.WarningPrefix, err)
-		} else {
-			StorePendingRecentConnection(r.recentVPNConnStore)
-			r.recentVPNConnStore.AddPending(recentModel)
-		}
-	}
 	r.events.Service.Connect.Publish(event)
 	// The "first time used" event correlates to the device location, which should already be known once a VPN connection is established.
 	// Hence, this event is emitted here.

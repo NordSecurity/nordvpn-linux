@@ -66,7 +66,7 @@ func TestStorePendingRecentConnection_BasicBehavior(t *testing.T) {
 				store.AddPending(*tt.pendingModel)
 			}
 
-			StorePendingRecentConnection(store)
+			storePendingRecentConnection(store)
 
 			// Verify connections stored
 			connections, err := store.Get()
@@ -107,13 +107,13 @@ func TestStorePendingRecentConnection_MultiplePendingConnections(t *testing.T) {
 	store.AddPending(model1)
 
 	// Store first pending
-	StorePendingRecentConnection(store)
+	storePendingRecentConnection(store)
 
 	// Add second pending
 	store.AddPending(model2)
 
 	// Store second pending
-	StorePendingRecentConnection(store)
+	storePendingRecentConnection(store)
 
 	// Verify both connections were added
 	connections, err := store.Get()
@@ -139,11 +139,11 @@ func TestStorePendingRecentConnection_DuplicateConnection(t *testing.T) {
 	// Add and store the connection first time
 	store.AddPending(model)
 
-	StorePendingRecentConnection(store)
+	storePendingRecentConnection(store)
 
 	// Add and store the same connection again
 	store.AddPending(model)
-	StorePendingRecentConnection(store)
+	storePendingRecentConnection(store)
 
 	// Verify only one connection exists (moved to front)
 	connections, err := store.Get()
@@ -170,7 +170,7 @@ func TestStorePendingRecentConnection_ConcurrentCalls(t *testing.T) {
 				ConnectionType: config.ServerSelectionRule_COUNTRY,
 			}
 			store.AddPending(model)
-			StorePendingRecentConnection(store)
+			storePendingRecentConnection(store)
 		}(i)
 	}
 
@@ -198,7 +198,7 @@ func TestStorePendingRecentConnection_WithServerTechnologies(t *testing.T) {
 
 	store.AddPending(model)
 
-	StorePendingRecentConnection(store)
+	storePendingRecentConnection(store)
 
 	connections, err := store.Get()
 	require.NoError(t, err)
@@ -225,8 +225,8 @@ func TestStorePendingRecentConnection_FullWorkflow(t *testing.T) {
 	// Step 1: Connection is established, pending is added
 	store.AddPending(connectModel)
 
-	// Step 2: Disconnect happens, StorePendingRecentConnection is called
-	StorePendingRecentConnection(store)
+	// Step 2: Disconnect happens, storePendingRecentConnection is called
+	storePendingRecentConnection(store)
 
 	// Verify the connection was stored
 	connections, err := store.Get()
@@ -243,7 +243,7 @@ func TestStorePendingRecentConnection_FullWorkflow(t *testing.T) {
 	}
 
 	store.AddPending(reconnectModel)
-	StorePendingRecentConnection(store)
+	storePendingRecentConnection(store)
 
 	// Verify both connections are stored
 	connections, err = store.Get()
@@ -312,7 +312,7 @@ func TestStorePendingRecentConnection_ErrorHandling(t *testing.T) {
 			// Add pending connection
 			store.AddPending(tt.pendingModel)
 
-			StorePendingRecentConnection(store)
+			storePendingRecentConnection(store)
 
 			// Verify pending was cleared
 			if tt.expectedCleared {

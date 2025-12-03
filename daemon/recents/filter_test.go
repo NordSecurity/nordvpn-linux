@@ -79,14 +79,14 @@ func TestFilter_Apply_WithTechnologies(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			filter := NewFilter(tt.target, tt.candidates)
-			filter.WithSpecificServerOnlyFor([]config.ServerSelectionRule{
+			filter := newFilter(tt.target, tt.candidates)
+			filter.withSpecificServerOnlyFor([]config.ServerSelectionRule{
 				config.ServerSelectionRule_SPECIFIC_SERVER,
 				config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 			})
-			filter.WithTechnologies(tt.target.ServerTechnologies)
+			filter.withTechnologies(tt.target.ServerTechnologies)
 
-			result := filter.Apply()
+			result := filter.apply()
 
 			assert.Len(t, result, tt.expectedCount)
 			if tt.expectedCount > 0 && tt.expectedCity != "" {
@@ -105,14 +105,14 @@ func TestFilter_Apply_SpecificServer(t *testing.T) {
 		specificServerModel("USA", "New York", "US", "us5678", "United States #5678", []core.ServerTechnology{1, 3, 5}),
 	}
 
-	filter := NewFilter(target, candidates)
-	filter.WithSpecificServerOnlyFor([]config.ServerSelectionRule{
+	filter := newFilter(target, candidates)
+	filter.withSpecificServerOnlyFor([]config.ServerSelectionRule{
 		config.ServerSelectionRule_SPECIFIC_SERVER,
 		config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 	})
-	filter.WithTechnologies(target.ServerTechnologies)
+	filter.withTechnologies(target.ServerTechnologies)
 
-	result := filter.Apply()
+	result := filter.apply()
 
 	assert.Len(t, result, 1, "expected 1 match")
 	assert.Equal(t, "us1234", result[0].SpecificServer)
@@ -147,14 +147,14 @@ func TestFilter_Apply_City_IgnoresSpecificServer(t *testing.T) {
 		},
 	}
 
-	filter := NewFilter(target, candidates)
-	filter.WithSpecificServerOnlyFor([]config.ServerSelectionRule{
+	filter := newFilter(target, candidates)
+	filter.withSpecificServerOnlyFor([]config.ServerSelectionRule{
 		config.ServerSelectionRule_SPECIFIC_SERVER,
 		config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 	})
-	filter.WithTechnologies(target.ServerTechnologies)
+	filter.withTechnologies(target.ServerTechnologies)
 
-	result := filter.Apply()
+	result := filter.apply()
 
 	assert.Len(t, result, 2, "expected 2 matches - specific server fields should be excluded for CITY connections")
 }
@@ -169,14 +169,14 @@ func TestFilter_Apply_WithoutTechnologies(t *testing.T) {
 		cityModel("Canada", "Montreal", "CA", []core.ServerTechnology{1, 3, 5}),
 	}
 
-	filter := NewFilter(target, candidates)
-	filter.WithSpecificServerOnlyFor([]config.ServerSelectionRule{
+	filter := newFilter(target, candidates)
+	filter.withSpecificServerOnlyFor([]config.ServerSelectionRule{
 		config.ServerSelectionRule_SPECIFIC_SERVER,
 		config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 	})
-	filter.WithoutTechnologies()
+	filter.withoutTechnologies()
 
-	result := filter.Apply()
+	result := filter.apply()
 
 	assert.Len(t, result, 2, "expected 2 matches - technologies should be ignored")
 	for _, r := range result {
