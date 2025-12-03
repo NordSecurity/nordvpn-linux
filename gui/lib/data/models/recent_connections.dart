@@ -1,5 +1,6 @@
 import 'package:nordvpn/pb/daemon/recent_connections.pb.dart';
 import 'package:nordvpn/pb/daemon/server_selection_rule.pb.dart';
+import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/pb/daemon/config/group.pb.dart' as cfg;
 
 class RecentConnection {
@@ -47,25 +48,25 @@ class RecentConnection {
         'specificServer: $specificServer, connectionType: $connectionType, virtual: $isVirtual)';
   }
 
-  static const Map<cfg.ServerGroup, String> _groupTitles = {
-    cfg.ServerGroup.DOUBLE_VPN: "Double VPN",
-    cfg.ServerGroup.ONION_OVER_VPN: "Onion Over VPN",
-    cfg.ServerGroup.STANDARD_VPN_SERVERS: "Standard VPN Servers",
-    cfg.ServerGroup.P2P: "P2P",
-    cfg.ServerGroup.OBFUSCATED: "Obfuscated Servers",
-    cfg.ServerGroup.DEDICATED_IP: "Dedicated IP",
+  final Map<cfg.ServerGroup, String> _groupTitles = {
+    cfg.ServerGroup.DOUBLE_VPN: t.ui.doubleVpn,
+    cfg.ServerGroup.ONION_OVER_VPN: t.ui.onionOverVpn,
+    cfg.ServerGroup.STANDARD_VPN_SERVERS: t.ui.standardVpnServer,
+    cfg.ServerGroup.P2P: t.ui.p2p,
+    cfg.ServerGroup.OBFUSCATED: t.ui.obfuscatedServers,
+    cfg.ServerGroup.DEDICATED_IP: t.ui.dedicatedIp,
     // [Deprecated] Region
-    cfg.ServerGroup.EUROPE: "Europe",
+    cfg.ServerGroup.EUROPE: t.ui.europe,
     // [Deprecated] Region
-    cfg.ServerGroup.THE_AMERICAS: "The Americas",
+    cfg.ServerGroup.THE_AMERICAS: t.ui.theAmericas,
     // [Deprecated] Region
-    cfg.ServerGroup.ASIA_PACIFIC: "Asia Pacific",
+    cfg.ServerGroup.ASIA_PACIFIC: t.ui.asiaPacific,
     // [Deprecated] Region
     cfg.ServerGroup.AFRICA_THE_MIDDLE_EAST_AND_INDIA:
-        "Africa The Middle East and India",
+        t.ui.africaTheMiddleEastAndIndia,
   };
 
-  String get specialtyServer => RecentConnection._groupTitles[group] ?? "";
+  String get specialtyServer => _groupTitles[group] ?? "";
 
   bool get isSpecialtyServer {
     return connectionType == ServerSelectionRule.GROUP;

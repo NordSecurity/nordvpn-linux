@@ -94,6 +94,7 @@
   "asiaPacific": "Asia Pacific",
   "africaTheMiddleEastAndIndia": "Africa, the Middle East, and India",
   "obfuscated": "Obfuscated",
+  "obfuscatedServers": "Obfuscated Servers",
   "selectServerForDip": "Pick a location for your IP",
   "selectLocation": "Select location",
   "dipSelectLocationDescription": "You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.",
@@ -258,5 +259,6 @@
   "changePassword": "Change password",
   "productHub": "Product Hub",
   "subscriptionInactive": "Inactive",
-  "recentConnections": "Recent connections"
+  "recentConnections": "Recent connections",
+  "standardVpnServer": "Standard VPN Servers"
 }

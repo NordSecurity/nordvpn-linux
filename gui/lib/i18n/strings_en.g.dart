@@ -547,6 +547,7 @@ class TranslationsUiEn {
 	String get asiaPacific => 'Asia Pacific';
 	String get africaTheMiddleEastAndIndia => 'Africa, the Middle East, and India';
 	String get obfuscated => 'Obfuscated';
+	String get obfuscatedServers => 'Obfuscated Servers';
 	String get selectServerForDip => 'Pick a location for your IP';
 	String get selectLocation => 'Select location';
 	String get dipSelectLocationDescription => 'You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.';
@@ -712,6 +713,7 @@ class TranslationsUiEn {
 	String get productHub => 'Product Hub';
 	String get subscriptionInactive => 'Inactive';
 	String get recentConnections => 'Recent connections';
+	String get standardVpnServer => 'Standard VPN Servers';
 }
 
 /// Flat map(s) containing all translations.
@@ -1187,6 +1189,7 @@ extension on Translations {
 			case 'ui.asiaPacific': return 'Asia Pacific';
 			case 'ui.africaTheMiddleEastAndIndia': return 'Africa, the Middle East, and India';
 			case 'ui.obfuscated': return 'Obfuscated';
+			case 'ui.obfuscatedServers': return 'Obfuscated Servers';
 			case 'ui.selectServerForDip': return 'Pick a location for your IP';
 			case 'ui.selectLocation': return 'Select location';
 			case 'ui.dipSelectLocationDescription': return 'You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.';
@@ -1352,6 +1355,7 @@ extension on Translations {
 			case 'ui.productHub': return 'Product Hub';
 			case 'ui.subscriptionInactive': return 'Inactive';
 			case 'ui.recentConnections': return 'Recent connections';
+			case 'ui.standardVpnServer': return 'Standard VPN Servers';
 			default: return null;
 		}
 	}
