@@ -7,8 +7,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 )
 
-// Filter provides a chainable interface for filtering recent connections
-type Filter struct {
+// filter provides a chainable interface for filtering recent connections
+type filter struct {
 	target     Model
 	candidates []Model
 	// flags for criteria
@@ -18,18 +18,18 @@ type Filter struct {
 	includeTechnologies []core.ServerTechnology
 }
 
-// NewFilter creates a new filter for finding matching recent connections
-func NewFilter(target Model, candidates []Model) *Filter {
-	return &Filter{
+// newFilter creates a new filter for finding matching recent connections
+func newFilter(target Model, candidates []Model) *filter {
+	return &filter{
 		target:     target,
 		candidates: slices.Clone(candidates),
 	}
 }
 
-// WithSpecificServerOnlyFor configures the filter to match specific server fields (ID and name)
+// withSpecificServerOnlyFor configures the filter to match specific server fields (ID and name)
 // only when the target connection type is one of the specified rules.
 // For all other connection types, specific server fields are ignored during matching.
-func (f *Filter) WithSpecificServerOnlyFor(rules []config.ServerSelectionRule) *Filter {
+func (f *filter) withSpecificServerOnlyFor(rules []config.ServerSelectionRule) *filter {
 	matchesRule := slices.Contains(rules, f.target.ConnectionType)
 	if !matchesRule {
 		// Connection type is NOT in the list - exclude specific server fields
@@ -39,26 +39,26 @@ func (f *Filter) WithSpecificServerOnlyFor(rules []config.ServerSelectionRule) *
 	return f
 }
 
-// WithoutTechnologies excludes all technology-based criteria from the comparison.
+// withoutTechnologies excludes all technology-based criteria from the comparison.
 // Use this when you want the match logic to ignore server technologies entirely.
-// Calling this clears any previously set WithTechnologies filter to avoid conflicting states.
-func (f *Filter) WithoutTechnologies() *Filter {
+// Calling this clears any previously set withTechnologies filter to avoid conflicting states.
+func (f *filter) withoutTechnologies() *filter {
 	f.includeTechnologies = nil
 	f.excludeTechnologies = true
 	return f
 }
 
-// WithTechnologies requires that candidates support all of the specified server technologies.
+// withTechnologies requires that candidates support all of the specified server technologies.
 // Use this when you need strict matching based on supported technologies.
-// Calling this clears any previously set WithoutTechnologies filter to avoid conflicting states.
-func (f *Filter) WithTechnologies(serverTechs []core.ServerTechnology) *Filter {
+// Calling this clears any previously set withoutTechnologies filter to avoid conflicting states.
+func (f *filter) withTechnologies(serverTechs []core.ServerTechnology) *filter {
 	f.excludeTechnologies = false
 	f.includeTechnologies = serverTechs
 	return f
 }
 
-// Apply applies all configured filters and returns all matching models
-func (f *Filter) Apply() []Model {
+// apply applies all configured filters and returns all matching models
+func (f *filter) apply() []Model {
 	var result []Model
 	for _, candidate := range f.candidates {
 		if f.matches(candidate) {
@@ -69,7 +69,7 @@ func (f *Filter) Apply() []Model {
 }
 
 // matches checks if a single candidate matches the target based on filter criteria
-func (f *Filter) matches(m Model) bool {
+func (f *filter) matches(m Model) bool {
 	if m.Country != f.target.Country {
 		return false
 	}
