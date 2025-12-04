@@ -286,11 +286,14 @@ func renewNCCredentials(confman config.Manager, api core.ClientAPI) session.NCCr
 			return nil, fmt.Errorf("getting nc credentials data: %w", err)
 		}
 
+		// validity period is provided in seconds
+		expiresIn := time.Duration(resp.ExpiresIn) * time.Second
+
 		return &session.NCCredentialsResponse{
 			Username:  resp.Username,
 			Password:  resp.Password,
 			Endpoint:  resp.Endpoint,
-			ExpiresIn: time.Duration(resp.ExpiresIn),
+			ExpiresIn: expiresIn,
 		}, nil
 	}
 }
