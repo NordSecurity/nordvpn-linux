@@ -165,11 +165,11 @@ final class RecentConnectionsItemFactory {
     bool isSpecialtyServer,
   ) {
     if (model.connectionType == ServerSelectionRule.SPECIFIC_SERVER &&
-        model.specificServerName.isNotEmpty) {
+        model.specificServer.isNotEmpty) {
       return ConnectArguments(
         server: ServerInfo(
           id: 0,
-          hostname: model.specificServerName,
+          hostname: "${model.specificServer}.nordvpn.com",
           isVirtual: model.isVirtual,
         ),
       );
