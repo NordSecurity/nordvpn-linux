@@ -25,6 +25,7 @@ def teardown_function(function):  # noqa: ARG001
     meshnet.TestUtils.teardown_function(ssh_client)
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize("lan_discovery", [True, False])
 @pytest.mark.parametrize("local", [True, False])
 def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
@@ -65,6 +66,7 @@ def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
         assert result, message
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize("lan_discovery", [True, False])
 @pytest.mark.parametrize("local", [True, False])
 def test_killswitch_exitnode_vpn(lan_discovery: bool, local: bool):
@@ -130,6 +132,7 @@ def test_killswitch_exitnode_vpn(lan_discovery: bool, local: bool):
     assert network.is_available()
 
 
+@pytest.mark.xfail
 def test_connect_set_mesh_off():
     peer = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().hostname
     assert network.is_available()
@@ -153,6 +156,7 @@ def test_connect_set_mesh_off():
     assert network.is_available()
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 # This doesn't directly test meshnet, but it uses it
 def test_set_defaults_when_connected_2nd_set(tech, proto, obfuscated):

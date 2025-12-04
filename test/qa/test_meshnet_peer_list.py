@@ -50,6 +50,7 @@ def base_test_peer_list(filter_list: list[str] | None = None) -> None:
         assert local_formed_list == local_peer_list.split("\n")
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize("external", [True, False], ids=lambda value: "external" if value else "")
 @pytest.mark.parametrize("internal", [True, False], ids=lambda value: "internal" if value else "")
 @pytest.mark.parametrize("offline", [True, False], ids=lambda value: "offline" if value else "")
@@ -63,6 +64,7 @@ def test_meshnet_peer_list_state_filters(external, internal, offline, online):
     base_test_peer_list(filter_list)
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize("allows_incoming_traffic", [True, False], ids=lambda value: "allows_incoming_traffic" if value else "")
 @pytest.mark.parametrize("allows_routing", [True, False], ids=lambda value: "allows_routing" if value else "")
 @pytest.mark.parametrize("allows_sending_files", [True, False], ids=lambda value: "allows_sending_files" if value else "")

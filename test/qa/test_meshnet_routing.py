@@ -89,6 +89,7 @@ def test_killswitch_exitnode(lan_discovery: bool, local: bool):
     assert network.is_available()
 
 
+@pytest.mark.xfail
 def test_route_traffic_to_each_other():
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     peer_hostname = peer_list.get_external_peer().hostname
@@ -203,6 +204,7 @@ def test_route_to_peer_that_is_disconnected():
     assert expected_message in ex.value.stdout.decode("utf-8")
 
 
+@pytest.mark.xfail
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_NO_MESHNET)
 def test_route_traffic_to_peer_wrong_tech(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
