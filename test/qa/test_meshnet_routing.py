@@ -1,14 +1,13 @@
-import os
-import pytest
-import sh
 import socket
 import time
+
+import pytest
+import sh
 
 import lib
 from lib import daemon, logging, meshnet, network, ssh
 from lib.shell import sh_no_tty
 
-DISABLE_MESHNET_TESTS = os.getenv("DISABLE_MESHNET_TESTS") is not None
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
 
@@ -28,7 +27,7 @@ def teardown_function(function):  # noqa: ARG001
     meshnet.TestUtils.teardown_function(ssh_client)
 
 
-@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
+@pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
 @pytest.mark.parametrize("lan_discovery", [True, False])
 @pytest.mark.parametrize("local", [True, False])
 def test_killswitch_exitnode(lan_discovery: bool, local: bool):
@@ -90,7 +89,7 @@ def test_killswitch_exitnode(lan_discovery: bool, local: bool):
     assert network.is_available()
 
 
-@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
+@pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
 def test_route_traffic_to_each_other():
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     peer_hostname = peer_list.get_external_peer().hostname
@@ -124,7 +123,7 @@ def test_routing_deny_for_peer_is_peer_no_netting():
     ssh_client.exec_command("nordvpn disconnect")
 
 
-@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
+@pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
 def test_route_to_nonexistant_node():
     nonexistant_node_name = "penguins-are-cool.nord"
 
@@ -135,7 +134,7 @@ def test_route_to_nonexistant_node():
 
     assert expected_message in ex.value.stdout.decode("utf-8")
 
-@pytest.mark.skipif(DISABLE_MESHNET_TESTS, reason="TOOD: LVPN-9459")
+@pytest.mark.skipif(meshnet.is_meshnet_test_disabled_from_run(), reason="TOOD: LVPN-9459")
 def test_route_to_peer_status_valid():
     peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().hostname
 
@@ -189,7 +188,7 @@ def test_route_to_peer_status_valid():
     sh_no_tty.nordvpn.disconnect()
 
 
-@pytest.mark.skipif(DISABLE_MESHNET_TESTS, reason="Test suit exits, before test can be completed.")
+@pytest.mark.skipif(meshnet.is_meshnet_test_disabled_from_run(), reason="Test suit exits, before test can be completed.")
 def test_route_to_peer_that_is_disconnected():
     peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().name()
 
@@ -205,7 +204,7 @@ def test_route_to_peer_that_is_disconnected():
     assert expected_message in ex.value.stdout.decode("utf-8")
 
 
-@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
+@pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_NO_MESHNET)
 def test_route_traffic_to_peer_wrong_tech(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
