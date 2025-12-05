@@ -162,6 +162,7 @@ class AppStateChange {
     for (final observer in _settingsObservers) {
       observer.onSettingsChanged(appSettings);
     }
+
     // for some user changes refresh servers list
     if (_shouldRefreshServersList(appSettings)) {
       _notifyServersListChanged();

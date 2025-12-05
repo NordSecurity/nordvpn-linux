@@ -253,5 +253,11 @@
   "manageSubscription": "Manage subscription",
   "changePassword": "Change password",
   "productHub": "Product Hub",
-  "subscriptionInactive": "Inactive"
+  "subscriptionInactive": "Inactive",
+  "reconnectNow": "Reconnect now",
+  "reconnectToChangeProtocol": "Reconnect to change protocol",
+  "reconnectToChangeProtocolDescription": "To apply this change, we'll reconnect you to the VPN.",
+  "reconnectToApplyChanges": "Reconnect to apply changes",
+  "reconnectToApplyChangesDescription": "Your new settings will take effect after you reconnect to the VPN.",
+  "gotIt": "Got it"
 }
