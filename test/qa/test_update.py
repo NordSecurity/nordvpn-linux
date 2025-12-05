@@ -106,7 +106,7 @@ def test_meshnet_available_after_update():
     assert network.is_available()
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
 def test_fileshare_available_after_update():
     """Manual TC: LVPN-3205"""
 
