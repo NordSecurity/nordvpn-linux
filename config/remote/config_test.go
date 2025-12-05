@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 )
@@ -742,7 +743,7 @@ func TestFeatureLoad(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.feature.load(test.sourcePath, test.fileReader, test.validator)
+			err := test.feature.load(test.sourcePath, test.fileReader, test.validator, internal.DefaultRCFileOperations{})
 
 			if test.expectedError != nil {
 				assert.Error(t, err)
@@ -941,7 +942,7 @@ func TestFeatureLoadWithIncludeFiles(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.feature.load(tempDir, test.fileReader, test.validator)
+			err := test.feature.load(tempDir, test.fileReader, test.validator, internal.DefaultRCFileOperations{})
 
 			if test.expectSuccess {
 				assert.NoError(t, err)
@@ -1094,7 +1095,7 @@ func TestHandleIncludeFilesEdgeCases(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.feature.load(tempDir, test.fileReader, test.validator)
+			err := test.feature.load(tempDir, test.fileReader, test.validator, internal.DefaultRCFileOperations{})
 
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), test.errorContains)
@@ -1393,6 +1394,7 @@ func TestFeatureDownloadErrors(t *testing.T) {
 				test.validator,
 				test.cdnBasePath,
 				test.targetPath,
+				internal.DefaultRCFileOperations{},
 			)
 
 			if test.skipHashCheck {
@@ -1516,7 +1518,7 @@ func TestFeatureLoadFieldValidationErrors(t *testing.T) {
 				},
 			}
 
-			err := feature.load(tempDir, fileReader, &mockValidator{})
+			err := feature.load(tempDir, fileReader, &mockValidator{}, internal.DefaultRCFileOperations{})
 
 			assert.Error(t, err)
 

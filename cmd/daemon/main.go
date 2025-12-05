@@ -366,7 +366,7 @@ func main() {
 		log.Println(internal.ErrorPrefix, "getting rollout group:", err)
 		// in case of error, rollout group is `0`
 	}
-	rcConfig := getRemoteConfigGetter(
+	rcConfig := remoteConfigGetter(
 		buildTarget,
 		RemotePath,
 		cdnAPI,
