@@ -1,10 +1,8 @@
-import os
 import pytest
 
 from lib import meshnet, poll, ssh
 from lib.shell import sh_no_tty
 
-DISABLE_MESHNET_TESTS = os.getenv("DISABLE_MESHNET_TESTS") is not None
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
 
@@ -52,7 +50,7 @@ def base_test_peer_list(filter_list: list[str] | None = None) -> None:
         assert local_formed_list == local_peer_list.split("\n")
 
 
-@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
+@pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
 @pytest.mark.parametrize("external", [True, False], ids=lambda value: "external" if value else "")
 @pytest.mark.parametrize("internal", [True, False], ids=lambda value: "internal" if value else "")
 @pytest.mark.parametrize("offline", [True, False], ids=lambda value: "offline" if value else "")
@@ -66,7 +64,7 @@ def test_meshnet_peer_list_state_filters(external, internal, offline, online):
     base_test_peer_list(filter_list)
 
 
-@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
+@pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
 @pytest.mark.parametrize("allows_incoming_traffic", [True, False], ids=lambda value: "allows_incoming_traffic" if value else "")
 @pytest.mark.parametrize("allows_routing", [True, False], ids=lambda value: "allows_routing" if value else "")
 @pytest.mark.parametrize("allows_sending_files", [True, False], ids=lambda value: "allows_sending_files" if value else "")
