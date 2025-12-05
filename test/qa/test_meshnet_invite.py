@@ -43,7 +43,7 @@ def test_invite_send_repeated():
     assert "Meshnet invitation for 'test@test.com' already exists." in ex.value.stderr.decode("utf-8")
 
 
-@pytest.mark.skip(condition=DISABLE_MESHNET_TESTS, reason="TODO: LVPN-9458")
+@pytest.mark.skipif(DISABLE_MESHNET_TESTS, reason="TODO: LVPN-9458")
 def test_invite_send_own_email():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         meshnet.send_meshnet_invite(login.get_credentials("default").email)
@@ -59,7 +59,7 @@ def test_invite_send_not_an_email():
     assert "Invalid email 'test'." in ex.value.stderr.decode("utf-8")
 
 
-@pytest.mark.skip(condition=DISABLE_MESHNET_TESTS, reason="A different error message is expected - LVPN-262")
+@pytest.mark.skipif(DISABLE_MESHNET_TESTS, reason="A different error message is expected - LVPN-262")
 def test_invite_send_long_email():
     # A long email address containing more than 256 characters is created
     email = "test" * 65 + "@test.com"
@@ -70,7 +70,7 @@ def test_invite_send_long_email():
     assert "It's not you, it's us. We're having trouble with our servers. If the issue persists, please contact our customer support." not in ex.value.stdout.decode("utf-8")
 
 
-@pytest.mark.skip(condition=DISABLE_MESHNET_TESTS, reason="A different error message is expected - LVPN-262")
+@pytest.mark.skipif(DISABLE_MESHNET_TESTS, reason="A different error message is expected - LVPN-262")
 def test_invite_send_email_special_character():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         meshnet.send_meshnet_invite("\u2222@test.com")

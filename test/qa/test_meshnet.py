@@ -171,7 +171,7 @@ def test_set_meshnet_on_when_logged_out(meshnet_allias):
     assert "You are not logged in." in ex.value.stdout.decode("utf-8")
 
 
-@pytest.mark.skip(condition=DISABLE_MESHNET_TESTS, reason="LVPN-4590")
+@pytest.mark.skipif(DISABLE_MESHNET_TESTS, reason="LVPN-4590")
 @pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
 def test_set_meshnet_off_when_logged_out(meshnet_allias):
 
@@ -287,7 +287,7 @@ def test_derp_server_selection_logic():
 
 
 @pytest.mark.core_meshnet
-@pytest.mark.skip(condition=DISABLE_MESHNET_TESTS, reason="LVPN-3428, need a discussion here")
+@pytest.mark.skipif(DISABLE_MESHNET_TESTS, reason="LVPN-3428, need a discussion here")
 def test_direct_connection_rtt_and_loss():
     def get_loss(ping_output: str) -> float:
         """Pass `ping_output`, and get loss returned."""
