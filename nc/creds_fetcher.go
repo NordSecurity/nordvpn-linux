@@ -11,8 +11,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 )
 
-const credentialsValidityPeriod = 24 * time.Hour
-
 type CredentialsGetter struct {
 	api core.CredentialsAPI
 	cm  config.Manager
