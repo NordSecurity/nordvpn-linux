@@ -46,6 +46,11 @@ type RemoteConfigNotifier interface {
 	RemoteConfigUpdate(RemoteConfigEvent) error
 }
 
+type JsonFileIO interface {
+	writeFile(name string, content []byte, mode os.FileMode) error
+	readFile(name string) ([]byte, error)
+}
+
 type CdnRemoteConfig struct {
 	appVersion      string
 	appEnvironment  string
@@ -57,6 +62,8 @@ type CdnRemoteConfig struct {
 	analytics       Analytics
 	mu              sync.RWMutex
 	notifier        events.PublishSubcriber[RemoteConfigEvent]
+	fileIO          JsonFileIO
+	rcFileIO        internal.RCFileOperations
 }
 
 // NewCdnRemoteConfig setup RemoteStorage based remote config loaded/getter
@@ -72,6 +79,8 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 		analytics:       analytics,
 		features:        NewFeatureMap(),
 		notifier:        &subs.Subject[RemoteConfigEvent]{},
+		fileIO:          jsonFileReaderWriter{},
+		rcFileIO:        internal.DefaultRCFileOperations{},
 	}
 	rc.features.add(FeatureMain)
 	rc.features.add(FeatureLibtelio)
@@ -197,7 +206,7 @@ func (c *CdnRemoteConfig) download() (bool, error) {
 
 	for _, f := range c.features.keys() {
 		feature := c.features.get(f)
-		dnld, err := feature.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
+		dnld, err := feature.download(cdnFileGetter{cdn: c.cdn}, c.fileIO, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath, c.rcFileIO)
 		if err != nil {
 			log.Printf("%s failed downloading feature [%s] remote config: %v\n", internal.ErrorPrefix, feature.name, err)
 
@@ -263,7 +272,7 @@ func (c *CdnRemoteConfig) load() {
 func (c *CdnRemoteConfig) doLoad(reportErrors bool) {
 	for _, f := range c.features.keys() {
 		feature := c.features.get(f)
-		if err := feature.load(c.localCachePath, jsonFileReaderWriter{}, jsonValidator{}); err != nil {
+		if err := feature.load(c.localCachePath, c.fileIO, jsonValidator{}, c.rcFileIO); err != nil {
 			if reportErrors {
 				c.reportLoadError(feature.name, err)
 				log.Printf("%s failed loading feature [%s] config from the disk: %s\n", internal.ErrorPrefix, feature.name, err)

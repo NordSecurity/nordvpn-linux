@@ -105,6 +105,15 @@ func (rdl *runDirListener) Addr() net.Addr {
 	return rdl.listener.Addr()
 }
 
+// TODO provide description
+type RCFileOperations interface {
+	IsValidExistingDir(path string) (bool, error)
+	CleanupTmpFiles(targetPath, fileExt string) error
+	RenameTmpFiles(targetPath, fileExt string) error
+}
+
+type DefaultRCFileOperations struct{}
+
 // ManualListenerIfNotInUse returns manually created listener with provided permissions, it also detects if this socket
 // is in use by another process, and returns an appropriate error if it is.
 func ManualListenerIfNotInUse(socket string, perm fs.FileMode, pidfile string) func() (net.Listener, error) {
@@ -303,7 +312,7 @@ func IsFile(fileName string) bool {
 }
 
 // IsValidExistingDir check if is valid existing directory
-func IsValidExistingDir(path string) (bool, error) {
+func (DefaultRCFileOperations) IsValidExistingDir(path string) (bool, error) {
 	info, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -431,7 +440,7 @@ func WalkFiles(targetPath, fileExt string, actionFunc func(string)) error {
 }
 
 // RenameTmpFiles rename files by removing extra extension
-func RenameTmpFiles(targetPath, fileExt string) error {
+func (DefaultRCFileOperations) RenameTmpFiles(targetPath, fileExt string) error {
 	return WalkFiles(targetPath, fileExt, func(path string) {
 		newPath := strings.TrimSuffix(path, fileExt)
 		if err := os.Rename(path, newPath); err != nil {
@@ -441,7 +450,7 @@ func RenameTmpFiles(targetPath, fileExt string) error {
 }
 
 // CleanupTmpFiles remove files by specified extension
-func CleanupTmpFiles(targetPath, fileExt string) error {
+func (DefaultRCFileOperations) CleanupTmpFiles(targetPath, fileExt string) error {
 	return WalkFiles(targetPath, fileExt, func(path string) {
 		if err := os.Remove(path); err != nil {
 			log.Printf(ErrorPrefix+" removing %s: %s\n", path, err)
