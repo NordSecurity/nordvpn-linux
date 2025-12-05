@@ -8,7 +8,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
-	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	mockconfig "github.com/NordSecurity/nordvpn-linux/test/mock/config"
 	"github.com/stretchr/testify/assert"
@@ -61,18 +60,13 @@ func TestStorePendingRecentConnection_BasicBehavior(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fs := mockconfig.NewFilesystemMock(t)
-			store := recents.NewRecentConnectionsStore("/test/path", &fs)
+			store := recents.NewRecentConnectionsStore("/test/path", &fs, nil)
 
 			if tt.pendingModel != nil {
 				store.AddPending(*tt.pendingModel)
 			}
 
-			eventPublished := false
-			eventPublisher := func(data events.DataRecentsChanged) {
-				eventPublished = true
-			}
-
-			StorePendingRecentConnection(store, eventPublisher)
+			storePendingRecentConnection(store)
 
 			// Verify connections stored
 			connections, err := store.Get()
@@ -82,9 +76,6 @@ func TestStorePendingRecentConnection_BasicBehavior(t *testing.T) {
 			if tt.validateStored != nil && len(connections) > 0 {
 				tt.validateStored(t, connections)
 			}
-
-			// Verify event publication
-			assert.Equal(t, tt.expectedEvent, eventPublished)
 
 			// Verify pending was cleared if expected
 			if tt.expectedCleared {
@@ -100,7 +91,7 @@ func TestStorePendingRecentConnection_MultiplePendingConnections(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := recents.NewRecentConnectionsStore("/test/path", &fs)
+	store := recents.NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	model1 := recents.Model{
 		Country:        "France",
@@ -115,19 +106,14 @@ func TestStorePendingRecentConnection_MultiplePendingConnections(t *testing.T) {
 	// Add first pending
 	store.AddPending(model1)
 
-	eventCount := 0
-	eventPublisher := func(data events.DataRecentsChanged) {
-		eventCount++
-	}
-
 	// Store first pending
-	StorePendingRecentConnection(store, eventPublisher)
+	storePendingRecentConnection(store)
 
 	// Add second pending
 	store.AddPending(model2)
 
 	// Store second pending
-	StorePendingRecentConnection(store, eventPublisher)
+	storePendingRecentConnection(store)
 
 	// Verify both connections were added
 	connections, err := store.Get()
@@ -135,16 +121,13 @@ func TestStorePendingRecentConnection_MultiplePendingConnections(t *testing.T) {
 	require.Len(t, connections, 2)
 	assert.Equal(t, model2, connections[0]) // Most recent first
 	assert.Equal(t, model1, connections[1])
-
-	// Verify event was published twice
-	assert.Equal(t, 2, eventCount, "RecentsChanged event should be published twice")
 }
 
 func TestStorePendingRecentConnection_DuplicateConnection(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := recents.NewRecentConnectionsStore("/test/path", &fs)
+	store := recents.NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	model := recents.Model{
 		Country:        "Italy",
@@ -156,40 +139,24 @@ func TestStorePendingRecentConnection_DuplicateConnection(t *testing.T) {
 	// Add and store the connection first time
 	store.AddPending(model)
 
-	eventCount := 0
-	eventPublisher := func(data events.DataRecentsChanged) {
-		eventCount++
-	}
-
-	StorePendingRecentConnection(store, eventPublisher)
+	storePendingRecentConnection(store)
 
 	// Add and store the same connection again
 	store.AddPending(model)
-	StorePendingRecentConnection(store, eventPublisher)
+	storePendingRecentConnection(store)
 
 	// Verify only one connection exists (moved to front)
 	connections, err := store.Get()
 	require.NoError(t, err)
 	require.Len(t, connections, 1)
 	assert.Equal(t, model, connections[0])
-
-	// Verify event was published twice
-	assert.Equal(t, 2, eventCount)
 }
 
 func TestStorePendingRecentConnection_ConcurrentCalls(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := recents.NewRecentConnectionsStore("/test/path", &fs)
-
-	var eventMu sync.Mutex
-	eventCount := 0
-	eventPublisher := func(data events.DataRecentsChanged) {
-		eventMu.Lock()
-		defer eventMu.Unlock()
-		eventCount++
-	}
+	store := recents.NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	var wg sync.WaitGroup
 	const goroutines = 10
@@ -203,7 +170,7 @@ func TestStorePendingRecentConnection_ConcurrentCalls(t *testing.T) {
 				ConnectionType: config.ServerSelectionRule_COUNTRY,
 			}
 			store.AddPending(model)
-			StorePendingRecentConnection(store, eventPublisher)
+			storePendingRecentConnection(store)
 		}(i)
 	}
 
@@ -213,18 +180,13 @@ func TestStorePendingRecentConnection_ConcurrentCalls(t *testing.T) {
 	connections, err := store.Get()
 	require.NoError(t, err)
 	assert.LessOrEqual(t, len(connections), goroutines)
-
-	// Verify events were published
-	eventMu.Lock()
-	defer eventMu.Unlock()
-	assert.Greater(t, eventCount, 0, "At least one event should be published")
 }
 
 func TestStorePendingRecentConnection_WithServerTechnologies(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := recents.NewRecentConnectionsStore("/test/path", &fs)
+	store := recents.NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	model := recents.Model{
 		Country:            "Netherlands",
@@ -236,12 +198,7 @@ func TestStorePendingRecentConnection_WithServerTechnologies(t *testing.T) {
 
 	store.AddPending(model)
 
-	eventPublished := false
-	eventPublisher := func(data events.DataRecentsChanged) {
-		eventPublished = true
-	}
-
-	StorePendingRecentConnection(store, eventPublisher)
+	storePendingRecentConnection(store)
 
 	connections, err := store.Get()
 	require.NoError(t, err)
@@ -249,19 +206,13 @@ func TestStorePendingRecentConnection_WithServerTechnologies(t *testing.T) {
 	assert.Equal(t, model.Country, connections[0].Country)
 	assert.Equal(t, model.City, connections[0].City)
 	assert.ElementsMatch(t, model.ServerTechnologies, connections[0].ServerTechnologies)
-	assert.True(t, eventPublished)
 }
 
 func TestStorePendingRecentConnection_FullWorkflow(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := recents.NewRecentConnectionsStore("/test/path", &fs)
-
-	eventCount := 0
-	eventPublisher := func(data events.DataRecentsChanged) {
-		eventCount++
-	}
+	store := recents.NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	// Simulate connect workflow
 	connectModel := recents.Model{
@@ -274,15 +225,14 @@ func TestStorePendingRecentConnection_FullWorkflow(t *testing.T) {
 	// Step 1: Connection is established, pending is added
 	store.AddPending(connectModel)
 
-	// Step 2: Disconnect happens, StorePendingRecentConnection is called
-	StorePendingRecentConnection(store, eventPublisher)
+	// Step 2: Disconnect happens, storePendingRecentConnection is called
+	storePendingRecentConnection(store)
 
 	// Verify the connection was stored
 	connections, err := store.Get()
 	require.NoError(t, err)
 	require.Len(t, connections, 1)
 	assert.Equal(t, connectModel, connections[0])
-	assert.Equal(t, 1, eventCount)
 
 	// Step 3: Another connection
 	reconnectModel := recents.Model{
@@ -293,7 +243,7 @@ func TestStorePendingRecentConnection_FullWorkflow(t *testing.T) {
 	}
 
 	store.AddPending(reconnectModel)
-	StorePendingRecentConnection(store, eventPublisher)
+	storePendingRecentConnection(store)
 
 	// Verify both connections are stored
 	connections, err = store.Get()
@@ -301,7 +251,6 @@ func TestStorePendingRecentConnection_FullWorkflow(t *testing.T) {
 	require.Len(t, connections, 2)
 	assert.Equal(t, reconnectModel, connections[0]) // Most recent first
 	assert.Equal(t, connectModel, connections[1])
-	assert.Equal(t, 2, eventCount)
 }
 
 func TestStorePendingRecentConnection_ErrorHandling(t *testing.T) {
@@ -349,7 +298,7 @@ func TestStorePendingRecentConnection_ErrorHandling(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fs := mockconfig.NewFilesystemMock(t)
-			store := recents.NewRecentConnectionsStore("/test/path", &fs)
+			store := recents.NewRecentConnectionsStore("/test/path", &fs, nil)
 
 			// Add existing connection if specified
 			if tt.existingModel != nil {
@@ -363,15 +312,7 @@ func TestStorePendingRecentConnection_ErrorHandling(t *testing.T) {
 			// Add pending connection
 			store.AddPending(tt.pendingModel)
 
-			eventPublished := false
-			eventPublisher := func(data events.DataRecentsChanged) {
-				eventPublished = true
-			}
-
-			StorePendingRecentConnection(store, eventPublisher)
-
-			// Verify event was not published on error
-			assert.Equal(t, tt.expectedEvent, eventPublished)
+			storePendingRecentConnection(store)
 
 			// Verify pending was cleared
 			if tt.expectedCleared {

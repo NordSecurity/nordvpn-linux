@@ -38,7 +38,7 @@ final class MockAccountInfo extends CancelableDelayed {
 
   // When null, has no DIP subscription.
   // For 0 it has subscription, but no servers selected
-  // For bigger values, selectes the specified number of servers from DIP
+  // For bigger values, selects the specified number of servers from DIP
   // servers list, normally 1 or 2
   int? _numberOfDipServers;
   int? get numberOfDipServers => _numberOfDipServers;

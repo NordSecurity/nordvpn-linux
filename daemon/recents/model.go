@@ -46,3 +46,16 @@ func (m Model) Clone() Model {
 		IsVirtual:          m.IsVirtual,
 	}
 }
+
+// Equals compares two models for equality
+func (m Model) Equals(other Model) bool {
+	return m.Country == other.Country &&
+		m.City == other.City &&
+		m.Group == other.Group &&
+		m.CountryCode == other.CountryCode &&
+		m.SpecificServerName == other.SpecificServerName &&
+		m.SpecificServer == other.SpecificServer &&
+		m.ConnectionType == other.ConnectionType &&
+		slices.Equal(m.ServerTechnologies, other.ServerTechnologies) &&
+		m.IsVirtual == other.IsVirtual
+}
