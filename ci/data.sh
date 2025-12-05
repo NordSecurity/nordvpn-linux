@@ -10,7 +10,7 @@ go run \
 
 # prefetch templates
 wget -O "${WORKDIR}"/dist/data/ovpn_template.xslt https://downloads.nordcdn.com/configs/templates/ovpn/1.0/template.xslt 
-wget -O "${WORKDIR}"/dist/data/ovpn_xor_template.xslt https://downloads.nordcdn.com/configs/templates/ovpn_xor/1.0/template.xslt
+wget -O "${WORKDIR}"/dist/data/ovpn_xor_template.xslt https://downloads.nordcdn.com/configs/templates/ovpn_xor/1.1/template.xslt
 wget -O "${WORKDIR}"/dist/data/cybersec.dat https://downloads.nordcdn.com/configs/dns/cybersec.json
  
 chmod 0700 "${WORKDIR}"/dist/data

@@ -262,7 +262,7 @@ a196c9de96012090e333519ae18d3509
 </xsl:template>
 </xsl:stylesheet>`
 
-	// https://downloads.nordcdn.com/configs_xor/templates/ovpn/1.0/template.xslt
+	// https://downloads.nordcdn.com/configs/templates/ovpn_xor/1.1/template.xslt
 	configXORV1Template = `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 <xsl:output method="text"/>
 <xsl:template match="/">client
@@ -302,6 +302,7 @@ persist-tun
 reneg-sec 0
 server-poll-timeout 5
 scramble obfuscate tiecohbeengik9eiGheeshidohtai8hiegeelai3Am9Cee8eePhohRa
+hand-window 10
 remote-cert-tls server
 auth-user-pass
 verb 3
