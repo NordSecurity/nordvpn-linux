@@ -23,7 +23,7 @@ func NewFileshareProcessClient() *FileshareProcessClient {
 
 func getFileshareClient() (pb.FileshareClient, *grpc.ClientConn, error) {
 	//nolint:staticcheck
-	fileshareConn, err := grpc.Dial(
+	fileshareConn, err := grpc.NewClient(
 		FileshareURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 
@@ -54,6 +54,13 @@ func (f *FileshareProcessClient) Ping(nowait bool) error {
 }
 
 func (f *FileshareProcessClient) Stop(bool) error {
+	// There are cases when the fileshare has already been stopped when meshnet was disabled
+	// We don't want to try stop it again
+	if !internal.FileExists(internal.FileshareSocket) {
+		log.Println(internal.InfoPrefix, "Fileshare has already been stopped")
+		return nil
+	}
+
 	client, clientConn, err := getFileshareClient()
 	if err != nil {
 		return fmt.Errorf("failed to initialize the connection: %w", err)
