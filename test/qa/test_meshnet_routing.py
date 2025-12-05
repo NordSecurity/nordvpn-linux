@@ -109,7 +109,6 @@ def test_route_traffic_to_each_other():
     ssh_client.exec_command("nordvpn disconnect")
 
 
-@pytest.mark.xfail
 def test_routing_deny_for_peer_is_peer_no_netting():
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     peer_hostname = peer_list.get_external_peer().hostname
@@ -119,7 +118,6 @@ def test_routing_deny_for_peer_is_peer_no_netting():
     assert meshnet.is_connect_successful(output, this_device.hostname)
 
     sh_no_tty.nordvpn.mesh.peer.routing.deny(peer_hostname)
-
     assert ssh_client.network.is_not_available()
 
     ssh_client.exec_command("nordvpn disconnect")
