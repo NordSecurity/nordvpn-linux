@@ -1,17 +1,18 @@
 import json
 import os
-import re
-import time
-from datetime import datetime
-
 import pytest
+import re
 import requests
 import sh
+import time
+
+from datetime import datetime
 
 import lib
 from lib import daemon, logging, login, meshnet, settings, ssh
 from lib.shell import sh_no_tty
 
+DISABLE_MESHNET_TESTS = os.getenv("DISABLE_MESHNET_TESTS") is not None
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
 
@@ -31,7 +32,7 @@ def teardown_function(function):  # noqa: ARG001
     meshnet.TestUtils.teardown_function(ssh_client)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
 def test_meshnet_connect():
     peer = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer()
     this_device = meshnet.PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list")).get_external_peer()
@@ -57,7 +58,7 @@ def test_meshnet_connect():
     assert nickname == this_device.nickname
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
 def test_mesh_removed_machine_by_other():
     # find my token from cli
     mytoken = ""
@@ -95,7 +96,7 @@ def test_mesh_removed_machine_by_other():
     meshnet.add_peer(ssh_client)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
 @pytest.mark.parametrize("routing", [True, False])
 @pytest.mark.parametrize("local", [True, False])
 @pytest.mark.parametrize("incoming", [True, False])
@@ -127,7 +128,7 @@ def test_exitnode_permissions(routing: bool, local: bool, incoming: bool, filesh
         assert f"-A POSTROUTING -s {peer_ip}/32 ! -d 100.64.0.0/10 -m comment --comment nordvpn -j MASQUERADE" not in rules
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
 def test_remove_peer_firewall_update():
     peer_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().ip
     meshnet.set_permissions(peer_ip, True, True, True, True)
@@ -150,14 +151,14 @@ def test_remove_peer_firewall_update():
     assert result, message
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
 def test_account_switch():
     sh_no_tty.nordvpn.logout("--persist-token")
     login.login_as("qa-peer")
     sh_no_tty.nordvpn.set.mesh.on()  # expecting failure here
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
 @pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
 def test_set_meshnet_on_when_logged_out(meshnet_allias):
 
@@ -170,7 +171,7 @@ def test_set_meshnet_on_when_logged_out(meshnet_allias):
     assert "You are not logged in." in ex.value.stdout.decode("utf-8")
 
 
-@pytest.mark.skip(reason="LVPN-4590")
+@pytest.mark.skip(condition=DISABLE_MESHNET_TESTS, reason="LVPN-4590")
 @pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
 def test_set_meshnet_off_when_logged_out(meshnet_allias):
 
@@ -183,7 +184,7 @@ def test_set_meshnet_off_when_logged_out(meshnet_allias):
     assert "You are not logged in." in ex.value.stdout.decode("utf-8")
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
 @pytest.mark.core_meshnet
 @pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
 def test_set_meshnet_off_on(meshnet_allias):
@@ -195,7 +196,7 @@ def test_set_meshnet_off_on(meshnet_allias):
     assert settings.is_meshnet_enabled()
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
 @pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
 def test_set_meshnet_on_repeated(meshnet_allias):
 
@@ -205,7 +206,7 @@ def test_set_meshnet_on_repeated(meshnet_allias):
     assert "Meshnet is already enabled." in ex.value.stdout.decode("utf-8")
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
 @pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
 def test_set_meshnet_off_repeated(meshnet_allias):
 
@@ -217,7 +218,7 @@ def test_set_meshnet_off_repeated(meshnet_allias):
     assert "Meshnet is already disabled." in ex.value.stdout.decode("utf-8")
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
 @pytest.mark.parametrize(("permission", "permission_state", "expected_message"), meshnet.PERMISSION_SUCCESS_MESSAGE_PARAMETER_SET, \
                          ids=[f"{line[0]}-{line[1]}" for line in meshnet.PERMISSION_SUCCESS_MESSAGE_PARAMETER_SET])
 def test_permission_messages_success(permission, permission_state, expected_message):
@@ -233,7 +234,7 @@ def test_permission_messages_success(permission, permission_state, expected_mess
     assert expected_message in got_message
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
 @pytest.mark.parametrize(("permission", "permission_state", "expected_message"), meshnet.PERMISSION_ERROR_MESSAGE_PARAMETER_SET, \
                          ids=[f"{line[0]}-{line[1]}" for line in meshnet.PERMISSION_ERROR_MESSAGE_PARAMETER_SET])
 def test_permission_messages_error(permission, permission_state, expected_message):
@@ -249,7 +250,7 @@ def test_permission_messages_error(permission, permission_state, expected_messag
     assert expected_message in ex.value.stdout.decode("utf-8")
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
 def test_derp_server_selection_logic():
     def has_duplicates(lst):
         return len(lst) != len(set(lst))
@@ -286,7 +287,7 @@ def test_derp_server_selection_logic():
 
 
 @pytest.mark.core_meshnet
-@pytest.mark.skip("LVPN-3428, need a discussion here") # @pytest.mark.xfail
+@pytest.mark.skip(condition=DISABLE_MESHNET_TESTS, reason="LVPN-3428, need a discussion here")
 def test_direct_connection_rtt_and_loss():
     def get_loss(ping_output: str) -> float:
         """Pass `ping_output`, and get loss returned."""
@@ -323,7 +324,7 @@ def test_direct_connection_rtt_and_loss():
         base_test(log_content, qapeer_hostname)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
 def test_incoming_connections():
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname
@@ -336,7 +337,7 @@ def test_incoming_connections():
     assert not meshnet.is_peer_reachable(peer_list.get_external_peer(), retry=1)
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
 def test_login_mesh_on_set_defaults_mesh_on_sequence():
     """Test the sequence: login -> set mesh on -> set defaults -> set mesh on"""
 
@@ -353,7 +354,7 @@ def test_login_mesh_on_set_defaults_mesh_on_sequence():
     assert settings.is_meshnet_enabled()
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail(condition=DISABLE_MESHNET_TESTS, reason="Run only in nightly")
 def test_login_mesh_on_set_defaults_logout_login_mesh_on():
     """Test the sequence with logout: login -> set mesh on -> set defaults --logout -> login -> set mesh on"""
 
