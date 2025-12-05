@@ -135,7 +135,7 @@ def test_route_to_nonexistant_node():
 
     assert expected_message in ex.value.stdout.decode("utf-8")
 
-@pytest.mark.skip(condition=DISABLE_MESHNET_TESTS, reason="TOOD: LVPN-9459")
+@pytest.mark.skipif(DISABLE_MESHNET_TESTS, reason="TOOD: LVPN-9459")
 def test_route_to_peer_status_valid():
     peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().hostname
 
@@ -189,7 +189,7 @@ def test_route_to_peer_status_valid():
     sh_no_tty.nordvpn.disconnect()
 
 
-@pytest.mark.skip(condition=DISABLE_MESHNET_TESTS, reason="Test suit exits, before test can be completed.")
+@pytest.mark.skipif(DISABLE_MESHNET_TESTS, reason="Test suit exits, before test can be completed.")
 def test_route_to_peer_that_is_disconnected():
     peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().name()
 
