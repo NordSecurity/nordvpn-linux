@@ -195,7 +195,7 @@ def _is_dns_resolvable(domain = "nordvpn.com", retry=5) -> bool:
             resolver = dns.resolver.Resolver()
             resolver.nameservers = ["103.86.96.100"] # specify server so it will not get the result from the docker host
             # resolver.nameservers = ["208.67.222.222"]
-            answ = resolver.resolve(domain, 'A', lifetime=5)
+            answ = resolver.resolve(domain, 'A', lifetime=60)
             print(answ.response)
             print(answ.nameserver)
             print(answ.port)

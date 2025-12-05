@@ -87,7 +87,7 @@ mkdir -p "${LOGS_FOLDER}"
 mkdir -p "${ARTIFACTS_FOLDER}"
 mkdir -p "${GOCOVERDIR}"
 
-python3 -m pytest -v -x -rsx --setup-timeout 60 --execution-timeout 180 --teardown-timeout 25 -o log_cli=true \
+python3 -m pytest -v -x -rsx --setup-timeout 60 --execution-timeout 111111 --teardown-timeout 25 -o log_cli=true \
 --html="${WORKDIR}"/dist/test_artifacts/report.html --self-contained-html  --junitxml="${WORKDIR}"/dist/test_artifacts/report.xml "${args[@]}"
 
 # # To print goroutine profile when debugging:

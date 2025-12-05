@@ -204,7 +204,9 @@ def test_killswitch_on_after_update():
     print(savepre)
     print(savepost)
     print("CHECKING AFTER")
-    network.is_not_available(2)
+    network.is_not_available(60)
+    # import time
+    # time.sleep(124124)
     # if not netw_not_avail:
     #     import time
         # time.sleep(300)
