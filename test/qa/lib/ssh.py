@@ -26,8 +26,8 @@ class Ssh:
     def connect(self):
         self.client.connect(self.hostname, 22, username=self.username, password=self.password)
 
-    def exec_command(self, command: str) -> str:
-        _, stdout, stderr = self.client.exec_command(command, timeout=16) # TODO: LVPN-9477
+    def exec_command(self, command: str, timeout=16) -> str:
+        _, stdout, stderr = self.client.exec_command(command, timeout=timeout) # TODO: LVPN-9477
         try:
             output = stdout.read().decode()
             error = stderr.read().decode()
@@ -87,7 +87,7 @@ class Ssh:
             for _ in range(retry):
                 try:
                     with pytest.raises(RuntimeError) as ex:
-                        self.ssh_class_instance.exec_command("ping -c 1 -w 1 nordvpn.com")
+                        self.ssh_class_instance.exec_command("ping -c 1 -w 1 nordvpn.com", timeout=30)
 
                     return "Network is unreachable" in str(ex) or \
                         "Name or service not known" in str(ex) or \
@@ -98,7 +98,7 @@ class Ssh:
 
         def is_not_available(self, retry=5) -> bool:
             """Returns True when network access is not available."""
-            return not self._is_internet_reachable(retry=retry) and self._is_dns_not_resolvable(retry=retry)
+            return self._is_internet_reachable(retry=retry) and self._is_dns_not_resolvable(retry=retry)
 
         def ping(self, target: str, retry=5) -> bool:
             i = 0
