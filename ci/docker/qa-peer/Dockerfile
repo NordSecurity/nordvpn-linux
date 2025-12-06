@@ -6,8 +6,11 @@ EXPOSE 22
 
 RUN apt-get update && \
     apt-get install -y openssh-server sudo iptables iputils-ping \
-        iproute2 procps ca-certificates libxml2 libidn2-0 zlib1g && \
+        iproute2 procps ca-certificates libxml2 libidn2-0 zlib1g sockperf curl && \
     echo "root:root" | chpasswd && \
+    # Adding license for sockperf below
+    mkdir -p /usr/share/licenses/sockperf/ && \
+    curl -s https://raw.githubusercontent.com/Mellanox/sockperf/sockperf_v2/copying > /usr/share/licenses/sockperf/LICENSE && \
     echo PermitRootLogin yes >> /etc/ssh/sshd_config && \
     mkdir /run/sshd
 
