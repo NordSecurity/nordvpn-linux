@@ -174,7 +174,7 @@ type mockedFileEntry struct {
 	timestamp time.Time
 }
 
-// mockedFileManager holds neccessary data to mock actual file operations in a minimalistic fashion.
+// mockedFileManager holds necessary data to mock actual file operations in a minimalistic fashion.
 type mockedFileManager struct {
 	files    map[string]mockedFileEntry
 	cdnFiles map[string][]byte
@@ -613,7 +613,6 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	assert.Greater(t, info3.UnixNano(), info1.UnixNano())
 	assert.Greater(t, info3inc1.UnixNano(), info1inc1.UnixNano())
 	assert.Greater(t, info3inc2.UnixNano(), info1inc2.UnixNano())
-
 }
 
 type RemoteConfigEventHandler struct {
