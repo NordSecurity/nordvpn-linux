@@ -1,12 +1,10 @@
 package remote
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,23 +14,18 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/core"
 	devents "github.com/NordSecurity/nordvpn-linux/daemon/events"
-	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 )
 
 const (
-	httpPort              = "8005"
-	httpPath              = "/config"
-	httpHost              = "http://localhost"
-	cdnUrl                = httpHost + ":" + httpPort
-	localPath             = "tmp/cfg"
-	httpServerWaitTimeout = 2 * time.Second
-	testFeatureNoRc       = "feature1"
-	testFeatureWithRc     = "nordwhisper"
+	cdnRemotePath     = "/config"
+	cdnDevRemotePath  = "/config/dev"
+	localPath         = "tmp/cfg"
+	testFeatureNoRc   = "feature1"
+	testFeatureWithRc = "nordwhisper"
 
 	defaultRolloutGroup = 10
 )
@@ -188,8 +181,9 @@ func (w *mockedFileEntry) IsDir() bool        { return false }
 func (w *mockedFileEntry) Sys() any           { return struct{}{} }
 
 type mockedFileIO struct {
-	mem map[string]mockedFileEntry
-	mu  sync.RWMutex
+	mem      map[string]mockedFileEntry
+	cdnFiles map[string][]byte
+	mu       sync.RWMutex
 }
 
 func (w *mockedFileIO) getEntry(name string) (time.Time, error) {
@@ -201,103 +195,108 @@ func (w *mockedFileIO) getEntry(name string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("file not found %s", name)
 }
 
+func (w *mockedFileIO) setupCDNConfigFiles() {
+	libtelioCfg := libtelioJsonConfFile
+	libtelioInc1Cfg := libtelioJsonConfInc1File
+	libtelioInc2Cfg := libtelioJsonConfInc2File
+	w.cdnFiles = map[string][]byte{
+		filepath.Join(cdnDevRemotePath, "nordvpn.json"):                []byte(nordvpnJsonConfFile),
+		filepath.Join(cdnDevRemotePath, "nordvpn-hash.json"):           makeHashJson([]byte(nordvpnJsonConfFile)),
+		filepath.Join(cdnDevRemotePath, "nordwhisper.json"):            []byte(nordwhisperJsonConfFile),
+		filepath.Join(cdnDevRemotePath, "nordwhisper-hash.json"):       makeHashJson([]byte(nordwhisperJsonConfFile)),
+		filepath.Join(cdnDevRemotePath, "libtelio.json"):               []byte(libtelioCfg),
+		filepath.Join(cdnDevRemotePath, "include/libtelio1.json"):      []byte(libtelioInc1Cfg),
+		filepath.Join(cdnDevRemotePath, "include/libtelio2.json"):      []byte(libtelioInc2Cfg),
+		filepath.Join(cdnDevRemotePath, "libtelio-hash.json"):          makeHashJson([]byte(libtelioCfg), []byte(libtelioInc1Cfg), []byte(libtelioInc2Cfg)),
+		filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json"): makeHashJson([]byte(libtelioInc1Cfg)),
+		filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json"): makeHashJson([]byte(libtelioInc2Cfg)),
+	}
+
+	log.Println("libtelio hash:", string(w.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio-hash.json")]))
+	log.Println("libtelio inc1 hash:", string(w.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")]))
+	log.Println("libtelio inc2 hash:", string(w.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")]))
+}
+
+func (w *mockedFileIO) updateCDNConfigFiles() {
+	if w.cdnFiles == nil {
+		return
+	}
+	libtelioCfg := libtelioUpdatedJsonConfFile
+	libtelioInc1Cfg := libtelioUpdatedJsonConfInc1File
+	libtelioInc2Cfg := libtelioUpdatedJsonConfInc2File
+
+	w.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio.json")] = []byte(libtelioCfg)
+	w.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1.json")] = []byte(libtelioInc1Cfg)
+	w.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2.json")] = []byte(libtelioInc2Cfg)
+	w.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio-hash.json")] = makeHashJson([]byte(libtelioCfg), []byte(libtelioInc1Cfg), []byte(libtelioInc2Cfg))
+	w.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")] = makeHashJson([]byte(libtelioInc1Cfg))
+	w.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")] = makeHashJson([]byte(libtelioInc2Cfg))
+
+	log.Println("libtelio hash:", string(w.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio-hash.json")]))
+	log.Println("libtelio inc1 hash:", string(w.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")]))
+	log.Println("libtelio inc2 hash:", string(w.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")]))
+}
+
 func (w *mockedFileIO) writeFile(name string, content []byte, mode os.FileMode) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	now := time.Now()
-	// nameOrg := strings.TrimSuffix(name, tmpExt)
-	log.Printf("[STASIU][%s] called writeFile at %s, now.Nanoseconds = %d", name, now.Format(time.RFC3339Nano), now.Nanosecond())
-	w.mem[name] = mockedFileEntry{content: content, timestamp: now}
-	// w.mem[nameOrg] = mockedFileEntry{content: content, timestamp: now}
+	copiedContent := append([]byte(nil), content...)
+	w.mem[name] = mockedFileEntry{content: copiedContent, timestamp: now}
 	return nil
 }
+
 func (w *mockedFileIO) readFile(name string) ([]byte, error) {
-	log.Println("[STASIU] called readFile for: ", name)
-	return w.mem[name].content, nil
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	entry, isPresent := w.mem[name]
+	if !isPresent {
+		return nil, fmt.Errorf("file not found %s", name)
+	}
+	return append([]byte(nil), entry.content...), nil
 }
 
 func (w *mockedFileIO) IsValidExistingDir(path string) (bool, error) {
-	log.Printf("[STASIU][%s] called IsValidExistingDir", path)
-	_, isPresent := w.mem[path]
-	return isPresent, nil
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	for k := range w.mem {
+		if strings.HasPrefix(k, path) {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
-func (*mockedFileIO) CleanupTmpFiles(targetPath, fileExt string) error { return nil }
+func (w *mockedFileIO) CleanupTmpFiles(targetPath, fileExt string) error { return nil }
 
 func (w *mockedFileIO) RenameTmpFiles(targetPath, fileExt string) error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	newMap := make(map[string]mockedFileEntry)
-	log.Printf("[STASIU][%s] called RenameTmpFiles", targetPath)
+
 	for k, v := range w.mem {
-		log.Println("[STASIU] RenameTmpFiles for key", k)
-		if strings.Contains(k, fileExt) {
-			log.Printf("[STASIU]RenameTmpFiles update from %s to %s", k, strings.TrimSuffix(k, fileExt))
-			v.timestamp = time.Now()
-			newMap[strings.TrimSuffix(k, fileExt)] = v
+		if strings.HasSuffix(k, fileExt) {
+			now := time.Now()
+			newMap[strings.TrimSuffix(k, fileExt)] = mockedFileEntry{content: v.content, timestamp: now, fileinfo: v.fileinfo}
 		} else {
-			newMap[k] = v
+			if _, isPresent := newMap[k]; !isPresent {
+				newMap[k] = v
+			}
 		}
 	}
-	// if len(newMap) > 0 {
-	log.Println("PRE")
-	for k := range w.mem {
-		log.Println(k)
-	}
+
 	w.mem = newMap
-	log.Println("POST")
-
-	for k := range w.mem {
-		log.Println(k)
-	}
-	// }
-	// entry, isPresent := w.mem[targetPath]
-	// if isPresent {
-	// 	log.Printf("[STASIU][%s] called RenameTmpFiles - renaming...", targetPath)
-	// 	strippedPath := strings.TrimSuffix(targetPath, fileExt)
-	// 	w.mu.Lock()
-	// 	w.mem[strippedPath] = entry
-	// 	w.mu.Unlock()
-	// }
 	return nil
-	// nameOrg := strings.TrimSuffix(name, tmpExt)
 }
 
-func cleanLocalPath(t *testing.T) {
-	os.RemoveAll(localPath)
-	t.Cleanup(func() { os.RemoveAll(localPath) })
-}
-
-func waitForServer() error {
-	deadline := time.Now().Add(httpServerWaitTimeout)
-	addr := httpHost + ":" + httpPort
-	for time.Now().Before(deadline) {
-		conn, err := net.Dial("tcp", addr)
-		if err == nil {
-			conn.Close()
-			return nil // Server is up
-		}
-		time.Sleep(10 * time.Millisecond)
+// func (c *mockedFileIO) Do(req *http.Request) (*http.Response, error) { return &http.Response{}, nil }
+func (c *mockedFileIO) GetRemoteFile(name string) ([]byte, error) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	if content, ok := c.cdnFiles[name]; ok {
+		return content, nil
 	}
-	return fmt.Errorf("server at %s did not become ready in time", addr)
-}
-
-// // modTimeNanos is a helper function to get the nanosecond part of a file's modification time.
-// // To be used in conjunction with the assertEventuallyGreater function.
-// func modTimeNanos(fi os.FileInfo) func() int {
-// 	return func() int { return fi.ModTime().Nanosecond() }
-// }
-
-// assertEventuallyGreater checks that the new value eventually becomes greater than the old value within the timeout period.
-func assertEventuallyGreater(t *testing.T, getNew, getOld func() int, timeout time.Duration) {
-	deadline := time.Now().Add(timeout)
-	for time.Now().Before(deadline) {
-		if getNew() > getOld() {
-			return // exit early if condition is already met
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	assert.Greater(t, getNew(), getOld()) // Final assertion (will fail with message if not greater)
+	return []byte{}, nil
 }
 
 func TestFindMatchingRecord(t *testing.T) {
@@ -398,9 +397,17 @@ func TestFindMatchingRecord(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cdn, cancel := setupMockCdnClient()
-			defer cancel()
-			rc := newTestRemoteConfig(test.myAppVer, "dev", cdn, test.myAppRollout)
+			// cdn, _ := setupMockCdnClient()
+
+			fileIO := &mockedFileIO{
+				mem:      make(map[string]mockedFileEntry),
+				cdnFiles: make(map[string][]byte),
+				mu:       sync.RWMutex{},
+			}
+			rc := newTestRemoteConfig(test.myAppVer, "dev", fileIO, test.myAppRollout)
+
+			// rc.fileIO = fileIO
+			// rc.rcFileIO = fileIO
 			match := rc.findMatchingRecord(test.input, test.myAppVer)
 
 			if test.matchValue != "" {
@@ -414,14 +421,14 @@ func TestFindMatchingRecord(t *testing.T) {
 }
 
 func TestFeatureOnOff(t *testing.T) {
-	category.Set(t, category.Unit)
+	category.Set(t, category.Integration)
 
-	stop := setupMockCdnWebServer(false)
-	defer stop()
-
-	cdn, cancel := setupMockCdnClient()
-	defer cancel()
-
+	fileIO := &mockedFileIO{
+		mem:      make(map[string]mockedFileEntry),
+		cdnFiles: make(map[string][]byte),
+		mu:       sync.RWMutex{},
+	}
+	fileIO.setupCDNConfigFiles()
 	tests := []struct {
 		name                   string
 		ver                    string
@@ -455,7 +462,8 @@ func TestFeatureOnOff(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			eh := newTestRemoteConfigEventHandler()
-			rc := newTestRemoteConfig(test.ver, test.env, cdn, defaultRolloutGroup)
+			rc := newTestRemoteConfig(test.ver, test.env, fileIO, defaultRolloutGroup)
+
 			rc.Subscribe(eh)
 			err := rc.Load()
 			assert.True(t, eh.notified)
@@ -467,21 +475,25 @@ func TestFeatureOnOff(t *testing.T) {
 }
 
 func TestMultiAccess(t *testing.T) {
-	category.Set(t, category.Unit)
 
-	stop := setupMockCdnWebServer(false)
-	defer stop()
+	category.Set(t, category.Integration)
 
-	cdn, cancel := setupMockCdnClient()
-	defer cancel()
+	fileIO := &mockedFileIO{
+		mem:      make(map[string]mockedFileEntry),
+		cdnFiles: make(map[string][]byte),
+		mu:       sync.RWMutex{},
+	}
+	rc := newTestRemoteConfig("3.20.1", "dev", fileIO, defaultRolloutGroup)
 
-	rc := newTestRemoteConfig("3.20.1", "dev", cdn, defaultRolloutGroup)
+	rc.fileIO = fileIO
+	rc.rcFileIO = fileIO
+	rc.cdn = fileIO
 
 	cnt := 10
 	wg := sync.WaitGroup{}
 	wg.Add(cnt)
 
-	for i := 0; i < cnt; i++ {
+	for range cnt {
 		go func() {
 			err := rc.Load()
 			assert.NoError(t, err)
@@ -494,20 +506,20 @@ func TestMultiAccess(t *testing.T) {
 }
 
 func TestGetTelioConfig(t *testing.T) {
-	category.Set(t, category.Unit)
+	category.Set(t, category.Integration)
 
-	stop := setupMockCdnWebServer(false)
-	defer stop()
-
-	cdn, cancel := setupMockCdnClient()
-	defer cancel()
+	fileIO := &mockedFileIO{
+		mem:      make(map[string]mockedFileEntry),
+		cdnFiles: make(map[string][]byte),
+		mu:       sync.RWMutex{},
+	}
+	fileIO.setupCDNConfigFiles()
 
 	tests := []struct {
 		name        string
 		ver         string
 		env         string
 		fromDisk    bool
-		feature     string
 		expectError bool
 	}{
 		{
@@ -515,7 +527,6 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.20.1",
 			env:         "dev",
 			fromDisk:    false,
-			feature:     FeatureLibtelio,
 			expectError: false,
 		},
 		{
@@ -523,7 +534,6 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.1.1",
 			env:         "dev",
 			fromDisk:    false,
-			feature:     FeatureLibtelio,
 			expectError: true,
 		},
 		{
@@ -531,7 +541,6 @@ func TestGetTelioConfig(t *testing.T) {
 			ver:         "3.20.1",
 			env:         "dev",
 			fromDisk:    true,
-			feature:     FeatureLibtelio,
 			expectError: false,
 		},
 	}
@@ -545,7 +554,11 @@ func TestGetTelioConfig(t *testing.T) {
 				err := os.Unsetenv(envUseLocalConfig)
 				assert.NoError(t, err)
 			}
-			rc := newTestRemoteConfig(test.ver, test.env, cdn, defaultRolloutGroup)
+			rc := newTestRemoteConfig(test.ver, test.env, fileIO, defaultRolloutGroup)
+
+			rc.fileIO = fileIO
+			rc.rcFileIO = fileIO
+			rc.cdn = fileIO
 			err := rc.Load()
 			assert.NoError(t, err)
 			telioCfg, err := rc.GetTelioConfig()
@@ -561,45 +574,36 @@ func TestGetTelioConfig(t *testing.T) {
 }
 
 func TestGetUpdatedTelioConfig(t *testing.T) {
-	category.Set(t, category.Unit)
+	category.Set(t, category.Integration)
 
-	stopWebServer := setupMockCdnWebServer(false)
+	fileIO := &mockedFileIO{
+		mem:      make(map[string]mockedFileEntry),
+		cdnFiles: make(map[string][]byte),
+		mu:       sync.RWMutex{},
+	}
 
-	cdn, cancel := setupMockCdnClient()
-	defer cancel()
-
-	os.RemoveAll(localPath)
+	fileIO.setupCDNConfigFiles()
 
 	libtelioMainConfigFile := filepath.Join(localPath, "libtelio.json")
 	libtelioInc1ConfigFile := filepath.Join(localPath, "include/libtelio1.json")
 	libtelioInc2ConfigFile := filepath.Join(localPath, "include/libtelio2.json")
 
-	rc := newTestRemoteConfig("3.4.1", "dev", cdn, defaultRolloutGroup)
-	fileIO := &mockedFileIO{
-		mem: make(map[string]mockedFileEntry),
-		mu:  sync.RWMutex{},
-	}
+	rc := newTestRemoteConfig("3.4.1", "dev", fileIO, defaultRolloutGroup)
 
+	rc.cdn = fileIO
 	rc.fileIO = fileIO
 	rc.rcFileIO = fileIO
-
 	log.Println("~~~~ first attempt to load - should load whole config from web server")
 
 	err := rc.Load()
 	assert.NoError(t, err)
 
-	for k := range fileIO.mem {
-		log.Println(k)
-	}
-	// info1, err := os.Stat(libtelioMainConfigFile)
 	info1, err := fileIO.getEntry(libtelioMainConfigFile)
 	assert.NoError(t, err)
 	assert.NotNil(t, info1)
-	// info1inc1, err := os.Stat(libtelioInc1ConfigFile)
 	info1inc1, err := fileIO.getEntry(libtelioInc1ConfigFile)
 	assert.NoError(t, err)
 	assert.NotNil(t, info1inc1)
-	// info1inc2, err := os.Stat(libtelioInc2ConfigFile)
 	info1inc2, err := fileIO.getEntry(libtelioInc2ConfigFile)
 	assert.NoError(t, err)
 	assert.NotNil(t, info1inc2)
@@ -609,58 +613,44 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	err = rc.Load()
 	assert.NoError(t, err)
 
-	// info2, err := os.Stat(libtelioMainConfigFile)
 	info2, err := fileIO.getEntry(libtelioMainConfigFile)
 	assert.NoError(t, err)
 	assert.NotNil(t, info2)
-	// info2inc1, err := os.Stat(libtelioInc1ConfigFile)
 	info2inc1, err := fileIO.getEntry(libtelioInc1ConfigFile)
 	assert.NoError(t, err)
 	assert.NotNil(t, info2inc1)
-	// info2inc2, err := os.Stat(libtelioInc2ConfigFile)
 	info2inc2, err := fileIO.getEntry(libtelioInc2ConfigFile)
 	assert.NoError(t, err)
 	assert.NotNil(t, info2inc2)
 
 	// files are not modified on disk - should be the same time
-	assert.Equal(t, info1.Nanosecond(), info2.Nanosecond())
-	assert.Equal(t, info1inc1.Nanosecond(), info2inc1.Nanosecond())
-	assert.Equal(t, info1inc2.Nanosecond(), info2inc2.Nanosecond())
-
-	stopWebServer()
-
-	// time.Sleep(time.Second)
+	assert.Equal(t, info1.UnixNano(), info2.UnixNano())
+	assert.Equal(t, info1inc1.UnixNano(), info2inc1.UnixNano())
+	assert.Equal(t, info1inc2.UnixNano(), info2inc2.UnixNano())
 
 	// have updated libtelio remote config
-	stopWebServer = setupMockCdnWebServer(true)
 
-	// log.Println("~~~~ try to load again - libtelio config hash is not the same, should try to load whole libtelio config from web server")
+	fileIO.updateCDNConfigFiles()
 
-	// err = rc.Load()
-	// assert.NoError(t, err)
+	log.Println("~~~~ try to load again - libtelio config hash is not the same, should try to load whole libtelio config from web server")
 
-	// info3, err := os.Stat(libtelioMainConfigFile)
-	// info3, err := fileIO.getEntry(libtelioMainConfigFile)
-	// assert.NoError(t, err)
-	// assert.NotNil(t, info3)
-	// // info3inc1, err := os.Stat(libtelioInc1ConfigFile)
-	// info3inc1, err := fileIO.getEntry(libtelioInc1ConfigFile)
-	// assert.NoError(t, err)
-	// assert.NotNil(t, info3inc1)
-	// // info3inc2, err := os.Stat(libtelioInc2ConfigFile)
-	// info3inc2, err := fileIO.getEntry(libtelioInc2ConfigFile)
-	// assert.NoError(t, err)
-	// assert.NotNil(t, info3inc2)
+	err = rc.Load()
+	assert.NoError(t, err)
 
-	// // files are modified on disk - should be greater time
-	// // sometimes I/O operations can get delayed, thus here we use active-waiting approach bounded by the timeout
-	// timeout := 2 * time.Second
-	// assertEventuallyGreater(t, info3.Nanosecond, info1.Nanosecond, timeout)
-	// assertEventuallyGreater(t, info3inc1.Nanosecond, info1inc1.Nanosecond, timeout)
-	// assertEventuallyGreater(t, info3inc2.Nanosecond, info1inc2.Nanosecond, timeout)
+	info3, err := fileIO.getEntry(libtelioMainConfigFile)
+	assert.NoError(t, err)
+	assert.NotNil(t, info3)
+	info3inc1, err := fileIO.getEntry(libtelioInc1ConfigFile)
+	assert.NoError(t, err)
+	assert.NotNil(t, info3inc1)
+	info3inc2, err := fileIO.getEntry(libtelioInc2ConfigFile)
+	assert.NoError(t, err)
+	assert.NotNil(t, info3inc2)
 
-	stopWebServer()
-	cleanLocalPath(t)
+	assert.Greater(t, info3.UnixNano(), info1.UnixNano())
+	assert.Greater(t, info3inc1.UnixNano(), info1inc1.UnixNano())
+	assert.Greater(t, info3inc2.UnixNano(), info1inc2.UnixNano())
+
 }
 
 type RemoteConfigEventHandler struct {
@@ -678,7 +668,7 @@ func (e *RemoteConfigEventHandler) RemoteConfigUpdate(c RemoteConfigEvent) error
 	return nil
 }
 
-func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage, rolloutGroup int) *CdnRemoteConfig {
+func newTestRemoteConfig(ver, env string, mockedCdn *mockedFileIO, rolloutGroup int) *CdnRemoteConfig {
 	testSubject := subs.Subject[events.DebuggerEvent]{}
 	ve := devents.DebuggerEvents{
 		DebuggerEvents: &testSubject,
@@ -686,49 +676,21 @@ func newTestRemoteConfig(ver, env string, cdn core.RemoteStorage, rolloutGroup i
 	rc := &CdnRemoteConfig{
 		appVersion:      ver,
 		appEnvironment:  env,
-		remotePath:      httpPath,
+		remotePath:      cdnRemotePath,
 		localCachePath:  localPath,
-		cdn:             cdn,
+		cdn:             mockedCdn,
 		features:        NewFeatureMap(),
 		analytics:       NewRemoteConfigAnalytics(ve.DebuggerEvents, rolloutGroup),
 		notifier:        &subs.Subject[RemoteConfigEvent]{},
 		appRolloutGroup: rolloutGroup,
-		fileIO: &mockedFileIO{
-			mem: make(map[string]mockedFileEntry),
-			mu:  sync.RWMutex{},
-		},
+		fileIO:          mockedCdn,
+		rcFileIO:        mockedCdn,
 	}
 	rc.features.add(FeatureMain)
 	rc.features.add(FeatureLibtelio)
 	rc.features.add(testFeatureNoRc)
 	rc.features.add(testFeatureWithRc)
 	return rc
-}
-
-func setupMockCdnClient() (*core.CDNAPI, context.CancelFunc) {
-	validator := response.NoopValidator{}
-
-	userAgent := fmt.Sprintf("NordApp Linux %s %s", "3.33.3", "distro.KernelName")
-
-	httpGlobalCtx, cancelFn := context.WithCancel(context.Background())
-	httpCallsSubject := &subs.Subject[events.DataRequestAPI]{}
-
-	// simple standard http client with dialer wrapped inside
-	httpClientSimple := request.NewStdHTTP()
-	httpClientSimple.Transport = request.NewHTTPReTransport(
-		1, 1, "HTTP/1.1", func() http.RoundTripper {
-			return request.NewPublishingRoundTripper(
-				request.NewContextRoundTripper(request.NewStdTransport(), httpGlobalCtx),
-				httpCallsSubject,
-			)
-		}, nil)
-
-	return core.NewCDNAPI(
-		userAgent,
-		cdnUrl,
-		httpClientSimple,
-		validator,
-	), cancelFn
 }
 
 func makeHashJson(data ...[]byte) []byte {
@@ -739,72 +701,6 @@ func makeHashJson(data ...[]byte) []byte {
 	jsn := jsonHash{Hash: hash(bytesForHash)}
 	rz, _ := json.Marshal(jsn)
 	return rz
-}
-
-// setupMockCdnWebServer sets up a mock CDN web server that serves predefined JSON configuration files.
-// The CDN web server is here mocked by a local HTTP one. Also there's a call to waitForServer() to ensure the server is actually ready to handle incoming requests.
-func setupMockCdnWebServer(updated bool) func() {
-	httpPath := filepath.Join(httpPath, "dev")
-
-	libtelioCfg := libtelioJsonConfFile
-	libtelioInc1Cfg := libtelioJsonConfInc1File
-	libtelioInc2Cfg := libtelioJsonConfInc2File
-	if updated {
-		libtelioCfg = libtelioUpdatedJsonConfFile
-		libtelioInc1Cfg = libtelioUpdatedJsonConfInc1File
-		libtelioInc2Cfg = libtelioUpdatedJsonConfInc2File
-	}
-
-	// in-memory file data
-	files := map[string][]byte{
-		filepath.Join(httpPath, "nordvpn.json"):                []byte(nordvpnJsonConfFile),
-		filepath.Join(httpPath, "nordvpn-hash.json"):           makeHashJson([]byte(nordvpnJsonConfFile)),
-		filepath.Join(httpPath, "nordwhisper.json"):            []byte(nordwhisperJsonConfFile),
-		filepath.Join(httpPath, "nordwhisper-hash.json"):       makeHashJson([]byte(nordwhisperJsonConfFile)),
-		filepath.Join(httpPath, "libtelio.json"):               []byte(libtelioCfg),
-		filepath.Join(httpPath, "include/libtelio1.json"):      []byte(libtelioInc1Cfg),
-		filepath.Join(httpPath, "include/libtelio2.json"):      []byte(libtelioInc2Cfg),
-		filepath.Join(httpPath, "libtelio-hash.json"):          makeHashJson([]byte(libtelioCfg), []byte(libtelioInc1Cfg), []byte(libtelioInc2Cfg)),
-		filepath.Join(httpPath, "include/libtelio1-hash.json"): makeHashJson([]byte(libtelioInc1Cfg)),
-		filepath.Join(httpPath, "include/libtelio2-hash.json"): makeHashJson([]byte(libtelioInc2Cfg)),
-	}
-
-	log.Println("libtelio hash:", string(files[filepath.Join(httpPath, "libtelio-hash.json")]))
-	log.Println("libtelio inc1 hash:", string(files[filepath.Join(httpPath, "include/libtelio1-hash.json")]))
-	log.Println("libtelio inc2 hash:", string(files[filepath.Join(httpPath, "include/libtelio2-hash.json")]))
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		content, ok := files[r.URL.Path]
-		if !ok {
-			http.NotFound(w, r)
-			return
-		}
-		w.Write(content)
-	})
-
-	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%s", httpPort),
-		Handler: mux,
-	}
-
-	// start server in a goroutine
-	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server error: %v", err)
-		}
-	}()
-
-	waitForServer()
-
-	// return http server stop function
-	return func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		if err := srv.Shutdown(ctx); err != nil {
-			log.Fatalf("Server forced to shutdown: %v", err)
-		}
-	}
 }
 
 var nordvpnJsonConfFile = `
