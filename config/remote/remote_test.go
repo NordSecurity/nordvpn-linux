@@ -167,39 +167,42 @@ func (e *timeoutError) Error() string   { return "timeout" }
 func (e *timeoutError) Timeout() bool   { return true }
 func (e *timeoutError) Temporary() bool { return true }
 
+// mockedFileEntry serves as in-memory representation of a file
+// used to mock actual I/O operations in tests.
 type mockedFileEntry struct {
 	content   []byte
 	timestamp time.Time
-	fileinfo  os.FileInfo
 }
 
-func (w *mockedFileEntry) Name() string       { return "" }
-func (w *mockedFileEntry) Size() int64        { return int64(len(w.content)) }
-func (w *mockedFileEntry) Mode() os.FileMode  { return 777 }
-func (w *mockedFileEntry) ModTime() time.Time { return w.timestamp }
-func (w *mockedFileEntry) IsDir() bool        { return false }
-func (w *mockedFileEntry) Sys() any           { return struct{}{} }
-
-type mockedFileIO struct {
-	mem      map[string]mockedFileEntry
+// mockedFileManager holds neccessary data to mock actual file operations in a minimalistic fashion.
+type mockedFileManager struct {
+	files    map[string]mockedFileEntry
 	cdnFiles map[string][]byte
 	mu       sync.RWMutex
 }
 
-func (w *mockedFileIO) getEntry(name string) (time.Time, error) {
-	w.mu.RLock()
-	defer w.mu.RUnlock()
-	if val, isPresent := w.mem[name]; isPresent {
+func newMockedFileManager() *mockedFileManager {
+	return &mockedFileManager{
+		files:    make(map[string]mockedFileEntry),
+		cdnFiles: make(map[string][]byte),
+		mu:       sync.RWMutex{},
+	}
+}
+
+func (m *mockedFileManager) getEntry(name string) (time.Time, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if val, isPresent := m.files[name]; isPresent {
 		return val.timestamp, nil
 	}
 	return time.Time{}, fmt.Errorf("file not found %s", name)
 }
 
-func (w *mockedFileIO) setupCDNConfigFiles() {
+func (m *mockedFileManager) setupCDNConfigFiles() {
 	libtelioCfg := libtelioJsonConfFile
 	libtelioInc1Cfg := libtelioJsonConfInc1File
 	libtelioInc2Cfg := libtelioJsonConfInc2File
-	w.cdnFiles = map[string][]byte{
+	m.cdnFiles = map[string][]byte{
 		filepath.Join(cdnDevRemotePath, "nordvpn.json"):                []byte(nordvpnJsonConfFile),
 		filepath.Join(cdnDevRemotePath, "nordvpn-hash.json"):           makeHashJson([]byte(nordvpnJsonConfFile)),
 		filepath.Join(cdnDevRemotePath, "nordwhisper.json"):            []byte(nordwhisperJsonConfFile),
@@ -212,54 +215,54 @@ func (w *mockedFileIO) setupCDNConfigFiles() {
 		filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json"): makeHashJson([]byte(libtelioInc2Cfg)),
 	}
 
-	log.Println("libtelio hash:", string(w.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio-hash.json")]))
-	log.Println("libtelio inc1 hash:", string(w.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")]))
-	log.Println("libtelio inc2 hash:", string(w.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")]))
+	log.Println("libtelio hash:", string(m.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio-hash.json")]))
+	log.Println("libtelio inc1 hash:", string(m.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")]))
+	log.Println("libtelio inc2 hash:", string(m.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")]))
 }
 
-func (w *mockedFileIO) updateCDNConfigFiles() {
-	if w.cdnFiles == nil {
+func (m *mockedFileManager) updateCDNConfigFiles() {
+	if m.cdnFiles == nil {
 		return
 	}
 	libtelioCfg := libtelioUpdatedJsonConfFile
 	libtelioInc1Cfg := libtelioUpdatedJsonConfInc1File
 	libtelioInc2Cfg := libtelioUpdatedJsonConfInc2File
 
-	w.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio.json")] = []byte(libtelioCfg)
-	w.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1.json")] = []byte(libtelioInc1Cfg)
-	w.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2.json")] = []byte(libtelioInc2Cfg)
-	w.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio-hash.json")] = makeHashJson([]byte(libtelioCfg), []byte(libtelioInc1Cfg), []byte(libtelioInc2Cfg))
-	w.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")] = makeHashJson([]byte(libtelioInc1Cfg))
-	w.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")] = makeHashJson([]byte(libtelioInc2Cfg))
+	m.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio.json")] = []byte(libtelioCfg)
+	m.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1.json")] = []byte(libtelioInc1Cfg)
+	m.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2.json")] = []byte(libtelioInc2Cfg)
+	m.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio-hash.json")] = makeHashJson([]byte(libtelioCfg), []byte(libtelioInc1Cfg), []byte(libtelioInc2Cfg))
+	m.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")] = makeHashJson([]byte(libtelioInc1Cfg))
+	m.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")] = makeHashJson([]byte(libtelioInc2Cfg))
 
-	log.Println("libtelio hash:", string(w.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio-hash.json")]))
-	log.Println("libtelio inc1 hash:", string(w.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")]))
-	log.Println("libtelio inc2 hash:", string(w.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")]))
+	log.Println("libtelio hash:", string(m.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio-hash.json")]))
+	log.Println("libtelio inc1 hash:", string(m.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")]))
+	log.Println("libtelio inc2 hash:", string(m.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")]))
 }
 
-func (w *mockedFileIO) writeFile(name string, content []byte, mode os.FileMode) error {
-	w.mu.Lock()
-	defer w.mu.Unlock()
+func (m *mockedFileManager) writeFile(name string, content []byte, mode os.FileMode) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	now := time.Now()
 	copiedContent := append([]byte(nil), content...)
-	w.mem[name] = mockedFileEntry{content: copiedContent, timestamp: now}
+	m.files[name] = mockedFileEntry{content: copiedContent, timestamp: now}
 	return nil
 }
 
-func (w *mockedFileIO) readFile(name string) ([]byte, error) {
-	w.mu.RLock()
-	defer w.mu.RUnlock()
-	entry, isPresent := w.mem[name]
+func (m *mockedFileManager) readFile(name string) ([]byte, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	entry, isPresent := m.files[name]
 	if !isPresent {
 		return nil, fmt.Errorf("file not found %s", name)
 	}
 	return append([]byte(nil), entry.content...), nil
 }
 
-func (w *mockedFileIO) IsValidExistingDir(path string) (bool, error) {
-	w.mu.RLock()
-	defer w.mu.RUnlock()
-	for k := range w.mem {
+func (m *mockedFileManager) IsValidExistingDir(path string) (bool, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	for k := range m.files {
 		if strings.HasPrefix(k, path) {
 			return true, nil
 		}
@@ -267,17 +270,17 @@ func (w *mockedFileIO) IsValidExistingDir(path string) (bool, error) {
 	return false, nil
 }
 
-func (w *mockedFileIO) CleanupTmpFiles(targetPath, fileExt string) error { return nil }
+func (m *mockedFileManager) CleanupTmpFiles(targetPath, fileExt string) error { return nil }
 
-func (w *mockedFileIO) RenameTmpFiles(targetPath, fileExt string) error {
-	w.mu.Lock()
-	defer w.mu.Unlock()
+func (m *mockedFileManager) RenameTmpFiles(targetPath, fileExt string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	newMap := make(map[string]mockedFileEntry)
 
-	for k, v := range w.mem {
+	for k, v := range m.files {
 		if strings.HasSuffix(k, fileExt) {
 			now := time.Now()
-			newMap[strings.TrimSuffix(k, fileExt)] = mockedFileEntry{content: v.content, timestamp: now, fileinfo: v.fileinfo}
+			newMap[strings.TrimSuffix(k, fileExt)] = mockedFileEntry{content: v.content, timestamp: now}
 		} else {
 			if _, isPresent := newMap[k]; !isPresent {
 				newMap[k] = v
@@ -285,15 +288,14 @@ func (w *mockedFileIO) RenameTmpFiles(targetPath, fileExt string) error {
 		}
 	}
 
-	w.mem = newMap
+	m.files = newMap
 	return nil
 }
 
-// func (c *mockedFileIO) Do(req *http.Request) (*http.Response, error) { return &http.Response{}, nil }
-func (c *mockedFileIO) GetRemoteFile(name string) ([]byte, error) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	if content, ok := c.cdnFiles[name]; ok {
+func (m *mockedFileManager) GetRemoteFile(name string) ([]byte, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if content, ok := m.cdnFiles[name]; ok {
 		return content, nil
 	}
 	return []byte{}, nil
@@ -397,17 +399,8 @@ func TestFindMatchingRecord(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			// cdn, _ := setupMockCdnClient()
-
-			fileIO := &mockedFileIO{
-				mem:      make(map[string]mockedFileEntry),
-				cdnFiles: make(map[string][]byte),
-				mu:       sync.RWMutex{},
-			}
+			fileIO := newMockedFileManager()
 			rc := newTestRemoteConfig(test.myAppVer, "dev", fileIO, test.myAppRollout)
-
-			// rc.fileIO = fileIO
-			// rc.rcFileIO = fileIO
 			match := rc.findMatchingRecord(test.input, test.myAppVer)
 
 			if test.matchValue != "" {
@@ -423,11 +416,7 @@ func TestFindMatchingRecord(t *testing.T) {
 func TestFeatureOnOff(t *testing.T) {
 	category.Set(t, category.Integration)
 
-	fileIO := &mockedFileIO{
-		mem:      make(map[string]mockedFileEntry),
-		cdnFiles: make(map[string][]byte),
-		mu:       sync.RWMutex{},
-	}
+	fileIO := newMockedFileManager()
 	fileIO.setupCDNConfigFiles()
 	tests := []struct {
 		name                   string
@@ -475,19 +464,10 @@ func TestFeatureOnOff(t *testing.T) {
 }
 
 func TestMultiAccess(t *testing.T) {
-
 	category.Set(t, category.Integration)
 
-	fileIO := &mockedFileIO{
-		mem:      make(map[string]mockedFileEntry),
-		cdnFiles: make(map[string][]byte),
-		mu:       sync.RWMutex{},
-	}
+	fileIO := newMockedFileManager()
 	rc := newTestRemoteConfig("3.20.1", "dev", fileIO, defaultRolloutGroup)
-
-	rc.fileIO = fileIO
-	rc.rcFileIO = fileIO
-	rc.cdn = fileIO
 
 	cnt := 10
 	wg := sync.WaitGroup{}
@@ -508,11 +488,7 @@ func TestMultiAccess(t *testing.T) {
 func TestGetTelioConfig(t *testing.T) {
 	category.Set(t, category.Integration)
 
-	fileIO := &mockedFileIO{
-		mem:      make(map[string]mockedFileEntry),
-		cdnFiles: make(map[string][]byte),
-		mu:       sync.RWMutex{},
-	}
+	fileIO := newMockedFileManager()
 	fileIO.setupCDNConfigFiles()
 
 	tests := []struct {
@@ -555,10 +531,6 @@ func TestGetTelioConfig(t *testing.T) {
 				assert.NoError(t, err)
 			}
 			rc := newTestRemoteConfig(test.ver, test.env, fileIO, defaultRolloutGroup)
-
-			rc.fileIO = fileIO
-			rc.rcFileIO = fileIO
-			rc.cdn = fileIO
 			err := rc.Load()
 			assert.NoError(t, err)
 			telioCfg, err := rc.GetTelioConfig()
@@ -576,12 +548,7 @@ func TestGetTelioConfig(t *testing.T) {
 func TestGetUpdatedTelioConfig(t *testing.T) {
 	category.Set(t, category.Integration)
 
-	fileIO := &mockedFileIO{
-		mem:      make(map[string]mockedFileEntry),
-		cdnFiles: make(map[string][]byte),
-		mu:       sync.RWMutex{},
-	}
-
+	fileIO := newMockedFileManager()
 	fileIO.setupCDNConfigFiles()
 
 	libtelioMainConfigFile := filepath.Join(localPath, "libtelio.json")
@@ -589,10 +556,6 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	libtelioInc2ConfigFile := filepath.Join(localPath, "include/libtelio2.json")
 
 	rc := newTestRemoteConfig("3.4.1", "dev", fileIO, defaultRolloutGroup)
-
-	rc.cdn = fileIO
-	rc.fileIO = fileIO
-	rc.rcFileIO = fileIO
 	log.Println("~~~~ first attempt to load - should load whole config from web server")
 
 	err := rc.Load()
@@ -668,7 +631,7 @@ func (e *RemoteConfigEventHandler) RemoteConfigUpdate(c RemoteConfigEvent) error
 	return nil
 }
 
-func newTestRemoteConfig(ver, env string, mockedCdn *mockedFileIO, rolloutGroup int) *CdnRemoteConfig {
+func newTestRemoteConfig(ver, env string, mockedCdn *mockedFileManager, rolloutGroup int) *CdnRemoteConfig {
 	testSubject := subs.Subject[events.DebuggerEvent]{}
 	ve := devents.DebuggerEvents{
 		DebuggerEvents: &testSubject,
@@ -683,8 +646,8 @@ func newTestRemoteConfig(ver, env string, mockedCdn *mockedFileIO, rolloutGroup 
 		analytics:       NewRemoteConfigAnalytics(ve.DebuggerEvents, rolloutGroup),
 		notifier:        &subs.Subject[RemoteConfigEvent]{},
 		appRolloutGroup: rolloutGroup,
-		fileIO:          mockedCdn,
-		rcFileIO:        mockedCdn,
+		fileOps:         mockedCdn,
+		rcFileOps:       mockedCdn,
 	}
 	rc.features.add(FeatureMain)
 	rc.features.add(FeatureLibtelio)

@@ -59,7 +59,7 @@ type validator interface {
 
 // download main json file and check if include files should be downloaded,
 // return `true` if remote config was really downloaded.
-func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBasePath, targetPath string, fileIO internal.RCFileOperations) (success bool, err error) {
+func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBasePath, targetPath string, fileIO internal.RemoteConfigFileOps) (success bool, err error) {
 	// config file consists of:
 	// - main json file e.g. nordvpn.json;
 	// - sibling file with hash e.g. nordvpn-hash.json;
@@ -134,7 +134,7 @@ func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBaseP
 }
 
 // load feature config from JSON file
-func (f *Feature) load(sourcePath string, fr fileReader, jv validator, fileIO internal.RCFileOperations) error {
+func (f *Feature) load(sourcePath string, fr fileReader, jv validator, fileIO internal.RemoteConfigFileOps) error {
 	if f.name == "" {
 		return NewLoadError(LoadErrorOther, fmt.Errorf("feature name is not set"))
 	}
