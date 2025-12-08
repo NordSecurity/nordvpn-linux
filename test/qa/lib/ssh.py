@@ -98,7 +98,7 @@ class Ssh:
 
         def is_not_available(self, retry=5) -> bool:
             """Returns True when network access is not available."""
-            return self._is_internet_reachable(retry=retry) and self._is_dns_not_resolvable(retry=retry)
+            return not self._is_internet_reachable(retry=retry) and self._is_dns_not_resolvable(retry=retry)
 
         def ping(self, target: str, retry=5) -> bool:
             i = 0
