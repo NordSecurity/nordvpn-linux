@@ -105,8 +105,9 @@ func (rdl *runDirListener) Addr() net.Addr {
 	return rdl.listener.Addr()
 }
 
-// TODO provide description
-type RCFileOperations interface {
+// RemoteConfigFileOps aggregates into a common interface
+// a set of file-related operations utilized for the sake of remote-config feature functionality.
+type RemoteConfigFileOps interface {
 	IsValidExistingDir(path string) (bool, error)
 	CleanupTmpFiles(targetPath, fileExt string) error
 	RenameTmpFiles(targetPath, fileExt string) error
