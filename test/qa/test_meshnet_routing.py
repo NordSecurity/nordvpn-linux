@@ -134,7 +134,7 @@ def test_route_to_nonexistant_node():
 
     assert expected_message in ex.value.stdout.decode("utf-8")
 
-@pytest.mark.skipif(meshnet.is_meshnet_test_disabled_from_run(), reason="TOOD: LVPN-9459")
+@pytest.mark.skipif(meshnet.is_meshnet_test_disabled_from_run(), reason="TODO: LVPN-9459")
 def test_route_to_peer_status_valid():
     peer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().hostname
 
