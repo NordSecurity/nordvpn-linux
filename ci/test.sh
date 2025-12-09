@@ -21,8 +21,8 @@ parallel=""
 if [ "${1:-""}" = "full" ]; then
 	# Apply moose patch in case compiling with moose
 	trap '${WORKDIR}/ci/remove_private_bindings.sh moose/events; ${WORKDIR}/ci/remove_private_bindings.sh moose/worker;' EXIT
-	source "${WORKDIR}"/ci/add_private_bindings.sh moose/events ./third-party/moose-events/moosenordvpnappgo/v18
-	source "${WORKDIR}"/ci/add_private_bindings.sh moose/worker ./third-party/moose-worker/mooseworkergo/v18
+	source "${WORKDIR}"/ci/add_private_bindings.sh moose/events ./third-party/moose-events/moosenordvpnappgo/v20
+	source "${WORKDIR}"/ci/add_private_bindings.sh moose/worker ./third-party/moose-worker/mooseworkergo/v20
 
 	excluded_packages="thisshouldneverexist"
 	excluded_categories="root,link"

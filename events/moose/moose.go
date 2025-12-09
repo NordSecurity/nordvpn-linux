@@ -45,7 +45,8 @@ import (
 	worker "moose/worker"
 )
 
-type mooseConsentFunc func(bool) uint32
+type mooseConsentFunc func(bool) uint32 // TODO: review
+type mooseConsentFuncNew func(consentLevel moose.UserConsent) uint32
 type mooseSetConsentIntoContextFunc func(moose.NordvpnappConsentLevel) uint32
 
 // Subscriber listen events, send to moose engine
@@ -61,7 +62,7 @@ type Subscriber struct {
 	connectionStartTime        time.Time
 	connectionToMeshnetPeer    bool
 	initialHeartbeatSent       bool
-	mooseConsentLevelFunc      mooseConsentFunc
+	mooseConsentLevelFunc      mooseConsentFuncNew
 	mooseSetConsentIntoCtxFunc mooseSetConsentIntoContextFunc
 	httpClient                 *http.Client
 	canSendAllEvents           atomic.Bool
@@ -115,7 +116,11 @@ func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error 
 
 	enabled := newState == config.ConsentGranted
 	log.Println(internal.InfoPrefix, LogComponentPrefix, "request to set consent level to", enabled)
-	if err := s.response(s.mooseConsentLevelFunc(enabled)); err != nil {
+	userConsent := moose.UserConsentEssential // TODO: 
+	if enabled {
+		userConsent = moose.UserConsentNonEssential
+	}
+	if err := s.response(s.mooseConsentLevelFunc(userConsent)); err != nil {
 		return fmt.Errorf("setting new consent level: %w", err)
 	}
 
@@ -216,11 +221,24 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		internal.IsProdEnv(s.buildTarget.Environment),
 		s,
 		s,
-		s.canSendAllEvents.Load(),
+		//s.canSendAllEvents.Load(),
 	)); err != nil {
 		if !strings.Contains(err.Error(), "moose: already initiated") {
 			return fmt.Errorf("starting tracker: %w", err)
 		}
+	}
+
+	// TODO: set moose config, replace hardcoded experimental string with json string received from remote config
+	mooseConfigJsonStr := `{
+	  "events_blacklist": [
+		{ "trackers": ["*"], "event": "developer.logging.log", "args": [] },
+	  ],
+	}`
+	log.Println(internal.DebugPrefix, "~~~mose config json:", mooseConfigJsonStr)
+	if err := s.response(moose.MooseNordvpnappSetConfig(
+		mooseConfigJsonStr,
+	)); err != nil {
+		log.Println(internal.DebugPrefix, fmt.Errorf("setting moose config: %w", err))
 	}
 
 	// TODO (LVPN-9654): currently, it should be safe to assume moose got correctly initialized when both worker and the app got started properly
@@ -433,7 +451,11 @@ func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
 }
 
 func (s *Subscriber) NotifyHeartBeat(period time.Duration) error {
-	if err := s.response(moose.NordvpnappSendServiceQualityStatusHeartbeat(int32(period.Minutes()), nil)); err != nil {
+	if err := s.response(moose.NordvpnappSendServiceQualityStatusHeartbeat(
+		int32(period.Minutes()), 
+		moose.MemoryUsageParams{}, // TODO: new param, need review
+		nil,
+	)); err != nil {
 		return err
 	}
 	if !s.initialHeartbeatSent {
@@ -567,7 +589,8 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		},
 		threatProtectionLiteToInternalType(data.ThreatProtectionLite),
 		-1,
-		nil,
+		"",
+		nil, // TODO: param count changed, need to review
 	)); err != nil {
 		return err
 	}
