@@ -231,8 +231,8 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 	// TODO: set moose config, replace hardcoded experimental string with json string received from remote config
 	mooseConfigJsonStr := `{
 	  "events_blacklist": [
-		{ "trackers": ["*"], "event": "developer.logging.log", "args": [] },
-	  ],
+		{ "trackers": ["*"], "event": "developer.logging.log", "args": [] }
+	  ]
 	}`
 	log.Println(internal.DebugPrefix, "~~~mose config json:", mooseConfigJsonStr)
 	if err := s.response(moose.MooseNordvpnappSetConfig(
