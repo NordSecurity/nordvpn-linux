@@ -83,7 +83,6 @@ func (cf *CredentialsGetter) GetCredentialsFromAPI() (config.NCData, error) {
 	ncData.Username = resp.Username
 	ncData.Password = resp.Password
 	// validity period is provided in seconds
-
 	expiresIn := time.Duration(resp.ExpiresIn) * time.Second
 	ncData.ExpirationDate = time.Now().UTC().Add(expiresIn)
 
