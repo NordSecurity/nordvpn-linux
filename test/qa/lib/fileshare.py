@@ -309,7 +309,7 @@ def validate_transfer_progress(transfer_log: str):
     return increasing
 
 
-class TransferState(Enum):
+class TransferState(str, Enum):
     DOWNLOADING = "downloading"
     UPLOADING = "uploading"
 
