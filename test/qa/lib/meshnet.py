@@ -806,3 +806,8 @@ def delete_machines_by_identifier(token: str, identifiers: list | None = None) -
         except requests.RequestException as e:
             logging.log(f"Got an error during DELETE request for {identifier}: {e}")
     session.close()
+
+
+def is_meshnet_test_disabled_from_run() -> bool:
+    """Checks if Meshnet tests are disabled from a run based on environment variable."""
+    return os.getenv("DISABLE_MESHNET_TESTS") is not None
