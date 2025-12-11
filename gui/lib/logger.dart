@@ -33,7 +33,7 @@ Future<void> setupLogger() async {
         : fileOutput;
   }
 
-  final logLevel = giveLogLevel();
+  final logLevel = determineLogLevel();
   logger = Logger(
     output: loggerOutput,
     filter: ProductionFilter(),
@@ -86,7 +86,7 @@ Future<void> _trimLogFileIfNeeded(
   }
 }
 
-Level giveLogLevel() {
+Level determineLogLevel() {
   if (kDebugMode) return Level.all;
   final env = Platform.environment;
   final logLevelStr = env["NORDVPN_GUI_LOG_LEVEL"];
