@@ -28,6 +28,38 @@ You can find everything related to building, testing and environment setup in [B
 For installing an already released version please follow the instructions on
 our [official page](https://nordvpn.com/download/linux/#install-nordvpn).
 
+## Debugging
+
+Application stores logs in:
+
+- `~/.cache/nordvpn/nordvpn-gui.log` for deb/rpm package
+- `~/snap/nordvpn/current/.cache/nordvpn/nordvpn-gui.log` for snap package
+
+By default it logs only `INFO` level. This can be controlled by setting
+`NORDVPN_GUI_LOG_LEVEL` environment variable:
+
+- for deb/rpm package:
+
+```bash
+NORDVPN_GUI_LOG_LEVEL=<level> nordvpn-gui
+```
+
+- for snap package:
+
+```bash
+NORDVPN_GUI_LOG_LEVEL=<level> nordvpn.nordvpn-gui
+```
+
+Supported levels:
+
+- all
+- trace
+- debug
+- info
+- warn
+- error
+- fatal
+
 ## Supported distros
 
 - Ubuntu

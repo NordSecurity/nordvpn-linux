@@ -33,18 +33,21 @@ Future<void> setupLogger() async {
         : fileOutput;
   }
 
+  final logLevel = giveLogLevel();
   logger = Logger(
     output: loggerOutput,
     filter: ProductionFilter(),
-    level: kDebugMode ? Level.all : Level.info,
+    level: logLevel,
     printer: PrettyPrinter(
-      colors: kDebugMode,
-      printEmojis: kDebugMode,
-      noBoxingByDefault: kDebugMode,
+      colors: true,
+      printEmojis: false,
+      noBoxingByDefault: true,
       methodCount: 1,
       dateTimeFormat: DateTimeFormat.dateAndTime,
     ),
   );
+
+  logger.i("starting with log level: $logLevel");
 }
 
 Future<Directory> _ensureExists(String logDir) async {
@@ -79,4 +82,24 @@ Future<void> _trimLogFileIfNeeded(
       await file.writeAsBytes(remainingBytes, mode: FileMode.write);
     }
   }
+}
+
+Level giveLogLevel() {
+  if (kDebugMode) return Level.all;
+  final env = Platform.environment;
+  final logLevelStr = env["NORDVPN_GUI_LOG_LEVEL"];
+  return parseLogLevel(logLevelStr);
+}
+
+Level parseLogLevel(String? value) {
+  return switch (value?.toLowerCase()) {
+    "all" => Level.all,
+    "trace" => Level.trace,
+    "debug" => Level.debug,
+    "info" => Level.info,
+    "warn" => Level.warning,
+    "error" => Level.error,
+    "fatal" => Level.fatal,
+    _ => Level.info,
+  };
 }
