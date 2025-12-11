@@ -33,18 +33,23 @@ Future<void> setupLogger() async {
         : fileOutput;
   }
 
+  final logLevel = determineLogLevel();
   logger = Logger(
     output: loggerOutput,
     filter: ProductionFilter(),
-    level: kDebugMode ? Level.all : Level.info,
-    printer: PrettyPrinter(
-      colors: kDebugMode,
-      printEmojis: kDebugMode,
-      noBoxingByDefault: kDebugMode,
-      methodCount: 1,
-      dateTimeFormat: DateTimeFormat.dateAndTime,
+    level: logLevel,
+    printer: LevelPrefixPrinter(
+      PrettyPrinter(
+        colors: true,
+        printEmojis: false,
+        noBoxingByDefault: true,
+        methodCount: 1,
+        dateTimeFormat: DateTimeFormat.dateAndTime,
+      ),
     ),
   );
+
+  logger.i("starting with log level: $logLevel");
 }
 
 Future<Directory> _ensureExists(String logDir) async {
@@ -78,5 +83,42 @@ Future<void> _trimLogFileIfNeeded(
 
       await file.writeAsBytes(remainingBytes, mode: FileMode.write);
     }
+  }
+}
+
+Level determineLogLevel() {
+  if (kDebugMode) return Level.all;
+  final env = Platform.environment;
+  final logLevelStr = env["NORDVPN_GUI_LOG_LEVEL"];
+  return parseLogLevel(logLevelStr);
+}
+
+Level parseLogLevel(String? value) {
+  return switch (value?.toLowerCase()) {
+    "all" => Level.all,
+    "trace" => Level.trace,
+    "debug" => Level.debug,
+    "info" => Level.info,
+    "warn" => Level.warning,
+    "error" => Level.error,
+    "fatal" => Level.fatal,
+    _ => Level.info,
+  };
+}
+
+final class LevelPrefixPrinter extends LogPrinter {
+  final LogPrinter _inner;
+
+  LevelPrefixPrinter(this._inner);
+
+  @override
+  List<String> log(LogEvent event) {
+    final levelStr = event.level.toString().split('.').last.toUpperCase();
+
+    final lines = _inner.log(event);
+    return [
+      for (final line in lines)
+        line.trim().isEmpty ? line : "[$levelStr] $line",
+    ];
   }
 }
