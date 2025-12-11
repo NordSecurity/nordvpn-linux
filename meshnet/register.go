@@ -149,7 +149,7 @@ func (r *RegisteringChecker) register(cfg *config.Config) error {
 		const delayAfterNewKey time.Duration = time.Second * 5
 		r.delayFunc(delayAfterNewKey)
 	}
-
+	log.Printf("BUGDE: register cfg contents %v", cfg.MeshDevice)
 	cfg.MeshDevice = peer
 	cfg.MeshPrivateKey = privateKey
 	return nil
