@@ -38,12 +38,14 @@ Future<void> setupLogger() async {
     output: loggerOutput,
     filter: ProductionFilter(),
     level: logLevel,
-    printer: PrettyPrinter(
-      colors: true,
-      printEmojis: false,
-      noBoxingByDefault: true,
-      methodCount: 1,
-      dateTimeFormat: DateTimeFormat.dateAndTime,
+    printer: LevelPrefixPrinter(
+      PrettyPrinter(
+        colors: true,
+        printEmojis: false,
+        noBoxingByDefault: true,
+        methodCount: 1,
+        dateTimeFormat: DateTimeFormat.dateAndTime,
+      ),
     ),
   );
 
@@ -102,4 +104,21 @@ Level parseLogLevel(String? value) {
     "fatal" => Level.fatal,
     _ => Level.info,
   };
+}
+
+final class LevelPrefixPrinter extends LogPrinter {
+  final LogPrinter _inner;
+
+  LevelPrefixPrinter(this._inner);
+
+  @override
+  List<String> log(LogEvent event) {
+    final levelStr = event.level.toString().split('.').last.toUpperCase();
+
+    final lines = _inner.log(event);
+    return [
+      for (final line in lines)
+        line.trim().isEmpty ? line : "[$levelStr] $line",
+    ];
+  }
 }

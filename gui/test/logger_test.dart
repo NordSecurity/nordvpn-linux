@@ -48,4 +48,58 @@ void main() {
       expect(parseLogLevel('   '), Level.info);
     });
   });
+
+  group('LevelPrefixPrinter', () {
+    test('prefixes single non-empty line with uppercased level', () {
+      final inner = _FakePrinter(['hello world']);
+      final printer = LevelPrefixPrinter(inner);
+
+      final event = LogEvent(Level.info, 'hello world');
+      final result = printer.log(event);
+
+      expect(result, ['[INFO] hello world']);
+    });
+
+    test('prefixes multiple non-empty lines', () {
+      final inner = _FakePrinter(['line 1', 'line 2']);
+      final printer = LevelPrefixPrinter(inner);
+
+      final event = LogEvent(Level.debug, 'multi');
+      final result = printer.log(event);
+
+      expect(result, ['[DEBUG] line 1', '[DEBUG] line 2']);
+    });
+
+    test('does not modify empty or whitespace-only lines', () {
+      final inner = _FakePrinter(['', '   ', '\t', 'msg']);
+      final printer = LevelPrefixPrinter(inner);
+
+      final event = LogEvent(Level.warning, 'test');
+      final result = printer.log(event);
+
+      expect(result, ['', '   ', '\t', '[WARNING] msg']);
+    });
+
+    test('handles different levels correctly', () {
+      final inner = _FakePrinter(['x']);
+      final printer = LevelPrefixPrinter(inner);
+
+      expect(printer.log(LogEvent(Level.all, 'x')), ['[ALL] x']);
+      expect(printer.log(LogEvent(Level.trace, 'x')), ['[TRACE] x']);
+      expect(printer.log(LogEvent(Level.debug, 'x')), ['[DEBUG] x']);
+      expect(printer.log(LogEvent(Level.info, 'x')), ['[INFO] x']);
+      expect(printer.log(LogEvent(Level.warning, 'x')), ['[WARNING] x']);
+      expect(printer.log(LogEvent(Level.error, 'x')), ['[ERROR] x']);
+      expect(printer.log(LogEvent(Level.fatal, 'x')), ['[FATAL] x']);
+    });
+  });
+}
+
+final class _FakePrinter extends LogPrinter {
+  _FakePrinter(this._lines);
+
+  final List<String> _lines;
+
+  @override
+  List<String> log(LogEvent event) => _lines;
 }
