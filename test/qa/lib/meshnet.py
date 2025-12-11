@@ -58,9 +58,11 @@ class TestUtils:
 
         # if setup_function fails, teardown won't be executed, so daemon is not stopped
         if daemon.is_running():
+            sh_no_tty.nordvpn.set.defaults("--logout", "--off-killswitch")
             daemon.stop()
 
         if daemon.is_peer_running(ssh_client):
+            ssh_client.exec_command("nordvpn set defaults --logout --off-killswitch")
             daemon.stop_peer(ssh_client)
 
         delete_machines_by_identifier(token=LOCAL_TOKEN)
