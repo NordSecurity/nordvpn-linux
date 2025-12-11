@@ -50,7 +50,7 @@ NORDVPN_GUI_LOG_LEVEL=<level> nordvpn-gui
 NORDVPN_GUI_LOG_LEVEL=<level> nordvpn.nordvpn-gui
 ```
 
-Supported levels:
+Supported levels (case insensitive):
 
 - all
 - trace
