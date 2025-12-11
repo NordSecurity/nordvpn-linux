@@ -22,7 +22,7 @@ extension StringTranslation on String {
     if (val != null) {
       return val;
     }
-    logger.d(
+    logger.t(
       "Missing translation \"$this\" for [${t.$meta.locale.languageCode}]",
     );
     return defaultValue ?? this;
