@@ -105,16 +105,6 @@ func (rdl *runDirListener) Addr() net.Addr {
 	return rdl.listener.Addr()
 }
 
-// RemoteConfigFileOps aggregates into a common interface
-// a set of file-related operations utilized for the sake of remote-config feature functionality.
-type RemoteConfigFileOps interface {
-	IsValidExistingDir(path string) (bool, error)
-	CleanupTmpFiles(targetPath, fileExt string) error
-	RenameTmpFiles(targetPath, fileExt string) error
-}
-
-type DefaultRCFileOperations struct{}
-
 // ManualListenerIfNotInUse returns manually created listener with provided permissions, it also detects if this socket
 // is in use by another process, and returns an appropriate error if it is.
 func ManualListenerIfNotInUse(socket string, perm fs.FileMode, pidfile string) func() (net.Listener, error) {
@@ -312,18 +302,6 @@ func IsFile(fileName string) bool {
 	return fileInfo.Mode().IsRegular()
 }
 
-// IsValidExistingDir check if is valid existing directory
-func (DefaultRCFileOperations) IsValidExistingDir(path string) (bool, error) {
-	info, err := os.Stat(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		}
-		return false, err
-	}
-	return info.IsDir(), nil
-}
-
 // IsSymLink check if file name is sym link
 func IsSymLink(fileName string) bool {
 	fileInfo, err := os.Lstat(fileName)
@@ -419,44 +397,6 @@ func IsFileTooBig(name string) error {
 		return fmt.Errorf("file [%s] is too big, size [%d]", name, fileSize)
 	}
 	return nil
-}
-
-// WalkFiles iterate files by given extension and do specified action
-func WalkFiles(targetPath, fileExt string, actionFunc func(string)) error {
-	err := filepath.WalkDir(targetPath, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			log.Printf(ErrorPrefix+" accessing %s: %v\n", path, err)
-			return nil // continue walking
-		}
-		// exclude symlinks
-		if d.Type()&os.ModeSymlink != 0 {
-			return nil
-		}
-		if !d.IsDir() && strings.HasSuffix(d.Name(), fileExt) {
-			actionFunc(path)
-		}
-		return nil
-	})
-	return err
-}
-
-// RenameTmpFiles rename files by removing extra extension
-func (DefaultRCFileOperations) RenameTmpFiles(targetPath, fileExt string) error {
-	return WalkFiles(targetPath, fileExt, func(path string) {
-		newPath := strings.TrimSuffix(path, fileExt)
-		if err := os.Rename(path, newPath); err != nil {
-			log.Printf(ErrorPrefix+" renaming %s to %s: %s\n", path, newPath, err)
-		}
-	})
-}
-
-// CleanupTmpFiles remove files by specified extension
-func (DefaultRCFileOperations) CleanupTmpFiles(targetPath, fileExt string) error {
-	return WalkFiles(targetPath, fileExt, func(path string) {
-		if err := os.Remove(path); err != nil {
-			log.Printf(ErrorPrefix+" removing %s: %s\n", path, err)
-		}
-	})
 }
 
 func FileSha256(filepath string) (sum []byte, err error) {

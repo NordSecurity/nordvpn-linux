@@ -3,6 +3,7 @@ package remote
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"net"
 	"os"
@@ -15,6 +16,11 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+)
+
+const (
+	envUseLocalConfig   = "RC_USE_LOCAL_CONFIG"
+	defaultFeatureState = true
 )
 
 // ConfigGetter get values from remote config
@@ -33,10 +39,65 @@ type ConfigLoader interface {
 	TryPreload()
 }
 
-const (
-	envUseLocalConfig   = "RC_USE_LOCAL_CONFIG"
-	defaultFeatureState = true
-)
+// RemoteConfigFileOps aggregates into a common interface
+// a set of file-related operations utilized for the sake of remote-config feature functionality.
+type RemoteConfigFileOps interface {
+	IsValidExistingDir(path string) (bool, error)
+	CleanupTmpFiles(targetPath, fileExt string) error
+	RenameTmpFiles(targetPath, fileExt string) error
+}
+
+type FileOpsDefaultImpl struct{}
+
+// WalkFiles iterate files by given extension and do specified action
+func (FileOpsDefaultImpl) WalkFiles(targetPath, fileExt string, actionFunc func(string)) error {
+	err := filepath.WalkDir(targetPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			log.Printf(internal.ErrorPrefix+" accessing %s: %v\n", path, err)
+			return nil // continue walking
+		}
+		// exclude symlinks
+		if d.Type()&os.ModeSymlink != 0 {
+			return nil
+		}
+		if !d.IsDir() && strings.HasSuffix(d.Name(), fileExt) {
+			actionFunc(path)
+		}
+		return nil
+	})
+	return err
+}
+
+// RenameTmpFiles rename files by removing extra extension
+func (f *FileOpsDefaultImpl) RenameTmpFiles(targetPath, fileExt string) error {
+	return f.WalkFiles(targetPath, fileExt, func(path string) {
+		newPath := strings.TrimSuffix(path, fileExt)
+		if err := os.Rename(path, newPath); err != nil {
+			log.Printf(internal.ErrorPrefix+" renaming %s to %s: %s\n", path, newPath, err)
+		}
+	})
+}
+
+// CleanupTmpFiles remove files by specified extension
+func (f *FileOpsDefaultImpl) CleanupTmpFiles(targetPath, fileExt string) error {
+	return f.WalkFiles(targetPath, fileExt, func(path string) {
+		if err := os.Remove(path); err != nil {
+			log.Printf(internal.ErrorPrefix+" removing %s: %s\n", path, err)
+		}
+	})
+}
+
+// IsValidExistingDir check if is valid existing directory
+func (FileOpsDefaultImpl) IsValidExistingDir(path string) (bool, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return info.IsDir(), nil
+}
 
 type RemoteConfigEvent struct {
 	MeshnetFeatureEnabled bool
@@ -64,7 +125,7 @@ type CdnRemoteConfig struct {
 	mu              sync.RWMutex
 	notifier        events.PublishSubcriber[RemoteConfigEvent]
 	fileOps         FileStoreOps
-	rcFileOps       internal.RemoteConfigFileOps
+	rcFileOps       RemoteConfigFileOps
 }
 
 // NewCdnRemoteConfig setup RemoteStorage based remote config loaded/getter
@@ -81,7 +142,7 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 		features:        NewFeatureMap(),
 		notifier:        &subs.Subject[RemoteConfigEvent]{},
 		fileOps:         jsonFileReaderWriter{},
-		rcFileOps:       internal.DefaultRCFileOperations{},
+		rcFileOps:       &FileOpsDefaultImpl{},
 	}
 	rc.features.add(FeatureMain)
 	rc.features.add(FeatureLibtelio)
