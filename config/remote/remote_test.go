@@ -190,7 +190,7 @@ func (cdn *mockedCdn) GetRemoteFile(name string) ([]byte, error) {
 	if content, ok := cdn.cdnFiles[name]; ok {
 		return content, nil
 	}
-	return []byte{}, nil
+	return []byte{}, fmt.Errorf("Remote file %s not found!", name)
 }
 
 func (cdn *mockedCdn) setupCDNConfigFiles() {
