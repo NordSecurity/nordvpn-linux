@@ -7,10 +7,10 @@ Keep the PR in **Draft** while you are still iterating (build, unit tests, lint,
 
 ## 2. Description 📣
 Give reviewers the essentials:
-* Current situation / problem
-* What changed (modules, files, behaviors)
-* Why it changed (link issue: `LVPN-####` if available)
-* Expected outcome / improvement
+* Current situation / problem.
+* What changed (modules, files, behaviors).
+* Why it changed (link issue: `LVPN-####` if available).
+* Expected outcome / improvement.
 
 ## 3. Size & Scope 📦
 Prefer focused PRs. If you must land something large, consider splitting it into logical parts or a temporary feature branch. If major follow‑up work appears mid‑review, open a new PR rather than stacking huge diffs. Also, when a substantial new change lands, **reset approvals** and ask for fresh reviews. 🔄
@@ -20,11 +20,11 @@ Add or update tests for new logic, edge cases, and error paths. Skipping tests s
 
 ## 5. Ownership & Hygiene 🔧
 You own the PR until merge:
-* Keep CI green (fix red builds early)
-* Resolve or explicitly defer (with issue link) all comments
-* Rebase / merge main to clear conflicts early
-* Avoid stale PRs lingering without progress
-* Consider using labels and assign yourself to the PR
+* Keep CI green (fix red builds early).
+* Resolve or explicitly defer (with issue link) all comments.
+* Rebase / merge main to clear conflicts early.
+* Avoid stale PRs lingering without progress.
+* Consider using labels and assign yourself to the PR.
 
 ### Quick Tips ✨
 * Separate mechanical changes (format, rename) from logic changes when possible.
