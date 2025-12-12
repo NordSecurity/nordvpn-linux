@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:nordvpn/data/providers/app_state_provider.dart';
 import 'package:nordvpn/data/providers/grpc_connection_controller.dart';
 import 'package:nordvpn/data/repository/account_repository.dart';

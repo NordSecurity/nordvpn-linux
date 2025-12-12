@@ -148,7 +148,7 @@ func testRPCLocal(t *testing.T) *RPC {
 	rpc := testRPC()
 
 	fs := mockconfig.NewFilesystemMock(t)
-	recentStore := recents.NewRecentConnectionsStore("/test/recents_"+t.Name()+".dat", &fs)
+	recentStore := recents.NewRecentConnectionsStore("/test/recents_"+t.Name()+".dat", &fs, nil)
 	rpc.recentVPNConnStore = recentStore
 
 	rpc.serversAPI = &deterministicServersAPI{}
@@ -446,7 +446,8 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 			expectedRecentConn: &recents.Model{
 				Country:            "Germany",
 				CountryCode:        "DE",
-				ConnectionType:     config.ServerSelectionRule_COUNTRY,
+				City:               "Berlin",
+				ConnectionType:     config.ServerSelectionRule_CITY,
 				Group:              config.ServerGroup_UNDEFINED,
 				ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
 			},
@@ -471,6 +472,7 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 			expectedRecentConn: &recents.Model{
 				Country:            "Germany",
 				CountryCode:        "DE",
+				City:               "Berlin",
 				SpecificServer:     "de3",
 				SpecificServerName: "Germany #3",
 				ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER,
@@ -503,8 +505,9 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 			expectedRecentConn: &recents.Model{
 				Country:            "Germany",
 				CountryCode:        "DE",
+				City:               "Berlin",
 				Group:              config.ServerGroup_P2P,
-				ConnectionType:     config.ServerSelectionRule_COUNTRY_WITH_GROUP,
+				ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 				ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
 			},
 			shouldAddToRecent: true,
@@ -542,10 +545,7 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 			assert.Equal(t, internal.CodeConnected, server.msg.Type)
 
 			// Manually store the pending connection (normally happens on disconnect)
-			StorePendingRecentConnection(
-				rpc.recentVPNConnStore,
-				rpc.dataUpdateEvents.RecentsUpdate.Publish,
-			)
+			storePendingRecentConnection(rpc.recentVPNConnStore)
 
 			recentConns, err := rpc.recentVPNConnStore.Get()
 			require.NoError(t, err)
@@ -574,6 +574,83 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRPCConnect_RecentConnectionsOnFailure_PreviousConnectionStored(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	defer testsCleanup()
+
+	rpc := testRPCLocal(t)
+
+	rpc.factory = func(config.Technology) (vpn.VPN, error) {
+		return &mock.WorkingVPN{}, nil
+	}
+
+	server := &mockRPCServer{}
+	err := rpc.Connect(&pb.ConnectRequest{ServerTag: "germany"}, server)
+	assert.NoError(t, err)
+	assert.Equal(t, internal.CodeConnected, server.msg.Type)
+
+	// Now try to switch to France but it fails (making networker fail)
+	rpc.netw = testnetworker.Failing{}
+	rpc.factory = func(config.Technology) (vpn.VPN, error) {
+		return &mock.FailingVPN{}, nil
+	}
+
+	server = &mockRPCServer{}
+	err = rpc.Connect(&pb.ConnectRequest{ServerTag: "france"}, server)
+	assert.NoError(t, err)
+	assert.Equal(t, internal.CodeFailure, server.msg.Type)
+
+	// Should have stored the pending connection (Germany)
+	// even though the new connection (France) failed
+	recentConns, err := rpc.recentVPNConnStore.Get()
+	assert.NoError(t, err)
+
+	// Should have the previous successful connection (Germany)
+	assert.Len(t, recentConns, 1, "Expected one recent connection from previous successful connect")
+	assert.Equal(t, "Germany", recentConns[0].Country)
+	assert.Equal(t, "DE", recentConns[0].CountryCode)
+}
+
+func TestRPCConnect_RecentConnectionsOnFailure_MultipleConnectionsPreserved(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	defer testsCleanup()
+
+	rpc := testRPCLocal(t)
+	rpc.factory = func(config.Technology) (vpn.VPN, error) {
+		return &mock.WorkingVPN{}, nil
+	}
+
+	server := &mockRPCServer{}
+	err := rpc.Connect(&pb.ConnectRequest{ServerTag: "germany"}, server)
+	assert.NoError(t, err)
+
+	server = &mockRPCServer{}
+	err = rpc.Connect(&pb.ConnectRequest{ServerTag: "france"}, server)
+	assert.NoError(t, err)
+
+	// Now try to connect to a P2P server but it fails (making networker fail)
+	rpc.netw = testnetworker.Failing{}
+	rpc.factory = func(config.Technology) (vpn.VPN, error) {
+		return &mock.FailingVPN{}, nil
+	}
+
+	server = &mockRPCServer{}
+	err = rpc.Connect(&pb.ConnectRequest{ServerGroup: "P2P"}, server)
+	assert.NoError(t, err)
+	assert.Equal(t, internal.CodeFailure, server.msg.Type)
+
+	// Should have both previous successful connections
+	recentConns, err := rpc.recentVPNConnStore.Get()
+	assert.NoError(t, err)
+	assert.Len(t, recentConns, 2, "Expected two recent connections from previous successful connects")
+
+	// Most recent successful connection should be first (France)
+	assert.Equal(t, "France", recentConns[0].Country)
+	assert.Equal(t, "Germany", recentConns[1].Country)
 }
 
 func TestRPCConnect_RecentConnectionsMultiple(t *testing.T) {

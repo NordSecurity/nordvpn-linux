@@ -89,7 +89,12 @@
   "doubleVpn": "Double VPN",
   "onionOverVpn": "Onion over VPN",
   "p2p": "P2P",
+  "europe": "Europe",
+  "theAmericas": "The Americas",
+  "asiaPacific": "Asia Pacific",
+  "africaTheMiddleEastAndIndia": "Africa, the Middle East, and India",
   "obfuscated": "Obfuscated",
+  "obfuscatedServers": "Obfuscated Servers",
   "selectServerForDip": "Pick a location for your IP",
   "selectLocation": "Select location",
   "dipSelectLocationDescription": "You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.",
@@ -114,7 +119,7 @@
   "vpnConnection": "VPN connection",
   "vpnConnectionSubtitle": "Auto-connect, Kill Switch, protocol",
   "autoConnectDescription": "Automatically connect to the fastest available server or your chosen server location when the app starts.",
-  "fastestServer": "Fastest server",
+  "fastestServer": "Fastest",
   "change": "Change",
   "nordLynx": "NordLynx",
   "openVpnTcp": "OpenVPN (TCP)",
@@ -253,5 +258,7 @@
   "manageSubscription": "Manage subscription",
   "changePassword": "Change password",
   "productHub": "Product Hub",
-  "subscriptionInactive": "Inactive"
+  "subscriptionInactive": "Inactive",
+  "recentConnections": "Recent connections",
+  "standardVpnServer": "Standard VPN Servers"
 }

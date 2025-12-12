@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$VpnStatus {
 
- String? get ip; String? get hostname; City? get city; Country? get country; ConnectionState get status; VpnProtocol get protocol; bool get isVirtualLocation; ConnectionParameters get connectionParameters; bool get isMeshnetRouting;
+ String? get ip; String? get hostname; City? get city; Country? get country; ConnectionState get status; VpnProtocol get protocol; bool get isVirtualLocation; bool get isObfuscated; ConnectionParameters get connectionParameters; bool get isMeshnetRouting;
 /// Create a copy of VpnStatus
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -26,16 +26,16 @@ $VpnStatusCopyWith<VpnStatus> get copyWith => _$VpnStatusCopyWithImpl<VpnStatus>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is VpnStatus&&(identical(other.ip, ip) || other.ip == ip)&&(identical(other.hostname, hostname) || other.hostname == hostname)&&(identical(other.city, city) || other.city == city)&&(identical(other.country, country) || other.country == country)&&(identical(other.status, status) || other.status == status)&&(identical(other.protocol, protocol) || other.protocol == protocol)&&(identical(other.isVirtualLocation, isVirtualLocation) || other.isVirtualLocation == isVirtualLocation)&&(identical(other.connectionParameters, connectionParameters) || other.connectionParameters == connectionParameters)&&(identical(other.isMeshnetRouting, isMeshnetRouting) || other.isMeshnetRouting == isMeshnetRouting));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is VpnStatus&&(identical(other.ip, ip) || other.ip == ip)&&(identical(other.hostname, hostname) || other.hostname == hostname)&&(identical(other.city, city) || other.city == city)&&(identical(other.country, country) || other.country == country)&&(identical(other.status, status) || other.status == status)&&(identical(other.protocol, protocol) || other.protocol == protocol)&&(identical(other.isVirtualLocation, isVirtualLocation) || other.isVirtualLocation == isVirtualLocation)&&(identical(other.isObfuscated, isObfuscated) || other.isObfuscated == isObfuscated)&&(identical(other.connectionParameters, connectionParameters) || other.connectionParameters == connectionParameters)&&(identical(other.isMeshnetRouting, isMeshnetRouting) || other.isMeshnetRouting == isMeshnetRouting));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,ip,hostname,city,country,status,protocol,isVirtualLocation,connectionParameters,isMeshnetRouting);
+int get hashCode => Object.hash(runtimeType,ip,hostname,city,country,status,protocol,isVirtualLocation,isObfuscated,connectionParameters,isMeshnetRouting);
 
 @override
 String toString() {
-  return 'VpnStatus(ip: $ip, hostname: $hostname, city: $city, country: $country, status: $status, protocol: $protocol, isVirtualLocation: $isVirtualLocation, connectionParameters: $connectionParameters, isMeshnetRouting: $isMeshnetRouting)';
+  return 'VpnStatus(ip: $ip, hostname: $hostname, city: $city, country: $country, status: $status, protocol: $protocol, isVirtualLocation: $isVirtualLocation, isObfuscated: $isObfuscated, connectionParameters: $connectionParameters, isMeshnetRouting: $isMeshnetRouting)';
 }
 
 
@@ -46,7 +46,7 @@ abstract mixin class $VpnStatusCopyWith<$Res>  {
   factory $VpnStatusCopyWith(VpnStatus value, $Res Function(VpnStatus) _then) = _$VpnStatusCopyWithImpl;
 @useResult
 $Res call({
- String? ip, String? hostname, City? city, Country? country, ConnectionState status, VpnProtocol protocol, bool isVirtualLocation, ConnectionParameters connectionParameters, bool isMeshnetRouting
+ String? ip, String? hostname, City? city, Country? country, ConnectionState status, VpnProtocol protocol, bool isVirtualLocation, bool isObfuscated, ConnectionParameters connectionParameters, bool isMeshnetRouting
 });
 
 
@@ -62,7 +62,7 @@ class _$VpnStatusCopyWithImpl<$Res>
 
 /// Create a copy of VpnStatus
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? ip = freezed,Object? hostname = freezed,Object? city = freezed,Object? country = freezed,Object? status = null,Object? protocol = null,Object? isVirtualLocation = null,Object? connectionParameters = null,Object? isMeshnetRouting = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? ip = freezed,Object? hostname = freezed,Object? city = freezed,Object? country = freezed,Object? status = null,Object? protocol = null,Object? isVirtualLocation = null,Object? isObfuscated = null,Object? connectionParameters = null,Object? isMeshnetRouting = null,}) {
   return _then(_self.copyWith(
 ip: freezed == ip ? _self.ip : ip // ignore: cast_nullable_to_non_nullable
 as String?,hostname: freezed == hostname ? _self.hostname : hostname // ignore: cast_nullable_to_non_nullable
@@ -71,6 +71,7 @@ as City?,country: freezed == country ? _self.country : country // ignore: cast_n
 as Country?,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as ConnectionState,protocol: null == protocol ? _self.protocol : protocol // ignore: cast_nullable_to_non_nullable
 as VpnProtocol,isVirtualLocation: null == isVirtualLocation ? _self.isVirtualLocation : isVirtualLocation // ignore: cast_nullable_to_non_nullable
+as bool,isObfuscated: null == isObfuscated ? _self.isObfuscated : isObfuscated // ignore: cast_nullable_to_non_nullable
 as bool,connectionParameters: null == connectionParameters ? _self.connectionParameters : connectionParameters // ignore: cast_nullable_to_non_nullable
 as ConnectionParameters,isMeshnetRouting: null == isMeshnetRouting ? _self.isMeshnetRouting : isMeshnetRouting // ignore: cast_nullable_to_non_nullable
 as bool,
@@ -84,7 +85,7 @@ as bool,
 
 
 class _VpnStatus extends VpnStatus {
-  const _VpnStatus({required this.ip, required this.hostname, required this.city, required this.country, required this.status, required this.protocol, required this.isVirtualLocation, required this.connectionParameters, required this.isMeshnetRouting}): super._();
+  const _VpnStatus({required this.ip, required this.hostname, required this.city, required this.country, required this.status, required this.protocol, required this.isVirtualLocation, required this.isObfuscated, required this.connectionParameters, required this.isMeshnetRouting}): super._();
   
 
 @override final  String? ip;
@@ -94,6 +95,7 @@ class _VpnStatus extends VpnStatus {
 @override final  ConnectionState status;
 @override final  VpnProtocol protocol;
 @override final  bool isVirtualLocation;
+@override final  bool isObfuscated;
 @override final  ConnectionParameters connectionParameters;
 @override final  bool isMeshnetRouting;
 
@@ -107,16 +109,16 @@ _$VpnStatusCopyWith<_VpnStatus> get copyWith => __$VpnStatusCopyWithImpl<_VpnSta
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _VpnStatus&&(identical(other.ip, ip) || other.ip == ip)&&(identical(other.hostname, hostname) || other.hostname == hostname)&&(identical(other.city, city) || other.city == city)&&(identical(other.country, country) || other.country == country)&&(identical(other.status, status) || other.status == status)&&(identical(other.protocol, protocol) || other.protocol == protocol)&&(identical(other.isVirtualLocation, isVirtualLocation) || other.isVirtualLocation == isVirtualLocation)&&(identical(other.connectionParameters, connectionParameters) || other.connectionParameters == connectionParameters)&&(identical(other.isMeshnetRouting, isMeshnetRouting) || other.isMeshnetRouting == isMeshnetRouting));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _VpnStatus&&(identical(other.ip, ip) || other.ip == ip)&&(identical(other.hostname, hostname) || other.hostname == hostname)&&(identical(other.city, city) || other.city == city)&&(identical(other.country, country) || other.country == country)&&(identical(other.status, status) || other.status == status)&&(identical(other.protocol, protocol) || other.protocol == protocol)&&(identical(other.isVirtualLocation, isVirtualLocation) || other.isVirtualLocation == isVirtualLocation)&&(identical(other.isObfuscated, isObfuscated) || other.isObfuscated == isObfuscated)&&(identical(other.connectionParameters, connectionParameters) || other.connectionParameters == connectionParameters)&&(identical(other.isMeshnetRouting, isMeshnetRouting) || other.isMeshnetRouting == isMeshnetRouting));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,ip,hostname,city,country,status,protocol,isVirtualLocation,connectionParameters,isMeshnetRouting);
+int get hashCode => Object.hash(runtimeType,ip,hostname,city,country,status,protocol,isVirtualLocation,isObfuscated,connectionParameters,isMeshnetRouting);
 
 @override
 String toString() {
-  return 'VpnStatus(ip: $ip, hostname: $hostname, city: $city, country: $country, status: $status, protocol: $protocol, isVirtualLocation: $isVirtualLocation, connectionParameters: $connectionParameters, isMeshnetRouting: $isMeshnetRouting)';
+  return 'VpnStatus(ip: $ip, hostname: $hostname, city: $city, country: $country, status: $status, protocol: $protocol, isVirtualLocation: $isVirtualLocation, isObfuscated: $isObfuscated, connectionParameters: $connectionParameters, isMeshnetRouting: $isMeshnetRouting)';
 }
 
 
@@ -127,7 +129,7 @@ abstract mixin class _$VpnStatusCopyWith<$Res> implements $VpnStatusCopyWith<$Re
   factory _$VpnStatusCopyWith(_VpnStatus value, $Res Function(_VpnStatus) _then) = __$VpnStatusCopyWithImpl;
 @override @useResult
 $Res call({
- String? ip, String? hostname, City? city, Country? country, ConnectionState status, VpnProtocol protocol, bool isVirtualLocation, ConnectionParameters connectionParameters, bool isMeshnetRouting
+ String? ip, String? hostname, City? city, Country? country, ConnectionState status, VpnProtocol protocol, bool isVirtualLocation, bool isObfuscated, ConnectionParameters connectionParameters, bool isMeshnetRouting
 });
 
 
@@ -143,7 +145,7 @@ class __$VpnStatusCopyWithImpl<$Res>
 
 /// Create a copy of VpnStatus
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? ip = freezed,Object? hostname = freezed,Object? city = freezed,Object? country = freezed,Object? status = null,Object? protocol = null,Object? isVirtualLocation = null,Object? connectionParameters = null,Object? isMeshnetRouting = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? ip = freezed,Object? hostname = freezed,Object? city = freezed,Object? country = freezed,Object? status = null,Object? protocol = null,Object? isVirtualLocation = null,Object? isObfuscated = null,Object? connectionParameters = null,Object? isMeshnetRouting = null,}) {
   return _then(_VpnStatus(
 ip: freezed == ip ? _self.ip : ip // ignore: cast_nullable_to_non_nullable
 as String?,hostname: freezed == hostname ? _self.hostname : hostname // ignore: cast_nullable_to_non_nullable
@@ -152,6 +154,7 @@ as City?,country: freezed == country ? _self.country : country // ignore: cast_n
 as Country?,status: null == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as ConnectionState,protocol: null == protocol ? _self.protocol : protocol // ignore: cast_nullable_to_non_nullable
 as VpnProtocol,isVirtualLocation: null == isVirtualLocation ? _self.isVirtualLocation : isVirtualLocation // ignore: cast_nullable_to_non_nullable
+as bool,isObfuscated: null == isObfuscated ? _self.isObfuscated : isObfuscated // ignore: cast_nullable_to_non_nullable
 as bool,connectionParameters: null == connectionParameters ? _self.connectionParameters : connectionParameters // ignore: cast_nullable_to_non_nullable
 as ConnectionParameters,isMeshnetRouting: null == isMeshnetRouting ? _self.isMeshnetRouting : isMeshnetRouting // ignore: cast_nullable_to_non_nullable
 as bool,

@@ -19,6 +19,7 @@ const loginTimeoutDuration = Duration(seconds: 10);
 const maxInt32 = 0xffffffff;
 const maxInt16 = 0xffff;
 const maxCustomDnsServers = 3;
+const maxRecentConnections = 3;
 // Maximum number of servers returned when searching after the server number '#'
 const maxNumberOfServersResults = 50;
 
@@ -51,3 +52,11 @@ const dedicatedIp = "Dedicated_IP";
 const onionOverVpn = "Onion_Over_VPN";
 const p2p = "p2p";
 const obfuscatedServers = "Obfuscated_Servers";
+// [Deprecated] Region
+const europe = "Europe";
+// [Deprecated] Region
+const theAmericas = "The_Americas";
+// [Deprecated] Region
+const asiaPacific = "Asia_Pacific";
+// [Deprecated] Region
+const africaTheMiddleEastAndIndia = "Africa_The_Middle_East_and_India";
