@@ -1,5 +1,6 @@
 import contextlib
 import json
+import subprocess
 import time
 from collections import namedtuple
 
@@ -26,20 +27,43 @@ class Ssh:
     def connect(self):
         self.client.connect(self.hostname, 22, username=self.username, password=self.password)
 
-    def exec_command(self, command: str, timeout=16) -> str:
-        _, stdout, stderr = self.client.exec_command(command, timeout=timeout) # TODO: LVPN-9477
-        try:
-            output = stdout.read().decode()
-            error = stderr.read().decode()
-        except TimeoutError as err:
-            stdout.close()
-            stderr.close()
-            raise RuntimeError("Socket timed out.") from err
+    # def exec_command(self, command: str, timeout=16) -> str:
+    #     _, stdout, stderr = self.client.exec_command(command, timeout=timeout) # TODO: LVPN-9477
+    #     try:
+    #         output = stdout.read().decode()
+    #         error = stderr.read().decode()
+    #     except TimeoutError as err:
+    #         stdout.close()
+    #         stderr.close()
+    #         raise RuntimeError("Socket timed out.") from err
+    #
+    #     if stdout.channel.recv_exit_status() != 0:
+    #         msg = f'{output} {error}'
+    #         raise RuntimeError(msg)
+    #     return output
 
-        if stdout.channel.recv_exit_status() != 0:
-            msg = f'{output} {error}'
-            raise RuntimeError(msg)
-        return output
+    def exec_command(self, command: str, timeout=16) -> str:
+        ssh_command = [
+            "sshpass", "-p", "root",
+            "ssh",
+            "-o", "StrictHostKeyChecking=no",
+            "-o", "UserKnownHostsFile=/dev/null",
+            f"root@qa-peer",
+            command
+        ]
+        try:
+            print(f"Running command via subprocess + ssh: \n{' '.join(ssh_command)}")
+            result = subprocess.run(
+                ssh_command,
+                capture_output=True,
+                text=True,
+                timeout=timeout
+            )
+            if result.returncode != 0:
+                raise RuntimeError(result.stdout + result.stderr)
+            return result.stdout
+        except subprocess.TimeoutExpired as err:
+            raise RuntimeError("Socket timed out.") from err
 
     # Sends file in the provided path to the ssh peer
     # path and remote_path MUST be different, otherwise an empty file will be uploaded (fails to read local file for some reason)

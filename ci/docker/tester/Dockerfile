@@ -20,6 +20,10 @@ RUN apt-get update && \
         tshark \
         # changelog parsing
         dpkg-dev \
+        # SSH password tool
+        sshpass \
+        # SSH client
+        openssh-client \
         # deb package tools
         devscripts && \
     # make sure, that Docker does not hang during installation, when we get TUI screen
