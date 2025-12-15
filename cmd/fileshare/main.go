@@ -11,6 +11,7 @@ import (
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
 	"net/netip"
 	"os"
+	"os/user"
 	"path/filepath"
 	"runtime/debug"
 
@@ -182,10 +183,17 @@ func main() {
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
+	isProdEnv := internal.IsProdEnv(Environment)
+	if !isProdEnv && isRunningInTestingEnv() {
+		// In tests always set the env to prod, to prevent libdrop failures because moose cannot be initialized
+		isProdEnv = true
+		log.Println(internal.DebugPrefix, "Use prod env for fileshare")
+	}
+
 	fileshareImplementation, fileshareStorage, err := newFileshare(
 		eventManager,
 		eventsDBPath,
-		internal.IsProdEnv(Environment),
+		isProdEnv,
 		fileshare.NewPubkeyProvider(meshClient).PubkeyFunc,
 		string(meshPrivKey),
 		storagePath,
@@ -276,4 +284,17 @@ func firstAddressByInterfaceName(name string) (netip.Addr, error) {
 	}
 
 	return ip.Addr(), nil
+}
+
+// Detect if the running environment is the qa or qapeer docker image
+func isRunningInTestingEnv() bool {
+	if u, err := user.Lookup("qa"); err == nil {
+		return u.HomeDir == "/home/qa"
+	}
+
+	if u, err := user.Lookup("qapeer"); err == nil {
+		return u.HomeDir == "/home/qapeer"
+	}
+
+	return false
 }
