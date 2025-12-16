@@ -102,7 +102,8 @@ final class MockApplicationSettings extends CancelableDelayed {
     stream.add(AppState(settingsChange: s));
 
     // Check if VPN is active to return appropriate status
-    final isVpnActive = vpnStatus.status.state == ConnectionState.CONNECTED ||
+    final isVpnActive =
+        vpnStatus.status.state == ConnectionState.CONNECTED ||
         vpnStatus.status.state == ConnectionState.CONNECTING;
 
     return Payload(
@@ -271,8 +272,9 @@ final class MockApplicationSettings extends CancelableDelayed {
 
     return SetProtocolResponse(
       setProtocolStatus: isConnected
-          ? SetProtocolStatus.PROTOCOL_CONFIGURED_VPN_ON  // Show reconnect popup
-          : SetProtocolStatus.PROTOCOL_CONFIGURED,         // No popup
+          ? SetProtocolStatus
+                .PROTOCOL_CONFIGURED_VPN_ON // Show reconnect popup
+          : SetProtocolStatus.PROTOCOL_CONFIGURED, // No popup
     );
   }
 
