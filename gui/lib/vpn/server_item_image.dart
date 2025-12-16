@@ -11,11 +11,7 @@ final class ServerItemImage extends ConsumerWidget {
   final Widget image;
   final bool Function(VpnStatus)? shouldHighlight;
 
-  const ServerItemImage({
-    super.key,
-    required this.image,
-    this.shouldHighlight,
-  });
+  const ServerItemImage({super.key, required this.image, this.shouldHighlight});
 
   @override
   // Build the icon for a server. The icon reacts to VPN status changes

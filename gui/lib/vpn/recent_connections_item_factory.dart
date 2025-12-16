@@ -78,7 +78,8 @@ final class RecentConnectionsItemFactory {
         final country = Country.fromCode(model.countryCode);
         var subtitle = country.localizedName;
         final city = model.city;
-        subtitle += " - ${city.isEmpty ? t.ui.fastestServer : City(city).localizedName}";
+        subtitle +=
+            " - ${city.isEmpty ? t.ui.fastestServer : City(city).localizedName}";
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,

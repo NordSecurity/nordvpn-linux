@@ -19,6 +19,7 @@ GRPC_FILES=(
     "protobuf/daemon/service.proto"
     "protobuf/meshnet/service.proto"
     "protobuf/fileshare/service.proto"
+    "protobuf/snapconf/snapconf.proto"
 )
 echo "**** Generate GRPC files *****"
 for i in "${GRPC_FILES[@]}"; do
@@ -34,7 +35,7 @@ for i in "${GRPC_FILES[@]}"; do
     popd >/dev/null
 done
 
-PROTO_FILES=$(find ./protobuf -name "*.proto" ! -name service.proto -not -path "*/snapconf/*" -not -path "*/norduser/*" -not -path "*/libtelio/*" -not -path "*/parts/*")
+PROTO_FILES=$(find ./protobuf -name "*.proto" ! -name service.proto -not -path "*/norduser/*" -not -path "*/libtelio/*" -not -path "*/parts/*")
 
 echo "**** Generate files *****"
 for i in ${PROTO_FILES}; do
