@@ -125,16 +125,14 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
       noButtonText: t.ui.cancel,
       yesButtonText: t.ui.reconnectNow,
       yesAction: (ref) {
-        Future(() async {
-          final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
-          if (vpnStatus == null) {
-            logger.e('Cannot reconnect: vpnStatus is null');
-            return;
-          }
-          await ref
-              .read(vpnStatusControllerProvider.notifier)
-              .reconnect(vpnStatus.connectionParameters);
-        });
+        final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
+        if (vpnStatus == null) {
+          logger.e('Cannot reconnect: vpnStatus is null');
+          return;
+        }
+        ref
+            .read(vpnStatusControllerProvider.notifier)
+            .reconnect(vpnStatus.connectionParameters);
       },
     ),
 
