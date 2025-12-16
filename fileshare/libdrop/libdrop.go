@@ -247,7 +247,20 @@ func (f *Fileshare) start(
 		AutoRetryIntervalMs: &autoRetryIntervalMs,
 	}
 
-	return f.norddrop.Start(listenAddr.String(), config)
+	var err error
+	for i := range 5 {
+		err = f.norddrop.Start(listenAddr.String(), config)
+		if err != nil && !f.isProd && errors.Is(err, norddrop.ErrLibdropErrorUnknown) {
+			// for debug libdrop fails with unknown error when moose init fails to initialize, in this case add retry
+			log.Println(internal.DebugPrefix, "failed to start libdrop. Retry", i)
+			time.Sleep(10 * time.Millisecond)
+			continue
+		}
+
+		return err
+	}
+
+	return err
 }
 
 // Disable executes Stop in norddrop library. Other Fileshare methods can't be called until
