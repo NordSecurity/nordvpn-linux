@@ -116,7 +116,7 @@ func testRPC() *RPC {
 		mock.NewRemoteConfigMock(),
 		state.NewConnectionInfo(),
 		NewConsentChecker(false, cm, api, &workingLoginChecker{}, &analytics),
-		recents.NewRecentConnectionsStore(TestdataPath+TestRecentConnFile, &config.StdFilesystemHandle{}),
+		recents.NewRecentConnectionsStore(TestdataPath+TestRecentConnFile, &config.StdFilesystemHandle{}, nil),
 		daemonEvents.NewDataUpdateEvents(),
 	)
 }
