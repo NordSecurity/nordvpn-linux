@@ -19,7 +19,6 @@ import 'package:nordvpn/settings/settings_home_screen.dart';
 import 'package:nordvpn/settings/terms_screen.dart';
 import 'package:nordvpn/settings/threat_protection_settings.dart';
 import 'package:nordvpn/settings/vpn_connection_settings.dart';
-import 'package:nordvpn/snap/snap_screen.dart';
 import 'package:nordvpn/vpn/vpn.dart';
 import 'package:nordvpn/widgets/responsive_scaffold.dart';
 import 'package:nordvpn/widgets/widgets_showcase.dart';
@@ -106,7 +105,6 @@ List<RouteBase> configureRoutes() {
     _route(AppRoute.errorScreen, const ErrorScreen()),
     _route(AppRoute.login, const LoginScreen()),
     _route(AppRoute.consentScreen, const ConsentScreen()),
-    _route(AppRoute.missingSnapPermissions, const SnapScreen()),
 
     _routeWithAppScaffold(
       RouteMetadata(route: AppRoute.vpn, screen: const VpnWidget()),

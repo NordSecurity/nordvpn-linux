@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grpc/grpc.dart';
 import 'package:nordvpn/data/models/application_error.dart';
 import 'package:nordvpn/data/providers/account_controller.dart';
 import 'package:nordvpn/data/providers/consent_status_provider.dart';
 import 'package:nordvpn/data/providers/grpc_connection_controller.dart';
 import 'package:nordvpn/data/providers/login_status_provider.dart';
-import 'package:nordvpn/data/providers/snap_permissions_provider.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/urls.dart';
 import 'package:nordvpn/logger.dart';
+import 'package:nordvpn/pb/snapconf/snapconf.pb.dart';
+import 'package:nordvpn/snap/snap_helpers.dart';
+import 'package:nordvpn/snap/snap_screen.dart';
 import 'package:nordvpn/widgets/copy_field.dart';
 import 'package:nordvpn/widgets/full_screen_error.dart';
 import 'package:nordvpn/widgets/full_screen_scaffold.dart';
@@ -26,6 +29,20 @@ final class ErrorScreen extends ConsumerWidget {
 
     if (connectionProvider case AsyncError(:final error)) {
       logger.i("connection error $error");
+
+      // Check for snap permissions error
+      if (error is ApplicationError &&
+          error.code == AppStatusCode.snapInterfaces) {
+        final missingPermissions = _extractMissingConnections(
+          error.originalError,
+        );
+        if (missingPermissions.isNotEmpty) {
+          return SnapScreen(missingPermissions: missingPermissions);
+        } else {
+          logger.w("_extractMissingConnections returned an empty list");
+        }
+      }
+
       return _displayError(_dataForGrpcError(error));
     }
 
@@ -109,6 +126,12 @@ ErrorData _dataForApplicationError(ApplicationError error) {
     case AppStatusCode.unknown:
       // for unknown issues display the generic screen
       break;
+
+    case AppStatusCode.snapInterfaces:
+      logger.w(
+        "Processing a AppStatusCode.snapInterfaces, this should not happen",
+      );
+      break;
   }
 
   return _genericErrorMessage();
@@ -157,7 +180,7 @@ ErrorData _dataForAccountError(WidgetRef ref) {
 }
 
 CopyField _buildCopyFieldForSocketNotFound() {
-  if (SnapPermissions.isSnapContext()) {
+  if (SnapHelpers.isSnapContext()) {
     return CopyField(items: [CopyItem(command: "sudo snap start nordvpn")]);
   }
 
@@ -173,4 +196,25 @@ CopyField _buildCopyFieldForSocketNotFound() {
       ),
     ],
   );
+}
+
+List<String> _extractMissingConnections(Object? error) {
+  if (error is! GrpcError) return const [];
+
+  if (error.details != null) {
+    for (var detail in error.details!) {
+      if (detail is Any && detail.typeUrl.endsWith('ErrMissingConnections')) {
+        try {
+          return ErrMissingConnections.fromBuffer(
+            detail.value,
+          ).missingConnections;
+        } catch (_) {
+          logger.e("Failed to parse ErrMissingConnections");
+          return const [];
+        }
+      }
+    }
+  }
+
+  return const [];
 }

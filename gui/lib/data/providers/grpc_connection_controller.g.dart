@@ -7,7 +7,7 @@ part of 'grpc_connection_controller.dart';
 // **************************************************************************
 
 String _$grpcConnectionControllerHash() =>
-    r'031d234165569af2bc933993b1ae1c54f3d74a8e';
+    r'bf7012b4c1bec648b0c481212c9ce737a6c8d83a';
 
 /// See also [GrpcConnectionController].
 @ProviderFor(GrpcConnectionController)

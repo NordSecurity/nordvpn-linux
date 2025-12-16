@@ -37,10 +37,10 @@ class GrpcConnectionController extends _$GrpcConnectionController {
         .listen((error) => _onGrpcInterceptorError(error));
 
     _pingTimer = Timer.periodic(_pingCallTimeout, (timer) async {
-      await _pingDaemon();
+      await pingDaemon();
     });
 
-    _pingDaemon();
+    pingDaemon();
     ref.onDispose(_dispose);
 
     return true;
@@ -109,7 +109,7 @@ class GrpcConnectionController extends _$GrpcConnectionController {
     state = const AsyncData(true);
   }
 
-  Future<void> _pingDaemon() async {
+  Future<void> pingDaemon() async {
     try {
       // Timeout is used for when the user was part of the nordvpn group,
       // but later was removed without rebooting the system. Because of this
@@ -153,6 +153,7 @@ class GrpcConnectionController extends _$GrpcConnectionController {
   }
 
   void _onGrpcInterceptorError(ErrorGrpc error) {
+    logger.e("Intercepted an error $error");
     // deadline is ignored because this happens for a gRPC call and not for
     // the pinging of the daemon from here. And in that case the app must no
     // be put in error mode.
@@ -187,6 +188,12 @@ class GrpcConnectionController extends _$GrpcConnectionController {
 
         case StatusCode.unavailable:
           return _mapErrorMessageToStatus(error.message);
+
+        case StatusCode.permissionDenied:
+          final message = error.message?.toLowerCase() ?? "";
+          if (message.contains("snap")) {
+            return AppStatusCode.snapInterfaces;
+          }
 
         case StatusCode.deadlineExceeded:
           // this is important only for pinging the daemon. And it is used to
