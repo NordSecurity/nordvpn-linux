@@ -742,7 +742,7 @@ func TestFeatureLoad(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.feature.load(test.sourcePath, test.fileReader, test.validator, &FileOpsDefaultImpl{})
+			err := test.feature.load(test.sourcePath, test.fileReader, test.validator, &fileOpsDefaultImpl{})
 
 			if test.expectedError != nil {
 				assert.Error(t, err)
@@ -941,7 +941,7 @@ func TestFeatureLoadWithIncludeFiles(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.feature.load(tempDir, test.fileReader, test.validator, &FileOpsDefaultImpl{})
+			err := test.feature.load(tempDir, test.fileReader, test.validator, &fileOpsDefaultImpl{})
 
 			if test.expectSuccess {
 				assert.NoError(t, err)
@@ -1094,7 +1094,7 @@ func TestHandleIncludeFilesEdgeCases(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := test.feature.load(tempDir, test.fileReader, test.validator, &FileOpsDefaultImpl{})
+			err := test.feature.load(tempDir, test.fileReader, test.validator, &fileOpsDefaultImpl{})
 
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), test.errorContains)
@@ -1393,7 +1393,7 @@ func TestFeatureDownloadErrors(t *testing.T) {
 				test.validator,
 				test.cdnBasePath,
 				test.targetPath,
-				&FileOpsDefaultImpl{},
+				&fileOpsDefaultImpl{},
 			)
 
 			if test.skipHashCheck {
@@ -1517,7 +1517,7 @@ func TestFeatureLoadFieldValidationErrors(t *testing.T) {
 				},
 			}
 
-			err := feature.load(tempDir, fileReader, &mockValidator{}, &FileOpsDefaultImpl{})
+			err := feature.load(tempDir, fileReader, &mockValidator{}, &fileOpsDefaultImpl{})
 
 			assert.Error(t, err)
 

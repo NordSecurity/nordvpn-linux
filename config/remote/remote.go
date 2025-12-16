@@ -39,18 +39,18 @@ type ConfigLoader interface {
 	TryPreload()
 }
 
-// RemoteConfigFileOps aggregates into a common interface
+// remoteConfigFileOps aggregates into a common interface
 // a set of file-related operations utilized for the sake of remote-config feature functionality.
-type RemoteConfigFileOps interface {
+type remoteConfigFileOps interface {
 	IsValidExistingDir(path string) (bool, error)
 	CleanupTmpFiles(targetPath, fileExt string) error
 	RenameTmpFiles(targetPath, fileExt string) error
 }
 
-type FileOpsDefaultImpl struct{}
+type fileOpsDefaultImpl struct{}
 
 // WalkFiles iterate files by given extension and do specified action
-func (FileOpsDefaultImpl) WalkFiles(targetPath, fileExt string, actionFunc func(string)) error {
+func (fileOpsDefaultImpl) WalkFiles(targetPath, fileExt string, actionFunc func(string)) error {
 	err := filepath.WalkDir(targetPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			log.Printf(internal.ErrorPrefix+" accessing %s: %v\n", path, err)
@@ -69,7 +69,7 @@ func (FileOpsDefaultImpl) WalkFiles(targetPath, fileExt string, actionFunc func(
 }
 
 // RenameTmpFiles rename files by removing extra extension
-func (f *FileOpsDefaultImpl) RenameTmpFiles(targetPath, fileExt string) error {
+func (f fileOpsDefaultImpl) RenameTmpFiles(targetPath, fileExt string) error {
 	return f.WalkFiles(targetPath, fileExt, func(path string) {
 		newPath := strings.TrimSuffix(path, fileExt)
 		if err := os.Rename(path, newPath); err != nil {
@@ -79,7 +79,7 @@ func (f *FileOpsDefaultImpl) RenameTmpFiles(targetPath, fileExt string) error {
 }
 
 // CleanupTmpFiles remove files by specified extension
-func (f *FileOpsDefaultImpl) CleanupTmpFiles(targetPath, fileExt string) error {
+func (f fileOpsDefaultImpl) CleanupTmpFiles(targetPath, fileExt string) error {
 	return f.WalkFiles(targetPath, fileExt, func(path string) {
 		if err := os.Remove(path); err != nil {
 			log.Printf(internal.ErrorPrefix+" removing %s: %s\n", path, err)
@@ -88,7 +88,7 @@ func (f *FileOpsDefaultImpl) CleanupTmpFiles(targetPath, fileExt string) error {
 }
 
 // IsValidExistingDir check if is valid existing directory
-func (FileOpsDefaultImpl) IsValidExistingDir(path string) (bool, error) {
+func (fileOpsDefaultImpl) IsValidExistingDir(path string) (bool, error) {
 	info, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -107,8 +107,8 @@ type RemoteConfigNotifier interface {
 	RemoteConfigUpdate(RemoteConfigEvent) error
 }
 
-// FileStoreOps aggregates file relevant operations under a common interface
-type FileStoreOps interface {
+// fileStoreOps aggregates file relevant operations under a common interface
+type fileStoreOps interface {
 	writeFile(name string, content []byte, mode os.FileMode) error
 	readFile(name string) ([]byte, error)
 }
@@ -124,8 +124,8 @@ type CdnRemoteConfig struct {
 	analytics       Analytics
 	mu              sync.RWMutex
 	notifier        events.PublishSubcriber[RemoteConfigEvent]
-	fileOps         FileStoreOps
-	rcFileOps       RemoteConfigFileOps
+	fileOps         fileStoreOps
+	rcFileOps       remoteConfigFileOps
 }
 
 // NewCdnRemoteConfig setup RemoteStorage based remote config loaded/getter
@@ -142,7 +142,7 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 		features:        NewFeatureMap(),
 		notifier:        &subs.Subject[RemoteConfigEvent]{},
 		fileOps:         jsonFileReaderWriter{},
-		rcFileOps:       &FileOpsDefaultImpl{},
+		rcFileOps:       &fileOpsDefaultImpl{},
 	}
 	rc.features.add(FeatureMain)
 	rc.features.add(FeatureLibtelio)
