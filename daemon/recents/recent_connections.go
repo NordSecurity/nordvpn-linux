@@ -24,16 +24,23 @@ type RecentConnectionsStore struct {
 	fsHandle          config.FilesystemHandle
 	mu                sync.Mutex
 	pendingConnection Model
+	onDataChangedFunc func()
 }
 
-// NewRecentConnectionsStore creates a recent VPN connection store
+// NewRecentConnectionsStore creates a recent VPN connection store.
+// The path specifies where recent connections will be stored.
+// The fsHandle provides filesystem operations for reading and writing data.
+// The onDataChangedFunc is an optional callback invoked when data changes;
+// pass nil to disable event publishing.
 func NewRecentConnectionsStore(
 	path string,
 	fsHandle config.FilesystemHandle,
+	onDataChangedFunc func(),
 ) *RecentConnectionsStore {
 	return &RecentConnectionsStore{
-		path:     path,
-		fsHandle: fsHandle,
+		path:              path,
+		fsHandle:          fsHandle,
+		onDataChangedFunc: onDataChangedFunc,
 	}
 }
 
@@ -60,20 +67,6 @@ func (r *RecentConnectionsStore) Get() ([]Model, error) {
 	return conns, nil
 }
 
-func (r *RecentConnectionsStore) find(model Model, list []Model) int {
-	return slices.IndexFunc(list, func(m Model) bool {
-		return m.Country == model.Country &&
-			m.City == model.City &&
-			m.Group == model.Group &&
-			m.CountryCode == model.CountryCode &&
-			m.SpecificServerName == model.SpecificServerName &&
-			m.SpecificServer == model.SpecificServer &&
-			m.ConnectionType == model.ConnectionType &&
-			slices.Equal(m.ServerTechnologies, model.ServerTechnologies) &&
-			m.IsVirtual == model.IsVirtual
-	})
-}
-
 // Add adds a new VPN connection to store if it does not exist yet
 // New connections are placed at the beginning of the store
 func (r *RecentConnectionsStore) Add(model Model) error {
@@ -97,18 +90,41 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 
 	// Sort server technologies, so that the order does not affect equality checks
 	slices.Sort(model.ServerTechnologies)
-	index := r.find(model, connections)
-	if index != -1 {
-		connections = slices.Delete(connections, index, index+1)
-	}
 
-	connections = slices.Insert(connections, 0, model)
+	// Find matches that have the same connection model with technologies and connection type
+	// considered
+	matches := newFilter(model, connections).
+		withSpecificServerOnlyFor([]config.ServerSelectionRule{
+			config.ServerSelectionRule_SPECIFIC_SERVER,
+			config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
+		}).
+		withTechnologies(model.ServerTechnologies).
+		apply()
+
+	// For now we select input model as the entry to insert
+	modelToInsert := model
+	if len(matches) > 0 {
+		// Found existing entry - move it to the front
+		modelToInsert = matches[0]
+		index := slices.IndexFunc(connections, func(c Model) bool {
+			return c.Equals(modelToInsert)
+		})
+		if index != -1 {
+			connections = slices.Delete(connections, index, index+1)
+		}
+	}
+	connections = slices.Insert(connections, 0, modelToInsert)
+
 	if len(connections) > maxRecentConnections {
 		connections = connections[:maxRecentConnections]
 	}
 
 	if err := r.save(connections); err != nil {
 		return fmt.Errorf("adding new recent vpn connection: %w", err)
+	}
+
+	if r.onDataChangedFunc != nil {
+		r.onDataChangedFunc()
 	}
 
 	return nil
@@ -136,13 +152,18 @@ func (r *RecentConnectionsStore) PopPending() (bool, Model) {
 	return true, connection
 }
 
-// Clean removes all stored connection information
+// Clean removes all stored connection information.
+// On successful clean, the data change event will be published if configured.
 func (r *RecentConnectionsStore) Clean() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	if err := r.save([]Model{}); err != nil {
 		return fmt.Errorf("cleaning existing recent vpn connections: %w", err)
+	}
+
+	if r.onDataChangedFunc != nil {
+		r.onDataChangedFunc()
 	}
 
 	return nil

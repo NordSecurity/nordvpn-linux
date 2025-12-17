@@ -19,7 +19,7 @@ func TestRecentConnectionsStore_Get_EmptyStore(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	connections, err := store.Get()
 
@@ -44,7 +44,7 @@ func TestRecentConnectionsStore_Get_ExistingConnections(t *testing.T) {
 	data, _ := json.Marshal(existingConnections)
 	fs.AddFile("/test/path", data)
 
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	connections, err := store.Get()
 
@@ -57,7 +57,7 @@ func TestRecentConnectionsStore_Get_InvalidJSON(t *testing.T) {
 
 	fs := mockconfig.NewFilesystemMock(t)
 	fs.AddFile("/test/path", []byte("invalid json"))
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	connections, err := store.Get()
 
@@ -70,7 +70,7 @@ func TestRecentConnectionsStore_Add_SingleConnection(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	newConn := Model{
 		Country:        "Spain",
@@ -90,7 +90,7 @@ func TestRecentConnectionsStore_Add_MovesExistingToFront(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	conn1 := Model{
 		Country:        "Italy",
@@ -120,7 +120,7 @@ func TestRecentConnectionsStore_Add_RespectsCapacityLimit(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	for i := 0; i < maxRecentConnections+5; i++ {
 		conn := Model{
@@ -142,7 +142,7 @@ func TestRecentConnectionsStore_Add_WriteError(t *testing.T) {
 
 	fs := mockconfig.NewFilesystemMock(t)
 	fs.WriteErr = errors.New("write error")
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	conn := Model{
 		Country:        "Sweden",
@@ -159,7 +159,7 @@ func TestRecentConnectionsStore_Clean(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	conn := Model{
 		Country:        "Norway",
@@ -176,66 +176,45 @@ func TestRecentConnectionsStore_Clean(t *testing.T) {
 	assert.Empty(t, connections)
 }
 
-func TestRecentConnectionsStore_Find_ExactMatch(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
-
-	models := []Model{
-		{Country: "USA", City: "New York", ConnectionType: config.ServerSelectionRule_CITY},
-		{Country: "Germany", ConnectionType: config.ServerSelectionRule_COUNTRY},
-		{ConnectionType: config.ServerSelectionRule_RECOMMENDED},
-		{SpecificServerName: "uk1234", ConnectionType: config.ServerSelectionRule_SPECIFIC_SERVER},
-	}
-
-	assert.Equal(t, 0, store.find(models[0], models))
-	assert.Equal(t, 1, store.find(models[1], models))
-	assert.Equal(t, 2, store.find(models[2], models))
-	assert.Equal(t, 3, store.find(models[3], models))
-
-	nonExisting := Model{
-		Country:        "France",
-		ConnectionType: config.ServerSelectionRule_COUNTRY,
-	}
-	assert.Equal(t, -1, store.find(nonExisting, models))
-}
-
 func TestRecentConnectionsStore_Find_DifferentServersAreDifferent(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
-	cityConn1 := Model{
-		Country:        "Germany",
-		City:           "Berlin",
-		SpecificServer: "de123",
-		ConnectionType: config.ServerSelectionRule_CITY,
+	// For SPECIFIC_SERVER connection type, different servers should be different
+	specificConn1 := Model{
+		Country:            "Germany",
+		City:               "Berlin",
+		SpecificServerName: "de123",
+		SpecificServer:     "de123",
+		ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER,
 	}
-	cityConn2 := Model{
-		Country:        "Germany",
-		City:           "Berlin",
-		SpecificServer: "de456",
-		ConnectionType: config.ServerSelectionRule_CITY,
+	specificConn2 := Model{
+		Country:            "Germany",
+		City:               "Berlin",
+		SpecificServerName: "de456",
+		SpecificServer:     "de456",
+		ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER,
 	}
 
-	err := store.Add(cityConn1)
+	err := store.Add(specificConn1)
 	require.NoError(t, err)
-	err = store.Add(cityConn2)
+	err = store.Add(specificConn2)
 	require.NoError(t, err)
 
 	connections, err := store.Get()
 	require.NoError(t, err)
-	assert.Len(t, connections, 2)
+	assert.Len(t, connections, 2, "Different specific servers should create separate entries")
 }
 
 func TestRecentConnectionsStore_Find_AllFieldsMustMatch(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
+	// Use SPECIFIC_SERVER connection type so all fields are compared
 	base := Model{
 		Country:            "USA",
 		City:               "New York",
@@ -243,7 +222,7 @@ func TestRecentConnectionsStore_Find_AllFieldsMustMatch(t *testing.T) {
 		CountryCode:        "US",
 		SpecificServerName: "US #1234",
 		SpecificServer:     "us1234",
-		ConnectionType:     config.ServerSelectionRule_CITY,
+		ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER,
 		IsVirtual:          false,
 	}
 
@@ -252,7 +231,7 @@ func TestRecentConnectionsStore_Find_AllFieldsMustMatch(t *testing.T) {
 		{Country: base.Country, City: "Los Angeles", Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType, IsVirtual: base.IsVirtual},
 		{Country: base.Country, City: base.City, Group: config.ServerGroup_DOUBLE_VPN, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType, IsVirtual: base.IsVirtual},
 		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: "CA", SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType, IsVirtual: base.IsVirtual},
-		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: "us #5678", SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType, IsVirtual: base.IsVirtual},
+		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: "US #5678", SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType, IsVirtual: base.IsVirtual},
 		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: "us5678", ConnectionType: base.ConnectionType, IsVirtual: base.IsVirtual},
 		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: config.ServerSelectionRule_COUNTRY, IsVirtual: base.IsVirtual},
 		{Country: base.Country, City: base.City, Group: base.Group, CountryCode: base.CountryCode, SpecificServerName: base.SpecificServerName, SpecificServer: base.SpecificServer, ConnectionType: base.ConnectionType, IsVirtual: !base.IsVirtual},
@@ -268,14 +247,14 @@ func TestRecentConnectionsStore_Find_AllFieldsMustMatch(t *testing.T) {
 
 	connections, err := store.Get()
 	require.NoError(t, err)
-	assert.Len(t, connections, len(variations)+1)
+	assert.Len(t, connections, len(variations)+1, "All variations should create separate entries when using SPECIFIC_SERVER type")
 }
 
 func TestRecentConnectionsStore_Persistence(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	connections := []Model{
 		{
@@ -297,7 +276,7 @@ func TestRecentConnectionsStore_Persistence(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	store2 := NewRecentConnectionsStore("/test/path", &fs)
+	store2 := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	loadedConnections, err := store2.Get()
 	require.NoError(t, err)
@@ -311,7 +290,7 @@ func TestRecentConnectionsStore_ConcurrentAccess(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	initial := Model{
 		Country:        "Sweden",
@@ -420,7 +399,7 @@ func TestRecentConnectionsStore_RaceCondition(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	var wg sync.WaitGroup
 	const iterations = 100
@@ -460,7 +439,7 @@ func TestRecentConnectionsStore_ConcurrentAdd_OrderingGuarantee(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	denmark := Model{
 		Country:        "Denmark",
@@ -499,7 +478,7 @@ func TestRecentConnectionsStore_CheckExistence_CreatesFile(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	assert.False(t, fs.FileExists("/test/path"))
 
@@ -517,7 +496,7 @@ func TestRecentConnectionsStore_Save_Error(t *testing.T) {
 
 	fs := mockconfig.NewFilesystemMock(t)
 	fs.WriteErr = errors.New("permission denied")
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	connections := []Model{
 		{
@@ -537,7 +516,7 @@ func TestRecentConnectionsStore_Load_Error(t *testing.T) {
 
 	fs := mockconfig.NewFilesystemMock(t)
 	fs.ReadErr = errors.New("file not found")
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	connections, err := store.load()
 	assert.Error(t, err)
@@ -546,11 +525,338 @@ func TestRecentConnectionsStore_Load_Error(t *testing.T) {
 	assert.Nil(t, connections)
 }
 
+func TestRecentConnectionsStore_Add_ServerTechnologiesSorting(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	conn1 := Model{
+		Country:            "Germany",
+		ConnectionType:     config.ServerSelectionRule_COUNTRY,
+		ServerTechnologies: []core.ServerTechnology{3, 1, 2},
+	}
+
+	err := store.Add(conn1)
+	require.NoError(t, err)
+
+	connections, err := store.Get()
+	require.NoError(t, err)
+	require.Len(t, connections, 1)
+
+	assert.Equal(t, []core.ServerTechnology{1, 2, 3}, connections[0].ServerTechnologies, "ServerTechnologies should be sorted")
+
+	conn2 := Model{
+		Country:            "Germany",
+		ConnectionType:     config.ServerSelectionRule_COUNTRY,
+		ServerTechnologies: []core.ServerTechnology{2, 3, 1},
+	}
+
+	err = store.Add(conn2)
+	require.NoError(t, err)
+
+	connections, err = store.Get()
+	require.NoError(t, err)
+	require.Len(t, connections, 1, "Should have only one connection as they match after sorting")
+	assert.Equal(t, []core.ServerTechnology{1, 2, 3}, connections[0].ServerTechnologies)
+}
+
+func TestRecentConnectionsStore_Get_LoadErrorRecreatesFile(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	fs.AddFile("/test/path", []byte("corrupted data"))
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	connections, err := store.Get()
+
+	require.NoError(t, err, "Get should succeed after recreating file")
+	assert.Empty(t, connections)
+
+	data, err := fs.ReadFile("/test/path")
+	require.NoError(t, err)
+	assert.Equal(t, []byte("[]"), data, "File should be recreated with empty array")
+}
+
+func TestRecentConnectionsStore_Get_LoadErrorWithSaveError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	fs.AddFile("/test/path", []byte("corrupted data"))
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	fs.WriteErr = errors.New("write permission denied")
+
+	connections, err := store.Get()
+
+	assert.Error(t, err)
+	assert.Nil(t, connections)
+	assert.Contains(t, err.Error(), "getting recent vpn connections")
+	assert.Contains(t, err.Error(), "recreating recent connections file")
+}
+
+func TestRecentConnectionsStore_Add_LoadErrorRecreatesFile(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	fs.AddFile("/test/path", []byte("corrupted data"))
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	newConn := Model{
+		Country:        "Spain",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+
+	err := store.Add(newConn)
+	require.NoError(t, err, "Add should succeed after recreating file")
+
+	connections, err := store.Get()
+	require.NoError(t, err)
+	require.Len(t, connections, 1)
+	assert.Equal(t, newConn, connections[0])
+}
+
+func TestRecentConnectionsStore_Add_LoadErrorWithSaveError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	fs.AddFile("/test/path", []byte("corrupted data"))
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	fs.WriteErr = errors.New("write permission denied")
+
+	newConn := Model{
+		Country:        "Spain",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+
+	err := store.Add(newConn)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "adding new recent vpn connection")
+	assert.Contains(t, err.Error(), "recreating recent connections file")
+}
+
+func TestRecentConnectionsStore_Clean_WriteError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	conn := Model{
+		Country:        "Norway",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+	err := store.Add(conn)
+	require.NoError(t, err)
+
+	fs.WriteErr = errors.New("permission denied")
+
+	err = store.Clean()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "cleaning existing recent vpn connections")
+	assert.Contains(t, err.Error(), "permission denied")
+}
+
+func TestRecentConnectionsStore_Add_SpecificServerWithGroup(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	conn1 := Model{
+		SpecificServerName: "uk1234",
+		SpecificServer:     "uk1234",
+		Group:              config.ServerGroup_P2P,
+		ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
+	}
+
+	conn2 := Model{
+		SpecificServerName: "uk1234",
+		SpecificServer:     "uk1234",
+		Group:              config.ServerGroup_DOUBLE_VPN,
+		ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
+	}
+
+	err := store.Add(conn1)
+	require.NoError(t, err)
+
+	err = store.Add(conn2)
+	require.NoError(t, err)
+
+	connections, err := store.Get()
+	require.NoError(t, err)
+	assert.Len(t, connections, 2, "Different groups should create separate entries")
+}
+
+func TestRecentConnectionsStore_CheckExistence_WriteError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	fs.WriteErr = errors.New("permission denied")
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	err := store.checkExistence()
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "creating new recent vpn connections store")
+	assert.Contains(t, err.Error(), "permission denied")
+}
+
+func TestRecentConnectionsStore_Get_CheckExistenceError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	// Set write error to make checkExistence fail when trying to create the file
+	fs.WriteErr = errors.New("permission denied")
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	connections, err := store.Get()
+
+	assert.Error(t, err)
+	assert.Nil(t, connections)
+	assert.Contains(t, err.Error(), "getting recent connections")
+	assert.Contains(t, err.Error(), "permission denied")
+}
+
+func TestRecentConnectionsStore_Add_CheckExistenceError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	fs.WriteErr = errors.New("permission denied")
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	conn := Model{
+		Country:        "Spain",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+
+	err := store.Add(conn)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "adding new vpn connection")
+	assert.Contains(t, err.Error(), "permission denied")
+}
+
+func TestRecentConnectionsStore_Add_SaveErrorAfterSuccessfulLoad(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	// First add a connection successfully
+	conn1 := Model{
+		Country:        "Germany",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+	err := store.Add(conn1)
+	require.NoError(t, err)
+
+	// Now set write error to fail on the next save
+	fs.WriteErr = errors.New("disk full")
+
+	conn2 := Model{
+		Country:        "France",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+
+	err = store.Add(conn2)
+
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "adding new recent vpn connection")
+	assert.Contains(t, err.Error(), "disk full")
+}
+
+func TestRecentConnectionsStore_Add_DifferentConnectionTypes(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	tests := []struct {
+		name           string
+		conn1          Model
+		conn2          Model
+		expectSeparate bool
+		description    string
+	}{
+		{
+			name: "CITY connections with different specific servers are treated as same",
+			conn1: Model{
+				Country:        "Germany",
+				City:           "Berlin",
+				SpecificServer: "de123",
+				ConnectionType: config.ServerSelectionRule_CITY,
+			},
+			conn2: Model{
+				Country:        "Germany",
+				City:           "Berlin",
+				SpecificServer: "de456",
+				ConnectionType: config.ServerSelectionRule_CITY,
+			},
+			expectSeparate: false,
+			description:    "CITY type excludes specific server fields from matching",
+		},
+		{
+			name: "COUNTRY connections with different specific servers are treated as same",
+			conn1: Model{
+				Country:        "France",
+				SpecificServer: "fr123",
+				ConnectionType: config.ServerSelectionRule_COUNTRY,
+			},
+			conn2: Model{
+				Country:        "France",
+				SpecificServer: "fr456",
+				ConnectionType: config.ServerSelectionRule_COUNTRY,
+			},
+			expectSeparate: false,
+			description:    "COUNTRY type excludes specific server fields from matching",
+		},
+		{
+			name: "RECOMMENDED connections are all treated as same",
+			conn1: Model{
+				SpecificServer: "us123",
+				ConnectionType: config.ServerSelectionRule_RECOMMENDED,
+			},
+			conn2: Model{
+				SpecificServer: "uk456",
+				ConnectionType: config.ServerSelectionRule_RECOMMENDED,
+			},
+			expectSeparate: false,
+			description:    "RECOMMENDED type excludes specific server fields from matching",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Clean store before each test
+			err := store.Clean()
+			require.NoError(t, err)
+
+			err = store.Add(tt.conn1)
+			require.NoError(t, err)
+
+			err = store.Add(tt.conn2)
+			require.NoError(t, err)
+
+			connections, err := store.Get()
+			require.NoError(t, err)
+
+			if tt.expectSeparate {
+				assert.Len(t, connections, 2, tt.description)
+			} else {
+				assert.Len(t, connections, 1, tt.description)
+			}
+		})
+	}
+}
+
 func TestRecentConnectionsStore_AddPending_StoresPendingConnection(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	model := Model{
 		Country:        "Germany",
@@ -571,7 +877,7 @@ func TestRecentConnectionsStore_AddPending_OverwritesPreviousPending(t *testing.
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	model1 := Model{
 		Country:        "France",
@@ -596,7 +902,7 @@ func TestRecentConnectionsStore_AddPending_ConcurrentAccess(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	var wg sync.WaitGroup
 	const goroutines = 50
@@ -625,7 +931,7 @@ func TestRecentConnectionsStore_PopPending_ReturnsAndClearsPending(t *testing.T)
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	model := Model{
 		Country:        "Italy",
@@ -651,7 +957,7 @@ func TestRecentConnectionsStore_PopPending_NoPendingConnection(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	exists, model := store.PopPending()
 	assert.False(t, exists)
@@ -662,7 +968,7 @@ func TestRecentConnectionsStore_PopPending_ReturnsClone(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	original := Model{
 		Country:            "Netherlands",
@@ -693,7 +999,7 @@ func TestRecentConnectionsStore_PopPending_ConcurrentAccess(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	model := Model{
 		Country:        "Sweden",
@@ -735,7 +1041,7 @@ func TestRecentConnectionsStore_AddPending_EmptyModel(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	emptyModel := Model{}
 	store.AddPending(emptyModel)
@@ -749,7 +1055,7 @@ func TestRecentConnectionsStore_PendingWorkflow_FullCycle(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	fs := mockconfig.NewFilesystemMock(t)
-	store := NewRecentConnectionsStore("/test/path", &fs)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	// Step 1: Add a pending connection
 	model := Model{
@@ -779,4 +1085,214 @@ func TestRecentConnectionsStore_PendingWorkflow_FullCycle(t *testing.T) {
 	exists, empty := store.PopPending()
 	assert.False(t, exists)
 	assert.True(t, empty.IsEmpty())
+}
+
+func TestRecentConnectionsStore_Add_PublishesEventOnSuccess(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+
+	eventPublished := false
+	eventPublisher := func() {
+		eventPublished = true
+	}
+
+	store := NewRecentConnectionsStore("/test/path", &fs, eventPublisher)
+
+	conn := Model{
+		Country:        "Germany",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+
+	err := store.Add(conn)
+	require.NoError(t, err)
+	assert.True(t, eventPublished, "Event should be published after successful Add")
+}
+
+func TestRecentConnectionsStore_Add_DoesNotPublishEventOnError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	fs.WriteErr = errors.New("write error")
+
+	eventPublished := false
+	eventPublisher := func() {
+		eventPublished = true
+	}
+
+	store := NewRecentConnectionsStore("/test/path", &fs, eventPublisher)
+
+	conn := Model{
+		Country:        "Germany",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+
+	err := store.Add(conn)
+	assert.Error(t, err)
+	assert.False(t, eventPublished, "Event should NOT be published when Add fails")
+}
+
+func TestRecentConnectionsStore_Add_WorksWithNilEventPublisher(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	conn := Model{
+		Country:        "France",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+
+	err := store.Add(conn)
+	require.NoError(t, err)
+
+	connections, err := store.Get()
+	require.NoError(t, err)
+	require.Len(t, connections, 1)
+	assert.Equal(t, conn, connections[0])
+}
+
+func TestRecentConnectionsStore_Clean_PublishesEventOnSuccess(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+
+	eventPublished := false
+	eventPublisher := func() {
+		eventPublished = true
+	}
+
+	store := NewRecentConnectionsStore("/test/path", &fs, eventPublisher)
+
+	conn := Model{
+		Country:        "Spain",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+	err := store.Add(conn)
+	require.NoError(t, err)
+
+	eventPublished = false
+
+	err = store.Clean()
+	require.NoError(t, err)
+	assert.True(t, eventPublished, "Event should be published after successful Clean")
+
+	connections, err := store.Get()
+	require.NoError(t, err)
+	assert.Empty(t, connections)
+}
+
+func TestRecentConnectionsStore_Clean_DoesNotPublishEventOnError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+
+	eventPublished := false
+	eventPublisher := func() {
+		eventPublished = true
+	}
+
+	store := NewRecentConnectionsStore("/test/path", &fs, eventPublisher)
+
+	fs.WriteErr = errors.New("write error")
+
+	err := store.Clean()
+	assert.Error(t, err)
+	assert.False(t, eventPublished, "Event should NOT be published when Clean fails")
+}
+
+func TestRecentConnectionsStore_Clean_WorksWithNilEventPublisher(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	conn := Model{
+		Country:        "Italy",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+	err := store.Add(conn)
+	require.NoError(t, err)
+
+	err = store.Clean()
+	require.NoError(t, err)
+
+	connections, err := store.Get()
+	require.NoError(t, err)
+	assert.Empty(t, connections)
+}
+
+func TestRecentConnectionsStore_EventPublisher_MultipleOperations(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+
+	eventCount := 0
+	eventPublisher := func() {
+		eventCount++
+	}
+
+	store := NewRecentConnectionsStore("/test/path", &fs, eventPublisher)
+
+	for i := 0; i < 3; i++ {
+		conn := Model{
+			Country:        fmt.Sprintf("Country%d", i),
+			ConnectionType: config.ServerSelectionRule_COUNTRY,
+		}
+		err := store.Add(conn)
+		require.NoError(t, err)
+	}
+	assert.Equal(t, 3, eventCount, "Should have published 3 events for 3 Add operations")
+
+	err := store.Clean()
+	require.NoError(t, err)
+	assert.Equal(t, 4, eventCount, "Should have published 4 events total (3 Add + 1 Clean)")
+
+	conn := Model{
+		Country:        "FinalCountry",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
+	}
+	err = store.Add(conn)
+	require.NoError(t, err)
+	assert.Equal(t, 5, eventCount, "Should have published 5 events total")
+}
+
+func TestRecentConnectionsStore_EventPublisher_ConcurrentOperations(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := mockconfig.NewFilesystemMock(t)
+
+	var eventCount int
+	var mu sync.Mutex
+	eventPublisher := func() {
+		mu.Lock()
+		eventCount++
+		mu.Unlock()
+	}
+
+	store := NewRecentConnectionsStore("/test/path", &fs, eventPublisher)
+
+	var wg sync.WaitGroup
+	const operations = 50
+
+	for i := 0; i < operations; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			conn := Model{
+				Country:        fmt.Sprintf("Country%d", idx),
+				ConnectionType: config.ServerSelectionRule_COUNTRY,
+			}
+			_ = store.Add(conn)
+		}(i)
+	}
+
+	wg.Wait()
+
+	mu.Lock()
+	finalCount := eventCount
+	mu.Unlock()
+
+	assert.Greater(t, finalCount, 0, "Should have published events for successful operations")
+	assert.LessOrEqual(t, finalCount, operations, "Should not publish more events than operations")
 }

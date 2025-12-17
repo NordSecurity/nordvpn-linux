@@ -307,24 +307,33 @@ bool _isConnectedToSelectedLocation(
 
   final connParams = vpnStatus.connectionParameters;
   // connected to default - Fastest server (Quick Connect)
-  if (location == null) {
+  if (location == null ||
+      (location.country == null && location.specialtyGroup == null)) {
     return connParams.country.isEmpty &&
         connParams.city.isEmpty &&
         (connParams.group == ServerGroup.UNDEFINED ||
             connParams.group == ServerGroup.STANDARD_VPN_SERVERS);
   }
 
-  // connected to something else
+  // If a specialty group is specified in the setting, it must match the connection.
+  if (location.specialtyGroup != null &&
+      location.specialtyGroup != connParams.group.toSpecialtyType()) {
+    return false;
+  }
 
-  // `?? ""` here is because `connParams.country` is empty string when not set
-  // while `location.countryCode?.code` is `null` when not set, but both cases
-  // mean "not set". Similarly for city name.
-  final countryMatches = (location.country?.code ?? "") == connParams.country;
-  final cityMatches = (location.city?.name ?? "") == connParams.city;
-  final groupMatches =
-      location.specialtyGroup == connParams.group.toSpecialtyType();
+  // If a country is specified in the setting, it must match the connection.
+  if (location.country != null &&
+      location.country!.code != connParams.country) {
+    return false;
+  }
 
-  return countryMatches && cityMatches && groupMatches;
+  // If a city is specified in the setting, it must match the connection.
+  if (location.city != null && location.city!.name != connParams.city) {
+    return false;
+  }
+
+  // All specified parameters in the setting match the current connection.
+  return true;
 }
 
 final class AutoConnectServerInfo extends StatelessWidget {
