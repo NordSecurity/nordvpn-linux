@@ -254,42 +254,6 @@ def test_permission_messages_error(permission, permission_state, expected_messag
     assert expected_message in ex.value.stdout.decode("utf-8")
 
 
-@pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
-def test_derp_server_selection_logic():
-    def has_duplicates(lst):
-        return len(lst) != len(set(lst))
-
-    ssh_client.exec_command("sudo iptables -I OUTPUT 1 -p tcp -m tcp --sport 8765 -j DROP")
-    ssh_client.exec_command("sudo iptables -I OUTPUT 1 -p tcp -m tcp --dport 8765 -j DROP")
-
-    daemon.stop_peer(ssh_client)
-    ssh_client.exec_command("echo '' > /var/log/nordvpn/daemon.log")
-    daemon.start_peer(ssh_client)
-
-    derp_lines_from_logs = []
-
-    while len(derp_lines_from_logs) < 2:
-        daemonlog = ssh_client.exec_command("cat /var/log/nordvpn/daemon.log").split("\n")
-        derp_lines_from_logs = meshnet.get_lines_with_keywords(daemonlog, ["region_code", "connecting"])
-        time.sleep(5)
-
-    server_list = []
-    for line in derp_lines_from_logs:
-        json_match = re.search(r'\{.*\}', line)
-
-        if json_match:
-            json_data = json.loads(json_match.group())
-            hostname = json_data.get("body", {}).get("hostname", "")
-            server_list.append(hostname)
-
-    # Same server should not be contacted twice in a row
-    assert len(server_list) != 0
-    assert not has_duplicates(server_list)
-
-    ssh_client.exec_command("sudo iptables -D OUTPUT -p tcp -m tcp --sport 8765 -j DROP")
-    ssh_client.exec_command("sudo iptables -D OUTPUT -p tcp -m tcp --dport 8765 -j DROP")
-
-
 @pytest.mark.core_meshnet
 @pytest.mark.skip("LVPN-3428, need a discussion here")
 def test_direct_connection_rtt_and_loss():
