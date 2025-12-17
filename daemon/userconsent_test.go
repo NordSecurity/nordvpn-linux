@@ -142,40 +142,63 @@ func TestConsentModeFromUserLocation(t *testing.T) {
 }
 
 func TestSetConsentGranted(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
-		name              string
-		initialState      config.AnalyticsConsent
-		enableErr         error
-		saveErr           error
-		expectedErr       error
-		expectedState     config.AnalyticsConsent
-		expectedSaved     bool
-		expectedConsentIn config.AnalyticsConsent
+		name               string
+		initialState       config.AnalyticsConsent
+		enableErr          error
+		saveErr            error
+		expectedErr        error
+		expectedSaved      bool
+		expectedConsentIn  config.AnalyticsConsent
+		expectedState      config.AnalyticsConsent
+		initErr            error
+		expectedInitCalled bool
+		expectedInitWith   config.AnalyticsConsent
 	}{
 		{
-			name:              "analytics is enabled and config is saved on success",
-			initialState:      config.ConsentUndefined,
-			expectedErr:       nil,
-			expectedState:     config.ConsentGranted,
-			expectedSaved:     true,
-			expectedConsentIn: config.ConsentGranted,
+			name:               "analytics init, enable, then config is saved",
+			initialState:       config.ConsentUndefined,
+			expectedErr:        nil,
+			expectedState:      config.ConsentGranted,
+			expectedSaved:      true,
+			expectedConsentIn:  config.ConsentGranted,
+			expectedInitCalled: true,
+			expectedInitWith:   config.ConsentGranted,
 		},
 		{
-			name:          "analytics enable fails -> config is not saved",
-			initialState:  config.ConsentUndefined,
-			enableErr:     errors.New("enable error"),
-			expectedErr:   errors.New("enable error"),
-			expectedState: config.ConsentUndefined,
-			expectedSaved: false,
+			name:               "analytics init fails -> config is not saved",
+			initialState:       config.ConsentUndefined,
+			initErr:            errors.New("init error"),
+			expectedErr:        errors.New("init error"),
+			expectedState:      config.ConsentUndefined,
+			expectedSaved:      false,
+			expectedConsentIn:  config.ConsentUndefined,
+			expectedInitCalled: true,
+			expectedInitWith:   config.ConsentGranted,
 		},
 		{
-			name:              "config save fails",
-			initialState:      config.ConsentUndefined,
-			saveErr:           errors.New("save error"),
-			expectedErr:       errors.New("save error"),
-			expectedState:     config.ConsentGranted,
-			expectedSaved:     false,
-			expectedConsentIn: config.ConsentUndefined,
+			name:               "analytics enable fails -> config is not saved",
+			initialState:       config.ConsentUndefined,
+			enableErr:          errors.New("enable error"),
+			expectedErr:        errors.New("enable error"),
+			expectedState:      config.ConsentUndefined,
+			expectedSaved:      false,
+			expectedConsentIn:  config.ConsentUndefined,
+			expectedInitCalled: true,
+			expectedInitWith:   config.ConsentGranted,
+		},
+		{
+			name:               "config save fails",
+			initialState:       config.ConsentUndefined,
+			saveErr:            errors.New("save error"),
+			expectedErr:        errors.New("save error"),
+			expectedState:      config.ConsentGranted,
+			expectedSaved:      false,
+			expectedConsentIn:  config.ConsentUndefined,
+			expectedInitCalled: true,
+			expectedInitWith:   config.ConsentGranted,
 		},
 	}
 
@@ -183,6 +206,7 @@ func TestSetConsentGranted(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			analytics := &events.Analytics{
 				State:     tt.initialState,
+				InitErr:   tt.initErr,
 				EnableErr: tt.enableErr,
 			}
 			cm := mock.NewMockConfigManager()
@@ -200,8 +224,13 @@ func TestSetConsentGranted(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			assert.Equal(t, tt.expectedState, analytics.State)
 			assert.Equal(t, tt.expectedSaved, cm.Saved)
+			assert.Equal(t, tt.expectedInitCalled, analytics.InitCalled)
+			assert.Equal(t, tt.expectedState, analytics.State)
+
+			if tt.expectedInitCalled {
+				assert.Equal(t, tt.expectedInitWith, analytics.InitCalledWith)
+			}
 
 			if cm.Cfg != nil {
 				assert.Equal(t, tt.expectedConsentIn, cm.Cfg.AnalyticsConsent)
