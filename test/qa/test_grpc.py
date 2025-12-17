@@ -82,7 +82,6 @@ def collect_state_changes(channel: grpc.Channel, stop_at: int, tracked_states: S
             if change.WhichOneof('state') in tracked_states:
                 result.append(change)
                 if len(result) >= stop_at:
-                    logging.log(f"Events received listener {result}")
                     break
         return result
 
