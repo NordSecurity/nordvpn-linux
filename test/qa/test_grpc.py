@@ -3,6 +3,7 @@ import threading
 import sh
 import grpc
 from collections.abc import Sequence
+from lib import logging
 from lib.protobuf.daemon import (common_pb2, service_pb2_grpc, state_pb2, status_pb2)
 from threading import Barrier
 
@@ -21,11 +22,13 @@ def test_multiple_state_subscribers():
     ]
 
     num_threads = 5
-    all_threads_subscribed = Barrier(num_threads+1) # number of child threads + parrent thread
+    all_threads_subscribed = Barrier(num_threads+1) # number of child threads + parent thread
     threads = []
     results = {}
 
     with grpc.insecure_channel(NORDVPND_SOCKET) as channel:
+        channel.subscribe(callback=lambda value: logging.log(data = f"connection changed {value}"), try_to_connect=True)
+
         threads = [threading.Thread(target=lambda i=i: results.update(
             {i: collect_state_changes(channel, len(expected_states), ['connection_status'], all_threads_subscribed)})) for i in range(num_threads)]
 
@@ -47,12 +50,12 @@ def test_tunnel_update_notifications_before_and_after_connect():
         status_pb2.ConnectionState.DISCONNECTED,
     ]
 
-    subscribtion_barrier = Barrier(2) # parrent and child thread
+    subscription_barrier = Barrier(2) # parent and child thread
     result = []
     thread = threading.Thread(target=lambda: result.extend(collect_state_changes_guard(
-        len(expected_states), ['connection_status'], subscribtion_barrier)))
+        len(expected_states), ['connection_status'], subscription_barrier)))
     thread.start()
-    subscribtion_barrier.wait(timeout=10)
+    subscription_barrier.wait(timeout=10)
     sh.nordvpn.connect()
     sh.nordvpn.disconnect()
     thread.join()
@@ -60,22 +63,26 @@ def test_tunnel_update_notifications_before_and_after_connect():
                b in zip(result, expected_states, strict=True))
 
 
-def collect_state_changes_guard(stop_at: int, tracked_states: Sequence[str], subscribtion_barrier: Barrier, timeout: int = 30) -> Sequence[state_pb2.AppState]:
+def collect_state_changes_guard(stop_at: int, tracked_states: Sequence[str], subscription_barrier: Barrier, timeout: int = 30) -> Sequence[state_pb2.AppState]:
     with grpc.insecure_channel(NORDVPND_SOCKET) as channel:
-        return collect_state_changes(channel, stop_at, tracked_states, subscribtion_barrier, timeout)
+        channel.subscribe(callback=lambda value: logging.log(data = f"socket connection changed {value}"), try_to_connect=True)
+        return collect_state_changes(channel, stop_at, tracked_states, subscription_barrier, timeout)
 
-def collect_state_changes(channel: grpc.Channel, stop_at: int, tracked_states: Sequence[str], subscribtion_barrier: Barrier, timeout: int = 30) -> Sequence[state_pb2.AppState]:
+def collect_state_changes(channel: grpc.Channel, stop_at: int, tracked_states: Sequence[str], subscription_barrier: Barrier, timeout: int = 30) -> Sequence[state_pb2.AppState]:
         grpc.channel_ready_future(channel).result(timeout=timeout)
         stub = service_pb2_grpc.DaemonStub(channel)
-        subscribtion_barrier.wait()
         response_stream = stub.SubscribeToStateChanges(
             common_pb2.Empty(), timeout=timeout)
+
+        subscription_barrier.wait()
+
         result = []
         for change in response_stream:
             # Ignore the rest of updates as some settings updates may be published
             if change.WhichOneof('state') in tracked_states:
                 result.append(change)
                 if len(result) >= stop_at:
+                    logging.log(f"Events received listener {result}")
                     break
         return result
 
