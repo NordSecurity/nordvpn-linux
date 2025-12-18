@@ -5,8 +5,11 @@ import "github.com/NordSecurity/nordvpn-linux/config"
 type Analytics struct {
 	EnableErr error
 	DisablErr error
+	InitErr   error
 
-	State config.AnalyticsConsent
+	State          config.AnalyticsConsent
+	InitCalled     bool
+	InitCalledWith config.AnalyticsConsent
 }
 
 func NewAnalytics(currentState config.AnalyticsConsent) Analytics {
@@ -35,4 +38,11 @@ func (a *Analytics) Disable() error {
 	return nil
 }
 
-func (*Analytics) Init(config.AnalyticsConsent) error { return nil }
+func (a *Analytics) Init(consent config.AnalyticsConsent) error {
+	a.InitCalled = true
+	a.InitCalledWith = consent
+	if a.InitErr != nil {
+		return a.InitErr
+	}
+	return nil
+}

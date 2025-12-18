@@ -127,6 +127,10 @@ func (acc *AnalyticsConsentChecker) IsConsentFlowCompleted() bool {
 }
 
 func (acc *AnalyticsConsentChecker) setConsentGranted() error {
+	if err := acc.analytics.Init(config.ConsentGranted); err != nil {
+		log.Println(internal.ErrorPrefix, "moose failed to initialize with granted consent:", err)
+		return err
+	}
 	if err := acc.analytics.Enable(); err != nil {
 		return err
 	}
