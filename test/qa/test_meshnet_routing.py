@@ -91,6 +91,8 @@ def test_killswitch_exitnode(lan_discovery: bool, local: bool):
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
 def test_route_traffic_to_each_other():
+    """Manual TC: LVPN-426, LVPN-1258"""
+
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     peer_hostname = peer_list.get_external_peer().hostname
     peer_pubkey = peer_list.get_external_peer().public_key

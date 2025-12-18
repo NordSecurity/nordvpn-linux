@@ -29,6 +29,8 @@ def teardown_function(function):  # noqa: ARG001
 @pytest.mark.parametrize("lan_discovery", [True, False])
 @pytest.mark.parametrize("local", [True, False])
 def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
+    """Manual TCs: LVPN-1261, LVPN-1262"""
+
     peer_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().ip
     meshnet.set_permissions(peer_ip, True, local, True, True)
 
@@ -187,6 +189,8 @@ def test_set_defaults_when_connected_2nd_set(tech, proto, obfuscated):
 
 
 def test_route_to_peer_that_is_connected_to_vpn():
+    """Manual TC: LVPN-430"""
+
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname
     peer_hostname = peer_list.get_external_peer().hostname
