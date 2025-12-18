@@ -3,6 +3,7 @@ package remote
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"net"
 	"os"
@@ -15,6 +16,11 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+)
+
+const (
+	envUseLocalConfig   = "RC_USE_LOCAL_CONFIG"
+	defaultFeatureState = true
 )
 
 // ConfigGetter get values from remote config
@@ -33,10 +39,65 @@ type ConfigLoader interface {
 	TryPreload()
 }
 
-const (
-	envUseLocalConfig   = "RC_USE_LOCAL_CONFIG"
-	defaultFeatureState = true
-)
+// remoteConfigFileOps aggregates into a common interface
+// a set of file-related operations utilized for the sake of remote-config feature functionality.
+type remoteConfigFileOps interface {
+	IsValidExistingDir(path string) (bool, error)
+	CleanupTmpFiles(targetPath, fileExt string) error
+	RenameTmpFiles(targetPath, fileExt string) error
+}
+
+type fileOpsDefaultImpl struct{}
+
+// WalkFiles iterate files by given extension and do specified action
+func (fileOpsDefaultImpl) WalkFiles(targetPath, fileExt string, actionFunc func(string)) error {
+	err := filepath.WalkDir(targetPath, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			log.Printf(internal.ErrorPrefix+" accessing %s: %v\n", path, err)
+			return nil // continue walking
+		}
+		// exclude symlinks
+		if d.Type()&os.ModeSymlink != 0 {
+			return nil
+		}
+		if !d.IsDir() && strings.HasSuffix(d.Name(), fileExt) {
+			actionFunc(path)
+		}
+		return nil
+	})
+	return err
+}
+
+// RenameTmpFiles rename files by removing extra extension
+func (f fileOpsDefaultImpl) RenameTmpFiles(targetPath, fileExt string) error {
+	return f.WalkFiles(targetPath, fileExt, func(path string) {
+		newPath := strings.TrimSuffix(path, fileExt)
+		if err := os.Rename(path, newPath); err != nil {
+			log.Printf(internal.ErrorPrefix+" renaming %s to %s: %s\n", path, newPath, err)
+		}
+	})
+}
+
+// CleanupTmpFiles remove files by specified extension
+func (f fileOpsDefaultImpl) CleanupTmpFiles(targetPath, fileExt string) error {
+	return f.WalkFiles(targetPath, fileExt, func(path string) {
+		if err := os.Remove(path); err != nil {
+			log.Printf(internal.ErrorPrefix+" removing %s: %s\n", path, err)
+		}
+	})
+}
+
+// IsValidExistingDir check if is valid existing directory
+func (fileOpsDefaultImpl) IsValidExistingDir(path string) (bool, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return info.IsDir(), nil
+}
 
 type RemoteConfigEvent struct {
 	MeshnetFeatureEnabled bool
@@ -44,6 +105,12 @@ type RemoteConfigEvent struct {
 
 type RemoteConfigNotifier interface {
 	RemoteConfigUpdate(RemoteConfigEvent) error
+}
+
+// fileStoreOps aggregates file relevant operations under a common interface
+type fileStoreOps interface {
+	writeFile(name string, content []byte, mode os.FileMode) error
+	readFile(name string) ([]byte, error)
 }
 
 type CdnRemoteConfig struct {
@@ -57,6 +124,8 @@ type CdnRemoteConfig struct {
 	analytics       Analytics
 	mu              sync.RWMutex
 	notifier        events.PublishSubcriber[RemoteConfigEvent]
+	fileOps         fileStoreOps
+	rcFileOps       remoteConfigFileOps
 }
 
 // NewCdnRemoteConfig setup RemoteStorage based remote config loaded/getter
@@ -72,6 +141,8 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 		analytics:       analytics,
 		features:        NewFeatureMap(),
 		notifier:        &subs.Subject[RemoteConfigEvent]{},
+		fileOps:         jsonFileReaderWriter{},
+		rcFileOps:       &fileOpsDefaultImpl{},
 	}
 	rc.features.add(FeatureMain)
 	rc.features.add(FeatureLibtelio)
@@ -197,7 +268,7 @@ func (c *CdnRemoteConfig) download() (bool, error) {
 
 	for _, f := range c.features.keys() {
 		feature := c.features.get(f)
-		dnld, err := feature.download(cdnFileGetter{cdn: c.cdn}, jsonFileReaderWriter{}, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath)
+		dnld, err := feature.download(cdnFileGetter{cdn: c.cdn}, c.fileOps, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath, c.rcFileOps)
 		if err != nil {
 			log.Printf("%s failed downloading feature [%s] remote config: %v\n", internal.ErrorPrefix, feature.name, err)
 
@@ -263,7 +334,7 @@ func (c *CdnRemoteConfig) load() {
 func (c *CdnRemoteConfig) doLoad(reportErrors bool) {
 	for _, f := range c.features.keys() {
 		feature := c.features.get(f)
-		if err := feature.load(c.localCachePath, jsonFileReaderWriter{}, jsonValidator{}); err != nil {
+		if err := feature.load(c.localCachePath, c.fileOps, jsonValidator{}, c.rcFileOps); err != nil {
 			if reportErrors {
 				c.reportLoadError(feature.name, err)
 				log.Printf("%s failed loading feature [%s] config from the disk: %s\n", internal.ErrorPrefix, feature.name, err)

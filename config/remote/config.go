@@ -59,7 +59,7 @@ type validator interface {
 
 // download main json file and check if include files should be downloaded,
 // return `true` if remote config was really downloaded.
-func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBasePath, targetPath string) (success bool, err error) {
+func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBasePath, targetPath string, fileIO remoteConfigFileOps) (success bool, err error) {
 	// config file consists of:
 	// - main json file e.g. nordvpn.json;
 	// - sibling file with hash e.g. nordvpn-hash.json;
@@ -68,7 +68,7 @@ func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBaseP
 
 	defer func() {
 		if err != nil {
-			_ = internal.CleanupTmpFiles(targetPath, tmpExt)
+			_ = fileIO.CleanupTmpFiles(targetPath, tmpExt)
 		}
 	}()
 
@@ -126,7 +126,7 @@ func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBaseP
 	// while processing, save files with special extension '*.bu'
 	// if download or handling would fail in the middle - previous files are left intact,
 	// also need to cleanup tmp files (see above)
-	if err = internal.RenameTmpFiles(targetPath, tmpExt); err != nil {
+	if err = fileIO.RenameTmpFiles(targetPath, tmpExt); err != nil {
 		return false, NewDownloadError(DownloadErrorFileRename, fmt.Errorf("writing/renaming files: %w", err))
 	}
 
@@ -134,12 +134,12 @@ func (f *Feature) download(cdn fileReader, fw fileWriter, jv validator, cdnBaseP
 }
 
 // load feature config from JSON file
-func (f *Feature) load(sourcePath string, fr fileReader, jv validator) error {
+func (f *Feature) load(sourcePath string, fr fileReader, jv validator, fileIO remoteConfigFileOps) error {
 	if f.name == "" {
 		return NewLoadError(LoadErrorOther, fmt.Errorf("feature name is not set"))
 	}
 
-	validDir, err := internal.IsValidExistingDir(sourcePath)
+	validDir, err := fileIO.IsValidExistingDir(sourcePath)
 	if err != nil {
 		return NewLoadError(LoadErrorOther, fmt.Errorf("accessing source path: %w", err))
 	}
