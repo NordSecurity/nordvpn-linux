@@ -16,13 +16,6 @@ libquench_artifact_url="${LIBQUENCH_ARTIFACTS_URL}/${LIBQUENCH_VERSION}/linux.zi
 
 echo "XXX ${libtelio_artifact_url}"
 
-# Uncomment this when all libraries migrate artifacts
-# if [[ ${CI+x} ]]; then
-#   header="JOB-TOKEN:${CI_JOB_TOKEN}"
-# else
-#   header="PRIVATE-TOKEN:${GL_ACCESS_TOKEN}"
-# fi
-
 mkdir -p "${temp_dir}"
 
 function fetch_gitlab_artifact() {
@@ -40,24 +33,19 @@ function fetch_gitlab_artifact() {
   echo "Downloading artifact from ${artifact_url} to ${out_file}"
   # disable tracing - don't show the token
   set +x
+  # If CI environment, use different header
   if [[ ${CI+x} ]]; then
     header="JOB-TOKEN:${CI_JOB_TOKEN}"
   else
-    # Need two tokens while the dependency migration is not fully done
-    # set CI_JOB_TOKEN as a token that can reach new GL if running locally
     header="PRIVATE-TOKEN:${CI_JOB_TOKEN}"
   fi
-  for _ in $(seq 1 2)
-  do
-    curl \
-      --retry 3 \
-      --retry-delay 2 \
-      --fail \
-      --header "$header" \
-      -o "${out_file}" \
-      -L "${artifact_url}" && break || echo "Token failed"
-    header="PRIVATE-TOKEN:${GL_ACCESS_TOKEN}"
-  done
+  curl \
+    --retry 3 \
+    --retry-delay 2 \
+    --fail \
+    --header "$header" \
+    -o "${out_file}" \
+    -L "${artifact_url}"
   # re-enable tracing
   set -x
 }
