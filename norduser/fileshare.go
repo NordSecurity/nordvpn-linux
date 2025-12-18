@@ -41,7 +41,7 @@ func fileshareManagementLoop(managementChan <-chan FileshareManagementMsg, shutd
 				log.Println(internal.ErrorPrefix, "failed to stop fileshare:", err)
 			}
 		case Shutdown:
-			log.Println(internal.InfoPrefix, "stopping fileshare")
+			log.Println(internal.InfoPrefix, "stopping fileshare at shutdown")
 			if err := fileshareProcessManager.StopProcess(true); err != nil {
 				log.Println(internal.ErrorPrefix, "failed to stop fileshare on shutdown:", err)
 			}

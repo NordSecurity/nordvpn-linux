@@ -14,7 +14,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/cli"
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/godbus/dbus/v5"
 )
@@ -230,10 +229,7 @@ func (ti *Instance) disconnect() bool {
 }
 
 func (ti *Instance) setNotify(flag bool) bool {
-	flagText := "off"
-	if flag {
-		flagText = "on"
-	}
+	flagText := getFlagText(flag)
 	resp, err := ti.client.SetNotify(context.Background(), &pb.SetNotifyRequest{
 		Notify: flag,
 	})
@@ -252,10 +248,7 @@ func (ti *Instance) setNotify(flag bool) bool {
 	case internal.CodeSuccess:
 	}
 
-	_, err = ti.fileshareClient.SetNotifications(context.Background(), &filesharepb.SetNotificationsRequest{Enable: flag})
-	if err != nil {
-		log.Printf("%s Setting fileshare notifications %s error: %s", internal.ErrorPrefix, flagText, err)
-	}
+	ti.fileshare.SetNotifications(flag)
 
 	if resp.Type == internal.CodeNothingToDo {
 		ti.notify(NoForce, "Notifications already %s", flagText)
@@ -265,10 +258,7 @@ func (ti *Instance) setNotify(flag bool) bool {
 }
 
 func (ti *Instance) setTray(flag bool) bool {
-	flagText := "off"
-	if flag {
-		flagText = "on"
-	}
+	flagText := getFlagText(flag)
 
 	if !flag {
 		log.Printf("%s Tray icon disabled. To enable it again, run the \"nordvpn set tray on\" command.", internal.InfoPrefix)
@@ -296,4 +286,11 @@ func (ti *Instance) setTray(flag bool) bool {
 	}
 
 	return true
+}
+
+func getFlagText(flag bool) string {
+	if flag {
+		return "on"
+	}
+	return "off"
 }

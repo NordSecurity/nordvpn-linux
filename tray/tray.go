@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 	"github.com/NordSecurity/nordvpn-linux/notify"
@@ -119,7 +118,7 @@ func sortedConnections(sgs []*pb.ServerGroup) []Server {
 
 type Instance struct {
 	client              pb.DaemonClient
-	fileshareClient     filesharepb.FileshareClient
+	fileshare           FileshareManager
 	accountInfo         accountInfo
 	debugMode           bool
 	notifier            dbusNotifier
@@ -168,10 +167,10 @@ func (state *trayState) serverName() string {
 	return vpnServerName
 }
 
-func NewTrayInstance(client pb.DaemonClient, fileshareClient filesharepb.FileshareClient, quitChan chan<- norduser.StopRequest) *Instance {
+func NewTrayInstance(client pb.DaemonClient, quitChan chan<- norduser.StopRequest) *Instance {
 	obj := &Instance{
 		client:            client,
-		fileshareClient:   fileshareClient,
+		fileshare:         NewFileshareManager(),
 		quitChan:          quitChan,
 		connSensor:        newConnectionSettingsChangeSensor(),
 		recentConnections: newRecentConnectionsManager(client),
