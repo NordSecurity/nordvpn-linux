@@ -31,12 +31,7 @@ You can find everything related to building, testing and environment setup in [B
 For installing an already released version please follow the instructions on our [official page](https://nordvpn.com/download/linux/#install-nordvpn).
 
 ## Supported distros
-* Ubuntu
-* Fedora
-* Debian
-* Kali
-* OpenSUSE
-* Raspbian
+https://nordvpn.com/download/linux/
 
 Distributions are not supported after their end of life.
 
