@@ -1,7 +1,4 @@
-import json
 import os
-import re
-import time
 from datetime import datetime
 
 import pytest
@@ -9,7 +6,7 @@ import requests
 import sh
 
 import lib
-from lib import daemon, logging, login, meshnet, settings, ssh
+from lib import logging, login, meshnet, settings, ssh
 from lib.shell import sh_no_tty
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
