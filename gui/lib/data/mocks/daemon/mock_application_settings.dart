@@ -22,8 +22,8 @@ import 'package:nordvpn/pb/daemon/status.pb.dart';
 final class MockApplicationSettings extends CancelableDelayed {
   final StreamController<AppState> stream;
   final MockServersList serversList;
-  final MockVpnStatus vpnStatus;
-  MockApplicationSettings(this.stream, this.serversList, this.vpnStatus) {
+  MockVpnStatus? vpnStatus;
+  MockApplicationSettings(this.stream, this.serversList, [this.vpnStatus]) {
     setDefaults();
   }
 
@@ -102,8 +102,8 @@ final class MockApplicationSettings extends CancelableDelayed {
     stream.add(AppState(settingsChange: s));
 
     // Check if VPN is active to return appropriate status
-    final isVpnActive = vpnStatus.status.state == ConnectionState.CONNECTED ||
-        vpnStatus.status.state == ConnectionState.CONNECTING;
+    final isVpnActive = vpnStatus?.status.state == ConnectionState.CONNECTED ||
+        vpnStatus?.status.state == ConnectionState.CONNECTING;
 
     return Payload(
       type: Int64(DaemonStatusCode.success),
@@ -267,7 +267,7 @@ final class MockApplicationSettings extends CancelableDelayed {
     }
 
     // Check if VPN is connected to determine whether to show reconnect popup
-    final isConnected = vpnStatus.status.state == ConnectionState.CONNECTED;
+    final isConnected = vpnStatus?.status.state == ConnectionState.CONNECTED;
 
     return SetProtocolResponse(
       setProtocolStatus: isConnected
