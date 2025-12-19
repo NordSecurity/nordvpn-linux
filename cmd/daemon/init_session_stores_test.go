@@ -488,7 +488,7 @@ func TestRenewalFunctions_NCCredentials(t *testing.T) {
 	assert.Equal(t, "nc-user", resp.Username)
 	assert.Equal(t, "nc-pass", resp.Password)
 	assert.Equal(t, "wss://nc.example.com", resp.Endpoint)
-	assert.Equal(t, time.Duration(3600), resp.ExpiresIn)
+	assert.Equal(t, time.Duration(3600)*time.Second, resp.ExpiresIn)
 }
 
 func TestGetTokenData_Success(t *testing.T) {

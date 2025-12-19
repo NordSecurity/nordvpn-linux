@@ -11,8 +11,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 )
 
-const credentialsValidityPeriod = 24 * time.Hour
-
 type CredentialsGetter struct {
 	api core.CredentialsAPI
 	cm  config.Manager
@@ -84,7 +82,9 @@ func (cf *CredentialsGetter) GetCredentialsFromAPI() (config.NCData, error) {
 	ncData.Endpoint = resp.Endpoint
 	ncData.Username = resp.Username
 	ncData.Password = resp.Password
-	ncData.ExpirationDate = time.Now().Add(credentialsValidityPeriod)
+	// validity period is provided in seconds
+	expiresIn := time.Duration(resp.ExpiresIn) * time.Second
+	ncData.ExpirationDate = time.Now().UTC().Add(expiresIn)
 
 	return ncData, cf.cm.SaveWith(func(c config.Config) config.Config {
 		user := c.TokensData[userID]
