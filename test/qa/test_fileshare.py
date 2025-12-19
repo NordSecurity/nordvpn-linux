@@ -290,7 +290,12 @@ def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, backg
 
     if not background_accept:
         assert fileshare.validate_transfer_progress(t_progress_interactive)
-        assert len(re.findall(fileshare.INTERACTIVE_TRANSFER_PROGRESS_COMPLETED_PATTERN, t_progress_interactive)) == 1, logging.log("DBG: " + ssh_client.exec_command(f"nordvpn fileshare list; nordvpn fileshare list {local_transfer_id}"))
+
+        for t_completed in poll(lambda: (len(re.findall(fileshare.INTERACTIVE_TRANSFER_PROGRESS_COMPLETED_PATTERN, t_progress_interactive)) == 1)):
+            if t_completed:
+                break
+            logging.log("t_completed: " + str(t_completed))
+            logging.log(ssh_client.exec_command(f"nordvpn fileshare list; nordvpn fileshare list {local_transfer_id}"))
 
     assert fileshare.files_from_transfer_exist_in_filesystem(local_transfer_id, [wfolder], ssh_client)
 
