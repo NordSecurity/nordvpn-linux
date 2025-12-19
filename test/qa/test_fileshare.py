@@ -263,18 +263,34 @@ def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, backg
     transfers_remote = ssh_client.exec_command("nordvpn fileshare list")
     assert "waiting for download" in fileshare.find_transfer_by_id(transfers_remote, peer_transfer_id)
 
-    transfer_progress_local = fileshare.TransferProgressValidationThread(local_transfer_id, fileshare.TransferState.UPLOADING, None)
-    transfer_progress_local.start()
-
-    transfer_progress_remote = fileshare.TransferProgressValidationThread(local_transfer_id, fileshare.TransferState.DOWNLOADING, ssh_client)
-    transfer_progress_remote.start()
-
     if path_flag:
         peer_filepath = "/tmp/"
         t_progress_interactive = ssh_client.exec_command(f"nordvpn fileshare accept {background_accept} --path {peer_filepath} {peer_transfer_id}")
     else:
         peer_filepath = "~/Downloads/"
         t_progress_interactive = ssh_client.exec_command(f"nordvpn fileshare accept {background_accept} {peer_transfer_id}")
+
+    for transfers_started in poll(
+        lambda: (
+            fileshare.TransferState.UPLOADING in fileshare.find_transfer_by_id(
+                sh.nordvpn.fileshare.list(),
+                local_transfer_id
+            )
+            and
+            fileshare.TransferState.DOWNLOADING in fileshare.find_transfer_by_id(
+                ssh_client.exec_command("nordvpn fileshare list"),
+                peer_transfer_id
+            )
+        )
+    ):
+        if transfers_started:
+            break
+
+    transfer_progress_local = fileshare.TransferProgressValidationThread(local_transfer_id, fileshare.TransferState.UPLOADING, None)
+    transfer_progress_local.start()
+
+    transfer_progress_remote = fileshare.TransferProgressValidationThread(local_transfer_id, fileshare.TransferState.DOWNLOADING, ssh_client)
+    transfer_progress_remote.start()
 
     transfer_progress_local.join()
     transfer_progress_remote.join()
