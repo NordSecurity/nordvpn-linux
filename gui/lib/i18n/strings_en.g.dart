@@ -359,8 +359,6 @@ class TranslationsDaemonEn {
 	final Translations _root; // ignore: unused_field
 
 	// Translations
-	String get code_2002_title => 'Reconnect to VPN to apply changes';
-	String get code_2002_msg => 'You\'re connected to the VPN. Please reconnect to apply the setting.';
 	String get code_3001_title => 'Unauthorized';
 	String get code_3001_msg => 'We couldn\'t log you in. Make sure your credentials are correct. If you have turned on MFA, log in using the \'nordvpn login\' command.';
 	String get code_3003_title => 'Format error';
@@ -714,6 +712,12 @@ class TranslationsUiEn {
 	String get subscriptionInactive => 'Inactive';
 	String get recentConnections => 'Recent connections';
 	String get standardVpnServer => 'Standard VPN Servers';
+	String get reconnectNow => 'Reconnect now';
+	String get reconnectToChangeProtocol => 'Reconnect to change protocol';
+	String get reconnectToChangeProtocolDescription => 'To apply this change, we\'ll reconnect you to the VPN.';
+	String get reconnectToApplyChanges => 'Reconnect to apply changes';
+	String get reconnectToApplyChangesDescription => 'Your new settings will take effect after you reconnect to the VPN.';
+	String get gotIt => 'Got it';
 }
 
 /// Flat map(s) containing all translations.
@@ -1010,8 +1014,6 @@ extension on Translations {
 			case 'countries.UZ': return 'Uzbekistan';
 			case 'countries.VE': return 'Venezuela';
 			case 'countries.VN': return 'Vietnam';
-			case 'daemon.code_2002_title': return 'Reconnect to VPN to apply changes';
-			case 'daemon.code_2002_msg': return 'You\'re connected to the VPN. Please reconnect to apply the setting.';
 			case 'daemon.code_3001_title': return 'Unauthorized';
 			case 'daemon.code_3001_msg': return 'We couldn\'t log you in. Make sure your credentials are correct. If you have turned on MFA, log in using the \'nordvpn login\' command.';
 			case 'daemon.code_3003_title': return 'Format error';
@@ -1356,6 +1358,12 @@ extension on Translations {
 			case 'ui.subscriptionInactive': return 'Inactive';
 			case 'ui.recentConnections': return 'Recent connections';
 			case 'ui.standardVpnServer': return 'Standard VPN Servers';
+			case 'ui.reconnectNow': return 'Reconnect now';
+			case 'ui.reconnectToChangeProtocol': return 'Reconnect to change protocol';
+			case 'ui.reconnectToChangeProtocolDescription': return 'To apply this change, we\'ll reconnect you to the VPN.';
+			case 'ui.reconnectToApplyChanges': return 'Reconnect to apply changes';
+			case 'ui.reconnectToApplyChangesDescription': return 'Your new settings will take effect after you reconnect to the VPN.';
+			case 'ui.gotIt': return 'Got it';
 			default: return null;
 		}
 	}

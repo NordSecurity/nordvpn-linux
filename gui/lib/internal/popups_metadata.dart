@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/data/providers/account_controller.dart';
 import 'package:nordvpn/data/providers/preferences_controller.dart';
 import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
+import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/i18n/daemon_code_messages.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
@@ -113,6 +115,35 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
             .read(vpnSettingsControllerProvider.notifier)
             .setLanDiscovery(true);
       },
+    ),
+
+    // Reconnect to apply protocol change
+    PopupCodes.reconnectToChangeProtocol => DecisionPopupMetadata(
+      id: PopupCodes.reconnectToChangeProtocol,
+      title: t.ui.reconnectToChangeProtocol,
+      message: (_) => t.ui.reconnectToChangeProtocolDescription,
+      noButtonText: t.ui.cancel,
+      yesButtonText: t.ui.reconnectNow,
+      yesAction: (ref) {
+        final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
+        if (vpnStatus == null) {
+          logger.e('Cannot reconnect: vpnStatus is null');
+          return;
+        }
+        ref
+            .read(vpnStatusControllerProvider.notifier)
+            .reconnect(vpnStatus.connectionParameters);
+      },
+    ),
+
+    // Reconnect to apply obfuscation, post-quantum, virtual location changes
+    PopupCodes.reconnectToChangeObfuscation ||
+    PopupCodes.reconnectToChangePostQuantum ||
+    PopupCodes.reconnectToChangeVirtualLocation => InfoPopupMetadata(
+      id: PopupCodes.reconnectToChangeObfuscation,
+      title: t.ui.reconnectToApplyChanges,
+      message: (_) => t.ui.reconnectToApplyChangesDescription,
+      buttonText: t.ui.gotIt,
     ),
 
     // ==============================    [ triggered by daemon ]    ==============================
