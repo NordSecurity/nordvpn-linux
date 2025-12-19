@@ -136,7 +136,8 @@ def test_quick_connect_after_update(tech, proto, obfuscated):
 
     if tech == "openvpn" and proto == "udp" and obfuscated == "on":
         tech_name = lib.technology_to_upper_camel_case(tech)
-        assert f"Technology is set to '{tech_name}' successfully." in sh.nordvpn.set.technology(tech)
+        expected_msg = f"Technology has been successfully set to '{tech_name}'."
+        assert expected_msg in sh.nordvpn.set.technology(tech)
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
