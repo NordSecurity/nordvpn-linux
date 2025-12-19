@@ -145,7 +145,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 			}, nil
 		}
 	}
-
+	log.Printf("BUGDE: finished register current cfg.MeshDevice: %v", cfg.MeshDevice)
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
 	resp, err := s.mapper.Map(token, cfg.MeshDevice.ID, true)
 	if err != nil {

@@ -226,6 +226,7 @@ func ruleToIPTables(rule firewall.Rule, module string, stateFlag string, chainPr
 												module, stateFlag, rule.ConnectionStates, chainPrefix, portFlag,
 												rule.HopLimit, nil, nil, rule.Comment, mark, nameComment,
 											)
+											log.Println(newRule)
 											if rule.Ipv6Only {
 												// We should have just our block rule here
 												ipv6TableRules = append(ipv6TableRules, newRule)
@@ -240,6 +241,7 @@ func ruleToIPTables(rule firewall.Rule, module string, stateFlag string, chainPr
 											rule.HopLimit, rule.SourcePorts, rule.DestinationPorts,
 											rule.Comment, mark, nameComment,
 										)
+										log.Println(newRule)
 										if rule.Ipv6Only {
 											// We should have just our block rule here
 											ipv6TableRules = append(ipv6TableRules, newRule)
