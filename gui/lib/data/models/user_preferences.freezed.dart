@@ -51,6 +51,7 @@ $Res call({
 
 
 
+
 }
 /// @nodoc
 class _$UserPreferencesCopyWithImpl<$Res>
@@ -113,6 +114,7 @@ abstract mixin class _$UserPreferencesCopyWith<$Res> implements $UserPreferences
 $Res call({
  ThemeMode appearance
 });
+
 
 
 

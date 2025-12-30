@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
-import 'package:nordvpn/theme/app_theme.dart';
+import 'package:nordvpn/theme/popup_theme.dart';
 import 'package:nordvpn/widgets/popups/popup.dart';
 
 // Popup for showing information (like failed action). It can be only closed.
@@ -14,23 +14,27 @@ final class InfoPopup extends Popup {
 
   @override
   Widget buildContent(BuildContext context, WidgetRef ref) {
-    final appTheme = context.appTheme;
+    final theme = context.popupTheme;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: appTheme.horizontalSpace,
+      spacing: theme.verticalElementSpacing,
       children: [
-        Text(message(ref), style: appTheme.body),
+        Text(message(ref), style: theme.textSecondary),
         Align(alignment: Alignment.centerRight, child: _closeButton(context)),
       ],
     );
   }
 
   Widget _closeButton(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () => closePopup(context),
-      child: Text(t.ui.close),
+    final theme = context.popupTheme;
+    return ConstrainedBox(
+      constraints: BoxConstraints(minWidth: theme.singleButtonMinWidth),
+      child: ElevatedButton(
+        onPressed: () => closePopup(context),
+        child: Text(infoMetadata.buttonText ?? t.ui.close),
+      ),
     );
   }
 }
