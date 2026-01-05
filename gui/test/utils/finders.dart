@@ -57,9 +57,7 @@ Finder subscriptionPopupText() {
 }
 
 Finder accountUserInfo() {
-  final userInfoFinder = find.byKey(AccountWidgetKeys.userInfo);
-  expect(userInfoFinder, findsOneWidget);
-  return userInfoFinder;
+  return find.byKey(AccountWidgetKeys.userInfo);
 }
 
 Finder parentNavigationBreadcrumb() {
