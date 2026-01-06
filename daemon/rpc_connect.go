@@ -158,7 +158,7 @@ func (r *RPC) connect(
 		}
 
 		if errors.Is(err, internal.ErrVirtualServerSelected) {
-			return true, srv.Send(&pb.Payload{Type: internal.CodeServerUnavailable})
+			return true, srv.Send(&pb.Payload{Type: internal.CodeVirtualLocationDisabled})
 		}
 
 		return false, err
