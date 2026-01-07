@@ -261,7 +261,7 @@ def test_repeated_login_callback_nordvpn_scheme_url():
 
         assert "You're already logged in." in ex.value.stdout.decode("utf-8")
 
-@pytest.mark.smoke
+
 def test_logout_not_connected():
     """
     :details    Verify that app has a possibility to logout
