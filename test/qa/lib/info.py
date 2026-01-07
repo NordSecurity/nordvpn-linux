@@ -12,7 +12,7 @@ def collect():
     nameserver_info = os.popen("sudo cat /etc/resolv.conf").read() #sh.sudo.cat("/etc/resolv.conf")
 
     # without `ww` we cannot see full process lines, as it is cut off early
-    processes = sh.ps("-ef", "ww")
+    processes = sh.ps("-efww")
 
     return "\n".join(
         [
