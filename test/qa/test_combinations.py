@@ -1,3 +1,5 @@
+from itertools import product
+
 import pytest
 import sh
 
@@ -6,6 +8,8 @@ from lib import (
     daemon,
     network
 )
+from lib.dynamic_parametrize import dynamic_parametrize
+from conftest import IS_NIGHTLY
 from test_connect import disconnect_base_test, get_alias
 
 def connect_base_test(group: str = (), name: str = "", hostname: str = ""):
@@ -29,8 +33,17 @@ def connect_base_test(group: str = (), name: str = "", hostname: str = ""):
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
 
 
-@pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.parametrize(("source_tech", "source_proto", "source_obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "target_tech", "target_proto", "target_obfuscated",
+        "source_tech", "source_proto", "source_obfuscated",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[lib.TECHNOLOGIES],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{source_tech}-{source_proto}-{source_obfuscated}-"
+              "{target_tech}-{target_proto}-{target_obfuscated}",
+)
 def test_reconnect_matrix(
         source_tech,
         target_tech,
@@ -50,8 +63,16 @@ def test_reconnect_matrix(
     disconnect_base_test()
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.parametrize(("country", "city"), list(zip(lib.COUNTRIES, lib.CITIES, strict=False)))
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "country", "city",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[list(zip(lib.COUNTRIES, lib.CITIES, strict=False))],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{country}-{city}-"
+               "{tech}-{proto}-{obfuscated}",
+)
 def test_connect_country_and_city(tech, proto, obfuscated, country, city):
     """Manual TC: LVPN-8610"""
 
@@ -64,8 +85,17 @@ def test_connect_country_and_city(tech, proto, obfuscated, country, city):
     disconnect_base_test()
 
 
-@pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.STANDARD_TECHNOLOGIES)
-@pytest.mark.parametrize(("source_tech", "source_proto", "source_obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "target_tech", "target_proto", "target_obfuscated",
+        "source_tech", "source_proto", "source_obfuscated",
+    ],
+    ordered_source=[lib.STANDARD_TECHNOLOGIES],
+    randomized_source=[lib.STANDARD_TECHNOLOGIES],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{source_tech}-{source_proto}-{source_obfuscated}-"
+              "{target_tech}-{target_proto}-{target_obfuscated}",
+)
 def test_status_change_technology_and_protocol(
         source_tech,
         target_tech,
@@ -103,8 +133,17 @@ def test_status_change_technology_and_protocol(
     disconnect_base_test()
 
 
-@pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.STANDARD_TECHNOLOGIES)
-@pytest.mark.parametrize(("source_tech", "source_proto", "source_obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "target_tech", "target_proto", "target_obfuscated",
+        "source_tech", "source_proto", "source_obfuscated",
+    ],
+    ordered_source=[lib.STANDARD_TECHNOLOGIES],
+    randomized_source=[lib.STANDARD_TECHNOLOGIES],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{source_tech}-{source_proto}-{source_obfuscated}-"
+              "{target_tech}-{target_proto}-{target_obfuscated}",
+)
 def test_status_change_technology_and_protocol_reconnect(
         source_tech,
         target_tech,
@@ -135,10 +174,18 @@ def test_status_change_technology_and_protocol_reconnect(
     disconnect_base_test()
 
 
-@pytest.mark.parametrize("source_group", lib.STANDARD_GROUPS[-2:])
-@pytest.mark.parametrize("target_group", lib.STANDARD_GROUPS[-2:])
-@pytest.mark.parametrize(("source_tech", "source_proto", "source_obfuscated"), lib.STANDARD_TECHNOLOGIES)
-@pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "target_tech", "target_proto", "target_obfuscated", "target_group",
+        "source_tech", "source_proto", "source_obfuscated", "source_group",
+    ],
+    ordered_source=[[(*tech, group) for tech, group in product(lib.STANDARD_TECHNOLOGIES, lib.STANDARD_GROUPS[-2:])]],
+    randomized_source=[[(*tech, group) for tech, group in product(lib.STANDARD_TECHNOLOGIES, lib.STANDARD_GROUPS[-2:])]],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{source_tech}-{source_proto}-{source_obfuscated}-"
+               "{target_tech}-{target_proto}-{target_obfuscated}-"
+               "{source_group}-{target_group}",
+)
 def test_reconnect_to_standard_group(
     source_tech,
     target_tech,
@@ -162,10 +209,18 @@ def test_reconnect_to_standard_group(
     disconnect_base_test()
 
 
-@pytest.mark.parametrize("source_group", lib.ADDITIONAL_GROUPS[-2:])
-@pytest.mark.parametrize("target_group", lib.ADDITIONAL_GROUPS[-2:])
-@pytest.mark.parametrize(("source_tech", "source_proto", "source_obfuscated"), lib.STANDARD_TECHNOLOGIES)
-@pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "target_tech", "target_proto", "target_obfuscated", "target_group",
+        "source_tech", "source_proto", "source_obfuscated", "source_group",
+    ],
+    ordered_source=[[(*tech, group) for tech, group in product(lib.STANDARD_TECHNOLOGIES, lib.ADDITIONAL_GROUPS[-2:])]],
+    randomized_source=[[(*tech, group) for tech, group in product(lib.STANDARD_TECHNOLOGIES, lib.ADDITIONAL_GROUPS[-2:])]],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{source_tech}-{source_proto}-{source_obfuscated}-"
+               "{target_tech}-{target_proto}-{target_obfuscated}-"
+               "{source_group}-{target_group}",
+)
 def test_reconnect_to_additional_group(
     source_tech,
     target_tech,
@@ -189,10 +244,18 @@ def test_reconnect_to_additional_group(
     disconnect_base_test()
 
 
-@pytest.mark.parametrize("source_country", lib.COUNTRIES[-2:])
-@pytest.mark.parametrize("target_country", lib.COUNTRIES[-2:])
-@pytest.mark.parametrize(("source_tech", "source_proto", "source_obfuscated"), lib.STANDARD_TECHNOLOGIES)
-@pytest.mark.parametrize(("target_tech", "target_proto", "target_obfuscated"), lib.STANDARD_TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "target_tech", "target_proto", "target_obfuscated", "target_country",
+        "source_tech", "source_proto", "source_obfuscated", "source_country",
+    ],
+    ordered_source=[[(*tech, group) for tech, group in product(lib.STANDARD_TECHNOLOGIES, lib.COUNTRIES[-2:])]],
+    randomized_source=[[(*tech, group) for tech, group in product(lib.STANDARD_TECHNOLOGIES, lib.COUNTRIES[-2:])]],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{source_tech}-{source_proto}-{source_obfuscated}-"
+               "{target_tech}-{target_proto}-{target_obfuscated}-"
+               "{source_country}-{target_country}",
+)
 def test_reconnect_to_server_by_country_name(
     source_tech,
     target_tech,
