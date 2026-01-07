@@ -43,14 +43,14 @@ class VpnSettingsController extends _$VpnSettingsController
   /// Sets the VPN protocol.
   /// If VPN is connected, stores the pending protocol and shows a popup.
   /// The change will only be applied if user confirms in the popup.
-  // Otherwise sets it immediately.
+  /// Otherwise sets it immediately.
   Future<int> setVpnProtocol(VpnProtocol protocol) async {
     // Check if VPN is connected
     final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
     if (vpnStatus != null && vpnStatus.isConnected()) {
       // VPN is connected - store pending protocol and show popup
       // The change will be applied only if user confirms
-      ref.read(pendingProtocolProvider.notifier).set(protocol);
+      ref.read(pendingVPNProtocolProvider.notifier).set(protocol);
       ref
           .read(popupsProvider.notifier)
           .show(PopupCodes.reconnectToChangeProtocol);
@@ -62,21 +62,20 @@ class VpnSettingsController extends _$VpnSettingsController
   }
 
   /// Applies the pending protocol change.
-  /// Called by the reconnect popup when user confirms.
   /// Returns true if the protocol was applied successfully.
-  Future<bool> applyPendingProtocol() async {
+  Future<bool> applyPendingVPNProtocol() async {
     // Consume the pending protocol change
-    final pendingProtocol = ref
-        .read(pendingProtocolProvider.notifier)
+    final pendingVPNProtocol = ref
+        .read(pendingVPNProtocolProvider.notifier)
         .consume();
-    if (pendingProtocol == null) {
-      logger.e('Cannot apply protocol change: no pending protocol');
+    if (pendingVPNProtocol == null) {
+      logger.e('Cannot apply protocol change: no pending vpn protocol');
       return false;
     }
 
     // Apply the protocol change
     final status = await _setValue(
-      (repository) => repository.setVpnProtocol(pendingProtocol),
+      (repository) => repository.setVpnProtocol(pendingVPNProtocol),
       popupCodeOverrides: {
         DaemonStatusCode.virtualLocationsDisabled:
             PopupCodes.reconnectToChangeVirtualLocation,

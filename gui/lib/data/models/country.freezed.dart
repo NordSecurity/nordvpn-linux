@@ -47,7 +47,6 @@ $Res call({
 
 
 
-
 }
 /// @nodoc
 class _$CountryCopyWithImpl<$Res>
@@ -108,7 +107,6 @@ abstract mixin class _$CountryCopyWith<$Res> implements $CountryCopyWith<$Res> {
 $Res call({
  String code, String name
 });
-
 
 
 
