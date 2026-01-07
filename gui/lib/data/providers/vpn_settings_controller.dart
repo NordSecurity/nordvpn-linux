@@ -3,7 +3,9 @@ import 'package:nordvpn/data/models/app_settings.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
 import 'package:nordvpn/data/models/vpn_protocol.dart';
 import 'package:nordvpn/data/providers/app_state_provider.dart';
+import 'package:nordvpn/data/providers/pending_settings_provider.dart';
 import 'package:nordvpn/data/providers/popups_provider.dart';
+import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/data/repository/vpn_settings_repository.dart';
 import 'package:nordvpn/internal/popup_codes.dart';
@@ -26,6 +28,7 @@ const _popupIgnoreCodes = [
   DaemonStatusCode.dnsListModified,
   DaemonStatusCode.tpLiteDisabled,
   DaemonStatusCode.allowListModified,
+  DaemonStatusCode.vpnIsRunning,
 ];
 
 @riverpod
@@ -37,13 +40,57 @@ class VpnSettingsController extends _$VpnSettingsController
     return await _fetchSettings();
   }
 
+  /// Sets the VPN protocol.
+  /// If VPN is connected, stores the pending protocol and shows a popup.
+  /// The change will only be applied if user confirms in the popup.
+  // Otherwise sets it immediately.
   Future<int> setVpnProtocol(VpnProtocol protocol) async {
-    return await _setValue(
-      (repository) => repository.setVpnProtocol(protocol),
+    // Check if VPN is connected
+    final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
+    if (vpnStatus != null && vpnStatus.isConnected()) {
+      // VPN is connected - store pending protocol and show popup
+      // The change will be applied only if user confirms
+      ref.read(pendingProtocolProvider.notifier).set(protocol);
+      ref
+          .read(popupsProvider.notifier)
+          .show(PopupCodes.reconnectToChangeProtocol);
+      return DaemonStatusCode.success;
+    }
+
+    // VPN is not connected - apply the change directly
+    return await _setValue((repository) => repository.setVpnProtocol(protocol));
+  }
+
+  /// Applies the pending protocol change.
+  /// Called by the reconnect popup when user confirms.
+  /// Returns true if the protocol was applied successfully.
+  Future<bool> applyPendingProtocol() async {
+    // Consume the pending protocol change
+    final pendingProtocol = ref
+        .read(pendingProtocolProvider.notifier)
+        .consume();
+    if (pendingProtocol == null) {
+      logger.e('Cannot apply protocol change: no pending protocol');
+      return false;
+    }
+
+    // Apply the protocol change
+    final status = await _setValue(
+      (repository) => repository.setVpnProtocol(pendingProtocol),
       popupCodeOverrides: {
-        DaemonStatusCode.vpnIsRunning: PopupCodes.reconnectToChangeProtocol,
+        DaemonStatusCode.virtualLocationsDisabled:
+            PopupCodes.reconnectToChangeVirtualLocation,
       },
     );
+    // Accept success, nothingToDo, or vpnIsRunning as valid statuses
+    if (status != DaemonStatusCode.success &&
+        status != DaemonStatusCode.nothingToDo &&
+        status != DaemonStatusCode.vpnIsRunning) {
+      logger.e('Failed to apply protocol change: $status');
+      return false;
+    }
+
+    return true;
   }
 
   Future<int> resetToDefaults() async {
@@ -203,7 +250,8 @@ class VpnSettingsController extends _$VpnSettingsController
     return await _setValue(
       (repository) => repository.useVirtualServers(value),
       popupCodeOverrides: {
-        DaemonStatusCode.vpnIsRunning: PopupCodes.reconnectToChangeVirtualLocation,
+        DaemonStatusCode.vpnIsRunning:
+            PopupCodes.reconnectToChangeVirtualLocation,
       },
     );
   }
@@ -240,13 +288,13 @@ class VpnSettingsController extends _$VpnSettingsController
   /// The popupCodeOverrides map allows overriding daemon status codes with custom popup codes.
   /// This is useful when different settings need specific popup messages for the same daemon code.
   ///
-  /// Example: Both protocol and obfuscation changes return vpnIsRunning, but we want
+  /// Example: Both obfuscation and post-quantum changes return vpnIsRunning, but we want
   /// different popup messages for each:
   /// ```dart
   /// _setValue(
-  ///   (repo) => repo.setVpnProtocol(protocol),
+  ///   (repo) => repo.setObfuscated(value),
   ///   popupCodeOverrides: {
-  ///     DaemonStatusCode.vpnIsRunning: PopupCodes.reconnectToChangeProtocol,
+  ///     DaemonStatusCode.vpnIsRunning: PopupCodes.reconnectToChangeObfuscation,
   ///   },
   /// );
   /// ```
