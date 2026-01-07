@@ -23,7 +23,7 @@ final class DecisionPopup extends Popup {
         Row(
           spacing: theme.gapBetweenElements,
           children: [
-            Expanded(child: _noButton(context)),
+            Expanded(child: _noButton(ref, context)),
             Expanded(child: _yesButton(ref, context)),
           ],
         ),
@@ -31,9 +31,12 @@ final class DecisionPopup extends Popup {
     );
   }
 
-  Widget _noButton(BuildContext context) {
+  Widget _noButton(WidgetRef ref, BuildContext context) {
     return OutlinedButton(
-      onPressed: () => closePopup(context),
+      onPressed: () {
+        closePopup(context);
+        decisionMetadata.noAction?.call(ref);
+      },
       child: Text(decisionMetadata.noButtonText),
     );
   }
