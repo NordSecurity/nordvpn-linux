@@ -114,8 +114,8 @@ func TestHandleCheckboxOptionSuccessfulCheck(t *testing.T) {
 		t.Fatal("setter was not called")
 	}
 
-	assert.True(t, item.Checked(), "item should be checked")
 	cs.WaitForOperations()
+	assert.True(t, item.Checked(), "item should be checked")
 	assert.False(t, cs.operationInProgress, "operation should be marked as complete")
 }
 
@@ -141,8 +141,8 @@ func TestHandleCheckboxOptionSuccessfulUncheck(t *testing.T) {
 		t.Fatal("setter was not called")
 	}
 
-	assert.False(t, item.Checked(), "item should be unchecked")
 	cs.WaitForOperations()
+	assert.False(t, item.Checked(), "item should be unchecked")
 	assert.False(t, cs.operationInProgress, "operation should be marked as complete")
 }
 
@@ -166,8 +166,8 @@ func TestHandleCheckboxOptionSetterFails(t *testing.T) {
 		t.Fatal("setter was not called")
 	}
 
-	assert.False(t, item.Checked(), "item should not be checked if setter fails")
 	cs.WaitForOperations()
+	assert.False(t, item.Checked(), "item should not be checked if setter fails")
 	assert.False(t, cs.operationInProgress, "operation should be marked as complete even if setter fails")
 }
 
