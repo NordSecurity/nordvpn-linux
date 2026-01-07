@@ -50,7 +50,6 @@ $Res call({
 });
 
 
-$CityCopyWith<$Res>? get city;$CountryCopyWith<$Res>? get country;
 
 }
 /// @nodoc
@@ -78,31 +77,7 @@ as ConnectionParameters,isMeshnetRouting: null == isMeshnetRouting ? _self.isMes
 as bool,
   ));
 }
-/// Create a copy of VpnStatus
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$CityCopyWith<$Res>? get city {
-    if (_self.city == null) {
-    return null;
-  }
 
-  return $CityCopyWith<$Res>(_self.city!, (value) {
-    return _then(_self.copyWith(city: value));
-  });
-}/// Create a copy of VpnStatus
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$CountryCopyWith<$Res>? get country {
-    if (_self.country == null) {
-    return null;
-  }
-
-  return $CountryCopyWith<$Res>(_self.country!, (value) {
-    return _then(_self.copyWith(country: value));
-  });
-}
 }
 
 
@@ -158,7 +133,6 @@ $Res call({
 });
 
 
-@override $CityCopyWith<$Res>? get city;@override $CountryCopyWith<$Res>? get country;
 
 }
 /// @nodoc
@@ -187,31 +161,7 @@ as bool,
   ));
 }
 
-/// Create a copy of VpnStatus
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$CityCopyWith<$Res>? get city {
-    if (_self.city == null) {
-    return null;
-  }
 
-  return $CityCopyWith<$Res>(_self.city!, (value) {
-    return _then(_self.copyWith(city: value));
-  });
-}/// Create a copy of VpnStatus
-/// with the given fields replaced by the non-null parameter values.
-@override
-@pragma('vm:prefer-inline')
-$CountryCopyWith<$Res>? get country {
-    if (_self.country == null) {
-    return null;
-  }
-
-  return $CountryCopyWith<$Res>(_self.country!, (value) {
-    return _then(_self.copyWith(country: value));
-  });
-}
 }
 
 // dart format on

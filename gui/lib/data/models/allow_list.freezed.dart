@@ -51,7 +51,6 @@ $Res call({
 
 
 
-
 }
 /// @nodoc
 class _$AllowListCopyWithImpl<$Res>
@@ -131,7 +130,6 @@ $Res call({
 
 
 
-
 }
 /// @nodoc
 class __$AllowListCopyWithImpl<$Res>
@@ -190,7 +188,6 @@ abstract mixin class $PortIntervalCopyWith<$Res>  {
 $Res call({
  int start, int end, PortType type
 });
-
 
 
 
@@ -263,7 +260,6 @@ $Res call({
 
 
 
-
 }
 /// @nodoc
 class __$PortIntervalCopyWithImpl<$Res>
@@ -326,7 +322,6 @@ abstract mixin class $SubnetCopyWith<$Res>  {
 $Res call({
  String value, int? ip, int? cidr
 });
-
 
 
 
@@ -399,7 +394,6 @@ abstract mixin class _$SubnetCopyWith<$Res> implements $SubnetCopyWith<$Res> {
 $Res call({
  String value, int? ip, int? cidr
 });
-
 
 
 
