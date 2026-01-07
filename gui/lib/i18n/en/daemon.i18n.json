@@ -101,6 +101,9 @@
     "code_3051_title": "Disabled technology",
     "code_3051_msg": "Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.",
 
+    "code_3057_title": "Virtual location required",
+    "code_3057_msg": "Please enable virtual location to connect to the server.",
+
     "code_5007_title": "Restart daemon to apply setting",
     "code_5007_msg": "Restart the daemon to apply this setting. For example, use the command `sudo systemctl restart nordvpnd` on systemd distributions.",
 
