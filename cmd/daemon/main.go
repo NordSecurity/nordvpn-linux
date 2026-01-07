@@ -254,26 +254,13 @@ func main() {
 	}
 	log.Println(internal.InfoPrefix, "CDN URL:", cdnUrl)
 
-	threatProtectionLiteServers := func() *dns.NameServers {
-		cdn := core.NewCDNAPI(
-			userAgent,
-			cdnUrl,
-			httpClientSimple,
-			validator,
-		)
-		nameservers, err := cdn.ThreatProtectionLite()
-		if err != nil {
-			log.Println(internal.ErrorPrefix, "error retrieving nameservers:", err)
-			return dns.NewNameServers(nil)
-		}
-		return dns.NewNameServers(nameservers.Servers)
-	}()
-
-	resolver := network.NewResolver(fw, threatProtectionLiteServers)
-
-	if err := SetBufferSizeForHTTP3(); err != nil {
-		log.Println(internal.WarningPrefix, "failed to set buffer size for HTTP/3:", err)
-	}
+	threatProtectionLiteServers, resolver := buildTpServersAndResolver(
+		userAgent,
+		cdnUrl,
+		httpClientSimple,
+		validator,
+		fw,
+	)
 
 	httpClientWithRotator := request.NewStdHTTP()
 	httpClientWithRotator.Transport = createTimedOutTransport(
@@ -773,6 +760,7 @@ func main() {
 	if err := analytics.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping analytics:", err)
 	}
+	log.Println(internal.InfoPrefix, "Daemon stopped")
 }
 
 // assignMooseDBPermissions updates moose DB permissions.
@@ -854,4 +842,34 @@ func buildClientAPIAndSessionStores(
 	builder.BuildNCCredsStore(smartAPI)
 
 	return smartAPI, builder
+}
+
+func buildTpServersAndResolver(
+	userAgent string,
+	cdnUrl string,
+	httpClientSimple *http.Client,
+	validator response.Validator,
+	fw *firewall.Firewall,
+) (*dns.NameServers, *network.Resolver) {
+	threatProtectionLiteServers := func() *dns.NameServers {
+		cdn := core.NewCDNAPI(
+			userAgent,
+			cdnUrl,
+			httpClientSimple,
+			validator,
+		)
+		nameservers, err := cdn.ThreatProtectionLite()
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "error retrieving nameservers:", err)
+			return dns.NewNameServers(nil)
+		}
+		return dns.NewNameServers(nameservers.Servers)
+	}()
+
+	resolver := network.NewResolver(fw, threatProtectionLiteServers)
+
+	if err := SetBufferSizeForHTTP3(); err != nil {
+		log.Println(internal.WarningPrefix, "failed to set buffer size for HTTP/3:", err)
+	}
+	return threatProtectionLiteServers, resolver
 }

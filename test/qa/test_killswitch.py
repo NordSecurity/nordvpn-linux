@@ -2,11 +2,15 @@ import pytest
 import sh
 import os
 import glob
+import time
+
+from pathlib import Path
 
 import lib
 from lib import (
     daemon,
     login,
+    logging,
     network,
 )
 
@@ -175,6 +179,7 @@ def test_fancy_transport():
 
 # This test assumes being run on docker
 def test_killswitch_on_after_update():
+    assert Path("/.dockerenv").exists(), "Test must be executed in docker"
     # Mocking ps to pretend as if we are in an initd system
     sh.sudo.mv("/usr/bin/ps", "/usr/bin/pso")
     sh.sudo.cp("/etc/mock_ps.sh", "/usr/bin/ps")
@@ -183,7 +188,7 @@ def test_killswitch_on_after_update():
     sh.dpkg_deb("-R", DEB_PATH, "/tmp/")
     ver = str(sh.dpkg_query("-f", '${VERSION}', "-W", "nordvpn"))
     increased_ver = str(int(ver[0]) + 1) + ver[1:]
-    print(increased_ver)
+    logging.log(f"Increase version {increased_ver}")
     with open("/tmp/DEBIAN/control", "rb") as f:
         data = f.readlines()
     data[1] = bytes("Version: " + increased_ver + "\n", "utf-8")
@@ -193,14 +198,18 @@ def test_killswitch_on_after_update():
     os.remove("/tmp/DEBIAN/conffiles")
     sh.sudo("dpkg-deb", "-b", "/tmp/", "/opt/updated.deb")
 
-
     sh.nordvpn.set.killswitch.on()
     assert daemon.is_killswitch_on()
     assert network.is_not_available(2)
+    logging.log("Start installing")
     sh.sudo.apt.install("/opt/updated.deb", "-y")
+    logging.log("Finish installing")
     assert network.is_not_available(2)
+    logging.log(f"settings xxx {sh.nordvpn.settings()}")
     assert daemon.is_killswitch_on()
     sh.nordvpn.set.killswitch.off()
+    logging.log(f"settings xxx2 {sh.nordvpn.settings()}")
+    time.sleep(60 * 5)
     assert network.is_available()
     # Restore to normal if more tests are run afterwards
     sh.sudo.mv("/usr/bin/pso", "/usr/bin/ps")
