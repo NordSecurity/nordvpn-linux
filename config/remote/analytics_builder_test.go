@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -70,7 +71,7 @@ func TestEventJSONOutput(t *testing.T) {
 			err := json.Unmarshal([]byte(debugerEvent.JsonData), &decodedEvent)
 			require.NoError(t, err, "JSON should be valid and parsable into remote-config event")
 
-			assert.Equal(t, messageNamespace, decodedEvent.MessageNamespace, "namespace should be correctly set")
+			assert.Equal(t, internal.DebugEventMessageNamespace, decodedEvent.MessageNamespace, "namespace should be correctly set")
 			assert.Equal(t, subscope, decodedEvent.Subscope, "subscope should be correctly set")
 			assert.Equal(t, tc.event.Event, decodedEvent.Event, "event type should match")
 			assert.Equal(t, tc.expectedResult, decodedEvent.Result, "result should match expected")
@@ -144,7 +145,7 @@ func TestDebuggerEventContainsOnlyDesignedFields(t *testing.T) {
 	assert.ElementsMatch(t, expectedKeys, actualKeys, "JSON fields should match expected set")
 
 	// Optionally, check that the names are correct and values are as expected
-	assert.Equal(t, messageNamespace, payload["namespace"])
+	assert.Equal(t, internal.DebugEventMessageNamespace, payload["namespace"])
 	assert.Equal(t, subscope, payload["subscope"])
 	assert.Equal(t, "test-env", payload["client"])
 	assert.Equal(t, DownloadFailure.String(), payload["event"])
