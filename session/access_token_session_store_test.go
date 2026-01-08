@@ -682,3 +682,47 @@ func TestAccessTokenSessionStore_Renew_ForceRenewal(t *testing.T) {
 		})
 	}
 }
+
+func TestAccessTokenSessionStore_Renew_StoresTokenRenewDateInConfig(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	uid := int64(123)
+	idempotencyKey := uuid.New()
+	pastTime := time.Now().UTC().Add(-24 * time.Hour)
+	futureTime := time.Now().UTC().Add(24 * time.Hour)
+	updatedAt := time.Now().UTC()
+
+	cfg := &config.Config{
+		AutoConnectData: config.AutoConnectData{ID: uid},
+		TokensData: map[int64]config.TokenData{
+			uid: {
+				Token:          "old-token",
+				RenewToken:     "old-renew",
+				TokenExpiry:    pastTime.Format(internal.ServerDateFormat),
+				IdempotencyKey: &idempotencyKey,
+			},
+		},
+	}
+
+	cfgManager := &mock.ConfigManager{Cfg: cfg}
+	errorRegistry := internal.NewErrorHandlingRegistry[error]()
+
+	renewAPICall := func(renewToken string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+		return &session.AccessTokenResponse{
+			Token:      "ab78bb36299d442fa0715fb53b5e3e58",
+			RenewToken: "ab78bb36299d442fa0715fb53b5e3e59",
+			ExpiresAt:  futureTime.Format(internal.ServerDateFormat),
+			UpdatedAt:  updatedAt.Format(internal.ServerDateFormat),
+		}, nil
+	}
+
+	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
+	err := store.Renew()
+
+	assert.NoError(t, err)
+
+	// Verify TokenRenewDate is stored in config
+	tokenData := cfgManager.Cfg.TokensData[uid]
+	assert.Equal(t, updatedAt.Format(internal.ServerDateFormat), tokenData.TokenRenewDate,
+		"TokenRenewDate should be stored in config")
+}
