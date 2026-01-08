@@ -210,6 +210,7 @@ type TokenRenewResponse struct {
 	Token      string `json:"token"`
 	RenewToken string `json:"renew_token"`
 	ExpiresAt  string `json:"expires_at"`
+	UpdatedAt  string `json:"updated_at"`
 }
 
 type Plans []Plan
