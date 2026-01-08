@@ -95,9 +95,9 @@ func (d *DNSServiceSetter) setBasedOnComment(iface string, nameservers []string)
 	}
 
 	resolvConfFileContentsStr := string(resolvConfFileContents)
-	if strings.Contains(string(resolvConfFileContentsStr), resolvdComment) {
+	if strings.Contains(resolvConfFileContentsStr, resolvdComment) {
 		log.Println(internal.InfoPrefix, dnsPrefix,
-			"configuring DNS with systemd-resolved, infered from resolv.conf comment")
+			"configuring DNS with systemd-resolved, inferred from resolv.conf comment")
 		if err := d.set(d.systemdResolvedSetter, iface, nameservers); err != nil {
 			return fmt.Errorf("setting DNS based on resolv.conf comment: %w", err)
 		}
@@ -116,7 +116,7 @@ func (d *DNSServiceSetter) setBasedOnResolvConfLinkTarget(iface string, nameserv
 	}
 
 	if strings.Contains(resolvConfLinkDestination, resolvedLinkTarget) {
-		log.Println(internal.InfoPrefix, dnsPrefix, "configuring DNS with systemd-resolved, infered from link target")
+		log.Println(internal.InfoPrefix, dnsPrefix, "configuring DNS with systemd-resolved, inferred from link target")
 		if err := d.set(d.systemdResolvedSetter, iface, nameservers); err != nil {
 			return fmt.Errorf("setting DNS based on resolv.conf link target: %w", err)
 		}
