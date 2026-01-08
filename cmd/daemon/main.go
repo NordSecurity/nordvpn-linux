@@ -350,6 +350,7 @@ func main() {
 
 	heartBeatSubject.Subscribe(analytics.NotifyHeartBeat)
 	httpCallsSubject.Subscribe(analytics.NotifyRequestAPI)
+	configEvents.Subscribe(analytics)
 	daemonEvents.Subscribe(analytics)
 
 	firstopen.RegisterNotifier(

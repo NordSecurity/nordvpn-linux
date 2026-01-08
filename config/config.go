@@ -2,6 +2,7 @@
 package config
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -70,6 +71,17 @@ func (c Config) withLoginData(other *Config) Config {
 func (c Config) withAnalyticsConsent(value AnalyticsConsent) Config {
 	c.AnalyticsConsent = value
 	return c
+}
+
+// DeepCopy creates a deep copy of the Config struct using JSON serialization.
+func (c Config) DeepCopy() (Config, error) {
+	var copy Config
+	data, err := json.Marshal(c)
+	if err != nil {
+		return copy, err
+	}
+	err = json.Unmarshal(data, &copy)
+	return copy, err
 }
 
 type AutoConnectData struct {
