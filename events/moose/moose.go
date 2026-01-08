@@ -567,6 +567,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		},
 		threatProtectionLiteToInternalType(data.ThreatProtectionLite),
 		-1,
+		"", // recommendationUuid - this will be addressed by LVPN-9414
 		nil,
 	)); err != nil {
 		return err
