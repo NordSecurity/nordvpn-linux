@@ -6,6 +6,7 @@ type TokenData struct {
 	Token                  string     `json:"token,omitempty"`
 	TokenExpiry            string     `json:"token_expiry,omitempty"`
 	RenewToken             string     `json:"renew_token,omitempty"`
+	TokenRenewDate         string     `json:"token_renew_date,omitempty"`
 	IsOAuth                bool       `json:"is_oauth,omitempty"`
 	TrustedPassToken       string     `json:"trusted_pass_token,omitempty"`
 	TrustedPassOwnerID     string     `json:"trusted_pass_owner_id,omitempty"`

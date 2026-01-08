@@ -73,6 +73,9 @@ func (StdFilesystemHandle) WriteFile(location string, data []byte, mode fs.FileM
 }
 
 type DataConfigChange struct {
+	// PreviousConfig contains the config state before the change (nil on first load)
+	PreviousConfig *Config
+	// Config contains the config state after the change
 	Config *Config
 	// Caller contains file and line number of the call to update the config
 	Caller string
@@ -120,13 +123,15 @@ func (f *FilesystemConfigManager) SaveWith(fn SaveFunc) error {
 	// deadlock when conifg change subscriber tries to read the config with the same manager when the change is
 	// published. The assumption here is that publisher is protected with it's own lock.
 	caller := getCaller()
+	var previousCfg *Config
 	var c Config
 	var err error
 	defer func() {
 		if err == nil && f.configPublisher != nil {
 			f.configPublisher.Publish(DataConfigChange{
-				Config: &c,
-				Caller: caller,
+				PreviousConfig: previousCfg,
+				Config:         &c,
+				Caller:         caller,
 			})
 		}
 	}()
@@ -136,6 +141,12 @@ func (f *FilesystemConfigManager) SaveWith(fn SaveFunc) error {
 
 	if err := f.load(&c); err != nil {
 		return err
+	}
+
+	// Deep copy the config before applying changes to preserve the previous state
+	prevCopy, copyErr := c.DeepCopy()
+	if copyErr == nil {
+		previousCfg = &prevCopy
 	}
 
 	c = fn(c)
@@ -172,11 +183,13 @@ func (f *FilesystemConfigManager) Reset(preserveLoginData bool, disableKillswitc
 	// published. The assumption here is that publisher is protected with it's own lock.
 	caller := getCaller()
 	var newCfg Config
+	var previousCfg *Config
 	defer func() {
 		if retErr == nil && f.configPublisher != nil {
 			f.configPublisher.Publish(DataConfigChange{
-				Config: &newCfg,
-				Caller: caller,
+				PreviousConfig: previousCfg,
+				Config:         &newCfg,
+				Caller:         caller,
 			})
 		}
 	}()
@@ -185,6 +198,12 @@ func (f *FilesystemConfigManager) Reset(preserveLoginData bool, disableKillswitc
 	retErr = f.load(&current)
 	if retErr != nil {
 		return fmt.Errorf("loading old config: %w", retErr)
+	}
+
+	// Deep copy the current config to preserve the previous state
+	prevCopy, copyErr := current.DeepCopy()
+	if copyErr == nil {
+		previousCfg = &prevCopy
 	}
 
 	newCfg = *newConfig(f.machineIDGetter)

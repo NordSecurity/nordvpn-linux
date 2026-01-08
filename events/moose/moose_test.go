@@ -223,3 +223,174 @@ func TestChangeConsentState(t *testing.T) {
 		})
 	}
 }
+
+func TestGetTokenRenewDate(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		cfg      *config.Config
+		expected string
+	}{
+		{
+			name:     "nil config returns empty string",
+			cfg:      nil,
+			expected: "",
+		},
+		{
+			name:     "nil TokensData returns empty string",
+			cfg:      &config.Config{TokensData: nil},
+			expected: "",
+		},
+		{
+			name: "missing user ID returns empty string",
+			cfg: &config.Config{
+				AutoConnectData: config.AutoConnectData{ID: 123},
+				TokensData:      map[int64]config.TokenData{},
+			},
+			expected: "",
+		},
+		{
+			name: "returns TokenRenewDate for current user",
+			cfg: &config.Config{
+				AutoConnectData: config.AutoConnectData{ID: 123},
+				TokensData: map[int64]config.TokenData{
+					123: {TokenRenewDate: "2024-01-15 10:30:00"},
+				},
+			},
+			expected: "2024-01-15 10:30:00",
+		},
+		{
+			name: "returns empty string when TokenRenewDate is empty",
+			cfg: &config.Config{
+				AutoConnectData: config.AutoConnectData{ID: 123},
+				TokensData: map[int64]config.TokenData{
+					123: {TokenRenewDate: ""},
+				},
+			},
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := getTokenRenewDate(tt.cfg)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestHandleTokenRenewDateChange(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name              string
+		prevConfig        *config.Config
+		currConfig        *config.Config
+		expectMooseCalled bool
+		expectedTimestamp int32
+	}{
+		{
+			name:              "no change when current date is empty",
+			prevConfig:        nil,
+			currConfig:        &config.Config{TokensData: map[int64]config.TokenData{}},
+			expectMooseCalled: false,
+		},
+		{
+			name: "no change when dates are the same",
+			prevConfig: &config.Config{
+				AutoConnectData: config.AutoConnectData{ID: 123},
+				TokensData: map[int64]config.TokenData{
+					123: {TokenRenewDate: "2024-01-15 10:30:00"},
+				},
+			},
+			currConfig: &config.Config{
+				AutoConnectData: config.AutoConnectData{ID: 123},
+				TokensData: map[int64]config.TokenData{
+					123: {TokenRenewDate: "2024-01-15 10:30:00"},
+				},
+			},
+			expectMooseCalled: false,
+		},
+		{
+			name: "calls moose when date changes",
+			prevConfig: &config.Config{
+				AutoConnectData: config.AutoConnectData{ID: 123},
+				TokensData: map[int64]config.TokenData{
+					123: {TokenRenewDate: "2024-01-15 10:30:00"},
+				},
+			},
+			currConfig: &config.Config{
+				AutoConnectData: config.AutoConnectData{ID: 123},
+				TokensData: map[int64]config.TokenData{
+					123: {TokenRenewDate: "2024-01-16 11:00:00"},
+				},
+			},
+			expectMooseCalled: true,
+			expectedTimestamp: int32(time.Date(2024, 1, 16, 11, 0, 0, 0, time.UTC).Unix()),
+		},
+		{
+			name:       "calls moose when date is set for first time (prev nil)",
+			prevConfig: nil,
+			currConfig: &config.Config{
+				AutoConnectData: config.AutoConnectData{ID: 123},
+				TokensData: map[int64]config.TokenData{
+					123: {TokenRenewDate: "2024-01-16 11:00:00"},
+				},
+			},
+			expectMooseCalled: true,
+			expectedTimestamp: int32(time.Date(2024, 1, 16, 11, 0, 0, 0, time.UTC).Unix()),
+		},
+		{
+			name: "calls moose when date is set for first time (prev empty)",
+			prevConfig: &config.Config{
+				AutoConnectData: config.AutoConnectData{ID: 123},
+				TokensData: map[int64]config.TokenData{
+					123: {TokenRenewDate: ""},
+				},
+			},
+			currConfig: &config.Config{
+				AutoConnectData: config.AutoConnectData{ID: 123},
+				TokensData: map[int64]config.TokenData{
+					123: {TokenRenewDate: "2024-01-16 11:00:00"},
+				},
+			},
+			expectMooseCalled: true,
+			expectedTimestamp: int32(time.Date(2024, 1, 16, 11, 0, 0, 0, time.UTC).Unix()),
+		},
+		{
+			name:       "ignores invalid date format",
+			prevConfig: nil,
+			currConfig: &config.Config{
+				AutoConnectData: config.AutoConnectData{ID: 123},
+				TokensData: map[int64]config.TokenData{
+					123: {TokenRenewDate: "invalid-date"},
+				},
+			},
+			expectMooseCalled: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mooseCalled := false
+			var capturedTimestamp int32
+
+			s := &Subscriber{
+				mooseSetTokenRenewDateFunc: func(timestamp int32) uint32 {
+					mooseCalled = true
+					capturedTimestamp = timestamp
+					return 0
+				},
+			}
+
+			err := s.handleTokenRenewDateChange(tt.prevConfig, tt.currConfig)
+			assert.NilError(t, err)
+			assert.Equal(t, tt.expectMooseCalled, mooseCalled, "moose call expectation mismatch")
+
+			if tt.expectMooseCalled {
+				assert.Equal(t, tt.expectedTimestamp, capturedTimestamp, "timestamp mismatch")
+			}
+		})
+	}
+}

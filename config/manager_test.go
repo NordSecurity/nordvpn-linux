@@ -163,3 +163,94 @@ func TestConfigDefaultValues(t *testing.T) {
 		})
 	}
 }
+
+func TestConfig_DeepCopy(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name   string
+		config Config
+	}{
+		{
+			name: "config with TokensData",
+			config: Config{
+				AutoConnectData: AutoConnectData{
+					ID: 123,
+					Allowlist: Allowlist{
+						Ports: Ports{
+							TCP: PortSet{},
+							UDP: PortSet{},
+						},
+					},
+				},
+				TokensData: map[int64]TokenData{
+					123: {
+						Token:          "test-token",
+						RenewToken:     "test-renew",
+						TokenExpiry:    "2024-01-15 10:30:00",
+						TokenRenewDate: "2024-01-14 09:00:00",
+					},
+				},
+			},
+		},
+		{
+			name: "config with Allowlist",
+			config: Config{
+				AutoConnectData: AutoConnectData{
+					Allowlist: Allowlist{
+						Ports: Ports{
+							TCP: PortSet{443: true, 80: true},
+							UDP: PortSet{53: true},
+						},
+						Subnets: []string{"192.168.1.0/24", "10.0.0.0/8"},
+					},
+				},
+			},
+		},
+		{
+			name: "config with multiple users",
+			config: Config{
+				AutoConnectData: AutoConnectData{
+					ID: 1,
+					Allowlist: Allowlist{
+						Ports: Ports{
+							TCP: PortSet{},
+							UDP: PortSet{},
+						},
+					},
+				},
+				TokensData: map[int64]TokenData{
+					1: {Token: "token1", TokenRenewDate: "2024-01-15 10:00:00"},
+					2: {Token: "token2", TokenRenewDate: "2024-01-16 11:00:00"},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			copied, err := tt.config.DeepCopy()
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.config.AutoConnectData.ID, copied.AutoConnectData.ID)
+			assert.Equal(t, len(tt.config.TokensData), len(copied.TokensData))
+			for id, td := range tt.config.TokensData {
+				assert.Equal(t, td.Token, copied.TokensData[id].Token)
+				assert.Equal(t, td.TokenRenewDate, copied.TokensData[id].TokenRenewDate)
+			}
+
+			if tt.config.TokensData != nil {
+				for id := range copied.TokensData {
+					td := copied.TokensData[id]
+					td.Token = "modified-token"
+					copied.TokensData[id] = td
+					break
+				}
+				for id := range tt.config.TokensData {
+					assert.NotEqual(t, "modified-token", tt.config.TokensData[id].Token)
+					break
+				}
+			}
+		})
+	}
+}
