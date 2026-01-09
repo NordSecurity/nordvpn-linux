@@ -1086,7 +1086,7 @@ func (netw *Combined) setMesh(
 		)
 	}
 
-	err = netw.refresh(cfg)
+	err = netw.refresh(cfg, self)
 	if err != nil {
 		return err
 	}
@@ -1097,7 +1097,7 @@ func (netw *Combined) setMesh(
 	return nil
 }
 
-func (netw *Combined) refresh(cfg mesh.MachineMap) error {
+func (netw *Combined) refresh(cfg mesh.MachineMap, self netip.Addr) error {
 	if err := netw.defaultMeshUnBlock(); err != nil {
 		log.Println(internal.WarningPrefix, err)
 	}
@@ -1120,11 +1120,11 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 	netw.cfg = cfg
 
 	var err error
-	if err = netw.defaultMeshBlock(cfg.Machine.Address); err != nil { //nolint:staticcheck
+	if err = netw.defaultMeshBlock(self); err != nil { //nolint:staticcheck
 		return fmt.Errorf("adding default block rule: %w", err)
 	}
-
-	if err = netw.allowIncoming(cfg.PublicKey, cfg.Machine.Address, true); err != nil { //nolint:staticcheck
+	log.Println("BUGDE: machine addr: " + self.String())
+	if err = netw.allowIncoming(cfg.PublicKey, self, true); err != nil { //nolint:staticcheck
 		return fmt.Errorf("allowing to reach self via meshnet: %w", err)
 	}
 

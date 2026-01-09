@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/netip"
 
@@ -149,6 +150,7 @@ func (api *SimpleClientAPI) Register(token string, peer mesh.Machine) (*mesh.Mac
 	if len(raw.Addresses) > 0 {
 		addr = raw.Addresses[0]
 	}
+	log.Println("BUGDE: ip gotten via register mesh api endpoint:" + addr.String())
 
 	return &mesh.Machine{
 		ID:              raw.Identifier,
