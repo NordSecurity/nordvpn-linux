@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -726,17 +727,24 @@ func TestPickServer(t *testing.T) {
 			onlyPhysicServers: true,
 			expectedError:     internal.ErrVirtualServerSelected,
 		},
+		{
+			name:          "can't find a server",
+			api:           mockFailingServersAPI{},
+			servers:       core.Servers{},
+			tech:          config.Technology_NORDLYNX,
+			expectedError: internal.ErrServerIsUnavailable,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			server, remote, err := PickServer(test.api,
+			serverSelection, err := PickServer(test.api,
 				countriesList(), test.servers, test.longitude, test.latitude, test.tech, test.protocol, test.obfuscated, test.tag, test.groupFlag, !test.onlyPhysicServers)
 
 			assert.Equal(t, test.expectedError, err)
-			assert.Equal(t, test.expectedRemoteServer, remote)
+			assert.Equal(t, test.expectedRemoteServer, serverSelection.remote)
 			if len(test.expectedServerName) > 0 {
-				assert.Equal(t, test.expectedServerName, server.Name)
+				assert.Equal(t, test.expectedServerName, serverSelection.server.Name)
 			}
 		})
 	}
@@ -823,6 +831,89 @@ func TestGetServerParameters(t *testing.T) {
 			params := GetServerParameters(test.tag, test.group, countriesList())
 
 			assert.Equal(t, test.expected, params)
+		})
+	}
+}
+
+func TestRecommendationUUID_ExtractRecommendationUUID(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                    string
+		headerKey               string
+		headerValue             string
+		expectedError           bool
+		expectedRecommendedUUID recommendationUUID
+	}{
+		{
+			name:                    "valid uuid",
+			headerKey:               recommendationUUIDHeader,
+			headerValue:             "c0b4c990-3000-457f-8b81-6850b8cdb54e",
+			expectedError:           false,
+			expectedRecommendedUUID: recommendationUUID(TestRecommendedUUID),
+		},
+		{
+			name:                    "missing uuid",
+			headerKey:               "NOT-Recommendation-Uuid",
+			headerValue:             "random-value",
+			expectedError:           true,
+			expectedRecommendedUUID: emptyUuid,
+		},
+		{
+			name:                    "bad uuid",
+			headerKey:               recommendationUUIDHeader,
+			headerValue:             "not-a-uuid",
+			expectedError:           true,
+			expectedRecommendedUUID: emptyUuid,
+		},
+	}
+
+	for _, test := range tests {
+		header := http.Header{}
+		header.Set(test.headerKey, test.headerValue)
+
+		t.Run(test.name, func(t *testing.T) {
+			recommendedUUID, err := extractRecommendationUUID(header)
+			assert.Equal(t, test.expectedRecommendedUUID, recommendedUUID)
+			if test.expectedError {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+func TestRecommendationUUID_GetServersRemote(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                    string
+		api                     core.ServersAPI
+		longitude               float64
+		latitude                float64
+		tech                    config.Technology
+		protocol                config.Protocol
+		obfuscated              bool
+		tag                     core.ServerTag
+		group                   config.ServerGroup
+		expectedError           error
+		expectedRecommendedUUID recommendationUUID
+	}{
+		{
+			name:                    "recommended uuid",
+			api:                     mockServersAPI{},
+			tech:                    config.Technology_NORDLYNX,
+			expectedError:           nil,
+			expectedRecommendedUUID: recommendationUUID(TestRecommendedUUID),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, recommendedUUID, err := getServersRemote(test.api, test.longitude, test.latitude, test.tech, test.protocol, test.obfuscated, test.tag, test.group)
+			assert.Equal(t, test.expectedError, err)
+			assert.Equal(t, test.expectedRecommendedUUID, recommendedUUID)
 		})
 	}
 }

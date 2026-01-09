@@ -142,7 +142,7 @@ func (r *RPC) connect(
 	log.Println(internal.DebugPrefix, "picking servers for", cfg.Technology, "technology", "input",
 		in.GetServerTag(), in.GetServerGroup())
 
-	server, remote, err := selectServer(r, &insights, cfg, inputServerTag, in.GetServerGroup())
+	serverSelection, err := selectServer(r, &insights, cfg, inputServerTag, in.GetServerGroup())
 	if err != nil {
 		var errorCode *internal.ErrorWithCode
 		if errors.As(err, &errorCode) {
@@ -164,12 +164,12 @@ func (r *RPC) connect(
 		return false, err
 	}
 
-	country, err := server.Locations.Country()
+	country, err := serverSelection.server.Locations.Country()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, err)
 	}
 
-	ip, err := server.IPv4()
+	ip, err := serverSelection.server.IPv4()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, err)
 		return false, internal.ErrUnhandled
@@ -181,7 +181,7 @@ func (r *RPC) connect(
 		log.Println(internal.ErrorPrefix, err)
 		return false, internal.ErrUnhandled
 	}
-	r.lastServer = *server
+	r.lastServer = *serverSelection.server
 
 	tokenData := cfg.TokensData[cfg.AutoConnectData.ID]
 	creds := vpn.Credentials{
@@ -191,13 +191,13 @@ func (r *RPC) connect(
 	}
 	serverData := vpn.ServerData{
 		IP:                subnet.Addr(),
-		Hostname:          server.Hostname,
+		Hostname:          serverSelection.server.Hostname,
 		Protocol:          cfg.AutoConnectData.Protocol,
-		NordLynxPublicKey: server.NordLynxPublicKey,
+		NordLynxPublicKey: serverSelection.server.NordLynxPublicKey,
 		Obfuscated:        cfg.AutoConnectData.Obfuscate,
 		PostQuantum:       cfg.AutoConnectData.PostquantumVpn,
-		OpenVPNVersion:    server.Version(),
-		NordWhisperPort:   server.NordWhisperPort,
+		OpenVPNVersion:    serverSelection.server.Version(),
+		NordWhisperPort:   serverSelection.server.NordWhisperPort,
 	}
 
 	allowlist := cfg.AutoConnectData.Allowlist
@@ -206,8 +206,8 @@ func (r *RPC) connect(
 	r.RequestedConnParams.Set(source, parameters)
 
 	city := country.City.Name
-	if len(server.Locations) > 0 {
-		city = server.Locations[0].City.Name
+	if len(serverSelection.server.Locations) > 0 {
+		city = serverSelection.server.Locations[0].City.Name
 	}
 
 	event := events.DataConnect{
@@ -219,15 +219,16 @@ func (r *RPC) connect(
 		DurationMs:              getElapsedTime(connectingStartTime),
 		EventStatus:             events.StatusAttempt,
 		TargetServerSelection:   determineServerSelectionRule(parameters),
-		ServerFromAPI:           remote,
-		IsVirtualLocation:       server.IsVirtualLocation(),
+		ServerFromAPI:           serverSelection.remote,
+		IsVirtualLocation:       serverSelection.server.IsVirtualLocation(),
 		TargetServerCity:        city,
 		TargetServerCountry:     country.Name,
 		TargetServerCountryCode: country.Code,
-		TargetServerDomain:      server.Hostname,
-		TargetServerGroup:       determineTargetServerGroup(server, parameters),
+		TargetServerDomain:      serverSelection.server.Hostname,
+		TargetServerGroup:       determineTargetServerGroup(serverSelection.server, parameters),
 		TargetServerIP:          subnet.Addr(),
-		TargetServerName:        server.Name,
+		TargetServerName:        serverSelection.server.Name,
+		RecommendationUUID:      string(serverSelection.recommendationUUID),
 	}
 
 	// Send the connection attempt event
@@ -248,7 +249,7 @@ func (r *RPC) connect(
 	}()
 
 	virtualServer := ""
-	if server.IsVirtualLocation() {
+	if serverSelection.server.IsVirtualLocation() {
 		virtualServer = " - Virtual"
 	}
 	data := []string{r.lastServer.Name, r.lastServer.Hostname, virtualServer}
@@ -261,6 +262,7 @@ func (r *RPC) connect(
 		Protocol:             cfg.AutoConnectData.Protocol,
 		Technology:           cfg.Technology,
 		ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
+		RecommendationUUID:   string(serverSelection.recommendationUUID),
 	}, r.events.Service.Disconnect.Publish)
 
 	err = r.netw.Start(
@@ -279,7 +281,7 @@ func (r *RPC) connect(
 		storePendingRecentConnection(r.recentVPNConnStore)
 		connectionEstablished := event.EventStatus == events.StatusSuccess
 		if connectionEstablished && isRecentConnectionSupported(event.TargetServerSelection) {
-			recentModel, err := buildRecentConnectionModel(event, parameters, server, r.dm, cfg)
+			recentModel, err := buildRecentConnectionModel(event, parameters, serverSelection.server, r.dm, cfg)
 			if err != nil {
 				log.Println(internal.WarningPrefix, "Failed to build recent VPN connection model:", err)
 				return

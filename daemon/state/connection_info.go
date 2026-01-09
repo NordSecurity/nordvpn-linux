@@ -102,20 +102,21 @@ func (c *ConnectionInfo) ConnectionStatusNotifyConnect(e events.DataConnect) err
 	}
 
 	status := types.ConnectionStatus{
-		State:             connectionStatus,
-		Technology:        e.Technology,
-		Protocol:          e.Protocol,
-		IP:                e.TargetServerIP,
-		Name:              e.TargetServerName,
-		Hostname:          e.TargetServerDomain,
-		Country:           e.TargetServerCountry,
-		CountryCode:       e.TargetServerCountryCode,
-		City:              e.TargetServerCity,
-		StartTime:         startTime,
-		IsVirtualLocation: e.IsVirtualLocation,
-		IsPostQuantum:     e.IsPostQuantum,
-		IsObfuscated:      e.IsObfuscated,
-		IsMeshnetPeer:     e.IsMeshnetPeer,
+		State:              connectionStatus,
+		Technology:         e.Technology,
+		Protocol:           e.Protocol,
+		IP:                 e.TargetServerIP,
+		Name:               e.TargetServerName,
+		Hostname:           e.TargetServerDomain,
+		Country:            e.TargetServerCountry,
+		CountryCode:        e.TargetServerCountryCode,
+		City:               e.TargetServerCity,
+		StartTime:          startTime,
+		IsVirtualLocation:  e.IsVirtualLocation,
+		IsPostQuantum:      e.IsPostQuantum,
+		IsObfuscated:       e.IsObfuscated,
+		IsMeshnetPeer:      e.IsMeshnetPeer,
+		RecommendationUUID: e.RecommendationUUID,
 	}
 
 	c.setStatus(status, fullyConnected)
@@ -128,9 +129,10 @@ func (c *ConnectionInfo) ConnectionStatusNotifyDisconnect(e events.DataDisconnec
 		return nil
 	}
 	status := types.ConnectionStatus{
-		State:      pb.ConnectionState_DISCONNECTED,
-		TunnelName: "",
-		StartTime:  nil,
+		State:              pb.ConnectionState_DISCONNECTED,
+		TunnelName:         "",
+		StartTime:          nil,
+		RecommendationUUID: "",
 	}
 
 	c.setStatus(status, false)
