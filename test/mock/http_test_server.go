@@ -36,7 +36,9 @@ func (s *HTTPTestServer) Start() {
 	}
 	s.srv.Start()
 	s.running.Store(true)
-	s.t.Cleanup(func() { s.Close() })
+	if s.t != nil {
+		s.t.Cleanup(func() { s.Close() })
+	}
 }
 
 func (s *HTTPTestServer) Close() {
@@ -77,7 +79,10 @@ func NewHandleWithFileContent(pattern string, path string) Handler {
 	return Handler{
 		Pattern: pattern,
 		Fn: func() ([]byte, *HTTPError) {
-			byteData, _ := internal.FileRead(path)
+			byteData, err := internal.FileRead(path)
+			if err != nil {
+				fmt.Println(internal.ErrorPrefix, "Failed to read file", path, err)
+			}
 			return byteData, nil
 		},
 	}
@@ -111,7 +116,9 @@ func (h *internalHandler) setHeaders(w http.ResponseWriter, data []byte) {
 }
 
 func NewHTTPTestServer(t *testing.T, handlers []Handler) *HTTPTestServer {
-	t.Helper()
+	if t != nil {
+		t.Helper()
+	}
 
 	mux := http.NewServeMux()
 	ts := httptest.NewUnstartedServer(mux)
