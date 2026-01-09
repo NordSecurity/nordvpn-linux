@@ -19,6 +19,7 @@ import 'package:nordvpn/theme/servers_list_theme.dart';
 import 'package:nordvpn/theme/settings_theme.dart';
 import 'package:nordvpn/theme/support_link_theme.dart';
 import 'package:nordvpn/theme/vpn_status_card_theme.dart';
+import 'package:nordvpn/theme/popup_theme.dart';
 
 ThemeData lightTheme() {
   return NordVpnTheme(ThemeMode.light).data();
@@ -75,6 +76,7 @@ final class NordVpnTheme {
         _interactiveListViewThemeExt(),
         _errorScreenThemeExt(),
         _consentScreenThemeExt(),
+        _popupThemeExt(),
       ],
     );
   }
@@ -692,6 +694,24 @@ final class NordVpnTheme {
         color: design.semanticColors.textPrimary,
       ),
       titleBarWidth: 45,
+    );
+  }
+
+  PopupTheme _popupThemeExt() {
+    return PopupTheme(
+      widgetWidth: 500,
+      widgetRadius: BorderRadius.all(Radius.circular(16.0)),
+      contentAllPadding: AppSpacing.spacing4,
+      xButtonAllPadding: AppSpacing.spacing1,
+      gapBetweenElements: AppSpacing.spacing2,
+      verticalElementSpacing: AppSpacing.spacing4,
+      singleButtonMinWidth: AppSpacing.spacing30,
+      textPrimary: design.typography.subHeading.copyWith(
+        color: design.semanticColors.textPrimary,
+      ),
+      textSecondary: design.typography.body.copyWith(
+        color: design.semanticColors.textSecondary,
+      ),
     );
   }
 }

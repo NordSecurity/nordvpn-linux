@@ -41,9 +41,10 @@ final class MockDaemon extends DaemonServiceBase {
 
   MockDaemon() {
     serversList = MockServersList(appStateStream);
-    appSettings = MockApplicationSettings(appStateStream, serversList);
+    vpnStatus = MockVpnStatus(appStateStream, null, serversList);
+    appSettings = MockApplicationSettings(appStateStream, serversList, vpnStatus);
+    vpnStatus.appSettings = appSettings;
     account = MockAccountInfo(appStateStream, serversList);
-    vpnStatus = MockVpnStatus(appStateStream, appSettings, serversList);
     recentConnections = MockRecentConnections(serversList);
   }
 
