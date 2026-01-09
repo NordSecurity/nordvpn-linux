@@ -225,6 +225,8 @@ func (d *DNSServiceSetter) Unset(iface string) error {
 type DNSMethodSetter struct {
 	publisher events.Publisher[string]
 	methods   []Method
+	// unsetMethod is the method previously used to configure DNS
+	unsetMethod Method
 }
 
 func NewSetter(publisher events.Publisher[string], methods ...Method) *DNSMethodSetter {
@@ -254,6 +256,7 @@ func (d *DNSMethodSetter) Set(iface string, nameservers []string) error {
 			log.Println(internal.ErrorPrefix, fmt.Errorf("setting dns with %s: %w", method.Name(), err))
 			continue
 		}
+		d.unsetMethod = method
 		return nil
 	}
 
@@ -264,14 +267,12 @@ func (d *DNSMethodSetter) Set(iface string, nameservers []string) error {
 // is available, and remove the backup on success.
 func (d *DNSMethodSetter) Unset(iface string) error {
 	d.publisher.Publish("unsetting DNS")
+	if d.unsetMethod == nil {
+		return fmt.Errorf("unset method was not set")
+	}
 
-	for _, method := range d.methods {
-		d.publisher.Publish("unset dns for interface [" + iface + "] using: " + method.Name())
-		if err := method.Unset(iface); err != nil {
-			log.Println(internal.ErrorPrefix, fmt.Errorf("unsetting dns with %s: %w", method.Name(), err))
-			continue
-		}
-		return nil
+	if err := d.unsetMethod.Unset(iface); err != nil {
+		return fmt.Errorf("unsetting DNS: %w", err)
 	}
 
 	return nil
