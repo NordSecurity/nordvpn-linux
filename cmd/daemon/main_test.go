@@ -11,11 +11,14 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestBuildClientAPIAndSessionStores(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	clientAPI, sessionBuilder := buildClientAPIAndSessionStores(
 		"test-agent",
 		&http.Client{},
@@ -34,7 +37,10 @@ func TestBuildClientAPIAndSessionStores(t *testing.T) {
 	}
 }
 
+// Test that TP nameservers and resolver are build, without blocking until servers list is downloaded
 func TestBuildTpServersAndResolver(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	serversList := []string{"1.2.3.4", "4.4.5.6"}
 	sort.Strings(serversList)
 	server := mock.NewHTTPTestServer(t,
@@ -42,7 +48,8 @@ func TestBuildTpServersAndResolver(t *testing.T) {
 			mock.Handler{
 				Pattern: core.ThreatProtectionLiteURL,
 				Fn: func() ([]byte, *mock.HTTPError) {
-					// time.Sleep(10 * time.Second)
+					// block the call
+					// time.Sleep(1 * time.Second)
 					b, _ := json.Marshal(serversList)
 					response := fmt.Sprintf("{\"servers\":%s}", string(b))
 					return []byte(response), nil
@@ -63,7 +70,7 @@ func TestBuildTpServersAndResolver(t *testing.T) {
 		&firewall.Firewall{},
 	)
 	duration := time.Now().UnixMilli() - startPoint.UnixMilli()
-	assert.Less(t, duration, time.Second.Milliseconds())
+	assert.Less(t, duration, 100*time.Millisecond.Milliseconds())
 
 	assert.NotNil(t, tp)
 	assert.NotNil(t, resolver)
