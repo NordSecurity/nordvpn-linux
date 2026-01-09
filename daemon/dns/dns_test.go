@@ -212,7 +212,7 @@ func Test_DNSServiceSetter(t *testing.T) {
 	errUnset := fmt.Errorf("failed to unconfigure DNS")
 
 	// example configuration of resolv.conf file when it's managed by systemd-resolved
-	resolvdResolvconf := []byte(`# This is /run/systemd/resolve/stub-resolv.conf managed by man:systemd-resolved(8).
+	systemdResolvedResolvconf := []byte(`# This is /run/systemd/resolve/stub-resolv.conf managed by man:systemd-resolved(8).
 # Do not edit.
 #
 # This file might be symlinked as /etc/resolv.conf. If you're looking at
@@ -250,11 +250,11 @@ search home`)
 		name                      string
 		resolvconfFileContents    []byte
 		resolvconfLinkDestination string
-		setByResolvd              bool
+		setBySystemdResolved      bool
 		setByResolvconf           bool
 		getLinkDestinationErr     error
-		resolvedSetErr            error
-		resolvedUnsetErr          error
+		systemdResolvedSetErr     error
+		systemdResolvedUnsetErr   error
 		resolvconfSetErr          error
 		resolvconfUnsetErr        error
 		expectedSetErr            error
@@ -262,77 +262,77 @@ search home`)
 		readErr                   error
 	}{
 		{
-			name:                   "resolv.conf is managed by resolved, resolved is used to set DNS",
-			resolvconfFileContents: resolvdResolvconf,
-			setByResolvd:           true,
+			name:                   "resolv.conf is managed by systemd-resolved, systemd-resolved is used to set DNS",
+			resolvconfFileContents: systemdResolvedResolvconf,
+			setBySystemdResolved:   true,
 		},
 		{
-			name:                   "resolv.conf is not managed by resolved and resolved is not found, resolv.conf is used to set DNS",
+			name:                   "resolv.conf is not managed by systemd-resolved and systemd-resolved is not found, resolv.conf is used to set DNS",
 			resolvconfFileContents: noManagerResolvConf,
-			resolvedSetErr:         fmt.Errorf("resolvd not found"),
+			systemdResolvedSetErr:  fmt.Errorf("resolved not found"),
 			setByResolvconf:        true,
 		},
 		{
-			name:                   "resolv.conf manager is unknown and resolv.conf is not a link, resolvd is not available, resolv.conf is used to set DNS",
+			name:                   "resolv.conf manager is unknown and resolv.conf is not a link, systemd-resolved is not available, resolv.conf is used to set DNS",
 			resolvconfFileContents: unknownManager,
 			getLinkDestinationErr:  fmt.Errorf("failed to read link destination"),
-			resolvedSetErr:         fmt.Errorf("resolvd not found"),
+			systemdResolvedSetErr:  fmt.Errorf("resolved not found"),
 			setByResolvconf:        true,
 		},
 		{
-			name:                   "resolv.conf manager is unknown and resolv.conf is not a link, resolvd is available, resolvd is used to set DNS",
+			name:                   "resolv.conf manager is unknown and resolv.conf is not a link, systemd-resolved is available, systemd-resolved is used to set DNS",
 			resolvconfFileContents: unknownManager,
 			getLinkDestinationErr:  fmt.Errorf("failed to read link destination"),
-			setByResolvd:           true,
+			setBySystemdResolved:   true,
 		},
 		{
-			name:                      "manager is not recognized based on resolv.conf contents but the file links to resolved is used to set DNS",
-			resolvconfLinkDestination: resolvedLinkTarget,
+			name:                      "manager is not recognized based on resolv.conf contents but the file links to systemd-resolved is used to set DNS",
+			resolvconfLinkDestination: systemdResolvedLinkTarget,
 			resolvconfFileContents:    unknownManager,
-			setByResolvd:              true,
+			setBySystemdResolved:      true,
 		},
 		{
-			name:                   "resolved is recognized from resolv.conf comment but setting the DNS fails, resolv.conf is used to set DNS",
-			resolvconfFileContents: resolvdResolvconf,
-			resolvedSetErr:         errSet,
+			name:                   "systemd-resolved is recognized from resolv.conf comment but setting the DNS fails, resolv.conf is used to set DNS",
+			resolvconfFileContents: systemdResolvedResolvconf,
+			systemdResolvedSetErr:  errSet,
 			setByResolvconf:        true,
 		},
 		{
 			name:                   "setting DNS with resolved and resolv.conf fails, a proper error is returned",
 			resolvconfFileContents: noManagerResolvConf,
 			resolvconfSetErr:       errSet,
-			resolvedSetErr:         errSet,
+			systemdResolvedSetErr:  errSet,
 			expectedSetErr:         errSet,
 			expectedUnsetErr:       ErrDNSNotSet,
 		},
 		{
-			name:                   "unsetting fails with resolved, a proper error is returned",
-			resolvconfFileContents: resolvdResolvconf,
-			setByResolvd:           true,
-			resolvedUnsetErr:       errUnset,
-			expectedUnsetErr:       errUnset,
+			name:                    "unsetting fails with systemd-resolved, a proper error is returned",
+			resolvconfFileContents:  systemdResolvedResolvconf,
+			setBySystemdResolved:    true,
+			systemdResolvedUnsetErr: errUnset,
+			expectedUnsetErr:        errUnset,
 		},
 		{
 			name:                   "unsetting fails with resolv.conf, a proper error is returned",
 			resolvconfFileContents: noManagerResolvConf,
 			setByResolvconf:        true,
-			resolvedSetErr:         errSet,
+			systemdResolvedSetErr:  errSet,
 			resolvconfUnsetErr:     errUnset,
 			expectedUnsetErr:       errUnset,
 		},
 		{
-			name:                      "reading resolv.conf file fails, but the file links to resolvd, resolvd is used to set DNS",
-			resolvconfLinkDestination: resolvedLinkTarget,
+			name:                      "reading resolv.conf file fails, but the file links to systemd-resolved, systemd-resolved is used to set DNS",
+			resolvconfLinkDestination: systemdResolvedLinkTarget,
 			readErr:                   fmt.Errorf("read failed"),
-			setByResolvd:              true,
+			setBySystemdResolved:      true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			resolvedSetter := MockSetter{
-				setErr:   test.resolvedSetErr,
-				unsetErr: test.resolvedUnsetErr,
+				setErr:   test.systemdResolvedSetErr,
+				unsetErr: test.systemdResolvedUnsetErr,
 			}
 			resolvconfSetter := MockSetter{
 				setErr:   test.resolvconfSetErr,
@@ -354,22 +354,19 @@ search home`)
 			err := s.Set("eth0", []string{"1.1.1.1"})
 			assert.ErrorIs(t, err, test.expectedSetErr, "Expected set error was not returned.")
 
-			if test.setByResolvd {
-				assert.True(t, resolvedSetter.isSet, "DNS was not configured by the expected setter(resolved).")
-				assert.False(t, resolvconfSetter.isSet, "DNS was configured by the unexpected setter(resolvconf)")
-			}
-
-			if test.setByResolvconf {
-				assert.True(t, resolvconfSetter.isSet, "DNS was not configured by the expected setter(resolvconf).")
-				assert.False(t, resolvedSetter.isSet, "DNS was configured by the unexpected setter(resolvd)")
-			}
+			assert.Equal(t, test.setBySystemdResolved, resolvedSetter.isSet,
+				"DNS was not configured by the expected setter.")
+			assert.Equal(t, test.setByResolvconf, resolvconfSetter.isSet,
+				"DNS was not configured by the expected setter.")
 
 			err = s.Unset("eth0")
 			assert.ErrorIs(t, err, test.expectedUnsetErr, "Expected unset error was not returned.")
 
 			if err == nil {
-				assert.False(t, resolvedSetter.isSet, "DNS config for resolvd was not reverted after calling unset.")
-				assert.False(t, resolvconfSetter.isSet, "DNS config for resolv.conf was not reverted after calling unset.")
+				assert.False(t, resolvedSetter.isSet,
+					"DNS config for systemd-resolved was not reverted after calling unset.")
+				assert.False(t, resolvconfSetter.isSet,
+					"DNS config for resolv.conf was not reverted after calling unset.")
 			}
 		})
 	}
