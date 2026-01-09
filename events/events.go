@@ -85,6 +85,7 @@ type DataConnect struct {
 	IsVirtualLocation       bool
 	IsObfuscated            bool
 	IsPostQuantum           bool
+	RecommendationUUID      string
 }
 
 // DataConnectChangeNotif is used to provide notifications for internal listeners of ConnectionStatus
@@ -157,6 +158,7 @@ type DataDisconnect struct {
 	Duration              time.Duration
 	Error                 error
 	IsRefresh             bool
+	RecommendationUUID    string
 }
 
 type ReasonCode int32

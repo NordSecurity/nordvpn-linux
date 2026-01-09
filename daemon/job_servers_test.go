@@ -19,6 +19,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const TestRecommendedUUID string = "c0b4c990-3000-457f-8b81-6850b8cdb54e"
+
 type mockServersAPI struct{}
 
 func (mockServersAPI) Servers() (core.Servers, http.Header, error) {
@@ -39,7 +41,10 @@ func (mockServersAPI) RecommendedServers(filter core.ServersFilter, _ float64, _
 		servers = append(servers, server)
 	}
 
-	return servers, nil, nil
+	header := http.Header{}
+	header.Set("X-Recommendation-Uuid", TestRecommendedUUID)
+
+	return servers, header, nil
 }
 
 func (mockServersAPI) Server(serverID int64) (*core.Server, error) {
