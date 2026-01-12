@@ -72,20 +72,19 @@ func (n *NameServers) fetchTpServers(fetcher ServersFetcher, timeoutFn internal.
 		return
 	}
 
-	for {
+	for i := 0; ; i++ {
 		servers, err := fetcher()
 		if err == nil && len(servers.Servers) > 0 {
 			// copy to ensure pointer is not later modified from outside
+			log.Println(internal.InfoPrefix, "TP servers updated to", servers.Servers)
 			s := slices.Clone(servers.Servers)
 			n.tpServers.Store(&s)
 
 			return
 		}
 
-		var i = 1
 		tryAfterDuration := timeoutFn(i)
-		log.Printf("%s failed to fetch TP servers: %v, retry(%d) servers after %v\n", internal.WarningPrefix, err, i, tryAfterDuration)
-		i += 1
+		log.Printf("%s failed to fetch TP servers. retry(%d) servers after %v: %v\n", internal.ErrorPrefix, i, tryAfterDuration, err)
 		<-time.After(tryAfterDuration)
 	}
 }
