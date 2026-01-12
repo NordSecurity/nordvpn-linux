@@ -40,8 +40,12 @@ type NameServers struct {
 
 func NewNameServers(fetcher ServersFetcher, timeoutFn internal.CalculateRetryDelayForAttempt) *NameServers {
 	n := &NameServers{}
-	// start async to fetch the TP server names
-	go n.fetchTpServers(fetcher, timeoutFn)
+	if fetcher != nil && timeoutFn != nil {
+		// start async to fetch the TP server names
+		go n.fetchTPServers(fetcher, timeoutFn)
+	} else {
+		log.Println(internal.ErrorPrefix, "no fetcher set for TP servers")
+	}
 	return n
 }
 
@@ -67,7 +71,8 @@ func (n *NameServers) LookupIP(host string) ([]net.IP, error) {
 	return net.LookupIP(host)
 }
 
-func (n *NameServers) fetchTpServers(fetcher ServersFetcher, timeoutFn internal.CalculateRetryDelayForAttempt) {
+// fetches the TP servers until is successful. It uses exponential backoff between retries
+func (n *NameServers) fetchTPServers(fetcher ServersFetcher, timeoutFn internal.CalculateRetryDelayForAttempt) {
 	if fetcher == nil {
 		return
 	}
