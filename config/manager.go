@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -140,16 +139,16 @@ func (f *FilesystemConfigManager) SaveWith(fn SaveFunc) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	if err := f.load(&c); err != nil {
-		return err
+	var prev Config
+	// This avoids expensive deep copy (marshal+unmarshal) by reusing already-read JSON bytes.
+	isNewInstall, loadErr := f.loadTwoCopies(&c, &prev)
+	if loadErr != nil {
+		return loadErr
 	}
 
-	// Deep copy the config before applying changes to preserve the previous state
-	prevCopy, copyErr := c.DeepCopy()
-	if copyErr == nil {
-		previousCfg = &prevCopy
-	} else {
-		log.Println(internal.WarningPrefix, "failed to deep copy config before save:", copyErr)
+	// On new installation, there's no previous config
+	if !isNewInstall {
+		previousCfg = &prev
 	}
 
 	c = fn(c)
@@ -202,14 +201,7 @@ func (f *FilesystemConfigManager) Reset(preserveLoginData bool, disableKillswitc
 	if retErr != nil {
 		return fmt.Errorf("loading old config: %w", retErr)
 	}
-
-	// Deep copy the current config to preserve the previous state
-	prevCopy, copyErr := current.DeepCopy()
-	if copyErr == nil {
-		previousCfg = &prevCopy
-	} else {
-		log.Println(internal.WarningPrefix, "failed to deep copy config before reset:", copyErr)
-	}
+	previousCfg = &current
 
 	newCfg = *newConfig(f.machineIDGetter)
 
@@ -241,36 +233,78 @@ func (f *FilesystemConfigManager) load(c *Config) error {
 	// always init with default settings and override later with the values from the file
 	*c = *newConfig(f.machineIDGetter)
 
-	// TODO(LVPN-9628): revisit how this mechanism works
-	if !f.fsHandle.FileExists(f.location) {
-		f.NewInstallation = true
+	decryptedJSON, isNewInstall, err := f.readDecryptedConfigJSON()
+	if isNewInstall {
 		return f.save(*c)
 	}
 
-	pass, err := f.getPassphrase()
 	if err != nil {
 		return err
 	}
 
-	var data []byte
-
-	// #nosec G304 -- no input comes from the user
-	data, err = f.fsHandle.ReadFile(f.location)
-	if err != nil {
-		return err
-	}
-
-	decrypted, err := internal.Decrypt(data, pass)
-	if err != nil {
-		return err
-	}
-
-	// this overrides default values
-	if err := json.Unmarshal(decrypted, c); err != nil {
+	if err := json.Unmarshal(decryptedJSON, c); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// loadTwoCopies loads config into two independent structs by unmarshaling the same JSON bytes twice.
+// Returns isNewInstallation=true if the config file didn't exist, and 'second' is not populated in
+// that case.
+func (f *FilesystemConfigManager) loadTwoCopies(first *Config, second *Config) (isNewInstallation bool, err error) {
+	// Initialize first with defaults
+	*first = *newConfig(f.machineIDGetter)
+
+	decryptedJSON, isNewInstall, err := f.readDecryptedConfigJSON()
+	if isNewInstall {
+		// On new installation only save default config
+		return true, f.save(*first)
+	}
+
+	if err != nil {
+		return false, err
+	}
+
+	if err := json.Unmarshal(decryptedJSON, first); err != nil {
+		return false, err
+	}
+
+	*second = *newConfig(f.machineIDGetter)
+	if err := json.Unmarshal(decryptedJSON, second); err != nil {
+		return false, err
+	}
+
+	return false, nil
+}
+
+// readDecryptedConfigJSON reads and decrypts the config file from disk.
+// Returns (decryptedJSON, isNewInstallation, error).
+// If isNewInstallation is true, the caller should save default config.
+func (f *FilesystemConfigManager) readDecryptedConfigJSON() ([]byte, bool, error) {
+	// TODO(LVPN-9628): revisit how this mechanism works
+	if !f.fsHandle.FileExists(f.location) {
+		f.NewInstallation = true
+		return nil, true, nil
+	}
+
+	pass, err := f.getPassphrase()
+	if err != nil {
+		return nil, false, err
+	}
+
+	// #nosec G304 -- no input comes from the user
+	data, err := f.fsHandle.ReadFile(f.location)
+	if err != nil {
+		return nil, false, err
+	}
+
+	decryptedJSON, err := internal.Decrypt(data, pass)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return decryptedJSON, false, nil
 }
 
 // getPassphrase for accessing the data
