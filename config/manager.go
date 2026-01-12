@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -147,6 +148,8 @@ func (f *FilesystemConfigManager) SaveWith(fn SaveFunc) error {
 	prevCopy, copyErr := c.DeepCopy()
 	if copyErr == nil {
 		previousCfg = &prevCopy
+	} else {
+		log.Println(internal.WarningPrefix, "failed to deep copy config before save:", copyErr)
 	}
 
 	c = fn(c)
@@ -204,6 +207,8 @@ func (f *FilesystemConfigManager) Reset(preserveLoginData bool, disableKillswitc
 	prevCopy, copyErr := current.DeepCopy()
 	if copyErr == nil {
 		previousCfg = &prevCopy
+	} else {
+		log.Println(internal.WarningPrefix, "failed to deep copy config before reset:", copyErr)
 	}
 
 	newCfg = *newConfig(f.machineIDGetter)

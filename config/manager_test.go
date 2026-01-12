@@ -7,7 +7,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestFilesystem(t *testing.T) {
@@ -75,7 +74,7 @@ func TestConfigIsBackwardsCompatible(t *testing.T) {
 	category.Set(t, category.File)
 
 	salt, ok := os.LookupEnv("SALT")
-	require.True(t, ok)
+	assert.True(t, ok)
 
 	tests := []struct {
 		settingsFile string
@@ -104,7 +103,7 @@ func TestConfigIsBackwardsCompatible(t *testing.T) {
 			fs := NewFilesystemConfigManager(test.settingsFile, test.installFile, salt, NewMachineID(os.ReadFile, os.Hostname), StdFilesystemHandle{}, nil)
 			var cfg Config
 			err := fs.Load(&cfg)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			var cfg2 Config
 			assert.NotEqual(t, cfg2, cfg)
 		})
@@ -115,7 +114,7 @@ func TestConfigDefaultValues(t *testing.T) {
 	category.Set(t, category.File)
 
 	salt, ok := os.LookupEnv("SALT")
-	require.True(t, ok)
+	assert.True(t, ok)
 
 	tests := []struct {
 		settingsFile string
@@ -151,7 +150,7 @@ func TestConfigDefaultValues(t *testing.T) {
 			fs := NewFilesystemConfigManager(test.settingsFile, test.installFile, salt, NewMachineID(os.ReadFile, os.Hostname), StdFilesystemHandle{}, nil)
 			var cfg Config
 			err := fs.Load(&cfg)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			assert.Equal(t, defaultFWMarkValue, cfg.FirewallMark)
 			assert.Equal(t, test.technology, cfg.Technology)
 			assert.True(t, cfg.Firewall)
@@ -230,15 +229,9 @@ func TestConfig_DeepCopy(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			copied, err := tt.config.DeepCopy()
-			require.NoError(t, err)
+			assert.NoError(t, err)
 
-			assert.Equal(t, tt.config.AutoConnectData.ID, copied.AutoConnectData.ID)
-			assert.Equal(t, len(tt.config.TokensData), len(copied.TokensData))
-			for id, td := range tt.config.TokensData {
-				assert.Equal(t, td.Token, copied.TokensData[id].Token)
-				assert.Equal(t, td.TokenRenewDate, copied.TokensData[id].TokenRenewDate)
-			}
-
+			assert.Equal(t, tt.config, copied)
 			if tt.config.TokensData != nil {
 				for id := range copied.TokensData {
 					td := copied.TokensData[id]
