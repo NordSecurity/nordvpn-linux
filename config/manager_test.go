@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -51,11 +52,10 @@ func TestFilesystem(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			configLocation := "testdata/config"
-			vaultLocation := "testdata/vault"
-			fs := NewFilesystemConfigManager("testdata/config", "testdata/vault", "", NewMachineID(os.ReadFile, os.Hostname), StdFilesystemHandle{}, nil)
-			defer os.Remove(configLocation)
-			defer os.Remove(vaultLocation)
+			tmpDir := t.TempDir()
+			configLocation := filepath.Join(tmpDir, "config")
+			vaultLocation := filepath.Join(tmpDir, "vault")
+			fs := NewFilesystemConfigManager(configLocation, vaultLocation, "", NewMachineID(os.ReadFile, os.Hostname), StdFilesystemHandle{}, nil)
 
 			err := fs.SaveWith(test.f)
 			assert.NoError(t, err)
@@ -163,87 +163,107 @@ func TestConfigDefaultValues(t *testing.T) {
 	}
 }
 
-func TestConfig_DeepCopy(t *testing.T) {
-	category.Set(t, category.Unit)
+func TestSaveWithPublishesPreviousConfig(t *testing.T) {
+	category.Set(t, category.File)
 
-	tests := []struct {
-		name   string
-		config Config
-	}{
-		{
-			name: "config with TokensData",
-			config: Config{
-				AutoConnectData: AutoConnectData{
-					ID: 123,
-					Allowlist: Allowlist{
-						Ports: Ports{
-							TCP: PortSet{},
-							UDP: PortSet{},
-						},
-					},
-				},
-				TokensData: map[int64]TokenData{
-					123: {
-						Token:          "test-token",
-						RenewToken:     "test-renew",
-						TokenExpiry:    "2024-01-15 10:30:00",
-						TokenRenewDate: "2024-01-14 09:00:00",
-					},
-				},
-			},
-		},
-		{
-			name: "config with Allowlist",
-			config: Config{
-				AutoConnectData: AutoConnectData{
-					Allowlist: Allowlist{
-						Ports: Ports{
-							TCP: PortSet{443: true, 80: true},
-							UDP: PortSet{53: true},
-						},
-						Subnets: []string{"192.168.1.0/24", "10.0.0.0/8"},
-					},
-				},
-			},
-		},
-		{
-			name: "config with multiple users",
-			config: Config{
-				AutoConnectData: AutoConnectData{
-					ID: 1,
-					Allowlist: Allowlist{
-						Ports: Ports{
-							TCP: PortSet{},
-							UDP: PortSet{},
-						},
-					},
-				},
-				TokensData: map[int64]TokenData{
-					1: {Token: "token1", TokenRenewDate: "2024-01-15 10:00:00"},
-					2: {Token: "token2", TokenRenewDate: "2024-01-16 11:00:00"},
-				},
-			},
+	tmpDir := t.TempDir()
+	configLocation := filepath.Join(tmpDir, "config")
+	vaultLocation := filepath.Join(tmpDir, "vault")
+
+	var publishedChange DataConfigChange
+	publisher := &mockConfigPublisher{
+		onPublish: func(change DataConfigChange) {
+			publishedChange = change
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			copied, err := tt.config.DeepCopy()
-			assert.NoError(t, err)
+	fs := NewFilesystemConfigManager(
+		configLocation,
+		vaultLocation,
+		"",
+		NewMachineID(os.ReadFile, os.Hostname),
+		StdFilesystemHandle{},
+		publisher,
+	)
 
-			assert.Equal(t, tt.config, copied)
-			if tt.config.TokensData != nil {
-				for id := range copied.TokensData {
-					td := copied.TokensData[id]
-					td.Token = "modified-token"
-					copied.TokensData[id] = td
-					break
-				}
-				for id := range tt.config.TokensData {
-					assert.NotEqual(t, "modified-token", tt.config.TokensData[id].Token)
-					break
-				}
-			}
-		})
+	// First save - creates initial config
+	err := fs.SaveWith(func(c Config) Config {
+		c.AutoConnect = true
+		return c
+	})
+	assert.NoError(t, err)
+
+	// Verify first publish (new installation)
+	assert.Nil(t, publishedChange.PreviousConfig)
+	assert.NotNil(t, publishedChange.Config)
+	assert.True(t, publishedChange.Config.AutoConnect)
+
+	// Second save - should have PreviousConfig
+	err = fs.SaveWith(func(c Config) Config {
+		c.KillSwitch = true
+		return c
+	})
+	assert.NoError(t, err)
+
+	// Verify PreviousConfig contains the state before the change
+	assert.NotNil(t, publishedChange.PreviousConfig)
+	assert.True(t, publishedChange.PreviousConfig.AutoConnect, "PreviousConfig should have AutoConnect=true from first save")
+	assert.False(t, publishedChange.PreviousConfig.KillSwitch, "PreviousConfig should have KillSwitch=false before change")
+
+	// Verify Config contains the new state
+	assert.NotNil(t, publishedChange.Config)
+	assert.True(t, publishedChange.Config.AutoConnect)
+	assert.True(t, publishedChange.Config.KillSwitch, "Config should have KillSwitch=true after change")
+}
+
+type mockConfigPublisher struct {
+	onPublish func(DataConfigChange)
+}
+
+func (m *mockConfigPublisher) Publish(change DataConfigChange) {
+	if m.onPublish != nil {
+		m.onPublish(change)
 	}
+}
+
+func TestLoadTwoCopiesReturnsIndependentCopies(t *testing.T) {
+	category.Set(t, category.File)
+
+	tmpDir := t.TempDir()
+	configLocation := filepath.Join(tmpDir, "config")
+	vaultLocation := filepath.Join(tmpDir, "vault")
+
+	fs := NewFilesystemConfigManager(
+		configLocation,
+		vaultLocation,
+		"",
+		NewMachineID(os.ReadFile, os.Hostname),
+		StdFilesystemHandle{},
+		nil,
+	)
+
+	// Create initial config
+	err := fs.SaveWith(func(c Config) Config {
+		c.AutoConnect = true
+		c.TokensData[123] = TokenData{Token: "test-token"}
+		return c
+	})
+	assert.NoError(t, err)
+
+	// Load two copies
+	var first, second Config
+	_, err = fs.loadTwoCopies(&first, &second)
+	assert.NoError(t, err)
+
+	// Verify both have the same initial values
+	assert.Equal(t, first.AutoConnect, second.AutoConnect)
+	assert.Equal(t, first.TokensData[123].Token, second.TokensData[123].Token)
+
+	// Modify first copy
+	first.AutoConnect = false
+	first.TokensData[123] = TokenData{Token: "modified-token"}
+
+	// Verify second copy is unchanged (independent)
+	assert.True(t, second.AutoConnect, "second copy should be unchanged")
+	assert.Equal(t, "test-token", second.TokensData[123].Token, "second copy TokensData should be unchanged")
 }
