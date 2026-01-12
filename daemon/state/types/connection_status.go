@@ -44,4 +44,6 @@ type ConnectionStatus struct {
 	Rx uint64
 	// Number of bytes uploaded
 	Tx uint64
+	// RecommendationUuid used for analytics purposes
+	RecommendationUuid string
 }

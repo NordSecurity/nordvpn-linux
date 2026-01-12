@@ -142,7 +142,7 @@ func (r *RPC) connect(
 	log.Println(internal.DebugPrefix, "picking servers for", cfg.Technology, "technology", "input",
 		in.GetServerTag(), in.GetServerGroup())
 
-	server, remote, err := selectServer(r, &insights, cfg, inputServerTag, in.GetServerGroup())
+	server, recommendationUuid, remote, err := selectServer(r, &insights, cfg, inputServerTag, in.GetServerGroup())
 	if err != nil {
 		var errorCode *internal.ErrorWithCode
 		if errors.As(err, &errorCode) {
@@ -220,6 +220,7 @@ func (r *RPC) connect(
 		TargetServerGroup:       determineTargetServerGroup(server, parameters),
 		TargetServerIP:          subnet.Addr(),
 		TargetServerName:        server.Name,
+		RecommendationUuid:      recommendationUuid,
 	}
 
 	// Send the connection attempt event
@@ -253,6 +254,7 @@ func (r *RPC) connect(
 		Protocol:             cfg.AutoConnectData.Protocol,
 		Technology:           cfg.Technology,
 		ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
+		RecommendationUuid:   recommendationUuid,
 	}, r.events.Service.Disconnect.Publish)
 
 	err = r.netw.Start(

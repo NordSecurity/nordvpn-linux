@@ -567,7 +567,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		},
 		threatProtectionLiteToInternalType(data.ThreatProtectionLite),
 		-1,
-		"", // recommendationUuid - this will be addressed by LVPN-9414
+		data.RecommendationUuid,
 		nil,
 	)); err != nil {
 		return err
@@ -611,6 +611,14 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		))
 	}
 
+	if data.RecommendationUuid != "" {
+		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid(data.RecommendationUuid)); err != nil {
+			// We can ignore setting the recommendation Uuid
+			// Sending the disconnect event is much more important
+			log.Println(internal.WarningPrefix, "Failed to set RecommendationUuid into the moose context ", err)
+		}
+	}
+
 	if err := s.response(moose.NordvpnappSendServiceQualityServersDisconnect(
 		moose.EventParams{
 			EventDuration: int32(data.Duration.Milliseconds()),
@@ -633,6 +641,12 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		nil,
 	)); err != nil {
 		return err
+	}
+
+	if data.RecommendationUuid != "" {
+		if err := s.response(moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid()); err != nil {
+			return err
+		}
 	}
 
 	if err := s.response(moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue()); err != nil {

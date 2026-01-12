@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"regexp"
 	"strings"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/google/uuid"
 	"golang.org/x/exp/slices"
 )
 
@@ -32,8 +34,8 @@ func PickServer(
 	tag string,
 	groupFlag string,
 	allowVirtualServer bool,
-) (core.Server, bool, error) {
-	result, remote, err := getServers(
+) (core.Server, string, bool, error) {
+	result, recommendationUuid, remote, err := getServers(
 		api,
 		countries,
 		servers,
@@ -48,11 +50,11 @@ func PickServer(
 		allowVirtualServer,
 	)
 	if err != nil {
-		return core.Server{}, remote, err
+		return core.Server{}, "", remote, err
 	}
 
 	// #nosec G404 -- not used for cryptographic purposes
-	return result[rand.Intn(len(result))], remote, nil
+	return result[rand.Intn(len(result))], recommendationUuid, remote, nil
 }
 
 func getServers(
@@ -68,25 +70,26 @@ func getServers(
 	groupFlag string,
 	count int,
 	allowVirtualServer bool,
-) ([]core.Server, bool, error) {
+) ([]core.Server, string, bool, error) {
 	var remote = true
 	var err error
+	var recommendationUuid string
 	ret := []core.Server{}
 
 	serverGroup, err := resolveServerGroup(groupFlag, tag)
 	if err != nil {
-		return ret, false, err
+		return ret, "", false, err
 	}
 
 	if serverGroup == config.ServerGroup_DEDICATED_IP {
 		// DIP servers are taken from the user subscription services
-		return nil, false, ErrDedicatedIPServer
+		return nil, "", false, ErrDedicatedIPServer
 	}
 
 	isGroupFlagSet := groupFlag != ""
 	serverTag, err := serverTagFromString(countries, api, tag, serverGroup, servers, isGroupFlagSet)
 	if errors.Is(err, internal.ErrTagDoesNotExist) {
-		return ret, false, err
+		return ret, "", false, err
 	}
 	if err == nil {
 		if serverTag.Action == core.ServerByName {
@@ -100,7 +103,7 @@ func getServers(
 				tag,
 			)
 		} else {
-			ret, err = getServersRemote(
+			ret, recommendationUuid, err = getServersRemote(
 				api,
 				longitude,
 				latitude,
@@ -134,14 +137,14 @@ func getServers(
 	}
 
 	if err != nil {
-		return ret, false, err
+		return ret, "", false, err
 	}
 
 	if !allowVirtualServer && len(ret) > 0 {
 		ret = slices.DeleteFunc(ret, func(s core.Server) bool { return s.IsVirtualLocation() })
 		if len(ret) == 0 {
 			// if the selected servers are only virtual, but user has this disabled return an error
-			return ret, false, internal.ErrVirtualServerSelected
+			return ret, "", false, internal.ErrVirtualServerSelected
 		}
 	}
 
@@ -151,7 +154,7 @@ func getServers(
 		ret = []core.Server{ret[rng.Int63n(int64(len(ret)))]}
 	}
 
-	return ret, remote, nil
+	return ret, recommendationUuid, remote, nil
 }
 
 func resolveServerGroup(flag, tag string) (config.ServerGroup, error) {
@@ -208,10 +211,10 @@ func getServersRemote(
 	tag core.ServerTag,
 	group config.ServerGroup,
 	count int,
-) ([]core.Server, error) {
+) ([]core.Server, string, error) {
 	serverTech := techToServerTech(tech, protocol, obfuscated)
 	if serverTech == core.Unknown {
-		return nil, errors.New("unknown technology")
+		return nil, "", errors.New("unknown technology")
 	}
 	limit := 20
 	if count != 1 {
@@ -229,16 +232,38 @@ func getServersRemote(
 		Limit: limit,
 	}
 
-	servers, _, err := api.RecommendedServers(filter, longitude, latitude)
+	servers, header, err := api.RecommendedServers(filter, longitude, latitude)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	if len(servers) == 0 {
-		return nil, fmt.Errorf("recommended: empty list")
+		return nil, "", fmt.Errorf("recommended: empty list")
 	}
 
-	return servers, nil
+	recommendationUuid, err := extractRecommendationUuid(header)
+	if err != nil {
+		log.Println(internal.WarningPrefix, "failed to extract recommendation uuid from the http header", err)
+	}
+	return servers, recommendationUuid, nil
+}
+
+func extractRecommendationUuid(h http.Header) (string, error) {
+	raw := h.Get("X-Recommendation-Uuid")
+	if raw == "" {
+		return "", fmt.Errorf("missing X-Recommendation-Uuid header")
+	}
+
+	u, err := uuid.Parse(raw)
+	if err != nil {
+		return "", err
+	}
+
+	if u.Version() != 4 {
+		return "", fmt.Errorf("wrong uuid version %d, expected 4", u.Version())
+	}
+
+	return u.String(), nil
 }
 
 func filterServers(
@@ -459,9 +484,9 @@ func isAnyDIPServersAvailable(dedicatedIPServices []auth.DedicatedIPService) boo
 	return index != -1
 }
 
-func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string, groupFlag string) (*core.Server, bool, error) {
+func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string, groupFlag string) (*core.Server, string, bool, error) {
 	serversList := r.dm.GetServersData().Servers
-	server, remote, err := PickServer(
+	server, recommendationUuid, remote, err := PickServer(
 		r.serversAPI,
 		r.dm.GetCountryData().Countries,
 		serversList,
@@ -480,25 +505,25 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 		switch {
 		case errors.Is(err, core.ErrUnauthorized):
 			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, r.events.User.Logout)); err != nil {
-				return nil, false, err
+				return nil, "", false, err
 			}
-			return nil, false, internal.ErrNotLoggedIn
+			return nil, "", false, internal.ErrNotLoggedIn
 		case errors.Is(err, internal.ErrTagDoesNotExist),
 			errors.Is(err, internal.ErrGroupDoesNotExist),
 			errors.Is(err, internal.ErrServerIsUnavailable),
 			errors.Is(err, internal.ErrDoubleGroup),
 			errors.Is(err, internal.ErrVirtualServerSelected):
-			return nil, false, err
+			return nil, "", false, err
 
 		case errors.Is(err, ErrDedicatedIPServer):
 			dedicatedIPServer, err := selectDedicatedIPServer(r.ac, serversList)
 			if err != nil {
-				return nil, false, err
+				return nil, "", false, err
 			}
 			server = *dedicatedIPServer
 
 		default:
-			return nil, false, internal.ErrUnhandled
+			return nil, "", false, internal.ErrUnhandled
 		}
 	}
 
@@ -509,17 +534,17 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "getting dedicated IP service data:", err)
 			if errors.Is(err, core.ErrUnauthorized) {
-				return nil, false, err
+				return nil, "", false, err
 			}
-			return nil, false, internal.ErrUnhandled
+			return nil, "", false, internal.ErrUnhandled
 		}
 
 		if len(dedicatedIPServices) == 0 {
-			return nil, false, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
+			return nil, "", false, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
 		}
 
 		if !isAnyDIPServersAvailable(dedicatedIPServices) {
-			return nil, false, internal.NewErrorWithCode(internal.CodeDedicatedIPServiceButNoServers)
+			return nil, "", false, internal.NewErrorWithCode(internal.CodeDedicatedIPServiceButNoServers)
 		}
 
 		index := slices.IndexFunc(dedicatedIPServices, func(s auth.DedicatedIPService) bool {
@@ -528,17 +553,17 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 		})
 		if index == -1 {
 			log.Println(internal.ErrorPrefix, "server is not in the DIP servers list")
-			return nil, false, internal.NewErrorWithCode(internal.CodeDedicatedIPNoServer)
+			return nil, "", false, internal.NewErrorWithCode(internal.CodeDedicatedIPNoServer)
 		}
 
 		if !core.IsConnectableWithProtocol(cfg.Technology, cfg.AutoConnectData.Protocol)(server) ||
 			(core.IsObfuscated()(server) != cfg.AutoConnectData.Obfuscate) {
 			log.Println(internal.ErrorPrefix, "failed to connect because the server doesn't support user settings")
-			return nil, false, internal.ErrServerIsUnavailable
+			return nil, "", false, internal.ErrServerIsUnavailable
 		}
 	}
 
-	return &server, remote, nil
+	return &server, recommendationUuid, remote, nil
 }
 
 func getServerByID(servers core.Servers, serverID int64) (*core.Server, error) {
