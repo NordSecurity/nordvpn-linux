@@ -72,20 +72,22 @@ func (n *NameServers) fetchTpServers(fetcher ServersFetcher, timeoutFn internal.
 		return
 	}
 
-	servers, err := fetcher()
-	if err == nil && len(servers.Servers) > 0 {
-		// copy to ensure pointer is not later modified from outside
-		s := slices.Clone(servers.Servers)
-		n.tpServers.Store(&s)
+	for {
+		servers, err := fetcher()
+		if err == nil && len(servers.Servers) > 0 {
+			// copy to ensure pointer is not later modified from outside
+			s := slices.Clone(servers.Servers)
+			n.tpServers.Store(&s)
 
-		return
+			return
+		}
+
+		var i = 1
+		tryAfterDuration := timeoutFn(i)
+		log.Printf("%s failed to fetch TP servers: %v, retry(%d) servers after %v\n", internal.WarningPrefix, err, i, tryAfterDuration)
+		i += 1
+		<-time.After(tryAfterDuration)
 	}
-
-	var i = 1
-	tryAfterDuration := timeoutFn(i)
-	log.Printf("%s failed to fetch TP servers: %v, retry(%d) servers after %v\n", internal.WarningPrefix, err, i, tryAfterDuration)
-	i += 1
-	<-time.After(tryAfterDuration)
 }
 
 func shuffleNameservers(nameservers []string) []string {

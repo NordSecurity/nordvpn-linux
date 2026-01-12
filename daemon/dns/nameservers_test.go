@@ -1,7 +1,10 @@
 package dns
 
 import (
+	"errors"
 	"reflect"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -113,10 +116,43 @@ func TestNameserversRandomness(t *testing.T) {
 	}
 }
 
-func TestNameserversNotCrashingForNilServersFetcher(t *testing.T) {
+func TestNameserversNotCrashingWithNilServersFetcher(t *testing.T) {
 	category.Set(t, category.Unit)
 	nameservers := NewNameServers(nil, internal.ExponentialBackoff)
 
 	// check that the default servers are returned
 	assert.ElementsMatch(t, defaultTpServers, nameservers.Get(true))
+}
+
+func TestNameserversFetcherRetriesOnError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	servers := []string{"1.2.3.4"}
+
+	var retries atomic.Int32
+	retries.Store(3)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	nameservers := NewNameServers(
+		func() (*core.NameServers, error) {
+			if retries.Load() == 0 {
+				defer wg.Done()
+				return &core.NameServers{Servers: servers}, nil
+			}
+
+			return nil, errors.New("fail to fetch")
+		},
+		func(attempt int) time.Duration {
+			retries.Add(-1)
+			assert.True(t, retries.Load() >= 0, "called too many times")
+			return time.Millisecond
+		},
+	)
+
+	wg.Wait()
+	time.Sleep(time.Millisecond * 5)
+	assert.ElementsMatch(t, servers, nameservers.Get(true))
+	assert.Equal(t, int32(0), retries.Load())
 }
