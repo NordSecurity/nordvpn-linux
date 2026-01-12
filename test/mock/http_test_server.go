@@ -15,7 +15,6 @@ import (
 type HTTPTestServer struct {
 	t          *testing.T
 	srv        *httptest.Server
-	mux        *http.ServeMux
 	privateKey *rsa.PrivateKey
 	publicKey  ssh.PublicKey
 	running    atomic.Bool
@@ -100,6 +99,7 @@ func (h *internalHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.setHeaders(w, byteData)
+	// #nosec G104 -- it's ok to ignore error here
 	w.Write(byteData)
 }
 

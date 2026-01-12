@@ -2,7 +2,6 @@ import pytest
 import sh
 import os
 import glob
-import time
 
 from pathlib import Path
 

@@ -67,13 +67,15 @@ func TestMain(m *testing.M) {
 // ready for use in tests SimpleAPI
 func testNewSimpleAPI(serverType int) RawClientAPI {
 	var baseURL string
-	if serverType == GeneralInfo {
+	switch serverType {
+	case GeneralInfo:
 		baseURL = workingServer.URL()
-	} else if serverType == InvalidInfo {
+	case InvalidInfo:
 		baseURL = brokenServer.URL()
-	} else {
+	default:
 		panic(fmt.Sprintf("Invalid value: %d", serverType))
 	}
+
 	return NewSimpleAPI(
 		"",
 		baseURL,
