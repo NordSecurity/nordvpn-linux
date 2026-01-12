@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -37,20 +38,28 @@ func TestBuildClientAPIAndSessionStores(t *testing.T) {
 	}
 }
 
-// Test that TP nameservers and resolver are build, without blocking until servers list is downloaded
+// Test that TP nameservers and resolver are build
 func TestBuildTpServersAndResolver(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
+
+	var fetched atomic.Bool
+
 	serversList := []string{"1.2.3.4", "4.4.5.6"}
+
 	server := mock.NewHTTPTestServer(t,
 		[]mock.Handler{
 			mock.Handler{
 				Pattern: core.ThreatProtectionLiteURL,
 				Fn: func() ([]byte, *mock.HTTPError) {
-					defer wg.Done()
+					// simulate that fetching takes more time, also gives time to check fetched value
+					time.Sleep(time.Millisecond * 20)
+					assert.False(t, fetched.Load(), "must execute only once")
+					fetched.Store(true)
 
+					defer wg.Done()
 					b, _ := json.Marshal(serversList)
 					response := fmt.Sprintf("{\"servers\":%s}", string(b))
 					return []byte(response), nil
@@ -62,7 +71,6 @@ func TestBuildTpServersAndResolver(t *testing.T) {
 	server.Start()
 	defer server.Close()
 
-	startPoint := time.Now()
 	tp, resolver := buildTpServersAndResolver(
 		"test-agent",
 		server.URL(),
@@ -74,15 +82,16 @@ func TestBuildTpServersAndResolver(t *testing.T) {
 			return time.Minute
 		},
 	)
-	duration := time.Now().UnixMilli() - startPoint.UnixMilli()
-	assert.Less(t, duration, 100*time.Millisecond.Milliseconds())
 
+	assert.False(t, fetched.Load(), "fetcher must not be executed when building the objects")
 	assert.NotNil(t, tp)
 	assert.NotNil(t, resolver)
 
 	wg.Wait()
 
+	assert.True(t, fetched.Load(), "servers were fetched")
+
 	// wait a few milliseconds to give time to set the data into the list
-	time.Sleep(time.Millisecond * 10)
+	time.Sleep(time.Millisecond * 5)
 	assert.ElementsMatch(t, serversList, tp.Get(true))
 }

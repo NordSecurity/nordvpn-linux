@@ -853,15 +853,8 @@ func buildTpServersAndResolver(
 	fw *firewall.Firewall,
 	timeoutFn internal.CalculateRetryDelayForAttempt,
 ) (*dns.NameServers, *network.Resolver) {
-	threatProtectionLiteServers := func() *dns.NameServers {
-		cdn := core.NewCDNAPI(
-			userAgent,
-			cdnUrl,
-			httpClientSimple,
-			validator,
-		)
-		return dns.NewNameServers(cdn.ThreatProtectionLite, timeoutFn)
-	}()
+	cdn := core.NewCDNAPI(userAgent, cdnUrl, httpClientSimple, validator)
+	threatProtectionLiteServers := dns.NewNameServers(cdn.ThreatProtectionLite, timeoutFn)
 
 	resolver := network.NewResolver(fw, threatProtectionLiteServers)
 

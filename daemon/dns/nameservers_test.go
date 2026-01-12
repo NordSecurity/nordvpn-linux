@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// helper function to return the needed format for the fetcher used in NewNameServers
 func wrapServersList(servers []string) func() (*core.NameServers, error) {
 	return func() (*core.NameServers, error) {
 		return &core.NameServers{
@@ -94,7 +95,7 @@ func TestNameserversRandomness(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			servers := NewNameServers(wrapServersList(test.initial), internal.ExponentialBackoff)
 
-			// give time to fetch the data
+			// give time to fetch the data, before checking it
 			time.Sleep(time.Millisecond * 5)
 
 			nameservers1 := servers.Get(test.threatProtectionLite)
@@ -118,13 +119,13 @@ func TestNameserversRandomness(t *testing.T) {
 
 func TestNameserversNotCrashingWithNilServersFetcher(t *testing.T) {
 	category.Set(t, category.Unit)
-	nameservers := NewNameServers(nil, internal.ExponentialBackoff)
+	nameservers := NewNameServers(nil, nil)
 
 	// check that the default servers are returned
 	assert.ElementsMatch(t, defaultTpServers, nameservers.Get(true))
 }
 
-func TestNameserversFetcherRetriesOnError(t *testing.T) {
+func TestNameserversRetriesToFetchTPOnError(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	servers := []string{"1.2.3.4"}
@@ -137,6 +138,7 @@ func TestNameserversFetcherRetriesOnError(t *testing.T) {
 
 	nameservers := NewNameServers(
 		func() (*core.NameServers, error) {
+			// return error for `retries` times, before returning servers list
 			if retries.Load() == 0 {
 				defer wg.Done()
 				return &core.NameServers{Servers: servers}, nil

@@ -39,9 +39,7 @@ func GetHostOSPrettyName() (string, error) {
 	if err != nil {
 		log.Printf("%s %s connecting to system dbus: %s\n", logTag, internal.ErrorPrefix, err)
 		log.Println(logTag, internal.WarningPrefix, "falling back to alternative OS detection method")
-		ret, err := GetHostOSName()
-		log.Println(internal.InfoPrefix, "Get hostname finish")
-		return ret, err
+		return GetHostOSName()
 	}
 	defer conn.Close()
 
