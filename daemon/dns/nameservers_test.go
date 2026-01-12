@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
@@ -61,7 +60,7 @@ func TestNameservers(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			servers := NewNameServers(wrapServersList(test.initial), internal.ExponentialBackoff)
+			servers := NewNameServers(wrapServersList(test.initial), func(attempt int) time.Duration { return time.Millisecond })
 			nameservers := servers.Get(test.threatProtectionLite)
 			assert.ElementsMatch(t, test.expected, nameservers)
 		})
@@ -93,7 +92,7 @@ func TestNameserversRandomness(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			servers := NewNameServers(wrapServersList(test.initial), internal.ExponentialBackoff)
+			servers := NewNameServers(wrapServersList(test.initial), func(attempt int) time.Duration { return time.Millisecond })
 
 			// give time to fetch the data, before checking it
 			time.Sleep(time.Millisecond * 5)
