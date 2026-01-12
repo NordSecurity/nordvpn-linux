@@ -16,7 +16,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/network"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	mqttp "github.com/eclipse/paho.mqtt.golang/packets"
@@ -116,19 +116,17 @@ func (MqttClientBuilder) Build(opts *mqtt.ClientOptions) mqtt.Client {
 	return mqtt.NewClient(opts)
 }
 
-type CalculateRetryDelayForAttempt func(attempt int) time.Duration
-
 // Client is a client for Notification center
 type Client struct {
 	clientBuilder ClientBuilder
 	// MQTT Docs say that reusing client after doing Disconnect can lead to panics.
 	// Since we are doing connect manually with our exponential backoff, we are in risk of those panics.
-	// That's why this mutex must be locked everytime client is used.
+	// That's why this mutex must be locked every time client is used.
 	subjectInfo       events.Publisher[string]
 	subjectErr        events.Publisher[error]
 	subjectPeerUpdate events.Publisher[[]string]
 	credsFetcher      CredentialsGetter
-	retryDelayFunc    CalculateRetryDelayForAttempt
+	retryDelayFunc    internal.CalculateRetryDelayForAttempt
 
 	startMu          sync.Mutex
 	started          bool
@@ -150,7 +148,7 @@ func NewClient(
 		subjectErr:        subjectErr,
 		subjectPeerUpdate: subjectPeerUpdate,
 		credsFetcher:      credsFetcher,
-		retryDelayFunc:    network.ExponentialBackoff,
+		retryDelayFunc:    internal.ExponentialBackoff,
 	}
 }
 

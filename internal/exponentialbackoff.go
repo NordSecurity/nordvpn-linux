@@ -1,9 +1,11 @@
-package network
+package internal
 
 import (
 	"math/rand"
 	"time"
 )
+
+type CalculateRetryDelayForAttempt func(attempt int) time.Duration
 
 func ExponentialBackoff(tries int) time.Duration {
 	var minSecs, maxSecs int

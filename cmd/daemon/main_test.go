@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sort"
+	"sync"
 	"testing"
 	"time"
 
@@ -41,15 +41,16 @@ func TestBuildClientAPIAndSessionStores(t *testing.T) {
 func TestBuildTpServersAndResolver(t *testing.T) {
 	category.Set(t, category.Unit)
 
+	var wg sync.WaitGroup
+	wg.Add(1)
 	serversList := []string{"1.2.3.4", "4.4.5.6"}
-	sort.Strings(serversList)
 	server := mock.NewHTTPTestServer(t,
 		[]mock.Handler{
 			mock.Handler{
 				Pattern: core.ThreatProtectionLiteURL,
 				Fn: func() ([]byte, *mock.HTTPError) {
-					// block the call
-					// time.Sleep(1 * time.Second)
+					defer wg.Done()
+
 					b, _ := json.Marshal(serversList)
 					response := fmt.Sprintf("{\"servers\":%s}", string(b))
 					return []byte(response), nil
@@ -68,6 +69,10 @@ func TestBuildTpServersAndResolver(t *testing.T) {
 		http.DefaultClient,
 		response.NoopValidator{},
 		&firewall.Firewall{},
+		func(attempt int) time.Duration {
+			assert.Fail(t, "this must be called only for error while fetching")
+			return time.Minute
+		},
 	)
 	duration := time.Now().UnixMilli() - startPoint.UnixMilli()
 	assert.Less(t, duration, 100*time.Millisecond.Milliseconds())
@@ -75,8 +80,9 @@ func TestBuildTpServersAndResolver(t *testing.T) {
 	assert.NotNil(t, tp)
 	assert.NotNil(t, resolver)
 
-	// get the servers list and sort it because internally is shuffled
-	result := tp.Get(true)
-	sort.Strings(result)
-	assert.Equal(t, serversList, result)
+	wg.Wait()
+
+	// wait a few milliseconds to give time to set the data into the list
+	time.Sleep(time.Millisecond * 10)
+	assert.ElementsMatch(t, serversList, tp.Get(true))
 }

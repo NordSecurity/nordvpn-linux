@@ -21,7 +21,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/features"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
-	"github.com/NordSecurity/nordvpn-linux/network"
 
 	"google.golang.org/grpc/metadata"
 )
@@ -114,7 +113,7 @@ func (r *RPC) StartRemoteConfigLoaderJob(
 			if err == nil {
 				return
 			}
-			tryAfterDuration := network.ExponentialBackoff(i)
+			tryAfterDuration := internal.ExponentialBackoff(i)
 			log.Println(internal.WarningPrefix, "loading remote config, attempt:", i, "; next try after:", tryAfterDuration, "; error:", err)
 			<-time.After(tryAfterDuration)
 		}
@@ -258,8 +257,6 @@ func (a *autoconnectServer) Send(data *pb.Payload) error {
 	return nil
 }
 
-type GetTimeoutFunc func(tries int) time.Duration
-
 func (r *RPC) fallbackTechnology(targetTechnology config.Technology) error {
 	log.Println(internal.DebugPrefix,
 		"technology was configured to NordWhisper, but NordWhisper was disabled, switching to",
@@ -283,7 +280,7 @@ func (r *RPC) fallbackTechnology(targetTechnology config.Technology) error {
 }
 
 // StartAutoConnect connect to VPN server if autoconnect is enabled
-func (r *RPC) StartAutoConnect(timeoutFn GetTimeoutFunc) error {
+func (r *RPC) StartAutoConnect(timeoutFn internal.CalculateRetryDelayForAttempt) error {
 	tries := 1
 	for {
 		if r.netw.IsVPNActive() {
@@ -362,7 +359,7 @@ func meshErrorCheck(err error) bool {
 }
 
 // StartAutoMeshnet enable meshnet if it was enabled before
-func (r *RPC) StartAutoMeshnet(meshService *meshnet.Server, timeoutFn GetTimeoutFunc) error {
+func (r *RPC) StartAutoMeshnet(meshService *meshnet.Server, timeoutFn internal.CalculateRetryDelayForAttempt) error {
 	tries := 1
 	for {
 		if r.netw.IsMeshnetActive() {
