@@ -260,6 +260,7 @@ func main() {
 		httpClientSimple,
 		validator,
 		fw,
+		internal.ExponentialBackoff,
 	)
 
 	httpClientWithRotator := request.NewStdHTTP()
@@ -718,7 +719,7 @@ func main() {
 	}
 
 	if cfg.AutoConnect {
-		go rpc.StartAutoConnect(network.ExponentialBackoff)
+		go rpc.StartAutoConnect(internal.ExponentialBackoff)
 	}
 	monitor, err := netstate.NewNetlinkMonitor([]string{openvpn.InterfaceName, nordlynx.InterfaceName})
 	if err != nil {
@@ -730,7 +731,7 @@ func main() {
 		go daemon.StartNC("[startup]", notificationClient)
 	}
 	if cfg.Mesh {
-		go rpc.StartAutoMeshnet(meshService, network.ExponentialBackoff)
+		go rpc.StartAutoMeshnet(meshService, internal.ExponentialBackoff)
 	}
 
 	// Graceful stop
@@ -850,6 +851,7 @@ func buildTpServersAndResolver(
 	httpClientSimple *http.Client,
 	validator response.Validator,
 	fw *firewall.Firewall,
+	timeoutFn internal.CalculateRetryDelayForAttempt,
 ) (*dns.NameServers, *network.Resolver) {
 	threatProtectionLiteServers := func() *dns.NameServers {
 		cdn := core.NewCDNAPI(
@@ -858,12 +860,7 @@ func buildTpServersAndResolver(
 			httpClientSimple,
 			validator,
 		)
-		nameservers, err := cdn.ThreatProtectionLite()
-		if err != nil {
-			log.Println(internal.ErrorPrefix, "error retrieving nameservers:", err)
-			return dns.NewNameServers(nil)
-		}
-		return dns.NewNameServers(nameservers.Servers)
+		return dns.NewNameServers(cdn.ThreatProtectionLite, timeoutFn)
 	}()
 
 	resolver := network.NewResolver(fw, threatProtectionLiteServers)
