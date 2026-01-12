@@ -26,6 +26,7 @@ var (
 	defaultServers = []string{primaryNameserver4, secondaryNameserver4}
 )
 
+type CalculateRetryDelayForAttempt func(attempt int) time.Duration
 type ServersFetcher func() (*core.NameServers, error)
 
 type Getter interface {
@@ -38,7 +39,7 @@ type NameServers struct {
 	tpServers atomic.Pointer[[]string]
 }
 
-func NewNameServers(fetcher ServersFetcher, timeoutFn internal.CalculateRetryDelayForAttempt) *NameServers {
+func NewNameServers(fetcher ServersFetcher, timeoutFn CalculateRetryDelayForAttempt) *NameServers {
 	n := &NameServers{}
 	if fetcher != nil && timeoutFn != nil {
 		// start async to fetch the TP server names
@@ -72,7 +73,7 @@ func (n *NameServers) LookupIP(host string) ([]net.IP, error) {
 }
 
 // fetches the TP servers until is successful. It uses exponential backoff between retries
-func (n *NameServers) fetchTPServers(fetcher ServersFetcher, timeoutFn internal.CalculateRetryDelayForAttempt) {
+func (n *NameServers) fetchTPServers(fetcher ServersFetcher, timeoutFn CalculateRetryDelayForAttempt) {
 	if fetcher == nil {
 		return
 	}

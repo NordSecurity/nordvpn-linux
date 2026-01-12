@@ -147,6 +147,10 @@ func main() {
 	log.SetOutput(os.Stdout)
 	log.Println(internal.InfoPrefix, "Daemon has started")
 
+	if err := SetBufferSizeForHTTP3(); err != nil {
+		log.Println(internal.WarningPrefix, "failed to set buffer size for HTTP/3:", err)
+	}
+
 	machineIdGenerator := config.NewMachineID(os.ReadFile, os.Hostname)
 
 	// Config
@@ -260,7 +264,7 @@ func main() {
 		httpClientSimple,
 		validator,
 		fw,
-		internal.ExponentialBackoff,
+		network.ExponentialBackoff,
 	)
 
 	httpClientWithRotator := request.NewStdHTTP()
@@ -719,7 +723,7 @@ func main() {
 	}
 
 	if cfg.AutoConnect {
-		go rpc.StartAutoConnect(internal.ExponentialBackoff)
+		go rpc.StartAutoConnect(network.ExponentialBackoff)
 	}
 	monitor, err := netstate.NewNetlinkMonitor([]string{openvpn.InterfaceName, nordlynx.InterfaceName})
 	if err != nil {
@@ -731,7 +735,7 @@ func main() {
 		go daemon.StartNC("[startup]", notificationClient)
 	}
 	if cfg.Mesh {
-		go rpc.StartAutoMeshnet(meshService, internal.ExponentialBackoff)
+		go rpc.StartAutoMeshnet(meshService, network.ExponentialBackoff)
 	}
 
 	// Graceful stop
@@ -851,15 +855,11 @@ func buildTpServersAndResolver(
 	httpClientSimple *http.Client,
 	validator response.Validator,
 	fw *firewall.Firewall,
-	timeoutFn internal.CalculateRetryDelayForAttempt,
+	timeoutFn dns.CalculateRetryDelayForAttempt,
 ) (*dns.NameServers, *network.Resolver) {
 	cdn := core.NewCDNAPI(userAgent, cdnUrl, httpClientSimple, validator)
 	threatProtectionLiteServers := dns.NewNameServers(cdn.ThreatProtectionLite, timeoutFn)
 
 	resolver := network.NewResolver(fw, threatProtectionLiteServers)
-
-	if err := SetBufferSizeForHTTP3(); err != nil {
-		log.Println(internal.WarningPrefix, "failed to set buffer size for HTTP/3:", err)
-	}
 	return threatProtectionLiteServers, resolver
 }

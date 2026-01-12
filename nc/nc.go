@@ -16,7 +16,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/network"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	mqttp "github.com/eclipse/paho.mqtt.golang/packets"
@@ -116,6 +116,8 @@ func (MqttClientBuilder) Build(opts *mqtt.ClientOptions) mqtt.Client {
 	return mqtt.NewClient(opts)
 }
 
+type CalculateRetryDelayForAttempt func(attempt int) time.Duration
+
 // Client is a client for Notification center
 type Client struct {
 	clientBuilder ClientBuilder
@@ -126,7 +128,7 @@ type Client struct {
 	subjectErr        events.Publisher[error]
 	subjectPeerUpdate events.Publisher[[]string]
 	credsFetcher      CredentialsGetter
-	retryDelayFunc    internal.CalculateRetryDelayForAttempt
+	retryDelayFunc    CalculateRetryDelayForAttempt
 
 	startMu          sync.Mutex
 	started          bool
@@ -148,7 +150,7 @@ func NewClient(
 		subjectErr:        subjectErr,
 		subjectPeerUpdate: subjectPeerUpdate,
 		credsFetcher:      credsFetcher,
-		retryDelayFunc:    internal.ExponentialBackoff,
+		retryDelayFunc:    network.ExponentialBackoff,
 	}
 }
 
