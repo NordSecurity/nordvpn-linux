@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"net"
 	"slices"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -43,7 +44,14 @@ func NewNameServers(fetcher ServersFetcher, timeoutFn CalculateRetryDelayForAtte
 	n := &NameServers{}
 	if fetcher != nil && timeoutFn != nil {
 		// start async to fetch the TP server names
-		go n.fetchTPServers(fetcher, timeoutFn)
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			wg.Done()
+			n.fetchTPServers(fetcher, timeoutFn)
+		}()
+
+		wg.Wait()
 	} else {
 		log.Println(internal.ErrorPrefix, "no fetcher set for TP servers")
 	}

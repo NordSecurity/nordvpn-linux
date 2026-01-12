@@ -49,24 +49,22 @@ func TestBuildTpServersAndResolver(t *testing.T) {
 
 	serversList := []string{"1.2.3.4", "4.4.5.6"}
 
-	server := mock.NewHTTPTestServer(t,
-		[]mock.Handler{
-			mock.Handler{
-				Pattern: core.ThreatProtectionLiteURL,
-				Fn: func() ([]byte, *mock.HTTPError) {
-					// simulate that fetching takes more time, also gives time to check fetched value
-					time.Sleep(time.Millisecond * 20)
-					assert.False(t, fetched.Load(), "must execute only once")
-					fetched.Store(true)
+	server := mock.NewHTTPTestServer(t, []mock.Handler{
+		mock.Handler{
+			Pattern: core.ThreatProtectionLiteURL,
+			Fn: func() ([]byte, *mock.HTTPError) {
+				// simulate that fetching takes more time, also gives time to check fetched value
+				time.Sleep(time.Millisecond * 20)
+				assert.False(t, fetched.Load(), "must execute only once")
+				fetched.Store(true)
 
-					defer wg.Done()
-					b, _ := json.Marshal(serversList)
-					response := fmt.Sprintf("{\"servers\":%s}", string(b))
-					return []byte(response), nil
-				},
+				defer wg.Done()
+				b, _ := json.Marshal(serversList)
+				response := fmt.Sprintf("{\"servers\":%s}", string(b))
+				return []byte(response), nil
 			},
 		},
-	)
+	})
 
 	server.Start()
 	defer server.Close()
