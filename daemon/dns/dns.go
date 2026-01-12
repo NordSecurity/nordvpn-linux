@@ -176,7 +176,7 @@ func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
 		if err == nil {
 			return nil
 		}
-		log.Println(internal.WarningPrefix, dnsPrefix, "failed to set DNS using systemd-resovled:", err)
+		log.Println(internal.WarningPrefix, dnsPrefix, "failed to set DNS using systemd-resolved:", err)
 	case unknown:
 		log.Println(internal.WarningPrefix, dnsPrefix, "unknown DNS service")
 	}
