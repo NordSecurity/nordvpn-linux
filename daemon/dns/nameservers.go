@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"net"
 	"slices"
-	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -34,9 +34,8 @@ type Getter interface {
 }
 
 type NameServers struct {
-	// protects tpServers
-	mx        sync.Mutex
-	tpServers []string // List of TP servers fetched from cloud
+	// Pointer to the List of TP servers fetched from cloud
+	tpServers atomic.Pointer[[]string]
 }
 
 func NewNameServers(fetcher ServersFetcher, timeoutFn internal.CalculateRetryDelayForAttempt) *NameServers {
@@ -52,17 +51,16 @@ func (n *NameServers) Get(isThreatProtectionLite bool) []string {
 		return n.getTpServers()
 	}
 
-	return shuffleNameservers(defaultServers)
+	return shuffleNameservers(slices.Clone(defaultServers))
 }
 
 func (n *NameServers) getTpServers() []string {
-	n.mx.Lock()
-	defer n.mx.Unlock()
-	if len(n.tpServers) != 0 {
-		return shuffleNameservers(slices.Clone(n.tpServers))
+	servers := n.tpServers.Load()
+	if servers != nil && len(*servers) != 0 {
+		return shuffleNameservers(slices.Clone(*servers))
 	}
 
-	return shuffleNameservers(defaultTpServers)
+	return shuffleNameservers(slices.Clone(defaultTpServers))
 }
 
 func (n *NameServers) LookupIP(host string) ([]net.IP, error) {
@@ -74,16 +72,16 @@ func (n *NameServers) fetchTpServers(fetcher ServersFetcher, timeoutFn internal.
 		return
 	}
 
-	var i = 1
 	servers, err := fetcher()
 	if err == nil && len(servers.Servers) > 0 {
-		n.mx.Lock()
-		n.tpServers = servers.Servers
-		n.mx.Unlock()
+		// copy to ensure pointer is not later modified from outside
+		s := slices.Clone(servers.Servers)
+		n.tpServers.Store(&s)
 
 		return
 	}
 
+	var i = 1
 	tryAfterDuration := timeoutFn(i)
 	log.Printf("%s failed to fetch TP servers: %v, retry(%d) servers after %v\n", internal.WarningPrefix, err, i, tryAfterDuration)
 	i += 1
