@@ -50,7 +50,7 @@ func TestBuildTpServersAndResolver(t *testing.T) {
 	serversList := []string{"1.2.3.4", "4.4.5.6"}
 
 	server := mock.NewHTTPTestServer(t, []mock.Handler{
-		mock.Handler{
+		{
 			Pattern: core.ThreatProtectionLiteURL,
 			Fn: func() ([]byte, *mock.HTTPError) {
 				// simulate that fetching takes more time, also gives time to check fetched value
