@@ -432,9 +432,9 @@ func (s *Subscriber) NotifyMFA(data bool) error {
 // configChangeHandler defines a handler for a specific config field change.
 type configChangeHandler func(prev, curr *config.Config) error
 
-// NotifyConfigChanged handles config change events and updates moose context accordingly.
+// OnConfigChanged handles config change events and updates moose context accordingly.
 // It dispatches to specific handlers based on which config fields have changed.
-func (s *Subscriber) NotifyConfigChanged(e config.DataConfigChange) error {
+func (s *Subscriber) OnConfigChanged(e config.DataConfigChange) error {
 	if e.Config == nil {
 		return nil
 	}
