@@ -276,11 +276,15 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 		return nil, err
 	}
 
+	// Set token renewal timestamp to login time (when the fresh token was issued)
+	tokenRenewDate := time.Now().UTC().Format(internal.ServerDateFormat)
+
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
 		c.TokensData[credentials.ID] = config.TokenData{
 			Token:              resp.Token,
 			RenewToken:         resp.RenewToken,
 			TokenExpiry:        resp.ExpiresAt,
+			TokenRenewDate:     tokenRenewDate,
 			NordLynxPrivateKey: credentials.NordlynxPrivateKey,
 			OpenVPNUsername:    credentials.Username,
 			OpenVPNPassword:    credentials.Password,
