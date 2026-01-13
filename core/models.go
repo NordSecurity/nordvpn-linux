@@ -105,11 +105,7 @@ type LoginResponse struct {
 	Token      string `json:"token"`
 	RenewToken string `json:"renew_token"`
 	ExpiresAt  string `json:"expires_at"`
-	UpdatedAt  string `json:"updated_at"`
-	CreatedAt  string `json:"created_at"`
-	ID         int64  `json:"id"`
 }
-
 type CredentialsResponse struct {
 	ID                 int64  `json:"id"`
 	CreatedAt          string `json:"created_at"`
