@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
@@ -18,24 +17,30 @@ import (
 // AccountUsageText is shown next to account command by nordvpn --help
 const AccountUsageText = "Shows account information"
 
-func displayServiceStatus(serviceName string, serviceStatus int64, expiry string) error {
-	switch serviceStatus {
-	case internal.CodeSuccess:
-		expiryTime, err := time.Parse(internal.ServerDateFormat, expiry)
-		if err != nil {
-			return formatError(fmt.Errorf(AccountCantFetchVPNService, serviceName))
-		}
+func formatDate(dateStr string) (string, error) {
+	t, err := time.Parse(internal.ServerDateFormat, dateStr)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s %d, %d", t.Month().String()[0:3], t.Day(), t.Year()), nil
+}
 
-		expiryString := fmt.Sprintf("%s %s, %d",
-			expiryTime.Month().String()[0:3], ordinal(expiryTime.Day()), expiryTime.Year())
-		fmt.Printf("%s Service: Active (Expires on %s)\n", serviceName, expiryString)
+func displayExpiryInfo(name string, status int64, expiry string) error {
+	switch status {
+	case internal.CodeSuccess:
+		expiryString, err := formatDate(expiry)
+		if err != nil {
+			return formatError(fmt.Errorf(AccountCantFetchVPNService, name))
+		}
+		fmt.Printf("%s: Active until %s\n", name, expiryString)
 	case internal.CodeNoService:
-		fmt.Printf("%s: Inactive\n", serviceName)
+		fmt.Printf("%s: Inactive\n", name)
 	}
 
 	return nil
 }
 
+// Account displays account information
 func (c *cmd) Account(ctx *cli.Context) error {
 	payload, err := c.client.AccountInfo(context.Background(), &pb.AccountRequest{Full: true})
 	if err != nil {
@@ -60,17 +65,23 @@ func (c *cmd) Account(ctx *cli.Context) error {
 		return formatError(errors.New(client.AccessTokenExpired))
 	}
 
-	fmt.Println("Account Information:")
+	fmt.Println("Account information")
 	if payload.Username != "" {
 		fmt.Printf("Username: %s\n", payload.Username)
 	}
-	fmt.Println("Email Address:", payload.Email)
+	fmt.Println("Email address:", payload.Email)
 
-	if err := displayServiceStatus("VPN", payload.Type, payload.SubscriptionExpiresAt); err != nil {
+	createdOnFormatted, err := formatDate(payload.CreatedOn)
+	if err != nil {
+		return formatError(fmt.Errorf("failed to parse account creation date"))
+	}
+	fmt.Println("Account created:", createdOnFormatted)
+
+	if err := displayExpiryInfo("Subscription", payload.Type, payload.SubscriptionExpiresAt); err != nil {
 		return err
 	}
 
-	if err := displayServiceStatus("Dedicated IP",
+	if err := displayExpiryInfo("Dedicated IP",
 		payload.DedicatedIpStatus,
 		payload.LastDedicatedIpExpiresAt); err != nil {
 		return err
@@ -79,34 +90,14 @@ func (c *cmd) Account(ctx *cli.Context) error {
 	var mfa string
 	switch payload.MfaStatus {
 	case pb.TriState_ENABLED:
-		mfa = "enabled"
+		mfa = "Turned on"
 	case pb.TriState_DISABLED:
-		mfa = "disabled"
+		mfa = "Turned off"
 	case pb.TriState_UNKNOWN:
 		mfa = "unknown"
 	}
 
-	fmt.Println("Multi-factor Authentication (MFA):", mfa)
+	fmt.Println("Multi-factor authentication (MFA):", mfa)
 
 	return nil
-}
-
-func ordinal(day int) string {
-	switch day {
-	case 1, 21, 31:
-		return strconv.Itoa(day) + "st"
-	case 2, 22:
-		return strconv.Itoa(day) + "nd"
-	case 3, 23:
-		return strconv.Itoa(day) + "rd"
-	default:
-		return strconv.Itoa(day) + "th"
-	}
-}
-
-func activeBoolToString(isActive bool) string {
-	if isActive {
-		return "Active"
-	}
-	return "Inactive"
 }
