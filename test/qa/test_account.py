@@ -9,7 +9,8 @@ pytestmark = pytest.mark.usefixtures(
 
 
 def test_account_output_contains_all_fields():
-    """Verify that account command output contains all expected fields.
+    """
+    Verify that account command output contains all expected fields.
 
     This test ensures that the account command displays all required fields
     without checking their specific values.
