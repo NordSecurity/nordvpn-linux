@@ -3,6 +3,7 @@ package dns
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 
@@ -36,23 +37,34 @@ func (m *MockSetter) Unset(iface string) error {
 	return nil
 }
 
-type mockSymlinkFilesystemHandle struct {
+type mockFileInfo struct {
+	os.FileInfo
+}
+
+type mockStatingFilesystemHandle struct {
 	config.FilesystemMock
-	linkDestination       string
-	getLinkDestinationErr error
+	isSameFile bool
+	// statErrors maps file location to a potential stat error
+	statErrors map[string]error
 }
 
-func newMockSymlinkFilesystemHandle(t *testing.T) *mockSymlinkFilesystemHandle {
-	return &mockSymlinkFilesystemHandle{
+func newMockStatingFilesystemHandle(t *testing.T) *mockStatingFilesystemHandle {
+	return &mockStatingFilesystemHandle{
 		FilesystemMock: config.NewFilesystemMock(t),
+		statErrors:     make(map[string]error),
 	}
 }
 
-func (s *mockSymlinkFilesystemHandle) getLinkTarget(location string) (string, error) {
-	if s.getLinkDestinationErr != nil {
-		return "", s.getLinkDestinationErr
+func (s *mockStatingFilesystemHandle) stat(location string) (os.FileInfo, error) {
+	if statErr, ok := s.statErrors[location]; ok {
+		return mockFileInfo{}, statErr
 	}
-	return s.linkDestination, nil
+
+	return mockFileInfo{}, nil
+}
+
+func (s *mockStatingFilesystemHandle) sameFile(fi1 os.FileInfo, fi2 os.FileInfo) bool {
+	return s.isSameFile
 }
 
 type MockMethod struct {
@@ -252,14 +264,18 @@ search home`)
 		resolvconfLinkDestination string
 		setBySystemdResolved      bool
 		setByResolvconf           bool
-		getLinkDestinationErr     error
-		systemdResolvedSetErr     error
-		systemdResolvedUnsetErr   error
-		resolvconfSetErr          error
-		resolvconfUnsetErr        error
-		expectedSetErr            error
-		expectedUnsetErr          error
-		readErr                   error
+		resolvConfIsASymlink      bool
+		// resolvConfStatErr is returned when running Stat for /etc/resolv.conf
+		resolvConfStatErr error
+		// systemdStubStatErr is returned when running Stat for the systemd-resolved stub of /etc/resolv.conf
+		systemdStubStatErr      error
+		systemdResolvedSetErr   error
+		systemdResolvedUnsetErr error
+		resolvconfSetErr        error
+		resolvconfUnsetErr      error
+		expectedSetErr          error
+		expectedUnsetErr        error
+		readErr                 error
 	}{
 		{
 			name:                   "resolv.conf is managed by systemd-resolved, systemd-resolved is used to set DNS",
@@ -275,21 +291,45 @@ search home`)
 		{
 			name:                   "resolv.conf manager is unknown and resolv.conf is not a link, systemd-resolved is not available, resolv.conf is used to set DNS",
 			resolvconfFileContents: unknownManager,
-			getLinkDestinationErr:  fmt.Errorf("failed to read link destination"),
+			resolvConfIsASymlink:   false,
 			systemdResolvedSetErr:  fmt.Errorf("resolved not found"),
 			setByResolvconf:        true,
 		},
 		{
 			name:                   "resolv.conf manager is unknown and resolv.conf is not a link, systemd-resolved is available, systemd-resolved is used to set DNS",
 			resolvconfFileContents: unknownManager,
-			getLinkDestinationErr:  fmt.Errorf("failed to read link destination"),
+			resolvConfIsASymlink:   false,
 			setBySystemdResolved:   true,
 		},
 		{
-			name:                      "manager is not recognized based on resolv.conf contents but the file links to systemd-resolved is used to set DNS",
-			resolvconfLinkDestination: systemdResolvedLinkTarget,
-			resolvconfFileContents:    unknownManager,
-			setBySystemdResolved:      true,
+			name:                   "resolv.conf manager is unknown and running stat on resolv.conf fails, systemd-resolved is available, systemd-resolved is used to set DNS",
+			resolvconfFileContents: unknownManager,
+			resolvConfStatErr:      fmt.Errorf("failed to stat"),
+			setBySystemdResolved:   true,
+		},
+		{
+			name:                   "resolv.conf manager is unknown and running stat on resolv.conf fails, systemd-resolved is not available, resolv.conf is used to set DNS",
+			resolvconfFileContents: unknownManager,
+			resolvConfStatErr:      fmt.Errorf("failed to stat"),
+			setBySystemdResolved:   true,
+		},
+		{
+			name:                   "resolv.conf manager is unknown and running stat on systemd stub fails, systemd-resolved is available, systemd-resolved is used to set DNS",
+			resolvconfFileContents: unknownManager,
+			systemdStubStatErr:     fmt.Errorf("failed to stat"),
+			setBySystemdResolved:   true,
+		},
+		{
+			name:                   "resolv.conf manager is unknown and running stat on systemd stub fails, systemd-resolved is not available, resolv.conf is used to set DNS",
+			resolvconfFileContents: unknownManager,
+			systemdStubStatErr:     fmt.Errorf("failed to stat"),
+			setBySystemdResolved:   true,
+		},
+		{
+			name:                   "manager is not recognized based on resolv.conf contents but the file links to systemd-resolved is used to set DNS",
+			resolvConfIsASymlink:   true,
+			resolvconfFileContents: unknownManager,
+			setBySystemdResolved:   true,
 		},
 		{
 			name:                   "systemd-resolved is recognized from resolv.conf comment but setting the DNS fails, resolv.conf is used to set DNS",
@@ -320,12 +360,6 @@ search home`)
 			resolvconfUnsetErr:     errUnset,
 			expectedUnsetErr:       errUnset,
 		},
-		{
-			name:                      "reading resolv.conf file fails, but the file links to systemd-resolved, systemd-resolved is used to set DNS",
-			resolvconfLinkDestination: systemdResolvedLinkTarget,
-			readErr:                   fmt.Errorf("read failed"),
-			setBySystemdResolved:      true,
-		},
 	}
 
 	for _, test := range tests {
@@ -339,10 +373,10 @@ search home`)
 				unsetErr: test.resolvconfUnsetErr,
 			}
 
-			fs := newMockSymlinkFilesystemHandle(t)
+			fs := newMockStatingFilesystemHandle(t)
 			fs.ReadErr = test.readErr
-			fs.getLinkDestinationErr = test.getLinkDestinationErr
-			fs.linkDestination = test.resolvconfLinkDestination
+			// fs.statErr = test.isSymlinkToTargetErr
+			fs.isSameFile = test.resolvConfIsASymlink
 			fs.AddFile(resolvconfFilePath, test.resolvconfFileContents)
 
 			s := DNSServiceSetter{

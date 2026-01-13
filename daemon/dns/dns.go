@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -33,20 +32,25 @@ const (
 	unknown
 )
 
-var ErrDNSNotSet = fmt.Errorf("DNS not set")
+var ErrDNSNotSet = fmt.Errorf("DNS unsetter not set")
 
-// symlinkFilesystemHandle extends FilesystemHandle with symlink resolution capabilities
-type symlinkFilesystemHandle interface {
+// statingFilesystemHandle extends FilesystemHandle with wrappers for os.Stat and os.SameFile
+type statingFilesystemHandle interface {
 	config.FilesystemHandle
-	getLinkTarget(string) (string, error)
+	stat(location string) (os.FileInfo, error)
+	sameFile(os.FileInfo, os.FileInfo) bool
 }
 
-type stdSymlinkFilesystemHandle struct {
+type stdStatingFilesystemHandle struct {
 	config.StdFilesystemHandle
 }
 
-func (s *stdSymlinkFilesystemHandle) getLinkTarget(location string) (string, error) {
-	return os.Readlink(location)
+func (s *stdStatingFilesystemHandle) stat(location string) (os.FileInfo, error) {
+	return os.Stat(location)
+}
+
+func (s *stdStatingFilesystemHandle) sameFile(fi1 os.FileInfo, fi2 os.FileInfo) bool {
+	return os.SameFile(fi1, fi2)
 }
 
 // Setter is responsible for configuring DNS.
@@ -73,14 +77,14 @@ type DNSServiceSetter struct {
 	//	2. direct write to /etc/resolv.conf
 	resolvconfSetter Setter
 	unsetter         Setter
-	filesystemHandle symlinkFilesystemHandle
+	filesystemHandle statingFilesystemHandle
 }
 
 func NewDNSServiceSetter(publisher events.Publisher[string]) *DNSServiceSetter {
 	return &DNSServiceSetter{
 		systemdResolvedSetter: NewSetter(publisher, &Resolved{}, &Resolvectl{}),
 		resolvconfSetter:      NewSetter(publisher, &Resolvconf{}, &ResolvConfFile{}),
-		filesystemHandle:      &stdSymlinkFilesystemHandle{},
+		filesystemHandle:      &stdStatingFilesystemHandle{},
 	}
 }
 
@@ -98,13 +102,14 @@ func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfComment() (dnsMa
 }
 
 func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfLinkTarget() (dnsManagementService, error) {
-	resolvConfLinkDestination, err := d.filesystemHandle.getLinkTarget(resolvconfFilePath)
+	resolvConfFileInfo, err := d.filesystemHandle.stat(resolvconfFilePath)
 	if err != nil {
-		return unknown, fmt.Errorf("failed to obtain resolv.conf link target: %w", err)
+		return unknown, fmt.Errorf("failed to stat /etc/resolv.conf: %w", err)
 	}
 
-	resolvConfLinkDestination = filepath.Clean(resolvConfLinkDestination)
-	if strings.Contains(resolvConfLinkDestination, systemdResolvedLinkTarget) {
+	if systemdResolvedFileInfo, err := d.filesystemHandle.stat(systemdResolvedLinkTarget); err != nil {
+		log.Println(internal.WarningPrefix, dnsPrefix, "failed to stat systemd-resolved stub:", err)
+	} else if d.filesystemHandle.sameFile(resolvConfFileInfo, systemdResolvedFileInfo) {
 		return systemdResolved, nil
 	}
 
@@ -114,6 +119,7 @@ func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfLinkTarget() (dn
 func (d *DNSServiceSetter) getManagementService() dnsManagementService {
 	managmenetService, err := d.getManagementServiceBasedOnResolvconfComment()
 	if err == nil {
+		log.Println(internal.InfoPrefix, dnsPrefix, "management service inferred from resovl.conf comment")
 		return managmenetService
 	}
 	log.Println(internal.WarningPrefix, dnsPrefix,
@@ -125,6 +131,8 @@ func (d *DNSServiceSetter) getManagementService() dnsManagementService {
 			"couldn't determine management service based on resolv.conf link target:", err)
 		return unknown
 	}
+
+	log.Println(internal.InfoPrefix, dnsPrefix, "management service inferred from link target")
 	return managmenetService
 }
 
