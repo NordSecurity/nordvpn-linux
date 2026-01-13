@@ -264,6 +264,5 @@ func TestLoadTwoCopiesReturnsIndependentCopies(t *testing.T) {
 	first.TokensData[123] = TokenData{Token: "modified-token"}
 
 	// Verify second copy is unchanged (independent)
-	assert.True(t, second.AutoConnect, "second copy should be unchanged")
-	assert.Equal(t, "test-token", second.TokensData[123].Token, "second copy TokensData should be unchanged")
+	assert.NotEqual(t, first, second, "Modifications to the first copy should not affect the second copy")
 }

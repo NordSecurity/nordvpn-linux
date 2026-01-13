@@ -465,6 +465,8 @@ func (s *Subscriber) handleTokenRenewDateChange(prev, curr *config.Config) error
 
 	renewDate, err := time.Parse(internal.ServerDateFormat, currentDate)
 	if err != nil {
+		log.Println(internal.WarningPrefix, LogComponentPrefix,
+			fmt.Sprintf("failed to parse token renew date %q: %v", currentDate, err))
 		return nil
 	}
 
