@@ -1,11 +1,11 @@
 package dns
 
 import (
+	"errors"
 	"log"
 	"math/rand"
 	"net"
 	"slices"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -40,22 +40,8 @@ type NameServers struct {
 	tpServers atomic.Pointer[[]string]
 }
 
-func NewNameServers(fetcher ServersFetcher, timeoutFn CalculateRetryDelayForAttempt) *NameServers {
-	n := &NameServers{}
-	if fetcher != nil && timeoutFn != nil {
-		// start async to fetch the TP server names
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go func() {
-			wg.Done()
-			n.fetchTPServers(fetcher, timeoutFn)
-		}()
-
-		wg.Wait()
-	} else {
-		log.Println(internal.ErrorPrefix, "no fetcher set for TP servers")
-	}
-	return n
+func NewNameServers() *NameServers {
+	return &NameServers{}
 }
 
 // Get nameservers selected by the given criteria.
@@ -80,13 +66,14 @@ func (n *NameServers) LookupIP(host string) ([]net.IP, error) {
 	return net.LookupIP(host)
 }
 
-// fetches the TP servers until is successful. It uses exponential backoff between retries
-func (n *NameServers) fetchTPServers(fetcher ServersFetcher, timeoutFn CalculateRetryDelayForAttempt) {
-	if fetcher == nil {
-		return
+// FetchTPServers it is a blocking operation and fetches the TP servers until is successful.
+// It uses exponential backoff between retries.
+func (n *NameServers) FetchTPServers(fetcher ServersFetcher, timeoutFn CalculateRetryDelayForAttempt) error {
+	if fetcher == nil || timeoutFn == nil {
+		return errors.New("fetcher parameters cannot be nil")
 	}
 
-	for i := 0; ; i++ {
+	for retry := 0; ; retry++ {
 		servers, err := fetcher()
 		if err == nil && len(servers.Servers) > 0 {
 			// copy to ensure pointer is not later modified from outside
@@ -94,13 +81,15 @@ func (n *NameServers) fetchTPServers(fetcher ServersFetcher, timeoutFn Calculate
 			s := slices.Clone(servers.Servers)
 			n.tpServers.Store(&s)
 
-			return
+			break
 		}
 
-		tryAfterDuration := timeoutFn(i)
-		log.Printf("%s failed to fetch TP servers. retry(%d) servers after %v: %v\n", internal.ErrorPrefix, i, tryAfterDuration, err)
+		tryAfterDuration := timeoutFn(retry)
+		log.Printf("%s failed to fetch TP servers. retry(%d) servers after %v: %v\n", internal.ErrorPrefix, retry, tryAfterDuration, err)
 		<-time.After(tryAfterDuration)
 	}
+
+	return nil
 }
 
 func shuffleNameservers(nameservers []string) []string {

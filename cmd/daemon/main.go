@@ -858,8 +858,10 @@ func buildTpServersAndResolver(
 	timeoutFn dns.CalculateRetryDelayForAttempt,
 ) (*dns.NameServers, *network.Resolver) {
 	cdn := core.NewCDNAPI(userAgent, cdnUrl, httpClientSimple, validator)
-	threatProtectionLiteServers := dns.NewNameServers(cdn.ThreatProtectionLite, timeoutFn)
+	tpServers := dns.NewNameServers()
+	// fetch async the TP servers, because FetchTPServers will retry until is successful
+	go tpServers.FetchTPServers(cdn.ThreatProtectionLite, timeoutFn)
 
-	resolver := network.NewResolver(fw, threatProtectionLiteServers)
-	return threatProtectionLiteServers, resolver
+	resolver := network.NewResolver(fw, tpServers)
+	return tpServers, resolver
 }
