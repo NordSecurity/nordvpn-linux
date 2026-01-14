@@ -145,7 +145,7 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
       },
       noAction: (ref) {
         // Clear pending protocol when user cancels
-        ref.read(pendingProtocolProvider.notifier).clear();
+        ref.read(pendingVPNProtocolProvider.notifier).clear();
       },
     ),
 
