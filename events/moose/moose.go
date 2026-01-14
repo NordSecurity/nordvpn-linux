@@ -459,15 +459,17 @@ func (s *Subscriber) handleTokenRenewDateChange(prev, curr *config.Config) error
 	currentDate := getTokenRenewDate(curr)
 	previousDate := getTokenRenewDate(prev)
 
-	if currentDate == "" || currentDate == previousDate {
+	if currentDate == previousDate {
 		return nil
+	}
+
+	if currentDate == "" {
+		return s.unsetTokenRenewDate()
 	}
 
 	renewDate, err := time.Parse(internal.ServerDateFormat, currentDate)
 	if err != nil {
-		log.Println(internal.WarningPrefix, LogComponentPrefix,
-			fmt.Sprintf("failed to parse token renew date %q: %v", currentDate, err))
-		return nil
+		return fmt.Errorf("parsing token renew date %q: %w", currentDate, err)
 	}
 
 	return s.setTokenRenewDate(renewDate.Unix())

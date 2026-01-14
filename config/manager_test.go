@@ -8,6 +8,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFilesystem(t *testing.T) {
@@ -74,7 +75,7 @@ func TestConfigIsBackwardsCompatible(t *testing.T) {
 	category.Set(t, category.File)
 
 	salt, ok := os.LookupEnv("SALT")
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	tests := []struct {
 		settingsFile string
@@ -103,7 +104,7 @@ func TestConfigIsBackwardsCompatible(t *testing.T) {
 			fs := NewFilesystemConfigManager(test.settingsFile, test.installFile, salt, NewMachineID(os.ReadFile, os.Hostname), StdFilesystemHandle{}, nil)
 			var cfg Config
 			err := fs.Load(&cfg)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			var cfg2 Config
 			assert.NotEqual(t, cfg2, cfg)
 		})
@@ -114,7 +115,7 @@ func TestConfigDefaultValues(t *testing.T) {
 	category.Set(t, category.File)
 
 	salt, ok := os.LookupEnv("SALT")
-	assert.True(t, ok)
+	require.True(t, ok)
 
 	tests := []struct {
 		settingsFile string
@@ -150,7 +151,7 @@ func TestConfigDefaultValues(t *testing.T) {
 			fs := NewFilesystemConfigManager(test.settingsFile, test.installFile, salt, NewMachineID(os.ReadFile, os.Hostname), StdFilesystemHandle{}, nil)
 			var cfg Config
 			err := fs.Load(&cfg)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, defaultFWMarkValue, cfg.FirewallMark)
 			assert.Equal(t, test.technology, cfg.Technology)
 			assert.True(t, cfg.Firewall)
@@ -226,7 +227,7 @@ func (m *mockConfigPublisher) Publish(change DataConfigChange) {
 	}
 }
 
-func TestLoadTwoCopiesReturnsIndependentCopies(t *testing.T) {
+func TestLoadWithCopyReturnsIndependentCopies(t *testing.T) {
 	category.Set(t, category.File)
 
 	tmpDir := t.TempDir()
@@ -250,9 +251,9 @@ func TestLoadTwoCopiesReturnsIndependentCopies(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	// Load two copies
+	// Load with copy
 	var first, second Config
-	_, err = fs.loadTwoCopies(&first, &second)
+	err = fs.load(&first, &second)
 	assert.NoError(t, err)
 
 	// Verify both have the same initial values
