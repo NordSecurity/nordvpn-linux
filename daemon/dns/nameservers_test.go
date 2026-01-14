@@ -3,7 +3,6 @@ package dns
 import (
 	"errors"
 	"reflect"
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -24,6 +23,8 @@ func wrapServersList(servers []string) func() (*core.NameServers, error) {
 }
 
 func TestDiscoverNameserverIp(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	ip, err := discoverNameserverIp()
 	assert.NoError(t, err)
 	assert.NotNil(t, ip)
@@ -60,7 +61,8 @@ func TestNameservers(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			servers := NewNameServers(wrapServersList(test.initial), func(attempt int) time.Duration { return time.Millisecond })
+			servers := NewNameServers()
+			go servers.FetchTPServers(wrapServersList(test.initial), func(attempt int) time.Duration { return time.Millisecond })
 			nameservers := servers.Get(test.threatProtectionLite)
 			assert.ElementsMatch(t, test.expected, nameservers)
 		})
@@ -92,7 +94,8 @@ func TestNameserversRandomness(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			servers := NewNameServers(wrapServersList(test.initial), func(attempt int) time.Duration { return time.Millisecond })
+			servers := NewNameServers()
+			go servers.FetchTPServers(wrapServersList(test.initial), func(attempt int) time.Duration { return time.Millisecond })
 
 			// give time to fetch the data, before checking it
 			time.Sleep(time.Millisecond * 5)
@@ -118,8 +121,8 @@ func TestNameserversRandomness(t *testing.T) {
 
 func TestNameserversNotCrashingWithNilServersFetcher(t *testing.T) {
 	category.Set(t, category.Unit)
-	nameservers := NewNameServers(nil, nil)
-
+	nameservers := NewNameServers()
+	assert.Error(t, nameservers.FetchTPServers(nil, nil))
 	// check that the default servers are returned
 	assert.ElementsMatch(t, defaultTpServers, nameservers.Get(true))
 }
@@ -132,14 +135,11 @@ func TestNameserversRetriesToFetchTPOnError(t *testing.T) {
 	var retries atomic.Int32
 	retries.Store(3)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-
-	nameservers := NewNameServers(
+	nameservers := NewNameServers()
+	nameservers.FetchTPServers(
 		func() (*core.NameServers, error) {
 			// return error for `retries` times, before returning servers list
 			if retries.Load() == 0 {
-				defer wg.Done()
 				return &core.NameServers{Servers: servers}, nil
 			}
 
@@ -152,7 +152,6 @@ func TestNameserversRetriesToFetchTPOnError(t *testing.T) {
 		},
 	)
 
-	wg.Wait()
 	time.Sleep(time.Millisecond * 5)
 	assert.ElementsMatch(t, servers, nameservers.Get(true))
 	assert.Equal(t, int32(0), retries.Load())

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -76,7 +77,7 @@ func TestBuildTpServersAndResolver(t *testing.T) {
 		response.NoopValidator{},
 		&firewall.Firewall{},
 		func(attempt int) time.Duration {
-			assert.Fail(t, "this must be called only for error while fetching")
+			assert.Fail(t, "this must not be called in this case")
 			return time.Minute
 		},
 	)
@@ -89,7 +90,13 @@ func TestBuildTpServersAndResolver(t *testing.T) {
 
 	assert.True(t, fetched.Load(), "servers were fetched")
 
-	// wait a few milliseconds to give time to set the data into the list
-	time.Sleep(time.Millisecond * 5)
+	// retry several times, until the internal members are sync
+	for retry := 0; retry < 5; retry++ {
+		if slices.Contains(tp.Get(true), serversList[0]) {
+			break
+		}
+		time.Sleep(time.Millisecond * 2)
+	}
+
 	assert.ElementsMatch(t, serversList, tp.Get(true))
 }
