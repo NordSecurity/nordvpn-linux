@@ -22,7 +22,7 @@ func formatDate(dateStr string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s %d, %d", t.Month().String()[0:3], t.Day(), t.Year()), nil
+	return t.Format("Jan 2, 2006"), nil
 }
 
 func displayExpiryInfo(name string, status int64, expiry string) error {

@@ -86,3 +86,33 @@ def test_cmd_not_found_error():
     print(ex.value)
     assert f"Command '{invalid_cmd}' doesn't exist." in ex.value.stdout.decode()
     assert network.is_disconnected()
+
+
+def test_account_output_contains_all_fields():
+    """
+    Verify that account command output contains all expected fields.
+
+    This test ensures that the account command displays all required fields
+    without checking their specific values.
+    """
+    output = sh.nordvpn.account()
+
+    # Header
+    assert "Account information" in output
+
+    # Required fields (always present)
+    assert "Email address:" in output
+    assert "Account created:" in output
+    assert "Subscription:" in output
+    assert "Dedicated IP:" in output
+    assert "Multi-factor authentication (MFA):" in output
+
+
+def test_account_not_logged_in():
+    """Verify account command shows error when not logged in."""
+    sh.nordvpn.logout("--persist-token", _ok_code=[0, 1])
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.account()
+
+    assert "You are not logged in." in ex.value.stdout.decode("utf-8")
