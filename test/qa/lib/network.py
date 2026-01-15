@@ -148,7 +148,7 @@ def is_internet_reachable(ip_address="1.1.1.1", port=443, retry=5) -> bool:
             sock.close()
             return True
         except Exception as e: # noqa: BLE001
-            print(f"is_internet_reachable failed {ip_address}: {e}")
+            logging.log(f"is_internet_reachable failed {ip_address}: {e}")
             time.sleep(1)
             i += 1
     return False
