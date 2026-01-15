@@ -199,6 +199,7 @@ def test_killswitch_on_after_update():
     logging.log(f"Settings before update {sh.nordvpn.settings()}")
     assert network.is_not_available(2)
     sh.sudo.dpkg("-i", DEB_PATH)
+    daemon.wait_until_daemon_is_running()
     logging.log(f"Settings after app update {sh.nordvpn.settings()}")
     assert network.is_not_available(2)
     assert daemon.is_killswitch_on()
