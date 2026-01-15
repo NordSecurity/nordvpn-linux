@@ -119,6 +119,10 @@ def setup_check_internet_connection():
 
 @pytest.fixture(scope="session", autouse=True)
 def start_system_monitoring():
+    if os.getenv("SKIP_SYSTEM_MONITORING"):
+        print("Skipping monitoring...")
+        yield
+
     print("Run start_system_monitoring")
 
     # control running threads execution
