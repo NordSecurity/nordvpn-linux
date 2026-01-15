@@ -69,7 +69,7 @@ func Test_ResolvConfMonitoring(t *testing.T) {
 
 	analyticsMock := newAnalyticsMock()
 
-	resolvConfMonitor := resolvConfMonitor{
+	resolvConfMonitor := resolvConfFileWatcherMonitor{
 		analytics:      &analyticsMock,
 		getWatcherFunc: getMockWatcherFunc,
 	}

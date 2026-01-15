@@ -13,6 +13,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type mockResolvConfMonitor struct {
+}
+
+func (m *mockResolvConfMonitor) Start() {}
+func (m *mockResolvConfMonitor) Stop()  {}
+
 type MockSetter struct {
 	isSet    bool
 	setErr   error
@@ -384,6 +390,7 @@ search home`)
 			s := DNSServiceSetter{
 				systemdResolvedSetter: &resolvedSetter,
 				resolvconfSetter:      &resolvconfSetter,
+				resolvConfMonitor:     &mockResolvConfMonitor{},
 				filesystemHandle:      fs,
 			}
 

@@ -9,9 +9,14 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
+type resolvConfMonitor interface {
+	Start()
+	Stop()
+}
+
 type getWatcherFunc func() (*fsnotify.Watcher, error)
 
-type resolvConfMonitor struct {
+type resolvConfFileWatcherMonitor struct {
 	analytics      analytics
 	getWatcherFunc getWatcherFunc
 	cancelFunc     context.CancelFunc
@@ -21,8 +26,8 @@ type resolvConfMonitor struct {
 	doneChan <-chan any
 }
 
-func newResolvConfMonitor(analytics analytics) resolvConfMonitor {
-	return resolvConfMonitor{
+func newResolvConfMonitor(analytics analytics) resolvConfFileWatcherMonitor {
+	return resolvConfFileWatcherMonitor{
 		analytics:      analytics,
 		getWatcherFunc: getWatcher,
 	}
@@ -48,7 +53,7 @@ func getWatcher() (*fsnotify.Watcher, error) {
 	return watcher, nil
 }
 
-func (r *resolvConfMonitor) monitorResolvConf(ctx context.Context) error {
+func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context) error {
 	watcher, err := r.getWatcherFunc()
 	if err != nil {
 		return fmt.Errorf("creating file watcher: %w", err)
@@ -84,7 +89,7 @@ func (r *resolvConfMonitor) monitorResolvConf(ctx context.Context) error {
 	}
 }
 
-func (r *resolvConfMonitor) Start() {
+func (r *resolvConfFileWatcherMonitor) Start() {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	r.cancelFunc = cancelFunc
 	go func() {
@@ -94,7 +99,7 @@ func (r *resolvConfMonitor) Start() {
 	}()
 }
 
-func (r *resolvConfMonitor) Stop() {
+func (r *resolvConfFileWatcherMonitor) Stop() {
 	if r.cancelFunc != nil {
 		r.cancelFunc()
 		// wait for the monitor goroutine to finish

@@ -85,12 +85,13 @@ type DNSServiceSetter struct {
 func NewDNSServiceSetter(publisher events.Publisher[string],
 	debugPublisher events.PublishSubcriber[events.DebuggerEvent]) *DNSServiceSetter {
 	analytics := newDNSAnalytics(debugPublisher)
+	resolvConfMonitor := newResolvConfMonitor(analytics)
 	return &DNSServiceSetter{
 		systemdResolvedSetter: NewSetter(publisher, &Resolved{}, &Resolvectl{}),
 		resolvconfSetter:      NewSetter(publisher, &Resolvconf{}, &ResolvConfFile{}),
 		filesystemHandle:      &stdStatingFilesystemHandle{},
 		analytics:             analytics,
-		resolvConfMonitor:     newResolvConfMonitor(analytics),
+		resolvConfMonitor:     &resolvConfMonitor,
 	}
 }
 
