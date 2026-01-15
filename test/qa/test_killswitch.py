@@ -9,7 +9,9 @@ from lib import (
     login,
     network,
 )
+from lib.dynamic_parametrize import dynamic_parametrize
 
+from conftest import IS_NIGHTLY
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
@@ -114,8 +116,17 @@ def test_killswitch_off_connected(tech, proto, obfuscated):
     assert network.is_available()
 
 
-@pytest.mark.parametrize(("tech_from", "proto_from", "obfuscated_from"), lib.TECHNOLOGIES)
-@pytest.mark.parametrize(("tech_to", "proto_to", "obfuscated_to"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech_from", "proto_from", "obfuscated_from",
+        "tech_to", "proto_to", "obfuscated_to",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[lib.TECHNOLOGIES],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech_from}-{proto_from}-{obfuscated_from}-"
+               "{tech_to}-{proto_to}-{obfuscated_to}",
+)
 def test_killswitch_reconnect(tech_from, proto_from, obfuscated_from, tech_to, proto_to, obfuscated_to):
     """Manual TC: LVPN-8716"""
 
