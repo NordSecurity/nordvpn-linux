@@ -179,25 +179,10 @@ def test_killswitch_on_after_update():
     sh.sudo.mv("/usr/bin/ps", "/usr/bin/pso")
     sh.sudo.cp("/etc/mock_ps.sh", "/usr/bin/ps")
 
-    # Making a second deb package with increased version to upgrade to
-    sh.dpkg_deb("-R", DEB_PATH, "/tmp/")
-    ver = str(sh.dpkg_query("-f", '${VERSION}', "-W", "nordvpn"))
-    increased_ver = str(int(ver[0]) + 1) + ver[1:]
-    print(increased_ver)
-    with open("/tmp/DEBIAN/control", "rb") as f:
-        data = f.readlines()
-    data[1] = bytes("Version: " + increased_ver + "\n", "utf-8")
-    with open("/tmp/DEBIAN/control", "wb") as f:
-        f.writelines(data)
-    # Empty file with which dpkg-deb does not work, we remove it before repackaging
-    os.remove("/tmp/DEBIAN/conffiles")
-    sh.sudo("dpkg-deb", "-b", "/tmp/", "/opt/updated.deb")
-
-
     sh.nordvpn.set.killswitch.on()
     assert daemon.is_killswitch_on()
     assert network.is_not_available(2)
-    sh.sudo.apt.install("/opt/updated.deb", "-y")
+    sh.sudo.dpkg("-i", DEB_PATH)
     assert network.is_not_available(2)
     assert daemon.is_killswitch_on()
     sh.nordvpn.set.killswitch.off()
