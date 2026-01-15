@@ -6,7 +6,8 @@ import sh
 import lib
 from lib import daemon, network, server, settings
 from lib.shell import sh_no_tty
-
+from lib.dynamic_parametrize import dynamic_parametrize
+from conftest import IS_NIGHTLY
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
 
@@ -51,8 +52,15 @@ def test_not_autoconnect(tech, proto, obfuscated):
     assert network.is_disconnected()
 
 
-@pytest.mark.parametrize("group", lib.COUNTRIES + lib.COUNTRY_CODES)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "group",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[lib.COUNTRIES + lib.COUNTRY_CODES],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{group}",
+)
 def test_autoconnect_to_country(tech, proto, obfuscated, group):
     """Manual TC: LVPN-6781"""
 
@@ -60,8 +68,15 @@ def test_autoconnect_to_country(tech, proto, obfuscated, group):
     autoconnect_base_test(group)
 
 
-@pytest.mark.parametrize("group", lib.CITIES)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "group",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[lib.CITIES],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{group}",
+)
 def test_autoconnect_to_city(tech, proto, obfuscated, group):
     """Manual TC: LVPN-6784"""
 
@@ -81,8 +96,15 @@ def test_autoconnect_to_random_server_by_name(tech, proto, obfuscated):
     autoconnect_base_test(name)
 
 
-@pytest.mark.parametrize("group", lib.STANDARD_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "group",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[lib.STANDARD_GROUPS],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{group}",
+)
 def test_autoconnect_to_standard_group(tech, proto, obfuscated, group):
     """Manual TC: LVPN-8424"""
 
