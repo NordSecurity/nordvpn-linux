@@ -273,76 +273,98 @@ search home`)
 		// resolvConfStatErr is returned when running Stat for /etc/resolv.conf
 		resolvConfStatErr error
 		// systemdStubStatErr is returned when running Stat for the systemd-resolved stub of /etc/resolv.conf
-		systemdStubStatErr      error
-		systemdResolvedSetErr   error
-		systemdResolvedUnsetErr error
-		resolvconfSetErr        error
-		resolvconfUnsetErr      error
-		expectedSetErr          error
-		expectedUnsetErr        error
-		readErr                 error
+		shouldEmitDNSConfiguredEvent     bool
+		expectedManagementServiceInEvent dnsManagementService
+		systemdStubStatErr               error
+		systemdResolvedSetErr            error
+		systemdResolvedUnsetErr          error
+		resolvconfSetErr                 error
+		resolvconfUnsetErr               error
+		expectedSetErr                   error
+		expectedUnsetErr                 error
+		readErr                          error
 	}{
 		{
-			name:                   "resolv.conf is managed by systemd-resolved, systemd-resolved is used to set DNS",
-			resolvconfFileContents: systemdResolvedResolvconf,
-			setBySystemdResolved:   true,
+			name:                             "resolv.conf is managed by systemd-resolved, systemd-resolved is used to set DNS",
+			resolvconfFileContents:           systemdResolvedResolvconf,
+			setBySystemdResolved:             true,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedManagementServiceInEvent: systemdResolved,
 		},
 		{
-			name:                   "resolv.conf is not managed by systemd-resolved and systemd-resolved is not found, resolv.conf is used to set DNS",
-			resolvconfFileContents: noManagerResolvConf,
-			systemdResolvedSetErr:  fmt.Errorf("resolved not found"),
-			setByResolvconf:        true,
+			name:                             "resolv.conf is not managed by systemd-resolved and systemd-resolved is not found, resolv.conf is used to set DNS",
+			resolvconfFileContents:           noManagerResolvConf,
+			systemdResolvedSetErr:            fmt.Errorf("resolved not found"),
+			setByResolvconf:                  true,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedManagementServiceInEvent: unmanaged,
 		},
 		{
-			name:                   "resolv.conf manager is unknown and resolv.conf is not a link, systemd-resolved is not available, resolv.conf is used to set DNS",
-			resolvconfFileContents: unknownManager,
-			resolvConfIsASymlink:   false,
-			systemdResolvedSetErr:  fmt.Errorf("resolved not found"),
-			setByResolvconf:        true,
+			name:                             "resolv.conf manager is unknown and resolv.conf is not a link, systemd-resolved is not available, resolv.conf is used to set DNS",
+			resolvconfFileContents:           unknownManager,
+			resolvConfIsASymlink:             false,
+			systemdResolvedSetErr:            fmt.Errorf("resolved not found"),
+			setByResolvconf:                  true,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedManagementServiceInEvent: unmanaged,
 		},
 		{
-			name:                   "resolv.conf manager is unknown and resolv.conf is not a link, systemd-resolved is available, systemd-resolved is used to set DNS",
-			resolvconfFileContents: unknownManager,
-			resolvConfIsASymlink:   false,
-			setBySystemdResolved:   true,
+			name:                             "resolv.conf manager is unknown and resolv.conf is not a link, systemd-resolved is available, systemd-resolved is used to set DNS",
+			resolvconfFileContents:           unknownManager,
+			resolvConfIsASymlink:             false,
+			setBySystemdResolved:             true,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedManagementServiceInEvent: systemdResolved,
 		},
 		{
-			name:                   "resolv.conf manager is unknown and running stat on resolv.conf fails, systemd-resolved is available, systemd-resolved is used to set DNS",
-			resolvconfFileContents: unknownManager,
-			resolvConfStatErr:      fmt.Errorf("failed to stat"),
-			setBySystemdResolved:   true,
+			name:                             "resolv.conf manager is unknown and running stat on resolv.conf fails, systemd-resolved is available, systemd-resolved is used to set DNS",
+			resolvconfFileContents:           unknownManager,
+			resolvConfStatErr:                fmt.Errorf("failed to stat"),
+			setBySystemdResolved:             true,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedManagementServiceInEvent: systemdResolved,
 		},
 		{
-			name:                   "resolv.conf manager is unknown and running stat on resolv.conf fails, systemd-resolved is not available, resolv.conf is used to set DNS",
-			resolvconfFileContents: unknownManager,
-			resolvConfStatErr:      fmt.Errorf("failed to stat"),
-			systemdResolvedSetErr:  fmt.Errorf("failed to set"),
-			setByResolvconf:        true,
+			name:                             "resolv.conf manager is unknown and running stat on resolv.conf fails, systemd-resolved is not available, resolv.conf is used to set DNS",
+			resolvconfFileContents:           unknownManager,
+			resolvConfStatErr:                fmt.Errorf("failed to stat"),
+			systemdResolvedSetErr:            fmt.Errorf("failed to set"),
+			setByResolvconf:                  true,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedManagementServiceInEvent: unmanaged,
 		},
 		{
-			name:                   "resolv.conf manager is unknown and running stat on systemd stub fails, systemd-resolved is available, systemd-resolved is used to set DNS",
-			resolvconfFileContents: unknownManager,
-			systemdStubStatErr:     fmt.Errorf("failed to stat"),
-			setBySystemdResolved:   true,
+			name:                             "resolv.conf manager is unknown and running stat on systemd stub fails, systemd-resolved is available, systemd-resolved is used to set DNS",
+			resolvconfFileContents:           unknownManager,
+			systemdStubStatErr:               fmt.Errorf("failed to stat"),
+			setBySystemdResolved:             true,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedManagementServiceInEvent: systemdResolved,
 		},
 		{
-			name:                   "resolv.conf manager is unknown and running stat on systemd stub fails, systemd-resolved is not available, resolv.conf is used to set DNS",
-			resolvconfFileContents: unknownManager,
-			systemdStubStatErr:     fmt.Errorf("failed to stat"),
-			systemdResolvedSetErr:  fmt.Errorf("failed to set"),
-			setByResolvconf:        true,
+			name:                             "resolv.conf manager is unknown and running stat on systemd stub fails, systemd-resolved is not available, resolv.conf is used to set DNS",
+			resolvconfFileContents:           unknownManager,
+			systemdStubStatErr:               fmt.Errorf("failed to stat"),
+			systemdResolvedSetErr:            fmt.Errorf("failed to set"),
+			setByResolvconf:                  true,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedManagementServiceInEvent: unmanaged,
 		},
 		{
-			name:                   "manager is not recognized based on resolv.conf contents but the file links to systemd-resolved is used to set DNS",
-			resolvConfIsASymlink:   true,
-			resolvconfFileContents: unknownManager,
-			setBySystemdResolved:   true,
+			name:                             "manager is not recognized based on resolv.conf contents but the file links to systemd-resolved is used to set DNS",
+			resolvConfIsASymlink:             true,
+			resolvconfFileContents:           unknownManager,
+			setBySystemdResolved:             true,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedManagementServiceInEvent: systemdResolved,
 		},
 		{
-			name:                   "systemd-resolved is recognized from resolv.conf comment but setting the DNS fails, resolv.conf is used to set DNS",
-			resolvconfFileContents: systemdResolvedResolvconf,
-			systemdResolvedSetErr:  errSet,
-			setByResolvconf:        true,
+			name:                             "systemd-resolved is recognized from resolv.conf comment but setting the DNS fails, resolv.conf is used to set DNS",
+			resolvconfFileContents:           systemdResolvedResolvconf,
+			systemdResolvedSetErr:            errSet,
+			setByResolvconf:                  true,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedManagementServiceInEvent: unmanaged,
 		},
 		{
 			name:                   "setting DNS with resolved and resolv.conf fails, a proper error is returned",
@@ -353,19 +375,23 @@ search home`)
 			expectedUnsetErr:       ErrDNSNotSet,
 		},
 		{
-			name:                    "unsetting fails with systemd-resolved, a proper error is returned",
-			resolvconfFileContents:  systemdResolvedResolvconf,
-			setBySystemdResolved:    true,
-			systemdResolvedUnsetErr: errUnset,
-			expectedUnsetErr:        errUnset,
+			name:                             "unsetting fails with systemd-resolved, a proper error is returned",
+			resolvconfFileContents:           systemdResolvedResolvconf,
+			setBySystemdResolved:             true,
+			systemdResolvedUnsetErr:          errUnset,
+			expectedUnsetErr:                 errUnset,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedManagementServiceInEvent: systemdResolved,
 		},
 		{
-			name:                   "unsetting fails with resolv.conf, a proper error is returned",
-			resolvconfFileContents: noManagerResolvConf,
-			setByResolvconf:        true,
-			systemdResolvedSetErr:  errSet,
-			resolvconfUnsetErr:     errUnset,
-			expectedUnsetErr:       errUnset,
+			name:                             "unsetting fails with resolv.conf, a proper error is returned",
+			resolvconfFileContents:           noManagerResolvConf,
+			setByResolvconf:                  true,
+			systemdResolvedSetErr:            errSet,
+			resolvconfUnsetErr:               errUnset,
+			expectedUnsetErr:                 errUnset,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedManagementServiceInEvent: unmanaged,
 		},
 	}
 
@@ -387,10 +413,13 @@ search home`)
 			fs.isSameFile = test.resolvConfIsASymlink
 			fs.AddFile(resolvconfFilePath, test.resolvconfFileContents)
 
+			analyticsMock := analyticsMock{}
+
 			s := DNSServiceSetter{
 				systemdResolvedSetter: &resolvedSetter,
 				resolvconfSetter:      &resolvconfSetter,
 				resolvConfMonitor:     &mockResolvConfMonitor{},
+				analytics:             &analyticsMock,
 				filesystemHandle:      fs,
 			}
 
@@ -401,6 +430,18 @@ search home`)
 				"DNS was not configured by the expected setter.")
 			assert.Equal(t, test.setByResolvconf, resolvconfSetter.isSet,
 				"DNS was not configured by the expected setter.")
+
+			if test.shouldEmitDNSConfiguredEvent {
+				assert.True(t, analyticsMock.dnsConfiguredEmited,
+					"DNSConfigured event was not emited upon DNS configuration.")
+				assert.Equal(t,
+					test.expectedManagementServiceInEvent,
+					analyticsMock.managementService,
+					"Unexpected management service in sent event.")
+			} else {
+				assert.False(t, analyticsMock.dnsConfiguredEmited,
+					"DNSConfigured event was emitted when DNS configuration failed.")
+			}
 
 			err = s.Unset("eth0")
 			assert.ErrorIs(t, err, test.expectedUnsetErr, "Expected unset error was not returned.")

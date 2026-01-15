@@ -13,6 +13,12 @@ import (
 
 type analyticsMock struct {
 	resolvConfEventEmitted atomic.Bool
+	dnsConfiguredEmited    bool
+	managementService      dnsManagementService
+}
+
+func (a *analyticsMock) setManagementService(managementService dnsManagementService) {
+	a.managementService = managementService
 }
 
 func (a *analyticsMock) emitResolvConfOverwrittenEvent() {
@@ -21,6 +27,10 @@ func (a *analyticsMock) emitResolvConfOverwrittenEvent() {
 
 func (a *analyticsMock) getResolvConfEmitted() bool {
 	return a.resolvConfEventEmitted.Load()
+}
+
+func (a *analyticsMock) emitDNSConfiguredEvent() {
+	a.dnsConfiguredEmited = true
 }
 
 func newAnalyticsMock() analyticsMock {
