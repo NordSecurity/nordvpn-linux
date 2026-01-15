@@ -40,7 +40,10 @@ RUN dpkg --add-architecture i386 && \
         # libxml2-dev:armel \
         # Install libc6-dev-armel-cross instead of libxml2-dev:armel to provide libc6-dev for armel
         libc6-dev-armel-cross \
-        procps && \
+        procps \
+        # Python and file for arch sanity check post build
+        python3 \
+        file && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
