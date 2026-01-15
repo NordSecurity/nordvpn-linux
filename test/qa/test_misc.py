@@ -115,4 +115,4 @@ def test_account_not_logged_in():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.account()
 
-    assert "You are not logged in." in ex.value.stdout.decode("utf-8")
+    assert "You're not logged in." in ex.value.stdout.decode("utf-8")
