@@ -9,7 +9,9 @@ from lib import (
     firewall,
     network,
 )
+from lib.dynamic_parametrize import dynamic_parametrize
 
+from conftest import IS_NIGHTLY
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
@@ -88,8 +90,15 @@ def test_firewall_enable_connect(tech, proto, obfuscated):
     assert not firewall.is_active()
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.parametrize("port", lib.PORTS)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "port",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[lib.PORTS],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{port.protocol}-{port.value}",
+)
 def test_firewall_02_allowlist_port(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8722"""
 
@@ -111,8 +120,15 @@ def test_firewall_02_allowlist_port(tech, proto, obfuscated, port):
     assert not firewall.is_active([port])
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-@pytest.mark.parametrize("ports", lib.PORTS_RANGE)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "ports",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[lib.PORTS_RANGE],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{ports.protocol}-{ports.value}",
+)
 def test_firewall_03_allowlist_ports_range(tech, proto, obfuscated, ports):
     """Manual TC: LVPN-8725"""
 
