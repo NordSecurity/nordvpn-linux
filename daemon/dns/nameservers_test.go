@@ -3,6 +3,8 @@ package dns
 import (
 	"errors"
 	"reflect"
+	"slices"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -14,8 +16,11 @@ import (
 )
 
 // helper function to return the needed format for the fetcher used in NewNameServers
-func wrapServersList(servers []string) func() (*core.NameServers, error) {
+func wrapServersList(servers []string, wg *sync.WaitGroup) func() (*core.NameServers, error) {
 	return func() (*core.NameServers, error) {
+		if wg != nil {
+			wg.Done()
+		}
 		return &core.NameServers{
 			Servers: servers,
 		}, nil
@@ -40,16 +45,22 @@ func TestNameservers(t *testing.T) {
 		expected             []string
 	}{
 		{
-			name:                 "ipv4",
+			name:                 "default DNS servers, TP=false",
 			threatProtectionLite: false,
 			initial:              defaultTpServers,
 			expected:             defaultServers,
 		},
 		{
-			name:                 "ipv4 threat protection lite",
+			name:                 "fetch TP list and return it",
 			threatProtectionLite: true,
 			initial:              defaultTpServers,
 			expected:             defaultTpServers,
+		},
+		{
+			name:                 "fetched servers are returned for TP servers",
+			threatProtectionLite: true,
+			initial:              []string{"1.2.3.4"},
+			expected:             []string{"1.2.3.4"},
 		},
 		{
 			name:                 "empty initial list",
@@ -62,9 +73,28 @@ func TestNameservers(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			servers := NewNameServers()
-			go servers.FetchTPServers(wrapServersList(test.initial), func(attempt int) time.Duration { return time.Millisecond })
-			nameservers := servers.Get(test.threatProtectionLite)
-			assert.ElementsMatch(t, test.expected, nameservers)
+
+			// before fetching the servers from the API check the default values
+			assert.ElementsMatch(t, defaultTpServers, servers.Get(true))
+			assert.ElementsMatch(t, defaultServers, servers.Get(false))
+
+			var wg sync.WaitGroup
+			wg.Add(1)
+			go servers.FetchTPServers(wrapServersList(test.initial, &wg), func(attempt int) time.Duration {
+				assert.True(t, len(test.initial) == 0, "this must be called only when test.initial is empty")
+				return time.Minute
+			})
+
+			wg.Wait()
+
+			// retry several times to fetch the servers, because at first attempt internal members might not be stored
+			for retry := 0; retry < 2; retry++ {
+				if slices.Contains(servers.Get(test.threatProtectionLite), test.expected[0]) {
+					break
+				}
+				time.Sleep(time.Millisecond * 2)
+			}
+			assert.ElementsMatch(t, test.expected, servers.Get(test.threatProtectionLite))
 		})
 	}
 }
@@ -95,10 +125,9 @@ func TestNameserversRandomness(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			servers := NewNameServers()
-			go servers.FetchTPServers(wrapServersList(test.initial), func(attempt int) time.Duration { return time.Millisecond })
 
-			// give time to fetch the data, before checking it
-			time.Sleep(time.Millisecond * 5)
+			// fetch in blocking mode
+			servers.FetchTPServers(wrapServersList(test.initial, nil), func(attempt int) time.Duration { return time.Minute })
 
 			nameservers1 := servers.Get(test.threatProtectionLite)
 			nameservers2 := servers.Get(test.threatProtectionLite)
@@ -136,6 +165,8 @@ func TestNameserversRetriesToFetchTPOnError(t *testing.T) {
 	retries.Store(3)
 
 	nameservers := NewNameServers()
+
+	// run as blocking the fetch because there is no need to fetch in parallel and is successful after number of "retries"
 	nameservers.FetchTPServers(
 		func() (*core.NameServers, error) {
 			// return error for `retries` times, before returning servers list
@@ -152,7 +183,6 @@ func TestNameserversRetriesToFetchTPOnError(t *testing.T) {
 		},
 	)
 
-	time.Sleep(time.Millisecond * 5)
 	assert.ElementsMatch(t, servers, nameservers.Get(true))
 	assert.Equal(t, int32(0), retries.Load())
 }
