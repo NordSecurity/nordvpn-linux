@@ -281,7 +281,7 @@ def test_set_defaults_no_logout(tech, proto, obfuscated):
     assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
 
     assert settings.app_has_defaults_settings()
-    assert "Account Information" in sh.nordvpn.account()
+    assert "Account information" in sh.nordvpn.account()
 
 
 def test_set_analytics_off_on():
@@ -461,7 +461,7 @@ def test_set_defaults_no_logout_connected(tech, proto, obfuscated):
 
     assert "Status: Disconnected" in sh.nordvpn.status()
     assert settings.app_has_defaults_settings()
-    assert "Account Information" in sh.nordvpn.account()
+    assert "Account information" in sh.nordvpn.account()
 
 
 @pytest.mark.parametrize("nameserver", (dns.DNS_CASE_CUSTOM_SINGLE,))
