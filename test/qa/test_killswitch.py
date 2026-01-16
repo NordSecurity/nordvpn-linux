@@ -167,7 +167,7 @@ def test_fancy_transport():
     with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
         output = sh.nordvpn.account()
         print(output)
-        assert "Account Information:" in output
+        assert "Account information" in output
 
     sh.nordvpn.set.killswitch("off")
     assert network.is_available()
