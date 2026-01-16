@@ -99,8 +99,6 @@ func getActiveUsers() (userData, error) {
 	}
 	defer C.free(unsafe.Pointer(usersCArray))
 
-	log.Printf("%s %d active user processes found", internal.DebugPrefix, size)
-
 	users := make(userData)
 	for index := 0; index < int(size); index++ {
 		userC := (*C.user)(unsafe.Pointer(uintptr(unsafe.Pointer(usersCArray)) +

@@ -11,17 +11,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type mockErrorEvent struct {
+	errorType errorType
+	critical  bool
+}
+
 type analyticsMock struct {
-	resolvConfEventEmitted atomic.Bool
-	dnsConfiguredEmited    bool
-	managementService      dnsManagementService
+	resolvConfEventEmitted atomic.Bool // only resolvConfEventEmitted needs to be stored in an atomic because it's the
+	// only field accessed concurrently. resolv.conf monitoring tests need to be run in multiple goroutines because of
+	// the nature of this use case.
+	managementService   dnsManagementService
+	dnsConfiguredEmited bool
+	emittedErrors       []mockErrorEvent
 }
 
-func (a *analyticsMock) setManagementService(managementService dnsManagementService) {
-	a.managementService = managementService
-}
-
-func (a *analyticsMock) emitResolvConfOverwrittenEvent() {
+func (a *analyticsMock) emitResolvConfOverwrittenEvent(dnsManagementService) {
 	a.resolvConfEventEmitted.Store(true)
 }
 
@@ -29,8 +33,16 @@ func (a *analyticsMock) getResolvConfEmitted() bool {
 	return a.resolvConfEventEmitted.Load()
 }
 
-func (a *analyticsMock) emitDNSConfiguredEvent() {
+func (a *analyticsMock) emitDNSConfiguredEvent(managementService dnsManagementService) {
 	a.dnsConfiguredEmited = true
+	a.managementService = managementService
+}
+
+func (a *analyticsMock) emitDNSConfigurationErrorEvent(managementService dnsManagementService,
+	errorType errorType,
+	critical bool) {
+	a.emittedErrors = append(a.emittedErrors, mockErrorEvent{errorType: errorType, critical: critical})
+	a.managementService = managementService
 }
 
 func newAnalyticsMock() analyticsMock {
