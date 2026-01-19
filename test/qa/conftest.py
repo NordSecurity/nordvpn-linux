@@ -119,31 +119,35 @@ def setup_check_internet_connection():
 
 @pytest.fixture(scope="session", autouse=True)
 def start_system_monitoring():
-    print("Run start_system_monitoring")
+    if os.getenv("NO_MONITORING"):
+        print("Skipping monitoring...")
+        yield
+    else:
+        print("Run start_system_monitoring")
 
-    # control running threads execution
-    stop_event = threading.Event()
+        # control running threads execution
+        stop_event = threading.Event()
 
-    threads = []
+        threads = []
 
-    threads.append(threading.Thread(target=_check_connection_to_ip, args=["1.1.1.1", stop_event], daemon=True))
-    threads.append(
-        threading.Thread(target=_check_connection_to_ip_outside_vpn, args=["1.1.1.1", stop_event], daemon=True)
-    )
-    threads.append(threading.Thread(target=_check_dns_resolution, args=["nordvpn.com", stop_event], daemon=True))
-    threads.append(threading.Thread(target=_capture_traffic, args=[stop_event], daemon=True))
-    print(threads)
+        threads.append(threading.Thread(target=_check_connection_to_ip, args=["1.1.1.1", stop_event], daemon=True))
+        threads.append(
+            threading.Thread(target=_check_connection_to_ip_outside_vpn, args=["1.1.1.1", stop_event], daemon=True)
+        )
+        threads.append(threading.Thread(target=_check_dns_resolution, args=["nordvpn.com", stop_event], daemon=True))
+        threads.append(threading.Thread(target=_capture_traffic, args=[stop_event], daemon=True))
+        print(threads)
 
-    for thread in threads:
-        thread.start()
+        for thread in threads:
+            thread.start()
 
-    # execute tests
-    yield
+        # execute tests
+        yield
 
-    # stop monitoring after execution
-    stop_event.set()
-    for thread in threads:
-        thread.join()
+        # stop monitoring after execution
+        stop_event.set()
+        for thread in threads:
+            thread.join()
 
 
 def _check_connection_to_ip(ip_address, stop_event):

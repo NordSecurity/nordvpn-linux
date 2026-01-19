@@ -1,3 +1,4 @@
+import os
 import socket
 import time
 from itertools import cycle
@@ -156,6 +157,9 @@ def is_internet_reachable(ip_address="1.1.1.1", port=443, retry=5) -> bool:
 
 def is_internet_reachable_outside_vpn(retry=5, ip_address="1.0.0.1") -> bool:
     """Returns True when remote host is reachable by its public IP outside VPN tunnel."""
+    if os.getenv("NO_MONITORING"):
+        return True
+
     i = 0
     response = ""
     while i < retry:
