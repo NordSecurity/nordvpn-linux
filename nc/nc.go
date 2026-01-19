@@ -123,7 +123,7 @@ type Client struct {
 	clientBuilder ClientBuilder
 	// MQTT Docs say that reusing client after doing Disconnect can lead to panics.
 	// Since we are doing connect manually with our exponential backoff, we are in risk of those panics.
-	// That's why this mutex must be locked everytime client is used.
+	// That's why this mutex must be locked every time client is used.
 	subjectInfo       events.Publisher[string]
 	subjectErr        events.Publisher[error]
 	subjectPeerUpdate events.Publisher[[]string]

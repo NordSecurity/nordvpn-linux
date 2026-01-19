@@ -258,8 +258,6 @@ func (a *autoconnectServer) Send(data *pb.Payload) error {
 	return nil
 }
 
-type GetTimeoutFunc func(tries int) time.Duration
-
 func (r *RPC) fallbackTechnology(targetTechnology config.Technology) error {
 	log.Println(internal.DebugPrefix,
 		"technology was configured to NordWhisper, but NordWhisper was disabled, switching to",
@@ -283,7 +281,7 @@ func (r *RPC) fallbackTechnology(targetTechnology config.Technology) error {
 }
 
 // StartAutoConnect connect to VPN server if autoconnect is enabled
-func (r *RPC) StartAutoConnect(timeoutFn GetTimeoutFunc) error {
+func (r *RPC) StartAutoConnect(timeoutFn network.CalculateRetryDelayForAttempt) error {
 	tries := 1
 	for {
 		if r.netw.IsVPNActive() {
@@ -362,7 +360,7 @@ func meshErrorCheck(err error) bool {
 }
 
 // StartAutoMeshnet enable meshnet if it was enabled before
-func (r *RPC) StartAutoMeshnet(meshService *meshnet.Server, timeoutFn GetTimeoutFunc) error {
+func (r *RPC) StartAutoMeshnet(meshService *meshnet.Server, timeoutFn network.CalculateRetryDelayForAttempt) error {
 	tries := 1
 	for {
 		if r.netw.IsMeshnetActive() {

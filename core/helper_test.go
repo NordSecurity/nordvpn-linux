@@ -1,151 +1,84 @@
 package core
 
 import (
-	"context"
-	"crypto/rsa"
 	"fmt"
-	"log"
-	"net"
 	"net/http"
 	"os"
-	"strconv"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
-
-	"golang.org/x/crypto/ssh"
 )
 
 const (
 	TestdataPath       = "testdata/"
-	LocalServerPath    = "http://localhost"
-	TestUserCreateJSON = "usercreate.json"
-	TestPlansJSON      = "plans.json"
+	TestUserCreateJSON = TestdataPath + "usercreate.json"
+	TestPlansJSON      = TestdataPath + "plans.json"
 )
 
 const (
 	// Use different ports than rpc package does to avoid port collision when all tests are
 	// executed.
-	GeneralInfo int = iota + 9602
+	GeneralInfo int = iota
 	InvalidInfo
 )
 
-type Handler struct {
-	pattern string
-	f       func(http.ResponseWriter, *http.Request)
-}
+var (
+	workingServer *mock.HTTPTestServer // server used when GeneralInfo is used in tests
+	brokenServer  *mock.HTTPTestServer // server returns broken responses, for InvalidInfo
+)
 
-var privateKey *rsa.PrivateKey
-var publicKey ssh.PublicKey
+func partialReadFromFile(fileName string) string {
+	byteData, _ := internal.FileRead(fileName)
+	return string(byteData[:len(byteData)/2])
+}
 
 func TestMain(m *testing.M) {
 	// make local servers for functions relying on API
-	servers := make([]*http.Server, 0)
-	generalInfoHandler := []Handler{
-		{"/v1/users", mockAPI(TestUserCreateJSON).handler},
-		{"/v1/plans", mockAPI(TestPlansJSON).handler},
-	}
-	servers = append(servers, StartServer(GeneralInfo, generalInfoHandler))
+	workingServer = mock.NewHTTPTestServer(nil,
+		[]mock.Handler{
+			mock.NewHandleWithFileContent("/v1/users", TestUserCreateJSON),
+			mock.NewHandleWithFileContent("/v1/plans", TestPlansJSON),
+		},
+	)
 
-	invalidInfoHandler := []Handler{
-		{"/v1/users", mockAPI(TestUserCreateJSON).invalidHandler},
-		{"/v1/plans", mockAPI(TestPlansJSON).invalidHandler},
-	}
+	brokenServer = mock.NewHTTPTestServer(nil,
+		[]mock.Handler{
+			mock.NewHandleWithResponse("/v1/users", partialReadFromFile(TestUserCreateJSON)),
+			mock.NewHandleWithResponse("/v1/plans", partialReadFromFile(TestPlansJSON)),
+		},
+	)
 
-	var err error
-	privateKey, publicKey, err = mock.GenerateKeyPair()
-	if err != nil {
-		log.Fatalf("error on generating RSA key pair: %+v", err)
-	}
-
-	servers = append(servers, StartServer(InvalidInfo, invalidInfoHandler))
-	res := m.Run()
+	servers := []*mock.HTTPTestServer{workingServer, brokenServer}
 	for _, server := range servers {
-		server.Shutdown(context.Background())
+		server.Start()
+	}
+
+	res := m.Run()
+
+	for _, server := range servers {
+		server.Close()
 	}
 	os.Exit(res)
 }
 
-func localServerPath(port int) string {
-	return fmt.Sprintf("%s:%d", LocalServerPath, port)
-}
-
-type mockAPI string
-
-// handler gives content of file specified in mockAPI in http.Response with correctly set HTTP headers
-func (api mockAPI) handler(w http.ResponseWriter, r *http.Request) {
-	byteData, _ := internal.FileRead(TestdataPath + string(api))
-	setHeaders(w, byteData)
-	w.Write(byteData)
-}
-
-func (api mockAPI) invalidHandler(w http.ResponseWriter, r *http.Request) {
-	byteData, _ := internal.FileRead(TestdataPath + string(api))
-	byteData = byteData[:len(byteData)/2]
-	setHeaders(w, byteData)
-	w.Write(byteData)
-}
-
-func setHeaders(w http.ResponseWriter, data []byte) {
-	headers, err := mock.GenerateValidHeaders(privateKey, data)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	for key := range headers {
-		w.Header().Set(key, headers.Get(key))
-	}
-	w.Header().Set("Content-Type", "application/json")
-}
-
-func StartServer(port int, handlers []Handler) *http.Server {
-	log.Println("Port:", port)
-	srv := &http.Server{}
-
-	mux := http.NewServeMux()
-	if len(handlers) > 0 {
-		for _, h := range handlers {
-			mux.HandleFunc(h.pattern, h.f)
-		}
-	}
-
-	listener, err := net.Listen("tcp", ":"+strconv.Itoa(port))
-	if err != nil {
-		log.Fatal(err)
-	}
-	srv.Handler = mux
-
-	go func() {
-		//nolint:staticcheck
-		if err := srv.Serve(listener); err != nil && err != http.ErrServerClosed {
-			//empty on purpose
-		}
-	}()
-
-	// check for race conditions
-	CheckServer(listener, 10)
-	return srv
-}
-
-func CheckServer(listener net.Listener, attempts int) {
-	resp, err := http.Get("http://" + listener.Addr().String())
-	if err != nil {
-		if attempts <= 0 {
-			log.Fatal("Error starting server")
-		}
-		CheckServer(listener, attempts-1)
-	}
-	defer resp.Body.Close()
-}
-
 // testNewSimpleAPI returns a pointer to initialized and
 // ready for use in tests SimpleAPI
-func testNewSimpleAPI(port int) RawClientAPI {
+func testNewSimpleAPI(serverType int) RawClientAPI {
+	var baseURL string
+	switch serverType {
+	case GeneralInfo:
+		baseURL = workingServer.URL()
+	case InvalidInfo:
+		baseURL = brokenServer.URL()
+	default:
+		panic(fmt.Sprintf("Invalid value: %d", serverType))
+	}
+
 	return NewSimpleAPI(
 		"",
-		localServerPath(port),
+		baseURL,
 		http.DefaultClient,
 		response.NoopValidator{},
 	)

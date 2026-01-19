@@ -3,10 +3,13 @@ import sh
 import os
 import glob
 
+from pathlib import Path
+
 import lib
 from lib import (
     daemon,
     login,
+    logging,
     network,
 )
 from lib.dynamic_parametrize import dynamic_parametrize
@@ -186,14 +189,18 @@ def test_fancy_transport():
 
 # This test assumes being run on docker
 def test_killswitch_on_after_update():
+    assert Path("/.dockerenv").exists(), "Test must be executed in docker"
     # Mocking ps to pretend as if we are in an initd system
     sh.sudo.mv("/usr/bin/ps", "/usr/bin/pso")
     sh.sudo.cp("/etc/mock_ps.sh", "/usr/bin/ps")
 
     sh.nordvpn.set.killswitch.on()
     assert daemon.is_killswitch_on()
+    logging.log(f"Settings before update {sh.nordvpn.settings()}")
     assert network.is_not_available(2)
     sh.sudo.dpkg("-i", DEB_PATH)
+    daemon.wait_until_daemon_is_running()
+    logging.log(f"Settings after app update {sh.nordvpn.settings()}")
     assert network.is_not_available(2)
     assert daemon.is_killswitch_on()
     sh.nordvpn.set.killswitch.off()
