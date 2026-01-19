@@ -28,7 +28,6 @@ const _popupIgnoreCodes = [
   DaemonStatusCode.dnsListModified,
   DaemonStatusCode.tpLiteDisabled,
   DaemonStatusCode.allowListModified,
-  DaemonStatusCode.vpnIsRunning,
 ];
 
 @riverpod
@@ -45,7 +44,9 @@ class VpnSettingsController extends _$VpnSettingsController
   /// The change will only be applied if user confirms in the popup.
   /// Otherwise sets it immediately.
   Future<int> setVpnProtocol(VpnProtocol protocol) async {
-    // Check if VPN is connected
+    // We need to check VPN status here because protocol change requires
+    // a different flow: store pending protocol and show confirmation popup.
+    // The daemon doesn't return vpnIsRunning for protocol changes.
     final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
     if (vpnStatus != null && vpnStatus.isConnected()) {
       // VPN is connected - store pending protocol and show popup
@@ -77,8 +78,11 @@ class VpnSettingsController extends _$VpnSettingsController
     final status = await _setValue(
       (repository) => repository.setVpnProtocol(pendingVPNProtocol),
       popupCodeOverrides: {
+        // virtualLocationsDisabled needs to show a specific popup.
         DaemonStatusCode.virtualLocationsDisabled:
             PopupCodes.reconnectToChangeVirtualLocation,
+        // Ignore vpnIsRunning here - we already showed the reconnect popup
+        DaemonStatusCode.vpnIsRunning: DaemonStatusCode.success,
       },
     );
     // Accept success, nothingToDo, or vpnIsRunning as valid statuses
@@ -316,16 +320,17 @@ class VpnSettingsController extends _$VpnSettingsController
       logger.e("Unexpected error: $e");
     }
 
+    // Use overridden popup code if provided, otherwise use the daemon status code
+    final popupCode = popupCodeOverrides?[status] ?? status;
+
     // don't show popup when code is on ignore list
-    if (_popupIgnoreCodes.contains(status)) {
+    if (_popupIgnoreCodes.contains(popupCode)) {
       return status;
     }
 
     // We do that to avoid the toggle of on/off button in case of failure
     state = state;
 
-    // Use overridden popup code if provided, otherwise use the daemon status code
-    final popupCode = popupCodeOverrides?[status] ?? status;
     ref.read(popupsProvider.notifier).show(popupCode);
 
     return status;

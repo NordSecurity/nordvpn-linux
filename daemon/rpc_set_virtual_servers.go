@@ -3,6 +3,7 @@ package daemon
 import (
 	"context"
 	"log"
+	"strconv"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -30,5 +31,8 @@ func (r *RPC) SetVirtualLocation(ctx context.Context, in *pb.SetGenericRequest) 
 
 	r.events.Settings.VirtualLocation.Publish(in.Enabled)
 
-	return &pb.Payload{Type: internal.CodeSuccess}, nil
+	payload := &pb.Payload{}
+	payload.Type = internal.CodeSuccess
+	payload.Data = []string{strconv.FormatBool(r.netw.IsVPNActive())}
+	return payload, nil
 }

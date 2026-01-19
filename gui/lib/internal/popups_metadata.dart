@@ -154,7 +154,7 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
     PopupCodes.reconnectToChangeObfuscation ||
     PopupCodes.reconnectToChangePostQuantum ||
     PopupCodes.reconnectToChangeVirtualLocation => InfoPopupMetadata(
-      id: PopupCodes.reconnectToChangeObfuscation,
+      id: PopupCodes.reconnectToChangeProtocol,
       title: t.ui.reconnectToApplyChanges,
       message: (_) => t.ui.reconnectToApplyChangesDescription,
       buttonText: t.ui.gotIt,
@@ -224,7 +224,12 @@ PopupMetadata infoForDaemonCode(int code) {
   }
 
   assert(title.isNotEmpty && message.isNotEmpty);
-  return InfoPopupMetadata(id: code, title: title, message: (_) => message);
+  return InfoPopupMetadata(
+    id: code,
+    title: title,
+    message: (_) => message,
+    buttonText: t.ui.gotIt,
+  );
 }
 
 PopupMetadata _resetToDefaults(int code) {
