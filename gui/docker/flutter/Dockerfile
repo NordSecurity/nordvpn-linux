@@ -22,7 +22,9 @@ RUN apt-get update && \
         unzip \
         curl \
         xvfb \
-        xz-utils && \
+        xz-utils \
+        python3 \
+        file && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

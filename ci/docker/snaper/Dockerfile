@@ -6,7 +6,8 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
   apt-get install --no-install-recommends -y \
   elfutils \
-  git
+  git \
+  file
 
 # Put the missing Snapcraft extension assets where the extension expects them
 RUN git clone --depth=1 https://github.com/canonical/snapcraft.git /tmp/snapcraft-src \

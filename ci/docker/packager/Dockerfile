@@ -10,7 +10,7 @@ RUN go install github.com/goreleaser/nfpm/v2/cmd/nfpm@d0d484200d974e7ac6d06ed6d5
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
 RUN apt-get update && \
-    apt-get -y --no-install-recommends install elfutils gettext-base && \
+    apt-get -y --no-install-recommends install elfutils gettext-base python3 file && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     go clean -cache -modcache && \
