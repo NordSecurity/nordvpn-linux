@@ -1,6 +1,6 @@
 import 'package:nordvpn/data/models/app_settings.dart';
 import 'package:nordvpn/data/providers/app_state_provider.dart';
-import 'package:nordvpn/data/providers/snap_permissions_provider.dart';
+import 'package:nordvpn/data/providers/grpc_connection_controller.dart';
 import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
 import 'package:nordvpn/data/repository/vpn_settings_repository.dart';
 import 'package:nordvpn/logger.dart';
@@ -13,26 +13,25 @@ enum ConsentLevel { none, acceptedAll, essentialOnly }
 // ConsentStatus is a provider that controls the ConsentScreen
 @riverpod
 final class ConsentStatus extends _$ConsentStatus
-    implements VpnSettingsObserver, SnapPermissionsObserver {
+    implements VpnSettingsObserver {
   @override
   FutureOr<ConsentLevel> build() async {
+    final isConnected = ref.watch(grpcConnectionControllerProvider);
+    if (isConnected is! AsyncData) {
+      throw "grpc connect not established";
+    }
+
     _registerNotifications();
     return await _fetchConsentStatus();
   }
 
   void _registerNotifications() {
     final appNotification = ref.read(appStateProvider);
-    final snapNotification = ref.read(snapPermissionsProvider.notifier);
     appNotification.addSettingsObserver(this);
-    snapNotification.addSnapObserver(this);
-    ref.onDispose(() => _dispose(appNotification, snapNotification));
+    ref.onDispose(() => _dispose(appNotification));
   }
 
-  void _dispose(
-    AppStateChange appNotification,
-    SnapPermissions snapNotifications,
-  ) {
-    snapNotifications.removeSnapObserver(this);
+  void _dispose(AppStateChange appNotification) {
     appNotification.removeSettingsObserver(this);
   }
 
@@ -47,11 +46,6 @@ final class ConsentStatus extends _$ConsentStatus
       return;
     }
     state = AsyncData(settings.analyticsConsent);
-  }
-
-  @override
-  Future<void> onPermissionsChanged() async {
-    await retry();
   }
 
   Future<void> setLevel(ConsentLevel level) async {
