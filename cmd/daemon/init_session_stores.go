@@ -51,7 +51,9 @@ func NewSessionStoresBuilder(confman config.Manager) *SessionStoresBuilder {
 }
 
 // BuildAccessTokenStore builds and returns the access token session store
-func (b *SessionStoresBuilder) BuildAccessTokenStore(rawClientAPI core.RawClientAPI) *session.AccessTokenSessionStore {
+func (b *SessionStoresBuilder) BuildAccessTokenStore(
+	rawClientAPI core.RawClientAPI,
+) *session.AccessTokenSessionStore {
 	b.stores.accessToken = session.NewAccessTokenSessionStore(
 		b.confman,
 		b.registries.accessToken,
@@ -233,6 +235,7 @@ func renewAccessToken(api core.RawClientAPI) session.AccessTokenRenewalAPICall {
 			Token:      resp.Token,
 			RenewToken: resp.RenewToken,
 			ExpiresAt:  resp.ExpiresAt,
+			UpdatedAt:  resp.UpdatedAt,
 		}, nil
 	}
 }

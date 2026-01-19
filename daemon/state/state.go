@@ -103,7 +103,7 @@ func (s *StatePublisher) NotifyMFA(bool) error {
 	return nil
 }
 
-func (s *StatePublisher) NotifyConfigChanged(e config.DataConfigChange) error {
+func (s *StatePublisher) OnConfigChanged(e config.DataConfigChange) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
