@@ -188,6 +188,11 @@ def is_running():
         return True
 
 
+def wait_until_daemon_is_running():
+    while not is_running():
+        time.sleep(1)
+
+
 # returns True when daemon is running in peer
 def is_peer_running(ssh_client: ssh.Ssh) -> bool:
     try:

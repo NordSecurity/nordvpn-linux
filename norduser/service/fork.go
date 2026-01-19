@@ -160,7 +160,7 @@ func (c *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err 
 	return nil
 }
 
-// Stop teminates norduser process
+// Stop terminates norduser process
 func (c *ChildProcessNorduser) Stop(uid uint32, wait bool) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()

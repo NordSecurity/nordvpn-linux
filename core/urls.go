@@ -133,8 +133,8 @@ const (
 	// ovpnObfsTemplateURL defines url to ovpn obfuscated server template
 	ovpnObfsTemplateURL = "/configs/templates/ovpn_xor/1.1/template.xslt"
 
-	// threatProtectionLiteURL defines url of the cybersec file
-	threatProtectionLiteURL = "/configs/dns/cybersec.json"
+	// ThreatProtectionLiteURL defines url of the cybersec file
+	ThreatProtectionLiteURL = "/configs/dns/cybersec.json"
 
 	// DebFileinfoURLFormat is the path to debian repository's package information
 	DebFileinfoURLFormat = "/deb/%s/debian/dists/stable/main/binary-%s/Packages.gz"
