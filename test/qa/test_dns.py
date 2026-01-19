@@ -4,7 +4,9 @@ import dns.resolver as dnspy
 
 import lib
 from lib import dns, settings
+from conftest import IS_NIGHTLY
 
+from lib.dynamic_parametrize import dynamic_parametrize
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs", "disable_dns_and_threat_protection")
 
@@ -83,8 +85,15 @@ def test_set_tpl_off_and_connect(tech, proto, obfuscated):
     assert dns.is_unset()
 
 
-@pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "nameserver",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[dns.DNS_CASES_CUSTOM],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{nameserver}",
+)
 def test_tpl_on_set_custom_dns_disconnected(tech, proto, obfuscated, nameserver):
     """Manual TC: LVPN-6803"""
 
@@ -104,8 +113,15 @@ def test_tpl_on_set_custom_dns_disconnected(tech, proto, obfuscated, nameserver)
     assert dns.is_unset()
 
 
-@pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "nameserver",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[dns.DNS_CASES_CUSTOM],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{nameserver}",
+)
 def test_tpl_on_set_custom_dns_connected(tech, proto, obfuscated, nameserver):
     """Manual TC: LVPN-6802"""
 
@@ -128,8 +144,15 @@ def test_tpl_on_set_custom_dns_connected(tech, proto, obfuscated, nameserver):
     assert dns.is_unset()
 
 
-@pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "nameserver",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[dns.DNS_CASES_CUSTOM],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{nameserver}",
+)
 def test_custom_dns_connect(tech, proto, obfuscated, nameserver):
     """Manual TC: LVPN-6793"""
 
@@ -150,8 +173,15 @@ def test_custom_dns_connect(tech, proto, obfuscated, nameserver):
     assert dns.is_unset()
 
 
-@pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "nameserver",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[dns.DNS_CASES_CUSTOM],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{nameserver}",
+)
 def test_custom_dns_off_connect(tech, proto, obfuscated, nameserver):
     """Manual TC: LVPN-6796"""
 
@@ -174,8 +204,15 @@ def test_custom_dns_off_connect(tech, proto, obfuscated, nameserver):
     assert dns.is_unset()
 
 
-@pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "nameserver",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[dns.DNS_CASES_CUSTOM],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{nameserver}",
+)
 def test_set_custom_dns_connected(tech, proto, obfuscated, nameserver):
     """Manual TC: LVPN-6790"""
 
@@ -193,8 +230,15 @@ def test_set_custom_dns_connected(tech, proto, obfuscated, nameserver):
     assert dns.is_unset()
 
 
-@pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "nameserver",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[dns.DNS_CASES_CUSTOM],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{nameserver}",
+)
 def test_set_custom_dns_off_connected(tech, proto, obfuscated, nameserver):
     """Manual TC: LVPN-1637"""
 
@@ -251,8 +295,15 @@ def test_custom_dns_errors_connected(tech, proto, obfuscated, nameserver, expect
     assert dns.is_unset()
 
 
-@pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "nameserver",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[dns.DNS_CASES_CUSTOM],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{nameserver}",
+)
 def test_custom_dns_already_set_disconnected(tech, proto, obfuscated, nameserver):
     """Manual TC: LVPN-8755"""
 
@@ -272,8 +323,15 @@ def test_custom_dns_already_set_disconnected(tech, proto, obfuscated, nameserver
     assert dns.is_unset()
 
 
-@pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "nameserver",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[dns.DNS_CASES_CUSTOM],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{nameserver}",
+)
 def test_custom_dns_already_set_connected(tech, proto, obfuscated, nameserver):
     """Manual TC: LVPN-8754"""
 
@@ -360,8 +418,15 @@ def test_custom_dns_order_is_kept(tech, proto, obfuscated):
     assert dns.is_unset()
 
 
-@pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "nameserver",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[dns.DNS_CASES_CUSTOM],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{nameserver}",
+)
 def test_custom_dns_removed_when_tpl_enabled_disconnected(tech, proto, obfuscated, nameserver):
     """Manual TC: LVPN-8439"""
 
@@ -382,8 +447,15 @@ def test_custom_dns_removed_when_tpl_enabled_disconnected(tech, proto, obfuscate
     assert dns.is_unset()
 
 
-@pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "nameserver",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[dns.DNS_CASES_CUSTOM],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{nameserver}",
+)
 def test_custom_dns_removed_when_tpl_enabled_connected(tech, proto, obfuscated, nameserver):
     """Manual TC: LVPN-8444"""
 
