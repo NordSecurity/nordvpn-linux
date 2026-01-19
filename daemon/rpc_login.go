@@ -171,7 +171,7 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (paylo
 			EventTrigger:               events.TriggerUser,
 			EventStatus:                events.StatusFailure, // emit failure event, but continue
 			EventType:                  eventType,
-			IsAlteredFlowOnNordAccount: r.initialLoginType.isAltered(in.GetType()),
+			IsAlteredFlowOnNordAccount: false, // here we are too early for flow to be altered
 			Reason:                     events.ReasonUnfinishedPrevLogin,
 		})
 	}
@@ -188,7 +188,7 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (paylo
 			EventTrigger:               events.TriggerUser,
 			EventStatus:                eventStatus,
 			EventType:                  eventType,
-			IsAlteredFlowOnNordAccount: r.initialLoginType.isAltered(in.GetType()),
+			IsAlteredFlowOnNordAccount: false, // here we are too early for flow to be altered
 			Reason:                     eventReason,
 		})
 	}()
