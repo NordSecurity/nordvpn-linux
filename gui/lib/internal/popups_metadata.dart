@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/data/providers/account_controller.dart';
+import 'package:nordvpn/data/providers/pending_settings_provider.dart';
 import 'package:nordvpn/data/providers/preferences_controller.dart';
 import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
+import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/i18n/daemon_code_messages.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
@@ -115,6 +118,48 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
       },
     ),
 
+    // Reconnect to apply protocol change - requires user confirmation
+    // The protocol change is postponed until user confirms
+    PopupCodes.reconnectToChangeProtocol => DecisionPopupMetadata(
+      id: PopupCodes.reconnectToChangeProtocol,
+      title: t.ui.reconnectToChangeProtocol,
+      message: (_) => t.ui.reconnectToChangeProtocolDescription,
+      noButtonText: t.ui.cancel,
+      yesButtonText: t.ui.reconnectNow,
+      yesAction: (ref) async {
+        // Get current connection parameters before applying protocol change
+        final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
+        final connectionParams = vpnStatus?.connectionParameters;
+
+        // Apply the pending protocol change
+        final success = await ref
+            .read(vpnSettingsControllerProvider.notifier)
+            .applyPendingVPNProtocol();
+
+        // Reconnect with the saved connection parameters
+        if (success && connectionParams != null) {
+          ref
+              .read(vpnStatusControllerProvider.notifier)
+              .reconnect(connectionParams);
+        }
+      },
+      noAction: (ref) {
+        // Clear pending protocol when user cancels
+        ref.read(pendingVPNProtocolProvider.notifier).clear();
+      },
+    ),
+
+    // Reconnect to apply obfuscation, post-quantum, virtual location changes
+    // These are applied immediately and user is just informed to reconnect
+    PopupCodes.reconnectToChangeObfuscation ||
+    PopupCodes.reconnectToChangePostQuantum ||
+    PopupCodes.reconnectToChangeVirtualLocation => InfoPopupMetadata(
+      id: PopupCodes.reconnectToChangeProtocol,
+      title: t.ui.reconnectToApplyChanges,
+      message: (_) => t.ui.reconnectToApplyChangesDescription,
+      buttonText: t.ui.gotIt,
+    ),
+
     // ==============================    [ triggered by daemon ]    ==============================
 
     // Subscription expired
@@ -179,7 +224,12 @@ PopupMetadata infoForDaemonCode(int code) {
   }
 
   assert(title.isNotEmpty && message.isNotEmpty);
-  return InfoPopupMetadata(id: code, title: title, message: (_) => message);
+  return InfoPopupMetadata(
+    id: code,
+    title: title,
+    message: (_) => message,
+    buttonText: t.ui.gotIt,
+  );
 }
 
 PopupMetadata _resetToDefaults(int code) {

@@ -143,6 +143,8 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 			rpcErr = errors.New(internal.GroupNonexistentErrorMessage)
 		case internal.CodeServerUnavailable:
 			rpcErr = errors.New(internal.ServerUnavailableErrorMessage)
+		case internal.CodeVirtualLocationDisabled:
+			rpcErr = errors.New(internal.SpecifiedServerIsVirtualLocation)
 		case internal.CodeDoubleGroupError:
 			rpcErr = errors.New(internal.DoubleGroupErrorMessage)
 		case internal.CodeTechnologyDisabled:

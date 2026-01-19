@@ -287,7 +287,7 @@ class VpnSettingsRepository {
     final result = await _client.setVirtualLocation(
       SetGenericRequest(enabled: value),
     );
-    return result.type.toInt();
+    return _checkSettingsUpdate(result);
   }
 
   int _checkSettingsUpdate(Payload response) {

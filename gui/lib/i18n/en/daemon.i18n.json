@@ -1,7 +1,4 @@
 {
-    "code_2002_title": "Reconnect to VPN to apply changes",
-    "code_2002_msg": "You're connected to the VPN. Please reconnect to apply the setting.",
-
     "code_3001_title": "Unauthorized",
     "code_3001_msg": "We couldn't log you in. Make sure your credentials are correct. If you have turned on MFA, log in using the 'nordvpn login' command.",
 
@@ -103,6 +100,9 @@
 
     "code_3051_title": "Disabled technology",
     "code_3051_msg": "Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.",
+
+    "code_3057_title": "Server access not allowed",
+    "code_3057_msg": "To connect to the selected server, turn on virtual location access using the app’s command-line interface.",
 
     "code_5007_title": "Restart daemon to apply setting",
     "code_5007_msg": "Restart the daemon to apply this setting. For example, use the command `sudo systemctl restart nordvpnd` on systemd distributions.",

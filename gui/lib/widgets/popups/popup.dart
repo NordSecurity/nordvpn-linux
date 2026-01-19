@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
-import 'package:nordvpn/theme/app_theme.dart';
+import 'package:nordvpn/theme/popup_theme.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 
 // Base class providing "template" for popups.
@@ -17,7 +17,7 @@ abstract class Popup extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final screenSize = MediaQuery.sizeOf(context);
-    final appTheme = context.appTheme;
+    final popupTheme = context.popupTheme;
     final theme = Theme.of(context);
 
     return Dialog(
@@ -25,30 +25,29 @@ abstract class Popup extends ConsumerWidget {
       child: Container(
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(appTheme.borderRadiusLarge),
+          borderRadius: popupTheme.widgetRadius,
         ),
-        padding: EdgeInsets.all(appTheme.verticalSpaceMedium),
-        width: min(dynamicScale(500), screenSize.width * 0.8),
+        padding: EdgeInsets.all(popupTheme.verticalElementSpacing),
+        width: min(dynamicScale(popupTheme.widgetWidth), screenSize.width * 0.8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
-          spacing: appTheme.verticalSpaceMedium,
-          children: [_titleBar(context, appTheme), buildContent(context, ref)],
+          children: [_titleBar(context, popupTheme), buildContent(context, ref)],
         ),
       ),
     );
   }
 
-  Widget _titleBar(BuildContext context, AppTheme appTheme) {
+  Widget _titleBar(BuildContext context, PopupTheme theme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
           child: Row(
-            spacing: appTheme.horizontalSpace,
+            spacing: theme.contentAllPadding,
             children: [
               if (leadingIcon != null) leadingIcon!,
-              Flexible(child: _title(appTheme)),
+              Flexible(child: _title(theme)),
             ],
           ),
         ),
@@ -57,13 +56,14 @@ abstract class Popup extends ConsumerWidget {
     );
   }
 
-  Widget _title(AppTheme appTheme) {
-    return Text(title, style: appTheme.bodyStrong);
+  Widget _title(PopupTheme theme) {
+    return Text(title, style: theme.textPrimary);
   }
 
   Widget _closeIcon(BuildContext context) {
+    final theme = context.popupTheme;
     return IconButton(
-      padding: EdgeInsets.zero,
+      padding: EdgeInsetsGeometry.all(theme.xButtonAllPadding),
       icon: DynamicThemeImage("close.svg"),
       onPressed: () => Navigator.of(context).pop(),
     );
