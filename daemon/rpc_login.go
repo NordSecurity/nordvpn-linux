@@ -61,6 +61,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 			EventTrigger: events.TriggerUser,
 			EventStatus:  events.StatusFailure, // emit failure event, but continue
 			EventType:    events.LoginLogin,
+			IsAlteredFlowOnNordAccount: r.initialLoginType.isAltered(pb.LoginType_LoginType_LOGIN),
 			Reason:       events.ReasonUnfinishedPrevLogin,
 		})
 	}
@@ -77,6 +78,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 			EventTrigger: events.TriggerUser,
 			EventStatus:  eventStatus,
 			EventType:    events.LoginLogin,
+			IsAlteredFlowOnNordAccount: r.initialLoginType.isAltered(pb.LoginType_LoginType_LOGIN),
 			Reason:       eventReason,
 		})
 		// at the end, reset initiated login type
@@ -169,6 +171,7 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (paylo
 			EventTrigger: events.TriggerUser,
 			EventStatus:  events.StatusFailure, // emit failure event, but continue
 			EventType:    eventType,
+			IsAlteredFlowOnNordAccount: r.initialLoginType.isAltered(in.GetType()),
 			Reason:       events.ReasonUnfinishedPrevLogin,
 		})
 	}
@@ -185,6 +188,7 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (paylo
 			EventTrigger: events.TriggerUser,
 			EventStatus:  eventStatus,
 			EventType:    eventType,
+			IsAlteredFlowOnNordAccount: r.initialLoginType.isAltered(in.GetType()),
 			Reason:       eventReason,
 		})
 	}()
