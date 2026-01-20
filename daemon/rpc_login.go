@@ -114,11 +114,16 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 		}, nil
 	}
 
+	// The actual manually created token creation time is unknown, so we use the current time.
+	// This value remains unchanged until the user logs out and logs in again.
+	tokenRenewDate := time.Now().UTC().Format(internal.ServerDateFormat)
+
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
 		c.TokensData[credentials.ID] = config.TokenData{
 			Token:              token,
 			RenewToken:         "",
 			TokenExpiry:        session.ManualAccessTokenExpiryDateString,
+			TokenRenewDate:     tokenRenewDate,
 			NordLynxPrivateKey: credentials.NordlynxPrivateKey,
 			OpenVPNUsername:    credentials.Username,
 			OpenVPNPassword:    credentials.Password,
