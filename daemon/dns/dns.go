@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -26,9 +27,11 @@ const (
 )
 
 type dnsManagementService int
+type NMCliHandler func() bool
 
 const (
 	unknown dnsManagementService = iota
+	nmcliManaged
 	systemdResolved
 )
 
@@ -72,19 +75,24 @@ type DNSServiceSetter struct {
 	// 	1. systemd-resolved DBUS
 	// 	2. resolvectl exec call
 	systemdResolvedSetter Setter
+	// nmcliSetter sets DNS using NetworkManager CLI tool
+	nmcliSetter Setter
 	// resolvconfSetter sets DNS using the most desired method:
 	//	1. resolvconf exec call
 	//	2. direct write to /etc/resolv.conf
-	resolvconfSetter Setter
-	unsetter         Setter
-	filesystemHandle statingFilesystemHandle
+	resolvconfSetter             Setter
+	unsetter                     Setter
+	filesystemHandle             statingFilesystemHandle
+	isNetworkManagerCliAvailable NMCliHandler
 }
 
 func NewDNSServiceSetter(publisher events.Publisher[string]) *DNSServiceSetter {
 	return &DNSServiceSetter{
-		systemdResolvedSetter: NewSetter(publisher, &Resolved{}, &Resolvectl{}),
-		resolvconfSetter:      NewSetter(publisher, &Resolvconf{}, &ResolvConfFile{}),
-		filesystemHandle:      &stdStatingFilesystemHandle{},
+		systemdResolvedSetter:        NewSetter(publisher, &Resolved{}, &Resolvectl{}),
+		nmcliSetter:                  NewSetter(publisher, &NMCli{}),
+		resolvconfSetter:             NewSetter(publisher, &Resolvconf{}, &ResolvConfFile{}),
+		filesystemHandle:             &stdStatingFilesystemHandle{},
+		isNetworkManagerCliAvailable: isNMCliToolAvailable,
 	}
 }
 
@@ -129,9 +137,12 @@ func (d *DNSServiceSetter) getManagementService() dnsManagementService {
 	if err != nil {
 		log.Println(internal.ErrorPrefix, dnsPrefix,
 			"couldn't determine management service based on resolv.conf link target:", err)
-		return unknown
 	}
 
+	if d.isNetworkManagerCliAvailable() {
+		log.Println(internal.InfoPrefix, dnsPrefix, "management service inferred as NetworkManager nmcli tool")
+		return nmcliManaged
+	}
 	log.Println(internal.InfoPrefix, dnsPrefix, "management service inferred from link target")
 	return managmenetService
 }
@@ -172,9 +183,10 @@ func (d *DNSServiceSetter) setUsingBestAvailable(iface string, nameservers []str
 
 // Set sets the DNS using the most appropriate method, it attempts to:
 //  1. Infer which method to use from the comment in /etc/resolv.conf
-//  2. If the above fails, infer which method to use based on /etc/resolv.conf link target
-//  3. If the above fails, it attempts to use best available method(see setUsingBestAvailable)
-//  4. If all of the above fail, it returns an error
+//  2. If the above fails, use networm manager nmcli tool if available
+//  3. If the above fails, infer which method to use based on /etc/resolv.conf link target
+//  4. If the above fails, it attempts to use best available method(see setUsingBestAvailable)
+//  5. If all of the above fail, it returns an error
 func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
 	managementService := d.getManagementService()
 	switch managementService {
@@ -185,6 +197,13 @@ func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
 			return nil
 		}
 		log.Println(internal.WarningPrefix, dnsPrefix, "failed to set DNS using systemd-resolved:", err)
+	case nmcliManaged:
+		log.Print(internal.InfoPrefix, dnsPrefix, "setting DNS using NetworkManager nmcli tool")
+		err := d.set(d.nmcliSetter, iface, nameservers)
+		if err == nil {
+			return nil
+		}
+		log.Println(internal.WarningPrefix, dnsPrefix, "failed to set DNS using nmcli:", err)
 	case unknown:
 		log.Println(internal.WarningPrefix, dnsPrefix, "unknown DNS service")
 	}
@@ -267,6 +286,11 @@ func (d *DNSMethodSetter) Unset(iface string) error {
 	}
 
 	return nil
+}
+
+func isNMCliToolAvailable() bool {
+	_, err := exec.LookPath("nmcli")
+	return err == nil
 }
 
 // RestoreResolvConfFile try to restore resolv.conf if target file contains Nordvpn changes

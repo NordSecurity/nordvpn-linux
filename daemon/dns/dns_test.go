@@ -261,6 +261,7 @@ search home`)
 	tests := []struct {
 		name                   string
 		resolvconfFileContents []byte
+		setByNmCli             bool
 		setBySystemdResolved   bool
 		setByResolvconf        bool
 		resolvConfIsASymlink   bool
@@ -270,6 +271,8 @@ search home`)
 		systemdStubStatErr      error
 		systemdResolvedSetErr   error
 		systemdResolvedUnsetErr error
+		nmcliSetErr             error
+		nmcliUnsetErr           error
 		resolvconfSetErr        error
 		resolvconfUnsetErr      error
 		expectedSetErr          error
@@ -282,7 +285,21 @@ search home`)
 			setBySystemdResolved:   true,
 		},
 		{
-			name:                   "resolv.conf is not managed by systemd-resolved and systemd-resolved is not found, resolv.conf is used to set DNS",
+			name:                   "resolv.conf is not managed by systemd-resolved and systemd-resolved is not found, nmcli is used to set DNS",
+			resolvconfFileContents: unknownManager,
+			resolvConfIsASymlink:   false,
+			setByNmCli:             true,
+		},
+		{
+			name:                    "resolv.conf is not managed by systemd-resolved and systemd-resolved is not found, nmcli is not found, thus resolv.conf is used to set DNS",
+			systemdResolvedSetErr:   fmt.Errorf("resolved not found"),
+			systemdResolvedUnsetErr: fmt.Errorf("resolved not found"),
+			nmcliSetErr:             fmt.Errorf("nmcli not found"),
+			nmcliUnsetErr:           fmt.Errorf("nmcli not found"),
+			setByResolvconf:         true,
+		},
+		{
+			name:                   "resolv.conf is not managed by systemd-resolved and systemd-resolved is not found resolv.conf is used to set DNS",
 			resolvconfFileContents: noManagerResolvConf,
 			systemdResolvedSetErr:  fmt.Errorf("resolved not found"),
 			setByResolvconf:        true,
@@ -373,6 +390,10 @@ search home`)
 				setErr:   test.resolvconfSetErr,
 				unsetErr: test.resolvconfUnsetErr,
 			}
+			nmCliSetter := MockSetter{
+				setErr:   test.nmcliSetErr,
+				unsetErr: test.nmcliUnsetErr,
+			}
 
 			fs := newMockStatingFilesystemHandle(t)
 			fs.ReadErr = test.readErr
@@ -382,9 +403,11 @@ search home`)
 			fs.AddFile(resolvconfFilePath, test.resolvconfFileContents)
 
 			s := DNSServiceSetter{
-				systemdResolvedSetter: &resolvedSetter,
-				resolvconfSetter:      &resolvconfSetter,
-				filesystemHandle:      fs,
+				systemdResolvedSetter:        &resolvedSetter,
+				resolvconfSetter:             &resolvconfSetter,
+				filesystemHandle:             fs,
+				nmcliSetter:                  &nmCliSetter,
+				isNetworkManagerCliAvailable: func() bool { return test.setByNmCli },
 			}
 
 			err := s.Set("eth0", []string{"1.1.1.1"})
@@ -393,6 +416,8 @@ search home`)
 			assert.Equal(t, test.setBySystemdResolved, resolvedSetter.isSet,
 				"DNS was not configured by the expected setter.")
 			assert.Equal(t, test.setByResolvconf, resolvconfSetter.isSet,
+				"DNS was not configured by the expected setter.")
+			assert.Equal(t, test.setByNmCli, nmCliSetter.isSet,
 				"DNS was not configured by the expected setter.")
 
 			err = s.Unset("eth0")
@@ -403,6 +428,7 @@ search home`)
 					"DNS config for systemd-resolved was not reverted after calling unset.")
 				assert.False(t, resolvconfSetter.isSet,
 					"DNS config for resolv.conf was not reverted after calling unset.")
+
 			}
 		})
 	}
