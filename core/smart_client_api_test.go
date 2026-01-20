@@ -11,6 +11,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/session"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	mocksession "github.com/NordSecurity/nordvpn-linux/test/mock/session"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -1474,6 +1475,110 @@ func Test_RecommendedServers_TokenRenewalScenarios(t *testing.T) {
 	assert.Equal(t, expectedHeader, header)
 	assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
 	assert.Equal(t, 0, mockSessionStore.RenewCallCount)
+}
+
+func Test_PrepareRecommendedServersURL(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	limit := 10
+	longitude := 12.345678
+	latitude := -98.765432
+	technology := core.WireguardTech
+
+	filtersLimit := "limit=10"
+	filtersLongitude := "coordinates[longitude]=12.345678"
+	filtersLatitude := "coordinates[latitude]=-98.765432"
+	filtersTechnology := "filters[servers_technologies]=35"
+
+	filtersGroups := "filters[servers_groups]="
+	filtersCountry := "filters[country_id]="
+	filtersCity := "filters[country_city_id]="
+
+	tests := []struct {
+		name             string
+		tag              core.ServerTag
+		group            config.ServerGroup
+		shouldContain    []string
+		shouldNotContain []string
+	}{
+		{
+			name:             "quick connect",
+			tag:              core.ServerTag{Action: core.ServerByUnknown, ID: 0},
+			group:            config.ServerGroup_UNDEFINED,
+			shouldContain:    []string{filtersTechnology, filtersLongitude, filtersLatitude},
+			shouldNotContain: []string{filtersLimit, "filters[servers.status]=online", filtersGroups, filtersCity, filtersCountry},
+		},
+		{
+			name:             "connect to specific country",
+			tag:              core.ServerTag{Action: core.ServerByCountry, ID: 123},
+			group:            config.ServerGroup_UNDEFINED,
+			shouldContain:    []string{"filters[country_id]=123", filtersLimit, filtersTechnology, filtersLongitude, filtersLatitude},
+			shouldNotContain: []string{filtersGroups, filtersCity},
+		},
+		{
+			name:             "connect to specific country with specific group",
+			tag:              core.ServerTag{Action: core.ServerByCountry, ID: 123},
+			group:            config.ServerGroup_OBFUSCATED,
+			shouldContain:    []string{"filters[country_id]=123", "filters[servers_groups]=17", filtersLimit, filtersTechnology, filtersLongitude, filtersLatitude},
+			shouldNotContain: []string{filtersCity},
+		},
+		{
+			name:             "connect to specific city",
+			tag:              core.ServerTag{Action: core.ServerByCity, ID: 123},
+			group:            config.ServerGroup_UNDEFINED,
+			shouldContain:    []string{"filters[country_city_id]=123", filtersLimit, filtersTechnology, filtersLongitude, filtersLatitude},
+			shouldNotContain: []string{filtersGroups, filtersCountry},
+		},
+		{
+			name:             "connect to specific city with specific group",
+			tag:              core.ServerTag{Action: core.ServerByCity, ID: 123},
+			group:            config.ServerGroup_OBFUSCATED,
+			shouldContain:    []string{"filters[country_city_id]=123", "filters[servers_groups]=17", filtersLimit, filtersTechnology, filtersLongitude, filtersLatitude},
+			shouldNotContain: []string{filtersCountry},
+		},
+		{
+			name:             "connect to specific group",
+			tag:              core.ServerTag{Action: core.ServerByUnknown, ID: 0},
+			group:            config.ServerGroup_OBFUSCATED,
+			shouldContain:    []string{"filters[servers_groups]=17", filtersLimit, filtersTechnology, filtersLongitude, filtersLatitude},
+			shouldNotContain: []string{filtersCountry, filtersCity},
+		},
+		{
+			name:             "server by speed with tag group",
+			tag:              core.ServerTag{Action: core.ServerBySpeed, ID: 17},
+			group:            config.ServerGroup_UNDEFINED,
+			shouldContain:    []string{"filters[servers_groups]=17", filtersLimit, filtersTechnology, filtersLongitude, filtersLatitude},
+			shouldNotContain: []string{filtersCountry, filtersCity},
+		},
+		{
+			name:             "server by speed with specified group",
+			tag:              core.ServerTag{Action: core.ServerBySpeed, ID: 0},
+			group:            config.ServerGroup_OBFUSCATED,
+			shouldContain:    []string{"filters[servers_groups]=17", filtersLimit, filtersTechnology, filtersLongitude, filtersLatitude},
+			shouldNotContain: []string{filtersCountry, filtersCity},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			filter := core.ServersFilter{
+				Limit: limit,
+				Tech:  technology,
+				Group: test.group,
+				Tag:   test.tag,
+			}
+
+			url := core.PrepareRecommendedServersURL(filter, longitude, latitude)
+
+			for _, str := range test.shouldContain {
+				assert.Contains(t, url, str)
+			}
+
+			for _, str := range test.shouldNotContain {
+				assert.NotContains(t, url, str)
+			}
+		})
+	}
 }
 
 func Test_Server_TokenRenewalScenarios(t *testing.T) {
