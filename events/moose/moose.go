@@ -459,12 +459,12 @@ func (s *Subscriber) handleTokenRenewDateChange(prev, curr *config.Config) error
 	currentDate := getTokenRenewDate(curr)
 	previousDate := getTokenRenewDate(prev)
 
-	if currentDate == previousDate {
-		return nil
-	}
-
 	if currentDate == "" {
 		return s.unsetTokenRenewDate()
+	}
+
+	if currentDate == previousDate {
+		return nil
 	}
 
 	renewDate, err := time.Parse(internal.ServerDateFormat, currentDate)
