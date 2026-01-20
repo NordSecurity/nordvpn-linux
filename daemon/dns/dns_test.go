@@ -259,12 +259,11 @@ options edns0 trust-ad
 search home`)
 
 	tests := []struct {
-		name                      string
-		resolvconfFileContents    []byte
-		resolvconfLinkDestination string
-		setBySystemdResolved      bool
-		setByResolvconf           bool
-		resolvConfIsASymlink      bool
+		name                   string
+		resolvconfFileContents []byte
+		setBySystemdResolved   bool
+		setByResolvconf        bool
+		resolvConfIsASymlink   bool
 		// resolvConfStatErr is returned when running Stat for /etc/resolv.conf
 		resolvConfStatErr error
 		// systemdStubStatErr is returned when running Stat for the systemd-resolved stub of /etc/resolv.conf
@@ -311,7 +310,8 @@ search home`)
 			name:                   "resolv.conf manager is unknown and running stat on resolv.conf fails, systemd-resolved is not available, resolv.conf is used to set DNS",
 			resolvconfFileContents: unknownManager,
 			resolvConfStatErr:      fmt.Errorf("failed to stat"),
-			setBySystemdResolved:   true,
+			systemdResolvedSetErr:  fmt.Errorf("failed to set"),
+			setByResolvconf:        true,
 		},
 		{
 			name:                   "resolv.conf manager is unknown and running stat on systemd stub fails, systemd-resolved is available, systemd-resolved is used to set DNS",
@@ -323,7 +323,8 @@ search home`)
 			name:                   "resolv.conf manager is unknown and running stat on systemd stub fails, systemd-resolved is not available, resolv.conf is used to set DNS",
 			resolvconfFileContents: unknownManager,
 			systemdStubStatErr:     fmt.Errorf("failed to stat"),
-			setBySystemdResolved:   true,
+			systemdResolvedSetErr:  fmt.Errorf("failed to set"),
+			setByResolvconf:        true,
 		},
 		{
 			name:                   "manager is not recognized based on resolv.conf contents but the file links to systemd-resolved is used to set DNS",
@@ -375,7 +376,8 @@ search home`)
 
 			fs := newMockStatingFilesystemHandle(t)
 			fs.ReadErr = test.readErr
-			// fs.statErr = test.isSymlinkToTargetErr
+			fs.statErrors[resolvconfFilePath] = test.resolvConfStatErr
+			fs.statErrors[systemdResolvedLinkTarget] = test.systemdStubStatErr
 			fs.isSameFile = test.resolvConfIsASymlink
 			fs.AddFile(resolvconfFilePath, test.resolvconfFileContents)
 

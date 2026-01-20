@@ -28,11 +28,11 @@ const (
 type dnsManagementService int
 
 const (
-	systemdResolved dnsManagementService = iota + 1
-	unknown
+	unknown dnsManagementService = iota
+	systemdResolved
 )
 
-var ErrDNSNotSet = fmt.Errorf("DNS unsetter not set")
+var ErrDNSNotSet = errors.New("DNS unsetter not set")
 
 // statingFilesystemHandle extends FilesystemHandle with wrappers for os.Stat and os.SameFile
 type statingFilesystemHandle interface {
