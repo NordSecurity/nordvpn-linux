@@ -20,6 +20,9 @@ def autoconnect_base_test(group):
     daemon.wait_for_autoconnect()
     assert network.is_connected()
 
+    status_info = daemon.get_status_data()
+    assert "Connected" in status_info["status"]
+
     output = sh_no_tty.nordvpn.set.autoconnect.off()
     print(output)
     assert settings.MSG_AUTOCONNECT_DISABLE_SUCCESS in output
@@ -111,8 +114,15 @@ def test_autoconnect_to_standard_group(tech, proto, obfuscated, group):
     autoconnect_base_test(group)
 
 
-@pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "group",
+    ],
+    ordered_source=[lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER],
+    randomized_source=[lib.ADDITIONAL_GROUPS],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{group}",
+)
 def test_autoconnect_to_additional_group(tech, proto, obfuscated, group):
     """Manual TC: LVPN-6786"""
 
@@ -120,8 +130,15 @@ def test_autoconnect_to_additional_group(tech, proto, obfuscated, group):
     autoconnect_base_test(group)
 
 
-@pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS_NORDWHISPER)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.NORDWHISPER_TECHNOLOGY)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "group",
+    ],
+    ordered_source=[lib.NORDWHISPER_TECHNOLOGY],
+    randomized_source=[lib.ADDITIONAL_GROUPS_NORDWHISPER],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{group}",
+)
 def test_nordwhisper_autoconnect_to_additional_group(tech, proto, obfuscated, group):
     """Manual TC: LVPN-6786"""
 

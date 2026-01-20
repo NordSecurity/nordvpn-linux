@@ -81,8 +81,15 @@ def test_connect_to_server_random_by_name(tech, proto, obfuscated):
     disconnect_base_test()
 
 
-@pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "group",
+    ],
+    ordered_source=[lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER],
+    randomized_source=[lib.ADDITIONAL_GROUPS],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{group}",
+)
 def test_connect_to_group_random_server_by_name_additional(tech, proto, obfuscated, group):
     """Manual TC: LVPN-8847"""
 
@@ -298,8 +305,15 @@ def test_connect_to_flag_group_standard(tech, proto, obfuscated, group):
     assert lib.is_connect_unsuccessful(ex)
 
 
-@pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "group",
+    ],
+    ordered_source=[lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER],
+    randomized_source=[lib.ADDITIONAL_GROUPS],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{group}",
+)
 def test_connect_to_flag_group_additional(tech, proto, obfuscated, group):
     """Manual TC: LVPN-8615"""
 
