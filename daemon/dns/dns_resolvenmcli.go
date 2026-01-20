@@ -36,6 +36,7 @@ func (nmcli *NMCli) Set(iface string, nameservers []string) error {
 	args = append(args, nameservers...)
 	args = append(args, "ipv4.ignore-auto-dns", "yes")
 
+	// #nosec G204: input is properly validated
 	if out, err := exec.Command(execNmCli, args...).CombinedOutput(); err != nil {
 		log.Println(internal.WarningPrefix, nmCliPrintTag, "Setting DNS with nmcli failed:", strings.TrimSpace(string(out)))
 		return fmt.Errorf("setting dns with nmcli failed: %w", err)
@@ -53,6 +54,7 @@ func (nmcli *NMCli) Unset(iface string) error {
 		return nil
 	}
 	args := []string{"connection", "modify", iface, "ipv4.dns", ""}
+	// #nosec G204: input is properly validated
 	if _, err := exec.Command(execNmCli, args...).CombinedOutput(); err != nil {
 		return fmt.Errorf("unsetting dns with nmcli failed: %w", err)
 	}
@@ -67,12 +69,14 @@ func (nmcli *NMCli) Name() string {
 // reloadConnection restarts the network connection for the specified interface using nmcli tool.
 func (nmcli *NMCli) reloadConnection(iface string) error {
 	disableInterfaceargs := []string{"connection", "down", iface}
+	// #nosec G204: input is properly validated
 	if out, err := exec.Command(execNmCli, disableInterfaceargs...).CombinedOutput(); err != nil {
 		log.Println(internal.WarningPrefix, nmCliPrintTag, ":", strings.TrimSpace(string(out)))
 		return fmt.Errorf("reload connection failed for DOWN request %w", err)
 	}
 
 	enableInterfaceargs := []string{"connection", "up", iface}
+	// #nosec G204: input is properly validated
 	if _, err := exec.Command(execNmCli, enableInterfaceargs...).CombinedOutput(); err != nil {
 		return fmt.Errorf("reload connection failed for UP request %w", err)
 	}
