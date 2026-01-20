@@ -185,6 +185,8 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 			ti.notify(NoForce, internal.GroupNonexistentErrorMessage)
 		case internal.CodeServerUnavailable:
 			ti.notify(NoForce, internal.ServerUnavailableErrorMessage)
+		case internal.CodeVirtualLocationDisabled:
+			ti.notify(NoForce, internal.ServerUnavailableErrorMessage)
 		case internal.CodeDoubleGroupError:
 			ti.notify(NoForce, internal.DoubleGroupErrorMessage)
 		case internal.CodeVPNRunning:

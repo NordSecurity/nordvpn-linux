@@ -3,9 +3,12 @@ import 'package:nordvpn/data/models/app_settings.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
 import 'package:nordvpn/data/models/vpn_protocol.dart';
 import 'package:nordvpn/data/providers/app_state_provider.dart';
+import 'package:nordvpn/data/providers/pending_settings_provider.dart';
 import 'package:nordvpn/data/providers/popups_provider.dart';
+import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/data/repository/vpn_settings_repository.dart';
+import 'package:nordvpn/internal/popup_codes.dart';
 import 'package:nordvpn/logger.dart';
 import 'package:grpc/grpc.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -36,8 +39,61 @@ class VpnSettingsController extends _$VpnSettingsController
     return await _fetchSettings();
   }
 
+  /// Sets the VPN protocol.
+  /// If VPN is connected, stores the pending protocol and shows a popup.
+  /// The change will only be applied if user confirms in the popup.
+  /// Otherwise sets it immediately.
   Future<int> setVpnProtocol(VpnProtocol protocol) async {
+    // We need to check VPN status here because protocol change requires
+    // a different flow: store pending protocol and show confirmation popup.
+    // The daemon doesn't return vpnIsRunning for protocol changes.
+    final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
+    if (vpnStatus != null && vpnStatus.isConnected()) {
+      // VPN is connected - store pending protocol and show popup
+      // The change will be applied only if user confirms
+      ref.read(pendingVPNProtocolProvider.notifier).set(protocol);
+      ref
+          .read(popupsProvider.notifier)
+          .show(PopupCodes.reconnectToChangeProtocol);
+      return DaemonStatusCode.success;
+    }
+
+    // VPN is not connected - apply the change directly
     return await _setValue((repository) => repository.setVpnProtocol(protocol));
+  }
+
+  /// Applies the pending protocol change.
+  /// Returns true if the protocol was applied successfully.
+  Future<bool> applyPendingVPNProtocol() async {
+    // Consume the pending protocol change
+    final pendingVPNProtocol = ref
+        .read(pendingVPNProtocolProvider.notifier)
+        .consume();
+    if (pendingVPNProtocol == null) {
+      logger.e('Cannot apply protocol change: no pending vpn protocol');
+      return false;
+    }
+
+    // Apply the protocol change
+    final status = await _setValue(
+      (repository) => repository.setVpnProtocol(pendingVPNProtocol),
+      popupCodeOverrides: {
+        // virtualLocationsDisabled needs to show a specific popup.
+        DaemonStatusCode.virtualLocationsDisabled:
+            PopupCodes.reconnectToChangeVirtualLocation,
+        // Ignore vpnIsRunning here - we already showed the reconnect popup
+        DaemonStatusCode.vpnIsRunning: DaemonStatusCode.success,
+      },
+    );
+    // Accept success, nothingToDo, or vpnIsRunning as valid statuses
+    if (status != DaemonStatusCode.success &&
+        status != DaemonStatusCode.nothingToDo &&
+        status != DaemonStatusCode.vpnIsRunning) {
+      logger.e('Failed to apply protocol change: $status');
+      return false;
+    }
+
+    return true;
   }
 
   Future<int> resetToDefaults() async {
@@ -45,7 +101,12 @@ class VpnSettingsController extends _$VpnSettingsController
   }
 
   Future<int> setObfuscated(bool value) async {
-    return await _setValue((repository) => repository.setObfuscated(value));
+    return await _setValue(
+      (repository) => repository.setObfuscated(value),
+      popupCodeOverrides: {
+        DaemonStatusCode.vpnIsRunning: PopupCodes.reconnectToChangeObfuscation,
+      },
+    );
   }
 
   Future<int> setAnalytics(bool value) async {
@@ -180,11 +241,22 @@ class VpnSettingsController extends _$VpnSettingsController
   }
 
   Future<int> setPostQuantum(bool value) async {
-    return await _setValue((repository) => repository.setPostQuantum(value));
+    return await _setValue(
+      (repository) => repository.setPostQuantum(value),
+      popupCodeOverrides: {
+        DaemonStatusCode.vpnIsRunning: PopupCodes.reconnectToChangePostQuantum,
+      },
+    );
   }
 
   Future<int> useVirtualServers(bool value) async {
-    return await _setValue((repository) => repository.useVirtualServers(value));
+    return await _setValue(
+      (repository) => repository.useVirtualServers(value),
+      popupCodeOverrides: {
+        DaemonStatusCode.vpnIsRunning:
+            PopupCodes.reconnectToChangeVirtualLocation,
+      },
+    );
   }
 
   @override
@@ -214,9 +286,25 @@ class VpnSettingsController extends _$VpnSettingsController
     return await repository.fetchSettings();
   }
 
+  /// Executes a repository callback and handles status codes and popups.
+  ///
+  /// The popupCodeOverrides map allows overriding daemon status codes with custom popup codes.
+  /// This is useful when different settings need specific popup messages for the same daemon code.
+  ///
+  /// Example: Both obfuscation and post-quantum changes return vpnIsRunning, but we want
+  /// different popup messages for each:
+  /// ```dart
+  /// _setValue(
+  ///   (repo) => repo.setObfuscated(value),
+  ///   popupCodeOverrides: {
+  ///     DaemonStatusCode.vpnIsRunning: PopupCodes.reconnectToChangeObfuscation,
+  ///   },
+  /// );
+  /// ```
   Future<int> _setValue(
-    Future<int> Function(VpnSettingsRepository repository) callback,
-  ) async {
+    Future<int> Function(VpnSettingsRepository repository) callback, {
+    Map<int, int>? popupCodeOverrides,
+  }) async {
     final repository = ref.read(vpnSettingsProvider);
     int status = DaemonStatusCode.failure;
 
@@ -232,14 +320,19 @@ class VpnSettingsController extends _$VpnSettingsController
       logger.e("Unexpected error: $e");
     }
 
+    // Use overridden popup code if provided, otherwise use the daemon status code
+    final popupCode = popupCodeOverrides?[status] ?? status;
+
     // don't show popup when code is on ignore list
-    if (_popupIgnoreCodes.contains(status)) {
+    if (_popupIgnoreCodes.contains(popupCode)) {
       return status;
     }
 
     // We do that to avoid the toggle of on/off button in case of failure
     state = state;
-    ref.read(popupsProvider.notifier).show(status);
+
+    ref.read(popupsProvider.notifier).show(popupCode);
+
     return status;
   }
 

@@ -23,12 +23,13 @@ sealed class PopupMetadata {
 }
 
 // Metadata for popups with yes/no decision. Besides the base of [PopupMetadata],
-// it specifies also labels for "no" and "yes" buttons and acton executed
-// after clicking on "yes" button.
+// it specifies also labels for "no" and "yes" buttons and actions executed
+// after clicking on "yes" or "no" button.
 final class DecisionPopupMetadata extends PopupMetadata {
   final String noButtonText;
   final String yesButtonText;
   final Function(WidgetRef ref) yesAction;
+  final Function(WidgetRef ref)? noAction;
 
   DecisionPopupMetadata({
     required super.id,
@@ -36,16 +37,21 @@ final class DecisionPopupMetadata extends PopupMetadata {
     required this.noButtonText,
     required this.yesButtonText,
     required this.yesAction,
+    this.noAction,
     super.title,
   });
 }
 
 // Metadata for popups that can be only closed. Has just `id`, `title` nad `message`
+// Optionally accepts [buttonText] to customize the close button label.
+// If not provided, defaults to "Close".
 final class InfoPopupMetadata extends PopupMetadata {
+  final String? buttonText;
   InfoPopupMetadata({
     required super.id,
     required super.title,
     required super.message,
+    this.buttonText,
   });
 }
 

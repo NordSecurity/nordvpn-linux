@@ -235,7 +235,7 @@ func getServersRemote(
 	}
 
 	if len(servers) == 0 {
-		return nil, fmt.Errorf("recommended: empty list")
+		return nil, internal.ErrServerIsUnavailable
 	}
 
 	return servers, nil
