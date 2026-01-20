@@ -123,6 +123,8 @@ class UIItemValue extends $pb.ProtobufEnum {
           6, _omitEnumNames ? '' : 'UI_ITEM_VALUE_CONNECTION_ONION_OVER_VPN');
   static const UIItemValue UI_ITEM_VALUE_CONNECTION_DOUBLE_VPN = UIItemValue._(
       7, _omitEnumNames ? '' : 'UI_ITEM_VALUE_CONNECTION_DOUBLE_VPN');
+  static const UIItemValue UI_ITEM_VALUE_CONNECTION_P2P =
+      UIItemValue._(8, _omitEnumNames ? '' : 'UI_ITEM_VALUE_CONNECTION_P2P');
 
   static const $core.List<UIItemValue> values = <UIItemValue>[
     UI_ITEM_VALUE_CONNECTION_UNSPECIFIED,
@@ -133,10 +135,11 @@ class UIItemValue extends $pb.ProtobufEnum {
     UI_ITEM_VALUE_CONNECTION_OBFUSCATED,
     UI_ITEM_VALUE_CONNECTION_ONION_OVER_VPN,
     UI_ITEM_VALUE_CONNECTION_DOUBLE_VPN,
+    UI_ITEM_VALUE_CONNECTION_P2P,
   ];
 
   static final $core.List<UIItemValue?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 7);
+      $pb.ProtobufEnum.$_initByValueList(values, 8);
   static UIItemValue? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
