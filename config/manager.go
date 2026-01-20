@@ -239,6 +239,9 @@ func (f *FilesystemConfigManager) load(c *Config, copy *Config) error {
 		return f.save(*c)
 	}
 
+	// Reset for subsequent calls
+	f.NewInstallation = false
+
 	pass, err := f.getPassphrase()
 	if err != nil {
 		return err
