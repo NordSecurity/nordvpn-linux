@@ -287,14 +287,17 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 		name              string
 		prevConfig        *config.Config
 		currConfig        *config.Config
-		expectMooseCalled bool
+		expectSetCalled   bool
+		expectUnsetCalled bool
 		expectedTimestamp int32
+		expectError       bool
 	}{
 		{
-			name:              "no change when current date is empty",
+			name:              "unset called when current date is empty",
 			prevConfig:        nil,
 			currConfig:        &config.Config{TokensData: map[int64]config.TokenData{}},
-			expectMooseCalled: false,
+			expectSetCalled:   false,
+			expectUnsetCalled: true,
 		},
 		{
 			name: "no change when dates are the same",
@@ -310,10 +313,11 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 					123: {TokenRenewDate: "2024-01-15 10:30:00"},
 				},
 			},
-			expectMooseCalled: false,
+			expectSetCalled:   false,
+			expectUnsetCalled: false,
 		},
 		{
-			name: "calls moose when date changes",
+			name: "calls set when date changes",
 			prevConfig: &config.Config{
 				AutoConnectData: config.AutoConnectData{ID: 123},
 				TokensData: map[int64]config.TokenData{
@@ -326,11 +330,12 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 					123: {TokenRenewDate: "2024-01-16 11:00:00"},
 				},
 			},
-			expectMooseCalled: true,
+			expectSetCalled:   true,
+			expectUnsetCalled: false,
 			expectedTimestamp: int32(time.Date(2024, 1, 16, 11, 0, 0, 0, time.UTC).Unix()),
 		},
 		{
-			name:       "calls moose when date is set for first time (prev nil)",
+			name:       "calls set when date is set for first time (prev nil)",
 			prevConfig: nil,
 			currConfig: &config.Config{
 				AutoConnectData: config.AutoConnectData{ID: 123},
@@ -338,11 +343,12 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 					123: {TokenRenewDate: "2024-01-16 11:00:00"},
 				},
 			},
-			expectMooseCalled: true,
+			expectSetCalled:   true,
+			expectUnsetCalled: false,
 			expectedTimestamp: int32(time.Date(2024, 1, 16, 11, 0, 0, 0, time.UTC).Unix()),
 		},
 		{
-			name: "calls moose when date is set for first time (prev empty)",
+			name: "calls set when date is set for first time (prev empty)",
 			prevConfig: &config.Config{
 				AutoConnectData: config.AutoConnectData{ID: 123},
 				TokensData: map[int64]config.TokenData{
@@ -355,11 +361,12 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 					123: {TokenRenewDate: "2024-01-16 11:00:00"},
 				},
 			},
-			expectMooseCalled: true,
+			expectSetCalled:   true,
+			expectUnsetCalled: false,
 			expectedTimestamp: int32(time.Date(2024, 1, 16, 11, 0, 0, 0, time.UTC).Unix()),
 		},
 		{
-			name:       "ignores invalid date format",
+			name:       "returns error for invalid date format",
 			prevConfig: nil,
 			currConfig: &config.Config{
 				AutoConnectData: config.AutoConnectData{ID: 123},
@@ -367,28 +374,42 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 					123: {TokenRenewDate: "invalid-date"},
 				},
 			},
-			expectMooseCalled: false,
+			expectSetCalled:   false,
+			expectUnsetCalled: false,
+			expectError:       true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mooseCalled := false
+			setCalled := false
+			unsetCalled := false
 			var capturedTimestamp int32
 
 			s := &Subscriber{
 				mooseSetTokenRenewDateFunc: func(timestamp int32) uint32 {
-					mooseCalled = true
+					setCalled = true
 					capturedTimestamp = timestamp
+					return 0
+				},
+				mooseUnsetTokenRenewDateFunc: func() uint32 {
+					unsetCalled = true
 					return 0
 				},
 			}
 
 			err := s.handleTokenRenewDateChange(tt.prevConfig, tt.currConfig)
-			assert.NilError(t, err)
-			assert.Equal(t, tt.expectMooseCalled, mooseCalled, "moose call expectation mismatch")
 
-			if tt.expectMooseCalled {
+			if tt.expectError {
+				assert.Assert(t, err != nil, "expected error but got nil")
+			} else {
+				assert.NilError(t, err)
+			}
+
+			assert.Equal(t, tt.expectSetCalled, setCalled, "set call expectation mismatch")
+			assert.Equal(t, tt.expectUnsetCalled, unsetCalled, "unset call expectation mismatch")
+
+			if tt.expectSetCalled {
 				assert.Equal(t, tt.expectedTimestamp, capturedTimestamp, "timestamp mismatch")
 			}
 		})
