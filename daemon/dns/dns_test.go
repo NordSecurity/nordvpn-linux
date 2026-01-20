@@ -428,7 +428,8 @@ search home`)
 					"DNS config for systemd-resolved was not reverted after calling unset.")
 				assert.False(t, resolvconfSetter.isSet,
 					"DNS config for resolv.conf was not reverted after calling unset.")
-
+				assert.False(t, nmCliSetter.isSet,
+					"DNS config for nmcli was not reverted after calling unset.")
 			}
 		})
 	}

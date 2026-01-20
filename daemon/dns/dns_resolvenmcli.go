@@ -14,9 +14,7 @@ const (
 	nmCliPrintTag = "[DNS][NMCLI]"
 )
 
-type NMCli struct {
-	ignoreAutoDNS bool
-}
+type NMCli struct{}
 
 // Set configures DNS nameservers for the specified network interface using nmcli tool.
 //
