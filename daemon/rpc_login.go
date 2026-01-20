@@ -73,12 +73,13 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 		if retErr != nil || payload != nil && payload.Type != internal.CodeSuccess {
 			eventStatus = events.StatusFailure
 		}
+		alteredFlow := r.initialLoginType.wasStarted() && r.initialLoginType.isAltered(pb.LoginType_LoginType_LOGIN)
 		r.events.User.Login.Publish(events.DataAuthorization{
 			DurationMs:                 max(int(time.Since(loginStartTime).Milliseconds()), 1),
 			EventTrigger:               events.TriggerUser,
 			EventStatus:                eventStatus,
 			EventType:                  events.LoginLogin,
-			IsAlteredFlowOnNordAccount: r.initialLoginType.isAltered(pb.LoginType_LoginType_LOGIN),
+			IsAlteredFlowOnNordAccount: alteredFlow,
 			Reason:                     eventReason,
 		})
 		// at the end, reset initiated login type
