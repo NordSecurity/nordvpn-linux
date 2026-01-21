@@ -87,6 +87,7 @@ func TestConnectionInfo_VerifyDataConnectConversionToConnectionStatus(t *testing
 		IsPostQuantum:           false,
 		IsObfuscated:            true,
 		IsMeshnetPeer:           false,
+		RecommendationUUID:      "c0b4c990-3000-457f-8b81-6850b8cdb54e",
 	}
 
 	go func() {
@@ -113,6 +114,7 @@ func TestConnectionInfo_VerifyDataConnectConversionToConnectionStatus(t *testing
 	assert.Equal(t, event.IsObfuscated, status.IsObfuscated)
 	assert.Equal(t, "", status.TunnelName)
 	assert.Equal(t, event.IsMeshnetPeer, status.IsMeshnetPeer)
+	assert.Equal(t, event.RecommendationUUID, status.RecommendationUUID)
 }
 
 func TestConnectionInfo_VerifyDataDisconnectConversionToConnectionStatus(t *testing.T) {
@@ -133,6 +135,7 @@ func TestConnectionInfo_VerifyDataDisconnectConversionToConnectionStatus(t *test
 	assert.Equal(t, pb.ConnectionState_DISCONNECTED, status.State)
 	assert.False(t, tf.sut.fullyConnected)
 	assert.Nil(t, status.StartTime)
+	assert.Equal(t, status.RecommendationUUID, "")
 }
 
 func TestConnectionInfo_TracksStateProperly(t *testing.T) {

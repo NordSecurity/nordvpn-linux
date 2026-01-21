@@ -15,6 +15,7 @@ type DisconnectInput struct {
 	Networker                  networker.Networker
 	ConfigManager              config.Manager
 	PublishDisconnectEventFunc func(events.DataDisconnect)
+	RecommendationUUID         string
 }
 
 // Disconnect disconnects the user from the current VPN server. Returning boolean indicates
@@ -47,6 +48,7 @@ func Disconnect(input DisconnectInput) (bool, error) {
 			ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
 			Duration:             time.Since(startTime),
 			Error:                err,
+			RecommendationUUID:   input.RecommendationUUID,
 		})
 	}()
 
