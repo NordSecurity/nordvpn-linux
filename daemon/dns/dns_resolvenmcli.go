@@ -68,17 +68,17 @@ func (nmcli *NMCli) Name() string {
 
 // reloadConnection restarts the network connection for the specified interface using nmcli tool.
 func (nmcli *NMCli) reloadConnection(iface string) error {
-	disableInterfaceargs := []string{"connection", "down", iface}
+	disableInterfaceArgs := []string{"connection", "down", iface}
 	// #nosec G204: input is properly validated
-	if out, err := exec.Command(execNmCli, disableInterfaceargs...).CombinedOutput(); err != nil {
+	if out, err := exec.Command(execNmCli, disableInterfaceArgs...).CombinedOutput(); err != nil {
 		log.Println(internal.WarningPrefix, nmCliPrintTag, ":", strings.TrimSpace(string(out)))
-		return fmt.Errorf("reload connection failed for DOWN request %w", err)
+		return fmt.Errorf("reload connection failed for DOWN request: %w", err)
 	}
 
-	enableInterfaceargs := []string{"connection", "up", iface}
+	enableInterfaceArgs := []string{"connection", "up", iface}
 	// #nosec G204: input is properly validated
-	if _, err := exec.Command(execNmCli, enableInterfaceargs...).CombinedOutput(); err != nil {
-		return fmt.Errorf("reload connection failed for UP request %w", err)
+	if _, err := exec.Command(execNmCli, enableInterfaceArgs...).CombinedOutput(); err != nil {
+		return fmt.Errorf("reload connection failed for UP request: %w", err)
 	}
 	return nil
 }

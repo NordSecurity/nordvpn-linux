@@ -216,7 +216,7 @@ func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
 		}
 		log.Println(internal.WarningPrefix, dnsPrefix, "failed to set DNS using systemd-resolved:", err)
 	case nmcliManaged:
-		log.Print(internal.InfoPrefix, dnsPrefix, "setting DNS using NetworkManager nmcli tool")
+		log.Println(internal.InfoPrefix, dnsPrefix, "setting DNS using NetworkManager nmcli tool")
 		err := d.set(d.nmcliSetter, iface, nameservers)
 		if err == nil {
 			return nil
