@@ -48,29 +48,27 @@ import (
 type mooseConsentFunc func(bool) uint32
 type mooseSetConsentIntoContextFunc func(moose.NordvpnappConsentLevel) uint32
 type mooseSetTokenRenewDateFunc func(int32) uint32
-type mooseUnsetTokenRenewDateFunc func() uint32
 
 // Subscriber listen events, send to moose engine
 type Subscriber struct {
-	eventsDbPath                 string
-	config                       config.Manager
-	buildTarget                  config.BuildTarget
-	domain                       string
-	subdomain                    string
-	deviceID                     string
-	clientAPI                    core.ClientAPI
-	currentDomain                string
-	connectionStartTime          time.Time
-	connectionToMeshnetPeer      bool
-	initialHeartbeatSent         bool
-	mooseConsentLevelFunc        mooseConsentFunc
-	mooseSetConsentIntoCtxFunc   mooseSetConsentIntoContextFunc
-	mooseSetTokenRenewDateFunc   mooseSetTokenRenewDateFunc
-	mooseUnsetTokenRenewDateFunc mooseUnsetTokenRenewDateFunc
-	httpClient                   *http.Client
-	canSendAllEvents             atomic.Bool
-	mux                          sync.RWMutex
-	isInitialized                bool
+	eventsDbPath               string
+	config                     config.Manager
+	buildTarget                config.BuildTarget
+	domain                     string
+	subdomain                  string
+	deviceID                   string
+	clientAPI                  core.ClientAPI
+	currentDomain              string
+	connectionStartTime        time.Time
+	connectionToMeshnetPeer    bool
+	initialHeartbeatSent       bool
+	mooseConsentLevelFunc      mooseConsentFunc
+	mooseSetConsentIntoCtxFunc mooseSetConsentIntoContextFunc
+	mooseSetTokenRenewDateFunc mooseSetTokenRenewDateFunc
+	httpClient                 *http.Client
+	canSendAllEvents           atomic.Bool
+	mux                        sync.RWMutex
+	isInitialized              bool
 }
 
 func NewSubscriber(
@@ -177,7 +175,6 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 	s.mooseConsentLevelFunc = moose.MooseNordvpnappSetConsentLevel
 	s.mooseSetConsentIntoCtxFunc = moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel
 	s.mooseSetTokenRenewDateFunc = moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTokenRenewDateValue
-	s.mooseUnsetTokenRenewDateFunc = moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateTokenRenewDateValue
 
 	cfg, err := s.getConfig()
 	if err != nil {
@@ -417,9 +414,6 @@ func (s *Subscriber) NotifyLogout(data events.DataAuthorization) error {
 	}
 
 	if data.EventStatus == events.StatusSuccess {
-		if err := s.unsetTokenRenewDate(); err != nil {
-			return err
-		}
 		return s.clearSubscriptions()
 	}
 	return nil
@@ -455,15 +449,13 @@ func (s *Subscriber) OnConfigChanged(e config.DataConfigChange) error {
 }
 
 // handleTokenRenewDateChange updates moose context when token renewal date changes.
+// Note: The data team confirmed that tokenRenewDate field should always have a value,
+// so we only set it and never call unset.
 func (s *Subscriber) handleTokenRenewDateChange(prev, curr *config.Config) error {
 	currentDate := getTokenRenewDate(curr)
 	previousDate := getTokenRenewDate(prev)
 
-	if currentDate == "" {
-		return s.unsetTokenRenewDate()
-	}
-
-	if currentDate == previousDate {
+	if currentDate == "" || currentDate == previousDate {
 		return nil
 	}
 
@@ -493,10 +485,6 @@ func getTokenRenewDate(cfg *config.Config) string {
 // setTokenRenewDate sets the token renewal date in moose context
 func (s *Subscriber) setTokenRenewDate(unixTimestamp int64) error {
 	return s.response(s.mooseSetTokenRenewDateFunc(int32(unixTimestamp)))
-}
-
-func (s *Subscriber) unsetTokenRenewDate() error {
-	return s.response(s.mooseUnsetTokenRenewDateFunc())
 }
 
 func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {

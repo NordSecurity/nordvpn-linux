@@ -288,16 +288,14 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 		prevConfig        *config.Config
 		currConfig        *config.Config
 		expectSetCalled   bool
-		expectUnsetCalled bool
 		expectedTimestamp int32
 		expectError       bool
 	}{
 		{
-			name:              "unset called when current date is empty",
-			prevConfig:        nil,
-			currConfig:        &config.Config{TokensData: map[int64]config.TokenData{}},
-			expectSetCalled:   false,
-			expectUnsetCalled: true,
+			name:            "no action when current date is empty",
+			prevConfig:      nil,
+			currConfig:      &config.Config{TokensData: map[int64]config.TokenData{}},
+			expectSetCalled: false,
 		},
 		{
 			name: "no change when dates are the same",
@@ -313,8 +311,7 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 					123: {TokenRenewDate: "2024-01-15 10:30:00"},
 				},
 			},
-			expectSetCalled:   false,
-			expectUnsetCalled: false,
+			expectSetCalled: false,
 		},
 		{
 			name: "calls set when date changes",
@@ -331,7 +328,6 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 				},
 			},
 			expectSetCalled:   true,
-			expectUnsetCalled: false,
 			expectedTimestamp: int32(time.Date(2024, 1, 16, 11, 0, 0, 0, time.UTC).Unix()),
 		},
 		{
@@ -344,7 +340,6 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 				},
 			},
 			expectSetCalled:   true,
-			expectUnsetCalled: false,
 			expectedTimestamp: int32(time.Date(2024, 1, 16, 11, 0, 0, 0, time.UTC).Unix()),
 		},
 		{
@@ -362,7 +357,6 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 				},
 			},
 			expectSetCalled:   true,
-			expectUnsetCalled: false,
 			expectedTimestamp: int32(time.Date(2024, 1, 16, 11, 0, 0, 0, time.UTC).Unix()),
 		},
 		{
@@ -374,26 +368,20 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 					123: {TokenRenewDate: "invalid-date"},
 				},
 			},
-			expectSetCalled:   false,
-			expectUnsetCalled: false,
-			expectError:       true,
+			expectSetCalled: false,
+			expectError:     true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			setCalled := false
-			unsetCalled := false
 			var capturedTimestamp int32
 
 			s := &Subscriber{
 				mooseSetTokenRenewDateFunc: func(timestamp int32) uint32 {
 					setCalled = true
 					capturedTimestamp = timestamp
-					return 0
-				},
-				mooseUnsetTokenRenewDateFunc: func() uint32 {
-					unsetCalled = true
 					return 0
 				},
 			}
@@ -407,7 +395,6 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 			}
 
 			assert.Equal(t, tt.expectSetCalled, setCalled, "set call expectation mismatch")
-			assert.Equal(t, tt.expectUnsetCalled, unsetCalled, "unset call expectation mismatch")
 
 			if tt.expectSetCalled {
 				assert.Equal(t, tt.expectedTimestamp, capturedTimestamp, "timestamp mismatch")
