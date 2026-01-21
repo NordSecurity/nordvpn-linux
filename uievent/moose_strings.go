@@ -22,20 +22,23 @@ func ToMooseStrings(ctx *UIEventContext) events.UiItemsAction {
 // formReferenceToString converts FormReference enum to Moose string value
 func formReferenceToString(ref pb.UIEvent_FormReference) string {
 	switch ref {
+	case pb.UIEvent_FORM_REFERENCE_UNSPECIFIED:
+		return ""
 	case pb.UIEvent_CLI:
 		return "cli"
 	case pb.UIEvent_TRAY:
 		return "tray"
 	case pb.UIEvent_HOME_SCREEN:
 		return "home_screen"
-	default:
-		return ""
 	}
+	return ""
 }
 
 // itemNameToString converts ItemName enum to Moose string value
 func itemNameToString(name pb.UIEvent_ItemName) string {
 	switch name {
+	case pb.UIEvent_ITEM_NAME_UNSPECIFIED:
+		return ""
 	case pb.UIEvent_CONNECT:
 		return "connect"
 	case pb.UIEvent_CONNECT_RECENTS:
@@ -50,24 +53,26 @@ func itemNameToString(name pb.UIEvent_ItemName) string {
 		return "rate_connection"
 	case pb.UIEvent_MESHNET_INVITE_SEND:
 		return "meshnet_invite_send"
-	default:
-		return ""
 	}
+	return ""
 }
 
 // itemTypeToString converts ItemType enum to Moose string value
 func itemTypeToString(itemType pb.UIEvent_ItemType) string {
 	switch itemType {
+	case pb.UIEvent_ITEM_TYPE_UNSPECIFIED:
+		return ""
 	case pb.UIEvent_CLICK:
 		return "click"
-	default:
-		return ""
 	}
+	return ""
 }
 
 // itemValueToString converts ItemValue enum to Moose string value
 func itemValueToString(value pb.UIEvent_ItemValue) string {
 	switch value {
+	case pb.UIEvent_ITEM_VALUE_UNSPECIFIED:
+		return ""
 	case pb.UIEvent_COUNTRY:
 		return "country"
 	case pb.UIEvent_CITY:
@@ -84,7 +89,6 @@ func itemValueToString(value pb.UIEvent_ItemValue) string {
 		return "double_vpn"
 	case pb.UIEvent_P2P:
 		return "p2p"
-	default:
-		return ""
 	}
+	return ""
 }
