@@ -16,134 +16,130 @@ import 'package:protobuf/protobuf.dart' as $pb;
 
 /// UIFormReference identifies the UI form or screen from which an action
 /// originated
-class UIFormReference extends $pb.ProtobufEnum {
-  static const UIFormReference UI_FORM_REFERENCE_UNSPECIFIED =
-      UIFormReference._(
-          0, _omitEnumNames ? '' : 'UI_FORM_REFERENCE_UNSPECIFIED');
-  static const UIFormReference UI_FORM_REFERENCE_CLI =
-      UIFormReference._(1, _omitEnumNames ? '' : 'UI_FORM_REFERENCE_CLI');
-  static const UIFormReference UI_FORM_REFERENCE_TRAY =
-      UIFormReference._(2, _omitEnumNames ? '' : 'UI_FORM_REFERENCE_TRAY');
-  static const UIFormReference UI_FORM_REFERENCE_HOME_SCREEN =
-      UIFormReference._(
-          3, _omitEnumNames ? '' : 'UI_FORM_REFERENCE_HOME_SCREEN');
+class UIEvent_FormReference extends $pb.ProtobufEnum {
+  static const UIEvent_FormReference FORM_REFERENCE_UNSPECIFIED =
+      UIEvent_FormReference._(
+          0, _omitEnumNames ? '' : 'FORM_REFERENCE_UNSPECIFIED');
+  static const UIEvent_FormReference CLI =
+      UIEvent_FormReference._(1, _omitEnumNames ? '' : 'CLI');
+  static const UIEvent_FormReference TRAY =
+      UIEvent_FormReference._(2, _omitEnumNames ? '' : 'TRAY');
+  static const UIEvent_FormReference HOME_SCREEN =
+      UIEvent_FormReference._(3, _omitEnumNames ? '' : 'HOME_SCREEN');
 
-  static const $core.List<UIFormReference> values = <UIFormReference>[
-    UI_FORM_REFERENCE_UNSPECIFIED,
-    UI_FORM_REFERENCE_CLI,
-    UI_FORM_REFERENCE_TRAY,
-    UI_FORM_REFERENCE_HOME_SCREEN,
+  static const $core.List<UIEvent_FormReference> values =
+      <UIEvent_FormReference>[
+    FORM_REFERENCE_UNSPECIFIED,
+    CLI,
+    TRAY,
+    HOME_SCREEN,
   ];
 
-  static final $core.List<UIFormReference?> _byValue =
+  static final $core.List<UIEvent_FormReference?> _byValue =
       $pb.ProtobufEnum.$_initByValueList(values, 3);
-  static UIFormReference? valueOf($core.int value) =>
+  static UIEvent_FormReference? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
-  const UIFormReference._(super.value, super.name);
+  const UIEvent_FormReference._(super.value, super.name);
 }
 
-/// UIItemName represents a user interface event item name
-class UIItemName extends $pb.ProtobufEnum {
-  static const UIItemName UI_ITEM_NAME_UNSPECIFIED =
-      UIItemName._(0, _omitEnumNames ? '' : 'UI_ITEM_NAME_UNSPECIFIED');
-  static const UIItemName UI_ITEM_NAME_CONNECT =
-      UIItemName._(1, _omitEnumNames ? '' : 'UI_ITEM_NAME_CONNECT');
-  static const UIItemName UI_ITEM_NAME_CONNECT_RECENTS =
-      UIItemName._(2, _omitEnumNames ? '' : 'UI_ITEM_NAME_CONNECT_RECENTS');
-  static const UIItemName UI_ITEM_NAME_DISCONNECT =
-      UIItemName._(3, _omitEnumNames ? '' : 'UI_ITEM_NAME_DISCONNECT');
-  static const UIItemName UI_ITEM_NAME_LOGIN =
-      UIItemName._(4, _omitEnumNames ? '' : 'UI_ITEM_NAME_LOGIN');
-  static const UIItemName UI_ITEM_NAME_LOGOUT =
-      UIItemName._(5, _omitEnumNames ? '' : 'UI_ITEM_NAME_LOGOUT');
-  static const UIItemName UI_ITEM_NAME_RATE_CONNECTION =
-      UIItemName._(6, _omitEnumNames ? '' : 'UI_ITEM_NAME_RATE_CONNECTION');
-  static const UIItemName UI_ITEM_NAME_MESHNET_INVITE_SEND =
-      UIItemName._(7, _omitEnumNames ? '' : 'UI_ITEM_NAME_MESHNET_INVITE_SEND');
+/// ItemName represents a user interface event item name
+class UIEvent_ItemName extends $pb.ProtobufEnum {
+  static const UIEvent_ItemName ITEM_NAME_UNSPECIFIED =
+      UIEvent_ItemName._(0, _omitEnumNames ? '' : 'ITEM_NAME_UNSPECIFIED');
+  static const UIEvent_ItemName CONNECT =
+      UIEvent_ItemName._(1, _omitEnumNames ? '' : 'CONNECT');
+  static const UIEvent_ItemName CONNECT_RECENTS =
+      UIEvent_ItemName._(2, _omitEnumNames ? '' : 'CONNECT_RECENTS');
+  static const UIEvent_ItemName DISCONNECT =
+      UIEvent_ItemName._(3, _omitEnumNames ? '' : 'DISCONNECT');
+  static const UIEvent_ItemName LOGIN =
+      UIEvent_ItemName._(4, _omitEnumNames ? '' : 'LOGIN');
+  static const UIEvent_ItemName LOGOUT =
+      UIEvent_ItemName._(5, _omitEnumNames ? '' : 'LOGOUT');
+  static const UIEvent_ItemName RATE_CONNECTION =
+      UIEvent_ItemName._(6, _omitEnumNames ? '' : 'RATE_CONNECTION');
+  static const UIEvent_ItemName MESHNET_INVITE_SEND =
+      UIEvent_ItemName._(7, _omitEnumNames ? '' : 'MESHNET_INVITE_SEND');
 
-  static const $core.List<UIItemName> values = <UIItemName>[
-    UI_ITEM_NAME_UNSPECIFIED,
-    UI_ITEM_NAME_CONNECT,
-    UI_ITEM_NAME_CONNECT_RECENTS,
-    UI_ITEM_NAME_DISCONNECT,
-    UI_ITEM_NAME_LOGIN,
-    UI_ITEM_NAME_LOGOUT,
-    UI_ITEM_NAME_RATE_CONNECTION,
-    UI_ITEM_NAME_MESHNET_INVITE_SEND,
+  static const $core.List<UIEvent_ItemName> values = <UIEvent_ItemName>[
+    ITEM_NAME_UNSPECIFIED,
+    CONNECT,
+    CONNECT_RECENTS,
+    DISCONNECT,
+    LOGIN,
+    LOGOUT,
+    RATE_CONNECTION,
+    MESHNET_INVITE_SEND,
   ];
 
-  static final $core.List<UIItemName?> _byValue =
+  static final $core.List<UIEvent_ItemName?> _byValue =
       $pb.ProtobufEnum.$_initByValueList(values, 7);
-  static UIItemName? valueOf($core.int value) =>
+  static UIEvent_ItemName? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
-  const UIItemName._(super.value, super.name);
+  const UIEvent_ItemName._(super.value, super.name);
 }
 
-/// UIItemType represents the type of user interface event
-class UIItemType extends $pb.ProtobufEnum {
-  static const UIItemType UI_ITEM_TYPE_UNSPECIFIED =
-      UIItemType._(0, _omitEnumNames ? '' : 'UI_ITEM_TYPE_UNSPECIFIED');
-  static const UIItemType UI_ITEM_TYPE_CLICK =
-      UIItemType._(1, _omitEnumNames ? '' : 'UI_ITEM_TYPE_CLICK');
-  static const UIItemType UI_ITEM_TYPE_SHOW =
-      UIItemType._(2, _omitEnumNames ? '' : 'UI_ITEM_TYPE_SHOW');
+/// ItemType represents the type of user interface event
+class UIEvent_ItemType extends $pb.ProtobufEnum {
+  static const UIEvent_ItemType ITEM_TYPE_UNSPECIFIED =
+      UIEvent_ItemType._(0, _omitEnumNames ? '' : 'ITEM_TYPE_UNSPECIFIED');
+  static const UIEvent_ItemType CLICK =
+      UIEvent_ItemType._(1, _omitEnumNames ? '' : 'CLICK');
 
-  static const $core.List<UIItemType> values = <UIItemType>[
-    UI_ITEM_TYPE_UNSPECIFIED,
-    UI_ITEM_TYPE_CLICK,
-    UI_ITEM_TYPE_SHOW,
+  static const $core.List<UIEvent_ItemType> values = <UIEvent_ItemType>[
+    ITEM_TYPE_UNSPECIFIED,
+    CLICK,
   ];
 
-  static final $core.List<UIItemType?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 2);
-  static UIItemType? valueOf($core.int value) =>
+  static final $core.List<UIEvent_ItemType?> _byValue =
+      $pb.ProtobufEnum.$_initByValueList(values, 1);
+  static UIEvent_ItemType? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
-  const UIItemType._(super.value, super.name);
+  const UIEvent_ItemType._(super.value, super.name);
 }
 
-/// UIItemValue represents the value associated with a user interface event
-class UIItemValue extends $pb.ProtobufEnum {
-  static const UIItemValue UI_ITEM_VALUE_CONNECTION_UNSPECIFIED = UIItemValue._(
-      0, _omitEnumNames ? '' : 'UI_ITEM_VALUE_CONNECTION_UNSPECIFIED');
-  static const UIItemValue UI_ITEM_VALUE_CONNECTION_COUNTRY = UIItemValue._(
-      1, _omitEnumNames ? '' : 'UI_ITEM_VALUE_CONNECTION_COUNTRY');
-  static const UIItemValue UI_ITEM_VALUE_CONNECTION_CITY =
-      UIItemValue._(2, _omitEnumNames ? '' : 'UI_ITEM_VALUE_CONNECTION_CITY');
-  static const UIItemValue UI_ITEM_VALUE_CONNECTION_DIP =
-      UIItemValue._(3, _omitEnumNames ? '' : 'UI_ITEM_VALUE_CONNECTION_DIP');
-  static const UIItemValue UI_ITEM_VALUE_CONNECTION_MESHNET = UIItemValue._(
-      4, _omitEnumNames ? '' : 'UI_ITEM_VALUE_CONNECTION_MESHNET');
-  static const UIItemValue UI_ITEM_VALUE_CONNECTION_OBFUSCATED = UIItemValue._(
-      5, _omitEnumNames ? '' : 'UI_ITEM_VALUE_CONNECTION_OBFUSCATED');
-  static const UIItemValue UI_ITEM_VALUE_CONNECTION_ONION_OVER_VPN =
-      UIItemValue._(
-          6, _omitEnumNames ? '' : 'UI_ITEM_VALUE_CONNECTION_ONION_OVER_VPN');
-  static const UIItemValue UI_ITEM_VALUE_CONNECTION_DOUBLE_VPN = UIItemValue._(
-      7, _omitEnumNames ? '' : 'UI_ITEM_VALUE_CONNECTION_DOUBLE_VPN');
-  static const UIItemValue UI_ITEM_VALUE_CONNECTION_P2P =
-      UIItemValue._(8, _omitEnumNames ? '' : 'UI_ITEM_VALUE_CONNECTION_P2P');
+/// ItemValue represents the value associated with a user interface event
+class UIEvent_ItemValue extends $pb.ProtobufEnum {
+  static const UIEvent_ItemValue ITEM_VALUE_UNSPECIFIED =
+      UIEvent_ItemValue._(0, _omitEnumNames ? '' : 'ITEM_VALUE_UNSPECIFIED');
+  static const UIEvent_ItemValue COUNTRY =
+      UIEvent_ItemValue._(1, _omitEnumNames ? '' : 'COUNTRY');
+  static const UIEvent_ItemValue CITY =
+      UIEvent_ItemValue._(2, _omitEnumNames ? '' : 'CITY');
+  static const UIEvent_ItemValue DIP =
+      UIEvent_ItemValue._(3, _omitEnumNames ? '' : 'DIP');
+  static const UIEvent_ItemValue MESHNET =
+      UIEvent_ItemValue._(4, _omitEnumNames ? '' : 'MESHNET');
+  static const UIEvent_ItemValue OBFUSCATED =
+      UIEvent_ItemValue._(5, _omitEnumNames ? '' : 'OBFUSCATED');
+  static const UIEvent_ItemValue ONION_OVER_VPN =
+      UIEvent_ItemValue._(6, _omitEnumNames ? '' : 'ONION_OVER_VPN');
+  static const UIEvent_ItemValue DOUBLE_VPN =
+      UIEvent_ItemValue._(7, _omitEnumNames ? '' : 'DOUBLE_VPN');
+  static const UIEvent_ItemValue P2P =
+      UIEvent_ItemValue._(8, _omitEnumNames ? '' : 'P2P');
 
-  static const $core.List<UIItemValue> values = <UIItemValue>[
-    UI_ITEM_VALUE_CONNECTION_UNSPECIFIED,
-    UI_ITEM_VALUE_CONNECTION_COUNTRY,
-    UI_ITEM_VALUE_CONNECTION_CITY,
-    UI_ITEM_VALUE_CONNECTION_DIP,
-    UI_ITEM_VALUE_CONNECTION_MESHNET,
-    UI_ITEM_VALUE_CONNECTION_OBFUSCATED,
-    UI_ITEM_VALUE_CONNECTION_ONION_OVER_VPN,
-    UI_ITEM_VALUE_CONNECTION_DOUBLE_VPN,
-    UI_ITEM_VALUE_CONNECTION_P2P,
+  static const $core.List<UIEvent_ItemValue> values = <UIEvent_ItemValue>[
+    ITEM_VALUE_UNSPECIFIED,
+    COUNTRY,
+    CITY,
+    DIP,
+    MESHNET,
+    OBFUSCATED,
+    ONION_OVER_VPN,
+    DOUBLE_VPN,
+    P2P,
   ];
 
-  static final $core.List<UIItemValue?> _byValue =
+  static final $core.List<UIEvent_ItemValue?> _byValue =
       $pb.ProtobufEnum.$_initByValueList(values, 8);
-  static UIItemValue? valueOf($core.int value) =>
+  static UIEvent_ItemValue? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
-  const UIItemValue._(super.value, super.name);
+  const UIEvent_ItemValue._(super.value, super.name);
 }
 
 const $core.bool _omitEnumNames =

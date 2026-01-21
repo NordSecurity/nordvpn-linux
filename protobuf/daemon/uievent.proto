@@ -4,43 +4,45 @@ package pb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
-// UIFormReference identifies the UI form or screen from which an action
-// originated
-enum UIFormReference {
-  UI_FORM_REFERENCE_UNSPECIFIED = 0;
-  UI_FORM_REFERENCE_CLI = 1;
-  UI_FORM_REFERENCE_TRAY = 2;
-  UI_FORM_REFERENCE_HOME_SCREEN = 3;
-}
+// UIEvent contains nested enums for UI event tracking
+message UIEvent {
+  // UIFormReference identifies the UI form or screen from which an action
+  // originated
+  enum FormReference {
+    FORM_REFERENCE_UNSPECIFIED = 0;
+    CLI = 1;
+    TRAY = 2;
+    HOME_SCREEN = 3;
+  }
 
-// UIItemName represents a user interface event item name
-enum UIItemName {
-  UI_ITEM_NAME_UNSPECIFIED = 0;
-  UI_ITEM_NAME_CONNECT = 1;
-  UI_ITEM_NAME_CONNECT_RECENTS = 2;
-  UI_ITEM_NAME_DISCONNECT = 3;
-  UI_ITEM_NAME_LOGIN = 4;
-  UI_ITEM_NAME_LOGOUT = 5;
-  UI_ITEM_NAME_RATE_CONNECTION = 6;
-  UI_ITEM_NAME_MESHNET_INVITE_SEND = 7;
-}
+  // ItemName represents a user interface event item name
+  enum ItemName {
+    ITEM_NAME_UNSPECIFIED = 0;
+    CONNECT = 1;
+    CONNECT_RECENTS = 2;
+    DISCONNECT = 3;
+    LOGIN = 4;
+    LOGOUT = 5;
+    RATE_CONNECTION = 6;
+    MESHNET_INVITE_SEND = 7;
+  }
 
-// UIItemType represents the type of user interface event
-enum UIItemType {
-  UI_ITEM_TYPE_UNSPECIFIED = 0;
-  UI_ITEM_TYPE_CLICK = 1;
-  UI_ITEM_TYPE_SHOW = 2;
-}
+  // ItemType represents the type of user interface event
+  enum ItemType {
+    ITEM_TYPE_UNSPECIFIED = 0;
+    CLICK = 1;
+  }
 
-// UIItemValue represents the value associated with a user interface event
-enum UIItemValue {
-  UI_ITEM_VALUE_CONNECTION_UNSPECIFIED = 0;
-  UI_ITEM_VALUE_CONNECTION_COUNTRY = 1;
-  UI_ITEM_VALUE_CONNECTION_CITY = 2;
-  UI_ITEM_VALUE_CONNECTION_DIP = 3;
-  UI_ITEM_VALUE_CONNECTION_MESHNET = 4;
-  UI_ITEM_VALUE_CONNECTION_OBFUSCATED = 5;
-  UI_ITEM_VALUE_CONNECTION_ONION_OVER_VPN = 6;
-  UI_ITEM_VALUE_CONNECTION_DOUBLE_VPN = 7;
-  UI_ITEM_VALUE_CONNECTION_P2P = 8;
+  // ItemValue represents the value associated with a user interface event
+  enum ItemValue {
+    ITEM_VALUE_UNSPECIFIED = 0;
+    COUNTRY = 1;
+    CITY = 2;
+    DIP = 3;
+    MESHNET = 4;
+    OBFUSCATED = 5;
+    ONION_OVER_VPN = 6;
+    DOUBLE_VPN = 7;
+    P2P = 8;
+  }
 }

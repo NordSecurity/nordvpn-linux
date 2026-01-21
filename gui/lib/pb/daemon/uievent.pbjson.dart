@@ -14,83 +14,76 @@ import 'dart:convert' as $convert;
 import 'dart:core' as $core;
 import 'dart:typed_data' as $typed_data;
 
-@$core.Deprecated('Use uIFormReferenceDescriptor instead')
-const UIFormReference$json = {
-  '1': 'UIFormReference',
-  '2': [
-    {'1': 'UI_FORM_REFERENCE_UNSPECIFIED', '2': 0},
-    {'1': 'UI_FORM_REFERENCE_CLI', '2': 1},
-    {'1': 'UI_FORM_REFERENCE_TRAY', '2': 2},
-    {'1': 'UI_FORM_REFERENCE_HOME_SCREEN', '2': 3},
+@$core.Deprecated('Use uIEventDescriptor instead')
+const UIEvent$json = {
+  '1': 'UIEvent',
+  '4': [
+    UIEvent_FormReference$json,
+    UIEvent_ItemName$json,
+    UIEvent_ItemType$json,
+    UIEvent_ItemValue$json
   ],
 };
 
-/// Descriptor for `UIFormReference`. Decode as a `google.protobuf.EnumDescriptorProto`.
-final $typed_data.Uint8List uIFormReferenceDescriptor = $convert.base64Decode(
-    'Cg9VSUZvcm1SZWZlcmVuY2USIQodVUlfRk9STV9SRUZFUkVOQ0VfVU5TUEVDSUZJRUQQABIZCh'
-    'VVSV9GT1JNX1JFRkVSRU5DRV9DTEkQARIaChZVSV9GT1JNX1JFRkVSRU5DRV9UUkFZEAISIQod'
-    'VUlfRk9STV9SRUZFUkVOQ0VfSE9NRV9TQ1JFRU4QAw==');
-
-@$core.Deprecated('Use uIItemNameDescriptor instead')
-const UIItemName$json = {
-  '1': 'UIItemName',
+@$core.Deprecated('Use uIEventDescriptor instead')
+const UIEvent_FormReference$json = {
+  '1': 'FormReference',
   '2': [
-    {'1': 'UI_ITEM_NAME_UNSPECIFIED', '2': 0},
-    {'1': 'UI_ITEM_NAME_CONNECT', '2': 1},
-    {'1': 'UI_ITEM_NAME_CONNECT_RECENTS', '2': 2},
-    {'1': 'UI_ITEM_NAME_DISCONNECT', '2': 3},
-    {'1': 'UI_ITEM_NAME_LOGIN', '2': 4},
-    {'1': 'UI_ITEM_NAME_LOGOUT', '2': 5},
-    {'1': 'UI_ITEM_NAME_RATE_CONNECTION', '2': 6},
-    {'1': 'UI_ITEM_NAME_MESHNET_INVITE_SEND', '2': 7},
+    {'1': 'FORM_REFERENCE_UNSPECIFIED', '2': 0},
+    {'1': 'CLI', '2': 1},
+    {'1': 'TRAY', '2': 2},
+    {'1': 'HOME_SCREEN', '2': 3},
   ],
 };
 
-/// Descriptor for `UIItemName`. Decode as a `google.protobuf.EnumDescriptorProto`.
-final $typed_data.Uint8List uIItemNameDescriptor = $convert.base64Decode(
-    'CgpVSUl0ZW1OYW1lEhwKGFVJX0lURU1fTkFNRV9VTlNQRUNJRklFRBAAEhgKFFVJX0lURU1fTk'
-    'FNRV9DT05ORUNUEAESIAocVUlfSVRFTV9OQU1FX0NPTk5FQ1RfUkVDRU5UUxACEhsKF1VJX0lU'
-    'RU1fTkFNRV9ESVNDT05ORUNUEAMSFgoSVUlfSVRFTV9OQU1FX0xPR0lOEAQSFwoTVUlfSVRFTV'
-    '9OQU1FX0xPR09VVBAFEiAKHFVJX0lURU1fTkFNRV9SQVRFX0NPTk5FQ1RJT04QBhIkCiBVSV9J'
-    'VEVNX05BTUVfTUVTSE5FVF9JTlZJVEVfU0VORBAH');
-
-@$core.Deprecated('Use uIItemTypeDescriptor instead')
-const UIItemType$json = {
-  '1': 'UIItemType',
+@$core.Deprecated('Use uIEventDescriptor instead')
+const UIEvent_ItemName$json = {
+  '1': 'ItemName',
   '2': [
-    {'1': 'UI_ITEM_TYPE_UNSPECIFIED', '2': 0},
-    {'1': 'UI_ITEM_TYPE_CLICK', '2': 1},
-    {'1': 'UI_ITEM_TYPE_SHOW', '2': 2},
+    {'1': 'ITEM_NAME_UNSPECIFIED', '2': 0},
+    {'1': 'CONNECT', '2': 1},
+    {'1': 'CONNECT_RECENTS', '2': 2},
+    {'1': 'DISCONNECT', '2': 3},
+    {'1': 'LOGIN', '2': 4},
+    {'1': 'LOGOUT', '2': 5},
+    {'1': 'RATE_CONNECTION', '2': 6},
+    {'1': 'MESHNET_INVITE_SEND', '2': 7},
   ],
 };
 
-/// Descriptor for `UIItemType`. Decode as a `google.protobuf.EnumDescriptorProto`.
-final $typed_data.Uint8List uIItemTypeDescriptor = $convert.base64Decode(
-    'CgpVSUl0ZW1UeXBlEhwKGFVJX0lURU1fVFlQRV9VTlNQRUNJRklFRBAAEhYKElVJX0lURU1fVF'
-    'lQRV9DTElDSxABEhUKEVVJX0lURU1fVFlQRV9TSE9XEAI=');
-
-@$core.Deprecated('Use uIItemValueDescriptor instead')
-const UIItemValue$json = {
-  '1': 'UIItemValue',
+@$core.Deprecated('Use uIEventDescriptor instead')
+const UIEvent_ItemType$json = {
+  '1': 'ItemType',
   '2': [
-    {'1': 'UI_ITEM_VALUE_CONNECTION_UNSPECIFIED', '2': 0},
-    {'1': 'UI_ITEM_VALUE_CONNECTION_COUNTRY', '2': 1},
-    {'1': 'UI_ITEM_VALUE_CONNECTION_CITY', '2': 2},
-    {'1': 'UI_ITEM_VALUE_CONNECTION_DIP', '2': 3},
-    {'1': 'UI_ITEM_VALUE_CONNECTION_MESHNET', '2': 4},
-    {'1': 'UI_ITEM_VALUE_CONNECTION_OBFUSCATED', '2': 5},
-    {'1': 'UI_ITEM_VALUE_CONNECTION_ONION_OVER_VPN', '2': 6},
-    {'1': 'UI_ITEM_VALUE_CONNECTION_DOUBLE_VPN', '2': 7},
-    {'1': 'UI_ITEM_VALUE_CONNECTION_P2P', '2': 8},
+    {'1': 'ITEM_TYPE_UNSPECIFIED', '2': 0},
+    {'1': 'CLICK', '2': 1},
   ],
 };
 
-/// Descriptor for `UIItemValue`. Decode as a `google.protobuf.EnumDescriptorProto`.
-final $typed_data.Uint8List uIItemValueDescriptor = $convert.base64Decode(
-    'CgtVSUl0ZW1WYWx1ZRIoCiRVSV9JVEVNX1ZBTFVFX0NPTk5FQ1RJT05fVU5TUEVDSUZJRUQQAB'
-    'IkCiBVSV9JVEVNX1ZBTFVFX0NPTk5FQ1RJT05fQ09VTlRSWRABEiEKHVVJX0lURU1fVkFMVUVf'
-    'Q09OTkVDVElPTl9DSVRZEAISIAocVUlfSVRFTV9WQUxVRV9DT05ORUNUSU9OX0RJUBADEiQKIF'
-    'VJX0lURU1fVkFMVUVfQ09OTkVDVElPTl9NRVNITkVUEAQSJwojVUlfSVRFTV9WQUxVRV9DT05O'
-    'RUNUSU9OX09CRlVTQ0FURUQQBRIrCidVSV9JVEVNX1ZBTFVFX0NPTk5FQ1RJT05fT05JT05fT1'
-    'ZFUl9WUE4QBhInCiNVSV9JVEVNX1ZBTFVFX0NPTk5FQ1RJT05fRE9VQkxFX1ZQThAHEiAKHFVJ'
-    'X0lURU1fVkFMVUVfQ09OTkVDVElPTl9QMlAQCA==');
+@$core.Deprecated('Use uIEventDescriptor instead')
+const UIEvent_ItemValue$json = {
+  '1': 'ItemValue',
+  '2': [
+    {'1': 'ITEM_VALUE_UNSPECIFIED', '2': 0},
+    {'1': 'COUNTRY', '2': 1},
+    {'1': 'CITY', '2': 2},
+    {'1': 'DIP', '2': 3},
+    {'1': 'MESHNET', '2': 4},
+    {'1': 'OBFUSCATED', '2': 5},
+    {'1': 'ONION_OVER_VPN', '2': 6},
+    {'1': 'DOUBLE_VPN', '2': 7},
+    {'1': 'P2P', '2': 8},
+  ],
+};
+
+/// Descriptor for `UIEvent`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List uIEventDescriptor = $convert.base64Decode(
+    'CgdVSUV2ZW50IlMKDUZvcm1SZWZlcmVuY2USHgoaRk9STV9SRUZFUkVOQ0VfVU5TUEVDSUZJRU'
+    'QQABIHCgNDTEkQARIICgRUUkFZEAISDwoLSE9NRV9TQ1JFRU4QAyKcAQoISXRlbU5hbWUSGQoV'
+    'SVRFTV9OQU1FX1VOU1BFQ0lGSUVEEAASCwoHQ09OTkVDVBABEhMKD0NPTk5FQ1RfUkVDRU5UUx'
+    'ACEg4KCkRJU0NPTk5FQ1QQAxIJCgVMT0dJThAEEgoKBkxPR09VVBAFEhMKD1JBVEVfQ09OTkVD'
+    'VElPThAGEhcKE01FU0hORVRfSU5WSVRFX1NFTkQQByIwCghJdGVtVHlwZRIZChVJVEVNX1RZUE'
+    'VfVU5TUEVDSUZJRUQQABIJCgVDTElDSxABIpEBCglJdGVtVmFsdWUSGgoWSVRFTV9WQUxVRV9V'
+    'TlNQRUNJRklFRBAAEgsKB0NPVU5UUlkQARIICgRDSVRZEAISBwoDRElQEAMSCwoHTUVTSE5FVB'
+    'AEEg4KCk9CRlVTQ0FURUQQBRISCg5PTklPTl9PVkVSX1ZQThAGEg4KCkRPVUJMRV9WUE4QBxIH'
+    'CgNQMlAQCA==');

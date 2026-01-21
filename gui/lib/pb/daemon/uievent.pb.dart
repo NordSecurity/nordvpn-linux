@@ -12,6 +12,49 @@
 
 import 'dart:core' as $core;
 
+import 'package:protobuf/protobuf.dart' as $pb;
+
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
 export 'uievent.pbenum.dart';
+
+/// UIEvent contains nested enums for UI event tracking
+class UIEvent extends $pb.GeneratedMessage {
+  factory UIEvent() => create();
+
+  UIEvent._();
+
+  factory UIEvent.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory UIEvent.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'UIEvent',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
+      createEmptyInstance: create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  UIEvent clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  UIEvent copyWith(void Function(UIEvent) updates) =>
+      super.copyWith((message) => updates(message as UIEvent)) as UIEvent;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static UIEvent create() => UIEvent._();
+  @$core.override
+  UIEvent createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static UIEvent getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<UIEvent>(create);
+  static UIEvent? _defaultInstance;
+}
+
+const $core.bool _omitMessageNames =
+    $core.bool.fromEnvironment('protobuf.omit_message_names');
