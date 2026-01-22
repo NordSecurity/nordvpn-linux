@@ -2,6 +2,7 @@ package dns
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -11,11 +12,15 @@ import (
 )
 
 type analyticsMock struct {
-	resolvConfEventEmitted bool
+	resolvConfEventEmitted atomic.Bool
 }
 
 func (a *analyticsMock) emitResolvConfOverwrittenEvent() {
-	a.resolvConfEventEmitted = true
+	a.resolvConfEventEmitted.Store(true)
+}
+
+func (a *analyticsMock) getResolvConfEmitted() bool {
+	return a.resolvConfEventEmitted.Load()
 }
 
 func newAnalyticsMock() analyticsMock {
@@ -77,7 +82,7 @@ func Test_ResolvConfMonitoring(t *testing.T) {
 	resolvConfMonitor.Start()
 	eventsChan <- fsnotify.Event{}
 	checkResultFunc := func() bool {
-		return analyticsMock.resolvConfEventEmitted
+		return analyticsMock.getResolvConfEmitted()
 	}
 	revolvConfEventEmitted := checkLoop(checkResultFunc, 10*time.Millisecond, 1*time.Second)
 
