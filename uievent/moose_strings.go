@@ -47,6 +47,8 @@ func itemNameToString(name pb.UIEvent_ItemName) string {
 		return "disconnect"
 	case pb.UIEvent_LOGIN:
 		return "login"
+	case pb.UIEvent_LOGIN_TOKEN:
+		return "login_token"
 	case pb.UIEvent_LOGOUT:
 		return "logout"
 	case pb.UIEvent_RATE_CONNECTION:

@@ -25,6 +25,7 @@ func TestMethodToItemName(t *testing.T) {
 		{"Connect", pb.Daemon_Connect_FullMethodName, pb.UIEvent_CONNECT},
 		{"Disconnect", pb.Daemon_Disconnect_FullMethodName, pb.UIEvent_DISCONNECT},
 		{"LoginOAuth2", pb.Daemon_LoginOAuth2_FullMethodName, pb.UIEvent_LOGIN},
+		{"LoginWithToken", pb.Daemon_LoginWithToken_FullMethodName, pb.UIEvent_LOGIN_TOKEN},
 		{"Logout", pb.Daemon_Logout_FullMethodName, pb.UIEvent_LOGOUT},
 		{"RateConnection", pb.Daemon_RateConnection_FullMethodName, pb.UIEvent_RATE_CONNECTION},
 		{"Meshnet Invite", meshpb.Meshnet_Invite_FullMethodName, pb.UIEvent_MESHNET_INVITE_SEND},

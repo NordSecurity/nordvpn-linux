@@ -81,6 +81,7 @@ func TestItemNameToString(t *testing.T) {
 		{pb.UIEvent_CONNECT_RECENTS, "connect_recents"},
 		{pb.UIEvent_DISCONNECT, "disconnect"},
 		{pb.UIEvent_LOGIN, "login"},
+		{pb.UIEvent_LOGIN_TOKEN, "login_token"},
 		{pb.UIEvent_LOGOUT, "logout"},
 		{pb.UIEvent_RATE_CONNECTION, "rate_connection"},
 		{pb.UIEvent_MESHNET_INVITE_SEND, "meshnet_invite_send"},
