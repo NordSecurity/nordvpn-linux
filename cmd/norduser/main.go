@@ -21,7 +21,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
-	"github.com/NordSecurity/nordvpn-linux/clientid"
 	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
@@ -30,6 +29,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/norduser/process"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/NordSecurity/nordvpn-linux/tray"
+	"github.com/NordSecurity/nordvpn-linux/uievent"
 )
 
 func openLogFile(path string) (*os.File, error) {
@@ -65,13 +65,13 @@ func addAutostart() (string, error) {
 
 func startTray(quitChan chan<- norduser.StopRequest) {
 	daemonURL := fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
-	cliendIDMetadataInterceptor := clientid.NewInsertClientIDInterceptor(daemonpb.ClientID_TRAY)
+	uiEventInterceptor := uievent.NewClientInterceptor(daemonpb.UIEvent_TRAY)
 
 	conn, err := grpc.NewClient(
 		daemonURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(cliendIDMetadataInterceptor.SetMetadataUnaryInterceptor),
-		grpc.WithStreamInterceptor(cliendIDMetadataInterceptor.SetMetadataStreamInterceptor),
+		grpc.WithUnaryInterceptor(uiEventInterceptor.UnaryInterceptor),
+		grpc.WithStreamInterceptor(uiEventInterceptor.StreamInterceptor),
 	)
 
 	var client daemonpb.DaemonClient
