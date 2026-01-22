@@ -81,6 +81,8 @@ func methodToItemName(method string) pb.UIEvent_ItemName {
 		return pb.UIEvent_DISCONNECT
 	case pb.Daemon_LoginOAuth2_FullMethodName:
 		return pb.UIEvent_LOGIN
+	case pb.Daemon_LoginWithToken_FullMethodName:
+		return pb.UIEvent_LOGIN_TOKEN
 	case pb.Daemon_Logout_FullMethodName:
 		return pb.UIEvent_LOGOUT
 	case pb.Daemon_RateConnection_FullMethodName:
