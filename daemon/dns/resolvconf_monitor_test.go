@@ -22,7 +22,7 @@ func newAnalyticsMock() analyticsMock {
 	return analyticsMock{}
 }
 
-// checkLoop executes test in an interval untill it returns true or a timeout is reached
+// checkLoop executes test in an interval until it returns true or a timeout is reached
 func checkLoop(test func() bool, interval time.Duration, timeout time.Duration) bool {
 	if test() {
 		return true
