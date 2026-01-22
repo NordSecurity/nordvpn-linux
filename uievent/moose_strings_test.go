@@ -53,7 +53,6 @@ func TestToMooseStrings(t *testing.T) {
 
 func TestFormReferenceToString(t *testing.T) {
 	category.Set(t, category.Unit)
-
 	tests := []struct {
 		input    pb.UIEvent_FormReference
 		expected string
@@ -73,7 +72,6 @@ func TestFormReferenceToString(t *testing.T) {
 
 func TestItemNameToString(t *testing.T) {
 	category.Set(t, category.Unit)
-
 	tests := []struct {
 		input    pb.UIEvent_ItemName
 		expected string
@@ -97,7 +95,6 @@ func TestItemNameToString(t *testing.T) {
 
 func TestItemTypeToString(t *testing.T) {
 	category.Set(t, category.Unit)
-
 	tests := []struct {
 		input    pb.UIEvent_ItemType
 		expected string
@@ -115,7 +112,6 @@ func TestItemTypeToString(t *testing.T) {
 
 func TestItemValueToString(t *testing.T) {
 	category.Set(t, category.Unit)
-
 	tests := []struct {
 		input    pb.UIEvent_ItemValue
 		expected string

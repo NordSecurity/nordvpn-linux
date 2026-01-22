@@ -13,7 +13,6 @@ import (
 
 func TestToMetadata_RoundTrip(t *testing.T) {
 	category.Set(t, category.Unit)
-
 	tests := []struct {
 		name string
 		ctx  *UIEventContext
@@ -117,7 +116,6 @@ func TestFromMetadata_PartiallySet(t *testing.T) {
 
 func TestIsValid(t *testing.T) {
 	category.Set(t, category.Unit)
-
 	tests := []struct {
 		name     string
 		ctx      *UIEventContext
