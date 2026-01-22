@@ -21,7 +21,7 @@ type resolvConfFileWatcherMonitor struct {
 	getWatcherFunc getWatcherFunc
 	cancelFunc     context.CancelFunc
 	// doneChan is created when the monitor is started and closed when it is stopped(by calling Done on monitorCtx).
-	// It is neccessary to ensure that changes performed on /etc/resolv.conf will not be detected by the monitor when
+	// It is necessary to ensure that changes performed on /etc/resolv.conf will not be detected by the monitor when
 	// unsetting the DNS.
 	doneChan <-chan any
 }
