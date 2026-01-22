@@ -14,12 +14,12 @@ import (
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	"github.com/NordSecurity/nordvpn-linux/cli"
-	"github.com/NordSecurity/nordvpn-linux/clientid"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/norduser/process"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
+	"github.com/NordSecurity/nordvpn-linux/uievent"
 
 	"github.com/fatih/color"
 	"google.golang.org/grpc"
@@ -90,7 +90,7 @@ func main() {
 	}
 	log.SetOutput(fileLogger)
 
-	clientIDMetadataInterceptor := clientid.NewInsertClientIDInterceptor(pb.ClientID_CLI)
+	uiEventInterceptor := uievent.NewClientInterceptor(pb.UIEvent_CLI)
 
 	loaderInterceptor := cli.LoaderInterceptor{}
 
@@ -100,9 +100,9 @@ func main() {
 		// protected by file permissions
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainUnaryInterceptor(loaderInterceptor.UnaryInterceptor,
-			clientIDMetadataInterceptor.SetMetadataUnaryInterceptor),
+			uiEventInterceptor.UnaryInterceptor),
 		grpc.WithChainStreamInterceptor(loaderInterceptor.StreamInterceptor,
-			clientIDMetadataInterceptor.SetMetadataStreamInterceptor),
+			uiEventInterceptor.StreamInterceptor),
 	)
 	fileshareConn, _ := grpc.NewClient(
 		fileshare_process.FileshareURL,
