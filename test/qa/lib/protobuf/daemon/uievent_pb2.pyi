@@ -13,10 +13,12 @@ class UIEvent(_message.Message):
         CLI: _ClassVar[UIEvent.FormReference]
         TRAY: _ClassVar[UIEvent.FormReference]
         HOME_SCREEN: _ClassVar[UIEvent.FormReference]
+        GUI: _ClassVar[UIEvent.FormReference]
     FORM_REFERENCE_UNSPECIFIED: UIEvent.FormReference
     CLI: UIEvent.FormReference
     TRAY: UIEvent.FormReference
     HOME_SCREEN: UIEvent.FormReference
+    GUI: UIEvent.FormReference
     class ItemName(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         ITEM_NAME_UNSPECIFIED: _ClassVar[UIEvent.ItemName]

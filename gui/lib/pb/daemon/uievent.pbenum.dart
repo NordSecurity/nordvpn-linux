@@ -26,6 +26,8 @@ class UIEvent_FormReference extends $pb.ProtobufEnum {
       UIEvent_FormReference._(2, _omitEnumNames ? '' : 'TRAY');
   static const UIEvent_FormReference HOME_SCREEN =
       UIEvent_FormReference._(3, _omitEnumNames ? '' : 'HOME_SCREEN');
+  static const UIEvent_FormReference GUI =
+      UIEvent_FormReference._(4, _omitEnumNames ? '' : 'GUI');
 
   static const $core.List<UIEvent_FormReference> values =
       <UIEvent_FormReference>[
@@ -33,10 +35,11 @@ class UIEvent_FormReference extends $pb.ProtobufEnum {
     CLI,
     TRAY,
     HOME_SCREEN,
+    GUI,
   ];
 
   static final $core.List<UIEvent_FormReference?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 3);
+      $pb.ProtobufEnum.$_initByValueList(values, 4);
   static UIEvent_FormReference? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
