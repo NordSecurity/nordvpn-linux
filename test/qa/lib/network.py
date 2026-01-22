@@ -142,6 +142,8 @@ def capture_traffic(connection_settings, duration: int=5) -> str:
 def is_internet_reachable(ip_address="1.1.1.1", port=443, retry=5) -> bool:
     """Returns True when remote host is reachable by its public IP."""
     i = 0
+    logging.log(sh.sudo("iptables-save"))
+    logging.log(sh.lsof("-i"))
     while i < retry:
         try:
             sock = socket.create_connection((ip_address, port), timeout=2)

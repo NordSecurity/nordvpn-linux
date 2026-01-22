@@ -8,6 +8,7 @@ import signal
 import threading
 import time
 import sh
+import random
 
 import dns.resolver
 import pytest
@@ -30,7 +31,7 @@ from constants import (
 
 pytest_plugins = "lib.pytest_timeouts.pytest_timeouts"
 
-_CHECK_FREQUENCY = 5
+_CHECK_FREQUENCY = 2
 TMP_DAEMON_PATH_BACKUP = f"{os.getcwd()}/tmp"
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "lib/protobuf/daemon")))
@@ -171,11 +172,14 @@ def _check_connection_to_ip_outside_vpn(ip_address, stop_event):
 
 def _check_dns_resolution(domain, stop_event):
     print("Start _check_dns_resolution")
+    # google, cisco opendns, quad9
+    nameservers = ["8.8.8.8", "208.67.222.222", "208.67.220.220", "9.9.9.9", "149.112.112.112"]
     while not stop_event.is_set():
         try:
             resolver = dns.resolver.Resolver()
-            resolver.nameservers = ["8.8.8.8"]
+            resolver.nameservers = random.choice(nameservers)
             resolver.resolve(domain, "A")  # 'A' for IPv4
+            print(f"~~~_check_dns_resolution: DNS {domain} SUCCESS.")
         except Exception as e:  # noqa: BLE001
             print(f"~~~_check_dns_resolution: DNS {domain} FAILURE. Error: {e}")
         stop_event.wait(_CHECK_FREQUENCY)
