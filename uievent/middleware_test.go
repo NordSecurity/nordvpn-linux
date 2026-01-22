@@ -6,6 +6,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -32,6 +33,7 @@ func (m *mockServerStream) Context() context.Context {
 }
 
 func TestMiddleware_UnaryMiddleware_PublishesEvent(t *testing.T) {
+	category.Set(t, category.Unit)
 	publisher := &mockPublisher{}
 	middleware := NewMiddleware(publisher)
 
@@ -55,6 +57,7 @@ func TestMiddleware_UnaryMiddleware_PublishesEvent(t *testing.T) {
 }
 
 func TestMiddleware_UnaryMiddleware_NoMetadata(t *testing.T) {
+	category.Set(t, category.Unit)
 	publisher := &mockPublisher{}
 	middleware := NewMiddleware(publisher)
 
@@ -66,6 +69,7 @@ func TestMiddleware_UnaryMiddleware_NoMetadata(t *testing.T) {
 }
 
 func TestMiddleware_UnaryMiddleware_InvalidContext(t *testing.T) {
+	category.Set(t, category.Unit)
 	publisher := &mockPublisher{}
 	middleware := NewMiddleware(publisher)
 
@@ -85,6 +89,7 @@ func TestMiddleware_UnaryMiddleware_InvalidContext(t *testing.T) {
 }
 
 func TestMiddleware_UnaryMiddleware_NilPublisher(t *testing.T) {
+	category.Set(t, category.Unit)
 	middleware := NewMiddleware(nil)
 
 	md := metadata.MD{
@@ -102,6 +107,7 @@ func TestMiddleware_UnaryMiddleware_NilPublisher(t *testing.T) {
 }
 
 func TestMiddleware_StreamMiddleware_PublishesEvent(t *testing.T) {
+	category.Set(t, category.Unit)
 	publisher := &mockPublisher{}
 	middleware := NewMiddleware(publisher)
 
@@ -125,6 +131,7 @@ func TestMiddleware_StreamMiddleware_PublishesEvent(t *testing.T) {
 }
 
 func TestMiddleware_StreamMiddleware_NoMetadata(t *testing.T) {
+	category.Set(t, category.Unit)
 	publisher := &mockPublisher{}
 	middleware := NewMiddleware(publisher)
 
@@ -135,6 +142,7 @@ func TestMiddleware_StreamMiddleware_NoMetadata(t *testing.T) {
 }
 
 func TestMiddleware_StreamMiddleware_NilPublisher(t *testing.T) {
+	category.Set(t, category.Unit)
 	middleware := NewMiddleware(nil)
 
 	md := metadata.MD{
@@ -150,6 +158,7 @@ func TestMiddleware_StreamMiddleware_NilPublisher(t *testing.T) {
 }
 
 func TestMiddleware_IntegrationScenario_TrayConnectRecents(t *testing.T) {
+	category.Set(t, category.Unit)
 	// Simulate a real scenario: Tray client connects via recent connections
 	publisher := &mockPublisher{}
 	middleware := NewMiddleware(publisher)

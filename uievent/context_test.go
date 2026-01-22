@@ -5,12 +5,14 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
 )
 
 func TestToMetadata_RoundTrip(t *testing.T) {
+	category.Set(t, category.Unit)
 	tests := []struct {
 		name string
 		ctx  *UIEventContext
@@ -50,10 +52,12 @@ func TestToMetadata_RoundTrip(t *testing.T) {
 }
 
 func TestToMetadata_NilContext(t *testing.T) {
+	category.Set(t, category.Unit)
 	assert.Empty(t, ToMetadata(nil))
 }
 
 func TestToMetadata_ItemValueOptional(t *testing.T) {
+	category.Set(t, category.Unit)
 	ctx := &UIEventContext{
 		FormReference: pb.UIEvent_CLI,
 		ItemName:      pb.UIEvent_CONNECT,
@@ -70,11 +74,13 @@ func TestToMetadata_ItemValueOptional(t *testing.T) {
 }
 
 func TestFromMetadata_NilOrEmptyMetadata(t *testing.T) {
+	category.Set(t, category.Unit)
 	assert.Nil(t, FromMetadata(nil))
 	assert.Nil(t, FromMetadata(metadata.MD{}))
 }
 
 func TestFromMetadata_AllUnspecified(t *testing.T) {
+	category.Set(t, category.Unit)
 	md := metadata.MD{
 		MetadataKeyFormReference: []string{"0"},
 		MetadataKeyItemName:      []string{"0"},
@@ -84,6 +90,7 @@ func TestFromMetadata_AllUnspecified(t *testing.T) {
 }
 
 func TestFromMetadata_InvalidIntegerValues(t *testing.T) {
+	category.Set(t, category.Unit)
 	md := metadata.MD{
 		MetadataKeyFormReference: []string{"invalid"},
 		MetadataKeyItemName:      []string{"1"},
@@ -100,6 +107,7 @@ func TestFromMetadata_InvalidIntegerValues(t *testing.T) {
 }
 
 func TestFromMetadata_PartiallySet(t *testing.T) {
+	category.Set(t, category.Unit)
 	md := metadata.MD{
 		MetadataKeyFormReference: []string{"1"}, // CLI
 		MetadataKeyItemName:      []string{"0"}, // UNSPECIFIED
@@ -113,6 +121,7 @@ func TestFromMetadata_PartiallySet(t *testing.T) {
 }
 
 func TestIsValid(t *testing.T) {
+	category.Set(t, category.Unit)
 	tests := []struct {
 		name     string
 		ctx      *UIEventContext
@@ -169,6 +178,7 @@ func TestIsValid(t *testing.T) {
 }
 
 func TestAttachToOutgoingContext(t *testing.T) {
+	category.Set(t, category.Unit)
 	uiCtx := &UIEventContext{
 		FormReference: pb.UIEvent_CLI,
 		ItemName:      pb.UIEvent_CONNECT,
@@ -187,15 +197,18 @@ func TestAttachToOutgoingContext(t *testing.T) {
 }
 
 func TestAttachToOutgoingContext_NilUIContext(t *testing.T) {
+	category.Set(t, category.Unit)
 	originalCtx := context.Background()
 	assert.Equal(t, originalCtx, AttachToOutgoingContext(originalCtx, nil))
 }
 
 func TestFromIncomingContext_NoMetadata(t *testing.T) {
+	category.Set(t, category.Unit)
 	assert.Nil(t, FromIncomingContext(context.Background()))
 }
 
 func TestFromIncomingContext_WithMetadata(t *testing.T) {
+	category.Set(t, category.Unit)
 	md := metadata.MD{
 		MetadataKeyFormReference: []string{"2"}, // TRAY
 		MetadataKeyItemName:      []string{"2"}, // CONNECT_RECENTS

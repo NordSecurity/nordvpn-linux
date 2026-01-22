@@ -4,10 +4,12 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestToMooseStrings_NilContext(t *testing.T) {
+	category.Set(t, category.Unit)
 	result := ToMooseStrings(nil)
 	assert.Empty(t, result.FormReference)
 	assert.Empty(t, result.ItemName)
@@ -16,6 +18,7 @@ func TestToMooseStrings_NilContext(t *testing.T) {
 }
 
 func TestToMooseStrings_AllFields(t *testing.T) {
+	category.Set(t, category.Unit)
 	ctx := &UIEventContext{
 		FormReference: pb.UIEvent_CLI,
 		ItemName:      pb.UIEvent_CONNECT,
@@ -32,6 +35,7 @@ func TestToMooseStrings_AllFields(t *testing.T) {
 }
 
 func TestFormReferenceToString(t *testing.T) {
+	category.Set(t, category.Unit)
 	tests := []struct {
 		input    pb.UIEvent_FormReference
 		expected string
@@ -50,6 +54,7 @@ func TestFormReferenceToString(t *testing.T) {
 }
 
 func TestItemNameToString(t *testing.T) {
+	category.Set(t, category.Unit)
 	tests := []struct {
 		input    pb.UIEvent_ItemName
 		expected string
@@ -72,6 +77,7 @@ func TestItemNameToString(t *testing.T) {
 }
 
 func TestItemTypeToString(t *testing.T) {
+	category.Set(t, category.Unit)
 	tests := []struct {
 		input    pb.UIEvent_ItemType
 		expected string
@@ -88,6 +94,7 @@ func TestItemTypeToString(t *testing.T) {
 }
 
 func TestItemValueToString(t *testing.T) {
+	category.Set(t, category.Unit)
 	tests := []struct {
 		input    pb.UIEvent_ItemValue
 		expected string
