@@ -38,8 +38,9 @@ func (ti *Instance) login() {
 		return
 	}
 
+	ctx := attachUIEventMetadata(context.Background(), pb.UIEvent_LOGIN, pb.UIEvent_ITEM_VALUE_UNSPECIFIED)
 	loginResp, err := ti.client.LoginOAuth2(
-		context.Background(),
+		ctx,
 		&pb.LoginOAuth2Request{
 			Type: pb.LoginType_LoginType_LOGIN,
 		},
@@ -104,7 +105,8 @@ func tryDbus(uri string) error {
 }
 
 func (ti *Instance) logout(persistToken bool) bool {
-	resp, err := ti.client.Logout(context.Background(), &pb.LogoutRequest{
+	ctx := attachUIEventMetadata(context.Background(), pb.UIEvent_LOGOUT, pb.UIEvent_ITEM_VALUE_UNSPECIFIED)
+	resp, err := ti.client.Logout(ctx, &pb.LogoutRequest{
 		PersistToken: persistToken,
 	})
 	if err != nil {
@@ -134,7 +136,15 @@ func (ti *Instance) notifyServiceExpired(url string, trustedPassURL string, mess
 	ti.notify(Force, message, link)
 }
 
-func (ti *Instance) connect(serverTag string, serverGroup string) bool {
+func (ti *Instance) connect(serverTag string, serverGroup string) {
+	ti.connectWithUIEvent(serverTag, serverGroup, pb.UIEvent_CONNECT, pb.UIEvent_ITEM_VALUE_UNSPECIFIED)
+}
+
+func (ti *Instance) connectWithUIEvent(
+	serverTag, serverGroup string,
+	itemName pb.UIEvent_ItemName,
+	itemValue pb.UIEvent_ItemValue,
+) bool {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt)
 	defer close(ch)
@@ -145,7 +155,8 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 		}
 	}(ch)
 
-	resp, err := ti.client.Connect(context.Background(), &pb.ConnectRequest{
+	ctx := attachUIEventMetadata(context.Background(), itemName, itemValue)
+	resp, err := ti.client.Connect(ctx, &pb.ConnectRequest{
 		ServerTag:   strings.ToLower(serverTag),
 		ServerGroup: strings.ToLower(serverGroup),
 	})
@@ -170,7 +181,7 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 		case internal.CodeExpiredRenewToken:
 			ti.notify(NoForce, client.RelogRequest)
 			ti.login()
-			return ti.connect(serverTag, serverGroup)
+			return ti.connectWithUIEvent(serverTag, serverGroup, itemName, itemValue)
 		case internal.CodeTokenRenewError:
 			ti.notify(NoForce, client.AccountTokenRenewError)
 		case internal.CodeAccountExpired:
@@ -205,7 +216,8 @@ func (ti *Instance) connect(serverTag string, serverGroup string) bool {
 }
 
 func (ti *Instance) disconnect() bool {
-	resp, err := ti.client.Disconnect(context.Background(), &pb.Empty{})
+	ctx := attachUIEventMetadata(context.Background(), pb.UIEvent_DISCONNECT, pb.UIEvent_ITEM_VALUE_UNSPECIFIED)
+	resp, err := ti.client.Disconnect(ctx, &pb.Empty{})
 	if err != nil {
 		ti.notify(NoForce, "Disconnect error: %s", err)
 		return false

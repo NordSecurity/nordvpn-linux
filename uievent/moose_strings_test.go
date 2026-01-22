@@ -4,38 +4,56 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestToMooseStrings_NilContext(t *testing.T) {
+func TestToMooseStrings(t *testing.T) {
 	category.Set(t, category.Unit)
-	result := ToMooseStrings(nil)
-	assert.Empty(t, result.FormReference)
-	assert.Empty(t, result.ItemName)
-	assert.Empty(t, result.ItemType)
-	assert.Empty(t, result.ItemValue)
-}
 
-func TestToMooseStrings_AllFields(t *testing.T) {
-	category.Set(t, category.Unit)
-	ctx := &UIEventContext{
-		FormReference: pb.UIEvent_CLI,
-		ItemName:      pb.UIEvent_CONNECT,
-		ItemType:      pb.UIEvent_CLICK,
-		ItemValue:     pb.UIEvent_COUNTRY,
+	tests := []struct {
+		name     string
+		ctx      *UIEventContext
+		expected events.UiItemsAction
+	}{
+		{
+			name: "nil context returns empty",
+			ctx:  nil,
+			expected: events.UiItemsAction{
+				FormReference: "",
+				ItemName:      "",
+				ItemType:      "",
+				ItemValue:     "",
+			},
+		},
+		{
+			name: "all fields set",
+			ctx: &UIEventContext{
+				FormReference: pb.UIEvent_CLI,
+				ItemName:      pb.UIEvent_CONNECT,
+				ItemType:      pb.UIEvent_CLICK,
+				ItemValue:     pb.UIEvent_COUNTRY,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "cli",
+				ItemName:      "connect",
+				ItemType:      "click",
+				ItemValue:     "country",
+			},
+		},
 	}
 
-	result := ToMooseStrings(ctx)
-
-	assert.Equal(t, "cli", result.FormReference)
-	assert.Equal(t, "connect", result.ItemName)
-	assert.Equal(t, "click", result.ItemType)
-	assert.Equal(t, "country", result.ItemValue)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, ToMooseStrings(tt.ctx))
+		})
+	}
 }
 
 func TestFormReferenceToString(t *testing.T) {
 	category.Set(t, category.Unit)
+
 	tests := []struct {
 		input    pb.UIEvent_FormReference
 		expected string
@@ -55,6 +73,7 @@ func TestFormReferenceToString(t *testing.T) {
 
 func TestItemNameToString(t *testing.T) {
 	category.Set(t, category.Unit)
+
 	tests := []struct {
 		input    pb.UIEvent_ItemName
 		expected string
@@ -78,6 +97,7 @@ func TestItemNameToString(t *testing.T) {
 
 func TestItemTypeToString(t *testing.T) {
 	category.Set(t, category.Unit)
+
 	tests := []struct {
 		input    pb.UIEvent_ItemType
 		expected string
@@ -95,6 +115,7 @@ func TestItemTypeToString(t *testing.T) {
 
 func TestItemValueToString(t *testing.T) {
 	category.Set(t, category.Unit)
+
 	tests := []struct {
 		input    pb.UIEvent_ItemValue
 		expected string
