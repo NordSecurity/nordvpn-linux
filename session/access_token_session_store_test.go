@@ -717,9 +717,7 @@ func TestAccessTokenSessionStore_Renew_StoresTokenRenewDateInConfig(t *testing.T
 	}
 
 	store := session.NewAccessTokenSessionStore(cfgManager, errorRegistry, renewAPICall)
-	err := store.Renew()
-
-	assert.NoError(t, err)
+	assert.NoError(t, store.Renew())
 
 	// Verify TokenRenewDate is stored in config
 	tokenData := cfgManager.Cfg.TokensData[uid]

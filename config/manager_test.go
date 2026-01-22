@@ -188,11 +188,10 @@ func TestSaveWithPublishesPreviousConfig(t *testing.T) {
 	)
 
 	// First save - creates initial config
-	err := fs.SaveWith(func(c Config) Config {
+	assert.NoError(t, fs.SaveWith(func(c Config) Config {
 		c.AutoConnect = true
 		return c
-	})
-	assert.NoError(t, err)
+	}))
 
 	// Verify first publish (new installation)
 	assert.Nil(t, publishedChange.PreviousConfig)
@@ -200,11 +199,10 @@ func TestSaveWithPublishesPreviousConfig(t *testing.T) {
 	assert.True(t, publishedChange.Config.AutoConnect)
 
 	// Second save - should have PreviousConfig
-	err = fs.SaveWith(func(c Config) Config {
+	assert.NoError(t, fs.SaveWith(func(c Config) Config {
 		c.KillSwitch = true
 		return c
-	})
-	assert.NoError(t, err)
+	}))
 
 	// Verify PreviousConfig contains the state before the change
 	assert.NotNil(t, publishedChange.PreviousConfig)
