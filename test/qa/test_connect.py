@@ -6,8 +6,7 @@ import pytest
 import sh
 
 import lib
-from lib import daemon, info, logging, network, server
-from conftest import IS_NIGHTLY
+from lib import daemon, info, logging, network, server, IS_NIGHTLY
 
 from lib.dynamic_parametrize import dynamic_parametrize
 

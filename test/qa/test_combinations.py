@@ -6,10 +6,10 @@ import sh
 import lib
 from lib import (
     daemon,
-    network
+    network,
+    IS_NIGHTLY
 )
 from lib.dynamic_parametrize import dynamic_parametrize
-from conftest import IS_NIGHTLY
 from test_connect import disconnect_base_test, get_alias
 
 def connect_base_test(group: str = (), name: str = "", hostname: str = ""):

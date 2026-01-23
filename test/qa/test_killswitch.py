@@ -11,10 +11,9 @@ from lib import (
     login,
     logging,
     network,
+    IS_NIGHTLY
 )
 from lib.dynamic_parametrize import dynamic_parametrize
-
-from conftest import IS_NIGHTLY
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 

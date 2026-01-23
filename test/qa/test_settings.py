@@ -3,10 +3,8 @@ import sh
 import pexpect
 
 import lib
-from lib import daemon, dns, info, logging, login, network, settings
+from lib import daemon, dns, info, logging, login, network, settings, IS_NIGHTLY
 from lib.dynamic_parametrize import dynamic_parametrize
-
-from conftest import IS_NIGHTLY
 
 
 def setup_function(function):  # noqa: ARG001
