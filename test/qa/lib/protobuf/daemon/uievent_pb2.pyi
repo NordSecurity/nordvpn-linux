@@ -27,6 +27,7 @@ class UIEvent(_message.Message):
         LOGOUT: _ClassVar[UIEvent.ItemName]
         RATE_CONNECTION: _ClassVar[UIEvent.ItemName]
         MESHNET_INVITE_SEND: _ClassVar[UIEvent.ItemName]
+        LOGIN_TOKEN: _ClassVar[UIEvent.ItemName]
     ITEM_NAME_UNSPECIFIED: UIEvent.ItemName
     CONNECT: UIEvent.ItemName
     CONNECT_RECENTS: UIEvent.ItemName
@@ -35,6 +36,7 @@ class UIEvent(_message.Message):
     LOGOUT: UIEvent.ItemName
     RATE_CONNECTION: UIEvent.ItemName
     MESHNET_INVITE_SEND: UIEvent.ItemName
+    LOGIN_TOKEN: UIEvent.ItemName
     class ItemType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         ITEM_TYPE_UNSPECIFIED: _ClassVar[UIEvent.ItemType]
