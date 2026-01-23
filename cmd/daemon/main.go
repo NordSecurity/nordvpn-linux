@@ -24,7 +24,6 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
-	"github.com/NordSecurity/nordvpn-linux/clientid"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -647,10 +646,6 @@ func main() {
 		middleware.AddStreamMiddleware(norduserMiddleware.StreamMiddleware)
 		middleware.AddUnaryMiddleware(norduserMiddleware.UnaryMiddleware)
 	}
-
-	clientIDMiddleware := clientid.NewClientIDMiddleware(daemonEvents.Service.UiItemsClick)
-	middleware.AddStreamMiddleware(clientIDMiddleware.StreamMiddleware)
-	middleware.AddUnaryMiddleware(clientIDMiddleware.UnaryMiddleware)
 
 	uiEventMiddleware := uievent.NewMiddleware(daemonEvents.Service.UiItemsClick)
 	middleware.AddStreamMiddleware(uiEventMiddleware.StreamMiddleware)
