@@ -392,7 +392,7 @@ func main() {
 		}
 	}
 
-	devices, err := device.ListPhysical()
+	devices, err := device.OutsideCapableTrafficInterfaces()
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -443,12 +443,12 @@ func main() {
 			arg = append(arg, "-w", internal.SecondsToWaitForIptablesLock)
 			return exec.Command(command, arg...).CombinedOutput()
 		}),
-		device.ListPhysical,
+		device.OutsideCapableTrafficInterfaces,
 		routes.NewPolicyRouter(
 			&norule.Facade{},
 			iprule.NewRouter(
 				routes.NewSysctlRPFilterManager(),
-				ifgroup.NewNetlinkManager(device.ListPhysical),
+				ifgroup.NewNetlinkManager(device.OutsideCapableTrafficInterfaces),
 				cfg.FirewallMark,
 			),
 			cfg.Routing.Get(),
