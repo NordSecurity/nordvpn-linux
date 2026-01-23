@@ -112,6 +112,8 @@ func OutsideCapableTrafficInterfaces() ([]net.Interface, error) {
 			if !ifaceListContains(devices, *iface) {
 				devices = append(devices, *iface)
 			}
+		} else {
+			log.Println(internal.WarningPrefix, "not found interface with index", r.LinkIndex, err)
 		}
 	}
 	return devices, nil
@@ -216,6 +218,8 @@ func InterfacesWithDefaultRoute(ignoreSet mapset.Set[string]) map[string]net.Int
 			if ignoreSet == nil || !ignoreSet.Contains(iface.Name) {
 				interfacesList[iface.Name] = *iface
 			}
+		} else {
+			log.Println(internal.WarningPrefix, "default route, not found interface with index", r.LinkIndex, err)
 		}
 	}
 
