@@ -352,27 +352,8 @@ func (api *SimpleClientAPI) ServersCountries() (Countries, http.Header, error) {
 
 // RecommendedServers returns recommended servers list
 func (api *SimpleClientAPI) RecommendedServers(filter ServersFilter, longitude, latitude float64) (Servers, http.Header, error) {
-	var filterQuery string
-	switch filter.Tag.Action { //nolint:exhaustive // libmoose deprecates this
-	case ServerBySpeed:
-		// Set group filter from tag only if group flag is not defined
-		if filter.Group == config.ServerGroup_UNDEFINED {
-			filterQuery = fmt.Sprintf(RecommendedServersGroupsFilter, filter.Tag.ID)
-		}
-	case ServerByCountry:
-		filterQuery = fmt.Sprintf(RecommendedServersCountryFilter, filter.Tag.ID)
-	case ServerByCity:
-		filterQuery = fmt.Sprintf(RecommendedServersCityFilter, filter.Tag.ID)
-	default:
-		filterQuery = ""
-	}
+	url := PrepareRecommendedServersURL(filter, longitude, latitude)
 
-	// When flag is defined append it to filter query
-	if filter.Group != config.ServerGroup_UNDEFINED {
-		filterQuery += fmt.Sprintf(RecommendedServersGroupsFilter, filter.Group)
-	}
-
-	url := RecommendedServersURL + fmt.Sprintf(RecommendedServersURLConnectQuery, filter.Limit, filter.Tech, longitude, latitude) + filterQuery
 	req, err := request.NewRequest(http.MethodGet, api.agent, api.baseURL, url, "application/json", "", "gzip, deflate", nil)
 	if err != nil {
 		return nil, nil, err
@@ -395,6 +376,34 @@ func (api *SimpleClientAPI) RecommendedServers(filter ServersFilter, longitude, 
 	}
 
 	return ret, resp.Header, nil
+}
+
+func PrepareRecommendedServersURL(filter ServersFilter, longitude, latitude float64) string {
+	var filterQuery string
+	switch filter.Tag.Action {
+	case ServerBySpeed:
+		// Set group filter from tag only if group flag is not defined
+		if filter.Group == config.ServerGroup_UNDEFINED {
+			filterQuery = fmt.Sprintf(RecommendedServersGroupsFilter, filter.Tag.ID)
+		}
+	case ServerByCountry:
+		filterQuery = fmt.Sprintf(RecommendedServersCountryFilter, filter.Tag.ID)
+	case ServerByCity:
+		filterQuery = fmt.Sprintf(RecommendedServersCityFilter, filter.Tag.ID)
+	case ServerByUnknown, ServerByName:
+		filterQuery = ""
+	}
+
+	// When flag is defined append it to filter query
+	if filter.Group != config.ServerGroup_UNDEFINED {
+		filterQuery += fmt.Sprintf(RecommendedServersGroupsFilter, filter.Group)
+	}
+
+	if filterQuery == "" {
+		return RecommendedServersURL + fmt.Sprintf(RecommendedServersURLQuickConnectQuery, filter.Tech, longitude, latitude)
+	} else {
+		return RecommendedServersURL + fmt.Sprintf(RecommendedServersURLConnectQuery, filter.Limit, filter.Tech, longitude, latitude) + filterQuery
+	}
 }
 
 // Server returns specific server

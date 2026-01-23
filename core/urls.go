@@ -120,6 +120,30 @@ const (
 		"&coordinates[longitude]=%f&coordinates[latitude]=%f" +
 		"&fields[servers.ips]"
 
+	RecommendedServersURLQuickConnectQuery = "?filters[servers_technologies]=%d" +
+		"&filters[servers_technologies][pivot][status]=online" +
+		"&fields[servers.id]" +
+		"&fields[servers.name]" +
+		"&fields[servers.hostname]" +
+		"&fields[servers.station]" +
+		"&fields[servers.status]" +
+		"&fields[servers.load]" +
+		"&fields[servers.created_at]" +
+		"&fields[servers.groups.id]" +
+		"&fields[servers.groups.title]" +
+		"&fields[servers.technologies.id]" +
+		"&fields[servers.technologies.metadata]" +
+		"&fields[servers.technologies.pivot.status]" +
+		"&fields[servers.specifications.identifier]" +
+		"&fields[servers.specifications.values.value]" +
+		"&fields[servers.locations.country.name]" +
+		"&fields[servers.locations.country.code]" +
+		"&fields[servers.locations.country.city.name]" +
+		"&fields[servers.locations.country.city.latitude]" +
+		"&fields[servers.locations.country.city.longitude]" +
+		"&coordinates[longitude]=%f&coordinates[latitude]=%f" +
+		"&fields[servers.ips]"
+
 	RecommendedServersCountryFilter = "&filters[country_id]=%d"
 	RecommendedServersCityFilter    = "&filters[country_city_id]=%d"
 	RecommendedServersGroupsFilter  = "&filters[servers_groups]=%d"
