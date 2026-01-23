@@ -165,3 +165,105 @@ func TestStreamInterceptor_PropagatesStreamerError(t *testing.T) {
 	_, err := interceptor.StreamInterceptor(context.Background(), nil, nil, pb.Daemon_Connect_FullMethodName, mockStreamer)
 	assert.ErrorIs(t, err, expectedErr)
 }
+
+func TestHasUIEventMetadata(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		ctx      context.Context
+		expected bool
+	}{
+		{
+			name:     "empty context",
+			ctx:      context.Background(),
+			expected: false,
+		},
+		{
+			name:     "context with unrelated metadata",
+			ctx:      metadata.NewOutgoingContext(context.Background(), metadata.Pairs("other-key", "value")),
+			expected: false,
+		},
+		{
+			name: "context with ui-item-name metadata",
+			ctx: metadata.NewOutgoingContext(context.Background(), metadata.Pairs(
+				MetadataKeyItemName, "2", // CONNECT_RECENTS
+			)),
+			expected: true,
+		},
+		{
+			name: "context with full UI event metadata",
+			ctx: metadata.NewOutgoingContext(context.Background(), metadata.Pairs(
+				MetadataKeyFormReference, "2",
+				MetadataKeyItemName, "2",
+				MetadataKeyItemType, "1",
+				MetadataKeyItemValue, "1",
+			)),
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, hasUIEventMetadata(tt.ctx))
+		})
+	}
+}
+
+func TestUnaryInterceptor_DoesNotOverrideExistingUIEventMetadata(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	interceptor := NewClientInterceptor(pb.UIEvent_CLI)
+
+	// Create context with CONNECT_RECENTS metadata (simulating call-site attachment)
+	existingCtx := metadata.NewOutgoingContext(context.Background(), metadata.Pairs(
+		MetadataKeyFormReference, "2", // TRAY
+		MetadataKeyItemName, "2", // CONNECT_RECENTS
+		MetadataKeyItemType, "1", // CLICK
+	))
+
+	var capturedCtx context.Context
+	mockInvoker := func(ctx context.Context, _ string, _, _ any, _ *grpc.ClientConn, _ ...grpc.CallOption) error {
+		capturedCtx = ctx
+		return nil
+	}
+
+	// Call Connect method - interceptor would normally attach CONNECT, but should preserve CONNECT_RECENTS
+	err := interceptor.UnaryInterceptor(existingCtx, pb.Daemon_Connect_FullMethodName, nil, nil, nil, mockInvoker)
+	assert.NoError(t, err)
+
+	md, ok := metadata.FromOutgoingContext(capturedCtx)
+	assert.True(t, ok)
+	// Should preserve the original CONNECT_RECENTS (2), not override with CONNECT (1)
+	assert.Equal(t, []string{"2"}, md.Get(MetadataKeyItemName), "should preserve call-site CONNECT_RECENTS metadata")
+	assert.Equal(t, []string{"2"}, md.Get(MetadataKeyFormReference), "should preserve call-site TRAY form reference")
+}
+
+func TestStreamInterceptor_DoesNotOverrideExistingUIEventMetadata(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	interceptor := NewClientInterceptor(pb.UIEvent_CLI)
+
+	// Create context with CONNECT_RECENTS metadata (simulating call-site attachment)
+	existingCtx := metadata.NewOutgoingContext(context.Background(), metadata.Pairs(
+		MetadataKeyFormReference, "2", // TRAY
+		MetadataKeyItemName, "2", // CONNECT_RECENTS
+		MetadataKeyItemType, "1", // CLICK
+	))
+
+	var capturedCtx context.Context
+	mockStreamer := func(ctx context.Context, _ *grpc.StreamDesc, _ *grpc.ClientConn, _ string, _ ...grpc.CallOption) (grpc.ClientStream, error) {
+		capturedCtx = ctx
+		return nil, nil
+	}
+
+	// Call Connect method - interceptor would normally attach CONNECT, but should preserve CONNECT_RECENTS
+	_, err := interceptor.StreamInterceptor(existingCtx, nil, nil, pb.Daemon_Connect_FullMethodName, mockStreamer)
+	assert.NoError(t, err)
+
+	md, ok := metadata.FromOutgoingContext(capturedCtx)
+	assert.True(t, ok)
+	// Should preserve the original CONNECT_RECENTS (2), not override with CONNECT (1)
+	assert.Equal(t, []string{"2"}, md.Get(MetadataKeyItemName), "should preserve call-site CONNECT_RECENTS metadata")
+	assert.Equal(t, []string{"2"}, md.Get(MetadataKeyFormReference), "should preserve call-site TRAY form reference")
+}

@@ -6,6 +6,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 // ClientInterceptor is a gRPC client interceptor that attaches UI event metadata
@@ -20,6 +21,8 @@ func NewClientInterceptor(formRef pb.UIEvent_FormReference) *ClientInterceptor {
 }
 
 // UnaryInterceptor is a gRPC unary client interceptor that attaches UI event metadata.
+//
+// If the context already has UI event metadata the interceptor will NOT override it.
 func (i *ClientInterceptor) UnaryInterceptor(
 	ctx context.Context,
 	method string,
@@ -28,6 +31,10 @@ func (i *ClientInterceptor) UnaryInterceptor(
 	invoker grpc.UnaryInvoker,
 	opts ...grpc.CallOption,
 ) error {
+	if hasUIEventMetadata(ctx) {
+		return invoker(ctx, method, req, reply, cc, opts...)
+	}
+
 	itemName := methodToItemName(method)
 	if itemName == pb.UIEvent_ITEM_NAME_UNSPECIFIED {
 		// Skip metadata attachment
@@ -46,6 +53,8 @@ func (i *ClientInterceptor) UnaryInterceptor(
 }
 
 // StreamInterceptor is a gRPC stream client interceptor that attaches UI event metadata.
+//
+// If the context already has UI event metadata the interceptor will NOT override it.
 func (i *ClientInterceptor) StreamInterceptor(
 	ctx context.Context,
 	desc *grpc.StreamDesc,
@@ -54,9 +63,13 @@ func (i *ClientInterceptor) StreamInterceptor(
 	streamer grpc.Streamer,
 	opts ...grpc.CallOption,
 ) (grpc.ClientStream, error) {
+	if hasUIEventMetadata(ctx) {
+		return streamer(ctx, desc, cc, method, opts...)
+	}
+
 	itemName := methodToItemName(method)
 	if itemName == pb.UIEvent_ITEM_NAME_UNSPECIFIED {
-		// Not a tracked method, skip metadata attachment
+		// Skip metadata attachment
 		return streamer(ctx, desc, cc, method, opts...)
 	}
 
@@ -69,6 +82,17 @@ func (i *ClientInterceptor) StreamInterceptor(
 
 	enrichedCtx := AttachToOutgoingContext(ctx, uiCtx)
 	return streamer(enrichedCtx, desc, cc, method, opts...)
+}
+
+// hasUIEventMetadata checks if the context already has UI event metadata attached.
+func hasUIEventMetadata(ctx context.Context) bool {
+	md, ok := metadata.FromOutgoingContext(ctx)
+	if !ok {
+		return false
+	}
+	// Check for the presence of the item-name key, which is the primary identifier
+	_, hasItemName := md[MetadataKeyItemName]
+	return hasItemName
 }
 
 // methodToItemName maps a gRPC method name to a UIEvent ItemName.
