@@ -6,7 +6,6 @@ import 'package:nordvpn/constants.dart';
 import 'package:nordvpn/data/mocks/daemon/grpc_server.dart';
 import 'package:nordvpn/grpc/error_handling_interceptor.dart';
 import 'package:nordvpn/logger.dart';
-import 'package:nordvpn/pb/daemon/common.pb.dart';
 import 'package:nordvpn/pb/daemon/service.pbgrpc.dart';
 import 'package:nordvpn/service_locator.dart';
 
@@ -49,11 +48,5 @@ String _socketPath() {
 DaemonClient createDaemonClient([ClientChannel? channel]) {
   final ch = channel ?? sl();
   ErrorHandlingInterceptor errorInterceptor = sl();
-  return DaemonClient(
-    ch,
-    interceptors: [errorInterceptor],
-    options: CallOptions(
-      metadata: {'client-id': ClientID.GUI.value.toString()},
-    ),
-  );
+  return DaemonClient(ch, interceptors: [errorInterceptor]);
 }

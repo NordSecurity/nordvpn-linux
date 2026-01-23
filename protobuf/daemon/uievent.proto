@@ -13,6 +13,7 @@ message UIEvent {
     CLI = 1;
     TRAY = 2;
     HOME_SCREEN = 3;
+    GUI = 4; // temporary, to be replaced with more specific references
   }
 
   // ItemName represents a user interface event item name
