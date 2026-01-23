@@ -111,6 +111,10 @@ func (r Rule) Equal(other Rule) bool {
 		r.SimplifiedName == other.SimplifiedName
 }
 
+func (r Rule) IsEmpty() bool {
+	return r.Equal(Rule{})
+}
+
 // OrderedRules stores rules in an order they were added.
 type OrderedRules struct {
 	// rules is unexported in order to prevent direct appends
