@@ -11,7 +11,7 @@ type MachineCreateRequest struct {
 	// PublicKey is a WireGuard public key used to encrypt outgoing packets.
 	PublicKey string `json:"public_key"`
 	// app_user_uid
-	UserID uuid.UUID `json:"app_user_uid"`
+	UserID string `json:"app_user_uid"`
 	// HardwareID is used in combination with PublicKey to allow registering
 	// multiple machines on the same hardware.
 	HardwareID uuid.UUID `json:"hardware_identifier"`

@@ -44,7 +44,7 @@ type mockSimpleClientAPI struct {
 	CreateUserFunc                    func(email, password string) (*core.UserCreateResponse, error)
 	OrdersFunc                        func(token string) ([]core.Order, error)
 	PaymentsFunc                      func(token string) ([]core.PaymentResponse, error)
-	RegisterFunc                      func(token string, peer mesh.Machine) (*mesh.Machine, error)
+	RegisterFunc                      func(token string, appUserID string, peer mesh.Machine) (*mesh.Machine, error)
 	UpdateFunc                        func(token string, id uuid.UUID, info mesh.MachineUpdateRequest) error
 	ConfigureFunc                     func(token string, id uuid.UUID, peerID uuid.UUID, peerUpdateInfo mesh.PeerUpdateRequest) error
 	UnregisterFunc                    func(token string, self uuid.UUID) error
@@ -140,8 +140,8 @@ func (m *mockSimpleClientAPI) Payments(token string) ([]core.PaymentResponse, er
 	return m.PaymentsFunc(token)
 }
 
-func (m *mockSimpleClientAPI) Register(token string, peer mesh.Machine) (*mesh.Machine, error) {
-	return m.RegisterFunc(token, peer)
+func (m *mockSimpleClientAPI) Register(token string, appUserID string, peer mesh.Machine) (*mesh.Machine, error) {
+	return m.RegisterFunc(token, appUserID, peer)
 }
 
 func (m *mockSimpleClientAPI) Update(token string, id uuid.UUID, info mesh.MachineUpdateRequest) error {
@@ -1993,15 +1993,16 @@ func Test_Register_TokenRenewalScenarios(t *testing.T) {
 		}
 
 		mockAPI := &mockSimpleClientAPI{
-			RegisterFunc: func(token string, peer mesh.Machine) (*mesh.Machine, error) {
+			RegisterFunc: func(token string, userID string, peer mesh.Machine) (*mesh.Machine, error) {
 				assert.Equal(t, token, initialToken)
+				assert.Equal(t, userID, appUserID)
 				assert.Equal(t, peer, expectedMachine)
 				return &peer, nil
 			},
 		}
 
 		client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
-		machine, err := client.Register(initialToken, expectedMachine)
+		machine, err := client.Register(initialToken, appUserID, expectedMachine)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedMachine, *machine)

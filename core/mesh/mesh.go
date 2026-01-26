@@ -8,7 +8,7 @@ import (
 // Registry defines a set of operations used to interact with the rest of the mesh.
 type Registry interface {
 	// Register Self to mesh network.
-	Register(token string, userID uuid.UUID, self Machine) (*Machine, error)
+	Register(token string, appUserID string, self Machine) (*Machine, error)
 	// Update already registered peer.
 	Update(token string, id uuid.UUID, info MachineUpdateRequest) error
 	// Configure interaction with specific peer.
