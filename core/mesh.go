@@ -104,7 +104,7 @@ func (api *SimpleClientAPI) Register(token string, appUserID string, peer mesh.M
 
 	data, err := json.Marshal(mesh.MachineCreateRequest{
 		PublicKey:       peer.PublicKey,
-		UserID:			 appUserID,
+		UserID:          appUserID,
 		HardwareID:      peer.HardwareID,
 		OS:              peer.OS.Name,
 		Distro:          peer.OS.Distro,

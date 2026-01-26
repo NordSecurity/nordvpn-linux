@@ -191,7 +191,7 @@ func runDocker(
 		AutoRemove:  true,
 		Mounts:      mounts,
 		Privileged:  isPrivileged,
-		Tmpfs: 		 tmpFs,
+		Tmpfs:       tmpFs,
 		Sysctls:     map[string]string{"net.ipv6.conf.all.disable_ipv6": "1"},
 		NetworkMode: container.NetworkMode(network),
 	}

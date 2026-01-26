@@ -29,7 +29,7 @@ type registry struct {
 const registryUUID = "00000000-0000-0000-0000-000000000001"
 const registryIP = "0.0.0.1"
 
-func (r *registry) Register(token string,  appUserID string, self mesh.Machine) (*mesh.Machine, error) {
+func (r *registry) Register(token string, appUserID string, self mesh.Machine) (*mesh.Machine, error) {
 	return &mesh.Machine{
 		ID:      uuid.MustParse(registryUUID),
 		Address: netip.MustParseAddr(registryIP),
