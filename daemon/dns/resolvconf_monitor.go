@@ -60,7 +60,7 @@ func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context) er
 	}
 	defer func() {
 		if watcher != nil {
-			watcher.Close()
+			_ = watcher.Close()
 		}
 	}()
 
