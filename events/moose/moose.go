@@ -69,6 +69,7 @@ type Subscriber struct {
 	canSendAllEvents           atomic.Bool
 	mux                        sync.RWMutex
 	isInitialized              bool
+	configChangeHandlers       []configChangeHandler
 }
 
 func NewSubscriber(
@@ -91,6 +92,11 @@ func NewSubscriber(
 		clientAPI:     clientAPI,
 		httpClient:    httpClient,
 		isInitialized: false,
+	}
+
+	// Add more handlers here as needed
+	sub.configChangeHandlers = []configChangeHandler{
+		sub.handleTokenRenewDateChange,
 	}
 	return sub
 }
@@ -433,13 +439,8 @@ func (s *Subscriber) OnConfigChanged(e config.DataConfigChange) error {
 		return nil
 	}
 
-	// Add more handlers here as needed
-	handlers := []configChangeHandler{
-		s.handleTokenRenewDateChange,
-	}
-
 	var errs []error
-	for _, handler := range handlers {
+	for _, handler := range s.configChangeHandlers {
 		if err := handler(e.PreviousConfig, e.Config); err != nil {
 			errs = append(errs, err)
 		}
@@ -449,8 +450,6 @@ func (s *Subscriber) OnConfigChanged(e config.DataConfigChange) error {
 }
 
 // handleTokenRenewDateChange updates moose context when token renewal date changes.
-// Note: The data team confirmed that tokenRenewDate field should always have a value,
-// so we only set it and never call unset.
 func (s *Subscriber) handleTokenRenewDateChange(prev, curr *config.Config) error {
 	currentDate := getTokenRenewDate(curr)
 	previousDate := getTokenRenewDate(prev)
