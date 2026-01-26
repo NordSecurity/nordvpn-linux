@@ -160,8 +160,8 @@ func (s *smartClientAPI) Payments() ([]PaymentResponse, error) {
 }
 
 // for mesh we dont do anything right now
-func (s *smartClientAPI) Register(token string, peer mesh.Machine) (*mesh.Machine, error) {
-	return s.wrapped.Register(token, peer)
+func (s *smartClientAPI) Register(token string, userID uuid.UUID, peer mesh.Machine) (*mesh.Machine, error) {
+	return s.wrapped.Register(token, userID, peer)
 }
 
 func (s *smartClientAPI) Update(token string, id uuid.UUID, info mesh.MachineUpdateRequest) error {

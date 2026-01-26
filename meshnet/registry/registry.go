@@ -18,8 +18,8 @@ func NewNotifyingRegistry(inner mesh.Registry, sub events.PublishSubcriber[[]str
 	}
 }
 
-func (r *NotifyingRegistry) Register(token string, self mesh.Machine) (*mesh.Machine, error) {
-	return r.inner.Register(token, self)
+func (r *NotifyingRegistry) Register(token string, userID uuid.UUID, self mesh.Machine) (*mesh.Machine, error) {
+	return r.inner.Register(token, userID, self)
 }
 func (r *NotifyingRegistry) Update(token string, id uuid.UUID, info mesh.MachineUpdateRequest) error {
 	if err := r.inner.Update(token, id, info); err != nil {

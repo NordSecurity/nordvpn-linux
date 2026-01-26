@@ -109,6 +109,10 @@ func (r *RegisteringChecker) Register() error {
 
 func (r *RegisteringChecker) register(cfg *config.Config) error {
 	newKey := false
+	userID := cfg.AutoConnectData.ID
+	tokenData := cfg.TokensData[userID]
+	ncData := tokenData.NCData
+	log.Printf("printing alleged user ID: %v", ncData.UserID.ID())
 
 	privateKey := cfg.MeshPrivateKey
 	if privateKey == "" {
@@ -120,7 +124,7 @@ func (r *RegisteringChecker) register(cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
-	peer, err := r.reg.Register(token, cmesh.Machine{
+	peer, err := r.reg.Register(token, ncData.UserID, cmesh.Machine{
 		HardwareID:      cfg.MachineID,
 		PublicKey:       r.gen.Public(privateKey),
 		OS:              cmesh.OperatingSystem{Name: "linux", Distro: distroName},
@@ -131,7 +135,7 @@ func (r *RegisteringChecker) register(cfg *config.Config) error {
 		// then they have to be regenerated. There's no way to check if the current mesh device data
 		// belongs to this account or not, so handling this on registering error is the best approach.
 		privateKey = r.gen.Private()
-		peer, err = r.reg.Register(token, cmesh.Machine{
+		peer, err = r.reg.Register(token, ncData.UserID, cmesh.Machine{
 			HardwareID:      cfg.MachineID,
 			PublicKey:       r.gen.Public(privateKey),
 			OS:              cmesh.OperatingSystem{Name: "linux", Distro: distroName},

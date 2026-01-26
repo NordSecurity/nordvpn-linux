@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/netip"
 
@@ -89,7 +90,7 @@ func peersResponseToMachinePeers(rawPeers []mesh.MachinePeerResponse) []mesh.Mac
 }
 
 // Register peer to the mesh network.
-func (api *SimpleClientAPI) Register(token string, peer mesh.Machine) (*mesh.Machine, error) {
+func (api *SimpleClientAPI) Register(token string, userID uuid.UUID, peer mesh.Machine) (*mesh.Machine, error) {
 	api.mu.Lock()
 	defer api.mu.Unlock()
 
@@ -103,12 +104,14 @@ func (api *SimpleClientAPI) Register(token string, peer mesh.Machine) (*mesh.Mac
 
 	data, err := json.Marshal(mesh.MachineCreateRequest{
 		PublicKey:       peer.PublicKey,
+		UserID:			 userID,
 		HardwareID:      peer.HardwareID,
 		OS:              peer.OS.Name,
 		Distro:          peer.OS.Distro,
 		Endpoints:       peer.Endpoints,
 		SupportsRouting: peer.SupportsRouting,
 	})
+	log.Printf("printing data used for api req: %v", userID)
 	if err != nil {
 		return nil, err
 	}
