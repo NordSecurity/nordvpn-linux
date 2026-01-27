@@ -177,7 +177,7 @@ def _check_dns_resolution(domain, stop_event):
     while not stop_event.is_set():
         try:
             resolver = dns.resolver.Resolver()
-            resolver.nameservers = random.choice(nameservers)
+            resolver.nameservers = [random.choice(nameservers)]
             resolver.resolve(domain, "A")  # 'A' for IPv4
             print(f"~~~_check_dns_resolution: DNS {domain} SUCCESS.")
         except Exception as e:  # noqa: BLE001
