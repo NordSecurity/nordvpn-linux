@@ -73,6 +73,9 @@ func (StdFilesystemHandle) WriteFile(location string, data []byte, mode fs.FileM
 }
 
 type DataConfigChange struct {
+	// PreviousConfig contains the config state before the change (nil on first load)
+	PreviousConfig *Config
+	// Config contains the config state after the change
 	Config *Config
 	// Caller contains file and line number of the call to update the config
 	Caller string
@@ -120,13 +123,15 @@ func (f *FilesystemConfigManager) SaveWith(fn SaveFunc) error {
 	// deadlock when conifg change subscriber tries to read the config with the same manager when the change is
 	// published. The assumption here is that publisher is protected with it's own lock.
 	caller := getCaller()
+	var previousCfg *Config
 	var c Config
 	var err error
 	defer func() {
 		if err == nil && f.configPublisher != nil {
 			f.configPublisher.Publish(DataConfigChange{
-				Config: &c,
-				Caller: caller,
+				PreviousConfig: previousCfg,
+				Config:         &c,
+				Caller:         caller,
 			})
 		}
 	}()
@@ -134,8 +139,14 @@ func (f *FilesystemConfigManager) SaveWith(fn SaveFunc) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	if err := f.load(&c); err != nil {
-		return err
+	var prev Config
+	if loadErr := f.load(&c, &prev); loadErr != nil {
+		return loadErr
+	}
+
+	// On new installation, there's no previous config
+	if !f.NewInstallation {
+		previousCfg = &prev
 	}
 
 	c = fn(c)
@@ -172,20 +183,22 @@ func (f *FilesystemConfigManager) Reset(preserveLoginData bool, disableKillswitc
 	// published. The assumption here is that publisher is protected with it's own lock.
 	caller := getCaller()
 	var newCfg Config
+	var previousCfg *Config
 	defer func() {
 		if retErr == nil && f.configPublisher != nil {
 			f.configPublisher.Publish(DataConfigChange{
-				Config: &newCfg,
-				Caller: caller,
+				PreviousConfig: previousCfg,
+				Config:         &newCfg,
+				Caller:         caller,
 			})
 		}
 	}()
 
 	var current Config
-	retErr = f.load(&current)
-	if retErr != nil {
+	if retErr = f.load(&current, nil); retErr != nil {
 		return fmt.Errorf("loading old config: %w", retErr)
 	}
+	previousCfg = &current
 
 	newCfg = *newConfig(f.machineIDGetter)
 
@@ -210,10 +223,13 @@ func (f *FilesystemConfigManager) Reset(preserveLoginData bool, disableKillswitc
 func (f *FilesystemConfigManager) Load(c *Config) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	return f.load(c)
+	return f.load(c, nil)
 }
 
-func (f *FilesystemConfigManager) load(c *Config) error {
+// load loads encrypted config from the filesystem into c. If copy is not nil, it
+// also loads an independent copy into copy. This is used to get the previous config
+// before changes are applied.
+func (f *FilesystemConfigManager) load(c *Config, copy *Config) error {
 	// always init with default settings and override later with the values from the file
 	*c = *newConfig(f.machineIDGetter)
 
@@ -223,27 +239,34 @@ func (f *FilesystemConfigManager) load(c *Config) error {
 		return f.save(*c)
 	}
 
+	// Reset for subsequent calls
+	f.NewInstallation = false
+
 	pass, err := f.getPassphrase()
 	if err != nil {
 		return err
 	}
 
-	var data []byte
-
 	// #nosec G304 -- no input comes from the user
-	data, err = f.fsHandle.ReadFile(f.location)
+	data, err := f.fsHandle.ReadFile(f.location)
 	if err != nil {
 		return err
 	}
 
-	decrypted, err := internal.Decrypt(data, pass)
+	decryptedJSON, err := internal.Decrypt(data, pass)
 	if err != nil {
 		return err
 	}
 
-	// this overrides default values
-	if err := json.Unmarshal(decrypted, c); err != nil {
+	if err := json.Unmarshal(decryptedJSON, c); err != nil {
 		return err
+	}
+
+	if copy != nil {
+		*copy = *newConfig(f.machineIDGetter)
+		if err := json.Unmarshal(decryptedJSON, copy); err != nil {
+			return err
+		}
 	}
 
 	return nil
