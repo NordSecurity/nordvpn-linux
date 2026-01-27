@@ -14,7 +14,7 @@ type resolvConfMonitor interface {
 	Stop()
 }
 
-type getWatcherFunc func() (*fsnotify.Watcher, error)
+type getWatcherFunc func(pathsToMonitor ...string) (*fsnotify.Watcher, error)
 
 type resolvConfFileWatcherMonitor struct {
 	analytics      analytics
@@ -29,32 +29,12 @@ type resolvConfFileWatcherMonitor struct {
 func newResolvConfMonitor(analytics analytics) resolvConfFileWatcherMonitor {
 	return resolvConfFileWatcherMonitor{
 		analytics:      analytics,
-		getWatcherFunc: getWatcher,
+		getWatcherFunc: internal.GetFileWatcher,
 	}
-}
-
-func getWatcher() (*fsnotify.Watcher, error) {
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		return nil, fmt.Errorf("starting file watcher: %w", err)
-	}
-
-	defer func() {
-		if err != nil && watcher != nil {
-			_ = watcher.Close()
-		}
-	}()
-
-	err = watcher.Add(resolvconfFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("adding file to watchlist: %w", err)
-	}
-
-	return watcher, nil
 }
 
 func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context) error {
-	watcher, err := r.getWatcherFunc()
+	watcher, err := r.getWatcherFunc(resolvconfFilePath)
 	if err != nil {
 		return fmt.Errorf("creating file watcher: %w", err)
 	}
