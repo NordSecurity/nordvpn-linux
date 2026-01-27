@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
+sudo apt update && sudo apt install lsof
 
 # load the env vars needed for tests
 source "${WORKDIR}/ci/qa_tests_env.sh"
