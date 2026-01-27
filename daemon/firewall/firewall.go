@@ -49,40 +49,66 @@ func NewFirewall(noop, working Agent, publisher events.Publisher[string], enable
 func (fw *Firewall) Add(rules []Rule) error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
-	alreadyAddedRules, err := fw.current.GetActiveRules()
+
+	ruleNamesFromOS, err := fw.current.GetActiveRules()
 	if err != nil {
-		log.Printf("%v, unable to get already active rules: %v", internal.WarningPrefix, err)
+		log.Printf("%v, unable to get already active rules: %v\n", internal.WarningPrefix, err)
 	}
+	trafficWasDropped := false
+
 	for _, rule := range rules {
 		fw.publisher.Publish(fmt.Sprintf("adding rule %s", rule.Name))
 		if rule.Name == "" {
 			return NewError(ErrRuleWithoutName)
 		}
 
+		// check if rule exists already
 		existingRule, err := fw.rules.Get(rule.Name)
 		if err == nil {
-			// rule with the given name exists, check if the rules are equal
+			// rule with the given name exists, check if the rules are equal => replace or return error
 			if existingRule.Equal(rule) {
 				return NewError(ErrRuleAlreadyExists)
 			}
 			fw.publisher.Publish(fmt.Sprintf("replacing existing rule %s", rule.Name))
-		}
-		// dont add if already added
-		if !slices.Contains(alreadyAddedRules, rule.Name) &&
-			!slices.Contains(alreadyAddedRules, rule.SimplifiedName) {
-			if err := fw.current.Add(rule); err != nil {
-				return NewError(fmt.Errorf("adding %s: %w", rule.Name, err))
-			}
 		} else {
-			log.Printf("%s rule already exists: %v", internal.WarningPrefix, rule.Name)
+			existingRule = Rule{}
+			// Check if rule exists in the OS, but not in the app
+			existsInOS := slices.ContainsFunc(ruleNamesFromOS, func(ruleName string) bool {
+				return ruleName == rule.Name || ruleName == rule.SimplifiedName
+			})
+			if existsInOS {
+				// block traffic until rules are swapped
+				if !trafficWasDropped {
+					blockRule := Rule{Name: "drop-all", Direction: TwoWay, Allow: false}
+					if err := fw.current.Add(blockRule); err != nil {
+						log.Printf("%s failed to temporarily block traffic: %v\n", internal.ErrorPrefix, err)
+					} else {
+						trafficWasDropped = true
+						defer func() {
+							if err := fw.current.Delete(blockRule); err != nil {
+								log.Printf("%s failed to unblock temporarily blocked traffic: %v\n", internal.ErrorPrefix, err)
+							}
+						}()
+					}
+				}
+				// delete it from the firewall because later it will be inserted
+				log.Printf("%s rule already exists in OS: %v\n", internal.WarningPrefix, rule.Name)
+				if err := fw.current.Delete(rule); err != nil {
+					log.Printf("%s failed to delete rule %s from OS %v\n", internal.ErrorPrefix, rule.Name, err)
+				}
+			}
+		}
+
+		if err := fw.current.Add(rule); err != nil {
+			return NewError(fmt.Errorf("adding %s: %w", rule.Name, err))
 		}
 
 		if err := fw.rules.Add(rule); err != nil {
 			return NewError(fmt.Errorf("adding %s to memory: %w", rule.Name, err))
 		}
 
-		if err == nil {
-			// remove older rule
+		if !existingRule.IsEmpty() {
+			// remove older rule because the new one was added
 			if err := fw.current.Delete(existingRule); err != nil {
 				return NewError(fmt.Errorf("removing replaced rule %s to memory: %w", rule.Name, err))
 			}
