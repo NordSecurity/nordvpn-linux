@@ -15,6 +15,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
+	"github.com/NordSecurity/nordvpn-linux/daemon/allowlist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -35,6 +36,9 @@ func (r *RPC) StartJobs(
 	statePublisher *state.StatePublisher,
 	heartBeatPublisher events.Publisher[time.Duration],
 ) {
+	// emit allowlist snapshot event on startup
+	r.emitAllowlistSnapshot()
+
 	// order of the jobs below matters
 	// servers job requires geo info and configs data to create server list
 	// TODO what if configs file is deleted just before servers job or disk is full?
@@ -384,4 +388,21 @@ func (r *RPC) StartAutoMeshnet(meshService *meshnet.Server, timeoutFn network.Ca
 		log.Println(internal.WarningPrefix, "will retry(", tries, ") enable mesh after:", tryAfterDuration)
 		<-time.After(tryAfterDuration)
 	}
+}
+
+// emitAllowlistSnapshot emits a snapshot event with the current allowlist configuration.
+func (r *RPC) emitAllowlistSnapshot() {
+	var cfg config.Config
+	if err := r.cm.Load(&cfg); err != nil {
+		log.Println(internal.WarningPrefix, "failed to load config for allowlist snapshot:", err)
+		return
+	}
+
+	snapshot := allowlist.NewSnapshot(allowlist.SnapshotConfig{
+		TCPPorts: cfg.AutoConnectData.Allowlist.GetTCPPorts(),
+		UDPPorts: cfg.AutoConnectData.Allowlist.GetUDPPorts(),
+		Subnets:  cfg.AutoConnectData.Allowlist.Subnets,
+	})
+
+	r.events.Debugger.DebuggerEvents.Publish(*snapshot.ToDebuggerEvent())
 }
