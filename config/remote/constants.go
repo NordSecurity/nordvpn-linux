@@ -9,7 +9,6 @@ const (
 	// effectively making the value to be in range of 1-100 (inclusive) to reflect percentage-based groups.
 	defaultMaxGroup                uint32 = 100
 	logPrefix                             = "[Remote Config]"
-	messageNamespace                      = "nordvpn-linux"
 	rcFailure                             = "failure"
 	rcSuccess                             = "success"
 	partialRolloutPerformedFailure        = false
