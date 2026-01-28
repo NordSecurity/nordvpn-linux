@@ -471,7 +471,7 @@ func (m *mockRawClientAPI) Payments(token string) ([]core.PaymentResponse, error
 }
 
 // Mesh interface methods
-func (m *mockRawClientAPI) Register(token string, peer mesh.Machine) (*mesh.Machine, error) {
+func (m *mockRawClientAPI) Register(token string, appUserID string, peer mesh.Machine) (*mesh.Machine, error) {
 	return &mesh.Machine{}, nil
 }
 

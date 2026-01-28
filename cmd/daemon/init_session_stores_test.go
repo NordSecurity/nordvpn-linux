@@ -131,7 +131,7 @@ func (m *mockRawClientAPI) Payments(token string) ([]core.PaymentResponse, error
 	return []core.PaymentResponse{}, nil
 }
 
-func (m *mockRawClientAPI) Register(token string, peer mesh.Machine) (*mesh.Machine, error) {
+func (m *mockRawClientAPI) Register(token string, appUserID string, peer mesh.Machine) (*mesh.Machine, error) {
 	return &mesh.Machine{}, nil
 }
 func (m *mockRawClientAPI) Update(token string, id uuid.UUID, info mesh.MachineUpdateRequest) error {

@@ -37,7 +37,7 @@ func TestMeshAPI_Register(t *testing.T) {
 				http.DefaultClient,
 				response.NoopValidator{},
 			)
-			machine, err := api.Register("bearer", mesh.Machine{
+			machine, err := api.Register("bearer", "app-user-id", mesh.Machine{
 				ID:        uuid.New(),
 				PublicKey: uuid.New().String(),
 				OS: mesh.OperatingSystem{

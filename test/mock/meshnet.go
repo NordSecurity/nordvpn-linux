@@ -20,7 +20,7 @@ type RegistryMock struct {
 	UpdateErr    error
 }
 
-func (*RegistryMock) Register(token string, self mesh.Machine) (*mesh.Machine, error) {
+func (*RegistryMock) Register(token string, appUserID string, self mesh.Machine) (*mesh.Machine, error) {
 	return &mesh.Machine{}, nil
 }
 func (r *RegistryMock) Update(token string, id uuid.UUID, info mesh.MachineUpdateRequest) error {
