@@ -33,6 +33,7 @@ const (
 	debuggerEventBaseKey = "dns"
 )
 
+// analytics provides an interface for sending DNS related debugger events
 type analytics interface {
 	emitResolvConfOverwrittenEvent()
 }
@@ -55,6 +56,7 @@ func (d *dnsAnalytics) emitResolvConfOverwrittenEvent() {
 	d.debugPublisher.Publish(*debuggerEvent)
 }
 
+// buildDebuggerEvent creates a debugger event for the provided eventType
 func buildDebuggerEvent(eventType eventType) *events.DebuggerEvent {
 	e := event{
 		Event:            eventType.String(),

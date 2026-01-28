@@ -16,8 +16,8 @@ import (
 type mockResolvConfMonitor struct {
 }
 
-func (m *mockResolvConfMonitor) Start() {}
-func (m *mockResolvConfMonitor) Stop()  {}
+func (m *mockResolvConfMonitor) start() {}
+func (m *mockResolvConfMonitor) stop()  {}
 
 type MockSetter struct {
 	isSet    bool

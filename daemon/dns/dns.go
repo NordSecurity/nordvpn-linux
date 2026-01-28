@@ -173,7 +173,7 @@ func (d *DNSServiceSetter) setUsingBestAvailable(iface string, nameservers []str
 	}
 
 	log.Println(internal.InfoPrefix, dnsPrefix, "DNS configured with resolv.conf")
-	d.resolvConfMonitor.Start()
+	d.resolvConfMonitor.start()
 
 	return nil
 }
@@ -212,7 +212,7 @@ func (d *DNSServiceSetter) Unset(iface string) error {
 	}
 
 	log.Println(internal.DebugPrefix, dnsPrefix, "unsetting DNS")
-	d.resolvConfMonitor.Stop()
+	d.resolvConfMonitor.stop()
 	if err := d.unsetter.Unset(iface); err != nil {
 		return fmt.Errorf("unsetting DNS: %w", err)
 	}

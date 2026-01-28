@@ -562,6 +562,7 @@ func isProcessRunning(executablePath string, readdir readdirFunc, readfile readf
 	return false, nil
 }
 
+// GetFileWatcher returns a fsnotify file watcher that is monitoring files provided in pathsToMonitor
 func GetFileWatcher(pathsToMonitor ...string) (watcher *fsnotify.Watcher, err error) {
 	watcher, err = fsnotify.NewWatcher()
 	if err != nil {
