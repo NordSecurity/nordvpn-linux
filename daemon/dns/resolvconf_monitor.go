@@ -4,14 +4,16 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/fsnotify/fsnotify"
 )
 
+// resolvConfMonitor monitors /etc/resolv.conf and perfoms actions when the file is changed.
 type resolvConfMonitor interface {
-	Start()
-	Stop()
+	start()
+	stop()
 }
 
 type getWatcherFunc func(pathsToMonitor ...string) (*fsnotify.Watcher, error)
@@ -33,7 +35,7 @@ func newResolvConfMonitor(analytics analytics) resolvConfFileWatcherMonitor {
 	}
 }
 
-func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context) error {
+func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context, doneChan chan<- any) error {
 	watcher, err := r.getWatcherFunc(resolvconfFilePath)
 	if err != nil {
 		return fmt.Errorf("creating file watcher: %w", err)
@@ -44,8 +46,6 @@ func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context) er
 		}
 	}()
 
-	doneChan := make(chan any)
-	r.doneChan = doneChan
 	log.Println(internal.InfoPrefix, dnsPrefix, "starting resolv.conf file watcher")
 	for {
 		select {
@@ -69,20 +69,28 @@ func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context) er
 	}
 }
 
-func (r *resolvConfFileWatcherMonitor) Start() {
+// start starts the monitoring goroutine.
+func (r *resolvConfFileWatcherMonitor) start() {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	r.cancelFunc = cancelFunc
+	doneChan := make(chan any)
+	r.doneChan = doneChan
 	go func() {
-		if err := r.monitorResolvConf(ctx); err != nil {
+		if err := r.monitorResolvConf(ctx, doneChan); err != nil {
 			log.Println(internal.ErrorPrefix, dnsPrefix, "resolv.conf monitoring failed:", err)
 		}
 	}()
 }
 
-func (r *resolvConfFileWatcherMonitor) Stop() {
+// stop stops the monitoring goroutine and ensures that it exits before the function return.
+func (r *resolvConfFileWatcherMonitor) stop() {
 	if r.cancelFunc != nil {
 		r.cancelFunc()
 		// wait for the monitor goroutine to finish
-		<-r.doneChan
+		select {
+		case <-r.doneChan:
+		case <-time.After(1 * time.Second):
+			log.Println(internal.WarningPrefix, dnsPrefix, "timed out wating for the monitorign goroutine to stop")
+		}
 	}
 }

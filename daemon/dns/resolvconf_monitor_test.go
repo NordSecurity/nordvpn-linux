@@ -8,7 +8,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/fsnotify/fsnotify"
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 type analyticsMock struct {
@@ -79,7 +79,7 @@ func Test_ResolvConfMonitoring(t *testing.T) {
 		getWatcherFunc: getMockWatcherFunc,
 	}
 
-	resolvConfMonitor.Start()
+	resolvConfMonitor.start()
 	eventsChan <- fsnotify.Event{}
 	checkResultFunc := func() bool {
 		return analyticsMock.getResolvConfEmitted()
@@ -87,4 +87,40 @@ func Test_ResolvConfMonitoring(t *testing.T) {
 	revolvConfEventEmitted := checkLoop(checkResultFunc, 10*time.Millisecond, 1*time.Second)
 
 	assert.Equal(t, true, revolvConfEventEmitted, "Event was not emitted after resolv.conf change was detected.")
+}
+
+func Test_ResolvConfMonitoringDoesNotDeadlock(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	eventsChan := make(chan fsnotify.Event)
+	errorChan := make(chan error)
+	getMockWatcherFunc := func(...string) (*fsnotify.Watcher, error) {
+
+		watcher, _ := fsnotify.NewWatcher()
+		watcher.Events = eventsChan
+		watcher.Errors = errorChan
+		time.Sleep(time.Duration(time.Duration.Seconds(1)))
+		return watcher, nil
+	}
+
+	analyticsMock := newAnalyticsMock()
+
+	resolvConfMonitor := resolvConfFileWatcherMonitor{
+		analytics:      &analyticsMock,
+		getWatcherFunc: getMockWatcherFunc,
+	}
+
+	resolvConfMonitor.start()
+
+	stoppedChan := make(chan any)
+	go func() {
+		resolvConfMonitor.stop()
+		stoppedChan <- true
+	}()
+
+	select {
+	case <-stoppedChan:
+	case <-time.After(time.Second * 1):
+		assert.Fail(t, "Timed out waiting for the resolvConf monitor to stop")
+	}
 }
