@@ -4,249 +4,13 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/internal/analytics"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func TestNewPortOperation(t *testing.T) {
-	category.Set(t, category.Unit)
-	tests := []struct {
-		name      string
-		op        string
-		port      int64
-		protocol  string
-		success   bool
-		errCode   int64
-		wantEvent *OperationEvent
-	}{
-		{
-			name:     "add TCP port success",
-			op:       OpAdd,
-			port:     22,
-			protocol: ProtoTCP,
-			success:  true,
-			errCode:  internal.CodeSuccess,
-			wantEvent: &OperationEvent{
-				Namespace: Namespace,
-				Subscope:  Subscope,
-				Event:     EventOperation,
-				Operation: OpAdd,
-				EntryType: EntryPort,
-				Protocol:  ProtoTCP,
-				Result:    ResultSuccess,
-				Error:     "success",
-				Port:      22,
-			},
-		},
-		{
-			name:     "add UDP port failure",
-			op:       OpAdd,
-			port:     70000,
-			protocol: ProtoUDP,
-			success:  false,
-			errCode:  internal.CodeAllowlistPortOutOfRange,
-			wantEvent: &OperationEvent{
-				Namespace: Namespace,
-				Subscope:  Subscope,
-				Event:     EventOperation,
-				Operation: OpAdd,
-				EntryType: EntryPort,
-				Protocol:  ProtoUDP,
-				Result:    ResultFailure,
-				Error:     "port out of valid range (1-65535)",
-				Port:      70000,
-			},
-		},
-		{
-			name:     "remove TCP port success",
-			op:       OpRemove,
-			port:     443,
-			protocol: ProtoTCP,
-			success:  true,
-			errCode:  internal.CodeSuccess,
-			wantEvent: &OperationEvent{
-				Namespace: Namespace,
-				Subscope:  Subscope,
-				Event:     EventOperation,
-				Operation: OpRemove,
-				EntryType: EntryPort,
-				Protocol:  ProtoTCP,
-				Result:    ResultSuccess,
-				Error:     "success",
-				Port:      443,
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := NewPortOperation(tt.op, tt.port, tt.protocol, tt.success, tt.errCode)
-			assert.Equal(t, tt.wantEvent, got)
-		})
-	}
-}
-
-func TestNewPortRangeOperation(t *testing.T) {
-	category.Set(t, category.Unit)
-	tests := []struct {
-		name      string
-		op        string
-		start     int64
-		end       int64
-		protocol  string
-		success   bool
-		errCode   int64
-		wantEvent *OperationEvent
-	}{
-		{
-			name:     "add UDP port range success",
-			op:       OpAdd,
-			start:    3000,
-			end:      8000,
-			protocol: ProtoUDP,
-			success:  true,
-			errCode:  internal.CodeSuccess,
-			wantEvent: &OperationEvent{
-				Namespace: Namespace,
-				Subscope:  Subscope,
-				Event:     EventOperation,
-				Operation: OpAdd,
-				EntryType: EntryPortRange,
-				Protocol:  ProtoUDP,
-				Result:    ResultSuccess,
-				Error:     "success",
-				PortStart: 3000,
-				PortEnd:   8000,
-			},
-		},
-		{
-			name:     "remove TCP port range success",
-			op:       OpRemove,
-			start:    1024,
-			end:      2048,
-			protocol: ProtoTCP,
-			success:  true,
-			errCode:  internal.CodeSuccess,
-			wantEvent: &OperationEvent{
-				Namespace: Namespace,
-				Subscope:  Subscope,
-				Event:     EventOperation,
-				Operation: OpRemove,
-				EntryType: EntryPortRange,
-				Protocol:  ProtoTCP,
-				Result:    ResultSuccess,
-				Error:     "success",
-				PortStart: 1024,
-				PortEnd:   2048,
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := NewPortRangeOperation(tt.op, tt.start, tt.end, tt.protocol, tt.success, tt.errCode)
-			assert.Equal(t, tt.wantEvent, got)
-		})
-	}
-}
-
-func TestNewSubnetOperation(t *testing.T) {
-	category.Set(t, category.Unit)
-	tests := []struct {
-		name      string
-		op        string
-		subnet    string
-		success   bool
-		errCode   int64
-		wantEvent *OperationEvent
-	}{
-		{
-			name:    "add subnet /24 success",
-			op:      OpAdd,
-			subnet:  "192.168.1.0/24",
-			success: true,
-			errCode: internal.CodeSuccess,
-			wantEvent: &OperationEvent{
-				Namespace:  Namespace,
-				Subscope:   Subscope,
-				Event:      EventOperation,
-				Operation:  OpAdd,
-				EntryType:  EntrySubnet,
-				Protocol:   ProtoNA,
-				Result:     ResultSuccess,
-				Error:      "success",
-				Subnet:     "192.168.1.0/24",
-				SubnetMask: 24,
-			},
-		},
-		{
-			name:    "add subnet /16 success",
-			op:      OpAdd,
-			subnet:  "10.0.0.0/16",
-			success: true,
-			errCode: internal.CodeSuccess,
-			wantEvent: &OperationEvent{
-				Namespace:  Namespace,
-				Subscope:   Subscope,
-				Event:      EventOperation,
-				Operation:  OpAdd,
-				EntryType:  EntrySubnet,
-				Protocol:   ProtoNA,
-				Result:     ResultSuccess,
-				Error:      "success",
-				Subnet:     "10.0.0.0/16",
-				SubnetMask: 16,
-			},
-		},
-		{
-			name:    "add single host /32 success",
-			op:      OpAdd,
-			subnet:  "192.168.1.100/32",
-			success: true,
-			errCode: internal.CodeSuccess,
-			wantEvent: &OperationEvent{
-				Namespace:  Namespace,
-				Subscope:   Subscope,
-				Event:      EventOperation,
-				Operation:  OpAdd,
-				EntryType:  EntrySubnet,
-				Protocol:   ProtoNA,
-				Result:     ResultSuccess,
-				Error:      "success",
-				Subnet:     "192.168.1.100/32",
-				SubnetMask: 32,
-			},
-		},
-		{
-			name:    "add invalid subnet failure",
-			op:      OpAdd,
-			subnet:  "invalid",
-			success: false,
-			errCode: internal.CodeAllowlistInvalidSubnet,
-			wantEvent: &OperationEvent{
-				Namespace:  Namespace,
-				Subscope:   Subscope,
-				Event:      EventOperation,
-				Operation:  OpAdd,
-				EntryType:  EntrySubnet,
-				Protocol:   ProtoNA,
-				Result:     ResultFailure,
-				Error:      "invalid subnet format",
-				Subnet:     "invalid",
-				SubnetMask: 0,
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := NewSubnetOperation(tt.op, tt.subnet, tt.success, tt.errCode)
-			assert.Equal(t, tt.wantEvent, got)
-		})
-	}
-}
 
 func TestNewClearOperation(t *testing.T) {
 	category.Set(t, category.Unit)
@@ -267,8 +31,8 @@ func TestNewClearOperation(t *testing.T) {
 				Operation: OpClear,
 				EntryType: EntryPort,
 				Protocol:  ProtoBoth,
-				Result:    ResultSuccess,
-				Error:     "success",
+				Result:    analytics.ResultSuccess,
+				Error:     "",
 			},
 		},
 		{
@@ -282,7 +46,7 @@ func TestNewClearOperation(t *testing.T) {
 				Operation: OpClear,
 				EntryType: EntryPort,
 				Protocol:  ProtoBoth,
-				Result:    ResultFailure,
+				Result:    analytics.ResultFailure,
 				Error:     "operation failed",
 			},
 		},
@@ -291,6 +55,231 @@ func TestNewClearOperation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := NewClearOperation(tt.success, tt.errCode)
+			assert.Equal(t, tt.wantEvent, got)
+		})
+	}
+}
+
+func TestNewOperationEventFromRequest(t *testing.T) {
+	category.Set(t, category.Unit)
+	tests := []struct {
+		name      string
+		req       *pb.SetAllowlistRequest
+		op        string
+		success   bool
+		errCode   int64
+		wantEvent *OperationEvent
+	}{
+		{
+			name: "subnet request add success",
+			req: &pb.SetAllowlistRequest{
+				Request: &pb.SetAllowlistRequest_SetAllowlistSubnetRequest{
+					SetAllowlistSubnetRequest: &pb.SetAllowlistSubnetRequest{
+						Subnet: "192.168.1.0/24",
+					},
+				},
+			},
+			op:      OpAdd,
+			success: true,
+			errCode: internal.CodeSuccess,
+			wantEvent: &OperationEvent{
+				Namespace:       Namespace,
+				Subscope:        Subscope,
+				Event:           EventOperation,
+				Operation:       OpAdd,
+				EntryType:       EntrySubnet,
+				Protocol:        ProtoNA,
+				Result:          analytics.ResultSuccess,
+				Error:           "",
+				SubnetMask:      24,
+				IsPrivateSubnet: true,
+			},
+		},
+		{
+			name: "subnet request remove failure",
+			req: &pb.SetAllowlistRequest{
+				Request: &pb.SetAllowlistRequest_SetAllowlistSubnetRequest{
+					SetAllowlistSubnetRequest: &pb.SetAllowlistSubnetRequest{
+						Subnet: "10.0.0.0/8",
+					},
+				},
+			},
+			op:      OpRemove,
+			success: false,
+			errCode: internal.CodeAllowlistSubnetNoop,
+			wantEvent: &OperationEvent{
+				Namespace:       Namespace,
+				Subscope:        Subscope,
+				Event:           EventOperation,
+				Operation:       OpRemove,
+				EntryType:       EntrySubnet,
+				Protocol:        ProtoNA,
+				Result:          analytics.ResultFailure,
+				Error:           "subnet unchanged: already in desired state",
+				SubnetMask:      8,
+				IsPrivateSubnet: true,
+			},
+		},
+		{
+			name: "single port TCP only",
+			req: &pb.SetAllowlistRequest{
+				Request: &pb.SetAllowlistRequest_SetAllowlistPortsRequest{
+					SetAllowlistPortsRequest: &pb.SetAllowlistPortsRequest{
+						IsTcp: true,
+						IsUdp: false,
+						PortRange: &pb.PortRange{
+							StartPort: 22,
+							EndPort:   0,
+						},
+					},
+				},
+			},
+			op:      OpAdd,
+			success: true,
+			errCode: internal.CodeSuccess,
+			wantEvent: &OperationEvent{
+				Namespace: Namespace,
+				Subscope:  Subscope,
+				Event:     EventOperation,
+				Operation: OpAdd,
+				EntryType: EntryPort,
+				Protocol:  ProtoTCP,
+				Result:    analytics.ResultSuccess,
+				Error:     "",
+				Port:      22,
+			},
+		},
+		{
+			name: "single port UDP only",
+			req: &pb.SetAllowlistRequest{
+				Request: &pb.SetAllowlistRequest_SetAllowlistPortsRequest{
+					SetAllowlistPortsRequest: &pb.SetAllowlistPortsRequest{
+						IsTcp: false,
+						IsUdp: true,
+						PortRange: &pb.PortRange{
+							StartPort: 53,
+							EndPort:   53,
+						},
+					},
+				},
+			},
+			op:      OpAdd,
+			success: true,
+			errCode: internal.CodeSuccess,
+			wantEvent: &OperationEvent{
+				Namespace: Namespace,
+				Subscope:  Subscope,
+				Event:     EventOperation,
+				Operation: OpAdd,
+				EntryType: EntryPort,
+				Protocol:  ProtoUDP,
+				Result:    analytics.ResultSuccess,
+				Error:     "",
+				Port:      53,
+			},
+		},
+		{
+			name: "single port both protocols",
+			req: &pb.SetAllowlistRequest{
+				Request: &pb.SetAllowlistRequest_SetAllowlistPortsRequest{
+					SetAllowlistPortsRequest: &pb.SetAllowlistPortsRequest{
+						IsTcp: true,
+						IsUdp: true,
+						PortRange: &pb.PortRange{
+							StartPort: 443,
+							EndPort:   0,
+						},
+					},
+				},
+			},
+			op:      OpAdd,
+			success: true,
+			errCode: internal.CodeSuccess,
+			wantEvent: &OperationEvent{
+				Namespace: Namespace,
+				Subscope:  Subscope,
+				Event:     EventOperation,
+				Operation: OpAdd,
+				EntryType: EntryPort,
+				Protocol:  ProtoBoth,
+				Result:    analytics.ResultSuccess,
+				Error:     "",
+				Port:      443,
+			},
+		},
+		{
+			name: "port range TCP",
+			req: &pb.SetAllowlistRequest{
+				Request: &pb.SetAllowlistRequest_SetAllowlistPortsRequest{
+					SetAllowlistPortsRequest: &pb.SetAllowlistPortsRequest{
+						IsTcp: true,
+						IsUdp: false,
+						PortRange: &pb.PortRange{
+							StartPort: 3000,
+							EndPort:   8000,
+						},
+					},
+				},
+			},
+			op:      OpAdd,
+			success: true,
+			errCode: internal.CodeSuccess,
+			wantEvent: &OperationEvent{
+				Namespace:      Namespace,
+				Subscope:       Subscope,
+				Event:          EventOperation,
+				Operation:      OpAdd,
+				EntryType:      EntryPortRange,
+				Protocol:       ProtoTCP,
+				Result:         analytics.ResultSuccess,
+				Error:          "",
+				PortRangeStart: 3000,
+				PortRangeEnd:   8000,
+			},
+		},
+		{
+			name: "port range failure",
+			req: &pb.SetAllowlistRequest{
+				Request: &pb.SetAllowlistRequest_SetAllowlistPortsRequest{
+					SetAllowlistPortsRequest: &pb.SetAllowlistPortsRequest{
+						IsTcp: true,
+						IsUdp: true,
+						PortRange: &pb.PortRange{
+							StartPort: 70000,
+							EndPort:   80000,
+						},
+					},
+				},
+			},
+			op:      OpAdd,
+			success: false,
+			errCode: internal.CodeAllowlistPortOutOfRange,
+			wantEvent: &OperationEvent{
+				Namespace:      Namespace,
+				Subscope:       Subscope,
+				Event:          EventOperation,
+				Operation:      OpAdd,
+				EntryType:      EntryPortRange,
+				Protocol:       ProtoBoth,
+				Result:         analytics.ResultFailure,
+				Error:          "port out of valid range (1-65535)",
+				PortRangeStart: 70000,
+				PortRangeEnd:   80000,
+			},
+		},
+		{
+			name:      "nil request returns nil",
+			req:       &pb.SetAllowlistRequest{},
+			op:        OpAdd,
+			success:   true,
+			errCode:   internal.CodeSuccess,
+			wantEvent: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := NewOperationEventFromRequest(tt.req, tt.op, tt.success, tt.errCode)
 			assert.Equal(t, tt.wantEvent, got)
 		})
 	}
@@ -311,17 +300,18 @@ func TestNewSnapshot(t *testing.T) {
 				Subnets:  []string{},
 			},
 			wantEvent: &SnapshotEvent{
-				Namespace:    Namespace,
-				Subscope:     Subscope,
-				Event:        EventSnapshot,
-				TCPPorts:     []int64{},
-				UDPPorts:     []int64{},
-				Subnets:      []string{},
-				TCPPortCount: 0,
-				UDPPortCount: 0,
-				SubnetCount:  0,
-				TotalCount:   0,
-				IsEnabled:    false,
+				Namespace:          Namespace,
+				Subscope:           Subscope,
+				Event:              EventSnapshot,
+				TCPPorts:           []int64{},
+				UDPPorts:           []int64{},
+				TCPPortCount:       0,
+				UDPPortCount:       0,
+				SubnetCount:        0,
+				PrivateSubnetCount: 0,
+				PublicSubnetCount:  0,
+				TotalEntryCount:    0,
+				IsEnabled:          false,
 			},
 		},
 		{
@@ -332,17 +322,18 @@ func TestNewSnapshot(t *testing.T) {
 				Subnets:  []string{},
 			},
 			wantEvent: &SnapshotEvent{
-				Namespace:    Namespace,
-				Subscope:     Subscope,
-				Event:        EventSnapshot,
-				TCPPorts:     []int64{22, 80, 443},
-				UDPPorts:     []int64{},
-				Subnets:      []string{},
-				TCPPortCount: 3,
-				UDPPortCount: 0,
-				SubnetCount:  0,
-				TotalCount:   3,
-				IsEnabled:    true,
+				Namespace:          Namespace,
+				Subscope:           Subscope,
+				Event:              EventSnapshot,
+				TCPPorts:           []int64{22, 80, 443},
+				UDPPorts:           []int64{},
+				TCPPortCount:       3,
+				UDPPortCount:       0,
+				SubnetCount:        0,
+				PrivateSubnetCount: 0,
+				PublicSubnetCount:  0,
+				TotalEntryCount:    3,
+				IsEnabled:          true,
 			},
 		},
 		{
@@ -353,17 +344,18 @@ func TestNewSnapshot(t *testing.T) {
 				Subnets:  []string{"192.168.1.0/24"},
 			},
 			wantEvent: &SnapshotEvent{
-				Namespace:    Namespace,
-				Subscope:     Subscope,
-				Event:        EventSnapshot,
-				TCPPorts:     []int64{22, 80, 443},
-				UDPPorts:     []int64{53, 123},
-				Subnets:      []string{"192.168.1.0/24"},
-				TCPPortCount: 3,
-				UDPPortCount: 2,
-				SubnetCount:  1,
-				TotalCount:   6,
-				IsEnabled:    true,
+				Namespace:          Namespace,
+				Subscope:           Subscope,
+				Event:              EventSnapshot,
+				TCPPorts:           []int64{22, 80, 443},
+				UDPPorts:           []int64{53, 123},
+				TCPPortCount:       3,
+				UDPPortCount:       2,
+				SubnetCount:        1,
+				PrivateSubnetCount: 1,
+				PublicSubnetCount:  0,
+				TotalEntryCount:    6,
+				IsEnabled:          true,
 			},
 		},
 		{
@@ -374,17 +366,18 @@ func TestNewSnapshot(t *testing.T) {
 				Subnets:  []string{"192.168.1.0/24", "10.0.0.0/8", "172.16.0.0/16"},
 			},
 			wantEvent: &SnapshotEvent{
-				Namespace:    Namespace,
-				Subscope:     Subscope,
-				Event:        EventSnapshot,
-				TCPPorts:     []int64{22},
-				UDPPorts:     []int64{},
-				Subnets:      []string{"192.168.1.0/24", "10.0.0.0/8", "172.16.0.0/16"},
-				TCPPortCount: 1,
-				UDPPortCount: 0,
-				SubnetCount:  3,
-				TotalCount:   4,
-				IsEnabled:    true,
+				Namespace:          Namespace,
+				Subscope:           Subscope,
+				Event:              EventSnapshot,
+				TCPPorts:           []int64{22},
+				UDPPorts:           []int64{},
+				TCPPortCount:       1,
+				UDPPortCount:       0,
+				SubnetCount:        3,
+				PrivateSubnetCount: 3,
+				PublicSubnetCount:  0,
+				TotalEntryCount:    4,
+				IsEnabled:          true,
 			},
 		},
 		{
@@ -395,17 +388,40 @@ func TestNewSnapshot(t *testing.T) {
 				Subnets:  []string{"192.168.0.0/16", "10.10.10.0/24"},
 			},
 			wantEvent: &SnapshotEvent{
-				Namespace:    Namespace,
-				Subscope:     Subscope,
-				Event:        EventSnapshot,
-				TCPPorts:     []int64{},
-				UDPPorts:     []int64{},
-				Subnets:      []string{"192.168.0.0/16", "10.10.10.0/24"},
-				TCPPortCount: 0,
-				UDPPortCount: 0,
-				SubnetCount:  2,
-				TotalCount:   2,
-				IsEnabled:    true,
+				Namespace:          Namespace,
+				Subscope:           Subscope,
+				Event:              EventSnapshot,
+				TCPPorts:           []int64{},
+				UDPPorts:           []int64{},
+				TCPPortCount:       0,
+				UDPPortCount:       0,
+				SubnetCount:        2,
+				PrivateSubnetCount: 2,
+				PublicSubnetCount:  0,
+				TotalEntryCount:    2,
+				IsEnabled:          true,
+			},
+		},
+		{
+			name: "mixed private and public subnets",
+			cfg: SnapshotConfig{
+				TCPPorts: []int64{},
+				UDPPorts: []int64{},
+				Subnets:  []string{"192.168.1.0/24", "8.8.8.0/24", "10.0.0.0/8", "1.1.1.0/24"},
+			},
+			wantEvent: &SnapshotEvent{
+				Namespace:          Namespace,
+				Subscope:           Subscope,
+				Event:              EventSnapshot,
+				TCPPorts:           []int64{},
+				UDPPorts:           []int64{},
+				TCPPortCount:       0,
+				UDPPortCount:       0,
+				SubnetCount:        4,
+				PrivateSubnetCount: 2,
+				PublicSubnetCount:  2,
+				TotalEntryCount:    4,
+				IsEnabled:          true,
 			},
 		},
 	}
@@ -420,7 +436,16 @@ func TestNewSnapshot(t *testing.T) {
 
 func TestOperationEvent_ToDebuggerEvent(t *testing.T) {
 	category.Set(t, category.Unit)
-	event := NewPortOperation(OpAdd, 22, ProtoTCP, true, 0)
+	req := &pb.SetAllowlistRequest{
+		Request: &pb.SetAllowlistRequest_SetAllowlistPortsRequest{
+			SetAllowlistPortsRequest: &pb.SetAllowlistPortsRequest{
+				IsTcp:     true,
+				IsUdp:     false,
+				PortRange: &pb.PortRange{StartPort: 22, EndPort: 0},
+			},
+		},
+	}
+	event := NewOperationEventFromRequest(req, OpAdd, true, 0)
 	debuggerEvent := event.ToDebuggerEvent()
 
 	require.NotNil(t, debuggerEvent)
@@ -496,34 +521,43 @@ func TestSnapshotEvent_ToDebuggerEvent(t *testing.T) {
 		"application.nordvpnapp.config.current_state.is_on_vpn.value")
 }
 
-func TestExtractMask(t *testing.T) {
+func TestParseSubnetInfo(t *testing.T) {
 	category.Set(t, category.Unit)
 	tests := []struct {
-		cidr     string
-		wantMask int64
+		cidr          string
+		wantMask      int
+		wantIsPrivate bool
 	}{
-		{"192.168.1.0/24", 24},
-		{"10.0.0.0/8", 8},
-		{"172.16.0.0/16", 16},
-		{"192.168.1.100/32", 32},
-		{"invalid", 0},
-		{"192.168.1.0", 0},
-		{"192.168.1.0/", 0},
-		{"192.168.1.0/abc", 0},
+		// Valid private subnets
+		{"192.168.1.0/24", 24, true},
+		{"10.0.0.0/8", 8, true},
+		{"172.16.0.0/16", 16, true},
+		{"192.168.1.100/32", 32, true},
+		// Valid public subnets
+		{"8.8.8.0/24", 24, false},
+		{"1.1.1.0/24", 24, false},
+		// Edge cases
+		{"0.0.0.0/0", 0, false}, // 0.0.0.0 is not considered private
+		// Invalid inputs
+		{"invalid", -1, false},
+		{"192.168.1.0", -1, false},
+		{"192.168.1.0/", -1, false},
+		{"192.168.1.0/abc", -1, false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.cidr, func(t *testing.T) {
-			got := extractMask(tt.cidr)
-			assert.Equal(t, tt.wantMask, got)
+			gotMask, gotIsPrivate := parseSubnetInfo(tt.cidr)
+			assert.Equal(t, tt.wantMask, gotMask)
+			assert.Equal(t, tt.wantIsPrivate, gotIsPrivate)
 		})
 	}
 }
 
 func TestBoolToResult(t *testing.T) {
 	category.Set(t, category.Unit)
-	assert.Equal(t, ResultSuccess, boolToResult(true))
-	assert.Equal(t, ResultFailure, boolToResult(false))
+	assert.Equal(t, analytics.ResultSuccess, analytics.BoolToResult(true))
+	assert.Equal(t, analytics.ResultFailure, analytics.BoolToResult(false))
 }
 
 func TestError(t *testing.T) {
@@ -532,22 +566,21 @@ func TestError(t *testing.T) {
 		code    int64
 		wantMsg string
 	}{
-		{internal.CodeSuccess, "success"},
+		{internal.CodeSuccess, ""},
 		{internal.CodeFailure, "operation failed"},
 		{internal.CodeConfigError, "configuration error"},
 		{internal.CodePrivateSubnetLANDiscovery, "private subnet conflicts with LAN discovery"},
 		{internal.CodeAllowlistInvalidSubnet, "invalid subnet format"},
-		{internal.CodeAllowlistSubnetNoop, "subnet already exists or does not exist"},
+		{internal.CodeAllowlistSubnetNoop, "subnet unchanged: already in desired state"},
 		{internal.CodeAllowlistPortOutOfRange, "port out of valid range (1-65535)"},
-		{internal.CodeAllowlistPortNoop, "port already exists or does not exist"},
+		{internal.CodeAllowlistPortNoop, "port unchanged: already in desired state"},
 		{9999, "unknown allowlist error (code 9999)"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.wantMsg, func(t *testing.T) {
-			err := NewError(tt.code)
-			assert.Equal(t, tt.wantMsg, err.Error())
-			assert.Equal(t, tt.code, err.Code)
+			got := codeToString(tt.code)
+			assert.Equal(t, tt.wantMsg, got)
 		})
 	}
 }

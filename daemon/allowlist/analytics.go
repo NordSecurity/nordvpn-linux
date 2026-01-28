@@ -3,16 +3,18 @@ package allowlist
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
-	"strings"
+	"log"
+	"net/netip"
 
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/internal/analytics"
 )
 
 // Event identification constants
 const (
-	Namespace         = "nordvpn-linux"
+	Namespace         = internal.DebugEventMessageNamespace
 	Subscope          = "allowlist"
 	EventOperation    = Subscope + "_operation"
 	EventSnapshot     = Subscope + "_snapshot"
@@ -41,12 +43,6 @@ const (
 	ProtoNA   = "n/a"
 )
 
-// Results
-const (
-	ResultSuccess = "success"
-	ResultFailure = "failure"
-)
-
 // globalContextPaths defines the common context paths included in all allowlist events.
 var globalContextPaths = []string{
 	// Device context
@@ -62,38 +58,39 @@ var globalContextPaths = []string{
 
 // OperationEvent represents an allowlist add/remove/clear operation.
 type OperationEvent struct {
-	Namespace  string `json:"namespace"`
-	Subscope   string `json:"subscope"`
-	Event      string `json:"event"`
-	Operation  string `json:"operation"`
-	EntryType  string `json:"entry_type"`
-	Protocol   string `json:"protocol"`
-	Result     string `json:"result"`
-	Error      string `json:"error"`
-	Port       int64  `json:"port"`
-	PortStart  int64  `json:"port_start"`
-	PortEnd    int64  `json:"port_end"`
-	Subnet     string `json:"subnet"`
-	SubnetMask int64  `json:"subnet_mask"`
+	Namespace       string `json:"namespace"`
+	Subscope        string `json:"subscope"`
+	Event           string `json:"event"`
+	Operation       string `json:"operation"`
+	EntryType       string `json:"entry_type"`
+	Protocol        string `json:"protocol"`
+	Result          string `json:"result"`
+	Error           string `json:"error,omitempty"`
+	Port            int64  `json:"port,omitempty"`
+	PortRangeStart  int64  `json:"port_range_start,omitempty"`
+	PortRangeEnd    int64  `json:"port_range_end,omitempty"`
+	SubnetMask      int    `json:"subnet_mask,omitempty"`
+	IsPrivateSubnet bool   `json:"is_private_subnet,omitempty"`
 }
 
 // SnapshotEvent represents the current allowlist configuration state.
 type SnapshotEvent struct {
-	Namespace    string   `json:"namespace"`
-	Subscope     string   `json:"subscope"`
-	Event        string   `json:"event"`
-	TCPPorts     []int64  `json:"tcp_ports"`
-	UDPPorts     []int64  `json:"udp_ports"`
-	Subnets      []string `json:"subnets"`
-	TCPPortCount int64    `json:"tcp_port_count"`
-	UDPPortCount int64    `json:"udp_port_count"`
-	SubnetCount  int64    `json:"subnet_count"`
-	TotalCount   int64    `json:"total_count"`
-	IsEnabled    bool     `json:"is_enabled"`
+	Namespace          string  `json:"namespace"`
+	Subscope           string  `json:"subscope"`
+	Event              string  `json:"event"`
+	TCPPorts           []int64 `json:"tcp_ports"`
+	UDPPorts           []int64 `json:"udp_ports"`
+	TCPPortCount       int64   `json:"tcp_port_count"`
+	UDPPortCount       int64   `json:"udp_port_count"`
+	SubnetCount        int64   `json:"subnet_count"`
+	PrivateSubnetCount int64   `json:"private_subnet_count"`
+	PublicSubnetCount  int64   `json:"public_subnet_count"`
+	TotalEntryCount    int64   `json:"total_entry_count"`
+	IsEnabled          bool    `json:"is_enabled"`
 }
 
-// NewPortOperation creates an event for single port add/remove
-func NewPortOperation(op string, port int64, protocol string, success bool, errCode int64) *OperationEvent {
+// newPortOperation creates an event for single port add/remove
+func newPortOperation(op string, port int64, protocol string, success bool, errCode int64) *OperationEvent {
 	return &OperationEvent{
 		Namespace: Namespace,
 		Subscope:  Subscope,
@@ -101,41 +98,42 @@ func NewPortOperation(op string, port int64, protocol string, success bool, errC
 		Operation: op,
 		EntryType: EntryPort,
 		Protocol:  protocol,
-		Result:    boolToResult(success),
-		Error:     NewError(errCode).Error(),
+		Result:    analytics.BoolToResult(success),
+		Error:     codeToString(errCode),
 		Port:      port,
 	}
 }
 
-// NewPortRangeOperation creates an event for port range add/remove
-func NewPortRangeOperation(op string, start, end int64, protocol string, success bool, errCode int64) *OperationEvent {
+// newPortRangeOperation creates an event for port range add/remove
+func newPortRangeOperation(op string, start, end int64, protocol string, success bool, errCode int64) *OperationEvent {
 	return &OperationEvent{
-		Namespace: Namespace,
-		Subscope:  Subscope,
-		Event:     EventOperation,
-		Operation: op,
-		EntryType: EntryPortRange,
-		Protocol:  protocol,
-		Result:    boolToResult(success),
-		Error:     NewError(errCode).Error(),
-		PortStart: start,
-		PortEnd:   end,
+		Namespace:      Namespace,
+		Subscope:       Subscope,
+		Event:          EventOperation,
+		Operation:      op,
+		EntryType:      EntryPortRange,
+		Protocol:       protocol,
+		Result:         analytics.BoolToResult(success),
+		Error:          codeToString(errCode),
+		PortRangeStart: start,
+		PortRangeEnd:   end,
 	}
 }
 
-// NewSubnetOperation creates an event for subnet add/remove.
-func NewSubnetOperation(op string, subnet string, success bool, errCode int64) *OperationEvent {
+// newSubnetOperation creates an event for subnet add/remove.
+func newSubnetOperation(op string, subnet string, success bool, errCode int64) *OperationEvent {
+	mask, isPrivate := parseSubnetInfo(subnet)
 	return &OperationEvent{
-		Namespace:  Namespace,
-		Subscope:   Subscope,
-		Event:      EventOperation,
-		Operation:  op,
-		EntryType:  EntrySubnet,
-		Protocol:   ProtoNA,
-		Result:     boolToResult(success),
-		Error:      NewError(errCode).Error(),
-		Subnet:     subnet,
-		SubnetMask: extractMask(subnet),
+		Namespace:       Namespace,
+		Subscope:        Subscope,
+		Event:           EventOperation,
+		Operation:       op,
+		EntryType:       EntrySubnet,
+		Protocol:        ProtoNA,
+		Result:          analytics.BoolToResult(success),
+		Error:           codeToString(errCode),
+		SubnetMask:      mask,
+		IsPrivateSubnet: isPrivate,
 	}
 }
 
@@ -148,8 +146,8 @@ func NewClearOperation(success bool, errCode int64) *OperationEvent {
 		Operation: OpClear,
 		EntryType: EntryPort,
 		Protocol:  ProtoBoth,
-		Result:    boolToResult(success),
-		Error:     NewError(errCode).Error(),
+		Result:    analytics.BoolToResult(success),
+		Error:     codeToString(errCode),
 	}
 }
 
@@ -165,25 +163,78 @@ func NewSnapshot(cfg SnapshotConfig) *SnapshotEvent {
 	tcpCount := int64(len(cfg.TCPPorts))
 	udpCount := int64(len(cfg.UDPPorts))
 	subnetCount := int64(len(cfg.Subnets))
+
+	var privateCount, publicCount int64
+	for _, subnet := range cfg.Subnets {
+		_, isPrivate := parseSubnetInfo(subnet)
+		if isPrivate {
+			privateCount++
+		} else {
+			publicCount++
+		}
+	}
+
 	total := tcpCount + udpCount + subnetCount
 	return &SnapshotEvent{
-		Namespace:    Namespace,
-		Subscope:     Subscope,
-		Event:        EventSnapshot,
-		TCPPorts:     cfg.TCPPorts,
-		UDPPorts:     cfg.UDPPorts,
-		Subnets:      cfg.Subnets,
-		TCPPortCount: tcpCount,
-		UDPPortCount: udpCount,
-		SubnetCount:  subnetCount,
-		TotalCount:   total,
-		IsEnabled:    total > 0,
+		Namespace:          Namespace,
+		Subscope:           Subscope,
+		Event:              EventSnapshot,
+		TCPPorts:           cfg.TCPPorts,
+		UDPPorts:           cfg.UDPPorts,
+		TCPPortCount:       tcpCount,
+		UDPPortCount:       udpCount,
+		SubnetCount:        subnetCount,
+		PrivateSubnetCount: privateCount,
+		PublicSubnetCount:  publicCount,
+		TotalEntryCount:    total,
+		IsEnabled:          total > 0,
 	}
+}
+
+// NewOperationEventFromRequest creates an analytics event based on the protobuf request type.
+func NewOperationEventFromRequest(
+	req *pb.SetAllowlistRequest,
+	op string,
+	success bool,
+	errCode int64,
+) *OperationEvent {
+	switch request := req.Request.(type) {
+	case *pb.SetAllowlistRequest_SetAllowlistSubnetRequest:
+		subnet := request.SetAllowlistSubnetRequest.GetSubnet()
+		return newSubnetOperation(op, subnet, success, errCode)
+
+	case *pb.SetAllowlistRequest_SetAllowlistPortsRequest:
+		portRange := request.SetAllowlistPortsRequest.GetPortRange()
+		start := portRange.GetStartPort()
+		end := portRange.GetEndPort()
+
+		protocol := ProtoBoth
+		if request.SetAllowlistPortsRequest.IsTcp && !request.SetAllowlistPortsRequest.IsUdp {
+			protocol = ProtoTCP
+		} else if request.SetAllowlistPortsRequest.IsUdp && !request.SetAllowlistPortsRequest.IsTcp {
+			protocol = ProtoUDP
+		}
+
+		if end == 0 || end == start {
+			return newPortOperation(op, start, protocol, success, errCode)
+		}
+		return newPortRangeOperation(op, start, end, protocol, success, errCode)
+	}
+
+	return nil
 }
 
 // ToDebuggerEvent converts OperationEvent to a DebuggerEvent for moose publishing
 func (e *OperationEvent) ToDebuggerEvent() *events.DebuggerEvent {
-	jsonData, _ := json.Marshal(e)
+	jsonData, err := json.Marshal(e)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to marshal operation-event:", err)
+		// Fallback: provide basic information we know for certain
+		jsonData = []byte(fmt.Sprintf(
+			`{"namespace":"%s","subscope":"%s","event":"%s","operation":"%s","result":"%s","error":"marshal_error"}`,
+			e.Namespace, e.Subscope, e.Event, e.Operation, e.Result,
+		))
+	}
 	return events.NewDebuggerEvent(string(jsonData)).
 		WithKeyBasedContextPaths(
 			events.ContextValue{Path: contextPathPrefix + ".namespace", Value: e.Namespace},
@@ -195,17 +246,25 @@ func (e *OperationEvent) ToDebuggerEvent() *events.DebuggerEvent {
 			events.ContextValue{Path: contextPathPrefix + ".result", Value: e.Result},
 			events.ContextValue{Path: contextPathPrefix + ".error", Value: e.Error},
 			events.ContextValue{Path: contextPathPrefix + ".port", Value: e.Port},
-			events.ContextValue{Path: contextPathPrefix + ".port_start", Value: e.PortStart},
-			events.ContextValue{Path: contextPathPrefix + ".port_end", Value: e.PortEnd},
-			events.ContextValue{Path: contextPathPrefix + ".subnet", Value: e.Subnet},
+			events.ContextValue{Path: contextPathPrefix + ".port_range_start", Value: e.PortRangeStart},
+			events.ContextValue{Path: contextPathPrefix + ".port_range_end", Value: e.PortRangeEnd},
 			events.ContextValue{Path: contextPathPrefix + ".subnet_mask", Value: e.SubnetMask},
+			events.ContextValue{Path: contextPathPrefix + ".is_private_subnet", Value: e.IsPrivateSubnet},
 		).
 		WithGlobalContextPaths(globalContextPaths...)
 }
 
 // ToDebuggerEvent converts SnapshotEvent to a DebuggerEvent for moose publishing
 func (e *SnapshotEvent) ToDebuggerEvent() *events.DebuggerEvent {
-	jsonData, _ := json.Marshal(e)
+	jsonData, err := json.Marshal(e)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to marshal snapshot-event:", err)
+		// Fallback: provide basic information we know for certain
+		jsonData = []byte(fmt.Sprintf(
+			`{"namespace":"%s","subscope":"%s","event":"%s","error":"marshal_error"}`,
+			e.Namespace, e.Subscope, e.Event,
+		))
+	}
 	return events.NewDebuggerEvent(string(jsonData)).
 		WithKeyBasedContextPaths(
 			events.ContextValue{Path: contextPathPrefix + ".namespace", Value: e.Namespace},
@@ -213,47 +272,31 @@ func (e *SnapshotEvent) ToDebuggerEvent() *events.DebuggerEvent {
 			events.ContextValue{Path: contextPathPrefix + ".event", Value: e.Event},
 			events.ContextValue{Path: contextPathPrefix + ".tcp_ports", Value: e.TCPPorts},
 			events.ContextValue{Path: contextPathPrefix + ".udp_ports", Value: e.UDPPorts},
-			events.ContextValue{Path: contextPathPrefix + ".subnets", Value: e.Subnets},
 			events.ContextValue{Path: contextPathPrefix + ".tcp_port_count", Value: e.TCPPortCount},
 			events.ContextValue{Path: contextPathPrefix + ".udp_port_count", Value: e.UDPPortCount},
 			events.ContextValue{Path: contextPathPrefix + ".subnet_count", Value: e.SubnetCount},
-			events.ContextValue{Path: contextPathPrefix + ".total_count", Value: e.TotalCount},
+			events.ContextValue{Path: contextPathPrefix + ".private_subnet_count", Value: e.PrivateSubnetCount},
+			events.ContextValue{Path: contextPathPrefix + ".public_subnet_count", Value: e.PublicSubnetCount},
+			events.ContextValue{Path: contextPathPrefix + ".total_entry_count", Value: e.TotalEntryCount},
 			events.ContextValue{Path: contextPathPrefix + ".is_enabled", Value: e.IsEnabled},
 		).
 		WithGlobalContextPaths(globalContextPaths...)
 }
 
-func boolToResult(success bool) string {
-	if success {
-		return ResultSuccess
-	}
-	return ResultFailure
-}
-
-func extractMask(cidr string) int64 {
-	parts := strings.Split(cidr, "/")
-	if len(parts) != 2 {
-		return 0
-	}
-	mask, err := strconv.ParseInt(parts[1], 10, 64)
+// parseSubnetInfo extracts the mask and determines if the subnet is private.
+// Returns mask=-1 if parsing fails, isPrivate=false for invalid or public addresses.
+func parseSubnetInfo(cidr string) (mask int, isPrivate bool) {
+	prefix, err := netip.ParsePrefix(cidr)
 	if err != nil {
-		return 0
+		return -1, false
 	}
-	return mask
+	return prefix.Bits(), prefix.Addr().IsPrivate()
 }
 
-type Error struct {
-	Code int64
-}
-
-func NewError(code int64) *Error {
-	return &Error{Code: code}
-}
-
-func (e *Error) Error() string {
-	switch e.Code {
+func codeToString(code int64) string {
+	switch code {
 	case internal.CodeSuccess:
-		return "success"
+		return ""
 	case internal.CodeFailure:
 		return "operation failed"
 	case internal.CodeConfigError:
@@ -263,12 +306,12 @@ func (e *Error) Error() string {
 	case internal.CodeAllowlistInvalidSubnet:
 		return "invalid subnet format"
 	case internal.CodeAllowlistSubnetNoop:
-		return "subnet already exists or does not exist"
+		return "subnet unchanged: already in desired state"
 	case internal.CodeAllowlistPortOutOfRange:
 		return "port out of valid range (1-65535)"
 	case internal.CodeAllowlistPortNoop:
-		return "port already exists or does not exist"
+		return "port unchanged: already in desired state"
 	default:
-		return fmt.Sprintf("unknown allowlist error (code %d)", e.Code)
+		return fmt.Sprintf("unknown allowlist error (code %d)", code)
 	}
 }
