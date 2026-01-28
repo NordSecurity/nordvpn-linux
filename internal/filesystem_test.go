@@ -3,7 +3,6 @@ package internal
 import (
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,6 +13,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -450,8 +450,8 @@ func TestIsProcessRunning(t *testing.T) {
 			expectedExecPath: execPath,
 			readdir: func(string) ([]os.DirEntry, error) {
 				return []os.DirEntry{
-					&MockDirEntry{
-						name: "12",
+					&fs.MockDirEntry{
+						DirName: "12",
 					},
 				}, nil
 			},
@@ -464,8 +464,8 @@ func TestIsProcessRunning(t *testing.T) {
 			expectedExecPath: "/snap/nordvpn/x1/usr/lib/nordvpn/nordfileshare",
 			readdir: func(string) ([]os.DirEntry, error) {
 				return []os.DirEntry{
-					&MockDirEntry{
-						name: "1208910",
+					&fs.MockDirEntry{
+						DirName: "1208910",
 					},
 				}, nil
 			},
@@ -478,8 +478,8 @@ func TestIsProcessRunning(t *testing.T) {
 			expectedExecPath: "/../../..//usr//lib/nordvpn/some/dirs/../..//nordfileshare",
 			readdir: func(string) ([]os.DirEntry, error) {
 				return []os.DirEntry{
-					&MockDirEntry{
-						name: "12",
+					&fs.MockDirEntry{
+						DirName: "12",
 					},
 				}, nil
 			},
@@ -492,14 +492,14 @@ func TestIsProcessRunning(t *testing.T) {
 			expectedExecPath: execPath,
 			readdir: func(string) ([]os.DirEntry, error) {
 				return []os.DirEntry{
-					&MockDirEntry{
-						name: "wrong-dir-name",
+					&fs.MockDirEntry{
+						DirName: "wrong-dir-name",
 					},
-					&MockDirEntry{
-						name: "9365",
+					&fs.MockDirEntry{
+						DirName: "9365",
 					},
-					&MockDirEntry{
-						name: "42",
+					&fs.MockDirEntry{
+						DirName: "42",
 					},
 				}, nil
 			},
@@ -512,14 +512,14 @@ func TestIsProcessRunning(t *testing.T) {
 			expectedExecPath: execPath,
 			readdir: func(string) ([]os.DirEntry, error) {
 				return []os.DirEntry{
-					&MockDirEntry{
-						name: "wrong-dir-name",
+					&fs.MockDirEntry{
+						DirName: "wrong-dir-name",
 					},
-					&MockDirEntry{
-						name: "another-wrong",
+					&fs.MockDirEntry{
+						DirName: "another-wrong",
 					},
-					&MockDirEntry{
-						name: "42",
+					&fs.MockDirEntry{
+						DirName: "42",
 					},
 				}, nil
 			},
@@ -532,8 +532,8 @@ func TestIsProcessRunning(t *testing.T) {
 			expectedExecPath: "/not/important",
 			readdir: func(string) ([]os.DirEntry, error) {
 				return []os.DirEntry{
-					&MockDirEntry{
-						name: "not-a-pid",
+					&fs.MockDirEntry{
+						DirName: "not-a-pid",
 					},
 				}, nil
 			},
@@ -546,8 +546,8 @@ func TestIsProcessRunning(t *testing.T) {
 			expectedExecPath: "/not/important",
 			readdir: func(string) ([]os.DirEntry, error) {
 				return []os.DirEntry{
-					&MockDirEntry{
-						name: "42",
+					&fs.MockDirEntry{
+						DirName: "42",
 					},
 				}, nil
 			},
@@ -560,8 +560,8 @@ func TestIsProcessRunning(t *testing.T) {
 			expectedExecPath: "/not/important",
 			readdir: func(string) ([]os.DirEntry, error) {
 				return []os.DirEntry{
-					&MockDirEntry{
-						name: "42",
+					&fs.MockDirEntry{
+						DirName: "42",
 					},
 				}, nil
 			},
@@ -574,8 +574,8 @@ func TestIsProcessRunning(t *testing.T) {
 			expectedExecPath: execPath,
 			readdir: func(string) ([]os.DirEntry, error) {
 				return []os.DirEntry{
-					&MockDirEntry{
-						name: "not-a-pid",
+					&fs.MockDirEntry{
+						DirName: "not-a-pid",
 					},
 				}, nil
 			},
@@ -598,8 +598,8 @@ func TestIsProcessRunning(t *testing.T) {
 			expectedExecPath: execPath,
 			readdir: func(string) ([]os.DirEntry, error) {
 				return []os.DirEntry{
-					&MockDirEntry{
-						name: "12",
+					&fs.MockDirEntry{
+						DirName: "12",
 					},
 				}, nil
 			},
@@ -621,44 +621,3 @@ func TestIsProcessRunning(t *testing.T) {
 		})
 	}
 }
-
-type MockDirEntry struct {
-	name string
-}
-
-func (m *MockDirEntry) Name() string {
-	return m.name
-}
-
-func (m *MockDirEntry) IsDir() bool {
-	return true
-}
-
-func (m *MockDirEntry) Type() fs.FileMode {
-	return os.ModeSymlink
-}
-
-func (m *MockDirEntry) Info() (fs.FileInfo, error) {
-	return &MockFileInfo{
-		name:    m.name,
-		size:    1024,
-		mode:    os.FileMode(0644),
-		modTime: time.Now(),
-		sys:     &syscall.Stat_t{},
-	}, nil
-}
-
-type MockFileInfo struct {
-	modTime time.Time
-	sys     any
-	name    string
-	size    int64
-	mode    fs.FileMode
-}
-
-func (m *MockFileInfo) Name() string       { return m.name }
-func (m *MockFileInfo) Size() int64        { return m.size }
-func (m *MockFileInfo) Mode() fs.FileMode  { return m.mode }
-func (m *MockFileInfo) ModTime() time.Time { return m.modTime }
-func (m *MockFileInfo) IsDir() bool        { return m.mode.IsDir() }
-func (m *MockFileInfo) Sys() any           { return m.sys }
