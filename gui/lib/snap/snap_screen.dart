@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nordvpn/data/providers/snap_permissions_provider.dart';
+import 'package:nordvpn/data/providers/grpc_connection_controller.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
 import 'package:nordvpn/internal/urls.dart';
@@ -13,13 +13,14 @@ import 'package:nordvpn/widgets/loading_button.dart';
 import 'package:nordvpn/widgets/rich_text_markdown_links.dart';
 
 final class SnapScreen extends ConsumerWidget {
-  const SnapScreen({super.key});
+  final List<String> missingPermissions;
+
+  const SnapScreen({super.key, required this.missingPermissions});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appTheme = context.appTheme;
     final errorScreenTheme = context.errorScreenTheme;
-    final missingPermissions = ref.watch(snapPermissionsProvider).valueOrNull;
 
     return FullScreenScaffold(
       child: Padding(
@@ -56,7 +57,9 @@ final class SnapScreen extends ConsumerWidget {
                 padding: EdgeInsets.only(top: appTheme.verticalSpaceMedium),
                 child: LoadingElevatedButton(
                   onPressed: () async {
-                    await ref.read(snapPermissionsProvider.notifier).retry();
+                    await ref
+                        .read(grpcConnectionControllerProvider.notifier)
+                        .pingDaemon();
                   },
                   child: Text(t.ui.refresh),
                 ),
