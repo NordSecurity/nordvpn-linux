@@ -100,6 +100,8 @@ const (
 	NordWhisperInterfaceName = "qtun"
 
 	MaxBytesLimit int64 = 1024*1024*20 + 1 // + 1 because we allow for values which are equal to the limit
+
+	DebugEventMessageNamespace = "nordvpn-linux"
 )
 
 var (

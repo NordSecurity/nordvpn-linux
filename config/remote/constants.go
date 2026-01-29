@@ -1,6 +1,10 @@
 package remote
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/NordSecurity/nordvpn-linux/internal/analytics"
+)
 
 const (
 	debuggerEventBaseKey = "remote-config"
@@ -10,8 +14,8 @@ const (
 	defaultMaxGroup                uint32 = 100
 	logPrefix                             = "[Remote Config]"
 	messageNamespace                      = "nordvpn-linux"
-	rcFailure                             = "failure"
-	rcSuccess                             = "success"
+	rcFailure                             = analytics.ResultFailure
+	rcSuccess                             = analytics.ResultSuccess
 	partialRolloutPerformedFailure        = false
 	partialRolloutPerformedSuccess        = true
 	rolloutNo                             = "no"
