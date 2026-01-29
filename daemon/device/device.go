@@ -97,7 +97,7 @@ func OutsideCapableTrafficInterfaces() ([]net.Interface, error) {
 	for _, iface := range interfaces {
 		// ensure the interface is not physical.
 		// It can happen that between sysDepsImpl.Interfaces && listVirtual interface was removed, giving false positive
-		if !isPhysical(iface.Name) && !ifaceListContains(vInterfaces, iface) {
+		if isPhysical(iface.Name) && !ifaceListContains(vInterfaces, iface) {
 			devices = append(devices, iface)
 		}
 	}
