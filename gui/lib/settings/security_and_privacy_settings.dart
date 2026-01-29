@@ -131,7 +131,7 @@ class _SecurityAndPrivacySettingsState
     return SettingsWrapperWidget.buildListItem(
       context,
       title: t.ui.allowlist,
-      subtitle: t.ui.allowListDescription,
+      subtitle: t.ui.useAllowListSettingDescription,
       trailingLocation: TrailingLocation.center,
       trailing: DynamicThemeImage("right_arrow.svg"),
       onTap: () => context.navigateToRoute(AppRoute.settingsAllowList),
