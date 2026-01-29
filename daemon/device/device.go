@@ -112,6 +112,7 @@ func OutsideCapableTrafficInterfaces() ([]net.Interface, error) {
 
 		if iface, err := sysDepsImpl.InterfaceByIndex(r.LinkIndex); err == nil && iface != nil {
 			if !ifaceListContains(devices, *iface) {
+				log.Println("add2", *iface)
 				devices = append(devices, *iface)
 			}
 		} else {
