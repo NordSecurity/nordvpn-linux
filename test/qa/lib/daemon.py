@@ -43,7 +43,11 @@ def is_under_snap():
 def is_connected() -> bool:
     """Returns True when connected to VPN server."""
     try:
-        return "Connected" in sh.nordvpn.status()
+        status = sh.nordvpn.status()
+        connected = "Connected" in status
+        if not connected:
+            logging.log(f"Not connected {status}")
+        return connected
     except sh.ErrorReturnCode:
         return False
 

@@ -65,7 +65,9 @@ func listVirtual() ([]net.Interface, error) {
 	for _, file := range files {
 		dev, err := sysDepsImpl.InterfaceByName(file.Name())
 		if err != nil {
-			return nil, fmt.Errorf("retrieving network interface by name: %w", err)
+			log.Println("get virtual interface by name [%s] failed: %w", file.Name(), err)
+			// get as much interfaces as possible
+			continue
 		}
 
 		devices = append(devices, *dev)
@@ -125,7 +127,7 @@ func OutsideCapableTrafficIfNames(ignore mapset.Set[string]) mapset.Set[string] 
 	result := mapset.NewSet[string]()
 	ifaces, err := OutsideCapableTrafficInterfaces()
 	if err != nil {
-		log.Println(internal.WarningPrefix, "netlink monitoring failed to get intefaces", err)
+		log.Println(internal.WarningPrefix, "netlink monitoring failed to get interfaces", err)
 		return result
 	}
 
