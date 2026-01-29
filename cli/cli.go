@@ -270,7 +270,7 @@ func NewApp(version, environment, hash, salt string,
 		{
 			Name:    "allowlist",
 			Aliases: []string{"whitelist"},
-			Usage:   "Adds or removes an option from the allowlist",
+			Usage:   "Adds or removes an option from the allowlist. Allowlist rules apply to both incoming and outgoing traffic. Any allowlisted traffic also falls outside Kill Switch protection.",
 			Subcommands: []*cli.Command{
 				{
 					Name:  "add",

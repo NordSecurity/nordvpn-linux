@@ -69,7 +69,7 @@ class _AllowListSettingsState extends ConsumerState<AllowListSettings> {
             SettingsWrapperWidget.buildListItem(
               context,
               title: t.ui.useAllowList,
-              subtitle: t.ui.useAllowListDescription,
+              subtitle: t.ui.useAllowListScreenDescription,
               trailingLocation: TrailingLocation.center,
               trailing: OnOffSwitch(
                 value: isAllowListEnabled,
