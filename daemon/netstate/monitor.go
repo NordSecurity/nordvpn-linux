@@ -1,6 +1,7 @@
 package netstate
 
 import (
+	"log"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
@@ -81,6 +82,7 @@ func (m *NetlinkMonitor) setCachedInterfaces(interfaces mapset.Set[string]) bool
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
 	if !m.cached.Equal(interfaces) {
+		log.Println("old:", m.cached, "new", interfaces)
 		m.cached = interfaces
 		return true
 	}

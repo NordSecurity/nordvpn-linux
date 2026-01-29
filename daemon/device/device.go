@@ -125,7 +125,7 @@ func OutsideCapableTrafficIfNames(ignore mapset.Set[string]) mapset.Set[string] 
 	result := mapset.NewSet[string]()
 	ifaces, err := OutsideCapableTrafficInterfaces()
 	if err != nil {
-		log.Println(internal.WarningPrefix, "netlink monitoring failed to get intefaces", err)
+		log.Println(internal.WarningPrefix, "netlink monitoring failed to get interfaces", err)
 		return result
 	}
 
