@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -65,7 +66,7 @@ func listVirtual() ([]net.Interface, error) {
 	for _, file := range files {
 		dev, err := sysDepsImpl.InterfaceByName(file.Name())
 		if err != nil {
-			log.Println("get virtual interface by name [%s] failed: %w", file.Name(), err)
+			log.Printf("fail to get virtual interface by name [%s]: %w\n", file.Name(), err)
 			// get as much interfaces as possible
 			continue
 		}
@@ -94,7 +95,9 @@ func OutsideCapableTrafficInterfaces() ([]net.Interface, error) {
 	var devices []net.Interface
 
 	for _, iface := range interfaces {
-		if !ifaceListContains(vInterfaces, iface) {
+		// ensure the interface is not physical.
+		// It can happen that between sysDepsImpl.Interfaces && listVirtual interface was removed, giving false positive
+		if !isPhysical(iface.Name) && !ifaceListContains(vInterfaces, iface) {
 			devices = append(devices, iface)
 		}
 	}
@@ -112,7 +115,6 @@ func OutsideCapableTrafficInterfaces() ([]net.Interface, error) {
 
 		if iface, err := sysDepsImpl.InterfaceByIndex(r.LinkIndex); err == nil && iface != nil {
 			if !ifaceListContains(devices, *iface) {
-				log.Println("add2", *iface)
 				devices = append(devices, *iface)
 			}
 		} else {
@@ -263,4 +265,9 @@ func isOutsideCapable(r netlink.Route) bool {
 	}
 
 	return false
+}
+
+// isPhysical - checks if the interface has a device attached to it
+func isPhysical(iface string) bool {
+	return internal.FileExists(filepath.Join("/sys/class/net", iface, "device"))
 }
