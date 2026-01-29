@@ -35,6 +35,10 @@ func (r *RPC) StartJobs(
 	statePublisher *state.StatePublisher,
 	heartBeatPublisher events.Publisher[time.Duration],
 ) {
+	// emit allowlist snapshot event on startup in a goroutine
+	// to avoid blocking other critical startup tasks
+	go r.emitAllowlistSnapshot()
+
 	// order of the jobs below matters
 	// servers job requires geo info and configs data to create server list
 	// TODO what if configs file is deleted just before servers job or disk is full?
