@@ -101,6 +101,11 @@ func setMockSysDeps(t *testing.T) {
 	})
 
 	sysDepsImpl = &mock.MockSystemDeps{
+		ExistingFiles: []string{
+			"/sys/class/net/en2/device",
+			"/sys/class/net/en3/device",
+			"/sys/class/net/en4/device",
+		},
 		InterfacesList: []net.Interface{
 			{Index: 2, Name: "en2"},
 			{Index: 3, Name: "en3"},

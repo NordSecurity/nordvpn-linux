@@ -31,6 +31,7 @@ type SystemDeps interface {
 
 	// os
 	ReadDir(name string) ([]os.DirEntry, error)
+	FileExists(path string) bool
 }
 
 // realSystemDeps is the production implementation backed by real OS calls.
@@ -56,6 +57,10 @@ func (realSystemDeps) ReadDir(name string) ([]os.DirEntry, error) {
 	return os.ReadDir(name)
 }
 
+func (realSystemDeps) FileExists(name string) bool {
+	return internal.FileExists(name)
+}
+
 func listVirtual() ([]net.Interface, error) {
 	files, err := sysDepsImpl.ReadDir("/sys/devices/virtual/net/")
 	if err != nil {
@@ -66,7 +71,7 @@ func listVirtual() ([]net.Interface, error) {
 	for _, file := range files {
 		dev, err := sysDepsImpl.InterfaceByName(file.Name())
 		if err != nil {
-			log.Printf("fail to get virtual interface by name [%s]: %w\n", file.Name(), err)
+			log.Printf("fail to get virtual interface by name [%s]: %v\n", file.Name(), err)
 			// get as much interfaces as possible
 			continue
 		}
@@ -269,5 +274,5 @@ func isOutsideCapable(r netlink.Route) bool {
 
 // isPhysical - checks if the interface has a device attached to it
 func isPhysical(iface string) bool {
-	return internal.FileExists(filepath.Join("/sys/class/net", iface, "device"))
+	return sysDepsImpl.FileExists(filepath.Join("/sys/class/net", iface, "device"))
 }
