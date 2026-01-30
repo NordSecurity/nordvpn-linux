@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -30,7 +29,6 @@ type SystemDeps interface {
 	Interfaces() ([]net.Interface, error)
 
 	// os
-	ReadDir(name string) ([]os.DirEntry, error)
 	FileExists(path string) bool
 }
 
@@ -53,33 +51,8 @@ func (realSystemDeps) Interfaces() ([]net.Interface, error) {
 	return net.Interfaces()
 }
 
-func (realSystemDeps) ReadDir(name string) ([]os.DirEntry, error) {
-	return os.ReadDir(name)
-}
-
 func (realSystemDeps) FileExists(name string) bool {
 	return internal.FileExists(name)
-}
-
-func listVirtual() ([]net.Interface, error) {
-	files, err := sysDepsImpl.ReadDir("/sys/devices/virtual/net/")
-	if err != nil {
-		return nil, fmt.Errorf("listing files in network interfaces dir: %w", err)
-	}
-
-	var devices []net.Interface
-	for _, file := range files {
-		dev, err := sysDepsImpl.InterfaceByName(file.Name())
-		if err != nil {
-			log.Printf("fail to get virtual interface by name [%s]: %v\n", file.Name(), err)
-			// get as much interfaces as possible
-			continue
-		}
-
-		devices = append(devices, *dev)
-	}
-
-	return devices, nil
 }
 
 // OutsideCapableTrafficInterfaces returns a list of interfaces that can send traffic outside.
@@ -92,17 +65,12 @@ func OutsideCapableTrafficInterfaces() ([]net.Interface, error) {
 	if err != nil {
 		return nil, fmt.Errorf("retrieving system network interfaces: %w", err)
 	}
-	vInterfaces, err := listVirtual()
-	if err != nil {
-		return nil, fmt.Errorf("retrieving virtual interfaces: %w", err)
-	}
 
 	var devices []net.Interface
 
 	for _, iface := range interfaces {
-		// ensure the interface is not physical.
-		// It can happen that between sysDepsImpl.Interfaces && listVirtual interface was removed, giving false positive
-		if isPhysical(iface.Name) && !ifaceListContains(vInterfaces, iface) {
+		// select only physical interfaces
+		if isPhysical(iface.Name) {
 			devices = append(devices, iface)
 		}
 	}

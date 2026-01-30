@@ -34,10 +34,6 @@ type MockSystemDeps struct {
 	RouteListRoutes []netlink.Route
 	RouteListErr    error
 
-	// read dir
-	ReadDirEntries []os.DirEntry
-	ReadDirErr     error
-
 	// check that file exists
 	ExistingFiles []string
 }
@@ -90,15 +86,6 @@ func (m *MockSystemDeps) Interfaces() ([]net.Interface, error) {
 	}
 	out := make([]net.Interface, len(m.InterfacesList))
 	copy(out, m.InterfacesList)
-	return out, nil
-}
-
-func (m *MockSystemDeps) ReadDir(_ string) ([]os.DirEntry, error) {
-	if m.ReadDirErr != nil {
-		return nil, m.ReadDirErr
-	}
-	out := make([]os.DirEntry, len(m.ReadDirEntries))
-	copy(out, m.ReadDirEntries)
 	return out, nil
 }
 

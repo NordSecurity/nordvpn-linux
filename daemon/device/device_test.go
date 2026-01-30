@@ -2,12 +2,10 @@ package device
 
 import (
 	"net"
-	"os"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
-	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
@@ -143,11 +141,6 @@ func setMockSysDeps(t *testing.T) {
 				LinkIndex: 9,
 				Scope:     netlink.SCOPE_UNIVERSE,
 			},
-		},
-		ReadDirEntries: []os.DirEntry{
-			&fs.MockDirEntry{DirName: "virtual9"},
-			&fs.MockDirEntry{DirName: "virtual10"},
-			&fs.MockDirEntry{DirName: "virtual11"},
 		},
 	}
 }
