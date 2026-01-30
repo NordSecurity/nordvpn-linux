@@ -587,7 +587,6 @@ class TranslationsUiEn {
 	String get resetAndDisconnectDesc => 'This will remove your personalized configurations across the app and disconnect you from the VPN.';
 	String get resetSettings => 'Reset settings';
 	String get resetAndDisconnect => 'Reset and disconnect';
-	String get allowListDescription => 'Add ports, port ranges, and subnets that don’t require the VPN.';
 	String get lanDiscovery => 'LAN discovery';
 	String get lanDiscoveryDescription => 'Make your device visible to other devices on your local network while connected to the VPN. Access printers, TVs, and other LAN devices.';
 	String get customDns => 'Custom DNS';
@@ -647,7 +646,8 @@ class TranslationsUiEn {
 	String get obfuscationErrorNoServerFound => 'No results found. To access all available servers, turn off obfuscation.';
 	String get goToSettings => 'Go to Settings';
 	String get useAllowList => 'Use allowlist';
-	String get useAllowListDescription => 'Specify ports, port ranges, or subnets to exclude from VPN protection.';
+	String get useAllowListSettingDescription => 'Exclude ports, port ranges, or subnets from VPN protection.';
+	String get useAllowListScreenDescription => 'Specify ports, port ranges, or subnets to exclude from VPN protection. Allowlisted ports may accept incoming connections from any external source outside your network.';
 	String get turnOffAllowList => 'Turn off allowlist?';
 	String get turnOffAllowListDescription => 'Disabling the allowlist will delete all your previously added ports, port ranges, and subnets.';
 	String get port => 'Port';
@@ -1235,7 +1235,6 @@ extension on Translations {
 			case 'ui.resetAndDisconnectDesc': return 'This will remove your personalized configurations across the app and disconnect you from the VPN.';
 			case 'ui.resetSettings': return 'Reset settings';
 			case 'ui.resetAndDisconnect': return 'Reset and disconnect';
-			case 'ui.allowListDescription': return 'Add ports, port ranges, and subnets that don’t require the VPN.';
 			case 'ui.lanDiscovery': return 'LAN discovery';
 			case 'ui.lanDiscoveryDescription': return 'Make your device visible to other devices on your local network while connected to the VPN. Access printers, TVs, and other LAN devices.';
 			case 'ui.customDns': return 'Custom DNS';
@@ -1295,7 +1294,8 @@ extension on Translations {
 			case 'ui.obfuscationErrorNoServerFound': return 'No results found. To access all available servers, turn off obfuscation.';
 			case 'ui.goToSettings': return 'Go to Settings';
 			case 'ui.useAllowList': return 'Use allowlist';
-			case 'ui.useAllowListDescription': return 'Specify ports, port ranges, or subnets to exclude from VPN protection.';
+			case 'ui.useAllowListSettingDescription': return 'Exclude ports, port ranges, or subnets from VPN protection.';
+			case 'ui.useAllowListScreenDescription': return 'Specify ports, port ranges, or subnets to exclude from VPN protection. Allowlisted ports may accept incoming connections from any external source outside your network.';
 			case 'ui.turnOffAllowList': return 'Turn off allowlist?';
 			case 'ui.turnOffAllowListDescription': return 'Disabling the allowlist will delete all your previously added ports, port ranges, and subnets.';
 			case 'ui.port': return 'Port';

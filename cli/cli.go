@@ -270,7 +270,7 @@ func NewApp(version, environment, hash, salt string,
 		{
 			Name:    "allowlist",
 			Aliases: []string{"whitelist"},
-			Usage:   "Adds or removes an option from the allowlist",
+			Usage:   "Specify ports, port ranges, or subnets to exclude from VPN protection. Allowlisted ports may accept incoming connections from any external source outside your network.",
 			Subcommands: []*cli.Command{
 				{
 					Name:  "add",
