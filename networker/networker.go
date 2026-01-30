@@ -300,16 +300,16 @@ func (netw *Combined) start(
 
 	netw.publisher.Publish("Setting the routing rules up")
 
+	if err = netw.configureNetwork(allowlist, serverData, nameservers); err != nil {
+		return err
+	}
+
 	// if routing rules were set - they will be adjusted as needed
 	if err = netw.policyRouter.SetupRoutingRules(
 		netw.enableLocalTraffic,
 		netw.lanDiscovery,
 		allowlist.Subnets,
 	); err != nil {
-		return err
-	}
-
-	if err = netw.configureNetwork(allowlist, serverData, nameservers); err != nil {
 		return err
 	}
 
@@ -338,11 +338,11 @@ func (netw *Combined) configureNetwork(
 		return err
 	}
 
-	if err := netw.addDefaultRoute(); err != nil {
+	if err := netw.configureDNS(serverData, nameservers); err != nil {
 		return err
 	}
 
-	if err := netw.configureDNS(serverData, nameservers); err != nil {
+	if err := netw.addDefaultRoute(); err != nil {
 		return err
 	}
 
@@ -435,13 +435,13 @@ func (netw *Combined) restart(
 		return err
 	}
 
-	// after restarting need to restore routing - because tun interface was recreated
-	// assuming all other routing rules are left as it was before restart
-	if err = netw.addDefaultRoute(); err != nil {
+	if err := netw.configureDNS(serverData, nameservers); err != nil {
 		return err
 	}
 
-	if err := netw.configureDNS(serverData, nameservers); err != nil {
+	// after restarting need to restore routing - because tun interface was recreated
+	// assuming all other routing rules are left as it was before restart
+	if err = netw.addDefaultRoute(); err != nil {
 		return err
 	}
 
