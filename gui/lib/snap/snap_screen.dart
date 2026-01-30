@@ -1,6 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nordvpn/data/providers/grpc_connection_controller.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
 import 'package:nordvpn/internal/urls.dart';
@@ -12,10 +13,22 @@ import 'package:nordvpn/widgets/full_screen_scaffold.dart';
 import 'package:nordvpn/widgets/loading_button.dart';
 import 'package:nordvpn/widgets/rich_text_markdown_links.dart';
 
+final class SnapWidgetKeys {
+  SnapWidgetKeys._();
+  static const title = Key("snapTitle");
+  static const description = Key("snapDescription");
+  static const copyField = Key("snapCopyField");
+}
+
 final class SnapScreen extends ConsumerWidget {
   final List<String> missingPermissions;
+  final FutureOr<void> Function()? retryCallback;
 
-  const SnapScreen({super.key, required this.missingPermissions});
+  const SnapScreen({
+    super.key,
+    required this.missingPermissions,
+    required this.retryCallback,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -33,6 +46,7 @@ final class SnapScreen extends ConsumerWidget {
               DynamicThemeImage("something_went_wrong.svg"),
               Text(
                 t.ui.snapScreenTitle,
+                key: SnapWidgetKeys.title,
                 style: errorScreenTheme.titleTextStyle,
               ),
               Padding(
@@ -41,6 +55,7 @@ final class SnapScreen extends ConsumerWidget {
                   maxWidth: 262,
                   child: Text(
                     t.ui.snapScreenDescription,
+                    key: SnapWidgetKeys.description,
                     textAlign: TextAlign.center,
                     softWrap: true,
                     style: errorScreenTheme.descriptionTextStyle,
@@ -50,6 +65,7 @@ final class SnapScreen extends ConsumerWidget {
               Padding(
                 padding: EdgeInsets.only(top: appTheme.verticalSpaceMedium),
                 child: CopyField(
+                  key: SnapWidgetKeys.copyField,
                   items: [_buildNeededCommands(missingPermissions)],
                 ),
               ),
@@ -57,9 +73,9 @@ final class SnapScreen extends ConsumerWidget {
                 padding: EdgeInsets.only(top: appTheme.verticalSpaceMedium),
                 child: LoadingElevatedButton(
                   onPressed: () async {
-                    await ref
-                        .read(grpcConnectionControllerProvider.notifier)
-                        .pingDaemon();
+                    if (retryCallback != null) {
+                      await retryCallback!();
+                    }
                   },
                   child: Text(t.ui.refresh),
                 ),

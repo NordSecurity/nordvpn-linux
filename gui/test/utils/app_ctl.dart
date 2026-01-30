@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nordvpn/data/mocks/daemon/grpc_server.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_account_info.dart';
+import 'package:nordvpn/data/mocks/daemon/mock_snap_interceptor.dart';
 import 'package:nordvpn/pb/daemon/status.pb.dart' as pbstatus;
 import 'package:nordvpn/data/mocks/daemon/mock_application_settings.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_vpn_status.dart';
@@ -30,6 +31,8 @@ final class AppCtl {
   MockAccountInfo get appAccount => GrpcServer.instance.account;
   MockApplicationSettings get appSettings => GrpcServer.instance.appSettings;
   MockVpnStatus get vpnStatus => GrpcServer.instance.vpnStatus;
+  MockSnapErrorInterceptor get snapInterceptor =>
+      GrpcServer.instance.snapInterceptor;
 
   AppCtl({required this.tester});
 
