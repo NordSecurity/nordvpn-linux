@@ -46,8 +46,7 @@ enum AppRoute {
   login,
   loadingScreen,
   errorScreen,
-  consentScreen,
-  missingSnapPermissions;
+  consentScreen;
 
   @override
   String toString() {
@@ -69,7 +68,6 @@ enum AppRoute {
       AppRoute.loadingScreen => "/loading",
       AppRoute.errorScreen => "/error",
       AppRoute.consentScreen => "/consent",
-      AppRoute.missingSnapPermissions => "/snap",
     };
   }
 }

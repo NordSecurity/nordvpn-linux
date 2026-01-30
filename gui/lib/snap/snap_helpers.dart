@@ -1,8 +1,9 @@
-
 import 'dart:io';
 
 final class SnapHelpers {
-    static bool isSnapContext() {
+  SnapHelpers._();
+
+  static bool isSnapContext() {
     return Platform.environment.containsKey('SNAP_NAME');
   }
 }

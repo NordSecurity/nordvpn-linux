@@ -16,10 +16,10 @@ final class ConsentStatus extends _$ConsentStatus
     implements VpnSettingsObserver {
   @override
   FutureOr<ConsentLevel> build() async {
-    final isConnected = ref.watch(grpcConnectionControllerProvider);
-    if (isConnected is! AsyncData) {
-      throw "grpc connect not established";
-    }
+    // If grpcConnectionControllerProvider will have AsyncError
+    // this call will throw an error which will set this provider's
+    // status to AsyncError using the error thrown by the grpc
+    await ref.watch(grpcConnectionControllerProvider.future);
 
     _registerNotifications();
     return await _fetchConsentStatus();

@@ -8,6 +8,7 @@ import 'custom_dns_settings.dart';
 import 'legal_information.dart';
 import 'login_screen.dart';
 import 'obfuscated_servers.dart';
+import 'snap_test.dart';
 import 'vpn_screen.dart';
 import 'warmup.dart';
 
@@ -26,4 +27,5 @@ void main() async {
   runCustomDnsTests();
   runObfuscatedServersTests();
   runLegalInformationTests();
+  runSnapErrorScreenTests();
 }
