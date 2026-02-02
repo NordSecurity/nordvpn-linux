@@ -1457,8 +1457,9 @@ def test_clear():
 
 def test_fileshare_process_monitoring_manages_fileshare_rules_on_process_state_changes():
     try:
+        peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
         # port is open when fileshare is running
-        assert fileshare.port_is_allowed()
+        assert fileshare.port_is_allowed(peer_address)
 
         sh.pkill("-SIGKILL", "nordfileshare")
         # at the time of writing, the monitoring job is executed periodically every second,
@@ -1466,13 +1467,13 @@ def test_fileshare_process_monitoring_manages_fileshare_rules_on_process_state_c
         time.sleep(2)
 
         # port is not allowed when fileshare is down
-        assert fileshare.port_is_blocked()
+        assert fileshare.port_is_blocked(peer_address)
 
         # restart meshet to get fileshare back up
         fileshare.restart_mesh()
 
         # port is allowed again when fileshare process is up
-        assert fileshare.port_is_allowed()
+        assert fileshare.port_is_allowed(peer_address)
     finally: # meshnet should be on for most of the tests in this module
         fileshare.ensure_mesh_is_on()
 
@@ -1480,10 +1481,11 @@ def test_fileshare_process_monitoring_manages_fileshare_rules_on_process_state_c
 @pytest.mark.skip(reason="LVPN-6691")
 def test_fileshare_process_monitoring_cuts_the_port_access_even_when_it_was_taken_before():
     try:
+        peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
         # stop meshnet to bind to 49111 first
         sh.nordvpn.set.meshnet.off()
         time.sleep(2)
-        assert fileshare.port_is_blocked()
+        assert fileshare.port_is_blocked(peer_address)
 
         # bind to port before fileshare process starts
         sock = fileshare.bind_port()
@@ -1494,7 +1496,7 @@ def test_fileshare_process_monitoring_cuts_the_port_access_even_when_it_was_take
         time.sleep(2)
 
         # port should not be allowed (fileshare is down)
-        assert fileshare.port_is_blocked()
+        assert fileshare.port_is_blocked(peer_address)
 
         # free the port
         sock.close()
@@ -1503,7 +1505,7 @@ def test_fileshare_process_monitoring_cuts_the_port_access_even_when_it_was_take
         fileshare.restart_mesh()
 
         # fileshare is up so port is allowed
-        assert fileshare.port_is_allowed()
+        assert fileshare.port_is_allowed(peer_address)
     finally: # meshnet should be on for most of the tests in this module
         fileshare.ensure_mesh_is_on()
 
