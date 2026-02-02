@@ -34,20 +34,19 @@ func (m *mockServerStream) Context() context.Context {
 
 func TestMiddleware_UnaryMiddleware_PublishesEvent(t *testing.T) {
 	category.Set(t, category.Unit)
+
 	publisher := &mockPublisher{}
 	middleware := NewMiddleware(publisher)
 
-	md := metadata.MD{
+	ctx := metadata.NewIncomingContext(context.Background(), metadata.MD{
 		MetadataKeyFormReference: []string{"1"}, // CLI
 		MetadataKeyItemName:      []string{"1"}, // CONNECT
 		MetadataKeyItemType:      []string{"1"}, // CLICK
 		MetadataKeyItemValue:     []string{"1"}, // COUNTRY
-	}
-	ctx := metadata.NewIncomingContext(context.Background(), md)
+	})
 
-	result, err := middleware.UnaryMiddleware(ctx, nil, &grpc.UnaryServerInfo{})
+	_, err := middleware.UnaryMiddleware(ctx, nil, &grpc.UnaryServerInfo{})
 
-	assert.Nil(t, result)
 	assert.NoError(t, err)
 	require.Len(t, publisher.published, 1)
 	assert.Equal(t, "cli", publisher.published[0].FormReference)
@@ -58,69 +57,65 @@ func TestMiddleware_UnaryMiddleware_PublishesEvent(t *testing.T) {
 
 func TestMiddleware_UnaryMiddleware_NoMetadata(t *testing.T) {
 	category.Set(t, category.Unit)
+
 	publisher := &mockPublisher{}
 	middleware := NewMiddleware(publisher)
 
-	result, err := middleware.UnaryMiddleware(context.Background(), nil, &grpc.UnaryServerInfo{})
+	_, err := middleware.UnaryMiddleware(context.Background(), nil, &grpc.UnaryServerInfo{})
 
-	assert.Nil(t, result)
 	assert.NoError(t, err)
 	assert.Empty(t, publisher.published)
 }
 
 func TestMiddleware_UnaryMiddleware_InvalidContext(t *testing.T) {
 	category.Set(t, category.Unit)
+
 	publisher := &mockPublisher{}
 	middleware := NewMiddleware(publisher)
 
 	// Only FormReference set, ItemName and ItemType are unspecified
-	md := metadata.MD{
+	ctx := metadata.NewIncomingContext(context.Background(), metadata.MD{
 		MetadataKeyFormReference: []string{"1"}, // CLI
 		MetadataKeyItemName:      []string{"0"}, // UNSPECIFIED
 		MetadataKeyItemType:      []string{"0"}, // UNSPECIFIED
-	}
-	ctx := metadata.NewIncomingContext(context.Background(), md)
+	})
 
-	result, err := middleware.UnaryMiddleware(ctx, nil, &grpc.UnaryServerInfo{})
+	_, err := middleware.UnaryMiddleware(ctx, nil, &grpc.UnaryServerInfo{})
 
-	assert.Nil(t, result)
 	assert.NoError(t, err)
 	assert.Empty(t, publisher.published)
 }
 
 func TestMiddleware_UnaryMiddleware_NilPublisher(t *testing.T) {
 	category.Set(t, category.Unit)
+
 	middleware := NewMiddleware(nil)
 
-	md := metadata.MD{
+	ctx := metadata.NewIncomingContext(context.Background(), metadata.MD{
 		MetadataKeyFormReference: []string{"1"},
 		MetadataKeyItemName:      []string{"1"},
 		MetadataKeyItemType:      []string{"1"},
-	}
-	ctx := metadata.NewIncomingContext(context.Background(), md)
+	})
 
 	// Should not panic
-	result, err := middleware.UnaryMiddleware(ctx, nil, &grpc.UnaryServerInfo{})
-
-	assert.Nil(t, result)
+	_, err := middleware.UnaryMiddleware(ctx, nil, &grpc.UnaryServerInfo{})
 	assert.NoError(t, err)
 }
 
 func TestMiddleware_StreamMiddleware_PublishesEvent(t *testing.T) {
 	category.Set(t, category.Unit)
+
 	publisher := &mockPublisher{}
 	middleware := NewMiddleware(publisher)
 
-	md := metadata.MD{
+	ctx := metadata.NewIncomingContext(context.Background(), metadata.MD{
 		MetadataKeyFormReference: []string{"2"}, // TRAY
 		MetadataKeyItemName:      []string{"2"}, // CONNECT_RECENTS
 		MetadataKeyItemType:      []string{"1"}, // CLICK
 		MetadataKeyItemValue:     []string{"2"}, // CITY
-	}
-	ctx := metadata.NewIncomingContext(context.Background(), md)
-	stream := &mockServerStream{ctx: ctx}
+	})
 
-	err := middleware.StreamMiddleware(nil, stream, &grpc.StreamServerInfo{})
+	err := middleware.StreamMiddleware(nil, &mockServerStream{ctx: ctx}, &grpc.StreamServerInfo{})
 
 	assert.NoError(t, err)
 	require.Len(t, publisher.published, 1)
@@ -132,59 +127,56 @@ func TestMiddleware_StreamMiddleware_PublishesEvent(t *testing.T) {
 
 func TestMiddleware_StreamMiddleware_NoMetadata(t *testing.T) {
 	category.Set(t, category.Unit)
+
 	publisher := &mockPublisher{}
 	middleware := NewMiddleware(publisher)
 
-	stream := &mockServerStream{ctx: context.Background()}
-
-	assert.NoError(t, middleware.StreamMiddleware(nil, stream, &grpc.StreamServerInfo{}))
+	assert.NoError(t, middleware.StreamMiddleware(nil, &mockServerStream{ctx: context.Background()}, &grpc.StreamServerInfo{}))
 	assert.Empty(t, publisher.published)
 }
 
 func TestMiddleware_StreamMiddleware_NilPublisher(t *testing.T) {
 	category.Set(t, category.Unit)
+
 	middleware := NewMiddleware(nil)
 
-	md := metadata.MD{
+	ctx := metadata.NewIncomingContext(context.Background(), metadata.MD{
 		MetadataKeyFormReference: []string{"1"},
 		MetadataKeyItemName:      []string{"1"},
 		MetadataKeyItemType:      []string{"1"},
-	}
-	ctx := metadata.NewIncomingContext(context.Background(), md)
-	stream := &mockServerStream{ctx: ctx}
+	})
 
 	// Should not panic
-	assert.NoError(t, middleware.StreamMiddleware(nil, stream, &grpc.StreamServerInfo{}))
+	assert.NoError(t, middleware.StreamMiddleware(nil, &mockServerStream{ctx: ctx}, &grpc.StreamServerInfo{}))
 }
 
 func TestMiddleware_IntegrationScenario_TrayConnectRecents(t *testing.T) {
 	category.Set(t, category.Unit)
+
 	// Simulate a real scenario: Tray client connects via recent connections
 	publisher := &mockPublisher{}
 	middleware := NewMiddleware(publisher)
 
-	uiCtx := &UIEventContext{
+	// Client side: attach metadata to outgoing context
+	clientCtx := AttachToOutgoingContext(context.Background(), &UIEventContext{
 		FormReference: pb.UIEvent_TRAY,
 		ItemName:      pb.UIEvent_CONNECT_RECENTS,
 		ItemType:      pb.UIEvent_CLICK,
 		ItemValue:     pb.UIEvent_CITY,
-	}
-
-	// Client side: attach metadata to outgoing context
-	clientCtx := AttachToOutgoingContext(context.Background(), uiCtx)
+	})
 	outgoingMD, _ := metadata.FromOutgoingContext(clientCtx)
 
-	// Server side: receive as incoming context
-	serverCtx := metadata.NewIncomingContext(context.Background(), outgoingMD)
-
-	// Middleware processes the request
-	_, _ = middleware.UnaryMiddleware(serverCtx, nil, &grpc.UnaryServerInfo{})
+	// Server side: receive as incoming context and process
+	_, _ = middleware.UnaryMiddleware(
+		metadata.NewIncomingContext(context.Background(), outgoingMD),
+		nil,
+		&grpc.UnaryServerInfo{},
+	)
 
 	// Verify the event was published correctly
 	require.Len(t, publisher.published, 1)
-	action := publisher.published[0]
-	assert.Equal(t, "tray", action.FormReference)
-	assert.Equal(t, "connect_recents", action.ItemName)
-	assert.Equal(t, "click", action.ItemType)
-	assert.Equal(t, "city", action.ItemValue)
+	assert.Equal(t, "tray", publisher.published[0].FormReference)
+	assert.Equal(t, "connect_recents", publisher.published[0].ItemName)
+	assert.Equal(t, "click", publisher.published[0].ItemType)
+	assert.Equal(t, "city", publisher.published[0].ItemValue)
 }
