@@ -13,6 +13,7 @@ import (
 
 func TestToMetadata_RoundTrip(t *testing.T) {
 	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name string
 		ctx  *UIEventContext
@@ -39,9 +40,7 @@ func TestToMetadata_RoundTrip(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			md := ToMetadata(tt.ctx)
-			result := FromMetadata(md)
-
+			result := FromMetadata(ToMetadata(tt.ctx))
 			require.NotNil(t, result)
 			assert.Equal(t, tt.ctx.FormReference, result.FormReference)
 			assert.Equal(t, tt.ctx.ItemName, result.ItemName)
@@ -58,14 +57,13 @@ func TestToMetadata_NilContext(t *testing.T) {
 
 func TestToMetadata_ItemValueOptional(t *testing.T) {
 	category.Set(t, category.Unit)
-	ctx := &UIEventContext{
+
+	md := ToMetadata(&UIEventContext{
 		FormReference: pb.UIEvent_CLI,
 		ItemName:      pb.UIEvent_CONNECT,
 		ItemType:      pb.UIEvent_CLICK,
 		ItemValue:     pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
-	}
-
-	md := ToMetadata(ctx)
+	})
 
 	assert.NotEmpty(t, md.Get(MetadataKeyFormReference))
 	assert.NotEmpty(t, md.Get(MetadataKeyItemName))
@@ -81,23 +79,21 @@ func TestFromMetadata_NilOrEmptyMetadata(t *testing.T) {
 
 func TestFromMetadata_AllUnspecified(t *testing.T) {
 	category.Set(t, category.Unit)
-	md := metadata.MD{
+	assert.Nil(t, FromMetadata(metadata.MD{
 		MetadataKeyFormReference: []string{"0"},
 		MetadataKeyItemName:      []string{"0"},
 		MetadataKeyItemType:      []string{"0"},
-	}
-	assert.Nil(t, FromMetadata(md))
+	}))
 }
 
 func TestFromMetadata_InvalidIntegerValues(t *testing.T) {
 	category.Set(t, category.Unit)
-	md := metadata.MD{
+
+	result := FromMetadata(metadata.MD{
 		MetadataKeyFormReference: []string{"invalid"},
 		MetadataKeyItemName:      []string{"1"},
 		MetadataKeyItemType:      []string{"1"},
-	}
-
-	result := FromMetadata(md)
+	})
 	// FormReference will be 0 (unspecified) due to parse error
 	// But ItemName and ItemType are valid, so context is returned
 	require.NotNil(t, result)
@@ -108,13 +104,12 @@ func TestFromMetadata_InvalidIntegerValues(t *testing.T) {
 
 func TestFromMetadata_PartiallySet(t *testing.T) {
 	category.Set(t, category.Unit)
-	md := metadata.MD{
+
+	result := FromMetadata(metadata.MD{
 		MetadataKeyFormReference: []string{"1"}, // CLI
 		MetadataKeyItemName:      []string{"0"}, // UNSPECIFIED
 		MetadataKeyItemType:      []string{"0"}, // UNSPECIFIED
-	}
-
-	result := FromMetadata(md)
+	})
 	// At least one field is set, so context is returned
 	require.NotNil(t, result)
 	assert.Equal(t, pb.UIEvent_CLI, result.FormReference)
@@ -122,6 +117,7 @@ func TestFromMetadata_PartiallySet(t *testing.T) {
 
 func TestIsValid(t *testing.T) {
 	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name     string
 		ctx      *UIEventContext
@@ -179,14 +175,13 @@ func TestIsValid(t *testing.T) {
 
 func TestAttachToOutgoingContext(t *testing.T) {
 	category.Set(t, category.Unit)
-	uiCtx := &UIEventContext{
+
+	ctx := AttachToOutgoingContext(context.Background(), &UIEventContext{
 		FormReference: pb.UIEvent_CLI,
 		ItemName:      pb.UIEvent_CONNECT,
 		ItemType:      pb.UIEvent_CLICK,
 		ItemValue:     pb.UIEvent_COUNTRY,
-	}
-
-	ctx := AttachToOutgoingContext(context.Background(), uiCtx)
+	})
 
 	md, ok := metadata.FromOutgoingContext(ctx)
 	require.True(t, ok)
@@ -209,13 +204,13 @@ func TestFromIncomingContext_NoMetadata(t *testing.T) {
 
 func TestFromIncomingContext_WithMetadata(t *testing.T) {
 	category.Set(t, category.Unit)
-	md := metadata.MD{
+
+	ctx := metadata.NewIncomingContext(context.Background(), metadata.MD{
 		MetadataKeyFormReference: []string{"2"}, // TRAY
 		MetadataKeyItemName:      []string{"2"}, // CONNECT_RECENTS
 		MetadataKeyItemType:      []string{"1"}, // CLICK
 		MetadataKeyItemValue:     []string{"2"}, // CITY
-	}
-	ctx := metadata.NewIncomingContext(context.Background(), md)
+	})
 
 	result := FromIncomingContext(ctx)
 
