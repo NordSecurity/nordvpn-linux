@@ -436,12 +436,16 @@ def bind_port() -> socket.socket | None:
     return None
 
 
-def port_is_allowed(peer_address: str) -> bool:
+def check_fileshare_port_status(is_allowed: bool, peer_address: str) -> bool:
     for _ in range(3):
-        if is_port_allowed(peer_address):
+        if is_port_allowed(peer_address) == is_allowed:
             return True
         time.sleep(1)
     return False
+
+
+def port_is_allowed(peer_address: str) -> bool:
+    return check_fileshare_port_status(True, peer_address)
 
 
 def is_port_allowed(peer_address: str) -> bool:
@@ -450,11 +454,7 @@ def is_port_allowed(peer_address: str) -> bool:
 
 
 def port_is_blocked(peer_address: str) -> bool:
-    for _ in range(3):
-        if not is_port_allowed(peer_address):
-            return True
-        time.sleep(1)
-    return False
+    return check_fileshare_port_status(False, peer_address)
 
 
 def ensure_mesh_is_on() -> None:
