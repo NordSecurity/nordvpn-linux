@@ -3,6 +3,7 @@ package mock
 import (
 	"net"
 	"os"
+	"slices"
 
 	"github.com/vishvananda/netlink"
 )
@@ -33,9 +34,8 @@ type MockSystemDeps struct {
 	RouteListRoutes []netlink.Route
 	RouteListErr    error
 
-	// read dir
-	ReadDirEntries []os.DirEntry
-	ReadDirErr     error
+	// check that file exists
+	ExistingFiles []string
 }
 
 func (m *MockSystemDeps) ifaceByIndex(index int) (*net.Interface, bool) {
@@ -89,15 +89,6 @@ func (m *MockSystemDeps) Interfaces() ([]net.Interface, error) {
 	return out, nil
 }
 
-func (m *MockSystemDeps) ReadDir(_ string) ([]os.DirEntry, error) {
-	if m.ReadDirErr != nil {
-		return nil, m.ReadDirErr
-	}
-	out := make([]os.DirEntry, len(m.ReadDirEntries))
-	copy(out, m.ReadDirEntries)
-	return out, nil
-}
-
 func (m *MockSystemDeps) RouteList(_ netlink.Link, _ int) ([]netlink.Route, error) {
 	if m.RouteListErr != nil {
 		return nil, m.RouteListErr
@@ -106,4 +97,8 @@ func (m *MockSystemDeps) RouteList(_ netlink.Link, _ int) ([]netlink.Route, erro
 	out := make([]netlink.Route, len(m.RouteListRoutes))
 	copy(out, m.RouteListRoutes)
 	return out, nil
+}
+
+func (m *MockSystemDeps) FileExists(name string) bool {
+	return slices.Contains(m.ExistingFiles, name)
 }
