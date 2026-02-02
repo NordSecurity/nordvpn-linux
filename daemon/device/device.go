@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -29,7 +29,7 @@ type SystemDeps interface {
 	Interfaces() ([]net.Interface, error)
 
 	// os
-	ReadDir(name string) ([]os.DirEntry, error)
+	FileExists(path string) bool
 }
 
 // realSystemDeps is the production implementation backed by real OS calls.
@@ -51,27 +51,8 @@ func (realSystemDeps) Interfaces() ([]net.Interface, error) {
 	return net.Interfaces()
 }
 
-func (realSystemDeps) ReadDir(name string) ([]os.DirEntry, error) {
-	return os.ReadDir(name)
-}
-
-func listVirtual() ([]net.Interface, error) {
-	files, err := sysDepsImpl.ReadDir("/sys/devices/virtual/net/")
-	if err != nil {
-		return nil, fmt.Errorf("listing files in network interfaces dir: %w", err)
-	}
-
-	var devices []net.Interface
-	for _, file := range files {
-		dev, err := sysDepsImpl.InterfaceByName(file.Name())
-		if err != nil {
-			return nil, fmt.Errorf("retrieving network interface by name: %w", err)
-		}
-
-		devices = append(devices, *dev)
-	}
-
-	return devices, nil
+func (realSystemDeps) FileExists(name string) bool {
+	return internal.FileExists(name)
 }
 
 // OutsideCapableTrafficInterfaces returns a list of interfaces that can send traffic outside.
@@ -84,15 +65,12 @@ func OutsideCapableTrafficInterfaces() ([]net.Interface, error) {
 	if err != nil {
 		return nil, fmt.Errorf("retrieving system network interfaces: %w", err)
 	}
-	vInterfaces, err := listVirtual()
-	if err != nil {
-		return nil, fmt.Errorf("retrieving virtual interfaces: %w", err)
-	}
 
 	var devices []net.Interface
 
 	for _, iface := range interfaces {
-		if !ifaceListContains(vInterfaces, iface) {
+		// select only physical interfaces
+		if isPhysical(iface.Name) {
 			devices = append(devices, iface)
 		}
 	}
@@ -125,7 +103,7 @@ func OutsideCapableTrafficIfNames(ignore mapset.Set[string]) mapset.Set[string] 
 	result := mapset.NewSet[string]()
 	ifaces, err := OutsideCapableTrafficInterfaces()
 	if err != nil {
-		log.Println(internal.WarningPrefix, "netlink monitoring failed to get intefaces", err)
+		log.Println(internal.WarningPrefix, "netlink monitoring failed to get interfaces", err)
 		return result
 	}
 
@@ -260,4 +238,9 @@ func isOutsideCapable(r netlink.Route) bool {
 	}
 
 	return false
+}
+
+// isPhysical - checks if the interface has a device attached to it
+func isPhysical(iface string) bool {
+	return sysDepsImpl.FileExists(filepath.Join("/sys/class/net", iface, "device"))
 }
