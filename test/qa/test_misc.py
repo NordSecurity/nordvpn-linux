@@ -106,6 +106,9 @@ def test_account_output_contains_all_fields():
     assert "Subscription:" in output
     assert "Dedicated IP:" in output
     assert "Multi-factor authentication (MFA):" in output
+    assert "Terms of Service" in output
+    assert "Auto-renewal terms" in output
+    assert "Privacy Policy" in output
 
 
 def test_account_not_logged_in():
