@@ -95,7 +95,6 @@ func Test_ResolvConfMonitoringDoesNotDeadlock(t *testing.T) {
 	eventsChan := make(chan fsnotify.Event)
 	errorChan := make(chan error)
 	getMockWatcherFunc := func(...string) (*fsnotify.Watcher, error) {
-
 		watcher, _ := fsnotify.NewWatcher()
 		watcher.Events = eventsChan
 		watcher.Errors = errorChan
