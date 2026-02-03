@@ -7,14 +7,16 @@ import subprocess
 import tempfile
 import threading
 import time
+from itertools import product
 
 import psutil
 import pytest
 import sh
 
-from lib import daemon, fileshare, info, logging, login, meshnet, poll, ssh
+from lib import daemon, fileshare, info, logging, login, meshnet, poll, ssh, IS_NIGHTLY
 from lib.shell import sh_no_tty
 from lib.meshnet import delete_machines_by_identifier, LOCAL_TOKEN, PEER_TOKEN
+from lib.dynamic_parametrize import dynamic_parametrize
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -207,11 +209,21 @@ def test_accept(accept_directories):
 
 
 @pytest.mark.core_meshnet
-@pytest.mark.parametrize("path_flag", [True, False], ids=["accept_custom_path", "accept_downloads"])
-@pytest.mark.parametrize("background_accept", ["", "--background"], ids=["accept_int", "accept_bg"])
-@pytest.mark.parametrize("background_send", [True, False], ids=["send_bg", "send_int"])
-@pytest.mark.parametrize("filesystem_entity", list(fileshare.FileSystemEntity), ids = [f"send_{entity.value}" for entity in list(fileshare.FileSystemEntity)])
-def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, background_send: bool, path_flag: str, background_accept: str):
+@dynamic_parametrize(
+    [
+        "filesystem_entity",
+        "background_send",
+        "path_flag",
+        "background_accept",
+    ],
+    ordered_source=[list(fileshare.FileSystemEntity)],
+    randomized_source=[[(background_send, path_flag, background_accept) for
+                        background_send, path_flag, background_accept in
+                        product([True, False], [True, False], ["", "--background"])]],
+    id_pattern="send_{filesystem_entity}-send_bg_{background_send}-accept_custom_path_{path_flag}-accept_bg_'{background_accept}'",
+    generate_all=IS_NIGHTLY,
+)
+def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, background_send: bool, path_flag: bool, background_accept: str):
     """Manual TCs: LVPN-3128, LVPN-3130"""
 
     peer_name = random.choice(list(meshnet.PeerName)[:-1])
