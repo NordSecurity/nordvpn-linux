@@ -35,7 +35,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/forwarder"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/iptables"
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/nft"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/notables"
 	"github.com/NordSecurity/nordvpn-linux/daemon/netstate"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -209,11 +209,11 @@ func main() {
 	stateModule := "conntrack"
 	stateFlag := "--ctstate"
 	chainPrefix := ""
-	iptablesAgent := iptables.New(
+	iptablesAgent := nft.New(
 		stateModule,
 		stateFlag,
 		chainPrefix,
-		iptables.FilterSupportedIPTables([]string{"iptables", "ip6tables"}),
+		[]string{},
 	)
 	fw := firewall.NewFirewall(
 		&notables.Facade{},

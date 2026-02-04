@@ -354,6 +354,15 @@ func (netw *Combined) configureNetwork(
 		}
 	}
 
+	if err := netw.fw.Add([]firewall.Rule{
+		{
+			Name:           "enable",
+			SimplifiedName: netw.vpnet.Tun().Interface().Name,
+		},
+	}); err != nil {
+		return fmt.Errorf("add firewall rule: %w", err)
+	}
+
 	return nil
 }
 
@@ -606,6 +615,10 @@ func (netw *Combined) blockTraffic() error {
 			Ipv6Only:   true,
 			Allow:      false,
 			Physical:   true,
+		},
+		{
+			Name:           "enable",
+			SimplifiedName: "someinvalidif",
 		},
 	})
 }
@@ -917,6 +930,10 @@ func (netw *Combined) UnsetFirewall() error {
 
 func (netw *Combined) unsetNetwork() error {
 	if err := netw.fw.Delete([]string{"api_allowlist"}); err != nil {
+		return err
+	}
+
+	if err := netw.fw.Delete([]string{"enable"}); err != nil {
 		return err
 	}
 
