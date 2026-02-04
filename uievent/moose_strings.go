@@ -30,6 +30,8 @@ func formReferenceToString(ref pb.UIEvent_FormReference) string {
 		return "tray"
 	case pb.UIEvent_HOME_SCREEN:
 		return "home_screen"
+	case pb.UIEvent_GUI:
+		return "gui"
 	}
 	return ""
 }
