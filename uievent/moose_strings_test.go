@@ -61,6 +61,7 @@ func TestFormReferenceToString(t *testing.T) {
 		{pb.UIEvent_CLI, "cli"},
 		{pb.UIEvent_TRAY, "tray"},
 		{pb.UIEvent_HOME_SCREEN, "home_screen"},
+		{pb.UIEvent_GUI, "gui"},
 	}
 
 	for _, tt := range tests {
