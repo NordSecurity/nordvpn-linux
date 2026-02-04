@@ -1,4 +1,5 @@
 """Functions to make it easier to interact with nordvpnd."""
+
 import glob
 import os
 import socket
@@ -23,6 +24,7 @@ from constants import (
 class Env:
     DEV = "dev"
     PROD = "prod"
+
 
 def _rewrite_log_path():
     project_root = os.environ["WORKDIR"].replace("/", "\\/")
@@ -73,26 +75,26 @@ def is_killswitch_on():
 def install_peer(ssh_client: ssh.Ssh):
     """Installs nordvpn in peer."""
     project_root = os.environ["WORKDIR"]
-    deb_path = glob.glob(f'{project_root}/dist/app/deb/nordvpn_*amd64.deb')[0]
-    ssh_client.send_file(deb_path, '/tmp/nordvpn.deb')
+    deb_path = glob.glob(f"{project_root}/dist/app/deb/nordvpn_*amd64.deb")[0]
+    ssh_client.send_file(deb_path, "/tmp/nordvpn.deb")
     # TODO: Install required dependencies during qa-peer image build, then replace with 'dpkg -i /tmp/nordvpn.deb'
-    ssh_client.exec_command('sudo apt-get update')
-    ssh_client.exec_command('sudo apt install -y /tmp/nordvpn.deb')
+    ssh_client.exec_command("sudo apt-get update")
+    ssh_client.exec_command("sudo apt install -y /tmp/nordvpn.deb")
 
 
 def uninstall_peer(ssh_client: ssh.Ssh):
     """Uninstalls nordvpn in peer."""
     # TODO: Replace with 'dpkg --purge nordvpn'
-    ssh_client.exec_command('sudo apt remove -y nordvpn')
+    ssh_client.exec_command("sudo apt remove -y nordvpn")
 
 
 def start():
     """Starts daemon and blocks until it is actually started."""
     if is_under_snap():
-        #sh.sudo.snap("start", "nordvpn")
+        # sh.sudo.snap("start", "nordvpn")
         os.popen("sudo snap start nordvpn").read()
     elif is_init_systemd():
-        #sh.sudo.systemctl.start.nordvpnd()
+        # sh.sudo.systemctl.start.nordvpnd()
         os.popen("sudo systemctl start nordvpn").read()
     else:
         # call to init.d returns before the daemon is actually started
@@ -208,16 +210,7 @@ def is_peer_running(ssh_client: ssh.Ssh) -> bool:
 
 def get_unavailable_groups():
     """Returns groups that are not available with current connection settings."""
-    all_groups = ['Africa_The_Middle_East_And_India',
-                  'Asia_Pacific',
-                  'Dedicated_IP',
-                  'Double_VPN',
-                  'Europe',
-                  'Obfuscated_Servers',
-                  'Onion_Over_VPN',
-                  'P2P',
-                  'Standard_VPN_Servers',
-                  'The_Americas']
+    all_groups = ["Africa_The_Middle_East_And_India", "Asia_Pacific", "Dedicated_IP", "Double_VPN", "Europe", "Obfuscated_Servers", "Onion_Over_VPN", "P2P", "Standard_VPN_Servers", "The_Americas"]
 
     current_groups = str(sh.nordvpn.groups(_tty_out=False)).strip().split()
 
@@ -225,12 +218,13 @@ def get_unavailable_groups():
 
 
 def get_status_data() -> dict:
-    lines = sh.nordvpn.status(_tty_out=False).strip().split('\n')
-    colon_separated_pairs = (element.split(':') for element in lines)
+    lines = sh.nordvpn.status(_tty_out=False).strip().split("\n")
+    colon_separated_pairs = (element.split(":") for element in lines)
     formatted_pairs = {(key.lower(), value.strip()) for key, value in colon_separated_pairs}
     return dict(formatted_pairs)
 
-def get_env() ->str:
+
+def get_env() -> str:
     """
     Detects and returns the active environment (DEV or PROD) based on the NordVPN version output.
 
@@ -240,6 +234,7 @@ def get_env() ->str:
     if Env.DEV in result:
         return Env.DEV
     return Env.PROD
+
 
 def enable_rc_local_config_usage():
     """
@@ -263,6 +258,7 @@ def enable_rc_local_config_usage():
     # Print service file after modification
     print(f"Service after:\n {sh.cat(service_path)}")
 
+
 def disable_rc_local_config_usage():
     """
     Restores the original nordvpn service file by removing the forced local config env variable.
@@ -280,6 +276,7 @@ def disable_rc_local_config_usage():
     sh.sudo(SNAP, "restart", NORDVPND_SERVICE_NAME.get(SNAP)) if is_under_snap() else restart()
     # Print restored service file for verification
     print(f"Service restored:\n {sh.cat(service_path)}")
+
 
 def set_rc_retry_custom_time(daemon_log_reader: LogReader, timeout: int = RC_TIMEOUT) -> int:
     """
@@ -303,6 +300,7 @@ def set_rc_retry_custom_time(daemon_log_reader: LogReader, timeout: int = RC_TIM
     sh.sudo(SNAP, "restart", NORDVPND_SERVICE_NAME.get(SNAP)) if is_under_snap() else restart()
 
     return cursor
+
 
 def remove_rc_retry_custom_time(timeout: int = RC_TIMEOUT):
     """
