@@ -433,7 +433,7 @@ search home`)
 
 			if test.shouldEmitDNSConfiguredEvent {
 				assert.True(t, analyticsMock.dnsConfiguredEmited,
-					"DNSConfigured event was not emited upon DNS configuration.")
+					"DNSConfigured event was not emitted upon DNS configuration.")
 				assert.Equal(t,
 					test.expectedManagementServiceInEvent,
 					analyticsMock.managementService,
