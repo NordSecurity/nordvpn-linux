@@ -9,6 +9,7 @@ import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/router/router.dart';
 import 'package:nordvpn/service_locator.dart';
 import 'package:nordvpn/theme/theme.dart';
+import 'package:nordvpn/widgets/custom_window_bar.dart';
 import 'package:nordvpn/widgets/popups_listener.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:window_manager/window_manager.dart';
@@ -45,6 +46,9 @@ Future<void> resizeMainWindow() async {
     WindowOptions windowOptions = WindowOptions(
       size: windowDefaultSize * textScaleFactor,
       minimumSize: windowMinSize * textScaleFactor,
+      backgroundColor: Colors.transparent,
+      titleBarStyle: TitleBarStyle.hidden,
+      windowButtonVisibility: false,
     );
     windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
@@ -96,7 +100,12 @@ final class _NordVpnAppState extends ConsumerState<NordVpnApp> {
       // wrap into a scaffold without maximum width to allow some screen to use
       // the entire windows size
       builder: (context, child) =>
-          Scaffold(body: PopupsListener(child: child!)),
+          Scaffold(body: Column(
+            children: [
+              CustomTitleBar(),
+              Expanded(child: Center(child: PopupsListener(child: child!))),
+            ]),
+          ),
       title: t.ui.nordVpn,
       theme: lightTheme(),
       darkTheme: darkTheme(),
