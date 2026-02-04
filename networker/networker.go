@@ -469,6 +469,15 @@ func (netw *Combined) restart(
 		}
 	}
 
+	if err := netw.fw.Add([]firewall.Rule{
+		{
+			Name:           "enable",
+			SimplifiedName: netw.vpnet.Tun().Interface().Name,
+		},
+	}); err != nil {
+		return fmt.Errorf("add firewall rule: %w", err)
+	}
+
 	netw.lastServer = serverData
 	netw.lastCreds = creds
 	return nil
