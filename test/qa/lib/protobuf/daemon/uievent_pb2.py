@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ruievent.proto\x12\x02pb\"\xc3\x03\n\x07UIEvent\"S\n\rFormReference\x12\x1e\n\x1a\x46ORM_REFERENCE_UNSPECIFIED\x10\x00\x12\x07\n\x03\x43LI\x10\x01\x12\x08\n\x04TRAY\x10\x02\x12\x0f\n\x0bHOME_SCREEN\x10\x03\"\x9c\x01\n\x08ItemName\x12\x19\n\x15ITEM_NAME_UNSPECIFIED\x10\x00\x12\x0b\n\x07\x43ONNECT\x10\x01\x12\x13\n\x0f\x43ONNECT_RECENTS\x10\x02\x12\x0e\n\nDISCONNECT\x10\x03\x12\t\n\x05LOGIN\x10\x04\x12\n\n\x06LOGOUT\x10\x05\x12\x13\n\x0fRATE_CONNECTION\x10\x06\x12\x17\n\x13MESHNET_INVITE_SEND\x10\x07\"0\n\x08ItemType\x12\x19\n\x15ITEM_TYPE_UNSPECIFIED\x10\x00\x12\t\n\x05\x43LICK\x10\x01\"\x91\x01\n\tItemValue\x12\x1a\n\x16ITEM_VALUE_UNSPECIFIED\x10\x00\x12\x0b\n\x07\x43OUNTRY\x10\x01\x12\x08\n\x04\x43ITY\x10\x02\x12\x07\n\x03\x44IP\x10\x03\x12\x0b\n\x07MESHNET\x10\x04\x12\x0e\n\nOBFUSCATED\x10\x05\x12\x12\n\x0eONION_OVER_VPN\x10\x06\x12\x0e\n\nDOUBLE_VPN\x10\x07\x12\x07\n\x03P2P\x10\x08\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\ruievent.proto\x12\x02pb\"\xd4\x03\n\x07UIEvent\"S\n\rFormReference\x12\x1e\n\x1a\x46ORM_REFERENCE_UNSPECIFIED\x10\x00\x12\x07\n\x03\x43LI\x10\x01\x12\x08\n\x04TRAY\x10\x02\x12\x0f\n\x0bHOME_SCREEN\x10\x03\"\xad\x01\n\x08ItemName\x12\x19\n\x15ITEM_NAME_UNSPECIFIED\x10\x00\x12\x0b\n\x07\x43ONNECT\x10\x01\x12\x13\n\x0f\x43ONNECT_RECENTS\x10\x02\x12\x0e\n\nDISCONNECT\x10\x03\x12\t\n\x05LOGIN\x10\x04\x12\n\n\x06LOGOUT\x10\x05\x12\x13\n\x0fRATE_CONNECTION\x10\x06\x12\x17\n\x13MESHNET_INVITE_SEND\x10\x07\x12\x0f\n\x0bLOGIN_TOKEN\x10\x08\"0\n\x08ItemType\x12\x19\n\x15ITEM_TYPE_UNSPECIFIED\x10\x00\x12\t\n\x05\x43LICK\x10\x01\"\x91\x01\n\tItemValue\x12\x1a\n\x16ITEM_VALUE_UNSPECIFIED\x10\x00\x12\x0b\n\x07\x43OUNTRY\x10\x01\x12\x08\n\x04\x43ITY\x10\x02\x12\x07\n\x03\x44IP\x10\x03\x12\x0b\n\x07MESHNET\x10\x04\x12\x0e\n\nOBFUSCATED\x10\x05\x12\x12\n\x0eONION_OVER_VPN\x10\x06\x12\x0e\n\nDOUBLE_VPN\x10\x07\x12\x07\n\x03P2P\x10\x08\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,13 +33,13 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z/github.com/NordSecurity/nordvpn-linux/daemon/pb'
   _globals['_UIEVENT']._serialized_start=22
-  _globals['_UIEVENT']._serialized_end=473
+  _globals['_UIEVENT']._serialized_end=490
   _globals['_UIEVENT_FORMREFERENCE']._serialized_start=33
   _globals['_UIEVENT_FORMREFERENCE']._serialized_end=116
   _globals['_UIEVENT_ITEMNAME']._serialized_start=119
-  _globals['_UIEVENT_ITEMNAME']._serialized_end=275
-  _globals['_UIEVENT_ITEMTYPE']._serialized_start=277
-  _globals['_UIEVENT_ITEMTYPE']._serialized_end=325
-  _globals['_UIEVENT_ITEMVALUE']._serialized_start=328
-  _globals['_UIEVENT_ITEMVALUE']._serialized_end=473
+  _globals['_UIEVENT_ITEMNAME']._serialized_end=292
+  _globals['_UIEVENT_ITEMTYPE']._serialized_start=294
+  _globals['_UIEVENT_ITEMTYPE']._serialized_end=342
+  _globals['_UIEVENT_ITEMVALUE']._serialized_start=345
+  _globals['_UIEVENT_ITEMVALUE']._serialized_end=490
 # @@protoc_insertion_point(module_scope)
