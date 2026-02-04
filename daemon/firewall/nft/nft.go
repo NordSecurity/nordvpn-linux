@@ -123,7 +123,7 @@ func removeRules() error {
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		log.Printf("cleanup failed: %w: %s\n", err, stderr.String())
+		log.Printf("cleanup failed: %s\n", stderr.String())
 	}
 	return nil
 }

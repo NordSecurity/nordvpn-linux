@@ -18,6 +18,9 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
+var url, _ = getEnv()
+var imageTester = url["BASE"] + "tester:1.6.3_nft"
+
 const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
 	imageBuilder           = registryPrefix + "builder:1.4.3"
@@ -27,10 +30,10 @@ const (
 	imageSnapPackager      = registryPrefix + "snaper:1.2.2"
 	imageProtobufGenerator = registryPrefix + "generator:1.4.2"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
-	imageTester            = registryPrefix + "tester:1.6.3"
-	imageQAPeer            = registryPrefix + "qa-peer:1.0.4"
-	imageRuster            = registryPrefix + "ruster:1.4.1"
-	imageCodeQL            = registryPrefix + "codeql:1.0.0"
+
+	imageQAPeer = registryPrefix + "qa-peer:1.0.4"
+	imageRuster = registryPrefix + "ruster:1.4.1"
+	imageCodeQL = registryPrefix + "codeql:1.0.0"
 
 	dockerWorkDir    = "/opt"
 	guiDockerWorkDir = dockerWorkDir + "/gui"
