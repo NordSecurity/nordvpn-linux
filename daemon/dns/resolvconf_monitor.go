@@ -49,12 +49,16 @@ func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context, do
 	log.Println(internal.InfoPrefix, dnsPrefix, "starting resolv.conf file watcher")
 	for {
 		select {
-		case _, ok := <-watcher.Events:
+		case e, ok := <-watcher.Events:
 			log.Println(internal.InfoPrefix, dnsPrefix, "resolv.conf overwrite detected")
 			if !ok {
 				return fmt.Errorf("file watcher closed")
 			}
-			r.analytics.emitResolvConfOverwrittenEvent()
+
+			if e.Op == fsnotify.Write || e.Op == fsnotify.Remove {
+				r.analytics.emitResolvConfOverwrittenEvent()
+			}
+
 			return nil
 		case err, ok := <-watcher.Errors:
 			if !ok {
