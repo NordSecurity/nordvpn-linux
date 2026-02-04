@@ -53,7 +53,6 @@ func TestToMooseStrings(t *testing.T) {
 
 func TestFormReferenceToString(t *testing.T) {
 	category.Set(t, category.Unit)
-
 	tests := []struct {
 		input    pb.UIEvent_FormReference
 		expected string
@@ -73,7 +72,6 @@ func TestFormReferenceToString(t *testing.T) {
 
 func TestItemNameToString(t *testing.T) {
 	category.Set(t, category.Unit)
-
 	tests := []struct {
 		input    pb.UIEvent_ItemName
 		expected string
@@ -83,6 +81,7 @@ func TestItemNameToString(t *testing.T) {
 		{pb.UIEvent_CONNECT_RECENTS, "connect_recents"},
 		{pb.UIEvent_DISCONNECT, "disconnect"},
 		{pb.UIEvent_LOGIN, "login"},
+		{pb.UIEvent_LOGIN_TOKEN, "login_token"},
 		{pb.UIEvent_LOGOUT, "logout"},
 		{pb.UIEvent_RATE_CONNECTION, "rate_connection"},
 		{pb.UIEvent_MESHNET_INVITE_SEND, "meshnet_invite_send"},
@@ -97,7 +96,6 @@ func TestItemNameToString(t *testing.T) {
 
 func TestItemTypeToString(t *testing.T) {
 	category.Set(t, category.Unit)
-
 	tests := []struct {
 		input    pb.UIEvent_ItemType
 		expected string
@@ -115,7 +113,6 @@ func TestItemTypeToString(t *testing.T) {
 
 func TestItemValueToString(t *testing.T) {
 	category.Set(t, category.Unit)
-
 	tests := []struct {
 		input    pb.UIEvent_ItemValue
 		expected string

@@ -25,6 +25,16 @@ type UIEventContext struct {
 	ItemValue     pb.UIEvent_ItemValue
 }
 
+// NewClickContext creates a UIEventContext for a click action.
+func NewClickContext(formRef pb.UIEvent_FormReference, itemName pb.UIEvent_ItemName) *UIEventContext {
+	return &UIEventContext{
+		FormReference: formRef,
+		ItemName:      itemName,
+		ItemType:      pb.UIEvent_CLICK,
+		ItemValue:     pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
+	}
+}
+
 // int32ToMetadataValue converts an int32 to a metadata value slice.
 func int32ToMetadataValue(val int32) []string {
 	return []string{strconv.FormatInt(int64(val), 10)}
