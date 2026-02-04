@@ -106,13 +106,6 @@ func (fw *Firewall) Add(rules []Rule) error {
 		if err := fw.rules.Add(rule); err != nil {
 			return NewError(fmt.Errorf("adding %s to memory: %w", rule.Name, err))
 		}
-
-		if !existingRule.IsEmpty() {
-			// remove older rule because the new one was added
-			if err := fw.current.Delete(existingRule); err != nil {
-				return NewError(fmt.Errorf("removing replaced rule %s to memory: %w", rule.Name, err))
-			}
-		}
 	}
 	return nil
 }
