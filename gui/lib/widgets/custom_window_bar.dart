@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:nordvpn/i18n/strings.g.dart' show t;
+import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -13,6 +14,7 @@ class CustomTitleBar extends StatefulWidget {
 
 class _CustomTitleBarState extends State<CustomTitleBar> {
   bool _isMaximized = false;
+  Size? _previousSize;
 
   @override
   void initState() {
@@ -27,9 +29,20 @@ class _CustomTitleBarState extends State<CustomTitleBar> {
 
   Future<void> _toggleMaximize() async {
     if (await windowManager.isMaximized()) {
-      await windowManager.restore();
+      await windowManager.unmaximize();
+      if (_previousSize != null) {
+        logger.w('unmaximizing $_previousSize');
+        await Future.delayed(const Duration(milliseconds: 100));
+
+        if (_previousSize != null) {
+          await windowManager.setSize(_previousSize!);
+        }
+      }
       _isMaximized = false;
     } else {
+      _previousSize = (await windowManager.getBounds()).size;
+      logger.w('storing bounds $_previousSize');
+
       await windowManager.maximize();
       _isMaximized = true;
     }
@@ -37,9 +50,6 @@ class _CustomTitleBarState extends State<CustomTitleBar> {
     if (mounted) setState(() {});
   }
 
-  Future<void> _doNothing() async {
-
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,21 +63,27 @@ class _CustomTitleBarState extends State<CustomTitleBar> {
       child: Container(
         height: 45,
         color: Colors.grey.shade900,
-        padding: const EdgeInsets.only(top: 2, bottom: 3, left: 20, right: 0),
+        padding: const EdgeInsets.only(top: 12, bottom: 12, left: 12, right: 0),
         child: Row(
           children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: DynamicThemeImage('nordvpn_logo.svg'),
+            ),
+            
+            const SizedBox(width: 8),
+
+            Text(
+              t.ui.nordVpn,
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
             const Spacer(),
 
                       // Insert the search bar
-            const SizedBox(
-              width: 400,
-              child: WindowSearchBar(),
-            ),
-              
-
-            _WindowButton(icon: Icons.notifications, onPressed: _doNothing),
-
-            _WindowButton(icon: Icons.account_box, onPressed: _doNothing),
 
             _WindowButton(
               icon: Icons.minimize,
