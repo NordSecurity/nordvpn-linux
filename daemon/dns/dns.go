@@ -75,16 +75,23 @@ type DNSServiceSetter struct {
 	// resolvconfSetter sets DNS using the most desired method:
 	//	1. resolvconf exec call
 	//	2. direct write to /etc/resolv.conf
-	resolvconfSetter Setter
-	unsetter         Setter
-	filesystemHandle statingFilesystemHandle
+	resolvconfSetter  Setter
+	unsetter          Setter
+	filesystemHandle  statingFilesystemHandle
+	analytics         analytics
+	resolvConfMonitor resolvConfMonitor
 }
 
-func NewDNSServiceSetter(publisher events.Publisher[string]) *DNSServiceSetter {
+func NewDNSServiceSetter(publisher events.Publisher[string],
+	debugPublisher events.PublishSubcriber[events.DebuggerEvent]) *DNSServiceSetter {
+	analytics := newDNSAnalytics(debugPublisher)
+	resolvConfMonitor := newResolvConfMonitor(analytics)
 	return &DNSServiceSetter{
 		systemdResolvedSetter: NewSetter(publisher, &Resolved{}, &Resolvectl{}),
 		resolvconfSetter:      NewSetter(publisher, &Resolvconf{}, &ResolvConfFile{}),
 		filesystemHandle:      &stdStatingFilesystemHandle{},
+		analytics:             analytics,
+		resolvConfMonitor:     &resolvConfMonitor,
 	}
 }
 
@@ -166,6 +173,7 @@ func (d *DNSServiceSetter) setUsingBestAvailable(iface string, nameservers []str
 	}
 
 	log.Println(internal.InfoPrefix, dnsPrefix, "DNS configured with resolv.conf")
+	d.resolvConfMonitor.start()
 
 	return nil
 }
@@ -204,6 +212,7 @@ func (d *DNSServiceSetter) Unset(iface string) error {
 	}
 
 	log.Println(internal.DebugPrefix, dnsPrefix, "unsetting DNS")
+	d.resolvConfMonitor.stop()
 	if err := d.unsetter.Unset(iface); err != nil {
 		return fmt.Errorf("unsetting DNS: %w", err)
 	}
@@ -245,7 +254,6 @@ func (d *DNSMethodSetter) Set(iface string, nameservers []string) error {
 			log.Println(internal.ErrorPrefix, fmt.Errorf("setting dns with %s: %w", method.Name(), err))
 			continue
 		}
-
 		return nil
 	}
 
