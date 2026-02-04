@@ -32,6 +32,9 @@ final class VpnWidget extends ConsumerWidget {
               onSelected: (args) async {
                 await _connect(ref, args);
               },
+              onRecentSelected: (args) async {
+                await _connectFromRecents(ref, args);
+              },
               withRecentConnectionsWidget: true,
             ),
           ),
@@ -43,5 +46,10 @@ final class VpnWidget extends ConsumerWidget {
   Future<void> _connect(WidgetRef ref, ConnectArguments args) async {
     final vpnController = ref.read(vpnStatusControllerProvider.notifier);
     await vpnController.connect(args);
+  }
+
+  Future<void> _connectFromRecents(WidgetRef ref, ConnectArguments args) async {
+    final vpnController = ref.read(vpnStatusControllerProvider.notifier);
+    await vpnController.connectFromRecents(args);
   }
 }

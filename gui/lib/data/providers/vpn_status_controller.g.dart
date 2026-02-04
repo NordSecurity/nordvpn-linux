@@ -7,9 +7,11 @@ part of 'vpn_status_controller.dart';
 // **************************************************************************
 
 String _$vpnStatusControllerHash() =>
-    r'1c8b427f411be47b40473ddcd66f747b9f43cf00';
+    r'17cfcb7bfa50b91f612105a35a2f7bd662b52b68';
 
-/// See also [VpnStatusController].
+/// Handles the VPN connection functionality
+///
+/// Copied from [VpnStatusController].
 @ProviderFor(VpnStatusController)
 final vpnStatusControllerProvider =
     AutoDisposeAsyncNotifierProvider<VpnStatusController, VpnStatus>.internal(
