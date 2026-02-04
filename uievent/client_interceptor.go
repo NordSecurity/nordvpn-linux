@@ -41,12 +41,7 @@ func (i *ClientInterceptor) UnaryInterceptor(
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
 
-	uiCtx := &UIEventContext{
-		FormReference: i.formReference,
-		ItemName:      itemName,
-		ItemType:      pb.UIEvent_CLICK,
-		ItemValue:     pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
-	}
+	uiCtx := NewClickContext(i.formReference, itemName)
 
 	enrichedCtx := AttachToOutgoingContext(ctx, uiCtx)
 	return invoker(enrichedCtx, method, req, reply, cc, opts...)
@@ -73,12 +68,7 @@ func (i *ClientInterceptor) StreamInterceptor(
 		return streamer(ctx, desc, cc, method, opts...)
 	}
 
-	uiCtx := &UIEventContext{
-		FormReference: i.formReference,
-		ItemName:      itemName,
-		ItemType:      pb.UIEvent_CLICK,
-		ItemValue:     pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
-	}
+	uiCtx := NewClickContext(i.formReference, itemName)
 
 	enrichedCtx := AttachToOutgoingContext(ctx, uiCtx)
 	return streamer(enrichedCtx, desc, cc, method, opts...)
