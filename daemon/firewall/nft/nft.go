@@ -16,18 +16,18 @@ const rules = `add table inet nordvpn
 delete table inet nordvpn
 
 table inet nordvpn {
-    chain nv_postrouting {
+    chain postrouting {
         type filter hook postrouting priority mangle; policy accept;
         # Save packet fwmark
         meta mark 0xe1f1 ct mark set meta mark
     }
 
-    chain nv_prerouting {
+    chain prerouting {
         type filter hook prerouting priority mangle; policy accept;
         ct mark 0xe1f1 meta mark set ct mark
     }
 
-  chain nv_input {
+  chain input {
     type filter hook input priority filter; policy drop;
 
     iifname "lo" accept
@@ -40,7 +40,7 @@ table inet nordvpn {
     tcp sport 53 ct state established accept
   }
 
-    chain nv_output {
+    chain output {
         type filter hook output priority filter; policy drop;
 
         oifname "{{.TunnelInterface}}" accept
@@ -52,8 +52,7 @@ table inet nordvpn {
 		udp dport 53 accept
         tcp dport 53 accept
     }
-
-  chain nv_forward {
+  chain forward {
     type filter hook forward priority filter; policy drop;
   }
 }`
