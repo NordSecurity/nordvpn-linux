@@ -39,6 +39,8 @@ func (e dnsManagementService) String() string {
 		return "systemd-resolved"
 	case unmanaged:
 		return "unmanaged"
+	case unknown:
+		fallthrough
 	default:
 		return "unknown_service"
 	}
@@ -210,7 +212,11 @@ func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
 			return nil
 		}
 		log.Println(internal.WarningPrefix, dnsPrefix, "failed to set DNS using systemd-resolved:", err)
+	case unmanaged:
+		fallthrough
 	case unknown:
+		fallthrough
+	default:
 		log.Println(internal.WarningPrefix, dnsPrefix, "unknown DNS service")
 	}
 
