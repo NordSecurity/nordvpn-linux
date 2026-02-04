@@ -80,7 +80,7 @@ func Test_ResolvConfMonitoring(t *testing.T) {
 	}
 
 	resolvConfMonitor.start()
-	eventsChan <- fsnotify.Event{}
+	eventsChan <- fsnotify.Event{Op: fsnotify.Write}
 	checkResultFunc := func() bool {
 		return analyticsMock.getResolvConfEmitted()
 	}
