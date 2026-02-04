@@ -178,30 +178,9 @@ func (n *NorduserProcessMonitor) handleUTMPFileUpdate(currentGroupMembers userSe
 	return currentGroupMembers, nil
 }
 
-func getWatcher(pathsToMonitor ...string) (watcher *fsnotify.Watcher, err error) {
-	watcher, err = fsnotify.NewWatcher()
-	if err != nil {
-		return nil, fmt.Errorf("creating new watcher: %w", err)
-	}
-
-	defer func() {
-		if err != nil && watcher != nil {
-			_ = watcher.Close()
-		}
-	}()
-
-	for _, file := range pathsToMonitor {
-		if err := watcher.Add(file); err != nil {
-			return nil, fmt.Errorf("adding group file to watcher: %w", err)
-		}
-	}
-
-	return watcher, nil
-}
-
 // Start blocks the thread and starts monitoring for changes in the nordvpn group.
 func (n *NorduserProcessMonitor) Start() error {
-	watcher, err := getWatcher(etcPath, utmpFilePath)
+	watcher, err := internal.GetFileWatcher(etcPath, utmpFilePath)
 	if err != nil {
 		return fmt.Errorf("creating file watcher: %w", err)
 	}

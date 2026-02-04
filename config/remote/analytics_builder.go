@@ -79,7 +79,7 @@ func NewRolloutEvent(userRolloutGroup int, client string, featureName string, fe
 
 func (e Event) ToDebuggerEvent() *events.DebuggerEvent {
 	eventToMarshal := e
-	eventToMarshal.MessageNamespace = messageNamespace
+	eventToMarshal.MessageNamespace = internal.DebugEventMessageNamespace
 	eventToMarshal.Subscope = subscope
 	if e.Event == Rollout.String() {
 		// rollout events have a different result values: yes|no
@@ -112,7 +112,7 @@ func (e Event) ToDebuggerEvent() *events.DebuggerEvent {
 			FeatureName      string `json:"feature_name"`
 			RolloutGroup     int    `json:"rollout_group"`
 		}{
-			MessageNamespace: messageNamespace,
+			MessageNamespace: internal.DebugEventMessageNamespace,
 			Subscope:         subscope,
 			Client:           e.Client,
 			Event:            e.Event,

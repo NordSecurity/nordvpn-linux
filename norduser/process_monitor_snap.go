@@ -37,7 +37,7 @@ func (n *NorduserProcessMonitor) stopForDeletedGroupMembers(currentGroupMembers 
 // WaitForLogout will send over logoutChan when user under the username logs out(i.e there are no remaining user
 // processes for that user).
 func WaitForLogout(username string, logoutChan chan<- interface{}) error {
-	watcher, err := getWatcher(utmpFilePath)
+	watcher, err := internal.GetFileWatcher(utmpFilePath)
 	if err != nil {
 		return fmt.Errorf("creating a fsnotify watcher for utmp file: %w", err)
 	}
@@ -79,7 +79,7 @@ func WaitForLogout(username string, logoutChan chan<- interface{}) error {
 // form the nordvpn group, no other actions will be taken. Because of snap, starting/restarting the process has to be
 // handled in the process itself.
 func (n *NorduserProcessMonitor) StartSnap() error {
-	watcher, err := getWatcher(etcPath, utmpFilePath)
+	watcher, err := internal.GetFileWatcher(etcPath, utmpFilePath)
 	if err != nil {
 		return fmt.Errorf("creating file watcher: %w", err)
 	}
