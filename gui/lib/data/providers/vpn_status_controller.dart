@@ -9,17 +9,17 @@ import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/data/repository/vpn_repository.dart';
 import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/pb/daemon/status.pb.dart';
+import 'package:nordvpn/pb/daemon/uievent.pbenum.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'vpn_status_controller.g.dart';
 
 typedef _VpnRepoFn = Future<int> Function(VpnRepository);
 
-// Handles the VPN connection functionality
+/// Handles the VPN connection functionality
 @riverpod
 class VpnStatusController extends _$VpnStatusController
     implements VpnStatusObserver {
-
   @override
   FutureOr<VpnStatus> build() async {
     final status = await ref.read(vpnRepositoryProvider).fetchStatus();
@@ -28,8 +28,23 @@ class VpnStatusController extends _$VpnStatusController
     return VpnStatus.fromStatusResponse(status);
   }
 
+  /// Connect to a VPN server.
+  ///
+  /// For regular connections from the server list, quick connect, etc.
   Future<void> connect(ConnectArguments? args) {
-    return _doAndShowPopup((vpn) => vpn.connect(args ?? ConnectArguments()));
+    return _doAndShowPopup(
+      (vpn) => vpn.connect(
+        args ?? ConnectArguments(),
+        itemName: UIEvent_ItemName.CONNECT,
+      ),
+    );
+  }
+
+  /// Connect from the Recent Connections list.
+  Future<void> connectFromRecents(ConnectArguments args) {
+    return _doAndShowPopup(
+      (vpn) => vpn.connect(args, itemName: UIEvent_ItemName.CONNECT_RECENTS),
+    );
   }
 
   Future<void> reconnect(ConnectionParameters args) =>
