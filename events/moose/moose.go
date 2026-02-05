@@ -571,7 +571,7 @@ func (s *Subscriber) NotifyProtocol(data config.Protocol) error {
 func (s *Subscriber) NotifyAllowlist(data events.DataAllowlist) error {
 	enabled := len(data.UDPPorts) != 0 || len(data.TCPPorts) != 0 || len(data.Subnets) != 0
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesSplitTunnelingEnabledMeta(
-		fmt.Sprintf(`{"udp_ports":%d,"tcp_ports:%d,"subnets":%d}`, len(data.UDPPorts), len(data.TCPPorts), len(data.Subnets)),
+		fmt.Sprintf(`{"udp_ports":%d,"tcp_ports":%d,"subnets":%d}`, len(data.UDPPorts), len(data.TCPPorts), len(data.Subnets)),
 	)); err != nil {
 		return err
 	}
