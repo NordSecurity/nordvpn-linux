@@ -603,28 +603,10 @@ func (netw *Combined) unsetDNS() error {
 }
 
 func (netw *Combined) blockTraffic() error {
-	ifaces, err := netw.devices()
-	if err != nil {
-		return err
-	}
 
 	// block PREROUTING & POSTROUTING
 	return netw.fw.Add([]firewall.Rule{
-		{
-			Name:       dropIpv4Rule,
-			Direction:  firewall.TwoWay,
-			Interfaces: ifaces,
-			Allow:      false,
-			Physical:   true,
-		},
-		{
-			Name:       dropIpv6Rule,
-			Direction:  firewall.TwoWay,
-			Interfaces: ifaces,
-			Ipv6Only:   true,
-			Allow:      false,
-			Physical:   true,
-		},
+
 		{
 			Name:           "enable",
 			SimplifiedName: "someinvalidif",
@@ -893,24 +875,6 @@ func (netw *Combined) setNetwork(allowlist config.Allowlist) error {
 		return err
 	}
 
-	ifaces, err := netw.devices()
-	if err != nil {
-		return err
-	}
-
-	if err := netw.fw.Add([]firewall.Rule{
-		{
-			Name:       "api_allowlist",
-			Interfaces: ifaces,
-			Direction:  firewall.TwoWay,
-			Marks:      []uint32{netw.fwmark},
-			Allow:      true,
-			Physical:   true,
-		},
-	}); err != nil {
-		return err
-	}
-
 	if err := netw.setAllowlist(allowlist); err != nil {
 		return err
 	}
@@ -938,10 +902,6 @@ func (netw *Combined) UnsetFirewall() error {
 }
 
 func (netw *Combined) unsetNetwork() error {
-	if err := netw.fw.Delete([]string{"api_allowlist"}); err != nil {
-		return err
-	}
-
 	if err := netw.fw.Delete([]string{"enable"}); err != nil {
 		return err
 	}
@@ -969,7 +929,7 @@ func (netw *Combined) unsetNetwork() error {
 func (netw *Combined) SetKillSwitch(allowlist config.Allowlist) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	return netw.setKillSwitch(allowlist, false)
+	return netw.setKillSwitch(allowlist, true)
 }
 
 func (netw *Combined) setKillSwitch(allowlist config.Allowlist, force bool) error {
