@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
+
+// UIEvent contains nested enums for UI event tracking
+message UIEvent {
+  // UIFormReference identifies the UI form or screen from which an action
+  // originated
+  enum FormReference {
+    FORM_REFERENCE_UNSPECIFIED = 0;
+    CLI = 1;
+    TRAY = 2;
+    HOME_SCREEN = 3;
+    GUI = 4; // temporary, to be replaced with more specific references
+  }
+
+  // ItemName represents a user interface event item name
+  enum ItemName {
+    ITEM_NAME_UNSPECIFIED = 0;
+    CONNECT = 1;
+    CONNECT_RECENTS = 2;
+    DISCONNECT = 3;
+    LOGIN = 4;
+    LOGOUT = 5;
+    RATE_CONNECTION = 6;
+    MESHNET_INVITE_SEND = 7;
+    LOGIN_TOKEN = 8; // CLI-only: login via token (nordvpn login --token)
+  }
+
+  // ItemType represents the type of user interface event
+  enum ItemType {
+    ITEM_TYPE_UNSPECIFIED = 0;
+    CLICK = 1;
+  }
+
+  // ItemValue represents the value associated with a user interface event
+  enum ItemValue {
+    ITEM_VALUE_UNSPECIFIED = 0;
+    COUNTRY = 1;
+    CITY = 2;
+    DIP = 3;
+    MESHNET = 4;
+    OBFUSCATED = 5;
+    ONION_OVER_VPN = 6;
+    DOUBLE_VPN = 7;
+    P2P = 8;
+  }
+}
