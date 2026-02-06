@@ -63,6 +63,7 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 		DurationMs:   -1,
 		EventTrigger: events.TriggerUser,
 		EventStatus:  events.StatusAttempt,
+		Reason:       events.ReasonNotSpecified,
 	})
 
 	defer func() {
@@ -74,6 +75,7 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 			DurationMs:   max(int(time.Since(logoutStartTime).Milliseconds()), 1),
 			EventTrigger: events.TriggerUser,
 			EventStatus:  status,
+			Reason:       events.ReasonNotSpecified,
 		})
 	}()
 
