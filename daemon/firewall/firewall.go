@@ -5,12 +5,9 @@ package firewall
 
 import (
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/internal"
-	"golang.org/x/exp/slices"
 )
 
 // Firewall is responsible for correctly changing one firewall agent over another.
@@ -50,53 +47,10 @@ func (fw *Firewall) Add(rules []Rule) error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
-	ruleNamesFromOS, err := fw.current.GetActiveRules()
-	if err != nil {
-		log.Printf("%v, unable to get already active rules: %v\n", internal.WarningPrefix, err)
-	}
-	trafficWasDropped := false
-
 	for _, rule := range rules {
 		fw.publisher.Publish(fmt.Sprintf("adding rule %s", rule.Name))
 		if rule.Name == "" {
 			return NewError(ErrRuleWithoutName)
-		}
-
-		// check if rule exists already
-		existingRule, err := fw.rules.Get(rule.Name)
-		if err == nil {
-			// rule with the given name exists, check if the rules are equal => replace or return error
-			if existingRule.Equal(rule) {
-				return NewError(ErrRuleAlreadyExists)
-			}
-			fw.publisher.Publish(fmt.Sprintf("replacing existing rule %s", rule.Name))
-		} else {
-			existingRule = Rule{}
-			// Check if rule exists in the OS, but not in the app
-			existsInOS := slices.ContainsFunc(ruleNamesFromOS, func(ruleName string) bool {
-				return ruleName == rule.Name || ruleName == rule.SimplifiedName
-			})
-			if existsInOS {
-				// block traffic until rules are swapped
-				if !trafficWasDropped {
-					blockRule := Rule{Name: "drop-all", Direction: TwoWay, Allow: false}
-					if err := fw.current.Add(blockRule); err != nil {
-						log.Printf("%s failed to temporarily block traffic: %v\n", internal.ErrorPrefix, err)
-					} else {
-						trafficWasDropped = true
-						defer func() {
-							if err := fw.current.Delete(blockRule); err != nil {
-								log.Printf("%s failed to unblock temporarily blocked traffic: %v\n", internal.ErrorPrefix, err)
-							}
-						}()
-					}
-				}
-				// delete it from the firewall because later it will be inserted
-				log.Printf("%s rule already exists in OS: %v\n", internal.WarningPrefix, rule.Name)
-				if err := fw.current.Delete(rule); err != nil {
-					log.Printf("%s failed to delete rule %s from OS %v\n", internal.ErrorPrefix, rule.Name, err)
-				}
-			}
 		}
 
 		if err := fw.current.Add(rule); err != nil {
