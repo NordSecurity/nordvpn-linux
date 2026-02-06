@@ -46,6 +46,10 @@ class GrpcConnectionController extends _$GrpcConnectionController {
     return true;
   }
 
+  Future<void> retry() async {
+    await _pingDaemon();
+  }
+
   // Update state only when the new state is different,
   // to prevent too many widget rebuilds
   void _updateState(AsyncValue<bool> newState) {
@@ -153,6 +157,7 @@ class GrpcConnectionController extends _$GrpcConnectionController {
   }
 
   void _onGrpcInterceptorError(ErrorGrpc error) {
+    logger.w("Intercepted an error $error");
     // deadline is ignored because this happens for a gRPC call and not for
     // the pinging of the daemon from here. And in that case the app must no
     // be put in error mode.
@@ -187,6 +192,12 @@ class GrpcConnectionController extends _$GrpcConnectionController {
 
         case StatusCode.unavailable:
           return _mapErrorMessageToStatus(error.message);
+
+        case StatusCode.permissionDenied:
+          final message = error.message?.toLowerCase() ?? "";
+          if (message.contains("snap")) {
+            return AppStatusCode.snapInterfaces;
+          }
 
         case StatusCode.deadlineExceeded:
           // this is important only for pinging the daemon. And it is used to

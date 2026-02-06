@@ -4,6 +4,7 @@ import 'package:nordvpn/data/mocks/daemon/mock_account_info.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_application_settings.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_daemon.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_servers_list.dart';
+import 'package:nordvpn/data/mocks/daemon/mock_snap_interceptor.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_vpn_status.dart';
 import 'package:nordvpn/logger.dart';
 
@@ -21,6 +22,9 @@ final class GrpcServer {
   Server? _server;
   MockDaemon? _daemon;
 
+  // By default it's disabled
+  final MockSnapErrorInterceptor _snapInterceptor = MockSnapErrorInterceptor();
+
   bool get isRunning => _daemon != null;
 
   MockDaemon get daemon => _daemon!;
@@ -28,6 +32,7 @@ final class GrpcServer {
   MockApplicationSettings get appSettings => daemon.appSettings;
   MockServersList get serversList => daemon.serversList;
   MockVpnStatus get vpnStatus => daemon.vpnStatus;
+  MockSnapErrorInterceptor get snapInterceptor => _snapInterceptor;
 
   /// Starts the gRPC server
   Future<void> start() async {
@@ -35,7 +40,10 @@ final class GrpcServer {
       return;
     }
     _daemon = MockDaemon();
-    _server = Server.create(services: [_daemon!]);
+    _server = Server.create(
+      services: [_daemon!],
+      serverInterceptors: [_snapInterceptor],
+    );
     await _server!.serve(port: defaultPortNumber, shared: true);
     logger.i('✅ gRPC Server started on port $defaultPortNumber');
   }
