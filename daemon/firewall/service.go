@@ -4,16 +4,10 @@ package firewall
 //
 // Used by callers.
 type Service interface {
-	// Add and apply firewall rules
-	Add([]Rule) error
-	// Delete a list of firewall rules by defined names
-	Delete(names []string) error
-	// Enable firewall
-	Enable() error
-	// Disable firewall
-	Disable() error
-	// Flushes firewall
+	Configure(tunnelInterface string) error
 	Flush() error
+	Disable() error
+	Enable(tunnelInterface string) error
 }
 
 // Agent carries out required firewall changes.
@@ -28,4 +22,9 @@ type Agent interface {
 	Flush() error
 	// GetActiveRules gets currently active rules by name
 	GetActiveRules() ([]string, error)
+}
+
+type FwImpl interface {
+	Configure(tunnelInterface string) error
+	Flush() error
 }
