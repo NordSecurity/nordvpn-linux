@@ -106,7 +106,7 @@ Shows the app version.
 .PP
 \fBallowlist, whitelist\fR
 .RS 4
-Adds or removes allowlist options.
+Specify ports, port ranges, or subnets to exclude from VPN protection. Allowlisted ports may accept incoming connections from any external source outside your network.
 .RE
 .PP
 \fBmeshnet, mesh\fR
