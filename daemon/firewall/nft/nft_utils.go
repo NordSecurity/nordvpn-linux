@@ -146,6 +146,7 @@ func addMarkCheckAndSetToCt(fwmark uint32) []expr.Any {
 	}
 }
 
+// interface name must be unix.IFNAMSIZ chars, even if they are \0
 func ifname(n string) []byte {
 	b := make([]byte, unix.IFNAMSIZ)
 	copy(b, []byte(n))

@@ -1,108 +1,41 @@
 package nft
 
 import (
-	"errors"
 	"fmt"
 
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/google/nftables"
 	"github.com/google/nftables/binaryutil"
 	"github.com/google/nftables/expr"
-	"golang.org/x/sys/unix"
 )
 
 const tableName = "nordvpn"
 const appFwmark uint32 = 0xe1f1
 const allowedInterfacesSetName = "allowed_interfaces"
 
-const rules = `add table inet nordvpn
-delete table inet nordvpn
-
-table inet nordvpn {
-    chain postrouting {
-        type filter hook postrouting priority mangle; policy accept;
-        # Save packet fwmark
-        meta mark 0xe1f1 ct mark set meta mark
-    }
-
-    chain prerouting {
-        type filter hook prerouting priority mangle; policy accept;
-        ct mark 0xe1f1 meta mark set ct mark
-    }
-
-  chain input {
-    type filter hook input priority filter; policy drop;
-
-    iifname "lo" accept
-    iifname "{{.TunnelInterface}}" accept
-
-    ct state established,related ct mark 0xe1f1 accept
-    ct mark 0xe1f1 accept
-
-	udp sport 53 ct state established accept
-    tcp sport 53 ct state established accept
-  }
-
-    chain output {
-        type filter hook output priority filter; policy drop;
-
-        oifname "{{.TunnelInterface}}" accept
-        oifname "lo" accept
-
-        ct state new,established,related ct mark 0xe1f1 accept
-        meta mark 0xe1f1 accept
-
-		udp dport 53 accept
-        tcp dport 53 accept
-    }
-  chain forward {
-    type filter hook forward priority filter; policy drop;
-  }
-}`
-
 type nft struct {
 	conn *nftables.Conn
 }
 
-func (n *nft) Add(rule firewall.Rule) error {
-	if rule.Name == "enable" {
-		if rule.SimplifiedName == "" {
-			return errors.New("Empty tun name")
-		}
-		if err := n.applyRules(rule.SimplifiedName); err != nil {
-			return fmt.Errorf("applying VPN lockdown: %w", err)
-		}
-		return nil
-	}
-	return nil
-}
-
-func (n *nft) Delete(rule firewall.Rule) error {
-	if rule.Name == "enable" {
-		fmt.Println("Delete block block block")
-		if err := n.removeRules(); err != nil {
-			return fmt.Errorf("applying VPN lockdown: %w", err)
-		}
-		return nil
+func (n *nft) Configure(tunnelInterface string) error {
+	if err := n.configure(tunnelInterface); err != nil {
+		return fmt.Errorf("applying VPN lockdown: %w", err)
 	}
 	return nil
 }
 
 func (n *nft) Flush() error {
-	return n.removeRules()
+	table := addMainTable(n.conn)
+	n.conn.DelTable(table)
+	return n.conn.Flush()
 }
 
-func (*nft) GetActiveRules() ([]string, error) {
-	return nil, nil
-}
-
-func New(stateModule string, stateFlag string, chainPrefix string, supportedIPTables []string) *nft {
+func New() *nft {
 	return &nft{
 		conn: &nftables.Conn{},
 	}
 }
 
-func (n *nft) applyRules(tunnelInterface string) error {
+func (n *nft) configure(tunnelInterface string) error {
 	table := addMainTable(n.conn)
 	n.conn.DelTable(table)
 	table = addMainTable(n.conn)
@@ -199,8 +132,6 @@ func (n *nft) addPreRouting(table *nftables.Table) {
 // //	    iifname "{{.TunnelInterface}}" accept
 // //	    ct state established,related ct mark 0xe1f1 accept
 // //	    ct mark 0xe1f1 accept
-// //			ct state established udp sport 53 accept
-// //		    ct state established tcp sport 53 accept
 // //		}
 func (n *nft) addInput(table *nftables.Table, allowedInterfaces *nftables.Set) {
 	dropPolicy := nftables.ChainPolicyDrop
@@ -226,26 +157,6 @@ func (n *nft) addInput(table *nftables.Table, allowedInterfaces *nftables.Set) {
 		Chain: inputChain,
 		Exprs: buildRules(expr.VerdictAccept, addCtMarkCheck(appFwmark)),
 	})
-
-	// ct state established udp sport 53 accept
-	n.conn.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: inputChain,
-		Exprs: buildRules(expr.VerdictAccept,
-			addCheckCtState(expr.CtStateBitESTABLISHED|expr.CtStateBitRELATED),
-			addPortCheck(53, unix.IPPROTO_UDP, MATCH_SOURCE),
-		),
-	})
-
-	// ct state established tcp sport 53 accept
-	n.conn.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: inputChain,
-		Exprs: buildRules(expr.VerdictAccept,
-			addCheckCtState(expr.CtStateBitESTABLISHED|expr.CtStateBitRELATED),
-			addPortCheck(53, unix.IPPROTO_TCP, MATCH_SOURCE),
-		),
-	})
 }
 
 // chain output {
@@ -254,12 +165,9 @@ func (n *nft) addInput(table *nftables.Table, allowedInterfaces *nftables.Set) {
 //     oifname "{{.TunnelInterface}}" accept
 //     oifname "lo" accept
 
-//     ct mark 0xe1f1 accept
-//     meta mark 0xe1f1 accept
-
-//		udp dport 53 accept
-//	    tcp dport 53 accept
-//	}
+//	    ct mark 0xe1f1 accept
+//	    meta mark 0xe1f1 accept
+//		}
 func (n *nft) addOutput(table *nftables.Table, allowedInterfaces *nftables.Set) {
 	dropPolicy := nftables.ChainPolicyDrop
 
@@ -307,29 +215,6 @@ func (n *nft) addOutput(table *nftables.Table, allowedInterfaces *nftables.Set) 
 			},
 		},
 	})
-
-	// tcp dport 53 accept
-	n.conn.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: outputChain,
-		Exprs: buildRules(expr.VerdictAccept,
-			addPortCheck(53, unix.IPPROTO_TCP, MATCH_DESTINATION),
-		),
-	})
-
-	n.conn.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: outputChain,
-		Exprs: buildRules(expr.VerdictAccept,
-			addPortCheck(53, unix.IPPROTO_UDP, MATCH_DESTINATION),
-		),
-	})
-}
-
-func (n *nft) removeRules() error {
-	table := addMainTable(n.conn)
-	n.conn.DelTable(table)
-	return n.conn.Flush()
 }
 
 func addMainTable(conn *nftables.Conn) *nftables.Table {

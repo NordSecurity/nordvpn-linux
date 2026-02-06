@@ -35,7 +35,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/forwarder"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/nft"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/notables"
 	"github.com/NordSecurity/nordvpn-linux/daemon/netstate"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	telemetrypb "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1"
@@ -206,21 +205,8 @@ func main() {
 	dns.RestoreResolvConfFile()
 
 	// Firewall
-	stateModule := "conntrack"
-	stateFlag := "--ctstate"
-	chainPrefix := ""
-	iptablesAgent := nft.New(
-		stateModule,
-		stateFlag,
-		chainPrefix,
-		[]string{},
-	)
-	fw := firewall.NewFirewall(
-		&notables.Facade{},
-		iptablesAgent,
-		debugSubject,
-		cfg.Firewall,
-	)
+	nftImpl := nft.New()
+	fw := firewall.NewFirewall(nftImpl, cfg.Firewall)
 
 	// API
 	var err error
@@ -265,6 +251,7 @@ func main() {
 		validator,
 		cfg.FirewallMark,
 		network.ExponentialBackoff,
+		cfg.FirewallMark,
 	)
 
 	httpClientWithRotator := request.NewStdHTTP()
