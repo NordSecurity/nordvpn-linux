@@ -77,6 +77,8 @@ function copy_to_libs() {
     so_out_dir="${out_dir}/${ARCHS_SO_REVERSE[${arch}]}"
     mkdir -p "${so_out_dir}"
     unzip -jo "${zipfile}" -d "${so_out_dir}" "${dir_in_zip}"
+    # set correct permissions after extracting
+    chmod 644 "${so_out_dir}/${so_file}"
   done
 }
 

@@ -76,8 +76,6 @@ contents:
     dst: /usr/share/bash-completion/completions/nordvpn
   - src: ${WORKDIR}/dist/autocomplete/zsh_autocomplete
     dst: /usr/share/zsh/functions/Completion/Unix/_nordvpn_auto_complete
-  - src: ${WORKDIR}/bin/deps/openvpn/current/${ARCH}/openvpn
-    dst: /usr/lib/${NAME}/openvpn
   - src: ${WORKDIR}/contrib/desktop/nordvpn.desktop
     dst: /usr/share/applications/nordvpn.desktop
     file_info:
@@ -120,9 +118,16 @@ contents:
     dst: /usr/bin/nordvpn
   - src: ${BASEDIR}/usr/lib/${NAME}/nordfileshare
     dst: /usr/lib/${NAME}/nordfileshare
+    file_info:
+      mode: 0755
   - src: ${BASEDIR}/usr/lib/${NAME}/norduserd
     dst: /usr/lib/${NAME}/norduserd
-
+    file_info:
+      mode: 0755
+  - src: ${WORKDIR}/bin/deps/openvpn/current/${ARCH}/openvpn
+    dst: /usr/lib/${NAME}/openvpn
+    file_info:
+      mode: 0755
   - src: ${WORKDIR}/contrib/initd/nordvpn
     dst: /etc/init.d/nordvpn
     packager: deb
@@ -132,8 +137,13 @@ contents:
   - src: ${WORKDIR}/bin/deps/lib/current-dump/${ARCH}
     dst: /usr/lib/${NAME}
     type: tree
-    file_info:
-      mode: 0755
+    # File info for tree type sets permission level for whole
+    # dst directory, if this is ran as file info 0644
+    # the directory itself will not have executable permissions
+    # and the user process of norduserd will not be able to be run
+
+    # Ensure that libraries are packaged in with proper permissions
+    # during build/download stage
 
 # All fields above marked as `overridable` can be overridden for a given package format in this section.
 overrides:
