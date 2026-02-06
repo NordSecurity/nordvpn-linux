@@ -36,7 +36,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/forwarder"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/nft"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/notables"
 	"github.com/NordSecurity/nordvpn-linux/daemon/netstate"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	telemetrypb "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1"
@@ -206,21 +205,8 @@ func main() {
 	dns.RestoreResolvConfFile()
 
 	// Firewall
-	stateModule := "conntrack"
-	stateFlag := "--ctstate"
-	chainPrefix := ""
-	iptablesAgent := nft.New(
-		stateModule,
-		stateFlag,
-		chainPrefix,
-		[]string{},
-	)
-	fw := firewall.NewFirewall(
-		&notables.Facade{},
-		iptablesAgent,
-		debugSubject,
-		cfg.Firewall,
-	)
+	nftImpl := nft.New()
+	fw := firewall.NewFirewall(nftImpl, cfg.Firewall)
 
 	// API
 	var err error
@@ -263,8 +249,8 @@ func main() {
 		cdnUrl,
 		httpClientSimple,
 		validator,
-		fw,
 		network.ExponentialBackoff,
+		cfg.FirewallMark,
 	)
 
 	httpClientWithRotator := request.NewStdHTTP()
@@ -855,14 +841,14 @@ func buildTpServersAndResolver(
 	cdnUrl string,
 	httpClientSimple *http.Client,
 	validator response.Validator,
-	fw *firewall.Firewall,
 	timeoutFn dns.CalculateRetryDelayForAttempt,
+	fwmark uint32,
 ) (*dns.NameServers, *network.Resolver) {
 	cdn := core.NewCDNAPI(userAgent, cdnUrl, httpClientSimple, validator)
 	tpServers := dns.NewNameServers()
 	// fetch async the TP servers, because FetchTPServers will retry until is successful
 	go tpServers.FetchTPServers(cdn.ThreatProtectionLite, timeoutFn)
 
-	resolver := network.NewResolver(fw, tpServers)
+	resolver := network.NewResolver(tpServers, fwmark)
 	return tpServers, resolver
 }
