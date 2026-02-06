@@ -11,6 +11,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
@@ -127,7 +128,7 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 		log.Println(internal.ErrorPrefix, "retrieving user:", err)
 		switch {
 		case errors.Is(err, core.ErrUnauthorized):
-			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, r.events.User.Logout)); err != nil {
+			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, r.events.User.Logout, events.ReasonUnauthorized)); err != nil {
 				return &pb.AccountResponse{
 					Type: internal.CodeConfigError,
 				}, nil
