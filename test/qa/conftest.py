@@ -121,6 +121,7 @@ def start_system_monitoring():
     if os.getenv("SKIP_SYSTEM_MONITORING"):
         print("Skipping monitoring...")
         yield
+        return
 
     print("Run start_system_monitoring")
 
