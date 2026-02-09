@@ -138,7 +138,7 @@ func (api *CDNAPI) ConfigTemplate(isObfuscated bool, method string) (http.Header
 }
 
 func (api *CDNAPI) ThreatProtectionLite() (*NameServers, error) {
-	resp, err := api.request(threatProtectionLiteURL, http.MethodGet)
+	resp, err := api.request(ThreatProtectionLiteURL, http.MethodGet)
 	if err != nil {
 		return nil, err
 	}

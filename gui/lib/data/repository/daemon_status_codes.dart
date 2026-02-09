@@ -19,6 +19,7 @@ final class DaemonStatusCode {
   static const noService = 3020;
   static const tokenRenewError = 3022;
   static const tokenLoginFailure = 3035;
+  static const serverUnavailable = 3032;
   static const serverNotObfuscated = 3037;
   static const serverObfuscated = 3038;
   static const privateSubnetLANDiscovery = 3040;
@@ -26,6 +27,7 @@ final class DaemonStatusCode {
   static const allowlistPortOutOfRange = 3046;
   static const featureHidden = 3050;
   static const technologyDisabled = 3051;
+  static const virtualLocationsDisabled = 3057;
 
   // custom GUI defined error codes
   static const invalidTechnology = 5000;

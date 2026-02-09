@@ -13,6 +13,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type mockResolvConfMonitor struct {
+}
+
+func (m *mockResolvConfMonitor) start() {}
+func (m *mockResolvConfMonitor) stop()  {}
+
 type MockSetter struct {
 	isSet    bool
 	setErr   error
@@ -425,6 +431,7 @@ search home`)
 				resolvconfSetter:      &resolvconfSetter,
 				filesystemHandle:      fs,
 				nmcliSetter:           &nmCliSetter,
+				resolvConfMonitor:     &mockResolvConfMonitor{},
 			}
 
 			err := s.Set("eth0", []string{"1.1.1.1"})

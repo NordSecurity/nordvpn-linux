@@ -3,13 +3,18 @@ import sh
 import os
 import glob
 
+from pathlib import Path
+
 import lib
 from lib import (
     daemon,
     login,
+    logging,
     network,
 )
+from lib.dynamic_parametrize import dynamic_parametrize
 
+from conftest import IS_NIGHTLY
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
@@ -114,8 +119,17 @@ def test_killswitch_off_connected(tech, proto, obfuscated):
     assert network.is_available()
 
 
-@pytest.mark.parametrize(("tech_from", "proto_from", "obfuscated_from"), lib.TECHNOLOGIES)
-@pytest.mark.parametrize(("tech_to", "proto_to", "obfuscated_to"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech_from", "proto_from", "obfuscated_from",
+        "tech_to", "proto_to", "obfuscated_to",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[lib.TECHNOLOGIES],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech_from}-{proto_from}-{obfuscated_from}-"
+               "{tech_to}-{proto_to}-{obfuscated_to}",
+)
 def test_killswitch_reconnect(tech_from, proto_from, obfuscated_from, tech_to, proto_to, obfuscated_to):
     """Manual TC: LVPN-8716"""
 
@@ -167,7 +181,7 @@ def test_fancy_transport():
     with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
         output = sh.nordvpn.account()
         print(output)
-        assert "Account Information:" in output
+        assert "Account information" in output
 
     sh.nordvpn.set.killswitch("off")
     assert network.is_available()
@@ -175,29 +189,18 @@ def test_fancy_transport():
 
 # This test assumes being run on docker
 def test_killswitch_on_after_update():
+    assert Path("/.dockerenv").exists(), "Test must be executed in docker"
     # Mocking ps to pretend as if we are in an initd system
     sh.sudo.mv("/usr/bin/ps", "/usr/bin/pso")
     sh.sudo.cp("/etc/mock_ps.sh", "/usr/bin/ps")
 
-    # Making a second deb package with increased version to upgrade to
-    sh.dpkg_deb("-R", DEB_PATH, "/tmp/")
-    ver = str(sh.dpkg_query("-f", '${VERSION}', "-W", "nordvpn"))
-    increased_ver = str(int(ver[0]) + 1) + ver[1:]
-    print(increased_ver)
-    with open("/tmp/DEBIAN/control", "rb") as f:
-        data = f.readlines()
-    data[1] = bytes("Version: " + increased_ver + "\n", "utf-8")
-    with open("/tmp/DEBIAN/control", "wb") as f:
-        f.writelines(data)
-    # Empty file with which dpkg-deb does not work, we remove it before repackaging
-    os.remove("/tmp/DEBIAN/conffiles")
-    sh.sudo("dpkg-deb", "-b", "/tmp/", "/opt/updated.deb")
-
-
     sh.nordvpn.set.killswitch.on()
     assert daemon.is_killswitch_on()
+    logging.log(f"Settings before update {sh.nordvpn.settings()}")
     assert network.is_not_available(2)
-    sh.sudo.apt.install("/opt/updated.deb", "-y")
+    sh.sudo.dpkg("-i", DEB_PATH)
+    daemon.wait_until_daemon_is_running()
+    logging.log(f"Settings after app update {sh.nordvpn.settings()}")
     assert network.is_not_available(2)
     assert daemon.is_killswitch_on()
     sh.nordvpn.set.killswitch.off()

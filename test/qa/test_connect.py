@@ -7,6 +7,9 @@ import sh
 
 import lib
 from lib import daemon, info, logging, network, server
+from conftest import IS_NIGHTLY
+
+from lib.dynamic_parametrize import dynamic_parametrize
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
 
@@ -105,8 +108,15 @@ def test_nordwhisper_connect_to_group_random_server_by_name_additional(tech, pro
     disconnect_base_test()
 
 
-@pytest.mark.parametrize("group", lib.STANDARD_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "group",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[lib.STANDARD_GROUPS],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{group}",
+)
 def test_connect_to_group_random_server_by_name_standard(tech, proto, obfuscated, group):
     """Manual TC: LVPN-8864"""
 
@@ -203,8 +213,15 @@ def test_connect_network_gone(tech, proto, obfuscated):
         print(ex.value)
 
 
-@pytest.mark.parametrize("group", lib.STANDARD_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "group",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[lib.STANDARD_GROUPS],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{group}",
+)
 def test_connect_to_group_standard(tech, proto, obfuscated, group):
     """Manual TC: LVPN-809"""
 
@@ -258,8 +275,15 @@ def test_connect_to_group_obfuscated(tech, proto, obfuscated, group):
     disconnect_base_test()
 
 
-@pytest.mark.parametrize("group", lib.STANDARD_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "group",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[lib.STANDARD_GROUPS],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{group}",
+)
 def test_connect_to_flag_group_standard(tech, proto, obfuscated, group):
     """Manual TC: LVPN-8620"""
 
@@ -356,8 +380,15 @@ def test_connect_to_group_invalid(tech, proto, obfuscated):
     assert lib.is_connect_unsuccessful(ex)
 
 
-@pytest.mark.parametrize("country", lib.COUNTRIES)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "country",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[lib.COUNTRIES],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{country}",
+)
 def test_connect_to_country(tech, proto, obfuscated, country):
     """Manual TC: LVPN-489"""
 
@@ -367,8 +398,15 @@ def test_connect_to_country(tech, proto, obfuscated, country):
     disconnect_base_test()
 
 
-@pytest.mark.parametrize("country_code", lib.COUNTRY_CODES)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "country_code",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[lib.COUNTRY_CODES],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{country_code}",
+)
 def test_connect_to_country_code(tech, proto, obfuscated, country_code):
     """Manual TC: LVPN-843"""
 
@@ -378,8 +416,15 @@ def test_connect_to_country_code(tech, proto, obfuscated, country_code):
     disconnect_base_test()
 
 
-@pytest.mark.parametrize("city", lib.CITIES)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "city",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[lib.CITIES],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{city}",
+)
 def test_connect_to_city(tech, proto, obfuscated, city):
     """Manual TC: LVPN-815"""
 

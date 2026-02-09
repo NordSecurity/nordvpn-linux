@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+type CalculateRetryDelayForAttempt func(attempt int) time.Duration
+
 func ExponentialBackoff(tries int) time.Duration {
 	var minSecs, maxSecs int
 	switch {

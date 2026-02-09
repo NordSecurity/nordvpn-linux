@@ -4,6 +4,10 @@ import pexpect
 
 import lib
 from lib import daemon, dns, info, logging, login, network, settings
+from lib.dynamic_parametrize import dynamic_parametrize
+
+from conftest import IS_NIGHTLY
+
 
 def setup_function(function):  # noqa: ARG001
     logging.log()
@@ -209,8 +213,15 @@ def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
     assert settings.app_has_defaults_settings()
 
 
-@pytest.mark.parametrize("nameserver", dns.DNS_CASES_CUSTOM)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@dynamic_parametrize(
+    [
+        "tech", "proto", "obfuscated", "nameserver",
+    ],
+    ordered_source=[lib.TECHNOLOGIES],
+    randomized_source=[dns.DNS_CASES_CUSTOM],
+    generate_all=IS_NIGHTLY,
+    id_pattern="{tech}-{proto}-{obfuscated}-{nameserver}",
+)
 def test_is_custom_dns_removed_after_setting_defaults(tech, proto, obfuscated, nameserver):
     """Manual TC: LVPN-8747"""
 
@@ -281,7 +292,7 @@ def test_set_defaults_no_logout(tech, proto, obfuscated):
     assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
 
     assert settings.app_has_defaults_settings()
-    assert "Account Information" in sh.nordvpn.account()
+    assert "Account information" in sh.nordvpn.account()
 
 
 def test_set_analytics_off_on():
@@ -461,7 +472,7 @@ def test_set_defaults_no_logout_connected(tech, proto, obfuscated):
 
     assert "Status: Disconnected" in sh.nordvpn.status()
     assert settings.app_has_defaults_settings()
-    assert "Account Information" in sh.nordvpn.account()
+    assert "Account information" in sh.nordvpn.account()
 
 
 @pytest.mark.parametrize("nameserver", (dns.DNS_CASE_CUSTOM_SINGLE,))

@@ -6,10 +6,8 @@ set -euxo pipefail
 # testing/development purposes.
 # If the tests fail because of C dependencies, the failing packages
 # must be separated from the rest of the code and added here.
-excluded_packages="moose\|cmd\/daemon\|telio\|daemon\/vpn\/openvpn"
-excluded_packages=$excluded_packages"\|meshnet\/mesh\/nordlynx\|fileshare\/drop"
+excluded_packages="moose\|telio"
 excluded_packages=$excluded_packages"\|events\/moose"
-excluded_packages=$excluded_packages"\|pb\|magefiles"
 excluded_packages=$excluded_packages"\|daemon\/vpn\/quench"
 excluded_categories="root,link,firewall,route,file,integration"
 

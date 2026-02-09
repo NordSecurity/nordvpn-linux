@@ -717,6 +717,15 @@ func TestPickServer(t *testing.T) {
 			tech:              config.Technology_NORDLYNX,
 			onlyPhysicServers: true,
 		},
+		{
+			name:              "virtual location disabled returns error when only virtual servers match",
+			api:               mockFailingServersAPI{},
+			servers:           serversList(),
+			tech:              config.Technology_NORDLYNX,
+			tag:               "algeria",
+			onlyPhysicServers: true,
+			expectedError:     internal.ErrVirtualServerSelected,
+		},
 	}
 
 	for _, test := range tests {

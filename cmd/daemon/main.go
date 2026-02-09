@@ -147,6 +147,10 @@ func main() {
 	log.SetOutput(os.Stdout)
 	log.Println(internal.InfoPrefix, "Daemon has started")
 
+	if err := SetBufferSizeForHTTP3(); err != nil {
+		log.Println(internal.WarningPrefix, "failed to set buffer size for HTTP/3:", err)
+	}
+
 	machineIdGenerator := config.NewMachineID(os.ReadFile, os.Hostname)
 
 	// Config
@@ -254,26 +258,14 @@ func main() {
 	}
 	log.Println(internal.InfoPrefix, "CDN URL:", cdnUrl)
 
-	threatProtectionLiteServers := func() *dns.NameServers {
-		cdn := core.NewCDNAPI(
-			userAgent,
-			cdnUrl,
-			httpClientSimple,
-			validator,
-		)
-		nameservers, err := cdn.ThreatProtectionLite()
-		if err != nil {
-			log.Println(internal.ErrorPrefix, "error retrieving nameservers:", err)
-			return dns.NewNameServers(nil)
-		}
-		return dns.NewNameServers(nameservers.Servers)
-	}()
-
-	resolver := network.NewResolver(fw, threatProtectionLiteServers)
-
-	if err := SetBufferSizeForHTTP3(); err != nil {
-		log.Println(internal.WarningPrefix, "failed to set buffer size for HTTP/3:", err)
-	}
+	threatProtectionLiteServers, resolver := buildTpServersAndResolver(
+		userAgent,
+		cdnUrl,
+		httpClientSimple,
+		validator,
+		fw,
+		network.ExponentialBackoff,
+	)
 
 	httpClientWithRotator := request.NewStdHTTP()
 	httpClientWithRotator.Transport = createTimedOutTransport(
@@ -305,7 +297,8 @@ func main() {
 		httpClientSimple,
 	)
 	gwret := netlinkrouter.Retriever{}
-	dnsSetter := dns.NewDNSServiceSetter(infoSubject)
+
+	dnsSetter := dns.NewDNSServiceSetter(infoSubject, daemonEvents.Debugger.DebuggerEvents)
 	dnsHostSetter := dns.NewHostsFileSetter(dns.HostsFilePath)
 
 	eventsDbPath := filepath.Join(internal.DatFilesPathCommon, "moose.db")
@@ -773,6 +766,7 @@ func main() {
 	if err := analytics.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping analytics:", err)
 	}
+	log.Println(internal.InfoPrefix, "Daemon stopped")
 }
 
 // assignMooseDBPermissions updates moose DB permissions.
@@ -854,4 +848,21 @@ func buildClientAPIAndSessionStores(
 	builder.BuildNCCredsStore(smartAPI)
 
 	return smartAPI, builder
+}
+
+func buildTpServersAndResolver(
+	userAgent string,
+	cdnUrl string,
+	httpClientSimple *http.Client,
+	validator response.Validator,
+	fw *firewall.Firewall,
+	timeoutFn dns.CalculateRetryDelayForAttempt,
+) (*dns.NameServers, *network.Resolver) {
+	cdn := core.NewCDNAPI(userAgent, cdnUrl, httpClientSimple, validator)
+	tpServers := dns.NewNameServers()
+	// fetch async the TP servers, because FetchTPServers will retry until is successful
+	go tpServers.FetchTPServers(cdn.ThreatProtectionLite, timeoutFn)
+
+	resolver := network.NewResolver(fw, tpServers)
+	return tpServers, resolver
 }

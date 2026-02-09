@@ -30,8 +30,16 @@ def test_allowlist_add_multiple_port_ranges_cli_output():
     port_list = allowlist.get_allow_list_ports()
     assert len(port_list) == 3
 
-@dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS + lib.PORTS_RANGE,
-                     id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}", always_pair=lib.TECHNOLOGIES_BASIC1[0])
+
+@dynamic_parametrize(
+    [
+        "port", "tech", "proto", "obfuscated",
+    ],
+    ordered_source=[lib.PORTS + lib.PORTS_RANGE],
+    randomized_source=[lib.TECHNOLOGIES],
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+)
 def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_disconnected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8956"""
 
@@ -49,8 +57,15 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_disconne
     assert output_after_add == output_after_delete
 
 
-@dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS + lib.PORTS_RANGE,
-                     id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}", always_pair=lib.TECHNOLOGIES_BASIC1[0])
+@dynamic_parametrize(
+    [
+        "port", "tech", "proto", "obfuscated",
+    ],
+    ordered_source=[lib.PORTS + lib.PORTS_RANGE],
+    randomized_source=[lib.TECHNOLOGIES],
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+)
 def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8957"""
 
@@ -70,8 +85,15 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connecte
     assert output_after_add == output_after_delete
 
 
-@dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS,
-                     id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}", always_pair=lib.TECHNOLOGIES_BASIC1[0])
+@dynamic_parametrize(
+    [
+        "port", "tech", "proto", "obfuscated",
+    ],
+    ordered_source=[lib.PORTS],
+    randomized_source=[lib.TECHNOLOGIES],
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+)
 def test_allowlist_port_twice_disconnected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-759"""
 
@@ -91,8 +113,15 @@ def test_allowlist_port_twice_disconnected(tech, proto, obfuscated, port):
     assert not firewall.is_active([port])
 
 
-@dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES_BASIC2, ordered_source=lib.PORTS,
-                     id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}")
+@dynamic_parametrize(
+    [
+        "port", "tech", "proto", "obfuscated",
+    ],
+    ordered_source=[lib.PORTS],
+    randomized_source=[lib.TECHNOLOGIES_BASIC2],
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+)
 def test_allowlist_port_twice_connected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8958"""
 
@@ -117,8 +146,15 @@ def test_allowlist_port_twice_connected(tech, proto, obfuscated, port):
     assert not firewall.is_active([port])
 
 
-@dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS + lib.PORTS_RANGE,
-                     id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}", always_pair=lib.TECHNOLOGIES_BASIC1[0])
+@dynamic_parametrize(
+    [
+        "port", "tech", "proto", "obfuscated",
+    ],
+    ordered_source=[lib.PORTS + lib.PORTS_RANGE],
+    randomized_source=[lib.TECHNOLOGIES],
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+)
 def test_allowlist_port_and_remove_disconnected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8959"""
 
@@ -131,8 +167,15 @@ def test_allowlist_port_and_remove_disconnected(tech, proto, obfuscated, port):
     assert not firewall.is_active([port])
 
 
-@dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS + lib.PORTS_RANGE,
-                     id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}", always_pair=lib.TECHNOLOGIES_BASIC1[0])
+@dynamic_parametrize(
+    [
+        "port", "tech", "proto", "obfuscated",
+    ],
+    ordered_source=[lib.PORTS + lib.PORTS_RANGE],
+    randomized_source=[lib.TECHNOLOGIES],
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+)
 def test_allowlist_port_and_remove_connected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8958"""
 
@@ -147,8 +190,15 @@ def test_allowlist_port_and_remove_connected(tech, proto, obfuscated, port):
     assert firewall.is_active() and not firewall.is_active([port])
 
 
-@dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS,
-                     id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}", always_pair=lib.TECHNOLOGIES_BASIC1[0])
+@dynamic_parametrize(
+    [
+        "port", "tech", "proto", "obfuscated",
+    ],
+    ordered_source=[lib.PORTS],
+    randomized_source=[lib.TECHNOLOGIES],
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+)
 def test_allowlist_port_remove_nonexistent_disconnected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-728"""
 
@@ -163,8 +213,16 @@ def test_allowlist_port_remove_nonexistent_disconnected(tech, proto, obfuscated,
     expected_message = allowlist.MSG_ALLOWLIST_PORT_REMOVE_ERROR % (port.value, port.protocol)
     assert expected_message in ex.value.stdout.decode("utf-8")
 
-@dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS,
-                     id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}", always_pair=lib.TECHNOLOGIES_BASIC1[0])
+
+@dynamic_parametrize(
+    [
+        "port", "tech", "proto", "obfuscated",
+    ],
+    ordered_source=[lib.PORTS],
+    randomized_source=[lib.TECHNOLOGIES],
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+)
 def test_allowlist_port_remove_nonexistent_connected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8960"""
 
@@ -182,8 +240,15 @@ def test_allowlist_port_remove_nonexistent_connected(tech, proto, obfuscated, po
     assert expected_message in ex.value.stdout.decode("utf-8")
 
 
-@dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS_RANGE,
-                     id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}", always_pair=lib.TECHNOLOGIES_BASIC1[0])
+@dynamic_parametrize(
+    [
+        "port", "tech", "proto", "obfuscated",
+    ],
+    ordered_source=[lib.PORTS_RANGE],
+    randomized_source=[lib.TECHNOLOGIES],
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+)
 def test_allowlist_port_range_remove_nonexistent_disconnected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-3779"""
 
@@ -201,8 +266,15 @@ def test_allowlist_port_range_remove_nonexistent_disconnected(tech, proto, obfus
     assert expected_message in ex.value.stdout.decode("utf-8")
 
 
-@dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS_RANGE,
-                     id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}", always_pair=lib.TECHNOLOGIES_BASIC1[0])
+@dynamic_parametrize(
+    [
+        "port", "tech", "proto", "obfuscated",
+    ],
+    ordered_source=[lib.PORTS_RANGE],
+    randomized_source=[lib.TECHNOLOGIES],
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+)
 def test_allowlist_port_range_remove_nonexistent_connected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8961"""
 
@@ -221,8 +293,16 @@ def test_allowlist_port_range_remove_nonexistent_connected(tech, proto, obfuscat
     expected_message = allowlist.MSG_ALLOWLIST_PORT_RANGE_REMOVE_ERROR % (port.value.replace(":", " - "), port.protocol)
     assert expected_message in ex.value.stdout.decode("utf-8")
 
-@dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS_RANGE,
-                     id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}", always_pair=lib.TECHNOLOGIES_BASIC1[0])
+
+@dynamic_parametrize(
+    [
+        "port", "tech", "proto", "obfuscated",
+    ],
+    ordered_source=[lib.PORTS_RANGE],
+    randomized_source=[lib.TECHNOLOGIES],
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+)
 def test_allowlist_port_range_twice_disconnected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-3789"""
 
@@ -234,8 +314,15 @@ def test_allowlist_port_range_twice_disconnected(tech, proto, obfuscated, port):
     assert not firewall.is_active([port])
 
 
-@dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS_RANGE,
-                     id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}", always_pair=lib.TECHNOLOGIES_BASIC1[0])
+@dynamic_parametrize(
+    [
+        "port", "tech", "proto", "obfuscated",
+    ],
+    ordered_source=[lib.PORTS_RANGE],
+    randomized_source=[lib.TECHNOLOGIES],
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+)
 def test_allowlist_port_range_twice_connected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8962"""
 
@@ -249,8 +336,15 @@ def test_allowlist_port_range_twice_connected(tech, proto, obfuscated, port):
     assert firewall.is_active([port])
 
 
-@dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS_RANGE,
-                     id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}", always_pair=lib.TECHNOLOGIES_BASIC1[0])
+@dynamic_parametrize(
+    [
+        "port", "tech", "proto", "obfuscated",
+    ],
+    ordered_source=[lib.PORTS_RANGE],
+    randomized_source=[lib.TECHNOLOGIES],
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+)
 def test_allowlist_port_range_when_port_from_range_already_allowlisted_disconnected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-724"""
 
@@ -267,8 +361,15 @@ def test_allowlist_port_range_when_port_from_range_already_allowlisted_disconnec
     assert not firewall.is_active([port]) and not firewall.is_active([already_allowlisted_port])
 
 
-@dynamic_parametrize(["tech", "proto", "obfuscated", "port"], randomized_source=lib.TECHNOLOGIES, ordered_source=lib.PORTS_RANGE,
-                     id_pattern="{ordered.protocol}-{ordered.value}-{randomized[0]}-{randomized[1]}-{randomized[2]}", always_pair=lib.TECHNOLOGIES_BASIC1[0])
+@dynamic_parametrize(
+    [
+        "port", "tech", "proto", "obfuscated",
+    ],
+    ordered_source=[lib.PORTS_RANGE],
+    randomized_source=[lib.TECHNOLOGIES],
+    id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
+    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+)
 def test_allowlist_port_range_when_port_from_range_already_allowlisted_connected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8963"""
 

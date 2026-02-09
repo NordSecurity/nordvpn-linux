@@ -15,7 +15,7 @@ import 'package:nordvpn/pb/daemon/config/group.pbenum.dart' as config;
 // Store information about the VPN status for the mocked daemon
 final class MockVpnStatus extends CancelableDelayed {
   final StreamController<AppState> stream;
-  final MockApplicationSettings appSettings;
+  MockApplicationSettings? appSettings;
   final MockServersList serversList;
 
   MockVpnStatus(this.stream, this.appSettings, this.serversList);
@@ -66,10 +66,10 @@ final class MockVpnStatus extends CancelableDelayed {
       }
     }
 
-    final settings = appSettings.settings.data;
+    final settings = appSettings!.settings.data;
     final group = args.serverGroup.isNotEmpty
         ? args.toServerGroup()
-        : appSettings.settings.data.obfuscate
+        : appSettings!.settings.data.obfuscate
         ? config.ServerGroup.OBFUSCATED
         : null;
 

@@ -7,7 +7,7 @@ part of 'vpn_settings_controller.dart';
 // **************************************************************************
 
 String _$vpnSettingsControllerHash() =>
-    r'7f3382fa15f063f3b0ae76ceac89877450ebc826';
+    r'99090940df5c11fa1824c0d7cb2acab0579a4eed';
 
 /// See also [VpnSettingsController].
 @ProviderFor(VpnSettingsController)

@@ -32,6 +32,7 @@ pytest_plugins = "lib.pytest_timeouts.pytest_timeouts"
 
 _CHECK_FREQUENCY = 5
 TMP_DAEMON_PATH_BACKUP = f"{os.getcwd()}/tmp"
+IS_NIGHTLY = (os.getenv("CI_PIPELINE_SCHEDULE_DESCRIPTION") or "").strip().lower() == "nightly"
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "lib/protobuf/daemon")))
 
@@ -52,8 +53,7 @@ def pytest_configure(config):
 
     :param config: The pytest config object, which holds command-line options and internal state.
     """
-    is_nightly = os.getenv("CI_PIPELINE_SCHEDULE_DESCRIPTION")
-    if is_nightly and is_nightly.lower().strip() == "nightly":
+    if IS_NIGHTLY:
         config.option.maxfail = 0
         config.option.exitfirst = False
 
@@ -119,6 +119,10 @@ def setup_check_internet_connection():
 
 @pytest.fixture(scope="session", autouse=True)
 def start_system_monitoring():
+    if os.getenv("SKIP_SYSTEM_MONITORING"):
+        print("Skipping monitoring...")
+        yield
+
     print("Run start_system_monitoring")
 
     # control running threads execution
