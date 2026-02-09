@@ -40,10 +40,6 @@ func (n *nft) configure(tunnelInterface string) error {
 	n.conn.DelTable(table)
 	table = addMainTable(n.conn)
 
-	if err := n.conn.Flush(); err != nil {
-		return err
-	}
-
 	// allowed interfaces set
 	allowedInterfaces := &nftables.Set{
 		Table:        table,
@@ -57,24 +53,11 @@ func (n *nft) configure(tunnelInterface string) error {
 		{Key: ifname(tunnelInterface)},
 	})
 
-	if err := n.conn.Flush(); err != nil {
-		return err
-	}
-
 	n.addPostRouting(table)
-
-	if err := n.conn.Flush(); err != nil {
-		return err
-	}
 	n.addPreRouting(table)
-	if err := n.conn.Flush(); err != nil {
-		return err
-	}
 	n.addInput(table, allowedInterfaces)
-	if err := n.conn.Flush(); err != nil {
-		return err
-	}
 	n.addOutput(table, allowedInterfaces)
+	n.addForward(table, tunnelInterface)
 
 	return n.conn.Flush()
 }
@@ -130,7 +113,6 @@ func (n *nft) addPreRouting(table *nftables.Table) {
 // //	    type filter hook input priority filter; policy drop;
 // //	    iifname "lo" accept
 // //	    iifname "{{.TunnelInterface}}" accept
-// //	    ct state established,related ct mark 0xe1f1 accept
 // //	    ct mark 0xe1f1 accept
 // //		}
 func (n *nft) addInput(table *nftables.Table, allowedInterfaces *nftables.Set) {
@@ -214,6 +196,40 @@ func (n *nft) addOutput(table *nftables.Table, allowedInterfaces *nftables.Set) 
 				Kind: expr.VerdictAccept,
 			},
 		},
+	})
+}
+
+//	chain forward {
+//	    type filter hook forward priority filter; policy drop;
+//		iifname <tun> ct state established,related accept
+//		oifname <tun> accept
+//	  }
+func (n *nft) addForward(table *nftables.Table, tunnelInterface string) {
+	dropPolicy := nftables.ChainPolicyDrop
+
+	forwardChain := n.conn.AddChain(&nftables.Chain{
+		Name:     "forward",
+		Table:    table,
+		Type:     nftables.ChainTypeFilter,
+		Hooknum:  nftables.ChainHookForward,
+		Priority: nftables.ChainPriorityFilter,
+		Policy:   &dropPolicy,
+	})
+
+	n.conn.AddRule(&nftables.Rule{
+		Table: table,
+		Chain: forwardChain,
+		Exprs: buildRules(expr.VerdictAccept, addInterfaceNameCheck(tunnelInterface, IF_OUTPUT)),
+	})
+
+	n.conn.AddRule(&nftables.Rule{
+		Table: table,
+		Chain: forwardChain,
+		Exprs: buildRules(
+			expr.VerdictAccept,
+			addInterfaceNameCheck(tunnelInterface, IF_INPUT),
+			addCheckCtState(expr.CtStateBitESTABLISHED|expr.CtStateBitRELATED),
+		),
 	})
 }
 
