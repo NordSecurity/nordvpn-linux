@@ -91,7 +91,7 @@ type DNSServiceSetter struct {
 func NewDNSServiceSetter(publisher events.Publisher[string]) *DNSServiceSetter {
 	return &DNSServiceSetter{
 		systemdResolvedSetter: NewSetter(publisher, &Resolved{}, &Resolvectl{}),
-		nmcliSetter:           NewSetter(publisher, &NMCli{}),
+		nmcliSetter:           NewSetter(publisher, newNMCli()),
 		resolvconfSetter:      NewSetter(publisher, &Resolvconf{}, &ResolvConfFile{}),
 		filesystemHandle:      &stdStatingFilesystemHandle{},
 	}
