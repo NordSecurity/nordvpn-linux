@@ -44,6 +44,20 @@ func (fw *Firewall) Configure(tunnelInterface string) error {
 	return fw.impl.Configure(tunnelInterface)
 }
 
+func (fw *Firewall) Remove() error {
+	fw.mu.Lock()
+	defer fw.mu.Unlock()
+
+	log.Println(internal.InfoPrefix, logPrefix, "enable firewall, older status:", fw.enabled)
+
+	if !fw.enabled {
+		return nil
+	}
+
+	return fw.impl.Flush()
+
+}
+
 func (fw *Firewall) Enable(tunnelInterface string) error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()

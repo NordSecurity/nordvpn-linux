@@ -5,6 +5,7 @@ package firewall
 // Used by callers.
 type Service interface {
 	Configure(tunnelInterface string) error
+	Remove() error
 	Flush() error
 	Disable() error
 	Enable(tunnelInterface string) error

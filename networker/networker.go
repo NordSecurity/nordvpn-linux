@@ -602,7 +602,7 @@ func (netw *Combined) blockTraffic() error {
 }
 
 func (netw *Combined) unblockTraffic() error {
-	return netw.fw.Flush()
+	return netw.fw.Remove()
 }
 
 func (netw *Combined) resetAllowlist() error {

@@ -107,6 +107,24 @@ func addInterfacesCheck(interfaces *nftables.Set, direction ifDirection) []expr.
 	}
 }
 
+func addInterfaceNameCheck(ifName string, direction ifDirection) []expr.Any {
+	dir := expr.MetaKeyIIFNAME
+	if direction == IF_OUTPUT {
+		dir = expr.MetaKeyOIFNAME
+	}
+	return []expr.Any{
+		&expr.Meta{
+			Key:      dir,
+			Register: 1,
+		},
+		&expr.Cmp{
+			Register: 1,
+			Op:       expr.CmpOpEq,
+			Data:     ifname(ifName),
+		},
+	}
+}
+
 func addCtMarkCheck(fwmark uint32) []expr.Any {
 	return []expr.Any{
 		&expr.Ct{
