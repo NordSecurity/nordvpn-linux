@@ -348,14 +348,17 @@ func (netw *Combined) configureNetwork(
 		return err
 	}
 
+	if err := netw.fw.Configure(netw.vpnet.Tun().Interface().Name); err != nil {
+		return fmt.Errorf("add firewall rule: %w", err)
+	}
+
 	if netw.isMeshnetSet {
 		if err := netw.refresh(netw.cfg); err != nil {
 			return fmt.Errorf("refreshing meshnet: %w", err)
 		}
-	}
-
-	if err := netw.fw.Configure(netw.vpnet.Tun().Interface().Name); err != nil {
-		return fmt.Errorf("add firewall rule: %w", err)
+		if err := netw.fw.ConfigureMesh(netw.cfg); err != nil{
+			return fmt.Errorf("configuring meshnet %w", err)
+		}
 	}
 
 	return nil
@@ -1071,6 +1074,11 @@ func (netw *Combined) setMesh(
 		return err
 	}
 
+	err = netw.fw.ConfigureMesh(cfg)
+	if err != nil {
+		return err
+	}
+
 	netw.isMeshnetSet = true
 	netw.lastPrivateKey = privateKey
 
@@ -1099,54 +1107,56 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 	}
 	netw.cfg = cfg
 
-	var err error
-	if err = netw.defaultMeshBlock(cfg.Machine.Address); err != nil { //nolint:staticcheck
-		return fmt.Errorf("adding default block rule: %w", err)
-	}
+	// var err error
+	// TODO: REPLACE WITH NFT
+	netw.fw.ConfigureMesh(cfg)
+	// if err = netw.defaultMeshBlock(cfg.Machine.Address); err != nil { //nolint:staticcheck
+	// 	return fmt.Errorf("adding default block rule: %w", err)
+	// }
 
-	if err = netw.allowIncoming(cfg.PublicKey, cfg.Machine.Address, true); err != nil { //nolint:staticcheck
-		return fmt.Errorf("allowing to reach self via meshnet: %w", err)
-	}
+	// if err = netw.allowIncoming(cfg.PublicKey, cfg.Machine.Address, true); err != nil { //nolint:staticcheck
+	// 	return fmt.Errorf("allowing to reach self via meshnet: %w", err)
+	// }
 
-	for _, peer := range cfg.Peers {
-		if !peer.Address.IsValid() {
-			continue
-		}
+	// for _, peer := range cfg.Peers {
+	// 	if !peer.Address.IsValid() {
+	// 		continue
+	// 	}
 
-		lanAllowed := peer.DoIAllowRouting && peer.DoIAllowLocalNetwork
+	// 	lanAllowed := peer.DoIAllowRouting && peer.DoIAllowLocalNetwork
 
-		if peer.DoIAllowInbound {
-			err = netw.allowIncoming(peer.PublicKey, peer.Address, lanAllowed)
-			if err != nil {
-				return fmt.Errorf("allowing inbound traffic for peer: %w", err)
-			}
-		}
+	// 	if peer.DoIAllowInbound {
+	// 		// err = netw.allowIncoming(peer.PublicKey, peer.Address, lanAllowed)
+	// 		// if err != nil {
+	// 		// 	return fmt.Errorf("allowing inbound traffic for peer: %w", err)
+	// 		// }
+	// 	}
 
-		if peer.DoIAllowFileshare {
-			err = netw.allowFileshare(peer.PublicKey, peer.Address)
-			if err != nil {
-				return fmt.Errorf("allowing fileshare for peer: %w", err)
-			}
-		}
+	// 	if peer.DoIAllowFileshare {
+	// 		// err = netw.allowFileshare(peer.PublicKey, peer.Address)
+	// 		// if err != nil {
+	// 		// 	return fmt.Errorf("allowing fileshare for peer: %w", err)
+	// 		// }
+	// 	}
 
-		// TODO (LVPN-4031): detect which peer we are connected (if connected)
-		// to and check if maybe allowLocalAccess permission has changed and
-		// if so, change routing to route to local LAN
-	}
+	// 	// TODO (LVPN-4031): detect which peer we are connected (if connected)
+	// 	// to and check if maybe allowLocalAccess permission has changed and
+	// 	// if so, change routing to route to local LAN
+	// }
 
-	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
-	err = netw.exitNode.ResetPeers(cfg.Peers,
-		lanAvailable,
-		netw.isKillSwitchSet,
-		netw.allowlist)
-	if err != nil {
-		return err
-	}
+	// lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
+	// err = netw.exitNode.ResetPeers(cfg.Peers,
+	// 	lanAvailable,
+	// 	netw.isKillSwitchSet,
+	// 	netw.allowlist)
+	// if err != nil {
+	// 	return err
+	// }
 
 	var hostName string
 	var domainNames []string
 
-	//nolint:staticcheck
+	// //nolint:staticcheck
 	if cfg.Machine.Nickname != "" {
 		hostName = cfg.Machine.Nickname
 		domainNames = []string{
@@ -1159,7 +1169,7 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 		domainNames = []string{strings.TrimSuffix(cfg.Machine.Hostname, ".nord")}
 	}
 
-	//nolint:staticcheck
+	// //nolint:staticcheck
 	hosts := dns.Hosts{dns.Host{
 		IP:          cfg.Machine.Address,
 		FQDN:        hostName,
@@ -1177,11 +1187,11 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 
 func (netw *Combined) defaultMeshUnBlock() error {
 	// TODO: fix nft
-	// err := netw.fw.Delete(netw.rules)
-	// if err != nil {
-	// 	return err
-	// }
-	// netw.rules = nil
+	err := netw.fw.FlushMesh()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

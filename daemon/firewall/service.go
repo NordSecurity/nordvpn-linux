@@ -1,11 +1,15 @@
 package firewall
 
+import "github.com/NordSecurity/nordvpn-linux/core/mesh"
+
 // Service adapts system firewall configuration to firewall rules
 //
 // Used by callers.
 type Service interface {
 	Configure(tunnelInterface string) error
+	ConfigureMesh(cfg mesh.MachineMap) error
 	Flush() error
+	FlushMesh() error
 	Disable() error
 	Enable(tunnelInterface string) error
 }
@@ -26,5 +30,7 @@ type Agent interface {
 
 type FwImpl interface {
 	Configure(tunnelInterface string) error
+	ConfigureMesh(cfg mesh.MachineMap) error
 	Flush() error
+	FlushMesh() error
 }

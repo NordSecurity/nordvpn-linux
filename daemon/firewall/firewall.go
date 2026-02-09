@@ -7,6 +7,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
@@ -42,6 +43,18 @@ func (fw *Firewall) Configure(tunnelInterface string) error {
 	}
 
 	return fw.impl.Configure(tunnelInterface)
+}
+func (fw *Firewall) ConfigureMesh(cfg mesh.MachineMap) error {
+	fw.mu.Lock()
+	defer fw.mu.Unlock()
+
+	log.Println(internal.InfoPrefix, logPrefix, "configure firewall, enabled:", fw.enabled)
+
+	if !fw.enabled {
+		return nil
+	}
+
+	return fw.impl.ConfigureMesh(cfg)
 }
 
 func (fw *Firewall) Enable(tunnelInterface string) error {
@@ -79,4 +92,11 @@ func (fw *Firewall) Flush() error {
 	defer fw.mu.Unlock()
 
 	return fw.impl.Flush()
+}
+
+func (fw *Firewall) FlushMesh() error {
+	fw.mu.Lock()
+	defer fw.mu.Unlock()
+
+	return fw.impl.FlushMesh()
 }

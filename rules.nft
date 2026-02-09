@@ -1,0 +1,30 @@
+add table inet nordvpn-meshnet
+delete table inet nordvpn-meshnet
+
+table inet nordvpn-meshnet{
+    chain FORWARD {
+        type filter hook forward priority filter; policy drop;
+		ip saddr 100.64.0.0/10 ip daddr 169.254.0.0/16 counter drop
+		ip saddr 100.64.0.0/10 ip daddr 192.168.0.0/16 counter drop
+		ip saddr 100.64.0.0/10 ip daddr 172.16.0.0/12 counter drop
+		ip saddr 100.64.0.0/10 ip daddr 10.0.0.0/8 counter drop
+		ip daddr 100.64.0.0/10 ct state related,established counter accept
+		ip daddr 100.64.0.0/10 counter drop
+		ip saddr 100.64.0.0/10 counter drop
+
+    }
+
+    chain INPUT {
+        type filter hook input priority filter; policy accept;
+		ip saddr 100.108.155.28 tcp dport 49111 counter accept
+		ip saddr 100.108.155.28 ip daddr 169.254.0.0/16 counter drop
+		ip saddr 100.108.155.28 ip daddr 192.168.0.0/16 counter drop
+		ip saddr 100.108.155.28 ip daddr 172.16.0.0/12 counter drop
+		ip saddr 100.108.155.28 ip daddr 10.0.0.0/8 counter drop
+		ip saddr 100.108.155.28 counter packets accept
+		ip saddr 100.94.110.153 counter accept
+		ip saddr 100.64.0.0/10 ct state related,established ct original saddr 100.94.110.153 counter accept
+		ip saddr 100.64.0.0/10 counter drop
+
+    }
+}
