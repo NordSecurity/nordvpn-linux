@@ -30,7 +30,7 @@ func (e eventType) String() string {
 	case dnsConfigured:
 		return "dns_configured"
 	default:
-		return fmt.Sprintf("%d", e)
+		return fmt.Sprintf("undefined, id: %d", e)
 	}
 }
 

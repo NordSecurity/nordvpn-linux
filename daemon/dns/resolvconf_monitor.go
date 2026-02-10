@@ -55,7 +55,7 @@ func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context, do
 				return fmt.Errorf("file watcher closed")
 			}
 
-			if e.Op == fsnotify.Write || e.Op == fsnotify.Remove {
+			if e.Op.Has(fsnotify.Write) || e.Op.Has(fsnotify.Remove) {
 				r.analytics.emitResolvConfOverwrittenEvent()
 			}
 

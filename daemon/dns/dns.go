@@ -138,15 +138,15 @@ func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfLinkTarget() (dn
 }
 
 func (d *DNSServiceSetter) getManagementService() dnsManagementService {
-	managmenetService, err := d.getManagementServiceBasedOnResolvconfComment()
+	managementService, err := d.getManagementServiceBasedOnResolvconfComment()
 	if err == nil {
 		log.Println(internal.InfoPrefix, dnsPrefix, "management service inferred from resovl.conf comment")
-		return managmenetService
+		return managementService
 	}
 	log.Println(internal.WarningPrefix, dnsPrefix,
 		"couldn't determine management service based on resolv.conf comment:", err)
 
-	managmenetService, err = d.getManagementServiceBasedOnResolvconfLinkTarget()
+	managementService, err = d.getManagementServiceBasedOnResolvconfLinkTarget()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, dnsPrefix,
 			"couldn't determine management service based on resolv.conf link target:", err)
@@ -154,7 +154,7 @@ func (d *DNSServiceSetter) getManagementService() dnsManagementService {
 	}
 
 	log.Println(internal.InfoPrefix, dnsPrefix, "management service inferred from link target")
-	return managmenetService
+	return managementService
 }
 
 // set sets DNS using the provided setter and sets a matching unsetter if the operation was successful
@@ -174,7 +174,7 @@ func (d *DNSServiceSetter) set(setter Setter, iface string, nameservers []string
 //  1. systemd-resolved DBUS
 //  2. resolvctl utility
 //  3. resolv.conf utility
-//  4. direct write to resovl.conf
+//  4. direct write to resolv.conf
 func (d *DNSServiceSetter) setUsingBestAvailable(iface string, nameservers []string) error {
 	d.analytics.setManagementService(systemdResolved)
 	if err := d.set(d.systemdResolvedSetter, iface, nameservers); err != nil {
