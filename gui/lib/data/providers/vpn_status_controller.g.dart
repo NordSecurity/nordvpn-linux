@@ -6,22 +6,50 @@ part of 'vpn_status_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+
+@ProviderFor(VpnStatusController)
+final vpnStatusControllerProvider = VpnStatusControllerProvider._();
+
+final class VpnStatusControllerProvider
+    extends $AsyncNotifierProvider<VpnStatusController, VpnStatus> {
+  VpnStatusControllerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'vpnStatusControllerProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$vpnStatusControllerHash();
+
+  @$internal
+  @override
+  VpnStatusController create() => VpnStatusController();
+}
+
 String _$vpnStatusControllerHash() =>
     r'1c8b427f411be47b40473ddcd66f747b9f43cf00';
 
-/// See also [VpnStatusController].
-@ProviderFor(VpnStatusController)
-final vpnStatusControllerProvider =
-    AutoDisposeAsyncNotifierProvider<VpnStatusController, VpnStatus>.internal(
-      VpnStatusController.new,
-      name: r'vpnStatusControllerProvider',
-      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-          ? null
-          : _$vpnStatusControllerHash,
-      dependencies: null,
-      allTransitiveDependencies: null,
-    );
-
-typedef _$VpnStatusController = AutoDisposeAsyncNotifier<VpnStatus>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+abstract class _$VpnStatusController extends $AsyncNotifier<VpnStatus> {
+  FutureOr<VpnStatus> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<VpnStatus>, VpnStatus>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<VpnStatus>, VpnStatus>,
+              AsyncValue<VpnStatus>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}

@@ -27,7 +27,7 @@ class _AllowListSettingsState extends ConsumerState<AllowListSettings> {
   @override
   void initState() {
     super.initState();
-    final settings = ref.read(vpnSettingsControllerProvider).valueOrNull;
+    final settings = ref.read(vpnSettingsControllerProvider).asData?.value;
     if (settings == null || settings.allowListData.isNotEmpty) return;
     // Allow List servers are not set and user just opened this page - switch
     // Allow List setting to false so the OnOffSwitch is off.

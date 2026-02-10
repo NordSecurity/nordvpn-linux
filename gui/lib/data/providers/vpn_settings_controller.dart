@@ -47,7 +47,7 @@ class VpnSettingsController extends _$VpnSettingsController
     // We need to check VPN status here because protocol change requires
     // a different flow: store pending protocol and show confirmation popup.
     // The daemon doesn't return vpnIsRunning for protocol changes.
-    final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
+    final vpnStatus = ref.read(vpnStatusControllerProvider).asData?.value;
     if (vpnStatus != null && vpnStatus.isConnected()) {
       // VPN is connected - store pending protocol and show popup
       // The change will be applied only if user confirms
@@ -192,7 +192,7 @@ class VpnSettingsController extends _$VpnSettingsController
     if (address.isEmpty) {
       return DaemonStatusCode.invalidDnsAddress;
     }
-    List<String> dnsServers = [...?state.valueOrNull?.customDnsServers];
+    List<String> dnsServers = [...?state.asData?.value.customDnsServers];
     if (dnsServers.contains(address)) {
       return DaemonStatusCode.alreadyExists;
     }
@@ -205,7 +205,7 @@ class VpnSettingsController extends _$VpnSettingsController
     if (address.isEmpty) {
       return DaemonStatusCode.invalidDnsAddress;
     }
-    final dnsServers = [...?state.valueOrNull?.customDnsServers];
+    final dnsServers = [...?state.asData?.value.customDnsServers];
     if (!dnsServers.contains(address)) {
       return DaemonStatusCode.nothingToDo;
     }

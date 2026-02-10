@@ -6,25 +6,50 @@ part of 'servers_list_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$serversListControllerHash() =>
-    r'cc1ddb5dfe29bdfafd70456dcb4a68745ab4838f';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [ServersListController].
 @ProviderFor(ServersListController)
-final serversListControllerProvider =
-    AutoDisposeAsyncNotifierProvider<
-      ServersListController,
-      ServersList
-    >.internal(
-      ServersListController.new,
-      name: r'serversListControllerProvider',
-      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-          ? null
-          : _$serversListControllerHash,
-      dependencies: null,
-      allTransitiveDependencies: null,
-    );
+final serversListControllerProvider = ServersListControllerProvider._();
 
-typedef _$ServersListController = AutoDisposeAsyncNotifier<ServersList>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class ServersListControllerProvider
+    extends $AsyncNotifierProvider<ServersListController, ServersList> {
+  ServersListControllerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'serversListControllerProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$serversListControllerHash();
+
+  @$internal
+  @override
+  ServersListController create() => ServersListController();
+}
+
+String _$serversListControllerHash() =>
+    r'8250eba55d32f2826064d0b91fb2a7f2d68f2929';
+
+abstract class _$ServersListController extends $AsyncNotifier<ServersList> {
+  FutureOr<ServersList> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<ServersList>, ServersList>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<ServersList>, ServersList>,
+              AsyncValue<ServersList>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}

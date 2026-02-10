@@ -6,25 +6,54 @@ part of 'recent_connections_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$recentConnectionsRepositoryHash() =>
-    r'69afdeb0fbd89f718eedb23cf998f7a7726f1f8b';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [recentConnectionsRepository].
 @ProviderFor(recentConnectionsRepository)
 final recentConnectionsRepositoryProvider =
-    AutoDisposeProvider<RecentConnectionsRepository>.internal(
-      recentConnectionsRepository,
-      name: r'recentConnectionsRepositoryProvider',
-      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-          ? null
-          : _$recentConnectionsRepositoryHash,
-      dependencies: null,
-      allTransitiveDependencies: null,
-    );
+    RecentConnectionsRepositoryProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef RecentConnectionsRepositoryRef =
-    AutoDisposeProviderRef<RecentConnectionsRepository>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class RecentConnectionsRepositoryProvider
+    extends
+        $FunctionalProvider<
+          RecentConnectionsRepository,
+          RecentConnectionsRepository,
+          RecentConnectionsRepository
+        >
+    with $Provider<RecentConnectionsRepository> {
+  RecentConnectionsRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'recentConnectionsRepositoryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$recentConnectionsRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<RecentConnectionsRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  RecentConnectionsRepository create(Ref ref) {
+    return recentConnectionsRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(RecentConnectionsRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<RecentConnectionsRepository>(value),
+    );
+  }
+}
+
+String _$recentConnectionsRepositoryHash() =>
+    r'69afdeb0fbd89f718eedb23cf998f7a7726f1f8b';

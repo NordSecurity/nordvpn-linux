@@ -39,7 +39,7 @@ class _LoginFormState extends ConsumerState<LoginForm> {
   Widget build(BuildContext context) {
     final settingsProvider = ref.watch(vpnSettingsControllerProvider);
 
-    _updateCheckboxVisibilityState(settingsProvider.valueOrNull);
+    _updateCheckboxVisibilityState(settingsProvider.asData?.value);
 
     final loginDialogTheme = context.loginFormTheme;
     final appTheme = context.appTheme;

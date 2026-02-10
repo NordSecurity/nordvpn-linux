@@ -107,7 +107,7 @@ final class VpnStatusCard extends StatelessWidget {
     AppTheme appTheme,
     VpnStatus status,
   ) {
-    final settings = ref.watch(vpnSettingsControllerProvider).valueOrNull;
+    final settings = ref.watch(vpnSettingsControllerProvider).asData?.value;
     if (status.isConnected()) {
       return [
         Expanded(
@@ -220,7 +220,7 @@ final class VpnStatusLabel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appTheme = context.appTheme;
     final statusCardTheme = context.vpnStatusCardTheme;
-    final settings = ref.watch(vpnSettingsControllerProvider).valueOrNull;
+    final settings = ref.watch(vpnSettingsControllerProvider).asData?.value;
 
     return Text(
       _constructLabel(settings),
@@ -277,7 +277,7 @@ final class VpnServerInfo extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statusCardTheme = context.vpnStatusCardTheme;
     var label = t.ui.connectToVpn;
-    final settings = ref.watch(vpnSettingsControllerProvider).valueOrNull;
+    final settings = ref.watch(vpnSettingsControllerProvider).asData?.value;
 
     if (vpnStatus.isConnected()) {
       assert(

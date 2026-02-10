@@ -19,7 +19,7 @@ final class SnapScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appTheme = context.appTheme;
     final errorScreenTheme = context.errorScreenTheme;
-    final missingPermissions = ref.watch(snapPermissionsProvider).valueOrNull;
+    final missingPermissions = ref.watch(snapPermissionsProvider).asData?.value;
 
     return FullScreenScaffold(
       child: Padding(
