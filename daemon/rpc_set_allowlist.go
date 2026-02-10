@@ -117,6 +117,7 @@ func (r *RPC) getNewAllowlist(req *pb.SetAllowlistRequest, remove bool) (config.
 }
 
 func (r *RPC) handleNewAllowlist(allowlist config.Allowlist) int64 {
+	// TODO: if save fails revert
 	if err := r.netw.SetAllowlist(allowlist); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 		return internal.CodeFailure
