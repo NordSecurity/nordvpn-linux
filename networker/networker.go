@@ -94,7 +94,7 @@ type Networker interface {
 	UnsetDNS() error
 	IsVPNActive() bool
 	IsMeshnetActive() bool
-	EnableFirewall() error
+	EnableFirewall(allowlist config.Allowlist) error
 	DisableFirewall() error
 	EnableRouting()
 	DisableRouting()
@@ -354,7 +354,7 @@ func (netw *Combined) configureNetwork(
 		}
 	}
 
-	if err := netw.fw.Configure(netw.vpnet.Tun().Interface().Name); err != nil {
+	if err := netw.fw.Configure(netw.vpnet.Tun().Interface().Name, allowlist); err != nil {
 		return fmt.Errorf("add firewall rule: %w", err)
 	}
 
@@ -464,7 +464,8 @@ func (netw *Combined) restart(
 		}
 	}
 
-	if err := netw.fw.Configure(netw.vpnet.Tun().Interface().Name); err != nil {
+	// TODO: nft
+	if err := netw.fw.Configure(netw.vpnet.Tun().Interface().Name, config.Allowlist{}); err != nil {
 		return fmt.Errorf("add firewall rule: %w", err)
 	}
 
@@ -592,13 +593,13 @@ func (netw *Combined) unsetDNS() error {
 	return nil
 }
 
-func (netw *Combined) blockTraffic() error {
+func (netw *Combined) blockTraffic(allowlist config.Allowlist) error {
 	// TODO: fix nft
 	tunnelInterface := "xdsit"
 	if netw.isVpnSet {
 		tunnelInterface = netw.vpnet.Tun().Interface().Name
 	}
-	return netw.fw.Configure(tunnelInterface)
+	return netw.fw.Configure(tunnelInterface, allowlist)
 }
 
 func (netw *Combined) unblockTraffic() error {
@@ -620,7 +621,7 @@ func (netw *Combined) resetAllowlist() error {
 
 // EnableFirewall activates the firewall and applies the rules
 // according to the user's settings. (killswitch, allowlist)
-func (netw *Combined) EnableFirewall() error {
+func (netw *Combined) EnableFirewall(allowList config.Allowlist) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
@@ -630,7 +631,7 @@ func (netw *Combined) EnableFirewall() error {
 		tunnelInterface = netw.vpnet.Tun().Interface().Name
 	}
 
-	if err := netw.fw.Configure(tunnelInterface); err != nil {
+	if err := netw.fw.Configure(tunnelInterface, allowList); err != nil {
 		return fmt.Errorf("enabling firewall: %w", err)
 	}
 
@@ -710,9 +711,9 @@ func (netw *Combined) SetAllowlist(allowlist config.Allowlist) error {
 	defer netw.mu.Unlock()
 
 	if netw.isNetworkSet {
-		if err := netw.unsetAllowlist(); err != nil {
-			return err
-		}
+		// if err := netw.unsetAllowlist(); err != nil {
+		// 	return err
+		// }
 
 		if err := netw.setAllowlist(allowlist); err != nil {
 			return err
@@ -723,17 +724,13 @@ func (netw *Combined) SetAllowlist(allowlist config.Allowlist) error {
 }
 
 func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
-	ifaces, err := netw.devices()
-	if err != nil {
-		return err
-	}
 	// allow traffic to LAN - only when user enabled lan-discovery
 	if netw.lanDiscovery {
 		allowlist = addLANPermissions(allowlist)
 	}
 
 	// start adding set of rules
-	rules := []firewall.Rule{}
+	var err error
 	var subnets []netip.Prefix
 	for _, cidr := range allowlist.Subnets {
 		subnet, err := netip.ParsePrefix(cidr)
@@ -750,14 +747,6 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 		subnets = append(subnets, subnet)
 	}
 	if subnets != nil {
-		rules = append(rules, firewall.Rule{
-			Name:           "allowlist_subnets",
-			Interfaces:     ifaces,
-			RemoteNetworks: subnets,
-			Direction:      firewall.TwoWay,
-			Allow:          true,
-			Physical:       true,
-		})
 	}
 
 	for _, pair := range []struct {
@@ -775,17 +764,6 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 			ports = append(ports, int(port))
 		}
 		if ports != nil {
-			rules = append(rules, firewall.Rule{
-				Name:       "allowlist_ports_" + pair.name,
-				Interfaces: ifaces,
-				Protocols:  []string{pair.name},
-				Direction:  firewall.Inbound,
-				// TwoWay for this is unnecessary as the rules added by following EnablePorts
-				// function is already covering the marking of outgoing packets
-				Ports:    ports,
-				Allow:    true,
-				Physical: true,
-			})
 			if err := netw.allowlistRouting.EnablePorts(ports, pair.name, fmt.Sprintf("%#x", netw.fwmark)); err != nil {
 				return errors.Join(fmt.Errorf("enabling allowlist routing"), err)
 			}
@@ -866,7 +844,7 @@ func (netw *Combined) IsNetworkSet() bool {
 }
 
 func (netw *Combined) setNetwork(allowlist config.Allowlist) error {
-	err := netw.blockTraffic()
+	err := netw.blockTraffic(allowlist)
 	if err != nil && !errors.Is(err, firewall.ErrRuleAlreadyExists) {
 		return err
 	}
