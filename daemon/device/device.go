@@ -3,73 +3,117 @@ package device
 
 import (
 	"fmt"
+	"log"
 	"net"
-	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/vishvananda/netlink"
+	"golang.org/x/sys/unix"
 )
 
 type ListFunc func() ([]net.Interface, error)
 
-func listVirtual() ([]net.Interface, error) {
-	files, err := os.ReadDir("/sys/devices/virtual/net/")
-	if err != nil {
-		return nil, fmt.Errorf("listing files in network interfaces dir: %w", err)
-	}
+var sysDepsImpl SystemDeps = realSystemDeps{}
 
-	var devices []net.Interface
-	for _, file := range files {
-		dev, err := net.InterfaceByName(file.Name())
-		if err != nil {
-			return nil, fmt.Errorf("retrieving network interface by name: %w", err)
-		}
+type SystemDeps interface {
+	// netlink
+	RouteList(link netlink.Link, family int) ([]netlink.Route, error)
 
-		devices = append(devices, *dev)
-	}
+	// net
+	InterfaceByIndex(index int) (*net.Interface, error)
+	InterfaceByName(name string) (*net.Interface, error)
+	Interfaces() ([]net.Interface, error)
 
-	return devices, nil
+	// os
+	FileExists(path string) bool
 }
 
-// ListPhysical network interfaces found on the system.
-//
-// All Linux systems have physical interfaces with one exception - containers.
-// When system is properly virtualized, guest does not know that it is virtual
-// so even though those interfaces are mapped to virtual interfaces on the host,
-// guest does not know this, but containers know. This is because the kernel is
-// shared between the host and the guest.
-//
-// If the system has only virtual interfaces, return a virtual interface which is used as
-// default gateway.
-func ListPhysical() ([]net.Interface, error) {
-	interfaces, err := net.Interfaces()
+// realSystemDeps is the production implementation backed by real OS calls.
+type realSystemDeps struct{}
+
+func (realSystemDeps) RouteList(link netlink.Link, family int) ([]netlink.Route, error) {
+	return netlink.RouteList(link, family)
+}
+
+func (realSystemDeps) InterfaceByIndex(index int) (*net.Interface, error) {
+	return net.InterfaceByIndex(index)
+}
+
+func (realSystemDeps) InterfaceByName(name string) (*net.Interface, error) {
+	return net.InterfaceByName(name)
+}
+
+func (realSystemDeps) Interfaces() ([]net.Interface, error) {
+	return net.Interfaces()
+}
+
+func (realSystemDeps) FileExists(name string) bool {
+	return internal.FileExists(name)
+}
+
+// OutsideCapableTrafficInterfaces returns a list of interfaces that can send traffic outside.
+// The list includes
+// * all physical interfaces
+// * plus interfaces that have default route
+// * plus interfaces that have gateway, e.g. 1.1.1.1 via 192.168.0.1 dev br0
+func OutsideCapableTrafficInterfaces() ([]net.Interface, error) {
+	interfaces, err := sysDepsImpl.Interfaces()
 	if err != nil {
 		return nil, fmt.Errorf("retrieving system network interfaces: %w", err)
 	}
-	vInterfaces, err := listVirtual()
-	if err != nil {
-		return nil, fmt.Errorf("retrieving virtual interfaces: %w", err)
-	}
-
-	if len(interfaces) == len(vInterfaces) {
-		gateway, err := DefaultGateway()
-
-		if err == nil {
-			return []net.Interface{gateway}, nil
-		}
-
-		return nil, fmt.Errorf("unable to retrieve default gateway: %w", err)
-	}
 
 	var devices []net.Interface
+
 	for _, iface := range interfaces {
-		if !ifaceListContains(vInterfaces, iface) {
+		// select only physical interfaces
+		if isPhysical(iface.Name) {
 			devices = append(devices, iface)
 		}
 	}
+
+	// add interfaces that are capable to route traffic to outside
+	// for example 1.1.1.1 via 192.168.0.1 dev br0
+	routeList, err := sysDepsImpl.RouteList(nil, netlink.FAMILY_V4)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch the routes %w", err)
+	}
+	for _, r := range routeList {
+		if !isOutsideCapable(r) {
+			continue
+		}
+
+		if iface, err := sysDepsImpl.InterfaceByIndex(r.LinkIndex); err == nil && iface != nil {
+			if !ifaceListContains(devices, *iface) {
+				devices = append(devices, *iface)
+			}
+		} else {
+			log.Println(internal.WarningPrefix, "not found interface with index", r.LinkIndex, err)
+		}
+	}
 	return devices, nil
+}
+
+// OutsideCapableTrafficIfNames is a helper function that returns same as OutsideCapableTrafficInterfaces
+// but just the interfaces names
+func OutsideCapableTrafficIfNames(ignore mapset.Set[string]) mapset.Set[string] {
+	result := mapset.NewSet[string]()
+	ifaces, err := OutsideCapableTrafficInterfaces()
+	if err != nil {
+		log.Println(internal.WarningPrefix, "netlink monitoring failed to get interfaces", err)
+		return result
+	}
+
+	for _, iface := range ifaces {
+		if ignore == nil || !ignore.Contains(iface.Name) {
+			result.Add(iface.Name)
+		}
+	}
+
+	return result
 }
 
 func ifaceListContains(list []net.Interface, device net.Interface) bool {
@@ -109,7 +153,7 @@ func DefaultGateway() (net.Interface, error) {
 
 	device, err := net.InterfaceByName(name)
 	if err != nil {
-		return net.Interface{}, fmt.Errorf("retrieving network interface by name: %w", err)
+		return net.Interface{}, fmt.Errorf("default gateway retrieving network interface by name: %w", err)
 	}
 	return *device, nil
 }
@@ -133,23 +177,70 @@ func InterfacesAreEqual(a net.Interface, b net.Interface) bool {
 		a.Flags == b.Flags
 }
 
-func InterfacesWithDefaultRoute(ignoreSet mapset.Set[string]) mapset.Set[string] {
+// InterfacesWithDefaultRoute returns all the interfaces that have a default route, excluding the ones from ignoreSet
+func InterfacesWithDefaultRoute(ignoreSet mapset.Set[string]) map[string]net.Interface {
 	// get interface list from default routes
-	routeList, _ := netlink.RouteList(nil, netlink.FAMILY_V4)
-	interfacesList := mapset.NewSet[string]()
+	interfacesList := make(map[string]net.Interface)
+
+	routeList, err := sysDepsImpl.RouteList(nil, netlink.FAMILY_V4)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to get system routes", err)
+		return interfacesList
+	}
 	for _, r := range routeList {
-		if r.Dst != nil {
+		if !isDefaultRoute(r) {
 			continue
 		}
-		if r.Gw == nil {
-			continue
-		}
-		if iface, err := net.InterfaceByIndex(r.LinkIndex); err == nil {
-			if !ignoreSet.Contains(iface.Name) {
-				interfacesList.Add(iface.Name)
+
+		if iface, err := sysDepsImpl.InterfaceByIndex(r.LinkIndex); err == nil && iface != nil {
+			if ignoreSet == nil || !ignoreSet.Contains(iface.Name) {
+				interfacesList[iface.Name] = *iface
 			}
+		} else {
+			log.Println(internal.WarningPrefix, "default route, not found interface with index", r.LinkIndex, err)
 		}
 	}
 
 	return interfacesList
+}
+
+// isDefaultRoute checks if a route is a default route
+func isDefaultRoute(r netlink.Route) bool {
+	if r.Dst == nil {
+		return true
+	}
+
+	ones, bits := r.Dst.Mask.Size()
+	if ones != 0 || bits != 32 { // must be /0
+		return false
+	}
+
+	return true
+}
+
+// isOutsideCapable detects if a route is capable to send traffic outside
+func isOutsideCapable(r netlink.Route) bool {
+	// Ignore non-forwarding routes
+	if r.Type == unix.RTN_BLACKHOLE ||
+		r.Type == unix.RTN_UNREACHABLE ||
+		r.Type == unix.RTN_PROHIBIT {
+		return false
+	}
+
+	// Default route (even without gateway)
+	if isDefaultRoute(r) {
+		return true
+	}
+
+	// Any route with a real gateway
+	if r.Gw != nil && !r.Gw.IsUnspecified() {
+		return true
+	}
+
+	return false
+}
+
+// isPhysical - checks if the interface has a device attached to it
+func isPhysical(iface string) bool {
+	return sysDepsImpl.FileExists(filepath.Join("/sys/class/net", iface, "device"))
 }

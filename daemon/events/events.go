@@ -265,7 +265,7 @@ func (l *LoginEvents) Subscribe(to LoginPublisher) {
 
 // Config changes
 type ConfigPublisher interface {
-	NotifyConfigChanged(cfg config.DataConfigChange) error
+	OnConfigChanged(cfg config.DataConfigChange) error
 }
 
 type ConfigEvents struct {
@@ -273,7 +273,7 @@ type ConfigEvents struct {
 }
 
 func (c *ConfigEvents) Subscribe(to ConfigPublisher) {
-	c.Config.Subscribe(to.NotifyConfigChanged)
+	c.Config.Subscribe(to.OnConfigChanged)
 }
 
 func NewConfigEvents() *ConfigEvents {

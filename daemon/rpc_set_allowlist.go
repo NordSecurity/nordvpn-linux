@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/daemon/allowlist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -73,7 +74,7 @@ func (r *RPC) getNewAllowlist(req *pb.SetAllowlistRequest, remove bool) (config.
 	var cfg config.Config
 	err := r.cm.Load(&cfg)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "reading config: %w", err)
+		log.Println(internal.ErrorPrefix, "reading config:", err)
 		return config.Allowlist{}, internal.CodeConfigError
 	}
 
@@ -83,14 +84,11 @@ func (r *RPC) getNewAllowlist(req *pb.SetAllowlistRequest, remove bool) (config.
 	case *pb.SetAllowlistRequest_SetAllowlistSubnetRequest:
 		subnet := request.SetAllowlistSubnetRequest.GetSubnet()
 
-		if cfg.LanDiscovery &&
-			containsPrivateNetwork(subnet) {
+		if cfg.LanDiscovery && containsPrivateNetwork(subnet) {
 			return config.Allowlist{}, internal.CodePrivateSubnetLANDiscovery
 		}
 
-		if valid, errorCode := isSubnetValid(subnet,
-			cfg.AutoConnectData.Allowlist.Subnets,
-			remove); !valid {
+		if valid, errorCode := isSubnetValid(subnet, cfg.AutoConnectData.Allowlist.Subnets, remove); !valid {
 			return config.Allowlist{}, errorCode
 		}
 
@@ -98,10 +96,7 @@ func (r *RPC) getNewAllowlist(req *pb.SetAllowlistRequest, remove bool) (config.
 	case *pb.SetAllowlistRequest_SetAllowlistPortsRequest:
 		if request.SetAllowlistPortsRequest.IsUdp {
 			portRange := request.SetAllowlistPortsRequest.GetPortRange()
-			if valid, errorCode := arePortsValid(portRange.GetStartPort(),
-				portRange.GetEndPort(),
-				allowlist.Ports.UDP,
-				remove); !valid {
+			if valid, errorCode := arePortsValid(portRange.GetStartPort(), portRange.GetEndPort(), allowlist.Ports.UDP, remove); !valid {
 				return config.Allowlist{}, errorCode
 			}
 
@@ -110,10 +105,7 @@ func (r *RPC) getNewAllowlist(req *pb.SetAllowlistRequest, remove bool) (config.
 
 		if request.SetAllowlistPortsRequest.IsTcp {
 			portRange := request.SetAllowlistPortsRequest.GetPortRange()
-			if valid, errorCode := arePortsValid(portRange.GetStartPort(),
-				portRange.GetEndPort(),
-				allowlist.Ports.TCP,
-				remove); !valid {
+			if valid, errorCode := arePortsValid(portRange.GetStartPort(), portRange.GetEndPort(), allowlist.Ports.TCP, remove); !valid {
 				return config.Allowlist{}, errorCode
 			}
 
@@ -155,34 +147,77 @@ func getPortsInARange(start int64, stop int64) []int64 {
 	return ports
 }
 
+// emitAllowlistAnalytics publishes an allowlist operation event to the debugger events channel
+func (r *RPC) emitAllowlistAnalytics(event *allowlist.OperationEvent) {
+	r.events.Debugger.DebuggerEvents.Publish(*event.ToDebuggerEvent())
+}
+
 func (r *RPC) SetAllowlist(ctx context.Context, in *pb.SetAllowlistRequest) (*pb.Payload, error) {
-	allowlist, code := r.getNewAllowlist(in, false)
+	allowlistCfg, code := r.getNewAllowlist(in, false)
 	if code != internal.CodeSuccess {
-		return &pb.Payload{
-			Type: code,
-		}, nil
+		// emit failure event
+		if event := allowlist.NewOperationEventFromRequest(in, allowlist.OpAdd, false, code); event != nil {
+			r.emitAllowlistAnalytics(event)
+		}
+		return &pb.Payload{Type: code}, nil
 	}
 
-	return &pb.Payload{
-		Type: r.handleNewAllowlist(allowlist),
-	}, nil
+	resultCode := r.handleNewAllowlist(allowlistCfg)
+	success := resultCode == internal.CodeSuccess
+
+	// emit analytics event
+	if event := allowlist.NewOperationEventFromRequest(in, allowlist.OpAdd, success, resultCode); event != nil {
+		r.emitAllowlistAnalytics(event)
+	}
+
+	return &pb.Payload{Type: resultCode}, nil
 }
 
 func (r *RPC) UnsetAllowlist(ctx context.Context, in *pb.SetAllowlistRequest) (*pb.Payload, error) {
-	allowlist, code := r.getNewAllowlist(in, true)
+	allowlistCfg, code := r.getNewAllowlist(in, true)
 	if code != internal.CodeSuccess {
-		return &pb.Payload{
-			Type: code,
-		}, nil
+		// emit failure event
+		if event := allowlist.NewOperationEventFromRequest(in, allowlist.OpRemove, false, code); event != nil {
+			r.emitAllowlistAnalytics(event)
+		}
+		return &pb.Payload{Type: code}, nil
 	}
 
-	return &pb.Payload{
-		Type: r.handleNewAllowlist(allowlist),
-	}, nil
+	resultCode := r.handleNewAllowlist(allowlistCfg)
+	success := resultCode == internal.CodeSuccess
+
+	// emit analytics event
+	if event := allowlist.NewOperationEventFromRequest(in, allowlist.OpRemove, success, resultCode); event != nil {
+		r.emitAllowlistAnalytics(event)
+	}
+
+	return &pb.Payload{Type: resultCode}, nil
+}
+
+// emitAllowlistSnapshot emits a snapshot event with the current allowlist configuration.
+// Called on daemon startup to capture initial state.
+func (r *RPC) emitAllowlistSnapshot() {
+	var cfg config.Config
+	if err := r.cm.Load(&cfg); err != nil {
+		log.Println(internal.WarningPrefix, "failed to load config for allowlist snapshot:", err)
+		return
+	}
+
+	snapshot := allowlist.NewSnapshot(allowlist.SnapshotConfig{
+		TCPPorts: cfg.AutoConnectData.Allowlist.GetTCPPorts(),
+		UDPPorts: cfg.AutoConnectData.Allowlist.GetUDPPorts(),
+		Subnets:  cfg.AutoConnectData.Allowlist.Subnets,
+	})
+
+	r.events.Debugger.DebuggerEvents.Publish(*snapshot.ToDebuggerEvent())
 }
 
 func (r *RPC) UnsetAllAllowlist(ctx context.Context, in *pb.Empty) (*pb.Payload, error) {
-	return &pb.Payload{
-		Type: r.handleNewAllowlist(config.NewAllowlist([]int64{}, []int64{}, []string{})),
-	}, nil
+	resultCode := r.handleNewAllowlist(config.NewAllowlist([]int64{}, []int64{}, []string{}))
+	success := resultCode == internal.CodeSuccess
+
+	event := allowlist.NewClearOperation(success, resultCode)
+	r.emitAllowlistAnalytics(event)
+
+	return &pb.Payload{Type: resultCode}, nil
 }

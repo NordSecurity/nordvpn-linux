@@ -1,6 +1,10 @@
 package remote
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/NordSecurity/nordvpn-linux/internal/analytics"
+)
 
 const (
 	debuggerEventBaseKey = "remote-config"
@@ -9,8 +13,9 @@ const (
 	// effectively making the value to be in range of 1-100 (inclusive) to reflect percentage-based groups.
 	defaultMaxGroup                uint32 = 100
 	logPrefix                             = "[Remote Config]"
-	rcFailure                             = "failure"
-	rcSuccess                             = "success"
+	messageNamespace                      = "nordvpn-linux"
+	rcFailure                             = analytics.ResultFailure
+	rcSuccess                             = analytics.ResultSuccess
 	partialRolloutPerformedFailure        = false
 	partialRolloutPerformedSuccess        = true
 	rolloutNo                             = "no"

@@ -24,10 +24,19 @@ func (r *RPC) Disconnect(_ *pb.Empty, srv pb.Daemon_DisconnectServer) error {
 
 // DoDisconnect is the non-gRPC function for Disconect to be used directly.
 func (r *RPC) DoDisconnect() (bool, error) {
+	var recommendationUUID string
+	// Not sure if it can be nil in the real scenarios
+	if r.connectionInfo != nil {
+		recommendationUUID = r.connectionInfo.Status().RecommendationUUID
+	} else {
+		log.Println(internal.WarningPrefix, "connection info is nil and it shouldn't be")
+	}
+
 	wasConnected, err := access.Disconnect(access.DisconnectInput{
 		Networker:                  r.netw,
 		ConfigManager:              r.cm,
 		PublishDisconnectEventFunc: r.events.Service.Disconnect.Publish,
+		RecommendationUUID:         recommendationUUID,
 	})
 
 	if wasConnected {

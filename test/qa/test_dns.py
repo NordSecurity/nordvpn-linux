@@ -3,9 +3,7 @@ import sh
 import dns.resolver as dnspy
 
 import lib
-from lib import dns, settings
-from conftest import IS_NIGHTLY
-
+from lib import dns, settings, IS_NIGHTLY
 from lib.dynamic_parametrize import dynamic_parametrize
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs", "disable_dns_and_threat_protection")

@@ -13,7 +13,7 @@ import (
 func TestNetlinkManager_SetUnset(t *testing.T) {
 	category.Set(t, category.Link)
 
-	devices, err := device.ListPhysical()
+	devices, err := device.OutsideCapableTrafficInterfaces()
 	require.NoError(t, err)
 	require.Greater(t, len(devices), 0)
 
@@ -32,7 +32,7 @@ func TestNetlinkManager_SetUnset(t *testing.T) {
 	}
 
 	// Set the groups
-	manager := NewNetlinkManager(device.ListPhysical)
+	manager := NewNetlinkManager(device.OutsideCapableTrafficInterfaces)
 	assert.NoError(t, manager.Set())
 
 	// Check if set happened correctly

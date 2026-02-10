@@ -6,10 +6,10 @@ import sh
 import lib
 from lib import (
     daemon,
-    network
+    network,
+    IS_NIGHTLY
 )
 from lib.dynamic_parametrize import dynamic_parametrize
-from conftest import IS_NIGHTLY
 from test_connect import disconnect_base_test, get_alias
 
 def connect_base_test(group: str = (), name: str = "", hostname: str = ""):
@@ -52,13 +52,23 @@ def test_reconnect_matrix(
         source_obfuscated,
         target_obfuscated,
 ):
-    """Manual TC: LVPN-8674"""
-
+    """Manual TC: LVPN-8674, LVPN-8694"""
     lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
     connect_base_test()
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
     connect_base_test()
+
+    status_info = daemon.get_status_data()
+
+    assert target_tech.upper() in status_info["current technology"]
+
+    if target_tech == "openvpn":
+        assert target_proto.upper() in status_info["current protocol"]
+    elif target_tech == "nordwhisper":
+        assert "Webtunnel" in status_info["current protocol"]
+    else:
+        assert "UDP" in status_info["current protocol"]
 
     disconnect_base_test()
 
@@ -126,47 +136,6 @@ def test_status_change_technology_and_protocol(
     if source_tech == "openvpn":
         assert source_proto.upper() in status_info["current protocol"]
     elif source_tech == "nordwhisper":
-        assert "Webtunnel" in status_info["current protocol"]
-    else:
-        assert "UDP" in status_info["current protocol"]
-
-    disconnect_base_test()
-
-
-@dynamic_parametrize(
-    [
-        "target_tech", "target_proto", "target_obfuscated",
-        "source_tech", "source_proto", "source_obfuscated",
-    ],
-    ordered_source=[lib.STANDARD_TECHNOLOGIES],
-    randomized_source=[lib.STANDARD_TECHNOLOGIES],
-    generate_all=IS_NIGHTLY,
-    id_pattern="{source_tech}-{source_proto}-{source_obfuscated}-"
-              "{target_tech}-{target_proto}-{target_obfuscated}",
-)
-def test_status_change_technology_and_protocol_reconnect(
-        source_tech,
-        target_tech,
-        source_proto,
-        target_proto,
-        source_obfuscated,
-        target_obfuscated,
-):
-    """Manual TC: LVPN-8694"""
-
-    lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
-    sh.nordvpn(get_alias())
-
-    lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
-
-    sh.nordvpn(get_alias())
-    status_info = daemon.get_status_data()
-
-    assert target_tech.upper() in status_info["current technology"]
-
-    if target_tech == "openvpn":
-        assert target_proto.upper() in status_info["current protocol"]
-    elif target_tech == "nordwhisper":
         assert "Webtunnel" in status_info["current protocol"]
     else:
         assert "UDP" in status_info["current protocol"]

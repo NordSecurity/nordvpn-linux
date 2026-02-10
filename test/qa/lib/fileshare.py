@@ -436,25 +436,25 @@ def bind_port() -> socket.socket | None:
     return None
 
 
-def port_is_allowed() -> bool:
+def check_fileshare_port_status(is_allowed: bool, peer_address: str) -> bool:
     for _ in range(3):
-        if is_port_allowed():
+        if is_port_allowed(peer_address) == is_allowed:
             return True
         time.sleep(1)
     return False
 
 
-def is_port_allowed() -> bool:
+def port_is_allowed(peer_address: str) -> bool:
+    return check_fileshare_port_status(True, peer_address)
+
+
+def is_port_allowed(peer_address: str) -> bool:
     rules = os.popen("sudo iptables -S").read()
-    return "49111 -m comment --comment nordvpn-meshnet -j ACCEPT" in rules
+    return f"49111 -m comment --comment nordvpn-meshnet -m comment --comment \"-allow-fileshare-rule-{peer_address}\" -j ACCEPT" in rules
 
 
-def port_is_blocked() -> bool:
-    for _ in range(3):
-        if not is_port_allowed():
-            return True
-        time.sleep(1)
-    return False
+def port_is_blocked(peer_address: str) -> bool:
+    return check_fileshare_port_status(False, peer_address)
 
 
 def ensure_mesh_is_on() -> None:
