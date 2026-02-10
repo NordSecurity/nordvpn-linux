@@ -28,6 +28,7 @@ type NMCli struct {
 func newNMCli() *NMCli {
 	return &NMCli{
 		cmdExecutor: func(name string, arg ...string) ([]byte, error) {
+			// #nosec G204: input is properly validated
 			return exec.Command(name, arg...).CombinedOutput()
 		},
 	}
@@ -54,7 +55,6 @@ func (nmcli *NMCli) Set(iface string, nameservers []string) error {
 		args = append(args, strings.Join(nameservers, ","))
 		args = append(args, nmCliIPIgnoreAutoDnsKey, "yes")
 
-		// #nosec G204: input is properly validated
 		if out, err := nmcli.cmdExecutor(execNmCli, args...); err != nil {
 			log.Println(internal.WarningPrefix, nmCliPrintTag, "Setting DNS with nmcli failed:", strings.TrimSpace(string(out)))
 			return fmt.Errorf("setting dns with nmcli failed: %w", err)
@@ -82,7 +82,6 @@ func (nmcli *NMCli) Unset(iface string) error {
 		args := []string{nmCliConKey, "modify", con, nmCliIPv4DNSKey, ""}
 		args = append(args, nmCliIPIgnoreAutoDnsKey, "no")
 
-		// #nosec G204: input is properly validated
 		if out, err := nmcli.cmdExecutor(execNmCli, args...); err != nil {
 			log.Println(internal.WarningPrefix, nmCliPrintTag, "Setting DNS with nmcli failed:", strings.TrimSpace(string(out)))
 			return fmt.Errorf("setting dns with nmcli failed: %w", err)
@@ -130,20 +129,20 @@ func (nmcli *NMCli) getConnectionFromPhysicalInterfaces() ([]string, error) {
 		}
 	}
 	return conns, nil
-
 }
 
 // reloadConnection restarts the network connection for the specified interface using nmcli tool.
 func (nmcli *NMCli) reloadConnection(iface string) error {
-	reload := []string{nmCliConKey, "reload", iface}
-	// #nosec G204: input is properly validated
-	if out, err := nmcli.cmdExecutor(execNmCli, reload...); err != nil {
+	reloadArgs := []string{nmCliConKey, "reload", iface}
+	if out, err := nmcli.cmdExecutor(execNmCli, reloadArgs...); err != nil {
 		log.Println(internal.WarningPrefix, nmCliPrintTag, ":", strings.TrimSpace(string(out)))
 		return fmt.Errorf("reload connection failed: %w", err)
 	}
 
-	up := []string{nmCliConKey, "up", iface}
-	// #nosec G204: input is properly validated
-	nmcli.cmdExecutor(execNmCli, up...)
+	upArgs := []string{nmCliConKey, "up", iface}
+	if _, err := nmcli.cmdExecutor(execNmCli, upArgs...); err != nil {
+		//at this stage we can disregard the error, as the DNS configuration should be applied even if the connection is not reloaded properly. Log it for debugging purposes.
+		log.Println(internal.WarningPrefix, nmCliPrintTag, "Setting ", iface, " UP failed with:", err)
+	}
 	return nil
 }
