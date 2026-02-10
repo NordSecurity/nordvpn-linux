@@ -7,6 +7,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
@@ -31,7 +32,7 @@ func NewFirewall(impl FwImpl, enabled bool) *Firewall {
 	}
 }
 
-func (fw *Firewall) Configure(tunnelInterface string) error {
+func (fw *Firewall) Configure(tunnelInterface string, allowList config.Allowlist) error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
@@ -41,7 +42,7 @@ func (fw *Firewall) Configure(tunnelInterface string) error {
 		return nil
 	}
 
-	return fw.impl.Configure(tunnelInterface)
+	return fw.impl.Configure(tunnelInterface, allowList)
 }
 
 func (fw *Firewall) Remove() error {
@@ -58,7 +59,7 @@ func (fw *Firewall) Remove() error {
 
 }
 
-func (fw *Firewall) Enable(tunnelInterface string) error {
+func (fw *Firewall) Enable(tunnelInterface string, allowList config.Allowlist) error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
@@ -70,7 +71,7 @@ func (fw *Firewall) Enable(tunnelInterface string) error {
 
 	fw.enabled = true
 
-	return fw.impl.Configure(tunnelInterface)
+	return fw.impl.Configure(tunnelInterface, allowList)
 }
 
 func (fw *Firewall) Disable() error {
