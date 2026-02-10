@@ -8,15 +8,13 @@ part 'country.freezed.dart';
 abstract class Country with _$Country {
   const Country._();
 
-  const factory Country._internal({
-    required String code,
-    required String name,
-  }) = _Country;
+  const factory Country.internal({required String code, required String name}) =
+      _Country;
 
   factory Country({required String code, required String name}) {
     final sanitizedCode = code.toUpperCase();
     assert(sanitizedCode.length == 2, "country code $code incorrect");
-    return Country._internal(code: sanitizedCode, name: name);
+    return Country.internal(code: sanitizedCode, name: name);
   }
 
   factory Country.fromCode(String code) {
