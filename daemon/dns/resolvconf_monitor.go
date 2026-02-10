@@ -36,6 +36,7 @@ func newResolvConfMonitor(analytics analytics) resolvConfFileWatcherMonitor {
 }
 
 func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context, doneChan chan<- any) error {
+	defer close(doneChan)
 	watcher, err := r.getWatcherFunc(resolvconfFilePath)
 	if err != nil {
 		return fmt.Errorf("creating file watcher: %w", err)
@@ -55,7 +56,7 @@ func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context, do
 				return fmt.Errorf("file watcher closed")
 			}
 
-			if e.Op == fsnotify.Write || e.Op == fsnotify.Remove {
+			if e.Has(fsnotify.Write | fsnotify.Remove) {
 				r.analytics.emitResolvConfOverwrittenEvent()
 			}
 
@@ -66,7 +67,6 @@ func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context, do
 			}
 			log.Println(internal.ErrorPrefix, dnsPrefix, "file watcher error:", err)
 		case <-ctx.Done():
-			close(doneChan)
 			log.Println(internal.InfoPrefix, dnsPrefix, "stopping resolv.conf monitoring")
 			return nil
 		}
@@ -94,7 +94,7 @@ func (r *resolvConfFileWatcherMonitor) stop() {
 		select {
 		case <-r.doneChan:
 		case <-time.After(1 * time.Second):
-			log.Println(internal.WarningPrefix, dnsPrefix, "timed out wating for the monitorign goroutine to stop")
+			log.Println(internal.WarningPrefix, dnsPrefix, "timed out waiting for the monitoring goroutine to stop")
 		}
 	}
 }
