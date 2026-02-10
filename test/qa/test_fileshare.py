@@ -46,33 +46,42 @@ def setup_module(module):  # noqa: ARG001
     ssh_client.connect()
     daemon.install_peer(ssh_client)
     daemon.start_peer(ssh_client)
-    login.login_as("default", ssh_client)
 
-    ssh_client.exec_command(f"mkdir -p {workdir}")
-    ssh_client.exec_command(f"chmod 0777 {workdir}")
-    ssh_client.exec_command("nordvpn set notify off")
-    ssh_client.exec_command("nordvpn set mesh on")
+    try:
+        login.login_as("default", ssh_client)
 
-    sh.nordvpn.mesh.peer.refresh()
-    ssh_client.exec_command("nordvpn mesh peer refresh")
+        ssh_client.exec_command(f"mkdir -p {workdir}")
+        ssh_client.exec_command(f"chmod 0777 {workdir}")
+        ssh_client.exec_command("nordvpn set notify off")
+        ssh_client.exec_command("nordvpn set mesh on")
 
-    while True:
-        local_peer_list = sh_no_tty.nordvpn.mesh.peer.list()
-        remote_peer_list = ssh_client.exec_command("nordvpn mesh peer list")
-        if all("Status: connected" in peer_list for peer_list in (local_peer_list, remote_peer_list)):
-            break
-        time.sleep(1)
+        sh.nordvpn.mesh.peer.refresh()
+        ssh_client.exec_command("nordvpn mesh peer refresh")
 
-    if not os.path.exists(workdir):
-        os.makedirs(workdir)
+        while True:
+            local_peer_list = sh_no_tty.nordvpn.mesh.peer.list()
+            remote_peer_list = ssh_client.exec_command("nordvpn mesh peer list")
+            if all("Status: connected" in peer_list for peer_list in (local_peer_list, remote_peer_list)):
+                break
+            time.sleep(1)
 
-    message = "testing fileshare"
-    for file in test_files:
-        filepath = f"{workdir}/{file}"
-        with open(filepath, "w") as f:
-            f.write(message)
+        if not os.path.exists(workdir):
+            os.makedirs(workdir)
 
-    ssh_client.exec_command("mkdir -p /root/Downloads")
+        message = "testing fileshare"
+        for file in test_files:
+            filepath = f"{workdir}/{file}"
+            with open(filepath, "w") as f:
+                f.write(message)
+
+        ssh_client.exec_command("mkdir -p /root/Downloads")
+    except Exception as e:
+        dest_logs_path = f"{os.environ['WORKDIR']}/dist/logs"
+        ssh_client.download_file("/var/log/nordvpn/daemon.log", f"{dest_logs_path}/daemon-qapeer.log")
+        ssh_client.download_file("/root/.cache/nordvpn/nordfileshare.log", f"{dest_logs_path}/nordfileshare-qapeer.log")
+        ssh_client.download_file("/root/.cache/nordvpn/norduserd.log", f"{dest_logs_path}/norduserd-qapeer.log")
+
+        pytest.fail(f"setup_module failed: {e}")
 
 
 def teardown_module(module):  # noqa: ARG001
