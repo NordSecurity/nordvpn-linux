@@ -202,6 +202,9 @@ func (d *DNSServiceSetter) setUsingBestAvailable(iface string, nameservers []str
 //  3. If the above fails, it attempts to use best available method(see setUsingBestAvailable)
 //  4. If all of the above fail, it returns an error
 func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
+	// stop resolv.conf monitoring in case it is already running
+	d.resolvConfMonitor.stop()
+
 	managementService := d.getManagementService()
 	d.analytics.setManagementService(managementService)
 	switch managementService {

@@ -67,7 +67,7 @@ func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context, do
 			log.Println(internal.ErrorPrefix, dnsPrefix, "file watcher error:", err)
 		case <-ctx.Done():
 			close(doneChan)
-			log.Println(internal.InfoPrefix, dnsPrefix, "stopping resolv.conf monitoring")
+			log.Println(internal.InfoPrefix, dnsPrefix, "resolv.conf monitoring context closed")
 			return nil
 		}
 	}
@@ -89,6 +89,7 @@ func (r *resolvConfFileWatcherMonitor) start() {
 // stop stops the monitoring goroutine and ensures that it exits before the function return.
 func (r *resolvConfFileWatcherMonitor) stop() {
 	if r.cancelFunc != nil {
+		log.Println(internal.InfoPrefix, dnsPrefix, "stopping resolv.conf file watcher")
 		r.cancelFunc()
 		// wait for the monitor goroutine to finish
 		select {
