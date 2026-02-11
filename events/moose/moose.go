@@ -45,9 +45,12 @@ import (
 	worker "moose/worker"
 )
 
-type mooseConsentFunc func(bool) uint32
-type mooseSetConsentIntoContextFunc func(moose.NordvpnappConsentLevel) uint32
-type mooseSetTokenRenewDateFunc func(int32) uint32
+type (
+	mooseConsentFunc               func(bool) uint32
+	mooseSetConsentIntoContextFunc func(moose.NordvpnappConsentLevel) uint32
+	mooseSetTokenRenewDateFunc     func(int32) uint32
+	mooseSetTPLiteUserPrefFunc     func(bool) uint32
+)
 
 // Subscriber listen events, send to moose engine
 type Subscriber struct {
@@ -65,6 +68,7 @@ type Subscriber struct {
 	mooseConsentLevelFunc      mooseConsentFunc
 	mooseSetConsentIntoCtxFunc mooseSetConsentIntoContextFunc
 	mooseSetTokenRenewDateFunc mooseSetTokenRenewDateFunc
+	mooseSetTPLiteUserPrefFunc mooseSetTPLiteUserPrefFunc
 	httpClient                 *http.Client
 	canSendAllEvents           atomic.Bool
 	mux                        sync.RWMutex
@@ -80,8 +84,8 @@ func NewSubscriber(
 	buildTarget config.BuildTarget,
 	id string,
 	eventsDomain string,
-	eventsSubdomain string) *Subscriber {
-
+	eventsSubdomain string,
+) *Subscriber {
 	sub := &Subscriber{
 		eventsDbPath:  eventsDbPath,
 		config:        fs,
@@ -181,6 +185,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 	s.mooseConsentLevelFunc = moose.MooseNordvpnappSetConsentLevel
 	s.mooseSetConsentIntoCtxFunc = moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel
 	s.mooseSetTokenRenewDateFunc = moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTokenRenewDateValue
+	s.mooseSetTPLiteUserPrefFunc = moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue
 
 	cfg, err := s.getConfig()
 	if err != nil {
@@ -302,7 +307,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		log.Println(internal.WarningPrefix, LogComponentPrefix, "failed to restore token renew date:", err)
 	}
 
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue(cfg.AutoConnectData.ThreatProtectionLite)); err != nil {
+	if err := s.setTPLiteUserPreference(cfg.AutoConnectData.ThreatProtectionLite); err != nil {
 		return fmt.Errorf("setting TP Lite in user preferences: %w", err)
 	}
 
@@ -325,6 +330,10 @@ func (s *Subscriber) Stop() error {
 	}
 
 	return nil
+}
+
+func (s *Subscriber) setTPLiteUserPreference(enabled bool) error {
+	return s.response(s.mooseSetTPLiteUserPrefFunc(enabled))
 }
 
 func (s *Subscriber) NotifyKillswitch(data bool) error {
@@ -556,12 +565,23 @@ func (s *Subscriber) NotifyPeerUpdate([]string) error { return nil }
 func (s *Subscriber) NotifySelfRemoved(any) error { return nil }
 
 func (s *Subscriber) NotifyThreatProtectionLite(data bool) error {
+	// User Preferences field in moose context is used to see what's the setting
+	// user selected - no matter if VPN is actively used or not.
+	if err := s.setTPLiteUserPreference(data); err != nil {
+		log.Println(internal.WarningPrefix, "failed to set TP Lite in User Preferences:", err)
+	}
+
+	// We are also checking if TP Lite is **actively** used, this is tracked in Current State field.
+	// On disconnect (see `NotifyDisconnect`), we are unsetting TP Lite In Current State in the context,
+	// because it stops being actively used after user disconnects.
 	if s.connectionStartTime.IsZero() {
 		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue(data)); err != nil {
+			log.Println(internal.ErrorPrefix, "failed to set TP Lite in Current State:", err)
 			return err
 		}
 	}
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue(data))
+
+	return nil
 }
 
 func (s *Subscriber) NotifyProtocol(data config.Protocol) error {
@@ -660,7 +680,6 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	}
 
 	return nil
-
 }
 
 func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
@@ -723,6 +742,7 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		return err
 	}
 
+	// Unset TP Lite in Current State - user disconnected so TP Lite is not **actively** used
 	if err := s.response(moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue()); err != nil {
 		return err
 	}
@@ -739,7 +759,7 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 		return fmt.Errorf("request nil")
 	}
 
-	//for attempt events response_code shall be set to 0
+	// for attempt events response_code shall be set to 0
 	responseCode := 0
 	if data.Response != nil {
 		responseCode = data.Response.StatusCode
@@ -758,7 +778,7 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 		eventStatus = moose.NordvpnappEventStatusFailureDueToRuntimeException
 	}
 
-	//for attempt events duration shall be set to 0
+	// for attempt events duration shall be set to 0
 	duration := int32(0)
 	if !data.IsAttempt {
 		duration = int32(data.Duration.Milliseconds())
@@ -804,7 +824,7 @@ func (s *Subscriber) NotifyDebuggerEvent(e events.DebuggerEvent) error {
 		case float32:
 			moose.MooseNordvpnappSetDeveloperEventContextFloat(ctx.Path, v)
 			combinedPaths = append(combinedPaths, path)
-		//deliberately omitted uint64
+		// deliberately omitted uint64
 		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32:
 			val := reflect.ValueOf(v).Int()
 			if val > math.MaxInt32 {
@@ -1263,7 +1283,6 @@ func threatProtectionLiteToInternalType(enabled bool) moose.NordvpnappOptBool {
 	}
 
 	return moose.NordvpnappOptBoolFalse
-
 }
 
 func deviceTypeToInternalType(deviceType sysinfo.SystemDeviceType) moose.NordvpnappDeviceType {
