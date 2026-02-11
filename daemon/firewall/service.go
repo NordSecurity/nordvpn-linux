@@ -10,7 +10,7 @@ type Service interface {
 	Remove() error
 	Flush() error
 	Disable() error
-	Enable(tunnelInterface string, allowList config.Allowlist) error
+	Enable() error
 }
 
 // Agent carries out required firewall changes.

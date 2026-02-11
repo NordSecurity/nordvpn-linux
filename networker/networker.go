@@ -625,14 +625,20 @@ func (netw *Combined) EnableFirewall(allowList config.Allowlist) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
-	// TODO: fix nft
-	tunnelInterface := "xfdsfsdf"
-	if netw.isVpnSet {
-		tunnelInterface = netw.vpnet.Tun().Interface().Name
+	if err := netw.fw.Enable(); err != nil {
+		return fmt.Errorf("enabling firewall: %w", err)
 	}
 
-	if err := netw.fw.Configure(tunnelInterface, allowList); err != nil {
-		return fmt.Errorf("enabling firewall: %w", err)
+	if netw.isKillSwitchSet || netw.isVpnSet {
+		// TODO: fix nft
+		tunnelInterface := "xfdsfsdf"
+		if netw.isVpnSet {
+			tunnelInterface = netw.vpnet.Tun().Interface().Name
+		}
+
+		if err := netw.fw.Configure(tunnelInterface, allowList); err != nil {
+			return fmt.Errorf("enabling firewall: %w", err)
+		}
 	}
 
 	return nil

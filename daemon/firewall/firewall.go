@@ -4,6 +4,7 @@ Package firewall provides firewall service to the caller
 package firewall
 
 import (
+	"errors"
 	"log"
 	"sync"
 
@@ -39,7 +40,7 @@ func (fw *Firewall) Configure(tunnelInterface string, allowList config.Allowlist
 	log.Println(internal.InfoPrefix, logPrefix, "configure firewall, enabled:", fw.enabled)
 
 	if !fw.enabled {
-		return nil
+		return errors.New("firewall not enabled")
 	}
 
 	return fw.impl.Configure(tunnelInterface, allowList)
@@ -49,29 +50,29 @@ func (fw *Firewall) Remove() error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
-	log.Println(internal.InfoPrefix, logPrefix, "enable firewall, older status:", fw.enabled)
+	log.Println(internal.InfoPrefix, logPrefix, "remove firewall, older status:", fw.enabled)
 
 	if !fw.enabled {
-		return nil
+		return errors.New("firewall not enabled")
 	}
 
 	return fw.impl.Flush()
 
 }
 
-func (fw *Firewall) Enable(tunnelInterface string, allowList config.Allowlist) error {
+func (fw *Firewall) Enable() error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
-	log.Println(internal.InfoPrefix, logPrefix, "enable firewall, older status:", fw.enabled)
+	log.Println(internal.InfoPrefix, logPrefix, "enabling firewall:", fw.enabled)
 
 	if fw.enabled {
-		return nil
+		return errors.New("already enabled")
 	}
 
 	fw.enabled = true
 
-	return fw.impl.Configure(tunnelInterface, allowList)
+	return nil
 }
 
 func (fw *Firewall) Disable() error {
@@ -81,7 +82,7 @@ func (fw *Firewall) Disable() error {
 	log.Println(internal.InfoPrefix, logPrefix, "disable firewall, older status:", fw.enabled)
 
 	if !fw.enabled {
-		return nil
+		return errors.New("already disabled")
 	}
 
 	fw.enabled = false

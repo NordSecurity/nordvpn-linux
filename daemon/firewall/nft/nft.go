@@ -2,6 +2,7 @@ package nft
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/google/nftables"
@@ -44,6 +45,7 @@ type tcpPortsSet *nftables.Set
 type udpPortsSet *nftables.Set
 
 func (n *nft) configure(tunnelInterface string, allowList config.Allowlist) error {
+	log.Println("configure FW")
 	table := addMainTable(n.conn)
 	n.conn.DelTable(table)
 	table = addMainTable(n.conn)
@@ -332,11 +334,13 @@ func (n *nft) addOutput(
 		Exprs: buildRules(expr.VerdictAccept, addCtMarkCheck(appFwmark)),
 	})
 
-	// meta mark 0xe1f1 accept
+	// meta mark 0x0000e1f1 ct mark set 0x0000e1f1 accept
 	n.conn.AddRule(&nftables.Rule{
 		Table: table,
 		Chain: outputChain,
-		Exprs: buildRules(expr.VerdictAccept, addMetaMarkCheck(appFwmark)),
+		Exprs: buildRules(expr.VerdictAccept,
+			addMetaMarkCheckAndSetCtMark(appFwmark),
+		),
 	})
 }
 
