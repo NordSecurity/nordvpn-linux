@@ -717,13 +717,15 @@ func (netw *Combined) SetAllowlist(allowlist config.Allowlist) error {
 	defer netw.mu.Unlock()
 
 	if netw.isNetworkSet {
-		// if err := netw.unsetAllowlist(); err != nil {
-		// 	return err
-		// }
+		if err := netw.unsetAllowlist(); err != nil {
+			return err
+		}
 
 		if err := netw.setAllowlist(allowlist); err != nil {
 			return err
 		}
+
+		return netw.blockTraffic(allowlist)
 	}
 
 	return nil
