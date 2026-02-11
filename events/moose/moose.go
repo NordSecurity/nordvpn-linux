@@ -96,8 +96,12 @@ func NewSubscriber(
 		clientAPI:     clientAPI,
 		httpClient:    httpClient,
 		isInitialized: false,
-	}
 
+		mooseConsentLevelFunc:      moose.MooseNordvpnappSetConsentLevel,
+		mooseSetConsentIntoCtxFunc: moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel,
+		mooseSetTokenRenewDateFunc: moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTokenRenewDateValue,
+		mooseSetTPLiteUserPrefFunc: moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue,
+	}
 	// Add more handlers here as needed
 	sub.configChangeHandlers = []configChangeHandler{
 		sub.handleTokenRenewDateChange,
@@ -181,11 +185,6 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		return nil
 	}
 	log.Println(internal.InfoPrefix, LogComponentPrefix, "initializing")
-
-	s.mooseConsentLevelFunc = moose.MooseNordvpnappSetConsentLevel
-	s.mooseSetConsentIntoCtxFunc = moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel
-	s.mooseSetTokenRenewDateFunc = moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTokenRenewDateValue
-	s.mooseSetTPLiteUserPrefFunc = moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue
 
 	cfg, err := s.getConfig()
 	if err != nil {
