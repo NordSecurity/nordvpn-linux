@@ -302,6 +302,10 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		log.Println(internal.WarningPrefix, LogComponentPrefix, "failed to restore token renew date:", err)
 	}
 
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue(cfg.AutoConnectData.ThreatProtectionLite)); err != nil {
+		return fmt.Errorf("setting TP Lite in user preferences: %w", err)
+	}
+
 	return nil
 }
 
