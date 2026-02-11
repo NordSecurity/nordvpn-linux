@@ -118,7 +118,7 @@ func (b *SessionStoresBuilder) registerAccessTokenHandlers(logoutHandler *daemon
 		session.ErrInvalidRenewToken:          events.ReasonTokenCorrupted,
 		session.ErrSessionInvalidated:         events.ReasonAuthTokenInvalidated,
 		session.ErrMissingAccessTokenResponse: events.ReasonTokenMissing,
-		core.ErrUnauthorized:                  events.ReasonNotSpecified, // no dedicated exception code
+		core.ErrUnauthorized:                  events.ReasonUnauthorized,
 	}
 
 	errs := []error{
