@@ -6,21 +6,49 @@ part of 'snap_permissions_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+
+@ProviderFor(SnapPermissions)
+final snapPermissionsProvider = SnapPermissionsProvider._();
+
+final class SnapPermissionsProvider
+    extends $AsyncNotifierProvider<SnapPermissions, List<String>> {
+  SnapPermissionsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'snapPermissionsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$snapPermissionsHash();
+
+  @$internal
+  @override
+  SnapPermissions create() => SnapPermissions();
+}
+
 String _$snapPermissionsHash() => r'c6d2c22713b7f593f7ef3efd39916d468febb370';
 
-/// See also [SnapPermissions].
-@ProviderFor(SnapPermissions)
-final snapPermissionsProvider =
-    AutoDisposeAsyncNotifierProvider<SnapPermissions, List<String>>.internal(
-      SnapPermissions.new,
-      name: r'snapPermissionsProvider',
-      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-          ? null
-          : _$snapPermissionsHash,
-      dependencies: null,
-      allTransitiveDependencies: null,
-    );
-
-typedef _$SnapPermissions = AutoDisposeAsyncNotifier<List<String>>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+abstract class _$SnapPermissions extends $AsyncNotifier<List<String>> {
+  FutureOr<List<String>> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<List<String>>, List<String>>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<List<String>>, List<String>>,
+              AsyncValue<List<String>>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}

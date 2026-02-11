@@ -6,22 +6,52 @@ part of 'account_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$accountRepositoryHash() => r'00519ebd29f0f3cc14504792c366eec1fe69e71d';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [accountRepository].
 @ProviderFor(accountRepository)
-final accountRepositoryProvider = Provider<AccountRepository>.internal(
-  accountRepository,
-  name: r'accountRepositoryProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$accountRepositoryHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+final accountRepositoryProvider = AccountRepositoryProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef AccountRepositoryRef = ProviderRef<AccountRepository>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class AccountRepositoryProvider
+    extends
+        $FunctionalProvider<
+          AccountRepository,
+          AccountRepository,
+          AccountRepository
+        >
+    with $Provider<AccountRepository> {
+  AccountRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'accountRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$accountRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<AccountRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  AccountRepository create(Ref ref) {
+    return accountRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AccountRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AccountRepository>(value),
+    );
+  }
+}
+
+String _$accountRepositoryHash() => r'00519ebd29f0f3cc14504792c366eec1fe69e71d';

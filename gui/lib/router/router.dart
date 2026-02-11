@@ -19,12 +19,15 @@ final routerProvider = Provider<GoRouter>((ref) {
     GoRouter.optionURLReflectsImperativeAPIs = true;
   }
 
-  final redirect = ref.read(redirectStateProvider);
+  // Listens for account and connection changes, updates redirect and notifies
+  // about the changes.
+  final redirectStateProvider =
+      NotifierProvider<RedirectNotifier, RedirectState>(RedirectNotifier.new);
+  final redirect = ref.watch(redirectStateProvider);
   final router = GoRouter(
     navigatorKey: goRouterKey,
     debugLogDiagnostics: kDebugMode,
     initialLocation: AppRoute.loadingScreen.toString(),
-    refreshListenable: redirect,
     redirect: (_, state) => redirect.route(state.uri)?.toString(),
     routes: configureRoutes(),
   );
@@ -34,84 +37,46 @@ final routerProvider = Provider<GoRouter>((ref) {
   return router;
 });
 
-// Listens for account and connection changes, updates redirect and notifies
-// about the changes.
-final redirectStateProvider = ChangeNotifierProvider((ref) {
-  final notifier = RedirectState();
-
-  void updateRedirect() {
-    final connection = ref.read(grpcConnectionControllerProvider);
-    final consentStatus = ref.read(consentStatusProvider);
-    final loginState = ref.read(loginStatusProvider);
-    final account = ref.read(accountControllerProvider);
-    final snap = ref.read(snapPermissionsProvider);
-
-    notifier.update(
-      isLoading:
-          connection is AsyncLoading ||
-          consentStatus is AsyncLoading ||
-          loginState is AsyncLoading ||
-          snap is AsyncLoading,
-      hasError:
-          connection is AsyncError ||
-          consentStatus is AsyncError ||
-          loginState is AsyncError ||
-          account is AsyncError,
-      isLoggedIn: loginState is AsyncData && loginState.value == true,
-      displayConsent:
-          consentStatus is AsyncData &&
-          consentStatus.value == ConsentLevel.none,
-      missingSnapPermissions:
-          snap is AsyncData && (snap.value?.isNotEmpty ?? false),
-    );
-  }
-
-  for (final provider in [
-    loginStatusProvider,
-    grpcConnectionControllerProvider,
-    accountControllerProvider,
-    consentStatusProvider,
-    snapPermissionsProvider,
-  ]) {
-    ref.listen(provider, (_, _) => updateRedirect());
-  }
-
-  updateRedirect();
-
-  return notifier;
-});
-
 // Keep state of connection, login and error and gives route for redirect
 // based on that information.
-final class RedirectState extends ChangeNotifier {
-  bool isLoading = false;
-  bool hasError = false;
-  bool isLoggedIn = false;
-  bool displayConsent = false;
-  bool missingSnapPermissions = false;
+class RedirectState {
+  final bool isLoading;
+  final bool hasError;
+  final bool isLoggedIn;
+  final bool displayConsent;
+  final bool missingSnapPermissions;
 
-  void update({
-    required bool isLoading,
-    required bool hasError,
-    required bool isLoggedIn,
-    required bool displayConsent,
-    required bool missingSnapPermissions,
+  const RedirectState({
+    required this.isLoading,
+    required this.hasError,
+    required this.isLoggedIn,
+    required this.displayConsent,
+    required this.missingSnapPermissions,
+  });
+
+  factory RedirectState.initial() => const RedirectState(
+    isLoading: false,
+    hasError: false,
+    isLoggedIn: false,
+    displayConsent: false,
+    missingSnapPermissions: false,
+  );
+
+  RedirectState copyWith({
+    bool? isLoading,
+    bool? hasError,
+    bool? isLoggedIn,
+    bool? displayConsent,
+    bool? missingSnapPermissions,
   }) {
-    final changed =
-        this.isLoading != isLoading ||
-        this.hasError != hasError ||
-        this.isLoggedIn != isLoggedIn ||
-        this.displayConsent != displayConsent ||
-        this.missingSnapPermissions != missingSnapPermissions;
-
-    if (changed) {
-      this.isLoading = isLoading;
-      this.hasError = hasError;
-      this.isLoggedIn = isLoggedIn;
-      this.displayConsent = displayConsent;
-      this.missingSnapPermissions = missingSnapPermissions;
-      notifyListeners();
-    }
+    return RedirectState(
+      isLoading: isLoading ?? this.isLoading,
+      hasError: hasError ?? this.hasError,
+      isLoggedIn: isLoggedIn ?? this.isLoggedIn,
+      displayConsent: displayConsent ?? this.displayConsent,
+      missingSnapPermissions:
+          missingSnapPermissions ?? this.missingSnapPermissions,
+    );
   }
 
   // Calculates the route based on the connection, account and error state:
@@ -146,5 +111,53 @@ final class RedirectState extends ChangeNotifier {
     ];
     final path = uri.toString();
     return redirectToVpnRoutes.contains(path);
+  }
+}
+
+class RedirectNotifier extends Notifier<RedirectState> {
+  @override
+  RedirectState build() {
+    final connection = ref.watch(grpcConnectionControllerProvider);
+    final consent = ref.watch(consentStatusProvider);
+    final login = ref.watch(loginStatusProvider);
+    final account = ref.watch(accountControllerProvider);
+    final snap = ref.watch(snapPermissionsProvider);
+
+    final isLoading = [
+      connection,
+      consent,
+      login,
+      snap,
+    ].any((v) => v.isLoading);
+
+    final hasError = [
+      connection,
+      consent,
+      login,
+      account,
+    ].any((v) => v.hasError);
+
+    final isLoggedIn = login.maybeWhen(
+      data: (v) => v == true,
+      orElse: () => false,
+    );
+
+    final displayConsent = consent.maybeWhen(
+      data: (v) => v == ConsentLevel.none,
+      orElse: () => false,
+    );
+
+    final missingSnapPermissions = snap.maybeWhen(
+      data: (v) => v.isNotEmpty,
+      orElse: () => false,
+    );
+
+    return RedirectState(
+      isLoading: isLoading,
+      hasError: hasError,
+      isLoggedIn: isLoggedIn,
+      displayConsent: displayConsent,
+      missingSnapPermissions: missingSnapPermissions,
+    );
   }
 }

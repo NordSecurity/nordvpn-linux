@@ -6,22 +6,52 @@ part of 'user_preferences_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$userPreferencesHash() => r'b7d59190a6480505b86ec562a95aea140c56d867';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [userPreferences].
 @ProviderFor(userPreferences)
-final userPreferencesProvider = Provider<UserPreferencesRepository>.internal(
-  userPreferences,
-  name: r'userPreferencesProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$userPreferencesHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+final userPreferencesProvider = UserPreferencesProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef UserPreferencesRef = ProviderRef<UserPreferencesRepository>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class UserPreferencesProvider
+    extends
+        $FunctionalProvider<
+          UserPreferencesRepository,
+          UserPreferencesRepository,
+          UserPreferencesRepository
+        >
+    with $Provider<UserPreferencesRepository> {
+  UserPreferencesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'userPreferencesProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$userPreferencesHash();
+
+  @$internal
+  @override
+  $ProviderElement<UserPreferencesRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  UserPreferencesRepository create(Ref ref) {
+    return userPreferences(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(UserPreferencesRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<UserPreferencesRepository>(value),
+    );
+  }
+}
+
+String _$userPreferencesHash() => r'b7d59190a6480505b86ec562a95aea140c56d867';

@@ -28,11 +28,17 @@ abstract class Popup extends ConsumerWidget {
           borderRadius: popupTheme.widgetRadius,
         ),
         padding: EdgeInsets.all(popupTheme.verticalElementSpacing),
-        width: min(dynamicScale(popupTheme.widgetWidth), screenSize.width * 0.8),
+        width: min(
+          dynamicScale(popupTheme.widgetWidth),
+          screenSize.width * 0.8,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
-          children: [_titleBar(context, popupTheme), buildContent(context, ref)],
+          children: [
+            _titleBar(context, popupTheme),
+            buildContent(context, ref),
+          ],
         ),
       ),
     );

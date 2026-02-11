@@ -19,7 +19,6 @@ typedef _VpnRepoFn = Future<int> Function(VpnRepository);
 @riverpod
 class VpnStatusController extends _$VpnStatusController
     implements VpnStatusObserver {
-
   @override
   FutureOr<VpnStatus> build() async {
     final status = await ref.read(vpnRepositoryProvider).fetchStatus();

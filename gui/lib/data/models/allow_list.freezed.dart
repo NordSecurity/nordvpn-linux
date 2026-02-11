@@ -1,6 +1,5 @@
-// dart format width=80
-// coverage:ignore-file
 // GENERATED CODE - DO NOT MODIFY BY HAND
+// coverage:ignore-file
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
@@ -51,6 +50,7 @@ $Res call({
 
 
 
+
 }
 /// @nodoc
 class _$AllowListCopyWithImpl<$Res>
@@ -72,6 +72,136 @@ as List<PortInterval>,
 
 }
 
+
+/// Adds pattern-matching-related methods to [AllowList].
+extension AllowListPatterns on AllowList {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _AllowList value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _AllowList() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _AllowList value)  $default,){
+final _that = this;
+switch (_that) {
+case _AllowList():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _AllowList value)?  $default,){
+final _that = this;
+switch (_that) {
+case _AllowList() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( List<Subnet> subnets,  List<PortInterval> ports)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _AllowList() when $default != null:
+return $default(_that.subnets,_that.ports);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( List<Subnet> subnets,  List<PortInterval> ports)  $default,) {final _that = this;
+switch (_that) {
+case _AllowList():
+return $default(_that.subnets,_that.ports);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( List<Subnet> subnets,  List<PortInterval> ports)?  $default,) {final _that = this;
+switch (_that) {
+case _AllowList() when $default != null:
+return $default(_that.subnets,_that.ports);case _:
+  return null;
+
+}
+}
+
+}
 
 /// @nodoc
 
@@ -127,6 +257,7 @@ abstract mixin class _$AllowListCopyWith<$Res> implements $AllowListCopyWith<$Re
 $Res call({
  List<Subnet> subnets, List<PortInterval> ports
 });
+
 
 
 
@@ -191,6 +322,7 @@ $Res call({
 
 
 
+
 }
 /// @nodoc
 class _$PortIntervalCopyWithImpl<$Res>
@@ -213,6 +345,136 @@ as PortType,
 
 }
 
+
+/// Adds pattern-matching-related methods to [PortInterval].
+extension PortIntervalPatterns on PortInterval {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _PortInterval value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _PortInterval() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _PortInterval value)  $default,){
+final _that = this;
+switch (_that) {
+case _PortInterval():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _PortInterval value)?  $default,){
+final _that = this;
+switch (_that) {
+case _PortInterval() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int start,  int end,  PortType type)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _PortInterval() when $default != null:
+return $default(_that.start,_that.end,_that.type);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int start,  int end,  PortType type)  $default,) {final _that = this;
+switch (_that) {
+case _PortInterval():
+return $default(_that.start,_that.end,_that.type);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int start,  int end,  PortType type)?  $default,) {final _that = this;
+switch (_that) {
+case _PortInterval() when $default != null:
+return $default(_that.start,_that.end,_that.type);case _:
+  return null;
+
+}
+}
+
+}
 
 /// @nodoc
 
@@ -257,6 +519,7 @@ abstract mixin class _$PortIntervalCopyWith<$Res> implements $PortIntervalCopyWi
 $Res call({
  int start, int end, PortType type
 });
+
 
 
 
@@ -325,6 +588,7 @@ $Res call({
 
 
 
+
 }
 /// @nodoc
 class _$SubnetCopyWithImpl<$Res>
@@ -347,6 +611,136 @@ as int?,
 
 }
 
+
+/// Adds pattern-matching-related methods to [Subnet].
+extension SubnetPatterns on Subnet {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _Subnet value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _Subnet() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _Subnet value)  $default,){
+final _that = this;
+switch (_that) {
+case _Subnet():
+return $default(_that);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _Subnet value)?  $default,){
+final _that = this;
+switch (_that) {
+case _Subnet() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String value,  int? ip,  int? cidr)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _Subnet() when $default != null:
+return $default(_that.value,_that.ip,_that.cidr);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String value,  int? ip,  int? cidr)  $default,) {final _that = this;
+switch (_that) {
+case _Subnet():
+return $default(_that.value,_that.ip,_that.cidr);case _:
+  throw StateError('Unexpected subclass');
+
+}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String value,  int? ip,  int? cidr)?  $default,) {final _that = this;
+switch (_that) {
+case _Subnet() when $default != null:
+return $default(_that.value,_that.ip,_that.cidr);case _:
+  return null;
+
+}
+}
+
+}
 
 /// @nodoc
 
@@ -394,6 +788,7 @@ abstract mixin class _$SubnetCopyWith<$Res> implements $SubnetCopyWith<$Res> {
 $Res call({
  String value, int? ip, int? cidr
 });
+
 
 
 
