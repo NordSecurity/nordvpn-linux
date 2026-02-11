@@ -2,6 +2,7 @@ import 'package:nordvpn/data/models/city.dart';
 import 'package:nordvpn/data/models/country.dart';
 import 'package:nordvpn/data/models/server_info.dart';
 import 'package:nordvpn/pb/daemon/connect.pb.dart';
+import 'package:nordvpn/pb/daemon/uievent.pbenum.dart';
 
 // Used to store the arguments used at connect and autoconnect.
 final class ConnectArguments {
@@ -63,6 +64,39 @@ final class ConnectArguments {
     }
 
     return connectRequest;
+  }
+
+  /// Converts the connection arguments to a UIEvent_ItemValue for analytics.
+  ///
+  /// Specialty groups (Double VPN, P2P, etc.) take priority over connection type.
+  ///  Falls back to CITY/COUNTRY for standard VPN connections.
+  UIEvent_ItemValue toUIEventItemValue() {
+    if (specialtyGroup != null) {
+      switch (specialtyGroup!) {
+        case ServerType.dedicatedIP:
+          return UIEvent_ItemValue.DIP;
+        case ServerType.obfuscated:
+          return UIEvent_ItemValue.OBFUSCATED;
+        case ServerType.onionOverVpn:
+          return UIEvent_ItemValue.ONION_OVER_VPN;
+        case ServerType.doubleVpn:
+          return UIEvent_ItemValue.DOUBLE_VPN;
+        case ServerType.p2p:
+          return UIEvent_ItemValue.P2P;
+        default:
+          break;
+      }
+    }
+
+    if (city != null) {
+      return UIEvent_ItemValue.CITY;
+    }
+
+    if (country != null) {
+      return UIEvent_ItemValue.COUNTRY;
+    }
+
+    return UIEvent_ItemValue.ITEM_VALUE_UNSPECIFIED;
   }
 
   @override

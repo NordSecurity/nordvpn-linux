@@ -117,42 +117,44 @@ func connectByConnectionModel(ti *Instance, model *RecentConnection) bool {
 		return strings.ReplaceAll(text, " ", "_")
 	}
 
+	itemValue := ItemValueFromRecentConnection(model)
+
 	switch model.ConnectionType {
 	case config.ServerSelectionRule_RECOMMENDED:
-		return ti.connect("", "")
+		return ti.connectWithUIEvent("", "", pb.UIEvent_CONNECT_RECENTS, itemValue)
 
 	case config.ServerSelectionRule_CITY:
 		if model.City != "" {
 			cityString := normalizeForAPI(model.City)
-			return ti.connect(cityString, "")
+			return ti.connectWithUIEvent(cityString, "", pb.UIEvent_CONNECT_RECENTS, itemValue)
 		}
 
 	case config.ServerSelectionRule_COUNTRY:
 		if model.CountryCode != "" {
-			return ti.connect(model.CountryCode, "")
+			return ti.connectWithUIEvent(model.CountryCode, "", pb.UIEvent_CONNECT_RECENTS, itemValue)
 		}
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER:
 		if model.SpecificServer != "" {
-			return ti.connect(model.SpecificServer, "")
+			return ti.connectWithUIEvent(model.SpecificServer, "", pb.UIEvent_CONNECT_RECENTS, itemValue)
 		}
 
 	case config.ServerSelectionRule_GROUP:
 		if model.Group != config.ServerGroup_UNDEFINED {
 			group := normalizeForAPI(model.Group.String())
-			return ti.connect("", group)
+			return ti.connectWithUIEvent("", group, pb.UIEvent_CONNECT_RECENTS, itemValue)
 		}
 
 	case config.ServerSelectionRule_COUNTRY_WITH_GROUP:
 		if model.CountryCode != "" && model.Group != config.ServerGroup_UNDEFINED {
 			group := normalizeForAPI(model.Group.String())
-			return ti.connect(model.CountryCode, group)
+			return ti.connectWithUIEvent(model.CountryCode, group, pb.UIEvent_CONNECT_RECENTS, itemValue)
 		}
 
 	case config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP:
 		if model.SpecificServer != "" && model.Group != config.ServerGroup_UNDEFINED {
 			group := normalizeForAPI(model.Group.String())
-			return ti.connect(model.SpecificServer, group)
+			return ti.connectWithUIEvent(model.SpecificServer, group, pb.UIEvent_CONNECT_RECENTS, itemValue)
 		}
 
 	case config.ServerSelectionRule_NONE:
