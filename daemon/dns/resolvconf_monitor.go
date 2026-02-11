@@ -56,7 +56,7 @@ func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context, do
 			}
 
 			if e.Op.Has(fsnotify.Write) || e.Op.Has(fsnotify.Remove) {
-				r.analytics.emitResolvConfOverwrittenEvent()
+				r.analytics.emitResolvConfOverwrittenEvent(unmanaged)
 			}
 
 			return nil
