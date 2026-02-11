@@ -3,6 +3,7 @@ package nft
 import (
 	"fmt"
 	"net"
+	"slices"
 
 	"github.com/google/nftables"
 	"github.com/google/nftables/binaryutil"
@@ -81,6 +82,69 @@ func addPortCheck(port uint16, portType byte, match matchType) []expr.Any {
 			Register: 1,
 			Op:       expr.CmpOpEq,
 			Data:     binaryutil.BigEndian.PutUint16(port),
+		},
+	}
+}
+
+// portType: unix.IPPROTO_UDP | IPPROTO_TCP..., destination
+func addPortInSetAndSetMark(fwMark uint32, portType byte, match matchType, portsSet *nftables.Set) []expr.Any {
+	// Offset: 0, Len: 2  → sport
+	// Offset: 2, Len: 2  → dport
+
+	var offset uint32 = 0
+	if match == MATCH_DESTINATION {
+		offset = 2
+	}
+	return []expr.Any{
+		// meta l4proto tcp/udp
+		&expr.Meta{
+			Key:      expr.MetaKeyL4PROTO,
+			Register: 1,
+		},
+		&expr.Cmp{
+			Register: 1,
+			Op:       expr.CmpOpEq,
+			Data:     []byte{portType},
+		},
+
+		//sport/dport (2 bytes) from transport header offset
+		&expr.Payload{
+			DestRegister: 1,
+			Base:         expr.PayloadBaseTransportHeader,
+			Offset:       offset,
+			Len:          2,
+		},
+
+		// lookup sport in set
+		&expr.Lookup{
+			SourceRegister: 1,
+			SetName:        portsSet.Name,
+			SetID:          portsSet.ID,
+		},
+
+		// meta mark set 0xe1f1
+		&expr.Immediate{
+			Register: 1,
+			Data:     binaryutil.NativeEndian.PutUint32(fwMark),
+		},
+		&expr.Meta{
+			Key:            expr.MetaKeyMARK,
+			SourceRegister: true,
+			Register:       1,
+		},
+	}
+}
+
+func setMetaMark(fwMark uint32) []expr.Any {
+	return []expr.Any{
+		&expr.Immediate{
+			Register: 1,
+			Data:     binaryutil.NativeEndian.PutUint32(fwMark),
+		},
+		&expr.Meta{
+			Key:            expr.MetaKeyMARK,
+			SourceRegister: true,
+			Register:       1,
 		},
 	}
 }
@@ -275,4 +339,40 @@ func firstLastV4(cidr string) (net.IP, net.IP, error) {
 	}
 
 	return first, lastExclusive, nil
+}
+
+func convertPortsToSetElements(ports []int64) []nftables.SetElement {
+	if len(ports) == 0 {
+		return nil
+	}
+
+	slices.Sort(ports)
+
+	var elems []nftables.SetElement
+	start := ports[0]
+	last := ports[0]
+	for i := 1; i < len(ports); i++ {
+		cur := ports[i]
+		if cur == last+1 {
+			last = cur
+			continue
+		}
+
+		elems = append(elems, nftables.SetElement{
+			Key: binaryutil.BigEndian.PutUint16(uint16(start)),
+		}, nftables.SetElement{
+			Key:         binaryutil.BigEndian.PutUint16(uint16(last + 1)),
+			IntervalEnd: true,
+		})
+		start, last = cur, cur
+	}
+
+	elems = append(elems, nftables.SetElement{
+		Key: binaryutil.BigEndian.PutUint16(uint16(start)),
+	}, nftables.SetElement{
+		Key:         binaryutil.BigEndian.PutUint16(uint16(last + 1)),
+		IntervalEnd: true,
+	})
+
+	return elems
 }

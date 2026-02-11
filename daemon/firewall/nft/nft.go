@@ -7,12 +7,15 @@ import (
 	"github.com/google/nftables"
 	"github.com/google/nftables/binaryutil"
 	"github.com/google/nftables/expr"
+	"golang.org/x/sys/unix"
 )
 
 const tableName = "nordvpn"
 const appFwmark uint32 = 0xe1f1
 const allowedInterfacesSetName = "allowed_interfaces"
 const allowedSubnetsSetName = "allowed_subnets"
+const tcpSetName = "allowed_tcp"
+const udpSetName = "allowed_udp"
 
 type nft struct {
 	conn *nftables.Conn
@@ -36,6 +39,9 @@ func New() *nft {
 		conn: &nftables.Conn{},
 	}
 }
+
+type tcpPortsSet *nftables.Set
+type udpPortsSet *nftables.Set
 
 func (n *nft) configure(tunnelInterface string, allowList config.Allowlist) error {
 	table := addMainTable(n.conn)
@@ -63,7 +69,7 @@ func (n *nft) configure(tunnelInterface string, allowList config.Allowlist) erro
 			KeyType:  nftables.TypeIPAddr,
 			Interval: true,
 		}
-		var elems []nftables.SetElement
+		var elements []nftables.SetElement
 		for _, subnet := range allowList.Subnets {
 
 			startIp, endIp, err := firstLastV4(subnet)
@@ -71,23 +77,51 @@ func (n *nft) configure(tunnelInterface string, allowList config.Allowlist) erro
 				return fmt.Errorf("failed to parse allowlist IP: %s %w", subnet, err)
 			}
 
-			elems = append(elems, nftables.SetElement{
+			elements = append(elements, nftables.SetElement{
 				Key: startIp,
 			}, nftables.SetElement{
 				Key:         endIp,
 				IntervalEnd: true,
 			})
 		}
-		if err := n.conn.AddSet(allowedSubnets, elems); err != nil {
+		if err := n.conn.AddSet(allowedSubnets, elements); err != nil {
+			return fmt.Errorf("failed to set elements: %v", err)
+		}
+	}
+
+	var tcpPorts tcpPortsSet
+	if len(allowList.Ports.TCP) > 0 {
+		tcpPorts = &nftables.Set{
+			Table:    table,
+			Name:     tcpSetName,
+			KeyType:  nftables.TypeInetService,
+			Interval: true,
+		}
+		elements := convertPortsToSetElements(allowList.GetTCPPorts())
+		if err := n.conn.AddSet(tcpPorts, elements); err != nil {
+			return fmt.Errorf("failed to set elements: %v", err)
+		}
+	}
+
+	var udpPorts udpPortsSet
+	if len(allowList.Ports.TCP) > 0 {
+		udpPorts = &nftables.Set{
+			Table:    table,
+			Name:     udpSetName,
+			KeyType:  nftables.TypeInetService,
+			Interval: true,
+		}
+		elements := convertPortsToSetElements(allowList.GetUDPPorts())
+		if err := n.conn.AddSet(udpPorts, elements); err != nil {
 			return fmt.Errorf("failed to set elements: %v", err)
 		}
 	}
 
 	// n.addPostRouting(table, allowedSubnets)
-	n.addPreRouting(table, allowedSubnets)
+	n.addPreRouting(table, allowedSubnets, tcpPorts, udpPorts)
 	n.addInput(table, allowedInterfaces)
-	n.addOutput(table, allowedInterfaces, allowedSubnets)
-	n.addForward(table, tunnelInterface, allowedSubnets)
+	n.addOutput(table, allowedInterfaces, allowedSubnets, tcpPorts, udpPorts)
+	n.addForward(table, tunnelInterface, allowedSubnets, tcpPorts, udpPorts)
 
 	return n.conn.Flush()
 }
@@ -128,7 +162,12 @@ func (n *nft) configure(tunnelInterface string, allowList config.Allowlist) erro
 // //	    type filter hook prerouting priority mangle; policy accept;
 // //	    ct mark 0xe1f1 meta mark set 0xe1f1
 // //	}
-func (n *nft) addPreRouting(table *nftables.Table, allowedSubnets *nftables.Set) {
+func (n *nft) addPreRouting(
+	table *nftables.Table,
+	allowedSubnets *nftables.Set,
+	udpPortsSet tcpPortsSet,
+	tcpPortsSet udpPortsSet,
+) {
 	acceptPolicy := nftables.ChainPolicyAccept
 
 	preRoutingChain := n.conn.AddChain(&nftables.Chain{
@@ -150,11 +189,35 @@ func (n *nft) addPreRouting(table *nftables.Table, allowedSubnets *nftables.Set)
 		})
 	}
 
+	if tcpPortsSet != nil {
+		// tcp sport @ports_tcp meta mark set 0xe1f1 accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: preRoutingChain,
+			Exprs: buildRules(expr.VerdictAccept,
+				addPortInSetAndSetMark(appFwmark, unix.IPPROTO_TCP, MATCH_SOURCE, tcpPortsSet),
+			),
+		})
+	}
+
+	if udpPortsSet != nil {
+		// udp sport @ports_tcp meta mark set 0xe1f1 accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: preRoutingChain,
+			Exprs: buildRules(expr.VerdictAccept,
+				addPortInSetAndSetMark(appFwmark, unix.IPPROTO_UDP, MATCH_SOURCE, udpPortsSet),
+			),
+		})
+	}
+
+	//    ct mark 0xe1f1 meta mark 0xe1f1 accept
 	n.conn.AddRule(&nftables.Rule{
 		Table: table,
 		Chain: preRoutingChain,
 		Exprs: buildRules(expr.VerdictAccept,
-			addMetaMarkCheckAndSetCtMark(appFwmark),
+			addCtMarkCheck(appFwmark),
+			setMetaMark(appFwmark),
 		),
 	})
 }
@@ -206,7 +269,13 @@ func (n *nft) addInput(table *nftables.Table, allowedInterfaces *nftables.Set) {
 //	    ct mark 0xe1f1 accept
 //	    meta mark 0xe1f1 accept
 //		}
-func (n *nft) addOutput(table *nftables.Table, allowedInterfaces *nftables.Set, allowedSubnets *nftables.Set) {
+func (n *nft) addOutput(
+	table *nftables.Table,
+	allowedInterfaces *nftables.Set,
+	allowedSubnets *nftables.Set,
+	udpPortsSet tcpPortsSet,
+	tcpPortsSet udpPortsSet,
+) {
 	dropPolicy := nftables.ChainPolicyDrop
 
 	outputChain := n.conn.AddChain(&nftables.Chain{
@@ -234,6 +303,28 @@ func (n *nft) addOutput(table *nftables.Table, allowedInterfaces *nftables.Set, 
 		})
 	}
 
+	if tcpPortsSet != nil {
+		// tcp dport @ports_tcp meta mark set 0xe1f1 accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: outputChain,
+			Exprs: buildRules(expr.VerdictAccept,
+				addPortInSetAndSetMark(appFwmark, unix.IPPROTO_TCP, MATCH_DESTINATION, tcpPortsSet),
+			),
+		})
+	}
+
+	if udpPortsSet != nil {
+		// udp dport @ports_tcp meta mark set 0xe1f1 accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: outputChain,
+			Exprs: buildRules(expr.VerdictAccept,
+				addPortInSetAndSetMark(appFwmark, unix.IPPROTO_UDP, MATCH_DESTINATION, udpPortsSet),
+			),
+		})
+	}
+
 	// ct mark 0xe1f1 accept
 	n.conn.AddRule(&nftables.Rule{
 		Table: table,
@@ -254,7 +345,13 @@ func (n *nft) addOutput(table *nftables.Table, allowedInterfaces *nftables.Set, 
 //		iifname <tun> ct state established,related accept
 //		oifname <tun> accept
 //	  }
-func (n *nft) addForward(table *nftables.Table, tunnelInterface string, allowedSubnets *nftables.Set) {
+func (n *nft) addForward(
+	table *nftables.Table,
+	tunnelInterface string,
+	allowedSubnets *nftables.Set,
+	udpPortsSet tcpPortsSet,
+	tcpPortsSet udpPortsSet,
+) {
 	dropPolicy := nftables.ChainPolicyDrop
 
 	forwardChain := n.conn.AddChain(&nftables.Chain{
@@ -297,6 +394,28 @@ func (n *nft) addForward(table *nftables.Table, tunnelInterface string, allowedS
 		Chain: forwardChain,
 		Exprs: buildRules(expr.VerdictAccept, addMetaMarkCheck(appFwmark)),
 	})
+
+	if tcpPortsSet != nil {
+		// tcp dport @ports_tcp meta mark set 0xe1f1 accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: forwardChain,
+			Exprs: buildRules(expr.VerdictAccept,
+				addPortInSetAndSetMark(appFwmark, unix.IPPROTO_TCP, MATCH_DESTINATION, tcpPortsSet),
+			),
+		})
+	}
+
+	if udpPortsSet != nil {
+		// udp dport @ports_tcp meta mark set 0xe1f1 accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: forwardChain,
+			Exprs: buildRules(expr.VerdictAccept,
+				addPortInSetAndSetMark(appFwmark, unix.IPPROTO_UDP, MATCH_DESTINATION, udpPortsSet),
+			),
+		})
+	}
 }
 
 func addMainTable(conn *nftables.Conn) *nftables.Table {
