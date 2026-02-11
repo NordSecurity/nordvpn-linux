@@ -30,7 +30,21 @@ type dnsManagementService int
 const (
 	unknown dnsManagementService = iota
 	systemdResolved
+	unmanaged
 )
+
+func (e dnsManagementService) String() string {
+	switch e {
+	case systemdResolved:
+		return "systemd-resolved"
+	case unmanaged:
+		return "unmanaged"
+	case unknown:
+		fallthrough
+	default:
+		return "unknown_service"
+	}
+}
 
 var ErrDNSNotSet = errors.New("DNS unsetter not set")
 
@@ -124,15 +138,15 @@ func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfLinkTarget() (dn
 }
 
 func (d *DNSServiceSetter) getManagementService() dnsManagementService {
-	managmenetService, err := d.getManagementServiceBasedOnResolvconfComment()
+	managementService, err := d.getManagementServiceBasedOnResolvconfComment()
 	if err == nil {
 		log.Println(internal.InfoPrefix, dnsPrefix, "management service inferred from resovl.conf comment")
-		return managmenetService
+		return managementService
 	}
 	log.Println(internal.WarningPrefix, dnsPrefix,
 		"couldn't determine management service based on resolv.conf comment:", err)
 
-	managmenetService, err = d.getManagementServiceBasedOnResolvconfLinkTarget()
+	managementService, err = d.getManagementServiceBasedOnResolvconfLinkTarget()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, dnsPrefix,
 			"couldn't determine management service based on resolv.conf link target:", err)
@@ -140,7 +154,7 @@ func (d *DNSServiceSetter) getManagementService() dnsManagementService {
 	}
 
 	log.Println(internal.InfoPrefix, dnsPrefix, "management service inferred from link target")
-	return managmenetService
+	return managementService
 }
 
 // set sets DNS using the provided setter and sets a matching unsetter if the operation was successful
@@ -151,6 +165,8 @@ func (d *DNSServiceSetter) set(setter Setter, iface string, nameservers []string
 	}
 
 	d.unsetter = setter
+	d.analytics.emitDNSConfiguredEvent()
+
 	return nil
 }
 
@@ -158,8 +174,9 @@ func (d *DNSServiceSetter) set(setter Setter, iface string, nameservers []string
 //  1. systemd-resolved DBUS
 //  2. resolvctl utility
 //  3. resolv.conf utility
-//  4. direct write to resovl.conf
+//  4. direct write to resolv.conf
 func (d *DNSServiceSetter) setUsingBestAvailable(iface string, nameservers []string) error {
+	d.analytics.setManagementService(systemdResolved)
 	if err := d.set(d.systemdResolvedSetter, iface, nameservers); err != nil {
 		log.Println(internal.WarningPrefix, dnsPrefix,
 			"failed to configure DNS using systemd-resolved, attempting with resolv.conf")
@@ -168,6 +185,7 @@ func (d *DNSServiceSetter) setUsingBestAvailable(iface string, nameservers []str
 		return nil
 	}
 
+	d.analytics.setManagementService(unmanaged)
 	if err := d.set(d.resolvconfSetter, iface, nameservers); err != nil {
 		return fmt.Errorf("failed to configure DNS with resolv.conf: %w", err)
 	}
@@ -184,7 +202,11 @@ func (d *DNSServiceSetter) setUsingBestAvailable(iface string, nameservers []str
 //  3. If the above fails, it attempts to use best available method(see setUsingBestAvailable)
 //  4. If all of the above fail, it returns an error
 func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
+	// stop resolv.conf monitoring in case it is already running
+	d.resolvConfMonitor.stop()
+
 	managementService := d.getManagementService()
+	d.analytics.setManagementService(managementService)
 	switch managementService {
 	case systemdResolved:
 		log.Println(internal.InfoPrefix, dnsPrefix, "setting DNS using systemd-resolved")
@@ -193,7 +215,11 @@ func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
 			return nil
 		}
 		log.Println(internal.WarningPrefix, dnsPrefix, "failed to set DNS using systemd-resolved:", err)
+	case unmanaged:
+		fallthrough
 	case unknown:
+		fallthrough
+	default:
 		log.Println(internal.WarningPrefix, dnsPrefix, "unknown DNS service")
 	}
 
