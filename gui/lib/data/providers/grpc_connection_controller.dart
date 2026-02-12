@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:grpc/grpc.dart';
+import 'package:nordvpn/daemon/error_screen.dart';
 import 'package:nordvpn/data/models/application_error.dart';
 import 'package:nordvpn/grpc/grpc_service.dart';
 import 'package:nordvpn/grpc/error_handling_interceptor.dart';
@@ -75,10 +76,21 @@ class GrpcConnectionController extends _$GrpcConnectionController {
           error is ApplicationError,
           "$error must be of type ApplicationError",
         );
-        if (state is AsyncError<bool> &&
-            error is ApplicationError &&
-            state.error is ApplicationError &&
-            error.code == (state.error as ApplicationError).code) {
+        final appError = error as ApplicationError;
+        if (state is! AsyncError<bool>) break;
+        if (state.error is! ApplicationError) break;
+        final stateAppError = state.error as ApplicationError;
+        if (appError.code != stateAppError.code) break;
+        if (appError.code != AppStatusCode.snapInterfaces) {
+          return;
+        }
+        final oldSet = extractMissingConnections(
+          stateAppError.originalError,
+        ).toSet();
+        final newSet = extractMissingConnections(
+          appError.originalError,
+        ).toSet();
+        if (oldSet.length == newSet.length && oldSet.containsAll(newSet)) {
           return;
         }
         break;

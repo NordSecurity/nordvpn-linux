@@ -9,11 +9,16 @@ void main() {
   group('toUIEventItemValue', () {
     test('returns ITEM_VALUE_UNSPECIFIED for empty arguments', () {
       final args = ConnectArguments();
-      expect(args.toUIEventItemValue(), UIEvent_ItemValue.ITEM_VALUE_UNSPECIFIED);
+      expect(
+        args.toUIEventItemValue(),
+        UIEvent_ItemValue.ITEM_VALUE_UNSPECIFIED,
+      );
     });
 
     test('returns COUNTRY when only country is specified', () {
-      final args = ConnectArguments(country: Country(code: 'US', name: 'United States'));
+      final args = ConnectArguments(
+        country: Country(code: 'US', name: 'United States'),
+      );
       expect(args.toUIEventItemValue(), UIEvent_ItemValue.COUNTRY);
     });
 
@@ -70,7 +75,10 @@ void main() {
     test('returns ITEM_VALUE_UNSPECIFIED for standard VPN specialty group', () {
       // standardVpn is filtered out by the specialtyGroup getter
       final args = ConnectArguments(specialtyGroup: ServerType.standardVpn);
-      expect(args.toUIEventItemValue(), UIEvent_ItemValue.ITEM_VALUE_UNSPECIFIED);
+      expect(
+        args.toUIEventItemValue(),
+        UIEvent_ItemValue.ITEM_VALUE_UNSPECIFIED,
+      );
     });
   });
 }

@@ -129,7 +129,7 @@ ErrorData _dataForApplicationError(WidgetRef ref, ApplicationError error) {
 }
 
 ErrorData _dataForSnapInterfaces(WidgetRef ref, ApplicationError error) {
-  final missingPermissions = _extractMissingConnections(error.originalError);
+  final missingPermissions = extractMissingConnections(error.originalError);
 
   if (missingPermissions.isEmpty) {
     logger.w("_extractMissingConnections returned an empty list");
@@ -206,7 +206,7 @@ CopyField _buildCopyFieldForSocketNotFound() {
   );
 }
 
-List<String> _extractMissingConnections(Object? error) {
+List<String> extractMissingConnections(Object? error) {
   if (error is! GrpcError) return const [];
 
   if (error.details != null) {
