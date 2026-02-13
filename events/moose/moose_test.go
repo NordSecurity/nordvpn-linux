@@ -191,7 +191,6 @@ func TestChangeConsentState(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			consentFunc := func(enable bool) uint32 {
 				if test.consentErrCode != 0 {
 					return test.consentErrCode
@@ -206,10 +205,12 @@ func TestChangeConsentState(t *testing.T) {
 			configManagerMock := mock.NewMockConfigManager()
 			configManagerMock.Cfg.AnalyticsConsent = test.currentConsentState
 			s := &Subscriber{
-				config:                     configManagerMock,
-				mooseConsentLevelFunc:      consentFunc,
-				mooseSetConsentIntoCtxFunc: setConsentToCtx,
-				canSendAllEvents:           atomic.Bool{},
+				config: configManagerMock,
+				mooseFuncs: mooseFunctions{
+					mooseConsentLevelFunc:      consentFunc,
+					mooseSetConsentIntoCtxFunc: setConsentToCtx,
+				},
+				canSendAllEvents: atomic.Bool{},
 			}
 
 			s.canSendAllEvents.Store(test.currentOptInState)
@@ -379,10 +380,12 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 			var capturedTimestamp int32
 
 			s := &Subscriber{
-				mooseSetTokenRenewDateFunc: func(timestamp int32) uint32 {
-					setCalled = true
-					capturedTimestamp = timestamp
-					return 0
+				mooseFuncs: mooseFunctions{
+					mooseSetTokenRenewDateFunc: func(timestamp int32) uint32 {
+						setCalled = true
+						capturedTimestamp = timestamp
+						return 0
+					},
 				},
 			}
 
@@ -402,7 +405,6 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 		})
 	}
 }
-
 
 func TestSetTPLiteUserPreference(t *testing.T) {
 	category.Set(t, category.Unit)
@@ -439,10 +441,12 @@ func TestSetTPLiteUserPreference(t *testing.T) {
 			var got bool
 
 			s := &Subscriber{
-				mooseSetTPLiteUserPrefFunc: func(v bool) uint32 {
-					called = true
-					got = v
-					return tt.mooseErrCode
+				mooseFuncs: mooseFunctions{
+					mooseSetTPLiteUserPrefFunc: func(v bool) uint32 {
+						called = true
+						got = v
+						return tt.mooseErrCode
+					},
 				},
 			}
 
@@ -494,10 +498,12 @@ func TestNotifyThreatProtectionLite_CallsUserPreferenceSetter(t *testing.T) {
 			var got bool
 
 			s := &Subscriber{
-				mooseSetTPLiteUserPrefFunc: func(v bool) uint32 {
-					called = true
-					got = v
-					return tt.mooseErrCode
+				mooseFuncs: mooseFunctions{
+					mooseSetTPLiteUserPrefFunc: func(v bool) uint32 {
+						called = true
+						got = v
+						return tt.mooseErrCode
+					},
 				},
 			}
 
