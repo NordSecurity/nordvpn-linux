@@ -350,7 +350,7 @@ search home`)
 			resolvConfIsASymlink:             false,
 			setBySystemdResolved:             true,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: unknown,
+			expectedManagementServiceInEvent: systemdResolved,
 		},
 		{
 			name:                             "resolv.conf manager is unknown and running stat on resolv.conf fails, systemd-resolved is available, systemd-resolved is used to set DNS",
@@ -358,7 +358,7 @@ search home`)
 			resolvConfStatErr:                fmt.Errorf("failed to stat"),
 			setBySystemdResolved:             true,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: unknown,
+			expectedManagementServiceInEvent: systemdResolved,
 		},
 		{
 			name:                             "resolv.conf manager is unknown and running stat on resolv.conf fails, systemd-resolved is not available, resolv.conf is used to set DNS",
@@ -376,7 +376,7 @@ search home`)
 			systemdStubStatErr:               fmt.Errorf("failed to stat"),
 			setBySystemdResolved:             true,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: unknown,
+			expectedManagementServiceInEvent: systemdResolved,
 		},
 		{
 			name:                             "resolv.conf manager is unknown and running stat on systemd stub fails, systemd-resolved is not available, resolv.conf is used to set DNS",
