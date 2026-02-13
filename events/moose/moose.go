@@ -53,10 +53,10 @@ type (
 )
 
 type mooseFunctions struct {
-	mooseConsentLevelFunc      mooseConsentFunc
-	mooseSetConsentIntoCtxFunc mooseSetConsentIntoContextFunc
-	mooseSetTokenRenewDateFunc mooseSetTokenRenewDateFunc
-	mooseSetTPLiteUserPrefFunc mooseSetTPLiteUserPrefFunc
+	setAppConsentLevel            mooseConsentFunc
+	setConsentUserPreference      mooseSetConsentIntoContextFunc
+	setTokenRenewDateCurrentState mooseSetTokenRenewDateFunc
+	setTPLiteUserPreference       mooseSetTPLiteUserPrefFunc
 }
 
 // Subscriber listen events, send to moose engine
@@ -101,10 +101,10 @@ func NewSubscriber(
 		httpClient:    httpClient,
 		isInitialized: false,
 		mooseFuncs: mooseFunctions{
-			mooseConsentLevelFunc:      moose.MooseNordvpnappSetConsentLevel,
-			mooseSetConsentIntoCtxFunc: moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel,
-			mooseSetTokenRenewDateFunc: moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTokenRenewDateValue,
-			mooseSetTPLiteUserPrefFunc: moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue,
+			setAppConsentLevel:            moose.MooseNordvpnappSetConsentLevel,
+			setConsentUserPreference:      moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel,
+			setTokenRenewDateCurrentState: moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTokenRenewDateValue,
+			setTPLiteUserPreference:       moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue,
 		},
 	}
 	// Add more handlers here as needed
@@ -136,7 +136,7 @@ func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error 
 
 	enabled := newState == config.ConsentGranted
 	log.Println(internal.InfoPrefix, LogComponentPrefix, "request to set consent level to", enabled)
-	if err := s.response(s.mooseFuncs.mooseConsentLevelFunc(enabled)); err != nil {
+	if err := s.response(s.mooseFuncs.setAppConsentLevel(enabled)); err != nil {
 		return fmt.Errorf("setting new consent level: %w", err)
 	}
 
@@ -157,7 +157,7 @@ func setUserConsentLevelIntoContext(s *Subscriber, consent config.AnalyticsConse
 	if consent == config.ConsentGranted {
 		consentLevel = moose.NordvpnappConsentLevelAnalytics
 	}
-	if err := s.response(s.mooseFuncs.mooseSetConsentIntoCtxFunc(consentLevel)); err != nil {
+	if err := s.response(s.mooseFuncs.setConsentUserPreference(consentLevel)); err != nil {
 		return fmt.Errorf("setting user consent level: %w", err)
 	}
 	return nil
@@ -337,7 +337,7 @@ func (s *Subscriber) Stop() error {
 }
 
 func (s *Subscriber) setTPLiteUserPreference(enabled bool) error {
-	return s.response(s.mooseFuncs.mooseSetTPLiteUserPrefFunc(enabled))
+	return s.response(s.mooseFuncs.setTPLiteUserPreference(enabled))
 }
 
 func (s *Subscriber) NotifyKillswitch(data bool) error {
@@ -500,7 +500,7 @@ func getTokenRenewDate(cfg *config.Config) string {
 
 // setTokenRenewDate sets the token renewal date in moose context
 func (s *Subscriber) setTokenRenewDate(unixTimestamp int64) error {
-	return s.response(s.mooseFuncs.mooseSetTokenRenewDateFunc(int32(unixTimestamp)))
+	return s.response(s.mooseFuncs.setTokenRenewDateCurrentState(int32(unixTimestamp)))
 }
 
 func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {

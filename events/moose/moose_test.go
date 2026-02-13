@@ -207,8 +207,8 @@ func TestChangeConsentState(t *testing.T) {
 			s := &Subscriber{
 				config: configManagerMock,
 				mooseFuncs: mooseFunctions{
-					mooseConsentLevelFunc:      consentFunc,
-					mooseSetConsentIntoCtxFunc: setConsentToCtx,
+					setAppConsentLevel:       consentFunc,
+					setConsentUserPreference: setConsentToCtx,
 				},
 				canSendAllEvents: atomic.Bool{},
 			}
@@ -381,7 +381,7 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 
 			s := &Subscriber{
 				mooseFuncs: mooseFunctions{
-					mooseSetTokenRenewDateFunc: func(timestamp int32) uint32 {
+					setTokenRenewDateCurrentState: func(timestamp int32) uint32 {
 						setCalled = true
 						capturedTimestamp = timestamp
 						return 0
@@ -442,7 +442,7 @@ func TestSetTPLiteUserPreference(t *testing.T) {
 
 			s := &Subscriber{
 				mooseFuncs: mooseFunctions{
-					mooseSetTPLiteUserPrefFunc: func(v bool) uint32 {
+					setTPLiteUserPreference: func(v bool) uint32 {
 						called = true
 						got = v
 						return tt.mooseErrCode
@@ -499,7 +499,7 @@ func TestNotifyThreatProtectionLite_CallsUserPreferenceSetter(t *testing.T) {
 
 			s := &Subscriber{
 				mooseFuncs: mooseFunctions{
-					mooseSetTPLiteUserPrefFunc: func(v bool) uint32 {
+					setTPLiteUserPreference: func(v bool) uint32 {
 						called = true
 						got = v
 						return tt.mooseErrCode
