@@ -402,3 +402,121 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 		})
 	}
 }
+
+
+func TestSetTPLiteUserPreference(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name          string
+		enabled       bool
+		mooseErrCode  uint32
+		expectErr     bool
+		expectCalled  bool
+		expectedValue bool
+	}{
+		{
+			name:          "success",
+			enabled:       true,
+			mooseErrCode:  0,
+			expectErr:     false,
+			expectCalled:  true,
+			expectedValue: true,
+		},
+		{
+			name:          "failure propagates error",
+			enabled:       false,
+			mooseErrCode:  1,
+			expectErr:     true,
+			expectCalled:  true,
+			expectedValue: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			called := false
+			var got bool
+
+			s := &Subscriber{
+				mooseSetTPLiteUserPrefFunc: func(v bool) uint32 {
+					called = true
+					got = v
+					return tt.mooseErrCode
+				},
+			}
+
+			err := s.setTPLiteUserPreference(tt.enabled)
+
+			assert.Equal(t, tt.expectCalled, called)
+			if tt.expectCalled {
+				assert.Equal(t, tt.expectedValue, got)
+			}
+
+			if tt.expectErr {
+				assert.Assert(t, err != nil)
+			} else {
+				assert.NilError(t, err)
+			}
+		})
+	}
+}
+
+func TestNotifyThreatProtectionLite_CallsUserPreferenceSetter(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name             string
+		enabled          bool
+		mooseErrCode     uint32
+		expectNotifyErr  bool
+		expectPrefCalled bool
+	}{
+		{
+			name:             "returns nil even if setting user preference fails (when connected so current-state update is skipped)",
+			enabled:          true,
+			mooseErrCode:     1,
+			expectNotifyErr:  false,
+			expectPrefCalled: true,
+		},
+		{
+			name:             "returns nil on success (when connected so current-state update is skipped)",
+			enabled:          false,
+			mooseErrCode:     0,
+			expectNotifyErr:  false,
+			expectPrefCalled: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			called := false
+			var got bool
+
+			s := &Subscriber{
+				mooseSetTPLiteUserPrefFunc: func(v bool) uint32 {
+					called = true
+					got = v
+					return tt.mooseErrCode
+				},
+			}
+
+			// make sure we don't hit the "Current State" call path:
+			// `NotifyThreatProtectionLite` only sets Current State when connectionStartTime.IsZero().
+			s.connectionStartTime = time.Now()
+
+			err := s.NotifyThreatProtectionLite(tt.enabled)
+
+			assert.Equal(t, tt.expectPrefCalled, called)
+			if tt.expectPrefCalled {
+				assert.Equal(t, tt.enabled, got)
+			}
+
+			if tt.expectNotifyErr {
+				assert.Assert(t, err != nil)
+			} else {
+				assert.NilError(t, err)
+			}
+		})
+	}
+}
