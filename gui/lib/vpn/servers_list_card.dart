@@ -42,6 +42,7 @@ final class ServersListCard extends StatefulWidget {
   final ImagesManager imagesManager;
   final ServerListItemFactory itemFactory;
   final Future<void> Function(ConnectArguments) onSelected;
+
   /// Callback for when a recent connection is selected.
   /// If null, falls back to [onSelected].
   final Future<void> Function(ConnectArguments)? onRecentSelected;
