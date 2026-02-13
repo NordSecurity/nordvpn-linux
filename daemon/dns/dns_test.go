@@ -291,7 +291,7 @@ search home`)
 		expectedUnsetErr                 error
 	}{
 		{
-			name:                             "resolv.conf managed by systemd-resolved, use systemd-resolved to set DNS",
+			name:                             "resolv.conf is managed by systemd-resolved, systemd-resolved is used to set DNS",
 			resolvconfFileContents:           systemdResolvedResolvconf,
 			setBySystemdResolved:             true,
 			shouldEmitDNSConfiguredEvent:     true,

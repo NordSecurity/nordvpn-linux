@@ -41,6 +41,8 @@ const (
 
 func (e dnsManagementService) String() string {
 	switch e {
+	case nmcliManaged:
+		return "nmcli"
 	case systemdResolved:
 		return "systemd-resolved"
 	case unmanaged:
