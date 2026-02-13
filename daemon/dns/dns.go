@@ -143,19 +143,22 @@ func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfLinkTarget() (dn
 }
 
 func (d *DNSServiceSetter) getManagementService() dnsManagementService {
-	managmenetService, err := d.getManagementServiceBasedOnResolvconfComment()
+	managementService, err := d.getManagementServiceBasedOnResolvconfComment()
 	if err == nil {
-		log.Println(internal.InfoPrefix, dnsPrefix, "management service inferred from resovl.conf comment")
-	} else {
-		log.Println(internal.WarningPrefix, dnsPrefix, "couldn't determine management service based on resolv.conf comment:", err)
-		managmenetService, err = d.getManagementServiceBasedOnResolvconfLinkTarget()
-		if err == nil {
-			log.Println(internal.InfoPrefix, dnsPrefix, "management service inferred from link target")
-		} else {
-			log.Println(internal.ErrorPrefix, dnsPrefix, "couldn't determine management service based on resolv.conf link target:", err)
-		}
+		log.Println(internal.InfoPrefix, dnsPrefix, "management service inferred from resolv.conf comment")
+		return managementService
 	}
-	return managmenetService
+
+	log.Println(internal.WarningPrefix, dnsPrefix, "couldn't determine management service based on resolv.conf comment:", err)
+	managementService, err = d.getManagementServiceBasedOnResolvconfLinkTarget()
+	if err == nil {
+		log.Println(internal.InfoPrefix, dnsPrefix, "management service inferred from link target")
+		return managementService
+	}
+	log.Println(internal.ErrorPrefix, dnsPrefix, "couldn't determine management service based on resolv.conf link target:", err)
+
+	//this is effectively `unknown`, see getManagementServiceBasedOnResolvconfLinkTarget for details (it returns unknown upon an error)
+	return managementService
 }
 
 // set sets DNS using the provided setter and sets a matching unsetter if the operation was successful
@@ -172,12 +175,13 @@ func (d *DNSServiceSetter) set(setter Setter, iface string, nameservers []string
 // setUsingAvailable sets DNS using the first setter in the bellow priority list:
 //  1. systemd-resolved DBUS
 //  2. resolvctl utility
-//  3. resolv.conf utility
-//  4. direct write to resovl.conf
+//  3. NetworkManager nmcli tool
+//  4. resolv.conf utility
+//  5. direct write to resolv.conf
 func (d *DNSServiceSetter) setUsingAvailable(iface string, nameservers []string) error {
 	if err := d.set(d.systemdResolvedSetter, iface, nameservers); err != nil {
 		log.Println(internal.WarningPrefix, dnsPrefix,
-			"failed to configure DNS using systemd-resolved, attempting with nmcli")
+			"failed to configure DNS using systemd-resolved, attempting with nmcli: %w", err)
 	} else {
 		log.Println(internal.InfoPrefix, dnsPrefix, "DNS configured with systemd-resolved")
 		return nil
@@ -185,7 +189,7 @@ func (d *DNSServiceSetter) setUsingAvailable(iface string, nameservers []string)
 
 	if err := d.set(d.nmcliSetter, iface, nameservers); err != nil {
 		log.Println(internal.WarningPrefix, dnsPrefix,
-			"failed to configure DNS using nmcli, attempting with resolv.conf")
+			"failed to configure DNS using nmcli, attempting with resolv.conf, %w", err)
 	} else {
 		log.Println(internal.InfoPrefix, dnsPrefix, "DNS configured with nmcli")
 		return nil
