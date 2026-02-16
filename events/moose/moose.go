@@ -50,30 +50,38 @@ type (
 	mooseSetConsentIntoContextFunc func(moose.NordvpnappConsentLevel) uint32
 	mooseSetTokenRenewDateFunc     func(int32) uint32
 	mooseSetTPLiteUserPrefFunc     func(bool) uint32
+	mooseSetTPLiteCurrentFunc      func(bool) uint32
+	mooseUnsetTPLiteCurrentFunc    func() uint32
+	mooseSetCustomDNSMetaFunc      func(string) uint32
+	mooseSetCustomDNSValueFunc     func(bool) uint32
 )
 
 // Subscriber listen events, send to moose engine
 type Subscriber struct {
-	eventsDbPath               string
-	config                     config.Manager
-	buildTarget                config.BuildTarget
-	domain                     string
-	subdomain                  string
-	deviceID                   string
-	clientAPI                  core.ClientAPI
-	currentDomain              string
-	connectionStartTime        time.Time
-	connectionToMeshnetPeer    bool
-	initialHeartbeatSent       bool
-	mooseConsentLevelFunc      mooseConsentFunc
-	mooseSetConsentIntoCtxFunc mooseSetConsentIntoContextFunc
-	mooseSetTokenRenewDateFunc mooseSetTokenRenewDateFunc
-	mooseSetTPLiteUserPrefFunc mooseSetTPLiteUserPrefFunc
-	httpClient                 *http.Client
-	canSendAllEvents           atomic.Bool
-	mux                        sync.RWMutex
-	isInitialized              bool
-	configChangeHandlers       []configChangeHandler
+	eventsDbPath                string
+	config                      config.Manager
+	buildTarget                 config.BuildTarget
+	domain                      string
+	subdomain                   string
+	deviceID                    string
+	clientAPI                   core.ClientAPI
+	currentDomain               string
+	connectionStartTime         time.Time
+	connectionToMeshnetPeer     bool
+	initialHeartbeatSent        bool
+	mooseConsentLevelFunc       mooseConsentFunc
+	mooseSetConsentIntoCtxFunc  mooseSetConsentIntoContextFunc
+	mooseSetTokenRenewDateFunc  mooseSetTokenRenewDateFunc
+	mooseSetTPLiteUserPrefFunc  mooseSetTPLiteUserPrefFunc
+	mooseSetTPLiteCurrentFunc   mooseSetTPLiteCurrentFunc
+	mooseUnsetTPLiteCurrentFunc mooseUnsetTPLiteCurrentFunc
+	mooseSetCustomDNSMetaFunc   mooseSetCustomDNSMetaFunc
+	mooseSetCustomDNSValueFunc  mooseSetCustomDNSValueFunc
+	httpClient                  *http.Client
+	canSendAllEvents            atomic.Bool
+	mux                         sync.RWMutex
+	isInitialized               bool
+	configChangeHandlers        []configChangeHandler
 }
 
 func NewSubscriber(
@@ -97,10 +105,14 @@ func NewSubscriber(
 		httpClient:    httpClient,
 		isInitialized: false,
 
-		mooseConsentLevelFunc:      moose.MooseNordvpnappSetConsentLevel,
-		mooseSetConsentIntoCtxFunc: moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel,
-		mooseSetTokenRenewDateFunc: moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTokenRenewDateValue,
-		mooseSetTPLiteUserPrefFunc: moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue,
+		mooseConsentLevelFunc:       moose.MooseNordvpnappSetConsentLevel,
+		mooseSetConsentIntoCtxFunc:  moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel,
+		mooseSetTokenRenewDateFunc:  moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTokenRenewDateValue,
+		mooseSetTPLiteUserPrefFunc:  moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue,
+		mooseSetTPLiteCurrentFunc:   moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
+		mooseUnsetTPLiteCurrentFunc: moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
+		mooseSetCustomDNSMetaFunc:   moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledMeta,
+		mooseSetCustomDNSValueFunc:  moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledValue,
 	}
 	// Add more handlers here as needed
 	sub.configChangeHandlers = []configChangeHandler{
@@ -366,12 +378,12 @@ func (s *Subscriber) NotifyDNS(data events.DataDNS) error {
 
 func (s *Subscriber) setCustomDNS(data events.DataDNS) error {
 	dnsIPCount := len(data.Ips)
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledMeta(fmt.Sprintf(`{"count":%d}`, dnsIPCount))); err != nil {
+	if err := s.response(s.mooseSetCustomDNSMetaFunc(fmt.Sprintf(`{"count":%d}`, dnsIPCount))); err != nil {
 		return err
 	}
 
 	isCustomDNSEnabled := dnsIPCount > 0
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledValue(isCustomDNSEnabled))
+	return s.response(s.mooseSetCustomDNSValueFunc(isCustomDNSEnabled))
 }
 
 func (s *Subscriber) NotifyFirewall(data bool) error {
@@ -604,7 +616,7 @@ func (s *Subscriber) setTPLite(isTPLiteEnabled bool) error {
 	// On disconnect (see `NotifyDisconnect`), we are unsetting TP Lite In Current State in the context,
 	// because it stops being actively used after user disconnects.
 	if s.connectionStartTime.IsZero() {
-		return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue(isTPLiteEnabled))
+		return s.response(s.mooseSetTPLiteCurrentFunc(isTPLiteEnabled))
 	}
 
 	return nil
@@ -769,7 +781,7 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 	}
 
 	// Unset TP Lite in Current State - user disconnected so TP Lite is not **actively** used
-	if err := s.response(moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue()); err != nil {
+	if err := s.response(s.mooseUnsetTPLiteCurrentFunc()); err != nil {
 		return err
 	}
 

@@ -11,6 +11,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"gotest.tools/v3/assert"
@@ -191,7 +192,6 @@ func TestChangeConsentState(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			consentFunc := func(enable bool) uint32 {
 				if test.consentErrCode != 0 {
 					return test.consentErrCode
@@ -407,38 +407,56 @@ func TestNotifyThreatProtectionLite_CallsUserPreferenceSetter(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name             string
-		enabled          bool
-		mooseErrCode     uint32
-		expectNotifyErr  bool
-		expectPrefCalled bool
+		name                      string
+		enabled                   bool
+		mooseUserPrefErrCode      uint32
+		mooseCurrentStateErrCode  uint32
+		mooseSetCustomDNSMetaErr  uint32
+		mooseSetCustomDNSValueErr uint32
+		expectNotifyErr           bool
+		expectPrefCalled          bool
+		expectCustomDNSCalled     bool
 	}{
 		{
-			name:             "returns nil even if setting user preference fails (when connected so current-state update is skipped)",
-			enabled:          true,
-			mooseErrCode:     1,
-			expectNotifyErr:  false,
-			expectPrefCalled: true,
+			name:                      "returns nil even if setting user preference fails (when connected so current-state update is skipped)",
+			enabled:                   true,
+			mooseUserPrefErrCode:      1,
+			mooseSetCustomDNSMetaErr:  0,
+			mooseSetCustomDNSValueErr: 0,
+			expectNotifyErr:           false, // setTPLite logs but doesn't return the error
+			expectPrefCalled:          true,
+			expectCustomDNSCalled:     true, // TP Lite enabled, so custom DNS is disabled
 		},
 		{
-			name:             "returns nil on success (when connected so current-state update is skipped)",
-			enabled:          false,
-			mooseErrCode:     0,
-			expectNotifyErr:  false,
-			expectPrefCalled: true,
+			name:                  "returns nil on success (when connected so current-state update is skipped)",
+			enabled:               false,
+			mooseUserPrefErrCode:  0,
+			expectNotifyErr:       false,
+			expectPrefCalled:      true,
+			expectCustomDNSCalled: false, // TP Lite disabled, so custom DNS is not touched
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			called := false
-			var got bool
+			prefCalled := false
+			customDNSMetaCalled := false
+			customDNSValueCalled := false
+			var gotPref bool
 
 			s := &Subscriber{
 				mooseSetTPLiteUserPrefFunc: func(v bool) uint32 {
-					called = true
-					got = v
-					return tt.mooseErrCode
+					prefCalled = true
+					gotPref = v
+					return tt.mooseUserPrefErrCode
+				},
+				mooseSetCustomDNSMetaFunc: func(meta string) uint32 {
+					customDNSMetaCalled = true
+					return tt.mooseSetCustomDNSMetaErr
+				},
+				mooseSetCustomDNSValueFunc: func(enabled bool) uint32 {
+					customDNSValueCalled = true
+					return tt.mooseSetCustomDNSValueErr
 				},
 			}
 
@@ -448,12 +466,275 @@ func TestNotifyThreatProtectionLite_CallsUserPreferenceSetter(t *testing.T) {
 
 			err := s.NotifyThreatProtectionLite(tt.enabled)
 
-			assert.Equal(t, tt.expectPrefCalled, called)
+			assert.Equal(t, tt.expectPrefCalled, prefCalled)
 			if tt.expectPrefCalled {
-				assert.Equal(t, tt.enabled, got)
+				assert.Equal(t, tt.enabled, gotPref)
 			}
 
+			assert.Equal(t, tt.expectCustomDNSCalled, customDNSMetaCalled)
+			assert.Equal(t, tt.expectCustomDNSCalled, customDNSValueCalled)
+
 			if tt.expectNotifyErr {
+				assert.Assert(t, err != nil)
+			} else {
+				assert.NilError(t, err)
+			}
+		})
+	}
+}
+
+func TestSetCustomDNS(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                 string
+		dnsIPs               []string
+		mooseMetaErrCode     uint32
+		mooseValueErrCode    uint32
+		expectErr            bool
+		expectMetaCalled     bool
+		expectValueCalled    bool
+		expectedMetaContent  string
+		expectedValueContent bool
+	}{
+		{
+			name:                 "no DNS IPs - success",
+			dnsIPs:               []string{},
+			mooseMetaErrCode:     0,
+			mooseValueErrCode:    0,
+			expectErr:            false,
+			expectMetaCalled:     true,
+			expectValueCalled:    true,
+			expectedMetaContent:  `{"count":0}`,
+			expectedValueContent: false,
+		},
+		{
+			name:                 "single DNS IP - success",
+			dnsIPs:               []string{"1.1.1.1"},
+			mooseMetaErrCode:     0,
+			mooseValueErrCode:    0,
+			expectErr:            false,
+			expectMetaCalled:     true,
+			expectValueCalled:    true,
+			expectedMetaContent:  `{"count":1}`,
+			expectedValueContent: true,
+		},
+		{
+			name:                 "multiple DNS IPs - success",
+			dnsIPs:               []string{"1.1.1.1", "8.8.8.8", "8.8.4.4"},
+			mooseMetaErrCode:     0,
+			mooseValueErrCode:    0,
+			expectErr:            false,
+			expectMetaCalled:     true,
+			expectValueCalled:    true,
+			expectedMetaContent:  `{"count":3}`,
+			expectedValueContent: true,
+		},
+		{
+			name:              "meta setter fails - propagates error",
+			dnsIPs:            []string{"1.1.1.1"},
+			mooseMetaErrCode:  1,
+			mooseValueErrCode: 0,
+			expectErr:         true,
+			expectMetaCalled:  true,
+			expectValueCalled: false, // value setter not called if meta setter fails
+		},
+		{
+			name:                "value setter fails - propagates error",
+			dnsIPs:              []string{"1.1.1.1"},
+			mooseMetaErrCode:    0,
+			mooseValueErrCode:   1,
+			expectErr:           true,
+			expectMetaCalled:    true,
+			expectValueCalled:   true,
+			expectedMetaContent: `{"count":1}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			metaCalled := false
+			valueCalled := false
+			var gotMeta string
+			var gotValue bool
+
+			s := &Subscriber{
+				mooseSetCustomDNSMetaFunc: func(meta string) uint32 {
+					metaCalled = true
+					gotMeta = meta
+					return tt.mooseMetaErrCode
+				},
+				mooseSetCustomDNSValueFunc: func(enabled bool) uint32 {
+					valueCalled = true
+					gotValue = enabled
+					return tt.mooseValueErrCode
+				},
+			}
+
+			data := events.DataDNS{Ips: tt.dnsIPs}
+			err := s.setCustomDNS(data)
+
+			assert.Equal(t, tt.expectMetaCalled, metaCalled)
+			if tt.expectMetaCalled && tt.mooseMetaErrCode == 0 {
+				assert.Equal(t, tt.expectedMetaContent, gotMeta)
+			}
+
+			assert.Equal(t, tt.expectValueCalled, valueCalled)
+			if tt.expectValueCalled && tt.mooseValueErrCode == 0 {
+				assert.Equal(t, tt.expectedValueContent, gotValue)
+			}
+
+			if tt.expectErr {
+				assert.Assert(t, err != nil)
+			} else {
+				assert.NilError(t, err)
+			}
+		})
+	}
+}
+
+func TestNotifyDNS(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                   string
+		dnsIPs                 []string
+		mooseMetaErrCode       uint32
+		mooseValueErrCode      uint32
+		mooseTPLiteUserPrefErr uint32
+		mooseTPLiteCurrentErr  uint32
+		expectErr              bool
+		expectMetaCalled       bool
+		expectValueCalled      bool
+		expectTPLiteCalled     bool
+		expectedTPLiteValue    bool
+	}{
+		{
+			name:               "no DNS IPs - custom DNS disabled, TP Lite not touched",
+			dnsIPs:             []string{},
+			mooseMetaErrCode:   0,
+			mooseValueErrCode:  0,
+			expectErr:          false,
+			expectMetaCalled:   true,
+			expectValueCalled:  true,
+			expectTPLiteCalled: false, // TP Lite only touched when custom DNS is enabled
+		},
+		{
+			name:                   "single DNS IP - custom DNS enabled, TP Lite disabled (not connected)",
+			dnsIPs:                 []string{"1.1.1.1"},
+			mooseMetaErrCode:       0,
+			mooseValueErrCode:      0,
+			mooseTPLiteUserPrefErr: 0,
+			mooseTPLiteCurrentErr:  0,
+			expectErr:              false,
+			expectMetaCalled:       true,
+			expectValueCalled:      true,
+			expectTPLiteCalled:     true,
+			expectedTPLiteValue:    false,
+		},
+		{
+			name:                   "multiple DNS IPs - custom DNS enabled, TP Lite disabled (not connected)",
+			dnsIPs:                 []string{"1.1.1.1", "8.8.8.8"},
+			mooseMetaErrCode:       0,
+			mooseValueErrCode:      0,
+			mooseTPLiteUserPrefErr: 0,
+			mooseTPLiteCurrentErr:  0,
+			expectErr:              false,
+			expectMetaCalled:       true,
+			expectValueCalled:      true,
+			expectTPLiteCalled:     true,
+			expectedTPLiteValue:    false,
+		},
+		{
+			name:               "custom DNS meta setter fails - propagates error, TP Lite not touched",
+			dnsIPs:             []string{"1.1.1.1"},
+			mooseMetaErrCode:   1,
+			mooseValueErrCode:  0,
+			expectErr:          true,
+			expectMetaCalled:   true,
+			expectValueCalled:  false,
+			expectTPLiteCalled: false, // setCustomDNS fails early
+		},
+		{
+			name:               "custom DNS value setter fails - propagates error, TP Lite not touched",
+			dnsIPs:             []string{"1.1.1.1"},
+			mooseMetaErrCode:   0,
+			mooseValueErrCode:  1,
+			expectErr:          true,
+			expectMetaCalled:   true,
+			expectValueCalled:  true,
+			expectTPLiteCalled: false, // setCustomDNS fails, so setTPLite not called
+		},
+		{
+			name:                   "TP Lite user pref setter fails - error logged but not returned (not connected)",
+			dnsIPs:                 []string{"1.1.1.1"},
+			mooseMetaErrCode:       0,
+			mooseValueErrCode:      0,
+			mooseTPLiteUserPrefErr: 1,
+			mooseTPLiteCurrentErr:  0,
+			expectErr:              false, // setTPLite logs but doesn't return the error
+			expectMetaCalled:       true,
+			expectValueCalled:      true,
+			expectTPLiteCalled:     true,
+		},
+		{
+			name:                   "TP Lite current setter fails - propagates error (not connected)",
+			dnsIPs:                 []string{"1.1.1.1"},
+			mooseMetaErrCode:       0,
+			mooseValueErrCode:      0,
+			mooseTPLiteUserPrefErr: 0,
+			mooseTPLiteCurrentErr:  1,
+			expectErr:              true,
+			expectMetaCalled:       true,
+			expectValueCalled:      true,
+			expectTPLiteCalled:     true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			metaCalled := false
+			valueCalled := false
+			tpLiteUserPrefCalled := false
+			tpLiteCurrentCalled := false
+			var gotTPLiteValue bool
+
+			s := &Subscriber{
+				mooseSetCustomDNSMetaFunc: func(meta string) uint32 {
+					metaCalled = true
+					return tt.mooseMetaErrCode
+				},
+				mooseSetCustomDNSValueFunc: func(enabled bool) uint32 {
+					valueCalled = true
+					return tt.mooseValueErrCode
+				},
+				mooseSetTPLiteUserPrefFunc: func(v bool) uint32 {
+					tpLiteUserPrefCalled = true
+					return tt.mooseTPLiteUserPrefErr
+				},
+				mooseSetTPLiteCurrentFunc: func(v bool) uint32 {
+					tpLiteCurrentCalled = true
+					gotTPLiteValue = v
+					return tt.mooseTPLiteCurrentErr
+				},
+			}
+
+			// Ensure we're in "not connected" state so TP Lite current state is set
+			s.connectionStartTime = time.Time{}
+
+			data := events.DataDNS{Ips: tt.dnsIPs}
+			err := s.NotifyDNS(data)
+
+			assert.Equal(t, tt.expectMetaCalled, metaCalled)
+			assert.Equal(t, tt.expectValueCalled, valueCalled)
+			assert.Equal(t, tt.expectTPLiteCalled, tpLiteUserPrefCalled)
+			assert.Equal(t, tt.expectTPLiteCalled, tpLiteCurrentCalled)
+
+			if tt.expectTPLiteCalled && tt.mooseTPLiteCurrentErr == 0 {
+				assert.Equal(t, tt.expectedTPLiteValue, gotTPLiteValue)
+			}
+
+			if tt.expectErr {
 				assert.Assert(t, err != nil)
 			} else {
 				assert.NilError(t, err)
