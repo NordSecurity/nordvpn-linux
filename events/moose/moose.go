@@ -352,10 +352,26 @@ func (s *Subscriber) NotifyDefaults(any) error {
 }
 
 func (s *Subscriber) NotifyDNS(data events.DataDNS) error {
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledMeta(fmt.Sprintf(`{"count":%d}`, len(data.Ips)))); err != nil {
+	if err := s.setCustomDNS(data); err != nil {
 		return err
 	}
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledValue(len(data.Ips) > 0))
+
+	// Custom DNS is not compatible with TP Lite - if Custom DNS is enabled, TP Lite should be off
+	if len(data.Ips) > 0 {
+		return s.setTPLite(false)
+	}
+
+	return nil
+}
+
+func (s *Subscriber) setCustomDNS(data events.DataDNS) error {
+	dnsIPCount := len(data.Ips)
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledMeta(fmt.Sprintf(`{"count":%d}`, dnsIPCount))); err != nil {
+		return err
+	}
+
+	isCustomDNSEnabled := dnsIPCount > 0
+	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledValue(isCustomDNSEnabled))
 }
 
 func (s *Subscriber) NotifyFirewall(data bool) error {
@@ -563,10 +579,24 @@ func (s *Subscriber) NotifyPeerUpdate([]string) error { return nil }
 
 func (s *Subscriber) NotifySelfRemoved(any) error { return nil }
 
-func (s *Subscriber) NotifyThreatProtectionLite(data bool) error {
+func (s *Subscriber) NotifyThreatProtectionLite(isTPLiteEnabled bool) error {
+	if err := s.setTPLite(isTPLiteEnabled); err != nil {
+		return err
+	}
+
+	// TP Lite is not compatible with custom DNS - if TP Lite is on, Custom DNS should be off
+	if isTPLiteEnabled {
+		disable := events.DataDNS{} // empty custom DNS
+		return s.setCustomDNS(disable)
+	}
+
+	return nil
+}
+
+func (s *Subscriber) setTPLite(isTPLiteEnabled bool) error {
 	// User Preferences field in moose context is used to see what's the setting
 	// user selected - no matter if VPN is actively used or not.
-	if err := s.setTPLiteUserPreference(data); err != nil {
+	if err := s.setTPLiteUserPreference(isTPLiteEnabled); err != nil {
 		log.Println(internal.WarningPrefix, "failed to set TP Lite in User Preferences:", err)
 	}
 
@@ -574,10 +604,7 @@ func (s *Subscriber) NotifyThreatProtectionLite(data bool) error {
 	// On disconnect (see `NotifyDisconnect`), we are unsetting TP Lite In Current State in the context,
 	// because it stops being actively used after user disconnects.
 	if s.connectionStartTime.IsZero() {
-		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue(data)); err != nil {
-			log.Println(internal.ErrorPrefix, "failed to set TP Lite in Current State:", err)
-			return err
-		}
+		return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue(isTPLiteEnabled))
 	}
 
 	return nil
