@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -104,11 +105,16 @@ type ServersData struct {
 func (data *ServersData) load() error {
 	content, err := internal.FileRead(data.filePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("reading server data: %w", err)
 	}
 
 	decoder := gob.NewDecoder(bytes.NewReader(content))
-	return decoder.Decode(data)
+	err = decoder.Decode(data)
+	if err != nil {
+		return fmt.Errorf("decoding server data: %w", err)
+	}
+
+	return nil
 }
 
 func (data *ServersData) save() error {
@@ -116,12 +122,12 @@ func (data *ServersData) save() error {
 	encoder := gob.NewEncoder(buffer)
 	err := encoder.Encode(data)
 	if err != nil {
-		return err
+		return fmt.Errorf("encoding data: %w", err)
 	}
 
 	err = internal.FileWrite(data.filePath, buffer.Bytes(), internal.PermUserRWGroupROthersR)
 	if err != nil {
-		return err
+		return fmt.Errorf("writign data: %w", err)
 	}
 	return nil
 }

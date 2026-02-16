@@ -70,6 +70,7 @@ const (
 	CodeCleanRecentConnectionError     int64 = 3055
 	CodeARPIgnoreError                 int64 = 3056
 	CodeVirtualLocationDisabled        int64 = 3057
+	CodeServersListNotReady            int64 = 3058
 )
 
 type ErrorWithCode struct {

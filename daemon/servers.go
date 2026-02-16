@@ -465,8 +465,22 @@ func isAnyDIPServersAvailable(dedicatedIPServices []auth.DedicatedIPService) boo
 	return index != -1
 }
 
+// getServerUnavailableError returns either ErrServerDataIsNotReady if data is not valid(i.e outdated) or
+// ErrServerIsUnavailable if data is valid. This is done so that autoconnect can differentiate between the two cases.
+func getServerUnavailableError(serversData ServersData) error {
+	if serversData.isValid() {
+		return internal.ErrServerIsUnavailable
+	}
+	return internal.ErrServerDataIsNotReady
+}
+
 func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string, groupFlag string) (serverSelection, error) {
-	serversList := r.dm.GetServersData().Servers
+	if !r.dm.IsServersDataReady() {
+		return serverSelection{}, internal.ErrServerDataIsNotReady
+	}
+
+	serversData := r.dm.GetServersData()
+	serversList := serversData.Servers
 	selection, err := PickServer(
 		r.serversAPI,
 		r.dm.GetCountryData().Countries,
@@ -491,10 +505,12 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 			return serverSelection{}, internal.ErrNotLoggedIn
 		case errors.Is(err, internal.ErrTagDoesNotExist),
 			errors.Is(err, internal.ErrGroupDoesNotExist),
-			errors.Is(err, internal.ErrServerIsUnavailable),
 			errors.Is(err, internal.ErrDoubleGroup),
 			errors.Is(err, internal.ErrVirtualServerSelected):
 			return serverSelection{}, err
+
+		case errors.Is(err, internal.ErrServerIsUnavailable):
+			return serverSelection{}, getServerUnavailableError(serversData)
 
 		case errors.Is(err, ErrDedicatedIPServer):
 			dedicatedIPServer, err := selectDedicatedIPServer(r.ac, serversList)
@@ -543,7 +559,7 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 		if !core.IsConnectableWithProtocol(cfg.Technology, cfg.AutoConnectData.Protocol)(*selection.server) ||
 			(core.IsObfuscated()(*selection.server) != cfg.AutoConnectData.Obfuscate) {
 			log.Println(internal.ErrorPrefix, "failed to connect because the server doesn't support user settings")
-			return serverSelection{}, internal.ErrServerIsUnavailable
+			return serverSelection{}, getServerUnavailableError(serversData)
 		}
 	}
 
