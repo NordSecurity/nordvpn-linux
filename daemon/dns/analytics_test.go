@@ -166,7 +166,7 @@ func Test_emitDNSConfigurationErrorEvent(t *testing.T) {
 			})
 
 			expectedJson :=
-				fmt.Sprintf("{\"event\":\"dns_configuration_error\",\"namespace\":\"nordvpn-linux\",\"management_service\":\"%s\",\"error_type\":\"%s\",\"cricital\":%s}",
+				fmt.Sprintf("{\"event\":\"dns_configuration_error\",\"namespace\":\"nordvpn-linux\",\"management_service\":\"%s\",\"error_type\":\"%s\",\"critical\":%s}",
 					test.managementService.String(),
 					test.errorType.String(),
 					strconv.FormatBool(test.critical))

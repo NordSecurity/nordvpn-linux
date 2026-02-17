@@ -69,7 +69,7 @@ type errorEvent struct {
 	event
 	ErrorType string `json:"error_type"`
 	// Critical should be set to true if the given error prevents DNS configuration
-	Critical bool `json:"cricital"`
+	Critical bool `json:"critical"`
 }
 
 func newErrorEvent(eventType eventType,
