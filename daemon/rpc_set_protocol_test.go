@@ -12,7 +12,7 @@ import (
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
-	configMock "github.com/NordSecurity/nordvpn-linux/test/mock/config"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 )
 
@@ -64,7 +64,7 @@ func TestSetProtocol_Success(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			uuid, _ := uuid.NewUUID()
-			filesystem := configMock.NewFilesystemMock(t)
+			filesystem := fs.NewSystemFileHandleMock(t)
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",
 				&machineIDGetterMock{machineID: uuid},
@@ -168,7 +168,7 @@ func TestSetProtocol_Error(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			uuid, _ := uuid.NewUUID()
-			filesystem := configMock.NewFilesystemMock(t)
+			filesystem := fs.NewSystemFileHandleMock(t)
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",
 				&machineIDGetterMock{machineID: uuid},

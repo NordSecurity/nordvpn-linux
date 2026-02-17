@@ -10,7 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	mockconfig "github.com/NordSecurity/nordvpn-linux/test/mock/config"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,7 +18,7 @@ import (
 func TestRecentConnectionsStore_Get_EmptyStore(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	connections, err := store.Get()
@@ -31,7 +31,7 @@ func TestRecentConnectionsStore_Get_EmptyStore(t *testing.T) {
 func TestRecentConnectionsStore_Get_ExistingConnections(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	existingConnections := []Model{
 		{
 			Country:        "Germany",
@@ -55,7 +55,7 @@ func TestRecentConnectionsStore_Get_ExistingConnections(t *testing.T) {
 func TestRecentConnectionsStore_Get_InvalidJSON(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	fs.AddFile("/test/path", []byte("invalid json"))
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
@@ -69,7 +69,7 @@ func TestRecentConnectionsStore_Get_InvalidJSON(t *testing.T) {
 func TestRecentConnectionsStore_Add_SingleConnection(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	newConn := Model{
@@ -89,7 +89,7 @@ func TestRecentConnectionsStore_Add_SingleConnection(t *testing.T) {
 func TestRecentConnectionsStore_Add_MovesExistingToFront(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	conn1 := Model{
@@ -119,7 +119,7 @@ func TestRecentConnectionsStore_Add_MovesExistingToFront(t *testing.T) {
 func TestRecentConnectionsStore_Add_RespectsCapacityLimit(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	for i := 0; i < maxRecentConnections+5; i++ {
@@ -140,7 +140,7 @@ func TestRecentConnectionsStore_Add_RespectsCapacityLimit(t *testing.T) {
 func TestRecentConnectionsStore_Add_WriteError(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	fs.WriteErr = errors.New("write error")
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
@@ -158,7 +158,7 @@ func TestRecentConnectionsStore_Add_WriteError(t *testing.T) {
 func TestRecentConnectionsStore_Clean(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	conn := Model{
@@ -179,7 +179,7 @@ func TestRecentConnectionsStore_Clean(t *testing.T) {
 func TestRecentConnectionsStore_Find_DifferentServersAreDifferent(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	// For SPECIFIC_SERVER connection type, different servers should be different
@@ -211,7 +211,7 @@ func TestRecentConnectionsStore_Find_DifferentServersAreDifferent(t *testing.T) 
 func TestRecentConnectionsStore_Find_AllFieldsMustMatch(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	// Use SPECIFIC_SERVER connection type so all fields are compared
@@ -253,7 +253,7 @@ func TestRecentConnectionsStore_Find_AllFieldsMustMatch(t *testing.T) {
 func TestRecentConnectionsStore_Persistence(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	connections := []Model{
@@ -289,7 +289,7 @@ func TestRecentConnectionsStore_Persistence(t *testing.T) {
 func TestRecentConnectionsStore_ConcurrentAccess(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	initial := Model{
@@ -398,7 +398,7 @@ func TestRecentConnectionsStore_RaceCondition(t *testing.T) {
 
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	var wg sync.WaitGroup
@@ -438,7 +438,7 @@ func TestRecentConnectionsStore_RaceCondition(t *testing.T) {
 func TestRecentConnectionsStore_ConcurrentAdd_OrderingGuarantee(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	denmark := Model{
@@ -477,7 +477,7 @@ func TestRecentConnectionsStore_ConcurrentAdd_OrderingGuarantee(t *testing.T) {
 func TestRecentConnectionsStore_CheckExistence_CreatesFile(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	assert.False(t, fs.FileExists("/test/path"))
@@ -494,7 +494,7 @@ func TestRecentConnectionsStore_CheckExistence_CreatesFile(t *testing.T) {
 func TestRecentConnectionsStore_Save_Error(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	fs.WriteErr = errors.New("permission denied")
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
@@ -514,7 +514,7 @@ func TestRecentConnectionsStore_Save_Error(t *testing.T) {
 func TestRecentConnectionsStore_Load_Error(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	fs.ReadErr = errors.New("file not found")
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
@@ -528,7 +528,7 @@ func TestRecentConnectionsStore_Load_Error(t *testing.T) {
 func TestRecentConnectionsStore_Add_ServerTechnologiesSorting(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	conn1 := Model{
@@ -564,7 +564,7 @@ func TestRecentConnectionsStore_Add_ServerTechnologiesSorting(t *testing.T) {
 func TestRecentConnectionsStore_Get_LoadErrorRecreatesFile(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	fs.AddFile("/test/path", []byte("corrupted data"))
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
@@ -581,7 +581,7 @@ func TestRecentConnectionsStore_Get_LoadErrorRecreatesFile(t *testing.T) {
 func TestRecentConnectionsStore_Get_LoadErrorWithSaveError(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	fs.AddFile("/test/path", []byte("corrupted data"))
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
@@ -598,7 +598,7 @@ func TestRecentConnectionsStore_Get_LoadErrorWithSaveError(t *testing.T) {
 func TestRecentConnectionsStore_Add_LoadErrorRecreatesFile(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	fs.AddFile("/test/path", []byte("corrupted data"))
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
@@ -619,7 +619,7 @@ func TestRecentConnectionsStore_Add_LoadErrorRecreatesFile(t *testing.T) {
 func TestRecentConnectionsStore_Add_LoadErrorWithSaveError(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	fs.AddFile("/test/path", []byte("corrupted data"))
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
@@ -640,7 +640,7 @@ func TestRecentConnectionsStore_Add_LoadErrorWithSaveError(t *testing.T) {
 func TestRecentConnectionsStore_Clean_WriteError(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	conn := Model{
@@ -662,7 +662,7 @@ func TestRecentConnectionsStore_Clean_WriteError(t *testing.T) {
 func TestRecentConnectionsStore_Add_SpecificServerWithGroup(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	conn1 := Model{
@@ -693,7 +693,7 @@ func TestRecentConnectionsStore_Add_SpecificServerWithGroup(t *testing.T) {
 func TestRecentConnectionsStore_CheckExistence_WriteError(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	fs.WriteErr = errors.New("permission denied")
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
@@ -707,7 +707,7 @@ func TestRecentConnectionsStore_CheckExistence_WriteError(t *testing.T) {
 func TestRecentConnectionsStore_Get_CheckExistenceError(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	// Set write error to make checkExistence fail when trying to create the file
 	fs.WriteErr = errors.New("permission denied")
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
@@ -723,7 +723,7 @@ func TestRecentConnectionsStore_Get_CheckExistenceError(t *testing.T) {
 func TestRecentConnectionsStore_Add_CheckExistenceError(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	fs.WriteErr = errors.New("permission denied")
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
@@ -742,7 +742,7 @@ func TestRecentConnectionsStore_Add_CheckExistenceError(t *testing.T) {
 func TestRecentConnectionsStore_Add_SaveErrorAfterSuccessfulLoad(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	// First add a connection successfully
@@ -771,7 +771,7 @@ func TestRecentConnectionsStore_Add_SaveErrorAfterSuccessfulLoad(t *testing.T) {
 func TestRecentConnectionsStore_Add_DifferentConnectionTypes(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	tests := []struct {
@@ -855,7 +855,7 @@ func TestRecentConnectionsStore_Add_DifferentConnectionTypes(t *testing.T) {
 func TestRecentConnectionsStore_AddPending_StoresPendingConnection(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	model := Model{
@@ -876,7 +876,7 @@ func TestRecentConnectionsStore_AddPending_StoresPendingConnection(t *testing.T)
 func TestRecentConnectionsStore_AddPending_OverwritesPreviousPending(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	model1 := Model{
@@ -901,7 +901,7 @@ func TestRecentConnectionsStore_AddPending_OverwritesPreviousPending(t *testing.
 func TestRecentConnectionsStore_AddPending_ConcurrentAccess(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	var wg sync.WaitGroup
@@ -930,7 +930,7 @@ func TestRecentConnectionsStore_AddPending_ConcurrentAccess(t *testing.T) {
 func TestRecentConnectionsStore_PopPending_ReturnsAndClearsPending(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	model := Model{
@@ -956,7 +956,7 @@ func TestRecentConnectionsStore_PopPending_ReturnsAndClearsPending(t *testing.T)
 func TestRecentConnectionsStore_PopPending_NoPendingConnection(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	exists, model := store.PopPending()
@@ -967,7 +967,7 @@ func TestRecentConnectionsStore_PopPending_NoPendingConnection(t *testing.T) {
 func TestRecentConnectionsStore_PopPending_ReturnsClone(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	original := Model{
@@ -998,7 +998,7 @@ func TestRecentConnectionsStore_PopPending_ReturnsClone(t *testing.T) {
 func TestRecentConnectionsStore_PopPending_ConcurrentAccess(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	model := Model{
@@ -1040,7 +1040,7 @@ func TestRecentConnectionsStore_PopPending_ConcurrentAccess(t *testing.T) {
 func TestRecentConnectionsStore_AddPending_EmptyModel(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	emptyModel := Model{}
@@ -1054,7 +1054,7 @@ func TestRecentConnectionsStore_AddPending_EmptyModel(t *testing.T) {
 func TestRecentConnectionsStore_PendingWorkflow_FullCycle(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	// Step 1: Add a pending connection
@@ -1090,7 +1090,7 @@ func TestRecentConnectionsStore_PendingWorkflow_FullCycle(t *testing.T) {
 func TestRecentConnectionsStore_Add_PublishesEventOnSuccess(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 
 	eventPublished := false
 	eventPublisher := func() {
@@ -1112,7 +1112,7 @@ func TestRecentConnectionsStore_Add_PublishesEventOnSuccess(t *testing.T) {
 func TestRecentConnectionsStore_Add_DoesNotPublishEventOnError(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	fs.WriteErr = errors.New("write error")
 
 	eventPublished := false
@@ -1135,7 +1135,7 @@ func TestRecentConnectionsStore_Add_DoesNotPublishEventOnError(t *testing.T) {
 func TestRecentConnectionsStore_Add_WorksWithNilEventPublisher(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	conn := Model{
@@ -1155,7 +1155,7 @@ func TestRecentConnectionsStore_Add_WorksWithNilEventPublisher(t *testing.T) {
 func TestRecentConnectionsStore_Clean_PublishesEventOnSuccess(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 
 	eventPublished := false
 	eventPublisher := func() {
@@ -1185,7 +1185,7 @@ func TestRecentConnectionsStore_Clean_PublishesEventOnSuccess(t *testing.T) {
 func TestRecentConnectionsStore_Clean_DoesNotPublishEventOnError(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 
 	eventPublished := false
 	eventPublisher := func() {
@@ -1204,7 +1204,7 @@ func TestRecentConnectionsStore_Clean_DoesNotPublishEventOnError(t *testing.T) {
 func TestRecentConnectionsStore_Clean_WorksWithNilEventPublisher(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	conn := Model{
@@ -1225,7 +1225,7 @@ func TestRecentConnectionsStore_Clean_WorksWithNilEventPublisher(t *testing.T) {
 func TestRecentConnectionsStore_EventPublisher_MultipleOperations(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 
 	eventCount := 0
 	eventPublisher := func() {
@@ -1260,7 +1260,7 @@ func TestRecentConnectionsStore_EventPublisher_MultipleOperations(t *testing.T) 
 func TestRecentConnectionsStore_EventPublisher_ConcurrentOperations(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 
 	var eventCount int
 	var mu sync.Mutex
