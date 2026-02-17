@@ -312,7 +312,7 @@ search home`)
 			resolvconfFileContents:           systemdResolvedResolvconf,
 			setByNmCli:                       true,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: systemdResolved,
+			expectedManagementServiceInEvent: nmcliManaged,
 		},
 		{
 			name:                             "resolv.conf managed by network manager, systemd-resolved and nmcli fail, fallback to use resolv.conf to set DNS",

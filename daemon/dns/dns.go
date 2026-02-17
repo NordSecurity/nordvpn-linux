@@ -197,11 +197,11 @@ func (d *DNSServiceSetter) set(setter Setter, iface string, nameservers []string
 //  4. resolv.conf utility
 //  5. direct write to resolv.conf
 func (d *DNSServiceSetter) setUsingAvailable(iface string, nameservers []string) error {
-	d.analytics.setManagementService(systemdResolved)
 	if err := d.set(d.systemdResolvedSetter, iface, nameservers); err != nil {
 		log.Println(internal.WarningPrefix, dnsPrefix,
 			"failed to configure DNS using systemd-resolved, attempting with nmcli: %w", err)
 	} else {
+		d.analytics.setManagementService(systemdResolved)
 		log.Println(internal.InfoPrefix, dnsPrefix, "DNS configured with systemd-resolved")
 		return nil
 	}
@@ -210,6 +210,7 @@ func (d *DNSServiceSetter) setUsingAvailable(iface string, nameservers []string)
 		log.Println(internal.WarningPrefix, dnsPrefix,
 			"failed to configure DNS using nmcli, attempting with resolv.conf, %w", err)
 	} else {
+		d.analytics.setManagementService(nmcliManaged)
 		log.Println(internal.InfoPrefix, dnsPrefix, "DNS configured with nmcli")
 		return nil
 	}
