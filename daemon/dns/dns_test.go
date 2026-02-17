@@ -3,13 +3,12 @@ package dns
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	"github.com/NordSecurity/nordvpn-linux/test/mock/config"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,36 +40,6 @@ func (m *MockSetter) Unset(iface string) error {
 
 	m.isSet = false
 	return nil
-}
-
-type mockFileInfo struct {
-	os.FileInfo
-}
-
-type mockStatingFilesystemHandle struct {
-	config.FilesystemMock
-	isSameFile bool
-	// statErrors maps file location to a potential stat error
-	statErrors map[string]error
-}
-
-func newMockStatingFilesystemHandle(t *testing.T) *mockStatingFilesystemHandle {
-	return &mockStatingFilesystemHandle{
-		FilesystemMock: config.NewFilesystemMock(t),
-		statErrors:     make(map[string]error),
-	}
-}
-
-func (s *mockStatingFilesystemHandle) stat(location string) (os.FileInfo, error) {
-	if statErr, ok := s.statErrors[location]; ok {
-		return mockFileInfo{}, statErr
-	}
-
-	return mockFileInfo{}, nil
-}
-
-func (s *mockStatingFilesystemHandle) sameFile(fi1 os.FileInfo, fi2 os.FileInfo) bool {
-	return s.isSameFile
 }
 
 type MockMethod struct {
@@ -452,10 +421,10 @@ search home`)
 				unsetErr: test.nmcliUnsetErr,
 			}
 
-			fs := newMockStatingFilesystemHandle(t)
-			fs.statErrors[resolvconfFilePath] = test.resolvConfStatErr
-			fs.statErrors[systemdResolvedLinkTarget] = test.systemdStubStatErr
-			fs.isSameFile = test.resolvConfIsASymlink
+			fs := fs.NewSystemFileHandleMock(t)
+			fs.StatErrors[resolvconfFilePath] = test.resolvConfStatErr
+			fs.StatErrors[systemdResolvedLinkTarget] = test.systemdStubStatErr
+			fs.IsSameFile = test.resolvConfIsASymlink
 			fs.AddFile(resolvconfFilePath, test.resolvconfFileContents)
 
 			analyticsMock := analyticsMock{}
@@ -465,7 +434,7 @@ search home`)
 				resolvconfSetter:      &resolvconfSetter,
 				resolvConfMonitor:     &mockResolvConfMonitor{},
 				analytics:             &analyticsMock,
-				filesystemHandle:      fs,
+				filesystemHandle:      &fs,
 				nmcliSetter:           &nmCliSetter,
 			}
 

@@ -160,7 +160,7 @@ func main() {
 		config.InstallFilePath,
 		Salt,
 		machineIdGenerator,
-		config.StdFilesystemHandle{},
+		internal.StdFilesystemHandle{},
 		configEvents.Config,
 	)
 
@@ -597,7 +597,7 @@ func main() {
 		consentChecker,
 		recents.NewRecentConnectionsStore(
 			internal.RecentVPNConnectionsFilename,
-			&config.StdFilesystemHandle{},
+			&internal.StdFilesystemHandle{},
 			func() {
 				dataUpdateEvents.RecentsUpdate.Publish(events.DataRecentsChanged{})
 			},

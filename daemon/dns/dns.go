@@ -7,10 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
@@ -56,25 +54,6 @@ func (e dnsManagementService) String() string {
 
 var ErrDNSNotSet = errors.New("DNS unsetter not set")
 
-// statingFilesystemHandle extends FilesystemHandle with wrappers for os.Stat and os.SameFile
-type statingFilesystemHandle interface {
-	config.FilesystemHandle
-	stat(location string) (os.FileInfo, error)
-	sameFile(os.FileInfo, os.FileInfo) bool
-}
-
-type stdStatingFilesystemHandle struct {
-	config.StdFilesystemHandle
-}
-
-func (s *stdStatingFilesystemHandle) stat(location string) (os.FileInfo, error) {
-	return os.Stat(location)
-}
-
-func (s *stdStatingFilesystemHandle) sameFile(fi1 os.FileInfo, fi2 os.FileInfo) bool {
-	return os.SameFile(fi1, fi2)
-}
-
 // Setter is responsible for configuring DNS.
 type Setter interface {
 	Set(iface string, nameservers []string) error
@@ -101,7 +80,7 @@ type DNSServiceSetter struct {
 	//	2. direct write to /etc/resolv.conf
 	resolvconfSetter  Setter
 	unsetter          Setter
-	filesystemHandle  statingFilesystemHandle
+	filesystemHandle  internal.FileSystemHandle
 	analytics         analytics
 	resolvConfMonitor resolvConfMonitor
 }
@@ -114,7 +93,7 @@ func NewDNSServiceSetter(publisher events.Publisher[string],
 		systemdResolvedSetter: NewSetter(publisher, &Resolved{}, &Resolvectl{}),
 		resolvconfSetter:      NewSetter(publisher, &Resolvconf{}, &ResolvConfFile{}),
 		nmcliSetter:           NewSetter(publisher, newNMCli()),
-		filesystemHandle:      &stdStatingFilesystemHandle{},
+		filesystemHandle:      internal.StdFilesystemHandle{},
 		analytics:             analytics,
 		resolvConfMonitor:     &resolvConfMonitor,
 	}
@@ -138,20 +117,20 @@ func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfComment() (dnsMa
 }
 
 func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfLinkTarget() (dnsManagementService, error) {
-	resolvConfFileInfo, err := d.filesystemHandle.stat(resolvconfFilePath)
+	resolvConfFileInfo, err := d.filesystemHandle.Stat(resolvconfFilePath)
 	if err != nil {
 		return unknown, fmt.Errorf("failed to stat /etc/resolv.conf: %w", err)
 	}
 
-	if systemdResolvedFileInfo, err := d.filesystemHandle.stat(systemdResolvedLinkTarget); err != nil {
+	if systemdResolvedFileInfo, err := d.filesystemHandle.Stat(systemdResolvedLinkTarget); err != nil {
 		log.Println(internal.WarningPrefix, dnsPrefix, "failed to stat systemd-resolved stub:", err)
-	} else if d.filesystemHandle.sameFile(resolvConfFileInfo, systemdResolvedFileInfo) {
+	} else if d.filesystemHandle.SameFile(resolvConfFileInfo, systemdResolvedFileInfo) {
 		return systemdResolved, nil
 	}
 
-	if nmcliFileInfo, err := d.filesystemHandle.stat(networkManagerLinkTarget); err != nil {
+	if nmcliFileInfo, err := d.filesystemHandle.Stat(networkManagerLinkTarget); err != nil {
 		log.Println(internal.WarningPrefix, dnsPrefix, "failed to stat NetworkManager resolv.conf:", err)
-	} else if d.filesystemHandle.sameFile(resolvConfFileInfo, nmcliFileInfo) {
+	} else if d.filesystemHandle.SameFile(resolvConfFileInfo, nmcliFileInfo) {
 		return nmcliManaged, nil
 	}
 
