@@ -6,11 +6,14 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	mockevents "github.com/NordSecurity/nordvpn-linux/test/mock/events"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_emitResolvConfOverwrittenEvent(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	mockPublisher := mockevents.MockPublisher[events.DebuggerEvent]{}
 	analytics := newDNSAnalytics(&mockPublisher)
 	analytics.emitResolvConfOverwrittenEvent(unknown)
@@ -31,6 +34,8 @@ func Test_emitResolvConfOverwrittenEvent(t *testing.T) {
 }
 
 func Test_emitDNSConfiguredEvent(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name              string
 		managementService dnsManagementService
@@ -72,7 +77,9 @@ func Test_emitDNSConfiguredEvent(t *testing.T) {
 	}
 }
 
-func Test_emidDNSConfigurationErrorEvent(t *testing.T) {
+func Test_emitDNSConfigurationErrorEvent(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	tests := []struct {
 		name              string
 		managementService dnsManagementService
@@ -133,7 +140,11 @@ func Test_emidDNSConfigurationErrorEvent(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			mockPublisher := mockevents.MockPublisher[events.DebuggerEvent]{}
 			analytics := newDNSAnalytics(&mockPublisher)
-			analytics.emitDNSConfigurationErrorEvent(test.managementService, test.errorType, test.critical)
+			if test.critical {
+				analytics.emitDNSConfigurationCriticalErrorEvent(test.managementService, test.errorType)
+			} else {
+				analytics.emitDNSConfigurationErrorEvent(test.managementService, test.errorType)
+			}
 
 			event, n, stackIsEmpty := mockPublisher.PopEvent()
 

@@ -168,7 +168,8 @@ func (e errorType) String() string {
 type analytics interface {
 	emitResolvConfOverwrittenEvent(managementService dnsManagementService)
 	emitDNSConfiguredEvent(managementService dnsManagementService)
-	emitDNSConfigurationErrorEvent(managementService dnsManagementService, errorType errorType, critical bool)
+	emitDNSConfigurationErrorEvent(managementService dnsManagementService, errorType errorType)
+	emitDNSConfigurationCriticalErrorEvent(managementService dnsManagementService, errorType errorType)
 }
 
 type dnsAnalytics struct {
@@ -199,13 +200,23 @@ func (d *dnsAnalytics) emitDNSConfiguredEvent(managementService dnsManagementSer
 	d.debugPublisher.Publish(*debuggerEvent)
 }
 
-func (d *dnsAnalytics) emitDNSConfigurationErrorEvent(managementService dnsManagementService,
-	errorType errorType,
-	critical bool) {
+func (d *dnsAnalytics) emitDNSConfigurationErrorEvent(managementService dnsManagementService, errorType errorType) {
 	debuggerEvent := newErrorEvent(dnsConfigurationErrorEventType,
 		managementService,
 		errorType,
-		critical).toDebuggerEvent()
+		false).toDebuggerEvent()
+
+	log.Printf("%s%s publishing event: %+v", internal.DebugPrefix, dnsPrefix, debuggerEvent)
+
+	d.debugPublisher.Publish(*debuggerEvent)
+}
+
+func (d *dnsAnalytics) emitDNSConfigurationCriticalErrorEvent(managementService dnsManagementService,
+	errorType errorType) {
+	debuggerEvent := newErrorEvent(dnsConfigurationErrorEventType,
+		managementService,
+		errorType,
+		true).toDebuggerEvent()
 
 	log.Printf("%s%s publishing event: %+v", internal.DebugPrefix, dnsPrefix, debuggerEvent)
 

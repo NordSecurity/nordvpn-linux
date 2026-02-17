@@ -38,10 +38,14 @@ func (a *analyticsMock) emitDNSConfiguredEvent(managementService dnsManagementSe
 	a.managementService = managementService
 }
 
-func (a *analyticsMock) emitDNSConfigurationErrorEvent(managementService dnsManagementService,
-	errorType errorType,
-	critical bool) {
-	a.emittedErrors = append(a.emittedErrors, mockErrorEvent{errorType: errorType, critical: critical})
+func (a *analyticsMock) emitDNSConfigurationErrorEvent(managementService dnsManagementService, errorType errorType) {
+	a.emittedErrors = append(a.emittedErrors, mockErrorEvent{errorType: errorType, critical: false})
+	a.managementService = managementService
+}
+
+func (a *analyticsMock) emitDNSConfigurationCriticalErrorEvent(managementService dnsManagementService,
+	errorType errorType) {
+	a.emittedErrors = append(a.emittedErrors, mockErrorEvent{errorType: errorType, critical: true})
 	a.managementService = managementService
 }
 

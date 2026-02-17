@@ -418,7 +418,7 @@ search home`)
 			resolvconfSetErr:       errDNSSetFailed,
 			systemdResolvedSetErr:  errDNSSetFailed,
 			expectedSetErr:         errDNSSetFailed,
-			expectedUnsetErr:       ErrDNSNotSet,
+			expectedUnsetErr:       errDNSMissingUnsetter,
 			expectedEmittedErrors:  []mockErrorEvent{{errorType: setFailedErrorType, critical: true}},
 		},
 		{
