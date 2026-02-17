@@ -318,7 +318,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		log.Println(internal.WarningPrefix, LogComponentPrefix, "failed to restore token renew date:", err)
 	}
 
-	if err := s.setTPLiteUserPreference(cfg.AutoConnectData.ThreatProtectionLite); err != nil {
+	if err := s.response(s.mooseSetTPLiteUserPrefFunc(cfg.AutoConnectData.ThreatProtectionLite)); err != nil {
 		return fmt.Errorf("setting TP Lite in user preferences: %w", err)
 	}
 
@@ -341,10 +341,6 @@ func (s *Subscriber) Stop() error {
 	}
 
 	return nil
-}
-
-func (s *Subscriber) setTPLiteUserPreference(enabled bool) error {
-	return s.response(s.mooseSetTPLiteUserPrefFunc(enabled))
 }
 
 func (s *Subscriber) NotifyKillswitch(data bool) error {
@@ -608,7 +604,7 @@ func (s *Subscriber) NotifyThreatProtectionLite(isTPLiteEnabled bool) error {
 func (s *Subscriber) setTPLite(isTPLiteEnabled bool) error {
 	// User Preferences field in moose context is used to see what's the setting
 	// user selected - no matter if VPN is actively used or not.
-	if err := s.setTPLiteUserPreference(isTPLiteEnabled); err != nil {
+	if err := s.response(s.mooseSetTPLiteUserPrefFunc(isTPLiteEnabled)); err != nil {
 		log.Println(internal.WarningPrefix, "failed to set TP Lite in User Preferences:", err)
 	}
 
