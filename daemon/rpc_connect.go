@@ -157,6 +157,10 @@ func (r *RPC) connect(
 			return true, srv.Send(&pb.Payload{Type: internal.CodeServerUnavailable})
 		}
 
+		if errors.Is(err, internal.ErrServerDataIsNotReady) {
+			return true, srv.Send(&pb.Payload{Type: internal.CodeServersListNotReady})
+		}
+
 		if errors.Is(err, internal.ErrVirtualServerSelected) {
 			return true, srv.Send(&pb.Payload{Type: internal.CodeVirtualLocationDisabled})
 		}

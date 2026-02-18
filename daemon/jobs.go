@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-co-op/gocron/v2"
 	"github.com/godbus/dbus/v5"
+	"github.com/google/uuid"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
@@ -39,36 +40,60 @@ func (r *RPC) StartJobs(
 	// to avoid blocking other critical startup tasks
 	go r.emitAllowlistSnapshot()
 
+	gocronErrorLogger := func(_ uuid.UUID, jobName string, err error) {
+		log.Println(internal.ErrorPrefix, "job:", jobName, "failed:", err)
+	}
+
 	// order of the jobs below matters
 	// servers job requires geo info and configs data to create server list
 	// TODO what if configs file is deleted just before servers job or disk is full?
-	if _, err := r.scheduler.NewJob(gocron.DurationJob(6*time.Hour), gocron.NewTask(JobCountries(r.dm, r.serversAPI)), gocron.WithName("job countries")); err != nil {
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(6*time.Hour),
+		gocron.NewTask(JobCountries(r.dm, r.serversAPI)),
+		gocron.WithName("job countries"),
+		gocron.WithEventListeners(gocron.AfterJobRunsWithError(gocronErrorLogger))); err != nil {
 		log.Println(internal.WarningPrefix, "job countries schedule error:", err)
 	}
 
-	jobInsights, err := r.scheduler.NewJob(gocron.DurationJob(30*time.Minute), gocron.NewTask(JobInsights(r.dm, r.api, r.netw, r.events, false)), gocron.WithName("job insights"))
+	jobInsights, err := r.scheduler.NewJob(gocron.DurationJob(30*time.Minute),
+		gocron.NewTask(JobInsights(r.dm, r.api, r.netw, r.events, false)),
+		gocron.WithName("job insights"),
+		gocron.WithEventListeners(gocron.AfterJobRunsWithError(gocronErrorLogger)))
 	if err != nil {
 		log.Println(internal.WarningPrefix, "job insights schedule error:", err)
 	}
 
-	if _, err := r.scheduler.NewJob(gocron.DurationJob(1*time.Hour), gocron.NewTask(JobServers(r.dm, r.serversAPI, true)), gocron.WithName("job servers")); err != nil {
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(1*time.Hour),
+		gocron.NewTask(JobServers(r.dm, r.serversAPI, true)),
+		gocron.WithName("job servers"), gocron.WithEventListeners(gocron.AfterJobRunsWithError(gocronErrorLogger))); err != nil {
 		log.Println(internal.WarningPrefix, "job servers schedule error:", err)
 	}
 	// TODO if autoconnect runs before servers job, it will return zero servers list
 
-	if _, err := r.scheduler.NewJob(gocron.DurationJob(15*time.Minute), gocron.NewTask(JobServerCheck(r.dm, r.serversAPI, r.netw, r.lastServer)), gocron.WithName("job servers check")); err != nil {
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(15*time.Minute),
+		gocron.NewTask(JobServerCheck(r.dm, r.serversAPI, r.netw, r.lastServer)),
+		gocron.WithName("job servers check"),
+		gocron.WithEventListeners(gocron.AfterJobRunsWithError(gocronErrorLogger))); err != nil {
 		log.Println(internal.WarningPrefix, "job servers check schedule error:", err)
 	}
 
-	if _, err := r.scheduler.NewJob(gocron.DurationJob(24*time.Hour), gocron.NewTask(JobTemplates(r.cdn)), gocron.WithName("job templates")); err != nil {
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(24*time.Hour),
+		gocron.NewTask(JobTemplates(r.cdn)),
+		gocron.WithName("job templates"),
+		gocron.WithEventListeners(gocron.AfterJobRunsWithError(gocronErrorLogger))); err != nil {
 		log.Println(internal.WarningPrefix, "job templates schedule error:", err)
 	}
 
-	if _, err := r.scheduler.NewJob(gocron.DurationJob(3*time.Hour), gocron.NewTask(JobVersionCheck(r.dm, r.repo, r.statePublisher)), gocron.WithName("job version")); err != nil {
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(3*time.Hour),
+		gocron.NewTask(JobVersionCheck(r.dm, r.repo, r.statePublisher)),
+		gocron.WithName("job version"),
+		gocron.WithEventListeners(gocron.AfterJobRunsWithError(gocronErrorLogger))); err != nil {
 		log.Println(internal.WarningPrefix, "job version schedule error:", err)
 	}
 
-	if _, err := r.scheduler.NewJob(gocron.DurationJob(heartBeatPeriod), gocron.NewTask(JobHeartBeat(r.ac, heartBeatPublisher, heartBeatPeriod)), gocron.WithName("job heart beat")); err != nil {
+	if _, err := r.scheduler.NewJob(gocron.DurationJob(heartBeatPeriod),
+		gocron.NewTask(JobHeartBeat(r.ac, heartBeatPublisher, heartBeatPeriod)),
+		gocron.WithName("job heart beat"),
+		gocron.WithEventListeners(gocron.AfterJobRunsWithError(gocronErrorLogger))); err != nil {
 		log.Println(internal.WarningPrefix, "job heart beat schedule error:", err)
 	}
 	if _, err := r.scheduler.NewJob(gocron.DurationJob(7*24*time.Hour), gocron.NewTask(func() {
@@ -258,6 +283,8 @@ func (a *autoconnectServer) Send(data *pb.Payload) error {
 	switch data.GetType() {
 	case internal.CodeFailure:
 		a.err = errors.New("autoconnect failure")
+	case internal.CodeServersListNotReady:
+		a.err = errors.New("servers list not ready")
 	}
 	return nil
 }
@@ -295,6 +322,8 @@ func (r *RPC) StartAutoConnect(timeoutFn network.CalculateRetryDelayForAttempt) 
 
 		if err := r.doAutoConnect(); err == nil {
 			return nil
+		} else {
+			log.Println(internal.ErrorPrefix, "autoconnect failed:", err)
 		}
 		tryAfterDuration := timeoutFn(tries)
 		tries++

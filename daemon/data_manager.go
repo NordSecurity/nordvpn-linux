@@ -29,6 +29,7 @@ type DataManager struct {
 	countryData      CountryData
 	insightsData     InsightsData
 	serversData      ServersData
+	serversDataReady bool
 	versionData      VersionData
 	accountData      AccountData
 	dataUpdateEvents *events.DataUpdateEvents
@@ -62,6 +63,8 @@ func (dm *DataManager) LoadData() error {
 	}
 	if err := dm.serversData.load(); err != nil {
 		errs = append(errs, fmt.Errorf("loading servers data: %w", err))
+	} else {
+		dm.serversDataReady = true
 	}
 	if err := dm.versionData.load(); err != nil {
 		errs = append(errs, fmt.Errorf("loading version data: %w", err))
@@ -121,6 +124,14 @@ func (dm *DataManager) IsServersDataValid() bool {
 	return dm.serversData.isValid()
 }
 
+// IsServersDataReady returns true if servers data was loaded from disk or fetched from the backend api at any point
+// throughout the runtime
+func (dm *DataManager) IsServersDataReady() bool {
+	dm.mu.Lock()
+	defer dm.mu.Unlock()
+	return dm.serversDataReady
+}
+
 func (dm *DataManager) GetServersData() ServersData {
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
@@ -146,7 +157,14 @@ func (dm *DataManager) SetServersData(updatedAt time.Time, servers core.Servers,
 		Hash:      hash,
 		filePath:  dm.serversData.filePath,
 	}
-	return dm.serversData.save()
+	log.Println(internal.InfoPrefix, "saving new servers data")
+	err = dm.serversData.save()
+	if err != nil {
+		return fmt.Errorf("saving servers data: %w", err)
+	}
+
+	dm.serversDataReady = true
+	return nil
 }
 
 func (dm *DataManager) UpdateServerPenalty(s core.Server) error {

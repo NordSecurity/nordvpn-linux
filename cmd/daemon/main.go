@@ -712,9 +712,12 @@ func main() {
 
 	go func() {
 		if err := dm.LoadData(); err != nil {
-			log.Println(internal.WarningPrefix, err)
+			log.Println(internal.WarningPrefix, "loading data:", err)
+		} else {
+			log.Println(internal.InfoPrefix, "data successfully loaded from disk")
 		}
 	}()
+
 	rpc.StartJobs(statePublisher, heartBeatSubject)
 	rpc.StartRemoteConfigLoaderJob(rcConfig)
 	meshService.StartJobs()
