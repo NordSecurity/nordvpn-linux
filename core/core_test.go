@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"compress/gzip"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -257,4 +258,90 @@ func TestMaxBytes(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSimpleAPI_SizeLimitAppliedToCompressedResponse(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	// Create a large repetitive string that compresses well
+	largeData := make([]byte, 1024*1024) // 1MB of data
+	for i := range largeData {
+		largeData[i] = 'A'
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Encoding", "gzip")
+		w.Header().Set("Content-Type", "application/json")
+
+		var buf bytes.Buffer
+		gz := gzip.NewWriter(&buf)
+		_, _ = gz.Write(largeData)
+		_ = gz.Close()
+
+		compressedSize := buf.Len()
+		t.Logf("Original size: %d, Compressed size: %d, Compression ratio: %.2fx",
+			len(largeData), compressedSize, float64(len(largeData))/float64(compressedSize))
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(buf.Bytes())
+	}))
+	defer server.Close()
+
+	client := &http.Client{}
+
+	api := NewSimpleAPI(
+		"test-agent",
+		server.URL,
+		client,
+		response.NoopValidator{},
+	)
+
+	// The request should succeed because the compressed size is well under the limit
+	_, err := api.Plans()
+	// We'll get a JSON decode error since our data isn't valid JSON,
+	// but that's fine - we're testing that we don't get a size limit error
+	if err != nil {
+		assert.NotContains(t, err.Error(), "max limit")
+		assert.NotContains(t, err.Error(), "exceeded")
+	}
+}
+
+func TestSimpleAPI_OversizedCompressedResponseRejected(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	// We use a size slightly over the limit to trigger rejection
+	oversizedData := make([]byte, internal.MaxBytesLimit+1000)
+	for i := range oversizedData {
+		oversizedData[i] = byte(rand.Intn(256))
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Encoding", "gzip")
+		w.Header().Set("Content-Type", "application/json")
+
+		var buf bytes.Buffer
+		gz := gzip.NewWriter(&buf)
+		_, _ = gz.Write(oversizedData)
+		_ = gz.Close()
+
+		t.Logf("Sending compressed response of size: %d bytes (original: %d)",
+			buf.Len(), len(oversizedData))
+
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(buf.Bytes())
+	}))
+	defer server.Close()
+
+	client := &http.Client{}
+
+	api := NewSimpleAPI(
+		"test-agent",
+		server.URL,
+		client,
+		response.NoopValidator{},
+	)
+
+	_, err := api.Plans()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "max limit")
 }
