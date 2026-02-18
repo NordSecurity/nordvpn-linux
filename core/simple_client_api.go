@@ -101,27 +101,31 @@ func (api *SimpleClientAPI) do(req *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 
-	switch req.Method {
-	case http.MethodHead:
-		resp.Body = io.NopCloser(bytes.NewReader(nil))
-	default:
-		// Decode response body if it is encoded
-		switch resp.Header.Get("Content-Encoding") {
-		case "gzip":
-			reader, err := gzip.NewReader(resp.Body)
-			if err != nil {
-				return nil, err
-			}
-			resp.Body = reader
-		}
-	}
-
 	defer resp.Body.Close()
 
 	var body []byte
-	body, err = MaxBytesReadAll(resp.Body)
-	if err != nil {
-		return nil, err
+	switch req.Method {
+	case http.MethodHead:
+		body = nil
+	default:
+		// Read the response body with size limit applied to the compressed data
+		body, err = MaxBytesReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		// Decompress after applying the size limit
+		if resp.Header.Get("Content-Encoding") == "gzip" {
+			reader, err := gzip.NewReader(bytes.NewReader(body))
+			if err != nil {
+				return nil, err
+			}
+			defer reader.Close()
+			body, err = io.ReadAll(reader)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	resp.Body = io.NopCloser(bytes.NewBuffer(body))
