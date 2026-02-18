@@ -5,6 +5,7 @@ package moose
 import (
 	"math"
 	moose "moose/events"
+	"reflect"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -16,6 +17,19 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"gotest.tools/v3/assert"
 )
+
+func TestNewSubscriber_AllMooseFuncsSet(t *testing.T) {
+	category.Set(t, category.Unit)
+	// values are not important, `mooseFuncs` field needs to be set properly
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+
+	v := reflect.ValueOf(sub.mooseFuncs)
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Type().Field(i)
+		value := v.Field(i)
+		assert.Equal(t, value.IsNil(), false, "mooseFunc %q is not set", field.Name)
+	}
+}
 
 func TestIsPaymentValid(t *testing.T) {
 	category.Set(t, category.Unit)
