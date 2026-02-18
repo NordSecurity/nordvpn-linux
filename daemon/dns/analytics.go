@@ -54,7 +54,7 @@ func (e event) toContextPaths() []events.ContextValue {
 func (e event) toDebuggerEvent() *events.DebuggerEvent {
 	jsonData, err := json.Marshal(e)
 	if err != nil {
-		log.Println(internal.DebugPrefix, dnsPrefix, "failed to serialize event json for resolv.conf overwrite:", err)
+		log.Println(internal.WarningPrefix, dnsPrefix, "failed to serialize event json for resolv.conf overwrite:", err)
 		jsonData = []byte("{}")
 	}
 
@@ -182,22 +182,21 @@ func newDNSAnalytics(publisher events.Publisher[events.DebuggerEvent]) *dnsAnaly
 	}
 }
 
+func (d *dnsAnalytics) publish(event *events.DebuggerEvent) {
+	log.Printf("%s%s publishing event: %+v", internal.DebugPrefix, dnsPrefix, event)
+	d.debugPublisher.Publish(*event)
+}
+
 func (d *dnsAnalytics) emitResolvConfOverwrittenEvent(managementService dnsManagementService) {
 	debuggerEvent := newEvent(resolvConfOverwrittenEventType,
 		managementService).toDebuggerEvent()
-
-	log.Printf("%s%s publishing event: %+v", internal.DebugPrefix, dnsPrefix, debuggerEvent)
-
-	d.debugPublisher.Publish(*debuggerEvent)
+	d.publish(debuggerEvent)
 }
 
 func (d *dnsAnalytics) emitDNSConfiguredEvent(managementService dnsManagementService) {
 	debuggerEvent := newEvent(dnsConfiguredEventType,
 		managementService).toDebuggerEvent()
-
-	log.Printf("%s%s publishing event: %+v", internal.DebugPrefix, dnsPrefix, debuggerEvent)
-
-	d.debugPublisher.Publish(*debuggerEvent)
+	d.publish(debuggerEvent)
 }
 
 func (d *dnsAnalytics) emitDNSConfigurationErrorEvent(managementService dnsManagementService, errorType errorType) {
@@ -205,10 +204,7 @@ func (d *dnsAnalytics) emitDNSConfigurationErrorEvent(managementService dnsManag
 		managementService,
 		errorType,
 		false).toDebuggerEvent()
-
-	log.Printf("%s%s publishing event: %+v", internal.DebugPrefix, dnsPrefix, debuggerEvent)
-
-	d.debugPublisher.Publish(*debuggerEvent)
+	d.publish(debuggerEvent)
 }
 
 func (d *dnsAnalytics) emitDNSConfigurationCriticalErrorEvent(managementService dnsManagementService,
@@ -217,8 +213,5 @@ func (d *dnsAnalytics) emitDNSConfigurationCriticalErrorEvent(managementService 
 		managementService,
 		errorType,
 		true).toDebuggerEvent()
-
-	log.Printf("%s%s publishing event: %+v", internal.DebugPrefix, dnsPrefix, debuggerEvent)
-
-	d.debugPublisher.Publish(*debuggerEvent)
+	d.publish(debuggerEvent)
 }

@@ -52,7 +52,7 @@ var (
 	// errDNSSetFailed is returned when all DNS set methods fail
 	errDNSSetFailed = errors.New("all dns set attempts failed")
 	// errDNSSetFailedNoBinaries is returned when no binaries necessary to set DNS were found
-	errDNSSetFailedNoBinaries = errors.New("no binaries to set DNS with this method wre found")
+	errDNSSetFailedNoBinaries = errors.New("no binaries to set DNS with this method were found")
 )
 
 // statingFilesystemHandle extends FilesystemHandle with wrappers for os.Stat and os.SameFile
