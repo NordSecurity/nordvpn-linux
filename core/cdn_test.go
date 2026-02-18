@@ -320,4 +320,3 @@ func TestCDNAPI_Request_SizeLimitAppliesToCompressedData(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, len(largeData), len(resp))
 }
-
