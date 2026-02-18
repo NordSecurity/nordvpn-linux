@@ -619,7 +619,7 @@ func (s *Subscriber) setTPLite(isTPLiteEnabled bool) error {
 	// On disconnect (see `NotifyDisconnect`), we are unsetting TP Lite In Current State in the context,
 	// because it stops being actively used after user disconnects.
 	if s.connectionStartTime.IsZero() {
-		errs = append(errs, s.response(s.mooseSetTPLiteCurrentFunc(isTPLiteEnabled)))
+		errs = append(errs, s.response(s.mooseFuncs.setTPLiteCurrentState(isTPLiteEnabled)))
 	}
 
 	return errors.Join(errs...)
@@ -1342,4 +1342,3 @@ func deviceTypeToInternalType(deviceType sysinfo.SystemDeviceType) moose.Nordvpn
 
 	return dt
 }
-
