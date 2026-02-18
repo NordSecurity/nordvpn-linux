@@ -101,7 +101,7 @@ func (e errorEvent) toContextPaths() []events.ContextValue {
 func (e errorEvent) toDebuggerEvent() *events.DebuggerEvent {
 	jsonData, err := json.Marshal(e)
 	if err != nil {
-		log.Println(internal.DebugPrefix,
+		log.Println(internal.WarningPrefix,
 			dnsPrefix,
 			"failed to serialize error event json for resolv.conf overwrite:", err)
 		jsonData = []byte("{}")
