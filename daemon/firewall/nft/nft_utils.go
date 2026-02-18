@@ -194,6 +194,43 @@ func addIpCheckAndSetMetaMark(fwmark uint32, ipSet *nftables.Set, match matchTyp
 			Register:       1,
 		},
 	}
+}
+
+func addIpCheckInSet(ipSet *nftables.Set, match matchType) []expr.Any {
+	if ipSet == nil {
+		return []expr.Any{}
+	}
+	// IPv4 header saddr offset 12, daddr at ofset 16
+	var offset uint32 = 12
+	if match == MATCH_DESTINATION {
+		offset = 16
+	}
+
+	return []expr.Any{
+		// check that it is IPv4 address
+		// meta nfproto == ipv4
+		&expr.Meta{
+			Key:      expr.MetaKeyNFPROTO,
+			Register: 1,
+		},
+		&expr.Cmp{
+			Register: 1,
+			Op:       expr.CmpOpEq,
+			Data:     []byte{unix.NFPROTO_IPV4},
+		},
+		// read address source or destination and check in set
+		&expr.Payload{
+			DestRegister: 1,
+			Base:         expr.PayloadBaseNetworkHeader,
+			Offset:       offset,
+			Len:          4,
+		},
+		&expr.Lookup{
+			SourceRegister: 1,
+			SetName:        ipSet.Name,
+			SetID:          ipSet.ID,
+		},
+	}
 
 }
 
@@ -375,4 +412,20 @@ func convertPortsToSetElements(ports []int64) []nftables.SetElement {
 	})
 
 	return elems
+}
+
+func converCidrToSetElements(cidrList []string) ([]nftables.SetElement, error) {
+	var elems []nftables.SetElement
+	for _, cidr := range cidrList {
+		start, end, err := firstLastV4(cidr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert %s: %w", cidr, err)
+		}
+		elems = append(elems,
+			nftables.SetElement{Key: start},
+			nftables.SetElement{Key: end, IntervalEnd: true},
+		)
+	}
+
+	return elems, nil
 }

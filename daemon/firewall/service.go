@@ -1,12 +1,34 @@
 package firewall
 
-import "github.com/NordSecurity/nordvpn-linux/config"
+import (
+	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+)
 
 // Service adapts system firewall configuration to firewall rules
 //
 // Used by callers.
+
+type VpnInfo struct {
+	TunnelInterface string
+	AllowList       config.Allowlist
+	KillSwitch      bool
+}
+
+func NewVpnInfo(
+	tunnelInterface string,
+	allowList config.Allowlist,
+	killSwitch bool,
+) VpnInfo {
+	return VpnInfo{
+		TunnelInterface: tunnelInterface,
+		AllowList:       allowList,
+		KillSwitch:      killSwitch,
+	}
+}
+
 type Service interface {
-	Configure(tunnelInterface string, allowList config.Allowlist) error
+	Configure(vpnInfo *VpnInfo, meshnetMap *mesh.MachineMap) error
 	Remove() error
 	Flush() error
 	Disable() error
@@ -28,6 +50,6 @@ type Service interface {
 // }
 
 type FwImpl interface {
-	Configure(tunnelInterface string, allowList config.Allowlist) error
+	Configure(vpnInfo *VpnInfo, meshnetMap *mesh.MachineMap) error
 	Flush() error
 }

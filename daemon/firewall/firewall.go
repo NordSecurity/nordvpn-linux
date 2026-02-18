@@ -8,7 +8,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
@@ -33,17 +33,18 @@ func NewFirewall(impl FwImpl, enabled bool) *Firewall {
 	}
 }
 
-func (fw *Firewall) Configure(tunnelInterface string, allowList config.Allowlist) error {
+func (fw *Firewall) Configure(vpnInfo *VpnInfo, meshnetMap *mesh.MachineMap) error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
 	log.Println(internal.InfoPrefix, logPrefix, "configure firewall, enabled:", fw.enabled)
 
 	if !fw.enabled {
-		return errors.New("firewall not enabled")
+		log.Println("firewall not enabled")
+		return nil
 	}
 
-	return fw.impl.Configure(tunnelInterface, allowList)
+	return fw.impl.Configure(vpnInfo, meshnetMap)
 }
 
 func (fw *Firewall) Remove() error {
@@ -53,7 +54,8 @@ func (fw *Firewall) Remove() error {
 	log.Println(internal.InfoPrefix, logPrefix, "remove firewall, older status:", fw.enabled)
 
 	if !fw.enabled {
-		return errors.New("firewall not enabled")
+		log.Println("firewall not enabled")
+		return nil
 	}
 
 	return fw.impl.Flush()
@@ -93,6 +95,11 @@ func (fw *Firewall) Disable() error {
 func (fw *Firewall) Flush() error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
+
+	if !fw.enabled {
+		log.Println("firewall not enabled")
+		return nil
+	}
 
 	return fw.impl.Flush()
 }
