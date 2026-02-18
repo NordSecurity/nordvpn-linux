@@ -160,7 +160,7 @@ func (dm *DataManager) SetServersData(updatedAt time.Time, servers core.Servers,
 	log.Println(internal.InfoPrefix, "saving new servers data")
 	err = dm.serversData.save()
 	if err != nil {
-		return fmt.Errorf("saving servers data: %W", err)
+		return fmt.Errorf("saving servers data: %w", err)
 	}
 
 	dm.serversDataReady = true

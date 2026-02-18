@@ -127,7 +127,7 @@ func (data *ServersData) save() error {
 
 	err = internal.FileWrite(data.filePath, buffer.Bytes(), internal.PermUserRWGroupROthersR)
 	if err != nil {
-		return fmt.Errorf("writign data: %w", err)
+		return fmt.Errorf("writing data: %w", err)
 	}
 	return nil
 }
