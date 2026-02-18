@@ -387,12 +387,12 @@ func (s *Subscriber) NotifyDNS(data events.DataDNS) error {
 
 func (s *Subscriber) setCustomDNS(data events.DataDNS) error {
 	dnsIPCount := len(data.Ips)
-	if err := s.response(s.mooseSetCustomDNSMetaFunc(fmt.Sprintf(`{"count":%d}`, dnsIPCount))); err != nil {
+	if err := s.response(s.mooseFuncs.setCustomDNSMeta(fmt.Sprintf(`{"count":%d}`, dnsIPCount))); err != nil {
 		return fmt.Errorf("setting custom DNS metadata (count=%d): %w", dnsIPCount, err)
 	}
 
 	isCustomDNSEnabled := dnsIPCount > 0
-	if err := s.response(s.mooseSetCustomDNSValueFunc(isCustomDNSEnabled)); err != nil {
+	if err := s.response(s.mooseFuncs.setCustomDNSValue(isCustomDNSEnabled)); err != nil {
 		return fmt.Errorf("setting custom DNS enabled value (enabled=%v): %w", isCustomDNSEnabled, err)
 	}
 	return nil
@@ -558,7 +558,7 @@ func getTokenRenewDate(cfg *config.Config) string {
 
 // setTokenRenewDate sets the token renewal date in moose context
 func (s *Subscriber) setTokenRenewDate(unixTimestamp int64) error {
-	if err := s.response(s.mooseSetTokenRenewDateFunc(int32(unixTimestamp))); err != nil {
+	if err := s.response(s.mooseFuncs.setTokenRenewDateCurrentState(int32(unixTimestamp))); err != nil {
 		return fmt.Errorf("setting token renew date in moose context (timestamp=%d): %w", unixTimestamp, err)
 	}
 	return nil
@@ -666,9 +666,7 @@ func (s *Subscriber) setTPLite(isTPLiteEnabled bool) error {
 	// On disconnect (see `NotifyDisconnect`), we are unsetting TP Lite In Current State in the context,
 	// because it stops being actively used after user disconnects.
 	if s.connectionStartTime.IsZero() {
-		if err := s.response(s.mooseSetTPLiteCurrentFunc(isTPLiteEnabled)); err != nil {
-			errs = append(errs, fmt.Errorf("setting TP Lite current state (enabled=%v): %w", isTPLiteEnabled, err))
-		}
+		errs = append(errs, s.response(s.mooseFuncs.setTPLiteCurrentState(isTPLiteEnabled)))
 	}
 
 	return errors.Join(errs...)
@@ -854,7 +852,7 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 	}
 
 	// Unset TP Lite in Current State - user disconnected so TP Lite is not **actively** used
-	if err := s.response(s.mooseUnsetTPLiteCurrentFunc()); err != nil {
+	if err := s.response(s.mooseFuncs.unsetTPLiteCurrentState()); err != nil {
 		return fmt.Errorf("unsetting TP Lite current state after disconnect: %w", err)
 	}
 
@@ -1426,4 +1424,3 @@ func deviceTypeToInternalType(deviceType sysinfo.SystemDeviceType) moose.Nordvpn
 
 	return dt
 }
-
