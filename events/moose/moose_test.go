@@ -410,7 +410,6 @@ func TestNotifyThreatProtectionLite_CallsUserPreferenceSetter(t *testing.T) {
 		name                      string
 		enabled                   bool
 		mooseUserPrefErrCode      uint32
-		mooseCurrentStateErrCode  uint32
 		mooseSetCustomDNSMetaErr  uint32
 		mooseSetCustomDNSValueErr uint32
 		expectNotifyErr           bool
