@@ -602,20 +602,22 @@ func (s *Subscriber) NotifyThreatProtectionLite(isTPLiteEnabled bool) error {
 }
 
 func (s *Subscriber) setTPLite(isTPLiteEnabled bool) error {
+	var errs []error
 	// User Preferences field in moose context is used to see what's the setting
 	// user selected - no matter if VPN is actively used or not.
 	if err := s.response(s.mooseSetTPLiteUserPrefFunc(isTPLiteEnabled)); err != nil {
 		log.Println(internal.WarningPrefix, "failed to set TP Lite in User Preferences:", err)
+		errs = append(errs, err)
 	}
 
 	// We are also checking if TP Lite is **actively** used, this is tracked in Current State field.
 	// On disconnect (see `NotifyDisconnect`), we are unsetting TP Lite In Current State in the context,
 	// because it stops being actively used after user disconnects.
 	if s.connectionStartTime.IsZero() {
-		return s.response(s.mooseSetTPLiteCurrentFunc(isTPLiteEnabled))
+		errs = append(errs, s.response(s.mooseSetTPLiteCurrentFunc(isTPLiteEnabled)))
 	}
 
-	return nil
+	return errors.Join(errs...)
 }
 
 func (s *Subscriber) NotifyProtocol(data config.Protocol) error {

@@ -418,14 +418,14 @@ func TestNotifyThreatProtectionLite_CallsUserPreferenceSetter(t *testing.T) {
 		expectCustomDNSCalled     bool
 	}{
 		{
-			name:                      "returns nil even if setting user preference fails (when connected so current-state update is skipped)",
+			name:                      "returns err if setting user preference fails (when connected so current-state update is skipped)",
 			enabled:                   true,
-			mooseUserPrefErrCode:      1,
+			mooseUserPrefErrCode:      12,
 			mooseSetCustomDNSMetaErr:  0,
 			mooseSetCustomDNSValueErr: 0,
-			expectNotifyErr:           false, // setTPLite logs but doesn't return the error
+			expectNotifyErr:           true,
 			expectPrefCalled:          true,
-			expectCustomDNSCalled:     true, // TP Lite enabled, so custom DNS is disabled
+			expectCustomDNSCalled:     false,
 		},
 		{
 			name:                  "returns nil on success (when connected so current-state update is skipped)",
@@ -666,13 +666,13 @@ func TestNotifyDNS(t *testing.T) {
 			expectTPLiteCalled: false, // setCustomDNS fails, so setTPLite not called
 		},
 		{
-			name:                   "TP Lite user pref setter fails - error logged but not returned (not connected)",
+			name:                   "TP Lite user pref setter fails - propagates error (not connected)",
 			dnsIPs:                 []string{"1.1.1.1"},
 			mooseMetaErrCode:       0,
 			mooseValueErrCode:      0,
-			mooseTPLiteUserPrefErr: 1,
+			mooseTPLiteUserPrefErr: 12,
 			mooseTPLiteCurrentErr:  0,
-			expectErr:              false, // setTPLite logs but doesn't return the error
+			expectErr:              true,
 			expectMetaCalled:       true,
 			expectValueCalled:      true,
 			expectTPLiteCalled:     true,
