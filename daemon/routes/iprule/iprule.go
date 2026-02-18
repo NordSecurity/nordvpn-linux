@@ -226,7 +226,7 @@ func (r *Router) TableID() uint {
 	return r.tableID
 }
 
-// calculateRulePriority find out what priority id to use for Fwmark rule
+// calculateRulePriority find out what priority id to use for a new rule
 //
 // On some environments already existing IP rules can exist with very high priority
 // (close to 0) and our rules do not fit into ip rules table. E. g.
@@ -238,7 +238,7 @@ func (r *Router) TableID() uint {
 //
 // If NordVPN tries to create 3 new rules, by default `ip rule` behaviour they will
 // appear with `1`, `0`, and `0` priorities. This creates conflicts between highest
-// priorities rules and traffic may become unpredictable. Therefore, NordVPN would
+// priorities rules and traffic may become unpredictable. Therefore, NordVPN should
 // shift rule with priority `2` to as many levels as we need. E. g. `ip rule` output
 // with VPN connected would result in such ip rule table:
 //
@@ -249,6 +249,8 @@ func (r *Router) TableID() uint {
 // 4:      from 1.1.1.1 lookup main # problematic rule
 // 32766:  from all lookup main
 // 32767:  from all lookup default
+// For now we don't do that. We will return the highest prio (lowest value) closer to
+// main rule (from all lookup main). In the above case 32765. We need to rethink this mechanism.
 func calculateRulePriority() (uint, error) {
 	// # get rule priority:
 	// CDM "ip rule show" PARSE OUTPUT, LOOKUP "from all lookup main":
@@ -258,25 +260,27 @@ func calculateRulePriority() (uint, error) {
 	// 32767:	from all lookup default
 	// # EXPECTED RESULT: 32766 - 1 = 32765 (check if priority/id is not in use)
 
-	var prioID uint
-
 	rules, err := netlink.RuleList(netlink.FAMILY_V4)
 	if err != nil {
 		return 0, fmt.Errorf("listing ip rules: %w", err)
 	}
+	return findRulePriorityCandidate(rules)
+}
+
+func findRulePriorityCandidate(rules []netlink.Rule) (uint, error) {
+	prioID := uint(0)
+
 	allID := make(map[uint]bool, len(rules))
 
 	for _, rule := range rules {
-		mainRule := netlink.NewRule()
-		mainRule.Table = unix.RT_TABLE_MAIN
 		allID[uint(rule.Priority)] = true // #nosec G115
-		if isRuleSame(rule, *mainRule) {
-			continue
+		prioID = uint(rule.Priority)      // #nosec G115
+		if isFromAllLookupMainRule(rule) {
+			break
 		}
-		prioID = uint(rule.Priority) // #nosec G115
 	}
 
-	if prioID == 0 {
+	if prioID == 0 || prioID > math.MaxInt {
 		return 0, fmt.Errorf("unable to calculate ip rule priority id")
 	}
 
@@ -479,6 +483,19 @@ func isRuleSame(rule netlink.Rule, target netlink.Rule) bool {
 		rule.Table == target.Table &&
 		(rule.SuppressIfgroup == target.SuppressIfgroup ||
 			rule.SuppressPrefixlen == target.SuppressPrefixlen)
+}
+
+// isFromAllLookup checks if the rule is the "from all lookup main"
+func isFromAllLookupMainRule(rule netlink.Rule) bool {
+	return rule.Table == unix.RT_TABLE_MAIN &&
+		rule.Src == nil && // from all
+		rule.Dst == nil &&
+		rule.Mark == -1 &&
+		rule.IifName == "" &&
+		rule.OifName == "" &&
+		rule.SuppressIfgroup == -1 &&
+		rule.SuppressPrefixlen == -1 &&
+		!rule.Invert
 }
 
 func allowSubnetRule(prioID int, subnet *net.IPNet) *netlink.Rule {
