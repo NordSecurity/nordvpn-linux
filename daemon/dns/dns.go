@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -46,7 +47,13 @@ func (e dnsManagementService) String() string {
 	}
 }
 
-var ErrDNSNotSet = errors.New("DNS unsetter not set")
+var (
+	errDNSMissingUnsetter = errors.New("DNS unsetter not set")
+	// errDNSSetFailed is returned when all DNS set methods fail
+	errDNSSetFailed = errors.New("all dns set attempts failed")
+	// errDNSSetFailedNoBinaries is returned when no binaries necessary to set DNS were found
+	errDNSSetFailedNoBinaries = errors.New("no binaries to set DNS with this method were found")
+)
 
 // statingFilesystemHandle extends FilesystemHandle with wrappers for os.Stat and os.SameFile
 type statingFilesystemHandle interface {
@@ -94,6 +101,8 @@ type DNSServiceSetter struct {
 	filesystemHandle  statingFilesystemHandle
 	analytics         analytics
 	resolvConfMonitor resolvConfMonitor
+	// currentManagementService is used to identify the service in analytics
+	currentManagementService dnsManagementService
 }
 
 func NewDNSServiceSetter(publisher events.Publisher[string],
@@ -112,6 +121,7 @@ func NewDNSServiceSetter(publisher events.Publisher[string],
 func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfComment() (dnsManagementService, error) {
 	resolvConfFileContents, err := d.filesystemHandle.ReadFile(resolvconfFilePath)
 	if err != nil {
+		d.analytics.emitDNSConfigurationErrorEvent(unknown, resolvConfReadFailedErrorType)
 		return unknown, fmt.Errorf("reading resolv.conf file: %w", err)
 	}
 
@@ -125,6 +135,7 @@ func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfComment() (dnsMa
 func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfLinkTarget() (dnsManagementService, error) {
 	resolvConfFileInfo, err := d.filesystemHandle.stat(resolvconfFilePath)
 	if err != nil {
+		d.analytics.emitDNSConfigurationErrorEvent(unknown, resolvConfStatFailedErrorType)
 		return unknown, fmt.Errorf("failed to stat /etc/resolv.conf: %w", err)
 	}
 
@@ -140,7 +151,7 @@ func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfLinkTarget() (dn
 func (d *DNSServiceSetter) getManagementService() dnsManagementService {
 	managementService, err := d.getManagementServiceBasedOnResolvconfComment()
 	if err == nil {
-		log.Println(internal.InfoPrefix, dnsPrefix, "management service inferred from resovl.conf comment")
+		log.Println(internal.InfoPrefix, dnsPrefix, "management service inferred from resolv.conf comment")
 		return managementService
 	}
 	log.Println(internal.WarningPrefix, dnsPrefix,
@@ -165,7 +176,7 @@ func (d *DNSServiceSetter) set(setter Setter, iface string, nameservers []string
 	}
 
 	d.unsetter = setter
-	d.analytics.emitDNSConfiguredEvent()
+	d.analytics.emitDNSConfiguredEvent(d.currentManagementService)
 
 	return nil
 }
@@ -176,7 +187,7 @@ func (d *DNSServiceSetter) set(setter Setter, iface string, nameservers []string
 //  3. resolv.conf utility
 //  4. direct write to resolv.conf
 func (d *DNSServiceSetter) setUsingBestAvailable(iface string, nameservers []string) error {
-	d.analytics.setManagementService(systemdResolved)
+	d.currentManagementService = systemdResolved
 	if err := d.set(d.systemdResolvedSetter, iface, nameservers); err != nil {
 		log.Println(internal.WarningPrefix, dnsPrefix,
 			"failed to configure DNS using systemd-resolved, attempting with resolv.conf")
@@ -185,8 +196,9 @@ func (d *DNSServiceSetter) setUsingBestAvailable(iface string, nameservers []str
 		return nil
 	}
 
-	d.analytics.setManagementService(unmanaged)
+	d.currentManagementService = unmanaged
 	if err := d.set(d.resolvconfSetter, iface, nameservers); err != nil {
+		d.analytics.emitDNSConfigurationCriticalErrorEvent(d.currentManagementService, setFailedErrorType)
 		return fmt.Errorf("failed to configure DNS with resolv.conf: %w", err)
 	}
 
@@ -204,15 +216,19 @@ func (d *DNSServiceSetter) setUsingBestAvailable(iface string, nameservers []str
 func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
 	// stop resolv.conf monitoring in case it is already running
 	d.resolvConfMonitor.stop()
+	d.currentManagementService = d.getManagementService()
 
-	managementService := d.getManagementService()
-	d.analytics.setManagementService(managementService)
-	switch managementService {
+	switch d.currentManagementService {
 	case systemdResolved:
 		log.Println(internal.InfoPrefix, dnsPrefix, "setting DNS using systemd-resolved")
 		err := d.set(d.systemdResolvedSetter, iface, nameservers)
 		if err == nil {
 			return nil
+		}
+		if errors.Is(err, errDNSSetFailedNoBinaries) {
+			d.analytics.emitDNSConfigurationErrorEvent(d.currentManagementService, binaryNotFoundSetErrorType)
+		} else {
+			d.analytics.emitDNSConfigurationErrorEvent(d.currentManagementService, setFailedErrorType)
 		}
 		log.Println(internal.WarningPrefix, dnsPrefix, "failed to set DNS using systemd-resolved:", err)
 	case unmanaged:
@@ -234,14 +250,17 @@ func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
 // Uset unsets the DNS using the same family of methods that was used to set it
 func (d *DNSServiceSetter) Unset(iface string) error {
 	if d.unsetter == nil {
-		return ErrDNSNotSet
+		return errDNSMissingUnsetter
 	}
 
 	log.Println(internal.DebugPrefix, dnsPrefix, "unsetting DNS")
 	d.resolvConfMonitor.stop()
 	if err := d.unsetter.Unset(iface); err != nil {
+		d.analytics.emitDNSConfigurationCriticalErrorEvent(d.currentManagementService, unsetFailedErrorType)
 		return fmt.Errorf("unsetting DNS: %w", err)
 	}
+
+	d.currentManagementService = unknown
 
 	return nil
 }
@@ -274,16 +293,24 @@ func (d *DNSMethodSetter) Set(iface string, nameservers []string) error {
 		return errors.New("nameservers not provided")
 	}
 
+	binariesAvailable := false
 	for _, method := range d.methods {
 		d.publisher.Publish("set dns for interface [" + iface + "] using: " + method.Name())
 		if err := method.Set(iface, nameservers); err != nil {
+			if !errors.Is(err, exec.ErrNotFound) {
+				binariesAvailable = true
+			}
 			log.Println(internal.ErrorPrefix, fmt.Errorf("setting dns with %s: %w", method.Name(), err))
 			continue
 		}
 		return nil
 	}
 
-	return fmt.Errorf("dns not set, no dns setting method is available")
+	if binariesAvailable {
+		return errDNSSetFailed
+	}
+
+	return errDNSSetFailedNoBinaries
 }
 
 // Unset DNS for network interface, restore DNS from a backup, if backup
