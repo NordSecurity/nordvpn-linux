@@ -595,7 +595,7 @@ func (netw *Combined) blockTraffic(allowlist config.Allowlist) error {
 	if netw.isVpnSet {
 		tunnelInterface = netw.vpnet.Tun().Interface().Name
 	}
-	vpnInfo := firewall.NewVpnInfo(tunnelInterface, config.Allowlist{}, netw.isKillSwitchSet)
+	vpnInfo := firewall.NewVpnInfo(tunnelInterface, allowlist, netw.isKillSwitchSet)
 
 	return netw.fw.Configure(&vpnInfo, &netw.cfg)
 }
