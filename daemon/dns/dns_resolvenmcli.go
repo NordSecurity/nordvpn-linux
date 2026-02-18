@@ -126,12 +126,12 @@ func (nmcli *NMCli) Name() string {
 //
 // Returns a slice of connection names and an error if the nmcli command fails.
 func (nmcli *NMCli) getConnectionFromPhysicalInterfaces() ([]string, error) {
-	cmd, err := nmcli.cmdExecutor(nmCliExecutable, "-t", "-f", "NAME,TYPE", "con", "show", "--active")
+	connectionsList, err := nmcli.cmdExecutor(nmCliExecutable, "-t", "-f", "NAME,TYPE", "con", "show", "--active")
 	if err != nil {
 		return []string{}, fmt.Errorf("Failed to fetch active devices: %w", err)
 	}
 	var conns = []string{}
-	lines := strings.SplitSeq(string(cmd), "\n")
+	lines := strings.SplitSeq(string(connectionsList), "\n")
 	for line := range lines {
 		parts := strings.Split(line, ":")
 		if len(parts) < 2 {
