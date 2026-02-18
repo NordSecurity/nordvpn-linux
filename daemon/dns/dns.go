@@ -200,7 +200,7 @@ func (d *DNSServiceSetter) setUsingAvailable(iface string, nameservers []string)
 	d.analytics.setManagementService(systemdResolved)
 	if err := d.set(d.systemdResolvedSetter, iface, nameservers); err != nil {
 		log.Println(internal.WarningPrefix, dnsPrefix,
-			"failed to configure DNS using systemd-resolved, attempting with nmcli: %w", err)
+			"failed to configure DNS using systemd-resolved:", err, "Attempt to try nmcli.")
 	} else {
 		log.Println(internal.InfoPrefix, dnsPrefix, "DNS configured with systemd-resolved")
 		return nil
@@ -208,7 +208,7 @@ func (d *DNSServiceSetter) setUsingAvailable(iface string, nameservers []string)
 
 	if err := d.set(d.nmcliSetter, iface, nameservers); err != nil {
 		log.Println(internal.WarningPrefix, dnsPrefix,
-			"failed to configure DNS using nmcli, attempting with resolv.conf, %w", err)
+			"failed to configure DNS using nmcli:", err, "Attempt to try resolv.conf.")
 	} else {
 		log.Println(internal.InfoPrefix, dnsPrefix, "DNS configured with nmcli")
 		return nil
