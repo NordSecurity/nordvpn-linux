@@ -60,7 +60,6 @@ func (n *nft) configure(vpnInfo *firewall.VpnInfo, meshMap *mesh.MachineMap) err
 	}
 	setElements := []nftables.SetElement{
 			{Key: ifname("lo")},
-			// {Key: ifname(*vpnInfo.TunnelInterface)},
 	}
 	if vpnInfo.TunnelInterface != nil {
 		setElements = append(setElements, nftables.SetElement{Key: ifname(*vpnInfo.TunnelInterface)})

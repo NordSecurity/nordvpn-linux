@@ -157,8 +157,7 @@ func (r *RPC) StartKillSwitch() {
 	}
 
 	if cfg.KillSwitch {
-		allowlist := cfg.AutoConnectData.Allowlist
-		if err := r.netw.SetKillSwitch(allowlist); err != nil {
+		if err := r.netw.SetKillSwitch(); err != nil {
 			log.Println(internal.ErrorPrefix, "starting killswitch:", err)
 			return
 		}

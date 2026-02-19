@@ -204,6 +204,7 @@ func main() {
 	// Firewall
 	nftImpl := nft.New()
 	fw := firewall.NewFirewall(nftImpl, cfg.Firewall)
+	vpnInfo := firewall.NewVpnInfo(cfg.AutoConnectData.Allowlist, cfg.KillSwitch)
 
 	// API
 	var err error
@@ -422,10 +423,6 @@ func main() {
 		allowlistRouter,
 		dnsSetter,
 		fw,
-		// allowlist.NewAllowlistRouting(func(command string, arg ...string) ([]byte, error) {
-		// 	arg = append(arg, "-w", internal.SecondsToWaitForIptablesLock)
-		// 	return exec.Command(command, arg...).CombinedOutput()
-		// }),
 		device.OutsideCapableTrafficInterfaces,
 		routes.NewPolicyRouter(
 			&norule.Facade{},
@@ -439,14 +436,6 @@ func main() {
 		dnsHostSetter,
 		vpnRouter,
 		meshRouter,
-		// forwarder.NewForwarder(ifaceNames, func(command string, arg ...string) ([]byte, error) {
-		// 	arg = append(arg, "-w", internal.SecondsToWaitForIptablesLock)
-		// 	return exec.Command(command, arg...).CombinedOutput()
-		// },
-			// kernel.NewSysctlSetter(
-			// 	forwarder.Ipv4fwdKernelParamName,
-			// 	1,
-			// )),
 		cfg.FirewallMark,
 		cfg.LanDiscovery,
 		ipv6.NewIpv6(),
@@ -454,7 +443,7 @@ func main() {
 		kernel.NewSysctlSetter(
 			networker.ArpIgnoreParamName, 1,
 		),
-		*firewall.NewVpnInfo(cfg.AutoConnectData.Allowlist, cfg.KillSwitch),
+		*vpnInfo,
 	)
 
 	keygen, err := keygenImplementation(vpnFactory)

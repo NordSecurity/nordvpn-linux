@@ -41,7 +41,6 @@ type VpnInfo struct{
 }
 
 func NewVpnInfo(allowlist config.Allowlist, killswitch bool) *VpnInfo{
-	// log.Printf("got values: tunint - %v, al - %v, ks - %v", tunnelInterface, allowlist, killswitch)
 	return &VpnInfo{
 		TunnelInterface: nil, 
 		Allowlist: &allowlist, 
