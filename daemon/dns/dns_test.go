@@ -6,7 +6,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
 	"github.com/stretchr/testify/assert"
@@ -58,8 +57,7 @@ func (m *MockMethod) Name() string {
 
 func newDnsSetterGood() Setter {
 	ds := DNSMethodSetter{
-		publisher: &subs.Subject[string]{},
-		methods:   []Method{},
+		methods: []Method{},
 	}
 	ds.methods = append(ds.methods, &MockMethod{err: nil})
 	ds.methods = append(ds.methods, &MockMethod{err: errors.New("err1")})
@@ -67,8 +65,7 @@ func newDnsSetterGood() Setter {
 }
 func newDnsSetterError() Setter {
 	ds := DNSMethodSetter{
-		publisher: &subs.Subject[string]{},
-		methods:   []Method{},
+		methods: []Method{},
 	}
 	ds.methods = append(ds.methods, &MockMethod{err: nil})
 	ds.methods = append(ds.methods, &MockMethod{err: errors.New("err1")})
@@ -76,8 +73,7 @@ func newDnsSetterError() Setter {
 }
 func newDnsSetterNotAvailable() Setter {
 	ds := DNSMethodSetter{
-		publisher: &subs.Subject[string]{},
-		methods:   []Method{},
+		methods: []Method{},
 	}
 	ds.methods = append(ds.methods, &MockMethod{err: errors.New("set-err")})
 	ds.methods = append(ds.methods, &MockMethod{err: errors.New("unset-err")})
@@ -85,8 +81,7 @@ func newDnsSetterNotAvailable() Setter {
 }
 func newDnsSetterNoMethods() Setter {
 	ds := DNSMethodSetter{
-		publisher: &subs.Subject[string]{},
-		methods:   nil,
+		methods: nil,
 	}
 	return &ds
 }

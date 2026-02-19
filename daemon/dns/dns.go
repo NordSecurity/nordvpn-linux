@@ -85,14 +85,13 @@ type DNSServiceSetter struct {
 	resolvConfMonitor resolvConfMonitor
 }
 
-func NewDNSServiceSetter(publisher events.Publisher[string],
-	debugPublisher events.PublishSubcriber[events.DebuggerEvent]) *DNSServiceSetter {
+func NewDNSServiceSetter(debugPublisher events.PublishSubcriber[events.DebuggerEvent]) *DNSServiceSetter {
 	analytics := newDNSAnalytics(debugPublisher)
 	resolvConfMonitor := newResolvConfMonitor(analytics)
 	return &DNSServiceSetter{
-		systemdResolvedSetter: NewSetter(publisher, &Resolved{}, &Resolvectl{}),
-		resolvconfSetter:      NewSetter(publisher, &Resolvconf{}, &ResolvConfFile{}),
-		nmcliSetter:           NewSetter(publisher, newNMCli()),
+		systemdResolvedSetter: NewSetter(&Resolved{}, &Resolvectl{}),
+		resolvconfSetter:      NewSetter(&Resolvconf{}, &ResolvConfFile{}),
+		nmcliSetter:           NewSetter(newNMCli()),
 		filesystemHandle:      internal.StdFilesystemHandle{},
 		analytics:             analytics,
 		resolvConfMonitor:     &resolvConfMonitor,
@@ -257,7 +256,6 @@ func (d *DNSServiceSetter) Unset(iface string) error {
 		return ErrDNSNotSet
 	}
 
-	log.Println(internal.InfoPrefix, dnsPrefix, "unsetting DNS")
 	d.resolvConfMonitor.stop()
 	if err := d.unsetter.Unset(iface); err != nil {
 		return fmt.Errorf("unsetting DNS: %w", err)
@@ -269,14 +267,12 @@ func (d *DNSServiceSetter) Unset(iface string) error {
 // DNSMethodSetter iterates over the list of DNS configuration methods and tries to apply the desired DNS config with each of
 // them.
 type DNSMethodSetter struct {
-	publisher events.Publisher[string]
-	methods   []Method
+	methods []Method
 }
 
-func NewSetter(publisher events.Publisher[string], methods ...Method) *DNSMethodSetter {
+func NewSetter(methods ...Method) *DNSMethodSetter {
 	ds := DNSMethodSetter{
-		publisher: publisher,
-		methods:   methods,
+		methods: methods,
 	}
 
 	return &ds
@@ -286,16 +282,14 @@ func NewSetter(publisher events.Publisher[string], methods ...Method) *DNSMethod
 // Also, backup current DNS settings (only in case of direct resolv.conf edit).
 // Backup is not overridden, so its safe to call this function multiple times in a row.
 func (d *DNSMethodSetter) Set(iface string, nameservers []string) error {
-	d.publisher.Publish(
-		"setting dns to " + strings.Join(nameservers, " "),
-	)
+	log.Println(internal.InfoPrefix, dnsPrefix, "setting dns to "+strings.Join(nameservers, " "))
 
 	if len(nameservers) == 0 {
 		return errors.New("nameservers not provided")
 	}
 
 	for _, method := range d.methods {
-		d.publisher.Publish("set dns for interface [" + iface + "] using: " + method.Name())
+		log.Println(internal.InfoPrefix, dnsPrefix, "Set on interface ["+iface+"] using: ", method.Name())
 		if err := method.Set(iface, nameservers); err != nil {
 			log.Println(internal.ErrorPrefix, fmt.Errorf("setting dns with %s: %w", method.Name(), err))
 			continue
@@ -310,17 +304,14 @@ func (d *DNSMethodSetter) Set(iface string, nameservers []string) error {
 // Unset DNS for network interface, restore DNS from a backup, if backup
 // is available, and remove the backup on success.
 func (d *DNSMethodSetter) Unset(iface string) error {
-	d.publisher.Publish("unsetting DNS")
-
 	for _, method := range d.methods {
-		d.publisher.Publish("unset dns for interface [" + iface + "] using: " + method.Name())
+		log.Println(internal.InfoPrefix, dnsPrefix, "Unset on interface ["+iface+"] using: ", method.Name())
 		if err := method.Unset(iface); err != nil {
 			log.Println(internal.ErrorPrefix, fmt.Errorf("unsetting dns with %s: %w", method.Name(), err))
 			continue
 		}
 		return nil
 	}
-
 	return nil
 }
 
