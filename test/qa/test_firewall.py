@@ -277,3 +277,20 @@ def test_firewall_lan_allowlist_interaction(tech, proto, obfuscated):
             rules = os.popen("sudo iptables -S POSTROUTING").read()
             for rule in firewall.POSTROUTING_LAN_DISCOVERY_RULES:
                 assert rule not in rules, f"{rule} postrouting rule not found in iptables"
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_firewall_lan_allowlist_work_together(tech, proto, obfuscated):
+    with lib.Defer(lambda: sh.nordvpn.set("lan-discovery", "off", _ok_code=(0, 1))):
+        with lib.Defer(sh.nordvpn.disconnect):
+            subnet = "1.1.1.1/32"
+            with lib.Defer(lambda: sh.nordvpn.allowlist.remove.subnet(subnet, _ok_code=(0, 1))):
+
+                lib.set_technology_and_protocol(tech, proto, obfuscated)
+                pre_allow_out = sh.ip.route.get("1.1.1.1")
+
+                sh.nordvpn.allowlist.add.subnet(subnet)
+                sh.nordvpn.set("lan-discovery", "on")
+                sh.nordvpn.connect()
+                assert pre_allow_out == sh.ip.route.get("1.1.1.1"), "Allowlisted subnet is not going through default interface"
+                assert pre_allow_out != sh.ip.route.get("1.0.0.1")

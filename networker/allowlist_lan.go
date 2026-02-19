@@ -15,8 +15,7 @@ func addLANPermissions(allowlist config.Allowlist) config.Allowlist {
 		"192.168.0.0/16",
 		"169.254.0.0/16"}
 
-	var newSubnets []string
-	copy(newSubnets, allowlist.Subnets)
+	newSubnets := append([]string{}, allowlist.Subnets...)
 	for _, network := range localNetworks {
 		if !slices.Contains(newSubnets, network) {
 			newSubnets = append(newSubnets, network)
