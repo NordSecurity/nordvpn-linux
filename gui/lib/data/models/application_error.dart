@@ -3,6 +3,7 @@ enum AppStatusCode {
   compatibilityIssue, // gRPC changed and the GUI is not able to communicate with the daemon
   socketNotFound, // the daemon socket is not found
   permissionsDenied, // the application is not able to connect to the daemon, not part of the nordvpn group
+  snapInterfaces, // the application is missing some snap interfaces
 }
 
 // Class to define application errors and to store optionally the original error

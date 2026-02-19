@@ -42,6 +42,10 @@ final class ServersListCard extends StatefulWidget {
   final ImagesManager imagesManager;
   final ServerListItemFactory itemFactory;
   final Future<void> Function(ConnectArguments) onSelected;
+
+  /// Callback for when a recent connection is selected.
+  /// If null, falls back to [onSelected].
+  final Future<void> Function(ConnectArguments)? onRecentSelected;
   final bool enabled;
   final bool allowServerNameSearch;
   final bool withQuickConnectTile;
@@ -50,6 +54,7 @@ final class ServersListCard extends StatefulWidget {
   ServersListCard({
     super.key,
     required this.onSelected,
+    this.onRecentSelected,
     ImagesManager? imagesManager,
     ServerListItemFactory? itemFactory,
     this.enabled = true,
@@ -142,7 +147,7 @@ final class _ServersListCardState extends State<ServersListCard> {
         if (widget.withRecentConnectionsWidget)
           RecentConnectionsList(
             key: ServerListWidgetKeys.recentConnections,
-            onSelected: widget.onSelected,
+            onSelected: widget.onRecentSelected ?? widget.onSelected,
           ),
         Expanded(
           child: DefaultTabController(

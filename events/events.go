@@ -174,6 +174,7 @@ const (
 	ReasonAuthTokenInvalidated         ReasonCode = 3030100
 	ReasonCorruptedVPNCreds            ReasonCode = 3000400
 	ReasonTokenCorrupted               ReasonCode = 3040000
+	ReasonUnauthorized                 ReasonCode = 3000100
 	// login exceptions
 	ReasonUnfinishedPrevLogin       ReasonCode = 1000096
 	ReasonLoginURLRetrieveFailed    ReasonCode = 2000022

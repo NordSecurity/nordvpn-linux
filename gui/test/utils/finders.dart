@@ -6,6 +6,7 @@ import 'package:nordvpn/settings/autoconnect_settings.dart';
 import 'package:nordvpn/settings/navigation.dart';
 import 'package:nordvpn/settings/terms_screen.dart';
 import 'package:nordvpn/settings/vpn_connection_settings.dart';
+import 'package:nordvpn/snap/snap_screen.dart';
 import 'package:nordvpn/vpn/servers_list_card.dart';
 import 'package:nordvpn/vpn/vpn_status_card.dart';
 import 'package:nordvpn/widgets/login_form.dart';
@@ -234,4 +235,16 @@ Finder serviceSubscriptionInfoFinder() {
 
 Finder accountInfoFinder() {
   return find.byKey(AccountWidgetKeys.accountInfo);
+}
+
+Finder snapErrorScreenTitle() {
+  return find.byKey(SnapWidgetKeys.title);
+}
+
+Finder snapErrorScreenDescription() {
+  return find.byKey(SnapWidgetKeys.description);
+}
+
+Finder snapErrorScreenCopyField() {
+  return find.byKey(SnapWidgetKeys.copyField);
 }

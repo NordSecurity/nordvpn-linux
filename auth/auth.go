@@ -259,12 +259,17 @@ func saveVpnExpirationDate(userID int64, data config.TokenData) config.SaveFunc 
 }
 
 // Logout the user.
-func Logout(user int64, logoutPub events.Publisher[events.DataAuthorization]) config.SaveFunc {
+// reason specifies why the app-triggered logout occurred
+func Logout(user int64, logoutPub events.Publisher[events.DataAuthorization], reason events.ReasonCode) config.SaveFunc {
 	return func(c config.Config) config.Config {
 		if logoutPub != nil {
 			// register stats instant logout with status success
 			logoutPub.Publish(events.DataAuthorization{
-				DurationMs: -1, EventTrigger: events.TriggerApp, EventStatus: events.StatusSuccess})
+				DurationMs:   -1,
+				EventTrigger: events.TriggerApp,
+				EventStatus:  events.StatusSuccess,
+				Reason:       reason,
+			})
 		}
 		delete(c.TokensData, user)
 		return c
