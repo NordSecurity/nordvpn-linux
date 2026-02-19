@@ -34,13 +34,13 @@ type StaticConfigManager interface {
 
 // FilesystemStaticConfigManager saves and reads values to a config file
 type FilesystemStaticConfigManager struct {
-	fs FilesystemHandle
+	fs internal.FileSystemHandle
 	mu sync.RWMutex
 }
 
 func NewFilesystemStaticConfigManager() *FilesystemStaticConfigManager {
 	return &FilesystemStaticConfigManager{
-		fs: StdFilesystemHandle{},
+		fs: internal.StdFilesystemHandle{},
 	}
 }
 

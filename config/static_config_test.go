@@ -8,7 +8,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	"github.com/NordSecurity/nordvpn-linux/test/mock/config"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
 	"gotest.tools/v3/assert"
 )
 
@@ -62,7 +62,7 @@ func TestGetRolloutGroup(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			fsMock := config.NewFilesystemMock(t)
+			fsMock := fs.NewSystemFileHandleMock(t)
 			fsMock.ReadErr = test.readErr
 			if test.fileContents != nil {
 				fsMock.AddFile(internal.StaticConfigFilename, test.fileContents)
@@ -164,7 +164,7 @@ func TestSetRolloutGroup(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			fsMock := config.NewFilesystemMock(t)
+			fsMock := fs.NewSystemFileHandleMock(t)
 			fsMock.ReadErr = test.readErr
 			fsMock.WriteErr = test.writeErr
 			if test.initialFileContents != nil {
@@ -204,7 +204,7 @@ func TestSetRolloutGroup(t *testing.T) {
 func TestConcurrentAccess(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fsMock := config.NewFilesystemMock(t)
+	fsMock := fs.NewSystemFileHandleMock(t)
 	fsMock.AddFile(internal.StaticConfigFilename, []byte(`{"rollout_group": 50}`))
 
 	manager := FilesystemStaticConfigManager{
@@ -256,7 +256,7 @@ func TestLoadConfigErrorHandling(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			fsMock := config.NewFilesystemMock(t)
+			fsMock := fs.NewSystemFileHandleMock(t)
 			fsMock.ReadErr = test.readErr
 			if test.fileContents != nil {
 				fsMock.AddFile(internal.StaticConfigFilename, test.fileContents)
@@ -281,7 +281,7 @@ func TestLoadConfigErrorHandling(t *testing.T) {
 func TestSaveConfigErrorHandling(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fsMock := config.NewFilesystemMock(t)
+	fsMock := fs.NewSystemFileHandleMock(t)
 	fsMock.WriteErr = os.ErrPermission
 
 	manager := FilesystemStaticConfigManager{
@@ -325,7 +325,7 @@ func TestLoadConfigWritesDefaultOnError(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			fsMock := config.NewFilesystemMock(t)
+			fsMock := fs.NewSystemFileHandleMock(t)
 			fsMock.ReadErr = test.readErr
 			if test.fileContents != nil {
 				fsMock.AddFile(internal.StaticConfigFilename, test.fileContents)

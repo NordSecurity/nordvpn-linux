@@ -7,10 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
@@ -33,21 +31,21 @@ const (
 type dnsManagementService int
 
 const (
-	unknown dnsManagementService = iota
-	nmcliManaged
-	systemdResolved
-	unmanaged
+	unknownManagementService dnsManagementService = iota
+	nmcliManagementService
+	systemdResolvedManagementService
+	unmanagedManagementService
 )
 
 func (e dnsManagementService) String() string {
 	switch e {
-	case nmcliManaged:
+	case nmcliManagementService:
 		return "nmcli"
-	case systemdResolved:
+	case systemdResolvedManagementService:
 		return "systemd-resolved"
-	case unmanaged:
+	case unmanagedManagementService:
 		return "unmanaged"
-	case unknown:
+	case unknownManagementService:
 		fallthrough
 	default:
 		return "unknown_service"
@@ -55,25 +53,6 @@ func (e dnsManagementService) String() string {
 }
 
 var ErrDNSNotSet = errors.New("DNS unsetter not set")
-
-// statingFilesystemHandle extends FilesystemHandle with wrappers for os.Stat and os.SameFile
-type statingFilesystemHandle interface {
-	config.FilesystemHandle
-	stat(location string) (os.FileInfo, error)
-	sameFile(os.FileInfo, os.FileInfo) bool
-}
-
-type stdStatingFilesystemHandle struct {
-	config.StdFilesystemHandle
-}
-
-func (s *stdStatingFilesystemHandle) stat(location string) (os.FileInfo, error) {
-	return os.Stat(location)
-}
-
-func (s *stdStatingFilesystemHandle) sameFile(fi1 os.FileInfo, fi2 os.FileInfo) bool {
-	return os.SameFile(fi1, fi2)
-}
 
 // Setter is responsible for configuring DNS.
 type Setter interface {
@@ -101,20 +80,19 @@ type DNSServiceSetter struct {
 	//	2. direct write to /etc/resolv.conf
 	resolvconfSetter  Setter
 	unsetter          Setter
-	filesystemHandle  statingFilesystemHandle
+	filesystemHandle  internal.FileSystemHandle
 	analytics         analytics
 	resolvConfMonitor resolvConfMonitor
 }
 
-func NewDNSServiceSetter(publisher events.Publisher[string],
-	debugPublisher events.PublishSubcriber[events.DebuggerEvent]) *DNSServiceSetter {
+func NewDNSServiceSetter(debugPublisher events.PublishSubcriber[events.DebuggerEvent]) *DNSServiceSetter {
 	analytics := newDNSAnalytics(debugPublisher)
 	resolvConfMonitor := newResolvConfMonitor(analytics)
 	return &DNSServiceSetter{
-		systemdResolvedSetter: NewSetter(publisher, &Resolved{}, &Resolvectl{}),
-		resolvconfSetter:      NewSetter(publisher, &Resolvconf{}, &ResolvConfFile{}),
-		nmcliSetter:           NewSetter(publisher, newNMCli()),
-		filesystemHandle:      &stdStatingFilesystemHandle{},
+		systemdResolvedSetter: NewSetter(&Resolved{}, &Resolvectl{}),
+		resolvconfSetter:      NewSetter(&Resolvconf{}, &ResolvConfFile{}),
+		nmcliSetter:           NewSetter(newNMCli()),
+		filesystemHandle:      internal.StdFilesystemHandle{},
 		analytics:             analytics,
 		resolvConfMonitor:     &resolvConfMonitor,
 	}
@@ -123,39 +101,39 @@ func NewDNSServiceSetter(publisher events.Publisher[string],
 func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfComment() (dnsManagementService, error) {
 	resolvConfFileContents, err := d.filesystemHandle.ReadFile(resolvconfFilePath)
 	if err != nil {
-		return unknown, fmt.Errorf("reading resolv.conf file: %w", err)
+		return unknownManagementService, fmt.Errorf("reading resolv.conf file: %w", err)
 	}
 
 	if strings.Contains(string(resolvConfFileContents), systemdResolvedComment) {
-		return systemdResolved, nil
+		return systemdResolvedManagementService, nil
 	}
 
 	if strings.Contains(string(resolvConfFileContents), networkManagerComment) {
-		return nmcliManaged, nil
+		return nmcliManagementService, nil
 	}
 
-	return unknown, fmt.Errorf("comment not found or not recognized")
+	return unknownManagementService, fmt.Errorf("comment not found or not recognized")
 }
 
 func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfLinkTarget() (dnsManagementService, error) {
-	resolvConfFileInfo, err := d.filesystemHandle.stat(resolvconfFilePath)
+	resolvConfFileInfo, err := d.filesystemHandle.Stat(resolvconfFilePath)
 	if err != nil {
-		return unknown, fmt.Errorf("failed to stat /etc/resolv.conf: %w", err)
+		return unknownManagementService, fmt.Errorf("failed to stat /etc/resolv.conf: %w", err)
 	}
 
-	if systemdResolvedFileInfo, err := d.filesystemHandle.stat(systemdResolvedLinkTarget); err != nil {
+	if systemdResolvedFileInfo, err := d.filesystemHandle.Stat(systemdResolvedLinkTarget); err != nil {
 		log.Println(internal.WarningPrefix, dnsPrefix, "failed to stat systemd-resolved stub:", err)
-	} else if d.filesystemHandle.sameFile(resolvConfFileInfo, systemdResolvedFileInfo) {
-		return systemdResolved, nil
+	} else if d.filesystemHandle.SameFile(resolvConfFileInfo, systemdResolvedFileInfo) {
+		return systemdResolvedManagementService, nil
 	}
 
-	if nmcliFileInfo, err := d.filesystemHandle.stat(networkManagerLinkTarget); err != nil {
+	if nmcliFileInfo, err := d.filesystemHandle.Stat(networkManagerLinkTarget); err != nil {
 		log.Println(internal.WarningPrefix, dnsPrefix, "failed to stat NetworkManager resolv.conf:", err)
-	} else if d.filesystemHandle.sameFile(resolvConfFileInfo, nmcliFileInfo) {
-		return nmcliManaged, nil
+	} else if d.filesystemHandle.SameFile(resolvConfFileInfo, nmcliFileInfo) {
+		return nmcliManagementService, nil
 	}
 
-	return unknown, fmt.Errorf("link target not recognized")
+	return unknownManagementService, fmt.Errorf("link target not recognized")
 }
 
 func (d *DNSServiceSetter) getManagementService() dnsManagementService {
@@ -197,11 +175,11 @@ func (d *DNSServiceSetter) set(setter Setter, iface string, nameservers []string
 //  4. resolv.conf utility
 //  5. direct write to resolv.conf
 func (d *DNSServiceSetter) setUsingAvailable(iface string, nameservers []string) error {
-	d.analytics.setManagementService(systemdResolved)
 	if err := d.set(d.systemdResolvedSetter, iface, nameservers); err != nil {
 		log.Println(internal.WarningPrefix, dnsPrefix,
 			"failed to configure DNS using systemd-resolved:", err, "Attempt to try nmcli.")
 	} else {
+		d.analytics.setManagementService(systemdResolvedManagementService)
 		log.Println(internal.InfoPrefix, dnsPrefix, "DNS configured with systemd-resolved")
 		return nil
 	}
@@ -210,11 +188,12 @@ func (d *DNSServiceSetter) setUsingAvailable(iface string, nameservers []string)
 		log.Println(internal.WarningPrefix, dnsPrefix,
 			"failed to configure DNS using nmcli:", err, "Attempt to try resolv.conf.")
 	} else {
+		d.analytics.setManagementService(nmcliManagementService)
 		log.Println(internal.InfoPrefix, dnsPrefix, "DNS configured with nmcli")
 		return nil
 	}
 
-	d.analytics.setManagementService(unmanaged)
+	d.analytics.setManagementService(unmanagedManagementService)
 	if err := d.set(d.resolvconfSetter, iface, nameservers); err != nil {
 		return fmt.Errorf("failed to configure DNS with resolv.conf: %w", err)
 	}
@@ -241,23 +220,23 @@ func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
 	managementService := d.getManagementService()
 	d.analytics.setManagementService(managementService)
 	switch managementService {
-	case systemdResolved:
+	case systemdResolvedManagementService:
 		log.Println(internal.InfoPrefix, dnsPrefix, "setting DNS using systemd-resolved")
 		err := d.set(d.systemdResolvedSetter, iface, nameservers)
 		if err == nil {
 			return nil
 		}
 		log.Println(internal.WarningPrefix, dnsPrefix, "failed to set DNS using systemd-resolved:", err)
-	case nmcliManaged:
+	case nmcliManagementService:
 		log.Println(internal.InfoPrefix, dnsPrefix, "setting DNS using NetworkManager nmcli tool")
 		err := d.set(d.nmcliSetter, iface, nameservers)
 		if err == nil {
 			return nil
 		}
 		log.Println(internal.WarningPrefix, dnsPrefix, "failed to set DNS using nmcli:", err)
-	case unmanaged:
+	case unmanagedManagementService:
 		fallthrough
-	case unknown:
+	case unknownManagementService:
 		fallthrough
 	default:
 		log.Println(internal.WarningPrefix, dnsPrefix, "unknown DNS service")
@@ -277,7 +256,6 @@ func (d *DNSServiceSetter) Unset(iface string) error {
 		return ErrDNSNotSet
 	}
 
-	log.Println(internal.InfoPrefix, dnsPrefix, "unsetting DNS")
 	d.resolvConfMonitor.stop()
 	if err := d.unsetter.Unset(iface); err != nil {
 		return fmt.Errorf("unsetting DNS: %w", err)
@@ -289,14 +267,12 @@ func (d *DNSServiceSetter) Unset(iface string) error {
 // DNSMethodSetter iterates over the list of DNS configuration methods and tries to apply the desired DNS config with each of
 // them.
 type DNSMethodSetter struct {
-	publisher events.Publisher[string]
-	methods   []Method
+	methods []Method
 }
 
-func NewSetter(publisher events.Publisher[string], methods ...Method) *DNSMethodSetter {
+func NewSetter(methods ...Method) *DNSMethodSetter {
 	ds := DNSMethodSetter{
-		publisher: publisher,
-		methods:   methods,
+		methods: methods,
 	}
 
 	return &ds
@@ -306,16 +282,14 @@ func NewSetter(publisher events.Publisher[string], methods ...Method) *DNSMethod
 // Also, backup current DNS settings (only in case of direct resolv.conf edit).
 // Backup is not overridden, so its safe to call this function multiple times in a row.
 func (d *DNSMethodSetter) Set(iface string, nameservers []string) error {
-	d.publisher.Publish(
-		"setting dns to " + strings.Join(nameservers, " "),
-	)
+	log.Println(internal.InfoPrefix, dnsPrefix, "setting dns to "+strings.Join(nameservers, " "))
 
 	if len(nameservers) == 0 {
 		return errors.New("nameservers not provided")
 	}
 
 	for _, method := range d.methods {
-		d.publisher.Publish("set dns for interface [" + iface + "] using: " + method.Name())
+		log.Println(internal.InfoPrefix, dnsPrefix, "Set on interface ["+iface+"] using: ", method.Name())
 		if err := method.Set(iface, nameservers); err != nil {
 			log.Println(internal.ErrorPrefix, fmt.Errorf("setting dns with %s: %w", method.Name(), err))
 			continue
@@ -330,17 +304,14 @@ func (d *DNSMethodSetter) Set(iface string, nameservers []string) error {
 // Unset DNS for network interface, restore DNS from a backup, if backup
 // is available, and remove the backup on success.
 func (d *DNSMethodSetter) Unset(iface string) error {
-	d.publisher.Publish("unsetting DNS")
-
 	for _, method := range d.methods {
-		d.publisher.Publish("unset dns for interface [" + iface + "] using: " + method.Name())
+		log.Println(internal.InfoPrefix, dnsPrefix, "Unset on interface ["+iface+"] using: ", method.Name())
 		if err := method.Unset(iface); err != nil {
 			log.Println(internal.ErrorPrefix, fmt.Errorf("unsetting dns with %s: %w", method.Name(), err))
 			continue
 		}
 		return nil
 	}
-
 	return nil
 }
 

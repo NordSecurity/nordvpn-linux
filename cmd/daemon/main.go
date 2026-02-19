@@ -160,7 +160,7 @@ func main() {
 		config.InstallFilePath,
 		Salt,
 		machineIdGenerator,
-		config.StdFilesystemHandle{},
+		internal.StdFilesystemHandle{},
 		configEvents.Config,
 	)
 
@@ -298,7 +298,7 @@ func main() {
 	)
 	gwret := netlinkrouter.Retriever{}
 
-	dnsSetter := dns.NewDNSServiceSetter(infoSubject, daemonEvents.Debugger.DebuggerEvents)
+	dnsSetter := dns.NewDNSServiceSetter(daemonEvents.Debugger.DebuggerEvents)
 	dnsHostSetter := dns.NewHostsFileSetter(dns.HostsFilePath)
 
 	eventsDbPath := filepath.Join(internal.DatFilesPathCommon, "moose.db")
@@ -597,7 +597,7 @@ func main() {
 		consentChecker,
 		recents.NewRecentConnectionsStore(
 			internal.RecentVPNConnectionsFilename,
-			&config.StdFilesystemHandle{},
+			&internal.StdFilesystemHandle{},
 			func() {
 				dataUpdateEvents.RecentsUpdate.Publish(events.DataRecentsChanged{})
 			},

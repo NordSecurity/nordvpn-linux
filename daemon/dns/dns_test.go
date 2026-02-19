@@ -3,13 +3,11 @@ package dns
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"testing"
 
-	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	"github.com/NordSecurity/nordvpn-linux/test/mock/config"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,36 +41,6 @@ func (m *MockSetter) Unset(iface string) error {
 	return nil
 }
 
-type mockFileInfo struct {
-	os.FileInfo
-}
-
-type mockStatingFilesystemHandle struct {
-	config.FilesystemMock
-	isSameFile bool
-	// statErrors maps file location to a potential stat error
-	statErrors map[string]error
-}
-
-func newMockStatingFilesystemHandle(t *testing.T) *mockStatingFilesystemHandle {
-	return &mockStatingFilesystemHandle{
-		FilesystemMock: config.NewFilesystemMock(t),
-		statErrors:     make(map[string]error),
-	}
-}
-
-func (s *mockStatingFilesystemHandle) stat(location string) (os.FileInfo, error) {
-	if statErr, ok := s.statErrors[location]; ok {
-		return mockFileInfo{}, statErr
-	}
-
-	return mockFileInfo{}, nil
-}
-
-func (s *mockStatingFilesystemHandle) sameFile(fi1 os.FileInfo, fi2 os.FileInfo) bool {
-	return s.isSameFile
-}
-
 type MockMethod struct {
 	err error
 }
@@ -89,8 +57,7 @@ func (m *MockMethod) Name() string {
 
 func newDnsSetterGood() Setter {
 	ds := DNSMethodSetter{
-		publisher: &subs.Subject[string]{},
-		methods:   []Method{},
+		methods: []Method{},
 	}
 	ds.methods = append(ds.methods, &MockMethod{err: nil})
 	ds.methods = append(ds.methods, &MockMethod{err: errors.New("err1")})
@@ -98,8 +65,7 @@ func newDnsSetterGood() Setter {
 }
 func newDnsSetterError() Setter {
 	ds := DNSMethodSetter{
-		publisher: &subs.Subject[string]{},
-		methods:   []Method{},
+		methods: []Method{},
 	}
 	ds.methods = append(ds.methods, &MockMethod{err: nil})
 	ds.methods = append(ds.methods, &MockMethod{err: errors.New("err1")})
@@ -107,8 +73,7 @@ func newDnsSetterError() Setter {
 }
 func newDnsSetterNotAvailable() Setter {
 	ds := DNSMethodSetter{
-		publisher: &subs.Subject[string]{},
-		methods:   []Method{},
+		methods: []Method{},
 	}
 	ds.methods = append(ds.methods, &MockMethod{err: errors.New("set-err")})
 	ds.methods = append(ds.methods, &MockMethod{err: errors.New("unset-err")})
@@ -116,8 +81,7 @@ func newDnsSetterNotAvailable() Setter {
 }
 func newDnsSetterNoMethods() Setter {
 	ds := DNSMethodSetter{
-		publisher: &subs.Subject[string]{},
-		methods:   nil,
+		methods: nil,
 	}
 	return &ds
 }
@@ -295,7 +259,7 @@ search home`)
 			resolvconfFileContents:           systemdResolvedResolvconf,
 			setBySystemdResolved:             true,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: systemdResolved,
+			expectedManagementServiceInEvent: systemdResolvedManagementService,
 		},
 		{
 			name:                             "resolv.conf managed by network manager, use nmcli to set DNS",
@@ -303,7 +267,7 @@ search home`)
 			resolvConfIsASymlink:             false,
 			setByNmCli:                       true,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: nmcliManaged,
+			expectedManagementServiceInEvent: nmcliManagementService,
 		},
 		{
 			name:                             "resolv.conf managed by systemd-resolved, systemd-resolved fails, fallback to use nmcli to set DNS",
@@ -312,7 +276,7 @@ search home`)
 			resolvconfFileContents:           systemdResolvedResolvconf,
 			setByNmCli:                       true,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: systemdResolved,
+			expectedManagementServiceInEvent: nmcliManagementService,
 		},
 		{
 			name:                             "resolv.conf managed by network manager, systemd-resolved and nmcli fail, fallback to use resolv.conf to set DNS",
@@ -323,7 +287,7 @@ search home`)
 			resolvconfFileContents:           networkManagerResolvConf,
 			setByResolvconf:                  true,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: unmanaged,
+			expectedManagementServiceInEvent: unmanagedManagementService,
 		},
 		{
 			name:                             "resolv.conf is not managed by systemd-resolved and systemd-resolved is not found, resolv.conf is used to set DNS",
@@ -332,7 +296,7 @@ search home`)
 			nmcliSetErr:                      errSet,
 			setByResolvconf:                  true,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: unmanaged,
+			expectedManagementServiceInEvent: unmanagedManagementService,
 		},
 		{
 			name:                             "resolv.conf manager is unknown and resolv.conf is not a link, systemd-resolved is not available, resolv.conf is used to set DNS",
@@ -342,7 +306,7 @@ search home`)
 			nmcliSetErr:                      errSet,
 			setByResolvconf:                  true,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: unmanaged,
+			expectedManagementServiceInEvent: unmanagedManagementService,
 		},
 		{
 			name:                             "resolv.conf manager is unknown and resolv.conf is not a link, systemd-resolved is available, systemd-resolved is used to set DNS",
@@ -350,7 +314,7 @@ search home`)
 			resolvConfIsASymlink:             false,
 			setBySystemdResolved:             true,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: systemdResolved,
+			expectedManagementServiceInEvent: systemdResolvedManagementService,
 		},
 		{
 			name:                             "resolv.conf manager is unknown and running stat on resolv.conf fails, systemd-resolved is available, systemd-resolved is used to set DNS",
@@ -358,7 +322,7 @@ search home`)
 			resolvConfStatErr:                fmt.Errorf("failed to stat"),
 			setBySystemdResolved:             true,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: systemdResolved,
+			expectedManagementServiceInEvent: systemdResolvedManagementService,
 		},
 		{
 			name:                             "resolv.conf manager is unknown and running stat on resolv.conf fails, systemd-resolved is not available, resolv.conf is used to set DNS",
@@ -368,7 +332,7 @@ search home`)
 			systemdResolvedSetErr:            fmt.Errorf("failed to set"),
 			setByResolvconf:                  true,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: unmanaged,
+			expectedManagementServiceInEvent: unmanagedManagementService,
 		},
 		{
 			name:                             "resolv.conf manager is unknown and running stat on systemd stub fails, systemd-resolved is available, systemd-resolved is used to set DNS",
@@ -376,7 +340,7 @@ search home`)
 			systemdStubStatErr:               fmt.Errorf("failed to stat"),
 			setBySystemdResolved:             true,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: systemdResolved,
+			expectedManagementServiceInEvent: systemdResolvedManagementService,
 		},
 		{
 			name:                             "resolv.conf manager is unknown and running stat on systemd stub fails, systemd-resolved is not available, resolv.conf is used to set DNS",
@@ -386,7 +350,7 @@ search home`)
 			systemdResolvedSetErr:            fmt.Errorf("failed to set"),
 			setByResolvconf:                  true,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: unmanaged,
+			expectedManagementServiceInEvent: unmanagedManagementService,
 		},
 		{
 			name:                             "manager is not recognized based on resolv.conf contents but the file links to systemd-resolved is used to set DNS",
@@ -394,7 +358,7 @@ search home`)
 			resolvconfFileContents:           unknownManager,
 			setBySystemdResolved:             true,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: systemdResolved,
+			expectedManagementServiceInEvent: systemdResolvedManagementService,
 		},
 		{
 			name:                             "systemd-resolved is recognized from resolv.conf comment but setting the DNS fails, resolv.conf is used to set DNS",
@@ -403,7 +367,7 @@ search home`)
 			nmcliSetErr:                      errSet,
 			setByResolvconf:                  true,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: unmanaged,
+			expectedManagementServiceInEvent: unmanagedManagementService,
 		},
 		{
 			name:                   "setting DNS with resolved and resolv.conf fails, a proper error is returned",
@@ -422,7 +386,7 @@ search home`)
 			systemdResolvedUnsetErr:          errUnset,
 			expectedUnsetErr:                 errUnset,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: systemdResolved,
+			expectedManagementServiceInEvent: systemdResolvedManagementService,
 		},
 		{
 			name:                             "unsetting fails with resolv.conf, a proper error is returned",
@@ -433,7 +397,7 @@ search home`)
 			resolvconfUnsetErr:               errUnset,
 			expectedUnsetErr:                 errUnset,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: unmanaged,
+			expectedManagementServiceInEvent: unmanagedManagementService,
 		},
 	}
 
@@ -452,10 +416,10 @@ search home`)
 				unsetErr: test.nmcliUnsetErr,
 			}
 
-			fs := newMockStatingFilesystemHandle(t)
-			fs.statErrors[resolvconfFilePath] = test.resolvConfStatErr
-			fs.statErrors[systemdResolvedLinkTarget] = test.systemdStubStatErr
-			fs.isSameFile = test.resolvConfIsASymlink
+			fs := fs.NewSystemFileHandleMock(t)
+			fs.StatErrors[resolvconfFilePath] = test.resolvConfStatErr
+			fs.StatErrors[systemdResolvedLinkTarget] = test.systemdStubStatErr
+			fs.IsSameFile = test.resolvConfIsASymlink
 			fs.AddFile(resolvconfFilePath, test.resolvconfFileContents)
 
 			analyticsMock := analyticsMock{}
@@ -465,7 +429,7 @@ search home`)
 				resolvconfSetter:      &resolvconfSetter,
 				resolvConfMonitor:     &mockResolvConfMonitor{},
 				analytics:             &analyticsMock,
-				filesystemHandle:      fs,
+				filesystemHandle:      &fs,
 				nmcliSetter:           &nmCliSetter,
 			}
 
