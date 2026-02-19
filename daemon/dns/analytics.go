@@ -56,7 +56,7 @@ type dnsAnalytics struct {
 func newDNSAnalytics(publisher events.Publisher[events.DebuggerEvent]) *dnsAnalytics {
 	return &dnsAnalytics{
 		debugPublisher:    publisher,
-		managementService: unknown,
+		managementService: unknownManagementService,
 	}
 }
 

@@ -23,7 +23,7 @@ func Test_emitResolvConfOverwrittenEvent(t *testing.T) {
 		Value: resolvConfOverwritten.String()})
 	assert.Contains(t, event.KeyBasedContextPaths, events.ContextValue{
 		Path:  debuggerEventBaseKey + "." + debuggerEventManagementServiceKey,
-		Value: unknown.String()})
+		Value: unknownManagementService.String()})
 	assert.Equal(t,
 		"{\"event\":\"resolvconf_overwritten\",\"namespace\":\"nordvpn-linux\",\"management_service\":\"unknown_service\"}",
 		event.JsonData)
@@ -36,11 +36,11 @@ func Test_emitDNSConfiguredEvent(t *testing.T) {
 	}{
 		{
 			name:              "systemd-resolved",
-			managementService: systemdResolved,
+			managementService: systemdResolvedManagementService,
 		},
 		{
 			name:              "unmanaged",
-			managementService: unmanaged,
+			managementService: unmanagedManagementService,
 		},
 	}
 
