@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/google/nftables"
 	"github.com/google/nftables/binaryutil"
 	"github.com/google/nftables/expr"
@@ -22,8 +23,8 @@ type nft struct {
 	conn *nftables.Conn
 }
 
-func (n *nft) Configure(tunnelInterface string, allowList config.Allowlist) error {
-	if err := n.configure(tunnelInterface, allowList); err != nil {
+func (n *nft) Configure(vpnInfo *firewall.VpnInfo, meshMap *mesh.MachineMap) error {
+	if err := n.configure(vpnInfo, nil); err != nil {
 		return fmt.Errorf("applying VPN lockdown: %w", err)
 	}
 	return nil
@@ -44,7 +45,7 @@ func New() *nft {
 type tcpPortsSet *nftables.Set
 type udpPortsSet *nftables.Set
 
-func (n *nft) configure(tunnelInterface string, allowList config.Allowlist) error {
+func (n *nft) configure(vpnInfo *firewall.VpnInfo, meshMap *mesh.MachineMap) error {
 	log.Println("configure FW")
 	table := addMainTable(n.conn)
 	n.conn.DelTable(table)
@@ -57,14 +58,18 @@ func (n *nft) configure(tunnelInterface string, allowList config.Allowlist) erro
 		KeyType:      nftables.TypeIFName,
 		KeyByteOrder: binaryutil.NativeEndian,
 	}
+	setElements := []nftables.SetElement{
+			{Key: ifname("lo")},
+			// {Key: ifname(*vpnInfo.TunnelInterface)},
+	}
+	if vpnInfo.TunnelInterface != nil {
+		setElements = append(setElements, nftables.SetElement{Key: ifname(*vpnInfo.TunnelInterface)})
+	}
+	n.conn.AddSet(allowedInterfaces, setElements)
 
-	n.conn.AddSet(allowedInterfaces, []nftables.SetElement{
-		{Key: ifname("lo")},
-		{Key: ifname(tunnelInterface)},
-	})
 
 	var allowedSubnets *nftables.Set
-	if len(allowList.Subnets) > 0 {
+	if len(vpnInfo.Allowlist.Subnets) > 0 {
 		allowedSubnets = &nftables.Set{
 			Table:    table,
 			Name:     allowedSubnetsSetName,
@@ -72,7 +77,7 @@ func (n *nft) configure(tunnelInterface string, allowList config.Allowlist) erro
 			Interval: true,
 		}
 		var elements []nftables.SetElement
-		for _, subnet := range allowList.Subnets {
+		for _, subnet := range vpnInfo.Allowlist.Subnets {
 
 			startIp, endIp, err := firstLastV4(subnet)
 			if err != nil {
@@ -92,28 +97,28 @@ func (n *nft) configure(tunnelInterface string, allowList config.Allowlist) erro
 	}
 
 	var tcpPorts tcpPortsSet
-	if len(allowList.Ports.TCP) > 0 {
+	if len(vpnInfo.Allowlist.Ports.TCP) > 0 {
 		tcpPorts = &nftables.Set{
 			Table:    table,
 			Name:     tcpSetName,
 			KeyType:  nftables.TypeInetService,
 			Interval: true,
 		}
-		elements := convertPortsToSetElements(allowList.GetTCPPorts())
+		elements := convertPortsToSetElements(vpnInfo.Allowlist.GetTCPPorts())
 		if err := n.conn.AddSet(tcpPorts, elements); err != nil {
 			return fmt.Errorf("failed to set elements: %v", err)
 		}
 	}
 
 	var udpPorts udpPortsSet
-	if len(allowList.Ports.TCP) > 0 {
+	if len(vpnInfo.Allowlist.Ports.TCP) > 0 {
 		udpPorts = &nftables.Set{
 			Table:    table,
 			Name:     udpSetName,
 			KeyType:  nftables.TypeInetService,
 			Interval: true,
 		}
-		elements := convertPortsToSetElements(allowList.GetUDPPorts())
+		elements := convertPortsToSetElements(vpnInfo.Allowlist.GetUDPPorts())
 		if err := n.conn.AddSet(udpPorts, elements); err != nil {
 			return fmt.Errorf("failed to set elements: %v", err)
 		}
@@ -123,7 +128,9 @@ func (n *nft) configure(tunnelInterface string, allowList config.Allowlist) erro
 	n.addPreRouting(table, allowedSubnets, tcpPorts, udpPorts)
 	n.addInput(table, allowedInterfaces)
 	n.addOutput(table, allowedInterfaces, allowedSubnets, tcpPorts, udpPorts)
-	n.addForward(table, tunnelInterface, allowedSubnets, tcpPorts, udpPorts)
+	if vpnInfo.TunnelInterface != nil{
+		n.addForward(table, *vpnInfo.TunnelInterface, allowedSubnets, tcpPorts, udpPorts)
+	}
 
 	return n.conn.Flush()
 }

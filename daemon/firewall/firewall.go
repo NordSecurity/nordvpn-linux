@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
@@ -33,7 +34,20 @@ func NewFirewall(impl FwImpl, enabled bool) *Firewall {
 	}
 }
 
-func (fw *Firewall) Configure(tunnelInterface string, allowList config.Allowlist) error {
+type VpnInfo struct{
+	TunnelInterface *string
+	Allowlist *config.Allowlist
+	Killswitch bool
+}
+
+func NewVpnInfo(allowlist config.Allowlist, killswitch bool) *VpnInfo{
+	// log.Printf("got values: tunint - %v, al - %v, ks - %v", tunnelInterface, allowlist, killswitch)
+	return &VpnInfo{
+		TunnelInterface: nil, 
+		Allowlist: &allowlist, 
+		Killswitch: killswitch}
+}
+func (fw *Firewall) Configure(vpnInfo *VpnInfo, meshMap *mesh.MachineMap) error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
@@ -43,7 +57,7 @@ func (fw *Firewall) Configure(tunnelInterface string, allowList config.Allowlist
 		return errors.New("firewall not enabled")
 	}
 
-	return fw.impl.Configure(tunnelInterface, allowList)
+	return fw.impl.Configure(vpnInfo, nil)
 }
 
 func (fw *Firewall) Remove() error {

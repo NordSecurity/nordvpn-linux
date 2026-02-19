@@ -30,7 +30,7 @@ func (r *RPC) SetFirewall(ctx context.Context, in *pb.SetGenericRequest) (*pb.Pa
 	}
 
 	if in.GetEnabled() {
-		if err := r.netw.EnableFirewall(cfg.AutoConnectData.Allowlist); err != nil {
+		if err := r.netw.EnableFirewall(); err != nil {
 			log.Println(internal.ErrorPrefix, err)
 			return &pb.Payload{Type: internal.CodeFailure}, nil
 		}
