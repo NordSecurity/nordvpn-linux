@@ -5,6 +5,7 @@ package moose
 import (
 	"math"
 	moose "moose/events"
+	"reflect"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -16,6 +17,19 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"gotest.tools/v3/assert"
 )
+
+func TestNewSubscriber_AllMooseFuncsSet(t *testing.T) {
+	category.Set(t, category.Unit)
+	// values are not important, `mooseFuncs` field needs to be set properly
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+
+	v := reflect.ValueOf(sub.mooseFuncs)
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Type().Field(i)
+		value := v.Field(i)
+		assert.Equal(t, value.IsNil(), false, "mooseFunc %q is not set", field.Name)
+	}
+}
 
 func TestIsPaymentValid(t *testing.T) {
 	category.Set(t, category.Unit)
@@ -206,10 +220,12 @@ func TestChangeConsentState(t *testing.T) {
 			configManagerMock := mock.NewMockConfigManager()
 			configManagerMock.Cfg.AnalyticsConsent = test.currentConsentState
 			s := &Subscriber{
-				config:                     configManagerMock,
-				mooseConsentLevelFunc:      consentFunc,
-				mooseSetConsentIntoCtxFunc: setConsentToCtx,
-				canSendAllEvents:           atomic.Bool{},
+				config: configManagerMock,
+				mooseFuncs: mooseFunctions{
+					setAppConsentLevel:       consentFunc,
+					setConsentUserPreference: setConsentToCtx,
+				},
+				canSendAllEvents: atomic.Bool{},
 			}
 
 			s.canSendAllEvents.Store(test.currentOptInState)
@@ -379,10 +395,12 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 			var capturedTimestamp int32
 
 			s := &Subscriber{
-				mooseSetTokenRenewDateFunc: func(timestamp int32) uint32 {
-					setCalled = true
-					capturedTimestamp = timestamp
-					return 0
+				mooseFuncs: mooseFunctions{
+					setTokenRenewDateCurrentState: func(timestamp int32) uint32 {
+						setCalled = true
+						capturedTimestamp = timestamp
+						return 0
+					},
 				},
 			}
 
@@ -444,18 +462,20 @@ func TestNotifyThreatProtectionLite_CallsUserPreferenceSetter(t *testing.T) {
 			var gotPref bool
 
 			s := &Subscriber{
-				mooseSetTPLiteUserPrefFunc: func(v bool) uint32 {
-					prefCalled = true
-					gotPref = v
-					return tt.mooseUserPrefErrCode
-				},
-				mooseSetCustomDNSMetaFunc: func(meta string) uint32 {
-					customDNSMetaCalled = true
-					return tt.mooseSetCustomDNSMetaErr
-				},
-				mooseSetCustomDNSValueFunc: func(enabled bool) uint32 {
-					customDNSValueCalled = true
-					return tt.mooseSetCustomDNSValueErr
+				mooseFuncs: mooseFunctions{
+					setTPLiteUserPreference: func(v bool) uint32 {
+						prefCalled = true
+						gotPref = v
+						return tt.mooseUserPrefErrCode
+					},
+					setCustomDNSMeta: func(meta string) uint32 {
+						customDNSMetaCalled = true
+						return tt.mooseSetCustomDNSMetaErr
+					},
+					setCustomDNSValue: func(enabled bool) uint32 {
+						customDNSValueCalled = true
+						return tt.mooseSetCustomDNSValueErr
+					},
 				},
 			}
 
@@ -558,15 +578,17 @@ func TestSetCustomDNS(t *testing.T) {
 			var gotValue bool
 
 			s := &Subscriber{
-				mooseSetCustomDNSMetaFunc: func(meta string) uint32 {
-					metaCalled = true
-					gotMeta = meta
-					return tt.mooseMetaErrCode
-				},
-				mooseSetCustomDNSValueFunc: func(enabled bool) uint32 {
-					valueCalled = true
-					gotValue = enabled
-					return tt.mooseValueErrCode
+				mooseFuncs: mooseFunctions{
+					setCustomDNSMeta: func(meta string) uint32 {
+						metaCalled = true
+						gotMeta = meta
+						return tt.mooseMetaErrCode
+					},
+					setCustomDNSValue: func(enabled bool) uint32 {
+						valueCalled = true
+						gotValue = enabled
+						return tt.mooseValueErrCode
+					},
 				},
 			}
 
@@ -699,22 +721,24 @@ func TestNotifyDNS(t *testing.T) {
 			var gotTPLiteValue bool
 
 			s := &Subscriber{
-				mooseSetCustomDNSMetaFunc: func(meta string) uint32 {
-					metaCalled = true
-					return tt.mooseMetaErrCode
-				},
-				mooseSetCustomDNSValueFunc: func(enabled bool) uint32 {
-					valueCalled = true
-					return tt.mooseValueErrCode
-				},
-				mooseSetTPLiteUserPrefFunc: func(v bool) uint32 {
-					tpLiteUserPrefCalled = true
-					return tt.mooseTPLiteUserPrefErr
-				},
-				mooseSetTPLiteCurrentFunc: func(v bool) uint32 {
-					tpLiteCurrentCalled = true
-					gotTPLiteValue = v
-					return tt.mooseTPLiteCurrentErr
+				mooseFuncs: mooseFunctions{
+					setCustomDNSMeta: func(meta string) uint32 {
+						metaCalled = true
+						return tt.mooseMetaErrCode
+					},
+					setCustomDNSValue: func(enabled bool) uint32 {
+						valueCalled = true
+						return tt.mooseValueErrCode
+					},
+					setTPLiteUserPreference: func(v bool) uint32 {
+						tpLiteUserPrefCalled = true
+						return tt.mooseTPLiteUserPrefErr
+					},
+					setTPLiteCurrentState: func(v bool) uint32 {
+						tpLiteCurrentCalled = true
+						gotTPLiteValue = v
+						return tt.mooseTPLiteCurrentErr
+					},
 				},
 			}
 
