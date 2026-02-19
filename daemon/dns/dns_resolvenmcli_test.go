@@ -74,15 +74,15 @@ func Test_DNSResolveNmCli_PhysicalInterfaceDeduction(t *testing.T) {
 		},
 		{
 			name: "connections with semicolon in names",
-			cmdOutput: `Wired connection_:  2:802-3-ethernet
+			cmdOutput: `Wired connection_\:  2:802-3-ethernet
 docker0:bridge
 lo:loopback
 virbr0:tun
 br-f78c0ce0d3eb:tun
-mpqemubr0:bridge
+mpqemubr0\:\: \::bridge
 vnet3:tun`,
 			cmdError:      nil,
-			expectedConns: []string{"Wired connection_:  2", "docker0", "mpqemubr0"},
+			expectedConns: []string{"Wired connection_:  2", "docker0", "mpqemubr0:: :"},
 		},
 	}
 

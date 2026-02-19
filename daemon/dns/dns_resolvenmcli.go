@@ -148,7 +148,10 @@ func (nmcli *NMCli) getConnectionFromPhysicalInterfaces() ([]string, error) {
 			strings.Contains(fields[1], bridgeType) ||
 			strings.Contains(fields[1], gsmType) ||
 			strings.Contains(fields[1], cdmaType) {
-			conns = append(conns, strings.TrimSpace(fields[0]))
+			// for tersed output (eg. the -t flag) nmcli provides escaped colons in the connection names
+			// thus it is essential to unescape them here
+			connName := strings.ReplaceAll(fields[0], "\\:", ":")
+			conns = append(conns, strings.TrimSpace(connName))
 		}
 	}
 	return conns, nil
