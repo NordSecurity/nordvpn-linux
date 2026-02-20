@@ -14,14 +14,15 @@ _blackholes = []
 
 API_EXTERNAL_IP = "https://api.nordvpn.com/v1/helpers/ips/insights"
 
-FWMARK = 0xe1f1
+FWMARK = 0xE1F1
+
 
 class PacketCaptureThread(Thread):
     def __init__(self, connection_settings, duration: int):
         Thread.__init__(self)
         self.connection_settings = connection_settings
         self.packets = ""
-        self.duration=duration
+        self.duration = duration
 
     def run(self):
         self.packets = self._capture_packets()
@@ -38,7 +39,7 @@ class PacketCaptureThread(Thread):
         if technology == "openvpn":
             if obfuscated == "off":
                 return ["-f", f"{protocol} and (host {server_ip})", "-Y", "openvpn"]
-            if obfuscated =="on":
+            if obfuscated == "on":
                 return ["-f", f"{protocol} and (host {server_ip})", "-Y", "not openvpn"]
 
         print("_add_filters: no filters were added")
@@ -48,7 +49,7 @@ class PacketCaptureThread(Thread):
         technology = self.connection_settings[0]
 
         command = ["-i", "any", "-a", f"duration:{self.duration}"]
-        if technology != "" :
+        if technology != "":
             command += self._add_filters()
         logging.log(f"start capturing {command}")
         tshark_result: str = sh.tshark(command)
@@ -79,13 +80,13 @@ class RouteInfo:
         # The first token is either a CIDR or "default"
         self.destination = tokens[0]
 
-        self.gateway = self._extract_token(tokens, 'via')
-        self.interface = self._extract_token(tokens, 'dev')
-        self.metric = self._extract_token(tokens, 'metric', convert=int)
-        self.src = self._extract_token(tokens, 'src')
-        self.scope = self._extract_token(tokens, 'scope')
-        self.proto = self._extract_token(tokens, 'proto')
-        self.type = self._extract_token(tokens, 'type')
+        self.gateway = self._extract_token(tokens, "via")
+        self.interface = self._extract_token(tokens, "dev")
+        self.metric = self._extract_token(tokens, "metric", convert=int)
+        self.src = self._extract_token(tokens, "src")
+        self.scope = self._extract_token(tokens, "scope")
+        self.proto = self._extract_token(tokens, "proto")
+        self.type = self._extract_token(tokens, "type")
 
     def _extract_token(self, tokens, key, convert=str):
         try:
@@ -94,25 +95,21 @@ class RouteInfo:
             return None
 
     def __repr__(self):
-        return (
-            f"<RouteInfo destination={self.destination}, gateway={self.gateway}, "
-            f"interface={self.interface}, metric={self.metric}, src={self.src}, "
-            f"scope={self.scope}, proto={self.proto}, type={self.type}>"
-        )
+        return f"<RouteInfo destination={self.destination}, gateway={self.gateway}, interface={self.interface}, metric={self.metric}, src={self.src}, scope={self.scope}, proto={self.proto}, type={self.type}>"
 
     def routes_ip(self, ip: str) -> bool:
         result = sh.ip.route.get(ip).stdout.decode().strip()
         tokens = result.split()
 
-        resolved_dev = self._extract_token(tokens, 'dev')
-        resolved_via = self._extract_token(tokens, 'via')
-        resolved_src = self._extract_token(tokens, 'src')
+        resolved_dev = self._extract_token(tokens, "dev")
+        resolved_via = self._extract_token(tokens, "via")
+        resolved_src = self._extract_token(tokens, "src")
 
         if self.interface and resolved_dev != self.interface:
             return False
         if self.gateway and resolved_via and resolved_via != self.gateway:
             return False
-        return not(self.src and resolved_src and resolved_src != self.src)
+        return not (self.src and resolved_src and resolved_src != self.src)
 
     @staticmethod
     def default_route_info() -> "RouteInfo":
@@ -120,7 +117,7 @@ class RouteInfo:
         return RouteInfo(output)
 
 
-def capture_traffic(connection_settings, duration: int=5) -> str:
+def capture_traffic(connection_settings, duration: int = 5) -> str:
     """Returns count of captured packets."""
 
     # We try to capture packets using other thread
@@ -130,7 +127,7 @@ def capture_traffic(connection_settings, duration: int=5) -> str:
     try:
         # generate some traffic
         generate_traffic(retry=5)
-    except Exception as e: # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
         logging.log(f"capture_traffic exception: {e}")
         logging.log(t_connect.packets)
 
@@ -147,8 +144,10 @@ def is_internet_reachable(ip_address="1.1.1.1", port=443, retry=5) -> bool:
             sock = socket.create_connection((ip_address, port), timeout=2)
             sock.close()
             return True
-        except Exception as e: # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             logging.log(f"is_internet_reachable failed {ip_address}: {e}")
+            res = sh.sudo.nft.list.ruleset()
+            logging.log(f"is_internet_reachable {res}")
             time.sleep(1)
             i += 1
     return False
@@ -185,14 +184,14 @@ def _is_ipv6_internet_reachable(retry=5) -> bool:
     raise last
 
 
-def _is_dns_resolvable(domain = "nordvpn.com", retry=5) -> bool:
+def _is_dns_resolvable(domain="nordvpn.com", retry=5) -> bool:
     """Returns True when domain resolution is working."""
     i = 0
     while i < retry:
         try:
             resolver = dns.resolver.Resolver()
-            resolver.nameservers = ["103.86.96.100"] # specify server so it will not get the result from the docker host
-            resolver.resolve(domain, 'A', lifetime=5)
+            resolver.nameservers = ["103.86.96.100"]  # specify server so it will not get the result from the docker host
+            resolver.resolve(domain, "A", lifetime=5)
             return True
         except Exception as e:  # noqa: BLE001
             print(f"_is_dns_resolvable: DNS {domain} FAILURE. Error: {e}")
@@ -261,9 +260,9 @@ def start(default_gateway: dict):
 def stop() -> dict:
     """Returns default_gateway to be used when starting network again."""
     default_gateway = {}
-    for line in sh.ip.route().split('\n'):
-        if line.startswith('default'):
-            default_gateway[line.split()[4]]=line.split()[2]
+    for line in sh.ip.route().split("\n"):
+        if line.startswith("default"):
+            default_gateway[line.split()[4]] = line.split()[2]
     assert default_gateway, f"Couldn't find default gateway. Ip route are next: {sh.ip.route()}"
 
     logging.log(f"Default routing before stopping network {sh.sudo.ip.route.show.default()}")

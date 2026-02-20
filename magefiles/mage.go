@@ -18,6 +18,9 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
+// var url, _ = getEnv()
+// var imageTester = url["BASE"] + "tester:1.6.3_nft"
+
 const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
 	imageBuilder           = registryPrefix + "builder:1.4.3"
