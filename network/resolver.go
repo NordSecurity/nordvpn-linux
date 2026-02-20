@@ -58,7 +58,7 @@ func (r *Resolver) ResolveWithNameservers(domain string, nameservers []netip.Add
 }
 
 func allowlistIP(fw firewall.Service, name string, ips ...netip.Addr) error {
-	ifaces, err := device.ListPhysical()
+	ifaces, err := device.OutsideCapableTrafficInterfaces()
 	if err != nil {
 		return fmt.Errorf("listing physical interfaces: %w", err)
 	}

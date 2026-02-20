@@ -67,6 +67,8 @@ final class FullScreenError extends StatelessWidget {
   }
 }
 
+enum ErrorType { generic, snap }
+
 final class ErrorData {
   Widget? icon;
   String title;
@@ -75,6 +77,10 @@ final class ErrorData {
   Widget? footer;
   FutureOr<void> Function()? retryCallback;
 
+  final ErrorType errorType;
+  // Used for missing snap interfaces
+  final List<String> snapInterfaces;
+
   ErrorData({
     this.icon,
     required this.title,
@@ -82,5 +88,7 @@ final class ErrorData {
     this.recommendation,
     this.footer,
     this.retryCallback,
+    this.errorType = ErrorType.generic,
+    this.snapInterfaces = const [],
   });
 }

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package meshpb;
+package snappb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/snapconf/pb";
 

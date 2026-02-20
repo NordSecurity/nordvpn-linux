@@ -579,7 +579,7 @@ func TestLogoutReasonCodeSelectionWithProductionCode(t *testing.T) {
 			name:               "access token - unauthorized error",
 			sessionStore:       "accessToken",
 			apiError:           core.ErrUnauthorized,
-			expectedReasonCode: events.ReasonNotSpecified,
+			expectedReasonCode: events.ReasonUnauthorized,
 		},
 		{
 			name:               "vpn creds - missing vpn credentials",

@@ -15,7 +15,7 @@ import pytest
 import sys
 import os
 
-from lib import logging, network, daemon, login, info, firewall
+from lib import logging, network, daemon, login, info, firewall, IS_NIGHTLY
 
 from lib.remote_config_manager import RemoteConfigManager, LOCAL_CACHE_DIR, REMOTE_DIR
 from lib.logging import FILE
@@ -32,7 +32,6 @@ pytest_plugins = "lib.pytest_timeouts.pytest_timeouts"
 
 _CHECK_FREQUENCY = 5
 TMP_DAEMON_PATH_BACKUP = f"{os.getcwd()}/tmp"
-IS_NIGHTLY = (os.getenv("CI_PIPELINE_SCHEDULE_DESCRIPTION") or "").strip().lower() == "nightly"
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "lib/protobuf/daemon")))
 
@@ -122,6 +121,7 @@ def start_system_monitoring():
     if os.getenv("SKIP_SYSTEM_MONITORING"):
         print("Skipping monitoring...")
         yield
+        return
 
     print("Run start_system_monitoring")
 

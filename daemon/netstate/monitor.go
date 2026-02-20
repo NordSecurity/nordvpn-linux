@@ -1,9 +1,11 @@
 package netstate
 
 import (
+	"log"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/vishvananda/netlink"
 )
@@ -32,7 +34,7 @@ func NewNetlinkMonitor(ignoreIntfs []string) (*NetlinkMonitor, error) {
 		mtx:              sync.Mutex{},
 	}
 	nlmon.ignored = mapset.NewSet(ignoreIntfs...)
-	nlmon.cached = device.InterfacesWithDefaultRoute(nlmon.ignored)
+	nlmon.cached = device.OutsideCapableTrafficIfNames(nlmon.ignored)
 
 	if err := netlink.LinkSubscribe(nlmon.linkUpdatesChan, nlmon.doneChan); err != nil {
 		return nil, err
@@ -70,7 +72,7 @@ func (m *NetlinkMonitor) run(re Reconnector) {
 }
 
 func (m *NetlinkMonitor) checkForChanges(re Reconnector) {
-	interfaces := device.InterfacesWithDefaultRoute(m.ignored)
+	interfaces := device.OutsideCapableTrafficIfNames(m.ignored)
 
 	if m.setCachedInterfaces(interfaces) {
 		re.Reconnect(!interfaces.IsEmpty())
@@ -80,7 +82,10 @@ func (m *NetlinkMonitor) checkForChanges(re Reconnector) {
 func (m *NetlinkMonitor) setCachedInterfaces(interfaces mapset.Set[string]) bool {
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
-	if !m.cached.Equal(interfaces) {
+	// replace existing interface only if they are different
+	// don't replace with empty list because it might come back the same interface
+	if !interfaces.IsEmpty() && !m.cached.Equal(interfaces) {
+		log.Println(internal.InfoPrefix, "monitored interfaces changed from", m.cached, "to", interfaces)
 		m.cached = interfaces
 		return true
 	}

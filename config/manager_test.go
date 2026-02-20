@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -52,11 +53,10 @@ func TestFilesystem(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			configLocation := "testdata/config"
-			vaultLocation := "testdata/vault"
-			fs := NewFilesystemConfigManager("testdata/config", "testdata/vault", "", NewMachineID(os.ReadFile, os.Hostname), StdFilesystemHandle{}, nil)
-			defer os.Remove(configLocation)
-			defer os.Remove(vaultLocation)
+			tmpDir := t.TempDir()
+			configLocation := filepath.Join(tmpDir, "config")
+			vaultLocation := filepath.Join(tmpDir, "vault")
+			fs := NewFilesystemConfigManager(configLocation, vaultLocation, "", NewMachineID(os.ReadFile, os.Hostname), StdFilesystemHandle{}, nil)
 
 			err := fs.SaveWith(test.f)
 			assert.NoError(t, err)
@@ -162,4 +162,106 @@ func TestConfigDefaultValues(t *testing.T) {
 			assert.True(t, cfg.VirtualLocation.Get())
 		})
 	}
+}
+
+func TestSaveWithPublishesPreviousConfig(t *testing.T) {
+	category.Set(t, category.File)
+
+	tmpDir := t.TempDir()
+	configLocation := filepath.Join(tmpDir, "config")
+	vaultLocation := filepath.Join(tmpDir, "vault")
+
+	var publishedChange DataConfigChange
+	publisher := &mockConfigPublisher{
+		onPublish: func(change DataConfigChange) {
+			publishedChange = change
+		},
+	}
+
+	fs := NewFilesystemConfigManager(
+		configLocation,
+		vaultLocation,
+		"",
+		NewMachineID(os.ReadFile, os.Hostname),
+		StdFilesystemHandle{},
+		publisher,
+	)
+
+	// First save - creates initial config
+	assert.NoError(t, fs.SaveWith(func(c Config) Config {
+		c.AutoConnect = true
+		return c
+	}))
+
+	// Verify first publish (new installation)
+	assert.Nil(t, publishedChange.PreviousConfig)
+	assert.NotNil(t, publishedChange.Config)
+	assert.True(t, publishedChange.Config.AutoConnect)
+
+	// Second save - should have PreviousConfig
+	assert.NoError(t, fs.SaveWith(func(c Config) Config {
+		c.KillSwitch = true
+		return c
+	}))
+
+	// Verify PreviousConfig contains the state before the change
+	assert.NotNil(t, publishedChange.PreviousConfig)
+	assert.True(t, publishedChange.PreviousConfig.AutoConnect, "PreviousConfig should have AutoConnect=true from first save")
+	assert.False(t, publishedChange.PreviousConfig.KillSwitch, "PreviousConfig should have KillSwitch=false before change")
+
+	// Verify Config contains the new state
+	assert.NotNil(t, publishedChange.Config)
+	assert.True(t, publishedChange.Config.AutoConnect)
+	assert.True(t, publishedChange.Config.KillSwitch, "Config should have KillSwitch=true after change")
+}
+
+type mockConfigPublisher struct {
+	onPublish func(DataConfigChange)
+}
+
+func (m *mockConfigPublisher) Publish(change DataConfigChange) {
+	if m.onPublish != nil {
+		m.onPublish(change)
+	}
+}
+
+func TestLoadWithCopyReturnsIndependentCopies(t *testing.T) {
+	category.Set(t, category.File)
+
+	tmpDir := t.TempDir()
+	configLocation := filepath.Join(tmpDir, "config")
+	vaultLocation := filepath.Join(tmpDir, "vault")
+
+	fs := NewFilesystemConfigManager(
+		configLocation,
+		vaultLocation,
+		"",
+		NewMachineID(os.ReadFile, os.Hostname),
+		StdFilesystemHandle{},
+		nil,
+	)
+
+	// Create initial config
+	err := fs.SaveWith(func(c Config) Config {
+		c.AutoConnect = true
+		c.TokensData[123] = TokenData{Token: "test-token"}
+		return c
+	})
+	assert.NoError(t, err)
+
+	// Load with copy
+	var first, second Config
+	err = fs.load(&first, &second)
+	assert.NoError(t, err)
+
+	// Verify both have the same initial values
+	assert.Equal(t, first.AutoConnect, second.AutoConnect)
+	assert.Equal(t, first.TokensData[123].Token, second.TokensData[123].Token)
+
+	// Modify first copy
+	first.AutoConnect = false
+	first.TokensData[123] = TokenData{Token: "modified-token"}
+
+	// Verify second copy is unchanged (independent)
+	assert.NotEqual(t, first, second, "Modifications to the first copy should not affect the second copy")
 }

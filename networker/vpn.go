@@ -106,9 +106,12 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 	if netw.vpnet != nil && netw.vpnet.Tun() != nil {
 		tunnelName = netw.vpnet.Tun().Interface().Name
 	}
-	newInterfaces := device.InterfacesWithDefaultRoute(mapset.NewSet(tunnelName))
+	newInterfaces := device.OutsideCapableTrafficIfNames(mapset.NewSet(tunnelName))
 	newInterfaceDetected := !newInterfaces.IsSubset(netw.interfaces)
-	log.Println(internal.InfoPrefix, "refresh VPN, new interface detected:", newInterfaceDetected)
+	log.Println(internal.InfoPrefix,
+		"refresh VPN, new interface detected[]:",
+		newInterfaceDetected,
+		netw.interfaces, "->", newInterfaces)
 
 	if !newInterfaceDetected {
 		// if there is no new OS interface, just reconfigure the VPN internally if possible

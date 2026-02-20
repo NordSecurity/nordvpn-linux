@@ -14,8 +14,13 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// AccountUsageText is shown next to account command by nordvpn --help
-const AccountUsageText = "Shows account information"
+const (
+	// AccountUsageText is shown next to account command by nordvpn --help
+	AccountUsageText    = "Shows account information"
+	TermsOfServiceURL   = "https://my.nordaccount.com/legal/terms-of-service/?utm_medium=app&utm_source=nordvpn-linux-cli"
+	AutoRenewalTermsURL = "https://my.nordaccount.com/legal/terms-of-service/subscription/?utm_medium=app&utm_source=nordvpn-linux-cli"
+	PrivacyPolicyURL    = "https://my.nordaccount.com/legal/privacy-policy/?utm_medium=app&utm_source=nordvpn-linux-cli"
+)
 
 func formatDate(dateStr string) (string, error) {
 	t, err := time.Parse(internal.ServerDateFormat, dateStr)
@@ -98,6 +103,9 @@ func (c *cmd) Account(ctx *cli.Context) error {
 	}
 
 	fmt.Println("Multi-factor authentication (MFA):", mfa)
+	fmt.Println("\nTerms of Service -", TermsOfServiceURL)
+	fmt.Println("Auto-renewal terms -", AutoRenewalTermsURL)
+	fmt.Println("Privacy Policy -", PrivacyPolicyURL)
 
 	return nil
 }

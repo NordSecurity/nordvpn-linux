@@ -13,6 +13,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/google/uuid"
 	"golang.org/x/exp/slices"
@@ -485,7 +486,7 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 		log.Println(internal.ErrorPrefix, "picking servers:", err)
 		switch {
 		case errors.Is(err, core.ErrUnauthorized):
-			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, r.events.User.Logout)); err != nil {
+			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, r.events.User.Logout, events.ReasonUnauthorized)); err != nil {
 				return serverSelection{}, err
 			}
 			return serverSelection{}, internal.ErrNotLoggedIn

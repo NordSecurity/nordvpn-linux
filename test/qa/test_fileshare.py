@@ -7,14 +7,16 @@ import subprocess
 import tempfile
 import threading
 import time
+from itertools import product
 
 import psutil
 import pytest
 import sh
 
-from lib import daemon, fileshare, info, logging, login, meshnet, poll, ssh
+from lib import daemon, fileshare, info, logging, login, meshnet, poll, ssh, IS_NIGHTLY
 from lib.shell import sh_no_tty
 from lib.meshnet import delete_machines_by_identifier, LOCAL_TOKEN, PEER_TOKEN
+from lib.dynamic_parametrize import dynamic_parametrize
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
 
@@ -207,11 +209,21 @@ def test_accept(accept_directories):
 
 
 @pytest.mark.core_meshnet
-@pytest.mark.parametrize("path_flag", [True, False], ids=["accept_custom_path", "accept_downloads"])
-@pytest.mark.parametrize("background_accept", ["", "--background"], ids=["accept_int", "accept_bg"])
-@pytest.mark.parametrize("background_send", [True, False], ids=["send_bg", "send_int"])
-@pytest.mark.parametrize("filesystem_entity", list(fileshare.FileSystemEntity), ids = [f"send_{entity.value}" for entity in list(fileshare.FileSystemEntity)])
-def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, background_send: bool, path_flag: str, background_accept: str):
+@dynamic_parametrize(
+    [
+        "filesystem_entity",
+        "background_send",
+        "path_flag",
+        "background_accept",
+    ],
+    ordered_source=[list(fileshare.FileSystemEntity)],
+    randomized_source=[[(background_send, path_flag, background_accept) for
+                        background_send, path_flag, background_accept in
+                        product([True, False], [True, False], ["", "--background"])]],
+    id_pattern="send_{filesystem_entity}-send_bg_{background_send}-accept_custom_path_{path_flag}-accept_bg_'{background_accept}'",
+    generate_all=IS_NIGHTLY,
+)
+def test_fileshare_transfer(filesystem_entity: fileshare.FileSystemEntity, background_send: bool, path_flag: bool, background_accept: str):
     """Manual TCs: LVPN-3128, LVPN-3130"""
 
     peer_name = random.choice(list(meshnet.PeerName)[:-1])
@@ -1445,8 +1457,9 @@ def test_clear():
 
 def test_fileshare_process_monitoring_manages_fileshare_rules_on_process_state_changes():
     try:
+        peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
         # port is open when fileshare is running
-        assert fileshare.port_is_allowed()
+        assert fileshare.port_is_allowed(peer_address)
 
         sh.pkill("-SIGKILL", "nordfileshare")
         # at the time of writing, the monitoring job is executed periodically every second,
@@ -1454,13 +1467,13 @@ def test_fileshare_process_monitoring_manages_fileshare_rules_on_process_state_c
         time.sleep(2)
 
         # port is not allowed when fileshare is down
-        assert fileshare.port_is_blocked()
+        assert fileshare.port_is_blocked(peer_address)
 
         # restart meshet to get fileshare back up
         fileshare.restart_mesh()
 
         # port is allowed again when fileshare process is up
-        assert fileshare.port_is_allowed()
+        assert fileshare.port_is_allowed(peer_address)
     finally: # meshnet should be on for most of the tests in this module
         fileshare.ensure_mesh_is_on()
 
@@ -1468,10 +1481,11 @@ def test_fileshare_process_monitoring_manages_fileshare_rules_on_process_state_c
 @pytest.mark.skip(reason="LVPN-6691")
 def test_fileshare_process_monitoring_cuts_the_port_access_even_when_it_was_taken_before():
     try:
+        peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().ip
         # stop meshnet to bind to 49111 first
         sh.nordvpn.set.meshnet.off()
         time.sleep(2)
-        assert fileshare.port_is_blocked()
+        assert fileshare.port_is_blocked(peer_address)
 
         # bind to port before fileshare process starts
         sock = fileshare.bind_port()
@@ -1482,7 +1496,7 @@ def test_fileshare_process_monitoring_cuts_the_port_access_even_when_it_was_take
         time.sleep(2)
 
         # port should not be allowed (fileshare is down)
-        assert fileshare.port_is_blocked()
+        assert fileshare.port_is_blocked(peer_address)
 
         # free the port
         sock.close()
@@ -1491,7 +1505,7 @@ def test_fileshare_process_monitoring_cuts_the_port_access_even_when_it_was_take
         fileshare.restart_mesh()
 
         # fileshare is up so port is allowed
-        assert fileshare.port_is_allowed()
+        assert fileshare.port_is_allowed(peer_address)
     finally: # meshnet should be on for most of the tests in this module
         fileshare.ensure_mesh_is_on()
 

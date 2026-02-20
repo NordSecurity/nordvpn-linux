@@ -23,8 +23,9 @@ func (fw *Firewall) isEnabled() bool {
 }
 
 type mockAgent struct {
-	added   int
-	deleted int
+	added           int
+	deleted         int
+	activeRuleNames []string
 }
 
 type failingAgent struct {
@@ -48,7 +49,7 @@ func (m *mockAgent) Flush() error {
 }
 
 func (m *mockAgent) GetActiveRules() ([]string, error) {
-	return nil, nil
+	return m.activeRuleNames, nil
 }
 
 func (f *failingAgent) Add(rule Rule) error {
@@ -73,11 +74,12 @@ func TestFirewallAdd(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name     string
-		rules    []Rule
-		expected []Rule
-		agent    Agent
-		hasError bool
+		name           string
+		rules          []Rule
+		networkChanged []Rule
+		expected       []Rule
+		agent          Agent
+		hasError       bool
 	}{
 		{
 			name:     "empty slice",
@@ -188,6 +190,24 @@ func TestFirewallAdd(t *testing.T) {
 			agent:    &mockAgent{},
 			hasError: false,
 		},
+		{
+			name:  "add rule when it already exists only in OS",
+			rules: []Rule{},
+			networkChanged: []Rule{
+				{
+					Name:       "block",
+					Interfaces: []net.Interface{{Name: "en0"}},
+				},
+			},
+			expected: []Rule{
+				{
+					Name:       "block",
+					Interfaces: []net.Interface{{Name: "en0"}},
+				},
+			},
+			agent:    &mockAgent{activeRuleNames: []string{"block"}},
+			hasError: false,
+		},
 	}
 
 	for _, test := range tests {
@@ -198,6 +218,14 @@ func TestFirewallAdd(t *testing.T) {
 				assert.Error(t, err)
 				_, ok := err.(*Error)
 				assert.True(t, ok)
+			}
+			if len(test.networkChanged) > 0 {
+				err := fw.Add(test.networkChanged)
+				if test.hasError {
+					assert.Error(t, err)
+				} else {
+					assert.NoError(t, err)
+				}
 			}
 			assert.ElementsMatch(t, test.expected, fw.rules.rules)
 		})
