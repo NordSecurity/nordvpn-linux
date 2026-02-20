@@ -8,7 +8,6 @@ import (
 	"log"
 	"sync"
 
-	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
@@ -33,7 +32,7 @@ func NewFirewall(impl FwImpl, enabled bool) *Firewall {
 	}
 }
 
-func (fw *Firewall) Configure(vpnInfo *VpnInfo, meshnetMap *mesh.MachineMap) error {
+func (fw *Firewall) Configure(vpnInfo *VpnInfo, meshInfo *MeshInfo) error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
@@ -44,7 +43,7 @@ func (fw *Firewall) Configure(vpnInfo *VpnInfo, meshnetMap *mesh.MachineMap) err
 		return nil
 	}
 
-	return fw.impl.Configure(vpnInfo, meshnetMap)
+	return fw.impl.Configure(vpnInfo, meshInfo)
 }
 
 func (fw *Firewall) Remove() error {

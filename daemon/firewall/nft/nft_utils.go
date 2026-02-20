@@ -11,6 +11,19 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+func buildJumpRules(chainName string, parts ...[]expr.Any) []expr.Any {
+	var n int
+	for _, p := range parts {
+		n += len(p)
+	}
+	out := make([]expr.Any, 0, n+1)
+	for _, p := range parts {
+		out = append(out, p...)
+	}
+
+	return append(out, &expr.Verdict{Kind: expr.VerdictJump, Chain: chainName})
+}
+
 func buildRules(kind expr.VerdictKind, parts ...[]expr.Any) []expr.Any {
 	var n int
 	for _, p := range parts {
@@ -196,7 +209,11 @@ func addIpCheckAndSetMetaMark(fwmark uint32, ipSet *nftables.Set, match matchTyp
 	}
 }
 
-func addIpCheckInSet(ipSet *nftables.Set, match matchType) []expr.Any {
+func addIpCheckInSet(
+	ipSet *nftables.Set,
+	match matchType,
+	notEqual bool,
+) []expr.Any {
 	if ipSet == nil {
 		return []expr.Any{}
 	}
@@ -229,6 +246,7 @@ func addIpCheckInSet(ipSet *nftables.Set, match matchType) []expr.Any {
 			SourceRegister: 1,
 			SetName:        ipSet.Name,
 			SetID:          ipSet.ID,
+			Invert:         notEqual,
 		},
 	}
 
@@ -330,6 +348,48 @@ func addMetaMarkCheckAndSetCtMark(fwmark uint32) []expr.Any {
 	}
 }
 
+func addCheckIpInSubnet(ipNet *net.IPNet, match matchType) []expr.Any {
+	var offset uint32 = 12
+	if match == MATCH_DESTINATION {
+		offset = 16
+	}
+	return []expr.Any{
+		&expr.Meta{
+			Key:      expr.MetaKeyNFPROTO,
+			Register: 1,
+		},
+		&expr.Cmp{
+			Register: 1,
+			Op:       expr.CmpOpEq,
+			Data:     []byte{unix.NFPROTO_IPV4},
+		},
+
+		// Load IPv4 source address
+		&expr.Payload{
+			DestRegister: 1,
+			Base:         expr.PayloadBaseNetworkHeader,
+			Offset:       offset, // IPv4 saddr
+			Len:          4,
+		},
+
+		// Apply CIDR mask
+		&expr.Bitwise{
+			SourceRegister: 1,
+			DestRegister:   1,
+			Len:            4,
+			Mask:           ipNet.Mask,
+			Xor:            binaryutil.NativeEndian.PutUint32(0),
+		},
+
+		// Compare masked IP to network
+		&expr.Cmp{
+			Register: 1,
+			Op:       expr.CmpOpEq,
+			Data:     ipNet.IP.Mask(ipNet.Mask),
+		},
+	}
+}
+
 // interface name must be unix.IFNAMSIZ chars, even if they are \0
 func ifname(n string) []byte {
 	b := make([]byte, unix.IFNAMSIZ)
@@ -337,7 +397,7 @@ func ifname(n string) []byte {
 	return b
 }
 
-func firstLastV4(cidr string) (net.IP, net.IP, error) {
+func calculateFirstAndLastV4(cidr string) (net.IP, net.IP, error) {
 	ip, ipnet, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return nil, nil, err
@@ -417,7 +477,7 @@ func convertPortsToSetElements(ports []int64) []nftables.SetElement {
 func converCidrToSetElements(cidrList []string) ([]nftables.SetElement, error) {
 	var elems []nftables.SetElement
 	for _, cidr := range cidrList {
-		start, end, err := firstLastV4(cidr)
+		start, end, err := calculateFirstAndLastV4(cidr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert %s: %w", cidr, err)
 		}

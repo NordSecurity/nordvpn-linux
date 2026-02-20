@@ -3,6 +3,7 @@ package nft
 import (
 	"fmt"
 	"log"
+	"net"
 
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
@@ -18,18 +19,21 @@ const allowedInterfacesSetName = "allowed_interfaces"
 const allowedSubnetsSetName = "allowed_subnets"
 const tcpSetName = "allowed_tcp"
 const udpSetName = "allowed_udp"
-const lanIpRanges = "lan_ips"
+const lanIpRangesSetName = "lan_ips"
+
 const defaultMeshSubnet = "100.64.0.0/10"
-const meshPeersWithFileshare = "allow_peers_send_files"
-const inboundPeers = "allow_incoming_connections"
-const lanPeers = "lan_allowed_peers"
+const reservedMeshnetSubnet = "100.64.0.0/29"
+const fileshareAllowedPeersSet = "fileshare_allowed_peers"
+const allowIncomingConnectionPeersSet = "allow_incoming_connections"
+const allowTrafficRoutingPeersSet = "allow_peer_traffic_routing"
+const blockedLanAccessPeersSet = "blocked_peer_local_network_access"
 
 type nft struct {
 	conn *nftables.Conn
 }
 
-func (n *nft) Configure(vpnInfo *firewall.VpnInfo, meshnetMap *mesh.MachineMap) error {
-	if err := n.configure(vpnInfo, meshnetMap); err != nil {
+func (n *nft) Configure(vpnInfo *firewall.VpnInfo, meshnetInfo *firewall.MeshInfo) error {
+	if err := n.configure(vpnInfo, meshnetInfo); err != nil {
 		return fmt.Errorf("applying VPN lockdown: %w", err)
 	}
 	return nil
@@ -50,8 +54,11 @@ func New() *nft {
 type tcpPortsSet *nftables.Set
 type udpPortsSet *nftables.Set
 
-func (n *nft) configure(vpnInfo *firewall.VpnInfo, meshnetMap *mesh.MachineMap) error {
-	log.Println("configure FW")
+func (n *nft) configure(vpnInfo *firewall.VpnInfo, meshnetInfo *firewall.MeshInfo) error {
+	isVpnOrKsSet := vpnInfo != nil && (len(vpnInfo.TunnelInterface) > 0 || vpnInfo.KillSwitch)
+
+	log.Println("configure FW", isVpnOrKsSet)
+
 	table := addMainTable(n.conn)
 	n.conn.DelTable(table)
 	table = addMainTable(n.conn)
@@ -64,37 +71,19 @@ func (n *nft) configure(vpnInfo *firewall.VpnInfo, meshnetMap *mesh.MachineMap) 
 		KeyByteOrder: binaryutil.NativeEndian,
 	}
 
-	n.conn.AddSet(allowedInterfaces, []nftables.SetElement{
+	interfacesElements := []nftables.SetElement{
 		{Key: ifname("lo")},
-		{Key: ifname(vpnInfo.TunnelInterface)},
-	})
+	}
 
-	var allowedSubnets *nftables.Set
-	if len(vpnInfo.AllowList.Subnets) > 0 {
-		allowedSubnets = &nftables.Set{
-			Table:    table,
-			Name:     allowedSubnetsSetName,
-			KeyType:  nftables.TypeIPAddr,
-			Interval: true,
-		}
-		var elements []nftables.SetElement
-		for _, subnet := range vpnInfo.AllowList.Subnets {
+	if vpnInfo.TunnelInterface != "" {
+		interfacesElements = append(interfacesElements, nftables.SetElement{Key: ifname(vpnInfo.TunnelInterface)})
+	}
 
-			startIp, endIp, err := firstLastV4(subnet)
-			if err != nil {
-				return fmt.Errorf("failed to parse allowlist IP: %s %w", subnet, err)
-			}
+	n.conn.AddSet(allowedInterfaces, interfacesElements)
 
-			elements = append(elements, nftables.SetElement{
-				Key: startIp,
-			}, nftables.SetElement{
-				Key:         endIp,
-				IntervalEnd: true,
-			})
-		}
-		if err := n.conn.AddSet(allowedSubnets, elements); err != nil {
-			return fmt.Errorf("failed to set elements: %v", err)
-		}
+	allowedSubnets, err := n.buildAllowlistSubnets(table, vpnInfo)
+	if err != nil {
+		return err
 	}
 
 	var tcpPorts tcpPortsSet
@@ -125,36 +114,42 @@ func (n *nft) configure(vpnInfo *firewall.VpnInfo, meshnetMap *mesh.MachineMap) 
 		}
 	}
 
-	// var lanNets *nftables.Set
+	lanRangesIps, err := n.buildLanRangesSet(table)
+	if err != nil {
+		return err
+	}
+
 	var fileshare *nftables.Set
-	// var lanAllowed *nftables.Set
-	// var inboundAllowed *nftables.Set
-	if meshnetMap != nil {
-		// lanNets, err := n.buildLanRangesSet(table)
-		// if err != nil {
-		// 	return err
-		// }
-		var err error
-		fileshare, err = n.buildFileshare(table, *meshnetMap)
+	var lanBlockedForPeers *nftables.Set
+	var routingAllowed *nftables.Set
+	var allowedIncomingConnections *nftables.Set
+	if meshnetInfo != nil {
+		fileshare, err = n.buildFileshare(table, meshnetInfo.MeshnetMap)
 		if err != nil {
 			return err
 		}
 
-		// lanAllowed, err := n.buildLanAllowed(table, *meshnetMap)
-		// if err != nil {
-		// 	return err
-		// }
+		lanBlockedForPeers, err = n.buildBlockedLanPeers(table, meshnetInfo.MeshnetMap)
+		if err != nil {
+			return err
+		}
 
-		// inboundAllowed, err := n.buildInboundAllowed(table, *meshnetMap)
-		// if err != nil {
-		// 	return err
-		// }
+		routingAllowed, err = n.buildAllowedRoutingPeers(table, meshnetInfo.MeshnetMap)
+		if err != nil {
+			return err
+		}
+
+		allowedIncomingConnections, err = n.buildAllowedIncomingConnections(table, meshnetInfo.MeshnetMap)
+		if err != nil {
+			return err
+		}
+
 	}
 	// n.addPostRouting(table, allowedSubnets)
 	n.addPreRouting(table, allowedSubnets, tcpPorts, udpPorts)
-	n.addInput(table, allowedInterfaces, fileshare)
-	n.addOutput(table, allowedInterfaces, allowedSubnets, tcpPorts, udpPorts)
-	n.addForward(table, vpnInfo.TunnelInterface, allowedSubnets, tcpPorts, udpPorts)
+	n.addInput(isVpnOrKsSet, table, allowedInterfaces, fileshare, allowedIncomingConnections)
+	n.addOutput(isVpnOrKsSet, table, allowedInterfaces, allowedSubnets, tcpPorts, udpPorts, meshnetInfo)
+	n.addForward(table, vpnInfo.TunnelInterface, allowedSubnets, tcpPorts, udpPorts, lanBlockedForPeers, routingAllowed, lanRangesIps)
 
 	return n.conn.Flush()
 }
@@ -262,11 +257,16 @@ func (n *nft) addPreRouting(
 // //	    ct mark 0xe1f1 accept
 // //		}
 func (n *nft) addInput(
+	isVpnOrKsSet bool,
 	table *nftables.Table,
 	allowedInterfaces *nftables.Set,
 	filesharePeers *nftables.Set,
+	allowIncomingConnections *nftables.Set,
 ) {
-	dropPolicy := nftables.ChainPolicyDrop
+	dropPolicy := nftables.ChainPolicyAccept
+	if isVpnOrKsSet {
+		dropPolicy = nftables.ChainPolicyDrop
+	}
 
 	inputChain := n.conn.AddChain(&nftables.Chain{
 		Name:     "input",
@@ -275,12 +275,6 @@ func (n *nft) addInput(
 		Hooknum:  nftables.ChainHookInput,
 		Priority: nftables.ChainPriorityFilter,
 		Policy:   &dropPolicy,
-	})
-
-	n.conn.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: inputChain,
-		Exprs: buildRules(expr.VerdictAccept, addInterfacesCheck(allowedInterfaces, IF_INPUT)),
 	})
 
 	n.conn.AddRule(&nftables.Rule{
@@ -296,17 +290,86 @@ func (n *nft) addInput(
 		Exprs: buildRules(expr.VerdictAccept, addCtMarkCheck(appFwmark)),
 	})
 
-	if filesharePeers != nil {
-		n.conn.AddRule((&nftables.Rule{
+	// meshnet
+	if filesharePeers != nil || allowIncomingConnections != nil {
+		meshChain := n.conn.AddChain(&nftables.Chain{
+			Name:  "mesh_input",
 			Table: table,
-			Chain: inputChain,
+		})
+
+		_, ipNet, err := net.ParseCIDR(reservedMeshnetSubnet)
+		if err != nil {
+			log.Fatal(err)
+		}
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: meshChain,
 			Exprs: buildRules(
 				expr.VerdictAccept,
-				addIpCheckInSet(filesharePeers, MATCH_SOURCE),
-				addPortCheck(49111, unix.IPPROTO_TCP, MATCH_DESTINATION),
+				addCheckIpInSubnet(ipNet, MATCH_SOURCE),
+			),
+		})
+
+		if filesharePeers != nil {
+			n.conn.AddRule((&nftables.Rule{
+				Table: table,
+				Chain: meshChain,
+				Exprs: buildRules(
+					expr.VerdictAccept,
+					addPortCheck(49111, unix.IPPROTO_TCP, MATCH_DESTINATION),
+					addIpCheckInSet(filesharePeers, MATCH_SOURCE, false),
+				),
+			}))
+
+			n.conn.AddRule((&nftables.Rule{
+				Table: table,
+				Chain: meshChain,
+				Exprs: buildRules(
+					expr.VerdictDrop,
+					addPortCheck(49111, unix.IPPROTO_TCP, MATCH_DESTINATION),
+				),
+			}))
+		}
+
+		if allowIncomingConnections != nil {
+			n.conn.AddRule((&nftables.Rule{
+				Table: table,
+				Chain: meshChain,
+				Exprs: buildRules(
+					expr.VerdictAccept,
+					addIpCheckInSet(allowIncomingConnections, MATCH_SOURCE, false),
+				),
+			}))
+		}
+
+		n.conn.AddRule((&nftables.Rule{
+			Table: table,
+			Chain: meshChain,
+			Exprs: buildRules(
+				expr.VerdictDrop,
 			),
 		}))
+
+		// jump to meshnet input chain
+		_, ipNet, err = net.ParseCIDR(defaultMeshSubnet)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: inputChain,
+			Exprs: buildJumpRules(meshChain.Name,
+				addInterfaceNameCheck("nordlynx", IF_INPUT),
+				addCheckIpInSubnet(ipNet, MATCH_SOURCE),
+			),
+		})
 	}
+	n.conn.AddRule(&nftables.Rule{
+		Table: table,
+		Chain: inputChain,
+		Exprs: buildRules(expr.VerdictAccept, addInterfacesCheck(allowedInterfaces, IF_INPUT)),
+	})
 }
 
 // chain output {
@@ -319,13 +382,18 @@ func (n *nft) addInput(
 //	    meta mark 0xe1f1 accept
 //		}
 func (n *nft) addOutput(
+	isVpnOrKsSet bool,
 	table *nftables.Table,
 	allowedInterfaces *nftables.Set,
 	allowedSubnets *nftables.Set,
 	udpPortsSet tcpPortsSet,
 	tcpPortsSet udpPortsSet,
+	meshMap *firewall.MeshInfo,
 ) {
-	dropPolicy := nftables.ChainPolicyDrop
+	dropPolicy := nftables.ChainPolicyAccept
+	if isVpnOrKsSet {
+		dropPolicy = nftables.ChainPolicyDrop
+	}
 
 	outputChain := n.conn.AddChain(&nftables.Chain{
 		Name:     "output",
@@ -336,6 +404,7 @@ func (n *nft) addOutput(
 		Policy:   &dropPolicy,
 	})
 
+	// TODO: check for OpenVPN
 	n.conn.AddRule(&nftables.Rule{
 		Table: table,
 		Chain: outputChain,
@@ -389,6 +458,22 @@ func (n *nft) addOutput(
 			addMetaMarkCheckAndSetCtMark(appFwmark),
 		),
 	})
+
+	if meshMap != nil {
+		_, ipNet, err := net.ParseCIDR(defaultMeshSubnet)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: outputChain,
+			Exprs: buildRules(expr.VerdictAccept,
+				addInterfaceNameCheck("nordlynx", IF_OUTPUT),
+				addCheckIpInSubnet(ipNet, MATCH_DESTINATION),
+			),
+		})
+	}
 }
 
 //	chain forward {
@@ -402,6 +487,9 @@ func (n *nft) addForward(
 	allowedSubnets *nftables.Set,
 	udpPortsSet tcpPortsSet,
 	tcpPortsSet udpPortsSet,
+	lanBlockedForPeers *nftables.Set,
+	routingAllowed *nftables.Set,
+	lanRangesIps *nftables.Set,
 ) {
 	dropPolicy := nftables.ChainPolicyDrop
 
@@ -467,17 +555,41 @@ func (n *nft) addForward(
 			),
 		})
 	}
+
+	if lanBlockedForPeers != nil && lanRangesIps != nil {
+		// block peers that must not access LAN
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: forwardChain,
+			Exprs: buildRules(expr.VerdictDrop,
+				addIpCheckInSet(lanBlockedForPeers, MATCH_SOURCE, false),
+				addIpCheckInSet(lanRangesIps, MATCH_DESTINATION, false),
+			),
+		})
+	}
+
+	if routingAllowed != nil {
+		// allow routing
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: forwardChain,
+			Exprs: buildRules(expr.VerdictAccept,
+				addIpCheckInSet(routingAllowed, MATCH_SOURCE, false),
+			),
+		})
+	}
 }
 
 func (n *nft) buildLanRangesSet(table *nftables.Table) (*nftables.Set, error) {
 	lanNets := &nftables.Set{
 		Table:    table,
-		Name:     lanIpRanges,
+		Name:     lanIpRangesSetName,
 		KeyType:  nftables.TypeIPAddr,
 		Interval: true,
 	}
 
-	elems, err := converCidrToSetElements([]string{"10.0.0.0/8",
+	elems, err := converCidrToSetElements([]string{
+		"10.0.0.0/8",
 		"172.16.0.0/12",
 		"192.168.0.0/16",
 		"169.254.0.0/16",
@@ -496,7 +608,7 @@ func (n *nft) buildLanRangesSet(table *nftables.Table) (*nftables.Set, error) {
 func (n *nft) buildFileshare(table *nftables.Table, meshMap mesh.MachineMap) (*nftables.Set, error) {
 	set := &nftables.Set{
 		Table:    table,
-		Name:     meshPeersWithFileshare,
+		Name:     fileshareAllowedPeersSet,
 		KeyType:  nftables.TypeIPAddr,
 		Interval: false,
 	}
@@ -521,10 +633,10 @@ func (n *nft) buildFileshare(table *nftables.Table, meshMap mesh.MachineMap) (*n
 	return set, nil
 }
 
-func (n *nft) buildLanAllowed(table *nftables.Table, meshMap mesh.MachineMap) (*nftables.Set, error) {
+func (n *nft) buildBlockedLanPeers(table *nftables.Table, meshMap mesh.MachineMap) (*nftables.Set, error) {
 	set := &nftables.Set{
 		Table:    table,
-		Name:     lanPeers,
+		Name:     blockedLanAccessPeersSet,
 		KeyType:  nftables.TypeIPAddr,
 		Interval: false,
 	}
@@ -535,7 +647,8 @@ func (n *nft) buildLanAllowed(table *nftables.Table, meshMap mesh.MachineMap) (*
 			continue
 		}
 
-		if peer.DoIAllowLocalNetwork {
+		lanAllowed := peer.DoIAllowRouting && peer.DoIAllowLocalNetwork
+		if !lanAllowed {
 			elems = append(elems,
 				nftables.SetElement{Key: peer.Address.AsSlice()},
 			)
@@ -548,10 +661,11 @@ func (n *nft) buildLanAllowed(table *nftables.Table, meshMap mesh.MachineMap) (*
 
 	return set, nil
 }
-func (n *nft) buildInboundAllowed(table *nftables.Table, meshMap mesh.MachineMap) (*nftables.Set, error) {
+
+func (n *nft) buildAllowedIncomingConnections(table *nftables.Table, meshMap mesh.MachineMap) (*nftables.Set, error) {
 	set := &nftables.Set{
 		Table:    table,
-		Name:     inboundPeers,
+		Name:     allowIncomingConnectionPeersSet,
 		KeyType:  nftables.TypeIPAddr,
 		Interval: false,
 	}
@@ -574,6 +688,70 @@ func (n *nft) buildInboundAllowed(table *nftables.Table, meshMap mesh.MachineMap
 	}
 
 	return set, nil
+}
+
+func (n *nft) buildAllowedRoutingPeers(table *nftables.Table, meshMap mesh.MachineMap) (*nftables.Set, error) {
+	set := &nftables.Set{
+		Table:    table,
+		Name:     allowTrafficRoutingPeersSet,
+		KeyType:  nftables.TypeIPAddr,
+		Interval: false,
+	}
+
+	var elems []nftables.SetElement
+	for _, peer := range meshMap.Peers {
+		if !peer.Address.IsValid() {
+			continue
+		}
+
+		if peer.DoIAllowRouting {
+			elems = append(elems,
+				nftables.SetElement{Key: peer.Address.AsSlice()},
+			)
+		}
+	}
+
+	if err := n.conn.AddSet(set, elems); err != nil {
+		return nil, fmt.Errorf("failed to set elements: %w", err)
+	}
+
+	return set, nil
+}
+
+func (n *nft) buildAllowlistSubnets(table *nftables.Table, vpnInfo *firewall.VpnInfo) (*nftables.Set, error) {
+	if vpnInfo == nil {
+		return nil, nil
+	}
+
+	var allowedSubnets *nftables.Set
+	if len(vpnInfo.AllowList.Subnets) > 0 {
+		allowedSubnets = &nftables.Set{
+			Table:    table,
+			Name:     allowedSubnetsSetName,
+			KeyType:  nftables.TypeIPAddr,
+			Interval: true,
+		}
+		var elements []nftables.SetElement
+		for _, subnet := range vpnInfo.AllowList.Subnets {
+
+			startIp, endIp, err := calculateFirstAndLastV4(subnet)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse allowlist IP: %s %w", subnet, err)
+			}
+
+			elements = append(elements, nftables.SetElement{
+				Key: startIp,
+			}, nftables.SetElement{
+				Key:         endIp,
+				IntervalEnd: true,
+			})
+		}
+		if err := n.conn.AddSet(allowedSubnets, elements); err != nil {
+			return nil, fmt.Errorf("failed to set elements: %v", err)
+		}
+	}
+
+	return allowedSubnets, nil
 }
 
 func addMainTable(conn *nftables.Conn) *nftables.Table {

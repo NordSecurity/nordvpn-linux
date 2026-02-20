@@ -347,9 +347,19 @@ func (netw *Combined) configureNetwork(
 		}
 	}
 
-	vpnInfo := firewall.NewVpnInfo(netw.vpnet.Tun().Interface().Name, allowlist, netw.isKillSwitchSet)
+	tunnelInterface := ""
+	if netw.isVpnSet {
+		tunnelInterface = netw.vpnet.Tun().Interface().Name
+	}
 
-	if err := netw.fw.Configure(&vpnInfo, &netw.cfg); err != nil {
+	vpnInfo := firewall.NewVpnInfo(tunnelInterface, allowlist, netw.isKillSwitchSet)
+
+	var meshInfo *firewall.MeshInfo
+	if netw.isMeshnetSet {
+		meshInfo = firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)
+	}
+
+	if err := netw.fw.Configure(vpnInfo, meshInfo); err != nil {
 		return fmt.Errorf("enabling firewall: %w", err)
 	}
 
@@ -459,9 +469,17 @@ func (netw *Combined) restart(
 		}
 	}
 
-	vpnInfo := firewall.NewVpnInfo(netw.vpnet.Tun().Interface().Name, config.Allowlist{}, netw.isKillSwitchSet)
+	tunnelInterface := ""
+	if netw.isVpnSet {
+		tunnelInterface = netw.vpnet.Tun().Interface().Name
+	}
 
-	if err := netw.fw.Configure(&vpnInfo, &netw.cfg); err != nil {
+	vpnInfo := firewall.NewVpnInfo(tunnelInterface, config.Allowlist{}, netw.isKillSwitchSet)
+	var meshInfo *firewall.MeshInfo
+	if netw.isMeshnetSet {
+		meshInfo = firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)
+	}
+	if err := netw.fw.Configure(vpnInfo, meshInfo); err != nil {
 		return fmt.Errorf("enabling firewall: %w", err)
 	}
 
@@ -591,13 +609,18 @@ func (netw *Combined) unsetDNS() error {
 
 func (netw *Combined) blockTraffic(allowlist config.Allowlist) error {
 	// TODO: fix nft
-	tunnelInterface := "xdsit"
+	tunnelInterface := ""
 	if netw.isVpnSet {
 		tunnelInterface = netw.vpnet.Tun().Interface().Name
 	}
-	vpnInfo := firewall.NewVpnInfo(tunnelInterface, allowlist, netw.isKillSwitchSet)
 
-	return netw.fw.Configure(&vpnInfo, &netw.cfg)
+	vpnInfo := firewall.NewVpnInfo(tunnelInterface, allowlist, netw.isKillSwitchSet)
+	var meshInfo *firewall.MeshInfo
+	if netw.isMeshnetSet {
+		meshInfo = firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)
+	}
+
+	return netw.fw.Configure(vpnInfo, meshInfo)
 }
 
 func (netw *Combined) unblockTraffic() error {
@@ -629,14 +652,17 @@ func (netw *Combined) EnableFirewall(allowList config.Allowlist) error {
 
 	if netw.isKillSwitchSet || netw.isVpnSet {
 		// TODO: fix nft
-		tunnelInterface := "xfdsfsdf"
+		tunnelInterface := ""
 		if netw.isVpnSet {
 			tunnelInterface = netw.vpnet.Tun().Interface().Name
 		}
 
 		vpnInfo := firewall.NewVpnInfo(tunnelInterface, config.Allowlist{}, netw.isKillSwitchSet)
-
-		if err := netw.fw.Configure(&vpnInfo, &netw.cfg); err != nil {
+		var meshInfo *firewall.MeshInfo
+		if netw.isMeshnetSet {
+			meshInfo = firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)
+		}
+		if err := netw.fw.Configure(vpnInfo, meshInfo); err != nil {
 			return fmt.Errorf("enabling firewall: %w", err)
 		}
 	}
@@ -844,7 +870,14 @@ func (netw *Combined) IsNetworkSet() bool {
 	return netw.isNetworkSet
 }
 
-func (netw *Combined) setNetwork(allowlist config.Allowlist) error {
+func (netw *Combined) setNetwork(allowlist config.Allowlist) (retErr error) {
+	netw.isNetworkSet = true
+	defer func() {
+		if retErr != nil {
+			netw.isNetworkSet = false
+		}
+	}()
+
 	err := netw.blockTraffic(allowlist)
 	if err != nil && !errors.Is(err, firewall.ErrRuleAlreadyExists) {
 		return err
@@ -854,7 +887,6 @@ func (netw *Combined) setNetwork(allowlist config.Allowlist) error {
 		return err
 	}
 
-	netw.isNetworkSet = true
 	return nil
 }
 
@@ -888,13 +920,21 @@ func (netw *Combined) SetKillSwitch(allowlist config.Allowlist) error {
 	return netw.setKillSwitch(allowlist, true)
 }
 
-func (netw *Combined) setKillSwitch(allowlist config.Allowlist, force bool) error {
+func (netw *Combined) setKillSwitch(allowlist config.Allowlist, force bool) (retErr error) {
+
+	defer func() {
+		if retErr != nil {
+			netw.isKillSwitchSet = false
+		}
+	}()
+
+	netw.isKillSwitchSet = true
+
 	if !netw.isNetworkSet || force {
 		if err := netw.setNetwork(allowlist); err != nil {
 			return err
 		}
 	}
-	netw.isKillSwitchSet = true
 	return nil
 }
 
@@ -1083,9 +1123,16 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 		return err
 	}
 
-	vpnInfo := firewall.NewVpnInfo(netw.vpnet.Tun().Interface().Name, config.Allowlist{}, netw.isKillSwitchSet)
+	tunnelInterface := ""
+	if netw.isVpnSet {
+		tunnelInterface = netw.vpnet.Tun().Interface().Name
+	}
+	vpnInfo := firewall.NewVpnInfo(tunnelInterface, config.Allowlist{}, netw.isKillSwitchSet)
 
-	if err := netw.fw.Configure(&vpnInfo, &netw.cfg); err != nil {
+	var meshInfo *firewall.MeshInfo
+	meshInfo = firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)
+
+	if err := netw.fw.Configure(vpnInfo, meshInfo); err != nil {
 		return fmt.Errorf("add firewall rule: %w", err)
 	}
 
