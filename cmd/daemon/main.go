@@ -712,7 +712,7 @@ func main() {
 
 	go func() {
 		if err := dm.LoadData(); err != nil {
-			log.Println(internal.WarningPrefix, "loading data:", err)
+			log.Println(internal.WarningPrefix, "DataManager failed to load data:", err)
 		} else {
 			log.Println(internal.InfoPrefix, "data successfully loaded from disk")
 		}

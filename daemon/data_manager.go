@@ -64,6 +64,7 @@ func (dm *DataManager) LoadData() error {
 	if err := dm.serversData.load(); err != nil {
 		errs = append(errs, fmt.Errorf("loading servers data: %w", err))
 	} else {
+		log.Println(internal.InfoPrefix, "server data successfully loaded")
 		dm.serversDataReady = true
 	}
 	if err := dm.versionData.load(); err != nil {

@@ -294,5 +294,5 @@ func TestAutoconnect_HandleServersDataIsNotReady(t *testing.T) {
 	r := RPC{cm: mockConfigManager, ac: mockAuthChecker, dm: &dm}
 	request := pb.SetAutoconnectRequest{Enabled: true}
 	_, err := r.SetAutoConnect(context.Background(), &request)
-	assert.Equal(t, err.Error(), internal.ServerUnavailableErrorMessage)
+	assert.EqualError(t, err, internal.ServerUnavailableErrorMessage)
 }
