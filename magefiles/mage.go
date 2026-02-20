@@ -18,6 +18,7 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
+
 const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
 	imageBuilder           = registryPrefix + "builder:1.4.3"
