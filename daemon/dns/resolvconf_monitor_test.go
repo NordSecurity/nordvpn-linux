@@ -73,30 +73,71 @@ func checkLoop(test func() bool, interval time.Duration, timeout time.Duration) 
 func Test_ResolvConfMonitoring(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	eventsChan := make(chan fsnotify.Event)
-	errorChan := make(chan error)
-	getMockWatcherFunc := func(...string) (*fsnotify.Watcher, error) {
-		watcher, _ := fsnotify.NewWatcher()
-		watcher.Events = eventsChan
-		watcher.Errors = errorChan
-		return watcher, nil
+	tests := []struct {
+		name       string
+		event      fsnotify.Op
+		shouldEmit bool
+	}{
+		{
+			name:       "Write event emits analytics",
+			event:      fsnotify.Write,
+			shouldEmit: true,
+		},
+		{
+			name:       "Remove event emits analytics",
+			event:      fsnotify.Remove,
+			shouldEmit: true,
+		},
+		{
+			name:       "Create event does not emit analytics",
+			event:      fsnotify.Create,
+			shouldEmit: false,
+		},
+		{
+			name:       "Rename event does not emit analytics",
+			event:      fsnotify.Rename,
+			shouldEmit: false,
+		},
+		{
+			name:       "Chmod event does not emit analytics",
+			event:      fsnotify.Chmod,
+			shouldEmit: false,
+		},
+		{
+			name:       "Combined Chmod and Write event does emit analytics",
+			event:      fsnotify.Chmod | fsnotify.Write,
+			shouldEmit: true,
+		},
 	}
 
-	analyticsMock := newAnalyticsMock()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			eventsChan := make(chan fsnotify.Event)
+			errorChan := make(chan error)
+			getMockWatcherFunc := func(...string) (*fsnotify.Watcher, error) {
+				watcher, _ := fsnotify.NewWatcher()
+				watcher.Events = eventsChan
+				watcher.Errors = errorChan
+				return watcher, nil
+			}
 
-	resolvConfMonitor := resolvConfFileWatcherMonitor{
-		analytics:      &analyticsMock,
-		getWatcherFunc: getMockWatcherFunc,
+			analyticsMock := newAnalyticsMock()
+
+			resolvConfMonitor := resolvConfFileWatcherMonitor{
+				analytics:      &analyticsMock,
+				getWatcherFunc: getMockWatcherFunc,
+			}
+
+			resolvConfMonitor.start()
+			eventsChan <- fsnotify.Event{Op: tt.event}
+			checkResultFunc := func() bool {
+				return analyticsMock.getResolvConfEmitted()
+			}
+			revolvConfEventEmitted := checkLoop(checkResultFunc, 10*time.Millisecond, 500*time.Millisecond)
+
+			assert.Equal(t, tt.shouldEmit, revolvConfEventEmitted, "Event emission did not match expected behavior.")
+		})
 	}
-
-	resolvConfMonitor.start()
-	eventsChan <- fsnotify.Event{Op: fsnotify.Write}
-	checkResultFunc := func() bool {
-		return analyticsMock.getResolvConfEmitted()
-	}
-	revolvConfEventEmitted := checkLoop(checkResultFunc, 10*time.Millisecond, 1*time.Second)
-
-	assert.Equal(t, true, revolvConfEventEmitted, "Event was not emitted after resolv.conf change was detected.")
 }
 
 func Test_ResolvConfMonitoringDoesNotDeadlock(t *testing.T) {
