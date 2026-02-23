@@ -151,8 +151,7 @@ func TestCDNAPI_Request_InvalidGzipData(t *testing.T) {
 	api := NewCDNAPI("test-agent", server.URL, &http.Client{}, response.NoopValidator{})
 	_, err := api.GetRemoteFile("/test")
 
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "gzip")
+	assert.ErrorContains(t, err, "gzip")
 }
 
 func TestCDNAPI_Request_CorruptedGzipData(t *testing.T) {
@@ -192,8 +191,7 @@ func TestCDNAPI_Request_OversizedResponse(t *testing.T) {
 	api := NewCDNAPI("test-agent", server.URL, &http.Client{}, response.NoopValidator{})
 	_, err := api.GetRemoteFile("/test")
 
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "max limit")
+	assert.ErrorContains(t, err, "max limit")
 }
 
 func TestCDNAPI_Request_ValidationFailure(t *testing.T) {
@@ -208,9 +206,7 @@ func TestCDNAPI_Request_ValidationFailure(t *testing.T) {
 	api := NewCDNAPI("test-agent", server.URL, &http.Client{}, failingValidator{})
 	_, err := api.GetRemoteFile("/test")
 
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "cdn api")
-	assert.Contains(t, err.Error(), "validation failed")
+	assert.ErrorContains(t, err, "cdn api: validation failed")
 }
 
 func TestCDNAPI_Request_HTTPError(t *testing.T) {
@@ -256,8 +252,7 @@ func TestCDNAPI_Request_HeadMissingHeaders(t *testing.T) {
 	api := NewCDNAPI("test-agent", server.URL, &http.Client{}, response.NoopValidator{})
 	_, _, err := api.ConfigTemplate(false, http.MethodHead)
 
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "mandatory response headers")
+	assert.ErrorContains(t, err, "mandatory response headers")
 }
 
 func TestCDNAPI_Request_HeadWithMandatoryHeaders(t *testing.T) {
@@ -294,10 +289,7 @@ func TestCDNAPI_Request_SizeLimitAppliesToCompressedData(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	// Create data that compresses well - large when decompressed, small when compressed
-	largeData := make([]byte, 1024*1024) // 1MB of repetitive data
-	for i := range largeData {
-		largeData[i] = 'X'
-	}
+	largeData := bytes.Repeat([]byte{'A'}, 1024*1024) // 1MB of data
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Encoding", "gzip")

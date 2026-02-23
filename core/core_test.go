@@ -264,10 +264,7 @@ func TestSimpleAPI_SizeLimitAppliedToCompressedResponse(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	// Create a large repetitive string that compresses well
-	largeData := make([]byte, 1024*1024) // 1MB of data
-	for i := range largeData {
-		largeData[i] = 'A'
-	}
+	largeData := bytes.Repeat([]byte{'A'}, 1024*1024) // 1MB of data
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Encoding", "gzip")
@@ -342,6 +339,5 @@ func TestSimpleAPI_OversizedCompressedResponseRejected(t *testing.T) {
 	)
 
 	_, err := api.Plans()
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "max limit")
+	assert.ErrorContains(t, err, "max limit")
 }
