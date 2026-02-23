@@ -19,8 +19,8 @@ func NewVpnInfo(
 	tunnelInterface string,
 	allowList config.Allowlist,
 	killSwitch bool,
-) *VpnInfo {
-	return &VpnInfo{
+) VpnInfo {
+	return VpnInfo{
 		TunnelInterface: tunnelInterface,
 		AllowList:       allowList,
 		KillSwitch:      killSwitch,
@@ -40,7 +40,7 @@ func NewMeshInfo(meshnetMap mesh.MachineMap, meshInterface string) *MeshInfo {
 }
 
 type Service interface {
-	Configure(vpnInfo *VpnInfo, meshInfo *MeshInfo) error
+	Configure(vpnInfo VpnInfo, meshInfo *MeshInfo) error
 	Remove() error
 	Flush() error
 	Disable() error
@@ -62,6 +62,6 @@ type Service interface {
 // }
 
 type FwImpl interface {
-	Configure(vpnInfo *VpnInfo, meshInfo *MeshInfo) error
+	Configure(vpnInfo VpnInfo, meshInfo *MeshInfo) error
 	Flush() error
 }

@@ -3,6 +3,7 @@ package nft
 import (
 	"fmt"
 	"net"
+	"net/netip"
 	"slices"
 
 	"github.com/google/nftables"
@@ -66,7 +67,7 @@ const (
 
 // udp port 53
 // portType: unix.IPPROTO_UDP | IPPROTO_TCP..., destination
-func addPortCheck(port uint16, portType byte, match matchType) []expr.Any {
+func checkPortNumber(port uint16, portType byte, match matchType) []expr.Any {
 	// Offset: 0, Len: 2  → sport
 	// Offset: 2, Len: 2  → dport
 
@@ -99,8 +100,8 @@ func addPortCheck(port uint16, portType byte, match matchType) []expr.Any {
 	}
 }
 
-// portType: unix.IPPROTO_UDP | IPPROTO_TCP..., destination
-func addPortInSetAndSetMark(fwMark uint32, portType byte, match matchType, portsSet *nftables.Set) []expr.Any {
+// portType: unix.IPPROTO_UDP | IPPROTO_TCP
+func checkPortInSet(portsSet *nftables.Set, portType byte, match matchType) []expr.Any {
 	// Offset: 0, Len: 2  → sport
 	// Offset: 2, Len: 2  → dport
 
@@ -120,7 +121,7 @@ func addPortInSetAndSetMark(fwMark uint32, portType byte, match matchType, ports
 			Data:     []byte{portType},
 		},
 
-		//sport/dport (2 bytes) from transport header offset
+		// sport/dport (2 bytes) from transport header offset
 		&expr.Payload{
 			DestRegister: 1,
 			Base:         expr.PayloadBaseTransportHeader,
@@ -128,26 +129,16 @@ func addPortInSetAndSetMark(fwMark uint32, portType byte, match matchType, ports
 			Len:          2,
 		},
 
-		// lookup sport in set
+		// lookup port in set
 		&expr.Lookup{
 			SourceRegister: 1,
 			SetName:        portsSet.Name,
 			SetID:          portsSet.ID,
 		},
-
-		// meta mark set 0xe1f1
-		&expr.Immediate{
-			Register: 1,
-			Data:     binaryutil.NativeEndian.PutUint32(fwMark),
-		},
-		&expr.Meta{
-			Key:            expr.MetaKeyMARK,
-			SourceRegister: true,
-			Register:       1,
-		},
 	}
 }
 
+// meta mark set 0x1234
 func setMetaMark(fwMark uint32) []expr.Any {
 	return []expr.Any{
 		&expr.Immediate{
@@ -162,7 +153,8 @@ func setMetaMark(fwMark uint32) []expr.Any {
 	}
 }
 
-func addIpCheckAndSetMetaMark(fwmark uint32, ipSet *nftables.Set, match matchType) []expr.Any {
+// ip saddr/daddr @set_name
+func checkIpInSet(ipSet *nftables.Set, match matchType) []expr.Any {
 	if ipSet == nil {
 		return []expr.Any{}
 	}
@@ -195,58 +187,6 @@ func addIpCheckAndSetMetaMark(fwmark uint32, ipSet *nftables.Set, match matchTyp
 			SourceRegister: 1,
 			SetName:        ipSet.Name,
 			SetID:          ipSet.ID,
-		},
-		// set meta mark set 0xe1f1
-		&expr.Immediate{
-			Register: 1,
-			Data:     binaryutil.NativeEndian.PutUint32(fwmark),
-		},
-		&expr.Meta{
-			Key:            expr.MetaKeyMARK,
-			SourceRegister: true,
-			Register:       1,
-		},
-	}
-}
-
-func addIpCheckInSet(
-	ipSet *nftables.Set,
-	match matchType,
-	notEqual bool,
-) []expr.Any {
-	if ipSet == nil {
-		return []expr.Any{}
-	}
-	// IPv4 header saddr offset 12, daddr at ofset 16
-	var offset uint32 = 12
-	if match == MATCH_DESTINATION {
-		offset = 16
-	}
-
-	return []expr.Any{
-		// check that it is IPv4 address
-		// meta nfproto == ipv4
-		&expr.Meta{
-			Key:      expr.MetaKeyNFPROTO,
-			Register: 1,
-		},
-		&expr.Cmp{
-			Register: 1,
-			Op:       expr.CmpOpEq,
-			Data:     []byte{unix.NFPROTO_IPV4},
-		},
-		// read address source or destination and check in set
-		&expr.Payload{
-			DestRegister: 1,
-			Base:         expr.PayloadBaseNetworkHeader,
-			Offset:       offset,
-			Len:          4,
-		},
-		&expr.Lookup{
-			SourceRegister: 1,
-			SetName:        ipSet.Name,
-			SetID:          ipSet.ID,
-			Invert:         notEqual,
 		},
 	}
 
@@ -259,6 +199,7 @@ const (
 	IF_OUTPUT ifDirection = 2
 )
 
+// iifname @set
 func addInterfacesCheck(interfaces *nftables.Set, direction ifDirection) []expr.Any {
 	dir := expr.MetaKeyIIFNAME
 	if direction == IF_OUTPUT {
@@ -277,7 +218,8 @@ func addInterfacesCheck(interfaces *nftables.Set, direction ifDirection) []expr.
 	}
 }
 
-func addInterfaceNameCheck(ifName string, direction ifDirection) []expr.Any {
+// iifname "nordlynx"
+func checkInterfaceName(ifName string, direction ifDirection) []expr.Any {
 	dir := expr.MetaKeyIIFNAME
 	if direction == IF_OUTPUT {
 		dir = expr.MetaKeyOIFNAME
@@ -295,7 +237,8 @@ func addInterfaceNameCheck(ifName string, direction ifDirection) []expr.Any {
 	}
 }
 
-func addCtMarkCheck(fwmark uint32) []expr.Any {
+// ct mark 0xe1f1
+func checkConntrack(fwmark uint32) []expr.Any {
 	return []expr.Any{
 		&expr.Ct{
 			Key:      expr.CtKeyMARK,
@@ -309,7 +252,8 @@ func addCtMarkCheck(fwmark uint32) []expr.Any {
 	}
 }
 
-func addMetaMarkCheck(fwmark uint32) []expr.Any {
+// meta mark 0xe1f1
+func checkMetaMark(fwmark uint32) []expr.Any {
 	return []expr.Any{
 		&expr.Meta{
 			Key:      expr.MetaKeyMARK,
@@ -348,16 +292,15 @@ func addMetaMarkCheckAndSetCtMark(fwmark uint32) []expr.Any {
 	}
 }
 
-func addCheckIpInSubnet(ipNet *net.IPNet, match matchType, notEqual bool) []expr.Any {
+// ip saddr 100.64.0.0/10
+func checkIpPartOfSubnet(pfx netip.Prefix, match matchType) []expr.Any {
 	var offset uint32 = 12
 	if match == MATCH_DESTINATION {
 		offset = 16
 	}
 
-	op := expr.CmpOpEq
-	if notEqual {
-		op = expr.CmpOpNeq
-	}
+	networkAddr := pfx.Addr().As4()
+	mask := net.CIDRMask(pfx.Bits(), 32)
 
 	return []expr.Any{
 		&expr.Meta{
@@ -383,15 +326,15 @@ func addCheckIpInSubnet(ipNet *net.IPNet, match matchType, notEqual bool) []expr
 			SourceRegister: 1,
 			DestRegister:   1,
 			Len:            4,
-			Mask:           ipNet.Mask,
+			Mask:           mask,
 			Xor:            binaryutil.NativeEndian.PutUint32(0),
 		},
 
 		// Compare masked IP to network
 		&expr.Cmp{
 			Register: 1,
-			Op:       op,
-			Data:     ipNet.IP.Mask(ipNet.Mask),
+			Op:       expr.CmpOpEq,
+			Data:     networkAddr[:],
 		},
 	}
 }
@@ -403,43 +346,51 @@ func ifname(n string) []byte {
 	return b
 }
 
-func calculateFirstAndLastV4(cidr string) (net.IP, net.IP, error) {
-	ip, ipnet, err := net.ParseCIDR(cidr)
+// calculateFirstAndLastV4Prefix returns:
+//   - first: network address (inclusive)
+//   - lastExclusive: (broadcast + 1), i.e. exclusive upper bound
+func calculateFirstAndLastV4Prefix(cidr string) (net.IP, net.IP, error) {
+	pfx, err := netip.ParsePrefix(cidr)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	ip = ip.To4()
-	if ip == nil {
+	// Ensure it's IPv4 (reject IPv6 prefixes and IPv4-mapped IPv6)
+	if !pfx.Addr().Is4() {
 		return nil, nil, fmt.Errorf("not an IPv4 CIDR: %s", cidr)
 	}
 
-	mask := net.IP(ipnet.Mask).To4()
-	if mask == nil || len(mask) != 4 {
-		return nil, nil, fmt.Errorf("invalid IPv4 mask: %s", cidr)
+	// Normalize to the network address
+	pfx = pfx.Masked()
+
+	firstAddr := pfx.Addr() // network address
+	first4 := firstAddr.As4()
+
+	// Compute lastExclusive = first + size(prefix)
+	ones := pfx.Bits()
+	if ones < 0 || ones > 32 {
+		return nil, nil, fmt.Errorf("invalid IPv4 prefix length: %s", cidr)
 	}
 
-	// first = network address
-	first := make(net.IP, 4)
-	for i := 0; i < 4; i++ {
-		first[i] = ip[i] & mask[i]
+	hostBits := 32 - ones
+
+	// For /0, size is 2^32 which doesn't fit in uint32.
+	// We'll compute in uint64 and allow wrap to 0.0.0.0, same as your byte-carry loop would.
+	size := uint64(1) << uint(hostBits)
+
+	firstU32 := uint64(first4[0])<<24 | uint64(first4[1])<<16 | uint64(first4[2])<<8 | uint64(first4[3])
+	lastExclusiveU32 := (firstU32 + size) & 0xFFFFFFFF
+
+	lastExclusive4 := [4]byte{
+		byte(lastExclusiveU32 >> 24),
+		byte(lastExclusiveU32 >> 16),
+		byte(lastExclusiveU32 >> 8),
+		byte(lastExclusiveU32),
 	}
 
-	// lastInclusive = broadcast address
-	lastInclusive := make(net.IP, 4)
-	for i := 0; i < 4; i++ {
-		lastInclusive[i] = first[i] | ^mask[i]
-	}
-
-	// lastExclusive = lastInclusive + 1
-	lastExclusive := make(net.IP, 4)
-	copy(lastExclusive, lastInclusive)
-	for i := 3; i >= 0; i-- {
-		lastExclusive[i]++
-		if lastExclusive[i] != 0 {
-			break
-		}
-	}
+	// Return as net.IP to match your original signature
+	first := net.IPv4(first4[0], first4[1], first4[2], first4[3]).To4()
+	lastExclusive := net.IPv4(lastExclusive4[0], lastExclusive4[1], lastExclusive4[2], lastExclusive4[3]).To4()
 
 	return first, lastExclusive, nil
 }
@@ -480,12 +431,13 @@ func convertPortsToSetElements(ports []int64) []nftables.SetElement {
 	return elems
 }
 
-func converCidrToSetElements(cidrList []string) ([]nftables.SetElement, error) {
+// Covert from a list of CIDRs to a nftables set of IP ranges
+func convertCidrToSetElements(cidrList []string) ([]nftables.SetElement, error) {
 	var elems []nftables.SetElement
 	for _, cidr := range cidrList {
-		start, end, err := calculateFirstAndLastV4(cidr)
+		start, end, err := calculateFirstAndLastV4Prefix(cidr)
 		if err != nil {
-			return nil, fmt.Errorf("failed to convert %s: %w", cidr, err)
+			return nil, fmt.Errorf("convert for %s: %w", cidr, err)
 		}
 		elems = append(elems,
 			nftables.SetElement{Key: start},

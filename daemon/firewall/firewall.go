@@ -32,7 +32,7 @@ func NewFirewall(impl FwImpl, enabled bool) *Firewall {
 	}
 }
 
-func (fw *Firewall) Configure(vpnInfo *VpnInfo, meshInfo *MeshInfo) error {
+func (fw *Firewall) Configure(vpnInfo VpnInfo, meshInfo *MeshInfo) error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 

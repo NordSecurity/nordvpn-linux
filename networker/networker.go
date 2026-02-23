@@ -42,7 +42,6 @@ var (
 	// ErrNothingToCancel is returned when `Cancel()` is called but there is no in progress
 	// connection to be canceled
 	ErrNothingToCancel = errors.New("nothing to cancel")
-	defaultMeshSubnet  = netip.MustParsePrefix("100.64.0.0/10")
 )
 
 // ErrNoSuchRule is returned when networker tried to remove
@@ -379,7 +378,7 @@ func (netw *Combined) configureNetwork(
 func (netw *Combined) configureDNS(serverData vpn.ServerData, nameservers config.DNS) error {
 	dnsGetter := &dns.NameServers{}
 
-	if netw.isMeshnetSet && defaultMeshSubnet.Contains(serverData.IP) {
+	if netw.isMeshnetSet && internal.MeshSubnet.Contains(serverData.IP) {
 		return netw.setDNS(dnsGetter.Get(false))
 	} else {
 		return netw.setDNS(nameservers)
@@ -1062,7 +1061,7 @@ func (netw *Combined) setMesh(
 	// add routes for new peers and remove for the old ones
 	netw.publisher.Publish("adding mesh route")
 	if err := netw.peerRouter.Add(routes.Route{
-		Subnet:  defaultMeshSubnet,
+		Subnet:  internal.MeshSubnet,
 		Device:  netw.mesh.Tun().Interface(),
 		TableID: netw.policyRouter.TableID(),
 	}); err != nil {
@@ -1391,6 +1390,7 @@ func (netw *Combined) SetLanDiscovery(enabled bool) {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
+	// TODO: update firewall
 	netw.lanDiscovery = enabled
 
 	// if routing rules were set - they will be adjusted as needed
