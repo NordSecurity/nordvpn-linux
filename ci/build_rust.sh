@@ -10,6 +10,7 @@ declare -A targets=(
   [arm64]=aarch64-unknown-linux-gnu
   [armhf]=armv7-unknown-linux-gnueabihf
   [armel]=arm-unknown-linux-gnueabi
+  [riscv64]=riscv64gc-unknown-linux-gnu
 )
 
 function clone_if_absent() {

@@ -64,6 +64,7 @@ declare -A cross_compiler_map=(
     [amd64]=x86_64-linux-gnu-gcc
     [armel]=arm-linux-gnueabi-gcc
     [armhf]=arm-linux-gnueabihf-gcc
+    [riscv64]=riscv64-linux-gnu-gcc
     [aarch64]=aarch64-linux-gnu-gcc
 )
 

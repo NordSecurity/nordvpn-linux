@@ -38,6 +38,7 @@ declare -A cross_compiler_map=(
     [armel]=arm-linux-gnueabi-gcc
     [armhf]=arm-linux-gnueabihf-gcc
     [aarch64]=aarch64-linux-gnu-gcc
+    [riscv64]=riscv64-linux-gnu-gcc
 )
 
 # Required by Go when cross-compiling

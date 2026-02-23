@@ -7,6 +7,7 @@ if [[ ! "${ARCHS:-}" ]]; then
         armel
         armhf
         aarch64
+        riscv64
     )
 fi
 
@@ -23,6 +24,7 @@ declare -A ARCHS_REVERSE=(
     [armv7_eabihf]=armhf
     [arm64]=aarch64
     [aarch64]=aarch64
+    [riscv64]=riscv64
 )
 
 # Key is one of ARCHS
@@ -32,6 +34,7 @@ declare -A ARCHS_DEB=(
     [armel]=armel
     [armhf]=armhf
     [aarch64]=arm64
+    [riscv64]=riscv64
 )
 
 # Key is one of ARCHS
@@ -41,6 +44,7 @@ declare -A ARCHS_RPM=(
     [armel]=armv5l
     [armhf]=armhfp
     [aarch64]=aarch64
+    [riscv64]=riscv64
 )
 
 # Key is one of ARCHS
@@ -50,6 +54,7 @@ declare -A ARCHS_GO=(
     [armel]=arm
     [armhf]=arm
     [aarch64]=arm64
+    [riscv64]=riscv64
 )
 
 # for .so files comming from libtelio, libdrop and libmoose
@@ -63,6 +68,7 @@ declare -A ARCHS_SO_REVERSE=(
     [armv7hf]=armhf
     [armv7]=armhf
     [armv7_eabihf]=armhf
+    [riscv64]=riscv64
 )
 
 declare -A ARCHS_RUST=(
@@ -71,12 +77,14 @@ declare -A ARCHS_RUST=(
     [armel]=armel
     [armhf]=armhf
     [aarch64]=arm64
+    [riscv64]=riscv64
 )
 
 # Key is one of ARCHS
 declare -A ARCHS_FLUTTER=(
     [amd64]=x64
     [aarch64]=arm64
+    [riscv64]=riscv64
 )
 
 export ARCHS
