@@ -348,11 +348,17 @@ func addMetaMarkCheckAndSetCtMark(fwmark uint32) []expr.Any {
 	}
 }
 
-func addCheckIpInSubnet(ipNet *net.IPNet, match matchType) []expr.Any {
+func addCheckIpInSubnet(ipNet *net.IPNet, match matchType, notEqual bool) []expr.Any {
 	var offset uint32 = 12
 	if match == MATCH_DESTINATION {
 		offset = 16
 	}
+
+	op := expr.CmpOpEq
+	if notEqual {
+		op = expr.CmpOpNeq
+	}
+
 	return []expr.Any{
 		&expr.Meta{
 			Key:      expr.MetaKeyNFPROTO,
@@ -364,7 +370,7 @@ func addCheckIpInSubnet(ipNet *net.IPNet, match matchType) []expr.Any {
 			Data:     []byte{unix.NFPROTO_IPV4},
 		},
 
-		// Load IPv4 source address
+		// Load IPv4 address
 		&expr.Payload{
 			DestRegister: 1,
 			Base:         expr.PayloadBaseNetworkHeader,
@@ -384,7 +390,7 @@ func addCheckIpInSubnet(ipNet *net.IPNet, match matchType) []expr.Any {
 		// Compare masked IP to network
 		&expr.Cmp{
 			Register: 1,
-			Op:       expr.CmpOpEq,
+			Op:       op,
 			Data:     ipNet.IP.Mask(ipNet.Mask),
 		},
 	}

@@ -623,10 +623,6 @@ func (netw *Combined) blockTraffic(allowlist config.Allowlist) error {
 	return netw.fw.Configure(vpnInfo, meshInfo)
 }
 
-func (netw *Combined) unblockTraffic() error {
-	return netw.fw.Remove()
-}
-
 func (netw *Combined) resetAllowlist() error {
 	// this is done in order to maintain the order of the firewall rules
 	log.Println(internal.InfoPrefix, "reset allow list")
@@ -901,9 +897,21 @@ func (netw *Combined) UnsetFirewall() error {
 }
 
 func (netw *Combined) unsetNetwork() error {
-	err := netw.unblockTraffic()
-	if err != nil && !errors.Is(err, firewall.ErrRuleNotFound) {
-		return err
+	if netw.isMeshnetSet || netw.isKillSwitchSet {
+		vpnInfo := firewall.NewVpnInfo("", config.Allowlist{}, netw.isKillSwitchSet)
+
+		var meshInfo *firewall.MeshInfo
+		if netw.isMeshnetSet {
+			meshInfo = firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)
+		}
+
+		if err := netw.fw.Configure(vpnInfo, meshInfo); err != nil {
+			return fmt.Errorf("disable firewall: %w", err)
+		}
+	} else {
+		if err := netw.fw.Flush(); err != nil {
+			return fmt.Errorf("disable firewall: %w", err)
+		}
 	}
 
 	if err := netw.unsetAllowlist(); err != nil {
@@ -1156,6 +1164,19 @@ func (netw *Combined) unSetMesh() error {
 	}
 	if err := netw.dnsHostSetter.UnsetHosts(); err != nil {
 		return fmt.Errorf("unsetting hosts: %w", err)
+	}
+
+	if netw.isVpnSet {
+		tunnelInterface := netw.vpnet.Tun().Interface().Name
+		vpnInfo := firewall.NewVpnInfo(tunnelInterface, config.Allowlist{}, netw.isKillSwitchSet)
+
+		if err := netw.fw.Configure(vpnInfo, nil); err != nil {
+			return fmt.Errorf("disable firewall: %w", err)
+		}
+	} else {
+		if err := netw.fw.Flush(); err != nil {
+			return fmt.Errorf("disable firewall: %w", err)
+		}
 	}
 
 	if !netw.isVpnSet {
