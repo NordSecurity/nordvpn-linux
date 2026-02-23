@@ -11,12 +11,14 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
+	"github.com/NordSecurity/nordvpn-linux/network"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/stretchr/testify/assert"
 )
+
+const defaultFWMarkValue uint32 = 0xe1f1
 
 func TestBuildClientAPIAndSessionStores(t *testing.T) {
 	category.Set(t, category.Unit)
@@ -75,11 +77,8 @@ func TestBuildTpServersAndResolver(t *testing.T) {
 		server.URL(),
 		http.DefaultClient,
 		response.NoopValidator{},
-		&firewall.Firewall{},
-		func(attempt int) time.Duration {
-			assert.Fail(t, "this must not be called in this case")
-			return time.Minute
-		},
+		network.ExponentialBackoff,
+		defaultFWMarkValue,
 	)
 
 	assert.False(t, fetched.Load(), "fetcher must not be executed when building the objects")

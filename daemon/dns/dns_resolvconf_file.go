@@ -77,7 +77,7 @@ func resetDNSinResolvconfFile(addresses []string) error {
 
 	// set DNS
 	_ = internal.FileUnlock(resolvconfFilePath)
-	// defer internal.FileLock(resolvconfFilePath)
+	defer internal.FileLock(resolvconfFilePath)
 	content := resolvconfFileMark + "\n" + strings.Join(addrs, "\n") + "\n"
 	return internal.FileWrite(resolvconfFilePath, []byte(content), internal.PermUserRWGroupROthersR)
 }
