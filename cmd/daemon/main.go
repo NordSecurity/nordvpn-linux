@@ -327,7 +327,8 @@ func main() {
 	buildTarget := config.BuildTarget{
 		Version:      Version,
 		Environment:  Environment,
-		Architecture: Arch}
+		Architecture: Arch,
+	}
 	if archVariant, err := machineIdGenerator.GetArchitectureVariantName(sysinfo.GetHostArchitecture()); err == nil {
 		buildTarget.Architecture = archVariant
 	}
@@ -373,17 +374,25 @@ func main() {
 	// try to load config from disk if it was previously downloaded
 	rcConfig.TryPreload()
 
-	vpnLibConfigGetter := vpnLibConfigGetterImplementation(fsystem, rcConfig)
+	vpnLibtelioConfigGetter := vpnLibtelioConfigGetterImplementation(fsystem, rcConfig)
+	vpnNordWhisperConfigGetter := vpnNordWhisperConfigGetterImplementation(fsystem, rcConfig)
 
 	internalVpnEvents := vpn.NewInternalVPNEvents()
 
 	// Networker
-	vpnFactory := getVpnFactory(eventsDbPath, cfg.FirewallMark,
-		internal.IsDevEnv(Environment), vpnLibConfigGetter, Version, internalVpnEvents)
+	vpnFactory := getVpnFactory(
+		eventsDbPath,
+		cfg.FirewallMark,
+		internal.IsDevEnv(Environment),
+		vpnLibtelioConfigGetter,
+		vpnNordWhisperConfigGetter,
+		Version,
+		internalVpnEvents,
+	)
 
 	vpn, err := vpnFactory(cfg.Technology)
 	if err != nil {
-		// if NordWhiser was disabled we'll fall back automatically to NordLynx if autoconnect is enabled or tell user
+		// if NordWhisper was disabled we'll fall back automatically to NordLynx if autoconnect is enabled or tell user
 		// to switch to a different tech
 		if !errors.Is(err, ErrNordWhisperDisabled) {
 			log.Fatalln(err)
