@@ -26,7 +26,7 @@ const reservedMeshnetSubnet = "100.64.0.0/29"
 const fileshareAllowedPeersSet = "fileshare_allowed_peers"
 const allowIncomingConnectionPeersSet = "allow_incoming_connections"
 const allowTrafficRoutingPeersSet = "allow_peer_traffic_routing"
-const blockedLanAccessPeersSet = "blocked_peer_local_network_access"
+const lanAccessPeersSet = "peer_local_network_access"
 
 type nft struct {
 	conn *nftables.Conn
@@ -708,7 +708,7 @@ func (n *nft) buildFileshare(table *nftables.Table, meshMap mesh.MachineMap) (*n
 func (n *nft) buildLanAllowedPeers(table *nftables.Table, meshMap mesh.MachineMap) (*nftables.Set, error) {
 	set := &nftables.Set{
 		Table:    table,
-		Name:     blockedLanAccessPeersSet,
+		Name:     lanAccessPeersSet,
 		KeyType:  nftables.TypeIPAddr,
 		Interval: false,
 	}

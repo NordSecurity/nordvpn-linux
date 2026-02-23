@@ -306,6 +306,16 @@ func (netw *Combined) start(
 		return err
 	}
 
+	vpnInfo := firewall.NewVpnInfo(netw.vpnet.Tun().Interface().Name, allowlist, netw.isKillSwitchSet)
+	var meshInfo *firewall.MeshInfo
+	if netw.isMeshnetSet {
+		meshInfo = firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)
+	}
+
+	if err := netw.fw.Configure(vpnInfo, meshInfo); err != nil {
+		return err
+	}
+
 	if netw.ignoreARP {
 		if err := netw.arpIgnoreSetter.Set(); err != nil {
 			return fmt.Errorf("setting arp ignore: %w", err)
@@ -607,22 +617,6 @@ func (netw *Combined) unsetDNS() error {
 	return nil
 }
 
-func (netw *Combined) blockTraffic(allowlist config.Allowlist) error {
-	// TODO: fix nft
-	tunnelInterface := ""
-	if netw.isVpnSet {
-		tunnelInterface = netw.vpnet.Tun().Interface().Name
-	}
-
-	vpnInfo := firewall.NewVpnInfo(tunnelInterface, allowlist, netw.isKillSwitchSet)
-	var meshInfo *firewall.MeshInfo
-	if netw.isMeshnetSet {
-		meshInfo = firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)
-	}
-
-	return netw.fw.Configure(vpnInfo, meshInfo)
-}
-
 func (netw *Combined) resetAllowlist() error {
 	// this is done in order to maintain the order of the firewall rules
 	log.Println(internal.InfoPrefix, "reset allow list")
@@ -747,7 +741,25 @@ func (netw *Combined) SetAllowlist(allowlist config.Allowlist) error {
 			return err
 		}
 
-		return netw.blockTraffic(allowlist)
+		return netw.updateFirewall(allowlist)
+	}
+
+	return nil
+}
+
+func (netw *Combined) updateFirewall(allowlist config.Allowlist) error {
+	tunnelInterface := ""
+	if netw.isVpnSet {
+		tunnelInterface = netw.vpnet.Tun().Interface().Name
+	}
+	vpnInfo := firewall.NewVpnInfo(tunnelInterface, allowlist, netw.isKillSwitchSet)
+	var meshInfo *firewall.MeshInfo
+	if netw.isMeshnetSet {
+		meshInfo = firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)
+	}
+
+	if err := netw.fw.Configure(vpnInfo, meshInfo); err != nil {
+		return err
 	}
 
 	return nil
@@ -866,22 +878,12 @@ func (netw *Combined) IsNetworkSet() bool {
 	return netw.isNetworkSet
 }
 
-func (netw *Combined) setNetwork(allowlist config.Allowlist) (retErr error) {
-	netw.isNetworkSet = true
-	defer func() {
-		if retErr != nil {
-			netw.isNetworkSet = false
-		}
-	}()
-
-	err := netw.blockTraffic(allowlist)
-	if err != nil && !errors.Is(err, firewall.ErrRuleAlreadyExists) {
-		return err
-	}
-
+func (netw *Combined) setNetwork(allowlist config.Allowlist) error {
 	if err := netw.setAllowlist(allowlist); err != nil {
 		return err
 	}
+
+	netw.isNetworkSet = true
 
 	return nil
 }
