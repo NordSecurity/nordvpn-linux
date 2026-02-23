@@ -42,7 +42,6 @@ var (
 	ErrGateway                 = errors.New("can't find gateway")
 	ErrStdin                   = errors.New("Stdin: missing argument")
 	ErrServerIsUnavailable     = errors.New(ServerUnavailableErrorMessage)
-	ErrServerDataIsNotReady    = errors.New("Server data is not ready")
 	ErrTagDoesNotExist         = errors.New(TagNonexistentErrorMessage)
 	ErrGroupDoesNotExist       = errors.New(GroupNonexistentErrorMessage)
 	ErrDoubleGroup             = errors.New(DoubleGroupErrorMessage)

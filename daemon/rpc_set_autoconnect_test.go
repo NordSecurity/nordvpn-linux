@@ -162,7 +162,7 @@ func TestAutoconnect(t *testing.T) {
 		mockConfigManager := newMockConfigManager()
 		mockPublisherSubscriber := events.MockPublisherSubscriber[bool]{}
 		mockEvents := events.Events{Settings: &events.SettingsEvents{Autoconnect: &mockPublisherSubscriber}}
-		dm := DataManager{serversData: ServersData{Servers: serversList()}, serversDataReady: true}
+		dm := DataManager{serversData: ServersData{Servers: serversList()}}
 		r := RPC{cm: mockConfigManager, ac: mockAuthChecker, events: &mockEvents, dm: &dm, serversAPI: &mockServersAPI{}}
 		request := pb.SetAutoconnectRequest{Enabled: true}
 
@@ -249,7 +249,6 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 			},
 		}
 		dm := DataManager{
-			serversDataReady: true,
 			serversData: ServersData{
 				Servers: serversList(),
 			},
@@ -284,15 +283,4 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 			assert.Equal(t, test.expected.Group, mockConfigManager.c.AutoConnectData.Group)
 		})
 	}
-}
-
-func TestAutoconnect_HandleServersDataIsNotReady(t *testing.T) {
-	category.Set(t, category.Unit)
-	mockAuthChecker := mockAutoconnectAuthChecker{}
-	mockConfigManager := newMockConfigManager()
-	dm := DataManager{serversData: ServersData{Servers: serversList()}, serversDataReady: false}
-	r := RPC{cm: mockConfigManager, ac: mockAuthChecker, dm: &dm}
-	request := pb.SetAutoconnectRequest{Enabled: true}
-	_, err := r.SetAutoConnect(context.Background(), &request)
-	assert.EqualError(t, err, internal.ServerUnavailableErrorMessage)
 }

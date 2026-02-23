@@ -196,21 +196,19 @@ func TestRPCConnect(t *testing.T) {
 
 	defer testsCleanup()
 	tests := []struct {
-		name             string
-		serverGroup      string
-		serverTag        string
-		factory          FactoryFunc
-		resp             int64
-		setup            func(*RPC)
-		serversDataReady bool
+		name        string
+		serverGroup string
+		serverTag   string
+		factory     FactoryFunc
+		resp        int64
+		setup       func(*RPC)
 	}{
 		{
 			name: "Quick connect works",
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			resp:             internal.CodeConnected,
-			serversDataReady: true,
+			resp: internal.CodeConnected,
 		},
 		{
 			name: "Fail for broken Networker and VPN",
@@ -220,8 +218,7 @@ func TestRPCConnect(t *testing.T) {
 			setup: func(rpc *RPC) {
 				rpc.netw = testnetworker.Failing{}
 			},
-			resp:             internal.CodeFailure,
-			serversDataReady: true,
+			resp: internal.CodeFailure,
 		},
 		{
 			name: "Fail when VPN subscription is expired",
@@ -231,8 +228,7 @@ func TestRPCConnect(t *testing.T) {
 			setup: func(rpc *RPC) {
 				rpc.ac = &workingLoginChecker{isVPNExpired: true}
 			},
-			resp:             internal.CodeAccountExpired,
-			serversDataReady: true,
+			resp: internal.CodeAccountExpired,
 		},
 		{
 			name: "Fail when VPN subscription API calls fails",
@@ -242,8 +238,7 @@ func TestRPCConnect(t *testing.T) {
 			setup: func(rpc *RPC) {
 				rpc.ac = &workingLoginChecker{vpnErr: errors.New("test error")}
 			},
-			resp:             internal.CodeTokenRenewError,
-			serversDataReady: true,
+			resp: internal.CodeTokenRenewError,
 		},
 		{
 			name:      "Connects using country name",
@@ -251,8 +246,7 @@ func TestRPCConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			resp:             internal.CodeConnected,
-			serversDataReady: true,
+			resp: internal.CodeConnected,
 		},
 		{
 			name:      "Connects using country name + city name",
@@ -260,8 +254,7 @@ func TestRPCConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			resp:             internal.CodeConnected,
-			serversDataReady: true,
+			resp: internal.CodeConnected,
 		},
 		{
 			name:      "Connects for city name",
@@ -269,8 +262,7 @@ func TestRPCConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			resp:             internal.CodeConnected,
-			serversDataReady: true,
+			resp: internal.CodeConnected,
 		},
 		{
 			name:      "Connects using country code + city name",
@@ -278,8 +270,7 @@ func TestRPCConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			resp:             internal.CodeConnected,
-			serversDataReady: true,
+			resp: internal.CodeConnected,
 		},
 		{
 			name:      "Connects using country code",
@@ -287,8 +278,7 @@ func TestRPCConnect(t *testing.T) {
 			factory: func(config.Technology) (vpn.VPN, error) {
 				return &mock.WorkingVPN{}, nil
 			},
-			resp:             internal.CodeConnected,
-			serversDataReady: true,
+			resp: internal.CodeConnected,
 		},
 		{
 			name:        "Dedicated IP group connect works",
@@ -304,8 +294,7 @@ func TestRPCConnect(t *testing.T) {
 					},
 				}
 			},
-			resp:             internal.CodeConnected,
-			serversDataReady: true,
+			resp: internal.CodeConnected,
 		},
 		{
 			name:      "Dedicated IP with server name works",
@@ -321,8 +310,7 @@ func TestRPCConnect(t *testing.T) {
 					},
 				}
 			},
-			resp:             internal.CodeConnected,
-			serversDataReady: true,
+			resp: internal.CodeConnected,
 		},
 		{
 			name:      "Dedicated IP with server name multiple servers in service works",
@@ -338,8 +326,7 @@ func TestRPCConnect(t *testing.T) {
 					},
 				}
 			},
-			resp:             internal.CodeConnected,
-			serversDataReady: true,
+			resp: internal.CodeConnected,
 		},
 		{
 			name:      "fails when Dedicated IP subscription is expired",
@@ -350,8 +337,7 @@ func TestRPCConnect(t *testing.T) {
 			setup: func(rpc *RPC) {
 				rpc.ac = &workingLoginChecker{isDedicatedIPExpired: true}
 			},
-			resp:             internal.CodeDedicatedIPRenewError,
-			serversDataReady: true,
+			resp: internal.CodeDedicatedIPRenewError,
 		},
 		{
 			name:      "fails for Dedicated IP when API fails",
@@ -364,7 +350,6 @@ func TestRPCConnect(t *testing.T) {
 					dedicatedIPErr: errors.New("error"),
 				}
 			},
-			serversDataReady: true,
 		},
 		{
 			name:      "fails when server not into Dedicated IP servers list",
@@ -381,8 +366,7 @@ func TestRPCConnect(t *testing.T) {
 					},
 				}
 			},
-			resp:             internal.CodeDedicatedIPNoServer,
-			serversDataReady: true,
+			resp: internal.CodeDedicatedIPNoServer,
 		},
 		{
 			name:      "fails because Dedicated IP servers list is empty",
@@ -398,16 +382,7 @@ func TestRPCConnect(t *testing.T) {
 					},
 				}
 			},
-			resp:             internal.CodeDedicatedIPServiceButNoServers,
-			serversDataReady: true,
-		},
-		{
-			name: "Fails because servers list is not ready",
-			factory: func(config.Technology) (vpn.VPN, error) {
-				return &mock.WorkingVPN{}, nil
-			},
-			resp:             internal.CodeServersListNotReady,
-			serversDataReady: false,
+			resp: internal.CodeDedicatedIPServiceButNoServers,
 		},
 	}
 
@@ -431,7 +406,6 @@ func TestRPCConnect(t *testing.T) {
 					return nil
 				}
 				rpc.events.Service.FirstTimeOpened.Subscribe(firstOpenListener)
-				rpc.dm.serversDataReady = test.serversDataReady
 				server := &mockRPCServer{}
 				err := rpc.Connect(&pb.ConnectRequest{
 					ServerGroup: test.serverGroup,

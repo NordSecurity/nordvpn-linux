@@ -283,7 +283,7 @@ func (a *autoconnectServer) Send(data *pb.Payload) error {
 	switch data.GetType() {
 	case internal.CodeFailure:
 		a.err = errors.New("autoconnect failure")
-	case internal.CodeServersListNotReady:
+	case internal.CodeServerUnavailable:
 		a.err = errors.New("servers list not ready")
 	}
 	return nil
