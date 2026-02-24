@@ -74,15 +74,15 @@ func Test_DNSResolveNmCli_PhysicalInterfaceDeduction(t *testing.T) {
 		},
 		{
 			name: "connections with semicolon in names",
-			cmdOutput: `Wired connection_:  2:802-3-ethernet
+			cmdOutput: `Wired connection_\:  2:802-3-ethernet
 docker0:bridge
 lo:loopback
 virbr0:tun
 br-f78c0ce0d3eb:tun
-mpqemubr0:bridge
+mpqemubr0\:\: \::bridge
 vnet3:tun`,
 			cmdError:      nil,
-			expectedConns: []string{"Wired connection_:  2", "docker0", "mpqemubr0"},
+			expectedConns: []string{"Wired connection_:  2", "docker0", "mpqemubr0:: :"},
 		},
 	}
 
@@ -106,15 +106,15 @@ vnet3:tun`,
 
 func Test_DNSResolveNmCli_RollbackOnReloadFailure(t *testing.T) {
 	category.Set(t, category.Integration)
-
 	type connectionState struct {
 		ipv4DNS       string
 		ignoreAutoDNS string
 	}
 	// Mock state representing DNS configuration per connection
 	type mockState struct {
-		connections         map[string]connectionState
-		failOnReloadForConn string
+		connections           map[string]connectionState
+		failOnReloadForConn   string
+		failOnGetStateForConn string
 	}
 
 	tests := []struct {
@@ -138,6 +138,22 @@ func Test_DNSResolveNmCli_RollbackOnReloadFailure(t *testing.T) {
 			expectedFinalDNS: map[string]connectionState{
 				"Wired-connection-1": {ipv4DNS: "1.2.3.4", ignoreAutoDNS: "no"},
 				"Wi-Fi":              {ipv4DNS: "5.6.7.8", ignoreAutoDNS: "yes"},
+			},
+		},
+		{
+			name: "rollback on second get state for second connection",
+			initialState: mockState{
+				connections: map[string]connectionState{
+					"Wired-connection-1": {ipv4DNS: "11.22.33.44", ignoreAutoDNS: "no"},
+					"Wi-Fi":              {ipv4DNS: "55.66.77.88", ignoreAutoDNS: "no"},
+				},
+				failOnGetStateForConn: "Wi-Fi",
+			},
+			nameservers:   []string{"1.1.1.1", "8.8.8.8"},
+			expectedError: true,
+			expectedFinalDNS: map[string]connectionState{
+				"Wired-connection-1": {ipv4DNS: "11.22.33.44", ignoreAutoDNS: "no"},
+				"Wi-Fi":              {ipv4DNS: "55.66.77.88", ignoreAutoDNS: "no"},
 			},
 		},
 		{
@@ -183,6 +199,9 @@ func Test_DNSResolveNmCli_RollbackOnReloadFailure(t *testing.T) {
 					// Simulate call to getConnectionState to get ipv4.dns value
 					if len(args) > 2 && args[0] == "-t" && args[2] == nmCliIPv4DNSKey {
 						connName := args[5]
+						if tt.initialState.failOnGetStateForConn != "" && connName == tt.initialState.failOnGetStateForConn {
+							return nil, fmt.Errorf("failed to get state for connection %s", connName)
+						}
 						if conn, exists := currentState.connections[connName]; exists {
 							return []byte(fmt.Sprintf("%s:%s", nmCliIPv4DNSKey, conn.ipv4DNS)), nil
 						}

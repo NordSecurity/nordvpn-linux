@@ -20,7 +20,6 @@ const (
 	nmCliExecutable         = "nmcli"
 	nmCliIPv4DNSKey         = "ipv4.dns"
 	nmCliIPIgnoreAutoDnsKey = "ipv4.ignore-auto-dns"
-	nmCliPrintTag           = "[DNS][NMCLI]"
 )
 
 // connectionState holds the DNS configuration state for a connection
@@ -56,29 +55,33 @@ func newNMCli() *NMCli {
 func (nmcli *NMCli) Set(iface string, nameservers []string) error {
 	connections, err := nmcli.getConnectionFromPhysicalInterfaces()
 	if err != nil {
-		log.Println(internal.WarningPrefix, nmCliPrintTag, "Failed to get active connections upon SetDNS", err)
+		log.Println(internal.WarningPrefix, dnsPrefix, "Failed to get active connections upon SetDNS", err)
 		return fmt.Errorf("failed to get active connection upon SetDNS: %w", err)
 	}
 
 	originalStates := make(map[string]*connectionState)
 	for _, con := range connections {
 		state, err := nmcli.getConnectionState(con)
-		originalStates[con] = state
 		if err != nil {
-			log.Println(internal.WarningPrefix, nmCliPrintTag, "Failed to get state for connection", con, ":", err)
+			log.Println(internal.WarningPrefix, dnsPrefix, "Failed to get state for connection", con, ":", err)
 			return fmt.Errorf("failed to get connection state: %w", err)
 		}
+		originalStates[con] = state
+	}
 
+	for _, con := range connections {
 		args := []string{nmCliConKey, "modify", con, nmCliIPv4DNSKey}
 		args = append(args, strings.Join(nameservers, ","))
 		args = append(args, nmCliIPIgnoreAutoDnsKey, "yes")
 
 		if _, err := nmcli.cmdExecutor(nmCliExecutable, args...); err != nil {
+			log.Println(internal.WarningPrefix, dnsPrefix, "Failed to modify connection", con, ":", err)
 			nmcli.rollback(originalStates)
 			return fmt.Errorf("setting dns with nmcli failed: %w", err)
 		}
 
 		if err := nmcli.reloadConnection(con); err != nil {
+			log.Println(internal.WarningPrefix, dnsPrefix, "Failed to reload connection", con, ":", err)
 			nmcli.rollback(originalStates)
 			return fmt.Errorf("failed to reload connection upon SetDNS: %w", err)
 		}
@@ -94,7 +97,7 @@ func (nmcli *NMCli) Set(iface string, nameservers []string) error {
 func (nmcli *NMCli) Unset(_ string) error {
 	connections, err := nmcli.getConnectionFromPhysicalInterfaces()
 	if err != nil {
-		log.Println(internal.WarningPrefix, nmCliPrintTag, "Failed to get active connections upon UnsetDNS", err)
+		log.Println(internal.WarningPrefix, dnsPrefix, "Failed to get active connections upon UnsetDNS", err)
 		return fmt.Errorf("failed to get active connection upon UnsetDNS: %w", err)
 	}
 	for _, con := range connections {
@@ -123,12 +126,12 @@ func (nmcli *NMCli) Name() string {
 //
 // Returns a slice of connection names and an error if the nmcli command fails.
 func (nmcli *NMCli) getConnectionFromPhysicalInterfaces() ([]string, error) {
-	cmd, err := nmcli.cmdExecutor(nmCliExecutable, "-t", "-f", "NAME,TYPE", "con", "show", "--active")
+	connectionsList, err := nmcli.cmdExecutor(nmCliExecutable, "-t", "-f", "NAME,TYPE", "con", "show", "--active")
 	if err != nil {
 		return []string{}, fmt.Errorf("Failed to fetch active devices: %w", err)
 	}
 	var conns = []string{}
-	lines := strings.SplitSeq(string(cmd), "\n")
+	lines := strings.SplitSeq(string(connectionsList), "\n")
 	for line := range lines {
 		parts := strings.Split(line, ":")
 		if len(parts) < 2 {
@@ -145,7 +148,10 @@ func (nmcli *NMCli) getConnectionFromPhysicalInterfaces() ([]string, error) {
 			strings.Contains(fields[1], bridgeType) ||
 			strings.Contains(fields[1], gsmType) ||
 			strings.Contains(fields[1], cdmaType) {
-			conns = append(conns, strings.TrimSpace(fields[0]))
+			// for tersed output (eg. the -t flag) nmcli provides escaped colons in the connection names
+			// thus it is essential to unescape them here
+			connName := strings.ReplaceAll(fields[0], "\\:", ":")
+			conns = append(conns, strings.TrimSpace(connName))
 		}
 	}
 	return conns, nil
@@ -155,14 +161,14 @@ func (nmcli *NMCli) getConnectionFromPhysicalInterfaces() ([]string, error) {
 func (nmcli *NMCli) reloadConnection(connectionName string) error {
 	reloadArgs := []string{nmCliConKey, "reload"}
 	if out, err := nmcli.cmdExecutor(nmCliExecutable, reloadArgs...); err != nil {
-		log.Println(internal.WarningPrefix, nmCliPrintTag, ":", strings.TrimSpace(string(out)))
+		log.Println(internal.WarningPrefix, dnsPrefix, ":", strings.TrimSpace(string(out)))
 		return fmt.Errorf("reload connection failed: %w", err)
 	}
 
 	upArgs := []string{nmCliConKey, "up", connectionName}
 	if _, err := nmcli.cmdExecutor(nmCliExecutable, upArgs...); err != nil {
 		//at this stage we can disregard the error, as the DNS configuration should be applied even if the connection is not reloaded properly. Log it for debugging purposes.
-		log.Println(internal.WarningPrefix, nmCliPrintTag, "Setting", connectionName, "UP failed with:", err)
+		log.Println(internal.WarningPrefix, dnsPrefix, "Setting", connectionName, "UP failed with:", err)
 	}
 	return nil
 }
@@ -203,12 +209,12 @@ func (nmcli *NMCli) restoreConnectionState(state *connectionState) error {
 
 // rollback restores original DNS configuration for all modified connections
 func (nmcli *NMCli) rollback(originalStates map[string]*connectionState) {
-	log.Println(internal.WarningPrefix, nmCliPrintTag, "Rolling back DNS changes...")
+	log.Println(internal.WarningPrefix, dnsPrefix, "Rolling back DNS changes...")
 	for con, state := range originalStates {
 		if err := nmcli.restoreConnectionState(state); err != nil {
-			log.Println(internal.WarningPrefix, nmCliPrintTag, "Failed to rollback connection", con, ":", err)
+			log.Println(internal.WarningPrefix, dnsPrefix, "Failed to rollback connection", con, ":", err)
 		} else {
-			log.Println(internal.InfoPrefix, nmCliPrintTag, "Successfully rolled back connection", con)
+			log.Println(internal.InfoPrefix, dnsPrefix, "Successfully rolled back connection", con)
 		}
 	}
 }
