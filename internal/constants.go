@@ -3,6 +3,7 @@ package internal
 import (
 	"errors"
 	"fmt"
+	"net/netip"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -102,6 +103,8 @@ const (
 	MaxBytesLimit int64 = 1024*1024*20 + 1 // + 1 because we allow for values which are equal to the limit
 
 	DebugEventMessageNamespace = "nordvpn-linux"
+
+	FilesharePort = 49111
 )
 
 var (
@@ -145,6 +148,12 @@ var (
 	FileshareBinaryPath = filepath.Join(AppDataPathStatic, Fileshare)
 
 	NorduserdBinaryPath = filepath.Join(AppDataPathStatic, Norduserd)
+
+	// ReservedMeshnetSubnet are the IP addresses used for meshnet functionality. No peer can have this value
+	ReservedMeshnetSubnet = netip.MustParsePrefix("100.64.0.0/29")
+
+	// MeshSubnet is the subnet used for meshnet
+	MeshSubnet = netip.MustParsePrefix("100.64.0.0/10")
 )
 
 var (
