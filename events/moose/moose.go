@@ -133,7 +133,7 @@ func (s *Subscriber) getConfig() (config.Config, error) {
 func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error {
 	cfg, err := s.getConfig()
 	if err != nil {
-		return err
+		return fmt.Errorf("loading config for consent state change: %w", err)
 	}
 
 	// the same state requested, no-op
@@ -149,7 +149,7 @@ func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error 
 
 	log.Println(internal.InfoPrefix, LogComponentPrefix, "update consent level into context with new value", newState.String())
 	if err := setUserConsentLevelIntoContext(s, newState); err != nil {
-		return err
+		return fmt.Errorf("updating consent level in moose context: %w", err)
 	}
 	s.canSendAllEvents.Store(newState == config.ConsentGranted)
 
@@ -200,7 +200,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 
 	cfg, err := s.getConfig()
 	if err != nil {
-		return err
+		return fmt.Errorf("loading config during Init: %w", err)
 	}
 
 	err = s.updateEventDomain()
@@ -266,7 +266,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 	}
 
 	if err := setUserConsentLevelIntoContext(s, consent); err != nil {
-		return err
+		return fmt.Errorf("setting user consent level during Init: %w", err)
 	}
 
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappVersion(s.buildTarget.Version)); err != nil {
@@ -344,7 +344,10 @@ func (s *Subscriber) Stop() error {
 }
 
 func (s *Subscriber) NotifyKillswitch(data bool) error {
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesKillSwitchEnabledValue(data))
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesKillSwitchEnabledValue(data)); err != nil {
+		return fmt.Errorf("setting kill switch preference (enabled=%v): %w", data, err)
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyAccountCheck(any) error {
@@ -352,7 +355,10 @@ func (s *Subscriber) NotifyAccountCheck(any) error {
 }
 
 func (s *Subscriber) NotifyAutoconnect(data bool) error {
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesAutoConnectEnabledValue(data))
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesAutoConnectEnabledValue(data)); err != nil {
+		return fmt.Errorf("setting auto-connect preference (enabled=%v): %w", data, err)
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyDefaults(any) error {
@@ -361,12 +367,14 @@ func (s *Subscriber) NotifyDefaults(any) error {
 
 func (s *Subscriber) NotifyDNS(data events.DataDNS) error {
 	if err := s.setCustomDNS(data); err != nil {
-		return err
+		return fmt.Errorf("updating custom DNS context: %w", err)
 	}
 
 	// Custom DNS is not compatible with TP Lite - if Custom DNS is enabled, TP Lite should be off
 	if len(data.Ips) > 0 {
-		return s.setTPLite(false)
+		if err := s.setTPLite(false); err != nil {
+			return fmt.Errorf("disabling TP Lite after custom DNS was set: %w", err)
+		}
 	}
 
 	return nil
@@ -375,38 +383,59 @@ func (s *Subscriber) NotifyDNS(data events.DataDNS) error {
 func (s *Subscriber) setCustomDNS(data events.DataDNS) error {
 	dnsIPCount := len(data.Ips)
 	if err := s.response(s.mooseSetCustomDNSMetaFunc(fmt.Sprintf(`{"count":%d}`, dnsIPCount))); err != nil {
-		return err
+		return fmt.Errorf("setting custom DNS metadata (count=%d): %w", dnsIPCount, err)
 	}
 
 	isCustomDNSEnabled := dnsIPCount > 0
-	return s.response(s.mooseSetCustomDNSValueFunc(isCustomDNSEnabled))
+	if err := s.response(s.mooseSetCustomDNSValueFunc(isCustomDNSEnabled)); err != nil {
+		return fmt.Errorf("setting custom DNS enabled value (enabled=%v): %w", isCustomDNSEnabled, err)
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyFirewall(data bool) error {
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesFirewallEnabledValue(data))
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesFirewallEnabledValue(data)); err != nil {
+		return fmt.Errorf("setting firewall preference (enabled=%v): %w", data, err)
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyRouting(data bool) error {
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesRoutingEnabledValue(data))
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesRoutingEnabledValue(data)); err != nil {
+		return fmt.Errorf("setting routing preference (enabled=%v): %w", data, err)
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyLANDiscovery(data bool) error {
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesLocalNetworkDiscoveryAllowedValue(data))
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesLocalNetworkDiscoveryAllowedValue(data)); err != nil {
+		return fmt.Errorf("setting LAN discovery preference (allowed=%v): %w", data, err)
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyVirtualLocation(data bool) error {
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesVirtualServerEnabledValue(data))
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesVirtualServerEnabledValue(data)); err != nil {
+		return fmt.Errorf("setting virtual location preference (enabled=%v): %w", data, err)
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyPostquantumVpn(data bool) error {
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesPostQuantumEnabledValue(data))
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesPostQuantumEnabledValue(data)); err != nil {
+		return fmt.Errorf("setting post-quantum VPN preference (enabled=%v): %w", data, err)
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyIpv6(data bool) error {
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIpv6EnabledValue(data)); err != nil {
-		return err
+		return fmt.Errorf("setting IPv6 current state (enabled=%v): %w", data, err)
 	}
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesIpv6EnabledValue(data))
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesIpv6EnabledValue(data)); err != nil {
+		return fmt.Errorf("setting IPv6 user preference (enabled=%v): %w", data, err)
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error { // regular login, or login after signup
@@ -433,7 +462,7 @@ func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error { // regul
 		int32(data.Reason),
 		nil,
 	)); err != nil {
-		return err
+		return fmt.Errorf("sending login/register event (status=%v, type=%v): %w", data.EventStatus, data.EventType, err)
 	}
 
 	if data.EventStatus == events.StatusSuccess {
@@ -452,17 +481,22 @@ func (s *Subscriber) NotifyLogout(data events.DataAuthorization) error {
 		int32(data.Reason),
 		nil,
 	)); err != nil {
-		return err
+		return fmt.Errorf("sending logout event (status=%v): %w", data.EventStatus, err)
 	}
 
 	if data.EventStatus == events.StatusSuccess {
-		return s.clearSubscriptions()
+		if err := s.clearSubscriptions(); err != nil {
+			return fmt.Errorf("clearing subscriptions after logout: %w", err)
+		}
 	}
 	return nil
 }
 
 func (s *Subscriber) NotifyMFA(data bool) error {
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesMfaEnabledValue(data))
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesMfaEnabledValue(data)); err != nil {
+		return fmt.Errorf("setting MFA preference (enabled=%v): %w", data, err)
+	}
+	return nil
 }
 
 // configChangeHandler defines a handler for a specific config field change.
@@ -519,7 +553,10 @@ func getTokenRenewDate(cfg *config.Config) string {
 
 // setTokenRenewDate sets the token renewal date in moose context
 func (s *Subscriber) setTokenRenewDate(unixTimestamp int64) error {
-	return s.response(s.mooseSetTokenRenewDateFunc(int32(unixTimestamp)))
+	if err := s.response(s.mooseSetTokenRenewDateFunc(int32(unixTimestamp))); err != nil {
+		return fmt.Errorf("setting token renew date in moose context (timestamp=%d): %w", unixTimestamp, err)
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
@@ -527,7 +564,7 @@ func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
 	if data.ItemType == "textbox" {
 		itemType = moose.NordvpnappUserInterfaceItemTypeTextBox
 	}
-	return s.response(moose.NordvpnappSendUserInterfaceUiItemsClick(
+	if err := s.response(moose.NordvpnappSendUserInterfaceUiItemsClick(
 		moose.UiItemsParams{
 			FormReference: data.FormReference,
 			ItemName:      data.ItemName,
@@ -535,12 +572,15 @@ func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
 			ItemValue:     data.ItemValue,
 		},
 		nil,
-	))
+	)); err != nil {
+		return fmt.Errorf("sending UI item click event (form=%q, item=%q): %w", data.FormReference, data.ItemName, err)
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyHeartBeat(period time.Duration) error {
 	if err := s.response(moose.NordvpnappSendServiceQualityStatusHeartbeat(int32(period.Minutes()), nil)); err != nil {
-		return err
+		return fmt.Errorf("sending heartbeat event (period=%s): %w", period, err)
 	}
 	if !s.initialHeartbeatSent {
 		s.mux.Lock()
@@ -552,16 +592,16 @@ func (s *Subscriber) NotifyHeartBeat(period time.Duration) error {
 
 func (s *Subscriber) NotifyDeviceLocation(insights core.Insights) error {
 	if err := s.response(moose.NordvpnappSetContextDeviceLocationCity(insights.City)); err != nil {
-		return fmt.Errorf("setting moose device location city: %w", err)
+		return fmt.Errorf("setting moose device location city (%q): %w", insights.City, err)
 	}
 	if err := s.response(moose.NordvpnappSetContextDeviceLocationCountry(insights.CountryCode)); err != nil {
-		return fmt.Errorf("setting moose device location country: %w", err)
+		return fmt.Errorf("setting moose device location country (%q): %w", insights.CountryCode, err)
 	}
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIspValue(insights.Isp)); err != nil {
-		return fmt.Errorf("setting moose ISP value: %w", err)
+		return fmt.Errorf("setting moose ISP value (%q): %w", insights.Isp, err)
 	}
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIspAsnValue(strconv.Itoa(insights.IspAsn))); err != nil {
-		return fmt.Errorf("setting moose ISP ASN value: %w", err)
+		return fmt.Errorf("setting moose ISP ASN value (%d): %w", insights.IspAsn, err)
 	}
 	return nil
 }
@@ -570,17 +610,22 @@ func (s *Subscriber) NotifyNotify(bool) error { return nil }
 
 func (s *Subscriber) NotifyMeshnet(data bool) error {
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesMeshnetEnabledValue(data)); err != nil {
-		return err
+		return fmt.Errorf("setting meshnet preference (enabled=%v): %w", data, err)
 	}
 	if s.initialHeartbeatSent {
 		// 0 duration indicates that this is not a periodic heart beat
-		return s.NotifyHeartBeat(time.Duration(0))
+		if err := s.NotifyHeartBeat(time.Duration(0)); err != nil {
+			return fmt.Errorf("sending heartbeat after meshnet state change: %w", err)
+		}
 	}
 	return nil
 }
 
 func (s *Subscriber) NotifyObfuscate(data bool) error {
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesObfuscationEnabledValue(data))
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesObfuscationEnabledValue(data)); err != nil {
+		return fmt.Errorf("setting obfuscation preference (enabled=%v): %w", data, err)
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyPeerUpdate([]string) error { return nil }
@@ -589,13 +634,15 @@ func (s *Subscriber) NotifySelfRemoved(any) error { return nil }
 
 func (s *Subscriber) NotifyThreatProtectionLite(isTPLiteEnabled bool) error {
 	if err := s.setTPLite(isTPLiteEnabled); err != nil {
-		return err
+		return fmt.Errorf("setting TP Lite state (enabled=%v): %w", isTPLiteEnabled, err)
 	}
 
 	// TP Lite is not compatible with custom DNS - if TP Lite is on, Custom DNS should be off
 	if isTPLiteEnabled {
 		disable := events.DataDNS{} // empty custom DNS
-		return s.setCustomDNS(disable)
+		if err := s.setCustomDNS(disable); err != nil {
+			return fmt.Errorf("disabling custom DNS after TP Lite was enabled: %w", err)
+		}
 	}
 
 	return nil
@@ -607,14 +654,16 @@ func (s *Subscriber) setTPLite(isTPLiteEnabled bool) error {
 	// user selected - no matter if VPN is actively used or not.
 	if err := s.response(s.mooseSetTPLiteUserPrefFunc(isTPLiteEnabled)); err != nil {
 		log.Println(internal.WarningPrefix, "failed to set TP Lite in User Preferences:", err)
-		errs = append(errs, err)
+		errs = append(errs, fmt.Errorf("setting TP Lite user preference (enabled=%v): %w", isTPLiteEnabled, err))
 	}
 
 	// We are also checking if TP Lite is **actively** used, this is tracked in Current State field.
 	// On disconnect (see `NotifyDisconnect`), we are unsetting TP Lite In Current State in the context,
 	// because it stops being actively used after user disconnects.
 	if s.connectionStartTime.IsZero() {
-		errs = append(errs, s.response(s.mooseSetTPLiteCurrentFunc(isTPLiteEnabled)))
+		if err := s.response(s.mooseSetTPLiteCurrentFunc(isTPLiteEnabled)); err != nil {
+			errs = append(errs, fmt.Errorf("setting TP Lite current state (enabled=%v): %w", isTPLiteEnabled, err))
+		}
 	}
 
 	return errors.Join(errs...)
@@ -623,9 +672,12 @@ func (s *Subscriber) setTPLite(isTPLiteEnabled bool) error {
 func (s *Subscriber) NotifyProtocol(data config.Protocol) error {
 	protocol := connectionProtocolToInternalType(data)
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateProtocolValue(protocol)); err != nil {
-		return err
+		return fmt.Errorf("setting protocol current state (%v): %w", data, err)
 	}
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesProtocolValue(protocol))
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesProtocolValue(protocol)); err != nil {
+		return fmt.Errorf("setting protocol user preference (%v): %w", data, err)
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyAllowlist(data events.DataAllowlist) error {
@@ -633,9 +685,13 @@ func (s *Subscriber) NotifyAllowlist(data events.DataAllowlist) error {
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesSplitTunnelingEnabledMeta(
 		fmt.Sprintf(`{"udp_ports":%d,"tcp_ports":%d,"subnets":%d}`, len(data.UDPPorts), len(data.TCPPorts), len(data.Subnets)),
 	)); err != nil {
-		return err
+		return fmt.Errorf("setting allowlist metadata (udp=%d, tcp=%d, subnets=%d): %w",
+			len(data.UDPPorts), len(data.TCPPorts), len(data.Subnets), err)
 	}
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesSplitTunnelingEnabledValue(enabled))
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesSplitTunnelingEnabledValue(enabled)); err != nil {
+		return fmt.Errorf("setting allowlist enabled value (enabled=%v): %w", enabled, err)
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyTechnology(data config.Technology) error {
@@ -645,9 +701,12 @@ func (s *Subscriber) NotifyTechnology(data config.Technology) error {
 
 	technology := connectionTechnologyToInternalType(data)
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTechnologyValue(technology)); err != nil {
-		return err
+		return fmt.Errorf("setting technology current state (%v): %w", data, err)
 	}
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesTechnologyValue(technology))
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesTechnologyValue(technology)); err != nil {
+		return fmt.Errorf("setting technology user preference (%v): %w", data, err)
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
@@ -659,7 +718,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	}
 
 	if data.IsMeshnetPeer {
-		return s.response(moose.NordvpnappSendServiceQualityServersConnectToMeshnetDevice(
+		if err := s.response(moose.NordvpnappSendServiceQualityServersConnectToMeshnetDevice(
 			moose.EventParams{
 				EventDuration: int32(data.DurationMs),
 				EventStatus:   eventStatusToInternalType(data.EventStatus),
@@ -668,7 +727,10 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			-1,
 			-1,
 			nil,
-		))
+		)); err != nil {
+			return fmt.Errorf("sending meshnet peer connect event (status=%v): %w", data.EventStatus, err)
+		}
+		return nil
 	}
 
 	if err := s.response(moose.NordvpnappSendServiceQualityServersConnect(
@@ -700,19 +762,22 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		data.RecommendationUUID,
 		nil,
 	)); err != nil {
-		return err
+		return fmt.Errorf("sending VPN connect event (status=%v, server=%q, country=%q): %w",
+			data.EventStatus, data.TargetServerDomain, data.TargetServerCountryCode, err)
 	}
 
 	if data.EventStatus == events.StatusSuccess {
 		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue(data.ThreatProtectionLite)); err != nil {
-			return err
+			return fmt.Errorf("setting TP Lite current state after successful connect (enabled=%v): %w", data.ThreatProtectionLite, err)
 		}
 
 		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue(true)); err != nil {
-			return err
+			return fmt.Errorf("setting is-on-VPN current state after successful connect: %w", err)
 		}
 
-		return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue(data.TargetServerCountryCode))
+		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue(data.TargetServerCountryCode)); err != nil {
+			return fmt.Errorf("setting server country current state after successful connect (%q): %w", data.TargetServerCountryCode, err)
+		}
 	}
 
 	return nil
@@ -728,7 +793,7 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 	s.mux.Unlock()
 
 	if s.connectionToMeshnetPeer {
-		return s.response(moose.NordvpnappSendServiceQualityServersDisconnectFromMeshnetDevice(
+		if err := s.response(moose.NordvpnappSendServiceQualityServersDisconnectFromMeshnetDevice(
 			moose.EventParams{
 				EventDuration: int32(data.Duration.Milliseconds()),
 				EventStatus:   eventStatusToInternalType(data.EventStatus),
@@ -737,7 +802,11 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 			connectionDuration, // seconds
 			-1,
 			nil,
-		))
+		)); err != nil {
+			return fmt.Errorf("sending meshnet peer disconnect event (status=%v, duration=%ds): %w",
+				data.EventStatus, connectionDuration, err)
+		}
+		return nil
 	}
 
 	if data.RecommendationUUID != "" {
@@ -775,19 +844,24 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		errToExceptionCode(data.Error),
 		nil,
 	)); err != nil {
-		return err
+		return fmt.Errorf("sending VPN disconnect event (status=%v, duration=%ds): %w",
+			data.EventStatus, connectionDuration, err)
 	}
 
 	// Unset TP Lite in Current State - user disconnected so TP Lite is not **actively** used
 	if err := s.response(s.mooseUnsetTPLiteCurrentFunc()); err != nil {
-		return err
+		return fmt.Errorf("unsetting TP Lite current state after disconnect: %w", err)
 	}
 
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue(UnavailableEventParameterValue)); err != nil {
-		return err
+		return fmt.Errorf("clearing server country current state after disconnect: %w", err)
 	}
 
-	return s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue(false))
+	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue(false)); err != nil {
+		return fmt.Errorf("setting is-on-VPN current state after disconnect: %w", err)
+	}
+
+	return nil
 }
 
 func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
@@ -820,7 +894,7 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 		duration = int32(data.Duration.Milliseconds())
 	}
 
-	return s.response(notifierFunc(
+	if err := s.response(notifierFunc(
 		moose.EventParams{
 			EventDuration: duration,
 			EventStatus:   eventStatus,
@@ -838,7 +912,11 @@ func (s *Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 			TransferProtocol:  data.Request.Proto,
 		},
 		nil,
-	))
+	)); err != nil {
+		return fmt.Errorf("sending API request event (path=%q, status=%v, response_code=%d): %w",
+			data.Request.URL.Path, eventStatus, responseCode, err)
+	}
+	return nil
 }
 
 // NotifyDebuggerEvent processes a DebuggerEvent to emit a moose debugger log.
@@ -876,7 +954,10 @@ func (s *Subscriber) NotifyDebuggerEvent(e events.DebuggerEvent) error {
 			log.Printf("%s %s Discarding unsupported type (%T) on path: %s\n", internal.WarningPrefix, LogComponentPrefix, ctx.Value, path)
 		}
 	}
-	return s.response(moose.NordvpnappSendDebuggerLoggingLog(e.JsonData, combinedPaths, nil))
+	if err := s.response(moose.NordvpnappSendDebuggerLoggingLog(e.JsonData, combinedPaths, nil)); err != nil {
+		return fmt.Errorf("sending debugger log event: %w", err)
+	}
+	return nil
 }
 
 func (s *Subscriber) NotifyAppStartTime(duration int64) error {
@@ -885,7 +966,7 @@ func (s *Subscriber) NotifyAppStartTime(duration int64) error {
 	}
 
 	if err := s.response(moose.NordvpnappSendServiceQualityStatusAppStart(int32(duration), moose.NordvpnappEventTriggerApp, nil)); err != nil {
-		return fmt.Errorf("setting app start time")
+		return fmt.Errorf("sending app start time event (duration=%dms): %w", duration, err)
 	}
 
 	return nil
@@ -900,7 +981,7 @@ func (s *Subscriber) OnTelemetry(metric telemetry.Metric, value any) error {
 			}
 		} else {
 			if err := s.response(moose.NordvpnappSetContextDeviceDesktopEnvironment(value.(string))); err != nil {
-				return fmt.Errorf("setting desktop-environment: %w", err)
+				return fmt.Errorf("setting desktop-environment (%q): %w", value.(string), err)
 			}
 		}
 
@@ -912,16 +993,16 @@ func (s *Subscriber) OnTelemetry(metric telemetry.Metric, value any) error {
 			}
 		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_WAYLAND:
 			if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateDisplayProtocol("wayland")); err != nil {
-				return fmt.Errorf("setting display protocol: %w", err)
+				return fmt.Errorf("setting display protocol (wayland): %w", err)
 			}
 		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_X11:
 			if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateDisplayProtocol("x11")); err != nil {
-				return fmt.Errorf("setting display protocol: %w", err)
+				return fmt.Errorf("setting display protocol (x11): %w", err)
 			}
 		case telemetrypb.DisplayProtocol_DISPLAY_PROTOCOL_UNKNOWN:
 		default:
 			if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateDisplayProtocol("unknown")); err != nil {
-				return fmt.Errorf("setting display protocol: %w", err)
+				return fmt.Errorf("setting display protocol (unknown): %w", err)
 			}
 		}
 
@@ -953,20 +1034,23 @@ func (s *Subscriber) fetchAndSetVpnServiceExpiration() error {
 	date := expiry.Format(internal.YearMonthDateFormat)
 
 	if err := s.response(moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateServiceExpiresAt(date)); err != nil {
-		return err
+		return fmt.Errorf("setting VPN service expiration date (%q): %w", date, err)
 	}
 
 	return nil
 }
 
 func (s *Subscriber) OnFirstOpen() error {
-	return s.response(moose.NordvpnappSendServiceQualityStatusFirstOpenApp(-1, nil))
+	if err := s.response(moose.NordvpnappSendServiceQualityStatusFirstOpenApp(-1, nil)); err != nil {
+		return fmt.Errorf("sending first open app event: %w", err)
+	}
+	return nil
 }
 
 func (s *Subscriber) fetchSubscriptions() error {
 	cfg, err := s.getConfig()
 	if err != nil {
-		return err
+		return fmt.Errorf("loading config for subscription fetch: %w", err)
 	}
 
 	if cfg.AnalyticsConsent == config.ConsentUndefined {
@@ -1184,7 +1268,7 @@ func (s *Subscriber) clearSubscriptions() error {
 func (s *Subscriber) updateEventDomain() error {
 	domainUrl, err := url.Parse(s.domain)
 	if err != nil {
-		return err
+		return fmt.Errorf("parsing event domain URL %q: %w", s.domain, err)
 	}
 	// TODO: Remove subdomain handling logic as it brings no value after domain rotation removal
 	if s.subdomain != "" {
