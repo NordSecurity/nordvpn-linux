@@ -9,7 +9,4 @@ import (
 type Facade struct{}
 
 func (*Facade) Configure(vpnInfo *firewall.VpnInfo, meshMap *mesh.MachineMap) error { return nil }
-func (*Facade) Disable() error                                                      { return nil }
-func (*Facade) Enable() error                                                       { return nil }
 func (*Facade) Flush() error                                                        { return nil }
-func (*Facade) Remove() error                                                       { return nil }

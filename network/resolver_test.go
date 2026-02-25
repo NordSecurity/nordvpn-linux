@@ -1,6 +1,16 @@
 package network
 
-// TODO: redo tests when api is stable
+import (
+	"testing"
+
+	"github.com/NordSecurity/nordvpn-linux/test/category"
+)
+
+func TestDummy(t *testing.T) {
+	category.Set(t, category.Unit)
+}
+
+// TODO: needs checking what to exactly test when api of fw is stable
 // import (
 // 	"net/netip"
 // 	"testing"

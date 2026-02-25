@@ -180,13 +180,6 @@ func FilterSupportedIPTables(supportedIPTables []string) []string {
 	return supported
 }
 
-func trimPrefixes(str string, prefixes ...string) string {
-	for _, prefix := range prefixes {
-		str = strings.TrimSpace(strings.TrimPrefix(str, prefix))
-	}
-	return str
-}
-
 func portsDirectionToPortsFlag(direction firewall.PortsDirection) []string {
 	switch direction {
 	case firewall.SourceAndDestination:
