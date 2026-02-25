@@ -21,7 +21,7 @@ const (
 
 type RecentConnectionsStore struct {
 	path              string
-	fsHandle          config.FilesystemHandle
+	fsHandle          internal.FileSystemHandle
 	mu                sync.Mutex
 	pendingConnection Model
 	onDataChangedFunc func()
@@ -34,7 +34,7 @@ type RecentConnectionsStore struct {
 // pass nil to disable event publishing.
 func NewRecentConnectionsStore(
 	path string,
-	fsHandle config.FilesystemHandle,
+	fsHandle internal.FileSystemHandle,
 	onDataChangedFunc func(),
 ) *RecentConnectionsStore {
 	return &RecentConnectionsStore{
