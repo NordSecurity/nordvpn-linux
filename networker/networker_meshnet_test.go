@@ -1,5 +1,15 @@
 package networker
 
+import (
+	"testing"
+
+	"github.com/NordSecurity/nordvpn-linux/test/category"
+)
+
+func TestDummyMesh(t *testing.T) {
+	category.Set(t, category.Unit)
+}
+
 // TODO: redo tests when api is stable
 // import (
 // 	"net/netip"
