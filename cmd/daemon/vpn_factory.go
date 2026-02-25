@@ -13,17 +13,23 @@ import (
 
 var ErrNordWhisperDisabled = errors.New("NordWhisper technology was disabled in compile time")
 
-func getVpnFactory(eventsDbPath string, fwmark uint32, envIsDev bool,
-	cfg vpn.LibConfigGetter, appVersion string, eventsPublisher *vpn.Events,
+func getVpnFactory(
+	eventsDbPath string,
+	fwmark uint32,
+	envIsDev bool,
+	libtelioCfg vpn.LibConfigGetter,
+	libquenchCfg vpn.NordWhisperConfigGetter,
+	appVersion string,
+	eventsPublisher *vpn.Events,
 ) daemon.FactoryFunc {
-	nordlynxVPN, nordLynxErr := getNordlynxVPN(envIsDev, eventsDbPath, fwmark, cfg, appVersion, eventsPublisher)
+	nordlynxVPN, nordLynxErr := getNordlynxVPN(envIsDev, eventsDbPath, fwmark, libtelioCfg, appVersion, eventsPublisher)
 	if nordLynxErr != nil {
 		// don't exit with `err` here in case the factory will be called with
 		// technology different than `config.Technology_NORDLYNX`
 		log.Println(internal.ErrorPrefix, "getting NordLynx vpn:", nordLynxErr)
 	}
 
-	nordWhisperVPN, nordWhisperErr := getNordWhisperVPN(fwmark, envIsDev, eventsPublisher)
+	nordWhisperVPN, nordWhisperErr := getNordWhisperVPN(fwmark, envIsDev, eventsPublisher, libquenchCfg)
 	if nordWhisperErr != nil {
 		log.Println(internal.ErrorPrefix, "getting NordWhisper vpn:", nordWhisperErr)
 	}

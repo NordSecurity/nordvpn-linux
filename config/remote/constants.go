@@ -58,9 +58,10 @@ func (e EventType) String() string {
 }
 
 const (
-	FeatureMain     = "nordvpn"
-	FeatureLibtelio = "libtelio"
-	FeatureMeshnet  = "meshnet"
+	FeatureMain        = "nordvpn"
+	FeatureLibtelio    = "libtelio"
+	FeatureMeshnet     = "meshnet"
+	FeatureNordWhisper = "nordwhisper"
 )
 
 const (
