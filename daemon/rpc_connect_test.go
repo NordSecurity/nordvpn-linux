@@ -17,7 +17,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
-	mockconfig "github.com/NordSecurity/nordvpn-linux/test/mock/config"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -147,7 +147,7 @@ func getServersByID(servers core.Servers, id int64) core.Servers {
 func testRPCLocal(t *testing.T) *RPC {
 	rpc := testRPC()
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	recentStore := recents.NewRecentConnectionsStore("/test/recents_"+t.Name()+".dat", &fs, nil)
 	rpc.recentVPNConnStore = recentStore
 
