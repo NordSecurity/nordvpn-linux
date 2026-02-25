@@ -148,9 +148,10 @@ type Quench struct {
 	server   vpn.ServerData
 	vnic     *quenchBindigns.Vnic
 	tun      *tunnel.Tunnel
+	cfg      vpn.NordWhisperConfigGetter
 }
 
-func New(fwmark uint32, envIsDev bool, events *vpn.Events) *Quench {
+func New(fwmark uint32, envIsDev bool, events *vpn.Events, cfg vpn.NordWhisperConfigGetter) *Quench {
 	logLevel := quenchBindigns.LogLevelInfo
 	if envIsDev {
 		logLevel = quenchBindigns.LogLevelDebug
@@ -164,6 +165,7 @@ func New(fwmark uint32, envIsDev bool, events *vpn.Events) *Quench {
 		observer: newObserver(events, internal.NordWhisperInterfaceName),
 		logger:   &logger,
 		state:    vpn.ExitedState,
+		cfg:      cfg,
 	}
 }
 
@@ -201,11 +203,20 @@ func (q *Quench) Start(ctx context.Context, creds vpn.Credentials, server vpn.Se
 
 	addr := fmt.Sprintf("wt://%s:%d/", server.IP, server.NordWhisperPort)
 
+	features, err := q.cfg.GetConfig()
+	if err != nil {
+		// In case we fail to fetch the remote config, we will use the defaults
+		log.Println(internal.WarningPrefix, "Failed to fetch NordWhisper features:", err)
+		features = vpn.NewNordWhisperFeatureConfig()
+	}
+	log.Println(internal.InfoPrefix, "Using NordWhisper with features", features)
+
 	config := Config{
 		Protocol: Protocol{
 			Addr: addr,
 			Spec: Spec{
 				TlsDomain: server.Hostname,
+				EnableECH: features.EnableECH,
 			},
 		},
 	}
