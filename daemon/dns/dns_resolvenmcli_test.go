@@ -106,6 +106,7 @@ vnet3:tun`,
 
 func Test_DNSResolveNmCli_RollbackOnReloadFailure(t *testing.T) {
 	category.Set(t, category.Integration)
+
 	type connectionState struct {
 		ipv4DNS       string
 		ignoreAutoDNS string
