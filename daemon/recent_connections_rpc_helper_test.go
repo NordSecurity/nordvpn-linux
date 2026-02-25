@@ -9,7 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	mockconfig "github.com/NordSecurity/nordvpn-linux/test/mock/config"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -59,7 +59,7 @@ func TestStorePendingRecentConnection_BasicBehavior(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := mockconfig.NewFilesystemMock(t)
+			fs := fs.NewSystemFileHandleMock(t)
 			store := recents.NewRecentConnectionsStore("/test/path", &fs, nil)
 
 			if tt.pendingModel != nil {
@@ -90,7 +90,7 @@ func TestStorePendingRecentConnection_BasicBehavior(t *testing.T) {
 func TestStorePendingRecentConnection_MultiplePendingConnections(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := recents.NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	model1 := recents.Model{
@@ -126,7 +126,7 @@ func TestStorePendingRecentConnection_MultiplePendingConnections(t *testing.T) {
 func TestStorePendingRecentConnection_DuplicateConnection(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := recents.NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	model := recents.Model{
@@ -155,7 +155,7 @@ func TestStorePendingRecentConnection_DuplicateConnection(t *testing.T) {
 func TestStorePendingRecentConnection_ConcurrentCalls(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := recents.NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	var wg sync.WaitGroup
@@ -185,7 +185,7 @@ func TestStorePendingRecentConnection_ConcurrentCalls(t *testing.T) {
 func TestStorePendingRecentConnection_WithServerTechnologies(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := recents.NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	model := recents.Model{
@@ -211,7 +211,7 @@ func TestStorePendingRecentConnection_WithServerTechnologies(t *testing.T) {
 func TestStorePendingRecentConnection_FullWorkflow(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 	store := recents.NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	// Simulate connect workflow
@@ -297,7 +297,7 @@ func TestStorePendingRecentConnection_ErrorHandling(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fs := mockconfig.NewFilesystemMock(t)
+			fs := fs.NewSystemFileHandleMock(t)
 			store := recents.NewRecentConnectionsStore("/test/path", &fs, nil)
 
 			// Add existing connection if specified

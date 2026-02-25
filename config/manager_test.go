@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
@@ -56,7 +57,7 @@ func TestFilesystem(t *testing.T) {
 			tmpDir := t.TempDir()
 			configLocation := filepath.Join(tmpDir, "config")
 			vaultLocation := filepath.Join(tmpDir, "vault")
-			fs := NewFilesystemConfigManager(configLocation, vaultLocation, "", NewMachineID(os.ReadFile, os.Hostname), StdFilesystemHandle{}, nil)
+			fs := NewFilesystemConfigManager(configLocation, vaultLocation, "", NewMachineID(os.ReadFile, os.Hostname), internal.StdFilesystemHandle{}, nil)
 
 			err := fs.SaveWith(test.f)
 			assert.NoError(t, err)
@@ -101,7 +102,7 @@ func TestConfigIsBackwardsCompatible(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.settingsFile, func(t *testing.T) {
-			fs := NewFilesystemConfigManager(test.settingsFile, test.installFile, salt, NewMachineID(os.ReadFile, os.Hostname), StdFilesystemHandle{}, nil)
+			fs := NewFilesystemConfigManager(test.settingsFile, test.installFile, salt, NewMachineID(os.ReadFile, os.Hostname), internal.StdFilesystemHandle{}, nil)
 			var cfg Config
 			err := fs.Load(&cfg)
 			require.NoError(t, err)
@@ -148,7 +149,7 @@ func TestConfigDefaultValues(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.settingsFile, func(t *testing.T) {
-			fs := NewFilesystemConfigManager(test.settingsFile, test.installFile, salt, NewMachineID(os.ReadFile, os.Hostname), StdFilesystemHandle{}, nil)
+			fs := NewFilesystemConfigManager(test.settingsFile, test.installFile, salt, NewMachineID(os.ReadFile, os.Hostname), internal.StdFilesystemHandle{}, nil)
 			var cfg Config
 			err := fs.Load(&cfg)
 			require.NoError(t, err)
@@ -183,7 +184,7 @@ func TestSaveWithPublishesPreviousConfig(t *testing.T) {
 		vaultLocation,
 		"",
 		NewMachineID(os.ReadFile, os.Hostname),
-		StdFilesystemHandle{},
+		internal.StdFilesystemHandle{},
 		publisher,
 	)
 
@@ -237,7 +238,7 @@ func TestLoadWithCopyReturnsIndependentCopies(t *testing.T) {
 		vaultLocation,
 		"",
 		NewMachineID(os.ReadFile, os.Hostname),
-		StdFilesystemHandle{},
+		internal.StdFilesystemHandle{},
 		nil,
 	)
 
