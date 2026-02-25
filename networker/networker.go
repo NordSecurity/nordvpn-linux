@@ -1141,56 +1141,6 @@ func (netw *Combined) allowFileshareAll() error {
 	return nil
 }
 
-// func (netw *Combined) undenyDNS() error {
-// 	if !netw.dnsDenied {
-// 		log.Println(internal.DebugPrefix, "attempt to undeny dns when it was not previously denied")
-// 		return nil
-// 	}
-
-// 	// TODO: fix nft
-// 	// if err := netw.fw.Delete([]string{denyPrivateDNSRule}); err != nil {
-// 	// 	return fmt.Errorf("deleting deny-private-dns dns rule: %w", err)
-// 	// }
-
-// 	netw.dnsDenied = false
-
-// 	return nil
-// }
-
-// TODO NFT: logic needs to be moved to nft when all rules are set in stone
-// func (netw *Combined) denyDNS() error {
-// 	if netw.dnsDenied {
-// 		log.Println(internal.DebugPrefix, "attempt to deny dns when it was already denied")
-// 		return nil
-// 	}
-
-// 	// TODO: fix nft
-// 	// rules := []firewall.Rule{{
-// 	// 	Name:           denyPrivateDNSRule,
-// 	// 	Direction:      firewall.Outbound,
-// 	// 	Protocols:      []string{"udp", "tcp"},
-// 	// 	Ports:          []int{53},
-// 	// 	PortsDirection: firewall.Destination,
-// 	// 	RemoteNetworks: []netip.Prefix{
-// 	// 		netip.MustParsePrefix("10.0.0.0/8"),
-// 	// 		netip.MustParsePrefix("172.16.0.0/12"),
-// 	// 		netip.MustParsePrefix("192.168.0.0/16"),
-// 	// 		netip.MustParsePrefix("169.254.0.0/16"),
-// 	// 	},
-// 	// 	Allow: false,
-// 	// 	// We want this to be in filter table so we process the drops earlier
-// 	// 	Physical: false,
-// 	// }}
-
-// 	// if err := netw.fw.Add(rules); err != nil {
-// 	// 	return fmt.Errorf("adding deny-private-dns rule to firewall: %w", err)
-// 	// }
-
-// 	netw.dnsDenied = true
-
-// 	return nil
-// }
-
 func (netw *Combined) ForbidFileshare() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()

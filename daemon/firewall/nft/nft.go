@@ -96,6 +96,11 @@ func (n *nft) configure(config firewall.Config) error {
 		return fmt.Errorf("add excluded interfaces set %w", err)
 	}
 
+	lanPrivateRanges, err := n.buildLanRangesSet(table)
+	if err != nil {
+		return err
+	}
+
 	allowlistSubnets, err := n.buildAllowlistSubnets(table, config.Allowlist)
 	if err != nil {
 		return err
@@ -131,16 +136,11 @@ func (n *nft) configure(config firewall.Config) error {
 		}
 	}
 
-	var lanPrivateRanges *nftables.Set
 	var fileshare *nftables.Set
 	var lanAllowedPeers *nftables.Set
 	var routingAllowed *nftables.Set
 	var allowedIncomingConnections *nftables.Set
 	if config.MeshnetInfo != nil {
-		lanPrivateRanges, err = n.buildLanRangesSet(table)
-		if err != nil {
-			return err
-		}
 		fileshare, err = n.buildFileshare(table, config.MeshnetInfo.MeshnetMap)
 		if err != nil {
 			return fmt.Errorf("add fileshare peers set: %w", err)
@@ -167,8 +167,8 @@ func (n *nft) configure(config firewall.Config) error {
 	}
 
 	n.addPreRouting(table, allowlistSubnets, tcpPorts, udpPorts)
-	n.addInput(isVpnOrKsSet, table, excludedInterfaces, fileshare, allowedIncomingConnections, config.MeshnetInfo)
-	n.addOutput(isVpnOrKsSet, table, excludedInterfaces, allowlistSubnets, tcpPorts, udpPorts, config.MeshnetInfo)
+	n.addInput(config, table, excludedInterfaces, fileshare, allowedIncomingConnections)
+	n.addOutput(config, table, excludedInterfaces, allowlistSubnets, tcpPorts, udpPorts, lanPrivateRanges)
 	n.addForward(config, table, allowlistSubnets, tcpPorts, udpPorts, lanAllowedPeers, routingAllowed, lanPrivateRanges, config.MeshnetInfo)
 	if config.MeshnetInfo != nil && routingAllowed != nil {
 		n.addMeshnetNat(table, routingAllowed)
@@ -246,15 +246,14 @@ func (n *nft) addPreRouting(
 }
 
 func (n *nft) addInput(
-	isVpnOrKsSet bool,
+	config firewall.Config,
 	table *nftables.Table,
 	excludedInterfaces *nftables.Set,
 	filesharePeers *nftables.Set,
 	allowIncomingConnections *nftables.Set,
-	meshnetInfo *firewall.MeshInfo,
 ) {
 	dropPolicy := nftables.ChainPolicyAccept
-	if isVpnOrKsSet {
+	if config.IsVpnOrKillSwitchSet() {
 		dropPolicy = nftables.ChainPolicyDrop
 	}
 
@@ -293,7 +292,7 @@ func (n *nft) addInput(
 			Chain: inputChain,
 			Exprs: buildJumpRules(
 				meshChain.Name,
-				checkInterfaceName(meshnetInfo.MeshInterface, IF_INPUT),
+				checkInterfaceName(config.MeshnetInfo.MeshInterface, IF_INPUT),
 				checkIpPartOfSubnet(internal.MeshSubnet, MATCH_SOURCE),
 			),
 		})
@@ -371,16 +370,16 @@ func (n *nft) addInput(
 //	    meta mark 0xe1f1 accept
 //		}
 func (n *nft) addOutput(
-	isVpnOrKsSet bool,
+	config firewall.Config,
 	table *nftables.Table,
 	excludedInterfaces *nftables.Set,
 	allowlistSubnets *nftables.Set,
 	udpPortsSet *nftables.Set,
 	tcpPortsSet *nftables.Set,
-	meshMap *firewall.MeshInfo,
+	lanPrivateRanges *nftables.Set,
 ) {
 	dropPolicy := nftables.ChainPolicyAccept
-	if isVpnOrKsSet {
+	if config.IsVpnOrKillSwitchSet() {
 		dropPolicy = nftables.ChainPolicyDrop
 	}
 
@@ -399,6 +398,35 @@ func (n *nft) addOutput(
 		Chain: outputChain,
 		Exprs: buildRules(expr.VerdictAccept, addInterfacesCheck(excludedInterfaces, IF_OUTPUT)),
 	})
+
+	// always drop DNS if port 53 not whitelisted
+	if config.IsVpnOrKillSwitchSet() {
+		if !config.Allowlist.Ports.TCP[53] {
+			// ip daddr @lan_ranges tcp dport 53 drop
+			n.conn.AddRule(&nftables.Rule{
+				Table: table,
+				Chain: outputChain,
+				Exprs: buildRules(
+					expr.VerdictDrop,
+					checkIpInSet(lanPrivateRanges, MATCH_DESTINATION),
+					checkPortNumber(53, unix.IPPROTO_TCP, MATCH_DESTINATION),
+				),
+			})
+		}
+
+		if !config.Allowlist.Ports.UDP[53] {
+			// ip daddr @lan_ranges tcp dport 53 drop
+			n.conn.AddRule(&nftables.Rule{
+				Table: table,
+				Chain: outputChain,
+				Exprs: buildRules(
+					expr.VerdictDrop,
+					checkIpInSet(lanPrivateRanges, MATCH_DESTINATION),
+					checkPortNumber(53, unix.IPPROTO_UDP, MATCH_DESTINATION),
+				),
+			})
+		}
+	}
 
 	if allowlistSubnets != nil {
 		// ip daddr @allowed_subnets meta mark set 0x0000e1f1 accept
@@ -453,13 +481,13 @@ func (n *nft) addOutput(
 		),
 	})
 
-	if meshMap != nil {
+	if config.MeshnetInfo != nil {
 		// oifname "nordlynx" ip daddr 100.64.0.0/10 accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
 			Chain: outputChain,
 			Exprs: buildRules(expr.VerdictAccept,
-				checkInterfaceName(meshMap.MeshInterface, IF_OUTPUT),
+				checkInterfaceName(config.MeshnetInfo.MeshInterface, IF_OUTPUT),
 				checkIpPartOfSubnet(internal.MeshSubnet, MATCH_DESTINATION),
 			),
 		})
