@@ -64,9 +64,6 @@ func (netw *Combined) handleNetworkChanged() error {
 		if err := netw.resetAllowlist(); err != nil {
 			return err
 		}
-		if err := netw.configureTraffic(); err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -95,8 +92,8 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 	isVPNStarted := netw.isVpnSet
 	isMeshStarted := netw.isMeshnetSet
 
-	if netw.vpnInfo.Killswitch {
-		if err := netw.setKillSwitch(*netw.vpnInfo.Allowlist, true); err != nil {
+	if netw.isKillSwitchSet {
+		if err := netw.setKillSwitch(true); err != nil {
 			return fmt.Errorf("setting killswitch: %w", err)
 		}
 	}
@@ -133,14 +130,14 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 	defer func() { err = errors.Join(vpnErr, meshErr) }()
 
 	if isVPNStarted {
-		if !netw.vpnInfo.Killswitch {
-			if err := netw.setKillSwitch(*netw.vpnInfo.Allowlist, false); err != nil {
+		if !netw.isKillSwitchSet {
+			if err := netw.setKillSwitch(false); err != nil {
 				return fmt.Errorf("setting killswitch: %w", err)
 			}
 			defer func() {
 				if vpnErr != nil {
 					// Keep iptables rules to not expose user after background connect failure
-					netw.vpnInfo.Killswitch = false
+					netw.isKillSwitchSet = false
 				} else {
 					vpnErr = netw.unsetKillSwitch()
 				}
@@ -183,7 +180,7 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 			ctx,
 			netw.lastCreds,
 			netw.lastServer,
-			*netw.vpnInfo.Allowlist,
+			netw.allowlist,
 			netw.lastNameservers,
 		); vpnErr != nil {
 			vpnErr = fmt.Errorf("starting networker: %w", vpnErr)

@@ -202,9 +202,8 @@ func main() {
 	dns.RestoreResolvConfFile()
 
 	// Firewall
-	nftImpl := nft.New()
+	nftImpl := nft.New(cfg.FirewallMark)
 	fw := firewall.NewFirewall(nftImpl, cfg.Firewall)
-	vpnInfo := firewall.NewVpnInfo(cfg.AutoConnectData.Allowlist, cfg.KillSwitch)
 
 	// API
 	var err error
@@ -444,11 +443,10 @@ func main() {
 		kernel.NewSysctlSetter(
 			networker.ArpIgnoreParamName, 1,
 		),
-		// TODO: during nft mesh netw integration
-		// kernel.NewSysctlSetter(
-		// 	forwarder.Ipv4fwdKernelParamName, 1,
-		// ),
-		*vpnInfo,
+		cfg.AutoConnectData.Allowlist,
+		kernel.NewSysctlSetter(
+			networker.IpForwardParamName, 1,
+		),
 	)
 
 	keygen, err := keygenImplementation(vpnFactory)
