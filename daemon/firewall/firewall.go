@@ -8,8 +8,6 @@ import (
 	"log"
 	"sync"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
@@ -22,64 +20,40 @@ const (
 // Thread-safe.
 type Firewall struct {
 	mu      sync.Mutex
-	impl    FwImpl
+	impl    FirewallImpl
 	enabled bool
 }
 
 // NewFirewall produces an instance of Firewall.
-func NewFirewall(impl FwImpl, enabled bool) *Firewall {
+func NewFirewall(impl FirewallImpl, enabled bool) *Firewall {
 	return &Firewall{
 		impl:    impl,
 		enabled: enabled,
 	}
 }
 
-type VpnInfo struct {
-	TunnelInterface *string
-	Allowlist       *config.Allowlist
-	Killswitch      bool
-}
-
-func NewVpnInfo(allowlist config.Allowlist, killswitch bool) *VpnInfo {
-	return &VpnInfo{
-		TunnelInterface: nil,
-		Allowlist:       &allowlist,
-		Killswitch:      killswitch}
-}
-func (fw *Firewall) Configure(vpnInfo *VpnInfo, meshMap *mesh.MachineMap) error {
+func (fw *Firewall) Configure(config Config) error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
-	log.Println(internal.InfoPrefix, logPrefix, "configure firewall, enabled:", fw.enabled)
+	log.Println(internal.InfoPrefix, logPrefix, "configure firewall")
 
 	if !fw.enabled {
-		return errors.New("firewall not enabled")
+		log.Println(internal.InfoPrefix, logPrefix, "ignoring configure because firewall is disabled")
+		return nil
 	}
 
-	return fw.impl.Configure(vpnInfo, nil)
-}
-
-func (fw *Firewall) Remove() error {
-	fw.mu.Lock()
-	defer fw.mu.Unlock()
-
-	log.Println(internal.InfoPrefix, logPrefix, "remove firewall, older status:", fw.enabled)
-
-	if !fw.enabled {
-		return errors.New("firewall not enabled")
-	}
-
-	return fw.impl.Flush()
+	return fw.impl.Configure(config)
 }
 
 func (fw *Firewall) Enable() error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
-	log.Println(internal.InfoPrefix, logPrefix, "enabling firewall:", fw.enabled)
+	log.Println(internal.InfoPrefix, logPrefix, "enabling firewall")
 
 	if fw.enabled {
-		return errors.New("already enabled")
+		return errors.New("firewall already enabled")
 	}
 
 	fw.enabled = true
@@ -94,7 +68,7 @@ func (fw *Firewall) Disable() error {
 	log.Println(internal.InfoPrefix, logPrefix, "disable firewall, older status:", fw.enabled)
 
 	if !fw.enabled {
-		return errors.New("already disabled")
+		return errors.New("firewall already disabled")
 	}
 
 	fw.enabled = false
@@ -105,6 +79,13 @@ func (fw *Firewall) Disable() error {
 func (fw *Firewall) Flush() error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
+
+	log.Println(internal.InfoPrefix, logPrefix, "flush firewall rules")
+
+	if !fw.enabled {
+		log.Println(internal.InfoPrefix, logPrefix, "ignoring flush because firewall is disabled")
+		return nil
+	}
 
 	return fw.impl.Flush()
 }
