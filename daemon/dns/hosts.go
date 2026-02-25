@@ -54,7 +54,9 @@ func (s *HostsFileSetter) SetHosts(hosts Hosts) error {
 
 	if _, err := file.Write(content); err != nil {
 		// #nosec G104 -- errors.Join would be useful here
-		file.Close()
+		if cerr := file.Close(); cerr != nil {
+			return fmt.Errorf("writing to the hosts file: %v; closing file: %w", err, cerr)
+		}
 		return fmt.Errorf("writing to the hosts file: %w", err)
 	}
 
@@ -71,7 +73,9 @@ func (s *HostsFileSetter) UnsetHosts() error {
 
 	if _, err := file.Write(content); err != nil {
 		// #nosec G104 -- errors.Join would be useful here
-		file.Close()
+		if cerr := file.Close(); cerr != nil {
+			return fmt.Errorf("writing to the hosts file: %v; closing file: %w", err, cerr)
+		}
 		return fmt.Errorf("writing to the hosts file: %w", err)
 	}
 
