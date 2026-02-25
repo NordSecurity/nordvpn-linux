@@ -57,10 +57,10 @@ func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context, do
 			}
 
 			if e.Op.Has(fsnotify.Write) || e.Op.Has(fsnotify.Remove) {
-				r.analytics.emitResolvConfOverwrittenEvent(unmanaged)
+				r.analytics.emitResolvConfOverwrittenEvent(unmanagedManagementService)
+				return nil
 			}
 
-			return nil
 		case err, ok := <-watcher.Errors:
 			if !ok {
 				return fmt.Errorf("file watcher closed")

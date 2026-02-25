@@ -6,9 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/fs"
 	"math/rand"
-	"os"
 	"path/filepath"
 	"runtime"
 	"sync"
@@ -48,30 +46,6 @@ type Manager interface {
 	Reset(preserveLoginData bool, disableKillswitch bool) error
 }
 
-type FilesystemHandle interface {
-	FileExists(string) bool
-	ReadFile(string) ([]byte, error)
-	WriteFile(string, []byte, fs.FileMode) error
-}
-
-type StdFilesystemHandle struct{}
-
-func (StdFilesystemHandle) FileExists(location string) bool {
-	return internal.FileExists(location)
-}
-
-func (StdFilesystemHandle) ReadFile(location string) ([]byte, error) {
-	// #nosec G304 -- no input comes from the user
-	return os.ReadFile(location)
-}
-
-func (StdFilesystemHandle) WriteFile(location string, data []byte, mode fs.FileMode) error {
-	if err := internal.EnsureDir(location); err != nil {
-		return err
-	}
-	return os.WriteFile(location, data, mode)
-}
-
 type DataConfigChange struct {
 	// PreviousConfig contains the config state before the change (nil on first load)
 	PreviousConfig *Config
@@ -93,7 +67,7 @@ type FilesystemConfigManager struct {
 	vault           string
 	salt            string
 	machineIDGetter MachineIDGetter
-	fsHandle        FilesystemHandle
+	fsHandle        internal.FileSystemHandle
 	NewInstallation bool
 	configPublisher ConfigPublisher
 	mu              sync.Mutex
@@ -102,7 +76,7 @@ type FilesystemConfigManager struct {
 // NewFilesystemConfigManager is constructed from a given location and salt.
 func NewFilesystemConfigManager(location, vault, salt string,
 	machineIDGetter MachineIDGetter,
-	fsHandle FilesystemHandle,
+	fsHandle internal.FileSystemHandle,
 	configPublisher ConfigPublisher,
 ) *FilesystemConfigManager {
 	return &FilesystemConfigManager{

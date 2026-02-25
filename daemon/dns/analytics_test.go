@@ -16,7 +16,7 @@ func Test_emitResolvConfOverwrittenEvent(t *testing.T) {
 
 	mockPublisher := mockevents.MockPublisher[events.DebuggerEvent]{}
 	analytics := newDNSAnalytics(&mockPublisher)
-	analytics.emitResolvConfOverwrittenEvent(unknown)
+	analytics.emitResolvConfOverwrittenEvent(unknownManagementService)
 
 	event, n, stackIsEmpty := mockPublisher.PopEvent()
 
@@ -27,7 +27,7 @@ func Test_emitResolvConfOverwrittenEvent(t *testing.T) {
 		Value: resolvConfOverwrittenEventType.String()})
 	assert.Contains(t, event.KeyBasedContextPaths, events.ContextValue{
 		Path:  debuggerEventBaseKey + "." + debuggerEventManagementServiceKey,
-		Value: unknown.String()})
+		Value: unknownManagementService.String()})
 	assert.Equal(t,
 		"{\"event\":\"resolvconf_overwritten\",\"namespace\":\"nordvpn-linux\",\"management_service\":\"unknown_service\"}",
 		event.JsonData)
@@ -42,11 +42,11 @@ func Test_emitDNSConfiguredEvent(t *testing.T) {
 	}{
 		{
 			name:              "systemd-resolved",
-			managementService: systemdResolved,
+			managementService: systemdResolvedManagementService,
 		},
 		{
 			name:              "unmanaged",
-			managementService: unmanaged,
+			managementService: unmanagedManagementService,
 		},
 	}
 
@@ -88,49 +88,49 @@ func Test_emitDNSConfigurationErrorEvent(t *testing.T) {
 	}{
 		{
 			name:              "set failed for unmanaged, not critical",
-			managementService: unmanaged,
+			managementService: unmanagedManagementService,
 			errorType:         setFailedErrorType,
 			critical:          false,
 		},
 		{
 			name:              "failed to read for unmanaged, not critical",
-			managementService: unmanaged,
+			managementService: unmanagedManagementService,
 			errorType:         resolvConfReadFailedErrorType,
 			critical:          false,
 		},
 		{
 			name:              "set failed for unmanaged, critical",
-			managementService: unmanaged,
+			managementService: unmanagedManagementService,
 			errorType:         setFailedErrorType,
 			critical:          true,
 		},
 		{
 			name:              "failed to read for unmanaged, critical",
-			managementService: unmanaged,
+			managementService: unmanagedManagementService,
 			errorType:         resolvConfReadFailedErrorType,
 			critical:          true,
 		},
 		{
 			name:              "set failed for systemd-resolved, not critical",
-			managementService: systemdResolved,
+			managementService: systemdResolvedManagementService,
 			errorType:         setFailedErrorType,
 			critical:          false,
 		},
 		{
 			name:              "failed to read for systemd-resolved, not critical",
-			managementService: systemdResolved,
+			managementService: systemdResolvedManagementService,
 			errorType:         resolvConfReadFailedErrorType,
 			critical:          false,
 		},
 		{
 			name:              "set failed for systemd-resolved, critical",
-			managementService: systemdResolved,
+			managementService: systemdResolvedManagementService,
 			errorType:         setFailedErrorType,
 			critical:          true,
 		},
 		{
 			name:              "failed to read for systemd-resolved, critical",
-			managementService: systemdResolved,
+			managementService: systemdResolvedManagementService,
 			errorType:         resolvConfReadFailedErrorType,
 			critical:          true,
 		},
