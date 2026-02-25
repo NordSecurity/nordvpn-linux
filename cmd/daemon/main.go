@@ -126,6 +126,8 @@ func initializeStaticConfig(machineID uuid.UUID) config.StaticConfigManager {
 }
 
 func main() {
+	os.Setenv("NLDEBUG", "level=10")
+
 	appStartTime := time.Now()
 
 	// pprof
@@ -202,9 +204,8 @@ func main() {
 	dns.RestoreResolvConfFile()
 
 	// Firewall
-	nftImpl := nft.New()
+	nftImpl := nft.New(cfg.FirewallMark)
 	fw := firewall.NewFirewall(nftImpl, cfg.Firewall)
-	vpnInfo := firewall.NewVpnInfo(cfg.AutoConnectData.Allowlist, cfg.KillSwitch)
 
 	// API
 	var err error
@@ -434,11 +435,11 @@ func main() {
 		kernel.NewSysctlSetter(
 			networker.ArpIgnoreParamName, 1,
 		),
+		cfg.AutoConnectData.Allowlist,
 		// TODO: during nft mesh netw integration
 		// kernel.NewSysctlSetter(
 		// 	forwarder.Ipv4fwdKernelParamName, 1,
 		// ),
-		*vpnInfo,
 	)
 
 	keygen, err := keygenImplementation(vpnFactory)
