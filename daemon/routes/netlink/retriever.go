@@ -29,7 +29,9 @@ func (Retriever) Retrieve(prefix netip.Prefix, ignoreTable uint) (netip.Addr, ne
 			net.Interface{},
 			fmt.Errorf("ignore table value %d exceeds max int value", ignoreTable)
 	}
+	// fmt.Println("prefix, igntabl", prefix, ignoreTable)
 	routeList, err := listRoutesForSubnet(prefixToIPNet(prefix), int(ignoreTable))
+	fmt.Println("routelist", routeList)
 	if err != nil {
 		return netip.Addr{},
 			net.Interface{},
@@ -45,6 +47,7 @@ func (Retriever) Retrieve(prefix netip.Prefix, ignoreTable uint) (netip.Addr, ne
 			break
 		}
 	}
+	fmt.Println("route", route)
 	if route == nil {
 		return netip.Addr{},
 			net.Interface{},
@@ -59,6 +62,7 @@ func (Retriever) Retrieve(prefix netip.Prefix, ignoreTable uint) (netip.Addr, ne
 
 	// If not ok, Gw is likely not set
 	ip, ok := netip.AddrFromSlice(route.Gw)
+	fmt.Println("ip",ip)
 	if !ok {
 		return netip.Addr{}, net.Interface{}, fmt.Errorf("failed retrieving gateway ip")
 	}
