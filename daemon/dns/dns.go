@@ -191,7 +191,6 @@ func (d *DNSServiceSetter) setUsingAvailable(iface string, nameservers []string)
 		log.Println(internal.WarningPrefix, dnsPrefix,
 			"failed to configure DNS using systemd-resolved: "+err.Error()+". Attempt to try nmcli.")
 	} else {
-		d.currentManagementService = systemdResolvedManagementService
 		log.Println(internal.InfoPrefix, dnsPrefix, "DNS configured with systemd-resolved")
 		return nil
 	}
