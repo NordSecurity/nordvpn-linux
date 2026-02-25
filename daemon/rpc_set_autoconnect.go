@@ -58,8 +58,6 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 
 		serverSelection, err := selectServer(r, &insights, cfg, serverTag, serverGroup)
 		if err != nil {
-			// convert ErrServerDataIsNotReady to ErrServerIsUnavailable. ErrServerDataIsNotReady is used internally and
-			// it's not supposed to be seen by the users.
 			log.Println(internal.ErrorPrefix, "no server found for autoconnect", serverTag, err)
 
 			var errorCode *internal.ErrorWithCode

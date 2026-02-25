@@ -273,6 +273,8 @@ type autoconnectServer struct {
 	err error
 }
 
+var errServersUnavailable = errors.New("servers unavailable")
+
 func (autoconnectServer) SetHeader(metadata.MD) error  { return nil }
 func (autoconnectServer) SendHeader(metadata.MD) error { return nil }
 func (autoconnectServer) SetTrailer(metadata.MD)       {}
@@ -284,7 +286,7 @@ func (a *autoconnectServer) Send(data *pb.Payload) error {
 	case internal.CodeFailure:
 		a.err = errors.New("autoconnect failure")
 	case internal.CodeServerUnavailable:
-		a.err = errors.New("servers list not ready")
+		a.err = errServersUnavailable
 	}
 	return nil
 }
@@ -320,10 +322,10 @@ func (r *RPC) StartAutoConnect(timeoutFn network.CalculateRetryDelayForAttempt) 
 			return nil
 		}
 
-		if err := r.doAutoConnect(); err == nil {
-			return nil
-		} else {
+		if err := r.doAutoConnect(); err != nil {
 			log.Println(internal.ErrorPrefix, "autoconnect failed:", err)
+		} else {
+			return nil
 		}
 		tryAfterDuration := timeoutFn(tries)
 		tries++
