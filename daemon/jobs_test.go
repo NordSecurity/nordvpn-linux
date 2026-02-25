@@ -90,6 +90,25 @@ func TestStartAutoConnect(t *testing.T) {
 	}
 }
 
+func TestDoAutoconnectHandlesServerAvailabilityIssues(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	rpc := testRPC()
+	rpc.serversAPI = mockFailingServersAPI{}
+	mockConfigManager := newMockConfigManager()
+	updateAutoconnectData(mockConfigManager, config.AutoConnectData{Country: "DE"})
+	rpc.cm = mockConfigManager
+
+	rpc.dm.SetServersData(time.Now(), []core.Server{}, "")
+
+	err := rpc.doAutoConnect()
+	assert.ErrorIs(t, err, errServersUnavailable, "doAutoconnect has ignored server availability errors")
+
+	rpc.dm.SetServersData(time.Now(), serversList(), "")
+	err = rpc.doAutoConnect()
+	assert.Nil(t, err, "unexpected error returned by doAutoconnect")
+}
+
 func TestDoAutoConnect(t *testing.T) {
 	category.Set(t, category.Unit)
 

@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -23,7 +24,7 @@ func JobServers(dm *DataManager, api core.ServersAPI, validate bool) func() erro
 		currentTime := time.Now()
 		servers, headers, err := api.Servers()
 		if err != nil {
-			return err
+			return fmt.Errorf("fetching servers list from the api: %w", err)
 		}
 
 		if len(servers) == 0 {
@@ -37,7 +38,7 @@ func JobServers(dm *DataManager, api core.ServersAPI, validate bool) func() erro
 		// TODO: change server date format to equivalent from time.RFCXXXX
 		parsedTime, err := time.Parse(internal.ServerDateFormat, servers[0].CreatedAt)
 		if err != nil {
-			return err
+			return fmt.Errorf("parsing initial servers creation date: %w", err)
 		}
 		timestamp := parsedTime.Unix()
 		dist := distance(
@@ -67,7 +68,7 @@ func JobServers(dm *DataManager, api core.ServersAPI, validate bool) func() erro
 			// calculate minmax distance and timestamp
 			parsedTime, err := time.Parse(internal.ServerDateFormat, server.CreatedAt)
 			if err != nil {
-				return err
+				return fmt.Errorf("parsing servers creation date: %w", err)
 			}
 			timestamp := parsedTime.Unix()
 			dist := distance(
@@ -118,7 +119,7 @@ func JobServers(dm *DataManager, api core.ServersAPI, validate bool) func() erro
 
 		err = dm.SetServersData(currentTime, servers, headers.Get(core.HeaderDigest))
 		if err != nil {
-			return err
+			return fmt.Errorf("setting servers data: %w", err)
 		}
 		return nil
 	}
