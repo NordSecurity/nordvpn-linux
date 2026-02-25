@@ -281,8 +281,10 @@ func (d *DNSServiceSetter) Unset(iface string) error {
 	d.resolvConfMonitor.stop()
 	if err := d.unsetter.Unset(iface); err != nil {
 		d.analytics.emitDNSConfigurationCriticalErrorEvent(d.currentManagementService, unsetFailedErrorType)
-		return fmt.Errorf("unsetting DNS: %w", err)
+		log.Println(internal.ErrorPrefix, "unsetting DNS:", err)
 	}
+
+	d.unsetter = nil
 
 	d.currentManagementService = unknownManagementService
 
@@ -337,15 +339,17 @@ func (d *DNSMethodSetter) Set(iface string, nameservers []string) error {
 // Unset DNS for network interface, restore DNS from a backup, if backup
 // is available, and remove the backup on success.
 func (d *DNSMethodSetter) Unset(iface string) error {
+	var errs []error
 	for _, method := range d.methods {
 		log.Println(internal.InfoPrefix, dnsPrefix, "Unset on interface ["+iface+"] using: ", method.Name())
 		if err := method.Unset(iface); err != nil {
-			log.Println(internal.ErrorPrefix, fmt.Errorf("unsetting dns with %s: %w", method.Name(), err))
+			errs = append(errs, fmt.Errorf("unsetting dns with %s: %w", method.Name(), err))
 			continue
 		}
-		return nil
+		return errors.Join(errs...)
 	}
-	return nil
+
+	return errors.Join(errs...)
 }
 
 // RestoreResolvConfFile try to restore resolv.conf if target file contains Nordvpn changes

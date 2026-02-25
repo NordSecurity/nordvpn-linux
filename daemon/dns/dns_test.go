@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"slices"
 	"strings"
 	"testing"
 
@@ -128,7 +129,7 @@ func Test_DNSMethodSetter(t *testing.T) {
 			intf:        "any",
 			nameservers: []string{"1.1.1.1"},
 			setErr:      true,
-			unsetErr:    false,
+			unsetErr:    true,
 		},
 		{
 			name:        "no dns methods available",
@@ -191,7 +192,8 @@ func Test_CheckForEntry(t *testing.T) {
 func Test_DNSServiceSetter(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	errUnset := fmt.Errorf("failed to unconfigure DNS")
+	errSet := errors.New("err set")
+	errUnset := errors.New("err unset")
 
 	// example configuration of resolv.conf file when it's managed by systemd-resolved
 	systemdResolvedResolvconf := []byte(`# This is /run/systemd/resolve/stub-resolv.conf managed by man:systemd-resolved(8).
@@ -303,20 +305,10 @@ func Test_DNSServiceSetter(t *testing.T) {
 			expectedManagementServiceInEvent: nmcliManagementService,
 		},
 		{
-			name:                             "resolv.conf managed by systemd-resolved, systemd-resolved fails, fallback to use nmcli to set DNS",
-			systemdResolvedSetErr:            errDNSSetFailed,
-			systemdResolvedUnsetErr:          errUnset,
-			resolvconfFileContents:           systemdResolvedResolvconf,
-			setByNmCli:                       true,
-			shouldEmitDNSConfiguredEvent:     true,
-			expectedEmittedErrors:            []mockErrorEvent{{errorType: setFailedErrorType, critical: false}},
-			expectedManagementServiceInEvent: nmcliManagementService,
-		},
-		{
 			name:                             "resolv.conf is not managed by systemd-resolved and systemd-resolved is not found, resolv.conf is used to set DNS",
 			resolvconfFileContents:           noManagerResolvConf,
+			nmcliSetErr:                      exec.ErrNotFound,
 			systemdResolvedSetErr:            exec.ErrNotFound,
-			nmcliSetErr:                      errDNSSetFailed,
 			setByResolvconf:                  true,
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: unmanagedManagementService,
@@ -325,8 +317,8 @@ func Test_DNSServiceSetter(t *testing.T) {
 			name:                             "resolv.conf manager is unknown and resolv.conf is not a link, systemd-resolved is not available, resolv.conf is used to set DNS",
 			resolvconfFileContents:           unknownManager,
 			resolvConfIsASymlink:             false,
+			nmcliSetErr:                      exec.ErrNotFound,
 			systemdResolvedSetErr:            exec.ErrNotFound,
-			nmcliSetErr:                      errDNSSetFailed,
 			setByResolvconf:                  true,
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: unmanagedManagementService,
@@ -376,7 +368,7 @@ func Test_DNSServiceSetter(t *testing.T) {
 			name:                             "resolv.conf read fails, resolv.conf stat fails, resolv.conf is used to set DNS",
 			readErr:                          fmt.Errorf("read error"),
 			resolvConfStatErr:                fmt.Errorf("stat failed"),
-			systemdResolvedSetErr:            fmt.Errorf("set error"),
+			systemdResolvedSetErr:            errSet,
 			nmcliSetErr:                      errDNSSetFailed,
 			nmcliUnsetErr:                    errUnset,
 			setByResolvconf:                  true,
@@ -395,21 +387,20 @@ func Test_DNSServiceSetter(t *testing.T) {
 			expectedManagementServiceInEvent: systemdResolvedManagementService,
 		},
 		{
-			name:                         "resolv.conf manager is unknown and running stat on resolv.conf fails, systemd-resolved is available, systemd-resolved is used to set DNS",
-			resolvconfFileContents:       unknownManager,
-			resolvConfStatErr:            fmt.Errorf("failed to stat"),
-			setBySystemdResolved:         true,
-			shouldEmitDNSConfiguredEvent: true,
-
+			name:                             "resolv.conf manager is unknown and running stat on resolv.conf fails, systemd-resolved is available, systemd-resolved is used to set DNS",
+			resolvconfFileContents:           unknownManager,
+			resolvConfStatErr:                fmt.Errorf("failed to stat"),
+			setBySystemdResolved:             true,
+			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: systemdResolvedManagementService,
 			expectedEmittedErrors:            []mockErrorEvent{{errorType: resolvConfStatFailedErrorType, critical: false}},
 		},
 		{
 			name:                             "resolv.conf manager is unknown and running stat on resolv.conf fails, systemd-resolved is not available, resolv.conf is used to set DNS",
 			resolvconfFileContents:           unknownManager,
-			nmcliSetErr:                      errDNSSetFailed,
-			resolvConfStatErr:                fmt.Errorf("failed to stat"),
 			systemdResolvedSetErr:            exec.ErrNotFound,
+			nmcliSetErr:                      errSet,
+			resolvConfStatErr:                fmt.Errorf("failed to stat"),
 			setByResolvconf:                  true,
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: unmanagedManagementService,
@@ -420,8 +411,8 @@ func Test_DNSServiceSetter(t *testing.T) {
 			name:                             "resolv.conf manager is unknown and running stat on resolv.conf fails, set fails, resolv.conf is used to set DNS",
 			resolvconfFileContents:           unknownManager,
 			resolvConfStatErr:                fmt.Errorf("failed to stat"),
-			systemdResolvedSetErr:            fmt.Errorf("set failed"),
-			nmcliSetErr:                      errDNSSetFailed,
+			systemdResolvedSetErr:            errSet,
+			nmcliSetErr:                      errSet,
 			setByResolvconf:                  true,
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: unmanagedManagementService,
@@ -477,25 +468,25 @@ func Test_DNSServiceSetter(t *testing.T) {
 		{
 			name:                   "setting DNS with resolved and resolv.conf fails, a proper error is returned",
 			resolvconfFileContents: noManagerResolvConf,
-			nmcliSetErr:            errDNSSetFailed,
 			resolvconfSetErr:       errDNSSetFailed,
 			systemdResolvedSetErr:  errDNSSetFailed,
+			nmcliSetErr:            errDNSSetFailed,
 			expectedSetErr:         errDNSSetFailed,
 			expectedUnsetErr:       errDNSMissingUnsetter,
 			expectedEmittedErrors:  []mockErrorEvent{{errorType: setFailedErrorType, critical: true}},
 		},
 		{
-			name:                             "unsetting fails with systemd-resolved, a proper error is returned",
-			resolvconfFileContents:           systemdResolvedResolvconf,
-			setBySystemdResolved:             true,
-			nmcliUnsetErr:                    errUnset,
-			systemdResolvedUnsetErr:          errUnset,
-			expectedUnsetErr:                 errUnset,
+			name:                    "unsetting fails with systemd-resolved, a proper error is returned",
+			resolvconfFileContents:  systemdResolvedResolvconf,
+			setBySystemdResolved:    true,
+			nmcliUnsetErr:           errUnset,
+			systemdResolvedUnsetErr: errUnset,
+			expectedUnsetErr:        nil, // Unset should hide errors from the caller, just emit
+			// an event. This is done because networker doesn't really handle unset errors, just returns an error to the
+			// user.
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: systemdResolvedManagementService,
-			expectedEmittedErrors: []mockErrorEvent{
-				{errorType: unsetFailedErrorType, critical: true},
-			},
+			expectedEmittedErrors:            []mockErrorEvent{{errorType: unsetFailedErrorType, critical: true}},
 		},
 		{
 			name:                             "unsetting fails with resolv.conf, a proper error is returned",
@@ -504,12 +495,10 @@ func Test_DNSServiceSetter(t *testing.T) {
 			nmcliSetErr:                      errDNSSetFailed,
 			systemdResolvedSetErr:            errDNSSetFailed,
 			resolvconfUnsetErr:               errUnset,
-			expectedUnsetErr:                 errUnset,
+			expectedUnsetErr:                 nil,
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: unmanagedManagementService,
-			expectedEmittedErrors: []mockErrorEvent{
-				{errorType: unsetFailedErrorType, critical: true},
-			},
+			expectedEmittedErrors:            []mockErrorEvent{{errorType: unsetFailedErrorType, critical: true}},
 		},
 	}
 
@@ -529,12 +518,12 @@ func Test_DNSServiceSetter(t *testing.T) {
 			}
 
 			fs := fs.NewSystemFileHandleMock(t)
-			fs.ReadErr = test.readErr
 			fs.StatErrors[resolvconfFilePath] = test.resolvConfStatErr
 			fs.StatErrors[systemdResolvedLinkTarget] = test.systemdStubStatErr
 			fs.StatErrors[networkManagerLinkTarget] = test.nmcliStatErr
 			fs.IsSameFile = test.resolvConfIsASymlink
 			fs.AddFile(resolvconfFilePath, test.resolvconfFileContents)
+			fs.ReadErr = test.readErr
 
 			analyticsMock := analyticsMock{}
 
@@ -572,7 +561,11 @@ func Test_DNSServiceSetter(t *testing.T) {
 			err = s.Unset("eth0")
 			assert.ErrorIs(t, err, test.expectedUnsetErr, "Expected unset error was not returned.")
 
-			if err == nil {
+			// check for unset error events because Unset hides the error from the caller
+			wasUnsetErrorEmitted := slices.IndexFunc(analyticsMock.emittedErrors, func(m mockErrorEvent) bool {
+				return m.errorType == unsetFailedErrorType
+			}) != -1
+			if !wasUnsetErrorEmitted {
 				assert.False(t, resolvedSetter.isSet,
 					"DNS config for systemd-resolved was not reverted after calling unset.")
 				assert.False(t, resolvconfSetter.isSet,
