@@ -285,7 +285,7 @@ search home`)
 			expectedManagementServiceInEvent: nmcliManagementService,
 		},
 		{
-			name:                             "resolv.conf managed by network manager, systemd-resolved and nmcli fail, fallback to use resolv.conf to set DNS",
+			name:                             "resolv.conf managed by network manager, nmcli fails with set fail error, fallback to use resolv.conf to set DNS",
 			nmcliSetErr:                      errDNSSetFailed,
 			nmcliUnsetErr:                    errUnset,
 			systemdResolvedSetErr:            errDNSSetFailed,
@@ -294,6 +294,18 @@ search home`)
 			setByResolvconf:                  true,
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedEmittedErrors:            []mockErrorEvent{{errorType: setFailedErrorType, critical: false}},
+			expectedManagementServiceInEvent: unmanagedManagementService,
+		},
+		{
+			name:                             "resolv.conf managed by network manager, nmcli fails with binaries not present, fallback to use resolv.conf to set DNS",
+			nmcliSetErr:                      errDNSSetFailedNoBinaries,
+			nmcliUnsetErr:                    errUnset,
+			systemdResolvedSetErr:            errDNSSetFailed,
+			systemdResolvedUnsetErr:          errUnset,
+			resolvconfFileContents:           networkManagerResolvConf,
+			setByResolvconf:                  true,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedEmittedErrors:            []mockErrorEvent{{errorType: binaryNotFoundSetErrorType, critical: false}},
 			expectedManagementServiceInEvent: unmanagedManagementService,
 		},
 		{
@@ -370,7 +382,6 @@ search home`)
 			resolvConfStatErr:                fmt.Errorf("stat failed"),
 			systemdResolvedSetErr:            errSet,
 			nmcliSetErr:                      errSet,
-			nmcliUnsetErr:                    errUnset,
 			setByResolvconf:                  true,
 			expectedManagementServiceInEvent: unmanagedManagementService,
 			expectedEmittedErrors: []mockErrorEvent{
