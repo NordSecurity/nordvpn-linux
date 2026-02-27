@@ -23,3 +23,14 @@ func (c *Combined) Reconnect(stateIsUp bool) {
 		}
 	}
 }
+
+func (c *Combined) ReapplyDNS() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.isVpnSet {
+		if err := c.setDNS(c.lastNameservers); err != nil {
+			log.Println(internal.ErrorPrefix, "failed to reapply DNS:", err)
+		}
+	}
+}

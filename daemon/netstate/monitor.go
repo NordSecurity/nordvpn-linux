@@ -13,6 +13,7 @@ import (
 // Reconnector interface to reconnect on network state changes
 type Reconnector interface {
 	Reconnect(stateIsUp bool)
+	ReapplyDNS()
 }
 
 // NetlinkMonitor keeps track of the interfaces on this host.
@@ -21,7 +22,8 @@ type NetlinkMonitor struct {
 	routeUpdatesChan chan netlink.RouteUpdate
 	doneChan         chan struct{} // close(doneChan) to terminate Subscribe loop
 	mtx              sync.Mutex
-	cached           mapset.Set[string] // interface cache
+	cachedNames      mapset.Set[string] // interface cache
+	cachedStates     mapset.Set[device.InterfaceState]
 	ignored          mapset.Set[string] // ignore our-selfs created interfaces
 }
 
@@ -34,7 +36,7 @@ func NewNetlinkMonitor(ignoreIntfs []string) (*NetlinkMonitor, error) {
 		mtx:              sync.Mutex{},
 	}
 	nlmon.ignored = mapset.NewSet(ignoreIntfs...)
-	nlmon.cached = device.OutsideCapableTrafficIfNames(nlmon.ignored)
+	nlmon.cachedNames, nlmon.cachedStates = device.OutsideCapableTrafficIfNames(nlmon.ignored)
 
 	if err := netlink.LinkSubscribe(nlmon.linkUpdatesChan, nlmon.doneChan); err != nil {
 		return nil, err
@@ -72,23 +74,44 @@ func (m *NetlinkMonitor) run(re Reconnector) {
 }
 
 func (m *NetlinkMonitor) checkForChanges(re Reconnector) {
-	interfaces := device.OutsideCapableTrafficIfNames(m.ignored)
+	interfaces, interfaceStates := device.OutsideCapableTrafficIfNames(m.ignored)
 
-	if m.setCachedInterfaces(interfaces) {
+	updateType := m.setCachedInterfaces(interfaces, interfaceStates)
+
+	if updateType == newInterface {
 		re.Reconnect(!interfaces.IsEmpty())
+	} else if updateType == stateChange {
+		re.ReapplyDNS()
 	}
 }
 
-func (m *NetlinkMonitor) setCachedInterfaces(interfaces mapset.Set[string]) bool {
+type interfaceUpdateType int
+
+const (
+	newInterface interfaceUpdateType = iota
+	stateChange
+	noChange
+)
+
+func (m *NetlinkMonitor) setCachedInterfaces(interfaces mapset.Set[string],
+	interfaceStates mapset.Set[device.InterfaceState]) interfaceUpdateType {
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
 	// replace existing interface only if they are different
 	// don't replace with empty list because it might come back the same interface
-	if !interfaces.IsEmpty() && !m.cached.Equal(interfaces) {
-		log.Println(internal.InfoPrefix, "monitored interfaces changed from", m.cached, "to", interfaces)
-		m.cached = interfaces
-		return true
+	updateType := noChange
+
+	if !interfaceStates.IsEmpty() && !m.cachedStates.Equal(interfaceStates) {
+		log.Println(internal.InfoPrefix, "monitored interfaces state changed from", m.cachedStates, "to", interfaceStates)
+		m.cachedStates = interfaceStates
+		updateType = stateChange
 	}
 
-	return false
+	if !interfaces.IsEmpty() && !m.cachedNames.Equal(interfaces) {
+		log.Println(internal.InfoPrefix, "monitored interfaces changed from", m.cachedNames, "to", interfaces)
+		m.cachedNames = interfaces
+		updateType = newInterface
+	}
+
+	return updateType
 }

@@ -97,23 +97,31 @@ func OutsideCapableTrafficInterfaces() ([]net.Interface, error) {
 	return devices, nil
 }
 
-// OutsideCapableTrafficIfNames is a helper function that returns same as OutsideCapableTrafficInterfaces
-// but just the interfaces names
-func OutsideCapableTrafficIfNames(ignore mapset.Set[string]) mapset.Set[string] {
-	result := mapset.NewSet[string]()
+// InterfaceState contains the name of the interface and is up/down state
+type InterfaceState struct {
+	Name string
+	IsUp bool
+}
+
+// OutsideCapableTrafficIfNames is a helper function that converts the output of OutsideCapableTrafficInterfaces into
+// a set of interface names and a set of InterfaceState
+func OutsideCapableTrafficIfNames(ignore mapset.Set[string]) (mapset.Set[string], mapset.Set[InterfaceState]) {
+	interfaceNames := mapset.NewSet[string]()
+	interfaceStates := mapset.NewSet[InterfaceState]()
 	ifaces, err := OutsideCapableTrafficInterfaces()
 	if err != nil {
 		log.Println(internal.WarningPrefix, "netlink monitoring failed to get interfaces", err)
-		return result
+		return interfaceNames, interfaceStates
 	}
 
 	for _, iface := range ifaces {
 		if ignore == nil || !ignore.Contains(iface.Name) {
-			result.Add(iface.Name)
+			interfaceNames.Add(iface.Name)
+			interfaceStates.Add(InterfaceState{Name: iface.Name, IsUp: iface.Flags&net.FlagUp != 0})
 		}
 	}
 
-	return result
+	return interfaceNames, interfaceStates
 }
 
 func ifaceListContains(list []net.Interface, device net.Interface) bool {

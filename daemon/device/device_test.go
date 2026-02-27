@@ -74,11 +74,14 @@ func TestListBlockedInterfaces(t *testing.T) {
 	}
 	assert.ElementsMatch(t, expectedNames, names)
 
+	ifaceNames, ifaceStates := OutsideCapableTrafficIfNames(nil)
 	// check that the interface names set is correct
-	assert.Equal(t, mapset.NewSet(expectedNames...), OutsideCapableTrafficIfNames(nil))
+	assert.Equal(t, mapset.NewSet(expectedNames...), ifaceNames)
 
 	// when all interfaces are ignored returns empty list
-	assert.True(t, OutsideCapableTrafficIfNames(mapset.NewSet(expectedNames...)).IsEmpty())
+	ifaceNames, ifaceStates = OutsideCapableTrafficIfNames(mapset.NewSet(expectedNames...))
+	assert.True(t, ifaceNames.IsEmpty())
+	assert.True(t, ifaceStates.IsEmpty())
 }
 
 func mustCIDR(t *testing.T, s string) *net.IPNet {

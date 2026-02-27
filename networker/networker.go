@@ -325,7 +325,7 @@ func (netw *Combined) start(
 	netw.lastNameservers = nameservers
 
 	tunnelInterface := mapset.NewSet(netw.vpnet.Tun().Interface().Name)
-	netw.interfaces = device.OutsideCapableTrafficIfNames(tunnelInterface)
+	netw.interfaces, _ = device.OutsideCapableTrafficIfNames(tunnelInterface)
 	return nil
 }
 
