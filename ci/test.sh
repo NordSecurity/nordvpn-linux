@@ -9,7 +9,7 @@ set -euxo pipefail
 excluded_packages="moose\|telio"
 excluded_packages=$excluded_packages"\|events\/moose"
 excluded_packages=$excluded_packages"\|daemon\/vpn\/quench"
-excluded_categories="root,link,firewall,route,file,integration"
+excluded_categories="root,link,firewall,route,file,integration,notworking"
 
 tags="internal"
 parallel=""
@@ -23,7 +23,7 @@ if [ "${1:-""}" = "full" ]; then
 	source "${WORKDIR}"/ci/add_private_bindings.sh moose/worker ./third-party/moose-worker/mooseworkergo/v18
 
 	excluded_packages="thisshouldneverexist"
-	excluded_categories="root,link"
+	excluded_categories="notworking"
 	tags="internal,moose"
 	parallel="-p 1"
 fi

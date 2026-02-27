@@ -26,7 +26,8 @@ const (
 	// Route is a test category for tests that manipulate network routes
 	Route Category = "route"
 	// Root is a test category for tests that require root privileges
-	Root Category = "root"
+	Root       Category = "root"
+	NotWorking Category = "notworking"
 )
 
 // Define known categories list in order to determine if
@@ -38,6 +39,7 @@ var known = []Category{
 	Link,
 	Route,
 	Root,
+	NotWorking,
 }
 
 // this must be done in a global scope before any executions because these are custom flags

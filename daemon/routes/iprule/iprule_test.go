@@ -270,7 +270,7 @@ func withTable(t int) func(*netlink.Rule) {
 	}
 }
 
-func withMark(m int) func(*netlink.Rule) {
+func withMark(m uint32) func(*netlink.Rule) {
 	return func(r *netlink.Rule) {
 		r.Mark = m
 	}
