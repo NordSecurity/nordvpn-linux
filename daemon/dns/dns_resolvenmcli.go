@@ -167,8 +167,7 @@ func (nmcli *NMCli) reloadConnection(connectionName string) error {
 
 	upArgs := []string{nmCliConKey, "up", connectionName}
 	if _, err := nmcli.cmdExecutor(nmCliExecutable, upArgs...); err != nil {
-		//at this stage we can disregard the error, as the DNS configuration should be applied even if the connection is not reloaded properly. Log it for debugging purposes.
-		log.Println(internal.WarningPrefix, dnsPrefix, "Setting", connectionName, "UP failed with:", err)
+		return fmt.Errorf("Setting %s UP failed with:%w", connectionName, err)
 	}
 	return nil
 }
