@@ -189,7 +189,7 @@ func (d *DNSServiceSetter) setUsingAvailable(iface string, nameservers []string)
 	d.currentManagementService = systemdResolvedManagementService
 	if err := d.set(d.systemdResolvedSetter, iface, nameservers); err != nil {
 		log.Println(internal.WarningPrefix, dnsPrefix,
-			"failed to configure DNS using systemd-resolved:", err, "Attempt to try nmcli.")
+			"failed to configure DNS using systemd-resolved: "+err.Error()+". Attempt to try nmcli.")
 	} else {
 		log.Println(internal.InfoPrefix, dnsPrefix, "DNS configured with systemd-resolved")
 		return nil
@@ -198,7 +198,7 @@ func (d *DNSServiceSetter) setUsingAvailable(iface string, nameservers []string)
 	d.currentManagementService = nmcliManagementService
 	if err := d.set(d.nmcliSetter, iface, nameservers); err != nil {
 		log.Println(internal.WarningPrefix, dnsPrefix,
-			"failed to configure DNS using nmcli:", err, "Attempt to try resolv.conf.")
+			"failed to configure DNS using nmcli: "+err.Error()+". Attempt to try resolv.conf.")
 	} else {
 		log.Println(internal.InfoPrefix, dnsPrefix, "DNS configured with nmcli")
 		return nil
@@ -248,6 +248,11 @@ func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
 		err := d.set(d.nmcliSetter, iface, nameservers)
 		if err == nil {
 			return nil
+		}
+		if errors.Is(err, errDNSSetFailedNoBinaries) {
+			d.analytics.emitDNSConfigurationErrorEvent(d.currentManagementService, binaryNotFoundSetErrorType)
+		} else {
+			d.analytics.emitDNSConfigurationErrorEvent(d.currentManagementService, setFailedErrorType)
 		}
 		log.Println(internal.WarningPrefix, dnsPrefix, "failed to set DNS using nmcli:", err)
 	case unmanagedManagementService:
