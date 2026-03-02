@@ -37,9 +37,8 @@ func getDefaultGatewayMTU() (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("listing routes: %w", err)
 	}
-
 	for _, route := range routes {
-		if route.Dst == nil {
+		if route.Dst == nil || route.Dst.IP.IsUnspecified() {
 			link, err := netlink.LinkByIndex(route.LinkIndex)
 			if err != nil {
 				return 0, fmt.Errorf("getting link attributes: %w", err)

@@ -137,7 +137,7 @@ func ruleAppliesForRoute(rule netlink.Rule, route netlink.Route, ifgroup uint32)
 		routeDstPrefixLen, _ = route.Dst.Mask.Size()
 	}
 	// Cannot make any assumptions about fwmarks as route has no information about them
-	return rule.Invert != (rule.Mark < 0 &&
+	return rule.Invert != (rule.Mark == 0 &&
 		rule.Table == route.Table &&
 		isSubnet(rule.Src, route.Dst) &&
 		(rule.SuppressPrefixlen < 0 || rule.SuppressPrefixlen < routeDstPrefixLen) &&
@@ -169,7 +169,7 @@ func routeCmp(a netlink.Route, b netlink.Route) int {
 // isSubnet returns true if network contains whole range of subnet. Otherwise, returns false.
 func isSubnet(network, subnet *net.IPNet) bool {
 	// nil is treated as an IP with 0 prefix
-	if network == nil {
+	if network == nil || network.IP.IsUnspecified() {
 		return true
 	}
 	if subnet == nil {

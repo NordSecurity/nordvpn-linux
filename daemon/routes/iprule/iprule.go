@@ -492,7 +492,7 @@ func isFromAllLookupMainRule(rule netlink.Rule) bool {
 	return rule.Table == unix.RT_TABLE_MAIN &&
 		rule.Src == nil && // from all
 		rule.Dst == nil &&
-		rule.Mark == -1 &&
+		rule.Mark == 0 &&
 		rule.IifName == "" &&
 		rule.OifName == "" &&
 		rule.SuppressIfgroup == -1 &&
@@ -514,7 +514,7 @@ func fwmarkRule(prioID int, fwmark uint32, tableID int) *netlink.Rule {
 	rule := netlink.NewRule()
 	rule.Priority = prioID
 	rule.Invert = true
-	rule.Mark = int(fwmark)
+	rule.Mark = fwmark
 	rule.Table = tableID
 	rule.Family = netlink.FAMILY_V4
 	return rule
