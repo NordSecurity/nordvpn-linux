@@ -179,6 +179,16 @@ func (d *DNSServiceSetter) set(setter Setter, iface string, nameservers []string
 	return nil
 }
 
+// unset unsets DNS using the provided unsetter
+func (d *DNSServiceSetter) unset(setter Setter, iface string) error {
+	err := setter.Unset(iface)
+	if err != nil {
+		return fmt.Errorf("failed to unset DNS: %w", err)
+	}
+
+	return nil
+}
+
 // setUsingAvailable sets DNS using the first setter in the bellow priority list:
 //  1. systemd-resolved DBUS
 //  2. resolvctl utility
@@ -212,6 +222,41 @@ func (d *DNSServiceSetter) setUsingAvailable(iface string, nameservers []string)
 
 	log.Println(internal.InfoPrefix, dnsPrefix, "DNS configured with resolv.conf")
 	d.resolvConfMonitor.start()
+
+	return nil
+}
+
+// unsetUsingAvailable unsets DNS using the first unsetter in the bellow priority list:
+//  1. systemd-resolved DBUS
+//  2. resolvctl utility
+//  3. NetworkManager nmcli tool
+//  4. resolv.conf utility
+//  5. direct write to resolv.conf
+func (d *DNSServiceSetter) unsetUsingAvailable(iface string) error {
+	d.currentManagementService = systemdResolvedManagementService
+	if err := d.unset(d.systemdResolvedSetter, iface); err != nil {
+		log.Println(internal.WarningPrefix, dnsPrefix,
+			"failed to unset DNS using systemd-resolved:", err, "Attempt to try nmcli.")
+	} else {
+		log.Println(internal.InfoPrefix, dnsPrefix, "DNS unset with systemd-resolved")
+		return nil
+	}
+
+	d.currentManagementService = nmcliManagementService
+	if err := d.unset(d.nmcliSetter, iface); err != nil {
+		log.Println(internal.WarningPrefix, dnsPrefix,
+			"failed to unset DNS using nmcli:", err, "Attempt to try resolv.conf.")
+	} else {
+		log.Println(internal.InfoPrefix, dnsPrefix, "DNS unset with nmcli")
+		return nil
+	}
+
+	d.currentManagementService = unmanagedManagementService
+	if err := d.unset(d.resolvconfSetter, iface); err != nil {
+		return fmt.Errorf("failed to unset DNS with resolv.conf: %w", err)
+	}
+
+	log.Println(internal.InfoPrefix, dnsPrefix, "DNS unset with resolv.conf")
 
 	return nil
 }
@@ -279,12 +324,13 @@ func (d *DNSServiceSetter) Unset(iface string) error {
 
 	d.resolvConfMonitor.stop()
 	if err := d.unsetter.Unset(iface); err != nil {
-		d.analytics.emitDNSConfigurationCriticalErrorEvent(d.currentManagementService, unsetFailedErrorType)
 		log.Println(internal.ErrorPrefix, "unsetting DNS:", err)
+	}
+	if err := d.unsetUsingAvailable(iface); err != nil {
+		d.analytics.emitDNSConfigurationCriticalErrorEvent(d.currentManagementService, unsetFailedErrorType)
 	}
 
 	d.unsetter = nil
-
 	d.currentManagementService = unknownManagementService
 
 	return nil
