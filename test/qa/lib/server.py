@@ -75,9 +75,23 @@ def get_hostname_by(technology="", protocol="", obfuscated="", group_name=""):
 
     url = f"https://api.nordvpn.com/v1/servers?limit=10&filters[servers.status]=online&filters[servers_technologies][id]={tech_id}&filters[servers_groups][id]={group_id}"
     logging.debug(url)
-    response = requests.get(url, timeout=5).json()
-    assert len(response) > 0, "API returned an empty servers list"
-    logging.debug(response)
+
+    response = requests.get(url, timeout=5)
+    content_type = response.headers.get("Content-Type", "")
+
+    assert response.ok, (
+        f"Core API HTTP {response.status_code}, ct={content_type}, "
+        f"body={response.text[:300]!r}"
+    )
+    assert "json" in content_type.lower(), (
+        f"Core API returned non-JSON response, ct={content_type}, "
+        f"body={response.text[:300]!r}"
+    )
+
+    response = response.json()
+
+    assert len(response) > 0, "Core API returned an empty servers list"
+    logging.debug("Core API response (truncated): %s", str(response)[:300])
     server = response[0]
     validate_server(server_json=str(server), tech_id=tech_id, group_id=group_id)
     return ServerInfo(server_info=server)
