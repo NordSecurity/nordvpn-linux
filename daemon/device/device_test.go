@@ -74,6 +74,7 @@ func TestListBlockedInterfaces(t *testing.T) {
 	}
 	assert.ElementsMatch(t, expectedNames, names)
 
+	//nolint:staticcheck
 	ifaceNames, ifaceStates := OutsideCapableTrafficIfNames(nil)
 	// check that the interface names set is correct
 	assert.Equal(t, mapset.NewSet(expectedNames...), ifaceNames)

@@ -78,10 +78,13 @@ func (m *NetlinkMonitor) checkForChanges(re Reconnector) {
 
 	updateType := m.setCachedInterfaces(interfaces, interfaceStates)
 
-	if updateType == newInterface {
+	switch updateType {
+	case newInterface:
 		re.Reconnect(!interfaces.IsEmpty())
-	} else if updateType == stateChange {
+	case stateChange:
 		re.ReapplyDNS()
+	case noChange:
+		//no-op
 	}
 }
 

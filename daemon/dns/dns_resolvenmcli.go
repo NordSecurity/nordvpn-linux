@@ -28,7 +28,6 @@ type connectionState struct {
 	name          string
 	ipv4DNS       string
 	ignoreAutoDNS string
-	isModified    bool
 }
 
 type connectionInfo struct {
@@ -86,7 +85,6 @@ func (nmcli *NMCli) Set(iface string, nameservers []string) error {
 			nmcli.rollback(originalStates)
 			return fmt.Errorf("setting dns with nmcli failed: %w", err)
 		}
-		originalStates[con.name].isModified = true
 
 		if con.isActive {
 			if err := nmcli.reloadConnection(con.name); err != nil {
@@ -244,7 +242,6 @@ func (nmcli *NMCli) getConnectionState(connectionName string) (*connectionState,
 		name:          connectionName,
 		ipv4DNS:       dnsValue,
 		ignoreAutoDNS: ignoreValue,
-		isModified:    false,
 	}, nil
 }
 
@@ -261,12 +258,10 @@ func (nmcli *NMCli) restoreConnectionState(state *connectionState) error {
 func (nmcli *NMCli) rollback(originalStates map[string]*connectionState) {
 	log.Println(internal.WarningPrefix, dnsPrefix, "Rolling back DNS changes...")
 	for con, state := range originalStates {
-		if state.isModified {
-			if err := nmcli.restoreConnectionState(state); err != nil {
-				log.Println(internal.WarningPrefix, dnsPrefix, "Failed to rollback connection", con, ":", err)
-			} else {
-				log.Println(internal.InfoPrefix, dnsPrefix, "Successfully rolled back connection", con)
-			}
+		if err := nmcli.restoreConnectionState(state); err != nil {
+			log.Println(internal.WarningPrefix, dnsPrefix, "Failed to rollback connection", con, ":", err)
+		} else {
+			log.Println(internal.InfoPrefix, dnsPrefix, "Successfully rolled back connection", con)
 		}
 	}
 }

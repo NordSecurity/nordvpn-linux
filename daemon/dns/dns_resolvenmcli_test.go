@@ -105,10 +105,6 @@ func Test_DNSResolveNmCli_PhysicalInterfaceDeduction(t *testing.T) {
 			}
 
 			conns := nmcli.parsePhysicalConnections(tt.cmdOutput)
-			// if tt.cmdError != nil {
-			// 	assert.Error(t, err)
-			// 	assert.ErrorContains(t, err, tt.cmdError.Error())
-			// }
 			assert.Equal(t, tt.expectedConns, conns)
 		})
 	}
