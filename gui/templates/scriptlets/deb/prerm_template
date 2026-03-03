@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+case "$1" in
+    remove|deconfigure)
+        pkill -TERM -x nordvpn-gui || :
+    ;;
+    upgrade)
+        # Do nothing for upgrade
+    ;;
+    *)
+        echo "prerm called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+exit 0
