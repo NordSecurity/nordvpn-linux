@@ -20,9 +20,10 @@ func (m *mockResolvConfMonitor) start() {}
 func (m *mockResolvConfMonitor) stop()  {}
 
 type MockSetter struct {
-	isSet    bool
-	setErr   error
-	unsetErr error
+	isSet          bool
+	isUsedForUnset bool
+	setErr         error
+	unsetErr       error
 }
 
 func (m *MockSetter) Set(iface string, nameservers []string) error {
@@ -39,7 +40,7 @@ func (m *MockSetter) Unset(iface string) error {
 		return m.unsetErr
 	}
 
-	m.isSet = false
+	m.isUsedForUnset = true
 	return nil
 }
 
@@ -240,6 +241,9 @@ search home`)
 		setByNmCli             bool
 		setBySystemdResolved   bool
 		setByResolvconf        bool
+		unSetByNmCli           bool
+		unSetBySystemdResolved bool
+		unSetByResolvconf      bool
 		resolvConfIsASymlink   bool
 		// resolvConfStatErr is returned when running Stat for /etc/resolv.conf
 		resolvConfStatErr error
@@ -265,6 +269,7 @@ search home`)
 			setBySystemdResolved:             true,
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: systemdResolvedManagementService,
+			unSetBySystemdResolved:           true,
 		},
 		{
 			name:                             "resolv.conf managed by network manager, use nmcli to set DNS",
@@ -273,6 +278,7 @@ search home`)
 			setByNmCli:                       true,
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: nmcliManagementService,
+			unSetByNmCli:                     true,
 		},
 		{
 			name:                             "resolv.conf managed by systemd-resolved, systemd-resolved fails, fallback to use nmcli to set DNS",
@@ -283,6 +289,7 @@ search home`)
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedEmittedErrors:            []mockErrorEvent{{errorType: setFailedErrorType, critical: false}},
 			expectedManagementServiceInEvent: nmcliManagementService,
+			unSetByNmCli:                     true,
 		},
 		{
 			name:                             "resolv.conf managed by network manager, nmcli fails with set fail error, fallback to use resolv.conf to set DNS",
@@ -307,14 +314,7 @@ search home`)
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedEmittedErrors:            []mockErrorEvent{{errorType: binaryNotFoundSetErrorType, critical: false}},
 			expectedManagementServiceInEvent: unmanagedManagementService,
-		},
-		{
-			name:                             "resolv.conf managed by network manager, use nmcli to set DNS",
-			resolvconfFileContents:           networkManagerResolvConf,
-			resolvConfIsASymlink:             false,
-			setByNmCli:                       true,
-			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: nmcliManagementService,
+			unSetByResolvconf:                true,
 		},
 		{
 			name:                             "resolv.conf is not managed by systemd-resolved and systemd-resolved is not found, resolv.conf is used to set DNS",
@@ -324,6 +324,7 @@ search home`)
 			setByResolvconf:                  true,
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: unmanagedManagementService,
+			unSetByResolvconf:                true,
 		},
 		{
 			name:                             "resolv.conf manager is unknown and resolv.conf is not a link, systemd-resolved is not available, resolv.conf is used to set DNS",
@@ -334,6 +335,7 @@ search home`)
 			setByResolvconf:                  true,
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: unmanagedManagementService,
+			unSetByResolvconf:                true,
 		},
 		{
 			name:                             "resolv.conf read fails, symlink targets systemd-resolvd, systemd-resolvd is used to configure DNS",
@@ -343,6 +345,7 @@ search home`)
 			expectedManagementServiceInEvent: systemdResolvedManagementService,
 			expectedEmittedErrors:            []mockErrorEvent{{errorType: resolvConfReadFailedErrorType, critical: false}},
 			shouldEmitDNSConfiguredEvent:     true,
+			unSetBySystemdResolved:           true,
 		},
 		{
 			name:                             "resolv.conf read fails, resolv.conf stat fails, nmcli is used to set DNS",
@@ -355,6 +358,7 @@ search home`)
 				{errorType: resolvConfReadFailedErrorType, critical: false},
 				{errorType: resolvConfStatFailedErrorType, critical: false}},
 			shouldEmitDNSConfiguredEvent: true,
+			unSetByNmCli:                 true,
 		},
 
 		{
@@ -366,6 +370,7 @@ search home`)
 			nmcliSetErr:                      errDNSSetFailed,
 			expectedManagementServiceInEvent: unmanagedManagementService,
 			shouldEmitDNSConfiguredEvent:     true,
+			unSetByResolvconf:                true,
 		},
 		{
 			name:                             "resolv.conf read OK, systemd stub stat fails, nmcli is a symlink, nmcli used to set DNS",
@@ -375,6 +380,7 @@ search home`)
 			setByNmCli:                       true,
 			expectedManagementServiceInEvent: nmcliManagementService,
 			shouldEmitDNSConfiguredEvent:     true,
+			unSetByNmCli:                     true,
 		},
 		{
 			name:                             "resolv.conf read fails, resolv.conf stat fails, resolv.conf is used to set DNS",
@@ -388,6 +394,7 @@ search home`)
 				{errorType: resolvConfReadFailedErrorType, critical: false},
 				{errorType: resolvConfStatFailedErrorType, critical: false}},
 			shouldEmitDNSConfiguredEvent: true,
+			unSetByResolvconf:            true,
 		},
 		{
 			name:                             "resolv.conf manager is unknown and resolv.conf is not a link, systemd-resolved is available, systemd-resolved is used to set DNS",
@@ -396,6 +403,7 @@ search home`)
 			setBySystemdResolved:             true,
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: systemdResolvedManagementService,
+			unSetBySystemdResolved:           true,
 		},
 		{
 			name:                             "resolv.conf manager is unknown and running stat on resolv.conf fails, systemd-resolved is available, systemd-resolved is used to set DNS",
@@ -405,6 +413,7 @@ search home`)
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: systemdResolvedManagementService,
 			expectedEmittedErrors:            []mockErrorEvent{{errorType: resolvConfStatFailedErrorType, critical: false}},
+			unSetBySystemdResolved:           true,
 		},
 		{
 			name:                             "resolv.conf manager is unknown and running stat on resolv.conf fails, systemd-resolved is not available, resolv.conf is used to set DNS",
@@ -417,6 +426,7 @@ search home`)
 			expectedManagementServiceInEvent: unmanagedManagementService,
 			expectedEmittedErrors: []mockErrorEvent{
 				{errorType: resolvConfStatFailedErrorType, critical: false}},
+			unSetByResolvconf: true,
 		},
 		{
 			name:                             "resolv.conf manager is unknown and running stat on resolv.conf fails, set fails, resolv.conf is used to set DNS",
@@ -429,6 +439,7 @@ search home`)
 			expectedManagementServiceInEvent: unmanagedManagementService,
 			expectedEmittedErrors: []mockErrorEvent{
 				{errorType: resolvConfStatFailedErrorType, critical: false}},
+			unSetByResolvconf: true,
 		},
 		{
 			name:                             "resolv.conf manager is unknown and running stat on systemd stub fails, systemd-resolved is available, systemd-resolved is used to set DNS",
@@ -437,6 +448,7 @@ search home`)
 			setBySystemdResolved:             true,
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: systemdResolvedManagementService,
+			unSetBySystemdResolved:           true,
 		},
 		{
 			name:                             "resolv.conf manager is unknown and running stat on systemd stub fails, systemd-resolved is not available, resolv.conf is used to set DNS",
@@ -447,6 +459,7 @@ search home`)
 			setByResolvconf:                  true,
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: unmanagedManagementService,
+			unSetByResolvconf:                true,
 		},
 		{
 			name:                             "manager is not recognized based on resolv.conf contents but the file links to systemd-resolved is used to set DNS",
@@ -455,6 +468,7 @@ search home`)
 			setBySystemdResolved:             true,
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: systemdResolvedManagementService,
+			unSetBySystemdResolved:           true,
 		},
 		{
 			name:                             "systemd-resolved is recognized from resolv.conf comment but setting the DNS fails, resolv.conf is used to set DNS",
@@ -465,6 +479,7 @@ search home`)
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: unmanagedManagementService,
 			expectedEmittedErrors:            []mockErrorEvent{{errorType: setFailedErrorType, critical: false}},
+			unSetByResolvconf:                true,
 		},
 		{
 			name:                             "systemd-resolved is recognized from resolv.conf comment but setting the DNS fails because binaries were not found, resolv.conf is used to set DNS",
@@ -475,9 +490,10 @@ search home`)
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: unmanagedManagementService,
 			expectedEmittedErrors:            []mockErrorEvent{{errorType: binaryNotFoundSetErrorType, critical: false}},
+			unSetByResolvconf:                true,
 		},
 		{
-			name:                   "setting DNS with resolved and resolv.conf fails, a proper error is returned",
+			name:                   "setting DNS fails with all the methods, a proper error is returned",
 			resolvconfFileContents: noManagerResolvConf,
 			resolvconfSetErr:       errDNSSetFailed,
 			systemdResolvedSetErr:  errDNSSetFailed,
@@ -487,28 +503,40 @@ search home`)
 			expectedEmittedErrors:  []mockErrorEvent{{errorType: setFailedErrorType, critical: true}},
 		},
 		{
-			name:                    "unsetting fails with systemd-resolved, a proper error is returned",
-			resolvconfFileContents:  systemdResolvedResolvconf,
-			setBySystemdResolved:    true,
-			nmcliUnsetErr:           errUnset,
-			systemdResolvedUnsetErr: errUnset,
-			expectedUnsetErr:        nil, // Unset should hide errors from the caller, just emit
-			// an event. This is done because networker doesn't really handle unset errors, just returns an error to the
-			// user.
+			name:                             "unsetting fails with systemd-resolved and nmcli, passed with resolv.conf",
+			resolvconfFileContents:           systemdResolvedResolvconf,
+			setBySystemdResolved:             true,
+			unSetByResolvconf:                true,
+			nmcliUnsetErr:                    errUnset,
+			systemdResolvedUnsetErr:          errUnset,
+			expectedUnsetErr:                 nil,
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: systemdResolvedManagementService,
-			expectedEmittedErrors:            []mockErrorEvent{{errorType: unsetFailedErrorType, critical: true}},
 		},
 		{
-			name:                             "unsetting fails with resolv.conf, a proper error is returned",
-			resolvconfFileContents:           noManagerResolvConf,
-			setByResolvconf:                  true,
+			name:                             "unsetting fails with systemd-resolved, passed with nmcli",
+			resolvconfFileContents:           systemdResolvedResolvconf,
+			setBySystemdResolved:             true,
+			unSetByNmCli:                     true,
 			nmcliSetErr:                      errSet,
-			systemdResolvedSetErr:            errSet,
+			systemdResolvedUnsetErr:          errUnset,
 			resolvconfUnsetErr:               errUnset,
 			expectedUnsetErr:                 nil,
 			shouldEmitDNSConfiguredEvent:     true,
-			expectedManagementServiceInEvent: unmanagedManagementService,
+			expectedManagementServiceInEvent: systemdResolvedManagementService,
+		},
+		{
+			name:                             "unsetting fails with all methods, proper error is returned",
+			resolvconfFileContents:           systemdResolvedResolvconf,
+			setBySystemdResolved:             true,
+			unSetByNmCli:                     true,
+			nmcliSetErr:                      errSet,
+			nmcliUnsetErr:                    errUnset,
+			systemdResolvedUnsetErr:          errUnset,
+			resolvconfUnsetErr:               errUnset,
+			expectedUnsetErr:                 nil,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedManagementServiceInEvent: systemdResolvedManagementService,
 			expectedEmittedErrors:            []mockErrorEvent{{errorType: unsetFailedErrorType, critical: true}},
 		},
 	}
@@ -577,11 +605,11 @@ search home`)
 				return m.errorType == unsetFailedErrorType
 			}) != -1
 			if !wasUnsetErrorEmitted {
-				assert.False(t, resolvedSetter.isSet,
+				assert.Equal(t, test.unSetBySystemdResolved, resolvedSetter.isUsedForUnset,
 					"DNS config for systemd-resolved was not reverted after calling unset.")
-				assert.False(t, resolvconfSetter.isSet,
+				assert.Equal(t, test.unSetByResolvconf, resolvconfSetter.isUsedForUnset,
 					"DNS config for resolv.conf was not reverted after calling unset.")
-				assert.False(t, nmCliSetter.isSet,
+				assert.Equal(t, test.unSetByNmCli, nmCliSetter.isUsedForUnset,
 					"DNS config for nmcli was not reverted after calling unset.")
 			}
 
