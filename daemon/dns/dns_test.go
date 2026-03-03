@@ -302,6 +302,7 @@ search home`)
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedEmittedErrors:            []mockErrorEvent{{errorType: setFailedErrorType, critical: false}},
 			expectedManagementServiceInEvent: unmanagedManagementService,
+			unSetByResolvconf:                true,
 		},
 		{
 			name:                             "resolv.conf managed by network manager, nmcli fails with binaries not present, fallback to use resolv.conf to set DNS",
