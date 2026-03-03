@@ -9,7 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
 
-func getNordWhisperVPN(fwmark uint32, _ bool, _ *vpn.Events) (vpn.VPN, error) {
+func getNordWhisperVPN(fwmark uint32, _ bool, _ *vpn.Events, _ vpn.NordWhisperConfigGetter) (vpn.VPN, error) {
 	return noopNordWhisper{}, ErrNordWhisperDisabled
 }
 

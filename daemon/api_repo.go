@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"bytes"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -27,7 +28,7 @@ type RepoAPI struct {
 
 type RepoAPIResponse struct {
 	Headers http.Header
-	Body    io.ReadCloser
+	Body    []byte
 }
 
 func NewRepoAPI(
@@ -57,14 +58,8 @@ func (api *RepoAPI) DebianFileList() ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch debian fileinfo: %w", err)
 	}
-	defer resp.Body.Close()
 
-	body, err := core.MaxBytesReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read debian fileinfo data: %w", err)
-	}
-
-	return body, nil
+	return resp.Body, nil
 }
 
 func (api *RepoAPI) RpmFileList() ([]byte, error) {
@@ -87,28 +82,16 @@ func (api *RepoAPI) RpmFileList() ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch repomd: %w", err)
 	}
-	defer resp.Body.Close()
-
-	body, err := core.MaxBytesReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read repomd data: %w", err)
-	}
 
 	filelistPattern := regexp.MustCompile(`/.*filelists\.xml\.gz`)
-	filepath := strings.TrimLeft(filelistPattern.FindString(string(body)), "/")
+	filepath := strings.TrimLeft(filelistPattern.FindString(string(resp.Body)), "/")
 
 	resp, err = api.request(fmt.Sprintf(core.RpmRepoMdURLFormat, repoType, repoArch, filepath))
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch rpm fileinfo: %w", err)
 	}
-	defer resp.Body.Close()
 
-	body, err = core.MaxBytesReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read rpm fileinfo: %w", err)
-	}
-
-	return body, nil
+	return resp.Body, nil
 }
 
 func (api *RepoAPI) request(path string) (*RepoAPIResponse, error) {
@@ -116,23 +99,36 @@ func (api *RepoAPI) request(path string) (*RepoAPIResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	resp, err := api.client.Do(req) //nolint:bodyclose
+	resp, err := api.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	// resp body to be closed by invoking fn
+	defer resp.Body.Close()
 
 	if err := core.ExtractError(resp); err != nil {
 		return nil, err
 	}
 
-	reader, err := gzip.NewReader(resp.Body)
+	// Read the response body with size limit applied to the compressed data
+	body, err := core.MaxBytesReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// Decompress after applying the size limit
+	reader, err := gzip.NewReader(bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+
+	body, err = io.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}
 
 	return &RepoAPIResponse{
 		Headers: resp.Header,
-		Body:    reader,
+		Body:    body,
 	}, nil
 }

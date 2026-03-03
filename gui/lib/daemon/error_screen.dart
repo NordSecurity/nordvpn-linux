@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:grpc/grpc.dart';
 import 'package:nordvpn/data/models/application_error.dart';
 import 'package:nordvpn/data/providers/account_controller.dart';
 import 'package:nordvpn/data/providers/consent_status_provider.dart';
 import 'package:nordvpn/data/providers/grpc_connection_controller.dart';
 import 'package:nordvpn/data/providers/login_status_provider.dart';
-import 'package:nordvpn/data/providers/snap_permissions_provider.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/urls.dart';
 import 'package:nordvpn/logger.dart';
+import 'package:nordvpn/pb/snapconf/snapconf.pb.dart';
+import 'package:nordvpn/snap/snap_helpers.dart';
+import 'package:nordvpn/snap/snap_screen.dart';
 import 'package:nordvpn/widgets/copy_field.dart';
 import 'package:nordvpn/widgets/full_screen_error.dart';
 import 'package:nordvpn/widgets/full_screen_scaffold.dart';
@@ -26,7 +29,7 @@ final class ErrorScreen extends ConsumerWidget {
 
     if (connectionProvider case AsyncError(:final error)) {
       logger.i("connection error $error");
-      return _displayError(_dataForGrpcError(error));
+      return _displayError(_dataForGrpcError(ref, error));
     }
 
     if (consentStatus case AsyncError(:final error)) {
@@ -49,14 +52,22 @@ final class ErrorScreen extends ConsumerWidget {
   }
 
   Widget _displayError(ErrorData error) {
-    return FullScreenScaffold(child: FullScreenError(errorData: error));
+    switch (error.errorType) {
+      case ErrorType.snap:
+        return SnapScreen(
+          missingPermissions: error.snapInterfaces,
+          retryCallback: error.retryCallback,
+        );
+      case ErrorType.generic:
+        return FullScreenScaffold(child: FullScreenError(errorData: error));
+    }
   }
 }
 
-ErrorData _dataForGrpcError(Object error) {
+ErrorData _dataForGrpcError(WidgetRef ref, Object error) {
   switch (error) {
     case ApplicationError error:
-      return _dataForApplicationError(error);
+      return _dataForApplicationError(ref, error);
   }
 
   return _genericErrorMessage();
@@ -71,7 +82,7 @@ ErrorData _genericErrorMessage() {
   );
 }
 
-ErrorData _dataForApplicationError(ApplicationError error) {
+ErrorData _dataForApplicationError(WidgetRef ref, ApplicationError error) {
   switch (error.code) {
     case AppStatusCode.compatibilityIssue:
       return ErrorData(
@@ -106,12 +117,32 @@ ErrorData _dataForApplicationError(ApplicationError error) {
         ),
       );
 
+    case AppStatusCode.snapInterfaces:
+      return _dataForSnapInterfaces(ref, error);
+
     case AppStatusCode.unknown:
       // for unknown issues display the generic screen
       break;
   }
 
   return _genericErrorMessage();
+}
+
+ErrorData _dataForSnapInterfaces(WidgetRef ref, ApplicationError error) {
+  final missingPermissions = extractMissingConnections(error.originalError);
+
+  if (missingPermissions.isEmpty) {
+    logger.w("_extractMissingConnections returned an empty list");
+  }
+
+  return ErrorData(
+    title: t.ui.snapScreenTitle,
+    errorType: ErrorType.snap,
+    snapInterfaces: missingPermissions,
+    retryCallback: () async {
+      await ref.read(grpcConnectionControllerProvider.notifier).retry();
+    },
+  );
 }
 
 ErrorData _dataForConsentError(WidgetRef ref) {
@@ -157,7 +188,7 @@ ErrorData _dataForAccountError(WidgetRef ref) {
 }
 
 CopyField _buildCopyFieldForSocketNotFound() {
-  if (SnapPermissions.isSnapContext()) {
+  if (SnapHelpers.isSnapContext()) {
     return CopyField(items: [CopyItem(command: "sudo snap start nordvpn")]);
   }
 
@@ -173,4 +204,25 @@ CopyField _buildCopyFieldForSocketNotFound() {
       ),
     ],
   );
+}
+
+List<String> extractMissingConnections(Object? error) {
+  if (error is! GrpcError) return const [];
+
+  if (error.details != null) {
+    for (var detail in error.details!) {
+      if (detail is Any && detail.typeUrl.endsWith('ErrMissingConnections')) {
+        try {
+          return ErrMissingConnections.fromBuffer(
+            detail.value,
+          ).missingConnections;
+        } catch (e) {
+          logger.e('Failed to parse ErrMissingConnections: $e');
+          return const [];
+        }
+      }
+    }
+  }
+
+  return const [];
 }
