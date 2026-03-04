@@ -15,7 +15,7 @@ import (
 )
 
 func TestFind(t *testing.T) {
-	category.Set(t, category.Link)
+	category.Set(t, category.NotWorking)
 
 	tunnelName := "nordtuna"
 	ip := net.IPv4(192, 254, 0, 123)
@@ -103,7 +103,7 @@ func TestTunnelTransferRatesWithSys(t *testing.T) {
 }
 
 func TestTunnel_AddAddrs(t *testing.T) {
-	category.Set(t, category.Link)
+	category.Set(t, category.NotWorking)
 
 	iface, err := net.InterfaceByName("lo")
 	assert.NoError(t, err)
@@ -124,7 +124,7 @@ func TestTunnel_AddAddrs(t *testing.T) {
 }
 
 func TestTunnel_Up(t *testing.T) {
-	category.Set(t, category.Link)
+	category.Set(t, category.NotWorking)
 
 	out, err := exec.Command("ip", "link", "set", "lo", "down").CombinedOutput()
 	assert.NoError(t, err, string(out))

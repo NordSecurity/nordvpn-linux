@@ -42,13 +42,12 @@ func TestNetlinkManager_SetUnset(t *testing.T) {
 		attrs := link.Attrs()
 		assert.NotNil(t, attrs)
 		if attrs != nil {
-			assert.Equal(t, Group, attrs.Group)
+			assert.Equal(t, Group, int(attrs.Group))
 		}
 	}
 
 	// Unset groups
 	assert.NoError(t, manager.Unset())
-	assert.NoError(t, manager.Set())
 
 	// Check if unset happened correctly
 	for _, d := range devices {
