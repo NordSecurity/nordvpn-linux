@@ -83,7 +83,7 @@ func (nmcli *NMCli) Set(iface string, nameservers []string) error {
 		if _, err := nmcli.cmdExecutor(nmCliExecutable, args...); err != nil {
 			log.Println(internal.WarningPrefix, dnsPrefix, "Failed to modify connection", con, ":", err)
 			nmcli.rollback(originalStates)
-			return fmt.Errorf("setting dns with nmcli failed: %w", err)
+			return fmt.Errorf("setting DNS with nmcli failed: %w", err)
 		}
 
 		if con.isActive {
@@ -113,7 +113,7 @@ func (nmcli *NMCli) Unset(_ string) error {
 		args = append(args, nmCliIPIgnoreAutoDnsKey, "no")
 
 		if _, err := nmcli.cmdExecutor(nmCliExecutable, args...); err != nil {
-			return fmt.Errorf("setting dns with nmcli failed: %w", err)
+			return fmt.Errorf("unsetting DNS with nmcli failed: %w", err)
 		}
 		if con.isActive {
 			if err := nmcli.reloadConnection(con.name); err != nil {
@@ -138,12 +138,12 @@ func (nmcli *NMCli) Name() string {
 func (nmcli *NMCli) getConnectionFromPhysicalInterfaces() ([]connectionInfo, error) {
 	activeConnectionsList, err := nmcli.cmdExecutor(nmCliExecutable, "-t", "-f", "NAME,TYPE", "con", "show", "--active")
 	if err != nil {
-		return []connectionInfo{}, fmt.Errorf("Failed to fetch active connections: %w", err)
+		return []connectionInfo{}, fmt.Errorf("failed to fetch active connections: %w", err)
 	}
 
 	allConnectionsList, err := nmcli.cmdExecutor(nmCliExecutable, "-t", "-f", "NAME,TYPE", "con", "show")
 	if err != nil {
-		return []connectionInfo{}, fmt.Errorf("Failed to fetch all connections: %w", err)
+		return []connectionInfo{}, fmt.Errorf("failed to fetch all connections: %w", err)
 	}
 	activeConns := nmcli.parsePhysicalConnections(string(activeConnectionsList))
 	activeSet := make(map[string]bool)
@@ -215,7 +215,7 @@ func (nmcli *NMCli) reloadConnection(connectionName string) error {
 
 	upArgs := []string{nmCliConKey, "up", connectionName}
 	if _, err := nmcli.cmdExecutor(nmCliExecutable, upArgs...); err != nil {
-		return fmt.Errorf("Setting %s UP failed with:%w", connectionName, err)
+		return fmt.Errorf("setting %s UP failed with:%w", connectionName, err)
 	}
 	return nil
 }
