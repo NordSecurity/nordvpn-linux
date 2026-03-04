@@ -319,6 +319,7 @@ func (m *mockAccessTokenStoreWrapper) IsExpired() bool {
 
 func (m *mockAccessTokenStoreWrapper) Renew(opts ...session.RenewalOption) error {
 	m.mock.RenewCallCount++
+	m.mock.LastRenewOpts = opts // Store options for verification in tests
 	if m.mock.RenewFunc != nil {
 		return m.mock.RenewFunc(opts...)
 	}
@@ -2397,4 +2398,55 @@ func Test_NotifyNewTransfer_TokenRenewalScenarios(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 0, mockSessionStore.GetTokenCallCount)
 	assert.Equal(t, 0, mockSessionStore.RenewCallCount)
+}
+
+// Test_callWithToken_ForceRenewalOn401 verifies that when an API call returns 401
+// (ErrUnauthorized), the callWithToken() function calls Renew() with ForceRenewal().
+//
+// Without ForceRenewal(), Renew() would skip renewal if the token appeared locally valid,
+// causing the retry to fail with 401 again, which triggered session invalidation and forced logout.
+func Test_callWithToken_ForceRenewalOn401(t *testing.T) {
+	expectedResp := core.NotificationCredentialsResponse{
+		Endpoint: "mqtt://test.example.com",
+		Username: "renewed_user",
+		Password: "renewed_pass",
+	}
+	firstCall := true
+
+	mockSessionStore := &mocksession.MockAccessTokenSessionStore{
+		GetTokenFunc: func() string {
+			if firstCall {
+				return initialToken // "locally valid" token that server rejects
+			}
+			return renewedToken // token after forced renewal
+		},
+		RenewFunc: func(opts ...session.RenewalOption) error {
+			assert.True(t, session.HasForceRenewal(opts...),
+				"Renew() must be called with ForceRenewal() when API returns 401")
+			return nil
+		},
+	}
+
+	mockAPI := &mockSimpleClientAPI{
+		NotificationCredentialsFunc: func(token, uid string) (core.NotificationCredentialsResponse, error) {
+			if token == initialToken {
+				// Simulate server rejecting a "locally valid" token
+				// This happens when token is revoked/expired server-side but still valid locally
+				firstCall = false
+				return core.NotificationCredentialsResponse{}, core.ErrUnauthorized
+			}
+			// After forced renewal, server accepts the new token
+			assert.Equal(t, renewedToken, token)
+			return expectedResp, nil
+		},
+	}
+
+	client := NewMockSmartClientAPI(mockAPI, mockSessionStore)
+	resp, err := client.NotificationCredentials(appUserID)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expectedResp, resp)
+	assert.Equal(t, 2, mockSessionStore.GetTokenCallCount, "Should get token twice: initial + after renewal")
+	assert.Equal(t, 1, mockSessionStore.RenewCallCount, "Should call Renew() once on 401")
+	assert.True(t, mockSessionStore.HasForceRenewal(), "ForceRenewal() must be passed to Renew()")
 }
