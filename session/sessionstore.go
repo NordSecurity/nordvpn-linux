@@ -24,6 +24,15 @@ func ForceRenewal() RenewalOption {
 	}
 }
 
+// HasForceRenewal checks if ForceRenewal option is present in the given options.
+func HasForceRenewal(opts ...RenewalOption) bool {
+	options := &renewalOptions{}
+	for _, opt := range opts {
+		opt(options)
+	}
+	return options.forceRenewal
+}
+
 // SessionStore is an interface for managing session data.
 type SessionStore interface {
 	// Renew extends the lifetime of the current session.
