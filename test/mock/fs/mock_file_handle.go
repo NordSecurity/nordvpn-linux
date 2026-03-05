@@ -13,8 +13,10 @@ type SystemFileHandleMock struct {
 	// IsSameFile determines the result of SameFile calls.
 	IsSameFile bool
 	// StatErrors maps file location to a potential stat error
-	StatErrors map[string]error
-	RemoveErr  error
+	StatErrors      map[string]error
+	RemoveErr       error
+	Dirnames        []string
+	ReaddirnamesErr error
 }
 
 func (fm *SystemFileHandleMock) GetFile(location string) ([]byte, bool) {
@@ -65,6 +67,14 @@ func (fm *SystemFileHandleMock) Remove(location string) error {
 	}
 
 	return nil
+}
+
+func (fm *SystemFileHandleMock) Readdirnames(location string) ([]string, error) {
+	if fm.ReaddirnamesErr != nil {
+		return []string{}, fm.ReaddirnamesErr
+	}
+
+	return fm.Dirnames, nil
 }
 
 func NewSystemFileHandleMock(t *testing.T) SystemFileHandleMock {

@@ -55,8 +55,6 @@ func (e dnsManagementService) String() string {
 
 var (
 	errDNSMissingUnsetter = errors.New("DNS unsetter not set")
-	// errDNSSetFailed is returned when all DNS set methods fail
-	errDNSSetFailed = errors.New("all dns set attempts failed")
 	// errDNSSetFailedNoBinaries is returned when no binaries necessary to set DNS were found
 	errDNSSetFailedNoBinaries = errors.New("no binaries to set DNS with this method were found")
 )
@@ -251,6 +249,8 @@ func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
 		}
 		if errors.Is(err, errDNSSetFailedNoBinaries) {
 			d.analytics.emitDNSConfigurationErrorEvent(d.currentManagementService, binaryNotFoundSetErrorType)
+		} else if errors.Is(err, errCannotGuaranteeConfig) {
+			d.analytics.emitDNSConfigurationErrorEvent(d.currentManagementService, nmcliCannotGuaranteeConfigErrType)
 		} else {
 			d.analytics.emitDNSConfigurationErrorEvent(d.currentManagementService, setFailedErrorType)
 		}
@@ -315,12 +315,14 @@ func (d *DNSMethodSetter) Set(iface string, nameservers []string) error {
 	}
 
 	binariesAvailable := false
+	var returnErr error
 	for _, method := range d.methods {
 		log.Println(internal.InfoPrefix, dnsPrefix, "Set on interface ["+iface+"] using: ", method.Name())
 		if err := method.Set(iface, nameservers); err != nil {
 			if !errors.Is(err, exec.ErrNotFound) {
 				binariesAvailable = true
 			}
+			returnErr = errors.Join(returnErr, err)
 			log.Println(internal.ErrorPrefix, fmt.Errorf("setting dns with %s: %w", method.Name(), err))
 			continue
 		}
@@ -329,7 +331,7 @@ func (d *DNSMethodSetter) Set(iface string, nameservers []string) error {
 	}
 
 	if binariesAvailable {
-		return errDNSSetFailed
+		return returnErr
 	}
 
 	return errDNSSetFailedNoBinaries
@@ -351,7 +353,8 @@ func (d *DNSMethodSetter) Unset(iface string) error {
 	return errors.Join(errs...)
 }
 
-// RestoreResolvConfFile try to restore resolv.conf if target file contains Nordvpn changes
-func RestoreResolvConfFile() {
+// RestoreDNS try to restore resolv.conf if target file contains Nordvpn changes
+func RestoreDNS() {
 	tryToRestoreDNS()
+	newNMCli().removeConfigFile()
 }

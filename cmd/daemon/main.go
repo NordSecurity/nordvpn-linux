@@ -203,7 +203,7 @@ func main() {
 	daemonEvents.Settings.Subscribe(logger.NewSubscriber())
 
 	// try to restore resolv.conf if target file contains Nordvpn changes
-	dns.RestoreResolvConfFile()
+	dns.RestoreDNS()
 
 	// Firewall
 	stateModule := "conntrack"

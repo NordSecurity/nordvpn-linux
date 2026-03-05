@@ -49,6 +49,10 @@ type FileSystemHandle interface {
 
 	// Remove removes file under the given location.
 	Remove(location string) error
+
+	// Readdirnames reads the contents of the directory associated with file and returns a slice of up to n names of
+	// files in the directory. If n == 0 Readdirnames returns all of the names of files in the directory.
+	Readdirnames(location string) (names []string, err error)
 }
 
 type StdFilesystemHandle struct{}
@@ -79,6 +83,15 @@ func (StdFilesystemHandle) WriteFile(location string, data []byte, mode fs.FileM
 
 func (StdFilesystemHandle) Remove(location string) error {
 	return os.Remove(location)
+}
+
+func (StdFilesystemHandle) Readdirnames(location string) (names []string, err error) {
+	file, err := os.OpenFile(location, os.O_RDONLY, 0)
+	if err != nil {
+		return []string{}, fmt.Errorf("opening file: %w", err)
+	}
+
+	return file.Readdirnames(0)
 }
 
 // systemDFile returns a `os.systemDFile` object for

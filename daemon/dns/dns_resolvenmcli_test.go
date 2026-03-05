@@ -27,6 +27,7 @@ func Test_NMCliSetUnset(t *testing.T) {
 	tests := []struct {
 		name                      string
 		dnsServers                []string
+		otherConfigFiles          []string
 		shouldSetFail             bool
 		shouldUnsetFail           bool
 		expectedFileContents      string
@@ -34,6 +35,7 @@ func Test_NMCliSetUnset(t *testing.T) {
 		removeErr                 error
 		nmcliSetConfigReloadErr   error
 		nmcliUnsetConfigReloadErr error
+		readdirnamesErr           error
 	}{
 		{
 			name:                 "success",
@@ -46,6 +48,14 @@ func Test_NMCliSetUnset(t *testing.T) {
 			name:                 "success multiple servers",
 			dnsServers:           []string{"1.1.1.1", "8.8.8.8"},
 			expectedFileContents: generateConfig(t, "1.1.1.1", "8.8.8.8"),
+			shouldSetFail:        false,
+			shouldUnsetFail:      false,
+		},
+		{
+			name:                 "other config files in directory are of lower priority",
+			dnsServers:           []string{"1.1.1.1"},
+			otherConfigFiles:     []string{"z-other-file.conf", "99-nordvpn-dns.conf"},
+			expectedFileContents: generateConfig(t, "1.1.1.1"),
 			shouldSetFail:        false,
 			shouldUnsetFail:      false,
 		},
@@ -81,6 +91,24 @@ func Test_NMCliSetUnset(t *testing.T) {
 			shouldUnsetFail:           true,
 			nmcliUnsetConfigReloadErr: errors.New("failed to reload config file"),
 		},
+		{
+			name:                 "other config files have higher priority",
+			dnsServers:           []string{"1.1.1.1"},
+			expectedFileContents: generateConfig(t, "1.1.1.1"),
+			otherConfigFiles:     []string{"~-other-conf-file.conf", "99-other-conf-file.conf"},
+			shouldSetFail:        true,
+			shouldUnsetFail:      true,
+			removeErr:            errors.New("config file doesn't exist"),
+		},
+		{
+			name:                 "reading other files in the directory fails",
+			dnsServers:           []string{"1.1.1.1"},
+			expectedFileContents: generateConfig(t, "1.1.1.1"),
+			readdirnamesErr:      fmt.Errorf("failed to readdirnames"),
+			shouldSetFail:        true,
+			shouldUnsetFail:      true,
+			removeErr:            errors.New("config file doesn't exist"),
+		},
 	}
 
 	for _, test := range tests {
@@ -88,6 +116,8 @@ func Test_NMCliSetUnset(t *testing.T) {
 			mockFs := fs.NewSystemFileHandleMock(t)
 			mockFs.WriteErr = test.writeErr
 			mockFs.RemoveErr = test.removeErr
+			mockFs.ReaddirnamesErr = test.readdirnamesErr
+			mockFs.Dirnames = test.otherConfigFiles
 
 			nmcliFunc := func(...string) ([]byte, error) {
 				return []byte{}, test.nmcliSetConfigReloadErr
