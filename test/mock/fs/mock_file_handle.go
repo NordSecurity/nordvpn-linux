@@ -14,6 +14,12 @@ type SystemFileHandleMock struct {
 	IsSameFile bool
 	// StatErrors maps file location to a potential stat error
 	StatErrors map[string]error
+	RemoveErr  error
+}
+
+func (fm *SystemFileHandleMock) GetFile(location string) ([]byte, bool) {
+	contents, ok := fm.files[location]
+	return contents, ok
 }
 
 func (fm *SystemFileHandleMock) AddFile(name string, contents []byte) {
@@ -50,6 +56,14 @@ func (fm *SystemFileHandleMock) WriteFile(location string, data []byte, mode fs.
 	}
 
 	fm.files[location] = data
+	return nil
+}
+
+func (fm *SystemFileHandleMock) Remove(location string) error {
+	if fm.RemoveErr != nil {
+		return fm.RemoveErr
+	}
+
 	return nil
 }
 
