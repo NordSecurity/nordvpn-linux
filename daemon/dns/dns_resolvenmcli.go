@@ -45,7 +45,6 @@ func (n *NMCli) removeConfigFile() error {
 func (n *NMCli) Set(iface string, nameservers []string) error {
 	if len(nameservers) == 0 {
 		return errors.New("empty nameservers slice was provided")
-
 	}
 
 	configContents := fmt.Sprintf(`[global-dns-domain-*]

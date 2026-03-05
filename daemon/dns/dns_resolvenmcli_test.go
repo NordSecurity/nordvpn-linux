@@ -100,7 +100,6 @@ func Test_NMCliSetUnset(t *testing.T) {
 
 			if test.shouldSetFail {
 				assert.Error(t, err, "Expected error to be returned by Set but it was not returned.")
-
 			} else {
 				assert.Nil(t, err, "Unexpected error returned by Set.")
 				file, ok := mockFs.GetFile(networkManagerConfigFilePath)
