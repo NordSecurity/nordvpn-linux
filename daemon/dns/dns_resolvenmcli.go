@@ -1,6 +1,7 @@
 package dns
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os/exec"
@@ -9,9 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-// Executables
 const (
-	// execResolvectl defines resolvectl executable
 	execNMCli                    = "nmcli"
 	networkManagerConfigFilePath = "/etc/NetworkManager/conf.d/nordvpn-dns.conf"
 )
@@ -44,6 +43,11 @@ func (n *NMCli) removeConfigFile() error {
 }
 
 func (n *NMCli) Set(iface string, nameservers []string) error {
+	if len(nameservers) == 0 {
+		return errors.New("empty nameservers slice was provided")
+
+	}
+
 	configContents := fmt.Sprintf(`[global-dns-domain-*]
 
 servers=%s`, strings.Join(nameservers, ","))
@@ -57,7 +61,7 @@ servers=%s`, strings.Join(nameservers, ","))
 	if out, err := n.runNMCliCommandFunc("general", "reload"); err != nil {
 		log.Println(internal.ErrorPrefix,
 			dnsPrefix,
-			"failed to reaload after adding a config file NetworkManager, command output: %s",
+			"failed to reload after adding a config file NetworkManager, command output:",
 			strings.TrimSpace(string(out)))
 
 		if err := n.removeConfigFile(); err != nil {
@@ -77,7 +81,7 @@ func (n *NMCli) Unset(iface string) error {
 	if out, err := n.runNMCliCommandFunc("general", "reload"); err != nil {
 		log.Println(internal.ErrorPrefix,
 			dnsPrefix,
-			"failed to reaload after removing a config file NetworkManager, command output: %s",
+			"failed to reload after removing a config file NetworkManager, command output:",
 			strings.TrimSpace(string(out)))
 		return fmt.Errorf("failed to reload NetworkManager config: %w", err)
 	}
