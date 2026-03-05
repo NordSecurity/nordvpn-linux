@@ -72,6 +72,7 @@ overrides:
     # Deb specific scripts.
     scripts:
       postinstall: ${APP_BUNDLE_DIR}/scriptlets/deb/postinst
+      preremove: ${APP_BUNDLE_DIR}/scriptlets/deb/prerm
       postremove: ${APP_BUNDLE_DIR}/scriptlets/deb/postrm
   rpm:
     depends:
@@ -79,4 +80,5 @@ overrides:
     # RPM specific scripts.
     scripts:
       postinstall: ${APP_BUNDLE_DIR}/scriptlets/rpm/post
+      preremove: ${APP_BUNDLE_DIR}/scriptlets/rpm/preun
       postremove: ${APP_BUNDLE_DIR}/scriptlets/rpm/postun
