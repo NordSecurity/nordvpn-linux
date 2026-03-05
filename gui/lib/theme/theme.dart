@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:nordvpn/theme/allow_list_theme.dart';
 import 'package:nordvpn/theme/app_theme.dart';
@@ -32,17 +34,17 @@ ThemeData darkTheme() {
 final class NordVpnTheme {
   final ThemeMode mode;
 
-  final AppDesign design;
+  final SemanticColors semanticColors;
 
-  NordVpnTheme(this.mode) : design = AppDesign(mode);
+  NordVpnTheme(this.mode) : semanticColors = mode == ThemeMode.dark ? SemanticColors(true) : SemanticColors(false);
 
   ThemeData data() {
     final data = mode == ThemeMode.light
         ? ThemeData.light(useMaterial3: true)
         : ThemeData.dark(useMaterial3: true);
     return data.copyWith(
-      scaffoldBackgroundColor: design.semanticColors.bgPrimary,
-      disabledColor: design.semanticColors.textDisabled,
+      scaffoldBackgroundColor: semanticColors.bgPrimary,
+      disabledColor: semanticColors.textDisabled,
       navigationRailTheme: _navigationRailTheme(),
       navigationBarTheme: _navigationBarTheme(),
       tabBarTheme: _tabBarTheme(),
@@ -83,27 +85,27 @@ final class NordVpnTheme {
 
   NavigationRailThemeData _navigationRailTheme() {
     return NavigationRailThemeData(
-      backgroundColor: design.semanticColors.bgPrimary,
+      backgroundColor: semanticColors.bgPrimary,
       labelType: NavigationRailLabelType.all,
       useIndicator: true,
-      selectedLabelTextStyle: design.typography.body.copyWith(
-        color: design.semanticColors.textPrimary,
+      selectedLabelTextStyle: AppTypography.body.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      unselectedLabelTextStyle: design.typography.body.copyWith(
-        color: design.semanticColors.textPrimary,
+      unselectedLabelTextStyle: AppTypography.body.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      indicatorColor: design.semanticColors.bgSecondary,
+      indicatorColor: semanticColors.bgSecondary,
     );
   }
 
   NavigationBarThemeData _navigationBarTheme() {
     return NavigationBarThemeData(
-      indicatorColor: design.semanticColors.bgSecondary,
-      backgroundColor: design.semanticColors.bgPrimary,
-      surfaceTintColor: design.colors.transparent,
+      indicatorColor: semanticColors.bgSecondary,
+      backgroundColor: semanticColors.bgPrimary,
+      surfaceTintColor: AppCoreColors.transparent,
       labelTextStyle: WidgetStateProperty.all(
-        design.typography.body.copyWith(
-          color: design.semanticColors.textPrimary,
+        AppTypography.body.copyWith(
+          color: semanticColors.textPrimary,
         ),
       ),
     );
@@ -112,18 +114,18 @@ final class NordVpnTheme {
   TabBarThemeData _tabBarTheme() {
     return TabBarThemeData(
       indicator: UnderlineTabIndicator(
-        borderSide: BorderSide(width: 2, color: design.semanticColors.bgAccent),
+        borderSide: BorderSide(width: 2, color: semanticColors.bgAccent),
       ),
       tabAlignment: TabAlignment.start,
       indicatorSize: TabBarIndicatorSize.tab,
-      indicatorColor: design.semanticColors.bgAccent,
-      dividerColor: design.colors.transparent,
+      indicatorColor: semanticColors.bgAccent,
+      dividerColor: AppCoreColors.transparent,
       dividerHeight: 0,
-      labelStyle: design.typography.subBody.copyWith(
-        color: design.semanticColors.textPrimary,
+      labelStyle: AppTypography.subBody.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      unselectedLabelStyle: design.typography.subBody.copyWith(
-        color: design.semanticColors.textSecondary,
+      unselectedLabelStyle: AppTypography.subBody.copyWith(
+        color: semanticColors.textSecondary,
       ),
     );
   }
@@ -133,20 +135,20 @@ final class NordVpnTheme {
       toolbarHeight: 70,
       shape: Border(
         bottom: BorderSide(
-          color: design.semanticColors.borderSecondary,
+          color: semanticColors.borderSecondary,
           width: 1,
         ),
       ),
-      surfaceTintColor: design.colors.transparent,
+      surfaceTintColor: AppCoreColors.transparent,
       centerTitle: true,
-      backgroundColor: design.semanticColors.bgSecondary,
+      backgroundColor: semanticColors.bgSecondary,
     );
   }
 
   ColorScheme _colorScheme() {
     return ColorScheme.fromSeed(
-      surface: design.semanticColors.bgSecondary,
-      seedColor: design.semanticColors.bgAccent,
+      surface: semanticColors.bgSecondary,
+      seedColor: semanticColors.bgAccent,
     );
   }
 
@@ -154,14 +156,14 @@ final class NordVpnTheme {
     return ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        textStyle: design.typography.subHeading.copyWith(
-          color: design.semanticColors.textPrimary,
+        textStyle: AppTypography.subHeading.copyWith(
+          color: semanticColors.textPrimary,
         ),
         padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 16),
-        backgroundColor: design.semanticColors.bgAccent,
-        foregroundColor: design.semanticColors.textPrimaryOnColor,
-        disabledBackgroundColor: design.semanticColors.bgDisabled,
-        disabledForegroundColor: design.semanticColors.textDisabled,
+        backgroundColor: semanticColors.bgAccent,
+        foregroundColor: semanticColors.textPrimaryOnColor,
+        disabledBackgroundColor: semanticColors.bgDisabled,
+        disabledForegroundColor: semanticColors.textDisabled,
       ),
     );
   }
@@ -170,7 +172,7 @@ final class NordVpnTheme {
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
       borderSide: BorderSide(
-        color: design.semanticColors.borderSecondary,
+        color: semanticColors.borderSecondary,
         width: 1.0,
       ),
     );
@@ -182,8 +184,8 @@ final class NordVpnTheme {
       border: border,
       focusedBorder: border,
       enabledBorder: border,
-      hintStyle: design.typography.body.copyWith(
-        color: design.semanticColors.textSecondary,
+      hintStyle: AppTypography.body.copyWith(
+        color: semanticColors.textSecondary,
       ),
       floatingLabelBehavior: FloatingLabelBehavior.never,
     );
@@ -193,16 +195,16 @@ final class NordVpnTheme {
     return TextButtonThemeData(
       style: TextButton.styleFrom(
         side: BorderSide.none,
-        overlayColor: design.colors.transparent,
-        textStyle: design.typography.body.copyWith(
-          color: design.semanticColors.textPrimary,
+        overlayColor: AppCoreColors.transparent,
+        textStyle: AppTypography.body.copyWith(
+          color: semanticColors.textPrimary,
         ),
-        foregroundColor: design.semanticColors.textAccent,
+        foregroundColor: semanticColors.textAccent,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(4),
           side: BorderSide(
-            color: design.semanticColors.borderPrimary,
+            color: semanticColors.borderPrimary,
             width: 1,
           ),
         ),
@@ -213,15 +215,15 @@ final class NordVpnTheme {
   OutlinedButtonThemeData _outlinedButtonThemeData() {
     return OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        side: BorderSide(color: design.semanticColors.borderPrimary),
-        textStyle: design.typography.subHeading.copyWith(
-          color: design.semanticColors.textPrimary,
+        side: BorderSide(color: semanticColors.borderPrimary),
+        textStyle: AppTypography.subHeading.copyWith(
+          color: semanticColors.textPrimary,
         ),
-        foregroundColor: design.semanticColors.textPrimary,
+        foregroundColor: semanticColors.textPrimary,
         padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        disabledBackgroundColor: design.semanticColors.bgDisabled,
-        disabledForegroundColor: design.semanticColors.textDisabled,
+        disabledBackgroundColor: semanticColors.bgDisabled,
+        disabledForegroundColor: semanticColors.textDisabled,
       ),
     );
   }
@@ -234,7 +236,7 @@ final class NordVpnTheme {
 
   DividerThemeData _dividerTheme() {
     return DividerThemeData(
-      color: design.semanticColors.borderSecondary,
+      color: semanticColors.borderSecondary,
       thickness: 1,
     );
   }
@@ -242,46 +244,46 @@ final class NordVpnTheme {
   CheckboxThemeData _checkboxThemeData() {
     return CheckboxThemeData(
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      overlayColor: WidgetStateProperty.all(design.colors.transparent),
+      overlayColor: WidgetStateProperty.all(AppCoreColors.transparent),
       checkColor: WidgetStateProperty.resolveWith<Color?>((states) {
         if (states.contains(WidgetState.selected) &&
             states.contains(WidgetState.disabled)) {
-          return design.semanticColors.bgDisabled;
+          return semanticColors.bgDisabled;
         }
         if (states.contains(WidgetState.selected)) {
-          return design.semanticColors.bgSecondary;
+          return semanticColors.bgSecondary;
         }
         if (states.contains(WidgetState.disabled)) {
-          return design.semanticColors.bgDisabled;
+          return semanticColors.bgDisabled;
         }
-        return design.semanticColors.bgSecondary;
+        return semanticColors.bgSecondary;
       }),
       fillColor: WidgetStateProperty.resolveWith<Color?>((states) {
         if (states.contains(WidgetState.selected) &&
             states.contains(WidgetState.disabled)) {
-          return design.semanticColors.bgDisabled;
+          return semanticColors.bgDisabled;
         }
         if (states.contains(WidgetState.selected)) {
-          return design.semanticColors.bgAccent;
+          return semanticColors.bgAccent;
         }
         if (states.contains(WidgetState.disabled)) {
-          return design.semanticColors.bgSecondary;
+          return semanticColors.bgSecondary;
         }
-        return design.semanticColors.bgSecondary;
+        return semanticColors.bgSecondary;
       }),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       side: WidgetStateBorderSide.resolveWith((states) {
         if (states.contains(WidgetState.selected) &&
             states.contains(WidgetState.disabled)) {
-          return BorderSide(width: 1, color: design.semanticColors.bgDisabled);
+          return BorderSide(width: 1, color: semanticColors.bgDisabled);
         }
         if (states.contains(WidgetState.selected)) {
-          return BorderSide(width: 1, color: design.semanticColors.bgAccent);
+          return BorderSide(width: 1, color: semanticColors.bgAccent);
         }
         if (states.contains(WidgetState.disabled)) {
-          return BorderSide(width: 1, color: design.semanticColors.bgDisabled);
+          return BorderSide(width: 1, color: semanticColors.bgDisabled);
         }
-        return BorderSide(width: 1, color: design.semanticColors.borderInput);
+        return BorderSide(width: 1, color: semanticColors.borderInput);
       }),
     );
   }
@@ -294,7 +296,7 @@ final class NordVpnTheme {
       padding: 10,
       margin: 8,
       outerPadding: 16,
-      borderColor: design.semanticColors.borderSecondary,
+      borderColor: semanticColors.borderSecondary,
       verticalSpaceVerySmall: 2,
       verticalSpaceSmall: 8,
       verticalSpaceMedium: 16,
@@ -302,52 +304,52 @@ final class NordVpnTheme {
       verticalSpaceExtraLarge: 48,
       horizontalSpaceSmall: 8,
       horizontalSpace: 16,
-      textErrorColor: design.semanticColors.textCritical,
-      successColor: design.semanticColors.textSuccess,
+      textErrorColor: semanticColors.textCritical,
+      successColor: semanticColors.textSuccess,
       flagsBorderSize: 2,
-      overlayBackgroundColor: design.colors.neutral1000.withAlpha(127),
-      caption: design.typography.subBody.copyWith(
-        color: design.semanticColors.textSecondary,
+      overlayBackgroundColor: AppCoreColors.neutral1000.withAlpha(127),
+      caption: AppTypography.subBody.copyWith(
+        color: semanticColors.textSecondary,
       ),
       captionRegularGray171: TextStyle(
         fontSize: 12,
-        color: design.semanticColors.textSecondary,
+        color: semanticColors.textSecondary,
         fontWeight: FontWeight.w400,
       ),
-      captionStrong: design.typography.captionMedium.copyWith(
-        color: design.semanticColors.textPrimary,
+      captionStrong: AppTypography.captionMedium.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      bodyStrong: design.typography.subHeading.copyWith(
-        color: design.semanticColors.textPrimary,
+      bodyStrong: AppTypography.subHeading.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      body: design.typography.body.copyWith(
-        color: design.semanticColors.textPrimary,
+      body: AppTypography.body.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      subtitleStrong: design.typography.subBody.copyWith(
-        color: design.semanticColors.textPrimary,
+      subtitleStrong: AppTypography.subBody.copyWith(
+        color: semanticColors.textPrimary,
       ),
       linkButton: TextStyle(
         fontSize: 12,
-        color: design.semanticColors.bgAccent,
+        color: semanticColors.bgAccent,
         fontWeight: FontWeight.w400,
       ),
-      title: design.typography.display.copyWith(
-        color: design.semanticColors.textPrimary,
+      title: AppTypography.display.copyWith(
+        color: semanticColors.textPrimary,
       ),
       trailingIconSize: 32,
-      backgroundColor: design.semanticColors.bgSecondary,
-      areaBackgroundColor: design.semanticColors.bgSecondaryActive,
-      area: design.semanticColors.bgSecondaryActive,
-      dividerColor: design.semanticColors.borderSecondary,
+      backgroundColor: semanticColors.bgSecondary,
+      areaBackgroundColor: semanticColors.bgSecondaryActive,
+      area: semanticColors.bgSecondaryActive,
+      dividerColor: semanticColors.borderSecondary,
       disabledOpacity: 0.5,
-      linkNormal: design.typography.subBody.copyWith(
-        color: design.semanticColors.textAccent,
+      linkNormal: AppTypography.subBody.copyWith(
+        color: semanticColors.textAccent,
       ),
-      linkSmall: design.typography.caption.copyWith(
-        color: design.semanticColors.textAccent,
+      linkSmall: AppTypography.caption.copyWith(
+        color: semanticColors.textAccent,
       ),
-      textDisabled: design.typography.body.copyWith(
-        color: design.semanticColors.textDisabled,
+      textDisabled: AppTypography.body.copyWith(
+        color: semanticColors.textDisabled,
       ),
     );
   }
@@ -356,11 +358,11 @@ final class NordVpnTheme {
     return VpnStatusCardTheme(
       height: 150,
       maxConnectButtonWidth: 408,
-      primaryFont: design.typography.captionMedium.copyWith(
-        color: design.semanticColors.textPrimary,
+      primaryFont: AppTypography.captionMedium.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      secondaryFont: design.typography.subHeading.copyWith(
-        color: design.semanticColors.textPrimary,
+      secondaryFont: AppTypography.subHeading.copyWith(
+        color: semanticColors.textPrimary,
       ),
       iconSize: 40,
     );
@@ -375,43 +377,43 @@ final class NordVpnTheme {
         horizontal: 32,
         vertical: 8,
       ),
-      searchHintStyle: design.typography.body.copyWith(
-        color: design.semanticColors.textSecondary,
+      searchHintStyle: AppTypography.body.copyWith(
+        color: semanticColors.textSecondary,
       ),
-      searchErrorStyle: design.typography.body.copyWith(
-        color: design.semanticColors.textCritical,
+      searchErrorStyle: AppTypography.body.copyWith(
+        color: semanticColors.textCritical,
       ),
-      obfuscationSearchWarningStyle: design.typography.body.copyWith(
-        color: design.semanticColors.textSecondary,
+      obfuscationSearchWarningStyle: AppTypography.body.copyWith(
+        color: semanticColors.textSecondary,
       ),
-      obfuscatedItemBackgroundColor: design.semanticColors.bgSecondaryActive,
+      obfuscatedItemBackgroundColor: semanticColors.bgSecondaryActive,
       horizontalSpace: 16,
     );
   }
 
   SettingsTheme _settingsThemeExt() {
     return SettingsTheme(
-      currentPageNameStyle: design.typography.heading.copyWith(
-        color: design.semanticColors.textPrimary,
+      currentPageNameStyle: AppTypography.heading.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      parentPageStyle: design.typography.heading.copyWith(
-        color: design.semanticColors.textSecondary,
+      parentPageStyle: AppTypography.heading.copyWith(
+        color: semanticColors.textSecondary,
       ),
-      itemTitleStyle: design.typography.body.copyWith(
-        color: design.semanticColors.textPrimary,
+      itemTitleStyle: AppTypography.body.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      itemSubtitleStyle: design.typography.subBody.copyWith(
-        color: design.semanticColors.textSecondary,
+      itemSubtitleStyle: AppTypography.subBody.copyWith(
+        color: semanticColors.textSecondary,
       ),
-      vpnStatusStyle: design.typography.captionMedium.copyWith(
-        color: design.semanticColors.textPrimary,
+      vpnStatusStyle: AppTypography.captionMedium.copyWith(
+        color: semanticColors.textPrimary,
       ),
       textInputWidth: 220,
-      otherProductsTitle: design.typography.body.copyWith(
-        color: design.semanticColors.textPrimary,
+      otherProductsTitle: AppTypography.body.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      otherProductsSubtitle: design.typography.subBody.copyWith(
-        color: design.semanticColors.textSecondary,
+      otherProductsSubtitle: AppTypography.subBody.copyWith(
+        color: semanticColors.textSecondary,
       ),
       fwMarkInputSize: 250,
       itemPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 16),
@@ -423,11 +425,11 @@ final class NordVpnTheme {
       label: OnOffLabelTheme(
         width: 32,
         paddingRight: 10,
-        textStyle: design.typography.body.copyWith(
-          color: design.semanticColors.textPrimary,
+        textStyle: AppTypography.body.copyWith(
+          color: semanticColors.textPrimary,
         ),
-        disabledTextStyle: design.typography.body.copyWith(
-          color: design.semanticColors.textDisabled,
+        disabledTextStyle: AppTypography.body.copyWith(
+          color: semanticColors.textDisabled,
         ),
       ),
       slider: OnOffSliderTheme(
@@ -436,30 +438,30 @@ final class NordVpnTheme {
         on: SwitchOnOffProps(
           leftOffset: 21,
           rightOffset: 0,
-          color: design.colors.neutral0,
-          borderColor: design.semanticColors.bgAccent,
-          backgroundColor: design.semanticColors.bgAccent,
+          color: AppCoreColors.neutral0,
+          borderColor: semanticColors.bgAccent,
+          backgroundColor: semanticColors.bgAccent,
         ),
         off: SwitchOnOffProps(
           leftOffset: 0.8,
           rightOffset: 21,
-          color: design.semanticColors.textPrimary,
-          borderColor: design.semanticColors.borderInput,
-          backgroundColor: design.semanticColors.bgSecondary,
+          color: semanticColors.textPrimary,
+          borderColor: semanticColors.borderInput,
+          backgroundColor: semanticColors.bgSecondary,
         ),
         disabledOn: SwitchOnOffProps(
           leftOffset: 0.8,
           rightOffset: 21,
-          color: design.semanticColors.bgTertiary,
-          borderColor: design.semanticColors.bgDisabled,
-          backgroundColor: design.semanticColors.bgDisabled,
+          color: semanticColors.bgTertiary,
+          borderColor: semanticColors.bgDisabled,
+          backgroundColor: semanticColors.bgDisabled,
         ),
         disabledOff: SwitchOnOffProps(
           leftOffset: 0.8,
           rightOffset: 21,
-          color: design.semanticColors.bgDisabled,
-          borderColor: design.semanticColors.borderPrimary,
-          backgroundColor: design.colors.transparent,
+          color: semanticColors.bgDisabled,
+          borderColor: semanticColors.borderPrimary,
+          backgroundColor: AppCoreColors.transparent,
         ),
         bottomOffset: 2.1,
         topOffset: 2.1,
@@ -477,17 +479,17 @@ final class NordVpnTheme {
         width: 18,
         height: 18,
         on: RadioOnOffProps(
-          fillColor: design.semanticColors.bgAccent,
-          borderColor: design.semanticColors.bgAccent,
-          dotColor: design.colors.neutral0,
+          fillColor: semanticColors.bgAccent,
+          borderColor: semanticColors.bgAccent,
+          dotColor: AppCoreColors.neutral0,
           dotHeight: 6,
           dotWidth: 6,
           borderWidth: 6,
         ),
         off: RadioOnOffProps(
-          fillColor: design.semanticColors.bgSecondary,
-          borderColor: design.semanticColors.borderInput,
-          dotColor: design.colors.transparent,
+          fillColor: semanticColors.bgSecondary,
+          borderColor: semanticColors.borderInput,
+          dotColor: AppCoreColors.transparent,
           dotHeight: 0,
           dotWidth: 0,
           borderWidth: 1,
@@ -499,38 +501,38 @@ final class NordVpnTheme {
   InputTheme _inputThemeExt() {
     return InputTheme(
       height: 56,
-      errorStyle: design.typography.subBody.copyWith(
-        color: design.semanticColors.textCritical,
+      errorStyle: AppTypography.subBody.copyWith(
+        color: semanticColors.textCritical,
       ),
-      textStyle: design.typography.body.copyWith(
-        color: design.semanticColors.textPrimary,
+      textStyle: AppTypography.body.copyWith(
+        color: semanticColors.textPrimary,
       ),
       enabled: EnabledStyle(
-        borderColor: design.semanticColors.borderPrimary,
+        borderColor: semanticColors.borderPrimary,
         borderWidth: 1,
       ),
       focused: FocusedStyle(
-        borderColor: design.semanticColors.bgAccent,
+        borderColor: semanticColors.bgAccent,
         borderWidth: 2,
       ),
       error: ErrorStyle(
-        borderColor: design.semanticColors.borderCritical,
+        borderColor: semanticColors.borderCritical,
         borderWidth: 1,
       ),
       focusedError: FocusedErrorStyle(
-        borderColor: design.semanticColors.borderCritical,
+        borderColor: semanticColors.borderCritical,
         borderWidth: 1,
       ),
       icon: IconStyle(
-        color: design.semanticColors.textPrimary,
-        hoverColor: design.colors.transparent,
+        color: semanticColors.textPrimary,
+        hoverColor: AppCoreColors.transparent,
       ),
     );
   }
 
   LoadingIndicatorTheme _loadingIndicatorThemeExt() {
     return LoadingIndicatorTheme(
-      color: design.semanticColors.bgAccent,
+      color: semanticColors.bgAccent,
       strokeWidth: 2,
     );
   }
@@ -538,31 +540,31 @@ final class NordVpnTheme {
   CopyFieldTheme _copyFieldThemeExt() {
     return CopyFieldTheme(
       borderRadius: 4,
-      commandTextStyle: design.typography.subBody.copyWith(
-        color: design.semanticColors.textPrimary,
+      commandTextStyle: AppTypography.subBody.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      descriptionTextStyle: design.typography.subBody.copyWith(
-        color: design.semanticColors.textPrimary,
+      descriptionTextStyle: AppTypography.subBody.copyWith(
+        color: semanticColors.textPrimary,
       ),
     );
   }
 
   SupportLinkTheme _supportLinkThemeExt() {
     return SupportLinkTheme(
-      textStyle: design.typography.subBody.copyWith(
-        color: design.semanticColors.textPrimary,
+      textStyle: AppTypography.subBody.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      urlColor: design.semanticColors.bgAccent,
+      urlColor: semanticColors.bgAccent,
     );
   }
 
   LoginFormTheme _loginFormThemeExt() {
     return LoginFormTheme(
-      titleStyle: design.typography.display.copyWith(
-        color: design.semanticColors.textPrimary,
+      titleStyle: AppTypography.display.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      checkboxDescStyle: design.typography.subBody.copyWith(
-        color: design.semanticColors.textPrimary,
+      checkboxDescStyle: AppTypography.subBody.copyWith(
+        color: semanticColors.textPrimary,
       ),
       width: 424,
       height: 348,
@@ -570,7 +572,7 @@ final class NordVpnTheme {
         height: 16,
         width: 16,
         stroke: 1.5,
-        color: design.semanticColors.bgSecondary,
+        color: semanticColors.bgSecondary,
       ),
     );
   }
@@ -580,18 +582,18 @@ final class NordVpnTheme {
       width: 15,
       height: 15,
       stroke: 2,
-      color: design.semanticColors.bgAccent,
-      alternativeColor: design.colors.neutral0,
+      color: semanticColors.bgAccent,
+      alternativeColor: AppCoreColors.neutral0,
     );
   }
 
   AutoconnectPanelTheme _autoconnectPanelTheme() {
     return AutoconnectPanelTheme(
-      primaryFont: design.typography.subBody.copyWith(
-        color: design.semanticColors.textPrimary,
+      primaryFont: AppTypography.subBody.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      secondaryFont: design.typography.subBody.copyWith(
-        color: design.semanticColors.textPrimary,
+      secondaryFont: AppTypography.subBody.copyWith(
+        color: semanticColors.textPrimary,
       ),
       iconSize: 37,
       loaderSize: 35,
@@ -600,36 +602,36 @@ final class NordVpnTheme {
 
   CustomDnsTheme _customDnsThemeExt() {
     return CustomDnsTheme(
-      formBackground: design.semanticColors.bgSecondaryActive,
+      formBackground: semanticColors.bgSecondaryActive,
       dnsInputWidth: 300,
-      dividerColor: design.semanticColors.borderPrimary,
+      dividerColor: semanticColors.borderPrimary,
     );
   }
 
   AllowListTheme _allowListThemeExt() {
     return AllowListTheme(
-      labelStyle: design.typography.subBody.copyWith(
-        color: design.semanticColors.textPrimary,
+      labelStyle: AppTypography.subBody.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      addCardBackground: design.semanticColors.bgSecondaryActive,
-      tableItemsStyle: design.typography.body.copyWith(
-        color: design.semanticColors.textPrimary,
+      addCardBackground: semanticColors.bgSecondaryActive,
+      tableItemsStyle: AppTypography.body.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      tableHeaderStyle: design.typography.captionMedium.copyWith(
-        color: design.semanticColors.textPrimary,
+      tableHeaderStyle: AppTypography.captionMedium.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      dividerColor: design.semanticColors.borderPrimary,
-      listItemBackgroundColor: design.semanticColors.bgSecondaryActive,
+      dividerColor: semanticColors.borderPrimary,
+      listItemBackgroundColor: semanticColors.bgSecondaryActive,
     );
   }
 
   DropdownTheme _dropdownThemeExt() {
     return DropdownTheme(
-      color: design.semanticColors.bgSecondary,
+      color: semanticColors.bgSecondary,
       borderRadius: 4,
-      borderColor: design.semanticColors.borderPrimary,
-      focusBorderColor: design.semanticColors.borderAccent,
-      errorBorderColor: design.semanticColors.borderCritical,
+      borderColor: semanticColors.borderPrimary,
+      focusBorderColor: semanticColors.borderAccent,
+      errorBorderColor: semanticColors.borderCritical,
       borderWidth: 1,
       horizontalPadding: 8,
     );
@@ -638,15 +640,15 @@ final class NordVpnTheme {
   TooltipThemeData _tooltipThemeData() {
     return TooltipThemeData(
       decoration: BoxDecoration(
-        color: design.semanticColors.bgSecondary, //
+        color: semanticColors.bgSecondary, //
         border: Border.all(
-          color: design.semanticColors.borderPrimary,
+          color: semanticColors.borderPrimary,
           width: 1,
         ),
         borderRadius: BorderRadius.all(Radius.circular(5)),
       ),
-      textStyle: design.typography.subBody.copyWith(
-        color: design.semanticColors.textPrimary,
+      textStyle: AppTypography.subBody.copyWith(
+        color: semanticColors.textPrimary,
       ),
     );
   }
@@ -654,8 +656,8 @@ final class NordVpnTheme {
   InteractiveListViewTheme _interactiveListViewThemeExt() {
     return InteractiveListViewTheme(
       borderRadius: 4,
-      borderColor: design.semanticColors.borderPrimary,
-      focusBorderColor: design.semanticColors.borderAccent,
+      borderColor: semanticColors.borderPrimary,
+      focusBorderColor: semanticColors.borderAccent,
       borderWidth: 1,
       verticalSpaceSmall: 8,
     );
@@ -663,11 +665,11 @@ final class NordVpnTheme {
 
   ErrorScreenTheme _errorScreenThemeExt() {
     return ErrorScreenTheme(
-      titleTextStyle: design.typography.subHeading.copyWith(
-        color: design.semanticColors.textPrimary,
+      titleTextStyle: AppTypography.subHeading.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      descriptionTextStyle: design.typography.subBody.copyWith(
-        color: design.semanticColors.textPrimary,
+      descriptionTextStyle: AppTypography.subBody.copyWith(
+        color: semanticColors.textPrimary,
       ),
     );
   }
@@ -676,22 +678,22 @@ final class NordVpnTheme {
     return ConsentScreenTheme(
       width: 600,
       height: 430,
-      overlayColor: design.colors.neutral1000.withAlpha(125),
-      titleTextStyle: design.typography.display.copyWith(
-        color: design.semanticColors.textPrimary,
+      overlayColor: AppCoreColors.neutral1000.withAlpha(125),
+      titleTextStyle: AppTypography.display.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      bodyTextStyle: design.typography.body.copyWith(
-        color: design.semanticColors.textPrimary,
+      bodyTextStyle: AppTypography.body.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      titleBarTextStyle: design.typography.subBody.copyWith(
-        color: design.semanticColors.textPrimary,
+      titleBarTextStyle: AppTypography.subBody.copyWith(
+        color: semanticColors.textPrimary,
       ),
       padding: 40,
-      listItemTitle: design.typography.body.copyWith(
-        color: design.semanticColors.textPrimary,
+      listItemTitle: AppTypography.body.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      listItemSubtitle: design.typography.subBody.copyWith(
-        color: design.semanticColors.textPrimary,
+      listItemSubtitle: AppTypography.subBody.copyWith(
+        color: semanticColors.textPrimary,
       ),
       titleBarWidth: 45,
     );
@@ -706,11 +708,11 @@ final class NordVpnTheme {
       gapBetweenElements: AppSpacing.spacing2,
       verticalElementSpacing: AppSpacing.spacing4,
       singleButtonMinWidth: AppSpacing.spacing30,
-      textPrimary: design.typography.subHeading.copyWith(
-        color: design.semanticColors.textPrimary,
+      textPrimary: AppTypography.subHeading.copyWith(
+        color: semanticColors.textPrimary,
       ),
-      textSecondary: design.typography.body.copyWith(
-        color: design.semanticColors.textSecondary,
+      textSecondary: AppTypography.body.copyWith(
+        color: semanticColors.textSecondary,
       ),
     );
   }
