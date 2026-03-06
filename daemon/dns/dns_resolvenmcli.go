@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"slices"
 	"strings"
@@ -30,15 +31,29 @@ func execNMCliCommand(args ...string) ([]byte, error) {
 	return exec.Command(execNMCli, args...).CombinedOutput()
 }
 
+type getNetworkManagerConfigFileFunc func() (names []string, err error)
+
+// getNetworkManagerConfigFiles opens /etc/NetworkManager/conf.d/ and returns all of the filenames in that directory.
+func getNetworkManagerConfigFiles() (names []string, err error) {
+	file, err := os.Open(networkManagerConfigDirPath)
+	if err != nil {
+		return []string{}, fmt.Errorf("opening file: %w", err)
+	}
+
+	return file.Readdirnames(0)
+}
+
 // NMCli based detection method
 type NMCli struct {
 	runNMCliCommandFunc nmCliCommandFunc
+	getConfigFilesFunc  getNetworkManagerConfigFileFunc
 	filesystemHandle    internal.FileSystemHandle
 }
 
 func newNMCli() *NMCli {
 	return &NMCli{
 		runNMCliCommandFunc: execNMCliCommand,
+		getConfigFilesFunc:  getNetworkManagerConfigFiles,
 		filesystemHandle:    internal.StdFilesystemHandle{},
 	}
 }
@@ -50,7 +65,7 @@ func (n *NMCli) removeConfigFile() error {
 // higherPriorityFileExists returns true if a config file with higher priority(i.e lexicographically greater) exists
 // within the NetworkManager config directory.
 func (n *NMCli) higherPriorityFileExists() (bool, error) {
-	directoryNames, err := n.filesystemHandle.Readdirnames(networkManagerConfigDirPath)
+	directoryNames, err := n.getConfigFilesFunc()
 	if err != nil {
 		return false, fmt.Errorf("reading directory names: %w", err)
 	}

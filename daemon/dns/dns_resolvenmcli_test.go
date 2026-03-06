@@ -35,7 +35,7 @@ func Test_NMCliSetUnset(t *testing.T) {
 		removeErr                 error
 		nmcliSetConfigReloadErr   error
 		nmcliUnsetConfigReloadErr error
-		readdirnamesErr           error
+		getConfigFilesErr         error
 	}{
 		{
 			name:                 "success",
@@ -104,7 +104,7 @@ func Test_NMCliSetUnset(t *testing.T) {
 			name:                 "reading other files in the directory fails",
 			dnsServers:           []string{"1.1.1.1"},
 			expectedFileContents: generateConfig(t, "1.1.1.1"),
-			readdirnamesErr:      fmt.Errorf("failed to readdirnames"),
+			getConfigFilesErr:    fmt.Errorf("failed to readdirnames"),
 			shouldSetFail:        true,
 			shouldUnsetFail:      true,
 			removeErr:            errors.New("config file doesn't exist"),
@@ -116,8 +116,13 @@ func Test_NMCliSetUnset(t *testing.T) {
 			mockFs := fs.NewSystemFileHandleMock(t)
 			mockFs.WriteErr = test.writeErr
 			mockFs.RemoveErr = test.removeErr
-			mockFs.ReaddirnamesErr = test.readdirnamesErr
-			mockFs.Dirnames = test.otherConfigFiles
+
+			getConfigFilesFunc := func() ([]string, error) {
+				if test.getConfigFilesErr != nil {
+					return []string{}, test.getConfigFilesErr
+				}
+				return test.otherConfigFiles, nil
+			}
 
 			nmcliFunc := func(...string) ([]byte, error) {
 				return []byte{}, test.nmcliSetConfigReloadErr
@@ -125,6 +130,7 @@ func Test_NMCliSetUnset(t *testing.T) {
 
 			setter := NMCli{
 				runNMCliCommandFunc: nmcliFunc,
+				getConfigFilesFunc:  getConfigFilesFunc,
 				filesystemHandle:    &mockFs}
 			err := setter.Set("", test.dnsServers)
 
