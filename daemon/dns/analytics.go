@@ -144,6 +144,7 @@ const (
 	binaryNotFoundSetErrorType
 	resolvConfReadFailedErrorType
 	resolvConfStatFailedErrorType
+	nmcliCannotGuaranteeConfigErrType
 )
 
 func (e errorType) String() string {
@@ -158,6 +159,8 @@ func (e errorType) String() string {
 		return "resolv_conf_read_failed"
 	case resolvConfStatFailedErrorType:
 		return "resolv_conf_stat_failed"
+	case nmcliCannotGuaranteeConfigErrType:
+		return "nmcli_cannot_guarantee_config"
 	case unknonErrorType:
 		return "unknown"
 	default:
