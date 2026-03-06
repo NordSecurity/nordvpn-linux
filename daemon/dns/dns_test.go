@@ -192,6 +192,7 @@ func Test_CheckForEntry(t *testing.T) {
 func Test_DNSServiceSetter(t *testing.T) {
 	category.Set(t, category.Unit)
 
+	errDNSSetFailed := errors.New("all dns set attempts failed")
 	errSet := errors.New("err set")
 	errUnset := errors.New("err unset")
 
