@@ -11,5 +11,5 @@ import (
 
 func TestAgentInterface(t *testing.T) {
 	category.Set(t, category.Unit)
-	assert.Implements(t, (*firewall.Agent)(nil), &Facade{})
+	assert.Implements(t, (*firewall.FirewallImpl)(nil), &Facade{})
 }

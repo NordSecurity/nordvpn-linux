@@ -15,7 +15,7 @@ func TestResolveHost(t *testing.T) {
 	// random failures firewall still disabled - wait for it
 	// map[ip6tables:[-P INPUT DROP -P FORWARD ACCEPT -P OUTPUT DROP ] iptables:[-P INPUT DROP -P FORWARD ACCEPT -P OUTPUT DROP ]] %!s(<nil>)
 	time.Sleep(1 * time.Second)
-	result, err := LookupAddressWithCustomDNS("google.com", "1.1.1.1", "udp")
+	result, err := LookupAddressWithCustomDNS("google.com", "1.1.1.1", "udp", 0xe1f1)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, result[0])
 	assert.NotEmpty(t, result[1])

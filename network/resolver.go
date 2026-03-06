@@ -1,11 +1,11 @@
 package network
 
 import (
+	"errors"
 	"fmt"
 	"net/netip"
 	"sync"
 
-	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 )
@@ -13,15 +13,15 @@ import (
 // Resolver is a DNSResolver implementation wrapping each DHCP request with
 // allowing and blocking firewall rules
 type Resolver struct {
-	fw      firewall.Service
 	servers dns.Getter
+	fwmark  uint32
 	sync.Mutex
 }
 
-func NewResolver(fw firewall.Service, servers dns.Getter) *Resolver {
+func NewResolver(servers dns.Getter, fwmark uint32) *Resolver {
 	return &Resolver{
-		fw:      fw,
 		servers: servers,
+		fwmark:  fwmark,
 	}
 }
 
@@ -38,48 +38,17 @@ func (r *Resolver) ResolveWithNameservers(domain string, nameservers []netip.Add
 	r.Lock()
 	defer r.Unlock()
 
-	err := allowlistIP(r.fw, "allow_dns", nameservers...)
-	if err != nil {
-		return nil, fmt.Errorf("allowlisting DNS IP addresses %+v: %w", nameservers, err)
-	}
-	defer r.fw.Delete([]string{"allow_dns"}) // ignore error here
 	// get the addresses from DNS
 	var ipAddrs []netip.Addr
+	var err error
 	for _, nameserver := range nameservers {
-		ipAddrs, err = LookupAddressWithCustomDNS(domain, nameserver.String(), protocol)
+		ipAddrs, err = LookupAddressWithCustomDNS(domain, nameserver.String(), protocol, r.fwmark)
 		if err == nil {
-			break
+			return ipAddrs, nil
 		}
 	}
-	if err != nil {
-		return nil, fmt.Errorf("looking address up: %w", err)
-	}
-	return ipAddrs, nil
-}
 
-func allowlistIP(fw firewall.Service, name string, ips ...netip.Addr) error {
-	ifaces, err := device.OutsideCapableTrafficInterfaces()
-	if err != nil {
-		return fmt.Errorf("listing physical interfaces: %w", err)
-	}
-
-	var networks []netip.Prefix
-	for _, ip := range ips {
-		networks = append(networks, netip.PrefixFrom(ip, ip.BitLen()))
-	}
-	if err := fw.Add([]firewall.Rule{
-		{
-			Name:           name,
-			RemoteNetworks: networks,
-			Interfaces:     ifaces,
-			Direction:      firewall.TwoWay,
-			Allow:          true,
-			Physical:       true,
-		},
-	}); err != nil {
-		return fmt.Errorf("adding firewall rule %s for %+v: %w", name, ips, err)
-	}
-	return nil
+	return nil, fmt.Errorf("looking address up: %w", err)
 }
 
 // ResolverChain tries each resolver until the first successful one.
@@ -115,17 +84,5 @@ func NewPingConnectionChecker(fw firewall.Service) PingConnectionChecker {
 }
 
 func (c PingConnectionChecker) Resolve(endpointIP netip.Addr) ([]netip.Addr, error) {
-	if err := allowlistIP(c.fw, "allow_ping", endpointIP); err != nil {
-		return nil, err
-	}
-	defer c.fw.Delete([]string{"allow_ping"})
-
-	var err error
-	for i := 0; i < 3; i++ {
-		err = Ping(endpointIP.String(), 1)
-		if err == nil {
-			return []netip.Addr{endpointIP}, nil
-		}
-	}
-	return nil, err
+	return nil, errors.New("Not implemeted")
 }
