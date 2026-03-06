@@ -356,5 +356,6 @@ func (d *DNSMethodSetter) Unset(iface string) error {
 // RestoreDNS try to restore resolv.conf if target file contains Nordvpn changes
 func RestoreDNS() {
 	tryToRestoreDNS()
+	// #nosec G104 -- the operation is expected to fail in most cases
 	newNMCli().removeConfigFile()
 }
