@@ -14,6 +14,7 @@ type MockDaemonClient struct {
 	GroupsResponse    []*pb.ServerGroup
 	CountriesResponse []*pb.ServerGroup
 	PingFn            func() (*pb.PingResponse, error)
+	LoginWithTokenFn  func(ctx context.Context, in *pb.LoginWithTokenRequest) (*pb.LoginResponse, error)
 }
 
 func (c MockDaemonClient) Cities(ctx context.Context, in *pb.CitiesRequest, opts ...grpc.CallOption) (*pb.ServerGroupsList, error) {
@@ -59,4 +60,11 @@ func (c MockDaemonClient) Groups(ctx context.Context, in *pb.Empty, opts ...grpc
 
 func (c MockDaemonClient) Ping(ctx context.Context, in *pb.Empty, opts ...grpc.CallOption) (*pb.PingResponse, error) {
 	return c.PingFn()
+}
+
+func (c MockDaemonClient) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest, opts ...grpc.CallOption) (*pb.LoginResponse, error) {
+	if c.LoginWithTokenFn != nil {
+		return c.LoginWithTokenFn(ctx, in)
+	}
+	return &pb.LoginResponse{Type: internal.CodeSuccess}, nil
 }
