@@ -1216,14 +1216,11 @@ func getHostsFromConfig(peers mesh.MachinePeers) dns.Hosts {
 	return hosts
 }
 
-// TODO NFT: need to adjust logic possibly in nft
 func (netw *Combined) SetLanDiscovery(enabled bool) {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
 	netw.lanDiscovery = enabled
-
-	// lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
 
 	// if routing rules were set - they will be adjusted as needed
 	if netw.isMeshnetSet || netw.isVpnSet {

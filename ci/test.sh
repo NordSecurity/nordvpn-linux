@@ -16,7 +16,7 @@ parallel=""
 
 # In case 'full' was specified, do not exclude anything and run
 # everything
-if [ "full" = "full" ]; then
+if [ "${1:-""}" = "full" ]; then
 	# Apply moose patch in case compiling with moose
 	trap '${WORKDIR}/ci/remove_private_bindings.sh moose/events; ${WORKDIR}/ci/remove_private_bindings.sh moose/worker;' EXIT
 	source "${WORKDIR}"/ci/add_private_bindings.sh moose/events ./third-party/moose-events/moosenordvpnappgo/v18
