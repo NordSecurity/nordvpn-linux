@@ -96,10 +96,31 @@ func (c *cmd) login(requestType pb.LoginType) error {
 }
 
 func (c *cmd) loginWithToken(ctx *cli.Context) error {
-	// nordvpn login --token b50fc06c2bf6331522c1ef5f1d449ca99b818a16ef10253d67b4a4804d9x0xd6
-	token := ctx.Args().First()
-	if token == "" {
-		return formatError(errors.New(client.TokenLoginFailure))
+	// check if token was provided as CLI argument
+	rawToken := ctx.Args().First()
+
+	var token string
+	var err error
+
+	if rawToken != "" {
+		// token provided as an argument (backwards compatibility)
+		token, err = validateToken(rawToken)
+	} else {
+		// use interactive secure prompt
+		token, err = readTokenFromTerminal()
+	}
+
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrStdinNotTerminal):
+			return formatError(errors.New(client.TokenInputNotTerminal))
+		case errors.Is(err, ErrTokenEmpty):
+			return formatError(errors.New(client.TokenLoginFailure))
+		case errors.Is(err, ErrTokenTooLong):
+			return formatError(errors.New(client.TokenInvalid))
+		default:
+			return formatError(err)
+		}
 	}
 
 	resp, err := c.client.LoginWithToken(context.Background(), &pb.LoginWithTokenRequest{
