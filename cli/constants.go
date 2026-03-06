@@ -9,6 +9,8 @@ const (
 	ConfigFilePath = ConfigDirName + "nordvpn.conf"
 	// AllowlistProtocol defines allowlist commands argument
 	AllowlistProtocol = "protocol"
+	// MaxTokenLength defines the maximum allowed length for authentication tokens.
+	MaxTokenLength = 1024
 )
 
 const (
