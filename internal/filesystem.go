@@ -46,6 +46,9 @@ type FileSystemHandle interface {
 	// Creates the file if it doesn't exist, or truncates it if it does.
 	// Returns any error encountered during the write operation.
 	WriteFile(string, []byte, fs.FileMode) error
+
+	// Remove removes file under the given location.
+	Remove(location string) error
 }
 
 type StdFilesystemHandle struct{}
@@ -72,6 +75,10 @@ func (StdFilesystemHandle) WriteFile(location string, data []byte, mode fs.FileM
 		return err
 	}
 	return os.WriteFile(location, data, mode)
+}
+
+func (StdFilesystemHandle) Remove(location string) error {
+	return os.Remove(location)
 }
 
 // systemDFile returns a `os.systemDFile` object for
