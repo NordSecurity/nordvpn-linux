@@ -86,7 +86,7 @@ func (StdFilesystemHandle) Remove(location string) error {
 }
 
 func (StdFilesystemHandle) Readdirnames(location string) (names []string, err error) {
-	file, err := os.OpenFile(location, os.O_RDONLY, 0)
+	file, err := os.Open(location)
 	if err != nil {
 		return []string{}, fmt.Errorf("opening file: %w", err)
 	}

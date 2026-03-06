@@ -14,7 +14,8 @@ import (
 const (
 	execNMCli                   = "nmcli"
 	networkManagerConfigDirPath = "/etc/NetworkManager/conf.d/"
-	// prefix filename with zz- to guarantee high lexographical order/priority
+	// NetworkManager will load the config files in lexicographical order. Prefixing the file name with zz- ensures a
+	// high priority.
 	networkManagerConfigFilename = "zz-nordvpn-dns.conf"
 	networkManagerConfigFilePath = networkManagerConfigDirPath + networkManagerConfigFilename
 )
@@ -64,7 +65,7 @@ func (n *NMCli) higherPriorityFileExists() (bool, error) {
 }
 
 // Set attempts to configure DNS by creating a NetworkManager configuration file with a global DNS config and reloading
-// the general config.
+// the general NetworkManager config.
 func (n *NMCli) Set(iface string, nameservers []string) error {
 	if len(nameservers) == 0 {
 		return errors.New("empty nameservers slice was provided")
@@ -105,6 +106,8 @@ servers=%s`, strings.Join(nameservers, ","))
 	return nil
 }
 
+// Unset attempts to unset DNS configuration by removing the config file created by Set and reloading the general
+// NewtorkManager config.
 func (n *NMCli) Unset(iface string) error {
 	if err := n.removeConfigFile(); err != nil {
 		return fmt.Errorf("removing config file: %w", err)
