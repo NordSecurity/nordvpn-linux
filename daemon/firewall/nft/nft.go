@@ -117,7 +117,7 @@ func (n *nft) configure(config firewall.Config) error {
 	}
 
 	var udpPorts *nftables.Set
-	if len(config.Allowlist.Ports.TCP) > 0 {
+	if len(config.Allowlist.Ports.UDP) > 0 {
 		udpPorts = &nftables.Set{
 			Table:    table,
 			Name:     udpAllowlistSetName,
