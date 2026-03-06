@@ -31,6 +31,7 @@ const (
 	allowIncomingConnectionPeersSet = "allow_incoming_connections"
 	allowTrafficRoutingPeersSet     = "allow_peer_traffic_routing"
 	lanAccessPeersSet               = "peer_local_network_access"
+	defaultDnsPort                  = 53
 )
 
 // nft class is responsible to configure the firewall using the nftables.
@@ -79,9 +80,9 @@ func (n *nft) configure(config firewall.Config) error {
 	elems := []nftables.SetElement{
 		{Key: ifname("lo")},
 	}
-
-	if len(config.TunnelInterface) > 0 {
-		if len(config.TunnelInterface) > unix.IFNAMSIZ {
+	tunInterfaceLen := len(config.TunnelInterface)
+	if tunInterfaceLen > 0 {
+		if tunInterfaceLen > unix.IFNAMSIZ {
 			return fmt.Errorf("interface name is too long: %s", config.TunnelInterface)
 		}
 		elems = append(elems, nftables.SetElement{Key: ifname(config.TunnelInterface)})
@@ -117,7 +118,7 @@ func (n *nft) configure(config firewall.Config) error {
 	}
 
 	var udpPorts *nftables.Set
-	if len(config.Allowlist.Ports.TCP) > 0 {
+	if len(config.Allowlist.Ports.UDP) > 0 {
 		udpPorts = &nftables.Set{
 			Table:    table,
 			Name:     udpAllowlistSetName,
@@ -157,9 +158,9 @@ func (n *nft) configure(config firewall.Config) error {
 		}
 	}
 
-	if err := n.conn.Flush(); err != nil {
-		return err
-	}
+	// if err := n.conn.Flush(); err != nil {
+	// 	return err
+	// }
 
 	n.addPreRouting(table, allowlistSubnets, udpPorts, tcpPorts)
 	n.addInput(config, table, excludedInterfaces, fileshare, allowedIncomingConnections)
@@ -219,7 +220,7 @@ func (n *nft) addPreRouting(
 	}
 
 	if udpPortsSet != nil {
-		// udp sport @ports_tcp meta mark set 0xe1f1 accept
+		// udp sport @ports_udp meta mark set 0xe1f1 accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
 			Chain: preRoutingChain,
@@ -253,9 +254,9 @@ func (n *nft) addInput(
 	filesharePeers *nftables.Set,
 	allowIncomingConnections *nftables.Set,
 ) {
-	dropPolicy := nftables.ChainPolicyAccept
+	chainPolicy := nftables.ChainPolicyAccept
 	if config.IsVpnOrKillSwitchSet() {
-		dropPolicy = nftables.ChainPolicyDrop
+		chainPolicy = nftables.ChainPolicyDrop
 	}
 
 	inputChain := n.conn.AddChain(&nftables.Chain{
@@ -264,7 +265,7 @@ func (n *nft) addInput(
 		Type:     nftables.ChainTypeFilter,
 		Hooknum:  nftables.ChainHookInput,
 		Priority: nftables.ChainPriorityFilter,
-		Policy:   &dropPolicy,
+		Policy:   &chainPolicy,
 	})
 
 	n.conn.AddRule(&nftables.Rule{
@@ -373,9 +374,9 @@ func (n *nft) addOutput(
 	tcpPortsSet *nftables.Set,
 	lanPrivateRanges *nftables.Set,
 ) {
-	dropPolicy := nftables.ChainPolicyAccept
+	chainPolicy := nftables.ChainPolicyAccept
 	if config.IsVpnOrKillSwitchSet() {
-		dropPolicy = nftables.ChainPolicyDrop
+		chainPolicy = nftables.ChainPolicyDrop
 	}
 
 	outputChain := n.conn.AddChain(&nftables.Chain{
@@ -384,7 +385,7 @@ func (n *nft) addOutput(
 		Type:     nftables.ChainTypeFilter,
 		Hooknum:  nftables.ChainHookOutput,
 		Priority: nftables.ChainPriorityFilter,
-		Policy:   &dropPolicy,
+		Policy:   &chainPolicy,
 	})
 
 	// oifname @allowed_interfaces accept
@@ -396,7 +397,7 @@ func (n *nft) addOutput(
 
 	// always drop DNS if port 53 not whitelisted
 	if config.IsVpnOrKillSwitchSet() {
-		if !config.Allowlist.Ports.TCP[53] {
+		if !config.Allowlist.Ports.TCP[defaultDnsPort] {
 			// ip daddr @lan_ranges tcp dport 53 drop
 			n.conn.AddRule(&nftables.Rule{
 				Table: table,
@@ -404,20 +405,20 @@ func (n *nft) addOutput(
 				Exprs: buildRules(
 					expr.VerdictDrop,
 					checkIpInSet(lanPrivateRanges, MATCH_DESTINATION),
-					checkPortNumber(53, unix.IPPROTO_TCP, MATCH_DESTINATION),
+					checkPortNumber(defaultDnsPort, unix.IPPROTO_TCP, MATCH_DESTINATION),
 				),
 			})
 		}
 
-		if !config.Allowlist.Ports.UDP[53] {
-			// ip daddr @lan_ranges tcp dport 53 drop
+		if !config.Allowlist.Ports.UDP[defaultDnsPort] {
+			// ip daddr @lan_ranges udp dport 53 drop
 			n.conn.AddRule(&nftables.Rule{
 				Table: table,
 				Chain: outputChain,
 				Exprs: buildRules(
 					expr.VerdictDrop,
 					checkIpInSet(lanPrivateRanges, MATCH_DESTINATION),
-					checkPortNumber(53, unix.IPPROTO_UDP, MATCH_DESTINATION),
+					checkPortNumber(defaultDnsPort, unix.IPPROTO_UDP, MATCH_DESTINATION),
 				),
 			})
 		}
@@ -450,7 +451,7 @@ func (n *nft) addOutput(
 	}
 
 	if udpPortsSet != nil {
-		// udp dport @ports_tcp meta mark set 0xe1f1 accept
+		// udp dport @ports_udp meta mark set 0xe1f1 accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
 			Chain: outputChain,
@@ -505,9 +506,9 @@ func (n *nft) addForward(
 	lanRangesIps *nftables.Set,
 	meshMap *firewall.MeshInfo,
 ) {
-	dropPolicy := nftables.ChainPolicyAccept
+	chainPolicy := nftables.ChainPolicyAccept
 	if config.IsVpnOrKillSwitchSet() {
-		dropPolicy = nftables.ChainPolicyDrop
+		chainPolicy = nftables.ChainPolicyDrop
 	}
 
 	forwardChain := n.conn.AddChain(&nftables.Chain{
@@ -516,7 +517,7 @@ func (n *nft) addForward(
 		Type:     nftables.ChainTypeFilter,
 		Hooknum:  nftables.ChainHookForward,
 		Priority: nftables.ChainPriorityFilter,
-		Policy:   &dropPolicy,
+		Policy:   &chainPolicy,
 	})
 
 	if allowedSubnets != nil {
@@ -545,7 +546,7 @@ func (n *nft) addForward(
 	}
 
 	if udpPortsSet != nil {
-		// udp dport @ports_tcp meta mark set 0xe1f1 accept
+		// udp dport @ports_udp meta mark set 0xe1f1 accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
 			Chain: forwardChain,
@@ -672,12 +673,7 @@ func (n *nft) buildLanRangesSet(table *nftables.Table) (*nftables.Set, error) {
 		Constant: true,
 	}
 
-	elems, err := convertCidrToSetElements([]string{
-		"10.0.0.0/8",
-		"172.16.0.0/12",
-		"192.168.0.0/16",
-		"169.254.0.0/16",
-	})
+	elems, err := convertCidrToSetElements(internal.LocalNetworks)
 	if err != nil {
 		return nil, err
 	}
@@ -827,7 +823,7 @@ func (n *nft) buildAllowlistSubnets(table *nftables.Table, allowlist config.Allo
 		)
 	}
 	if err := n.conn.AddSet(set, elements); err != nil {
-		return nil, fmt.Errorf("add allowlist set: %v", err)
+		return nil, fmt.Errorf("add allowlist set: %w", err)
 	}
 
 	return set, nil

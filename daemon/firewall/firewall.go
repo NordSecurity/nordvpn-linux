@@ -20,12 +20,12 @@ const (
 // Thread-safe.
 type Firewall struct {
 	mu      sync.Mutex
-	impl    FirewallImpl
+	impl    FirewallBackend
 	enabled bool
 }
 
 // NewFirewall produces an instance of Firewall.
-func NewFirewall(impl FirewallImpl, enabled bool) *Firewall {
+func NewFirewall(impl FirewallBackend, enabled bool) *Firewall {
 	return &Firewall{
 		impl:    impl,
 		enabled: enabled,
@@ -65,7 +65,7 @@ func (fw *Firewall) Disable() error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
-	log.Println(internal.InfoPrefix, logPrefix, "disable firewall, older status:", fw.enabled)
+	log.Println(internal.InfoPrefix, logPrefix, "disable firewall")
 
 	if !fw.enabled {
 		return errors.New("firewall already disabled")

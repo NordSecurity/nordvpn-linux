@@ -15,7 +15,7 @@ type Service interface {
 	Enable() error
 }
 
-type FirewallImpl interface {
+type FirewallBackend interface {
 	Configure(config Config) error
 	Flush() error
 }

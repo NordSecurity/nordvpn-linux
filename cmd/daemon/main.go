@@ -202,8 +202,9 @@ func main() {
 	dns.RestoreResolvConfFile()
 
 	// Firewall
-	nftImpl := nft.New(cfg.FirewallMark)
-	fw := firewall.NewFirewall(nftImpl, cfg.Firewall)
+	fw := firewall.NewFirewall(
+		nft.New(cfg.FirewallMark),
+		cfg.Firewall)
 
 	// API
 	var err error
