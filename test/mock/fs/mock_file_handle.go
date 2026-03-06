@@ -64,6 +64,8 @@ func (fm *SystemFileHandleMock) Remove(location string) error {
 		return fm.RemoveErr
 	}
 
+	delete(fm.files, location)
+
 	return nil
 }
 

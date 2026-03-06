@@ -26,12 +26,12 @@ const (
 	trayClientString = "tray"
 )
 
-type CliendIDMiddleware struct {
+type ClientIDMiddleware struct {
 	publisher events.Publisher[events.UiItemsAction]
 }
 
-func NewClientIDMiddleware(publisher events.Publisher[events.UiItemsAction]) CliendIDMiddleware {
-	return CliendIDMiddleware{
+func NewClientIDMiddleware(publisher events.Publisher[events.UiItemsAction]) ClientIDMiddleware {
+	return ClientIDMiddleware{
 		publisher: publisher,
 	}
 }
@@ -79,7 +79,7 @@ func parseClientID(clientID string) (string, error) {
 	return clientString, nil
 }
 
-func (c *CliendIDMiddleware) notifyAboutClickEvent(ctx context.Context, fullMethod string) {
+func (c *ClientIDMiddleware) notifyAboutClickEvent(ctx context.Context, fullMethod string) {
 	itemName := fullMethodNameToItemName(fullMethod)
 	if itemName == "" {
 		return
@@ -110,7 +110,7 @@ func (c *CliendIDMiddleware) notifyAboutClickEvent(ctx context.Context, fullMeth
 	})
 }
 
-func (c *CliendIDMiddleware) UnaryMiddleware(
+func (c *ClientIDMiddleware) UnaryMiddleware(
 	ctx context.Context,
 	req interface{},
 	info *grpc.UnaryServerInfo) (interface{}, error) {
@@ -119,7 +119,7 @@ func (c *CliendIDMiddleware) UnaryMiddleware(
 	return nil, nil
 }
 
-func (c *CliendIDMiddleware) StreamMiddleware(srv interface{},
+func (c *ClientIDMiddleware) StreamMiddleware(srv interface{},
 	ss grpc.ServerStream,
 	info *grpc.StreamServerInfo) error {
 	c.notifyAboutClickEvent(ss.Context(), info.FullMethod)

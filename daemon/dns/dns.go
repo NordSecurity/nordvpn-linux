@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -356,6 +357,7 @@ func (d *DNSMethodSetter) Unset(iface string) error {
 // RestoreDNS try to restore resolv.conf if target file contains Nordvpn changes
 func RestoreDNS() {
 	tryToRestoreDNS()
-	// #nosec G104 -- the operation is expected to fail in most cases
-	newNMCli().removeConfigFile()
+	if err := newNMCli().Unset(""); err != nil && !errors.Is(err, os.ErrNotExist) {
+		log.Println(internal.ErrorPrefix, dnsPrefix, "found old NetworkManager config but failed to clean it up:", err)
+	}
 }

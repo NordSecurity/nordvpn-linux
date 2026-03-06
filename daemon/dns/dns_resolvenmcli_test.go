@@ -15,8 +15,8 @@ func generateConfig(t *testing.T, servers ...string) string {
 	t.Helper()
 
 	configTemplate := `[global-dns-domain-*]
-
-servers=%s`
+servers=%s
+`
 
 	return fmt.Sprintf(configTemplate, strings.Join(servers, ","))
 }
@@ -55,6 +55,14 @@ func Test_NMCliSetUnset(t *testing.T) {
 			name:                 "other config files in directory are of lower priority",
 			dnsServers:           []string{"1.1.1.1"},
 			otherConfigFiles:     []string{"z-other-file.conf", "99-nordvpn-dns.conf"},
+			expectedFileContents: generateConfig(t, "1.1.1.1"),
+			shouldSetFail:        false,
+			shouldUnsetFail:      false,
+		},
+		{
+			name:                 "config already exists",
+			dnsServers:           []string{"1.1.1.1"},
+			otherConfigFiles:     []string{"z-other-file.conf", "zz-nordvpn-dns.conf"},
 			expectedFileContents: generateConfig(t, "1.1.1.1"),
 			shouldSetFail:        false,
 			shouldUnsetFail:      false,
@@ -154,7 +162,7 @@ func Test_NMCliSetUnset(t *testing.T) {
 			} else {
 				assert.Nil(t, err, "Unexpected error returned by Unset.")
 				_, ok := mockFs.GetFile(networkManagerConfigFilePath)
-				assert.True(t, ok, "File was not removed after Unset.")
+				assert.False(t, ok, "File was not removed after Unset.")
 			}
 		})
 	}

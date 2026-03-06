@@ -65,16 +65,20 @@ func (n *NMCli) removeConfigFile() error {
 // higherPriorityFileExists returns true if a config file with higher priority(i.e lexicographically greater) exists
 // within the NetworkManager config directory.
 func (n *NMCli) higherPriorityFileExists() (bool, error) {
-	directoryNames, err := n.getConfigFilesFunc()
+	configFileNames, err := n.getConfigFilesFunc()
 	if err != nil {
 		return false, fmt.Errorf("reading directory names: %w", err)
 	}
 
-	if len(directoryNames) == 0 {
+	configFileNames = slices.DeleteFunc(configFileNames, func(filename string) bool {
+		return filename == networkManagerConfigFilename
+	})
+
+	if len(configFileNames) == 0 {
 		return false, nil
 	}
 
-	largestFilename := slices.Max(directoryNames)
+	largestFilename := slices.Max(configFileNames)
 
 	return strings.Compare(largestFilename, networkManagerConfigFilename) == 1, nil
 }
@@ -96,9 +100,7 @@ func (n *NMCli) Set(iface string, nameservers []string) error {
 		return errCannotGuaranteeConfig
 	}
 
-	configContents := fmt.Sprintf(`[global-dns-domain-*]
-
-servers=%s`, strings.Join(nameservers, ","))
+	configContents := fmt.Sprintf("[global-dns-domain-*]\nservers=%s\n", strings.Join(nameservers, ","))
 
 	if err := n.filesystemHandle.WriteFile(networkManagerConfigFilePath,
 		[]byte(configContents),
@@ -112,8 +114,8 @@ servers=%s`, strings.Join(nameservers, ","))
 			"failed to reload after adding a config file NetworkManager, command output:",
 			strings.TrimSpace(string(out)))
 
-		if err := n.removeConfigFile(); err != nil {
-			log.Println(internal.ErrorPrefix, dnsPrefix, "removing config file after a failed reload operation:", err)
+		if revertErr := n.removeConfigFile(); revertErr != nil {
+			err = errors.Join(err, revertErr)
 		}
 		return fmt.Errorf("failed to reload NetworkManager config: %w", err)
 	}
