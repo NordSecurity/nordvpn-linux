@@ -2,7 +2,7 @@
 package ipv6
 
 import (
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"

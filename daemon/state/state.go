@@ -2,7 +2,7 @@ package state
 
 import (
 	"context"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"sync"
 	"time"
 

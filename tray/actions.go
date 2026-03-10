@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"os"
 	"os/exec"
 	"os/signal"

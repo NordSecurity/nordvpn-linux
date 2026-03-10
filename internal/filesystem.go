@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"net"
 	"os"
 	"os/exec"

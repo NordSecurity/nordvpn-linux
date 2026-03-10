@@ -1,7 +1,7 @@
 package sysinfo
 
 import (
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"os/exec"
 	"strings"
 

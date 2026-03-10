@@ -2,7 +2,7 @@ package daemon
 
 import (
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"os"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"

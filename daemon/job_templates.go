@@ -2,7 +2,7 @@ package daemon
 
 import (
 	"encoding/hex"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"net/http"
 
 	"github.com/NordSecurity/nordvpn-linux/core"

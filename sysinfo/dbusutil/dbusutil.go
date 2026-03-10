@@ -2,7 +2,7 @@ package dbusutil
 
 import (
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/godbus/dbus/v5"

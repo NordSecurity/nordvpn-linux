@@ -5,7 +5,7 @@ package firewall
 
 import (
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/events"

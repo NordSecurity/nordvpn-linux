@@ -3,13 +3,13 @@ package dns
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"slices"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 const (

@@ -1,7 +1,7 @@
 package daemon
 
 import (
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"

@@ -2,7 +2,7 @@ package norduser
 
 import (
 	"context"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"os/user"
 	"strconv"
 

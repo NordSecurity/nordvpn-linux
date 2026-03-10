@@ -3,7 +3,7 @@ package daemon
 import (
 	"errors"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"math/rand"
 	"net/http"
 	"regexp"

@@ -2,7 +2,7 @@ package category
 
 import (
 	"flag"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"strings"
 	"testing"
 

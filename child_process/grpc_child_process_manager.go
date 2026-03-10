@@ -3,7 +3,7 @@ package childprocess
 import (
 	"errors"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"os/exec"
 	"strings"
 
