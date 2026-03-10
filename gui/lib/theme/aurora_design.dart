@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 // --- 1. Core Colors ---
 // This class defines the base color palette using hexadecimal values.
 final class AppCoreColors {
-  final Color transparent = Color(
-    0x00000000,
-  ); // Represents a fully transparent color.
+  final Color transparent = Color(0x00000000); // Represents a fully transparent color.
 
   // Neutral shades from 0 (white) to 1000 (darkest black).
   final Color neutral0 = Color(0xFFFFFFFF);
@@ -93,8 +91,23 @@ abstract class SemanticColors {
   Color get bgSecondaryActive;
   Color get bgAccentActive;
   Color get bgOverlay;
+  Color get bgGlass;
   Color get bgInverse;
   Color get bgInverseActive;
+  Color get bgGradientPrimaryStart;
+  Color get bgGradientPrimaryEnd;
+  Color get bgGradientSecondaryStart;
+  Color get bgGradientSecondaryEnd;
+  Color get bgSkeletonStart;
+  Color get bgSkeletonEnd;
+  Color get bgChartData1;
+  Color get bgChartData2;
+  Color get bgChartData3;
+  Color get bgChartData4;
+  Color get bgChartData5;
+  Color get bgChartData6;
+  Color get bgChartData7;
+  Color get bgChartData8;
 
   // Border colors for the light theme.
   Color get borderPrimary;
@@ -175,10 +188,55 @@ final class AppSemanticColorsLight implements SemanticColors {
   Color get bgOverlay => Color(0x80141415);
 
   @override
+  Color get bgGlass => Color(0xB3F7F7F8);
+
+  @override
   Color get bgInverse => appCoreColors.neutral950;
 
   @override
   Color get bgInverseActive => appCoreColors.neutral800;
+
+  @override
+  Color get bgGradientPrimaryStart => appCoreColors.neutral100;
+
+  @override
+  Color get bgGradientPrimaryEnd => Color(0x00F7F7F8);
+
+  @override
+  Color get bgGradientSecondaryStart => appCoreColors.neutral0;
+
+  @override
+  Color get bgGradientSecondaryEnd => Color(0x00FFFFFF);
+
+  @override
+  Color get bgSkeletonStart => appCoreColors.neutral150;
+
+  @override
+  Color get bgSkeletonEnd => appCoreColors.neutral200;
+
+  @override
+  Color get bgChartData1 => Color(0xFF6387EE);
+
+  @override
+  Color get bgChartData2 => Color(0xFFEC6255);
+
+  @override
+  Color get bgChartData3 => Color(0xFFBA8555);
+
+  @override
+  Color get bgChartData4 => Color(0xFFE85E83);
+
+  @override
+  Color get bgChartData5 => Color(0xFFE4700C);
+
+  @override
+  Color get bgChartData6 => Color(0xFF3A9E85);
+
+  @override
+  Color get bgChartData7 => Color(0xFF967CC2);
+
+  @override
+  Color get bgChartData8 => Color(0xFF909192);
 
   // Border colors for the light theme.
   @override
@@ -254,7 +312,7 @@ final class AppSemanticColorsDark implements SemanticColors {
   Color get bgAccent => appCoreColors.blue600;
 
   @override
-  Color get bgAccentSubtle => appCoreColors.blue950;
+  Color get bgAccentSubtle => appCoreColors.blue900;
 
   @override
   Color get bgDisabled => appCoreColors.neutral800;
@@ -290,13 +348,57 @@ final class AppSemanticColorsDark implements SemanticColors {
   Color get bgOverlay => Color(0x80141415);
 
   @override
+  Color get bgGlass => Color(0xB3141415);
+
+  @override
   Color get bgInverse => appCoreColors.neutral0;
 
   @override
   Color get bgInverseActive => appCoreColors.neutral200;
 
-  // Border colors for the dark theme.
+  @override
+  Color get bgGradientPrimaryStart => appCoreColors.neutral1000;
 
+  @override
+  Color get bgGradientPrimaryEnd => Color(0x00141415);
+
+  @override
+  Color get bgGradientSecondaryStart => appCoreColors.neutral950;
+
+  @override
+  Color get bgGradientSecondaryEnd => Color(0x001D1E20);
+
+  @override
+  Color get bgSkeletonStart => appCoreColors.neutral900;
+
+  @override
+  Color get bgSkeletonEnd => appCoreColors.neutral800;
+
+  @override
+  Color get bgChartData1 => Color(0xFF6387EE);
+
+  @override
+  Color get bgChartData2 => Color(0xFFEC6255);
+
+  @override
+  Color get bgChartData3 => Color(0xFFBA8555);
+
+  @override
+  Color get bgChartData4 => Color(0xFFE85E83);
+
+  @override
+  Color get bgChartData5 => Color(0xFFE4700C);
+
+  @override
+  Color get bgChartData6 => Color(0xFF3A9E85);
+
+  @override
+  Color get bgChartData7 => Color(0xFF967CC2);
+
+  @override
+  Color get bgChartData8 => Color(0xFF909192);
+
+  // Border colors for the dark theme.
   @override
   Color get borderPrimary => appCoreColors.neutral700;
 
@@ -322,7 +424,6 @@ final class AppSemanticColorsDark implements SemanticColors {
   Color get borderAccentActive => appCoreColors.blue700;
 
   // Text colors for the dark theme.
-
   @override
   Color get textPrimary => appCoreColors.neutral0;
 
@@ -330,7 +431,7 @@ final class AppSemanticColorsDark implements SemanticColors {
   Color get textSecondary => appCoreColors.neutral500;
 
   @override
-  Color get textAccent => appCoreColors.blue600;
+  Color get textAccent => appCoreColors.blue500;
 
   @override
   Color get textPrimaryOnColor => appCoreColors.neutral0;
@@ -348,7 +449,7 @@ final class AppSemanticColorsDark implements SemanticColors {
   Color get textWarning => appCoreColors.yellow300;
 
   @override
-  Color get textCritical => appCoreColors.red500;
+  Color get textCritical => appCoreColors.red400;
 
   @override
   Color get textAccentActive => appCoreColors.blue400;
@@ -545,7 +646,7 @@ final class AppTypography {
 
   final TextStyle bodyMdBold = TextStyle(
     fontFamily: fontFamilyBody,
-    fontWeight: FontWeight.bold,
+    fontWeight: fontWeightBold,
     fontSize: fontSizeMd,
     letterSpacing: letterSpacingMd,
     height: 22 / (1.0 * 16),
@@ -561,9 +662,7 @@ final class AppTypography {
 
   final TextStyle bodySmMedium = TextStyle(
     fontFamily: fontFamilyBody,
-    // fontWeight: FontWeight.medium,
-    // TODO: change it
-    fontWeight: FontWeight.normal,
+    fontWeight: fontWeightMedium,
     fontSize: fontSizeSm,
     letterSpacing: letterSpacingMd,
     height: 20 / (0.875 * 16),
@@ -571,7 +670,7 @@ final class AppTypography {
 
   final TextStyle bodySmBold = TextStyle(
     fontFamily: fontFamilyBody,
-    fontWeight: FontWeight.bold,
+    fontWeight: fontWeightBold,
     fontSize: fontSizeSm,
     letterSpacing: letterSpacingMd,
     height: 20 / (0.875 * 16),
@@ -579,7 +678,7 @@ final class AppTypography {
 
   final TextStyle bodyXs = TextStyle(
     fontFamily: fontFamilyBody,
-    fontWeight: FontWeight.normal,
+    fontWeight: fontWeightNormal,
     fontSize: fontSizeXs,
     letterSpacing: letterSpacingMd,
     height: 18 / (0.75 * 16),
@@ -587,9 +686,7 @@ final class AppTypography {
 
   final TextStyle bodyXsMedium = TextStyle(
     fontFamily: fontFamilyBody,
-    // fontWeight: FontWeight.medium,
-    // TODO: change it
-    fontWeight: FontWeight.normal,
+    fontWeight: fontWeightMedium,
     fontSize: fontSizeXs,
     letterSpacing: letterSpacingMd,
     height: 18 / (0.75 * 16),
@@ -597,7 +694,7 @@ final class AppTypography {
 
   final TextStyle bodyXsBold = TextStyle(
     fontFamily: fontFamilyBody,
-    fontWeight: FontWeight.bold,
+    fontWeight: fontWeightBold,
     fontSize: fontSizeXs,
     letterSpacing: letterSpacingMd,
     height: 18 / (0.75 * 16),
@@ -605,7 +702,7 @@ final class AppTypography {
 
   final TextStyle body2xs = TextStyle(
     fontFamily: fontFamilyBody,
-    fontWeight: FontWeight.normal,
+    fontWeight: fontWeightNormal,
     fontSize: fontSize2xs,
     letterSpacing: letterSpacingMd,
     height: 18 / (0.6875 * 16),
@@ -613,9 +710,7 @@ final class AppTypography {
 
   final TextStyle body2xsMedium = TextStyle(
     fontFamily: fontFamilyBody,
-    // fontWeight: FontWeight.medium,
-    // TODO: change it
-    fontWeight: FontWeight.normal,
+    fontWeight: fontWeightMedium,
     fontSize: fontSize2xs,
     letterSpacing: letterSpacingMd,
     height: 18 / (0.6875 * 16),
@@ -623,7 +718,7 @@ final class AppTypography {
 
   final TextStyle body2xsBold = TextStyle(
     fontFamily: fontFamilyBody,
-    fontWeight: FontWeight.bold,
+    fontWeight: fontWeightBold,
     fontSize: fontSize2xs,
     letterSpacing: letterSpacingMd,
     height: 18 / (0.6875 * 16),
@@ -751,10 +846,46 @@ final class AppBoxShadows {
   ];
   static List<BoxShadow> lightBevel = const [
     BoxShadow(
-      offset: Offset(0, 0.5),
-      blurRadius: 0,
+      offset: Offset(0, 2),
+      blurRadius: 8,
       spreadRadius: 0,
-      color: Color.fromRGBO(255, 255, 255, 0.16),
+      color: Color.fromRGBO(0, 0, 0, 0.04),
+    ),
+  ];
+  static List<BoxShadow> lightAppIconFeature = const [
+    BoxShadow(
+      offset: Offset(0, 2),
+      blurRadius: 3,
+      spreadRadius: 0,
+      color: Color.fromRGBO(0, 0, 0, 0.2),
+    ),
+  ];
+  static List<BoxShadow> lightFocus = const [
+    BoxShadow(
+      offset: Offset(0, 0),
+      blurRadius: 0,
+      spreadRadius: 2,
+      color: Color.fromRGBO(255, 255, 255, 1),
+    ),
+    BoxShadow(
+      offset: Offset(0, 0),
+      blurRadius: 0,
+      spreadRadius: 4,
+      color: Color.fromRGBO(62, 95, 255, 1),
+    ),
+  ];
+  static List<BoxShadow> lightFocusInset = const [
+    BoxShadow(
+      offset: Offset(0, 0),
+      blurRadius: 0,
+      spreadRadius: 2,
+      color: Color.fromRGBO(62, 95, 255, 1),
+    ),
+    BoxShadow(
+      offset: Offset(0, 0),
+      blurRadius: 0,
+      spreadRadius: 4,
+      color: Color.fromRGBO(255, 255, 255, 1),
     ),
   ];
 
@@ -831,6 +962,42 @@ final class AppBoxShadows {
       color: Color.fromRGBO(255, 255, 255, 0.16),
     ),
   ];
+  static List<BoxShadow> darkAppIconFeature = const [
+    BoxShadow(
+      offset: Offset(0, 2),
+      blurRadius: 3,
+      spreadRadius: 0,
+      color: Color.fromRGBO(0, 0, 0, 0.2),
+    ),
+  ];
+  static List<BoxShadow> darkFocus = const [
+    BoxShadow(
+      offset: Offset(0, 0),
+      blurRadius: 0,
+      spreadRadius: 2,
+      color: Color.fromRGBO(255, 255, 255, 1),
+    ),
+    BoxShadow(
+      offset: Offset(0, 0),
+      blurRadius: 0,
+      spreadRadius: 4,
+      color: Color.fromRGBO(62, 95, 255, 1),
+    ),
+  ];
+  static List<BoxShadow> darkFocusInset = const [
+    BoxShadow(
+      offset: Offset(0, 0),
+      blurRadius: 0,
+      spreadRadius: 2,
+      color: Color.fromRGBO(62, 95, 255, 1),
+    ),
+    BoxShadow(
+      offset: Offset(0, 0),
+      blurRadius: 0,
+      spreadRadius: 4,
+      color: Color.fromRGBO(255, 255, 255, 1),
+    ),
+  ];
 }
 
 // --- 8. Opacity ---
@@ -842,6 +1009,16 @@ final class AppOpacity {
   static const double o25 = 0.25;
   static const double o50 = 0.5;
   static const double o100 = 1.0;
+}
+
+// --- 8.5. Blur ---
+// This class defines blur radius values for various blur effects.
+final class AppBlur {
+  const AppBlur._(); // Private constructor to prevent instantiation.
+
+  static const double sm = 8;
+  static const double md = 16;
+  static const double lg = 24;
 }
 
 // --- 9. Transitions ---
@@ -901,6 +1078,9 @@ final class AppDesign {
 
   // Access to opacity values.
   static const AppOpacity opacity = AppOpacity._();
+
+  // Access to blur values.
+  static const AppBlur blur = AppBlur._();
 
   // Access to transition parameters.
   static const AppTransitions transitions = AppTransitions._();
