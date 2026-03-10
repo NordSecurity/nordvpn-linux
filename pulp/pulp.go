@@ -8,11 +8,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"net/http"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 const (

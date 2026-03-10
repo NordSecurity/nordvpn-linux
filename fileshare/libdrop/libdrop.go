@@ -4,12 +4,13 @@ package libdrop
 import (
 	"errors"
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"net/netip"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	norddrop "github.com/NordSecurity/libdrop-go/v9"
 	"github.com/NordSecurity/nordvpn-linux/fileshare"

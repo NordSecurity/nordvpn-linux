@@ -8,13 +8,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"net"
 	"net/netip"
 	"os/exec"
 	"regexp"
 	"sync"
 	"time"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	teliogo "github.com/NordSecurity/libtelio-go/v6"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"

@@ -1,7 +1,6 @@
 package state
 
 import (
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"sync"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
 

@@ -19,7 +19,6 @@ import "C"
 import (
 	"errors"
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"math"
 	"net/http"
 	"net/url"
@@ -38,6 +37,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/telemetry"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo"
 

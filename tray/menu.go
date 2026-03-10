@@ -2,11 +2,12 @@ package tray
 
 import (
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"runtime"
 	"slices"
 	"strings"
 	"time"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"github.com/NordSecurity/systray"
 

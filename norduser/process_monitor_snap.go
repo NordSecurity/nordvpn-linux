@@ -2,10 +2,10 @@ package norduser
 
 import (
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"slices"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/fsnotify/fsnotify"
 )
 

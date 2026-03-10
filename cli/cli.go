@@ -11,8 +11,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/NordSecurity/nordvpn-linux/log"
-
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -20,6 +18,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/nstrings"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"

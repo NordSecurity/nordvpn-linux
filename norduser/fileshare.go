@@ -1,8 +1,9 @@
 package norduser
 
 import (
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"time"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"

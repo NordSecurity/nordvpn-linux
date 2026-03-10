@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"net"
 	"net/netip"
 	"os/exec"
@@ -16,6 +15,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	gopenvpn "github.com/NordSecurity/gopenvpn/openvpn"
 

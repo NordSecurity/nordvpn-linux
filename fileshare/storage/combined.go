@@ -2,12 +2,12 @@ package storage
 
 import (
 	"errors"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"os"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // Combined combines transfers from two storages

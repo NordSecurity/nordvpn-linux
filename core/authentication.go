@@ -5,10 +5,11 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"net/http"
 	"net/url"
 	"sync"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // Authentication is responsible for verifying user's identity.

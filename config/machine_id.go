@@ -3,12 +3,12 @@ package config
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"os"
 	"strings"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/google/uuid"
 )
 

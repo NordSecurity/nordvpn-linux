@@ -3,8 +3,9 @@ package process
 import (
 	"context"
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"os"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

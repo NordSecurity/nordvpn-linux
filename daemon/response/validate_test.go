@@ -2,12 +2,12 @@ package response
 
 import (
 	"crypto/rsa"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"net/http"
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 

@@ -3,6 +3,7 @@ package fileshare_process
 import (
 	"context"
 	"fmt"
+
 	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"google.golang.org/grpc"

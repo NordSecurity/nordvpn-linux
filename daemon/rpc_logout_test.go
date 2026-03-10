@@ -16,7 +16,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	mockconfig "github.com/NordSecurity/nordvpn-linux/test/mock/config"
 	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
-
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 )

@@ -2,11 +2,11 @@ package tray
 
 import (
 	"context"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"google.golang.org/grpc"
 )
 

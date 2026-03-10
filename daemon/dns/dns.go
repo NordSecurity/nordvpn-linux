@@ -6,11 +6,11 @@ package dns
 import (
 	"errors"
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // Setter is responsible for configuring DNS.

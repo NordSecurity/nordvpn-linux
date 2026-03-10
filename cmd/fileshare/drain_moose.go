@@ -3,11 +3,11 @@
 package main
 
 import (
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"os"
 
 	"github.com/NordSecurity/nordvpn-linux/events/moose"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 func drainStart(dbPath string) {

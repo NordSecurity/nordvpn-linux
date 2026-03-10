@@ -2,11 +2,11 @@
 package ipv6
 
 import (
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/kernel"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // Blocker provides idempotent blocking and unblocking.

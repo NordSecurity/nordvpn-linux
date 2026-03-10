@@ -3,7 +3,6 @@ package remote
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"net"
 	"os"
 	"path/filepath"
@@ -16,6 +15,7 @@ import (
 	devents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 )

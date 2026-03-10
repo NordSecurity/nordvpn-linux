@@ -3,11 +3,11 @@ package fileshare
 import (
 	"errors"
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"os/exec"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	inotify "github.com/NordSecurity/nordvpn-linux/notify"
 	"github.com/esiqveland/notify"
 	"github.com/godbus/dbus/v5"
