@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"net"
 	"net/http"
 	"net/netip"

@@ -2,7 +2,7 @@
 package subs
 
 import (
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"

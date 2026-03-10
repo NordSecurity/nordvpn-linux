@@ -54,7 +54,7 @@ int get_utmp_user_processes(user** users) {
 import "C"
 import (
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"unsafe"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"

@@ -2,7 +2,7 @@ package service
 
 import (
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"os/exec"
 	"strconv"
 	"strings"

@@ -5,7 +5,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"net/http"
 	"net/netip"
 	"os"

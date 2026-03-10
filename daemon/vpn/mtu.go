@@ -2,7 +2,7 @@ package vpn
 
 import (
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"net"
 	"syscall"
 

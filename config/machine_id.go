@@ -3,7 +3,7 @@ package config
 import (
 	"crypto/rand"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"os"
 	"strings"
 	"sync"

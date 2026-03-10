@@ -2,7 +2,7 @@ package tray
 
 import (
 	"context"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"

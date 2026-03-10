@@ -2,7 +2,7 @@ package request
 
 import (
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"net/http"
 	"net/url"
 	"strings"

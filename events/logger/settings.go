@@ -2,7 +2,7 @@ package logger
 
 import (
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/config"

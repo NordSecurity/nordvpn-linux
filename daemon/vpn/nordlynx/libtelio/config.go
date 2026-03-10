@@ -2,7 +2,7 @@ package libtelio
 
 import (
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"os"
 	"strings"
 

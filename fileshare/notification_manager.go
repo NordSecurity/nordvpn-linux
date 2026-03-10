@@ -3,7 +3,7 @@ package fileshare
 import (
 	"errors"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"os/exec"
 	"sync"
 

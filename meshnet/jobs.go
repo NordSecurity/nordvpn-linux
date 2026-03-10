@@ -2,7 +2,7 @@ package meshnet
 
 import (
 	"context"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"time"
 
 	"github.com/go-co-op/gocron/v2"

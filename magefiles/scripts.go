@@ -5,7 +5,7 @@ package main
 import (
 	"errors"
 	"go/build"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"os"
 	"strings"
 )

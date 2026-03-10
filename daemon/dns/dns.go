@@ -6,7 +6,7 @@ package dns
 import (
 	"errors"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/events"

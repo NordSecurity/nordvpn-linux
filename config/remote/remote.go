@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"net"
 	"os"
 	"path/filepath"

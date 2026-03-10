@@ -2,7 +2,7 @@ package storage
 
 import (
 	"errors"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"os"
 	"time"
 

@@ -3,7 +3,7 @@ package tray
 import (
 	"errors"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"sync"
 
 	"github.com/esiqveland/notify"

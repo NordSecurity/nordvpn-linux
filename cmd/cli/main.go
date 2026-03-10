@@ -3,7 +3,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
 	"os"
 	"os/user"
@@ -11,6 +10,8 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	"github.com/NordSecurity/nordvpn-linux/cli"
