@@ -2,11 +2,11 @@ package dns
 
 import (
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"os/exec"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // Executables

@@ -2,10 +2,10 @@ package daemon
 
 import (
 	"context"
-	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 func (r *RPC) ClaimOnlinePurchase(ctx context.Context, in *pb.Empty) (*pb.ClaimOnlinePurchaseResponse, error) {

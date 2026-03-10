@@ -2,11 +2,11 @@ package vpn
 
 import (
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"net"
 	"syscall"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 )

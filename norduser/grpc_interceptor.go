@@ -2,11 +2,11 @@ package norduser
 
 import (
 	"context"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"os/user"
 	"strconv"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/norduser/service"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"

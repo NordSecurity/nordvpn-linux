@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 
 	"github.com/NordSecurity/nordvpn-linux/log"
-
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 )
 

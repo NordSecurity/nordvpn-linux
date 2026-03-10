@@ -3,7 +3,6 @@ package meshnet
 import (
 	"errors"
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"sync"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	cmesh "github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	sysinfo "github.com/NordSecurity/nordvpn-linux/sysinfo"
 
 	"github.com/google/uuid"

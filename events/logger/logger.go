@@ -5,7 +5,6 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"net/http"
 	"net/netip"
 	"os"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // Subscriber is a subscriber for logging debug messages, info messages

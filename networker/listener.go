@@ -2,9 +2,9 @@ package networker
 
 import (
 	"context"
-	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // Reconnect refresh connectivity on network state change

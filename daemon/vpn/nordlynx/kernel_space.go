@@ -3,7 +3,6 @@ package nordlynx
 import (
 	"context"
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"net"
 	"net/netip"
 	"os/exec"
@@ -13,6 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
 

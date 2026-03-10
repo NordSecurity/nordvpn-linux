@@ -2,12 +2,12 @@ package daemon
 
 import (
 	"context"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"net/netip"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 func (r *RPC) SetLANDiscovery(ctx context.Context, in *pb.SetLANDiscoveryRequest) (*pb.SetLANDiscoveryResponse, error) {

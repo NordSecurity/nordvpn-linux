@@ -3,7 +3,6 @@ package tray
 import (
 	"context"
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"slices"
 	"strings"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 
 	"google.golang.org/grpc"
