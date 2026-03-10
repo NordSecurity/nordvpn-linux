@@ -2,7 +2,7 @@
 package main
 
 import (
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"os"
 
 	"github.com/NordSecurity/nordvpn-linux/core"

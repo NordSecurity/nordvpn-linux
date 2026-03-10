@@ -2,7 +2,7 @@ package daemon
 
 import (
 	"context"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"

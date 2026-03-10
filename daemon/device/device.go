@@ -3,7 +3,7 @@ package device
 
 import (
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"net"
 	"os/exec"
 	"path/filepath"

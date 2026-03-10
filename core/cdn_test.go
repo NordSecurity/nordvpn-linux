@@ -6,7 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"net/http"
 	"net/http/httptest"
 	"testing"

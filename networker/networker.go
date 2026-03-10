@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"math"
 	"net/netip"
 	"strings"

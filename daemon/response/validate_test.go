@@ -2,7 +2,7 @@ package response
 
 import (
 	"crypto/rsa"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"net/http"
 	"strconv"
 	"testing"

@@ -4,7 +4,7 @@ package nordlynx
 import (
 	"errors"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"net"
 	"net/netip"
 	"os/exec"

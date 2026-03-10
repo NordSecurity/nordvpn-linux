@@ -2,7 +2,7 @@ package session
 
 import (
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"

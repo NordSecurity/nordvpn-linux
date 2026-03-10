@@ -2,7 +2,7 @@ package dns
 
 import (
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"net"
 	"net/netip"
 	"path/filepath"

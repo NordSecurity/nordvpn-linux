@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"os"
 	"os/exec"
 	"strconv"

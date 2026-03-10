@@ -3,7 +3,7 @@ package main
 
 import (
 	"debug/elf"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"os"
 	"strings"
 

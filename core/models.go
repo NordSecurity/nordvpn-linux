@@ -3,7 +3,7 @@ package core
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"net/netip"
 	"strconv"
 	"strings"

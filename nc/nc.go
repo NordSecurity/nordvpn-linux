@@ -10,7 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"sync"
 	"time"
 

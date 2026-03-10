@@ -1,7 +1,7 @@
 package state
 
 import (
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"sync"
 	"time"
 

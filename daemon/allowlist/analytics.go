@@ -3,7 +3,7 @@ package allowlist
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"net/netip"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"

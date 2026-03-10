@@ -3,7 +3,7 @@ package request
 import (
 	"bytes"
 	"io"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"net/http"
 	"sync/atomic"
 	"time"

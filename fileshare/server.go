@@ -3,7 +3,7 @@ package fileshare
 import (
 	"context"
 	"errors"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"net/netip"
 	"strings"
 

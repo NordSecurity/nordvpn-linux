@@ -2,7 +2,7 @@ package tray
 
 import (
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"runtime"
 	"slices"
 	"strings"

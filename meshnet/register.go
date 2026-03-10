@@ -3,7 +3,7 @@ package meshnet
 import (
 	"errors"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"sync"
 	"time"
 

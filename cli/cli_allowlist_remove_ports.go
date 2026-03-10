@@ -3,7 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"strconv"
 
 	"github.com/NordSecurity/nordvpn-linux/config"

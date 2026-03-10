@@ -3,7 +3,7 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"os"
 	"path/filepath"
 	"strings"

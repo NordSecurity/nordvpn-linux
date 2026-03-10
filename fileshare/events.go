@@ -3,7 +3,7 @@ package fileshare
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )

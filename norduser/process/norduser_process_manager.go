@@ -3,7 +3,7 @@ package process
 import (
 	"context"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"os"
 
 	"google.golang.org/grpc"

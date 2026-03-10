@@ -2,7 +2,7 @@ package dns
 
 import (
 	"errors"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"math/rand"
 	"net"
 	"slices"

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/user"
 	"path"
@@ -13,6 +12,8 @@ import (
 	"strconv"
 	"syscall"
 	"time"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"github.com/NordSecurity/systray"
 	"golang.org/x/net/netutil"

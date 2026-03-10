@@ -4,7 +4,7 @@ package libdrop
 import (
 	"errors"
 	"fmt"
-	"log"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"net/netip"
 	"path/filepath"
 	"strings"
