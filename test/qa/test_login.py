@@ -199,13 +199,14 @@ def test_logout_disconnects():
     assert network.is_disconnected()
 
 
-def test_missing_token_login():
+def test_token_login_requires_tty():
     """Manual TC: LVPN-485"""
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.login("--token")
 
-    assert "Token parameter value is missing." in ex.value.stdout.decode("utf-8")
+    expected = "We couldn't prompt for the token because the input is not a terminal."
+    assert expected in ex.value.stdout.decode("utf-8")
 
 
 def test_missing_url_callback_login():
