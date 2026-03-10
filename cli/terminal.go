@@ -16,12 +16,12 @@ import (
 	"golang.org/x/term"
 )
 
-func isStdoutATerminal() bool {
+func isStdoutTerminal() bool {
 	return term.IsTerminal(int(os.Stdout.Fd()))
 }
 
-// isStdinATerminal returns true if stdin is connected to a terminal.
-func isStdinATerminal() bool {
+// isStdinTerminal returns true if stdin is connected to a terminal.
+func isStdinTerminal() bool {
 	return term.IsTerminal(int(os.Stdin.Fd()))
 }
 
@@ -50,7 +50,7 @@ func validateToken(rawToken string) (string, error) {
 
 // readTokenFromTerminal reads a token with masked input (no echo).
 func readTokenFromTerminal() (string, error) {
-	if !isStdinATerminal() {
+	if !isStdinTerminal() {
 		return "", ErrStdinNotTerminal
 	}
 
@@ -70,14 +70,14 @@ func serverNameLen(server *pb.ServerGroup) int {
 }
 
 func formatServerName(server *pb.ServerGroup) string {
-	if server.VirtualLocation && isStdoutATerminal() {
+	if server.VirtualLocation && isStdoutTerminal() {
 		return color.HiBlueString(server.Name)
 	}
 	return server.Name
 }
 
 func footerForServerGroupsList(servers []*pb.ServerGroup) string {
-	if !isStdoutATerminal() {
+	if !isStdoutTerminal() {
 		return ""
 	}
 
