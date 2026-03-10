@@ -3,11 +3,12 @@ package core
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/netip"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"golang.org/x/exp/slices"
 

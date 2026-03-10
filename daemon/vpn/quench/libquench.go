@@ -6,10 +6,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net"
 	"net/netip"
 	"sync"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	quenchBindigns "quench"
 

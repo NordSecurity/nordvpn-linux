@@ -3,8 +3,9 @@ package tray
 import (
 	"errors"
 	"fmt"
-	"log"
 	"sync"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"github.com/esiqveland/notify"
 	"github.com/godbus/dbus/v5"

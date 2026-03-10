@@ -1,8 +1,9 @@
 package fileshare_startup
 
 import (
-	"log"
 	"net"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"google.golang.org/grpc"
 

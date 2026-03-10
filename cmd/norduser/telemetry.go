@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
-	"log"
 	"sync"
 	"time"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	telemetrypb "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1"
 	"github.com/NordSecurity/nordvpn-linux/internal"

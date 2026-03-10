@@ -2,7 +2,8 @@ package telemetry
 
 import (
 	"context"
-	"log"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	pb "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1"
 	"github.com/NordSecurity/nordvpn-linux/internal"

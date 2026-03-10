@@ -2,11 +2,11 @@ package daemon
 
 import (
 	"encoding/hex"
-	"log"
 	"net/http"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 func JobTemplates(cdn core.CDN) func() {

@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"github.com/go-co-op/gocron/v2"
 	"github.com/godbus/dbus/v5"

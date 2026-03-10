@@ -2,11 +2,11 @@ package libtelio
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 const (

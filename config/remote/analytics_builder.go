@@ -3,10 +3,10 @@ package remote
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // Event is the main analytics event structure.

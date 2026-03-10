@@ -2,9 +2,10 @@ package category
 
 import (
 	"flag"
-	"log"
 	"strings"
 	"testing"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"golang.org/x/exp/slices"
 )

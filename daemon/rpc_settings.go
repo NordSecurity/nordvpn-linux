@@ -2,12 +2,12 @@ package daemon
 
 import (
 	"context"
-	"log"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"google.golang.org/grpc/peer"
 )
 

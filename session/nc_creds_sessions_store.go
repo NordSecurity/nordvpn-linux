@@ -2,11 +2,11 @@ package session
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 type NCCredentialsResponse struct {
