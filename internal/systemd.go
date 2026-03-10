@@ -1,8 +1,9 @@
 package internal
 
 import (
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"strings"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"github.com/godbus/dbus/v5"
 )

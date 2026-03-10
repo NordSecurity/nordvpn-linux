@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"os"
 	"strings"
 	"text/tabwriter"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"golang.org/x/exp/slices"
 
 	"github.com/docker/go-units"

@@ -2,12 +2,12 @@ package daemon
 
 import (
 	"context"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"strconv"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 func (r *RPC) SetVirtualLocation(ctx context.Context, in *pb.SetGenericRequest) (*pb.Payload, error) {

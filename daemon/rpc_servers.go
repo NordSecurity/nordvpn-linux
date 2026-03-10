@@ -2,13 +2,13 @@ package daemon
 
 import (
 	"context"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"slices"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 func technologiesToProtobuf(technologies core.Technologies) []pb.Technology {

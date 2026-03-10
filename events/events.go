@@ -2,7 +2,6 @@
 package events
 
 import (
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"net/http"
 	"net/netip"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state/types"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // Handler is used to process messages.

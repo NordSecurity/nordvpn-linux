@@ -2,12 +2,12 @@ package meshnet
 
 import (
 	"context"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"time"
 
 	"github.com/go-co-op/gocron/v2"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 func (s *Server) StartJobs() {

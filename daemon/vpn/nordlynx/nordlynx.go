@@ -4,13 +4,13 @@ package nordlynx
 import (
 	"errors"
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"net"
 	"net/netip"
 	"os/exec"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 const (

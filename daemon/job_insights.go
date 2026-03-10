@@ -1,11 +1,10 @@
 package daemon
 
 import (
-	"github.com/NordSecurity/nordvpn-linux/log"
-
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // JobInsights is responsible for collecting information about the user's

@@ -1,12 +1,12 @@
 package daemon
 
 import (
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/coreos/go-semver/semver"
 )
 

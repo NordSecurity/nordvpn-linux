@@ -1,11 +1,11 @@
 package sysinfo
 
 import (
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"os/exec"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // defaultKernelName defines default kernel name

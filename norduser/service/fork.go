@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -16,6 +15,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // ErrNotStarted when disabling norduser

@@ -2,7 +2,6 @@ package dns
 
 import (
 	"errors"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"math/rand"
 	"net"
 	"slices"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 const (

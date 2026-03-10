@@ -13,8 +13,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/NordSecurity/nordvpn-linux/log"
-
 	"github.com/NordSecurity/systray"
 	"golang.org/x/net/netutil"
 	"golang.org/x/sys/unix"
@@ -24,6 +22,7 @@ import (
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 	"github.com/NordSecurity/nordvpn-linux/norduser/pb"

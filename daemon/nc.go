@@ -2,7 +2,6 @@ package daemon
 
 import (
 	"github.com/NordSecurity/nordvpn-linux/log"
-
 	"github.com/NordSecurity/nordvpn-linux/nc"
 )
 

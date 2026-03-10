@@ -2,7 +2,6 @@ package state
 
 import (
 	"context"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"sync"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 const notifyTimeout = 100 * time.Millisecond

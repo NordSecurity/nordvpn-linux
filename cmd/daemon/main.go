@@ -17,8 +17,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/NordSecurity/nordvpn-linux/log"
-
 	"github.com/google/uuid"
 	"golang.org/x/net/netutil"
 	"golang.org/x/sys/unix"
@@ -63,6 +61,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
 	"github.com/NordSecurity/nordvpn-linux/kernel"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/inviter"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/mapper"

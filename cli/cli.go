@@ -11,8 +11,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/NordSecurity/nordvpn-linux/log"
-
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -20,6 +18,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/nstrings"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
@@ -995,8 +994,7 @@ type LoaderInterceptor struct {
 }
 
 func (i *LoaderInterceptor) UnaryInterceptor(ctx context.Context, method string, req interface{}, reply interface{}, cc *grpc.ClientConn,
-	invoker grpc.UnaryInvoker, opts ...grpc.CallOption,
-) error {
+	invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 	if i.enabled {
 		loader := NewLoader()
 		loader.Start()
@@ -1008,8 +1006,7 @@ func (i *LoaderInterceptor) UnaryInterceptor(ctx context.Context, method string,
 }
 
 func (i *LoaderInterceptor) StreamInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string,
-	streamer grpc.Streamer, opts ...grpc.CallOption,
-) (grpc.ClientStream, error) {
+	streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 	stream, err := streamer(ctx, desc, cc, method, opts...)
 	return loaderStream{ClientStream: stream, loaderEnabled: i.enabled}, err
 }

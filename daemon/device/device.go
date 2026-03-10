@@ -3,13 +3,13 @@ package device
 
 import (
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"net"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"

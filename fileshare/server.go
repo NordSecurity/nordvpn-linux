@@ -3,11 +3,11 @@ package fileshare
 import (
 	"context"
 	"errors"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"net/netip"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"golang.org/x/exp/slices"

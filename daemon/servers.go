@@ -3,7 +3,6 @@ package daemon
 import (
 	"errors"
 	"fmt"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"math/rand"
 	"net/http"
 	"regexp"
@@ -15,6 +14,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/google/uuid"
 	"golang.org/x/exp/slices"
 )
