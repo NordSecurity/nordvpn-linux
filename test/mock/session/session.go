@@ -31,14 +31,24 @@ type MockAccessTokenSessionStore struct {
 	RenewCallCount       int
 	HandleErrorCallCount int
 	GetTokenCallCount    int
+
+	// LastRenewOpts stores the options passed to the last Renew() call
+	// Use HasForceRenewal() to check if ForceRenewal was passed
+	LastRenewOpts []session.RenewalOption
 }
 
 func (m *MockAccessTokenSessionStore) Renew(opts ...session.RenewalOption) error {
 	m.RenewCallCount++
+	m.LastRenewOpts = opts
 	if m.RenewFunc != nil {
 		return m.RenewFunc(opts...)
 	}
 	return nil
+}
+
+// HasForceRenewal checks if ForceRenewal() option was passed to the last Renew() call.
+func (m *MockAccessTokenSessionStore) HasForceRenewal() bool {
+	return session.HasForceRenewal(m.LastRenewOpts...)
 }
 
 func (m *MockAccessTokenSessionStore) HandleError(reason error) error {

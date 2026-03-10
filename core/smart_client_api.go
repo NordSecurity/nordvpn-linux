@@ -42,7 +42,9 @@ func callWithToken[T any](store session.TokenSessionStore, call func(token strin
 	}
 
 	if errors.Is(err, ErrUnauthorized) {
-		if err := store.Renew(); err != nil {
+		// Force to do a server-side renewal even if the token appears valid locally
+		// (it may be revoked/expired on the server).
+		if err := store.Renew(session.ForceRenewal()); err != nil {
 			var zero T
 			return zero, err
 		}
