@@ -17,6 +17,7 @@ linters:
     - unparam
     - unused
     - whitespace
+    - depguard
   exclusions:
     generated: lax
     presets:
@@ -30,6 +31,17 @@ linters:
       - linters: 
         - staticcheck
         text: "ST1005:" # systematically, disable all the linter issues on errors strings capitalization, or ending with a punctuation mark
+  settings:
+    depguard:
+      rules:
+        no-std-log:
+          list-mode: lax
+          files:
+            - $all
+            - "!**/nordvpn-linux/log/*.go"
+          deny:
+            - pkg: "log"
+              desc: "Use internal logger (github.com/NordSecurity/nordvpn-linux/log) instead"
 formatters:
   enable:
     - gofmt
@@ -38,3 +50,4 @@ formatters:
     generated: lax
     paths:
       - third-party
+
