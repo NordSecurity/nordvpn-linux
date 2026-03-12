@@ -263,7 +263,7 @@ func main() {
 		cdnUrl,
 		httpClientSimple,
 		validator,
-		fw,
+		cfg.FirewallMark,
 		network.ExponentialBackoff,
 	)
 
@@ -535,7 +535,6 @@ func main() {
 		sessionBuilder.GetStores()...,
 	)
 
-	endpointResolver := network.NewDefaultResolverChain(fw)
 	notificationClient := nc.NewClient(
 		nc.MqttClientBuilder{},
 		infoSubject,
@@ -591,7 +590,6 @@ func main() {
 		Version,
 		daemonEvents,
 		vpnFactory,
-		&endpointResolver,
 		netw,
 		debugSubject,
 		threatProtectionLiteServers,
@@ -864,7 +862,7 @@ func buildTpServersAndResolver(
 	cdnUrl string,
 	httpClientSimple *http.Client,
 	validator response.Validator,
-	fw *firewall.Firewall,
+	fwmark uint32,
 	timeoutFn dns.CalculateRetryDelayForAttempt,
 ) (*dns.NameServers, *network.Resolver) {
 	cdn := core.NewCDNAPI(userAgent, cdnUrl, httpClientSimple, validator)
@@ -872,6 +870,6 @@ func buildTpServersAndResolver(
 	// fetch async the TP servers, because FetchTPServers will retry until is successful
 	go tpServers.FetchTPServers(cdn.ThreatProtectionLite, timeoutFn)
 
-	resolver := network.NewResolver(fw, tpServers)
+	resolver := network.NewResolver(tpServers, fwmark)
 	return tpServers, resolver
 }
