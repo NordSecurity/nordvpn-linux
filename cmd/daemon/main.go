@@ -249,7 +249,6 @@ func main() {
 		validator,
 		cfg.FirewallMark,
 		network.ExponentialBackoff,
-		cfg.FirewallMark,
 	)
 
 	httpClientWithRotator := request.NewStdHTTP()

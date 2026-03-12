@@ -13,19 +13,14 @@ import (
 )
 
 func buildJumpRules(chainName string, parts ...[]expr.Any) []expr.Any {
-	var n int
-	for _, p := range parts {
-		n += len(p)
-	}
-	out := make([]expr.Any, 0, n+1)
-	for _, p := range parts {
-		out = append(out, p...)
-	}
-
-	return append(out, &expr.Verdict{Kind: expr.VerdictJump, Chain: chainName})
+	return buildRulesWithVerdict(&expr.Verdict{Kind: expr.VerdictJump, Chain: chainName}, parts...)
 }
 
 func buildRules(kind expr.VerdictKind, parts ...[]expr.Any) []expr.Any {
+	return buildRulesWithVerdict(&expr.Verdict{Kind: kind}, parts...)
+}
+
+func buildRulesWithVerdict(verdict *expr.Verdict, parts ...[]expr.Any) []expr.Any {
 	var n int
 	for _, p := range parts {
 		n += len(p)
@@ -35,7 +30,7 @@ func buildRules(kind expr.VerdictKind, parts ...[]expr.Any) []expr.Any {
 		out = append(out, p...)
 	}
 
-	return append(out, &expr.Verdict{Kind: kind})
+	return append(out, verdict)
 }
 
 // ct state == established

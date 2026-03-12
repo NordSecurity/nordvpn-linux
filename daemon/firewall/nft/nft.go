@@ -49,14 +49,11 @@ func New(fwmark uint32) *nft {
 }
 
 func (n *nft) Configure(config firewall.Config) error {
-	if err := n.configure(config); err != nil {
-		return fmt.Errorf("nft configure: %w", err)
-	}
-	return nil
+	return n.configure(config)
 }
 
 func (n *nft) Flush() error {
-	table := addMainTable(n.conn)
+	table := n.addMainTable()
 	n.conn.DelTable(table)
 	return n.conn.Flush()
 }
@@ -64,9 +61,9 @@ func (n *nft) Flush() error {
 func (n *nft) configure(config firewall.Config) error {
 	// Add and delete the table, then add again with correct rules.
 	// In this way if the table exists it will be deleted and new rules will not be merged with the existing rules
-	table := addMainTable(n.conn)
+	table := n.addMainTable()
 	n.conn.DelTable(table)
-	table = addMainTable(n.conn)
+	table = n.addMainTable()
 
 	// add excluded interfaces set, lo and tunnel interface
 	excludedInterfaces := &nftables.Set{
@@ -158,14 +155,10 @@ func (n *nft) configure(config firewall.Config) error {
 		}
 	}
 
-	// if err := n.conn.Flush(); err != nil {
-	// 	return err
-	// }
-
-	n.addPreRouting(table, allowlistSubnets, udpPorts, tcpPorts)
-	n.addInput(config, table, excludedInterfaces, fileshare, allowedIncomingConnections)
-	n.addOutput(config, table, excludedInterfaces, allowlistSubnets, udpPorts, tcpPorts, lanPrivateRanges)
-	n.addForward(config, table, allowlistSubnets, udpPorts, tcpPorts, lanAllowedPeers, routingAllowed, lanPrivateRanges, config.MeshnetInfo)
+	n.addPreRoutingChain(table, allowlistSubnets, udpPorts, tcpPorts)
+	n.addInputChain(config, table, excludedInterfaces, fileshare, allowedIncomingConnections)
+	n.addOutputChain(config, table, excludedInterfaces, allowlistSubnets, udpPorts, tcpPorts, lanPrivateRanges)
+	n.addForwardChain(config, table, allowlistSubnets, udpPorts, tcpPorts, lanAllowedPeers, routingAllowed, lanPrivateRanges, config.MeshnetInfo)
 	if config.MeshnetInfo != nil && routingAllowed != nil {
 		n.addMeshnetNat(table, routingAllowed)
 	}
@@ -173,10 +166,7 @@ func (n *nft) configure(config firewall.Config) error {
 	return n.conn.Flush()
 }
 
-//	chain prerouting {
-//			type filter hook prerouting priority mangle; policy accept;
-//	}
-func (n *nft) addPreRouting(
+func (n *nft) addPreRoutingChain(
 	table *nftables.Table,
 	allowlistSubnets *nftables.Set,
 	udpPortsSet *nftables.Set,
@@ -244,10 +234,7 @@ func (n *nft) addPreRouting(
 	})
 }
 
-//	chain input {
-//		type filter hook input priority filter; policy drop;
-//	}
-func (n *nft) addInput(
+func (n *nft) addInputChain(
 	config firewall.Config,
 	table *nftables.Table,
 	excludedInterfaces *nftables.Set,
@@ -283,10 +270,8 @@ func (n *nft) addInput(
 
 	// meshnet
 	if filesharePeers != nil || allowIncomingConnections != nil {
-		meshChain := n.conn.AddChain(&nftables.Chain{
-			Name:  meshInputChainName,
-			Table: table,
-		})
+		// Add chain for the meshnet and the jump rule to it
+		meshChain := n.addMeshnetInputChain(table, config, filesharePeers, allowIncomingConnections)
 
 		// iifname "nordlynx" ip saddr 100.64.0.0/10 jump mesh_input
 		n.conn.AddRule(&nftables.Rule{
@@ -298,60 +283,6 @@ func (n *nft) addInput(
 				checkIpPartOfSubnet(internal.MeshSubnet, MATCH_SOURCE, expr.CmpOpEq),
 			),
 		})
-
-		// ip saddr 100.64.0.0/29 accept
-		n.conn.AddRule(&nftables.Rule{
-			Table: table,
-			Chain: meshChain,
-			Exprs: buildRules(
-				expr.VerdictAccept,
-				checkIpPartOfSubnet(internal.ReservedMeshnetSubnet, MATCH_SOURCE, expr.CmpOpEq),
-			),
-		})
-
-		if filesharePeers != nil {
-			// tcp dport 49111 ip saddr @fileshare_allowed_peers accept
-			n.conn.AddRule((&nftables.Rule{
-				Table: table,
-				Chain: meshChain,
-				Exprs: buildRules(
-					expr.VerdictAccept,
-					checkPortNumber(internal.FilesharePort, unix.IPPROTO_TCP, MATCH_DESTINATION),
-					checkIpInSet(filesharePeers, MATCH_SOURCE),
-				),
-			}))
-		}
-
-		// tcp dport 49111 drop
-		n.conn.AddRule((&nftables.Rule{
-			Table: table,
-			Chain: meshChain,
-			Exprs: buildRules(
-				expr.VerdictDrop,
-				checkPortNumber(internal.FilesharePort, unix.IPPROTO_TCP, MATCH_DESTINATION),
-			),
-		}))
-
-		if allowIncomingConnections != nil {
-			// ip saddr @allow_incoming_connections accept
-			n.conn.AddRule((&nftables.Rule{
-				Table: table,
-				Chain: meshChain,
-				Exprs: buildRules(
-					expr.VerdictAccept,
-					checkIpInSet(allowIncomingConnections, MATCH_SOURCE),
-				),
-			}))
-		}
-
-		// drop
-		n.conn.AddRule((&nftables.Rule{
-			Table: table,
-			Chain: meshChain,
-			Exprs: buildRules(
-				expr.VerdictDrop,
-			),
-		}))
 	}
 
 	// iifname @allowed_interfaces accept
@@ -362,10 +293,76 @@ func (n *nft) addInput(
 	})
 }
 
-//		chain output {
-//		    type filter hook output priority filter; policy drop;
-//	}
-func (n *nft) addOutput(
+func (n *nft) addMeshnetInputChain(
+	table *nftables.Table,
+	config firewall.Config,
+	filesharePeers *nftables.Set,
+	allowIncomingConnections *nftables.Set,
+) *nftables.Chain {
+	// the chain is not hooked to anything, it is called from input chain
+	meshChain := n.conn.AddChain(&nftables.Chain{
+		Name:  meshInputChainName,
+		Table: table,
+	})
+
+	// ip saddr 100.64.0.0/29 accept
+	n.conn.AddRule(&nftables.Rule{
+		Table: table,
+		Chain: meshChain,
+		Exprs: buildRules(
+			expr.VerdictAccept,
+			checkIpPartOfSubnet(internal.ReservedMeshnetSubnet, MATCH_SOURCE, expr.CmpOpEq),
+		),
+	})
+
+	if filesharePeers != nil {
+		// tcp dport 49111 ip saddr @fileshare_allowed_peers accept
+		n.conn.AddRule((&nftables.Rule{
+			Table: table,
+			Chain: meshChain,
+			Exprs: buildRules(
+				expr.VerdictAccept,
+				checkPortNumber(internal.FilesharePort, unix.IPPROTO_TCP, MATCH_DESTINATION),
+				checkIpInSet(filesharePeers, MATCH_SOURCE),
+			),
+		}))
+	}
+
+	// tcp dport 49111 drop
+	n.conn.AddRule((&nftables.Rule{
+		Table: table,
+		Chain: meshChain,
+		Exprs: buildRules(
+			expr.VerdictDrop,
+			checkPortNumber(internal.FilesharePort, unix.IPPROTO_TCP, MATCH_DESTINATION),
+		),
+	}))
+
+	if allowIncomingConnections != nil {
+		// ip saddr @allow_incoming_connections accept
+		n.conn.AddRule((&nftables.Rule{
+			Table: table,
+			Chain: meshChain,
+			Exprs: buildRules(
+				expr.VerdictAccept,
+				checkIpInSet(allowIncomingConnections, MATCH_SOURCE),
+			),
+		}))
+	}
+
+	// drop
+	n.conn.AddRule((&nftables.Rule{
+		Table: table,
+		Chain: meshChain,
+		Exprs: buildRules(
+			expr.VerdictDrop,
+		),
+	}))
+
+	return meshChain
+}
+
+func (n *nft) addOutputChain(
 	config firewall.Config,
 	table *nftables.Table,
 	excludedInterfaces *nftables.Set,
@@ -492,10 +489,7 @@ func (n *nft) addOutput(
 	}
 }
 
-//	chain forward {
-//	    type filter hook forward priority filter; policy drop;
-//	  }
-func (n *nft) addForward(
+func (n *nft) addForwardChain(
 	config firewall.Config,
 	table *nftables.Table,
 	allowedSubnets *nftables.Set,
@@ -829,8 +823,8 @@ func (n *nft) buildAllowlistSubnets(table *nftables.Table, allowlist config.Allo
 	return set, nil
 }
 
-func addMainTable(conn *nftables.Conn) *nftables.Table {
-	return conn.AddTable(&nftables.Table{
+func (n *nft) addMainTable() *nftables.Table {
+	return n.conn.AddTable(&nftables.Table{
 		Family: nftables.TableFamilyINet,
 		Name:   tableName,
 	})

@@ -4,7 +4,6 @@ Package firewall provides firewall service to the caller
 package firewall
 
 import (
-	"errors"
 	"log"
 	"sync"
 
@@ -36,12 +35,11 @@ func (fw *Firewall) Configure(config Config) error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
-	log.Println(internal.InfoPrefix, logPrefix, "configure firewall")
-
 	if !fw.enabled {
-		log.Println(internal.InfoPrefix, logPrefix, "ignoring configure because firewall is disabled")
 		return nil
 	}
+
+	log.Println(internal.InfoPrefix, logPrefix, "configuring firewall")
 
 	return fw.impl.Configure(config)
 }
@@ -53,7 +51,7 @@ func (fw *Firewall) Enable() error {
 	log.Println(internal.InfoPrefix, logPrefix, "enabling firewall")
 
 	if fw.enabled {
-		return errors.New("firewall already enabled")
+		return NewError(ErrFirewallAlreadyEnabled)
 	}
 
 	fw.enabled = true
@@ -65,10 +63,10 @@ func (fw *Firewall) Disable() error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
-	log.Println(internal.InfoPrefix, logPrefix, "disable firewall")
+	log.Println(internal.InfoPrefix, logPrefix, "disabling firewall")
 
 	if !fw.enabled {
-		return errors.New("firewall already disabled")
+		return NewError(ErrFirewallAlreadyDisabled)
 	}
 
 	fw.enabled = false
