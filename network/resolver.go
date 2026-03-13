@@ -6,13 +6,11 @@ import (
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 )
 
 // Resolver is a DNSResolver implementation wrapping each DHCP request with
 // allowing and blocking firewall rules
 type Resolver struct {
-	fw      firewall.Service
 	servers dns.Getter
 	fwmark  uint32
 	sync.Mutex

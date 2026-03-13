@@ -12,5 +12,4 @@ func TestAllowlistIP(t *testing.T) {
 
 	resolver := NewResolver(&dns.NameServers{}, 0x1234)
 	resolver.Resolve("nordvpn.com")
-
 }
