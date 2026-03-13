@@ -43,7 +43,6 @@ type RPC struct {
 	events         *daemonevents.Events
 	// factory picks which VPN implementation to use
 	factory             FactoryFunc
-	endpointResolver    network.EndpointResolver
 	endpoint            network.Endpoint
 	scheduler           gocron.Scheduler
 	netw                networker.Networker
