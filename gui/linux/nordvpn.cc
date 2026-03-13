@@ -50,8 +50,8 @@ static void nordvpn_application_activate(GApplication* application) {
   // The minimum size is replaced in flutter code, but it is not always working.
   // As a backup set also here to a minimum value.
   GdkGeometry hints;
-  hints.min_width = 500;
-  hints.min_height = 600;
+  hints.min_width = 900;
+  hints.min_height = 700;
   gtk_window_set_geometry_hints(window, NULL, &hints, GDK_HINT_MIN_SIZE);
 
   // Creates the window hidden to reduce size flickering. The size and display are handled by flutter
