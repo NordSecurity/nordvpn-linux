@@ -24,9 +24,7 @@ get_head_commit_date() {
 }
 
 # Determine environment: keep prod if explicitly set, otherwise assign dev
-if [[ "${ENVIRONMENT:-}" != "prod" ]]; then
-  ENVIRONMENT="dev"
-fi
+ENVIRONMENT="${ENVIRONMENT:-dev}"
 
 VERSION_PATTERN="^[0-9]+\.[0-9]+\.[0-9]+$"
 REVISION="${HASH}"
