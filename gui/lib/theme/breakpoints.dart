@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:nordvpn/widgets/adaptive_scaffold/flutter_adaptive_scaffold.dart';
 
 final class AppBreakpoints {
@@ -24,13 +23,4 @@ final class AppBreakpoints {
     beginHeight: 532,
     endHeight: 532,
   );
-}
-
-extension AppBreakpointsExt on BuildContext {
-  bool isMediumScreen() {
-    final width = MediaQuery.of(this).size.width;
-    const mediumBreakpoint = AppBreakpoints.medium;
-    return mediumBreakpoint.beginWidth! <= width &&
-        width < mediumBreakpoint.endWidth!;
-  }
 }
