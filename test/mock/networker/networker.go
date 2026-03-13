@@ -83,10 +83,10 @@ func (m *Mock) IsMeshnetActive() bool {
 	m.MeshnetRetries++
 	return m.MeshActive || m.MeshnetRetries > 5
 }
-func (*Mock) SetKillSwitch(config.Allowlist) error { return nil }
-func (*Mock) UnsetKillSwitch() error               { return nil }
-func (*Mock) SetVPN(vpn.VPN)                       {}
-func (*Mock) LastServerName() string               { return "" }
+func (*Mock) SetKillSwitch() error   { return nil }
+func (*Mock) UnsetKillSwitch() error { return nil }
+func (*Mock) SetVPN(vpn.VPN)         {}
+func (*Mock) LastServerName() string { return "" }
 
 func (m *Mock) SetLanDiscoveryAndResetMesh(enabled bool, peers mesh.MachinePeers) {
 	m.MeshPeers = peers
@@ -130,7 +130,7 @@ func (Failing) DisableRouting()                                     {}
 func (Failing) SetAllowlist(config.Allowlist) error                 { return mock.ErrOnPurpose }
 func (Failing) UnsetAllowlist() error                               { return mock.ErrOnPurpose }
 func (Failing) IsNetworkSet() bool                                  { return false }
-func (Failing) SetKillSwitch(config.Allowlist) error                { return mock.ErrOnPurpose }
+func (Failing) SetKillSwitch() error                                { return mock.ErrOnPurpose }
 func (Failing) UnsetKillSwitch() error                              { return mock.ErrOnPurpose }
 func (Failing) Connect(netip.Addr, string) error                    { return mock.ErrOnPurpose }
 func (Failing) Disconnect() error                                   { return mock.ErrOnPurpose }
