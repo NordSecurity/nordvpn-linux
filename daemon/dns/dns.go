@@ -348,7 +348,7 @@ func (d *DNSMethodSetter) Unset(iface string) error {
 			errs = append(errs, fmt.Errorf("unsetting dns with %s: %w", method.Name(), err))
 			continue
 		}
-		return errors.Join(errs...)
+		return nil
 	}
 
 	return errors.Join(errs...)
