@@ -8,8 +8,8 @@ fi
 
 # build the application
 
-# NOTE: Updating of the app version should happen before `scripts/env.sh`
-# is sourced to export updated version
+source "${WORKDIR}/ci/env.sh"
+source "${WORKDIR}/ci/archs.sh"
 
 # update version info in pubspec.yaml
 scripts/update_app_version.sh
@@ -23,9 +23,6 @@ cleanup() {
   fi
 }
 trap cleanup EXIT ERR INT TERM
-
-source "${WORKDIR}/ci/env.sh"
-source "${WORKDIR}/ci/archs.sh"
 
 echo "Building on $(uname -m)"
 
