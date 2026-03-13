@@ -35,10 +35,11 @@ func LookupAddressWithCustomDNS(addr string, dns string, protocol string, fwmark
 				Timeout: time.Second * 7,
 			}
 			// if the server address doesn't have port number then add port 53
-			if _, _, err := net.SplitHostPort(dns); err != nil {
-				dns = net.JoinHostPort(dns, "53")
+			hostAndPortAddress := dns
+			if _, _, err := net.SplitHostPort(hostAndPortAddress); err != nil {
+				hostAndPortAddress = net.JoinHostPort(dns, "53")
 			}
-			return dialer.DialContext(ctx, protocol, dns)
+			return dialer.DialContext(ctx, protocol, hostAndPortAddress)
 		},
 	}
 	ipAddrs, err := resolver.LookupIPAddr(context.Background(), addr)
