@@ -7,7 +7,7 @@ const (
 	LegacyLoginFailure           = "We couldn't log you in. Make sure your credentials are correct. If you have turned on MFA, log in using the 'nordvpn login' command."
 	TokenLoginFailure            = "Token parameter value is missing." // #nosec
 	TokenInvalid                 = "We couldn't log you in - the access token is not valid. Please check if you've entered the token correctly. If the issue persists, contact our customer support."
-	TokenInputNotTerminal        = "We couldn't prompt for the token because the input is not a terminal. For non-interactive use, provide the token as an argument: nordvpn login --token <TOKEN>" // #nosec
+	TokenInputNotTerminal        = "We couldn't prompt for a login token, because the command is not running in a terminal. For non-interactive mode, provide the token as an argument using the 'nordvpn login --token <TOKEN>' command."
 	AccessTokenExpired           = "Your current access token has expired or been revoked. Please request a new one to continue."
 	RecentConnectionErrorMessage = "It seems there's an issue with the recent connections file. If the issue persists, please contact our customer support."
 

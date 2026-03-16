@@ -54,7 +54,7 @@ func readTokenFromTerminal() (string, error) {
 		return "", ErrStdinNotTerminal
 	}
 
-	fmt.Print("Token: ")
+	fmt.Print("Enter access token: ")
 	tokenBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
 	fmt.Println()
 
