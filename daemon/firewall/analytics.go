@@ -52,7 +52,7 @@ type ConfigureEvent struct {
 }
 
 // newConfigureEvent creates a new firewall configuration event.
-func newConfigureEvent(config Config, success bool, err error) *ConfigureEvent {
+func newConfigureEvent(config Config, err error) *ConfigureEvent {
 	purposes := determinePurposes(config)
 	errMsg := ""
 	if err != nil {
@@ -63,7 +63,7 @@ func newConfigureEvent(config Config, success bool, err error) *ConfigureEvent {
 		Namespace: Namespace,
 		Subscope:  Subscope,
 		Event:     EventConfigure,
-		Status:    analytics.BoolToResult(success),
+		Status:    analytics.BoolToResult(err == nil),
 		Purpose:   purposes,
 		Error:     errMsg,
 	}

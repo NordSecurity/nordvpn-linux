@@ -58,7 +58,7 @@ func (fw *Firewall) emitConfigureEvent(config Config, err error) {
 	if fw.debuggerEvents == nil {
 		return
 	}
-	event := newConfigureEvent(config, err == nil, err)
+	event := newConfigureEvent(config, err)
 	fw.debuggerEvents.Publish(*event.ToDebuggerEvent())
 }
 

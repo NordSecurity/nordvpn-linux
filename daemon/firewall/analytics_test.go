@@ -144,7 +144,7 @@ func TestDeterminePurposes(t *testing.T) {
 func TestConfigureEvent_ToDebuggerEvent(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	event := newConfigureEvent(Config{TunnelInterface: "nordlynx"}, true, nil)
+	event := newConfigureEvent(Config{TunnelInterface: "nordlynx"}, nil)
 	debuggerEvent := event.ToDebuggerEvent()
 
 	require.NotNil(t, debuggerEvent)
