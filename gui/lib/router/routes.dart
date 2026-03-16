@@ -20,7 +20,6 @@ import 'package:nordvpn/settings/terms_screen.dart';
 import 'package:nordvpn/settings/threat_protection_settings.dart';
 import 'package:nordvpn/settings/vpn_connection_settings.dart';
 import 'package:nordvpn/vpn/vpn.dart';
-import 'package:nordvpn/widgets/responsive_scaffold.dart';
 import 'package:nordvpn/widgets/widgets_showcase.dart';
 
 final Map<String, RouteMetadata> routeToNameMap = {};
@@ -214,11 +213,11 @@ GoRoute _routeWithAppScaffold(RouteMetadata metadata) {
     pageBuilder: (context, state) {
       return CustomTransitionPage(
         key: state.pageKey,
-        child: ResponsiveScaffold(child: metadata.screen),
+        child: AppScaffold(child: metadata.screen),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(
             opacity: CurveTween(curve: Curves.easeInOutCirc).animate(animation),
-            child: AppScaffold(child: child),
+            child: child,
           );
         },
       );

@@ -13,6 +13,7 @@ import 'package:nordvpn/theme/input_theme.dart';
 import 'package:nordvpn/theme/interactive_list_view_theme.dart';
 import 'package:nordvpn/theme/loading_indicator_theme.dart';
 import 'package:nordvpn/theme/login_form_theme.dart';
+import 'package:nordvpn/theme/nav_rail_theme.dart';
 import 'package:nordvpn/theme/on_off_switch_theme.dart';
 import 'package:nordvpn/theme/radio_button_theme.dart';
 import 'package:nordvpn/theme/servers_list_theme.dart';
@@ -43,7 +44,6 @@ final class NordVpnTheme {
     return data.copyWith(
       scaffoldBackgroundColor: design.semanticColors.bgPrimary,
       disabledColor: design.semanticColors.textDisabled,
-      navigationRailTheme: _navigationRailTheme(),
       navigationBarTheme: _navigationBarTheme(),
       tabBarTheme: _tabBarTheme(),
       appBarTheme: _appBarTheme(),
@@ -77,22 +77,8 @@ final class NordVpnTheme {
         _errorScreenThemeExt(),
         _consentScreenThemeExt(),
         _popupThemeExt(),
+        _navRailThemeExt(),
       ],
-    );
-  }
-
-  NavigationRailThemeData _navigationRailTheme() {
-    return NavigationRailThemeData(
-      backgroundColor: design.semanticColors.bgPrimary,
-      labelType: NavigationRailLabelType.all,
-      useIndicator: true,
-      selectedLabelTextStyle: design.typography.body.copyWith(
-        color: design.semanticColors.textPrimary,
-      ),
-      unselectedLabelTextStyle: design.typography.body.copyWith(
-        color: design.semanticColors.textPrimary,
-      ),
-      indicatorColor: design.semanticColors.bgSecondary,
     );
   }
 
@@ -712,6 +698,20 @@ final class NordVpnTheme {
       textSecondary: design.typography.body.copyWith(
         color: design.semanticColors.textSecondary,
       ),
+    );
+  }
+
+  NavRailTheme _navRailThemeExt() {
+    return NavRailTheme(
+      railBg: design.semanticColors.bgPrimary,
+      railWidth: 80,
+      containerWidth: 40,
+      containerHeight: 40,
+      betweenIconsGap: AppSpacing.spacing2,
+      iconsPaddingTop: AppSpacing.spacing3,
+      iconsMargin: AppSpacing.spacing2,
+      radius: AppBorderRadius.md,
+      selectedItemBg: design.semanticColors.bgTertiary,
     );
   }
 }
