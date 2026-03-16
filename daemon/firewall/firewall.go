@@ -7,6 +7,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
@@ -18,16 +19,22 @@ const (
 //
 // Thread-safe.
 type Firewall struct {
-	mu      sync.Mutex
-	impl    FirewallBackend
-	enabled bool
+	mu             sync.Mutex
+	impl           FirewallBackend
+	enabled        bool
+	debuggerEvents events.Publisher[events.DebuggerEvent]
 }
 
 // NewFirewall produces an instance of Firewall.
-func NewFirewall(impl FirewallBackend, enabled bool) *Firewall {
+func NewFirewall(
+	impl FirewallBackend,
+	enabled bool,
+	debuggerEvents events.Publisher[events.DebuggerEvent],
+) *Firewall {
 	return &Firewall{
-		impl:    impl,
-		enabled: enabled,
+		impl:           impl,
+		enabled:        enabled,
+		debuggerEvents: debuggerEvents,
 	}
 }
 
@@ -41,7 +48,18 @@ func (fw *Firewall) Configure(config Config) error {
 
 	log.Println(internal.InfoPrefix, logPrefix, "configuring firewall")
 
-	return fw.impl.Configure(config)
+	err := fw.impl.Configure(config)
+	fw.emitConfigureEvent(config, err)
+	return err
+}
+
+// emitConfigureEvent publishes a firewall configuration analytics event.
+func (fw *Firewall) emitConfigureEvent(config Config, err error) {
+	if fw.debuggerEvents == nil {
+		return
+	}
+	event := newConfigureEvent(config, err == nil, err)
+	fw.debuggerEvents.Publish(*event.ToDebuggerEvent())
 }
 
 func (fw *Firewall) Enable() error {
