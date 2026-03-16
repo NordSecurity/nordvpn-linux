@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+case "$1" in
+    0)
+        # Remove
+        pkill -TERM -x nordvpn-gui || :
+    ;;
+    1)
+        # Do nothing for upgrade
+    ;;
+    *)
+        echo "preun called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+exit 0
