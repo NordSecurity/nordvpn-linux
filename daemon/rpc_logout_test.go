@@ -14,8 +14,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
-	mockconfig "github.com/NordSecurity/nordvpn-linux/test/mock/config"
 	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
 
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
@@ -23,7 +23,7 @@ import (
 
 func TestLogout_Token(t *testing.T) {
 	cfgManagerMock := newMockConfigManager()
-	fs := mockconfig.NewFilesystemMock(t)
+	fs := fs.NewSystemFileHandleMock(t)
 
 	rpc := RPC{
 		ac:             &workingLoginChecker{},

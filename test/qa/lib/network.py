@@ -296,12 +296,12 @@ def unblock():
         _blackholes.pop()
 
 
-def get_external_device_ip() -> str:
+def get_external_device_ip(timeout=5) -> str:
     """Returns external device IP."""
     # Make sure new session is used for the HTTP request to avoid failures when jumping to and from
     # VPN connections
     with requests.Session() as session:
-        return session.get(API_EXTERNAL_IP, timeout=5).json().get("ip")
+        return session.get(API_EXTERNAL_IP, timeout=timeout).json().get("ip")
 
 
 def generate_traffic(retry=1):

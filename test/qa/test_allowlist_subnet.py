@@ -140,23 +140,26 @@ def test_allowlist_subnet_and_remove_disconnected(tech, proto, obfuscated):
 def test_allowlist_subnet_and_remove_connected(tech, proto, obfuscated):
     """Manual TC: LVPN-786"""
 
+    #TODO: remove conditional timeout, once LVPN-10169 gets fixed
+    timeout = 30 if tech.lower() == "nordwhisper" else 5
+
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    my_ip = network.get_external_device_ip()
+    my_ip = network.get_external_device_ip(timeout)
 
     sh.nordvpn.connect()
-    assert my_ip != network.get_external_device_ip()
+    assert my_ip != network.get_external_device_ip(timeout)
 
     ip_provider_addresses = socket.gethostbyname_ex(urlparse(lib.API_EXTERNAL_IP).netloc)[2]
     ip_addresses_with_subnet = [ip + CIDR_32 for ip in ip_provider_addresses]
 
     allowlist.add_subnet_to_allowlist(ip_addresses_with_subnet)
     assert firewall.is_active(None, ip_addresses_with_subnet)
-    assert my_ip == network.get_external_device_ip()
+    assert my_ip == network.get_external_device_ip(timeout)
 
     allowlist.remove_subnet_from_allowlist(ip_addresses_with_subnet)
     assert firewall.is_active() and not firewall.is_active(None, ip_addresses_with_subnet)
-    assert my_ip != network.get_external_device_ip()
+    assert my_ip != network.get_external_device_ip(timeout)
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)

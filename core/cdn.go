@@ -66,37 +66,34 @@ func (api *CDNAPI) request(path, method string) (*CDNAPIResponse, error) {
 	defer resp.Body.Close()
 
 	var body []byte
-	var reader io.ReadCloser
-	if err == nil {
-		switch method {
-		case http.MethodHead:
-			reader = io.NopCloser(bytes.NewReader(nil))
-		default:
-			switch resp.Header.Get("Content-Encoding") {
-			case "gzip":
-				reader, err = gzip.NewReader(resp.Body)
-				if err != nil {
-					return nil, err
-				}
-			default:
-				reader = resp.Body
-			}
+	switch method {
+	case http.MethodHead:
+		body = nil
+		if !mandatoryHeadersExist(resp.Header) {
+			return nil, fmt.Errorf("some of mandatory response headers do not exist")
 		}
-		body, err = MaxBytesReadAll(reader)
+	default:
+		// Read the response body with size limit applied to the compressed data
+		body, err = MaxBytesReadAll(resp.Body)
 		if err != nil {
 			return nil, err
 		}
-		defer reader.Close()
-		reader = io.NopCloser(bytes.NewBuffer(body))
 
-		if method == http.MethodHead {
-			if !mandatoryHeadersExist(resp.Header) {
-				return nil, fmt.Errorf("some of mandatory response headers do not exist")
+		// Decompress after applying the size limit
+		if resp.Header.Get("Content-Encoding") == "gzip" {
+			reader, err := gzip.NewReader(bytes.NewReader(body))
+			if err != nil {
+				return nil, err
 			}
-		} else {
-			if err = api.validator.Validate(resp.StatusCode, resp.Header, body); err != nil {
-				return nil, fmt.Errorf("cdn api: %w", err)
+			defer reader.Close()
+			body, err = io.ReadAll(reader)
+			if err != nil {
+				return nil, err
 			}
+		}
+
+		if err = api.validator.Validate(resp.StatusCode, resp.Header, body); err != nil {
+			return nil, fmt.Errorf("cdn api: %w", err)
 		}
 	}
 
@@ -106,7 +103,7 @@ func (api *CDNAPI) request(path, method string) (*CDNAPIResponse, error) {
 
 	return &CDNAPIResponse{
 		Headers: resp.Header,
-		Body:    reader,
+		Body:    io.NopCloser(bytes.NewBuffer(body)),
 	}, nil
 }
 

@@ -160,7 +160,7 @@ func main() {
 		config.InstallFilePath,
 		Salt,
 		machineIdGenerator,
-		config.StdFilesystemHandle{},
+		internal.StdFilesystemHandle{},
 		configEvents.Config,
 	)
 
@@ -203,7 +203,7 @@ func main() {
 	daemonEvents.Settings.Subscribe(logger.NewSubscriber())
 
 	// try to restore resolv.conf if target file contains Nordvpn changes
-	dns.RestoreResolvConfFile()
+	dns.RestoreDNS()
 
 	// Firewall
 	stateModule := "conntrack"
@@ -297,7 +297,8 @@ func main() {
 		httpClientSimple,
 	)
 	gwret := netlinkrouter.Retriever{}
-	dnsSetter := dns.NewSetter(infoSubject)
+
+	dnsSetter := dns.NewDNSServiceSetter(daemonEvents.Debugger.DebuggerEvents)
 	dnsHostSetter := dns.NewHostsFileSetter(dns.HostsFilePath)
 
 	eventsDbPath := filepath.Join(internal.DatFilesPathCommon, "moose.db")
@@ -605,7 +606,7 @@ func main() {
 		consentChecker,
 		recents.NewRecentConnectionsStore(
 			internal.RecentVPNConnectionsFilename,
-			&config.StdFilesystemHandle{},
+			&internal.StdFilesystemHandle{},
 			func() {
 				dataUpdateEvents.RecentsUpdate.Publish(events.DataRecentsChanged{})
 			},
@@ -721,9 +722,12 @@ func main() {
 
 	go func() {
 		if err := dm.LoadData(); err != nil {
-			log.Println(internal.WarningPrefix, err)
+			log.Println(internal.WarningPrefix, "DataManager failed to load data:", err)
+		} else {
+			log.Println(internal.InfoPrefix, "data successfully loaded from disk")
 		}
 	}()
+
 	rpc.StartJobs(statePublisher, heartBeatSubject)
 	rpc.StartRemoteConfigLoaderJob(rcConfig)
 	meshService.StartJobs()

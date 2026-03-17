@@ -13,7 +13,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
-	configMock "github.com/NordSecurity/nordvpn-linux/test/mock/config"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 )
 
@@ -56,7 +56,7 @@ func TestSetThreatProtectionLite_Success(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
 			uuid, _ := uuid.NewUUID()
-			filesystem := configMock.NewFilesystemMock(t)
+			filesystem := fs.NewSystemFileHandleMock(t)
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",
 				&machineIDGetterMock{machineID: uuid},
@@ -156,7 +156,7 @@ func TestSetThreatProtectionLite_Error(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
 			uuid, _ := uuid.NewUUID()
-			filesystem := configMock.NewFilesystemMock(t)
+			filesystem := fs.NewSystemFileHandleMock(t)
 			filesystem.WriteErr = test.writeConfigErr
 			configManager := config.NewFilesystemConfigManager(
 				"/location", "/vault", "",

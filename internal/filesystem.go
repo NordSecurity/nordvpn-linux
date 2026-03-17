@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fsnotify/fsnotify"
 	"golang.org/x/sys/unix"
 )
 
@@ -22,6 +23,63 @@ const (
 	// listenFdsStart corresponds to `SD_LISTEN_FDS_START`.
 	listenFdsStart = 3
 )
+
+// FileSystemHandle provides an abstraction layer for filesystem operations.
+type FileSystemHandle interface {
+	// FileExists checks if a file exists at the specified location.
+	// Returns true if the file exists, false otherwise.
+	FileExists(string) bool
+
+	// ReadFile reads the entire contents of the file at the specified location.
+	// Returns the file contents as a byte slice and any error encountered.
+	ReadFile(string) ([]byte, error)
+
+	// Stat returns file information for the file at the specified location.
+	// Returns os.FileInfo containing file metadata and any error encountered.
+	Stat(location string) (os.FileInfo, error)
+
+	// SameFile reports whether two FileInfo instances describe the same file.
+	// Returns true if both FileInfo instances refer to the same underlying file.
+	SameFile(os.FileInfo, os.FileInfo) bool
+
+	// WriteFile writes data to a file at the specified location with the given permissions.
+	// Creates the file if it doesn't exist, or truncates it if it does.
+	// Returns any error encountered during the write operation.
+	WriteFile(string, []byte, fs.FileMode) error
+
+	// Remove removes file under the given location.
+	Remove(location string) error
+}
+
+type StdFilesystemHandle struct{}
+
+func (StdFilesystemHandle) FileExists(location string) bool {
+	return FileExists(location)
+}
+
+func (StdFilesystemHandle) ReadFile(location string) ([]byte, error) {
+	// #nosec G304 -- no input comes from the user
+	return os.ReadFile(location)
+}
+
+func (StdFilesystemHandle) Stat(location string) (os.FileInfo, error) {
+	return os.Stat(location)
+}
+
+func (StdFilesystemHandle) SameFile(fi1 os.FileInfo, fi2 os.FileInfo) bool {
+	return os.SameFile(fi1, fi2)
+}
+
+func (StdFilesystemHandle) WriteFile(location string, data []byte, mode fs.FileMode) error {
+	if err := EnsureDir(location); err != nil {
+		return err
+	}
+	return os.WriteFile(location, data, mode)
+}
+
+func (StdFilesystemHandle) Remove(location string) error {
+	return os.Remove(location)
+}
 
 // systemDFile returns a `os.systemDFile` object for
 // systemDFile descriptor passed to this process via systemd fd-passing protocol.
@@ -559,4 +617,26 @@ func isProcessRunning(executablePath string, readdir readdirFunc, readfile readf
 	}
 
 	return false, nil
+}
+
+// GetFileWatcher returns a fsnotify file watcher that is monitoring files provided in pathsToMonitor
+func GetFileWatcher(pathsToMonitor ...string) (watcher *fsnotify.Watcher, err error) {
+	watcher, err = fsnotify.NewWatcher()
+	if err != nil {
+		return nil, fmt.Errorf("creating new watcher: %w", err)
+	}
+
+	defer func() {
+		if err != nil && watcher != nil {
+			_ = watcher.Close()
+		}
+	}()
+
+	for _, file := range pathsToMonitor {
+		if err := watcher.Add(file); err != nil {
+			return nil, fmt.Errorf("adding group file to watcher: %w", err)
+		}
+	}
+
+	return watcher, nil
 }
