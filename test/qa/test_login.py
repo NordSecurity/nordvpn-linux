@@ -2,6 +2,7 @@ import pytest
 import pexpect
 import sh
 
+
 import lib
 from lib import (
     daemon,
@@ -10,6 +11,7 @@ from lib import (
     settings,
     selenium,
 )
+
 
 pytestmark = pytest.mark.usefixtures("collect_logs")
 
@@ -199,13 +201,19 @@ def test_logout_disconnects():
     assert network.is_disconnected()
 
 
-def test_missing_token_login():
+def test_token_login_requires_tty():
     """Manual TC: LVPN-485"""
 
+    sh.nordvpn.set.analytics("enabled")
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.login("--token")
+        # simulate non-tty input by piping a token via stdin
+        sh.nordvpn.login("--token", _in="fake_token\n")
 
-    assert "Token parameter value is missing." in ex.value.stdout.decode("utf-8")
+    expected = (
+        "We couldn't prompt for a login token, "
+        "because the command is not running in a terminal."
+    )
+    assert expected in ex.value.stdout.decode("utf-8")
 
 
 def test_missing_url_callback_login():

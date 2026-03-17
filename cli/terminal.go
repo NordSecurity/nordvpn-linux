@@ -16,8 +16,53 @@ import (
 	"golang.org/x/term"
 )
 
-func isStdoutATerminal() bool {
+func isStdoutTerminal() bool {
 	return term.IsTerminal(int(os.Stdout.Fd()))
+}
+
+// isStdinTerminal returns true if stdin is connected to a terminal.
+func isStdinTerminal() bool {
+	return term.IsTerminal(int(os.Stdin.Fd()))
+}
+
+// ErrTokenEmpty is returned when the token is empty or contains only whitespace.
+var ErrTokenEmpty = errors.New("token cannot be empty")
+
+// ErrTokenTooLong is returned when the token exceeds MaxTokenLength.
+var ErrTokenTooLong = fmt.Errorf("token is too long; maximum length is %d characters", MaxTokenLength)
+
+// ErrStdinNotTerminal is returned when stdin is not a terminal but interactive input is required.
+var ErrStdinNotTerminal = errors.New("stdin is not a terminal")
+
+// validateToken trims whitespace and validates the token is non-empty and within MaxTokenLength.
+func validateToken(rawToken string) (string, error) {
+	token := strings.TrimSpace(rawToken)
+	if token == "" {
+		return "", ErrTokenEmpty
+	}
+
+	if len(token) > MaxTokenLength {
+		return "", ErrTokenTooLong
+	}
+
+	return token, nil
+}
+
+// readTokenFromTerminal reads a token with masked input (no echo).
+func readTokenFromTerminal() (string, error) {
+	if !isStdinTerminal() {
+		return "", ErrStdinNotTerminal
+	}
+
+	fmt.Print("Enter access token: ")
+	tokenBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
+	fmt.Println()
+
+	if err != nil {
+		return "", fmt.Errorf("token input cancelled or failed: %w", err)
+	}
+
+	return validateToken(string(tokenBytes))
 }
 
 func serverNameLen(server *pb.ServerGroup) int {
@@ -25,14 +70,14 @@ func serverNameLen(server *pb.ServerGroup) int {
 }
 
 func formatServerName(server *pb.ServerGroup) string {
-	if server.VirtualLocation && isStdoutATerminal() {
+	if server.VirtualLocation && isStdoutTerminal() {
 		return color.HiBlueString(server.Name)
 	}
 	return server.Name
 }
 
 func footerForServerGroupsList(servers []*pb.ServerGroup) string {
-	if !isStdoutATerminal() {
+	if !isStdoutTerminal() {
 		return ""
 	}
 

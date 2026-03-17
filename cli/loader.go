@@ -43,7 +43,7 @@ type LoaderConfig struct {
 }
 
 func NewLoader() Loader {
-	if isStdoutATerminal() {
+	if isStdoutTerminal() {
 		return &TerminalLoader{
 			active:   false,
 			stopChan: make(chan struct{}, 1),
