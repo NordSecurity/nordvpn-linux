@@ -6,14 +6,14 @@ if [ "$#" -ne 3 ]; then
   exit 1
 fi
 
-# TODO: Improve the way the version is updated. Currently, it needs to be
-# done both here and in `build_application.sh`.
+source "scripts/archs.sh"
 
-# NOTE: Updating of the app version should happen before `scripts/env.sh`
-# is sourced to export updated version
+# all of the already pre-exported env. variables are safe to be reused, except the NAME
+NAME=nordvpn-gui
+export NAME
 
-# update version info in pubspec.yaml
-scripts/update_app_version.sh
+DISPLAY_NAME="NordVPN GUI"
+export DISPLAY_NAME
 
 # This cleans up the version updates made in `pubspec.yaml`
 cleanup() {
@@ -24,9 +24,6 @@ cleanup() {
   fi
 }
 trap cleanup EXIT ERR INT TERM
-
-source "scripts/env.sh"
-source "scripts/archs.sh"
 
 # build type
 BUILD_TYPE="${1,,}"

@@ -23,11 +23,19 @@ get_head_commit_date() {
   format_date_utc "$(git log -1 --format=%aI HEAD)"
 }
 
+# Determine environment: keep prod if explicitly set, otherwise assign dev
+ENVIRONMENT="${ENVIRONMENT:-dev}"
+
 VERSION_PATTERN="^[0-9]+\.[0-9]+\.[0-9]+$"
+REVISION="${HASH}"
+
 if [[ "${CI_COMMIT_TAG:-}" =~ ${VERSION_PATTERN} ]]; then
-  ENVIRONMENT="prod"
-  REVISION=1
-  VERSION="${CI_COMMIT_TAG}"
+  if [[ "${ENVIRONMENT}" == "prod" ]]; then
+    VERSION="${CI_COMMIT_TAG}"
+    REVISION=1
+  else
+    VERSION="${CI_COMMIT_TAG}+${REVISION}"
+  fi
 
   if git rev-parse "${CI_COMMIT_TAG}" >/dev/null 2>&1; then
     VERSION_DATE="$(format_date_utc "$(git log -1 --format=%aI "${CI_COMMIT_TAG}")")"
@@ -36,9 +44,6 @@ if [[ "${CI_COMMIT_TAG:-}" =~ ${VERSION_PATTERN} ]]; then
     VERSION_DATE="$(get_head_commit_date)"
   fi
 else
-  ENVIRONMENT=${ENVIRONMENT:-"dev"}
-  REVISION="${HASH}"
-
   # '+' character is chosen because '_' is not allowed in .deb packages and '-' is not allowed in .rpm packages
   CHLOG_VERSION="$(find "${WORKDIR}"/contrib/changelog/prod -maxdepth 1 -type f -name '*.md' -printf '%f\n' | sed -E 's/_.*//; s/\.md$//' | sort -V | tail -n1)"
   VERSION="${CHLOG_VERSION}+${REVISION}"

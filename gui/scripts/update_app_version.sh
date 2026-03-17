@@ -5,16 +5,6 @@ set -euxo pipefail
 # this can be useful for local builds not to have the file marked as changed
 USE_BACKUP_FILE=${1:-true}
 
-VERSION_PATTERN="^[0-9]+\.[0-9]+\.[0-9]+$"
-if [[ "${CI_COMMIT_TAG:-}" =~ ${VERSION_PATTERN} ]]; then
-  # in this case expecting version to be e.g. 1.2.3
-  VERSION="${CI_COMMIT_TAG}"
-else
-  # use most recent core-app changelog version
-  REVISION=$(git rev-parse --short HEAD)
-  VERSION="$(find "${WORKDIR}"/contrib/changelog/prod -maxdepth 1 -type f -name '*.md' -printf '%f\n' | sed -E 's/_.*//; s/\.md$//' | sort -V | tail -n1)+${REVISION}"
-fi
-
 # Extract current version number from pubspec.yaml
 CURRENT_VERSION=$(grep 'version:' "${WORKDIR}"/gui/pubspec.yaml | cut -d ' ' -f 2 | cut -d '+' -f 1)
 
@@ -33,3 +23,10 @@ if [[ "${CURRENT_VERSION}" != "${VERSION}" ]]; then
 else
   echo "No changes needed. Version is up to date."
 fi
+
+NAME=nordvpn-gui
+export NAME
+
+DISPLAY_NAME="NordVPN GUI"
+export DISPLAY_NAME
+
