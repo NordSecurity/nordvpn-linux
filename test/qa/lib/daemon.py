@@ -226,7 +226,7 @@ def get_unavailable_groups():
 
 def get_status_data() -> dict:
     lines = sh.nordvpn.status(_tty_out=False).strip().split('\n')
-    colon_separated_pairs = (element.split(':') for element in lines)
+    colon_separated_pairs = (element.split(':', 1) for element in lines if ':' in element)
     formatted_pairs = {(key.lower(), value.strip()) for key, value in colon_separated_pairs}
     return dict(formatted_pairs)
 
