@@ -1282,14 +1282,14 @@ func TestOAuth2Callback_AlteredFlowOnMissingExchangeToken(t *testing.T) {
 }
 
 // TestOAuth2URLRetrieveFailed_StaleLoginType tests:
-// 1. User starts OAuth2 LOGIN flow -> initialLoginType set to LOGIN
-// 2. Callback never arrives (user abandons)
-// 3. User starts new OAuth2 SIGNUP flow, but URL retrieval fails
-// 4. initialLoginType remains LOGIN (stale from step 1) because set() is
-//    only called after successful URL retrieval
-// 5. User retries OAuth2 SIGNUP, URL retrieval succeeds
-// 6. LoginOAuth2Callback completes as SIGNUP and correctly reports
-//    IsAlteredFlowOnNordAccount=true (LOGIN was started, SIGNUP completed)
+//  1. User starts OAuth2 LOGIN flow -> initialLoginType set to LOGIN
+//  2. Callback never arrives (user abandons)
+//  3. User starts new OAuth2 SIGNUP flow, but URL retrieval fails
+//  4. initialLoginType remains LOGIN (stale from step 1) because set() is
+//     only called after successful URL retrieval
+//  5. User retries OAuth2 SIGNUP, URL retrieval succeeds
+//  6. LoginOAuth2Callback completes as SIGNUP and correctly reports
+//     IsAlteredFlowOnNordAccount=true (LOGIN was started, SIGNUP completed)
 func TestOAuth2URLRetrieveFailed_StaleLoginType(t *testing.T) {
 	category.Set(t, category.Unit)
 
