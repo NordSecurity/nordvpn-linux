@@ -61,7 +61,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 			EventTrigger:               events.TriggerUser,
 			EventStatus:                events.StatusFailure, // emit failure event, but continue
 			EventType:                  events.LoginLogin,
-			IsAlteredFlowOnNordAccount: r.initialLoginType.isAltered(pb.LoginType_LoginType_LOGIN),
+			IsAlteredFlowOnNordAccount: false, // token login is a standalone flow, not a continuation of OAuth2
 			Reason:                     events.ReasonUnfinishedPrevLogin,
 		})
 	}
@@ -73,13 +73,12 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 		if retErr != nil || payload != nil && payload.Type != internal.CodeSuccess {
 			eventStatus = events.StatusFailure
 		}
-		alteredFlow := r.initialLoginType.wasStarted() && r.initialLoginType.isAltered(pb.LoginType_LoginType_LOGIN)
 		r.events.User.Login.Publish(events.DataAuthorization{
 			DurationMs:                 max(int(time.Since(loginStartTime).Milliseconds()), 1),
 			EventTrigger:               events.TriggerUser,
 			EventStatus:                eventStatus,
 			EventType:                  events.LoginLogin,
-			IsAlteredFlowOnNordAccount: alteredFlow,
+			IsAlteredFlowOnNordAccount: false, // token login is always LOGIN, never altered
 			Reason:                     eventReason,
 		})
 		// at the end, reset initiated login type

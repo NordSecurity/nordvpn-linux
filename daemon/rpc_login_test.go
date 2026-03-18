@@ -883,3 +883,510 @@ func TestLoginWithToken(t *testing.T) {
 		})
 	}
 }
+
+// TestLoginWithToken_AlteredFlowFlag tests that loginWithToken does not incorrectly
+// report IsAlteredFlowOnNordAccount=true when there's stale state from a previous
+// failed OAuth2 flow. Token login is a standalone flow and should never report altered flow.
+func TestLoginWithToken_AlteredFlowFlag(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                       string
+		prevLoginType              pb.LoginType
+		expectedAlteredFlowOnEvent bool
+	}{
+		{
+			name:                       "no previous login - altered flow should be false",
+			prevLoginType:              pb.LoginType_LoginType_UNKNOWN,
+			expectedAlteredFlowOnEvent: false,
+		},
+		{
+			name:                       "previous LOGIN attempt - altered flow should be false",
+			prevLoginType:              pb.LoginType_LoginType_LOGIN,
+			expectedAlteredFlowOnEvent: false,
+		},
+		{
+			name:                       "previous SIGNUP attempt - altered flow should be false (bug: was true)",
+			prevLoginType:              pb.LoginType_LoginType_SIGNUP,
+			expectedAlteredFlowOnEvent: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var publishedEvents []*events.DataAuthorization
+			eventsMock := &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{
+				Handler: func(event events.DataAuthorization) error {
+					eventCopy := event
+					publishedEvents = append(publishedEvents, &eventCopy)
+					return nil
+				},
+			}
+
+			r := &RPC{
+				ac:               &testauth.AuthCheckerMock{LoggedIn: false},
+				cm:               mock.NewMockConfigManager(),
+				credentialsAPI:   &testcore.CredentialsAPIMock{},
+				events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
+				publisher:        &subs.Subject[string]{},
+				ncClient:         &mock.NotificationClientMock{},
+				initialLoginType: NewAtomicLoginType(),
+			}
+
+			// Simulate stale state from a previous failed OAuth2 flow
+			if tt.prevLoginType != pb.LoginType_LoginType_UNKNOWN {
+				r.initialLoginType.set(tt.prevLoginType)
+			}
+
+			payload, err := r.loginWithToken("test-token")
+
+			assert.NoError(t, err)
+			assert.Equal(t, internal.CodeSuccess, payload.Type)
+
+			// Find the success event (last event) and check altered flow flag
+			assert.GreaterOrEqual(t, len(publishedEvents), 1, "Expected at least 1 event")
+
+			// Check all events have correct altered flow flag
+			for i, evt := range publishedEvents {
+				assert.Equal(t, tt.expectedAlteredFlowOnEvent, evt.IsAlteredFlowOnNordAccount,
+					"Event %d should have IsAlteredFlowOnNordAccount=%v, got %v",
+					i, tt.expectedAlteredFlowOnEvent, evt.IsAlteredFlowOnNordAccount)
+			}
+
+			// Verify initialLoginType is reset after login
+			assert.Equal(t, pb.LoginType_LoginType_UNKNOWN, r.initialLoginType.get(),
+				"initialLoginType should be reset after login")
+		})
+	}
+}
+
+// TestOAuth2LoginCallbackFailure_ThenRetryLogin_AlteredFlowShouldBeFalse tests the scenario:
+// 1. User starts OAuth2 LOGIN flow -> initialLoginType set to LOGIN
+// 2. OAuth2 callback fails with ReasonLoginExchangeTokenMissing or ReasonLoginExchangeTokenFailed
+// 3. initialLoginType is reset after callback (even on failure)
+// 4. User retries OAuth2 LOGIN -> should NOT report altered flow
+func TestOAuth2LoginCallbackFailure_ThenRetryLogin_AlteredFlowShouldBeFalse(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name           string
+		callbackToken  string
+		tokenError     error
+		expectedReason events.ReasonCode
+	}{
+		{
+			name:           "callback fails with missing exchange token",
+			callbackToken:  "", // empty token causes ReasonLoginExchangeTokenMissing
+			tokenError:     nil,
+			expectedReason: events.ReasonLoginExchangeTokenMissing,
+		},
+		{
+			name:           "callback fails with exchange token error",
+			callbackToken:  "some-token",
+			tokenError:     errors.New("token exchange failed"),
+			expectedReason: events.ReasonLoginExchangeTokenFailed,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var publishedEvents []*events.DataAuthorization
+			eventsMock := &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{
+				Handler: func(event events.DataAuthorization) error {
+					eventCopy := event
+					publishedEvents = append(publishedEvents, &eventCopy)
+					return nil
+				},
+			}
+
+			r := &RPC{
+				consentChecker: &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+				ac:             &testauth.AuthCheckerMock{LoggedIn: false},
+				cm:             mock.NewMockConfigManager(),
+				credentialsAPI: &testcore.CredentialsAPIMock{},
+				events:         &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
+				authentication: &testcore.AuthenticationAPImock{
+					TokenError: tt.tokenError,
+				},
+				publisher:        &subs.Subject[string]{},
+				ncClient:         &mock.NotificationClientMock{},
+				initialLoginType: NewAtomicLoginType(),
+			}
+
+			// Step 1: User initiates OAuth2 LOGIN flow
+			resp, err := r.LoginOAuth2(context.Background(), &pb.LoginOAuth2Request{
+				Type: pb.LoginType_LoginType_LOGIN,
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, pb.LoginStatus_SUCCESS, resp.Status)
+			assert.Equal(t, pb.LoginType_LoginType_LOGIN, r.initialLoginType.get())
+
+			// Step 2: OAuth2 callback fails
+			_, err = r.LoginOAuth2Callback(context.Background(), &pb.LoginOAuth2CallbackRequest{
+				Token: tt.callbackToken,
+				Type:  pb.LoginType_LoginType_LOGIN,
+			})
+			assert.Error(t, err) // callback should fail
+
+			// Verify the failure event has correct reason and NO altered flow
+			// (LOGIN started, LOGIN callback - same type, not altered)
+			var failureEvent *events.DataAuthorization
+			for _, evt := range publishedEvents {
+				if evt.EventStatus == events.StatusFailure && evt.Reason == tt.expectedReason {
+					failureEvent = evt
+					break
+				}
+			}
+			assert.NotNil(t, failureEvent, "Expected failure event with reason %v", tt.expectedReason)
+			assert.False(t, failureEvent.IsAlteredFlowOnNordAccount,
+				"Callback failure event should have IsAlteredFlowOnNordAccount=false when LOGIN->LOGIN")
+
+			// Step 3: Verify initialLoginType is reset after callback (even on failure)
+			assert.Equal(t, pb.LoginType_LoginType_UNKNOWN, r.initialLoginType.get(),
+				"initialLoginType should be reset after callback, even on failure")
+
+			// Clear events
+			publishedEvents = nil
+
+			// Step 4: User retries OAuth2 LOGIN
+			resp2, err := r.LoginOAuth2(context.Background(), &pb.LoginOAuth2Request{
+				Type: pb.LoginType_LoginType_LOGIN,
+			})
+			assert.NoError(t, err)
+			assert.Equal(t, pb.LoginStatus_SUCCESS, resp2.Status)
+
+			// Verify retry events do NOT report altered flow
+			for i, evt := range publishedEvents {
+				assert.False(t, evt.IsAlteredFlowOnNordAccount,
+					"Retry event %d should have IsAlteredFlowOnNordAccount=false", i)
+			}
+		})
+	}
+}
+
+// TestOAuth2LoginFailure_InitialLoginTypeNotReset tests that when OAuth2 login flow
+// fails (e.g., user abandons OAuth in browser), the initialLoginType remains set,
+// and a subsequent loginWithToken should NOT report IsAlteredFlowOnNordAccount=true.
+// This test reproduces the bug scenario:
+// 1. User starts OAuth2 SIGNUP flow -> initialLoginType set to SIGNUP
+// 2. OAuth2 callback never happens (user closes browser) or fails
+// 3. User tries token login -> should NOT report altered flow
+func TestOAuth2LoginFailure_ThenTokenLogin_AlteredFlowShouldBeFalse(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	var publishedEvents []*events.DataAuthorization
+	eventsMock := &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{
+		Handler: func(event events.DataAuthorization) error {
+			eventCopy := event
+			publishedEvents = append(publishedEvents, &eventCopy)
+			return nil
+		},
+	}
+
+	r := &RPC{
+		consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+		ac:               &testauth.AuthCheckerMock{LoggedIn: false},
+		cm:               mock.NewMockConfigManager(),
+		credentialsAPI:   &testcore.CredentialsAPIMock{},
+		events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
+		authentication:   &testcore.AuthenticationAPImock{}, // successful URL retrieval
+		publisher:        &subs.Subject[string]{},
+		ncClient:         &mock.NotificationClientMock{},
+		initialLoginType: NewAtomicLoginType(),
+	}
+
+	// Step 1: User initiates OAuth2 SIGNUP flow
+	resp, err := r.LoginOAuth2(context.Background(), &pb.LoginOAuth2Request{
+		Type: pb.LoginType_LoginType_SIGNUP,
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, pb.LoginStatus_SUCCESS, resp.Status)
+
+	// Verify initialLoginType is now set to SIGNUP
+	assert.Equal(t, pb.LoginType_LoginType_SIGNUP, r.initialLoginType.get(),
+		"initialLoginType should be SIGNUP after OAuth2 flow started")
+
+	// Clear events from OAuth2 setup
+	publishedEvents = nil
+
+	// Step 2: User abandons OAuth (callback never happens)
+	// initialLoginType remains SIGNUP - this is the stale state
+
+	// Step 3: User tries token login instead
+	payload, err := r.loginWithToken("test-token")
+	assert.NoError(t, err)
+	assert.Equal(t, internal.CodeSuccess, payload.Type)
+
+	// Verify: All events from token login should have IsAlteredFlowOnNordAccount=false
+	// because token login is a standalone flow, not a continuation of OAuth2
+	assert.GreaterOrEqual(t, len(publishedEvents), 1, "Expected at least 1 event from token login")
+
+	for i, evt := range publishedEvents {
+		assert.False(t, evt.IsAlteredFlowOnNordAccount,
+			"Event %d from token login should have IsAlteredFlowOnNordAccount=false, got true. "+
+				"Token login is a standalone flow and should not inherit altered state from abandoned OAuth2 flow.",
+			i)
+	}
+
+	// Verify initialLoginType is reset after token login
+	assert.Equal(t, pb.LoginType_LoginType_UNKNOWN, r.initialLoginType.get(),
+		"initialLoginType should be reset after token login")
+}
+
+// TestOAuth2Callback_AlteredFlowWhenInitialLoginTypeUnknown tests the scenario
+// where LoginOAuth2Callback is called without a preceding LoginOAuth2 call
+// (or after a previous flow fully completed and reset the state).
+// In this case initialLoginType is UNKNOWN, and isAltered(LOGIN) or
+// isAltered(SIGNUP) both return true because UNKNOWN != LOGIN/SIGNUP.
+// The expected correct behavior is IsAlteredFlowOnNordAccount=false,
+// since the flow was never started — there's nothing to alter.
+func TestOAuth2Callback_AlteredFlowWhenInitialLoginTypeUnknown(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name      string
+		loginType pb.LoginType
+	}{
+		{
+			name:      "callback with LOGIN type without prior OAuth2 start",
+			loginType: pb.LoginType_LoginType_LOGIN,
+		},
+		{
+			name:      "callback with SIGNUP type without prior OAuth2 start",
+			loginType: pb.LoginType_LoginType_SIGNUP,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var publishedEvents []*events.DataAuthorization
+			eventsMock := &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{
+				Handler: func(event events.DataAuthorization) error {
+					eventCopy := event
+					publishedEvents = append(publishedEvents, &eventCopy)
+					return nil
+				},
+			}
+
+			r := &RPC{
+				consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+				ac:               &testauth.AuthCheckerMock{LoggedIn: false},
+				cm:               mock.NewMockConfigManager(),
+				credentialsAPI:   &testcore.CredentialsAPIMock{},
+				events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
+				authentication:   &testcore.AuthenticationAPImock{TokenValue: "token"},
+				publisher:        &subs.Subject[string]{},
+				ncClient:         &mock.NotificationClientMock{},
+				initialLoginType: NewAtomicLoginType(),
+			}
+
+			// initialLoginType is UNKNOWN (default) — no LoginOAuth2 was called
+
+			resp, err := r.LoginOAuth2Callback(context.Background(), &pb.LoginOAuth2CallbackRequest{
+				Token: "exchange-token",
+				Type:  tt.loginType,
+			})
+
+			assert.NoError(t, err)
+			assert.Equal(t, pb.LoginStatus_SUCCESS, resp.Status)
+			assert.GreaterOrEqual(t, len(publishedEvents), 1)
+
+			for i, evt := range publishedEvents {
+				assert.False(t, evt.IsAlteredFlowOnNordAccount,
+					"Event %d: IsAlteredFlowOnNordAccount should be false "+
+						"when no prior OAuth2 flow was started (initialLoginType=UNKNOWN), got true", i)
+			}
+		})
+	}
+}
+
+// TestOAuth2Callback_AlteredFlowOnMissingExchangeToken tests the scenario where
+// LoginOAuth2Callback receives an empty exchange token. The error event should
+// have IsAlteredFlowOnNordAccount=false when the callback type matches the
+// initially started flow type, and also false when no flow was started at all.
+func TestOAuth2Callback_AlteredFlowOnMissingExchangeToken(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                       string
+		prevLoginType              pb.LoginType
+		callbackType               pb.LoginType
+		expectedAlteredFlowOnEvent bool
+	}{
+		{
+			name:                       "no prior flow started, LOGIN callback with empty token",
+			prevLoginType:              pb.LoginType_LoginType_UNKNOWN,
+			callbackType:               pb.LoginType_LoginType_LOGIN,
+			expectedAlteredFlowOnEvent: false,
+		},
+		{
+			name:                       "LOGIN started, LOGIN callback with empty token",
+			prevLoginType:              pb.LoginType_LoginType_LOGIN,
+			callbackType:               pb.LoginType_LoginType_LOGIN,
+			expectedAlteredFlowOnEvent: false,
+		},
+		{
+			name:                       "SIGNUP started, LOGIN callback with empty token",
+			prevLoginType:              pb.LoginType_LoginType_SIGNUP,
+			callbackType:               pb.LoginType_LoginType_LOGIN,
+			expectedAlteredFlowOnEvent: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var publishedEvents []*events.DataAuthorization
+			eventsMock := &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{
+				Handler: func(event events.DataAuthorization) error {
+					eventCopy := event
+					publishedEvents = append(publishedEvents, &eventCopy)
+					return nil
+				},
+			}
+
+			r := &RPC{
+				consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+				ac:               &testauth.AuthCheckerMock{LoggedIn: false},
+				events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
+				publisher:        &subs.Subject[string]{},
+				initialLoginType: NewAtomicLoginType(),
+			}
+
+			if tt.prevLoginType != pb.LoginType_LoginType_UNKNOWN {
+				r.initialLoginType.set(tt.prevLoginType)
+			}
+
+			_, err := r.LoginOAuth2Callback(context.Background(), &pb.LoginOAuth2CallbackRequest{
+				Token: "", // empty token triggers ReasonLoginExchangeTokenMissing
+				Type:  tt.callbackType,
+			})
+			assert.Error(t, err)
+
+			assert.GreaterOrEqual(t, len(publishedEvents), 1)
+
+			// Find the event with ReasonLoginExchangeTokenMissing
+			var failureEvent *events.DataAuthorization
+			for _, evt := range publishedEvents {
+				if evt.Reason == events.ReasonLoginExchangeTokenMissing {
+					failureEvent = evt
+					break
+				}
+			}
+			assert.NotNil(t, failureEvent, "Expected event with ReasonLoginExchangeTokenMissing")
+			assert.Equal(t, events.StatusFailure, failureEvent.EventStatus)
+			assert.Equal(t, tt.expectedAlteredFlowOnEvent, failureEvent.IsAlteredFlowOnNordAccount,
+				"IsAlteredFlowOnNordAccount mismatch for prevLoginType=%v, callbackType=%v",
+				tt.prevLoginType, tt.callbackType)
+		})
+	}
+}
+
+// TestOAuth2URLRetrieveFailed_StaleLoginType tests:
+// 1. User starts OAuth2 LOGIN flow -> initialLoginType set to LOGIN
+// 2. Callback never arrives (user abandons)
+// 3. User starts new OAuth2 SIGNUP flow, but URL retrieval fails
+// 4. initialLoginType remains LOGIN (stale from step 1) because set() is
+//    only called after successful URL retrieval
+// 5. User retries OAuth2 SIGNUP, URL retrieval succeeds
+// 6. LoginOAuth2Callback completes as SIGNUP and correctly reports
+//    IsAlteredFlowOnNordAccount=true (LOGIN was started, SIGNUP completed)
+func TestOAuth2URLRetrieveFailed_StaleLoginType(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	var publishedEvents []*events.DataAuthorization
+	eventsMock := &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{
+		Handler: func(event events.DataAuthorization) error {
+			eventCopy := event
+			publishedEvents = append(publishedEvents, &eventCopy)
+			return nil
+		},
+	}
+
+	r := &RPC{
+		consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+		ac:               &testauth.AuthCheckerMock{LoggedIn: false},
+		cm:               mock.NewMockConfigManager(),
+		credentialsAPI:   &testcore.CredentialsAPIMock{},
+		events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
+		authentication:   &testcore.AuthenticationAPImock{}, // succeeds
+		publisher:        &subs.Subject[string]{},
+		ncClient:         &mock.NotificationClientMock{},
+		initialLoginType: NewAtomicLoginType(),
+	}
+
+	// Step 1: User starts OAuth2 LOGIN flow successfully
+	resp, err := r.LoginOAuth2(context.Background(), &pb.LoginOAuth2Request{
+		Type: pb.LoginType_LoginType_LOGIN,
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, pb.LoginStatus_SUCCESS, resp.Status)
+	assert.Equal(t, pb.LoginType_LoginType_LOGIN, r.initialLoginType.get())
+
+	// Step 2: Callback never arrives, user abandons the flow.
+	// initialLoginType remains LOGIN.
+
+	// Step 3: User starts new OAuth2 SIGNUP, but URL retrieval fails.
+	publishedEvents = nil
+	r.authentication = &testcore.AuthenticationAPImock{
+		LoginError: errors.New("network is unreachable"),
+	}
+
+	resp, err = r.LoginOAuth2(context.Background(), &pb.LoginOAuth2Request{
+		Type: pb.LoginType_LoginType_SIGNUP,
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, pb.LoginStatus_NO_NET, resp.Status)
+
+	// initialLoginType remains LOGIN (stale) because set() was not reached.
+	assert.Equal(t, pb.LoginType_LoginType_LOGIN, r.initialLoginType.get(),
+		"initialLoginType should still be LOGIN because URL retrieval failed before set() was called")
+
+	// The ReasonUnfinishedPrevLogin event always reports IsAlteredFlowOnNordAccount=false
+	// because LoginOAuth2 does not track flow alteration at URL-retrieval time.
+	var unfinishedEvent *events.DataAuthorization
+	for _, evt := range publishedEvents {
+		if evt.Reason == events.ReasonUnfinishedPrevLogin {
+			unfinishedEvent = evt
+			break
+		}
+	}
+	assert.NotNil(t, unfinishedEvent, "Expected an unfinished previous login event")
+	assert.False(t, unfinishedEvent.IsAlteredFlowOnNordAccount,
+		"ReasonUnfinishedPrevLogin event always reports IsAlteredFlowOnNordAccount=false")
+
+	// Step 4: User retries SIGNUP, URL retrieval succeeds.
+	publishedEvents = nil
+	r.authentication = &testcore.AuthenticationAPImock{} // succeeds
+
+	resp, err = r.LoginOAuth2(context.Background(), &pb.LoginOAuth2Request{
+		Type: pb.LoginType_LoginType_SIGNUP,
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, pb.LoginStatus_SUCCESS, resp.Status)
+	assert.Equal(t, pb.LoginType_LoginType_SIGNUP, r.initialLoginType.get())
+
+	// Step 5: SIGNUP callback arrives. initialLoginType is SIGNUP, callback type is SIGNUP:
+	// isAltered returns false — the final completed flow matches what was set.
+	publishedEvents = nil
+	cbResp, err := r.LoginOAuth2Callback(context.Background(), &pb.LoginOAuth2CallbackRequest{
+		Token: "exchange-token",
+		Type:  pb.LoginType_LoginType_SIGNUP,
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, pb.LoginStatus_SUCCESS, cbResp.Status)
+
+	assert.GreaterOrEqual(t, len(publishedEvents), 1)
+	var callbackEvent *events.DataAuthorization
+	for _, evt := range publishedEvents {
+		if evt.EventStatus == events.StatusSuccess {
+			callbackEvent = evt
+			break
+		}
+	}
+	assert.NotNil(t, callbackEvent, "Expected a success callback event")
+	assert.False(t, callbackEvent.IsAlteredFlowOnNordAccount,
+		"Callback event should not report altered flow when SIGNUP started and SIGNUP completed")
+
+	// Verify initialLoginType is reset after successful callback
+	assert.Equal(t, pb.LoginType_LoginType_UNKNOWN, r.initialLoginType.get())
+}
