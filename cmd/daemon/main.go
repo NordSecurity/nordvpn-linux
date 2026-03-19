@@ -12,7 +12,6 @@ import (
 	"net/http"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -32,10 +31,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/forwarder"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/iptables"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/notables"
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/nft"
 	"github.com/NordSecurity/nordvpn-linux/daemon/netstate"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	telemetrypb "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1"
@@ -206,21 +202,9 @@ func main() {
 	dns.RestoreDNS()
 
 	// Firewall
-	stateModule := "conntrack"
-	stateFlag := "--ctstate"
-	chainPrefix := ""
-	iptablesAgent := iptables.New(
-		stateModule,
-		stateFlag,
-		chainPrefix,
-		iptables.FilterSupportedIPTables([]string{"iptables", "ip6tables"}),
-	)
 	fw := firewall.NewFirewall(
-		&notables.Facade{},
-		iptablesAgent,
-		debugSubject,
-		cfg.Firewall,
-	)
+		nft.New(cfg.FirewallMark),
+		cfg.Firewall)
 
 	// API
 	var err error
@@ -402,15 +386,6 @@ func main() {
 		}
 	}
 
-	devices, err := device.OutsideCapableTrafficInterfaces()
-	if err != nil {
-		log.Fatalln(err)
-	}
-	ifaceNames := []string{}
-	for _, d := range devices {
-		ifaceNames = append(ifaceNames, d.Name)
-	}
-
 	mesh, err := meshnetImplementation(vpnFactory)
 	if err != nil {
 		log.Fatalln(err)
@@ -449,10 +424,6 @@ func main() {
 		allowlistRouter,
 		dnsSetter,
 		fw,
-		allowlist.NewAllowlistRouting(func(command string, arg ...string) ([]byte, error) {
-			arg = append(arg, "-w", internal.SecondsToWaitForIptablesLock)
-			return exec.Command(command, arg...).CombinedOutput()
-		}),
 		device.OutsideCapableTrafficInterfaces,
 		routes.NewPolicyRouter(
 			&norule.Facade{},
@@ -466,20 +437,16 @@ func main() {
 		dnsHostSetter,
 		vpnRouter,
 		meshRouter,
-		forwarder.NewForwarder(ifaceNames, func(command string, arg ...string) ([]byte, error) {
-			arg = append(arg, "-w", internal.SecondsToWaitForIptablesLock)
-			return exec.Command(command, arg...).CombinedOutput()
-		},
-			kernel.NewSysctlSetter(
-				forwarder.Ipv4fwdKernelParamName,
-				1,
-			)),
 		cfg.FirewallMark,
 		cfg.LanDiscovery,
 		ipv6.NewIpv6(),
 		cfg.ARPIgnore.Get(),
 		kernel.NewSysctlSetter(
 			networker.ArpIgnoreParamName, 1,
+		),
+		cfg.AutoConnectData.Allowlist,
+		kernel.NewSysctlSetter(
+			networker.IpForwardParamName, 1,
 		),
 	)
 
