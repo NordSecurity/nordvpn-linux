@@ -43,7 +43,6 @@ type RPC struct {
 	events         *daemonevents.Events
 	// factory picks which VPN implementation to use
 	factory             FactoryFunc
-	endpointResolver    network.EndpointResolver
 	endpoint            network.Endpoint
 	scheduler           gocron.Scheduler
 	netw                networker.Networker
@@ -79,7 +78,6 @@ func NewRPC(
 	version string,
 	events *daemonevents.Events,
 	factory FactoryFunc,
-	endpointResolver network.EndpointResolver,
 	netw networker.Networker,
 	publisher events.Publisher[string],
 	nameservers dns.Getter,
@@ -109,7 +107,6 @@ func NewRPC(
 		version:            version,
 		factory:            factory,
 		events:             events,
-		endpointResolver:   endpointResolver,
 		scheduler:          scheduler,
 		netw:               netw,
 		publisher:          publisher,
