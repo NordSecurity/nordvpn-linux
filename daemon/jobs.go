@@ -16,6 +16,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/iptables"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -184,6 +185,10 @@ func (r *RPC) StartKillSwitch() {
 	if cfg.KillSwitch {
 		if err := r.netw.SetKillSwitch(); err != nil {
 			log.Println(internal.ErrorPrefix, "starting killswitch:", err)
+			return
+		}
+		if err := iptables.CleanUpIptables(); err != nil {
+			log.Println(internal.ErrorPrefix, "cleaning iptables", err)
 			return
 		}
 		return
