@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
-import 'package:nordvpn/internal/images_manager.dart';
-import 'package:nordvpn/service_locator.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/vpn_status_card_theme.dart';
 import 'package:nordvpn/vpn/connection_card_buttons.dart';
@@ -15,10 +13,7 @@ import 'package:nordvpn/widgets/loading_indicator.dart';
 import 'package:nordvpn/widgets/round_container.dart';
 
 final class ConnectionCard extends StatelessWidget {
-  final ImagesManager imagesManager;
-
-  ConnectionCard({super.key, ImagesManager? imagesManager})
-    : imagesManager = imagesManager ?? sl();
+  const ConnectionCard({super.key});
 
   @override
   Widget build(BuildContext context) {
