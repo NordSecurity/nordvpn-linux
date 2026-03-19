@@ -3,6 +3,7 @@ package session
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -33,6 +34,7 @@ type AccessTokenSessionStore struct {
 	cfgManager         config.Manager
 	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
 	renewAPICall       AccessTokenRenewalAPICall
+	renewMu            sync.Mutex
 }
 
 // NewAccessTokenSessionStore creates a new AccessTokenSessionStore instance
@@ -58,17 +60,39 @@ func (s *AccessTokenSessionStore) Renew(opts ...RenewalOption) error {
 		opt(&options)
 	}
 
+	// check if renewal is needed (without lock)
 	if !options.forceRenewal {
-		err := s.validate()
-		if err == nil {
+		if err := s.validate(); err == nil {
 			return nil
-		}
-
-		// [special case] without correct renewal token we cannot renew the access token
-		// we need to trigger error handlers directly without going through the normal flow
-		// to handle this case
-		if errors.Is(err, ErrInvalidRenewToken) {
+		} else if errors.Is(err, ErrInvalidRenewToken) {
 			return s.HandleError(err)
+		}
+	}
+
+	// manual tokens cannot be renewed
+	if s.isManualToken() {
+		return nil
+	}
+
+	s.renewMu.Lock()
+	defer s.renewMu.Unlock()
+
+	return s.doRenew(options)
+}
+
+// isManualToken returns true if the current token is a manually generated token.
+// Manual tokens cannot be renewed via API.
+func (s *AccessTokenSessionStore) isManualToken() bool {
+	cfg, err := s.getConfig()
+	return err == nil && cfg.ExpiresAt.Equal(ManualAccessTokenExpiryDate)
+}
+
+// doRenew performs the actual token renewal
+func (s *AccessTokenSessionStore) doRenew(options renewalOptions) error {
+	// re-check after acquiring lock - another goroutine may have renewed
+	if !options.forceRenewal {
+		if err := s.validate(); err == nil {
+			return nil
 		}
 	}
 
@@ -221,6 +245,7 @@ func (s *AccessTokenSessionStore) getConfig() (accessTokenConfig, error) {
 
 	expiryTime, err := time.Parse(internal.ServerDateFormat, data.TokenExpiry)
 	if err != nil {
+		log.Printf("[auth] %s Error parsing token expiry time [%s]: %v\n", internal.WarningPrefix, data.TokenExpiry, err)
 		expiryTime = time.Now().Add(-1 * time.Second)
 	}
 
