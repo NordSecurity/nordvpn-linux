@@ -43,7 +43,6 @@ func getRuleOutput(iptableVersion string, table string) ([]byte, error) {
 }
 
 func CleanUpIptables() error {
-
 	var finalErr error = nil
 	for _, table := range tablesUsedInIPTables {
 		for _, iptableVersion := range supportedIPTables {
