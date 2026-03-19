@@ -16,8 +16,8 @@ const (
 )
 
 var (
-	tablesUsedInIPTables = []string{"mangle", "filter"}
-	supportedIPTables    = []string{"iptables", "ip6tables"}
+	tableNames  = []string{"mangle", "filter"}
+	binaryNames = []string{"iptables", "ip6tables"}
 )
 
 func generateFlushRules(rules string, table string) []string {
@@ -42,16 +42,19 @@ func getRuleOutput(iptableVersion string, table string) ([]byte, error) {
 	return out, nil
 }
 
+// CleanUpIptables cycles through iptables commands and cleans up every single iptables rule that was added by older app versions
 func CleanUpIptables() error {
 	var finalErr error = nil
-	for _, table := range tablesUsedInIPTables {
-		for _, iptableVersion := range supportedIPTables {
-			if !internal.IsCommandAvailable(iptableVersion) {
-				log.Printf("%s could not find %s, aborting iptables cleanup", internal.WarningPrefix, iptableVersion)
-			}
+	for _, iptableVersion := range binaryNames {
+		if !internal.IsCommandAvailable(iptableVersion) {
+			log.Printf("%s could not find %s, aborting cleanup", internal.WarningPrefix, iptableVersion)
+			continue
+		}
+		for _, table := range tableNames {
 			out, err := getRuleOutput(iptableVersion, table)
 			if err != nil {
-				return err
+				log.Println(internal.ErrorPrefix, err)
+				continue
 			}
 			rules := string(out)
 			for _, rule := range generateFlushRules(rules, table) {

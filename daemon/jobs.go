@@ -189,7 +189,6 @@ func (r *RPC) StartKillSwitch() {
 		}
 		if err := iptables.CleanUpIptables(); err != nil {
 			log.Println(internal.ErrorPrefix, "cleaning iptables", err)
-			return
 		}
 		return
 	}
