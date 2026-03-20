@@ -44,17 +44,13 @@ const (
 )
 
 // globalContextPaths defines the common context paths included in all allowlist events.
-var globalContextPaths = []string{
-	// Device context
-	"device.*",
-	"application.nordvpnapp.version",
-	"application.nordvpnapp.platform",
+var globalContextPaths = analytics.MergeContextPaths(
 	// Related feature states
 	"application.nordvpnapp.config.user_preferences.local_network_discovery_allowed.value",
 	"application.nordvpnapp.config.user_preferences.kill_switch_enabled.value",
 	"application.nordvpnapp.config.user_preferences.meshnet_enabled.value",
 	"application.nordvpnapp.config.current_state.is_on_vpn.value",
-}
+)
 
 // OperationEvent represents an allowlist add/remove/clear operation.
 type OperationEvent struct {

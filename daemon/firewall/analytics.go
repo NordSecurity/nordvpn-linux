@@ -28,17 +28,13 @@ const (
 )
 
 // globalContextPaths defines the common context paths included in all firewall events.
-var globalContextPaths = []string{
-	// Device context
-	"device.*",
-	"application.nordvpnapp.version",
-	"application.nordvpnapp.platform",
+var globalContextPaths = analytics.MergeContextPaths(
 	// User preference states (settings vs actual config)
 	"application.nordvpnapp.config.user_preferences.kill_switch_enabled.value",
 	"application.nordvpnapp.config.user_preferences.meshnet_enabled.value",
 	"application.nordvpnapp.config.user_preferences.split_tunneling_enabled.value",
 	"application.nordvpnapp.config.current_state.is_on_vpn.value",
-}
+)
 
 // ConfigureEvent represents a firewall configuration operation.
 // Emitted each time nftables firewall is configured.

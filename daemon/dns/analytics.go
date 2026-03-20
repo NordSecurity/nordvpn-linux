@@ -7,14 +7,12 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	analyticsutil "github.com/NordSecurity/nordvpn-linux/internal/analytics"
 )
 
-var globalPaths = []string{
-	"device.*",
+var globalPaths = analyticsutil.MergeContextPaths(
 	"application.nordvpnapp.*",
-	"application.nordvpnapp.version",
-	"application.nordvpnapp.platform",
-}
+)
 
 const (
 	debuggerEventBaseKey              = "dns"
