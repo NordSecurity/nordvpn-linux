@@ -33,6 +33,9 @@ echo "/usr/lib/nordvpn" > /etc/ld.so.conf.d/nordvpn.conf
 # literally nothing) fixes the issue.
 ldconfig -v > /dev/null 2>&1
 
+# adjust permissions of shared objects
+chmod 0644 /usr/lib/nordvpn/*
+
 set -e
 sqlite=$(ldconfig -p 2>/dev/null | grep 'libsqlite3.so.0' | sed -n 's/.*=>[[:space:]]*//p' | head -n1)
 ln -sf "${sqlite}" /usr/lib/nordvpn/libsqlite3.so
