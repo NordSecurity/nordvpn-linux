@@ -204,7 +204,9 @@ func main() {
 	// Firewall
 	fw := firewall.NewFirewall(
 		nft.New(cfg.FirewallMark),
-		cfg.Firewall)
+		cfg.Firewall,
+		daemonEvents.Debugger.DebuggerEvents,
+	)
 
 	// API
 	var err error

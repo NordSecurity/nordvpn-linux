@@ -7,6 +7,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/internal/analytics"
 )
 
 // Event is the main analytics event structure.
@@ -136,5 +137,5 @@ func (e Event) ToDebuggerEvent() *events.DebuggerEvent {
 			events.ContextValue{Path: debuggerEventBaseKey + ".feature_name", Value: e.FeatureName},
 			events.ContextValue{Path: debuggerEventBaseKey + ".rollout_group", Value: e.RolloutGroup},
 		).
-		WithGlobalContextPaths("device.*", "application.nordvpnapp.*", "application.nordvpnapp.version", "application.nordvpnapp.platform")
+		WithGlobalContextPaths(analytics.MergeContextPaths("application.nordvpnapp.*")...)
 }
