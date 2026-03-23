@@ -47,13 +47,13 @@ final class AppTheme extends ThemeExtension<AppTheme>
   });
 
   @override
-  final double borderRadiusLarge;
+  final BorderRadius borderRadiusLarge;
 
   @override
-  final double borderRadiusMedium;
+  final BorderRadius borderRadiusMedium;
 
   @override
-  final double borderRadiusSmall;
+  final BorderRadius borderRadiusSmall;
 
   @override
   final double padding;

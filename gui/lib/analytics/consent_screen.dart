@@ -28,6 +28,7 @@ final class _ConsentScreenState extends ConsumerState<ConsentScreen> {
       color: consentTheme.overlayColor,
       child: Center(
         child: ScalerResponsiveBox(
+        alignment: Alignment.center,
           maxWidth: consentTheme.width,
           maxHeight: consentTheme.height,
           child: Navigator(

@@ -83,8 +83,8 @@ final class NavRail extends StatelessWidget {
             ),
             ClipRect(
               child: SizedBox(
-                width: textScaler.scale(40),
-                height: textScaler.scale(40),
+                width: textScaler.scale(navTheme.containerWidth),
+                height: textScaler.scale(navTheme.containerHeight),
                 child: Banner(
                   textStyle: const TextStyle(
                     fontWeight: FontWeight.bold,

@@ -47,7 +47,7 @@ final class VpnStatusCard extends StatelessWidget {
         top: appTheme.margin,
         bottom: 0,
         right: appTheme.margin,
-        left: appTheme.margin,
+        left: 0,
       ),
       child: Consumer(
         builder: (context, ref, _) {

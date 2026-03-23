@@ -274,9 +274,9 @@ final class NordVpnTheme {
 
   AppTheme _appThemeExt() {
     return AppTheme(
-      borderRadiusLarge: 16,
-      borderRadiusMedium: 8,
-      borderRadiusSmall: 4,
+      borderRadiusLarge: AppBorderRadius.lg,
+      borderRadiusMedium: AppBorderRadius.md,
+      borderRadiusSmall: AppBorderRadius.sm,
       padding: 10,
       margin: 8,
       outerPadding: 16,
