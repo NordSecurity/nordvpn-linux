@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"slices"
 	"sort"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 	"github.com/NordSecurity/nordvpn-linux/notify"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo"

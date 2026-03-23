@@ -2,12 +2,12 @@ package norduser
 
 import (
 	"fmt"
-	"log"
 	"slices"
 
 	"github.com/fsnotify/fsnotify"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/norduser/service"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 )

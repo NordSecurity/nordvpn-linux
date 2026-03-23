@@ -3,9 +3,10 @@ package main
 
 import (
 	"debug/elf"
-	"log"
 	"os"
 	"strings"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"golang.org/x/mod/semver"
 )

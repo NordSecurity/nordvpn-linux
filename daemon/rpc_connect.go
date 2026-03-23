@@ -3,7 +3,6 @@ package daemon
 import (
 	"context"
 	"errors"
-	"log"
 	"slices"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/features"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/network"
 )
 

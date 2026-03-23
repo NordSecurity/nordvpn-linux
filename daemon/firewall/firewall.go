@@ -5,11 +5,11 @@ package firewall
 
 import (
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"golang.org/x/exp/slices"
 )
 

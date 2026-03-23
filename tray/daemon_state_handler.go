@@ -1,10 +1,9 @@
 package tray
 
 import (
-	"log"
-
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {

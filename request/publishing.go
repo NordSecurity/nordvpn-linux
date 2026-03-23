@@ -2,7 +2,6 @@ package request
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 type PublishingRoundTripper struct {
