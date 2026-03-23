@@ -7,7 +7,6 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
@@ -62,6 +61,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/ipv6"
 	"github.com/NordSecurity/nordvpn-linux/kernel"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/inviter"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/mapper"

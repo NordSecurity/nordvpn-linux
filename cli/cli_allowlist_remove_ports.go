@@ -3,12 +3,12 @@ package cli
 import (
 	"context"
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"golang.org/x/exp/slices"
 
 	"github.com/fatih/color"

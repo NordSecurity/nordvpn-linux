@@ -5,9 +5,10 @@ package main
 import (
 	"errors"
 	"go/build"
-	"log"
 	"os"
 	"strings"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 func getEnv() (map[string]string, error) {

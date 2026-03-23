@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rsa"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"net/netip"
@@ -13,8 +12,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	testsession "github.com/NordSecurity/nordvpn-linux/test/mock/session"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -25,12 +22,14 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 	testevents "github.com/NordSecurity/nordvpn-linux/test/mock/events"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
+	testsession "github.com/NordSecurity/nordvpn-linux/test/mock/session"
 
 	"golang.org/x/crypto/ssh"
 )

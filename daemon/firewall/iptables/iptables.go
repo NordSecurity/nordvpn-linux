@@ -4,7 +4,6 @@ package iptables
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"net"
 	"net/netip"
 	"os/exec"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 const (

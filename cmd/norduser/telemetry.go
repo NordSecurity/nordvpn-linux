@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"log"
 	"sync"
 	"time"
 
 	telemetrypb "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo"
 	"google.golang.org/grpc"
 )

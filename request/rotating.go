@@ -3,12 +3,12 @@ package request
 import (
 	"bytes"
 	"io"
-	"log"
 	"net/http"
 	"sync/atomic"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 type RotatingRoundTripper struct {

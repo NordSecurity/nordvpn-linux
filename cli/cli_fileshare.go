@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -22,6 +21,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	mpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 
 	"github.com/fatih/color"

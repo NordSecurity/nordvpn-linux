@@ -3,13 +3,13 @@ package tray
 import (
 	"errors"
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/esiqveland/notify"
 	"github.com/godbus/dbus/v5"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	inotify "github.com/NordSecurity/nordvpn-linux/notify"
 )
 

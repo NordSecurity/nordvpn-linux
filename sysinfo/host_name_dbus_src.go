@@ -1,9 +1,8 @@
 package sysinfo
 
 import (
-	"log"
-
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo/dbusutil"
 	"github.com/godbus/dbus/v5"
 )
