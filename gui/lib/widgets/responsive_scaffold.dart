@@ -46,7 +46,7 @@ final class ResponsiveScaffold extends StatelessWidget {
     return NavigationDestination(
       icon: DynamicThemeImage("home_off.svg"),
       selectedIcon: DynamicThemeImage("home_on.svg"),
-      label: context.isMediumScreen() ? "" : "VPN",
+      label: "VPN",
     );
   }
 
@@ -54,7 +54,7 @@ final class ResponsiveScaffold extends StatelessWidget {
     return NavigationDestination(
       icon: DynamicThemeImage("settings_navigation_off.svg"),
       selectedIcon: DynamicThemeImage("settings_navigation_on.svg"),
-      label: context.isMediumScreen() ? "" : t.ui.settings,
+      label: t.ui.settings,
     );
   }
 
@@ -62,7 +62,7 @@ final class ResponsiveScaffold extends StatelessWidget {
     return NavigationDestination(
       icon: _buildBannerForWidgetShowcase("notifications_off.svg"),
       selectedIcon: _buildBannerForWidgetShowcase("notifications_on.svg"),
-      label: context.isMediumScreen() ? "" : "Widgets showcase",
+      label: "Widgets showcase",
     );
   }
 }
