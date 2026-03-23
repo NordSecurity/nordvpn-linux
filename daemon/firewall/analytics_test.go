@@ -250,3 +250,45 @@ func TestFirewall_Configure_NilPublisherNoPanic(t *testing.T) {
 
 	require.NoError(t, err)
 }
+
+func TestMigrationEvent_ToDebuggerEvent(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	event := NewNftablesApplyEvent(nil)
+	debuggerEvent := event.ToDebuggerEvent()
+
+	require.NotNil(t, debuggerEvent)
+	assert.NotEmpty(t, debuggerEvent.JsonData)
+
+	// Verify JSON structure
+	var decoded MigrationEvent
+	err := json.Unmarshal([]byte(debuggerEvent.JsonData), &decoded)
+	require.NoError(t, err)
+
+	assert.Equal(t, event.Namespace, decoded.Namespace)
+	assert.Equal(t, event.Subscope, decoded.Subscope)
+	assert.Equal(t, event.Event, decoded.Event)
+	assert.Equal(t, event.Status, decoded.Status)
+	assert.Equal(t, event.Error, decoded.Error)
+
+	// Verify context paths are set
+	assert.NotEmpty(t, debuggerEvent.KeyBasedContextPaths)
+	assert.NotEmpty(t, debuggerEvent.GeneralContextPaths)
+}
+
+func TestMigrationEvent_ToDebuggerEvent_WithError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	testErr := errors.New("sorry Michael, rules are messed up")
+	event := NewNftablesApplyEvent(testErr)
+	debuggerEvent := event.ToDebuggerEvent()
+
+	require.NotNil(t, debuggerEvent)
+
+	var decoded MigrationEvent
+	err := json.Unmarshal([]byte(debuggerEvent.JsonData), &decoded)
+	require.NoError(t, err)
+
+	assert.Equal(t, analytics.ResultFailure, decoded.Status)
+	assert.Equal(t, "sorry Michael, rules are messed up", decoded.Error)
+}

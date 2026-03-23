@@ -42,6 +42,27 @@ func getRuleOutput(iptableVersion string, table string) ([]byte, error) {
 	return out, nil
 }
 
+// HasNordVPNRules checks if any nordvpn iptables rules exist.
+func HasNordVPNRules() bool {
+	for _, iptableVersion := range binaryNames {
+		if !internal.IsCommandAvailable(iptableVersion) {
+			continue
+		}
+		for _, table := range tableNames {
+			out, err := getRuleOutput(iptableVersion, table)
+			if err != nil {
+				continue
+			}
+			rules := string(out)
+			if len(generateFlushRules(rules, table)) > 0 {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 // CleanUpIptables cycles through iptables commands and cleans up every single iptables rule that was added by older app versions
 func CleanUpIptables() error {
 	var finalErr error = nil
