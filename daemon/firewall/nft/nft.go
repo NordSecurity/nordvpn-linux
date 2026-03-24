@@ -10,6 +10,7 @@ import (
 	"github.com/google/nftables"
 	"github.com/google/nftables/binaryutil"
 	"github.com/google/nftables/expr"
+	"github.com/google/nftables/userdata"
 	"golang.org/x/sys/unix"
 )
 
@@ -155,8 +156,8 @@ func (n *nft) configure(config firewall.Config) error {
 		}
 	}
 
-	n.addPreRoutingChain(table, allowlistSubnets, udpPorts, tcpPorts)
-	n.addInputChain(config, table, excludedInterfaces, fileshare, allowedIncomingConnections)
+	// n.addPreRoutingChain(table, allowlistSubnets, udpPorts, tcpPorts)
+	n.addInputChain(config, table, allowlistSubnets, udpPorts, tcpPorts, excludedInterfaces, fileshare, allowedIncomingConnections)
 	n.addOutputChain(config, table, excludedInterfaces, allowlistSubnets, udpPorts, tcpPorts, lanPrivateRanges)
 	n.addForwardChain(config, table, allowlistSubnets, udpPorts, tcpPorts, lanAllowedPeers, routingAllowed, lanPrivateRanges, config.MeshnetInfo)
 	if config.MeshnetInfo != nil && routingAllowed != nil {
@@ -166,46 +167,82 @@ func (n *nft) configure(config firewall.Config) error {
 	return n.conn.Flush()
 }
 
-func (n *nft) addPreRoutingChain(
-	table *nftables.Table,
+// func (n *nft) addPreRoutingChain(
+// 	table *nftables.Table,
+// 	allowlistSubnets *nftables.Set,
+// 	udpPortsSet *nftables.Set,
+// 	tcpPortsSet *nftables.Set,
+// ) {
+// 	acceptPolicy := nftables.ChainPolicyAccept
+
+// 	preRoutingChain := n.conn.AddChain(&nftables.Chain{
+// 		Name:     preroutingChainName,
+// 		Table:    table,
+// 		Type:     nftables.ChainTypeFilter,
+// 		Hooknum:  nftables.ChainHookPrerouting,
+// 		Priority: nftables.ChainPriorityMangle,
+// 		Policy:   &acceptPolicy,
+// 	})
+
+// 	// // ct mark 0xe1f1 meta mark 0xe1f1 accept
+// 	// n.conn.AddRule(&nftables.Rule{
+// 	// 	Table: table,
+// 	// 	Chain: preRoutingChain,
+// 	// 	Exprs: buildRules(
+// 	// 		expr.VerdictAccept,
+// 	// 		checkConntrack(n.fwmark),
+// 	// 		setMetaMark(n.fwmark),
+// 	// 	),
+// 	// })
+// }
+
+func (n *nft) addFromAllowlistSource(
+	config firewall.Config,
 	allowlistSubnets *nftables.Set,
-	udpPortsSet *nftables.Set,
+	table *nftables.Table,
+	chain *nftables.Chain,
 	tcpPortsSet *nftables.Set,
+	udpPortsSet *nftables.Set,
 ) {
-	acceptPolicy := nftables.ChainPolicyAccept
-
-	preRoutingChain := n.conn.AddChain(&nftables.Chain{
-		Name:     preroutingChainName,
-		Table:    table,
-		Type:     nftables.ChainTypeFilter,
-		Hooknum:  nftables.ChainHookPrerouting,
-		Priority: nftables.ChainPriorityMangle,
-		Policy:   &acceptPolicy,
-	})
-
+	// have: fib saddr . iif oif missing drop?
 	if allowlistSubnets != nil {
 		// ip saddr @allowed_subnets meta mark set 0x0000e1f1 accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
-			Chain: preRoutingChain,
+			Chain: chain,
 			Exprs: buildRules(
 				expr.VerdictAccept,
+				checkInterfaceName(config.TunnelInterface, IF_INPUT, expr.CmpOpNeq),
 				checkIpInSet(allowlistSubnets, MATCH_SOURCE),
-				setMetaMark(n.fwmark),
 			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "allowlist IPs to local"),
 		})
 	}
 
+	// TODO: check if also meshnet can access different ports
 	if tcpPortsSet != nil {
 		// tcp sport @ports_tcp meta mark set 0xe1f1 accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
-			Chain: preRoutingChain,
+			Chain: chain,
 			Exprs: buildRules(
 				expr.VerdictAccept,
+				checkInterfaceName(config.TunnelInterface, IF_INPUT, expr.CmpOpNeq),
 				checkPortInSet(tcpPortsSet, unix.IPPROTO_TCP, MATCH_SOURCE),
-				setMetaMark(n.fwmark),
 			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "from allowed TCP ports to local"),
+		})
+
+		// tcp dport @ports_tcp meta mark set 0xe1f1 accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: chain,
+			Exprs: buildRules(
+				expr.VerdictAccept,
+				checkInterfaceName(config.TunnelInterface, IF_INPUT, expr.CmpOpNeq),
+				checkPortInSet(tcpPortsSet, unix.IPPROTO_TCP, MATCH_DESTINATION),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "to local TCP ports"),
 		})
 	}
 
@@ -213,30 +250,35 @@ func (n *nft) addPreRoutingChain(
 		// udp sport @ports_udp meta mark set 0xe1f1 accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
-			Chain: preRoutingChain,
+			Chain: chain,
 			Exprs: buildRules(
 				expr.VerdictAccept,
+				checkInterfaceName(config.TunnelInterface, IF_INPUT, expr.CmpOpNeq),
 				checkPortInSet(udpPortsSet, unix.IPPROTO_UDP, MATCH_SOURCE),
-				setMetaMark(n.fwmark),
 			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "from allowed UDP ports to local"),
+		})
+
+		// udp dport @ports_udp meta mark set 0xe1f1 accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: chain,
+			Exprs: buildRules(
+				expr.VerdictAccept,
+				checkInterfaceName(config.TunnelInterface, IF_INPUT, expr.CmpOpNeq),
+				checkPortInSet(udpPortsSet, unix.IPPROTO_UDP, MATCH_DESTINATION),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "to local UDP ports"),
 		})
 	}
-
-	// ct mark 0xe1f1 meta mark 0xe1f1 accept
-	n.conn.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: preRoutingChain,
-		Exprs: buildRules(
-			expr.VerdictAccept,
-			checkConntrack(n.fwmark),
-			setMetaMark(n.fwmark),
-		),
-	})
 }
 
 func (n *nft) addInputChain(
 	config firewall.Config,
 	table *nftables.Table,
+	allowlistSubnets *nftables.Set,
+	udpPortsSet *nftables.Set,
+	tcpPortsSet *nftables.Set,
 	excludedInterfaces *nftables.Set,
 	filesharePeers *nftables.Set,
 	allowIncomingConnections *nftables.Set,
@@ -255,17 +297,22 @@ func (n *nft) addInputChain(
 		Policy:   &chainPolicy,
 	})
 
+	// iifname lo accept
 	n.conn.AddRule(&nftables.Rule{
 		Table: table,
 		Chain: inputChain,
-		Exprs: buildRules(expr.VerdictAccept, checkMetaMark(n.fwmark)),
+		Exprs: buildRules(expr.VerdictAccept,
+			checkInterfaceName("lo", IF_INPUT, expr.CmpOpEq),
+		),
+		UserData: userdata.AppendString(nil, userdata.TypeComment, "local to local"),
 	})
 
 	// ct mark 0xe1f1 accept
 	n.conn.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: inputChain,
-		Exprs: buildRules(expr.VerdictAccept, checkConntrack(n.fwmark)),
+		Table:    table,
+		Chain:    inputChain,
+		Exprs:    buildRules(expr.VerdictAccept, checkConntrack(n.fwmark)),
+		UserData: userdata.AppendString(nil, userdata.TypeComment, "response for sockets with SO_MARK"),
 	})
 
 	// meshnet
@@ -279,18 +326,36 @@ func (n *nft) addInputChain(
 			Chain: inputChain,
 			Exprs: buildJumpRules(
 				meshChain.Name,
-				checkInterfaceName(config.MeshnetInfo.MeshInterface, IF_INPUT),
+				checkInterfaceName(config.MeshnetInfo.MeshInterface, IF_INPUT, expr.CmpOpEq),
 				checkIpPartOfSubnet(internal.MeshSubnet, MATCH_SOURCE, expr.CmpOpEq),
 			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "meshnet to local"),
 		})
 	}
 
-	// iifname @allowed_interfaces accept
-	n.conn.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: inputChain,
-		Exprs: buildRules(expr.VerdictAccept, addInterfacesCheck(excludedInterfaces, IF_INPUT)),
-	})
+	if len(config.TunnelInterface) > 0 {
+		// iifname "nordlynx" ct state established,related accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: inputChain,
+			Exprs: buildRules(
+				expr.VerdictAccept,
+				checkInterfaceName(config.TunnelInterface, IF_INPUT, expr.CmpOpEq),
+				addCheckCtState(expr.CtStateBitESTABLISHED|expr.CtStateBitRELATED),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "response to connections inside tunnel"),
+		})
+	}
+
+	n.addFromAllowlistSource(config, allowlistSubnets, table, inputChain, tcpPortsSet, udpPortsSet)
+
+	// // meta mark 0x0000e1f1 accept
+	// n.conn.AddRule(&nftables.Rule{
+	// 	Table:    table,
+	// 	Chain:    inputChain,
+	// 	Exprs:    buildRules(expr.VerdictAccept, checkMetaMark(n.fwmark)),
+	// 	UserData: userdata.AppendString(nil, userdata.TypeComment, "marked traffic to local"),
+	// })
 }
 
 func (n *nft) addMeshnetInputChain(
@@ -385,11 +450,12 @@ func (n *nft) addOutputChain(
 		Policy:   &chainPolicy,
 	})
 
-	// oifname @allowed_interfaces accept
+	// oifname @excluded_interfaces accept
 	n.conn.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: outputChain,
-		Exprs: buildRules(expr.VerdictAccept, addInterfacesCheck(excludedInterfaces, IF_OUTPUT)),
+		Table:    table,
+		Chain:    outputChain,
+		Exprs:    buildRules(expr.VerdictAccept, addInterfacesCheck(excludedInterfaces, IF_OUTPUT)),
+		UserData: userdata.AppendString(nil, userdata.TypeComment, "local to local and local to VPN"),
 	})
 
 	// always drop DNS if port 53 not whitelisted
@@ -404,6 +470,7 @@ func (n *nft) addOutputChain(
 					checkIpInSet(lanPrivateRanges, MATCH_DESTINATION),
 					checkPortNumber(defaultDnsPort, unix.IPPROTO_TCP, MATCH_DESTINATION),
 				),
+				UserData: userdata.AppendString(nil, userdata.TypeComment, "local to LAN DNS for TCP"),
 			})
 		}
 
@@ -417,54 +484,56 @@ func (n *nft) addOutputChain(
 					checkIpInSet(lanPrivateRanges, MATCH_DESTINATION),
 					checkPortNumber(defaultDnsPort, unix.IPPROTO_UDP, MATCH_DESTINATION),
 				),
+				UserData: userdata.AppendString(nil, userdata.TypeComment, "local to LAN DNS for UDP"),
 			})
 		}
 	}
 
 	if allowlistSubnets != nil {
-		// ip daddr @allowed_subnets meta mark set 0x0000e1f1 accept
+		// ip daddr @allowed_subnets accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
 			Chain: outputChain,
 			Exprs: buildRules(
 				expr.VerdictAccept,
 				checkIpInSet(allowlistSubnets, MATCH_DESTINATION),
-				setMetaMark(n.fwmark),
 			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "local to allowlist IPs"),
 		})
 	}
 
 	if tcpPortsSet != nil {
-		// tcp dport @ports_tcp meta mark set 0xe1f1 accept
+		// tcp sport @ports_tcp accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
 			Chain: outputChain,
 			Exprs: buildRules(
 				expr.VerdictAccept,
-				checkPortInSet(tcpPortsSet, unix.IPPROTO_TCP, MATCH_DESTINATION),
-				setMetaMark(n.fwmark),
+				checkPortInSet(tcpPortsSet, unix.IPPROTO_TCP, MATCH_SOURCE),
 			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "from allowlist TCP ports"),
 		})
 	}
 
 	if udpPortsSet != nil {
-		// udp dport @ports_udp meta mark set 0xe1f1 accept
+		// udp sport @ports_udp accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
 			Chain: outputChain,
 			Exprs: buildRules(
 				expr.VerdictAccept,
-				checkPortInSet(udpPortsSet, unix.IPPROTO_UDP, MATCH_DESTINATION),
-				setMetaMark(n.fwmark),
+				checkPortInSet(udpPortsSet, unix.IPPROTO_UDP, MATCH_SOURCE),
 			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "from allowlist UDP ports"),
 		})
 	}
 
 	// ct mark 0xe1f1 accept
 	n.conn.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: outputChain,
-		Exprs: buildRules(expr.VerdictAccept, checkConntrack(n.fwmark)),
+		Table:    table,
+		Chain:    outputChain,
+		Exprs:    buildRules(expr.VerdictAccept, checkConntrack(n.fwmark)),
+		UserData: userdata.AppendString(nil, userdata.TypeComment, "VPN transport continuation"),
 	})
 
 	// meta mark 0x0000e1f1 ct mark set 0x0000e1f1 accept
@@ -474,6 +543,7 @@ func (n *nft) addOutputChain(
 		Exprs: buildRules(expr.VerdictAccept,
 			addMetaMarkCheckAndSetCtMark(n.fwmark),
 		),
+		UserData: userdata.AppendString(nil, userdata.TypeComment, "mark connection for socket with SO_MARK"),
 	})
 
 	if config.MeshnetInfo != nil {
@@ -482,9 +552,10 @@ func (n *nft) addOutputChain(
 			Table: table,
 			Chain: outputChain,
 			Exprs: buildRules(expr.VerdictAccept,
-				checkInterfaceName(config.MeshnetInfo.MeshInterface, IF_OUTPUT),
+				checkInterfaceName(config.MeshnetInfo.MeshInterface, IF_OUTPUT, expr.CmpOpEq),
 				checkIpPartOfSubnet(internal.MeshSubnet, MATCH_DESTINATION, expr.CmpOpEq),
 			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "local to meshnet"),
 		})
 	}
 }
@@ -512,6 +583,14 @@ func (n *nft) addForwardChain(
 		Hooknum:  nftables.ChainHookForward,
 		Priority: nftables.ChainPriorityFilter,
 		Policy:   &chainPolicy,
+	})
+
+	// meta mark 0x0000e1f1 accept
+	n.conn.AddRule(&nftables.Rule{
+		Table:    table,
+		Chain:    forwardChain,
+		Exprs:    buildRules(expr.VerdictAccept, checkMetaMark(n.fwmark)),
+		UserData: userdata.AppendString(nil, userdata.TypeComment, "local to meshnet"),
 	})
 
 	if allowedSubnets != nil {
@@ -551,13 +630,6 @@ func (n *nft) addForwardChain(
 		})
 	}
 
-	// meta mark 0x0000e1f1 accept
-	n.conn.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: forwardChain,
-		Exprs: buildRules(expr.VerdictAccept, checkMetaMark(n.fwmark)),
-	})
-
 	if routingAllowed != nil {
 		meshChain := n.conn.AddChain(&nftables.Chain{
 			Name:  meshForwardChainName,
@@ -570,7 +642,7 @@ func (n *nft) addForwardChain(
 			Chain: forwardChain,
 			Exprs: buildJumpRules(
 				meshChain.Name,
-				checkInterfaceName(meshMap.MeshInterface, IF_INPUT),
+				checkInterfaceName(meshMap.MeshInterface, IF_INPUT, expr.CmpOpEq),
 				checkIpPartOfSubnet(internal.MeshSubnet, MATCH_SOURCE, expr.CmpOpEq),
 			),
 		})
@@ -622,7 +694,10 @@ func (n *nft) addForwardChain(
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
 			Chain: forwardChain,
-			Exprs: buildRules(expr.VerdictAccept, checkInterfaceName(config.TunnelInterface, IF_OUTPUT)),
+			Exprs: buildRules(
+				expr.VerdictAccept,
+				checkInterfaceName(config.TunnelInterface, IF_OUTPUT, expr.CmpOpEq),
+			),
 		})
 
 		n.conn.AddRule(&nftables.Rule{
@@ -630,7 +705,7 @@ func (n *nft) addForwardChain(
 			Chain: forwardChain,
 			Exprs: buildRules(
 				expr.VerdictAccept,
-				checkInterfaceName(config.TunnelInterface, IF_INPUT),
+				checkInterfaceName(config.TunnelInterface, IF_INPUT, expr.CmpOpEq),
 				addCheckCtState(expr.CtStateBitESTABLISHED|expr.CtStateBitRELATED),
 			),
 		})

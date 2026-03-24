@@ -214,7 +214,11 @@ func addInterfacesCheck(interfaces *nftables.Set, direction ifDirection) []expr.
 }
 
 // iifname "nordlynx"
-func checkInterfaceName(ifName string, direction ifDirection) []expr.Any {
+func checkInterfaceName(ifName string, direction ifDirection, cmp expr.CmpOp) []expr.Any {
+	if len(ifName) == 0 {
+		return []expr.Any{}
+	}
+
 	dir := expr.MetaKeyIIFNAME
 	if direction == IF_OUTPUT {
 		dir = expr.MetaKeyOIFNAME
@@ -226,7 +230,7 @@ func checkInterfaceName(ifName string, direction ifDirection) []expr.Any {
 		},
 		&expr.Cmp{
 			Register: 1,
-			Op:       expr.CmpOpEq,
+			Op:       cmp,
 			Data:     ifname(ifName),
 		},
 	}
