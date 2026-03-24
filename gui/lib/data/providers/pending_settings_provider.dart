@@ -1,3 +1,4 @@
+import 'package:nordvpn/data/models/allow_list.dart';
 import 'package:nordvpn/data/models/vpn_protocol.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -23,6 +24,28 @@ class PendingVPNProtocol extends _$PendingVPNProtocol {
   /// Returns the pending value and clears it.
   /// Use this when applying the pending change.
   VpnProtocol? consume() {
+    final value = state;
+    clear();
+    return value;
+  }
+}
+
+/// Stores a pending allowlist entry (port or subnet) awaiting user
+/// confirmation before being added with force.
+@Riverpod(keepAlive: true)
+class PendingAllowListEntry extends _$PendingAllowListEntry {
+  @override
+  ({PortInterval? port, Subnet? subnet})? build() => null;
+
+  void set({PortInterval? port, Subnet? subnet}) {
+    state = (port: port, subnet: subnet);
+  }
+
+  void clear() {
+    state = null;
+  }
+
+  ({PortInterval? port, Subnet? subnet})? consume() {
     final value = state;
     clear();
     return value;

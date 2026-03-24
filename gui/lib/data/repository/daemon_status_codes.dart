@@ -29,6 +29,9 @@ final class DaemonStatusCode {
   static const technologyDisabled = 3051;
   static const virtualLocationsDisabled = 3057;
 
+  static const allowlistSubnetTooWideWarn = 3059;
+  static const allowlistSubnetWiderConfirm = 3060;
+
   // custom GUI defined error codes
   static const invalidTechnology = 5000;
   static const allowListModified = 5001;

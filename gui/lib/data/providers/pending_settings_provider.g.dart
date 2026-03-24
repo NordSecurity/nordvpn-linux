@@ -26,5 +26,29 @@ final pendingVPNProtocolProvider =
     );
 
 typedef _$PendingVPNProtocol = Notifier<VpnProtocol?>;
+String _$pendingAllowListEntryHash() =>
+    r'48703ae1a42dd8256b4686d42ff469aa0ea5bf29';
+
+/// Stores a pending allowlist entry (port or subnet) awaiting user
+/// confirmation before being added with force.
+///
+/// Copied from [PendingAllowListEntry].
+@ProviderFor(PendingAllowListEntry)
+final pendingAllowListEntryProvider =
+    NotifierProvider<
+      PendingAllowListEntry,
+      ({PortInterval? port, Subnet? subnet})?
+    >.internal(
+      PendingAllowListEntry.new,
+      name: r'pendingAllowListEntryProvider',
+      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+          ? null
+          : _$pendingAllowListEntryHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+typedef _$PendingAllowListEntry =
+    Notifier<({PortInterval? port, Subnet? subnet})?>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

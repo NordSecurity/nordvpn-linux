@@ -27,9 +27,19 @@ final class Popups extends _$Popups {
   bool _shouldIgnore(int code) {
     return code <= 2000 ||
         code ==
-            3045 // CodeAllowlistSubnetNoop should be ignored by GUI
+            DaemonStatusCode
+                .allowlistSubnetNoop // should be ignored by GUI
+                ||
+        code ==
+            3047 // CodeAllowlistPortNoop should be ignored by GUI
             ||
-        code == 3047; // CodeAllowlistPortNoop should be ignored by GUI
+        code ==
+            DaemonStatusCode
+                .allowlistSubnetTooWideWarn // handled in allow_list_settings.dart
+                ||
+        code ==
+            DaemonStatusCode
+                .allowlistSubnetWiderConfirm; // handled in allow_list_settings.dart
   }
 
   void _showWithMetadata(PopupMetadata metadata) {

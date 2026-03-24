@@ -118,6 +118,39 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
       },
     ),
 
+    // Ask user confirmation to remove overlapping/narrower subnet, if any
+    PopupCodes.removeOverlappingSubnetsConfirm => DecisionPopupMetadata(
+      id: PopupCodes.removeOverlappingSubnetsConfirm,
+      title: t.ui.removeOverlappingSubnets,
+      message: (_) => t.ui.removeOverlappingSubnetsDescription,
+      noButtonText: t.ui.cancel,
+      yesButtonText: t.ui.removeWord,
+      yesAction: (ref) async {
+        final entry = ref
+            .read(pendingAllowListEntryProvider.notifier)
+            .consume();
+        if (entry == null) return;
+        await ref
+            .read(vpnSettingsControllerProvider.notifier)
+            .addToAllowList(
+              port: entry.port,
+              subnet: entry.subnet,
+              force: true,
+            );
+      },
+      noAction: (ref) {
+        ref.read(pendingAllowListEntryProvider.notifier).clear();
+      },
+    ),
+
+    // Warn user about dangerous subnet being added
+    PopupCodes.addingTooWideSubnetWarn => InfoPopupMetadata(
+      id: PopupCodes.addingTooWideSubnetWarn,
+      title: t.ui.addingTooWideSubnet,
+      message: (_) => t.ui.addingTooWideSubnetDescription,
+      buttonText: t.ui.gotIt,
+    ),
+
     // Reconnect to apply protocol change - requires user confirmation
     // The protocol change is postponed until user confirms
     PopupCodes.reconnectToChangeProtocol => DecisionPopupMetadata(
