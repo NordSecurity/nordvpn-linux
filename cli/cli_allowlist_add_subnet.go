@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -33,11 +34,25 @@ func (c *cmd) AllowlistAddSubnet(ctx *cli.Context) error {
 
 	subnet := args.First()
 
+	// first call to rpc.SetAllowList() has Force=false which means do not remove narrower subnet, if found
 	resp, err := c.client.SetAllowlist(context.Background(), &pb.SetAllowlistRequest{
 		Request: &pb.SetAllowlistRequest_SetAllowlistSubnetRequest{
-			SetAllowlistSubnetRequest: &pb.SetAllowlistSubnetRequest{Subnet: subnet},
+			SetAllowlistSubnetRequest: &pb.SetAllowlistSubnetRequest{Subnet: subnet, Force: false},
 		},
 	})
+	if resp.Type == internal.CodeAllowlistSubnetWider {
+		// ask user to confirm removal of narrower subnet when wider subnet is added to allowlist
+		if !readForConfirmationDefaultValue(os.Stdin, MsgRemoveNarrowNarrowConfirmPrompt, true) {
+			return nil
+		}
+		// second call to rpc.SetAllowList() has Force=true which means force remove narrower subnet from allowlist
+		resp, err = c.client.SetAllowlist(context.Background(), &pb.SetAllowlistRequest{
+			Request: &pb.SetAllowlistRequest_SetAllowlistSubnetRequest{
+				SetAllowlistSubnetRequest: &pb.SetAllowlistSubnetRequest{Subnet: subnet, Force: true},
+			},
+		})
+	}
+
 	if err != nil {
 		return formatError(err)
 	}
@@ -55,6 +70,11 @@ func (c *cmd) AllowlistAddSubnet(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	case internal.CodeAllowlistSubnetNoop:
 		return formatError(fmt.Errorf(AllowlistAddSubnetExistsError, subnet))
+	case internal.CodeAllowlistSubnetSmallerNoop:
+		return formatError(fmt.Errorf(AllowlistAddSubnetExistsError, subnet))
+	case internal.CodeAllowlistSubnetTooWideWarn:
+		color.Yellow(AllowlistAddSubnetTooWideWarning) // show warning in yellow, and then show following success msg in green
+		fallthrough
 	case internal.CodeSuccess:
 		color.Green(fmt.Sprintf(AllowlistAddSubnetSuccess, subnet))
 	}

@@ -152,10 +152,12 @@ class PortRange(_message.Message):
     def __init__(self, start_port: _Optional[int] = ..., end_port: _Optional[int] = ...) -> None: ...
 
 class SetAllowlistSubnetRequest(_message.Message):
-    __slots__ = ("subnet",)
+    __slots__ = ("subnet", "force")
     SUBNET_FIELD_NUMBER: _ClassVar[int]
+    FORCE_FIELD_NUMBER: _ClassVar[int]
     subnet: str
-    def __init__(self, subnet: _Optional[str] = ...) -> None: ...
+    force: bool
+    def __init__(self, subnet: _Optional[str] = ..., force: bool = ...) -> None: ...
 
 class SetAllowlistPortsRequest(_message.Message):
     __slots__ = ("is_udp", "is_tcp", "port_range")

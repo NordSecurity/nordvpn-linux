@@ -70,6 +70,9 @@ const (
 	CodeCleanRecentConnectionError     int64 = 3055
 	CodeARPIgnoreError                 int64 = 3056
 	CodeVirtualLocationDisabled        int64 = 3057
+	CodeAllowlistSubnetSmallerNoop     int64 = 3058 // narrow subnet being added already covered by broader subnet in allowlist
+	CodeAllowlistSubnetTooWideWarn     int64 = 3059 // too wide subnet (<= /8) is being allowlisted
+	CodeAllowlistSubnetWider           int64 = 3060
 )
 
 type ErrorWithCode struct {

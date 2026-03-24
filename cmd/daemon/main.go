@@ -11,7 +11,9 @@ import (
 	"net"
 	"net/http"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
+	"net/netip"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -31,7 +33,10 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/nft"
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/forwarder"
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/iptables"
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/notables"
 	"github.com/NordSecurity/nordvpn-linux/daemon/netstate"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	telemetrypb "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1"
@@ -160,9 +165,9 @@ func main() {
 		configEvents.Config,
 	)
 
-	// Remove any remains of IPv6 settings
-	if err := fsystem.SaveWith(removeIPv6Remains); err != nil {
-		log.Println(internal.ErrorPrefix, "failed to remove IPv6 entries from settings ", err)
+	// Remove any remains of IPv6 settings and remove overlapping allowlist subnets
+	if err := fsystem.SaveWith(configCleanup); err != nil {
+		log.Println(internal.ErrorPrefix, "failed to cleanup config:", err)
 	}
 
 	var cfg config.Config
@@ -202,10 +207,20 @@ func main() {
 	dns.RestoreDNS()
 
 	// Firewall
+	stateModule := "conntrack"
+	stateFlag := "--ctstate"
+	chainPrefix := ""
+	iptablesAgent := iptables.New(
+		stateModule,
+		stateFlag,
+		chainPrefix,
+		iptables.FilterSupportedIPTables([]string{"iptables", "ip6tables"}),
+	)
 	fw := firewall.NewFirewall(
-		nft.New(cfg.FirewallMark),
+		&notables.Facade{},
+		iptablesAgent,
+		debugSubject,
 		cfg.Firewall,
-		daemonEvents.Debugger.DebuggerEvents,
 	)
 
 	// API
@@ -249,7 +264,7 @@ func main() {
 		cdnUrl,
 		httpClientSimple,
 		validator,
-		cfg.FirewallMark,
+		fw,
 		network.ExponentialBackoff,
 	)
 
@@ -388,6 +403,15 @@ func main() {
 		}
 	}
 
+	devices, err := device.OutsideCapableTrafficInterfaces()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	ifaceNames := []string{}
+	for _, d := range devices {
+		ifaceNames = append(ifaceNames, d.Name)
+	}
+
 	mesh, err := meshnetImplementation(vpnFactory)
 	if err != nil {
 		log.Fatalln(err)
@@ -426,6 +450,10 @@ func main() {
 		allowlistRouter,
 		dnsSetter,
 		fw,
+		allowlist.NewAllowlistRouting(func(command string, arg ...string) ([]byte, error) {
+			arg = append(arg, "-w", internal.SecondsToWaitForIptablesLock)
+			return exec.Command(command, arg...).CombinedOutput()
+		}),
 		device.OutsideCapableTrafficInterfaces,
 		routes.NewPolicyRouter(
 			&norule.Facade{},
@@ -439,16 +467,20 @@ func main() {
 		dnsHostSetter,
 		vpnRouter,
 		meshRouter,
+		forwarder.NewForwarder(ifaceNames, func(command string, arg ...string) ([]byte, error) {
+			arg = append(arg, "-w", internal.SecondsToWaitForIptablesLock)
+			return exec.Command(command, arg...).CombinedOutput()
+		},
+			kernel.NewSysctlSetter(
+				forwarder.Ipv4fwdKernelParamName,
+				1,
+			)),
 		cfg.FirewallMark,
 		cfg.LanDiscovery,
 		ipv6.NewIpv6(),
 		cfg.ARPIgnore.Get(),
 		kernel.NewSysctlSetter(
 			networker.ArpIgnoreParamName, 1,
-		),
-		cfg.AutoConnectData.Allowlist,
-		kernel.NewSysctlSetter(
-			networker.IpForwardParamName, 1,
 		),
 	)
 
@@ -505,6 +537,7 @@ func main() {
 		sessionBuilder.GetStores()...,
 	)
 
+	endpointResolver := network.NewDefaultResolverChain(fw)
 	notificationClient := nc.NewClient(
 		nc.MqttClientBuilder{},
 		infoSubject,
@@ -560,6 +593,7 @@ func main() {
 		Version,
 		daemonEvents,
 		vpnFactory,
+		&endpointResolver,
 		netw,
 		debugSubject,
 		threatProtectionLiteServers,
@@ -773,35 +807,23 @@ func assignMooseDBPermissions(eventsDbPath string) error {
 	return nil
 }
 
-func removeIPv6Remains(c config.Config) config.Config {
+// configCleanup - validate/cleanup DNS addresses, allowlist subnets
+func configCleanup(c config.Config) config.Config {
 	// Remove all nameservers with IPv6 addresses
 	var dnsList []string
 	for _, addr := range c.AutoConnectData.DNS {
-		ip := net.ParseIP(addr)
-		if ip == nil {
+		p, err := netip.ParsePrefix(addr)
+		if err != nil || !p.Addr().Is4() {
 			continue
 		}
-		if ip.To4() != nil {
-			dnsList = append(dnsList, addr)
-		}
+		dnsList = append(dnsList, addr)
 	}
-
 	c.AutoConnectData.DNS = dnsList
 
-	// Remove all IPv6 subnets from AllowList
-	var allowList []string
-	for _, addr := range c.AutoConnectData.Allowlist.Subnets {
-		_, subnet, err := net.ParseCIDR(addr)
-		if err != nil {
-			continue
-		}
-
-		if subnet.IP.To4() != nil {
-			allowList = append(allowList, addr)
-		}
-	}
-
-	c.AutoConnectData.Allowlist.Subnets = allowList
+	// Remove overlapping or invalid/non-IPv4 subnets, if any
+	c.AutoConnectData.Allowlist.NormalizeSubnets(func(removed, reason string) {
+		log.Println(internal.WarningPrefix, "On start, allowlist remove subnet:", removed, "; reason:", reason)
+	})
 
 	return c
 }
@@ -835,7 +857,7 @@ func buildTpServersAndResolver(
 	cdnUrl string,
 	httpClientSimple *http.Client,
 	validator response.Validator,
-	fwmark uint32,
+	fw *firewall.Firewall,
 	timeoutFn dns.CalculateRetryDelayForAttempt,
 ) (*dns.NameServers, *network.Resolver) {
 	cdn := core.NewCDNAPI(userAgent, cdnUrl, httpClientSimple, validator)
@@ -843,6 +865,6 @@ func buildTpServersAndResolver(
 	// fetch async the TP servers, because FetchTPServers will retry until is successful
 	go tpServers.FetchTPServers(cdn.ThreatProtectionLite, timeoutFn)
 
-	resolver := network.NewResolver(tpServers, fwmark)
+	resolver := network.NewResolver(fw, tpServers)
 	return tpServers, resolver
 }
