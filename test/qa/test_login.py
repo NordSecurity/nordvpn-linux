@@ -51,8 +51,8 @@ def test_invalid_input_repeats_consent_prompt_only():
 
     login.assert_prompt_present(first_output)
     login.assert_prompt_absent(second_output)
-    assert "Invalid response" in lib.squash_whitespace(second_output)
-    assert "(y/n)" in lib.squash_whitespace(second_output)
+    assert "Invalid response" in lib.squash_whitespace(second_output), "Invalid response message should appear for bad input"
+    assert "(y/n)" in lib.squash_whitespace(second_output), "Prompt should reappear with (y/n) for bad input"
 
 
 def test_user_consent_prompt_reappears_after_ctrl_c_interrupt():
@@ -96,7 +96,7 @@ def test_login():
 
     with lib.Defer(lambda: sh.nordvpn.logout("--persist-token")):
         output = login.login_as("default")
-        assert "Welcome to NordVPN! You can now connect to the VPN by using 'nordvpn connect'." in output
+        assert "Welcome to NordVPN! You can now connect to the VPN by using 'nordvpn connect'." in output, "Login should show welcome message"
 
 
 def test_invalid_token_login():
@@ -105,7 +105,7 @@ def test_invalid_token_login():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.login("--token", "xyz%#")
 
-    assert "We couldn't log you in - the access token is not valid. Please check if you've entered the token correctly. If the issue persists, contact our customer support." in ex.value.stdout.decode("utf-8")
+    assert "We couldn't log you in - the access token is not valid. Please check if you've entered the token correctly. If the issue persists, contact our customer support." in ex.value.stdout.decode("utf-8"), "Invalid token should show appropriate error message"
 
 
 def test_repeated_login():
@@ -117,7 +117,7 @@ def test_repeated_login():
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             login.login_as("default")
 
-        assert "You're already logged in." in ex.value.stdout.decode("utf-8")
+        assert "You're already logged in." in ex.value.stdout.decode("utf-8"), "Repeated login should show error message"
 
 
 @pytest.mark.skip(reason="can't get login token for expired account")
@@ -132,8 +132,8 @@ def test_expired_account_connect():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.connect()
 
-    assert "Your account has expired." in ex.value.stdout.decode("utf-8")
-    assert "https://join.nordvpn.com/order/?utm_medium=app&utm_source=linux" in ex.value.stdout.decode("utf-8")
+    assert "Your account has expired." in ex.value.stdout.decode("utf-8"), "Expired account should show expiration error"
+    assert "https://join.nordvpn.com/order/?utm_medium=app&utm_source=linux" in ex.value.stdout.decode("utf-8"), "Expired account error should include renewal link"
     sh.nordvpn.logout("--persist-token")
 
 
@@ -149,9 +149,9 @@ def test_login_while_connected():
             with pytest.raises(sh.ErrorReturnCode_1) as ex:
                 login.login_as("valid")
 
-        assert "You're already logged in" in ex.value.stdout.decode("utf-8")
+        assert "You're already logged in" in ex.value.stdout.decode("utf-8"), "Login while connected should show error"
 
-    assert network.is_disconnected()
+    assert network.is_disconnected(), "Network should be disconnected after test"
 
 
 def test_login_without_internet():
@@ -171,7 +171,7 @@ def test_repeated_logout():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.logout("--persist-token")
 
-    assert "You're not logged in" in ex.value.stdout.decode("utf-8")
+    assert "You're not logged in" in ex.value.stdout.decode("utf-8"), "Repeated logout should show error message"
 
 
 def test_logged_out_connect():
@@ -180,7 +180,7 @@ def test_logged_out_connect():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.connect()
 
-    assert "You're not logged in" in ex.value.stdout.decode("utf-8")
+    assert "You're not logged in" in ex.value.stdout.decode("utf-8"), "Connect without login should show error message"
 
 
 def test_logout_disconnects():
@@ -192,13 +192,13 @@ def test_logout_disconnects():
     output = sh.nordvpn.connect(_tty_out=False)
     print(output)
 
-    assert lib.is_connect_successful(output)
-    assert network.is_connected()
+    assert lib.is_connect_successful(output), "Connect should be successful after login"
+    assert network.is_connected(), "Network should be connected after connect command"
 
     output = sh.nordvpn.logout("--persist-token")
     print(output)
-    assert "You're logged out." in output
-    assert network.is_disconnected()
+    assert "You're logged out." in output, "Logout should show success message"
+    assert network.is_disconnected(), "Network should be disconnected after logout"
 
 
 def test_token_login_requires_tty():
@@ -213,7 +213,7 @@ def test_token_login_requires_tty():
         "We couldn't prompt for a login token, "
         "because the command is not running in a terminal."
     )
-    assert expected in ex.value.stdout.decode("utf-8")
+    assert expected in ex.value.stdout.decode("utf-8"), "Token login without TTY should show error message"
 
 
 def test_missing_url_callback_login():
@@ -222,7 +222,7 @@ def test_missing_url_callback_login():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.login("--callback")
 
-    assert "Expected a url." in ex.value.stdout.decode("utf-8")
+    assert "Expected a url." in ex.value.stdout.decode("utf-8"), "Callback login without URL should show error message"
 
 
 def test_invalid_url_callback_login():
@@ -231,7 +231,7 @@ def test_invalid_url_callback_login():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.login("--callback", "https://www.google.com/")
 
-    assert "Expected a url with nordvpn scheme." in ex.value.stdout.decode("utf-8")
+    assert "Expected a url with nordvpn scheme." in ex.value.stdout.decode("utf-8"), "Callback login with invalid URL should show error message"
 
 
 def test_repeated_login_callback():
@@ -243,7 +243,7 @@ def test_repeated_login_callback():
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh.nordvpn.login("--callback")
 
-        assert "You're already logged in." in ex.value.stdout.decode("utf-8")
+        assert "You're already logged in." in ex.value.stdout.decode("utf-8"), "Repeated login callback should show error message"
 
 
 def test_repeated_login_callback_invalid_url():
@@ -255,7 +255,7 @@ def test_repeated_login_callback_invalid_url():
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh.nordvpn.login("--callback", "https://www.google.com/")
 
-        assert "You're already logged in." in ex.value.stdout.decode("utf-8")
+        assert "You're already logged in." in ex.value.stdout.decode("utf-8"), "Repeated login callback with invalid URL should show error message"
 
 
 def test_repeated_login_callback_nordvpn_scheme_url():
@@ -267,7 +267,7 @@ def test_repeated_login_callback_nordvpn_scheme_url():
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh.nordvpn.login("--callback", "nordvpn://")
 
-        assert "You're already logged in." in ex.value.stdout.decode("utf-8")
+        assert "You're already logged in." in ex.value.stdout.decode("utf-8"), "Repeated login callback with nordvpn scheme should show error message"
 
 
 def test_logout_not_connected():

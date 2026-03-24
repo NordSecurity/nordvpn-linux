@@ -45,9 +45,9 @@ def base_test_peer_list(filter_list: list[str] | None = None) -> None:
     if len(filter_list) != 0:
         local_peer_list_filtered = meshnet.get_clean_peer_list(str(sh_no_tty.nordvpn.mesh.peer.list("-f", ",".join(filter_list)))).split("\n")
 
-        assert local_formed_list == local_peer_list_filtered
+        assert local_formed_list == local_peer_list_filtered, "Filtered peer list should match formatted peer list"
     else:
-        assert local_formed_list == local_peer_list.split("\n")
+        assert local_formed_list == local_peer_list.split("\n"), "Peer list should match formatted peer list"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")

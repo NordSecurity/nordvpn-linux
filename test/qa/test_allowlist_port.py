@@ -18,7 +18,7 @@ def test_allowlist_add_multiple_ports_cli_output():
     allowlist.add_ports_to_allowlist([lib.Port("6000", lib.Protocol.ALL)])
 
     port_list = allowlist.get_allow_list_ports()
-    assert len(port_list) == 3
+    assert len(port_list) == 3, "Allowlist should contain 3 ports"
 
 
 def test_allowlist_add_multiple_port_ranges_cli_output():
@@ -28,7 +28,7 @@ def test_allowlist_add_multiple_port_ranges_cli_output():
     allowlist.add_ports_to_allowlist([lib.Port("6000:6010", lib.Protocol.ALL)])
 
     port_list = allowlist.get_allow_list_ports()
-    assert len(port_list) == 3
+    assert len(port_list) == 3, "Allowlist should contain 3 ports"
 
 
 @dynamic_parametrize(
@@ -47,14 +47,14 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_disconne
 
     output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.add_ports_to_allowlist([port])
-    assert not firewall.is_active([port])
+    assert not firewall.is_active([port]), "Port should not be active when disconnected"
     output_after_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.remove_ports_from_allowlist([port])
-    assert not firewall.is_active([port])
+    assert not firewall.is_active([port]), "Port should not be active when disconnected"
     output_after_delete = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
-    assert output_before_add == output_after_add
-    assert output_after_add == output_after_delete
+    assert output_before_add == output_after_add, "Route table should not change after adding port"
+    assert output_after_add == output_after_delete, "Route table should not change after removing port"
 
 
 @dynamic_parametrize(
@@ -75,14 +75,14 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connecte
 
     output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.add_ports_to_allowlist([port])
-    assert firewall.is_active([port])
+    assert firewall.is_active([port]), "Port should be active when connected"
     output_after_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.remove_ports_from_allowlist([port])
-    assert not firewall.is_active([port])
+    assert not firewall.is_active([port]), "Port should not be active when disconnected"
     output_after_delete = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
-    assert output_before_add == output_after_add
-    assert output_after_add == output_after_delete
+    assert output_before_add == output_after_add, "Route table should not change after adding port"
+    assert output_after_add == output_after_delete, "Route table should not change after removing port"
 
 
 @dynamic_parametrize(
@@ -108,9 +108,9 @@ def test_allowlist_port_twice_disconnected(tech, proto, obfuscated, port):
             sh.nordvpn(allowlist.get_alias(), "add", "port", port.value, "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_ADD_ERROR % (port.value, port.protocol)
-    assert expected_message in ex.value.stdout.decode("utf-8")
-    assert str(sh.nordvpn.settings()).count(port.value) == 1
-    assert not firewall.is_active([port])
+    assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port add failed"
+    assert str(sh.nordvpn.settings()).count(port.value) == 1, "Port should appear once in settings"
+    assert not firewall.is_active([port]), "Port should not be active when disconnected"
 
 
 @dynamic_parametrize(
@@ -138,12 +138,12 @@ def test_allowlist_port_twice_connected(tech, proto, obfuscated, port):
             sh.nordvpn(allowlist.get_alias(), "add", "port", port.value, "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_ADD_ERROR % (port.value, port.protocol)
-    assert expected_message in ex.value.stdout.decode("utf-8")
-    assert str(sh.nordvpn.settings()).count(port.value) == 1
-    assert firewall.is_active([port])
+    assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port add failed"
+    assert str(sh.nordvpn.settings()).count(port.value) == 1, "Port should appear once in settings"
+    assert firewall.is_active([port]), "Port should be active when connected"
 
     sh.nordvpn.disconnect()
-    assert not firewall.is_active([port])
+    assert not firewall.is_active([port]), "Port should not be active when disconnected"
 
 
 @dynamic_parametrize(
@@ -161,10 +161,10 @@ def test_allowlist_port_and_remove_disconnected(tech, proto, obfuscated, port):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     allowlist.add_ports_to_allowlist([port])
-    assert not firewall.is_active([port])
+    assert not firewall.is_active([port]), "Port should not be active when disconnected"
 
     allowlist.remove_ports_from_allowlist([port])
-    assert not firewall.is_active([port])
+    assert not firewall.is_active([port]), "Port should not be active when disconnected"
 
 
 @dynamic_parametrize(
@@ -184,10 +184,10 @@ def test_allowlist_port_and_remove_connected(tech, proto, obfuscated, port):
     sh.nordvpn.connect()
 
     allowlist.add_ports_to_allowlist([port])
-    assert firewall.is_active([port])
+    assert firewall.is_active([port]), "Port should be active when connected"
 
     allowlist.remove_ports_from_allowlist([port])
-    assert firewall.is_active() and not firewall.is_active([port])
+    assert firewall.is_active() and not firewall.is_active([port]), "Firewall should be active but port should not be included"
 
 
 @dynamic_parametrize(
@@ -211,7 +211,7 @@ def test_allowlist_port_remove_nonexistent_disconnected(tech, proto, obfuscated,
             sh.nordvpn(allowlist.get_alias(), "remove", "port", port.value, "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_REMOVE_ERROR % (port.value, port.protocol)
-    assert expected_message in ex.value.stdout.decode("utf-8")
+    assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port remove failed"
 
 
 @dynamic_parametrize(
@@ -237,7 +237,7 @@ def test_allowlist_port_remove_nonexistent_connected(tech, proto, obfuscated, po
             sh.nordvpn(allowlist.get_alias(), "remove", "port", port.value, "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_REMOVE_ERROR % (port.value, port.protocol)
-    assert expected_message in ex.value.stdout.decode("utf-8")
+    assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port remove failed"
 
 
 @dynamic_parametrize(
@@ -263,7 +263,7 @@ def test_allowlist_port_range_remove_nonexistent_disconnected(tech, proto, obfus
             sh.nordvpn(allowlist.get_alias(), "remove", "ports", port_range[0], port_range[1], "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_RANGE_REMOVE_ERROR % (port.value.replace(":", " - "), port.protocol)
-    assert expected_message in ex.value.stdout.decode("utf-8")
+    assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port range remove failed"
 
 
 @dynamic_parametrize(
@@ -291,7 +291,7 @@ def test_allowlist_port_range_remove_nonexistent_connected(tech, proto, obfuscat
             sh.nordvpn(allowlist.get_alias(), "remove", "ports", port_range[0], port_range[1], "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_RANGE_REMOVE_ERROR % (port.value.replace(":", " - "), port.protocol)
-    assert expected_message in ex.value.stdout.decode("utf-8")
+    assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port range remove failed"
 
 
 @dynamic_parametrize(
@@ -311,7 +311,7 @@ def test_allowlist_port_range_twice_disconnected(tech, proto, obfuscated, port):
     for _ in range(2):
         allowlist.add_ports_to_allowlist([port])
 
-    assert not firewall.is_active([port])
+    assert not firewall.is_active([port]), "Port range should not be active when disconnected"
 
 
 @dynamic_parametrize(
@@ -333,7 +333,7 @@ def test_allowlist_port_range_twice_connected(tech, proto, obfuscated, port):
     for _ in range(2):
         allowlist.add_ports_to_allowlist([port])
 
-    assert firewall.is_active([port])
+    assert firewall.is_active([port]), "Port range should be active when connected"
 
 
 @dynamic_parametrize(
@@ -355,10 +355,10 @@ def test_allowlist_port_range_when_port_from_range_already_allowlisted_disconnec
 
     already_allowlisted_port = lib.Port(random_port_from_port_range, port.protocol)
     allowlist.add_ports_to_allowlist([already_allowlisted_port])
-    assert not firewall.is_active([already_allowlisted_port])
+    assert not firewall.is_active([already_allowlisted_port]), "Port should not be active when disconnected"
 
     allowlist.add_ports_to_allowlist([port])
-    assert not firewall.is_active([port]) and not firewall.is_active([already_allowlisted_port])
+    assert not firewall.is_active([port]) and not firewall.is_active([already_allowlisted_port]), "Port range and individual port should not be active when disconnected"
 
 
 @dynamic_parametrize(
@@ -382,7 +382,7 @@ def test_allowlist_port_range_when_port_from_range_already_allowlisted_connected
 
     already_allowlisted_port = lib.Port(random_port_from_port_range, port.protocol)
     allowlist.add_ports_to_allowlist([already_allowlisted_port])
-    assert firewall.is_active([already_allowlisted_port])
+    assert firewall.is_active([already_allowlisted_port]), "Port should be active when connected"
 
     allowlist.add_ports_to_allowlist([port])
-    assert firewall.is_active([port]) and not firewall.is_active([already_allowlisted_port])
+    assert firewall.is_active([port]) and not firewall.is_active([already_allowlisted_port]), "Port range should be active but individual port should be included in range"

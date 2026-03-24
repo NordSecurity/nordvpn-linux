@@ -97,65 +97,65 @@ def test_killswitch_exitnode_vpn(lan_discovery: bool, local: bool):
             raise
 
     # Start disconnected from exitnode
-    assert network.is_available()
+    assert network.is_available(), "Network should be available before connecting to exitnode"
     my_external_ip = network.get_external_device_ip()
 
     # Connect to exitnode
     sh_no_tty.nordvpn.mesh.peer.connect(peer_ip)
-    assert daemon.is_connected()
-    assert network.is_available()
+    assert daemon.is_connected(), "Daemon should be connected to exitnode"
+    assert network.is_available(), "Network should be available when connected to exitnode"
     peer_external_ip = network.get_external_device_ip()
 
     # Enable killswitch on exitnode
     ssh_client.exec_command("nordvpn set killswitch enabled")
-    assert daemon.is_connected()
-    assert network.is_not_available()
+    assert daemon.is_connected(), "Daemon should remain connected with killswitch enabled on exitnode"
+    assert network.is_not_available(), "Network should not be available when killswitch is enabled on exitnode"
 
     # Exitnode connects to VPN
     ssh_client.exec_command("nordvpn connect")
-    assert daemon.is_connected()
-    assert network.is_available()
+    assert daemon.is_connected(), "Daemon should remain connected when exitnode connects to VPN"
+    assert network.is_available(), "Network should be available when exitnode connects to VPN"
     peer_vpn_ip = network.get_external_device_ip()
-    assert peer_vpn_ip not in [my_ip, my_external_ip, peer_ip, peer_external_ip]
+    assert peer_vpn_ip not in [my_ip, my_external_ip, peer_ip, peer_external_ip], "Exitnode VPN IP should be different from all previous IPs"
 
     # Exitnode disconnects from VPN
     ssh_client.exec_command("nordvpn disconnect")
-    assert daemon.is_connected()
-    assert network.is_not_available()
+    assert daemon.is_connected(), "Daemon should remain connected when exitnode disconnects from VPN"
+    assert network.is_not_available(), "Network should not be available when exitnode disconnects with killswitch"
 
     # Disable killswitch on exitnode
     ssh_client.exec_command("nordvpn set killswitch disabled")
-    assert daemon.is_connected()
-    assert network.is_available()
+    assert daemon.is_connected(), "Daemon should remain connected after disabling killswitch on exitnode"
+    assert network.is_available(), "Network should be available after disabling killswitch on exitnode"
 
     # Disconnect from exitnode
     sh_no_tty.nordvpn.disconnect()
-    assert not daemon.is_connected()
-    assert network.is_available()
+    assert not daemon.is_connected(), "Daemon should be disconnected after disconnect"
+    assert network.is_available(), "Network should be available after disconnecting from exitnode"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
 def test_connect_set_mesh_off():
     peer = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().hostname
-    assert network.is_available()
+    assert network.is_available(), "Network should be available before connecting"
     sh_no_tty.nordvpn.mesh.peer.connect(peer)
-    assert daemon.is_connected()
-    assert network.is_available()
+    assert daemon.is_connected(), "Daemon should be connected to peer"
+    assert network.is_available(), "Network should be available when connected to peer"
     sh_no_tty.nordvpn.disconnect()
-    assert not daemon.is_connected()
-    assert network.is_available()
+    assert not daemon.is_connected(), "Daemon should be disconnected after disconnect"
+    assert network.is_available(), "Network should be available after disconnect"
     sh_no_tty.nordvpn.connect()
-    assert daemon.is_connected()
-    assert network.is_available()
+    assert daemon.is_connected(), "Daemon should be connected to VPN"
+    assert network.is_available(), "Network should be available when connected to VPN"
     sh_no_tty.nordvpn.set.mesh.off()
-    assert daemon.is_connected()
-    assert network.is_available()
+    assert daemon.is_connected(), "Daemon should remain connected after turning off mesh"
+    assert network.is_available(), "Network should be available after turning off mesh"
     sh_no_tty.nordvpn.disconnect()
-    assert not daemon.is_connected()
-    assert network.is_available()
+    assert not daemon.is_connected(), "Daemon should be disconnected after disconnect"
+    assert network.is_available(), "Network should be available after disconnect"
     sh_no_tty.nordvpn.set.mesh.on()
-    assert not daemon.is_connected()
-    assert network.is_available()
+    assert not daemon.is_connected(), "Daemon should not be connected after turning on mesh"
+    assert network.is_available(), "Network should be available after turning on mesh"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
@@ -170,22 +170,22 @@ def test_set_defaults_when_connected_2nd_set(tech, proto, obfuscated):
     sh_no_tty.nordvpn.set.tpl("on")
 
     sh_no_tty.nordvpn.connect()
-    assert "Status: Connected" in sh_no_tty.nordvpn.status()
+    assert "Status: Connected" in sh_no_tty.nordvpn.status(), "Status should show connected"
 
-    assert not settings.is_firewall_enabled()
-    assert settings.is_meshnet_enabled()
-    assert settings.is_tpl_enabled()
+    assert not settings.is_firewall_enabled(), "Firewall should be disabled"
+    assert settings.is_meshnet_enabled(), "Meshnet should be enabled"
+    assert settings.is_tpl_enabled(), "TPL should be enabled"
 
     if obfuscated == "on":
-        assert settings.is_obfuscated_enabled()
+        assert settings.is_obfuscated_enabled(), "Obfuscation should be enabled when set to on"
     else:
-        assert not settings.is_obfuscated_enabled()
+        assert not settings.is_obfuscated_enabled(), "Obfuscation should be disabled when set to off"
 
-    assert "Settings were successfully restored to defaults." in sh_no_tty.nordvpn.set.defaults("--logout")
+    assert "Settings were successfully restored to defaults." in sh_no_tty.nordvpn.set.defaults("--logout"), "Settings restore should show success message"
 
-    assert "Status: Disconnected" in sh_no_tty.nordvpn.status()
+    assert "Status: Disconnected" in sh_no_tty.nordvpn.status(), "Status should show disconnected after restore"
 
-    assert settings.app_has_defaults_settings()
+    assert settings.app_has_defaults_settings(), "App should have default settings after restore"
 
 
 def test_route_to_peer_that_is_connected_to_vpn():
@@ -199,8 +199,8 @@ def test_route_to_peer_that_is_connected_to_vpn():
 
     my_ip = network.get_external_device_ip()
     output = sh_no_tty.nordvpn.mesh.peer.connect(peer_hostname)
-    assert meshnet.is_connect_successful(output, peer_hostname)
-    assert my_ip != network.get_external_device_ip()
+    assert meshnet.is_connect_successful(output, peer_hostname), "Meshnet peer connect should be successful"
+    assert my_ip != network.get_external_device_ip(), "IP should change when connected to peer"
 
     lib.is_disconnect_successful(sh_no_tty.nordvpn.disconnect())
     ssh_client.exec_command("nordvpn disconnect")
@@ -211,8 +211,8 @@ def test_route_to_peer_that_is_connected_to_vpn():
 
     peer_ip = ssh_client.network.get_external_device_ip()
     output = ssh_client.exec_command(f"nordvpn mesh peer connect {local_hostname}")
-    assert meshnet.is_connect_successful(output, local_hostname)
-    assert peer_ip != ssh_client.network.get_external_device_ip()
+    assert meshnet.is_connect_successful(output, local_hostname), "Peer meshnet connect to local device should be successful"
+    assert peer_ip != ssh_client.network.get_external_device_ip(), "Peer IP should change when connected to local device"
 
     ssh_client.exec_command("nordvpn disconnect")
     lib.is_disconnect_successful(sh_no_tty.nordvpn.disconnect())
@@ -228,11 +228,11 @@ def test_route_to_peer_that_disconnects_from_vpn():
 
     my_ip = network.get_external_device_ip()
     output = sh_no_tty.nordvpn.mesh.peer.connect(peer_hostname)
-    assert meshnet.is_connect_successful(output, peer_hostname)
-    assert my_ip != network.get_external_device_ip()
+    assert meshnet.is_connect_successful(output, peer_hostname), "Meshnet peer connect should be successful"
+    assert my_ip != network.get_external_device_ip(), "IP should change when connected to peer"
 
     ssh_client.exec_command("nordvpn disconnect")
-    assert my_ip == network.get_external_device_ip()
+    assert my_ip == network.get_external_device_ip(), "IP should restore to original value after peer disconnect"
 
     lib.is_disconnect_successful(sh_no_tty.nordvpn.disconnect())
 
@@ -243,11 +243,11 @@ def test_route_to_peer_that_disconnects_from_vpn():
 
     peer_ip = ssh_client.network.get_external_device_ip()
     output = ssh_client.exec_command(f"nordvpn mesh peer connect {local_hostname}")
-    assert meshnet.is_connect_successful(output, local_hostname)
-    assert peer_ip != ssh_client.network.get_external_device_ip()
+    assert meshnet.is_connect_successful(output, local_hostname), "Peer meshnet connect to local device should be successful"
+    assert peer_ip != ssh_client.network.get_external_device_ip(), "Peer IP should change when connected to local device"
 
     sh_no_tty.nordvpn.disconnect()
-    assert peer_ip == ssh_client.network.get_external_device_ip()
+    assert peer_ip == ssh_client.network.get_external_device_ip(), "Peer IP should restore to original value after disconnect"
 
     lib.is_disconnect_successful(ssh_client.exec_command("nordvpn disconnect"))
 
@@ -259,14 +259,14 @@ def test_route_traffic_to_peer_once_again_when_already_routing():
 
     my_ip = network.get_external_device_ip()
     output = sh_no_tty.nordvpn.mesh.peer.connect(peer_hostname)
-    assert meshnet.is_connect_successful(output, peer_hostname)
-    assert network.is_connected()
-    assert my_ip != network.get_external_device_ip()
+    assert meshnet.is_connect_successful(output, peer_hostname), "First meshnet peer connect should be successful"
+    assert network.is_connected(), "Network should be connected after peer routing"
+    assert my_ip != network.get_external_device_ip(), "IP should change when first routing to peer"
 
     output = sh_no_tty.nordvpn.mesh.peer.connect(peer_hostname)
-    assert meshnet.is_connect_successful(output, peer_hostname)
-    assert network.is_connected()
-    assert my_ip != network.get_external_device_ip()
+    assert meshnet.is_connect_successful(output, peer_hostname), "Second meshnet peer connect should be successful"
+    assert network.is_connected(), "Network should still be connected after repeated peer routing"
+    assert my_ip != network.get_external_device_ip(), "IP should remain changed when routing again to same peer"
 
     sh_no_tty.nordvpn.disconnect()
     ssh_client.exec_command("nordvpn disconnect")

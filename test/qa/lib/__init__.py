@@ -412,6 +412,6 @@ def squash_whitespace(text: str) -> str:
 def get_random_virtual_country() -> str:
     """Return one random virtual country from `nordvpn countries` output."""
     virtual_countries = get_virtual_countries()
-    assert len(virtual_countries) > 0
+    assert len(virtual_countries) > 0, "Virtual countries list should not be empty"
     virtual_country = random.choice(virtual_countries)
     return virtual_country

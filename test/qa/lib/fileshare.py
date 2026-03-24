@@ -269,7 +269,7 @@ def clear_history(time_period: str, ssh_client: ssh.Ssh = None):
     else:
         msg = ssh_client.exec_command(f"nordvpn fileshare clear {time_period}")
 
-    assert MSG_HISTORY_CLEARED in msg
+    assert MSG_HISTORY_CLEARED in msg, f"Expected history cleared message not found. Actual message: {msg}"
 
 
 def validate_transfer_progress(transfer_log: str):
@@ -293,7 +293,7 @@ def validate_transfer_progress(transfer_log: str):
     increasing = True
 
     for line in filtered_lines:
-        assert transfer_id.group() in line
+        assert transfer_id.group() in line, f"Transfer ID is not consistent in progress lines: expected {transfer_id.group()}, got {line}"
 
         precentage_match = re.findall(r"\[(\d{1,3})%\]", line)
         if len(precentage_match) == 1:
@@ -400,7 +400,7 @@ def files_from_transfer_exist_in_filesystem(transfer_id: str, dir_list: list[Dir
     for file in files_in_transfer:
         try:
             file_hash = exec_command(f"{FILE_HASH_UTILITY} {download_location}/{file}").split()[0]
-            assert any(file_hash in directory.filehashes for directory in dir_list)
+            assert any(file_hash in directory.filehashes for directory in dir_list), f"File with hash {file_hash} not found in provided directories"
         except:  # noqa: E722
             return False
     return True
