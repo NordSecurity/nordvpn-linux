@@ -1,5 +1,6 @@
 base_locale: en
 timestamp: false # remove timestamp for the generated files
+input_directory: lib/i18n/en/
 #output_format: multiple_files
 output_directory: lib/i18n
 output_file_name: strings.g.dart

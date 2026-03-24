@@ -28,6 +28,9 @@ const _popupIgnoreCodes = [
   DaemonStatusCode.dnsListModified,
   DaemonStatusCode.tpLiteDisabled,
   DaemonStatusCode.allowListModified,
+  // Handled explicitly in allow_list_settings.dart
+  DaemonStatusCode.allowlistSubnetTooWideWarn,
+  DaemonStatusCode.allowlistSubnetWiderConfirm,
 ];
 
 @riverpod
@@ -146,11 +149,18 @@ class VpnSettingsController extends _$VpnSettingsController
     state = AsyncData(state.value!.copyWith(allowList: value));
   }
 
-  Future<int> addToAllowList({PortInterval? port, Subnet? subnet}) async {
+  Future<int> addToAllowList({
+    PortInterval? port,
+    Subnet? subnet,
+    bool force = false,
+  }) async {
     assert((port != null) || (subnet != null), " port or subnet must be valid");
     return await _setValue(
-      (repository) =>
-          repository.addToAllowList(port: port, subnet: subnet?.value),
+      (repository) => repository.addToAllowList(
+        port: port,
+        subnet: subnet?.value,
+        force: force,
+      ),
     );
   }
 
