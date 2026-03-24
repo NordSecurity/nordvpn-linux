@@ -39,7 +39,7 @@ def test_multiple_state_subscribers():
 
         for i in range(num_threads):
             assert all(a.connection_status.state == b for a, b in zip(
-                results[i], expected_states, strict=True))
+                results[i], expected_states, strict=True)), f"Thread {i} connection state sequence should match expected states"
 
 
 def test_tunnel_update_notifications_before_and_after_connect():
@@ -60,7 +60,7 @@ def test_tunnel_update_notifications_before_and_after_connect():
     sh.nordvpn.disconnect()
     thread.join()
     assert all(a.connection_status.state == b for a,
-               b in zip(result, expected_states, strict=True))
+               b in zip(result, expected_states, strict=True)), "Connection state sequence should match expected states before and after connect"
 
 
 def collect_state_changes_guard(stop_at: int, tracked_states: Sequence[str], subscription_barrier: Barrier, timeout: int = 30) -> Sequence[state_pb2.AppState]:
@@ -105,7 +105,7 @@ def check_is_virtual_location_in_response(loc: str, expected_is_virtual: bool):
     sh.nordvpn.connect(loc)
     sh.nordvpn.disconnect()
     thread.join()
-    assert result.pop().connection_status.virtualLocation == expected_is_virtual
+    assert result.pop().connection_status.virtualLocation == expected_is_virtual, f"Virtual location status should be {expected_is_virtual} for location {loc}"
 
 
 def test_is_virtual_is_false_for_non_virtual_location():
@@ -128,4 +128,4 @@ def test_manual_connection_source_is_present_in_response():
     sh.nordvpn.connect()
     sh.nordvpn.disconnect()
     thread.join()
-    assert result.pop().connection_status.parameters.source == status_pb2.ConnectionSource.MANUAL
+    assert result.pop().connection_status.parameters.source == status_pb2.ConnectionSource.MANUAL, f"Connection source status should be {status_pb2.ConnectionSource.MANUAL}"

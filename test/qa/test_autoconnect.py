@@ -14,23 +14,23 @@ pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
 def autoconnect_base_test(group):
     output = sh_no_tty.nordvpn.set.autoconnect.on(group)
     print(output)
-    assert settings.MSG_AUTOCONNECT_ENABLE_SUCCESS in output
+    assert settings.MSG_AUTOCONNECT_ENABLE_SUCCESS in output, "Should show autoconnect enable success message"
 
     daemon.restart()
     daemon.wait_for_autoconnect()
-    assert network.is_connected()
+    assert network.is_connected(), "Network should be connected after autoconnect"
 
     status_info = daemon.get_status_data()
-    assert "Connected" in status_info["status"]
+    assert "Connected" in status_info["status"], "Status should show Connected"
 
     output = sh_no_tty.nordvpn.set.autoconnect.off()
     print(output)
-    assert settings.MSG_AUTOCONNECT_DISABLE_SUCCESS in output
+    assert settings.MSG_AUTOCONNECT_DISABLE_SUCCESS in output, "Should show autoconnect disable success message"
 
     output = sh_no_tty.nordvpn.disconnect()
     print(output)
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
+    assert lib.is_disconnect_successful(output), "Disconnect should be successful"
+    assert network.is_disconnected(), "Network should be disconnected"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -51,7 +51,7 @@ def test_not_autoconnect(tech, proto, obfuscated):
     print(output)
 
     daemon.restart()
-    assert network.is_disconnected()
+    assert network.is_disconnected(), "Network should be disconnected when autoconnect is off"
 
 
 @dynamic_parametrize(
@@ -172,7 +172,7 @@ def test_autoconnect_virtual_country(tech, proto, obfuscated):
     sh.nordvpn.set("virtual-location", "on")
 
     virtual_countries = lib.get_virtual_countries()
-    assert len(virtual_countries) > 0
+    assert len(virtual_countries) > 0, "Virtual countries should be available"
     country = random.choice(virtual_countries)
 
     autoconnect_base_test(country)
@@ -196,7 +196,7 @@ def test_autoconnect_virtual_country_disabled(tech, proto, obfuscated):
 
     with pytest.raises(sh.ErrorReturnCode_1) as _:
         output = sh_no_tty.nordvpn.set.autoconnect.on(country)
-        assert "Please enable virtual location access to connect to this server." in output
+        assert "Please enable virtual location access to connect to this server." in output, "Should show virtual location access error"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -212,7 +212,7 @@ def test_autoconnect_to_unavailable_groups(tech, proto, obfuscated):
             sh_no_tty.nordvpn.set.autoconnect.on(group)
 
         print(ex.value)
-        assert lib.is_connect_unsuccessful(ex)
+        assert lib.is_connect_unsuccessful(ex), "Connection should be unsuccessful"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
@@ -230,10 +230,10 @@ def test_prevent_autoconnect_enable_to_non_obfuscated_servers_when_obfuscation_i
             sh.nordvpn.set.autoconnect.on(server_name)
         print(ex.value)
         error_message = "Your selected server doesn’t support obfuscation. Choose a different server or turn off obfuscation."
-        assert error_message in ex.value.stdout.decode("utf-8")
-        assert "Auto-connect: disabled" in sh.nordvpn.settings()
+        assert error_message in ex.value.stdout.decode("utf-8"), "Should show correct error message"
+        assert "Auto-connect: disabled" in sh.nordvpn.settings(), "Auto-connect should be disabled"
         daemon.restart()
-        assert network.is_disconnected()
+        assert network.is_disconnected(), "Network should be disconnected"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
@@ -253,8 +253,8 @@ def test_prevent_obfuscate_disable_with_autoconnect_enabled_to_obfuscated_server
         print(ex.value)
         error_message = "We couldn’t turn off obfuscation because your current auto-connect server is obfuscated by default. " \
             + "Set a different server for auto-connect, then turn off obfuscation."
-        assert error_message in ex.value.stdout.decode("utf-8")
-        assert "Obfuscate: enabled" in sh.nordvpn.settings()
+        assert error_message in ex.value.stdout.decode("utf-8"), "Should show correct error message"
+        assert "Obfuscate: enabled" in sh.nordvpn.settings(), "Obfuscate should be enabled"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
@@ -268,11 +268,11 @@ def test_prevent_autoconnect_enable_to_obfuscated_servers_when_obfuscation_is_of
         sh.nordvpn.set.autoconnect.on(server_name)
     print(ex.value)
     error_message = "Turn on obfuscation to connect to obfuscated servers."
-    assert error_message in ex.value.stdout.decode("utf-8")
-    assert "Auto-connect: disabled" in sh.nordvpn.settings()
+    assert error_message in ex.value.stdout.decode("utf-8"), "Should show turn on obfuscation error"
+    assert "Auto-connect: disabled" in sh.nordvpn.settings(), "Auto-connect should be disabled"
 
     daemon.restart()
-    assert network.is_disconnected()
+    assert network.is_disconnected(), "Network should be disconnected"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
@@ -296,5 +296,5 @@ def test_prevent_obfuscate_enable_with_autoconnect_set_to_nonobfuscated(tech, pr
         print(ex.value)
         error_message = "We couldn’t turn on obfuscation because the current auto-connect server doesn’t support it. " \
             + "Set a different server for auto-connect to use obfuscation."
-        assert error_message in ex.value.stdout.decode("utf-8")
-        assert "Obfuscate: disabled" in sh.nordvpn.settings()
+        assert error_message in ex.value.stdout.decode("utf-8"), "Should show correct error message"
+        assert "Obfuscate: disabled" in sh.nordvpn.settings(), "Obfuscate should be disabled"

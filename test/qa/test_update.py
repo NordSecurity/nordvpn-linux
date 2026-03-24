@@ -48,7 +48,7 @@ def setup_function(function):  # noqa: ARG001
 
     if TestData.INVOLVES_MESHNET:
         sh.nordvpn.set.notify.off()
-        assert "Meshnet is set to 'enabled' successfully." in sh.nordvpn.set.meshnet.on()
+        assert "Meshnet is set to 'enabled' successfully." in sh.nordvpn.set.meshnet.on(), "Meshnet should be successfully enabled"
 
         meshnet.remove_all_peers()
 
@@ -79,14 +79,14 @@ def teardown_function(function):  # noqa: ARG001
 
         daemon.uninstall_peer(ssh_client)
     daemon.stop() # TODO: LVPN-6403
-    assert network.is_disconnected()
+    assert network.is_disconnected(), "Network should be disconnected after daemon stop"
 
 
 def test_meshnet_available_after_update():
     """Manual TC: LVPN-3204"""
 
     meshnet_help_page = sh_no_tty.nordvpn.meshnet("--help")
-    assert "Learn more: https://meshnet.nordvpn.com/" in meshnet_help_page
+    assert "Learn more: https://meshnet.nordvpn.com/" in meshnet_help_page, "Meshnet help page should contain meshnet.nordvpn.com reference"
 
     parsed_peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
 
@@ -96,14 +96,14 @@ def test_meshnet_available_after_update():
 
     peer_hostname = parsed_peer_list.get_internal_peer().hostname
     output = sh.nordvpn.mesh.peer.connect(peer_hostname)
-    assert meshnet.is_connect_successful(output, peer_hostname)
-    assert daemon.is_connected()
-    assert network.is_available()
+    assert meshnet.is_connect_successful(output, peer_hostname), "Meshnet peer connect should be successful"
+    assert daemon.is_connected(), "Daemon should be connected after meshnet peer connect"
+    assert network.is_available(), "Network should be available when connected to meshnet peer"
 
     output = sh.nordvpn.disconnect()
-    assert lib.is_disconnect_successful(output)
-    assert not daemon.is_connected()
-    assert network.is_available()
+    assert lib.is_disconnect_successful(output), "Disconnect should be successful"
+    assert not daemon.is_connected(), "Daemon should be disconnected after disconnect"
+    assert network.is_available(), "Network should be available after disconnect"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
@@ -111,7 +111,7 @@ def test_fileshare_available_after_update():
     """Manual TC: LVPN-3205"""
 
     fileshare_help_page = sh.nordvpn.fileshare("--help", _tty_out=False)
-    assert "Learn more: https://meshnet.nordvpn.com/features/sharing-files-in-meshnet" in fileshare_help_page
+    assert "Learn more: https://meshnet.nordvpn.com/features/sharing-files-in-meshnet" in fileshare_help_page, "Fileshare help page should contain meshnet sharing reference"
 
     wdir = fileshare.create_directory(5)
 
@@ -137,7 +137,7 @@ def test_quick_connect_after_update(tech, proto, obfuscated):
     if tech == "openvpn" and proto == "udp" and obfuscated == "on":
         tech_name = lib.technology_to_upper_camel_case(tech)
         expected_msg = f"Technology has been successfully set to '{tech_name}'."
-        assert expected_msg in sh.nordvpn.set.technology(tech)
+        assert expected_msg in sh.nordvpn.set.technology(tech), "Technology should be successfully set"
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
@@ -156,5 +156,5 @@ def test_changelog_after_update():
 
     # take version without checksum as it will never be present in the changelog
     nordvpn_version = sh.nordvpn("-v").split()[2].split('+')[0]
-    assert nordvpn_version in changelog
-    assert "*" in changelog
+    assert nordvpn_version in changelog, f"Version {nordvpn_version} should be present in changelog"
+    assert "*" in changelog, "Changelog should contain entry markers"

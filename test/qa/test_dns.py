@@ -16,27 +16,27 @@ def test_set_tpl_on_off_connected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     # Make sure, that DNS is unset before we connect to VPN server
-    assert dns.is_unset()
+    assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
 
         tpl_alias = dns.get_tpl_alias()
-        assert "Threat Protection Lite has been successfully set to 'enabled'" in sh.nordvpn.set(tpl_alias, "on")
+        assert "Threat Protection Lite has been successfully set to 'enabled'" in sh.nordvpn.set(tpl_alias, "on"), "TPL enable should show success message"
 
-        assert settings.is_tpl_enabled()
-        assert settings.dns_visible_in_settings(["disabled"])
-        assert dns.is_set_for(dns.DNS_TPL)
+        assert settings.is_tpl_enabled(), "TPL should be enabled after setting it to on"
+        assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings when TPL is enabled"
+        assert dns.is_set_for(dns.DNS_TPL), "DNS should be set for TPL when connected with TPL enabled"
 
         tpl_alias = dns.get_tpl_alias()
-        assert "Threat Protection Lite has been successfully set to 'disabled'." in sh.nordvpn.set(tpl_alias, "off")
+        assert "Threat Protection Lite has been successfully set to 'disabled'." in sh.nordvpn.set(tpl_alias, "off"), "TPL disable should show success message"
 
-        assert not settings.is_tpl_enabled()
-        assert settings.dns_visible_in_settings(["disabled"])
-        assert dns.is_set_for(dns.DNS_NORD)
+        assert not settings.is_tpl_enabled(), "TPL should be disabled after setting it to off"
+        assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings after TPL is disabled"
+        assert dns.is_set_for(dns.DNS_NORD), "DNS should be set for Nord DNS when TPL is disabled"
 
     # Make sure, that DNS is unset, after we disconnect from VPN server
-    assert dns.is_unset()
+    assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -46,18 +46,18 @@ def test_set_tpl_on_and_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     tpl_alias = dns.get_tpl_alias()
-    assert "Threat Protection Lite has been successfully set to 'enabled'." in sh.nordvpn.set(tpl_alias, "on")
+    assert "Threat Protection Lite has been successfully set to 'enabled'." in sh.nordvpn.set(tpl_alias, "on"), "TPL enable should show success message"
 
-    assert settings.is_tpl_enabled()
-    assert settings.dns_visible_in_settings(["disabled"])
-    assert dns.is_unset()
+    assert settings.is_tpl_enabled(), "TPL should be enabled after setting it to on"
+    assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings when TPL is enabled"
+    assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
 
-        assert dns.is_set_for(dns.DNS_TPL)
+        assert dns.is_set_for(dns.DNS_TPL), "DNS should be set for TPL when connected with TPL enabled"
 
-    assert dns.is_unset()
+    assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -69,18 +69,18 @@ def test_set_tpl_off_and_connect(tech, proto, obfuscated):
     tpl_alias = dns.get_tpl_alias()
     sh.nordvpn.set(tpl_alias, "on")
 
-    assert "Threat Protection Lite has been successfully set to 'disabled'." in sh.nordvpn.set(tpl_alias, "off")
+    assert "Threat Protection Lite has been successfully set to 'disabled'." in sh.nordvpn.set(tpl_alias, "off"), "TPL disable should show success message"
 
-    assert not settings.is_tpl_enabled()
-    assert settings.dns_visible_in_settings(["disabled"])
-    assert dns.is_unset()
+    assert not settings.is_tpl_enabled(), "TPL should be disabled after setting it to off"
+    assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings after TPL is disabled"
+    assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
 
-        assert dns.is_set_for(dns.DNS_NORD)
+        assert dns.is_set_for(dns.DNS_NORD), "DNS should be set for Nord DNS when connected with TPL disabled"
 
-    assert dns.is_unset()
+    assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
 
 
 @dynamic_parametrize(
@@ -101,14 +101,14 @@ def test_tpl_on_set_custom_dns_disconnected(tech, proto, obfuscated, nameserver)
 
     tpl_alias = dns.get_tpl_alias()
     sh.nordvpn.set(tpl_alias, "on")
-    assert settings.is_tpl_enabled()
+    assert settings.is_tpl_enabled(), "TPL should be enabled after setting it to on"
 
     output = sh.nordvpn.set.dns(nameserver)
 
-    assert dns.TPL_MSG_WARNING_DISABLING in output
-    assert not settings.is_tpl_enabled()
-    assert settings.dns_visible_in_settings(nameserver)
-    assert dns.is_unset()
+    assert dns.TPL_MSG_WARNING_DISABLING in output, "TPL warning message should appear when setting custom DNS with TPL enabled"
+    assert not settings.is_tpl_enabled(), "TPL should be disabled when custom DNS is set"
+    assert settings.dns_visible_in_settings(nameserver), "Custom nameserver should be visible in settings"
+    assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
 
 
 @dynamic_parametrize(
@@ -131,15 +131,15 @@ def test_tpl_on_set_custom_dns_connected(tech, proto, obfuscated, nameserver):
         sh.nordvpn.connect()
         tpl_alias = dns.get_tpl_alias()
         sh.nordvpn.set(tpl_alias, "on")
-        assert settings.is_tpl_enabled()
+        assert settings.is_tpl_enabled(), "TPL should be enabled after setting it to on while connected"
 
         output = sh.nordvpn.set.dns(nameserver)
-        assert dns.TPL_MSG_WARNING_DISABLING in output
-        assert not settings.is_tpl_enabled()
-        assert settings.dns_visible_in_settings(nameserver)
-        assert dns.is_set_for(nameserver)
+        assert dns.TPL_MSG_WARNING_DISABLING in output, "TPL warning message should appear when setting custom DNS with TPL enabled while connected"
+        assert not settings.is_tpl_enabled(), "TPL should be disabled when custom DNS is set while connected"
+        assert settings.dns_visible_in_settings(nameserver), "Custom nameserver should be visible in settings while connected"
+        assert dns.is_set_for(nameserver), "DNS should be set for custom nameserver when connected"
 
-    assert dns.is_unset()
+    assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
 
 
 @dynamic_parametrize(
@@ -159,16 +159,16 @@ def test_custom_dns_connect(tech, proto, obfuscated, nameserver):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     sh.nordvpn.set.dns(nameserver)
 
-    assert dns.is_unset()
+    assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
 
-        assert not settings.is_tpl_enabled()
-        assert settings.dns_visible_in_settings(nameserver)
-        assert dns.is_set_for(nameserver)
+        assert not settings.is_tpl_enabled(), "TPL should not be enabled after setting custom DNS"
+        assert settings.dns_visible_in_settings(nameserver), "Custom nameserver should be visible in settings when connected"
+        assert dns.is_set_for(nameserver), "DNS should be set for custom nameserver when connected"
 
-    assert dns.is_unset()
+    assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
 
 
 @dynamic_parametrize(
@@ -188,18 +188,18 @@ def test_custom_dns_off_connect(tech, proto, obfuscated, nameserver):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.set.dns(nameserver)
-    assert settings.dns_visible_in_settings(nameserver)
-    assert dns.is_unset()
+    assert settings.dns_visible_in_settings(nameserver), "Custom nameserver should be visible in settings"
+    assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
 
     sh.nordvpn.set.dns("off")
-    assert settings.dns_visible_in_settings(["disabled"])
-    assert dns.is_unset()
+    assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings after setting to off"
+    assert dns.is_unset(), "DNS should still be unset after setting to off"
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
-        assert dns.is_set_for(dns.DNS_NORD)
+        assert dns.is_set_for(dns.DNS_NORD), "DNS should be set for Nord DNS when connected after disabling custom DNS"
 
-    assert dns.is_unset()
+    assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
 
 
 @dynamic_parametrize(
@@ -222,10 +222,10 @@ def test_set_custom_dns_connected(tech, proto, obfuscated, nameserver):
         sh.nordvpn.connect()
         sh.nordvpn.set.dns(nameserver)
 
-        assert settings.dns_visible_in_settings(nameserver)
-        assert dns.is_set_for(nameserver)
+        assert settings.dns_visible_in_settings(nameserver), "Custom nameserver should be visible in settings when connected"
+        assert dns.is_set_for(nameserver), "DNS should be set for custom nameserver when connected"
 
-    assert dns.is_unset()
+    assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
 
 
 @dynamic_parametrize(
@@ -248,14 +248,14 @@ def test_set_custom_dns_off_connected(tech, proto, obfuscated, nameserver):
         sh.nordvpn.connect()
 
         sh.nordvpn.set.dns(nameserver)
-        assert settings.dns_visible_in_settings(nameserver)
-        assert dns.is_set_for(nameserver)
+        assert settings.dns_visible_in_settings(nameserver), "Custom nameserver should be visible in settings when connected"
+        assert dns.is_set_for(nameserver), "DNS should be set for custom nameserver when connected"
 
         sh.nordvpn.set.dns("off")
-        assert settings.dns_visible_in_settings(["disabled"])
-        assert dns.is_set_for(dns.DNS_NORD)
+        assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings after setting to off while connected"
+        assert dns.is_set_for(dns.DNS_NORD), "DNS should be set for Nord DNS when set to off while connected"
 
-    assert dns.is_unset()
+    assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
 
 
 @pytest.mark.parametrize(("nameserver", "expected_error"), dns.DNS_CASES_ERROR)
@@ -268,9 +268,9 @@ def test_custom_dns_errors_disconnected(tech, proto, obfuscated, nameserver, exp
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set.dns(nameserver)
 
-    assert expected_error in ex.value.stdout.decode("utf-8")
-    assert settings.dns_visible_in_settings(["disabled"])
-    assert dns.is_unset()
+    assert expected_error in ex.value.stdout.decode("utf-8"), "Expected DNS error message should be present"
+    assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings after error"
+    assert dns.is_unset(), "DNS should be unset after DNS set error"
 
 
 @pytest.mark.parametrize(("nameserver", "expected_error"), dns.DNS_CASES_ERROR)
@@ -286,11 +286,11 @@ def test_custom_dns_errors_connected(tech, proto, obfuscated, nameserver, expect
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh.nordvpn.set.dns(nameserver)
 
-        assert expected_error in ex.value.stdout.decode("utf-8")
-        assert settings.dns_visible_in_settings(["disabled"])
-        assert dns.is_set_for(dns.DNS_NORD)
+        assert expected_error in ex.value.stdout.decode("utf-8"), "Expected DNS error message should be present when connected"
+        assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings after error while connected"
+        assert dns.is_set_for(dns.DNS_NORD), "DNS should still be set for Nord DNS after DNS set error while connected"
 
-    assert dns.is_unset()
+    assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
 
 
 @dynamic_parametrize(
@@ -309,16 +309,16 @@ def test_custom_dns_already_set_disconnected(tech, proto, obfuscated, nameserver
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.set.dns(nameserver)
-    assert dns.is_unset()
+    assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set.dns(nameserver)
 
     full_error_message = dns.DNS_MSG_ERROR_ALREADY_SET % ", ".join(nameserver)
 
-    assert full_error_message in ex.value.stdout.decode("utf-8")
-    assert settings.dns_visible_in_settings(nameserver)
-    assert dns.is_unset()
+    assert full_error_message in ex.value.stdout.decode("utf-8"), "Error message should indicate DNS is already set"
+    assert settings.dns_visible_in_settings(nameserver), "Custom nameserver should remain visible in settings"
+    assert dns.is_unset(), "DNS should still be unset after failed set attempt"
 
 
 @dynamic_parametrize(
@@ -338,7 +338,7 @@ def test_custom_dns_already_set_connected(tech, proto, obfuscated, nameserver):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.set.dns(nameserver)
-    assert dns.is_unset()
+    assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
@@ -347,11 +347,11 @@ def test_custom_dns_already_set_connected(tech, proto, obfuscated, nameserver):
             sh.nordvpn.set.dns(nameserver)
 
         full_error_message = dns.DNS_MSG_ERROR_ALREADY_SET % ", ".join(nameserver)
-        assert full_error_message in ex.value.stdout.decode("utf-8")
-        assert settings.dns_visible_in_settings(nameserver)
-        assert dns.is_set_for(nameserver)
+        assert full_error_message in ex.value.stdout.decode("utf-8"), "Error message should indicate DNS is already set while connected"
+        assert settings.dns_visible_in_settings(nameserver), "Custom nameserver should remain visible in settings while connected"
+        assert dns.is_set_for(nameserver), "DNS should still be set for custom nameserver after failed set attempt"
 
-    assert dns.is_unset()
+    assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -363,9 +363,9 @@ def test_custom_dns_already_disabled_disconnected(tech, proto, obfuscated):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set.dns("off")
 
-    assert dns.DNS_MSG_ERROR_ALREADY_DISABLED in ex.value.stdout.decode("utf-8")
-    assert settings.dns_visible_in_settings(["disabled"])
-    assert dns.is_unset()
+    assert dns.DNS_MSG_ERROR_ALREADY_DISABLED in ex.value.stdout.decode("utf-8"), "Error message should indicate DNS is already disabled"
+    assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings after error"
+    assert dns.is_unset(), "DNS should be unset after DNS disable error"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -380,11 +380,11 @@ def test_custom_dns_already_disabled_connected(tech, proto, obfuscated):
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh.nordvpn.set.dns("off")
 
-        assert settings.dns_visible_in_settings(["disabled"])
-        assert dns.DNS_MSG_ERROR_ALREADY_DISABLED in ex.value.stdout.decode("utf-8")
-        assert dns.is_set_for(dns.DNS_NORD)
+        assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings after error"
+        assert dns.DNS_MSG_ERROR_ALREADY_DISABLED in ex.value.stdout.decode("utf-8"), "Error message should indicate DNS is already disabled while connected"
+        assert dns.is_set_for(dns.DNS_NORD), "DNS should still be set for Nord DNS after DNS disable error while connected"
 
-    assert dns.is_unset()
+    assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -409,11 +409,11 @@ def test_custom_dns_order_is_kept(tech, proto, obfuscated):
                     found = True
                     servers_str = line.split(": ")[1].rstrip("\n")
                     servers = servers_str.split(" ")
-                    assert servers == nameserver_list
+                    assert servers == nameserver_list, "DNS server order should be preserved as configured"
             assert found, "Nordlynx/Nordtun device or their DNS servers were not found"
         else:
-            assert nameserver_list == resolver.nameservers
-    assert dns.is_unset()
+            assert nameserver_list == resolver.nameservers, "Resolver nameservers should match configured DNS order"
+    assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"
 
 
 @dynamic_parametrize(
@@ -434,15 +434,15 @@ def test_custom_dns_removed_when_tpl_enabled_disconnected(tech, proto, obfuscate
 
     sh.nordvpn.set.dns(nameserver)
 
-    assert settings.dns_visible_in_settings(nameserver)
+    assert settings.dns_visible_in_settings(nameserver), "Custom nameserver should be visible in settings"
 
     tpl_alias = dns.get_tpl_alias()
     output = sh.nordvpn.set(tpl_alias, "on")
 
-    assert dns.DNS_MSG_WARNING_DISABLING in output
-    assert settings.is_tpl_enabled()
-    assert not settings.dns_visible_in_settings(nameserver)
-    assert dns.is_unset()
+    assert dns.DNS_MSG_WARNING_DISABLING in output, "TPL warning message should appear when enabling TPL with custom DNS set"
+    assert settings.is_tpl_enabled(), "TPL should be enabled after setting it to on"
+    assert not settings.dns_visible_in_settings(nameserver), "Custom nameserver should be removed from settings when TPL is enabled"
+    assert dns.is_unset(), "DNS should be unset after TPL is enabled with custom DNS"
 
 
 @dynamic_parametrize(
@@ -463,20 +463,20 @@ def test_custom_dns_removed_when_tpl_enabled_connected(tech, proto, obfuscated, 
 
     sh.nordvpn.set.dns(nameserver)
 
-    assert settings.dns_visible_in_settings(nameserver)
-    assert dns.is_unset()
+    assert settings.dns_visible_in_settings(nameserver), "Custom nameserver should be visible in settings"
+    assert dns.is_unset(), "DNS should be unset before connecting to VPN server"
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
 
-        assert dns.is_set_for(nameserver)
+        assert dns.is_set_for(nameserver), "DNS should be set for custom nameserver when connected"
 
         tpl_alias = dns.get_tpl_alias()
         output = sh.nordvpn.set(tpl_alias, "on")
 
-        assert dns.DNS_MSG_WARNING_DISABLING in output
-        assert settings.is_tpl_enabled()
-        assert not settings.dns_visible_in_settings(nameserver)
-        assert dns.is_set_for(dns.DNS_TPL)
+        assert dns.DNS_MSG_WARNING_DISABLING in output, "TPL warning message should appear when enabling TPL with custom DNS set while connected"
+        assert settings.is_tpl_enabled(), "TPL should be enabled after setting it to on while connected"
+        assert not settings.dns_visible_in_settings(nameserver), "Custom nameserver should be removed from settings when TPL is enabled while connected"
+        assert dns.is_set_for(dns.DNS_TPL), "DNS should be set for TPL after enabling TPL while connected"
 
-    assert dns.is_unset()
+    assert dns.is_unset(), "DNS should be unset after disconnecting from VPN server"

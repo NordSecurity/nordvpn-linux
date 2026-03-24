@@ -186,7 +186,7 @@ def is_running():
         sh.nordvpn.status()
     except sh.ErrorReturnCode_1 as ex:
         # if user is not part of the nordvpn group assert
-        assert "Permission needed" not in ex.stdout.decode()
+        assert "Permission needed" not in ex.stdout.decode(), "User should be part of the nordvpn group"
         return False
     else:
         return True

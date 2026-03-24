@@ -25,7 +25,7 @@ def test_obfuscate_nonobfucated(tech, proto, obfuscated):
     """Manual TC: LVPN-788"""
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
-    assert network.is_available()
+    assert network.is_available(), "Network should be available before attempting to set obfuscation"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.set.obfuscate("on")
@@ -40,8 +40,8 @@ def test_set_technology(tech, proto, obfuscated):  # noqa: ARG001
         sh.nordvpn.set.technology("OPENVPN")
 
     tech_name =  lib.technology_to_upper_camel_case(tech)
-    assert f"Technology has been successfully set to '{tech_name}'." in sh.nordvpn.set.technology(tech)
-    assert tech.upper() in sh.nordvpn.settings()
+    assert f"Technology has been successfully set to '{tech_name}'." in sh.nordvpn.set.technology(tech), "Technology should be successfully set"
+    assert tech.upper() in sh.nordvpn.settings(), "Technology should appear in settings"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
@@ -49,7 +49,7 @@ def test_protocol_in_settings(tech, proto, obfuscated):
     """Manual TC: LVPN-8793"""
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
-    assert proto.upper() in sh.nordvpn.settings()
+    assert proto.upper() in sh.nordvpn.settings(), "Protocol should appear in settings"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -61,9 +61,9 @@ def test_technology_set_options(tech, proto, obfuscated):
     ovpn_list = "obfuscate" in sh.nordvpn.set() and "protocol" in sh.nordvpn.set()
 
     if tech == "openvpn":
-        assert ovpn_list
+        assert ovpn_list, "OpenVPN should have obfuscate and protocol options available"
     else:
-        assert not ovpn_list
+        assert not ovpn_list, "Non-OpenVPN technology should not have obfuscate and protocol options"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -84,24 +84,24 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     if tech == "nordlynx":
         sh.nordvpn.set.pq("on")
 
-    assert not settings.is_firewall_enabled()
-    assert not settings.is_routing_enabled()
-    assert not settings.is_dns_disabled()
-    assert settings.is_user_consent_declared()
-    assert settings.is_notify_enabled()
-    assert not settings.is_virtual_location_enabled()
+    assert not settings.is_firewall_enabled(), "Firewall should be disabled"
+    assert not settings.is_routing_enabled(), "Routing should be disabled"
+    assert not settings.is_dns_disabled(), "DNS should be enabled"
+    assert settings.is_user_consent_declared(), "User consent should be declared"
+    assert settings.is_notify_enabled(), "Notifications should be enabled"
+    assert not settings.is_virtual_location_enabled(), "Virtual location should be disabled"
 
     if tech == "nordlynx":
-        assert not settings.is_post_quantum_disabled()
+        assert not settings.is_post_quantum_disabled(), "Post-quantum should be enabled for NordLynx"
 
     if obfuscated == "on":
-        assert settings.is_obfuscated_enabled()
+        assert settings.is_obfuscated_enabled(), "Obfuscation should be enabled"
     else:
-        assert not settings.is_obfuscated_enabled()
+        assert not settings.is_obfuscated_enabled(), "Obfuscation should be disabled"
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout")
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout"), "Defaults reset message should be shown"
 
-    assert settings.app_has_defaults_settings()
+    assert settings.app_has_defaults_settings(), "App should have default settings"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -122,26 +122,26 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
     if tech == "nordlynx":
         sh.nordvpn.set.pq("on")
 
-    assert not settings.is_firewall_enabled()
-    assert not settings.is_routing_enabled()
-    assert settings.is_autoconnect_enabled()
-    assert settings.is_notify_enabled()
-    assert not settings.is_dns_disabled()
-    assert not settings.is_virtual_location_enabled()
+    assert not settings.is_firewall_enabled(), "Firewall should be disabled"
+    assert not settings.is_routing_enabled(), "Routing should be disabled"
+    assert settings.is_autoconnect_enabled(), "Autoconnect should be enabled"
+    assert settings.is_notify_enabled(), "Notifications should be enabled"
+    assert not settings.is_dns_disabled(), "DNS should be enabled"
+    assert not settings.is_virtual_location_enabled(), "Virtual location should be disabled"
 
     if tech == "nordlynx":
-        assert not settings.is_post_quantum_disabled()
+        assert not settings.is_post_quantum_disabled(), "Post-quantum should be enabled for NordLynx"
 
     if obfuscated == "on":
-        assert settings.is_obfuscated_enabled()
+        assert settings.is_obfuscated_enabled(), "Obfuscation should be enabled"
     else:
-        assert not settings.is_obfuscated_enabled()
+        assert not settings.is_obfuscated_enabled(), "Obfuscation should be disabled"
 
     sh.nordvpn.logout("--persist-token")
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout")
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout"), "Defaults reset message should be shown"
 
-    assert settings.app_has_defaults_settings()
+    assert settings.app_has_defaults_settings(), "App should have default settings"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -160,27 +160,27 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
         sh.nordvpn.set.pq("on")
 
     sh.nordvpn.connect()
-    assert "Status: Connected" in sh.nordvpn.status()
+    assert "Status: Connected" in sh.nordvpn.status(), "Status should show Connected"
 
-    assert not settings.is_routing_enabled()
-    assert not settings.is_dns_disabled()
-    assert settings.is_user_consent_declared()
-    assert settings.is_lan_discovery_enabled()
-    assert not settings.is_virtual_location_enabled()
+    assert not settings.is_routing_enabled(), "Routing should be disabled"
+    assert not settings.is_dns_disabled(), "DNS should be enabled"
+    assert settings.is_user_consent_declared(), "User consent should be declared"
+    assert settings.is_lan_discovery_enabled(), "LAN discovery should be enabled"
+    assert not settings.is_virtual_location_enabled(), "Virtual location should be disabled"
 
     if tech == "nordlynx":
-        assert not settings.is_post_quantum_disabled()
+        assert not settings.is_post_quantum_disabled(), "Post-quantum should be enabled for NordLynx"
 
     if obfuscated == "on":
-        assert settings.is_obfuscated_enabled()
+        assert settings.is_obfuscated_enabled(), "Obfuscation should be enabled"
     else:
-        assert not settings.is_obfuscated_enabled()
+        assert not settings.is_obfuscated_enabled(), "Obfuscation should be disabled"
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout")
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout"), "Defaults reset message should be shown"
 
-    assert "Status: Disconnected" in sh.nordvpn.status()
+    assert "Status: Disconnected" in sh.nordvpn.status(), "Status should show Disconnected after defaults reset"
 
-    assert settings.app_has_defaults_settings()
+    assert settings.app_has_defaults_settings(), "App should have default settings"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -190,25 +190,25 @@ def test_is_killswitch_disabled_after_setting_defaults(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.set.killswitch("on")
-    assert network.is_not_available(2)
+    assert network.is_not_available(2), "Network should not be available with killswitch enabled"
 
     sh.nordvpn.connect()
-    assert "Status: Connected" in sh.nordvpn.status()
-    assert network.is_available()
+    assert "Status: Connected" in sh.nordvpn.status(), "Status should show Connected"
+    assert network.is_available(), "Network should be available when connected with killswitch enabled"
 
-    assert daemon.is_killswitch_on()
+    assert daemon.is_killswitch_on(), "Killswitch should be enabled"
 
     if obfuscated == "on":
-        assert settings.is_obfuscated_enabled()
+        assert settings.is_obfuscated_enabled(), "Obfuscation should be enabled"
     else:
-        assert not settings.is_obfuscated_enabled()
+        assert not settings.is_obfuscated_enabled(), "Obfuscation should be disabled"
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout", "--off-killswitch")
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout", "--off-killswitch"), "Defaults reset message should be shown"
 
-    assert "Status: Disconnected" in sh.nordvpn.status()
-    assert network.is_available()
+    assert "Status: Disconnected" in sh.nordvpn.status(), "Status should show Disconnected after defaults reset"
+    assert network.is_available(), "Network should be available after turning off killswitch"
 
-    assert settings.app_has_defaults_settings()
+    assert settings.app_has_defaults_settings(), "App should have default settings"
 
 
 @dynamic_parametrize(
@@ -228,21 +228,21 @@ def test_is_custom_dns_removed_after_setting_defaults(tech, proto, obfuscated, n
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.set.dns(nameserver)
-    assert settings.dns_visible_in_settings(nameserver)
+    assert settings.dns_visible_in_settings(nameserver), "Custom DNS should be visible in settings"
 
     sh.nordvpn.connect()
 
-    assert dns.is_set_for(nameserver)
+    assert dns.is_set_for(nameserver), "Custom DNS should be set when connected"
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout")
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout"), "Defaults reset message should be shown"
 
     login.login_as("default")
 
-    assert settings.app_has_defaults_settings()
+    assert settings.app_has_defaults_settings(), "App should have default settings"
 
     sh.nordvpn.connect()
 
-    assert not dns.is_set_for(nameserver)
+    assert not dns.is_set_for(nameserver), "Custom DNS should be removed after defaults reset"
 
 
 def test_set_analytics_starts_prompt_even_if_completed_before():
@@ -284,51 +284,51 @@ def test_set_defaults_no_logout(tech, proto, obfuscated):
     sh.nordvpn.set("virtual-location", "off")
     sh.nordvpn.set("lan-discovery", "on")
 
-    assert not settings.is_virtual_location_enabled()
-    assert settings.is_lan_discovery_enabled()
+    assert not settings.is_virtual_location_enabled(), "Virtual location should be disabled"
+    assert settings.is_lan_discovery_enabled(), "LAN discovery should be enabled"
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults(), "Defaults reset message should be shown"
 
-    assert settings.app_has_defaults_settings()
-    assert "Account information" in sh.nordvpn.account()
+    assert settings.app_has_defaults_settings(), "App should have default settings"
+    assert "Account information" in sh.nordvpn.account(), "Account information should be displayed"
 
 
 def test_set_analytics_off_on():
     """Manual TC: LVPN-510"""
 
-    assert "Analytics has been successfully set to 'disabled'." in sh.nordvpn.set.analytics("off")
-    assert not settings.is_user_consent_granted()
+    assert "Analytics has been successfully set to 'disabled'." in sh.nordvpn.set.analytics("off"), "Analytics should be successfully disabled"
+    assert not settings.is_user_consent_granted(), "User consent should not be granted when analytics is disabled"
 
-    assert "Analytics has been successfully set to 'enabled'." in sh.nordvpn.set.analytics("on")
-    assert settings.is_user_consent_granted()
+    assert "Analytics has been successfully set to 'enabled'." in sh.nordvpn.set.analytics("on"), "Analytics should be successfully enabled"
+    assert settings.is_user_consent_granted(), "User consent should be granted when analytics is enabled"
 
 
 def test_set_analytics_on_off_repeated():
     """Manual TC: LVPN-509"""
 
-    assert "Analytics is already set to 'enabled'." in sh.nordvpn.set.analytics("on")
+    assert "Analytics is already set to 'enabled'." in sh.nordvpn.set.analytics("on"), "Analytics should be already enabled"
 
     sh.nordvpn.set.analytics("off")
-    assert "Analytics is already set to 'disabled'." in sh.nordvpn.set.analytics("off")
+    assert "Analytics is already set to 'disabled'." in sh.nordvpn.set.analytics("off"), "Analytics should be already disabled"
 
 
 def test_set_virtual_location_off_on():
     """Manual TC: LVPN-5253"""
 
-    assert "Virtual location has been successfully set to 'disabled'." in sh.nordvpn.set("virtual-location", "off")
-    assert not settings.is_virtual_location_enabled()
+    assert "Virtual location has been successfully set to 'disabled'." in sh.nordvpn.set("virtual-location", "off"), "Virtual location should be successfully disabled"
+    assert not settings.is_virtual_location_enabled(), "Virtual location should be disabled"
 
-    assert "Virtual location has been successfully set to 'enabled'." in sh.nordvpn.set("virtual-location", "on")
-    assert settings.is_virtual_location_enabled()
+    assert "Virtual location has been successfully set to 'enabled'." in sh.nordvpn.set("virtual-location", "on"), "Virtual location should be successfully enabled"
+    assert settings.is_virtual_location_enabled(), "Virtual location should be enabled"
 
 
 def test_set_virtual_location_on_off_repeated():
     """Manual TC: LVPN-5254"""
 
-    assert "Virtual location is already set to 'enabled'." in sh.nordvpn.set("virtual-location", "on")
+    assert "Virtual location is already set to 'enabled'." in sh.nordvpn.set("virtual-location", "on"), "Virtual location should be already enabled"
 
     sh.nordvpn.set("virtual-location", "off")
-    assert "Virtual location is already set to 'disabled'." in sh.nordvpn.set("virtual-location", "off")
+    assert "Virtual location is already set to 'disabled'." in sh.nordvpn.set("virtual-location", "off"), "Virtual location should be already disabled"
 
 
 def test_set_post_quantum_on_off():
@@ -336,11 +336,11 @@ def test_set_post_quantum_on_off():
 
     pq_alias = settings.get_pq_alias()
 
-    assert "Post-quantum VPN has been successfully set to 'enabled'." in sh.nordvpn.set(pq_alias, "on")
-    assert not settings.is_post_quantum_disabled()
+    assert "Post-quantum VPN has been successfully set to 'enabled'." in sh.nordvpn.set(pq_alias, "on"), "Post-quantum should be successfully enabled"
+    assert not settings.is_post_quantum_disabled(), "Post-quantum should be enabled"
 
-    assert "Post-quantum VPN has been successfully set to 'disabled'." in sh.nordvpn.set(pq_alias, "off")
-    assert settings.is_post_quantum_disabled()
+    assert "Post-quantum VPN has been successfully set to 'disabled'." in sh.nordvpn.set(pq_alias, "off"), "Post-quantum should be successfully disabled"
+    assert settings.is_post_quantum_disabled(), "Post-quantum should be disabled"
 
 
 def test_set_post_quantum_off_on_repeated():
@@ -348,10 +348,10 @@ def test_set_post_quantum_off_on_repeated():
 
     pq_alias = settings.get_pq_alias()
 
-    assert "Post-quantum VPN is already set to 'disabled'." in sh.nordvpn.set(pq_alias, "off")
+    assert "Post-quantum VPN is already set to 'disabled'." in sh.nordvpn.set(pq_alias, "off"), "Post-quantum should be already disabled"
 
     sh.nordvpn.set(pq_alias, "on")
-    assert "Post-quantum VPN is already set to 'enabled'." in sh.nordvpn.set(pq_alias, "on")
+    assert "Post-quantum VPN is already set to 'enabled'." in sh.nordvpn.set(pq_alias, "on"), "Post-quantum should be already enabled"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES + lib.OBFUSCATED_TECHNOLOGIES)
@@ -405,7 +405,7 @@ def test_autoconnect_enable_twice(tech, proto, obfuscated):
     for _ in range(2):
         output = sh.nordvpn.set.autoconnect.on()
         print(output)
-        assert settings.MSG_AUTOCONNECT_ENABLE_SUCCESS in output
+        assert settings.MSG_AUTOCONNECT_ENABLE_SUCCESS in output, "Autoconnect enable success message should be shown"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -416,7 +416,7 @@ def test_autoconnect_disable_twice(tech, proto, obfuscated):
 
     output = sh.nordvpn.set.autoconnect.off()
     print(str(output))
-    assert settings.MSG_AUTOCONNECT_DISABLE_FAIL in str(output)
+    assert settings.MSG_AUTOCONNECT_DISABLE_FAIL in str(output), "Autoconnect disable failure message should be shown"
 
 
 @pytest.mark.parametrize("killswitch_initial", [True, False])
@@ -436,8 +436,8 @@ def test_set_defaults_killswitch_interaction(killswitch_initial, killswitch_flag
 
     expected_killswitch_state = killswitch_initial and not killswitch_flag
 
-    assert daemon.is_killswitch_on() is expected_killswitch_state
-    assert network.is_not_available(2) is expected_killswitch_state
+    assert daemon.is_killswitch_on() is expected_killswitch_state, f"Killswitch state should be {expected_killswitch_state}"
+    assert network.is_not_available(2) is expected_killswitch_state, f"Network availability should be {not expected_killswitch_state}"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1 + lib.NORDWHISPER_TECHNOLOGY)
@@ -462,15 +462,15 @@ def test_set_defaults_no_logout_connected(tech, proto, obfuscated):
 
     sh.nordvpn.connect()
 
-    assert "Status: Connected" in sh.nordvpn.status()
-    assert not settings.is_notify_enabled()
-    assert settings.is_tpl_enabled()
+    assert "Status: Connected" in sh.nordvpn.status(), "Status should show Connected"
+    assert not settings.is_notify_enabled(), "Notifications should be disabled"
+    assert settings.is_tpl_enabled(), "TPL should be enabled"
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults(), "Defaults reset message should be shown"
 
-    assert "Status: Disconnected" in sh.nordvpn.status()
-    assert settings.app_has_defaults_settings()
-    assert "Account information" in sh.nordvpn.account()
+    assert "Status: Disconnected" in sh.nordvpn.status(), "Status should show Disconnected after defaults reset"
+    assert settings.app_has_defaults_settings(), "App should have default settings"
+    assert "Account information" in sh.nordvpn.account(), "Account information should be displayed"
 
 
 @pytest.mark.parametrize("nameserver", (dns.DNS_CASE_CUSTOM_SINGLE,))
@@ -481,47 +481,47 @@ def test_is_custom_dns_removed_after_setting_defaults_no_logout(tech, proto, obf
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.set.dns([nameserver])
-    assert settings.dns_visible_in_settings([nameserver])
+    assert settings.dns_visible_in_settings([nameserver]), "Custom DNS should be visible in settings"
 
     sh.nordvpn.connect()
 
-    assert dns.is_set_for([nameserver])
+    assert dns.is_set_for([nameserver]), "Custom DNS should be set when connected"
 
-    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults()
+    assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults(), "Defaults reset message should be shown"
 
-    assert settings.app_has_defaults_settings()
+    assert settings.app_has_defaults_settings(), "App should have default settings"
 
     sh.nordvpn.connect()
 
-    assert not dns.is_set_for(nameserver)
+    assert not dns.is_set_for(nameserver), "Custom DNS should be removed after defaults reset"
 
 
 def test_tray_off_on():
     """Manual TC: LVPN-8776"""
 
-    assert "Tray set to 'disabled' successfully." in sh.nordvpn.set.tray("off")
-    assert not settings.is_tray_enabled()
+    assert "Tray set to 'disabled' successfully." in sh.nordvpn.set.tray("off"), "Tray should be successfully disabled"
+    assert not settings.is_tray_enabled(), "Tray should be disabled"
 
-    assert "Tray set to 'enabled' successfully." in sh.nordvpn.set.tray("on")
-    assert settings.is_tray_enabled()
+    assert "Tray set to 'enabled' successfully." in sh.nordvpn.set.tray("on"), "Tray should be successfully enabled"
+    assert settings.is_tray_enabled(), "Tray should be enabled"
 
 
 def test_tray_on_off_repeated():
     """Manual TC: LVPN-8778"""
 
-    assert "Tray is already set to 'enabled'." in sh.nordvpn.set.tray("on")
+    assert "Tray is already set to 'enabled'." in sh.nordvpn.set.tray("on"), "Tray should be already enabled"
 
     sh.nordvpn.set.tray("off")
 
-    assert "Tray is already set to 'disabled'." in sh.nordvpn.set.tray("off")
+    assert "Tray is already set to 'disabled'." in sh.nordvpn.set.tray("off"), "Tray should be already disabled"
 
 
 def test_lan_discovery_on_off():
     """Manual TC: LVPN-8448"""
 
-    assert "LAN Discovery has been successfully set to 'enabled'." in sh.nordvpn.set("lan-discovery", "on")
-    assert settings.is_lan_discovery_enabled()
+    assert "LAN Discovery has been successfully set to 'enabled'." in sh.nordvpn.set("lan-discovery", "on"), "LAN Discovery should be successfully enabled"
+    assert settings.is_lan_discovery_enabled(), "LAN Discovery should be enabled"
 
-    assert "LAN Discovery has been successfully set to 'disabled'." in sh.nordvpn.set("lan-discovery", "off")
-    assert not settings.is_lan_discovery_enabled()
+    assert "LAN Discovery has been successfully set to 'disabled'." in sh.nordvpn.set("lan-discovery", "off"), "LAN Discovery should be successfully disabled"
+    assert not settings.is_lan_discovery_enabled(), "LAN Discovery should be disabled"
 

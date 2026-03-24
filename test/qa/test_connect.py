@@ -34,16 +34,16 @@ def connect_base_test(connection_settings, group=(), name="", hostname=""):
     output = sh.nordvpn(get_alias(), group, _tty_out=False)
     print(output)
 
-    assert lib.is_connect_successful(output, name, hostname)
-    assert network.is_available()
+    assert lib.is_connect_successful(output, name, hostname), "Connection should be successful"
+    assert network.is_available(), "Network should be available"
 
 
 def disconnect_base_test():
     output = sh.nordvpn.disconnect()
     print(output)
-    assert lib.is_disconnect_successful(output)
-    assert network.is_disconnected()
-    assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a() and "qtun" not in sh.ip.a()
+    assert lib.is_disconnect_successful(output), "Disconnect should be successful"
+    assert network.is_disconnected(), "Network should be disconnected"
+    assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a() and "qtun" not in sh.ip.a(), "VPN interfaces should be removed"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -66,8 +66,8 @@ def test_connect_to_server_absent(tech, proto, obfuscated):
         sh.nordvpn(get_alias(), "moon")
 
     print(ex.value)
-    assert lib.is_connect_unsuccessful(ex)
-    assert network.is_disconnected()
+    assert lib.is_connect_unsuccessful(ex), "Connection to non-existent server should fail"
+    assert network.is_disconnected(), "Network should be disconnected"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -161,7 +161,7 @@ def test_connect_network_restart_recreates_tun_interface(tech, proto, obfuscated
     default_gateway = network.stop()
     network.start(default_gateway)
     daemon.wait_for_reconnect(links)
-    assert network.is_connected()
+    assert network.is_connected(), "Network should be connected after reconnect"
     logging.log(info.collect())
 
     disconnect_base_test()
@@ -187,8 +187,8 @@ def test_connect_network_restart_nordlynx(tech, proto, obfuscated):
     # wait for internet
     network.is_available(10)
 
-    assert network.is_connected()
-    assert links == socket.if_nameindex()
+    assert network.is_connected(), "Network should be connected after restart"
+    assert links == socket.if_nameindex(), "Network interfaces should remain the same"
 
     logging.log(info.collect())
 
@@ -302,7 +302,7 @@ def test_connect_to_flag_group_standard(tech, proto, obfuscated, group):
         sh.nordvpn(get_alias(), "--group", group, group)
 
     print(ex.value)
-    assert lib.is_connect_unsuccessful(ex)
+    assert lib.is_connect_unsuccessful(ex), "Connection with duplicate group should fail"
 
 
 @dynamic_parametrize(
@@ -326,7 +326,7 @@ def test_connect_to_flag_group_additional(tech, proto, obfuscated, group):
         sh.nordvpn(get_alias(), "--group", group, group)
 
     print(ex.value)
-    assert lib.is_connect_unsuccessful(ex)
+    assert lib.is_connect_unsuccessful(ex), "Connection with duplicate group should fail"
 
 
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS_NORDWHISPER)
@@ -343,7 +343,7 @@ def test_nordwhisper_connect_to_flag_group_additional(tech, proto, obfuscated, g
         sh.nordvpn(get_alias(), "--group", group, group)
 
     print(ex.value)
-    assert lib.is_connect_unsuccessful(ex)
+    assert lib.is_connect_unsuccessful(ex), "Connection with duplicate group should fail"
 
 
 @pytest.mark.parametrize("group", lib.DEDICATED_IP_GROUPS)
@@ -360,7 +360,7 @@ def test_connect_to_flag_group_ovpn(tech, proto, obfuscated, group):
         sh.nordvpn(get_alias(), "--group", group, group)
 
     print(ex.value)
-    assert lib.is_connect_unsuccessful(ex)
+    assert lib.is_connect_unsuccessful(ex), "Connection with duplicate group should fail"
 
 
 @pytest.mark.parametrize("group", lib.OVPN_OBFUSCATED_GROUPS)
@@ -377,7 +377,7 @@ def test_connect_to_flag_group_obfuscated(tech, proto, obfuscated, group):
         sh.nordvpn(get_alias(), "--group", group, group)
 
     print(ex.value)
-    assert lib.is_connect_unsuccessful(ex)
+    assert lib.is_connect_unsuccessful(ex), "Connection with duplicate group should fail"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -390,7 +390,7 @@ def test_connect_to_group_invalid(tech, proto, obfuscated):
         sh.nordvpn(get_alias(), "--group", "nonexistent_group")
 
     print(ex.value)
-    assert lib.is_connect_unsuccessful(ex)
+    assert lib.is_connect_unsuccessful(ex), "Connection with invalid group should fail"
 
 
 @dynamic_parametrize(
@@ -463,7 +463,7 @@ def test_connect_to_unavailable_groups(tech, proto, obfuscated):
             sh.nordvpn(get_alias(), group)
 
         print(ex.value)
-        assert lib.is_connect_unsuccessful(ex)
+        assert lib.is_connect_unsuccessful(ex), "Connection to unavailable group should fail"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -485,7 +485,7 @@ def test_connect_to_unavailable_servers(tech, proto, obfuscated):
             sh.nordvpn(get_alias(), name)
 
         print(ex.value)
-        assert lib.is_connect_unsuccessful(ex)
+        assert lib.is_connect_unsuccessful(ex), "Connection to unavailable server should fail"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -494,8 +494,8 @@ def test_status_connected(tech, proto, obfuscated):
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    assert network.is_disconnected()
-    assert "Disconnected" in sh.nordvpn.status()
+    assert network.is_disconnected(), "Network should be disconnected initially"
+    assert "Disconnected" in sh.nordvpn.status(), "Status should show Disconnected initially"
 
     server_info = server.get_hostname_by(technology=tech, protocol=proto, obfuscated=obfuscated)
     sh.nordvpn(get_alias(), server_info.hostname.split(".")[0])
@@ -510,38 +510,38 @@ def test_status_connected(tech, proto, obfuscated):
     print("status_info: " + str(status_info))
     print("actual_status: " + str(sh.nordvpn.status()))
 
-    assert "Connected" in status_info["status"]
+    assert "Connected" in status_info["status"], "Status should show Connected"
 
-    assert server_info.hostname in status_info["hostname"]
-    assert server_info.name in status_info["server"]
+    assert server_info.hostname in status_info["hostname"], "Hostname should match connected server"
+    assert server_info.name in status_info["server"], "Server name should match"
 
-    assert socket.gethostbyname(server_info.hostname) in status_info["ip"]
+    assert socket.gethostbyname(server_info.hostname) in status_info["ip"], "IP address should match server"
 
-    assert server_info.country in status_info["country"]
-    assert server_info.city in status_info["city"]
+    assert server_info.country in status_info["country"], "Country should match server location"
+    assert server_info.city in status_info["city"], "City should match server location"
 
-    assert tech.upper() in status_info["current technology"]
+    assert tech.upper() in status_info["current technology"], "Technology should match current setting"
 
     if tech == "openvpn":
-        assert proto.upper() in status_info["current protocol"]
+        assert proto.upper() in status_info["current protocol"], "Protocol should match current setting"
     elif tech == "nordwhisper":
-        assert "Webtunnel" in status_info["current protocol"]
+        assert "Webtunnel" in status_info["current protocol"], "Protocol should be Webtunnel for Nordwhisper"
     else:
-        assert "UDP" in status_info["current protocol"]
+        assert "UDP" in status_info["current protocol"], "Protocol should be UDP by default"
 
     transfer_received = float(status_info["transfer"].split(" ")[0])
     transfer_sent = float(status_info["transfer"].split(" ")[3])
 
-    assert transfer_received >= 0
-    assert transfer_sent > 0
+    assert transfer_received >= 0, "Received transfer should be non-negative"
+    assert transfer_sent > 0, "Sent transfer should be positive"
 
     time_connected = int(status_info["uptime"].split(" ")[0])
     time_passed = status_time - connect_time
     if "minute" in status_info["uptime"]:
         time_connected_seconds = int(status_info["uptime"].split(" ")[2])
-        assert time_passed - 1 <= time_connected * 60 + time_connected_seconds <= time_passed + 1
+        assert time_passed - 1 <= time_connected * 60 + time_connected_seconds <= time_passed + 1, "Uptime should be accurate"
     else:
-        assert time_passed - 1 <= time_connected <= time_passed + 1
+        assert time_passed - 1 <= time_connected <= time_passed + 1, "Uptime should be accurate"
 
     disconnect_base_test()
 
@@ -554,7 +554,7 @@ def test_connect_to_virtual_server(tech, proto, obfuscated):
     sh.nordvpn.set("virtual-location", "on")
     virtual_countries = lib.get_virtual_countries()
 
-    assert len(virtual_countries) > 0
+    assert len(virtual_countries) > 0, "Virtual countries should be available"
     country = random.choice(virtual_countries)
 
     connect_base_test((tech, proto, obfuscated), country)
@@ -571,7 +571,7 @@ def test_connect_to_post_quantum_server(tech, proto, obfuscated):
 
     connect_base_test((tech, proto, obfuscated))
 
-    assert "preshared key" in sh.sudo.wg.show()
+    assert "preshared key" in sh.sudo.wg.show(), "Wireguard should have preshared key configured"
 
     disconnect_base_test()
 
@@ -587,8 +587,8 @@ def test_check_routing_table_for_lan():
 
     # check the tunnel IP
     nordlynx_route = network.RouteInfo(sh.ip.route.show.dev("nordlynx").stdout.decode())
-    assert nordlynx_route.destination == "10.5.0.0/16"
-    assert nordlynx_route.src == "10.5.0.2"
+    assert nordlynx_route.destination == "10.5.0.0/16", "Nordlynx route destination should be correct"
+    assert nordlynx_route.src == "10.5.0.2", "Nordlynx source IP should be correct"
 
     lan_ips = [
         "10.0.0.1",
@@ -600,19 +600,19 @@ def test_check_routing_table_for_lan():
     private_vpn_ip = "10.5.0.1"
 
     # check LAN IP is not routed thru main
-    assert all(not default_route.routes_ip(ip) for ip in lan_ips)
-    assert not default_route.routes_ip(private_vpn_ip)
-    assert nordlynx_route.routes_ip(private_vpn_ip)
+    assert all(not default_route.routes_ip(ip) for ip in lan_ips), "LAN IPs should not be routed through default route when LAN discovery is off"
+    assert not default_route.routes_ip(private_vpn_ip), "Private VPN IP should not be routed through default route"
+    assert nordlynx_route.routes_ip(private_vpn_ip), "Private VPN IP should be routed through nordlynx interface"
 
     # enable LAN discovery
     sh.nordvpn.set("lan-discovery", "on")
 
     # check LAN IP is routed thru main
-    assert all(default_route.routes_ip(ip) for ip in lan_ips)
+    assert all(default_route.routes_ip(ip) for ip in lan_ips), "LAN IPs should be routed through default route when LAN discovery is on"
 
     # IP from VPN private range is routed thru nordlynx interface
-    assert not default_route.routes_ip(private_vpn_ip)
-    assert nordlynx_route.routes_ip(private_vpn_ip)
+    assert not default_route.routes_ip(private_vpn_ip), "Private VPN IP should not be routed through default route"
+    assert nordlynx_route.routes_ip(private_vpn_ip), "Private VPN IP should be routed through nordlynx interface"
 
     disconnect_base_test()
 
@@ -628,8 +628,8 @@ def test_connect_to_dedicated_ip(tech, proto, obfuscated):
     connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
     disconnect_base_test()
 
-    assert network.is_disconnected()
-    assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a()
+    assert network.is_disconnected(), "Network should be disconnected after disconnect"
+    assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a(), "VPN interfaces should be removed"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
@@ -645,7 +645,7 @@ def test_connect_fails_virtual_location_disabled(tech, proto, obfuscated):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn(get_alias(), virtual_country)
 
-    assert "Please enable virtual location access to connect to this server." in ex.value.stdout.decode()
+    assert "Please enable virtual location access to connect to this server." in ex.value.stdout.decode(), "Should show virtual location disabled error"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
@@ -659,4 +659,4 @@ def test_obfuscation_prevents_virtual_location_connection(tech, proto, obfuscate
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn(get_alias(), virtual_country)
 
-    assert "The specified server is not available at the moment or does not support your connection settings." in ex.value.stdout.decode()
+    assert "The specified server is not available at the moment or does not support your connection settings." in ex.value.stdout.decode(), "Should show server unavailable error"
