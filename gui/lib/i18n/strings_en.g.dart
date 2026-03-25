@@ -1554,8 +1554,11 @@ class TranslationsUiEn {
 	/// en: 'Automatically connect to the fastest available server or your chosen server location when the app starts.'
 	String get autoConnectDescription => 'Automatically connect to the fastest available server or your chosen server location when the app starts.';
 
+	/// en: 'Fastest server'
+	String get fastestServer => 'Fastest server';
+
 	/// en: 'Fastest'
-	String get fastestServer => 'Fastest';
+	String get fastest => 'Fastest';
 
 	/// en: 'Change'
 	String get change => 'Change';
@@ -1997,6 +2000,12 @@ class TranslationsUiEn {
 
 	/// en: 'Got it'
 	String get gotIt => 'Got it';
+
+	/// en: 'Not secured'
+	String get notSecured => 'Not secured';
+
+	/// en: 'Secure my connection'
+	String get secureMyConnection => 'Secure my connection';
 
 	/// en: 'Pause for 5 minutes'
 	String get pauseFor5Min => 'Pause for 5 minutes';
@@ -2512,7 +2521,8 @@ extension on Translations {
 			'ui.vpnConnection' => 'VPN connection',
 			'ui.vpnConnectionSubtitle' => 'Auto-connect, Kill Switch, protocol',
 			'ui.autoConnectDescription' => 'Automatically connect to the fastest available server or your chosen server location when the app starts.',
-			'ui.fastestServer' => 'Fastest',
+			'ui.fastestServer' => 'Fastest server',
+			'ui.fastest' => 'Fastest',
 			'ui.change' => 'Change',
 			'ui.nordLynx' => 'NordLynx',
 			'ui.openVpnTcp' => 'OpenVPN (TCP)',
@@ -2533,9 +2543,9 @@ extension on Translations {
 			'ui.customDnsDescription' => 'Set custom DNS server addresses to use.',
 			'ui.routingDescription' => 'Use custom routing rules instead of the default VPN configuration.',
 			'ui.postQuantumVpn' => 'Post-quantum encryption',
-			'ui.postQuantumDescription' => 'Activate next-generation encryption that protects your data from threats posed by quantum computing.',
 			_ => null,
 		} ?? switch (path) {
+			'ui.postQuantumDescription' => 'Activate next-generation encryption that protects your data from threats posed by quantum computing.',
 			'ui.obfuscationDescription' => 'Avoid detection by traffic sensors in restricted networks while using a VPN. When enabled, only obfuscated servers are available.',
 			'ui.obfuscation' => 'Obfuscation',
 			'ui.add' => 'Add',
@@ -2662,6 +2672,8 @@ extension on Translations {
 			'ui.reconnectToApplyChanges' => 'Reconnect to apply changes',
 			'ui.reconnectToApplyChangesDescription' => 'Your new settings will take effect after you reconnect to the VPN.',
 			'ui.gotIt' => 'Got it',
+			'ui.notSecured' => 'Not secured',
+			'ui.secureMyConnection' => 'Secure my connection',
 			'ui.pauseFor5Min' => 'Pause for 5 minutes',
 			'ui.pauseFor15Min' => 'Pause for 15 minutes',
 			'ui.pauseFor30Min' => 'Pause for 30 minutes',

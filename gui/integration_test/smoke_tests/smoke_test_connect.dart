@@ -29,7 +29,7 @@ void runQuickConnectTest(
     final mainScreen = await app.goToVpnScreen();
 
     await tester.pumpUntilFound(
-      find.text(t.ui.quickConnect),
+      find.text(t.ui.secureMyConnection),
       timeout: Duration(seconds: 10),
     );
 

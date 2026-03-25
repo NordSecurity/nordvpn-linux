@@ -22,11 +22,35 @@ final class VpnStatusCardTheme extends ThemeExtension<VpnStatusCardTheme>
   @override
   final double iconSize;
 
+  @override
+  final ButtonStyle secureMyConnectionButtonStyle;
+
+  @override
+  final EdgeInsetsGeometry connectionCardPadding;
+
+  @override
+  final double smallSpacing;
+
+  @override
+  final double mediumSpacing;
+
+  @override
+  final Color iconBackgroundColor;
+
+  @override
+  final String disconnectedIcon;
+
   VpnStatusCardTheme({
     required this.height,
     required this.primaryFont,
     required this.secondaryFont,
     required this.iconSize,
     required this.maxConnectButtonWidth,
+    required this.secureMyConnectionButtonStyle,
+    required this.connectionCardPadding,
+    required this.smallSpacing,
+    required this.mediumSpacing,
+    required this.iconBackgroundColor,
+    required this.disconnectedIcon,
   });
 }
