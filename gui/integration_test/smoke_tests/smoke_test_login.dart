@@ -49,7 +49,7 @@ void runLoginSmokeTests() {
       expect(loginScreen.isLoginButtonEnabled(), isFalse);
 
       await tester.pumpUntilFound(
-        find.text(t.ui.quickConnect),
+        find.text(t.ui.secureMyConnection),
         timeout: Duration(seconds: 10),
       );
       await app.goTo(AppRoute.settingsAccount).waitForUiUpdates();
@@ -80,7 +80,7 @@ void runLoginSmokeTests() {
       await loginScreen.clickLogin();
 
       await tester.pumpUntilFound(
-        find.text(t.ui.quickConnect),
+        find.text(t.ui.secureMyConnection),
         timeout: Duration(seconds: 10),
       );
       await app.goTo(AppRoute.settingsVpnConnection).waitForUiUpdates();

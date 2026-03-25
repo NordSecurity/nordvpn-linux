@@ -11,6 +11,7 @@ const useMockDaemon = bool.fromEnvironment(
 );
 
 const logFile = "nordvpn-gui.log";
+const imagesPath = "assets/images/";
 final daemonDateFormat = DateFormat("yyyy-MM-dd h:m:s");
 
 const animationDuration = Duration(milliseconds: 200);
