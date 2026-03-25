@@ -508,6 +508,8 @@ func (ti *Instance) setVpnStatus(
 			case pb.ConnectionState_CONNECTED:
 				notificationText = labelConnectedFormat
 				notificationArg = ti.state.serverName()
+			case pb.ConnectionState_PAUSED:
+				fallthrough
 			case pb.ConnectionState_DISCONNECTED:
 				if oldServerName != "" {
 					notificationText = labelDisconnectedFormat

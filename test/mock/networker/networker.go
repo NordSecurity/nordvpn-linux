@@ -25,6 +25,7 @@ type Mock struct {
 	SetDNSErr         error
 	SetAllowlistErr   error
 	UnsetAllowlistErr error
+	StopErr           error
 }
 
 func (Mock) Start(
@@ -38,7 +39,13 @@ func (Mock) Start(
 ) error {
 	return nil
 }
-func (*Mock) Stop() error      { return nil }
+func (m *Mock) Stop() error {
+	if m.StopErr != nil {
+		return m.StopErr
+	}
+	m.VpnActive = false
+	return nil
+}
 func (*Mock) UnSetMesh() error { return nil }
 
 func (m *Mock) SetDNS(nameservers []string) error {

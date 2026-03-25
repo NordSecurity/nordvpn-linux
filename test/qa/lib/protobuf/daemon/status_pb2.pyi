@@ -20,6 +20,7 @@ class ConnectionState(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     DISCONNECTED: _ClassVar[ConnectionState]
     CONNECTING: _ClassVar[ConnectionState]
     CONNECTED: _ClassVar[ConnectionState]
+    PAUSED: _ClassVar[ConnectionState]
 UNKNOWN_SOURCE: ConnectionSource
 MANUAL: ConnectionSource
 AUTO: ConnectionSource
@@ -27,6 +28,7 @@ UNKNOWN_STATE: ConnectionState
 DISCONNECTED: ConnectionState
 CONNECTING: ConnectionState
 CONNECTED: ConnectionState
+PAUSED: ConnectionState
 
 class ConnectionParameters(_message.Message):
     __slots__ = ("source", "country", "city", "group", "server_name", "country_code")
@@ -45,7 +47,7 @@ class ConnectionParameters(_message.Message):
     def __init__(self, source: _Optional[_Union[ConnectionSource, str]] = ..., country: _Optional[str] = ..., city: _Optional[str] = ..., group: _Optional[_Union[_group_pb2.ServerGroup, str]] = ..., server_name: _Optional[str] = ..., country_code: _Optional[str] = ...) -> None: ...
 
 class StatusResponse(_message.Message):
-    __slots__ = ("state", "technology", "protocol", "ip", "hostname", "country", "city", "download", "upload", "uptime", "name", "virtualLocation", "parameters", "postQuantum", "is_mesh_peer", "by_user", "country_code", "obfuscated")
+    __slots__ = ("state", "technology", "protocol", "ip", "hostname", "country", "city", "download", "upload", "uptime", "name", "virtualLocation", "parameters", "postQuantum", "is_mesh_peer", "by_user", "country_code", "obfuscated", "paused_at", "pause_remaining_duration_sec")
     STATE_FIELD_NUMBER: _ClassVar[int]
     TECHNOLOGY_FIELD_NUMBER: _ClassVar[int]
     PROTOCOL_FIELD_NUMBER: _ClassVar[int]
@@ -64,6 +66,8 @@ class StatusResponse(_message.Message):
     BY_USER_FIELD_NUMBER: _ClassVar[int]
     COUNTRY_CODE_FIELD_NUMBER: _ClassVar[int]
     OBFUSCATED_FIELD_NUMBER: _ClassVar[int]
+    PAUSED_AT_FIELD_NUMBER: _ClassVar[int]
+    PAUSE_REMAINING_DURATION_SEC_FIELD_NUMBER: _ClassVar[int]
     state: ConnectionState
     technology: _technology_pb2.Technology
     protocol: _protocol_pb2.Protocol
@@ -82,4 +86,6 @@ class StatusResponse(_message.Message):
     by_user: bool
     country_code: str
     obfuscated: bool
-    def __init__(self, state: _Optional[_Union[ConnectionState, str]] = ..., technology: _Optional[_Union[_technology_pb2.Technology, str]] = ..., protocol: _Optional[_Union[_protocol_pb2.Protocol, str]] = ..., ip: _Optional[str] = ..., hostname: _Optional[str] = ..., country: _Optional[str] = ..., city: _Optional[str] = ..., download: _Optional[int] = ..., upload: _Optional[int] = ..., uptime: _Optional[int] = ..., name: _Optional[str] = ..., virtualLocation: bool = ..., parameters: _Optional[_Union[ConnectionParameters, _Mapping]] = ..., postQuantum: bool = ..., is_mesh_peer: bool = ..., by_user: bool = ..., country_code: _Optional[str] = ..., obfuscated: bool = ...) -> None: ...
+    paused_at: int
+    pause_remaining_duration_sec: int
+    def __init__(self, state: _Optional[_Union[ConnectionState, str]] = ..., technology: _Optional[_Union[_technology_pb2.Technology, str]] = ..., protocol: _Optional[_Union[_protocol_pb2.Protocol, str]] = ..., ip: _Optional[str] = ..., hostname: _Optional[str] = ..., country: _Optional[str] = ..., city: _Optional[str] = ..., download: _Optional[int] = ..., upload: _Optional[int] = ..., uptime: _Optional[int] = ..., name: _Optional[str] = ..., virtualLocation: bool = ..., parameters: _Optional[_Union[ConnectionParameters, _Mapping]] = ..., postQuantum: bool = ..., is_mesh_peer: bool = ..., by_user: bool = ..., country_code: _Optional[str] = ..., obfuscated: bool = ..., paused_at: _Optional[int] = ..., pause_remaining_duration_sec: _Optional[int] = ...) -> None: ...

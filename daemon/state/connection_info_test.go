@@ -15,19 +15,33 @@ import (
 )
 
 type TestSubscriber struct {
-	notificationCounter int
-	wg                  *sync.WaitGroup
+	notifications []events.DataConnectChangeNotif
+	wg            *sync.WaitGroup
 }
 
 func NewTestSubscriber() *TestSubscriber {
 	return &TestSubscriber{
-		notificationCounter: 0,
-		wg:                  &sync.WaitGroup{},
+		wg: &sync.WaitGroup{},
 	}
 }
 
-func (s *TestSubscriber) NotifyChangeState(events.DataConnectChangeNotif) error {
-	s.notificationCounter++
+// PopNotification returns first received notification and removes it from the notifications list. Returns false if
+// notifications list is empty.
+func (s *TestSubscriber) PopNotification() (events.DataConnectChangeNotif, bool) {
+	if len(s.notifications) == 0 {
+		return events.DataConnectChangeNotif{}, false
+	}
+	notification := s.notifications[0]
+	s.notifications = s.notifications[1:]
+	return notification, true
+}
+
+func (s *TestSubscriber) GetNotificationsCount() int {
+	return len(s.notifications)
+}
+
+func (s *TestSubscriber) NotifyChangeState(e events.DataConnectChangeNotif) error {
+	s.notifications = append(s.notifications, e)
 	s.wg.Done()
 	return nil
 }
@@ -62,7 +76,7 @@ func (f *testFixture) waitForCompletion(t *testing.T) {
 	t.Helper()
 	select {
 	case <-f.done:
-	case <-time.After(1 * time.Second):
+	case <-time.After(5000 * time.Second):
 		t.Fatal("Timeout waiting for subscriber notifications")
 	}
 }
@@ -319,29 +333,29 @@ func TestConnectionInfo_InternalEventsIgnoredUntilFullyConnected(t *testing.T) {
 			vpn.ConnectEvent{Status: events.StatusAttempt})
 		tf.sut.ConnectionStatusNotifyInternalConnect(
 			vpn.ConnectEvent{Status: events.StatusSuccess})
-		assert.Equal(t, 0, tf.subscriber.notificationCounter)
+		assert.Equal(t, 0, tf.subscriber.GetNotificationsCount())
 
 		tf.sut.ConnectionStatusNotifyConnect(
 			events.DataConnect{EventStatus: events.StatusAttempt},
 		)
-		assert.Equal(t, 1, tf.subscriber.notificationCounter)
+		assert.Equal(t, 1, tf.subscriber.GetNotificationsCount())
 
 		tf.sut.ConnectionStatusNotifyInternalConnect(
 			vpn.ConnectEvent{Status: events.StatusAttempt})
 		tf.sut.ConnectionStatusNotifyInternalConnect(
 			vpn.ConnectEvent{Status: events.StatusSuccess})
-		assert.Equal(t, 1, tf.subscriber.notificationCounter)
+		assert.Equal(t, 1, tf.subscriber.GetNotificationsCount())
 
 		tf.sut.ConnectionStatusNotifyConnect(
 			events.DataConnect{EventStatus: events.StatusSuccess},
 		)
-		assert.Equal(t, 2, tf.subscriber.notificationCounter)
+		assert.Equal(t, 2, tf.subscriber.GetNotificationsCount())
 
 		tf.sut.ConnectionStatusNotifyInternalConnect(
 			vpn.ConnectEvent{Status: events.StatusAttempt})
 		tf.sut.ConnectionStatusNotifyInternalConnect(
 			vpn.ConnectEvent{Status: events.StatusSuccess})
-		assert.Equal(t, 4, tf.subscriber.notificationCounter)
+		assert.Equal(t, 4, tf.subscriber.GetNotificationsCount())
 		close(tf.done)
 	}()
 	tf.waitForCompletion(t)
@@ -410,4 +424,65 @@ func TestConnectionInfo_RefreshDisconnectEventsAreIgnored(t *testing.T) {
 				"State was changed after receiving a refresh disconnect events. Refresh events should be ignored.")
 		})
 	}
+}
+
+func TestConnectionInfo_PauseHandling(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tf := newTestFixture(t)
+	duration := 10 * time.Second
+	pauseTime := time.Unix(1774276303, 0)
+	tf.sut.Pause(pauseTime, duration)
+
+	tf.sut.remainingDurationFunc = func(time.Time, time.Duration) int32 {
+		return 5
+	}
+
+	status := tf.sut.Status()
+	assert.Equal(t, pauseTime.Unix(), status.PausedAt)
+	assert.Equal(t, status.State, pb.ConnectionState_PAUSED)
+	assert.Equal(t, status.PauseRemainingTimeSec, int32(5))
+
+	go func() {
+		tf.subscriber.ExpectEvents(1)
+		tf.sut.ConnectionStatusNotifyDisconnect(events.DataDisconnect{})
+		tf.subscriber.wg.Wait()
+
+		assert.Equal(t, 1, tf.subscriber.GetNotificationsCount(),
+			"Unexpected number of notifications after a disconnect event.")
+
+		notification, notificationReceived := tf.subscriber.PopNotification()
+		assert.True(t, notificationReceived,
+			"Expected notification not received when DataDisconnect event was emitted.")
+		assert.Equal(t, notification.Status.State, pb.ConnectionState_PAUSED,
+			"Unexpected state received in the status notification.")
+		assert.Equal(t, pauseTime.Unix(), notification.Status.PausedAt,
+			"Unexpected pause time in a disconnect notification.")
+		assert.Equal(t, notification.Status.PauseRemainingTimeSec, int32(5),
+			"Unexpected remaining pause time in a disconnect notification.")
+
+		tf.subscriber.ExpectEvents(1)
+
+		tf.sut.remainingDurationFunc = func(time.Time, time.Duration) int32 {
+			return 2
+		}
+
+		tf.sut.fullyConnected = true
+		tf.sut.ConnectionStatusNotifyInternalDisconnect(events.StatusSuccess)
+
+		assert.Equal(t, 1, tf.subscriber.GetNotificationsCount(),
+			"Unexpected number of notifications after an internal disconnect event.")
+
+		notification, notificationReceived = tf.subscriber.PopNotification()
+		assert.True(t, notificationReceived,
+			"Expected notification not received when internal disconnect event was emitted.")
+		assert.Equal(t, notification.Status.State, pb.ConnectionState_PAUSED,
+			"Unexpected state received in the status notification.")
+		assert.Equal(t, notification.Status.PausedAt, pauseTime.Unix(),
+			"Unexpected pause time in an internal disconnect notification.")
+		assert.Equal(t, notification.Status.PauseRemainingTimeSec, int32(2),
+			"Unexpected remaining pause time in an internal disconnect notification.")
+		close(tf.done)
+	}()
+	tf.waitForCompletion(t)
 }

@@ -3,6 +3,7 @@ package daemon
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"time"
 
@@ -27,6 +28,7 @@ func isDedicatedIP(server core.Server) bool {
 
 // Connect initiates and handles the VPN connection process
 func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retErr error) {
+	r.pauseManager.CancelReconnection()
 	return r.connectWithContext(in, srv, pb.ConnectionSource_MANUAL)
 }
 
@@ -43,7 +45,24 @@ func (r *RPC) connectWithContext(in *pb.ConnectRequest, srv pb.Daemon_ConnectSer
 	// In order to fix this, all of expensive operations should implement `ctx.Done()` handling
 	// and have context bypassed to them.
 	if !r.connectContext.TryExecuteWith(func(ctx context.Context) {
-		didFail, err = r.connect(ctx, in, srv, source)
+		didFail, err = r.connectWithParameters(ctx, in, srv, source)
+	}) {
+		return srv.Send(&pb.Payload{Type: internal.CodeNothingToDo})
+	}
+
+	// set connection status to "Disconnected"
+	if didFail || err != nil {
+		r.events.Service.Disconnect.Publish(events.DataDisconnect{})
+	}
+
+	return err
+}
+
+func (r *RPC) connectWithContextStoredServerSelection(srv pb.Daemon_ConnectServer, source pb.ConnectionSource) error {
+	var err error
+	var didFail bool
+	if !r.connectContext.TryExecuteWith(func(ctx context.Context) {
+		didFail, err = r.connectWithStoredServerSelection(ctx, srv)
 	}) {
 		return srv.Send(&pb.Payload{Type: internal.CodeNothingToDo})
 	}
@@ -97,8 +116,46 @@ func determineServerSelectionRule(params ServerParameters) config.ServerSelectio
 	return config.ServerSelectionRule_NONE
 }
 
-func (r *RPC) connect(
-	ctx context.Context,
+type vpnExpirationCheckResult struct {
+	isExpired bool
+	errorCode int64
+}
+
+func (r *RPC) isVPNExpired() vpnExpirationCheckResult {
+	vpnExpired, err := r.ac.IsVPNExpired()
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "checking VPN expiration: ", err)
+		return vpnExpirationCheckResult{isExpired: true, errorCode: internal.CodeTokenRenewError}
+	} else if vpnExpired {
+		return vpnExpirationCheckResult{isExpired: true, errorCode: internal.CodeAccountExpired}
+	}
+	return vpnExpirationCheckResult{isExpired: false}
+}
+
+func (r *RPC) connectWithStoredServerSelection(ctx context.Context, srv pb.Daemon_ConnectServer) (bool, error) {
+	if ok, err := r.ac.IsLoggedIn(); !ok {
+		if errors.Is(err, core.ErrUnauthorized) {
+			_ = srv.Send(&pb.Payload{Type: internal.CodeRevokedAccessToken})
+		}
+		return false, internal.ErrNotLoggedIn
+	}
+
+	var cfg config.Config
+	if err := r.cm.Load(&cfg); err != nil {
+		log.Println(internal.ErrorPrefix, err)
+		return false, fmt.Errorf("reading config: %w", err)
+	}
+	r.connectionInfo.SetInitialConnecting()
+
+	expirationCheckResult := r.isVPNExpired()
+	if expirationCheckResult.isExpired {
+		return true, srv.Send(&pb.Payload{Type: expirationCheckResult.errorCode})
+	}
+
+	return r.connect(ctx, srv, cfg, r.lastServerSelection, r.RequestedConnParams.Get().ServerParameters, time.Now())
+}
+
+func (r *RPC) connectWithParameters(ctx context.Context,
 	in *pb.ConnectRequest,
 	srv pb.Daemon_ConnectServer,
 	source pb.ConnectionSource,
@@ -120,12 +177,9 @@ func (r *RPC) connect(
 	// to inform clients about connection attempt as soon as possible so they can react.
 	// The details will be filled and delivered to clients later.
 
-	vpnExpired, err := r.ac.IsVPNExpired()
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "checking VPN expiration: ", err)
-		return true, srv.Send(&pb.Payload{Type: internal.CodeTokenRenewError})
-	} else if vpnExpired {
-		return true, srv.Send(&pb.Payload{Type: internal.CodeAccountExpired})
+	expirationCheckResult := r.isVPNExpired()
+	if expirationCheckResult.isExpired {
+		return true, srv.Send(&pb.Payload{Type: expirationCheckResult.errorCode})
 	}
 
 	if cfg.Technology == config.Technology_NORDWHISPER && !features.NordWhisperEnabled {
@@ -163,7 +217,22 @@ func (r *RPC) connect(
 
 		return false, err
 	}
+	r.lastServerSelection = serverSelection
 
+	parameters := GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
+	r.RequestedConnParams.Set(source, parameters)
+
+	return r.connect(ctx, srv, cfg, serverSelection, parameters, connectingStartTime)
+}
+
+func (r *RPC) connect(
+	ctx context.Context,
+	srv pb.Daemon_ConnectServer,
+	cfg config.Config,
+	serverSelection serverSelection,
+	parameters ServerParameters,
+	connectingStartTime time.Time,
+) (didFail bool, retErr error) {
 	country, err := serverSelection.server.Locations.Country()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, err)
@@ -181,7 +250,6 @@ func (r *RPC) connect(
 		log.Println(internal.ErrorPrefix, err)
 		return false, internal.ErrUnhandled
 	}
-	r.lastServer = *serverSelection.server
 
 	tokenData := cfg.TokensData[cfg.AutoConnectData.ID]
 	creds := vpn.Credentials{
@@ -201,9 +269,6 @@ func (r *RPC) connect(
 	}
 
 	allowlist := cfg.AutoConnectData.Allowlist
-
-	parameters := GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
-	r.RequestedConnParams.Set(source, parameters)
 
 	city := country.City.Name
 	if len(serverSelection.server.Locations) > 0 {
@@ -252,7 +317,8 @@ func (r *RPC) connect(
 	if serverSelection.server.IsVirtualLocation() {
 		virtualServer = " - Virtual"
 	}
-	data := []string{r.lastServer.Name, r.lastServer.Hostname, virtualServer}
+	lastServer := r.lastServerSelection.server
+	data := []string{lastServer.Name, lastServer.Hostname, virtualServer}
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnecting, Data: data}); err != nil {
 		log.Println(internal.ErrorPrefix, err)

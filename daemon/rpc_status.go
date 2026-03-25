@@ -49,8 +49,10 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 			CountryCode: requestedConnParams.CountryCode,
 		},
 
-		PostQuantum: status.IsPostQuantum,
-		Obfuscated:  status.IsObfuscated,
+		PostQuantum:               status.IsPostQuantum,
+		Obfuscated:                status.IsObfuscated,
+		PausedAt:                  status.PausedAt,
+		PauseRemainingDurationSec: status.PauseRemainingTimeSec,
 	}, nil
 }
 

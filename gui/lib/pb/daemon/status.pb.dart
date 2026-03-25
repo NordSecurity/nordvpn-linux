@@ -160,6 +160,8 @@ class StatusResponse extends $pb.GeneratedMessage {
     $core.bool? byUser,
     $core.String? countryCode,
     $core.bool? obfuscated,
+    $fixnum.Int64? pausedAt,
+    $core.int? pauseRemainingDurationSec,
   }) {
     final result = create();
     if (state != null) result.state = state;
@@ -180,6 +182,9 @@ class StatusResponse extends $pb.GeneratedMessage {
     if (byUser != null) result.byUser = byUser;
     if (countryCode != null) result.countryCode = countryCode;
     if (obfuscated != null) result.obfuscated = obfuscated;
+    if (pausedAt != null) result.pausedAt = pausedAt;
+    if (pauseRemainingDurationSec != null)
+      result.pauseRemainingDurationSec = pauseRemainingDurationSec;
     return result;
   }
 
@@ -222,6 +227,8 @@ class StatusResponse extends $pb.GeneratedMessage {
     ..aOB(16, _omitFieldNames ? '' : 'byUser')
     ..aOS(17, _omitFieldNames ? '' : 'countryCode')
     ..aOB(18, _omitFieldNames ? '' : 'obfuscated')
+    ..aInt64(19, _omitFieldNames ? '' : 'pausedAt')
+    ..aI(20, _omitFieldNames ? '' : 'pauseRemainingDurationSec')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -406,6 +413,24 @@ class StatusResponse extends $pb.GeneratedMessage {
   $core.bool hasObfuscated() => $_has(17);
   @$pb.TagNumber(18)
   void clearObfuscated() => $_clearField(18);
+
+  @$pb.TagNumber(19)
+  $fixnum.Int64 get pausedAt => $_getI64(18);
+  @$pb.TagNumber(19)
+  set pausedAt($fixnum.Int64 value) => $_setInt64(18, value);
+  @$pb.TagNumber(19)
+  $core.bool hasPausedAt() => $_has(18);
+  @$pb.TagNumber(19)
+  void clearPausedAt() => $_clearField(19);
+
+  @$pb.TagNumber(20)
+  $core.int get pauseRemainingDurationSec => $_getIZ(19);
+  @$pb.TagNumber(20)
+  set pauseRemainingDurationSec($core.int value) => $_setSignedInt32(19, value);
+  @$pb.TagNumber(20)
+  $core.bool hasPauseRemainingDurationSec() => $_has(19);
+  @$pb.TagNumber(20)
+  void clearPauseRemainingDurationSec() => $_clearField(20);
 }
 
 const $core.bool _omitFieldNames =

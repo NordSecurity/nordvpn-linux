@@ -23,6 +23,7 @@ import "state.proto";
 import "servers.proto";
 import "defaults.proto";
 import "recent_connections.proto";
+import "pause.proto";
 
 service Daemon {
   // ==================== Authentication ====================
@@ -44,6 +45,7 @@ service Daemon {
   rpc Disconnect(Empty) returns (stream Payload);
   rpc Status(Empty) returns (StatusResponse);
   rpc RateConnection(RateRequest) returns (Payload);
+  rpc PauseConnection(PauseRequest) returns (Payload);
 
   // ==================== Server Discovery ====================
   rpc GetServers(Empty) returns (ServersResponse);

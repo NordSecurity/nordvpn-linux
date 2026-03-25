@@ -19,6 +19,7 @@ enum ConnectionState {
     DISCONNECTED = 1;
     CONNECTING = 2;
     CONNECTED = 3;
+    PAUSED = 4;
 }
 
 message ConnectionParameters {
@@ -49,4 +50,6 @@ message StatusResponse {
   bool by_user = 16;
   string country_code = 17;
   bool obfuscated = 18;
+  int64 paused_at = 19;
+  int32 pause_remaining_duration_sec = 20;
 }
