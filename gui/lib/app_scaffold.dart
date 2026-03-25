@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nordvpn/constants.dart';
@@ -81,7 +82,8 @@ final class NavRail extends StatelessWidget {
               selected: selectedIndex == 1,
               onClick: () => onDestinationSelected(1),
             ),
-            ClipRect(
+            // showcase only in debug mode
+            if (kDebugMode) ClipRect(
               child: SizedBox(
                 width: textScaler.scale(navTheme.containerWidth),
                 height: textScaler.scale(navTheme.containerHeight),
