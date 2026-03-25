@@ -45,6 +45,17 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 		return nil, internal.ErrAlreadyLoggedIn
 	}
 
+	// check if previous login/signup process was started
+	if r.initialLoginType.wasStarted() {
+		r.events.User.Login.Publish(events.DataAuthorization{
+			DurationMs:   -1,
+			EventTrigger: events.TriggerUser,
+			EventStatus:  events.StatusFailure, // emit failure event, but continue
+			EventType:    events.LoginLogin,
+			Reason:       events.ReasonUnfinishedPrevLogin,
+		})
+	}
+
 	loginStartTime := time.Now()
 	r.events.User.Login.Publish(events.DataAuthorization{
 		DurationMs:   -1,
@@ -54,18 +65,6 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 		Reason:       events.ReasonNotSpecified,
 	})
 
-	// check if previous login/signup process was started
-	if r.initialLoginType.wasStarted() {
-		r.events.User.Login.Publish(events.DataAuthorization{
-			DurationMs:                 -1,
-			EventTrigger:               events.TriggerUser,
-			EventStatus:                events.StatusFailure, // emit failure event, but continue
-			EventType:                  events.LoginLogin,
-			IsAlteredFlowOnNordAccount: false, // token login is a standalone flow, not a continuation of OAuth2
-			Reason:                     events.ReasonUnfinishedPrevLogin,
-		})
-	}
-
 	eventReason := events.ReasonNotSpecified
 
 	defer func() {
@@ -74,12 +73,11 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 			eventStatus = events.StatusFailure
 		}
 		r.events.User.Login.Publish(events.DataAuthorization{
-			DurationMs:                 max(int(time.Since(loginStartTime).Milliseconds()), 1),
-			EventTrigger:               events.TriggerUser,
-			EventStatus:                eventStatus,
-			EventType:                  events.LoginLogin,
-			IsAlteredFlowOnNordAccount: false, // token login is always LOGIN, never altered
-			Reason:                     eventReason,
+			DurationMs:   max(int(time.Since(loginStartTime).Milliseconds()), 1),
+			EventTrigger: events.TriggerUser,
+			EventStatus:  eventStatus,
+			EventType:    events.LoginLogin,
+			Reason:       eventReason,
 		})
 		// at the end, reset initiated login type
 		r.initialLoginType.reset()
@@ -172,12 +170,11 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (paylo
 	// check if previous login/signup process was started
 	if r.initialLoginType.wasStarted() {
 		r.events.User.Login.Publish(events.DataAuthorization{
-			DurationMs:                 -1,
-			EventTrigger:               events.TriggerUser,
-			EventStatus:                events.StatusFailure, // emit failure event, but continue
-			EventType:                  eventType,
-			IsAlteredFlowOnNordAccount: false, // here we are too early for flow to be altered
-			Reason:                     events.ReasonUnfinishedPrevLogin,
+			DurationMs:   -1,
+			EventTrigger: events.TriggerUser,
+			EventStatus:  events.StatusFailure, // emit failure event, but continue
+			EventType:    eventType,
+			Reason:       events.ReasonUnfinishedPrevLogin,
 		})
 	}
 
@@ -189,12 +186,11 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (paylo
 			eventStatus = events.StatusFailure
 		}
 		r.events.User.Login.Publish(events.DataAuthorization{
-			DurationMs:                 -1,
-			EventTrigger:               events.TriggerUser,
-			EventStatus:                eventStatus,
-			EventType:                  eventType,
-			IsAlteredFlowOnNordAccount: false, // here we are too early for flow to be altered
-			Reason:                     eventReason,
+			DurationMs:   -1,
+			EventTrigger: events.TriggerUser,
+			EventStatus:  eventStatus,
+			EventType:    eventType,
+			Reason:       eventReason,
 		})
 	}()
 
