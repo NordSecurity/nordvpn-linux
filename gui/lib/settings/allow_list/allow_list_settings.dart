@@ -127,13 +127,6 @@ class _AllowListSettingsState extends ConsumerState<AllowListSettings> {
         .read(vpnSettingsControllerProvider.notifier)
         .addToAllowList(port: port, subnet: subnet);
 
-    if (res == DaemonStatusCode.allowlistSubnetTooWideWarn) {
-      ref
-          .read(popupsProvider.notifier)
-          .show(PopupCodes.addingTooWideSubnetWarn);
-      return true;
-    }
-
     if (res == DaemonStatusCode.allowlistSubnetWiderConfirm) {
       ref
           .read(pendingAllowListEntryProvider.notifier)
@@ -141,6 +134,13 @@ class _AllowListSettingsState extends ConsumerState<AllowListSettings> {
       ref
           .read(popupsProvider.notifier)
           .show(PopupCodes.removeOverlappingSubnetsConfirm);
+      return true;
+    }
+
+    if (res == DaemonStatusCode.allowlistSubnetTooWideWarn) {
+      ref
+          .read(popupsProvider.notifier)
+          .show(PopupCodes.addingTooWideSubnetWarn);
       return true;
     }
 
