@@ -294,7 +294,7 @@ def set_rc_retry_custom_time(daemon_log_reader: LogReader, timeout: int = RC_TIM
     # Print original service file for reference
     print(f"Service original:\n {sh.cat(service_path)}")
 
-    sed_command = f'/^\[Service\]/a Environment="RC_LOAD_TIME_MIN={timeout}"' if is_under_snap() else f"1a export RC_LOAD_TIME_MIN={timeout}"
+    sed_command = rf'/^\[Service\]/a Environment="RC_LOAD_TIME_MIN={timeout}"' if is_under_snap() else rf"1a export RC_LOAD_TIME_MIN={timeout}"
     sh.sudo.sed("-i", sed_command, service_path)
 
     cursor = daemon_log_reader.get_cursor()
@@ -313,7 +313,7 @@ def remove_rc_retry_custom_time(timeout: int = RC_TIMEOUT):
     """
     service_path = NORDVPND_CONFIG_FILE.get(SNAP) if is_under_snap() else NORDVPND_CONFIG_FILE.get(DEB)
     # Cleanup: remove the injected environment variable line
-    sed_command = f'/^$$Service$$/,/^Environment="RC_LOAD_TIME_MIN={timeout}"$/d' if is_under_snap() else f"/^export RC_LOAD_TIME_MIN={timeout}$/d"
+    sed_command = rf'/^$$Service$$/,/^Environment="RC_LOAD_TIME_MIN={timeout}"$/d' if is_under_snap() else rf"/^export RC_LOAD_TIME_MIN={timeout}$/d"
 
     sh.sudo.sed("-i", sed_command, service_path)
     sh.sudo(SNAP, "restart", NORDVPND_SERVICE_NAME.get(SNAP)) if is_under_snap() else restart()

@@ -90,11 +90,11 @@ def _set_custom_config_for_rc(daemon_log_reader, string_to_be_added: str) -> int
     """
     if daemon.is_under_snap():
         # For VM
-        sed_command = f'/^\[Service\]/a Environment="{string_to_be_added}"'
+        sed_command = rf'/^\[Service\]/a Environment="{string_to_be_added}"'
         target_file = NORDVPND_CONFIG_FILE.get(SNAP)
     else:
         # For container
-        sed_command = f"1a export {string_to_be_added}"
+        sed_command = rf"1a export {string_to_be_added}"
         target_file = NORDVPND_CONFIG_FILE.get(DEB)
 
     sh.sudo.sed("-i", sed_command, target_file)
