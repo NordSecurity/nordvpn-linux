@@ -15,6 +15,12 @@ mixin _$VpnStatusCardThemeTailorMixin on ThemeExtension<VpnStatusCardTheme> {
   TextStyle get primaryFont;
   TextStyle get secondaryFont;
   double get iconSize;
+  ButtonStyle get secureMyConnectionButtonStyle;
+  EdgeInsetsGeometry get connectionCardPadding;
+  double get smallSpacing;
+  double get mediumSpacing;
+  Color get iconBackgroundColor;
+  String get disconnectedIcon;
 
   @override
   VpnStatusCardTheme copyWith({
@@ -23,6 +29,12 @@ mixin _$VpnStatusCardThemeTailorMixin on ThemeExtension<VpnStatusCardTheme> {
     TextStyle? primaryFont,
     TextStyle? secondaryFont,
     double? iconSize,
+    ButtonStyle? secureMyConnectionButtonStyle,
+    EdgeInsetsGeometry? connectionCardPadding,
+    double? smallSpacing,
+    double? mediumSpacing,
+    Color? iconBackgroundColor,
+    String? disconnectedIcon,
   }) {
     return VpnStatusCardTheme(
       height: height ?? this.height,
@@ -31,6 +43,14 @@ mixin _$VpnStatusCardThemeTailorMixin on ThemeExtension<VpnStatusCardTheme> {
       primaryFont: primaryFont ?? this.primaryFont,
       secondaryFont: secondaryFont ?? this.secondaryFont,
       iconSize: iconSize ?? this.iconSize,
+      secureMyConnectionButtonStyle:
+          secureMyConnectionButtonStyle ?? this.secureMyConnectionButtonStyle,
+      connectionCardPadding:
+          connectionCardPadding ?? this.connectionCardPadding,
+      smallSpacing: smallSpacing ?? this.smallSpacing,
+      mediumSpacing: mediumSpacing ?? this.mediumSpacing,
+      iconBackgroundColor: iconBackgroundColor ?? this.iconBackgroundColor,
+      disconnectedIcon: disconnectedIcon ?? this.disconnectedIcon,
     );
   }
 
@@ -48,6 +68,20 @@ mixin _$VpnStatusCardThemeTailorMixin on ThemeExtension<VpnStatusCardTheme> {
       primaryFont: TextStyle.lerp(primaryFont, other.primaryFont, t)!,
       secondaryFont: TextStyle.lerp(secondaryFont, other.secondaryFont, t)!,
       iconSize: t < 0.5 ? iconSize : other.iconSize,
+      secureMyConnectionButtonStyle: t < 0.5
+          ? secureMyConnectionButtonStyle
+          : other.secureMyConnectionButtonStyle,
+      connectionCardPadding: t < 0.5
+          ? connectionCardPadding
+          : other.connectionCardPadding,
+      smallSpacing: t < 0.5 ? smallSpacing : other.smallSpacing,
+      mediumSpacing: t < 0.5 ? mediumSpacing : other.mediumSpacing,
+      iconBackgroundColor: Color.lerp(
+        iconBackgroundColor,
+        other.iconBackgroundColor,
+        t,
+      )!,
+      disconnectedIcon: t < 0.5 ? disconnectedIcon : other.disconnectedIcon,
     );
   }
 
@@ -69,7 +103,31 @@ mixin _$VpnStatusCardThemeTailorMixin on ThemeExtension<VpnStatusCardTheme> {
               secondaryFont,
               other.secondaryFont,
             ) &&
-            const DeepCollectionEquality().equals(iconSize, other.iconSize));
+            const DeepCollectionEquality().equals(iconSize, other.iconSize) &&
+            const DeepCollectionEquality().equals(
+              secureMyConnectionButtonStyle,
+              other.secureMyConnectionButtonStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              connectionCardPadding,
+              other.connectionCardPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              smallSpacing,
+              other.smallSpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              mediumSpacing,
+              other.mediumSpacing,
+            ) &&
+            const DeepCollectionEquality().equals(
+              iconBackgroundColor,
+              other.iconBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              disconnectedIcon,
+              other.disconnectedIcon,
+            ));
   }
 
   @override
@@ -81,6 +139,12 @@ mixin _$VpnStatusCardThemeTailorMixin on ThemeExtension<VpnStatusCardTheme> {
       const DeepCollectionEquality().hash(primaryFont),
       const DeepCollectionEquality().hash(secondaryFont),
       const DeepCollectionEquality().hash(iconSize),
+      const DeepCollectionEquality().hash(secureMyConnectionButtonStyle),
+      const DeepCollectionEquality().hash(connectionCardPadding),
+      const DeepCollectionEquality().hash(smallSpacing),
+      const DeepCollectionEquality().hash(mediumSpacing),
+      const DeepCollectionEquality().hash(iconBackgroundColor),
+      const DeepCollectionEquality().hash(disconnectedIcon),
     );
   }
 }
@@ -93,4 +157,12 @@ extension VpnStatusCardThemeBuildContextProps on BuildContext {
   TextStyle get primaryFont => vpnStatusCardTheme.primaryFont;
   TextStyle get secondaryFont => vpnStatusCardTheme.secondaryFont;
   double get iconSize => vpnStatusCardTheme.iconSize;
+  ButtonStyle get secureMyConnectionButtonStyle =>
+      vpnStatusCardTheme.secureMyConnectionButtonStyle;
+  EdgeInsetsGeometry get connectionCardPadding =>
+      vpnStatusCardTheme.connectionCardPadding;
+  double get smallSpacing => vpnStatusCardTheme.smallSpacing;
+  double get mediumSpacing => vpnStatusCardTheme.mediumSpacing;
+  Color get iconBackgroundColor => vpnStatusCardTheme.iconBackgroundColor;
+  String get disconnectedIcon => vpnStatusCardTheme.disconnectedIcon;
 }

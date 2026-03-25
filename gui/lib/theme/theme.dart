@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nordvpn/constants.dart';
 import 'package:nordvpn/theme/allow_list_theme.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/aurora_design.dart';
@@ -58,7 +59,7 @@ final class NordVpnTheme {
       tooltipTheme: _tooltipThemeData(),
       extensions: [
         _appThemeExt(),
-        _vpnStatusCardThemeExt(),
+        _vpnStatusCardThemeExt(mode),
         _serversListThemeExt(),
         _settingsThemeExt(),
         _onOffSwitchThemeExt(),
@@ -352,17 +353,48 @@ final class NordVpnTheme {
     );
   }
 
-  VpnStatusCardTheme _vpnStatusCardThemeExt() {
+  VpnStatusCardTheme _vpnStatusCardThemeExt(ThemeMode mode) {
     return VpnStatusCardTheme(
-      height: 150,
-      maxConnectButtonWidth: 408,
-      primaryFont: design.typography.captionMedium.copyWith(
+      height: 160,
+      maxConnectButtonWidth: 320,
+      primaryFont: design.typography.heading.copyWith(
         color: design.semanticColors.textPrimary,
       ),
       secondaryFont: design.typography.subHeading.copyWith(
         color: design.semanticColors.textPrimary,
       ),
       iconSize: 40,
+      secureMyConnectionButtonStyle: ElevatedButton.styleFrom(
+        shape: RoundedRectangleBorder(
+          side: BorderSide(
+            color: design.semanticColors.borderAccent,
+            width: AppBorderWidth.md,
+          ),
+          borderRadius: AppBorderRadius.full,
+        ),
+        textStyle: design.typography.subHeading.copyWith(
+          color: design.semanticColors.textPrimary,
+        ),
+        padding: const EdgeInsets.symmetric(
+          vertical: AppSpacing.spacing3,
+          horizontal: AppSpacing.spacing7,
+        ),
+        backgroundColor: design.semanticColors.bgAccent,
+        foregroundColor: design.semanticColors.textPrimaryOnColor,
+        minimumSize: const Size.fromHeight(48),
+      ),
+      connectionCardPadding: EdgeInsets.fromLTRB(
+        AppSpacing.spacing6,
+        AppSpacing.spacing6,
+        280,
+        AppSpacing.spacing6,
+      ),
+      smallSpacing: AppSpacing.spacing3,
+      mediumSpacing: AppSpacing.spacing5,
+      iconBackgroundColor: design.semanticColors.bgCriticalSubtle,
+      disconnectedIcon: mode == ThemeMode.dark
+          ? "${imagesPath}shield_dark.svg"
+          : "${imagesPath}shield_light.svg",
     );
   }
 
