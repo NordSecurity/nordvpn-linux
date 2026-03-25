@@ -5,7 +5,7 @@ import 'package:nordvpn/data/models/server_info.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/internal/images_manager.dart';
 import 'package:nordvpn/service_locator.dart';
-import 'package:nordvpn/theme/vpn_status_card_theme.dart';
+import 'package:nordvpn/theme/connection_card_theme.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:nordvpn/widgets/padded_circle_avatar.dart';
 
@@ -21,23 +21,17 @@ final class ConnectionCardIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconTheme = context.vpnStatusCardTheme.iconStyle;
+    final iconTheme = context.connectionCardTheme.iconTheme;
 
     if (status.isConnected()) {
-      assert(status.country != null || status.isMeshnetRouting);
-
-      return PaddedCircleAvatar(
-        size: iconTheme.iconSize,
-        borderColor: iconTheme.borderConnectedColor,
-        borderSize: iconTheme.flagBorderSize,
-        child: icon(),
-      );
+      return _buildConnectedIcon(iconTheme);
     }
+
     if (status.isConnecting()) {
-      return _buildConnectingIcon(context, iconTheme);
+      return _buildConnectingIcon(iconTheme);
     }
 
-    return _buildDisconnectedIcon(context, iconTheme);
+    return _buildDisconnectedIcon(iconTheme);
   }
 
   Widget icon() {
@@ -59,17 +53,54 @@ final class ConnectionCardIcon extends StatelessWidget {
     return imagesManager.placeholderCountryFlag;
   }
 
-  Widget _buildConnectingIcon(
-    BuildContext context,
-    ConnectionCardIconThemeStyle iconTheme,
-  ) {
+  Widget _addDIPIconIfNeeded(ConnectionCardIconTheme iconTheme) {
+    final serverType = status.connectionParameters.group.toSpecialtyType();
+    if (serverType == null || serverType != ServerType.dedicatedIP) {
+      return SizedBox.shrink();
+    }
+
+    return Positioned(
+      bottom: 0,
+      right: 0,
+      child: SizedBox(
+        width: iconTheme.dipIconWidth,
+        height: iconTheme.dipIconHeight,
+        child: DynamicThemeImage("dip_connected_icon.svg"), // your widget here
+      ),
+    );
+  }
+
+  Widget _buildConnectedIcon(ConnectionCardIconTheme iconTheme) {
+    assert(
+      status.country != null || status.isMeshnetRouting,
+      "No country and no meshnet routing",
+    );
+
     return SizedBox(
       width: iconTheme.iconSize,
       height: iconTheme.iconSize,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Avatar
+          PaddedCircleAvatar(
+            size: iconTheme.iconSize,
+            borderColor: iconTheme.borderConnectedColor,
+            borderSize: iconTheme.flagBorderSize,
+            child: icon(),
+          ),
+          _addDIPIconIfNeeded(iconTheme),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConnectingIcon(ConnectionCardIconTheme iconTheme) {
+    return SizedBox(
+      width: iconTheme.iconSize,
+      height: iconTheme.iconSize,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
           CircleAvatar(
             radius: (iconTheme.iconSize / 2) - (2 * iconTheme.flagBorderSize),
             child: ClipOval(
@@ -80,8 +111,6 @@ final class ConnectionCardIcon extends StatelessWidget {
               ),
             ),
           ),
-
-          // Animated border
           SizedBox(
             width: iconTheme.iconSize,
             height: iconTheme.iconSize,
@@ -90,15 +119,13 @@ final class ConnectionCardIcon extends StatelessWidget {
               color: iconTheme.borderConnectingColor,
             ),
           ),
+          _addDIPIconIfNeeded(iconTheme),
         ],
       ),
     );
   }
 
-  Widget _buildDisconnectedIcon(
-    BuildContext context,
-    ConnectionCardIconThemeStyle iconTheme,
-  ) {
+  Widget _buildDisconnectedIcon(ConnectionCardIconTheme iconTheme) {
     return Container(
       width: iconTheme.iconSize,
       height: iconTheme.iconSize,

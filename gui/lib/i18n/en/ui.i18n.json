@@ -268,6 +268,7 @@
   "reconnectToApplyChanges": "Reconnect to apply changes",
   "reconnectToApplyChangesDescription": "Your new settings will take effect after you reconnect to the VPN.",
   "gotIt": "Got it",
+  "secured": "Secured",
   "notSecured": "Not secured",
   "secureMyConnection": "Secure my connection"
 }
