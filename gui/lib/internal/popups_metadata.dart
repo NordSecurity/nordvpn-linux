@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/data/providers/account_controller.dart';
 import 'package:nordvpn/data/providers/pending_settings_provider.dart';
+import 'package:nordvpn/data/providers/popups_provider.dart';
 import 'package:nordvpn/data/providers/preferences_controller.dart';
 import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
@@ -130,13 +131,18 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
             .read(pendingAllowListEntryProvider.notifier)
             .consume();
         if (entry == null) return;
-        await ref
+        final res = await ref
             .read(vpnSettingsControllerProvider.notifier)
             .addToAllowList(
               port: entry.port,
               subnet: entry.subnet,
               force: true,
             );
+        if (res == DaemonStatusCode.allowlistSubnetTooWideWarn) {
+          ref
+              .read(popupsProvider.notifier)
+              .show(PopupCodes.addingTooWideSubnetWarn);
+        }
       },
       noAction: (ref) {
         ref.read(pendingAllowListEntryProvider.notifier).clear();
