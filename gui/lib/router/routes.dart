@@ -72,25 +72,6 @@ enum AppRoute {
 }
 
 extension GoRouterExt on BuildContext {
-  int currentLocationIdx() {
-    String currentLocation = GoRouterState.of(this).uri.toString();
-    // If there are multiple / in the path, then get the first part and
-    // return the index for it because this is needed for navigation trail
-    final childRouteIndex = currentLocation.indexOf("/", 1);
-
-    if (childRouteIndex != -1) {
-      currentLocation = currentLocation.substring(0, childRouteIndex);
-    }
-
-    final idx = AppRoute.values.indexWhere(
-      (e) => e.toString() == currentLocation,
-    );
-
-    return idx;
-  }
-
-  String locationName(int index) => AppRoute.values[index].toString();
-
   void navigateToRoute(AppRoute route) {
     go(route.toString());
   }

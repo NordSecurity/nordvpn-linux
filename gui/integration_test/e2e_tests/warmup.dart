@@ -25,7 +25,7 @@ void runWarmupTests() async {
       await tester.pumpAndSettleWithTimeout();
 
       // settings screens
-      await tester.tap(find.byKey(AppScaffoldKeys.settingsNavIcon));
+      await tester.tap(find.byKey(NavDestination.settings.key!));
       await tester.pumpAndSettleWithTimeout();
 
       await tester.tap(find.text(t.ui.general));
