@@ -40,7 +40,7 @@ func isSubnetValid(subnet string, currentSubnets []string, remove bool) (bool, i
 		return false, internal.CodeAllowlistSubnetNoop
 	}
 
-	if parsedAddress.Bits() <= 8 {
+	if parsedAddress.Bits() <= internal.AllowlistTooWideSubnetPrefixThreshold {
 		return true, internal.CodeAllowlistSubnetTooWideWarn
 	}
 
@@ -98,8 +98,9 @@ func (r *RPC) getNewAllowlist(req *pb.SetAllowlistRequest, forceRemoveNarrower, 
 		}
 
 		// try to detect if new subnet is wider and some narrower subnets would be eliminated
-		narrowerSubnets, err := allowlist.WouldEliminateSubnets(subnet)
+		narrowerSubnets, err := allowlist.SubnetsCoveredBy(subnet)
 		if err != nil {
+			log.Println(internal.ErrorPrefix, "checking for overlapping subnets:", err)
 			return config.Allowlist{}, internal.CodeAllowlistInvalidSubnet
 		}
 

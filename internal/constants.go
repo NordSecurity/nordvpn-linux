@@ -105,6 +105,9 @@ const (
 	DebugEventMessageNamespace = "nordvpn-linux"
 
 	FilesharePort = 49111
+
+	// Subnets wider than this are considered as potentially unsafe to allowlist
+	AllowlistTooWideSubnetPrefixThreshold = 8
 )
 
 var (
