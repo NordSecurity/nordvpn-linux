@@ -13,8 +13,9 @@ import 'package:nordvpn/theme/vpn_status_card_theme.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 
 final class ConnectionCardButtons extends ConsumerWidget {
-  static const disconnectButtonKey = Key("vpnDisconnectButton");
   static const secureMyConnectionButtonKey = Key("vpnSecureMyConnectionButton");
+  static const cancelButtonKey = Key("vpnCancelButton");
+  static const disconnectButtonKey = Key("vpnDisconnectButton");
 
   final VpnStatus vpnStatus;
 
@@ -30,7 +31,13 @@ final class ConnectionCardButtons extends ConsumerWidget {
       child: IntrinsicHeight(
         child: Row(
           spacing: appTheme.horizontalSpaceSmall,
-          children: _buildButtons(context, ref, appTheme, vpnStatus),
+          children: _buildButtons(
+            context,
+            ref,
+            appTheme,
+            connectionCardTheme,
+            vpnStatus,
+          ),
         ),
       ),
     );
@@ -40,52 +47,73 @@ final class ConnectionCardButtons extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     AppTheme appTheme,
+    VpnStatusCardTheme connectionCardTheme,
     VpnStatus status,
   ) {
-    final statusCardTheme = context.vpnStatusCardTheme;
     final settings = ref.watch(vpnSettingsControllerProvider).valueOrNull;
     if (status.isConnected()) {
       return [
         Expanded(
           child: OutlinedButton(
             key: ConnectionCardButtons.disconnectButtonKey,
-            onPressed: () =>
-                ref.read(vpnStatusControllerProvider.notifier).disconnect(),
+            onPressed: () async => await ref
+                .read(vpnStatusControllerProvider.notifier)
+                .disconnect(),
             child: Text(t.ui.disconnect),
           ),
         ),
         if (!status.isMeshnetRouting)
           OutlinedButton(
             style: OutlinedButton.styleFrom(padding: EdgeInsets.all(0)),
-            onPressed: () => _reconnect(ref, status, settings),
+            onPressed: () async => await _reconnect(ref, status, settings),
             child: DynamicThemeImage("reconnect.svg"),
           ),
       ];
     }
 
-    return [
-      Expanded(
-        child: ElevatedButton(
-          key: ConnectionCardButtons.secureMyConnectionButtonKey,
-          onPressed: () async {
-            if (status.isDisconnected()) {
-              // Quick connect
-              ConnectArguments? args;
-              if (settings?.obfuscatedServers == true) {
-                args = ConnectArguments();
-              }
-              ref.read(vpnStatusControllerProvider.notifier).connect(args);
-            } else if (status.isConnecting()) {
-              ref.read(vpnStatusControllerProvider.notifier).cancelConnect();
-            }
-          },
-          style: statusCardTheme.secureMyConnectionButtonStyle,
-          child: Text(
-            status.isConnecting() ? t.ui.cancel : t.ui.secureMyConnection,
-          ),
-        ),
+    if (status.isConnecting()) {
+      return [_buildConnectingStateButton(ref, connectionCardTheme)];
+    }
+
+    return [_buildDisconnectedStateButton(ref, connectionCardTheme, settings)];
+  }
+
+  Widget _buildDisconnectedStateButton(
+    WidgetRef ref,
+    VpnStatusCardTheme connectionCardTheme,
+    ApplicationSettings? settings,
+  ) {
+    return Expanded(
+      child: ElevatedButton(
+        key: ConnectionCardButtons.secureMyConnectionButtonKey,
+        onPressed: () async {
+          // Quick connect
+          ConnectArguments? args;
+          if (settings?.obfuscatedServers == true) {
+            args = ConnectArguments();
+          }
+          await ref.read(vpnStatusControllerProvider.notifier).connect(args);
+        },
+        style: connectionCardTheme.secureMyConnectionButtonStyle,
+        child: Text(t.ui.secureMyConnection),
       ),
-    ];
+    );
+  }
+
+  Widget _buildConnectingStateButton(
+    WidgetRef ref,
+    VpnStatusCardTheme connectionCardTheme,
+  ) {
+    return Expanded(
+      child: ElevatedButton(
+        key: ConnectionCardButtons.cancelButtonKey,
+        onPressed: () async {
+          await ref.read(vpnStatusControllerProvider.notifier).cancelConnect();
+        },
+        style: connectionCardTheme.cancelButtonStyle,
+        child: Text(t.ui.cancel),
+      ),
+    );
   }
 
   Future<void> _reconnect(

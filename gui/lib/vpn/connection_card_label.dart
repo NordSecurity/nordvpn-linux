@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nordvpn/data/models/app_settings.dart';
 import 'package:nordvpn/data/models/server_group_extension.dart';
 import 'package:nordvpn/data/models/server_info.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
-import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
 import 'package:nordvpn/i18n/string_translation_extension.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
-import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/vpn_status_card_theme.dart';
 
-final class ConnectionCardLabel extends ConsumerWidget {
+final class ConnectionCardLabel extends StatelessWidget {
   static const labelKey = Key("vpnStatusLabelText");
 
   final VpnStatus vpnStatus;
@@ -18,24 +14,20 @@ final class ConnectionCardLabel extends ConsumerWidget {
   const ConnectionCardLabel({super.key, required this.vpnStatus});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final appTheme = context.appTheme;
-    final statusCardTheme = context.vpnStatusCardTheme;
-    final settings = ref.watch(vpnSettingsControllerProvider).valueOrNull;
+  Widget build(BuildContext context) {
+    final connectionCardTheme = context.vpnStatusCardTheme;
 
     return Text(
-      _constructLabel(settings),
+      _constructLabel(),
       key: ConnectionCardLabel.labelKey,
       overflow: TextOverflow.ellipsis,
-      style: statusCardTheme.secondaryFont.copyWith(
-        color: vpnStatus.isDisconnected() || vpnStatus.isConnecting()
-            ? appTheme.textErrorColor
-            : appTheme.successColor,
+      style: connectionCardTheme.secondaryFont.copyWith(
+        color: _labelColor(connectionCardTheme),
       ),
     );
   }
 
-  String _constructLabel(ApplicationSettings? settings) {
+  String _constructLabel() {
     var connectionStatus = t.ui.notSecured;
     if (vpnStatus.isAutoConnected()) {
       connectionStatus = t.ui.autoConnected;
@@ -44,7 +36,7 @@ final class ConnectionCardLabel extends ConsumerWidget {
           ? t.ui.meshnet
           : t.ui.connected;
     } else if (vpnStatus.isConnecting()) {
-      connectionStatus = t.ui.connecting;
+      return "${t.ui.connecting}...";
     }
 
     // Show obfuscated label if connection is obfuscated
@@ -61,10 +53,16 @@ final class ConnectionCardLabel extends ConsumerWidget {
       }
     }
 
-    if (vpnStatus.isConnecting()) {
-      connectionStatus += "...";
-    }
-
     return connectionStatus;
+  }
+
+  Color _labelColor(VpnStatusCardTheme theme) {
+    if (vpnStatus.isConnected()) {
+      return theme.labelStyle.connectedColor;
+    } else if (vpnStatus.isConnecting()) {
+      return theme.labelStyle.connectingColor;
+    } else {
+      return theme.labelStyle.disconnectedColor;
+    }
   }
 }
