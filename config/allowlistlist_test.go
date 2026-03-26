@@ -240,7 +240,7 @@ func TestNormalizeSubnetsInvalidInput(t *testing.T) {
 	}
 }
 
-func TestWouldEliminateSubnets(t *testing.T) {
+func TestSubnetsCoveredBy(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
@@ -317,7 +317,7 @@ func TestWouldEliminateSubnets(t *testing.T) {
 			existingCopy := make([]string, len(tt.existing))
 			copy(existingCopy, tt.existing)
 
-			eliminated, err := a.WouldEliminateSubnets(tt.newSubnet)
+			eliminated, err := a.SubnetsCoveredBy(tt.newSubnet)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedEliminated, eliminated)
 			assert.Equal(t, existingCopy, a.Subnets, "existing subnets must not be modified")
@@ -348,7 +348,7 @@ func TestWouldEliminateSubnetsInvalidInput(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := NewAllowlist(nil, nil, tt.existing)
-			eliminated, err := a.WouldEliminateSubnets(tt.newSubnet)
+			eliminated, err := a.SubnetsCoveredBy(tt.newSubnet)
 			assert.Error(t, err)
 			assert.Nil(t, eliminated)
 		})
