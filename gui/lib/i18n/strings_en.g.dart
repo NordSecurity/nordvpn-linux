@@ -1997,6 +1997,9 @@ class TranslationsUiEn {
 
 	/// en: 'Got it'
 	String get gotIt => 'Got it';
+
+	/// en: 'VPN connection resumes in $minutes:$seconds'
+	String VPNResumesIn({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes}:${seconds}';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -2647,6 +2650,7 @@ extension on Translations {
 			'ui.reconnectToApplyChanges' => 'Reconnect to apply changes',
 			'ui.reconnectToApplyChangesDescription' => 'Your new settings will take effect after you reconnect to the VPN.',
 			'ui.gotIt' => 'Got it',
+			'ui.VPNResumesIn' => ({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes}:${seconds}',
 			_ => null,
 		};
 	}

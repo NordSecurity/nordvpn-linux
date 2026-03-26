@@ -266,5 +266,6 @@
   "reconnectToChangeProtocolDescription": "To apply this change, we'll reconnect you to the VPN.",
   "reconnectToApplyChanges": "Reconnect to apply changes",
   "reconnectToApplyChangesDescription": "Your new settings will take effect after you reconnect to the VPN.",
-  "gotIt": "Got it"
+  "gotIt": "Got it",
+  "VPNResumesIn": "VPN connection resumes in $minutes:$seconds"
 }
