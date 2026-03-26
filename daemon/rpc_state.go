@@ -8,6 +8,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
@@ -107,7 +108,7 @@ func statusStream(stateChan <-chan any,
 					PostQuantum:               e.Status.IsPostQuantum,
 					Upload:                    e.Status.Tx,
 					Download:                  e.Status.Rx,
-					PausedAt:                  uint64(e.Status.PausedAt),
+					PausedAt:                  timestamppb.New(e.Status.PausedAt),
 					PauseRemainingDurationSec: uint32(e.Status.PauseRemainingTimeSec),
 				}
 

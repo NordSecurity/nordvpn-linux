@@ -19,6 +19,10 @@ func (r *RPC) PauseConnection(ctx context.Context, in *pb.PauseRequest) (*pb.Pay
 		return &pb.Payload{Type: internal.CodePauseAttemptWhenConnectedToMeshPeer}, nil
 	}
 
+	if in.Seconds == 0 {
+		return &pb.Payload{Type: internal.CodeNothingToDo}, nil
+	}
+
 	pauseDuration := time.Duration(in.Seconds) * time.Second
 	r.pauseManager.ScheduleReconnection(pauseDuration)
 

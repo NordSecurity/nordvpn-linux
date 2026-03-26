@@ -7,6 +7,7 @@ option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 import "config/protocol.proto";
 import "config/technology.proto";
 import "config/group.proto";
+import "google/protobuf/timestamp.proto";
 
 enum ConnectionSource {
   UNKNOWN_SOURCE = 0;
@@ -50,6 +51,6 @@ message StatusResponse {
   bool by_user = 16;
   string country_code = 17;
   bool obfuscated = 18;
-  uint64 paused_at = 19;
+  google.protobuf.Timestamp paused_at = 19;
   uint32 pause_remaining_duration_sec = 20;
 }

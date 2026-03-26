@@ -222,7 +222,7 @@ func (cs *ConnectionInfo) addPauseInfo(status types.ConnectionStatus) types.Conn
 	}
 
 	status.State = pb.ConnectionState_PAUSED
-	status.PausedAt = cs.pauseData.pausedAt.Unix()
+	status.PausedAt = cs.pauseData.pausedAt
 	status.PauseRemainingTimeSec = cs.remainingDurationFunc(cs.pauseData.pausedAt, cs.pauseData.pauseDuration)
 
 	return status

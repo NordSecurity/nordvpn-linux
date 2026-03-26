@@ -439,7 +439,7 @@ func TestConnectionInfo_PauseHandling(t *testing.T) {
 	}
 
 	status := tf.sut.Status()
-	assert.Equal(t, pauseTime.Unix(), status.PausedAt)
+	assert.Equal(t, pauseTime, status.PausedAt)
 	assert.Equal(t, status.State, pb.ConnectionState_PAUSED)
 	assert.Equal(t, status.PauseRemainingTimeSec, int32(5))
 
@@ -456,7 +456,7 @@ func TestConnectionInfo_PauseHandling(t *testing.T) {
 			"Expected notification not received when DataDisconnect event was emitted.")
 		assert.Equal(t, notification.Status.State, pb.ConnectionState_PAUSED,
 			"Unexpected state received in the status notification.")
-		assert.Equal(t, pauseTime.Unix(), notification.Status.PausedAt,
+		assert.Equal(t, pauseTime, notification.Status.PausedAt,
 			"Unexpected pause time in a disconnect notification.")
 		assert.Equal(t, notification.Status.PauseRemainingTimeSec, int32(5),
 			"Unexpected remaining pause time in a disconnect notification.")
@@ -478,7 +478,7 @@ func TestConnectionInfo_PauseHandling(t *testing.T) {
 			"Expected notification not received when internal disconnect event was emitted.")
 		assert.Equal(t, notification.Status.State, pb.ConnectionState_PAUSED,
 			"Unexpected state received in the status notification.")
-		assert.Equal(t, notification.Status.PausedAt, pauseTime.Unix(),
+		assert.Equal(t, notification.Status.PausedAt, pauseTime,
 			"Unexpected pause time in an internal disconnect notification.")
 		assert.Equal(t, notification.Status.PauseRemainingTimeSec, int32(2),
 			"Unexpected remaining pause time in an internal disconnect notification.")

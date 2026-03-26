@@ -15,9 +15,10 @@ import 'dart:core' as $core;
 import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 
-import 'config/group.pbenum.dart' as $0;
-import 'config/protocol.pbenum.dart' as $2;
-import 'config/technology.pbenum.dart' as $1;
+import 'config/group.pbenum.dart' as $1;
+import 'config/protocol.pbenum.dart' as $3;
+import 'config/technology.pbenum.dart' as $2;
+import 'google/protobuf/timestamp.pb.dart' as $0;
 import 'status.pbenum.dart';
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
@@ -29,7 +30,7 @@ class ConnectionParameters extends $pb.GeneratedMessage {
     ConnectionSource? source,
     $core.String? country,
     $core.String? city,
-    $0.ServerGroup? group,
+    $1.ServerGroup? group,
     $core.String? serverName,
     $core.String? countryCode,
   }) {
@@ -60,8 +61,8 @@ class ConnectionParameters extends $pb.GeneratedMessage {
         enumValues: ConnectionSource.values)
     ..aOS(2, _omitFieldNames ? '' : 'country')
     ..aOS(3, _omitFieldNames ? '' : 'city')
-    ..aE<$0.ServerGroup>(4, _omitFieldNames ? '' : 'group',
-        enumValues: $0.ServerGroup.values)
+    ..aE<$1.ServerGroup>(4, _omitFieldNames ? '' : 'group',
+        enumValues: $1.ServerGroup.values)
     ..aOS(5, _omitFieldNames ? '' : 'serverName')
     ..aOS(6, _omitFieldNames ? '' : 'countryCode')
     ..hasRequiredFields = false;
@@ -113,9 +114,9 @@ class ConnectionParameters extends $pb.GeneratedMessage {
   void clearCity() => $_clearField(3);
 
   @$pb.TagNumber(4)
-  $0.ServerGroup get group => $_getN(3);
+  $1.ServerGroup get group => $_getN(3);
   @$pb.TagNumber(4)
-  set group($0.ServerGroup value) => $_setField(4, value);
+  set group($1.ServerGroup value) => $_setField(4, value);
   @$pb.TagNumber(4)
   $core.bool hasGroup() => $_has(3);
   @$pb.TagNumber(4)
@@ -143,8 +144,8 @@ class ConnectionParameters extends $pb.GeneratedMessage {
 class StatusResponse extends $pb.GeneratedMessage {
   factory StatusResponse({
     ConnectionState? state,
-    $1.Technology? technology,
-    $2.Protocol? protocol,
+    $2.Technology? technology,
+    $3.Protocol? protocol,
     $core.String? ip,
     $core.String? hostname,
     $core.String? country,
@@ -160,7 +161,7 @@ class StatusResponse extends $pb.GeneratedMessage {
     $core.bool? byUser,
     $core.String? countryCode,
     $core.bool? obfuscated,
-    $fixnum.Int64? pausedAt,
+    $0.Timestamp? pausedAt,
     $core.int? pauseRemainingDurationSec,
   }) {
     final result = create();
@@ -203,10 +204,10 @@ class StatusResponse extends $pb.GeneratedMessage {
       createEmptyInstance: create)
     ..aE<ConnectionState>(1, _omitFieldNames ? '' : 'state',
         enumValues: ConnectionState.values)
-    ..aE<$1.Technology>(2, _omitFieldNames ? '' : 'technology',
-        enumValues: $1.Technology.values)
-    ..aE<$2.Protocol>(3, _omitFieldNames ? '' : 'protocol',
-        enumValues: $2.Protocol.values)
+    ..aE<$2.Technology>(2, _omitFieldNames ? '' : 'technology',
+        enumValues: $2.Technology.values)
+    ..aE<$3.Protocol>(3, _omitFieldNames ? '' : 'protocol',
+        enumValues: $3.Protocol.values)
     ..aOS(4, _omitFieldNames ? '' : 'ip')
     ..aOS(5, _omitFieldNames ? '' : 'hostname')
     ..aOS(6, _omitFieldNames ? '' : 'country')
@@ -227,9 +228,8 @@ class StatusResponse extends $pb.GeneratedMessage {
     ..aOB(16, _omitFieldNames ? '' : 'byUser')
     ..aOS(17, _omitFieldNames ? '' : 'countryCode')
     ..aOB(18, _omitFieldNames ? '' : 'obfuscated')
-    ..a<$fixnum.Int64>(
-        19, _omitFieldNames ? '' : 'pausedAt', $pb.PbFieldType.OU6,
-        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..aOM<$0.Timestamp>(19, _omitFieldNames ? '' : 'pausedAt',
+        subBuilder: $0.Timestamp.create)
     ..aI(20, _omitFieldNames ? '' : 'pauseRemainingDurationSec',
         fieldType: $pb.PbFieldType.OU3)
     ..hasRequiredFields = false;
@@ -263,18 +263,18 @@ class StatusResponse extends $pb.GeneratedMessage {
   void clearState() => $_clearField(1);
 
   @$pb.TagNumber(2)
-  $1.Technology get technology => $_getN(1);
+  $2.Technology get technology => $_getN(1);
   @$pb.TagNumber(2)
-  set technology($1.Technology value) => $_setField(2, value);
+  set technology($2.Technology value) => $_setField(2, value);
   @$pb.TagNumber(2)
   $core.bool hasTechnology() => $_has(1);
   @$pb.TagNumber(2)
   void clearTechnology() => $_clearField(2);
 
   @$pb.TagNumber(3)
-  $2.Protocol get protocol => $_getN(2);
+  $3.Protocol get protocol => $_getN(2);
   @$pb.TagNumber(3)
-  set protocol($2.Protocol value) => $_setField(3, value);
+  set protocol($3.Protocol value) => $_setField(3, value);
   @$pb.TagNumber(3)
   $core.bool hasProtocol() => $_has(2);
   @$pb.TagNumber(3)
@@ -418,13 +418,15 @@ class StatusResponse extends $pb.GeneratedMessage {
   void clearObfuscated() => $_clearField(18);
 
   @$pb.TagNumber(19)
-  $fixnum.Int64 get pausedAt => $_getI64(18);
+  $0.Timestamp get pausedAt => $_getN(18);
   @$pb.TagNumber(19)
-  set pausedAt($fixnum.Int64 value) => $_setInt64(18, value);
+  set pausedAt($0.Timestamp value) => $_setField(19, value);
   @$pb.TagNumber(19)
   $core.bool hasPausedAt() => $_has(18);
   @$pb.TagNumber(19)
   void clearPausedAt() => $_clearField(19);
+  @$pb.TagNumber(19)
+  $0.Timestamp ensurePausedAt() => $_ensure(18);
 
   @$pb.TagNumber(20)
   $core.int get pauseRemainingDurationSec => $_getIZ(19);

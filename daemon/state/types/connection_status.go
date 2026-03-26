@@ -47,7 +47,7 @@ type ConnectionStatus struct {
 	// RecommendationUUID used for analytics purposes
 	RecommendationUUID string
 	// Time at which connection was paused as an unix timestamp
-	PausedAt int64
+	PausedAt time.Time
 	// Remaining pause time in seconds
 	PauseRemainingTimeSec int32
 }

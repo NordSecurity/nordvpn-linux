@@ -1,6 +1,7 @@
 from config import protocol_pb2 as _protocol_pb2
 from config import technology_pb2 as _technology_pb2
 from config import group_pb2 as _group_pb2
+from google.protobuf import timestamp_pb2 as _timestamp_pb2
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
@@ -86,6 +87,6 @@ class StatusResponse(_message.Message):
     by_user: bool
     country_code: str
     obfuscated: bool
-    paused_at: int
+    paused_at: _timestamp_pb2.Timestamp
     pause_remaining_duration_sec: int
-    def __init__(self, state: _Optional[_Union[ConnectionState, str]] = ..., technology: _Optional[_Union[_technology_pb2.Technology, str]] = ..., protocol: _Optional[_Union[_protocol_pb2.Protocol, str]] = ..., ip: _Optional[str] = ..., hostname: _Optional[str] = ..., country: _Optional[str] = ..., city: _Optional[str] = ..., download: _Optional[int] = ..., upload: _Optional[int] = ..., uptime: _Optional[int] = ..., name: _Optional[str] = ..., virtualLocation: bool = ..., parameters: _Optional[_Union[ConnectionParameters, _Mapping]] = ..., postQuantum: bool = ..., is_mesh_peer: bool = ..., by_user: bool = ..., country_code: _Optional[str] = ..., obfuscated: bool = ..., paused_at: _Optional[int] = ..., pause_remaining_duration_sec: _Optional[int] = ...) -> None: ...
+    def __init__(self, state: _Optional[_Union[ConnectionState, str]] = ..., technology: _Optional[_Union[_technology_pb2.Technology, str]] = ..., protocol: _Optional[_Union[_protocol_pb2.Protocol, str]] = ..., ip: _Optional[str] = ..., hostname: _Optional[str] = ..., country: _Optional[str] = ..., city: _Optional[str] = ..., download: _Optional[int] = ..., upload: _Optional[int] = ..., uptime: _Optional[int] = ..., name: _Optional[str] = ..., virtualLocation: bool = ..., parameters: _Optional[_Union[ConnectionParameters, _Mapping]] = ..., postQuantum: bool = ..., is_mesh_peer: bool = ..., by_user: bool = ..., country_code: _Optional[str] = ..., obfuscated: bool = ..., paused_at: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., pause_remaining_duration_sec: _Optional[int] = ...) -> None: ...

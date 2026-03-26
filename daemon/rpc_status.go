@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // Status of daemon and connection
@@ -12,6 +13,13 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 	status := r.connectionInfo.Status()
 	//exhaustive:ignore
 	switch status.State {
+	case pb.ConnectionState_PAUSED:
+		return &pb.StatusResponse{
+			State:                     pb.ConnectionState_PAUSED,
+			Uptime:                    -1,
+			PausedAt:                  timestamppb.New(status.PausedAt),
+			PauseRemainingDurationSec: uint32(status.PauseRemainingTimeSec),
+		}, nil
 	case pb.ConnectionState_UNKNOWN_STATE, pb.ConnectionState_DISCONNECTED:
 		return &pb.StatusResponse{
 			State:  pb.ConnectionState_DISCONNECTED,
@@ -51,7 +59,7 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 
 		PostQuantum:               status.IsPostQuantum,
 		Obfuscated:                status.IsObfuscated,
-		PausedAt:                  uint64(status.PausedAt),
+		PausedAt:                  timestamppb.New(status.PausedAt),
 		PauseRemainingDurationSec: uint32(status.PauseRemainingTimeSec),
 	}, nil
 }
