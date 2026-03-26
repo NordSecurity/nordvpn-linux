@@ -25,7 +25,7 @@ func (connectServer) RecvMsg(m interface{}) error  { return nil }
 func (a *connectServer) Send(data *pb.Payload) error {
 	switch data.GetType() {
 	case internal.CodeFailure:
-		a.err = errors.New("autoconnect failure")
+		a.err = errors.New("connect failure")
 	case internal.CodeServerUnavailable:
 		a.err = errServersUnavailable
 	}
