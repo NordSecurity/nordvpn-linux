@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nordvpn/data/models/allow_list.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/data/providers/account_controller.dart';
 import 'package:nordvpn/data/providers/pending_settings_provider.dart';
@@ -20,7 +21,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 typedef PopupOrErrorCode = int;
 
 // Gives metadata based on the specified code.
-PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
+PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
   final metadata = switch (code) {
     // ==============================    [ triggered by app ]    ==============================
 
@@ -120,29 +121,20 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
     ),
 
     // Ask user confirmation to remove overlapping/narrower subnet, if any
-    PopupCodes.removeOverlappingSubnetsConfirm => DecisionPopupMetadata(
+    DaemonStatusCode.allowlistSubnetWiderConfirm => DecisionPopupMetadata(
       id: PopupCodes.removeOverlappingSubnetsConfirm,
       title: t.ui.removeOverlappingSubnets,
       message: (_) => t.ui.removeOverlappingSubnetsDescription,
       noButtonText: t.ui.cancel,
       yesButtonText: t.ui.removeWord,
-      yesAction: (ref) async {
-        final entry = ref
-            .read(pendingAllowListEntryProvider.notifier)
-            .consume();
-        if (entry == null) return;
-        final res = await ref
-            .read(vpnSettingsControllerProvider.notifier)
-            .addToAllowList(
-              port: entry.port,
-              subnet: entry.subnet,
-              force: true,
-            );
-        if (res == DaemonStatusCode.allowlistSubnetTooWideWarn) {
-          ref
-              .read(popupsProvider.notifier)
-              .show(PopupCodes.addingTooWideSubnetWarn);
+      yesAction: (ref) {
+        if (userData is! Subnet) {
+          return;
         }
+        final entry = userData;
+        ref
+            .read(vpnSettingsControllerProvider.notifier)
+            .addToAllowList(subnet: entry, force: true);
       },
       noAction: (ref) {
         ref.read(pendingAllowListEntryProvider.notifier).clear();

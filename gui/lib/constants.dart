@@ -5,10 +5,7 @@ import 'package:nordvpn/i18n/strings.g.dart';
 
 // Controls if the real daemon should be used or the mock
 // To enable for release build add --dart-define=MOCK_GRPC=true to flutter build
-const useMockDaemon = bool.fromEnvironment(
-  'MOCK_GRPC',
-  defaultValue: kDebugMode,
-);
+const useMockDaemon = bool.fromEnvironment('MOCK_GRPC', defaultValue: false);
 
 const logFile = "nordvpn-gui.log";
 final daemonDateFormat = DateFormat("yyyy-MM-dd h:m:s");

@@ -28,9 +28,6 @@ const _popupIgnoreCodes = [
   DaemonStatusCode.dnsListModified,
   DaemonStatusCode.tpLiteDisabled,
   DaemonStatusCode.allowListModified,
-  // Handled explicitly in allow_list_settings.dart
-  DaemonStatusCode.allowlistSubnetTooWideWarn,
-  DaemonStatusCode.allowlistSubnetWiderConfirm,
 ];
 
 @riverpod
@@ -161,6 +158,7 @@ class VpnSettingsController extends _$VpnSettingsController
         subnet: subnet?.value,
         force: force,
       ),
+      userData: subnet,
     );
   }
 
@@ -314,6 +312,7 @@ class VpnSettingsController extends _$VpnSettingsController
   Future<int> _setValue(
     Future<int> Function(VpnSettingsRepository repository) callback, {
     Map<int, int>? popupCodeOverrides,
+    Object? userData,
   }) async {
     final repository = ref.read(vpnSettingsProvider);
     int status = DaemonStatusCode.failure;
@@ -341,7 +340,7 @@ class VpnSettingsController extends _$VpnSettingsController
     // We do that to avoid the toggle of on/off button in case of failure
     state = state;
 
-    ref.read(popupsProvider.notifier).show(popupCode);
+    ref.read(popupsProvider.notifier).show(popupCode, userData: userData);
 
     return status;
   }
