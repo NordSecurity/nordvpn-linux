@@ -196,6 +196,13 @@ func Test_DNSServiceSetter(t *testing.T) {
 	errSet := errors.New("err set")
 	errUnset := errors.New("err unset")
 
+	systemdResolvedNetworkManagerConfig := []byte(`[main]
+dns=systemd-resolved
+`)
+
+	defaultNetworkManagerConfig := []byte(`[main]
+dns=default
+`)
 	// example configuration of resolv.conf file when it's managed by systemd-resolved
 	systemdResolvedResolvconf := []byte(`# This is /run/systemd/resolve/stub-resolv.conf managed by man:systemd-resolved(8).
 # Do not edit.
@@ -236,12 +243,13 @@ options edns0 trust-ad
 search home`)
 
 	tests := []struct {
-		name                   string
-		resolvconfFileContents []byte
-		setByNmCli             bool
-		setBySystemdResolved   bool
-		setByResolvconf        bool
-		resolvConfIsASymlink   bool
+		name                         string
+		resolvconfFileContents       []byte
+		networkManagerConfigContents []byte
+		setByNmCli                   bool
+		setBySystemdResolved         bool
+		setByResolvconf              bool
+		resolvConfIsASymlink         bool
 		// resolvConfStatErr is returned when running Stat for /etc/resolv.conf
 		resolvConfStatErr error
 		nmcliStatErr      error
@@ -261,14 +269,28 @@ search home`)
 		readErr                          error
 	}{
 		{
-			name:                             "resolv.conf is managed by systemd-resolved, systemd-resolved is used to set DNS",
+			name:                             "NetworkManager config detection, NetworkManager configured with systemd-resolved, systemd-resolved is used to set DNS",
+			networkManagerConfigContents:     systemdResolvedNetworkManagerConfig,
+			setBySystemdResolved:             true,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedManagementServiceInEvent: systemdResolvedManagementService,
+		},
+		{
+			name:                             "NetworkManager config detection, NetworkManager configured with default, nmcli is used to set DNS",
+			networkManagerConfigContents:     defaultNetworkManagerConfig,
+			setByNmCli:                       true,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedManagementServiceInEvent: nmcliManagementService,
+		},
+		{
+			name:                             "resolv.conf comment detection, resolv.conf is managed by systemd-resolved, systemd-resolved is used to set DNS",
 			resolvconfFileContents:           systemdResolvedResolvconf,
 			setBySystemdResolved:             true,
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: systemdResolvedManagementService,
 		},
 		{
-			name:                             "resolv.conf managed by network manager, use nmcli to set DNS",
+			name:                             "resolv.conf comment detection, resolv.conf managed by network manager, use nmcli to set DNS",
 			resolvconfFileContents:           networkManagerResolvConf,
 			resolvConfIsASymlink:             false,
 			setByNmCli:                       true,
@@ -276,7 +298,7 @@ search home`)
 			expectedManagementServiceInEvent: nmcliManagementService,
 		},
 		{
-			name:                             "resolv.conf managed by systemd-resolved, systemd-resolved fails, fallback to use nmcli to set DNS",
+			name:                             "resolv.conf comment detection, resolv.conf managed by systemd-resolved, systemd-resolved fails, fallback to use nmcli to set DNS",
 			systemdResolvedSetErr:            errDNSSetFailed,
 			systemdResolvedUnsetErr:          errUnset,
 			resolvconfFileContents:           systemdResolvedResolvconf,
@@ -286,7 +308,7 @@ search home`)
 			expectedManagementServiceInEvent: nmcliManagementService,
 		},
 		{
-			name:                             "resolv.conf managed by network manager, nmcli fails with set fail error, fallback to use resolv.conf to set DNS",
+			name:                             "resolv.conf comment detection, resolv.conf managed by network manager, nmcli fails with set fail error, fallback to use resolv.conf to set DNS",
 			nmcliSetErr:                      errDNSSetFailed,
 			nmcliUnsetErr:                    errUnset,
 			systemdResolvedSetErr:            errDNSSetFailed,
@@ -298,7 +320,7 @@ search home`)
 			expectedManagementServiceInEvent: unmanagedManagementService,
 		},
 		{
-			name:                             "resolv.conf managed by network manager, nmcli fails with binaries not present, fallback to use resolv.conf to set DNS",
+			name:                             "resolv.conf comment detection, resolv.conf managed by network manager, nmcli fails with binaries not present, fallback to use resolv.conf to set DNS",
 			nmcliSetErr:                      errDNSSetFailedNoBinaries,
 			nmcliUnsetErr:                    errUnset,
 			systemdResolvedSetErr:            errDNSSetFailed,
@@ -310,7 +332,7 @@ search home`)
 			expectedManagementServiceInEvent: unmanagedManagementService,
 		},
 		{
-			name:                             "resolv.conf managed by network manager, use nmcli to set DNS",
+			name:                             "resolv.conf comment detection, resolv.conf managed by network manager, use nmcli to set DNS",
 			resolvconfFileContents:           networkManagerResolvConf,
 			resolvConfIsASymlink:             false,
 			setByNmCli:                       true,
@@ -318,7 +340,7 @@ search home`)
 			expectedManagementServiceInEvent: nmcliManagementService,
 		},
 		{
-			name:                             "resolv.conf is not managed by systemd-resolved and systemd-resolved is not found, resolv.conf is used to set DNS",
+			name:                             "resolv.conf comment detection, resolv.conf is not managed by systemd-resolved and systemd-resolved is not found, resolv.conf is used to set DNS",
 			resolvconfFileContents:           noManagerResolvConf,
 			nmcliSetErr:                      exec.ErrNotFound,
 			systemdResolvedSetErr:            exec.ErrNotFound,
@@ -529,6 +551,10 @@ search home`)
 				unsetErr: test.nmcliUnsetErr,
 			}
 
+			readNMConfigFunc := func() ([]byte, error) {
+				return test.networkManagerConfigContents, nil
+			}
+
 			fs := fs.NewSystemFileHandleMock(t)
 			fs.StatErrors[resolvconfFilePath] = test.resolvConfStatErr
 			fs.StatErrors[systemdResolvedLinkTarget] = test.systemdStubStatErr
@@ -540,12 +566,13 @@ search home`)
 			analyticsMock := analyticsMock{}
 
 			s := DNSServiceSetter{
-				systemdResolvedSetter: &resolvedSetter,
-				resolvconfSetter:      &resolvconfSetter,
-				resolvConfMonitor:     &mockResolvConfMonitor{},
-				analytics:             &analyticsMock,
-				filesystemHandle:      &fs,
-				nmcliSetter:           &nmCliSetter,
+				systemdResolvedSetter:          &resolvedSetter,
+				resolvconfSetter:               &resolvconfSetter,
+				resolvConfMonitor:              &mockResolvConfMonitor{},
+				analytics:                      &analyticsMock,
+				filesystemHandle:               &fs,
+				nmcliSetter:                    &nmCliSetter,
+				networkManagerConfigGetterFunc: readNMConfigFunc,
 			}
 
 			err := s.Set("eth0", []string{"1.1.1.1"})

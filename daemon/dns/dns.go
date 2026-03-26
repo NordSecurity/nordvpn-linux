@@ -73,6 +73,13 @@ type Method interface {
 	Name() string
 }
 
+type networkManagerConfigGetterFunc func() ([]byte, error)
+
+func getNetworkManagerConfig() ([]byte, error) {
+	cmd, err := exec.Command("NetworkManager", "--print-config").CombinedOutput()
+	return cmd, err
+}
+
 // DNSServiceSetter detects how OS is managing the DNS configuration and tries to set it using the appropriate method.
 type DNSServiceSetter struct {
 	// systemdResolvedSetter sets DNS using the most desired method:
@@ -90,20 +97,47 @@ type DNSServiceSetter struct {
 	analytics         analytics
 	resolvConfMonitor resolvConfMonitor
 	// currentManagementService is used to identify the service in analytics
-	currentManagementService dnsManagementService
+	currentManagementService       dnsManagementService
+	networkManagerConfigGetterFunc networkManagerConfigGetterFunc
 }
 
 func NewDNSServiceSetter(debugPublisher events.PublishSubcriber[events.DebuggerEvent]) *DNSServiceSetter {
 	analytics := newDNSAnalytics(debugPublisher)
 	resolvConfMonitor := newResolvConfMonitor(analytics)
 	return &DNSServiceSetter{
-		systemdResolvedSetter: NewSetter(&Resolved{}, &Resolvectl{}),
-		resolvconfSetter:      NewSetter(&Resolvconf{}, &ResolvConfFile{}),
-		nmcliSetter:           NewSetter(newNMCli()),
-		filesystemHandle:      internal.StdFilesystemHandle{},
-		analytics:             analytics,
-		resolvConfMonitor:     &resolvConfMonitor,
+		systemdResolvedSetter:          NewSetter(&Resolved{}, &Resolvectl{}),
+		resolvconfSetter:               NewSetter(&Resolvconf{}, &ResolvConfFile{}),
+		nmcliSetter:                    NewSetter(newNMCli()),
+		filesystemHandle:               internal.StdFilesystemHandle{},
+		analytics:                      analytics,
+		resolvConfMonitor:              &resolvConfMonitor,
+		networkManagerConfigGetterFunc: getNetworkManagerConfig,
 	}
+}
+
+func (d *DNSServiceSetter) getManagementServiceBasedOnNetworkManagerConfiguration() (dnsManagementService, error) {
+	networkManagerConfig, err := d.networkManagerConfigGetterFunc()
+	if err != nil {
+		return unknownManagementService, fmt.Errorf("getting NetworkManager config: %w", err)
+	}
+
+	networkManagerConfigString := string(networkManagerConfig)
+
+	const (
+		dnsConfigEntry        = "dns="
+		defaultDNSConfigEntry = dnsConfigEntry + "default"
+		systemdResolvedEntry  = dnsConfigEntry + "systemd-resolved"
+	)
+
+	if strings.Contains(string(networkManagerConfigString), defaultDNSConfigEntry) {
+		return nmcliManagementService, nil
+	}
+
+	if strings.Contains(string(networkManagerConfigString), systemdResolvedEntry) {
+		return systemdResolvedManagementService, nil
+	}
+
+	return unknownManagementService, fmt.Errorf("config entry not found or recognized")
 }
 
 func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfComment() (dnsManagementService, error) {
@@ -147,7 +181,13 @@ func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfLinkTarget() (dn
 }
 
 func (d *DNSServiceSetter) getManagementService() dnsManagementService {
-	managementService, err := d.getManagementServiceBasedOnResolvconfComment()
+	managementService, err := d.getManagementServiceBasedOnNetworkManagerConfiguration()
+	if err == nil {
+		log.Println(internal.InfoPrefix, dnsPrefix, "management service inferred from NetworkManager config")
+		return managementService
+	}
+
+	managementService, err = d.getManagementServiceBasedOnResolvconfComment()
 	if err == nil {
 		log.Println(internal.InfoPrefix, dnsPrefix, "management service inferred from resolv.conf comment")
 		return managementService
