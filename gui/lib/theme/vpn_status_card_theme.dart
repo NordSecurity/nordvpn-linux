@@ -3,6 +3,38 @@ import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
 
 part 'vpn_status_card_theme.tailor.dart';
 
+final class ConnectionCardLabelThemeStyle {
+  final Color disconnectedColor;
+  final Color connectingColor;
+  final Color connectedColor;
+
+  ConnectionCardLabelThemeStyle({
+    required this.disconnectedColor,
+    required this.connectingColor,
+    required this.connectedColor,
+  });
+}
+
+final class ConnectionCardIconThemeStyle {
+  final double iconSize;
+  final double flagBorderSize;
+  final double strokeWidth;
+  final Color borderConnectedColor;
+  final Color borderConnectingColor;
+  final Color disconnectedBackgroundColor;
+  final String disconnectedIcon;
+
+  ConnectionCardIconThemeStyle({
+    required this.iconSize,
+    required this.flagBorderSize,
+    required this.strokeWidth,
+    required this.borderConnectedColor,
+    required this.borderConnectingColor,
+    required this.disconnectedBackgroundColor,
+    required this.disconnectedIcon,
+  });
+}
+
 // Theme data for VPN status card
 @tailorMixin
 final class VpnStatusCardTheme extends ThemeExtension<VpnStatusCardTheme>
@@ -20,10 +52,10 @@ final class VpnStatusCardTheme extends ThemeExtension<VpnStatusCardTheme>
   final TextStyle secondaryFont;
 
   @override
-  final double iconSize;
+  final ButtonStyle secureMyConnectionButtonStyle;
 
   @override
-  final ButtonStyle secureMyConnectionButtonStyle;
+  final ButtonStyle cancelButtonStyle;
 
   @override
   final EdgeInsetsGeometry connectionCardPadding;
@@ -35,22 +67,22 @@ final class VpnStatusCardTheme extends ThemeExtension<VpnStatusCardTheme>
   final double mediumSpacing;
 
   @override
-  final Color iconBackgroundColor;
+  final ConnectionCardLabelThemeStyle labelStyle;
 
   @override
-  final String disconnectedIcon;
+  final ConnectionCardIconThemeStyle iconStyle;
 
   VpnStatusCardTheme({
     required this.height,
     required this.primaryFont,
     required this.secondaryFont,
-    required this.iconSize,
     required this.maxConnectButtonWidth,
     required this.secureMyConnectionButtonStyle,
+    required this.cancelButtonStyle,
     required this.connectionCardPadding,
     required this.smallSpacing,
     required this.mediumSpacing,
-    required this.iconBackgroundColor,
-    required this.disconnectedIcon,
+    required this.labelStyle,
+    required this.iconStyle,
   });
 }
