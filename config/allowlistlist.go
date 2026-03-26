@@ -99,7 +99,7 @@ func (a *Allowlist) NormalizeSubnets(onRemove func(removed, reason string)) {
 			// b is strictly wider (fewer bits) — a is redundant.
 			// On equal bits keep the one that appears first.
 			if b.prefix.Bits() < a.prefix.Bits() ||
-				(b.prefix.Bits() == a.prefix.Bits() && j < i) {
+				(b.prefix.Bits() == a.prefix.Bits() && i < j) {
 				coveredByWider = true
 				coveredBy = b.raw
 				break

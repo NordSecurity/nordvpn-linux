@@ -21,7 +21,7 @@ final class Popups extends _$Popups {
     logger.i("showing popup for id: $id");
 
     final metadata = givePopupMetadata(id);
-    _showWithMetadata(metadata);
+    showMetadata(metadata);
   }
 
   bool _shouldIgnore(int code) {
@@ -42,7 +42,7 @@ final class Popups extends _$Popups {
                 .allowlistSubnetWiderConfirm; // handled in allow_list_settings.dart
   }
 
-  void _showWithMetadata(PopupMetadata metadata) {
+  void showMetadata(PopupMetadata metadata) {
     if (metadata.id == DaemonStatusCode.success) {
       return;
     }
