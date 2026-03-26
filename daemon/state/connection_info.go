@@ -195,7 +195,7 @@ func (c *ConnectionInfo) Subscribe(to InternalStateChangeNotif) {
 	c.internalNotif.Subscribe(to.NotifyChangeState)
 }
 
-// Pause sets the pause data. All the subsequent Disconnect events will be sent out with State set to
+// Pause sets the pause data. All the subsequent events will be sent out with State set to
 // pb.ConnectionState_PAUSED until Unpause is called.
 func (c *ConnectionInfo) Pause(pausedAt time.Time, duration time.Duration) {
 	c.mu.Lock()

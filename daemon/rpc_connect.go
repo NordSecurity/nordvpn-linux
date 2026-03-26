@@ -29,10 +29,10 @@ func isDedicatedIP(server core.Server) bool {
 // Connect initiates and handles the VPN connection process
 func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retErr error) {
 	r.pauseManager.CancelReconnection()
-	return r.connectWithContext(in, srv, pb.ConnectionSource_MANUAL)
+	return r.connectFromRequest(in, srv, pb.ConnectionSource_MANUAL)
 }
 
-func (r *RPC) connectWithContext(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer, source pb.ConnectionSource) error {
+func (r *RPC) connectFromRequest(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer, source pb.ConnectionSource) error {
 	var err error
 	var didFail bool
 	// TODO: Currently this only listens to a given context in `netw.Start()`, therefore gets
@@ -58,7 +58,7 @@ func (r *RPC) connectWithContext(in *pb.ConnectRequest, srv pb.Daemon_ConnectSer
 	return err
 }
 
-func (r *RPC) connectWithContextStoredServerSelection(srv pb.Daemon_ConnectServer, source pb.ConnectionSource) error {
+func (r *RPC) connectFromLastSelection(srv pb.Daemon_ConnectServer, source pb.ConnectionSource) error {
 	var err error
 	var didFail bool
 	if !r.connectContext.TryExecuteWith(func(ctx context.Context) {

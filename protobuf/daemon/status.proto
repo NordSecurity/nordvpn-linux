@@ -50,6 +50,6 @@ message StatusResponse {
   bool by_user = 16;
   string country_code = 17;
   bool obfuscated = 18;
-  int64 paused_at = 19;
-  int32 pause_remaining_duration_sec = 20;
+  uint64 paused_at = 19;
+  uint32 pause_remaining_duration_sec = 20;
 }

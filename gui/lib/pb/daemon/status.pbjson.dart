@@ -131,12 +131,12 @@ const StatusResponse$json = {
     {'1': 'by_user', '3': 16, '4': 1, '5': 8, '10': 'byUser'},
     {'1': 'country_code', '3': 17, '4': 1, '5': 9, '10': 'countryCode'},
     {'1': 'obfuscated', '3': 18, '4': 1, '5': 8, '10': 'obfuscated'},
-    {'1': 'paused_at', '3': 19, '4': 1, '5': 3, '10': 'pausedAt'},
+    {'1': 'paused_at', '3': 19, '4': 1, '5': 4, '10': 'pausedAt'},
     {
       '1': 'pause_remaining_duration_sec',
       '3': 20,
       '4': 1,
-      '5': 5,
+      '5': 13,
       '10': 'pauseRemainingDurationSec'
     },
   ],
@@ -155,5 +155,5 @@ final $typed_data.Uint8List statusResponseDescriptor = $convert.base64Decode(
     'IAoLcG9zdFF1YW50dW0YDiABKAhSC3Bvc3RRdWFudHVtEiAKDGlzX21lc2hfcGVlchgPIAEoCF'
     'IKaXNNZXNoUGVlchIXCgdieV91c2VyGBAgASgIUgZieVVzZXISIQoMY291bnRyeV9jb2RlGBEg'
     'ASgJUgtjb3VudHJ5Q29kZRIeCgpvYmZ1c2NhdGVkGBIgASgIUgpvYmZ1c2NhdGVkEhsKCXBhdX'
-    'NlZF9hdBgTIAEoA1IIcGF1c2VkQXQSPwoccGF1c2VfcmVtYWluaW5nX2R1cmF0aW9uX3NlYxgU'
-    'IAEoBVIZcGF1c2VSZW1haW5pbmdEdXJhdGlvblNlYw==');
+    'NlZF9hdBgTIAEoBFIIcGF1c2VkQXQSPwoccGF1c2VfcmVtYWluaW5nX2R1cmF0aW9uX3NlYxgU'
+    'IAEoDVIZcGF1c2VSZW1haW5pbmdEdXJhdGlvblNlYw==');

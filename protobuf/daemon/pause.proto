@@ -5,5 +5,5 @@ package pb;
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
 message PauseRequest {
-  int64 seconds = 1;
+  uint32 seconds = 1;
 }

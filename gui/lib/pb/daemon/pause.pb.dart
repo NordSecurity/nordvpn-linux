@@ -12,14 +12,13 @@
 
 import 'dart:core' as $core;
 
-import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
 class PauseRequest extends $pb.GeneratedMessage {
   factory PauseRequest({
-    $fixnum.Int64? seconds,
+    $core.int? seconds,
   }) {
     final result = create();
     if (seconds != null) result.seconds = seconds;
@@ -39,7 +38,7 @@ class PauseRequest extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'PauseRequest',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..aInt64(1, _omitFieldNames ? '' : 'seconds')
+    ..aI(1, _omitFieldNames ? '' : 'seconds', fieldType: $pb.PbFieldType.OU3)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -62,9 +61,9 @@ class PauseRequest extends $pb.GeneratedMessage {
   static PauseRequest? _defaultInstance;
 
   @$pb.TagNumber(1)
-  $fixnum.Int64 get seconds => $_getI64(0);
+  $core.int get seconds => $_getIZ(0);
   @$pb.TagNumber(1)
-  set seconds($fixnum.Int64 value) => $_setInt64(0, value);
+  set seconds($core.int value) => $_setUnsignedInt32(0, value);
   @$pb.TagNumber(1)
   $core.bool hasSeconds() => $_has(0);
   @$pb.TagNumber(1)

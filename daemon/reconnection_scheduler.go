@@ -18,37 +18,42 @@ type ReconnectScheduler interface {
 
 type connectFunc func(srv pb.Daemon_ConnectServer, source pb.ConnectionSource) error
 
-type Scheduler struct {
-	mu              sync.Mutex
-	pauseCancelFunc context.CancelFunc
-	connectFunc     connectFunc
-	connectionInfo  *state.ConnectionInfo
+type ReconnectSchedulerImpl struct {
+	mu                  sync.Mutex
+	reconnectCancelFunc context.CancelFunc
+	connectFunc         connectFunc
+	connectionInfo      *state.ConnectionInfo
 }
 
-func NewPauseManager(connectFunc connectFunc, connectionInfo *state.ConnectionInfo) Scheduler {
-	return Scheduler{
+func NewReconnectScheduler(connectFunc connectFunc, connectionInfo *state.ConnectionInfo) ReconnectScheduler {
+	return &ReconnectSchedulerImpl{
 		connectFunc:    connectFunc,
 		connectionInfo: connectionInfo,
 	}
 }
 
 // ScheduleReconnection schedules a reconnection. Reconnection attempt will be made in a duration of time
-func (pm *Scheduler) ScheduleReconnection(duration time.Duration) {
-	pm.mu.Lock()
-	defer pm.mu.Unlock()
+func (s *ReconnectSchedulerImpl) ScheduleReconnection(duration time.Duration) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.reconnectCancelFunc != nil {
+		log.Println(internal.DebugPrefix, "cancelling previous reconnection before initiating a new one")
+		s.reconnectCancelFunc()
+	}
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	pm.pauseCancelFunc = cancelFunc
-	pm.connectionInfo.Pause(time.Now(), duration)
+	s.reconnectCancelFunc = cancelFunc
+	s.connectionInfo.Pause(time.Now(), duration)
 	go func() {
 		log.Println(internal.DebugPrefix, "pausing connection for", duration.String())
 		select {
 		case <-time.After(duration):
 			log.Println(internal.DebugPrefix, "resuming connection after a pause")
-			pm.connectionInfo.Unpause()
+			s.connectionInfo.Unpause()
 
 			connServer := connectServer{}
-			err := pm.connectFunc(&connServer, pb.ConnectionSource_AUTO)
+			err := s.connectFunc(&connServer, pb.ConnectionSource_AUTO)
 			if err != nil || connServer.err != nil {
 				log.Println(internal.ErrorPrefix,
 					"failed to reconnect after a pause: connection error:", err, "server error:", connServer.err)
@@ -60,12 +65,12 @@ func (pm *Scheduler) ScheduleReconnection(duration time.Duration) {
 }
 
 // CancelReconnection cancels the reconnect goroutine if it was started
-func (pm *Scheduler) CancelReconnection() {
-	pm.mu.Lock()
-	defer pm.mu.Unlock()
-	if pm.pauseCancelFunc != nil {
+func (s *ReconnectSchedulerImpl) CancelReconnection() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.reconnectCancelFunc != nil {
 		log.Println(internal.DebugPrefix, "cancelling the reconnection after a pause")
-		pm.connectionInfo.Unpause()
-		pm.pauseCancelFunc()
+		s.connectionInfo.Unpause()
+		s.reconnectCancelFunc()
 	}
 }

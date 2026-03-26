@@ -342,7 +342,7 @@ func (r *RPC) doAutoConnect() error {
 		groupTag = cfg.AutoConnectData.Group.String()
 	}
 
-	err = r.connectWithContext(
+	err = r.connectFromRequest(
 		&pb.ConnectRequest{
 			ServerTag:   cfg.AutoConnectData.ServerTag,
 			ServerGroup: groupTag,

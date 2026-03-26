@@ -127,7 +127,7 @@ func NewRPC(
 		dataUpdateEvents:   dataUpdateEvents,
 		initialLoginType:   NewAtomicLoginType(),
 	}
-	pauseManager := NewPauseManager(r.connectWithContextStoredServerSelection, connectionInfo)
-	r.pauseManager = &pauseManager
+	reconnectScheduler := NewReconnectScheduler(r.connectFromLastSelection, connectionInfo)
+	r.pauseManager = reconnectScheduler
 	return r
 }

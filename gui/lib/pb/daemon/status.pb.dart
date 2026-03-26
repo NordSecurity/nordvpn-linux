@@ -227,8 +227,11 @@ class StatusResponse extends $pb.GeneratedMessage {
     ..aOB(16, _omitFieldNames ? '' : 'byUser')
     ..aOS(17, _omitFieldNames ? '' : 'countryCode')
     ..aOB(18, _omitFieldNames ? '' : 'obfuscated')
-    ..aInt64(19, _omitFieldNames ? '' : 'pausedAt')
-    ..aI(20, _omitFieldNames ? '' : 'pauseRemainingDurationSec')
+    ..a<$fixnum.Int64>(
+        19, _omitFieldNames ? '' : 'pausedAt', $pb.PbFieldType.OU6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..aI(20, _omitFieldNames ? '' : 'pauseRemainingDurationSec',
+        fieldType: $pb.PbFieldType.OU3)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -426,7 +429,8 @@ class StatusResponse extends $pb.GeneratedMessage {
   @$pb.TagNumber(20)
   $core.int get pauseRemainingDurationSec => $_getIZ(19);
   @$pb.TagNumber(20)
-  set pauseRemainingDurationSec($core.int value) => $_setSignedInt32(19, value);
+  set pauseRemainingDurationSec($core.int value) =>
+      $_setUnsignedInt32(19, value);
   @$pb.TagNumber(20)
   $core.bool hasPauseRemainingDurationSec() => $_has(19);
   @$pb.TagNumber(20)

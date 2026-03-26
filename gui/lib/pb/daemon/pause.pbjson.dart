@@ -18,10 +18,10 @@ import 'dart:typed_data' as $typed_data;
 const PauseRequest$json = {
   '1': 'PauseRequest',
   '2': [
-    {'1': 'seconds', '3': 1, '4': 1, '5': 3, '10': 'seconds'},
+    {'1': 'seconds', '3': 1, '4': 1, '5': 13, '10': 'seconds'},
   ],
 };
 
 /// Descriptor for `PauseRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List pauseRequestDescriptor = $convert
-    .base64Decode('CgxQYXVzZVJlcXVlc3QSGAoHc2Vjb25kcxgBIAEoA1IHc2Vjb25kcw==');
+    .base64Decode('CgxQYXVzZVJlcXVlc3QSGAoHc2Vjb25kcxgBIAEoDVIHc2Vjb25kcw==');

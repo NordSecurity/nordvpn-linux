@@ -51,8 +51,8 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 
 		PostQuantum:               status.IsPostQuantum,
 		Obfuscated:                status.IsObfuscated,
-		PausedAt:                  status.PausedAt,
-		PauseRemainingDurationSec: status.PauseRemainingTimeSec,
+		PausedAt:                  uint64(status.PausedAt),
+		PauseRemainingDurationSec: uint32(status.PauseRemainingTimeSec),
 	}, nil
 }
 

@@ -107,8 +107,8 @@ func statusStream(stateChan <-chan any,
 					PostQuantum:               e.Status.IsPostQuantum,
 					Upload:                    e.Status.Tx,
 					Download:                  e.Status.Rx,
-					PausedAt:                  e.Status.PausedAt,
-					PauseRemainingDurationSec: e.Status.PauseRemainingTimeSec,
+					PausedAt:                  uint64(e.Status.PausedAt),
+					PauseRemainingDurationSec: uint32(e.Status.PauseRemainingTimeSec),
 				}
 
 				// for disconnected state connection parameters shall be left empty

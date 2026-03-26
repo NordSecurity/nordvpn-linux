@@ -91,7 +91,7 @@ func TestPauseConnection(t *testing.T) {
 				connectionInfo:     connectionInfo,
 			}
 
-			response, err := r.PauseConnection(context.Background(), &pb.PauseRequest{Seconds: int64(test.pauseDuration)})
+			response, err := r.PauseConnection(context.Background(), &pb.PauseRequest{Seconds: uint32(test.pauseDuration)})
 			assert.NilError(t, err, "Unexpected error returned by PauseConnection RPC.")
 			assert.Equal(t, test.expectedResponseType, response.Type, "Unexpected response type returned by pause RPC.")
 			assert.Equal(t, test.expectedPauseDuration, pauseSchedulerMock.PauseDuration, "Unexpected pause duration.")
