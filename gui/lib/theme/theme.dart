@@ -349,7 +349,6 @@ final class NordVpnTheme {
       secondaryFont: design.typography.subHeading.copyWith(
         color: design.semanticColors.textPrimary,
       ),
-      iconSize: 40,
       secureMyConnectionButtonStyle: ElevatedButton.styleFrom(
         shape: RoundedRectangleBorder(
           side: BorderSide(
@@ -369,6 +368,25 @@ final class NordVpnTheme {
         foregroundColor: design.semanticColors.textPrimaryOnColor,
         minimumSize: const Size.fromHeight(48),
       ),
+      cancelButtonStyle: ElevatedButton.styleFrom(
+        shape: RoundedRectangleBorder(
+          side: BorderSide(
+            color: design.semanticColors.borderPrimary,
+            width: AppBorderWidth.md,
+          ),
+          borderRadius: AppBorderRadius.full,
+        ),
+        textStyle: design.typography.subHeading.copyWith(
+          color: design.semanticColors.textPrimary,
+        ),
+        padding: const EdgeInsets.symmetric(
+          vertical: AppSpacing.spacing3,
+          horizontal: AppSpacing.spacing7,
+        ),
+        backgroundColor: design.semanticColors.bgGlass,
+        foregroundColor: design.semanticColors.textPrimary,
+        minimumSize: const Size.fromHeight(48),
+      ),
       connectionCardPadding: EdgeInsets.fromLTRB(
         AppSpacing.spacing6,
         AppSpacing.spacing6,
@@ -377,10 +395,22 @@ final class NordVpnTheme {
       ),
       smallSpacing: AppSpacing.spacing3,
       mediumSpacing: AppSpacing.spacing5,
-      iconBackgroundColor: design.semanticColors.bgCriticalSubtle,
-      disconnectedIcon: mode == ThemeMode.dark
-          ? "${imagesPath}shield_dark.svg"
-          : "${imagesPath}shield_light.svg",
+      labelStyle: ConnectionCardLabelThemeStyle(
+        disconnectedColor: design.semanticColors.textCritical,
+        connectingColor: design.semanticColors.textSecondary,
+        connectedColor: design.semanticColors.textSuccess,
+      ),
+      iconStyle: ConnectionCardIconThemeStyle(
+        iconSize: 48,
+        flagBorderSize: 2,
+        strokeWidth: 3,
+        borderConnectedColor: design.semanticColors.textSuccess,
+        borderConnectingColor: design.semanticColors.textAccent,
+        disconnectedBackgroundColor: design.semanticColors.bgCriticalSubtle,
+        disconnectedIcon: mode == ThemeMode.dark
+            ? "${imagesPath}shield_dark.svg"
+            : "${imagesPath}shield_light.svg",
+      ),
     );
   }
 
