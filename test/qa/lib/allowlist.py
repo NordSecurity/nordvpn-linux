@@ -10,6 +10,16 @@ MSG_ALLOWLIST_SUBNET_ADD_ERROR = "Subnet %s is already on the allowlist."
 MSG_ALLOWLIST_SUBNET_REMOVE_SUCCESS = "Subnet %s has been deleted from the allowlist."
 MSG_ALLOWLIST_SUBNET_REMOVE_ERROR = "Subnet %s is not on the allowlist."
 
+MSG_ALLOWLIST_SUBNET_TOO_WIDE_WARNING = (
+    "Adding this subnet range may be unsafe. The subnet range you entered is "
+    "too large and may allow unprotected traffic to enter or leave your device."
+)
+MSG_ALLOWLIST_REMOVE_NARROW_CONFIRM_PROMPT = (
+    "The range you are trying to add includes previously allowed subnets. "
+    "To prevent conflicts, we'll delete the redundant ones. "
+    "Do you want to remove overlapping subnets?"
+)
+
 MSG_ALLOWLIST_PORT_ADD_SUCCESS = "Port %s (%s) has been successfully added to the allowlist."
 MSG_ALLOWLIST_PORT_ADD_ERROR = "Port %s (%s) is already on the allowlist."
 MSG_ALLOWLIST_PORT_REMOVE_SUCCESS = "Port %s (%s) has been deleted from the allowlist."
@@ -133,6 +143,16 @@ def remove_subnet_from_allowlist(subnet_list: list[str]):
 
         iprules = sh.ip.rule.show()
         assert subnet not in iprules, "Subnet found in `ip rule show`"
+
+
+def add_wider_subnet_to_allowlist(wider_subnet: str, expected_removed: list[str]):
+    """Add wider subnet, auto-confirming the overlap prompt. Verifies narrower ones are removed."""
+    cmd_message = sh.nordvpn(get_alias(), "add", "subnet", wider_subnet, _in="y\n")
+    assert MSG_ALLOWLIST_SUBNET_ADD_SUCCESS % wider_subnet in cmd_message
+    settings_output = str(sh.nordvpn.settings())
+    assert settings_output.count(wider_subnet) == 1
+    for removed in expected_removed:
+        assert settings_output.count(removed) == 0
 
 
 def get_allow_list_ports() -> list[Port]:
