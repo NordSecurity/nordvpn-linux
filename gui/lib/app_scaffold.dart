@@ -75,7 +75,7 @@ final class AppScaffold extends StatelessWidget {
             destinations: destinations,
             selectedIndex: selectedIndex,
             onDestinationSelected: (dest) {
-              context.go(dest.route.toString());
+              context.navigateToRoute(dest.route);
             },
           ),
           Expanded(
