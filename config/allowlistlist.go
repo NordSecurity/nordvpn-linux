@@ -96,7 +96,7 @@ func (a *Allowlist) NormalizeSubnets(onRemove func(removed, reason string)) {
 			if !outerVal.prefix.Overlaps(innerVal.prefix) {
 				continue
 			}
-			// innerVal is strictly wider (fewer bits) — outterVal is redundant.
+			// innerVal is strictly wider (fewer bits) — outerVal is redundant.
 			// On equal bits keep the one that appears first.
 			isWider := innerVal.prefix.Bits() < outerVal.prefix.Bits()
 			isEqualButEarlier := outerVal.prefix.Bits() == innerVal.prefix.Bits() && outerIdx < innerIdx
