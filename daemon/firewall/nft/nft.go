@@ -26,6 +26,7 @@ const (
 	outputChainName                 = "output"
 	forwardChainName                = "forward"
 	meshInputChainName              = "mesh_input"
+	allowlistInputChainName         = "allowlist_input"
 	meshForwardChainName            = "mesh_forward"
 	meshNatChainName                = "mesh_nat"
 	fileshareAllowedPeersSet        = "fileshare_allowed_peers"
@@ -196,14 +197,19 @@ func (n *nft) configure(config firewall.Config) error {
 // 	// })
 // }
 
-func (n *nft) addFromAllowlistSource(
+func (n *nft) addAllowlistInputChain(
 	config firewall.Config,
 	allowlistSubnets *nftables.Set,
 	table *nftables.Table,
-	chain *nftables.Chain,
 	tcpPortsSet *nftables.Set,
 	udpPortsSet *nftables.Set,
-) {
+) *nftables.Chain {
+
+	chain := n.conn.AddChain(&nftables.Chain{
+		Name:  allowlistInputChainName,
+		Table: table,
+	})
+
 	// have: fib saddr . iif oif missing drop?
 	if allowlistSubnets != nil {
 		// ip saddr @allowed_subnets meta mark set 0x0000e1f1 accept
@@ -212,7 +218,6 @@ func (n *nft) addFromAllowlistSource(
 			Chain: chain,
 			Exprs: buildRules(
 				expr.VerdictAccept,
-				checkInterfaceName(config.TunnelInterface, IF_INPUT, expr.CmpOpNeq),
 				checkIpInSet(allowlistSubnets, MATCH_SOURCE),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "allowlist IPs to local"),
@@ -227,7 +232,6 @@ func (n *nft) addFromAllowlistSource(
 			Chain: chain,
 			Exprs: buildRules(
 				expr.VerdictAccept,
-				checkInterfaceName(config.TunnelInterface, IF_INPUT, expr.CmpOpNeq),
 				checkPortInSet(tcpPortsSet, unix.IPPROTO_TCP, MATCH_SOURCE),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "from allowed TCP ports to local"),
@@ -239,7 +243,6 @@ func (n *nft) addFromAllowlistSource(
 			Chain: chain,
 			Exprs: buildRules(
 				expr.VerdictAccept,
-				checkInterfaceName(config.TunnelInterface, IF_INPUT, expr.CmpOpNeq),
 				checkPortInSet(tcpPortsSet, unix.IPPROTO_TCP, MATCH_DESTINATION),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "to local TCP ports"),
@@ -253,7 +256,6 @@ func (n *nft) addFromAllowlistSource(
 			Chain: chain,
 			Exprs: buildRules(
 				expr.VerdictAccept,
-				checkInterfaceName(config.TunnelInterface, IF_INPUT, expr.CmpOpNeq),
 				checkPortInSet(udpPortsSet, unix.IPPROTO_UDP, MATCH_SOURCE),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "from allowed UDP ports to local"),
@@ -265,12 +267,13 @@ func (n *nft) addFromAllowlistSource(
 			Chain: chain,
 			Exprs: buildRules(
 				expr.VerdictAccept,
-				checkInterfaceName(config.TunnelInterface, IF_INPUT, expr.CmpOpNeq),
 				checkPortInSet(udpPortsSet, unix.IPPROTO_UDP, MATCH_DESTINATION),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "to local UDP ports"),
 		})
 	}
+
+	return chain
 }
 
 func (n *nft) addInputChain(
@@ -347,7 +350,20 @@ func (n *nft) addInputChain(
 		})
 	}
 
-	n.addFromAllowlistSource(config, allowlistSubnets, table, inputChain, tcpPortsSet, udpPortsSet)
+	if allowlistSubnets != nil || tcpPortsSet != nil || udpPortsSet != nil {
+		chain := n.addAllowlistInputChain(config, allowlistSubnets, table, tcpPortsSet, udpPortsSet)
+
+		// iifname != "nordtun" jump allowlist_input
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: inputChain,
+			Exprs: buildJumpRules(
+				chain.Name,
+				checkInterfaceName(config.TunnelInterface, IF_INPUT, expr.CmpOpNeq),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "allowlist to local"),
+		})
+	}
 
 	// // meta mark 0x0000e1f1 accept
 	// n.conn.AddRule(&nftables.Rule{
