@@ -6,7 +6,7 @@ part of 'popups_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$popupsHash() => r'f75beb79b4c371dc52a3ccc0f889385487181355';
+String _$popupsHash() => r'2a261af23c3212efeec3bedfd0a3fc4de61fb389';
 
 /// See also [Popups].
 @ProviderFor(Popups)
