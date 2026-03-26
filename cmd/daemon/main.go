@@ -787,7 +787,7 @@ func configCleanup(c config.Config) config.Config {
 	}
 	c.AutoConnectData.DNS = dnsList
 
-	// Remove overlapping or invalid/non-IPv4 subnets, if any
+	// Remove overlapping, invalid and IPv6 subnets, if any
 	c.AutoConnectData.Allowlist.NormalizeSubnets(func(removed, reason string) {
 		log.Println(internal.WarningPrefix, "On start, allowlist remove subnet:", removed, "; reason:", reason)
 	})

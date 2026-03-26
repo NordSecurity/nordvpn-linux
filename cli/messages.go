@@ -390,7 +390,7 @@ Your browsing activities remain private, regardless of your choice.
 `
 	MsgConsentAgreementPrompt = "Do you allow us to collect and use limited app performance data? (y/n)"
 
-	MsgRemoveNarrowNarrowConfirmPrompt = "The range you are trying to add includes previously allowed subnets. To prevent conflicts, we'll delete the redundant ones. Do you want to remove overlapping subnets?"
+	MsgRemoveNarrowConfirmPrompt = "The range you are trying to add includes previously allowed subnets. To prevent conflicts, we'll delete the redundant ones. Do you want to remove overlapping subnets?"
 
 	SetARPIgnoreUsageText    = "Controls whether your device ignores or responds to ARP requests while the VPN is active.\nBy default, arp-ignore is on. This means ARP requests are ignored to prevent VPN exposure."
 	SetARPIgnoreSuccess      = "ARP ignore set to '%s' successfully."

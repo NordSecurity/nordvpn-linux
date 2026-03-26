@@ -86,38 +86,39 @@ func (a *Allowlist) NormalizeSubnets(onRemove func(removed, reason string)) {
 	}
 
 	var result []string
-	for i, a := range items {
+	for outerIdx, outerVal := range items {
 		coveredByWider := false
 		var coveredBy string
-		for j, b := range items {
-			if i == j {
+		for innerIdx, innerVal := range items {
+			if outerIdx == innerIdx {
 				continue
 			}
-			if !a.prefix.Overlaps(b.prefix) {
+			if !outerVal.prefix.Overlaps(innerVal.prefix) {
 				continue
 			}
-			// b is strictly wider (fewer bits) — a is redundant.
+			// innerVal is strictly wider (fewer bits) — outterVal is redundant.
 			// On equal bits keep the one that appears first.
-			if b.prefix.Bits() < a.prefix.Bits() ||
-				(b.prefix.Bits() == a.prefix.Bits() && i < j) {
+			isWider := innerVal.prefix.Bits() < outerVal.prefix.Bits()
+			isEqualButEarlier := outerVal.prefix.Bits() == innerVal.prefix.Bits() && outerIdx < innerIdx
+			if isWider || isEqualButEarlier {
 				coveredByWider = true
-				coveredBy = b.raw
+				coveredBy = innerVal.raw
 				break
 			}
 		}
 		if coveredByWider {
 			if onRemove != nil {
-				onRemove(a.raw, fmt.Sprintf("covered by: %s", coveredBy))
+				onRemove(outerVal.raw, fmt.Sprintf("covered by: %s", coveredBy))
 			}
 		} else {
-			result = append(result, a.raw)
+			result = append(result, outerVal.raw)
 		}
 	}
 	a.Subnets = result
 }
 
-// WouldEliminateSubnets check if new subnet would cover (i.e. eliminate) some existing subnet(-s)
-func (a *Allowlist) WouldEliminateSubnets(subnet string) ([]string, error) {
+// SubnetsCoveredBy check if new subnet would cover (i.e. eliminate) some existing subnet(-s)
+func (a *Allowlist) SubnetsCoveredBy(subnet string) ([]string, error) {
 	wouldbeEliminatedSubnets := []string{}
 	newPrefix, err := netip.ParsePrefix(subnet)
 	if err != nil {
