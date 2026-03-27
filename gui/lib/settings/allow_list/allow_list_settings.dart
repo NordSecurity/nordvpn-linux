@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/allow_list.dart';
 import 'package:nordvpn/data/models/app_settings.dart';
-import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/data/providers/popups_provider.dart';
 import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
@@ -128,32 +127,16 @@ class _AllowListSettingsState extends ConsumerState<AllowListSettings> {
         .addToAllowList(port: port, subnet: subnet);
 
     if (res == DaemonStatusCode.allowlistSubnetWiderConfirm) {
-      ref.read(popupsProvider.notifier).showMetadata(
-        DecisionPopupMetadata(
-          id: PopupCodes.removeOverlappingSubnetsConfirm,
-          title: t.ui.removeOverlappingSubnets,
-          message: (_) => t.ui.removeOverlappingSubnetsDescription,
-          noButtonText: t.ui.cancel,
-          yesButtonText: t.ui.removeWord,
-          yesAction: (ref) async {
-            final addRes = await ref
-                .read(vpnSettingsControllerProvider.notifier)
-                .addToAllowList(port: port, subnet: subnet, force: true);
-            if (addRes == DaemonStatusCode.allowlistSubnetTooWideWarn) {
-              ref
-                  .read(popupsProvider.notifier)
-                  .show(PopupCodes.addingTooWideSubnetWarn);
-            }
-          },
-        ),
-      );
+      ref
+          .read(popupsProvider.notifier)
+          .show(DaemonStatusCode.allowlistSubnetWiderConfirm, userData: subnet);
       return true;
     }
 
     if (res == DaemonStatusCode.allowlistSubnetTooWideWarn) {
       ref
           .read(popupsProvider.notifier)
-          .show(PopupCodes.addingTooWideSubnetWarn);
+          .show(DaemonStatusCode.allowlistSubnetTooWideWarn);
       return true;
     }
 

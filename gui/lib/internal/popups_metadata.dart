@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nordvpn/data/models/allow_list.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/data/providers/account_controller.dart';
 import 'package:nordvpn/data/providers/pending_settings_provider.dart';
@@ -19,7 +20,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 typedef PopupOrErrorCode = int;
 
 // Gives metadata based on the specified code.
-PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
+PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
   final metadata = switch (code) {
     // ==============================    [ triggered by app ]    ==============================
 
@@ -118,9 +119,29 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code) {
       },
     ),
 
+    DaemonStatusCode.allowlistSubnetWiderConfirm => DecisionPopupMetadata(
+      id: DaemonStatusCode.allowlistSubnetWiderConfirm,
+      title: t.ui.removeOverlappingSubnets,
+      message: (_) => t.ui.removeOverlappingSubnetsDescription,
+      noButtonText: t.ui.cancel,
+      yesButtonText: t.ui.removeWord,
+      yesAction: (ref) {
+        if (userData is! Subnet) {
+          logger.e(
+            'allowlistSubnetWiderConfirm yesAction: expected Subnet userData, got $userData',
+          );
+          return;
+        }
+        final entry = userData;
+        ref
+            .read(vpnSettingsControllerProvider.notifier)
+            .addToAllowList(subnet: entry, force: true);
+      },
+    ),
+
     // Warn user about dangerous subnet being added
-    PopupCodes.addingTooWideSubnetWarn => InfoPopupMetadata(
-      id: PopupCodes.addingTooWideSubnetWarn,
+    DaemonStatusCode.allowlistSubnetTooWideWarn => InfoPopupMetadata(
+      id: DaemonStatusCode.allowlistSubnetTooWideWarn,
       title: t.ui.addingTooWideSubnet,
       message: (_) => t.ui.addingTooWideSubnetDescription,
       buttonText: t.ui.gotIt,

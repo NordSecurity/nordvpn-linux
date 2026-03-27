@@ -13,8 +13,6 @@ final class PopupCodes {
   static const reconnectToChangeObfuscation = 7010;
   static const reconnectToChangePostQuantum = 7011;
   static const reconnectToChangeVirtualLocation = 7012;
-  static const removeOverlappingSubnetsConfirm = 7013;
-  static const addingTooWideSubnetWarn = 7014;
 
   PopupCodes._();
 }

@@ -13,14 +13,14 @@ final class Popups extends _$Popups {
   @override
   PopupMetadata? build() => null;
 
-  void show(int id) {
+  void show(int id, {Object? userData}) {
     if (_shouldIgnore(id)) {
       logger.d("ignoring popup with id: $id");
       return;
     }
     logger.i("showing popup for id: $id");
 
-    final metadata = givePopupMetadata(id);
+    final metadata = givePopupMetadata(id, userData: userData);
     showMetadata(metadata);
   }
 
@@ -31,15 +31,7 @@ final class Popups extends _$Popups {
                 .allowlistSubnetNoop // should be ignored by GUI
                 ||
         code ==
-            3047 // CodeAllowlistPortNoop should be ignored by GUI
-            ||
-        code ==
-            DaemonStatusCode
-                .allowlistSubnetTooWideWarn // handled in allow_list_settings.dart
-                ||
-        code ==
-            DaemonStatusCode
-                .allowlistSubnetWiderConfirm; // handled in allow_list_settings.dart
+            3047; // CodeAllowlistPortNoop should be ignored by GUI
   }
 
   void showMetadata(PopupMetadata metadata) {

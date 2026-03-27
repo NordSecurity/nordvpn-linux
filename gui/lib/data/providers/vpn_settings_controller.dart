@@ -28,9 +28,6 @@ const _popupIgnoreCodes = [
   DaemonStatusCode.dnsListModified,
   DaemonStatusCode.tpLiteDisabled,
   DaemonStatusCode.allowListModified,
-  // Handled explicitly in allow_list_settings.dart
-  DaemonStatusCode.allowlistSubnetTooWideWarn,
-  DaemonStatusCode.allowlistSubnetWiderConfirm,
 ];
 
 @riverpod
@@ -161,6 +158,7 @@ class VpnSettingsController extends _$VpnSettingsController
         subnet: subnet?.value,
         force: force,
       ),
+      userData: subnet,
     );
   }
 
@@ -314,6 +312,7 @@ class VpnSettingsController extends _$VpnSettingsController
   Future<int> _setValue(
     Future<int> Function(VpnSettingsRepository repository) callback, {
     Map<int, int>? popupCodeOverrides,
+    Object? userData,
   }) async {
     final repository = ref.read(vpnSettingsProvider);
     int status = DaemonStatusCode.failure;
@@ -330,8 +329,12 @@ class VpnSettingsController extends _$VpnSettingsController
       logger.e("Unexpected error: $e");
     }
 
-    // Use overridden popup code if provided, otherwise use the daemon status code
-    final popupCode = popupCodeOverrides?[status] ?? status;
+    // Use overridden popup code if provided, otherwise use the daemon status code.
+    // When an override fires the original code was remapped, so userData only
+    // applies to the original (non-overridden) code.
+    final overridden = popupCodeOverrides?.containsKey(status) ?? false;
+    final popupCode = overridden ? popupCodeOverrides![status]! : status;
+    final popupUserData = overridden ? null : userData;
 
     // don't show popup when code is on ignore list
     if (_popupIgnoreCodes.contains(popupCode)) {
@@ -341,7 +344,7 @@ class VpnSettingsController extends _$VpnSettingsController
     // We do that to avoid the toggle of on/off button in case of failure
     state = state;
 
-    ref.read(popupsProvider.notifier).show(popupCode);
+    ref.read(popupsProvider.notifier).show(popupCode, userData: popupUserData);
 
     return status;
   }
