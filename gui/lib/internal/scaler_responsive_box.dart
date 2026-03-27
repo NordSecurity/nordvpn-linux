@@ -5,24 +5,29 @@ class ScalerResponsiveBox extends StatelessWidget {
   final Widget child;
   final double maxWidth;
   final double? maxHeight;
+  final Alignment alignment;
 
   const ScalerResponsiveBox({
     super.key,
     required this.child,
     required this.maxWidth,
     this.maxHeight,
+    this.alignment = Alignment.centerLeft,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: dynamicScale(maxWidth, context),
-        maxHeight: maxHeight != null
-            ? dynamicScale(maxHeight!, context)
-            : double.infinity,
+    return Align(
+      alignment: alignment,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: dynamicScale(maxWidth, context),
+          maxHeight: maxHeight != null
+              ? dynamicScale(maxHeight!, context)
+              : double.infinity,
+        ),
+        child: child,
       ),
-      child: child,
     );
   }
 }

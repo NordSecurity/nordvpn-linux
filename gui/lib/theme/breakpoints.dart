@@ -1,4 +1,4 @@
-import 'package:nordvpn/widgets/adaptive_scaffold/flutter_adaptive_scaffold.dart';
+import 'package:flutter/material.dart';
 
 final class AppBreakpoints {
   AppBreakpoints._();
@@ -23,4 +23,21 @@ final class AppBreakpoints {
     beginHeight: 532,
     endHeight: 532,
   );
+}
+
+final class Breakpoint {
+  final double? beginWidth;
+
+  final double? endWidth;
+
+  final double? beginHeight;
+
+  final double? endHeight;
+
+  const Breakpoint({
+    this.beginWidth,
+    this.endWidth,
+    this.beginHeight,
+    this.endHeight,
+  });
 }
