@@ -18,7 +18,7 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 			State:                     pb.ConnectionState_PAUSED,
 			Uptime:                    -1,
 			PausedAt:                  timestamppb.New(status.PausedAt),
-			PauseRemainingDurationSec: uint32(status.PauseRemainingTimeSec),
+			PauseRemainingDurationSec: status.PauseRemainingTimeSec,
 		}, nil
 	case pb.ConnectionState_UNKNOWN_STATE, pb.ConnectionState_DISCONNECTED:
 		return &pb.StatusResponse{
@@ -60,7 +60,7 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 		PostQuantum:               status.IsPostQuantum,
 		Obfuscated:                status.IsObfuscated,
 		PausedAt:                  timestamppb.New(status.PausedAt),
-		PauseRemainingDurationSec: uint32(status.PauseRemainingTimeSec),
+		PauseRemainingDurationSec: status.PauseRemainingTimeSec,
 	}, nil
 }
 
