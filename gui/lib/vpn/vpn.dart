@@ -25,7 +25,7 @@ final class VpnWidget extends ConsumerWidget {
               top: 0,
               bottom: theme.margin,
               right: theme.margin,
-              left: theme.margin,
+              left: 0,
             ),
             child: ServersListCard(
               key: VpnWidgetKeys.vpnServersListCard,

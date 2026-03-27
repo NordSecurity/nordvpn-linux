@@ -20,7 +20,6 @@ import 'package:nordvpn/settings/terms_screen.dart';
 import 'package:nordvpn/settings/threat_protection_settings.dart';
 import 'package:nordvpn/settings/vpn_connection_settings.dart';
 import 'package:nordvpn/vpn/vpn.dart';
-import 'package:nordvpn/widgets/responsive_scaffold.dart';
 import 'package:nordvpn/widgets/widgets_showcase.dart';
 
 final Map<String, RouteMetadata> routeToNameMap = {};
@@ -73,25 +72,6 @@ enum AppRoute {
 }
 
 extension GoRouterExt on BuildContext {
-  int currentLocationIdx() {
-    String currentLocation = GoRouterState.of(this).uri.toString();
-    // If there are multiple / in the path, then get the first part and
-    // return the index for it because this is needed for navigation trail
-    final childRouteIndex = currentLocation.indexOf("/", 1);
-
-    if (childRouteIndex != -1) {
-      currentLocation = currentLocation.substring(0, childRouteIndex);
-    }
-
-    final idx = AppRoute.values.indexWhere(
-      (e) => e.toString() == currentLocation,
-    );
-
-    return idx;
-  }
-
-  String locationName(int index) => AppRoute.values[index].toString();
-
   void navigateToRoute(AppRoute route) {
     go(route.toString());
   }
@@ -214,11 +194,11 @@ GoRoute _routeWithAppScaffold(RouteMetadata metadata) {
     pageBuilder: (context, state) {
       return CustomTransitionPage(
         key: state.pageKey,
-        child: ResponsiveScaffold(child: metadata.screen),
+        child: AppScaffold(child: metadata.screen),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           return FadeTransition(
             opacity: CurveTween(curve: Curves.easeInOutCirc).animate(animation),
-            child: AppScaffold(child: child),
+            child: child,
           );
         },
       );
