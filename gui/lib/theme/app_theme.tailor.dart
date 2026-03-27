@@ -10,9 +10,9 @@ part of 'app_theme.dart';
 // **************************************************************************
 
 mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
-  double get borderRadiusLarge;
-  double get borderRadiusMedium;
-  double get borderRadiusSmall;
+  BorderRadius get borderRadiusLarge;
+  BorderRadius get borderRadiusMedium;
+  BorderRadius get borderRadiusSmall;
   double get padding;
   double get margin;
   double get outerPadding;
@@ -48,9 +48,9 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
 
   @override
   AppTheme copyWith({
-    double? borderRadiusLarge,
-    double? borderRadiusMedium,
-    double? borderRadiusSmall,
+    BorderRadius? borderRadiusLarge,
+    BorderRadius? borderRadiusMedium,
+    BorderRadius? borderRadiusSmall,
     double? padding,
     double? margin,
     double? outerPadding,
@@ -366,9 +366,9 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
 
 extension AppThemeBuildContextProps on BuildContext {
   AppTheme get appTheme => Theme.of(this).extension<AppTheme>()!;
-  double get borderRadiusLarge => appTheme.borderRadiusLarge;
-  double get borderRadiusMedium => appTheme.borderRadiusMedium;
-  double get borderRadiusSmall => appTheme.borderRadiusSmall;
+  BorderRadius get borderRadiusLarge => appTheme.borderRadiusLarge;
+  BorderRadius get borderRadiusMedium => appTheme.borderRadiusMedium;
+  BorderRadius get borderRadiusSmall => appTheme.borderRadiusSmall;
   double get padding => appTheme.padding;
   double get margin => appTheme.margin;
   double get outerPadding => appTheme.outerPadding;

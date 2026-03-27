@@ -12,7 +12,7 @@ final class RoundContainer extends StatelessWidget {
   final double? width;
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
-  final double? radius;
+  final BorderRadius? radius;
   final Color? color;
 
   const RoundContainer({
@@ -45,9 +45,7 @@ final class RoundContainer extends StatelessWidget {
           ),
       decoration: BoxDecoration(
         color: color ?? theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(
-          radius ?? appTheme.borderRadiusMedium,
-        ),
+        borderRadius: radius ?? appTheme.borderRadiusMedium,
       ),
       margin: margin ?? EdgeInsets.all(appTheme.margin),
       child: child,
