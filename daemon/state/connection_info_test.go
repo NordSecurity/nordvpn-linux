@@ -434,14 +434,14 @@ func TestConnectionInfo_PauseHandling(t *testing.T) {
 	pauseTime := time.Unix(1774276303, 0)
 	tf.sut.Pause(pauseTime, duration)
 
-	tf.sut.remainingDurationFunc = func(time.Time, time.Duration) int32 {
+	tf.sut.remainingDurationFunc = func(time.Time, time.Duration) uint32 {
 		return 5
 	}
 
 	status := tf.sut.Status()
 	assert.Equal(t, pauseTime, status.PausedAt)
 	assert.Equal(t, status.State, pb.ConnectionState_PAUSED)
-	assert.Equal(t, status.PauseRemainingTimeSec, int32(5))
+	assert.Equal(t, status.PauseRemainingTimeSec, uint32(5))
 
 	go func() {
 		tf.subscriber.ExpectEvents(1)
@@ -458,12 +458,12 @@ func TestConnectionInfo_PauseHandling(t *testing.T) {
 			"Unexpected state received in the status notification.")
 		assert.Equal(t, pauseTime, notification.Status.PausedAt,
 			"Unexpected pause time in a disconnect notification.")
-		assert.Equal(t, notification.Status.PauseRemainingTimeSec, int32(5),
+		assert.Equal(t, notification.Status.PauseRemainingTimeSec, uint32(5),
 			"Unexpected remaining pause time in a disconnect notification.")
 
 		tf.subscriber.ExpectEvents(1)
 
-		tf.sut.remainingDurationFunc = func(time.Time, time.Duration) int32 {
+		tf.sut.remainingDurationFunc = func(time.Time, time.Duration) uint32 {
 			return 2
 		}
 
@@ -480,7 +480,7 @@ func TestConnectionInfo_PauseHandling(t *testing.T) {
 			"Unexpected state received in the status notification.")
 		assert.Equal(t, notification.Status.PausedAt, pauseTime,
 			"Unexpected pause time in an internal disconnect notification.")
-		assert.Equal(t, notification.Status.PauseRemainingTimeSec, int32(2),
+		assert.Equal(t, notification.Status.PauseRemainingTimeSec, uint32(2),
 			"Unexpected remaining pause time in an internal disconnect notification.")
 		close(tf.done)
 	}()

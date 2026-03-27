@@ -116,20 +116,15 @@ func determineServerSelectionRule(params ServerParameters) config.ServerSelectio
 	return config.ServerSelectionRule_NONE
 }
 
-type vpnExpirationCheckResult struct {
-	isExpired bool
-	errorCode int64
-}
-
-func (r *RPC) isVPNExpired() vpnExpirationCheckResult {
+func (r *RPC) isVPNExpired() int64 {
 	vpnExpired, err := r.ac.IsVPNExpired()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "checking VPN expiration: ", err)
-		return vpnExpirationCheckResult{isExpired: true, errorCode: internal.CodeTokenRenewError}
+		return internal.CodeTokenRenewError
 	} else if vpnExpired {
-		return vpnExpirationCheckResult{isExpired: true, errorCode: internal.CodeAccountExpired}
+		return internal.CodeAccountExpired
 	}
-	return vpnExpirationCheckResult{isExpired: false}
+	return internal.CodeSuccess
 }
 
 func (r *RPC) connectWithStoredServerSelection(ctx context.Context, srv pb.Daemon_ConnectServer) (bool, error) {
@@ -148,8 +143,8 @@ func (r *RPC) connectWithStoredServerSelection(ctx context.Context, srv pb.Daemo
 	r.connectionInfo.SetInitialConnecting()
 
 	expirationCheckResult := r.isVPNExpired()
-	if expirationCheckResult.isExpired {
-		return true, srv.Send(&pb.Payload{Type: expirationCheckResult.errorCode})
+	if expirationCheckResult != internal.CodeSuccess {
+		return true, srv.Send(&pb.Payload{Type: expirationCheckResult})
 	}
 
 	return r.connect(ctx, srv, cfg, r.lastServerSelection, r.RequestedConnParams.Get().ServerParameters, time.Now())
@@ -178,8 +173,8 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	// The details will be filled and delivered to clients later.
 
 	expirationCheckResult := r.isVPNExpired()
-	if expirationCheckResult.isExpired {
-		return true, srv.Send(&pb.Payload{Type: expirationCheckResult.errorCode})
+	if expirationCheckResult != internal.CodeSuccess {
+		return true, srv.Send(&pb.Payload{Type: expirationCheckResult})
 	}
 
 	if cfg.Technology == config.Technology_NORDWHISPER && !features.NordWhisperEnabled {

@@ -14,11 +14,11 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
 
-type remainingDurationFunc func(startTime time.Time, duration time.Duration) int32
+type remainingDurationFunc func(startTime time.Time, duration time.Duration) uint32
 
-func getRemainingDuration(startTime time.Time, duration time.Duration) int32 {
+func getRemainingDuration(startTime time.Time, duration time.Duration) uint32 {
 	remainingDuration := time.Until(startTime.Add(duration))
-	return int32(remainingDuration.Seconds())
+	return uint32(remainingDuration.Seconds())
 }
 
 type InternalStateChangeNotif interface {

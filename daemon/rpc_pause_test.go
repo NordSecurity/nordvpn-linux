@@ -57,6 +57,7 @@ func TestPauseConnection(t *testing.T) {
 		{
 			name:                 "disconnect failure",
 			isVPNActive:          true,
+			pauseDuration:        10,
 			disconnectErr:        errors.New("failed to disconnect"),
 			expectedResponseType: internal.CodeFailure,
 			expectedVPNState:     true,
@@ -65,8 +66,14 @@ func TestPauseConnection(t *testing.T) {
 			name:                 "attempt to pause mesh connection",
 			isVPNActive:          true,
 			isMeshPeer:           true,
-			disconnectErr:        errors.New("failed to disconnect"),
 			expectedResponseType: internal.CodePauseAttemptWhenConnectedToMeshPeer,
+			expectedVPNState:     true,
+		},
+		{
+			name:                 "0 seconds duration pause is a noop",
+			isVPNActive:          true,
+			pauseDuration:        0,
+			expectedResponseType: internal.CodeNothingToDo,
 			expectedVPNState:     true,
 		},
 	}

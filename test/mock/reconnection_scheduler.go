@@ -14,4 +14,5 @@ func (p *PauseSchedulerMock) ScheduleReconnection(duration time.Duration) {
 
 func (p *PauseSchedulerMock) CancelReconnection() {
 	p.ConnectionScheduled = false
+	p.PauseDuration = 0
 }

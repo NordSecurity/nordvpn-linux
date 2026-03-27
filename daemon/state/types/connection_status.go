@@ -49,5 +49,5 @@ type ConnectionStatus struct {
 	// Time at which connection was paused as an unix timestamp
 	PausedAt time.Time
 	// Remaining pause time in seconds
-	PauseRemainingTimeSec int32
+	PauseRemainingTimeSec uint32
 }

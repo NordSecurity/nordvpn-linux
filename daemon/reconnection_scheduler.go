@@ -72,5 +72,6 @@ func (s *ReconnectSchedulerImpl) CancelReconnection() {
 		log.Println(internal.DebugPrefix, "cancelling the reconnection after a pause")
 		s.connectionInfo.Unpause()
 		s.reconnectCancelFunc()
+		s.reconnectCancelFunc = nil
 	}
 }
