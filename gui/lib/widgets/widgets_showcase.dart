@@ -251,7 +251,7 @@ class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
             ),
           ),
         ),
-        Positioned(right: 20, bottom: 16, child: const Toast()),
+        Positioned(right: 20, bottom: 16, child: const Toast(duration: Duration(seconds: 10))),
       ],
     );
   }

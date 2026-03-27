@@ -1,17 +1,58 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:nordvpn/i18n/strings.g.dart';
+import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:nordvpn/theme/aurora_design.dart';
 
-final class Toast extends StatelessWidget {
-  const Toast({super.key});
+import 'package:nordvpn/internal/scaler_responsive_box.dart';
+
+final class Toast extends StatefulWidget {
+  const Toast({super.key, required this.duration});
+
+  final Duration duration;
+
+  @override
+  State<Toast> createState() => _ToastState();
+}
+
+class _ToastState extends State<Toast> {
   final double _width = 356.0;
   final double _height = 58.0;
 
+  late Duration _remainingTime;
+  Timer? _timer;
+  bool _isVisible = true;
+
+
+ @override
+  void initState() {
+    super.initState();
+    _remainingTime = widget.duration;
+
+    void tick() {
+      _remainingTime -= Duration(seconds: 1);
+      final remainingSeconds = _remainingTime.inSeconds.clamp(0, widget.duration.inSeconds);
+      logger.e("Toast, remaining time: ${_remainingTime.inSeconds} s");
+
+      setState(() {
+        // refresh the countdown
+        if (remainingSeconds == 0) {
+          _timer?.cancel();
+        }
+        _remainingTime = Duration(seconds: remainingSeconds);
+      });
+    }
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => tick());
+  }
+
   @override
-  Widget build(BuildContext _) {
+  Widget build(BuildContext context) {
+    if (!_isVisible) return const SizedBox.shrink();
+
     return Container(
-      width: _width,
-      height: _height,
+      width: dynamicScale(_width),
+      height: dynamicScale(_height),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         color: AppDesign(ThemeMode.light).semanticColors.bgTertiary,
@@ -43,8 +84,10 @@ final class Toast extends StatelessWidget {
   }
 
   Widget _buildWidgetText() {
+    final m = _remainingTime.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = _remainingTime.inSeconds.remainder(60).toString().padLeft(2, '0');
     return Text(
-      "VPN connection resumes in 4:59",
+      t.ui.VPNResumesIn(minutes: m, seconds: s),
       style: AppDesign(ThemeMode.light).typography.subHeading,
       textAlign: TextAlign.center,
     );
@@ -53,7 +96,14 @@ final class Toast extends StatelessWidget {
   Widget _buildCloseButton() {
     return Padding(
       padding: const EdgeInsets.all(5.0),
-      child: DynamicThemeImage("toast_close_icon.svg"),
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _isVisible = false;
+          });
+        },
+        child: DynamicThemeImage("toast_close_icon.svg"),
+      )
     );
   }
 }
