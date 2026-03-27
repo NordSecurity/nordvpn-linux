@@ -126,8 +126,8 @@ Widget _vpnStatus(AppTheme appTheme, BuildContext context) {
     decoration: BoxDecoration(
       color: appTheme.area,
       borderRadius: BorderRadius.only(
-        bottomLeft: Radius.circular(appTheme.borderRadiusMedium),
-        bottomRight: Radius.circular(appTheme.borderRadiusMedium),
+        bottomLeft: appTheme.borderRadiusMedium.bottomLeft,
+        bottomRight: appTheme.borderRadiusMedium.bottomRight,
       ),
     ),
     child: Center(
