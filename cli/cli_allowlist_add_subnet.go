@@ -56,6 +56,9 @@ func (c *cmd) AllowlistAddSubnet(ctx *cli.Context) error {
 				SetAllowlistSubnetRequest: &pb.SetAllowlistSubnetRequest{Subnet: subnet, Force: true},
 			},
 		})
+		if err != nil {
+			return formatError(err)
+		}
 	}
 
 	switch resp.Type {
