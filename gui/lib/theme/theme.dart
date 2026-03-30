@@ -20,7 +20,7 @@ import 'package:nordvpn/theme/radio_button_theme.dart';
 import 'package:nordvpn/theme/servers_list_theme.dart';
 import 'package:nordvpn/theme/settings_theme.dart';
 import 'package:nordvpn/theme/support_link_theme.dart';
-import 'package:nordvpn/theme/vpn_status_card_theme.dart';
+import 'package:nordvpn/theme/connection_card_theme.dart';
 import 'package:nordvpn/theme/popup_theme.dart';
 
 ThemeData lightTheme() {
@@ -59,7 +59,7 @@ final class NordVpnTheme {
       tooltipTheme: _tooltipThemeData(),
       extensions: [
         _appThemeExt(),
-        _vpnStatusCardThemeExt(mode),
+        _connectionCardThemeExt(mode),
         _serversListThemeExt(),
         _settingsThemeExt(),
         _onOffSwitchThemeExt(),
@@ -339,14 +339,11 @@ final class NordVpnTheme {
     );
   }
 
-  VpnStatusCardTheme _vpnStatusCardThemeExt(ThemeMode mode) {
-    return VpnStatusCardTheme(
+  ConnectionCardTheme _connectionCardThemeExt(ThemeMode mode) {
+    return ConnectionCardTheme(
       height: 160,
       maxConnectButtonWidth: 320,
       primaryFont: design.typography.heading.copyWith(
-        color: design.semanticColors.textPrimary,
-      ),
-      secondaryFont: design.typography.subHeading.copyWith(
         color: design.semanticColors.textPrimary,
       ),
       secureMyConnectionButtonStyle: ElevatedButton.styleFrom(
@@ -395,15 +392,22 @@ final class NordVpnTheme {
       ),
       smallSpacing: AppSpacing.spacing3,
       mediumSpacing: AppSpacing.spacing5,
-      labelStyle: ConnectionCardLabelThemeStyle(
+      labelTheme: ConnectionCardLabelTheme(
         disconnectedColor: design.semanticColors.textCritical,
         connectingColor: design.semanticColors.textSecondary,
         connectedColor: design.semanticColors.textSuccess,
+        serverTypeColor: design.semanticColors.textPrimary,
+        spacing: AppSpacing.spacing1,
+        font: design.typography.subHeading.copyWith(
+          color: design.semanticColors.textPrimary,
+        ),
       ),
-      iconStyle: ConnectionCardIconThemeStyle(
+      iconTheme: ConnectionCardIconTheme(
         iconSize: 48,
         flagBorderSize: 2,
         strokeWidth: 3,
+        dipIconWidth: 23,
+        dipIconHeight: 24,
         borderConnectedColor: design.semanticColors.textSuccess,
         borderConnectingColor: design.semanticColors.textAccent,
         disconnectedBackgroundColor: design.semanticColors.bgCriticalSubtle,

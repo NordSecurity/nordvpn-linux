@@ -3,45 +3,42 @@
 // ignore_for_file: type=lint
 // ignore_for_file: unused_element, deprecated_member_use, deprecated_member_use_from_same_package, use_function_type_syntax_for_parameters, unnecessary_const, avoid_init_to_null, invalid_override_different_default_values_named, prefer_expression_function_bodies, annotate_overrides, invalid_annotation_target, unnecessary_question_mark
 
-part of 'vpn_status_card_theme.dart';
+part of 'connection_card_theme.dart';
 
 // **************************************************************************
 // TailorAnnotationsGenerator
 // **************************************************************************
 
-mixin _$VpnStatusCardThemeTailorMixin on ThemeExtension<VpnStatusCardTheme> {
+mixin _$ConnectionCardThemeTailorMixin on ThemeExtension<ConnectionCardTheme> {
   double get height;
   double get maxConnectButtonWidth;
   TextStyle get primaryFont;
-  TextStyle get secondaryFont;
   ButtonStyle get secureMyConnectionButtonStyle;
   ButtonStyle get cancelButtonStyle;
   EdgeInsetsGeometry get connectionCardPadding;
   double get smallSpacing;
   double get mediumSpacing;
-  ConnectionCardLabelThemeStyle get labelStyle;
-  ConnectionCardIconThemeStyle get iconStyle;
+  ConnectionCardLabelTheme get labelTheme;
+  ConnectionCardIconTheme get iconTheme;
 
   @override
-  VpnStatusCardTheme copyWith({
+  ConnectionCardTheme copyWith({
     double? height,
     double? maxConnectButtonWidth,
     TextStyle? primaryFont,
-    TextStyle? secondaryFont,
     ButtonStyle? secureMyConnectionButtonStyle,
     ButtonStyle? cancelButtonStyle,
     EdgeInsetsGeometry? connectionCardPadding,
     double? smallSpacing,
     double? mediumSpacing,
-    ConnectionCardLabelThemeStyle? labelStyle,
-    ConnectionCardIconThemeStyle? iconStyle,
+    ConnectionCardLabelTheme? labelTheme,
+    ConnectionCardIconTheme? iconTheme,
   }) {
-    return VpnStatusCardTheme(
+    return ConnectionCardTheme(
       height: height ?? this.height,
       maxConnectButtonWidth:
           maxConnectButtonWidth ?? this.maxConnectButtonWidth,
       primaryFont: primaryFont ?? this.primaryFont,
-      secondaryFont: secondaryFont ?? this.secondaryFont,
       secureMyConnectionButtonStyle:
           secureMyConnectionButtonStyle ?? this.secureMyConnectionButtonStyle,
       cancelButtonStyle: cancelButtonStyle ?? this.cancelButtonStyle,
@@ -49,24 +46,23 @@ mixin _$VpnStatusCardThemeTailorMixin on ThemeExtension<VpnStatusCardTheme> {
           connectionCardPadding ?? this.connectionCardPadding,
       smallSpacing: smallSpacing ?? this.smallSpacing,
       mediumSpacing: mediumSpacing ?? this.mediumSpacing,
-      labelStyle: labelStyle ?? this.labelStyle,
-      iconStyle: iconStyle ?? this.iconStyle,
+      labelTheme: labelTheme ?? this.labelTheme,
+      iconTheme: iconTheme ?? this.iconTheme,
     );
   }
 
   @override
-  VpnStatusCardTheme lerp(
-    covariant ThemeExtension<VpnStatusCardTheme>? other,
+  ConnectionCardTheme lerp(
+    covariant ThemeExtension<ConnectionCardTheme>? other,
     double t,
   ) {
-    if (other is! VpnStatusCardTheme) return this as VpnStatusCardTheme;
-    return VpnStatusCardTheme(
+    if (other is! ConnectionCardTheme) return this as ConnectionCardTheme;
+    return ConnectionCardTheme(
       height: t < 0.5 ? height : other.height,
       maxConnectButtonWidth: t < 0.5
           ? maxConnectButtonWidth
           : other.maxConnectButtonWidth,
       primaryFont: TextStyle.lerp(primaryFont, other.primaryFont, t)!,
-      secondaryFont: TextStyle.lerp(secondaryFont, other.secondaryFont, t)!,
       secureMyConnectionButtonStyle: t < 0.5
           ? secureMyConnectionButtonStyle
           : other.secureMyConnectionButtonStyle,
@@ -76,8 +72,8 @@ mixin _$VpnStatusCardThemeTailorMixin on ThemeExtension<VpnStatusCardTheme> {
           : other.connectionCardPadding,
       smallSpacing: t < 0.5 ? smallSpacing : other.smallSpacing,
       mediumSpacing: t < 0.5 ? mediumSpacing : other.mediumSpacing,
-      labelStyle: t < 0.5 ? labelStyle : other.labelStyle,
-      iconStyle: t < 0.5 ? iconStyle : other.iconStyle,
+      labelTheme: t < 0.5 ? labelTheme : other.labelTheme,
+      iconTheme: t < 0.5 ? iconTheme : other.iconTheme,
     );
   }
 
@@ -85,7 +81,7 @@ mixin _$VpnStatusCardThemeTailorMixin on ThemeExtension<VpnStatusCardTheme> {
   bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
-            other is VpnStatusCardTheme &&
+            other is ConnectionCardTheme &&
             const DeepCollectionEquality().equals(height, other.height) &&
             const DeepCollectionEquality().equals(
               maxConnectButtonWidth,
@@ -94,10 +90,6 @@ mixin _$VpnStatusCardThemeTailorMixin on ThemeExtension<VpnStatusCardTheme> {
             const DeepCollectionEquality().equals(
               primaryFont,
               other.primaryFont,
-            ) &&
-            const DeepCollectionEquality().equals(
-              secondaryFont,
-              other.secondaryFont,
             ) &&
             const DeepCollectionEquality().equals(
               secureMyConnectionButtonStyle,
@@ -120,10 +112,10 @@ mixin _$VpnStatusCardThemeTailorMixin on ThemeExtension<VpnStatusCardTheme> {
               other.mediumSpacing,
             ) &&
             const DeepCollectionEquality().equals(
-              labelStyle,
-              other.labelStyle,
+              labelTheme,
+              other.labelTheme,
             ) &&
-            const DeepCollectionEquality().equals(iconStyle, other.iconStyle));
+            const DeepCollectionEquality().equals(iconTheme, other.iconTheme));
   }
 
   @override
@@ -133,32 +125,30 @@ mixin _$VpnStatusCardThemeTailorMixin on ThemeExtension<VpnStatusCardTheme> {
       const DeepCollectionEquality().hash(height),
       const DeepCollectionEquality().hash(maxConnectButtonWidth),
       const DeepCollectionEquality().hash(primaryFont),
-      const DeepCollectionEquality().hash(secondaryFont),
       const DeepCollectionEquality().hash(secureMyConnectionButtonStyle),
       const DeepCollectionEquality().hash(cancelButtonStyle),
       const DeepCollectionEquality().hash(connectionCardPadding),
       const DeepCollectionEquality().hash(smallSpacing),
       const DeepCollectionEquality().hash(mediumSpacing),
-      const DeepCollectionEquality().hash(labelStyle),
-      const DeepCollectionEquality().hash(iconStyle),
+      const DeepCollectionEquality().hash(labelTheme),
+      const DeepCollectionEquality().hash(iconTheme),
     );
   }
 }
 
-extension VpnStatusCardThemeBuildContextProps on BuildContext {
-  VpnStatusCardTheme get vpnStatusCardTheme =>
-      Theme.of(this).extension<VpnStatusCardTheme>()!;
-  double get height => vpnStatusCardTheme.height;
-  double get maxConnectButtonWidth => vpnStatusCardTheme.maxConnectButtonWidth;
-  TextStyle get primaryFont => vpnStatusCardTheme.primaryFont;
-  TextStyle get secondaryFont => vpnStatusCardTheme.secondaryFont;
+extension ConnectionCardThemeBuildContextProps on BuildContext {
+  ConnectionCardTheme get connectionCardTheme =>
+      Theme.of(this).extension<ConnectionCardTheme>()!;
+  double get height => connectionCardTheme.height;
+  double get maxConnectButtonWidth => connectionCardTheme.maxConnectButtonWidth;
+  TextStyle get primaryFont => connectionCardTheme.primaryFont;
   ButtonStyle get secureMyConnectionButtonStyle =>
-      vpnStatusCardTheme.secureMyConnectionButtonStyle;
-  ButtonStyle get cancelButtonStyle => vpnStatusCardTheme.cancelButtonStyle;
+      connectionCardTheme.secureMyConnectionButtonStyle;
+  ButtonStyle get cancelButtonStyle => connectionCardTheme.cancelButtonStyle;
   EdgeInsetsGeometry get connectionCardPadding =>
-      vpnStatusCardTheme.connectionCardPadding;
-  double get smallSpacing => vpnStatusCardTheme.smallSpacing;
-  double get mediumSpacing => vpnStatusCardTheme.mediumSpacing;
-  ConnectionCardLabelThemeStyle get labelStyle => vpnStatusCardTheme.labelStyle;
-  ConnectionCardIconThemeStyle get iconStyle => vpnStatusCardTheme.iconStyle;
+      connectionCardTheme.connectionCardPadding;
+  double get smallSpacing => connectionCardTheme.smallSpacing;
+  double get mediumSpacing => connectionCardTheme.mediumSpacing;
+  ConnectionCardLabelTheme get labelTheme => connectionCardTheme.labelTheme;
+  ConnectionCardIconTheme get iconTheme => connectionCardTheme.iconTheme;
 }

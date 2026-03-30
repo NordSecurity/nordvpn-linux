@@ -2001,6 +2001,9 @@ class TranslationsUiEn {
 	/// en: 'Got it'
 	String get gotIt => 'Got it';
 
+	/// en: 'Secured'
+	String get secured => 'Secured';
+
 	/// en: 'Not secured'
 	String get notSecured => 'Not secured';
 
@@ -2657,6 +2660,7 @@ extension on Translations {
 			'ui.reconnectToApplyChanges' => 'Reconnect to apply changes',
 			'ui.reconnectToApplyChangesDescription' => 'Your new settings will take effect after you reconnect to the VPN.',
 			'ui.gotIt' => 'Got it',
+			'ui.secured' => 'Secured',
 			'ui.notSecured' => 'Not secured',
 			'ui.secureMyConnection' => 'Secure my connection',
 			_ => null,
