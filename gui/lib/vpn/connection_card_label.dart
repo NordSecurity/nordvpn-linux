@@ -4,7 +4,8 @@ import 'package:nordvpn/data/models/server_info.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/i18n/string_translation_extension.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
-import 'package:nordvpn/theme/vpn_status_card_theme.dart';
+import 'package:nordvpn/theme/connection_card_theme.dart';
+import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 
 final class ConnectionCardLabel extends StatelessWidget {
   static const labelKey = Key("vpnStatusLabelText");
@@ -15,54 +16,76 @@ final class ConnectionCardLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final connectionCardTheme = context.vpnStatusCardTheme;
+    final labelTheme = context.connectionCardTheme.labelTheme;
 
-    return Text(
-      _constructLabel(),
-      key: ConnectionCardLabel.labelKey,
-      overflow: TextOverflow.ellipsis,
-      style: connectionCardTheme.secondaryFont.copyWith(
-        color: _labelColor(connectionCardTheme),
-      ),
+    return Row(
+      key: labelKey,
+      spacing: labelTheme.spacing,
+      children: [
+        _buildLabel(labelTheme),
+        ..._addServerTypeIfNeeded(labelTheme),
+      ],
     );
   }
 
-  String _constructLabel() {
+  Widget _buildLabel(ConnectionCardLabelTheme labelTheme) {
     var connectionStatus = t.ui.notSecured;
     if (vpnStatus.isAutoConnected()) {
       connectionStatus = t.ui.autoConnected;
     } else if (vpnStatus.isConnected()) {
       connectionStatus = vpnStatus.isMeshnetRouting
-          ? t.ui.meshnet
-          : t.ui.connected;
+          ? t.ui.connected
+          : t.ui.secured;
     } else if (vpnStatus.isConnecting()) {
-      return "${t.ui.connecting}...";
+      connectionStatus = "${t.ui.connecting}...";
     }
 
-    // Show obfuscated label if connection is obfuscated
+    return Text(
+      connectionStatus,
+      overflow: TextOverflow.ellipsis,
+      style: labelTheme.font.copyWith(color: _labelColor(labelTheme)),
+    );
+  }
+
+  List<Widget> _addServerTypeIfNeeded(ConnectionCardLabelTheme labelTheme) {
+    if (!vpnStatus.isConnected()) {
+      return [];
+    }
+
+    var serverType = "";
     if (vpnStatus.isObfuscated) {
-      connectionStatus +=
-          " ${t.ui.to} ${labelForServerType(ServerType.obfuscated)}";
+      serverType = labelForServerType(ServerType.obfuscated);
     } else {
-      // Otherwise show other specialty server types
       final serverGroup = vpnStatus.connectionParameters.group
           .toSpecialtyType();
-      // `standardVpn` is a regular VPN connection - no special label for it.
-      if (serverGroup != null && serverGroup != ServerType.standardVpn) {
-        connectionStatus += " ${t.ui.to} ${labelForServerType(serverGroup)}";
+      if (serverGroup != null &&
+          serverGroup != ServerType.standardVpn &&
+          serverGroup != ServerType.p2p) {
+        serverType = labelForServerType(serverGroup);
       }
     }
 
-    return connectionStatus;
+    if (serverType == "") {
+      return [];
+    }
+
+    return [
+      DynamicThemeImage("dot.svg"),
+      Text(
+        serverType,
+        overflow: TextOverflow.ellipsis,
+        style: labelTheme.font.copyWith(color: labelTheme.serverTypeColor),
+      ),
+    ];
   }
 
-  Color _labelColor(VpnStatusCardTheme theme) {
+  Color _labelColor(ConnectionCardLabelTheme labelTheme) {
     if (vpnStatus.isConnected()) {
-      return theme.labelStyle.connectedColor;
+      return labelTheme.connectedColor;
     } else if (vpnStatus.isConnecting()) {
-      return theme.labelStyle.connectingColor;
+      return labelTheme.connectingColor;
     } else {
-      return theme.labelStyle.disconnectedColor;
+      return labelTheme.disconnectedColor;
     }
   }
 }

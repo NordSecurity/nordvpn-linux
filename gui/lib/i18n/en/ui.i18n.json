@@ -273,6 +273,7 @@
   "pauseFor30Min": "Pause for 30 minutes",
   "pauseFor1Hour": "Pause for 1 hour",
   "pauseFor24Hours": "Pause for 24 hours",
+  "secured": "Secured",
   "notSecured": "Not secured",
   "secureMyConnection": "Secure my connection"
 }

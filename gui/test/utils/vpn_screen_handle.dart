@@ -16,9 +16,13 @@ final class VpnScreenHandle extends ScreenHandle {
     return widget.data;
   }
 
-  String? findStatusLabelText() {
-    final widget = app.tester.widget<Text>(statusLabelText());
-    return widget.data;
+  List<String> findStatusLabelText() {
+    final row = app.tester.widget<Row>(statusLabelText());
+    final texts = row.children
+        .whereType<Text>()
+        .map((textWidget) => textWidget.data ?? '')
+        .toList();
+    return texts;
   }
 
   Future<void> quickConnect() async {

@@ -9,7 +9,7 @@ import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
 import 'package:nordvpn/theme/app_theme.dart';
-import 'package:nordvpn/theme/vpn_status_card_theme.dart';
+import 'package:nordvpn/theme/connection_card_theme.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 
 final class ConnectionCardButtons extends ConsumerWidget {
@@ -24,7 +24,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appTheme = context.appTheme;
-    final connectionCardTheme = context.vpnStatusCardTheme;
+    final connectionCardTheme = context.connectionCardTheme;
 
     return ScalerResponsiveBox(
       maxWidth: connectionCardTheme.maxConnectButtonWidth,
@@ -47,7 +47,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     AppTheme appTheme,
-    VpnStatusCardTheme connectionCardTheme,
+    ConnectionCardTheme connectionCardTheme,
     VpnStatus status,
   ) {
     final settings = ref.watch(vpnSettingsControllerProvider).valueOrNull;
@@ -56,6 +56,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
         Expanded(
           child: OutlinedButton(
             key: ConnectionCardButtons.disconnectButtonKey,
+            style: connectionCardTheme.cancelButtonStyle,
             onPressed: () async => await ref
                 .read(vpnStatusControllerProvider.notifier)
                 .disconnect(),
@@ -80,7 +81,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
 
   Widget _buildDisconnectedStateButton(
     WidgetRef ref,
-    VpnStatusCardTheme connectionCardTheme,
+    ConnectionCardTheme connectionCardTheme,
     ApplicationSettings? settings,
   ) {
     return Expanded(
@@ -102,7 +103,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
 
   Widget _buildConnectingStateButton(
     WidgetRef ref,
-    VpnStatusCardTheme connectionCardTheme,
+    ConnectionCardTheme connectionCardTheme,
   ) {
     return Expanded(
       child: ElevatedButton(
