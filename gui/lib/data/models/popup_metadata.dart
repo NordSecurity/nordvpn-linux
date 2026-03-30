@@ -8,14 +8,7 @@ sealed class PopupMetadata {
   String? title;
   final String Function(WidgetRef) message;
 
-  final Object? userData;
-
-  PopupMetadata({
-    required this.id,
-    required this.message,
-    this.title,
-    this.userData,
-  });
+  PopupMetadata({required this.id, required this.message, this.title});
 
   @override
   bool operator ==(Object other) {

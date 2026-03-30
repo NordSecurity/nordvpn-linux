@@ -330,11 +330,8 @@ class VpnSettingsController extends _$VpnSettingsController
     }
 
     // Use overridden popup code if provided, otherwise use the daemon status code.
-    // When an override fires the original code was remapped, so userData only
-    // applies to the original (non-overridden) code.
     final overridden = popupCodeOverrides?.containsKey(status) ?? false;
     final popupCode = overridden ? popupCodeOverrides![status]! : status;
-    final popupUserData = overridden ? null : userData;
 
     // don't show popup when code is on ignore list
     if (_popupIgnoreCodes.contains(popupCode)) {
@@ -344,7 +341,7 @@ class VpnSettingsController extends _$VpnSettingsController
     // We do that to avoid the toggle of on/off button in case of failure
     state = state;
 
-    ref.read(popupsProvider.notifier).show(popupCode, userData: popupUserData);
+    ref.read(popupsProvider.notifier).show(popupCode, userData: userData);
 
     return status;
   }
