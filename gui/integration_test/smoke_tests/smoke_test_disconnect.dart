@@ -43,7 +43,7 @@ void runDisconnectTest(
     }
 
     await tester.pumpUntilFound(
-      find.textContaining(t.ui.connected),
+      find.textContaining(t.ui.secured),
       timeout: Duration(seconds: 10),
     );
 
@@ -60,7 +60,7 @@ void runDisconnectTest(
       expect(isConnectedToObfuscated, findsOneWidget);
     } else {
       await tester.pumpUntilFound(
-        find.text(t.ui.connected),
+        find.text(t.ui.secured),
         timeout: Duration(seconds: 10),
       );
     }

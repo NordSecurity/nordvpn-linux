@@ -1,33 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:theme_tailor_annotation/theme_tailor_annotation.dart';
 
-part 'vpn_status_card_theme.tailor.dart';
+part 'connection_card_theme.tailor.dart';
 
-final class ConnectionCardLabelThemeStyle {
+final class ConnectionCardLabelTheme {
   final Color disconnectedColor;
   final Color connectingColor;
   final Color connectedColor;
+  final Color serverTypeColor;
+  final double spacing;
+  final TextStyle font;
 
-  ConnectionCardLabelThemeStyle({
+  ConnectionCardLabelTheme({
     required this.disconnectedColor,
     required this.connectingColor,
     required this.connectedColor,
+    required this.serverTypeColor,
+    required this.spacing,
+    required this.font,
   });
 }
 
-final class ConnectionCardIconThemeStyle {
+final class ConnectionCardIconTheme {
   final double iconSize;
   final double flagBorderSize;
   final double strokeWidth;
+  final double dipIconWidth;
+  final double dipIconHeight;
   final Color borderConnectedColor;
   final Color borderConnectingColor;
   final Color disconnectedBackgroundColor;
   final String disconnectedIcon;
 
-  ConnectionCardIconThemeStyle({
+  ConnectionCardIconTheme({
     required this.iconSize,
     required this.flagBorderSize,
     required this.strokeWidth,
+    required this.dipIconWidth,
+    required this.dipIconHeight,
     required this.borderConnectedColor,
     required this.borderConnectingColor,
     required this.disconnectedBackgroundColor,
@@ -37,8 +47,8 @@ final class ConnectionCardIconThemeStyle {
 
 // Theme data for VPN status card
 @tailorMixin
-final class VpnStatusCardTheme extends ThemeExtension<VpnStatusCardTheme>
-    with _$VpnStatusCardThemeTailorMixin {
+final class ConnectionCardTheme extends ThemeExtension<ConnectionCardTheme>
+    with _$ConnectionCardThemeTailorMixin {
   @override
   final double height;
 
@@ -47,9 +57,6 @@ final class VpnStatusCardTheme extends ThemeExtension<VpnStatusCardTheme>
 
   @override
   final TextStyle primaryFont;
-
-  @override
-  final TextStyle secondaryFont;
 
   @override
   final ButtonStyle secureMyConnectionButtonStyle;
@@ -67,22 +74,21 @@ final class VpnStatusCardTheme extends ThemeExtension<VpnStatusCardTheme>
   final double mediumSpacing;
 
   @override
-  final ConnectionCardLabelThemeStyle labelStyle;
+  final ConnectionCardLabelTheme labelTheme;
 
   @override
-  final ConnectionCardIconThemeStyle iconStyle;
+  final ConnectionCardIconTheme iconTheme;
 
-  VpnStatusCardTheme({
+  ConnectionCardTheme({
     required this.height,
     required this.primaryFont,
-    required this.secondaryFont,
     required this.maxConnectButtonWidth,
     required this.secureMyConnectionButtonStyle,
     required this.cancelButtonStyle,
     required this.connectionCardPadding,
     required this.smallSpacing,
     required this.mediumSpacing,
-    required this.labelStyle,
-    required this.iconStyle,
+    required this.labelTheme,
+    required this.iconTheme,
   });
 }

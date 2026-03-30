@@ -2016,6 +2016,9 @@ class TranslationsUiEn {
 	/// en: 'Pause for 24 hours'
 	String get pauseFor24Hours => 'Pause for 24 hours';
 
+	/// en: 'Secured'
+	String get secured => 'Secured';
+
 	/// en: 'Not secured'
 	String get notSecured => 'Not secured';
 
@@ -2677,6 +2680,7 @@ extension on Translations {
 			'ui.pauseFor30Min' => 'Pause for 30 minutes',
 			'ui.pauseFor1Hour' => 'Pause for 1 hour',
 			'ui.pauseFor24Hours' => 'Pause for 24 hours',
+			'ui.secured' => 'Secured',
 			'ui.notSecured' => 'Not secured',
 			'ui.secureMyConnection' => 'Secure my connection',
 			_ => null,

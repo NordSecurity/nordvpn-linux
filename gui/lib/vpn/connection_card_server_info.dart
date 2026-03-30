@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
-import 'package:nordvpn/theme/vpn_status_card_theme.dart';
+import 'package:nordvpn/theme/connection_card_theme.dart';
 
 final class ConnectionCardServerInfo extends StatelessWidget {
   static const textKey = Key("vpnServerInfoText");
@@ -11,7 +11,7 @@ final class ConnectionCardServerInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusCardTheme = context.vpnStatusCardTheme;
+    final statusCardTheme = context.connectionCardTheme;
     var label = t.ui.connectToVpn;
 
     if (vpnStatus.isDisconnected()) {
