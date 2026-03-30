@@ -23,16 +23,16 @@ def test_connected_firewall_disable(tech, proto, obfuscated):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
 
         lib.set_firewall("on")
-        assert not firewall.is_active()
+        assert not firewall.is_active(), "Firewall should not be active before connecting"
 
         sh.nordvpn.connect()
-        assert network.is_connected()
-        assert firewall.is_active()
+        assert network.is_connected(), "Network should be connected"
+        assert firewall.is_active(), "Firewall should be active when connected"
 
         lib.set_firewall("off")
-        assert not firewall.is_active()
-    assert network.is_disconnected()
-    assert not firewall.is_active()
+        assert not firewall.is_active(), "Firewall should be inactive after disabling"
+    assert network.is_disconnected(), "Network should be disconnected after context"
+    assert not firewall.is_active(), "Firewall should be inactive after disconnecting"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -43,16 +43,16 @@ def test_connected_firewall_enable(tech, proto, obfuscated):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
 
         lib.set_firewall("off")
-        assert not firewall.is_active()
+        assert not firewall.is_active(), "Firewall should not be active when disabled"
 
         sh.nordvpn.connect()
-        assert network.is_connected()
-        assert not firewall.is_active()
+        assert network.is_connected(), "Network should be connected"
+        assert not firewall.is_active(), "Firewall should remain inactive when disabled"
 
         lib.set_firewall("on")
-        assert firewall.is_active()
-    assert network.is_disconnected()
-    assert not firewall.is_active()
+        assert firewall.is_active(), "Firewall should be active after enabling"
+    assert network.is_disconnected(), "Network should be disconnected after context"
+    assert not firewall.is_active(), "Firewall should be inactive after disconnecting"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -63,13 +63,13 @@ def test_firewall_disable_connect(tech, proto, obfuscated):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
 
         lib.set_firewall("off")
-        assert not firewall.is_active()
+        assert not firewall.is_active(), "Firewall should not be active when disabled"
 
         sh.nordvpn.connect()
-        assert network.is_connected()
-        assert not firewall.is_active()
-    assert network.is_disconnected()
-    assert not firewall.is_active()
+        assert network.is_connected(), "Network should be connected"
+        assert not firewall.is_active(), "Firewall should remain inactive when disabled"
+    assert network.is_disconnected(), "Network should be disconnected after context"
+    assert not firewall.is_active(), "Firewall should be inactive after disconnecting"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -80,13 +80,13 @@ def test_firewall_enable_connect(tech, proto, obfuscated):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
 
         lib.set_firewall("on")
-        assert not firewall.is_active()
+        assert not firewall.is_active(), "Firewall should not be active before connecting"
 
         sh.nordvpn.connect()
-        assert network.is_connected()
-        assert firewall.is_active()
-    assert network.is_disconnected()
-    assert not firewall.is_active()
+        assert network.is_connected(), "Network should be connected"
+        assert firewall.is_active(), "Firewall should be active when connected"
+    assert network.is_disconnected(), "Network should be disconnected after context"
+    assert not firewall.is_active(), "Firewall should be inactive after disconnecting"
 
 
 @dynamic_parametrize(
@@ -107,16 +107,16 @@ def test_firewall_02_allowlist_port(tech, proto, obfuscated, port):
 
             lib.set_firewall("on")
             allowlist.add_ports_to_allowlist([port])
-            assert not firewall.is_active([port])
+            assert not firewall.is_active([port]), "Firewall should not be active for allowlisted port before connecting"
 
             sh.nordvpn.connect()
-            assert network.is_connected()
-            assert firewall.is_active([port])
+            assert network.is_connected(), "Network should be connected"
+            assert firewall.is_active([port]), "Firewall should be active for allowlisted port when connected"
 
             lib.set_firewall("off")
-            assert not firewall.is_active([port])
-        assert network.is_disconnected()
-    assert not firewall.is_active([port])
+            assert not firewall.is_active([port]), "Firewall should not be active for allowlisted port when disabled"
+        assert network.is_disconnected(), "Network should be disconnected after context"
+    assert not firewall.is_active([port]), "Firewall should not be active for allowlisted port after disconnecting"
 
 
 @dynamic_parametrize(
@@ -137,16 +137,16 @@ def test_firewall_03_allowlist_ports_range(tech, proto, obfuscated, ports):
 
             lib.set_firewall("on")
             allowlist.add_ports_to_allowlist([ports])
-            assert not firewall.is_active([ports])
+            assert not firewall.is_active([ports]), "Firewall should not be active for allowlisted ports before connecting"
 
             sh.nordvpn.connect()
-            assert network.is_connected()
-            assert firewall.is_active([ports])
+            assert network.is_connected(), "Network should be connected"
+            assert firewall.is_active([ports]), "Firewall should be active for allowlisted ports when connected"
 
             lib.set_firewall("off")
-            assert not firewall.is_active([ports])
-        assert network.is_disconnected()
-    assert not firewall.is_active([ports])
+            assert not firewall.is_active([ports]), "Firewall should not be active for allowlisted ports when disabled"
+        assert network.is_disconnected(), "Network should be disconnected after context"
+    assert not firewall.is_active([ports]), "Firewall should not be active for allowlisted ports after disconnecting"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -160,16 +160,16 @@ def test_firewall_05_allowlist_subnet(tech, proto, obfuscated, subnet):
 
             lib.set_firewall("on")
             allowlist.add_subnet_to_allowlist([subnet])
-            assert not firewall.is_active(None, [subnet])
+            assert not firewall.is_active(None, [subnet]), "Firewall should not be active for allowlisted subnet before connecting"
 
             sh.nordvpn.connect()
-            assert network.is_connected()
-            assert firewall.is_active(None, [subnet])
+            assert network.is_connected(), "Network should be connected"
+            assert firewall.is_active(None, [subnet]), "Firewall should be active for allowlisted subnet when connected"
 
             lib.set_firewall("off")
-            assert not firewall.is_active(None, [subnet])
-        assert network.is_disconnected()
-    assert not firewall.is_active(None, [subnet])
+            assert not firewall.is_active(None, [subnet]), "Firewall should not be active for allowlisted subnet when disabled"
+        assert network.is_disconnected(), "Network should be disconnected after context"
+    assert not firewall.is_active(None, [subnet]), "Firewall should not be active for allowlisted subnet after disconnecting"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -180,11 +180,11 @@ def test_firewall_06_with_killswitch(tech, proto, obfuscated):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
 
         lib.set_firewall("on")
-        assert not firewall.is_active()
+        assert not firewall.is_active(), "Firewall should not be active before killswitch is enabled"
 
         lib.set_killswitch("on")
-        assert firewall.is_active()
-    assert not firewall.is_active()
+        assert firewall.is_active(), "Firewall should be active when killswitch is enabled"
+    assert not firewall.is_active(), "Firewall should be inactive after killswitch is disabled"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -196,19 +196,19 @@ def test_firewall_07_with_killswitch_while_connected(tech, proto, obfuscated):
             lib.set_technology_and_protocol(tech, proto, obfuscated)
 
             lib.set_firewall("on")
-            assert not firewall.is_active()
+            assert not firewall.is_active(), "Firewall should not be active before killswitch is enabled"
 
             lib.set_killswitch("on")
-            assert firewall.is_active()
+            assert firewall.is_active(), "Firewall should be active when killswitch is enabled"
 
             sh.nordvpn.connect()
-            assert network.is_connected()
-            assert firewall.is_active()
+            assert network.is_connected(), "Network should be connected"
+            assert firewall.is_active(), "Firewall should remain active when connected with killswitch"
 
             lib.set_killswitch("off")
-            assert firewall.is_active()
-        assert network.is_disconnected()
-    assert not firewall.is_active()
+            assert firewall.is_active(), "Firewall should remain active after killswitch is disabled"
+        assert network.is_disconnected(), "Network should be disconnected after context"
+    assert not firewall.is_active(), "Firewall should be inactive after killswitch is disabled"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -295,4 +295,4 @@ def test_firewall_lan_allowlist_work_together(tech, proto, obfuscated):
                 sh.nordvpn.set("lan-discovery", "on")
                 sh.nordvpn.connect()
                 assert pre_allow_out == sh.ip.route.get("1.1.1.1"), "Allowlisted subnet is not going through default interface"
-                assert pre_allow_out != sh.ip.route.get("1.0.0.1")
+                assert pre_allow_out != sh.ip.route.get("1.0.0.1"), "Non-allowlisted subnet should not go through default interface"

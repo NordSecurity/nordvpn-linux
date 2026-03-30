@@ -219,7 +219,7 @@ def test_local_files_removal_and_daemon_restart(
 
     daemon.start()
 
-    assert daemon_log_reader.wait_for_messages(messages=RC_INITIAL_RUN_MESSAGES, cursor=cursor)
+    assert daemon_log_reader.wait_for_messages(messages=RC_INITIAL_RUN_MESSAGES, cursor=cursor), "Expected RC_INITIAL_RUN_MESSAGES log messages not found after daemon startup."
 
 
 def test_local_hash_files_removal_and_daemon_restart(
@@ -256,7 +256,7 @@ def test_local_hash_files_removal_and_daemon_restart(
 
     daemon.start()
 
-    assert daemon_log_reader.wait_for_messages(messages=RC_INITIAL_RUN_MESSAGES, cursor=cursor)
+    assert daemon_log_reader.wait_for_messages(messages=RC_INITIAL_RUN_MESSAGES, cursor=cursor), "Expected RC_INITIAL_RUN_MESSAGES log messages not found after daemon startup."
 
 
 def test_restart_causes_daemon_to_consume_local_files(
@@ -534,7 +534,7 @@ def test_local_config_usage_via_systemd_env(
     assert daemon_log_reader.wait_for_messages(
         messages=RC_USE_LOCAL_CONFIG_MESSAGE,
         cursor=cursor,
-    )
+    ), f"Expected {RC_USE_LOCAL_CONFIG_MESSAGE} message indicating local config usage not found in the logs."
 
     found_messages, missing_messages = daemon_log_reader.wait_for_messages(
         messages=RC_INITIAL_RUN_MESSAGES,
@@ -848,11 +848,11 @@ def test_killswitch_enabled_does_not_affect_cdn_with_firewall_mark(
         os.system(f"cd {conf_dir}/../ && ls -la && ls {conf_dir} -a")
 
     # enabling killswitch should not affect http transport of the remote config
-    assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on")
-    assert daemon.is_killswitch_on()
+    assert MSG_KILLSWITCH_ON in sh.nordvpn.set.killswitch("on"), "Couldn't enable killswitch"
+    assert daemon.is_killswitch_on(), "Daemon should report that killswitch is on"
 
     sh.nordvpn.disconnect()
-    assert daemon.is_disconnected()
+    assert daemon.is_disconnected(), "Daemon should report that it's disconnected"
     print("--- before manual files removal")
     printdir()
     # remove previously fetched files
@@ -991,7 +991,7 @@ def test_local_config_usage_ech_state(
         assert daemon_log_reader.wait_for_messages(
             messages=RC_USE_LOCAL_CONFIG_MESSAGE,
             cursor=cursor,
-        )
+        ), f"Expected {RC_USE_LOCAL_CONFIG_MESSAGE} message indicating local config usage not found in the logs."
 
         set_technology_and_protocol("nordwhisper", "", "")
 
@@ -1055,7 +1055,7 @@ def test_ech_disabled_with_local_rc_usage_then_reenabled_after_revert(
         assert daemon_log_reader.wait_for_messages(
             messages=RC_USE_LOCAL_CONFIG_MESSAGE,
             cursor=cursor,
-        )
+        ), f"Expected {RC_USE_LOCAL_CONFIG_MESSAGE} message indicating local config usage not found in the logs."
 
         set_technology_and_protocol("nordwhisper", "", "")
 
@@ -1074,7 +1074,7 @@ def test_ech_disabled_with_local_rc_usage_then_reenabled_after_revert(
     assert not daemon_log_reader.wait_for_messages(
         messages=RC_USE_LOCAL_CONFIG_MESSAGE,
         cursor=cursor,
-    )
+    ), f"Expected {RC_USE_LOCAL_CONFIG_MESSAGE} message to be absent in the logs after disabling local config usage."
 
     sh.nordvpn.connect()
 
@@ -1142,7 +1142,7 @@ def test_local_config_usage_missing_enable_ech_field(
         assert daemon_log_reader.wait_for_messages(
             messages=RC_USE_LOCAL_CONFIG_MESSAGE,
             cursor=cursor,
-        )
+        ), f"Expected {RC_USE_LOCAL_CONFIG_MESSAGE} message indicating local config usage not found in the logs."
 
         set_technology_and_protocol("nordwhisper", "", "")
 

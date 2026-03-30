@@ -60,13 +60,13 @@ def test_default_gateway_is_detected():
                         # Connect to VPN
                         output = sh.nordvpn.connect(_tty_out=False)
                         print(output)
-                        assert lib.is_connect_successful(output)
-                        assert network.is_connected()
+                        assert lib.is_connect_successful(output), "Connection should be successful"
+                        assert network.is_connected(), "Network should be connected"
 
                         output = sh.nordvpn.disconnect()
                         print(output)
-                        assert lib.is_disconnect_successful(output)
-                        assert daemon.is_disconnected()
+                        assert lib.is_disconnect_successful(output), "Disconnect should be successful"
+                        assert daemon.is_disconnected(), "Daemon should be disconnected"
 
     remove_iface()
     down_iface()
