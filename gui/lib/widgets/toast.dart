@@ -5,7 +5,6 @@ import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:nordvpn/theme/aurora_design.dart';
 
-import 'package:nordvpn/internal/scaler_responsive_box.dart';
 
 final class Toast extends StatefulWidget {
   const Toast({super.key, required this.duration});
@@ -50,16 +49,17 @@ class _ToastState extends State<Toast> {
   Widget build(BuildContext context) {
     if (!_isVisible) return const SizedBox.shrink();
 
+    final textScaler = MediaQuery.textScalerOf(context);
     return Container(
-      width: dynamicScale(_width),
-      height: dynamicScale(_height),
+      width: textScaler.scale(_width),
+      height: textScaler.scale(_height),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         color: AppDesign(ThemeMode.light).semanticColors.bgTertiary,
         border: Border.all(width: 1, color: AppCoreColors().neutral300),
       ),
       child: Container(
-        padding: const EdgeInsets.all(AppSpacing.spacing4),
+        padding: EdgeInsets.all(textScaler.scale(AppSpacing.spacing4)),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
