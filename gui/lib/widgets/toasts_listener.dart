@@ -21,10 +21,8 @@ final class _ToastsListenerState extends ConsumerState<ToastsListener> {
     return Stack(
       children: [
         widget.child,
-        if (timeout != null) Positioned(right: 20, bottom: 16, child: Toast(duration: timeout)),
+        if (timeout != null) Positioned(right: 20, bottom: 16, child: Toast(duration: timeout, onClose: () => ref.read(toastsProvider.notifier).closeToast())),
       ]
     );
   }
 }
-
-

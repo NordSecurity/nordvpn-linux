@@ -6,10 +6,11 @@ import 'package:nordvpn/theme/toast_theme.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 
 final class Toast extends StatefulWidget {
-  const Toast({super.key, required this.duration});
+  const Toast({super.key, required this.duration, required this.onClose});
   static const Duration _defaultTimerStep = Duration(seconds: 1);
 
   final Duration duration;
+  final Function? onClose;
 
   @override
   State<Toast> createState() => _ToastState();
@@ -18,7 +19,6 @@ final class Toast extends StatefulWidget {
 class _ToastState extends State<Toast> {
   late Duration _remainingTime;
   Timer? _timer;
-  bool _isVisible = true;
 
  @override
   void initState() {
@@ -28,7 +28,7 @@ class _ToastState extends State<Toast> {
     void tick() {
       _remainingTime -= Toast._defaultTimerStep;
       final remainingSeconds = _remainingTime.inSeconds.clamp(0, widget.duration.inSeconds);
-      logger.e("Toast, remaining time: ${_remainingTime.inSeconds} s");
+      logger.d("Toast, remaining time: ${_remainingTime.inSeconds} s");
 
       setState(() {
         // refresh the countdown
@@ -43,8 +43,6 @@ class _ToastState extends State<Toast> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isVisible) return const SizedBox.shrink();
-
     final theme = context.toastTheme;
     final textScaler = MediaQuery.textScalerOf(context);
     return Container(
@@ -60,13 +58,6 @@ class _ToastState extends State<Toast> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // general spacing for row -> 4 in all directions
-            // pause icon
-            // spacing 2 between
-            // heading with spacing 0.5 from top
-            // spacing 2 between text and button
-            // close button
-            // close button spacing 5 all directions
             _buildPauseIcon(),
             _buildWidgetText(theme),
             _buildCloseButton(theme),
@@ -95,9 +86,7 @@ class _ToastState extends State<Toast> {
       padding: theme.toastCloseButtonPadding,
       child: GestureDetector(
         onTap: () {
-          setState(() {
-            _isVisible = false;
-          });
+          widget.onClose?.call();
         },
         child: DynamicThemeImage("toast_close_icon.svg"),
       )
@@ -106,7 +95,6 @@ class _ToastState extends State<Toast> {
 
   @override
   void dispose() {
-    logger.e("Toast::dispose called!");
     if (_timer != null) {
       _timer!.cancel();
     }

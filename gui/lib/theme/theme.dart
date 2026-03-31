@@ -719,7 +719,9 @@ final class NordVpnTheme {
 
   ToastTheme _toastThemeExt() {
     return ToastTheme(
-      toastMessageTextStyle: design.typography.subHeading,
+      toastMessageTextStyle: design.typography.subHeading.copyWith(
+        color: design.semanticColors.textPrimary,
+      ),
       toastBackgroundColor: design.semanticColors.bgTertiary,
       toastSpacing: AppSpacing.spacing4,
       toastBorderRadius: BorderRadius.circular(12),
