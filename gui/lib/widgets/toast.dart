@@ -2,12 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/logger.dart';
+import 'package:nordvpn/theme/toast_theme.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
-import 'package:nordvpn/theme/aurora_design.dart';
-
 
 final class Toast extends StatefulWidget {
   const Toast({super.key, required this.duration});
+  static const Duration _defaultTimerStep = Duration(seconds: 1);
 
   final Duration duration;
 
@@ -16,13 +16,9 @@ final class Toast extends StatefulWidget {
 }
 
 class _ToastState extends State<Toast> {
-  final double _width = 356.0;
-  final double _height = 58.0;
-
   late Duration _remainingTime;
   Timer? _timer;
   bool _isVisible = true;
-
 
  @override
   void initState() {
@@ -30,7 +26,7 @@ class _ToastState extends State<Toast> {
     _remainingTime = widget.duration;
 
     void tick() {
-      _remainingTime -= Duration(seconds: 1);
+      _remainingTime -= Toast._defaultTimerStep;
       final remainingSeconds = _remainingTime.inSeconds.clamp(0, widget.duration.inSeconds);
       logger.e("Toast, remaining time: ${_remainingTime.inSeconds} s");
 
@@ -42,24 +38,26 @@ class _ToastState extends State<Toast> {
         _remainingTime = Duration(seconds: remainingSeconds);
       });
     }
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => tick());
+    _timer = Timer.periodic(Toast._defaultTimerStep, (_) => tick());
   }
 
   @override
   Widget build(BuildContext context) {
     if (!_isVisible) return const SizedBox.shrink();
 
+    final theme = context.toastTheme;
+    logger.e("STASIU, theme: $theme");
     final textScaler = MediaQuery.textScalerOf(context);
     return Container(
-      width: textScaler.scale(_width),
-      height: textScaler.scale(_height),
+      width: textScaler.scale(theme.widgetHeight),
+      height: textScaler.scale(theme.widgetHeight),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: AppDesign(ThemeMode.light).semanticColors.bgTertiary,
-        border: Border.all(width: 1, color: AppCoreColors().neutral300),
+        borderRadius: theme.toastBorderRadius,
+        color: theme.toastBackgroundColor,
+        border: Border.all(width: theme.toastBorderWidth, color: theme.toastBorderColor),
       ),
       child: Container(
-        padding: EdgeInsets.all(textScaler.scale(AppSpacing.spacing4)),
+        padding: EdgeInsets.all(textScaler.scale(theme.toastSpacing)),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -71,8 +69,8 @@ class _ToastState extends State<Toast> {
             // close button
             // close button spacing 5 all directions
             _buildPauseIcon(),
-            _buildWidgetText(),
-            _buildCloseButton(),
+            _buildWidgetText(theme),
+            _buildCloseButton(theme),
           ],
         ),
       ),
@@ -83,19 +81,19 @@ class _ToastState extends State<Toast> {
     return DynamicThemeImage("toast_pause_icon.svg");
   }
 
-  Widget _buildWidgetText() {
+  Widget _buildWidgetText(ToastTheme theme) {
     final m = _remainingTime.inMinutes.remainder(60).toString().padLeft(2, '0');
     final s = _remainingTime.inSeconds.remainder(60).toString().padLeft(2, '0');
     return Text(
       t.ui.VPNResumesIn(minutes: m, seconds: s),
-      style: AppDesign(ThemeMode.light).typography.subHeading,
+      style: theme.toastMessageTextStyle,
       textAlign: TextAlign.center,
     );
   }
 
-  Widget _buildCloseButton() {
+  Widget _buildCloseButton(ToastTheme theme) {
     return Padding(
-      padding: const EdgeInsets.all(5.0),
+      padding: theme.toastCloseButtonPadding,
       child: GestureDetector(
         onTap: () {
           setState(() {
@@ -105,6 +103,15 @@ class _ToastState extends State<Toast> {
         child: DynamicThemeImage("toast_close_icon.svg"),
       )
     );
+  }
+
+  @override
+  void dispose() {
+    logger.e("Toast::dispose called!");
+    if (_timer != null) {
+      _timer!.cancel();
+    }
+    super.dispose();
   }
 }
 
