@@ -25,11 +25,6 @@ final class _ToastsListenerState extends ConsumerState<ToastsListener> {
       ]
     );
   }
-
-  void closeCurrentToast() {
-    ref.read(toastsProvider.notifier).closeToast();
-  }
-
 }
 
 

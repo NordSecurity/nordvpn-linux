@@ -46,10 +46,9 @@ class _ToastState extends State<Toast> {
     if (!_isVisible) return const SizedBox.shrink();
 
     final theme = context.toastTheme;
-    logger.e("STASIU, theme: $theme");
     final textScaler = MediaQuery.textScalerOf(context);
     return Container(
-      width: textScaler.scale(theme.widgetHeight),
+      width: textScaler.scale(theme.widgetWidth),
       height: textScaler.scale(theme.widgetHeight),
       decoration: BoxDecoration(
         borderRadius: theme.toastBorderRadius,
