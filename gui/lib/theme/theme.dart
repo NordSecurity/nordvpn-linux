@@ -341,55 +341,21 @@ final class NordVpnTheme {
 
   ConnectionCardTheme _connectionCardThemeExt(ThemeMode mode) {
     return ConnectionCardTheme(
-      height: 160,
-      maxConnectButtonWidth: 320,
       primaryFont: design.typography.heading.copyWith(
         color: design.semanticColors.textPrimary,
       ),
-      secureMyConnectionButtonStyle: ElevatedButton.styleFrom(
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-            color: design.semanticColors.borderAccent,
-            width: AppBorderWidth.md,
-          ),
-          borderRadius: AppBorderRadius.full,
-        ),
-        textStyle: design.typography.subHeading.copyWith(
-          color: design.semanticColors.textPrimary,
-        ),
-        padding: const EdgeInsets.symmetric(
-          vertical: AppSpacing.spacing3,
-          horizontal: AppSpacing.spacing7,
-        ),
-        backgroundColor: design.semanticColors.bgAccent,
-        foregroundColor: design.semanticColors.textPrimaryOnColor,
-        minimumSize: const Size.fromHeight(48),
+      mapPadding: EdgeInsets.only(top: AppSpacing.spacing5),
+      connectionCardPadding: EdgeInsets.only(
+        left: AppSpacing.spacing6,
+        top: AppSpacing.spacing3,
+        bottom: AppSpacing.spacing6,
       ),
-      cancelButtonStyle: ElevatedButton.styleFrom(
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-            color: design.semanticColors.borderPrimary,
-            width: AppBorderWidth.md,
-          ),
-          borderRadius: AppBorderRadius.full,
-        ),
-        textStyle: design.typography.subHeading.copyWith(
-          color: design.semanticColors.textPrimary,
-        ),
-        padding: const EdgeInsets.symmetric(
-          vertical: AppSpacing.spacing3,
-          horizontal: AppSpacing.spacing7,
-        ),
-        backgroundColor: design.semanticColors.bgGlass,
-        foregroundColor: design.semanticColors.textPrimary,
-        minimumSize: const Size.fromHeight(48),
+      margin: EdgeInsets.only(
+        top: AppSpacing.spacing3,
+        right: AppSpacing.spacing2,
       ),
-      connectionCardPadding: EdgeInsets.fromLTRB(
-        AppSpacing.spacing6,
-        AppSpacing.spacing6,
-        280,
-        AppSpacing.spacing6,
-      ),
+      borderRadius: AppBorderRadius.lg,
+      minWidth: 520,
       smallSpacing: AppSpacing.spacing3,
       mediumSpacing: AppSpacing.spacing5,
       labelTheme: ConnectionCardLabelTheme(
@@ -405,7 +371,6 @@ final class NordVpnTheme {
       iconTheme: ConnectionCardIconTheme(
         iconSize: 48,
         flagBorderSize: 2,
-        strokeWidth: 3,
         dipIconWidth: 23,
         dipIconHeight: 24,
         borderConnectedColor: design.semanticColors.textSuccess,
@@ -414,6 +379,48 @@ final class NordVpnTheme {
         disconnectedIcon: mode == ThemeMode.dark
             ? "${imagesPath}shield_dark.svg"
             : "${imagesPath}shield_light.svg",
+        disconnectedPadding: EdgeInsets.all(AppSpacing.spacing2),
+      ),
+      buttonTheme: ConnectionCardButtonTheme(
+        maxConnectButtonWidth: 330,
+        secureMyConnectionButtonStyle: ElevatedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            side: BorderSide(
+              color: design.semanticColors.borderAccent,
+              width: AppBorderWidth.md,
+            ),
+            borderRadius: AppBorderRadius.full,
+          ),
+          textStyle: design.typography.subHeading.copyWith(
+            color: design.semanticColors.textPrimary,
+          ),
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.spacing3,
+            horizontal: AppSpacing.spacing7,
+          ),
+          backgroundColor: design.semanticColors.bgAccent,
+          foregroundColor: design.semanticColors.textPrimaryOnColor,
+          minimumSize: const Size.fromHeight(48),
+        ),
+        cancelButtonStyle: ElevatedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            side: BorderSide(
+              color: design.semanticColors.borderPrimary,
+              width: AppBorderWidth.md,
+            ),
+            borderRadius: AppBorderRadius.full,
+          ),
+          textStyle: design.typography.subHeading.copyWith(
+            color: design.semanticColors.textPrimary,
+          ),
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.spacing3,
+            horizontal: AppSpacing.spacing7,
+          ),
+          backgroundColor: design.semanticColors.bgGlass,
+          foregroundColor: design.semanticColors.textPrimary,
+          minimumSize: const Size.fromHeight(48),
+        ),
       ),
     );
   }
