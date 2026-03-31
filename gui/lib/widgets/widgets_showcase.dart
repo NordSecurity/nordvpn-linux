@@ -234,13 +234,13 @@ class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
                         .read(toastsProvider.notifier)
                         .show(Duration(seconds: 15)),
                     child: const Text("Open Toast"),
-                    ),
-                    ElevatedButton(
+                  ),
+                  ElevatedButton(
                     onPressed: () => ref
                         .read(toastsProvider.notifier)
                         .closeToast(),
                     child: const Text("Close Toast"),
-                    ),
+                  ),
                   Input(
                     submitText: "Error Popup",
                     hintText: "Enter status code or error message",
