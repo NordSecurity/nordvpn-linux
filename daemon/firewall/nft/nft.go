@@ -27,7 +27,8 @@ const (
 	forwardChainName                = "forward"
 	meshInputChainName              = "mesh_input"
 	allowlistInputChainName         = "allowlist_input"
-	meshForwardChainName            = "mesh_forward"
+	meshPeerToInternet              = "mesh_peer_to_internet"
+	internetToMeshPeer              = "internet_to_mesh_peer"
 	meshNatChainName                = "mesh_nat"
 	fileshareAllowedPeersSet        = "fileshare_allowed_peers"
 	allowIncomingConnectionPeersSet = "allow_incoming_connections"
@@ -606,40 +607,69 @@ func (n *nft) addForwardChain(
 	})
 
 	if routingAllowed != nil {
-		meshChain := n.addMeshForwardChain(lanAllowedPeers, table, lanRangesIps, routingAllowed)
-		// iifname "nordlynx" ip saddr 100.64.0.0/10 jump mesh_forward
+		meshToInternetChain := n.addMeshPeerToInternet(config, lanAllowedPeers, table, lanRangesIps, routingAllowed, allowedSubnets, udpPortsSet, tcpPortsSet)
+		// ip saddr 100.64.0.0/10 jump mesh_peer_internet
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
 			Chain: forwardChain,
 			Exprs: buildJumpRules(
-				meshChain.Name,
-				checkInterfaceName(meshMap.MeshInterface, IF_INPUT, expr.CmpOpEq),
+				meshToInternetChain.Name,
 				checkIpPartOfSubnet(internal.MeshSubnet, MATCH_SOURCE, expr.CmpOpEq),
 			),
-			UserData: userdata.AppendString(nil, userdata.TypeComment, "? to meshnet"),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "traffic from mesh peer"),
 		})
-	}
 
-	// ip daddr 100.64.0.0/10 ct state established,related accept
+		internetToMeshChain := n.addInternetToMeshPeer(config, lanAllowedPeers, table, lanRangesIps, routingAllowed, allowedSubnets, udpPortsSet, tcpPortsSet)
+		// ip daddr 100.64.0.0/10 jump internet_to_mesh_peer
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: forwardChain,
+			Exprs: buildJumpRules(
+				internetToMeshChain.Name,
+				checkIpPartOfSubnet(internal.MeshSubnet, MATCH_DESTINATION, expr.CmpOpEq),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "traffic to mesh peer"),
+		})
+
+	}
+}
+
+func (n *nft) addMeshPeerToInternet(
+	config firewall.Config,
+	lanAllowedPeers *nftables.Set,
+	table *nftables.Table,
+	lanRangesIps *nftables.Set,
+	routingAllowed *nftables.Set,
+	allowedSubnets *nftables.Set,
+	udpPortsSet *nftables.Set,
+	tcpPortsSet *nftables.Set,
+) *nftables.Chain {
+	chain := n.conn.AddChain(&nftables.Chain{
+		Name:  meshPeerToInternet,
+		Table: table,
+	})
+
+	// ip saddr != @allow_peer_traffic_routing drop
 	n.conn.AddRule(&nftables.Rule{
 		Table: table,
-		Chain: forwardChain,
+		Chain: chain,
 		Exprs: buildRules(
-			expr.VerdictAccept,
-			checkIpPartOfSubnet(internal.MeshSubnet, MATCH_SOURCE, expr.CmpOpEq),
-			addCheckCtState(expr.CtStateBitESTABLISHED|expr.CtStateBitRELATED),
+			expr.VerdictDrop,
+			checkIpNotInSet(routingAllowed, MATCH_SOURCE),
 		),
+		UserData: userdata.AppendString(nil, userdata.TypeComment, "traffic from not allowed peers"),
 	})
 
 	if allowedSubnets != nil {
 		// ip daddr @allowed_subnets accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
-			Chain: forwardChain,
+			Chain: chain,
 			Exprs: buildRules(
 				expr.VerdictAccept,
 				checkIpInSet(allowedSubnets, MATCH_DESTINATION),
 			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "mesh peer to allowlist IPs"),
 		})
 	}
 
@@ -647,10 +677,11 @@ func (n *nft) addForwardChain(
 		// tcp dport @ports_tcp accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
-			Chain: forwardChain,
+			Chain: chain,
 			Exprs: buildRules(expr.VerdictAccept,
 				checkPortInSet(tcpPortsSet, unix.IPPROTO_TCP, MATCH_DESTINATION),
 			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "mesh peer to allowlist TCP"),
 		})
 	}
 
@@ -658,84 +689,155 @@ func (n *nft) addForwardChain(
 		// udp dport @ports_udp accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
-			Chain: forwardChain,
+			Chain: chain,
 			Exprs: buildRules(expr.VerdictAccept,
 				checkPortInSet(udpPortsSet, unix.IPPROTO_UDP, MATCH_DESTINATION),
 			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "mesh peer to allowlist UDP"),
 		})
 	}
-
-	if len(config.TunnelInterface) > 0 {
-		n.conn.AddRule(&nftables.Rule{
-			Table: table,
-			Chain: forwardChain,
-			Exprs: buildRules(
-				expr.VerdictAccept,
-				checkInterfaceName(config.TunnelInterface, IF_OUTPUT, expr.CmpOpEq),
-			),
-		})
-
-		n.conn.AddRule(&nftables.Rule{
-			Table: table,
-			Chain: forwardChain,
-			Exprs: buildRules(
-				expr.VerdictAccept,
-				checkInterfaceName(config.TunnelInterface, IF_INPUT, expr.CmpOpEq),
-				addCheckCtState(expr.CtStateBitESTABLISHED|expr.CtStateBitRELATED),
-			),
-		})
-	}
-}
-
-func (n *nft) addMeshForwardChain(lanAllowedPeers *nftables.Set, table *nftables.Table, lanRangesIps *nftables.Set, routingAllowed *nftables.Set) *nftables.Chain {
-	meshChain := n.conn.AddChain(&nftables.Chain{
-		Name:  meshForwardChainName,
-		Table: table,
-	})
 
 	if lanAllowedPeers != nil {
-		// ip saddr @peer_local_network_access ip daddr @lan_ips accept
+		// ip daddr @lan_ranges ip saddr != @peer_local_network_access drop
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
-			Chain: meshChain,
+			Chain: chain,
 			Exprs: buildRules(
-				expr.VerdictAccept,
-				checkIpInSet(lanAllowedPeers, MATCH_SOURCE),
+				expr.VerdictDrop,
 				checkIpInSet(lanRangesIps, MATCH_DESTINATION),
+				checkIpNotInSet(lanAllowedPeers, MATCH_SOURCE),
 			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "mesh peer to LAN"),
 		})
 	}
-
-	// ip daddr @lan_ips drop
-	n.conn.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: meshChain,
-		Exprs: buildRules(
-			expr.VerdictDrop,
-			checkIpInSet(lanRangesIps, MATCH_DESTINATION),
-		),
-	})
-
-	// ip saddr @allow_peer_traffic_routing accept
-	n.conn.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: meshChain,
-		Exprs: buildRules(
-			expr.VerdictAccept,
-			checkIpInSet(routingAllowed, MATCH_SOURCE),
-		),
-	})
+	// allow traffic thru VPN when connected
+	// or when no VPN connected and KS=0, everywhere
+	if len(config.TunnelInterface) > 0 || !config.KillSwitch {
+		// ip daddr != 100.64.0.0/10 oif "nordtun" accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: chain,
+			Exprs: buildRules(
+				expr.VerdictAccept,
+				checkIpPartOfSubnet(internal.MeshSubnet, MATCH_DESTINATION, expr.CmpOpNeq),
+				checkInterfaceName(config.TunnelInterface, IF_OUTPUT, expr.CmpOpEq),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "mesh peer to VPN"),
+		})
+	}
 
 	// drop all
 	n.conn.AddRule((&nftables.Rule{
 		Table: table,
-		Chain: meshChain,
+		Chain: chain,
 		Exprs: buildRules(
 			expr.VerdictDrop,
 		),
 	}))
 
-	return meshChain
+	return chain
+}
+
+func (n *nft) addInternetToMeshPeer(
+	config firewall.Config,
+	lanAllowedPeers *nftables.Set,
+	table *nftables.Table,
+	lanRangesIps *nftables.Set,
+	routingAllowed *nftables.Set,
+	allowedSubnets *nftables.Set,
+	udpPortsSet *nftables.Set,
+	tcpPortsSet *nftables.Set,
+) *nftables.Chain {
+	chain := n.conn.AddChain(&nftables.Chain{
+		Name:  internetToMeshPeer,
+		Table: table,
+	})
+
+	// ip daddr != @allow_peer_traffic_routing drop
+	n.conn.AddRule(&nftables.Rule{
+		Table: table,
+		Chain: chain,
+		Exprs: buildRules(
+			expr.VerdictDrop,
+			checkIpNotInSet(routingAllowed, MATCH_DESTINATION),
+		),
+		UserData: userdata.AppendString(nil, userdata.TypeComment, "traffic to allowed peers"),
+	})
+
+	if allowedSubnets != nil {
+		// ip saddr @allowed_subnets accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: chain,
+			Exprs: buildRules(
+				expr.VerdictAccept,
+				checkIpInSet(allowedSubnets, MATCH_SOURCE),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "allowlist IPs to mesh peer"),
+		})
+	}
+
+	if tcpPortsSet != nil {
+		// tcp sport @ports_tcp accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: chain,
+			Exprs: buildRules(expr.VerdictAccept,
+				checkPortInSet(tcpPortsSet, unix.IPPROTO_TCP, MATCH_SOURCE),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "allowlist TCP to mesh peer"),
+		})
+	}
+
+	if udpPortsSet != nil {
+		// udp sport @ports_udp accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: chain,
+			Exprs: buildRules(expr.VerdictAccept,
+				checkPortInSet(udpPortsSet, unix.IPPROTO_UDP, MATCH_SOURCE),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "allowlist UDP to mesh peer"),
+		})
+	}
+
+	if lanAllowedPeers != nil {
+		// ip saddr @lan_ranges ip daddr != @peer_local_network_access drop
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: chain,
+			Exprs: buildRules(
+				expr.VerdictDrop,
+				checkIpInSet(lanRangesIps, MATCH_SOURCE),
+				checkIpNotInSet(lanAllowedPeers, MATCH_DESTINATION),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "LAN to mesh peer"),
+		})
+	}
+	if len(config.MeshnetInfo.MeshInterface) > 0 {
+		// oifname "nordlynx" ct state established,related accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: chain,
+			Exprs: buildRules(
+				expr.VerdictAccept,
+				checkInterfaceName(config.MeshnetInfo.MeshInterface, IF_OUTPUT, expr.CmpOpEq),
+				addCheckCtState(expr.CtStateBitESTABLISHED|expr.CtStateBitRELATED),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "response to mesh peer"),
+		})
+	}
+
+	// drop all
+	n.conn.AddRule((&nftables.Rule{
+		Table: table,
+		Chain: chain,
+		Exprs: buildRules(
+			expr.VerdictDrop,
+		),
+	}))
+
+	return chain
 }
 
 func (n *nft) addMeshnetNat(table *nftables.Table, routingAllowed *nftables.Set) {

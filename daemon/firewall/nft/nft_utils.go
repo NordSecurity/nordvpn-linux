@@ -150,6 +150,15 @@ func setMetaMark(fwMark uint32) []expr.Any {
 
 // ip saddr/daddr @set_name
 func checkIpInSet(ipSet *nftables.Set, match matchType) []expr.Any {
+	return addCheckIpInSet(ipSet, match, false)
+}
+
+// ip saddr/daddr != @set_name
+func checkIpNotInSet(ipSet *nftables.Set, match matchType) []expr.Any {
+	return addCheckIpInSet(ipSet, match, true)
+}
+
+func addCheckIpInSet(ipSet *nftables.Set, match matchType, inverted bool) []expr.Any {
 	if ipSet == nil {
 		return []expr.Any{}
 	}
@@ -182,9 +191,9 @@ func checkIpInSet(ipSet *nftables.Set, match matchType) []expr.Any {
 			SourceRegister: 1,
 			SetName:        ipSet.Name,
 			SetID:          ipSet.ID,
+			Invert:         inverted,
 		},
 	}
-
 }
 
 type ifDirection int
