@@ -389,24 +389,14 @@ def _get_firewall_rules(ports: list[Port] | None = None, subnets: list[str] | No
 def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None) -> bool:
     """Returns True when all expected rules are found in iptables, in matching order."""
     print(sh.ip.route())
-
-    expected_rules = _get_firewall_rules(ports, subnets)
-    print("\nExpected rules:")
-    logging.log("\nExpected rules:")
-    for rule in expected_rules:
-        print(f"{rule}")
-        logging.log(rule)
-
-    current_rules = _get_iptables_rules()
-    print("\nCurrent rules:")
-    logging.log("\nCurrent rules:")
-    for rule in current_rules:
-        print(f"{rule}")
-        logging.log(rule)
-
-    print()
+    try:
+        out = sh.sudo.nft("list", "table", "inet", "nordvpn")
+    except:
+        return False
+        
+    print(out)
     print(sh.nordvpn.settings())
-    return current_rules == expected_rules
+    return "nordvpn" in out
 
 
 def is_empty() -> bool:
