@@ -89,6 +89,13 @@ PREROUTING_LAN_DISCOVERY_RULES = [
     "-A PREROUTING -s 10.0.0.0/8 -i eth0 -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT",
 ]
 
+LAN_DISCOVERY_SUBNETS = [
+    "169.254.0.0/16",
+    "192.168.0.0/16",
+    "172.16.0.0/12",
+    "10.0.0.0/8"
+]
+
 POSTROUTING_LAN_DISCOVERY_RULES = [
     "-A POSTROUTING -d 169.254.0.0/16 -o eth0 -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT",
     "-A POSTROUTING -d 192.168.0.0/16 -o eth0 -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT",
