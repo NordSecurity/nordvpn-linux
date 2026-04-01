@@ -97,11 +97,7 @@ final class _NordVpnAppState extends ConsumerState<NordVpnApp> {
       // wrap into a scaffold without maximum width to allow some screen to use
       // the entire windows size
       builder: (context, child) => Scaffold(
-        body: PopupsListener(
-          child: ToastsListener(
-            child: child!,
-          ),
-        ),
+        body: PopupsListener(child: ToastsListener(child: child!)),
       ),
       title: t.ui.nordVpn,
       theme: lightTheme(),

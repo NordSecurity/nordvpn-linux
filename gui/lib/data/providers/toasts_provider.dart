@@ -5,7 +5,6 @@ part 'toasts_provider.g.dart';
 
 @Riverpod(keepAlive: true)
 final class Toasts extends _$Toasts {
-
   @override
   Duration? build() => null;
 
@@ -13,6 +12,7 @@ final class Toasts extends _$Toasts {
     logger.d("toast_provider::show called  with timeout: $t");
     state = t;
   }
+
   void closeToast() {
     logger.d("toast_provider::closeToast called!");
     state = null;

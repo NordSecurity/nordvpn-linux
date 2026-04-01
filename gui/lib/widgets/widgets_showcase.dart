@@ -236,9 +236,8 @@ class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
                     child: const Text("Open Toast"),
                   ),
                   ElevatedButton(
-                    onPressed: () => ref
-                        .read(toastsProvider.notifier)
-                        .closeToast(),
+                    onPressed: () =>
+                        ref.read(toastsProvider.notifier).closeToast(),
                     child: const Text("Close Toast"),
                   ),
                   Input(

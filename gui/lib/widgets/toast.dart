@@ -20,14 +20,17 @@ final class _ToastState extends State<Toast> {
   late Duration _remainingTime;
   Timer? _timer;
 
- @override
+  @override
   void initState() {
     super.initState();
     _remainingTime = widget.duration;
 
     void tick() {
       _remainingTime -= Toast._defaultTimerStep;
-      final remainingSeconds = _remainingTime.inSeconds.clamp(0, widget.duration.inSeconds);
+      final remainingSeconds = _remainingTime.inSeconds.clamp(
+        0,
+        widget.duration.inSeconds,
+      );
       logger.d("Toast, remaining time: ${_remainingTime.inSeconds} s");
 
       if (remainingSeconds == 0) {
@@ -38,6 +41,7 @@ final class _ToastState extends State<Toast> {
         _remainingTime = Duration(seconds: remainingSeconds);
       });
     }
+
     _timer = Timer.periodic(Toast._defaultTimerStep, (_) => tick());
   }
 
@@ -89,7 +93,7 @@ final class _ToastState extends State<Toast> {
           widget.onClose?.call();
         },
         child: DynamicThemeImage("toast_close_icon.svg"),
-      )
+      ),
     );
   }
 
@@ -99,4 +103,3 @@ final class _ToastState extends State<Toast> {
     super.dispose();
   }
 }
-

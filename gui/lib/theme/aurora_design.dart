@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 // --- 1. Core Colors ---
 // This class defines the base color palette using hexadecimal values.
 final class AppCoreColors {
-  final Color transparent = Color(0x00000000); // Represents a fully transparent color.
+  final Color transparent = Color(
+    0x00000000,
+  ); // Represents a fully transparent color.
 
   // Neutral shades from 0 (white) to 1000 (darkest black).
   final Color neutral0 = Color(0xFFFFFFFF);
