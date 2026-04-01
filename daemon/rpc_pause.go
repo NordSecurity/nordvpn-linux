@@ -2,11 +2,11 @@ package daemon
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // PauseConnection disconnects and schedules a reconnection in a timespan provided in the pause request
