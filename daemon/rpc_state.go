@@ -7,6 +7,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
@@ -90,22 +91,24 @@ func statusStream(stateChan <-chan any,
 			switch e := ev.(type) {
 			case events.DataConnectChangeNotif:
 				status := pb.StatusResponse{
-					State:           e.Status.State,
-					Ip:              e.Status.IP.String(),
-					Country:         e.Status.Country,
-					CountryCode:     e.Status.CountryCode,
-					City:            e.Status.City,
-					Name:            e.Status.Name,
-					Hostname:        e.Status.Hostname,
-					IsMeshPeer:      e.Status.IsMeshnetPeer,
-					ByUser:          true,
-					VirtualLocation: e.Status.IsVirtualLocation,
-					Technology:      e.Status.Technology,
-					Protocol:        e.Status.Protocol,
-					Obfuscated:      e.Status.IsObfuscated,
-					PostQuantum:     e.Status.IsPostQuantum,
-					Upload:          e.Status.Tx,
-					Download:        e.Status.Rx,
+					State:                     e.Status.State,
+					Ip:                        e.Status.IP.String(),
+					Country:                   e.Status.Country,
+					CountryCode:               e.Status.CountryCode,
+					City:                      e.Status.City,
+					Name:                      e.Status.Name,
+					Hostname:                  e.Status.Hostname,
+					IsMeshPeer:                e.Status.IsMeshnetPeer,
+					ByUser:                    true,
+					VirtualLocation:           e.Status.IsVirtualLocation,
+					Technology:                e.Status.Technology,
+					Protocol:                  e.Status.Protocol,
+					Obfuscated:                e.Status.IsObfuscated,
+					PostQuantum:               e.Status.IsPostQuantum,
+					Upload:                    e.Status.Tx,
+					Download:                  e.Status.Rx,
+					PausedAt:                  timestamppb.New(e.Status.PausedAt),
+					PauseRemainingDurationSec: e.Status.PauseRemainingTimeSec,
 				}
 
 				// for disconnected state connection parameters shall be left empty

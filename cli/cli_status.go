@@ -33,6 +33,8 @@ func Status(resp *pb.StatusResponse) string {
 		state = "Connected"
 	case pb.ConnectionState_CONNECTING:
 		state = "Connecting"
+	case pb.ConnectionState_PAUSED:
+		state = "Disconnected"
 	}
 	var b strings.Builder
 	b.WriteString(fmt.Sprintf("Status: %s\n", state))
