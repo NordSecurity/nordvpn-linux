@@ -30,6 +30,7 @@ const (
 	meshPeerToInternet              = "mesh_peer_to_internet"
 	internetToMeshPeer              = "internet_to_mesh_peer"
 	meshNatChainName                = "mesh_nat"
+	allowlistNatChainName           = "allowlist_nat"
 	fileshareAllowedPeersSet        = "fileshare_allowed_peers"
 	allowIncomingConnectionPeersSet = "allow_incoming_connections"
 	allowTrafficRoutingPeersSet     = "allow_peer_traffic_routing"
@@ -164,6 +165,10 @@ func (n *nft) configure(config firewall.Config) error {
 	n.addForwardChain(config, table, allowlistSubnets, udpPorts, tcpPorts, lanAllowedPeers, routingAllowed, lanPrivateRanges, config.MeshnetInfo)
 	if config.MeshnetInfo != nil && routingAllowed != nil {
 		n.addMeshnetNat(table, routingAllowed)
+	}
+
+	if udpPorts != nil || tcpPorts != nil {
+		n.addAllowlistNat(table, udpPorts, tcpPorts)
 	}
 
 	return n.conn.Flush()
@@ -465,18 +470,10 @@ func (n *nft) addOutputChain(
 	outputChain := n.conn.AddChain(&nftables.Chain{
 		Name:     outputChainName,
 		Table:    table,
-		Type:     nftables.ChainTypeFilter,
+		Type:     nftables.ChainTypeRoute,
 		Hooknum:  nftables.ChainHookOutput,
-		Priority: nftables.ChainPriorityFilter,
+		Priority: nftables.ChainPriorityMangle,
 		Policy:   &chainPolicy,
-	})
-
-	// oifname @excluded_interfaces accept
-	n.conn.AddRule(&nftables.Rule{
-		Table:    table,
-		Chain:    outputChain,
-		Exprs:    buildRules(expr.VerdictAccept, addInterfacesCheck(excludedInterfaces, IF_OUTPUT)),
-		UserData: userdata.AppendString(nil, userdata.TypeComment, "local to local and local to VPN"),
 	})
 
 	// always drop DNS if port 53 not whitelisted
@@ -490,32 +487,35 @@ func (n *nft) addOutputChain(
 			Exprs: buildRules(
 				expr.VerdictAccept,
 				checkIpInSet(allowlistSubnets, MATCH_DESTINATION),
+				setMetaMark(n.fwmark),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "local to allowlist IPs"),
 		})
 	}
 
 	if tcpPortsSet != nil {
-		// tcp dport @ports_tcp accept
+		// tcp sport @ports_tcp accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
 			Chain: outputChain,
 			Exprs: buildRules(
 				expr.VerdictAccept,
-				checkPortInSet(tcpPortsSet, unix.IPPROTO_TCP, MATCH_DESTINATION),
+				checkPortInSet(tcpPortsSet, unix.IPPROTO_TCP, MATCH_SOURCE),
+				setMetaMark(n.fwmark),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "from allowlist TCP ports"),
 		})
 	}
 
 	if udpPortsSet != nil {
-		// udp dport @ports_udp accept
+		// udp sport @ports_udp accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
 			Chain: outputChain,
 			Exprs: buildRules(
 				expr.VerdictAccept,
-				checkPortInSet(udpPortsSet, unix.IPPROTO_UDP, MATCH_DESTINATION),
+				checkPortInSet(udpPortsSet, unix.IPPROTO_UDP, MATCH_SOURCE),
+				setMetaMark(n.fwmark),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "from allowlist UDP ports"),
 		})
@@ -537,6 +537,14 @@ func (n *nft) addOutputChain(
 			addMetaMarkCheckAndSetCtMark(n.fwmark),
 		),
 		UserData: userdata.AppendString(nil, userdata.TypeComment, "mark connection for socket with SO_MARK"),
+	})
+
+	// oifname @excluded_interfaces accept
+	n.conn.AddRule(&nftables.Rule{
+		Table:    table,
+		Chain:    outputChain,
+		Exprs:    buildRules(expr.VerdictAccept, addInterfacesCheck(excludedInterfaces, IF_OUTPUT)),
+		UserData: userdata.AppendString(nil, userdata.TypeComment, "local to local and local to VPN"),
 	})
 
 	if config.MeshnetInfo != nil {
@@ -950,6 +958,42 @@ func (n *nft) addMeshnetNat(table *nftables.Table, routingAllowed *nftables.Set)
 		Chain: natChain,
 		Exprs: rules,
 	})
+}
+
+func (n *nft) addAllowlistNat(table *nftables.Table, udpPortsSet *nftables.Set, tcpPortsSet *nftables.Set) {
+	natChain := n.conn.AddChain(&nftables.Chain{
+		Name:     allowlistNatChainName,
+		Table:    table,
+		Type:     nftables.ChainTypeNAT,
+		Hooknum:  nftables.ChainHookPostrouting,
+		Priority: nftables.ChainPriorityNATSource,
+	})
+
+	// udp sport @udp_allowlist masquerade
+	if udpPortsSet != nil {
+		rules := checkPortInSet(udpPortsSet, unix.IPPROTO_UDP, MATCH_SOURCE)
+		rules = append(rules, &expr.Masq{})
+
+		n.conn.AddRule(&nftables.Rule{
+			Table:    table,
+			Chain:    natChain,
+			Exprs:    rules,
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "fix source IP for UDP allowlist ports"),
+		})
+	}
+
+	// tcp sport @tcp_allowlist masquerade
+	if tcpPortsSet != nil {
+		rules := checkPortInSet(tcpPortsSet, unix.IPPROTO_TCP, MATCH_SOURCE)
+		rules = append(rules, &expr.Masq{})
+
+		n.conn.AddRule(&nftables.Rule{
+			Table:    table,
+			Chain:    natChain,
+			Exprs:    rules,
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "fix source IP for TCP allowlist ports"),
+		})
+	}
 }
 
 func (n *nft) buildLanRangesSet(table *nftables.Table) (*nftables.Set, error) {
