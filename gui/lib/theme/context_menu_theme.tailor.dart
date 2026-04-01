@@ -20,6 +20,9 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
   EdgeInsets get itemPadding;
   Color get itemHoverColor;
   TextStyle get itemTextStyle;
+  Duration get animationDuration;
+  Curve get animationCurve;
+  List<BoxShadow> get menuBoxShadow;
 
   @override
   ContextMenuTheme copyWith({
@@ -33,6 +36,9 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
     EdgeInsets? itemPadding,
     Color? itemHoverColor,
     TextStyle? itemTextStyle,
+    Duration? animationDuration,
+    Curve? animationCurve,
+    List<BoxShadow>? menuBoxShadow,
   }) {
     return ContextMenuTheme(
       menuWidth: menuWidth ?? this.menuWidth,
@@ -45,6 +51,9 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
       itemPadding: itemPadding ?? this.itemPadding,
       itemHoverColor: itemHoverColor ?? this.itemHoverColor,
       itemTextStyle: itemTextStyle ?? this.itemTextStyle,
+      animationDuration: animationDuration ?? this.animationDuration,
+      animationCurve: animationCurve ?? this.animationCurve,
+      menuBoxShadow: menuBoxShadow ?? this.menuBoxShadow,
     );
   }
 
@@ -65,6 +74,9 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
       itemPadding: t < 0.5 ? itemPadding : other.itemPadding,
       itemHoverColor: Color.lerp(itemHoverColor, other.itemHoverColor, t)!,
       itemTextStyle: TextStyle.lerp(itemTextStyle, other.itemTextStyle, t)!,
+      animationDuration: t < 0.5 ? animationDuration : other.animationDuration,
+      animationCurve: t < 0.5 ? animationCurve : other.animationCurve,
+      menuBoxShadow: t < 0.5 ? menuBoxShadow : other.menuBoxShadow,
     );
   }
 
@@ -106,6 +118,18 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
             const DeepCollectionEquality().equals(
               itemTextStyle,
               other.itemTextStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              animationDuration,
+              other.animationDuration,
+            ) &&
+            const DeepCollectionEquality().equals(
+              animationCurve,
+              other.animationCurve,
+            ) &&
+            const DeepCollectionEquality().equals(
+              menuBoxShadow,
+              other.menuBoxShadow,
             ));
   }
 
@@ -123,6 +147,9 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
       const DeepCollectionEquality().hash(itemPadding),
       const DeepCollectionEquality().hash(itemHoverColor),
       const DeepCollectionEquality().hash(itemTextStyle),
+      const DeepCollectionEquality().hash(animationDuration),
+      const DeepCollectionEquality().hash(animationCurve),
+      const DeepCollectionEquality().hash(menuBoxShadow),
     );
   }
 }
@@ -140,4 +167,7 @@ extension ContextMenuThemeBuildContextProps on BuildContext {
   EdgeInsets get itemPadding => contextMenuTheme.itemPadding;
   Color get itemHoverColor => contextMenuTheme.itemHoverColor;
   TextStyle get itemTextStyle => contextMenuTheme.itemTextStyle;
+  Duration get animationDuration => contextMenuTheme.animationDuration;
+  Curve get animationCurve => contextMenuTheme.animationCurve;
+  List<BoxShadow> get menuBoxShadow => contextMenuTheme.menuBoxShadow;
 }

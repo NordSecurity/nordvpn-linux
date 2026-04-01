@@ -18,6 +18,9 @@ final class ContextMenuTheme extends ThemeExtension<ContextMenuTheme>
   final EdgeInsets itemPadding;
   final Color itemHoverColor;
   final TextStyle itemTextStyle;
+  final Duration animationDuration;
+  final Curve animationCurve;
+  final List<BoxShadow> menuBoxShadow;
 
   ContextMenuTheme({
     required this.menuWidth,
@@ -30,5 +33,8 @@ final class ContextMenuTheme extends ThemeExtension<ContextMenuTheme>
     required this.itemPadding,
     required this.itemHoverColor,
     required this.itemTextStyle,
+    required this.animationDuration,
+    required this.animationCurve,
+    required this.menuBoxShadow,
   });
 }

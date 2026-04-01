@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:nordvpn/theme/aurora_design.dart';
 import 'package:nordvpn/theme/context_menu_theme.dart';
 import 'package:nordvpn/widgets/context_menu/context_menu_item.dart';
 
@@ -54,22 +53,27 @@ class _ContextMenuState extends State<ContextMenu>
   late final AnimationController _animationController;
   late final Animation<double> _fadeAnimation;
   late final Animation<double> _sizeAnimation;
+  bool _initialized = false;
 
   @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: AppTransitions.durationFast,
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: AppTransitions.timingFunctionDefault,
-    );
-    _sizeAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: AppTransitions.timingFunctionDefault,
-    );
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      final theme = context.contextMenuTheme;
+      _animationController = AnimationController(
+        vsync: this,
+        duration: theme.animationDuration,
+      );
+      _fadeAnimation = CurvedAnimation(
+        parent: _animationController,
+        curve: theme.animationCurve,
+      );
+      _sizeAnimation = CurvedAnimation(
+        parent: _animationController,
+        curve: theme.animationCurve,
+      );
+    }
   }
 
   @override
@@ -169,8 +173,6 @@ class _MenuPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = context.contextMenuTheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final shadows = isDark ? AppBoxShadows.darkPopover : AppBoxShadows.lightPopover;
 
     return Container(
       width: width,
@@ -180,7 +182,7 @@ class _MenuPanel extends StatelessWidget {
           color: theme.menuBorderColor,
           width: theme.menuBorderWidth,
         ),
-        boxShadow: shadows,
+        boxShadow: theme.menuBoxShadow,
       ),
       child: Material(
         color: theme.menuColor,
@@ -191,7 +193,9 @@ class _MenuPanel extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: items
-                .map((item) => _MenuItemTile(item: item, onTapped: onItemTapped))
+                .map(
+                  (item) => _MenuItemTile(item: item, onTapped: onItemTapped),
+                )
                 .toList(),
           ),
         ),
@@ -209,9 +213,7 @@ class _MenuItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = context.contextMenuTheme;
-    final labelStyle = theme.itemTextStyle.copyWith(
-      color: item.labelColor,
-    );
+    final labelStyle = theme.itemTextStyle.copyWith(color: item.labelColor);
 
     return InkWell(
       onTap: () => onTapped(item.onTap),

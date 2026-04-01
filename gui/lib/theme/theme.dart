@@ -737,6 +737,11 @@ final class NordVpnTheme {
       itemTextStyle: design.typography.body.copyWith(
         color: design.semanticColors.textPrimary,
       ),
+      animationDuration: AppTransitions.durationFast,
+      animationCurve: AppTransitions.timingFunctionDefault,
+      menuBoxShadow: mode == ThemeMode.light
+          ? AppBoxShadows.lightPopover
+          : AppBoxShadows.darkPopover,
     );
   }
 }

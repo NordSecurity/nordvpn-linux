@@ -198,30 +198,9 @@ class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
                         onTap: () => logger.i("disconnect"),
                       ),
                     ],
-                    anchorBuilder: (toggleMenu) => OutlinedButton(
-                      onPressed: toggleMenu,
-                      child: Text(t.ui.disconnect),
-                    ),
-                  ),
-                  ContextMenu(
-                    items: [
-                      ContextMenuItem(
-                        label: "Option A",
-                        onTap: () => logger.i("option A"),
-                      ),
-                      ContextMenuItem(
-                        label: "Option B",
-                        onTap: () => logger.i("option B"),
-                      ),
-                      ContextMenuItem(
-                        label: "Danger zone",
-                        labelColor: context.appTheme.textErrorColor,
-                        onTap: () => logger.i("danger"),
-                      ),
-                    ],
                     anchorBuilder: (toggleMenu) => ElevatedButton(
                       onPressed: toggleMenu,
-                      child: const Text("Options"),
+                      child: Text(t.ui.disconnect),
                     ),
                   ),
                 ],
