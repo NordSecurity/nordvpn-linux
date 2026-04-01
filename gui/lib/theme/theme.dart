@@ -402,7 +402,7 @@ final class NordVpnTheme {
           ),
           backgroundColor: design.semanticColors.bgAccent,
           foregroundColor: design.semanticColors.textPrimaryOnColor,
-          minimumSize: const Size.fromHeight(48),
+          fixedSize: const Size.fromHeight(48),
         ),
         cancelButtonStyle: ElevatedButton.styleFrom(
           shape: RoundedRectangleBorder(
@@ -421,7 +421,7 @@ final class NordVpnTheme {
           ),
           backgroundColor: design.semanticColors.bgGlass,
           foregroundColor: design.semanticColors.textPrimary,
-          minimumSize: const Size.fromHeight(48),
+          fixedSize: const Size.fromHeight(48),
         ),
       ),
     );
