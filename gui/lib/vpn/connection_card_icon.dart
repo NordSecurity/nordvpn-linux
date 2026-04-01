@@ -115,7 +115,7 @@ final class ConnectionCardIcon extends StatelessWidget {
             width: iconTheme.iconSize,
             height: iconTheme.iconSize,
             child: CircularProgressIndicator(
-              strokeWidth: iconTheme.strokeWidth,
+              strokeWidth: iconTheme.flagBorderSize,
               color: iconTheme.borderConnectingColor,
             ),
           ),
@@ -129,7 +129,7 @@ final class ConnectionCardIcon extends StatelessWidget {
     return Container(
       width: iconTheme.iconSize,
       height: iconTheme.iconSize,
-      padding: const EdgeInsets.all(8),
+      padding: iconTheme.disconnectedPadding,
       decoration: BoxDecoration(
         color: iconTheme.disconnectedBackgroundColor,
         shape: BoxShape.circle,
