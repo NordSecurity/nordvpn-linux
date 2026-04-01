@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from google/protobuf/timestamp.proto.
+// Generated from pause.proto.
 
 // @dart = 3.3
 

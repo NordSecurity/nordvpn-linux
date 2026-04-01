@@ -46,4 +46,8 @@ type ConnectionStatus struct {
 	Tx uint64
 	// RecommendationUUID used for analytics purposes
 	RecommendationUUID string
+	// Time at which connection was paused as an unix timestamp
+	PausedAt time.Time
+	// Remaining pause time in seconds
+	PauseRemainingTimeSec uint32
 }

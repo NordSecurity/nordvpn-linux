@@ -18,6 +18,7 @@ import 'package:nordvpn/pb/daemon/features.pb.dart';
 import 'package:nordvpn/pb/daemon/login.pb.dart' as grpc;
 import 'package:nordvpn/pb/daemon/login_with_token.pb.dart';
 import 'package:nordvpn/pb/daemon/logout.pb.dart';
+import 'package:nordvpn/pb/daemon/pause.pb.dart';
 import 'package:nordvpn/pb/daemon/ping.pb.dart';
 import 'package:nordvpn/pb/daemon/purchase.pb.dart';
 import 'package:nordvpn/pb/daemon/rate.pb.dart';
@@ -368,5 +369,10 @@ final class MockDaemon extends DaemonServiceBase {
         connections: recentConnections.getConnections(),
       ),
     );
+  }
+
+  @override
+  Future<Payload> pauseConnection(ServiceCall call, PauseRequest request) {
+    throw UnimplementedError();
   }
 }
