@@ -24,10 +24,10 @@ final class ConnectionCardButtons extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appTheme = context.appTheme;
-    final connectionCardTheme = context.connectionCardTheme;
+    final buttonTheme = context.connectionCardTheme.buttonTheme;
 
     return ScalerResponsiveBox(
-      maxWidth: connectionCardTheme.maxConnectButtonWidth,
+      maxWidth: buttonTheme.maxConnectButtonWidth,
       child: IntrinsicHeight(
         child: Row(
           spacing: appTheme.horizontalSpaceSmall,
@@ -35,7 +35,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
             context,
             ref,
             appTheme,
-            connectionCardTheme,
+            buttonTheme,
             vpnStatus,
           ),
         ),
@@ -47,7 +47,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     AppTheme appTheme,
-    ConnectionCardTheme connectionCardTheme,
+    ConnectionCardButtonTheme buttonTheme,
     VpnStatus status,
   ) {
     final settings = ref.watch(vpnSettingsControllerProvider).valueOrNull;
@@ -56,7 +56,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
         Expanded(
           child: OutlinedButton(
             key: ConnectionCardButtons.disconnectButtonKey,
-            style: connectionCardTheme.cancelButtonStyle,
+            style: buttonTheme.cancelButtonStyle,
             onPressed: () async => await ref
                 .read(vpnStatusControllerProvider.notifier)
                 .disconnect(),
@@ -73,15 +73,15 @@ final class ConnectionCardButtons extends ConsumerWidget {
     }
 
     if (status.isConnecting()) {
-      return [_buildConnectingStateButton(ref, connectionCardTheme)];
+      return [_buildConnectingStateButton(ref, buttonTheme)];
     }
 
-    return [_buildDisconnectedStateButton(ref, connectionCardTheme, settings)];
+    return [_buildDisconnectedStateButton(ref, buttonTheme, settings)];
   }
 
   Widget _buildDisconnectedStateButton(
     WidgetRef ref,
-    ConnectionCardTheme connectionCardTheme,
+    ConnectionCardButtonTheme buttonTheme,
     ApplicationSettings? settings,
   ) {
     return Expanded(
@@ -95,7 +95,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
           }
           await ref.read(vpnStatusControllerProvider.notifier).connect(args);
         },
-        style: connectionCardTheme.secureMyConnectionButtonStyle,
+        style: buttonTheme.secureMyConnectionButtonStyle,
         child: Text(t.ui.secureMyConnection),
       ),
     );
@@ -103,7 +103,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
 
   Widget _buildConnectingStateButton(
     WidgetRef ref,
-    ConnectionCardTheme connectionCardTheme,
+    ConnectionCardButtonTheme buttonTheme,
   ) {
     return Expanded(
       child: ElevatedButton(
@@ -111,7 +111,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
         onPressed: () async {
           await ref.read(vpnStatusControllerProvider.notifier).cancelConnect();
         },
-        style: connectionCardTheme.cancelButtonStyle,
+        style: buttonTheme.cancelButtonStyle,
         child: Text(t.ui.cancel),
       ),
     );

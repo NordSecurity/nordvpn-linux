@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
-import 'package:nordvpn/theme/app_theme.dart';
-import 'package:nordvpn/theme/aurora_design.dart';
 import 'package:nordvpn/theme/connection_card_theme.dart';
 import 'package:nordvpn/vpn/connection_card_buttons.dart';
 import 'package:nordvpn/vpn/connection_card_icon.dart';
@@ -18,19 +16,12 @@ final class ConnectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusCardTheme = context.connectionCardTheme;
-    final appTheme = context.appTheme;
+    final connectionCardTheme = context.connectionCardTheme;
 
     return RoundContainer(
-      minHeight: statusCardTheme.height,
-      radius: AppBorderRadius.lg, // TODO (dfe): fix it
-      padding: statusCardTheme.connectionCardPadding,
-      margin: EdgeInsets.only(
-        top: appTheme.margin,
-        bottom: 0,
-        right: appTheme.margin,
-        left: 0,
-      ),
+      radius: connectionCardTheme.borderRadius,
+      padding: connectionCardTheme.mapPadding,
+      margin: connectionCardTheme.margin,
       child: Consumer(
         builder: (context, ref, _) {
           return AnimatedSwitcher(
@@ -52,26 +43,32 @@ final class ConnectionCard extends StatelessWidget {
   Widget _build(WidgetRef ref, BuildContext context, VpnStatus vpnStatus) {
     final connectionCardTheme = context.connectionCardTheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      key: ValueKey(vpnStatus.status),
-      children: [
-        Row(
+    return ConstrainedBox(
+      constraints: BoxConstraints(minWidth: connectionCardTheme.minWidth),
+      child: Container(
+        padding: connectionCardTheme.connectionCardPadding,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          key: ValueKey(vpnStatus.status),
           children: [
-            ConnectionCardIcon(status: vpnStatus),
-            SizedBox(width: connectionCardTheme.smallSpacing),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Row(
+              spacing: connectionCardTheme.smallSpacing,
               children: [
-                ConnectionCardServerInfo(vpnStatus: vpnStatus),
-                ConnectionCardLabel(vpnStatus: vpnStatus),
+                ConnectionCardIcon(status: vpnStatus),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ConnectionCardServerInfo(vpnStatus: vpnStatus),
+                    ConnectionCardLabel(vpnStatus: vpnStatus),
+                  ],
+                ),
               ],
             ),
+            SizedBox(height: connectionCardTheme.mediumSpacing),
+            ConnectionCardButtons(vpnStatus: vpnStatus),
           ],
         ),
-        SizedBox(height: connectionCardTheme.mediumSpacing),
-        ConnectionCardButtons(vpnStatus: vpnStatus),
-      ],
+      ),
     );
   }
 }
