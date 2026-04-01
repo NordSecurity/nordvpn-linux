@@ -405,6 +405,18 @@ def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None)
     print(sh.nordvpn.settings())
     return "nordvpn" in out
 
+tun_interface_names = [
+    "nordtun",
+    "qtun",
+    "nordlynx"
+]
+
+def is_active_subnet(subnets: list[str]) -> bool:
+    for subnet in subnets:
+        print(sh.ip.route.get(subnet))
+        # whitelisted subnet should not return tunnel interface name when using ip route get
+        return not any(iface_name in sh.ip.route.get(subnet) for iface_name in tun_interface_names)
+
 
 def is_empty() -> bool:
     """Returns True when firewall does not have DROP rules."""
