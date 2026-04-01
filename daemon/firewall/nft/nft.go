@@ -632,6 +632,92 @@ func (n *nft) addForwardChain(
 		})
 
 	}
+
+	// TODO: not on the tunnel
+	if allowedSubnets != nil {
+		// ip daddr @allowed_subnets accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: forwardChain,
+			Exprs: buildRules(
+				expr.VerdictAccept,
+				checkIpInSet(allowedSubnets, MATCH_DESTINATION),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "internet to allowlist IPs"),
+		})
+
+		// ip saddr @allowlist_subnets ct state established,related accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: forwardChain,
+			Exprs: buildRules(
+				expr.VerdictAccept,
+				checkIpInSet(allowedSubnets, MATCH_SOURCE),
+				addCheckCtState(expr.CtStateBitESTABLISHED|expr.CtStateBitRELATED),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "allow responses to allowlist IPs"),
+		})
+	}
+
+	if tcpPortsSet != nil {
+		// tcp dport @ports_tcp accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: forwardChain,
+			Exprs: buildRules(expr.VerdictAccept,
+				checkPortInSet(tcpPortsSet, unix.IPPROTO_TCP, MATCH_DESTINATION),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "internet to allowlist TCP"),
+		})
+
+		// 	tcp sport @tcp_allowlist ct state established,related accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: forwardChain,
+			Exprs: buildRules(expr.VerdictAccept,
+				checkPortInSet(tcpPortsSet, unix.IPPROTO_TCP, MATCH_SOURCE),
+				addCheckCtState(expr.CtStateBitESTABLISHED|expr.CtStateBitRELATED),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "allow responses to allowlist TCP"),
+		})
+	}
+
+	if udpPortsSet != nil {
+		// udp dport @ports_udp accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: forwardChain,
+			Exprs: buildRules(expr.VerdictAccept,
+				checkPortInSet(udpPortsSet, unix.IPPROTO_UDP, MATCH_DESTINATION),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "internet to allowlist UDP"),
+		})
+
+		// 	udp sport @udp_allowlist ct state established,related accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: forwardChain,
+			Exprs: buildRules(expr.VerdictAccept,
+				checkPortInSet(udpPortsSet, unix.IPPROTO_UDP, MATCH_SOURCE),
+				addCheckCtState(expr.CtStateBitESTABLISHED|expr.CtStateBitRELATED),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "allow responses to allowlist UDP"),
+		})
+
+	}
+
+	if len(config.TunnelInterface) > 0 {
+		// oif "nordtun" accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: table,
+			Chain: forwardChain,
+			Exprs: buildRules(expr.VerdictAccept,
+				checkInterfaceName(config.TunnelInterface, IF_OUTPUT, expr.CmpOpEq),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "internet to allowlist IPs"),
+		})
+	}
+
 }
 
 func (n *nft) addMeshPeerToInternet(
