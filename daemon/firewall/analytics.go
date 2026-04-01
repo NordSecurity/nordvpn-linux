@@ -13,9 +13,13 @@ import (
 
 // Event identification constants
 const (
-	Namespace         = internal.DebugEventMessageNamespace
-	Subscope          = "firewall"
-	EventConfigure    = Subscope + "_configure"
+	Namespace = internal.DebugEventMessageNamespace
+	Subscope  = "firewall"
+	// Events types
+	EventConfigure       = Subscope + "_configure"
+	EventNftablesApply   = Subscope + "_nftables_apply"
+	EventIptablesCleanup = Subscope + "_iptables_cleanup"
+
 	contextPathPrefix = "firewall"
 )
 
@@ -100,6 +104,66 @@ func (e *ConfigureEvent) ToDebuggerEvent() *events.DebuggerEvent {
 		// Fallback: provide basic information we know for certain
 		jsonData = []byte(fmt.Sprintf(
 			`{"namespace":"%s","subscope":"%s","event":"%s","status":"%s","purpose":[],"error":"marshal_error"}`,
+			e.Namespace, e.Subscope, e.Event, e.Status,
+		))
+	}
+	return events.NewDebuggerEvent(string(jsonData)).
+		WithKeyBasedContextPaths(
+			events.ContextValue{Path: contextPathPrefix + ".namespace", Value: e.Namespace},
+			events.ContextValue{Path: contextPathPrefix + ".subscope", Value: e.Subscope},
+			events.ContextValue{Path: contextPathPrefix + ".event", Value: e.Event},
+			events.ContextValue{Path: contextPathPrefix + ".status", Value: e.Status},
+			events.ContextValue{Path: contextPathPrefix + ".error", Value: e.Error},
+		).
+		WithGlobalContextPaths(globalContextPaths...)
+}
+
+// MigrationEvent represents a firewall migration operation event.
+// It's a one-time process
+type MigrationEvent struct {
+	Namespace string `json:"namespace"`
+	Subscope  string `json:"subscope"`
+	Event     string `json:"event"`
+	Status    string `json:"status"`
+	Error     string `json:"error,omitempty"`
+}
+
+// NewNftablesApplyEvent creates an event for nftables rule application.
+// Emitted after attempting to apply nftables rules during migration.
+func NewNftablesApplyEvent(err error) *MigrationEvent {
+	return newMigrationEvent(EventNftablesApply, err)
+}
+
+// NewIptablesCleanupEvent creates an event for iptables rule cleanup.
+// Emitted after attempting to remove iptables rules during migration.
+func NewIptablesCleanupEvent(err error) *MigrationEvent {
+	return newMigrationEvent(EventIptablesCleanup, err)
+}
+
+// newMigrationEvent creates a new migration event.
+func newMigrationEvent(eventType string, err error) *MigrationEvent {
+	errMsg := ""
+	if err != nil {
+		errMsg = err.Error()
+	}
+
+	return &MigrationEvent{
+		Namespace: Namespace,
+		Subscope:  Subscope,
+		Event:     eventType,
+		Status:    analytics.BoolToResult(err == nil),
+		Error:     errMsg,
+	}
+}
+
+// ToDebuggerEvent converts MigrationEvent to a DebuggerEvent for moose publishing.
+func (e *MigrationEvent) ToDebuggerEvent() *events.DebuggerEvent {
+	jsonData, err := json.Marshal(e)
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to marshal migration event:", err)
+		// Fallback: provide basic information we know for certain
+		jsonData = []byte(fmt.Sprintf(
+			`{"namespace":"%s","subscope":"%s","event":"%s","status":"%s","error":"marshal_error"}`,
 			e.Namespace, e.Subscope, e.Event, e.Status,
 		))
 	}
