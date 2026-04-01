@@ -719,17 +719,19 @@ final class NordVpnTheme {
 
   ToastTheme _toastThemeExt() {
     return ToastTheme(
-      toastMessageTextStyle: design.typography.subHeading.copyWith(
+      messageTextStyle: design.typography.subHeading.copyWith(
         color: design.semanticColors.textPrimary,
       ),
-      toastBackgroundColor: design.semanticColors.bgTertiary,
-      toastSpacing: AppSpacing.spacing4,
-      toastBorderRadius: BorderRadius.circular(12),
+      backgroundColor: design.semanticColors.bgTertiary,
+      spacing: AppSpacing.spacing4,
+      borderRadius: AppBorderRadius.md,
       widgetWidth: 356,
       widgetHeight: 58,
-      toastCloseButtonPadding: EdgeInsets.all(5),
-      toastBorderWidth: 1,
-      toastBorderColor: design.semanticColors.borderPrimary,
+      closeButtonPadding: EdgeInsets.all(5),
+      borderWidth: AppBorderWidth.md,
+      borderColor: design.semanticColors.borderPrimary,
+      widgetPositionRight: 20,
+      widgetPositionBottom: 16,
     );
   }
 }

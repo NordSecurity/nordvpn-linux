@@ -7,16 +7,16 @@ part 'toast_theme.tailor.dart';
 final class ToastTheme extends ThemeExtension<ToastTheme>
     with _$ToastThemeTailorMixin {
   @override
-  final TextStyle toastMessageTextStyle;
+  final TextStyle messageTextStyle;
 
   @override
-  final Color toastBackgroundColor;
+  final Color backgroundColor;
 
   @override
-  final double toastSpacing;
+  final double spacing;
 
   @override
-  final BorderRadius toastBorderRadius;
+  final BorderRadius borderRadius;
 
   @override
   final double widgetWidth;
@@ -25,23 +25,31 @@ final class ToastTheme extends ThemeExtension<ToastTheme>
   final double widgetHeight;
 
   @override
-  final EdgeInsets toastCloseButtonPadding;
+  final double widgetPositionRight;
 
   @override
-  final double toastBorderWidth;
+  final double widgetPositionBottom;
 
   @override
-  final Color toastBorderColor;
+  final EdgeInsets closeButtonPadding;
+
+  @override
+  final double borderWidth;
+
+  @override
+  final Color borderColor;
 
   ToastTheme({
-    required this.toastMessageTextStyle,
-    required this.toastBackgroundColor,
-    required this.toastSpacing,
-    required this.toastBorderRadius,
+    required this.messageTextStyle,
+    required this.backgroundColor,
+    required this.spacing,
+    required this.borderRadius,
     required this.widgetWidth,
     required this.widgetHeight,
-    required this.toastCloseButtonPadding,
-    required this.toastBorderWidth,
-    required this.toastBorderColor,
+    required this.closeButtonPadding,
+    required this.borderWidth,
+    required this.borderColor,
+    required this.widgetPositionRight,
+    required this.widgetPositionBottom,
   });
 }

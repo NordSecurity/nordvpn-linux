@@ -26,7 +26,7 @@ mixin _$NavRailThemeTailorMixin on ThemeExtension<NavRailTheme> {
     double? railWidth,
     double? containerWidth,
     double? containerHeight,
-    double? iconsGap,
+    double? betweenIconsGap,
     double? iconsPaddingTop,
     double? iconsMargin,
     BorderRadius? radius,
@@ -37,7 +37,7 @@ mixin _$NavRailThemeTailorMixin on ThemeExtension<NavRailTheme> {
       railWidth: railWidth ?? this.railWidth,
       containerWidth: containerWidth ?? this.containerWidth,
       containerHeight: containerHeight ?? this.containerHeight,
-      betweenIconsGap: iconsGap ?? this.betweenIconsGap,
+      betweenIconsGap: betweenIconsGap ?? this.betweenIconsGap,
       iconsPaddingTop: iconsPaddingTop ?? this.iconsPaddingTop,
       iconsMargin: iconsMargin ?? this.iconsMargin,
       radius: radius ?? this.radius,
@@ -118,7 +118,7 @@ extension NavRailThemeBuildContextProps on BuildContext {
   double get railWidth => navRailTheme.railWidth;
   double get containerWidth => navRailTheme.containerWidth;
   double get containerHeight => navRailTheme.containerHeight;
-  double get iconsGap => navRailTheme.betweenIconsGap;
+  double get betweenIconsGap => navRailTheme.betweenIconsGap;
   double get iconsPaddingTop => navRailTheme.iconsPaddingTop;
   double get iconsMargin => navRailTheme.iconsMargin;
   BorderRadius get radius => navRailTheme.radius;

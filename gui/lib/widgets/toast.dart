@@ -10,13 +10,13 @@ final class Toast extends StatefulWidget {
   static const Duration _defaultTimerStep = Duration(seconds: 1);
 
   final Duration duration;
-  final Function? onClose;
+  final VoidCallback? onClose;
 
   @override
   State<Toast> createState() => _ToastState();
 }
 
-class _ToastState extends State<Toast> {
+final class _ToastState extends State<Toast> {
   late Duration _remainingTime;
   Timer? _timer;
 
@@ -30,11 +30,11 @@ class _ToastState extends State<Toast> {
       final remainingSeconds = _remainingTime.inSeconds.clamp(0, widget.duration.inSeconds);
       logger.d("Toast, remaining time: ${_remainingTime.inSeconds} s");
 
+      if (remainingSeconds == 0) {
+        _timer?.cancel();
+      }
       setState(() {
         // refresh the countdown
-        if (remainingSeconds == 0) {
-          _timer?.cancel();
-        }
         _remainingTime = Duration(seconds: remainingSeconds);
       });
     }
@@ -49,12 +49,12 @@ class _ToastState extends State<Toast> {
       width: textScaler.scale(theme.widgetWidth),
       height: textScaler.scale(theme.widgetHeight),
       decoration: BoxDecoration(
-        borderRadius: theme.toastBorderRadius,
-        color: theme.toastBackgroundColor,
-        border: Border.all(width: theme.toastBorderWidth, color: theme.toastBorderColor),
+        borderRadius: theme.borderRadius,
+        color: theme.backgroundColor,
+        border: Border.all(width: theme.borderWidth, color: theme.borderColor),
       ),
       child: Container(
-        padding: EdgeInsets.all(textScaler.scale(theme.toastSpacing)),
+        padding: EdgeInsets.all(textScaler.scale(theme.spacing)),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -76,14 +76,14 @@ class _ToastState extends State<Toast> {
     final s = _remainingTime.inSeconds.remainder(60).toString().padLeft(2, '0');
     return Text(
       t.ui.VPNResumesIn(minutes: m, seconds: s),
-      style: theme.toastMessageTextStyle,
+      style: theme.messageTextStyle,
       textAlign: TextAlign.center,
     );
   }
 
   Widget _buildCloseButton(ToastTheme theme) {
     return Padding(
-      padding: theme.toastCloseButtonPadding,
+      padding: theme.closeButtonPadding,
       child: GestureDetector(
         onTap: () {
           widget.onClose?.call();
@@ -95,9 +95,7 @@ class _ToastState extends State<Toast> {
 
   @override
   void dispose() {
-    if (_timer != null) {
-      _timer!.cancel();
-    }
+    _timer?.cancel();
     super.dispose();
   }
 }

@@ -10,40 +10,44 @@ part of 'toast_theme.dart';
 // **************************************************************************
 
 mixin _$ToastThemeTailorMixin on ThemeExtension<ToastTheme> {
-  TextStyle get toastMessageTextStyle;
-  Color get toastBackgroundColor;
-  double get toastSpacing;
-  BorderRadius get toastBorderRadius;
+  TextStyle get messageTextStyle;
+  Color get backgroundColor;
+  double get spacing;
+  BorderRadius get borderRadius;
   double get widgetWidth;
   double get widgetHeight;
-  EdgeInsets get toastCloseButtonPadding;
-  double get toastBorderWidth;
-  Color get toastBorderColor;
+  double get widgetPositionRight;
+  double get widgetPositionBottom;
+  EdgeInsets get closeButtonPadding;
+  double get borderWidth;
+  Color get borderColor;
 
   @override
   ToastTheme copyWith({
-    TextStyle? toastMessageTextStyle,
-    Color? toastBackgroundColor,
-    double? toastSpacing,
-    BorderRadius? toastBorderRadius,
+    TextStyle? messageTextStyle,
+    Color? backgroundColor,
+    double? spacing,
+    BorderRadius? borderRadius,
     double? widgetWidth,
     double? widgetHeight,
-    EdgeInsets? toastCloseButtonPadding,
-    double? toastBorderWidth,
-    Color? toastBorderColor,
+    double? widgetPositionRight,
+    double? widgetPositionBottom,
+    EdgeInsets? closeButtonPadding,
+    double? borderWidth,
+    Color? borderColor,
   }) {
     return ToastTheme(
-      toastMessageTextStyle:
-          toastMessageTextStyle ?? this.toastMessageTextStyle,
-      toastBackgroundColor: toastBackgroundColor ?? this.toastBackgroundColor,
-      toastSpacing: toastSpacing ?? this.toastSpacing,
-      toastBorderRadius: toastBorderRadius ?? this.toastBorderRadius,
+      messageTextStyle: messageTextStyle ?? this.messageTextStyle,
+      backgroundColor: backgroundColor ?? this.backgroundColor,
+      spacing: spacing ?? this.spacing,
+      borderRadius: borderRadius ?? this.borderRadius,
       widgetWidth: widgetWidth ?? this.widgetWidth,
       widgetHeight: widgetHeight ?? this.widgetHeight,
-      toastCloseButtonPadding:
-          toastCloseButtonPadding ?? this.toastCloseButtonPadding,
-      toastBorderWidth: toastBorderWidth ?? this.toastBorderWidth,
-      toastBorderColor: toastBorderColor ?? this.toastBorderColor,
+      widgetPositionRight: widgetPositionRight ?? this.widgetPositionRight,
+      widgetPositionBottom: widgetPositionBottom ?? this.widgetPositionBottom,
+      closeButtonPadding: closeButtonPadding ?? this.closeButtonPadding,
+      borderWidth: borderWidth ?? this.borderWidth,
+      borderColor: borderColor ?? this.borderColor,
     );
   }
 
@@ -51,29 +55,27 @@ mixin _$ToastThemeTailorMixin on ThemeExtension<ToastTheme> {
   ToastTheme lerp(covariant ThemeExtension<ToastTheme>? other, double t) {
     if (other is! ToastTheme) return this as ToastTheme;
     return ToastTheme(
-      toastMessageTextStyle: TextStyle.lerp(
-        toastMessageTextStyle,
-        other.toastMessageTextStyle,
+      messageTextStyle: TextStyle.lerp(
+        messageTextStyle,
+        other.messageTextStyle,
         t,
       )!,
-      toastBackgroundColor: Color.lerp(
-        toastBackgroundColor,
-        other.toastBackgroundColor,
-        t,
-      )!,
-      toastSpacing: t < 0.5 ? toastSpacing : other.toastSpacing,
-      toastBorderRadius: t < 0.5 ? toastBorderRadius : other.toastBorderRadius,
+      backgroundColor: Color.lerp(backgroundColor, other.backgroundColor, t)!,
+      spacing: t < 0.5 ? spacing : other.spacing,
+      borderRadius: t < 0.5 ? borderRadius : other.borderRadius,
       widgetWidth: t < 0.5 ? widgetWidth : other.widgetWidth,
       widgetHeight: t < 0.5 ? widgetHeight : other.widgetHeight,
-      toastCloseButtonPadding: t < 0.5
-          ? toastCloseButtonPadding
-          : other.toastCloseButtonPadding,
-      toastBorderWidth: t < 0.5 ? toastBorderWidth : other.toastBorderWidth,
-      toastBorderColor: Color.lerp(
-        toastBorderColor,
-        other.toastBorderColor,
-        t,
-      )!,
+      widgetPositionRight: t < 0.5
+          ? widgetPositionRight
+          : other.widgetPositionRight,
+      widgetPositionBottom: t < 0.5
+          ? widgetPositionBottom
+          : other.widgetPositionBottom,
+      closeButtonPadding: t < 0.5
+          ? closeButtonPadding
+          : other.closeButtonPadding,
+      borderWidth: t < 0.5 ? borderWidth : other.borderWidth,
+      borderColor: Color.lerp(borderColor, other.borderColor, t)!,
     );
   }
 
@@ -83,20 +85,17 @@ mixin _$ToastThemeTailorMixin on ThemeExtension<ToastTheme> {
         (other.runtimeType == runtimeType &&
             other is ToastTheme &&
             const DeepCollectionEquality().equals(
-              toastMessageTextStyle,
-              other.toastMessageTextStyle,
+              messageTextStyle,
+              other.messageTextStyle,
             ) &&
             const DeepCollectionEquality().equals(
-              toastBackgroundColor,
-              other.toastBackgroundColor,
+              backgroundColor,
+              other.backgroundColor,
             ) &&
+            const DeepCollectionEquality().equals(spacing, other.spacing) &&
             const DeepCollectionEquality().equals(
-              toastSpacing,
-              other.toastSpacing,
-            ) &&
-            const DeepCollectionEquality().equals(
-              toastBorderRadius,
-              other.toastBorderRadius,
+              borderRadius,
+              other.borderRadius,
             ) &&
             const DeepCollectionEquality().equals(
               widgetWidth,
@@ -107,16 +106,24 @@ mixin _$ToastThemeTailorMixin on ThemeExtension<ToastTheme> {
               other.widgetHeight,
             ) &&
             const DeepCollectionEquality().equals(
-              toastCloseButtonPadding,
-              other.toastCloseButtonPadding,
+              widgetPositionRight,
+              other.widgetPositionRight,
             ) &&
             const DeepCollectionEquality().equals(
-              toastBorderWidth,
-              other.toastBorderWidth,
+              widgetPositionBottom,
+              other.widgetPositionBottom,
             ) &&
             const DeepCollectionEquality().equals(
-              toastBorderColor,
-              other.toastBorderColor,
+              closeButtonPadding,
+              other.closeButtonPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              borderWidth,
+              other.borderWidth,
+            ) &&
+            const DeepCollectionEquality().equals(
+              borderColor,
+              other.borderColor,
             ));
   }
 
@@ -124,28 +131,32 @@ mixin _$ToastThemeTailorMixin on ThemeExtension<ToastTheme> {
   int get hashCode {
     return Object.hash(
       runtimeType.hashCode,
-      const DeepCollectionEquality().hash(toastMessageTextStyle),
-      const DeepCollectionEquality().hash(toastBackgroundColor),
-      const DeepCollectionEquality().hash(toastSpacing),
-      const DeepCollectionEquality().hash(toastBorderRadius),
+      const DeepCollectionEquality().hash(messageTextStyle),
+      const DeepCollectionEquality().hash(backgroundColor),
+      const DeepCollectionEquality().hash(spacing),
+      const DeepCollectionEquality().hash(borderRadius),
       const DeepCollectionEquality().hash(widgetWidth),
       const DeepCollectionEquality().hash(widgetHeight),
-      const DeepCollectionEquality().hash(toastCloseButtonPadding),
-      const DeepCollectionEquality().hash(toastBorderWidth),
-      const DeepCollectionEquality().hash(toastBorderColor),
+      const DeepCollectionEquality().hash(widgetPositionRight),
+      const DeepCollectionEquality().hash(widgetPositionBottom),
+      const DeepCollectionEquality().hash(closeButtonPadding),
+      const DeepCollectionEquality().hash(borderWidth),
+      const DeepCollectionEquality().hash(borderColor),
     );
   }
 }
 
 extension ToastThemeBuildContextProps on BuildContext {
   ToastTheme get toastTheme => Theme.of(this).extension<ToastTheme>()!;
-  TextStyle get toastMessageTextStyle => toastTheme.toastMessageTextStyle;
-  Color get toastBackgroundColor => toastTheme.toastBackgroundColor;
-  double get toastSpacing => toastTheme.toastSpacing;
-  BorderRadius get toastBorderRadius => toastTheme.toastBorderRadius;
+  TextStyle get messageTextStyle => toastTheme.messageTextStyle;
+  Color get backgroundColor => toastTheme.backgroundColor;
+  double get spacing => toastTheme.spacing;
+  BorderRadius get borderRadius => toastTheme.borderRadius;
   double get widgetWidth => toastTheme.widgetWidth;
   double get widgetHeight => toastTheme.widgetHeight;
-  EdgeInsets get toastCloseButtonPadding => toastTheme.toastCloseButtonPadding;
-  double get toastBorderWidth => toastTheme.toastBorderWidth;
-  Color get toastBorderColor => toastTheme.toastBorderColor;
+  double get widgetPositionRight => toastTheme.widgetPositionRight;
+  double get widgetPositionBottom => toastTheme.widgetPositionBottom;
+  EdgeInsets get closeButtonPadding => toastTheme.closeButtonPadding;
+  double get borderWidth => toastTheme.borderWidth;
+  Color get borderColor => toastTheme.borderColor;
 }
