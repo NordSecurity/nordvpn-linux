@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:nordvpn/theme/aurora_design.dart';
 import 'package:nordvpn/theme/context_menu_theme.dart';
 import 'package:nordvpn/widgets/context_menu/context_menu_item.dart';
@@ -52,7 +51,6 @@ class _ContextMenuState extends State<ContextMenu>
     with SingleTickerProviderStateMixin {
   final _layerLink = LayerLink();
   final _overlayController = OverlayPortalController();
-  final _keyboardFocusNode = FocusNode();
   late final AnimationController _animationController;
   late final Animation<double> _fadeAnimation;
   late final Animation<double> _sizeAnimation;
@@ -76,7 +74,6 @@ class _ContextMenuState extends State<ContextMenu>
 
   @override
   void dispose() {
-    _keyboardFocusNode.dispose();
     _animationController.dispose();
     super.dispose();
   }
@@ -139,25 +136,15 @@ class _ContextMenuState extends State<ContextMenu>
           offset: const Offset(0, 4),
           child: Align(
             alignment: AlignmentDirectional.topStart,
-            child: KeyboardListener(
-              focusNode: _keyboardFocusNode,
-              autofocus: true,
-              onKeyEvent: (event) {
-                if (event is KeyDownEvent &&
-                    event.logicalKey == LogicalKeyboardKey.escape) {
-                  _close();
-                }
-              },
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: SizeTransition(
-                  sizeFactor: _sizeAnimation,
-                  axisAlignment: -1,
-                  child: _MenuPanel(
-                    items: widget.items,
-                    width: menuWidth,
-                    onItemTapped: _onItemTapped,
-                  ),
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: SizeTransition(
+                sizeFactor: _sizeAnimation,
+                axisAlignment: -1,
+                child: _MenuPanel(
+                  items: widget.items,
+                  width: menuWidth,
+                  onItemTapped: _onItemTapped,
                 ),
               ),
             ),
@@ -226,20 +213,16 @@ class _MenuItemTile extends StatelessWidget {
       color: item.labelColor,
     );
 
-    return Semantics(
-      button: true,
-      label: item.label,
-      child: InkWell(
-        onTap: () => onTapped(item.onTap),
-        hoverColor: theme.itemHoverColor,
-        child: Padding(
-          padding: theme.itemPadding,
-          child: SizedBox(
-            height: theme.itemHeight,
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text(item.label, style: labelStyle),
-            ),
+    return InkWell(
+      onTap: () => onTapped(item.onTap),
+      hoverColor: theme.itemHoverColor,
+      child: Padding(
+        padding: theme.itemPadding,
+        child: SizedBox(
+          height: theme.itemHeight,
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(item.label, style: labelStyle),
           ),
         ),
       ),
