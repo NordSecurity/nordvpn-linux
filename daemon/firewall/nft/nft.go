@@ -480,35 +480,7 @@ func (n *nft) addOutputChain(
 	})
 
 	// always drop DNS if port 53 not whitelisted
-	if config.IsVpnOrKillSwitchSet() {
-		if !config.Allowlist.Ports.TCP[defaultDnsPort] {
-			// ip daddr @lan_ranges tcp dport 53 drop
-			n.conn.AddRule(&nftables.Rule{
-				Table: table,
-				Chain: outputChain,
-				Exprs: buildRules(
-					expr.VerdictDrop,
-					checkIpInSet(lanPrivateRanges, MATCH_DESTINATION),
-					checkPortNumber(defaultDnsPort, unix.IPPROTO_TCP, MATCH_DESTINATION),
-				),
-				UserData: userdata.AppendString(nil, userdata.TypeComment, "local to LAN DNS for TCP"),
-			})
-		}
-
-		if !config.Allowlist.Ports.UDP[defaultDnsPort] {
-			// ip daddr @lan_ranges udp dport 53 drop
-			n.conn.AddRule(&nftables.Rule{
-				Table: table,
-				Chain: outputChain,
-				Exprs: buildRules(
-					expr.VerdictDrop,
-					checkIpInSet(lanPrivateRanges, MATCH_DESTINATION),
-					checkPortNumber(defaultDnsPort, unix.IPPROTO_UDP, MATCH_DESTINATION),
-				),
-				UserData: userdata.AppendString(nil, userdata.TypeComment, "local to LAN DNS for UDP"),
-			})
-		}
-	}
+	n.dropLanDnsIfNeeded(config, table, outputChain, lanPrivateRanges)
 
 	if allowlistSubnets != nil {
 		// ip daddr @allowed_subnets accept
@@ -581,6 +553,38 @@ func (n *nft) addOutputChain(
 	}
 }
 
+func (n *nft) dropLanDnsIfNeeded(config firewall.Config, table *nftables.Table, chain *nftables.Chain, lanPrivateRanges *nftables.Set) {
+	if config.IsVpnOrKillSwitchSet() {
+		if !config.Allowlist.Ports.TCP[defaultDnsPort] {
+			// ip daddr @lan_ranges tcp dport 53 drop
+			n.conn.AddRule(&nftables.Rule{
+				Table: table,
+				Chain: chain,
+				Exprs: buildRules(
+					expr.VerdictDrop,
+					checkIpInSet(lanPrivateRanges, MATCH_DESTINATION),
+					checkPortNumber(defaultDnsPort, unix.IPPROTO_TCP, MATCH_DESTINATION),
+				),
+				UserData: userdata.AppendString(nil, userdata.TypeComment, "block to LAN DNS for TCP"),
+			})
+		}
+
+		if !config.Allowlist.Ports.UDP[defaultDnsPort] {
+			// ip daddr @lan_ranges udp dport 53 drop
+			n.conn.AddRule(&nftables.Rule{
+				Table: table,
+				Chain: chain,
+				Exprs: buildRules(
+					expr.VerdictDrop,
+					checkIpInSet(lanPrivateRanges, MATCH_DESTINATION),
+					checkPortNumber(defaultDnsPort, unix.IPPROTO_UDP, MATCH_DESTINATION),
+				),
+				UserData: userdata.AppendString(nil, userdata.TypeComment, "block to LAN DNS for UDP"),
+			})
+		}
+	}
+}
+
 func (n *nft) addForwardChain(
 	config firewall.Config,
 	table *nftables.Table,
@@ -633,7 +637,8 @@ func (n *nft) addForwardChain(
 
 	}
 
-	// TODO: not on the tunnel
+	n.dropLanDnsIfNeeded(config, table, forwardChain, lanRangesIps)
+
 	if allowedSubnets != nil {
 		// ip daddr @allowed_subnets accept
 		n.conn.AddRule(&nftables.Rule{
