@@ -93,7 +93,7 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 	isMeshStarted := netw.isMeshnetSet
 
 	if netw.isKillSwitchSet {
-		if err := netw.setKillSwitch(true); err != nil {
+		if err := netw.setKillSwitch(); err != nil {
 			return fmt.Errorf("setting killswitch: %w", err)
 		}
 	}
@@ -131,7 +131,7 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 
 	if isVPNStarted {
 		if !netw.isKillSwitchSet {
-			if err := netw.setKillSwitch(false); err != nil {
+			if err := netw.setKillSwitch(); err != nil {
 				return fmt.Errorf("setting killswitch: %w", err)
 			}
 			defer func() {

@@ -496,26 +496,26 @@ func (n *nft) addOutputChain(
 	}
 
 	if tcpPortsSet != nil {
-		// tcp sport @ports_tcp accept
+		// tcp dport @ports_tcp accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
 			Chain: outputChain,
 			Exprs: buildRules(
 				expr.VerdictAccept,
-				checkPortInSet(tcpPortsSet, unix.IPPROTO_TCP, MATCH_SOURCE),
+				checkPortInSet(tcpPortsSet, unix.IPPROTO_TCP, MATCH_DESTINATION),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "from allowlist TCP ports"),
 		})
 	}
 
 	if udpPortsSet != nil {
-		// udp sport @ports_udp accept
+		// udp dport @ports_udp accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: table,
 			Chain: outputChain,
 			Exprs: buildRules(
 				expr.VerdictAccept,
-				checkPortInSet(udpPortsSet, unix.IPPROTO_UDP, MATCH_SOURCE),
+				checkPortInSet(udpPortsSet, unix.IPPROTO_UDP, MATCH_DESTINATION),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "from allowlist UDP ports"),
 		})

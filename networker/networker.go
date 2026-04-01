@@ -748,7 +748,7 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 	if err := netw.policyRouter.SetupRoutingRules(
 		netw.enableLocalTraffic,
 		netw.lanDiscovery,
-		netw.allowlist.Subnets,
+		allowlist.Subnets,
 	); err != nil {
 		return fmt.Errorf(
 			"setting routing rules: %w",
@@ -806,16 +806,10 @@ func (netw *Combined) unsetNetwork() error {
 func (netw *Combined) SetKillSwitch() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	return netw.setKillSwitch(false)
+	return netw.setKillSwitch()
 }
 
-func (netw *Combined) setKillSwitch(force bool) error {
-	if !netw.isNetworkSet || force {
-		if err := netw.setNetwork(netw.allowlist); err != nil {
-			return err
-		}
-	}
-
+func (netw *Combined) setKillSwitch() error {
 	// configure firewall
 	// use netw.allowlist to ensure it has the correct value
 	// because LAN ranges are added later for LAN discovery
