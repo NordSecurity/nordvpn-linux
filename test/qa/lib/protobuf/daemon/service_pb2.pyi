@@ -17,6 +17,7 @@ import state_pb2 as _state_pb2
 import servers_pb2 as _servers_pb2
 import defaults_pb2 as _defaults_pb2
 import recent_connections_pb2 as _recent_connections_pb2
+import pause_pb2 as _pause_pb2
 from google.protobuf import descriptor as _descriptor
 from typing import ClassVar as _ClassVar
 

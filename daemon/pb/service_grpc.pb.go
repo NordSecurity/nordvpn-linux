@@ -32,6 +32,7 @@ const (
 	Daemon_Disconnect_FullMethodName              = "/pb.Daemon/Disconnect"
 	Daemon_Status_FullMethodName                  = "/pb.Daemon/Status"
 	Daemon_RateConnection_FullMethodName          = "/pb.Daemon/RateConnection"
+	Daemon_PauseConnection_FullMethodName         = "/pb.Daemon/PauseConnection"
 	Daemon_GetServers_FullMethodName              = "/pb.Daemon/GetServers"
 	Daemon_Countries_FullMethodName               = "/pb.Daemon/Countries"
 	Daemon_Cities_FullMethodName                  = "/pb.Daemon/Cities"
@@ -87,6 +88,7 @@ type DaemonClient interface {
 	Disconnect(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Payload], error)
 	Status(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*StatusResponse, error)
 	RateConnection(ctx context.Context, in *RateRequest, opts ...grpc.CallOption) (*Payload, error)
+	PauseConnection(ctx context.Context, in *PauseRequest, opts ...grpc.CallOption) (*Payload, error)
 	// ==================== Server Discovery ====================
 	GetServers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServersResponse, error)
 	Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
@@ -281,6 +283,16 @@ func (c *daemonClient) RateConnection(ctx context.Context, in *RateRequest, opts
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Payload)
 	err := c.cc.Invoke(ctx, Daemon_RateConnection_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) PauseConnection(ctx context.Context, in *PauseRequest, opts ...grpc.CallOption) (*Payload, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, Daemon_PauseConnection_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -646,6 +658,7 @@ type DaemonServer interface {
 	Disconnect(*Empty, grpc.ServerStreamingServer[Payload]) error
 	Status(context.Context, *Empty) (*StatusResponse, error)
 	RateConnection(context.Context, *RateRequest) (*Payload, error)
+	PauseConnection(context.Context, *PauseRequest) (*Payload, error)
 	// ==================== Server Discovery ====================
 	GetServers(context.Context, *Empty) (*ServersResponse, error)
 	Countries(context.Context, *Empty) (*ServerGroupsList, error)
@@ -736,6 +749,9 @@ func (UnimplementedDaemonServer) Status(context.Context, *Empty) (*StatusRespons
 }
 func (UnimplementedDaemonServer) RateConnection(context.Context, *RateRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RateConnection not implemented")
+}
+func (UnimplementedDaemonServer) PauseConnection(context.Context, *PauseRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PauseConnection not implemented")
 }
 func (UnimplementedDaemonServer) GetServers(context.Context, *Empty) (*ServersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetServers not implemented")
@@ -1073,6 +1089,24 @@ func _Daemon_RateConnection_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DaemonServer).RateConnection(ctx, req.(*RateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_PauseConnection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PauseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).PauseConnection(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_PauseConnection_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).PauseConnection(ctx, req.(*PauseRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1714,6 +1748,10 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RateConnection",
 			Handler:    _Daemon_RateConnection_Handler,
+		},
+		{
+			MethodName: "PauseConnection",
+			Handler:    _Daemon_PauseConnection_Handler,
 		},
 		{
 			MethodName: "GetServers",
