@@ -232,12 +232,14 @@ mixin _$ConnectionCardButtonThemeTailorMixin
   double get maxConnectButtonWidth;
   ButtonStyle get secureMyConnectionButtonStyle;
   ButtonStyle get cancelButtonStyle;
+  ButtonStyle get connectionDetailsButtonStyle;
 
   @override
   ConnectionCardButtonTheme copyWith({
     double? maxConnectButtonWidth,
     ButtonStyle? secureMyConnectionButtonStyle,
     ButtonStyle? cancelButtonStyle,
+    ButtonStyle? connectionDetailsButtonStyle,
   }) {
     return ConnectionCardButtonTheme(
       maxConnectButtonWidth:
@@ -245,6 +247,8 @@ mixin _$ConnectionCardButtonThemeTailorMixin
       secureMyConnectionButtonStyle:
           secureMyConnectionButtonStyle ?? this.secureMyConnectionButtonStyle,
       cancelButtonStyle: cancelButtonStyle ?? this.cancelButtonStyle,
+      connectionDetailsButtonStyle:
+          connectionDetailsButtonStyle ?? this.connectionDetailsButtonStyle,
     );
   }
 
@@ -263,6 +267,9 @@ mixin _$ConnectionCardButtonThemeTailorMixin
           ? secureMyConnectionButtonStyle
           : other.secureMyConnectionButtonStyle,
       cancelButtonStyle: t < 0.5 ? cancelButtonStyle : other.cancelButtonStyle,
+      connectionDetailsButtonStyle: t < 0.5
+          ? connectionDetailsButtonStyle
+          : other.connectionDetailsButtonStyle,
     );
   }
 
@@ -282,6 +289,10 @@ mixin _$ConnectionCardButtonThemeTailorMixin
             const DeepCollectionEquality().equals(
               cancelButtonStyle,
               other.cancelButtonStyle,
+            ) &&
+            const DeepCollectionEquality().equals(
+              connectionDetailsButtonStyle,
+              other.connectionDetailsButtonStyle,
             ));
   }
 
@@ -292,6 +303,7 @@ mixin _$ConnectionCardButtonThemeTailorMixin
       const DeepCollectionEquality().hash(maxConnectButtonWidth),
       const DeepCollectionEquality().hash(secureMyConnectionButtonStyle),
       const DeepCollectionEquality().hash(cancelButtonStyle),
+      const DeepCollectionEquality().hash(connectionDetailsButtonStyle),
     );
   }
 }

@@ -275,5 +275,10 @@
   "pauseFor24Hours": "Pause for 24 hours",
   "secured": "Secured",
   "notSecured": "Not secured",
-  "secureMyConnection": "Secure my connection"
+  "secureMyConnection": "Secure my connection",
+  "reconnect": "Reconnect",
+  "changeVPNsettings": "Change VPN settings",
+  "getHelp": "Get help",
+  "connectionDetails": "...",
+  "pauseConnection": "Pause connection"
 }

@@ -2024,6 +2024,21 @@ class TranslationsUiEn {
 
 	/// en: 'Secure my connection'
 	String get secureMyConnection => 'Secure my connection';
+
+	/// en: 'Reconnect'
+	String get reconnect => 'Reconnect';
+
+	/// en: 'Change VPN settings'
+	String get changeVPNsettings => 'Change VPN settings';
+
+	/// en: 'Get help'
+	String get getHelp => 'Get help';
+
+	/// en: '...'
+	String get connectionDetails => '...';
+
+	/// en: 'Pause connection'
+	String get pauseConnection => 'Pause connection';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -2683,6 +2698,11 @@ extension on Translations {
 			'ui.secured' => 'Secured',
 			'ui.notSecured' => 'Not secured',
 			'ui.secureMyConnection' => 'Secure my connection',
+			'ui.reconnect' => 'Reconnect',
+			'ui.changeVPNsettings' => 'Change VPN settings',
+			'ui.getHelp' => 'Get help',
+			'ui.connectionDetails' => '...',
+			'ui.pauseConnection' => 'Pause connection',
 			_ => null,
 		};
 	}

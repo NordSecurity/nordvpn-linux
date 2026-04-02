@@ -92,10 +92,14 @@ final class ConnectionCardButtonTheme
   @override
   final ButtonStyle cancelButtonStyle;
 
+  @override
+  final ButtonStyle connectionDetailsButtonStyle;
+
   ConnectionCardButtonTheme({
     required this.maxConnectButtonWidth,
     required this.secureMyConnectionButtonStyle,
     required this.cancelButtonStyle,
+    required this.connectionDetailsButtonStyle,
   });
 }
 

@@ -423,6 +423,20 @@ final class NordVpnTheme {
           foregroundColor: design.semanticColors.textPrimary,
           minimumSize: const Size.fromHeight(48),
         ),
+        connectionDetailsButtonStyle: ElevatedButton.styleFrom(
+          shape: const CircleBorder(),
+          side: BorderSide(
+            color: design.semanticColors.borderPrimary,
+            width: AppBorderWidth.md,
+          ),
+          textStyle: design.typography.subHeading.copyWith(
+            color: design.semanticColors.textPrimary,
+          ),
+          padding: const EdgeInsets.all(AppSpacing.spacing3),
+          backgroundColor: design.semanticColors.bgGlass,
+          foregroundColor: design.semanticColors.textPrimary,
+          minimumSize: const Size.fromHeight(48),
+        ),
       ),
     );
   }
