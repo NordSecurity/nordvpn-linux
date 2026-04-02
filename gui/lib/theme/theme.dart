@@ -23,6 +23,7 @@ import 'package:nordvpn/theme/support_link_theme.dart';
 import 'package:nordvpn/theme/context_menu_theme.dart';
 import 'package:nordvpn/theme/connection_card_theme.dart';
 import 'package:nordvpn/theme/popup_theme.dart';
+import 'package:nordvpn/theme/toast_theme.dart';
 
 ThemeData lightTheme() {
   return NordVpnTheme(ThemeMode.light).data();
@@ -81,6 +82,7 @@ final class NordVpnTheme {
         _popupThemeExt(),
         _navRailThemeExt(),
         _contextMenuThemeExt(),
+        _toastThemeExt(),
       ],
     );
   }
@@ -813,6 +815,24 @@ final class NordVpnTheme {
       menuBoxShadow: mode == ThemeMode.light
           ? AppBoxShadows.lightPopover
           : AppBoxShadows.darkPopover,
+    );
+  }
+
+  ToastTheme _toastThemeExt() {
+    return ToastTheme(
+      messageTextStyle: design.typography.subHeading.copyWith(
+        color: design.semanticColors.textPrimary,
+      ),
+      backgroundColor: design.semanticColors.bgTertiary,
+      spacing: AppSpacing.spacing4,
+      borderRadius: AppBorderRadius.md,
+      widgetWidth: 356,
+      widgetHeight: 58,
+      closeButtonPadding: EdgeInsets.all(5),
+      borderWidth: AppBorderWidth.md,
+      borderColor: design.semanticColors.borderPrimary,
+      widgetPositionRight: 20,
+      widgetPositionBottom: 16,
     );
   }
 }
