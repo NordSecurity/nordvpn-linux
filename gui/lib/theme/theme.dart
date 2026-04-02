@@ -423,6 +423,25 @@ final class NordVpnTheme {
           foregroundColor: design.semanticColors.textPrimary,
           minimumSize: const Size.fromHeight(48),
         ),
+        pauseConnectionButtonStyle: ElevatedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            side: BorderSide(
+              color: design.semanticColors.borderPrimary,
+              width: AppBorderWidth.md,
+            ),
+            borderRadius: AppBorderRadius.full,
+          ),
+          textStyle: design.typography.subHeading.copyWith(
+            color: design.semanticColors.textPrimary,
+          ),
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.spacing3,
+            horizontal: AppSpacing.spacing7,
+          ),
+          backgroundColor: design.semanticColors.bgGlass,
+          foregroundColor: design.semanticColors.textPrimary,
+          minimumSize: const Size.fromHeight(48),
+        ),
         connectionDetailsButtonStyle: ElevatedButton.styleFrom(
           shape: const CircleBorder(),
           side: BorderSide(
@@ -435,7 +454,7 @@ final class NordVpnTheme {
           padding: const EdgeInsets.all(AppSpacing.spacing3),
           backgroundColor: design.semanticColors.bgGlass,
           foregroundColor: design.semanticColors.textPrimary,
-          minimumSize: const Size.fromHeight(48),
+          minimumSize: const Size(48, 48),
         ),
       ),
     );
@@ -829,6 +848,7 @@ final class NordVpnTheme {
       menuBoxShadow: mode == ThemeMode.light
           ? AppBoxShadows.lightPopover
           : AppBoxShadows.darkPopover,
+      menuGap: 4,
     );
   }
 }

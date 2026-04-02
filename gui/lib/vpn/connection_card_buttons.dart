@@ -59,37 +59,37 @@ final class ConnectionCardButtons extends ConsumerWidget {
         Expanded(
           child: ContextMenu(
             key: ConnectionCardButtons.disconnectButtonKey,
-            width: ContextMenu.matchAnchorWidth,
+            matchAnchorWidth: true,
             items: [
               ContextMenuItem(
                 label: t.ui.pauseFor5Min,
                 onTap: () async => await ref
                     .read(vpnStatusControllerProvider.notifier)
-                    .disconnect(),
+                    .disconnect(), // TODO(LVPN-10113): add proper action
               ),
               ContextMenuItem(
                 label: t.ui.pauseFor15Min,
                 onTap: () async => await ref
                     .read(vpnStatusControllerProvider.notifier)
-                    .disconnect(),
+                    .disconnect(), // TODO(LVPN-10113): add proper action
               ),
               ContextMenuItem(
                 label: t.ui.pauseFor30Min,
                 onTap: () async => await ref
                     .read(vpnStatusControllerProvider.notifier)
-                    .disconnect(),
+                    .disconnect(), // TODO(LVPN-10113): add proper action
               ),
               ContextMenuItem(
                 label: t.ui.pauseFor1Hour,
                 onTap: () async => await ref
                     .read(vpnStatusControllerProvider.notifier)
-                    .disconnect(),
+                    .disconnect(), // TODO(LVPN-10113): add proper action
               ),
               ContextMenuItem(
                 label: t.ui.pauseFor24Hours,
                 onTap: () async => await ref
                     .read(vpnStatusControllerProvider.notifier)
-                    .disconnect(),
+                    .disconnect(), // TODO(LVPN-10113): add proper action
               ),
               ContextMenuItem(
                 label: t.ui.disconnect,
@@ -100,7 +100,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
               ),
             ],
             anchorBuilder: (toggleMenu) => ElevatedButton(
-              style: buttonTheme.cancelButtonStyle,
+              style: buttonTheme.pauseConnectionButtonStyle,
               onPressed: toggleMenu,
               child: Text(t.ui.pauseConnection),
             ),
@@ -187,7 +187,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
     if (settings?.obfuscatedServers == true) {
       status.connectionParameters.group = ServerType.obfuscated.toServerGroup();
     }
-    ref
+    await ref
         .read(vpnStatusControllerProvider.notifier)
         .reconnect(status.connectionParameters);
   }

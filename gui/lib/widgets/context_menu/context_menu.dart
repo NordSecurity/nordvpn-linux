@@ -33,18 +33,19 @@ final class ContextMenu extends StatefulWidget {
   final List<ContextMenuItem> items;
 
   /// Override the menu panel width. Defaults to [ContextMenuTheme.menuWidth].
-  ///
-  /// Pass [ContextMenu.matchAnchorWidth] to size the panel to the anchor width.
   final double? width;
 
-  /// Sentinel value for [width]: sizes the menu panel to the anchor's width.
-  static const double matchAnchorWidth = -1;
+  /// Sizes the menu panel to match the anchor widget's rendered width.
+  ///
+  /// When true, [width] is ignored.
+  final bool matchAnchorWidth;
 
   const ContextMenu({
     super.key,
     required this.anchorBuilder,
     required this.items,
     this.width,
+    this.matchAnchorWidth = false,
   }) : assert(items.length > 0, 'ContextMenu must have at least one item');
 
   @override
@@ -58,7 +59,6 @@ class _ContextMenuState extends State<ContextMenu>
   late final AnimationController _animationController;
   late final Animation<double> _animation;
   bool _initialized = false;
-  double? _anchorWidth;
 
   @override
   void didChangeDependencies() {
@@ -84,10 +84,6 @@ class _ContextMenuState extends State<ContextMenu>
   }
 
   void _open() {
-    if (widget.width == ContextMenu.matchAnchorWidth) {
-      final box = context.findRenderObject() as RenderBox?;
-      _anchorWidth = box?.size.width;
-    }
     _overlayController.show();
     _animationController.forward();
   }
@@ -107,8 +103,12 @@ class _ContextMenuState extends State<ContextMenu>
   }
 
   void _onItemTapped(VoidCallback itemOnTap) {
-    _close();
-    itemOnTap();
+    _animationController.reverse().then((_) {
+      if (mounted) {
+        _overlayController.hide();
+        itemOnTap();
+      }
+    });
   }
 
   @override
@@ -125,8 +125,9 @@ class _ContextMenuState extends State<ContextMenu>
 
   Widget _buildOverlay(BuildContext context) {
     final theme = context.contextMenuTheme;
-    final menuWidth = widget.width == ContextMenu.matchAnchorWidth
-        ? (_anchorWidth ?? theme.menuWidth)
+    final menuWidth = widget.matchAnchorWidth
+        ? ((this.context.findRenderObject() as RenderBox?)?.size.width ??
+            theme.menuWidth)
         : (widget.width ?? theme.menuWidth);
 
     return Stack(
@@ -144,7 +145,7 @@ class _ContextMenuState extends State<ContextMenu>
           link: _layerLink,
           targetAnchor: Alignment.bottomLeft,
           followerAnchor: Alignment.topLeft,
-          offset: const Offset(0, 4),
+          offset: Offset(0, theme.menuGap),
           child: Align(
             alignment: AlignmentDirectional.topStart,
             child: FadeTransition(
