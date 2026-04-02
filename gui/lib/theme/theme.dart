@@ -20,6 +20,7 @@ import 'package:nordvpn/theme/servers_list_theme.dart';
 import 'package:nordvpn/theme/settings_theme.dart';
 import 'package:nordvpn/theme/support_link_theme.dart';
 import 'package:nordvpn/theme/vpn_status_card_theme.dart';
+import 'package:nordvpn/theme/context_menu_theme.dart';
 import 'package:nordvpn/theme/popup_theme.dart';
 
 ThemeData lightTheme() {
@@ -78,6 +79,7 @@ final class NordVpnTheme {
         _consentScreenThemeExt(),
         _popupThemeExt(),
         _navRailThemeExt(),
+        _contextMenuThemeExt(),
       ],
     );
   }
@@ -712,6 +714,34 @@ final class NordVpnTheme {
       iconsMargin: AppSpacing.spacing2,
       radius: AppBorderRadius.md,
       selectedItemBg: design.semanticColors.bgTertiary,
+    );
+  }
+
+  ContextMenuTheme _contextMenuThemeExt() {
+    return ContextMenuTheme(
+      menuWidth: 260,
+      menuRadius: AppBorderRadius.md,
+      menuPadding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.spacing1,
+        vertical: AppSpacing.spacing2,
+      ),
+      menuColor: design.semanticColors.bgSecondary,
+      menuBorderColor: design.semanticColors.borderPrimary,
+      menuBorderWidth: AppBorderWidth.md,
+      itemHeight: 40,
+      itemPadding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.spacing4,
+        vertical: AppSpacing.spacing0,
+      ),
+      itemHoverColor: design.semanticColors.bgTertiary,
+      itemTextStyle: design.typography.body.copyWith(
+        color: design.semanticColors.textPrimary,
+      ),
+      animationDuration: AppTransitions.durationFast,
+      animationCurve: AppTransitions.timingFunctionDefault,
+      menuBoxShadow: mode == ThemeMode.light
+          ? AppBoxShadows.lightPopover
+          : AppBoxShadows.darkPopover,
     );
   }
 }
