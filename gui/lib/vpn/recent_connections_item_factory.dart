@@ -79,7 +79,7 @@ final class RecentConnectionsItemFactory {
         var subtitle = country.localizedName;
         final city = model.city;
         subtitle +=
-            " - ${city.isEmpty ? t.ui.fastestServer : City(city).localizedName}";
+            " - ${city.isEmpty ? t.ui.fastest : City(city).localizedName}";
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,7 +99,7 @@ final class RecentConnectionsItemFactory {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           specialtyTitle,
-          Text(t.ui.fastestServer, style: appTheme.caption),
+          Text(t.ui.fastest, style: appTheme.caption),
         ],
       );
     }
@@ -152,7 +152,7 @@ final class RecentConnectionsItemFactory {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(country.localizedName, style: appTheme.body),
-        Text(t.ui.fastestServer, style: appTheme.caption),
+        Text(t.ui.fastest, style: appTheme.caption),
       ],
     );
   }

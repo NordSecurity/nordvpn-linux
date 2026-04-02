@@ -27,7 +27,7 @@ void runDisconnectTest(
     final mainScreen = await app.goToVpnScreen();
 
     await tester.pumpUntilFound(
-      find.text(t.ui.quickConnect),
+      find.text(t.ui.secureMyConnection),
       timeout: Duration(seconds: 10),
     );
 
@@ -43,7 +43,7 @@ void runDisconnectTest(
     }
 
     await tester.pumpUntilFound(
-      find.textContaining(t.ui.connected),
+      find.textContaining(t.ui.secured),
       timeout: Duration(seconds: 10),
     );
 
@@ -60,7 +60,7 @@ void runDisconnectTest(
       expect(isConnectedToObfuscated, findsOneWidget);
     } else {
       await tester.pumpUntilFound(
-        find.text(t.ui.connected),
+        find.text(t.ui.secured),
         timeout: Duration(seconds: 10),
       );
     }
@@ -76,12 +76,12 @@ void runDisconnectTest(
     await mainScreen.disconnect();
 
     await tester.pumpUntilFound(
-      find.text(t.ui.quickConnect),
+      find.text(t.ui.secureMyConnection),
       timeout: Duration(seconds: 10),
     );
 
     await tester.pumpUntilFound(
-      find.text(t.ui.notConnected),
+      find.text(t.ui.notSecured),
       timeout: Duration(seconds: 10),
     );
   });
