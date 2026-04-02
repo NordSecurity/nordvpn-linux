@@ -818,7 +818,7 @@ final class NordVpnTheme {
     );
   }
 
-    ToastTheme _toastThemeExt() {
+  ToastTheme _toastThemeExt() {
     return ToastTheme(
       messageTextStyle: design.typography.subHeading.copyWith(
         color: design.semanticColors.textPrimary,
@@ -834,5 +834,5 @@ final class NordVpnTheme {
       widgetPositionRight: 20,
       widgetPositionBottom: 16,
     );
-    }
+  }
 }
