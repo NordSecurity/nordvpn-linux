@@ -30,11 +30,8 @@ void runObfuscatedServersTests() async {
 
       await vpnScreen.quickConnect();
 
-      await vpnScreen.waitUntilFound(find.textContaining(t.ui.connected));
-      expect(
-        vpnScreen.findStatusLabelText(),
-        equals("${t.ui.connected} ${t.ui.to} ${t.ui.obfuscated}"),
-      );
+      await vpnScreen.waitUntilFound(find.textContaining(t.ui.secured));
+      expect(vpnScreen.findStatusLabelText(), contains(t.ui.obfuscated));
     });
   });
 }

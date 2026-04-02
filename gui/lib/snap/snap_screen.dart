@@ -52,7 +52,7 @@ final class SnapScreen extends ConsumerWidget {
               Padding(
                 padding: EdgeInsets.only(top: appTheme.verticalSpaceSmall),
                 child: ScalerResponsiveBox(
-                alignment: Alignment.center,
+                  alignment: Alignment.center,
                   maxWidth: 262,
                   child: Text(
                     t.ui.snapScreenDescription,
