@@ -17,12 +17,15 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
   Color get menuBorderColor;
   double get menuBorderWidth;
   double get itemHeight;
+  BorderRadius get itemBorderRadius;
   EdgeInsets get itemPadding;
   Color get itemHoverColor;
   TextStyle get itemTextStyle;
   Duration get animationDuration;
   Curve get animationCurve;
   List<BoxShadow> get menuBoxShadow;
+  double get menuShadowMargin;
+  double get menuGap;
 
   @override
   ContextMenuTheme copyWith({
@@ -33,12 +36,15 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
     Color? menuBorderColor,
     double? menuBorderWidth,
     double? itemHeight,
+    BorderRadius? itemBorderRadius,
     EdgeInsets? itemPadding,
     Color? itemHoverColor,
     TextStyle? itemTextStyle,
     Duration? animationDuration,
     Curve? animationCurve,
     List<BoxShadow>? menuBoxShadow,
+    double? menuShadowMargin,
+    double? menuGap,
   }) {
     return ContextMenuTheme(
       menuWidth: menuWidth ?? this.menuWidth,
@@ -48,12 +54,15 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
       menuBorderColor: menuBorderColor ?? this.menuBorderColor,
       menuBorderWidth: menuBorderWidth ?? this.menuBorderWidth,
       itemHeight: itemHeight ?? this.itemHeight,
+      itemBorderRadius: itemBorderRadius ?? this.itemBorderRadius,
       itemPadding: itemPadding ?? this.itemPadding,
       itemHoverColor: itemHoverColor ?? this.itemHoverColor,
       itemTextStyle: itemTextStyle ?? this.itemTextStyle,
       animationDuration: animationDuration ?? this.animationDuration,
       animationCurve: animationCurve ?? this.animationCurve,
       menuBoxShadow: menuBoxShadow ?? this.menuBoxShadow,
+      menuShadowMargin: menuShadowMargin ?? this.menuShadowMargin,
+      menuGap: menuGap ?? this.menuGap,
     );
   }
 
@@ -71,12 +80,15 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
       menuBorderColor: Color.lerp(menuBorderColor, other.menuBorderColor, t)!,
       menuBorderWidth: t < 0.5 ? menuBorderWidth : other.menuBorderWidth,
       itemHeight: t < 0.5 ? itemHeight : other.itemHeight,
+      itemBorderRadius: t < 0.5 ? itemBorderRadius : other.itemBorderRadius,
       itemPadding: t < 0.5 ? itemPadding : other.itemPadding,
       itemHoverColor: Color.lerp(itemHoverColor, other.itemHoverColor, t)!,
       itemTextStyle: TextStyle.lerp(itemTextStyle, other.itemTextStyle, t)!,
       animationDuration: t < 0.5 ? animationDuration : other.animationDuration,
       animationCurve: t < 0.5 ? animationCurve : other.animationCurve,
       menuBoxShadow: t < 0.5 ? menuBoxShadow : other.menuBoxShadow,
+      menuShadowMargin: t < 0.5 ? menuShadowMargin : other.menuShadowMargin,
+      menuGap: t < 0.5 ? menuGap : other.menuGap,
     );
   }
 
@@ -108,6 +120,10 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
               other.itemHeight,
             ) &&
             const DeepCollectionEquality().equals(
+              itemBorderRadius,
+              other.itemBorderRadius,
+            ) &&
+            const DeepCollectionEquality().equals(
               itemPadding,
               other.itemPadding,
             ) &&
@@ -130,7 +146,12 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
             const DeepCollectionEquality().equals(
               menuBoxShadow,
               other.menuBoxShadow,
-            ));
+            ) &&
+            const DeepCollectionEquality().equals(
+              menuShadowMargin,
+              other.menuShadowMargin,
+            ) &&
+            const DeepCollectionEquality().equals(menuGap, other.menuGap));
   }
 
   @override
@@ -144,12 +165,15 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
       const DeepCollectionEquality().hash(menuBorderColor),
       const DeepCollectionEquality().hash(menuBorderWidth),
       const DeepCollectionEquality().hash(itemHeight),
+      const DeepCollectionEquality().hash(itemBorderRadius),
       const DeepCollectionEquality().hash(itemPadding),
       const DeepCollectionEquality().hash(itemHoverColor),
       const DeepCollectionEquality().hash(itemTextStyle),
       const DeepCollectionEquality().hash(animationDuration),
       const DeepCollectionEquality().hash(animationCurve),
       const DeepCollectionEquality().hash(menuBoxShadow),
+      const DeepCollectionEquality().hash(menuShadowMargin),
+      const DeepCollectionEquality().hash(menuGap),
     );
   }
 }
@@ -164,10 +188,13 @@ extension ContextMenuThemeBuildContextProps on BuildContext {
   Color get menuBorderColor => contextMenuTheme.menuBorderColor;
   double get menuBorderWidth => contextMenuTheme.menuBorderWidth;
   double get itemHeight => contextMenuTheme.itemHeight;
+  BorderRadius get itemBorderRadius => contextMenuTheme.itemBorderRadius;
   EdgeInsets get itemPadding => contextMenuTheme.itemPadding;
   Color get itemHoverColor => contextMenuTheme.itemHoverColor;
   TextStyle get itemTextStyle => contextMenuTheme.itemTextStyle;
   Duration get animationDuration => contextMenuTheme.animationDuration;
   Curve get animationCurve => contextMenuTheme.animationCurve;
   List<BoxShadow> get menuBoxShadow => contextMenuTheme.menuBoxShadow;
+  double get menuShadowMargin => contextMenuTheme.menuShadowMargin;
+  double get menuGap => contextMenuTheme.menuGap;
 }

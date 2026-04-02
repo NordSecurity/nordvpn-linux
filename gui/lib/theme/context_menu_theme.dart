@@ -15,12 +15,15 @@ final class ContextMenuTheme extends ThemeExtension<ContextMenuTheme>
   final Color menuBorderColor;
   final double menuBorderWidth;
   final double itemHeight;
+  final BorderRadius itemBorderRadius;
   final EdgeInsets itemPadding;
   final Color itemHoverColor;
   final TextStyle itemTextStyle;
   final Duration animationDuration;
   final Curve animationCurve;
   final List<BoxShadow> menuBoxShadow;
+  final double menuShadowMargin;
+  final double menuGap;
 
   ContextMenuTheme({
     required this.menuWidth,
@@ -30,11 +33,14 @@ final class ContextMenuTheme extends ThemeExtension<ContextMenuTheme>
     required this.menuBorderColor,
     required this.menuBorderWidth,
     required this.itemHeight,
+    required this.itemBorderRadius,
     required this.itemPadding,
     required this.itemHoverColor,
     required this.itemTextStyle,
     required this.animationDuration,
     required this.animationCurve,
     required this.menuBoxShadow,
+    required this.menuShadowMargin,
+    required this.menuGap,
   });
 }

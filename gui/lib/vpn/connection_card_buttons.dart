@@ -8,9 +8,13 @@ import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
+import 'package:nordvpn/internal/uri_launch_extension.dart';
+import 'package:nordvpn/router/routes.dart';
+import 'package:nordvpn/internal/urls.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/connection_card_theme.dart';
-import 'package:nordvpn/widgets/dynamic_theme_image.dart';
+import 'package:nordvpn/widgets/context_menu/context_menu.dart';
 
 final class ConnectionCardButtons extends ConsumerWidget {
   static const secureMyConnectionButtonKey = Key("vpnSecureMyConnectionButton");
@@ -54,20 +58,85 @@ final class ConnectionCardButtons extends ConsumerWidget {
     if (status.isConnected()) {
       return [
         Expanded(
-          child: OutlinedButton(
+          child: ContextMenu(
             key: ConnectionCardButtons.disconnectButtonKey,
-            style: buttonTheme.cancelButtonStyle,
-            onPressed: () async => await ref
-                .read(vpnStatusControllerProvider.notifier)
-                .disconnect(),
-            child: Text(t.ui.disconnect),
+            matchAnchorWidth: true,
+            items: [
+              ContextMenuItem(
+                label: t.ui.pauseFor5Min,
+                onTap: () async => await ref
+                    .read(vpnStatusControllerProvider.notifier)
+                    .disconnect(), // TODO(LVPN-10113): add proper action
+              ),
+              ContextMenuItem(
+                label: t.ui.pauseFor15Min,
+                onTap: () async => await ref
+                    .read(vpnStatusControllerProvider.notifier)
+                    .disconnect(), // TODO(LVPN-10113): add proper action
+              ),
+              ContextMenuItem(
+                label: t.ui.pauseFor30Min,
+                onTap: () async => await ref
+                    .read(vpnStatusControllerProvider.notifier)
+                    .disconnect(), // TODO(LVPN-10113): add proper action
+              ),
+              ContextMenuItem(
+                label: t.ui.pauseFor1Hour,
+                onTap: () async => await ref
+                    .read(vpnStatusControllerProvider.notifier)
+                    .disconnect(), // TODO(LVPN-10113): add proper action
+              ),
+              ContextMenuItem(
+                label: t.ui.pauseFor24Hours,
+                onTap: () async => await ref
+                    .read(vpnStatusControllerProvider.notifier)
+                    .disconnect(), // TODO(LVPN-10113): add proper action
+              ),
+              ContextMenuItem(
+                label: t.ui.disconnect,
+                labelColor: context.appTheme.textErrorColor,
+                onTap: () async => await ref
+                    .read(vpnStatusControllerProvider.notifier)
+                    .disconnect(),
+              ),
+            ],
+            anchorBuilder: (toggleMenu) => ElevatedButton(
+              style: buttonTheme.pauseConnectionButtonStyle,
+              onPressed: toggleMenu,
+              child: Text(t.ui.pauseConnection),
+            ),
           ),
         ),
         if (!status.isMeshnetRouting)
-          OutlinedButton(
-            style: OutlinedButton.styleFrom(padding: EdgeInsets.all(0)),
-            onPressed: () async => await _reconnect(ref, status, settings),
-            child: DynamicThemeImage("reconnect.svg"),
+          IntrinsicWidth(
+            child: ContextMenu(
+              items: [
+                ContextMenuItem(
+                  label: t.ui.reconnect,
+                  onTap: () async => await _reconnect(ref, status, settings),
+                ),
+                ContextMenuItem(
+                  label: t.ui.changeVPNsettings,
+                  onTap: () =>
+                      context.navigateToRoute(AppRoute.settingsVpnConnection),
+                ),
+                ContextMenuItem(
+                  label: t.ui.getHelp,
+                  onTap: () => Uri.parse(supportCenterUrl.toString()).launch(),
+                ),
+              ],
+              anchorBuilder: (toggleMenu) => ElevatedButton(
+                style: buttonTheme.connectionDetailsButtonStyle,
+                onPressed: toggleMenu,
+                child: SvgPicture.asset(
+                  'assets/connection_details.svg',
+                  colorFilter: ColorFilter.mode(
+                    IconTheme.of(context).color!,
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+            ),
           ),
       ];
     }
@@ -125,7 +194,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
     if (settings?.obfuscatedServers == true) {
       status.connectionParameters.group = ServerType.obfuscated.toServerGroup();
     }
-    ref
+    await ref
         .read(vpnStatusControllerProvider.notifier)
         .reconnect(status.connectionParameters);
   }

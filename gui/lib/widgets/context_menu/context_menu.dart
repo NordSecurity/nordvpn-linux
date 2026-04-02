@@ -35,11 +35,17 @@ final class ContextMenu extends StatefulWidget {
   /// Override the menu panel width. Defaults to [ContextMenuTheme.menuWidth].
   final double? width;
 
+  /// Sizes the menu panel to match the anchor widget's rendered width.
+  ///
+  /// When true, [width] is ignored.
+  final bool matchAnchorWidth;
+
   const ContextMenu({
     super.key,
     required this.anchorBuilder,
     required this.items,
     this.width,
+    this.matchAnchorWidth = false,
   }) : assert(items.length > 0, 'ContextMenu must have at least one item');
 
   @override
@@ -97,8 +103,12 @@ class _ContextMenuState extends State<ContextMenu>
   }
 
   void _onItemTapped(VoidCallback itemOnTap) {
-    _close();
-    itemOnTap();
+    _animationController.reverse().then((_) {
+      if (mounted) {
+        _overlayController.hide();
+        itemOnTap();
+      }
+    });
   }
 
   @override
@@ -115,7 +125,10 @@ class _ContextMenuState extends State<ContextMenu>
 
   Widget _buildOverlay(BuildContext context) {
     final theme = context.contextMenuTheme;
-    final menuWidth = widget.width ?? theme.menuWidth;
+    final menuWidth = widget.matchAnchorWidth
+        ? ((this.context.findRenderObject() as RenderBox?)?.size.width ??
+            theme.menuWidth)
+        : (widget.width ?? theme.menuWidth);
 
     return Stack(
       children: [
@@ -132,7 +145,7 @@ class _ContextMenuState extends State<ContextMenu>
           link: _layerLink,
           targetAnchor: Alignment.bottomLeft,
           followerAnchor: Alignment.topLeft,
-          offset: const Offset(0, 4),
+          offset: Offset(0, theme.menuGap),
           child: Align(
             alignment: AlignmentDirectional.topStart,
             child: FadeTransition(
@@ -140,10 +153,15 @@ class _ContextMenuState extends State<ContextMenu>
               child: SizeTransition(
                 sizeFactor: _animation,
                 axisAlignment: -1,
-                child: _MenuPanel(
-                  items: widget.items,
-                  width: menuWidth,
-                  onItemTapped: _onItemTapped,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    bottom: theme.menuShadowMargin,
+                  ),
+                  child: _MenuPanel(
+                    items: widget.items,
+                    width: menuWidth,
+                    onItemTapped: _onItemTapped,
+                  ),
                 ),
               ),
             ),
@@ -213,6 +231,7 @@ class _MenuItemTile extends StatelessWidget {
     return InkWell(
       onTap: () => onTapped(item.onTap),
       hoverColor: theme.itemHoverColor,
+      borderRadius: theme.itemBorderRadius,
       child: Padding(
         padding: theme.itemPadding,
         child: SizedBox(
