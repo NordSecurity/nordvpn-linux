@@ -266,5 +266,10 @@
   "reconnectToChangeProtocolDescription": "To apply this change, we'll reconnect you to the VPN.",
   "reconnectToApplyChanges": "Reconnect to apply changes",
   "reconnectToApplyChangesDescription": "Your new settings will take effect after you reconnect to the VPN.",
-  "gotIt": "Got it"
+  "gotIt": "Got it",
+  "pauseFor5Min": "Pause for 5 minutes",
+  "pauseFor15Min": "Pause for 15 minutes",
+  "pauseFor30Min": "Pause for 30 minutes",
+  "pauseFor1Hour": "Pause for 1 hour",
+  "pauseFor24Hours": "Pause for 24 hours"
 }
