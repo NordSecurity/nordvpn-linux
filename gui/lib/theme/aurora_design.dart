@@ -189,8 +189,10 @@ final class AppSemanticColorsLight implements SemanticColors {
   @override
   Color get bgOverlay => Color(0x80141415);
 
+  // TODO (dfe) LVPN-10250: Change back to Color(0xB3F7F7F8) after figuring out how to make
+  // transparency work as it should.
   @override
-  Color get bgGlass => Color(0xB3F7F7F8);
+  Color get bgGlass => Color(0xFFF7F7F8);
 
   @override
   Color get bgInverse => appCoreColors.neutral950;
@@ -349,8 +351,10 @@ final class AppSemanticColorsDark implements SemanticColors {
   @override
   Color get bgOverlay => Color(0x80141415);
 
+  // TODO (dfe) LVPN-10250: Change back to Color(0xB3141415) after figuring out how to make
+  // transparency work as it should.
   @override
-  Color get bgGlass => Color(0xB3141415);
+  Color get bgGlass => Color(0xFF141415);
 
   @override
   Color get bgInverse => appCoreColors.neutral0;

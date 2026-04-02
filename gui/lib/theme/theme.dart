@@ -385,7 +385,7 @@ final class NordVpnTheme {
       ),
       buttonTheme: ConnectionCardButtonTheme(
         maxConnectButtonWidth: 330,
-        secureMyConnectionButtonStyle: ElevatedButton.styleFrom(
+        secureMyConnectionButtonStyle: OutlinedButton.styleFrom(
           shape: RoundedRectangleBorder(
             side: BorderSide(
               color: design.semanticColors.borderAccent,
@@ -393,18 +393,17 @@ final class NordVpnTheme {
             ),
             borderRadius: AppBorderRadius.full,
           ),
-          textStyle: design.typography.subHeading.copyWith(
-            color: design.semanticColors.textPrimary,
-          ),
+          textStyle: design.typography.subHeading,
           padding: const EdgeInsets.symmetric(
             vertical: AppSpacing.spacing3,
             horizontal: AppSpacing.spacing7,
           ),
           backgroundColor: design.semanticColors.bgAccent,
           foregroundColor: design.semanticColors.textPrimaryOnColor,
+          overlayColor: Colors.transparent,
           fixedSize: const Size.fromHeight(48),
         ),
-        cancelButtonStyle: ElevatedButton.styleFrom(
+        cancelButtonStyle: OutlinedButton.styleFrom(
           shape: RoundedRectangleBorder(
             side: BorderSide(
               color: design.semanticColors.borderPrimary,
@@ -412,15 +411,14 @@ final class NordVpnTheme {
             ),
             borderRadius: AppBorderRadius.full,
           ),
-          textStyle: design.typography.subHeading.copyWith(
-            color: design.semanticColors.textPrimary,
-          ),
+          textStyle: design.typography.subHeading,
           padding: const EdgeInsets.symmetric(
             vertical: AppSpacing.spacing3,
             horizontal: AppSpacing.spacing7,
           ),
           backgroundColor: design.semanticColors.bgGlass,
           foregroundColor: design.semanticColors.textPrimary,
+          overlayColor: Colors.transparent,
           fixedSize: const Size.fromHeight(48),
         ),
       ),

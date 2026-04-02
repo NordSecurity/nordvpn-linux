@@ -85,7 +85,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
     ApplicationSettings? settings,
   ) {
     return Expanded(
-      child: ElevatedButton(
+      child: OutlinedButton(
         key: ConnectionCardButtons.secureMyConnectionButtonKey,
         onPressed: () async {
           // Quick connect
@@ -106,7 +106,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
     ConnectionCardButtonTheme buttonTheme,
   ) {
     return Expanded(
-      child: ElevatedButton(
+      child: OutlinedButton(
         key: ConnectionCardButtons.cancelButtonKey,
         onPressed: () async {
           await ref.read(vpnStatusControllerProvider.notifier).cancelConnect();
