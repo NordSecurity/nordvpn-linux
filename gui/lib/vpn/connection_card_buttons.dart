@@ -8,6 +8,9 @@ import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
+import 'package:nordvpn/internal/uri_launch_extension.dart';
+import 'package:nordvpn/router/routes.dart';
+import 'package:nordvpn/internal/urls.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/connection_card_theme.dart';
 import 'package:nordvpn/widgets/context_menu/context_menu.dart';
@@ -56,6 +59,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
         Expanded(
           child: ContextMenu(
             key: ConnectionCardButtons.disconnectButtonKey,
+            width: ContextMenu.matchAnchorWidth,
             items: [
               ContextMenuItem(
                 label: t.ui.pauseFor5Min,
@@ -112,11 +116,12 @@ final class ConnectionCardButtons extends ConsumerWidget {
                 ),
                 ContextMenuItem(
                   label: t.ui.changeVPNsettings,
-                  onTap: () {},
+                  onTap: () =>
+                      context.navigateToRoute(AppRoute.settingsVpnConnection),
                 ),
                 ContextMenuItem(
                   label: t.ui.getHelp,
-                  onTap: () {},
+                  onTap: () => Uri.parse(supportCenterUrl.toString()).launch(),
                 ),
               ],
               anchorBuilder: (toggleMenu) => ElevatedButton(
