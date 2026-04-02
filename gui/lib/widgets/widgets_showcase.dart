@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grpc/grpc.dart';
 import 'package:nordvpn/analytics/consent_screen.dart';
 import 'package:nordvpn/data/providers/popups_provider.dart';
+import 'package:nordvpn/data/providers/toasts_provider.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/popup_codes.dart';
@@ -327,6 +328,17 @@ class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
                         .read(popupsProvider.notifier)
                         .show(DaemonStatusCode.failure),
                     child: const Text("Generic failure"),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => ref
+                        .read(toastsProvider.notifier)
+                        .show(Duration(seconds: 15)),
+                    child: const Text("Open Toast"),
+                  ),
+                  ElevatedButton(
+                    onPressed: () =>
+                        ref.read(toastsProvider.notifier).closeToast(),
+                    child: const Text("Close Toast"),
                   ),
                   Input(
                     submitText: "Error Popup",

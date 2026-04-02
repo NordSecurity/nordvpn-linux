@@ -2024,6 +2024,9 @@ class TranslationsUiEn {
 
 	/// en: 'Secure my connection'
 	String get secureMyConnection => 'Secure my connection';
+
+	/// en: 'VPN connection resumes in $minutes:$seconds'
+	String VPNResumesIn({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes}:${seconds}';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -2683,6 +2686,7 @@ extension on Translations {
 			'ui.secured' => 'Secured',
 			'ui.notSecured' => 'Not secured',
 			'ui.secureMyConnection' => 'Secure my connection',
+			'ui.VPNResumesIn' => ({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes}:${seconds}',
 			_ => null,
 		};
 	}
