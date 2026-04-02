@@ -5,24 +5,21 @@ import 'package:nordvpn/widgets/context_menu/context_menu.dart';
 import '../utils/test_helpers.dart';
 
 void main() {
-  Widget buildMenu({
-    required List<ContextMenuItem> items,
-    double? width,
-  }) {
+  Widget buildMenu({required List<ContextMenuItem> items, double? width}) {
     return ContextMenu(
       items: items,
       width: width,
-      anchorBuilder: (toggleMenu) => ElevatedButton(
-        onPressed: toggleMenu,
-        child: const Text('Open'),
-      ),
+      anchorBuilder: (toggleMenu) =>
+          ElevatedButton(onPressed: toggleMenu, child: const Text('Open')),
     );
   }
 
   group('ContextMenu', () {
     testWidgets('renders anchor widget when closed', (tester) async {
       await tester.setupWidgetTest(
-        buildMenu(items: [ContextMenuItem(label: 'Item', onTap: () {})]),
+        buildMenu(
+          items: [ContextMenuItem(label: 'Item', onTap: () {})],
+        ),
       );
 
       expect(find.text('Open'), findsOneWidget);
@@ -31,7 +28,9 @@ void main() {
 
     testWidgets('opens menu when anchor is tapped', (tester) async {
       await tester.setupWidgetTest(
-        buildMenu(items: [ContextMenuItem(label: 'Item', onTap: () {})]),
+        buildMenu(
+          items: [ContextMenuItem(label: 'Item', onTap: () {})],
+        ),
       );
 
       await tester.tap(find.text('Open'));
@@ -63,9 +62,7 @@ void main() {
       var tapped = false;
       await tester.setupWidgetTest(
         buildMenu(
-          items: [
-            ContextMenuItem(label: 'Action', onTap: () => tapped = true),
-          ],
+          items: [ContextMenuItem(label: 'Action', onTap: () => tapped = true)],
         ),
       );
 
@@ -79,7 +76,9 @@ void main() {
 
     testWidgets('closes menu after item is tapped', (tester) async {
       await tester.setupWidgetTest(
-        buildMenu(items: [ContextMenuItem(label: 'Action', onTap: () {})]),
+        buildMenu(
+          items: [ContextMenuItem(label: 'Action', onTap: () {})],
+        ),
       );
 
       await tester.tap(find.text('Open'));
@@ -94,7 +93,9 @@ void main() {
 
     testWidgets('closes menu when barrier is tapped', (tester) async {
       await tester.setupWidgetTest(
-        buildMenu(items: [ContextMenuItem(label: 'Item', onTap: () {})]),
+        buildMenu(
+          items: [ContextMenuItem(label: 'Item', onTap: () {})],
+        ),
       );
 
       await tester.tap(find.text('Open'));
@@ -146,7 +147,9 @@ void main() {
       expect(textWidget.style?.color, testColor);
     });
 
-    testWidgets('item without labelColor uses theme text color', (tester) async {
+    testWidgets('item without labelColor uses theme text color', (
+      tester,
+    ) async {
       await tester.setupWidgetTest(
         buildMenu(
           items: [ContextMenuItem(label: 'Default', onTap: () {})],
@@ -164,7 +167,9 @@ void main() {
 
     testWidgets('closes via barrier when menu is open', (tester) async {
       await tester.setupWidgetTest(
-        buildMenu(items: [ContextMenuItem(label: 'Item', onTap: () {})]),
+        buildMenu(
+          items: [ContextMenuItem(label: 'Item', onTap: () {})],
+        ),
       );
 
       await tester.tap(find.text('Open'));
