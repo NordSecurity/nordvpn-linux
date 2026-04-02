@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
-import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/theme/toast_theme.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 
@@ -31,7 +30,6 @@ final class _ToastState extends State<Toast> {
         0,
         widget.duration.inSeconds,
       );
-      logger.d("Toast, remaining time: ${_remainingTime.inSeconds} s");
 
       if (remainingSeconds == 0) {
         _timer?.cancel();
