@@ -20,7 +20,6 @@ import 'package:nordvpn/theme/radio_button_theme.dart';
 import 'package:nordvpn/theme/servers_list_theme.dart';
 import 'package:nordvpn/theme/settings_theme.dart';
 import 'package:nordvpn/theme/support_link_theme.dart';
-import 'package:nordvpn/theme/vpn_status_card_theme.dart';
 import 'package:nordvpn/theme/context_menu_theme.dart';
 import 'package:nordvpn/theme/connection_card_theme.dart';
 import 'package:nordvpn/theme/popup_theme.dart';

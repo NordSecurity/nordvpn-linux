@@ -2001,15 +2001,6 @@ class TranslationsUiEn {
 	/// en: 'Got it'
 	String get gotIt => 'Got it';
 
-	/// en: 'Secured'
-	String get secured => 'Secured';
-
-	/// en: 'Not secured'
-	String get notSecured => 'Not secured';
-
-	/// en: 'Secure my connection'
-	String get secureMyConnection => 'Secure my connection';
-
 	/// en: 'Pause for 5 minutes'
 	String get pauseFor5Min => 'Pause for 5 minutes';
 
@@ -2024,6 +2015,15 @@ class TranslationsUiEn {
 
 	/// en: 'Pause for 24 hours'
 	String get pauseFor24Hours => 'Pause for 24 hours';
+
+	/// en: 'Secured'
+	String get secured => 'Secured';
+
+	/// en: 'Not secured'
+	String get notSecured => 'Not secured';
+
+	/// en: 'Secure my connection'
+	String get secureMyConnection => 'Secure my connection';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -2675,14 +2675,14 @@ extension on Translations {
 			'ui.reconnectToApplyChanges' => 'Reconnect to apply changes',
 			'ui.reconnectToApplyChangesDescription' => 'Your new settings will take effect after you reconnect to the VPN.',
 			'ui.gotIt' => 'Got it',
-			'ui.secured' => 'Secured',
-			'ui.notSecured' => 'Not secured',
-			'ui.secureMyConnection' => 'Secure my connection',
 			'ui.pauseFor5Min' => 'Pause for 5 minutes',
 			'ui.pauseFor15Min' => 'Pause for 15 minutes',
 			'ui.pauseFor30Min' => 'Pause for 30 minutes',
 			'ui.pauseFor1Hour' => 'Pause for 1 hour',
 			'ui.pauseFor24Hours' => 'Pause for 24 hours',
+			'ui.secured' => 'Secured',
+			'ui.notSecured' => 'Not secured',
+			'ui.secureMyConnection' => 'Secure my connection',
 			_ => null,
 		};
 	}
