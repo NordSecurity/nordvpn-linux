@@ -17,8 +17,8 @@ void runWarmupTests() async {
       await tester.pumpUntilFound(find.text(t.ui.logIn));
       await tester.tap(find.text(t.ui.logIn));
 
-      await tester.pumpUntilFound(find.text(t.ui.quickConnect));
-      await tester.tap(find.text(t.ui.quickConnect));
+      await tester.pumpUntilFound(find.text(t.ui.secureMyConnection));
+      await tester.tap(find.text(t.ui.secureMyConnection));
 
       await tester.pumpUntilFound(find.text(t.ui.disconnect));
       await tester.tap(find.text(t.ui.disconnect));

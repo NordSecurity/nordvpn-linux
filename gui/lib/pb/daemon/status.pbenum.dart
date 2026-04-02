@@ -45,16 +45,19 @@ class ConnectionState extends $pb.ProtobufEnum {
       ConnectionState._(2, _omitEnumNames ? '' : 'CONNECTING');
   static const ConnectionState CONNECTED =
       ConnectionState._(3, _omitEnumNames ? '' : 'CONNECTED');
+  static const ConnectionState PAUSED =
+      ConnectionState._(4, _omitEnumNames ? '' : 'PAUSED');
 
   static const $core.List<ConnectionState> values = <ConnectionState>[
     UNKNOWN_STATE,
     DISCONNECTED,
     CONNECTING,
     CONNECTED,
+    PAUSED,
   ];
 
   static final $core.List<ConnectionState?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 3);
+      $pb.ProtobufEnum.$_initByValueList(values, 4);
   static ConnectionState? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 

@@ -119,7 +119,8 @@
   "vpnConnection": "VPN connection",
   "vpnConnectionSubtitle": "Auto-connect, Kill Switch, protocol",
   "autoConnectDescription": "Automatically connect to the fastest available server or your chosen server location when the app starts.",
-  "fastestServer": "Fastest",
+  "fastestServer": "Fastest server",
+  "fastest": "Fastest",
   "change": "Change",
   "nordLynx": "NordLynx",
   "openVpnTcp": "OpenVPN (TCP)",
@@ -267,5 +268,13 @@
   "reconnectToApplyChanges": "Reconnect to apply changes",
   "reconnectToApplyChangesDescription": "Your new settings will take effect after you reconnect to the VPN.",
   "gotIt": "Got it",
+  "pauseFor5Min": "Pause for 5 minutes",
+  "pauseFor15Min": "Pause for 15 minutes",
+  "pauseFor30Min": "Pause for 30 minutes",
+  "pauseFor1Hour": "Pause for 1 hour",
+  "pauseFor24Hours": "Pause for 24 hours",
+  "secured": "Secured",
+  "notSecured": "Not secured",
+  "secureMyConnection": "Secure my connection",
   "VPNResumesIn": "VPN connection resumes in $minutes:$seconds"
 }

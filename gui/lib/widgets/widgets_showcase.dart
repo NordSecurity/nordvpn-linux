@@ -9,6 +9,8 @@ import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/popup_codes.dart';
 import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/theme/app_theme.dart';
+import 'package:nordvpn/widgets/context_menu/context_menu.dart';
+import 'package:nordvpn/widgets/dropdown.dart';
 import 'package:nordvpn/widgets/input.dart';
 import 'package:nordvpn/widgets/loading_button.dart';
 import 'package:nordvpn/widgets/loading_checkbox.dart';
@@ -25,6 +27,7 @@ final class WidgetsShowcase extends ConsumerStatefulWidget {
 
 class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
   int _groupValue = 0;
+  String _dropdownValue = 'nordlynx';
 
   @override
   Widget build(BuildContext context) {
@@ -160,6 +163,103 @@ class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
                   ),
                 ],
               ),
+              SizedBox(height: 10),
+              const Divider(),
+              Text("context menu", style: TextStyle(fontSize: 18)),
+              SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                spacing: 10,
+                children: [
+                  ContextMenu(
+                    items: [
+                      ContextMenuItem(
+                        label: t.ui.pauseFor5Min,
+                        onTap: () => logger.i("pause 5 min"),
+                      ),
+                      ContextMenuItem(
+                        label: t.ui.pauseFor15Min,
+                        onTap: () => logger.i("pause 15 min"),
+                      ),
+                      ContextMenuItem(
+                        label: t.ui.pauseFor30Min,
+                        onTap: () => logger.i("pause 30 min"),
+                      ),
+                      ContextMenuItem(
+                        label: t.ui.pauseFor1Hour,
+                        onTap: () => logger.i("pause 1 hour"),
+                      ),
+                      ContextMenuItem(
+                        label: t.ui.pauseFor24Hours,
+                        onTap: () => logger.i("pause 24 hours"),
+                      ),
+                      ContextMenuItem(
+                        label: t.ui.disconnect,
+                        labelColor: context.appTheme.textErrorColor,
+                        onTap: () => logger.i("disconnect"),
+                      ),
+                    ],
+                    anchorBuilder: (toggleMenu) => ElevatedButton(
+                      onPressed: toggleMenu,
+                      child: Text(t.ui.disconnect),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10),
+              const Divider(),
+              SizedBox(height: 10),
+              Text("dropdown", style: TextStyle(fontSize: 18)),
+              SizedBox(height: 10),
+              SizedBox(
+                width: 200,
+                child: Dropdown<String>(
+                  initialValue: _dropdownValue,
+                  items: [
+                    DropdownItem(value: 'nordlynx', label: t.ui.nordLynx),
+                    DropdownItem(value: 'openvpn_tcp', label: t.ui.openVpnTcp),
+                    DropdownItem(value: 'openvpn_udp', label: t.ui.openVpnUdp),
+                  ],
+                  onChanged: (value) {
+                    setState(() => _dropdownValue = value);
+                    logger.i("dropdown changed to $value");
+                  },
+                ),
+              ),
+              SizedBox(height: 8),
+              SizedBox(
+                width: 200,
+                child: Dropdown<String>(
+                  initialValue: _dropdownValue,
+                  enabled: false,
+                  items: [
+                    DropdownItem(value: 'nordlynx', label: t.ui.nordLynx),
+                    DropdownItem(value: 'openvpn_tcp', label: t.ui.openVpnTcp),
+                    DropdownItem(value: 'openvpn_udp', label: t.ui.openVpnUdp),
+                  ],
+                  onChanged: (_) {},
+                ),
+              ),
+              SizedBox(height: 8),
+              SizedBox(
+                width: 200,
+                child: Dropdown<String>(
+                  initialValue: _dropdownValue,
+                  showError: true,
+                  items: [
+                    DropdownItem(value: 'nordlynx', label: t.ui.nordLynx),
+                    DropdownItem(value: 'openvpn_tcp', label: t.ui.openVpnTcp),
+                    DropdownItem(value: 'openvpn_udp', label: t.ui.openVpnUdp),
+                  ],
+                  onChanged: (value) {
+                    setState(() => _dropdownValue = value);
+                    logger.i("dropdown changed to $value");
+                  },
+                ),
+              ),
+              SizedBox(height: 10),
+              const Divider(),
+              SizedBox(height: 10),
               Text("popups", style: TextStyle(fontSize: 18)),
               SizedBox(height: 10),
               Column(
