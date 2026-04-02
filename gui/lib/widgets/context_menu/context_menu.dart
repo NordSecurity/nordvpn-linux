@@ -51,8 +51,7 @@ class _ContextMenuState extends State<ContextMenu>
   final _layerLink = LayerLink();
   final _overlayController = OverlayPortalController();
   late final AnimationController _animationController;
-  late final Animation<double> _fadeAnimation;
-  late final Animation<double> _sizeAnimation;
+  late final Animation<double> _animation;
   bool _initialized = false;
 
   @override
@@ -65,11 +64,7 @@ class _ContextMenuState extends State<ContextMenu>
         vsync: this,
         duration: theme.animationDuration,
       );
-      _fadeAnimation = CurvedAnimation(
-        parent: _animationController,
-        curve: theme.animationCurve,
-      );
-      _sizeAnimation = CurvedAnimation(
+      _animation = CurvedAnimation(
         parent: _animationController,
         curve: theme.animationCurve,
       );
@@ -141,9 +136,9 @@ class _ContextMenuState extends State<ContextMenu>
           child: Align(
             alignment: AlignmentDirectional.topStart,
             child: FadeTransition(
-              opacity: _fadeAnimation,
+              opacity: _animation,
               child: SizeTransition(
-                sizeFactor: _sizeAnimation,
+                sizeFactor: _animation,
                 axisAlignment: -1,
                 child: _MenuPanel(
                   items: widget.items,
