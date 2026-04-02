@@ -167,7 +167,7 @@ func (n *nft) configure(config firewall.Config) error {
 		n.addMeshnetNat(table, routingAllowed)
 	}
 
-	if udpPorts != nil || tcpPorts != nil {
+	if len(config.TunnelInterface) > 0 && (udpPorts != nil || tcpPorts != nil) {
 		n.addAllowlistNat(table, udpPorts, tcpPorts)
 	}
 
