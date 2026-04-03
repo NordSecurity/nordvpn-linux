@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euxo pipefail
 
+source "${WORKDIR}"/ci/export_lib_versions.sh
+
 # Excluded packages are directly related to C packages, therefore they
 # complicate the compilation process. It is fine to exclude them for
 # testing/development purposes.
@@ -19,8 +21,8 @@ parallel=""
 if [ "${1:-""}" = "full" ]; then
 	# Apply moose patch in case compiling with moose
 	trap '${WORKDIR}/ci/remove_private_bindings.sh moose/events; ${WORKDIR}/ci/remove_private_bindings.sh moose/worker;' EXIT
-	source "${WORKDIR}"/ci/add_private_bindings.sh moose/events ./third-party/moose-events/moosenordvpnappgo/v18
-	source "${WORKDIR}"/ci/add_private_bindings.sh moose/worker ./third-party/moose-worker/mooseworkergo/v18
+	source "${WORKDIR}"/ci/add_private_bindings.sh moose/events "${LIBMOOSE_NORDVPNAPP_BINDINGS_PATH}"
+	source "${WORKDIR}"/ci/add_private_bindings.sh moose/worker "${LIBMOOSE_WORKER_BINDINGS_PATH}"
 
 	excluded_packages="thisshouldneverexist"
 	excluded_categories="notworking"
