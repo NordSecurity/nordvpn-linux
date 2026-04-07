@@ -1,6 +1,7 @@
 package network
 
 import (
+	"log"
 	"net"
 	"net/netip"
 	"sync"
@@ -37,7 +38,7 @@ func startTestDNSServer(t *testing.T, domainName string, ip netip.Addr) (addr st
 		_ = w.WriteMsg(msg)
 	})
 
-	pc, err := net.ListenPacket("udp", "127.0.0.1:5000")
+	pc, err := net.ListenPacket("udp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("listen udp: %v", err)
 	}
@@ -49,8 +50,12 @@ func startTestDNSServer(t *testing.T, domainName string, ip netip.Addr) (addr st
 
 	var wg sync.WaitGroup
 	wg.Go(func() {
-		_ = server.ActivateAndServe()
+		if err := server.ActivateAndServe(); err != nil {
+			t.Fatalf("activate server: %v", err)
+		}
 	})
+
+	log.Println("running DNS server on", pc.LocalAddr().String(), "for", domainName)
 
 	return pc.LocalAddr().String(), func() {
 		_ = server.Shutdown()
@@ -59,7 +64,7 @@ func startTestDNSServer(t *testing.T, domainName string, ip netip.Addr) (addr st
 }
 
 func TestResolveHostUsingLocalDnsServer(t *testing.T) {
-	category.Set(t, category.Root)
+	category.Set(t, category.Unit)
 
 	domainName := "nordvpn.com"
 	ipAddress := netip.MustParseAddr("1.2.3.4")
@@ -67,7 +72,7 @@ func TestResolveHostUsingLocalDnsServer(t *testing.T) {
 	dnsAddr, shutdown := startTestDNSServer(t, domainName, ipAddress)
 	defer shutdown()
 
-	result, err := LookupAddressWithCustomDNS(domainName, dnsAddr, "udp", 0xe1f1)
+	result, err := LookupAddressNoFwmark(domainName, dnsAddr, "udp")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, result)
 	if len(result) > 0 {
@@ -76,9 +81,9 @@ func TestResolveHostUsingLocalDnsServer(t *testing.T) {
 }
 
 func TestResolveHost(t *testing.T) {
-	category.Set(t, category.Root)
+	category.Set(t, category.Unit)
 
-	result, err := LookupAddressWithCustomDNS("google.com", "1.1.1.1", "udp", 0x1234)
+	result, err := LookupAddressNoFwmark("google.com", "1.1.1.1", "udp")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, result[0])
 	assert.NotEmpty(t, result[1])

@@ -11,28 +11,40 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// LookupAddressWithCustomDNS looks up address in a specified DNS server
-func LookupAddressWithCustomDNS(addr string, dns string, protocol string, fwmark uint32) ([]netip.Addr, error) {
+const NO_FW_MARK uint32 = 0
+
+func LookupAddressNoFwmark(addr string, dns string, protocol string) ([]netip.Addr, error) {
+	return LookupAddress(addr, dns, protocol, NO_FW_MARK)
+}
+
+func LookupAddressWithFirewallMark(addr string, dns string, protocol string, fwmark uint32) ([]netip.Addr, error) {
+	return LookupAddress(addr, dns, protocol, fwmark)
+}
+
+func LookupAddress(addr string, dns string, protocol string, fwmark uint32) ([]netip.Addr, error) {
 	resolver := net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
 			var operr error
-			fwmarkFn := func(fd uintptr) {
-				operr = syscall.SetsockoptInt(
-					int(fd),
-					unix.SOL_SOCKET,
-					unix.SO_MARK,
-					int(fwmark),
-				)
-			}
 			dialer := &net.Dialer{
-				Control: func(network, address string, conn syscall.RawConn) error {
+				Timeout: time.Second * 7,
+			}
+
+			if fwmark != NO_FW_MARK {
+				fwmarkFn := func(fd uintptr) {
+					operr = syscall.SetsockoptInt(
+						int(fd),
+						unix.SOL_SOCKET,
+						unix.SO_MARK,
+						int(fwmark),
+					)
+				}
+				dialer.Control = func(network, address string, conn syscall.RawConn) error {
 					if err := conn.Control(fwmarkFn); err != nil {
 						return err
 					}
 					return operr
-				},
-				Timeout: time.Second * 7,
+				}
 			}
 			// if the server address doesn't have port number then add port 53
 			hostAndPortAddress := dns

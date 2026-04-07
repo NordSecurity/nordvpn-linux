@@ -251,6 +251,7 @@ func main() {
 		validator,
 		cfg.FirewallMark,
 		network.ExponentialBackoff,
+		daemonEvents.Service,
 	)
 
 	httpClientWithRotator := request.NewStdHTTP()
@@ -706,7 +707,11 @@ func main() {
 	if cfg.AutoConnect {
 		go rpc.StartAutoConnect(network.ExponentialBackoff)
 	}
-	monitor, err := netstate.NewNetlinkMonitor([]string{openvpn.InterfaceName, nordlynx.InterfaceName})
+	monitor, err := netstate.NewNetlinkMonitor([]string{
+		openvpn.InterfaceName,
+		nordlynx.InterfaceName,
+		internal.NordWhisperInterfaceName,
+	})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -837,12 +842,13 @@ func buildTpServersAndResolver(
 	validator response.Validator,
 	fwmark uint32,
 	timeoutFn dns.CalculateRetryDelayForAttempt,
-) (*dns.NameServers, *network.Resolver) {
+	serviceEvents *daemonevents.ServiceEvents,
+) (*dns.NameServers, network.DNSResolver) {
 	cdn := core.NewCDNAPI(userAgent, cdnUrl, httpClientSimple, validator)
 	tpServers := dns.NewNameServers()
 	// fetch async the TP servers, because FetchTPServers will retry until is successful
 	go tpServers.FetchTPServers(cdn.ThreatProtectionLite, timeoutFn)
 
-	resolver := network.NewResolver(tpServers, fwmark)
+	resolver := network.NewResolver(tpServers, fwmark, serviceEvents)
 	return tpServers, resolver
 }
