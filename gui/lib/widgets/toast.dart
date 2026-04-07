@@ -61,7 +61,7 @@ final class _ToastState extends State<Toast> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _buildPauseIcon(),
-            _buildWidgetText(theme),
+            Expanded(child: _buildWidgetText(theme)),
             _buildCloseButton(theme),
           ],
         ),
