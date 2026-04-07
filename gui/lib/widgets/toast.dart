@@ -74,10 +74,11 @@ final class _ToastState extends State<Toast> {
   }
 
   Widget _buildWidgetText(ToastTheme theme) {
+    final h = _remainingTime.inHours.remainder(60).toString().padLeft(2, '0');
     final m = _remainingTime.inMinutes.remainder(60).toString().padLeft(2, '0');
     final s = _remainingTime.inSeconds.remainder(60).toString().padLeft(2, '0');
     return Text(
-      t.ui.VPNResumesIn(minutes: m, seconds: s),
+      t.ui.VPNResumesIn(hours: h, minutes: m, seconds: s),
       style: theme.messageTextStyle,
       textAlign: TextAlign.center,
     );
