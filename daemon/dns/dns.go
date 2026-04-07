@@ -129,11 +129,11 @@ func (d *DNSServiceSetter) getManagementServiceBasedOnNetworkManagerConfiguratio
 		systemdResolvedEntry  = dnsConfigEntry + "systemd-resolved"
 	)
 
-	if strings.Contains(string(networkManagerConfigString), defaultDNSConfigEntry) {
+	if strings.Contains(networkManagerConfigString, defaultDNSConfigEntry) {
 		return nmcliManagementService, nil
 	}
 
-	if strings.Contains(string(networkManagerConfigString), systemdResolvedEntry) {
+	if strings.Contains(networkManagerConfigString, systemdResolvedEntry) {
 		return systemdResolvedManagementService, nil
 	}
 
