@@ -48,7 +48,7 @@ void runDisconnectTest(
     );
 
     await tester.pumpUntilFound(
-      find.text(t.ui.disconnect),
+      find.text(t.ui.pauseConnection),
       timeout: Duration(seconds: 10),
     );
 

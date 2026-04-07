@@ -19,7 +19,8 @@ import 'package:nordvpn/widgets/context_menu/context_menu.dart';
 final class ConnectionCardButtons extends ConsumerWidget {
   static const secureMyConnectionButtonKey = Key("vpnSecureMyConnectionButton");
   static const cancelButtonKey = Key("vpnCancelButton");
-  static const disconnectButtonKey = Key("vpnDisconnectButton");
+  static const pauseConnectionButtonKey = Key("pauseConnectionButton");
+  static const disconnectMenuItemKey = Key("disconnectMenuItem");
 
   final VpnStatus vpnStatus;
 
@@ -59,7 +60,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
       return [
         Expanded(
           child: ContextMenu(
-            key: ConnectionCardButtons.disconnectButtonKey,
+            key: ConnectionCardButtons.pauseConnectionButtonKey,
             matchAnchorWidth: true,
             items: [
               ContextMenuItem(
@@ -93,6 +94,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
                     .disconnect(), // TODO(LVPN-10113): add proper action
               ),
               ContextMenuItem(
+                key: ConnectionCardButtons.disconnectMenuItemKey,
                 label: t.ui.disconnect,
                 labelColor: context.appTheme.textErrorColor,
                 onTap: () async => await ref

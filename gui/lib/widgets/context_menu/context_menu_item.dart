@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 /// A single item in a [ContextMenu].
 final class ContextMenuItem {
+  /// Optional key applied to the rendered menu item widget.
+  final Key? key;
+
   /// The label displayed in the menu row.
   final String label;
 
@@ -12,6 +15,7 @@ final class ContextMenuItem {
   final VoidCallback onTap;
 
   const ContextMenuItem({
+    this.key,
     required this.label,
     this.labelColor,
     required this.onTap,

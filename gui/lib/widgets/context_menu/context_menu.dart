@@ -229,6 +229,7 @@ class _MenuItemTile extends StatelessWidget {
     final labelStyle = theme.itemTextStyle.copyWith(color: item.labelColor);
 
     return InkWell(
+      key: item.key,
       onTap: () => onTapped(item.onTap),
       hoverColor: theme.itemHoverColor,
       borderRadius: theme.itemBorderRadius,
