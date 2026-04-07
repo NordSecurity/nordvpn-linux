@@ -214,7 +214,7 @@ func TestAccessTokenSessionStore_RaceCondition_WithExpiredToken(t *testing.T) {
 
 	for i := 0; i < numGoroutines; i++ {
 		wg.Add(1)
-		go func(idx int) {
+		go func(int) {
 			defer wg.Done()
 			_ = store.Renew()
 		}(i)
