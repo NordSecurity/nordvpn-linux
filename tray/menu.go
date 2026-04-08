@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"runtime"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/NordSecurity/systray"
@@ -17,13 +16,12 @@ import (
 
 const (
 	// Menu item labels
-	labelVPNStatus             = "VPN %s"
 	labelServerPrefix          = "Server:"
 	labelCityPrefix            = "City:"
 	labelCountryPrefix         = "Country:"
 	labelDisconnect            = "Disconnect"
-	labelQuickConnect          = "Quick Connect"
-	labelConnectionSelection   = "Connect to"
+	labelSecureMyConnection    = "Secure my connection"
+	labelConnectionSelection   = "All connections"
 	labelRecentConnections     = "Recent Connections:"
 	labelReconnectTo           = "Reconnect to"
 	labelConnectTo             = "Connect to"
@@ -35,7 +33,7 @@ const (
 	labelUpdate                = "Update"
 	labelFullUpdate            = "Full update"
 	labelQuit                  = "Quit"
-	labelLoggedInAs            = "Logged in as:"
+	labelLoggedInAs            = "Account"
 	labelLogOut                = "Log out"
 	labelNotLoggedIn           = "Not logged in"
 	labelLogIn                 = "Log in"
@@ -213,12 +211,25 @@ func buildConnectionSection(ti *Instance) {
 	systray.AddSeparator()
 }
 
+func vpnStateToStatusLabel(state pb.ConnectionState) string {
+	switch state {
+
+	case pb.ConnectionState_CONNECTED:
+		return "Secured"
+	case pb.ConnectionState_CONNECTING:
+		return "Securing your connection…"
+	case pb.ConnectionState_DISCONNECTED:
+		fallthrough
+	default:
+		return "Not secured"
+	}
+}
+
 func buildVPNStatusLabel(ti *Instance) {
 	if ti == nil {
 		return
 	}
-	status := strings.ToLower(ti.state.vpnStatus.String())
-	label := fmt.Sprintf(labelVPNStatus, status)
+	label := vpnStateToStatusLabel(ti.state.vpnStatus)
 	mStatus := systray.AddMenuItem(label, label)
 	mStatus.Disable()
 }
@@ -262,7 +273,7 @@ func buildQuickConnectButton(ti *Instance) {
 	if ti == nil {
 		return
 	}
-	item := systray.AddMenuItem(labelQuickConnect, labelQuickConnect)
+	item := systray.AddMenuItem(labelSecureMyConnection, labelSecureMyConnection)
 	go handleQuickConnectClick(ti, item)
 }
 
