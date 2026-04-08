@@ -140,7 +140,13 @@ contents:
 
     # Ensure that libraries are packaged in with proper permissions
     # during build/download stage
-
+    #
+    # Additionally, not setting permissions at all makes nfpm assign
+    # invalid bit modes which may be rejected by some package managers
+    # like rpm-ostree.
+    file_info:
+      mode: 0755
+    
 # All fields above marked as `overridable` can be overridden for a given package format in this section.
 overrides:
   deb:
