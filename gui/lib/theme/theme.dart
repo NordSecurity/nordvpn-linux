@@ -423,6 +423,39 @@ final class NordVpnTheme {
           overlayColor: Colors.transparent,
           fixedSize: const Size.fromHeight(48),
         ),
+        pauseConnectionButtonStyle: ElevatedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            side: BorderSide(
+              color: design.semanticColors.borderPrimary,
+              width: AppBorderWidth.md,
+            ),
+            borderRadius: AppBorderRadius.full,
+          ),
+          textStyle: design.typography.subHeading.copyWith(
+            color: design.semanticColors.textPrimary,
+          ),
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.spacing3,
+            horizontal: AppSpacing.spacing7,
+          ),
+          backgroundColor: design.semanticColors.bgGlass,
+          foregroundColor: design.semanticColors.textPrimary,
+          fixedSize: const Size.fromHeight(48),
+        ),
+        connectionDetailsButtonStyle: ElevatedButton.styleFrom(
+          shape: const CircleBorder(),
+          side: BorderSide(
+            color: design.semanticColors.borderPrimary,
+            width: AppBorderWidth.md,
+          ),
+          textStyle: design.typography.subHeading.copyWith(
+            color: design.semanticColors.textPrimary,
+          ),
+          padding: const EdgeInsets.all(AppSpacing.spacing3),
+          backgroundColor: design.semanticColors.bgGlass,
+          foregroundColor: design.semanticColors.textPrimary,
+          fixedSize: const Size(48, 48),
+        ),
       ),
     );
   }
@@ -802,6 +835,7 @@ final class NordVpnTheme {
       menuBorderColor: design.semanticColors.borderPrimary,
       menuBorderWidth: AppBorderWidth.md,
       itemHeight: 40,
+      itemBorderRadius: AppBorderRadius.sm,
       itemPadding: EdgeInsets.symmetric(
         horizontal: AppSpacing.spacing4,
         vertical: AppSpacing.spacing0,
@@ -815,6 +849,8 @@ final class NordVpnTheme {
       menuBoxShadow: mode == ThemeMode.light
           ? AppBoxShadows.lightPopover
           : AppBoxShadows.darkPopover,
+      menuShadowMargin: 6,
+      menuGap: 4,
     );
   }
 
