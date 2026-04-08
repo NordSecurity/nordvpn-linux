@@ -8,7 +8,9 @@ import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/popup_codes.dart';
 import 'package:nordvpn/logger.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:nordvpn/theme/app_theme.dart';
+import 'package:nordvpn/theme/connection_card_theme.dart';
 import 'package:nordvpn/widgets/context_menu/context_menu.dart';
 import 'package:nordvpn/widgets/dropdown.dart';
 import 'package:nordvpn/widgets/input.dart';
@@ -167,44 +169,81 @@ class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
               const Divider(),
               Text("context menu", style: TextStyle(fontSize: 18)),
               SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                spacing: 10,
-                children: [
-                  ContextMenu(
-                    items: [
-                      ContextMenuItem(
-                        label: t.ui.pauseFor5Min,
-                        onTap: () => logger.i("pause 5 min"),
+              Builder(
+                builder: (context) {
+                  final buttonTheme = context.connectionCardTheme.buttonTheme;
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 10,
+                    children: [
+                      ContextMenu(
+                        items: [
+                          ContextMenuItem(
+                            label: t.ui.pauseFor5Min,
+                            onTap: () => logger.i("pause 5 min"),
+                          ),
+                          ContextMenuItem(
+                            label: t.ui.pauseFor15Min,
+                            onTap: () => logger.i("pause 15 min"),
+                          ),
+                          ContextMenuItem(
+                            label: t.ui.pauseFor30Min,
+                            onTap: () => logger.i("pause 30 min"),
+                          ),
+                          ContextMenuItem(
+                            label: t.ui.pauseFor1Hour,
+                            onTap: () => logger.i("pause 1 hour"),
+                          ),
+                          ContextMenuItem(
+                            label: t.ui.pauseFor24Hours,
+                            onTap: () => logger.i("pause 24 hours"),
+                          ),
+                          ContextMenuItem(
+                            label: t.ui.disconnect,
+                            labelColor: context.appTheme.textErrorColor,
+                            onTap: () => logger.i("disconnect"),
+                          ),
+                        ],
+                        anchorBuilder: (toggleMenu) => IntrinsicWidth(
+                          child: ElevatedButton(
+                            style: buttonTheme.cancelButtonStyle,
+                            onPressed: toggleMenu,
+                            child: Text(t.ui.pauseConnection),
+                          ),
+                        ),
                       ),
-                      ContextMenuItem(
-                        label: t.ui.pauseFor15Min,
-                        onTap: () => logger.i("pause 15 min"),
-                      ),
-                      ContextMenuItem(
-                        label: t.ui.pauseFor30Min,
-                        onTap: () => logger.i("pause 30 min"),
-                      ),
-                      ContextMenuItem(
-                        label: t.ui.pauseFor1Hour,
-                        onTap: () => logger.i("pause 1 hour"),
-                      ),
-                      ContextMenuItem(
-                        label: t.ui.pauseFor24Hours,
-                        onTap: () => logger.i("pause 24 hours"),
-                      ),
-                      ContextMenuItem(
-                        label: t.ui.disconnect,
-                        labelColor: context.appTheme.textErrorColor,
-                        onTap: () => logger.i("disconnect"),
+                      ContextMenu(
+                        items: [
+                          ContextMenuItem(
+                            label: t.ui.reconnect,
+                            onTap: () => logger.i("Reconnect"),
+                          ),
+                          ContextMenuItem(
+                            label: t.ui.changeVPNsettings,
+                            onTap: () => logger.i("Change VPN settings"),
+                          ),
+                          ContextMenuItem(
+                            label: t.ui.getHelp,
+                            onTap: () => logger.i("Get help"),
+                          ),
+                        ],
+                        anchorBuilder: (toggleMenu) => IntrinsicWidth(
+                          child: ElevatedButton(
+                            style: buttonTheme.connectionDetailsButtonStyle,
+                            onPressed: toggleMenu,
+                            child: SvgPicture.asset(
+                              'assets/connection_details.svg',
+                              colorFilter: ColorFilter.mode(
+                                IconTheme.of(context).color!,
+                                BlendMode.srcIn,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
-                    anchorBuilder: (toggleMenu) => ElevatedButton(
-                      onPressed: toggleMenu,
-                      child: Text(t.ui.disconnect),
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
               SizedBox(height: 10),
               const Divider(),

@@ -2027,6 +2027,21 @@ class TranslationsUiEn {
 
 	/// en: 'VPN connection resumes in $minutes:$seconds'
 	String VPNResumesIn({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes}:${seconds}';
+
+	/// en: 'Reconnect'
+	String get reconnect => 'Reconnect';
+
+	/// en: 'Change VPN settings'
+	String get changeVPNsettings => 'Change VPN settings';
+
+	/// en: 'Get help'
+	String get getHelp => 'Get help';
+
+	/// en: '...'
+	String get connectionDetails => '...';
+
+	/// en: 'Pause connection'
+	String get pauseConnection => 'Pause connection';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -2687,6 +2702,11 @@ extension on Translations {
 			'ui.notSecured' => 'Not secured',
 			'ui.secureMyConnection' => 'Secure my connection',
 			'ui.VPNResumesIn' => ({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes}:${seconds}',
+			'ui.reconnect' => 'Reconnect',
+			'ui.changeVPNsettings' => 'Change VPN settings',
+			'ui.getHelp' => 'Get help',
+			'ui.connectionDetails' => '...',
+			'ui.pauseConnection' => 'Pause connection',
 			_ => null,
 		};
 	}
