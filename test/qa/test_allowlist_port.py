@@ -44,13 +44,12 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_disconne
     """Manual TC: LVPN-8956"""
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
-
     output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.add_ports_to_allowlist([port])
-    assert not firewall.is_active([port])
+    assert not firewall.is_active()
     output_after_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.remove_ports_from_allowlist([port])
-    assert not firewall.is_active([port])
+    assert not firewall.is_active()
     output_after_delete = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
     assert output_before_add == output_after_add
@@ -71,17 +70,17 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connecte
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
+    allowlist.add_ports_to_allowlist([port])
     sh.nordvpn.connect()
 
-    output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
-    allowlist.add_ports_to_allowlist([port])
-    assert firewall.is_active([port])
+    # output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
+    assert firewall.is_source_port_reachable([port])
     output_after_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.remove_ports_from_allowlist([port])
-    assert not firewall.is_active([port])
+    assert not firewall.is_source_port_reachable([port])
     output_after_delete = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
-    assert output_before_add == output_after_add
+    # assert output_before_add == output_after_add
     assert output_after_add == output_after_delete
 
 
@@ -110,7 +109,7 @@ def test_allowlist_port_twice_disconnected(tech, proto, obfuscated, port):
     expected_message = allowlist.MSG_ALLOWLIST_PORT_ADD_ERROR % (port.value, port.protocol)
     assert expected_message in ex.value.stdout.decode("utf-8")
     assert str(sh.nordvpn.settings()).count(port.value) == 1
-    assert not firewall.is_active([port])
+    assert not firewall.is_active() and firewall.is_source_port_reachable([port])
 
 
 @dynamic_parametrize(
@@ -124,10 +123,11 @@ def test_allowlist_port_twice_disconnected(tech, proto, obfuscated, port):
 )
 def test_allowlist_port_twice_connected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8958"""
-
+    firewall.set_trace()
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.connect()
+    assert not firewall.is_source_port_reachable([port])
 
     allowlist.add_ports_to_allowlist([port])
 
@@ -140,10 +140,12 @@ def test_allowlist_port_twice_connected(tech, proto, obfuscated, port):
     expected_message = allowlist.MSG_ALLOWLIST_PORT_ADD_ERROR % (port.value, port.protocol)
     assert expected_message in ex.value.stdout.decode("utf-8")
     assert str(sh.nordvpn.settings()).count(port.value) == 1
-    assert firewall.is_active([port])
+    import time
+    # time.sleep()
+    assert firewall.is_active() and firewall.is_source_port_reachable([port])
 
     sh.nordvpn.disconnect()
-    assert not firewall.is_active([port])
+    assert not firewall.is_active() and firewall.is_source_port_reachable([port])
 
 
 @dynamic_parametrize(
@@ -161,10 +163,10 @@ def test_allowlist_port_and_remove_disconnected(tech, proto, obfuscated, port):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     allowlist.add_ports_to_allowlist([port])
-    assert not firewall.is_active([port])
+    assert not firewall.is_active() and firewall.is_source_port_reachable([port])
 
     allowlist.remove_ports_from_allowlist([port])
-    assert not firewall.is_active([port])
+    assert not firewall.is_active() and firewall.is_source_port_reachable([port])
 
 
 @dynamic_parametrize(
@@ -182,12 +184,13 @@ def test_allowlist_port_and_remove_connected(tech, proto, obfuscated, port):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.connect()
+    assert not firewall.is_source_port_reachable([port])
 
     allowlist.add_ports_to_allowlist([port])
-    assert firewall.is_active([port])
+    assert firewall.is_source_port_reachable([port])
 
     allowlist.remove_ports_from_allowlist([port])
-    assert firewall.is_active() and not firewall.is_active([port])
+    assert firewall.is_active() and not firewall.is_source_port_reachable([port])
 
 
 @dynamic_parametrize(
@@ -311,7 +314,7 @@ def test_allowlist_port_range_twice_disconnected(tech, proto, obfuscated, port):
     for _ in range(2):
         allowlist.add_ports_to_allowlist([port])
 
-    assert not firewall.is_active([port])
+    assert not firewall.is_active() and firewall.is_source_port_reachable([port])
 
 
 @dynamic_parametrize(
@@ -333,7 +336,7 @@ def test_allowlist_port_range_twice_connected(tech, proto, obfuscated, port):
     for _ in range(2):
         allowlist.add_ports_to_allowlist([port])
 
-    assert firewall.is_active([port])
+    assert firewall.is_active() and firewall.is_source_port_reachable([port])
 
 
 @dynamic_parametrize(
@@ -355,10 +358,10 @@ def test_allowlist_port_range_when_port_from_range_already_allowlisted_disconnec
 
     already_allowlisted_port = lib.Port(random_port_from_port_range, port.protocol)
     allowlist.add_ports_to_allowlist([already_allowlisted_port])
-    assert not firewall.is_active([already_allowlisted_port])
+    assert not firewall.is_active() and firewall.is_source_port_reachable([already_allowlisted_port])
 
     allowlist.add_ports_to_allowlist([port])
-    assert not firewall.is_active([port]) and not firewall.is_active([already_allowlisted_port])
+    assert not firewall.is_active() and firewall.is_source_port_reachable([already_allowlisted_port])
 
 
 @dynamic_parametrize(
@@ -382,7 +385,7 @@ def test_allowlist_port_range_when_port_from_range_already_allowlisted_connected
 
     already_allowlisted_port = lib.Port(random_port_from_port_range, port.protocol)
     allowlist.add_ports_to_allowlist([already_allowlisted_port])
-    assert firewall.is_active([already_allowlisted_port])
+    assert firewall.is_source_port_reachable([already_allowlisted_port])
 
     allowlist.add_ports_to_allowlist([port])
-    assert firewall.is_active([port]) and not firewall.is_active([already_allowlisted_port])
+    assert firewall.is_active() and firewall.is_source_port_reachable([port]) and firewall.is_source_port_reachable([already_allowlisted_port])

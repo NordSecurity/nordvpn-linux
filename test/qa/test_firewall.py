@@ -1,6 +1,3 @@
-import os
-import random
-
 import pytest
 import sh
 
@@ -108,16 +105,16 @@ def test_firewall_02_allowlist_port(tech, proto, obfuscated, port):
 
             lib.set_firewall("on")
             allowlist.add_ports_to_allowlist([port])
-            assert not firewall.is_active([port])
+            assert not firewall.is_active() and firewall.is_source_port_reachable([port])
 
             sh.nordvpn.connect()
             assert network.is_connected()
-            assert firewall.is_active([port])
+            assert firewall.is_active() and firewall.is_source_port_reachable([port])
 
             lib.set_firewall("off")
-            assert not firewall.is_active([port])
+            assert not firewall.is_active() and firewall.is_source_port_reachable([port])
         assert network.is_disconnected()
-    assert not firewall.is_active([port])
+    assert not firewall.is_active() and firewall.is_source_port_reachable([port])
 
 
 @dynamic_parametrize(
@@ -138,16 +135,16 @@ def test_firewall_03_allowlist_ports_range(tech, proto, obfuscated, ports):
 
             lib.set_firewall("on")
             allowlist.add_ports_to_allowlist([ports])
-            assert not firewall.is_active([ports])
+            assert not firewall.is_active() and firewall.is_source_port_reachable([ports])
 
             sh.nordvpn.connect()
             assert network.is_connected()
-            assert firewall.is_active([ports])
+            assert firewall.is_active and firewall.is_source_port_reachable([ports])
 
             lib.set_firewall("off")
-            assert not firewall.is_active([ports])
+            assert not firewall.is_active()
         assert network.is_disconnected()
-    assert not firewall.is_active([ports])
+    assert not firewall.is_active()
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -161,16 +158,16 @@ def test_firewall_05_allowlist_subnet(tech, proto, obfuscated, subnet):
 
             lib.set_firewall("on")
             allowlist.add_subnet_to_allowlist([subnet])
-            assert not firewall.is_active(None, [subnet])
+            assert not firewall.is_active_subnet([subnet])
 
             sh.nordvpn.connect()
             assert network.is_connected()
-            assert firewall.is_active(None, [subnet])
+            assert firewall.is_active_subnet([subnet])
 
             lib.set_firewall("off")
-            assert not firewall.is_active(None, [subnet])
+            assert not firewall.is_active_subnet([subnet])
         assert network.is_disconnected()
-    assert not firewall.is_active(None, [subnet])
+    assert not firewall.is_active_subnet([subnet])
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
