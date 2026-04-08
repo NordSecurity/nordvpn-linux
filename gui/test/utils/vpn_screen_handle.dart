@@ -36,8 +36,10 @@ final class VpnScreenHandle extends ScreenHandle {
   }
 
   Future<void> disconnect() async {
-    await app.tester.tap(disconnectButton());
-    await app.tester.pump();
+    await app.tester.tap(pauseConnectionButton());
+    await app.tester.pumpAndSettle(); // waits until all animations finish
+    await app.tester.tap(disconnectMenu());
+    await app.tester.pumpAndSettle();
   }
 
   bool isSubscriptionPopupVisible() {
@@ -137,9 +139,17 @@ final class VpnScreenHandle extends ScreenHandle {
     return goToSettingsFinder;
   }
 
-  Finder disconnectButton() {
+  Finder pauseConnectionButton() {
     final disconnectFinder = find.byKey(
-      ConnectionCardButtons.disconnectButtonKey,
+      ConnectionCardButtons.pauseConnectionButtonKey,
+    );
+    expect(disconnectFinder, findsOneWidget);
+    return disconnectFinder;
+  }
+
+  Finder disconnectMenu() {
+    final disconnectFinder = find.byKey(
+      ConnectionCardButtons.disconnectMenuItemKey,
     );
     expect(disconnectFinder, findsOneWidget);
     return disconnectFinder;
