@@ -54,6 +54,7 @@ abstract class VpnStatus with _$VpnStatus {
       isConnected() && connectionParameters.source == ConnectionSource.AUTO;
   bool isConnecting() => status == ConnectionState.CONNECTING;
   bool isDisconnected() => status == ConnectionState.DISCONNECTED;
+  bool isPaused() => status == ConnectionState.PAUSED;
 
   // Don't check all the members because they might not be relevant, e.g. connection duration
   bool isEqualToStatusResponse(StatusResponse statusResponse) {

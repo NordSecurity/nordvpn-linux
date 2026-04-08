@@ -5,6 +5,7 @@ import 'package:nordvpn/data/models/country.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/data/providers/app_state_provider.dart';
 import 'package:nordvpn/data/providers/popups_provider.dart';
+import 'package:nordvpn/data/providers/toasts_provider.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/data/repository/vpn_repository.dart';
 import 'package:nordvpn/logger.dart';
@@ -51,6 +52,9 @@ class VpnStatusController extends _$VpnStatusController
       _doAndShowPopup((vpn) => vpn.reconnect(args));
 
   Future<void> disconnect() => _doAndShowPopup((vpn) => vpn.disconnect());
+
+  Future<void> pauseConnection(int pauseSeconds) =>
+      _doAndShowPopup((vpn) => vpn.pauseConnection(pauseSeconds));
 
   Future<int> cancelConnect() => _doAndShowPopup((vpn) => vpn.cancelConnect());
 
@@ -100,6 +104,12 @@ class VpnStatusController extends _$VpnStatusController
         "ignore VPN status changed ${status.state} because they are equal",
       );
       return;
+    }
+
+    if (status.state == ConnectionState.PAUSED) {
+      ref.read(toastsProvider.notifier).showPending();
+    } else {
+      ref.read(toastsProvider.notifier).closeToast();
     }
 
     final vpnStatus = state.value!.copyWith(

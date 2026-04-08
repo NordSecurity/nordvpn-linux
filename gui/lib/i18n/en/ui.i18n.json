@@ -280,6 +280,5 @@
   "reconnect": "Reconnect",
   "changeVPNsettings": "Change VPN settings",
   "getHelp": "Get help",
-  "connectionDetails": "...",
   "pauseConnection": "Pause connection"
 }

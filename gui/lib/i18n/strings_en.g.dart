@@ -2037,9 +2037,6 @@ class TranslationsUiEn {
 	/// en: 'Get help'
 	String get getHelp => 'Get help';
 
-	/// en: '...'
-	String get connectionDetails => '...';
-
 	/// en: 'Pause connection'
 	String get pauseConnection => 'Pause connection';
 }
@@ -2705,7 +2702,6 @@ extension on Translations {
 			'ui.reconnect' => 'Reconnect',
 			'ui.changeVPNsettings' => 'Change VPN settings',
 			'ui.getHelp' => 'Get help',
-			'ui.connectionDetails' => '...',
 			'ui.pauseConnection' => 'Pause connection',
 			_ => null,
 		};

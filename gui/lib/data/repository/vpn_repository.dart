@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grpc/grpc.dart';
 import 'package:nordvpn/config.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
+import 'package:nordvpn/pb/daemon/pause.pb.dart';
 import 'package:nordvpn/pb/daemon/recent_connections.pb.dart';
 import 'package:nordvpn/grpc/grpc_service.dart';
 import 'package:nordvpn/grpc/protobuf_utils.dart';
@@ -86,6 +87,13 @@ class VpnRepository {
     }
 
     return DaemonStatusCode.failure;
+  }
+
+  Future<int> pauseConnection(int pauseSeconds) async {
+    final response = await _client.pauseConnection(
+      PauseRequest(seconds: pauseSeconds),
+    );
+    return response.type.toInt();
   }
 
   Future<int> cancelConnect() async {

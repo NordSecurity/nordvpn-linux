@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nordvpn/constants.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/app_settings.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
@@ -6,6 +7,7 @@ import 'package:nordvpn/data/models/server_info.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
+import 'package:nordvpn/data/providers/toasts_provider.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
 import 'package:nordvpn/internal/uri_launch_extension.dart';
@@ -65,33 +67,28 @@ final class ConnectionCardButtons extends ConsumerWidget {
             items: [
               ContextMenuItem(
                 label: t.ui.pauseFor5Min,
-                onTap: () async => await ref
-                    .read(vpnStatusControllerProvider.notifier)
-                    .disconnect(), // TODO(LVPN-10113): add proper action
+                onTap: () async =>
+                    await _pauseConnection(ref, pauseConnectionTime5Min),
               ),
               ContextMenuItem(
                 label: t.ui.pauseFor15Min,
-                onTap: () async => await ref
-                    .read(vpnStatusControllerProvider.notifier)
-                    .disconnect(), // TODO(LVPN-10113): add proper action
+                onTap: () async =>
+                    await _pauseConnection(ref, pauseConnectionTime15Min),
               ),
               ContextMenuItem(
                 label: t.ui.pauseFor30Min,
-                onTap: () async => await ref
-                    .read(vpnStatusControllerProvider.notifier)
-                    .disconnect(), // TODO(LVPN-10113): add proper action
+                onTap: () async =>
+                    await _pauseConnection(ref, pauseConnectionTime30Min),
               ),
               ContextMenuItem(
                 label: t.ui.pauseFor1Hour,
-                onTap: () async => await ref
-                    .read(vpnStatusControllerProvider.notifier)
-                    .disconnect(), // TODO(LVPN-10113): add proper action
+                onTap: () async =>
+                    await _pauseConnection(ref, pauseConnectionTime1Hour),
               ),
               ContextMenuItem(
                 label: t.ui.pauseFor24Hours,
-                onTap: () async => await ref
-                    .read(vpnStatusControllerProvider.notifier)
-                    .disconnect(), // TODO(LVPN-10113): add proper action
+                onTap: () async =>
+                    await _pauseConnection(ref, pauseConnectionTime24Hours),
               ),
               ContextMenuItem(
                 key: ConnectionCardButtons.disconnectMenuItemKey,
@@ -199,5 +196,14 @@ final class ConnectionCardButtons extends ConsumerWidget {
     await ref
         .read(vpnStatusControllerProvider.notifier)
         .reconnect(status.connectionParameters);
+  }
+
+  Future<void> _pauseConnection(WidgetRef ref, int pauseSeconds) async {
+    ref
+        .read(toastsProvider.notifier)
+        .setPendingDuration(Duration(seconds: pauseSeconds));
+    ref
+        .read(vpnStatusControllerProvider.notifier)
+        .pauseConnection(pauseSeconds);
   }
 }
