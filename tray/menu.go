@@ -213,11 +213,14 @@ func buildConnectionSection(ti *Instance) {
 
 func vpnStateToStatusLabel(state pb.ConnectionState) string {
 	switch state {
-
 	case pb.ConnectionState_CONNECTED:
 		return "Secured"
 	case pb.ConnectionState_CONNECTING:
 		return "Securing your connection…"
+	case pb.ConnectionState_UNKNOWN_STATE:
+		fallthrough
+	case pb.ConnectionState_PAUSED:
+		fallthrough
 	case pb.ConnectionState_DISCONNECTED:
 		fallthrough
 	default:
