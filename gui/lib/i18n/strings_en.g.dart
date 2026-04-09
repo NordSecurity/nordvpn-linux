@@ -1731,9 +1731,6 @@ class TranslationsUiEn {
 	/// en: 'Turn off Kill Switch'
 	String get turnOffKillSwitch => 'Turn off Kill Switch';
 
-	/// en: 'Connect now'
-	String get connectNow => 'Connect now';
-
 	/// en: 'Setting auto-connect to [$target]...'
 	String settingAutoconnectTo({required Object target}) => 'Setting auto-connect to [${target}]...';
 
@@ -2603,7 +2600,6 @@ extension on Translations {
 			'ui.appVersionCompatibilityRecommendation' => ({required Uri compatibilityUrl}) => 'For more options, check our [compatibility guide](${compatibilityUrl})',
 			'ui.turnOffKillSwitchDescription' => 'Kill Switch is blocking the login. Turn it off for now to continue.',
 			'ui.turnOffKillSwitch' => 'Turn off Kill Switch',
-			'ui.connectNow' => 'Connect now',
 			'ui.settingAutoconnectTo' => ({required Object target}) => 'Setting auto-connect to [${target}]...',
 			'ui.doubleVpnDesc' => 'Encrypt your traffic twice for extra security',
 			'ui.onionOverVpnDesc' => 'Use the Onion network with VPN protection',
