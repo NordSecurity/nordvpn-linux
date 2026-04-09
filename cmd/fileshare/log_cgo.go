@@ -22,8 +22,8 @@ void redirect_stdout_to_fd(int fd) {
 */
 import "C"
 
-// logSetup sets the stdout and stderr outside go runtime to a given file
-func logSetup(f *os.File) {
+// redirectNativeOutput sets the stdout and stderr outside go runtime to a given file
+func redirectNativeOutput(f *os.File) {
 	C.redirect_stdout_to_fd(C.int(f.Fd()))
 	// Ignore default printing of go stack trace in case of SIGABRT in prod builds which may be
 	// produced by Rust panics

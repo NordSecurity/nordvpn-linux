@@ -35,15 +35,6 @@ var (
 	daemonURL   = fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
 )
 
-func openLogFile(path string) (*os.File, error) {
-	// #nosec path is constant
-	logFile, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, internal.PermUserRW)
-	if err != nil {
-		return nil, err
-	}
-	return logFile, nil
-}
-
 func main() {
 	defer func() {
 		if r := recover(); r != nil {
@@ -59,14 +50,14 @@ func main() {
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
-	cacheDirPath, err := internal.GetCacheDirPath(homeDir)
-	if err == nil {
-		if logFile, err := openLogFile(filepath.Join(cacheDirPath, internal.FileshareLogFileName)); err == nil {
-			log.SetOutput(logFile)
-			logSetup(logFile)
-			log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
-		}
-	}
+	logFile := internal.UserLogOutput(internal.FileshareLogFileName)
+	redirectNativeOutput(logFile)
+	stopLevelWatcher := log.SetupLogger(
+		logFile,
+		internal.LogLevelFile,
+		log.DefaultLevel(internal.IsDevEnv(Environment)),
+	)
+	defer stopLevelWatcher()
 
 	processStatus := fileshare_process.NewFileshareGRPCProcessManager().ProcessStatus()
 	switch processStatus {
