@@ -117,7 +117,6 @@ func TestToMooseStrings(t *testing.T) {
 				ItemValue:     "24_hours",
 			},
 		},
-		
 	}
 
 	for _, tt := range tests {
