@@ -42,6 +42,7 @@ abstract class VpnStatus with _$VpnStatus {
     assert(
       vpnStatus.isMeshnetRouting ||
           vpnStatus.isConnecting() ||
+          vpnStatus.isPaused() ||
           (vpnStatus.isConnected() && vpnStatus.country != null) ||
           (vpnStatus.isDisconnected() && vpnStatus.country == null),
     );
