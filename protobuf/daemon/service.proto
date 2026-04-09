@@ -52,6 +52,7 @@ service Daemon {
   rpc Countries(Empty) returns (ServerGroupsList);
   rpc Cities(CitiesRequest) returns (ServerGroupsList);
   rpc Groups(Empty) returns (ServerGroupsList);
+  rpc RecommendedServer(Empty) returns(RecommendedServerLocation);
 
   // ==================== General Settings ====================
   rpc Settings(Empty) returns (SettingsResponse);

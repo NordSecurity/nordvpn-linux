@@ -143,6 +143,11 @@ class DaemonStub(object):
                 request_serializer=common__pb2.Empty.SerializeToString,
                 response_deserializer=common__pb2.ServerGroupsList.FromString,
                 _registered_method=True)
+        self.RecommendedServer = channel.unary_unary(
+                '/pb.Daemon/RecommendedServer',
+                request_serializer=common__pb2.Empty.SerializeToString,
+                response_deserializer=servers__pb2.RecommendedServerLocation.FromString,
+                _registered_method=True)
         self.Settings = channel.unary_unary(
                 '/pb.Daemon/Settings',
                 request_serializer=common__pb2.Empty.SerializeToString,
@@ -400,6 +405,12 @@ class DaemonServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def Groups(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RecommendedServer(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -679,6 +690,11 @@ def add_DaemonServicer_to_server(servicer, server):
                     servicer.Groups,
                     request_deserializer=common__pb2.Empty.FromString,
                     response_serializer=common__pb2.ServerGroupsList.SerializeToString,
+            ),
+            'RecommendedServer': grpc.unary_unary_rpc_method_handler(
+                    servicer.RecommendedServer,
+                    request_deserializer=common__pb2.Empty.FromString,
+                    response_serializer=servers__pb2.RecommendedServerLocation.SerializeToString,
             ),
             'Settings': grpc.unary_unary_rpc_method_handler(
                     servicer.Settings,
@@ -1312,6 +1328,33 @@ class Daemon(object):
             '/pb.Daemon/Groups',
             common__pb2.Empty.SerializeToString,
             common__pb2.ServerGroupsList.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RecommendedServer(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/RecommendedServer',
+            common__pb2.Empty.SerializeToString,
+            servers__pb2.RecommendedServerLocation.FromString,
             options,
             channel_credentials,
             insecure,
