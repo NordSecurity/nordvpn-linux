@@ -70,8 +70,9 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connecte
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    allowlist.add_ports_to_allowlist([port])
     sh.nordvpn.connect()
+
+    allowlist.add_ports_to_allowlist([port])
 
     # output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     assert firewall.is_source_port_reachable([port])

@@ -114,9 +114,9 @@ def is_port_accessible_UDP(src_port):
     s.settimeout(SOCK_TIMEOUT)
     try:
         s.sendto(b"ping", ("172.17.0.1", UDP_DST_PORT))
-        print("UDP data sent")
+        print("UDP data sent", UDP_DST_PORT, src_port)
         data, addr = s.recvfrom(4096)
-        print("data received back from server: ", data)
+        print("data received back from server: ", UDP_DST_PORT, data, addr)
         return True
     except PermissionError:
         print("unable to send packet to address")

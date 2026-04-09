@@ -245,5 +245,9 @@ func getNetworkInfo() string {
 	version := "4"
 	builder.WriteString("IP tables for ipv" + version + ":\n" + tableRules)
 
+	if out, err := exec.Command("nft", "list", "ruleset").CombinedOutput(); err == nil {
+		builder.WriteString("\nnft:\n" + string(out))
+	}
+
 	return builder.String()
 }

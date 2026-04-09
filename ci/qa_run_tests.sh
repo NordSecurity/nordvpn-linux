@@ -87,6 +87,9 @@ mkdir -p "${LOGS_FOLDER}"
 mkdir -p "${ARTIFACTS_FOLDER}"
 mkdir -p "${GOCOVERDIR}"
 
+sudo apt update
+sudo apt install -y conntrack
+
 python3 -m pytest -v -x -rsx --setup-timeout 60 --execution-timeout 180 --teardown-timeout 25 -o log_cli=true \
 --html="${WORKDIR}"/dist/test_artifacts/report.html --self-contained-html  --junitxml="${WORKDIR}"/dist/test_artifacts/report.xml "${args[@]}"
 

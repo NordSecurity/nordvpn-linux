@@ -112,12 +112,35 @@ print = _print_with_timestamp  # noqa: A001
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_check_internet_connection():
+    out = sh.sudo.conntrack("-L")
+    log_file = os.environ["WORKDIR"] + "/dist/logs/conntrack.log"
+    with open(log_file, "w") as f:
+        f.write(str(out))
     if not network.is_internet_reachable(retry=1) or not network.is_internet_reachable_outside_vpn(retry=1):
         print("setup_check_internet_connection: no internet available before running the tests")
+    sh.sudo.conntrack("-D", "-p", "udp")
+    sh.sudo.conntrack("-D", "-p", "tcp")
 
 
 @pytest.fixture(scope="session", autouse=True)
 def start_system_monitoring():
+    rules = r"""
+    table inet mytest {
+        chain input {
+            type filter hook input priority filter;
+            tcp sport 1234 meta nftrace set 1
+            udp sport 1235 meta nftrace set 1
+        }
+        chain output {
+            type route hook output priority mangle;
+            tcp dport 1234 meta nftrace set 1
+            udp dport 1235 meta nftrace set 1
+        }
+    }
+    """
+
+    subprocess.run(["sudo", "nft", "-f", "-"], input=rules, text=True, check=True)
+
     if os.getenv("SKIP_SYSTEM_MONITORING"):
         print("Skipping monitoring...")
         yield
@@ -131,11 +154,11 @@ def start_system_monitoring():
     threads = []
 
     threads.append(threading.Thread(target=_check_connection_to_ip, args=["1.1.1.1", stop_event], daemon=True))
-    threads.append(
-        threading.Thread(target=_check_connection_to_ip_outside_vpn, args=["1.1.1.1", stop_event], daemon=True)
-    )
+    threads.append(threading.Thread(target=_check_connection_to_ip_outside_vpn, args=["1.1.1.1", stop_event], daemon=True))
     threads.append(threading.Thread(target=_check_dns_resolution, args=["nordvpn.com", stop_event], daemon=True))
     threads.append(threading.Thread(target=_capture_traffic, args=[stop_event], daemon=True))
+
+    threads.append(threading.Thread(target=_monitor_nft, args=[stop_event], daemon=True))
     print(threads)
 
     for thread in threads:
@@ -180,6 +203,24 @@ def _check_dns_resolution(domain, stop_event):
         except Exception as e:  # noqa: BLE001
             print(f"~~~_check_dns_resolution: DNS {domain} FAILURE. Error: {e}")
         stop_event.wait(_CHECK_FREQUENCY)
+
+
+def _monitor_nft(stop_event):
+    log_file = os.environ["WORKDIR"] + "/dist/logs/nft.log"
+    print("Start nft monitor")
+    with open(log_file, "w") as f:
+        proc = subprocess.Popen(
+            ["sudo", "nft", "monitor", "trace"],
+            stdout=subprocess.PIPE,
+            text=True,
+        )
+        while not stop_event.is_set():
+            line = proc.stdout.readline()
+            if not line:
+                break
+            f.write(line)
+            f.flush()
+        proc.terminate()
 
 
 def _capture_traffic(stop_event):
@@ -388,7 +429,6 @@ def env():
     env = daemon.get_env()
     print(f"Current env: '{env}'")
     return env
-
 
 
 @pytest.fixture
