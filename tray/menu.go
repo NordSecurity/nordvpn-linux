@@ -216,7 +216,7 @@ func vpnStateToStatusLabel(state pb.ConnectionState) string {
 	case pb.ConnectionState_CONNECTED:
 		return "Secured"
 	case pb.ConnectionState_CONNECTING:
-		return "Securing your connection…"
+		return "Connecting…"
 	case pb.ConnectionState_UNKNOWN_STATE:
 		fallthrough
 	case pb.ConnectionState_PAUSED:
