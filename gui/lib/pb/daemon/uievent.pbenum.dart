@@ -131,6 +131,18 @@ class UIEvent_ItemValue extends $pb.ProtobufEnum {
   static const UIEvent_ItemValue P2P =
       UIEvent_ItemValue._(8, _omitEnumNames ? '' : 'P2P');
 
+  /// values for handling pause functionality analytics
+  static const UIEvent_ItemValue PAUSE_5_MIN =
+      UIEvent_ItemValue._(9, _omitEnumNames ? '' : 'PAUSE_5_MIN');
+  static const UIEvent_ItemValue PAUSE_15_MIN =
+      UIEvent_ItemValue._(10, _omitEnumNames ? '' : 'PAUSE_15_MIN');
+  static const UIEvent_ItemValue PAUSE_30_MIN =
+      UIEvent_ItemValue._(11, _omitEnumNames ? '' : 'PAUSE_30_MIN');
+  static const UIEvent_ItemValue PAUSE_1_HOUR =
+      UIEvent_ItemValue._(12, _omitEnumNames ? '' : 'PAUSE_1_HOUR');
+  static const UIEvent_ItemValue PAUSE_24_HOURS =
+      UIEvent_ItemValue._(13, _omitEnumNames ? '' : 'PAUSE_24_HOURS');
+
   static const $core.List<UIEvent_ItemValue> values = <UIEvent_ItemValue>[
     ITEM_VALUE_UNSPECIFIED,
     COUNTRY,
@@ -141,10 +153,15 @@ class UIEvent_ItemValue extends $pb.ProtobufEnum {
     ONION_OVER_VPN,
     DOUBLE_VPN,
     P2P,
+    PAUSE_5_MIN,
+    PAUSE_15_MIN,
+    PAUSE_30_MIN,
+    PAUSE_1_HOUR,
+    PAUSE_24_HOURS,
   ];
 
   static final $core.List<UIEvent_ItemValue?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 8);
+      $pb.ProtobufEnum.$_initByValueList(values, 13);
   static UIEvent_ItemValue? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 

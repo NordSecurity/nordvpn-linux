@@ -57,6 +57,8 @@ func itemNameToString(name pb.UIEvent_ItemName) string {
 		return "rate_connection"
 	case pb.UIEvent_MESHNET_INVITE_SEND:
 		return "meshnet_invite_send"
+	case pb.UIEvent_PAUSE:
+		return "pause"
 	}
 	return ""
 }
@@ -93,6 +95,16 @@ func itemValueToString(value pb.UIEvent_ItemValue) string {
 		return "double_vpn"
 	case pb.UIEvent_P2P:
 		return "p2p"
+	case pb.UIEvent_PAUSE_5_MIN:
+		return "5_minutes"
+	case pb.UIEvent_PAUSE_15_MIN:
+		return "15_minutes"
+	case pb.UIEvent_PAUSE_30_MIN:
+		return "30_minutes"
+	case pb.UIEvent_PAUSE_1_HOUR:
+		return "1_hour"
+	case pb.UIEvent_PAUSE_24_HOURS:
+		return "24_hours"
 	}
 	return ""
 }

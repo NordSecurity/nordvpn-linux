@@ -58,6 +58,11 @@ class UIEvent(_message.Message):
         ONION_OVER_VPN: _ClassVar[UIEvent.ItemValue]
         DOUBLE_VPN: _ClassVar[UIEvent.ItemValue]
         P2P: _ClassVar[UIEvent.ItemValue]
+        PAUSE_5_MIN: _ClassVar[UIEvent.ItemValue]
+        PAUSE_15_MIN: _ClassVar[UIEvent.ItemValue]
+        PAUSE_30_MIN: _ClassVar[UIEvent.ItemValue]
+        PAUSE_1_HOUR: _ClassVar[UIEvent.ItemValue]
+        PAUSE_24_HOURS: _ClassVar[UIEvent.ItemValue]
     ITEM_VALUE_UNSPECIFIED: UIEvent.ItemValue
     COUNTRY: UIEvent.ItemValue
     CITY: UIEvent.ItemValue
@@ -67,4 +72,9 @@ class UIEvent(_message.Message):
     ONION_OVER_VPN: UIEvent.ItemValue
     DOUBLE_VPN: UIEvent.ItemValue
     P2P: UIEvent.ItemValue
+    PAUSE_5_MIN: UIEvent.ItemValue
+    PAUSE_15_MIN: UIEvent.ItemValue
+    PAUSE_30_MIN: UIEvent.ItemValue
+    PAUSE_1_HOUR: UIEvent.ItemValue
+    PAUSE_24_HOURS: UIEvent.ItemValue
     def __init__(self) -> None: ...
