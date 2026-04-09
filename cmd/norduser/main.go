@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/user"
 	"path"
-	"path/filepath"
 	"slices"
 	"strconv"
 	"syscall"
@@ -32,14 +31,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/uievent"
 )
 
-func openLogFile(path string) (*os.File, error) {
-	// #nosec path is constant
-	logFile, err := os.OpenFile(path, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
-	if err != nil {
-		return nil, err
-	}
-	return logFile, nil
-}
+// Value set when building the application
+var Environment = ""
 
 func addAutostart() (string, error) {
 	autostartDesktopFileContents := "[Desktop Entry]" +
@@ -145,24 +138,6 @@ func shouldEnableFileshare(uid uint32) (bool, error) {
 	return meshStatus.GetUid() == uid && meshStatus.GetValue(), nil
 }
 
-func setupLog() {
-	log.SetOutput(os.Stdout)
-
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return
-	}
-
-	cacheDirPath, err := internal.GetCacheDirPath(homeDir)
-
-	if err == nil {
-		if logFile, err := openLogFile(filepath.Join(cacheDirPath, internal.NorduserdLogFileName)); err == nil {
-			log.SetOutput(logFile)
-			log.SetFlags(log.LstdFlags | log.Lshortfile | log.Lmicroseconds)
-		}
-	}
-}
-
 func waitForShutdown(stopChan <-chan norduser.StopRequest,
 	fileshareManagementChan chan<- norduser.FileshareManagementMsg,
 	fileshareShutdownChan <-chan interface{},
@@ -227,7 +202,13 @@ func startFileshare(uid uint32) (chan<- norduser.FileshareManagementMsg, <-chan 
 }
 
 func startSnap() {
-	setupLog()
+	stopLevelWatcher := log.SetupLogger(
+		internal.UserLogOutput(internal.NorduserdLogFileName),
+		internal.LogLevelFile,
+		log.DefaultLevel(internal.IsDevEnv(Environment)),
+	)
+	defer stopLevelWatcher()
+
 	group, err := user.LookupGroup(internal.NordvpnGroup)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "Unable to retrieve nordvpn group:", err)
@@ -324,15 +305,18 @@ func startSnap() {
 }
 
 func start() {
-	listenerFunction := internal.SystemDListener
-
-	setupLog()
+	stopLevelWatcher := log.SetupLogger(
+		internal.UserLogOutput(internal.NorduserdLogFileName),
+		internal.LogLevelFile,
+		log.DefaultLevel(internal.IsDevEnv(Environment)),
+	)
+	defer stopLevelWatcher()
 
 	connURL := internal.GetNorduserSocketFork(os.Geteuid())
 	if err := os.Remove(connURL); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Println(internal.ErrorPrefix, "Failed to remove old socket file:", err)
 	}
-	listenerFunction = internal.ManualListener(connURL, internal.PermUserRWX)
+	listenerFunction := internal.ManualListener(connURL, internal.PermUserRWX)
 
 	listener, err := listenerFunction()
 	if err != nil {
