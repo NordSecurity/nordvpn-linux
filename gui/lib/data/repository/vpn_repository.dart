@@ -90,8 +90,13 @@ class VpnRepository {
   }
 
   Future<int> pauseConnection(int pauseSeconds) async {
+    final options = createUiEventCallOptions(
+      formReference: UIEvent_FormReference.HOME_SCREEN,
+      itemName: UIEvent_ItemName.PAUSE,
+    );
     final response = await _client.pauseConnection(
       PauseRequest(seconds: pauseSeconds),
+      options: options,
     );
     return response.type.toInt();
   }
