@@ -13,10 +13,10 @@ import 'package:nordvpn/internal/scaler_responsive_box.dart';
 import 'package:nordvpn/internal/uri_launch_extension.dart';
 import 'package:nordvpn/router/routes.dart';
 import 'package:nordvpn/internal/urls.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/connection_card_theme.dart';
 import 'package:nordvpn/widgets/context_menu/context_menu.dart';
+import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 
 final class ConnectionCardButtons extends ConsumerWidget {
   static const secureMyConnectionButtonKey = Key("vpnSecureMyConnectionButton");
@@ -127,13 +127,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
               anchorBuilder: (toggleMenu) => ElevatedButton(
                 style: buttonTheme.connectionDetailsButtonStyle,
                 onPressed: toggleMenu,
-                child: SvgPicture.asset(
-                  'assets/connection_details.svg',
-                  colorFilter: ColorFilter.mode(
-                    IconTheme.of(context).color!,
-                    BlendMode.srcIn,
-                  ),
-                ),
+                child: DynamicThemeImage("connection_details.svg"),
               ),
             ),
           ),

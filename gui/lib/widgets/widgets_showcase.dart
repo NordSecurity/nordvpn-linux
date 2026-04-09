@@ -8,10 +8,10 @@ import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/popup_codes.dart';
 import 'package:nordvpn/logger.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/connection_card_theme.dart';
 import 'package:nordvpn/widgets/context_menu/context_menu.dart';
+import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:nordvpn/widgets/dropdown.dart';
 import 'package:nordvpn/widgets/input.dart';
 import 'package:nordvpn/widgets/loading_button.dart';
@@ -231,13 +231,7 @@ class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
                           child: ElevatedButton(
                             style: buttonTheme.connectionDetailsButtonStyle,
                             onPressed: toggleMenu,
-                            child: SvgPicture.asset(
-                              'assets/connection_details.svg',
-                              colorFilter: ColorFilter.mode(
-                                IconTheme.of(context).color!,
-                                BlendMode.srcIn,
-                              ),
-                            ),
+                            child: DynamicThemeImage("connection_details.svg"),
                           ),
                         ),
                       ),
