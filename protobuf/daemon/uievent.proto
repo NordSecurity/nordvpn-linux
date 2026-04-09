@@ -27,6 +27,7 @@ message UIEvent {
     RATE_CONNECTION = 6;
     MESHNET_INVITE_SEND = 7;
     LOGIN_TOKEN = 8; // CLI-only: login via token (nordvpn login --token)
+    PAUSE = 9;
   }
 
   // ItemType represents the type of user interface event

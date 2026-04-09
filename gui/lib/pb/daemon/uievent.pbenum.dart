@@ -66,6 +66,8 @@ class UIEvent_ItemName extends $pb.ProtobufEnum {
       UIEvent_ItemName._(7, _omitEnumNames ? '' : 'MESHNET_INVITE_SEND');
   static const UIEvent_ItemName LOGIN_TOKEN =
       UIEvent_ItemName._(8, _omitEnumNames ? '' : 'LOGIN_TOKEN');
+  static const UIEvent_ItemName PAUSE =
+      UIEvent_ItemName._(9, _omitEnumNames ? '' : 'PAUSE');
 
   static const $core.List<UIEvent_ItemName> values = <UIEvent_ItemName>[
     ITEM_NAME_UNSPECIFIED,
@@ -77,10 +79,11 @@ class UIEvent_ItemName extends $pb.ProtobufEnum {
     RATE_CONNECTION,
     MESHNET_INVITE_SEND,
     LOGIN_TOKEN,
+    PAUSE,
   ];
 
   static final $core.List<UIEvent_ItemName?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 8);
+      $pb.ProtobufEnum.$_initByValueList(values, 9);
   static UIEvent_ItemName? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
