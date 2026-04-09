@@ -868,7 +868,7 @@ final class NordVpnTheme {
       borderWidth: AppBorderWidth.md,
       borderColor: design.semanticColors.borderPrimary,
       widgetPositionRight: 20,
-      widgetPositionBottom: 16,
+      widgetPositionBottom: 36,
     );
   }
 }

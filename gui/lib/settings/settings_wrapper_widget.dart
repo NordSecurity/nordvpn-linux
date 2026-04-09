@@ -148,7 +148,7 @@ Widget _buildVpnStatus(BuildContext context) {
       final status = ref.watch(vpnStatusControllerProvider);
       if (status.hasValue && status.value != null) {
         final vpnStatus = status.value!;
-        if (vpnStatus.isDisconnected()) {
+        if (vpnStatus.isDisconnected() || vpnStatus.isPaused()) {
           return Text(
             t.ui.notConnected,
             style: settingsTheme.vpnStatusStyle.copyWith(
