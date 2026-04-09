@@ -640,3 +640,25 @@ func GetFileWatcher(pathsToMonitor ...string) (watcher *fsnotify.Watcher, err er
 
 	return watcher, nil
 }
+
+// UserLogOutput opens logFileName in the user's cache directory and returns it.
+// Falls back to os.Stdout if the file cannot be opened.
+func UserLogOutput(logFileName string) *os.File {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return os.Stdout
+	}
+	cacheDirPath, err := GetCacheDirPath(homeDir)
+	if err != nil {
+		return os.Stdout
+	}
+	logFile, err := os.OpenFile(
+		filepath.Join(cacheDirPath, logFileName),
+		os.O_WRONLY|os.O_APPEND|os.O_CREATE,
+		PermUserRW,
+	)
+	if err != nil {
+		return os.Stdout
+	}
+	return logFile
+}
