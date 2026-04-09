@@ -127,12 +127,12 @@ def start_system_monitoring():
     rules = r"""
     table inet mytest {
         chain input {
-            type filter hook input priority filter;
+            type filter hook input priority -200;
             tcp sport 1234 meta nftrace set 1
             udp sport 1235 meta nftrace set 1
         }
         chain output {
-            type route hook output priority mangle;
+            type route hook output priority -10000;
             tcp dport 1234 meta nftrace set 1
             udp dport 1235 meta nftrace set 1
         }
