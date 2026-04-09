@@ -41,13 +41,6 @@ final RegExp ipv4Regex = RegExp(
 
 const defaultTheme = ThemeMode.system;
 
-// pause time in seconds
-const pauseConnectionTime5Min = 5 * 60;
-const pauseConnectionTime15Min = 15 * 60;
-const pauseConnectionTime30Min = 30 * 60;
-const pauseConnectionTime1Hour = 60 * 60;
-const pauseConnectionTime24Hours = 24 * 60 * 60;
-
 // Main window sizes
 final windowMinSize = Size(900, 700);
 final windowDefaultSize = Size(900, 700);

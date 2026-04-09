@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grpc/grpc.dart';
 import 'package:nordvpn/config.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
+import 'package:nordvpn/data/models/pause.dart';
 import 'package:nordvpn/pb/daemon/pause.pb.dart';
 import 'package:nordvpn/pb/daemon/recent_connections.pb.dart';
 import 'package:nordvpn/grpc/grpc_service.dart';
@@ -89,13 +90,14 @@ class VpnRepository {
     return DaemonStatusCode.failure;
   }
 
-  Future<int> pauseConnection(int pauseSeconds) async {
+  Future<int> pauseConnection(PauseLength pauseValue) async {
     final options = createUiEventCallOptions(
       formReference: UIEvent_FormReference.HOME_SCREEN,
       itemName: UIEvent_ItemName.PAUSE,
+      itemValue: pauseValue.toUIEventItemValue(),
     );
     final response = await _client.pauseConnection(
-      PauseRequest(seconds: pauseSeconds),
+      PauseRequest(seconds: pauseValue.value),
       options: options,
     );
     return response.type.toInt();

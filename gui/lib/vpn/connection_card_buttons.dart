@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:nordvpn/constants.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/app_settings.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
+import 'package:nordvpn/data/models/pause.dart';
 import 'package:nordvpn/data/models/server_info.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
@@ -67,27 +67,27 @@ final class ConnectionCardButtons extends ConsumerWidget {
               ContextMenuItem(
                 label: t.ui.pauseFor5Min,
                 onTap: () async =>
-                    await _pauseConnection(ref, pauseConnectionTime5Min),
+                    await _pauseConnection(ref, PauseLength.mins5),
               ),
               ContextMenuItem(
                 label: t.ui.pauseFor15Min,
                 onTap: () async =>
-                    await _pauseConnection(ref, pauseConnectionTime15Min),
+                    await _pauseConnection(ref, PauseLength.mins15),
               ),
               ContextMenuItem(
                 label: t.ui.pauseFor30Min,
                 onTap: () async =>
-                    await _pauseConnection(ref, pauseConnectionTime30Min),
+                    await _pauseConnection(ref, PauseLength.mins30),
               ),
               ContextMenuItem(
                 label: t.ui.pauseFor1Hour,
                 onTap: () async =>
-                    await _pauseConnection(ref, pauseConnectionTime1Hour),
+                    await _pauseConnection(ref, PauseLength.hour1),
               ),
               ContextMenuItem(
                 label: t.ui.pauseFor24Hours,
                 onTap: () async =>
-                    await _pauseConnection(ref, pauseConnectionTime24Hours),
+                    await _pauseConnection(ref, PauseLength.hours24),
               ),
               ContextMenuItem(
                 key: ConnectionCardButtons.disconnectMenuItemKey,
@@ -191,9 +191,9 @@ final class ConnectionCardButtons extends ConsumerWidget {
         .reconnect(status.connectionParameters);
   }
 
-  Future<void> _pauseConnection(WidgetRef ref, int pauseSeconds) async {
+  Future<void> _pauseConnection(WidgetRef ref, PauseLength pauseLength) async {
     ref
         .read(vpnStatusControllerProvider.notifier)
-        .pauseConnection(pauseSeconds);
+        .pauseConnection(pauseLength);
   }
 }
