@@ -7,7 +7,6 @@ import 'package:nordvpn/data/models/server_info.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
-import 'package:nordvpn/data/providers/toasts_provider.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
 import 'package:nordvpn/internal/uri_launch_extension.dart';
@@ -193,9 +192,6 @@ final class ConnectionCardButtons extends ConsumerWidget {
   }
 
   Future<void> _pauseConnection(WidgetRef ref, int pauseSeconds) async {
-    ref
-        .read(toastsProvider.notifier)
-        .setPendingDuration(Duration(seconds: pauseSeconds));
     ref
         .read(vpnStatusControllerProvider.notifier)
         .pauseConnection(pauseSeconds);

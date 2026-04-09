@@ -363,12 +363,9 @@ class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
                     child: const Text("Generic failure"),
                   ),
                   ElevatedButton(
-                    onPressed: () {
-                      ref
-                          .read(toastsProvider.notifier)
-                          .setPendingDuration(Duration(seconds: 15));
-                      ref.read(toastsProvider.notifier).showPending();
-                    },
+                    onPressed: () => ref
+                        .read(toastsProvider.notifier)
+                        .show(Duration(seconds: 15)),
                     child: const Text("Open Toast"),
                   ),
                   ElevatedButton(

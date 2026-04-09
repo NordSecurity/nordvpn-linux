@@ -26,6 +26,13 @@ class VpnStatusController extends _$VpnStatusController
     final status = await ref.read(vpnRepositoryProvider).fetchStatus();
     _registerNotifications();
 
+    if (status.state == ConnectionState.PAUSED) {
+      // show the toast if the gui starts while already paused
+      ref
+          .read(toastsProvider.notifier)
+          .show(Duration(seconds: status.pauseRemainingDurationSec));
+    }
+
     return VpnStatus.fromStatusResponse(status);
   }
 
@@ -107,7 +114,9 @@ class VpnStatusController extends _$VpnStatusController
     }
 
     if (status.state == ConnectionState.PAUSED) {
-      ref.read(toastsProvider.notifier).showPending();
+      ref
+          .read(toastsProvider.notifier)
+          .show(Duration(seconds: status.pauseRemainingDurationSec));
     } else {
       ref.read(toastsProvider.notifier).closeToast();
     }
