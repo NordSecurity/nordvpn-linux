@@ -120,7 +120,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
                 ),
                 ContextMenuItem(
                   label: t.ui.getHelp,
-                  onTap: () => Uri.parse(supportCenterUrl.toString()).launch(),
+                  onTap: () => Uri.parse(getHelpUrl.toString()).launch(),
                 ),
               ],
               anchorBuilder: (toggleMenu) => ElevatedButton(
