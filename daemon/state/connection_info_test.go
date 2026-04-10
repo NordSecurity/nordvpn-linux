@@ -63,7 +63,7 @@ func newTestFixture(t *testing.T) *testFixture {
 	sut := NewConnectionInfo()
 	events := vpn.NewInternalVPNEvents()
 	events.Subscribe(sut)
-	sut.Subscribe(s)
+	sut.SubscribeToInternalStateChanges(s)
 
 	return &testFixture{
 		sut:        sut,
