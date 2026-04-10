@@ -1251,9 +1251,6 @@ class TranslationsUiEn {
 	/// en: 'Connected'
 	String get connected => 'Connected';
 
-	/// en: 'Not connected'
-	String get notConnected => 'Not connected';
-
 	/// en: 'Connect now or pick a country'
 	String get connectOrPickCountry => 'Connect now or pick a country';
 
@@ -2442,7 +2439,6 @@ extension on Translations {
 			'ui.onion_over_vpn' => 'Onion Over VPN',
 			'ui.fatalErrorMessage' => 'Fatal error',
 			'ui.connected' => 'Connected',
-			'ui.notConnected' => 'Not connected',
 			'ui.connectOrPickCountry' => 'Connect now or pick a country',
 			'ui.general' => 'General',
 			'ui.generalSettingsSubtitle' => 'Appearance, notifications and analytics settings',
@@ -2564,9 +2560,9 @@ extension on Translations {
 			'ui.customDnsDescription' => 'Set custom DNS server addresses to use.',
 			'ui.routingDescription' => 'Use custom routing rules instead of the default VPN configuration.',
 			'ui.postQuantumVpn' => 'Post-quantum encryption',
+			'ui.postQuantumDescription' => 'Activate next-generation encryption that protects your data from threats posed by quantum computing.',
 			_ => null,
 		} ?? switch (path) {
-			'ui.postQuantumDescription' => 'Activate next-generation encryption that protects your data from threats posed by quantum computing.',
 			'ui.obfuscationDescription' => 'Avoid detection by traffic sensors in restricted networks while using a VPN. When enabled, only obfuscated servers are available.',
 			'ui.obfuscation' => 'Obfuscation',
 			'ui.add' => 'Add',

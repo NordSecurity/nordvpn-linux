@@ -16,7 +16,6 @@
   "onion_over_vpn": "Onion Over VPN",
   "fatalErrorMessage": "Fatal error",
   "connected": "Connected",
-  "notConnected": "Not connected",
   "connectOrPickCountry": "Connect now or pick a country",
   "general": "General",
   "generalSettingsSubtitle": "Appearance, notifications and analytics settings",
