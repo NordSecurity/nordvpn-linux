@@ -140,8 +140,8 @@ func TestSetTray_ConfigSaveError(t *testing.T) {
 func TestSetTray_UidIsolation(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	const uidA uint32 = 1000
-	const uidB uint32 = 1001
+	const uidA uint32 = 1001
+	const uidB uint32 = 1002
 
 	cm := mock.NewMockConfigManager()
 	// uidB has tray explicitly enabled (not in TrayOff)
