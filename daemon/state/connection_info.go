@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state/types"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
@@ -25,27 +26,40 @@ type InternalStateChangeNotif interface {
 	NotifyChangeState(events.DataConnectChangeNotif) error
 }
 
+type PauseCancelledNotif interface {
+	NotifyPauseCancelled(events.DataPauseCancelled) error
+}
+
 type pauseData struct {
 	pausedAt      time.Time
 	pauseDuration time.Duration
+}
+
+type serverSelectionData struct {
+	serverSelectionRule config.ServerSelectionRule
+	serverFromAPI       bool
 }
 
 // ConnectionInfo stores data about currently active connection
 // and provides notifications about changes for the internal listeners
 // whenver an update of connection status happens
 type ConnectionInfo struct {
-	status                types.ConnectionStatus
-	fullyConnected        bool
-	pauseData             *pauseData
+	status         types.ConnectionStatus
+	fullyConnected bool
+	pauseData      *pauseData
+	// serverSelectionData stores data used to build PauseCancelled events
+	serverSelectionData   serverSelectionData
 	remainingDurationFunc remainingDurationFunc
 	mu                    sync.RWMutex
 	internalNotif         events.PublishSubcriber[events.DataConnectChangeNotif]
+	pauseCancelledNotif   events.PublishSubcriber[events.DataPauseCancelled]
 }
 
 func NewConnectionInfo() *ConnectionInfo {
 	return &ConnectionInfo{
 		status:                types.ConnectionStatus{},
 		internalNotif:         &subs.Subject[events.DataConnectChangeNotif]{},
+		pauseCancelledNotif:   &subs.Subject[events.DataPauseCancelled]{},
 		remainingDurationFunc: getRemainingDuration,
 	}
 }
@@ -191,8 +205,12 @@ func (c *ConnectionInfo) notifyInternalState(
 	return nil
 }
 
-func (c *ConnectionInfo) Subscribe(to InternalStateChangeNotif) {
+func (c *ConnectionInfo) SubscribeToInternalStateChanges(to InternalStateChangeNotif) {
 	c.internalNotif.Subscribe(to.NotifyChangeState)
+}
+
+func (c *ConnectionInfo) SubscribeToPauseCancelled(to PauseCancelledNotif) {
+	c.pauseCancelledNotif.Subscribe(to.NotifyPauseCancelled)
 }
 
 // Pause sets the pause data. All the subsequent events will be sent out with State set to
@@ -207,12 +225,42 @@ func (c *ConnectionInfo) Pause(pausedAt time.Time, duration time.Duration) {
 	}
 }
 
-// Unpause unsets the pause data.
-func (c *ConnectionInfo) Unpause() {
+// Unpause unsets the pause data, sends pause cancelled notification and returns the pause duration.
+func (c *ConnectionInfo) CancelPause() time.Duration {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	startTime := time.Now()
+	pauseInterval := c.unpause()
+	duration := time.Since(startTime)
+	if c.pauseData != nil {
+		c.pauseCancelledNotif.Publish(events.DataPauseCancelled{
+			Interval:            pauseInterval,
+			ServerFromAPI:       c.serverSelectionData.serverFromAPI,
+			ServerSelectionRule: c.serverSelectionData.serverSelectionRule,
+			Duration:            duration,
+		})
+	}
+
+	return pauseInterval
+}
+
+// Unpause unsets the pause data and returns the pause duration.
+func (c *ConnectionInfo) Unpause() time.Duration {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return c.unpause()
+}
+
+func (c *ConnectionInfo) unpause() time.Duration {
+	if c.pauseData == nil {
+		return 0
+	}
+
+	pauseDuration := c.pauseData.pauseDuration
 	c.pauseData = nil
+	return pauseDuration
 }
 
 // addPauseInfo adds pause info to the status if pause data is set
@@ -226,4 +274,15 @@ func (cs *ConnectionInfo) addPauseInfo(status types.ConnectionStatus) types.Conn
 	status.PauseRemainingTimeSec = cs.remainingDurationFunc(cs.pauseData.pausedAt, cs.pauseData.pauseDuration)
 
 	return status
+}
+
+// SetServerSelectionData sets server selection data that will be used when building PauseCancelled events
+func (cs *ConnectionInfo) SetServerSelectionData(serverSelectionRule config.ServerSelectionRule, serverFromAPI bool) {
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+
+	cs.serverSelectionData = serverSelectionData{
+		serverSelectionRule: serverSelectionRule,
+		serverFromAPI:       serverFromAPI,
+	}
 }

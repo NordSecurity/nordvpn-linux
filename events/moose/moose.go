@@ -736,11 +736,23 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		return nil
 	}
 
+	eventTrigger := moose.NordvpnappEventTriggerUser
+	vpnConnectionTrigger := moose.NordvpnappVpnConnectionTriggerNone
+	connectionFunnel := ""
+	// we only want Pause data in attempt events
+	if data.PauseInterval > 0 && data.EventStatus == events.StatusAttempt {
+		if !data.UnpausedByUser {
+			eventTrigger = moose.NordvpnappEventTriggerApp
+		}
+		vpnConnectionTrigger = moose.NordvpnappVpnConnectionTriggerAfterSnooze
+		connectionFunnel = durationToConnectionFunnel(data.PauseInterval)
+	}
+
 	if err := s.response(moose.NordvpnappSendServiceQualityServersConnect(
 		moose.EventParams{
 			EventDuration: int32(data.DurationMs),
 			EventStatus:   eventStatusToInternalType(data.EventStatus),
-			EventTrigger:  moose.NordvpnappEventTriggerUser,
+			EventTrigger:  eventTrigger,
 		},
 		moose.TargetConnectionParams{
 			TargetServerListSource:    serverListOriginToInternalType(data.ServerFromAPI),
@@ -757,8 +769,8 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			TargetTechnology:    connectionTechnologyToInternalType(data.Technology),
 		},
 		moose.ConnectionParams{
-			ConnectionFunnel:     "",
-			VpnConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone,
+			ConnectionFunnel:     connectionFunnel,
+			VpnConnectionTrigger: vpnConnectionTrigger,
 		},
 		threatProtectionLiteToInternalType(data.ThreatProtectionLite),
 		-1,
@@ -826,6 +838,13 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		}()
 	}
 
+	vpnConnectionTrigger := moose.NordvpnappVpnConnectionTriggerNone
+	connectionFunnel := ""
+	if data.PauseInterval > 0 {
+		vpnConnectionTrigger = moose.NordvpnappVpnConnectionTriggerPause
+		connectionFunnel = durationToConnectionFunnel(data.PauseInterval)
+	}
+
 	if err := s.response(moose.NordvpnappSendServiceQualityServersDisconnect(
 		moose.EventParams{
 			EventDuration: int32(data.Duration.Milliseconds()),
@@ -840,8 +859,8 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 			TargetServerType:          moose.NordvpnappServerTypeNone,
 		},
 		moose.ConnectionParams{
-			ConnectionFunnel:     "",
-			VpnConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone, // pass proper trigger
+			ConnectionFunnel:     connectionFunnel,
+			VpnConnectionTrigger: vpnConnectionTrigger, // pass proper trigger
 		},
 		connectionDuration, // seconds
 		errToExceptionCode(data.Error),
@@ -862,6 +881,34 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue(false)); err != nil {
 		return fmt.Errorf("setting is-on-VPN current state after disconnect: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Subscriber) NotifyPauseCancelled(data events.DataPauseCancelled) error {
+	connectionFunnel := durationToConnectionFunnel(data.Interval)
+	err := s.response(moose.NordvpnappSendServiceQualityServersPause(
+		moose.EventParams{
+			EventDuration: int32(data.Duration.Milliseconds()),
+			EventStatus:   moose.NordvpnappEventStatusFailureDueToUserInterrupt,
+			EventTrigger:  moose.NordvpnappEventTriggerUser,
+		},
+		moose.TargetConnectionParams{
+			TargetServerListSource:    serverListOriginToInternalType(data.ServerFromAPI),
+			TargetServerSelectionRule: serverSelectionRuleToInternalType(data.ServerSelectionRule),
+			TargetServerType:          moose.NordvpnappServerTypeNone,
+		},
+		moose.ConnectionOnPauseParams{
+			ConnectionFunnel:     connectionFunnel,
+			VpnConnectionTrigger: moose.NordvpnappVpnConnectionTriggerAfterSnooze,
+		},
+		-1,
+		nil,
+	))
+
+	if err != nil {
+		return fmt.Errorf("sending VPN pause event: %w", err)
 	}
 
 	return nil
@@ -1423,4 +1470,8 @@ func deviceTypeToInternalType(deviceType sysinfo.SystemDeviceType) moose.Nordvpn
 	}
 
 	return dt
+}
+
+func durationToConnectionFunnel(duration time.Duration) string {
+	return fmt.Sprintf("pause:%d", int(duration.Minutes()))
 }
