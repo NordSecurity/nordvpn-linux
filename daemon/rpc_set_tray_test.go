@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/peer"
 
-	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -25,16 +24,12 @@ func peerCtx(uid uint32) context.Context {
 	)
 }
 
-func newSetTrayRPC(cm config.Manager) *RPC {
-	norduserMock := testnorduser.NewMockNorduserCombinedService()
-	return &RPC{cm: cm, norduser: &norduserMock}
-}
-
 func TestSetTray_NoPeerContext(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	cm := mock.NewMockConfigManager()
-	rpc := newSetTrayRPC(cm)
+	norduserMock := testnorduser.NewMockNorduserCombinedService()
+	rpc := &RPC{cm: cm, norduser: &norduserMock}
 
 	resp, err := rpc.SetTray(context.Background(), &pb.SetTrayRequest{Tray: false})
 
@@ -47,7 +42,8 @@ func TestSetTray_NoUcredAuth(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	cm := mock.NewMockConfigManager()
-	rpc := newSetTrayRPC(cm)
+	norduserMock := testnorduser.NewMockNorduserCombinedService()
+	rpc := &RPC{cm: cm, norduser: &norduserMock}
 
 	ctx := peer.NewContext(context.Background(), &peer.Peer{}) // no AuthInfo
 	resp, err := rpc.SetTray(ctx, &pb.SetTrayRequest{Tray: false})
@@ -61,7 +57,6 @@ func TestSetTray_Disable(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	cm := mock.NewMockConfigManager()
-	// TrayOff is empty → tray is considered enabled for all uids
 	norduserMock := testnorduser.NewMockNorduserCombinedService()
 	rpc := &RPC{cm: cm, norduser: &norduserMock}
 
@@ -93,7 +88,6 @@ func TestSetTray_AlreadyEnabled_NothingToDo(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	cm := mock.NewMockConfigManager()
-	// TrayOff empty → tray is on; requesting on again → NothingToDo
 	norduserMock := testnorduser.NewMockNorduserCombinedService()
 	rpc := &RPC{cm: cm, norduser: &norduserMock}
 
@@ -136,7 +130,6 @@ func TestSetTray_ConfigSaveError(t *testing.T) {
 	assert.Empty(t, norduserMock.ActionToUIDs[testnorduser.Restart])
 }
 
-// TestSetTray_UidIsolation verifies that toggling the tray for uid A does not affect uid B.
 func TestSetTray_UidIsolation(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -144,11 +137,9 @@ func TestSetTray_UidIsolation(t *testing.T) {
 	const uidB uint32 = 1002
 
 	cm := mock.NewMockConfigManager()
-	// uidB has tray explicitly enabled (not in TrayOff)
 	norduserMock := testnorduser.NewMockNorduserCombinedService()
 	rpc := &RPC{cm: cm, norduser: &norduserMock}
 
-	// uidA disables their tray
 	resp, err := rpc.SetTray(peerCtx(uidA), &pb.SetTrayRequest{Tray: false})
 
 	assert.NoError(t, err)
