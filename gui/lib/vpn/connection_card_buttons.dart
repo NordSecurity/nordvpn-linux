@@ -22,6 +22,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
   static const cancelButtonKey = Key("vpnCancelButton");
   static const pauseConnectionButtonKey = Key("pauseConnectionButton");
   static const disconnectMenuItemKey = Key("disconnectMenuItem");
+  static const disconnectButtonKey = Key("vpnDisconnectButton");
 
   final VpnStatus vpnStatus;
 
@@ -58,6 +59,20 @@ final class ConnectionCardButtons extends ConsumerWidget {
   ) {
     final settings = ref.watch(vpnSettingsControllerProvider).valueOrNull;
     if (status.isConnected()) {
+      if (status.isMeshnetRouting) {
+        return [
+          Expanded(
+            child: OutlinedButton(
+              key: ConnectionCardButtons.disconnectButtonKey,
+              style: buttonTheme.cancelButtonStyle,
+              onPressed: () async => await ref
+                  .read(vpnStatusControllerProvider.notifier)
+                  .disconnect(),
+              child: Text(t.ui.disconnect),
+            ),
+          ),
+        ];
+      }
       return [
         Expanded(
           child: ContextMenu(
@@ -105,31 +120,30 @@ final class ConnectionCardButtons extends ConsumerWidget {
             ),
           ),
         ),
-        if (!status.isMeshnetRouting)
-          IntrinsicWidth(
-            child: ContextMenu(
-              items: [
-                ContextMenuItem(
-                  label: t.ui.reconnect,
-                  onTap: () async => await _reconnect(ref, status, settings),
-                ),
-                ContextMenuItem(
-                  label: t.ui.changeVPNsettings,
-                  onTap: () =>
-                      context.navigateToRoute(AppRoute.settingsVpnConnection),
-                ),
-                ContextMenuItem(
-                  label: t.ui.getHelp,
-                  onTap: () => Uri.parse(getHelpUrl.toString()).launch(),
-                ),
-              ],
-              anchorBuilder: (toggleMenu) => ElevatedButton(
-                style: buttonTheme.connectionDetailsButtonStyle,
-                onPressed: toggleMenu,
-                child: DynamicThemeImage("connection_details.svg"),
+        IntrinsicWidth(
+          child: ContextMenu(
+            items: [
+              ContextMenuItem(
+                label: t.ui.reconnect,
+                onTap: () async => await _reconnect(ref, status, settings),
               ),
+              ContextMenuItem(
+                label: t.ui.changeVPNsettings,
+                onTap: () =>
+                    context.navigateToRoute(AppRoute.settingsVpnConnection),
+              ),
+              ContextMenuItem(
+                label: t.ui.getHelp,
+                onTap: () => Uri.parse(getHelpUrl.toString()).launch(),
+              ),
+            ],
+            anchorBuilder: (toggleMenu) => ElevatedButton(
+              style: buttonTheme.connectionDetailsButtonStyle,
+              onPressed: toggleMenu,
+              child: DynamicThemeImage("connection_details.svg"),
             ),
           ),
+        ),
       ];
     }
 
