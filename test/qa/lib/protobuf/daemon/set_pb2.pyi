@@ -116,12 +116,10 @@ class SetNotifyRequest(_message.Message):
     def __init__(self, notify: bool = ...) -> None: ...
 
 class SetTrayRequest(_message.Message):
-    __slots__ = ("uid", "tray")
-    UID_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("tray",)
     TRAY_FIELD_NUMBER: _ClassVar[int]
-    uid: int
     tray: bool
-    def __init__(self, uid: _Optional[int] = ..., tray: bool = ...) -> None: ...
+    def __init__(self, tray: bool = ...) -> None: ...
 
 class SetProtocolRequest(_message.Message):
     __slots__ = ("protocol",)
