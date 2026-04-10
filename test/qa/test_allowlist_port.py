@@ -140,10 +140,16 @@ def test_allowlist_port_twice_connected(tech, proto, obfuscated, port):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.connect()
-    # assert not firewall.is_source_port_reachable([port])
+    assert not firewall.is_source_port_reachable([port])
 
     allowlist.add_ports_to_allowlist([port])
-    sh.sudo.conntrack("-D", "-p", port.protocol, "--sport", port.value)
+    # with pytest.raises(sh.ErrorReturnCode_1) as ex:
+    protocol = str(port.protocol)
+    if protocol == "UDP" or protocol == "TCP":
+        sh.sudo.conntrack("-D", "-p", protocol, "--sport", port.value)
+    else:
+        sh.sudo.conntrack("-D", "-p", "TCP", "--sport", port.value)
+        sh.sudo.conntrack("-D", "-p", "UDP", "--sport", port.value)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if port.protocol == lib.Protocol.ALL:

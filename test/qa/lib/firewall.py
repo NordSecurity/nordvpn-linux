@@ -84,7 +84,7 @@ def is_port_accessible_TCP(src_port: int) -> bool:
     s.bind(("0.0.0.0", src_port))
     s.settimeout(SOCK_TIMEOUT)
     try:
-        s.connect(("172.17.0.1", TCP_DST_PORT))
+        s.connect(("172.19.0.1", TCP_DST_PORT))
         s.send(b"ping")
         print("TCP data sent")
         data = s.recv(4096)
@@ -109,7 +109,7 @@ def is_port_accessible_UDP(src_port):
     s.bind(("0.0.0.0", src_port))
     s.settimeout(SOCK_TIMEOUT)
     try:
-        s.sendto(b"ping", ("172.17.0.1", UDP_DST_PORT))
+        s.sendto(b"ping", ("172.19.0.1", UDP_DST_PORT))
         print("UDP data sent", UDP_DST_PORT, src_port)
         data, addr = s.recvfrom(4096)
         print("data received back from server: ", UDP_DST_PORT, data, addr)
