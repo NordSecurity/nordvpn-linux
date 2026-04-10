@@ -69,10 +69,11 @@ func (s *ReconnectSchedulerImpl) CancelReconnection() time.Duration {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.reconnectCancelFunc != nil {
+		cancelStartTime := time.Now()
 		log.Println(internal.DebugPrefix, "cancelling the reconnection after a pause")
 		s.reconnectCancelFunc()
 		s.reconnectCancelFunc = nil
-		return s.connectionInfo.CancelPause()
+		return s.connectionInfo.CancelPause(cancelStartTime)
 	}
 
 	return 0
