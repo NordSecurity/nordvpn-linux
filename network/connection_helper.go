@@ -11,17 +11,9 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-const NO_FW_MARK uint32 = 0
+const noFwMark uint32 = 0
 
-func LookupAddressNoFwmark(addr string, dns string, protocol string) ([]netip.Addr, error) {
-	return LookupAddress(addr, dns, protocol, NO_FW_MARK)
-}
-
-func LookupAddressWithFirewallMark(addr string, dns string, protocol string, fwmark uint32) ([]netip.Addr, error) {
-	return LookupAddress(addr, dns, protocol, fwmark)
-}
-
-func LookupAddress(addr string, dns string, protocol string, fwmark uint32) ([]netip.Addr, error) {
+func lookupAddress(addr string, dns string, protocol string, fwmark uint32) ([]netip.Addr, error) {
 	resolver := net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
@@ -30,7 +22,7 @@ func LookupAddress(addr string, dns string, protocol string, fwmark uint32) ([]n
 				Timeout: time.Second * 7,
 			}
 
-			if fwmark != NO_FW_MARK {
+			if fwmark != noFwMark {
 				fwmarkFn := func(fd uintptr) {
 					operr = syscall.SetsockoptInt(
 						int(fd),

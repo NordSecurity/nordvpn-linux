@@ -64,12 +64,13 @@ func (r *Resolver) resolveWithNameservers(domain string, nameservers []string, p
 	var ipAddrs []netip.Addr
 	var err error
 	for _, nameserver := range nameservers {
-		if !r.isVpnConnected.Load() {
-			ipAddrs, err = LookupAddressWithFirewallMark(domain, nameserver, protocol, r.fwmark)
-		} else {
-			// While connected to VPN, send the DNS requests thru the tunnel
-			ipAddrs, err = LookupAddressNoFwmark(domain, nameserver, protocol)
+		var fwmark = r.fwmark
+		if r.isVpnConnected.Load() {
+			// While connected to VPN, send the DNS requests thru the tunnel so no fwmark
+			fwmark = noFwMark
 		}
+		ipAddrs, err = lookupAddress(domain, nameserver, protocol, fwmark)
+
 		if err == nil {
 			return ipAddrs, nil
 		}
