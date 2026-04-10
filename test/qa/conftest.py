@@ -112,10 +112,6 @@ print = _print_with_timestamp  # noqa: A001
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_check_internet_connection():
-    out = sh.sudo.conntrack("-L")
-    log_file = os.environ["WORKDIR"] + "/dist/logs/conntrack.log"
-    with open(log_file, "w") as f:
-        f.write(str(out))
     if not network.is_internet_reachable(retry=1) or not network.is_internet_reachable_outside_vpn(retry=1):
         print("setup_check_internet_connection: no internet available before running the tests")
     sh.sudo.conntrack("-D", "-p", "udp")
@@ -159,6 +155,8 @@ def start_system_monitoring():
     threads.append(threading.Thread(target=_capture_traffic, args=[stop_event], daemon=True))
 
     threads.append(threading.Thread(target=_monitor_nft, args=[stop_event], daemon=True))
+    threads.append(threading.Thread(target=_monitor_conntrack, args=[stop_event], daemon=True))
+
     print(threads)
 
     for thread in threads:
@@ -217,7 +215,26 @@ def _monitor_nft(stop_event):
         while not stop_event.is_set():
             line = proc.stdout.readline()
             if not line:
-                break
+                continue
+            f.write(line)
+            f.flush()
+        proc.terminate()
+
+
+def _monitor_conntrack(stop_event):
+    log_file = os.environ["WORKDIR"] + "/dist/logs/conntrack.log"
+    with open(log_file, "w") as f:
+        proc = subprocess.Popen(
+            ["sudo", "conntrack", "-E"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+
+        while not stop_event.is_set():
+            line = proc.stdout.readline()
+            if not line:
+                continue
             f.write(line)
             f.flush()
         proc.terminate()

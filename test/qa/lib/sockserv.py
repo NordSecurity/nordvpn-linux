@@ -3,6 +3,7 @@ import socket
 # import lib
 import argparse
 import threading
+from datetime import datetime
 
 
 # UDP
@@ -14,7 +15,7 @@ def udp_server(port):
         data, addr = s.recvfrom(4096)
         ip, p = addr
         s.sendto(b"pong", addr)
-        print("udp", data, ip, p)
+        print(datetime.now(), "udp", data, ip, p)
 
 
 # TCP
@@ -28,7 +29,7 @@ def tcp_server(port):
         data = conn.recv(4096)
         conn.send(b"pong")
         ip, p = addr
-        print("tcp", data, ip, p)
+        print(datetime.now(), "tcp", data, ip, p)
 
 
 parser = argparse.ArgumentParser(description="Select network protocol")

@@ -972,7 +972,7 @@ func (n *nft) addAllowlistNat(table *nftables.Table, udpPortsSet *nftables.Set, 
 	// udp sport @udp_allowlist masquerade
 	if udpPortsSet != nil {
 		rules := checkPortInSet(udpPortsSet, unix.IPPROTO_UDP, MATCH_SOURCE)
-		rules = append(rules, &expr.Masq{})
+		rules = append(rules, &expr.Counter{}, &expr.Masq{})
 
 		n.conn.AddRule(&nftables.Rule{
 			Table:    table,

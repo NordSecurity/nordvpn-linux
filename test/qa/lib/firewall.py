@@ -19,12 +19,7 @@ PREROUTING_LAN_DISCOVERY_RULES = [
     "-A PREROUTING -s 10.0.0.0/8 -i eth0 -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT",
 ]
 
-LAN_DISCOVERY_SUBNETS = [
-    "169.254.0.0/16",
-    "192.168.0.0/16",
-    "172.16.0.0/12",
-    "10.0.0.0/8"
-]
+LAN_DISCOVERY_SUBNETS = ["169.254.0.0/16", "192.168.0.0/16", "172.16.0.0/12", "10.0.0.0/8"]
 
 POSTROUTING_LAN_DISCOVERY_RULES = [
     "-A POSTROUTING -d 169.254.0.0/16 -o eth0 -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT",
@@ -32,6 +27,7 @@ POSTROUTING_LAN_DISCOVERY_RULES = [
     "-A POSTROUTING -d 172.16.0.0/12 -o eth0 -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT",
     "-A POSTROUTING -d 10.0.0.0/8 -o eth0 -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT",
 ]
+
 
 def set_trace():
     # sh.sudo.nft("insert", "chain", "ip", "nat", "PREROUTING")
@@ -47,19 +43,17 @@ def is_active() -> bool:
     """Returns True when all expected rules are found in iptables, in matching order."""
     print(sh.ip.route())
     try:
-        out = sh.sudo.nft("list", "table", "inet", "nordvpn")
+        out = sh.sudo.nft("-a", "list", "ruleset")
     except:
         return False
-        
+
     print(out)
     print(sh.nordvpn.settings())
     return "nordvpn" in out
 
-tun_interface_names = [
-    "nordtun",
-    "qtun",
-    "nordlynx"
-]
+
+tun_interface_names = ["nordtun", "qtun", "nordlynx"]
+
 
 def is_active_subnet(subnets: list[str]) -> bool:
     for subnet in subnets:
@@ -76,15 +70,15 @@ def is_source_port_reachable(ports: list[Port]) -> bool:
             port_range_start, port_range_end = port.value.split(":")
             return process_port(Port(port_range_start, port.protocol)) and process_port(Port(port_range_end, port.protocol))
         return process_port(port)
-    
 
-def process_port(port : Port) -> bool:
+
+def process_port(port: Port) -> bool:
     if port.protocol == Protocol.TCP:
         return is_port_accessible_TCP(int(port.value))
     return is_port_accessible_UDP(int(port.value))
 
 
-def is_port_accessible_TCP(src_port : int) -> bool :
+def is_port_accessible_TCP(src_port: int) -> bool:
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind(("0.0.0.0", src_port))
@@ -97,7 +91,9 @@ def is_port_accessible_TCP(src_port : int) -> bool :
         print("data received: ", data)
         return True
     except socket.timeout:
-        print(f"timeout of {SOCK_TIMEOUT} hit with TCP, source port {src_port}, dst port : {TCP_DST_PORT}",)
+        print(
+            f"timeout of {SOCK_TIMEOUT} hit with TCP, source port {src_port}, dst port : {TCP_DST_PORT}",
+        )
         return False
     # `OSError: [Errno 99] Cannot assign requested address` thrown when unable to connect
     except OSError as e:
@@ -122,7 +118,9 @@ def is_port_accessible_UDP(src_port):
         print("unable to send packet to address")
         return False
     except socket.timeout:
-        print(f"timeout of {SOCK_TIMEOUT} hit with UDP, source port {src_port}, dst port : {UDP_DST_PORT}",)
+        print(
+            f"timeout of {SOCK_TIMEOUT} hit with UDP, source port {src_port}, dst port : {UDP_DST_PORT}",
+        )
         return False
     finally:
         s.close()

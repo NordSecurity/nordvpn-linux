@@ -20,7 +20,7 @@ func buildRules(kind expr.VerdictKind, parts ...[]expr.Any) []expr.Any {
 	return buildRulesWithVerdict(&expr.Verdict{Kind: kind}, parts...)
 }
 
-func buildRulesWithVerdict(verdict *expr.Verdict, parts ...[]expr.Any) []expr.Any {
+func buildRulesWithVerdict(verdict expr.Any, parts ...[]expr.Any) []expr.Any {
 	var n int
 	for _, p := range parts {
 		n += len(p)
@@ -30,7 +30,7 @@ func buildRulesWithVerdict(verdict *expr.Verdict, parts ...[]expr.Any) []expr.An
 		out = append(out, p...)
 	}
 
-	return append(out, verdict)
+	return append(out, &expr.Counter{}, verdict)
 }
 
 // ct state == established
