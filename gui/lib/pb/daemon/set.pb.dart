@@ -620,11 +620,9 @@ class SetNotifyRequest extends $pb.GeneratedMessage {
 
 class SetTrayRequest extends $pb.GeneratedMessage {
   factory SetTrayRequest({
-    $fixnum.Int64? uid,
     $core.bool? tray,
   }) {
     final result = create();
-    if (uid != null) result.uid = uid;
     if (tray != null) result.tray = tray;
     return result;
   }
@@ -642,7 +640,6 @@ class SetTrayRequest extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'SetTrayRequest',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..aInt64(2, _omitFieldNames ? '' : 'uid')
     ..aOB(3, _omitFieldNames ? '' : 'tray')
     ..hasRequiredFields = false;
 
@@ -665,21 +662,12 @@ class SetTrayRequest extends $pb.GeneratedMessage {
       $pb.GeneratedMessage.$_defaultFor<SetTrayRequest>(create);
   static SetTrayRequest? _defaultInstance;
 
-  @$pb.TagNumber(2)
-  $fixnum.Int64 get uid => $_getI64(0);
-  @$pb.TagNumber(2)
-  set uid($fixnum.Int64 value) => $_setInt64(0, value);
-  @$pb.TagNumber(2)
-  $core.bool hasUid() => $_has(0);
-  @$pb.TagNumber(2)
-  void clearUid() => $_clearField(2);
-
   @$pb.TagNumber(3)
-  $core.bool get tray => $_getBF(1);
+  $core.bool get tray => $_getBF(0);
   @$pb.TagNumber(3)
-  set tray($core.bool value) => $_setBool(1, value);
+  set tray($core.bool value) => $_setBool(0, value);
   @$pb.TagNumber(3)
-  $core.bool hasTray() => $_has(1);
+  $core.bool hasTray() => $_has(0);
   @$pb.TagNumber(3)
   void clearTray() => $_clearField(3);
 }
