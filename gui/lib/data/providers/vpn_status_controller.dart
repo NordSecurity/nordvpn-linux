@@ -31,6 +31,9 @@ class VpnStatusController extends _$VpnStatusController
       ref
           .read(toastsProvider.notifier)
           .show(Duration(seconds: status.pauseRemainingDurationSec));
+    } else {
+      // clear any stale toast left over from a previous paused session
+      ref.read(toastsProvider.notifier).closeToast();
     }
 
     return VpnStatus.fromStatusResponse(status);

@@ -181,7 +181,25 @@ func (r *RPC) SubscribeToStateChanges(_ *pb.Empty, srv pb.Daemon_SubscribeToStat
 		uid = int64(cred.Uid)
 	}
 
+	// Subscribe before fetching current state so no transition events are
+	// missed between the snapshot and the start of the event loop.
 	stateChan, stopChan := r.statePublisher.AddSubscriber()
+
+	// Send the current state immediately so newly connected clients are
+	// synchronised without waiting for the next state change event. This
+	// is done synchronously on the same goroutine that will later call
+	// srv.Send inside statusStream, so there is no concurrent-Send race.
+	currentStatus, err := r.Status(srv.Context(), &pb.Empty{})
+	if err == nil {
+		if sendErr := srv.Send(&pb.AppState{
+			State: &pb.AppState_ConnectionStatus{ConnectionStatus: currentStatus},
+		}); sendErr != nil {
+			log.Println(internal.ErrorPrefix, "failed to send initial state to subscriber:", sendErr)
+		}
+	} else {
+		log.Println(internal.ErrorPrefix, "failed to fetch current status for new subscriber:", err)
+	}
+
 	statusStream(stateChan, stopChan, uid, srv, &r.RequestedConnParams)
 
 	return nil
