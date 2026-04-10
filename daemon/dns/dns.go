@@ -76,8 +76,7 @@ type Method interface {
 type networkManagerConfigGetterFunc func() ([]byte, error)
 
 func getNetworkManagerConfig() ([]byte, error) {
-	cmd, err := exec.Command("NetworkManager", "--print-config").CombinedOutput()
-	return cmd, err
+	return exec.Command("NetworkManager", "--print-config").CombinedOutput()
 }
 
 // DNSServiceSetter detects how OS is managing the DNS configuration and tries to set it using the appropriate method.
