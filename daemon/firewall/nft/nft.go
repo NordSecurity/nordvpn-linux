@@ -390,57 +390,6 @@ func (n *nft) addForwardChain(config firewall.Config, nftCtx *nftContext) {
 		})
 	}
 
-	if nftCtx.tcpPorts != nil {
-		// tcp dport @ports_tcp accept
-		n.conn.AddRule(&nftables.Rule{
-			Table: nftCtx.table,
-			Chain: forwardChain,
-			Exprs: buildRules(
-				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkIfPortIsInSet(nftCtx.tcpPorts, unix.IPPROTO_TCP, matchDestPort),
-			),
-			UserData: userdata.AppendString(nil, userdata.TypeComment, "internet to allowlist TCP"),
-		})
-
-		// 	tcp sport @tcp_allowlist ct state established,related accept
-		n.conn.AddRule(&nftables.Rule{
-			Table: nftCtx.table,
-			Chain: forwardChain,
-			Exprs: buildRules(
-				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkIfPortIsInSet(nftCtx.tcpPorts, unix.IPPROTO_TCP, matchSourcePort),
-				checkCtState(expr.CtStateBitESTABLISHED|expr.CtStateBitRELATED),
-			),
-			UserData: userdata.AppendString(nil, userdata.TypeComment, "allow responses to allowlist TCP"),
-		})
-	}
-
-	if nftCtx.udpPorts != nil {
-		// udp dport @ports_udp accept
-		n.conn.AddRule(&nftables.Rule{
-			Table: nftCtx.table,
-			Chain: forwardChain,
-			Exprs: buildRules(
-				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkIfPortIsInSet(nftCtx.udpPorts, unix.IPPROTO_UDP, matchDestPort),
-			),
-			UserData: userdata.AppendString(nil, userdata.TypeComment, "internet to allowlist UDP"),
-		})
-
-		// 	udp sport @udp_allowlist ct state established,related accept
-		n.conn.AddRule(&nftables.Rule{
-			Table: nftCtx.table,
-			Chain: forwardChain,
-			Exprs: buildRules(
-				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkIfPortIsInSet(nftCtx.udpPorts, unix.IPPROTO_UDP, matchSourcePort),
-				checkCtState(expr.CtStateBitESTABLISHED|expr.CtStateBitRELATED),
-			),
-			UserData: userdata.AppendString(nil, userdata.TypeComment, "allow responses to allowlist UDP"),
-		})
-
-	}
-
 	if len(config.TunnelInterface) > 0 {
 		// oif "nordtun" accept
 		n.conn.AddRule(&nftables.Rule{
