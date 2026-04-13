@@ -464,6 +464,7 @@ func TestConnectionInfo_PauseHandling(t *testing.T) {
 	assert.Equal(t, pauseTime, status.PausedAt)
 	assert.Equal(t, status.State, pb.ConnectionState_PAUSED)
 	assert.Equal(t, status.PauseRemainingTimeSec, uint32(5))
+	assert.True(t, tf.sut.IsPaused())
 
 	go func() {
 		tf.notificationSubscriber.stateChangeHandler.ExpectEvents(1)
