@@ -185,6 +185,13 @@ class DaemonClient extends $grpc.Client {
     return $createUnaryCall(_$groups, request, options: options);
   }
 
+  $grpc.ResponseFuture<$11.RecommendedServerLocation> recommendedServer(
+    $0.Empty request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$recommendedServer, request, options: options);
+  }
+
   /// ==================== General Settings ====================
   $grpc.ResponseFuture<$13.SettingsResponse> settings(
     $0.Empty request, {
@@ -483,6 +490,11 @@ class DaemonClient extends $grpc.Client {
       '/pb.Daemon/Groups',
       ($0.Empty value) => value.writeToBuffer(),
       $0.ServerGroupsList.fromBuffer);
+  static final _$recommendedServer =
+      $grpc.ClientMethod<$0.Empty, $11.RecommendedServerLocation>(
+          '/pb.Daemon/RecommendedServer',
+          ($0.Empty value) => value.writeToBuffer(),
+          $11.RecommendedServerLocation.fromBuffer);
   static final _$settings = $grpc.ClientMethod<$0.Empty, $13.SettingsResponse>(
       '/pb.Daemon/Settings',
       ($0.Empty value) => value.writeToBuffer(),
@@ -762,6 +774,13 @@ abstract class DaemonServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
         ($0.ServerGroupsList value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.Empty, $11.RecommendedServerLocation>(
+        'RecommendedServer',
+        recommendedServer_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
+        ($11.RecommendedServerLocation value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.Empty, $13.SettingsResponse>(
         'Settings',
         settings_Pre,
@@ -1133,6 +1152,14 @@ abstract class DaemonServiceBase extends $grpc.Service {
   }
 
   $async.Future<$0.ServerGroupsList> groups(
+      $grpc.ServiceCall call, $0.Empty request);
+
+  $async.Future<$11.RecommendedServerLocation> recommendedServer_Pre(
+      $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async {
+    return recommendedServer($call, await $request);
+  }
+
+  $async.Future<$11.RecommendedServerLocation> recommendedServer(
       $grpc.ServiceCall call, $0.Empty request);
 
   $async.Future<$13.SettingsResponse> settings_Pre(
