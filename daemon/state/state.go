@@ -8,7 +8,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -47,7 +46,7 @@ func (s *StatePublisher) notify(e any) {
 			newSubs = append(newSubs, sub)
 		case <-timeout.Done():
 			newSubs = append(newSubs, sub)
-			log.Println(internal.WarningPrefix, "could not notify state subscriber, event dropped")
+			log.Warn("could not notify state subscriber, event dropped")
 		}
 	}
 	s.subscribers = newSubs
@@ -57,7 +56,7 @@ func (s *StatePublisher) OnStateChange(e events.DataConnectChangeNotif) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Printf(internal.InfoPrefix+" notifying about data connect change event: %+v", e)
+	log.Infof(" notifying about data connect change event: %+v", e)
 	s.notify(e)
 	return nil
 }
@@ -66,7 +65,7 @@ func (s *StatePublisher) NotifyRecentsChanged(e events.DataRecentsChanged) error
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Println(internal.InfoPrefix, "notifying about recents change")
+	log.Info("notifying about recents change")
 	s.notify(pb.UpdateEvent_RECENTS_LIST_UPDATE)
 	return nil
 }
@@ -84,7 +83,7 @@ func (s *StatePublisher) NotifyLogin(e events.DataAuthorization) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Println(internal.InfoPrefix, "notifying about login event")
+	log.Info("notifying about login event")
 	s.notifyLoginLogout(e.EventStatus, pb.LoginEventType_LOGIN)
 
 	return nil
@@ -94,7 +93,7 @@ func (s *StatePublisher) NotifyLogout(e events.DataAuthorization) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Println(internal.InfoPrefix, "notifying about logout event")
+	log.Info("notifying about logout event")
 	s.notifyLoginLogout(e.EventStatus, pb.LoginEventType_LOGOUT)
 	return nil
 }
@@ -107,7 +106,7 @@ func (s *StatePublisher) OnConfigChanged(e config.DataConfigChange) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Println(internal.InfoPrefix, "notifying about config change:", e.Caller)
+	log.Info("notifying about config change:", e.Caller)
 
 	s.notify(e.Config)
 
@@ -118,7 +117,7 @@ func (s *StatePublisher) NotifyServersListUpdate(any) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Println(internal.InfoPrefix, "notifying about servers list update")
+	log.Info("notifying about servers list update")
 	s.notify(pb.UpdateEvent_SERVERS_LIST_UPDATE)
 
 	return nil
@@ -128,7 +127,7 @@ func (s *StatePublisher) NotifySubscriptionChanged(e *pb.AccountModification) er
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Println(internal.InfoPrefix, "notifying about subscription update")
+	log.Info("notifying about subscription update")
 	s.notify(e)
 
 	return nil
@@ -138,7 +137,7 @@ func (s *StatePublisher) NotifyVersionHealth(healthStatus *pb.VersionHealthStatu
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Printf(internal.InfoPrefix+"notifying about version health change: status_code=%d\n", healthStatus.StatusCode)
+	log.Infof("notifying about version health change: status_code=%d\n", healthStatus.StatusCode)
 	s.notify(healthStatus)
 
 	return nil

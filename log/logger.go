@@ -184,14 +184,12 @@ func Print(v ...any) {
 	log.Print(v...)
 }
 
-func atLevel(l LogLevel) bool {
-	return level.Load() <= uint32(l)
+func Println(v ...any) {
+	log.Println(v...)
 }
 
-func output(depth int, msg string) {
-	if err := log.Output(depth+1, msg); err != nil {
-		fmt.Fprintf(os.Stderr, "log.Output: %v\n", err)
-	}
+func Printf(format string, v ...any) {
+	log.Printf(format, v...)
 }
 
 func Fatalln(v ...any) {

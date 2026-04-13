@@ -5,7 +5,6 @@ import (
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -36,14 +35,14 @@ func fileshareManagementLoop(managementChan <-chan FileshareManagementMsg, shutd
 		case Start:
 			fileshareStartupLoop(fileshareProcessManager, managementChan, shutdownChan)
 		case Stop:
-			log.Println(internal.InfoPrefix, "stopping fileshare")
+			log.Info("stopping fileshare")
 			if err := fileshareProcessManager.StopProcess(true); err != nil {
-				log.Println(internal.ErrorPrefix, "failed to stop fileshare:", err)
+				log.Error("failed to stop fileshare:", err)
 			}
 		case Shutdown:
-			log.Println(internal.InfoPrefix, "stopping fileshare at shutdown")
+			log.Info("stopping fileshare at shutdown")
 			if err := fileshareProcessManager.StopProcess(true); err != nil {
-				log.Println(internal.ErrorPrefix, "failed to stop fileshare on shutdown:", err)
+				log.Error("failed to stop fileshare on shutdown:", err)
 			}
 			close(shutdownChan)
 		}
@@ -53,7 +52,7 @@ func fileshareManagementLoop(managementChan <-chan FileshareManagementMsg, shutd
 func startFileshare(fileshareProcessManager *childprocess.GRPCChildProcessManager) bool {
 	result, err := fileshareProcessManager.StartProcess()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "error when starting fileshare:", err)
+		log.Error("error when starting fileshare:", err)
 		return false
 	}
 
@@ -68,11 +67,11 @@ func startFileshare(fileshareProcessManager *childprocess.GRPCChildProcessManage
 	case childprocess.CodeFailedToCreateUnixScoket:
 		fallthrough
 	case childprocess.CodeAlreadyRunning:
-		log.Println(internal.InfoPrefix, "fileshare started, final result:", result)
+		log.Info("fileshare started, final result:", result)
 		return true
 	}
 
-	log.Println(internal.ErrorPrefix, "failed to start fileshare (will retry):", result)
+	log.Error("failed to start fileshare (will retry):", result)
 	return false
 }
 

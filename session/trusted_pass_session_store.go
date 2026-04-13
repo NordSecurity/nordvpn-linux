@@ -95,7 +95,7 @@ func (s *TrustedPassSessionStore) Renew(opts ...RenewalOption) error {
 func (s *TrustedPassSessionStore) HandleError(reason error) error {
 	handlers := s.errHandlerRegistry.GetHandlers(reason)
 	if len(handlers) == 0 {
-		log.Println(internal.InfoPrefix, "No handlers for trusted pass session store is registered")
+		log.Info("No handlers for trusted pass session store is registered")
 		return nil
 	}
 

@@ -18,7 +18,7 @@ import (
 func (r *RPC) SetFirewall(ctx context.Context, in *pb.SetGenericRequest) (*pb.Payload, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 
 	if cfg.Firewall == in.GetEnabled() {
@@ -31,12 +31,12 @@ func (r *RPC) SetFirewall(ctx context.Context, in *pb.SetGenericRequest) (*pb.Pa
 
 	if in.GetEnabled() {
 		if err := r.netw.EnableFirewall(); err != nil {
-			log.Println(internal.ErrorPrefix, err)
+			log.Error(err)
 			return &pb.Payload{Type: internal.CodeFailure}, nil
 		}
 	} else {
 		if err := r.netw.DisableFirewall(); err != nil {
-			log.Println(internal.ErrorPrefix, err)
+			log.Error(err)
 			return &pb.Payload{Type: internal.CodeFailure}, nil
 		}
 	}
@@ -45,7 +45,7 @@ func (r *RPC) SetFirewall(ctx context.Context, in *pb.SetGenericRequest) (*pb.Pa
 		c.Firewall = in.GetEnabled()
 		return c
 	}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.Payload{Type: internal.CodeConfigError}, nil
 	}
 	r.events.Settings.Firewall.Publish(in.GetEnabled())
@@ -56,7 +56,7 @@ func (r *RPC) SetFirewall(ctx context.Context, in *pb.SetGenericRequest) (*pb.Pa
 func (r *RPC) SetFirewallMark(ctx context.Context, in *pb.SetUint32Request) (*pb.Payload, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 
 	if cfg.FirewallMark == in.GetValue() {
@@ -67,7 +67,7 @@ func (r *RPC) SetFirewallMark(ctx context.Context, in *pb.SetUint32Request) (*pb
 		c.FirewallMark = in.GetValue()
 		return c
 	}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.Payload{Type: internal.CodeConfigError}, nil
 	}
 	return &pb.Payload{Type: internal.CodeSuccess}, nil

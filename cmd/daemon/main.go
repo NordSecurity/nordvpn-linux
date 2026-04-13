@@ -123,7 +123,7 @@ func initializeStaticConfig(machineID uuid.UUID) config.StaticConfigManager {
 	staticCfgManager := config.NewFilesystemStaticConfigManager()
 	if err := staticCfgManager.SetRolloutGroup(remote.GenerateRolloutGroup(machineID)); err != nil {
 		if !errors.Is(err, config.ErrStaticValueAlreadySet) {
-			log.Println(internal.ErrorPrefix, "failed to configure rollout group:", err)
+			log.Error("failed to configure rollout group:", err)
 		}
 	}
 	return staticCfgManager
@@ -144,15 +144,15 @@ func main() {
 		go func() {
 			// #nosec G114 -- not used in production
 			if err := http.ListenAndServe(fmt.Sprintf(":%d", Port), nil); err != nil {
-				log.Println(internal.ErrorPrefix, err)
+				log.Error(err)
 			}
 		}()
 	}
 
-	log.Println(internal.InfoPrefix, "Daemon has started")
+	log.Info("Daemon has started")
 
 	if err := SetBufferSizeForHTTP3(); err != nil {
-		log.Println(internal.WarningPrefix, "failed to set buffer size for HTTP/3:", err)
+		log.Warn("failed to set buffer size for HTTP/3:", err)
 	}
 
 	machineIdGenerator := config.NewMachineID(os.ReadFile, os.Hostname)
@@ -170,14 +170,14 @@ func main() {
 
 	// Remove any remains of IPv6 settings
 	if err := fsystem.SaveWith(removeIPv6Remains); err != nil {
-		log.Println(internal.ErrorPrefix, "failed to remove IPv6 entries from settings ", err)
+		log.Error("failed to remove IPv6 entries from settings ", err)
 	}
 
 	var cfg config.Config
 	if err := fsystem.Load(&cfg); err != nil {
-		log.Println(err)
+		log.Error(err)
 		if err := fsystem.Reset(false, false); err != nil {
-			log.Fatalln(err)
+			log.Fatal(err)
 		}
 	}
 
@@ -234,14 +234,14 @@ func main() {
 	} else {
 		validator, err = response.NewNordValidator()
 		if err != nil {
-			log.Fatalln("Error on creating validator:", err)
+			log.Fatal("Error on creating validator:", err)
 		}
 	}
 
 	userAgent, err := request.GetUserAgentValue(Version, sysinfo.GetHostOSPrettyName)
 	if err != nil {
 		userAgent = fmt.Sprintf("%s/%s (unknown)", request.AppName, Version)
-		log.Printf("Error while constructing UA value: %s. Falls back to default: %s\n", err, userAgent)
+		log.Errorf("Error while constructing UA value: %s. Falls back to default: %s\n", err, userAgent)
 	}
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
@@ -260,7 +260,7 @@ func main() {
 	if !internal.IsProdEnv(Environment) && os.Getenv(EnvNordCdnUrl) != "" {
 		cdnUrl = os.Getenv(EnvNordCdnUrl)
 	}
-	log.Println(internal.InfoPrefix, "CDN URL:", cdnUrl)
+	log.Info("CDN URL:", cdnUrl)
 
 	threatProtectionLiteServers, resolver := buildTpServersAndResolver(
 		userAgent,
@@ -289,7 +289,7 @@ func main() {
 
 	// Detect package type at startup
 	detectedPackageType := internal.DetectPackageType()
-	log.Printf("%s Detected package type: %s\n", internal.InfoPrefix, detectedPackageType)
+	log.Infof("Detected package type: %s\n", detectedPackageType)
 
 	repoAPI := daemon.NewRepoAPI(
 		userAgent,
@@ -307,7 +307,7 @@ func main() {
 
 	eventsDbPath := filepath.Join(internal.DatFilesPathCommon, "moose.db")
 	if err := assignMooseDBPermissions(eventsDbPath); err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 
 	machineID := machineIdGenerator.GetMachineID()
@@ -362,7 +362,7 @@ func main() {
 
 	rolloutGroup, err := staticCfg.GetRolloutGroup()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "getting rollout group:", err)
+		log.Error("getting rollout group:", err)
 		// in case of error, rollout group is `0`
 	}
 	rcConfig := getRemoteConfigGetter(
@@ -400,15 +400,15 @@ func main() {
 		// if NordWhisper was disabled we'll fall back automatically to NordLynx if autoconnect is enabled or tell user
 		// to switch to a different tech
 		if !errors.Is(err, ErrNordWhisperDisabled) {
-			log.Fatalln(err)
+			log.Fatal(err)
 		} else {
-			log.Println(internal.ErrorPrefix, "failed to build NordWhisper VPN, it was disabled during compilation")
+			log.Error("failed to build NordWhisper VPN, it was disabled during compilation")
 		}
 	}
 
 	devices, err := device.OutsideCapableTrafficInterfaces()
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 	ifaceNames := []string{}
 	for _, d := range devices {
@@ -417,7 +417,7 @@ func main() {
 
 	mesh, err := meshnetImplementation(vpnFactory)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 
 	allowlistRouter := routes.NewRouter(
@@ -490,7 +490,7 @@ func main() {
 
 	keygen, err := keygenImplementation(vpnFactory)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 
 	var norduserService norduserservice.Service
@@ -642,11 +642,11 @@ func main() {
 	go func() {
 		if snapconf.IsUnderSnap() {
 			if err := norduserMonitor.StartSnap(); err != nil {
-				log.Println(internal.ErrorPrefix, "Error when starting norduser monitor for snap:", err.Error())
+				log.Error("Error when starting norduser monitor for snap:", err.Error())
 			}
 		} else {
 			if err := norduserMonitor.Start(); err != nil {
-				log.Println(internal.ErrorPrefix, "Error when starting norduser monitor:", err.Error())
+				log.Error("Error when starting norduser monitor:", err.Error())
 			}
 		}
 	}()
@@ -717,19 +717,19 @@ func main() {
 
 		appStartDuration := time.Since(appStartTime).Milliseconds()
 		if err := analytics.NotifyAppStartTime(appStartDuration); err != nil {
-			log.Println(internal.ErrorPrefix, "setting app start time:", err)
+			log.Error("setting app start time:", err)
 		}
 
 		if err := s.Serve(listener); err != nil {
-			log.Fatalln(err)
+			log.Fatal(err)
 		}
 	}()
 
 	go func() {
 		if err := dm.LoadData(); err != nil {
-			log.Println(internal.WarningPrefix, "DataManager failed to load data:", err)
+			log.Warn("DataManager failed to load data:", err)
 		} else {
-			log.Println(internal.InfoPrefix, "data successfully loaded from disk")
+			log.Info("data successfully loaded from disk")
 		}
 	}()
 
@@ -746,7 +746,7 @@ func main() {
 	}
 	monitor, err := netstate.NewNetlinkMonitor([]string{openvpn.InterfaceName, nordlynx.InterfaceName})
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 	monitor.Start(netw)
 
@@ -761,30 +761,30 @@ func main() {
 
 	signals := internal.GetSignalChan()
 	sig := <-signals
-	log.Println(internal.InfoPrefix, "Received signal:", sig)
+	log.Info("Received signal:", sig)
 	s.Stop()
 	norduserService.StopAll()
 
 	httpCancel()
 
 	if err := notificationClient.Stop(); err != nil {
-		log.Println(internal.ErrorPrefix, "stopping NC:", err)
+		log.Error("stopping NC:", err)
 	}
 	if _, err := rpc.DoDisconnect(); err != nil {
-		log.Println(internal.ErrorPrefix, "disconnecting from VPN:", err)
+		log.Error("disconnecting from VPN:", err)
 	}
 	if err := netw.UnSetMesh(); err != nil && !errors.Is(err, networker.ErrMeshNotActive) {
-		log.Println(internal.ErrorPrefix, "disconnecting from meshnet:", err)
+		log.Error("disconnecting from meshnet:", err)
 	}
 	if sig != unix.SIGUSR1 {
 		if err := rpc.StopKillSwitch(); err != nil {
-			log.Println(internal.ErrorPrefix, "stopping KillSwitch:", err)
+			log.Error("stopping KillSwitch:", err)
 		}
 	}
 	if err := analytics.Stop(); err != nil {
-		log.Println(internal.ErrorPrefix, "stopping analytics:", err)
+		log.Error("stopping analytics:", err)
 	}
-	log.Println(internal.InfoPrefix, "Daemon stopped")
+	log.Info("Daemon stopped")
 }
 
 // assignMooseDBPermissions updates moose DB permissions.
@@ -798,15 +798,15 @@ func assignMooseDBPermissions(eventsDbPath string) error {
 	}
 	// Change permission of the existing DB, because older versions had read for everyone
 	if err := os.Chmod(eventsDbPath, permissions); err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 
 	if gid, err := internal.GetNordvpnGid(); err == nil {
 		if err := os.Chown(eventsDbPath, os.Getuid(), gid); err != nil {
-			log.Println(err)
+			log.Error(err)
 		}
 	} else {
-		log.Println(err)
+		log.Error(err)
 	}
 	return nil
 }

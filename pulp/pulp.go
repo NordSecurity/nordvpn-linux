@@ -94,7 +94,7 @@ func Login(
 	var parsed loginResponse
 	err = json.Unmarshal(data, &parsed)
 	if err != nil {
-		log.Println(string(data))
+		log.Debug(string(data))
 		return nil, fmt.Errorf("decode: %w", err)
 	}
 
@@ -217,7 +217,7 @@ func versions(
 	var data []packageResponse
 	err = json.Unmarshal(body, &data)
 	if err != nil {
-		log.Println(string(body))
+		log.Debug(string(body))
 		return nil, fmt.Errorf("decode: %w", err)
 	}
 

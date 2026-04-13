@@ -84,7 +84,7 @@ func publishVersionHealthStatus(dm *DataManager, statePublisher *state.StatePubl
 		}
 
 		if err := statePublisher.NotifyVersionHealth(healthStatus); err != nil {
-			log.Printf("%s Failed to publish version health status: %v\n", internal.ErrorPrefix, err)
+			log.Errorf("Failed to publish version health status: %v\n", err)
 		}
 
 		lastHealthStatusCode = healthStatusCode

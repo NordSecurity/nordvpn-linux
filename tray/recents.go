@@ -10,7 +10,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"google.golang.org/grpc"
 )
@@ -99,7 +98,7 @@ func makeDisplayLabel(conn *RecentConnection) string {
 		return ""
 
 	case config.ServerSelectionRule_NONE:
-		log.Println(internal.WarningPrefix, "cannot make a proper label with server selection rule 'none'")
+		log.Warn("cannot make a proper label with server selection rule 'none'")
 		fallthrough
 	case config.ServerSelectionRule_RECOMMENDED:
 		return ""

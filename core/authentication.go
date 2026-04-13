@@ -60,7 +60,7 @@ func (o *OAuth2) Login(regularLogin bool) (string, error) {
 	}
 	query.Add("redirect_flow", "default")
 	path.RawQuery = query.Encode()
-	log.Println("oauth2 login url", path.String())
+	log.Debug("oauth2 login url", path.String())
 
 	req, err := http.NewRequest(http.MethodPost, path.String(), nil)
 	if err != nil {

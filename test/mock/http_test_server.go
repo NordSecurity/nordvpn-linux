@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -80,7 +81,7 @@ func NewHandleWithFileContent(pattern string, path string) Handler {
 		Fn: func() ([]byte, *HTTPError) {
 			byteData, err := internal.FileRead(path)
 			if err != nil {
-				fmt.Println(internal.ErrorPrefix, "Failed to read file", path, err)
+				fmt.Println(log.ErrorPrefix, "Failed to read file", path, err)
 			}
 			return byteData, nil
 		},
@@ -123,7 +124,6 @@ func NewHTTPTestServer(t *testing.T, handlers []Handler) *HTTPTestServer {
 	mux := http.NewServeMux()
 	ts := httptest.NewUnstartedServer(mux)
 	privateKey, publicKey, err := GenerateKeyPair()
-
 	if err != nil {
 		t.Fatal("Cannot generate key pair")
 	}

@@ -13,7 +13,7 @@ import (
 func (r *RPC) Cities(ctx context.Context, in *pb.CitiesRequest) (*pb.ServerGroupsList, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.ServerGroupsList{
 			Type: internal.CodeConfigError,
 		}, nil
@@ -27,7 +27,7 @@ func (r *RPC) Cities(ctx context.Context, in *pb.CitiesRequest) (*pb.ServerGroup
 		cfg.VirtualLocation.Get(),
 	)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get cities for", in.GetCountry(), err)
+		log.Error("failed to get cities for", in.GetCountry(), err)
 
 		return &pb.ServerGroupsList{
 			Type: internal.CodeEmptyPayloadError,

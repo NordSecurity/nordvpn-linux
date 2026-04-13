@@ -16,14 +16,14 @@ var adjustAutoconnectCfgOnce sync.Once
 func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse, error) {
 	cred, err := getCallerCred(ctx)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "Settings:", err)
+		log.Error("Settings:", err)
 		return &pb.SettingsResponse{Type: internal.CodeFailure}, nil
 	}
 	uid := int64(cred.Uid)
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.SettingsResponse{
 			Type: internal.CodeConfigError,
 		}, nil
@@ -54,7 +54,7 @@ func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse,
 				return c
 			})
 			if err != nil {
-				log.Println(internal.WarningPrefix, "failed to set autoconnect parameters during the settings RPC:", err)
+				log.Warn("failed to set autoconnect parameters during the settings RPC:", err)
 			}
 		}
 	})

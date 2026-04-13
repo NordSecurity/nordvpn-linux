@@ -53,14 +53,12 @@ func (h *LogoutHandler) Register(
 func (h *LogoutHandler) makeHandler(clientHook func(reason error) events.ReasonCode) func(error) {
 	return func(reason error) {
 		if !h.logoutMutex.TryLock() {
-			log.Printf("%s session error detected but logout already in progress, ignoring: %v\n",
-				internal.InfoPrefix, reason)
+			log.Infof("session error detected but logout already in progress, ignoring: %v\n", reason)
 			return
 		}
 		defer h.logoutMutex.Unlock()
 
-		log.Printf("%s session error detected: %v. Forcing logout.\n",
-			internal.InfoPrefix, reason)
+		log.Infof("session error detected: %v. Forcing logout.\n", reason)
 
 		logoutReason := clientHook(reason)
 
@@ -89,12 +87,10 @@ func (h *LogoutHandler) forceLogout(sessionErr events.ReasonCode) {
 	})
 
 	if result.Err != nil {
-		log.Printf("%s logging out  invalid session hook: %v",
-			internal.ErrorPrefix, result.Err)
+		log.Errorf("logging out invalid session hook: %v", result.Err)
 	}
 
 	if result.Status == internal.CodeSuccess {
-		log.Printf("%s successfully logged out after detecting invalid session\n",
-			internal.InfoPrefix)
+		log.Info("successfully logged out after detecting invalid session")
 	}
 }

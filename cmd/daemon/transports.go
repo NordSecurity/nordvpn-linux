@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/kernel"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/network"
@@ -127,7 +126,7 @@ func validateHTTPTransportsString(val string) []string {
 		if slices.Contains(validTransportTypes, item) {
 			finalVal = append(finalVal, item)
 		} else {
-			log.Println(internal.WarningPrefix, "invalid http transport type value:", item, "; valid values:", validTransportTypes)
+			log.Warn("invalid http transport type value:", item, "; valid values:", validTransportTypes)
 		}
 	}
 
@@ -146,9 +145,9 @@ func createTimedOutTransport(
 	ctx context.Context,
 ) http.RoundTripper {
 	transportsStr := os.Getenv(envHTTPTransportsKey)
-	log.Println(internal.InfoPrefix, "http transports to use (environment):", transportsStr)
+	log.Info("http transports to use (environment):", transportsStr)
 	transportTypes := validateHTTPTransportsString(transportsStr)
-	log.Println(internal.InfoPrefix, "http transports to use (after validation):", transportTypes)
+	log.Info("http transports to use (after validation):", transportTypes)
 
 	containsH1 := slices.Contains(transportTypes, "http1")
 	containsH3 := slices.Contains(transportTypes, "http3")
@@ -173,7 +172,7 @@ func createTimedOutTransport(
 	}
 	if containsH3 {
 		if err := SetBufferSizeForHTTP3(); err != nil {
-			log.Println(internal.WarningPrefix, "failed to set buffer size for HTTP/3:", err)
+			log.Warn("failed to set buffer size for HTTP/3:", err)
 		}
 		h3Transport = request.NewHTTPReTransport(
 			3,
@@ -192,7 +191,7 @@ func createTimedOutTransport(
 	}
 	// This should never happen as validation makes sure of that but it is here for nil panics
 	if h1Transport == nil || h3Transport == nil {
-		log.Println(internal.ErrorPrefix, "Unexpected transport configuration, using default")
+		log.Error("Unexpected transport configuration, using default")
 		// http.Client handles nil transport
 		return nil
 	}

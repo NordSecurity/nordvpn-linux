@@ -5,7 +5,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/access"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -26,7 +25,7 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, er
 	})
 
 	if err := r.recentVPNConnStore.Clean(); err != nil {
-		log.Printf("%s [rpc] failed to clean recent connections on logout: %v\n", internal.WarningPrefix, err)
+		log.Warnf("[rpc] failed to clean recent connections on logout: %v\n", err)
 	}
 
 	if result.Status == 0 {

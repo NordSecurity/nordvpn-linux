@@ -124,7 +124,7 @@ func (s *AccessTokenSessionStore) doRenew(
 	}
 
 	if err := s.renewToken(uid, data, options.skipErrorHandlers); err != nil {
-		log.Printf("[auth] %s Renewing token for uid(%v): %s\n", internal.ErrorPrefix, uid, err)
+		log.Errorf("[auth] Renewing token for uid(%v): %s\n", uid, err)
 		return err
 	}
 
@@ -161,7 +161,7 @@ func (s *AccessTokenSessionStore) validate() error {
 func (s *AccessTokenSessionStore) HandleError(reason error) error {
 	handlers := s.errHandlerRegistry.GetHandlers(reason)
 	if len(handlers) == 0 {
-		log.Println(internal.InfoPrefix, "No handlers for access token session store is registered with reason:", reason)
+		log.Info("No handlers for access token session store is registered with reason:", reason)
 		return nil
 	}
 
@@ -219,7 +219,6 @@ func (s *AccessTokenSessionStore) renewToken(
 		c.TokensData[uid] = data
 		return c
 	})
-
 	if err != nil {
 		return fmt.Errorf("saving access token data: %w", err)
 	}
@@ -241,7 +240,6 @@ func (s *AccessTokenSessionStore) tryUpdateIdempotencyKey(uid int64, data *confi
 		c.TokensData[uid] = user
 		return c
 	})
-
 	if err != nil {
 		return fmt.Errorf("saving idempotency key: %w", err)
 	}
@@ -262,7 +260,7 @@ func (s *AccessTokenSessionStore) getConfig() (accessTokenConfig, error) {
 
 	expiryTime, err := time.Parse(internal.ServerDateFormat, data.TokenExpiry)
 	if err != nil {
-		log.Printf("[auth] %s Error parsing token expiry time [%s]: %v\n", internal.WarningPrefix, data.TokenExpiry, err)
+		log.Warnf("[auth] Error parsing token expiry time [%s]: %v\n", data.TokenExpiry, err)
 		expiryTime = time.Now().Add(-1 * time.Second)
 	}
 

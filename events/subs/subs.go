@@ -3,7 +3,6 @@ package subs
 
 import (
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -21,10 +20,7 @@ func (s *Subject[T]) Subscribe(handler events.Handler[T]) {
 func (s *Subject[T]) Publish(message T) {
 	for _, handler := range s.subscribers {
 		if err := handler(message); err != nil {
-			log.Printf(
-				"%s error while notifying subscriber: %s\n",
-				internal.WarningPrefix,
-				err)
+			log.Warnf("error while notifying subscriber: %s\n", err)
 		}
 	}
 }

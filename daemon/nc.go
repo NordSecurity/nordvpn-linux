@@ -10,6 +10,6 @@ import (
 // will be prepended to the error log.
 func StartNC(prefix string, ncClient nc.NotificationClient) {
 	if err := ncClient.Start(); err != nil {
-		log.Printf("%s starting notification client: %s", prefix, err)
+		log.Errorf("%s starting notification client: %s", prefix, err)
 	}
 }

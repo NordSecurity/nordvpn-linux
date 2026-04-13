@@ -5,7 +5,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -22,7 +21,7 @@ func NewFileshareManager() FileshareManager {
 
 // UpdateFileshareConnection updates the fileshare gRPC connection based on the meshnetEnabled status
 func (fs *FileshareManager) UpdateFileshareConnection(meshnetEnabled bool) {
-	log.Println(internal.InfoPrefix, "Updating tray's fileshare connection", getFlagText(meshnetEnabled))
+	log.Info("Updating tray's fileshare connection", getFlagText(meshnetEnabled))
 	if !meshnetEnabled {
 		fs.fileshareClient = nil
 		return
@@ -37,7 +36,7 @@ func (fs *FileshareManager) UpdateFileshareConnection(meshnetEnabled bool) {
 		if err == nil {
 			fs.fileshareClient = filesharepb.NewFileshareClient(fileShareConn)
 		} else {
-			log.Println(internal.ErrorPrefix, "Error connecting to the NordVPN fileshare daemon:", err)
+			log.Error("Error connecting to the NordVPN fileshare daemon:", err)
 		}
 	}
 }
@@ -45,10 +44,10 @@ func (fs *FileshareManager) UpdateFileshareConnection(meshnetEnabled bool) {
 // SetNotifications sets the fileshare notifications on/off
 func (fs *FileshareManager) SetNotifications(flag bool) {
 	if fs.fileshareClient == nil {
-		log.Println(internal.WarningPrefix, "fileshare client not initialized")
+		log.Warn("fileshare client not initialized")
 		return
 	}
 	if _, err := fs.fileshareClient.SetNotifications(context.Background(), &filesharepb.SetNotificationsRequest{Enable: flag}); err != nil {
-		log.Printf("%s Setting fileshare notifications %s error: %s\n", internal.ErrorPrefix, getFlagText(flag), err)
+		log.Errorf("Setting fileshare notifications %s error: %s\n", getFlagText(flag), err)
 	}
 }

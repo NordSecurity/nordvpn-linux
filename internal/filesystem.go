@@ -91,13 +91,13 @@ func systemDFile(unsetEnv bool) *os.File {
 	defer func() {
 		if unsetEnv {
 			if err := os.Unsetenv(ListenPID); err != nil {
-				log.Println(DeferPrefix, err)
+				log.Defer(err)
 			}
 			if err := os.Unsetenv(ListenFDS); err != nil {
-				log.Println(DeferPrefix, err)
+				log.Defer(err)
 			}
 			if err := os.Unsetenv(ListenFDNames); err != nil {
-				log.Println(DeferPrefix, err)
+				log.Defer(err)
 			}
 		}
 	}()
@@ -123,7 +123,7 @@ func SystemDListener() (net.Listener, error) {
 	file := systemDFile(true)
 	defer func() {
 		if err := file.Close(); err != nil {
-			log.Println(DeferPrefix, err)
+			log.Defer(err)
 		}
 	}()
 	return net.FileListener(file)
@@ -176,7 +176,7 @@ func ManualListenerIfNotInUse(socket string, perm fs.FileMode, pidfile string) f
 		// and should be removed otherwise new socket listener will fail to start
 		if FileExists(socket) {
 			if err := FileDelete(socket); err != nil {
-				log.Println(WarningPrefix, "cleaning socket file:", err)
+				log.Warn("cleaning socket file:", err)
 			}
 		}
 
@@ -248,7 +248,7 @@ func checkPidFile(pidfile string) error {
 		pidFromFile, err := strconv.Atoi(strings.TrimSpace(string(out)))
 		if err != nil {
 			// pid value is not valid integer, some garbage from previous run/failure?
-			log.Println(WarningPrefix, fmt.Errorf("daemon pid file does not contain valid integer value: %w", err))
+			log.Warn(fmt.Errorf("daemon pid file does not contain valid integer value: %w", err))
 		} else {
 			procFile := fmt.Sprintf("/proc/%d/cmdline", pidFromFile)
 			out, err := FileRead(procFile)
@@ -259,7 +259,7 @@ func checkPidFile(pidfile string) error {
 		}
 		// invalid pid or process not found - remove pid file
 		if err := FileDelete(pidfile); err != nil {
-			log.Println(WarningPrefix, "cleaning pid file:", err)
+			log.Warn("cleaning pid file:", err)
 		}
 	}
 	return nil
@@ -268,7 +268,7 @@ func checkPidFile(pidfile string) error {
 func cleanPidFile(pidFile string) {
 	if pidFile != "" && FileExists(pidFile) {
 		if err := FileDelete(pidFile); err != nil {
-			log.Println(ErrorPrefix, "removing pid file:", err)
+			log.Error("removing pid file:", err)
 		}
 	}
 }
@@ -591,7 +591,7 @@ var (
 func IsProcessRunning(execPath string) bool {
 	isRunning, err := isProcessRunning(execPath, defaultReaddir, defaultReadfile)
 	if err != nil {
-		log.Println(WarningPrefix, "failed to check if process is running, returning false:", err)
+		log.Warn("failed to check if process is running, returning false:", err)
 		return false
 	}
 	return isRunning

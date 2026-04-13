@@ -76,7 +76,7 @@ func (l *DaemonSettingsSubscriber) NotifyAllowlist(data events.DataAllowlist) er
 }
 
 func (l *DaemonSettingsSubscriber) NotifyDefaults(any) error {
-	log.Printf("Settings have been restored to their default values")
+	log.Info("Settings have been restored to their default values")
 	return nil
 }
 
@@ -96,7 +96,7 @@ func (l *DaemonSettingsSubscriber) NotifyPostquantumVpn(data bool) error {
 }
 
 func printSettingsChange(settingName string, val string) {
-	log.Printf("%s set to: %s", settingName, val)
+	log.Infof("%s set to: %s", settingName, val)
 }
 
 func boolToString(val bool) string {

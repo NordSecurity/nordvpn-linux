@@ -1,7 +1,6 @@
 package sysinfo
 
 import (
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo/dbusutil"
 	"github.com/godbus/dbus/v5"
@@ -36,8 +35,8 @@ const (
 func GetHostOSPrettyName() (string, error) {
 	conn, err := dbus.SystemBus()
 	if err != nil {
-		log.Printf("%s %s connecting to system dbus: %s\n", logTag, internal.ErrorPrefix, err)
-		log.Println(logTag, internal.WarningPrefix, "falling back to alternative OS detection method")
+		log.Errorf("%s connecting to system dbus: %s\n", logTag, err)
+		log.Warn(logTag, "falling back to alternative OS detection method")
 		return GetHostOSName()
 	}
 	defer conn.Close()
@@ -50,8 +49,8 @@ func GetHostOSPrettyName() (string, error) {
 
 	name, err := dbusutil.GetStringProperty(client, dbusHostname1PropOperatingSystemPrettyName)
 	if err != nil {
-		log.Printf("%s %s retrieving OS pretty name: %s\n", logTag, internal.WarningPrefix, err)
-		log.Println(logTag, internal.WarningPrefix, "falling back to alternative OS detection method")
+		log.Warnf("%s retrieving OS pretty name: %s\n", logTag, err)
+		log.Warn(logTag, "falling back to alternative OS detection method")
 		return GetHostOSName()
 	}
 

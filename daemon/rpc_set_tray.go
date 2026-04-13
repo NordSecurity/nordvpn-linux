@@ -12,7 +12,7 @@ import (
 func (r *RPC) SetTray(ctx context.Context, in *pb.SetTrayRequest) (*pb.Payload, error) {
 	cred, err := getCallerCred(ctx)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "SetTray:", err)
+		log.Error("SetTray:", err)
 		return &pb.Payload{Type: internal.CodeInternalError}, nil
 	}
 
@@ -20,7 +20,7 @@ func (r *RPC) SetTray(ctx context.Context, in *pb.SetTrayRequest) (*pb.Payload, 
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 
 	trayStatus := !cfg.UsersData.TrayOff[uid]
@@ -43,7 +43,7 @@ func (r *RPC) SetTray(ctx context.Context, in *pb.SetTrayRequest) (*pb.Payload, 
 			c.UsersData.TrayOff[uid] = true
 			return c
 		}); err != nil {
-			log.Println(internal.ErrorPrefix, err)
+			log.Error(err)
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil
@@ -53,7 +53,7 @@ func (r *RPC) SetTray(ctx context.Context, in *pb.SetTrayRequest) (*pb.Payload, 
 			delete(c.UsersData.TrayOff, uid)
 			return c
 		}); err != nil {
-			log.Println(internal.ErrorPrefix, err)
+			log.Error(err)
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil
@@ -61,7 +61,7 @@ func (r *RPC) SetTray(ctx context.Context, in *pb.SetTrayRequest) (*pb.Payload, 
 	}
 
 	if err := r.norduser.Restart(cred.Uid); err != nil {
-		log.Println(internal.ErrorPrefix, "Cannot restart norduserd", err)
+		log.Error("Cannot restart norduserd", err)
 	}
 
 	return &pb.Payload{

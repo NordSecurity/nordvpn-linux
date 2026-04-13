@@ -1807,9 +1807,7 @@ func (s *Server) Connect(
 	_ context.Context,
 	req *pb.UpdatePeerRequest,
 ) (*pb.ConnectResponse, error) {
-	var (
-		resp *pb.ConnectResponse
-	)
+	var resp *pb.ConnectResponse
 	if !s.connectContext.TryExecuteWith(func(ctx context.Context) {
 		resp = s.connect(ctx, req)
 	}) {
@@ -2010,7 +2008,7 @@ func (s *Server) getPeerWithIdentifier(id string, peers mesh.MachinePeers) *mesh
 func (s *Server) RemoteConfigUpdate(config remote.RemoteConfigEvent) error {
 	if !config.MeshnetFeatureEnabled {
 		if _, err := s.DisableMeshnet(context.Background(), &pb.Empty{}); err != nil {
-			log.Println(internal.WarningPrefix, "Failed to disable meshnet after remote config update:", err)
+			log.Warn("Failed to disable meshnet after remote config update:", err)
 		}
 	}
 	return nil
@@ -2031,6 +2029,7 @@ func MakePeerMaps(peers *pb.PeerList) (map[string]*pb.Peer, map[string]*pb.Peer)
 	}
 	return peerPubkeyToPeer, peerNameToPeer
 }
+
 func changeNicknameError(code pb.ChangeNicknameErrorCode) *pb.ChangeNicknameResponse {
 	return &pb.ChangeNicknameResponse{
 		Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{

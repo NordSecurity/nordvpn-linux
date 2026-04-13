@@ -41,7 +41,7 @@ func (jf JsonFile) Save(transfers map[string]*pb.Transfer) (err error) {
 		}
 
 		// truncate history; find the oldest completed transfer and remove it
-		log.Printf("truncating transfers history json size: %d (max limit: %d)\n", len(trBytes), historySizeMaxBytes)
+		log.Info("truncating transfers history json size: %d (max limit: %d)\n", len(trBytes), historySizeMaxBytes)
 		var oldestTransfer *pb.Transfer
 		for _, tr := range transfers {
 			if tr.Status == pb.Status_ONGOING {
@@ -55,7 +55,7 @@ func (jf JsonFile) Save(transfers map[string]*pb.Transfer) (err error) {
 		}
 
 		if oldestTransfer == nil {
-			log.Println("cannot truncate transfers history")
+			log.Error("cannot truncate transfers history")
 			break
 		} else {
 			delete(transfers, oldestTransfer.Id)

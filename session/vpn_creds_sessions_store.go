@@ -105,7 +105,7 @@ func (s *VPNCredentialsSessionStore) Renew(opts ...RenewalOption) error {
 func (s *VPNCredentialsSessionStore) HandleError(reason error) error {
 	handlers := s.errHandlerRegistry.GetHandlers(reason)
 	if len(handlers) == 0 {
-		log.Println(internal.InfoPrefix, "No handlers for vpn creds session store is registered")
+		log.Info("No handlers for vpn creds session store is registered")
 		return nil
 	}
 

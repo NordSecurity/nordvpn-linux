@@ -92,7 +92,7 @@ func (n *NMCli) Set(iface string, nameservers []string) error {
 
 	higherPriorityFileExists, err := n.higherPriorityFileExists()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, dnsPrefix, "failed to check if higher priority config file exists:", err)
+		log.Error(dnsPrefix, "failed to check if higher priority config file exists:", err)
 		return errCannotGuaranteeConfig
 	}
 
@@ -109,7 +109,7 @@ func (n *NMCli) Set(iface string, nameservers []string) error {
 	}
 
 	if out, err := n.runNMCliCommandFunc("general", "reload"); err != nil {
-		log.Println(internal.ErrorPrefix,
+		log.Error(
 			dnsPrefix,
 			"failed to reload after adding a config file NetworkManager, command output:",
 			strings.TrimSpace(string(out)))
@@ -131,7 +131,7 @@ func (n *NMCli) Unset(iface string) error {
 	}
 
 	if out, err := n.runNMCliCommandFunc("general", "reload"); err != nil {
-		log.Println(internal.ErrorPrefix,
+		log.Error(
 			dnsPrefix,
 			"failed to reload after removing a config file NetworkManager, command output:",
 			strings.TrimSpace(string(out)))

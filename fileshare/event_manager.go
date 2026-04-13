@@ -12,7 +12,6 @@ import (
 	"syscall"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"golang.org/x/exp/slices"
@@ -95,7 +94,7 @@ func (em *EventManager) process() {
 	for {
 		events, ok := <-em.events
 		if !ok {
-			log.Println(internal.WarningPrefix, "events channel closed")
+			log.Warn("events channel closed")
 			return
 		}
 		fn(events)
@@ -110,7 +109,7 @@ func (em *EventManager) Event(event ...Event) {
 	select {
 	case em.events <- event:
 	default:
-		log.Println(internal.WarningPrefix, "async events channel is full. Event() will block until there is space")
+		log.Warn("async events channel is full. Event() will block until there is space")
 		em.events <- event
 	}
 }
@@ -166,7 +165,7 @@ func (em *EventManager) DisableNotifications() error {
 
 func (em *EventManager) handleEvent(event Event) {
 	if !em.isProd {
-		log.Printf(internal.InfoPrefix+" DROP EVENT: %s\n", EventToString(event))
+		log.Infof(" DROP EVENT: %s\n", EventToString(event))
 	}
 
 	switch ev := event.Kind.(type) {
@@ -189,21 +188,21 @@ func (em *EventManager) handleEvent(event Event) {
 	case EventKindFileFailed:
 		em.handleFileFailedEvent(ev)
 	default:
-		log.Printf(internal.WarningPrefix+" unsupported libdrop event: %T\n", ev)
+		log.Warnf(" unsupported libdrop event: %T\n", ev)
 	}
 }
 
 func (em *EventManager) handleRequestReceivedEvent(event EventKindRequestReceived) {
 	peer, err := getPeerByIP(em.meshClient, event.Peer)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to retrieve peer requesting transfer:", err)
+		log.Error("failed to retrieve peer requesting transfer:", err)
 		return
 	}
 	if !peer.DoIAllowFileshare {
 		// This can only happen in the case of abuse, since clients shouldn't allow sending transfers
 		// to peers which don't allow that.
 		if err := em.fileshare.Finalize(event.TransferId); err != nil {
-			log.Printf(internal.WarningPrefix+" failed to auto-reject transfer %s: %s\n", event.TransferId, err)
+			log.Warnf(" failed to auto-reject transfer %s: %s\n", event.TransferId, err)
 		}
 		return
 	}
@@ -221,7 +220,7 @@ func (em *EventManager) handleRequestReceivedEvent(event EventKindRequestReceive
 
 	transfer, err := em.acceptTransfer(event.TransferId, em.defaultDownloadDir, []string{})
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to autoaccept transfer:", err)
+		log.Error("failed to autoaccept transfer:", err)
 		if em.notificationManager != nil {
 			em.notificationManager.NotifyAutoacceptFailed(event.TransferId, peer.Hostname, err)
 		}
@@ -231,7 +230,7 @@ func (em *EventManager) handleRequestReceivedEvent(event EventKindRequestReceive
 	for _, file := range transfer.Files {
 		err = em.fileshare.Accept(event.TransferId, em.defaultDownloadDir, file.Id)
 		if err != nil {
-			log.Println(internal.WarningPrefix, "failed to autoaccept file:", err)
+			log.Warn("failed to autoaccept file:", err)
 		}
 	}
 
@@ -256,7 +255,7 @@ func (em *EventManager) reportProgress(transferID string, status pb.Status, tran
 		select {
 		case ch <- progress:
 		default:
-			log.Println(internal.WarningPrefix, " progress channel is full. removing oldest item and sending")
+			log.Warn(" progress channel is full. removing oldest item and sending")
 			<-ch
 			ch <- progress
 		}
@@ -266,13 +265,13 @@ func (em *EventManager) reportProgress(transferID string, status pb.Status, tran
 func (em *EventManager) handleFileProgressEvent(event EventKindFileProgress) {
 	transfer, err := em.getLiveTransfer(event.TransferId)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
+		log.Error("failed to get live transfer:", err)
 		return
 	}
 
 	file, ok := transfer.Files[event.FileId]
 	if !ok {
-		log.Printf(internal.ErrorPrefix+" file %s from FileProgress event not found in transfer %s\n",
+		log.Errorf(" file %s from FileProgress event not found in transfer %s\n",
 			event.FileId, transfer.ID)
 		return
 	}
@@ -290,13 +289,13 @@ func (em *EventManager) handleFileProgressEvent(event EventKindFileProgress) {
 func (em *EventManager) handleFileDownloadedEvent(event EventKindFileDownloaded) {
 	transfer, err := em.getLiveTransfer(event.TransferId)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
+		log.Error("failed to get live transfer:", err)
 		return
 	}
 
 	file, ok := transfer.Files[event.FileId]
 	if !ok {
-		log.Printf(internal.ErrorPrefix+" file %s from FileDownloaded event not found in transfer %s\n",
+		log.Errorf(" file %s from FileDownloaded event not found in transfer %s\n",
 			event.FileId, transfer.ID)
 		return
 	}
@@ -315,13 +314,13 @@ func (em *EventManager) handleFileDownloadedEvent(event EventKindFileDownloaded)
 func (em *EventManager) handleFileUploadedEvent(event EventKindFileUploaded) {
 	transfer, err := em.getLiveTransfer(event.TransferId)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
+		log.Error("failed to get live transfer:", err)
 		return
 	}
 
 	file, ok := transfer.Files[event.FileId]
 	if !ok {
-		log.Printf(internal.ErrorPrefix+" file %s from FileUploaded event not found in transfer %s\n",
+		log.Errorf(" file %s from FileUploaded event not found in transfer %s\n",
 			event.FileId, transfer.ID)
 		return
 	}
@@ -340,19 +339,19 @@ func (em *EventManager) handleFileUploadedEvent(event EventKindFileUploaded) {
 func (em *EventManager) handleFileFailedEvent(event EventKindFileFailed) {
 	transfer, err := em.getLiveTransfer(event.TransferId)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
+		log.Error("failed to get live transfer:", err)
 		return
 	}
 
 	file, ok := transfer.Files[event.FileId]
 	if !ok {
-		log.Printf(internal.ErrorPrefix+" file %s from FileFailed event not found in transfer %s\n",
+		log.Errorf(" file %s from FileFailed event not found in transfer %s\n",
 			event.FileId, transfer.ID)
 		return
 	}
 	file.Finished = true
 
-	//no gosec violation, values from the enumeration are within the int32 max range
+	// no gosec violation, values from the enumeration are within the int32 max range
 	// #nosec G115
 	fileStatusInNotification := pb.Status(event.Status.Status)
 	removeFileFromLiveTransfer(transfer, file)
@@ -368,13 +367,13 @@ func (em *EventManager) handleFileFailedEvent(event EventKindFileFailed) {
 func (em *EventManager) handleFileRejectedEvent(event EventKindFileRejected) {
 	transfer, err := em.getLiveTransfer(event.TransferId)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
+		log.Error("failed to get live transfer:", err)
 		return
 	}
 
 	file, ok := transfer.Files[event.FileId]
 	if !ok {
-		log.Printf(internal.ErrorPrefix+" file %s from FileRejected event not found in transfer %s\n",
+		log.Errorf(" file %s from FileRejected event not found in transfer %s\n",
 			event.FileId, transfer.ID)
 		return
 	}
@@ -397,7 +396,7 @@ func (em *EventManager) handleTransferFailedEvent(event EventKindTransferFailed)
 func (em *EventManager) handleTransferFinalizedEvent(event EventKindTransferFinalized) {
 	transfer, err := em.getLiveTransfer(event.TransferId)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get live transfer:", err)
+		log.Error("failed to get live transfer:", err)
 		return
 	}
 
@@ -407,7 +406,7 @@ func (em *EventManager) handleTransferFinalizedEvent(event EventKindTransferFina
 		// Automatic cancel due to transfer finalization
 		storageTransfer, err := getTransferFromStorage(event.TransferId, em.storage)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "failed to get transfer from storage:", err)
+			log.Error("failed to get transfer from storage:", err)
 			return
 		}
 		status = storageTransfer.Status
@@ -462,7 +461,7 @@ func (em *EventManager) CancelLiveTransfers() {
 	for transferID := range em.liveTransfers {
 		err := em.fileshare.Finalize(transferID)
 		if err != nil {
-			log.Println(internal.WarningPrefix, "failed to cancel live transfer:", err)
+			log.Warn("failed to cancel live transfer:", err)
 		}
 	}
 }
@@ -545,13 +544,13 @@ func (em *EventManager) acceptTransfer(
 
 	userInfo, err := em.osInfo.CurrentUser()
 	if err != nil {
-		log.Printf(internal.ErrorPrefix+" getting user info: %s\n", err)
+		log.Errorf(" getting user info: %s\n", err)
 		return nil, ErrNoPermissionsToAcceptDirectory
 	}
 
 	userGroups, err := em.osInfo.GetGroupIds(userInfo)
 	if err != nil {
-		log.Printf(internal.ErrorPrefix+" getting user groups: %s\n", err)
+		log.Errorf(" getting user groups: %s\n", err)
 		return nil, ErrNoPermissionsToAcceptDirectory
 	}
 
@@ -596,7 +595,7 @@ func (em *EventManager) acceptTransfer(
 
 	statfs, err := em.filesystem.Statfs(path)
 	if err != nil {
-		log.Printf(internal.ErrorPrefix+" doing statfs: %s\n", err)
+		log.Errorf(" doing statfs: %s\n", err)
 		return nil, ErrSizeLimitExceeded
 	}
 
@@ -620,24 +619,24 @@ func isFileWriteable(fileInfo fs.FileInfo, user *user.User, gids []string) bool 
 
 	uid, err := strconv.Atoi(user.Uid)
 	if err != nil {
-		log.Printf(internal.ErrorPrefix+" failed to convert uid %s to int: %s\n", user.Uid, err)
+		log.Errorf(" failed to convert uid %s to int: %s\n", user.Uid, err)
 		return false
 	}
 
 	isOwner := uid == ownerUID
 
 	if isOwner {
-		return fileInfo.Mode().Perm()&os.FileMode(0200) != 0
+		return fileInfo.Mode().Perm()&os.FileMode(0o200) != 0
 	}
 
 	ownerGIDStr := strconv.Itoa(ownerGID)
 	gidIndex := slices.Index(gids, ownerGIDStr)
 	isGroup := gidIndex != -1
 	if isGroup {
-		return fileInfo.Mode().Perm()&os.FileMode(0020) != 0
+		return fileInfo.Mode().Perm()&os.FileMode(0o020) != 0
 	}
 
-	return fileInfo.Mode().Perm()&os.FileMode(0002) != 0
+	return fileInfo.Mode().Perm()&os.FileMode(0o002) != 0
 }
 
 // TransferProgressInfo info to report to the user

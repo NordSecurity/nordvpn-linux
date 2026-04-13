@@ -14,7 +14,7 @@ func (r *RPC) SetVirtualLocation(ctx context.Context, in *pb.SetGenericRequest) 
 	var cfg config.Config
 	err := r.cm.Load(&cfg)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 
 	if cfg.VirtualLocation.Get() == in.Enabled {
@@ -25,7 +25,7 @@ func (r *RPC) SetVirtualLocation(ctx context.Context, in *pb.SetGenericRequest) 
 		c.VirtualLocation.Set(in.Enabled)
 		return c
 	}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.Payload{Type: internal.CodeConfigError}, nil
 	}
 

@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"google.golang.org/grpc/status"
 )
@@ -53,7 +52,7 @@ func (g *GRPCChildProcessManager) StartProcess() (StartupErrorCode, error) {
 		var exiterr *exec.ExitError
 		if errors.As(err, &exiterr) {
 			exitCode := StartupErrorCode(exiterr.ExitCode())
-			log.Println(internal.ErrorPrefix, "failed to start:", err)
+			log.Error("failed to start:", err)
 			return exitCode, nil
 		}
 		return 0, fmt.Errorf("failed to start the process: %w", err)
