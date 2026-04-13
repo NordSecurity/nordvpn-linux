@@ -2151,6 +2151,9 @@ class TranslationsUiEn {
 	/// en: 'VPN connection resumes in $minutes:$seconds'
 	String VPNResumesIn({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes}:${seconds}';
 
+	/// en: 'VPN connection resumes in $hours:$minutes:$seconds'
+	String VPNResumesInWithHours({required Object hours, required Object minutes, required Object seconds}) => 'VPN connection resumes in ${hours}:${minutes}:${seconds}';
+
 	/// en: 'Reconnect'
 	String get reconnect => 'Reconnect';
 
@@ -2159,9 +2162,6 @@ class TranslationsUiEn {
 
 	/// en: 'Get help'
 	String get getHelp => 'Get help';
-
-	/// en: '...'
-	String get connectionDetails => '...';
 
 	/// en: 'Pause connection'
 	String get pauseConnection => 'Pause connection';
@@ -2866,10 +2866,10 @@ extension on Translations {
 			'ui.notSecured' => 'Not secured',
 			'ui.secureMyConnection' => 'Secure my connection',
 			'ui.VPNResumesIn' => ({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes}:${seconds}',
+			'ui.VPNResumesInWithHours' => ({required Object hours, required Object minutes, required Object seconds}) => 'VPN connection resumes in ${hours}:${minutes}:${seconds}',
 			'ui.reconnect' => 'Reconnect',
 			'ui.changeVPNsettings' => 'Change VPN settings',
 			'ui.getHelp' => 'Get help',
-			'ui.connectionDetails' => '...',
 			'ui.pauseConnection' => 'Pause connection',
 			_ => null,
 		};

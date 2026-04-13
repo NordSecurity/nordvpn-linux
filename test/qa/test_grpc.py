@@ -17,6 +17,7 @@ SUCCESS_RESPONSE_TYPE = 1000
 
 def test_multiple_state_subscribers():
     expected_states = [
+        status_pb2.ConnectionState.DISCONNECTED, # initial state on subscribe
         status_pb2.ConnectionState.CONNECTING, # start with "connecting" state ASAP
         status_pb2.ConnectionState.CONNECTING, # update with selected location
         status_pb2.ConnectionState.CONNECTED,
@@ -45,6 +46,7 @@ def test_multiple_state_subscribers():
 
 def test_tunnel_update_notifications_before_and_after_connect():
     expected_states = [
+        status_pb2.ConnectionState.DISCONNECTED, # initial state on subscribe
         status_pb2.ConnectionState.CONNECTING, # start with "connecting" state ASAP
         status_pb2.ConnectionState.CONNECTING, # update with selected location
         status_pb2.ConnectionState.CONNECTED,
@@ -92,6 +94,7 @@ def test_is_virtual_location_is_true_for_virtual_location():
 
 def check_is_virtual_location_in_response(loc: str, expected_is_virtual: bool):
     expected_states = [
+        status_pb2.ConnectionState.DISCONNECTED, # initial state on subscribe
         status_pb2.ConnectionState.CONNECTING, # start with "connecting" state ASAP
         status_pb2.ConnectionState.CONNECTING, # update with selected location
         status_pb2.ConnectionState.CONNECTED
@@ -115,6 +118,7 @@ def test_is_virtual_is_false_for_non_virtual_location():
 
 def test_manual_connection_source_is_present_in_response():
     expected_states = [
+        status_pb2.ConnectionState.DISCONNECTED, # initial state on subscribe
         status_pb2.ConnectionState.CONNECTING, # start with "connecting" state ASAP
         status_pb2.ConnectionState.CONNECTING, # update with selected location
         status_pb2.ConnectionState.CONNECTED
@@ -143,6 +147,7 @@ def pause_connection(pauseDurationSec: int = 10) -> int:
 
 def test_connection_is_resumed_after_a_pause():
     expected_states = [
+        status_pb2.ConnectionState.DISCONNECTED, # initial state on subscribe
         status_pb2.ConnectionState.CONNECTING,
         status_pb2.ConnectionState.CONNECTING,
         status_pb2.ConnectionState.CONNECTED,
@@ -170,13 +175,14 @@ def test_connection_is_resumed_after_a_pause():
     assert all(a.connection_status.state == b for a,
         b in zip(result, expected_states, strict=True))
 
-    initial_state = result[2] # initial state after connecting to the VPN
-    state_after_pause = result[7]
+    initial_state = result[3] # initial state after connecting to the VPN
+    state_after_pause = result[8]
     assert initial_state == state_after_pause
 
 
 def test_pause_is_ignored_after_reconnecting():
     expected_states = [
+        status_pb2.ConnectionState.DISCONNECTED, # initial state on subscribe
         status_pb2.ConnectionState.CONNECTING,
         status_pb2.ConnectionState.CONNECTING,
         status_pb2.ConnectionState.CONNECTED,
