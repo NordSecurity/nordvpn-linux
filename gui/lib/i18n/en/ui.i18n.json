@@ -177,7 +177,6 @@
   "appVersionCompatibilityRecommendation": "For more options, check our [compatibility guide](${compatibilityUrl: Uri})",
   "turnOffKillSwitchDescription": "Kill Switch is blocking the login. Turn it off for now to continue.",
   "turnOffKillSwitch": "Turn off Kill Switch",
-  "connectNow": "Connect now",
   "settingAutoconnectTo": "Setting auto-connect to [$target]...",
   "doubleVpnDesc": "Encrypt your traffic twice for extra security",
   "onionOverVpnDesc": "Use the Onion network with VPN protection",
