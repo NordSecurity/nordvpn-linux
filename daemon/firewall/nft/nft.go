@@ -534,17 +534,6 @@ func (n *nft) addAllowlistInputChain(config firewall.Config, nftCtx *nftContext)
 	}
 
 	if nftCtx.tcpPorts != nil {
-		// tcp sport @ports_tcp meta mark set 0xe1f1 accept
-		n.conn.AddRule(&nftables.Rule{
-			Table: nftCtx.table,
-			Chain: chain,
-			Exprs: buildRules(
-				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkIfPortIsInSet(nftCtx.tcpPorts, unix.IPPROTO_TCP, matchSourcePort),
-			),
-			UserData: userdata.AppendString(nil, userdata.TypeComment, "from allowed TCP ports to local"),
-		})
-
 		// tcp dport @ports_tcp meta mark set 0xe1f1 accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: nftCtx.table,
@@ -558,17 +547,6 @@ func (n *nft) addAllowlistInputChain(config firewall.Config, nftCtx *nftContext)
 	}
 
 	if nftCtx.udpPorts != nil {
-		// udp sport @ports_udp meta mark set 0xe1f1 accept
-		n.conn.AddRule(&nftables.Rule{
-			Table: nftCtx.table,
-			Chain: chain,
-			Exprs: buildRules(
-				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkIfPortIsInSet(nftCtx.udpPorts, unix.IPPROTO_UDP, matchSourcePort),
-			),
-			UserData: userdata.AppendString(nil, userdata.TypeComment, "from allowed UDP ports to local"),
-		})
-
 		// udp dport @ports_udp meta mark set 0xe1f1 accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: nftCtx.table,
