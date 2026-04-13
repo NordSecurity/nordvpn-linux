@@ -451,7 +451,6 @@ func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error { // regul
 
 	loginFlowAltered := moose.NordvpnappOptBoolNone
 	if data.EventStatus != events.StatusAttempt {
-		loginFlowAltered = moose.NordvpnappOptBoolFalse
 		if data.IsAlteredFlowOnNordAccount {
 			loginFlowAltered = moose.NordvpnappOptBoolTrue
 		}
