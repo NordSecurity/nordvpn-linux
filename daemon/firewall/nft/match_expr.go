@@ -10,7 +10,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func buildRules(verdict *expr.Verdict, parts ...[]expr.Any) []expr.Any {
+func buildRules(verdict expr.Any, parts ...[]expr.Any) []expr.Any {
 	var n int
 	for _, p := range parts {
 		n += len(p)
@@ -46,8 +46,8 @@ func checkCtState(ctState uint32) []expr.Any {
 type matchType int
 
 const (
-	MATCH_SOURCE      matchType = 1
-	MATCH_DESTINATION matchType = 2
+	matchSourcePort matchType = 1
+	matchDestPort   matchType = 2
 )
 
 // udp port 53
@@ -57,7 +57,7 @@ func checkPortNumber(port uint16, portType byte, match matchType) []expr.Any {
 	// Offset: 2, Len: 2  → dport
 
 	var offset uint32 = 0
-	if match == MATCH_DESTINATION {
+	if match == matchDestPort {
 		offset = 2
 	}
 
@@ -91,7 +91,7 @@ func checkIfPortIsInSet(portsSet *nftables.Set, portType byte, match matchType) 
 	// Offset: 2, Len: 2  → dport
 
 	var offset uint32 = 0
-	if match == MATCH_DESTINATION {
+	if match == matchDestPort {
 		offset = 2
 	}
 	return []expr.Any{
@@ -155,7 +155,7 @@ func verifyIpIsInSet(ipSet *nftables.Set, match matchType, isIn bool) []expr.Any
 	}
 	// IPv4 header saddr offset 12, daddr at ofset 16
 	var offset uint32 = 12
-	if match == MATCH_DESTINATION {
+	if match == matchDestPort {
 		offset = 16
 	}
 
@@ -190,14 +190,14 @@ func verifyIpIsInSet(ipSet *nftables.Set, match matchType, isIn bool) []expr.Any
 type ifDirection int
 
 const (
-	IF_INPUT  ifDirection = 1
-	IF_OUTPUT ifDirection = 2
+	ifNameInput  ifDirection = 1
+	ifNameOutput ifDirection = 2
 )
 
 // iifname @set
 func interfaceNameInSet(interfaces *nftables.Set, direction ifDirection) []expr.Any {
 	dir := expr.MetaKeyIIFNAME
-	if direction == IF_OUTPUT {
+	if direction == ifNameOutput {
 		dir = expr.MetaKeyOIFNAME
 	}
 	return []expr.Any{
@@ -220,7 +220,7 @@ func checkInterfaceName(ifName string, direction ifDirection, cmp expr.CmpOp) []
 	}
 
 	dir := expr.MetaKeyIIFNAME
-	if direction == IF_OUTPUT {
+	if direction == ifNameOutput {
 		dir = expr.MetaKeyOIFNAME
 	}
 	return []expr.Any{
@@ -294,7 +294,7 @@ func checkMetaMarkAndSetCtMark(fwmark uint32) []expr.Any {
 // ip saddr 100.64.0.0/10
 func checkIfIpIsPartOfSubnet(pfx netip.Prefix, match matchType, op expr.CmpOp) []expr.Any {
 	var offset uint32 = 12
-	if match == MATCH_DESTINATION {
+	if match == matchDestPort {
 		offset = 16
 	}
 
