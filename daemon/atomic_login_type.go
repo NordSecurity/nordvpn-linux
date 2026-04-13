@@ -49,7 +49,8 @@ func (a *atomicLoginType) wasStarted() bool {
 }
 
 func (a *atomicLoginType) isAltered(loginType pb.LoginType) bool {
-	return a.get() != loginType
+	current := a.get()
+	return current != pb.LoginType_LoginType_UNKNOWN && current != loginType
 }
 
 func (a *atomicLoginType) setLoginAttemptTime(t time.Time) {
