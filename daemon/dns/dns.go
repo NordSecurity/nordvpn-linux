@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -120,19 +122,42 @@ func (d *DNSServiceSetter) getManagementServiceBasedOnNetworkManagerConfiguratio
 		return unknownManagementService, fmt.Errorf("getting NetworkManager config: %w", err)
 	}
 
-	networkManagerConfigString := string(networkManagerConfig)
-
 	const (
 		dnsConfigEntry        = "dns="
-		defaultDNSConfigEntry = dnsConfigEntry + "default"
-		systemdResolvedEntry  = dnsConfigEntry + "systemd-resolved"
+		defaultDNSConfigEntry = "dns=default"
+		systemdResolvedEntry  = "dns=systemd-resolved"
 	)
 
-	if strings.Contains(networkManagerConfigString, defaultDNSConfigEntry) {
+	networkManagerConfigLines := strings.Split(string(networkManagerConfig), "\n")
+	dnsConfigEntryIndex := slices.IndexFunc(networkManagerConfigLines, func(networkManagerConfigLine string) bool {
+		return strings.Contains(networkManagerConfigLine, dnsConfigEntry)
+	})
+
+	if dnsConfigEntryIndex == -1 {
+		return unknownManagementService, fmt.Errorf("DNS config entry not found")
+	}
+
+	dnsConfigLine := strings.TrimSpace(networkManagerConfigLines[dnsConfigEntryIndex])
+	// ignore the config entry if it's commented out
+	if strings.HasPrefix(dnsConfigLine, "#") {
+		return unknownManagementService, fmt.Errorf("DNS config entry commented out")
+	}
+
+	re := regexp.MustCompile(`\bdns=([^ \t\r\n]+)`)
+	matches := re.FindAllString(string(networkManagerConfig), -1)
+	if matches == nil {
+		return unknownManagementService, fmt.Errorf("config entry not found")
+	}
+
+	if len(matches) > 1 {
+		return unknownManagementService, fmt.Errorf("multiple config entries")
+	}
+
+	if matches[0] == defaultDNSConfigEntry {
 		return nmcliManagementService, nil
 	}
 
-	if strings.Contains(networkManagerConfigString, systemdResolvedEntry) {
+	if matches[0] == systemdResolvedEntry {
 		return systemdResolvedManagementService, nil
 	}
 

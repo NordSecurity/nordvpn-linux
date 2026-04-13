@@ -203,6 +203,17 @@ dns=systemd-resolved
 	defaultNetworkManagerConfig := []byte(`[main]
 dns=default
 `)
+
+	networkManagerConfigCommentedOut := []byte(`[main]
+# dns=default
+`)
+	networkManagerConfigCommentedOutNonStandard := []byte(`[main]
+#             dns=default
+`)
+
+	networkManagerConfigInvalidEntry := []byte(`[main]
+dddddns=default
+`)
 	// example configuration of resolv.conf file when it's managed by systemd-resolved
 	systemdResolvedResolvconf := []byte(`# This is /run/systemd/resolve/stub-resolv.conf managed by man:systemd-resolved(8).
 # Do not edit.
@@ -281,6 +292,30 @@ search home`)
 			setByNmCli:                       true,
 			shouldEmitDNSConfiguredEvent:     true,
 			expectedManagementServiceInEvent: nmcliManagementService,
+		},
+		{
+			name:                             "NetworkManager config detection, NetworkManager configured with default, entry is commented out, fallback to resolv.conf comment",
+			networkManagerConfigContents:     networkManagerConfigCommentedOut,
+			resolvconfFileContents:           systemdResolvedNetworkManagerConfig,
+			setBySystemdResolved:             true,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedManagementServiceInEvent: systemdResolvedManagementService,
+		},
+		{
+			name:                             "NetworkManager config detection, NetworkManager configured with default, entry is commented out with extra spaces, fallback to resolv.conf comment",
+			networkManagerConfigContents:     networkManagerConfigCommentedOutNonStandard,
+			resolvconfFileContents:           systemdResolvedNetworkManagerConfig,
+			setBySystemdResolved:             true,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedManagementServiceInEvent: systemdResolvedManagementService,
+		},
+		{
+			name:                             "NetworkManager config detection, NetworkManager configured with default, entry is invalid, fallback to resolv.conf comment",
+			networkManagerConfigContents:     networkManagerConfigInvalidEntry,
+			resolvconfFileContents:           systemdResolvedNetworkManagerConfig,
+			setBySystemdResolved:             true,
+			shouldEmitDNSConfiguredEvent:     true,
+			expectedManagementServiceInEvent: systemdResolvedManagementService,
 		},
 		{
 			name:                             "resolv.conf comment detection, resolv.conf is managed by systemd-resolved, systemd-resolved is used to set DNS",
