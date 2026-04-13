@@ -36,6 +36,6 @@ func (r *RPC) PauseConnection(ctx context.Context, in *pb.PauseRequest) (*pb.Pay
 	return &pb.Payload{Type: internal.CodeSuccess}, nil
 }
 
-func (r *RPC) CancellPause() {
+func (r *RPC) CancelPause() {
 	r.pauseManager.CancelReconnection()
 }

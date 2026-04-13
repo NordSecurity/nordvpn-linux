@@ -21,8 +21,11 @@ type connectFunc func(srv pb.Daemon_ConnectServer, source pb.ConnectionSource, p
 type ReconnectSchedulerImpl struct {
 	mu                  sync.Mutex
 	reconnectCancelFunc context.CancelFunc
-	connectFunc         connectFunc
-	connectionInfo      *state.ConnectionInfo
+	// reconnectionScheduledChan will be closed once reconnection is cancelled or after the reconection wait period
+	// finishes
+	reconnectionScheduledChan chan any
+	connectFunc               connectFunc
+	connectionInfo            *state.ConnectionInfo
 }
 
 func NewReconnectScheduler(connectFunc connectFunc, connectionInfo *state.ConnectionInfo) ReconnectScheduler {
@@ -44,8 +47,10 @@ func (s *ReconnectSchedulerImpl) ScheduleReconnection(duration time.Duration) {
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	s.reconnectCancelFunc = cancelFunc
+	s.reconnectionScheduledChan = make(chan any)
 	s.connectionInfo.Pause(time.Now(), duration)
 	go func() {
+		defer close(s.reconnectionScheduledChan)
 		log.Println(internal.DebugPrefix, "pausing connection for", duration.String())
 		select {
 		case <-time.After(duration):
@@ -64,13 +69,23 @@ func (s *ReconnectSchedulerImpl) ScheduleReconnection(duration time.Duration) {
 	}()
 }
 
+func (s *ReconnectSchedulerImpl) isReconnectionScheduled() bool {
+	select {
+	case <-s.reconnectionScheduledChan:
+		return false
+	default:
+		return true
+	}
+}
+
 // CancelReconnection cancels the reconnect goroutine if it was started.
 func (s *ReconnectSchedulerImpl) CancelReconnection() time.Duration {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.reconnectCancelFunc != nil {
-		cancelStartTime := time.Now()
+
+	if s.reconnectCancelFunc != nil && s.isReconnectionScheduled() {
 		log.Println(internal.DebugPrefix, "cancelling the reconnection after a pause")
+		cancelStartTime := time.Now()
 		s.reconnectCancelFunc()
 		s.reconnectCancelFunc = nil
 		return s.connectionInfo.CancelPause(cancelStartTime)

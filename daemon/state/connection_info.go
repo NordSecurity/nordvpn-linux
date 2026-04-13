@@ -225,14 +225,14 @@ func (c *ConnectionInfo) Pause(pausedAt time.Time, duration time.Duration) {
 	}
 }
 
-// Unpause unsets the pause data, sends pause cancelled notification and returns the pause duration.
+// CancelPause unsets the pause data, sends pause cancelled notification and returns the pause duration.
 func (c *ConnectionInfo) CancelPause(cancelStartTime time.Time) time.Duration {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	var pauseInterval time.Duration
 	if c.pauseData != nil {
-		pauseInterval = c.unpause()
+		pauseInterval = c.doUnpause()
 		duration := time.Since(cancelStartTime)
 		c.pauseCancelledNotif.Publish(events.DataPauseCancelled{
 			Interval:            pauseInterval,
@@ -250,10 +250,10 @@ func (c *ConnectionInfo) Unpause() time.Duration {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	return c.unpause()
+	return c.doUnpause()
 }
 
-func (c *ConnectionInfo) unpause() time.Duration {
+func (c *ConnectionInfo) doUnpause() time.Duration {
 	if c.pauseData == nil {
 		return 0
 	}

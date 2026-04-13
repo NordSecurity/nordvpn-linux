@@ -436,11 +436,11 @@ func main() {
 	statePublisher := state.NewState()
 	internalVpnEvents.Subscribe(connectionInfo)
 	connectionInfo.SubscribeToInternalStateChanges(statePublisher)
+	connectionInfo.SubscribeToPauseCancelled(analytics)
 	daemonEvents.Service.Connect.Subscribe(connectionInfo.ConnectionStatusNotifyConnect)
 	daemonEvents.Service.Disconnect.Subscribe(connectionInfo.ConnectionStatusNotifyDisconnect)
 	daemonEvents.User.Subscribe(statePublisher)
 	configEvents.Subscribe(statePublisher)
-	connectionInfo.SubscribeToPauseCancelled(analytics)
 
 	netw := networker.NewCombined(
 		vpn,
@@ -763,7 +763,7 @@ func main() {
 
 	httpCancel()
 
-	rpc.CancellPause()
+	rpc.CancelPause()
 
 	if err := notificationClient.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping NC:", err)
