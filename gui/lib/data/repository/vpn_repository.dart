@@ -68,7 +68,8 @@ class VpnRepository {
   Future<int> disconnect() async {
     final options = createUiEventCallOptions(
       formReference: UIEvent_FormReference.HOME_SCREEN,
-      itemName: UIEvent_ItemName.DISCONNECT,
+      itemName: UIEvent_ItemName.PAUSE,
+      itemValue: UIEvent_ItemValue.PAUSE_DISCONNECT,
     );
     final stream = _client.disconnect(Empty(), options: options);
 

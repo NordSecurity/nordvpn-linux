@@ -117,6 +117,21 @@ func TestToMooseStrings(t *testing.T) {
 				ItemValue:     "24_hours",
 			},
 		},
+		{
+			name: "pause event disconnect",
+			ctx: &UIEventContext{
+				FormReference: pb.UIEvent_CLI,
+				ItemName:      pb.UIEvent_PAUSE,
+				ItemType:      pb.UIEvent_CLICK,
+				ItemValue:     pb.UIEvent_PAUSE_DISCONNECT,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "cli",
+				ItemName:      "pause",
+				ItemType:      "click",
+				ItemValue:     "disconnect",
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -208,6 +223,7 @@ func TestItemValueToString(t *testing.T) {
 		{pb.UIEvent_PAUSE_30_MIN, "30_minutes"},
 		{pb.UIEvent_PAUSE_1_HOUR, "1_hour"},
 		{pb.UIEvent_PAUSE_24_HOURS, "24_hours"},
+		{pb.UIEvent_PAUSE_DISCONNECT, "disconnect"},
 	}
 
 	for _, tt := range tests {
