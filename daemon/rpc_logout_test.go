@@ -119,7 +119,6 @@ func TestLogout_Pause(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			mockedDisconnectEvents := &daemonevents.MockPublisherSubscriber[events.DataDisconnect]{}
 			connectionInfo := state.NewConnectionInfo()
 
@@ -150,5 +149,4 @@ func TestLogout_Pause(t *testing.T) {
 			assert.Equal(t, test.isDataDisconnectExpected, mockedDisconnectEvents.EventPublished)
 		})
 	}
-
 }
