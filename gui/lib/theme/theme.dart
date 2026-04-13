@@ -862,7 +862,7 @@ final class NordVpnTheme {
       backgroundColor: design.semanticColors.bgTertiary,
       spacing: AppSpacing.spacing4,
       borderRadius: AppBorderRadius.md,
-      widgetWidth: 356,
+      widgetWidth: 386,
       widgetHeight: 58,
       closeButtonPadding: EdgeInsets.all(5),
       borderWidth: AppBorderWidth.md,

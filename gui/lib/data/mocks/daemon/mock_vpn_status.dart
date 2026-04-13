@@ -142,6 +142,24 @@ final class MockVpnStatus extends CancelableDelayed {
     await delayed(delayDuration);
   }
 
+  Future<Payload> pauseConnection(int pauseSeconds) async {
+    final previousStatus = _status;
+    setStatus(StatusResponse(
+      state: ConnectionState.PAUSED,
+      pauseRemainingDurationSec: pauseSeconds,
+    ));
+
+    final resumeDelay = Duration(seconds: pauseSeconds);
+    delayed(resumeDelay).then((_) {
+      if (_status.state == ConnectionState.PAUSED) {
+        previousStatus.state = ConnectionState.CONNECTED;
+        setStatus(previousStatus);
+      }
+    });
+
+    return Payload(type: Int64(DaemonStatusCode.success));
+  }
+
   Future<Payload> cancel() async {
     _shouldCancel = true;
     return Payload(type: Int64(DaemonStatusCode.success));
