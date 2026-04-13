@@ -15,15 +15,6 @@ import (
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 )
 
-const trayTestUID uint32 = 1000
-
-func peerCtx(uid uint32) context.Context {
-	return peer.NewContext(
-		context.Background(),
-		&peer.Peer{AuthInfo: internal.UcredAuth{Uid: uid}},
-	)
-}
-
 func TestSetTray_NoPeerContext(t *testing.T) {
 	category.Set(t, category.Unit)
 
