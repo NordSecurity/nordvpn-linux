@@ -142,6 +142,8 @@ class UIEvent_ItemValue extends $pb.ProtobufEnum {
       UIEvent_ItemValue._(12, _omitEnumNames ? '' : 'PAUSE_1_HOUR');
   static const UIEvent_ItemValue PAUSE_24_HOURS =
       UIEvent_ItemValue._(13, _omitEnumNames ? '' : 'PAUSE_24_HOURS');
+  static const UIEvent_ItemValue PAUSE_DISCONNECT =
+      UIEvent_ItemValue._(14, _omitEnumNames ? '' : 'PAUSE_DISCONNECT');
 
   static const $core.List<UIEvent_ItemValue> values = <UIEvent_ItemValue>[
     ITEM_VALUE_UNSPECIFIED,
@@ -158,10 +160,11 @@ class UIEvent_ItemValue extends $pb.ProtobufEnum {
     PAUSE_30_MIN,
     PAUSE_1_HOUR,
     PAUSE_24_HOURS,
+    PAUSE_DISCONNECT,
   ];
 
   static final $core.List<UIEvent_ItemValue?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 13);
+      $pb.ProtobufEnum.$_initByValueList(values, 14);
   static UIEvent_ItemValue? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
