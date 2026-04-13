@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -35,6 +36,9 @@ type AccessTokenSessionStore struct {
 	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
 	renewAPICall       AccessTokenRenewalAPICall
 	renewMu            sync.Mutex
+	// renewalCounter is incremented after every successful token renewal to detect
+	// whether a concurrent goroutine already completed a renewal.
+	renewalCounter atomic.Uint64
 }
 
 // NewAccessTokenSessionStore creates a new AccessTokenSessionStore instance
@@ -74,10 +78,15 @@ func (s *AccessTokenSessionStore) Renew(opts ...RenewalOption) error {
 		return nil
 	}
 
+	// Capture the current renewal counter before acquiring the lock.
+	// Used to detect whether a concurrent goroutine already completed
+	// a renewal while we were waiting.
+	renewalCounterSnapshot := s.renewalCounter.Load()
+
 	s.renewMu.Lock()
 	defer s.renewMu.Unlock()
 
-	return s.doRenew(options)
+	return s.doRenew(options, renewalCounterSnapshot)
 }
 
 // isManualToken returns true if the current token is a manually generated token.
@@ -87,13 +96,20 @@ func (s *AccessTokenSessionStore) isManualToken() bool {
 	return err == nil && cfg.ExpiresAt.Equal(ManualAccessTokenExpiryDate)
 }
 
-// doRenew performs the actual token renewal
-func (s *AccessTokenSessionStore) doRenew(options renewalOptions) error {
-	// re-check after acquiring lock - another goroutine may have renewed
+// doRenew performs the actual token renewal.
+func (s *AccessTokenSessionStore) doRenew(
+	options renewalOptions,
+	renewalCounterSnapshot uint64,
+) error {
+	// re-check after acquiring lock - another goroutine may have already renewed.
 	if !options.forceRenewal {
 		if err := s.validate(); err == nil {
 			return nil
 		}
+	} else if s.renewalCounter.Load() != renewalCounterSnapshot {
+		// The counter advanced while we waited, meaning a concurrent goroutine
+		// already completed the renewal. No need to call the API again.
+		return nil
 	}
 
 	var cfg config.Config
@@ -208,6 +224,7 @@ func (s *AccessTokenSessionStore) renewToken(
 		return fmt.Errorf("saving access token data: %w", err)
 	}
 
+	s.renewalCounter.Add(1)
 	return nil
 }
 

@@ -2,6 +2,7 @@ package session_test
 
 import (
 	"fmt"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -21,16 +22,23 @@ import (
 type raceConditionRenewalAPI struct {
 	mu                sync.Mutex
 	currentRenewToken string
-	requestDelay      time.Duration
-	callCount         atomic.Int32
-	successCount      atomic.Int32
-	failCount         atomic.Int32
+	// apiEnteredCh is sent when Renew is first entered.
+	// This let's to know that the first goroutine holds the renewal lock
+	// and is blocked inside the API call, giving remaining goroutines time to
+	// pile up at the mutex before the API call is released.
+	apiEnteredCh chan struct{}
+	// allowProceedCh is closed by the test to unblock the API call.
+	allowProceedCh chan struct{}
+	callCount      atomic.Int32
+	successCount   atomic.Int32
+	failCount      atomic.Int32
 }
 
 func newRaceConditionRenewalAPI(initialRenewToken string) *raceConditionRenewalAPI {
 	return &raceConditionRenewalAPI{
 		currentRenewToken: initialRenewToken,
-		requestDelay:      50 * time.Millisecond,
+		apiEnteredCh:      make(chan struct{}, 1),
+		allowProceedCh:    make(chan struct{}),
 	}
 }
 
@@ -38,7 +46,16 @@ var ErrRenewTokenNotFound = internal.NewCodedError(101202, "Renew token not foun
 
 func (api *raceConditionRenewalAPI) Renew(token string, idempotencyKey uuid.UUID) (*session.AccessTokenResponse, error) {
 	api.callCount.Add(1)
-	time.Sleep(api.requestDelay)
+
+	// Signal that the API has been entered (non-blocking; only the first call matters).
+	select {
+	case api.apiEnteredCh <- struct{}{}:
+	default:
+	}
+
+	// Block until the test releases. This ensures that goroutines blocked at
+	// the renewal mutex have a chance to pile up before the first renewal completes.
+	<-api.allowProceedCh
 
 	api.mu.Lock()
 	defer api.mu.Unlock()
@@ -100,15 +117,19 @@ func TestAccessTokenSessionStore_RaceCondition_MutexFix(t *testing.T) {
 	const numGoroutines = 5
 	var wg sync.WaitGroup
 	renewErrors := make([]error, numGoroutines)
+	startGate := make(chan struct{})
 
-	for i := 0; i < numGoroutines; i++ {
-		wg.Add(1)
-		go func(idx int) {
-			defer wg.Done()
-			renewErrors[idx] = store.Renew()
-		}(i)
+	for i := range numGoroutines {
+		wg.Go(func() {
+			<-startGate
+			renewErrors[i] = store.Renew()
+		})
 	}
 
+	close(startGate)          // release all goroutines simultaneously
+	<-api.apiEnteredCh        // wait for G1 to enter the API call (holding the renewal mutex)
+	runtime.Gosched()         // yield so G2-5 can reach renewMu.Lock() while G1 is still blocked
+	close(api.allowProceedCh) // release the blocked API call
 	wg.Wait()
 
 	t.Logf("API call count: %d", api.callCount.Load())
@@ -211,15 +232,19 @@ func TestAccessTokenSessionStore_RaceCondition_WithExpiredToken(t *testing.T) {
 
 	const numGoroutines = 5
 	var wg sync.WaitGroup
+	startGate := make(chan struct{})
 
-	for i := 0; i < numGoroutines; i++ {
-		wg.Add(1)
-		go func(int) {
-			defer wg.Done()
+	for range numGoroutines {
+		wg.Go(func() {
+			<-startGate
 			_ = store.Renew()
-		}(i)
+		})
 	}
 
+	close(startGate)
+	<-api.apiEnteredCh
+	runtime.Gosched() // yield so G2-5 can reach renewMu.Lock() while G1 is still blocked
+	close(api.allowProceedCh)
 	wg.Wait()
 
 	t.Logf("API call count: %d", api.callCount.Load())
