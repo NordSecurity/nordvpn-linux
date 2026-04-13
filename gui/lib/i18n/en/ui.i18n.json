@@ -276,9 +276,9 @@
   "notSecured": "Not secured",
   "secureMyConnection": "Secure my connection",
   "VPNResumesIn": "VPN connection resumes in $minutes:$seconds",
+  "VPNResumesInWithHours": "VPN connection resumes in $hours:$minutes:$seconds",
   "reconnect": "Reconnect",
   "changeVPNsettings": "Change VPN settings",
   "getHelp": "Get help",
-  "connectionDetails": "...",
   "pauseConnection": "Pause connection"
 }

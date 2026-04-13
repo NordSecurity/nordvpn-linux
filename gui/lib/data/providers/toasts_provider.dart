@@ -7,8 +7,8 @@ final class Toasts extends _$Toasts {
   @override
   Duration? build() => null;
 
-  void show(Duration t) {
-    state = t;
+  void show(Duration duration) {
+    state = duration;
   }
 
   void closeToast() {
