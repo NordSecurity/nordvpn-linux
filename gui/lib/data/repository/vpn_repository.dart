@@ -114,6 +114,11 @@ class VpnRepository {
     final request = RecentConnectionsRequest(limit: $fixnum.Int64(limit));
     return await _client.getRecentConnections(request);
   }
+
+  Future<RecommendedServerLocation> fetchRecommendedServerLocation() async {
+    final response = await _client.recommendedServer(Empty());
+    return response;
+  }
 }
 
 @Riverpod(keepAlive: true)

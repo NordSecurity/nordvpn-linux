@@ -443,6 +443,67 @@ func (*ServersResponse_Servers) isServersResponse_Response() {}
 
 func (*ServersResponse_Error) isServersResponse_Response() {}
 
+type RecommendedServerLocation struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	CountryCode string `protobuf:"bytes,1,opt,name=country_code,json=countryCode,proto3" json:"country_code,omitempty"`
+	CountryName string `protobuf:"bytes,2,opt,name=country_name,json=countryName,proto3" json:"country_name,omitempty"`
+	CityName    string `protobuf:"bytes,3,opt,name=city_name,json=cityName,proto3" json:"city_name,omitempty"`
+}
+
+func (x *RecommendedServerLocation) Reset() {
+	*x = RecommendedServerLocation{}
+	mi := &file_servers_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RecommendedServerLocation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RecommendedServerLocation) ProtoMessage() {}
+
+func (x *RecommendedServerLocation) ProtoReflect() protoreflect.Message {
+	mi := &file_servers_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RecommendedServerLocation.ProtoReflect.Descriptor instead.
+func (*RecommendedServerLocation) Descriptor() ([]byte, []int) {
+	return file_servers_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *RecommendedServerLocation) GetCountryCode() string {
+	if x != nil {
+		return x.CountryCode
+	}
+	return ""
+}
+
+func (x *RecommendedServerLocation) GetCountryName() string {
+	if x != nil {
+		return x.CountryName
+	}
+	return ""
+}
+
+func (x *RecommendedServerLocation) GetCityName() string {
+	if x != nil {
+		return x.CityName
+	}
+	return ""
+}
+
 var File_servers_proto protoreflect.FileDescriptor
 
 var file_servers_proto_rawDesc = []byte{
@@ -485,7 +546,15 @@ var file_servers_proto_rawDesc = []byte{
 	0x72, 0x76, 0x65, 0x72, 0x73, 0x12, 0x28, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x02,
 	0x20, 0x01, 0x28, 0x0e, 0x32, 0x10, 0x2e, 0x70, 0x62, 0x2e, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72,
 	0x73, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x48, 0x00, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x42,
-	0x0a, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2a, 0x4c, 0x0a, 0x0c, 0x53,
+	0x0a, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x7e, 0x0a, 0x19, 0x52,
+	0x65, 0x63, 0x6f, 0x6d, 0x6d, 0x65, 0x6e, 0x64, 0x65, 0x64, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72,
+	0x4c, 0x6f, 0x63, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x21, 0x0a, 0x0c, 0x63, 0x6f, 0x75, 0x6e,
+	0x74, 0x72, 0x79, 0x5f, 0x63, 0x6f, 0x64, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b,
+	0x63, 0x6f, 0x75, 0x6e, 0x74, 0x72, 0x79, 0x43, 0x6f, 0x64, 0x65, 0x12, 0x21, 0x0a, 0x0c, 0x63,
+	0x6f, 0x75, 0x6e, 0x74, 0x72, 0x79, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x0b, 0x63, 0x6f, 0x75, 0x6e, 0x74, 0x72, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x1b,
+	0x0a, 0x09, 0x63, 0x69, 0x74, 0x79, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x08, 0x63, 0x69, 0x74, 0x79, 0x4e, 0x61, 0x6d, 0x65, 0x2a, 0x4c, 0x0a, 0x0c, 0x53,
 	0x65, 0x72, 0x76, 0x65, 0x72, 0x73, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x12, 0x0c, 0x0a, 0x08, 0x4e,
 	0x4f, 0x5f, 0x45, 0x52, 0x52, 0x4f, 0x52, 0x10, 0x00, 0x12, 0x14, 0x0a, 0x10, 0x47, 0x45, 0x54,
 	0x5f, 0x43, 0x4f, 0x4e, 0x46, 0x49, 0x47, 0x5f, 0x45, 0x52, 0x52, 0x4f, 0x52, 0x10, 0x01, 0x12,
@@ -519,19 +588,20 @@ func file_servers_proto_rawDescGZIP() []byte {
 }
 
 var file_servers_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_servers_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_servers_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_servers_proto_goTypes = []any{
-	(ServersError)(0),       // 0: pb.ServersError
-	(Technology)(0),         // 1: pb.Technology
-	(*Server)(nil),          // 2: pb.Server
-	(*ServerCity)(nil),      // 3: pb.ServerCity
-	(*ServerCountry)(nil),   // 4: pb.ServerCountry
-	(*ServersMap)(nil),      // 5: pb.ServersMap
-	(*ServersResponse)(nil), // 6: pb.ServersResponse
-	(config.ServerGroup)(0), // 7: config.ServerGroup
+	(ServersError)(0),                 // 0: pb.ServersError
+	(Technology)(0),                   // 1: pb.Technology
+	(*Server)(nil),                    // 2: pb.Server
+	(*ServerCity)(nil),                // 3: pb.ServerCity
+	(*ServerCountry)(nil),             // 4: pb.ServerCountry
+	(*ServersMap)(nil),                // 5: pb.ServersMap
+	(*ServersResponse)(nil),           // 6: pb.ServersResponse
+	(*RecommendedServerLocation)(nil), // 7: pb.RecommendedServerLocation
+	(config.ServerGroup)(0),           // 8: config.ServerGroup
 }
 var file_servers_proto_depIdxs = []int32{
-	7, // 0: pb.Server.server_groups:type_name -> config.ServerGroup
+	8, // 0: pb.Server.server_groups:type_name -> config.ServerGroup
 	1, // 1: pb.Server.technologies:type_name -> pb.Technology
 	2, // 2: pb.ServerCity.servers:type_name -> pb.Server
 	3, // 3: pb.ServerCountry.cities:type_name -> pb.ServerCity
@@ -560,7 +630,7 @@ func file_servers_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_servers_proto_rawDesc,
 			NumEnums:      2,
-			NumMessages:   5,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
