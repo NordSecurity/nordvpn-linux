@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:grpc/grpc.dart';
 import 'package:nordvpn/daemon/error_screen.dart';
 import 'package:nordvpn/data/models/application_error.dart';
+import 'package:nordvpn/data/providers/toasts_provider.dart';
 import 'package:nordvpn/grpc/grpc_service.dart';
 import 'package:nordvpn/grpc/error_handling_interceptor.dart';
 import 'package:nordvpn/logger.dart';
@@ -97,6 +98,9 @@ class GrpcConnectionController extends _$GrpcConnectionController {
     }
 
     logger.i("state changed to $newState");
+    if (newState is AsyncError) {
+      ref.read(toastsProvider.notifier).closeToast();
+    }
     state = newState;
   }
 
