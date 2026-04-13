@@ -95,10 +95,10 @@ class VpnRepository {
     final options = createUiEventCallOptions(
       formReference: UIEvent_FormReference.HOME_SCREEN,
       itemName: UIEvent_ItemName.PAUSE,
-      itemValue: pauseValue.toUIEventItemValue(),
+      itemValue: pauseValue.eventValue,
     );
     final response = await _client.pauseConnection(
-      PauseRequest(seconds: pauseValue.value),
+      PauseRequest(seconds: pauseValue.seconds),
       options: options,
     );
     return response.type.toInt();
