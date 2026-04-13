@@ -9,7 +9,6 @@ import (
 	"github.com/NordSecurity/systray"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 )
@@ -167,7 +166,7 @@ func buildQuitButton(ti *Instance) {
 		if !open {
 			return
 		}
-		log.Printf("%s %s", internal.InfoPrefix, msgShutdownNotification)
+		log.Infof("%s", msgShutdownNotification)
 		ti.notify(Force, msgShutdownNotification)
 		select {
 		case ti.quitChan <- norduser.StopRequest{}:

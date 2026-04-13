@@ -12,7 +12,7 @@ import (
 func IsServiceActive(service string) bool {
 	conn, err := dbus.SystemBus()
 	if err != nil {
-		log.Println(ErrorPrefix, "getting system dbus:", err)
+		log.Error("getting system dbus:", err)
 		return false
 	}
 	defer conn.Close()
@@ -20,7 +20,7 @@ func IsServiceActive(service string) bool {
 	// obtain systemd dbus object
 	dbusObj, ok := conn.Object("org.freedesktop.systemd1", "/org/freedesktop/systemd1").(*dbus.Object)
 	if !ok {
-		log.Println(ErrorPrefix, "obtaining systemd dbus object:", err)
+		log.Error("obtaining systemd dbus object:", err)
 		return false
 	}
 
@@ -33,21 +33,21 @@ func IsServiceActive(service string) bool {
 	// obtain service unit path in dbus naming system
 	err = dbusObj.Call("org.freedesktop.systemd1.Manager.GetUnit", 0, service).Store(&unitPath)
 	if err != nil {
-		log.Println(ErrorPrefix, "invoking dbus object method:", err)
+		log.Error("invoking dbus object method:", err)
 		return false
 	}
 
 	// obtain service unit dbus object
 	dbusObj, ok = conn.Object("org.freedesktop.systemd1", unitPath).(*dbus.Object)
 	if !ok {
-		log.Println(ErrorPrefix, "obtaining service unit dbus object:", err)
+		log.Error("obtaining service unit dbus object:", err)
 		return false
 	}
 
 	// get dbus object property
 	propVal, err := dbusObj.GetProperty("org.freedesktop.systemd1.Unit.ActiveState")
 	if err != nil {
-		log.Println(ErrorPrefix, "obtaining service unit dbus object property:", err)
+		log.Error("obtaining service unit dbus object property:", err)
 		return false
 	}
 

@@ -8,7 +8,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -78,11 +77,11 @@ func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 		var cfg config.Config
 		// TODO(LVPN-9667): Error handling here should be revisited. Possibly, it should be promoted to the caller in order to properly handle it.
 		if err := acc.cm.Load(&cfg); err != nil {
-			log.Println(internal.ErrorPrefix, "failed to load config while running daemon preparation", err)
+			log.Error("failed to load config while running daemon preparation", err)
 			return
 		}
 		if err := acc.analytics.Init(cfg.AnalyticsConsent); err != nil {
-			log.Println(internal.ErrorPrefix, "moose failed to initialize with error:", err)
+			log.Error("moose failed to initialize with error:", err)
 		}
 		return
 	}
@@ -95,7 +94,7 @@ func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 	loggedIn, _ := acc.authChecker.IsLoggedIn()
 	if consentMode == consentModeGDPR && loggedIn {
 		if err := acc.doLightLogout(); err != nil {
-			log.Println(internal.WarningPrefix, "failed to perform light logout when user in gdpr mode:", err)
+			log.Warn("failed to perform light logout when user in gdpr mode:", err)
 		}
 		return
 	}
@@ -104,7 +103,7 @@ func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 	// consent flow, so update the config with `AnalyticsConsent := true`
 	if consentMode == consentModeStandard {
 		if err := acc.setConsentGranted(); err != nil {
-			log.Println(internal.WarningPrefix, "failed to set analytics consent to allowed when user in standard-mode:", err)
+			log.Warn("failed to set analytics consent to allowed when user in standard-mode:", err)
 		}
 	}
 }
@@ -114,7 +113,7 @@ func (acc *AnalyticsConsentChecker) PrepareDaemonIfConsentNotCompleted() {
 func (acc *AnalyticsConsentChecker) IsConsentFlowCompleted() bool {
 	var cfg config.Config
 	if err := acc.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, "failed to load config when checking consent flow", err)
+		log.Error("failed to load config when checking consent flow", err)
 		return false
 	}
 	switch cfg.AnalyticsConsent {
@@ -128,7 +127,7 @@ func (acc *AnalyticsConsentChecker) IsConsentFlowCompleted() bool {
 
 func (acc *AnalyticsConsentChecker) setConsentGranted() error {
 	if err := acc.analytics.Init(config.ConsentGranted); err != nil {
-		log.Println(internal.ErrorPrefix, "moose failed to initialize with granted consent:", err)
+		log.Error("moose failed to initialize with granted consent:", err)
 		return err
 	}
 	if err := acc.analytics.Enable(); err != nil {
@@ -151,27 +150,27 @@ func (acc *AnalyticsConsentChecker) setConsentGranted() error {
 func (acc *AnalyticsConsentChecker) consentModeFromUserLocation() consentMode {
 	var cfg config.Config
 	if err := acc.cm.Load(&cfg); err != nil {
-		log.Println(internal.WarningPrefix, "failed to load config, falling back to GDPR mode:", err)
+		log.Warn("failed to load config, falling back to GDPR mode:", err)
 		// fallback to strict mode in case of an issue with config
 		return consentModeGDPR
 	}
 
 	// can't determine user location with KS on, fallback to strict mode
 	if cfg.KillSwitch {
-		log.Println(internal.WarningPrefix, "KillSwitch active, falling back to GDPR mode")
+		log.Warn("KillSwitch active, falling back to GDPR mode")
 		return consentModeGDPR
 	}
 
 	// fallback to strict mode in case of an issue with API
 	insights, err := acc.insightsAPI.Insights()
 	if err != nil {
-		log.Println(internal.WarningPrefix, "insights api error, falling back to GDRP mode:", err)
+		log.Warn("insights api error, falling back to GDRP mode:", err)
 		return consentModeGDPR
 	}
 
 	// fallback to strict mode in case of nil response
 	if insights == nil {
-		log.Println(internal.WarningPrefix, "insights data is nil, falling back to GDPR mode")
+		log.Warn("insights data is nil, falling back to GDPR mode")
 		return consentModeGDPR
 	}
 
@@ -179,13 +178,13 @@ func (acc *AnalyticsConsentChecker) consentModeFromUserLocation() consentMode {
 	// allow override of country code in dev mode
 	if acc.isDevEnv {
 		if envVarCC, exists := os.LookupEnv("NORDVPN_USER_CC"); exists {
-			log.Println(internal.DebugPrefix, "overriding user's country code to", envVarCC)
+			log.Debug("overriding user's country code to", envVarCC)
 			cc = envVarCC
 		}
 	}
 
 	mode := modeForCountryCode(core.NewCountryCode(cc))
-	log.Printf(internal.DebugPrefix+" consent mode for country code '%s': %s\n", cc, mode)
+	log.Debugf(" consent mode for country code '%s': %s\n", cc, mode)
 	return mode
 }
 

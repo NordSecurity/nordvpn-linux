@@ -199,24 +199,24 @@ func testsCleanup() {
 
 func waitPortForListener(port int, timeoutSec int) (net.Listener, error) {
 	passedTime := 0
-	log.Printf("Waiting for port: %d to become available...\n", port)
+	log.Infof("Waiting for port: %d to become available...\n", port)
 	for {
 		passedTime++
 		listener, err := net.Listen("tcp", ":"+strconv.Itoa(port))
 		if listener != nil {
-			log.Printf("Port: %d is available!\n", port)
+			log.Infof("Port: %d is available!\n", port)
 			return listener, nil
 		}
 		time.Sleep(1 * time.Second)
 		if passedTime == timeoutSec {
 			return nil, fmt.Errorf("Waiting port for listener timeouted after: %d seconds", passedTime)
 		}
-		log.Printf("Wait port for: %v!\n", err)
+		log.Errorf("Wait port for: %v!\n", err)
 	}
 }
 
 func StartServer(port int, handlers []Handler) *http.Server {
-	log.Println("Port:", port)
+	log.Info("Port:", port)
 	srv := &http.Server{}
 
 	mux := http.NewServeMux()
@@ -227,7 +227,7 @@ func StartServer(port int, handlers []Handler) *http.Server {
 	}
 	listener, err := waitPortForListener(port, 10)
 	if err != nil {
-		log.Println("Could not create listener!")
+		log.Info("Could not create listener!")
 		log.Fatal(err)
 	}
 	fs := http.FileServer(http.Dir(TestdataPath))
@@ -235,7 +235,7 @@ func StartServer(port int, handlers []Handler) *http.Server {
 		return func(w http.ResponseWriter, r *http.Request) {
 			byteData, err := internal.FileRead(strings.ReplaceAll(r.RequestURI, "/configs/", TestdataPath))
 			if err != nil {
-				log.Println("ERROR:", err)
+				log.Error("ERROR:", err)
 			}
 			setHeaders(w, byteData)
 			h.ServeHTTP(w, r)
@@ -246,7 +246,7 @@ func StartServer(port int, handlers []Handler) *http.Server {
 
 	go func() {
 		if err := srv.Serve(listener); err != nil && err != http.ErrServerClosed {
-			log.Printf("Server error: %v", err)
+			log.Errorf("Server error: %v", err)
 		}
 	}()
 

@@ -47,11 +47,11 @@ func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context, do
 		}
 	}()
 
-	log.Println(internal.InfoPrefix, dnsPrefix, "starting resolv.conf file watcher")
+	log.Info(dnsPrefix, "starting resolv.conf file watcher")
 	for {
 		select {
 		case e, ok := <-watcher.Events:
-			log.Println(internal.InfoPrefix, dnsPrefix, "resolv.conf overwrite detected")
+			log.Info(dnsPrefix, "resolv.conf overwrite detected")
 			if !ok {
 				return fmt.Errorf("file watcher closed")
 			}
@@ -65,9 +65,9 @@ func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context, do
 			if !ok {
 				return fmt.Errorf("file watcher closed")
 			}
-			log.Println(internal.ErrorPrefix, dnsPrefix, "file watcher error:", err)
+			log.Error(dnsPrefix, "file watcher error:", err)
 		case <-ctx.Done():
-			log.Println(internal.InfoPrefix, dnsPrefix, "resolv.conf monitoring context closed")
+			log.Info(dnsPrefix, "resolv.conf monitoring context closed")
 			return nil
 		}
 	}
@@ -81,7 +81,7 @@ func (r *resolvConfFileWatcherMonitor) start() {
 	r.doneChan = doneChan
 	go func() {
 		if err := r.monitorResolvConf(ctx, doneChan); err != nil {
-			log.Println(internal.ErrorPrefix, dnsPrefix, "resolv.conf monitoring failed:", err)
+			log.Error(dnsPrefix, "resolv.conf monitoring failed:", err)
 		}
 	}()
 }
@@ -89,13 +89,13 @@ func (r *resolvConfFileWatcherMonitor) start() {
 // stop stops the monitoring goroutine and ensures that it exits before the function return.
 func (r *resolvConfFileWatcherMonitor) stop() {
 	if r.cancelFunc != nil {
-		log.Println(internal.InfoPrefix, dnsPrefix, "stopping resolv.conf file watcher")
+		log.Info(dnsPrefix, "stopping resolv.conf file watcher")
 		r.cancelFunc()
 		// wait for the monitor goroutine to finish
 		select {
 		case <-r.doneChan:
 		case <-time.After(1 * time.Second):
-			log.Println(internal.WarningPrefix, dnsPrefix, "timed out waiting for the monitoring goroutine to stop")
+			log.Warn(dnsPrefix, "timed out waiting for the monitoring goroutine to stop")
 		}
 	}
 }

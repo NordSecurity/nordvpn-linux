@@ -12,7 +12,7 @@ import (
 func (r *RPC) SetKillSwitch(ctx context.Context, in *pb.SetKillSwitchRequest) (*pb.Payload, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 
 	if !cfg.Firewall {
@@ -27,14 +27,14 @@ func (r *RPC) SetKillSwitch(ctx context.Context, in *pb.SetKillSwitchRequest) (*
 
 	if in.KillSwitch {
 		if err := r.netw.SetKillSwitch(cfg.AutoConnectData.Allowlist); err != nil {
-			log.Println(internal.ErrorPrefix, "enabling killswitch:", err)
+			log.Error("enabling killswitch:", err)
 			return &pb.Payload{
 				Type: internal.CodeKillSwitchError,
 			}, nil
 		}
 	} else {
 		if err := r.netw.UnsetKillSwitch(); err != nil {
-			log.Println(internal.ErrorPrefix, "disabling killswitch:", err)
+			log.Error("disabling killswitch:", err)
 			return &pb.Payload{
 				Type: internal.CodeKillSwitchError,
 			}, nil
@@ -45,7 +45,7 @@ func (r *RPC) SetKillSwitch(ctx context.Context, in *pb.SetKillSwitchRequest) (*
 		c.KillSwitch = in.GetKillSwitch()
 		return c
 	}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.Payload{
 			Type: internal.CodeConfigError,
 		}, nil

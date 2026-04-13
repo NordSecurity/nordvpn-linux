@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -77,7 +76,7 @@ func (n *NameServers) FetchTPServers(fetcher ServersFetcher, timeoutFn Calculate
 		servers, err := fetcher()
 		if err == nil && len(servers.Servers) > 0 {
 			// copy to ensure pointer is not later modified from outside
-			log.Println(internal.InfoPrefix, "TP servers updated to", servers.Servers)
+			log.Info("TP servers updated to", servers.Servers)
 			s := slices.Clone(servers.Servers)
 			n.tpServers.Store(&s)
 
@@ -85,7 +84,7 @@ func (n *NameServers) FetchTPServers(fetcher ServersFetcher, timeoutFn Calculate
 		}
 
 		tryAfterDuration := timeoutFn(retry)
-		log.Printf("%s failed to fetch TP servers. retry(%d) servers after %v: %v\n", internal.ErrorPrefix, retry, tryAfterDuration, err)
+		log.Errorf("failed to fetch TP servers. retry(%d) servers after %v: %v\n", retry, tryAfterDuration, err)
 		<-time.After(tryAfterDuration)
 	}
 

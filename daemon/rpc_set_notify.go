@@ -7,18 +7,29 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
+	"google.golang.org/grpc/peer"
 )
 
 func (r *RPC) SetNotify(ctx context.Context, in *pb.SetNotifyRequest) (*pb.Payload, error) {
-	cred, err := getCallerCred(ctx)
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "SetNotify:", err)
-		return &pb.Payload{Type: internal.CodeInternalError}, nil
+	peer, ok := peer.FromContext(ctx)
+	if !ok {
+		log.Error("failed to retrieve gRPC peer information from the context")
+		return &pb.Payload{
+			Type: internal.CodeInternalError,
+		}, nil
+	}
+
+	cred, ok := peer.AuthInfo.(internal.UcredAuth)
+	if !ok {
+		log.Error("failed to extract ucred out of gRPC peer info")
+		return &pb.Payload{
+			Type: internal.CodeInternalError,
+		}, nil
 	}
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 
 	notifyStatus := !cfg.UsersData.NotifyOff[int64(cred.Uid)]
@@ -41,7 +52,7 @@ func (r *RPC) SetNotify(ctx context.Context, in *pb.SetNotifyRequest) (*pb.Paylo
 			c.UsersData.NotifyOff[int64(cred.Uid)] = true
 			return c
 		}); err != nil {
-			log.Println(internal.ErrorPrefix, err)
+			log.Error(err)
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil
@@ -51,7 +62,7 @@ func (r *RPC) SetNotify(ctx context.Context, in *pb.SetNotifyRequest) (*pb.Paylo
 			delete(c.UsersData.NotifyOff, int64(cred.Uid))
 			return c
 		}); err != nil {
-			log.Println(internal.ErrorPrefix, err)
+			log.Error(err)
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil

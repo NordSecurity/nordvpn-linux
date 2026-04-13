@@ -10,7 +10,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
@@ -71,7 +70,7 @@ func NewConnectionInfo() *ConnectionInfo {
 func (cs *ConnectionInfo) getTransferRatesForTunnel(tunnelName string) (uint64, uint64) {
 	transferStats, err := tunnel.GetTransferRates(tunnelName)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "Failed to get transfer rates for tunnel:", err)
+		log.Error("Failed to get transfer rates for tunnel:", err)
 		return 0, 0
 	}
 	return transferStats.Tx, transferStats.Rx

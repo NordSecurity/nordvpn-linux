@@ -97,7 +97,7 @@ func newDbusNotifier(notificationManager *NotificationManager) (*DbusNotifier, e
 	defer func() {
 		if err != nil && dbusConn != nil {
 			if err := dbusConn.Close(); err != nil {
-				log.Println("failed to close dbus connection: ", err)
+				log.Error("failed to close dbus connection: ", err)
 			}
 		}
 	}()
@@ -123,7 +123,7 @@ func newDbusNotifier(notificationManager *NotificationManager) (*DbusNotifier, e
 		case actionKeyCancelTransfer:
 			notificationManager.CancelTransfer(action.ID)
 		default:
-			log.Println("Unknown action key: ", action.ActionKey)
+			log.Warn("Unknown action key: ", action.ActionKey)
 		}
 	}
 
@@ -137,7 +137,7 @@ func newDbusNotifier(notificationManager *NotificationManager) (*DbusNotifier, e
 	defer func() {
 		if err != nil && notifier != nil {
 			if err := notifier.Close(); err != nil {
-				log.Println("failed to close notifier: ", err)
+				log.Error("failed to close notifier: ", err)
 			}
 		}
 	}()
@@ -152,7 +152,7 @@ func newDbusNotifier(notificationManager *NotificationManager) (*DbusNotifier, e
 // openFileXdg opens a file with xdg-open command
 func openFileXdg(path string) {
 	if err := exec.Command("xdg-open", path).Start(); err != nil {
-		log.Println("failed to open file from notification ", err)
+		log.Error("failed to open file from notification ", err)
 	}
 }
 
@@ -231,7 +231,7 @@ type NotificationManager struct {
 func NewNotificationManager(fileshare Fileshare, eventManager *EventManager) (*NotificationManager, error) {
 	defaultDownloadDir, err := GetDefaultDownloadDirectory()
 	if err != nil {
-		log.Println("Failed to find default download directory: ", err.Error())
+		log.Error("Failed to find default download directory: ", err.Error())
 	}
 
 	notificationManager := NotificationManager{
@@ -254,7 +254,7 @@ func NewNotificationManager(fileshare Fileshare, eventManager *EventManager) (*N
 
 func (nm *NotificationManager) Disable() {
 	if err := nm.notifier.Close(); err != nil {
-		log.Println("Failed to close notifier: ", err)
+		log.Error("Failed to close notifier: ", err)
 	}
 }
 
@@ -285,7 +285,7 @@ func acceptErrorToNotificationBody(err error) string {
 	case errors.Is(err, ErrTransferCanceledByPeer):
 		return transferCanceledByPeerNotificationBody
 	default:
-		log.Println("Unknown error: ", err.Error())
+		log.Warn("Unknown error: ", err.Error())
 		return genericError
 	}
 }
@@ -305,7 +305,7 @@ func fileStatusToNotificationSummary(direction pb.Direction, status pb.Status) s
 
 	summary, ok := FileStatus[status]
 	if !ok {
-		log.Printf("failed to convert file status %s for direction %s to text summary",
+		log.Errorf("failed to convert file status %s for direction %s to text summary",
 			status.String(), direction.String())
 	}
 
@@ -329,21 +329,21 @@ func (nm *NotificationManager) NotifyFile(filename string, direction pb.Directio
 		if notificationID, err := nm.notifier.SendNotification(summary, filename, []Action{{actionKeyOpenFile, "Open"}}); err == nil {
 			nm.notifications.AddFileNotification(notificationID, filename)
 		} else {
-			log.Printf("failed to send notification for file %s: %s", filename, err)
+			log.Errorf("failed to send notification for file %s: %s", filename, err)
 		}
 		return
 	}
 
 	_, err := nm.notifier.SendNotification(summary, filename, nil)
 	if err != nil {
-		log.Printf("failed to send notification for file %s: %s", filename, err)
+		log.Errorf("failed to send notification for file %s: %s", filename, err)
 	}
 }
 
 func (nm *NotificationManager) sendGenericNotification(summary string, body string) {
 	_, err := nm.notifier.SendNotification(summary, body, nil)
 	if err != nil {
-		log.Println("failed to send generic notification: ", err)
+		log.Error("failed to send generic notification: ", err)
 	}
 }
 
@@ -377,7 +377,7 @@ func (nm *NotificationManager) AcceptTransfer(notificationID uint32) {
 	}
 
 	if err != nil {
-		log.Println("Failed to accept some files: ", err)
+		log.Error("Failed to accept some files: ", err)
 	}
 }
 
@@ -391,7 +391,7 @@ func (nm *NotificationManager) CancelTransfer(notificationID uint32) {
 
 	transfer, err := nm.eventManager.GetTransfer(transferID)
 	if err != nil {
-		log.Println("Failed to cancel transfer from notification manager: ", err)
+		log.Error("Failed to cancel transfer from notification manager: ", err)
 		nm.sendGenericNotification(cancelFailedNotificationSummary, genericError)
 		return
 	}
@@ -406,7 +406,7 @@ func (nm *NotificationManager) CancelTransfer(notificationID uint32) {
 	}
 
 	if err := nm.fileshare.Finalize(transferID); err != nil {
-		log.Println("Failed to cancel transfer from notification manager: ", err)
+		log.Error("Failed to cancel transfer from notification manager: ", err)
 		nm.sendGenericNotification(cancelFailedNotificationSummary, err.Error())
 	}
 }
@@ -423,7 +423,7 @@ func (nm *NotificationManager) NotifyNewTransfer(transferID string, peer string)
 			{actionKeyCancelTransfer, transferCancelAction},
 		})
 	if err != nil {
-		log.Println("failed to send notification for new transfer: ", err)
+		log.Error("failed to send notification for new transfer: ", err)
 	}
 
 	nm.notifications.AddTransferNotification(notificationID, transferID)

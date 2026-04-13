@@ -229,7 +229,7 @@ func (ovpn *OpenVPN) stop() error {
 		if err := <-ovpn.stopCh; err != nil {
 			// Don't return here as this could've failed due to non zero return code.
 			// This would result in broken ovpn state
-			log.Println(internal.ErrorPrefix, "Error on waiting for OpenVPN to stop:", err)
+			log.Error("Error on waiting for OpenVPN to stop:", err)
 		}
 
 		close(ovpn.stopCh)
@@ -477,7 +477,7 @@ func stage2Handler(
 	for e := range eventCh {
 		switch e := e.(type) {
 		case *gopenvpn.FatalEvent:
-			log.Println(e.String())
+			log.Error(e.String())
 			ovpn.setSubstate(vpn.UnknownSubstate)
 			return
 		case *gopenvpn.PasswordEvent:
@@ -486,7 +486,7 @@ func stage2Handler(
 			}
 			err := ovpn.manager.Auth(username, password)
 			if err != nil {
-				log.Println(internal.ErrorPrefix, err)
+				log.Error(err)
 			}
 		case *gopenvpn.StateEvent:
 			event := e
@@ -509,12 +509,12 @@ func stage2Handler(
 			case vpn.ConnectedState:
 				ip, err := netip.ParseAddr(event.LocalTunnelAddr())
 				if err != nil {
-					log.Println(internal.ErrorPrefix, err)
+					log.Error(err)
 				}
 
 				tunnel, err := tunnel.Find(ip)
 				if err != nil {
-					log.Println(internal.ErrorPrefix, err)
+					log.Error(err)
 				}
 				ovpn.setTun(tunnel) // might set to nil and crash
 			}
@@ -533,7 +533,7 @@ func vpnMonitor(reader io.Reader, prefix string, inform chan struct{}) {
 		if containsSeveral(txt, []string{cipherErr, tlsErr}) {
 			inform <- struct{}{}
 		}
-		log.Println(prefix, txt)
+		log.Info(prefix, txt)
 	}
 }
 

@@ -13,7 +13,7 @@ import (
 func (r *RPC) Groups(ctx context.Context, in *pb.Empty) (*pb.ServerGroupsList, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.ServerGroupsList{
 			Type: internal.CodeConfigError,
 		}, nil
@@ -26,7 +26,7 @@ func (r *RPC) Groups(ctx context.Context, in *pb.Empty) (*pb.ServerGroupsList, e
 		cfg.VirtualLocation.Get(),
 	)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get group names", err)
+		log.Error("failed to get group names", err)
 		return &pb.ServerGroupsList{
 			Type: internal.CodeEmptyPayloadError,
 		}, nil

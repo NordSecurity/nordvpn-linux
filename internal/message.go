@@ -16,15 +16,6 @@ const (
 	FilterNonExistentErrorMessage = "The specified filter does not exist."
 	DoubleGroupErrorMessage       = "You cannot connect to a group and set the group option at the same time."
 
-	DebugPrefix = "[Debug]"
-	// DeferPrefix is used when logging errors in deferred or cleanup code.
-	DeferPrefix = "[Defer]"
-	// ErrorPrefix is used when logging errors, which impact control flow.
-	ErrorPrefix = "[Error]"
-	// WarningPrefix is used when logging errors, which don't impact control flow.
-	WarningPrefix = "[Warning]"
-	InfoPrefix    = "[Info]"
-
 	// UnhandledMessage represents the default message for unhandled errors
 	UnhandledMessage = "Something went wrong. Please try again. If the problem persists, contact our customer support."
 

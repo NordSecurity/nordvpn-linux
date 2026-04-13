@@ -7,7 +7,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/google/uuid"
 )
@@ -99,14 +98,14 @@ func (getter *MachineID) getMachineID() (ret uuid.UUID) {
 	getter.usedInfoMask = 0
 
 	// create a random UUID
-	log.Println(internal.ErrorPrefix, "failed to generate machine ID", err)
+	log.Error("failed to generate machine ID", err)
 	id, err = uuid.NewRandom()
 	if err == nil {
 		return id
 	}
 
 	// Fallback to manually generating a UUID
-	log.Println(internal.ErrorPrefix, "failed to generate random UUID", err)
+	log.Error("failed to generate random UUID", err)
 	return getter.fallbackGenerateUUID()
 }
 
@@ -166,10 +165,10 @@ func (getter *MachineID) calculateMachineID() (uuid.UUID, error) {
 
 				return uuid.NewSHA1(machineUUID, []byte(hostname)), nil
 			} else {
-				log.Println("failed to parse", pair.fileName, err)
+				log.Error("failed to parse", pair.fileName, err)
 			}
 		} else {
-			log.Println("failed to read", pair.fileName, err)
+			log.Error("failed to read", pair.fileName, err)
 		}
 	}
 	return uuid.UUID{}, fmt.Errorf("failed to get device UUID")
@@ -259,7 +258,7 @@ func (getter *MachineID) fallbackGenerateUUID() uuid.UUID {
 	// randomize the content
 	_, err := rand.Read(id[:])
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "rand failed, retry to generate uuid", err)
+		log.Error("rand failed, retry to generate uuid", err)
 		return uuid.New()
 	}
 

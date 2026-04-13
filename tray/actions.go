@@ -23,7 +23,7 @@ import (
 func (ti *Instance) login() {
 	resp, err := ti.client.IsLoggedIn(context.Background(), &pb.Empty{})
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "Failed to login:", err)
+		log.Error("Failed to login:", err)
 		ti.notify(NoForce, "Login failed")
 		return
 	}
@@ -60,7 +60,7 @@ func (ti *Instance) login() {
 	case pb.LoginStatus_CONSENT_MISSING:
 		// NOTE: This should never happen, because analytics consent is
 		// triggered above, so at this point it should already be completed.
-		log.Println(internal.ErrorPrefix, "analytics consent should be already completed at this point")
+		log.Error("analytics consent should be already completed at this point")
 		ti.notify(NoForce, internal.ErrAnalyticsConsentMissing.Error())
 	case pb.LoginStatus_SUCCESS:
 		if url := loginResp.Url; url != "" {
@@ -68,7 +68,7 @@ func (ti *Instance) login() {
 			cmd := exec.Command("xdg-open", url)
 			err = cmd.Run()
 			if err != nil {
-				log.Println(internal.ErrorPrefix, "Failed to open login webpage:", err)
+				log.Error("Failed to open login webpage:", err)
 				// we want to force a notification here, otherwise there will be no reaction to user action
 				ti.notify(Force, "Continue log in in the browser: %s", url)
 			}
@@ -78,7 +78,7 @@ func (ti *Instance) login() {
 
 func openURI(uri string) {
 	if err := tryDbus(uri); err != nil {
-		log.Printf(internal.ErrorPrefix+" failed to open URI '%s' using D-Bus: %v\n", uri, err)
+		log.Errorf(" failed to open URI '%s' using D-Bus: %v\n", uri, err)
 	}
 }
 
@@ -248,14 +248,14 @@ func (ti *Instance) setNotify(flag bool) bool {
 		Notify: flag,
 	})
 	if err != nil {
-		log.Printf("%s Setting notifications %s error: %s", internal.ErrorPrefix, flagText, err)
+		log.Errorf("Setting notifications %s error: %s", flagText, err)
 		ti.notify(NoForce, "Setting notifications %s error: %s", flagText, err)
 		return false
 	}
 
 	switch resp.Type {
 	case internal.CodeConfigError:
-		log.Printf("%s Setting notifications %s error: %s", internal.ErrorPrefix, flagText, "Config file error")
+		log.Errorf("Setting notifications %s error: %s", flagText, "Config file error")
 		ti.notify(NoForce, "Setting notifications %s error: %s", flagText, "Config file error")
 		return false
 	case internal.CodeNothingToDo:
@@ -275,7 +275,7 @@ func (ti *Instance) setTray(flag bool) bool {
 	flagText := getFlagText(flag)
 
 	if !flag {
-		log.Printf("%s Tray icon disabled. To enable it again, run the \"nordvpn set tray on\" command.", internal.InfoPrefix)
+		log.Infof("Tray icon disabled. To enable it again, run the \"nordvpn set tray on\" command.")
 		ti.notify(Force, "Tray icon disabled. To enable it again, run the \"nordvpn set tray on\" command.")
 	}
 
@@ -283,14 +283,14 @@ func (ti *Instance) setTray(flag bool) bool {
 		Tray: flag,
 	})
 	if err != nil {
-		log.Printf("%s Setting tray %s error: %s", internal.ErrorPrefix, flagText, err)
+		log.Errorf("Setting tray %s error: %s", flagText, err)
 		ti.notify(NoForce, "Setting tray %s error: %s", flagText, err)
 		return false
 	}
 
 	switch resp.Type {
 	case internal.CodeConfigError:
-		log.Printf("%s Setting tray %s error: %s", internal.ErrorPrefix, flagText, "Config file error")
+		log.Errorf("Setting tray %s error: %s", flagText, "Config file error")
 		ti.notify(NoForce, "Setting tray %s error: %s", flagText, "Config file error")
 		return false
 	case internal.CodeNothingToDo:

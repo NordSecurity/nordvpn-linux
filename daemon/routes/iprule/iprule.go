@@ -10,7 +10,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/ifgroup"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
@@ -63,10 +62,10 @@ func (r *Router) SetupRoutingRules(
 		}
 
 		if err := removeSuppressRule(); err != nil {
-			log.Println(internal.DeferPrefix, err)
+			log.Defer(err)
 		}
 		if err := removeFwmarkRule(r.fwmark); err != nil {
-			log.Println(internal.DeferPrefix, err)
+			log.Defer(err)
 		}
 		r.removeAllowSubnetRules()
 	}()
@@ -106,7 +105,7 @@ func (r *Router) SetupRoutingRules(
 	} else {
 		if err := removeSuppressRule(); err != nil {
 			// in case of cleanup - do not propagate error if rule does not exist
-			log.Println(internal.WarningPrefix, err)
+			log.Warn(err)
 		}
 	}
 
@@ -159,11 +158,7 @@ func enableLocalTraffic(skipGroup bool) error {
 	}
 	if rulePresent {
 		if err := removeSuppressRule(); err != nil {
-			log.Println(
-				internal.WarningPrefix,
-				"error on removing suppress rule:",
-				err,
-			)
+			log.Warn("error on removing suppress rule:", err)
 		}
 	}
 	ruleID, err := calculateRulePriority()
@@ -182,11 +177,11 @@ func (r *Router) CleanupRouting() error {
 	defer r.mu.Unlock()
 
 	if err := removeSuppressRule(); err != nil {
-		log.Println(internal.WarningPrefix, err)
+		log.Warn(err)
 	}
 
 	if err := removeFwmarkRule(r.fwmark); err != nil {
-		log.Println(internal.WarningPrefix, err)
+		log.Warn(err)
 	}
 
 	// Remove allowlist subnet routing rules
@@ -213,7 +208,7 @@ func (r *Router) removeAllowSubnetRules() {
 			continue
 		}
 		if err := removeAllowSubnetRule(priority, subnetIPNet); err != nil {
-			log.Println(internal.ErrorPrefix, err)
+			log.Error(err)
 		}
 	}
 
@@ -295,7 +290,7 @@ func findRulePriorityCandidate(rules []netlink.Rule) (uint, error) {
 		}
 	}
 
-	log.Println(internal.InfoPrefix, "Selected candidate for new rule priority: ", prioID)
+	log.Info("Selected candidate for new rule priority: ", prioID)
 	return prioID, nil
 }
 

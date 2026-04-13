@@ -4,7 +4,6 @@ package ipv6
 import (
 	"sync"
 
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/kernel"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
@@ -35,7 +34,7 @@ func (i *Ipv6) Block() error {
 	if i.sysctlSetter.Exists() {
 		return i.sysctlSetter.Set()
 	}
-	log.Println(internal.InfoPrefix, "IPv6 module is not enabled")
+	log.Info("IPv6 module is not enabled")
 	return nil
 }
 

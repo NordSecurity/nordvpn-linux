@@ -169,7 +169,7 @@ func (e *timeoutError) Temporary() bool { return true }
 
 // mockedCdn holds CDN files in memory, used to mock remote CDN operations in tests.
 type mockedCdn struct {
-	//no need to synchronize, as this is read-only
+	// no need to synchronize, as this is read-only
 	cdnFiles map[string][]byte
 }
 
@@ -210,9 +210,9 @@ func (cdn *mockedCdn) setupCDNConfigFiles() {
 		filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json"): makeHashJson([]byte(libtelioInc2Cfg)),
 	}
 
-	log.Println("libtelio hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio-hash.json")]))
-	log.Println("libtelio inc1 hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")]))
-	log.Println("libtelio inc2 hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")]))
+	log.Info("libtelio hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio-hash.json")]))
+	log.Info("libtelio inc1 hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")]))
+	log.Info("libtelio inc2 hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")]))
 }
 
 func (cdn *mockedCdn) updateCDNConfigFiles() {
@@ -227,9 +227,9 @@ func (cdn *mockedCdn) updateCDNConfigFiles() {
 	cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")] = makeHashJson([]byte(libtelioInc1Cfg))
 	cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")] = makeHashJson([]byte(libtelioInc2Cfg))
 
-	log.Println("libtelio hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio-hash.json")]))
-	log.Println("libtelio inc1 hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")]))
-	log.Println("libtelio inc2 hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")]))
+	log.Info("libtelio hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio-hash.json")]))
+	log.Info("libtelio inc1 hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")]))
+	log.Info("libtelio inc2 hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")]))
 }
 
 // mockedFileEntry serves as in-memory representation of a file
@@ -570,7 +570,7 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	libtelioInc2ConfigFile := filepath.Join(localPath, "include/libtelio2.json")
 
 	rc := newTestRemoteConfig("3.4.1", "dev", cdn, fileIO, defaultRolloutGroup)
-	log.Println("~~~~ first attempt to load - should load whole config from web server")
+	log.Info("~~~~ first attempt to load - should load whole config from web server")
 
 	err := rc.Load()
 	assert.NoError(t, err)
@@ -585,7 +585,7 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, info1inc2)
 
-	log.Println("~~~~ second attempt to load - should check hash is the same and should not load main config from web server")
+	log.Info("~~~~ second attempt to load - should check hash is the same and should not load main config from web server")
 
 	err = rc.Load()
 	assert.NoError(t, err)
@@ -609,7 +609,7 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 
 	cdn.updateCDNConfigFiles()
 
-	log.Println("~~~~ try to load again - libtelio config hash is not the same, should try to load whole libtelio config from web server")
+	log.Info("~~~~ try to load again - libtelio config hash is not the same, should try to load whole libtelio config from web server")
 
 	err = rc.Load()
 	assert.NoError(t, err)
@@ -699,6 +699,7 @@ var nordvpnJsonConfFile = `
   ]
 }
 `
+
 var nordwhisperJsonConfFile = `
 {
     "version": 1,
@@ -752,6 +753,7 @@ var nordwhisperJsonConfFile = `
     ]
 }
 `
+
 var libtelioJsonConfFile = `
 {
     "version": 1,
@@ -777,6 +779,7 @@ var libtelioJsonConfFile = `
     ]
 }
 `
+
 var libtelioJsonConfInc1File = `
 {
     "lana": {},
@@ -796,9 +799,11 @@ var libtelioJsonConfInc1File = `
     }
 }
 `
+
 var libtelioJsonConfInc1HashFile = `
 {"hash":"ee7035eec3ebd6c6f47b8addefec408f8b0f845c9ae34760a47d3ac73d07d97b"}
 `
+
 var libtelioJsonConfInc2File = `
 {
     "lana": {},
@@ -807,6 +812,7 @@ var libtelioJsonConfInc2File = `
     }
 }
 `
+
 var libtelioUpdatedJsonConfFile = `
 {
     "version": 1,
@@ -832,6 +838,7 @@ var libtelioUpdatedJsonConfFile = `
     ]
 }
 `
+
 var libtelioUpdatedJsonConfInc1File = `
 {
     "lana": {},
@@ -851,6 +858,7 @@ var libtelioUpdatedJsonConfInc1File = `
     }
 }
 `
+
 var libtelioUpdatedJsonConfInc2File = `
 {
     "lana": {},
@@ -860,6 +868,7 @@ var libtelioUpdatedJsonConfInc2File = `
     }
 }
 `
+
 var nordvpnInvalidVersionJsonConfFile = `
 {
   "version": 99,
@@ -878,6 +887,7 @@ var nordvpnInvalidVersionJsonConfFile = `
   ]
 }
 `
+
 var nordvpnInvalidFieldTypeJsonConfFile = `
 {
   "version": 1,
@@ -896,6 +906,7 @@ var nordvpnInvalidFieldTypeJsonConfFile = `
   ]
 }
 `
+
 var nordvpnInvalidFieldType2JsonConfFile = `
 {
   "version": 1,
@@ -914,6 +925,7 @@ var nordvpnInvalidFieldType2JsonConfFile = `
   ]
 }
 `
+
 var nordvpnMissingVersionJsonConfFile = `
 {
   "versions": 1,
@@ -932,6 +944,7 @@ var nordvpnMissingVersionJsonConfFile = `
   ]
 }
 `
+
 var nordvpnInvalidFieldValuesJsonConfFile = `
 {
   "version": 1,

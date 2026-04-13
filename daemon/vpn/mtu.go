@@ -5,7 +5,6 @@ import (
 	"net"
 	"syscall"
 
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
@@ -53,7 +52,7 @@ func getDefaultGatewayMTU() (int, error) {
 func retrieveAndCalculateMTU(headerSize int) int {
 	defaultRouteMTU, err := getDefaultGatewayMTU()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to retrieve default interface, will use default value of: %w",
+		log.Error("failed to retrieve default interface, will use default value of: %w",
 			defaultMTU, err)
 		return defaultMTU
 	}

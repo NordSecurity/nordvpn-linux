@@ -17,10 +17,9 @@ func (s *Subscriber) PostInit(initResult moose.InitResult, errCode int32, errMsg
 	case moose.InitResultOkEmptyContext,
 		moose.InitResultOkExistingContext,
 		moose.InitResultOkAlreadyStarted:
-		log.Println(internal.InfoPrefix, LogComponentPrefix, "Initialization OK:", initResult)
+		log.Info(LogComponentPrefix, "Initialization OK:", initResult)
 	default:
-		log.Printf("%s %s Initialization error: %d: %d: %s\n",
-			internal.ErrorPrefix,
+		log.Errorf("%s Initialization error: %d: %d: %s\n",
 			LogComponentPrefix,
 			initResult,
 			errCode,
@@ -34,7 +33,7 @@ func (s *Subscriber) OnError(err moose.TrackerError, level uint32, code int32, m
 	if internal.IsProdEnv(s.buildTarget.Environment) && level < 2 {
 		return nil
 	}
-	log.Printf("%s MOOSE: %d: %d: %s", internal.ErrorPrefix, err, code, msg)
+	log.Errorf("MOOSE: %d: %d: %s", err, code, msg)
 	return nil
 }
 

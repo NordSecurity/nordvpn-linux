@@ -21,20 +21,20 @@ func NewPubkeyProvider(meshClient meshpb.MeshnetClient) *PubkeyProvider {
 func (c *PubkeyProvider) PubkeyFunc(peerIP string) []byte {
 	peers, err := getPeers(c.meshClient)
 	if err != nil {
-		log.Print(err)
+		log.Error(err)
 	}
 
 	for _, peer := range peers {
 		if peer.Ip == peerIP {
 			pubkeyBytes, err := base64.StdEncoding.DecodeString(peer.Pubkey)
 			if err != nil || len(pubkeyBytes) != 32 { // libdrop gives exactly 32 bytes buffer to write pubkey
-				log.Printf("invalid pubkey %s: %v", peer.Pubkey, err)
+				log.Errorf("invalid pubkey %s: %v", peer.Pubkey, err)
 				return make([]byte, 32)
 			}
 			return pubkeyBytes
 		}
 	}
 
-	log.Printf("couldn't find pubkey for ip %s", peerIP)
+	log.Warnf("couldn't find pubkey for ip %s", peerIP)
 	return make([]byte, 32)
 }

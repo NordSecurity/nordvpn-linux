@@ -59,7 +59,8 @@ func (r *RPC) connectFromRequest(in *pb.ConnectRequest, srv pb.Daemon_ConnectSer
 
 func (r *RPC) connectFromLastSelection(srv pb.Daemon_ConnectServer,
 	source pb.ConnectionSource,
-	pauseDuration time.Duration) error {
+	pauseDuration time.Duration,
+) error {
 	var err error
 	var didFail bool
 	if !r.connectContext.TryExecuteWith(func(ctx context.Context) {
@@ -111,7 +112,7 @@ func determineServerSelectionRule(params ServerParameters) config.ServerSelectio
 	}
 
 	// Fallback for any unexpected combination
-	log.Println(internal.WarningPrefix,
+	log.Warn(
 		"Failed to determine 'server-selection-rule':", params,
 		". Defaulting to :", config.ServerSelectionRule_NONE)
 	return config.ServerSelectionRule_NONE
@@ -120,7 +121,7 @@ func determineServerSelectionRule(params ServerParameters) config.ServerSelectio
 func (r *RPC) isVPNExpired() int64 {
 	vpnExpired, err := r.ac.IsVPNExpired()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "checking VPN expiration: ", err)
+		log.Error("checking VPN expiration: ", err)
 		return internal.CodeTokenRenewError
 	} else if vpnExpired {
 		return internal.CodeAccountExpired
@@ -130,7 +131,8 @@ func (r *RPC) isVPNExpired() int64 {
 
 func (r *RPC) connectWithStoredServerSelection(ctx context.Context,
 	srv pb.Daemon_ConnectServer,
-	pauseDuration time.Duration) (bool, error) {
+	pauseDuration time.Duration,
+) (bool, error) {
 	if ok, err := r.ac.IsLoggedIn(); !ok {
 		if errors.Is(err, core.ErrUnauthorized) {
 			_ = srv.Send(&pb.Payload{Type: internal.CodeRevokedAccessToken})
@@ -140,7 +142,7 @@ func (r *RPC) connectWithStoredServerSelection(ctx context.Context,
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return false, fmt.Errorf("reading config: %w", err)
 	}
 	r.connectionInfo.SetInitialConnecting()
@@ -175,7 +177,7 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 	r.connectionInfo.SetInitialConnecting()
 
@@ -183,9 +185,12 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	// to inform clients about connection attempt as soon as possible so they can react.
 	// The details will be filled and delivered to clients later.
 
-	expirationCheckResult := r.isVPNExpired()
-	if expirationCheckResult != internal.CodeSuccess {
-		return true, srv.Send(&pb.Payload{Type: expirationCheckResult})
+	vpnExpired, err := r.ac.IsVPNExpired()
+	if err != nil {
+		log.Error("checking VPN expiration: ", err)
+		return true, srv.Send(&pb.Payload{Type: internal.CodeTokenRenewError})
+	} else if vpnExpired {
+		return true, srv.Send(&pb.Payload{Type: internal.CodeAccountExpired})
 	}
 
 	if cfg.Technology == config.Technology_NORDWHISPER && !features.NordWhisperEnabled {
@@ -199,7 +204,7 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 
 	inputServerTag := internal.RemoveNonAlphanumeric(in.GetServerTag())
 
-	log.Println(internal.DebugPrefix, "picking servers for", cfg.Technology, "technology", "input",
+	log.Debug("picking servers for", cfg.Technology, "technology", "input",
 		in.GetServerTag(), in.GetServerGroup())
 
 	serverSelection, err := selectServer(r, &insights, cfg, inputServerTag, in.GetServerGroup())
@@ -243,19 +248,19 @@ func (r *RPC) connect(
 ) (didFail bool, retErr error) {
 	country, err := serverSelection.server.Locations.Country()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 
 	ip, err := serverSelection.server.IPv4()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return false, internal.ErrUnhandled
 	}
 	r.endpoint = network.NewIPv4Endpoint(ip)
 
 	subnet, err := r.endpoint.Network()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return false, internal.ErrUnhandled
 	}
 
@@ -334,7 +339,7 @@ func (r *RPC) connect(
 	data := []string{lastServer.Name, lastServer.Hostname, virtualServer}
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnecting, Data: data}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 
 	disconnectSender := events.NewDisconnectSender(events.DataDisconnect{
@@ -362,7 +367,7 @@ func (r *RPC) connect(
 		if connectionEstablished && isRecentConnectionSupported(event.TargetServerSelection) {
 			recentModel, err := buildRecentConnectionModel(event, parameters, serverSelection.server, r.dm, cfg)
 			if err != nil {
-				log.Println(internal.WarningPrefix, "Failed to build recent VPN connection model:", err)
+				log.Warn("Failed to build recent VPN connection model:", err)
 				return
 			}
 			r.recentVPNConnStore.AddPending(recentModel)
@@ -384,7 +389,7 @@ func (r *RPC) connect(
 			Type: t,
 			Data: data,
 		}); err != nil {
-			log.Println(internal.ErrorPrefix, err)
+			log.Error(err)
 		}
 		return false, nil
 	}
@@ -398,7 +403,7 @@ func (r *RPC) connect(
 	r.events.Service.FirstTimeOpened.Publish(struct{}{})
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnected, Data: data}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 
 	return false, nil

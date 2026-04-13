@@ -67,7 +67,7 @@ func (k *KernelSpace) Start(
 	iface, err := net.InterfaceByName(InterfaceName)
 	if err != nil {
 		if err := k.Stop(); err != nil {
-			log.Println(internal.DeferPrefix, err)
+			log.Defer(err)
 		}
 		return err
 	}
@@ -88,28 +88,28 @@ func (k *KernelSpace) Start(
 
 	if err := pushConfig(tun.Interface(), conf); err != nil {
 		if err := k.stop(); err != nil {
-			log.Println(internal.WarningPrefix, err)
+			log.Warn(err)
 		}
 		return fmt.Errorf("setting nordlynx server to connect to: %w", err)
 	}
 
 	if err := tun.AddAddrs(); err != nil {
 		if err := k.stop(); err != nil {
-			log.Println(internal.WarningPrefix, err)
+			log.Warn(err)
 		}
 		return err
 	}
 
 	if err := tun.Up(); err != nil {
 		if err := k.stop(); err != nil {
-			log.Println(internal.WarningPrefix, err)
+			log.Warn(err)
 		}
 		return err
 	}
 
 	if err := vpn.SetMTU(tun.Interface(), WireguardHeaderSize); err != nil {
 		if err := k.stop(); err != nil {
-			log.Println(internal.WarningPrefix, err)
+			log.Warn(err)
 		}
 		return fmt.Errorf("setting MTU for nordlynx interface: %w", err)
 	}

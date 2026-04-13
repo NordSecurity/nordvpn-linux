@@ -20,10 +20,8 @@ const (
 	resolvconfFileContent = "#restored\nnameserver %s\n"
 )
 
-var (
-	// resolvconfBackupPath defines where resolv.conf backup file is stored
-	resolvconfBackupPath = filepath.Join(internal.BakFilesPath, "resolv.conf")
-)
+// resolvconfBackupPath defines where resolv.conf backup file is stored
+var resolvconfBackupPath = filepath.Join(internal.BakFilesPath, "resolv.conf")
 
 // Direct file resolv.conf editing based DNS handling method.
 // This is last fallback method if others are not available
@@ -51,12 +49,12 @@ func setDNSinResolvconfFile(addresses []string) error {
 		} else {
 			if internal.IsFileLocked(resolvconfFilePath) {
 				// here we assume file is locked by user and we respect that
-				log.Println(internal.WarningPrefix, "dns not set, resolv.conf file is locked (immutable)")
+				log.Warn("dns not set, resolv.conf file is locked (immutable)")
 				return nil
 			}
 		}
 		if !internal.FileWritable(resolvconfFilePath) {
-			log.Println(internal.WarningPrefix, "dns not set, resolv.conf file is not writable")
+			log.Warn("dns not set, resolv.conf file is not writable")
 			return nil
 		}
 	}
@@ -68,7 +66,7 @@ func setDNSinResolvconfFile(addresses []string) error {
 }
 
 func resetDNSinResolvconfFile(addresses []string) error {
-	var addrs = make([]string, len(addresses))
+	addrs := make([]string, len(addresses))
 	for idx, address := range addresses {
 		addrs[idx] = "nameserver " + address
 	}
@@ -105,7 +103,7 @@ func backupDNS() error {
 
 func restoreDNS() error {
 	if err := restoreFromBackup(); err != nil {
-		log.Println(internal.WarningPrefix, fmt.Errorf("failed restoring resolv.conf from backup: %w", err))
+		log.Warn(fmt.Errorf("failed restoring resolv.conf from backup: %w", err))
 		restoreWithSimpleSettings()
 	}
 	return nil
@@ -121,20 +119,20 @@ func tryToRestoreDNS() {
 	// if backup does not exists, create simple dns settings file
 	out, err := internal.FileRead(resolvconfFilePath)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, fmt.Errorf("reading resolv.conf: %w", err))
+		log.Error(fmt.Errorf("reading resolv.conf: %w", err))
 		return
 	}
 	if !strings.Contains(string(out), resolvconfFileMark) {
 		return
 	}
 
-	log.Println(internal.WarningPrefix, "/etc/resolv.conf contains our changes - need to fix this")
+	log.Warn("/etc/resolv.conf contains our changes - need to fix this")
 
 	// try to unlock, if file contains our changes - it was locked by us
 	_ = internal.FileUnlock(resolvconfFilePath)
 
 	if err := restoreFromBackup(); err != nil {
-		log.Println(internal.WarningPrefix, fmt.Errorf("failed restoring resolv.conf from backup: %w", err))
+		log.Warn(fmt.Errorf("failed restoring resolv.conf from backup: %w", err))
 		restoreWithSimpleSettings()
 	}
 }
@@ -168,16 +166,16 @@ func restoreWithSimpleSettings() {
 	// there is no backup, but we need to fix dns settings
 	ip, err := discoverNameserverIp()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, fmt.Errorf("discovering nameserver: %w", err))
+		log.Error(fmt.Errorf("discovering nameserver: %w", err))
 		// this is very-very last option and hope this will not happen
 		ip = netip.MustParseAddr("1.1.1.1")
 	}
 
-	log.Println(internal.WarningPrefix, "/etc/resolv.conf restore with nameserver:", ip)
+	log.Warn("/etc/resolv.conf restore with nameserver:", ip)
 
 	content := fmt.Sprintf(resolvconfFileContent, ip)
 	if err := internal.FileWrite(resolvconfFilePath, []byte(content), internal.PermUserRWGroupROthersR); err != nil {
-		log.Println(internal.ErrorPrefix, fmt.Errorf("writing simple resolv.conf: %w", err))
+		log.Error(fmt.Errorf("writing simple resolv.conf: %w", err))
 	}
 }
 

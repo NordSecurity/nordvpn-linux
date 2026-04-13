@@ -5,7 +5,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -13,7 +12,7 @@ import (
 func (r *RPC) RecommendedServer(ctx context.Context, in *pb.Empty) (*pb.RecommendedServerLocation, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.RecommendedServerLocation{}, nil
 	}
 	insights := r.dm.GetInsightsData().Insights
@@ -27,7 +26,7 @@ func (r *RPC) RecommendedServer(ctx context.Context, in *pb.Empty) (*pb.Recommen
 			CountryName: country.Name,
 		}, nil
 	} else {
-		log.Println(internal.ErrorPrefix, "Failed to fetch the recommended server", err)
+		log.Error("Failed to fetch the recommended server", err)
 	}
 
 	return &pb.RecommendedServerLocation{}, nil

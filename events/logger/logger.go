@@ -23,29 +23,28 @@ type Subscriber struct{}
 
 // NotifyMessage logs data with a debug prefix only in dev builds.
 func (Subscriber) NotifyMessage(data string) error {
-	log.Println(internal.DebugPrefix, data)
+	log.Debug(data)
 	return nil
 }
 
 // NotifyInfo logs data with an info prefix in production and dev
 // builds
 func (Subscriber) NotifyInfo(data string) error {
-	log.Println(internal.InfoPrefix, data)
+	log.Info(data)
 	return nil
 }
 
 // NotifyError logs an error with an error prefix in production and
 // dev builds
 func (Subscriber) NotifyError(err error) error {
-	log.Println(internal.ErrorPrefix, err)
+	log.Error(err)
 	return nil
 }
 
 func (Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 	// do not log attempt events
 	if !data.IsAttempt {
-		log.Printf("%s HTTP CALL %s",
-			internal.InfoPrefix,
+		log.Infof("HTTP CALL %s",
 			dataRequestAPIToString(data, nil, nil, true),
 		)
 	}
@@ -80,8 +79,7 @@ func (Subscriber) NotifyRequestAPIVerbose(data events.DataRequestAPI) error {
 
 		respBodyBytes, _ = io.ReadAll(reader)
 	}
-	log.Printf("%s HTTP CALL %s",
-		internal.InfoPrefix,
+	log.Infof("HTTP CALL %s",
 		dataRequestAPIToString(data, reqBodyBytes, respBodyBytes, false),
 	)
 	return nil
@@ -91,15 +89,15 @@ func (s Subscriber) NotifyConnect(data events.DataConnect) error {
 	eventName := "POST_CONNECT"
 	switch data.EventStatus {
 	case events.StatusSuccess:
-		log.Println(internal.InfoPrefix, "connected to", data.TargetServerDomain)
+		log.Info("connected to", data.TargetServerDomain)
 	case events.StatusFailure:
-		log.Println(internal.ErrorPrefix, "failed to connect to", data.TargetServerDomain, ":", data.Error)
+		log.Error("failed to connect to", data.TargetServerDomain, ":", data.Error)
 	case events.StatusCanceled:
-		log.Println(internal.InfoPrefix, "connection to", data.TargetServerDomain, "was cancelled")
+		log.Info("connection to", data.TargetServerDomain, "was cancelled")
 	case events.StatusAttempt:
 		eventName = "PRE_CONNECT"
 	}
-	log.Printf("%s %s system info:\n%s\n%s\n", internal.InfoPrefix, eventName, getSystemInfo(), getNetworkInfo())
+	log.Infof("%s system info:\n%s\n%s\n", eventName, getSystemInfo(), getNetworkInfo())
 	return nil
 }
 
@@ -209,7 +207,7 @@ func maskIPRouteOutput(output string) string {
 	for _, ip := range ips {
 		parsed, err := netip.ParseAddr(ip)
 		if err != nil {
-			log.Println(internal.WarningPrefix,
+			log.Warn(
 				"Failed to parse ip address %s for masking: %v", ip, err)
 			continue
 		}

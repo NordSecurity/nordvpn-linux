@@ -4,7 +4,6 @@ import (
 	"context"
 
 	pb "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -35,8 +34,7 @@ func (t Telemetry) submitMetric(metric Metric, value any) error {
 	}
 
 	if err := t.metricReporter(metric, value); err != nil {
-		log.Printf("%s %s Failed to report metric %s: %s\n",
-			logTag, internal.WarningPrefix, metric, err)
+		log.Warnf("%s Failed to report metric %s: %s\n", logTag, metric, err)
 		return status.Errorf(codes.Internal, "failed to report metric: %v", err)
 	}
 

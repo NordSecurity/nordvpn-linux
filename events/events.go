@@ -8,7 +8,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state/types"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -253,7 +252,7 @@ func NewDisconnectSender(eventTemplate DataDisconnect, publishFunc func(DataDisc
 // status will be set to StatusSuccess.
 func (d *DisconnectSender) PublishDisconnect(startTime time.Time, err error) {
 	if startTime.After(time.Now()) {
-		log.Println(internal.ErrorPrefix,
+		log.Error(
 			"start time for disconnect event is greater than current time, will skip the event")
 		return
 	}
