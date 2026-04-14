@@ -826,7 +826,7 @@ func (n *nft) addAllowlistNat(config firewall.Config, nftCtx *nftContext) {
 		Priority: nftables.ChainPriorityNATSource,
 	})
 
-	// iifname != "nordlynx" udp sport @udp_allowlist masquerade
+	// oifname != "nordlynx" udp sport @udp_allowlist masquerade
 	if nftCtx.udpPorts != nil {
 		n.conn.AddRule(&nftables.Rule{
 			Table: nftCtx.table,
@@ -840,7 +840,7 @@ func (n *nft) addAllowlistNat(config firewall.Config, nftCtx *nftContext) {
 		})
 	}
 
-	// iifname != "nordlynx" tcp sport @tcp_allowlist masquerade
+	// oifname != "nordlynx" tcp sport @tcp_allowlist masquerade
 	if nftCtx.tcpPorts != nil {
 		n.conn.AddRule(&nftables.Rule{
 			Table: nftCtx.table,
