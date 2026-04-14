@@ -29,8 +29,9 @@ type Config struct {
 }
 
 type MeshInfo struct {
-	MeshnetMap    mesh.MachineMap
-	MeshInterface string
+	MeshnetMap     mesh.MachineMap
+	MeshInterface  string
+	BlockFileshare bool
 }
 
 func NewMeshInfo(meshnetMap mesh.MachineMap, meshInterface string) *MeshInfo {
@@ -81,5 +82,13 @@ func WithTunnelInterface(tunnelInterface string) Option {
 func WithMeshnetInfo(meshInfo *MeshInfo) Option {
 	return func(c *Config) {
 		c.MeshnetInfo = meshInfo
+	}
+}
+
+func WithBlockFileshare(block bool) Option {
+	return func(c *Config) {
+		if c.MeshnetInfo != nil {
+			c.MeshnetInfo.BlockFileshare = block
+		}
 	}
 }

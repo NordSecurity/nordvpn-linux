@@ -44,7 +44,7 @@ type nftContext struct {
 	allowlistSubnets               *nftables.Set
 	tcpPorts                       *nftables.Set
 	udpPorts                       *nftables.Set
-	fileshare                      *nftables.Set
+	fileshareAllowedPeers          *nftables.Set
 	meshLanAllowedPeers            *nftables.Set
 	meshRoutingAllowed             *nftables.Set
 	meshAllowedIncomingConnections *nftables.Set
@@ -100,8 +100,10 @@ func (n *nft) configure(config firewall.Config) error {
 	}
 
 	if config.MeshnetInfo != nil {
-		if err := n.addFileshare(config.MeshnetInfo.MeshnetMap, nftCtx); err != nil {
-			return err
+		if !config.MeshnetInfo.BlockFileshare {
+			if err := n.addFilesharePeers(config.MeshnetInfo.MeshnetMap, nftCtx); err != nil {
+				return err
+			}
 		}
 
 		if err := n.addLanAllowedPeers(config.MeshnetInfo.MeshnetMap, nftCtx); err != nil {
@@ -166,7 +168,7 @@ func (n *nft) addInputChain(config firewall.Config, nftCtx *nftContext) {
 	})
 
 	// meshnet
-	if nftCtx.fileshare != nil || nftCtx.meshAllowedIncomingConnections != nil {
+	if nftCtx.fileshareAllowedPeers != nil || nftCtx.meshAllowedIncomingConnections != nil {
 		// Add chain for the meshnet and the jump rule to it
 		meshChain := n.addMeshnetInputChain(nftCtx)
 
@@ -528,7 +530,7 @@ func (n *nft) addMeshnetInputChain(nftCtx *nftContext) *nftables.Chain {
 		UserData: userdata.AppendString(nil, userdata.TypeComment, "meshnet private IP"),
 	})
 
-	if nftCtx.fileshare != nil {
+	if nftCtx.fileshareAllowedPeers != nil {
 		// tcp dport 49111 ip saddr @fileshare_allowed_peers accept
 		n.conn.AddRule((&nftables.Rule{
 			Table: nftCtx.table,
@@ -536,7 +538,7 @@ func (n *nft) addMeshnetInputChain(nftCtx *nftContext) *nftables.Chain {
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictAccept},
 				checkPortNumber(internal.FilesharePort, unix.IPPROTO_TCP, matchDest),
-				checkIPIsInSet(nftCtx.fileshare, matchSource),
+				checkIPIsInSet(nftCtx.fileshareAllowedPeers, matchSource),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "meshnet to fileshare"),
 		}))
@@ -876,8 +878,8 @@ func (n *nft) addLanRangesSet(nftCtx *nftContext) error {
 	return nil
 }
 
-func (n *nft) addFileshare(meshMap mesh.MachineMap, nftCtx *nftContext) error {
-	nftCtx.fileshare = &nftables.Set{
+func (n *nft) addFilesharePeers(meshMap mesh.MachineMap, nftCtx *nftContext) error {
+	nftCtx.fileshareAllowedPeers = &nftables.Set{
 		Table:    nftCtx.table,
 		Name:     fileshareAllowedPeersSet,
 		KeyType:  nftables.TypeIPAddr,
@@ -896,7 +898,7 @@ func (n *nft) addFileshare(meshMap mesh.MachineMap, nftCtx *nftContext) error {
 		}
 	}
 
-	if err := n.conn.AddSet(nftCtx.fileshare, elems); err != nil {
+	if err := n.conn.AddSet(nftCtx.fileshareAllowedPeers, elems); err != nil {
 		return fmt.Errorf("add fileshare peers set: %w", err)
 	}
 
