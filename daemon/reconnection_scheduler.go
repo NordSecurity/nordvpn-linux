@@ -23,7 +23,7 @@ type ReconnectSchedulerImpl struct {
 	reconnectCancelFunc context.CancelFunc
 	// reconnectionScheduledChan will be closed once reconnection is cancelled or after the reconection wait period
 	// finishes
-	reconnectionScheduledChan chan any
+	reconnectionScheduledChan <-chan any
 	connectFunc               connectFunc
 	connectionInfo            *state.ConnectionInfo
 }
@@ -47,10 +47,11 @@ func (s *ReconnectSchedulerImpl) ScheduleReconnection(duration time.Duration) {
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	s.reconnectCancelFunc = cancelFunc
-	s.reconnectionScheduledChan = make(chan any)
+	reconnectionScheduledChan := make(chan any)
+	s.reconnectionScheduledChan = reconnectionScheduledChan
 	s.connectionInfo.Pause(time.Now(), duration)
 	go func() {
-		defer close(s.reconnectionScheduledChan)
+		defer close(reconnectionScheduledChan)
 		log.Println(internal.DebugPrefix, "pausing connection for", duration.String())
 		select {
 		case <-time.After(duration):
@@ -70,6 +71,10 @@ func (s *ReconnectSchedulerImpl) ScheduleReconnection(duration time.Duration) {
 }
 
 func (s *ReconnectSchedulerImpl) isReconnectionScheduled() bool {
+	if s.reconnectionScheduledChan == nil {
+		return false
+	}
+
 	select {
 	case <-s.reconnectionScheduledChan:
 		return false

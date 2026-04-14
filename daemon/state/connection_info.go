@@ -23,11 +23,11 @@ func getRemainingDuration(startTime time.Time, duration time.Duration) uint32 {
 }
 
 type InternalStateChangeNotif interface {
-	NotifyChangeState(events.DataConnectChangeNotif) error
+	OnStateChange(events.DataConnectChangeNotif) error
 }
 
 type PauseCancelledNotif interface {
-	NotifyPauseCancelled(events.DataPauseCancelled) error
+	OnPauseCancelled(events.DataPauseCancelled) error
 }
 
 type pauseData struct {
@@ -206,11 +206,11 @@ func (c *ConnectionInfo) notifyInternalState(
 }
 
 func (c *ConnectionInfo) SubscribeToInternalStateChanges(to InternalStateChangeNotif) {
-	c.internalNotif.Subscribe(to.NotifyChangeState)
+	c.internalNotif.Subscribe(to.OnStateChange)
 }
 
 func (c *ConnectionInfo) SubscribeToPauseCancelled(to PauseCancelledNotif) {
-	c.pauseCancelledNotif.Subscribe(to.NotifyPauseCancelled)
+	c.pauseCancelledNotif.Subscribe(to.OnPauseCancelled)
 }
 
 // Pause sets the pause data. All the subsequent events will be sent out with State set to

@@ -886,7 +886,7 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 	return nil
 }
 
-func (s *Subscriber) NotifyPauseCancelled(data events.DataPauseCancelled) error {
+func (s *Subscriber) OnPauseCancelled(data events.DataPauseCancelled) error {
 	connectionFunnel := durationToConnectionFunnel(data.Interval)
 	err := s.response(moose.NordvpnappSendServiceQualityServersPause(
 		moose.EventParams{
@@ -901,7 +901,7 @@ func (s *Subscriber) NotifyPauseCancelled(data events.DataPauseCancelled) error 
 		},
 		moose.ConnectionOnPauseParams{
 			ConnectionFunnel:     connectionFunnel,
-			VpnConnectionTrigger: moose.NordvpnappVpnConnectionTriggerAfterSnooze,
+			VpnConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone,
 		},
 		-1,
 		nil,

@@ -63,11 +63,11 @@ func NewTestSubscriber() *TestSubscriber {
 	}
 }
 
-func (s *TestSubscriber) NotifyChangeState(e events.DataConnectChangeNotif) error {
+func (s *TestSubscriber) OnStateChange(e events.DataConnectChangeNotif) error {
 	return s.stateChangeHandler.Notify(e)
 }
 
-func (s *TestSubscriber) NotifyPauseCancelled(e events.DataPauseCancelled) error {
+func (s *TestSubscriber) OnPauseCancelled(e events.DataPauseCancelled) error {
 	return s.pauseCancelledHandler.Notify(e)
 }
 
