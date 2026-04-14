@@ -855,9 +855,9 @@ func (n *nft) addAllowlistNat(config firewall.Config, nftCtx *nftContext) {
 	}
 }
 
-func (n *nft) addLanRangesSet(nftCxt *nftContext) error {
-	nftCxt.lanRanges = &nftables.Set{
-		Table:    nftCxt.table,
+func (n *nft) addLanRangesSet(nftCtx *nftContext) error {
+	nftCtx.lanRanges = &nftables.Set{
+		Table:    nftCtx.table,
 		Name:     lanPrivateIpsSetName,
 		KeyType:  nftables.TypeIPAddr,
 		Interval: true,
@@ -869,7 +869,7 @@ func (n *nft) addLanRangesSet(nftCxt *nftContext) error {
 		return err
 	}
 
-	if err := n.conn.AddSet(nftCxt.lanRanges, elems); err != nil {
+	if err := n.conn.AddSet(nftCtx.lanRanges, elems); err != nil {
 		return err
 	}
 
