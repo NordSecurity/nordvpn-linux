@@ -203,7 +203,7 @@ func main() {
 
 	// Firewall
 	fw := firewall.NewFirewall(
-		nft.New(cfg.FirewallMark),
+		nft.NewNft(cfg.FirewallMark),
 		cfg.Firewall,
 		daemonEvents.Debugger.DebuggerEvents,
 	)

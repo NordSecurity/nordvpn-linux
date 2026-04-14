@@ -57,7 +57,7 @@ type nft struct {
 	fwmark uint32
 }
 
-func New(fwmark uint32) *nft {
+func NewNft(fwmark uint32) firewall.FirewallBackend {
 	return &nft{
 		conn:   &nftables.Conn{},
 		fwmark: fwmark,
@@ -889,7 +889,7 @@ func (n *nft) addFilesharePeers(meshMap mesh.MachineMap, nftCtx *nftContext) err
 
 	var elems []nftables.SetElement
 	for _, peer := range meshMap.Peers {
-		if !peer.Address.IsValid() {
+		if !peer.Address.Is4() {
 			continue
 		}
 
