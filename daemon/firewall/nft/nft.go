@@ -112,7 +112,7 @@ func (n *nft) configure(config firewall.Config) error {
 			return err
 		}
 
-		if err := n.buildAllowedIncomingConnections(config.MeshnetInfo.MeshnetMap, nftCtx); err != nil {
+		if err := n.addAllowedIncomingConnections(config.MeshnetInfo.MeshnetMap, nftCtx); err != nil {
 			return err
 		}
 	}
@@ -931,7 +931,7 @@ func (n *nft) addLanAllowedPeers(meshMap mesh.MachineMap, nftCtx *nftContext) er
 	return nil
 }
 
-func (n *nft) buildAllowedIncomingConnections(meshMap mesh.MachineMap, nftCtx *nftContext) error {
+func (n *nft) addAllowedIncomingConnections(meshMap mesh.MachineMap, nftCtx *nftContext) error {
 	nftCtx.meshAllowedIncomingConnections = &nftables.Set{
 		Table:    nftCtx.table,
 		Name:     allowIncomingConnectionPeersSet,
