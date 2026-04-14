@@ -21,7 +21,7 @@ func runNftCommand(t *testing.T, args ...string) string {
 	return string(out)
 }
 
-func withNftCommand(t *testing.T, args []string, fn func(out string)) {
+func withNftCommandOutput(t *testing.T, args []string, fn func(out string)) {
 	t.Helper()
 	out := runNftCommand(t, args...)
 	fn(out)
@@ -51,7 +51,7 @@ func TestFileshareBlockAllow(t *testing.T) {
 
 	args := []string{"list", "chain", "inet", "nordvpn", "mesh_input"}
 
-	withNftCommand(t, args, func(out string) {
+	withNftCommandOutput(t, args, func(out string) {
 		assert.Contains(t, out, fmt.Sprintf("tcp dport 49111 ip saddr @%s accept", fileshareAllowedPeersSet))
 		assert.Contains(t, out, "tcp dport 49111 drop")
 	})
@@ -60,7 +60,7 @@ func TestFileshareBlockAllow(t *testing.T) {
 	cfg.MeshnetInfo.BlockFileshare = true
 	assert.NoError(t, n.Configure(cfg))
 
-	withNftCommand(t, args, func(out string) {
+	withNftCommandOutput(t, args, func(out string) {
 		assert.NotContains(t, out, fmt.Sprintf("tcp dport 49111 ip saddr @%s accept", fileshareAllowedPeersSet))
 		assert.Contains(t, out, "tcp dport 49111 drop", fileshareAllowedPeersSet)
 	})
@@ -69,7 +69,7 @@ func TestFileshareBlockAllow(t *testing.T) {
 	cfg.MeshnetInfo.BlockFileshare = false
 	assert.NoError(t, n.Configure(cfg))
 
-	withNftCommand(t, args, func(out string) {
+	withNftCommandOutput(t, args, func(out string) {
 		assert.Contains(t, out, fmt.Sprintf("tcp dport 49111 ip saddr @%s accept", fileshareAllowedPeersSet))
 		assert.Contains(t, out, "tcp dport 49111 drop", fileshareAllowedPeersSet)
 	})
