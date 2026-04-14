@@ -231,7 +231,6 @@ type DataPauseCancelled struct {
 	Interval            time.Duration
 	ServerFromAPI       bool
 	ServerSelectionRule config.ServerSelectionRule
-	Duration            time.Duration
 }
 
 // DisconnectCallback is called when Networker needs to disconnect when establishing a connection. This usually happens

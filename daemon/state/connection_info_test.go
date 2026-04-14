@@ -524,8 +524,7 @@ func TestConnectionInfo_CancelPause(t *testing.T) {
 
 	tf.notificationSubscriber.pauseCancelledHandler.ExpectEvents(1)
 
-	cancelTime := time.Unix(1774276303, 0)
-	returnedPauseDuration := tf.sut.CancelPause(cancelTime)
+	returnedPauseDuration := tf.sut.CancelPause()
 	assert.Equal(t, setPauseDuration, returnedPauseDuration,
 		"Returned pause duration should be equal to pause duration provided in Pause.")
 	assert.Nil(t, tf.sut.pauseData, "Pause data was not cleared after cancelling the pause.")
@@ -546,8 +545,7 @@ func TestConnectionInfo_CancelPauseWhenConnectionIsNotPaused(t *testing.T) {
 
 	tf.notificationSubscriber.pauseCancelledHandler.ExpectEvents(0)
 
-	cancelTime := time.Unix(1774276303, 0)
-	returnedPauseDuration := tf.sut.CancelPause(cancelTime)
+	returnedPauseDuration := tf.sut.CancelPause()
 	assert.Zero(t, returnedPauseDuration,
 		"Non-zero pause duration returned by CancelPause when connection was not Paused.")
 

@@ -226,19 +226,17 @@ func (c *ConnectionInfo) Pause(pausedAt time.Time, duration time.Duration) {
 }
 
 // CancelPause unsets the pause data, sends pause cancelled notification and returns the pause duration.
-func (c *ConnectionInfo) CancelPause(cancelStartTime time.Time) time.Duration {
+func (c *ConnectionInfo) CancelPause() time.Duration {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	var pauseInterval time.Duration
 	if c.pauseData != nil {
 		pauseInterval = c.doUnpause()
-		duration := time.Since(cancelStartTime)
 		c.pauseCancelledNotif.Publish(events.DataPauseCancelled{
 			Interval:            pauseInterval,
 			ServerFromAPI:       c.serverSelectionData.serverFromAPI,
 			ServerSelectionRule: c.serverSelectionData.serverSelectionRule,
-			Duration:            duration,
 		})
 	}
 

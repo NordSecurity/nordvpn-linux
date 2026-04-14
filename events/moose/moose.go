@@ -890,7 +890,7 @@ func (s *Subscriber) OnPauseCancelled(data events.DataPauseCancelled) error {
 	connectionFunnel := durationToConnectionFunnel(data.Interval)
 	err := s.response(moose.NordvpnappSendServiceQualityServersPause(
 		moose.EventParams{
-			EventDuration: int32(data.Duration.Milliseconds()),
+			EventDuration: 0,
 			EventStatus:   moose.NordvpnappEventStatusFailureDueToUserInterrupt,
 			EventTrigger:  moose.NordvpnappEventTriggerUser,
 		},
