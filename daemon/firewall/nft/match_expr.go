@@ -86,7 +86,7 @@ func checkPortNumber(port uint16, portType byte, match matchType) []expr.Any {
 }
 
 // portType: unix.IPPROTO_UDP | IPPROTO_TCP
-func checkIfPortIsInSet(portsSet *nftables.Set, portType byte, match matchType) []expr.Any {
+func checkPortIsInSet(portsSet *nftables.Set, portType byte, match matchType) []expr.Any {
 	// Offset: 0, Len: 2  → sport
 	// Offset: 2, Len: 2  → dport
 
@@ -139,7 +139,7 @@ func setMetaMark(fwMark uint32) []expr.Any {
 }
 
 // ip saddr/daddr @set_name
-func checkIfIPIsInSet(ipSet *nftables.Set, match matchType) []expr.Any {
+func checkIPIsInSet(ipSet *nftables.Set, match matchType) []expr.Any {
 	return verifyIPIsInSet(ipSet, match, true)
 }
 
@@ -292,7 +292,7 @@ func checkMetaMarkAndSetCtMark(fwmark uint32) []expr.Any {
 }
 
 // ip saddr 100.64.0.0/10
-func checkIfIPIsPartOfSubnet(pfx netip.Prefix, match matchType, op expr.CmpOp) []expr.Any {
+func checkIPIsPartOfSubnet(pfx netip.Prefix, match matchType, op expr.CmpOp) []expr.Any {
 	var offset uint32 = 12
 	if match == matchDest {
 		offset = 16
