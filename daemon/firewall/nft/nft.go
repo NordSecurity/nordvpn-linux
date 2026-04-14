@@ -84,7 +84,7 @@ func (n *nft) configure(config firewall.Config) error {
 	nftCtx.table = n.addMainTable()
 
 	if err := n.addExcludedInterfacesSet(config, nftCtx); err != nil {
-		return nil
+		return err
 	}
 
 	if err := n.addLanRangesSet(nftCtx); err != nil {
