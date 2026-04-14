@@ -46,8 +46,8 @@ func checkCtState(ctState uint32) []expr.Any {
 type matchType int
 
 const (
-	matchSourcePort matchType = 1
-	matchDestPort   matchType = 2
+	matchSource matchType = 1
+	matchDest   matchType = 2
 )
 
 // udp port 53
@@ -57,7 +57,7 @@ func checkPortNumber(port uint16, portType byte, match matchType) []expr.Any {
 	// Offset: 2, Len: 2  → dport
 
 	var offset uint32 = 0
-	if match == matchDestPort {
+	if match == matchDest {
 		offset = 2
 	}
 
@@ -91,7 +91,7 @@ func checkIfPortIsInSet(portsSet *nftables.Set, portType byte, match matchType) 
 	// Offset: 2, Len: 2  → dport
 
 	var offset uint32 = 0
-	if match == matchDestPort {
+	if match == matchDest {
 		offset = 2
 	}
 	return []expr.Any{
@@ -155,7 +155,7 @@ func verifyIPIsInSet(ipSet *nftables.Set, match matchType, isIn bool) []expr.Any
 	}
 	// IPv4 header saddr offset 12, daddr at ofset 16
 	var offset uint32 = 12
-	if match == matchDestPort {
+	if match == matchDest {
 		offset = 16
 	}
 
@@ -294,7 +294,7 @@ func checkMetaMarkAndSetCtMark(fwmark uint32) []expr.Any {
 // ip saddr 100.64.0.0/10
 func checkIfIPIsPartOfSubnet(pfx netip.Prefix, match matchType, op expr.CmpOp) []expr.Any {
 	var offset uint32 = 12
-	if match == matchDestPort {
+	if match == matchDest {
 		offset = 16
 	}
 
