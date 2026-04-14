@@ -139,17 +139,17 @@ func setMetaMark(fwMark uint32) []expr.Any {
 }
 
 // ip saddr/daddr @set_name
-func checkIfIpIsInSet(ipSet *nftables.Set, match matchType) []expr.Any {
-	return verifyIpIsInSet(ipSet, match, true)
+func checkIfIPIsInSet(ipSet *nftables.Set, match matchType) []expr.Any {
+	return verifyIPIsInSet(ipSet, match, true)
 }
 
 // ip saddr/daddr != @set_name
-func checkIpIsNotInSet(ipSet *nftables.Set, match matchType) []expr.Any {
-	return verifyIpIsInSet(ipSet, match, false)
+func checkIPIsNotInSet(ipSet *nftables.Set, match matchType) []expr.Any {
+	return verifyIPIsInSet(ipSet, match, false)
 }
 
 // ip saddr/daddr @set_name
-func verifyIpIsInSet(ipSet *nftables.Set, match matchType, isIn bool) []expr.Any {
+func verifyIPIsInSet(ipSet *nftables.Set, match matchType, isIn bool) []expr.Any {
 	if ipSet == nil {
 		return []expr.Any{}
 	}
@@ -292,7 +292,7 @@ func checkMetaMarkAndSetCtMark(fwmark uint32) []expr.Any {
 }
 
 // ip saddr 100.64.0.0/10
-func checkIfIpIsPartOfSubnet(pfx netip.Prefix, match matchType, op expr.CmpOp) []expr.Any {
+func checkIfIPIsPartOfSubnet(pfx netip.Prefix, match matchType, op expr.CmpOp) []expr.Any {
 	var offset uint32 = 12
 	if match == matchDestPort {
 		offset = 16

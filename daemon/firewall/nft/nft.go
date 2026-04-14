@@ -21,7 +21,6 @@ const (
 	tcpAllowlistSetName             = "tcp_allowlist"
 	udpAllowlistSetName             = "udp_allowlist"
 	lanPrivateIpsSetName            = "lan_ranges"
-	preroutingChainName             = "prerouting"
 	inputChainName                  = "input"
 	outputChainName                 = "output"
 	forwardChainName                = "forward"
@@ -35,7 +34,7 @@ const (
 	allowIncomingConnectionPeersSet = "allow_incoming_connections"
 	allowTrafficRoutingPeersSet     = "allow_peer_traffic_routing"
 	lanAccessPeersSet               = "peer_local_network_access"
-	defaultDnsPort                  = 53
+	defaultDNSPort                  = 53
 )
 
 type nftContext struct {
@@ -169,7 +168,7 @@ func (n *nft) addInputChain(config firewall.Config, nftCtx *nftContext) {
 	// meshnet
 	if nftCtx.fileshare != nil || nftCtx.meshAllowedIncomingConnections != nil {
 		// Add chain for the meshnet and the jump rule to it
-		meshChain := n.addMeshnetInputChain(config, nftCtx)
+		meshChain := n.addMeshnetInputChain(nftCtx)
 
 		// iifname "nordlynx" ip saddr 100.64.0.0/10 jump mesh_input
 		n.conn.AddRule(&nftables.Rule{
@@ -178,7 +177,7 @@ func (n *nft) addInputChain(config firewall.Config, nftCtx *nftContext) {
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictJump, Chain: meshChain.Name},
 				checkInterfaceName(config.MeshnetInfo.MeshInterface, ifNameInput, expr.CmpOpEq),
-				checkIfIpIsPartOfSubnet(internal.MeshSubnet, matchSourcePort, expr.CmpOpEq),
+				checkIfIPIsPartOfSubnet(internal.MeshSubnet, matchSourcePort, expr.CmpOpEq),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "meshnet to local"),
 		})
@@ -199,7 +198,7 @@ func (n *nft) addInputChain(config firewall.Config, nftCtx *nftContext) {
 	}
 
 	if nftCtx.allowlistSubnets != nil || nftCtx.tcpPorts != nil || nftCtx.udpPorts != nil {
-		chain := n.addAllowlistInputChain(config, nftCtx)
+		chain := n.addAllowlistInputChain(nftCtx)
 
 		// iifname != "nordtun" jump allowlist_input
 		n.conn.AddRule(&nftables.Rule{
@@ -230,7 +229,7 @@ func (n *nft) addOutputChain(config firewall.Config, nftCtx *nftContext) {
 	})
 
 	// drop DNS if port 53 not whitelisted
-	n.addLanDnsDrop(config, nftCtx, outputChain)
+	n.addLanDNSDrop(config, nftCtx, outputChain)
 
 	if nftCtx.allowlistSubnets != nil {
 		// ip daddr @allowed_subnets accept
@@ -239,7 +238,7 @@ func (n *nft) addOutputChain(config firewall.Config, nftCtx *nftContext) {
 			Chain: outputChain,
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkIfIpIsInSet(nftCtx.allowlistSubnets, matchDestPort),
+				checkIfIPIsInSet(nftCtx.allowlistSubnets, matchDestPort),
 				setMetaMark(n.fwmark),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "local to allowlist IPs"),
@@ -314,7 +313,7 @@ func (n *nft) addOutputChain(config firewall.Config, nftCtx *nftContext) {
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictAccept},
 				checkInterfaceName(config.MeshnetInfo.MeshInterface, ifNameOutput, expr.CmpOpEq),
-				checkIfIpIsPartOfSubnet(internal.MeshSubnet, matchDestPort, expr.CmpOpEq),
+				checkIfIPIsPartOfSubnet(internal.MeshSubnet, matchDestPort, expr.CmpOpEq),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "local to meshnet"),
 		})
@@ -344,7 +343,7 @@ func (n *nft) addForwardChain(config firewall.Config, nftCtx *nftContext) {
 			Chain: forwardChain,
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictJump, Chain: meshToInternetChain.Name},
-				checkIfIpIsPartOfSubnet(internal.MeshSubnet, matchSourcePort, expr.CmpOpEq),
+				checkIfIPIsPartOfSubnet(internal.MeshSubnet, matchSourcePort, expr.CmpOpEq),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "traffic from mesh peer"),
 		})
@@ -356,14 +355,14 @@ func (n *nft) addForwardChain(config firewall.Config, nftCtx *nftContext) {
 			Chain: forwardChain,
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictJump, Chain: internetToMeshChain.Name},
-				checkIfIpIsPartOfSubnet(internal.MeshSubnet, matchDestPort, expr.CmpOpEq),
+				checkIfIPIsPartOfSubnet(internal.MeshSubnet, matchDestPort, expr.CmpOpEq),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "traffic to mesh peer"),
 		})
 
 	}
 
-	n.addLanDnsDrop(config, nftCtx, forwardChain)
+	n.addLanDNSDrop(config, nftCtx, forwardChain)
 
 	if nftCtx.allowlistSubnets != nil {
 		// ip daddr @allowed_subnets accept
@@ -372,7 +371,7 @@ func (n *nft) addForwardChain(config firewall.Config, nftCtx *nftContext) {
 			Chain: forwardChain,
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkIfIpIsInSet(nftCtx.allowlistSubnets, matchDestPort),
+				checkIfIPIsInSet(nftCtx.allowlistSubnets, matchDestPort),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "internet to allowlist IPs"),
 		})
@@ -383,7 +382,7 @@ func (n *nft) addForwardChain(config firewall.Config, nftCtx *nftContext) {
 			Chain: forwardChain,
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkIfIpIsInSet(nftCtx.allowlistSubnets, matchSourcePort),
+				checkIfIPIsInSet(nftCtx.allowlistSubnets, matchSourcePort),
 				checkCtState(expr.CtStateBitESTABLISHED|expr.CtStateBitRELATED),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "allow responses to allowlist IPs"),
@@ -462,7 +461,7 @@ func (n *nft) addExcludedInterfacesSet(config firewall.Config, nftCtx *nftContex
 	return nil
 }
 
-func (n *nft) addAllowlistInputChain(config firewall.Config, nftCtx *nftContext) *nftables.Chain {
+func (n *nft) addAllowlistInputChain(nftCtx *nftContext) *nftables.Chain {
 
 	chain := n.conn.AddChain(&nftables.Chain{
 		Name:  allowlistInputChainName,
@@ -476,7 +475,7 @@ func (n *nft) addAllowlistInputChain(config firewall.Config, nftCtx *nftContext)
 			Chain: chain,
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkIfIpIsInSet(nftCtx.allowlistSubnets, matchSourcePort),
+				checkIfIPIsInSet(nftCtx.allowlistSubnets, matchSourcePort),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "allowlist IPs to local"),
 		})
@@ -511,7 +510,7 @@ func (n *nft) addAllowlistInputChain(config firewall.Config, nftCtx *nftContext)
 	return chain
 }
 
-func (n *nft) addMeshnetInputChain(config firewall.Config, nftCtx *nftContext) *nftables.Chain {
+func (n *nft) addMeshnetInputChain(nftCtx *nftContext) *nftables.Chain {
 	// the chain is not hooked to anything, it is called from input chain
 	meshChain := n.conn.AddChain(&nftables.Chain{
 		Name:  meshInputChainName,
@@ -524,7 +523,7 @@ func (n *nft) addMeshnetInputChain(config firewall.Config, nftCtx *nftContext) *
 		Chain: meshChain,
 		Exprs: buildRules(
 			&expr.Verdict{Kind: expr.VerdictAccept},
-			checkIfIpIsPartOfSubnet(internal.ReservedMeshnetSubnet, matchSourcePort, expr.CmpOpEq),
+			checkIfIPIsPartOfSubnet(internal.ReservedMeshnetSubnet, matchSourcePort, expr.CmpOpEq),
 		),
 		UserData: userdata.AppendString(nil, userdata.TypeComment, "meshnet private IP"),
 	})
@@ -537,7 +536,7 @@ func (n *nft) addMeshnetInputChain(config firewall.Config, nftCtx *nftContext) *
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictAccept},
 				checkPortNumber(internal.FilesharePort, unix.IPPROTO_TCP, matchDestPort),
-				checkIfIpIsInSet(nftCtx.fileshare, matchSourcePort),
+				checkIfIPIsInSet(nftCtx.fileshare, matchSourcePort),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "meshnet to fileshare"),
 		}))
@@ -561,7 +560,7 @@ func (n *nft) addMeshnetInputChain(config firewall.Config, nftCtx *nftContext) *
 			Chain: meshChain,
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkIfIpIsInSet(nftCtx.meshAllowedIncomingConnections, matchSourcePort),
+				checkIfIPIsInSet(nftCtx.meshAllowedIncomingConnections, matchSourcePort),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "meshnet to local"),
 		}))
@@ -577,31 +576,31 @@ func (n *nft) addMeshnetInputChain(config firewall.Config, nftCtx *nftContext) *
 	return meshChain
 }
 
-func (n *nft) addLanDnsDrop(config firewall.Config, nftCtx *nftContext, chain *nftables.Chain) {
+func (n *nft) addLanDNSDrop(config firewall.Config, nftCtx *nftContext, chain *nftables.Chain) {
 	if config.IsVpnOrKillSwitchSet() {
-		if !config.Allowlist.Ports.TCP[defaultDnsPort] {
+		if !config.Allowlist.Ports.TCP[defaultDNSPort] {
 			// ip daddr @lan_ranges tcp dport 53 drop
 			n.conn.AddRule(&nftables.Rule{
 				Table: nftCtx.table,
 				Chain: chain,
 				Exprs: buildRules(
 					&expr.Verdict{Kind: expr.VerdictDrop},
-					checkIfIpIsInSet(nftCtx.lanRanges, matchDestPort),
-					checkPortNumber(defaultDnsPort, unix.IPPROTO_TCP, matchDestPort),
+					checkIfIPIsInSet(nftCtx.lanRanges, matchDestPort),
+					checkPortNumber(defaultDNSPort, unix.IPPROTO_TCP, matchDestPort),
 				),
 				UserData: userdata.AppendString(nil, userdata.TypeComment, "block to LAN DNS for TCP"),
 			})
 		}
 
-		if !config.Allowlist.Ports.UDP[defaultDnsPort] {
+		if !config.Allowlist.Ports.UDP[defaultDNSPort] {
 			// ip daddr @lan_ranges udp dport 53 drop
 			n.conn.AddRule(&nftables.Rule{
 				Table: nftCtx.table,
 				Chain: chain,
 				Exprs: buildRules(
 					&expr.Verdict{Kind: expr.VerdictDrop},
-					checkIfIpIsInSet(nftCtx.lanRanges, matchDestPort),
-					checkPortNumber(defaultDnsPort, unix.IPPROTO_UDP, matchDestPort),
+					checkIfIPIsInSet(nftCtx.lanRanges, matchDestPort),
+					checkPortNumber(defaultDNSPort, unix.IPPROTO_UDP, matchDestPort),
 				),
 				UserData: userdata.AppendString(nil, userdata.TypeComment, "block to LAN DNS for UDP"),
 			})
@@ -621,7 +620,7 @@ func (n *nft) addMeshPeerToInternet(config firewall.Config, nftCtx *nftContext) 
 		Chain: chain,
 		Exprs: buildRules(
 			&expr.Verdict{Kind: expr.VerdictDrop},
-			checkIpIsNotInSet(nftCtx.meshRoutingAllowed, matchSourcePort),
+			checkIPIsNotInSet(nftCtx.meshRoutingAllowed, matchSourcePort),
 		),
 		UserData: userdata.AppendString(nil, userdata.TypeComment, "traffic from not allowed peers"),
 	})
@@ -633,7 +632,7 @@ func (n *nft) addMeshPeerToInternet(config firewall.Config, nftCtx *nftContext) 
 			Chain: chain,
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkIfIpIsInSet(nftCtx.allowlistSubnets, matchDestPort),
+				checkIfIPIsInSet(nftCtx.allowlistSubnets, matchDestPort),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "mesh peer to allowlist IPs"),
 		})
@@ -672,8 +671,8 @@ func (n *nft) addMeshPeerToInternet(config firewall.Config, nftCtx *nftContext) 
 			Chain: chain,
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictDrop},
-				checkIfIpIsInSet(nftCtx.meshLanAllowedPeers, matchDestPort),
-				checkIpIsNotInSet(nftCtx.meshLanAllowedPeers, matchSourcePort),
+				checkIfIPIsInSet(nftCtx.meshLanAllowedPeers, matchDestPort),
+				checkIPIsNotInSet(nftCtx.meshLanAllowedPeers, matchSourcePort),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "mesh peer to LAN"),
 		})
@@ -687,7 +686,7 @@ func (n *nft) addMeshPeerToInternet(config firewall.Config, nftCtx *nftContext) 
 			Chain: chain,
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkIfIpIsPartOfSubnet(internal.MeshSubnet, matchDestPort, expr.CmpOpNeq),
+				checkIfIPIsPartOfSubnet(internal.MeshSubnet, matchDestPort, expr.CmpOpNeq),
 				checkInterfaceName(config.TunnelInterface, ifNameOutput, expr.CmpOpEq),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "mesh peer to VPN"),
@@ -716,7 +715,7 @@ func (n *nft) addInternetToMeshPeer(config firewall.Config, nftCtx *nftContext) 
 		Chain: chain,
 		Exprs: buildRules(
 			&expr.Verdict{Kind: expr.VerdictDrop},
-			checkIpIsNotInSet(nftCtx.meshRoutingAllowed, matchDestPort),
+			checkIPIsNotInSet(nftCtx.meshRoutingAllowed, matchDestPort),
 		),
 		UserData: userdata.AppendString(nil, userdata.TypeComment, "traffic to allowed peers"),
 	})
@@ -728,7 +727,7 @@ func (n *nft) addInternetToMeshPeer(config firewall.Config, nftCtx *nftContext) 
 			Chain: chain,
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkIfIpIsInSet(nftCtx.allowlistSubnets, matchSourcePort),
+				checkIfIPIsInSet(nftCtx.allowlistSubnets, matchSourcePort),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "allowlist IPs to mesh peer"),
 		})
@@ -767,8 +766,8 @@ func (n *nft) addInternetToMeshPeer(config firewall.Config, nftCtx *nftContext) 
 			Chain: chain,
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictDrop},
-				checkIfIpIsInSet(nftCtx.meshLanAllowedPeers, matchSourcePort),
-				checkIpIsNotInSet(nftCtx.meshLanAllowedPeers, matchDestPort),
+				checkIfIPIsInSet(nftCtx.meshLanAllowedPeers, matchSourcePort),
+				checkIPIsNotInSet(nftCtx.meshLanAllowedPeers, matchDestPort),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "LAN to mesh peer"),
 		})
@@ -812,8 +811,8 @@ func (n *nft) addMeshnetNat(nftCtx *nftContext) {
 		Chain: natChain,
 		Exprs: buildRules(
 			&expr.Masq{},
-			checkIfIpIsInSet(nftCtx.meshRoutingAllowed, matchSourcePort),
-			checkIfIpIsPartOfSubnet(internal.MeshSubnet, matchDestPort, expr.CmpOpNeq),
+			checkIfIPIsInSet(nftCtx.meshRoutingAllowed, matchSourcePort),
+			checkIfIPIsPartOfSubnet(internal.MeshSubnet, matchDestPort, expr.CmpOpNeq),
 		),
 	})
 }
@@ -1005,13 +1004,13 @@ func (n *nft) addAllowlistSubnets(allowlist config.Allowlist, nftCtx *nftContext
 
 	var elements []nftables.SetElement
 	for _, subnet := range allowlist.Subnets {
-		startIp, endIp, err := calculateFirstAndLastV4Prefix(subnet)
+		startIP, endIP, err := calculateFirstAndLastV4Prefix(subnet)
 		if err != nil {
 			return fmt.Errorf("parse allowlist IP: %s %w", subnet, err)
 		}
 
 		elements = append(elements,
-			nftables.SetElement{Key: startIp}, nftables.SetElement{Key: endIp, IntervalEnd: true},
+			nftables.SetElement{Key: startIP}, nftables.SetElement{Key: endIP, IntervalEnd: true},
 		)
 	}
 	if err := n.conn.AddSet(nftCtx.allowlistSubnets, elements); err != nil {
