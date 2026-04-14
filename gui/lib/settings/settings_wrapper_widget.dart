@@ -150,7 +150,7 @@ Widget _buildVpnStatus(BuildContext context) {
         final vpnStatus = status.value!;
         if (vpnStatus.isDisconnected() || vpnStatus.isPaused()) {
           return Text(
-            t.ui.notConnected,
+            t.ui.notSecured,
             style: settingsTheme.vpnStatusStyle.copyWith(
               color: appTheme.textErrorColor,
             ),
@@ -168,7 +168,7 @@ Widget _buildVpnStatus(BuildContext context) {
 
         if (vpnStatus.isConnected()) {
           return Text(
-            t.ui.connected,
+            t.ui.secured,
             style: settingsTheme.vpnStatusStyle.copyWith(
               color: appTheme.successColor,
             ),

@@ -1377,9 +1377,6 @@ class TranslationsUiEn {
 	/// en: 'Connected'
 	String get connected => 'Connected';
 
-	/// en: 'Not connected'
-	String get notConnected => 'Not connected';
-
 	/// en: 'Connect now or pick a country'
 	String get connectOrPickCountry => 'Connect now or pick a country';
 
@@ -2607,7 +2604,6 @@ extension on Translations {
 			'ui.onion_over_vpn' => 'Onion Over VPN',
 			'ui.fatalErrorMessage' => 'Fatal error',
 			'ui.connected' => 'Connected',
-			'ui.notConnected' => 'Not connected',
 			'ui.connectOrPickCountry' => 'Connect now or pick a country',
 			'ui.general' => 'General',
 			'ui.generalSettingsSubtitle' => 'Appearance, notifications and analytics settings',
@@ -2687,9 +2683,9 @@ extension on Translations {
 			'ui.selectLocation' => 'Select location',
 			'ui.dipSelectLocationDescription' => 'You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.',
 			'ui.chooseLocationForDip' => 'Choose a location for your dedicated IP',
+			'ui.getDip' => 'Get dedicated IP',
 			_ => null,
 		} ?? switch (path) {
-			'ui.getDip' => 'Get dedicated IP',
 			'ui.getYourDip' => 'Get your personal IP',
 			'ui.getDipDescription' => 'Get a personal IP address that belongs only to you. Enjoy all the benefits of VPN encryption without dealing with blocklists, identity checks, and selecting images of boats in CAPTCHAs.',
 			'ui.notifications' => 'Notifications',

@@ -29,7 +29,7 @@ void runVpnScreenTests() async {
 
       // initially, we have the server info and we are not connected
       final mainScreen = await app.goToVpnScreen();
-      expect(mainScreen.findServerInfoText(), equals(t.ui.fastestServer));
+      expect(mainScreen.findServerInfoText(), contains("Dallas"));
 
       // connect
       app.connect(country: "FR", city: "Paris", isVirtualLocation: true);

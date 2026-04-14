@@ -127,7 +127,7 @@ class _ContextMenuState extends State<ContextMenu>
     final theme = context.contextMenuTheme;
     final menuWidth = widget.matchAnchorWidth
         ? ((this.context.findRenderObject() as RenderBox?)?.size.width ??
-            theme.menuWidth)
+              theme.menuWidth)
         : (widget.width ?? theme.menuWidth);
 
     return Stack(
@@ -154,9 +154,7 @@ class _ContextMenuState extends State<ContextMenu>
                 sizeFactor: _animation,
                 axisAlignment: -1,
                 child: Padding(
-                  padding: EdgeInsets.only(
-                    bottom: theme.menuShadowMargin,
-                  ),
+                  padding: EdgeInsets.only(bottom: theme.menuShadowMargin),
                   child: _MenuPanel(
                     items: widget.items,
                     width: menuWidth,

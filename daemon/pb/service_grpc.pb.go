@@ -37,6 +37,7 @@ const (
 	Daemon_Countries_FullMethodName               = "/pb.Daemon/Countries"
 	Daemon_Cities_FullMethodName                  = "/pb.Daemon/Cities"
 	Daemon_Groups_FullMethodName                  = "/pb.Daemon/Groups"
+	Daemon_RecommendedServer_FullMethodName       = "/pb.Daemon/RecommendedServer"
 	Daemon_Settings_FullMethodName                = "/pb.Daemon/Settings"
 	Daemon_SetDefaults_FullMethodName             = "/pb.Daemon/SetDefaults"
 	Daemon_SetAutoConnect_FullMethodName          = "/pb.Daemon/SetAutoConnect"
@@ -94,6 +95,7 @@ type DaemonClient interface {
 	Countries(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
 	Cities(ctx context.Context, in *CitiesRequest, opts ...grpc.CallOption) (*ServerGroupsList, error)
 	Groups(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ServerGroupsList, error)
+	RecommendedServer(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*RecommendedServerLocation, error)
 	// ==================== General Settings ====================
 	Settings(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*SettingsResponse, error)
 	SetDefaults(ctx context.Context, in *SetDefaultsRequest, opts ...grpc.CallOption) (*Payload, error)
@@ -333,6 +335,16 @@ func (c *daemonClient) Groups(ctx context.Context, in *Empty, opts ...grpc.CallO
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ServerGroupsList)
 	err := c.cc.Invoke(ctx, Daemon_Groups_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *daemonClient) RecommendedServer(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*RecommendedServerLocation, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RecommendedServerLocation)
+	err := c.cc.Invoke(ctx, Daemon_RecommendedServer_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -664,6 +676,7 @@ type DaemonServer interface {
 	Countries(context.Context, *Empty) (*ServerGroupsList, error)
 	Cities(context.Context, *CitiesRequest) (*ServerGroupsList, error)
 	Groups(context.Context, *Empty) (*ServerGroupsList, error)
+	RecommendedServer(context.Context, *Empty) (*RecommendedServerLocation, error)
 	// ==================== General Settings ====================
 	Settings(context.Context, *Empty) (*SettingsResponse, error)
 	SetDefaults(context.Context, *SetDefaultsRequest) (*Payload, error)
@@ -764,6 +777,9 @@ func (UnimplementedDaemonServer) Cities(context.Context, *CitiesRequest) (*Serve
 }
 func (UnimplementedDaemonServer) Groups(context.Context, *Empty) (*ServerGroupsList, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Groups not implemented")
+}
+func (UnimplementedDaemonServer) RecommendedServer(context.Context, *Empty) (*RecommendedServerLocation, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RecommendedServer not implemented")
 }
 func (UnimplementedDaemonServer) Settings(context.Context, *Empty) (*SettingsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Settings not implemented")
@@ -1179,6 +1195,24 @@ func _Daemon_Groups_Handler(srv interface{}, ctx context.Context, dec func(inter
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(DaemonServer).Groups(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Daemon_RecommendedServer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).RecommendedServer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_RecommendedServer_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).RecommendedServer(ctx, req.(*Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1768,6 +1802,10 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Groups",
 			Handler:    _Daemon_Groups_Handler,
+		},
+		{
+			MethodName: "RecommendedServer",
+			Handler:    _Daemon_RecommendedServer_Handler,
 		},
 		{
 			MethodName: "Settings",

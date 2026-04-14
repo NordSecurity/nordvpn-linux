@@ -9,6 +9,7 @@ DEFAULT_USER_ID=$(id -u ${DEFAULT_USER})
 ENV=$(ps --no-headers -o comm 1)
 NORDVPN_GROUP="nordvpn"
 ADD_USER_MESSAGE="Adding user '$DEFAULT_USER' to the group '$NORDVPN_GROUP'"
+LIBS_DIR="/usr/lib/nordvpn"
 
 installSuccess="NordVPN for Linux successfully installed!"
 userAddMessage=', please re-login or execute `su - $USER` in the current shell'
@@ -25,7 +26,10 @@ userDelMessage="To limit access exclusively to the root user, remove all users f
 helpMessage="If you need help using the app, use the command 'nordvpn --help'."
 
 # update configuration and shared library cache for linker to find .so files
-echo "/usr/lib/nordvpn" > /etc/ld.so.conf.d/nordvpn.conf
+echo "${LIBS_DIR}" > /etc/ld.so.conf.d/nordvpn.conf
+
+# adjust permissions of shared objects
+chmod 0644 "${LIBS_DIR}"/*.so
 
 groupadd --system "$NORDVPN_GROUP" 1>/dev/null 2> /dev/null
 groupCreated=$?

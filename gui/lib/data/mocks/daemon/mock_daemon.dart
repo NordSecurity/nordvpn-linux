@@ -375,4 +375,18 @@ final class MockDaemon extends DaemonServiceBase {
   Future<Payload> pauseConnection(ServiceCall call, PauseRequest request) {
     return vpnStatus.pauseConnection(request.seconds);
   }
+
+  @override
+  Future<RecommendedServerLocation> recommendedServer(
+    ServiceCall call,
+    Empty request,
+  ) {
+    return Future.value(
+      RecommendedServerLocation(
+        cityName: "Dallas",
+        countryCode: "US",
+        countryName: "United States",
+      ),
+    );
+  }
 }

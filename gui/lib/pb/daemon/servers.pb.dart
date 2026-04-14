@@ -388,6 +388,85 @@ class ServersResponse extends $pb.GeneratedMessage {
   void clearError() => $_clearField(2);
 }
 
+class RecommendedServerLocation extends $pb.GeneratedMessage {
+  factory RecommendedServerLocation({
+    $core.String? countryCode,
+    $core.String? countryName,
+    $core.String? cityName,
+  }) {
+    final result = create();
+    if (countryCode != null) result.countryCode = countryCode;
+    if (countryName != null) result.countryName = countryName;
+    if (cityName != null) result.cityName = cityName;
+    return result;
+  }
+
+  RecommendedServerLocation._();
+
+  factory RecommendedServerLocation.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory RecommendedServerLocation.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'RecommendedServerLocation',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'countryCode')
+    ..aOS(2, _omitFieldNames ? '' : 'countryName')
+    ..aOS(3, _omitFieldNames ? '' : 'cityName')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RecommendedServerLocation clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  RecommendedServerLocation copyWith(
+          void Function(RecommendedServerLocation) updates) =>
+      super.copyWith((message) => updates(message as RecommendedServerLocation))
+          as RecommendedServerLocation;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static RecommendedServerLocation create() => RecommendedServerLocation._();
+  @$core.override
+  RecommendedServerLocation createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static RecommendedServerLocation getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<RecommendedServerLocation>(create);
+  static RecommendedServerLocation? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get countryCode => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set countryCode($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasCountryCode() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearCountryCode() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get countryName => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set countryName($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasCountryName() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearCountryName() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get cityName => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set cityName($core.String value) => $_setString(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasCityName() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearCityName() => $_clearField(3);
+}
+
 const $core.bool _omitFieldNames =
     $core.bool.fromEnvironment('protobuf.omit_field_names');
 const $core.bool _omitMessageNames =
