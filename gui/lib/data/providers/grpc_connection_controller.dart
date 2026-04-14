@@ -99,7 +99,11 @@ class GrpcConnectionController extends _$GrpcConnectionController {
 
     logger.i("state changed to $newState");
     if (newState is AsyncError) {
-      ref.read(toastsProvider.notifier).closeToast();
+      try {
+        ref.read(toastsProvider.notifier).closeToast();
+      } on StateError catch (e) {
+        logger.w("Failed to close toast: $e");
+      }
     }
     state = newState;
   }
