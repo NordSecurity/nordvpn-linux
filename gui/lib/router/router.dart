@@ -26,10 +26,11 @@ final class _RoutePathNotifier extends ChangeNotifier {
     _router.routerDelegate.addListener(_onRouteChanged);
   }
 
-  String get path =>
-      _router.routerDelegate.currentConfiguration.uri.toString();
+  String get path => _router.routerDelegate.currentConfiguration.uri.toString();
 
-  void _onRouteChanged() => notifyListeners();
+  // defer the notification with Future() so it runs after
+  // the current build frame completes
+  void _onRouteChanged() => Future(notifyListeners);
 
   @override
   void dispose() {
