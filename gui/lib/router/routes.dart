@@ -47,6 +47,15 @@ enum AppRoute {
   errorScreen,
   consentScreen;
 
+  bool get blocksToast => switch (this) {
+    AppRoute.errorScreen ||
+    AppRoute.login ||
+    AppRoute.loadingScreen ||
+    AppRoute.consentScreen =>
+      true,
+    _ => false,
+  };
+
   @override
   String toString() {
     return switch (this) {
