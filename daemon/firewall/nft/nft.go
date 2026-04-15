@@ -100,7 +100,7 @@ func (n *nft) configure(config firewall.Config) error {
 	}
 
 	if config.MeshnetInfo != nil {
-		if !config.MeshnetInfo.BlockFileshare {
+		if !config.BlockFileshare {
 			if err := n.addFilesharePeers(config.MeshnetInfo.MeshnetMap, nftCtx); err != nil {
 				return err
 			}

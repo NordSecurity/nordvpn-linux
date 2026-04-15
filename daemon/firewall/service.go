@@ -25,13 +25,14 @@ type Config struct {
 	TunnelInterface string
 	Allowlist       config.Allowlist
 	KillSwitch      bool
-	MeshnetInfo     *MeshInfo
+	// is controlled by the fileshare process monitoring
+	BlockFileshare bool
+	MeshnetInfo    *MeshInfo
 }
 
 type MeshInfo struct {
-	MeshnetMap     mesh.MachineMap
-	MeshInterface  string
-	BlockFileshare bool
+	MeshnetMap    mesh.MachineMap
+	MeshInterface string
 }
 
 func NewMeshInfo(meshnetMap mesh.MachineMap, meshInterface string) *MeshInfo {
@@ -87,8 +88,6 @@ func WithMeshnetInfo(meshInfo *MeshInfo) Option {
 
 func WithBlockFileshare(block bool) Option {
 	return func(c *Config) {
-		if c.MeshnetInfo != nil {
-			c.MeshnetInfo.BlockFileshare = block
-		}
+		c.BlockFileshare = block
 	}
 }

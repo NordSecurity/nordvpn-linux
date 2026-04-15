@@ -205,6 +205,7 @@ func main() {
 	fw := firewall.NewFirewall(
 		nft.NewNft(cfg.FirewallMark),
 		cfg.Firewall,
+		Environment,
 		daemonEvents.Debugger.DebuggerEvents,
 	)
 

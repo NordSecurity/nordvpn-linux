@@ -1141,6 +1141,10 @@ func (netw *Combined) configureFileshareAccess(block bool) error {
 		return nil
 	}
 
+	if netw.fwConfig.BlockFileshare == block {
+		return nil
+	}
+
 	cfg := netw.fwConfig.CopyWith(
 		firewall.WithBlockFileshare(block),
 	)

@@ -23,17 +23,20 @@ type Firewall struct {
 	impl           FirewallBackend
 	enabled        bool
 	debuggerEvents events.Publisher[events.DebuggerEvent]
+	appEnvironment string
 }
 
 // NewFirewall produces an instance of Firewall.
 func NewFirewall(
 	impl FirewallBackend,
 	enabled bool,
+	appEnvironment string,
 	debuggerEvents events.Publisher[events.DebuggerEvent],
 ) *Firewall {
 	return &Firewall{
 		impl:           impl,
 		enabled:        enabled,
+		appEnvironment: appEnvironment,
 		debuggerEvents: debuggerEvents,
 	}
 }
@@ -47,6 +50,9 @@ func (fw *Firewall) Configure(config Config) error {
 	}
 
 	log.Println(internal.InfoPrefix, logPrefix, "configuring firewall")
+	if internal.IsDevEnv(fw.appEnvironment) {
+		log.Println(internal.DebugPrefix, logPrefix, "configure fw from", internal.GetStack())
+	}
 
 	err := fw.impl.Configure(config)
 	fw.emitConfigureEvent(config, err)
