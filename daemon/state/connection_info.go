@@ -284,3 +284,10 @@ func (cs *ConnectionInfo) SetServerSelectionData(serverSelectionRule config.Serv
 		serverFromAPI:       serverFromAPI,
 	}
 }
+
+// IsPaused return true if the connection is currently paused, false otherwise
+func (cs *ConnectionInfo) IsPaused() bool {
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+	return cs.pauseData != nil
+}

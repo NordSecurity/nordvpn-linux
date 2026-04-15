@@ -36,7 +36,7 @@ final class ConnectionCardServerInfo extends ConsumerWidget {
   String _buildServerInfoLabel(
     RecommendedServerLocation? fastestServerLocation,
   ) {
-    if (vpnStatus.isDisconnected()) {
+    if (vpnStatus.isDisconnected() || vpnStatus.isPaused()) {
       return _buildDisconnectedServerInfo(fastestServerLocation);
     }
 

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
@@ -43,4 +44,7 @@ func (r *RPC) PauseConnection(ctx context.Context, in *pb.PauseRequest) (*pb.Pay
 
 func (r *RPC) CancelPause() {
 	r.pauseManager.CancelReconnection()
+	//invariant: if the pause gets cancelled, the application state is then disconnected
+	//send out status update here, so the fontend can update its state accordingly
+	r.events.Service.Disconnect.Publish(events.DataDisconnect{})
 }
