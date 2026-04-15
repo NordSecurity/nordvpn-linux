@@ -10,6 +10,9 @@ import (
 )
 
 func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, error) {
+	if r.connectionInfo.IsPaused() {
+		r.CancelPause()
+	}
 	result := access.Logout(access.LogoutInput{
 		AuthChecker:                  r.ac,
 		CredentialsAPI:               r.credentialsAPI,

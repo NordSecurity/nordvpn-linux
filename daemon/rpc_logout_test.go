@@ -3,6 +3,7 @@ package daemon
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -10,9 +11,11 @@ import (
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
+	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
@@ -22,6 +25,7 @@ import (
 )
 
 func TestLogout_Token(t *testing.T) {
+	category.Set(t, category.Integration)
 	cfgManagerMock := newMockConfigManager()
 	fs := fs.NewSystemFileHandleMock(t)
 
@@ -38,6 +42,8 @@ func TestLogout_Token(t *testing.T) {
 			Service: &daemonevents.ServiceEvents{Disconnect: &daemonevents.MockPublisherSubscriber[events.DataDisconnect]{}},
 		},
 		recentVPNConnStore: recents.NewRecentConnectionsStore("/test/path", &fs, nil),
+		pauseManager:       &mock.PauseSchedulerMock{},
+		connectionInfo:     state.NewConnectionInfo(),
 	}
 
 	tests := []struct {
@@ -87,6 +93,60 @@ func TestLogout_Token(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, test.result, resp.Type)
 			assert.Equal(t, "", cfgManagerMock.c.MeshPrivateKey, "Mesh private key not removed after logout.")
+		})
+	}
+}
+
+func TestLogout_Pause(t *testing.T) {
+	category.Set(t, category.Integration)
+	cfgManagerMock := newMockConfigManager()
+	fs := fs.NewSystemFileHandleMock(t)
+	pauseSchedulerMock := &mock.PauseSchedulerMock{}
+
+	tests := []struct {
+		name                     string
+		isDataDisconnectExpected bool
+	}{
+		{
+			name:                     "logout while pause active, disconect event shall be emitted",
+			isDataDisconnectExpected: true,
+		},
+		{
+			name:                     "logout while no pause active, disconnect event shall not be emitted",
+			isDataDisconnectExpected: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mockedDisconnectEvents := &daemonevents.MockPublisherSubscriber[events.DataDisconnect]{}
+			connectionInfo := state.NewConnectionInfo()
+
+			rpc := RPC{
+				ac:             &workingLoginChecker{},
+				cm:             cfgManagerMock,
+				norduser:       &testnorduser.MockNorduserCombinedService{},
+				netw:           &networker.Mock{},
+				ncClient:       &mock.NotificationClientMock{},
+				publisher:      &subs.Subject[string]{},
+				credentialsAPI: &testcore.CredentialsAPIMock{},
+				events: &daemonevents.Events{
+					User:    &daemonevents.LoginEvents{Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{}},
+					Service: &daemonevents.ServiceEvents{Disconnect: mockedDisconnectEvents},
+				},
+				pauseManager:       pauseSchedulerMock,
+				connectionInfo:     connectionInfo,
+				recentVPNConnStore: recents.NewRecentConnectionsStore("/test/path", &fs, nil),
+			}
+
+			if test.isDataDisconnectExpected {
+				//simulate pause is activated
+				connectionInfo.Pause(time.Now(), time.Second*60*5)
+			}
+			// actual response code is not relevant for this test
+			_, err := rpc.Logout(context.Background(), &pb.LogoutRequest{PersistToken: false})
+			assert.NoError(t, err)
+			assert.Equal(t, test.isDataDisconnectExpected, mockedDisconnectEvents.EventPublished)
 		})
 	}
 }
