@@ -11,6 +11,7 @@ abstract class RouteMetadata with _$RouteMetadata {
   const factory RouteMetadata({
     required AppRoute route,
     required Widget screen,
+    required bool isBlocking,
     String? displayName,
     Function(BuildContext)? onPressed,
   }) = _RouteMetadata;
