@@ -627,6 +627,20 @@ func (n *nft) addMeshPeerToInternet(config firewall.Config, nftCtx *nftContext) 
 		UserData: userdata.AppendString(nil, userdata.TypeComment, "traffic from not allowed peers"),
 	})
 
+	if nftCtx.meshLanAllowedPeers != nil {
+		// ip daddr @lan_ranges ip saddr != @peer_local_network_access drop
+		n.conn.AddRule(&nftables.Rule{
+			Table: nftCtx.table,
+			Chain: chain,
+			Exprs: buildRules(
+				&expr.Verdict{Kind: expr.VerdictDrop},
+				checkIPIsInSet(nftCtx.lanRanges, matchDest),
+				checkIPIsNotInSet(nftCtx.meshLanAllowedPeers, matchSource),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "mesh peer to LAN"),
+		})
+	}
+
 	if nftCtx.allowlistSubnets != nil {
 		// ip daddr @allowed_subnets accept
 		n.conn.AddRule(&nftables.Rule{
@@ -666,19 +680,6 @@ func (n *nft) addMeshPeerToInternet(config firewall.Config, nftCtx *nftContext) 
 		})
 	}
 
-	if nftCtx.meshLanAllowedPeers != nil {
-		// ip daddr @lan_ranges ip saddr != @peer_local_network_access drop
-		n.conn.AddRule(&nftables.Rule{
-			Table: nftCtx.table,
-			Chain: chain,
-			Exprs: buildRules(
-				&expr.Verdict{Kind: expr.VerdictDrop},
-				checkIPIsInSet(nftCtx.meshLanAllowedPeers, matchDest),
-				checkIPIsNotInSet(nftCtx.meshLanAllowedPeers, matchSource),
-			),
-			UserData: userdata.AppendString(nil, userdata.TypeComment, "mesh peer to LAN"),
-		})
-	}
 	// allow traffic thru VPN when connected
 	// or when no VPN connected and KS=0, everywhere
 	if len(config.TunnelInterface) > 0 || !config.KillSwitch {
@@ -722,6 +723,21 @@ func (n *nft) addInternetToMeshPeer(config firewall.Config, nftCtx *nftContext) 
 		UserData: userdata.AppendString(nil, userdata.TypeComment, "traffic to allowed peers"),
 	})
 
+
+	if nftCtx.meshLanAllowedPeers != nil {
+		// ip saddr @lan_ranges ip daddr != @peer_local_network_access drop
+		n.conn.AddRule(&nftables.Rule{
+			Table: nftCtx.table,
+			Chain: chain,
+			Exprs: buildRules(
+				&expr.Verdict{Kind: expr.VerdictDrop},
+				checkIPIsInSet(nftCtx.lanRanges, matchSource),
+				checkIPIsNotInSet(nftCtx.meshLanAllowedPeers, matchDest),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "LAN to mesh peer"),
+		})
+	}
+
 	if nftCtx.allowlistSubnets != nil {
 		// ip saddr @allowed_subnets accept
 		n.conn.AddRule(&nftables.Rule{
@@ -761,19 +777,6 @@ func (n *nft) addInternetToMeshPeer(config firewall.Config, nftCtx *nftContext) 
 		})
 	}
 
-	if nftCtx.meshLanAllowedPeers != nil {
-		// ip saddr @lan_ranges ip daddr != @peer_local_network_access drop
-		n.conn.AddRule(&nftables.Rule{
-			Table: nftCtx.table,
-			Chain: chain,
-			Exprs: buildRules(
-				&expr.Verdict{Kind: expr.VerdictDrop},
-				checkIPIsInSet(nftCtx.meshLanAllowedPeers, matchSource),
-				checkIPIsNotInSet(nftCtx.meshLanAllowedPeers, matchDest),
-			),
-			UserData: userdata.AppendString(nil, userdata.TypeComment, "LAN to mesh peer"),
-		})
-	}
 	if len(config.MeshnetInfo.MeshInterface) > 0 {
 		// oifname "nordlynx" ct state established,related accept
 		n.conn.AddRule(&nftables.Rule{
