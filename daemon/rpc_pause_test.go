@@ -27,6 +27,7 @@ func TestPauseConnection(t *testing.T) {
 		pauseDuration         int
 		disconnectErr         error
 		isMeshPeer            bool
+		isPaused              bool
 		expectedResponseType  int64
 		expectedPauseDuration time.Duration
 		expectedState         pb.ConnectionState
@@ -53,6 +54,14 @@ func TestPauseConnection(t *testing.T) {
 			expectedResponseType:  internal.CodeSuccess,
 			expectedPauseDuration: 20 * time.Second,
 			expectedVPNState:      false,
+		},
+		{
+			name:                 "VPN is paused, pause returns nothing to do",
+			isVPNActive:          true,
+			pauseDuration:        20,
+			isPaused:             true,
+			expectedResponseType: internal.CodeNothingToDo,
+			expectedVPNState:     true,
 		},
 		{
 			name:                 "disconnect failure",
@@ -88,6 +97,9 @@ func TestPauseConnection(t *testing.T) {
 
 			connectionInfo := state.NewConnectionInfo()
 			connectionInfo.ConnectionStatusNotifyConnect(events.DataConnect{IsMeshnetPeer: test.isMeshPeer})
+			if test.isPaused {
+				connectionInfo.Pause(time.Now(), 0)
+			}
 
 			r := RPC{
 				netw:               &networkerMock,

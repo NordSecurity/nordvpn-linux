@@ -15,6 +15,11 @@ func (r *RPC) PauseConnection(ctx context.Context, in *pb.PauseRequest) (*pb.Pay
 		return &pb.Payload{Type: internal.CodeNothingToDo}, nil
 	}
 
+	connectionStatus := r.connectionInfo.Status()
+	if connectionStatus.State == pb.ConnectionState_PAUSED {
+		return &pb.Payload{Type: internal.CodeNothingToDo}, nil
+	}
+
 	if r.connectionInfo.Status().IsMeshnetPeer {
 		return &pb.Payload{Type: internal.CodePauseAttemptWhenConnectedToMeshPeer}, nil
 	}
@@ -26,7 +31,7 @@ func (r *RPC) PauseConnection(ctx context.Context, in *pb.PauseRequest) (*pb.Pay
 	pauseDuration := time.Duration(in.Seconds) * time.Second
 	r.pauseManager.ScheduleReconnection(pauseDuration)
 
-	_, err := r.DoDisconnect()
+	_, err := r.DoPause(pauseDuration)
 	if err != nil {
 		r.pauseManager.CancelReconnection()
 		log.Println(internal.ErrorPrefix, "failed to disconnect when pausing the connection:", err)
@@ -34,4 +39,8 @@ func (r *RPC) PauseConnection(ctx context.Context, in *pb.PauseRequest) (*pb.Pay
 	}
 
 	return &pb.Payload{Type: internal.CodeSuccess}, nil
+}
+
+func (r *RPC) CancelPause() {
+	r.pauseManager.CancelReconnection()
 }

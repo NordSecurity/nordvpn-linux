@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$RouteMetadata {
 
- AppRoute get route; Widget get screen; String? get displayName;  Function(BuildContext)? get onPressed;
+ AppRoute get route; Widget get screen; bool get isBlocking; String? get displayName;  Function(BuildContext)? get onPressed;
 /// Create a copy of RouteMetadata
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $RouteMetadataCopyWith<RouteMetadata> get copyWith => _$RouteMetadataCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is RouteMetadata&&(identical(other.route, route) || other.route == route)&&(identical(other.screen, screen) || other.screen == screen)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.onPressed, onPressed) || other.onPressed == onPressed));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is RouteMetadata&&(identical(other.route, route) || other.route == route)&&(identical(other.screen, screen) || other.screen == screen)&&(identical(other.isBlocking, isBlocking) || other.isBlocking == isBlocking)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.onPressed, onPressed) || other.onPressed == onPressed));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,route,screen,displayName,onPressed);
+int get hashCode => Object.hash(runtimeType,route,screen,isBlocking,displayName,onPressed);
 
 @override
 String toString() {
-  return 'RouteMetadata(route: $route, screen: $screen, displayName: $displayName, onPressed: $onPressed)';
+  return 'RouteMetadata(route: $route, screen: $screen, isBlocking: $isBlocking, displayName: $displayName, onPressed: $onPressed)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $RouteMetadataCopyWith<$Res>  {
   factory $RouteMetadataCopyWith(RouteMetadata value, $Res Function(RouteMetadata) _then) = _$RouteMetadataCopyWithImpl;
 @useResult
 $Res call({
- AppRoute route, Widget screen, String? displayName,  Function(BuildContext)? onPressed
+ AppRoute route, Widget screen, bool isBlocking, String? displayName,  Function(BuildContext)? onPressed
 });
 
 
@@ -62,11 +62,12 @@ class _$RouteMetadataCopyWithImpl<$Res>
 
 /// Create a copy of RouteMetadata
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? route = null,Object? screen = null,Object? displayName = freezed,Object? onPressed = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? route = null,Object? screen = null,Object? isBlocking = null,Object? displayName = freezed,Object? onPressed = freezed,}) {
   return _then(_self.copyWith(
 route: null == route ? _self.route : route // ignore: cast_nullable_to_non_nullable
 as AppRoute,screen: null == screen ? _self.screen : screen // ignore: cast_nullable_to_non_nullable
-as Widget,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as Widget,isBlocking: null == isBlocking ? _self.isBlocking : isBlocking // ignore: cast_nullable_to_non_nullable
+as bool,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String?,onPressed: freezed == onPressed ? _self.onPressed : onPressed // ignore: cast_nullable_to_non_nullable
 as  Function(BuildContext)?,
   ));
@@ -153,10 +154,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( AppRoute route,  Widget screen,  String? displayName,   Function(BuildContext)? onPressed)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( AppRoute route,  Widget screen,  bool isBlocking,  String? displayName,   Function(BuildContext)? onPressed)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _RouteMetadata() when $default != null:
-return $default(_that.route,_that.screen,_that.displayName,_that.onPressed);case _:
+return $default(_that.route,_that.screen,_that.isBlocking,_that.displayName,_that.onPressed);case _:
   return orElse();
 
 }
@@ -174,10 +175,10 @@ return $default(_that.route,_that.screen,_that.displayName,_that.onPressed);case
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( AppRoute route,  Widget screen,  String? displayName,   Function(BuildContext)? onPressed)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( AppRoute route,  Widget screen,  bool isBlocking,  String? displayName,   Function(BuildContext)? onPressed)  $default,) {final _that = this;
 switch (_that) {
 case _RouteMetadata():
-return $default(_that.route,_that.screen,_that.displayName,_that.onPressed);case _:
+return $default(_that.route,_that.screen,_that.isBlocking,_that.displayName,_that.onPressed);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -194,10 +195,10 @@ return $default(_that.route,_that.screen,_that.displayName,_that.onPressed);case
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( AppRoute route,  Widget screen,  String? displayName,   Function(BuildContext)? onPressed)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( AppRoute route,  Widget screen,  bool isBlocking,  String? displayName,   Function(BuildContext)? onPressed)?  $default,) {final _that = this;
 switch (_that) {
 case _RouteMetadata() when $default != null:
-return $default(_that.route,_that.screen,_that.displayName,_that.onPressed);case _:
+return $default(_that.route,_that.screen,_that.isBlocking,_that.displayName,_that.onPressed);case _:
   return null;
 
 }
@@ -209,11 +210,12 @@ return $default(_that.route,_that.screen,_that.displayName,_that.onPressed);case
 
 
 class _RouteMetadata extends RouteMetadata {
-  const _RouteMetadata({required this.route, required this.screen, this.displayName, this.onPressed}): super._();
+  const _RouteMetadata({required this.route, required this.screen, required this.isBlocking, this.displayName, this.onPressed}): super._();
   
 
 @override final  AppRoute route;
 @override final  Widget screen;
+@override final  bool isBlocking;
 @override final  String? displayName;
 @override final   Function(BuildContext)? onPressed;
 
@@ -227,16 +229,16 @@ _$RouteMetadataCopyWith<_RouteMetadata> get copyWith => __$RouteMetadataCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RouteMetadata&&(identical(other.route, route) || other.route == route)&&(identical(other.screen, screen) || other.screen == screen)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.onPressed, onPressed) || other.onPressed == onPressed));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _RouteMetadata&&(identical(other.route, route) || other.route == route)&&(identical(other.screen, screen) || other.screen == screen)&&(identical(other.isBlocking, isBlocking) || other.isBlocking == isBlocking)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.onPressed, onPressed) || other.onPressed == onPressed));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,route,screen,displayName,onPressed);
+int get hashCode => Object.hash(runtimeType,route,screen,isBlocking,displayName,onPressed);
 
 @override
 String toString() {
-  return 'RouteMetadata(route: $route, screen: $screen, displayName: $displayName, onPressed: $onPressed)';
+  return 'RouteMetadata(route: $route, screen: $screen, isBlocking: $isBlocking, displayName: $displayName, onPressed: $onPressed)';
 }
 
 
@@ -247,7 +249,7 @@ abstract mixin class _$RouteMetadataCopyWith<$Res> implements $RouteMetadataCopy
   factory _$RouteMetadataCopyWith(_RouteMetadata value, $Res Function(_RouteMetadata) _then) = __$RouteMetadataCopyWithImpl;
 @override @useResult
 $Res call({
- AppRoute route, Widget screen, String? displayName,  Function(BuildContext)? onPressed
+ AppRoute route, Widget screen, bool isBlocking, String? displayName,  Function(BuildContext)? onPressed
 });
 
 
@@ -264,11 +266,12 @@ class __$RouteMetadataCopyWithImpl<$Res>
 
 /// Create a copy of RouteMetadata
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? route = null,Object? screen = null,Object? displayName = freezed,Object? onPressed = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? route = null,Object? screen = null,Object? isBlocking = null,Object? displayName = freezed,Object? onPressed = freezed,}) {
   return _then(_RouteMetadata(
 route: null == route ? _self.route : route // ignore: cast_nullable_to_non_nullable
 as AppRoute,screen: null == screen ? _self.screen : screen // ignore: cast_nullable_to_non_nullable
-as Widget,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
+as Widget,isBlocking: null == isBlocking ? _self.isBlocking : isBlocking // ignore: cast_nullable_to_non_nullable
+as bool,displayName: freezed == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String?,onPressed: freezed == onPressed ? _self.onPressed : onPressed // ignore: cast_nullable_to_non_nullable
 as  Function(BuildContext)?,
   ));

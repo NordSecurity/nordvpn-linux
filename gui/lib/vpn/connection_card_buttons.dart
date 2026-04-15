@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:nordvpn/constants.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/app_settings.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
@@ -74,36 +73,24 @@ final class ConnectionCardButtons extends ConsumerWidget {
           ),
         ];
       }
+      final pauseOptions = <({String label, PauseLength pause})>[
+        (label: t.ui.pauseFor5Min,    pause: PauseLength.mins5),
+        (label: t.ui.pauseFor15Min,   pause: PauseLength.mins15),
+        (label: t.ui.pauseFor30Min,   pause: PauseLength.mins30),
+        (label: t.ui.pauseFor1Hour,   pause: PauseLength.hour1),
+        (label: t.ui.pauseFor24Hours, pause: PauseLength.hours24),
+      ];
       return [
         Expanded(
           child: ContextMenu(
             key: ConnectionCardButtons.pauseConnectionButtonKey,
             matchAnchorWidth: true,
             items: [
-              ContextMenuItem(
-                label: t.ui.pauseFor5Min,
-                onTap: () async =>
-                    await _pauseConnection(ref, PauseLength.mins5),
-              ),
-              ContextMenuItem(
-                label: t.ui.pauseFor15Min,
-                onTap: () async =>
-                    await _pauseConnection(ref, PauseLength.mins15),
-              ),
-              ContextMenuItem(
-                label: t.ui.pauseFor30Min,
-                onTap: () async =>
-                    await _pauseConnection(ref, PauseLength.mins30),
-              ),
-              ContextMenuItem(
-                label: t.ui.pauseFor1Hour,
-                onTap: () async =>
-                    await _pauseConnection(ref, PauseLength.hour1),
-              ),
-              ContextMenuItem(
-                label: t.ui.pauseFor24Hours,
-                onTap: () async =>
-                    await _pauseConnection(ref, PauseLength.hours24),
+              ...pauseOptions.map(
+                (opt) => ContextMenuItem(
+                  label: opt.label,
+                  onTap: () async => await _pauseConnection(ref, opt.pause),
+                ),
               ),
               ContextMenuItem(
                 key: ConnectionCardButtons.disconnectMenuItemKey,
