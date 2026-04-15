@@ -231,7 +231,7 @@ def is_connected() -> bool:
 
 def is_disconnected(retry=5) -> bool:
     """Returns True when not connected to VPN server or throws AssertionError otherwise."""
-    assert firewall.is_empty()
+    assert not firewall.is_active()
     assert daemon.is_disconnected()
     assert is_available(retry)
     return True
