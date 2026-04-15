@@ -2,6 +2,7 @@ import 'package:grpc/grpc.dart' hide ConnectionState;
 import 'package:nordvpn/data/models/city.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
 import 'package:nordvpn/data/models/country.dart';
+import 'package:nordvpn/data/models/pause.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/data/providers/app_state_provider.dart';
 import 'package:nordvpn/data/providers/popups_provider.dart';
@@ -63,8 +64,8 @@ class VpnStatusController extends _$VpnStatusController
 
   Future<void> disconnect() => _doAndShowPopup((vpn) => vpn.disconnect());
 
-  Future<void> pauseConnection(int pauseSeconds) =>
-      _doAndShowPopup((vpn) => vpn.pauseConnection(pauseSeconds));
+  Future<void> pauseConnection(PauseLength pauseValue) =>
+      _doAndShowPopup((vpn) => vpn.pauseConnection(pauseValue));
 
   Future<int> cancelConnect() => _doAndShowPopup((vpn) => vpn.cancelConnect());
 
