@@ -23,10 +23,13 @@ class GrpcConnectionController extends _$GrpcConnectionController {
   final DaemonClient _client = createDaemonClient();
   late Timer _pingTimer;
   late StreamSubscription _errorInterceptorSubscription;
+  late StreamSubscription _connectionStateSubscription;
+  bool _disposed = false;
 
   @override
   FutureOr<bool> build() async {
-    sl<ClientChannel>().onConnectionStateChanged.listen(
+    _connectionStateSubscription =
+        sl<ClientChannel>().onConnectionStateChanged.listen(
       (event) => _onConnectionStateChanged(event),
       onError: (err) => _onConnectionError(err),
       cancelOnError: false,
@@ -54,6 +57,8 @@ class GrpcConnectionController extends _$GrpcConnectionController {
   // Update state only when the new state is different,
   // to prevent too many widget rebuilds
   void _updateState(AsyncValue<bool> newState) {
+    if (_disposed) return;
+
     if (state == newState) {
       return;
     }
@@ -101,11 +106,15 @@ class GrpcConnectionController extends _$GrpcConnectionController {
   }
 
   void _dispose() {
+    _disposed = true;
     _pingTimer.cancel();
+    _connectionStateSubscription.cancel();
     _errorInterceptorSubscription.cancel();
   }
 
   void _checkApiCompatibility(int apiVersion) {
+    if (_disposed) return;
+
     if (apiVersion != DaemonApiVersion.CURRENT_VERSION.value) {
       logger.e(
         "API version error, GUI API: ${DaemonApiVersion.CURRENT_VERSION.value}, Daemon API: $apiVersion",
