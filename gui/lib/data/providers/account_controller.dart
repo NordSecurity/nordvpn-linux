@@ -9,7 +9,6 @@ import 'package:nordvpn/data/models/user_account.dart';
 import 'package:nordvpn/data/providers/app_state_provider.dart';
 import 'package:nordvpn/data/providers/grpc_connection_controller.dart';
 import 'package:nordvpn/data/providers/popups_provider.dart';
-import 'package:nordvpn/data/providers/toasts_provider.dart';
 import 'package:nordvpn/data/providers/servers_list_controller.dart';
 import 'package:nordvpn/data/repository/account_repository.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
@@ -162,7 +161,6 @@ final class AccountController extends _$AccountController
       logger.e("login thrown unknown error: $e");
     }
 
-    ref.read(toastsProvider.notifier).closeToast();
     _showError(status);
   }
 
