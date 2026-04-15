@@ -57,7 +57,7 @@ func TestFileshareBlockAllow(t *testing.T) {
 	})
 
 	// block the fileshare
-	cfg.MeshnetInfo.BlockFileshare = true
+	cfg.BlockFileshare = true
 	assert.NoError(t, n.Configure(cfg))
 
 	withNftCommandOutput(t, args, func(out string) {
@@ -66,7 +66,7 @@ func TestFileshareBlockAllow(t *testing.T) {
 	})
 
 	// allow fileshare
-	cfg.MeshnetInfo.BlockFileshare = false
+	cfg.BlockFileshare = false
 	assert.NoError(t, n.Configure(cfg))
 
 	withNftCommandOutput(t, args, func(out string) {
