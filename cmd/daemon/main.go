@@ -435,7 +435,8 @@ func main() {
 	connectionInfo := state.NewConnectionInfo()
 	statePublisher := state.NewState()
 	internalVpnEvents.Subscribe(connectionInfo)
-	connectionInfo.Subscribe(statePublisher)
+	connectionInfo.SubscribeToInternalStateChanges(statePublisher)
+	connectionInfo.SubscribeToPauseCancelled(analytics)
 	daemonEvents.Service.Connect.Subscribe(connectionInfo.ConnectionStatusNotifyConnect)
 	daemonEvents.Service.Disconnect.Subscribe(connectionInfo.ConnectionStatusNotifyDisconnect)
 	daemonEvents.User.Subscribe(statePublisher)
@@ -761,6 +762,8 @@ func main() {
 	norduserService.StopAll()
 
 	httpCancel()
+
+	rpc.CancelPause()
 
 	if err := notificationClient.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping NC:", err)

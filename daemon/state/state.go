@@ -53,7 +53,7 @@ func (s *StatePublisher) notify(e any) {
 	s.subscribers = newSubs
 }
 
-func (s *StatePublisher) NotifyChangeState(e events.DataConnectChangeNotif) error {
+func (s *StatePublisher) OnStateChange(e events.DataConnectChangeNotif) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
