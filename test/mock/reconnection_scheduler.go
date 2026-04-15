@@ -12,7 +12,10 @@ func (p *PauseSchedulerMock) ScheduleReconnection(duration time.Duration) {
 	p.PauseDuration = duration
 }
 
-func (p *PauseSchedulerMock) CancelReconnection() {
+func (p *PauseSchedulerMock) CancelReconnection() time.Duration {
+	duration := p.PauseDuration
 	p.ConnectionScheduled = false
 	p.PauseDuration = 0
+
+	return duration
 }

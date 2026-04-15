@@ -28,7 +28,6 @@ func isDedicatedIP(server core.Server) bool {
 
 // Connect initiates and handles the VPN connection process
 func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retErr error) {
-	r.pauseManager.CancelReconnection()
 	return r.connectFromRequest(in, srv, pb.ConnectionSource_MANUAL)
 }
 
@@ -58,11 +57,13 @@ func (r *RPC) connectFromRequest(in *pb.ConnectRequest, srv pb.Daemon_ConnectSer
 	return err
 }
 
-func (r *RPC) connectFromLastSelection(srv pb.Daemon_ConnectServer, source pb.ConnectionSource) error {
+func (r *RPC) connectFromLastSelection(srv pb.Daemon_ConnectServer,
+	source pb.ConnectionSource,
+	pauseDuration time.Duration) error {
 	var err error
 	var didFail bool
 	if !r.connectContext.TryExecuteWith(func(ctx context.Context) {
-		didFail, err = r.connectWithStoredServerSelection(ctx, srv)
+		didFail, err = r.connectWithStoredServerSelection(ctx, srv, pauseDuration)
 	}) {
 		return srv.Send(&pb.Payload{Type: internal.CodeNothingToDo})
 	}
@@ -127,7 +128,9 @@ func (r *RPC) isVPNExpired() int64 {
 	return internal.CodeSuccess
 }
 
-func (r *RPC) connectWithStoredServerSelection(ctx context.Context, srv pb.Daemon_ConnectServer) (bool, error) {
+func (r *RPC) connectWithStoredServerSelection(ctx context.Context,
+	srv pb.Daemon_ConnectServer,
+	pauseDuration time.Duration) (bool, error) {
 	if ok, err := r.ac.IsLoggedIn(); !ok {
 		if errors.Is(err, core.ErrUnauthorized) {
 			_ = srv.Send(&pb.Payload{Type: internal.CodeRevokedAccessToken})
@@ -147,7 +150,14 @@ func (r *RPC) connectWithStoredServerSelection(ctx context.Context, srv pb.Daemo
 		return true, srv.Send(&pb.Payload{Type: expirationCheckResult})
 	}
 
-	return r.connect(ctx, srv, cfg, r.lastServerSelection, r.RequestedConnParams.Get().ServerParameters, time.Now())
+	return r.connect(ctx,
+		srv,
+		cfg,
+		r.lastServerSelection,
+		r.RequestedConnParams.Get().ServerParameters,
+		time.Now(),
+		false,
+		pauseDuration)
 }
 
 func (r *RPC) connectWithParameters(ctx context.Context,
@@ -155,6 +165,7 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	srv pb.Daemon_ConnectServer,
 	source pb.ConnectionSource,
 ) (didFail bool, retErr error) {
+	pauseDuration := r.pauseManager.CancelReconnection()
 	if ok, err := r.ac.IsLoggedIn(); !ok {
 		if errors.Is(err, core.ErrUnauthorized) {
 			_ = srv.Send(&pb.Payload{Type: internal.CodeRevokedAccessToken})
@@ -217,7 +228,7 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	parameters := GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
 	r.RequestedConnParams.Set(source, parameters)
 
-	return r.connect(ctx, srv, cfg, serverSelection, parameters, connectingStartTime)
+	return r.connect(ctx, srv, cfg, serverSelection, parameters, connectingStartTime, true, pauseDuration)
 }
 
 func (r *RPC) connect(
@@ -227,6 +238,8 @@ func (r *RPC) connect(
 	serverSelection serverSelection,
 	parameters ServerParameters,
 	connectingStartTime time.Time,
+	pauseInterrupted bool,
+	pauseDuration time.Duration,
 ) (didFail bool, retErr error) {
 	country, err := serverSelection.server.Locations.Country()
 	if err != nil {
@@ -270,6 +283,9 @@ func (r *RPC) connect(
 		city = serverSelection.server.Locations[0].City.Name
 	}
 
+	serverSelectionRule := determineServerSelectionRule(parameters)
+	r.connectionInfo.SetServerSelectionData(serverSelectionRule, serverSelection.remote)
+
 	event := events.DataConnect{
 		Protocol:                cfg.AutoConnectData.Protocol,
 		Technology:              cfg.Technology,
@@ -289,6 +305,8 @@ func (r *RPC) connect(
 		TargetServerIP:          subnet.Addr(),
 		TargetServerName:        serverSelection.server.Name,
 		RecommendationUUID:      string(serverSelection.recommendationUUID),
+		PauseInterval:           pauseDuration,
+		UnpausedByUser:          pauseInterrupted,
 	}
 
 	// Send the connection attempt event
