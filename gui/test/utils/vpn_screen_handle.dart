@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
+import 'package:nordvpn/vpn/connection_card_buttons.dart';
 import 'package:nordvpn/vpn/servers_list_card.dart';
-import 'package:nordvpn/vpn/vpn_status_card.dart';
+import 'package:nordvpn/vpn/vpn.dart';
 
 import 'finders.dart';
 import 'screen_handle.dart';
@@ -15,9 +16,13 @@ final class VpnScreenHandle extends ScreenHandle {
     return widget.data;
   }
 
-  String? findStatusLabelText() {
-    final widget = app.tester.widget<Text>(statusLabelText());
-    return widget.data;
+  List<String> findStatusLabelText() {
+    final row = app.tester.widget<Row>(statusLabelText());
+    final texts = row.children
+        .whereType<Text>()
+        .map((textWidget) => textWidget.data ?? '')
+        .toList();
+    return texts;
   }
 
   Future<void> quickConnect() async {
@@ -31,8 +36,10 @@ final class VpnScreenHandle extends ScreenHandle {
   }
 
   Future<void> disconnect() async {
-    await app.tester.tap(disconnectButton());
-    await app.tester.pump();
+    await app.tester.tap(pauseConnectionButton());
+    await app.tester.pumpAndSettle(); // waits until all animations finish
+    await app.tester.tap(disconnectMenu());
+    await app.tester.pumpAndSettle();
   }
 
   bool isSubscriptionPopupVisible() {
@@ -117,7 +124,7 @@ final class VpnScreenHandle extends ScreenHandle {
 
   Finder _serversSearchTextField() {
     final finder = find.descendant(
-      of: find.byKey(VpnWidgetKeys.vpnServersListCard),
+      of: find.byKey(VpnWidget.serversListKey),
       matching: find.byType(TextField),
     );
     expect(finder, findsOne);
@@ -126,14 +133,24 @@ final class VpnScreenHandle extends ScreenHandle {
 
   Finder _goToSettings() {
     final goToSettingsFinder = find.descendant(
-      of: find.byKey(VpnWidgetKeys.vpnServersListCard),
+      of: find.byKey(VpnWidget.serversListKey),
       matching: find.byType(TextButton),
     );
     return goToSettingsFinder;
   }
 
-  Finder disconnectButton() {
-    final disconnectFinder = find.byKey(VpnWidgetKeys.vpnDisconnectButton);
+  Finder pauseConnectionButton() {
+    final disconnectFinder = find.byKey(
+      ConnectionCardButtons.pauseConnectionButtonKey,
+    );
+    expect(disconnectFinder, findsOneWidget);
+    return disconnectFinder;
+  }
+
+  Finder disconnectMenu() {
+    final disconnectFinder = find.byKey(
+      ConnectionCardButtons.disconnectMenuItemKey,
+    );
     expect(disconnectFinder, findsOneWidget);
     return disconnectFinder;
   }

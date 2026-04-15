@@ -4,11 +4,14 @@ import 'package:nordvpn/data/models/connect_arguments.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/vpn/servers_list_card.dart';
-import 'package:nordvpn/vpn/vpn_status_card.dart';
+import 'package:nordvpn/vpn/connection_card.dart';
 import 'package:nordvpn/widgets/round_container.dart';
 
 // VPN screen
 final class VpnWidget extends ConsumerWidget {
+  static const connectionCardKey = Key("vpnConnectionCard");
+  static const serversListKey = Key("vpnServersList");
+
   const VpnWidget({super.key});
 
   @override
@@ -18,17 +21,17 @@ final class VpnWidget extends ConsumerWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       spacing: theme.verticalSpaceSmall,
       children: [
-        VpnStatusCard(key: VpnWidgetKeys.vpnStatusCard),
+        ConnectionCard(key: VpnWidget.connectionCardKey),
         Expanded(
           child: RoundContainer(
             margin: EdgeInsets.only(
               top: 0,
               bottom: theme.margin,
               right: theme.margin,
-              left: theme.margin,
+              left: 0,
             ),
             child: ServersListCard(
-              key: VpnWidgetKeys.vpnServersListCard,
+              key: VpnWidget.serversListKey,
               onSelected: (args) async {
                 await _connect(ref, args);
               },

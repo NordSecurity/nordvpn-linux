@@ -99,7 +99,7 @@ class _AddPortState extends State<AddPort> {
                         // add some padding to center with the text field
                         Padding(
                           padding: EdgeInsets.only(
-                            top: appTheme.borderRadiusMedium,
+                            top: appTheme.verticalSpaceSmall,
                           ),
                           child: Text(t.ui.to, style: appTheme.body),
                         ),

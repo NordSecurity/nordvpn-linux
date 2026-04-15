@@ -29,11 +29,11 @@ void runVpnScreenTests() async {
 
       // initially, we have the server info and we are not connected
       final mainScreen = await app.goToVpnScreen();
-      expect(mainScreen.findServerInfoText(), equals(t.ui.connectToVpn));
+      expect(mainScreen.findServerInfoText(), contains("Dallas"));
 
       // connect
       app.connect(country: "FR", city: "Paris", isVirtualLocation: true);
-      await mainScreen.waitUntilFound(find.textContaining(t.ui.connected));
+      await mainScreen.waitUntilFound(find.textContaining(t.ui.secured));
 
       // now the server info changed
       expect(mainScreen.findServerInfoText(), contains("Virtual"));
@@ -43,30 +43,17 @@ void runVpnScreenTests() async {
       final app = await tester.setupIntegrationTests();
 
       final mainScreen = await app.goToVpnScreen();
-      expect(mainScreen.findStatusLabelText(), equals(t.ui.notConnected));
+      expect(mainScreen.findStatusLabelText(), contains(t.ui.notSecured));
 
       // connect to specialty server
       await mainScreen.clickSpecialtyServersTab();
       await mainScreen.clickDoubleVpnGroup();
-      await mainScreen.waitUntilFound(find.textContaining(t.ui.connected));
-      expect(
-        mainScreen.findStatusLabelText(),
-        equals("${t.ui.connected} ${t.ui.to} ${t.ui.doubleVpn}"),
-      );
+      await mainScreen.waitUntilFound(find.textContaining(t.ui.secured));
+      expect(mainScreen.findStatusLabelText(), contains(t.ui.doubleVpn));
 
       await mainScreen.clickOnionOverVpn();
-      await mainScreen.waitUntilFound(find.textContaining(t.ui.connected));
-      expect(
-        mainScreen.findStatusLabelText(),
-        equals("${t.ui.connected} ${t.ui.to} ${t.ui.onionOverVpn}"),
-      );
-
-      await mainScreen.clickP2p();
-      await mainScreen.waitUntilFound(find.textContaining(t.ui.connected));
-      expect(
-        mainScreen.findStatusLabelText(),
-        equals("${t.ui.connected} ${t.ui.to} ${t.ui.p2p}"),
-      );
+      await mainScreen.waitUntilFound(find.textContaining(t.ui.secured));
+      expect(mainScreen.findStatusLabelText(), contains(t.ui.onionOverVpn));
     });
   });
 
