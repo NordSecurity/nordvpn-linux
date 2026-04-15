@@ -3,7 +3,6 @@ package cli
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -27,7 +26,6 @@ func (c *cmd) SetTray(ctx *cli.Context) error {
 	}
 
 	daemonResp, err := c.client.SetTray(context.Background(), &pb.SetTrayRequest{
-		Uid:  int64(os.Getuid()),
 		Tray: flag,
 	})
 	if err != nil {
