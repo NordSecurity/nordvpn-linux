@@ -15,6 +15,11 @@ func (r *RPC) PauseConnection(ctx context.Context, in *pb.PauseRequest) (*pb.Pay
 		return &pb.Payload{Type: internal.CodeNothingToDo}, nil
 	}
 
+	connectionStatus := r.connectionInfo.Status()
+	if connectionStatus.State == pb.ConnectionState_PAUSED {
+		return &pb.Payload{Type: internal.CodeNothingToDo}, nil
+	}
+
 	if r.connectionInfo.Status().IsMeshnetPeer {
 		return &pb.Payload{Type: internal.CodePauseAttemptWhenConnectedToMeshPeer}, nil
 	}
