@@ -53,30 +53,17 @@ func JobRefreshMeshnet(s *Server) func() error {
 
 func JobMonitorFileshareProcess(s *Server) func() error {
 	job := monitorFileshareProcessJob{
-		isFileshareAllowed: false,
-		meshChecker:        s,
-		rulesController:    s.netw,
-		processChecker:     defaultProcessChecker{},
+		rulesController: s.netw,
+		processChecker:  defaultProcessChecker{},
 	}
 	return job.run
 }
 
 func (j *monitorFileshareProcessJob) run() error {
-	if !j.meshChecker.isMeshOn() {
-		if j.isFileshareAllowed {
-			if err := j.rulesController.ForbidFileshare(); err == nil {
-				j.isFileshareAllowed = false
-			}
-		}
-		return nil
-	}
-
 	if j.processChecker.isFileshareRunning() {
 		_ = j.rulesController.PermitFileshare()
-		j.isFileshareAllowed = true
 	} else {
 		_ = j.rulesController.ForbidFileshare()
-		j.isFileshareAllowed = false
 	}
 
 	return nil
@@ -89,14 +76,8 @@ func (defaultProcessChecker) isFileshareRunning() bool {
 }
 
 type monitorFileshareProcessJob struct {
-	isFileshareAllowed bool
-	meshChecker        meshChecker
-	rulesController    rulesController
-	processChecker     processChecker
-}
-
-type meshChecker interface {
-	isMeshOn() bool
+	rulesController rulesController
+	processChecker  processChecker
 }
 
 type rulesController interface {
