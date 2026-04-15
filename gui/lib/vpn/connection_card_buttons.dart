@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/app_settings.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
+import 'package:nordvpn/data/models/pause.dart';
 import 'package:nordvpn/data/models/server_info.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
@@ -72,12 +73,12 @@ final class ConnectionCardButtons extends ConsumerWidget {
           ),
         ];
       }
-      final pauseOptions = <({String label, int seconds})>[
-        (label: t.ui.pauseFor5Min,    seconds: 5  * 60),
-        (label: t.ui.pauseFor15Min,   seconds: 15 * 60),
-        (label: t.ui.pauseFor30Min,   seconds: 30 * 60),
-        (label: t.ui.pauseFor1Hour,   seconds: 60 * 60),
-        (label: t.ui.pauseFor24Hours, seconds: 24 * 60 * 60),
+      final pauseOptions = <({String label, PauseLength pause})>[
+        (label: t.ui.pauseFor5Min,    pause: PauseLength.mins5),
+        (label: t.ui.pauseFor15Min,   pause: PauseLength.mins15),
+        (label: t.ui.pauseFor30Min,   pause: PauseLength.mins30),
+        (label: t.ui.pauseFor1Hour,   pause: PauseLength.hour1),
+        (label: t.ui.pauseFor24Hours, pause: PauseLength.hours24),
       ];
       return [
         Expanded(
@@ -88,7 +89,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
               ...pauseOptions.map(
                 (opt) => ContextMenuItem(
                   label: opt.label,
-                  onTap: () async => await _pauseConnection(ref, opt.seconds),
+                  onTap: () async => await _pauseConnection(ref, opt.pause),
                 ),
               ),
               ContextMenuItem(
@@ -192,9 +193,9 @@ final class ConnectionCardButtons extends ConsumerWidget {
         .reconnect(status.connectionParameters);
   }
 
-  Future<void> _pauseConnection(WidgetRef ref, int pauseSeconds) async {
+  Future<void> _pauseConnection(WidgetRef ref, PauseLength pauseLength) async {
     ref
         .read(vpnStatusControllerProvider.notifier)
-        .pauseConnection(pauseSeconds);
+        .pauseConnection(pauseLength);
   }
 }

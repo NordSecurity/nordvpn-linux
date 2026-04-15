@@ -148,5 +148,17 @@ void main() {
         '5', // LOGOUT = 5
       );
     });
+
+    test('creates correct metadata for PAUSE', () {
+      final options = createUiEventCallOptions(
+        formReference: UIEvent_FormReference.GUI,
+        itemName: UIEvent_ItemName.PAUSE,
+      );
+
+      expect(
+        options.metadata[metadataKeyItemName],
+        '9', // PAUSE = 9
+      );
+    });
   });
 }
