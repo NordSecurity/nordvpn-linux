@@ -7,7 +7,7 @@ part of 'vpn_status_controller.dart';
 // **************************************************************************
 
 String _$vpnStatusControllerHash() =>
-    r'17cfcb7bfa50b91f612105a35a2f7bd662b52b68';
+    r'288ccab3a15affd8c60509ccf7a5d89d826d81d6';
 
 /// Handles the VPN connection functionality
 ///

@@ -3,11 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grpc/grpc.dart';
 import 'package:nordvpn/analytics/consent_screen.dart';
 import 'package:nordvpn/data/providers/popups_provider.dart';
+import 'package:nordvpn/data/providers/toasts_provider.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/popup_codes.dart';
 import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/theme/app_theme.dart';
+import 'package:nordvpn/theme/connection_card_theme.dart';
+import 'package:nordvpn/widgets/context_menu/context_menu.dart';
+import 'package:nordvpn/widgets/dynamic_theme_image.dart';
+import 'package:nordvpn/widgets/dropdown.dart';
 import 'package:nordvpn/widgets/input.dart';
 import 'package:nordvpn/widgets/loading_button.dart';
 import 'package:nordvpn/widgets/loading_checkbox.dart';
@@ -24,6 +29,7 @@ final class WidgetsShowcase extends ConsumerStatefulWidget {
 
 class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
   int _groupValue = 0;
+  String _dropdownValue = 'nordlynx';
 
   @override
   Widget build(BuildContext context) {
@@ -159,6 +165,134 @@ class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
                   ),
                 ],
               ),
+              SizedBox(height: 10),
+              const Divider(),
+              Text("context menu", style: TextStyle(fontSize: 18)),
+              SizedBox(height: 10),
+              Builder(
+                builder: (context) {
+                  final buttonTheme = context.connectionCardTheme.buttonTheme;
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    spacing: 10,
+                    children: [
+                      ContextMenu(
+                        items: [
+                          ContextMenuItem(
+                            label: t.ui.pauseFor5Min,
+                            onTap: () => logger.i("pause 5 min"),
+                          ),
+                          ContextMenuItem(
+                            label: t.ui.pauseFor15Min,
+                            onTap: () => logger.i("pause 15 min"),
+                          ),
+                          ContextMenuItem(
+                            label: t.ui.pauseFor30Min,
+                            onTap: () => logger.i("pause 30 min"),
+                          ),
+                          ContextMenuItem(
+                            label: t.ui.pauseFor1Hour,
+                            onTap: () => logger.i("pause 1 hour"),
+                          ),
+                          ContextMenuItem(
+                            label: t.ui.pauseFor24Hours,
+                            onTap: () => logger.i("pause 24 hours"),
+                          ),
+                          ContextMenuItem(
+                            label: t.ui.disconnect,
+                            labelColor: context.appTheme.textErrorColor,
+                            onTap: () => logger.i("disconnect"),
+                          ),
+                        ],
+                        anchorBuilder: (toggleMenu) => IntrinsicWidth(
+                          child: ElevatedButton(
+                            style: buttonTheme.cancelButtonStyle,
+                            onPressed: toggleMenu,
+                            child: Text(t.ui.pauseConnection),
+                          ),
+                        ),
+                      ),
+                      ContextMenu(
+                        items: [
+                          ContextMenuItem(
+                            label: t.ui.reconnect,
+                            onTap: () => logger.i("Reconnect"),
+                          ),
+                          ContextMenuItem(
+                            label: t.ui.changeVPNsettings,
+                            onTap: () => logger.i("Change VPN settings"),
+                          ),
+                          ContextMenuItem(
+                            label: t.ui.getHelp,
+                            onTap: () => logger.i("Get help"),
+                          ),
+                        ],
+                        anchorBuilder: (toggleMenu) => IntrinsicWidth(
+                          child: ElevatedButton(
+                            style: buttonTheme.connectionDetailsButtonStyle,
+                            onPressed: toggleMenu,
+                            child: DynamicThemeImage("connection_details.svg"),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              SizedBox(height: 10),
+              const Divider(),
+              SizedBox(height: 10),
+              Text("dropdown", style: TextStyle(fontSize: 18)),
+              SizedBox(height: 10),
+              SizedBox(
+                width: 200,
+                child: Dropdown<String>(
+                  initialValue: _dropdownValue,
+                  items: [
+                    DropdownItem(value: 'nordlynx', label: t.ui.nordLynx),
+                    DropdownItem(value: 'openvpn_tcp', label: t.ui.openVpnTcp),
+                    DropdownItem(value: 'openvpn_udp', label: t.ui.openVpnUdp),
+                  ],
+                  onChanged: (value) {
+                    setState(() => _dropdownValue = value);
+                    logger.i("dropdown changed to $value");
+                  },
+                ),
+              ),
+              SizedBox(height: 8),
+              SizedBox(
+                width: 200,
+                child: Dropdown<String>(
+                  initialValue: _dropdownValue,
+                  enabled: false,
+                  items: [
+                    DropdownItem(value: 'nordlynx', label: t.ui.nordLynx),
+                    DropdownItem(value: 'openvpn_tcp', label: t.ui.openVpnTcp),
+                    DropdownItem(value: 'openvpn_udp', label: t.ui.openVpnUdp),
+                  ],
+                  onChanged: (_) {},
+                ),
+              ),
+              SizedBox(height: 8),
+              SizedBox(
+                width: 200,
+                child: Dropdown<String>(
+                  initialValue: _dropdownValue,
+                  showError: true,
+                  items: [
+                    DropdownItem(value: 'nordlynx', label: t.ui.nordLynx),
+                    DropdownItem(value: 'openvpn_tcp', label: t.ui.openVpnTcp),
+                    DropdownItem(value: 'openvpn_udp', label: t.ui.openVpnUdp),
+                  ],
+                  onChanged: (value) {
+                    setState(() => _dropdownValue = value);
+                    logger.i("dropdown changed to $value");
+                  },
+                ),
+              ),
+              SizedBox(height: 10),
+              const Divider(),
+              SizedBox(height: 10),
               Text("popups", style: TextStyle(fontSize: 18)),
               SizedBox(height: 10),
               Column(
@@ -227,6 +361,17 @@ class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
                         .read(popupsProvider.notifier)
                         .show(DaemonStatusCode.failure),
                     child: const Text("Generic failure"),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => ref
+                        .read(toastsProvider.notifier)
+                        .show(Duration(seconds: 15)),
+                    child: const Text("Open Toast"),
+                  ),
+                  ElevatedButton(
+                    onPressed: () =>
+                        ref.read(toastsProvider.notifier).closeToast(),
+                    child: const Text("Close Toast"),
                   ),
                   Input(
                     submitText: "Error Popup",

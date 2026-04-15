@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nordvpn/app_scaffold.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 
 import '../../test/utils/test_helpers.dart';
@@ -16,15 +17,18 @@ void runWarmupTests() async {
       await tester.pumpUntilFound(find.text(t.ui.logIn));
       await tester.tap(find.text(t.ui.logIn));
 
-      await tester.pumpUntilFound(find.text(t.ui.quickConnect));
-      await tester.tap(find.text(t.ui.quickConnect));
+      await tester.pumpUntilFound(find.text(t.ui.secureMyConnection));
+      await tester.tap(find.text(t.ui.secureMyConnection));
+
+      await tester.pumpUntilFound(find.text(t.ui.pauseConnection));
+      await tester.tap(find.text(t.ui.pauseConnection));
 
       await tester.pumpUntilFound(find.text(t.ui.disconnect));
       await tester.tap(find.text(t.ui.disconnect));
       await tester.pumpAndSettleWithTimeout();
 
       // settings screens
-      await tester.tap(find.text(t.ui.settings));
+      await tester.tap(find.byKey(NavDestination.settings.key!));
       await tester.pumpAndSettleWithTimeout();
 
       await tester.tap(find.text(t.ui.general));

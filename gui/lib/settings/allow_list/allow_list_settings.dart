@@ -59,9 +59,9 @@ class _AllowListSettingsState extends ConsumerState<AllowListSettings> {
       showDivider: false,
       stickyHeader: Padding(
         padding: EdgeInsets.only(
-          left: appTheme.borderRadiusLarge,
-          right: appTheme.borderRadiusLarge,
-          bottom: appTheme.borderRadiusLarge,
+          left: appTheme.outerPadding,
+          right: appTheme.outerPadding,
+          bottom: appTheme.outerPadding,
         ),
         child: Column(
           spacing: appTheme.verticalSpaceSmall,

@@ -11,6 +11,34 @@ import 'package:nordvpn/router/routes.dart';
 
 final goRouterKey = GlobalKey<NavigatorState>();
 
+// Tracks the current route path, updating whenever navigation occurs.
+final currentRoutePathProvider = ChangeNotifierProvider<_RoutePathNotifier>((
+  ref,
+) {
+  final router = ref.watch(routerProvider);
+  return _RoutePathNotifier(router);
+});
+
+final class _RoutePathNotifier extends ChangeNotifier {
+  final GoRouter _router;
+
+  _RoutePathNotifier(this._router) {
+    _router.routerDelegate.addListener(_onRouteChanged);
+  }
+
+  String get path => _router.routerDelegate.currentConfiguration.uri.toString();
+
+  // defer the notification with Future() so it runs after
+  // the current build frame completes
+  void _onRouteChanged() => Future(notifyListeners);
+
+  @override
+  void dispose() {
+    _router.routerDelegate.removeListener(_onRouteChanged);
+    super.dispose();
+  }
+}
+
 // Configures router.
 final routerProvider = Provider<GoRouter>((ref) {
   if (kIsWeb) {

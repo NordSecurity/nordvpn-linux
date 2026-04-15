@@ -1,7 +1,6 @@
 package daemon
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
+	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -23,8 +23,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/network"
-
-	"google.golang.org/grpc/metadata"
 )
 
 const (
@@ -69,8 +67,12 @@ func (r *RPC) StartJobs(
 	}
 	// TODO if autoconnect runs before servers job, it will return zero servers list
 
+	var server core.Server
+	if r.lastServerSelection.server != nil {
+		server = *r.lastServerSelection.server
+	}
 	if _, err := r.scheduler.NewJob(gocron.DurationJob(15*time.Minute),
-		gocron.NewTask(JobServerCheck(r.dm, r.serversAPI, r.netw, r.lastServer)),
+		gocron.NewTask(JobServerCheck(r.dm, r.serversAPI, r.netw, server)),
 		gocron.WithName("job servers check"),
 		gocron.WithEventListeners(gocron.AfterJobRunsWithError(gocronErrorLogger))); err != nil {
 		log.Println(internal.WarningPrefix, "job servers check schedule error:", err)
@@ -269,28 +271,6 @@ func isSystemShutdownSignal(sig *dbus.Signal) bool {
 	return false
 }
 
-type autoconnectServer struct {
-	err error
-}
-
-var errServersUnavailable = errors.New("servers unavailable")
-
-func (autoconnectServer) SetHeader(metadata.MD) error  { return nil }
-func (autoconnectServer) SendHeader(metadata.MD) error { return nil }
-func (autoconnectServer) SetTrailer(metadata.MD)       {}
-func (autoconnectServer) Context() context.Context     { return nil }
-func (autoconnectServer) SendMsg(m interface{}) error  { return nil }
-func (autoconnectServer) RecvMsg(m interface{}) error  { return nil }
-func (a *autoconnectServer) Send(data *pb.Payload) error {
-	switch data.GetType() {
-	case internal.CodeFailure:
-		a.err = errors.New("autoconnect failure")
-	case internal.CodeServerUnavailable:
-		a.err = errServersUnavailable
-	}
-	return nil
-}
-
 func (r *RPC) fallbackTechnology(targetTechnology config.Technology) error {
 	log.Println(internal.DebugPrefix,
 		"technology was configured to NordWhisper, but NordWhisper was disabled, switching to",
@@ -353,7 +333,7 @@ func (r *RPC) doAutoConnect() error {
 		}
 	}
 
-	server := autoconnectServer{}
+	server := connectServer{}
 
 	groupTag := ""
 	if cfg.AutoConnectData.Group != config.ServerGroup_UNDEFINED &&
@@ -362,7 +342,7 @@ func (r *RPC) doAutoConnect() error {
 		groupTag = cfg.AutoConnectData.Group.String()
 	}
 
-	err = r.connectWithContext(
+	err = r.connectFromRequest(
 		&pb.ConnectRequest{
 			ServerTag:   cfg.AutoConnectData.ServerTag,
 			ServerGroup: groupTag,

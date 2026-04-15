@@ -88,7 +88,7 @@ flutter:
     - assets/images/not_themed/
     - assets/images/flags/
 
-fonts:
+  fonts:
     - family: Inter
       fonts:
         - asset: assets/fonts/Inter-Regular.ttf

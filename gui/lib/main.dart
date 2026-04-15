@@ -10,6 +10,7 @@ import 'package:nordvpn/router/router.dart';
 import 'package:nordvpn/service_locator.dart';
 import 'package:nordvpn/theme/theme.dart';
 import 'package:nordvpn/widgets/popups_listener.dart';
+import 'package:nordvpn/widgets/toasts_listener.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -95,8 +96,9 @@ final class _NordVpnAppState extends ConsumerState<NordVpnApp> {
       routerConfig: ref.watch(routerProvider),
       // wrap into a scaffold without maximum width to allow some screen to use
       // the entire windows size
-      builder: (context, child) =>
-          Scaffold(body: PopupsListener(child: child!)),
+      builder: (context, child) => Scaffold(
+        body: PopupsListener(child: ToastsListener(child: child!)),
+      ),
       title: t.ui.nordVpn,
       theme: lightTheme(),
       darkTheme: darkTheme(),

@@ -4,6 +4,10 @@ final supportCenterUrl = Uri.parse(
   "https://support.nordvpn.com/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=settings-get_help&nm=app&ns=nordvpn-linux-gui&nc=settings-get_help",
 );
 
+final getHelpUrl = Uri.parse(
+  "https://my.nordaccount.com/support-center/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=get_help-support_center&nm=app&ns=nordvpn-linux-gui&nc=get_help-support_center&owner_id=nordvpn",
+);
+
 final versionCompatibilityInfoUrl = Uri.parse(
   "https://nordvpn.com/download/linux/",
 );

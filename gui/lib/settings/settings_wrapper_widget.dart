@@ -126,8 +126,8 @@ Widget _vpnStatus(AppTheme appTheme, BuildContext context) {
     decoration: BoxDecoration(
       color: appTheme.area,
       borderRadius: BorderRadius.only(
-        bottomLeft: Radius.circular(appTheme.borderRadiusMedium),
-        bottomRight: Radius.circular(appTheme.borderRadiusMedium),
+        bottomLeft: appTheme.borderRadiusMedium.bottomLeft,
+        bottomRight: appTheme.borderRadiusMedium.bottomRight,
       ),
     ),
     child: Center(
@@ -148,9 +148,9 @@ Widget _buildVpnStatus(BuildContext context) {
       final status = ref.watch(vpnStatusControllerProvider);
       if (status.hasValue && status.value != null) {
         final vpnStatus = status.value!;
-        if (vpnStatus.isDisconnected()) {
+        if (vpnStatus.isDisconnected() || vpnStatus.isPaused()) {
           return Text(
-            t.ui.notConnected,
+            t.ui.notSecured,
             style: settingsTheme.vpnStatusStyle.copyWith(
               color: appTheme.textErrorColor,
             ),
@@ -168,7 +168,7 @@ Widget _buildVpnStatus(BuildContext context) {
 
         if (vpnStatus.isConnected()) {
           return Text(
-            t.ui.connected,
+            t.ui.secured,
             style: settingsTheme.vpnStatusStyle.copyWith(
               color: appTheme.successColor,
             ),
