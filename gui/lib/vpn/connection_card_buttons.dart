@@ -9,7 +9,6 @@ import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
-import 'package:nordvpn/internal/uri_launch_extension.dart';
 import 'package:nordvpn/router/routes.dart';
 import 'package:nordvpn/internal/urls.dart';
 import 'package:nordvpn/theme/app_theme.dart';
@@ -74,10 +73,10 @@ final class ConnectionCardButtons extends ConsumerWidget {
         ];
       }
       final pauseOptions = <({String label, PauseLength pause})>[
-        (label: t.ui.pauseFor5Min,    pause: PauseLength.mins5),
-        (label: t.ui.pauseFor15Min,   pause: PauseLength.mins15),
-        (label: t.ui.pauseFor30Min,   pause: PauseLength.mins30),
-        (label: t.ui.pauseFor1Hour,   pause: PauseLength.hour1),
+        (label: t.ui.pauseFor5Min, pause: PauseLength.mins5),
+        (label: t.ui.pauseFor15Min, pause: PauseLength.mins15),
+        (label: t.ui.pauseFor30Min, pause: PauseLength.mins30),
+        (label: t.ui.pauseFor1Hour, pause: PauseLength.hour1),
         (label: t.ui.pauseFor24Hours, pause: PauseLength.hours24),
       ];
       return [
@@ -122,7 +121,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
               ),
               ContextMenuItem(
                 label: t.ui.getHelp,
-                onTap: () => Uri.parse(getHelpUrl.toString()).launch(),
+                onTap: () => getHelpUrl.launch(),
               ),
             ],
             anchorBuilder: (toggleMenu) => ElevatedButton(
@@ -194,8 +193,6 @@ final class ConnectionCardButtons extends ConsumerWidget {
   }
 
   Future<void> _pauseConnection(WidgetRef ref, PauseLength pauseLength) async {
-    ref
-        .read(vpnStatusControllerProvider.notifier)
-        .pauseConnection(pauseLength);
+    ref.read(vpnStatusControllerProvider.notifier).pauseConnection(pauseLength);
   }
 }
