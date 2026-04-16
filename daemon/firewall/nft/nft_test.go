@@ -9,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/helpers"
 	"github.com/google/nftables"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func GetTestNft() *nft {
@@ -25,7 +26,7 @@ func TestConfigure(t *testing.T) {
 			name: "only vpn interface",
 			fwConfig: firewall.Config{
 				TunnelInterface: "dummynlx",
-				Allowlist:       config.Allowlist{config.Ports{}, []string{}},
+				Allowlist:       config.Allowlist{Ports: config.Ports{}, Subnets: []string{}},
 				KillSwitch:      false,
 				MeshnetInfo:     nil,
 			},
@@ -34,7 +35,7 @@ func TestConfigure(t *testing.T) {
 			name: "only killswitch",
 			fwConfig: firewall.Config{
 				TunnelInterface: "",
-				Allowlist:       config.Allowlist{config.Ports{}, []string{}},
+				Allowlist:       config.Allowlist{Ports: config.Ports{}, Subnets: []string{}},
 				KillSwitch:      true,
 				MeshnetInfo:     nil,
 			},
@@ -49,7 +50,7 @@ func TestConfigure(t *testing.T) {
 			ns := helpers.OpenNewNamespace(t)
 			defer helpers.CleanNamespace(t, ns)
 
-			n.Configure(tt.fwConfig)
+			require.NoError(t, n.Configure(tt.fwConfig))
 			// Currently just checking if the table was created
 			// When rules are finalized, we can start comparing hard coded expected strings to
 			// whatever output we get after calling Configure()
