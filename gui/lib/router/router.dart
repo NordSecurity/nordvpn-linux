@@ -21,6 +21,7 @@ final currentRoutePathProvider = ChangeNotifierProvider<_RoutePathNotifier>((
 
 final class _RoutePathNotifier extends ChangeNotifier {
   final GoRouter _router;
+  bool _disposed = false;
 
   _RoutePathNotifier(this._router) {
     _router.routerDelegate.addListener(_onRouteChanged);
@@ -30,10 +31,13 @@ final class _RoutePathNotifier extends ChangeNotifier {
 
   // defer the notification with Future() so it runs after
   // the current build frame completes
-  void _onRouteChanged() => Future(notifyListeners);
+  void _onRouteChanged() => Future(() {
+    if (!_disposed) notifyListeners();
+  });
 
   @override
   void dispose() {
+    _disposed = true;
     _router.routerDelegate.removeListener(_onRouteChanged);
     super.dispose();
   }

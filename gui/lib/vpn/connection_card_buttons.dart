@@ -9,7 +9,6 @@ import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
-import 'package:nordvpn/internal/uri_launch_extension.dart';
 import 'package:nordvpn/router/routes.dart';
 import 'package:nordvpn/internal/urls.dart';
 import 'package:nordvpn/theme/app_theme.dart';
@@ -122,7 +121,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
               ),
               ContextMenuItem(
                 label: t.ui.getHelp,
-                onTap: () => Uri.parse(getHelpUrl.toString()).launch(),
+                onTap: () => getHelpUrl.launch(),
               ),
             ],
             anchorBuilder: (toggleMenu) => ElevatedButton(
