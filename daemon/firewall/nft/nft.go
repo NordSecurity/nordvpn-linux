@@ -168,7 +168,7 @@ func (n *nft) addInputChain(config firewall.Config, nftCtx *nftContext) {
 	})
 
 	// meshnet
-	if nftCtx.fileshareAllowedPeers != nil || nftCtx.meshAllowedIncomingConnections != nil {
+	if config.MeshnetInfo != nil {
 		// Add chain for the meshnet and the jump rule to it
 		meshChain := n.addMeshnetInputChain(nftCtx)
 
@@ -464,7 +464,6 @@ func (n *nft) addExcludedInterfacesSet(config firewall.Config, nftCtx *nftContex
 }
 
 func (n *nft) addAllowlistInputChain(nftCtx *nftContext) *nftables.Chain {
-
 	chain := n.conn.AddChain(&nftables.Chain{
 		Name:  allowlistInputChainName,
 		Table: nftCtx.table,
@@ -722,7 +721,6 @@ func (n *nft) addInternetToMeshPeer(config firewall.Config, nftCtx *nftContext) 
 		),
 		UserData: userdata.AppendString(nil, userdata.TypeComment, "traffic to allowed peers"),
 	})
-
 
 	if nftCtx.meshLanAllowedPeers != nil {
 		// ip saddr @lan_ranges ip daddr != @peer_local_network_access drop
