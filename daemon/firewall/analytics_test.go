@@ -185,7 +185,7 @@ func TestFirewall_Configure_EmitsSuccessEvent(t *testing.T) {
 
 	publisher := &mockevents.MockPublisher[events.DebuggerEvent]{}
 	backend := &MockBackend{}
-	fw := NewFirewall(backend, true, publisher)
+	fw := NewFirewall(backend, true, "", publisher)
 
 	cfg := Config{TunnelInterface: "nordlynx"}
 	err := fw.Configure(cfg)
@@ -207,7 +207,7 @@ func TestFirewall_Configure_EmitsFailureEvent(t *testing.T) {
 
 	publisher := &mockevents.MockPublisher[events.DebuggerEvent]{}
 	backend := &MockBackend{ConfigureErr: errors.New("nftables error")}
-	fw := NewFirewall(backend, true, publisher)
+	fw := NewFirewall(backend, true, "", publisher)
 
 	cfg := Config{TunnelInterface: "nordlynx"}
 	err := fw.Configure(cfg)
@@ -229,7 +229,7 @@ func TestFirewall_Configure_NoEventWhenDisabled(t *testing.T) {
 
 	publisher := &mockevents.MockPublisher[events.DebuggerEvent]{}
 	backend := &MockBackend{}
-	fw := NewFirewall(backend, false, publisher)
+	fw := NewFirewall(backend, false, "", publisher)
 
 	cfg := Config{TunnelInterface: "nordlynx"}
 	err := fw.Configure(cfg)
@@ -243,7 +243,7 @@ func TestFirewall_Configure_NilPublisherNoPanic(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	backend := &MockBackend{}
-	fw := NewFirewall(backend, true, nil)
+	fw := NewFirewall(backend, true, "", nil)
 
 	cfg := Config{TunnelInterface: "nordlynx"}
 	err := fw.Configure(cfg)

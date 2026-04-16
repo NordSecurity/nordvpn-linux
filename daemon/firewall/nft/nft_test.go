@@ -12,7 +12,7 @@ import (
 )
 
 func GetTestNft() *nft {
-	return New(0xe1f1)
+	return NewNft(0xe1f1).(*nft)
 }
 
 func TestConfigure(t *testing.T) {

@@ -130,8 +130,7 @@ type Combined struct {
 	enableLocalTraffic bool
 	// list with the existing OS interfaces when VPN was connected.
 	// This is used at network changes to know when a new interface was inserted
-	interfaces           mapset.Set[string]
-	isFilesharePermitted bool
+	interfaces mapset.Set[string]
 	// dnsDenied            bool
 	ipv6Blocker     ipv6.Blocker
 	ignoreARP       bool
@@ -1124,52 +1123,32 @@ func (netw *Combined) StatusMap() (map[string]string, error) {
 	return netw.mesh.StatusMap()
 }
 
-// TODO: nft change fileshare monitoring
 func (netw *Combined) PermitFileshare() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	if netw.isFilesharePermitted {
-		return nil
-	}
-	netw.isFilesharePermitted = true
-	return netw.allowFileshareAll()
-}
-
-// TODO: nft change fileshare monitoring
-func (netw *Combined) allowFileshareAll() error {
-	return nil
+	return netw.configureFileshareAccess(false)
 }
 
 func (netw *Combined) ForbidFileshare() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	if !netw.isFilesharePermitted {
+
+	return netw.configureFileshareAccess(true)
+}
+
+func (netw *Combined) configureFileshareAccess(block bool) error {
+	if !netw.isMeshnetSet {
 		return nil
 	}
 
-	err := netw.blockFileshareAll()
-	// NOTE: Mark fileshare as forbidden only when there was no error here, so it
-	// can be tried again.
-	if err == nil {
-		netw.isFilesharePermitted = false
+	if netw.fwConfig.BlockFileshare == block {
+		return nil
 	}
 
-	return err
-}
-
-// TODO: nft change fileshare monitor
-func (netw *Combined) blockFileshareAll() error {
-	return nil
-	// var allErrors []error
-	// for _, peer := range netw.cfg.Peers {
-	// 	err := netw.blockFileshare(peer.PublicKey, peer.Address)
-	// 	// NOTE: It's fine to have the rule already removed which returns [ErrNoSuchRule].
-	// 	// It's not fine to have any other errors, so keep those.
-	// 	if !errors.Is(err, ErrNoSuchRule{}) {
-	// 		allErrors = append(allErrors, err)
-	// 	}
-	// }
-	// return errors.Join(allErrors...)
+	cfg := netw.fwConfig.CopyWith(
+		firewall.WithBlockFileshare(block),
+	)
+	return netw.configureFirewall(cfg)
 }
 
 func getHostsFromConfig(peers mesh.MachinePeers) dns.Hosts {
