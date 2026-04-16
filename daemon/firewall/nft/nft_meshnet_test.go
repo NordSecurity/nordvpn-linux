@@ -62,7 +62,7 @@ func TestFileshareBlockAllow(t *testing.T) {
 
 	withNftCommandOutput(t, args, func(out string) {
 		assert.NotContains(t, out, fmt.Sprintf("tcp dport 49111 ip saddr @%s accept", fileshareAllowedPeersSet))
-		assert.Contains(t, out, "tcp dport 49111 drop", fileshareAllowedPeersSet)
+		assert.Contains(t, out, "tcp dport 49111 drop")
 	})
 
 	// allow fileshare
@@ -71,6 +71,6 @@ func TestFileshareBlockAllow(t *testing.T) {
 
 	withNftCommandOutput(t, args, func(out string) {
 		assert.Contains(t, out, fmt.Sprintf("tcp dport 49111 ip saddr @%s accept", fileshareAllowedPeersSet))
-		assert.Contains(t, out, "tcp dport 49111 drop", fileshareAllowedPeersSet)
+		assert.Contains(t, out, "tcp dport 49111 drop")
 	})
 }
