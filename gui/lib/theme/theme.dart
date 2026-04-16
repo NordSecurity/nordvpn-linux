@@ -395,7 +395,7 @@ final class NordVpnTheme {
             ),
             borderRadius: AppBorderRadius.full,
           ),
-          textStyle: design.typography.subHeading,
+          textStyle: design.typography.body,
           padding: const EdgeInsets.symmetric(
             vertical: AppSpacing.spacing3,
             horizontal: AppSpacing.spacing7,
