@@ -125,7 +125,6 @@ class _AllowListSettingsState extends ConsumerState<AllowListSettings> {
     final res = await ref
         .read(vpnSettingsControllerProvider.notifier)
         .addToAllowList(port: port, subnet: subnet);
-
     return res == DaemonStatusCode.success;
   }
 

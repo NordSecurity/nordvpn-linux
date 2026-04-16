@@ -11,6 +11,8 @@ String _$pendingVPNProtocolHash() =>
 
 /// A notifier for storing a pending VPN protocol value that awaits user confirmation.
 /// Used when a VPN protocol change requires user confirmation (e.g., reconnect popup).
+/// TODO: PendingVPNProtocol does not need Riverpod, and should be replaced with
+/// simpler implementation similar to how `allowlistSubnetWiderConfirm` is handled.
 ///
 /// Copied from [PendingVPNProtocol].
 @ProviderFor(PendingVPNProtocol)

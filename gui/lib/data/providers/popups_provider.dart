@@ -21,19 +21,16 @@ final class Popups extends _$Popups {
     logger.i("showing popup for id: $id");
 
     final metadata = givePopupMetadata(id, userData: userData);
-    _showMetadata(metadata);
+    _showWithMetadata(metadata);
   }
 
   bool _shouldIgnore(int code) {
     return code <= 2000 ||
-        code ==
-            DaemonStatusCode
-                .allowlistSubnetNoop // should be ignored by GUI
-                ||
-        code == 3047; // CodeAllowlistPortNoop should be ignored by GUI
+        code == DaemonStatusCode.allowlistSubnetNoop ||
+        code == DaemonStatusCode.allowlistPortNoop;
   }
 
-  void _showMetadata(PopupMetadata metadata) {
+  void _showWithMetadata(PopupMetadata metadata) {
     if (metadata.id == DaemonStatusCode.success) {
       return;
     }

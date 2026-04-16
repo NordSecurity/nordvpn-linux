@@ -330,8 +330,7 @@ class VpnSettingsController extends _$VpnSettingsController
     }
 
     // Use overridden popup code if provided, otherwise use the daemon status code.
-    final overridden = popupCodeOverrides?.containsKey(status) ?? false;
-    final popupCode = overridden ? popupCodeOverrides![status]! : status;
+    final popupCode = popupCodeOverrides?[status] ?? status;
 
     // don't show popup when code is on ignore list
     if (_popupIgnoreCodes.contains(popupCode)) {
