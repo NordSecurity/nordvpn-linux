@@ -73,10 +73,10 @@ final class ConnectionCardButtons extends ConsumerWidget {
         ];
       }
       final pauseOptions = <({String label, PauseLength pause})>[
-        (label: t.ui.pauseFor5Min, pause: PauseLength.mins5),
-        (label: t.ui.pauseFor15Min, pause: PauseLength.mins15),
-        (label: t.ui.pauseFor30Min, pause: PauseLength.mins30),
-        (label: t.ui.pauseFor1Hour, pause: PauseLength.hour1),
+        (label: t.ui.pauseFor5Min,    pause: PauseLength.mins5),
+        (label: t.ui.pauseFor15Min,   pause: PauseLength.mins15),
+        (label: t.ui.pauseFor30Min,   pause: PauseLength.mins30),
+        (label: t.ui.pauseFor1Hour,   pause: PauseLength.hour1),
         (label: t.ui.pauseFor24Hours, pause: PauseLength.hours24),
       ];
       return [
@@ -193,6 +193,8 @@ final class ConnectionCardButtons extends ConsumerWidget {
   }
 
   Future<void> _pauseConnection(WidgetRef ref, PauseLength pauseLength) async {
-    ref.read(vpnStatusControllerProvider.notifier).pauseConnection(pauseLength);
+    ref
+        .read(vpnStatusControllerProvider.notifier)
+        .pauseConnection(pauseLength);
   }
 }
