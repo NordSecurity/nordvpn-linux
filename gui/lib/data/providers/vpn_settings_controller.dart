@@ -103,22 +103,24 @@ class VpnSettingsController extends _$VpnSettingsController
   }
 
   Future<int> setObfuscated(bool value) async {
-    // The daemon returns success (not vpnIsRunning) when VPN is paused,
-    // because pausing tears down the tunnel and IsVPNActive() returns false.
-    // Show the popup directly, same pattern as setVpnProtocol.
-    final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
-    if (vpnStatus != null && vpnStatus.isPaused()) {
-      ref
-          .read(popupsProvider.notifier)
-          .show(PopupCodes.reconnectToChangeObfuscation);
-      return DaemonStatusCode.success;
-    }
-    return await _setValue(
+    final status = await _setValue(
       (repository) => repository.setObfuscated(value),
       popupCodeOverrides: {
         DaemonStatusCode.vpnIsRunning: PopupCodes.reconnectToChangeObfuscation,
       },
     );
+    // When VPN is paused, the daemon saves the value but returns success
+    // (IsVPNActive()=false), so _setValue skips the popup (success is in the
+    // ignore list). Show the popup explicitly here.
+    if (status == DaemonStatusCode.success) {
+      final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
+      if (vpnStatus != null && vpnStatus.isPaused()) {
+        ref
+            .read(popupsProvider.notifier)
+            .show(PopupCodes.reconnectToChangeObfuscation);
+      }
+    }
+    return status;
   }
 
   Future<int> setAnalytics(bool value) async {
@@ -253,22 +255,24 @@ class VpnSettingsController extends _$VpnSettingsController
   }
 
   Future<int> setPostQuantum(bool value) async {
-    // The daemon returns success (not vpnIsRunning) when VPN is paused,
-    // because pausing tears down the tunnel and IsVPNActive() returns false.
-    // Show the popup directly, same pattern as setVpnProtocol.
-    final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
-    if (vpnStatus != null && vpnStatus.isPaused()) {
-      ref
-          .read(popupsProvider.notifier)
-          .show(PopupCodes.reconnectToChangePostQuantum);
-      return DaemonStatusCode.success;
-    }
-    return await _setValue(
+    final status = await _setValue(
       (repository) => repository.setPostQuantum(value),
       popupCodeOverrides: {
         DaemonStatusCode.vpnIsRunning: PopupCodes.reconnectToChangePostQuantum,
       },
     );
+    // When VPN is paused, the daemon saves the value but returns success
+    // (IsVPNActive()=false), so _setValue skips the popup (success is in the
+    // ignore list). Show the popup explicitly here.
+    if (status == DaemonStatusCode.success) {
+      final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
+      if (vpnStatus != null && vpnStatus.isPaused()) {
+        ref
+            .read(popupsProvider.notifier)
+            .show(PopupCodes.reconnectToChangePostQuantum);
+      }
+    }
+    return status;
   }
 
   Future<int> useVirtualServers(bool value) async {
