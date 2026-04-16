@@ -48,14 +48,16 @@ class VpnSettingsController extends _$VpnSettingsController
     // a different flow: store pending protocol and show confirmation popup.
     // The daemon doesn't return vpnIsRunning for protocol changes.
     final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
-    if (vpnStatus != null && vpnStatus.isConnected()) {
-      // VPN is connected - store pending protocol and show popup
-      // The change will be applied only if user confirms
-      ref.read(pendingVPNProtocolProvider.notifier).set(protocol);
-      ref
-          .read(popupsProvider.notifier)
-          .show(PopupCodes.reconnectToChangeProtocol);
-      return DaemonStatusCode.success;
+    if (vpnStatus != null) {
+      if (vpnStatus.isConnected() || vpnStatus.isPaused()) {
+        // VPN is connected - store pending protocol and show popup
+        // The change will be applied only if user confirms
+        ref.read(pendingVPNProtocolProvider.notifier).set(protocol);
+        ref
+            .read(popupsProvider.notifier)
+            .show(PopupCodes.reconnectToChangeProtocol);
+        return DaemonStatusCode.success;
+      }
     }
 
     // VPN is not connected - apply the change directly
@@ -101,6 +103,16 @@ class VpnSettingsController extends _$VpnSettingsController
   }
 
   Future<int> setObfuscated(bool value) async {
+    // The daemon returns success (not vpnIsRunning) when VPN is paused,
+    // because pausing tears down the tunnel and IsVPNActive() returns false.
+    // Show the popup directly, same pattern as setVpnProtocol.
+    final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
+    if (vpnStatus != null && vpnStatus.isPaused()) {
+      ref
+          .read(popupsProvider.notifier)
+          .show(PopupCodes.reconnectToChangeObfuscation);
+      return DaemonStatusCode.success;
+    }
     return await _setValue(
       (repository) => repository.setObfuscated(value),
       popupCodeOverrides: {
@@ -241,6 +253,16 @@ class VpnSettingsController extends _$VpnSettingsController
   }
 
   Future<int> setPostQuantum(bool value) async {
+    // The daemon returns success (not vpnIsRunning) when VPN is paused,
+    // because pausing tears down the tunnel and IsVPNActive() returns false.
+    // Show the popup directly, same pattern as setVpnProtocol.
+    final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
+    if (vpnStatus != null && vpnStatus.isPaused()) {
+      ref
+          .read(popupsProvider.notifier)
+          .show(PopupCodes.reconnectToChangePostQuantum);
+      return DaemonStatusCode.success;
+    }
     return await _setValue(
       (repository) => repository.setPostQuantum(value),
       popupCodeOverrides: {
