@@ -62,3 +62,36 @@ func TestFileshareBlockAllow(t *testing.T) {
 		assert.Contains(t, out, "tcp dport 49111 drop")
 	})
 }
+
+func TestLANTrafficIsDroppedForPeerWithoutLANAccess(t *testing.T) {
+	category.Set(t, category.Root)
+	ns := helpers.OpenNewNamespace(t)
+	defer helpers.CleanNamespace(t, ns)
+
+	n := GetTestNft()
+	fwConfig := firewall.Config{
+		Allowlist: config.Allowlist{Subnets: internal.LocalNetworks},
+		MeshnetInfo: &firewall.MeshInfo{
+			MeshnetMap: mesh.MachineMap{
+				Peers: mesh.MachinePeers{
+					mesh.MachinePeer{
+						Address:         netip.MustParseAddr("100.77.197.112"),
+						DoIAllowRouting: true,
+					},
+				},
+			},
+		},
+	}
+
+	require.NoError(t, n.Configure(fwConfig))
+
+	dropPeerWithoutLANAccess := fmt.Sprintf(
+		"ip daddr @%s ip saddr != @%s drop",
+		lanPrivateIpsSetName, lanAccessPeersSet,
+	)
+	acceptAllowlistAccess := fmt.Sprintf("ip daddr @%s accept", allowlistSubnetsSetName)
+
+	helpers.WithNftCommandOutput(t, helpers.ListChain(meshPeerToInternet), func(out string) {
+		helpers.AssertRulesOrder(t, out, dropPeerWithoutLANAccess, acceptAllowlistAccess)
+	})
+}
