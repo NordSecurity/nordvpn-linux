@@ -44,6 +44,7 @@ RUN dpkg --add-architecture i386 && \
         # Python and file for arch sanity check post build
         python3 \
         nftables \
+        conntrack \
         file && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
