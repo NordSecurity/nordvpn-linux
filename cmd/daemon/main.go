@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
+	"net/netip"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -160,9 +161,9 @@ func main() {
 		configEvents.Config,
 	)
 
-	// Remove any remains of IPv6 settings
-	if err := fsystem.SaveWith(removeIPv6Remains); err != nil {
-		log.Println(internal.ErrorPrefix, "failed to remove IPv6 entries from settings ", err)
+	// Remove any remains of IPv6 settings and remove overlapping allowlist subnets
+	if err := fsystem.SaveWith(configCleanup); err != nil {
+		log.Println(internal.ErrorPrefix, "failed to cleanup config:", err)
 	}
 
 	var cfg config.Config
@@ -779,35 +780,23 @@ func assignMooseDBPermissions(eventsDbPath string) error {
 	return nil
 }
 
-func removeIPv6Remains(c config.Config) config.Config {
+// configCleanup - validate/cleanup DNS addresses, allowlist subnets
+func configCleanup(c config.Config) config.Config {
 	// Remove all nameservers with IPv6 addresses
 	var dnsList []string
 	for _, addr := range c.AutoConnectData.DNS {
-		ip := net.ParseIP(addr)
-		if ip == nil {
+		p, err := netip.ParsePrefix(addr)
+		if err != nil || !p.Addr().Is4() {
 			continue
 		}
-		if ip.To4() != nil {
-			dnsList = append(dnsList, addr)
-		}
+		dnsList = append(dnsList, addr)
 	}
-
 	c.AutoConnectData.DNS = dnsList
 
-	// Remove all IPv6 subnets from AllowList
-	var allowList []string
-	for _, addr := range c.AutoConnectData.Allowlist.Subnets {
-		_, subnet, err := net.ParseCIDR(addr)
-		if err != nil {
-			continue
-		}
-
-		if subnet.IP.To4() != nil {
-			allowList = append(allowList, addr)
-		}
-	}
-
-	c.AutoConnectData.Allowlist.Subnets = allowList
+	// Remove overlapping, invalid and IPv6 subnets, if any
+	c.AutoConnectData.Allowlist.NormalizeSubnets(func(removed, reason string) {
+		log.Println(internal.WarningPrefix, "On start, allowlist remove subnet:", removed, "; reason:", reason)
+	})
 
 	return c
 }

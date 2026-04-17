@@ -200,7 +200,30 @@ final class MockApplicationSettings extends CancelableDelayed {
         return Payload(type: Int64(DaemonStatusCode.allowlistSubnetNoop));
       }
       if (add) {
+        final newSubnet = Subnet.fromString(
+          request.setAllowlistSubnetRequest.subnet,
+        );
+        final hasNarrower = subnets.any(
+          (s) => newSubnet.contains(Subnet.fromString(s)),
+        );
+        if (hasNarrower && !request.setAllowlistSubnetRequest.force) {
+          return Payload(
+            type: Int64(DaemonStatusCode.allowlistSubnetWiderConfirm),
+          );
+        }
+        subnets.removeWhere((s) => newSubnet.contains(Subnet.fromString(s)));
         subnets.add(request.setAllowlistSubnetRequest.subnet);
+        if (newSubnet.cidr != null && newSubnet.cidr! <= 8) {
+          await setSettings(
+            allowList: Allowlist(
+              ports: Ports(udp: portsUdp, tcp: portsTcp),
+              subnets: subnets,
+            ),
+          );
+          return Payload(
+            type: Int64(DaemonStatusCode.allowlistSubnetTooWideWarn),
+          );
+        }
       } else {
         subnets.remove(request.setAllowlistSubnetRequest.subnet);
       }

@@ -25,9 +25,12 @@ final class DaemonStatusCode {
   static const privateSubnetLANDiscovery = 3040;
   static const allowlistSubnetNoop = 3045;
   static const allowlistPortOutOfRange = 3046;
+  static const allowlistPortNoop = 3047;
   static const featureHidden = 3050;
   static const technologyDisabled = 3051;
   static const virtualLocationsDisabled = 3057;
+  static const allowlistSubnetTooWideWarn = 3059;
+  static const allowlistSubnetWiderConfirm = 3060;
 
   // custom GUI defined error codes
   static const invalidTechnology = 5000;

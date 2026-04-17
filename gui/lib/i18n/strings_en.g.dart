@@ -1851,6 +1851,21 @@ class TranslationsUiEn {
 	/// en: 'Enabling LAN discovery will remove any private subnets from allowlist. Continue?'
 	String get removePrivateSubnetsDescription => 'Enabling LAN discovery will remove any private subnets from allowlist. Continue?';
 
+	/// en: 'Remove overlapping subnets?'
+	String get removeOverlappingSubnets => 'Remove overlapping subnets?';
+
+	/// en: 'The range you are trying to add includes previously allowed subnets. To prevent conflicts, we’ll delete the redundant ones.'
+	String get removeOverlappingSubnetsDescription => 'The range you are trying to add includes previously allowed subnets. To prevent conflicts, we’ll delete the redundant ones.';
+
+	/// en: 'Remove'
+	String get removeWord => 'Remove';
+
+	/// en: 'Adding this range may be unsafe'
+	String get addingTooWideSubnet => 'Adding this range may be unsafe';
+
+	/// en: 'The subnet range you entered is too large and may allow unprotected traffic to enter or leave your device.'
+	String get addingTooWideSubnetDescription => 'The subnet range you entered is too large and may allow unprotected traffic to enter or leave your device.';
+
 	/// en: 'Private subnet can't be added'
 	String get privateSubnetCantBeAdded => 'Private subnet can\'t be added';
 
@@ -2598,6 +2613,11 @@ extension on Translations {
 			'ui.system' => 'System',
 			'ui.removePrivateSubnets' => 'We\'ll remove private subnets from allowlist',
 			'ui.removePrivateSubnetsDescription' => 'Enabling LAN discovery will remove any private subnets from allowlist. Continue?',
+			'ui.removeOverlappingSubnets' => 'Remove overlapping subnets?',
+			'ui.removeOverlappingSubnetsDescription' => 'The range you are trying to add includes previously allowed subnets. To prevent conflicts, we’ll delete the redundant ones.',
+			'ui.removeWord' => 'Remove',
+			'ui.addingTooWideSubnet' => 'Adding this range may be unsafe',
+			'ui.addingTooWideSubnetDescription' => 'The subnet range you entered is too large and may allow unprotected traffic to enter or leave your device.',
 			'ui.privateSubnetCantBeAdded' => 'Private subnet can\'t be added',
 			'ui.privateSubnetCantBeAddedDescription' => 'Allowlisting a private subnet isn’t available while local network discovery is enabled. To add a private subnet, turn off LAN discovery.',
 			'ui.turnOffLanDiscovery' => 'Turn off LAN discovery',

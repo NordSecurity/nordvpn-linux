@@ -947,9 +947,11 @@ class PortRange extends $pb.GeneratedMessage {
 class SetAllowlistSubnetRequest extends $pb.GeneratedMessage {
   factory SetAllowlistSubnetRequest({
     $core.String? subnet,
+    $core.bool? force,
   }) {
     final result = create();
     if (subnet != null) result.subnet = subnet;
+    if (force != null) result.force = force;
     return result;
   }
 
@@ -967,6 +969,7 @@ class SetAllowlistSubnetRequest extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'subnet')
+    ..aOB(2, _omitFieldNames ? '' : 'force')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -997,6 +1000,15 @@ class SetAllowlistSubnetRequest extends $pb.GeneratedMessage {
   $core.bool hasSubnet() => $_has(0);
   @$pb.TagNumber(1)
   void clearSubnet() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.bool get force => $_getBF(1);
+  @$pb.TagNumber(2)
+  set force($core.bool value) => $_setBool(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasForce() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearForce() => $_clearField(2);
 }
 
 class SetAllowlistPortsRequest extends $pb.GeneratedMessage {

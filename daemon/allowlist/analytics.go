@@ -307,6 +307,10 @@ func codeToString(code int64) string {
 		return "port out of valid range (1-65535)"
 	case internal.CodeAllowlistPortNoop:
 		return "port unchanged: already in desired state"
+	case internal.CodeAllowlistSubnetSmallerNoop:
+		return "subnet unchanged: tried to add narrower"
+	case internal.CodeAllowlistSubnetWider:
+		return "subnet is wider, it eliminates some narrower subnet"
 	default:
 		return fmt.Sprintf("unknown allowlist error (code %d)", code)
 	}

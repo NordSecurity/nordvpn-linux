@@ -2,8 +2,8 @@ package daemon
 
 import (
 	"context"
+	"errors"
 	"log"
-	"net"
 	"net/netip"
 	"slices"
 
@@ -26,13 +26,13 @@ func containsPrivateNetwork(subnet string) bool {
 
 // isSubnetValid returns true if subnet is valid and false and appropriate error code when it's invalid.
 func isSubnetValid(subnet string, currentSubnets []string, remove bool) (bool, int64) {
-	parsedAddress, _, err := net.ParseCIDR(subnet)
+	parsedAddress, err := netip.ParsePrefix(subnet)
 	if err != nil {
 		return false, internal.CodeAllowlistInvalidSubnet
 	}
 
 	// Do not allow IPv6 subnets
-	if parsedAddress.To4() == nil {
+	if !parsedAddress.Addr().Is4() {
 		return false, internal.CodeAllowlistInvalidSubnet
 	}
 
@@ -40,7 +40,11 @@ func isSubnetValid(subnet string, currentSubnets []string, remove bool) (bool, i
 		return false, internal.CodeAllowlistSubnetNoop
 	}
 
-	return true, 0
+	if parsedAddress.Bits() <= internal.AllowlistTooWideSubnetPrefixThreshold {
+		return true, internal.CodeAllowlistSubnetTooWideWarn
+	}
+
+	return true, internal.CodeSuccess
 }
 
 func arePortsValid(portRangeStart int64, portRangeEnd int64, currentPorts config.PortSet, remove bool) (bool, int64) {
@@ -70,7 +74,7 @@ func arePortsValid(portRangeStart int64, portRangeEnd int64, currentPorts config
 	return true, 0
 }
 
-func (r *RPC) getNewAllowlist(req *pb.SetAllowlistRequest, remove bool) (config.Allowlist, int64) {
+func (r *RPC) getNewAllowlist(req *pb.SetAllowlistRequest, forceRemoveNarrower, remove bool) (config.Allowlist, int64) {
 	var cfg config.Config
 	err := r.cm.Load(&cfg)
 	if err != nil {
@@ -88,11 +92,35 @@ func (r *RPC) getNewAllowlist(req *pb.SetAllowlistRequest, remove bool) (config.
 			return config.Allowlist{}, internal.CodePrivateSubnetLANDiscovery
 		}
 
-		if valid, errorCode := isSubnetValid(subnet, cfg.AutoConnectData.Allowlist.Subnets, remove); !valid {
+		valid, errorCode := isSubnetValid(subnet, cfg.AutoConnectData.Allowlist.Subnets, remove)
+		if !valid {
 			return config.Allowlist{}, errorCode
 		}
 
-		allowlist.UpdateSubnets(subnet, remove)
+		// try to detect if new subnet is wider and some narrower subnets would be eliminated
+		narrowerSubnets, err := allowlist.SubnetsCoveredBy(subnet)
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "checking for overlapping subnets:", err)
+			return config.Allowlist{}, internal.CodeAllowlistInvalidSubnet
+		}
+
+		// have detected narrower subnets which will be removed
+		// if there is user confirmation to proceed - go ahead, otherwise return with error code
+		if len(narrowerSubnets) > 0 && !forceRemoveNarrower {
+			return config.Allowlist{}, internal.CodeAllowlistSubnetWider
+		}
+
+		// UpdateSubnets takes logger function to be invoked in case existing subnet gets
+		// removed if it is covered by new subnet being added
+		if err := allowlist.UpdateSubnets(subnet, remove, func(removed, coveredBy string) {
+			log.Println(internal.WarningPrefix, "On add, allowlist removed subnet:", removed, "covered by:", coveredBy)
+		}); err != nil {
+			if errors.Is(err, config.ErrSubnetAlreadyCovered) {
+				return config.Allowlist{}, internal.CodeAllowlistSubnetSmallerNoop
+			}
+			return config.Allowlist{}, internal.CodeAllowlistInvalidSubnet
+		}
+		return allowlist, errorCode
 	case *pb.SetAllowlistRequest_SetAllowlistPortsRequest:
 		if request.SetAllowlistPortsRequest.IsUdp {
 			portRange := request.SetAllowlistPortsRequest.GetPortRange()
@@ -117,7 +145,6 @@ func (r *RPC) getNewAllowlist(req *pb.SetAllowlistRequest, remove bool) (config.
 }
 
 func (r *RPC) handleNewAllowlist(allowlist config.Allowlist) int64 {
-	// TODO: if save fails revert
 	if err := r.netw.SetAllowlist(allowlist); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 		return internal.CodeFailure
@@ -154,8 +181,10 @@ func (r *RPC) emitAllowlistAnalytics(event *allowlist.OperationEvent) {
 }
 
 func (r *RPC) SetAllowlist(ctx context.Context, in *pb.SetAllowlistRequest) (*pb.Payload, error) {
-	allowlistCfg, code := r.getNewAllowlist(in, false)
-	if code != internal.CodeSuccess {
+	req := in.GetSetAllowlistSubnetRequest() // Port or Subnet request, param `Force` is only for Subnet req
+	allowlistCfg, code := r.getNewAllowlist(in, req != nil && req.Force, false)
+	if code != internal.CodeSuccess &&
+		code != internal.CodeAllowlistSubnetTooWideWarn {
 		// emit failure event
 		if event := allowlist.NewOperationEventFromRequest(in, allowlist.OpAdd, false, code); event != nil {
 			r.emitAllowlistAnalytics(event)
@@ -171,12 +200,19 @@ func (r *RPC) SetAllowlist(ctx context.Context, in *pb.SetAllowlistRequest) (*pb
 		r.emitAllowlistAnalytics(event)
 	}
 
+	// code - is result from subnet validation (warning may come)
+	// resultCode - is result from allowlist apply into networker
+	if resultCode == internal.CodeSuccess && code != internal.CodeSuccess {
+		resultCode = code
+	}
+
 	return &pb.Payload{Type: resultCode}, nil
 }
 
 func (r *RPC) UnsetAllowlist(ctx context.Context, in *pb.SetAllowlistRequest) (*pb.Payload, error) {
-	allowlistCfg, code := r.getNewAllowlist(in, true)
-	if code != internal.CodeSuccess {
+	allowlistCfg, code := r.getNewAllowlist(in, true, true)
+	if code != internal.CodeSuccess &&
+		code != internal.CodeAllowlistSubnetTooWideWarn {
 		// emit failure event
 		if event := allowlist.NewOperationEventFromRequest(in, allowlist.OpRemove, false, code); event != nil {
 			r.emitAllowlistAnalytics(event)
