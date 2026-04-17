@@ -6,7 +6,7 @@ part of 'recommended_server_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$recommendedServerHash() => r'c744839cf4f5bfd57d2f8b00e6a4755b8c50aa50';
+String _$recommendedServerHash() => r'3cb3940c85c955e503e25e4efa333a9957edb1ba';
 
 /// See also [RecommendedServer].
 @ProviderFor(RecommendedServer)

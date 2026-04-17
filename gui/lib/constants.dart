@@ -41,7 +41,6 @@ final RegExp ipv4Regex = RegExp(
 
 const defaultTheme = ThemeMode.system;
 
-
 // Main window sizes
 final windowMinSize = Size(900, 700);
 final windowDefaultSize = Size(900, 700);

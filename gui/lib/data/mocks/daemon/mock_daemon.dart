@@ -39,6 +39,7 @@ final class MockDaemon extends DaemonServiceBase {
   late final MockAccountInfo account;
   late final MockVpnStatus vpnStatus;
   late final MockRecentConnections recentConnections;
+  RecommendedServerLocation? recommendedServerLocation;
 
   MockDaemon() {
     serversList = MockServersList(appStateStream);
@@ -381,12 +382,10 @@ final class MockDaemon extends DaemonServiceBase {
     ServiceCall call,
     Empty request,
   ) {
-    return Future.value(
-      RecommendedServerLocation(
-        cityName: "Dallas",
-        countryCode: "US",
-        countryName: "United States",
-      ),
-    );
+    if (recommendedServerLocation == null) {
+      return Future.value(RecommendedServerLocation());
+    } else {
+      return Future.value(recommendedServerLocation!);
+    }
   }
 }
