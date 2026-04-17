@@ -35,7 +35,7 @@ func TestResetToDefaults_PauseVariants(t *testing.T) {
 		isDataDisconnectExpected bool
 	}{
 		{
-			name:                     "reset to defaults while pause active, empty disconect event shall be emitted",
+			name:                     "reset to defaults while pause active, empty disconnect event shall be emitted",
 			isDataDisconnectExpected: true,
 		},
 		{
