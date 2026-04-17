@@ -25,10 +25,10 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_subnets_disco
 
     output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.add_subnet_to_allowlist([subnet])
-    assert not firewall.is_active(None, [subnet])
+    assert not firewall.is_active()
     output_after_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.remove_subnet_from_allowlist([subnet])
-    assert not firewall.is_active(None, [subnet])
+    assert not firewall.is_active()
     output_after_delete = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
     assert output_before_add == output_after_add
@@ -50,11 +50,11 @@ def test_connect_allowlist_subnet(tech, proto, obfuscated):
     ip_provider_addresses = socket.gethostbyname_ex(urlparse(lib.API_EXTERNAL_IP).netloc)[2]
     ip_addresses_with_subnet = [ip + CIDR_32 for ip in ip_provider_addresses]
     allowlist.add_subnet_to_allowlist(ip_addresses_with_subnet)
-    assert firewall.is_active(None, ip_addresses_with_subnet)
+    assert not firewall.is_ip_routed_via_VPN(ip_addresses_with_subnet)
     assert my_ip == network.get_external_device_ip()
 
     sh.nordvpn.disconnect()
-    assert not firewall.is_active(None, ip_addresses_with_subnet)
+    assert not firewall.is_active()
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -69,14 +69,14 @@ def test_allowlist_subnet_connect(tech, proto, obfuscated):
     ip_addresses_with_subnet = [ip + CIDR_32 for ip in ip_provider_addresses]
 
     allowlist.add_subnet_to_allowlist(ip_addresses_with_subnet)
-    assert not firewall.is_active(None, ip_addresses_with_subnet)
+    assert not firewall.is_active()
 
     sh.nordvpn.connect()
-    assert firewall.is_active(None, ip_addresses_with_subnet)
+    assert not firewall.is_ip_routed_via_VPN(ip_addresses_with_subnet)
     assert my_ip == network.get_external_device_ip()
 
     sh.nordvpn.disconnect()
-    assert not firewall.is_active(None, ip_addresses_with_subnet)
+    assert not firewall.is_active()
 
 
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
@@ -94,7 +94,7 @@ def test_allowlist_subnet_twice_disconnected(tech, proto, obfuscated, subnet):
     expected_message = allowlist.MSG_ALLOWLIST_SUBNET_ADD_ERROR % subnet
     assert expected_message in ex.value.stdout.decode("utf-8")
     assert str(sh.nordvpn.settings()).count(subnet) == 1
-    assert not firewall.is_active(None, [subnet])
+    assert not firewall.is_active()
 
 
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
@@ -114,10 +114,10 @@ def test_allowlist_subnet_twice_connected(tech, proto, obfuscated, subnet):
     expected_message = allowlist.MSG_ALLOWLIST_SUBNET_ADD_ERROR % subnet
     assert expected_message in ex.value.stdout.decode("utf-8")
     assert str(sh.nordvpn.settings()).count(subnet) == 1
-    assert firewall.is_active(None, [subnet])
+    assert not firewall.is_ip_routed_via_VPN([subnet])
 
     sh.nordvpn.disconnect()
-    assert not firewall.is_active(None, [subnet])
+    assert not firewall.is_active()
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -130,10 +130,10 @@ def test_allowlist_subnet_and_remove_disconnected(tech, proto, obfuscated):
     ip_addresses_with_subnet = [ip + CIDR_32 for ip in ip_provider_addresses]
 
     allowlist.add_subnet_to_allowlist(ip_addresses_with_subnet)
-    assert not firewall.is_active(None, ip_addresses_with_subnet)
+    assert not firewall.is_active()
 
     allowlist.remove_subnet_from_allowlist(ip_addresses_with_subnet)
-    assert not firewall.is_active(None, ip_addresses_with_subnet)
+    assert not firewall.is_active()
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -154,11 +154,11 @@ def test_allowlist_subnet_and_remove_connected(tech, proto, obfuscated):
     ip_addresses_with_subnet = [ip + CIDR_32 for ip in ip_provider_addresses]
 
     allowlist.add_subnet_to_allowlist(ip_addresses_with_subnet)
-    assert firewall.is_active(None, ip_addresses_with_subnet)
+    assert not firewall.is_ip_routed_via_VPN(ip_addresses_with_subnet)
     assert my_ip == network.get_external_device_ip(timeout)
 
     allowlist.remove_subnet_from_allowlist(ip_addresses_with_subnet)
-    assert firewall.is_active() and not firewall.is_active(None, ip_addresses_with_subnet)
+    assert firewall.is_active() and firewall.is_ip_routed_via_VPN(ip_addresses_with_subnet)
     assert my_ip != network.get_external_device_ip(timeout)
 
 

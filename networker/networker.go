@@ -879,6 +879,7 @@ func (netw *Combined) Refresh(c mesh.MachineMap) error {
 		if err := netw.configureFirewall(newCfg); err != nil {
 			return fmt.Errorf("configure firewall for meshnet refresh: %w", err)
 		}
+		return nil
 	}
 
 	return meshnet.ErrMeshnetNotEnabled
