@@ -24,8 +24,11 @@ func (r *RPC) Disconnect(_ *pb.Empty, srv pb.Daemon_DisconnectServer) error {
 	return srv.Send(&pb.Payload{Type: internal.CodeDisconnected})
 }
 
-// DoDisconnect is the non-gRPC function for Disconect to be used directly.
+// DoDisconnect is the non-gRPC function for Disconnect to be used directly.
 func (r *RPC) DoDisconnect() (bool, error) {
+	if r.connectionInfo.IsPaused() {
+		r.CancelPause()
+	}
 	return r.doDisconnect(0)
 }
 
