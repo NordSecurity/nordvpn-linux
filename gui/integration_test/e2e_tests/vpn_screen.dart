@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
+import 'package:nordvpn/pb/daemon/servers.pb.dart';
 
 import '../../test/utils/finders.dart';
 import '../../test/utils/test_helpers.dart';
@@ -29,7 +30,7 @@ void runVpnScreenTests() async {
 
       // initially, we have the server info and we are not connected
       final mainScreen = await app.goToVpnScreen();
-      expect(mainScreen.findServerInfoText(), contains("Dallas"));
+      expect(mainScreen.findServerInfoText(), equals(t.ui.fastestServer));
 
       // connect
       app.connect(country: "FR", city: "Paris", isVirtualLocation: true);
@@ -68,6 +69,71 @@ void runVpnScreenTests() async {
 
       await app.changeVirtualServers(false);
       expect(await vpnScreen.serversListHasVirtualServers(), isFalse);
+    });
+  });
+
+  group("test recommended location", () {
+    testWidgets("fastest server", (tester) async {
+      final app = await tester.setupIntegrationTests();
+      final mainScreen = await app.goToVpnScreen();
+      expect(mainScreen.findServerInfoText(), equals(t.ui.fastestServer));
+    });
+
+    testWidgets("specific location", (tester) async {
+      final app = await tester.setupIntegrationTests(
+        recommendedLocation: RecommendedServerLocation(
+          countryCode: "US",
+          countryName: "United States",
+          cityName: "Dallas",
+        ),
+      );
+      final mainScreen = await app.goToVpnScreen();
+      expect(mainScreen.findServerInfoText(), equals("Dallas, United States"));
+    });
+
+    testWidgets("bad location", (tester) async {
+      final app = await tester.setupIntegrationTests(
+        recommendedLocation: RecommendedServerLocation(cityName: "Dallas"),
+      );
+      final mainScreen = await app.goToVpnScreen();
+      expect(mainScreen.findServerInfoText(), equals(t.ui.fastestServer));
+    });
+
+    testWidgets("refetch location when settings change", (tester) async {
+      final app = await tester.setupIntegrationTests(
+        recommendedLocation: RecommendedServerLocation(
+          countryCode: "US",
+          countryName: "United States",
+          cityName: "Dallas",
+        ),
+      );
+      final mainScreen = await app.goToVpnScreen();
+      expect(mainScreen.findServerInfoText(), equals("Dallas, United States"));
+
+      app.daemon.recommendedServerLocation = RecommendedServerLocation(
+        countryCode: "RO",
+        countryName: "Romania",
+        cityName: "Bucharest",
+      );
+
+      // Trigger settings change
+      await app.setObfuscatedServers(true);
+
+      await mainScreen.waitUntilFound(
+        find.textContaining("Bucharest, Romania"),
+      );
+
+      app.daemon.recommendedServerLocation = RecommendedServerLocation(
+        countryCode: "US",
+        countryName: "United States",
+        cityName: "Dallas",
+      );
+
+      await app.setObfuscatedServers(false);
+
+      await mainScreen.waitUntilFound(
+        find.textContaining("Dallas, United States"),
+      );
     });
   });
 }

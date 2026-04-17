@@ -6,6 +6,7 @@ import 'package:nordvpn/config.dart';
 import 'package:nordvpn/constants.dart';
 import 'package:nordvpn/data/mocks/daemon/grpc_server.dart';
 import 'package:nordvpn/main.dart';
+import 'package:nordvpn/pb/daemon/servers.pb.dart';
 import 'package:nordvpn/pb/daemon/settings.pb.dart';
 import 'package:nordvpn/service_locator.dart';
 import 'package:nordvpn/theme/theme.dart';
@@ -72,6 +73,7 @@ extension Helper on WidgetTester {
     bool skipLoadingScreen = true,
     Size? windowSize,
     Settings? appSettings,
+    RecommendedServerLocation? recommendedLocation,
   }) async {
     if (config != null) {
       if (sl.isRegistered<Config>()) {
@@ -83,12 +85,12 @@ extension Helper on WidgetTester {
     // ensure mock gRPC server is used
     expect(useMockDaemon, true);
     await GrpcServer.instance.start();
+    GrpcServer.instance.daemon.recommendedServerLocation = recommendedLocation;
     // Set a default window size if not provided to ensure UI elements are visible
     await binding.setSurfaceSize(windowSize ?? const Size(1280, 720));
     GrpcServer.instance.account.delayDuration = skipLoadingScreen
         ? Duration.zero
         : Duration(seconds: 3);
-
     if (appSettings != null) {
       GrpcServer.instance.appSettings.replaceSettings(appSettings);
     }
