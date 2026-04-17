@@ -108,7 +108,7 @@ func TestLogout_Pause(t *testing.T) {
 		isDataDisconnectExpected bool
 	}{
 		{
-			name:                     "logout while pause active, disconect event shall be emitted",
+			name:                     "logout while pause active, disconnect event shall be emitted",
 			isDataDisconnectExpected: true,
 		},
 		{

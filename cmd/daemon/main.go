@@ -763,8 +763,6 @@ func main() {
 
 	httpCancel()
 
-	rpc.CancelPause()
-
 	if err := notificationClient.Stop(); err != nil {
 		log.Println(internal.ErrorPrefix, "stopping NC:", err)
 	}
