@@ -88,7 +88,11 @@ def is_source_port_reachable(ports: list[Port]) -> bool:
         for protocol in ["TCP", "UDP"]:
             try:
                 print("deleting ", protocol)
-                sh.sudo.conntrack("-D", "-p", protocol, "--sport", port.value)
+                if ":" in port.value:
+                    sh.sudo.conntrack("-D", "-p", protocol, "--sport", port_range_start)
+                    sh.sudo.conntrack("-D", "-p", protocol, "--sport", port_range_end)
+                else:
+                    sh.sudo.conntrack("-D", "-p", protocol, "--sport", port.value)
             except sh.ErrorReturnCode_1:
                 print("nothing to delete")
                 continue
