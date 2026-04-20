@@ -387,7 +387,7 @@ final class NordVpnTheme {
       ),
       buttonTheme: ConnectionCardButtonTheme(
         maxConnectButtonWidth: 330,
-        secureMyConnectionButtonStyle: OutlinedButton.styleFrom(
+        secureMyConnectionButtonStyle: ElevatedButton.styleFrom(
           shape: RoundedRectangleBorder(
             side: BorderSide(
               color: design.semanticColors.borderAccent,
@@ -405,7 +405,7 @@ final class NordVpnTheme {
           overlayColor: Colors.transparent,
           fixedSize: const Size.fromHeight(48),
         ),
-        cancelButtonStyle: OutlinedButton.styleFrom(
+        cancelButtonStyle: ElevatedButton.styleFrom(
           shape: RoundedRectangleBorder(
             side: BorderSide(
               color: design.semanticColors.borderPrimary,
