@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nordvpn/constants.dart';
 import 'package:nordvpn/theme/allow_list_theme.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/aurora_design.dart';
@@ -13,13 +14,16 @@ import 'package:nordvpn/theme/input_theme.dart';
 import 'package:nordvpn/theme/interactive_list_view_theme.dart';
 import 'package:nordvpn/theme/loading_indicator_theme.dart';
 import 'package:nordvpn/theme/login_form_theme.dart';
+import 'package:nordvpn/theme/nav_rail_theme.dart';
 import 'package:nordvpn/theme/on_off_switch_theme.dart';
 import 'package:nordvpn/theme/radio_button_theme.dart';
 import 'package:nordvpn/theme/servers_list_theme.dart';
 import 'package:nordvpn/theme/settings_theme.dart';
 import 'package:nordvpn/theme/support_link_theme.dart';
-import 'package:nordvpn/theme/vpn_status_card_theme.dart';
+import 'package:nordvpn/theme/context_menu_theme.dart';
+import 'package:nordvpn/theme/connection_card_theme.dart';
 import 'package:nordvpn/theme/popup_theme.dart';
+import 'package:nordvpn/theme/toast_theme.dart';
 
 ThemeData lightTheme() {
   return NordVpnTheme(ThemeMode.light).data();
@@ -43,7 +47,6 @@ final class NordVpnTheme {
     return data.copyWith(
       scaffoldBackgroundColor: design.semanticColors.bgPrimary,
       disabledColor: design.semanticColors.textDisabled,
-      navigationRailTheme: _navigationRailTheme(),
       navigationBarTheme: _navigationBarTheme(),
       tabBarTheme: _tabBarTheme(),
       appBarTheme: _appBarTheme(),
@@ -58,7 +61,7 @@ final class NordVpnTheme {
       tooltipTheme: _tooltipThemeData(),
       extensions: [
         _appThemeExt(),
-        _vpnStatusCardThemeExt(),
+        _connectionCardThemeExt(mode),
         _serversListThemeExt(),
         _settingsThemeExt(),
         _onOffSwitchThemeExt(),
@@ -77,22 +80,10 @@ final class NordVpnTheme {
         _errorScreenThemeExt(),
         _consentScreenThemeExt(),
         _popupThemeExt(),
+        _navRailThemeExt(),
+        _contextMenuThemeExt(),
+        _toastThemeExt(),
       ],
-    );
-  }
-
-  NavigationRailThemeData _navigationRailTheme() {
-    return NavigationRailThemeData(
-      backgroundColor: design.semanticColors.bgPrimary,
-      labelType: NavigationRailLabelType.all,
-      useIndicator: true,
-      selectedLabelTextStyle: design.typography.body.copyWith(
-        color: design.semanticColors.textPrimary,
-      ),
-      unselectedLabelTextStyle: design.typography.body.copyWith(
-        color: design.semanticColors.textPrimary,
-      ),
-      indicatorColor: design.semanticColors.bgSecondary,
     );
   }
 
@@ -288,9 +279,9 @@ final class NordVpnTheme {
 
   AppTheme _appThemeExt() {
     return AppTheme(
-      borderRadiusLarge: 16,
-      borderRadiusMedium: 8,
-      borderRadiusSmall: 4,
+      borderRadiusLarge: AppBorderRadius.lg,
+      borderRadiusMedium: AppBorderRadius.md,
+      borderRadiusSmall: AppBorderRadius.sm,
       padding: 10,
       margin: 8,
       outerPadding: 16,
@@ -352,17 +343,120 @@ final class NordVpnTheme {
     );
   }
 
-  VpnStatusCardTheme _vpnStatusCardThemeExt() {
-    return VpnStatusCardTheme(
-      height: 150,
-      maxConnectButtonWidth: 408,
-      primaryFont: design.typography.captionMedium.copyWith(
+  ConnectionCardTheme _connectionCardThemeExt(ThemeMode mode) {
+    return ConnectionCardTheme(
+      primaryFont: design.typography.heading.copyWith(
         color: design.semanticColors.textPrimary,
       ),
-      secondaryFont: design.typography.subHeading.copyWith(
-        color: design.semanticColors.textPrimary,
+      mapPadding: EdgeInsets.only(top: AppSpacing.spacing5),
+      connectionCardPadding: EdgeInsets.only(
+        left: AppSpacing.spacing6,
+        top: AppSpacing.spacing3,
+        bottom: AppSpacing.spacing6,
       ),
-      iconSize: 40,
+      margin: EdgeInsets.only(
+        top: AppSpacing.spacing3,
+        right: AppSpacing.spacing2,
+      ),
+      borderRadius: AppBorderRadius.lg,
+      minWidth: 520,
+      smallSpacing: AppSpacing.spacing3,
+      mediumSpacing: AppSpacing.spacing5,
+      labelTheme: ConnectionCardLabelTheme(
+        disconnectedColor: design.semanticColors.textCritical,
+        connectingColor: design.semanticColors.textSecondary,
+        connectedColor: design.semanticColors.textSuccess,
+        serverTypeColor: design.semanticColors.textPrimary,
+        spacing: AppSpacing.spacing1,
+        font: design.typography.subHeading.copyWith(
+          color: design.semanticColors.textPrimary,
+        ),
+      ),
+      iconTheme: ConnectionCardIconTheme(
+        iconSize: 48,
+        flagBorderSize: 2,
+        dipIconWidth: 23,
+        dipIconHeight: 24,
+        borderConnectedColor: design.semanticColors.textSuccess,
+        borderConnectingColor: design.semanticColors.textAccent,
+        disconnectedBackgroundColor: design.semanticColors.bgCriticalSubtle,
+        disconnectedIcon: mode == ThemeMode.dark
+            ? "${imagesPath}shield_dark.svg"
+            : "${imagesPath}shield_light.svg",
+        disconnectedPadding: EdgeInsets.all(AppSpacing.spacing2),
+      ),
+      buttonTheme: ConnectionCardButtonTheme(
+        maxConnectButtonWidth: 330,
+        secureMyConnectionButtonStyle: OutlinedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            side: BorderSide(
+              color: design.semanticColors.borderAccent,
+              width: AppBorderWidth.md,
+            ),
+            borderRadius: AppBorderRadius.full,
+          ),
+          textStyle: design.typography.subHeading,
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.spacing3,
+            horizontal: AppSpacing.spacing7,
+          ),
+          backgroundColor: design.semanticColors.bgAccent,
+          foregroundColor: design.semanticColors.textPrimaryOnColor,
+          overlayColor: Colors.transparent,
+          fixedSize: const Size.fromHeight(48),
+        ),
+        cancelButtonStyle: OutlinedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            side: BorderSide(
+              color: design.semanticColors.borderPrimary,
+              width: AppBorderWidth.md,
+            ),
+            borderRadius: AppBorderRadius.full,
+          ),
+          textStyle: design.typography.subHeading,
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.spacing3,
+            horizontal: AppSpacing.spacing7,
+          ),
+          backgroundColor: design.semanticColors.bgGlass,
+          foregroundColor: design.semanticColors.textPrimary,
+          overlayColor: Colors.transparent,
+          fixedSize: const Size.fromHeight(48),
+        ),
+        pauseConnectionButtonStyle: ElevatedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            side: BorderSide(
+              color: design.semanticColors.borderPrimary,
+              width: AppBorderWidth.md,
+            ),
+            borderRadius: AppBorderRadius.full,
+          ),
+          textStyle: design.typography.subHeading.copyWith(
+            color: design.semanticColors.textPrimary,
+          ),
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.spacing3,
+            horizontal: AppSpacing.spacing7,
+          ),
+          backgroundColor: design.semanticColors.bgGlass,
+          foregroundColor: design.semanticColors.textPrimary,
+          fixedSize: const Size.fromHeight(48),
+        ),
+        connectionDetailsButtonStyle: ElevatedButton.styleFrom(
+          shape: const CircleBorder(),
+          side: BorderSide(
+            color: design.semanticColors.borderPrimary,
+            width: AppBorderWidth.md,
+          ),
+          textStyle: design.typography.subHeading.copyWith(
+            color: design.semanticColors.textPrimary,
+          ),
+          padding: const EdgeInsets.all(AppSpacing.spacing3),
+          backgroundColor: design.semanticColors.bgGlass,
+          foregroundColor: design.semanticColors.textPrimary,
+          fixedSize: const Size(48, 48),
+        ),
+      ),
     );
   }
 
@@ -712,6 +806,69 @@ final class NordVpnTheme {
       textSecondary: design.typography.body.copyWith(
         color: design.semanticColors.textSecondary,
       ),
+    );
+  }
+
+  NavRailTheme _navRailThemeExt() {
+    return NavRailTheme(
+      railBg: design.semanticColors.bgPrimary,
+      railWidth: 80,
+      containerWidth: 40,
+      containerHeight: 40,
+      betweenIconsGap: AppSpacing.spacing2,
+      iconsPaddingTop: AppSpacing.spacing3,
+      iconsMargin: AppSpacing.spacing2,
+      radius: AppBorderRadius.md,
+      selectedItemBg: design.semanticColors.bgTertiary,
+    );
+  }
+
+  ContextMenuTheme _contextMenuThemeExt() {
+    return ContextMenuTheme(
+      menuWidth: 260,
+      menuRadius: AppBorderRadius.md,
+      menuPadding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.spacing1,
+        vertical: AppSpacing.spacing2,
+      ),
+      menuColor: design.semanticColors.bgSecondary,
+      menuBorderColor: design.semanticColors.borderPrimary,
+      menuBorderWidth: AppBorderWidth.md,
+      itemHeight: 40,
+      itemBorderRadius: AppBorderRadius.sm,
+      itemPadding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.spacing4,
+        vertical: AppSpacing.spacing0,
+      ),
+      itemHoverColor: design.semanticColors.bgTertiary,
+      itemTextStyle: design.typography.body.copyWith(
+        color: design.semanticColors.textPrimary,
+      ),
+      animationDuration: AppTransitions.durationFast,
+      animationCurve: AppTransitions.timingFunctionDefault,
+      menuBoxShadow: mode == ThemeMode.light
+          ? AppBoxShadows.lightPopover
+          : AppBoxShadows.darkPopover,
+      menuShadowMargin: 6,
+      menuGap: 4,
+    );
+  }
+
+  ToastTheme _toastThemeExt() {
+    return ToastTheme(
+      messageTextStyle: design.typography.subHeading.copyWith(
+        color: design.semanticColors.textPrimary,
+      ),
+      backgroundColor: design.semanticColors.bgTertiary,
+      spacing: AppSpacing.spacing4,
+      borderRadius: AppBorderRadius.md,
+      widgetWidth: 386,
+      widgetHeight: 58,
+      closeButtonPadding: EdgeInsets.all(5),
+      borderWidth: AppBorderWidth.md,
+      borderColor: design.semanticColors.borderPrimary,
+      widgetPositionRight: 20,
+      widgetPositionBottom: 16,
     );
   }
 }

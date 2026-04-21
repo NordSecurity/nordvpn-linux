@@ -178,3 +178,19 @@ final $typed_data.Uint8List serversResponseDescriptor = $convert.base64Decode(
     'Cg9TZXJ2ZXJzUmVzcG9uc2USKgoHc2VydmVycxgBIAEoCzIOLnBiLlNlcnZlcnNNYXBIAFIHc2'
     'VydmVycxIoCgVlcnJvchgCIAEoDjIQLnBiLlNlcnZlcnNFcnJvckgAUgVlcnJvckIKCghyZXNw'
     'b25zZQ==');
+
+@$core.Deprecated('Use recommendedServerLocationDescriptor instead')
+const RecommendedServerLocation$json = {
+  '1': 'RecommendedServerLocation',
+  '2': [
+    {'1': 'country_code', '3': 1, '4': 1, '5': 9, '10': 'countryCode'},
+    {'1': 'country_name', '3': 2, '4': 1, '5': 9, '10': 'countryName'},
+    {'1': 'city_name', '3': 3, '4': 1, '5': 9, '10': 'cityName'},
+  ],
+};
+
+/// Descriptor for `RecommendedServerLocation`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List recommendedServerLocationDescriptor = $convert.base64Decode(
+    'ChlSZWNvbW1lbmRlZFNlcnZlckxvY2F0aW9uEiEKDGNvdW50cnlfY29kZRgBIAEoCVILY291bn'
+    'RyeUNvZGUSIQoMY291bnRyeV9uYW1lGAIgASgJUgtjb3VudHJ5TmFtZRIbCgljaXR5X25hbWUY'
+    'AyABKAlSCGNpdHlOYW1l');

@@ -7,7 +7,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
-	"google.golang.org/grpc/peer"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
@@ -91,22 +91,24 @@ func statusStream(stateChan <-chan any,
 			switch e := ev.(type) {
 			case events.DataConnectChangeNotif:
 				status := pb.StatusResponse{
-					State:           e.Status.State,
-					Ip:              e.Status.IP.String(),
-					Country:         e.Status.Country,
-					CountryCode:     e.Status.CountryCode,
-					City:            e.Status.City,
-					Name:            e.Status.Name,
-					Hostname:        e.Status.Hostname,
-					IsMeshPeer:      e.Status.IsMeshnetPeer,
-					ByUser:          true,
-					VirtualLocation: e.Status.IsVirtualLocation,
-					Technology:      e.Status.Technology,
-					Protocol:        e.Status.Protocol,
-					Obfuscated:      e.Status.IsObfuscated,
-					PostQuantum:     e.Status.IsPostQuantum,
-					Upload:          e.Status.Tx,
-					Download:        e.Status.Rx,
+					State:                     e.Status.State,
+					Ip:                        e.Status.IP.String(),
+					Country:                   e.Status.Country,
+					CountryCode:               e.Status.CountryCode,
+					City:                      e.Status.City,
+					Name:                      e.Status.Name,
+					Hostname:                  e.Status.Hostname,
+					IsMeshPeer:                e.Status.IsMeshnetPeer,
+					ByUser:                    true,
+					VirtualLocation:           e.Status.IsVirtualLocation,
+					Technology:                e.Status.Technology,
+					Protocol:                  e.Status.Protocol,
+					Obfuscated:                e.Status.IsObfuscated,
+					PostQuantum:               e.Status.IsPostQuantum,
+					Upload:                    e.Status.Tx,
+					Download:                  e.Status.Rx,
+					PausedAt:                  timestamppb.New(e.Status.PausedAt),
+					PauseRemainingDurationSec: e.Status.PauseRemainingTimeSec,
 				}
 
 				// for disconnected state connection parameters shall be left empty
@@ -164,21 +166,36 @@ func statusStream(stateChan <-chan any,
 func (r *RPC) SubscribeToStateChanges(_ *pb.Empty, srv pb.Daemon_SubscribeToStateChangesServer) error {
 	log.Println(internal.InfoPrefix, "Received new subscription request")
 
-	peer, ok := peer.FromContext(srv.Context())
-	var uid int64
-	if ok {
-		cred, ok := peer.AuthInfo.(internal.UcredAuth)
-		if !ok {
-			return srv.Send(&pb.AppState{
-				State: &pb.AppState_Error{
-					Error: pb.AppStateError_FAILED_TO_GET_UID,
-				},
-			})
+	cred, err := getCallerCred(srv.Context())
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "SubscribeToStateChanges:", err)
+		return srv.Send(&pb.AppState{
+			State: &pb.AppState_Error{
+				Error: pb.AppStateError_FAILED_TO_GET_UID,
+			},
+		})
+	}
+	uid := int64(cred.Uid)
+
+	// Subscribe before fetching current state so no transition events are
+	// missed between the snapshot and the start of the event loop.
+	stateChan, stopChan := r.statePublisher.AddSubscriber()
+
+	// Send the current state immediately so newly connected clients are
+	// synchronised without waiting for the next state change event. This
+	// is done synchronously on the same goroutine that will later call
+	// srv.Send inside statusStream, so there is no concurrent-Send race.
+	currentStatus, err := r.Status(srv.Context(), &pb.Empty{})
+	if err == nil {
+		if sendErr := srv.Send(&pb.AppState{
+			State: &pb.AppState_ConnectionStatus{ConnectionStatus: currentStatus},
+		}); sendErr != nil {
+			log.Println(internal.ErrorPrefix, "failed to send initial state to subscriber:", sendErr)
 		}
-		uid = int64(cred.Uid)
+	} else {
+		log.Println(internal.ErrorPrefix, "failed to fetch current status for new subscriber:", err)
 	}
 
-	stateChan, stopChan := r.statePublisher.AddSubscriber()
 	statusStream(stateChan, stopChan, uid, srv, &r.RequestedConnParams)
 
 	return nil

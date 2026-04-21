@@ -112,6 +112,25 @@ func (s *testStateServer) Context() context.Context {
 	return s.ctx
 }
 
+func TestSubscribeToStateChanges_NoPeerContext(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	srv := &testStateServer{ctx: ctx, wg: &wg, states: make([]*pb.AppState, 0)}
+
+	r := testRPC()
+	err := r.SubscribeToStateChanges(&pb.Empty{}, srv)
+
+	wg.Wait()
+
+	assert.NoError(t, err)
+	require.Len(t, srv.states, 1)
+	assert.Equal(t, pb.AppStateError_FAILED_TO_GET_UID, srv.states[0].GetError())
+}
+
 // TestRpcState_HandleDataConnectChangedEvents tests the functionality of statusStream function
 // in handling DataConnectChangeNotif events. It verifies that:
 //   - When connection state is DISCONNECTED, no connection parameters shall be provided in the app state

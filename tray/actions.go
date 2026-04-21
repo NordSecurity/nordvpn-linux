@@ -280,7 +280,6 @@ func (ti *Instance) setTray(flag bool) bool {
 	}
 
 	resp, err := ti.client.SetTray(context.Background(), &pb.SetTrayRequest{
-		Uid:  int64(os.Getuid()),
 		Tray: flag,
 	})
 	if err != nil {

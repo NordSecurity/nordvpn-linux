@@ -2,9 +2,11 @@ import 'package:grpc/grpc.dart' hide ConnectionState;
 import 'package:nordvpn/data/models/city.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
 import 'package:nordvpn/data/models/country.dart';
+import 'package:nordvpn/data/models/pause.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/data/providers/app_state_provider.dart';
 import 'package:nordvpn/data/providers/popups_provider.dart';
+import 'package:nordvpn/data/providers/toasts_provider.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/data/repository/vpn_repository.dart';
 import 'package:nordvpn/logger.dart';
@@ -24,6 +26,16 @@ class VpnStatusController extends _$VpnStatusController
   FutureOr<VpnStatus> build() async {
     final status = await ref.read(vpnRepositoryProvider).fetchStatus();
     _registerNotifications();
+
+    if (status.state == ConnectionState.PAUSED) {
+      // show the toast if the gui starts while already paused
+      ref
+          .read(toastsProvider.notifier)
+          .show(Duration(seconds: status.pauseRemainingDurationSec));
+    } else {
+      // clear any stale toast left over from a previous paused session
+      ref.read(toastsProvider.notifier).closeToast();
+    }
 
     return VpnStatus.fromStatusResponse(status);
   }
@@ -51,6 +63,9 @@ class VpnStatusController extends _$VpnStatusController
       _doAndShowPopup((vpn) => vpn.reconnect(args));
 
   Future<void> disconnect() => _doAndShowPopup((vpn) => vpn.disconnect());
+
+  Future<void> pauseConnection(PauseLength pauseValue) =>
+      _doAndShowPopup((vpn) => vpn.pauseConnection(pauseValue));
 
   Future<int> cancelConnect() => _doAndShowPopup((vpn) => vpn.cancelConnect());
 
@@ -100,6 +115,14 @@ class VpnStatusController extends _$VpnStatusController
         "ignore VPN status changed ${status.state} because they are equal",
       );
       return;
+    }
+
+    if (status.state == ConnectionState.PAUSED) {
+      ref
+          .read(toastsProvider.notifier)
+          .show(Duration(seconds: status.pauseRemainingDurationSec));
+    } else {
+      ref.read(toastsProvider.notifier).closeToast();
     }
 
     final vpnStatus = state.value!.copyWith(

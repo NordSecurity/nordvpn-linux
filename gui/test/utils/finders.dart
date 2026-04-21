@@ -7,18 +7,21 @@ import 'package:nordvpn/settings/navigation.dart';
 import 'package:nordvpn/settings/terms_screen.dart';
 import 'package:nordvpn/settings/vpn_connection_settings.dart';
 import 'package:nordvpn/snap/snap_screen.dart';
+import 'package:nordvpn/vpn/connection_card_buttons.dart';
+import 'package:nordvpn/vpn/connection_card_label.dart';
+import 'package:nordvpn/vpn/connection_card_server_info.dart';
 import 'package:nordvpn/vpn/servers_list_card.dart';
-import 'package:nordvpn/vpn/vpn_status_card.dart';
+import 'package:nordvpn/vpn/vpn.dart';
 import 'package:nordvpn/widgets/login_form.dart';
 
 Finder serverInfoText() {
-  final serverInfoTextFinder = find.byKey(VpnWidgetKeys.vpnServerInfoText);
+  final serverInfoTextFinder = find.byKey(ConnectionCardServerInfo.textKey);
   expect(serverInfoTextFinder, findsOneWidget);
   return serverInfoTextFinder;
 }
 
 Finder statusLabelText() {
-  final statusInfoTextFinder = find.byKey(VpnWidgetKeys.vpnStatusLabelText);
+  final statusInfoTextFinder = find.byKey(ConnectionCardLabel.labelKey);
   expect(statusInfoTextFinder, findsOneWidget);
   return statusInfoTextFinder;
 }
@@ -42,13 +45,15 @@ Finder loginButtonLoadingIndicator() {
 }
 
 Finder vpnStatusCard() {
-  final vpnStatusFinder = find.byKey(VpnWidgetKeys.vpnStatusCard);
+  final vpnStatusFinder = find.byKey(VpnWidget.connectionCardKey);
   expect(vpnStatusFinder, findsOneWidget);
   return vpnStatusFinder;
 }
 
 Finder quickConnectButton() {
-  final quickConnectFinder = find.byKey(VpnWidgetKeys.vpnQuickConnectButton);
+  final quickConnectFinder = find.byKey(
+    ConnectionCardButtons.secureMyConnectionButtonKey,
+  );
   expect(quickConnectFinder, findsOneWidget);
   return quickConnectFinder;
 }

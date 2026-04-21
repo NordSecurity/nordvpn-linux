@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grpc/grpc.dart';
 import 'package:nordvpn/config.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
+import 'package:nordvpn/data/models/pause.dart';
+import 'package:nordvpn/pb/daemon/pause.pb.dart';
 import 'package:nordvpn/pb/daemon/recent_connections.pb.dart';
 import 'package:nordvpn/grpc/grpc_service.dart';
 import 'package:nordvpn/grpc/protobuf_utils.dart';
@@ -66,7 +68,8 @@ class VpnRepository {
   Future<int> disconnect() async {
     final options = createUiEventCallOptions(
       formReference: UIEvent_FormReference.HOME_SCREEN,
-      itemName: UIEvent_ItemName.DISCONNECT,
+      itemName: UIEvent_ItemName.PAUSE,
+      itemValue: UIEvent_ItemValue.PAUSE_DISCONNECT,
     );
     final stream = _client.disconnect(Empty(), options: options);
 
@@ -88,6 +91,19 @@ class VpnRepository {
     return DaemonStatusCode.failure;
   }
 
+  Future<int> pauseConnection(PauseLength pauseValue) async {
+    final options = createUiEventCallOptions(
+      formReference: UIEvent_FormReference.HOME_SCREEN,
+      itemName: UIEvent_ItemName.PAUSE,
+      itemValue: pauseValue.eventValue,
+    );
+    final response = await _client.pauseConnection(
+      PauseRequest(seconds: pauseValue.seconds),
+      options: options,
+    );
+    return response.type.toInt();
+  }
+
   Future<int> cancelConnect() async {
     final response = await _client.connectCancel(Empty());
     return response.type.toInt();
@@ -105,6 +121,11 @@ class VpnRepository {
   Future<RecentConnectionsResponse> fetchRecentConnections(int limit) async {
     final request = RecentConnectionsRequest(limit: $fixnum.Int64(limit));
     return await _client.getRecentConnections(request);
+  }
+
+  Future<RecommendedServerLocation> fetchRecommendedServerLocation() async {
+    final response = await _client.recommendedServer(Empty());
+    return response;
   }
 }
 

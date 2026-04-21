@@ -436,7 +436,7 @@ final class _ServersListCardState extends State<ServersListCard> {
       showDivider: shouldShowStaticList,
       buttonTitle: shouldShowStaticList || widget.withQuickConnectTile
           ? ""
-          : t.ui.quickConnect,
+          : t.ui.secureMyConnection,
       stretchButton: true,
       child: SearchableServersList(
         servers: servers,

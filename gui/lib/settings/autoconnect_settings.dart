@@ -205,7 +205,7 @@ final class _ConnectNowButton extends ConsumerWidget {
           : () => ref
                 .read(vpnStatusControllerProvider.notifier)
                 .connect(savedLocation),
-      child: Text(t.ui.connectNow),
+      child: Text(t.ui.secureMyConnection),
     );
   }
 }

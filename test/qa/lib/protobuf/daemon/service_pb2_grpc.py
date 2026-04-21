@@ -12,6 +12,7 @@ import features_pb2 as features__pb2
 import login_pb2 as login__pb2
 import login_with_token_pb2 as login__with__token__pb2
 import logout_pb2 as logout__pb2
+import pause_pb2 as pause__pb2
 import ping_pb2 as ping__pb2
 import purchase_pb2 as purchase__pb2
 import rate_pb2 as rate__pb2
@@ -117,6 +118,11 @@ class DaemonStub(object):
                 request_serializer=rate__pb2.RateRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
+        self.PauseConnection = channel.unary_unary(
+                '/pb.Daemon/PauseConnection',
+                request_serializer=pause__pb2.PauseRequest.SerializeToString,
+                response_deserializer=common__pb2.Payload.FromString,
+                _registered_method=True)
         self.GetServers = channel.unary_unary(
                 '/pb.Daemon/GetServers',
                 request_serializer=common__pb2.Empty.SerializeToString,
@@ -136,6 +142,11 @@ class DaemonStub(object):
                 '/pb.Daemon/Groups',
                 request_serializer=common__pb2.Empty.SerializeToString,
                 response_deserializer=common__pb2.ServerGroupsList.FromString,
+                _registered_method=True)
+        self.RecommendedServer = channel.unary_unary(
+                '/pb.Daemon/RecommendedServer',
+                request_serializer=common__pb2.Empty.SerializeToString,
+                response_deserializer=servers__pb2.RecommendedServerLocation.FromString,
                 _registered_method=True)
         self.Settings = channel.unary_unary(
                 '/pb.Daemon/Settings',
@@ -368,6 +379,12 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def PauseConnection(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def GetServers(self, request, context):
         """==================== Server Discovery ====================
         """
@@ -388,6 +405,12 @@ class DaemonServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def Groups(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def RecommendedServer(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -643,6 +666,11 @@ def add_DaemonServicer_to_server(servicer, server):
                     request_deserializer=rate__pb2.RateRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
             ),
+            'PauseConnection': grpc.unary_unary_rpc_method_handler(
+                    servicer.PauseConnection,
+                    request_deserializer=pause__pb2.PauseRequest.FromString,
+                    response_serializer=common__pb2.Payload.SerializeToString,
+            ),
             'GetServers': grpc.unary_unary_rpc_method_handler(
                     servicer.GetServers,
                     request_deserializer=common__pb2.Empty.FromString,
@@ -662,6 +690,11 @@ def add_DaemonServicer_to_server(servicer, server):
                     servicer.Groups,
                     request_deserializer=common__pb2.Empty.FromString,
                     response_serializer=common__pb2.ServerGroupsList.SerializeToString,
+            ),
+            'RecommendedServer': grpc.unary_unary_rpc_method_handler(
+                    servicer.RecommendedServer,
+                    request_deserializer=common__pb2.Empty.FromString,
+                    response_serializer=servers__pb2.RecommendedServerLocation.SerializeToString,
             ),
             'Settings': grpc.unary_unary_rpc_method_handler(
                     servicer.Settings,
@@ -1171,6 +1204,33 @@ class Daemon(object):
             _registered_method=True)
 
     @staticmethod
+    def PauseConnection(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/PauseConnection',
+            pause__pb2.PauseRequest.SerializeToString,
+            common__pb2.Payload.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
     def GetServers(request,
             target,
             options=(),
@@ -1268,6 +1328,33 @@ class Daemon(object):
             '/pb.Daemon/Groups',
             common__pb2.Empty.SerializeToString,
             common__pb2.ServerGroupsList.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RecommendedServer(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/RecommendedServer',
+            common__pb2.Empty.SerializeToString,
+            servers__pb2.RecommendedServerLocation.FromString,
             options,
             channel_credentials,
             insecure,

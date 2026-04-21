@@ -50,3 +50,9 @@ message ServersResponse {
         ServersError error = 2;
     }
 }
+
+message RecommendedServerLocation {
+    string country_code = 1;
+    string country_name = 2;
+    string city_name = 3;
+}

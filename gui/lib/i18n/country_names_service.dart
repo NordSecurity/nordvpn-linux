@@ -27,7 +27,7 @@ final class CountryNamesService {
 
   Country register({required String code, required String name}) {
     if (name.isEmpty) {
-      logger.i("no country name was provided");
+      logger.i("no country name was provided for $code");
       name = translateCountryName(code);
     }
     final country = Country(code: code, name: name);
