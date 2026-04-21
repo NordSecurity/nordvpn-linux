@@ -825,7 +825,7 @@ final class NordVpnTheme {
 
   ContextMenuTheme _contextMenuThemeExt() {
     return ContextMenuTheme(
-      menuWidth: 260,
+      menuWidth: 268,
       menuRadius: AppBorderRadius.md,
       menuPadding: EdgeInsets.symmetric(
         horizontal: AppSpacing.spacing1,
@@ -850,7 +850,7 @@ final class NordVpnTheme {
           ? AppBoxShadows.lightPopover
           : AppBoxShadows.darkPopover,
       menuShadowMargin: 6,
-      menuGap: 4,
+      menuGap: AppSpacing.spacing2,
     );
   }
 
