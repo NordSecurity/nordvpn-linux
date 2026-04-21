@@ -1,6 +1,9 @@
 package firewall
 
 import (
+	"bytes"
+	"slices"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 )
@@ -30,9 +33,53 @@ type Config struct {
 	MeshnetInfo    *MeshInfo
 }
 
+func NewConfig(opts ...Option) Config {
+	return Config{}.CopyWith(opts...)
+}
+
+// Only the firewall relevant parts are checked. It is not a fully IsEqual
+func (c *Config) HasSimilarMeshInfo(cfg *Config) bool {
+	return c.MeshnetInfo != nil &&
+		cfg.MeshnetInfo != nil &&
+		c.MeshnetInfo.IsSimilar(cfg.MeshnetInfo)
+}
+
 type MeshInfo struct {
 	MeshnetMap    mesh.MachineMap
 	MeshInterface string
+}
+
+// Only the firewall relevant parts are checked. It is not a fully IsEqual
+func (m *MeshInfo) IsSimilar(meshInfo *MeshInfo) bool {
+	if meshInfo == nil {
+		return false
+	}
+
+	if m.MeshInterface != meshInfo.MeshInterface {
+		return false
+	}
+
+	sortMeshnetMap(&meshInfo.MeshnetMap)
+
+	arePeersEqual := slices.EqualFunc(
+		m.MeshnetMap.Peers,
+		meshInfo.MeshnetMap.Peers,
+		func(p1, p2 mesh.MachinePeer) bool {
+			return p1.ID == p2.ID &&
+				p1.Address == p2.Address &&
+				p1.DoIAllowInbound == p2.DoIAllowInbound &&
+				p1.DoIAllowRouting == p2.DoIAllowRouting &&
+				p1.DoIAllowLocalNetwork == p2.DoIAllowLocalNetwork &&
+				p1.DoIAllowFileshare == p2.DoIAllowFileshare
+
+		},
+	)
+
+	if !arePeersEqual {
+		return false
+	}
+
+	return true
 }
 
 func NewMeshInfo(meshnetMap mesh.MachineMap, meshInterface string) *MeshInfo {
@@ -83,6 +130,9 @@ func WithTunnelInterface(tunnelInterface string) Option {
 func WithMeshnetInfo(meshInfo *MeshInfo) Option {
 	return func(c *Config) {
 		c.MeshnetInfo = meshInfo
+		if meshInfo != nil {
+			sortMeshnetMap(&c.MeshnetInfo.MeshnetMap)
+		}
 	}
 }
 
@@ -90,4 +140,11 @@ func WithBlockFileshare(block bool) Option {
 	return func(c *Config) {
 		c.BlockFileshare = block
 	}
+}
+
+func sortMeshnetMap(meshMap *mesh.MachineMap) {
+	// sort the peers to easier compare for equality
+	slices.SortFunc(meshMap.Peers, func(p1, p2 mesh.MachinePeer) int {
+		return bytes.Compare(p1.ID[:], p2.ID[:])
+	})
 }
