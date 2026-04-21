@@ -204,7 +204,7 @@ func (acc *AnalyticsConsentChecker) doLightLogout() error {
 		delete(c.TokensData, c.AutoConnectData.ID)
 		c.AutoConnectData.ID = 0
 		c.Mesh = false
-		c.MeshPrivateKey = ""
+		c.DeviceKey = ""
 		return c
 	})
 }

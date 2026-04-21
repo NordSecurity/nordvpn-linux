@@ -66,7 +66,7 @@ func (m *Meshnet) unsetMesh() error {
 	return m.man.SaveWith(func(c config.Config) config.Config {
 		c.Mesh = false
 		c.MeshDevice = nil
-		c.MeshPrivateKey = ""
+		c.DeviceKey = ""
 		return c
 	})
 }

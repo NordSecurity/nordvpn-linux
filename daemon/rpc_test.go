@@ -20,6 +20,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -117,6 +118,7 @@ func testRPC() *RPC {
 		NewConsentChecker(false, cm, api, &workingLoginChecker{}, &analytics),
 		recents.NewRecentConnectionsStore(TestdataPath+TestRecentConnFile, &internal.StdFilesystemHandle{}, nil),
 		daemonEvents.NewDataUpdateEvents(),
+		&devicekey.DeviceKeyManagerImpl{},
 	)
 }
 

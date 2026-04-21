@@ -16,6 +16,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -59,8 +60,8 @@ type registrationChecker struct {
 	registrationErr error
 }
 
-func (r registrationChecker) IsRegistrationInfoCorrect() bool { return r.registrationErr == nil }
-func (r registrationChecker) Register() error                 { return r.registrationErr }
+func (r registrationChecker) CheckAndRegisterMeshnet() bool { return r.registrationErr == nil }
+func (r registrationChecker) ForceRegisterMeshnet() error   { return r.registrationErr }
 
 type workingNetworker struct{}
 
@@ -1338,7 +1339,7 @@ func TestServer_fetchCfg(t *testing.T) {
 		name          string
 		isNotLoggedIn bool
 		cm            config.Manager
-		mc            Checker
+		mc            devicekey.MeshnetDeviceKeyManager
 		err           *pb.Error
 	}{
 		{
@@ -1398,11 +1399,11 @@ func TestServer_fetchCfg(t *testing.T) {
 				// Ignore meshnet settings as they are likely to be changed by reg checker
 				cfg.Mesh = false
 				cfg.MeshDevice = nil
-				cfg.MeshPrivateKey = ""
+				cfg.DeviceKey = ""
 				cfg.Technology = config.Technology_UNKNOWN_TECHNOLOGY
 				expectedCfg.Mesh = false
 				expectedCfg.MeshDevice = nil
-				expectedCfg.MeshPrivateKey = ""
+				expectedCfg.DeviceKey = ""
 				expectedCfg.Technology = config.Technology_UNKNOWN_TECHNOLOGY
 
 				assert.Equal(t, expectedCfg, cfg)

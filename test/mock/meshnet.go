@@ -103,5 +103,5 @@ type RegistrationCheckerMock struct {
 	registrationErr error
 }
 
-func (r RegistrationCheckerMock) IsRegistrationInfoCorrect() bool { return r.registrationErr == nil }
-func (r RegistrationCheckerMock) Register() error                 { return r.registrationErr }
+func (r RegistrationCheckerMock) CheckAndRegisterMeshnet() bool { return r.registrationErr == nil }
+func (r RegistrationCheckerMock) ForceRegisterMeshnet() error   { return r.registrationErr }

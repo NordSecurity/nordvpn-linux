@@ -450,6 +450,14 @@ func (m *mockRawClientAPI) ServersCountries() (core.Countries, http.Header, erro
 	return core.Countries{}, nil, nil
 }
 
+func (m *mockRawClientAPI) RegisterDevice(string, core.DevicesRequest) (core.DevicesResponse, error) {
+	return core.DevicesResponse{}, nil
+}
+
+func (m *mockRawClientAPI) UpdateDevice(string, uuid.UUID, core.UpdateDeviceRequest) (core.DevicesResponse, error) {
+	return core.DevicesResponse{}, nil
+}
+
 func (m *mockRawClientAPI) Base() string {
 	return "https://api.test.com"
 }

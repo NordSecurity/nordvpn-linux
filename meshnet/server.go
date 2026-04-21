@@ -22,6 +22,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -43,7 +44,7 @@ var (
 type Server struct {
 	ac                auth.Checker
 	cm                config.Manager
-	mc                Checker
+	mc                devicekey.MeshnetDeviceKeyManager
 	invitationAPI     mesh.Inviter
 	netw              Networker
 	reg               mesh.Registry
@@ -62,7 +63,7 @@ type Server struct {
 func NewServer(
 	ac auth.Checker,
 	cm config.Manager,
-	mc Checker,
+	mc devicekey.MeshnetDeviceKeyManager,
 	invitationAPI mesh.Inviter,
 	netw Networker,
 	reg mesh.Registry,
@@ -101,7 +102,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		}, nil
 	}
 
-	if err := s.mc.Register(); err != nil {
+	if err := s.mc.ForceRegisterMeshnet(); err != nil {
 		s.pub.Publish(fmt.Errorf("registering mesh: %w", err))
 		return &pb.MeshnetResponse{
 			Response: &pb.MeshnetResponse_MeshnetError{
@@ -175,7 +176,7 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 	if err = s.netw.SetMesh(
 		*resp,
 		cfg.MeshDevice.Address,
-		cfg.MeshPrivateKey,
+		cfg.DeviceKey,
 	); err != nil {
 		s.pub.Publish(fmt.Errorf("setting mesh: %w", err))
 		if errors.Is(err, ErrTunnelClosed) {
@@ -266,7 +267,7 @@ func (s *Server) IsEnabled(context.Context, *pb.Empty) (*pb.IsEnabledResponse, e
 	return &pb.IsEnabledResponse{
 		Response: &pb.IsEnabledResponse_Status{
 			Status: &pb.EnabledStatus{
-				Value: cfg.Mesh && s.mc.IsRegistrationInfoCorrect(),
+				Value: cfg.Mesh && s.mc.CheckAndRegisterMeshnet(),
 				Uid:   cfg.Meshnet.EnabledByUID,
 			},
 		},
@@ -295,7 +296,7 @@ func (s *Server) StartMeshnet() error {
 		return ErrMeshnetNotEnabled
 	}
 
-	if err := s.mc.Register(); err != nil {
+	if err := s.mc.ForceRegisterMeshnet(); err != nil {
 		s.pub.Publish(fmt.Errorf("setting mesh: %w", err))
 		return ErrDeviceNotRegistered
 	}
@@ -314,7 +315,7 @@ func (s *Server) StartMeshnet() error {
 	if err := s.netw.SetMesh(
 		*resp,
 		cfg.MeshDevice.Address,
-		cfg.MeshPrivateKey,
+		cfg.DeviceKey,
 	); err != nil {
 		s.pub.Publish(fmt.Errorf("setting mesh: %w", err))
 		return fmt.Errorf("setting the meshnet up: %w", err)
@@ -408,7 +409,7 @@ func (s *Server) RefreshMeshnet(context.Context, *pb.Empty) (*pb.MeshnetResponse
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
+	if !s.mc.CheckAndRegisterMeshnet() {
 		return &pb.MeshnetResponse{
 			Response: &pb.MeshnetResponse_MeshnetError{
 				MeshnetError: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -489,7 +490,7 @@ func (s *Server) Invite(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
+	if !s.mc.CheckAndRegisterMeshnet() {
 		return &pb.InviteResponse{
 			Response: &pb.InviteResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -602,7 +603,7 @@ func (s *Server) AcceptInvite(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
+	if !s.mc.CheckAndRegisterMeshnet() {
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -708,7 +709,7 @@ func (s *Server) DenyInvite(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
+	if !s.mc.CheckAndRegisterMeshnet() {
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -799,7 +800,7 @@ func (s *Server) RevokeInvite(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
+	if !s.mc.CheckAndRegisterMeshnet() {
 		return &pb.RespondToInviteResponse{
 			Response: &pb.RespondToInviteResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -887,7 +888,7 @@ func (s *Server) GetInvites(context.Context, *pb.Empty) (*pb.GetInvitesResponse,
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
+	if !s.mc.CheckAndRegisterMeshnet() {
 		return &pb.GetInvitesResponse{
 			Response: &pb.GetInvitesResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -1225,7 +1226,7 @@ func (s *Server) fetchCfg() (cfg config.Config, grpcErr *pb.Error) {
 		return
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
+	if !s.mc.CheckAndRegisterMeshnet() {
 		grpcErr = generalMeshError(pb.MeshnetErrorCode_NOT_REGISTERED)
 		return
 	}
@@ -1721,7 +1722,7 @@ func (s *Server) NotifyNewTransfer(
 		}, nil
 	}
 
-	if !s.mc.IsRegistrationInfoCorrect() {
+	if !s.mc.CheckAndRegisterMeshnet() {
 		return &pb.NotifyNewTransferResponse{
 			Response: &pb.NotifyNewTransferResponse_MeshnetErrorCode{
 				MeshnetErrorCode: pb.MeshnetErrorCode_NOT_REGISTERED,
@@ -1907,7 +1908,7 @@ func (s *Server) connect(
 	if err := s.netw.Start(
 		ctx,
 		vpn.Credentials{
-			NordLynxPrivateKey: cfg.MeshPrivateKey,
+			NordLynxPrivateKey: cfg.DeviceKey,
 		},
 		vpn.ServerData{
 			IP:                peer.Address,
@@ -1986,7 +1987,7 @@ func (s *Server) GetPrivateKey(ctx context.Context, _ *pb.Empty) (*pb.PrivateKey
 
 	return &pb.PrivateKeyResponse{
 		Response: &pb.PrivateKeyResponse_PrivateKey{
-			PrivateKey: cfg.MeshPrivateKey,
+			PrivateKey: cfg.DeviceKey,
 		},
 	}, nil
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -37,6 +38,11 @@ type RawServersAPI interface {
 	RecommendedServers(filter ServersFilter, longitude, latitude float64) (Servers, http.Header, error)
 	Server(id int64) (*Server, error)
 	ServersCountries() (Countries, http.Header, error)
+}
+
+type RawDedicatedServersAPI interface {
+	RegisterDevice(token string, request DevicesRequest) (DevicesResponse, error)
+	UpdateDevice(token string, deviceUUID uuid.UUID, request UpdateDeviceRequest) (DevicesResponse, error)
 }
 
 type RawCombinedAPI interface {
@@ -135,7 +141,7 @@ func (api *SimpleClientAPI) do(req *http.Request) (*http.Response, error) {
 
 	err = ExtractError(resp)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	return resp, nil
@@ -432,6 +438,54 @@ func (api *SimpleClientAPI) Server(id int64) (*Server, error) {
 		return nil, fmt.Errorf("invalid response")
 	}
 	return &ret[0], nil
+}
+
+func (api *SimpleClientAPI) RegisterDevice(token string, deviceRequest DevicesRequest) (DevicesResponse, error) {
+	data, err := json.Marshal(deviceRequest)
+	if err != nil {
+		return DevicesResponse{}, fmt.Errorf("marshaling the request data: %w", err)
+	}
+	// TODO: replace MockServerBaseURL with api.baseURL once the real API becomes available
+	req, err := request.NewRequestWithBearerToken(http.MethodPost, api.agent, MockServerBaseURL, DevicesURL, "application/json", "", "gzip, deflate", bytes.NewBuffer(data), token)
+	if err != nil {
+		return DevicesResponse{}, fmt.Errorf("creating nc credentials request: %w", err)
+	}
+	resp, err := api.do(req)
+	if err != nil && !errors.Is(err, ErrConflict) {
+		return DevicesResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var devicesResponse DevicesResponse
+	if err = json.NewDecoder(resp.Body).Decode(&devicesResponse); err != nil {
+		return DevicesResponse{}, err
+	}
+
+	return devicesResponse, err
+}
+
+func (api *SimpleClientAPI) UpdateDevice(token string, deviceUUID uuid.UUID, updateDeviceRequest UpdateDeviceRequest) (DevicesResponse, error) {
+	data, err := json.Marshal(updateDeviceRequest)
+	if err != nil {
+		return DevicesResponse{}, fmt.Errorf("marshaling the request data: %w", err)
+	}
+	// TODO: replace MockServerBaseURL with api.baseURL once the real API becomes available
+	req, err := request.NewRequestWithBearerToken(http.MethodPatch, api.agent, MockServerBaseURL, fmt.Sprintf(DevicesUpdateURL, deviceUUID.String()), "application/json", "", "gzip, deflate", bytes.NewBuffer(data), token)
+	if err != nil {
+		return DevicesResponse{}, fmt.Errorf("creating nc credentials request: %w", err)
+	}
+	resp, err := api.do(req)
+	if err != nil {
+		return DevicesResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var devicesResponse DevicesResponse
+	if err = json.NewDecoder(resp.Body).Decode(&devicesResponse); err != nil {
+		return DevicesResponse{}, err
+	}
+
+	return devicesResponse, nil
 }
 
 // Insights returns insights about user
