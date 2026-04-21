@@ -71,22 +71,20 @@ func (m *MeshInfo) IsSimilar(meshInfo *MeshInfo) bool {
 				p1.DoIAllowRouting == p2.DoIAllowRouting &&
 				p1.DoIAllowLocalNetwork == p2.DoIAllowLocalNetwork &&
 				p1.DoIAllowFileshare == p2.DoIAllowFileshare
-
 		},
 	)
 
-	if !arePeersEqual {
-		return false
-	}
-
-	return true
+	return arePeersEqual
 }
 
 func NewMeshInfo(meshnetMap mesh.MachineMap, meshInterface string) *MeshInfo {
-	return &MeshInfo{
+	info := &MeshInfo{
 		MeshnetMap:    meshnetMap,
 		MeshInterface: meshInterface,
 	}
+	sortMeshnetMap(&info.MeshnetMap)
+
+	return info
 }
 
 func (c Config) CopyWith(opts ...Option) Config {

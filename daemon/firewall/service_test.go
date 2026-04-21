@@ -102,8 +102,7 @@ func TestMeshInfoIsSimilar(t *testing.T) {
 
 	peer1 := createPeer()
 	peer2 := createPeer()
-	baseMeshInfo := NewMeshInfo(mesh.MachineMap{
-		Peers: mesh.MachinePeers{peer1, peer2}}, "nordlynx")
+	baseMeshInfo := NewMeshInfo(mesh.MachineMap{Peers: mesh.MachinePeers{peer1, peer2}}, "nordlynx")
 
 	tests := []struct {
 		name     string
@@ -189,8 +188,7 @@ func TestMeshInfoIsSimilar(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			m := NewMeshInfo(mesh.MachineMap{
-				Peers: mesh.MachinePeers{peer1, peer2}}, "nordlynx")
+			m := NewMeshInfo(mesh.MachineMap{Peers: mesh.MachinePeers{peer1, peer2}}, "nordlynx")
 			test.fn(m)
 			assert.Equal(t, test.expected, baseMeshInfo.IsSimilar(m))
 		})
