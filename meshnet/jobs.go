@@ -12,24 +12,24 @@ import (
 
 func (s *Server) StartJobs() {
 	if _, err := s.scheduler.NewJob(gocron.DurationJob(5*time.Minute), gocron.NewTask(JobRefreshMeshMap(s)), gocron.WithName("job refresh mesh map")); err != nil {
-		log.Println(internal.WarningPrefix, "job refresh meshnet map schedule error:", err)
+		log.Warn("job refresh meshnet map schedule error:", err)
 	}
 	if _, err := s.scheduler.NewJob(gocron.DurationJob(2*time.Hour), gocron.NewTask(JobRefreshMeshnet(s)), gocron.WithName("job refresh meshnet")); err != nil {
-		log.Println(internal.WarningPrefix, "job refresh meshnet schedule error:", err)
+		log.Warn("job refresh meshnet schedule error:", err)
 	}
 
 	if _, err := s.scheduler.NewJob(
 		gocron.DurationJob(1*time.Second),
 		gocron.NewTask(JobMonitorFileshareProcess(s)),
 		gocron.WithName("job monitor fileshare process")); err != nil {
-		log.Println(internal.WarningPrefix, "job monitor fileshare process schedule error:", err)
+		log.Warn("job monitor fileshare process schedule error:", err)
 	}
 
 	s.scheduler.Start()
 	for _, job := range s.scheduler.Jobs() {
 		err := job.RunNow()
 		if err != nil {
-			log.Println(internal.WarningPrefix, job.Name(), "first run error:", err)
+			log.Warn(job.Name(), "first run error:", err)
 		}
 	}
 }

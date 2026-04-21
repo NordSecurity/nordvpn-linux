@@ -13,7 +13,7 @@ import (
 func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.Payload, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.Payload{Type: internal.CodeConfigError}, nil
 	}
 
@@ -31,13 +31,13 @@ func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 
 	// implementation of moose.Init guarantees it's called only once
 	if err := r.analytics.Init(newConsentLevel); err != nil {
-		log.Println(internal.ErrorPrefix, "moose initialization failure:", err)
+		log.Error("moose initialization failure:", err)
 		return &pb.Payload{Type: internal.CodeInternalError}, nil
 	}
 
 	if in.GetEnabled() {
 		if err := r.analytics.Enable(); err != nil {
-			log.Println(internal.ErrorPrefix, err)
+			log.Error(err)
 
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
@@ -45,7 +45,7 @@ func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 		}
 	} else {
 		if err := r.analytics.Disable(); err != nil {
-			log.Println(internal.ErrorPrefix, err)
+			log.Error(err)
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil
@@ -56,7 +56,7 @@ func (r *RPC) SetAnalytics(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 		c.AnalyticsConsent = newConsentLevel
 		return c
 	}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.Payload{
 			Type: internal.CodeConfigError,
 		}, nil

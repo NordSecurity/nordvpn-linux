@@ -4,7 +4,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -28,14 +27,14 @@ func defaultCmdRunner(name string, args ...string) (string, error) {
 func uname(runner cmdRunner, flags string) string {
 	out, err := runner("uname", flags)
 	if err != nil {
-		log.Printf("%s failed to execute 'uname %s': %v. Falling back to default: %s\n",
-			internal.ErrorPrefix, flags, err, defaultKernelName)
+		log.Errorf("failed to execute 'uname %s': %v. Falling back to default: %s\n",
+			flags, err, defaultKernelName)
 		return defaultKernelName
 	}
 
 	if out == "" {
-		log.Printf("%s 'uname %s' returned empty output. Falling back to default: %s\n",
-			internal.ErrorPrefix, flags, defaultKernelName)
+		log.Errorf("'uname %s' returned empty output. Falling back to default: %s\n",
+			flags, defaultKernelName)
 		return defaultKernelName
 	}
 

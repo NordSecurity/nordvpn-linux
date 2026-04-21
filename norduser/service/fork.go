@@ -58,7 +58,7 @@ func parseNorduserPIDs(psOutput string) []int {
 		}
 		pid, err := strconv.Atoi(pidStr)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "failed to parse pid string:", pidStr, "; err:", err)
+			log.Error("failed to parse pid string:", pidStr, "; err:", err)
 			continue
 		}
 
@@ -87,11 +87,11 @@ func findPIDOfUID(uids string, desiredUID uint32) int {
 			continue
 		}
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "failed to parse uid pid line:", uidPid, "; err:", err)
+			log.Error("failed to parse uid pid line:", uidPid, "; err:", err)
 			continue
 		}
 		if n != 2 {
-			log.Println(internal.ErrorPrefix, "invalid input line, expected <uid> <pid> format:", uidPid)
+			log.Error("invalid input line, expected <uid> <pid> format:", uidPid)
 		}
 		if uid == int(desiredUID) {
 			return pid
@@ -144,7 +144,7 @@ func (c *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err 
 
 	err = mergeUserSessionEnv(uid, gid, &cmd.Env, NewSystemEnvConfigurator())
 	if err != nil {
-		log.Println(internal.WarningPrefix, "failed to retrieve user session's environment:", err)
+		log.Warn("failed to retrieve user session's environment:", err)
 	}
 
 	if err := cmd.Start(); err != nil {
@@ -204,7 +204,7 @@ func (c *ChildProcessNorduser) StopAll() {
 
 	for _, pid := range pids {
 		if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
-			log.Println(internal.ErrorPrefix, "failed to send a signal to norduserd:", err)
+			log.Error("failed to send a signal to norduserd:", err)
 		}
 	}
 
@@ -290,7 +290,7 @@ func (s *systemGIDProvider) GetNordvpnGid() (uint32, error) {
 		return 0, errors.New("negative gid cannot be converted to uint32")
 	}
 
-	//no gosec violation, current Linux distributions use GID lower than uint32 max value
+	// no gosec violation, current Linux distributions use GID lower than uint32 max value
 	// #nosec G115
 	return uint32(gid), nil
 }

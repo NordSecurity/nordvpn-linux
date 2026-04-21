@@ -228,7 +228,7 @@ func NewOperationEventFromRequest(
 func (e *OperationEvent) ToDebuggerEvent() *events.DebuggerEvent {
 	jsonData, err := json.Marshal(e)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to marshal operation-event:", err)
+		log.Error("failed to marshal operation-event:", err)
 		// Fallback: provide basic information we know for certain
 		jsonData = []byte(fmt.Sprintf(
 			`{"namespace":"%s","subscope":"%s","event":"%s","operation":"%s","result":"%s","error":"marshal_error"}`,
@@ -258,7 +258,7 @@ func (e *OperationEvent) ToDebuggerEvent() *events.DebuggerEvent {
 func (e *SnapshotEvent) ToDebuggerEvent() *events.DebuggerEvent {
 	jsonData, err := json.Marshal(e)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to marshal snapshot-event:", err)
+		log.Error("failed to marshal snapshot-event:", err)
 		// Fallback: provide basic information we know for certain
 		jsonData = []byte(fmt.Sprintf(
 			`{"namespace":"%s","subscope":"%s","event":"%s","error":"marshal_error"}`,

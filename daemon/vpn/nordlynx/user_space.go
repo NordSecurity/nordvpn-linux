@@ -17,7 +17,6 @@ import (
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 
@@ -100,7 +99,7 @@ func (u *UserSpace) Start(
 	if err != nil {
 		return fmt.Errorf("generating uapi config: %w", err)
 	}
-	log.Println("UAPI CONFIG:", conf)
+	log.Debug("UAPI CONFIG:", conf)
 
 	// check if wireguard interface is not up already
 	if _, err := exec.Command("ip", "link", "show", "dev", InterfaceName).Output(); err == nil {
@@ -115,7 +114,7 @@ func (u *UserSpace) Start(
 	iface, err := net.InterfaceByName(InterfaceName)
 	if err != nil {
 		if err := u.stop(); err != nil {
-			log.Println(internal.DeferPrefix, err)
+			log.Defer(err)
 		}
 		return err
 	}
@@ -126,21 +125,21 @@ func (u *UserSpace) Start(
 	u.tun = tun
 	if err := tun.AddAddrs(); err != nil {
 		if err := u.stop(); err != nil {
-			log.Println(internal.DeferPrefix, err)
+			log.Defer(err)
 		}
 		return err
 	}
 
 	if err := tun.Up(); err != nil {
 		if err := u.stop(); err != nil {
-			log.Println(internal.DeferPrefix, err)
+			log.Defer(err)
 		}
 		return err
 	}
 
 	if err := vpn.SetMTU(tun.Interface(), WireguardHeaderSize); err != nil {
 		if err := u.stop(); err != nil {
-			log.Println(internal.DeferPrefix, err)
+			log.Defer(err)
 		}
 		return fmt.Errorf("setting MTU for nordlynx interface: %w", err)
 	}
@@ -259,7 +258,7 @@ func wgGoTurnOn(iface string, settings string) (int32, error) {
 	uapi, err = ipc.UAPIListen(interfaceName, uapiFile)
 	if err != nil {
 		if err := uapiFile.Close(); err != nil {
-			log.Println(internal.DeferPrefix, err)
+			log.Defer(err)
 		}
 		return i, fmt.Errorf("listening for UAPI: %w", err)
 	}

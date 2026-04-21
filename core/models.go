@@ -396,7 +396,7 @@ func (s *Server) IsVirtualLocation() bool {
 		if err == nil {
 			return value
 		}
-		log.Println(internal.DebugPrefix, "cannot convert server virtual location", s.Hostname, virtualLocation, err)
+		log.Debug("cannot convert server virtual location", s.Hostname, virtualLocation, err)
 	}
 	return false
 }
@@ -469,7 +469,7 @@ func (s *Server) UnmarshalJSON(b []byte) error {
 					trimmed := strings.TrimSpace(value)
 					port, err := strconv.ParseInt(trimmed, 10, 64)
 					if err != nil {
-						log.Println("failed to parse NordWhisper server port:", err)
+						log.Error("failed to parse NordWhisper server port:", err)
 						continue
 					}
 					hack.NordWhisperPort = port

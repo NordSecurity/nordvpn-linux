@@ -9,7 +9,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	cmesh "github.com/NordSecurity/nordvpn-linux/core/mesh"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	sysinfo "github.com/NordSecurity/nordvpn-linux/sysinfo"
 
@@ -61,7 +60,7 @@ func (r *RegisteringChecker) IsRegistrationInfoCorrect() bool {
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return false
 	}
 
@@ -70,12 +69,12 @@ func (r *RegisteringChecker) IsRegistrationInfoCorrect() bool {
 	}
 
 	if err := r.register(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return false
 	}
 
 	if err := r.cm.SaveWith(meshConfig(cfg.MeshDevice, cfg.MeshPrivateKey)); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return false
 	}
 

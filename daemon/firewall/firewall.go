@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"golang.org/x/exp/slices"
 )
@@ -52,7 +51,7 @@ func (fw *Firewall) Add(rules []Rule) error {
 
 	ruleNamesFromOS, err := fw.current.GetActiveRules()
 	if err != nil {
-		log.Printf("%v, unable to get already active rules: %v\n", internal.WarningPrefix, err)
+		log.Warnf(", unable to get already active rules: %v\n", err)
 	}
 	trafficWasDropped := false
 
@@ -81,20 +80,20 @@ func (fw *Firewall) Add(rules []Rule) error {
 				if !trafficWasDropped {
 					blockRule := Rule{Name: "drop-all", Direction: TwoWay, Allow: false}
 					if err := fw.current.Add(blockRule); err != nil {
-						log.Printf("%s failed to temporarily block traffic: %v\n", internal.ErrorPrefix, err)
+						log.Errorf("failed to temporarily block traffic: %v\n", err)
 					} else {
 						trafficWasDropped = true
 						defer func() {
 							if err := fw.current.Delete(blockRule); err != nil {
-								log.Printf("%s failed to unblock temporarily blocked traffic: %v\n", internal.ErrorPrefix, err)
+								log.Errorf("failed to unblock temporarily blocked traffic: %v\n", err)
 							}
 						}()
 					}
 				}
 				// delete it from the firewall because later it will be inserted
-				log.Printf("%s rule already exists in OS: %v\n", internal.WarningPrefix, rule.Name)
+				log.Warnf("rule already exists in OS: %v\n", rule.Name)
 				if err := fw.current.Delete(rule); err != nil {
-					log.Printf("%s failed to delete rule %s from OS %v\n", internal.ErrorPrefix, rule.Name, err)
+					log.Errorf("failed to delete rule %s from OS %v\n", rule.Name, err)
 				}
 			}
 		}

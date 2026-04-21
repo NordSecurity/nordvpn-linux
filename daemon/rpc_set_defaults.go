@@ -12,39 +12,39 @@ import (
 func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.Payload, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.Payload{Type: internal.CodeFailure}, nil
 	}
 
 	if _, err := r.DoDisconnect(); err != nil {
-		log.Println(internal.ErrorPrefix, "error while disconnecting:", err)
+		log.Error("error while disconnecting:", err)
 		return &pb.Payload{Type: internal.CodeFailure}, nil
 	}
 
 	if in.OffKillswitch && cfg.KillSwitch {
 		if err := r.netw.UnsetKillSwitch(); err != nil {
-			log.Println(internal.ErrorPrefix, "error while disabling killswitch:", err)
+			log.Error("error while disabling killswitch:", err)
 			return &pb.Payload{Type: internal.CodeFailure}, nil
 		}
 	}
 
 	// No error check in case mesh isn't even turned on
 	if err := r.netw.UnSetMesh(); err != nil {
-		log.Println(internal.WarningPrefix, err)
+		log.Warn(err)
 	}
 
 	if !in.NoLogout {
 		if err := r.ncClient.Stop(); err != nil {
-			log.Println(internal.WarningPrefix, "error stoping notification center client:", err)
+			log.Warn("error stoping notification center client:", err)
 		}
 
 		if !r.ncClient.Revoke() {
-			log.Println(internal.WarningPrefix, "error revoking notification center token")
+			log.Warn("error revoking notification center token")
 		}
 	}
 
 	if err := r.cm.Reset(in.NoLogout, in.OffKillswitch); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.Payload{
 			Type: internal.CodeConfigError,
 		}, nil
@@ -57,12 +57,12 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 	}
 
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 
 	v, err := r.factory(cfg.Technology)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.Payload{
 			Type: internal.CodeConfigError,
 		}, nil

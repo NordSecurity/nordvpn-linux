@@ -44,7 +44,7 @@ func getNorduserManager() childprocess.ChildProcessManager {
 
 		uid, err := strconv.Atoi(usr.Uid)
 		if err != nil {
-			log.Printf("Invalid unix user id, failed to convert from string: %s", usr.Uid)
+			log.Errorf("Invalid unix user id, failed to convert from string: %s", usr.Uid)
 			os.Exit(int(childprocess.CodeFailedToEnable))
 		}
 
@@ -67,17 +67,17 @@ func clearFormatting(input string) string {
 func main() {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println(internal.UnhandledMessage)
+			log.Error(internal.UnhandledMessage)
 		}
 	}()
 
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 	configDir, err := internal.GetConfigDirPath(homeDir)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 
 	// Setup logging

@@ -38,9 +38,9 @@ var (
 func main() {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Println("panic:", r)
+			log.Error("panic:", r)
 			if internal.IsDevEnv(Environment) {
-				log.Println(string(debug.Stack()))
+				log.Error(string(debug.Stack()))
 			}
 			panic(r)
 		}
@@ -64,7 +64,7 @@ func main() {
 	case childprocess.Running:
 		os.Exit(int(childprocess.CodeAlreadyRunning))
 	case childprocess.RunningForOtherUser:
-		log.Println("Cannot start fileshare daemon, it is already running for another user.")
+		log.Error("Cannot start fileshare daemon, it is already running for another user.")
 		os.Exit(int(childprocess.CodeAlreadyRunningForOtherUser))
 	case childprocess.NotRunning:
 		// Continue with normal startup
@@ -79,22 +79,22 @@ func main() {
 		// will not be created yet
 		downloadsDir, err := fileshare.GetDefaultDownloadDirectory()
 		if err != nil {
-			log.Println(internal.WarningPrefix, "failed to get the default downloads directory:", err)
+			log.Warn("failed to get the default downloads directory:", err)
 		} else {
 			if err := internal.EnsureDir(filepath.Join(downloadsDir, "a")); err != nil {
-				log.Println(internal.WarningPrefix, "failed to ensure default downloads directory:", err)
+				log.Warn("failed to ensure default downloads directory:", err)
 			}
 		}
 		drainStart(eventsDBPath)
 	}
 
 	if err := os.Remove(internal.FileshareSocket); err != nil && !errors.Is(err, os.ErrNotExist) {
-		log.Println(internal.WarningPrefix, "failed to remove old socket file:", err)
+		log.Warn("failed to remove old socket file:", err)
 	}
 
 	listener, err := internal.ManualListener(internal.FileshareSocket, internal.PermUserRWX)()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to open unix socket:", err)
+		log.Error("failed to open unix socket:", err)
 		os.Exit(int(childprocess.CodeFailedToCreateUnixScoket))
 	}
 	limitedListener := netutil.LimitListener(listener, 100)
@@ -102,7 +102,7 @@ func main() {
 	defer func() {
 		if err != nil {
 			if err := listener.Close(); err != nil {
-				log.Println(internal.DeferPrefix, "failed to close socket listener on failure:", err)
+				log.Defer("failed to close socket listener on failure:", err)
 			}
 		}
 	}()
@@ -113,14 +113,14 @@ func main() {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "cannot start fileshare daemon:", err)
+		log.Error("cannot start fileshare daemon:", err)
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
 	defer func() {
 		if err != nil {
 			if err := grpcConn.Close(); err != nil {
-				log.Println(internal.ErrorPrefix, "failed to close grpc connection on failure")
+				log.Error("failed to close grpc connection on failure")
 			}
 		}
 	}()
@@ -130,13 +130,13 @@ func main() {
 
 	resp, err := meshClient.IsEnabled(context.Background(), &meshpb.Empty{})
 	if err != nil || !resp.GetStatus().GetValue() {
-		log.Println(internal.ErrorPrefix, "meshnet not enabled:", err)
+		log.Error("meshnet not enabled:", err)
 		os.Exit(int(childprocess.CodeMeshnetNotEnabled))
 	}
 
 	defaultDownloadDirectory, err := fileshare.GetDefaultDownloadDirectory()
 	if err != nil {
-		log.Println(internal.WarningPrefix, "failed to find default download directory:", err)
+		log.Warn("failed to find default download directory:", err)
 		defaultDownloadDirectory = ""
 	}
 
@@ -150,26 +150,26 @@ func main() {
 
 	privKeyResponse, err := meshClient.GetPrivateKey(context.Background(), &meshpb.Empty{})
 	if err != nil || privKeyResponse.GetPrivateKey() == "" {
-		log.Printf(internal.ErrorPrefix+" retrieving mesh private key: error: %s, response: %s", err, privKeyResponse.GetPrivateKey())
+		log.Errorf(" retrieving mesh private key: error: %s, response: %s", err, privKeyResponse.GetPrivateKey())
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
 	meshPrivKey, err := base64.StdEncoding.DecodeString(privKeyResponse.GetPrivateKey())
 	if err != nil || len(meshPrivKey) != 32 {
-		log.Println(internal.ErrorPrefix, "failed to decode mesh private key")
+		log.Error("failed to decode mesh private key")
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
 	configDirPath, err := internal.GetConfigDirPath(homeDir)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get path to OS configuration directory:", err)
+		log.Error("failed to get path to OS configuration directory:", err)
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
 	storagePath := filepath.Join(configDirPath, internal.FileshareHistoryFileName)
 
 	if err := internal.EnsureDir(storagePath); err != nil {
-		log.Println(internal.ErrorPrefix, "failed to ensure dir for transfer history:", err)
+		log.Error("failed to ensure dir for transfer history:", err)
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
@@ -182,7 +182,7 @@ func main() {
 		storagePath,
 	)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "can't create fileshare implementation:", err)
+		log.Error("can't create fileshare implementation:", err)
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
@@ -200,30 +200,30 @@ func main() {
 
 	settings, err := daemonClient.Settings(context.Background(), &daemonpb.Empty{})
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to retrieve daemon setting:", err)
+		log.Error("failed to retrieve daemon setting:", err)
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
 	if settings != nil && settings.Data.UserSettings.Notify {
 		err = eventManager.EnableNotifications(fileshareImplementation)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "failed to enable notifications:", err)
+			log.Error("failed to enable notifications:", err)
 		}
 	}
 
 	meshnetIP, err := firstAddressByInterfaceName(nordlynx.InterfaceName)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to look up meshnet ip:", err)
+		log.Error("failed to look up meshnet ip:", err)
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
 	err = fileshareImplementation.Enable(meshnetIP)
 	if err != nil {
 		if errors.Is(err, fileshare.ErrAddressAlreadyInUse) {
-			log.Println(internal.ErrorPrefix, "mesh already in use:", err)
+			log.Error("mesh already in use:", err)
 			os.Exit(int(childprocess.CodeAddressAlreadyInUse))
 		}
-		log.Println(internal.ErrorPrefix, "failed to enable libdrop:", err)
+		log.Error("failed to enable libdrop:", err)
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
@@ -238,15 +238,15 @@ func main() {
 
 	signals := internal.GetSignalChan()
 
-	log.Println(internal.InfoPrefix, "Daemon has started")
+	log.Info("Daemon has started")
 	select {
 	case sig := <-signals:
-		log.Println("Received signal: ", sig)
+		log.Info("Received signal: ", sig)
 	case <-fileshareHandle.GetShutdownChan():
 	}
 
 	// Teardown
-	log.Println("Stopping fileshare process.")
+	log.Info("Stopping fileshare process.")
 	fileshareHandle.Shutdown()
 }
 

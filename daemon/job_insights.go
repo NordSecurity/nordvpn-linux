@@ -3,7 +3,6 @@ package daemon
 import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -28,7 +27,7 @@ func JobInsights(
 					Latitude:    32.77859397576304,
 					Longitude:   -96.80300999652735,
 				}); err != nil {
-					log.Println(internal.WarningPrefix, err)
+					log.Warn(err)
 				}
 				return
 			}
@@ -41,7 +40,7 @@ func JobInsights(
 				return
 			}
 			if err := dm.SetInsightsData(*insights); err != nil {
-				log.Println(internal.WarningPrefix, err)
+				log.Warn(err)
 			}
 			if events != nil {
 				events.Service.DeviceLocation.Publish(*insights)

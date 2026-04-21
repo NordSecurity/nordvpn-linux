@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -41,7 +40,7 @@ func getParameter(parameter string, values url.Values) string {
 	}
 
 	if len(parameterValue) != 1 || parameterValue[0] == "" {
-		log.Println(internal.WarningPrefix,
+		log.Warn(
 			"invalid value of parameter in the api call URL, parameter name:", parameter)
 		return ""
 	}

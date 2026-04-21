@@ -157,7 +157,7 @@ func transferToOutputString(transfer *pb.Transfer) string {
 	}
 
 	if err := tableWriter.Flush(); err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 
 	return builder.String()
@@ -219,7 +219,7 @@ func buildTransferTable(writer *tabwriter.Writer, transfers []*pb.Transfer, dire
 	}
 
 	if err := writer.Flush(); err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 }
 

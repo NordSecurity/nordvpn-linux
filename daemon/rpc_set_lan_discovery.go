@@ -39,7 +39,7 @@ func (r *RPC) SetLANDiscovery(ctx context.Context, in *pb.SetLANDiscoveryRequest
 		subnets = make([]string, 0)
 		for _, subnet := range cfg.AutoConnectData.Allowlist.Subnets {
 			if prefix, err := netip.ParsePrefix(subnet); err != nil {
-				log.Println("Failed to parse subnet: ", err)
+				log.Error("Failed to parse subnet: ", err)
 			} else if !prefix.Addr().IsPrivate() && !prefix.Addr().IsLinkLocalUnicast() {
 				subnets = append(subnets, subnet)
 			} else {
@@ -52,7 +52,7 @@ func (r *RPC) SetLANDiscovery(ctx context.Context, in *pb.SetLANDiscoveryRequest
 	}
 
 	if err := r.netw.SetAllowlist(allowlist); err != nil {
-		log.Printf("Failed to set allowlist: %v", err)
+		log.Errorf("Failed to set allowlist: %v", err)
 		return &pb.SetLANDiscoveryResponse{
 			Response: &pb.SetLANDiscoveryResponse_ErrorCode{
 				ErrorCode: pb.SetErrorCode_FAILURE,

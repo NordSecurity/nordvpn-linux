@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -173,7 +172,7 @@ func EventToString(event Event) string {
 func eventToString(event Event, m marshaler) string {
 	json, err := m.Marshal(event)
 	if err != nil {
-		log.Printf(internal.WarningPrefix+" failed to marshall event: %T, returning just its type\n", event.Kind)
+		log.Warnf(" failed to marshall event: %T, returning just its type\n", event.Kind)
 		return fmt.Sprintf("%T", event.Kind)
 	}
 	return string(json)

@@ -147,12 +147,12 @@ func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error 
 	}
 
 	enabled := newState == config.ConsentGranted
-	log.Println(internal.InfoPrefix, LogComponentPrefix, "request to set consent level to", enabled)
+	log.Info(LogComponentPrefix, "request to set consent level to", enabled)
 	if err := s.response(s.mooseFuncs.setAppConsentLevel(enabled)); err != nil {
 		return fmt.Errorf("setting new consent level: %w", err)
 	}
 
-	log.Println(internal.InfoPrefix, LogComponentPrefix, "update consent level into context with new value", newState.String())
+	log.Info(LogComponentPrefix, "update consent level into context with new value", newState.String())
 	if err := setUserConsentLevelIntoContext(s, newState); err != nil {
 		return fmt.Errorf("updating consent level in moose context: %w", err)
 	}
@@ -201,7 +201,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 	if s.isInitialized {
 		return nil
 	}
-	log.Println(internal.InfoPrefix, LogComponentPrefix, "initializing")
+	log.Info(LogComponentPrefix, "initializing")
 
 	cfg, err := s.getConfig()
 	if err != nil {
@@ -239,7 +239,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 
 	// can we send only essential or all?
 	s.canSendAllEvents.Store(consent == config.ConsentGranted)
-	log.Println(internal.InfoPrefix, LogComponentPrefix, "all events are sent:", s.canSendAllEvents.Load())
+	log.Info(LogComponentPrefix, "all events are sent:", s.canSendAllEvents.Load())
 
 	if err := s.response(moose.MooseNordvpnappInit(
 		s.eventsDbPath,
@@ -258,7 +258,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 	s.isInitialized = true
 
 	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
-		log.Println(internal.WarningPrefix, LogComponentPrefix, "failed to flush changes before setting analytics opt in: %w", err)
+		log.Warn(LogComponentPrefix, "failed to flush changes before setting analytics opt in: %w", err)
 	}
 
 	applicationName := "linux-app"
@@ -320,7 +320,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 	}
 
 	if err := s.handleTokenRenewDateChange(nil, &cfg); err != nil {
-		log.Println(internal.WarningPrefix, LogComponentPrefix, "failed to restore token renew date:", err)
+		log.Warn(LogComponentPrefix, "failed to restore token renew date:", err)
 	}
 
 	if err := s.response(s.mooseFuncs.setTPLiteUserPreference(cfg.AutoConnectData.ThreatProtectionLite)); err != nil {
@@ -331,7 +331,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 }
 
 func (s *Subscriber) Stop() error {
-	log.Println(internal.DebugPrefix, LogComponentPrefix, "flushing changes")
+	log.Debug(LogComponentPrefix, "flushing changes")
 	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
 		return fmt.Errorf("flushing changes: %w", err)
 	}
@@ -340,7 +340,7 @@ func (s *Subscriber) Stop() error {
 		return fmt.Errorf("stopping moose worker: %w", err)
 	}
 
-	log.Println(internal.DebugPrefix, LogComponentPrefix, "deinitializing")
+	log.Debug(LogComponentPrefix, "deinitializing")
 	if err := s.response(moose.MooseNordvpnappDeinit()); err != nil {
 		return fmt.Errorf("deinitializing: %w", err)
 	}
@@ -657,7 +657,7 @@ func (s *Subscriber) setTPLite(isTPLiteEnabled bool) error {
 	// User Preferences field in moose context is used to see what's the setting
 	// user selected - no matter if VPN is actively used or not.
 	if err := s.response(s.mooseFuncs.setTPLiteUserPreference(isTPLiteEnabled)); err != nil {
-		log.Println(internal.WarningPrefix, "failed to set TP Lite in User Preferences:", err)
+		log.Warn("failed to set TP Lite in User Preferences:", err)
 		errs = append(errs, fmt.Errorf("setting TP Lite user preference (enabled=%v): %w", isTPLiteEnabled, err))
 	}
 
@@ -827,12 +827,12 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid(data.RecommendationUUID)); err != nil {
 			// We can ignore setting the recommendation Uuid
 			// Sending the disconnect event is much more important
-			log.Println(internal.WarningPrefix, "Failed to set RecommendationUUID into the moose context ", err)
+			log.Warn("Failed to set RecommendationUUID into the moose context ", err)
 		}
 
 		defer func() {
 			if err := s.response(moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid()); err != nil {
-				log.Println(internal.WarningPrefix, "Failed to unset RecommendationUUID into the moose context ", err)
+				log.Warn("Failed to unset RecommendationUUID into the moose context ", err)
 			}
 		}()
 	}
@@ -1000,7 +1000,7 @@ func (s *Subscriber) NotifyDebuggerEvent(e events.DebuggerEvent) error {
 			moose.MooseNordvpnappSetDeveloperEventContextString(ctx.Path, v)
 			combinedPaths = append(combinedPaths, path)
 		default:
-			log.Printf("%s %s Discarding unsupported type (%T) on path: %s\n", internal.WarningPrefix, LogComponentPrefix, ctx.Value, path)
+			log.Warnf("%s Discarding unsupported type (%T) on path: %s\n", LogComponentPrefix, ctx.Value, path)
 		}
 	}
 	if err := s.response(moose.NordvpnappSendDebuggerLoggingLog(e.JsonData, combinedPaths, nil)); err != nil {

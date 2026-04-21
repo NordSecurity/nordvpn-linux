@@ -33,7 +33,7 @@ func (c *cmd) Groups(ctx *cli.Context) error {
 	)
 
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		countries, _ := formatTable(resp.Servers, serverNameLen, formatServerName, 1, footer)
 		fmt.Println(countries)
 	} else {

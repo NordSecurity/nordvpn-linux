@@ -55,7 +55,7 @@ func (r *RecentConnectionsStore) Get() ([]Model, error) {
 
 	conns, err := r.load()
 	if err != nil {
-		log.Printf("%s %s Getting recent VPN connections: %s\n", logTag, internal.WarningPrefix, err)
+		log.Warnf("%s Getting recent VPN connections: %s\n", logTag, err)
 		if saveErr := r.save([]Model{}); saveErr != nil {
 			return nil, errors.Join(
 				fmt.Errorf("getting recent vpn connections: %w", err),
@@ -79,7 +79,7 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 
 	connections, err := r.load()
 	if err != nil {
-		log.Printf("%s %s Adding new recent VPN connection: %s\n", logTag, internal.WarningPrefix, err)
+		log.Warnf("%s Adding new recent VPN connection: %s\n", logTag, err)
 		if saveErr := r.save([]Model{}); saveErr != nil {
 			return errors.Join(
 				fmt.Errorf("adding new recent vpn connection: %w", err),

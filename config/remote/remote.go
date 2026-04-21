@@ -53,7 +53,7 @@ type fileOpsDefaultImpl struct{}
 func (fileOpsDefaultImpl) WalkFiles(targetPath, fileExt string, actionFunc func(string)) error {
 	err := filepath.WalkDir(targetPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			log.Printf(internal.ErrorPrefix+" accessing %s: %v\n", path, err)
+			log.Errorf(" accessing %s: %v\n", path, err)
 			return nil // continue walking
 		}
 		// exclude symlinks
@@ -73,7 +73,7 @@ func (f fileOpsDefaultImpl) RenameTmpFiles(targetPath, fileExt string) error {
 	return f.WalkFiles(targetPath, fileExt, func(path string) {
 		newPath := strings.TrimSuffix(path, fileExt)
 		if err := os.Rename(path, newPath); err != nil {
-			log.Printf(internal.ErrorPrefix+" renaming %s to %s: %s\n", path, newPath, err)
+			log.Errorf(" renaming %s to %s: %s\n", path, newPath, err)
 		}
 	})
 }
@@ -82,7 +82,7 @@ func (f fileOpsDefaultImpl) RenameTmpFiles(targetPath, fileExt string) error {
 func (f fileOpsDefaultImpl) CleanupTmpFiles(targetPath, fileExt string) error {
 	return f.WalkFiles(targetPath, fileExt, func(path string) {
 		if err := os.Remove(path); err != nil {
-			log.Printf(internal.ErrorPrefix+" removing %s: %s\n", path, err)
+			log.Errorf(" removing %s: %s\n", path, err)
 		}
 	})
 }
@@ -239,7 +239,7 @@ func (c *CdnRemoteConfig) Load() error {
 
 	useOnlyLocalConfig := internal.IsDevEnv(c.appEnvironment) && os.Getenv(envUseLocalConfig) != "" // forced load from disk?
 	if useOnlyLocalConfig {
-		log.Printf("%s Ignoring remote config, using only local\n", internal.InfoPrefix)
+		log.Infof("Ignoring remote config, using only local\n")
 	} else {
 		if needReload, err = c.download(); err != nil {
 			return fmt.Errorf("downloading remote config: %w", err)
@@ -271,7 +271,7 @@ func (c *CdnRemoteConfig) download() (bool, error) {
 		feature := c.features.get(f)
 		dnld, err := feature.download(cdnFileGetter{cdn: c.cdn}, c.fileOps, jsonValidator{}, filepath.Join(c.remotePath, c.appEnvironment), c.localCachePath, c.rcFileOps)
 		if err != nil {
-			log.Printf("%s failed downloading feature [%s] remote config: %v\n", internal.ErrorPrefix, feature.name, err)
+			log.Errorf("failed downloading feature [%s] remote config: %v\n", feature.name, err)
 
 			var downloadErr *DownloadError
 			if errors.As(err, &downloadErr) {
@@ -284,7 +284,7 @@ func (c *CdnRemoteConfig) download() (bool, error) {
 		}
 		if dnld {
 			// only if remote config was really downloaded
-			log.Printf("%s feature [%s] remote config downloaded to: %s\n", internal.InfoPrefix, feature.name, c.localCachePath)
+			log.Infof("feature [%s] remote config downloaded to: %s\n", feature.name, c.localCachePath)
 			c.analytics.EmitDownloadEvent(ClientCli, feature.name)
 			newChangesDownloaded = true
 		}
@@ -338,11 +338,11 @@ func (c *CdnRemoteConfig) doLoad(reportErrors bool) {
 		if err := feature.load(c.localCachePath, c.fileOps, jsonValidator{}, c.rcFileOps); err != nil {
 			if reportErrors {
 				c.reportLoadError(feature.name, err)
-				log.Printf("%s failed loading feature [%s] config from the disk: %s\n", internal.ErrorPrefix, feature.name, err)
+				log.Errorf("failed loading feature [%s] config from the disk: %s\n", feature.name, err)
 			}
 			continue
 		}
-		log.Printf("%s feature [%s] config loaded from: %s\n", internal.InfoPrefix, feature.name, c.localCachePath)
+		log.Infof("feature [%s] config loaded from: %s\n", feature.name, c.localCachePath)
 		c.analytics.EmitLocalUseEvent(ClientCli, feature.name, nil)
 	}
 }
@@ -352,7 +352,7 @@ func (c *CdnRemoteConfig) findMatchingRecord(ss []ParamValue, featureName string
 		// find my version matching records
 		ok, err := isVersionMatching(c.appVersion, s.AppVersion)
 		if err != nil {
-			log.Printf("%s invalid version: %s\n", internal.ErrorPrefix, err)
+			log.Errorf("invalid version: %s\n", err)
 			continue
 		}
 		if ok {

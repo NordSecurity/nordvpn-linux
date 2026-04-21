@@ -55,14 +55,14 @@ func setupCdnApi() (*CDNAPI, context.CancelFunc) {
 	} else {
 		validator, err = response.NewNordValidator()
 		if err != nil {
-			log.Fatalln("Error on creating validator:", err)
+			log.Fatal("Error on creating validator:", err)
 		}
 	}
 
 	userAgent, err := request.GetUserAgentValue(Version, sysinfo.GetHostOSPrettyName)
 	if err != nil {
 		userAgent = fmt.Sprintf("%s/%s (unknown)", request.AppName, Version)
-		log.Printf("Error while constructing UA value: %s. Falls back to default: %s\n", err, userAgent)
+		log.Errorf("Error while constructing UA value: %s. Falls back to default: %s\n", err, userAgent)
 	}
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())

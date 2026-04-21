@@ -13,7 +13,7 @@ import (
 func (r *RPC) Disconnect(_ *pb.Empty, srv pb.Daemon_DisconnectServer) error {
 	wasConnected, err := r.DoDisconnect()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return internal.ErrUnhandled
 	}
 	if !wasConnected {
@@ -42,7 +42,7 @@ func (r *RPC) doDisconnect(pauseInterval time.Duration) (bool, error) {
 	if r.connectionInfo != nil {
 		recommendationUUID = r.connectionInfo.Status().RecommendationUUID
 	} else {
-		log.Println(internal.WarningPrefix, "connection info is nil and it shouldn't be")
+		log.Warn("connection info is nil and it shouldn't be")
 	}
 
 	wasConnected, err := access.Disconnect(access.DisconnectInput{

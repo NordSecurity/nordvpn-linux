@@ -14,13 +14,13 @@ import (
 func (c *cmd) Countries(ctx *cli.Context) error {
 	resp, err := c.client.Countries(context.Background(), &pb.Empty{})
 	if err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return formatError(err)
 	}
 
 	if resp.Type != internal.CodeSuccess {
 		err := fmt.Errorf(MsgListIsEmpty, "countries")
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return formatError(err)
 	}
 
@@ -31,7 +31,7 @@ func (c *cmd) Countries(ctx *cli.Context) error {
 		footer,
 	)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		countries, _ := formatTable(resp.Servers, serverNameLen, formatServerName, 1, footer)
 		fmt.Println(countries)
 	} else {

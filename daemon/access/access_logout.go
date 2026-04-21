@@ -81,22 +81,22 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 
 	var cfg config.Config
 	if err := input.ConfigManager.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return LogoutResult{Status: internal.CodeFailure, Err: nil}
 	}
 
 	if _, err := input.DisconnectFunc(); err != nil {
-		log.Println(internal.ErrorPrefix, "disconnect failed:", err)
+		log.Error("disconnect failed:", err)
 		return LogoutResult{Status: internal.CodeFailure, Err: nil}
 	}
 
 	if err := input.Netw.UnSetMesh(); err != nil && !errors.Is(err, networker.ErrMeshNotActive) {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return LogoutResult{Status: internal.CodeFailure, Err: nil}
 	}
 
 	if err := input.NcClient.Stop(); err != nil {
-		log.Println(internal.WarningPrefix, err)
+		log.Warn(err)
 	}
 
 	tokenData, ok := cfg.TokensData[cfg.AutoConnectData.ID]
@@ -105,12 +105,12 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 	}
 
 	if !input.NcClient.Revoke() {
-		log.Println(internal.WarningPrefix, "error revoking NC token")
+		log.Warn("error revoking NC token")
 	}
 
 	if !input.PersistToken {
 		if err := input.CredentialsAPI.DeleteToken(); err != nil {
-			log.Println(internal.ErrorPrefix, "deleting token:", err)
+			log.Error("deleting token:", err)
 			switch {
 			case errors.Is(err, core.ErrUnauthorized):
 			case errors.Is(err, core.ErrBadRequest):
@@ -122,7 +122,7 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 		}
 
 		if err := input.CredentialsAPI.Logout(); err != nil {
-			log.Println(internal.ErrorPrefix, "logging out:", err)
+			log.Error("logging out:", err)
 			switch {
 			// This means that token is invalid anyway
 			case errors.Is(err, core.ErrUnauthorized):
@@ -167,7 +167,7 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 
 	// Log the reason if provided
 	if input.Reason != events.ReasonNotSpecified {
-		log.Printf("%s %s Forcing logout. Reason: %v\n", logTag, internal.InfoPrefix, input.Reason)
+		log.Infof("%s Forcing logout. Reason: %v\n", logTag, input.Reason)
 	}
 
 	input.PublishLogoutEventFunc(events.DataAuthorization{
@@ -195,21 +195,21 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 	}()
 
 	if _, err := input.DisconnectFunc(); err != nil {
-		log.Println(logTag, internal.ErrorPrefix, "disconnect failed:", err)
+		log.Error(logTag, "disconnect failed:", err)
 		return LogoutResult{Status: internal.CodeFailure, Err: nil}
 	}
 
 	if err := input.Netw.UnSetMesh(); err != nil && !errors.Is(err, networker.ErrMeshNotActive) {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return LogoutResult{Status: internal.CodeFailure, Err: nil}
 	}
 
 	if err := input.NcClient.Stop(); err != nil {
-		log.Println(internal.WarningPrefix, err)
+		log.Warn(err)
 	}
 
 	if err := input.ConfigManager.SaveWith(clearConfigData()); err != nil {
-		log.Println(logTag, internal.ErrorPrefix, "Failed to wipe config on logout:", err)
+		log.Error(logTag, "Failed to wipe config on logout:", err)
 		return LogoutResult{Status: internal.CodeConfigError, Err: err}
 	}
 

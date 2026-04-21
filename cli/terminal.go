@@ -118,7 +118,7 @@ func ReadCredentialsFromTerminal() (string, string, error) {
 	}
 	defer func() {
 		if err := term.Restore(0, oldState); err != nil {
-			log.Println(internal.DeferPrefix, err)
+			log.Defer(err)
 		}
 	}()
 
@@ -166,7 +166,7 @@ func ReadPlanFromTerminal() (int, error) {
 	}
 	defer func() {
 		if err := term.Restore(0, oldState); err != nil {
-			log.Println(internal.DeferPrefix, err)
+			log.Defer(err)
 		}
 	}()
 
@@ -278,7 +278,7 @@ func cliDimensions() (int, int, error) {
 		return width, height, nil
 	}
 
-	log.Println(internal.InfoPrefix, "failed to get windows size, try stty")
+	log.Info("failed to get windows size, try stty")
 
 	// if getting the window size from stdout fails, usually when piped, try to execute stty
 	// #nosec G204

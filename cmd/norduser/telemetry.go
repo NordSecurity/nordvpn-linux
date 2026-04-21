@@ -6,7 +6,6 @@ import (
 	"time"
 
 	telemetrypb "github.com/NordSecurity/nordvpn-linux/daemon/pb/telemetry/v1"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo"
 	"google.golang.org/grpc"
@@ -51,8 +50,8 @@ func ReportTelemetry(conn *grpc.ClientConn, evt ReportEvent, wait bool) {
 }
 
 func logErrorMessage(metric string, value string, err error) {
-	log.Printf("%s %s Failed to send metric: metric=%s, value=%s, error=%v",
-		internal.WarningPrefix, tag, metric, value, err)
+	log.Warn("%s Failed to send metric: metric=%s, value=%s, error=%v",
+		tag, metric, value, err)
 }
 
 // sendDesktopEnvironmentMetric sends the current desktop environment

@@ -72,5 +72,5 @@ func removeDevice(device string) ([]byte, error) {
 }
 
 func debug(data ...string) {
-	log.Println("[nordlynx]", strings.Join(data, " "))
+	log.Info("[nordlynx]", strings.Join(data, " "))
 }

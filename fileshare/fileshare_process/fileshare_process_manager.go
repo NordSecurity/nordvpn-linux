@@ -44,7 +44,7 @@ func (f *FileshareProcessClient) Ping(nowait bool) error {
 	defer func() {
 		if clientConn != nil {
 			if err := clientConn.Close(); err != nil {
-				log.Println(internal.ErrorPrefix, "Failed to close client connection after a failed gRPC call: ", err)
+				log.Error("Failed to close client connection after a failed gRPC call: ", err)
 			}
 		}
 	}()
@@ -58,7 +58,7 @@ func (f *FileshareProcessClient) Stop(bool) error {
 	// There are cases when the fileshare has already been stopped when meshnet was disabled
 	// We don't want to try stop it again
 	if !internal.FileExists(internal.FileshareSocket) {
-		log.Println(internal.InfoPrefix, "Fileshare has already been stopped")
+		log.Info("Fileshare has already been stopped")
 		return nil
 	}
 
@@ -69,7 +69,7 @@ func (f *FileshareProcessClient) Stop(bool) error {
 	defer func() {
 		if clientConn != nil {
 			if err := clientConn.Close(); err != nil {
-				log.Println("Failed to close client connection after a failed gRPC call: ", err)
+				log.Warn("Failed to close client connection after a failed gRPC call: ", err)
 			}
 		}
 	}()

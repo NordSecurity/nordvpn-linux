@@ -28,21 +28,21 @@ func (n *StartNorduserdMiddleware) middleware(ctx context.Context) {
 	var ucred unix.Ucred
 	peer, ok := peer.FromContext(ctx)
 	if !ok || peer.AuthInfo == nil {
-		log.Println("no peer/auth info found in stream context")
+		log.Warn("no peer/auth info found in stream context")
 	} else {
 		var err error
 		ucred, err = internal.StringToUcred(peer.AuthInfo.AuthType())
 		if err != nil {
-			log.Println("failed to convert auth info to user credentials:", err.Error())
+			log.Error("failed to convert auth info to user credentials:", err.Error())
 		}
 	}
 
 	u, err := user.LookupId(strconv.FormatInt(int64(ucred.Uid), 10))
 	if err != nil {
-		log.Println("failed to find user by UID:", err)
+		log.Error("failed to find user by UID:", err)
 	}
 	if err := n.norduserd.Enable(ucred.Uid, ucred.Gid, u.HomeDir); err != nil {
-		log.Println("failed to enable norduserd:", err)
+		log.Error("failed to enable norduserd:", err)
 	}
 }
 

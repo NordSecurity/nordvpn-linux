@@ -91,7 +91,7 @@ func OutsideCapableTrafficInterfaces() ([]net.Interface, error) {
 				devices = append(devices, *iface)
 			}
 		} else {
-			log.Println(internal.WarningPrefix, "not found interface with index", r.LinkIndex, err)
+			log.Warn("not found interface with index", r.LinkIndex, err)
 		}
 	}
 	return devices, nil
@@ -103,7 +103,7 @@ func OutsideCapableTrafficIfNames(ignore mapset.Set[string]) mapset.Set[string] 
 	result := mapset.NewSet[string]()
 	ifaces, err := OutsideCapableTrafficInterfaces()
 	if err != nil {
-		log.Println(internal.WarningPrefix, "netlink monitoring failed to get interfaces", err)
+		log.Warn("netlink monitoring failed to get interfaces", err)
 		return result
 	}
 
@@ -184,7 +184,7 @@ func InterfacesWithDefaultRoute(ignoreSet mapset.Set[string]) map[string]net.Int
 
 	routeList, err := sysDepsImpl.RouteList(nil, netlink.FAMILY_V4)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get system routes", err)
+		log.Error("failed to get system routes", err)
 		return interfacesList
 	}
 	for _, r := range routeList {
@@ -197,7 +197,7 @@ func InterfacesWithDefaultRoute(ignoreSet mapset.Set[string]) map[string]net.Int
 				interfacesList[iface.Name] = *iface
 			}
 		} else {
-			log.Println(internal.WarningPrefix, "default route, not found interface with index", r.LinkIndex, err)
+			log.Warn("default route, not found interface with index", r.LinkIndex, err)
 		}
 	}
 

@@ -39,7 +39,7 @@ func (n NorduserSnap) stopAll(disable bool) {
 	// #nosec G204 -- arg values are constant
 	output, err := exec.Command("ps", "-C", internal.Norduserd, "-o", "uid=").CombinedOutput()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "Failed to list running norduserd instances: ", err)
+		log.Error("Failed to list running norduserd instances: ", err)
 	}
 
 	uids := string(output)
@@ -51,14 +51,14 @@ func (n NorduserSnap) stopAll(disable bool) {
 	for _, uid := range strings.Split(uids, "\n") {
 		uidInt, err := strconv.ParseUint(strings.TrimSpace(uid), 10, 32)
 		if err != nil {
-			log.Printf("Invalid unix user id, failed to convert from string: %s", uid)
+			log.Errorf("Invalid unix user id, failed to convert from string: %s", uid)
 			continue
 		}
 
 		//parsed value is within uint32 range
 		// #nosec G115
 		if err := process.NewNorduserGRPCProcessManager(uint32(uidInt)).StopProcess(disable); err != nil {
-			log.Println(internal.ErrorPrefix, "Failed to stop norduserd for uid: ", uid)
+			log.Error("Failed to stop norduserd for uid: ", uid)
 		}
 	}
 }

@@ -156,7 +156,7 @@ func (ipt *IPTables) Flush() error {
 				// #nosec G204
 				err := exec.Command(iptableVersion, strings.Split(rule, " ")...).Run()
 				if err != nil {
-					log.Printf("%s failed to delete rule %s: %s", internal.ErrorPrefix, rule, err)
+					log.Errorf("failed to delete rule %s: %s", rule, err)
 					finalErr = fmt.Errorf("failed to delete all rules")
 				}
 			}

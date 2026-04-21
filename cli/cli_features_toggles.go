@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -18,9 +17,8 @@ func defaultToggles() FeatureToggles {
 
 func (c *cmd) GetFeatureToggles() FeatureToggles {
 	featureToggles, err := c.client.GetFeatureToggles(context.Background(), &pb.Empty{})
-
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get the feature toggles", err)
+		log.Error("failed to get the feature toggles", err)
 		return defaultToggles()
 	}
 

@@ -3,7 +3,6 @@ package dbusutil
 import (
 	"fmt"
 
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/godbus/dbus/v5"
 )
@@ -31,8 +30,7 @@ func (c *genericDBusPropertyClient) GetProperty(name string) (dbus.Variant, erro
 // This can be used for any service and object path.
 func NewPropertyClient(conn *dbus.Conn, service string, objectPath dbus.ObjectPath) DBusPropertyClient {
 	if conn == nil {
-		log.Printf("%s %s D-Bus connection is nil; cannot create property client",
-			logTag, internal.ErrorPrefix)
+		log.Errorf("%s D-Bus connection is nil; cannot create property client", logTag)
 		return nil
 	}
 
