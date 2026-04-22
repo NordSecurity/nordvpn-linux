@@ -3,9 +3,9 @@ package fileshare
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 type EventCallback interface {

@@ -6,13 +6,15 @@ package dns
 import (
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
+	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 const (
@@ -73,6 +75,12 @@ type Method interface {
 	Name() string
 }
 
+type networkManagerConfigGetterFunc func() ([]byte, error)
+
+func getNetworkManagerConfig() ([]byte, error) {
+	return exec.Command("NetworkManager", "--print-config").CombinedOutput()
+}
+
 // DNSServiceSetter detects how OS is managing the DNS configuration and tries to set it using the appropriate method.
 type DNSServiceSetter struct {
 	// systemdResolvedSetter sets DNS using the most desired method:
@@ -90,20 +98,70 @@ type DNSServiceSetter struct {
 	analytics         analytics
 	resolvConfMonitor resolvConfMonitor
 	// currentManagementService is used to identify the service in analytics
-	currentManagementService dnsManagementService
+	currentManagementService       dnsManagementService
+	networkManagerConfigGetterFunc networkManagerConfigGetterFunc
 }
 
 func NewDNSServiceSetter(debugPublisher events.PublishSubcriber[events.DebuggerEvent]) *DNSServiceSetter {
 	analytics := newDNSAnalytics(debugPublisher)
 	resolvConfMonitor := newResolvConfMonitor(analytics)
 	return &DNSServiceSetter{
-		systemdResolvedSetter: NewSetter(&Resolved{}, &Resolvectl{}),
-		resolvconfSetter:      NewSetter(&Resolvconf{}, &ResolvConfFile{}),
-		nmcliSetter:           NewSetter(newNMCli()),
-		filesystemHandle:      internal.StdFilesystemHandle{},
-		analytics:             analytics,
-		resolvConfMonitor:     &resolvConfMonitor,
+		systemdResolvedSetter:          NewSetter(&Resolved{}, &Resolvectl{}),
+		resolvconfSetter:               NewSetter(&Resolvconf{}, &ResolvConfFile{}),
+		nmcliSetter:                    NewSetter(newNMCli()),
+		filesystemHandle:               internal.StdFilesystemHandle{},
+		analytics:                      analytics,
+		resolvConfMonitor:              &resolvConfMonitor,
+		networkManagerConfigGetterFunc: getNetworkManagerConfig,
 	}
+}
+
+func (d *DNSServiceSetter) getManagementServiceBasedOnNetworkManagerConfiguration() (dnsManagementService, error) {
+	networkManagerConfig, err := d.networkManagerConfigGetterFunc()
+	if err != nil {
+		return unknownManagementService, fmt.Errorf("getting NetworkManager config: %w", err)
+	}
+
+	const (
+		dnsConfigEntry        = "dns="
+		defaultDNSConfigEntry = "dns=default"
+		systemdResolvedEntry  = "dns=systemd-resolved"
+	)
+
+	networkManagerConfigLines := strings.Split(string(networkManagerConfig), "\n")
+	dnsConfigEntryIndex := slices.IndexFunc(networkManagerConfigLines, func(networkManagerConfigLine string) bool {
+		return strings.Contains(networkManagerConfigLine, dnsConfigEntry)
+	})
+
+	if dnsConfigEntryIndex == -1 {
+		return unknownManagementService, fmt.Errorf("DNS config entry not found")
+	}
+
+	dnsConfigLine := strings.TrimSpace(networkManagerConfigLines[dnsConfigEntryIndex])
+	// ignore the config entry if it's commented out
+	if strings.HasPrefix(dnsConfigLine, "#") {
+		return unknownManagementService, fmt.Errorf("DNS config entry commented out")
+	}
+
+	re := regexp.MustCompile(`\bdns=([^ \t\r\n]+)`)
+	matches := re.FindAllString(string(networkManagerConfig), -1)
+	if matches == nil {
+		return unknownManagementService, fmt.Errorf("config entry not found")
+	}
+
+	if len(matches) > 1 {
+		return unknownManagementService, fmt.Errorf("multiple config entries")
+	}
+
+	if matches[0] == defaultDNSConfigEntry {
+		return nmcliManagementService, nil
+	}
+
+	if matches[0] == systemdResolvedEntry {
+		return systemdResolvedManagementService, nil
+	}
+
+	return unknownManagementService, fmt.Errorf("config entry not found or recognized")
 }
 
 func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfComment() (dnsManagementService, error) {
@@ -147,7 +205,13 @@ func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfLinkTarget() (dn
 }
 
 func (d *DNSServiceSetter) getManagementService() dnsManagementService {
-	managementService, err := d.getManagementServiceBasedOnResolvconfComment()
+	managementService, err := d.getManagementServiceBasedOnNetworkManagerConfiguration()
+	if err == nil {
+		log.Println(internal.InfoPrefix, dnsPrefix, "management service inferred from NetworkManager config")
+		return managementService
+	}
+
+	managementService, err = d.getManagementServiceBasedOnResolvconfComment()
 	if err == nil {
 		log.Println(internal.InfoPrefix, dnsPrefix, "management service inferred from resolv.conf comment")
 		return managementService

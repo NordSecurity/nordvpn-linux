@@ -3,7 +3,6 @@ package tray
 import (
 	"context"
 	"fmt"
-	"log"
 	"slices"
 	"strings"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 
 	"google.golang.org/grpc"
@@ -508,6 +508,8 @@ func (ti *Instance) setVpnStatus(
 			case pb.ConnectionState_CONNECTED:
 				notificationText = labelConnectedFormat
 				notificationArg = ti.state.serverName()
+			case pb.ConnectionState_PAUSED:
+				fallthrough
 			case pb.ConnectionState_DISCONNECTED:
 				if oldServerName != "" {
 					notificationText = labelDisconnectedFormat

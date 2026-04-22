@@ -18,6 +18,7 @@ import 'package:nordvpn/pb/daemon/features.pb.dart';
 import 'package:nordvpn/pb/daemon/login.pb.dart' as grpc;
 import 'package:nordvpn/pb/daemon/login_with_token.pb.dart';
 import 'package:nordvpn/pb/daemon/logout.pb.dart';
+import 'package:nordvpn/pb/daemon/pause.pb.dart';
 import 'package:nordvpn/pb/daemon/ping.pb.dart';
 import 'package:nordvpn/pb/daemon/purchase.pb.dart';
 import 'package:nordvpn/pb/daemon/rate.pb.dart';
@@ -38,6 +39,7 @@ final class MockDaemon extends DaemonServiceBase {
   late final MockAccountInfo account;
   late final MockVpnStatus vpnStatus;
   late final MockRecentConnections recentConnections;
+  RecommendedServerLocation? recommendedServerLocation;
 
   MockDaemon() {
     serversList = MockServersList(appStateStream);
@@ -368,5 +370,22 @@ final class MockDaemon extends DaemonServiceBase {
         connections: recentConnections.getConnections(),
       ),
     );
+  }
+
+  @override
+  Future<Payload> pauseConnection(ServiceCall call, PauseRequest request) {
+    return vpnStatus.pauseConnection(request.seconds);
+  }
+
+  @override
+  Future<RecommendedServerLocation> recommendedServer(
+    ServiceCall call,
+    Empty request,
+  ) {
+    if (recommendedServerLocation == null) {
+      return Future.value(RecommendedServerLocation());
+    } else {
+      return Future.value(recommendedServerLocation!);
+    }
   }
 }

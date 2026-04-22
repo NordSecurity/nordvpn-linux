@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nordvpn/data/mocks/daemon/grpc_server.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_account_info.dart';
+import 'package:nordvpn/data/mocks/daemon/mock_daemon.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_snap_interceptor.dart';
 import 'package:nordvpn/pb/daemon/status.pb.dart' as pbstatus;
 import 'package:nordvpn/data/mocks/daemon/mock_application_settings.dart';
@@ -28,6 +29,7 @@ import 'vpn_screen_handle.dart';
 // Convenience class to easier navigate and run the integration tests
 final class AppCtl {
   final WidgetTester tester;
+  MockDaemon get daemon => GrpcServer.instance.daemon;
   MockAccountInfo get appAccount => GrpcServer.instance.account;
   MockApplicationSettings get appSettings => GrpcServer.instance.appSettings;
   MockVpnStatus get vpnStatus => GrpcServer.instance.vpnStatus;

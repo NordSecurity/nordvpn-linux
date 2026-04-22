@@ -2,7 +2,6 @@
 package events
 
 import (
-	"log"
 	"net/http"
 	"net/netip"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state/types"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // Handler is used to process messages.
@@ -86,6 +86,8 @@ type DataConnect struct {
 	IsObfuscated            bool
 	IsPostQuantum           bool
 	RecommendationUUID      string
+	PauseInterval           time.Duration
+	UnpausedByUser          bool
 }
 
 // DataConnectChangeNotif is used to provide notifications for internal listeners of ConnectionStatus
@@ -159,6 +161,7 @@ type DataDisconnect struct {
 	Error                 error
 	IsRefresh             bool
 	RecommendationUUID    string
+	PauseInterval         time.Duration
 }
 
 type ReasonCode int32
@@ -223,6 +226,12 @@ type UiItemsAction struct {
 }
 
 type DataRecentsChanged struct{}
+
+type DataPauseCancelled struct {
+	Interval            time.Duration
+	ServerFromAPI       bool
+	ServerSelectionRule config.ServerSelectionRule
+}
 
 // DisconnectCallback is called when Networker needs to disconnect when establishing a connection. This usually happens
 // in case of a connection refresh.

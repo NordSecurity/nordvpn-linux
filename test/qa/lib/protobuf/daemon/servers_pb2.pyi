@@ -76,3 +76,13 @@ class ServersResponse(_message.Message):
     servers: ServersMap
     error: ServersError
     def __init__(self, servers: _Optional[_Union[ServersMap, _Mapping]] = ..., error: _Optional[_Union[ServersError, str]] = ...) -> None: ...
+
+class RecommendedServerLocation(_message.Message):
+    __slots__ = ("country_code", "country_name", "city_name")
+    COUNTRY_CODE_FIELD_NUMBER: _ClassVar[int]
+    COUNTRY_NAME_FIELD_NUMBER: _ClassVar[int]
+    CITY_NAME_FIELD_NUMBER: _ClassVar[int]
+    country_code: str
+    country_name: str
+    city_name: str
+    def __init__(self, country_code: _Optional[str] = ..., country_name: _Optional[str] = ..., city_name: _Optional[str] = ...) -> None: ...

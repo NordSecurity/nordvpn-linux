@@ -30,6 +30,7 @@ class UIEvent(_message.Message):
         RATE_CONNECTION: _ClassVar[UIEvent.ItemName]
         MESHNET_INVITE_SEND: _ClassVar[UIEvent.ItemName]
         LOGIN_TOKEN: _ClassVar[UIEvent.ItemName]
+        PAUSE: _ClassVar[UIEvent.ItemName]
     ITEM_NAME_UNSPECIFIED: UIEvent.ItemName
     CONNECT: UIEvent.ItemName
     CONNECT_RECENTS: UIEvent.ItemName
@@ -39,6 +40,7 @@ class UIEvent(_message.Message):
     RATE_CONNECTION: UIEvent.ItemName
     MESHNET_INVITE_SEND: UIEvent.ItemName
     LOGIN_TOKEN: UIEvent.ItemName
+    PAUSE: UIEvent.ItemName
     class ItemType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         ITEM_TYPE_UNSPECIFIED: _ClassVar[UIEvent.ItemType]
@@ -56,6 +58,12 @@ class UIEvent(_message.Message):
         ONION_OVER_VPN: _ClassVar[UIEvent.ItemValue]
         DOUBLE_VPN: _ClassVar[UIEvent.ItemValue]
         P2P: _ClassVar[UIEvent.ItemValue]
+        PAUSE_5_MIN: _ClassVar[UIEvent.ItemValue]
+        PAUSE_15_MIN: _ClassVar[UIEvent.ItemValue]
+        PAUSE_30_MIN: _ClassVar[UIEvent.ItemValue]
+        PAUSE_1_HOUR: _ClassVar[UIEvent.ItemValue]
+        PAUSE_24_HOURS: _ClassVar[UIEvent.ItemValue]
+        PAUSE_DISCONNECT: _ClassVar[UIEvent.ItemValue]
     ITEM_VALUE_UNSPECIFIED: UIEvent.ItemValue
     COUNTRY: UIEvent.ItemValue
     CITY: UIEvent.ItemValue
@@ -65,4 +73,10 @@ class UIEvent(_message.Message):
     ONION_OVER_VPN: UIEvent.ItemValue
     DOUBLE_VPN: UIEvent.ItemValue
     P2P: UIEvent.ItemValue
+    PAUSE_5_MIN: UIEvent.ItemValue
+    PAUSE_15_MIN: UIEvent.ItemValue
+    PAUSE_30_MIN: UIEvent.ItemValue
+    PAUSE_1_HOUR: UIEvent.ItemValue
+    PAUSE_24_HOURS: UIEvent.ItemValue
+    PAUSE_DISCONNECT: UIEvent.ItemValue
     def __init__(self) -> None: ...

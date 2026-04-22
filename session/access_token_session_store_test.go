@@ -123,6 +123,7 @@ func TestAccessTokenSessionStore_Renew_SetIdempotencyKey(t *testing.T) {
 	pastTime := time.Now().UTC().Add(-24 * time.Hour)
 	futureTime := time.Now().UTC().Add(24 * time.Hour)
 
+	var usedKey uuid.UUID
 	cfg := &config.Config{
 		AutoConnectData: config.AutoConnectData{ID: uid},
 		TokensData: map[int64]config.TokenData{
@@ -139,6 +140,7 @@ func TestAccessTokenSessionStore_Renew_SetIdempotencyKey(t *testing.T) {
 	errorRegistry := internal.NewErrorHandlingRegistry[error]()
 
 	renewAPICall := func(token string, key uuid.UUID) (*session.AccessTokenResponse, error) {
+		usedKey = key
 		return &session.AccessTokenResponse{
 			Token:      "ab78bb36299d442fa0715fb53b5e3e58",
 			RenewToken: "ab78bb36299d442fa0715fb53b5e3e59",
@@ -150,7 +152,9 @@ func TestAccessTokenSessionStore_Renew_SetIdempotencyKey(t *testing.T) {
 	err := store.Renew()
 
 	assert.NoError(t, err)
-	assert.NotNil(t, cfgManager.Cfg.TokensData[uid].IdempotencyKey)
+	assert.NotEqual(t, uuid.Nil, usedKey, "An idempotency key should be generated for the API call")
+	assert.NotNil(t, cfgManager.Cfg.TokensData[uid].IdempotencyKey,
+		"Idempotency key should be preserved after renewal for retry scenarios")
 }
 
 func TestAccessTokenSessionStore_Renew_APIErrorWithHandler(t *testing.T) {

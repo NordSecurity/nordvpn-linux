@@ -3,10 +3,10 @@ package session
 import (
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 type VPNCredentialsResponse struct {

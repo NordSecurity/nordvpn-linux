@@ -4,7 +4,6 @@ package iprule
 import (
 	"errors"
 	"fmt"
-	"log"
 	"math"
 	"net"
 	"sync"
@@ -12,6 +11,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes/ifgroup"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
 )

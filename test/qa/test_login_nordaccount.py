@@ -66,7 +66,7 @@ def test_selenium_login(login_flag):
 
         output = sh.nordvpn.logout(_tty_out=False)
         print(f"Logout action output: {output}\n")
-        assert selenium.LOGOUT_MSG_SUCCESS in output
+        assert selenium.LOGOUT_MSG_SUCCESS in output, "Logout should show success message"
 
 
 @pytest.mark.parametrize("login_flag", selenium.LOGIN_FLAG)
@@ -106,4 +106,4 @@ def test_selenium_login_callback(login_flag):
 
         output = sh.nordvpn.login("--callback", callback_link, _tty_out=False)
         print(f"Callback login action output: {output}\n")
-        assert selenium.LOGIN_MSG_SUCCESS in output
+        assert selenium.LOGIN_MSG_SUCCESS in output, "Login via callback should show success message"

@@ -1,12 +1,12 @@
 package norduser
 
 import (
-	"log"
 	"time"
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 type FileshareManagementMsg int

@@ -1,8 +1,9 @@
 package internal
 
 import (
-	"log"
 	"os"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // UpdateFilePermissions sets permissions of a given file if it exists and logs the error to stdout

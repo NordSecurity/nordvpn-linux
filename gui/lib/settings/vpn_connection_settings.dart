@@ -14,6 +14,7 @@ import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/autoconnect_panel_theme.dart';
 import 'package:nordvpn/widgets/advanced_list_tile.dart';
 import 'package:nordvpn/widgets/custom_error_widget.dart';
+import 'package:nordvpn/widgets/enabled_widget.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:nordvpn/widgets/loading_indicator.dart';
 import 'package:nordvpn/widgets/on_off_switch.dart';
@@ -143,6 +144,12 @@ final class VpnConnectionSettings extends ConsumerWidget {
     ApplicationSettings settings,
   ) {
     final appTheme = context.appTheme;
+    final vpnStatus = ref.watch(vpnStatusControllerProvider);
+    final isConnecting = vpnStatus.whenOrNull(
+          data: (status) => status.isConnecting(),
+        ) ??
+        false;
+
     List<({String label, VpnProtocol value})> protocols = [
       (label: t.ui.nordLynx, value: VpnProtocol.nordlynx),
       (label: t.ui.nordWhisper, value: VpnProtocol.nordWhisper),
@@ -156,17 +163,21 @@ final class VpnConnectionSettings extends ConsumerWidget {
         SettingsWrapperWidget.buildListItem(context, title: t.ui.vpnProtocol),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: appTheme.outerPadding),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final item in protocols)
-                RadioButton(
-                  value: item.value,
-                  groupValue: settings.protocol,
-                  onChanged: (value) => _setProtocol(ref, value),
-                  label: item.label,
-                ),
-            ],
+          child: EnabledWidget(
+            enabled: !isConnecting,
+            disabledOpacity: appTheme.disabledOpacity,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final item in protocols)
+                  RadioButton(
+                    value: item.value,
+                    groupValue: settings.protocol,
+                    onChanged: (value) => _setProtocol(ref, value),
+                    label: item.label,
+                  ),
+              ],
+            ),
           ),
         ),
       ],

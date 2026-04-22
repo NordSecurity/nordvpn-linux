@@ -2,7 +2,6 @@ package access
 
 import (
 	"errors"
-	"log"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
@@ -10,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/nc"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 )

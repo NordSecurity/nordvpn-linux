@@ -80,9 +80,9 @@ def get_new_output(buffer, old_output=""):
 
 def assert_prompt_present(output, message=WE_VALUE_YOUR_PRIVACY_MSG):
     """Asserts that the consent message is in the output."""
-    assert message in squash_whitespace(output)
+    assert message in squash_whitespace(output), f"Expected consent message not found. Actual output: {output}"
 
 
 def assert_prompt_absent(output, message=WE_VALUE_YOUR_PRIVACY_MSG):
     """Asserts that the consent message is not in the output."""
-    assert message not in squash_whitespace(output)
+    assert message not in squash_whitespace(output), f"Unexpected consent message found. Actual output: {output}"

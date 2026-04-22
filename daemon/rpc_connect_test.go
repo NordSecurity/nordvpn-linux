@@ -396,10 +396,20 @@ func TestRPCConnect(t *testing.T) {
 				}
 				rpc.events.Service.FirstTimeOpened.Subscribe(firstOpenListener)
 				server := &mockRPCServer{}
+
+				mockPauseManager := &mock.PauseSchedulerMock{
+					ConnectionScheduled: true,
+				}
+
+				rpc.pauseManager = mockPauseManager
+
 				err := rpc.Connect(&pb.ConnectRequest{
 					ServerGroup: test.serverGroup,
 					ServerTag:   test.serverTag,
 				}, server)
+
+				assert.False(t, mockPauseManager.ConnectionScheduled,
+					"Paused connection was not cancelled after another connection attempt.")
 
 				switch test.resp {
 				case internal.CodeConnected:

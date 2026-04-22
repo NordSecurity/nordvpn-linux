@@ -2,11 +2,11 @@ package logger
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 type DaemonSettingsSubscriber struct{}

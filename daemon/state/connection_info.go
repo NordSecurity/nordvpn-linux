@@ -1,21 +1,43 @@
 package state
 
 import (
-	"log"
 	"sync"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state/types"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
 
+type remainingDurationFunc func(startTime time.Time, duration time.Duration) uint32
+
+func getRemainingDuration(startTime time.Time, duration time.Duration) uint32 {
+	remainingDuration := time.Until(startTime.Add(duration))
+	return uint32(remainingDuration.Seconds())
+}
+
 type InternalStateChangeNotif interface {
-	NotifyChangeState(events.DataConnectChangeNotif) error
+	OnStateChange(events.DataConnectChangeNotif) error
+}
+
+type PauseCancelledNotif interface {
+	OnPauseCancelled(events.DataPauseCancelled) error
+}
+
+type pauseData struct {
+	pausedAt      time.Time
+	pauseDuration time.Duration
+}
+
+type serverSelectionData struct {
+	serverSelectionRule config.ServerSelectionRule
+	serverFromAPI       bool
 }
 
 // ConnectionInfo stores data about currently active connection
@@ -24,14 +46,21 @@ type InternalStateChangeNotif interface {
 type ConnectionInfo struct {
 	status         types.ConnectionStatus
 	fullyConnected bool
-	mu             sync.RWMutex
-	internalNotif  events.PublishSubcriber[events.DataConnectChangeNotif]
+	pauseData      *pauseData
+	// serverSelectionData stores data used to build PauseCancelled events
+	serverSelectionData   serverSelectionData
+	remainingDurationFunc remainingDurationFunc
+	mu                    sync.RWMutex
+	internalNotif         events.PublishSubcriber[events.DataConnectChangeNotif]
+	pauseCancelledNotif   events.PublishSubcriber[events.DataPauseCancelled]
 }
 
 func NewConnectionInfo() *ConnectionInfo {
 	return &ConnectionInfo{
-		status:        types.ConnectionStatus{},
-		internalNotif: &subs.Subject[events.DataConnectChangeNotif]{},
+		status:                types.ConnectionStatus{},
+		internalNotif:         &subs.Subject[events.DataConnectChangeNotif]{},
+		pauseCancelledNotif:   &subs.Subject[events.DataPauseCancelled]{},
+		remainingDurationFunc: getRemainingDuration,
 	}
 }
 
@@ -57,7 +86,7 @@ func (cs *ConnectionInfo) Status() types.ConnectionStatus {
 	// c) previous values are never used in any case
 	// thus it is OK to not synchronize them each time
 	cs.mu.RLock()
-	status := cs.status
+	status := cs.addPauseInfo(cs.status)
 	cs.mu.RUnlock()
 	if status.State == pb.ConnectionState_CONNECTED && status.TunnelName != "" {
 		status.Tx, status.Rx = cs.getTransferRatesForTunnel(status.TunnelName)
@@ -72,7 +101,7 @@ func (cs *ConnectionInfo) setStatus(s types.ConnectionStatus, fullyConnected boo
 		// Don't override tunnel name as it comes from internal events
 		s.TunnelName = cs.status.TunnelName
 	}
-	cs.status = s
+	cs.status = cs.addPauseInfo(s)
 	cs.fullyConnected = fullyConnected
 }
 
@@ -136,7 +165,7 @@ func (c *ConnectionInfo) ConnectionStatusNotifyDisconnect(e events.DataDisconnec
 	}
 
 	c.setStatus(status, false)
-	c.internalNotif.Publish(events.DataConnectChangeNotif{Status: status})
+	c.internalNotif.Publish(events.DataConnectChangeNotif{Status: c.status})
 	return nil
 }
 
@@ -144,6 +173,7 @@ func (c *ConnectionInfo) ConnectionStatusNotifyInternalConnect(
 	e vpn.ConnectEvent,
 ) error {
 	state := pb.ConnectionState_CONNECTED
+
 	if e.Status != events.StatusSuccess {
 		state = pb.ConnectionState_CONNECTING
 	}
@@ -169,11 +199,95 @@ func (c *ConnectionInfo) notifyInternalState(
 		return nil
 	}
 	c.status.State = state
+	c.status = c.addPauseInfo(c.status)
 	c.mu.Unlock()
 	c.internalNotif.Publish(events.DataConnectChangeNotif{Status: c.status})
 	return nil
 }
 
-func (c *ConnectionInfo) Subscribe(to InternalStateChangeNotif) {
-	c.internalNotif.Subscribe(to.NotifyChangeState)
+func (c *ConnectionInfo) SubscribeToInternalStateChanges(to InternalStateChangeNotif) {
+	c.internalNotif.Subscribe(to.OnStateChange)
+}
+
+func (c *ConnectionInfo) SubscribeToPauseCancelled(to PauseCancelledNotif) {
+	c.pauseCancelledNotif.Subscribe(to.OnPauseCancelled)
+}
+
+// Pause sets the pause data. All the subsequent events will be sent out with State set to
+// pb.ConnectionState_PAUSED until Unpause is called.
+func (c *ConnectionInfo) Pause(pausedAt time.Time, duration time.Duration) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.pauseData = &pauseData{
+		pausedAt:      pausedAt,
+		pauseDuration: duration,
+	}
+}
+
+// CancelPause unsets the pause data, sends pause cancelled notification and returns the pause duration.
+func (c *ConnectionInfo) CancelPause() time.Duration {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	var pauseInterval time.Duration
+	if c.pauseData != nil {
+		pauseInterval = c.doUnpause()
+		c.pauseCancelledNotif.Publish(events.DataPauseCancelled{
+			Interval:            pauseInterval,
+			ServerFromAPI:       c.serverSelectionData.serverFromAPI,
+			ServerSelectionRule: c.serverSelectionData.serverSelectionRule,
+		})
+	}
+
+	return pauseInterval
+}
+
+// Unpause unsets the pause data and returns the pause duration.
+func (c *ConnectionInfo) Unpause() time.Duration {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return c.doUnpause()
+}
+
+func (c *ConnectionInfo) doUnpause() time.Duration {
+	if c.pauseData == nil {
+		return 0
+	}
+
+	pauseDuration := c.pauseData.pauseDuration
+	c.pauseData = nil
+	return pauseDuration
+}
+
+// addPauseInfo adds pause info to the status if pause data is set
+func (cs *ConnectionInfo) addPauseInfo(status types.ConnectionStatus) types.ConnectionStatus {
+	if cs.pauseData == nil {
+		return status
+	}
+
+	status.State = pb.ConnectionState_PAUSED
+	status.PausedAt = cs.pauseData.pausedAt
+	status.PauseRemainingTimeSec = cs.remainingDurationFunc(cs.pauseData.pausedAt, cs.pauseData.pauseDuration)
+
+	return status
+}
+
+// SetServerSelectionData sets server selection data that will be used when building PauseCancelled events
+func (cs *ConnectionInfo) SetServerSelectionData(serverSelectionRule config.ServerSelectionRule, serverFromAPI bool) {
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+
+	cs.serverSelectionData = serverSelectionData{
+		serverSelectionRule: serverSelectionRule,
+		serverFromAPI:       serverFromAPI,
+	}
+}
+
+// IsPaused return true if the connection is currently paused, false otherwise
+func (cs *ConnectionInfo) IsPaused() bool {
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+	return cs.pauseData != nil
 }

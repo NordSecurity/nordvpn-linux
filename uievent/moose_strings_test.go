@@ -42,6 +42,96 @@ func TestToMooseStrings(t *testing.T) {
 				ItemValue:     "country",
 			},
 		},
+		{
+			name: "pause event for 5 minutes",
+			ctx: &UIEventContext{
+				FormReference: pb.UIEvent_CLI,
+				ItemName:      pb.UIEvent_PAUSE,
+				ItemType:      pb.UIEvent_CLICK,
+				ItemValue:     pb.UIEvent_PAUSE_5_MIN,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "cli",
+				ItemName:      "pause",
+				ItemType:      "click",
+				ItemValue:     "5_minutes",
+			},
+		},
+		{
+			name: "pause event for 15 minutes",
+			ctx: &UIEventContext{
+				FormReference: pb.UIEvent_CLI,
+				ItemName:      pb.UIEvent_PAUSE,
+				ItemType:      pb.UIEvent_CLICK,
+				ItemValue:     pb.UIEvent_PAUSE_15_MIN,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "cli",
+				ItemName:      "pause",
+				ItemType:      "click",
+				ItemValue:     "15_minutes",
+			},
+		},
+		{
+			name: "pause event for 30 minutes",
+			ctx: &UIEventContext{
+				FormReference: pb.UIEvent_CLI,
+				ItemName:      pb.UIEvent_PAUSE,
+				ItemType:      pb.UIEvent_CLICK,
+				ItemValue:     pb.UIEvent_PAUSE_30_MIN,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "cli",
+				ItemName:      "pause",
+				ItemType:      "click",
+				ItemValue:     "30_minutes",
+			},
+		},
+		{
+			name: "pause event for 1 hour",
+			ctx: &UIEventContext{
+				FormReference: pb.UIEvent_CLI,
+				ItemName:      pb.UIEvent_PAUSE,
+				ItemType:      pb.UIEvent_CLICK,
+				ItemValue:     pb.UIEvent_PAUSE_1_HOUR,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "cli",
+				ItemName:      "pause",
+				ItemType:      "click",
+				ItemValue:     "1_hour",
+			},
+		},
+		{
+			name: "pause event for 24 hours",
+			ctx: &UIEventContext{
+				FormReference: pb.UIEvent_CLI,
+				ItemName:      pb.UIEvent_PAUSE,
+				ItemType:      pb.UIEvent_CLICK,
+				ItemValue:     pb.UIEvent_PAUSE_24_HOURS,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "cli",
+				ItemName:      "pause",
+				ItemType:      "click",
+				ItemValue:     "24_hours",
+			},
+		},
+		{
+			name: "pause event disconnect",
+			ctx: &UIEventContext{
+				FormReference: pb.UIEvent_CLI,
+				ItemName:      pb.UIEvent_PAUSE,
+				ItemType:      pb.UIEvent_CLICK,
+				ItemValue:     pb.UIEvent_PAUSE_DISCONNECT,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "cli",
+				ItemName:      "pause",
+				ItemType:      "click",
+				ItemValue:     "disconnect",
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -86,6 +176,7 @@ func TestItemNameToString(t *testing.T) {
 		{pb.UIEvent_LOGOUT, "logout"},
 		{pb.UIEvent_RATE_CONNECTION, "rate_connection"},
 		{pb.UIEvent_MESHNET_INVITE_SEND, "meshnet_invite_send"},
+		{pb.UIEvent_PAUSE, "pause"},
 	}
 
 	for _, tt := range tests {
@@ -127,6 +218,12 @@ func TestItemValueToString(t *testing.T) {
 		{pb.UIEvent_ONION_OVER_VPN, "onion_over_vpn"},
 		{pb.UIEvent_DOUBLE_VPN, "double_vpn"},
 		{pb.UIEvent_P2P, "p2p"},
+		{pb.UIEvent_PAUSE_5_MIN, "5_minutes"},
+		{pb.UIEvent_PAUSE_15_MIN, "15_minutes"},
+		{pb.UIEvent_PAUSE_30_MIN, "30_minutes"},
+		{pb.UIEvent_PAUSE_1_HOUR, "1_hour"},
+		{pb.UIEvent_PAUSE_24_HOURS, "24_hours"},
+		{pb.UIEvent_PAUSE_DISCONNECT, "disconnect"},
 	}
 
 	for _, tt := range tests {

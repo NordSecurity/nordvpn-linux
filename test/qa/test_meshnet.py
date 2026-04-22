@@ -40,20 +40,20 @@ def test_meshnet_connect():
 
     peer = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer() # Refresh nickname
 
-    assert meshnet.is_peer_reachable(peer, meshnet.PeerName.Hostname)
-    assert meshnet.is_peer_reachable(peer, meshnet.PeerName.Ip)
-    assert meshnet.is_peer_reachable(peer, meshnet.PeerName.Nickname)
-    assert nickname == peer.nickname
+    assert meshnet.is_peer_reachable(peer, meshnet.PeerName.Hostname), "Peer should be reachable by hostname"
+    assert meshnet.is_peer_reachable(peer, meshnet.PeerName.Ip), "Peer should be reachable by IP"
+    assert meshnet.is_peer_reachable(peer, meshnet.PeerName.Nickname), "Peer should be reachable by nickname"
+    assert nickname == peer.nickname, "Peer nickname should be set correctly"
 
     nickname = "local-machine"
     ssh_client.exec_command(f"nordvpn mesh peer nick set {this_device.hostname} {nickname}")
 
     this_device = meshnet.PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list")).get_external_peer() # Refresh nickname
 
-    assert ssh_client.network.ping(this_device.hostname)
-    assert ssh_client.network.ping(this_device.ip)
-    assert ssh_client.network.ping(this_device.nickname)
-    assert nickname == this_device.nickname
+    assert ssh_client.network.ping(this_device.hostname), "Remote device should be reachable by hostname"
+    assert ssh_client.network.ping(this_device.ip), "Remote device should be reachable by IP"
+    assert ssh_client.network.ping(this_device.nickname), "Remote device should be reachable by nickname"
+    assert nickname == this_device.nickname, "Remote device nickname should be set correctly"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
@@ -88,7 +88,7 @@ def test_mesh_removed_machine_by_other():
     try:
         sh_no_tty.nordvpn.mesh.peer.list()
     except Exception as e:  # noqa: BLE001
-        assert "Meshnet is not enabled." in str(e)
+        assert "Meshnet is not enabled." in str(e), "Should show meshnet disabled error after machine removal"
 
     sh_no_tty.nordvpn.set.meshnet.on()  # enable back on for other tests
     meshnet.add_peer(ssh_client)
@@ -123,9 +123,9 @@ def test_exitnode_permissions(routing: bool, local: bool, incoming: bool, filesh
     rules = os.popen("sudo iptables -S POSTROUTING -t nat").read()
 
     if routing:
-        assert f"-A POSTROUTING -s {peer_ip}/32 ! -d 100.64.0.0/10 -m comment --comment nordvpn -j MASQUERADE" in rules
+        assert f"-A POSTROUTING -s {peer_ip}/32 ! -d 100.64.0.0/10 -m comment --comment nordvpn -j MASQUERADE" in rules, "MASQUERADE rule should exist when routing is enabled"
     else:
-        assert f"-A POSTROUTING -s {peer_ip}/32 ! -d 100.64.0.0/10 -m comment --comment nordvpn -j MASQUERADE" not in rules
+        assert f"-A POSTROUTING -s {peer_ip}/32 ! -d 100.64.0.0/10 -m comment --comment nordvpn -j MASQUERADE" not in rules, "MASQUERADE rule should not exist when routing is disabled"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
@@ -163,12 +163,12 @@ def test_account_switch():
 def test_set_meshnet_on_when_logged_out(meshnet_allias):
 
     sh_no_tty.nordvpn.logout("--persist-token")
-    assert not settings.is_meshnet_enabled()
+    assert not settings.is_meshnet_enabled(), "Meshnet should be disabled after logout"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh_no_tty.nordvpn.set(meshnet_allias, "on")
 
-    assert "You are not logged in." in ex.value.stdout.decode("utf-8")
+    assert "You are not logged in." in ex.value.stdout.decode("utf-8"), "Should show not logged in error"
 
 
 @pytest.mark.skipif(meshnet.is_meshnet_test_disabled_from_run(), reason="LVPN-4590")
@@ -176,23 +176,23 @@ def test_set_meshnet_on_when_logged_out(meshnet_allias):
 def test_set_meshnet_off_when_logged_out(meshnet_allias):
 
     sh_no_tty.nordvpn.logout("--persist-token")
-    assert not settings.is_meshnet_enabled()
+    assert not settings.is_meshnet_enabled(), "Meshnet should be disabled after logout"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh_no_tty.nordvpn.set(meshnet_allias, "off")
 
-    assert "You are not logged in." in ex.value.stdout.decode("utf-8")
+    assert "You are not logged in." in ex.value.stdout.decode("utf-8"), "Should show not logged in error"
 
 
 @pytest.mark.core_meshnet
 @pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
 def test_set_meshnet_off_on(meshnet_allias):
 
-    assert "Meshnet is set to 'disabled' successfully." in sh_no_tty.nordvpn.set(meshnet_allias, "off")
-    assert not settings.is_meshnet_enabled()
+    assert "Meshnet is set to 'disabled' successfully." in sh_no_tty.nordvpn.set(meshnet_allias, "off"), "Should show meshnet disabled message"
+    assert not settings.is_meshnet_enabled(), "Meshnet should be disabled"
 
-    assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set(meshnet_allias, "on")
-    assert settings.is_meshnet_enabled()
+    assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set(meshnet_allias, "on"), "Should show meshnet enabled message"
+    assert settings.is_meshnet_enabled(), "Meshnet should be enabled"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
@@ -202,7 +202,7 @@ def test_set_meshnet_on_repeated(meshnet_allias):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh_no_tty.nordvpn.set(meshnet_allias, "on")
 
-    assert "Meshnet is already enabled." in ex.value.stdout.decode("utf-8")
+    assert "Meshnet is already enabled." in ex.value.stdout.decode("utf-8"), "Should show already enabled error"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
@@ -214,7 +214,7 @@ def test_set_meshnet_off_repeated(meshnet_allias):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh_no_tty.nordvpn.set(meshnet_allias, "off")
 
-    assert "Meshnet is already disabled." in ex.value.stdout.decode("utf-8")
+    assert "Meshnet is already disabled." in ex.value.stdout.decode("utf-8"), "Should show already disabled error"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
@@ -232,7 +232,7 @@ def test_permission_messages_success(permission, permission_state, expected_mess
 
     expected_message = expected_message % peer_hostname
 
-    assert expected_message in got_message
+    assert expected_message in got_message, "Should show expected permission success message"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
@@ -248,7 +248,7 @@ def test_permission_messages_error(permission, permission_state, expected_messag
 
     expected_message = expected_message % peer_hostname
 
-    assert expected_message in ex.value.stdout.decode("utf-8")
+    assert expected_message in ex.value.stdout.decode("utf-8"), "Should show expected permission error message"
 
 
 @pytest.mark.core_meshnet
@@ -274,14 +274,14 @@ def test_direct_connection_rtt_and_loss():
             log_relay_event_time = datetime.strptime(log_relay_events[0].split(" ")[1], "%H:%M:%S")
             log_direct_event_time = datetime.strptime(log_direct_events[0].split(" ")[1], "%H:%M:%S")
 
-            assert (log_direct_event_time - log_relay_event_time).total_seconds() < meshnet.TELIO_EXPECTED_RELAY_TO_DIRECT_TIME
+            assert (log_direct_event_time - log_relay_event_time).total_seconds() < meshnet.TELIO_EXPECTED_RELAY_TO_DIRECT_TIME, "Direct connection should be established within expected time after relay connection"
         elif len(log_relay_events) == 0 and len(log_direct_events) > 0:
             pass
 
         # RTT & loss
         ping_output = sh.ping("-c", "20", peer_hostname)
-        assert get_average_rtt(ping_output) <= meshnet.TELIO_EXPECTED_RTT
-        assert get_loss(ping_output) <= meshnet.TELIO_EXPECTED_PACKET_LOSS
+        assert get_average_rtt(ping_output) <= meshnet.TELIO_EXPECTED_RTT, "Average RTT should be within expected threshold"
+        assert get_loss(ping_output) <= meshnet.TELIO_EXPECTED_PACKET_LOSS, "Packet loss should be within expected threshold"
 
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
 
@@ -300,47 +300,47 @@ def test_incoming_connections():
     peer_hostname = peer_list.get_external_peer().hostname
 
     sh_no_tty.nordvpn.mesh.peer.incoming.deny(peer_hostname)
-    assert not ssh_client.network.ping(local_hostname, retry=1)
+    assert not ssh_client.network.ping(local_hostname, retry=1), "Local device should not be reachable when incoming denied"
 
     ssh_client.exec_command(f"nordvpn mesh peer incoming deny {local_hostname}")
-    assert not meshnet.is_peer_reachable(peer_list.get_external_peer(), retry=1)
+    assert not meshnet.is_peer_reachable(peer_list.get_external_peer(), retry=1), "Peer should not be reachable when incoming denied"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
 def test_login_mesh_on_set_defaults_mesh_on_sequence():
     """Test the sequence: login -> set mesh on -> set defaults -> set mesh on"""
 
-    assert "Account information" in sh_no_tty.nordvpn.account()
-    assert settings.is_meshnet_enabled()
-    assert settings.MSG_SET_DEFAULTS in sh_no_tty.nordvpn.set.defaults()
+    assert "Account information" in sh_no_tty.nordvpn.account(), "Should show account information after login"
+    assert settings.is_meshnet_enabled(), "Meshnet should be enabled after login"
+    assert settings.MSG_SET_DEFAULTS in sh_no_tty.nordvpn.set.defaults(), "Should show defaults set message"
 
-    assert not settings.is_meshnet_enabled()
+    assert not settings.is_meshnet_enabled(), "Meshnet should be disabled after set defaults"
 
-    assert "Account information" in sh_no_tty.nordvpn.account()
+    assert "Account information" in sh_no_tty.nordvpn.account(), "Should show account information"
 
-    assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on()
+    assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on(), "Should show meshnet enabled message"
 
-    assert settings.is_meshnet_enabled()
+    assert settings.is_meshnet_enabled(), "Meshnet should be enabled after setting on"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
 def test_login_mesh_on_set_defaults_logout_login_mesh_on():
     """Test the sequence with logout: login -> set mesh on -> set defaults --logout -> login -> set mesh on"""
 
-    assert "Account information" in sh_no_tty.nordvpn.account()
-    assert settings.is_meshnet_enabled()
-    assert settings.MSG_SET_DEFAULTS in sh_no_tty.nordvpn.set.defaults("--logout")
+    assert "Account information" in sh_no_tty.nordvpn.account(), "Should show account information after login"
+    assert settings.is_meshnet_enabled(), "Meshnet should be enabled after login"
+    assert settings.MSG_SET_DEFAULTS in sh_no_tty.nordvpn.set.defaults("--logout"), "Should show defaults set message"
 
-    assert not settings.is_meshnet_enabled()
+    assert not settings.is_meshnet_enabled(), "Meshnet should be disabled after set defaults"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh_no_tty.nordvpn.account()
-        assert "You are not logged in." in ex.value.stdout.decode("utf-8")
+        assert "You are not logged in." in ex.value.stdout.decode("utf-8"), "Should show not logged in error"
 
     login.login_as("default")
 
-    assert "Account information" in sh_no_tty.nordvpn.account()
+    assert "Account information" in sh_no_tty.nordvpn.account(), "Should show account information after login"
 
-    assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on()
+    assert "Meshnet is set to 'enabled' successfully." in sh_no_tty.nordvpn.set.meshnet.on(), "Should show meshnet enabled message"
 
-    assert settings.is_meshnet_enabled()
+    assert settings.is_meshnet_enabled(), "Meshnet should be enabled after setting on"

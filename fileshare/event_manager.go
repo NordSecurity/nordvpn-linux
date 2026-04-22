@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"os/user"
 	"sort"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"golang.org/x/exp/slices"
 )
