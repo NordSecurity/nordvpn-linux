@@ -390,7 +390,11 @@ Your browsing activities remain private, regardless of your choice.
 	MsgConsentAgreementPrompt = "Do you allow us to collect and use limited app performance data? (y/n)"
 
 	SetARPIgnoreUsageText    = "Controls whether your device ignores or responds to ARP requests while the VPN is active.\nBy default, arp-ignore is on. This means ARP requests are ignored to prevent VPN exposure."
-	SetARPIgnoreSuccess      = "ARP ignore set to '%s' successfully."
-	SetARPIgnoreNothingToSet = "ARP ignore is already set to '%s'."
+	SetARPIgnoreSuccess      = "ARP ignore set to ‘%s’ successfully."
+	SetARPIgnoreNothingToSet = "ARP ignore is already set to ‘%s’."
 	SetARPIgnoreWarning      = "You’ve turned off arp-ignore. This is an advanced privacy setting and should only be off if your network setup requires ARP responses."
+
+	// Troubleshoot
+	MsgTroubleshootSuccess = "Diagnostics collected successfully.\nFile saved to: %s"
+	MsgTroubleshootFailure = "Failed to collect diagnostics. Please try again or contact support."
 )

@@ -50,3 +50,5 @@ stage
 
 # GUI has its own .gitignore
 !gui/**
+CLAUDE.md
+.worktrees/

@@ -6,6 +6,12 @@ source "${WORKDIR}/ci/build_rust.sh"
 source "${WORKDIR}/ci/export_lib_versions.sh"
 source "${WORKDIR}/ci/populate_current_lib_ver.sh"
 
+# Skip build if libtelio.so already exists for amd64
+if [[ -f "${lib_root}/libtelio/current/amd64/libtelio.so" ]]; then
+    echo "libtelio.so already exists, skipping build"
+    exit 0
+fi
+
 mkdir -p "${WORKDIR}/build/foss"
 
 clone_if_absent "https://github.com/NordSecurity/libtelio.git" "${LIBTELIO_VERSION}" "${WORKDIR}/build/foss"

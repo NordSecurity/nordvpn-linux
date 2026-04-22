@@ -11,7 +11,7 @@
 set -euxo pipefail
 
 NAME=nordvpn
-HASH=$(git rev-parse --short HEAD)
+HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
 format_date_utc() {
   local date_input="$1"
@@ -20,7 +20,13 @@ format_date_utc() {
 }
 
 get_head_commit_date() {
-  format_date_utc "$(git log -1 --format=%aI HEAD)"
+  local date_str
+  date_str=$(git log -1 --format=%aI HEAD 2>/dev/null || echo "")
+  if [[ -n "${date_str}" ]]; then
+    format_date_utc "${date_str}"
+  else
+    date -u +"%Y-%m-%dT%H:%M:%SZ"
+  fi
 }
 
 # Determine environment: keep prod if explicitly set, otherwise assign dev

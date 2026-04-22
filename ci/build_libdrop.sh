@@ -6,6 +6,12 @@ source "${WORKDIR}/ci/build_rust.sh"
 source "${WORKDIR}/ci/export_lib_versions.sh"
 source "${WORKDIR}/ci/populate_current_lib_ver.sh"
 
+# Skip build if libnorddrop.so already exists for amd64
+if [[ -f "${lib_root}/libdrop/current/amd64/libnorddrop.so" ]]; then
+    echo "libnorddrop.so already exists, skipping build"
+    exit 0
+fi
+
 clone_if_absent "https://github.com/NordSecurity/libdrop.git" "${LIBDROP_VERSION}" "${WORKDIR}/build/foss"
 
 # libdrop does not define configuration for linkers for different architectures
