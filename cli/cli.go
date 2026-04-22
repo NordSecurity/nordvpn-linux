@@ -345,6 +345,12 @@ func NewApp(version, environment, hash, salt string,
 			Action: cmd.User,
 			Hidden: true,
 		},
+		{
+			Name:               "troubleshoot",
+			Usage:              TroubleshootUsageText,
+			Action:             cmd.Troubleshoot,
+			CustomHelpTemplate: CommandWithoutArgsHelpTemplate,
+		},
 	}
 
 	if isMeshnetEnabled {
