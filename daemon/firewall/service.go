@@ -1,6 +1,8 @@
 package firewall
 
 import (
+	"slices"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 )
@@ -30,9 +32,51 @@ type Config struct {
 	MeshnetInfo    *MeshInfo
 }
 
+func NewConfig(opts ...Option) Config {
+	return Config{}.CopyWith(opts...)
+}
+
+// Only the firewall relevant parts are checked. It is not a fully IsEqual
+func (c *Config) HasSimilarMeshInfo(cfg *Config) bool {
+	return c.MeshnetInfo != nil &&
+		cfg.MeshnetInfo != nil &&
+		c.MeshnetInfo.IsSimilar(cfg.MeshnetInfo)
+}
+
 type MeshInfo struct {
 	MeshnetMap    mesh.MachineMap
 	MeshInterface string
+}
+
+// Only the firewall relevant parts are checked. It is not a fully IsEqual
+func (m *MeshInfo) IsSimilar(meshInfo *MeshInfo) bool {
+	if meshInfo == nil {
+		return false
+	}
+
+	if m.MeshInterface != meshInfo.MeshInterface {
+		return false
+	}
+
+	if len(meshInfo.MeshnetMap.Peers) != len(m.MeshnetMap.Peers) {
+		return false
+	}
+
+	for _, peer := range m.MeshnetMap.Peers {
+		idx := slices.IndexFunc(meshInfo.MeshnetMap.Peers, func(p mesh.MachinePeer) bool {
+			return peer.ID == p.ID &&
+				peer.Address == p.Address &&
+				peer.DoIAllowInbound == p.DoIAllowInbound &&
+				peer.DoIAllowRouting == p.DoIAllowRouting &&
+				peer.DoIAllowLocalNetwork == p.DoIAllowLocalNetwork &&
+				peer.DoIAllowFileshare == p.DoIAllowFileshare
+		})
+		if idx == -1 {
+			return false
+		}
+	}
+
+	return true
 }
 
 func NewMeshInfo(meshnetMap mesh.MachineMap, meshInterface string) *MeshInfo {

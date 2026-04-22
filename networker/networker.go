@@ -876,8 +876,11 @@ func (netw *Combined) Refresh(c mesh.MachineMap) error {
 		newCfg := netw.fwConfig.CopyWith(
 			firewall.WithMeshnetInfo(firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)),
 		)
-		if err := netw.configureFirewall(newCfg); err != nil {
-			return fmt.Errorf("configure firewall for meshnet refresh: %w", err)
+
+		if !netw.fwConfig.HasSimilarMeshInfo(&newCfg) {
+			if err := netw.configureFirewall(newCfg); err != nil {
+				return fmt.Errorf("configure firewall for meshnet refresh: %w", err)
+			}
 		}
 		return nil
 	}
@@ -994,8 +997,10 @@ func (netw *Combined) setMesh(
 	newCfg := netw.fwConfig.CopyWith(
 		firewall.WithMeshnetInfo(firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)),
 	)
-	if err := netw.configureFirewall(newCfg); err != nil {
-		return fmt.Errorf("configure firewall for set meshnet: %w", err)
+	if !netw.fwConfig.HasSimilarMeshInfo(&newCfg) {
+		if err := netw.configureFirewall(newCfg); err != nil {
+			return fmt.Errorf("configure firewall for set meshnet: %w", err)
+		}
 	}
 
 	netw.isMeshnetSet = true
