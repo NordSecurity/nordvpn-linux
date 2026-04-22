@@ -405,4 +405,8 @@ Your browsing activities remain private, regardless of your choice.
 	DedicatedServersAutoconnectNordlynxMessage = "Auto-connect to Dedicated Server requires NordLynx protocol."
 	DedicatedServerPQMessage                   = "Post-quantum encryption is not compatible with Dedicated Server."
 	DedicatedServersNoNordlynxMessage          = "Connection to Dedicated Server requires NordLynx technology."
+	// Troubleshoot
+	MsgTroubleshootSuccess    = "Diagnostics collected successfully.\nFile saved to: %s"
+	MsgTroubleshootFailure    = "Failed to collect diagnostics. Please try again or contact support."
+	MsgTroubleshootDisclaimer = "WARNING: this archive contains sensitive information about your system and configuration. Share it only with NordVPN customer support, and only over a secure channel."
 )
