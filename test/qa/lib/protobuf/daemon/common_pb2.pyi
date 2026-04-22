@@ -83,3 +83,13 @@ class ServerGroupsList(_message.Message):
     type: int
     servers: _containers.RepeatedCompositeFieldContainer[ServerGroup]
     def __init__(self, type: _Optional[int] = ..., servers: _Optional[_Iterable[_Union[ServerGroup, _Mapping]]] = ...) -> None: ...
+
+class DiagnosticsProgress(_message.Message):
+    __slots__ = ("step", "file_path", "error")
+    STEP_FIELD_NUMBER: _ClassVar[int]
+    FILE_PATH_FIELD_NUMBER: _ClassVar[int]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    step: str
+    file_path: str
+    error: str
+    def __init__(self, step: _Optional[str] = ..., file_path: _Optional[str] = ..., error: _Optional[str] = ...) -> None: ...

@@ -1,4 +1,6 @@
 import os
+import re
+import zipfile
 
 import pytest
 import sh
@@ -119,3 +121,158 @@ def test_account_not_logged_in():
         sh.nordvpn.account()
 
     assert "You're not logged in." in ex.value.stdout.decode("utf-8"), "Account command should show error when not logged in"
+
+
+# ---------------------------------------------------------------------------
+# `nordvpn troubleshoot`
+# ---------------------------------------------------------------------------
+
+def _has_any_file(path: str) -> bool:
+    """True if path is a directory with at least one file under it (recursive)."""
+    if not os.path.isdir(path):
+        return False
+    for _root, _dirs, files in os.walk(path):
+        if files:
+            return True
+    return False
+
+
+# Zip entries the daemon always produces, independent of host state.
+ALWAYS_IN_ZIP_FILES = {
+    "daemon.log",
+    "system-info.txt",
+    "network-info.txt",
+    "dns-info.txt",
+    "nftables-ruleset.txt",
+    "log_extraction_report.log",
+}
+
+# Zip entries whose presence is conditional on a host source. Each row:
+# (zip path, host source, predicate(host) -> bool).
+# Folder zip paths end in "/" and match by prefix; everything else is an
+# exact name. Test contract: host present ⇒ zip entry present;
+# host absent ⇒ zip entry absent.
+CONDITIONAL_ZIP_ENTRIES = (
+    ("cli.log", os.path.expanduser("~/.config/nordvpn/cli.log"), os.path.isfile),
+    ("cache/", os.path.expanduser("~/.cache/nordvpn"), _has_any_file),
+    ("etc/NetworkManager/conf.d/", "/etc/NetworkManager/conf.d", _has_any_file),
+)
+
+
+def _run_troubleshoot() -> str:
+    """
+    Run `nordvpn troubleshoot`, assert the success banner, and return the
+    zip path the daemon reports.
+    """
+    output = str(sh.nordvpn.troubleshoot())
+    assert "Diagnostics collected successfully." in output, output
+    match = re.search(r"File saved to:\s*(\S+)", output)
+    assert match, f"Could not find zip path in output:\n{output}"
+    return match.group(1)
+
+
+def _cleanup_zip(path: str | None) -> None:
+    if not path:
+        return
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass
+
+
+def test_troubleshoot():
+    """
+    Single end-to-end check for `nordvpn troubleshoot`:
+      - the file exists, ends in .zip, has the diagnostics naming scheme
+      - the file is owned by the invoking user and readable
+      - the zip is CRC-valid and contains every expected entry
+      - log_extraction_report.log records the per-step start/finish lines
+      - system-info.txt and dns-info.txt have their labelled blocks
+      - a second invocation produces a different zip path (no overwrite)
+
+    The success banner check is performed inside `_run_troubleshoot`.
+    """
+    zip_path = _run_troubleshoot()
+    second_zip_path = None
+    try:
+        # File on disk
+        assert os.path.isfile(zip_path), f"zip not found at {zip_path}"
+        assert zip_path.endswith(".zip")
+        assert "nordvpn-diagnostics-" in os.path.basename(zip_path)
+
+        # File permissions: owned by the invoking user and readable by them.
+        st = os.stat(zip_path)
+        assert st.st_uid == os.getuid(), f"zip owner uid {st.st_uid} != caller uid {os.getuid()}"
+        assert st.st_gid == os.getgid(), f"zip owner gid {st.st_gid} != caller gid {os.getgid()}"
+        assert st.st_mode & 0o400, f"zip not readable by owner (mode={oct(st.st_mode)})"
+
+        with zipfile.ZipFile(zip_path) as zf:
+            assert zf.testzip() is None, "zip has CRC errors"
+            names = set(zf.namelist())
+            report = zf.read("log_extraction_report.log").decode("utf-8")
+            sysinfo = zf.read("system-info.txt").decode("utf-8")
+            dnsinfo = zf.read("dns-info.txt").decode("utf-8")
+
+        # Always-present zip entries
+        missing = ALWAYS_IN_ZIP_FILES - names
+        assert not missing, f"missing always-present entries: {missing}"
+
+        # Conditional entries: zip presence must mirror host presence in
+        # both directions — captured iff the source exists, absent
+        # otherwise.
+        for zip_entry, host_path, host_present in CONDITIONAL_ZIP_ENTRIES:
+            if zip_entry.endswith("/"):
+                in_zip = any(n.startswith(zip_entry) for n in names)
+            else:
+                in_zip = zip_entry in names
+            on_host = host_present(host_path)
+            if on_host:
+                assert in_zip, (
+                    f"host {host_path!r} exists but zip entry {zip_entry!r} missing"
+                )
+            else:
+                assert not in_zip, (
+                    f"host {host_path!r} absent but zip entry {zip_entry!r} present"
+                )
+
+        # log_extraction_report.log
+        assert "diagnostics collection started" in report
+        assert "diagnostics collection finished" in report
+        started = report.count("step started:")
+        completed = report.count("step completed:")
+        assert started >= 7, f"expected >=7 step-start entries, got {started}"
+        # Some steps may be non-fatal failures on a minimal CI box, so
+        # "completed" can be < started; just assert the logger wrote *something*.
+        assert completed >= 1
+
+        # system-info blocks
+        for block in (
+            "OS Release",
+            "Linux Distribution",
+            "Kernel Version",
+            "Desktop Environment",
+            "nordvpn version",
+            "nordvpn status",
+            "nordvpn settings",
+        ):
+            assert f"=== {block} ===" in sysinfo, f"missing system-info block {block!r}"
+
+        # dns-info blocks
+        for block in (
+            "/etc/resolv.conf",
+            "NetworkManager DNS Mode (dbus)",
+            "NetworkManager DNS Configuration (dbus)",
+        ):
+            assert f"=== {block} ===" in dnsinfo, f"missing dns-info block {block!r}"
+
+        # Second invocation must not overwrite the first — names embed a
+        # timestamp, so two consecutive runs should produce distinct paths.
+        second_zip_path = _run_troubleshoot()
+        assert second_zip_path != zip_path, (
+            f"second invocation reused first path: {second_zip_path}"
+        )
+        assert os.path.isfile(second_zip_path)
+        assert os.path.isfile(zip_path), "first zip was overwritten/removed"
+    finally:
+        _cleanup_zip(zip_path)
+        _cleanup_zip(second_zip_path)

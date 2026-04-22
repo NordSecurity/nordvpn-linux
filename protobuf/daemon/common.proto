@@ -56,3 +56,9 @@ enum ClientID {
   GUI = 2;
   TRAY = 3;
 }
+
+message DiagnosticsProgress {
+  string step = 2;
+  string file_path = 4;
+  string error = 5;
+}

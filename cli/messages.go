@@ -413,4 +413,9 @@ Your browsing activities remain private, regardless of your choice.
 	PauseWhenMeshnetOn = "Pausing is not available while you’re connected to a Meshnet device. Use “nordvpn disconnect” instead."
 	PauseSuccess       = "Connection paused for %s."
 	PauseInterrupted   = "Pause canceled. You are disconnected from the VPN."
+
+	// Troubleshoot
+	MsgTroubleshootSuccess    = "Diagnostics collected successfully.\nFile saved to: %s"
+	MsgTroubleshootFailure    = "Failed to collect diagnostics. Please try again or contact support."
+	MsgTroubleshootDisclaimer = "WARNING: this archive contains sensitive information about your system and configuration. Share it only with NordVPN customer support, and only over a secure channel."
 )
