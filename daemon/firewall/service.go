@@ -1,7 +1,6 @@
 package firewall
 
 import (
-	"bytes"
 	"slices"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -59,32 +58,32 @@ func (m *MeshInfo) IsSimilar(meshInfo *MeshInfo) bool {
 		return false
 	}
 
-	sortMeshnetMap(&meshInfo.MeshnetMap)
+	if len(meshInfo.MeshnetMap.Peers) != len(m.MeshnetMap.Peers) {
+		return false
+	}
 
-	arePeersEqual := slices.EqualFunc(
-		m.MeshnetMap.Peers,
-		meshInfo.MeshnetMap.Peers,
-		func(p1, p2 mesh.MachinePeer) bool {
-			return p1.ID == p2.ID &&
-				p1.Address == p2.Address &&
-				p1.DoIAllowInbound == p2.DoIAllowInbound &&
-				p1.DoIAllowRouting == p2.DoIAllowRouting &&
-				p1.DoIAllowLocalNetwork == p2.DoIAllowLocalNetwork &&
-				p1.DoIAllowFileshare == p2.DoIAllowFileshare
-		},
-	)
+	for _, peer := range m.MeshnetMap.Peers {
+		idx := slices.IndexFunc(meshInfo.MeshnetMap.Peers, func(p mesh.MachinePeer) bool {
+			return peer.ID == p.ID &&
+				peer.Address == p.Address &&
+				peer.DoIAllowInbound == p.DoIAllowInbound &&
+				peer.DoIAllowRouting == p.DoIAllowRouting &&
+				peer.DoIAllowLocalNetwork == p.DoIAllowLocalNetwork &&
+				peer.DoIAllowFileshare == p.DoIAllowFileshare
+		})
+		if idx == -1 {
+			return false
+		}
+	}
 
-	return arePeersEqual
+	return true
 }
 
 func NewMeshInfo(meshnetMap mesh.MachineMap, meshInterface string) *MeshInfo {
-	info := &MeshInfo{
+	return &MeshInfo{
 		MeshnetMap:    meshnetMap,
 		MeshInterface: meshInterface,
 	}
-	sortMeshnetMap(&info.MeshnetMap)
-
-	return info
 }
 
 func (c Config) CopyWith(opts ...Option) Config {
@@ -128,9 +127,6 @@ func WithTunnelInterface(tunnelInterface string) Option {
 func WithMeshnetInfo(meshInfo *MeshInfo) Option {
 	return func(c *Config) {
 		c.MeshnetInfo = meshInfo
-		if meshInfo != nil {
-			sortMeshnetMap(&c.MeshnetInfo.MeshnetMap)
-		}
 	}
 }
 
@@ -138,11 +134,4 @@ func WithBlockFileshare(block bool) Option {
 	return func(c *Config) {
 		c.BlockFileshare = block
 	}
-}
-
-func sortMeshnetMap(meshMap *mesh.MachineMap) {
-	// sort the peers to easier compare for equality
-	slices.SortFunc(meshMap.Peers, func(p1, p2 mesh.MachinePeer) int {
-		return bytes.Compare(p1.ID[:], p2.ID[:])
-	})
 }

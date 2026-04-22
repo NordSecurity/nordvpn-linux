@@ -107,61 +107,75 @@ func TestMeshInfoIsSimilar(t *testing.T) {
 	tests := []struct {
 		name     string
 		fn       func(*MeshInfo)
-		expected bool
+		areEqual bool
 	}{
 		{
 			name:     "are equal for same data",
 			fn:       func(m *MeshInfo) {},
-			expected: true,
+			areEqual: true,
 		},
 		{
 			name: "not equal when mesh interface changes",
 			fn: func(m *MeshInfo) {
 				m.MeshInterface = "other"
 			},
-			expected: false,
+			areEqual: false,
 		},
 		{
 			name: "ID changes",
 			fn: func(m *MeshInfo) {
 				m.MeshnetMap.Peers[0].ID = uuid.New()
 			},
-			expected: false,
+			areEqual: false,
 		},
 		{
 			name: "address changes",
 			fn: func(m *MeshInfo) {
 				m.MeshnetMap.Peers[0].Address = randomIP()
 			},
-			expected: false,
+			areEqual: false,
 		},
 		{
 			name: "DoIAllowInbound changes",
 			fn: func(m *MeshInfo) {
 				m.MeshnetMap.Peers[0].DoIAllowInbound = false
 			},
-			expected: false,
+			areEqual: false,
 		},
 		{
 			name: "DoIAllowRouting changes",
 			fn: func(m *MeshInfo) {
 				m.MeshnetMap.Peers[0].DoIAllowRouting = false
 			},
-			expected: false,
+			areEqual: false,
 		},
 		{
 			name: "DoIAllowLocalNetwork changes",
 			fn: func(m *MeshInfo) {
 				m.MeshnetMap.Peers[0].DoIAllowLocalNetwork = false
 			},
-			expected: false,
+			areEqual: false,
 		},
 		{
 			name: "DoIAllowFileshare changes",
 			fn: func(m *MeshInfo) {
 				m.MeshnetMap.Peers[0].DoIAllowFileshare = false
 			},
-			expected: false,
+			areEqual: false,
+		},
+		{
+			name: "same peers in different order",
+			fn: func(m *MeshInfo) {
+				m.MeshnetMap.Peers = mesh.MachinePeers{peer2, peer1}
+			},
+			areEqual: true,
+		},
+		{
+			name: "different peers same number of elements",
+			fn: func(m *MeshInfo) {
+				m.MeshnetMap.Peers = mesh.MachinePeers{createPeer(), createPeer()}
+			},
+			areEqual: false,
 		},
 		{
 			name: "irrelevant changes have no effect",
@@ -182,7 +196,7 @@ func TestMeshInfoIsSimilar(t *testing.T) {
 				peer.Nickname = "nick"
 				m.MeshnetMap.Peers[0] = peer
 			},
-			expected: true,
+			areEqual: true,
 		},
 	}
 
@@ -190,7 +204,7 @@ func TestMeshInfoIsSimilar(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			m := NewMeshInfo(mesh.MachineMap{Peers: mesh.MachinePeers{peer1, peer2}}, "nordlynx")
 			test.fn(m)
-			assert.Equal(t, test.expected, baseMeshInfo.IsSimilar(m))
+			assert.Equal(t, test.areEqual, baseMeshInfo.IsSimilar(m))
 		})
 	}
 }
