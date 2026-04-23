@@ -48,9 +48,10 @@ func calculateFirstAndLastV4Prefix(cidr string) (net.IP, net.IP, error) {
 	hostBits := 32 - ones
 
 	// For /0, size is 2^32 which doesn't fit in uint32.
-	// We'll compute in uint64 and allow wrap to 0.0.0.0, same as your byte-carry loop would.
-	size := uint64(1) << uint(hostBits)
+	// compute in uint64 and allow wrap to 0.0.0.0
+	size := uint64(1) << hostBits
 
+	// nosec: CWE-118 - slices have 4 elements
 	firstU32 := uint64(first4[0])<<24 | uint64(first4[1])<<16 | uint64(first4[2])<<8 | uint64(first4[3])
 	lastExclusiveU32 := (firstU32 + size) & 0xFFFFFFFF
 
@@ -61,8 +62,9 @@ func calculateFirstAndLastV4Prefix(cidr string) (net.IP, net.IP, error) {
 		byte(lastExclusiveU32 & 0xFF),
 	}
 
-	// Return as net.IP to match your original signature
+	// nosec: CWE-118 - slices have 4 elements
 	first := net.IPv4(first4[0], first4[1], first4[2], first4[3]).To4()
+	// nosec: CWE-118 - slices have 4 elements
 	lastExclusive := net.IPv4(lastExclusive4[0], lastExclusive4[1], lastExclusive4[2], lastExclusive4[3]).To4()
 
 	return first, lastExclusive, nil
@@ -112,8 +114,10 @@ func convertCidrToSetElements(cidrList []string) ([]nftables.SetElement, error) 
 
 // Add range to set [start, lastInclusive] into the format needed by nft
 func addPortRangeToSet(elems []nftables.SetElement, start int64, lastInclusive int64) []nftables.SetElement {
-	startRange := uint16(start & 0xFFFF)
-	endRange := uint16(lastInclusive & 0xFFFF)
+	// #nosec G115 - ports are already checked to be uint16
+	startRange := uint16(start)
+	// #nosec G115
+	endRange := uint16(lastInclusive)
 	if endRange == math.MaxUint16 {
 		// if 65535 needs to be included then the range end is 0
 		endRange = 0
