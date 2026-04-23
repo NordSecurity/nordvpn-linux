@@ -2,7 +2,6 @@ package network
 
 import (
 	"fmt"
-	"log"
 	"net/netip"
 	"sync"
 	"sync/atomic"
@@ -11,6 +10,7 @@ import (
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // Resolver is a DNSResolver implementation wrapping each DHCP request with

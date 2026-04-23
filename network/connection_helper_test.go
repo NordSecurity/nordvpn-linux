@@ -1,12 +1,12 @@
 package network
 
 import (
-	"log"
 	"net"
 	"net/netip"
 	"sync"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/miekg/dns"
 

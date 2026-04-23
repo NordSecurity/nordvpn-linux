@@ -2,7 +2,6 @@ package network
 
 import (
 	"fmt"
-	"log"
 	"net/netip"
 	"os/exec"
 	"strings"
@@ -11,6 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	mockevents "github.com/NordSecurity/nordvpn-linux/test/mock/events"
