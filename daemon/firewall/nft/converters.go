@@ -51,7 +51,7 @@ func calculateFirstAndLastV4Prefix(cidr string) (net.IP, net.IP, error) {
 	// compute in uint64 and allow wrap to 0.0.0.0
 	size := uint64(1) << hostBits
 
-	// nosec: CWE-118 - slices have 4 elements
+	// #nosec G602 - slices have 4 elements
 	firstU32 := uint64(first4[0])<<24 | uint64(first4[1])<<16 | uint64(first4[2])<<8 | uint64(first4[3])
 	lastExclusiveU32 := (firstU32 + size) & 0xFFFFFFFF
 
@@ -62,9 +62,9 @@ func calculateFirstAndLastV4Prefix(cidr string) (net.IP, net.IP, error) {
 		byte(lastExclusiveU32 & 0xFF),
 	}
 
-	// nosec: CWE-118 - slices have 4 elements
+	// #nosec G602 - slices have 4 elements
 	first := net.IPv4(first4[0], first4[1], first4[2], first4[3]).To4()
-	// nosec: CWE-118 - slices have 4 elements
+	// #nosec G602 - slices have 4 elements
 	lastExclusive := net.IPv4(lastExclusive4[0], lastExclusive4[1], lastExclusive4[2], lastExclusive4[3]).To4()
 
 	return first, lastExclusive, nil
