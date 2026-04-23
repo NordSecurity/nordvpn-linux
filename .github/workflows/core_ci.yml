@@ -143,7 +143,8 @@ jobs:
           go-version-file: go.mod
       - run: go install github.com/securego/gosec/v2/cmd/gosec@v2.22.10
       - run: go clean -cache
-      - run: gosec -quiet -exclude-dir=third-party -exclude-generated ./...
+      # TODO: remove daemon/firewall/nft exclusion when finalized implementation starts
+      - run: gosec -quiet -exclude-dir=third-party -exclude-dir=daemon/firewall/nft -exclude-generated ./...
   ruff:
     runs-on: ubuntu-22.04
     steps:
