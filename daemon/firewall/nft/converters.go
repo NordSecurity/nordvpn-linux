@@ -2,6 +2,7 @@ package nft
 
 import (
 	"fmt"
+	"math"
 	"net"
 	"net/netip"
 	"slices"
@@ -54,10 +55,10 @@ func calculateFirstAndLastV4Prefix(cidr string) (net.IP, net.IP, error) {
 	lastExclusiveU32 := (firstU32 + size) & 0xFFFFFFFF
 
 	lastExclusive4 := [4]byte{
-		byte(lastExclusiveU32 >> 24),
-		byte(lastExclusiveU32 >> 16),
-		byte(lastExclusiveU32 >> 8),
-		byte(lastExclusiveU32),
+		byte((lastExclusiveU32 >> 24) & 0xFF),
+		byte((lastExclusiveU32 >> 16) & 0xFF),
+		byte((lastExclusiveU32 >> 8) & 0xFF),
+		byte(lastExclusiveU32 & 0xFF),
 	}
 
 	// Return as net.IP to match your original signature
@@ -83,22 +84,11 @@ func convertPortsToSetElements(ports []int64) []nftables.SetElement {
 			last = cur
 			continue
 		}
-
-		elems = append(elems, nftables.SetElement{
-			Key: binaryutil.BigEndian.PutUint16(uint16(start)),
-		}, nftables.SetElement{
-			Key:         binaryutil.BigEndian.PutUint16(uint16(last + 1)),
-			IntervalEnd: true,
-		})
+		elems = addPortRangeToSet(elems, start, last)
 		start, last = cur, cur
 	}
 
-	elems = append(elems, nftables.SetElement{
-		Key: binaryutil.BigEndian.PutUint16(uint16(start)),
-	}, nftables.SetElement{
-		Key:         binaryutil.BigEndian.PutUint16(uint16(last + 1)),
-		IntervalEnd: true,
-	})
+	elems = addPortRangeToSet(elems, start, last)
 
 	return elems
 }
@@ -118,4 +108,24 @@ func convertCidrToSetElements(cidrList []string) ([]nftables.SetElement, error) 
 	}
 
 	return elems, nil
+}
+
+// Add range to set [start, lastInclusive] into the format needed by nft
+func addPortRangeToSet(elems []nftables.SetElement, start int64, lastInclusive int64) []nftables.SetElement {
+	startRange := uint16(start & 0xFFFF)
+	endRange := uint16(lastInclusive & 0xFFFF)
+	if endRange == math.MaxUint16 {
+		// if 65535 needs to be included then the range end is 0
+		endRange = 0
+	} else {
+		endRange += 1
+	}
+
+	elems = append(elems, nftables.SetElement{
+		Key: binaryutil.BigEndian.PutUint16(startRange),
+	}, nftables.SetElement{
+		Key:         binaryutil.BigEndian.PutUint16(endRange),
+		IntervalEnd: true,
+	})
+	return elems
 }
