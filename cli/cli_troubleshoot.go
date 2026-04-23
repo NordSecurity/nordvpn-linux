@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -36,7 +37,7 @@ func (c *cmd) Troubleshoot(ctx *cli.Context) error {
 
 		// Check for error in response
 		if resp.Error != "" {
-			return formatError(fmt.Errorf(resp.Error))
+			return formatError(errors.New(resp.Error))
 		}
 
 		// Final response: daemon signals completion by sending the file

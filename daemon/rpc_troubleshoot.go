@@ -32,8 +32,40 @@ const (
 // diagnostics zip past maxZipFileSize.
 var errZipSizeLimitExceeded = errors.New("diagnostics zip exceeds size limit")
 
-// sizeLimitedWriter wraps an io.Writer and rejects writes that would exceed
-// the configured limit, returning errZipSizeLimitExceeded.
+// daemonSupervisor identifies how the nordvpn daemon is being managed on the
+// host, so addDaemonLogs can pick the matching log source. Detection runs
+// once at collection time (detectDaemonSupervisor); addDaemonLogs itself is a
+// pure dispatch on this value, which keeps it trivially testable.
+type daemonSupervisor int
+
+const (
+	daemonSupervisorUnknown daemonSupervisor = iota
+	daemonSupervisorSnap
+	daemonSupervisorSystemd
+	daemonSupervisorInitd
+)
+
+// detectDaemonSupervisor probes the host to figure out which supervisor is
+// running the daemon. Order matters: snap takes precedence over systemd
+// because snap-confined builds also see /run/systemd/system.
+func detectDaemonSupervisor() daemonSupervisor {
+	switch {
+	case snapconf.IsUnderSnap():
+		return daemonSupervisorSnap
+	case internal.IsSystemd():
+		return daemonSupervisorSystemd
+	case internal.FileExists("/etc/init.d/nordvpn"):
+		return daemonSupervisorInitd
+	default:
+		return daemonSupervisorUnknown
+	}
+}
+
+// sizeLimitedWriter wraps an io.Writer and caps total bytes written to limit.
+// Writes that would push past the cap are truncated to the remaining space:
+// the prefix is forwarded to the underlying writer and errZipSizeLimitExceeded
+// is returned alongside the partial count, so callers see exactly how much
+// was accepted.
 type sizeLimitedWriter struct {
 	w       io.Writer
 	limit   int64
@@ -43,12 +75,21 @@ type sizeLimitedWriter struct {
 func (lw *sizeLimitedWriter) Write(p []byte) (int, error) {
 	// Subtraction avoids int64 overflow that a naive `written+len(p) > limit`
 	// could hit when written is close to math.MaxInt64.
-	if int64(len(p)) > lw.limit-lw.written {
+	remaining := lw.limit - lw.written
+	if remaining <= 0 {
 		return 0, errZipSizeLimitExceeded
 	}
-	n, err := lw.w.Write(p)
+	if int64(len(p)) <= remaining {
+		n, err := lw.w.Write(p)
+		lw.written += int64(n)
+		return n, err
+	}
+	n, err := lw.w.Write(p[:remaining])
 	lw.written += int64(n)
-	return n, err
+	if err != nil {
+		return n, err
+	}
+	return n, errZipSizeLimitExceeded
 }
 
 func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsServer) (retErr error) {
@@ -126,16 +167,16 @@ func collectDiagnosticsData(
 	zipWriter := zip.NewWriter(limited)
 	defer zipWriter.Close()
 
-	// Buffered so the progress.log entry can be written as the last zip
+	// Buffered so the log_extraction_report.log entry can be written as the last zip
 	// entry; zip.Writer finalizes each entry when the next Create is called,
 	// so we can't keep this entry open while other entries are being written.
-	var progressLog bytes.Buffer
-	logger := log.New(&progressLog, "", log.LstdFlags)
+	var logExtractionReport bytes.Buffer
+	logger := log.New(&logExtractionReport, "", log.LstdFlags)
 	logger.Printf("diagnostics collection started (version=%s)", version)
 
 	steps := []diagnosticsStep{
 		{"Collecting daemon logs...", func() error {
-			return addDaemonLogs(zipWriter)
+			return addDaemonLogs(zipWriter, detectDaemonSupervisor())
 		}, true},
 		{"Collecting CLI logs...", func() error {
 			cliLog := filepath.Join(homeDir, ".config", "nordvpn", "cli.log")
@@ -171,12 +212,12 @@ func collectDiagnosticsData(
 		}
 		if step.fatal {
 			logger.Printf("step failed (fatal): %s: %v", step.description, err)
-			writeProgressLog(zipWriter, &progressLog)
+			writeLogExtractionReport(zipWriter, &logExtractionReport)
 			return err
 		}
 		if errors.Is(err, errZipSizeLimitExceeded) {
 			logger.Printf("step failed (size limit exceeded): %s: %v", step.description, err)
-			writeProgressLog(zipWriter, &progressLog)
+			writeLogExtractionReport(zipWriter, &logExtractionReport)
 			return err
 		}
 		logger.Printf("step failed: %s: %v", step.description, err)
@@ -184,44 +225,44 @@ func collectDiagnosticsData(
 	}
 
 	logger.Printf("diagnostics collection finished")
-	writeProgressLog(zipWriter, &progressLog)
+	writeLogExtractionReport(zipWriter, &logExtractionReport)
 
 	// Explicit finalize so caller sees any central-directory write error
 	// (e.g. hitting the size cap on the last flush).
 	return zipWriter.Close()
 }
 
-// writeProgressLog flushes the in-memory progress log into the zip as
-// progress.log. Best-effort: any failure here is logged to stderr and
+// writeLogExtractionReport flushes the in-memory progress log into the zip as
+// log_extraction_report.log. Best-effort: any failure here is logged to stderr and
 // swallowed, since we don't want a log-writing error to mask the original
 // collection outcome.
-func writeProgressLog(zipWriter *zip.Writer, buf *bytes.Buffer) {
-	w, err := zipWriter.Create("progress.log")
+func writeLogExtractionReport(zipWriter *zip.Writer, buf *bytes.Buffer) {
+	w, err := zipWriter.Create("log_extraction_report.log")
 	if err != nil {
-		log.Println(internal.WarningPrefix, "failed to create progress.log:", err)
+		log.Println(internal.WarningPrefix, "failed to create log_extraction_report.log:", err)
 		return
 	}
 	if _, err := w.Write(buf.Bytes()); err != nil {
-		log.Println(internal.WarningPrefix, "failed to write progress.log:", err)
+		log.Println(internal.WarningPrefix, "failed to write log_extraction_report.log:", err)
 	}
 }
 
-// addDaemonLogs writes the daemon's logs to daemon.log inside the archive.
-// It probes how the daemon is being supervised (snap > systemd > initd) and
-// pulls logs from the matching source. If none of these apply, an explanatory
-// note is written into the archive entry instead.
-func addDaemonLogs(zipWriter *zip.Writer) error {
+// addDaemonLogs writes the daemon's logs to daemon.log inside the archive,
+// dispatching on supervisor to pick the right log source. The unknown
+// variant is fatal: nothing is written and an explanatory error is returned
+// to the caller for surfacing to the user.
+func addDaemonLogs(zipWriter *zip.Writer, supervisor daemonSupervisor) error {
 	writer, err := zipWriter.Create("daemon.log")
 	if err != nil {
 		return err
 	}
 
-	switch {
-	case snapconf.IsUnderSnap():
+	switch supervisor {
+	case daemonSupervisorSnap:
 		return streamCommandToWriter(writer, "snap", "logs", "nordvpn", "-n", "all")
-	case internal.IsSystemd():
+	case daemonSupervisorSystemd:
 		return streamCommandToWriter(writer, "journalctl", "-u", "nordvpnd", "--no-pager")
-	case internal.FileExists("/etc/init.d/nordvpn"):
+	case daemonSupervisorInitd:
 		logFile := filepath.Join(internal.LogPath, "daemon.log")
 		return streamFileToWriter(writer, logFile)
 	default:
@@ -387,7 +428,7 @@ func runCommand(name string, args ...string) string {
 func readFile(path string) string {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return fmt.Sprintf("(error reading %s: %v)\n", path, err)
+		return fmt.Sprintf("error reading %s: %v\n", path, err)
 	}
 	return string(data)
 }
