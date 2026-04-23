@@ -2,14 +2,17 @@ package daemon
 
 import (
 	"context"
-	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/access"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, error) {
+	if r.connectionInfo.IsPaused() {
+		r.CancelPause()
+	}
 	result := access.Logout(access.LogoutInput{
 		AuthChecker:                  r.ac,
 		CredentialsAPI:               r.credentialsAPI,

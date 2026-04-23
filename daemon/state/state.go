@@ -2,7 +2,6 @@ package state
 
 import (
 	"context"
-	"log"
 	"sync"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 const notifyTimeout = 100 * time.Millisecond
@@ -53,7 +53,7 @@ func (s *StatePublisher) notify(e any) {
 	s.subscribers = newSubs
 }
 
-func (s *StatePublisher) NotifyChangeState(e events.DataConnectChangeNotif) error {
+func (s *StatePublisher) OnStateChange(e events.DataConnectChangeNotif) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

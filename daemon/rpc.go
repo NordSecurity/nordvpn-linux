@@ -28,19 +28,19 @@ import (
 
 // RPC is a gRPC server.
 type RPC struct {
-	environment    internal.Environment
-	ac             auth.Checker
-	cm             config.Manager
-	dm             *DataManager
-	api            core.CombinedAPI
-	serversAPI     core.ServersAPI
-	credentialsAPI core.CredentialsAPI
-	cdn            core.CDN
-	repo           *RepoAPI
-	authentication core.Authentication
-	lastServer     core.Server
-	version        string
-	events         *daemonevents.Events
+	environment         internal.Environment
+	ac                  auth.Checker
+	cm                  config.Manager
+	dm                  *DataManager
+	api                 core.CombinedAPI
+	serversAPI          core.ServersAPI
+	credentialsAPI      core.CredentialsAPI
+	cdn                 core.CDN
+	repo                *RepoAPI
+	authentication      core.Authentication
+	lastServerSelection serverSelection
+	version             string
+	events              *daemonevents.Events
 	// factory picks which VPN implementation to use
 	factory             FactoryFunc
 	endpoint            network.Endpoint
@@ -61,6 +61,7 @@ type RPC struct {
 	recentVPNConnStore  *recents.RecentConnectionsStore
 	dataUpdateEvents    *daemonevents.DataUpdateEvents
 	initialLoginType    *atomicLoginType // memorize what action started: Login or Signup (Register) - thread-safe
+	pauseManager        ReconnectScheduler
 	pb.UnimplementedDaemonServer
 }
 
@@ -93,7 +94,7 @@ func NewRPC(
 	dataUpdateEvents *daemonevents.DataUpdateEvents,
 ) *RPC {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
-	return &RPC{
+	r := &RPC{
 		environment:        environment,
 		ac:                 ac,
 		cm:                 cm,
@@ -123,4 +124,7 @@ func NewRPC(
 		dataUpdateEvents:   dataUpdateEvents,
 		initialLoginType:   NewAtomicLoginType(),
 	}
+	reconnectScheduler := NewReconnectScheduler(r.connectFromLastSelection, connectionInfo)
+	r.pauseManager = reconnectScheduler
+	return r
 }

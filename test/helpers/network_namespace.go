@@ -1,12 +1,12 @@
 package helpers
 
 import (
-	"log"
 	"os"
 	"os/exec"
 	"runtime"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/vishvananda/netns"
 )
 

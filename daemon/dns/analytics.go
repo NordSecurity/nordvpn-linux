@@ -3,11 +3,11 @@ package dns
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	analyticsutil "github.com/NordSecurity/nordvpn-linux/internal/analytics"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 var globalPaths = analyticsutil.MergeContextPaths(

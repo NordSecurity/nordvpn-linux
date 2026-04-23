@@ -191,10 +191,11 @@ def _is_dns_resolvable(domain="nordvpn.com", retry=5) -> bool:
         try:
             resolver = dns.resolver.Resolver()
             resolver.nameservers = ["103.86.96.100"]  # specify server so it will not get the result from the docker host
-            resolver.resolve(domain, "A", lifetime=5)
+            answer = resolver.resolve(domain, "A", lifetime=5)
+            logging.log(f"_is_dns_resolvable: DNS {domain} - {answer}")
             return True
         except Exception as e:  # noqa: BLE001
-            print(f"_is_dns_resolvable: DNS {domain} FAILURE. Error: {e}")
+            logging.log(f"_is_dns_resolvable: DNS {domain} FAILURE. Error: {e}")
             time.sleep(1)
             i += 1
     return False
@@ -216,24 +217,25 @@ def is_not_available(retry=5) -> bool:
 
 def is_available(retry=5) -> bool:
     """Returns True when network access is available or throws AssertionError otherwise."""
-    assert is_internet_reachable_outside_vpn(retry=retry)
-    assert is_internet_reachable(retry=retry)
-    assert _is_dns_resolvable(retry=retry)
+    assert is_internet_reachable_outside_vpn(retry=retry), "Internet should be reachable outside VPN tunnel"
+    assert is_internet_reachable(retry=retry), "Internet should be reachable"
+    assert _is_dns_resolvable(retry=retry), "DNS should be resolvable"
     return True
 
 
 def is_connected() -> bool:
     """Returns True when connected to VPN server or throws AssertionError otherwise."""
-    assert daemon.is_connected()
-    assert is_available()
+    assert daemon.is_connected(), "VPN should be connected"
+    assert is_available(), "Network should be available"
     return True
 
 
 def is_disconnected(retry=5) -> bool:
     """Returns True when not connected to VPN server or throws AssertionError otherwise."""
-    assert not firewall.is_active()
+    assert not firewall.is_active(), "Firewall is not configured"
     assert daemon.is_disconnected()
-    assert is_available(retry)
+    assert is_available(retry), "There is internet"
+
     return True
 
 
@@ -273,7 +275,7 @@ def stop() -> dict:
         sh.sudo.ip.link.set.dev.eth0.down()
 
     logging.log(f"stopping network {default_gateway}")
-    assert is_not_available()
+    assert is_not_available(), "Network should not be available after stopping it"
     logging.log(info.collect())
     return default_gateway
 

@@ -4,17 +4,13 @@ import pytest
 import sh
 
 import lib
-from lib import (
-    allowlist,
-    firewall,
-    network,
-    IS_NIGHTLY
-)
+from lib import IS_NIGHTLY, allowlist, firewall, network
 from lib.dynamic_parametrize import dynamic_parametrize
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
-def setup_module(module): # noqa: ARG001
+
+def setup_module(module):  # noqa: ARG001
     firewall.setup_port_sock_server(None)
 
 
@@ -26,16 +22,16 @@ def test_connected_firewall_disable(tech, proto, obfuscated):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
 
         lib.set_firewall("on")
-        assert not firewall.is_active()
+        assert not firewall.is_active(), "Firewall should not be active before connecting"
 
         sh.nordvpn.connect()
-        assert network.is_connected()
-        assert firewall.is_active()
+        assert network.is_connected(), "Network should be connected"
+        assert firewall.is_active(), "Firewall should be active when connected"
 
         lib.set_firewall("off")
-        assert not firewall.is_active()
-    assert network.is_disconnected()
-    assert not firewall.is_active()
+        assert not firewall.is_active(), "Firewall should be inactive after disabling"
+    assert network.is_disconnected(), "Network should be disconnected after context"
+    assert not firewall.is_active(), "Firewall should be inactive after disconnecting"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -46,16 +42,16 @@ def test_connected_firewall_enable(tech, proto, obfuscated):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
 
         lib.set_firewall("off")
-        assert not firewall.is_active()
+        assert not firewall.is_active(), "Firewall should not be active when disabled"
 
         sh.nordvpn.connect()
-        assert network.is_connected()
-        assert not firewall.is_active()
+        assert network.is_connected(), "Network should be connected"
+        assert not firewall.is_active(), "Firewall should remain inactive when disabled"
 
         lib.set_firewall("on")
-        assert firewall.is_active()
-    assert network.is_disconnected()
-    assert not firewall.is_active()
+        assert firewall.is_active(), "Firewall should be active after enabling"
+    assert network.is_disconnected(), "Network should be disconnected after context"
+    assert not firewall.is_active(), "Firewall should be inactive after disconnecting"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -66,13 +62,13 @@ def test_firewall_disable_connect(tech, proto, obfuscated):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
 
         lib.set_firewall("off")
-        assert not firewall.is_active()
+        assert not firewall.is_active(), "Firewall should not be active when disabled"
 
         sh.nordvpn.connect()
-        assert network.is_connected()
-        assert not firewall.is_active()
-    assert network.is_disconnected()
-    assert not firewall.is_active()
+        assert network.is_connected(), "Network should be connected"
+        assert not firewall.is_active(), "Firewall should remain inactive when disabled"
+    assert network.is_disconnected(), "Network should be disconnected after context"
+    assert not firewall.is_active(), "Firewall should be inactive after disconnecting"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -83,18 +79,21 @@ def test_firewall_enable_connect(tech, proto, obfuscated):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
 
         lib.set_firewall("on")
-        assert not firewall.is_active()
+        assert not firewall.is_active(), "Firewall should not be active before connecting"
 
         sh.nordvpn.connect()
-        assert network.is_connected()
-        assert firewall.is_active()
-    assert network.is_disconnected()
-    assert not firewall.is_active()
+        assert network.is_connected(), "Network should be connected"
+        assert firewall.is_active(), "Firewall should be active when connected"
+    assert network.is_disconnected(), "Network should be disconnected after context"
+    assert not firewall.is_active(), "Firewall should be inactive after disconnecting"
 
 
 @dynamic_parametrize(
     [
-        "tech", "proto", "obfuscated", "port",
+        "tech",
+        "proto",
+        "obfuscated",
+        "port",
     ],
     ordered_source=[lib.TECHNOLOGIES],
     randomized_source=[lib.PORTS],
@@ -110,25 +109,28 @@ def test_firewall_02_allowlist_port(tech, proto, obfuscated, port):
 
             lib.set_firewall("on")
             allowlist.add_ports_to_allowlist([port])
-            assert not firewall.is_active()
-            assert firewall.is_source_port_reachable([port])
+            assert not firewall.is_active(), "Firewall is not configured"
+            assert firewall.is_source_port_reachable([port]), "Whitelisted port is not blocked"
 
             sh.nordvpn.connect()
-            assert network.is_connected()
-            assert firewall.is_active()
-            assert firewall.is_source_port_reachable([port])
+            assert network.is_connected(), "VPN is connected and there is internet"
+            assert firewall.is_active(), "Firewall is configured"
+            assert firewall.is_source_port_reachable([port]), "Whitelisted port is not blocked"
 
             lib.set_firewall("off")
-            assert not firewall.is_active()
+            assert not firewall.is_active(), "Firewall is not configured"
             # Firewall off means that allowlisted packets are not told to not go through vpn
-            assert not firewall.is_source_port_reachable([port])
-        assert network.is_disconnected()
-    assert not firewall.is_active() and firewall.is_source_port_reachable([port])
+            assert not firewall.is_source_port_reachable([port]), "Routing to the ports is broken if firewall is off"
+        assert network.is_disconnected(), "VPN is disconnected and internet is working"
+    assert not firewall.is_active() and firewall.is_source_port_reachable([port]), "Firewall is not configured and whitelisted port is working"
 
 
 @dynamic_parametrize(
     [
-        "tech", "proto", "obfuscated", "ports",
+        "tech",
+        "proto",
+        "obfuscated",
+        "ports",
     ],
     ordered_source=[lib.TECHNOLOGIES],
     randomized_source=[lib.PORTS_RANGE],
@@ -144,19 +146,19 @@ def test_firewall_03_allowlist_ports_range(tech, proto, obfuscated, ports):
 
             lib.set_firewall("on")
             allowlist.add_ports_to_allowlist([ports])
-            assert not firewall.is_active()
-            assert firewall.is_source_port_reachable([ports])
+            assert not firewall.is_active(), "Firewall is not configured"
+            assert firewall.is_source_port_reachable([ports]), "Port is reachable"
 
             sh.nordvpn.connect()
-            assert network.is_connected()
-            assert firewall.is_active()
-            assert firewall.is_source_port_reachable([ports])
+            assert network.is_connected(), "VPN is connected"
+            assert firewall.is_active(), "Firewall is configured"
+            assert firewall.is_source_port_reachable([ports]), "Port is reachable outside of the tunnel"
 
             lib.set_firewall("off")
-            assert not firewall.is_active()
-            assert not firewall.is_source_port_reachable([ports])
-        assert network.is_disconnected()
-    assert not firewall.is_active()
+            assert not firewall.is_active(), "Firewall is not configured"
+            assert not firewall.is_source_port_reachable([ports]), "Port routing is broken because firewall is disabled"
+        assert network.is_disconnected(), "VPN disconnected"
+    assert not firewall.is_active(), "Firewall is not configured"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -170,16 +172,16 @@ def test_firewall_05_allowlist_subnet(tech, proto, obfuscated, subnet):
 
             lib.set_firewall("on")
             allowlist.add_subnet_to_allowlist([subnet])
-            assert not firewall.is_ip_routed_via_VPN([subnet])
+            assert not firewall.is_ip_routed_via_VPN([subnet]), "Whitelisted IP not routed thru VPN"
 
             sh.nordvpn.connect()
-            assert network.is_connected()
-            assert not firewall.is_ip_routed_via_VPN([subnet])
+            assert network.is_connected(), "VPN is connected"
+            assert not firewall.is_ip_routed_via_VPN([subnet]), "Whitelisted port is not routed thru VPN"
 
             lib.set_firewall("off")
-            assert not firewall.is_ip_routed_via_VPN([subnet])
-        assert network.is_disconnected()
-    assert not firewall.is_ip_routed_via_VPN([subnet])
+            assert not firewall.is_ip_routed_via_VPN([subnet]), "Whitelisted port is not routed thru VPN"
+        assert network.is_disconnected(), "VPN is disconnected"
+    assert not firewall.is_ip_routed_via_VPN([subnet]), "Whitelisted port is not routed thru VPN"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -190,11 +192,11 @@ def test_firewall_06_with_killswitch(tech, proto, obfuscated):
         lib.set_technology_and_protocol(tech, proto, obfuscated)
 
         lib.set_firewall("on")
-        assert not firewall.is_active()
+        assert not firewall.is_active(), "Firewall should not be active before killswitch is enabled"
 
         lib.set_killswitch("on")
-        assert firewall.is_active()
-    assert not firewall.is_active()
+        assert firewall.is_active(), "Firewall should be active when killswitch is enabled"
+    assert not firewall.is_active(), "Firewall should be inactive after killswitch is disabled"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -206,19 +208,20 @@ def test_firewall_07_with_killswitch_while_connected(tech, proto, obfuscated):
             lib.set_technology_and_protocol(tech, proto, obfuscated)
 
             lib.set_firewall("on")
-            assert not firewall.is_active()
+            assert not firewall.is_active(), "Firewall should not be active before killswitch is enabled"
 
             lib.set_killswitch("on")
-            assert firewall.is_active()
+            assert firewall.is_active(), "Firewall should be active when killswitch is enabled"
 
             sh.nordvpn.connect()
-            assert network.is_connected()
-            assert firewall.is_active()
+            assert network.is_connected(), "Network should be connected"
+            assert firewall.is_active(), "Firewall should remain active when connected with killswitch"
 
             lib.set_killswitch("off")
-            assert firewall.is_active()
-        assert network.is_disconnected()
-    assert not firewall.is_active()
+            assert firewall.is_active(), "Firewall should remain active after killswitch is disabled"
+        assert network.is_disconnected(), "Network should be disconnected after context"
+    assert not firewall.is_active(), "Firewall should be inactive after killswitch is disabled"
+
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("before_connect", [True, False])
@@ -277,11 +280,10 @@ def test_firewall_lan_allowlist_work_together(tech, proto, obfuscated):
         with lib.Defer(sh.nordvpn.disconnect):
             subnet = "1.1.1.1/32"
             with lib.Defer(lambda: sh.nordvpn.allowlist.remove.subnet(subnet, _ok_code=(0, 1))):
-
                 lib.set_technology_and_protocol(tech, proto, obfuscated)
 
                 sh.nordvpn.allowlist.add.subnet(subnet)
                 sh.nordvpn.set("lan-discovery", "on")
                 sh.nordvpn.connect()
-                assert not firewall.is_ip_routed_via_VPN(["1.1.1.1"]), "Allowlisted subnet is not going through default interface"
-                assert firewall.is_ip_routed_via_VPN(["1.0.0.1"])
+                assert not firewall.is_ip_routed_via_VPN(["1.1.1.1"]), "Allowlisted subnet is not going through VPN"
+                assert firewall.is_ip_routed_via_VPN(["1.0.0.1"]), "Not whitelisted subnet is going through VPN"

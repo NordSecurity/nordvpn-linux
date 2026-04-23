@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -15,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/fsnotify/fsnotify"
 	"golang.org/x/sys/unix"
 )

@@ -3,12 +3,12 @@ package firewall
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/internal/analytics"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // Event identification constants

@@ -2,13 +2,13 @@ package daemon
 
 import (
 	"context"
-	"log"
 	"net"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"golang.org/x/exp/slices"
 )
 

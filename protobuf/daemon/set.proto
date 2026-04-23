@@ -71,7 +71,8 @@ message SetNotifyRequest {
 }
 
 message SetTrayRequest {
-  int64 uid = 2;
+  reserved 2;
+  reserved "uid";
   bool tray = 3;
 }
 

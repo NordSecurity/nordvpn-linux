@@ -26,8 +26,8 @@ def connect_base_test(group: str = (), name: str = "", hostname: str = ""):
     output = sh.nordvpn.connect(group, _tty_out=False)
     print(output)
 
-    assert lib.is_connect_successful(output, name, hostname)
-    assert network.is_connected()
+    assert lib.is_connect_successful(output, name, hostname), "Connection should be successful"
+    assert network.is_connected(), "Network should be connected"
 
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
@@ -61,14 +61,14 @@ def test_reconnect_matrix(
 
     status_info = daemon.get_status_data()
 
-    assert target_tech.upper() in status_info["current technology"]
+    assert target_tech.upper() in status_info["current technology"], "Current technology should match target technology"
 
     if target_tech == "openvpn":
-        assert target_proto.upper() in status_info["current protocol"]
+        assert target_proto.upper() in status_info["current protocol"], "Current protocol should match target protocol"
     elif target_tech == "nordwhisper":
-        assert "Webtunnel" in status_info["current protocol"]
+        assert "Webtunnel" in status_info["current protocol"], "Current protocol should be Webtunnel for nordwhisper"
     else:
-        assert "UDP" in status_info["current protocol"]
+        assert "UDP" in status_info["current protocol"], "Current protocol should be UDP"
 
     disconnect_base_test()
 
@@ -121,24 +121,24 @@ def test_status_change_technology_and_protocol(
     sh.nordvpn(get_alias())
     status_info = daemon.get_status_data()
 
-    assert source_tech.upper() in status_info["current technology"]
+    assert source_tech.upper() in status_info["current technology"], "Current technology should match source technology"
 
     if source_tech == "openvpn":
-        assert source_proto.upper() in status_info["current protocol"]
+        assert source_proto.upper() in status_info["current protocol"], "Current protocol should match source protocol"
     elif source_tech == "nordwhisper":
-        assert "Webtunnel" in status_info["current protocol"]
+        assert "Webtunnel" in status_info["current protocol"], "Current protocol should be Webtunnel for nordwhisper"
     else:
-        assert "UDP" in status_info["current protocol"]
+        assert "UDP" in status_info["current protocol"], "Current protocol should be UDP"
 
     lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
-    assert source_tech.upper() in status_info["current technology"]
+    assert source_tech.upper() in status_info["current technology"], "Current technology should remain source technology"
 
     if source_tech == "openvpn":
-        assert source_proto.upper() in status_info["current protocol"]
+        assert source_proto.upper() in status_info["current protocol"], "Current protocol should remain source protocol"
     elif source_tech == "nordwhisper":
-        assert "Webtunnel" in status_info["current protocol"]
+        assert "Webtunnel" in status_info["current protocol"], "Current protocol should remain Webtunnel for nordwhisper"
     else:
-        assert "UDP" in status_info["current protocol"]
+        assert "UDP" in status_info["current protocol"], "Current protocol should remain UDP"
 
     disconnect_base_test()
 

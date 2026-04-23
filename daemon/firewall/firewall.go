@@ -4,11 +4,11 @@ Package firewall provides firewall service to the caller
 package firewall
 
 import (
-	"log"
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 const (

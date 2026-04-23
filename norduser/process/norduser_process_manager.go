@@ -3,7 +3,6 @@ package process
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 
 	"google.golang.org/grpc"
@@ -11,6 +10,7 @@ import (
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/norduser/pb"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 )

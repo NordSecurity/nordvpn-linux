@@ -3,7 +3,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
 	"os"
 	"os/user"
@@ -17,6 +16,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/norduser/process"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/NordSecurity/nordvpn-linux/uievent"

@@ -3,10 +3,10 @@ package dns
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/fsnotify/fsnotify"
 )
 

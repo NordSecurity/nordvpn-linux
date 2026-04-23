@@ -27,6 +27,7 @@ message UIEvent {
     RATE_CONNECTION = 6;
     MESHNET_INVITE_SEND = 7;
     LOGIN_TOKEN = 8; // CLI-only: login via token (nordvpn login --token)
+    PAUSE = 9;
   }
 
   // ItemType represents the type of user interface event
@@ -46,5 +47,12 @@ message UIEvent {
     ONION_OVER_VPN = 6;
     DOUBLE_VPN = 7;
     P2P = 8;
+    //values for handling pause functionality analytics
+    PAUSE_5_MIN = 9;
+    PAUSE_15_MIN = 10;
+    PAUSE_30_MIN = 11;
+    PAUSE_1_HOUR = 12;
+    PAUSE_24_HOURS = 13;
+    PAUSE_DISCONNECT = 14;
   }
 }

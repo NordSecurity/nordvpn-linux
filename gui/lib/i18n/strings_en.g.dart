@@ -566,6 +566,132 @@ class TranslationsCitiesEn {
 
 	/// en: 'Lewiston'
 	String get lewiston => 'Lewiston';
+
+	/// en: 'New Orleans'
+	String get new_orleans => 'New Orleans';
+
+	/// en: 'Oklahoma City'
+	String get oklahoma_city => 'Oklahoma City';
+
+	/// en: 'Portland'
+	String get portland => 'Portland';
+
+	/// en: 'Des Moines'
+	String get des_moines => 'Des Moines';
+
+	/// en: 'Honolulu'
+	String get honolulu => 'Honolulu';
+
+	/// en: 'Huntington'
+	String get huntington => 'Huntington';
+
+	/// en: 'Bordeaux'
+	String get bordeaux => 'Bordeaux';
+
+	/// en: 'Burlington'
+	String get burlington => 'Burlington';
+
+	/// en: 'Charleston'
+	String get charleston => 'Charleston';
+
+	/// en: 'Cheyenne'
+	String get cheyenne => 'Cheyenne';
+
+	/// en: 'Fargo'
+	String get fargo => 'Fargo';
+
+	/// en: 'Providence'
+	String get providence => 'Providence';
+
+	/// en: 'Columbus'
+	String get columbus => 'Columbus';
+
+	/// en: 'Trenton'
+	String get trenton => 'Trenton';
+
+	/// en: 'Jackson'
+	String get jackson => 'Jackson';
+
+	/// en: 'New Haven'
+	String get new_haven => 'New Haven';
+
+	/// en: 'Sioux Falls'
+	String get sioux_falls => 'Sioux Falls';
+
+	/// en: 'Wichita'
+	String get wichita => 'Wichita';
+
+	/// en: 'Nashua'
+	String get nashua => 'Nashua';
+
+	/// en: 'Las Vegas'
+	String get las_vegas => 'Las Vegas';
+
+	/// en: 'Little Rock'
+	String get little_rock => 'Little Rock';
+
+	/// en: 'Louisville'
+	String get louisville => 'Louisville';
+
+	/// en: 'Milwaukee'
+	String get milwaukee => 'Milwaukee';
+
+	/// en: 'Minneapolis'
+	String get minneapolis => 'Minneapolis';
+
+	/// en: 'Montgomery'
+	String get montgomery => 'Montgomery';
+
+	/// en: 'Indianapolis'
+	String get indianapolis => 'Indianapolis';
+
+	/// en: 'Boise'
+	String get boise => 'Boise';
+
+	/// en: 'Baltimore'
+	String get baltimore => 'Baltimore';
+
+	/// en: 'Billings'
+	String get billings => 'Billings';
+
+	/// en: 'Albuquerque'
+	String get albuquerque => 'Albuquerque';
+
+	/// en: 'Anchorage'
+	String get anchorage => 'Anchorage';
+
+	/// en: 'Wilmington'
+	String get wilmington => 'Wilmington';
+
+	/// en: 'Fujairah'
+	String get fujairah => 'Fujairah';
+
+	/// en: 'Bridgetown'
+	String get bridgetown => 'Bridgetown';
+
+	/// en: 'Sarajevo'
+	String get sarajevo => 'Sarajevo';
+
+	/// en: 'NDjamena'
+	String get ndjamena => 'NDjamena';
+
+	/// en: 'Yamoussoukro'
+	String get yamoussoukro => 'Yamoussoukro';
+
+	/// en: 'Suva'
+	String get suva => 'Suva';
+
+	/// en: 'Paramaribo'
+	String get paramaribo => 'Paramaribo';
+
+	/// en: 'Dodoma'
+	String get dodoma => 'Dodoma';
+
+	/// en: 'Sanaa'
+	String get sanaa => 'Sanaa';
+
+	/// en: 'Lome'
+	String get lome => 'Lome';
 }
 
 // Path: countries
@@ -1251,9 +1377,6 @@ class TranslationsUiEn {
 	/// en: 'Connected'
 	String get connected => 'Connected';
 
-	/// en: 'Not connected'
-	String get notConnected => 'Not connected';
-
 	/// en: 'Connect now or pick a country'
 	String get connectOrPickCountry => 'Connect now or pick a country';
 
@@ -1554,8 +1677,11 @@ class TranslationsUiEn {
 	/// en: 'Automatically connect to the fastest available server or your chosen server location when the app starts.'
 	String get autoConnectDescription => 'Automatically connect to the fastest available server or your chosen server location when the app starts.';
 
+	/// en: 'Fastest server'
+	String get fastestServer => 'Fastest server';
+
 	/// en: 'Fastest'
-	String get fastestServer => 'Fastest';
+	String get fastest => 'Fastest';
 
 	/// en: 'Change'
 	String get change => 'Change';
@@ -1727,9 +1853,6 @@ class TranslationsUiEn {
 
 	/// en: 'Turn off Kill Switch'
 	String get turnOffKillSwitch => 'Turn off Kill Switch';
-
-	/// en: 'Connect now'
-	String get connectNow => 'Connect now';
 
 	/// en: 'Setting auto-connect to [$target]...'
 	String settingAutoconnectTo({required Object target}) => 'Setting auto-connect to [${target}]...';
@@ -2012,6 +2135,48 @@ class TranslationsUiEn {
 
 	/// en: 'Got it'
 	String get gotIt => 'Got it';
+
+	/// en: 'Pause for 5 minutes'
+	String get pauseFor5Min => 'Pause for 5 minutes';
+
+	/// en: 'Pause for 15 minutes'
+	String get pauseFor15Min => 'Pause for 15 minutes';
+
+	/// en: 'Pause for 30 minutes'
+	String get pauseFor30Min => 'Pause for 30 minutes';
+
+	/// en: 'Pause for 1 hour'
+	String get pauseFor1Hour => 'Pause for 1 hour';
+
+	/// en: 'Pause for 24 hours'
+	String get pauseFor24Hours => 'Pause for 24 hours';
+
+	/// en: 'Secured'
+	String get secured => 'Secured';
+
+	/// en: 'Not secured'
+	String get notSecured => 'Not secured';
+
+	/// en: 'Secure my connection'
+	String get secureMyConnection => 'Secure my connection';
+
+	/// en: 'VPN connection resumes in $minutes:$seconds'
+	String VPNResumesIn({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes}:${seconds}';
+
+	/// en: 'VPN connection resumes in $hours:$minutes:$seconds'
+	String VPNResumesInWithHours({required Object hours, required Object minutes, required Object seconds}) => 'VPN connection resumes in ${hours}:${minutes}:${seconds}';
+
+	/// en: 'Reconnect'
+	String get reconnect => 'Reconnect';
+
+	/// en: 'Change VPN settings'
+	String get changeVPNsettings => 'Change VPN settings';
+
+	/// en: 'Get help'
+	String get getHelp => 'Get help';
+
+	/// en: 'Pause connection'
+	String get pauseConnection => 'Pause connection';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -2193,6 +2358,48 @@ extension on Translations {
 			'cities.port_louis' => 'Port Louis',
 			'cities.dushanbe' => 'Dushanbe',
 			'cities.lewiston' => 'Lewiston',
+			'cities.new_orleans' => 'New Orleans',
+			'cities.oklahoma_city' => 'Oklahoma City',
+			'cities.portland' => 'Portland',
+			'cities.des_moines' => 'Des Moines',
+			'cities.honolulu' => 'Honolulu',
+			'cities.huntington' => 'Huntington',
+			'cities.bordeaux' => 'Bordeaux',
+			'cities.burlington' => 'Burlington',
+			'cities.charleston' => 'Charleston',
+			'cities.cheyenne' => 'Cheyenne',
+			'cities.fargo' => 'Fargo',
+			'cities.providence' => 'Providence',
+			'cities.columbus' => 'Columbus',
+			'cities.trenton' => 'Trenton',
+			'cities.jackson' => 'Jackson',
+			'cities.new_haven' => 'New Haven',
+			'cities.sioux_falls' => 'Sioux Falls',
+			'cities.wichita' => 'Wichita',
+			'cities.nashua' => 'Nashua',
+			'cities.las_vegas' => 'Las Vegas',
+			'cities.little_rock' => 'Little Rock',
+			'cities.louisville' => 'Louisville',
+			'cities.milwaukee' => 'Milwaukee',
+			'cities.minneapolis' => 'Minneapolis',
+			'cities.montgomery' => 'Montgomery',
+			'cities.indianapolis' => 'Indianapolis',
+			'cities.boise' => 'Boise',
+			'cities.baltimore' => 'Baltimore',
+			'cities.billings' => 'Billings',
+			'cities.albuquerque' => 'Albuquerque',
+			'cities.anchorage' => 'Anchorage',
+			'cities.wilmington' => 'Wilmington',
+			'cities.fujairah' => 'Fujairah',
+			'cities.bridgetown' => 'Bridgetown',
+			'cities.sarajevo' => 'Sarajevo',
+			'cities.ndjamena' => 'NDjamena',
+			'cities.yamoussoukro' => 'Yamoussoukro',
+			'cities.suva' => 'Suva',
+			'cities.paramaribo' => 'Paramaribo',
+			'cities.dodoma' => 'Dodoma',
+			'cities.sanaa' => 'Sanaa',
+			'cities.lome' => 'Lome',
 			'countries.AL' => 'Albania',
 			'countries.DZ' => 'Algeria',
 			'countries.AD' => 'Andorra',
@@ -2412,7 +2619,6 @@ extension on Translations {
 			'ui.onion_over_vpn' => 'Onion Over VPN',
 			'ui.fatalErrorMessage' => 'Fatal error',
 			'ui.connected' => 'Connected',
-			'ui.notConnected' => 'Not connected',
 			'ui.connectOrPickCountry' => 'Connect now or pick a country',
 			'ui.general' => 'General',
 			'ui.generalSettingsSubtitle' => 'Appearance, notifications and analytics settings',
@@ -2493,6 +2699,8 @@ extension on Translations {
 			'ui.dipSelectLocationDescription' => 'You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.',
 			'ui.chooseLocationForDip' => 'Choose a location for your dedicated IP',
 			'ui.getDip' => 'Get dedicated IP',
+			_ => null,
+		} ?? switch (path) {
 			'ui.getYourDip' => 'Get your personal IP',
 			'ui.getDipDescription' => 'Get a personal IP address that belongs only to you. Enjoy all the benefits of VPN encryption without dealing with blocklists, identity checks, and selecting images of boats in CAPTCHAs.',
 			'ui.notifications' => 'Notifications',
@@ -2512,7 +2720,8 @@ extension on Translations {
 			'ui.vpnConnection' => 'VPN connection',
 			'ui.vpnConnectionSubtitle' => 'Auto-connect, Kill Switch, protocol',
 			'ui.autoConnectDescription' => 'Automatically connect to the fastest available server or your chosen server location when the app starts.',
-			'ui.fastestServer' => 'Fastest',
+			'ui.fastestServer' => 'Fastest server',
+			'ui.fastest' => 'Fastest',
 			'ui.change' => 'Change',
 			'ui.nordLynx' => 'NordLynx',
 			'ui.openVpnTcp' => 'OpenVPN (TCP)',
@@ -2534,8 +2743,6 @@ extension on Translations {
 			'ui.routingDescription' => 'Use custom routing rules instead of the default VPN configuration.',
 			'ui.postQuantumVpn' => 'Post-quantum encryption',
 			'ui.postQuantumDescription' => 'Activate next-generation encryption that protects your data from threats posed by quantum computing.',
-			_ => null,
-		} ?? switch (path) {
 			'ui.obfuscationDescription' => 'Avoid detection by traffic sensors in restricted networks while using a VPN. When enabled, only obfuscated servers are available.',
 			'ui.obfuscation' => 'Obfuscation',
 			'ui.add' => 'Add',
@@ -2572,7 +2779,6 @@ extension on Translations {
 			'ui.appVersionCompatibilityRecommendation' => ({required Uri compatibilityUrl}) => 'For more options, check our [compatibility guide](${compatibilityUrl})',
 			'ui.turnOffKillSwitchDescription' => 'Kill Switch is blocking the login. Turn it off for now to continue.',
 			'ui.turnOffKillSwitch' => 'Turn off Kill Switch',
-			'ui.connectNow' => 'Connect now',
 			'ui.settingAutoconnectTo' => ({required Object target}) => 'Setting auto-connect to [${target}]...',
 			'ui.doubleVpnDesc' => 'Encrypt your traffic twice for extra security',
 			'ui.onionOverVpnDesc' => 'Use the Onion network with VPN protection',
@@ -2667,6 +2873,20 @@ extension on Translations {
 			'ui.reconnectToApplyChanges' => 'Reconnect to apply changes',
 			'ui.reconnectToApplyChangesDescription' => 'Your new settings will take effect after you reconnect to the VPN.',
 			'ui.gotIt' => 'Got it',
+			'ui.pauseFor5Min' => 'Pause for 5 minutes',
+			'ui.pauseFor15Min' => 'Pause for 15 minutes',
+			'ui.pauseFor30Min' => 'Pause for 30 minutes',
+			'ui.pauseFor1Hour' => 'Pause for 1 hour',
+			'ui.pauseFor24Hours' => 'Pause for 24 hours',
+			'ui.secured' => 'Secured',
+			'ui.notSecured' => 'Not secured',
+			'ui.secureMyConnection' => 'Secure my connection',
+			'ui.VPNResumesIn' => ({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes}:${seconds}',
+			'ui.VPNResumesInWithHours' => ({required Object hours, required Object minutes, required Object seconds}) => 'VPN connection resumes in ${hours}:${minutes}:${seconds}',
+			'ui.reconnect' => 'Reconnect',
+			'ui.changeVPNsettings' => 'Change VPN settings',
+			'ui.getHelp' => 'Get help',
+			'ui.pauseConnection' => 'Pause connection',
 			_ => null,
 		};
 	}

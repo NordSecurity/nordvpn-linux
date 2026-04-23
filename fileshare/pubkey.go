@@ -2,8 +2,8 @@ package fileshare
 
 import (
 	"encoding/base64"
-	"log"
 
+	"github.com/NordSecurity/nordvpn-linux/log"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 )
 

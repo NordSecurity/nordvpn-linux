@@ -2,11 +2,11 @@ package tray
 
 import (
 	"context"
-	"log"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

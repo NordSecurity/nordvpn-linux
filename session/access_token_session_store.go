@@ -3,11 +3,13 @@ package session
 import (
 	"errors"
 	"fmt"
-	"log"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/google/uuid"
 )
 
@@ -33,6 +35,10 @@ type AccessTokenSessionStore struct {
 	cfgManager         config.Manager
 	errHandlerRegistry *internal.ErrorHandlingRegistry[error]
 	renewAPICall       AccessTokenRenewalAPICall
+	renewMu            sync.Mutex
+	// renewalCounter is incremented after every successful token renewal to detect
+	// whether a concurrent goroutine already completed a renewal.
+	renewalCounter atomic.Uint64
 }
 
 // NewAccessTokenSessionStore creates a new AccessTokenSessionStore instance
@@ -58,18 +64,52 @@ func (s *AccessTokenSessionStore) Renew(opts ...RenewalOption) error {
 		opt(&options)
 	}
 
+	// check if renewal is needed (without lock)
 	if !options.forceRenewal {
-		err := s.validate()
-		if err == nil {
+		if err := s.validate(); err == nil {
 			return nil
-		}
-
-		// [special case] without correct renewal token we cannot renew the access token
-		// we need to trigger error handlers directly without going through the normal flow
-		// to handle this case
-		if errors.Is(err, ErrInvalidRenewToken) {
+		} else if errors.Is(err, ErrInvalidRenewToken) {
 			return s.HandleError(err)
 		}
+	}
+
+	// manual tokens cannot be renewed
+	if s.isManualToken() {
+		return nil
+	}
+
+	// Capture the current renewal counter before acquiring the lock.
+	// Used to detect whether a concurrent goroutine already completed
+	// a renewal while we were waiting.
+	renewalCounterSnapshot := s.renewalCounter.Load()
+
+	s.renewMu.Lock()
+	defer s.renewMu.Unlock()
+
+	return s.doRenew(options, renewalCounterSnapshot)
+}
+
+// isManualToken returns true if the current token is a manually generated token.
+// Manual tokens cannot be renewed via API.
+func (s *AccessTokenSessionStore) isManualToken() bool {
+	cfg, err := s.getConfig()
+	return err == nil && cfg.ExpiresAt.Equal(ManualAccessTokenExpiryDate)
+}
+
+// doRenew performs the actual token renewal.
+func (s *AccessTokenSessionStore) doRenew(
+	options renewalOptions,
+	renewalCounterSnapshot uint64,
+) error {
+	// re-check after acquiring lock - another goroutine may have already renewed.
+	if !options.forceRenewal {
+		if err := s.validate(); err == nil {
+			return nil
+		}
+	} else if s.renewalCounter.Load() != renewalCounterSnapshot {
+		// The counter advanced while we waited, meaning a concurrent goroutine
+		// already completed the renewal. No need to call the API again.
+		return nil
 	}
 
 	var cfg config.Config
@@ -184,6 +224,7 @@ func (s *AccessTokenSessionStore) renewToken(
 		return fmt.Errorf("saving access token data: %w", err)
 	}
 
+	s.renewalCounter.Add(1)
 	return nil
 }
 
@@ -221,6 +262,7 @@ func (s *AccessTokenSessionStore) getConfig() (accessTokenConfig, error) {
 
 	expiryTime, err := time.Parse(internal.ServerDateFormat, data.TokenExpiry)
 	if err != nil {
+		log.Printf("[auth] %s Error parsing token expiry time [%s]: %v\n", internal.WarningPrefix, data.TokenExpiry, err)
 		expiryTime = time.Now().Add(-1 * time.Second)
 	}
 

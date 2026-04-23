@@ -2,10 +2,9 @@
 package subs
 
 import (
-	"log"
-
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // Subject is a single topic, which supports multiple subscribers.

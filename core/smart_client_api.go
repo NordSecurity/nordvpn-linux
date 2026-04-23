@@ -42,7 +42,9 @@ func callWithToken[T any](store session.TokenSessionStore, call func(token strin
 	}
 
 	if errors.Is(err, ErrUnauthorized) {
-		if err := store.Renew(); err != nil {
+		// Force renewal to avoid retrying with a server-invalidated token,
+		// which would cause an unnecessary logout.
+		if err := store.Renew(session.ForceRenewal()); err != nil {
 			var zero T
 			return zero, err
 		}

@@ -268,14 +268,17 @@ final $typed_data.Uint8List setNotifyRequestDescriptor = $convert
 const SetTrayRequest$json = {
   '1': 'SetTrayRequest',
   '2': [
-    {'1': 'uid', '3': 2, '4': 1, '5': 3, '10': 'uid'},
     {'1': 'tray', '3': 3, '4': 1, '5': 8, '10': 'tray'},
   ],
+  '9': [
+    {'1': 2, '2': 3},
+  ],
+  '10': ['uid'],
 };
 
 /// Descriptor for `SetTrayRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List setTrayRequestDescriptor = $convert.base64Decode(
-    'Cg5TZXRUcmF5UmVxdWVzdBIQCgN1aWQYAiABKANSA3VpZBISCgR0cmF5GAMgASgIUgR0cmF5');
+    'Cg5TZXRUcmF5UmVxdWVzdBISCgR0cmF5GAMgASgIUgR0cmF5SgQIAhADUgN1aWQ=');
 
 @$core.Deprecated('Use setProtocolRequestDescriptor instead')
 const SetProtocolRequest$json = {

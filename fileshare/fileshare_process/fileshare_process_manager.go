@@ -3,7 +3,8 @@ package fileshare_process
 import (
 	"context"
 	"fmt"
-	"log"
+
+	"github.com/NordSecurity/nordvpn-linux/log"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

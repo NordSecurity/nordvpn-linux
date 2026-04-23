@@ -4,7 +4,7 @@ import sh
 import grpc
 from collections.abc import Sequence
 from lib import logging
-from lib.protobuf.daemon import (common_pb2, service_pb2_grpc, state_pb2, status_pb2)
+from lib.protobuf.daemon import (common_pb2, service_pb2_grpc, state_pb2, status_pb2, pause_pb2)
 from threading import Barrier
 
 
@@ -12,10 +12,12 @@ pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
 
 
 NORDVPND_SOCKET = 'unix:///run/nordvpn/nordvpnd.sock'
+SUCCESS_RESPONSE_TYPE = 1000
 
 
 def test_multiple_state_subscribers():
     expected_states = [
+        status_pb2.ConnectionState.DISCONNECTED, # initial state on subscribe
         status_pb2.ConnectionState.CONNECTING, # start with "connecting" state ASAP
         status_pb2.ConnectionState.CONNECTING, # update with selected location
         status_pb2.ConnectionState.CONNECTED,
@@ -39,11 +41,12 @@ def test_multiple_state_subscribers():
 
         for i in range(num_threads):
             assert all(a.connection_status.state == b for a, b in zip(
-                results[i], expected_states, strict=True))
+                results[i], expected_states, strict=True)), f"Thread {i} connection state sequence should match expected states"
 
 
 def test_tunnel_update_notifications_before_and_after_connect():
     expected_states = [
+        status_pb2.ConnectionState.DISCONNECTED, # initial state on subscribe
         status_pb2.ConnectionState.CONNECTING, # start with "connecting" state ASAP
         status_pb2.ConnectionState.CONNECTING, # update with selected location
         status_pb2.ConnectionState.CONNECTED,
@@ -60,7 +63,7 @@ def test_tunnel_update_notifications_before_and_after_connect():
     sh.nordvpn.disconnect()
     thread.join()
     assert all(a.connection_status.state == b for a,
-               b in zip(result, expected_states, strict=True))
+               b in zip(result, expected_states, strict=True)), "Connection state sequence should match expected states before and after connect"
 
 
 def collect_state_changes_guard(stop_at: int, tracked_states: Sequence[str], subscription_barrier: Barrier, timeout: int = 30) -> Sequence[state_pb2.AppState]:
@@ -91,6 +94,7 @@ def test_is_virtual_location_is_true_for_virtual_location():
 
 def check_is_virtual_location_in_response(loc: str, expected_is_virtual: bool):
     expected_states = [
+        status_pb2.ConnectionState.DISCONNECTED, # initial state on subscribe
         status_pb2.ConnectionState.CONNECTING, # start with "connecting" state ASAP
         status_pb2.ConnectionState.CONNECTING, # update with selected location
         status_pb2.ConnectionState.CONNECTED
@@ -105,7 +109,7 @@ def check_is_virtual_location_in_response(loc: str, expected_is_virtual: bool):
     sh.nordvpn.connect(loc)
     sh.nordvpn.disconnect()
     thread.join()
-    assert result.pop().connection_status.virtualLocation == expected_is_virtual
+    assert result.pop().connection_status.virtualLocation == expected_is_virtual, f"Virtual location status should be {expected_is_virtual} for location {loc}"
 
 
 def test_is_virtual_is_false_for_non_virtual_location():
@@ -114,6 +118,7 @@ def test_is_virtual_is_false_for_non_virtual_location():
 
 def test_manual_connection_source_is_present_in_response():
     expected_states = [
+        status_pb2.ConnectionState.DISCONNECTED, # initial state on subscribe
         status_pb2.ConnectionState.CONNECTING, # start with "connecting" state ASAP
         status_pb2.ConnectionState.CONNECTING, # update with selected location
         status_pb2.ConnectionState.CONNECTED
@@ -128,4 +133,83 @@ def test_manual_connection_source_is_present_in_response():
     sh.nordvpn.connect()
     sh.nordvpn.disconnect()
     thread.join()
-    assert result.pop().connection_status.parameters.source == status_pb2.ConnectionSource.MANUAL
+    assert result.pop().connection_status.parameters.source == status_pb2.ConnectionSource.MANUAL, f"Connection source status should be {status_pb2.ConnectionSource.MANUAL}"
+
+
+def pause_connection(pauseDurationSec: int = 10) -> int:
+    with grpc.insecure_channel(NORDVPND_SOCKET) as channel:
+        channel.subscribe(callback=lambda value: logging.log(data = f"socket connection changed {value}"), try_to_connect=True)
+        grpc.channel_ready_future(channel).result()
+        stub = service_pb2_grpc.DaemonStub(channel)
+
+        response = stub.PauseConnection(pause_pb2.PauseRequest(seconds=pauseDurationSec))
+        return response.type
+
+def test_connection_is_resumed_after_a_pause():
+    expected_states = [
+        status_pb2.ConnectionState.DISCONNECTED, # initial state on subscribe
+        status_pb2.ConnectionState.CONNECTING,
+        status_pb2.ConnectionState.CONNECTING,
+        status_pb2.ConnectionState.CONNECTED,
+        status_pb2.ConnectionState.PAUSED,
+        status_pb2.ConnectionState.PAUSED,
+        status_pb2.ConnectionState.CONNECTING,
+        status_pb2.ConnectionState.CONNECTING,
+        status_pb2.ConnectionState.CONNECTED
+    ]
+
+    subscribtion_barrier = Barrier(2) # parrent and child thread
+    result = []
+    thread = threading.Thread(target=lambda: result.extend(collect_state_changes_guard(
+    len(expected_states), ['connection_status'], subscribtion_barrier)))
+    thread.start()
+    subscribtion_barrier.wait(timeout=10)
+
+    sh.nordvpn.connect()
+
+    pause_result = pause_connection()
+    assert pause_result == SUCCESS_RESPONSE_TYPE
+
+    thread.join()
+
+    assert all(a.connection_status.state == b for a,
+        b in zip(result, expected_states, strict=True))
+
+    initial_state = result[3] # initial state after connecting to the VPN
+    state_after_pause = result[8]
+    assert initial_state == state_after_pause
+
+
+def test_pause_is_ignored_after_reconnecting():
+    expected_states = [
+        status_pb2.ConnectionState.DISCONNECTED, # initial state on subscribe
+        status_pb2.ConnectionState.CONNECTING,
+        status_pb2.ConnectionState.CONNECTING,
+        status_pb2.ConnectionState.CONNECTED,
+        status_pb2.ConnectionState.PAUSED,
+        status_pb2.ConnectionState.PAUSED,
+        # The subsequent CONNECTING/CONNECTED states come after reconnecting to the VPN while connection is paused, not
+        # because pause was finished and the connection automatically resumed.
+        status_pb2.ConnectionState.CONNECTING,
+        status_pb2.ConnectionState.CONNECTING,
+        status_pb2.ConnectionState.CONNECTED
+    ]
+
+    subscribtion_barrier = Barrier(2) # parrent and child thread
+    result = []
+    thread = threading.Thread(target=lambda: result.extend(collect_state_changes_guard(
+    len(expected_states), ['connection_status'], subscribtion_barrier)))
+    thread.start()
+    subscribtion_barrier.wait(timeout=10)
+
+    sh.nordvpn.connect()
+
+    pause_result = pause_connection()
+    assert pause_result == SUCCESS_RESPONSE_TYPE
+
+    sh.nordvpn.connect()
+
+    thread.join()
+
+    assert all(a.connection_status.state == b for a,
+        b in zip(result, expected_states, strict=True))
