@@ -191,10 +191,11 @@ def _is_dns_resolvable(domain="nordvpn.com", retry=5) -> bool:
         try:
             resolver = dns.resolver.Resolver()
             resolver.nameservers = ["103.86.96.100"]  # specify server so it will not get the result from the docker host
-            resolver.resolve(domain, "A", lifetime=5)
+            answer = resolver.resolve(domain, "A", lifetime=5)
+            logging.log(f"_is_dns_resolvable: DNS {domain} - {answer}")
             return True
         except Exception as e:  # noqa: BLE001
-            print(f"_is_dns_resolvable: DNS {domain} FAILURE. Error: {e}")
+            logging.log(f"_is_dns_resolvable: DNS {domain} FAILURE. Error: {e}")
             time.sleep(1)
             i += 1
     return False
