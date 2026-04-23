@@ -58,8 +58,6 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 		return srv.Send(&pb.DiagnosticsProgress{Error: err.Error()})
 	}
 
-	srv.Send(&pb.DiagnosticsProgress{Step: "Initializing..."})
-
 	zipFile, err := os.Create(caller.zipPath)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to create diagnostics zip:", err)
@@ -74,7 +72,9 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 
 	// Change ownership immediately so user can access partial file
 	if err := os.Chown(caller.zipPath, int(caller.uid), int(caller.gid)); err != nil {
-		log.Println(internal.WarningPrefix, "failed to change file ownership:", err)
+		log.Println(internal.ErrorPrefix, "failed to change file ownership:", err)
+		srv.Send(&pb.DiagnosticsProgress{Error: fmt.Sprintf("Failed to change file ownership: %v", err)})
+		return err
 	}
 
 	if err := collectDiagnosticsData(srv, zipFile, caller.user.HomeDir, r.version); err != nil {
@@ -96,7 +96,6 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 
 	return srv.Send(&pb.DiagnosticsProgress{
 		Step:     "Done",
-		Done:     true,
 		FilePath: caller.zipPath,
 	})
 }
@@ -226,7 +225,7 @@ func addDaemonLogs(zipWriter *zip.Writer) error {
 		logFile := filepath.Join(internal.LogPath, "daemon.log")
 		return streamFileToWriter(writer, logFile)
 	default:
-		return fmt.Errorf("unable to determine how the daemon is running (systemd/snap/initd)")
+		return fmt.Errorf("unable to extract daemon logs automatically: the daemon was not started via systemd, snap, or initd. Please contact customer support to send the logs manually")
 	}
 }
 

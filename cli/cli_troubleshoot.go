@@ -39,15 +39,16 @@ func (c *cmd) Troubleshoot(ctx *cli.Context) error {
 			return formatError(fmt.Errorf(resp.Error))
 		}
 
-		// Show progress if TTY
-		if isTTY && !resp.Done {
-			fmt.Printf("%s\n", resp.Step)
-		}
-
-		// Final response
-		if resp.Done {
+		// Final response: daemon signals completion by sending the file
+		// path with no error.
+		if resp.FilePath != "" {
 			color.Green(MsgTroubleshootSuccess, resp.FilePath)
 			return nil
+		}
+
+		// Show progress if TTY
+		if isTTY {
+			fmt.Printf("%s\n", resp.Step)
 		}
 	}
 

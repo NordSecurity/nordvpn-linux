@@ -61,7 +61,6 @@ enum ClientID {
 
 message DiagnosticsProgress {
   string step = 2;
-  bool done = 3;
   string file_path = 4;
   string error = 5;
 }
