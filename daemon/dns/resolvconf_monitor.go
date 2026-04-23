@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/filewatch"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/fsnotify/fsnotify"
@@ -31,7 +32,7 @@ type resolvConfFileWatcherMonitor struct {
 func newResolvConfMonitor(analytics analytics) resolvConfFileWatcherMonitor {
 	return resolvConfFileWatcherMonitor{
 		analytics:      analytics,
-		getWatcherFunc: internal.GetFileWatcher,
+		getWatcherFunc: filewatch.GetFileWatcher,
 	}
 }
 
