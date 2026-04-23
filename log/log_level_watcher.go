@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/filewatch"
 	"github.com/fsnotify/fsnotify"
 )
 
@@ -21,19 +22,12 @@ func WatchLevelFile(path string) (CancelFunc, error) {
 		return nil, err
 	}
 
-	watcher, err := fsnotify.NewWatcher()
+	watcher, err := filewatch.GetFileWatcher(filepath.Dir(path))
 	if err != nil {
 		return nil, err
 	}
 
 	applyLevelFile(path)
-
-	if err := watcher.Add(filepath.Dir(path)); err != nil {
-		if closeErr := watcher.Close(); closeErr != nil {
-			Warn("closing log level watcher:", closeErr)
-		}
-		return nil, err
-	}
 
 	go func() {
 		defer func() {
