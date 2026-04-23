@@ -94,15 +94,13 @@ class ServerGroupsList(_message.Message):
     def __init__(self, type: _Optional[int] = ..., servers: _Optional[_Iterable[_Union[ServerGroup, _Mapping]]] = ...) -> None: ...
 
 class DiagnosticsProgress(_message.Message):
-    __slots__ = ("percentage", "step", "done", "file_path", "error")
-    PERCENTAGE_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ("step", "done", "file_path", "error")
     STEP_FIELD_NUMBER: _ClassVar[int]
     DONE_FIELD_NUMBER: _ClassVar[int]
     FILE_PATH_FIELD_NUMBER: _ClassVar[int]
     ERROR_FIELD_NUMBER: _ClassVar[int]
-    percentage: int
     step: str
     done: bool
     file_path: str
     error: str
-    def __init__(self, percentage: _Optional[int] = ..., step: _Optional[str] = ..., done: bool = ..., file_path: _Optional[str] = ..., error: _Optional[str] = ...) -> None: ...
+    def __init__(self, step: _Optional[str] = ..., done: bool = ..., file_path: _Optional[str] = ..., error: _Optional[str] = ...) -> None: ...

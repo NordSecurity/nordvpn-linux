@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"archive/zip"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -10,11 +11,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
+	"github.com/godbus/dbus/v5"
 )
 
 const (
@@ -57,7 +58,7 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 		return srv.Send(&pb.DiagnosticsProgress{Error: err.Error()})
 	}
 
-	srv.Send(&pb.DiagnosticsProgress{Percentage: 0, Step: "Initializing..."})
+	srv.Send(&pb.DiagnosticsProgress{Step: "Initializing..."})
 
 	zipFile, err := os.Create(caller.zipPath)
 	if err != nil {
@@ -94,16 +95,14 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 	}
 
 	return srv.Send(&pb.DiagnosticsProgress{
-		Percentage: 100,
-		Step:       "Done",
-		Done:       true,
-		FilePath:   caller.zipPath,
+		Step:     "Done",
+		Done:     true,
+		FilePath: caller.zipPath,
 	})
 }
 
 // diagnosticsStep represents one unit of diagnostics collection: the message
-// shown to the user and the function that performs the work. Progress
-// percentages are computed dynamically from the step's position in the list.
+// shown to the user and the function that performs the work.
 //
 // When fatal is true, any error returned by collect aborts the whole RPC; the
 // partial zip is then discarded by the caller. Non-fatal step errors are
@@ -115,13 +114,10 @@ type diagnosticsStep struct {
 }
 
 // collectDiagnosticsData creates the zip writer and runs each collection
-// step, reporting progress to the client. Individual step failures are logged
-// as warnings and do not abort collection — partial diagnostics are still
-// useful. Size-limit overflow is fatal and is returned to the caller so the
-// partial zip can be discarded.
-//
-// Progress percentages are distributed evenly across steps: step i (0-indexed)
-// is reported at (i+1) * 100 / (N+1), leaving the final 100% slot for "Done".
+// step, reporting progress to the client as "[n/total] description".
+// Individual step failures are logged as warnings and do not abort collection
+// — partial diagnostics are still useful. Size-limit overflow is fatal and is
+// returned to the caller so the partial zip can be discarded.
 func collectDiagnosticsData(
 	srv pb.Daemon_CollectDiagnosticsServer,
 	output io.Writer,
@@ -130,6 +126,13 @@ func collectDiagnosticsData(
 	limited := &sizeLimitedWriter{w: output, limit: maxZipFileSize}
 	zipWriter := zip.NewWriter(limited)
 	defer zipWriter.Close()
+
+	// Buffered so the progress.log entry can be written as the last zip
+	// entry; zip.Writer finalizes each entry when the next Create is called,
+	// so we can't keep this entry open while other entries are being written.
+	var progressLog bytes.Buffer
+	logger := log.New(&progressLog, "", log.LstdFlags)
+	logger.Printf("diagnostics collection started (version=%s)", version)
 
 	steps := []diagnosticsStep{
 		{"Collecting daemon logs...", func() error {
@@ -146,29 +149,62 @@ func collectDiagnosticsData(
 		{"Collecting system info...", func() error {
 			return addSystemInfo(zipWriter)
 		}, false},
-		{"Collecting version info...", func() error {
-			return addVersionInfo(zipWriter, version)
-		}, false},
 		{"Collecting network info...", func() error {
 			return addNetworkInfo(zipWriter)
 		}, false},
+		{"Collecting DNS info...", func() error {
+			return addDNSInfo(zipWriter)
+		}, false},
+		{"Collecting NFTables ruleset...", func() error {
+			return addNFTablesInfo(zipWriter)
+		}, false},
 	}
 
-	slots := int32(len(steps) + 1) // +1 reserves the final slot for "Done" at 100%.
+	total := len(steps)
 	for i, step := range steps {
-		pct := int32(i+1) * 100 / slots
-		srv.Send(&pb.DiagnosticsProgress{Percentage: pct, Step: step.description})
-		if err := step.collect(); err != nil {
-			if step.fatal || errors.Is(err, errZipSizeLimitExceeded) {
-				return err
-			}
-			log.Println(internal.WarningPrefix, "diagnostics step failed:", step.description, err)
+		desc := fmt.Sprintf("[%d/%d] %s", i+1, total, step.description)
+		srv.Send(&pb.DiagnosticsProgress{Step: desc})
+		logger.Printf("step started: %s", step.description)
+		err := step.collect()
+		if err == nil {
+			logger.Printf("step completed: %s", step.description)
+			continue
 		}
+		if step.fatal {
+			logger.Printf("step failed (fatal): %s: %v", step.description, err)
+			writeProgressLog(zipWriter, &progressLog)
+			return err
+		}
+		if errors.Is(err, errZipSizeLimitExceeded) {
+			logger.Printf("step failed (size limit exceeded): %s: %v", step.description, err)
+			writeProgressLog(zipWriter, &progressLog)
+			return err
+		}
+		logger.Printf("step failed: %s: %v", step.description, err)
+		log.Println(internal.WarningPrefix, "diagnostics step failed:", step.description, err)
 	}
+
+	logger.Printf("diagnostics collection finished")
+	writeProgressLog(zipWriter, &progressLog)
 
 	// Explicit finalize so caller sees any central-directory write error
 	// (e.g. hitting the size cap on the last flush).
 	return zipWriter.Close()
+}
+
+// writeProgressLog flushes the in-memory progress log into the zip as
+// progress.log. Best-effort: any failure here is logged to stderr and
+// swallowed, since we don't want a log-writing error to mask the original
+// collection outcome.
+func writeProgressLog(zipWriter *zip.Writer, buf *bytes.Buffer) {
+	w, err := zipWriter.Create("progress.log")
+	if err != nil {
+		log.Println(internal.WarningPrefix, "failed to create progress.log:", err)
+		return
+	}
+	if _, err := w.Write(buf.Bytes()); err != nil {
+		log.Println(internal.WarningPrefix, "failed to write progress.log:", err)
+	}
 }
 
 // addDaemonLogs writes the daemon's logs to daemon.log inside the archive.
@@ -183,23 +219,15 @@ func addDaemonLogs(zipWriter *zip.Writer) error {
 
 	switch {
 	case snapconf.IsUnderSnap():
-		if err := streamCommandToWriter(writer, "snap", "logs", "nordvpn", "-n", "all"); err != nil {
-			fmt.Fprintf(writer, "Error getting snap logs: %v\n", err)
-		}
+		return streamCommandToWriter(writer, "snap", "logs", "nordvpn", "-n", "all")
 	case internal.IsSystemd():
-		if err := streamCommandToWriter(writer, "journalctl", "-u", "nordvpnd", "--no-pager"); err != nil {
-			fmt.Fprintf(writer, "Error getting journalctl output: %v\n", err)
-		}
+		return streamCommandToWriter(writer, "journalctl", "-u", "nordvpnd", "--no-pager")
 	case internal.FileExists("/etc/init.d/nordvpn"):
 		logFile := filepath.Join(internal.LogPath, "daemon.log")
-		if err := streamFileToWriter(writer, logFile); err != nil {
-			fmt.Fprintf(writer, "Error reading %s: %v\n", logFile, err)
-		}
+		return streamFileToWriter(writer, logFile)
 	default:
 		return fmt.Errorf("unable to determine how the daemon is running (systemd/snap/initd)")
 	}
-
-	return nil
 }
 
 // streamCommandToWriter runs a command and streams its output directly to the writer
@@ -336,35 +364,48 @@ func addFileToZip(zipWriter *zip.Writer, filePath, zipPath string) error {
 // writeBlock appends a titled section to w in the form:
 //
 //	=== title ===
-//	<content produced by fn>
+//	<content>
 //	=========
-//
-// The content is produced by fn, which writes directly to the block body so
-// large outputs can stream without being buffered in memory first. If fn
-// returns an error it is rendered inline; the header and footer are still
-// emitted so the surrounding report stays well-formed.
-func writeBlock(w io.Writer, title string, fn func(io.Writer) error) {
+func writeBlock(w io.Writer, title, content string) {
 	fmt.Fprintf(w, "=== %s ===\n", title)
-	if err := fn(w); err != nil {
-		fmt.Fprintf(w, "(error: %v)\n", err)
-	}
-	fmt.Fprint(w, "=========\n")
+	fmt.Fprint(w, content)
+	fmt.Fprint(w, "=========\n\n")
 }
 
-// blockString adapts a ready-made string into a writeBlock content producer.
-func blockString(s string) func(io.Writer) error {
-	return func(w io.Writer) error {
-		_, err := io.WriteString(w, s)
-		return err
+// runCommand executes name with args and returns the combined stdout/stderr.
+// On failure the error is appended inline so the block still reports
+// something meaningful instead of being silently empty.
+func runCommand(name string, args ...string) string {
+	out, err := exec.Command(name, args...).CombinedOutput()
+	if err != nil {
+		return fmt.Sprintf("%s(error: %v)\n", out, err)
 	}
+	return string(out)
 }
 
-// blockCommand adapts `name args...` into a writeBlock content producer that
-// streams the command's stdout directly into the block.
-func blockCommand(name string, args ...string) func(io.Writer) error {
-	return func(w io.Writer) error {
-		return streamCommandToWriter(w, name, args...)
+// readFile returns the contents of path as a string. On failure the error is
+// rendered inline (mirroring runCommand) so blocks are never silently empty.
+func readFile(path string) string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Sprintf("(error reading %s: %v)\n", path, err)
 	}
+	return string(data)
+}
+
+// dbusGetProperty fetches a property from the system bus and returns its
+// formatted string representation. Errors are rendered inline (mirroring
+// runCommand) so the block is never silently empty.
+func dbusGetProperty(service, path, iface, property string) string {
+	conn, err := dbus.SystemBus()
+	if err != nil {
+		return fmt.Sprintf("(dbus connect error: %v)\n", err)
+	}
+	v, err := conn.Object(service, dbus.ObjectPath(path)).GetProperty(iface + "." + property)
+	if err != nil {
+		return fmt.Sprintf("(error: %v)\n", err)
+	}
+	return v.String() + "\n"
 }
 
 func addSystemInfo(zipWriter *zip.Writer) error {
@@ -373,18 +414,17 @@ func addSystemInfo(zipWriter *zip.Writer) error {
 		return err
 	}
 
-	osRelease, _ := os.ReadFile("/etc/os-release")
-	writeBlock(w, "OS Release", blockString(string(osRelease)))
+	writeBlock(w, "OS Release", readFile("/etc/os-release"))
 
-	if distro, err := os.ReadFile("/etc/lsb-release"); err == nil {
-		writeBlock(w, "Linux Distribution", blockString(string(distro)))
+	if _, err := os.Stat("/etc/lsb-release"); err == nil {
+		writeBlock(w, "Linux Distribution", readFile("/etc/lsb-release"))
 	} else {
-		writeBlock(w, "Linux Distribution", blockCommand("lsb_release", "-a"))
+		writeBlock(w, "Linux Distribution", runCommand("lsb_release", "-a"))
 	}
 
-	writeBlock(w, "Kernel Version", blockCommand("uname", "-a"))
-	writeBlock(w, "Desktop Environment", blockString(collectDesktopEnvironment()))
-	writeBlock(w, "Systemd Status", blockCommand("systemctl", "status", "nordvpnd", "--no-pager"))
+	writeBlock(w, "Kernel Version", runCommand("uname", "-a"))
+	writeBlock(w, "Desktop Environment", collectDesktopEnvironment())
+	writeBlock(w, "Systemd Status", runCommand("systemctl", "status", "nordvpnd", "--no-pager"))
 
 	return nil
 }
@@ -394,7 +434,7 @@ func addSystemInfo(zipWriter *zip.Writer) error {
 func collectDesktopEnvironment() string {
 	output, err := exec.Command("loginctl", "list-sessions", "--no-legend").Output()
 	if err != nil {
-		return ""
+		return fmt.Sprintf("(loginctl error: %v)\n", err)
 	}
 	var b strings.Builder
 	for _, session := range strings.Split(strings.TrimSpace(string(output)), "\n") {
@@ -412,120 +452,88 @@ func collectDesktopEnvironment() string {
 	return b.String()
 }
 
-func addVersionInfo(zipWriter *zip.Writer, version string) error {
-	w, err := zipWriter.Create("version-info.txt")
-	if err != nil {
-		return err
-	}
-	fmt.Fprintf(w, "NordVPN Version: %s\n", version)
-	fmt.Fprintf(w, "Collection Time: %s\n", time.Now().Format(time.RFC3339))
-	return nil
-}
-
 func addNetworkInfo(zipWriter *zip.Writer) error {
 	w, err := zipWriter.Create("network-info.txt")
 	if err != nil {
 		return err
 	}
 
-	writeBlock(w, "Network Interfaces", blockCommand("ip", "addr"))
-	writeBlock(w, "IP Rules", blockCommand("ip", "rule", "show"))
-	writeBlock(w, "Routing Tables", blockCommand("ip", "route", "show", "table", "all"))
-
-	writeBlock(w, "/etc/resolv.conf", streamFileWithMetadata("/etc/resolv.conf"))
-
-	// systemd-resolve was renamed to resolvectl; try the new name first and
-	// fall back so both old and new systems are covered in a single block.
-	writeBlock(w, "systemd-resolve / resolvectl status",
-		blockCommand(resolvectlCmd(), resolvectlArgs()...))
-
-	writeBlock(w, "nmcli general", blockCommand("nmcli", "general"))
-	writeBlock(w, "nmcli device show (DNS)", blockString(dnsLinesFromNmcli()))
-
-	writeBlock(w, "NetworkManager DNS Mode (busctl)", blockCommand(
-		"busctl", "get-property", "org.freedesktop.NetworkManager",
-		"/org/freedesktop/NetworkManager/DnsManager",
-		"org.freedesktop.NetworkManager.DnsManager", "Mode"))
-	writeBlock(w, "NetworkManager DNS Configuration (busctl)", blockCommand(
-		"busctl", "get-property", "org.freedesktop.NetworkManager",
-		"/org/freedesktop/NetworkManager/DnsManager",
-		"org.freedesktop.NetworkManager.DnsManager", "Configuration"))
-
-	writeBlock(w, "/etc/NetworkManager/conf.d/", blockString(dumpConfDir("/etc/NetworkManager/conf.d")))
-
-	resolvedConf, _ := os.ReadFile("/etc/systemd/resolved.conf")
-	writeBlock(w, "/etc/systemd/resolved.conf", blockString(string(resolvedConf)))
-
-	writeBlock(w, "/etc/systemd/resolved.conf.d/", blockString(dumpConfDir("/etc/systemd/resolved.conf.d")))
-
-	writeBlock(w, "NFTables Ruleset", blockCommand("nft", "list", "ruleset"))
+	writeBlock(w, "Network Interfaces", runCommand("ip", "addr"))
+	writeBlock(w, "IP Rules", runCommand("ip", "rule", "show"))
+	writeBlock(w, "Routing Tables", runCommand("ip", "route", "show", "table", "all"))
 
 	return nil
 }
 
-// resolvectlCmd picks systemd-resolve (old) if present, otherwise resolvectl.
-func resolvectlCmd() string {
-	if _, err := exec.LookPath("systemd-resolve"); err == nil {
-		return "systemd-resolve"
-	}
-	return "resolvectl"
-}
-
-func resolvectlArgs() []string {
-	if _, err := exec.LookPath("systemd-resolve"); err == nil {
-		return []string{"--status"}
-	}
-	return []string{"status"}
-}
-
-// dnsLinesFromNmcli runs `nmcli device show` and returns only the lines
-// relevant to DNS debugging (device identity + DNS entries).
-func dnsLinesFromNmcli() string {
-	output, err := exec.Command("nmcli", "device", "show").Output()
+// addNFTablesInfo streams the full nftables ruleset into nftables-ruleset.txt.
+// It lives in its own entry (rather than being a block inside network-info.txt)
+// because the ruleset dump can be large enough to drown out the surrounding
+// report.
+func addNFTablesInfo(zipWriter *zip.Writer) error {
+	w, err := zipWriter.Create("nftables-ruleset.txt")
 	if err != nil {
-		return fmt.Sprintf("(nmcli error: %v)\n", err)
+		return err
 	}
-	var b strings.Builder
-	for _, line := range strings.Split(string(output), "\n") {
-		if strings.Contains(line, "DNS") ||
-			strings.Contains(line, "DEVICE") ||
-			strings.Contains(line, "TYPE") ||
-			strings.Contains(line, "CONNECTION") {
-			b.WriteString(line)
-			b.WriteByte('\n')
-		}
-	}
-	return b.String()
+	return streamCommandToWriter(w, "nft", "list", "ruleset")
 }
 
-// streamFileWithMetadata returns a writeBlock content producer that streams
-// `ls -la` output for path (which exposes size, permissions, and symlink
-// targets) followed by the file's contents straight into the block.
-func streamFileWithMetadata(path string) func(io.Writer) error {
-	return func(w io.Writer) error {
-		if err := streamCommandToWriter(w, "ls", "-la", path); err != nil {
-			fmt.Fprintf(w, "(error running ls: %v)\n", err)
-		}
-		return streamFileToWriter(w, path)
-	}
-}
-
-// dumpConfDir concatenates every regular file in dir as `-- name --` sections.
-func dumpConfDir(dir string) string {
-	entries, err := os.ReadDir(dir)
+// addDNSInfo writes DNS-related diagnostics (resolv.conf, systemd-resolved,
+// NetworkManager DNS state) to dns-info.txt inside the archive. DNS is a
+// frequent support topic, so these blocks live in their own entry to keep
+// them easy to find alongside the rest of the report.
+func addDNSInfo(zipWriter *zip.Writer) error {
+	w, err := zipWriter.Create("dns-info.txt")
 	if err != nil {
-		return "(directory not found)\n"
+		return err
 	}
-	var b strings.Builder
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
+
+	writeBlock(w, "/etc/resolv.conf (ls -la)", runCommand("ls", "-la", "/etc/resolv.conf"))
+	writeBlock(w, "/etc/resolv.conf", readFile("/etc/resolv.conf"))
+
+	writeBlock(w, "systemd-resolve / resolvectl status", resolvectlStatus())
+
+	writeBlock(w, "nmcli general", runCommand("nmcli", "general"))
+	writeBlock(w, "nmcli device show", runCommand("nmcli", "device", "show"))
+
+	writeBlock(w, "NetworkManager DNS Mode (dbus)", dbusGetProperty(
+		"org.freedesktop.NetworkManager",
+		"/org/freedesktop/NetworkManager/DnsManager",
+		"org.freedesktop.NetworkManager.DnsManager", "Mode"))
+	writeBlock(w, "NetworkManager DNS Configuration (dbus)", dbusGetProperty(
+		"org.freedesktop.NetworkManager",
+		"/org/freedesktop/NetworkManager/DnsManager",
+		"org.freedesktop.NetworkManager.DnsManager", "Configuration"))
+
+	writeBlock(w, "/etc/systemd/resolved.conf", readFile("/etc/systemd/resolved.conf"))
+
+	// conf.d drop-ins land as real zip subdirectories so each file keeps its
+	// name and can be inspected individually. A missing directory is logged
+	// rather than skipped silently so support can tell the difference between
+	// "no drop-ins configured" and "we forgot to collect them".
+	if _, err := os.Stat("/etc/NetworkManager/conf.d"); err == nil {
+		if err := addDirectoryToZip(zipWriter, "/etc/NetworkManager/conf.d", "etc/NetworkManager/conf.d"); err != nil {
+			return err
 		}
-		fmt.Fprintf(&b, "-- %s --\n", entry.Name())
-		if data, err := os.ReadFile(filepath.Join(dir, entry.Name())); err == nil {
-			b.Write(data)
-			b.WriteByte('\n')
-		}
+	} else {
+		log.Println(internal.WarningPrefix, "/etc/NetworkManager/conf.d:", err)
 	}
-	return b.String()
+	if _, err := os.Stat("/etc/systemd/resolved.conf.d"); err == nil {
+		if err := addDirectoryToZip(zipWriter, "/etc/systemd/resolved.conf.d", "etc/systemd/resolved.conf.d"); err != nil {
+			return err
+		}
+	} else {
+		writeBlock(w, "/etc/systemd/resolved.conf.d", fmt.Sprintf("(error: %v)\n", err))
+	}
+
+	return nil
+}
+
+// resolvectlStatus runs the resolver status command, preferring the legacy
+// systemd-resolve binary when present (old systems) and falling back to
+// resolvectl (new systems). Returns the combined output.
+func resolvectlStatus() string {
+	if _, err := exec.LookPath("systemd-resolve"); err == nil {
+		return runCommand("systemd-resolve", "--status")
+	}
+	return runCommand("resolvectl", "status")
 }

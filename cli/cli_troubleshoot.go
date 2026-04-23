@@ -41,7 +41,7 @@ func (c *cmd) Troubleshoot(ctx *cli.Context) error {
 
 		// Show progress if TTY
 		if isTTY && !resp.Done {
-			fmt.Printf("[%3d%%] %s\n", resp.Percentage, resp.Step)
+			fmt.Printf("%s\n", resp.Step)
 		}
 
 		// Final response
