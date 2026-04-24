@@ -476,7 +476,7 @@ func (api *SimpleClientAPI) UpdateDevice(token string, deviceUUID uuid.UUID, upd
 	}
 	resp, err := api.do(req)
 	if err != nil {
-		return DevicesResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
+		return DevicesResponse{}, fmt.Errorf("executing HTTP PATCH request: %w", err)
 	}
 	defer resp.Body.Close()
 
