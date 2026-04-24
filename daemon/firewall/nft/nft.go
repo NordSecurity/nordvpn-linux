@@ -8,7 +8,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/google/nftables"
-	"github.com/google/nftables/binaryutil"
 	"github.com/google/nftables/expr"
 	"github.com/google/nftables/userdata"
 	"golang.org/x/sys/unix"
@@ -16,7 +15,6 @@ import (
 
 const (
 	tableName                       = "nordvpn"
-	excludedInterfacesSetName       = "excluded_interfaces"
 	allowlistSubnetsSetName         = "allowlist_subnets"
 	tcpAllowlistSetName             = "tcp_allowlist"
 	udpAllowlistSetName             = "udp_allowlist"
@@ -35,11 +33,11 @@ const (
 	allowTrafficRoutingPeersSet     = "allow_peer_traffic_routing"
 	lanAccessPeersSet               = "peer_local_network_access"
 	defaultDNSPort                  = 53
+	loopbackInterface               = "lo"
 )
 
 type nftContext struct {
 	table                          *nftables.Table
-	excludedInterfaces             *nftables.Set
 	lanRanges                      *nftables.Set
 	allowlistSubnets               *nftables.Set
 	tcpPorts                       *nftables.Set
@@ -82,10 +80,6 @@ func (n *nft) configure(config firewall.Config) error {
 	nftCtx.table = n.addMainTable()
 	n.conn.DelTable(nftCtx.table)
 	nftCtx.table = n.addMainTable()
-
-	if err := n.addExcludedInterfacesSet(config, nftCtx); err != nil {
-		return err
-	}
 
 	if err := n.addLanRangesSet(nftCtx); err != nil {
 		return err
@@ -154,7 +148,7 @@ func (n *nft) addInputChain(config firewall.Config, nftCtx *nftContext) {
 		Chain: inputChain,
 		Exprs: buildRules(
 			&expr.Verdict{Kind: expr.VerdictAccept},
-			checkInterfaceName("lo", ifNameInput, expr.CmpOpEq),
+			checkInterfaceName(loopbackInterface, ifNameInput, expr.CmpOpEq),
 		),
 		UserData: userdata.AppendString(nil, userdata.TypeComment, "local to local"),
 	})
@@ -230,22 +224,66 @@ func (n *nft) addOutputChain(config firewall.Config, nftCtx *nftContext) {
 		Policy:   &chainPolicy,
 	})
 
-	// drop DNS if port 53 not whitelisted
-	n.addLanDNSDrop(config, nftCtx, outputChain)
+	// oifname "lo" accept
+	n.conn.AddRule(&nftables.Rule{
+		Table: nftCtx.table,
+		Chain: outputChain,
+		Exprs: buildRules(
+			&expr.Verdict{Kind: expr.VerdictAccept},
+			checkInterfaceName(loopbackInterface, ifNameOutput, expr.CmpOpEq),
+		),
+		UserData: userdata.AppendString(nil, userdata.TypeComment, "local to loopback"),
+	})
 
-	if nftCtx.allowlistSubnets != nil {
-		// ip daddr @allowed_subnets accept
+	// ct mark 0xe1f1 accept
+	n.conn.AddRule(&nftables.Rule{
+		Table: nftCtx.table,
+		Chain: outputChain,
+		Exprs: buildRules(
+			&expr.Verdict{Kind: expr.VerdictAccept},
+			checkCtMark(n.fwmark)),
+		UserData: userdata.AppendString(nil, userdata.TypeComment, "VPN transport continuation"),
+	})
+
+	// meta mark 0x0000e1f1 ct mark set 0x0000e1f1 accept
+	n.conn.AddRule(&nftables.Rule{
+		Table: nftCtx.table,
+		Chain: outputChain,
+		Exprs: buildRules(
+			&expr.Verdict{Kind: expr.VerdictAccept},
+			checkMetaMarkAndSetCtMark(n.fwmark),
+		),
+		UserData: userdata.AppendString(nil, userdata.TypeComment, "mark connection for socket with SO_MARK"),
+	})
+
+	if config.MeshnetInfo != nil {
+		// oifname "nordlynx" ip daddr 100.64.0.0/10 accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: nftCtx.table,
 			Chain: outputChain,
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkIPIsInSet(nftCtx.allowlistSubnets, matchDest),
-				setMetaMark(n.fwmark),
+				checkInterfaceName(config.MeshnetInfo.MeshInterface, ifNameOutput, expr.CmpOpEq),
+				checkIPIsPartOfSubnet(internal.MeshSubnet, matchDest, expr.CmpOpEq),
 			),
-			UserData: userdata.AppendString(nil, userdata.TypeComment, "local to allowlist IPs"),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "local to meshnet"),
 		})
 	}
+
+	if len(config.TunnelInterface) > 0 {
+		// oif "nordtun" accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: nftCtx.table,
+			Chain: outputChain,
+			Exprs: buildRules(
+				&expr.Verdict{Kind: expr.VerdictAccept},
+				checkInterfaceName(config.TunnelInterface, ifNameOutput, expr.CmpOpEq),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "local to VPN"),
+		})
+	}
+
+	n.addLanDNSDrop(config, nftCtx, outputChain)
 
 	if nftCtx.tcpPorts != nil {
 		// tcp sport @ports_tcp accept
@@ -275,49 +313,17 @@ func (n *nft) addOutputChain(config firewall.Config, nftCtx *nftContext) {
 		})
 	}
 
-	// ct mark 0xe1f1 accept
-	n.conn.AddRule(&nftables.Rule{
-		Table: nftCtx.table,
-		Chain: outputChain,
-		Exprs: buildRules(
-			&expr.Verdict{Kind: expr.VerdictAccept},
-			checkCtMark(n.fwmark)),
-		UserData: userdata.AppendString(nil, userdata.TypeComment, "VPN transport continuation"),
-	})
-
-	// meta mark 0x0000e1f1 ct mark set 0x0000e1f1 accept
-	n.conn.AddRule(&nftables.Rule{
-		Table: nftCtx.table,
-		Chain: outputChain,
-		Exprs: buildRules(
-			&expr.Verdict{Kind: expr.VerdictAccept},
-			checkMetaMarkAndSetCtMark(n.fwmark),
-		),
-		UserData: userdata.AppendString(nil, userdata.TypeComment, "mark connection for socket with SO_MARK"),
-	})
-
-	// oifname @excluded_interfaces accept
-	n.conn.AddRule(&nftables.Rule{
-		Table: nftCtx.table,
-		Chain: outputChain,
-		Exprs: buildRules(
-			&expr.Verdict{Kind: expr.VerdictAccept},
-			interfaceNameInSet(nftCtx.excludedInterfaces, ifNameOutput),
-		),
-		UserData: userdata.AppendString(nil, userdata.TypeComment, "local to local and local to VPN"),
-	})
-
-	if config.MeshnetInfo != nil {
-		// oifname "nordlynx" ip daddr 100.64.0.0/10 accept
+	if nftCtx.allowlistSubnets != nil {
+		// ip daddr @allowed_subnets accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: nftCtx.table,
 			Chain: outputChain,
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkInterfaceName(config.MeshnetInfo.MeshInterface, ifNameOutput, expr.CmpOpEq),
-				checkIPIsPartOfSubnet(internal.MeshSubnet, matchDest, expr.CmpOpEq),
+				checkIPIsInSet(nftCtx.allowlistSubnets, matchDest),
+				setMetaMark(n.fwmark),
 			),
-			UserData: userdata.AppendString(nil, userdata.TypeComment, "local to meshnet"),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "local to allowlist IPs"),
 		})
 	}
 }
@@ -443,33 +449,6 @@ func (n *nft) addAllowlistPorts(config firewall.Config, nftCtx *nftContext) erro
 		if err := n.conn.AddSet(nftCtx.udpPorts, elements); err != nil {
 			return fmt.Errorf("add UDP ports set: %w", err)
 		}
-	}
-	return nil
-}
-
-func (n *nft) addExcludedInterfacesSet(config firewall.Config, nftCtx *nftContext) error {
-	elems := []nftables.SetElement{
-		{Key: ifname("lo")},
-	}
-	// add excluded interfaces set, lo and tunnel interface
-	nftCtx.excludedInterfaces = &nftables.Set{
-		Table:        nftCtx.table,
-		Name:         excludedInterfacesSetName,
-		KeyType:      nftables.TypeIFName,
-		KeyByteOrder: binaryutil.NativeEndian,
-		// Constant:     true, // disable for strings https://github.com/google/nftables/issues/177
-	}
-
-	tunInterfaceLen := len(config.TunnelInterface)
-	if tunInterfaceLen > 0 {
-		if tunInterfaceLen > unix.IFNAMSIZ {
-			return fmt.Errorf("interface name is too long: %s", config.TunnelInterface)
-		}
-		elems = append(elems, nftables.SetElement{Key: ifname(config.TunnelInterface)})
-	}
-
-	if err := n.conn.AddSet(nftCtx.excludedInterfaces, elems); err != nil {
-		return fmt.Errorf("add excluded interfaces set %w", err)
 	}
 	return nil
 }
