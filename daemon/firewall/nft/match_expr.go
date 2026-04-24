@@ -194,25 +194,6 @@ const (
 	ifNameOutput ifDirection = 2
 )
 
-// iifname @set
-func interfaceNameInSet(interfaces *nftables.Set, direction ifDirection) []expr.Any {
-	dir := expr.MetaKeyIIFNAME
-	if direction == ifNameOutput {
-		dir = expr.MetaKeyOIFNAME
-	}
-	return []expr.Any{
-		&expr.Meta{
-			Key:      dir,
-			Register: 1,
-		},
-		&expr.Lookup{
-			SourceRegister: 1,
-			SetName:        interfaces.Name,
-			SetID:          interfaces.ID,
-		},
-	}
-}
-
 // iifname "nordlynx"
 func checkInterfaceName(ifName string, direction ifDirection, cmp expr.CmpOp) []expr.Any {
 	if len(ifName) == 0 {
