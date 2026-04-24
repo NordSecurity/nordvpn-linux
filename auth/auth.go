@@ -5,6 +5,7 @@ package auth
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -36,11 +37,14 @@ type Checker interface {
 	// GetDedicatedIPServices returns all available server IDs, if server is not selected by the user it will set
 	// ServerID for that service to NoServerSelected
 	GetDedicatedIPServices() ([]DedicatedIPService, error)
+	// HasDedicatedServerService
+	HasDedicatedServerService() (bool, error)
 }
 
 const (
-	VPNServiceID         = 1
-	DedicatedIPServiceID = 11
+	VPNServiceID              = 1
+	DedicatedIPServiceID      = 11
+	DedicatedServersServiceID = 33
 )
 
 type systemTimeExpirationChecker struct{}
@@ -202,6 +206,21 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 	}
 
 	return dipServices, nil
+}
+
+// HasDedicatedServerService
+func (r *RenewingChecker) HasDedicatedServerService() (bool, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	services, err := r.fetchServices()
+	if err != nil {
+		return false, fmt.Errorf("fetching services: %w", err)
+	}
+
+	return slices.ContainsFunc(services, func(service core.ServiceData) bool {
+		return service.ID == DedicatedIPServiceID && r.expChecker.IsExpired(service.ExpiresAt)
+	}), nil
 }
 
 // FindVpnServiceExpiration returns VPN service expiration date in the format of YYY-MM-DD HH:MM:SS

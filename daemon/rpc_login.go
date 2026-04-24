@@ -35,6 +35,10 @@ func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) 
 		}, nil
 	}
 
+	if err := r.SyncDevice(); err != nil {
+		log.Println(internal.ErrorPrefix, "failed to sync device for dedicated servers")
+	}
+
 	// login common with custom logic
 	return r.loginWithToken(in.GetToken())
 }
@@ -213,6 +217,10 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (paylo
 	// memorize what login type started: Login or Signup
 	// (dont forget to reset it after login/signup is completed)
 	r.initialLoginType.set(in.GetType())
+
+	if err := r.SyncDevice(); err != nil {
+		log.Println(internal.ErrorPrefix, "failed to sync device for dedicated servers")
+	}
 
 	return &pb.LoginOAuth2Response{
 		Status: pb.LoginStatus_SUCCESS,
