@@ -361,7 +361,31 @@ func (n *nft) addForwardChain(config firewall.Config, nftCtx *nftContext) {
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "traffic to mesh peer"),
 		})
+	}
 
+	if len(config.TunnelInterface) > 0 {
+		// oif "nordtun" accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: nftCtx.table,
+			Chain: forwardChain,
+			Exprs: buildRules(
+				&expr.Verdict{Kind: expr.VerdictAccept},
+				checkInterfaceName(config.TunnelInterface, ifNameOutput, expr.CmpOpEq),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "internet to allowlist IPs"),
+		})
+
+		// iif "nordtun" ct state established,related accept
+		n.conn.AddRule(&nftables.Rule{
+			Table: nftCtx.table,
+			Chain: forwardChain,
+			Exprs: buildRules(
+				&expr.Verdict{Kind: expr.VerdictAccept},
+				checkInterfaceName(config.TunnelInterface, ifNameInput, expr.CmpOpEq),
+				checkCtState(expr.CtStateBitESTABLISHED|expr.CtStateBitRELATED),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "response to connections inside tunnel"),
+		})
 	}
 
 	n.addLanDNSDrop(config, nftCtx, forwardChain)
@@ -388,19 +412,6 @@ func (n *nft) addForwardChain(config firewall.Config, nftCtx *nftContext) {
 				checkCtState(expr.CtStateBitESTABLISHED|expr.CtStateBitRELATED),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "allow responses to allowlist IPs"),
-		})
-	}
-
-	if len(config.TunnelInterface) > 0 {
-		// oif "nordtun" accept
-		n.conn.AddRule(&nftables.Rule{
-			Table: nftCtx.table,
-			Chain: forwardChain,
-			Exprs: buildRules(
-				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkInterfaceName(config.TunnelInterface, ifNameOutput, expr.CmpOpEq),
-			),
-			UserData: userdata.AppendString(nil, userdata.TypeComment, "internet to allowlist IPs"),
 		})
 	}
 }
