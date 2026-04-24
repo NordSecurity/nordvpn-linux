@@ -95,11 +95,21 @@ func (api *SimpleClientAPI) request(path, method string, data []byte, token stri
 		return nil, err
 	}
 
-	return api.do(req)
+	return api.doRequest(req)
 }
 
-// do request regardless of the authentication.
-func (api *SimpleClientAPI) do(req *http.Request) (*http.Response, error) {
+// doRequest request regardless of the authentication.
+//
+// Response's body will be consumed if an error code is returned. Do not try to read the body in this case.
+func (api *SimpleClientAPI) doRequest(req *http.Request) (*http.Response, error) {
+	return api.do(req, -1)
+}
+
+// doRequest request regardless of the authentication.
+//
+// Response's body will be consumed if an error code is returned and is not equal to acceptedCode. Do not try to read
+// the body in this case.
+func (api *SimpleClientAPI) do(req *http.Request, acceptedCode int) (*http.Response, error) {
 	resp, err := api.client.Do(req)
 
 	// Transport of the request is already up to date
@@ -139,7 +149,7 @@ func (api *SimpleClientAPI) do(req *http.Request) (*http.Response, error) {
 		return nil, fmt.Errorf("validating headers: %w", err)
 	}
 
-	err = ExtractError(resp)
+	err = extractError(resp, acceptedCode)
 	if err != nil {
 		return resp, err
 	}
@@ -154,7 +164,7 @@ func (api *SimpleClientAPI) Plans() (*Plans, error) {
 		return nil, err
 	}
 
-	resp, err := api.do(req)
+	resp, err := api.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +222,7 @@ func (api *SimpleClientAPI) CreateUser(email, password string) (*UserCreateRespo
 		return nil, err
 	}
 
-	resp, err := api.do(req)
+	resp, err := api.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -301,7 +311,7 @@ func (api *SimpleClientAPI) TokenRenew(token string, idempotencyKey uuid.UUID) (
 	}
 	req.Header.Add("Idempotency-Key", idempotencyKey.String())
 
-	resp, err := api.do(req)
+	resp, err := api.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +331,7 @@ func (api *SimpleClientAPI) Servers() (Servers, http.Header, error) {
 		return nil, nil, err
 	}
 
-	resp, err := api.do(req)
+	resp, err := api.doRequest(req)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -347,7 +357,7 @@ func (api *SimpleClientAPI) ServersCountries() (Countries, http.Header, error) {
 		return nil, nil, err
 	}
 
-	resp, err := api.do(req)
+	resp, err := api.doRequest(req)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -369,7 +379,7 @@ func (api *SimpleClientAPI) RecommendedServers(filter ServersFilter, longitude, 
 		return nil, nil, err
 	}
 
-	resp, err := api.do(req)
+	resp, err := api.doRequest(req)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -423,7 +433,7 @@ func (api *SimpleClientAPI) Server(id int64) (*Server, error) {
 		return nil, err
 	}
 
-	resp, err := api.do(req)
+	resp, err := api.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -450,7 +460,7 @@ func (api *SimpleClientAPI) RegisterDevice(token string, deviceRequest DevicesRe
 	if err != nil {
 		return DevicesResponse{}, fmt.Errorf("creating nc credentials request: %w", err)
 	}
-	resp, err := api.do(req)
+	resp, err := api.do(req, 409)
 	if err != nil && !errors.Is(err, ErrConflict) {
 		return DevicesResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
 	}
@@ -474,7 +484,7 @@ func (api *SimpleClientAPI) UpdateDevice(token string, deviceUUID uuid.UUID, upd
 	if err != nil {
 		return DevicesResponse{}, fmt.Errorf("creating nc credentials request: %w", err)
 	}
-	resp, err := api.do(req)
+	resp, err := api.doRequest(req)
 	if err != nil {
 		return DevicesResponse{}, fmt.Errorf("executing HTTP PATCH request: %w", err)
 	}
@@ -495,7 +505,7 @@ func (api *SimpleClientAPI) Insights() (*Insights, error) {
 		return nil, err
 	}
 
-	resp, err := api.do(req)
+	resp, err := api.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -542,7 +552,7 @@ func (api *SimpleClientAPI) NotificationCredentials(token, appUserID string) (No
 	if err != nil {
 		return NotificationCredentialsResponse{}, fmt.Errorf("creating nc credentials request: %w", err)
 	}
-	rawResp, err := api.do(req)
+	rawResp, err := api.doRequest(req)
 	if err != nil {
 		return NotificationCredentialsResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
 	}
@@ -586,7 +596,7 @@ func (api *SimpleClientAPI) NotificationCredentialsRevoke(token, appUserID strin
 	if err != nil {
 		return NotificationCredentialsRevokeResponse{}, fmt.Errorf("creating nc credentials revoke request: %w", err)
 	}
-	rawResp, err := api.do(req)
+	rawResp, err := api.doRequest(req)
 	if err != nil {
 		return NotificationCredentialsRevokeResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
 	}
