@@ -60,6 +60,41 @@ func TestRPCGroups(t *testing.T) {
 	}
 }
 
+func TestRPCGroups_RegionalGroupsFiltered(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	dm := testNewDataManager()
+	dm.serversData.Servers = core.Servers{
+		{
+			Status: core.Online,
+			Technologies: core.Technologies{
+				{ID: core.WireguardTech, Pivot: core.Pivot{Status: core.Online}},
+			},
+			Groups: core.Groups{{ID: 19, Title: "Europe"}},
+		},
+		{
+			Status: core.Online,
+			Technologies: core.Technologies{
+				{ID: core.WireguardTech, Pivot: core.Pivot{Status: core.Online}},
+			},
+			Groups: core.Groups{{ID: config.ServerGroup_P2P, Title: "P2P"}},
+		},
+	}
+
+	cm := newMockConfigManager()
+	cm.c.Technology = config.Technology_NORDLYNX
+
+	rpc := RPC{
+		cm: cm,
+		dm: dm,
+	}
+	payload, _ := rpc.Groups(context.Background(), &pb.Empty{})
+
+	assert.Equal(t, internal.CodeSuccess, payload.Type)
+	assert.Equal(t, 1, len(payload.Servers))
+	assert.Equal(t, "P2P", payload.Servers[0].Name)
+}
+
 func TestRPCGroups_Successful(t *testing.T) {
 	category.Set(t, category.Unit)
 	defer testsCleanup()

@@ -221,10 +221,6 @@ func TestServers(t *testing.T) {
 					ID:    config.ServerGroup_ANTI_DDOS,
 					Title: "Anti DDOS",
 				},
-				{
-					ID:    config.ServerGroup_EUROPE,
-					Title: "Europe",
-				},
 			},
 			[]core.ServerTechnology{
 				core.L2TP,
@@ -252,8 +248,8 @@ func TestServers(t *testing.T) {
 					Title: "Anti DDOS",
 				},
 				{
-					ID:    config.ServerGroup_EUROPE,
-					Title: "Europe",
+					ID:    config.ServerGroup_ANTI_DDOS,
+					Title: "Anti DDOS",
 				},
 			},
 			[]core.ServerTechnology{
@@ -285,8 +281,8 @@ func TestServers(t *testing.T) {
 					Title: "Anti DDOS",
 				},
 				{
-					ID:    config.ServerGroup_EUROPE,
-					Title: "Europe",
+					ID:    config.ServerGroup_ANTI_DDOS,
+					Title: "Anti DDOS",
 				},
 			},
 			[]core.ServerTechnology{
