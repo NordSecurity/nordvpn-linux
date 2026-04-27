@@ -643,32 +643,6 @@ func (n *nft) addMeshPeerToInternet(config firewall.Config, nftCtx *nftContext) 
 		})
 	}
 
-	if nftCtx.tcpPorts != nil {
-		// tcp dport @ports_tcp accept
-		n.conn.AddRule(&nftables.Rule{
-			Table: nftCtx.table,
-			Chain: chain,
-			Exprs: buildRules(
-				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkPortIsInSet(nftCtx.tcpPorts, unix.IPPROTO_TCP, matchDest),
-			),
-			UserData: userdata.AppendString(nil, userdata.TypeComment, "mesh peer to allowlist TCP"),
-		})
-	}
-
-	if nftCtx.udpPorts != nil {
-		// udp dport @ports_udp accept
-		n.conn.AddRule(&nftables.Rule{
-			Table: nftCtx.table,
-			Chain: chain,
-			Exprs: buildRules(
-				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkPortIsInSet(nftCtx.udpPorts, unix.IPPROTO_UDP, matchDest),
-			),
-			UserData: userdata.AppendString(nil, userdata.TypeComment, "mesh peer to allowlist UDP"),
-		})
-	}
-
 	// allow traffic thru VPN when connected
 	// or when no VPN connected and KS=0, everywhere
 	if len(config.TunnelInterface) > 0 || !config.KillSwitch {
@@ -736,32 +710,6 @@ func (n *nft) addInternetToMeshPeer(config firewall.Config, nftCtx *nftContext) 
 				checkIPIsInSet(nftCtx.allowlistSubnets, matchSource),
 			),
 			UserData: userdata.AppendString(nil, userdata.TypeComment, "allowlist IPs to mesh peer"),
-		})
-	}
-
-	if nftCtx.tcpPorts != nil {
-		// tcp sport @ports_tcp accept
-		n.conn.AddRule(&nftables.Rule{
-			Table: nftCtx.table,
-			Chain: chain,
-			Exprs: buildRules(
-				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkPortIsInSet(nftCtx.tcpPorts, unix.IPPROTO_TCP, matchSource),
-			),
-			UserData: userdata.AppendString(nil, userdata.TypeComment, "allowlist TCP to mesh peer"),
-		})
-	}
-
-	if nftCtx.udpPorts != nil {
-		// udp sport @ports_udp accept
-		n.conn.AddRule(&nftables.Rule{
-			Table: nftCtx.table,
-			Chain: chain,
-			Exprs: buildRules(
-				&expr.Verdict{Kind: expr.VerdictAccept},
-				checkPortIsInSet(nftCtx.udpPorts, unix.IPPROTO_UDP, matchSource),
-			),
-			UserData: userdata.AppendString(nil, userdata.TypeComment, "allowlist UDP to mesh peer"),
 		})
 	}
 
