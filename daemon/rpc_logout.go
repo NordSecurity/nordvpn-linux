@@ -23,6 +23,7 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, er
 		DebugPublisherFunc:           r.publisher.Publish,
 		PersistToken:                 in.GetPersistToken(),
 		DisconnectFunc:               r.DoDisconnect,
+		DeviceKeyInvalidator:         r.dedicatedServersKeyManager,
 	})
 
 	if err := r.recentVPNConnStore.Clean(); err != nil {

@@ -6,6 +6,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/access"
+	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -22,6 +23,7 @@ type LogoutHandlerDependencies struct {
 	PublishLogoutEventFunc func(events.DataAuthorization)
 	PublishDisconnectFunc  func(events.DataDisconnect)
 	DebugPublisherFunc     func(string)
+	DeviceKeyInvalidator   devicekey.DeviceKeyInvalidator
 }
 
 // LogoutHandler provides a simple way to register session error handlers
@@ -86,6 +88,7 @@ func (h *LogoutHandler) forceLogout(sessionErr events.ReasonCode) {
 		DebugPublisherFunc:     h.deps.DebugPublisherFunc,
 		DisconnectFunc:         func() (bool, error) { return access.Disconnect(discArgs) },
 		Reason:                 sessionErr,
+		DeviceKeyInvalidator:   h.deps.DeviceKeyInvalidator,
 	})
 
 	if result.Err != nil {

@@ -174,4 +174,14 @@ const (
 
 	// RepoTypeTest defines non-production (qa, development) repo type
 	RepoTypeTest = "nordvpn-test"
+
+	DedicatedServersURL = "/v1/dedicated-servers"
+
+	DevicesURL = DedicatedServersURL + "/devices"
+
+	// /v1/dedicated-servers/devices/<device-uuid>
+	DevicesUpdateURL = DevicesURL + "/%s"
+
+	// TODO: remove once the real API becomes available
+	MockServerBaseURL = ""
 )

@@ -133,7 +133,7 @@ func (m *mockConfigManager) Load(c *config.Config) error {
 	c.Meshnet = m.c.Meshnet
 	c.Mesh = m.c.Mesh
 	c.MeshDevice = m.c.MeshDevice
-	c.MeshPrivateKey = m.c.MeshPrivateKey
+	c.DeviceKey = m.c.DeviceKey
 	c.VirtualLocation = m.c.VirtualLocation
 	return nil
 }

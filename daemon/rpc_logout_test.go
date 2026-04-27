@@ -18,8 +18,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
+	testdevicekey "github.com/NordSecurity/nordvpn-linux/test/mock/devicekey"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
-
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 )
@@ -75,7 +75,9 @@ func TestLogout_Token(t *testing.T) {
 	}
 
 	for _, test := range tests {
+		deviceKeyManagerMock := testdevicekey.MockDeviceKeyManager{}
 		t.Run(test.name, func(t *testing.T) {
+			rpc.dedicatedServersKeyManager = &deviceKeyManagerMock
 			err := rpc.cm.SaveWith(func(c config.Config) config.Config {
 				tokenData := c.TokensData[c.AutoConnectData.ID]
 				if test.loggedInWithToken {
@@ -85,14 +87,14 @@ func TestLogout_Token(t *testing.T) {
 				}
 				tokenData.Token = "1234"
 				c.TokensData[c.AutoConnectData.ID] = tokenData
-				c.MeshPrivateKey = "key"
+				c.DeviceKey = "key"
 				return c
 			})
 			assert.NoError(t, err)
 			resp, err := rpc.Logout(context.Background(), &pb.LogoutRequest{PersistToken: test.persistToken})
 			assert.NoError(t, err)
 			assert.Equal(t, test.result, resp.Type)
-			assert.Equal(t, "", cfgManagerMock.c.MeshPrivateKey, "Mesh private key not removed after logout.")
+			assert.True(t, deviceKeyManagerMock.WasDeviceKeyInvalidated, "Device key was not invalidated after logout.")
 		})
 	}
 }
@@ -134,9 +136,10 @@ func TestLogout_Pause(t *testing.T) {
 					User:    &daemonevents.LoginEvents{Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{}},
 					Service: &daemonevents.ServiceEvents{Disconnect: mockedDisconnectEvents},
 				},
-				pauseManager:       pauseSchedulerMock,
-				connectionInfo:     connectionInfo,
-				recentVPNConnStore: recents.NewRecentConnectionsStore("/test/path", &fs, nil),
+				pauseManager:               pauseSchedulerMock,
+				connectionInfo:             connectionInfo,
+				recentVPNConnStore:         recents.NewRecentConnectionsStore("/test/path", &fs, nil),
+				dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 			}
 
 			if test.isDataDisconnectExpected {
