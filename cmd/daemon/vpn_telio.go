@@ -10,6 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx/libtelio"
+	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 )
 
@@ -40,13 +41,13 @@ func meshnetImplementation(fn daemon.FactoryFunc) (meshnet.Mesh, error) {
 	return mesh, nil
 }
 
-func keygenImplementation(fn daemon.FactoryFunc) (meshnet.KeyGenerator, error) {
+func keygenImplementation(fn daemon.FactoryFunc) (devicekey.KeyGenerator, error) {
 	vpn, err := fn(config.Technology_NORDLYNX)
 	if err != nil {
 		return nil, err
 	}
 
-	keygen, ok := vpn.(meshnet.KeyGenerator)
+	keygen, ok := vpn.(devicekey.KeyGenerator)
 	if !ok {
 		return nil, errors.New("not a keygen")
 	}

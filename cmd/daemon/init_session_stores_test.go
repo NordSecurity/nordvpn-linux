@@ -16,6 +16,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	mockauth "github.com/NordSecurity/nordvpn-linux/test/mock/auth"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/devicekey"
 	mocknetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -113,7 +114,12 @@ func (m *mockRawClientAPI) Server(id int64) (*core.Server, error) {
 func (m *mockRawClientAPI) ServersCountries() (core.Countries, http.Header, error) {
 	return core.Countries{}, nil, nil
 }
-
+func (m *mockRawClientAPI) RegisterDevice(string, core.DevicesRequest) (core.DevicesResponse, error) {
+	return core.DevicesResponse{}, nil
+}
+func (m *mockRawClientAPI) UpdateDevice(string, uuid.UUID, core.UpdateDeviceRequest) (core.DevicesResponse, error) {
+	return core.DevicesResponse{}, nil
+}
 func (m *mockRawClientAPI) Base() string {
 	return "https://api.test.com"
 }
@@ -204,6 +210,12 @@ func (m *mockClientAPI) Orders() ([]core.Order, error) {
 }
 func (m *mockClientAPI) Payments() ([]core.PaymentResponse, error) {
 	return m.mockRawClientAPI.Payments("")
+}
+func (m *mockClientAPI) RegisterDevice(core.DevicesRequest) (core.DevicesResponse, error) {
+	return m.mockRawClientAPI.RegisterDevice("", core.DevicesRequest{})
+}
+func (m *mockClientAPI) UpdateDevice(uuid.UUID, core.UpdateDeviceRequest) (core.DevicesResponse, error) {
+	return m.mockRawClientAPI.UpdateDevice("", uuid.Nil, core.UpdateDeviceRequest{})
 }
 
 func setupTestConfig() *config.Config {
@@ -682,6 +694,7 @@ func TestLogoutReasonCodeSelectionWithProductionCode(t *testing.T) {
 				AuthChecker:            &mockauth.AuthCheckerMock{},
 				PublishDisconnectFunc:  func(events.DataDisconnect) {},
 				DebugPublisherFunc:     func(string) {},
+				DeviceKeyInvalidator:   &devicekey.MockDeviceKeyManager{},
 			})
 
 			switch tt.sessionStore {
@@ -804,6 +817,7 @@ func TestVPNCredsReasonCodeWithAccessTokenRenewal(t *testing.T) {
 				AuthChecker:            &mockauth.AuthCheckerMock{},
 				PublishDisconnectFunc:  func(events.DataDisconnect) {},
 				DebugPublisherFunc:     func(string) {},
+				DeviceKeyInvalidator:   &devicekey.MockDeviceKeyManager{},
 			})
 
 			builder.registerAccessTokenHandlers(logoutHandler)

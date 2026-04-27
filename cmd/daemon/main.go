@@ -47,6 +47,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/openvpn"
+	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/firstopen"
 	"github.com/NordSecurity/nordvpn-linux/events/logger"
@@ -479,10 +480,11 @@ func main() {
 	norduserClient := norduserservice.NewNorduserGRPCClient()
 
 	meshRegistry := registry.NewNotifyingRegistry(clientAPI, meshnetEvents.PeerUpdate)
-	meshnetChecker := meshnet.NewRegisteringChecker(
+	deviceKeyManager := devicekey.NewDeviceKeyManager(
 		fsystem,
 		keygen,
 		meshRegistry,
+		clientAPI,
 	)
 
 	meshMapper := mapper.NewNotifyingMapper(
@@ -492,7 +494,7 @@ func main() {
 	)
 
 	meshnetEvents.PeerUpdate.Subscribe(refresher.NewMeshnet(
-		meshMapper, meshnetChecker, fsystem, netw,
+		meshMapper, deviceKeyManager, fsystem, netw,
 	).NotifyPeerUpdate)
 
 	meshUnsetter := meshunsetter.NewMeshnet(
@@ -536,6 +538,7 @@ func main() {
 		PublishLogoutEventFunc: daemonEvents.User.Logout.Publish,
 		PublishDisconnectFunc:  daemonEvents.Service.Disconnect.Publish,
 		DebugPublisherFunc:     debugSubject.Publish,
+		DeviceKeyInvalidator:   deviceKeyManager,
 	})
 
 	// Configure error handlers for all session stores
@@ -560,6 +563,7 @@ func main() {
 		clientAPI,
 		authChecker,
 		analytics,
+		deviceKeyManager,
 	)
 	consentChecker.PrepareDaemonIfConsentNotCompleted()
 
@@ -598,11 +602,12 @@ func main() {
 		),
 		dataUpdateEvents,
 		pauseEvents,
+		deviceKeyManager,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,
 		fsystem,
-		meshnetChecker,
+		deviceKeyManager,
 		inviter.NewNotifyingInviter(clientAPI, meshnetEvents.PeerUpdate),
 		netw,
 		meshRegistry,
