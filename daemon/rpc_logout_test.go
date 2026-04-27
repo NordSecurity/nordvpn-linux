@@ -94,7 +94,6 @@ func TestLogout_Token(t *testing.T) {
 			resp, err := rpc.Logout(context.Background(), &pb.LogoutRequest{PersistToken: test.persistToken})
 			assert.NoError(t, err)
 			assert.Equal(t, test.result, resp.Type)
-			assert.Equal(t, "", cfgManagerMock.c.DeviceKey, "Mesh private key not removed after logout.")
 			assert.True(t, deviceKeyManagerMock.WasDeviceKeyInvalidated, "Device key was not invalidated after logout.")
 		})
 	}

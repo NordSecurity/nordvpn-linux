@@ -17,7 +17,7 @@ func newConsentChecker(
 	insightsAPI core.InsightsAPI,
 	authChecker auth.Checker,
 	analytics events.Analytics,
-	deviceKeyInvalidator devicekey.DevicekeyInvalidator,
+	deviceKeyInvalidator devicekey.DeviceKeyInvalidator,
 ) daemon.ConsentChecker {
 	return daemon.NewConsentChecker(isDevEnv, cm, insightsAPI, authChecker, analytics, deviceKeyInvalidator)
 }
