@@ -1354,7 +1354,7 @@ func TestSessionErrorHandler_LogoutClearsUserData(t *testing.T) {
 
 	assert.NotContains(t, cfgManager.Cfg.TokensData, uid, "Current user data should be removed")
 	assert.Contains(t, cfgManager.Cfg.TokensData, uid2, "Other user data should remain")
-	assert.True(t, mockDeviceKeyInvalidator.DeviceKeyInvalidated, "Device key should be invalidated.")
+	assert.True(t, mockDeviceKeyInvalidator.WasDeviceKeyInvalidated, "Device key should be invalidated.")
 }
 
 // Test renewal response with invalid data

@@ -1,10 +1,10 @@
 package devicekey
 
 type MockDeviceKeyInvalidator struct {
-	deviceKeyInvalidated bool
+	WasDeviceKeyInvalidated bool
 }
 
 func (m *MockDeviceKeyInvalidator) InvalidateDeviceKeyData() error {
-	m.deviceKeyInvalidated = true
+	m.WasDeviceKeyInvalidated = true
 	return nil
 }
