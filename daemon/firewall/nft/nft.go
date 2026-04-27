@@ -643,6 +643,7 @@ func (n *nft) addMeshPeerToInternet(config firewall.Config, nftCtx *nftContext) 
 		})
 	}
 
+	// some dummy change to trigger pipeline
 	// allow traffic thru VPN when connected
 	// or when no VPN connected and KS=0, everywhere
 	if len(config.TunnelInterface) > 0 || !config.KillSwitch {
