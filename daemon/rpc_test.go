@@ -116,7 +116,7 @@ func testRPC() *RPC {
 		sharedctx.New(),
 		mock.NewRemoteConfigMock(),
 		state.NewConnectionInfo(),
-		NewConsentChecker(false, cm, api, &workingLoginChecker{}, &analytics, &testdevicekey.MockDeviceKeyInvalidator{}),
+		NewConsentChecker(false, cm, api, &workingLoginChecker{}, &analytics, &testdevicekey.MockDeviceKeyManager{}),
 		recents.NewRecentConnectionsStore(TestdataPath+TestRecentConnFile, &internal.StdFilesystemHandle{}, nil),
 		daemonEvents.NewDataUpdateEvents(),
 		&devicekey.DeviceKeyManagerImpl{},

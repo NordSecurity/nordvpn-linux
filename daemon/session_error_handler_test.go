@@ -113,7 +113,7 @@ func TestRegisterSessionErrorHandler(t *testing.T) {
 				DebugPublisherFunc: func(msg string) {
 					captured.debugMessages = append(captured.debugMessages, msg)
 				},
-				DeviceKeyInvalidator: &devicekey.MockDeviceKeyInvalidator{},
+				DeviceKeyInvalidator: &devicekey.MockDeviceKeyManager{},
 			}
 
 			logoutHandler := NewLogoutHandler(deps)
@@ -171,7 +171,7 @@ func TestSessionErrorHandler_IntegrationWithAccessTokenStore(t *testing.T) {
 		},
 		PublishDisconnectFunc: func(e events.DataDisconnect) {},
 		DebugPublisherFunc:    func(msg string) {},
-		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyInvalidator{},
+		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyManager{},
 	}
 
 	RegisterSessionErrorHandler(registry, deps)
@@ -233,7 +233,7 @@ func TestSessionErrorHandler_APIErrorToLogoutFlow(t *testing.T) {
 		DebugPublisherFunc: func(msg string) {
 			flowSteps = append(flowSteps, "debug_message")
 		},
-		DeviceKeyInvalidator: &devicekey.MockDeviceKeyInvalidator{},
+		DeviceKeyInvalidator: &devicekey.MockDeviceKeyManager{},
 	}
 
 	RegisterSessionErrorHandler(registry, deps)
@@ -287,7 +287,7 @@ func TestSessionErrorHandler_HandlesProperlyWrappedErrors(t *testing.T) {
 		},
 		PublishDisconnectFunc: func(e events.DataDisconnect) {},
 		DebugPublisherFunc:    func(msg string) {},
-		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyInvalidator{},
+		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyManager{},
 	}
 
 	RegisterSessionErrorHandler(registry, deps)
@@ -321,7 +321,7 @@ func TestSessionErrorHandler_DoesNotHandleIncorrectlyWrappedErrors(t *testing.T)
 		},
 		PublishDisconnectFunc: func(e events.DataDisconnect) {},
 		DebugPublisherFunc:    func(msg string) {},
-		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyInvalidator{},
+		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyManager{},
 	}
 
 	RegisterSessionErrorHandler(registry, deps)
@@ -670,7 +670,7 @@ func TestSessionErrorHandler_SmartClientAPIIntegration(t *testing.T) {
 				DebugPublisherFunc: func(msg string) {
 					debugMessages = append(debugMessages, msg)
 				},
-				DeviceKeyInvalidator: &devicekey.MockDeviceKeyInvalidator{},
+				DeviceKeyInvalidator: &devicekey.MockDeviceKeyManager{},
 			}
 			RegisterSessionErrorHandler(errorRegistry, deps)
 
@@ -775,7 +775,7 @@ func TestSessionErrorHandler_ServicesAPIWithSmartClient(t *testing.T) {
 		},
 		PublishDisconnectFunc: func(e events.DataDisconnect) {},
 		DebugPublisherFunc:    func(msg string) {},
-		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyInvalidator{},
+		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyManager{},
 	}
 	RegisterSessionErrorHandler(errorRegistry, deps)
 
@@ -863,7 +863,7 @@ func TestSessionErrorHandler_ConcurrentLogoutPrevention(t *testing.T) {
 				}
 			}
 		},
-		DeviceKeyInvalidator: &devicekey.MockDeviceKeyInvalidator{},
+		DeviceKeyInvalidator: &devicekey.MockDeviceKeyManager{},
 	}
 	RegisterSessionErrorHandler(errorRegistry, deps)
 
@@ -969,7 +969,7 @@ func TestSessionErrorHandler_ConcurrentAPICallsWithErrors(t *testing.T) {
 				}
 			}
 		},
-		DeviceKeyInvalidator: &devicekey.MockDeviceKeyInvalidator{},
+		DeviceKeyInvalidator: &devicekey.MockDeviceKeyManager{},
 	}
 	RegisterSessionErrorHandler(errorRegistry, deps)
 
@@ -1070,7 +1070,7 @@ func TestSessionErrorHandler_NetworkErrorDuringRenewal(t *testing.T) {
 		},
 		PublishDisconnectFunc: func(e events.DataDisconnect) {},
 		DebugPublisherFunc:    func(msg string) {},
-		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyInvalidator{},
+		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyManager{},
 	}
 	RegisterSessionErrorHandler(errorRegistry, deps)
 
@@ -1173,7 +1173,7 @@ func TestSessionErrorHandler_EmptyTokenScenarios(t *testing.T) {
 				},
 				PublishDisconnectFunc: func(e events.DataDisconnect) {},
 				DebugPublisherFunc:    func(msg string) {},
-				DeviceKeyInvalidator:  &devicekey.MockDeviceKeyInvalidator{},
+				DeviceKeyInvalidator:  &devicekey.MockDeviceKeyManager{},
 			}
 			RegisterSessionErrorHandler(errorRegistry, deps)
 
@@ -1255,7 +1255,7 @@ func TestSessionErrorHandler_MalformedTokenExpiry(t *testing.T) {
 		},
 		PublishDisconnectFunc: func(e events.DataDisconnect) {},
 		DebugPublisherFunc:    func(msg string) {},
-		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyInvalidator{},
+		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyManager{},
 	}
 	RegisterSessionErrorHandler(errorRegistry, deps)
 
@@ -1315,7 +1315,7 @@ func TestSessionErrorHandler_LogoutClearsUserData(t *testing.T) {
 		tokenRenewError:  core.ErrUnauthorized,
 	}
 
-	mockDeviceKeyInvalidator := devicekey.MockDeviceKeyInvalidator{}
+	mockDeviceKeyInvalidator := devicekey.MockDeviceKeyManager{}
 
 	errorRegistry := internal.NewErrorHandlingRegistry[error]()
 	deps := LogoutHandlerDependencies{
@@ -1399,7 +1399,7 @@ func TestSessionErrorHandler_InvalidRenewalResponse(t *testing.T) {
 		},
 		PublishDisconnectFunc: func(e events.DataDisconnect) {},
 		DebugPublisherFunc:    func(msg string) {},
-		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyInvalidator{},
+		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyManager{},
 	}
 	RegisterSessionErrorHandler(errorRegistry, deps)
 
@@ -1468,7 +1468,7 @@ func TestSessionErrorHandler_LogoutEventAlwaysPublished(t *testing.T) {
 		},
 		PublishDisconnectFunc: func(e events.DataDisconnect) {},
 		DebugPublisherFunc:    func(msg string) {},
-		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyInvalidator{},
+		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyManager{},
 	}
 	RegisterSessionErrorHandler(errorRegistry, deps)
 

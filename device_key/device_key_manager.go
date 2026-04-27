@@ -208,6 +208,9 @@ func (d *DeviceKeyManagerImpl) CheckAndRegisterDedicatedServers() bool {
 }
 
 func (d *DeviceKeyManagerImpl) InvalidateDeviceKeyData() error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
 	err := d.configManager.SaveWith(func(c config.Config) config.Config {
 		c.DeviceKey = ""
 		c = *invalidateKeyData(&c)
@@ -284,7 +287,6 @@ func (d *DeviceKeyManagerImpl) registerMeshnet(deviceKey string,
 	}
 
 	return cfg, nil
-
 }
 
 func (d *DeviceKeyManagerImpl) registerDedicatedServer(deviceKey string,

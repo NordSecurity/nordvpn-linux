@@ -7,6 +7,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon"
+	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/events"
 )
 
@@ -30,6 +31,7 @@ func newConsentChecker(
 	_ core.InsightsAPI,
 	_ auth.Checker,
 	_ events.Analytics,
+	_ devicekey.DeviceKeyInvalidator,
 ) daemon.ConsentChecker {
 	return &NoOpConsentChecker{}
 }

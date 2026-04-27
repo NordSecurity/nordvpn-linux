@@ -1,10 +1,14 @@
 package devicekey
 
-type MockDeviceKeyInvalidator struct {
+type MockDeviceKeyManager struct {
 	WasDeviceKeyInvalidated bool
 }
 
-func (m *MockDeviceKeyInvalidator) InvalidateDeviceKeyData() error {
+func (m *MockDeviceKeyManager) CheckAndRegisterDedicatedServers() bool {
+	return false
+}
+
+func (m *MockDeviceKeyManager) InvalidateDeviceKeyData() error {
 	m.WasDeviceKeyInvalidated = true
 	return nil
 }

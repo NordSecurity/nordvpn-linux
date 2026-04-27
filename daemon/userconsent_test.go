@@ -73,7 +73,7 @@ func TestIsConsentFlowCompleted(t *testing.T) {
 				&insights.InsightsMock{},
 				&auth.AuthCheckerMock{},
 				&analytics,
-				&devicekey.MockDeviceKeyInvalidator{},
+				&devicekey.MockDeviceKeyManager{},
 			)
 			got := consentChecker.IsConsentFlowCompleted()
 			assert.Equal(t, got, tt.expected)
@@ -249,7 +249,8 @@ func TestDoLightLogout(t *testing.T) {
 	}
 	cm := &mock.ConfigManager{Cfg: &cfg}
 	analytics := events.NewAnalytics(config.ConsentUndefined)
-	acc := &AnalyticsConsentChecker{cm: cm, analytics: &analytics}
+	acc := &AnalyticsConsentChecker{cm: cm, analytics: &analytics,
+		deviceKeyInvalidator: &devicekey.MockDeviceKeyManager{}}
 	assert.False(t, cm.Saved)
 	assert.True(t, len(cm.Cfg.TokensData) > 0)
 	assert.True(t, cm.Cfg.AutoConnectData.ID != 0)
@@ -330,7 +331,11 @@ func TestPrepareDaemonIfConsentNotCompleted(t *testing.T) {
 			authChk := &auth.AuthCheckerMock{LoggedIn: tt.authLoggedIn}
 			analytics := events.NewAnalytics(config.ConsentUndefined)
 
-			acc := &AnalyticsConsentChecker{cm: cm, insightsAPI: api, authChecker: authChk, analytics: &analytics}
+			acc := &AnalyticsConsentChecker{cm: cm,
+				insightsAPI:          api,
+				authChecker:          authChk,
+				analytics:            &analytics,
+				deviceKeyInvalidator: &devicekey.MockDeviceKeyManager{}}
 			acc.PrepareDaemonIfConsentNotCompleted()
 
 			assert.Equal(t, cm.Saved, tt.expectedSaved)

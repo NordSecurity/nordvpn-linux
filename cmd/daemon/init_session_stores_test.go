@@ -694,7 +694,7 @@ func TestLogoutReasonCodeSelectionWithProductionCode(t *testing.T) {
 				AuthChecker:            &mockauth.AuthCheckerMock{},
 				PublishDisconnectFunc:  func(events.DataDisconnect) {},
 				DebugPublisherFunc:     func(string) {},
-				DeviceKeyInvalidator:   &devicekey.MockDeviceKeyInvalidator{},
+				DeviceKeyInvalidator:   &devicekey.MockDeviceKeyManager{},
 			})
 
 			switch tt.sessionStore {
@@ -817,7 +817,7 @@ func TestVPNCredsReasonCodeWithAccessTokenRenewal(t *testing.T) {
 				AuthChecker:            &mockauth.AuthCheckerMock{},
 				PublishDisconnectFunc:  func(events.DataDisconnect) {},
 				DebugPublisherFunc:     func(string) {},
-				DeviceKeyInvalidator:   &devicekey.MockDeviceKeyInvalidator{},
+				DeviceKeyInvalidator:   &devicekey.MockDeviceKeyManager{},
 			})
 
 			builder.registerAccessTokenHandlers(logoutHandler)

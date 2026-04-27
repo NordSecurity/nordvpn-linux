@@ -578,6 +578,7 @@ func main() {
 		clientAPI,
 		authChecker,
 		analytics,
+		deviceKeyManager,
 	)
 	consentChecker.PrepareDaemonIfConsentNotCompleted()
 
