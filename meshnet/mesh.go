@@ -28,11 +28,3 @@ type Mesh interface {
 	// NetworkChanged is called at network changes
 	NetworkChanged() error
 }
-
-// KeyGenerator for use in meshnet.
-type KeyGenerator interface {
-	// Private returns base64 encoded private key
-	Private() string
-	// Public expects base64 encoded private key and returns base64 encoded public key
-	Public(string) string
-}

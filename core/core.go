@@ -56,6 +56,11 @@ type SubscriptionAPI interface {
 	Payments() ([]PaymentResponse, error)
 }
 
+type DedicatedServersAPI interface {
+	RegisterDevice(DevicesRequest) (DevicesResponse, error)
+	UpdateDevice(uuid.UUID, UpdateDeviceRequest) (DevicesResponse, error)
+}
+
 type ErrMaxBytesLimit struct {
 	Limit int64
 }

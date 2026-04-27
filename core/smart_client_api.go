@@ -15,6 +15,7 @@ type ClientAPI interface {
 	ServersAPI
 	CombinedAPI
 	SubscriptionAPI
+	DedicatedServersAPI
 	mesh.Mapper
 	mesh.Registry
 	mesh.Inviter
@@ -135,6 +136,18 @@ func (s *smartClientAPI) Server(id int64) (*Server, error) {
 
 func (s *smartClientAPI) ServersCountries() (Countries, http.Header, error) {
 	return s.wrapped.ServersCountries()
+}
+
+func (s *smartClientAPI) RegisterDevice(req DevicesRequest) (DevicesResponse, error) {
+	return callWithToken(s.store, func(token string) (DevicesResponse, error) {
+		return s.wrapped.RegisterDevice(token, req)
+	})
+}
+
+func (s *smartClientAPI) UpdateDevice(deviceUUID uuid.UUID, req UpdateDeviceRequest) (DevicesResponse, error) {
+	return callWithToken(s.store, func(token string) (DevicesResponse, error) {
+		return s.wrapped.UpdateDevice(token, deviceUUID, req)
+	})
 }
 
 func (s *smartClientAPI) Base() string {
