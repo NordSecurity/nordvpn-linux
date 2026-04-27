@@ -44,6 +44,7 @@ func (c *cmd) Troubleshoot(ctx *cli.Context) error {
 		// path with no error.
 		if resp.FilePath != "" {
 			color.Green(MsgTroubleshootSuccess, resp.FilePath)
+			color.Yellow(MsgTroubleshootDisclaimer)
 			return nil
 		}
 

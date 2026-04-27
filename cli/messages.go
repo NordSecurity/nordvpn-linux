@@ -395,6 +395,7 @@ Your browsing activities remain private, regardless of your choice.
 	SetARPIgnoreWarning      = "You’ve turned off arp-ignore. This is an advanced privacy setting and should only be off if your network setup requires ARP responses."
 
 	// Troubleshoot
-	MsgTroubleshootSuccess = "Diagnostics collected successfully.\nFile saved to: %s"
-	MsgTroubleshootFailure = "Failed to collect diagnostics. Please try again or contact support."
+	MsgTroubleshootSuccess    = "Diagnostics collected successfully.\nFile saved to: %s"
+	MsgTroubleshootFailure    = "Failed to collect diagnostics. Please try again or contact support."
+	MsgTroubleshootDisclaimer = "WARNING: this archive contains sensitive information about your system and configuration. Share it only with NordVPN customer support, and only over a secure channel."
 )

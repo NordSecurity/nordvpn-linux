@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -340,8 +341,35 @@ func TestFailToExtractDaemonLogs(t *testing.T) {
 	err := addDaemonLogs(zw, daemonSupervisorUnknown)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unable to extract daemon logs automatically")
-	assert.Contains(t, err.Error(), "systemd, snap, or initd")
+	assert.Contains(t, err.Error(), "systemd or snap")
 	assert.Contains(t, err.Error(), "contact customer support")
+}
+
+// TestCreateDiagnosticsZip_UniqueFilename verifies that back-to-back calls
+// produce distinct paths even when they share the same second-precision
+// timestamp — the random suffix injected by os.CreateTemp's `*` is what
+// guarantees uniqueness, so two collections in the same second cannot
+// clobber each other's output.
+func TestCreateDiagnosticsZip_UniqueFilename(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	dir := t.TempDir()
+
+	const N = 5
+	seen := make(map[string]bool, N)
+	for i := 0; i < N; i++ {
+		f, err := createDiagnosticsZip(dir)
+		require.NoError(t, err)
+		require.NoError(t, f.Close())
+
+		name := filepath.Base(f.Name())
+		assert.False(t, seen[name], "duplicate filename %q (iteration %d)", name, i)
+		seen[name] = true
+
+		assert.True(t, strings.HasPrefix(name, "nordvpn-diagnostics-"), "unexpected prefix: %q", name)
+		assert.True(t, strings.HasSuffix(name, ".zip"), "unexpected suffix: %q", name)
+	}
+	assert.Len(t, seen, N, "expected %d unique filenames", N)
 }
 
 func TestTroubleshootFailsWhengRPCPeerIsInvalid(t *testing.T) {
