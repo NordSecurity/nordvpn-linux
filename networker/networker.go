@@ -786,10 +786,10 @@ func (netw *Combined) UnsetFirewall() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
-	// just refresh the firewall because the netw.fwConfig already contains the correct values
-	if err := netw.configureFirewall(netw.fwConfig); err != nil {
+	if err := netw.unsetKillSwitch(); err != nil {
 		return fmt.Errorf("unset firewall: %w", err)
 	}
+
 	return nil
 }
 
