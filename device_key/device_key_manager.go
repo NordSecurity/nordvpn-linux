@@ -99,8 +99,9 @@ func invalidateKeyData(cfg *config.Config) *config.Config {
 	return cfg
 }
 
-// getDeviceKey returns device key from cfg or generates a new key if it doesn't exist. Returns true if key was not
-// found in the provided config.
+// getDeviceKey returns device key from cfg or generates a new key if it doesn't exist. Returns a tuple where first
+// element is the device key and second element is a bool that holds true if new key got generated and false if old key
+// was read from the cfg.
 func (d *DeviceKeyManagerImpl) getDeviceKey(cfg config.Config) (string, bool) {
 	if cfg.DeviceKey == "" {
 		return d.keyGenerator.Private(), true
@@ -129,7 +130,7 @@ func (d *DeviceKeyManagerImpl) CheckAndRegisterMeshnet() bool {
 
 	newConfig, err := d.registerKey(&cfg, d.registerMeshnet)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to register new device key: %s", err)
+		log.Println(internal.ErrorPrefix, "failed to register new device key:", err)
 		return false
 	}
 
@@ -139,7 +140,7 @@ func (d *DeviceKeyManagerImpl) CheckAndRegisterMeshnet() bool {
 	}
 
 	if err := isMeshnetRegistrationInfoCorrect(*newConfig); err != nil {
-		log.Println(internal.ErrorPrefix, "registration failed: %s", err)
+		log.Println(internal.ErrorPrefix, "registration failed:", err)
 		return false
 	}
 	return true
