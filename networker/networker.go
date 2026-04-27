@@ -786,6 +786,10 @@ func (netw *Combined) UnsetFirewall() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
+	if netw.isKillSwitchSet {
+		return nil
+	}
+
 	if err := netw.unsetKillSwitch(); err != nil {
 		return fmt.Errorf("unset firewall: %w", err)
 	}
