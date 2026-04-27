@@ -27,6 +27,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
+	testdevicekey "github.com/NordSecurity/nordvpn-linux/test/mock/devicekey"
 	testevents "github.com/NordSecurity/nordvpn-linux/test/mock/events"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
@@ -115,7 +116,7 @@ func testRPC() *RPC {
 		sharedctx.New(),
 		mock.NewRemoteConfigMock(),
 		state.NewConnectionInfo(),
-		NewConsentChecker(false, cm, api, &workingLoginChecker{}, &analytics),
+		NewConsentChecker(false, cm, api, &workingLoginChecker{}, &analytics, &testdevicekey.MockDeviceKeyInvalidator{}),
 		recents.NewRecentConnectionsStore(TestdataPath+TestRecentConnFile, &internal.StdFilesystemHandle{}, nil),
 		daemonEvents.NewDataUpdateEvents(),
 		&devicekey.DeviceKeyManagerImpl{},

@@ -16,6 +16,11 @@ import (
 	"github.com/google/uuid"
 )
 
+type DeviceKeyInvalidator interface {
+	// InvalidateDeviceKeyData invalidates the device key and all of it's associated data
+	InvalidateDeviceKeyData() error
+}
+
 // KeyGenerator for use in device key generation.
 type KeyGenerator interface {
 	// Private returns base64 encoded private key
@@ -28,7 +33,7 @@ type KeyGenerator interface {
 type DelayFunc func(duration time.Duration)
 
 type MeshnetDeviceKeyManager interface {
-	// RegisterMeshnet checks if the device key is registered for meshnet and registers it if it isn't.
+	// CheckAndRegisterMeshnet checks if the device key is registered for meshnet and registers it if it isn't.
 	CheckAndRegisterMeshnet() bool
 	// ForceRegisterMeshnet registers device key for meshnet.
 	ForceRegisterMeshnet() error
@@ -36,13 +41,14 @@ type MeshnetDeviceKeyManager interface {
 
 type DedicatedServersKeyManager interface {
 	CheckAndRegisterDedicatedServers() bool
+	DeviceKeyInvalidator
 }
 
 // DeviceKeyManagerImpl does both registration checks and registration, if it's not done.
 type DeviceKeyManagerImpl struct {
 	configManager       config.Manager
 	keyGenerator        KeyGenerator
-	meshnetReggistry    cmesh.Registry
+	meshnetRegistry     cmesh.Registry
 	dedicatedServersAPI core.DedicatedServersAPI
 	mu                  sync.Mutex
 	delayFunc           DelayFunc
@@ -58,7 +64,7 @@ func NewDeviceKeyManager(
 	return &DeviceKeyManagerImpl{
 		configManager:       configManager,
 		keyGenerator:        keyGenerator,
-		meshnetReggistry:    meshnetRegistery,
+		meshnetRegistry:     meshnetRegistery,
 		dedicatedServersAPI: dedicatedServersAPI,
 		delayFunc:           time.Sleep}
 }
@@ -87,7 +93,7 @@ func isDedicatedServersRegistrationInfoCorrect(cfg config.Config) bool {
 	return cfg.DeviceKey != "" && cfg.DeviceUUID != uuid.Nil
 }
 
-func invalidateKeyData(cfg config.Config) config.Config {
+func invalidateKeyData(cfg *config.Config) *config.Config {
 	cfg.MeshDevice = nil
 	cfg.DeviceUUID = uuid.Nil
 	return cfg
@@ -121,18 +127,18 @@ func (d *DeviceKeyManagerImpl) CheckAndRegisterMeshnet() bool {
 		return true
 	}
 
-	newConfig, err := d.registerKey(cfg, d.registerMeshnet)
+	newConfig, err := d.registerKey(&cfg, d.registerMeshnet)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to register new device key: %s", err)
 		return false
 	}
 
-	if err := d.configManager.SaveWith(keyConfig(newConfig)); err != nil {
+	if err := d.configManager.SaveWith(keyConfig(*newConfig)); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 		return false
 	}
 
-	if err := isMeshnetRegistrationInfoCorrect(newConfig); err != nil {
+	if err := isMeshnetRegistrationInfoCorrect(*newConfig); err != nil {
 		log.Println(internal.ErrorPrefix, "registration failed: %s", err)
 		return false
 	}
@@ -151,29 +157,25 @@ func (d *DeviceKeyManagerImpl) ForceRegisterMeshnet() error {
 		return fmt.Errorf("loading config: %w", err)
 	}
 
-	newConfig, err := d.registerKey(cfg, d.registerMeshnet)
+	newConfig, err := d.registerKey(&cfg, d.registerMeshnet)
 	if err != nil {
 		return fmt.Errorf("registering device key: %w", err)
 	}
 
-	if err := d.configManager.SaveWith(keyConfig(newConfig)); err != nil {
+	if err := d.configManager.SaveWith(keyConfig(*newConfig)); err != nil {
 		return err
 	}
 
-	if err := isMeshnetRegistrationInfoCorrect(newConfig); err != nil {
-		return fmt.Errorf("meshnet registration info is not correct after registration: %w", err)
-	}
-
-	return nil
+	return isMeshnetRegistrationInfoCorrect(*newConfig)
 }
 
 type registerFunc func(deviceKey string,
 	distroName string,
 	isKeyNew bool,
-	cfg config.Config) (config.Config, error)
+	cfg *config.Config) (*config.Config, error)
 
-// CheckAndRegisterDedicatedServers checks if device key is registered for the dedicated servers and registers it if it
-// isn't. Return true if the key was successfully registered.
+// CheckAndRegisterDedicatedServers checks if device key is registered for the dedicated servers and registers it if not.
+// Returns true if the key was successfully registered.
 //
 // Thread-safe.
 func (d *DeviceKeyManagerImpl) CheckAndRegisterDedicatedServers() bool {
@@ -190,37 +192,50 @@ func (d *DeviceKeyManagerImpl) CheckAndRegisterDedicatedServers() bool {
 		return true
 	}
 
-	newConfig, err := d.registerKey(cfg, d.registerDedicatedServer)
+	newConfig, err := d.registerKey(&cfg, d.registerDedicatedServer)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to register device key for dedicated servers:", err)
 		return false
 	}
 
-	if err := d.configManager.SaveWith(keyConfig(newConfig)); err != nil {
+	if err := d.configManager.SaveWith(keyConfig(*newConfig)); err != nil {
 		log.Println(internal.ErrorPrefix, "failed to save dedicated servers config:", err)
 		return false
 	}
 
-	return isDedicatedServersRegistrationInfoCorrect(newConfig)
+	return isDedicatedServersRegistrationInfoCorrect(*newConfig)
+}
+
+func (d *DeviceKeyManagerImpl) InvalidateDeviceKeyData() error {
+	err := d.configManager.SaveWith(func(c config.Config) config.Config {
+		c.DeviceKey = ""
+		c = *invalidateKeyData(&c)
+		return c
+	})
+	if err != nil {
+		return fmt.Errorf("invalidating key data: %w", err)
+	}
+
+	return nil
 }
 
 // registerKey reads the device key from local config(or generates it if it doesn't exist) and registers it using the
 // provided registerFunc.
-func (d *DeviceKeyManagerImpl) registerKey(cfg config.Config,
-	registerFunc registerFunc) (config.Config, error) {
-	deviceKey, newKey := d.getDeviceKey(cfg)
+func (d *DeviceKeyManagerImpl) registerKey(cfg *config.Config,
+	registerFunc registerFunc) (*config.Config, error) {
+	deviceKey, newKey := d.getDeviceKey(*cfg)
 	if newKey {
 		cfg = invalidateKeyData(cfg)
 	}
 
 	distroName, err := sysinfo.GetHostOSName()
 	if err != nil {
-		return cfg, err
+		return nil, err
 	}
 
 	cfg, err = registerFunc(deviceKey, distroName, newKey, cfg)
 	if err != nil {
-		return cfg, err
+		return nil, err
 	}
 
 	return cfg, nil
@@ -229,9 +244,9 @@ func (d *DeviceKeyManagerImpl) registerKey(cfg config.Config,
 func (d *DeviceKeyManagerImpl) registerMeshnet(deviceKey string,
 	distroName string,
 	isKeyNew bool,
-	cfg config.Config) (config.Config, error) {
+	cfg *config.Config) (*config.Config, error) {
 	token := cfg.TokensData[cfg.AutoConnectData.ID].Token
-	peer, err := d.meshnetReggistry.Register(token, cmesh.Machine{
+	peer, err := d.meshnetRegistry.Register(token, cmesh.Machine{
 		HardwareID:      cfg.MachineID,
 		PublicKey:       d.keyGenerator.Public(deviceKey),
 		OS:              cmesh.OperatingSystem{Name: "linux", Distro: distroName},
@@ -246,7 +261,7 @@ func (d *DeviceKeyManagerImpl) registerMeshnet(deviceKey string,
 		isKeyNew = true
 
 		token := cfg.TokensData[cfg.AutoConnectData.ID].Token
-		peer, err = d.meshnetReggistry.Register(token, cmesh.Machine{
+		peer, err = d.meshnetRegistry.Register(token, cmesh.Machine{
 			HardwareID:      cfg.MachineID,
 			PublicKey:       d.keyGenerator.Public(deviceKey),
 			OS:              cmesh.OperatingSystem{Name: "linux", Distro: distroName},
@@ -254,7 +269,7 @@ func (d *DeviceKeyManagerImpl) registerMeshnet(deviceKey string,
 		})
 	}
 	if err != nil {
-		return cfg, fmt.Errorf("registering meshnet: %w", err)
+		return nil, fmt.Errorf("registering meshnet: %w", err)
 	}
 
 	cfg.MeshDevice = peer
@@ -268,12 +283,13 @@ func (d *DeviceKeyManagerImpl) registerMeshnet(deviceKey string,
 	}
 
 	return cfg, nil
+
 }
 
 func (d *DeviceKeyManagerImpl) registerDedicatedServer(deviceKey string,
 	distroName string,
 	isKeyNew bool,
-	cfg config.Config) (config.Config, error) {
+	cfg *config.Config) (*config.Config, error) {
 	if isKeyNew {
 		cfg = invalidateKeyData(cfg)
 	}
@@ -294,21 +310,21 @@ func (d *DeviceKeyManagerImpl) registerDedicatedServer(deviceKey string,
 
 		uuid, uuidParseErr := uuid.Parse(resp.UUID)
 		if uuidParseErr != nil {
-			return cfg, fmt.Errorf("parsing UUID: %w", uuidParseErr)
+			return nil, fmt.Errorf("parsing UUID: %w", uuidParseErr)
 		}
 
 		resp, err = d.dedicatedServersAPI.UpdateDevice(uuid, core.UpdateDeviceRequest{
-			PublicKey: deviceKey,
+			PublicKey: d.keyGenerator.Public(deviceKey),
 			Name:      fmt.Sprintf("Linux %s", distroName)})
 	}
 
 	if err != nil {
-		return cfg, fmt.Errorf("registering device in the backend: %w", err)
+		return nil, fmt.Errorf("registering device in the backend: %w", err)
 	}
 
 	uuid, err := uuid.Parse(resp.UUID)
 	if err != nil {
-		return cfg, fmt.Errorf("parsing UUID: %w", err)
+		return nil, fmt.Errorf("parsing UUID: %w", err)
 	}
 
 	cfg.DeviceUUID = uuid

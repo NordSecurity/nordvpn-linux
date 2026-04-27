@@ -556,6 +556,7 @@ func main() {
 		PublishLogoutEventFunc: daemonEvents.User.Logout.Publish,
 		PublishDisconnectFunc:  daemonEvents.Service.Disconnect.Publish,
 		DebugPublisherFunc:     debugSubject.Publish,
+		DeviceKeyInvalidator:   deviceKeyManager,
 	})
 
 	// Configure error handlers for all session stores

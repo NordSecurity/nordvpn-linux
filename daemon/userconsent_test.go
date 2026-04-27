@@ -9,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/auth"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/devicekey"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/events"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/insights"
 	"github.com/stretchr/testify/assert"
@@ -72,6 +73,7 @@ func TestIsConsentFlowCompleted(t *testing.T) {
 				&insights.InsightsMock{},
 				&auth.AuthCheckerMock{},
 				&analytics,
+				&devicekey.MockDeviceKeyInvalidator{},
 			)
 			got := consentChecker.IsConsentFlowCompleted()
 			assert.Equal(t, got, tt.expected)

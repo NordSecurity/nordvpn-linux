@@ -18,6 +18,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	mockauth "github.com/NordSecurity/nordvpn-linux/test/mock/auth"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/devicekey"
 	mocknetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -112,6 +113,7 @@ func TestRegisterSessionErrorHandler(t *testing.T) {
 				DebugPublisherFunc: func(msg string) {
 					captured.debugMessages = append(captured.debugMessages, msg)
 				},
+				DeviceKeyInvalidator: &devicekey.MockDeviceKeyInvalidator{},
 			}
 
 			logoutHandler := NewLogoutHandler(deps)
@@ -169,6 +171,7 @@ func TestSessionErrorHandler_IntegrationWithAccessTokenStore(t *testing.T) {
 		},
 		PublishDisconnectFunc: func(e events.DataDisconnect) {},
 		DebugPublisherFunc:    func(msg string) {},
+		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyInvalidator{},
 	}
 
 	RegisterSessionErrorHandler(registry, deps)
@@ -230,6 +233,7 @@ func TestSessionErrorHandler_APIErrorToLogoutFlow(t *testing.T) {
 		DebugPublisherFunc: func(msg string) {
 			flowSteps = append(flowSteps, "debug_message")
 		},
+		DeviceKeyInvalidator: &devicekey.MockDeviceKeyInvalidator{},
 	}
 
 	RegisterSessionErrorHandler(registry, deps)
@@ -283,6 +287,7 @@ func TestSessionErrorHandler_HandlesProperlyWrappedErrors(t *testing.T) {
 		},
 		PublishDisconnectFunc: func(e events.DataDisconnect) {},
 		DebugPublisherFunc:    func(msg string) {},
+		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyInvalidator{},
 	}
 
 	RegisterSessionErrorHandler(registry, deps)
@@ -316,6 +321,7 @@ func TestSessionErrorHandler_DoesNotHandleIncorrectlyWrappedErrors(t *testing.T)
 		},
 		PublishDisconnectFunc: func(e events.DataDisconnect) {},
 		DebugPublisherFunc:    func(msg string) {},
+		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyInvalidator{},
 	}
 
 	RegisterSessionErrorHandler(registry, deps)
@@ -664,6 +670,7 @@ func TestSessionErrorHandler_SmartClientAPIIntegration(t *testing.T) {
 				DebugPublisherFunc: func(msg string) {
 					debugMessages = append(debugMessages, msg)
 				},
+				DeviceKeyInvalidator: &devicekey.MockDeviceKeyInvalidator{},
 			}
 			RegisterSessionErrorHandler(errorRegistry, deps)
 
@@ -768,6 +775,7 @@ func TestSessionErrorHandler_ServicesAPIWithSmartClient(t *testing.T) {
 		},
 		PublishDisconnectFunc: func(e events.DataDisconnect) {},
 		DebugPublisherFunc:    func(msg string) {},
+		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyInvalidator{},
 	}
 	RegisterSessionErrorHandler(errorRegistry, deps)
 
@@ -855,6 +863,7 @@ func TestSessionErrorHandler_ConcurrentLogoutPrevention(t *testing.T) {
 				}
 			}
 		},
+		DeviceKeyInvalidator: &devicekey.MockDeviceKeyInvalidator{},
 	}
 	RegisterSessionErrorHandler(errorRegistry, deps)
 
@@ -960,6 +969,7 @@ func TestSessionErrorHandler_ConcurrentAPICallsWithErrors(t *testing.T) {
 				}
 			}
 		},
+		DeviceKeyInvalidator: &devicekey.MockDeviceKeyInvalidator{},
 	}
 	RegisterSessionErrorHandler(errorRegistry, deps)
 
@@ -1060,6 +1070,7 @@ func TestSessionErrorHandler_NetworkErrorDuringRenewal(t *testing.T) {
 		},
 		PublishDisconnectFunc: func(e events.DataDisconnect) {},
 		DebugPublisherFunc:    func(msg string) {},
+		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyInvalidator{},
 	}
 	RegisterSessionErrorHandler(errorRegistry, deps)
 
@@ -1162,6 +1173,7 @@ func TestSessionErrorHandler_EmptyTokenScenarios(t *testing.T) {
 				},
 				PublishDisconnectFunc: func(e events.DataDisconnect) {},
 				DebugPublisherFunc:    func(msg string) {},
+				DeviceKeyInvalidator:  &devicekey.MockDeviceKeyInvalidator{},
 			}
 			RegisterSessionErrorHandler(errorRegistry, deps)
 
@@ -1243,6 +1255,7 @@ func TestSessionErrorHandler_MalformedTokenExpiry(t *testing.T) {
 		},
 		PublishDisconnectFunc: func(e events.DataDisconnect) {},
 		DebugPublisherFunc:    func(msg string) {},
+		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyInvalidator{},
 	}
 	RegisterSessionErrorHandler(errorRegistry, deps)
 
@@ -1302,6 +1315,8 @@ func TestSessionErrorHandler_LogoutClearsUserData(t *testing.T) {
 		tokenRenewError:  core.ErrUnauthorized,
 	}
 
+	mockDeviceKeyInvalidator := devicekey.MockDeviceKeyInvalidator{}
+
 	errorRegistry := internal.NewErrorHandlingRegistry[error]()
 	deps := LogoutHandlerDependencies{
 		AuthChecker:            &mockauth.AuthCheckerMock{LoggedIn: true},
@@ -1311,6 +1326,7 @@ func TestSessionErrorHandler_LogoutClearsUserData(t *testing.T) {
 		PublishLogoutEventFunc: func(e events.DataAuthorization) {},
 		PublishDisconnectFunc:  func(e events.DataDisconnect) {},
 		DebugPublisherFunc:     func(msg string) {},
+		DeviceKeyInvalidator:   &mockDeviceKeyInvalidator,
 	}
 	RegisterSessionErrorHandler(errorRegistry, deps)
 
@@ -1338,6 +1354,7 @@ func TestSessionErrorHandler_LogoutClearsUserData(t *testing.T) {
 
 	assert.NotContains(t, cfgManager.Cfg.TokensData, uid, "Current user data should be removed")
 	assert.Contains(t, cfgManager.Cfg.TokensData, uid2, "Other user data should remain")
+	assert.True(t, mockDeviceKeyInvalidator.DeviceKeyInvalidated, "Device key should be invalidated.")
 }
 
 // Test renewal response with invalid data
@@ -1382,6 +1399,7 @@ func TestSessionErrorHandler_InvalidRenewalResponse(t *testing.T) {
 		},
 		PublishDisconnectFunc: func(e events.DataDisconnect) {},
 		DebugPublisherFunc:    func(msg string) {},
+		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyInvalidator{},
 	}
 	RegisterSessionErrorHandler(errorRegistry, deps)
 
@@ -1450,6 +1468,7 @@ func TestSessionErrorHandler_LogoutEventAlwaysPublished(t *testing.T) {
 		},
 		PublishDisconnectFunc: func(e events.DataDisconnect) {},
 		DebugPublisherFunc:    func(msg string) {},
+		DeviceKeyInvalidator:  &devicekey.MockDeviceKeyInvalidator{},
 	}
 	RegisterSessionErrorHandler(errorRegistry, deps)
 

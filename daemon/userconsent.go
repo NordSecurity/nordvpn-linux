@@ -7,6 +7,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -38,11 +39,12 @@ func (c consentMode) String() string {
 }
 
 type AnalyticsConsentChecker struct {
-	isDevEnv    bool
-	cm          config.Manager
-	insightsAPI core.InsightsAPI
-	authChecker auth.Checker
-	analytics   events.Analytics
+	isDevEnv             bool
+	cm                   config.Manager
+	insightsAPI          core.InsightsAPI
+	authChecker          auth.Checker
+	analytics            events.Analytics
+	deviceKeyInvalidator devicekey.DeviceKeyInvalidator
 }
 
 func NewConsentChecker(
@@ -51,6 +53,7 @@ func NewConsentChecker(
 	insightsAPI core.InsightsAPI,
 	authChecker auth.Checker,
 	analytics events.Analytics,
+	deviceKeyInvalidator devicekey.DeviceKeyInvalidator,
 ) *AnalyticsConsentChecker {
 	return &AnalyticsConsentChecker{
 		isDevEnv,
@@ -58,6 +61,7 @@ func NewConsentChecker(
 		insightsAPI,
 		authChecker,
 		analytics,
+		deviceKeyInvalidator,
 	}
 }
 
@@ -200,13 +204,20 @@ func (acc *AnalyticsConsentChecker) consentModeFromUserLocation() consentMode {
 // and it's not retried later, so logged out account won't have meshnet working
 // even if it was enabled in the configuration during startup.
 func (acc *AnalyticsConsentChecker) doLightLogout() error {
-	return acc.cm.SaveWith(func(c config.Config) config.Config {
+	err := acc.deviceKeyInvalidator.InvalidateDeviceKeyData()
+	if err != nil {
+		return fmt.Errorf("invalidating device key: %w", err)
+	}
+	err = acc.cm.SaveWith(func(c config.Config) config.Config {
 		delete(c.TokensData, c.AutoConnectData.ID)
 		c.AutoConnectData.ID = 0
 		c.Mesh = false
-		c.DeviceKey = ""
 		return c
 	})
+	if err != nil {
+		return fmt.Errorf("clearing meshnet and autoconnect data: %w", err)
+	}
+	return nil
 }
 
 // modeForCountryCode returns analytics consent mode.

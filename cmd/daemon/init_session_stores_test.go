@@ -16,6 +16,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	mockauth "github.com/NordSecurity/nordvpn-linux/test/mock/auth"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/devicekey"
 	mocknetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -693,6 +694,7 @@ func TestLogoutReasonCodeSelectionWithProductionCode(t *testing.T) {
 				AuthChecker:            &mockauth.AuthCheckerMock{},
 				PublishDisconnectFunc:  func(events.DataDisconnect) {},
 				DebugPublisherFunc:     func(string) {},
+				DeviceKeyInvalidator:   &devicekey.MockDeviceKeyInvalidator{},
 			})
 
 			switch tt.sessionStore {
@@ -815,6 +817,7 @@ func TestVPNCredsReasonCodeWithAccessTokenRenewal(t *testing.T) {
 				AuthChecker:            &mockauth.AuthCheckerMock{},
 				PublishDisconnectFunc:  func(events.DataDisconnect) {},
 				DebugPublisherFunc:     func(string) {},
+				DeviceKeyInvalidator:   &devicekey.MockDeviceKeyInvalidator{},
 			})
 
 			builder.registerAccessTokenHandlers(logoutHandler)
