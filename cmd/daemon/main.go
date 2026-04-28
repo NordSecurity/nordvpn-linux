@@ -522,7 +522,9 @@ func main() {
 		infoSubject,
 		errSubject,
 		meshnetEvents.PeerUpdate,
-		nc.NewCredsFetcher(clientAPI, fsystem))
+		nc.NewCredsFetcher(clientAPI, fsystem),
+		cfg.FirewallMark,
+	)
 
 	// on session unrecoverable error perform user log-out action
 	logoutHandler := daemon.NewLogoutHandler(daemon.LogoutHandlerDependencies{

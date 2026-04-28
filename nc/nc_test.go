@@ -170,7 +170,9 @@ func TestStartStopNotificationClient(t *testing.T) {
 			&subs.Subject[string]{},
 			&subs.Subject[error]{},
 			&subs.Subject[[]string]{},
-			credsFetcher)
+			credsFetcher,
+			0,
+		)
 
 		t.Run(test.name, func(t *testing.T) {
 			_, newConnectionState := notificationClient.tryConnect(&mockMqttClient,
