@@ -378,7 +378,7 @@ func (n *nft) addForwardChain(config firewall.Config, nftCtx *nftContext) {
 				&expr.Verdict{Kind: expr.VerdictAccept},
 				checkInterfaceName(config.TunnelInterface, ifNameOutput, expr.CmpOpEq),
 			),
-			UserData: userdata.AppendString(nil, userdata.TypeComment, "internet to allowlist IPs"),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "traffic to VPN"),
 		})
 
 		// iif "nordtun" ct state established,related accept
