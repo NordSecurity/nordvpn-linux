@@ -178,9 +178,9 @@ func InterfacesAreEqual(a net.Interface, b net.Interface) bool {
 }
 
 // InterfacesWithDefaultRoute returns all the interfaces that have a default route, excluding the ones from ignoreSet
-func InterfacesWithDefaultRoute(ignoreSet mapset.Set[string]) map[string]net.Interface {
+func InterfacesWithDefaultRoute(ignoreSet mapset.Set[string]) mapset.Set[string] {
 	// get interface list from default routes
-	interfacesList := make(map[string]net.Interface)
+	interfacesList := mapset.NewSet[string]()
 
 	routeList, err := sysDepsImpl.RouteList(nil, netlink.FAMILY_V4)
 	if err != nil {
@@ -194,7 +194,7 @@ func InterfacesWithDefaultRoute(ignoreSet mapset.Set[string]) map[string]net.Int
 
 		if iface, err := sysDepsImpl.InterfaceByIndex(r.LinkIndex); err == nil && iface != nil {
 			if ignoreSet == nil || !ignoreSet.Contains(iface.Name) {
-				interfacesList[iface.Name] = *iface
+				interfacesList.Add(iface.Name)
 			}
 		} else {
 			log.Println(internal.WarningPrefix, "default route, not found interface with index", r.LinkIndex, err)

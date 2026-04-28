@@ -94,6 +94,14 @@ type Networker interface {
 	SetARPIgnore(bool) error
 }
 
+type killSwitchState int
+
+const (
+	disabledByUser killSwitchState = iota
+	enabledByUser
+	internallyEnabled
+)
+
 // Combined configures networking for VPN connections.
 //
 // It is implemented in such a way, that all public methods
@@ -130,13 +138,12 @@ type Combined struct {
 	enableLocalTraffic bool
 	// list with the existing OS interfaces when VPN was connected.
 	// This is used at network changes to know when a new interface was inserted
-	interfaces mapset.Set[string]
-	// dnsDenied            bool
+	interfaces      mapset.Set[string]
 	ipv6Blocker     ipv6.Blocker
 	ignoreARP       bool
 	arpIgnoreSetter kernel.SysctlSetter
 	allowlist       config.Allowlist
-	isKillSwitchSet bool
+	KillSwitchState killSwitchState
 	fwConfig        firewall.Config
 	ipForwardSetter kernel.SysctlSetter
 }
@@ -227,7 +234,7 @@ func failureRecover(netw *Combined) {
 		log.Println(internal.DeferPrefix, err)
 	}
 
-	if netw.isNetworkSet && !netw.isKillSwitchSet {
+	if netw.isNetworkSet && netw.KillSwitchState == disabledByUser {
 		if err := netw.unsetNetwork(); err != nil {
 			log.Println(internal.DeferPrefix, err)
 		}
@@ -515,7 +522,7 @@ func (netw *Combined) stop() error {
 		return err
 	}
 	netw.isVpnSet = false
-	if !netw.isKillSwitchSet {
+	if netw.KillSwitchState == disabledByUser {
 		if err = netw.unsetNetwork(); err != nil {
 			return fmt.Errorf("unsetting network: %w", err)
 		}
@@ -526,10 +533,8 @@ func (netw *Combined) stop() error {
 	}
 
 	// configure firewall
-	// remove tunnel interface and use the KS state, in case is set internally, e.g. at reconnect
 	newCfg := netw.fwConfig.CopyWith(
 		firewall.WithTunnelInterface(""),
-		firewall.WithKillSwitch(netw.isKillSwitchSet),
 	)
 	if err := netw.configureFirewall(newCfg); err != nil {
 		return fmt.Errorf("configuring firewall at stop: %w", err)
@@ -620,7 +625,7 @@ func (netw *Combined) resetAllowlist() error {
 }
 
 // EnableFirewall activates the firewall and applies the rules
-// according to the user's settings. (killswitch, allowlist, meshnet)
+// according to the user's settings. (kill switch, allowlist, meshnet)
 func (netw *Combined) EnableFirewall() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
@@ -786,10 +791,14 @@ func (netw *Combined) UnsetFirewall() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
-	// just refresh the firewall because the netw.fwConfig already contains the correct values
-	if err := netw.configureFirewall(netw.fwConfig); err != nil {
+	if netw.KillSwitchState == enabledByUser {
+		return nil
+	}
+
+	if err := netw.unsetKillSwitch(); err != nil {
 		return fmt.Errorf("unset firewall: %w", err)
 	}
+
 	return nil
 }
 
@@ -821,7 +830,7 @@ func (netw *Combined) setKillSwitch() error {
 		return fmt.Errorf("enabling kill switch: %w", err)
 	}
 
-	netw.isKillSwitchSet = true
+	netw.KillSwitchState = enabledByUser
 	return nil
 }
 
@@ -847,7 +856,22 @@ func (netw *Combined) unsetKillSwitch() error {
 		return fmt.Errorf("disabling kill switch: %w", err)
 	}
 
-	netw.isKillSwitchSet = false
+	netw.KillSwitchState = disabledByUser
+	return nil
+}
+
+// This function is used to temporary enable KS when there is a VPN reconnect in background,
+// to prevent leaks
+func (netw *Combined) internallyEnabledKillSwitch() error {
+	newCfg := netw.fwConfig.CopyWith(
+		firewall.WithKillSwitch(true),
+	)
+
+	if err := netw.configureFirewall(newCfg); err != nil {
+		return fmt.Errorf("internally enabling kill switch failed: %w", err)
+	}
+
+	netw.KillSwitchState = internallyEnabled
 	return nil
 }
 

@@ -109,5 +109,9 @@ func (fw *Firewall) Flush() error {
 		return nil
 	}
 
+	if internal.IsDevEnv(fw.appEnvironment) {
+		log.Println(internal.DebugPrefix, logPrefix, "flush fw", internal.GetStack())
+	}
+
 	return fw.impl.Flush()
 }
