@@ -101,7 +101,6 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 				return formatError(err)
 			}
 		}
-
 		switch out.Type {
 		case internal.CodeFailure:
 			rpcErr = errors.New(client.ConnectCantConnect)
@@ -136,7 +135,11 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		case internal.CodeDedicatedIPServiceButNoServers:
 			rpcErr = errors.New(NoPreferredDedicatedIPLocationSelected)
 		case internal.CodeDisconnected:
-			color.Yellow(fmt.Sprintf(client.ConnectCanceled, internal.StringsToInterfaces(out.Data)...))
+			message := client.ConnectCanceled
+			if len(out.Data) == 1 {
+				message = client.ConnectCanceledNoHostname
+			}
+			color.Yellow(fmt.Sprintf(message, internal.StringsToInterfaces(out.Data)...))
 		case internal.CodeTagNonexisting:
 			rpcErr = errors.New(internal.TagNonexistentErrorMessage)
 		case internal.CodeGroupNonexisting:
@@ -149,6 +152,14 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 			rpcErr = errors.New(internal.DoubleGroupErrorMessage)
 		case internal.CodeTechnologyDisabled:
 			rpcErr = errors.New(TechnologyDisabledMessage)
+		case internal.CodeDedicatedServerRenewError:
+			rpcErr = errors.New(DedicatedServersNoServiceMssage)
+		case internal.CodeDedicatedServeversServiceButNoServers:
+			rpcErr = errors.New(DedicatedServersNoServersAvailable)
+		case internal.CodeDedicatedServerNotReady:
+			rpcErr = errors.New(DedicatedServersServerNotReadyMessage)
+		case internal.CodeDedicatedServerNoNordlynx:
+			rpcErr = errors.New(DedicatedServersNoNordlynxMessage)
 		case internal.CodeVPNRunning:
 			color.Yellow(client.ConnectConnected)
 		case internal.CodeNothingToDo:
@@ -156,9 +167,17 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		case internal.CodeUFWDisabled:
 			color.Yellow(client.UFWDisabledMessage)
 		case internal.CodeConnecting:
-			color.Green(fmt.Sprintf(client.ConnectStart, internal.StringsToInterfaces(out.Data)...))
+			message := client.ConnectStart
+			if len(out.Data) == 1 {
+				message = client.ConnectStartNoHostname
+			}
+			color.Green(fmt.Sprintf(message, internal.StringsToInterfaces(out.Data)...))
 		case internal.CodeConnected:
-			color.Green(fmt.Sprintf(internal.ConnectSuccess, internal.StringsToInterfaces(out.Data)...))
+			message := internal.ConnectSuccess
+			if len(out.Data) == 1 {
+				message = internal.ConnectSuccessNoHostname
+			}
+			color.Green(fmt.Sprintf(message, internal.StringsToInterfaces(out.Data)...))
 		}
 	}
 

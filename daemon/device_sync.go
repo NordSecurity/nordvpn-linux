@@ -13,9 +13,9 @@ func (r *RPC) RegisterDedicatedServers() error {
 		return nil
 	}
 
-	ok := r.dedicatedServersKeyManager.CheckAndRegisterDedicatedServers()
-	if !ok {
-		return fmt.Errorf("failed to register device")
+	data := r.dedicatedServersKeyManager.CheckAndRegisterDedicatedServers()
+	if data == nil {
+		return fmt.Errorf("failed to register the device")
 	}
 
 	return nil

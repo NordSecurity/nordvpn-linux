@@ -219,7 +219,7 @@ func (r *RenewingChecker) HasDedicatedServerService() (bool, error) {
 	}
 
 	return slices.ContainsFunc(services, func(service core.ServiceData) bool {
-		return service.ID == DedicatedServersServiceID && !r.expChecker.IsExpired(service.ExpiresAt)
+		return service.Service.ID == DedicatedServersServiceID && !r.expChecker.IsExpired(service.ExpiresAt)
 	}), nil
 }
 

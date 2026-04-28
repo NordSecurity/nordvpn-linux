@@ -10,6 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -1428,7 +1429,8 @@ func TestLoginWithToken_RegisterForDedicatedServers(t *testing.T) {
 		},
 	}
 
-	mockKeyManager := testdevicekey.MockDeviceKeyManager{CheckAndRegisterDedicatedServersStatus: true}
+	mockKeyManager := testdevicekey.MockDeviceKeyManager{
+		DedicatedServerRegistrationData: &devicekey.DedicatedServersRegistrationData{}}
 
 	r := &RPC{
 		consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
@@ -1457,7 +1459,8 @@ func TestLoginOAuth2Callback_RegisterForDedicatedServers(t *testing.T) {
 		},
 	}
 
-	mockKeyManager := testdevicekey.MockDeviceKeyManager{CheckAndRegisterDedicatedServersStatus: true}
+	mockKeyManager := testdevicekey.MockDeviceKeyManager{
+		DedicatedServerRegistrationData: &devicekey.DedicatedServersRegistrationData{}}
 
 	r := &RPC{
 		consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},

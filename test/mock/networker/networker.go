@@ -26,17 +26,24 @@ type Mock struct {
 	SetAllowlistErr   error
 	UnsetAllowlistErr error
 	StopErr           error
+
+	// ProvidedCredentials contain vpn.Credentials provided to the networker in the last Start call
+	ProvidedCredentials vpn.Credentials
+	// ProvidedCredentials contains vpn.ServerData provided to the networker in the last Start call
+	ProvidedServerData vpn.ServerData
 }
 
-func (Mock) Start(
-	context.Context,
-	vpn.Credentials,
-	vpn.ServerData,
-	config.Allowlist,
-	config.DNS,
-	bool,
-	events.DisconnectCallback,
+func (m *Mock) Start(
+	_ context.Context,
+	credentials vpn.Credentials,
+	serverData vpn.ServerData,
+	_ config.Allowlist,
+	_ config.DNS,
+	_ bool,
+	_ events.DisconnectCallback,
 ) error {
+	m.ProvidedCredentials = credentials
+	m.ProvidedServerData = serverData
 	return nil
 }
 func (m *Mock) Stop() error {

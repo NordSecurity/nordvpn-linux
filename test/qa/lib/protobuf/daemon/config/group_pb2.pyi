@@ -20,6 +20,7 @@ class ServerGroup(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     THE_AMERICAS: _ClassVar[ServerGroup]
     ASIA_PACIFIC: _ClassVar[ServerGroup]
     AFRICA_THE_MIDDLE_EAST_AND_INDIA: _ClassVar[ServerGroup]
+    DEDICATED_SERVERS: _ClassVar[ServerGroup]
 UNDEFINED: ServerGroup
 DOUBLE_VPN: ServerGroup
 ONION_OVER_VPN: ServerGroup
@@ -34,3 +35,4 @@ EUROPE: ServerGroup
 THE_AMERICAS: ServerGroup
 ASIA_PACIFIC: ServerGroup
 AFRICA_THE_MIDDLE_EAST_AND_INDIA: ServerGroup
+DEDICATED_SERVERS: ServerGroup

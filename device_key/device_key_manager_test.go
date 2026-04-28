@@ -55,6 +55,14 @@ func (m *mockDedicatedServersAPI) UpdateDevice(uuid uuid.UUID, req core.UpdateDe
 	}, nil
 }
 
+func (m *mockDedicatedServersAPI) DedicatedServers() (core.DedicatedServers, error) {
+	return core.DedicatedServers{}, nil
+}
+
+func (m *mockDedicatedServersAPI) Connect(string, core.ConnectRequest) (core.ConnectResponse, error) {
+	return core.ConnectResponse{}, nil
+}
+
 type generator struct {
 	KeyGenerator
 	privateKey string
@@ -320,8 +328,8 @@ func TestCheckAndRegisterDedicatedServers(t *testing.T) {
 				&registry{},
 				&mockDedicatedServer)
 
-			ok := rc.CheckAndRegisterDedicatedServers()
-			assert.True(t, ok)
+			deviceData := rc.CheckAndRegisterDedicatedServers()
+			assert.NotNil(t, deviceData)
 			assert.Equal(t, test.shouldCallAPI, mockDedicatedServer.wasRegisterDeviceCalled)
 			assert.Equal(t, test.expectedDeviceKey, cm.Cfg.DeviceKey)
 			assert.Equal(t, test.expectedDeviceID, cm.Cfg.DeviceUUID)
@@ -353,8 +361,8 @@ func TestCheckAndRegisterDedicatedServers_ConflictHandling(t *testing.T) {
 	meshRegistryMock := registry{}
 
 	rc := NewDeviceKeyManager(&configManagerMock, &keyGeneratorMock, &meshRegistryMock, &dedicatedServersAPIMock)
-	registered := rc.CheckAndRegisterDedicatedServers()
-	assert.True(t, registered)
+	deviceData := rc.CheckAndRegisterDedicatedServers()
+	assert.NotNil(t, deviceData)
 	assert.True(t, dedicatedServersAPIMock.wasRegisterDeviceCalled)
 	assert.True(t, dedicatedServersAPIMock.wasUpdateDeviceCalled)
 	assert.Equal(t, newPrivateKey, configManagerMock.Cfg.DeviceKey,
@@ -388,21 +396,21 @@ func TestDeviceKeyManager_DedicatedServersMeshnetInteraction(t *testing.T) {
 
 	// CheckAndRegisterDedicatedServers called for the first time, it register the key for dedicated servers and set the
 	// DeviceUUID but not touch the DeviceKey iteself.
-	registered := rc.CheckAndRegisterDedicatedServers()
-	assert.True(t, registered, "Key not registered for dedicated servers when expected.")
+	deviceData := rc.CheckAndRegisterDedicatedServers()
+	assert.NotNil(t, deviceData, "Key not registered for dedicated servers when expected.")
 	assert.True(t, dedicatedServersAPIMock.getUnsetWasCalled(), "Dedicated servers api was not called when expected.")
 	assert.Equal(t, privateKey, configManagerMock.Cfg.DeviceKey)
 	assert.Equal(t, deviceUUID, configManagerMock.Cfg.DeviceUUID)
 
 	// CheckAndRegisterDedicatedServers called for the second time, it should not do anything since the key is already
 	// registered.
-	registered = rc.CheckAndRegisterDedicatedServers()
-	assert.True(t, registered, "Key not registered for dedicated servers when expected.")
+	deviceData = rc.CheckAndRegisterDedicatedServers()
+	assert.NotNil(t, deviceData, "Key not registered for dedicated servers when expected.")
 	assert.False(t, dedicatedServersAPIMock.getUnsetWasCalled(), "Dedicated servers api was called when not expected.")
 
 	// CheckAndRegisterMeshnet called for the second time, it should not do anything since the key is already
 	// registered.
-	registered = rc.CheckAndRegisterMeshnet()
+	registered := rc.CheckAndRegisterMeshnet()
 	assert.True(t, registered, "Key not registered for meshnet when expected.")
 	assert.False(t, meshRegistryMock.getUnsetWasCalled(), "Meshnet api was called when not expected.")
 
@@ -421,8 +429,8 @@ func TestDeviceKeyManager_DedicatedServersMeshnetInteraction(t *testing.T) {
 	assert.True(t, delayChecker.called, "App did not block after registering a new mesh key.")
 
 	// CheckAndRegisterDedicatedServers called after the key was regenerated, it should register the new key.
-	registered = rc.CheckAndRegisterDedicatedServers()
-	assert.True(t, registered, "Key not registered for dedicated servers when expected.")
+	deviceData = rc.CheckAndRegisterDedicatedServers()
+	assert.NotNil(t, deviceData, "Key not registered for dedicated servers when expected.")
 	assert.True(t, dedicatedServersAPIMock.getUnsetWasCalled(), "Dedicated servers api was not called when expected.")
 	assert.Equal(t, newKey, configManagerMock.Cfg.DeviceKey)
 	assert.Equal(t, deviceUUID, configManagerMock.Cfg.DeviceUUID)

@@ -464,6 +464,14 @@ func (m *mockRawClientAPI) UpdateDevice(string, uuid.UUID, core.UpdateDeviceRequ
 	return core.DevicesResponse{}, nil
 }
 
+func (m *mockRawClientAPI) DedicatedServers(token string) (core.DedicatedServers, error) {
+	return core.DedicatedServers{}, nil
+}
+
+func (m *mockRawClientAPI) Connect(token string, serverUUID string, req core.ConnectRequest) (core.ConnectResponse, error) {
+	return core.ConnectResponse{}, nil
+}
+
 func (m *mockRawClientAPI) Base() string {
 	return "https://api.test.com"
 }

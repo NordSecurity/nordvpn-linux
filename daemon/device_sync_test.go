@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	testauth "github.com/NordSecurity/nordvpn-linux/test/mock/auth"
 	testdevicekey "github.com/NordSecurity/nordvpn-linux/test/mock/devicekey"
@@ -14,33 +15,33 @@ func TestSyncDevice(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name                         string
-		hasDedicatedServersService   bool
-		hasDedicatedServerServiceErr error
-		deviceSuccessfullyRegistered bool
-		shouldReturnError            bool
-		expectedKeyRegistered        bool
+		name                             string
+		hasDedicatedServersService       bool
+		hasDedicatedServerServiceErr     error
+		dedicatedServersRegistrationData *devicekey.DedicatedServersRegistrationData
+		shouldReturnError                bool
+		expectedKeyRegistered            bool
 	}{
 		{
-			name:                         "user has dedicated servers service, key is registered",
-			hasDedicatedServersService:   true,
-			deviceSuccessfullyRegistered: true,
-			expectedKeyRegistered:        true,
-			shouldReturnError:            false,
+			name:                             "user has dedicated servers service, key is registered",
+			hasDedicatedServersService:       true,
+			dedicatedServersRegistrationData: &devicekey.DedicatedServersRegistrationData{},
+			expectedKeyRegistered:            true,
+			shouldReturnError:                false,
 		},
 		{
-			name:                         "user doesn't have dedicated servers service, key is not registered",
-			hasDedicatedServersService:   false,
-			deviceSuccessfullyRegistered: false,
-			expectedKeyRegistered:        false,
-			shouldReturnError:            false,
+			name:                             "user doesn't have dedicated servers service, key is not registered",
+			hasDedicatedServersService:       false,
+			dedicatedServersRegistrationData: &devicekey.DedicatedServersRegistrationData{},
+			expectedKeyRegistered:            false,
+			shouldReturnError:                false,
 		},
 		{
-			name:                         "user has dedicated servers service, key registration fails, error is returned",
-			hasDedicatedServersService:   true,
-			deviceSuccessfullyRegistered: false,
-			expectedKeyRegistered:        false,
-			shouldReturnError:            true,
+			name:                             "user has dedicated servers service, key registration fails, error is returned",
+			hasDedicatedServersService:       true,
+			dedicatedServersRegistrationData: nil,
+			expectedKeyRegistered:            false,
+			shouldReturnError:                true,
 		},
 		{
 			name:                         "checking dedicated server service status fails, error is returned",
@@ -56,7 +57,7 @@ func TestSyncDevice(t *testing.T) {
 				HasDedicatedServerServiceErr: test.hasDedicatedServerServiceErr,
 			}
 			deviceKeyManagerMock := testdevicekey.MockDeviceKeyManager{
-				CheckAndRegisterDedicatedServersStatus: test.deviceSuccessfullyRegistered,
+				DedicatedServerRegistrationData: test.dedicatedServersRegistrationData,
 			}
 			r := RPC{
 				ac:                         &authCheckerMock,
