@@ -97,8 +97,8 @@ type Networker interface {
 type killSwitchState int
 
 const (
-	enabledByUser killSwitchState = iota
-	disabledByUser
+	disabledByUser killSwitchState = iota
+	enabledByUser
 	internallyEnabled
 )
 
