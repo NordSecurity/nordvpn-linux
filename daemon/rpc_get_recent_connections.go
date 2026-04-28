@@ -42,6 +42,10 @@ func (r *RPC) GetRecentConnections(
 			continue
 		}
 
+		if config.IsRegionalGroup(v.Group) {
+			continue
+		}
+
 		item := &pb.RecentConnectionModel{
 			Country:            v.Country,
 			CountryCode:        v.CountryCode,

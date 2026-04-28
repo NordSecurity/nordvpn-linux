@@ -11,6 +11,7 @@ import (
 )
 
 var adjustAutoconnectCfgOnce sync.Once
+var migrateRegionalAutoconnectOnce sync.Once
 
 // Settings returns system daemon settings
 func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse, error) {
@@ -56,6 +57,26 @@ func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse,
 			if err != nil {
 				log.Println(internal.WarningPrefix, "failed to set autoconnect parameters during the settings RPC:", err)
 			}
+		}
+	})
+
+	migrateRegionalAutoconnectOnce.Do(func() {
+		if !config.IsRegionalGroup(cfg.AutoConnectData.Group) {
+			return
+		}
+		err := r.cm.SaveWith(func(c config.Config) config.Config {
+			c.AutoConnectData.Group = config.ServerGroup_UNDEFINED
+			// If a country or city was also configured alongside the group, keep that location
+			// and only drop the deprecated regional group.
+			// Otherwise the regional arg was the only parameter, so also clear ServerTag.
+			// Autoconnect will then pick the fastest server (quick connect).
+			if c.AutoConnectData.Country == "" && c.AutoConnectData.City == "" {
+				c.AutoConnectData.ServerTag = ""
+			}
+			return c
+		})
+		if err != nil {
+			log.Println(internal.WarningPrefix, "failed to migrate regional autoconnect group:", err)
 		}
 	})
 
