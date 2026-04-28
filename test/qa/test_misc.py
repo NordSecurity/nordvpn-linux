@@ -206,7 +206,15 @@ def test_troubleshoot():
         assert completed >= 1
 
         # system-info blocks
-        for block in ("OS Release", "Kernel Version", "Desktop Environment", "Systemd Status"):
+        for block in (
+            "OS Release",
+            "Linux Distribution",
+            "Kernel Version",
+            "Desktop Environment",
+            "nordvpn version",
+            "nordvpn status",
+            "nordvpn settings",
+        ):
             assert f"=== {block} ===" in sysinfo, f"missing system-info block {block!r}"
 
         # dns-info blocks
