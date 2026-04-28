@@ -128,7 +128,7 @@ def test_account_not_logged_in():
 # ---------------------------------------------------------------------------
 
 EXPECTED_ZIP_ENTRIES = {
-    "daemon.log",
+    "daemon.log.gz",
     "system-info.txt",
     "network-info.txt",
     "dns-info.txt",
