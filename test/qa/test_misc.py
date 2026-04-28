@@ -127,7 +127,18 @@ def test_account_not_logged_in():
 # `nordvpn troubleshoot`
 # ---------------------------------------------------------------------------
 
-EXPECTED_ZIP_ENTRIES = {
+def _has_any_file(path: str) -> bool:
+    """True if path is a directory with at least one file under it (recursive)."""
+    if not os.path.isdir(path):
+        return False
+    for _root, _dirs, files in os.walk(path):
+        if files:
+            return True
+    return False
+
+
+# Zip entries the daemon always produces, independent of host state.
+ALWAYS_IN_ZIP_FILES = {
     "daemon.log",
     "system-info.txt",
     "network-info.txt",
@@ -135,6 +146,17 @@ EXPECTED_ZIP_ENTRIES = {
     "nftables-ruleset.txt",
     "log_extraction_report.log",
 }
+
+# Zip entries whose presence is conditional on a host source. Each row:
+# (zip path, host source, predicate(host) -> bool).
+# Folder zip paths end in "/" and match by prefix; everything else is an
+# exact name. Test contract: host present ⇒ zip entry present;
+# host absent ⇒ zip entry absent.
+CONDITIONAL_ZIP_ENTRIES = (
+    ("cli.log", os.path.expanduser("~/.config/nordvpn/cli.log"), os.path.isfile),
+    ("cache/", os.path.expanduser("~/.cache/nordvpn"), _has_any_file),
+    ("etc/NetworkManager/conf.d/", "/etc/NetworkManager/conf.d", _has_any_file),
+)
 
 
 def _run_troubleshoot() -> str:
@@ -191,9 +213,27 @@ def test_troubleshoot():
             sysinfo = zf.read("system-info.txt").decode("utf-8")
             dnsinfo = zf.read("dns-info.txt").decode("utf-8")
 
-        # Entry list
-        missing = EXPECTED_ZIP_ENTRIES - names
-        assert not missing, f"missing entries: {missing}"
+        # Always-present zip entries
+        missing = ALWAYS_IN_ZIP_FILES - names
+        assert not missing, f"missing always-present entries: {missing}"
+
+        # Conditional entries: zip presence must mirror host presence in
+        # both directions — captured iff the source exists, absent
+        # otherwise.
+        for zip_entry, host_path, host_present in CONDITIONAL_ZIP_ENTRIES:
+            if zip_entry.endswith("/"):
+                in_zip = any(n.startswith(zip_entry) for n in names)
+            else:
+                in_zip = zip_entry in names
+            on_host = host_present(host_path)
+            if on_host:
+                assert in_zip, (
+                    f"host {host_path!r} exists but zip entry {zip_entry!r} missing"
+                )
+            else:
+                assert not in_zip, (
+                    f"host {host_path!r} absent but zip entry {zip_entry!r} present"
+                )
 
         # log_extraction_report.log
         assert "diagnostics collection started" in report
