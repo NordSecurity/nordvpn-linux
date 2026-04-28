@@ -395,14 +395,15 @@ final class NordVpnTheme {
             ),
             borderRadius: AppBorderRadius.full,
           ),
-          textStyle: design.typography.subHeading,
+          textStyle: design.typography.subHeading.copyWith(
+            fontWeight: FontWeight.w400,
+          ),
           padding: const EdgeInsets.symmetric(
             vertical: AppSpacing.spacing3,
             horizontal: AppSpacing.spacing7,
           ),
           backgroundColor: design.semanticColors.bgAccent,
           foregroundColor: design.semanticColors.textPrimaryOnColor,
-          overlayColor: Colors.transparent,
           fixedSize: const Size.fromHeight(48),
         ),
         cancelButtonStyle: ElevatedButton.styleFrom(
@@ -420,7 +421,6 @@ final class NordVpnTheme {
           ),
           backgroundColor: design.semanticColors.bgGlass,
           foregroundColor: design.semanticColors.textPrimary,
-          overlayColor: Colors.transparent,
           fixedSize: const Size.fromHeight(48),
         ),
         pauseConnectionButtonStyle: ElevatedButton.styleFrom(
