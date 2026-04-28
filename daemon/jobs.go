@@ -335,8 +335,18 @@ func (r *RPC) doAutoConnect() error {
 
 	server := connectServer{}
 
+	serverTag := cfg.AutoConnectData.ServerTag
 	groupTag := ""
-	if cfg.AutoConnectData.Group != config.ServerGroup_UNDEFINED &&
+	groupParam := cfg.AutoConnectData.Group
+
+	// runtime migration for deprecated regional groups.
+	if config.IsRegionalGroup(cfg.AutoConnectData.Group) {
+		groupParam = config.ServerGroup_UNDEFINED
+		if cfg.AutoConnectData.Country == "" && cfg.AutoConnectData.City == "" {
+			// the configured target was purely regional, so fall back to fastest server
+			serverTag = ""
+		}
+	} else if cfg.AutoConnectData.Group != config.ServerGroup_UNDEFINED &&
 		cfg.AutoConnectData.ServerTag != strings.ToLower(cfg.AutoConnectData.Group.String()) &&
 		cfg.AutoConnectData.ServerTag != config.GroupTitleForId(cfg.AutoConnectData.Group) {
 		groupTag = cfg.AutoConnectData.Group.String()
@@ -344,7 +354,7 @@ func (r *RPC) doAutoConnect() error {
 
 	err = r.connectFromRequest(
 		&pb.ConnectRequest{
-			ServerTag:   cfg.AutoConnectData.ServerTag,
+			ServerTag:   serverTag,
 			ServerGroup: groupTag,
 		},
 		&server,
@@ -357,7 +367,7 @@ func (r *RPC) doAutoConnect() error {
 			ServerParameters{
 				Country: cfg.AutoConnectData.Country,
 				City:    cfg.AutoConnectData.City,
-				Group:   cfg.AutoConnectData.Group,
+				Group:   groupParam,
 			},
 		)
 		return nil
