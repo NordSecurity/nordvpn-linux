@@ -351,7 +351,7 @@ final class NordVpnTheme {
       mapPadding: EdgeInsets.only(top: AppSpacing.spacing5),
       connectionCardPadding: EdgeInsets.only(
         left: AppSpacing.spacing6,
-        top: AppSpacing.spacing3,
+        top: AppSpacing.spacing4,
         bottom: AppSpacing.spacing6,
       ),
       margin: EdgeInsets.only(
