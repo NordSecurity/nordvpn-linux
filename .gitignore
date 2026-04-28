@@ -52,3 +52,4 @@ stage
 !gui/**
 CLAUDE.md
 .worktrees/
+.devcontainer/

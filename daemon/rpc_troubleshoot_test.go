@@ -4,10 +4,14 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"crypto/rand"
+	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -331,6 +335,109 @@ func TestStreamCommandToWriter(t *testing.T) {
 			assert.Equal(t, tc.expectedOutput, buf.String())
 		})
 	}
+}
+
+// TestStreamFileToWriter_RespectsDaemonLogCap verifies the truncation
+// mechanism that bounds the daemon-log entry. The production cap is
+// maxDaemonLogSize (500 MB) which is too large for a fast unit test, so we
+// exercise writeFileTailReversed — the same helper streamFileToWriter
+// invokes when the source exceeds the cap — with a small synthetic max.
+func TestStreamFileToWriter_RespectsDaemonLogCap(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	path := filepath.Join(t.TempDir(), uuid.NewString()+".log")
+	// 1 KiB of recognisable lines: 100 lines × ~10 bytes each.
+	var content bytes.Buffer
+	for i := 0; i < 100; i++ {
+		fmt.Fprintf(&content, "line %03d\n", i) // 9 bytes/line incl. newline
+	}
+	require.NoError(t, os.WriteFile(path, content.Bytes(), 0600))
+
+	f, err := os.Open(path)
+	require.NoError(t, err)
+	defer f.Close()
+	info, err := f.Stat()
+	require.NoError(t, err)
+
+	const max = int64(120) // ~13 lines
+	var out bytes.Buffer
+	require.NoError(t, writeFileTailReversed(&out, f, info.Size(), max))
+
+	// Output should not exceed the read window. The reverse-emission may
+	// shift one trailing newline, so we allow +1 byte of slack.
+	assert.LessOrEqual(t, int64(out.Len()), max+1, "output exceeds the daemon-log cap")
+	// And it should contain the LATEST lines, not the earliest ones.
+	assert.Contains(t, out.String(), "line 099")
+	assert.NotContains(t, out.String(), "line 000")
+}
+
+// TestZipOutput_RespectsMaxFileSize verifies the cap mechanism that bounds
+// the final diagnostics zip. Production wires sizeLimitedWriter to
+// maxZipFileSize (40 MB); we exercise the same integration with a small
+// synthetic cap so the test stays fast. The payload is random bytes — zip's
+// default Deflate would compress repetitive data away to nothing and the
+// cap would never trip.
+func TestZipOutput_RespectsMaxFileSize(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	const cap = int64(4 * 1024)
+	var out bytes.Buffer
+	limited := &sizeLimitedWriter{w: &out, limit: cap}
+	zw := zip.NewWriter(limited)
+
+	w, err := zw.Create("payload")
+	require.NoError(t, err)
+
+	payload := make([]byte, int(cap)*4)
+	_, err = rand.Read(payload)
+	require.NoError(t, err)
+	_, writeErr := w.Write(payload)
+	closeErr := zw.Close()
+
+	// Either the write or the central-directory flush during Close must
+	// surface the size-limit error.
+	gotSizeErr := errors.Is(writeErr, errZipSizeLimitExceeded) ||
+		errors.Is(closeErr, errZipSizeLimitExceeded)
+	assert.True(t, gotSizeErr, "expected errZipSizeLimitExceeded; writeErr=%v closeErr=%v", writeErr, closeErr)
+	assert.LessOrEqual(t, int64(out.Len()), cap, "zip output exceeded the size cap")
+}
+
+// TestAddDaemonLogs_StdoutAsRegularFile exercises the /proc/self/fd/1
+// fallback in addDaemonLogs. It redirects the test process's stdout (fd 1)
+// to a regular file, then invokes addDaemonLogs with the unknown supervisor
+// — the path stdoutAsRegularFile resolves /proc/self/fd/1 → real file and
+// streamFileToWriter copies the content into the zip's daemon.log entry.
+func TestAddDaemonLogs_StdoutAsRegularFile(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	logPath := filepath.Join(t.TempDir(), uuid.NewString()+".log")
+	content := "alpha\nbeta\ngamma\n"
+	require.NoError(t, os.WriteFile(logPath, []byte(content), 0600))
+
+	logFile, err := os.OpenFile(logPath, os.O_RDWR, 0600)
+	require.NoError(t, err)
+	t.Cleanup(func() { logFile.Close() })
+
+	// Save fd 1 so we can restore it; point fd 1 at logFile so
+	// /proc/self/fd/1 symlinks to logPath for the duration of this test.
+	savedFD, err := syscall.Dup(1)
+	require.NoError(t, err)
+	require.NoError(t, syscall.Dup3(int(logFile.Fd()), 1, 0))
+	t.Cleanup(func() {
+		if err := syscall.Dup3(savedFD, 1, 0); err != nil {
+			t.Errorf("failed to restore fd 1: %v", err)
+		}
+		syscall.Close(savedFD)
+	})
+
+	var zbuf bytes.Buffer
+	zw := zip.NewWriter(&zbuf)
+	require.NoError(t, addDaemonLogs(zw, daemonSupervisorUnknown))
+	require.NoError(t, zw.Close())
+
+	entries := readZipEntries(t, zbuf.Bytes())
+	require.Contains(t, entries, "daemon.log")
+	assert.Equal(t, content, entries["daemon.log"], "daemon.log entry should mirror /proc/self/fd/1 contents")
 }
 
 func TestFailToExtractDaemonLogs(t *testing.T) {

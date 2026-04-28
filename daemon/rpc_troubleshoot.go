@@ -3,7 +3,6 @@ package daemon
 import (
 	"archive/zip"
 	"bytes"
-	"compress/gzip"
 	"context"
 	"errors"
 	"fmt"
@@ -27,16 +26,16 @@ import (
 )
 
 const (
-	// maxDaemonLogSize is the maximum size of daemon logs to collect (300 MB).
-	maxDaemonLogSize = 300 * 1024 * 1024
+	// maxDaemonLogSize is the maximum size of daemon logs to collect (500 MB).
+	maxDaemonLogSize = 500 * 1024 * 1024
 
-	// maxZipFileSize caps the resulting diagnostics archive (19 MB).
-	maxZipFileSize = 19 * 1024 * 1024
+	// maxZipFileSize caps the resulting diagnostics archive (40 MB).
+	maxZipFileSize = 40 * 1024 * 1024
 
 	// User-facing messages sent via pb.DiagnosticsProgress.Error. Centralised
 	// here so support can grep them, and so we never accidentally diverge two
 	// copies of the same wording.
-	zipTooLargeMsg       = "Diagnostics file exceeds 19 MB limit. Please contact support for assistance."
+	zipTooLargeMsg       = "Diagnostics file exceeds 40 MB limit. Please contact support for assistance."
 	failedCreateZipMsg   = "Failed to create zip file: %v"
 	failedChownZipMsg    = "Failed to change file ownership: %v"
 	failedCollectMsg     = "Failed to collect diagnostics: %v"
@@ -82,7 +81,7 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 	state := r.collectAppState(srv.Context())
 	if err := collectDiagnosticsData(srv, zipFile, caller.user.HomeDir, state); err != nil {
 		if errors.Is(err, errZipSizeLimitExceeded) {
-			log.Println(internal.ErrorPrefix, "diagnostics zip exceeded 19 MB limit")
+			log.Println(internal.ErrorPrefix, "diagnostics zip exceeded 40 MB limit")
 			srv.Send(&pb.DiagnosticsProgress{Error: zipTooLargeMsg})
 			return err
 		}
@@ -376,32 +375,26 @@ func stdoutAsRegularFile() (string, bool) {
 	return target, true
 }
 
-// addDaemonLogs writes the daemon's logs to daemon.log.gz inside the archive
-// (gzip-compressed so the 19 MB zip cap holds far more text than uncompressed),
-// dispatching on supervisor to pick the right log source. The unknown variant
-// is fatal: nothing is written and an explanatory error is returned to the
-// caller for surfacing to the user.
-func addDaemonLogs(zipWriter *zip.Writer, supervisor daemonSupervisor) (retErr error) {
-	writer, err := zipWriter.Create("daemon.log.gz")
+// addDaemonLogs writes the daemon's logs to daemon.log inside the archive,
+// dispatching on supervisor to pick the right log source. The zip writer
+// applies its own deflate compression, so no extra gzip layer is needed.
+// The unknown variant is fatal: nothing is written and an explanatory error
+// is returned to the caller for surfacing to the user.
+func addDaemonLogs(zipWriter *zip.Writer, supervisor daemonSupervisor) error {
+	writer, err := zipWriter.Create("daemon.log")
 	if err != nil {
 		return err
 	}
-	gz, _ := gzip.NewWriterLevel(writer, gzip.BestCompression)
-	defer func() {
-		if cerr := gz.Close(); cerr != nil && retErr == nil {
-			retErr = cerr
-		}
-	}()
 
 	// Use journalctl -r (reverse, newest first) for both systemd and snap so
-	// the 300 MB streaming cap drops the *oldest* entries instead of the newest.
+	// the 500 MB streaming cap drops the *oldest* entries instead of the newest.
 	// The snap path queries the snap-managed unit directly rather than `snap
 	// logs`, since snap logs has no reverse mode.
 	switch supervisor {
 	case daemonSupervisorSnap:
-		return streamCommandToWriter(gz, "journalctl", "-u", "snap.nordvpn.nordvpnd", "--no-pager", "-r")
+		return streamCommandToWriter(writer, "journalctl", "-u", "snap.nordvpn.nordvpnd", "--no-pager", "-r")
 	case daemonSupervisorSystemd:
-		return streamCommandToWriter(gz, "journalctl", "-u", "nordvpnd", "--no-pager", "-r")
+		return streamCommandToWriter(writer, "journalctl", "-u", "nordvpnd", "--no-pager", "-r")
 	default:
 		// Last-resort fallback: if the daemon's own stdout (fd 1) is a
 		// regular file, the operator likely redirected logs there manually
@@ -409,7 +402,7 @@ func addDaemonLogs(zipWriter *zip.Writer, supervisor daemonSupervisor) (retErr e
 		// with stdout pinned to a file). Streaming that file gives support
 		// something to work with even when no supervisor was detected.
 		if path, ok := stdoutAsRegularFile(); ok {
-			return streamFileToWriter(gz, path)
+			return streamFileToWriter(writer, path)
 		}
 		return errors.New(noDaemonLogSourceMsg)
 	}
@@ -463,7 +456,7 @@ func streamCommandToWriter(writer io.Writer, name string, args ...string) error 
 	// If we hit the limit, kill the command and note truncation
 	if totalWritten >= maxDaemonLogSize {
 		cmd.Process.Kill()
-		fmt.Fprintf(writer, "\n... (log truncated at 300 MB) ...\n")
+		fmt.Fprintf(writer, "\n... (log truncated at 500 MB) ...\n")
 	}
 
 	cmd.Wait()
@@ -488,7 +481,7 @@ func streamFileToWriter(writer io.Writer, filePath string) error {
 	}
 
 	if info.Size() > maxDaemonLogSize {
-		fmt.Fprintf(writer, "... (log truncated to last 300 MB, reversed) ...\n")
+		fmt.Fprintf(writer, "... (log truncated to last 500 MB, reversed) ...\n")
 		return writeFileTailReversed(writer, file, info.Size(), maxDaemonLogSize)
 	}
 
