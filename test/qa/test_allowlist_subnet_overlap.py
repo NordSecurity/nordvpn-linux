@@ -23,7 +23,7 @@ def test_add_wider_subnet_removes_narrower_disconnected():
 
     allowlist.add_wider_subnet_to_allowlist(WIDER, expected_removed=[NARROWER_A])
 
-    assert not firewall.is_active(None, [WIDER])
+    assert not firewall.is_active()
 
 
 def test_add_wider_subnet_removes_multiple_narrower_disconnected():
@@ -31,7 +31,7 @@ def test_add_wider_subnet_removes_multiple_narrower_disconnected():
 
     allowlist.add_wider_subnet_to_allowlist(WIDER, expected_removed=[NARROWER_A, NARROWER_B])
 
-    assert not firewall.is_active(None, [WIDER])
+    assert not firewall.is_active()
 
 
 def test_add_wider_subnet_declined_leaves_state_unchanged():

@@ -449,7 +449,7 @@ def port_is_allowed(peer_address: str) -> bool:
 
 
 def is_port_allowed(peer_address: str) -> bool:
-    rules = os.popen("sudo iptables -S").read()
+    rules = os.popen("sudo nft list ruleset").read()
     return f"49111 -m comment --comment nordvpn-meshnet -m comment --comment \"-allow-fileshare-rule-{peer_address}\" -j ACCEPT" in rules
 
 

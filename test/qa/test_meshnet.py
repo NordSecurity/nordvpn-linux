@@ -120,7 +120,7 @@ def test_exitnode_permissions(routing: bool, local: bool, incoming: bool, filesh
     assert result, message
 
     #rules = sh.sudo.iptables("-S", "POSTROUTING", "-t", "nat")
-    rules = os.popen("sudo iptables -S POSTROUTING -t nat").read()
+    rules = os.popen("sudo nft list chain ip nat postrouting").read()
 
     if routing:
         assert f"-A POSTROUTING -s {peer_ip}/32 ! -d 100.64.0.0/10 -m comment --comment nordvpn -j MASQUERADE" in rules
@@ -138,7 +138,7 @@ def test_remove_peer_firewall_update():
 
     def all_peer_permissions_removed() -> (bool, str):
         #rules = sh.sudo.iptables("-S")
-        rules = os.popen("sudo iptables -S").read()
+        rules = os.popen("sudo nft list ruleset").read()
         if peer_ip not in rules:
             return True, ""
         return False, f"Rules for peer were not removed from firewall\nPeer IP: {peer_ip}\nrules:\n{rules}"

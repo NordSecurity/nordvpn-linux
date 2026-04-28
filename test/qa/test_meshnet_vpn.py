@@ -39,7 +39,7 @@ def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
 
     # If either LAN discovery or local(or both) is disabled, routing rule should bellow LAN blocking rules.
     def check_rules_routing() -> (bool, str):
-        rules = sh_no_tty.sudo.iptables("-S", "FORWARD")
+        rules = sh_no_tty.sudo.nft("list", "chain", "inet", "nordvpn", "forward")
 
         routing_rule = f"-A FORWARD -s {peer_ip}/32 -m comment --comment nordvpn-exitnode-transient -j ACCEPT"
         routing_rule_idx = rules.find(routing_rule)
