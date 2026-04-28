@@ -12,6 +12,7 @@ var GroupMap = map[string]ServerGroup{
 	"asia_pacific":                     ServerGroup_ASIA_PACIFIC,
 	"africa_the_middle_east_and_india": ServerGroup_AFRICA_THE_MIDDLE_EAST_AND_INDIA,
 	"obfuscated_servers":               ServerGroup_OBFUSCATED,
+	"dedicated_servers":                ServerGroup_DEDICATED_SERVERS,
 }
 
 // GroupTitleForId converts group ID to group lowercase title

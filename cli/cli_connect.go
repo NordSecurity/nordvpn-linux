@@ -101,7 +101,6 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 				return formatError(err)
 			}
 		}
-
 		switch out.Type {
 		case internal.CodeFailure:
 			rpcErr = errors.New(client.ConnectCantConnect)
@@ -149,6 +148,14 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 			rpcErr = errors.New(internal.DoubleGroupErrorMessage)
 		case internal.CodeTechnologyDisabled:
 			rpcErr = errors.New(TechnologyDisabledMessage)
+		case internal.CodeDedicatedServerRenewError:
+			rpcErr = errors.New(DedicatedServersNoServiceMssage)
+		case internal.CodeDedicatedServeversServiceButNoServers:
+			rpcErr = errors.New(DedicatedServersNoServersAvailable)
+		case internal.CodeDedicatedServerNotReady:
+			rpcErr = errors.New(DedicatedServersServerNotReadyMessage)
+		case internal.CodeDedicatedServerNoNordlynx:
+			rpcErr = errors.New(DedicatedServersNoNordlynxMessage)
 		case internal.CodeVPNRunning:
 			color.Yellow(client.ConnectConnected)
 		case internal.CodeNothingToDo:

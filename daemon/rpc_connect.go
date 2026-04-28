@@ -265,15 +265,27 @@ func (r *RPC) connect(
 		OpenVPNPassword:    tokenData.OpenVPNPassword,
 		NordLynxPrivateKey: tokenData.NordLynxPrivateKey,
 	}
+
+	// if server is a dedicated server, we need to use the device key instead of NordLynx private key
+	if slices.ContainsFunc(serverSelection.server.Groups, func(group core.Group) bool {
+		return group.ID == config.ServerGroup_DEDICATED_SERVERS
+	}) {
+		if cfg.Technology != config.Technology_NORDLYNX {
+			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServerNoNordlynx})
+		}
+		creds.NordLynxPrivateKey = cfg.DeviceKey
+	}
+
 	serverData := vpn.ServerData{
-		IP:                subnet.Addr(),
-		Hostname:          serverSelection.server.Hostname,
-		Protocol:          cfg.AutoConnectData.Protocol,
-		NordLynxPublicKey: serverSelection.server.NordLynxPublicKey,
-		Obfuscated:        cfg.AutoConnectData.Obfuscate,
-		PostQuantum:       cfg.AutoConnectData.PostquantumVpn,
-		OpenVPNVersion:    serverSelection.server.Version(),
-		NordWhisperPort:   serverSelection.server.NordWhisperPort,
+		IP:                  subnet.Addr(),
+		Hostname:            serverSelection.server.Hostname,
+		Protocol:            cfg.AutoConnectData.Protocol,
+		NordLynxPublicKey:   serverSelection.server.NordLynxPublicKey,
+		Obfuscated:          cfg.AutoConnectData.Obfuscate,
+		PostQuantum:         cfg.AutoConnectData.PostquantumVpn,
+		OpenVPNVersion:      serverSelection.server.Version(),
+		NordWhisperPort:     serverSelection.server.NordWhisperPort,
+		DedicatedServerPort: serverSelection.server.DedicatedServersPort,
 	}
 
 	allowlist := cfg.AutoConnectData.Allowlist

@@ -182,6 +182,9 @@ const (
 	// /v1/dedicated-servers/devices/<device-uuid>
 	DevicesUpdateURL = DevicesURL + "/%s"
 
+	// /v1/dedicated-servers/<dedicated-server-uuid>/connect
+	DedicatedServersConnectURL = DedicatedServersURL + "/%s/connect"
+
 	// TODO: remove once the real API becomes available
 	MockServerBaseURL = ""
 )

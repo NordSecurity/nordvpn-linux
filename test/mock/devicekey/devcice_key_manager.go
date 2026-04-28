@@ -1,18 +1,20 @@
 package devicekey
 
+import devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
+
 type MockDeviceKeyManager struct {
-	CheckAndRegisterDedicatedServersStatus bool
+	DedicatedServerRegistrationData *devicekey.DedicatedServersRegistrationData
 
 	WasKeyRegistered        bool
 	WasDeviceKeyInvalidated bool
 }
 
-func (m *MockDeviceKeyManager) CheckAndRegisterDedicatedServers() bool {
-	if !m.CheckAndRegisterDedicatedServersStatus {
-		return m.CheckAndRegisterDedicatedServersStatus
+func (m *MockDeviceKeyManager) CheckAndRegisterDedicatedServers() *devicekey.DedicatedServersRegistrationData {
+	if m.DedicatedServerRegistrationData == nil {
+		return nil
 	}
 	m.WasKeyRegistered = true
-	return m.CheckAndRegisterDedicatedServersStatus
+	return m.DedicatedServerRegistrationData
 }
 
 func (m *MockDeviceKeyManager) InvalidateDeviceKeyData() error {

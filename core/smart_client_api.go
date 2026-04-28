@@ -150,6 +150,18 @@ func (s *smartClientAPI) UpdateDevice(deviceUUID uuid.UUID, req UpdateDeviceRequ
 	})
 }
 
+func (s *smartClientAPI) DedicatedServers() (DedicatedServers, error) {
+	return callWithToken(s.store, func(token string) (DedicatedServers, error) {
+		return s.wrapped.DedicatedServers(token)
+	})
+}
+
+func (s *smartClientAPI) Connect(dedicatedServerUUID string, connectRequest ConnectRequest) (ConnectResponse, error) {
+	return callWithToken(s.store, func(token string) (ConnectResponse, error) {
+		return s.wrapped.Connect(token, dedicatedServerUUID, connectRequest)
+	})
+}
+
 func (s *smartClientAPI) Base() string {
 	return s.wrapped.Base()
 }

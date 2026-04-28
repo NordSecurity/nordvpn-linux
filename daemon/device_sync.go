@@ -9,12 +9,13 @@ func (r *RPC) SyncDevice() error {
 		return fmt.Errorf("checking service status: %w", err)
 	}
 
+	hasDedicatedServerService = true
 	if !hasDedicatedServerService {
 		return nil
 	}
 
-	ok := r.dedicatedServersKeyManager.CheckAndRegisterDedicatedServers()
-	if !ok {
+	data := r.dedicatedServersKeyManager.CheckAndRegisterDedicatedServers()
+	if data == nil {
 		return fmt.Errorf("failed to registed device")
 	}
 

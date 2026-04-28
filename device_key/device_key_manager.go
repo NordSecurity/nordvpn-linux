@@ -39,8 +39,16 @@ type MeshnetDeviceKeyManager interface {
 	ForceRegisterMeshnet() error
 }
 
+type DedicatedServersRegistrationData struct {
+	DevicePublicKey string
+	DeviceUUID      uuid.UUID
+}
+
 type DedicatedServersKeyManager interface {
-	CheckAndRegisterDedicatedServers() bool
+	// CheckAndRegisterDedicatedServers checks if device has been registered for private servers and registers it if it
+	// isn't.
+	// Returns the registration data if it is available. Returns nil if data is not available.
+	CheckAndRegisterDedicatedServers() *DedicatedServersRegistrationData
 	DeviceKeyInvalidator
 }
 
@@ -179,32 +187,42 @@ type registerFunc func(deviceKey string,
 // Returns true if the key was successfully registered.
 //
 // Thread-safe.
-func (d *DeviceKeyManagerImpl) CheckAndRegisterDedicatedServers() bool {
+func (d *DeviceKeyManagerImpl) CheckAndRegisterDedicatedServers() *DedicatedServersRegistrationData {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
 	var cfg config.Config
 	if err := d.configManager.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
-		return false
+		return nil
 	}
 
 	if isDedicatedServersRegistrationInfoCorrect(cfg) {
-		return true
+		return &DedicatedServersRegistrationData{
+			DeviceUUID:      cfg.DeviceUUID,
+			DevicePublicKey: d.keyGenerator.Public(cfg.DeviceKey),
+		}
 	}
 
 	newConfig, err := d.registerKey(&cfg, d.registerDedicatedServer)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to register device key for dedicated servers:", err)
-		return false
+		return nil
 	}
 
 	if err := d.configManager.SaveWith(keyConfig(*newConfig)); err != nil {
 		log.Println(internal.ErrorPrefix, "failed to save dedicated servers config:", err)
-		return false
+		return nil
 	}
 
-	return isDedicatedServersRegistrationInfoCorrect(*newConfig)
+	if !isDedicatedServersRegistrationInfoCorrect(*newConfig) {
+		return nil
+	}
+
+	return &DedicatedServersRegistrationData{
+		DeviceUUID:      newConfig.DeviceUUID,
+		DevicePublicKey: d.keyGenerator.Public(newConfig.DeviceKey),
+	}
 }
 
 func (d *DeviceKeyManagerImpl) InvalidateDeviceKeyData() error {

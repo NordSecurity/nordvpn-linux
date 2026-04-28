@@ -60,6 +60,8 @@ type mockSimpleClientAPI struct {
 	NotifyNewTransferFunc             func(token string, self uuid.UUID, peer uuid.UUID, fileName string, fileCount int, transferID string) error
 	DevicesFunc                       func(token string, req core.DevicesRequest) (core.DevicesResponse, error)
 	UpdateDevicesFunc                 func(token string, req core.UpdateDeviceRequest) (core.DevicesResponse, error)
+	DedicatedServersFunc              func(token string) (core.DedicatedServers, error)
+	ConnectFunc                       func(token string, dedicatedServerUIID string, req core.ConnectRequest) (core.ConnectResponse, error)
 }
 
 func (m *mockSimpleClientAPI) NotificationCredentials(token, appUserID string) (core.NotificationCredentialsResponse, error) {
@@ -128,6 +130,14 @@ func (m *mockSimpleClientAPI) RegisterDevice(token string, req core.DevicesReque
 
 func (m *mockSimpleClientAPI) UpdateDevice(token string, deviceUUID uuid.UUID, req core.UpdateDeviceRequest) (core.DevicesResponse, error) {
 	return m.UpdateDevicesFunc(token, req)
+}
+
+func (m *mockSimpleClientAPI) DedicatedServers(token string) (core.DedicatedServers, error) {
+	return m.DedicatedServersFunc(token)
+}
+
+func (m *mockSimpleClientAPI) Connect(token string, dedicatedServerUUID string, req core.ConnectRequest) (core.ConnectResponse, error) {
+	return m.ConnectFunc(token, dedicatedServerUUID, req)
 }
 
 func (m *mockSimpleClientAPI) Base() string {

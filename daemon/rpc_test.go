@@ -97,6 +97,7 @@ func testRPC() *RPC {
 		api,
 		&mockServersAPI{},
 		&testcore.CredentialsAPIMock{},
+		&testcore.DedicatedServersAPIMock{},
 		testNewCDNAPI(),
 		testNewRepoAPI(),
 		&testcore.AuthenticationAPImock{},

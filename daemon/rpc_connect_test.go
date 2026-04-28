@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/netip"
+	"strconv"
 	"testing"
 	"time"
 
@@ -17,8 +18,10 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -159,11 +162,13 @@ func testRPCLocal(t *testing.T) *RPC {
 }
 
 type workingLoginChecker struct {
-	isVPNExpired         bool
-	vpnErr               error
-	isDedicatedIPExpired bool
-	dedicatedIPErr       error
-	dedicatedIPService   []auth.DedicatedIPService
+	isVPNExpired              bool
+	vpnErr                    error
+	isDedicatedIPExpired      bool
+	dedicatedIPErr            error
+	dedicatedIPService        []auth.DedicatedIPService
+	isDedicatedServersExpired bool
+	dedicatedServerErr        error
 }
 
 func (*workingLoginChecker) IsLoggedIn() (bool, error)     { return true, nil }
@@ -181,7 +186,10 @@ func (c *workingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPServic
 	return c.dedicatedIPService, nil
 }
 func (c *workingLoginChecker) HasDedicatedServerService() (bool, error) {
-	return false, nil
+	if c.isDedicatedServersExpired {
+		return false, c.dedicatedServerErr
+	}
+	return true, c.dedicatedServerErr
 }
 
 type mockEndpointResolver struct{ ip netip.Addr }
@@ -1065,4 +1073,169 @@ func Test_determineServerGroup(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestConnect_DedicatedServers(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	serverUUID := uuid.MustParse("af0bc2b1-785a-4455-bfe0-5397c39c4f4e")
+	serverAddress := "1.2.3.4"
+	serverPort := 55555
+	dedicatedServer := core.DedicatedServer{
+		UUID:   serverUUID.String(),
+		Name:   "server 1",
+		Status: core.DedicatedServerStatusRunning,
+		IP:     serverAddress,
+	}
+	dedicatedServers := core.DedicatedServers{dedicatedServer}
+
+	dedicatedServerNotReady := dedicatedServer
+	dedicatedServerNotReady.Status = "not running"
+
+	serverPublicKey := "public_key"
+	connectResponse := core.ConnectResponse{
+		ServerEndpoint:  serverAddress + ":" + strconv.Itoa(serverPort),
+		ServerPublicKey: serverPublicKey,
+	}
+
+	deviceKey := "device key"
+
+	tests := []struct {
+		name                      string
+		isDedicatedServersExpired bool
+		dedicatedServersResponse  core.DedicatedServers
+		connectResponse           core.ConnectResponse
+		technology                config.Technology
+		serviceCheckErr           error
+		dedicatedServersFetchErr  error
+		connectErr                error
+		expectedErr               error
+		expectedStatus            int64
+	}{
+		{
+			name:                      "success",
+			isDedicatedServersExpired: false,
+			dedicatedServersResponse:  dedicatedServers,
+			connectResponse:           connectResponse,
+			technology:                config.Technology_NORDLYNX,
+			expectedStatus:            internal.CodeConnected,
+		},
+		{
+			name:                      "dedicated servers service has expired",
+			isDedicatedServersExpired: true,
+			expectedStatus:            internal.CodeDedicatedServerRenewError,
+		},
+		{
+			name:                      "empty dedicated servers list",
+			isDedicatedServersExpired: false,
+			dedicatedServersResponse:  core.DedicatedServers{},
+			expectedStatus:            internal.CodeDedicatedServeversServiceButNoServers,
+		},
+		{
+			name:                      "dedicated server not ready",
+			isDedicatedServersExpired: false,
+			dedicatedServersResponse:  core.DedicatedServers{dedicatedServerNotReady},
+			expectedStatus:            internal.CodeDedicatedServerNotReady,
+		},
+		{
+			name:                      "technology is not nordlynx",
+			isDedicatedServersExpired: false,
+			dedicatedServersResponse:  dedicatedServers,
+			connectResponse:           connectResponse,
+			technology:                config.Technology_OPENVPN,
+			expectedStatus:            internal.CodeDedicatedServerNoNordlynx,
+		},
+		{
+			name:            "dedicated server service check fails",
+			serviceCheckErr: errors.New("error"),
+			expectedStatus:  internal.CodeSuccess,
+			expectedErr:     internal.ErrUnhandled,
+		},
+		{
+			name:                      "dedicated servers fetch fails",
+			isDedicatedServersExpired: false,
+			dedicatedServersFetchErr:  errors.New("error"),
+			expectedErr:               internal.ErrUnhandled,
+		},
+		{
+			name:                      "connect fails",
+			isDedicatedServersExpired: false,
+			dedicatedServersResponse:  dedicatedServers,
+			connectErr:                errors.New("error"),
+			expectedErr:               internal.ErrUnhandled,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			rpc := testRPCLocal(t)
+			rpc.dedicatedServersAPI = &testcore.DedicatedServersAPIMock{
+				DedicatedServersResponse: test.dedicatedServersResponse,
+				ConnectResponse:          test.connectResponse,
+				DedicatedServerErr:       test.dedicatedServersFetchErr,
+				ConnectErr:               test.connectErr,
+			}
+			rpc.ac = &workingLoginChecker{
+				isDedicatedServersExpired: test.isDedicatedServersExpired,
+				dedicatedServerErr:        test.serviceCheckErr,
+			}
+
+			configManagerMock := rpc.cm.(*mockConfigManager)
+			configManagerMock.c.Technology = test.technology
+			configManagerMock.c.DeviceKey = deviceKey
+
+			mockRPCServer := &mockRPCServer{}
+			err := rpc.Connect(&pb.ConnectRequest{ServerTag: "dedicated_servers"}, mockRPCServer)
+			assert.Equal(t, test.expectedErr, err, "Unexpected error returned by the Connect RPC.")
+			if test.expectedErr == nil {
+				assert.Equal(t, test.expectedStatus, mockRPCServer.msg.Type,
+					"Unexpected status in a Connect RPC response.")
+			}
+		})
+	}
+}
+
+func TestDedicatedServers_Internals(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	serverUUID := uuid.MustParse("af0bc2b1-785a-4455-bfe0-5397c39c4f4e")
+	serverAddress := "1.2.3.4"
+	serverPort := int64(55555)
+	dedicatedServer := core.DedicatedServer{
+		UUID:   serverUUID.String(),
+		Name:   "server 1",
+		Status: core.DedicatedServerStatusRunning,
+		IP:     serverAddress,
+	}
+	dedicatedServers := core.DedicatedServers{dedicatedServer}
+
+	serverPublicKey := "public_key"
+	connectResponse := core.ConnectResponse{
+		ServerEndpoint:  serverAddress + ":" + strconv.Itoa(int(serverPort)),
+		ServerPublicKey: serverPublicKey,
+	}
+
+	deviceKey := "device key"
+
+	rpc := testRPCLocal(t)
+	rpc.dedicatedServersAPI = &testcore.DedicatedServersAPIMock{
+		DedicatedServersResponse: dedicatedServers,
+		ConnectResponse:          connectResponse,
+	}
+	rpc.ac = &workingLoginChecker{
+		isDedicatedServersExpired: false,
+	}
+
+	configManagerMock := rpc.cm.(*mockConfigManager)
+	configManagerMock.c.Technology = config.Technology_NORDLYNX
+	configManagerMock.c.DeviceKey = deviceKey
+
+	networkerMock := rpc.netw.(*testnetworker.Mock)
+
+	mockRPCServer := &mockRPCServer{}
+	rpc.Connect(&pb.ConnectRequest{ServerTag: "dedicated_servers"}, mockRPCServer)
+
+	assert.Equal(t, deviceKey, networkerMock.ProvidedCredentials.NordLynxPrivateKey,
+		"DeviceKey should be used in place of NordlynxPrivateKey in case of dedicated server connections.")
+	assert.Equal(t, serverPort, networkerMock.ProvidedServerData.DedicatedServerPort)
 }

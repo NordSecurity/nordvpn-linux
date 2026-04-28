@@ -43,6 +43,8 @@ type RawServersAPI interface {
 type RawDedicatedServersAPI interface {
 	RegisterDevice(token string, request DevicesRequest) (DevicesResponse, error)
 	UpdateDevice(token string, deviceUUID uuid.UUID, request UpdateDeviceRequest) (DevicesResponse, error)
+	DedicatedServers(token string) (DedicatedServers, error)
+	Connect(token string, serverUUID string, connectRequest ConnectRequest) (ConnectResponse, error)
 }
 
 type RawCombinedAPI interface {
@@ -496,6 +498,51 @@ func (api *SimpleClientAPI) UpdateDevice(token string, deviceUUID uuid.UUID, upd
 	}
 
 	return devicesResponse, nil
+}
+
+func (api *SimpleClientAPI) DedicatedServers(token string) (DedicatedServers, error) {
+	// TODO: replace MockServerBaseURL with api.baseURL once the real API becomes available
+	req, err := request.NewRequestWithBearerToken(http.MethodGet, api.agent, MockServerBaseURL, DedicatedServersURL, "application/json", "", "gzip, deflate", nil, token)
+	if err != nil {
+		return DedicatedServers{}, fmt.Errorf("creating nc credentials request: %w", err)
+	}
+	resp, err := api.doRequest(req)
+	if err != nil {
+		return DedicatedServers{}, fmt.Errorf("executing HTTP GET request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var dedicatedServers DedicatedServers
+	if err = json.NewDecoder(resp.Body).Decode(&dedicatedServers); err != nil {
+		return DedicatedServers{}, err
+	}
+
+	return dedicatedServers, nil
+}
+
+func (api *SimpleClientAPI) Connect(token string, serverUUID string, connectRequest ConnectRequest) (ConnectResponse, error) {
+	data, err := json.Marshal(connectRequest)
+	if err != nil {
+		return ConnectResponse{}, fmt.Errorf("marshaling the request data: %w", err)
+	}
+	// TODO: replace MockServerBaseURL with api.baseURL once the real API becomes available
+	dedicatedServerURL := fmt.Sprintf(DedicatedServersConnectURL, serverUUID)
+	req, err := request.NewRequestWithBearerToken(http.MethodPost, api.agent, MockServerBaseURL, dedicatedServerURL, "application/json", "", "gzip, deflate", bytes.NewBuffer(data), token)
+	if err != nil {
+		return ConnectResponse{}, fmt.Errorf("creating nc credentials request: %w", err)
+	}
+	resp, err := api.doRequest(req)
+	if err != nil {
+		return ConnectResponse{}, fmt.Errorf("executing HTTP GET request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var connectResponse ConnectResponse
+	if err = json.NewDecoder(resp.Body).Decode(&connectResponse); err != nil {
+		return ConnectResponse{}, err
+	}
+
+	return connectResponse, nil
 }
 
 // Insights returns insights about user

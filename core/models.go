@@ -257,26 +257,27 @@ type ServerIP struct {
 }
 
 type Server struct {
-	ID                int64  `json:"id"`
-	CreatedAt         string `json:"created_at"`
-	UpdatedAt         string `json:"updated_at"`
-	Name              string `json:"name"`
-	Station           string `json:"station"`
-	Hostname          string `json:"hostname"`
-	Load              int64  `json:"load"`
-	Status            Status `json:"status"`
-	Locations         `json:"locations"`
-	Technologies      Technologies `json:"technologies"`
-	Groups            `json:"groups"`
-	Specifications    []Specification  `json:"specifications"`
-	Distance          float64          `json:"distance"`
-	Timestamp         int64            `json:"timestamp"`
-	Penalty           float64          `json:"penalty"`
-	PartialPenalty    float64          `json:"partial_penalty"`
-	NordLynxPublicKey string           `json:"-"`
-	NordWhisperPort   int64            `json:"-"`
-	Keys              []string         `json:"-"`
-	IPRecords         []ServerIPRecord `json:"ips"`
+	ID                   int64  `json:"id"`
+	CreatedAt            string `json:"created_at"`
+	UpdatedAt            string `json:"updated_at"`
+	Name                 string `json:"name"`
+	Station              string `json:"station"`
+	Hostname             string `json:"hostname"`
+	Load                 int64  `json:"load"`
+	Status               Status `json:"status"`
+	Locations            `json:"locations"`
+	Technologies         Technologies `json:"technologies"`
+	Groups               `json:"groups"`
+	Specifications       []Specification  `json:"specifications"`
+	Distance             float64          `json:"distance"`
+	Timestamp            int64            `json:"timestamp"`
+	Penalty              float64          `json:"penalty"`
+	PartialPenalty       float64          `json:"partial_penalty"`
+	NordLynxPublicKey    string           `json:"-"`
+	NordWhisperPort      int64            `json:"-"`
+	DedicatedServersPort int64            `json"-"`
+	Keys                 []string         `json:"-"`
+	IPRecords            []ServerIPRecord `json:"ips"`
 }
 
 // ServerObfuscationStatus is the return status of IsServerObfuscated

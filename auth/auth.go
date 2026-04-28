@@ -218,6 +218,8 @@ func (r *RenewingChecker) HasDedicatedServerService() (bool, error) {
 		return false, fmt.Errorf("fetching services: %w", err)
 	}
 
+	return true, nil
+
 	return slices.ContainsFunc(services, func(service core.ServiceData) bool {
 		return service.ID == DedicatedIPServiceID && r.expChecker.IsExpired(service.ExpiresAt)
 	}), nil

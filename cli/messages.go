@@ -393,4 +393,10 @@ Your browsing activities remain private, regardless of your choice.
 	SetARPIgnoreSuccess      = "ARP ignore set to '%s' successfully."
 	SetARPIgnoreNothingToSet = "ARP ignore is already set to '%s'."
 	SetARPIgnoreWarning      = "You’ve turned off arp-ignore. This is an advanced privacy setting and should only be off if your network setup requires ARP responses."
+
+	// TODO: change those messages once we have proper texts
+	DedicatedServersNoServiceMssage       = "no dedicated servers service, purchase it at www.test.com"
+	DedicatedServersNoServersAvailable    = "pick a location at www.test1.com"
+	DedicatedServersServerNotReadyMessage = "activating your server, please wait"
+	DedicatedServersNoNordlynxMessage     = "Nordlynx technology must be enabled"
 )
