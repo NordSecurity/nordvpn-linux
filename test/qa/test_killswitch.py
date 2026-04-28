@@ -234,25 +234,24 @@ def test_nc_mqtt_connection_with_killswitch():
 
         # Restart daemon to trigger fresh NC connection attempt
         # NC client starts on daemon startup when user is logged in
-        sh.sudo.systemctl.restart("nordvpnd")
-        daemon.wait_until_daemon_is_running()
+        daemon.restart()
 
         # Wait for NC connection success message in logs
         # NC should connect despite kill switch because its sockets have fwmark set
-        found, not_found = daemon_log_reader.wait_for_messages(
+        nc_connected = daemon_log_reader.wait_for_messages(
             messages=["[NC] Connected"],
             cursor=cursor,
             timeout=90,
             interval=3,
-            return_not_found=True,
         )
 
-        if not found:
-            # Collect NC logs for debugging
+        if not nc_connected:
+            # Collect NC logs for debugging on failure
             partial_log = daemon_log_reader.get_partial_log(cursor)
             nc_logs = [line for line in partial_log.splitlines() if "[NC]" in line]
             logging.log(f"NC logs during test: {nc_logs}")
-            assert found, f"NC client failed to connect with kill switch enabled. NC logs: {nc_logs[-20:]}"
+
+        assert nc_connected, "NC client should connect successfully with kill switch enabled"
 
     # Cleanup
     output = sh.nordvpn.set.killswitch("off")
