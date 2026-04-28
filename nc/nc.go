@@ -10,7 +10,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -20,6 +22,7 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	mqttp "github.com/eclipse/paho.mqtt.golang/packets"
+	"golang.org/x/sys/unix"
 )
 
 const (
@@ -129,6 +132,7 @@ type Client struct {
 	subjectPeerUpdate events.Publisher[[]string]
 	credsFetcher      CredentialsGetter
 	retryDelayFunc    CalculateRetryDelayForAttempt
+	fwmark            uint32
 
 	startMu          sync.Mutex
 	started          bool
@@ -143,6 +147,7 @@ func NewClient(
 	subjectErr events.Publisher[error],
 	subjectPeerUpdate events.Publisher[[]string],
 	credsFetcher CredentialsGetter,
+	fwmark uint32,
 ) *Client {
 	return &Client{
 		clientBuilder:     clientBuilder,
@@ -151,6 +156,7 @@ func NewClient(
 		subjectPeerUpdate: subjectPeerUpdate,
 		credsFetcher:      credsFetcher,
 		retryDelayFunc:    network.ExponentialBackoff,
+		fwmark:            fwmark,
 	}
 }
 
@@ -175,6 +181,28 @@ func (c *Client) createClientOptions(
 	opts.SetPassword(credentials.Password)
 	opts.SetClientID(credentials.UserID.String())
 	opts.SetConnectTimeout(timeout)
+
+	if c.fwmark != 0 {
+		var operr error
+		fwmarkFn := func(fd uintptr) {
+			operr = syscall.SetsockoptInt(
+				int(fd),
+				unix.SOL_SOCKET,
+				unix.SO_MARK,
+				int(c.fwmark),
+			)
+		}
+		dialer := &net.Dialer{
+			Timeout: timeout,
+			Control: func(network, address string, conn syscall.RawConn) error {
+				if err := conn.Control(fwmarkFn); err != nil {
+					return err
+				}
+				return operr
+			},
+		}
+		opts.SetDialer(dialer)
+	}
 
 	opts.SetDefaultPublishHandler(func(_ mqtt.Client, m mqtt.Message) {
 		log.Println(logPrefix, "MQTT message received.")
