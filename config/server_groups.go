@@ -12,6 +12,7 @@ var GroupMap = map[string]ServerGroup{
 
 // IsRegionalGroup reports whether g is a deprecated regional group; uses raw ints since the named constants are removed.
 func IsRegionalGroup(g ServerGroup) bool {
+	//exhaustive:ignore [only regional group IDs are relevant]
 	switch g {
 	case 19, 21, 23, 25: // EUROPE, THE_AMERICAS, ASIA_PACIFIC, AFRICA_THE_MIDDLE_EAST_AND_INDIA
 		return true
