@@ -138,8 +138,7 @@ type Combined struct {
 	enableLocalTraffic bool
 	// list with the existing OS interfaces when VPN was connected.
 	// This is used at network changes to know when a new interface was inserted
-	interfaces mapset.Set[string]
-	// dnsDenied            bool
+	interfaces      mapset.Set[string]
 	ipv6Blocker     ipv6.Blocker
 	ignoreARP       bool
 	arpIgnoreSetter kernel.SysctlSetter

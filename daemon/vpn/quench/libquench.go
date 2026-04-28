@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net"
 	"net/netip"
 	"sync"
@@ -175,6 +176,7 @@ func (q *Quench) Start(ctx context.Context, creds vpn.Credentials, server vpn.Se
 
 	opts := quenchBindigns.NewVnicOptions()
 	opts.SetFwmark(q.fwmark)
+	opts.SetConnectionTimeout(math.MaxUint64)
 
 	vnic, err := quenchBindigns.VnicFromName(q.vnicName, q.observer, &opts)
 	if err != nil {
