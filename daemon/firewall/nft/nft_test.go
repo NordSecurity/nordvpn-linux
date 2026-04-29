@@ -51,10 +51,6 @@ func TestConfigure(t *testing.T) {
 			defer helpers.CleanNamespace(t, ns)
 
 			require.NoError(t, n.Configure(tt.fwConfig))
-			// Currently just checking if the table was created
-			// When rules are finalized, we can start comparing hard coded expected strings to
-			// whatever output we get after calling Configure()
-
 			// Output can be checked via help of
 			// exec.Command("nft", "list", "ruleset")
 			table, err := n.conn.ListTableOfFamily(tableName, nftables.TableFamilyINet)

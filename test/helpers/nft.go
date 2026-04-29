@@ -4,7 +4,7 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func ListTable(tableName string) []string {
@@ -14,6 +14,6 @@ func ListTable(tableName string) []string {
 func WithNftCommandOutput(t *testing.T, args []string, fn func(out string)) {
 	t.Helper()
 	out, err := exec.Command("nft", args...).Output()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	fn(string(out))
 }

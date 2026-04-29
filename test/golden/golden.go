@@ -1,6 +1,9 @@
 package golden
 
 import (
+	"errors"
+	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,49 +17,70 @@ const UpdateGoldenEnvVar = "UPDATE_GOLDEN"
 
 var update = os.Getenv(UpdateGoldenEnvVar) != ""
 
+// AssertMatchesGolden compares passed string with file located based on
+// convention. Has to be called from subtest.
+// For a subtest "TestVPNRuleset/kill_switch_only" the result is
+// "testdata/TestVPNRuleset/kill_switch_only.nft".
 func AssertMatchesGolden(t *testing.T, got string) {
 	t.Helper()
-	path := goldenFilePath(t)
-	dir := filepath.Dir(path)
+	dir, name := goldenFileParts(t)
 
 	if update {
-		require.NoError(t, os.MkdirAll(dir, 0o750))
-		require.NoError(t, os.WriteFile(path, []byte(got), 0o600))
+		root, err := os.OpenRoot(".")
+		require.NoError(t, err)
+		defer root.Close()
+		require.NoError(t, root.MkdirAll(filepath.Join("testdata", dir), 0o750))
+
+		f, err := root.OpenFile(
+			filepath.Join("testdata", dir, name),
+			os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
+			0o600,
+		)
+		require.NoError(t, err)
+		defer f.Close()
+
+		_, err = f.WriteString(got)
+		require.NoError(t, err)
+
 		return
 	}
 
-	golden, err := os.ReadFile(path)
-	if os.IsNotExist(err) {
+	root, err := os.OpenRoot("testdata")
+	require.NoError(t, err)
+	defer root.Close()
+
+	f, err := root.Open(filepath.Join(dir, name))
+	if errors.Is(err, fs.ErrNotExist) {
 		t.Fatalf(
-			"golden file %s not found — run with %s=1 to create it",
-			UpdateGoldenEnvVar,
-			path,
+			"golden file testdata/%s/%s not found — run with %s=1 to create it",
+			dir, name, UpdateGoldenEnvVar,
 		)
 	}
 	require.NoError(t, err)
+	defer f.Close()
 
-	if string(golden) == got {
+	data, err := io.ReadAll(f)
+	require.NoError(t, err)
+
+	if string(data) == got {
 		return
 	}
 
 	diff, _ := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
-		A:        difflib.SplitLines(string(golden)),
+		A:        difflib.SplitLines(string(data)),
 		B:        difflib.SplitLines(got),
 		FromFile: "golden",
 		ToFile:   "actual",
 		Context:  3,
 	})
-	t.Fatalf("ruleset does not match golden file %s:\n%s", path, diff)
+	t.Fatalf("ruleset does not match golden file testdata/%s/%s:\n%s", dir, name, diff)
 }
 
-// goldenFilePath derives the path from t.Name().
-// For a subtest "TestVPNRuleset/kill_switch_only" the result is
-// "testdata/TestVPNRuleset/kill_switch_only.nft".
-func goldenFilePath(t *testing.T) string {
+func goldenFileParts(t *testing.T) (dir, name string) {
 	t.Helper()
 	parts := strings.SplitN(t.Name(), "/", 2)
 	if len(parts) != 2 {
-		t.Fatalf("goldenFilePath: %s must be a subtest (contain '/')", t.Name())
+		t.Fatalf("goldenFileParts: %s must be a subtest (contain '/')", t.Name())
 	}
-	return filepath.Join("testdata", parts[0], parts[1]+".nft")
+	return parts[0], parts[1] + ".nft"
 }
