@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/test/golden"
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )
@@ -324,7 +325,7 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
 	env["PACKAGE"] = devPackageType
-	//TODO (LVPN-9228) remove usage of ENABLE_GUI_BUILD variable, once the way of building is unified
+	// TODO (LVPN-9228) remove usage of ENABLE_GUI_BUILD variable, once the way of building is unified
 	env["ENABLE_GUI_BUILD"] = "1"
 
 	switch packageType {
@@ -592,6 +593,9 @@ func (Test) CgoDocker(ctx context.Context) error {
 	}
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
+	if v := os.Getenv(golden.UpdateGoldenEnvVar); v != "" {
+		env[golden.UpdateGoldenEnvVar] = v
+	}
 
 	return RunDockerWithSettings(
 		ctx,

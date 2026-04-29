@@ -31,6 +31,7 @@ require (
 	github.com/magefile/mage v1.14.0
 	github.com/miekg/dns v1.1.72
 	github.com/milosgajdos/tenus v0.0.3
+	github.com/pmezard/go-difflib v1.0.0
 	github.com/quic-go/quic-go v0.57.0
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v2 v2.25.0
@@ -78,7 +79,6 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect

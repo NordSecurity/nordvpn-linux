@@ -2,14 +2,13 @@ package helpers
 
 import (
 	"os/exec"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func ListChain(chainName string) []string {
-	return []string{"list", "chain", "inet", "nordvpn", chainName}
+func ListTable(tableName string) []string {
+	return []string{"list", "table", "inet", tableName}
 }
 
 func AssertRulesOrder(t *testing.T, content, firstSubstr, secondSubstr string) {
