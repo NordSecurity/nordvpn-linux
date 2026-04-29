@@ -40,6 +40,18 @@ Because the project uses many external dependencies, the usage of mocks in tests
   * In `/test/mock/a.go` file (or `/test/mock/a/a.go` if there are circular dependency issues) if the mock is exported.
 * Generally if the interface is big then it's better to export the mock so that it could be reused.
 
+### Snapshot (golden file) tests
+
+Some tests verify the exact output of a subsystem by comparing it against a stored golden file rather than writing per-field assertions. The nftables firewall ruleset tests in `daemon/firewall/nft/` use this approach: each subtest renders the full `nft list table` output and diffs it against a file under `daemon/firewall/nft/testdata/<TestFunctionName>/<subtest_name>.nft`.
+
+When the expected output changes (e.g. after modifying firewall rule generation), regenerate the golden files by running the full cgo test suite with `UPDATE_GOLDEN=1`:
+
+```
+UPDATE_GOLDEN=1 mage test:cgoDocker
+```
+
+These tests require root and run only under `mage test:cgoDocker` (they are skipped by `mage test:go` because they carry the `root` category).
+
 ### Other guidelines
 
 * A test reproducing a bug must be introduced prior to fixing the bug if possible (possible exceptions: bug reproduces only on untested distribution, etc.)
