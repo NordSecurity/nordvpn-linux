@@ -55,15 +55,6 @@ class RecentConnection {
     cfg.ServerGroup.P2P: t.ui.p2p,
     cfg.ServerGroup.OBFUSCATED: t.ui.obfuscatedServers,
     cfg.ServerGroup.DEDICATED_IP: t.ui.dedicatedIp,
-    // [Deprecated] Region
-    cfg.ServerGroup.EUROPE: t.ui.europe,
-    // [Deprecated] Region
-    cfg.ServerGroup.THE_AMERICAS: t.ui.theAmericas,
-    // [Deprecated] Region
-    cfg.ServerGroup.ASIA_PACIFIC: t.ui.asiaPacific,
-    // [Deprecated] Region
-    cfg.ServerGroup.AFRICA_THE_MIDDLE_EAST_AND_INDIA:
-        t.ui.africaTheMiddleEastAndIndia,
   };
 
   String get specialtyServer => _groupTitles[group] ?? "";
