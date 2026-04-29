@@ -387,7 +387,7 @@ final class NordVpnTheme {
       ),
       buttonTheme: ConnectionCardButtonTheme(
         maxConnectButtonWidth: 330,
-        secureMyConnectionButtonStyle: OutlinedButton.styleFrom(
+        secureMyConnectionButtonStyle: ElevatedButton.styleFrom(
           shape: RoundedRectangleBorder(
             side: BorderSide(
               color: design.semanticColors.borderAccent,
@@ -405,7 +405,7 @@ final class NordVpnTheme {
           overlayColor: Colors.transparent,
           fixedSize: const Size.fromHeight(48),
         ),
-        cancelButtonStyle: OutlinedButton.styleFrom(
+        cancelButtonStyle: ElevatedButton.styleFrom(
           shape: RoundedRectangleBorder(
             side: BorderSide(
               color: design.semanticColors.borderPrimary,
@@ -825,7 +825,7 @@ final class NordVpnTheme {
 
   ContextMenuTheme _contextMenuThemeExt() {
     return ContextMenuTheme(
-      menuWidth: 260,
+      menuWidth: 268,
       menuRadius: AppBorderRadius.md,
       menuPadding: EdgeInsets.symmetric(
         horizontal: AppSpacing.spacing1,
@@ -850,7 +850,7 @@ final class NordVpnTheme {
           ? AppBoxShadows.lightPopover
           : AppBoxShadows.darkPopover,
       menuShadowMargin: 6,
-      menuGap: 4,
+      menuGap: AppSpacing.spacing2,
     );
   }
 

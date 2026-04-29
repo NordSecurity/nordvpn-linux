@@ -235,7 +235,6 @@ def is_disconnected(retry=5) -> bool:
     assert not firewall.is_active(), "Firewall is not configured"
     assert daemon.is_disconnected()
     assert is_available(retry), "There is internet"
-
     return True
 
 
