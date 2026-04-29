@@ -120,14 +120,11 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 
 	if isVPNStarted {
 		if netw.KillSwitchState != enabledByUser {
-			log.Println("XXXXXxxxxx")
-
 			if err := netw.internallyEnabledKillSwitch(); err != nil {
 				return fmt.Errorf("setting killswitch: %w", err)
 			}
 			defer func() {
 				if vpnErr == nil {
-					log.Println("XXXXXwewq")
 
 					vpnErr = netw.unsetKillSwitch()
 				} else {
