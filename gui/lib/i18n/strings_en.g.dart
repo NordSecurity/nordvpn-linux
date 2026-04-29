@@ -1587,18 +1587,6 @@ class TranslationsUiEn {
 	/// en: 'P2P'
 	String get p2p => 'P2P';
 
-	/// en: 'Europe'
-	String get europe => 'Europe';
-
-	/// en: 'The Americas'
-	String get theAmericas => 'The Americas';
-
-	/// en: 'Asia Pacific'
-	String get asiaPacific => 'Asia Pacific';
-
-	/// en: 'Africa, the Middle East, and India'
-	String get africaTheMiddleEastAndIndia => 'Africa, the Middle East, and India';
-
 	/// en: 'Obfuscated'
 	String get obfuscated => 'Obfuscated';
 
@@ -2673,10 +2661,6 @@ extension on Translations {
 			'ui.doubleVpn' => 'Double VPN',
 			'ui.onionOverVpn' => 'Onion over VPN',
 			'ui.p2p' => 'P2P',
-			'ui.europe' => 'Europe',
-			'ui.theAmericas' => 'The Americas',
-			'ui.asiaPacific' => 'Asia Pacific',
-			'ui.africaTheMiddleEastAndIndia' => 'Africa, the Middle East, and India',
 			'ui.obfuscated' => 'Obfuscated',
 			'ui.obfuscatedServers' => 'Obfuscated Servers',
 			'ui.selectServerForDip' => 'Pick a location for your IP',
@@ -2684,12 +2668,12 @@ extension on Translations {
 			'ui.dipSelectLocationDescription' => 'You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.',
 			'ui.chooseLocationForDip' => 'Choose a location for your dedicated IP',
 			'ui.getDip' => 'Get dedicated IP',
-			_ => null,
-		} ?? switch (path) {
 			'ui.getYourDip' => 'Get your personal IP',
 			'ui.getDipDescription' => 'Get a personal IP address that belongs only to you. Enjoy all the benefits of VPN encryption without dealing with blocklists, identity checks, and selecting images of boats in CAPTCHAs.',
 			'ui.notifications' => 'Notifications',
 			'ui.specialtyServersSearchHint' => 'Search country or city',
+			_ => null,
+		} ?? switch (path) {
 			'ui.on' => 'On',
 			'ui.off' => 'Off',
 			'ui.invalidFormat' => 'Invalid format',
