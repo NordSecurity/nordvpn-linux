@@ -430,7 +430,7 @@ func main() {
 		allowlistRouter,
 		dnsSetter,
 		fw,
-		device.OutsideCapableTrafficInterfaces,
+		device.InterfacesWithDefaultRoute,
 		routes.NewPolicyRouter(
 			&norule.Facade{},
 			iprule.NewRouter(

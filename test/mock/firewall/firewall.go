@@ -1,50 +1,95 @@
-package firewall
+package firewallmock
 
 import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
-	"golang.org/x/exp/slices"
 )
 
-type FirewallMock struct {
-	Rules []firewall.Rule
+// --- Firewall mock (firewall.Service) ---
+
+type Firewall struct {
+	enabled bool
+	config  firewall.Config
+	Err     error
 }
 
-func NewMockFirewall() FirewallMock {
-	return FirewallMock{
-		Rules: []firewall.Rule{},
-	}
-}
-
-// Add and apply firewall rules
-func (mf *FirewallMock) Add(rules []firewall.Rule) error {
-	mf.Rules = append(mf.Rules, rules...)
-
-	return nil
-}
-
-// Delete a list of firewall rules by defined names
-func (mf *FirewallMock) Delete(names []string) error {
-	for _, name := range names {
-		nameIndex := slices.IndexFunc(mf.Rules, func(r firewall.Rule) bool { return r.Name == name })
-		if nameIndex != -1 {
-			mf.Rules = append(mf.Rules[:nameIndex], mf.Rules[nameIndex+1:]...)
-		}
-	}
-
-	return nil
+func NewFirewall() *Firewall {
+	return &Firewall{}
 }
 
 // Enable firewall
-func (mf *FirewallMock) Enable() error {
+func (mf *Firewall) Enable() error {
+	if mf.Err != nil {
+		return mf.Err
+	}
+	mf.enabled = true
 	return nil
 }
 
 // Disable firewall
-func (mf *FirewallMock) Disable() error {
+func (mf *Firewall) Disable() error {
+	if mf.Err != nil {
+		return mf.Err
+	}
+	mf.enabled = false
 	return nil
 }
 
 // Flush firewall
-func (mf *FirewallMock) Flush() error {
+func (mf *Firewall) Flush() error {
+	if mf.Err != nil {
+		return mf.Err
+	}
+	mf.config = firewall.Config{}
 	return nil
 }
+
+// Configure firewall
+func (mf *Firewall) Configure(config firewall.Config) error {
+	if mf.Err != nil {
+		return mf.Err
+	}
+	mf.config = config
+	return nil
+}
+
+// IsEnabled returns the current enable status
+func (mf *Firewall) IsEnabled() bool {
+	return mf.enabled
+}
+
+// Config returns the currently stored config
+func (mf *Firewall) Config() firewall.Config {
+	return mf.config
+}
+
+// --- end Firewall mock ---
+
+// --- FirewallBackend mock (firewall.FirewallBackend) ---
+
+type FirewallBackend struct {
+	config firewall.Config
+	Err    error
+}
+
+func (m *FirewallBackend) Configure(config firewall.Config) error {
+	if m.Err != nil {
+		return m.Err
+	}
+	m.config = config
+	return nil
+}
+
+func (m *FirewallBackend) Flush() error {
+	if m.Err != nil {
+		return m.Err
+	}
+	m.config = firewall.Config{}
+	return nil
+}
+
+// Config returns the currently stored config
+func (m *FirewallBackend) Config() firewall.Config {
+	return m.config
+}
+
+// --- end FirewallBackend mock ---

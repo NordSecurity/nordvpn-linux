@@ -15,7 +15,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-type ListFunc func() ([]net.Interface, error)
+type ListFunc func(mapset.Set[string]) mapset.Set[string]
 
 var sysDepsImpl SystemDeps = realSystemDeps{}
 

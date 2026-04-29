@@ -7,7 +7,6 @@ import (
 	"net/netip"
 	"time"
 
-	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -100,7 +99,7 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 	if netw.vpnet != nil && netw.vpnet.Tun() != nil {
 		tunnelName = netw.vpnet.Tun().Interface().Name
 	}
-	newInterfaces := device.InterfacesWithDefaultRoute(mapset.NewSet(tunnelName))
+	newInterfaces := netw.devices(mapset.NewSet(tunnelName))
 	newInterfaceDetected := !newInterfaces.IsSubset(netw.interfaces)
 	log.Println(internal.InfoPrefix,
 		"refresh VPN, new interface detected[]:",
@@ -120,12 +119,16 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 	defer func() { err = errors.Join(vpnErr, meshErr) }()
 
 	if isVPNStarted {
-		if netw.KillSwitchState == disabledByUser {
+		if netw.KillSwitchState != enabledByUser {
+			log.Println("XXXXXxxxxx")
+
 			if err := netw.internallyEnabledKillSwitch(); err != nil {
 				return fmt.Errorf("setting killswitch: %w", err)
 			}
 			defer func() {
 				if vpnErr == nil {
+					log.Println("XXXXXwewq")
+
 					vpnErr = netw.unsetKillSwitch()
 				} else {
 					log.Println(internal.InfoPrefix, "keeping killswitch, VPN failed to reconnect in background:", vpnErr)
