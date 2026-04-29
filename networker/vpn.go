@@ -125,7 +125,6 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 			}
 			defer func() {
 				if vpnErr == nil {
-
 					vpnErr = netw.unsetKillSwitch()
 				} else {
 					log.Println(internal.InfoPrefix, "keeping killswitch, VPN failed to reconnect in background:", vpnErr)
