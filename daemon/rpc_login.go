@@ -35,10 +35,6 @@ func (r *RPC) LoginWithToken(ctx context.Context, in *pb.LoginWithTokenRequest) 
 		}, nil
 	}
 
-	if err := r.SyncDevice(); err != nil {
-		log.Println(internal.ErrorPrefix, "failed to sync device for dedicated servers")
-	}
-
 	// login common with custom logic
 	return r.loginWithToken(in.GetToken())
 }
@@ -145,6 +141,10 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 	go StartNC("[login]", r.ncClient)
 	r.publisher.Publish("user logged in")
 
+	if err := r.SyncDevice(); err != nil {
+		log.Println(internal.ErrorPrefix, "failed to sync device for dedicated servers:", err)
+	}
+
 	return &pb.LoginResponse{
 		Type: internal.CodeSuccess,
 	}, nil
@@ -217,10 +217,6 @@ func (r *RPC) LoginOAuth2(ctx context.Context, in *pb.LoginOAuth2Request) (paylo
 	// memorize what login type started: Login or Signup
 	// (dont forget to reset it after login/signup is completed)
 	r.initialLoginType.set(in.GetType())
-
-	if err := r.SyncDevice(); err != nil {
-		log.Println(internal.ErrorPrefix, "failed to sync device for dedicated servers")
-	}
 
 	return &pb.LoginOAuth2Response{
 		Status: pb.LoginStatus_SUCCESS,
@@ -309,6 +305,11 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 	_, _ = r.ac.IsMFAEnabled()
 
 	go StartNC("[login callback]", r.ncClient)
+
+	if err := r.SyncDevice(); err != nil {
+		log.Println(internal.ErrorPrefix, "failed to sync device for dedicated servers:", err)
+	}
+
 	return &pb.LoginOAuth2CallbackResponse{
 		Status: pb.LoginStatus_SUCCESS,
 	}, nil

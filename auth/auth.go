@@ -37,7 +37,7 @@ type Checker interface {
 	// GetDedicatedIPServices returns all available server IDs, if server is not selected by the user it will set
 	// ServerID for that service to NoServerSelected
 	GetDedicatedIPServices() ([]DedicatedIPService, error)
-	// HasDedicatedServerService
+	// HasDedicatedServerService returns true if user has dedicated servers service that is not expired.
 	HasDedicatedServerService() (bool, error)
 }
 
@@ -208,7 +208,7 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 	return dipServices, nil
 }
 
-// HasDedicatedServerService
+// HasDedicatedServerService returns true if user has dedicated servers service that is not expired.
 func (r *RenewingChecker) HasDedicatedServerService() (bool, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -219,7 +219,7 @@ func (r *RenewingChecker) HasDedicatedServerService() (bool, error) {
 	}
 
 	return slices.ContainsFunc(services, func(service core.ServiceData) bool {
-		return service.ID == DedicatedIPServiceID && r.expChecker.IsExpired(service.ExpiresAt)
+		return service.ID == DedicatedServersServiceID && !r.expChecker.IsExpired(service.ExpiresAt)
 	}), nil
 }
 
