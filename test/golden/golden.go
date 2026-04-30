@@ -83,5 +83,5 @@ func goldenFileParts(t *testing.T) (dir, name string) {
 	if len(parts) != 2 {
 		t.Fatalf("goldenFileParts: %s must be a subtest (contain '/')", t.Name())
 	}
-	return parts[0], parts[1] + ".nft"
+	return parts[0], parts[1] + ".txt"
 }
