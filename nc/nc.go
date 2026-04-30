@@ -14,7 +14,6 @@ import (
 	"net"
 	"net/url"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -24,7 +23,6 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	mqttp "github.com/eclipse/paho.mqtt.golang/packets"
-	"golang.org/x/sys/unix"
 )
 
 const (
@@ -133,9 +131,9 @@ type Client struct {
 	subjectErr        events.Publisher[error]
 	subjectPeerUpdate events.Publisher[[]string]
 	credsFetcher      CredentialsGetter
-	retryDelayFunc CalculateRetryDelayForAttempt
-	fwmark         uint32
-	resolver       network.DNSResolver
+	retryDelayFunc    CalculateRetryDelayForAttempt
+	fwmark            uint32
+	resolver          network.DNSResolver
 
 	startMu          sync.Mutex
 	started          bool
@@ -242,20 +240,7 @@ func (c *Client) createClientOptions(
 		// Create dialer with fwmark on TCP socket to bypass killswitch.
 		dialer := &net.Dialer{
 			Timeout: timeout,
-			Control: func(_, _ string, conn syscall.RawConn) error {
-				var operr error
-				if err := conn.Control(func(fd uintptr) {
-					operr = syscall.SetsockoptInt(
-						int(fd),
-						unix.SOL_SOCKET,
-						unix.SO_MARK,
-						int(c.fwmark),
-					)
-				}); err != nil {
-					return err
-				}
-				return operr
-			},
+			Control: network.NewFwmarkControlFn(c.fwmark),
 		}
 		opts.SetDialer(dialer)
 	}
