@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const UpdateGoldenEnvVar = "UPDATE_GOLDEN"
+const UpdateGoldenFilesEnvVar = "UPDATE_GOLDEN_FILES"
 
-var update = os.Getenv(UpdateGoldenEnvVar) != ""
+var update = os.Getenv(UpdateGoldenFilesEnvVar) != ""
 
 // AssertMatchesGolden compares passed string with file located based on
 // convention. Has to be called from subtest.
@@ -53,7 +53,7 @@ func AssertMatchesGolden(t *testing.T, got string) {
 	if errors.Is(err, fs.ErrNotExist) {
 		t.Fatalf(
 			"golden file testdata/%s/%s not found — run with %s=1 to create it",
-			dir, name, UpdateGoldenEnvVar,
+			dir, name, UpdateGoldenFilesEnvVar,
 		)
 	}
 	require.NoError(t, err)

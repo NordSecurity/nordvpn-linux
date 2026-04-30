@@ -593,8 +593,8 @@ func (Test) CgoDocker(ctx context.Context) error {
 	}
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
-	if v := os.Getenv(golden.UpdateGoldenEnvVar); v != "" {
-		env[golden.UpdateGoldenEnvVar] = v
+	if v := os.Getenv(golden.UpdateGoldenFilesEnvVar); v != "" {
+		env[golden.UpdateGoldenFilesEnvVar] = v
 	}
 
 	return RunDockerWithSettings(

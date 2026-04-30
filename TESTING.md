@@ -68,10 +68,10 @@ under `daemon/firewall/nft/testdata/<TestFunctionName>/<subtest_name>.nft`.
 
 When the expected output changes (e.g. after modifying firewall rule
 generation), regenerate the golden files by running the full cgo test suite
-with `UPDATE_GOLDEN=1`:
+with `UPDATE_GOLDEN_FILES=1`:
 
 ```bash
-UPDATE_GOLDEN=1 mage test:cgoDocker
+UPDATE_GOLDEN_FILES=1 mage test:cgoDocker
 ```
 
 These tests require root and run only under `mage test:cgoDocker` (they are
