@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/netip"
 	"testing"
 	"time"
 
@@ -179,16 +178,6 @@ func (c *workingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPServic
 	}
 
 	return c.dedicatedIPService, nil
-}
-
-type mockEndpointResolver struct{ ip netip.Addr }
-
-func newEndpointResolverMock(ip netip.Addr) mockEndpointResolver {
-	return mockEndpointResolver{ip: ip}
-}
-
-func (g mockEndpointResolver) Resolve(netip.Addr) ([]netip.Addr, error) {
-	return []netip.Addr{g.ip}, nil
 }
 
 func TestRPCConnect(t *testing.T) {

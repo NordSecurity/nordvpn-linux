@@ -198,9 +198,9 @@ SUBNETS = [
 
 # Used for test parametrization, when the same test has to be run for different ports.
 PORTS = [
-    Port("22", Protocol.UDP),
-    Port("22", Protocol.TCP),
-    Port("22", Protocol.ALL),
+    Port("2500", Protocol.UDP),
+    Port("2500", Protocol.TCP),
+    Port("2500", Protocol.ALL),
 ]
 
 # Used for test parametrization, when the same test has to be run for different ports.

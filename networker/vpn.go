@@ -92,12 +92,6 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 	isVPNStarted := netw.isVpnSet
 	isMeshStarted := netw.isMeshnetSet
 
-	if netw.isKillSwitchSet {
-		if err := netw.setKillSwitch(netw.allowlist, true); err != nil {
-			return fmt.Errorf("setting killswitch: %w", err)
-		}
-	}
-
 	if !isVPNStarted && !isMeshStarted {
 		return nil
 	}
@@ -106,21 +100,17 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 	if netw.vpnet != nil && netw.vpnet.Tun() != nil {
 		tunnelName = netw.vpnet.Tun().Interface().Name
 	}
-	newInterfaces := device.OutsideCapableTrafficIfNames(mapset.NewSet(tunnelName))
+	newInterfaces := device.InterfacesWithDefaultRoute(mapset.NewSet(tunnelName))
 	newInterfaceDetected := !newInterfaces.IsSubset(netw.interfaces)
 	log.Println(internal.InfoPrefix,
 		"refresh VPN, new interface detected[]:",
 		newInterfaceDetected,
 		netw.interfaces, "->", newInterfaces)
 
-	if !newInterfaceDetected {
-		// if there is no new OS interface, just reconfigure the VPN internally if possible
-		errNetChanged := netw.handleNetworkChanged()
-		if errNetChanged == nil {
-			return nil
-		}
-
-		log.Println(internal.ErrorPrefix, "failed to handle network changes, reinit the tunnel", errNetChanged)
+	if err := netw.handleNetworkChanged(); err == nil {
+		return nil
+	} else {
+		log.Println(internal.ErrorPrefix, "failed to handle network changes, reinit the tunnel", err)
 	}
 
 	netw.interfaces = newInterfaces
@@ -130,16 +120,15 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 	defer func() { err = errors.Join(vpnErr, meshErr) }()
 
 	if isVPNStarted {
-		if !netw.isKillSwitchSet {
-			if err := netw.setKillSwitch(netw.allowlist, false); err != nil {
+		if netw.KillSwitchState == disabledByUser {
+			if err := netw.internallyEnabledKillSwitch(); err != nil {
 				return fmt.Errorf("setting killswitch: %w", err)
 			}
 			defer func() {
-				if vpnErr != nil {
-					// Keep iptables rules to not expose user after background connect failure
-					netw.isKillSwitchSet = false
-				} else {
+				if vpnErr == nil {
 					vpnErr = netw.unsetKillSwitch()
+				} else {
+					log.Println(internal.InfoPrefix, "keeping killswitch, VPN failed to reconnect in background:", vpnErr)
 				}
 			}()
 		}

@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"net/netip"
 	"strings"
 	"sync"
@@ -18,8 +17,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/forwarder"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -29,7 +26,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	mapset "github.com/deckarep/golang-set/v2"
-	"golang.org/x/exp/slices"
 )
 
 var (
@@ -44,7 +40,6 @@ var (
 	// ErrNothingToCancel is returned when `Cancel()` is called but there is no in progress
 	// connection to be canceled
 	ErrNothingToCancel = errors.New("nothing to cancel")
-	defaultMeshSubnet  = netip.MustParsePrefix("100.64.0.0/10")
 )
 
 // ErrNoSuchRule is returned when networker tried to remove
@@ -58,19 +53,8 @@ func (e ErrNoSuchRule) Error() string {
 }
 
 const (
-	// a string to be prepended with peers public key and appended with peers ip address to form the internal rule name
-	// for allowing the incomig connections
-	allowIncomingRule = "-allow-rule-"
-	// a string to be prepended with peers public key and appended with peers ip address to form the internal rule name
-	// for blocking incoming connections into local networks
-	blockLanRule               = "-block-lan-rule-"
-	meshnetFirewallRuleComment = "nordvpn-meshnet"
-	denyPrivateDNSRule         = "deny-private-dns"
-	allowFileshareRule         = "-allow-fileshare-rule-"
-	dropIpv4Rule               = "drop-IPv4"
-	dropIpv6Rule               = "drop-IPv6"
-
 	ArpIgnoreParamName = "net.ipv4.conf.all.arp_ignore"
+	IpForwardParamName = "net.ipv4.ip_forward" // used for meshnet to have routing thru current machine
 )
 
 // Networker configures networking for connections.
@@ -100,7 +84,7 @@ type Networker interface {
 	DisableRouting()
 	SetAllowlist(allowlist config.Allowlist) error
 	IsNetworkSet() bool
-	SetKillSwitch(config.Allowlist) error
+	SetKillSwitch() error
 	UnsetKillSwitch() error
 	SetVPN(vpn.VPN)
 	LastServerName() string
@@ -110,40 +94,43 @@ type Networker interface {
 	SetARPIgnore(bool) error
 }
 
+type killSwitchState int
+
+const (
+	disabledByUser killSwitchState = iota
+	enabledByUser
+	internallyEnabled
+)
+
 // Combined configures networking for VPN connections.
 //
 // It is implemented in such a way, that all public methods
 // use sync.Mutex and all private ones don't.
 type Combined struct {
-	vpnet            vpn.VPN
-	mesh             meshnet.Mesh
-	gateway          routes.GatewayRetriever
-	publisher        events.Publisher[string]
-	allowlistRouter  routes.Service
-	dnsSetter        dns.Setter
-	fw               firewall.Service
-	allowlistRouting allowlist.Routing
-	devices          device.ListFunc
-	policyRouter     routes.PolicyService
-	dnsHostSetter    dns.HostnameSetter
-	router           routes.Service
-	peerRouter       routes.Service
-	exitNode         forwarder.ForwardChainManager
-	isNetworkSet     bool // used during cleanup
-	isKillSwitchSet  bool // used during cleanup
-	isVpnSet         bool // used during cleanup
-	isMeshnetSet     bool
-	rules            []string // firewall rule names
-	nextVPN          vpn.VPN
-	cfg              mesh.MachineMap
-	allowlist        config.Allowlist
-	lastServer       vpn.ServerData
-	lastCreds        vpn.Credentials
-	lastNameservers  []string
-	lastPrivateKey   string
-	fwmark           uint32
-	mu               sync.Mutex
-	lanDiscovery     bool
+	vpnet           vpn.VPN
+	mesh            meshnet.Mesh
+	gateway         routes.GatewayRetriever
+	publisher       events.Publisher[string]
+	allowlistRouter routes.Service
+	dnsSetter       dns.Setter
+	fw              firewall.Service
+	devices         device.ListFunc
+	policyRouter    routes.PolicyService
+	dnsHostSetter   dns.HostnameSetter
+	router          routes.Service
+	peerRouter      routes.Service
+	isNetworkSet    bool // used during cleanup
+	isVpnSet        bool // used during cleanup
+	isMeshnetSet    bool
+	nextVPN         vpn.VPN
+	cfg             mesh.MachineMap
+	lastServer      vpn.ServerData
+	lastCreds       vpn.Credentials
+	lastNameservers []string
+	lastPrivateKey  string
+	fwmark          uint32
+	mu              sync.Mutex
+	lanDiscovery    bool
 	// need to memorize route to remote LAN state set on mesh peer connect
 	// according how remote peer has set its permission, for later when
 	// doing mesh refresh which may happen in background e.g. when network
@@ -151,12 +138,14 @@ type Combined struct {
 	enableLocalTraffic bool
 	// list with the existing OS interfaces when VPN was connected.
 	// This is used at network changes to know when a new interface was inserted
-	interfaces           mapset.Set[string]
-	isFilesharePermitted bool
-	dnsDenied            bool
-	ipv6Blocker          ipv6.Blocker
-	ignoreARP            bool
-	arpIgnoreSetter      kernel.SysctlSetter
+	interfaces      mapset.Set[string]
+	ipv6Blocker     ipv6.Blocker
+	ignoreARP       bool
+	arpIgnoreSetter kernel.SysctlSetter
+	allowlist       config.Allowlist
+	KillSwitchState killSwitchState
+	fwConfig        firewall.Config
+	ipForwardSetter kernel.SysctlSetter
 }
 
 // NewCombined returns a ready made version of
@@ -169,18 +158,18 @@ func NewCombined(
 	allowlistRouter routes.Service,
 	dnsSetter dns.Setter,
 	fw firewall.Service,
-	allowlist allowlist.Routing,
 	devices device.ListFunc,
 	policyRouter routes.PolicyService,
 	dnsHostSetter dns.HostnameSetter,
 	router routes.Service,
 	peerRouter routes.Service,
-	exitNode forwarder.ForwardChainManager,
 	fwmark uint32,
 	lanDiscovery bool,
 	ipv6Blocker ipv6.Blocker,
 	ignoreARP bool,
 	arpIgnoreSetter kernel.SysctlSetter,
+	allowlist config.Allowlist,
+	ipForwardSetter kernel.SysctlSetter,
 ) *Combined {
 	return &Combined{
 		vpnet:              vpnet,
@@ -190,14 +179,11 @@ func NewCombined(
 		allowlistRouter:    allowlistRouter,
 		dnsSetter:          dnsSetter,
 		fw:                 fw,
-		allowlistRouting:   allowlist,
 		devices:            devices,
 		policyRouter:       policyRouter,
 		dnsHostSetter:      dnsHostSetter,
 		router:             router,
 		peerRouter:         peerRouter,
-		exitNode:           exitNode,
-		rules:              []string{},
 		fwmark:             fwmark,
 		lanDiscovery:       lanDiscovery,
 		enableLocalTraffic: true,
@@ -205,6 +191,9 @@ func NewCombined(
 		ipv6Blocker:        ipv6Blocker,
 		ignoreARP:          ignoreARP,
 		arpIgnoreSetter:    arpIgnoreSetter,
+		allowlist:          allowlist,
+		fwConfig:           firewall.Config{Allowlist: allowlist},
+		ipForwardSetter:    ipForwardSetter,
 	}
 }
 
@@ -221,6 +210,7 @@ func (netw *Combined) Start(
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
+	netw.allowlist = allowlist
 	netw.enableLocalTraffic = enableLocalTraffic
 	if netw.isConnectedToVPN() {
 		return netw.restart(ctx, creds, serverData, nameservers, disconnectCallback)
@@ -244,10 +234,17 @@ func failureRecover(netw *Combined) {
 		log.Println(internal.DeferPrefix, err)
 	}
 
-	if netw.isNetworkSet && !netw.isKillSwitchSet {
+	if netw.isNetworkSet && netw.KillSwitchState == disabledByUser {
 		if err := netw.unsetNetwork(); err != nil {
 			log.Println(internal.DeferPrefix, err)
 		}
+	}
+
+	cfg := netw.fwConfig.CopyWith(
+		firewall.WithTunnelInterface(""),
+	)
+	if err := netw.configureFirewall(cfg); err != nil {
+		log.Println(internal.DeferPrefix, err)
 	}
 
 	netw.unblockIPv6()
@@ -297,7 +294,6 @@ func (netw *Combined) start(
 		}
 		return err
 	}
-
 	netw.publisher.Publish("Setting the routing rules up")
 
 	// if routing rules were set - they will be adjusted as needed
@@ -309,7 +305,7 @@ func (netw *Combined) start(
 		return err
 	}
 
-	if err = netw.configureNetwork(allowlist, serverData, nameservers); err != nil {
+	if err = netw.configureNetwork(serverData, nameservers); err != nil {
 		return err
 	}
 
@@ -319,25 +315,38 @@ func (netw *Combined) start(
 		}
 	}
 
+	tunnelInterface := netw.vpnet.Tun().Interface().Name
+	// configure firewall
+	// update tunnel name and allowlist
+	// use netw.allowlist because it is populated in setAllowlist and there will be
+	// updated to also contain LAN addresses for LAN discovery enabled
+	newCfg := netw.fwConfig.CopyWith(
+		firewall.WithTunnelInterface(tunnelInterface),
+		firewall.WithAllowlist(netw.allowlist),
+	)
+	if err := netw.configureFirewall(newCfg); err != nil {
+		return fmt.Errorf("configuring firewall: %w", err)
+	}
+
 	netw.isVpnSet = true
 	netw.lastServer = serverData
 	netw.lastCreds = creds
 	netw.lastNameservers = nameservers
 
-	tunnelInterface := mapset.NewSet(netw.vpnet.Tun().Interface().Name)
-	netw.interfaces = device.OutsideCapableTrafficIfNames(tunnelInterface)
+	netw.interfaces = device.OutsideCapableTrafficIfNames(mapset.NewSet(tunnelInterface))
 	return nil
 }
 
 func (netw *Combined) configureNetwork(
-	allowlist config.Allowlist,
 	serverData vpn.ServerData,
 	nameservers config.DNS,
 ) error {
 	netw.publisher.Publish("starting network configuration")
 
-	if err := netw.configureFirewall(allowlist); err != nil {
-		return err
+	if err := netw.setNetwork(netw.allowlist); err != nil {
+		if !netw.isNetworkSet {
+			return err
+		}
 	}
 
 	if err := netw.addDefaultRoute(); err != nil {
@@ -360,7 +369,7 @@ func (netw *Combined) configureNetwork(
 func (netw *Combined) configureDNS(serverData vpn.ServerData, nameservers config.DNS) error {
 	dnsGetter := &dns.NameServers{}
 
-	if netw.isMeshnetSet && defaultMeshSubnet.Contains(serverData.IP) {
+	if netw.isMeshnetSet && internal.MeshSubnet.Contains(serverData.IP) {
 		return netw.setDNS(dnsGetter.Get(false))
 	} else {
 		return netw.setDNS(nameservers)
@@ -377,21 +386,6 @@ func (netw *Combined) addDefaultRoute() error {
 		return fmt.Errorf("adding the default route: %w", err)
 	}
 	return err
-}
-
-func (netw *Combined) configureFirewall(allowlist config.Allowlist) error {
-	if err := netw.setNetwork(allowlist); err != nil && !errors.Is(err, firewall.ErrRuleAlreadyExists) {
-		if !netw.isNetworkSet {
-			return err
-		} else {
-			netw.publisher.Publish("re-setting firewall failed: " + err.Error())
-		}
-	}
-
-	if err := netw.resetAllowlist(); err != nil {
-		return err
-	}
-	return nil
 }
 
 func (netw *Combined) restart(
@@ -460,6 +454,15 @@ func (netw *Combined) restart(
 		}
 	}
 
+	// configure firewall
+	// update only the interface name, in case there is a different VPN technology used
+	newCfg := netw.fwConfig.CopyWith(
+		firewall.WithTunnelInterface(netw.vpnet.Tun().Interface().Name),
+	)
+	if err := netw.configureFirewall(newCfg); err != nil {
+		return fmt.Errorf("configuring firewall: %w", err)
+	}
+
 	netw.lastServer = serverData
 	netw.lastCreds = creds
 	return nil
@@ -518,7 +521,8 @@ func (netw *Combined) stop() error {
 	if err != nil {
 		return err
 	}
-	if !netw.isKillSwitchSet {
+	netw.isVpnSet = false
+	if netw.KillSwitchState == disabledByUser {
 		if err = netw.unsetNetwork(); err != nil {
 			return fmt.Errorf("unsetting network: %w", err)
 		}
@@ -528,8 +532,16 @@ func (netw *Combined) stop() error {
 		return fmt.Errorf("unsetting arp ignore: %w", err)
 	}
 
+	// configure firewall
+	newCfg := netw.fwConfig.CopyWith(
+		firewall.WithTunnelInterface(""),
+	)
+	if err := netw.configureFirewall(newCfg); err != nil {
+		return fmt.Errorf("configuring firewall at stop: %w", err)
+	}
+
 	netw.switchToNextVpn()
-	netw.isVpnSet = false
+
 	return nil
 }
 
@@ -584,41 +596,26 @@ func (netw *Combined) unsetDNS() error {
 	return nil
 }
 
-func (netw *Combined) blockTraffic() error {
-	ifaces, err := netw.devices()
-	if err != nil {
-		return err
+// Will configure the firewall based on the config parameter.
+// If config doesn't have VPN, KS, or meshnet enabled it will delete the firewall rules from the system
+func (netw *Combined) configureFirewall(config firewall.Config) error {
+	if config.IsEmpty() {
+		if err := netw.fw.Flush(); err != nil {
+			return fmt.Errorf("removing all the rules from firewall: %w", err)
+		}
+	} else if err := netw.fw.Configure(config); err != nil {
+		return fmt.Errorf("configuring firewall: %w", err)
 	}
+	netw.fwConfig = config
 
-	// block PREROUTING & POSTROUTING
-	return netw.fw.Add([]firewall.Rule{
-		{
-			Name:       dropIpv4Rule,
-			Direction:  firewall.TwoWay,
-			Interfaces: ifaces,
-			Allow:      false,
-			Physical:   true,
-		},
-		{
-			Name:       dropIpv6Rule,
-			Direction:  firewall.TwoWay,
-			Interfaces: ifaces,
-			Ipv6Only:   true,
-			Allow:      false,
-			Physical:   true,
-		},
-	})
-}
-
-func (netw *Combined) unblockTraffic() error {
-	return netw.fw.Delete([]string{dropIpv4Rule, dropIpv6Rule})
+	return nil
 }
 
 func (netw *Combined) resetAllowlist() error {
 	// this is done in order to maintain the order of the firewall rules
 	log.Println(internal.InfoPrefix, "reset allow list")
-	if err := netw.unsetAllowlist(); err != nil {
-		return fmt.Errorf("unsetting allowlist: %w", err)
+	if err := netw.allowlistRouter.Flush(); err != nil {
+		return fmt.Errorf("flushing allowlist router: %w", err)
 	}
 
 	if err := netw.setAllowlist(netw.allowlist); err != nil {
@@ -628,11 +625,17 @@ func (netw *Combined) resetAllowlist() error {
 }
 
 // EnableFirewall activates the firewall and applies the rules
-// according to the user's settings. (killswitch, allowlist)
+// according to the user's settings. (kill switch, allowlist, meshnet)
 func (netw *Combined) EnableFirewall() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
+
 	if err := netw.fw.Enable(); err != nil {
+		return fmt.Errorf("enabling firewall: %w", err)
+	}
+
+	// use the existing information to configure the firewall
+	if err := netw.configureFirewall(netw.fwConfig); err != nil {
 		return fmt.Errorf("enabling firewall: %w", err)
 	}
 
@@ -719,106 +722,37 @@ func (netw *Combined) SetAllowlist(allowlist config.Allowlist) error {
 		if err := netw.setAllowlist(allowlist); err != nil {
 			return err
 		}
+	} else {
+		netw.allowlist = allowlist
+		if netw.lanDiscovery {
+			netw.allowlist = addLANPermissions(allowlist)
+		}
+	}
+
+	// configure firewall
+	// use netw.allowlist because it will be updated with LAN ranges if needed
+	newCfg := netw.fwConfig.CopyWith(
+		firewall.WithAllowlist(netw.allowlist),
+	)
+
+	if err := netw.configureFirewall(newCfg); err != nil {
+		return fmt.Errorf("firewall at allowlist: %w", err)
 	}
 
 	return nil
 }
 
 func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
-	ifaces, err := netw.devices()
-	if err != nil {
-		return err
-	}
 	// allow traffic to LAN - only when user enabled lan-discovery
 	if netw.lanDiscovery {
 		allowlist = addLANPermissions(allowlist)
 	}
 
-	// start adding set of rules
-	rules := []firewall.Rule{}
-	var subnets []netip.Prefix
-	for _, cidr := range allowlist.Subnets {
-		subnet, err := netip.ParsePrefix(cidr)
-		if err != nil {
-			return errors.Join(fmt.Errorf("parsing subnet CIDR"), err)
-		}
-
-		// For local unicast addresses only firewall rules are added
-		if subnet.Addr().IsLinkLocalUnicast() {
-			subnets = append(subnets, subnet)
-			continue
-		}
-
-		subnets = append(subnets, subnet)
-	}
-	if subnets != nil {
-		rules = append(rules, firewall.Rule{
-			Name:           "allowlist_subnets",
-			Interfaces:     ifaces,
-			RemoteNetworks: subnets,
-			Direction:      firewall.TwoWay,
-			Allow:          true,
-			Physical:       true,
-		})
-	}
-
-	for _, pair := range []struct {
-		name  string
-		ports map[int64]bool
-	}{
-		{name: "tcp", ports: allowlist.Ports.TCP},
-		{name: "udp", ports: allowlist.Ports.UDP},
-	} {
-		var ports []int
-		for port := range pair.ports {
-			if port > math.MaxUint16 {
-				continue
-			}
-			ports = append(ports, int(port))
-		}
-		if ports != nil {
-			rules = append(rules, firewall.Rule{
-				Name:       "allowlist_ports_" + pair.name,
-				Interfaces: ifaces,
-				Protocols:  []string{pair.name},
-				Direction:  firewall.Inbound,
-				// TwoWay for this is unnecessary as the rules added by following EnablePorts
-				// function is already covering the marking of outgoing packets
-				Ports:    ports,
-				Allow:    true,
-				Physical: true,
-			})
-			if err := netw.allowlistRouting.EnablePorts(ports, pair.name, fmt.Sprintf("%#x", netw.fwmark)); err != nil {
-				return errors.Join(fmt.Errorf("enabling allowlist routing"), err)
-			}
-		}
-	}
-	// if port 53 is whitelisted - do not add drop-dns rules
-	if !allowlist.Ports.TCP[53] && !allowlist.Ports.UDP[53] {
-		// disable DNS traffic to private LAN ranges - to prevent DNS leaks
-		// when /etc/resolv.conf has nameserver default gateway
-		if err := netw.denyDNS(); err != nil {
-			return err
-		}
-	}
-	if err := netw.fw.Add(rules); err != nil {
-		return err
-	}
-
-	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
-	if err := netw.exitNode.ResetFirewall(lanAvailable,
-		netw.isKillSwitchSet,
-		allowlist); err != nil {
-		return fmt.Errorf("resseting forward firewall: %w", err)
-	}
-
-	netw.allowlist = allowlist
-
 	// adjust allow subnet routing rules
-	if err = netw.policyRouter.SetupRoutingRules(
+	if err := netw.policyRouter.SetupRoutingRules(
 		netw.enableLocalTraffic,
 		netw.lanDiscovery,
-		netw.allowlist.Subnets,
+		allowlist.Subnets,
 	); err != nil {
 		return fmt.Errorf(
 			"setting routing rules: %w",
@@ -826,6 +760,7 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 		)
 	}
 
+	netw.allowlist = allowlist
 	return nil
 }
 
@@ -833,28 +768,6 @@ func (netw *Combined) unsetAllowlist() error {
 	log.Println(internal.InfoPrefix, "unset allow list")
 	if err := netw.allowlistRouter.Flush(); err != nil {
 		log.Println(internal.WarningPrefix, "flushing allowlist router:", err)
-	}
-
-	for _, rule := range []string{
-		"allowlist_subnets",
-		"allowlist_subnets_forward",
-		"allowlist_ports_tcp",
-		"allowlist_ports_udp",
-	} {
-		err := netw.fw.Delete([]string{rule})
-		if err != nil && !errors.Is(err, firewall.ErrRuleNotFound) {
-			return fmt.Errorf("disabling allowlist firewall rules: %w", err)
-		}
-	}
-
-	if err := netw.allowlistRouting.Disable(); err != nil {
-		return fmt.Errorf("disabling allowlist routing: %w", err)
-	}
-
-	if !netw.allowlist.Ports.TCP[53] && !netw.allowlist.Ports.UDP[53] {
-		if err := netw.undenyDNS(); err != nil {
-			return fmt.Errorf("unsetting deny dns: %w", err)
-		}
 	}
 	return nil
 }
@@ -866,39 +779,8 @@ func (netw *Combined) IsNetworkSet() bool {
 }
 
 func (netw *Combined) setNetwork(allowlist config.Allowlist) error {
-	err := netw.blockTraffic()
-	if err != nil && !errors.Is(err, firewall.ErrRuleAlreadyExists) {
-		return err
-	}
-
-	ifaces, err := netw.devices()
-	if err != nil {
-		return err
-	}
-
-	if err := netw.fw.Add([]firewall.Rule{
-		{
-			Name:       "api_allowlist",
-			Interfaces: ifaces,
-			Direction:  firewall.TwoWay,
-			Marks:      []uint32{netw.fwmark},
-			Allow:      true,
-			Physical:   true,
-		},
-	}); err != nil {
-		return err
-	}
-
 	if err := netw.setAllowlist(allowlist); err != nil {
 		return err
-	}
-
-	if err := netw.exitNode.ResetFirewall(netw.lanDiscovery,
-		true,
-		netw.allowlist); err != nil {
-		log.Println(internal.ErrorPrefix,
-			"failed to reset peers firewall rules after enabling killswitch: ",
-			err)
 	}
 
 	netw.isNetworkSet = true
@@ -909,50 +791,46 @@ func (netw *Combined) UnsetFirewall() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
-	if netw.isKillSwitchSet {
+	if netw.KillSwitchState == enabledByUser {
 		return nil
 	}
-	return netw.fw.Flush()
+
+	if err := netw.unsetKillSwitch(); err != nil {
+		return fmt.Errorf("unset firewall: %w", err)
+	}
+
+	return nil
 }
 
 func (netw *Combined) unsetNetwork() error {
-	if err := netw.fw.Delete([]string{"api_allowlist"}); err != nil {
-		return err
-	}
-
-	err := netw.unblockTraffic()
-	if err != nil && !errors.Is(err, firewall.ErrRuleNotFound) {
-		return err
-	}
-
 	if err := netw.unsetAllowlist(); err != nil {
 		return err
-	}
-
-	// Passing true because LAN is always available when network is unset
-	if err := netw.exitNode.ResetFirewall(true, false, netw.allowlist); err != nil {
-		log.Println(internal.ErrorPrefix,
-			"failed to reset peers firewall rules after disabling killswitch: ",
-			err)
 	}
 
 	netw.isNetworkSet = false
 	return nil
 }
 
-func (netw *Combined) SetKillSwitch(allowlist config.Allowlist) error {
+func (netw *Combined) SetKillSwitch() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	return netw.setKillSwitch(allowlist, false)
+	return netw.setKillSwitch()
 }
 
-func (netw *Combined) setKillSwitch(allowlist config.Allowlist, force bool) error {
-	if !netw.isNetworkSet || force {
-		if err := netw.setNetwork(allowlist); err != nil {
-			return err
-		}
+func (netw *Combined) setKillSwitch() error {
+	// configure firewall
+	// use netw.allowlist to ensure it has the correct value
+	// because LAN ranges are added later for LAN discovery
+	newCfg := netw.fwConfig.CopyWith(
+		firewall.WithKillSwitch(true),
+		firewall.WithAllowlist(netw.allowlist),
+	)
+
+	if err := netw.configureFirewall(newCfg); err != nil {
+		return fmt.Errorf("enabling kill switch: %w", err)
 	}
-	netw.isKillSwitchSet = true
+
+	netw.KillSwitchState = enabledByUser
 	return nil
 }
 
@@ -969,7 +847,31 @@ func (netw *Combined) unsetKillSwitch() error {
 		}
 	}
 
-	netw.isKillSwitchSet = false
+	// configure firewall
+	newCfg := netw.fwConfig.CopyWith(
+		firewall.WithKillSwitch(false),
+	)
+
+	if err := netw.configureFirewall(newCfg); err != nil {
+		return fmt.Errorf("disabling kill switch: %w", err)
+	}
+
+	netw.KillSwitchState = disabledByUser
+	return nil
+}
+
+// This function is used to temporary enable KS when there is a VPN reconnect in background,
+// to prevent leaks
+func (netw *Combined) internallyEnabledKillSwitch() error {
+	newCfg := netw.fwConfig.CopyWith(
+		firewall.WithKillSwitch(true),
+	)
+
+	if err := netw.configureFirewall(newCfg); err != nil {
+		return fmt.Errorf("internally enabling kill switch failed: %w", err)
+	}
+
+	netw.KillSwitchState = internallyEnabled
 	return nil
 }
 
@@ -986,7 +888,25 @@ func (netw *Combined) Refresh(c mesh.MachineMap) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 	if netw.isMeshnetSet {
-		return netw.refresh(c)
+		if err := netw.refresh(c); err != nil {
+			return fmt.Errorf("refresh meshnet: %w", err)
+		}
+
+		if err := netw.ipForwardSetter.Set(); err != nil {
+			return fmt.Errorf("IP forwarding enabling: %w", err)
+		}
+
+		// configure firewall
+		newCfg := netw.fwConfig.CopyWith(
+			firewall.WithMeshnetInfo(firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)),
+		)
+
+		if !netw.fwConfig.HasSimilarMeshInfo(&newCfg) {
+			if err := netw.configureFirewall(newCfg); err != nil {
+				return fmt.Errorf("configure firewall for meshnet refresh: %w", err)
+			}
+		}
+		return nil
 	}
 
 	return meshnet.ErrMeshnetNotEnabled
@@ -1019,15 +939,18 @@ func (netw *Combined) setMesh(
 				}
 			}
 
-			if err := netw.defaultMeshUnBlock(); err != nil {
+			if err := netw.ipForwardSetter.Unset(); err != nil {
+				log.Println(internal.DeferPrefix, err)
+			}
+
+			cfg := netw.fwConfig.CopyWith(
+				firewall.WithMeshnetInfo(nil),
+			)
+			if err := netw.configureFirewall(cfg); err != nil {
 				log.Println(internal.DeferPrefix, err)
 			}
 
 			if err := netw.dnsHostSetter.UnsetHosts(); err != nil {
-				log.Println(internal.DeferPrefix, err)
-			}
-
-			if err := netw.exitNode.Disable(); err != nil {
 				log.Println(internal.DeferPrefix, err)
 			}
 
@@ -1068,17 +991,14 @@ func (netw *Combined) setMesh(
 		netw.lanDiscovery,
 		netw.allowlist.Subnets,
 	); err != nil {
-		return fmt.Errorf(
-			"setting routing rules: %w",
-			err,
-		)
+		return fmt.Errorf("setting routing rules: %w", err)
 	}
 	routingRulesSet = true
 
 	// add routes for new peers and remove for the old ones
 	netw.publisher.Publish("adding mesh route")
 	if err := netw.peerRouter.Add(routes.Route{
-		Subnet:  defaultMeshSubnet,
+		Subnet:  internal.MeshSubnet,
 		Device:  netw.mesh.Tun().Interface(),
 		TableID: netw.policyRouter.TableID(),
 	}); err != nil {
@@ -1093,6 +1013,20 @@ func (netw *Combined) setMesh(
 		return err
 	}
 
+	if err := netw.ipForwardSetter.Set(); err != nil {
+		return fmt.Errorf("IP forwarding setting: %w", err)
+	}
+
+	// configure firewall
+	newCfg := netw.fwConfig.CopyWith(
+		firewall.WithMeshnetInfo(firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)),
+	)
+	if !netw.fwConfig.HasSimilarMeshInfo(&newCfg) {
+		if err := netw.configureFirewall(newCfg); err != nil {
+			return fmt.Errorf("configure firewall for set meshnet: %w", err)
+		}
+	}
+
 	netw.isMeshnetSet = true
 	netw.lastPrivateKey = privateKey
 
@@ -1100,20 +1034,8 @@ func (netw *Combined) setMesh(
 }
 
 func (netw *Combined) refresh(cfg mesh.MachineMap) error {
-	if err := netw.defaultMeshUnBlock(); err != nil {
-		log.Println(internal.WarningPrefix, err)
-	}
-
 	if err := netw.dnsHostSetter.UnsetHosts(); err != nil {
 		log.Println(internal.WarningPrefix, err)
-	}
-
-	if err := netw.exitNode.Disable(); err != nil {
-		log.Println(internal.WarningPrefix, err)
-	}
-
-	if err := netw.exitNode.Enable(); err != nil {
-		return fmt.Errorf("enabling exit node: %w", err)
 	}
 
 	if err := netw.mesh.Refresh(cfg); err != nil {
@@ -1121,49 +1043,9 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 	}
 	netw.cfg = cfg
 
-	var err error
-	if err = netw.defaultMeshBlock(cfg.Machine.Address); err != nil { //nolint:staticcheck
-		return fmt.Errorf("adding default block rule: %w", err)
-	}
-
-	if err = netw.allowIncoming(cfg.PublicKey, cfg.Machine.Address, true); err != nil { //nolint:staticcheck
-		return fmt.Errorf("allowing to reach self via meshnet: %w", err)
-	}
-
-	for _, peer := range cfg.Peers {
-		if !peer.Address.IsValid() {
-			continue
-		}
-
-		lanAllowed := peer.DoIAllowRouting && peer.DoIAllowLocalNetwork
-
-		if peer.DoIAllowInbound {
-			err = netw.allowIncoming(peer.PublicKey, peer.Address, lanAllowed)
-			if err != nil {
-				return fmt.Errorf("allowing inbound traffic for peer: %w", err)
-			}
-		}
-
-		if peer.DoIAllowFileshare {
-			err = netw.allowFileshare(peer.PublicKey, peer.Address)
-			if err != nil {
-				return fmt.Errorf("allowing fileshare for peer: %w", err)
-			}
-		}
-
-		// TODO (LVPN-4031): detect which peer we are connected (if connected)
-		// to and check if maybe allowLocalAccess permission has changed and
-		// if so, change routing to route to local LAN
-	}
-
-	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
-	err = netw.exitNode.ResetPeers(cfg.Peers,
-		lanAvailable,
-		netw.isKillSwitchSet,
-		netw.allowlist)
-	if err != nil {
-		return err
-	}
+	// TODO (LVPN-4031): detect which peer we are connected (if connected)
+	// to and check if maybe allowLocalAccess permission has changed and
+	// if so, change routing to route to local LAN
 
 	var hostName string
 	var domainNames []string
@@ -1197,15 +1079,6 @@ func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 	return nil
 }
 
-func (netw *Combined) defaultMeshUnBlock() error {
-	err := netw.fw.Delete(netw.rules)
-	if err != nil {
-		return err
-	}
-	netw.rules = nil
-	return nil
-}
-
 func (netw *Combined) UnSetMesh() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
@@ -1213,7 +1086,15 @@ func (netw *Combined) UnSetMesh() error {
 	// because it is used during refresh, and during refresh we need to know what
 	// was set before i.e. during mesh peer connect
 	netw.enableLocalTraffic = true
-	return netw.unSetMesh()
+	if err := netw.unSetMesh(); err != nil {
+		return fmt.Errorf("unsetting meshnet: %w", err)
+	}
+
+	if err := netw.ipForwardSetter.Unset(); err != nil {
+		return fmt.Errorf("IP forwarding unset: %w", err)
+	}
+
+	return nil
 }
 
 func (netw *Combined) unSetMesh() error {
@@ -1224,18 +1105,11 @@ func (netw *Combined) unSetMesh() error {
 		return fmt.Errorf("unsetting hosts: %w", err)
 	}
 
-	if err := netw.defaultMeshUnBlock(); err != nil {
-		return fmt.Errorf(
-			"unblocking the peer subnet: %w",
-			err,
-		)
-	}
-
-	if err := netw.exitNode.Disable(); err != nil {
-		return fmt.Errorf(
-			"disabling exit node: %w",
-			err,
-		)
+	newCfg := netw.fwConfig.CopyWith(
+		firewall.WithMeshnetInfo(nil),
+	)
+	if err := netw.configureFirewall(newCfg); err != nil {
+		return fmt.Errorf("configure firewall for set meshnet: %w", err)
 	}
 
 	if !netw.isVpnSet {
@@ -1279,232 +1153,32 @@ func (netw *Combined) StatusMap() (map[string]string, error) {
 	return netw.mesh.StatusMap()
 }
 
-func (netw *Combined) allowIncoming(publicKey string, address netip.Addr, lanAllowed bool) error {
-	rules := []firewall.Rule{}
-
-	ruleName := publicKey + allowIncomingRule + address.String()
-	rule := firewall.Rule{
-		Name:      ruleName,
-		Direction: firewall.Inbound,
-		RemoteNetworks: []netip.Prefix{
-			netip.PrefixFrom(address, address.BitLen()),
-		},
-		Allow:          true,
-		Comment:        meshnetFirewallRuleComment,
-		SimplifiedName: allowIncomingRule + address.String(),
-	}
-	rules = append(rules, rule)
-
-	ruleIndex := slices.Index(netw.rules, ruleName)
-
-	if ruleIndex != -1 {
-		return fmt.Errorf("allow rule already exist for %s", ruleName)
-	}
-
-	if !lanAllowed {
-		ruleName := publicKey + blockLanRule + address.String()
-		rule := firewall.Rule{
-			Name:      ruleName,
-			Direction: firewall.Inbound,
-			LocalNetworks: []netip.Prefix{
-				netip.MustParsePrefix("10.0.0.0/8"),
-				netip.MustParsePrefix("172.16.0.0/12"),
-				netip.MustParsePrefix("192.168.0.0/16"),
-				netip.MustParsePrefix("169.254.0.0/16"),
-			},
-			RemoteNetworks: []netip.Prefix{
-				netip.PrefixFrom(address, address.BitLen()),
-			},
-			Allow:          false,
-			Comment:        meshnetFirewallRuleComment,
-			SimplifiedName: blockLanRule + address.String(),
-		}
-
-		rules = append(rules, rule)
-		netw.rules = append(netw.rules, ruleName)
-	}
-
-	if err := netw.fw.Add(rules); err != nil {
-		return fmt.Errorf("adding allow-incoming rule to firewall: %w", err)
-	}
-
-	netw.rules = append(netw.rules, ruleName)
-	return nil
-}
-
-func (netw *Combined) AllowFileshare(uniqueAddress meshnet.UniqueAddress) error {
-	netw.mu.Lock()
-	defer netw.mu.Unlock()
-	return netw.allowFileshare(uniqueAddress.UID, uniqueAddress.Address)
-}
-
-func (netw *Combined) allowFileshare(publicKey string, address netip.Addr) error {
-	if !netw.isFilesharePermitted {
-		log.Println(internal.WarningPrefix, "fileshare is not permitted, can't add allow rules")
-		return nil
-	}
-
-	ruleName := publicKey + allowFileshareRule + address.String()
-	rules := []firewall.Rule{{
-		Name:           ruleName,
-		Direction:      firewall.Inbound,
-		Protocols:      []string{"tcp"},
-		Ports:          []int{49111},
-		PortsDirection: firewall.Destination,
-		RemoteNetworks: []netip.Prefix{
-			netip.PrefixFrom(address, address.BitLen()),
-		},
-		Allow:          true,
-		Comment:        meshnetFirewallRuleComment,
-		SimplifiedName: allowFileshareRule + address.String(),
-	}}
-
-	ruleIndex := slices.Index(netw.rules, ruleName)
-
-	if ruleIndex != -1 {
-		return fmt.Errorf("allow rule already exist for %s", ruleName)
-	}
-
-	if err := netw.fw.Add(rules); err != nil {
-		return fmt.Errorf("adding allow-fileshare rule to firewall: %w", err)
-	}
-
-	netw.rules = append(netw.rules, ruleName)
-	return nil
-}
-
 func (netw *Combined) PermitFileshare() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	if netw.isFilesharePermitted {
-		return nil
-	}
-	netw.isFilesharePermitted = true
-	return netw.allowFileshareAll()
-}
-
-func (netw *Combined) allowFileshareAll() error {
-	var allErrors []error
-	for _, peer := range netw.cfg.Peers {
-		if peer.DoIAllowFileshare {
-			err := netw.allowFileshare(peer.PublicKey, peer.Address)
-			allErrors = append(allErrors, err)
-		}
-	}
-	return errors.Join(allErrors...)
-}
-
-func (netw *Combined) undenyDNS() error {
-	if !netw.dnsDenied {
-		log.Println(internal.DebugPrefix, "attempt to undeny dns when it was not previously denied")
-		return nil
-	}
-
-	if err := netw.fw.Delete([]string{denyPrivateDNSRule}); err != nil {
-		return fmt.Errorf("deleting deny-private-dns dns rule: %w", err)
-	}
-
-	netw.dnsDenied = false
-
-	return nil
-}
-
-func (netw *Combined) denyDNS() error {
-	if netw.dnsDenied {
-		log.Println(internal.DebugPrefix, "attempt to deny dns when it was already denied")
-		return nil
-	}
-
-	rules := []firewall.Rule{{
-		Name:           denyPrivateDNSRule,
-		Direction:      firewall.Outbound,
-		Protocols:      []string{"udp", "tcp"},
-		Ports:          []int{53},
-		PortsDirection: firewall.Destination,
-		RemoteNetworks: []netip.Prefix{
-			netip.MustParsePrefix("10.0.0.0/8"),
-			netip.MustParsePrefix("172.16.0.0/12"),
-			netip.MustParsePrefix("192.168.0.0/16"),
-			netip.MustParsePrefix("169.254.0.0/16"),
-		},
-		Allow: false,
-		// We want this to be in filter table so we process the drops earlier
-		Physical: false,
-	}}
-
-	if err := netw.fw.Add(rules); err != nil {
-		return fmt.Errorf("adding deny-private-dns rule to firewall: %w", err)
-	}
-
-	netw.dnsDenied = true
-
-	return nil
-}
-
-func (netw *Combined) blockIncoming(uniqueAddress meshnet.UniqueAddress) error {
-	lanRuleName := uniqueAddress.UID + blockLanRule + uniqueAddress.Address.String()
-	if slices.Index(netw.rules, lanRuleName) != -1 {
-		if err := netw.removeRule(lanRuleName); err != nil {
-			return err
-		}
-	}
-
-	ruleName := uniqueAddress.UID + allowIncomingRule + uniqueAddress.Address.String()
-	return netw.removeRule(ruleName)
-}
-
-func (netw *Combined) blockFileshare(publicKey string, address netip.Addr) error {
-	if !netw.isFilesharePermitted {
-		log.Println(internal.WarningPrefix, "fileshare is already forbidden")
-		return nil
-	}
-	ruleName := publicKey + allowFileshareRule + address.String()
-	return netw.removeRule(ruleName)
-}
-
-func (netw *Combined) removeRule(ruleName string) error {
-	ruleIndex := slices.Index(netw.rules, ruleName)
-
-	if ruleIndex == -1 {
-		return ErrNoSuchRule{ruleName}
-	}
-
-	if err := netw.fw.Delete([]string{ruleName}); err != nil {
-		return err
-	}
-	netw.rules = slices.Delete(netw.rules, ruleIndex, ruleIndex+1)
-
-	return nil
+	return netw.configureFileshareAccess(false)
 }
 
 func (netw *Combined) ForbidFileshare() error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
-	if !netw.isFilesharePermitted {
+
+	return netw.configureFileshareAccess(true)
+}
+
+func (netw *Combined) configureFileshareAccess(block bool) error {
+	if !netw.isMeshnetSet {
 		return nil
 	}
 
-	err := netw.blockFileshareAll()
-	// NOTE: Mark fileshare as forbidden only when there was no error here, so it
-	// can be tried again.
-	if err == nil {
-		netw.isFilesharePermitted = false
+	if netw.fwConfig.BlockFileshare == block {
+		return nil
 	}
 
-	return err
-}
-
-func (netw *Combined) blockFileshareAll() error {
-	var allErrors []error
-	for _, peer := range netw.cfg.Peers {
-		err := netw.blockFileshare(peer.PublicKey, peer.Address)
-		// NOTE: It's fine to have the rule already removed which returns [ErrNoSuchRule].
-		// It's not fine to have any other errors, so keep those.
-		if !errors.Is(err, ErrNoSuchRule{}) {
-			allErrors = append(allErrors, err)
-		}
-	}
-	return errors.Join(allErrors...)
+	cfg := netw.fwConfig.CopyWith(
+		firewall.WithBlockFileshare(block),
+	)
+	return netw.configureFirewall(cfg)
 }
 
 func getHostsFromConfig(peers mesh.MachinePeers) dns.Hosts {
@@ -1536,88 +1210,11 @@ func getHostsFromConfig(peers mesh.MachinePeers) dns.Hosts {
 	return hosts
 }
 
-func (netw *Combined) refreshIncoming(peer mesh.MachinePeer) error {
-	netw.mu.Lock()
-	defer netw.mu.Unlock()
-
-	if !peer.DoIAllowInbound {
-		return nil
-	}
-
-	address := meshnet.UniqueAddress{
-		UID: peer.PublicKey, Address: peer.Address,
-	}
-
-	if slices.Index(netw.rules, peer.PublicKey+allowIncomingRule+peer.Address.String()) != -1 {
-		if err := netw.blockIncoming(address); err != nil {
-			return fmt.Errorf("blocking incoming traffic: %w", err)
-		}
-	}
-
-	if err := netw.allowIncoming(address.UID, address.Address, peer.DoIAllowRouting && peer.DoIAllowLocalNetwork); err != nil {
-		return fmt.Errorf("allowing incoming traffic: %w", err)
-	}
-
-	return nil
-}
-
-func (netw *Combined) ResetRouting(peer mesh.MachinePeer, peers mesh.MachinePeers) error {
-	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
-	if err := netw.exitNode.ResetPeers(peers,
-		lanAvailable,
-		netw.isKillSwitchSet,
-		netw.allowlist); err != nil {
-		return err
-	}
-
-	return netw.refreshIncoming(peer)
-}
-
-func (netw *Combined) defaultMeshBlock(ip netip.Addr) error {
-	defaultMeshBlock := "default-mesh-block"
-	defaultMeshAllowEstablished := "default-mesh-allow-established"
-	if err := netw.fw.Add([]firewall.Rule{
-		// Block all the inbound traffic for the meshnet peers
-		{
-			Name:           defaultMeshBlock,
-			Direction:      firewall.Inbound,
-			RemoteNetworks: []netip.Prefix{defaultMeshSubnet},
-			Allow:          false,
-			Comment:        meshnetFirewallRuleComment,
-		},
-		// Allow inbound traffic for the existing connections
-		// E. g. this device is making some calls to another
-		// peer. In such case it should be able to receive
-		// the response.
-		{
-			Name:           defaultMeshAllowEstablished,
-			Direction:      firewall.Inbound,
-			RemoteNetworks: []netip.Prefix{defaultMeshSubnet},
-			ConnectionStates: firewall.ConnectionStates{
-				SrcAddr: ip,
-				States: []firewall.ConnectionState{
-					firewall.Related,
-					firewall.Established,
-				},
-			},
-			Allow:   true,
-			Comment: meshnetFirewallRuleComment,
-		},
-	}); err != nil {
-		return err
-	}
-	netw.rules = append(netw.rules, defaultMeshBlock)
-	netw.rules = append(netw.rules, defaultMeshAllowEstablished)
-	return nil
-}
-
 func (netw *Combined) SetLanDiscovery(enabled bool) {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
 	netw.lanDiscovery = enabled
-
-	lanAvailable := netw.lanDiscovery || !netw.isNetworkSet
 
 	// if routing rules were set - they will be adjusted as needed
 	if netw.isMeshnetSet || netw.isVpnSet {
@@ -1632,14 +1229,6 @@ func (netw *Combined) SetLanDiscovery(enabled bool) {
 				err,
 			)
 		}
-	}
-
-	if err := netw.exitNode.ResetFirewall(lanAvailable,
-		netw.isKillSwitchSet,
-		netw.allowlist); err != nil {
-		log.Println(internal.ErrorPrefix,
-			"failed to reset peers firewall rules after enabling lan discovery:",
-			err)
 	}
 }
 

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math/rand"
 	"path/filepath"
-	"runtime"
 	"sync"
 	"time"
 
@@ -26,15 +25,6 @@ var errNoInstallFile = errors.New("install file doesn't exist")
 
 // SaveFunc is used by Manager to save the config.
 type SaveFunc func(Config) Config
-
-func getCaller() string {
-	// we need to skip two frames, one for getCaller, and one for caller of getCaller
-	_, file, line, ok := runtime.Caller(2)
-	if ok {
-		return fmt.Sprintf("%s:%d", file, line)
-	}
-	return ""
-}
 
 // Manager is responsible for persisting and retrieving the config.
 type Manager interface {
@@ -96,7 +86,7 @@ func (f *FilesystemConfigManager) SaveWith(fn SaveFunc) error {
 	// We want to publish the setting changes after the config change mutex is unlocked. Otherwise it could cause a
 	// deadlock when conifg change subscriber tries to read the config with the same manager when the change is
 	// published. The assumption here is that publisher is protected with it's own lock.
-	caller := getCaller()
+	caller := internal.GetCaller()
 	var previousCfg *Config
 	var c Config
 	var err error
@@ -155,7 +145,7 @@ func (f *FilesystemConfigManager) Reset(preserveLoginData bool, disableKillswitc
 	// We want to publish the setting changes after the config change mutex is unlocked. Otherwise it could cause a
 	// deadlock when conifg change subscriber tries to read the config with the same manager when the change is
 	// published. The assumption here is that publisher is protected with it's own lock.
-	caller := getCaller()
+	caller := internal.GetCaller()
 	var newCfg Config
 	var previousCfg *Config
 	defer func() {

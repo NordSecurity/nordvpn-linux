@@ -11,10 +11,12 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
+	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	mockevents "github.com/NordSecurity/nordvpn-linux/test/mock/events"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -75,10 +77,14 @@ func TestBuildTpServersAndResolver(t *testing.T) {
 		server.URL(),
 		http.DefaultClient,
 		response.NoopValidator{},
-		&firewall.Firewall{},
+		0x1234,
 		func(attempt int) time.Duration {
 			assert.Fail(t, "this must not be called in this case")
 			return time.Minute
+		},
+		&daemonevents.ServiceEvents{
+			Connect:    mockevents.NewMockPublisherSubscriber[events.DataConnect](),
+			Disconnect: mockevents.NewMockPublisherSubscriber[events.DataDisconnect](),
 		},
 	)
 

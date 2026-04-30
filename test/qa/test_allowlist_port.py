@@ -7,8 +7,11 @@ import lib
 from lib import allowlist, firewall
 from lib.dynamic_parametrize import dynamic_parametrize
 
-
 pytestmark = pytest.mark.usefixtures("add_and_delete_random_route", "nordvpnd_scope_function")
+
+
+def setup_module(module):  # noqa: ARG001
+    firewall.setup_port_sock_server(None)
 
 
 def test_allowlist_add_multiple_ports_cli_output():
@@ -33,24 +36,26 @@ def test_allowlist_add_multiple_port_ranges_cli_output():
 
 @dynamic_parametrize(
     [
-        "port", "tech", "proto", "obfuscated",
+        "port",
+        "tech",
+        "proto",
+        "obfuscated",
     ],
     ordered_source=[lib.PORTS + lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
     id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+    always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_disconnected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8956"""
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
-
     output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.add_ports_to_allowlist([port])
-    assert not firewall.is_active([port]), "Port should not be active when disconnected"
+    assert not firewall.is_active(), "Firewall is not configured"
     output_after_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.remove_ports_from_allowlist([port])
-    assert not firewall.is_active([port]), "Port should not be active when disconnected"
+    assert not firewall.is_active(), "Firewall is not configured"
     output_after_delete = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
     assert output_before_add == output_after_add, "Route table should not change after adding port"
@@ -59,26 +64,29 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_disconne
 
 @dynamic_parametrize(
     [
-        "port", "tech", "proto", "obfuscated",
+        "port",
+        "tech",
+        "proto",
+        "obfuscated",
     ],
     ordered_source=[lib.PORTS + lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
     id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+    always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8957"""
-
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.connect()
 
     output_before_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.add_ports_to_allowlist([port])
-    assert firewall.is_active([port]), "Port should be active when connected"
+    assert firewall.is_source_port_reachable([port]), "Whitelisted port is sending traffic outside of the tunnel"
     output_after_add = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
     allowlist.remove_ports_from_allowlist([port])
-    assert not firewall.is_active([port]), "Port should not be active when disconnected"
+    assert not firewall.is_source_port_reachable([port]), "Port is sending traffic thru the tunnel"
+
     output_after_delete = sh.ip.route.show.table(firewall.IP_ROUTE_TABLE)
 
     assert output_before_add == output_after_add, "Route table should not change after adding port"
@@ -87,12 +95,15 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connecte
 
 @dynamic_parametrize(
     [
-        "port", "tech", "proto", "obfuscated",
+        "port",
+        "tech",
+        "proto",
+        "obfuscated",
     ],
     ordered_source=[lib.PORTS],
     randomized_source=[lib.TECHNOLOGIES],
     id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+    always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_port_twice_disconnected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-759"""
@@ -110,17 +121,20 @@ def test_allowlist_port_twice_disconnected(tech, proto, obfuscated, port):
     expected_message = allowlist.MSG_ALLOWLIST_PORT_ADD_ERROR % (port.value, port.protocol)
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port add failed"
     assert str(sh.nordvpn.settings()).count(port.value) == 1, "Port should appear once in settings"
-    assert not firewall.is_active([port]), "Port should not be active when disconnected"
+    assert not firewall.is_active() and firewall.is_source_port_reachable([port]), "Firewall is not configured and traffic from port is not blocked"
 
 
 @dynamic_parametrize(
     [
-        "port", "tech", "proto", "obfuscated",
+        "port",
+        "tech",
+        "proto",
+        "obfuscated",
     ],
     ordered_source=[lib.PORTS],
     randomized_source=[lib.TECHNOLOGIES_BASIC2],
     id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+    always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_port_twice_connected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8958"""
@@ -128,6 +142,7 @@ def test_allowlist_port_twice_connected(tech, proto, obfuscated, port):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.connect()
+    assert not firewall.is_source_port_reachable([port])
 
     allowlist.add_ports_to_allowlist([port])
 
@@ -140,20 +155,23 @@ def test_allowlist_port_twice_connected(tech, proto, obfuscated, port):
     expected_message = allowlist.MSG_ALLOWLIST_PORT_ADD_ERROR % (port.value, port.protocol)
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port add failed"
     assert str(sh.nordvpn.settings()).count(port.value) == 1, "Port should appear once in settings"
-    assert firewall.is_active([port]), "Port should be active when connected"
+    assert firewall.is_active() and firewall.is_source_port_reachable([port]), "Firewall is configured and traffic from the port is reachable"
 
     sh.nordvpn.disconnect()
-    assert not firewall.is_active([port]), "Port should not be active when disconnected"
+    assert not firewall.is_active() and firewall.is_source_port_reachable([port]), "Firewall is not configured and traffic from the port is reachable"
 
 
 @dynamic_parametrize(
     [
-        "port", "tech", "proto", "obfuscated",
+        "port",
+        "tech",
+        "proto",
+        "obfuscated",
     ],
     ordered_source=[lib.PORTS + lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
     id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+    always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_port_and_remove_disconnected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8959"""
@@ -161,20 +179,23 @@ def test_allowlist_port_and_remove_disconnected(tech, proto, obfuscated, port):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     allowlist.add_ports_to_allowlist([port])
-    assert not firewall.is_active([port]), "Port should not be active when disconnected"
+    assert not firewall.is_active() and firewall.is_source_port_reachable([port]), "Firewall is not configured and traffic from the port is reachable"
 
     allowlist.remove_ports_from_allowlist([port])
-    assert not firewall.is_active([port]), "Port should not be active when disconnected"
+    assert not firewall.is_active() and firewall.is_source_port_reachable([port]), "Firewall is not configured and traffic from the port is reachable"
 
 
 @dynamic_parametrize(
     [
-        "port", "tech", "proto", "obfuscated",
+        "port",
+        "tech",
+        "proto",
+        "obfuscated",
     ],
     ordered_source=[lib.PORTS + lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
     id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+    always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_port_and_remove_connected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8958"""
@@ -182,22 +203,26 @@ def test_allowlist_port_and_remove_connected(tech, proto, obfuscated, port):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.connect()
+    assert not firewall.is_source_port_reachable([port])
 
     allowlist.add_ports_to_allowlist([port])
-    assert firewall.is_active([port]), "Port should be active when connected"
+    assert firewall.is_source_port_reachable([port]), "Traffic from the port is reachable"
 
     allowlist.remove_ports_from_allowlist([port])
-    assert firewall.is_active() and not firewall.is_active([port]), "Firewall should be active but port should not be included"
+    assert firewall.is_active() and not firewall.is_source_port_reachable([port]), "Firewall is configured and traffic from the port is blocked"
 
 
 @dynamic_parametrize(
     [
-        "port", "tech", "proto", "obfuscated",
+        "port",
+        "tech",
+        "proto",
+        "obfuscated",
     ],
     ordered_source=[lib.PORTS],
     randomized_source=[lib.TECHNOLOGIES],
     id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+    always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_port_remove_nonexistent_disconnected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-728"""
@@ -216,12 +241,15 @@ def test_allowlist_port_remove_nonexistent_disconnected(tech, proto, obfuscated,
 
 @dynamic_parametrize(
     [
-        "port", "tech", "proto", "obfuscated",
+        "port",
+        "tech",
+        "proto",
+        "obfuscated",
     ],
     ordered_source=[lib.PORTS],
     randomized_source=[lib.TECHNOLOGIES],
     id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+    always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_port_remove_nonexistent_connected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8960"""
@@ -242,12 +270,15 @@ def test_allowlist_port_remove_nonexistent_connected(tech, proto, obfuscated, po
 
 @dynamic_parametrize(
     [
-        "port", "tech", "proto", "obfuscated",
+        "port",
+        "tech",
+        "proto",
+        "obfuscated",
     ],
     ordered_source=[lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
     id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+    always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_port_range_remove_nonexistent_disconnected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-3779"""
@@ -268,12 +299,15 @@ def test_allowlist_port_range_remove_nonexistent_disconnected(tech, proto, obfus
 
 @dynamic_parametrize(
     [
-        "port", "tech", "proto", "obfuscated",
+        "port",
+        "tech",
+        "proto",
+        "obfuscated",
     ],
     ordered_source=[lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
     id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+    always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_port_range_remove_nonexistent_connected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8961"""
@@ -296,12 +330,15 @@ def test_allowlist_port_range_remove_nonexistent_connected(tech, proto, obfuscat
 
 @dynamic_parametrize(
     [
-        "port", "tech", "proto", "obfuscated",
+        "port",
+        "tech",
+        "proto",
+        "obfuscated",
     ],
     ordered_source=[lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
     id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+    always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_port_range_twice_disconnected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-3789"""
@@ -311,17 +348,20 @@ def test_allowlist_port_range_twice_disconnected(tech, proto, obfuscated, port):
     for _ in range(2):
         allowlist.add_ports_to_allowlist([port])
 
-    assert not firewall.is_active([port]), "Port range should not be active when disconnected"
+    assert not firewall.is_active() and firewall.is_source_port_reachable([port]), "Firewall is not configured and traffic from the port is reachable"
 
 
 @dynamic_parametrize(
     [
-        "port", "tech", "proto", "obfuscated",
+        "port",
+        "tech",
+        "proto",
+        "obfuscated",
     ],
     ordered_source=[lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
     id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+    always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_port_range_twice_connected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8962"""
@@ -333,17 +373,20 @@ def test_allowlist_port_range_twice_connected(tech, proto, obfuscated, port):
     for _ in range(2):
         allowlist.add_ports_to_allowlist([port])
 
-    assert firewall.is_active([port]), "Port range should be active when connected"
+    assert firewall.is_active() and firewall.is_source_port_reachable([port]), "Firewall is configured and traffic from the port is reachable"
 
 
 @dynamic_parametrize(
     [
-        "port", "tech", "proto", "obfuscated",
+        "port",
+        "tech",
+        "proto",
+        "obfuscated",
     ],
     ordered_source=[lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
     id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+    always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_port_range_when_port_from_range_already_allowlisted_disconnected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-724"""
@@ -355,20 +398,23 @@ def test_allowlist_port_range_when_port_from_range_already_allowlisted_disconnec
 
     already_allowlisted_port = lib.Port(random_port_from_port_range, port.protocol)
     allowlist.add_ports_to_allowlist([already_allowlisted_port])
-    assert not firewall.is_active([already_allowlisted_port]), "Port should not be active when disconnected"
+    assert not firewall.is_active() and firewall.is_source_port_reachable([already_allowlisted_port]), "Firewall is not configured and traffic from the port is reachable"
 
     allowlist.add_ports_to_allowlist([port])
-    assert not firewall.is_active([port]) and not firewall.is_active([already_allowlisted_port]), "Port range and individual port should not be active when disconnected"
+    assert not firewall.is_active() and firewall.is_source_port_reachable([already_allowlisted_port]), "Firewall is not configured and traffic from the port is reachable"
 
 
 @dynamic_parametrize(
     [
-        "port", "tech", "proto", "obfuscated",
+        "port",
+        "tech",
+        "proto",
+        "obfuscated",
     ],
     ordered_source=[lib.PORTS_RANGE],
     randomized_source=[lib.TECHNOLOGIES],
     id_pattern="{port.protocol}-{port.value}-{tech}-{proto}-{obfuscated}",
-    always_pair=lib.TECHNOLOGIES_BASIC1[0]
+    always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_port_range_when_port_from_range_already_allowlisted_connected(tech, proto, obfuscated, port):
     """Manual TC: LVPN-8963"""
@@ -382,7 +428,9 @@ def test_allowlist_port_range_when_port_from_range_already_allowlisted_connected
 
     already_allowlisted_port = lib.Port(random_port_from_port_range, port.protocol)
     allowlist.add_ports_to_allowlist([already_allowlisted_port])
-    assert firewall.is_active([already_allowlisted_port]), "Port should be active when connected"
+    assert firewall.is_source_port_reachable([already_allowlisted_port]), "Traffic from the port is reachable"
 
     allowlist.add_ports_to_allowlist([port])
-    assert firewall.is_active([port]) and not firewall.is_active([already_allowlisted_port]), "Port range should be active but individual port should be included in range"
+    assert firewall.is_active() and firewall.is_source_port_reachable([port]) and firewall.is_source_port_reachable([already_allowlisted_port]), (
+        "Firewall is configured and traffic from the whitelisted ports is not blocked"
+    )

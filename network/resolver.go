@@ -4,25 +4,47 @@ import (
 	"fmt"
 	"net/netip"
 	"sync"
+	"sync/atomic"
 
-	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
+	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
+	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // Resolver is a DNSResolver implementation wrapping each DHCP request with
 // allowing and blocking firewall rules
 type Resolver struct {
-	fw      firewall.Service
 	servers dns.Getter
+	fwmark  uint32
+	// store if VPN is connected or not. Based on this is decided if the firewall mark is used or not
+	isVpnConnected atomic.Bool
 	sync.Mutex
 }
 
-func NewResolver(fw firewall.Service, servers dns.Getter) *Resolver {
-	return &Resolver{
-		fw:      fw,
-		servers: servers,
+func NewResolver(
+	servers dns.Getter,
+	fwmark uint32,
+	daemonEvents *daemonevents.ServiceEvents,
+) DNSResolver {
+	resolver := &Resolver{
+		servers:        servers,
+		fwmark:         fwmark,
+		isVpnConnected: atomic.Bool{},
 	}
+
+	daemonEvents.Connect.Subscribe(func(dc events.DataConnect) error {
+		resolver.updateVpnStatus(dc.EventStatus == events.StatusSuccess)
+		return nil
+	})
+
+	daemonEvents.Disconnect.Subscribe(func(dd events.DataDisconnect) error {
+		resolver.updateVpnStatus(false)
+		return nil
+	})
+
+	return resolver
 }
 
 type DNSResolver interface {
@@ -31,24 +53,26 @@ type DNSResolver interface {
 
 func (r *Resolver) Resolve(domain string) ([]netip.Addr, error) {
 	nameservers := r.servers.Get(false)
-	return r.ResolveWithNameservers(domain, StringsToIPs(nameservers), "udp")
+	return r.resolveWithNameservers(domain, FilterInvalidIPs(nameservers), "udp")
 }
 
-func (r *Resolver) ResolveWithNameservers(domain string, nameservers []netip.Addr, protocol string) ([]netip.Addr, error) {
+func (r *Resolver) resolveWithNameservers(domain string, nameservers []string, protocol string) ([]netip.Addr, error) {
 	r.Lock()
 	defer r.Unlock()
 
-	err := allowlistIP(r.fw, "allow_dns", nameservers...)
-	if err != nil {
-		return nil, fmt.Errorf("allowlisting DNS IP addresses %+v: %w", nameservers, err)
-	}
-	defer r.fw.Delete([]string{"allow_dns"}) // ignore error here
 	// get the addresses from DNS
 	var ipAddrs []netip.Addr
+	var err error
 	for _, nameserver := range nameservers {
-		ipAddrs, err = LookupAddressWithCustomDNS(domain, nameserver.String(), protocol)
+		var fwmark = r.fwmark
+		if r.isVpnConnected.Load() {
+			// While connected to VPN, send the DNS requests thru the tunnel so no fwmark
+			fwmark = noFwMark
+		}
+		ipAddrs, err = lookupAddress(domain, nameserver, protocol, fwmark)
+
 		if err == nil {
-			break
+			return ipAddrs, nil
 		}
 	}
 	if err != nil {
@@ -57,75 +81,7 @@ func (r *Resolver) ResolveWithNameservers(domain string, nameservers []netip.Add
 	return ipAddrs, nil
 }
 
-func allowlistIP(fw firewall.Service, name string, ips ...netip.Addr) error {
-	ifaces, err := device.OutsideCapableTrafficInterfaces()
-	if err != nil {
-		return fmt.Errorf("listing physical interfaces: %w", err)
-	}
-
-	var networks []netip.Prefix
-	for _, ip := range ips {
-		networks = append(networks, netip.PrefixFrom(ip, ip.BitLen()))
-	}
-	if err := fw.Add([]firewall.Rule{
-		{
-			Name:           name,
-			RemoteNetworks: networks,
-			Interfaces:     ifaces,
-			Direction:      firewall.TwoWay,
-			Allow:          true,
-			Physical:       true,
-		},
-	}); err != nil {
-		return fmt.Errorf("adding firewall rule %s for %+v: %w", name, ips, err)
-	}
-	return nil
-}
-
-// ResolverChain tries each resolver until the first successful one.
-type ResolverChain struct {
-	resolvers []EndpointResolver
-}
-
-func NewDefaultResolverChain(fw firewall.Service) ResolverChain {
-	return ResolverChain{
-		resolvers: []EndpointResolver{
-			NewPingConnectionChecker(fw),
-		},
-	}
-}
-
-func (c ResolverChain) Resolve(endpointIP netip.Addr) ([]netip.Addr, error) {
-	for _, resolver := range c.resolvers {
-		ip, err := resolver.Resolve(endpointIP)
-		if err == nil {
-			return ip, nil
-		}
-	}
-	return nil, fmt.Errorf("unable to resolve ip %s", endpointIP)
-}
-
-// PingConnectionChecker is the only resolver used by ResolverChain
-type PingConnectionChecker struct {
-	fw firewall.Service
-}
-
-func NewPingConnectionChecker(fw firewall.Service) PingConnectionChecker {
-	return PingConnectionChecker{fw}
-}
-
-func (c PingConnectionChecker) Resolve(endpointIP netip.Addr) ([]netip.Addr, error) {
-	if err := allowlistIP(c.fw, "allow_ping", endpointIP); err != nil {
-		return nil, err
-	}
-	defer c.fw.Delete([]string{"allow_ping"})
-
-	var err error
-	for i := 0; i < 3; i++ {
-		err = Ping(endpointIP.String(), 1)
-		if err == nil {
-			return []netip.Addr{endpointIP}, nil
-		}
-	}
-	return nil, err
+func (r *Resolver) updateVpnStatus(isConnected bool) {
+	log.Println(internal.InfoPrefix, "resolver set VPN connected to", isConnected)
+	r.isVpnConnected.Store(isConnected)
 }

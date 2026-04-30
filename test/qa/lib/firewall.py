@@ -1,459 +1,168 @@
 import os
-import re
+import socket
+import struct
+import time
 
 import sh
 
-from . import Port, Protocol, daemon, logging, dns
+from . import Port, Protocol, ssh
 
 IP_ROUTE_TABLE = 205
 ENDPOINTS = "endpoints"
+SOCK_TIMEOUT = 5
+TCP_DST_PORT = 1234
+UDP_DST_PORT = 1235
+DST_ADDR = "qa-peer"
+# This is used when communicating with the socket server
+# on the qa-peer container, used in port allowlisting behavioral testing
+try:
+    IP = socket.gethostbyname(DST_ADDR)
+except Exception as e: # noqa: BLE001
+    print(e)
+    print("Unable to get qa-peer addr, does it exist?")
 
-# Rules for killswitch
-# mangle
-# -A PREROUTING -i {iface} -m comment --comment nordvpn -m comment --comment drop-IPv4 -j DROP
-# -A POSTROUTING -o {iface} -m comment --comment nordvpn -m comment --comment drop-IPv4 -j DROP
-
-# Rules for firewall
-# mangle
-# -A PREROUTING -i {iface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j ACCEPT
-# -A PREROUTING -i {iface} -m comment --comment nordvpn -m comment --comment drop-IPv4 -j DROP
-# -A POSTROUTING -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
-# -A POSTROUTING -o {iface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -m comment --comment nordvpn -j ACCEPT
-# -A POSTROUTING -o {iface} -m comment --comment nordvpn -m comment --comment drop-IPv4 -j DROP
-
-# Rules for allowlisted subnet
-# mangle
-# -A PREROUTING -s {subnet_ip} -i {iface} -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT
-# -A PREROUTING -i {iface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j ACCEPT
-# -A PREROUTING -i {iface} -m comment --comment nordvpn -m comment --comment drop-IPv4 -j DROP
-# -A POSTROUTING -d {subnet_ip} -o {iface} -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT
-# -A POSTROUTING -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
-# -A POSTROUTING -o {iface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j ACCEPT
-# -A POSTROUTING -o {iface} -m comment --comment nordvpn -m comment --comment drop-IPv4 -j DROP
-
-# Rules for allowlisted port
-# mangle
-# -A PREROUTING -i {iface} -p udp -m udp --dport {port} -m comment --comment nordvpn -m comment --comment allowlist_ports_udp -j ACCEPT
-# -A PREROUTING -i {iface} -p udp -m udp --sport {port} -m comment --comment nordvpn -m comment --comment allowlist_ports_udp -j ACCEPT
-# -A PREROUTING -i {iface} -p tcp -m tcp --dport {port} -m comment --comment nordvpn -m comment --comment allowlist_ports_tcp -j ACCEPT
-# -A PREROUTING -i {iface} -p tcp -m tcp --sport {port} -m comment --comment nordvpn -m comment --comment allowlist_ports_tcp -j ACCEPT
-# -A PREROUTING -i {iface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j ACCEPT
-# -A PREROUTING -i {iface} -m comment --comment nordvpn -m comment --comment drop-IPv4 -j DROP
-# -A OUTPUT -p udp -m udp --sport {port} -m comment --comment nordvpn_allowlist -j MARK --set-xmark 0xe1f1/0xffffffff
-# -A OUTPUT -p tcp -m tcp --sport {port} -m comment --comment nordvpn_allowlist -j MARK --set-xmark 0xe1f1/0xffffffff
-# -A POSTROUTING -o {iface} -m mark --mark 0xe1f1 m comment --comment nordvpn -m comment --comment api_allowlist -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
-# -A POSTROUTING -o {iface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j ACCEPT     p
-# -A POSTROUTING -o {iface} -m comment --comment nordvpn -m comment --comment drop-IPv4 -j DROP
-
-# Rules for allowlisted ports range
-# mangle
-# -A PREROUTING -i {iface} -p udp -m udp --dport {port_start}:{port_end} -m comment --comment nordvpn -m comment --comment allowlist_ports_udp -j ACCEPT
-# -A PREROUTING -i {iface} -p udp -m udp --sport {port_start}:{port_end} -m comment --comment nordvpn -m comment --comment allowlist_ports_udp -j ACCEPT
-# -A PREROUTING -i {iface} -p tcp -m tcp --dport {port_start}:{port_end} -m comment --comment nordvpn -m comment --comment allowlist_ports_tcp -j ACCEPT
-# -A PREROUTING -i {iface} -p tcp -m tcp --sport {port_start}:{port_end} -m comment --comment nordvpn -m comment --comment allowlist_ports_tcp -j ACCEPT
-# -A PREROUTING -i {iface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j ACCEPT
-# -A PREROUTING -i {iface} -m comment --comment nordvpn -m comment --comment drop-IPv4 -j DROP
-# -A OUTPUT -p udp -m udp --sport {port_start}:{port_end} -m comment --comment nordvpn_allowlist -j MARK --set-xmark 0xe1f1/0xffffffff
-# -A OUTPUT -p tcp -m tcp --sport {port_start}:{port_end} -m comment --comment nordvpn_allowlist -j MARK --set-xmark 0xe1f1/0xffffffff
-# -A POSTROUTING -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
-# -A POSTROUTING -o {iface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j ACCEPT
-# -A POSTROUTING -o {iface} -m comment --comment nordvpn -m comment --comment drop-IPv4 -j DROP
-
-# Rules for allowlisted port and protocol
-# mangle
-# -A PREROUTING -i {iface} -p {protocol} -m {protocol} --dport {port} -m comment --comment nordvpn -m comment --comment allowlist_ports_{protocol} -j ACCEPT
-# -A PREROUTING -i {iface} -p {protocol} -m {protocol} --sport {port} -m comment --comment nordvpn -m comment --comment allowlist_ports_{protocol} -j ACCEPT
-# -A PREROUTING -i {iface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j ACCEPT
-# -A PREROUTING -i {iface} -m comment --comment nordvpn -m comment --comment drop-IPv4 -j DROP
-# -A OUTPUT -p {protocol} -m {protocol} --sport {port} -m comment --comment nordvpn_allowlist -j MARK --set-xmark 0xe1f1/0xffffffff
-# -A POSTROUTING -o {iface} -p {protocol} -m {protocol} --dport {port} -m comment --comment nordvpn -m comment --comment allowlist_ports_{protocol} -j ACCEPT
-# -A POSTROUTING -o {iface} -p {protocol} -m {protocol} --sport {port} -m comment --comment nordvpn -m comment --comment allowlist_ports_{protocol} -j ACCEPT
-# -A POSTROUTING -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
-# -A POSTROUTING -o {iface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j ACCEPT
-# -A POSTROUTING -o {iface} -m comment --comment nordvpn -m comment --comment drop-IPv4 -j DROP
-
-# Rules for allowlisted ports range and protocol
-# mangle
-# -A PREROUTING -i {iface} -p {protocol} -m {protocol} --sport {port_start}:{port_end} -m comment --comment nordvpn -m comment --comment allowlist_ports_{protocol} -j ACCEPT
-# -A PREROUTING -i {iface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j ACCEPT
-# -A PREROUTING -i {iface} -m comment --comment nordvpn -m comment --comment drop-IPv4 -j DROP
-# -A OUTPUT -p {protocol} -m {protocol} --sport {port} -m comment --comment nordvpn_allowlist -j MARK --set-xmark 0xe1f1/0xffffffff
-# -A POSTROUTING -o {iface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
-# -A POSTROUTING -o {iface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j ACCEPT
-# -A POSTROUTING -o {iface} -m comment --comment nordvpn -m comment --comment drop-IPv4 -j DROP
-
-PREROUTING_LAN_DISCOVERY_RULES = [
-    "-A PREROUTING -s 169.254.0.0/16 -i eth0 -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT",
-    "-A PREROUTING -s 192.168.0.0/16 -i eth0 -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT",
-    "-A PREROUTING -s 172.16.0.0/12 -i eth0 -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT",
-    "-A PREROUTING -s 10.0.0.0/8 -i eth0 -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT",
+LAN_DISCOVERY_SUBNETS = [
+    "169.254.0.0/16",
+    "192.168.0.0/16",
+    "172.16.0.0/12",
+    "10.0.0.0/8"
 ]
 
-POSTROUTING_LAN_DISCOVERY_RULES = [
-    "-A POSTROUTING -d 169.254.0.0/16 -o eth0 -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT",
-    "-A POSTROUTING -d 192.168.0.0/16 -o eth0 -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT",
-    "-A POSTROUTING -d 172.16.0.0/12 -o eth0 -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT",
-    "-A POSTROUTING -d 10.0.0.0/8 -o eth0 -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT",
-]
-
-
-def __rules_connmark_chain_prerouting(interfaces: list) -> list[str]:
-    result = []
-    rules = [
-            "-A PREROUTING -i {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j ACCEPT",
-            "-A PREROUTING -i {interface} -m comment --comment nordvpn -m comment --comment drop-IPv4 -j DROP",
-    ]
-
-    for rule in rules:
-        for interface in interfaces:
-            result.append(rule.format(interface=interface))
-
-    return result
-
-
-def __rules_block_dns_port() -> list[str]:
-    return [
-        "-A OUTPUT -d 169.254.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -m comment --comment deny-private-dns -j DROP",
-        "-A OUTPUT -d 169.254.0.0/16 -p udp -m udp --dport 53 -m comment --comment nordvpn -m comment --comment deny-private-dns -j DROP",
-        "-A OUTPUT -d 192.168.0.0/16 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -m comment --comment deny-private-dns -j DROP",
-        "-A OUTPUT -d 192.168.0.0/16 -p udp -m udp --dport 53 -m comment --comment nordvpn -m comment --comment deny-private-dns -j DROP",
-        "-A OUTPUT -d 172.16.0.0/12 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -m comment --comment deny-private-dns -j DROP",
-        "-A OUTPUT -d 172.16.0.0/12 -p udp -m udp --dport 53 -m comment --comment nordvpn -m comment --comment deny-private-dns -j DROP",
-        "-A OUTPUT -d 10.0.0.0/8 -p tcp -m tcp --dport 53 -m comment --comment nordvpn -m comment --comment deny-private-dns -j DROP",
-        "-A OUTPUT -d 10.0.0.0/8 -p udp -m udp --dport 53 -m comment --comment nordvpn -m comment --comment deny-private-dns -j DROP"
-    ]
-
-
-def __rules_connmark_chain_output(interfaces: list) -> list[str]:
-    result = []
-    rules = [
-        "-A POSTROUTING -o {interface} -m mark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff",
-        "-A POSTROUTING -o {interface} -m connmark --mark 0xe1f1 -m comment --comment nordvpn -m comment --comment api_allowlist -j ACCEPT",
-    ]
-    """
-    Need to separate preparing expected rules ordering due to that:
-    -A PREROUTING -i eth1 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-    -A PREROUTING -i eth0 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-    -A PREROUTING -i eth1 -m comment --comment nordvpn -j DROP
-    -A PREROUTING -i eth0 -m comment --comment nordvpn -j DROP
-    -A POSTROUTING -o eth1 -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
-    -A POSTROUTING -o eth1 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-    -A POSTROUTING -o eth0 -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
-    -A POSTROUTING -o eth0 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-    -A POSTROUTING -o eth1 -m comment --comment nordvpn -j DROP
-    -A POSTROUTING -o eth0 -m comment --comment nordvpn -j DROP
-    """
-    for interface in interfaces:
-        for rule in rules:
-            result.append(rule.format(interface=interface))
-
-    for interface in interfaces:
-        result.append(f"-A POSTROUTING -o {interface} -m comment --comment nordvpn -m comment --comment drop-IPv4 -j DROP")
-
-    return result
-
-
-def __rules_allowlist_subnet_chain_input(interfaces: list, subnets: list[str]) -> list[str]:
-    result = []
-
-    """
-    Reverse is needed due to that:
-    Expected rules:
-    -A PREROUTING -s 192.168.1.1/32 -i eth0 -m comment --comment nordvpn -j ACCEPT
-    -A PREROUTING -s 192.168.1.1/32 -i eth1 -m comment --comment nordvpn -j ACCEPT
-    Current rules:
-    -A PREROUTING -s 192.168.1.1/32 -i eth1 -m comment --comment nordvpn -j ACCEPT
-    -A PREROUTING -s 192.168.1.1/32 -i eth0 -m comment --comment nordvpn -j ACCEPT
-    """
-    interfaces.reverse()
-
-    for subnet in subnets:
-        for interface in interfaces:
-            result.append(
-                f"-A PREROUTING -s {subnet} -i {interface} -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT",
-            )
-    result.reverse()  # reverse() is needed because we always insert our rules, so newest one is always on top
-    return result
-
-
-def __rules_allowlist_subnet_chain_output(interfaces: list, subnets: list[str]) -> list[str]:
-    result = []
-
-    for subnet in subnets:
-        for interface in interfaces:
-            result.append(
-                f"-A POSTROUTING -d {subnet} -o {interface} -m comment --comment nordvpn -m comment --comment allowlist_subnets -j ACCEPT",
-            )
-    result.reverse()
-    return result
-
-
-def __rules_allowlist_port_chain_input(interfaces: list, ports_udp: list[Port], ports_tcp: list[Port]) -> list[str]:
-    result = []
-
-    udp_rules = [
-        "-A PREROUTING -i {interface} -p udp -m udp --dport {port} -m comment --comment nordvpn -m comment --comment allowlist_ports_udp -j ACCEPT",
-        "-A PREROUTING -i {interface} -p udp -m udp --sport {port} -m comment --comment nordvpn -m comment --comment allowlist_ports_udp -j ACCEPT",
-    ]
-    tcp_rules = [
-        "-A PREROUTING -i {interface} -p tcp -m tcp --dport {port} -m comment --comment nordvpn -m comment --comment allowlist_ports_tcp -j ACCEPT",
-        "-A PREROUTING -i {interface} -p tcp -m tcp --sport {port} -m comment --comment nordvpn -m comment --comment allowlist_ports_tcp -j ACCEPT",
-    ]
-
-    for interface in interfaces:
-        for udp_rule in udp_rules:
-            for port in ports_udp:
-                result.append(
-                    udp_rule.format(interface=interface, port=port.value),
-                )
-
-    for interface in interfaces:
-        for tcp_rule in tcp_rules:
-            for port in ports_tcp:
-                result.append(
-                    tcp_rule.format(interface=interface, port=port.value),
-                )
-
-    return result
-
-
-def __rules_allowlist_port_chain_output(ports_udp: list[Port], ports_tcp: list[Port]) -> list[str]:
-    result = []
-
-    for port in ports_udp:
-        result.extend(
-            [
-                f"-A OUTPUT -p udp -m udp --sport {port.value} -m comment --comment nordvpn_allowlist -j MARK --set-xmark 0xe1f1/0xffffffff",
-            ]
-        )
-    for port in ports_tcp:
-        result.extend(
-            [
-                f"-A OUTPUT -p tcp -m tcp --sport {port.value} -m comment --comment nordvpn_allowlist -j MARK --set-xmark 0xe1f1/0xffffffff",
-            ]
-        )
-
-    return result
-
-
-def _get_rules_killswitch_on(interfaces: list) -> list[str]:
-    result = []
-    # mangle table rules
-    result.extend(__rules_connmark_chain_prerouting(interfaces))
-
-    result.extend(__rules_connmark_chain_output(interfaces))
-    # filter table rules
-    result.extend(__rules_block_dns_port())
-
-    return result
-
-
-def _get_rules_connected_to_vpn_server(interfaces: list) -> list[str]:
-    return _get_rules_killswitch_on(interfaces)
-
-
-def _get_rules_allowlist_subnet_on(interfaces: list, subnets: list[str]) -> list[str]:
-    result = []
-    # mangle table rules
-    result.extend(__rules_allowlist_subnet_chain_input(interfaces, subnets))
-    result.extend(__rules_connmark_chain_prerouting(interfaces))
-
-    result.extend(__rules_allowlist_subnet_chain_output(interfaces, subnets))
-    result.extend(__rules_connmark_chain_output(interfaces))
-    # filter table rules
-    result.extend(__rules_block_dns_port())
-
-    return result
-
-
-def _get_rules_allowlist_port_on(interfaces: list, ports: list[Port]) -> list[str]:
-    ports_udp: list[Port]
-    ports_tcp: list[Port]
-    ports_udp, ports_tcp = _sort_ports_by_protocol(ports)
-
-    result = []
-    # mangle table rules
-    result.extend(__rules_allowlist_port_chain_input(interfaces, ports_udp, ports_tcp))
-    result.extend(__rules_connmark_chain_prerouting(interfaces))
-
-    result.extend(__rules_allowlist_port_chain_output(ports_udp, ports_tcp))
-
-    result.extend(__rules_connmark_chain_output(interfaces))
-    # filter table rules
-    result.extend(__rules_block_dns_port())
-
-    return result
-
-
-def _get_rules_allowlist_subnet_and_port_on(interfaces: list, subnets: list[str], ports: list[Port]) -> list[str]:
-    ports_udp, ports_tcp = _sort_ports_by_protocol(ports)
-
-    result = []
-    # mangle table rules
-    result.extend(__rules_allowlist_port_chain_input(interfaces, ports_udp, ports_tcp))
-    result.extend(__rules_allowlist_subnet_chain_input(interfaces, subnets))
-    result.extend(__rules_connmark_chain_prerouting(interfaces))
-
-    result.extend(__rules_allowlist_port_chain_output(ports_udp, ports_tcp))
-
-    result.extend(__rules_allowlist_subnet_chain_output(interfaces, subnets))
-    result.extend(__rules_connmark_chain_output(interfaces))
-    # filter table rules
-    result.extend(__rules_block_dns_port())
-
-    return result
-
-
-def _get_all_interfaces() -> list[str]:
-    """
-    Extract interface names from 'ip a show dynamic' output
-
-    :returns: list of interface names that have dynamic configuration
-    """
-    # Run the command
-    output = sh.ip("a", "show", "dynamic", "up")
-
-    interfaces = []
-
-    # Parse the output line by line
-    for line in output:
-        # Look for lines that contain interface definitions
-        # These start with a number followed by a colon and the interface name
-        if line and line[0].isdigit() and ": " in line:
-            # Extract the interface name (between the colon and the colon or end of line)
-            # Example -> 1: enp0s31f6: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc fq_codel state DOWN group 78760 qlen 1000
-            parts = line.split(": ", 2)
-            interface_name = parts[1].split(":", 1)[0].strip()
-            interfaces.append(interface_name)
-
-    return interfaces if interfaces else [sh.ip.route.show("default").split(None)[4]]
-
-
-def _get_firewall_rules(ports: list[Port] | None = None, subnets: list[str] | None = None) -> list[str]:
-    # Default route interface
-    rules = []
-    interfaces = _get_all_interfaces()
-
-    print("Default gateway:", interfaces)
-
-    interfaces.reverse()
-    """
-    Need reverse interfaces due to that
-    Expected rules:
-    -A PREROUTING -i eth0 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-    -A PREROUTING -i eth1 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-    -A PREROUTING -i eth0 -m comment --comment nordvpn -j DROP
-    -A PREROUTING -i eth1 -m comment --comment nordvpn -j DROP
-    -A POSTROUTING -o eth0 -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
-    -A POSTROUTING -o eth1 -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
-    -A POSTROUTING -o eth0 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-    -A POSTROUTING -o eth1 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-    -A POSTROUTING -o eth0 -m comment --comment nordvpn -j DROP
-    -A POSTROUTING -o eth1 -m comment --comment nordvpn -j DROP
-
-    Current rules:
-    -A PREROUTING -i eth1 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-    -A PREROUTING -i eth0 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-    -A PREROUTING -i eth1 -m comment --comment nordvpn -j DROP
-    -A PREROUTING -i eth0 -m comment --comment nordvpn -j DROP
-    -A POSTROUTING -o eth1 -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
-    -A POSTROUTING -o eth1 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-    -A POSTROUTING -o eth0 -m mark --mark 0xe1f1 -m comment --comment nordvpn -j CONNMARK --save-mark --nfmask 0xffffffff --ctmask 0xffffffff
-    -A POSTROUTING -o eth0 -m connmark --mark 0xe1f1 -m comment --comment nordvpn -j ACCEPT
-    -A POSTROUTING -o eth1 -m comment --comment nordvpn -j DROP
-    -A POSTROUTING -o eth0 -m comment --comment nordvpn -j DROP
-    """
-    # Disconnected & Kill Switch ON
-    if not daemon.is_connected() and daemon.is_killswitch_on():
-        rules = _get_rules_killswitch_on(interfaces)
-
-    # Connected
-    if not ports and not subnets:
-        rules = _get_rules_connected_to_vpn_server(interfaces)
-
-    # Connected & Subnet(s) and Port(s) allowlisted
-    if subnets and ports:
-        rules = _get_rules_allowlist_subnet_and_port_on(interfaces, subnets, ports)
-
-    # Connected & Subnet(s) allowlisted
-    if subnets and not ports:
-        rules = _get_rules_allowlist_subnet_on(interfaces, subnets)
-
-    # Connected & Port(s) allowlisted
-    if ports:
-        rules = _get_rules_allowlist_port_on(interfaces, ports)
-
-    return rules
-
-
-def is_active(ports: list[Port] | None = None, subnets: list[str] | None = None) -> bool:
-    """Returns True when all expected rules are found in iptables, in matching order."""
+def setup_port_sock_server(ssh_client : ssh.Ssh | None):
+    if ssh_client is None:
+        ssh_client = ssh.Ssh("qa-peer", "root", "root")
+    ssh_client.connect()
+    remote_path = "/tmp/sockserv.py"
+    project_root = os.environ["WORKDIR"]
+    serv_path = f"{project_root}/test/qa/lib/sockserv.py"
+    ssh_client.send_file(serv_path, remote_path)
+    command = (
+        f"nohup python3 {remote_path}"
+        f"> {project_root}/server.log 2>&1 &"
+    )
+    out = ssh_client.exec_command(command)
+    print(out)
+    print(f"Remote script started in background: {remote_path}")
+    time.sleep(1)
+
+
+def is_active() -> bool:
+    """Returns True when nft finds the default nordvpn table"""
     print(sh.ip.route())
+    try:
+        out = sh.sudo.nft("list", "table", "inet", "nordvpn")
+    except Exception: # noqa: BLE001
+        return False
 
-    expected_rules = _get_firewall_rules(ports, subnets)
-    print("\nExpected rules:")
-    logging.log("\nExpected rules:")
-    for rule in expected_rules:
-        print(f"{rule}")
-        logging.log(rule)
-
-    current_rules = _get_iptables_rules()
-    print("\nCurrent rules:")
-    logging.log("\nCurrent rules:")
-    for rule in current_rules:
-        print(f"{rule}")
-        logging.log(rule)
-
-    print()
+    print(out)
     print(sh.nordvpn.settings())
-    return current_rules == expected_rules
+    return "nordvpn" in out
+
+tun_interface_names = [
+    "nordtun",
+    "qtun",
+    "nordlynx"
+]
+
+def is_ip_routed_via_VPN(subnets: list[str]) -> bool:
+    bool_array = []
+    for subnet in subnets:
+        print(sh.ip.route.get(subnet))
+        # Allowlisted subnet should not return tunnel interface name when using ip route get
+        bool_array.append(any(iface_name in sh.ip.route.get(subnet) for iface_name in tun_interface_names))
+    return all(bool_array)
 
 
-def is_empty() -> bool:
-    """Returns True when firewall does not have DROP rules."""
-    # under snap, also on host, ignore docker rules
-    rules = os.popen("sudo iptables -S | grep -v DOCKER").read()
-    result = "DROP" not in rules
-    if not result:
-        logging.log(data=f"firewall.is_empty rules: {rules}")
-    return result
 
-
-def _get_iptables_rules() -> list[str]:
-    print("Using iptables")
-
-    mangle_fw_lines = os.popen("sudo iptables -S -t mangle").read()
-    mangle_fw_list = mangle_fw_lines.split("\n")[5:-1]
-
-    filter_fw_lines = os.popen("sudo iptables -S -t filter").read()
-    filter_fw_list = filter_fw_lines.split("\n")[3:-1]
-    fw_list = mangle_fw_list + filter_fw_list
-
-    dns_full = dns.DNS_NORD + dns.DNS_TPL
-
-    return [rule for rule in fw_list if not any(dns in rule for dns in dns_full)]
-
-
-def _sort_ports_by_protocol(ports: list[Port]) -> tuple[list[Port], list[Port]]:
-    """Sorts a list of ports and their corresponding protocols into UDP and TCP, both in descending order."""
-
-    ports_udp: list[Port] = []
-    ports_tcp: list[Port] = []
-
+def is_source_port_reachable(ports: list[Port]) -> bool:
+    """Must be used in a test in which setup_port_sock_server is setup, otherwise will not work"""
+    bool_array = []
     for port in ports:
-        if port.protocol == Protocol.UDP:
-            ports_udp.append(port)
-        elif port.protocol == Protocol.TCP:
-            ports_tcp.append(port)
+        # Given port is a range `3000:3100`, in such a case we wish to test both ends of the range
+        if ":" in port.value:
+            port_range_start, port_range_end = port.value.split(":")
+            bool_array.append(process_port(Port(port_range_start, port.protocol)) and process_port(Port(port_range_end, port.protocol)))
         else:
-            ports_udp.append(port)
-            ports_tcp.append(port)
+            bool_array.append(process_port(port))
+        # clean up connmarks for test connections as it affects next test
+        for protocol in ["TCP", "UDP"]:
+            try:
+                print("deleting ", protocol)
+                if ":" in port.value:
+                    sh.sudo.conntrack("-D", "-p", protocol, "--sport", port_range_start)
+                    sh.sudo.conntrack("-D", "-p", protocol, "--sport", port_range_end)
+                else:
+                    sh.sudo.conntrack("-D", "-p", protocol, "--sport", port.value)
+            except sh.ErrorReturnCode_1:
+                print("nothing to delete")
+                continue
+    return all(bool_array)
 
-    # Sort lists in descending order, since app sort rules like this in iptables
-    ports_udp.sort(key=lambda x: [int(i) if i.isdigit() else i for i in re.split("(\\d+)", x.value)], reverse=True)
-    ports_tcp.sort(key=lambda x: [int(i) if i.isdigit() else i for i in re.split("(\\d+)", x.value)], reverse=True)
 
-    return ports_udp, ports_tcp
+
+def process_port(port: Port) -> bool:
+    if port.protocol == Protocol.TCP:
+        print("process tcp")
+        return is_port_accessible_TCP(int(port.value))
+    if port.protocol == Protocol.UDP:
+        print("process udp")
+        return is_port_accessible_UDP(int(port.value))
+    print("process both, tcp")
+    tcp_retval = is_port_accessible_TCP(int(port.value))
+    print("process both, udp")
+    udp_retval = is_port_accessible_UDP(int(port.value))
+    return tcp_retval and udp_retval
+
+
+def is_port_accessible_TCP(src_port : int) -> bool :
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+    s.bind(("0.0.0.0", src_port))
+    s.setsockopt(
+        socket.SOL_SOCKET,
+        socket.SO_LINGER,
+        struct.pack('ii', 1, 0)
+    )
+    s.settimeout(SOCK_TIMEOUT)
+    try:
+        s.connect((IP, TCP_DST_PORT))
+        s.send(b"ping")
+        print("TCP data sent")
+        data = s.recv(4096)
+        print("data received: ", data)
+        retval = True
+    except TimeoutError:
+        print(f"timeout of {SOCK_TIMEOUT} hit with TCP, source port {src_port}, dst port : {TCP_DST_PORT}",)
+        retval = False
+    # `OSError: [Errno 99] Cannot assign requested address` handling
+    except OSError as e:
+        print(e)
+        retval = False
+    finally:
+        s.close()
+    return retval
+
+
+def is_port_accessible_UDP(src_port):
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.bind(("0.0.0.0", src_port))
+    s.settimeout(SOCK_TIMEOUT)
+    try:
+        s.sendto(b"ping", (IP, UDP_DST_PORT))
+        print("UDP data sent")
+        data, addr = s.recvfrom(4096)
+        print("data received back from server: ", data)
+        return True
+    except PermissionError:
+        print("unable to send packet to address")
+        return False
+    except TimeoutError:
+        print(f"timeout of {SOCK_TIMEOUT} hit with UDP, source port {src_port}, dst port : {UDP_DST_PORT}",)
+        return False
+    finally:
+        s.close()
 
 
 def add_and_delete_random_route():

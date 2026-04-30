@@ -51,13 +51,9 @@ func TestInterfacesWithDefaultRoute(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	setMockSysDeps(t)
-	expectedNames := []string{"en2", "virtual10"}
+	expectedNames := mapset.NewSet[string]("en2", "virtual10")
 	interfaces := InterfacesWithDefaultRoute(nil)
-	var names []string
-	for _, iface := range interfaces {
-		names = append(names, iface.Name)
-	}
-	assert.ElementsMatch(t, expectedNames, names)
+	assert.Equal(t, expectedNames, interfaces)
 }
 
 func TestListBlockedInterfaces(t *testing.T) {

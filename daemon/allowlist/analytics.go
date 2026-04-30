@@ -44,17 +44,13 @@ const (
 )
 
 // globalContextPaths defines the common context paths included in all allowlist events.
-var globalContextPaths = []string{
-	// Device context
-	"device.*",
-	"application.nordvpnapp.version",
-	"application.nordvpnapp.platform",
+var globalContextPaths = analytics.MergeContextPaths(
 	// Related feature states
 	"application.nordvpnapp.config.user_preferences.local_network_discovery_allowed.value",
 	"application.nordvpnapp.config.user_preferences.kill_switch_enabled.value",
 	"application.nordvpnapp.config.user_preferences.meshnet_enabled.value",
 	"application.nordvpnapp.config.current_state.is_on_vpn.value",
-}
+)
 
 // OperationEvent represents an allowlist add/remove/clear operation.
 type OperationEvent struct {
@@ -311,6 +307,10 @@ func codeToString(code int64) string {
 		return "port out of valid range (1-65535)"
 	case internal.CodeAllowlistPortNoop:
 		return "port unchanged: already in desired state"
+	case internal.CodeAllowlistSubnetSmallerNoop:
+		return "subnet unchanged: tried to add narrower"
+	case internal.CodeAllowlistSubnetWider:
+		return "subnet is wider, it eliminates some narrower subnet"
 	default:
 		return fmt.Sprintf("unknown allowlist error (code %d)", code)
 	}

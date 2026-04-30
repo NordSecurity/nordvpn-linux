@@ -27,6 +27,8 @@ linters:
       - std-error-handling
     paths:
       - third-party
+      # TODO: remove this from exclusion when finalized implementation starts
+      - daemon/firewall/nft
     rules:
       - linters: 
         - staticcheck
