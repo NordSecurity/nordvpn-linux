@@ -516,6 +516,7 @@ func main() {
 		meshnetEvents.PeerUpdate,
 		nc.NewCredsFetcher(clientAPI, fsystem),
 		cfg.FirewallMark,
+		resolver,
 	)
 
 	// on session unrecoverable error perform user log-out action
