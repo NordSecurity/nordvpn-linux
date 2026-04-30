@@ -1,9 +1,11 @@
 package core
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -48,6 +50,18 @@ type apiError struct {
 //
 // if an error was returned, do not try to read a response again.
 func ExtractError(resp *http.Response) error {
+	return extractError(resp, NoAcceptedErrorCode)
+}
+
+const NoAcceptedErrorCode = -1
+
+// extractError from the response if it exist.
+//
+// In case of an error, response body will be preserved if error code matches the acceptedCode. Otherwise don't try to
+// read the response body if an error was returned.
+//
+// acceptedCode will be ignored if set to -1.
+func extractError(resp *http.Response, acceptedCode int) error {
 	if resp.StatusCode < 400 {
 		return nil
 	}
@@ -72,6 +86,10 @@ func ExtractError(resp *http.Response) error {
 			resp.StatusCode,
 			err,
 		)
+	}
+
+	if acceptedCode != -1 && resp.StatusCode == acceptedCode {
+		resp.Body = io.NopCloser(bytes.NewBuffer(body))
 	}
 
 	switch resp.StatusCode {
