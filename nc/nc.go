@@ -182,19 +182,12 @@ func (c *Client) createClientOptions(
 
 	// Parse endpoint URL to extract hostname for DNS resolution and TLS verification.
 	// Example: "ssl://mqtt.example.com:8883" -> hostname="mqtt.example.com", port="8883"
+	log.Println(logPrefix, "try DNS resolution for original endpoint:", credentials.Endpoint)
 	u, err := url.Parse(credentials.Endpoint)
 	hostname := ""
 	if err == nil {
 		hostname = u.Hostname()
 		port := u.Port()
-		if port == "" {
-			switch u.Scheme {
-			case "ssl", "tls", "mqtts", "tcps":
-				port = "8883"
-			default:
-				port = "1883"
-			}
-		}
 
 		// Resolve hostname to IPs using resolver with fwmark (bypasses killswitch).
 		// Add each IP as a separate broker - MQTT library will try them sequentially.
@@ -204,11 +197,15 @@ func (c *Client) createClientOptions(
 				for _, ip := range ips {
 					var ipStr string
 					if ip.Is6() {
-						ipStr = fmt.Sprintf("[%s]", ip.String())
+						log.Println(logPrefix, "got IPv6 address:", ip, " ignore.")
+						continue
 					} else {
 						ipStr = ip.String()
 					}
-					brokerURL := fmt.Sprintf("%s://%s:%s", u.Scheme, ipStr, port)
+					brokerURL := fmt.Sprintf("%s://%s", u.Scheme, ipStr)
+					if port != "" {
+						brokerURL = fmt.Sprintf("%s:%s", brokerURL, port)
+					}
 					opts.AddBroker(brokerURL)
 				}
 			} else {
