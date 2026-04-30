@@ -15,7 +15,6 @@ import (
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/log"
-	"github.com/fsnotify/fsnotify"
 	"golang.org/x/sys/unix"
 )
 
@@ -344,7 +343,7 @@ func FileExists(path string) bool {
 // FileWritable checks if the given file exists and is writable by its owner
 func FileWritable(path string) bool {
 	info, err := os.Stat(path)
-	if err == nil && info.Mode().Perm()&0200 == 0200 {
+	if err == nil && info.Mode().Perm()&0o200 == 0o200 {
 		return true
 	} else {
 		return false
@@ -619,24 +618,35 @@ func isProcessRunning(executablePath string, readdir readdirFunc, readfile readf
 	return false, nil
 }
 
-// GetFileWatcher returns a fsnotify file watcher that is monitoring files provided in pathsToMonitor
-func GetFileWatcher(pathsToMonitor ...string) (watcher *fsnotify.Watcher, err error) {
-	watcher, err = fsnotify.NewWatcher()
+// UserLogOutput opens logFileName in the user's cache directory and returns it.
+// Falls back to os.Stdout if the file cannot be opened.
+func UserLogOutput(logFileName string) *os.File {
+	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return nil, fmt.Errorf("creating new watcher: %w", err)
+		return os.Stdout
+	}
+	cacheDirPath, err := GetCacheDirPath(homeDir)
+	if err != nil {
+		return os.Stdout
 	}
 
+	root, err := os.OpenRoot(cacheDirPath)
+	if err != nil {
+		return os.Stdout
+	}
 	defer func() {
-		if err != nil && watcher != nil {
-			_ = watcher.Close()
+		if err := root.Close(); err != nil {
+			log.Errorf("failed to close root '%s': %v", cacheDirPath, err)
 		}
 	}()
 
-	for _, file := range pathsToMonitor {
-		if err := watcher.Add(file); err != nil {
-			return nil, fmt.Errorf("adding group file to watcher: %w", err)
-		}
+	logFile, err := root.OpenFile(
+		logFileName,
+		os.O_WRONLY|os.O_APPEND|os.O_CREATE,
+		PermUserRW,
+	)
+	if err != nil {
+		return os.Stdout
 	}
-
-	return watcher, nil
+	return logFile
 }

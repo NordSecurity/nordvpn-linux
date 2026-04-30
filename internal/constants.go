@@ -142,6 +142,9 @@ var (
 	// DaemonPid defines daemon PID file location
 	DaemonPid = filepath.Join(RunDir, "/nordvpnd.pid")
 
+	// LogLevelFile defines the path to the runtime log level control file
+	LogLevelFile = filepath.Join(RunDir, "loglevel")
+
 	FileshareBinaryPath = filepath.Join(AppDataPathStatic, Fileshare)
 
 	NorduserdBinaryPath = filepath.Join(AppDataPathStatic, Norduserd)

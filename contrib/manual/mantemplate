@@ -650,6 +650,19 @@ $ \fBnordvpn fileshare clear <time_period>\fR
 
 For example, \fInordvpn fileshare clear 1d 12h\fR clears entries older than 36 hours. Specify time periods using the systemd time span syntax: https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html
 
+.SH "FILES"
+.PP
+\fB/run/nordvpn/loglevel\fR
+.RS 4
+Controls the log verbosity of the NordVPN daemons at runtime\&.
+Write one of \fBdebug\fR, \fBinfo\fR, \fBwarn\fR, \fBerror\fR, \fBfatal\fR, or \fBoff\fR to this file
+to change the log level without restarting the service\&. For example:
+.sp
+.RS 4
+$ \fBecho "debug" | sudo tee /run/nordvpn/loglevel\fR
+.RE
+.RE
+
 .SH "BUGS"
 .sp
 Our QA team did their best to hunt for bugs before the release\&. But if it happens that we missed something, please report it to support@nordvpn.com\&.

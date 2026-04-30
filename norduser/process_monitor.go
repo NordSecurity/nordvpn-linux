@@ -6,6 +6,7 @@ import (
 
 	"github.com/fsnotify/fsnotify"
 
+	"github.com/NordSecurity/nordvpn-linux/filewatch"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/norduser/service"
@@ -180,7 +181,7 @@ func (n *NorduserProcessMonitor) handleUTMPFileUpdate(currentGroupMembers userSe
 
 // Start blocks the thread and starts monitoring for changes in the nordvpn group.
 func (n *NorduserProcessMonitor) Start() error {
-	watcher, err := internal.GetFileWatcher(etcPath, utmpFilePath)
+	watcher, err := filewatch.GetFileWatcher(etcPath, utmpFilePath)
 	if err != nil {
 		return fmt.Errorf("creating file watcher: %w", err)
 	}
