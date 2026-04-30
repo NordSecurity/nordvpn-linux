@@ -205,7 +205,7 @@ func startSnap() {
 	stopLevelWatcher := log.SetupLogger(
 		internal.UserLogOutput(internal.NorduserdLogFileName),
 		internal.LogLevelFile,
-		log.DefaultLevel(internal.IsDevEnv(Environment)),
+		log.DefaultLevel(),
 	)
 	defer stopLevelWatcher()
 
@@ -308,7 +308,7 @@ func start() {
 	stopLevelWatcher := log.SetupLogger(
 		internal.UserLogOutput(internal.NorduserdLogFileName),
 		internal.LogLevelFile,
-		log.DefaultLevel(internal.IsDevEnv(Environment)),
+		log.DefaultLevel(),
 	)
 	defer stopLevelWatcher()
 

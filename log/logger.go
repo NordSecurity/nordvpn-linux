@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 	"sync/atomic"
 )
 
@@ -62,8 +63,7 @@ type CancelFunc func()
 
 var level atomic.Uint32
 
-// DefaultLevel returns LevelDebug for dev environments and LevelInfo otherwise.
-func DefaultLevel(devEnv bool) logLevel {
+func DefaultLevel() logLevel {
 	return levelDebug
 }
 
@@ -118,9 +118,8 @@ func Fatalf(format string, v ...any) {
 
 func logAt(l logLevel, prefix string, v []any) {
 	if level.Load() <= uint32(l) {
-		msg := fmt.Sprintln(v...)
-		// -1 to trim trailing \n
-		output(prefix + " " + msg[:len(msg)-1])
+		msg := strings.TrimRight(fmt.Sprintln(v...), "\n")
+		output(prefix + " " + msg)
 	}
 }
 
