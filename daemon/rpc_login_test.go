@@ -17,6 +17,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testauth "github.com/NordSecurity/nordvpn-linux/test/mock/auth"
 	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
+	testdevicekey "github.com/NordSecurity/nordvpn-linux/test/mock/devicekey"
 )
 
 func TestLoginEvents(t *testing.T) {
@@ -38,15 +39,16 @@ func TestLoginEvents(t *testing.T) {
 			name: "login attempt then login success",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-					cm:               mock.NewMockConfigManager(),
-					credentialsAPI:   &testcore.CredentialsAPIMock{},
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					authentication:   &testcore.AuthenticationAPImock{TokenValue: "token"},
-					publisher:        &subs.Subject[string]{},
-					ncClient:         &mock.NotificationClientMock{},
-					initialLoginType: NewAtomicLoginType(),
+					consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+					cm:                         mock.NewMockConfigManager(),
+					credentialsAPI:             &testcore.CredentialsAPIMock{},
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					authentication:             &testcore.AuthenticationAPImock{TokenValue: "token"},
+					publisher:                  &subs.Subject[string]{},
+					ncClient:                   &mock.NotificationClientMock{},
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			loginType1:      pb.LoginType_LoginType_LOGIN,
@@ -72,15 +74,16 @@ func TestLoginEvents(t *testing.T) {
 			name: "signup attempt then login success",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-					cm:               mock.NewMockConfigManager(),
-					credentialsAPI:   &testcore.CredentialsAPIMock{},
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					authentication:   &testcore.AuthenticationAPImock{TokenValue: "token"},
-					publisher:        &subs.Subject[string]{},
-					ncClient:         &mock.NotificationClientMock{},
-					initialLoginType: NewAtomicLoginType(),
+					consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+					cm:                         mock.NewMockConfigManager(),
+					credentialsAPI:             &testcore.CredentialsAPIMock{},
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					authentication:             &testcore.AuthenticationAPImock{TokenValue: "token"},
+					publisher:                  &subs.Subject[string]{},
+					ncClient:                   &mock.NotificationClientMock{},
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			loginType1:      pb.LoginType_LoginType_SIGNUP,
@@ -190,7 +193,8 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 					authentication: &testcore.AuthenticationAPImock{
 						LoginError: errors.New("network is unreachable"),
 					},
-					initialLoginType: NewAtomicLoginType(),
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			loginType:           pb.LoginType_LoginType_LOGIN,
@@ -215,7 +219,8 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 					authentication: &testcore.AuthenticationAPImock{
 						LoginError: errors.New("Client.Timeout exceeded while awaiting headers"),
 					},
-					initialLoginType: NewAtomicLoginType(),
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			loginType:           pb.LoginType_LoginType_SIGNUP,
@@ -239,7 +244,8 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 					authentication: &testcore.AuthenticationAPImock{
 						LoginError: errors.New("some other error"),
 					},
-					initialLoginType: NewAtomicLoginType(),
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			loginType:           pb.LoginType_LoginType_LOGIN,
@@ -255,11 +261,12 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 			name: "unfinished previous login - login after login",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					authentication:   &testcore.AuthenticationAPImock{},
-					initialLoginType: NewAtomicLoginType(),
+					consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					authentication:             &testcore.AuthenticationAPImock{},
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			loginType:           pb.LoginType_LoginType_LOGIN,
@@ -286,11 +293,12 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 			name: "unfinished previous signup - login after signup",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					authentication:   &testcore.AuthenticationAPImock{},
-					initialLoginType: NewAtomicLoginType(),
+					consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					authentication:             &testcore.AuthenticationAPImock{},
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			loginType:           pb.LoginType_LoginType_LOGIN,
@@ -313,11 +321,12 @@ func TestLoginOAuth2_AnalyticsEvents(t *testing.T) {
 			name: "successful login without previous unfinished login",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					authentication:   &testcore.AuthenticationAPImock{},
-					initialLoginType: NewAtomicLoginType(),
+					consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					authentication:             &testcore.AuthenticationAPImock{},
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			loginType:           pb.LoginType_LoginType_LOGIN,
@@ -404,11 +413,12 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 			name: "missing exchange token",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					publisher:        &subs.Subject[string]{},
-					initialLoginType: NewAtomicLoginType(),
+					consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					publisher:                  &subs.Subject[string]{},
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			token:               "",
@@ -428,12 +438,13 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 			name: "exchange token failed",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					authentication:   &testcore.AuthenticationAPImock{TokenError: errors.New("token exchange failed")},
-					publisher:        &subs.Subject[string]{},
-					initialLoginType: NewAtomicLoginType(),
+					consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					authentication:             &testcore.AuthenticationAPImock{TokenError: errors.New("token exchange failed")},
+					publisher:                  &subs.Subject[string]{},
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			token:               "exchange-token",
@@ -450,13 +461,14 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 			name: "get user info failed",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					authentication:   &testcore.AuthenticationAPImock{},
-					credentialsAPI:   &testcore.CredentialsAPIMock{ServiceCredentialsErr: errors.New("failed to get credentials")},
-					publisher:        &subs.Subject[string]{},
-					initialLoginType: NewAtomicLoginType(),
+					consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					authentication:             &testcore.AuthenticationAPImock{},
+					credentialsAPI:             &testcore.CredentialsAPIMock{ServiceCredentialsErr: errors.New("failed to get credentials")},
+					publisher:                  &subs.Subject[string]{},
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			token:               "exchange-token",
@@ -473,14 +485,15 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 			name: "successful login callback - unaltered flow",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-					cm:               mock.NewMockConfigManager(),
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					authentication:   &testcore.AuthenticationAPImock{},
-					credentialsAPI:   &testcore.CredentialsAPIMock{},
-					initialLoginType: NewAtomicLoginType(),
-					ncClient:         &mock.NotificationClientMock{},
+					consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+					cm:                         mock.NewMockConfigManager(),
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					authentication:             &testcore.AuthenticationAPImock{},
+					credentialsAPI:             &testcore.CredentialsAPIMock{},
+					initialLoginType:           NewAtomicLoginType(),
+					ncClient:                   &mock.NotificationClientMock{},
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			token:               "exchange-token",
@@ -501,14 +514,15 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 			name: "successful signup callback - altered flow",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-					cm:               mock.NewMockConfigManager(),
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					authentication:   &testcore.AuthenticationAPImock{},
-					credentialsAPI:   &testcore.CredentialsAPIMock{},
-					initialLoginType: NewAtomicLoginType(),
-					ncClient:         &mock.NotificationClientMock{},
+					consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+					cm:                         mock.NewMockConfigManager(),
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					authentication:             &testcore.AuthenticationAPImock{},
+					credentialsAPI:             &testcore.CredentialsAPIMock{},
+					initialLoginType:           NewAtomicLoginType(),
+					ncClient:                   &mock.NotificationClientMock{},
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			token:               "exchange-token",
@@ -530,14 +544,15 @@ func TestLoginOAuth2Callback_AnalyticsEvents(t *testing.T) {
 				cm := mock.NewMockConfigManager()
 				cm.SaveErr = errors.New("config save error")
 				return &RPC{
-					consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-					cm:               cm,
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					authentication:   &testcore.AuthenticationAPImock{},
-					credentialsAPI:   &testcore.CredentialsAPIMock{},
-					initialLoginType: NewAtomicLoginType(),
-					ncClient:         &mock.NotificationClientMock{},
+					consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+					cm:                         cm,
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					authentication:             &testcore.AuthenticationAPImock{},
+					credentialsAPI:             &testcore.CredentialsAPIMock{},
+					initialLoginType:           NewAtomicLoginType(),
+					ncClient:                   &mock.NotificationClientMock{},
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			token:               "exchange-token",
@@ -697,9 +712,10 @@ func TestLoginWithToken(t *testing.T) {
 			name: "already logged in",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					ac:               &testauth.AuthCheckerMock{LoggedIn: true},
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					initialLoginType: NewAtomicLoginType(),
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: true},
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			token:                  "test-token",
@@ -711,13 +727,14 @@ func TestLoginWithToken(t *testing.T) {
 			name: "successful login",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-					cm:               mock.NewMockConfigManager(),
-					credentialsAPI:   &testcore.CredentialsAPIMock{},
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					publisher:        &subs.Subject[string]{},
-					ncClient:         &mock.NotificationClientMock{},
-					initialLoginType: NewAtomicLoginType(),
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+					cm:                         mock.NewMockConfigManager(),
+					credentialsAPI:             &testcore.CredentialsAPIMock{},
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					publisher:                  &subs.Subject[string]{},
+					ncClient:                   &mock.NotificationClientMock{},
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			token:                  "test-token",
@@ -744,10 +761,11 @@ func TestLoginWithToken(t *testing.T) {
 			name: "credentials API returns server internal error",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-					credentialsAPI:   &testcore.CredentialsAPIMock{ServiceCredentialsErr: core.ErrServerInternal},
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					initialLoginType: NewAtomicLoginType(),
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+					credentialsAPI:             &testcore.CredentialsAPIMock{ServiceCredentialsErr: core.ErrServerInternal},
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			token:                  "test-token",
@@ -763,10 +781,11 @@ func TestLoginWithToken(t *testing.T) {
 			name: "credentials API returns unauthorized error",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-					credentialsAPI:   &testcore.CredentialsAPIMock{ServiceCredentialsErr: core.ErrUnauthorized},
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					initialLoginType: NewAtomicLoginType(),
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+					credentialsAPI:             &testcore.CredentialsAPIMock{ServiceCredentialsErr: core.ErrUnauthorized},
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			token:                  "test-token",
@@ -782,10 +801,11 @@ func TestLoginWithToken(t *testing.T) {
 			name: "credentials API returns generic error",
 			setup: func(em *daemonevents.MockPublisherSubscriber[events.DataAuthorization]) *RPC {
 				return &RPC{
-					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-					credentialsAPI:   &testcore.CredentialsAPIMock{ServiceCredentialsErr: errors.New("generic error")},
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					initialLoginType: NewAtomicLoginType(),
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+					credentialsAPI:             &testcore.CredentialsAPIMock{ServiceCredentialsErr: errors.New("generic error")},
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			token:                  "test-token",
@@ -803,11 +823,12 @@ func TestLoginWithToken(t *testing.T) {
 				cm := mock.NewMockConfigManager()
 				cm.LoadErr = errors.New("config load error")
 				return &RPC{
-					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-					cm:               cm,
-					credentialsAPI:   &testcore.CredentialsAPIMock{},
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					initialLoginType: NewAtomicLoginType(),
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+					cm:                         cm,
+					credentialsAPI:             &testcore.CredentialsAPIMock{},
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			token:                  "test-token",
@@ -825,11 +846,12 @@ func TestLoginWithToken(t *testing.T) {
 				cm := mock.NewMockConfigManager()
 				cm.SaveErr = errors.New("config save error")
 				return &RPC{
-					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-					cm:               cm,
-					credentialsAPI:   &testcore.CredentialsAPIMock{},
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
-					initialLoginType: NewAtomicLoginType(),
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+					cm:                         cm,
+					credentialsAPI:             &testcore.CredentialsAPIMock{},
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: em}},
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			token:                  "test-token",
@@ -924,13 +946,14 @@ func TestLoginWithToken_AlteredFlowFlag(t *testing.T) {
 			}
 
 			r := &RPC{
-				ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-				cm:               mock.NewMockConfigManager(),
-				credentialsAPI:   &testcore.CredentialsAPIMock{},
-				events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
-				publisher:        &subs.Subject[string]{},
-				ncClient:         &mock.NotificationClientMock{},
-				initialLoginType: NewAtomicLoginType(),
+				ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+				cm:                         mock.NewMockConfigManager(),
+				credentialsAPI:             &testcore.CredentialsAPIMock{},
+				events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
+				publisher:                  &subs.Subject[string]{},
+				ncClient:                   &mock.NotificationClientMock{},
+				initialLoginType:           NewAtomicLoginType(),
+				dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 			}
 
 			// Simulate stale state from a previous failed OAuth2 flow
@@ -1008,9 +1031,10 @@ func TestOAuth2LoginCallbackFailure_ThenRetryLogin_AlteredFlowShouldBeFalse(t *t
 				authentication: &testcore.AuthenticationAPImock{
 					TokenError: tt.tokenError,
 				},
-				publisher:        &subs.Subject[string]{},
-				ncClient:         &mock.NotificationClientMock{},
-				initialLoginType: NewAtomicLoginType(),
+				publisher:                  &subs.Subject[string]{},
+				ncClient:                   &mock.NotificationClientMock{},
+				initialLoginType:           NewAtomicLoginType(),
+				dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 			}
 
 			// Step 1: User initiates OAuth2 LOGIN flow
@@ -1084,15 +1108,16 @@ func TestOAuth2LoginFailure_ThenTokenLogin_AlteredFlowShouldBeFalse(t *testing.T
 	}
 
 	r := &RPC{
-		consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-		ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-		cm:               mock.NewMockConfigManager(),
-		credentialsAPI:   &testcore.CredentialsAPIMock{},
-		events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
-		authentication:   &testcore.AuthenticationAPImock{}, // successful URL retrieval
-		publisher:        &subs.Subject[string]{},
-		ncClient:         &mock.NotificationClientMock{},
-		initialLoginType: NewAtomicLoginType(),
+		consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+		ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+		cm:                         mock.NewMockConfigManager(),
+		credentialsAPI:             &testcore.CredentialsAPIMock{},
+		events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
+		authentication:             &testcore.AuthenticationAPImock{}, // successful URL retrieval
+		publisher:                  &subs.Subject[string]{},
+		ncClient:                   &mock.NotificationClientMock{},
+		initialLoginType:           NewAtomicLoginType(),
+		dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 	}
 
 	// Step 1: User initiates OAuth2 SIGNUP flow
@@ -1169,15 +1194,16 @@ func TestOAuth2Callback_AlteredFlowWhenInitialLoginTypeUnknown(t *testing.T) {
 			}
 
 			r := &RPC{
-				consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-				ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-				cm:               mock.NewMockConfigManager(),
-				credentialsAPI:   &testcore.CredentialsAPIMock{},
-				events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
-				authentication:   &testcore.AuthenticationAPImock{TokenValue: "token"},
-				publisher:        &subs.Subject[string]{},
-				ncClient:         &mock.NotificationClientMock{},
-				initialLoginType: NewAtomicLoginType(),
+				consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+				ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+				cm:                         mock.NewMockConfigManager(),
+				credentialsAPI:             &testcore.CredentialsAPIMock{},
+				events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
+				authentication:             &testcore.AuthenticationAPImock{TokenValue: "token"},
+				publisher:                  &subs.Subject[string]{},
+				ncClient:                   &mock.NotificationClientMock{},
+				initialLoginType:           NewAtomicLoginType(),
+				dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 			}
 
 			// initialLoginType is UNKNOWN (default) — no LoginOAuth2 was called
@@ -1245,11 +1271,12 @@ func TestOAuth2Callback_AlteredFlowOnMissingExchangeToken(t *testing.T) {
 			}
 
 			r := &RPC{
-				consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-				ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-				events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
-				publisher:        &subs.Subject[string]{},
-				initialLoginType: NewAtomicLoginType(),
+				consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+				ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+				events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
+				publisher:                  &subs.Subject[string]{},
+				initialLoginType:           NewAtomicLoginType(),
+				dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 			}
 
 			if tt.prevLoginType != pb.LoginType_LoginType_UNKNOWN {
@@ -1303,15 +1330,16 @@ func TestOAuth2URLRetrieveFailed_StaleLoginType(t *testing.T) {
 	}
 
 	r := &RPC{
-		consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-		ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-		cm:               mock.NewMockConfigManager(),
-		credentialsAPI:   &testcore.CredentialsAPIMock{},
-		events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
-		authentication:   &testcore.AuthenticationAPImock{}, // succeeds
-		publisher:        &subs.Subject[string]{},
-		ncClient:         &mock.NotificationClientMock{},
-		initialLoginType: NewAtomicLoginType(),
+		consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+		ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+		cm:                         mock.NewMockConfigManager(),
+		credentialsAPI:             &testcore.CredentialsAPIMock{},
+		events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
+		authentication:             &testcore.AuthenticationAPImock{}, // succeeds
+		publisher:                  &subs.Subject[string]{},
+		ncClient:                   &mock.NotificationClientMock{},
+		initialLoginType:           NewAtomicLoginType(),
+		dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 	}
 
 	// Step 1: User starts OAuth2 LOGIN flow successfully

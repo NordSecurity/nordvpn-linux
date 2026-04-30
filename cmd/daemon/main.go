@@ -753,6 +753,9 @@ func main() {
 
 	if ok, _ := authChecker.IsLoggedIn(); ok {
 		go daemon.StartNC("[startup]", notificationClient)
+		if err := rpc.RegisterDedicatedServers(); err != nil {
+			log.Println(internal.ErrorPrefix, "failed to sync device: %s", err)
+		}
 	}
 	if cfg.Mesh {
 		go rpc.StartAutoMeshnet(meshService, network.ExponentialBackoff)
