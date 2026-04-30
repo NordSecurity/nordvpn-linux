@@ -133,9 +133,9 @@ type Client struct {
 	subjectErr        events.Publisher[error]
 	subjectPeerUpdate events.Publisher[[]string]
 	credsFetcher      CredentialsGetter
-	retryDelayFunc    CalculateRetryDelayForAttempt
-	fwmark            uint32
-	resolver          network.DNSResolver
+	retryDelayFunc CalculateRetryDelayForAttempt
+	fwmark         uint32
+	resolver       network.DNSResolver
 
 	startMu          sync.Mutex
 	started          bool
@@ -173,46 +173,6 @@ type mqttMessage struct {
 	message mqtt.Message
 }
 
-// resolveEndpoint resolves the hostname in an MQTT endpoint URL using the DNS resolver.
-// Returns the resolved endpoint URL (with IP instead of hostname), the original hostname
-// (for TLS ServerName verification), and any error that occurred.
-func (c *Client) resolveEndpoint(endpoint string) (string, string, error) {
-	u, err := url.Parse(endpoint)
-	if err != nil {
-		return "", "", fmt.Errorf("parsing endpoint URL: %w", err)
-	}
-
-	host := u.Hostname()
-	port := u.Port()
-	if port == "" {
-		switch u.Scheme {
-		case "ssl", "tls", "mqtts", "tcps":
-			port = "8883"
-		default:
-			port = "1883"
-		}
-	}
-
-	ips, err := c.resolver.Resolve(host)
-	if err != nil {
-		return "", "", fmt.Errorf("resolving %s: %w", host, err)
-	}
-	if len(ips) == 0 {
-		return "", "", fmt.Errorf("no IPs resolved for %s", host)
-	}
-
-	ip := ips[0]
-	var resolvedHost string
-	if ip.Is6() {
-		resolvedHost = fmt.Sprintf("[%s]", ip.String())
-	} else {
-		resolvedHost = ip.String()
-	}
-
-	resolvedEndpoint := fmt.Sprintf("%s://%s:%s", u.Scheme, resolvedHost, port)
-	return resolvedEndpoint, host, nil
-}
-
 func (c *Client) createClientOptions(
 	credentials config.NCData,
 	managementChan chan<- interface{},
@@ -222,47 +182,76 @@ func (c *Client) createClientOptions(
 	opts.SetOrderMatters(false)
 	opts.SetAutoReconnect(false) // handled manually with the exponential backoff
 
-	endpoint := credentials.Endpoint
-	var originalHostname string
-	if c.resolver != nil {
-		resolvedEndpoint, hostname, err := c.resolveEndpoint(credentials.Endpoint)
-		if err != nil {
-			log.Println(logPrefix, "failed to resolve endpoint:", err)
-		} else {
-			endpoint = resolvedEndpoint
-			originalHostname = hostname
-			log.Println(logPrefix, "resolved endpoint:", endpoint)
+	// Parse endpoint URL to extract hostname for DNS resolution and TLS verification.
+	// Example: "ssl://mqtt.example.com:8883" -> hostname="mqtt.example.com", port="8883"
+	u, err := url.Parse(credentials.Endpoint)
+	hostname := ""
+	if err == nil {
+		hostname = u.Hostname()
+		port := u.Port()
+		if port == "" {
+			switch u.Scheme {
+			case "ssl", "tls", "mqtts", "tcps":
+				port = "8883"
+			default:
+				port = "1883"
+			}
 		}
+
+		// Resolve hostname to IPs using resolver with fwmark (bypasses killswitch).
+		// Add each IP as a separate broker - MQTT library will try them sequentially.
+		if c.resolver != nil {
+			ips, resolveErr := c.resolver.Resolve(hostname)
+			if resolveErr == nil && len(ips) > 0 {
+				for _, ip := range ips {
+					var ipStr string
+					if ip.Is6() {
+						ipStr = fmt.Sprintf("[%s]", ip.String())
+					} else {
+						ipStr = ip.String()
+					}
+					brokerURL := fmt.Sprintf("%s://%s:%s", u.Scheme, ipStr, port)
+					opts.AddBroker(brokerURL)
+				}
+			} else {
+				// Fallback to original endpoint if resolution fails
+				log.Println(logPrefix, "DNS resolution failed, using original endpoint:", resolveErr)
+				opts.AddBroker(credentials.Endpoint)
+			}
+		} else {
+			opts.AddBroker(credentials.Endpoint)
+		}
+	} else {
+		opts.AddBroker(credentials.Endpoint)
 	}
 
-	opts.AddBroker(endpoint)
 	opts.SetUsername(credentials.Username)
 	opts.SetPassword(credentials.Password)
 	opts.SetClientID(credentials.UserID.String())
 	opts.SetConnectTimeout(timeout)
 
-	// Set TLS config with original hostname for certificate verification when using resolved IP
-	if originalHostname != "" {
-		// #nosec G402 -- minimum TLS version is controlled by the standard library
+	// Set TLS config with original hostname for certificate verification.
+	// Required when connecting to IP address instead of hostname.
+	if hostname != "" {
 		opts.SetTLSConfig(&tls.Config{
-			ServerName: originalHostname,
+			ServerName: hostname,
 		})
 	}
 
 	if c.fwmark != 0 {
-		var operr error
-		fwmarkFn := func(fd uintptr) {
-			operr = syscall.SetsockoptInt(
-				int(fd),
-				unix.SOL_SOCKET,
-				unix.SO_MARK,
-				int(c.fwmark),
-			)
-		}
+		// Create dialer with fwmark on TCP socket to bypass killswitch.
 		dialer := &net.Dialer{
 			Timeout: timeout,
-			Control: func(network, address string, conn syscall.RawConn) error {
-				if err := conn.Control(fwmarkFn); err != nil {
+			Control: func(_, _ string, conn syscall.RawConn) error {
+				var operr error
+				if err := conn.Control(func(fd uintptr) {
+					operr = syscall.SetsockoptInt(
+						int(fd),
+						unix.SOL_SOCKET,
+						unix.SO_MARK,
+						int(c.fwmark),
+					)
+				}); err != nil {
 					return err
 				}
 				return operr
