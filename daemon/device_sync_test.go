@@ -63,7 +63,7 @@ func TestSyncDevice(t *testing.T) {
 				dedicatedServersKeyManager: &deviceKeyManagerMock,
 			}
 
-			err := r.SyncDevice()
+			err := r.RegisterDedicatedServers()
 			if test.shouldReturnError {
 				assert.NotNil(t, err, "Error not returned by SyncDevice when expected.")
 			} else {

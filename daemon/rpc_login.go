@@ -141,7 +141,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 	go StartNC("[login]", r.ncClient)
 	r.publisher.Publish("user logged in")
 
-	if err := r.SyncDevice(); err != nil {
+	if err := r.RegisterDedicatedServers(); err != nil {
 		log.Println(internal.ErrorPrefix, "failed to sync device for dedicated servers:", err)
 	}
 
@@ -306,7 +306,7 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 
 	go StartNC("[login callback]", r.ncClient)
 
-	if err := r.SyncDevice(); err != nil {
+	if err := r.RegisterDedicatedServers(); err != nil {
 		log.Println(internal.ErrorPrefix, "failed to sync device for dedicated servers:", err)
 	}
 
