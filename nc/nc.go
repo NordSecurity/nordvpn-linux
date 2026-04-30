@@ -14,7 +14,6 @@ import (
 	"net"
 	"net/url"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -24,7 +23,6 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	mqttp "github.com/eclipse/paho.mqtt.golang/packets"
-	"golang.org/x/sys/unix"
 )
 
 const (
@@ -133,9 +131,9 @@ type Client struct {
 	subjectErr        events.Publisher[error]
 	subjectPeerUpdate events.Publisher[[]string]
 	credsFetcher      CredentialsGetter
-	retryDelayFunc CalculateRetryDelayForAttempt
-	fwmark         uint32
-	resolver       network.DNSResolver
+	retryDelayFunc    CalculateRetryDelayForAttempt
+	fwmark            uint32
+	resolver          network.DNSResolver
 
 	startMu          sync.Mutex
 	started          bool
@@ -176,7 +174,7 @@ type mqttMessage struct {
 func (c *Client) createClientOptions(
 	credentials config.NCData,
 	managementChan chan<- interface{},
-	ctx context.Context) *mqtt.ClientOptions {
+	ctx context.Context) (*mqtt.ClientOptions, error) {
 	opts := mqtt.NewClientOptions()
 	opts.SetCleanSession(false)
 	opts.SetOrderMatters(false)
@@ -184,44 +182,39 @@ func (c *Client) createClientOptions(
 
 	// Parse endpoint URL to extract hostname for DNS resolution and TLS verification.
 	// Example: "ssl://mqtt.example.com:8883" -> hostname="mqtt.example.com", port="8883"
+	log.Println(logPrefix, "try DNS resolution for original endpoint:", credentials.Endpoint)
 	u, err := url.Parse(credentials.Endpoint)
 	hostname := ""
-	if err == nil {
-		hostname = u.Hostname()
-		port := u.Port()
-		if port == "" {
-			switch u.Scheme {
-			case "ssl", "tls", "mqtts", "tcps":
-				port = "8883"
-			default:
-				port = "1883"
-			}
-		}
+	if err != nil {
+		return nil, fmt.Errorf("NC original endpoint URL parse error: %w", err)
+	}
 
-		// Resolve hostname to IPs using resolver with fwmark (bypasses killswitch).
-		// Add each IP as a separate broker - MQTT library will try them sequentially.
-		if c.resolver != nil {
-			ips, resolveErr := c.resolver.Resolve(hostname)
-			if resolveErr == nil && len(ips) > 0 {
-				for _, ip := range ips {
-					var ipStr string
-					if ip.Is6() {
-						ipStr = fmt.Sprintf("[%s]", ip.String())
-					} else {
-						ipStr = ip.String()
-					}
-					brokerURL := fmt.Sprintf("%s://%s:%s", u.Scheme, ipStr, port)
-					opts.AddBroker(brokerURL)
-				}
-			} else {
-				// Fallback to original endpoint if resolution fails
-				log.Println(logPrefix, "DNS resolution failed, using original endpoint:", resolveErr)
-				opts.AddBroker(credentials.Endpoint)
+	hostname = u.Hostname()
+	port := u.Port()
+
+	// Resolve hostname to IPs using resolver with fwmark (bypasses killswitch).
+	// Add each IP as a separate broker - MQTT library will try them sequentially.
+	ips, resolveErr := c.resolver.Resolve(hostname)
+	if resolveErr == nil && len(ips) > 0 {
+		for _, ip := range ips {
+			if ip.Is6() {
+				log.Println(logPrefix, "got IPv6 address:", ip, " ignore.")
+				continue
 			}
-		} else {
-			opts.AddBroker(credentials.Endpoint)
+			brokerURL := fmt.Sprintf("%s://%s", u.Scheme, ip.String())
+			if port != "" {
+				brokerURL = fmt.Sprintf("%s:%s", brokerURL, port)
+			}
+			opts.AddBroker(brokerURL)
 		}
-	} else {
+	}
+
+	if len(opts.Servers) == 0 {
+		if resolveErr != nil {
+			log.Println(logPrefix, "DNS resolution failed, using original endpoint, err:", resolveErr)
+		} else {
+			log.Println(logPrefix, "no usable IPv4 addresses resolved, using original endpoint")
+		}
 		opts.AddBroker(credentials.Endpoint)
 	}
 
@@ -235,6 +228,7 @@ func (c *Client) createClientOptions(
 	if hostname != "" {
 		opts.SetTLSConfig(&tls.Config{
 			ServerName: hostname,
+			MinVersion: tls.VersionTLS12,
 		})
 	}
 
@@ -242,20 +236,7 @@ func (c *Client) createClientOptions(
 		// Create dialer with fwmark on TCP socket to bypass killswitch.
 		dialer := &net.Dialer{
 			Timeout: timeout,
-			Control: func(_, _ string, conn syscall.RawConn) error {
-				var operr error
-				if err := conn.Control(func(fd uintptr) {
-					operr = syscall.SetsockoptInt(
-						int(fd),
-						unix.SOL_SOCKET,
-						unix.SO_MARK,
-						int(c.fwmark),
-					)
-				}); err != nil {
-					return err
-				}
-				return operr
-			},
+			Control: network.NewFwmarkControlFn(c.fwmark),
 		}
 		opts.SetDialer(dialer)
 	}
@@ -287,7 +268,7 @@ func (c *Client) createClientOptions(
 		}
 	})
 
-	return opts
+	return opts, nil
 }
 
 type connectionState int
@@ -333,7 +314,11 @@ func (c *Client) tryConnect(
 			return client, connectionState
 		}
 
-		opts := c.createClientOptions(credentials, managementChan, ctx)
+		opts, err := c.createClientOptions(credentials, managementChan, ctx)
+		if err != nil {
+			logFunc(logPrefix, "failed to create client options, err:", err.Error())
+			return client, connectionState
+		}
 		client = c.clientBuilder.Build(opts)
 		connectionState = connecting
 	}
@@ -551,7 +536,11 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan any, error)
 		}()
 
 		connectedChan := make(chan mqtt.Client)
-		opts := c.createClientOptions(credentials, managementChan, connectionContext)
+		opts, err := c.createClientOptions(credentials, managementChan, connectionContext)
+		if err != nil {
+			log.Println(logPrefix, "failed to create client options, err:", err.Error())
+			return
+		}
 		client = c.clientBuilder.Build(opts)
 		go c.connect(client, credentialsInvalidated, connectionContext, managementChan, connectedChan)
 
