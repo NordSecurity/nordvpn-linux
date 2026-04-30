@@ -138,7 +138,7 @@ func runSnapshotTest(t *testing.T, b *helpers.FirewallConfigBuilder) {
 	ns := helpers.OpenNewNamespace(t)
 	defer helpers.CleanNamespace(t, ns)
 
-	n := GetTestNft()
+	n := NewNft(0xe1f1)
 	require.NoError(t, n.Configure(b.Build()))
 
 	helpers.WithNftCommandOutput(t, helpers.ListTable(tableName), func(out string) {
