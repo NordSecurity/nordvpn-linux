@@ -19,8 +19,9 @@ var update = os.Getenv(UpdateGoldenFilesEnvVar) != ""
 
 // AssertMatchesGolden compares passed string with file located based on
 // convention. Has to be called from subtest.
-// For a subtest "TestVPNRuleset/kill_switch_only" the result is
-// "testdata/TestVPNRuleset/kill_switch_only.nft".
+// For a subtest "TestVPNRuleset/kill switch only" the result is
+// "testdata/TestVPNRuleset/kill_switch_only.nft" (gotest replaces spaces
+// with "_").
 func AssertMatchesGolden(t *testing.T, got string) {
 	t.Helper()
 	dir, name := goldenFileParts(t)

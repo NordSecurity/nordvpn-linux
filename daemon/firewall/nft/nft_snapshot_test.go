@@ -22,23 +22,23 @@ func TestVPNRuleset(t *testing.T) {
 		config *helpers.FirewallConfigBuilder
 	}{
 		{
-			name:   "kill_switch_only",
+			name:   "kill switch only",
 			config: helpers.NewFWConfig().KillSwitch(),
 		},
 		{
-			name:   "vpn_only",
+			name:   "vpn only",
 			config: helpers.NewFWConfig().TunnelInterface(ifName),
 		},
 		{
-			name:   "vpn_and_kill_switch",
+			name:   "vpn and kill switch",
 			config: helpers.NewFWConfig().TunnelInterface(ifName).KillSwitch(),
 		},
 		{
-			name:   "tcp_port_allowlisted",
+			name:   "tcp port allowlisted",
 			config: helpers.NewFWConfig().TunnelInterface(ifName).AllowlistTCPPort(1337),
 		},
 		{
-			name:   "udp_port_allowlisted",
+			name:   "udp port allowlisted",
 			config: helpers.NewFWConfig().TunnelInterface(ifName).AllowlistUDPPort(8080),
 		},
 		{
@@ -60,11 +60,11 @@ func TestMeshnetRuleset(t *testing.T) {
 		config *helpers.FirewallConfigBuilder
 	}{
 		{
-			name:   "without_peers",
+			name:   "without peers",
 			config: helpers.NewFWConfig().Meshnet(ifName),
 		},
 		{
-			name: "peer_with_lan_access",
+			name: "peer with lan_access",
 			config: helpers.NewFWConfig().
 				Meshnet(ifName).
 				MeshPeer(mesh.MachinePeer{
@@ -74,7 +74,7 @@ func TestMeshnetRuleset(t *testing.T) {
 				}),
 		},
 		{
-			name: "host_allows_routing",
+			name: "host allows routing",
 			config: helpers.NewFWConfig().
 				Meshnet(ifName).
 				MeshPeer(mesh.MachinePeer{
@@ -83,7 +83,7 @@ func TestMeshnetRuleset(t *testing.T) {
 				}),
 		},
 		{
-			name: "host_allows_inbound_but_no_routing",
+			name: "host allows inbound but_no_routing",
 			config: helpers.NewFWConfig().
 				Meshnet(ifName).
 				MeshPeer(mesh.MachinePeer{
@@ -93,7 +93,7 @@ func TestMeshnetRuleset(t *testing.T) {
 				}),
 		},
 		{
-			name: "with_fileshare",
+			name: "with fileshare",
 			config: helpers.NewFWConfig().
 				Meshnet(ifName).
 				MeshPeer(mesh.MachinePeer{
@@ -102,7 +102,7 @@ func TestMeshnetRuleset(t *testing.T) {
 				}),
 		},
 		{
-			name: "with_blocked_fileshare",
+			name: "with blocked fileshare",
 			config: helpers.NewFWConfig().
 				Meshnet(ifName).
 				BlockFileshare().
@@ -112,7 +112,7 @@ func TestMeshnetRuleset(t *testing.T) {
 				}),
 		},
 		{
-			name: "peer_with_full_permissions",
+			name: "peer with full permissions",
 			config: helpers.NewFWConfig().
 				Meshnet(ifName).
 				MeshPeer(mesh.MachinePeer{
