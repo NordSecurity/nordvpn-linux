@@ -102,10 +102,10 @@ func (api *SimpleClientAPI) request(path, method string, data []byte, token stri
 //
 // Response's body will be consumed if an error code is returned. Do not try to read the body in this case.
 func (api *SimpleClientAPI) doRequest(req *http.Request) (*http.Response, error) {
-	return api.do(req, -1)
+	return api.do(req, NoAcceptedErrorCode)
 }
 
-// doRequest request regardless of the authentication.
+// do request regardless of the authentication.
 //
 // Response's body will be consumed if an error code is returned and is not equal to acceptedCode. Do not try to read
 // the body in this case.
@@ -460,7 +460,7 @@ func (api *SimpleClientAPI) RegisterDevice(token string, deviceRequest DevicesRe
 	if err != nil {
 		return DevicesResponse{}, fmt.Errorf("creating nc credentials request: %w", err)
 	}
-	resp, err := api.do(req, 409)
+	resp, err := api.do(req, http.StatusConflict)
 	if err != nil && !errors.Is(err, ErrConflict) {
 		return DevicesResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
 	}

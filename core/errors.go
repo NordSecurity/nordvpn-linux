@@ -50,8 +50,10 @@ type apiError struct {
 //
 // if an error was returned, do not try to read a response again.
 func ExtractError(resp *http.Response) error {
-	return extractError(resp, -1)
+	return extractError(resp, NoAcceptedErrorCode)
 }
+
+const NoAcceptedErrorCode = -1
 
 // extractError from the response if it exist.
 //
