@@ -36,7 +36,11 @@ func TestSetMTU(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			defaultGateway, _ := device.DefaultGateway()
+			ifaces, _ := device.DefaultRouteInterfaces()
+			if len(ifaces) == 0 {
+				t.Fatal("no default route interface available")
+			}
+			defaultGateway := ifaces[0]
 			exec.Command("ip", "link", "set", "dev", defaultGateway.Name, "mtu", strconv.Itoa(test.currentMTU)).Run()
 			defer exec.Command("ip",
 				"link",

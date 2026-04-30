@@ -430,12 +430,12 @@ func main() {
 		allowlistRouter,
 		dnsSetter,
 		fw,
-		device.OutsideCapableTrafficInterfaces,
+		device.DefaultRouteIfNames,
 		routes.NewPolicyRouter(
 			&norule.Facade{},
 			iprule.NewRouter(
 				routes.NewSysctlRPFilterManager(),
-				ifgroup.NewNetlinkManager(device.OutsideCapableTrafficInterfaces),
+				ifgroup.NewNetlinkManager(device.DefaultRouteInterfaces),
 				cfg.FirewallMark,
 			),
 			cfg.Routing.Get(),

@@ -4,9 +4,7 @@ package device
 import (
 	"fmt"
 	"net"
-	"os/exec"
 	"path/filepath"
-	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -15,7 +13,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-type ListFunc func() ([]net.Interface, error)
+type ListFunc func(mapset.Set[string]) mapset.Set[string]
 
 var sysDepsImpl SystemDeps = realSystemDeps{}
 
@@ -125,50 +123,6 @@ func ifaceListContains(list []net.Interface, device net.Interface) bool {
 	return false
 }
 
-// DefaultGateway returns network interface used as default gateway.
-//
-// Linux generally has only a single default gateway. Although it can
-// have more than one default gateway by using routing tables, only one
-// is allowed per routing table.
-func DefaultGateway() (net.Interface, error) {
-	cmd := exec.Command("ip", "-4", "route", "list", "default") // local table
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return net.Interface{}, fmt.Errorf("getting network interface used by default route: %w", err)
-	}
-
-	if string(out) == "" {
-		return net.Interface{}, fmt.Errorf("default gateway does not exist")
-	}
-
-	var name string
-	for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
-		name, err = interfaceNameFromIPRoute(line)
-		if err != nil {
-			return net.Interface{}, fmt.Errorf("looking up the name of default gateway: %w", err)
-		}
-		//nolint:staticcheck
-		break
-	}
-
-	device, err := net.InterfaceByName(name)
-	if err != nil {
-		return net.Interface{}, fmt.Errorf("default gateway retrieving network interface by name: %w", err)
-	}
-	return *device, nil
-}
-
-func interfaceNameFromIPRoute(line string) (string, error) {
-	words := strings.Split(line, " ")
-	for i, word := range words {
-		if word == "dev" { // next word is the name of an interface
-			return words[i+1], nil
-		}
-	}
-
-	return "", fmt.Errorf("malformed input")
-}
-
 func InterfacesAreEqual(a net.Interface, b net.Interface) bool {
 	return a.Index == b.Index &&
 		a.MTU == b.MTU &&
@@ -177,31 +131,47 @@ func InterfacesAreEqual(a net.Interface, b net.Interface) bool {
 		a.Flags == b.Flags
 }
 
-// InterfacesWithDefaultRoute returns all the interfaces that have a default route, excluding the ones from ignoreSet
-func InterfacesWithDefaultRoute(ignoreSet mapset.Set[string]) mapset.Set[string] {
-	// get interface list from default routes
-	interfacesList := mapset.NewSet[string]()
-
+// DefaultRouteInterfaces returns all the interfaces that have a default route.
+func DefaultRouteInterfaces() ([]net.Interface, error) {
 	routeList, err := sysDepsImpl.RouteList(nil, netlink.FAMILY_V4)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get system routes", err)
-		return interfacesList
+		return nil, fmt.Errorf("failed to get system routes: %w", err)
 	}
+
+	var devices []net.Interface
 	for _, r := range routeList {
 		if !isDefaultRoute(r) {
 			continue
 		}
 
 		if iface, err := sysDepsImpl.InterfaceByIndex(r.LinkIndex); err == nil && iface != nil {
-			if ignoreSet == nil || !ignoreSet.Contains(iface.Name) {
-				interfacesList.Add(iface.Name)
+			if !ifaceListContains(devices, *iface) {
+				devices = append(devices, *iface)
 			}
 		} else {
 			log.Println(internal.WarningPrefix, "default route, not found interface with index", r.LinkIndex, err)
 		}
 	}
+	return devices, nil
+}
 
-	return interfacesList
+// DefaultRouteIfNames is a helper function that returns the same as DefaultRouteInterfaces
+// but just the interface names, excluding the ones from ignoreSet.
+func DefaultRouteIfNames(ignoreSet mapset.Set[string]) mapset.Set[string] {
+	result := mapset.NewSet[string]()
+	ifaces, err := DefaultRouteInterfaces()
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to get default route interfaces", err)
+		return result
+	}
+
+	for _, iface := range ifaces {
+		if ignoreSet == nil || !ignoreSet.Contains(iface.Name) {
+			result.Add(iface.Name)
+		}
+	}
+
+	return result
 }
 
 // isDefaultRoute checks if a route is a default route
