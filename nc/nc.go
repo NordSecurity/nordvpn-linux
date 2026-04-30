@@ -7,9 +7,12 @@ package nc
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
+	"net/url"
 	"sync"
 	"time"
 
@@ -129,6 +132,8 @@ type Client struct {
 	subjectPeerUpdate events.Publisher[[]string]
 	credsFetcher      CredentialsGetter
 	retryDelayFunc    CalculateRetryDelayForAttempt
+	fwmark            uint32
+	resolver          network.DNSResolver
 
 	startMu          sync.Mutex
 	started          bool
@@ -143,6 +148,8 @@ func NewClient(
 	subjectErr events.Publisher[error],
 	subjectPeerUpdate events.Publisher[[]string],
 	credsFetcher CredentialsGetter,
+	fwmark uint32,
+	resolver network.DNSResolver,
 ) *Client {
 	return &Client{
 		clientBuilder:     clientBuilder,
@@ -151,6 +158,8 @@ func NewClient(
 		subjectPeerUpdate: subjectPeerUpdate,
 		credsFetcher:      credsFetcher,
 		retryDelayFunc:    network.ExponentialBackoff,
+		fwmark:            fwmark,
+		resolver:          resolver,
 	}
 }
 
@@ -170,11 +179,68 @@ func (c *Client) createClientOptions(
 	opts.SetCleanSession(false)
 	opts.SetOrderMatters(false)
 	opts.SetAutoReconnect(false) // handled manually with the exponential backoff
-	opts.AddBroker(credentials.Endpoint)
+
+	// Parse endpoint URL to extract hostname for DNS resolution and TLS verification.
+	// Example: "ssl://mqtt.example.com:8883" -> hostname="mqtt.example.com", port="8883"
+	log.Println(logPrefix, "try DNS resolution for original endpoint:", credentials.Endpoint)
+	u, err := url.Parse(credentials.Endpoint)
+	hostname := ""
+	if err == nil {
+		hostname = u.Hostname()
+		port := u.Port()
+
+		// Resolve hostname to IPs using resolver with fwmark (bypasses killswitch).
+		// Add each IP as a separate broker - MQTT library will try them sequentially.
+		if c.resolver != nil {
+			ips, resolveErr := c.resolver.Resolve(hostname)
+			if resolveErr == nil && len(ips) > 0 {
+				for _, ip := range ips {
+					var ipStr string
+					if ip.Is6() {
+						log.Println(logPrefix, "got IPv6 address:", ip, " ignore.")
+						continue
+					} else {
+						ipStr = ip.String()
+					}
+					brokerURL := fmt.Sprintf("%s://%s", u.Scheme, ipStr)
+					if port != "" {
+						brokerURL = fmt.Sprintf("%s:%s", brokerURL, port)
+					}
+					opts.AddBroker(brokerURL)
+				}
+			} else {
+				// Fallback to original endpoint if resolution fails
+				log.Println(logPrefix, "DNS resolution failed, using original endpoint:", resolveErr)
+				opts.AddBroker(credentials.Endpoint)
+			}
+		} else {
+			opts.AddBroker(credentials.Endpoint)
+		}
+	} else {
+		opts.AddBroker(credentials.Endpoint)
+	}
+
 	opts.SetUsername(credentials.Username)
 	opts.SetPassword(credentials.Password)
 	opts.SetClientID(credentials.UserID.String())
 	opts.SetConnectTimeout(timeout)
+
+	// Set TLS config with original hostname for certificate verification.
+	// Required when connecting to IP address instead of hostname.
+	if hostname != "" {
+		opts.SetTLSConfig(&tls.Config{
+			ServerName: hostname,
+		})
+	}
+
+	if c.fwmark != 0 {
+		// Create dialer with fwmark on TCP socket to bypass killswitch.
+		dialer := &net.Dialer{
+			Timeout: timeout,
+			Control: network.NewFwmarkControlFn(c.fwmark),
+		}
+		opts.SetDialer(dialer)
+	}
 
 	opts.SetDefaultPublishHandler(func(_ mqtt.Client, m mqtt.Message) {
 		log.Println(logPrefix, "MQTT message received.")

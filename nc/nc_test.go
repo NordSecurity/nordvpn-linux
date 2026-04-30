@@ -3,6 +3,7 @@ package nc
 import (
 	"context"
 	"fmt"
+	"net/netip"
 	"testing"
 	"time"
 
@@ -17,6 +18,12 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	mqttp "github.com/eclipse/paho.mqtt.golang/packets"
 )
+
+type mockResolver struct{}
+
+func (m *mockResolver) Resolve(domain string) ([]netip.Addr, error) {
+	return []netip.Addr{netip.MustParseAddr("127.0.0.1")}, nil
+}
 
 type mockMqttClient struct {
 	mqtt.Client
@@ -170,7 +177,10 @@ func TestStartStopNotificationClient(t *testing.T) {
 			&subs.Subject[string]{},
 			&subs.Subject[error]{},
 			&subs.Subject[[]string]{},
-			credsFetcher)
+			credsFetcher,
+			0,
+			&mockResolver{},
+		)
 
 		t.Run(test.name, func(t *testing.T) {
 			_, newConnectionState := notificationClient.tryConnect(&mockMqttClient,

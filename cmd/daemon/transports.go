@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -22,7 +21,6 @@ import (
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 	"golang.org/x/exp/slices"
-	"golang.org/x/sys/unix"
 )
 
 const (
@@ -46,22 +44,8 @@ func SetBufferSizeForHTTP3() error {
 
 func createH1Transport(resolver network.DNSResolver, fwmark uint32) func() http.RoundTripper {
 	return func() http.RoundTripper {
-		var operr error
-		fwmark := func(fd uintptr) {
-			operr = syscall.SetsockoptInt(
-				int(fd),
-				unix.SOL_SOCKET,
-				unix.SO_MARK,
-				int(fwmark),
-			)
-		}
 		dialer := &net.Dialer{
-			Control: func(network, address string, conn syscall.RawConn) error {
-				if err := conn.Control(fwmark); err != nil {
-					return err
-				}
-				return operr
-			},
+			Control: network.NewFwmarkControlFn(fwmark),
 			Timeout: request.DefaultTimeout,
 		}
 		return &http.Transport{
