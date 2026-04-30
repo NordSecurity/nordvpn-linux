@@ -17,97 +17,103 @@ const (
 )
 
 func TestVPNRuleset(t *testing.T) {
-	t.Run("kill_switch_only", func(t *testing.T) {
-		runSnapshotTest(t, helpers.NewFWConfig().KillSwitch())
-	})
+	tests := []struct {
+		name   string
+		config *helpers.FirewallConfigBuilder
+	}{
+		{
+			name:   "kill_switch_only",
+			config: helpers.NewFWConfig().KillSwitch(),
+		},
+		{
+			name:   "vpn_only",
+			config: helpers.NewFWConfig().TunnelInterface(ifName),
+		},
+		{
+			name:   "vpn_and_kill_switch",
+			config: helpers.NewFWConfig().TunnelInterface(ifName).KillSwitch(),
+		},
+		{
+			name:   "tcp_port_allowlisted",
+			config: helpers.NewFWConfig().TunnelInterface(ifName).AllowlistTCPPort(1337),
+		},
+		{
+			name:   "udp_port_allowlisted",
+			config: helpers.NewFWConfig().TunnelInterface(ifName).AllowlistUDPPort(8080),
+		},
+		{
+			name:   "subnet_allowlisted",
+			config: helpers.NewFWConfig().TunnelInterface(ifName).AllowlistSubnet("10.0.0.0/24"),
+		},
+	}
 
-	t.Run("vpn_only", func(t *testing.T) {
-		runSnapshotTest(t, helpers.NewFWConfig().TunnelInterface(ifName))
-	})
-
-	t.Run("vpn_and_kill_switch", func(t *testing.T) {
-		runSnapshotTest(t, helpers.NewFWConfig().TunnelInterface(ifName).KillSwitch())
-	})
-
-	t.Run("tcp_port_allowlisted", func(t *testing.T) {
-		runSnapshotTest(t, helpers.NewFWConfig().TunnelInterface(ifName).AllowlistTCPPort(1337))
-	})
-
-	t.Run("udp_port_allowlisted", func(t *testing.T) {
-		runSnapshotTest(t, helpers.NewFWConfig().TunnelInterface(ifName).AllowlistUDPPort(8080))
-	})
-
-	t.Run("subnet_allowlisted", func(t *testing.T) {
-		runSnapshotTest(t, helpers.NewFWConfig().TunnelInterface(ifName).AllowlistSubnet("10.0.0.0/24"))
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runSnapshotTest(t, tt.config)
+		})
+	}
 }
 
 func TestMeshnetRuleset(t *testing.T) {
-	t.Run("without_peers", func(t *testing.T) {
-		runSnapshotTest(t, helpers.NewFWConfig().Meshnet(ifName))
-	})
-
-	t.Run("peer_with_lan_access", func(t *testing.T) {
-		runSnapshotTest(t,
-			helpers.NewFWConfig().
+	tests := []struct {
+		name   string
+		config *helpers.FirewallConfigBuilder
+	}{
+		{
+			name:   "without_peers",
+			config: helpers.NewFWConfig().Meshnet(ifName),
+		},
+		{
+			name: "peer_with_lan_access",
+			config: helpers.NewFWConfig().
 				Meshnet(ifName).
 				MeshPeer(mesh.MachinePeer{
 					Address:              netip.MustParseAddr(peerIP),
 					DoIAllowLocalNetwork: true,
 					DoIAllowInbound:      true,
 				}),
-		)
-	})
-
-	t.Run("host_allows_routing", func(t *testing.T) {
-		runSnapshotTest(t,
-			helpers.NewFWConfig().
+		},
+		{
+			name: "host_allows_routing",
+			config: helpers.NewFWConfig().
 				Meshnet(ifName).
 				MeshPeer(mesh.MachinePeer{
 					Address:         netip.MustParseAddr(peerIP),
 					DoIAllowRouting: true,
 				}),
-		)
-	})
-
-	t.Run("host_allows_inbound_but_no_routing", func(t *testing.T) {
-		runSnapshotTest(t,
-			helpers.NewFWConfig().
+		},
+		{
+			name: "host_allows_inbound_but_no_routing",
+			config: helpers.NewFWConfig().
 				Meshnet(ifName).
 				MeshPeer(mesh.MachinePeer{
 					Address:         netip.MustParseAddr(peerIP),
 					DoIAllowInbound: true,
 					DoIAllowRouting: false,
 				}),
-		)
-	})
-
-	t.Run("with_fileshare", func(t *testing.T) {
-		runSnapshotTest(t,
-			helpers.NewFWConfig().
+		},
+		{
+			name: "with_fileshare",
+			config: helpers.NewFWConfig().
 				Meshnet(ifName).
 				MeshPeer(mesh.MachinePeer{
 					Address:           netip.MustParseAddr(peerIP),
 					DoIAllowFileshare: true,
 				}),
-		)
-	})
-
-	t.Run("with_blocked_fileshare", func(t *testing.T) {
-		runSnapshotTest(t,
-			helpers.NewFWConfig().
+		},
+		{
+			name: "with_blocked_fileshare",
+			config: helpers.NewFWConfig().
 				Meshnet(ifName).
 				BlockFileshare().
 				MeshPeer(mesh.MachinePeer{
 					Address:           netip.MustParseAddr(peerIP),
 					DoIAllowFileshare: true,
 				}),
-		)
-	})
-
-	t.Run("peer_with_full_permissions", func(t *testing.T) {
-		runSnapshotTest(t,
-			helpers.NewFWConfig().
+		},
+		{
+			name: "peer_with_full_permissions",
+			config: helpers.NewFWConfig().
 				Meshnet(ifName).
 				MeshPeer(mesh.MachinePeer{
 					Address:              netip.MustParseAddr(peerIP),
@@ -116,8 +122,14 @@ func TestMeshnetRuleset(t *testing.T) {
 					DoIAllowRouting:      true,
 					DoIAllowLocalNetwork: true,
 				}),
-		)
-	})
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runSnapshotTest(t, tt.config)
+		})
+	}
 }
 
 func runSnapshotTest(t *testing.T, b *helpers.FirewallConfigBuilder) {
