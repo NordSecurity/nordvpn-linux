@@ -21,7 +21,7 @@ func GetFileWatcher(pathsToMonitor ...string) (watcher *fsnotify.Watcher, err er
 
 	for _, file := range pathsToMonitor {
 		if err := watcher.Add(file); err != nil {
-			return nil, fmt.Errorf("adding group file to watcher: %w", err)
+			return nil, fmt.Errorf("adding file to watcher: %w", err)
 		}
 	}
 
