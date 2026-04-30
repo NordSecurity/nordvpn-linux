@@ -42,7 +42,14 @@ func TestVPNRuleset(t *testing.T) {
 			config: helpers.NewFWConfig().TunnelInterface(ifName).AllowlistUDPPort(8080),
 		},
 		{
-			name:   "subnet_allowlisted",
+			name: "DNS port allowlisted for both protocols",
+			config: helpers.NewFWConfig().
+				TunnelInterface(ifName).
+				AllowlistUDPPort(53).
+				AllowlistTCPPort(53),
+		},
+		{
+			name:   "subnet allowlisted",
 			config: helpers.NewFWConfig().TunnelInterface(ifName).AllowlistSubnet("10.0.0.0/24"),
 		},
 	}
