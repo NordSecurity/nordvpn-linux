@@ -55,7 +55,7 @@ func main() {
 	stopLevelWatcher := log.SetupLogger(
 		logFile,
 		internal.LogLevelFile,
-		log.DefaultLevel(internal.IsDevEnv(Environment)),
+		log.DefaultLevel(),
 	)
 	defer stopLevelWatcher()
 
