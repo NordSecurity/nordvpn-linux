@@ -47,12 +47,12 @@ func TestInterfaceNameFromIpRoute(t *testing.T) {
 	}
 }
 
-func TestInterfacesWithDefaultRoute(t *testing.T) {
+func TestDefaultRouteIfNames(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	setMockSysDeps(t)
 	expectedNames := mapset.NewSet[string]("en2", "virtual10")
-	interfaces := InterfacesWithDefaultRoute(nil)
+	interfaces := DefaultRouteIfNames(nil)
 	assert.Equal(t, expectedNames, interfaces)
 }
 

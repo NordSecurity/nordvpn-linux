@@ -177,31 +177,47 @@ func InterfacesAreEqual(a net.Interface, b net.Interface) bool {
 		a.Flags == b.Flags
 }
 
-// InterfacesWithDefaultRoute returns all the interfaces that have a default route, excluding the ones from ignoreSet
-func InterfacesWithDefaultRoute(ignoreSet mapset.Set[string]) mapset.Set[string] {
-	// get interface list from default routes
-	interfacesList := mapset.NewSet[string]()
-
+// DefaultRouteInterfaces returns all the interfaces that have a default route.
+func DefaultRouteInterfaces() ([]net.Interface, error) {
 	routeList, err := sysDepsImpl.RouteList(nil, netlink.FAMILY_V4)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get system routes", err)
-		return interfacesList
+		return nil, fmt.Errorf("failed to get system routes: %w", err)
 	}
+
+	var devices []net.Interface
 	for _, r := range routeList {
 		if !isDefaultRoute(r) {
 			continue
 		}
 
 		if iface, err := sysDepsImpl.InterfaceByIndex(r.LinkIndex); err == nil && iface != nil {
-			if ignoreSet == nil || !ignoreSet.Contains(iface.Name) {
-				interfacesList.Add(iface.Name)
+			if !ifaceListContains(devices, *iface) {
+				devices = append(devices, *iface)
 			}
 		} else {
 			log.Println(internal.WarningPrefix, "default route, not found interface with index", r.LinkIndex, err)
 		}
 	}
+	return devices, nil
+}
 
-	return interfacesList
+// DefaultRouteIfNames is a helper function that returns the same as DefaultRouteInterfaces
+// but just the interface names, excluding the ones from ignoreSet.
+func DefaultRouteIfNames(ignoreSet mapset.Set[string]) mapset.Set[string] {
+	result := mapset.NewSet[string]()
+	ifaces, err := DefaultRouteInterfaces()
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "failed to get default route interfaces", err)
+		return result
+	}
+
+	for _, iface := range ifaces {
+		if ignoreSet == nil || !ignoreSet.Contains(iface.Name) {
+			result.Add(iface.Name)
+		}
+	}
+
+	return result
 }
 
 // isDefaultRoute checks if a route is a default route
