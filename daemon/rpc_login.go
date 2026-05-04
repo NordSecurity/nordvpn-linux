@@ -139,11 +139,12 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 	_, _ = r.ac.IsMFAEnabled()
 
 	go StartNC("[login]", r.ncClient)
-	r.publisher.Publish("user logged in")
 
 	if err := r.RegisterDedicatedServers(); err != nil {
 		log.Println(internal.ErrorPrefix, "failed to sync device for dedicated servers:", err)
 	}
+
+	r.publisher.Publish("user logged in")
 
 	return &pb.LoginResponse{
 		Type: internal.CodeSuccess,

@@ -1418,3 +1418,61 @@ func TestOAuth2URLRetrieveFailed_StaleLoginType(t *testing.T) {
 	// Verify initialLoginType is reset after successful callback
 	assert.Equal(t, pb.LoginType_LoginType_UNKNOWN, r.initialLoginType.get())
 }
+
+func TestLoginWithToken_RegisterForDedicatedServers(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	eventsStub := &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{
+		Handler: func(event events.DataAuthorization) error {
+			return nil
+		},
+	}
+
+	mockKeyManager := testdevicekey.MockDeviceKeyManager{CheckAndRegisterDedicatedServersStatus: true}
+
+	r := &RPC{
+		consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+		ac:                         &testauth.AuthCheckerMock{LoggedIn: false, DedicatedServerService: true},
+		cm:                         mock.NewMockConfigManager(),
+		credentialsAPI:             &testcore.CredentialsAPIMock{},
+		events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsStub}},
+		authentication:             &testcore.AuthenticationAPImock{}, // succeeds
+		publisher:                  &subs.Subject[string]{},
+		ncClient:                   &mock.NotificationClientMock{},
+		initialLoginType:           NewAtomicLoginType(),
+		dedicatedServersKeyManager: &mockKeyManager,
+	}
+	payload, err := r.loginWithToken("token")
+	assert.Nil(t, err, "unexpected error returned by loginWithToken.")
+	assert.Equal(t, payload.Type, internal.CodeSuccess, "Unexpected response code.")
+	assert.True(t, mockKeyManager.WasKeyRegistered, "Key was not registered when expected.")
+}
+
+func TestLoginOAuth2Callback_RegisterForDedicatedServers(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	eventsStub := &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{
+		Handler: func(event events.DataAuthorization) error {
+			return nil
+		},
+	}
+
+	mockKeyManager := testdevicekey.MockDeviceKeyManager{CheckAndRegisterDedicatedServersStatus: true}
+
+	r := &RPC{
+		consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+		ac:                         &testauth.AuthCheckerMock{LoggedIn: false, DedicatedServerService: true},
+		cm:                         mock.NewMockConfigManager(),
+		credentialsAPI:             &testcore.CredentialsAPIMock{},
+		events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsStub}},
+		authentication:             &testcore.AuthenticationAPImock{}, // succeeds
+		publisher:                  &subs.Subject[string]{},
+		ncClient:                   &mock.NotificationClientMock{},
+		initialLoginType:           NewAtomicLoginType(),
+		dedicatedServersKeyManager: &mockKeyManager,
+	}
+	response, err := r.LoginOAuth2Callback(context.Background(), &pb.LoginOAuth2CallbackRequest{Token: "token", Type: pb.LoginType_LoginType_LOGIN})
+	assert.Nil(t, err, "unexpected error returned by loginWithToken.")
+	assert.Equal(t, response.Status, pb.LoginStatus_SUCCESS, "Unexpected response code.")
+	assert.True(t, mockKeyManager.WasKeyRegistered, "Key was not registered when expected.")
+}
