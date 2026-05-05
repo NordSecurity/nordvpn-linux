@@ -189,11 +189,8 @@ func (c *workingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPServic
 
 	return c.dedicatedIPService, nil
 }
-func (c *workingLoginChecker) HasDedicatedServerService() (bool, error) {
-	if c.isDedicatedServersExpired {
-		return false, c.dedicatedServerErr
-	}
-	return true, c.dedicatedServerErr
+func (c *workingLoginChecker) GetDedicatedServersService() (auth.DedicatedServersService, error) {
+	return auth.DedicatedServersService{Active: !c.isDedicatedServersExpired}, c.dedicatedServerErr
 }
 
 type mockEndpointResolver struct{ ip netip.Addr }

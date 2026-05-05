@@ -189,15 +189,14 @@ func (a *AccountData) unset() {
 // get retrieves account data from cache.
 // Parameters:
 //   - respectDataExpiry: Controls cache retrieval
-//     - If true: Tries to return valid cached data, or error if it is invalid
-//     - If false: Returns whatever is in the cache regardless of validity, including stale data
+//   - If true: Tries to return valid cached data, or error if it is invalid
+//   - If false: Returns whatever is in the cache regardless of validity, including stale data
 //
 // Returns:
 //   - *pb.AccountResponse: The account data
 //   - bool: Whether cached data was used (true) or not (false)
-//     - true indicates data came from cache (valid or stale)
-//     - false indicates no cache data was available or an error occurred
-
+//   - true indicates data came from cache (valid or stale)
+//   - false indicates no cache data was available or an error occurred
 func (a *AccountData) get(respectDataExpiry bool) (*pb.AccountResponse, bool) {
 	data, err := a.cache.Get()
 	if data == nil {

@@ -617,7 +617,7 @@ func selectDedicatedIPServer(authChecker auth.Checker, servers core.Servers) (*c
 func selectDedicatedServer(authChecker auth.Checker,
 	api core.DedicatedServersAPI,
 	keyManager devicekey.DedicatedServersKeyManager) (*core.Server, error) {
-	ok, err := authChecker.HasDedicatedServerService()
+	service, err := authChecker.GetDedicatedServersService()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "checking dedicated servers service status:", err)
 		if errors.Is(err, core.ErrUnauthorized) {
@@ -626,8 +626,8 @@ func selectDedicatedServer(authChecker auth.Checker,
 		return nil, internal.ErrUnhandled
 	}
 
-	if !ok {
-		return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersRenewError)
+	if !service.Active {
+		return nil, internal.NewErrorWithCode(internal.CodeDedicatedServerRenewError)
 	}
 
 	dedicatedServers, err := api.DedicatedServers()

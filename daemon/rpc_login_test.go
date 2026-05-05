@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -657,14 +658,15 @@ func TestLoginWithTokenInputValidation(t *testing.T) {
 			setup: func() *RPC {
 				eventsMock := &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{}
 				return &RPC{
-					consentChecker:   &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-					ac:               &testauth.AuthCheckerMock{LoggedIn: false},
-					cm:               mock.NewMockConfigManager(),
-					credentialsAPI:   &testcore.CredentialsAPIMock{},
-					events:           &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
-					publisher:        &subs.Subject[string]{},
-					ncClient:         &mock.NotificationClientMock{},
-					initialLoginType: NewAtomicLoginType(),
+					consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+					ac:                         &testauth.AuthCheckerMock{LoggedIn: false},
+					cm:                         mock.NewMockConfigManager(),
+					credentialsAPI:             &testcore.CredentialsAPIMock{},
+					events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsMock}},
+					publisher:                  &subs.Subject[string]{},
+					ncClient:                   &mock.NotificationClientMock{},
+					initialLoginType:           NewAtomicLoginType(),
+					dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
 				}
 			},
 			token:           "abcdef123456",
@@ -1433,8 +1435,10 @@ func TestLoginWithToken_RegisterForDedicatedServers(t *testing.T) {
 		DedicatedServerRegistrationData: &devicekey.DedicatedServersConnectionData{}}
 
 	r := &RPC{
-		consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-		ac:                         &testauth.AuthCheckerMock{LoggedIn: false, DedicatedServerService: true},
+		consentChecker: &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+		ac: &testauth.AuthCheckerMock{
+			LoggedIn:               false,
+			DedicatedServerService: auth.DedicatedServersService{Active: true}},
 		cm:                         mock.NewMockConfigManager(),
 		credentialsAPI:             &testcore.CredentialsAPIMock{},
 		events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsStub}},
@@ -1463,8 +1467,10 @@ func TestLoginOAuth2Callback_RegisterForDedicatedServers(t *testing.T) {
 		DedicatedServerRegistrationData: &devicekey.DedicatedServersConnectionData{}}
 
 	r := &RPC{
-		consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
-		ac:                         &testauth.AuthCheckerMock{LoggedIn: false, DedicatedServerService: true},
+		consentChecker: &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
+		ac: &testauth.AuthCheckerMock{
+			LoggedIn:               false,
+			DedicatedServerService: auth.DedicatedServersService{Active: true}},
 		cm:                         mock.NewMockConfigManager(),
 		credentialsAPI:             &testcore.CredentialsAPIMock{},
 		events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsStub}},

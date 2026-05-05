@@ -92,6 +92,8 @@ class AccountResponse extends $pb.GeneratedMessage {
     $core.Iterable<DedidcatedIPService>? dedicatedIpServices,
     $0.TriState? mfaStatus,
     $core.String? createdOn,
+    $fixnum.Int64? dedicatedServersStatus,
+    $core.String? dedicatedServersServiceExpiresAt,
   }) {
     final result = create();
     if (type != null) result.type = type;
@@ -106,6 +108,11 @@ class AccountResponse extends $pb.GeneratedMessage {
       result.dedicatedIpServices.addAll(dedicatedIpServices);
     if (mfaStatus != null) result.mfaStatus = mfaStatus;
     if (createdOn != null) result.createdOn = createdOn;
+    if (dedicatedServersStatus != null)
+      result.dedicatedServersStatus = dedicatedServersStatus;
+    if (dedicatedServersServiceExpiresAt != null)
+      result.dedicatedServersServiceExpiresAt =
+          dedicatedServersServiceExpiresAt;
     return result;
   }
 
@@ -133,6 +140,8 @@ class AccountResponse extends $pb.GeneratedMessage {
     ..aE<$0.TriState>(8, _omitFieldNames ? '' : 'mfaStatus',
         enumValues: $0.TriState.values)
     ..aOS(9, _omitFieldNames ? '' : 'createdOn')
+    ..aInt64(10, _omitFieldNames ? '' : 'dedicatedServersStatus')
+    ..aOS(11, _omitFieldNames ? '' : 'dedicatedServersServiceExpiresAt')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -228,6 +237,25 @@ class AccountResponse extends $pb.GeneratedMessage {
   $core.bool hasCreatedOn() => $_has(8);
   @$pb.TagNumber(9)
   void clearCreatedOn() => $_clearField(9);
+
+  @$pb.TagNumber(10)
+  $fixnum.Int64 get dedicatedServersStatus => $_getI64(9);
+  @$pb.TagNumber(10)
+  set dedicatedServersStatus($fixnum.Int64 value) => $_setInt64(9, value);
+  @$pb.TagNumber(10)
+  $core.bool hasDedicatedServersStatus() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearDedicatedServersStatus() => $_clearField(10);
+
+  @$pb.TagNumber(11)
+  $core.String get dedicatedServersServiceExpiresAt => $_getSZ(10);
+  @$pb.TagNumber(11)
+  set dedicatedServersServiceExpiresAt($core.String value) =>
+      $_setString(10, value);
+  @$pb.TagNumber(11)
+  $core.bool hasDedicatedServersServiceExpiresAt() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearDedicatedServersServiceExpiresAt() => $_clearField(11);
 }
 
 class AccountRequest extends $pb.GeneratedMessage {

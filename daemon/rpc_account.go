@@ -103,6 +103,22 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 		}
 	}
 
+	dedicatedServerService, err := r.ac.GetDedicatedServersService()
+	if err != nil {
+		log.Println(internal.ErrorPrefix, "gettig dedicated server service:", err)
+		if errors.Is(err, core.ErrUnauthorized) {
+			return &pb.AccountResponse{Type: internal.CodeExpiredAccessToken}, nil
+		} else {
+			return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
+		}
+	}
+
+	accountInfo.DedicatedServersStatus = internal.CodeNoService
+	if dedicatedServerService.Active {
+		accountInfo.DedicatedServersStatus = internal.CodeSuccess
+		accountInfo.DedicatedServersServiceExpiresAt = dedicatedServerService.ExpiresAt
+	}
+
 	// get user's current mfa status
 	accountInfo.MfaStatus = pb.TriState_DISABLED
 	mfaStatus, err := r.ac.IsMFAEnabled()

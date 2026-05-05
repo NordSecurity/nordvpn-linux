@@ -41,8 +41,8 @@ func (failingLoginChecker) IsVPNExpired() (bool, error) {
 func (failingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
 	return nil, fmt.Errorf("Not implemented")
 }
-func (failingLoginChecker) HasDedicatedServerService() (bool, error) {
-	return false, fmt.Errorf("Not implemented")
+func (failingLoginChecker) GetDedicatedServersService() (auth.DedicatedServersService, error) {
+	return auth.DedicatedServersService{}, fmt.Errorf("Not implemented")
 }
 
 func updateAutoconnectData(c *mockConfigManager, data config.AutoConnectData) {
