@@ -50,6 +50,15 @@ func (c *cmd) getTrustedPassTokenData() (trustedPassTokenData, error) {
 	return trustedPassTokenData{token: resp.TrustedPassToken, owner_id: resp.TrustedPassOwnerId}, nil
 }
 
+func (c *cmd) injectLinkIntoMessage(url string, trustedPassURL string, message string) string {
+	link := url
+	tokenData, err := c.getTrustedPassTokenData()
+	if err == nil {
+		link = fmt.Sprintf(trustedPassURL, tokenData.token, tokenData.owner_id)
+	}
+	return fmt.Sprintf(message, link)
+}
+
 func (c *cmd) Connect(ctx *cli.Context) error {
 	args := ctx.Args()
 
@@ -117,19 +126,9 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		case internal.CodeRevokedAccessToken:
 			return formatError(errors.New(client.AccessTokenExpired))
 		case internal.CodeAccountExpired:
-			link := client.SubscriptionURL
-			tokenData, err := c.getTrustedPassTokenData()
-			if err == nil {
-				link = fmt.Sprintf(client.SubscriptionURLLogin, tokenData.token, tokenData.owner_id)
-			}
-			rpcErr = fmt.Errorf(ExpiredAccountMessage, link)
+			rpcErr = fmt.Errorf(c.injectLinkIntoMessage(client.SubscriptionURL, client.SubscriptionURLLogin, ExpiredAccountMessage))
 		case internal.CodeDedicatedIPRenewError:
-			link := client.SubscriptionDedicatedIPURL
-			tokenData, err := c.getTrustedPassTokenData()
-			if err == nil {
-				link = fmt.Sprintf(client.SubscriptionDedicatedIPURLLogin, tokenData.token, tokenData.owner_id)
-			}
-			rpcErr = fmt.Errorf(NoDedicatedIPMessage, link)
+			rpcErr = fmt.Errorf(c.injectLinkIntoMessage(client.SubscriptionDedicatedIPURL, client.SubscriptionDedicatedIPURLLogin, NoDedicatedIPMessage))
 		case internal.CodeDedicatedIPNoServer:
 			rpcErr = errors.New(NoDedidcatedIPServerMessage)
 		case internal.CodeDedicatedIPServiceButNoServers:
@@ -153,9 +152,9 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		case internal.CodeTechnologyDisabled:
 			rpcErr = errors.New(TechnologyDisabledMessage)
 		case internal.CodeDedicatedServerRenewError:
-			rpcErr = errors.New(DedicatedServersNoServiceMssage)
+			rpcErr = fmt.Errorf(c.injectLinkIntoMessage(client.DedicatedServersUpselURL, client.DedicatedServersUpselURLLogin, DedicatedServersNoServiceMssage))
 		case internal.CodeDedicatedServersServiceButNoServers:
-			rpcErr = errors.New(DedicatedServersNoServersAvailable)
+			rpcErr = fmt.Errorf(c.injectLinkIntoMessage(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin, DedicatedServersNoServersAvailable))
 		case internal.CodeDedicatedServerNotReady:
 			rpcErr = errors.New(DedicatedServersServerNotReadyMessage)
 		case internal.CodeDedicatedServerNoNordlynx:
