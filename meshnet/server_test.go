@@ -55,6 +55,9 @@ func (meshRenewChecker) IsVPNExpired() (bool, error) { return false, nil }
 func (meshRenewChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
 	return nil, fmt.Errorf("Not implemented")
 }
+func (meshRenewChecker) HasDedicatedServerService() (bool, error) {
+	return false, fmt.Errorf("Not implemented")
+}
 
 type registrationChecker struct {
 	registrationErr error

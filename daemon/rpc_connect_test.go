@@ -175,6 +175,9 @@ func (c *workingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPServic
 
 	return c.dedicatedIPService, nil
 }
+func (c *workingLoginChecker) HasDedicatedServerService() (bool, error) {
+	return false, nil
+}
 
 func TestRPCConnect(t *testing.T) {
 	category.Set(t, category.Unit)
