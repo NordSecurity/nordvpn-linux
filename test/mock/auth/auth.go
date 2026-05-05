@@ -3,14 +3,16 @@ package auth
 import "github.com/NordSecurity/nordvpn-linux/auth"
 
 type AuthCheckerMock struct {
-	LoggedIn    bool
-	MFAEnabled  bool
-	VPNExpired  bool
-	DIPServices []auth.DedicatedIPService
+	LoggedIn               bool
+	MFAEnabled             bool
+	VPNExpired             bool
+	DIPServices            []auth.DedicatedIPService
+	DedicatedServerService bool
 
-	IsMFAEnabledErr           error
-	IsVPNExpiredErr           error
-	GetDedicatedIPServicesErr error
+	IsMFAEnabledErr              error
+	IsVPNExpiredErr              error
+	GetDedicatedIPServicesErr    error
+	HasDedicatedServerServiceErr error
 }
 
 func (a *AuthCheckerMock) IsLoggedIn() (bool, error) {
@@ -27,4 +29,8 @@ func (a *AuthCheckerMock) IsVPNExpired() (bool, error) {
 
 func (a *AuthCheckerMock) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
 	return a.DIPServices, a.GetDedicatedIPServicesErr
+}
+
+func (a *AuthCheckerMock) HasDedicatedServerService() (bool, error) {
+	return a.DedicatedServerService, a.HasDedicatedServerServiceErr
 }
