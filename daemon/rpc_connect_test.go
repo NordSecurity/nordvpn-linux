@@ -103,11 +103,7 @@ func (d *deterministicServersAPI) RecommendedServers(filter core.ServersFilter, 
 			config.ServerGroup_ANTI_DDOS,
 			config.ServerGroup_STANDARD_VPN_SERVERS,
 			config.ServerGroup_NETFLIX_USA,
-			config.ServerGroup_OBFUSCATED,
-			config.ServerGroup_EUROPE,
-			config.ServerGroup_THE_AMERICAS,
-			config.ServerGroup_ASIA_PACIFIC,
-			config.ServerGroup_AFRICA_THE_MIDDLE_EAST_AND_INDIA:
+			config.ServerGroup_OBFUSCATED:
 
 			return getServersByID(allServers, 1), nil, nil
 		}
@@ -988,42 +984,6 @@ func Test_determineServerGroup(t *testing.T) {
 			}},
 			params: ServerParameters{Group: config.ServerGroup_ANTI_DDOS},
 			want:   "Anti DDoS",
-		},
-		{
-			name: "Group is EUROPE returns matching group title",
-			server: core.Server{Groups: []core.Group{
-				{ID: config.ServerGroup_EUROPE, Title: "Europe"},
-				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
-			}},
-			params: ServerParameters{Group: config.ServerGroup_EUROPE},
-			want:   "Europe",
-		},
-		{
-			name: "Group is THE_AMERICAS returns matching group title",
-			server: core.Server{Groups: []core.Group{
-				{ID: config.ServerGroup_THE_AMERICAS, Title: "The Americas"},
-				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
-			}},
-			params: ServerParameters{Group: config.ServerGroup_THE_AMERICAS},
-			want:   "The Americas",
-		},
-		{
-			name: "Group is ASIA_PACIFIC returns matching group title",
-			server: core.Server{Groups: []core.Group{
-				{ID: config.ServerGroup_ASIA_PACIFIC, Title: "Asia Pacific"},
-				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
-			}},
-			params: ServerParameters{Group: config.ServerGroup_ASIA_PACIFIC},
-			want:   "Asia Pacific",
-		},
-		{
-			name: "Group is AFRICA_THE_MIDDLE_EAST_AND_INDIA returns matching group title",
-			server: core.Server{Groups: []core.Group{
-				{ID: config.ServerGroup_AFRICA_THE_MIDDLE_EAST_AND_INDIA, Title: "Africa, the Middle East and India"},
-				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
-			}},
-			params: ServerParameters{Group: config.ServerGroup_AFRICA_THE_MIDDLE_EAST_AND_INDIA},
-			want:   "Africa, the Middle East and India",
 		},
 		{
 			name:   "Server has no groups returns empty string",

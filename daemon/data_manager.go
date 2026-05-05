@@ -373,6 +373,10 @@ func (dm *DataManager) Groups(
 				continue
 			}
 
+			if config.IsRegionalGroup(group.ID) {
+				continue
+			}
+
 			groupsSet.Add(group.Title)
 			// special server groups contain both virtual and physical
 			// display them always as physical servers

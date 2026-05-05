@@ -102,22 +102,6 @@ def test_autoconnect_to_random_server_by_name(tech, proto, obfuscated):
     [
         "tech", "proto", "obfuscated", "group",
     ],
-    ordered_source=[lib.TECHNOLOGIES],
-    randomized_source=[lib.STANDARD_GROUPS],
-    generate_all=IS_NIGHTLY,
-    id_pattern="{tech}-{proto}-{obfuscated}-{group}",
-)
-def test_autoconnect_to_standard_group(tech, proto, obfuscated, group):
-    """Manual TC: LVPN-8424"""
-
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-    autoconnect_base_test(group)
-
-
-@dynamic_parametrize(
-    [
-        "tech", "proto", "obfuscated", "group",
-    ],
     ordered_source=[lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER],
     randomized_source=[lib.ADDITIONAL_GROUPS],
     generate_all=IS_NIGHTLY,
