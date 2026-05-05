@@ -180,6 +180,9 @@ func (c *workingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPServic
 
 	return c.dedicatedIPService, nil
 }
+func (c *workingLoginChecker) HasDedicatedServerService() (bool, error) {
+	return false, nil
+}
 
 type mockEndpointResolver struct{ ip netip.Addr }
 
