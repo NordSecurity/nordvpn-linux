@@ -1,6 +1,9 @@
 package daemon
 
 import (
+	"slices"
+
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 )
@@ -13,7 +16,11 @@ func JobServerCheck(
 	server core.Server,
 ) func() {
 	return func() {
-		if netw.IsVPNActive() {
+		// dedicated servers are not kept on the server list, so we have to skip them
+		isDedicatedServer := slices.ContainsFunc(server.Groups, func(group core.Group) bool {
+			return group.ID == config.ServerGroup_DEDICATED_SERVERS
+		})
+		if netw.IsVPNActive() && !isDedicatedServer {
 			srv, err := api.Server(server.ID)
 			if err != nil || srv == nil {
 				return

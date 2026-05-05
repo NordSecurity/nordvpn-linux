@@ -459,7 +459,7 @@ func (api *SimpleClientAPI) RegisterDevice(token string, deviceRequest DevicesRe
 	}
 	req, err := request.NewRequestWithBearerToken(http.MethodPost, api.agent, api.baseURL, DevicesURL, "application/json", "", "gzip, deflate", bytes.NewBuffer(data), token)
 	if err != nil {
-		return DevicesResponse{}, fmt.Errorf("creating nc credentials request: %w", err)
+		return DevicesResponse{}, fmt.Errorf("creating register device request: %w", err)
 	}
 	resp, apiErr := api.do(req, http.StatusConflict)
 	if apiErr != nil && !errors.Is(apiErr, ErrConflict) {
@@ -482,7 +482,7 @@ func (api *SimpleClientAPI) UpdateDevice(token string, deviceUUID uuid.UUID, upd
 	}
 	req, err := request.NewRequestWithBearerToken(http.MethodPatch, api.agent, api.baseURL, fmt.Sprintf(DevicesUpdateURL, deviceUUID.String()), "application/json", "", "gzip, deflate", bytes.NewBuffer(data), token)
 	if err != nil {
-		return DevicesResponse{}, fmt.Errorf("creating nc credentials request: %w", err)
+		return DevicesResponse{}, fmt.Errorf("creating device update request: %w", err)
 	}
 	resp, err := api.doRequest(req)
 	if err != nil {
@@ -501,7 +501,7 @@ func (api *SimpleClientAPI) UpdateDevice(token string, deviceUUID uuid.UUID, upd
 func (api *SimpleClientAPI) DedicatedServers(token string) (DedicatedServers, error) {
 	req, err := request.NewRequestWithBearerToken(http.MethodGet, api.agent, api.baseURL, DedicatedServersURL, "application/json", "", "gzip, deflate", nil, token)
 	if err != nil {
-		return DedicatedServers{}, fmt.Errorf("creating nc credentials request: %w", err)
+		return DedicatedServers{}, fmt.Errorf("creating dedicated servers request: %w", err)
 	}
 	resp, err := api.doRequest(req)
 	if err != nil {
@@ -525,11 +525,11 @@ func (api *SimpleClientAPI) Connect(token string, serverUUID string, connectRequ
 	dedicatedServerURL := fmt.Sprintf(DedicatedServersConnectURL, serverUUID)
 	req, err := request.NewRequestWithBearerToken(http.MethodPost, api.agent, api.baseURL, dedicatedServerURL, "application/json", "", "gzip, deflate", bytes.NewBuffer(data), token)
 	if err != nil {
-		return ConnectResponse{}, fmt.Errorf("creating nc credentials request: %w", err)
+		return ConnectResponse{}, fmt.Errorf("creating connect request: %w", err)
 	}
 	resp, err := api.doRequest(req)
 	if err != nil {
-		return ConnectResponse{}, fmt.Errorf("executing HTTP GET request: %w", err)
+		return ConnectResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
 	}
 	defer resp.Body.Close()
 
