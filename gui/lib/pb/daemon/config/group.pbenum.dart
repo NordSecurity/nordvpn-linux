@@ -34,14 +34,6 @@ class ServerGroup extends $pb.ProtobufEnum {
   static const ServerGroup P2P = ServerGroup._(15, _omitEnumNames ? '' : 'P2P');
   static const ServerGroup OBFUSCATED =
       ServerGroup._(17, _omitEnumNames ? '' : 'OBFUSCATED');
-  static const ServerGroup EUROPE =
-      ServerGroup._(19, _omitEnumNames ? '' : 'EUROPE');
-  static const ServerGroup THE_AMERICAS =
-      ServerGroup._(21, _omitEnumNames ? '' : 'THE_AMERICAS');
-  static const ServerGroup ASIA_PACIFIC =
-      ServerGroup._(23, _omitEnumNames ? '' : 'ASIA_PACIFIC');
-  static const ServerGroup AFRICA_THE_MIDDLE_EAST_AND_INDIA = ServerGroup._(
-      25, _omitEnumNames ? '' : 'AFRICA_THE_MIDDLE_EAST_AND_INDIA');
 
   static const $core.List<ServerGroup> values = <ServerGroup>[
     UNDEFINED,
@@ -54,10 +46,6 @@ class ServerGroup extends $pb.ProtobufEnum {
     NETFLIX_USA,
     P2P,
     OBFUSCATED,
-    EUROPE,
-    THE_AMERICAS,
-    ASIA_PACIFIC,
-    AFRICA_THE_MIDDLE_EAST_AND_INDIA,
   ];
 
   static final $core.Map<$core.int, ServerGroup> _byValue =
