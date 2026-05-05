@@ -5,6 +5,7 @@ var GroupMap = map[string]ServerGroup{
 	"double_vpn":                       ServerGroup_DOUBLE_VPN,
 	"onion_over_vpn":                   ServerGroup_ONION_OVER_VPN,
 	"dedicated_ip":                     ServerGroup_DEDICATED_IP,
+	"dedicated_servers":                ServerGroup_DEDICATED_SERVERS,
 	"standard_vpn_servers":             ServerGroup_STANDARD_VPN_SERVERS,
 	"p2p":                              ServerGroup_P2P,
 	"europe":                           ServerGroup_EUROPE,

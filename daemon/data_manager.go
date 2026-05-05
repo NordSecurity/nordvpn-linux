@@ -19,6 +19,10 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
+// dedicatedServersGroupTitle is the group title used for the "Dedicated Server" specialty group.
+// It is assumed to be always present, even if the user doens't have a valid subscription.
+const dedicatedServersGroupTitle = "Dedicated Servers"
+
 type InsightsDataManager interface {
 	GetInsightsData() InsightsData
 	SetInsightsData(core.Insights) error
@@ -356,6 +360,7 @@ func (dm *DataManager) Groups(
 	groupsSet := mapset.NewSet[string]()
 	result := []*pb.ServerGroup{}
 	for _, server := range dm.serversData.Servers {
+
 		if !core.IsConnectableVia(serverTechnology)(server) {
 			continue
 		}
@@ -375,6 +380,11 @@ func (dm *DataManager) Groups(
 			item := &pb.ServerGroup{Name: internal.Title(group.Title), VirtualLocation: false}
 			result = append(result, item)
 		}
+	}
+
+	// Dedicated Server is to be always present in Tray
+	if !groupsSet.Contains(dedicatedServersGroupTitle) {
+		result = append(result, &pb.ServerGroup{Name: internal.Title(dedicatedServersGroupTitle), VirtualLocation: false})
 	}
 
 	sort.Slice(result, func(i, j int) bool {
