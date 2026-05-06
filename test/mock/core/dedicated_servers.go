@@ -7,7 +7,12 @@ import (
 
 type DedicatedServersAPIMock struct {
 	DedicatedServersResponse core.DedicatedServers
-	ConnectResponse          core.ConnectResponse
+	ConnectResponse          core.DedicatedServerConnectResponse
+
+	// DedicatedServerConnectCheck holds serverUUID provided to DedicatedServerConnectCheck
+	ConnectServerUUID string
+	// ConnectRequest holds connectRequest provided to DedicatedServerConnectCheck
+	ConnectRequest core.DedicatedServerConnectRequest
 
 	DedicatedServerErr error
 	ConnectErr         error
@@ -25,6 +30,8 @@ func (d *DedicatedServersAPIMock) DedicatedServers() (core.DedicatedServers, err
 	return d.DedicatedServersResponse, d.DedicatedServerErr
 }
 
-func (d *DedicatedServersAPIMock) Connect(serverUUID string, connectRequest core.ConnectRequest) (core.ConnectResponse, error) {
+func (d *DedicatedServersAPIMock) DedicatedServerConnectCheck(serverUUID string, connectRequest core.DedicatedServerConnectRequest) (core.DedicatedServerConnectResponse, error) {
+	d.ConnectRequest = connectRequest
+	d.ConnectServerUUID = serverUUID
 	return d.ConnectResponse, d.ConnectErr
 }

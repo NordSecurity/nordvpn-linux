@@ -44,7 +44,7 @@ type RawDedicatedServersAPI interface {
 	RegisterDevice(token string, request DevicesRequest) (DevicesResponse, error)
 	UpdateDevice(token string, deviceUUID uuid.UUID, request UpdateDeviceRequest) (DevicesResponse, error)
 	DedicatedServers(token string) (DedicatedServers, error)
-	Connect(token string, serverUUID string, connectRequest ConnectRequest) (ConnectResponse, error)
+	DedicatedServerConnectCheck(token string, serverUUID string, connectRequest DedicatedServerConnectRequest) (DedicatedServerConnectResponse, error)
 }
 
 type RawCombinedAPI interface {
@@ -517,25 +517,25 @@ func (api *SimpleClientAPI) DedicatedServers(token string) (DedicatedServers, er
 	return dedicatedServers, nil
 }
 
-func (api *SimpleClientAPI) Connect(token string, serverUUID string, connectRequest ConnectRequest) (ConnectResponse, error) {
+func (api *SimpleClientAPI) DedicatedServerConnectCheck(token string, serverUUID string, connectRequest DedicatedServerConnectRequest) (DedicatedServerConnectResponse, error) {
 	data, err := json.Marshal(connectRequest)
 	if err != nil {
-		return ConnectResponse{}, fmt.Errorf("marshaling the request data: %w", err)
+		return DedicatedServerConnectResponse{}, fmt.Errorf("marshaling the request data: %w", err)
 	}
 	dedicatedServerURL := fmt.Sprintf(DedicatedServersConnectURL, serverUUID)
 	req, err := request.NewRequestWithBearerToken(http.MethodPost, api.agent, api.baseURL, dedicatedServerURL, "application/json", "", "gzip, deflate", bytes.NewBuffer(data), token)
 	if err != nil {
-		return ConnectResponse{}, fmt.Errorf("creating connect request: %w", err)
+		return DedicatedServerConnectResponse{}, fmt.Errorf("creating connect request: %w", err)
 	}
 	resp, err := api.doRequest(req)
 	if err != nil {
-		return ConnectResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
+		return DedicatedServerConnectResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	var connectResponse ConnectResponse
+	var connectResponse DedicatedServerConnectResponse
 	if err = json.NewDecoder(resp.Body).Decode(&connectResponse); err != nil {
-		return ConnectResponse{}, err
+		return DedicatedServerConnectResponse{}, err
 	}
 
 	return connectResponse, nil

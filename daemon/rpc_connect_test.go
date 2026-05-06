@@ -1097,32 +1097,40 @@ func TestConnect_DedicatedServers(t *testing.T) {
 	dedicatedServerNotReady.Status = "not running"
 
 	serverPublicKey := "public_key"
-	connectResponse := core.ConnectResponse{
+	deviceUUID := uuid.MustParse("a25b9415-c77b-4a18-b8ff-ef06042aa450")
+	connectResponse := core.DedicatedServerConnectResponse{
 		ServerEndpoint:  serverAddress + ":" + strconv.Itoa(serverPort),
 		ServerPublicKey: serverPublicKey,
 	}
 
-	deviceKey := "device key"
+	devicePublicKey := "device public key"
 
 	tests := []struct {
-		name                      string
-		isDedicatedServersExpired bool
-		dedicatedServersResponse  core.DedicatedServers
-		connectResponse           core.ConnectResponse
-		technology                config.Technology
-		serviceCheckErr           error
-		dedicatedServersFetchErr  error
-		connectErr                error
-		expectedErr               error
-		expectedStatus            int64
+		name                       string
+		isDedicatedServersExpired  bool
+		dedicatedServersResponse   core.DedicatedServers
+		connectResponse            core.DedicatedServerConnectResponse
+		technology                 config.Technology
+		serviceCheckErr            error
+		dedicatedServersFetchErr   error
+		connectErr                 error
+		expectedErr                error
+		expectedStatus             int64
+		expectedConnectRequestUUID string
+		expectedConnectRequest     core.DedicatedServerConnectRequest
 	}{
 		{
-			name:                      "success",
-			isDedicatedServersExpired: false,
-			dedicatedServersResponse:  dedicatedServers,
-			connectResponse:           connectResponse,
-			technology:                config.Technology_NORDLYNX,
-			expectedStatus:            internal.CodeConnected,
+			name:                       "success",
+			isDedicatedServersExpired:  false,
+			dedicatedServersResponse:   dedicatedServers,
+			connectResponse:            connectResponse,
+			technology:                 config.Technology_NORDLYNX,
+			expectedStatus:             internal.CodeConnected,
+			expectedConnectRequestUUID: serverUUID.String(),
+			expectedConnectRequest: core.DedicatedServerConnectRequest{
+				DeviceUUID:      deviceUUID.String(),
+				DevicePublicKey: devicePublicKey,
+			},
 		},
 		{
 			name:                      "dedicated servers service has expired",
@@ -1167,44 +1175,58 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			expectedErr:               internal.ErrUnhandled,
 		},
 		{
-			name:                      "connect fails",
-			isDedicatedServersExpired: false,
-			dedicatedServersResponse:  dedicatedServers,
-			technology:                config.Technology_NORDLYNX,
-			connectErr:                errors.New("error"),
-			expectedErr:               internal.ErrUnhandled,
+			name:                       "connect fails",
+			isDedicatedServersExpired:  false,
+			dedicatedServersResponse:   dedicatedServers,
+			technology:                 config.Technology_NORDLYNX,
+			connectErr:                 errors.New("error"),
+			expectedErr:                internal.ErrUnhandled,
+			expectedConnectRequestUUID: serverUUID.String(),
+			expectedConnectRequest: core.DedicatedServerConnectRequest{
+				DeviceUUID:      deviceUUID.String(),
+				DevicePublicKey: devicePublicKey,
+			},
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			rpc := testRPCLocal(t)
-			rpc.dedicatedServersAPI = &testcore.DedicatedServersAPIMock{
+			mockDedicatedServersAPI := testcore.DedicatedServersAPIMock{
 				DedicatedServersResponse: test.dedicatedServersResponse,
 				ConnectResponse:          test.connectResponse,
 				DedicatedServerErr:       test.dedicatedServersFetchErr,
 				ConnectErr:               test.connectErr,
 			}
+			rpc.dedicatedServersAPI = &mockDedicatedServersAPI
 			rpc.ac = &workingLoginChecker{
 				isDedicatedServersExpired: test.isDedicatedServersExpired,
 				dedicatedServerErr:        test.serviceCheckErr,
 			}
 			rpc.dedicatedServersKeyManager = &testdevicekey.MockDeviceKeyManager{
 				DedicatedServerRegistrationData: &devicekey.DedicatedServersRegistrationData{
-					DevicePublicKey: deviceKey,
+					DevicePublicKey: devicePublicKey,
+					DeviceUUID:      deviceUUID,
 				},
 			}
 
 			configManagerMock := rpc.cm.(*mockConfigManager)
 			configManagerMock.c.Technology = test.technology
-			configManagerMock.c.DeviceKey = deviceKey
 
 			mockRPCServer := &mockRPCServer{}
 			err := rpc.Connect(&pb.ConnectRequest{ServerTag: "dedicated_servers"}, mockRPCServer)
+
 			assert.Equal(t, test.expectedErr, err, "Unexpected error returned by the Connect RPC.")
+			assert.Equal(t, test.expectedConnectRequest, mockDedicatedServersAPI.ConnectRequest,
+				"Invalid connect request.")
+			assert.Equal(t, test.expectedConnectRequestUUID, mockDedicatedServersAPI.ConnectServerUUID,
+				"Connect request was sent to invalid server.")
+
 			if test.expectedErr == nil {
 				assert.Equal(t, test.expectedStatus, mockRPCServer.msg.Type,
 					"Unexpected status in a Connect RPC response.")
+			} else {
+				assert.Nil(t, mockRPCServer.msg, "Unexpected Connect RPC response.")
 			}
 		})
 	}
@@ -1225,7 +1247,7 @@ func TestDedicatedServers_Internals(t *testing.T) {
 	dedicatedServers := core.DedicatedServers{dedicatedServer}
 
 	serverPublicKey := "public_key"
-	connectResponse := core.ConnectResponse{
+	connectResponse := core.DedicatedServerConnectResponse{
 		ServerEndpoint:  serverAddress + ":" + strconv.Itoa(int(serverPort)),
 		ServerPublicKey: serverPublicKey,
 	}

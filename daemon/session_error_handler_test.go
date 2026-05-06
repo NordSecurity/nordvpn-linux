@@ -468,8 +468,8 @@ func (m *mockRawClientAPI) DedicatedServers(token string) (core.DedicatedServers
 	return core.DedicatedServers{}, nil
 }
 
-func (m *mockRawClientAPI) Connect(token string, serverUUID string, req core.ConnectRequest) (core.ConnectResponse, error) {
-	return core.ConnectResponse{}, nil
+func (m *mockRawClientAPI) DedicatedServerConnectCheck(token string, serverUUID string, req core.DedicatedServerConnectRequest) (core.DedicatedServerConnectResponse, error) {
+	return core.DedicatedServerConnectResponse{}, nil
 }
 
 func (m *mockRawClientAPI) Base() string {

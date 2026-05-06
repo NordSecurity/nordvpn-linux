@@ -38,12 +38,12 @@ type DedicatedServer struct {
 	Location `json:"location"`
 }
 
-type ConnectRequest struct {
+type DedicatedServerConnectRequest struct {
 	DeviceUUID      string `json:"device_uuid"`
 	DevicePublicKey string `json:"device_public_key"`
 }
 
-type ConnectResponse struct {
+type DedicatedServerConnectResponse struct {
 	ServerPublicKey string `json:"server_public_key"`
 	ServerEndpoint  string `json:"server_endpoint"`
 }

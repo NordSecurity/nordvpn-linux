@@ -156,9 +156,9 @@ func (s *smartClientAPI) DedicatedServers() (DedicatedServers, error) {
 	})
 }
 
-func (s *smartClientAPI) Connect(dedicatedServerUUID string, connectRequest ConnectRequest) (ConnectResponse, error) {
-	return callWithToken(s.store, func(token string) (ConnectResponse, error) {
-		return s.wrapped.Connect(token, dedicatedServerUUID, connectRequest)
+func (s *smartClientAPI) DedicatedServerConnectCheck(dedicatedServerUUID string, connectRequest DedicatedServerConnectRequest) (DedicatedServerConnectResponse, error) {
+	return callWithToken(s.store, func(token string) (DedicatedServerConnectResponse, error) {
+		return s.wrapped.DedicatedServerConnectCheck(token, dedicatedServerUUID, connectRequest)
 	})
 }
 

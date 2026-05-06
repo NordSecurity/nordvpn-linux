@@ -123,8 +123,8 @@ func (m *mockRawClientAPI) UpdateDevice(string, uuid.UUID, core.UpdateDeviceRequ
 func (m *mockRawClientAPI) DedicatedServers(string) (core.DedicatedServers, error) {
 	return core.DedicatedServers{}, nil
 }
-func (m *mockRawClientAPI) Connect(string, string, core.ConnectRequest) (core.ConnectResponse, error) {
-	return core.ConnectResponse{}, nil
+func (m *mockRawClientAPI) DedicatedServerConnectCheck(string, string, core.DedicatedServerConnectRequest) (core.DedicatedServerConnectResponse, error) {
+	return core.DedicatedServerConnectResponse{}, nil
 }
 
 func (m *mockRawClientAPI) Base() string {
@@ -227,8 +227,8 @@ func (m *mockClientAPI) UpdateDevice(uuid.UUID, core.UpdateDeviceRequest) (core.
 func (m *mockClientAPI) DedicatedServers() (core.DedicatedServers, error) {
 	return m.mockRawClientAPI.DedicatedServers("")
 }
-func (m *mockClientAPI) Connect(string, core.ConnectRequest) (core.ConnectResponse, error) {
-	return m.mockRawClientAPI.Connect("", "", core.ConnectRequest{})
+func (m *mockClientAPI) DedicatedServerConnectCheck(string, core.DedicatedServerConnectRequest) (core.DedicatedServerConnectResponse, error) {
+	return m.mockRawClientAPI.DedicatedServerConnectCheck("", "", core.DedicatedServerConnectRequest{})
 }
 
 func setupTestConfig() *config.Config {

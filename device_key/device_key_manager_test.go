@@ -59,8 +59,8 @@ func (m *mockDedicatedServersAPI) DedicatedServers() (core.DedicatedServers, err
 	return core.DedicatedServers{}, nil
 }
 
-func (m *mockDedicatedServersAPI) Connect(string, core.ConnectRequest) (core.ConnectResponse, error) {
-	return core.ConnectResponse{}, nil
+func (m *mockDedicatedServersAPI) DedicatedServerConnectCheck(string, core.DedicatedServerConnectRequest) (core.DedicatedServerConnectResponse, error) {
+	return core.DedicatedServerConnectResponse{}, nil
 }
 
 type generator struct {

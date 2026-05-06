@@ -61,7 +61,7 @@ type mockSimpleClientAPI struct {
 	DevicesFunc                       func(token string, req core.DevicesRequest) (core.DevicesResponse, error)
 	UpdateDevicesFunc                 func(token string, req core.UpdateDeviceRequest) (core.DevicesResponse, error)
 	DedicatedServersFunc              func(token string) (core.DedicatedServers, error)
-	ConnectFunc                       func(token string, dedicatedServerUIID string, req core.ConnectRequest) (core.ConnectResponse, error)
+	ConnectFunc                       func(token string, dedicatedServerUIID string, req core.DedicatedServerConnectRequest) (core.DedicatedServerConnectResponse, error)
 }
 
 func (m *mockSimpleClientAPI) NotificationCredentials(token, appUserID string) (core.NotificationCredentialsResponse, error) {
@@ -136,7 +136,7 @@ func (m *mockSimpleClientAPI) DedicatedServers(token string) (core.DedicatedServ
 	return m.DedicatedServersFunc(token)
 }
 
-func (m *mockSimpleClientAPI) Connect(token string, dedicatedServerUUID string, req core.ConnectRequest) (core.ConnectResponse, error) {
+func (m *mockSimpleClientAPI) DedicatedServerConnectCheck(token string, dedicatedServerUUID string, req core.DedicatedServerConnectRequest) (core.DedicatedServerConnectResponse, error) {
 	return m.ConnectFunc(token, dedicatedServerUUID, req)
 }
 

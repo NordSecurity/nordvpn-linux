@@ -60,7 +60,7 @@ type DedicatedServersAPI interface {
 	RegisterDevice(DevicesRequest) (DevicesResponse, error)
 	UpdateDevice(uuid.UUID, UpdateDeviceRequest) (DevicesResponse, error)
 	DedicatedServers() (DedicatedServers, error)
-	Connect(serverUUID string, connectRequest ConnectRequest) (ConnectResponse, error)
+	DedicatedServerConnectCheck(serverUUID string, connectRequest DedicatedServerConnectRequest) (DedicatedServerConnectResponse, error)
 }
 
 type ErrMaxBytesLimit struct {

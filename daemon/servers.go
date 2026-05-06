@@ -652,7 +652,7 @@ func selectDedicatedServer(authChecker auth.Checker,
 		return nil, fmt.Errorf("failed to register the dedicated server")
 	}
 
-	connectResponse, err := api.Connect(dedicatedServer.UUID, core.ConnectRequest{
+	connectResponse, err := api.DedicatedServerConnectCheck(dedicatedServer.UUID, core.DedicatedServerConnectRequest{
 		DeviceUUID:      dedicatedServerRegistrationData.DeviceUUID.String(),
 		DevicePublicKey: dedicatedServerRegistrationData.DevicePublicKey,
 	})
