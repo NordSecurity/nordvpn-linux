@@ -145,6 +145,10 @@ func (r *RPC) connectWithStoredServerSelection(ctx context.Context,
 	}
 	r.connectionInfo.SetInitialConnecting()
 
+	if IsServerDedicatedServer(*r.lastServerSelection.server) && cfg.Technology != config.Technology_NORDLYNX {
+		return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServerNoNordlynx})
+	}
+
 	expirationCheckResult := r.isVPNExpired()
 	if expirationCheckResult != internal.CodeSuccess {
 		return true, srv.Send(&pb.Payload{Type: expirationCheckResult})
@@ -178,6 +182,12 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 		log.Println(internal.ErrorPrefix, err)
 	}
 	r.connectionInfo.SetInitialConnecting()
+
+	if (groupConvert(in.ServerGroup) == config.ServerGroup_DEDICATED_SERVERS ||
+		groupConvert(in.ServerTag) == config.ServerGroup_DEDICATED_SERVERS) &&
+		cfg.Technology != config.Technology_NORDLYNX {
+		return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServerNoNordlynx})
+	}
 
 	// Set status to "Connecting" and send the connection attempt event without details
 	// to inform clients about connection attempt as soon as possible so they can react.
@@ -270,9 +280,6 @@ func (r *RPC) connect(
 	if slices.ContainsFunc(serverSelection.server.Groups, func(group core.Group) bool {
 		return group.ID == config.ServerGroup_DEDICATED_SERVERS
 	}) {
-		if cfg.Technology != config.Technology_NORDLYNX {
-			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServerNoNordlynx})
-		}
 		creds.NordLynxPrivateKey = cfg.DeviceKey
 	}
 

@@ -734,3 +734,9 @@ func GetServerParameters(serverTag string, groupTag string, countries core.Count
 	parameters.City = country.Cities[cityIndex].Name
 	return parameters
 }
+
+func IsServerDedicatedServer(server core.Server) bool {
+	return slices.ContainsFunc(server.Groups, func(group core.Group) bool {
+		return group.ID == config.ServerGroup_DEDICATED_IP
+	})
+}
