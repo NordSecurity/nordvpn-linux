@@ -149,7 +149,7 @@ func (r *RPC) connectWithStoredServerSelection(ctx context.Context,
 	r.connectionInfo.SetInitialConnecting()
 
 	if IsServerDedicated(*r.lastServerSelection.server) && cfg.Technology != config.Technology_NORDLYNX {
-		return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServerNoNordlynx})
+		return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
 	}
 
 	expirationCheckResult := r.isVPNExpired()
@@ -189,7 +189,7 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	if (groupConvert(in.ServerGroup) == config.ServerGroup_DEDICATED_SERVERS ||
 		groupConvert(in.ServerTag) == config.ServerGroup_DEDICATED_SERVERS) &&
 		cfg.Technology != config.Technology_NORDLYNX {
-		return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServerNoNordlynx})
+		return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
 	}
 
 	// Set status to "Connecting" and send the connection attempt event without details

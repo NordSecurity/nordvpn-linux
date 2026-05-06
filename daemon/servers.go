@@ -627,7 +627,7 @@ func selectDedicatedServer(authChecker auth.Checker,
 	}
 
 	if !ok {
-		return nil, internal.NewErrorWithCode(internal.CodeDedicatedServerRenewError)
+		return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersRenewError)
 	}
 
 	dedicatedServers, err := api.DedicatedServers()
@@ -643,7 +643,7 @@ func selectDedicatedServer(authChecker auth.Checker,
 	// Currently there can be only one dedicated server per user.
 	dedicatedServer := dedicatedServers[0]
 	if dedicatedServer.Status != core.DedicatedServerStatusRunning {
-		return nil, internal.NewErrorWithCode(internal.CodeDedicatedServerNotReady)
+		return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersNotReady)
 	}
 
 	dedicatedServerRegistrationData := keyManager.CheckAndRegisterDedicatedServers()

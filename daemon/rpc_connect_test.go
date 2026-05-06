@@ -1136,7 +1136,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			name:                      "dedicated servers service has expired",
 			isDedicatedServersExpired: true,
 			technology:                config.Technology_NORDLYNX,
-			expectedStatus:            internal.CodeDedicatedServerRenewError,
+			expectedStatus:            internal.CodeDedicatedServersRenewError,
 		},
 		{
 			name:                      "empty dedicated servers list",
@@ -1150,7 +1150,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			isDedicatedServersExpired: false,
 			dedicatedServersResponse:  core.DedicatedServers{dedicatedServerNotReady},
 			technology:                config.Technology_NORDLYNX,
-			expectedStatus:            internal.CodeDedicatedServerNotReady,
+			expectedStatus:            internal.CodeDedicatedServersNotReady,
 		},
 		{
 			name:                      "technology is not nordlynx",
@@ -1158,7 +1158,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			dedicatedServersResponse:  dedicatedServers,
 			connectResponse:           connectResponse,
 			technology:                config.Technology_OPENVPN,
-			expectedStatus:            internal.CodeDedicatedServerNoNordlynx,
+			expectedStatus:            internal.CodeDedicatedServersNoNordlynx,
 		},
 		{
 			name:            "dedicated server service check fails",

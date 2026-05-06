@@ -151,13 +151,13 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 			rpcErr = errors.New(internal.DoubleGroupErrorMessage)
 		case internal.CodeTechnologyDisabled:
 			rpcErr = errors.New(TechnologyDisabledMessage)
-		case internal.CodeDedicatedServerRenewError:
+		case internal.CodeDedicatedServersRenewError:
 			rpcErr = errors.New(c.injectLinkIntoMessage(client.DedicatedServersUpselURL, client.DedicatedServersUpselURLLogin, DedicatedServersNoServiceMessage))
 		case internal.CodeDedicatedServersServiceButNoServers:
 			rpcErr = errors.New(c.injectLinkIntoMessage(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin, DedicatedServersNoServersAvailable))
-		case internal.CodeDedicatedServerNotReady:
+		case internal.CodeDedicatedServersNotReady:
 			rpcErr = errors.New(DedicatedServersServerNotReadyMessage)
-		case internal.CodeDedicatedServerNoNordlynx:
+		case internal.CodeDedicatedServersNoNordlynx:
 			rpcErr = errors.New(DedicatedServersNoNordlynxMessage)
 		case internal.CodeVPNRunning:
 			color.Yellow(client.ConnectConnected)
