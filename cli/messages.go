@@ -395,7 +395,7 @@ Your browsing activities remain private, regardless of your choice.
 	SetARPIgnoreWarning      = "You’ve turned off arp-ignore. This is an advanced privacy setting and should only be off if your network setup requires ARP responses."
 
 	// TODO: change those messages once we have proper texts
-	DedicatedServersNoServiceMssage       = "Get a server that's exclusively yours. Enjoy your own IP with resources and speed reserved entirely for you. Use it with port forwarding to host services and access devices remotely.\n%s"
+	DedicatedServersNoServiceMessage      = "Get a server that's exclusively yours. Enjoy your own IP with resources and speed reserved entirely for you. Use it with port forwarding to host services and access devices remotely.\n%s"
 	DedicatedServersNoServersAvailable    = "Setup your dedicated server. One last step - pick a server location.\n%s"
 	DedicatedServersServerNotReadyMessage = "Activating your dedicated server. This may take a few minutes."
 	DedicatedServersNoNordlynxMessage     = "NordLynx technology must be set to use this feature."

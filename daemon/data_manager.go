@@ -20,7 +20,7 @@ import (
 )
 
 // dedicatedServersGroupTitle is the group title used for the "Dedicated Server" specialty group.
-// It is assumed to be always present, even if the user doens't have a valid subscription.
+// It is assumed to be always present.
 const dedicatedServersGroupTitle = "Dedicated Servers"
 
 type InsightsDataManager interface {

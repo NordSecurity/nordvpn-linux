@@ -207,7 +207,7 @@ func (ti *Instance) connectWithUIEvent(
 		case internal.CodeUFWDisabled:
 			ti.notify(NoForce, client.UFWDisabledMessage)
 		case internal.CodeDedicatedServerRenewError:
-			ti.notifyServiceExpired(client.DedicatedServersUpselURL, client.DedicatedServersUpselURLLogin, cli.DedicatedServersNoServiceMssage)
+			ti.notifyServiceExpired(client.DedicatedServersUpselURL, client.DedicatedServersUpselURLLogin, cli.DedicatedServersNoServiceMessage)
 		case internal.CodeDedicatedServersServiceButNoServers:
 			ti.notifyServiceExpired(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin, cli.DedicatedServersNoServersAvailable)
 		case internal.CodeDedicatedServerNotReady:
