@@ -126,9 +126,9 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		case internal.CodeRevokedAccessToken:
 			return formatError(errors.New(client.AccessTokenExpired))
 		case internal.CodeAccountExpired:
-			rpcErr = fmt.Errorf(c.injectLinkIntoMessage(client.SubscriptionURL, client.SubscriptionURLLogin, ExpiredAccountMessage))
+			rpcErr = errors.New(c.injectLinkIntoMessage(client.SubscriptionURL, client.SubscriptionURLLogin, ExpiredAccountMessage))
 		case internal.CodeDedicatedIPRenewError:
-			rpcErr = fmt.Errorf(c.injectLinkIntoMessage(client.SubscriptionDedicatedIPURL, client.SubscriptionDedicatedIPURLLogin, NoDedicatedIPMessage))
+			rpcErr = errors.New(c.injectLinkIntoMessage(client.SubscriptionDedicatedIPURL, client.SubscriptionDedicatedIPURLLogin, NoDedicatedIPMessage))
 		case internal.CodeDedicatedIPNoServer:
 			rpcErr = errors.New(NoDedidcatedIPServerMessage)
 		case internal.CodeDedicatedIPServiceButNoServers:
@@ -152,9 +152,9 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		case internal.CodeTechnologyDisabled:
 			rpcErr = errors.New(TechnologyDisabledMessage)
 		case internal.CodeDedicatedServerRenewError:
-			rpcErr = fmt.Errorf(c.injectLinkIntoMessage(client.DedicatedServersUpselURL, client.DedicatedServersUpselURLLogin, DedicatedServersNoServiceMssage))
+			rpcErr = errors.New(c.injectLinkIntoMessage(client.DedicatedServersUpselURL, client.DedicatedServersUpselURLLogin, DedicatedServersNoServiceMssage))
 		case internal.CodeDedicatedServersServiceButNoServers:
-			rpcErr = fmt.Errorf(c.injectLinkIntoMessage(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin, DedicatedServersNoServersAvailable))
+			rpcErr = errors.New(c.injectLinkIntoMessage(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin, DedicatedServersNoServersAvailable))
 		case internal.CodeDedicatedServerNotReady:
 			rpcErr = errors.New(DedicatedServersServerNotReadyMessage)
 		case internal.CodeDedicatedServerNoNordlynx:

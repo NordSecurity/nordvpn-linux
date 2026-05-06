@@ -360,7 +360,6 @@ func (dm *DataManager) Groups(
 	groupsSet := mapset.NewSet[string]()
 	result := []*pb.ServerGroup{}
 	for _, server := range dm.serversData.Servers {
-
 		if !core.IsConnectableVia(serverTechnology)(server) {
 			continue
 		}
