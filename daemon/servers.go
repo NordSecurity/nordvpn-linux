@@ -638,7 +638,7 @@ func selectDedicatedServer(authChecker auth.Checker,
 	}
 
 	if len(dedicatedServers) == 0 {
-		return nil, internal.NewErrorWithCode(internal.CodeDedicatedServeversServiceButNoServers)
+		return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersServiceButNoServers)
 	}
 
 	// Currently there can be only one dedicated server per user.

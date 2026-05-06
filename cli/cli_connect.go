@@ -154,7 +154,7 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 			rpcErr = errors.New(TechnologyDisabledMessage)
 		case internal.CodeDedicatedServerRenewError:
 			rpcErr = errors.New(DedicatedServersNoServiceMssage)
-		case internal.CodeDedicatedServeversServiceButNoServers:
+		case internal.CodeDedicatedServersServiceButNoServers:
 			rpcErr = errors.New(DedicatedServersNoServersAvailable)
 		case internal.CodeDedicatedServerNotReady:
 			rpcErr = errors.New(DedicatedServersServerNotReadyMessage)

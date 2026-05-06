@@ -1135,7 +1135,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			isDedicatedServersExpired: false,
 			dedicatedServersResponse:  core.DedicatedServers{},
 			technology:                config.Technology_NORDLYNX,
-			expectedStatus:            internal.CodeDedicatedServeversServiceButNoServers,
+			expectedStatus:            internal.CodeDedicatedServersServiceButNoServers,
 		},
 		{
 			name:                      "dedicated server not ready",
