@@ -11,7 +11,7 @@ const (
 	// with slash instead. e.g. /v1/example
 
 	// BaseURL defines the base uri for the api
-	BaseURL = "https://api.nonmountain.net"
+	BaseURL = "https://api.nordvpn.com"
 
 	// RepoURL is the url for NordVPN repository
 	RepoURL = "https://repo.nordvpn.com"

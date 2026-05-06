@@ -1275,7 +1275,8 @@ func TestDedicatedServers_Internals(t *testing.T) {
 	networkerMock := rpc.netw.(*testnetworker.Mock)
 
 	mockRPCServer := &mockRPCServer{}
-	rpc.Connect(&pb.ConnectRequest{ServerTag: "dedicated_servers"}, mockRPCServer)
+	err := rpc.Connect(&pb.ConnectRequest{ServerTag: "dedicated_servers"}, mockRPCServer)
+	assert.Nil(t, err, "Unexpected error returned by Connect.")
 
 	assert.Equal(t, deviceKey, networkerMock.ProvidedCredentials.NordLynxPrivateKey,
 		"DeviceKey should be used in place of NordlynxPrivateKey in case of dedicated server connections.")
