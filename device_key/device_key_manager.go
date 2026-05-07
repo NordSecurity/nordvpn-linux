@@ -40,8 +40,9 @@ type MeshnetDeviceKeyManager interface {
 }
 
 type DedicatedServersRegistrationData struct {
-	DevicePublicKey string
-	DeviceUUID      uuid.UUID
+	DevicePublicKey  string
+	DevicePrivateKey string
+	DeviceUUID       uuid.UUID
 }
 
 type DedicatedServersKeyManager interface {
@@ -199,8 +200,9 @@ func (d *DeviceKeyManagerImpl) CheckAndRegisterDedicatedServers() *DedicatedServ
 
 	if isDedicatedServersRegistrationInfoCorrect(cfg) {
 		return &DedicatedServersRegistrationData{
-			DeviceUUID:      cfg.DeviceUUID,
-			DevicePublicKey: d.keyGenerator.Public(cfg.DeviceKey),
+			DeviceUUID:       cfg.DeviceUUID,
+			DevicePublicKey:  d.keyGenerator.Public(cfg.DeviceKey),
+			DevicePrivateKey: cfg.DeviceKey,
 		}
 	}
 
@@ -220,8 +222,9 @@ func (d *DeviceKeyManagerImpl) CheckAndRegisterDedicatedServers() *DedicatedServ
 	}
 
 	return &DedicatedServersRegistrationData{
-		DeviceUUID:      newConfig.DeviceUUID,
-		DevicePublicKey: d.keyGenerator.Public(newConfig.DeviceKey),
+		DeviceUUID:       newConfig.DeviceUUID,
+		DevicePublicKey:  d.keyGenerator.Public(newConfig.DeviceKey),
+		DevicePrivateKey: cfg.DeviceKey,
 	}
 }
 

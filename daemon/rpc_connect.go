@@ -280,7 +280,12 @@ func (r *RPC) connect(
 	if slices.ContainsFunc(serverSelection.server.Groups, func(group core.Group) bool {
 		return group.ID == config.ServerGroup_DEDICATED_SERVERS
 	}) {
-		creds.NordLynxPrivateKey = cfg.DeviceKey
+		dedicatedServersDeviceData := r.dedicatedServersKeyManager.CheckAndRegisterDedicatedServers()
+		if dedicatedServersDeviceData == nil {
+			log.Println(internal.ErrorPrefix, "failed to fetch the device key for dedicated server connection")
+			return false, internal.ErrUnhandled
+		}
+		creds.NordLynxPrivateKey = dedicatedServersDeviceData.DevicePrivateKey
 	}
 
 	serverData := vpn.ServerData{
