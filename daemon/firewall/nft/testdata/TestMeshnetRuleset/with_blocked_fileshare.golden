@@ -1,0 +1,70 @@
+table inet nordvpn {
+	set lan_ranges {
+		type ipv4_addr
+		flags constant,interval
+		elements = { 10.0.0.0/8, 169.254.0.0/16,
+			     172.16.0.0/12, 192.168.0.0/16 }
+	}
+
+	set peer_local_network_access {
+		type ipv4_addr
+		flags constant
+	}
+
+	set allow_peer_traffic_routing {
+		type ipv4_addr
+		flags constant
+	}
+
+	set allow_incoming_connections {
+		type ipv4_addr
+		flags constant
+	}
+
+	chain input {
+		type filter hook input priority filter; policy accept;
+		iifname "lo" accept comment "local to local"
+		ct mark 0x0000e1f1 accept comment "response for sockets with SO_MARK"
+		iifname "nordlynx" ip saddr 100.64.0.0/10 jump mesh_input comment "meshnet to local"
+	}
+
+	chain mesh_input {
+		ip saddr 100.64.0.0/29 accept comment "meshnet private IP"
+		tcp dport 49111 drop comment "meshnet to fileshare"
+		ip saddr @allow_incoming_connections accept comment "meshnet to local"
+		drop
+	}
+
+	chain output {
+		type route hook output priority mangle; policy accept;
+		oifname "lo" accept comment "local to loopback"
+		ct mark 0x0000e1f1 accept comment "VPN transport continuation"
+		meta mark 0x0000e1f1 ct mark set meta mark accept comment "mark connection for socket with SO_MARK"
+		oifname "nordlynx" ip daddr 100.64.0.0/10 accept comment "local to meshnet"
+	}
+
+	chain forward {
+		type filter hook forward priority filter; policy accept;
+		ip saddr 100.64.0.0/10 jump mesh_peer_to_internet comment "traffic from mesh peer"
+		ip daddr 100.64.0.0/10 jump internet_to_mesh_peer comment "traffic to mesh peer"
+	}
+
+	chain mesh_peer_to_internet {
+		ip saddr != @allow_peer_traffic_routing drop comment "traffic from not allowed peers"
+		ip daddr @lan_ranges ip saddr != @peer_local_network_access drop comment "mesh peer to LAN"
+		ip daddr != 100.64.0.0/10 accept comment "mesh peer to VPN"
+		drop
+	}
+
+	chain internet_to_mesh_peer {
+		ip daddr != @allow_peer_traffic_routing drop comment "traffic to allowed peers"
+		ip saddr @lan_ranges ip daddr != @peer_local_network_access drop comment "LAN to mesh peer"
+		oifname "nordlynx" ct state established,related accept comment "response to mesh peer"
+		drop
+	}
+
+	chain mesh_nat {
+		type nat hook postrouting priority srcnat; policy accept;
+		ip saddr @allow_peer_traffic_routing ip daddr != 100.64.0.0/10 masquerade
+	}
+}
