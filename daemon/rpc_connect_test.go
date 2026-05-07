@@ -1164,7 +1164,6 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			name:            "dedicated server service check fails",
 			technology:      config.Technology_NORDLYNX,
 			serviceCheckErr: errors.New("error"),
-			expectedStatus:  internal.CodeSuccess,
 			expectedErr:     internal.ErrUnhandled,
 		},
 		{
