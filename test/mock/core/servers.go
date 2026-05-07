@@ -8,6 +8,7 @@ import (
 
 type ServersAPIMock struct {
 	ServerEndpointCalled bool
+	ServerResponse       core.Server
 }
 
 func (*ServersAPIMock) Servers() (core.Servers, http.Header, error) {
@@ -20,7 +21,7 @@ func (*ServersAPIMock) RecommendedServers(filter core.ServersFilter, longitude, 
 
 func (s *ServersAPIMock) Server(id int64) (*core.Server, error) {
 	s.ServerEndpointCalled = true
-	return nil, nil
+	return &s.ServerResponse, nil
 }
 
 func (*ServersAPIMock) ServersCountries() (core.Countries, http.Header, error) {

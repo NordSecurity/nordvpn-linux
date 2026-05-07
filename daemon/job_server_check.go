@@ -14,21 +14,23 @@ func JobServerCheck(
 ) func() {
 	return func() {
 		// dedicated servers are not kept on the server list, so we have to skip them
-		if netw.IsVPNActive() && IsServerDedicatedServer(server) {
-			srv, err := api.Server(server.ID)
-			if err != nil || srv == nil {
-				return
-			}
+		if !netw.IsVPNActive() || IsServerDedicatedServer(server) {
+			return
+		}
 
-			err = dm.UpdateServerPenalty(*srv)
-			if err != nil {
-				return
-			}
+		srv, err := api.Server(server.ID)
+		if err != nil || srv == nil {
+			return
+		}
 
-			err = dm.SetServerStatus(server, server.Status)
-			if err != nil {
-				return
-			}
+		err = dm.UpdateServerPenalty(*srv)
+		if err != nil {
+			return
+		}
+
+		err = dm.SetServerStatus(server, server.Status)
+		if err != nil {
+			return
 		}
 	}
 }

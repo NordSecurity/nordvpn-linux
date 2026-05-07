@@ -14,20 +14,79 @@ import (
 func TestServerCheck_DedicatedServersAreNotChecked(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	dataManager := DataManager{}
-	serversDataBeforeUpdate := dataManager.serversData
-	serversAPIMock := testcore.ServersAPIMock{}
-	jobFunc := JobServerCheck(&dataManager,
-		&serversAPIMock,
-		&testnetworker.Mock{VpnActive: true},
-		core.Server{Groups: core.Groups{core.Group{ID: config.ServerGroup_DEDICATED_SERVERS}}})
-	jobFunc()
+	serverBeforeUpdate := core.Server{ID: 1122, Status: core.Online, Penalty: 1.0}
 
-	assert.Equal(t, serversDataBeforeUpdate,
-		dataManager.serversData,
-		"Servers data should not be updated if the current server is a dedicated server.")
-	assert.Equal(t,
-		serversAPIMock.ServerEndpointCalled,
-		false,
-		"Servers endpoint should not be called if current server is a dedicated server.")
+	serverAfterUpdate := core.Server{ID: 1122,
+		Status: core.Online,
+		// Penalty is expected to be 4.0 because it's calculated by dividing Load by 10 and exponentiating it by itself.
+		Penalty: 4.0,
+		Load:    20}
+
+	tests := []struct {
+		name                 string
+		serverGroup          config.ServerGroup
+		isVPNActive          bool
+		severResponse        core.Server
+		expectedServerStatus core.Status
+		expectedPenalty      float64
+		shouldCallServersAPI bool
+	}{
+		{
+			name:                 "VPN is active and server is not a dedicated server, server data is updated",
+			serverGroup:          config.ServerGroup_STANDARD_VPN_SERVERS,
+			isVPNActive:          true,
+			severResponse:        serverAfterUpdate,
+			expectedPenalty:      serverAfterUpdate.Penalty,
+			expectedServerStatus: serverAfterUpdate.Status,
+			shouldCallServersAPI: true,
+		},
+		{
+			name:                 "VPN is active, server is a dedicated server, server data is not updated",
+			serverGroup:          config.ServerGroup_DEDICATED_SERVERS,
+			isVPNActive:          true,
+			expectedServerStatus: serverBeforeUpdate.Status,
+			expectedPenalty:      serverBeforeUpdate.Penalty,
+			shouldCallServersAPI: false,
+		},
+		{
+			name:                 "VPN is not active, server is not a dedicated server, server data is not updated",
+			serverGroup:          config.ServerGroup_STANDARD_VPN_SERVERS,
+			isVPNActive:          false,
+			expectedServerStatus: serverBeforeUpdate.Status,
+			expectedPenalty:      serverBeforeUpdate.Penalty,
+			shouldCallServersAPI: false,
+		},
+		{
+			name:                 "VPN is not active, server is a dedicated server, server data is not updated",
+			serverGroup:          config.ServerGroup_DEDICATED_SERVERS,
+			isVPNActive:          false,
+			expectedServerStatus: serverBeforeUpdate.Status,
+			expectedPenalty:      serverBeforeUpdate.Penalty,
+			shouldCallServersAPI: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dataManager := DataManager{serversData: ServersData{
+				Servers: core.Servers{
+					serverBeforeUpdate,
+				},
+			}}
+
+			serversAPIMock := testcore.ServersAPIMock{ServerResponse: test.severResponse}
+			jobFunc := JobServerCheck(&dataManager,
+				&serversAPIMock,
+				&testnetworker.Mock{VpnActive: test.isVPNActive},
+				core.Server{Groups: core.Groups{core.Group{ID: test.serverGroup}}})
+			jobFunc()
+
+			assert.Equal(t, test.expectedServerStatus, dataManager.serversData.Servers[0].Status)
+			assert.Equal(t, test.expectedPenalty, dataManager.serversData.Servers[0].Penalty)
+			assert.Equal(t,
+				test.shouldCallServersAPI,
+				serversAPIMock.ServerEndpointCalled,
+				"Servers endpoint should not be called if current server is a dedicated server.")
+		})
+	}
 }
