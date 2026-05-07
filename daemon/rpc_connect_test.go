@@ -1252,6 +1252,7 @@ func TestDedicatedServers_Internals(t *testing.T) {
 	}
 
 	deviceKey := "device key"
+	devicePrivateKey := "device private key"
 
 	rpc := testRPCLocal(t)
 	rpc.dedicatedServersAPI = &testcore.DedicatedServersAPIMock{
@@ -1263,13 +1264,13 @@ func TestDedicatedServers_Internals(t *testing.T) {
 	}
 	rpc.dedicatedServersKeyManager = &testdevicekey.MockDeviceKeyManager{
 		DedicatedServerRegistrationData: &devicekey.DedicatedServersRegistrationData{
-			DevicePublicKey: deviceKey,
+			DevicePublicKey:  deviceKey,
+			DevicePrivateKey: devicePrivateKey,
 		},
 	}
 
 	configManagerMock := rpc.cm.(*mockConfigManager)
 	configManagerMock.c.Technology = config.Technology_NORDLYNX
-	configManagerMock.c.DeviceKey = deviceKey
 
 	networkerMock := rpc.netw.(*testnetworker.Mock)
 
@@ -1277,7 +1278,7 @@ func TestDedicatedServers_Internals(t *testing.T) {
 	err := rpc.Connect(&pb.ConnectRequest{ServerTag: "dedicated_servers"}, mockRPCServer)
 	assert.Nil(t, err, "Unexpected error returned by Connect.")
 
-	assert.Equal(t, deviceKey, networkerMock.ProvidedCredentials.NordLynxPrivateKey,
+	assert.Equal(t, devicePrivateKey, networkerMock.ProvidedCredentials.NordLynxPrivateKey,
 		"DeviceKey should be used in place of NordlynxPrivateKey in case of dedicated server connections.")
 	assert.Equal(t, serverPort, networkerMock.ProvidedServerData.DedicatedServerPort)
 }
