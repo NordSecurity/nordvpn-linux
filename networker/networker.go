@@ -333,7 +333,7 @@ func (netw *Combined) start(
 	netw.lastCreds = creds
 	netw.lastNameservers = nameservers
 
-	netw.interfaces = device.OutsideCapableTrafficIfNames(mapset.NewSet(tunnelInterface))
+	netw.interfaces = device.DefaultRouteIfNames(mapset.NewSet(tunnelInterface))
 	return nil
 }
 
