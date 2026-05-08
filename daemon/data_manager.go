@@ -21,7 +21,7 @@ import (
 
 // dedicatedServersGroupTitle is the group title used for the "Dedicated Server" specialty group.
 // It is assumed to be always present.
-const dedicatedServersGroupTitle = "Dedicated Servers"
+const dedicatedServersGroupTitle = "Dedicated server"
 
 type InsightsDataManager interface {
 	GetInsightsData() InsightsData
@@ -382,9 +382,7 @@ func (dm *DataManager) Groups(
 	}
 
 	// Dedicated Server is to be always present in Tray
-	if !groupsSet.Contains(dedicatedServersGroupTitle) {
-		result = append(result, &pb.ServerGroup{Name: internal.Title(dedicatedServersGroupTitle), VirtualLocation: false})
-	}
+	result = append(result, &pb.ServerGroup{Name: internal.Title(dedicatedServersGroupTitle), VirtualLocation: false})
 
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].Name < result[j].Name
