@@ -39,17 +39,21 @@ type MeshnetDeviceKeyManager interface {
 	ForceRegisterMeshnet() error
 }
 
-type DedicatedServersRegistrationData struct {
-	DevicePublicKey  string
+// DedicatedServersConnectionData contains device side data necessary to connect to a dedicated server
+type DedicatedServersConnectionData struct {
+	// DevicePublicKey is used when making dedicated server connect checks
+	DevicePublicKey string
+	// DevicePrivateKey is used when connecting to a dedicated server
 	DevicePrivateKey string
-	DeviceUUID       uuid.UUID
+	// DeviceUUID is used when making dedicated server connect checks
+	DeviceUUID uuid.UUID
 }
 
 type DedicatedServersKeyManager interface {
 	// CheckAndRegisterDedicatedServers checks if device has been registered for private servers and registers it if it
 	// isn't.
-	// Returns the registration data if it is available. Returns nil if data is not available.
-	CheckAndRegisterDedicatedServers() *DedicatedServersRegistrationData
+	// Returns the connection data if it is available. Returns nil if data is not available.
+	CheckAndRegisterDedicatedServers() *DedicatedServersConnectionData
 	DeviceKeyInvalidator
 }
 
@@ -188,7 +192,7 @@ type registerFunc func(deviceKey string,
 // Returns true if the key was successfully registered.
 //
 // Thread-safe.
-func (d *DeviceKeyManagerImpl) CheckAndRegisterDedicatedServers() *DedicatedServersRegistrationData {
+func (d *DeviceKeyManagerImpl) CheckAndRegisterDedicatedServers() *DedicatedServersConnectionData {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -199,7 +203,7 @@ func (d *DeviceKeyManagerImpl) CheckAndRegisterDedicatedServers() *DedicatedServ
 	}
 
 	if isDedicatedServersRegistrationInfoCorrect(cfg) {
-		return &DedicatedServersRegistrationData{
+		return &DedicatedServersConnectionData{
 			DeviceUUID:       cfg.DeviceUUID,
 			DevicePublicKey:  d.keyGenerator.Public(cfg.DeviceKey),
 			DevicePrivateKey: cfg.DeviceKey,
@@ -221,7 +225,7 @@ func (d *DeviceKeyManagerImpl) CheckAndRegisterDedicatedServers() *DedicatedServ
 		return nil
 	}
 
-	return &DedicatedServersRegistrationData{
+	return &DedicatedServersConnectionData{
 		DeviceUUID:       newConfig.DeviceUUID,
 		DevicePublicKey:  d.keyGenerator.Public(newConfig.DeviceKey),
 		DevicePrivateKey: cfg.DeviceKey,

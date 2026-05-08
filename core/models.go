@@ -276,6 +276,7 @@ type Server struct {
 	NordLynxPublicKey    string           `json:"-"`
 	NordWhisperPort      int64            `json:"-"`
 	DedicatedServersPort int64            `json:"-"`
+	DedicatedServerUUID  string           `json:"-"`
 	Keys                 []string         `json:"-"`
 	IPRecords            []ServerIPRecord `json:"ips"`
 }

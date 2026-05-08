@@ -1430,7 +1430,7 @@ func TestLoginWithToken_RegisterForDedicatedServers(t *testing.T) {
 	}
 
 	mockKeyManager := testdevicekey.MockDeviceKeyManager{
-		DedicatedServerRegistrationData: &devicekey.DedicatedServersRegistrationData{}}
+		DedicatedServerRegistrationData: &devicekey.DedicatedServersConnectionData{}}
 
 	r := &RPC{
 		consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
@@ -1460,7 +1460,7 @@ func TestLoginOAuth2Callback_RegisterForDedicatedServers(t *testing.T) {
 	}
 
 	mockKeyManager := testdevicekey.MockDeviceKeyManager{
-		DedicatedServerRegistrationData: &devicekey.DedicatedServersRegistrationData{}}
+		DedicatedServerRegistrationData: &devicekey.DedicatedServersConnectionData{}}
 
 	r := &RPC{
 		consentChecker:             &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},

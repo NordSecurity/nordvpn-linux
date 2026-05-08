@@ -18,21 +18,21 @@ func TestSyncDevice(t *testing.T) {
 		name                             string
 		hasDedicatedServersService       bool
 		hasDedicatedServerServiceErr     error
-		dedicatedServersRegistrationData *devicekey.DedicatedServersRegistrationData
+		dedicatedServersRegistrationData *devicekey.DedicatedServersConnectionData
 		shouldReturnError                bool
 		expectedKeyRegistered            bool
 	}{
 		{
 			name:                             "user has dedicated servers service, key is registered",
 			hasDedicatedServersService:       true,
-			dedicatedServersRegistrationData: &devicekey.DedicatedServersRegistrationData{},
+			dedicatedServersRegistrationData: &devicekey.DedicatedServersConnectionData{},
 			expectedKeyRegistered:            true,
 			shouldReturnError:                false,
 		},
 		{
 			name:                             "user doesn't have dedicated servers service, key is not registered",
 			hasDedicatedServersService:       false,
-			dedicatedServersRegistrationData: &devicekey.DedicatedServersRegistrationData{},
+			dedicatedServersRegistrationData: &devicekey.DedicatedServersConnectionData{},
 			expectedKeyRegistered:            false,
 			shouldReturnError:                false,
 		},

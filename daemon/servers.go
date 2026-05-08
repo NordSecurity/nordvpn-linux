@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"net/http"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -652,39 +651,16 @@ func selectDedicatedServer(authChecker auth.Checker,
 		return nil, fmt.Errorf("failed to register the dedicated server")
 	}
 
-	connectResponse, err := api.DedicatedServerConnectCheck(dedicatedServer.UUID, core.DedicatedServerConnectRequest{
-		DeviceUUID:      dedicatedServerRegistrationData.DeviceUUID.String(),
-		DevicePublicKey: dedicatedServerRegistrationData.DevicePublicKey,
-	})
-	if err != nil {
-		log.Println(internal.ErrorPrefix, "getting dedicated server connection data:", err)
-		return nil, internal.ErrUnhandled
-	}
-
-	stationPort := strings.Split(connectResponse.ServerEndpoint, ":")
-	station := stationPort[0]
-	var dedicatedServerPort int64
-	if len(stationPort) > 1 {
-		port, err := strconv.Atoi(stationPort[1])
-		if err != nil {
-			log.Println(internal.ErrorPrefix, "parsing dedicated server port:", err)
-			return nil, internal.ErrUnhandled
-		}
-		dedicatedServerPort = int64(port)
-	}
-
 	return &core.Server{
-		ID:      dedicatedServer.ID,
-		Name:    dedicatedServer.Name,
-		Station: station,
-		Status:  core.Online,
+		ID:     dedicatedServer.ID,
+		Name:   dedicatedServer.Name,
+		Status: core.Online,
 		Groups: core.Groups{core.Group{
 			ID:    config.ServerGroup_DEDICATED_SERVERS,
 			Title: config.ServerGroup_DEDICATED_SERVERS.String(),
 		}},
-		Locations:            core.Locations{dedicatedServer.Location},
-		NordLynxPublicKey:    connectResponse.ServerPublicKey,
-		DedicatedServersPort: dedicatedServerPort,
+		Locations:           core.Locations{dedicatedServer.Location},
+		DedicatedServerUUID: dedicatedServer.UUID,
 	}, nil
 }
 
@@ -735,7 +711,7 @@ func GetServerParameters(serverTag string, groupTag string, countries core.Count
 	return parameters
 }
 
-func IsServerDedicatedServer(server core.Server) bool {
+func IsServerDedicated(server core.Server) bool {
 	return slices.ContainsFunc(server.Groups, func(group core.Group) bool {
 		return group.ID == config.ServerGroup_DEDICATED_SERVERS
 	})
