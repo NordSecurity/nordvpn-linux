@@ -82,7 +82,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 			cm:         newMockConfigManager(),
 			statusCode: internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
-				{Name: "Dedicated_Servers", VirtualLocation: false},
+				{Name: "Dedicated_Server", VirtualLocation: false},
 			},
 		},
 		{
@@ -95,7 +95,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 				{Name: "Double_VPN", VirtualLocation: false},
 				{Name: "P2P", VirtualLocation: false},
 				{Name: "Standard_VPN_Servers", VirtualLocation: false},
-				{Name: "Dedicated_Servers", VirtualLocation: false},
+				{Name: "Dedicated_Server", VirtualLocation: false},
 			},
 		},
 		{
@@ -109,7 +109,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 				{Name: "Double_VPN", VirtualLocation: false},
 				{Name: "P2P", VirtualLocation: false},
 				{Name: "Standard_VPN_Servers", VirtualLocation: false},
-				{Name: "Dedicated_Servers", VirtualLocation: false},
+				{Name: "Dedicated_Server", VirtualLocation: false},
 			},
 		},
 	}
