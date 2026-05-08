@@ -282,6 +282,7 @@ func (r *RPC) connect(
 			*dedicatedServersDeviceData)
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "fetching dedicated server connection data:", err)
+			return false, internal.ErrUnhandled
 		}
 		serverSelection.server.Station = dedicatedServerConnectionData.ip
 		serverSelection.server.DedicatedServersPort = dedicatedServerConnectionData.port

@@ -228,7 +228,7 @@ func (d *DeviceKeyManagerImpl) CheckAndRegisterDedicatedServers() *DedicatedServ
 	return &DedicatedServersConnectionData{
 		DeviceUUID:       newConfig.DeviceUUID,
 		DevicePublicKey:  d.keyGenerator.Public(newConfig.DeviceKey),
-		DevicePrivateKey: cfg.DeviceKey,
+		DevicePrivateKey: newConfig.DeviceKey,
 	}
 }
 

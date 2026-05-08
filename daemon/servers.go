@@ -652,7 +652,6 @@ func selectDedicatedServer(authChecker auth.Checker,
 	}
 
 	return &core.Server{
-		ID:     dedicatedServer.ID,
 		Name:   dedicatedServer.Name,
 		Status: core.Online,
 		Groups: core.Groups{core.Group{
