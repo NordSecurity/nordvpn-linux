@@ -257,6 +257,21 @@ func TestAnalyticsConsentLevel(t *testing.T) {
 	}
 }
 
+func TestAnalyticsConsentLevel_Granted(t *testing.T) {
+	category.Set(t, category.Unit)
+	assert.Equal(t, moose.UserConsentNonEssential, toAnalyticsConsentLevel(config.ConsentGranted))
+}
+
+func TestAnalyticsConsentLevel_Denied(t *testing.T) {
+	category.Set(t, category.Unit)
+	assert.Equal(t, moose.UserConsentEssential, toAnalyticsConsentLevel(config.ConsentDenied))
+}
+
+func TestAnalyticsConsentLevel_Undefined(t *testing.T) {
+	category.Set(t, category.Unit)
+	assert.Equal(t, moose.UserConsentRejectAll, toAnalyticsConsentLevel(config.ConsentUndefined))
+}
+
 func TestGetTokenRenewDate(t *testing.T) {
 	category.Set(t, category.Unit)
 
