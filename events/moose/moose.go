@@ -298,6 +298,10 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		}
 	}
 
+	if err := s.response(s.mooseFuncs.setAppConsentLevel(toAnalyticsConsentLevel(consent))); err != nil {
+		return fmt.Errorf("setting initial consent level: %w", err)
+	}
+
 	// TODO (LVPN-9654): currently, it should be safe to assume moose got correctly initialized when both worker and the app got started properly
 	// however this mechanism of initialization might need to be revisited in the future
 	s.isInitialized.Store(true)

@@ -776,7 +776,34 @@ func qaSnap(_ context.Context, testGroup, testPattern string) error {
 
 // Performs linter check against Go codebase
 func (Test) Lint() error {
-	return sh.RunV("golangci-lint", "run", "-v", "--config=.golangci-lint.yml")
+	mod, err := sh.Output("go", "list", "-m")
+	if err != nil {
+		return fmt.Errorf("getting module path: %w", err)
+	}
+
+	out, err := sh.Output("go", "list", "-e", "./...")
+	if err != nil {
+		return fmt.Errorf("listing packages for lint: %w", err)
+	}
+
+	// filter "third-party" packages here rather than via golangci-lint's "exclusion_paths"
+	// because those only run after loading packages and can't suppress errors.
+	mod = strings.TrimSpace(mod) + "/"
+	var pkgs []string
+	for _, pkg := range strings.Fields(out) {
+		if strings.Contains(pkg, "/third-party/") {
+			continue
+		}
+		// add as a relative path
+		pkgs = append(pkgs, "./"+strings.TrimPrefix(pkg, mod))
+	}
+
+	if len(pkgs) == 0 {
+		return fmt.Errorf("go list returned no packages to lint")
+	}
+
+	args := append([]string{"run", "-v", "--config=.golangci-lint.yml"}, pkgs...)
+	return sh.RunV("golangci-lint", args...)
 }
 
 // Binaries to their respective locations and restart
