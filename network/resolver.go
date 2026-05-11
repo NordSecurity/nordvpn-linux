@@ -13,8 +13,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
-// Resolver is a DNSResolver implementation wrapping each DHCP request with
-// allowing and blocking firewall rules
+// Resolver is a DNSResolver implementation marking with FWMARK the socket for each DHCP
 type Resolver struct {
 	servers dns.Getter
 	fwmark  uint32

@@ -844,7 +844,6 @@ func TestCombined_UnSetMesh(t *testing.T) {
 		rt        routes.Service
 		publicKey string
 		address   string
-		ruleName  string
 		err       error
 	}{
 		{
@@ -853,7 +852,6 @@ func TestCombined_UnSetMesh(t *testing.T) {
 			rt:        workingRouter{},
 			publicKey: "d2513324-7bac-4dcc-b059-e12df48d7418",
 			address:   "100.100.10.1",
-			ruleName:  "d2513324-7bac-4dcc-b059-e12df48d7418-allow-rule-100.100.10.1",
 		},
 		{
 			name:      "fails when firewall returns error",
@@ -909,7 +907,6 @@ func TestCombined_Reconnect(t *testing.T) {
 		router    routes.PolicyService
 		publicKey string
 		address   string
-		ruleName  string
 		err       error
 	}{
 		{

@@ -42,16 +42,6 @@ var (
 	ErrNothingToCancel = errors.New("nothing to cancel")
 )
 
-// ErrNoSuchRule is returned when networker tried to remove
-// a rule, but such rule does not exist
-type ErrNoSuchRule struct {
-	ruleName string
-}
-
-func (e ErrNoSuchRule) Error() string {
-	return fmt.Sprintf("allow rule does not exist for %s", e.ruleName)
-}
-
 const (
 	ArpIgnoreParamName = "net.ipv4.conf.all.arp_ignore"
 	IpForwardParamName = "net.ipv4.ip_forward" // used for meshnet to have routing thru current machine
