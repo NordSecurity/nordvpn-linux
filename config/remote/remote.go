@@ -148,6 +148,7 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 	rc.features.add(FeatureLibtelio)
 	rc.features.add(FeatureMeshnet)
 	rc.features.add(FeatureNordWhisper)
+	rc.features.add(FeatureDedicatedServers)
 	return rc
 }
 
