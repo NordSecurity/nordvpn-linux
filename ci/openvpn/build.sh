@@ -18,11 +18,11 @@ patch_sources() {
   tar -xzf "${tarballs}/openvpn-${OPENVPN_VERSION}.tar.gz" -C "${sources}"
 
   pushd "${sources}/openvpn-${OPENVPN_VERSION}"
-    git apply ../../patches/02-tunnelblick-openvpn_xorpatch-a.diff
-    git apply ../../patches/03-tunnelblick-openvpn_xorpatch-b.diff
-    git apply ../../patches/04-tunnelblick-openvpn_xorpatch-c.diff
-    git apply ../../patches/05-tunnelblick-openvpn_xorpatch-d.diff
-    git apply ../../patches/06-tunnelblick-openvpn_xorpatch-e.diff
+    patch -p1 < ../../patches/02-tunnelblick-openvpn_xorpatch-a.diff
+    patch -p1 < ../../patches/03-tunnelblick-openvpn_xorpatch-b.diff
+    patch -p1 < ../../patches/04-tunnelblick-openvpn_xorpatch-c.diff
+    patch -p1 < ../../patches/05-tunnelblick-openvpn_xorpatch-d.diff
+    patch -p1 < ../../patches/06-tunnelblick-openvpn_xorpatch-e.diff
   popd
 }
 patch_sources
