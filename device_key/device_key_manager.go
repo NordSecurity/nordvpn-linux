@@ -316,12 +316,8 @@ func (d *DeviceKeyManagerImpl) registerMeshnet(deviceKey string,
 
 func (d *DeviceKeyManagerImpl) registerDedicatedServer(deviceKey string,
 	distroName string,
-	isKeyNew bool,
+	_ bool,
 	cfg *config.Config) (*config.Config, error) {
-	if isKeyNew {
-		cfg = invalidateKeyData(cfg)
-	}
-
 	resp, err := d.dedicatedServersAPI.RegisterDevice(core.DevicesRequest{
 		HardwareIdentifier: cfg.MachineID.String(),
 		PublicKey:          d.keyGenerator.Public(deviceKey),
@@ -333,8 +329,11 @@ func (d *DeviceKeyManagerImpl) registerDedicatedServer(deviceKey string,
 		// We try to keep the same keys as long as possible, but if relogin with different account happens
 		// then they have to be regenerated. There's no way to check if the current mesh device data
 		// belongs to this account or not, so handling this on registering error is the best approach.
-		deviceKey = d.keyGenerator.Private()
-		cfg = invalidateKeyData(cfg)
+		// If meshnet is on we can reuse it's key. If it's off we invalidate all of the key data.
+		if !cfg.Mesh {
+			deviceKey = d.keyGenerator.Private()
+			cfg = invalidateKeyData(cfg)
+		}
 
 		uuid, uuidParseErr := uuid.Parse(resp.UUID)
 		if uuidParseErr != nil {
