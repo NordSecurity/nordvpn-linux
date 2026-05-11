@@ -387,7 +387,7 @@ final class NordVpnTheme {
       ),
       buttonTheme: ConnectionCardButtonTheme(
         maxConnectButtonWidth: 330,
-        secureMyConnectionButtonStyle: ElevatedButton.styleFrom(
+        secureMyConnectionButtonStyle: OutlinedButton.styleFrom(
           shape: RoundedRectangleBorder(
             side: BorderSide(
               color: design.semanticColors.borderAccent,
@@ -405,8 +405,9 @@ final class NordVpnTheme {
           backgroundColor: design.semanticColors.bgAccent,
           foregroundColor: design.semanticColors.textPrimaryOnColor,
           fixedSize: const Size.fromHeight(48),
+          enabledMouseCursor: SystemMouseCursors.basic,
         ),
-        cancelButtonStyle: ElevatedButton.styleFrom(
+        cancelButtonStyle: OutlinedButton.styleFrom(
           shape: RoundedRectangleBorder(
             side: BorderSide(
               color: design.semanticColors.borderPrimary,
@@ -422,8 +423,9 @@ final class NordVpnTheme {
           backgroundColor: design.semanticColors.bgGlass,
           foregroundColor: design.semanticColors.textPrimary,
           fixedSize: const Size.fromHeight(48),
+          enabledMouseCursor: SystemMouseCursors.basic,
         ),
-        pauseConnectionButtonStyle: ElevatedButton.styleFrom(
+        pauseConnectionButtonStyle: OutlinedButton.styleFrom(
           shape: RoundedRectangleBorder(
             side: BorderSide(
               color: design.semanticColors.borderPrimary,
@@ -441,8 +443,9 @@ final class NordVpnTheme {
           backgroundColor: design.semanticColors.bgGlass,
           foregroundColor: design.semanticColors.textPrimary,
           fixedSize: const Size.fromHeight(48),
+          enabledMouseCursor: SystemMouseCursors.basic,
         ),
-        connectionDetailsButtonStyle: ElevatedButton.styleFrom(
+        connectionDetailsButtonStyle: OutlinedButton.styleFrom(
           shape: const CircleBorder(),
           side: BorderSide(
             color: design.semanticColors.borderPrimary,
@@ -455,6 +458,7 @@ final class NordVpnTheme {
           backgroundColor: design.semanticColors.bgGlass,
           foregroundColor: design.semanticColors.textPrimary,
           fixedSize: const Size(48, 48),
+          enabledMouseCursor: SystemMouseCursors.basic,
         ),
       ),
     );

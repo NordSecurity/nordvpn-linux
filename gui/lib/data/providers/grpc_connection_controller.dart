@@ -28,12 +28,12 @@ class GrpcConnectionController extends _$GrpcConnectionController {
 
   @override
   FutureOr<bool> build() async {
-    _connectionStateSubscription =
-        sl<ClientChannel>().onConnectionStateChanged.listen(
-      (event) => _onConnectionStateChanged(event),
-      onError: (err) => _onConnectionError(err),
-      cancelOnError: false,
-    );
+    _connectionStateSubscription = sl<ClientChannel>().onConnectionStateChanged
+        .listen(
+          (event) => _onConnectionStateChanged(event),
+          onError: (err) => _onConnectionError(err),
+          cancelOnError: false,
+        );
 
     // add listener for all the gRPC errors in the application
     _errorInterceptorSubscription = sl<ErrorHandlingInterceptor>()
