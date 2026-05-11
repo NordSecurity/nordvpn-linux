@@ -1213,7 +1213,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			configManagerMock.c.Technology = test.technology
 
 			mockRPCServer := &mockRPCServer{}
-			err := rpc.Connect(&pb.ConnectRequest{ServerTag: "dedicated_servers"}, mockRPCServer)
+			err := rpc.Connect(&pb.ConnectRequest{ServerTag: "dedicated_server"}, mockRPCServer)
 
 			assert.Equal(t, test.expectedErr, err, "Unexpected error returned by the Connect RPC.")
 			assert.Equal(t, test.expectedConnectRequest, mockDedicatedServersAPI.ConnectRequest,
@@ -1275,7 +1275,7 @@ func TestDedicatedServers_Internals(t *testing.T) {
 	networkerMock := rpc.netw.(*testnetworker.Mock)
 
 	mockRPCServer := &mockRPCServer{}
-	err := rpc.Connect(&pb.ConnectRequest{ServerTag: "dedicated_servers"}, mockRPCServer)
+	err := rpc.Connect(&pb.ConnectRequest{ServerTag: "dedicated_server"}, mockRPCServer)
 	assert.Nil(t, err, "Unexpected error returned by Connect.")
 
 	assert.Equal(t, devicePrivateKey, networkerMock.ProvidedCredentials.NordLynxPrivateKey,
