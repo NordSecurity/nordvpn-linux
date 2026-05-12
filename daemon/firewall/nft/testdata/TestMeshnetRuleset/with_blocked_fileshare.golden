@@ -30,6 +30,7 @@ table inet nordvpn {
 
 	chain mesh_input {
 		ip saddr 100.64.0.0/29 accept comment "meshnet private IP"
+		ct state established,related ct original ip saddr 100.64.0.1 accept comment "responses to my connections only"
 		tcp dport 49111 drop comment "meshnet to fileshare"
 		ip saddr @allow_incoming_connections accept comment "meshnet to local"
 		drop
