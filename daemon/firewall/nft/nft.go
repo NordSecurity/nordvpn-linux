@@ -833,23 +833,20 @@ func (n *nft) addLanRangesSet(nftCtx *nftContext) error {
 }
 
 func (n *nft) addFilesharePeers(meshMap mesh.MachineMap, nftCtx *nftContext) error {
+	elems := convertPeersToSetElements(
+		meshMap.Peers,
+		func(peer mesh.MachinePeer) bool { return peer.DoIAllowFileshare },
+	)
+	if len(elems) == 0 {
+		return nil
+	}
+
 	nftCtx.fileshareAllowedPeers = &nftables.Set{
 		Table:    nftCtx.table,
 		Name:     fileshareAllowedPeersSet,
 		KeyType:  nftables.TypeIPAddr,
 		Interval: false,
 		Constant: true,
-	}
-
-	var elems []nftables.SetElement
-	for _, peer := range meshMap.Peers {
-		if !peer.Address.Is4() {
-			continue
-		}
-
-		if peer.DoIAllowFileshare {
-			elems = append(elems, nftables.SetElement{Key: peer.Address.AsSlice()})
-		}
 	}
 
 	if err := n.conn.AddSet(nftCtx.fileshareAllowedPeers, elems); err != nil {
@@ -860,24 +857,20 @@ func (n *nft) addFilesharePeers(meshMap mesh.MachineMap, nftCtx *nftContext) err
 }
 
 func (n *nft) addLanAllowedPeers(meshMap mesh.MachineMap, nftCtx *nftContext) error {
+	elems := convertPeersToSetElements(
+		meshMap.Peers,
+		func(peer mesh.MachinePeer) bool { return peer.DoIAllowRouting && peer.DoIAllowLocalNetwork },
+	)
+	if len(elems) == 0 {
+		return nil
+	}
+
 	nftCtx.meshLanAllowedPeers = &nftables.Set{
 		Table:    nftCtx.table,
 		Name:     lanAccessPeersSet,
 		KeyType:  nftables.TypeIPAddr,
 		Interval: false,
 		Constant: true,
-	}
-
-	var elems []nftables.SetElement
-	for _, peer := range meshMap.Peers {
-		if !peer.Address.IsValid() {
-			continue
-		}
-
-		lanAllowed := peer.DoIAllowRouting && peer.DoIAllowLocalNetwork
-		if lanAllowed {
-			elems = append(elems, nftables.SetElement{Key: peer.Address.AsSlice()})
-		}
 	}
 
 	if err := n.conn.AddSet(nftCtx.meshLanAllowedPeers, elems); err != nil {
@@ -888,25 +881,20 @@ func (n *nft) addLanAllowedPeers(meshMap mesh.MachineMap, nftCtx *nftContext) er
 }
 
 func (n *nft) addAllowedIncomingConnections(meshMap mesh.MachineMap, nftCtx *nftContext) error {
+	elems := convertPeersToSetElements(
+		meshMap.Peers,
+		func(peer mesh.MachinePeer) bool { return peer.DoIAllowInbound },
+	)
+	if len(elems) == 0 {
+		return nil
+	}
+
 	nftCtx.meshAllowedIncomingConnections = &nftables.Set{
 		Table:    nftCtx.table,
 		Name:     allowIncomingConnectionPeersSet,
 		KeyType:  nftables.TypeIPAddr,
 		Interval: false,
 		Constant: true,
-	}
-
-	var elems []nftables.SetElement
-	for _, peer := range meshMap.Peers {
-		if !peer.Address.IsValid() {
-			continue
-		}
-
-		if peer.DoIAllowInbound {
-			elems = append(elems,
-				nftables.SetElement{Key: peer.Address.AsSlice()},
-			)
-		}
 	}
 
 	if err := n.conn.AddSet(nftCtx.meshAllowedIncomingConnections, elems); err != nil {
@@ -917,25 +905,20 @@ func (n *nft) addAllowedIncomingConnections(meshMap mesh.MachineMap, nftCtx *nft
 }
 
 func (n *nft) addAllowedRoutingPeers(meshMap mesh.MachineMap, nftCtx *nftContext) error {
+	elems := convertPeersToSetElements(
+		meshMap.Peers,
+		func(peer mesh.MachinePeer) bool { return peer.DoIAllowRouting },
+	)
+	if len(elems) == 0 {
+		return nil
+	}
+
 	nftCtx.meshRoutingAllowed = &nftables.Set{
 		Table:    nftCtx.table,
 		Name:     allowTrafficRoutingPeersSet,
 		KeyType:  nftables.TypeIPAddr,
 		Interval: false,
 		Constant: true,
-	}
-
-	var elems []nftables.SetElement
-	for _, peer := range meshMap.Peers {
-		if !peer.Address.IsValid() {
-			continue
-		}
-
-		if peer.DoIAllowRouting {
-			elems = append(elems,
-				nftables.SetElement{Key: peer.Address.AsSlice()},
-			)
-		}
 	}
 
 	if err := n.conn.AddSet(nftCtx.meshRoutingAllowed, elems); err != nil {
@@ -981,4 +964,22 @@ func (n *nft) addMainTable() *nftables.Table {
 		Family: nftables.TableFamilyINet,
 		Name:   tableName,
 	})
+}
+
+func convertPeersToSetElements(
+	peers mesh.MachinePeers,
+	fn func(peer mesh.MachinePeer) bool,
+) []nftables.SetElement {
+
+	var elems []nftables.SetElement
+	for _, peer := range peers {
+		if !peer.Address.Is4() {
+			continue
+		}
+		if fn(peer) {
+			elems = append(elems, nftables.SetElement{Key: peer.Address.AsSlice()})
+		}
+	}
+
+	return elems
 }

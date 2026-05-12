@@ -19,6 +19,8 @@ const (
 var selfMeshIP = netip.MustParseAddr("100.64.0.1")
 
 func TestVPNRuleset(t *testing.T) {
+	category.Set(t, category.Root)
+
 	tests := []struct {
 		name   string
 		config *helpers.FirewallConfigBuilder
@@ -64,6 +66,8 @@ func TestVPNRuleset(t *testing.T) {
 }
 
 func TestMeshnetRuleset(t *testing.T) {
+	category.Set(t, category.Root)
+
 	tests := []struct {
 		name   string
 		config *helpers.FirewallConfigBuilder
