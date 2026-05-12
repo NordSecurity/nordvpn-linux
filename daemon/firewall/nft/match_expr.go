@@ -272,6 +272,25 @@ func checkMetaMarkAndSetCtMark(fwmark uint32) []expr.Any {
 	}
 }
 
+// ct original saddr <ip>
+func checkCtOriginalSrcIP(ip netip.Addr) []expr.Any {
+	addr := ip.As4()
+	return []expr.Any{
+		&expr.Meta{Key: expr.MetaKeyNFPROTO, Register: 1},
+		&expr.Cmp{
+			Register: 1,
+			Op:       expr.CmpOpEq,
+			Data:     []byte{unix.NFPROTO_IPV4},
+		},
+		&expr.Ct{Register: 1, Key: expr.CtKeySRC, Direction: 0},
+		&expr.Cmp{
+			Register: 1,
+			Op:       expr.CmpOpEq,
+			Data:     addr[:],
+		},
+	}
+}
+
 // ip saddr 100.64.0.0/10
 func checkIPIsPartOfSubnet(pfx netip.Prefix, match matchType, op expr.CmpOp) []expr.Any {
 	var offset uint32 = 12
