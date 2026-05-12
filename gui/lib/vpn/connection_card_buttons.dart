@@ -102,7 +102,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
                     .disconnect(),
               ),
             ],
-            anchorBuilder: (toggleMenu) => ElevatedButton(
+            anchorBuilder: (toggleMenu) => OutlinedButton(
               style: buttonTheme.pauseConnectionButtonStyle,
               onPressed: toggleMenu,
               child: Text(t.ui.pauseConnection),
@@ -135,7 +135,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
     ApplicationSettings? settings,
   ) {
     return Expanded(
-      child: ElevatedButton(
+      child: OutlinedButton(
         key: ConnectionCardButtons.secureMyConnectionButtonKey,
         onPressed: () async {
           // Quick connect
@@ -156,7 +156,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
     ConnectionCardButtonTheme buttonTheme,
   ) {
     return Expanded(
-      child: ElevatedButton(
+      child: OutlinedButton(
         key: ConnectionCardButtons.cancelButtonKey,
         onPressed: () async {
           await ref.read(vpnStatusControllerProvider.notifier).cancelConnect();
@@ -185,12 +185,12 @@ final class ConnectionCardButtons extends ConsumerWidget {
   }
 
   static String _pauseLabel(PauseLength pause) => switch (pause) {
-        PauseLength.mins5 => t.ui.pauseFor5Min,
-        PauseLength.mins15 => t.ui.pauseFor15Min,
-        PauseLength.mins30 => t.ui.pauseFor30Min,
-        PauseLength.hour1 => t.ui.pauseFor1Hour,
-        PauseLength.hours24 => t.ui.pauseFor24Hours,
-      };
+    PauseLength.mins5 => t.ui.pauseFor5Min,
+    PauseLength.mins15 => t.ui.pauseFor15Min,
+    PauseLength.mins30 => t.ui.pauseFor30Min,
+    PauseLength.hour1 => t.ui.pauseFor1Hour,
+    PauseLength.hours24 => t.ui.pauseFor24Hours,
+  };
 
   Widget _buildConnectionDetailsButton(
     BuildContext context,
@@ -203,14 +203,15 @@ final class ConnectionCardButtons extends ConsumerWidget {
           ...extraItems,
           ContextMenuItem(
             label: t.ui.changeVPNsettings,
-            onTap: () => context.navigateToRoute(AppRoute.settingsVpnConnection),
+            onTap: () =>
+                context.navigateToRoute(AppRoute.settingsVpnConnection),
           ),
           ContextMenuItem(
             label: t.ui.getHelp,
             onTap: () => getHelpUrl.launch(),
           ),
         ],
-        anchorBuilder: (toggleMenu) => ElevatedButton(
+        anchorBuilder: (toggleMenu) => OutlinedButton(
           style: buttonTheme.connectionDetailsButtonStyle,
           onPressed: toggleMenu,
           child: DynamicThemeImage("connection_details.svg"),
