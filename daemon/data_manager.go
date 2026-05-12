@@ -350,6 +350,7 @@ func (dm *DataManager) Groups(
 	protocol config.Protocol,
 	obfuscated bool,
 	virtualLocation bool,
+	dedicatedServersEnabled bool,
 ) ([]*pb.ServerGroup, error) {
 	serverTechnology, err := toServerTechnology(technology, protocol, obfuscated)
 	if err != nil {
@@ -381,8 +382,10 @@ func (dm *DataManager) Groups(
 		}
 	}
 
-	// Dedicated Server is to be always present in Tray
-	result = append(result, &pb.ServerGroup{Name: internal.Title(dedicatedServersGroupTitle), VirtualLocation: false})
+	if dedicatedServersEnabled {
+		// Dedicated Server is to be always present in Tray
+		result = append(result, &pb.ServerGroup{Name: internal.Title(dedicatedServersGroupTitle), VirtualLocation: false})
+	}
 
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].Name < result[j].Name

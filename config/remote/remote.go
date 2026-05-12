@@ -100,7 +100,8 @@ func (fileOpsDefaultImpl) IsValidExistingDir(path string) (bool, error) {
 }
 
 type RemoteConfigEvent struct {
-	MeshnetFeatureEnabled bool
+	MeshnetFeatureEnabled   bool
+	DedicatedServersEnabled bool
 }
 
 type RemoteConfigNotifier interface {
@@ -254,7 +255,10 @@ func (c *CdnRemoteConfig) Load() error {
 
 	if reloadDone {
 		// notify what is current state after config reload
-		c.notifier.Publish(RemoteConfigEvent{MeshnetFeatureEnabled: c.IsFeatureEnabled(FeatureMeshnet)})
+		c.notifier.Publish(RemoteConfigEvent{
+			MeshnetFeatureEnabled:   c.IsFeatureEnabled(FeatureMeshnet),
+			DedicatedServersEnabled: c.IsFeatureEnabled(FeatureDedicatedServers),
+		})
 		// reset event flags for some events to control emit frequency
 		c.analytics.ClearEventFlags()
 	}

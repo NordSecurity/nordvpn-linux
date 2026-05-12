@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -19,11 +20,16 @@ func (r *RPC) Groups(ctx context.Context, in *pb.Empty) (*pb.ServerGroupsList, e
 		}, nil
 	}
 
+	dedicatedserversEnabled := r.remoteConfigGetter.IsFeatureEnabled(
+		remote.FeatureDedicatedServers,
+	)
+
 	groups, err := r.dm.Groups(
 		cfg.Technology,
 		cfg.AutoConnectData.Protocol,
 		cfg.AutoConnectData.Obfuscate,
 		cfg.VirtualLocation.Get(),
+		dedicatedserversEnabled,
 	)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to get group names", err)
