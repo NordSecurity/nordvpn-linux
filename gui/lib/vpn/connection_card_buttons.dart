@@ -23,6 +23,14 @@ final class ConnectionCardButtons extends ConsumerWidget {
   static const disconnectMenuItemKey = Key("disconnectMenuItem");
   static const disconnectButtonKey = Key("vpnDisconnectButton");
 
+  static const _pauseLengths = [
+    PauseLength.mins5,
+    PauseLength.mins15,
+    PauseLength.mins30,
+    PauseLength.hour1,
+    PauseLength.hours24,
+  ];
+
   final VpnStatus vpnStatus;
 
   const ConnectionCardButtons({super.key, required this.vpnStatus});
@@ -70,25 +78,19 @@ final class ConnectionCardButtons extends ConsumerWidget {
               child: Text(t.ui.disconnect),
             ),
           ),
+          _buildConnectionDetailsButton(context, buttonTheme),
         ];
       }
-      final pauseOptions = <({String label, PauseLength pause})>[
-        (label: t.ui.pauseFor5Min, pause: PauseLength.mins5),
-        (label: t.ui.pauseFor15Min, pause: PauseLength.mins15),
-        (label: t.ui.pauseFor30Min, pause: PauseLength.mins30),
-        (label: t.ui.pauseFor1Hour, pause: PauseLength.hour1),
-        (label: t.ui.pauseFor24Hours, pause: PauseLength.hours24),
-      ];
       return [
         Expanded(
           child: ContextMenu(
             key: ConnectionCardButtons.pauseConnectionButtonKey,
             matchAnchorWidth: true,
             items: [
-              ...pauseOptions.map(
-                (opt) => ContextMenuItem(
-                  label: opt.label,
-                  onTap: () async => await _pauseConnection(ref, opt.pause),
+              ..._pauseLengths.map(
+                (pause) => ContextMenuItem(
+                  label: _pauseLabel(pause),
+                  onTap: () async => await _pauseConnection(ref, pause),
                 ),
               ),
               ContextMenuItem(
@@ -100,36 +102,22 @@ final class ConnectionCardButtons extends ConsumerWidget {
                     .disconnect(),
               ),
             ],
-            anchorBuilder: (toggleMenu) => ElevatedButton(
+            anchorBuilder: (toggleMenu) => OutlinedButton(
               style: buttonTheme.pauseConnectionButtonStyle,
               onPressed: toggleMenu,
               child: Text(t.ui.pauseConnection),
             ),
           ),
         ),
-        IntrinsicWidth(
-          child: ContextMenu(
-            items: [
-              ContextMenuItem(
-                label: t.ui.reconnect,
-                onTap: () async => await _reconnect(ref, status, settings),
-              ),
-              ContextMenuItem(
-                label: t.ui.changeVPNsettings,
-                onTap: () =>
-                    context.navigateToRoute(AppRoute.settingsVpnConnection),
-              ),
-              ContextMenuItem(
-                label: t.ui.getHelp,
-                onTap: () => getHelpUrl.launch(),
-              ),
-            ],
-            anchorBuilder: (toggleMenu) => ElevatedButton(
-              style: buttonTheme.connectionDetailsButtonStyle,
-              onPressed: toggleMenu,
-              child: DynamicThemeImage("connection_details.svg"),
+        _buildConnectionDetailsButton(
+          context,
+          buttonTheme,
+          extraItems: [
+            ContextMenuItem(
+              label: t.ui.reconnect,
+              onTap: () async => await _reconnect(ref, status, settings),
             ),
-          ),
+          ],
         ),
       ];
     }
@@ -147,7 +135,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
     ApplicationSettings? settings,
   ) {
     return Expanded(
-      child: ElevatedButton(
+      child: OutlinedButton(
         key: ConnectionCardButtons.secureMyConnectionButtonKey,
         onPressed: () async {
           // Quick connect
@@ -168,7 +156,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
     ConnectionCardButtonTheme buttonTheme,
   ) {
     return Expanded(
-      child: ElevatedButton(
+      child: OutlinedButton(
         key: ConnectionCardButtons.cancelButtonKey,
         onPressed: () async {
           await ref.read(vpnStatusControllerProvider.notifier).cancelConnect();
@@ -194,5 +182,41 @@ final class ConnectionCardButtons extends ConsumerWidget {
 
   Future<void> _pauseConnection(WidgetRef ref, PauseLength pauseLength) async {
     ref.read(vpnStatusControllerProvider.notifier).pauseConnection(pauseLength);
+  }
+
+  static String _pauseLabel(PauseLength pause) => switch (pause) {
+    PauseLength.mins5 => t.ui.pauseFor5Min,
+    PauseLength.mins15 => t.ui.pauseFor15Min,
+    PauseLength.mins30 => t.ui.pauseFor30Min,
+    PauseLength.hour1 => t.ui.pauseFor1Hour,
+    PauseLength.hours24 => t.ui.pauseFor24Hours,
+  };
+
+  Widget _buildConnectionDetailsButton(
+    BuildContext context,
+    ConnectionCardButtonTheme buttonTheme, {
+    List<ContextMenuItem> extraItems = const [],
+  }) {
+    return IntrinsicWidth(
+      child: ContextMenu(
+        items: [
+          ...extraItems,
+          ContextMenuItem(
+            label: t.ui.changeVPNsettings,
+            onTap: () =>
+                context.navigateToRoute(AppRoute.settingsVpnConnection),
+          ),
+          ContextMenuItem(
+            label: t.ui.getHelp,
+            onTap: () => getHelpUrl.launch(),
+          ),
+        ],
+        anchorBuilder: (toggleMenu) => OutlinedButton(
+          style: buttonTheme.connectionDetailsButtonStyle,
+          onPressed: toggleMenu,
+          child: DynamicThemeImage("connection_details.svg"),
+        ),
+      ),
+    );
   }
 }

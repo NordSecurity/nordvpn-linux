@@ -129,6 +129,13 @@ func initializeStaticConfig(machineID uuid.UUID) config.StaticConfigManager {
 func main() {
 	appStartTime := time.Now()
 
+	stopLevelWatcher := log.SetupLogger(
+		os.Stdout,
+		internal.LogLevelFile,
+		log.DefaultLevel(),
+	)
+	defer stopLevelWatcher()
+
 	// pprof
 	if internal.IsDevEnv(Environment) {
 		go func() {
@@ -139,9 +146,6 @@ func main() {
 		}()
 	}
 
-	// Logging
-
-	log.SetOutput(os.Stdout)
 	log.Println(internal.InfoPrefix, "Daemon has started")
 
 	if err := SetBufferSizeForHTTP3(); err != nil {
