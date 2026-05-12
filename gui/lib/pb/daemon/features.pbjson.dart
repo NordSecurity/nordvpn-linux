@@ -19,10 +19,18 @@ const FeatureToggles$json = {
   '1': 'FeatureToggles',
   '2': [
     {'1': 'meshnet_enabled', '3': 1, '4': 1, '5': 8, '10': 'meshnetEnabled'},
+    {
+      '1': 'dedicatedservers_enabled',
+      '3': 2,
+      '4': 1,
+      '5': 8,
+      '10': 'dedicatedserversEnabled'
+    },
   ],
 };
 
 /// Descriptor for `FeatureToggles`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List featureTogglesDescriptor = $convert.base64Decode(
     'Cg5GZWF0dXJlVG9nZ2xlcxInCg9tZXNobmV0X2VuYWJsZWQYASABKAhSDm1lc2huZXRFbmFibG'
-    'Vk');
+    'VkEjkKGGRlZGljYXRlZHNlcnZlcnNfZW5hYmxlZBgCIAEoCFIXZGVkaWNhdGVkc2VydmVyc0Vu'
+    'YWJsZWQ=');
