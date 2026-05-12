@@ -1,13 +1,13 @@
 import socket
+import struct
 import time
 from itertools import cycle
-from threading import Thread
 
 import dns.resolver
 import requests
 import sh
 
-from . import daemon, firewall, info, logging, settings
+from . import daemon, firewall, info, logging
 
 # private variable for storing routes
 _blackholes = []
@@ -15,49 +15,6 @@ _blackholes = []
 API_EXTERNAL_IP = "https://api.nordvpn.com/v1/helpers/ips/insights"
 
 FWMARK = 0xE1F1
-
-
-class PacketCaptureThread(Thread):
-    def __init__(self, connection_settings, duration: int):
-        Thread.__init__(self)
-        self.connection_settings = connection_settings
-        self.packets = ""
-        self.duration = duration
-
-    def run(self):
-        self.packets = self._capture_packets()
-
-    def _add_filters(self) -> list[str]:
-        technology = self.connection_settings[0]
-        protocol = self.connection_settings[1]
-        obfuscated = self.connection_settings[2]
-        server_ip = settings.get_server_ip()
-
-        if technology == "nordlynx":
-            return ["-f", f"(udp port 51820) and (host {server_ip})", "-Y", "wg"]
-
-        if technology == "openvpn":
-            if obfuscated == "off":
-                return ["-f", f"{protocol} and (host {server_ip})", "-Y", "openvpn"]
-            if obfuscated == "on":
-                return ["-f", f"{protocol} and (host {server_ip})", "-Y", "not openvpn"]
-
-        print("_add_filters: no filters were added")
-        return []
-
-    def _capture_packets(self) -> str:
-        technology = self.connection_settings[0]
-
-        command = ["-i", "any", "-a", f"duration:{self.duration}"]
-        if technology != "":
-            command += self._add_filters()
-        logging.log(f"start capturing {command}")
-        tshark_result: str = sh.tshark(command)
-        # in some cases there will be no output from tshark. This might be a python or tshark problem
-        logging.log(f"captured traffic: {tshark_result}")
-
-        return tshark_result.strip()
-
 
 class RouteInfo:
     def __init__(self, ip_route_line: str):
@@ -115,25 +72,6 @@ class RouteInfo:
     def default_route_info() -> "RouteInfo":
         output = sh.ip.route.show("default").stdout.decode()
         return RouteInfo(output)
-
-
-def capture_traffic(connection_settings, duration: int = 5) -> str:
-    """Returns count of captured packets."""
-
-    # We try to capture packets using other thread
-    t_connect = PacketCaptureThread(connection_settings, duration)
-    t_connect.start()
-
-    try:
-        # generate some traffic
-        generate_traffic(retry=5)
-    except Exception as e:  # noqa: BLE001
-        logging.log(f"capture_traffic exception: {e}")
-        logging.log(t_connect.packets)
-
-    t_connect.join()
-
-    return t_connect.packets
 
 
 def is_internet_reachable(ip_address="1.1.1.1", port=443, retry=5) -> bool:
@@ -307,3 +245,24 @@ def get_external_device_ip(timeout=5) -> str:
 def generate_traffic(retry=1):
     # use an invalid server name to be sure that there will be DNS requests and that the result will not be from OS cache
     _is_dns_resolvable(domain="invalid-server-name.com", retry=retry)
+
+
+def get_default_gateway(interface: str | None = None) -> str | None:
+    """
+    Return the default gateway IP. If `interface` is given (e.g. 'eth0'),
+
+    return the default gateway for that interface only.
+    """
+    with open("/proc/net/route") as f:
+        next(f)  # skip header
+        for line in f:
+            fields = line.strip().split()
+            iface, dest, gateway, flags = fields[0], fields[1], fields[2], int(fields[3], 16)
+            # Default route: destination 0.0.0.0 and RTF_GATEWAY flag (0x2)
+            if dest != "00000000" or not (flags & 0x2):
+                continue
+            if interface and iface != interface:
+                continue
+            # Gateway is little-endian hex; convert to dotted-quad
+            return socket.inet_ntoa(struct.pack("<L", int(gateway, 16)))
+    return None

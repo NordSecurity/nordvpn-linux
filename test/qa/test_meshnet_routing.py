@@ -5,10 +5,11 @@ import pytest
 import sh
 
 import lib
-from lib import daemon, logging, meshnet, network, ssh
+from lib import daemon, logging, meshnet, network, ssh, capture_utils
 from lib.shell import sh_no_tty
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
+http_bin_ip = socket.gethostbyname("httpbin.org")
 
 
 def setup_module(module):  # noqa: ARG001
@@ -89,7 +90,7 @@ def test_killswitch_exitnode(lan_discovery: bool, local: bool):
     assert network.is_available(), "Network should be available after final disconnect"
 
 
-@pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
+@pytest.mark.core_meshnet
 def test_route_traffic_to_each_other():
     """Manual TC: LVPN-426, LVPN-1258"""
 
@@ -110,7 +111,28 @@ def test_route_traffic_to_each_other():
     sh_no_tty.nordvpn.disconnect()
     ssh_client.exec_command("nordvpn disconnect")
 
+@pytest.mark.core_meshnet
+def test_route_traffic_accept():
+    peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
+    peer_ip = peer_list.get_external_peer().ip
+    this_device = peer_list.get_this_device()
+    cap = capture_utils.BackgroundCapture(
+        interface="any",
+        display_filter=f"ip.addr == {http_bin_ip}"
+    )
+    output = ssh_client.exec_command("nordvpn mesh peer connect " + this_device.ip)
+    assert meshnet.is_connect_successful(output, this_device.hostname), "Remote peer connect should be successful"
+    cap.start()
+    time.sleep(2)
+    output = ssh_client.exec_command(f'wget --header="Host: httpbin.org" --output-document - http://{http_bin_ip}/get')
+    print(output)
+    cap.stop()
+    capture_utils.summarize(cap.packets)
+    assert capture_utils.check_for_routing_pattern(cap.packets, peer_ip, http_bin_ip), "Routing pattern not found"
+    ssh_client.exec_command("nordvpn disconnect")
 
+
+@pytest.mark.core_meshnet
 def test_routing_deny_for_peer_is_peer_no_netting():
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     peer_hostname = peer_list.get_external_peer().hostname
@@ -123,6 +145,44 @@ def test_routing_deny_for_peer_is_peer_no_netting():
     assert ssh_client.network.is_not_available(), "Network should not be available after denying routing"
 
     ssh_client.exec_command("nordvpn disconnect")
+
+
+@pytest.mark.core_meshnet
+def test_routing_access_LAN():
+    peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
+    peer_hostname = peer_list.get_external_peer().hostname
+    this_device = peer_list.get_this_device()
+    sh_no_tty.nordvpn.mesh.peer.local.deny(peer_hostname)
+
+    output = ssh_client.exec_command("nordvpn mesh peer connect " + this_device.ip)
+    assert meshnet.is_connect_successful(output, this_device.hostname), "Remote peer connect should be successful"
+    default_gateway = network.get_default_gateway()
+
+    assert not ssh_client.network.ping(default_gateway, retry=3)
+    sh_no_tty.nordvpn.mesh.peer.local.allow(peer_hostname)
+    cap = capture_utils.BackgroundCapture("any", display_filter=f"ip.addr == {default_gateway}")
+    cap.start()
+    assert ssh_client.network.ping(default_gateway, retry=3)
+    time.sleep(2)
+    capture_utils.check_for_tunnel_packets(cap.packets)
+    ssh_client.exec_command("nordvpn disconnect")
+
+
+@pytest.mark.core_meshnet
+def test_routing_access_LAN_when_LAN_discovery_is_on():
+    sh_no_tty.nordvpn.set("lan-discovery", "on")
+    peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
+    peer_hostname = peer_list.get_external_peer().hostname
+    this_device = peer_list.get_this_device()
+    sh_no_tty.nordvpn.mesh.peer.local.deny(peer_hostname)
+    output = ssh_client.exec_command("nordvpn mesh peer connect " + this_device.ip)
+    assert meshnet.is_connect_successful(output, this_device.hostname), "Remote peer connect should be successful"
+
+    default_gateway = network.get_default_gateway()
+    assert not ssh_client.network.ping(default_gateway, retry=3)
+
+    ssh_client.exec_command("nordvpn disconnect")
+
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
