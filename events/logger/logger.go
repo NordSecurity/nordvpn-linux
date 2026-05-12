@@ -234,7 +234,6 @@ func getNetworkInfo() string {
 
 	builder.WriteString("IP rules for ipv4" + ":\n" + string(out) + "\n")
 
-	// #nosec G204 -- input is properly sanitized
 	if out, err := exec.Command("nft", "list", "ruleset").CombinedOutput(); err != nil {
 		builder.WriteString("nft failed with: " + err.Error())
 	} else {
