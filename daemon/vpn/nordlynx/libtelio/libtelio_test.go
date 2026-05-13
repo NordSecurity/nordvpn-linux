@@ -510,7 +510,7 @@ func TestLibtelio_connect(t *testing.T) {
 			var err error
 			go func() {
 				connectionInitiatedWG.Done()
-				err = libtelio.connect(ctx, netip.Addr{}, "", false)
+				err = libtelio.connect(ctx, netip.Addr{}, 0, "", false)
 				connectionEstablishedWG.Done()
 			}()
 

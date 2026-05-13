@@ -74,6 +74,10 @@ const (
 	CodeAllowlistSubnetSmallerNoop          int64 = 3059
 	CodeAllowlistSubnetTooWideWarn          int64 = 3060
 	CodeAllowlistSubnetWider                int64 = 3061
+	CodeDedicatedServerRenewError           int64 = 3062
+	CodeDedicatedServersServiceButNoServers int64 = 3063
+	CodeDedicatedServerNotReady             int64 = 3064
+	CodeDedicatedServerNoNordlynx           int64 = 3065
 )
 
 type ErrorWithCode struct {

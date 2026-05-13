@@ -59,6 +59,8 @@ type SubscriptionAPI interface {
 type DedicatedServersAPI interface {
 	RegisterDevice(DevicesRequest) (DevicesResponse, error)
 	UpdateDevice(uuid.UUID, UpdateDeviceRequest) (DevicesResponse, error)
+	DedicatedServers() (DedicatedServers, error)
+	DedicatedServerConnectCheck(serverUUID string, connectRequest DedicatedServerConnectRequest) (DedicatedServerConnectResponse, error)
 }
 
 type ErrMaxBytesLimit struct {

@@ -5,12 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/features"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -154,6 +157,10 @@ func (r *RPC) connectWithStoredServerSelection(ctx context.Context,
 	}
 	r.connectionInfo.SetInitialConnecting()
 
+	if IsServerDedicated(*r.lastServerSelection.server) && cfg.Technology != config.Technology_NORDLYNX {
+		return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServerNoNordlynx})
+	}
+
 	expirationCheckResult := r.isVPNExpired()
 	if expirationCheckResult != internal.CodeSuccess {
 		return true, srv.Send(&pb.Payload{Type: expirationCheckResult})
@@ -187,6 +194,12 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 		log.Println(internal.ErrorPrefix, err)
 	}
 	r.connectionInfo.SetInitialConnecting()
+
+	if (groupConvert(in.ServerGroup) == config.ServerGroup_DEDICATED_SERVERS ||
+		groupConvert(in.ServerTag) == config.ServerGroup_DEDICATED_SERVERS) &&
+		cfg.Technology != config.Technology_NORDLYNX {
+		return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServerNoNordlynx})
+	}
 
 	// Set status to "Connecting" and send the connection attempt event without details
 	// to inform clients about connection attempt as soon as possible so they can react.
@@ -255,6 +268,36 @@ func (r *RPC) connect(
 		log.Println(internal.ErrorPrefix, err)
 	}
 
+	tokenData := cfg.TokensData[cfg.AutoConnectData.ID]
+	creds := vpn.Credentials{
+		OpenVPNUsername:    tokenData.OpenVPNUsername,
+		OpenVPNPassword:    tokenData.OpenVPNPassword,
+		NordLynxPrivateKey: tokenData.NordLynxPrivateKey,
+	}
+
+	isServerDedicated := IsServerDedicated(*serverSelection.server)
+	// if server is a dedicated server, we need to use the device key instead of NordLynx private key
+	if isServerDedicated {
+		dedicatedServersDeviceData := r.dedicatedServersKeyManager.CheckAndRegisterDedicatedServers()
+		if dedicatedServersDeviceData == nil {
+			log.Println(internal.ErrorPrefix, "failed to fetch the device key for dedicated server connection")
+			return false, internal.ErrUnhandled
+		}
+		creds.NordLynxPrivateKey = dedicatedServersDeviceData.DevicePrivateKey
+
+		dedicatedServerConnectionData, err := getDedicatedServerConnectionData(
+			r.dedicatedServersAPI,
+			serverSelection.server.DedicatedServerUUID,
+			*dedicatedServersDeviceData)
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "fetching dedicated server connection data:", err)
+			return false, internal.ErrUnhandled
+		}
+		serverSelection.server.Station = dedicatedServerConnectionData.ip
+		serverSelection.server.DedicatedServersPort = dedicatedServerConnectionData.port
+		serverSelection.server.NordLynxPublicKey = dedicatedServerConnectionData.publicKey
+	}
+
 	ip, err := serverSelection.server.IPv4()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, err)
@@ -268,21 +311,16 @@ func (r *RPC) connect(
 		return false, internal.ErrUnhandled
 	}
 
-	tokenData := cfg.TokensData[cfg.AutoConnectData.ID]
-	creds := vpn.Credentials{
-		OpenVPNUsername:    tokenData.OpenVPNUsername,
-		OpenVPNPassword:    tokenData.OpenVPNPassword,
-		NordLynxPrivateKey: tokenData.NordLynxPrivateKey,
-	}
 	serverData := vpn.ServerData{
-		IP:                subnet.Addr(),
-		Hostname:          serverSelection.server.Hostname,
-		Protocol:          cfg.AutoConnectData.Protocol,
-		NordLynxPublicKey: serverSelection.server.NordLynxPublicKey,
-		Obfuscated:        cfg.AutoConnectData.Obfuscate,
-		PostQuantum:       cfg.AutoConnectData.PostquantumVpn,
-		OpenVPNVersion:    serverSelection.server.Version(),
-		NordWhisperPort:   serverSelection.server.NordWhisperPort,
+		IP:                  subnet.Addr(),
+		Hostname:            serverSelection.server.Hostname,
+		Protocol:            cfg.AutoConnectData.Protocol,
+		NordLynxPublicKey:   serverSelection.server.NordLynxPublicKey,
+		Obfuscated:          cfg.AutoConnectData.Obfuscate,
+		PostQuantum:         cfg.AutoConnectData.PostquantumVpn,
+		OpenVPNVersion:      serverSelection.server.Version(),
+		NordWhisperPort:     serverSelection.server.NordWhisperPort,
+		DedicatedServerPort: serverSelection.server.DedicatedServersPort,
 	}
 
 	allowlist := cfg.AutoConnectData.Allowlist
@@ -341,7 +379,12 @@ func (r *RPC) connect(
 		virtualServer = " - Virtual"
 	}
 	lastServer := r.lastServerSelection.server
+
 	data := []string{lastServer.Name, lastServer.Hostname, virtualServer}
+	// In case of dedicated servers we only return server name, as hostname is not available.
+	if isServerDedicated {
+		data = []string{lastServer.Name}
+	}
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnecting, Data: data}); err != nil {
 		log.Println(internal.ErrorPrefix, err)
@@ -446,6 +489,44 @@ func determineTargetServerGroup(server *core.Server, parameters ServerParameters
 	}
 
 	return ""
+}
+
+type dedicatedServerConnectionData struct {
+	ip        string
+	port      int64
+	publicKey string
+}
+
+func getDedicatedServerConnectionData(api core.DedicatedServersAPI,
+	serverUUID string,
+	deviceConnectionData devicekey.DedicatedServersConnectionData) (dedicatedServerConnectionData, error) {
+	connectResponse, err := api.DedicatedServerConnectCheck(serverUUID, core.DedicatedServerConnectRequest{
+		DeviceUUID:      deviceConnectionData.DeviceUUID.String(),
+		DevicePublicKey: deviceConnectionData.DevicePublicKey,
+	})
+	if err != nil {
+		return dedicatedServerConnectionData{}, fmt.Errorf("getting dedicated server connection data: %w", err)
+	}
+
+	addrPort := strings.Split(connectResponse.ServerEndpoint, ":")
+
+	ip := addrPort[0]
+
+	var dedicatedServerPort int64
+	if len(addrPort) > 1 {
+		port, err := strconv.Atoi(addrPort[1])
+		if err != nil {
+			log.Println(internal.ErrorPrefix, "parsing dedicated server port:", err)
+			return dedicatedServerConnectionData{}, fmt.Errorf("parsing dedicated server port: %w", err)
+		}
+		dedicatedServerPort = int64(port)
+	}
+
+	return dedicatedServerConnectionData{
+		ip:        ip,
+		port:      dedicatedServerPort,
+		publicKey: connectResponse.ServerPublicKey,
+	}, nil
 }
 
 type FactoryFunc func(config.Technology) (vpn.VPN, error)
