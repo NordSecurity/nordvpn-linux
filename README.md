@@ -19,7 +19,7 @@ The application manages:
 - network interfaces using
   [WireGuard](https://www.wireguard.com/) (NordLynx) and tun (OpenVPN),
 - firewall with the help of
-  [iptables](https://www.netfilter.org/projects/iptables/index.html),
+  [nftables](https://nftables.org),
 - routing via the
   [netlink](https://www.man7.org/linux/man-pages/man7/netlink.7.html)
   kernel interface and
