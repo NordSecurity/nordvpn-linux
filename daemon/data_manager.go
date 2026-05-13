@@ -251,7 +251,7 @@ func (dm *DataManager) Countries(
 	technology config.Technology,
 	protocol config.Protocol,
 	obfuscated bool,
-	virtualLocation bool,
+	includeVirtualLocation bool,
 ) ([]*pb.ServerGroup, error) {
 	serverTechnology, err := toServerTechnology(technology, protocol, obfuscated)
 	if err != nil {
@@ -260,15 +260,10 @@ func (dm *DataManager) Countries(
 
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
-	countriesSet := mapset.NewSet[string]()
-	result := []*pb.ServerGroup{}
+	countries := map[string]bool{}
 
 	for _, server := range dm.serversData.Servers {
 		if !core.IsConnectableVia(serverTechnology)(server) {
-			continue
-		}
-
-		if !virtualLocation && server.IsVirtualLocation() {
 			continue
 		}
 
@@ -277,13 +272,22 @@ func (dm *DataManager) Countries(
 			continue
 		}
 
-		if countriesSet.Contains(country.Code) {
+		existing, ok := countries[country.Name]
+		if !ok {
+			existing = true
+		}
+		countries[country.Name] = server.IsVirtualLocation() && existing
+	}
+
+	result := make([]*pb.ServerGroup, 0, len(countries))
+	for name, isVirtual := range countries {
+		if !includeVirtualLocation && isVirtual {
 			continue
 		}
-
-		countriesSet.Add(country.Code)
-		group := &pb.ServerGroup{Name: internal.Title(country.Name), VirtualLocation: server.IsVirtualLocation()}
-		result = append(result, group)
+		result = append(result, &pb.ServerGroup{
+			Name:            internal.Title(name),
+			VirtualLocation: isVirtual,
+		})
 	}
 
 	sort.Slice(result, func(i, j int) bool {
