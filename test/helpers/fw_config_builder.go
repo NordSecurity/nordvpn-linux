@@ -8,8 +8,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 )
 
-const DefaultMachineAddr = "100.64.0.1"
-
 type FirewallConfigBuilder struct {
 	cfg firewall.Config
 }
@@ -54,9 +52,9 @@ func (b *FirewallConfigBuilder) BlockFileshare() *FirewallConfigBuilder {
 	return b
 }
 
-func (b *FirewallConfigBuilder) Meshnet(iface string) *FirewallConfigBuilder {
+func (b *FirewallConfigBuilder) Meshnet(iface string, selfMeshIP netip.Addr) *FirewallConfigBuilder {
 	b.cfg.MeshnetInfo = &firewall.MeshInfo{MeshInterface: iface}
-	b.cfg.MeshnetInfo.MeshnetMap.Machine.Address = netip.MustParseAddr(DefaultMachineAddr)
+	b.cfg.MeshnetInfo.MeshnetMap.Address = selfMeshIP
 	return b
 }
 
