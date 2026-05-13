@@ -521,7 +521,7 @@ func (n *nft) addMeshnetInputChain(nftCtx *nftContext, selfMeshIP netip.Addr) *n
 	})
 
 	// ct state established,related ct original saddr <selfMeshIP> accept
-	if selfMeshIP.IsValid() {
+	if selfMeshIP.Is4() {
 		n.conn.AddRule(&nftables.Rule{
 			Table: nftCtx.table,
 			Chain: meshChain,
