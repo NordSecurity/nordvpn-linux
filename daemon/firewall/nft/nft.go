@@ -2,6 +2,7 @@ package nft
 
 import (
 	"fmt"
+	"net/netip"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
@@ -164,7 +165,7 @@ func (n *nft) addInputChain(config firewall.Config, nftCtx *nftContext) {
 	// meshnet
 	if config.MeshnetInfo != nil {
 		// Add chain for the meshnet and the jump rule to it
-		meshChain := n.addMeshnetInputChain(nftCtx)
+		meshChain := n.addMeshnetInputChain(nftCtx, config.MeshnetInfo.MeshnetMap.Address)
 
 		// iifname "nordlynx" ip saddr 100.64.0.0/10 jump mesh_input
 		n.conn.AddRule(&nftables.Rule{
@@ -501,7 +502,7 @@ func (n *nft) addAllowlistInputChain(nftCtx *nftContext) *nftables.Chain {
 	return chain
 }
 
-func (n *nft) addMeshnetInputChain(nftCtx *nftContext) *nftables.Chain {
+func (n *nft) addMeshnetInputChain(nftCtx *nftContext, selfMeshIP netip.Addr) *nftables.Chain {
 	// the chain is not hooked to anything, it is called from input chain
 	meshChain := n.conn.AddChain(&nftables.Chain{
 		Name:  meshInputChainName,
@@ -518,6 +519,20 @@ func (n *nft) addMeshnetInputChain(nftCtx *nftContext) *nftables.Chain {
 		),
 		UserData: userdata.AppendString(nil, userdata.TypeComment, "meshnet private IP"),
 	})
+
+	// ct state established,related ct original saddr <selfMeshIP> accept
+	if selfMeshIP.Is4() {
+		n.conn.AddRule(&nftables.Rule{
+			Table: nftCtx.table,
+			Chain: meshChain,
+			Exprs: buildRules(
+				&expr.Verdict{Kind: expr.VerdictAccept},
+				checkCtState(expr.CtStateBitESTABLISHED|expr.CtStateBitRELATED),
+				checkCtOriginalSrcIP(selfMeshIP),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "responses to my connections only"),
+		})
+	}
 
 	if nftCtx.fileshareAllowedPeers != nil {
 		// tcp dport 49111 ip saddr @fileshare_allowed_peers accept

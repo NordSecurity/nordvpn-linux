@@ -1,6 +1,8 @@
 package helpers
 
 import (
+	"net/netip"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
@@ -50,8 +52,9 @@ func (b *FirewallConfigBuilder) BlockFileshare() *FirewallConfigBuilder {
 	return b
 }
 
-func (b *FirewallConfigBuilder) Meshnet(iface string) *FirewallConfigBuilder {
+func (b *FirewallConfigBuilder) Meshnet(iface string, selfMeshIP netip.Addr) *FirewallConfigBuilder {
 	b.cfg.MeshnetInfo = &firewall.MeshInfo{MeshInterface: iface}
+	b.cfg.MeshnetInfo.MeshnetMap.Address = selfMeshIP
 	return b
 }
 

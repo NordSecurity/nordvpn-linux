@@ -16,6 +16,8 @@ const (
 	ifName = "nordlynx"
 )
 
+var selfMeshIP = netip.MustParseAddr("100.64.0.1")
+
 func TestVPNRuleset(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -68,12 +70,12 @@ func TestMeshnetRuleset(t *testing.T) {
 	}{
 		{
 			name:   "without peers",
-			config: helpers.NewFWConfig().Meshnet(ifName),
+			config: helpers.NewFWConfig().Meshnet(ifName, selfMeshIP),
 		},
 		{
 			name: "peer with lan_access",
 			config: helpers.NewFWConfig().
-				Meshnet(ifName).
+				Meshnet(ifName, selfMeshIP).
 				MeshPeer(mesh.MachinePeer{
 					Address:              netip.MustParseAddr(peerIP),
 					DoIAllowLocalNetwork: true,
@@ -83,7 +85,7 @@ func TestMeshnetRuleset(t *testing.T) {
 		{
 			name: "host allows routing",
 			config: helpers.NewFWConfig().
-				Meshnet(ifName).
+				Meshnet(ifName, selfMeshIP).
 				MeshPeer(mesh.MachinePeer{
 					Address:         netip.MustParseAddr(peerIP),
 					DoIAllowRouting: true,
@@ -92,7 +94,7 @@ func TestMeshnetRuleset(t *testing.T) {
 		{
 			name: "host allows inbound but_no_routing",
 			config: helpers.NewFWConfig().
-				Meshnet(ifName).
+				Meshnet(ifName, selfMeshIP).
 				MeshPeer(mesh.MachinePeer{
 					Address:         netip.MustParseAddr(peerIP),
 					DoIAllowInbound: true,
@@ -102,7 +104,7 @@ func TestMeshnetRuleset(t *testing.T) {
 		{
 			name: "with fileshare",
 			config: helpers.NewFWConfig().
-				Meshnet(ifName).
+				Meshnet(ifName, selfMeshIP).
 				MeshPeer(mesh.MachinePeer{
 					Address:           netip.MustParseAddr(peerIP),
 					DoIAllowFileshare: true,
@@ -111,7 +113,7 @@ func TestMeshnetRuleset(t *testing.T) {
 		{
 			name: "with blocked fileshare",
 			config: helpers.NewFWConfig().
-				Meshnet(ifName).
+				Meshnet(ifName, selfMeshIP).
 				BlockFileshare().
 				MeshPeer(mesh.MachinePeer{
 					Address:           netip.MustParseAddr(peerIP),
@@ -121,7 +123,7 @@ func TestMeshnetRuleset(t *testing.T) {
 		{
 			name: "peer with full permissions",
 			config: helpers.NewFWConfig().
-				Meshnet(ifName).
+				Meshnet(ifName, selfMeshIP).
 				MeshPeer(mesh.MachinePeer{
 					Address:              netip.MustParseAddr(peerIP),
 					DoIAllowFileshare:    true,
