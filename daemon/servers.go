@@ -660,6 +660,9 @@ func selectDedicatedServer(authChecker auth.Checker,
 		}},
 		Locations:           core.Locations{dedicatedServer.Location},
 		DedicatedServerUUID: dedicatedServer.UUID,
+		// Invariant: dedicated servers are always of Nordlynx, hence Wireguard tech.
+		// This is needed to correctly display dedicated servers in the recent connections list.
+		Technologies: core.Technologies{core.Technology{ID: core.WireguardTech}},
 	}, nil
 }
 
