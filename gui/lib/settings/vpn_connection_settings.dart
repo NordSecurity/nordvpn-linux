@@ -145,10 +145,8 @@ final class VpnConnectionSettings extends ConsumerWidget {
   ) {
     final appTheme = context.appTheme;
     final vpnStatus = ref.watch(vpnStatusControllerProvider);
-    final isConnecting = vpnStatus.whenOrNull(
-          data: (status) => status.isConnecting(),
-        ) ??
-        false;
+    final isConnecting =
+        vpnStatus.whenOrNull(data: (status) => status.isConnecting()) ?? false;
 
     List<({String label, VpnProtocol value})> protocols = [
       (label: t.ui.nordLynx, value: VpnProtocol.nordlynx),

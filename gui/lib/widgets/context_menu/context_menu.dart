@@ -231,6 +231,7 @@ class _MenuItemTile extends StatelessWidget {
       onTap: () => onTapped(item.onTap),
       hoverColor: theme.itemHoverColor,
       borderRadius: theme.itemBorderRadius,
+      mouseCursor: SystemMouseCursors.basic,
       child: Padding(
         padding: theme.itemPadding,
         child: SizedBox(

@@ -351,7 +351,7 @@ final class NordVpnTheme {
       mapPadding: EdgeInsets.only(top: AppSpacing.spacing5),
       connectionCardPadding: EdgeInsets.only(
         left: AppSpacing.spacing6,
-        top: AppSpacing.spacing3,
+        top: AppSpacing.spacing4,
         bottom: AppSpacing.spacing6,
       ),
       margin: EdgeInsets.only(
@@ -387,7 +387,7 @@ final class NordVpnTheme {
       ),
       buttonTheme: ConnectionCardButtonTheme(
         maxConnectButtonWidth: 330,
-        secureMyConnectionButtonStyle: ElevatedButton.styleFrom(
+        secureMyConnectionButtonStyle: OutlinedButton.styleFrom(
           shape: RoundedRectangleBorder(
             side: BorderSide(
               color: design.semanticColors.borderAccent,
@@ -395,17 +395,19 @@ final class NordVpnTheme {
             ),
             borderRadius: AppBorderRadius.full,
           ),
-          textStyle: design.typography.subHeading,
+          textStyle: design.typography.subHeading.copyWith(
+            fontWeight: FontWeight.w400,
+          ),
           padding: const EdgeInsets.symmetric(
             vertical: AppSpacing.spacing3,
             horizontal: AppSpacing.spacing7,
           ),
           backgroundColor: design.semanticColors.bgAccent,
           foregroundColor: design.semanticColors.textPrimaryOnColor,
-          overlayColor: Colors.transparent,
           fixedSize: const Size.fromHeight(48),
+          enabledMouseCursor: SystemMouseCursors.basic,
         ),
-        cancelButtonStyle: ElevatedButton.styleFrom(
+        cancelButtonStyle: OutlinedButton.styleFrom(
           shape: RoundedRectangleBorder(
             side: BorderSide(
               color: design.semanticColors.borderPrimary,
@@ -420,10 +422,10 @@ final class NordVpnTheme {
           ),
           backgroundColor: design.semanticColors.bgGlass,
           foregroundColor: design.semanticColors.textPrimary,
-          overlayColor: Colors.transparent,
           fixedSize: const Size.fromHeight(48),
+          enabledMouseCursor: SystemMouseCursors.basic,
         ),
-        pauseConnectionButtonStyle: ElevatedButton.styleFrom(
+        pauseConnectionButtonStyle: OutlinedButton.styleFrom(
           shape: RoundedRectangleBorder(
             side: BorderSide(
               color: design.semanticColors.borderPrimary,
@@ -441,8 +443,9 @@ final class NordVpnTheme {
           backgroundColor: design.semanticColors.bgGlass,
           foregroundColor: design.semanticColors.textPrimary,
           fixedSize: const Size.fromHeight(48),
+          enabledMouseCursor: SystemMouseCursors.basic,
         ),
-        connectionDetailsButtonStyle: ElevatedButton.styleFrom(
+        connectionDetailsButtonStyle: OutlinedButton.styleFrom(
           shape: const CircleBorder(),
           side: BorderSide(
             color: design.semanticColors.borderPrimary,
@@ -455,6 +458,7 @@ final class NordVpnTheme {
           backgroundColor: design.semanticColors.bgGlass,
           foregroundColor: design.semanticColors.textPrimary,
           fixedSize: const Size(48, 48),
+          enabledMouseCursor: SystemMouseCursors.basic,
         ),
       ),
     );

@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nordvpn/data/providers/vpn_status_controller.dart';
-import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/settings/navigation.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/settings_theme.dart';
@@ -52,7 +49,6 @@ final class SettingsWrapperWidget extends StatelessWidget {
           Expanded(child: _pageContents(context)),
           if (stickyFooter != null) _divider(),
           if (stickyFooter != null) stickyFooter!,
-          _vpnStatus(appTheme, context),
         ],
       ),
     );
@@ -121,76 +117,6 @@ final class SettingsWrapperWidget extends StatelessWidget {
 
 Widget _divider() => Divider(height: 33);
 
-Widget _vpnStatus(AppTheme appTheme, BuildContext context) {
-  return Container(
-    decoration: BoxDecoration(
-      color: appTheme.area,
-      borderRadius: BorderRadius.only(
-        bottomLeft: appTheme.borderRadiusMedium.bottomLeft,
-        bottomRight: appTheme.borderRadiusMedium.bottomRight,
-      ),
-    ),
-    child: Center(
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: _buildVpnStatus(context),
-      ),
-    ),
-  );
-}
-
-Widget _buildVpnStatus(BuildContext context) {
-  final settingsTheme = context.settingsTheme;
-  final appTheme = context.appTheme;
-
-  return Consumer(
-    builder: (context, ref, child) {
-      final status = ref.watch(vpnStatusControllerProvider);
-      if (status.hasValue && status.value != null) {
-        final vpnStatus = status.value!;
-        if (vpnStatus.isDisconnected() || vpnStatus.isPaused()) {
-          return Text(
-            t.ui.notSecured,
-            style: settingsTheme.vpnStatusStyle.copyWith(
-              color: appTheme.textErrorColor,
-            ),
-          );
-        }
-
-        if (vpnStatus.isAutoConnected()) {
-          return Text(
-            t.ui.autoConnected,
-            style: settingsTheme.vpnStatusStyle.copyWith(
-              color: appTheme.successColor,
-            ),
-          );
-        }
-
-        if (vpnStatus.isConnected()) {
-          return Text(
-            t.ui.secured,
-            style: settingsTheme.vpnStatusStyle.copyWith(
-              color: appTheme.successColor,
-            ),
-          );
-        }
-
-        if (vpnStatus.isConnecting()) {
-          return Text(
-            "${t.ui.connecting}...",
-            style: settingsTheme.vpnStatusStyle.copyWith(
-              color: appTheme.textErrorColor,
-            ),
-          );
-        }
-        assert(false);
-      }
-
-      return SizedBox.fromSize();
-    },
-  );
-}
-
 final class SingleChildSettingsWrapperWidget extends StatelessWidget {
   final Widget? stickyHeader;
   final Widget child;
@@ -222,7 +148,6 @@ final class SingleChildSettingsWrapperWidget extends StatelessWidget {
           Expanded(child: child),
           if (showDivider && stickyFooter != null) _divider(),
           if (stickyFooter != null) stickyFooter!,
-          _vpnStatus(appTheme, context),
         ],
       ),
     );
