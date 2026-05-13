@@ -165,7 +165,7 @@ func (n *nft) addInputChain(config firewall.Config, nftCtx *nftContext) {
 	// meshnet
 	if config.MeshnetInfo != nil {
 		// Add chain for the meshnet and the jump rule to it
-		meshChain := n.addMeshnetInputChain(nftCtx, config.MeshnetInfo.MeshnetMap.Machine.Address)
+		meshChain := n.addMeshnetInputChain(nftCtx, config.MeshnetInfo.MeshnetMap.Address)
 
 		// iifname "nordlynx" ip saddr 100.64.0.0/10 jump mesh_input
 		n.conn.AddRule(&nftables.Rule{
