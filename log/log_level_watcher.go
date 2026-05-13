@@ -12,14 +12,11 @@ import (
 )
 
 // WatchLevelFile starts a goroutine that watches path for writes and updates
-// the active log level whenever the file content changes. The goroutine
-// stops when the returned CancelFunc is called.
+// the active log level whenever the file content changes. This func expects
+// the parent directory of a file path to already exist and be accessible.
+// The goroutine stops when the returned CancelFunc is called.
 func WatchLevelFile(path string) (CancelFunc, error) {
 	Info("trying to set log level watcher on path", path)
-	if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
-		return nil, err
-	}
-
 	watcher, err := filewatch.GetFileWatcher(filepath.Dir(path))
 	if err != nil {
 		return nil, err
