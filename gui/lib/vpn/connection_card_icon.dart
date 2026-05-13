@@ -50,7 +50,7 @@ final class ConnectionCardIcon extends StatelessWidget {
       return imagesManager.forSpecialtyServer(serverType);
     }
 
-    return imagesManager.placeholderCountryFlag;
+    return DynamicThemeImage("flag_placeholder.svg");
   }
 
   Widget _addDIPIconIfNeeded(ConnectionCardIconTheme iconTheme) {
@@ -103,6 +103,7 @@ final class ConnectionCardIcon extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: (iconTheme.iconSize / 2) - (2 * iconTheme.flagBorderSize),
+            backgroundColor: Colors.transparent,
             child: ClipOval(
               child: SizedBox(
                 width: double.infinity,
