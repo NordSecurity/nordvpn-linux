@@ -595,6 +595,7 @@ func main() {
 		clientAPI,
 		clientAPI,
 		clientAPI,
+		clientAPI,
 		cdnAPI,
 		repoAPI,
 		core.NewOAuth2(httpClientWithRotator, daemon.BaseURL),

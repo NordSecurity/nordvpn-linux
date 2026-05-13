@@ -120,6 +120,13 @@ func (m *mockRawClientAPI) RegisterDevice(string, core.DevicesRequest) (core.Dev
 func (m *mockRawClientAPI) UpdateDevice(string, uuid.UUID, core.UpdateDeviceRequest) (core.DevicesResponse, error) {
 	return core.DevicesResponse{}, nil
 }
+func (m *mockRawClientAPI) DedicatedServers(string) (core.DedicatedServers, error) {
+	return core.DedicatedServers{}, nil
+}
+func (m *mockRawClientAPI) DedicatedServerConnectCheck(string, string, core.DedicatedServerConnectRequest) (core.DedicatedServerConnectResponse, error) {
+	return core.DedicatedServerConnectResponse{}, nil
+}
+
 func (m *mockRawClientAPI) Base() string {
 	return "https://api.test.com"
 }
@@ -216,6 +223,12 @@ func (m *mockClientAPI) RegisterDevice(core.DevicesRequest) (core.DevicesRespons
 }
 func (m *mockClientAPI) UpdateDevice(uuid.UUID, core.UpdateDeviceRequest) (core.DevicesResponse, error) {
 	return m.mockRawClientAPI.UpdateDevice("", uuid.Nil, core.UpdateDeviceRequest{})
+}
+func (m *mockClientAPI) DedicatedServers() (core.DedicatedServers, error) {
+	return m.mockRawClientAPI.DedicatedServers("")
+}
+func (m *mockClientAPI) DedicatedServerConnectCheck(string, core.DedicatedServerConnectRequest) (core.DedicatedServerConnectResponse, error) {
+	return m.mockRawClientAPI.DedicatedServerConnectCheck("", "", core.DedicatedServerConnectRequest{})
 }
 
 func setupTestConfig() *config.Config {

@@ -39,8 +39,21 @@ type MeshnetDeviceKeyManager interface {
 	ForceRegisterMeshnet() error
 }
 
+// DedicatedServersConnectionData contains device side data necessary to connect to a dedicated server
+type DedicatedServersConnectionData struct {
+	// DevicePublicKey is used when making dedicated server connect checks
+	DevicePublicKey string
+	// DevicePrivateKey is used when connecting to a dedicated server
+	DevicePrivateKey string
+	// DeviceUUID is used when making dedicated server connect checks
+	DeviceUUID uuid.UUID
+}
+
 type DedicatedServersKeyManager interface {
-	CheckAndRegisterDedicatedServers() bool
+	// CheckAndRegisterDedicatedServers checks if device has been registered for private servers and registers it if it
+	// isn't.
+	// Returns the connection data if it is available. Returns nil if data is not available.
+	CheckAndRegisterDedicatedServers() *DedicatedServersConnectionData
 	DeviceKeyInvalidator
 }
 
@@ -179,32 +192,44 @@ type registerFunc func(deviceKey string,
 // Returns true if the key was successfully registered.
 //
 // Thread-safe.
-func (d *DeviceKeyManagerImpl) CheckAndRegisterDedicatedServers() bool {
+func (d *DeviceKeyManagerImpl) CheckAndRegisterDedicatedServers() *DedicatedServersConnectionData {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
 	var cfg config.Config
 	if err := d.configManager.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
-		return false
+		return nil
 	}
 
 	if isDedicatedServersRegistrationInfoCorrect(cfg) {
-		return true
+		return &DedicatedServersConnectionData{
+			DeviceUUID:       cfg.DeviceUUID,
+			DevicePublicKey:  d.keyGenerator.Public(cfg.DeviceKey),
+			DevicePrivateKey: cfg.DeviceKey,
+		}
 	}
 
 	newConfig, err := d.registerKey(&cfg, d.registerDedicatedServer)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to register device key for dedicated servers:", err)
-		return false
+		return nil
 	}
 
 	if err := d.configManager.SaveWith(keyConfig(*newConfig)); err != nil {
 		log.Println(internal.ErrorPrefix, "failed to save dedicated servers config:", err)
-		return false
+		return nil
 	}
 
-	return isDedicatedServersRegistrationInfoCorrect(*newConfig)
+	if !isDedicatedServersRegistrationInfoCorrect(*newConfig) {
+		return nil
+	}
+
+	return &DedicatedServersConnectionData{
+		DeviceUUID:       newConfig.DeviceUUID,
+		DevicePublicKey:  d.keyGenerator.Public(newConfig.DeviceKey),
+		DevicePrivateKey: newConfig.DeviceKey,
+	}
 }
 
 func (d *DeviceKeyManagerImpl) InvalidateDeviceKeyData() error {
@@ -291,12 +316,8 @@ func (d *DeviceKeyManagerImpl) registerMeshnet(deviceKey string,
 
 func (d *DeviceKeyManagerImpl) registerDedicatedServer(deviceKey string,
 	distroName string,
-	isKeyNew bool,
+	_ bool,
 	cfg *config.Config) (*config.Config, error) {
-	if isKeyNew {
-		cfg = invalidateKeyData(cfg)
-	}
-
 	resp, err := d.dedicatedServersAPI.RegisterDevice(core.DevicesRequest{
 		HardwareIdentifier: cfg.MachineID.String(),
 		PublicKey:          d.keyGenerator.Public(deviceKey),
@@ -308,8 +329,11 @@ func (d *DeviceKeyManagerImpl) registerDedicatedServer(deviceKey string,
 		// We try to keep the same keys as long as possible, but if relogin with different account happens
 		// then they have to be regenerated. There's no way to check if the current mesh device data
 		// belongs to this account or not, so handling this on registering error is the best approach.
-		deviceKey = d.keyGenerator.Private()
-		cfg = invalidateKeyData(cfg)
+		// If meshnet is on we can reuse it's key. If it's off we invalidate all of the key data.
+		if !cfg.Mesh {
+			deviceKey = d.keyGenerator.Private()
+			cfg = invalidateKeyData(cfg)
+		}
 
 		uuid, uuidParseErr := uuid.Parse(resp.UUID)
 		if uuidParseErr != nil {
