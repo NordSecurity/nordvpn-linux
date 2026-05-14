@@ -42,8 +42,8 @@ class ServerGroup extends $pb.ProtobufEnum {
       ServerGroup._(23, _omitEnumNames ? '' : 'ASIA_PACIFIC');
   static const ServerGroup AFRICA_THE_MIDDLE_EAST_AND_INDIA = ServerGroup._(
       25, _omitEnumNames ? '' : 'AFRICA_THE_MIDDLE_EAST_AND_INDIA');
-  static const ServerGroup DEDICATED_SERVERS =
-      ServerGroup._(99, _omitEnumNames ? '' : 'DEDICATED_SERVERS');
+  static const ServerGroup DEDICATED_SERVER =
+      ServerGroup._(99, _omitEnumNames ? '' : 'DEDICATED_SERVER');
 
   static const $core.List<ServerGroup> values = <ServerGroup>[
     UNDEFINED,
@@ -60,7 +60,7 @@ class ServerGroup extends $pb.ProtobufEnum {
     THE_AMERICAS,
     ASIA_PACIFIC,
     AFRICA_THE_MIDDLE_EAST_AND_INDIA,
-    DEDICATED_SERVERS,
+    DEDICATED_SERVER,
   ];
 
   static final $core.Map<$core.int, ServerGroup> _byValue =
