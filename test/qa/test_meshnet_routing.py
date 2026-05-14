@@ -128,7 +128,7 @@ def test_route_traffic_accept():
     print(output)
     cap.stop()
     capture_utils.summarize(cap.packets)
-    assert capture_utils.check_for_routing_pattern(cap.packets, peer_ip, http_bin_ip), "Routing pattern not found"
+    assert capture_utils.is_routed_through_host(cap.packets, peer_ip, http_bin_ip), "Routing pattern not found"
     ssh_client.exec_command("nordvpn disconnect")
 
 
@@ -162,9 +162,12 @@ def test_routing_access_LAN():
     sh_no_tty.nordvpn.mesh.peer.local.allow(peer_hostname)
     cap = capture_utils.BackgroundCapture("any", display_filter=f"ip.addr == {default_gateway}")
     cap.start()
+    time.sleep(2)
     assert ssh_client.network.ping(default_gateway, retry=3)
     time.sleep(2)
-    capture_utils.check_for_tunnel_packets(cap.packets)
+    cap.stop()
+    capture_utils.summarize(cap.packets)
+    assert capture_utils.has_tunnel_packets(cap.packets)
     ssh_client.exec_command("nordvpn disconnect")
 
 

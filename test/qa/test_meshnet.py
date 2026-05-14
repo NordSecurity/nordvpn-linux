@@ -291,7 +291,6 @@ def test_direct_connection_rtt_and_loss():
         base_test(log_content, qapeer_hostname)
 
 
-# @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
 @pytest.mark.core_meshnet
 def test_incoming_connections():
     """Manual TC: LVPN-1259"""

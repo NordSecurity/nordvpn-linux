@@ -15,7 +15,7 @@ RUN apt-get update && \
         # install wireguard tools for tests
         wireguard-tools \
         # install python for tests
-        python3 python3-pip python3-nftables \
+        python3 python3-pip \
         # install tshark  \
         tshark \
         # changelog parsing

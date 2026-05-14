@@ -1,7 +1,6 @@
 import asyncio
 import threading
 import os
-from collections import defaultdict
 
 import pyshark
 
@@ -20,7 +19,6 @@ class BackgroundCapture:
         self._thread = None
         self._capture = None
         self._loop = None
-        self._ready = threading.Event()
 
     def _run(self):
         # Each thread needs its own asyncio loop for pyshark
@@ -85,28 +83,22 @@ def summarize(packets):
         except AttributeError:
             pass
 
-def check_for_routing_pattern(packets: list, peer_ip, endpoint_ip):
-    groups = defaultdict(list)
-    for pkt in packets:
-        groups[pkt.length].append(pkt)
-
-    grouped_packets = list(groups.values())
-    print(grouped_packets)
-    handshake_group = grouped_packets[0]
+def is_routed_through_host(packets: list, peer_ip, endpoint_ip) -> bool:
+    first_len = packets[0].length
+    handshake_group = [p for p in packets if p.length == first_len]
     for index, _ in enumerate(handshake_group):
         try:
-            # initial request of peer -> endpoint
             packet1 = handshake_group[index]
             packet2 = handshake_group[index + 1]
             packet3 = handshake_group[index + 2]
             packet4 = handshake_group[index + 3]
-            # initial request of peer -> endpoint
+                # initial request of peer -> endpoint
             if (ifindex_to_name(packet1.sll.ifindex) == "nordlynx" and packet1.ip.src == peer_ip and packet1.ip.dst == endpoint_ip and
-            # second packet in order is the device being routed through's interface passing to endpoint
+                # second packet in order is the device being routed through's interface passing to endpoint
                 ifindex_to_name(packet2.sll.ifindex) != "nordlynx" and packet2.ip.dst == endpoint_ip and
-            # third packet is endpoint ip sending ack to router
+                # third packet is endpoint ip sending ack to router
                 ifindex_to_name(packet3.sll.ifindex) != "nordlynx" and packet3.ip.src == endpoint_ip and
-            # fourth packet is sending this ack now back to the peer over the tunnel
+                # fourth packet is sending this ack now back to the peer over the tunnel
                 ifindex_to_name(packet4.sll.ifindex) == "nordlynx" and packet4.ip.src == endpoint_ip and packet4.ip.dst == peer_ip):
                 return True
             continue
@@ -115,5 +107,5 @@ def check_for_routing_pattern(packets: list, peer_ip, endpoint_ip):
     return False
 
 
-def check_for_tunnel_packets(packets: list):
+def has_tunnel_packets(packets: list) -> bool:
     return any(ifindex_to_name(packet.sll.ifindex) == "nordlynx" for packet in packets)
