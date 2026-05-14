@@ -78,6 +78,9 @@ const (
 	CodeDedicatedServersServiceButNoServers int64 = 3063
 	CodeDedicatedServerNotReady             int64 = 3064
 	CodeDedicatedServerNoNordlynx           int64 = 3065
+	CodeDedicatedServersRenewError          int64 = 3066
+	CodeDedicatedServersNotReady            int64 = 3067
+	CodeDedicatedServersNoNordlynx          int64 = 3068
 )
 
 type ErrorWithCode struct {

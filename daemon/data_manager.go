@@ -19,6 +19,10 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
+// dedicatedServersGroupTitle is the group title used for the "Dedicated Server" specialty group.
+// It is assumed to be always present.
+const dedicatedServersGroupTitle = "Dedicated server"
+
 type InsightsDataManager interface {
 	GetInsightsData() InsightsData
 	SetInsightsData(core.Insights) error
@@ -384,6 +388,9 @@ func (dm *DataManager) Groups(
 			result = append(result, item)
 		}
 	}
+
+	// Dedicated Server is to be always present in Tray
+	result = append(result, &pb.ServerGroup{Name: internal.Title(dedicatedServersGroupTitle), VirtualLocation: false})
 
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].Name < result[j].Name

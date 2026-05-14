@@ -91,8 +91,10 @@ func TestRPCGroups_RegionalGroupsFiltered(t *testing.T) {
 	payload, _ := rpc.Groups(context.Background(), &pb.Empty{})
 
 	assert.Equal(t, internal.CodeSuccess, payload.Type)
-	assert.Equal(t, 1, len(payload.Servers))
-	assert.Equal(t, "P2P", payload.Servers[0].Name)
+	assert.Equal(t, 2, len(payload.Servers))
+	// dedicated server group is always appended to the server groups list
+	assert.Equal(t, "Dedicated_Server", payload.Servers[0].Name)
+	assert.Equal(t, "P2P", payload.Servers[1].Name)
 }
 
 func TestRPCGroups_Successful(t *testing.T) {
@@ -113,10 +115,12 @@ func TestRPCGroups_Successful(t *testing.T) {
 			statusCode: internal.CodeConfigError,
 		},
 		{
-			name:       "no results when no servers exist",
+			name:       "dedicated servers group always present",
 			cm:         newMockConfigManager(),
 			statusCode: internal.CodeSuccess,
-			expected:   []*pb.ServerGroup{},
+			expected: []*pb.ServerGroup{
+				{Name: "Dedicated_Server", VirtualLocation: false},
+			},
 		},
 		{
 			name:       "virtual and physical servers",
@@ -128,6 +132,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 				{Name: "Double_VPN", VirtualLocation: false},
 				{Name: "P2P", VirtualLocation: false},
 				{Name: "Standard_VPN_Servers", VirtualLocation: false},
+				{Name: "Dedicated_Server", VirtualLocation: false},
 			},
 		},
 		{
@@ -141,6 +146,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 				{Name: "Double_VPN", VirtualLocation: false},
 				{Name: "P2P", VirtualLocation: false},
 				{Name: "Standard_VPN_Servers", VirtualLocation: false},
+				{Name: "Dedicated_Server", VirtualLocation: false},
 			},
 		},
 	}
@@ -170,7 +176,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 
 			assert.Equal(t, test.statusCode, payload.Type)
 			assert.Equal(t, len(test.expected), len(payload.Servers))
-			assert.Equal(t, test.expected, payload.Servers)
+			assert.ElementsMatch(t, test.expected, payload.Servers)
 		})
 	}
 }

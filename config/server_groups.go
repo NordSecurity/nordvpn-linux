@@ -8,7 +8,7 @@ var GroupMap = map[string]ServerGroup{
 	"standard_vpn_servers": ServerGroup_STANDARD_VPN_SERVERS,
 	"p2p":                  ServerGroup_P2P,
 	"obfuscated_servers":   ServerGroup_OBFUSCATED,
-	"dedicated_servers":    ServerGroup_DEDICATED_SERVERS,
+	"dedicated_server":     ServerGroup_DEDICATED_SERVER,
 }
 
 // IsRegionalGroup reports whether g is a deprecated regional group; uses raw ints since the named constants are removed.
