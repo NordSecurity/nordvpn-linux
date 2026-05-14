@@ -61,7 +61,11 @@ class ServerGroup extends $pb.ProtobufEnum {
     ASIA_PACIFIC,
     AFRICA_THE_MIDDLE_EAST_AND_INDIA,
     DEDICATED_SERVER,
+  ];
+
+  static final $core.Map<$core.int, ServerGroup> _byValue =
       $pb.ProtobufEnum.initByValue(values);
+  static ServerGroup? valueOf($core.int value) => _byValue[value];
 
   const ServerGroup._(super.value, super.name);
 }
