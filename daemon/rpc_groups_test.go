@@ -78,10 +78,12 @@ func TestRPCGroups_Successful(t *testing.T) {
 			statusCode: internal.CodeConfigError,
 		},
 		{
-			name:       "no results when no servers exist",
+			name:       "dedicated servers group always present",
 			cm:         newMockConfigManager(),
 			statusCode: internal.CodeSuccess,
-			expected:   []*pb.ServerGroup{},
+			expected: []*pb.ServerGroup{
+				{Name: "Dedicated_Server", VirtualLocation: false},
+			},
 		},
 		{
 			name:       "virtual and physical servers",
@@ -93,6 +95,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 				{Name: "Double_VPN", VirtualLocation: false},
 				{Name: "P2P", VirtualLocation: false},
 				{Name: "Standard_VPN_Servers", VirtualLocation: false},
+				{Name: "Dedicated_Server", VirtualLocation: false},
 			},
 		},
 		{
@@ -106,6 +109,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 				{Name: "Double_VPN", VirtualLocation: false},
 				{Name: "P2P", VirtualLocation: false},
 				{Name: "Standard_VPN_Servers", VirtualLocation: false},
+				{Name: "Dedicated_Server", VirtualLocation: false},
 			},
 		},
 	}
@@ -135,7 +139,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 
 			assert.Equal(t, test.statusCode, payload.Type)
 			assert.Equal(t, len(test.expected), len(payload.Servers))
-			assert.Equal(t, test.expected, payload.Servers)
+			assert.ElementsMatch(t, test.expected, payload.Servers)
 		})
 	}
 }

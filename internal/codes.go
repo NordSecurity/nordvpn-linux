@@ -71,10 +71,10 @@ const (
 	CodeARPIgnoreError                      int64 = 3056
 	CodeVirtualLocationDisabled             int64 = 3057
 	CodePauseAttemptWhenConnectedToMeshPeer int64 = 3058
-	CodeDedicatedServerRenewError           int64 = 3059
+	CodeDedicatedServersRenewError          int64 = 3059
 	CodeDedicatedServersServiceButNoServers int64 = 3060
-	CodeDedicatedServerNotReady             int64 = 3061
-	CodeDedicatedServerNoNordlynx           int64 = 3062
+	CodeDedicatedServersNotReady            int64 = 3061
+	CodeDedicatedServersNoNordlynx          int64 = 3062
 )
 
 type ErrorWithCode struct {

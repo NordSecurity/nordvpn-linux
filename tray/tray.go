@@ -116,12 +116,17 @@ func sortedConnections(sgs []*pb.ServerGroup) []Server {
 	return list
 }
 
+type notifier interface {
+	start()
+	sendNotification(summary string, body string) error
+}
+
 type Instance struct {
 	client              pb.DaemonClient
 	fileshare           FileshareManager
 	accountInfo         accountInfo
 	debugMode           bool
-	notifier            dbusNotifier
+	notifier            notifier
 	renderChan          chan struct{}
 	initialDataLoadChan chan struct{}
 	iconConnected       string
@@ -171,6 +176,7 @@ func NewTrayInstance(client pb.DaemonClient, quitChan chan<- norduser.StopReques
 	obj := &Instance{
 		client:            client,
 		fileshare:         NewFileshareManager(),
+		notifier:          &dbusNotifier{},
 		quitChan:          quitChan,
 		connSensor:        newConnectionSettingsChangeSensor(),
 		recentConnections: newRecentConnectionsManager(client),
