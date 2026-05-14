@@ -13,29 +13,30 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
   double get flagSize;
   double get loaderSize;
   double get listItemHeight;
+  double get labelPadding;
   EdgeInsetsGeometry get paddingSearchGroupsLabel;
   TextStyle get searchHintStyle;
   TextStyle get obfuscationSearchWarningStyle;
   TextStyle get searchErrorStyle;
   Color get obfuscatedItemBackgroundColor;
-  double get horizontalSpace;
 
   @override
   ServersListTheme copyWith({
     double? flagSize,
     double? loaderSize,
     double? listItemHeight,
+    double? labelPadding,
     EdgeInsetsGeometry? paddingSearchGroupsLabel,
     TextStyle? searchHintStyle,
     TextStyle? obfuscationSearchWarningStyle,
     TextStyle? searchErrorStyle,
     Color? obfuscatedItemBackgroundColor,
-    double? horizontalSpace,
   }) {
     return ServersListTheme(
       flagSize: flagSize ?? this.flagSize,
       loaderSize: loaderSize ?? this.loaderSize,
       listItemHeight: listItemHeight ?? this.listItemHeight,
+      labelPadding: labelPadding ?? this.labelPadding,
       paddingSearchGroupsLabel:
           paddingSearchGroupsLabel ?? this.paddingSearchGroupsLabel,
       searchHintStyle: searchHintStyle ?? this.searchHintStyle,
@@ -44,7 +45,6 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
       searchErrorStyle: searchErrorStyle ?? this.searchErrorStyle,
       obfuscatedItemBackgroundColor:
           obfuscatedItemBackgroundColor ?? this.obfuscatedItemBackgroundColor,
-      horizontalSpace: horizontalSpace ?? this.horizontalSpace,
     );
   }
 
@@ -58,6 +58,7 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
       flagSize: t < 0.5 ? flagSize : other.flagSize,
       loaderSize: t < 0.5 ? loaderSize : other.loaderSize,
       listItemHeight: t < 0.5 ? listItemHeight : other.listItemHeight,
+      labelPadding: t < 0.5 ? labelPadding : other.labelPadding,
       paddingSearchGroupsLabel: t < 0.5
           ? paddingSearchGroupsLabel
           : other.paddingSearchGroupsLabel,
@@ -81,7 +82,6 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
         other.obfuscatedItemBackgroundColor,
         t,
       )!,
-      horizontalSpace: t < 0.5 ? horizontalSpace : other.horizontalSpace,
     );
   }
 
@@ -98,6 +98,10 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
             const DeepCollectionEquality().equals(
               listItemHeight,
               other.listItemHeight,
+            ) &&
+            const DeepCollectionEquality().equals(
+              labelPadding,
+              other.labelPadding,
             ) &&
             const DeepCollectionEquality().equals(
               paddingSearchGroupsLabel,
@@ -118,10 +122,6 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
             const DeepCollectionEquality().equals(
               obfuscatedItemBackgroundColor,
               other.obfuscatedItemBackgroundColor,
-            ) &&
-            const DeepCollectionEquality().equals(
-              horizontalSpace,
-              other.horizontalSpace,
             ));
   }
 
@@ -132,12 +132,12 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
       const DeepCollectionEquality().hash(flagSize),
       const DeepCollectionEquality().hash(loaderSize),
       const DeepCollectionEquality().hash(listItemHeight),
+      const DeepCollectionEquality().hash(labelPadding),
       const DeepCollectionEquality().hash(paddingSearchGroupsLabel),
       const DeepCollectionEquality().hash(searchHintStyle),
       const DeepCollectionEquality().hash(obfuscationSearchWarningStyle),
       const DeepCollectionEquality().hash(searchErrorStyle),
       const DeepCollectionEquality().hash(obfuscatedItemBackgroundColor),
-      const DeepCollectionEquality().hash(horizontalSpace),
     );
   }
 }
@@ -148,6 +148,7 @@ extension ServersListThemeBuildContextProps on BuildContext {
   double get flagSize => serversListTheme.flagSize;
   double get loaderSize => serversListTheme.loaderSize;
   double get listItemHeight => serversListTheme.listItemHeight;
+  double get labelPadding => serversListTheme.labelPadding;
   EdgeInsetsGeometry get paddingSearchGroupsLabel =>
       serversListTheme.paddingSearchGroupsLabel;
   TextStyle get searchHintStyle => serversListTheme.searchHintStyle;
@@ -156,5 +157,4 @@ extension ServersListThemeBuildContextProps on BuildContext {
   TextStyle get searchErrorStyle => serversListTheme.searchErrorStyle;
   Color get obfuscatedItemBackgroundColor =>
       serversListTheme.obfuscatedItemBackgroundColor;
-  double get horizontalSpace => serversListTheme.horizontalSpace;
 }
