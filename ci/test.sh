@@ -24,7 +24,7 @@ if [ "${1:-""}" = "full" ]; then
 	source "${WORKDIR}"/ci/add_private_bindings.sh moose/events "${LIBMOOSE_NORDVPNAPP_BINDINGS_PATH}"
 	source "${WORKDIR}"/ci/add_private_bindings.sh moose/worker "${LIBMOOSE_WORKER_BINDINGS_PATH}"
 
-	excluded_packages="thisshouldneverexist"
+	excluded_packages="third-party"
 	excluded_categories="notworking"
 	tags="internal,moose"
 	parallel="-p 1"
