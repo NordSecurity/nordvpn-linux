@@ -115,7 +115,7 @@ func (d *deterministicServersAPI) RecommendedServers(filter core.ServersFilter, 
 			config.ServerGroup_AFRICA_THE_MIDDLE_EAST_AND_INDIA:
 
 			return getServersByID(allServers, 1), nil, nil
-		case config.ServerGroup_DEDICATED_SERVERS:
+		case config.ServerGroup_DEDICATED_SERVER:
 			panic("dedicated servers will never be recommended")
 		}
 	}

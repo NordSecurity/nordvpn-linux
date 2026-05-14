@@ -69,7 +69,7 @@ func PickServer(
 		return serverSelection{}, ErrDedicatedIPServer
 	}
 
-	if serverGroup == config.ServerGroup_DEDICATED_SERVERS {
+	if serverGroup == config.ServerGroup_DEDICATED_SERVER {
 		// DS servers are taken from another API endpoint
 		return serverSelection{}, ErrDedicatedServer
 	}
@@ -655,11 +655,14 @@ func selectDedicatedServer(authChecker auth.Checker,
 		Name:   dedicatedServer.Name,
 		Status: core.Online,
 		Groups: core.Groups{core.Group{
-			ID:    config.ServerGroup_DEDICATED_SERVERS,
-			Title: config.ServerGroup_DEDICATED_SERVERS.String(),
+			ID:    config.ServerGroup_DEDICATED_SERVER,
+			Title: config.ServerGroup_DEDICATED_SERVER.String(),
 		}},
 		Locations:           core.Locations{dedicatedServer.Location},
 		DedicatedServerUUID: dedicatedServer.UUID,
+		// Invariant: dedicated servers are always of Nordlynx, hence Wireguard tech.
+		// This is needed to correctly display dedicated servers in the recent connections list.
+		Technologies: core.Technologies{core.Technology{ID: core.WireguardTech}},
 	}, nil
 }
 
@@ -712,6 +715,6 @@ func GetServerParameters(serverTag string, groupTag string, countries core.Count
 
 func IsServerDedicated(server core.Server) bool {
 	return slices.ContainsFunc(server.Groups, func(group core.Group) bool {
-		return group.ID == config.ServerGroup_DEDICATED_SERVERS
+		return group.ID == config.ServerGroup_DEDICATED_SERVER
 	})
 }

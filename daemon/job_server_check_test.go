@@ -42,7 +42,7 @@ func TestServerCheck_DedicatedServersAreNotChecked(t *testing.T) {
 		},
 		{
 			name:                 "VPN is active, server is a dedicated server, server data is not updated",
-			serverGroup:          config.ServerGroup_DEDICATED_SERVERS,
+			serverGroup:          config.ServerGroup_DEDICATED_SERVER,
 			isVPNActive:          true,
 			expectedServerStatus: serverBeforeUpdate.Status,
 			expectedPenalty:      serverBeforeUpdate.Penalty,
@@ -58,7 +58,7 @@ func TestServerCheck_DedicatedServersAreNotChecked(t *testing.T) {
 		},
 		{
 			name:                 "VPN is not active, server is a dedicated server, server data is not updated",
-			serverGroup:          config.ServerGroup_DEDICATED_SERVERS,
+			serverGroup:          config.ServerGroup_DEDICATED_SERVER,
 			isVPNActive:          false,
 			expectedServerStatus: serverBeforeUpdate.Status,
 			expectedPenalty:      serverBeforeUpdate.Penalty,

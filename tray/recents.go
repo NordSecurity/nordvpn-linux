@@ -46,7 +46,7 @@ var groupTitles = map[config.ServerGroup]string{
 	config.ServerGroup_THE_AMERICAS:                     "The Americas",
 	config.ServerGroup_ASIA_PACIFIC:                     "Asia Pacific",
 	config.ServerGroup_AFRICA_THE_MIDDLE_EAST_AND_INDIA: "Africa The Middle East and India",
-	config.ServerGroup_DEDICATED_SERVERS:                "Dedicated server",
+	config.ServerGroup_DEDICATED_SERVER:                 "Dedicated Server",
 }
 
 func formatGroupTitle(group config.ServerGroup) string {
