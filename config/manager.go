@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 var (
@@ -20,6 +21,7 @@ var (
 	InstallFilePath = filepath.Join(internal.DatFilesPathCommon, "install.dat")
 	// SettingsDataFilePath defines path to app configs file
 	SettingsDataFilePath = filepath.Join(internal.DatFilesPath, "settings.dat")
+	decryptedConfigFileHeader = []byte{0x2E, 0x44, 0x41, 0x54}
 )
 
 var errNoInstallFile = errors.New("install file doesn't exist")
@@ -130,22 +132,24 @@ func (f *FilesystemConfigManager) SaveWith(fn SaveFunc) error {
 }
 
 func (f *FilesystemConfigManager) save(c Config) error {
-	pass, err := f.getPassphrase()
-	if err != nil {
-		return err
-	}
+	// pass, err := f.getPassphrase()
+	// if err != nil {
+	// 	return err
+	// }
 
 	data, err := json.Marshal(c)
 	if err != nil {
 		return err
 	}
+	dataWithHeader := decryptedConfigFileHeader
+	dataWithHeader = append(dataWithHeader, data...)
 
-	encrypted, err := internal.Encrypt(data, pass)
-	if err != nil {
-		return err
-	}
+	// encrypted, err := internal.Encrypt(data, pass)
+	// if err != nil {
+	// 	return err
+	// }
 
-	return f.fsHandle.WriteFile(f.location, encrypted, internal.PermUserRW)
+	return f.fsHandle.WriteFile(f.location, dataWithHeader, internal.PermUserRW)
 }
 
 // Reset config values to defaults.
@@ -226,19 +230,27 @@ func (f *FilesystemConfigManager) load(c *Config, copy *Config) error {
 	if err != nil {
 		return err
 	}
-
-	decryptedJSON, err := internal.Decrypt(data, pass)
-	if err != nil {
-		return err
+	var decryptedData []byte
+	// Checking if file header matches the expected decrypted file header
+	if !bytes.Equal(data[:4], decryptedConfigFileHeader) {
+		log.Debug("do a little loading file headers did not match")
+		decryptedJSON, err := internal.Decrypt(data, pass)
+		if err != nil {
+			return err
+		}
+		decryptedData = decryptedJSON
+	} else {
+		decryptedData = data[4:]
 	}
 
-	if err := json.Unmarshal(decryptedJSON, c); err != nil {
+
+	if err := json.Unmarshal(decryptedData, c); err != nil {
 		return err
 	}
 
 	if copy != nil {
 		*copy = *newConfig(f.machineIDGetter)
-		if err := json.Unmarshal(decryptedJSON, copy); err != nil {
+		if err := json.Unmarshal(decryptedData, copy); err != nil {
 			return err
 		}
 	}
