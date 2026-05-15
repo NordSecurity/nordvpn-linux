@@ -41,6 +41,9 @@ class TestUtils:
         ssh_client.connect()
         daemon.install_peer(ssh_client)
         TestUtils.allowlist_ssh(ssh_client, network.FWMARK)
+        # Setting up a http server to check incoming connections validity
+        # to avoid using ping and also not using socket connection to port 22 as it is allowlisted
+        ssh_client.exec_command("nohup python3 -m http.server &>/dev/null &")
 
 
     @staticmethod
@@ -675,7 +678,7 @@ def get_clean_peer_list(peer_list: str):
     return output
 
 
-def is_peer_reachable(peer: Peer, peer_name: PeerName = PeerName.Hostname, ssh_client: ssh.Ssh = None, retry: int = 5) -> bool:
+def is_peer_reachable(peer: Peer, peer_name: PeerName = PeerName.Hostname, ssh_client: ssh.Ssh = None, retry: int = 5, port = 22) -> bool:
     """Returns True when ping to peer succeeds."""
 
     if peer_name == PeerName.Hostname:
@@ -686,7 +689,7 @@ def is_peer_reachable(peer: Peer, peer_name: PeerName = PeerName.Hostname, ssh_c
         peer_hostname = peer.nickname
 
     if ssh_client is None:
-        return network.is_internet_reachable(peer_hostname, 22, retry)
+        return network.is_internet_reachable(peer_hostname, port, retry)
     else:  # noqa: RET505
         work_dir = os.environ.get("WORKDIR")
         # Usage: python3 is_host_alive.py <host> [retries] [delay]
@@ -813,3 +816,5 @@ def delete_machines_by_identifier(token: str, identifiers: list | None = None) -
 def is_meshnet_test_disabled_from_run() -> bool:
     """Checks if Meshnet tests are disabled from a run based on environment variable."""
     return os.getenv("DISABLE_MESHNET_TESTS") is not None
+
+
