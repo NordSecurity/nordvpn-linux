@@ -26,7 +26,7 @@ type DedicatedIPService struct {
 	ServerIDs []int64
 }
 
-type DedicatedServersService struct {
+type DedicatedServerService struct {
 	ExpiresAt string
 	Active    bool
 }
@@ -42,8 +42,8 @@ type Checker interface {
 	// GetDedicatedIPServices returns all available server IDs, if server is not selected by the user it will set
 	// ServerID for that service to NoServerSelected
 	GetDedicatedIPServices() ([]DedicatedIPService, error)
-	// GetDedicatedServersService returns dedicated servers service status and expiration date
-	GetDedicatedServersService() (DedicatedServersService, error)
+	// GetDedicatedServerService returns dedicated servers service status and expiration date
+	GetDedicatedServerService() (DedicatedServerService, error)
 }
 
 const (
@@ -213,14 +213,14 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 	return dipServices, nil
 }
 
-// GetDedicatedServersService returns dedicated servers service status and expiration date
-func (r *RenewingChecker) GetDedicatedServersService() (DedicatedServersService, error) {
+// GetDedicatedServerService returns dedicated servers service status and expiration date
+func (r *RenewingChecker) GetDedicatedServerService() (DedicatedServerService, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	services, err := r.fetchServices()
 	if err != nil {
-		return DedicatedServersService{}, fmt.Errorf("fetching services: %w", err)
+		return DedicatedServerService{}, fmt.Errorf("fetching services: %w", err)
 	}
 
 	dedicatedServersServiceIndex := slices.IndexFunc(services, func(serviceData core.ServiceData) bool {
@@ -228,17 +228,13 @@ func (r *RenewingChecker) GetDedicatedServersService() (DedicatedServersService,
 	})
 
 	if dedicatedServersServiceIndex == -1 {
-		return DedicatedServersService{Active: false}, nil
+		return DedicatedServerService{Active: false}, nil
 	}
 
 	dedicatedServersServiceData := services[dedicatedServersServiceIndex]
-	if r.expChecker.IsExpired(dedicatedServersServiceData.ExpiresAt) {
-		return DedicatedServersService{Active: false}, nil
-	}
-
-	return DedicatedServersService{
+	return DedicatedServerService{
 		ExpiresAt: dedicatedServersServiceData.ExpiresAt,
-		Active:    true,
+		Active:    !r.expChecker.IsExpired(dedicatedServersServiceData.ExpiresAt),
 	}, nil
 }
 

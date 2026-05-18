@@ -1438,7 +1438,7 @@ func TestLoginWithToken_RegisterForDedicatedServers(t *testing.T) {
 		consentChecker: &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
 		ac: &testauth.AuthCheckerMock{
 			LoggedIn:               false,
-			DedicatedServerService: auth.DedicatedServersService{Active: true}},
+			DedicatedServerService: auth.DedicatedServerService{Active: true}},
 		cm:                         mock.NewMockConfigManager(),
 		credentialsAPI:             &testcore.CredentialsAPIMock{},
 		events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsStub}},
@@ -1470,7 +1470,7 @@ func TestLoginOAuth2Callback_RegisterForDedicatedServers(t *testing.T) {
 		consentChecker: &mock.AnalyticsConsentCheckerMock{ConsentCompleted: true},
 		ac: &testauth.AuthCheckerMock{
 			LoggedIn:               false,
-			DedicatedServerService: auth.DedicatedServersService{Active: true}},
+			DedicatedServerService: auth.DedicatedServerService{Active: true}},
 		cm:                         mock.NewMockConfigManager(),
 		credentialsAPI:             &testcore.CredentialsAPIMock{},
 		events:                     &daemonevents.Events{User: &daemonevents.LoginEvents{Login: eventsStub}},

@@ -4,7 +4,7 @@ import "fmt"
 
 // RegisterDedicatedServers registers the device for dedicated servers if dedicated servers service is available to the user.
 func (r *RPC) RegisterDedicatedServers() error {
-	dedicatedServersService, err := r.ac.GetDedicatedServersService()
+	dedicatedServersService, err := r.ac.GetDedicatedServerService()
 	if err != nil {
 		return fmt.Errorf("checking service status: %w", err)
 	}

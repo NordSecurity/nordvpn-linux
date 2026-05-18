@@ -17,7 +17,7 @@ func TestSyncDevice(t *testing.T) {
 
 	tests := []struct {
 		name                             string
-		dedicatedServersService          auth.DedicatedServersService
+		dedicatedServersService          auth.DedicatedServerService
 		hasDedicatedServerServiceErr     error
 		dedicatedServersRegistrationData *devicekey.DedicatedServersConnectionData
 		shouldReturnError                bool
@@ -25,21 +25,21 @@ func TestSyncDevice(t *testing.T) {
 	}{
 		{
 			name:                             "user has dedicated servers service, key is registered",
-			dedicatedServersService:          auth.DedicatedServersService{Active: true},
+			dedicatedServersService:          auth.DedicatedServerService{Active: true},
 			dedicatedServersRegistrationData: &devicekey.DedicatedServersConnectionData{},
 			expectedKeyRegistered:            true,
 			shouldReturnError:                false,
 		},
 		{
 			name:                             "user doesn't have dedicated servers service, key is not registered",
-			dedicatedServersService:          auth.DedicatedServersService{Active: false},
+			dedicatedServersService:          auth.DedicatedServerService{Active: false},
 			dedicatedServersRegistrationData: &devicekey.DedicatedServersConnectionData{},
 			expectedKeyRegistered:            false,
 			shouldReturnError:                false,
 		},
 		{
 			name:                             "user has dedicated servers service, key registration fails, error is returned",
-			dedicatedServersService:          auth.DedicatedServersService{Active: true},
+			dedicatedServersService:          auth.DedicatedServerService{Active: true},
 			dedicatedServersRegistrationData: nil,
 			expectedKeyRegistered:            false,
 			shouldReturnError:                true,

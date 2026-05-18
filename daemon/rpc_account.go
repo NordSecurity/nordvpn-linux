@@ -103,14 +103,13 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 		}
 	}
 
-	dedicatedServerService, err := r.ac.GetDedicatedServersService()
+	dedicatedServerService, err := r.ac.GetDedicatedServerService()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "gettig dedicated server service:", err)
+		log.Println(internal.ErrorPrefix, "getting dedicated server service:", err)
 		if errors.Is(err, core.ErrUnauthorized) {
 			return &pb.AccountResponse{Type: internal.CodeExpiredAccessToken}, nil
-		} else {
-			return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
 		}
+		return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
 	}
 
 	accountInfo.DedicatedServersStatus = internal.CodeNoService

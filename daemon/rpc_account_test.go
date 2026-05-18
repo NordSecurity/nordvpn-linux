@@ -240,7 +240,7 @@ func TestAccountInfo_ContainsServiceData(t *testing.T) {
 			authCheckerMock := testauth.AuthCheckerMock{
 				LoggedIn:                     true,
 				GetDedicatedServerServiceErr: test.getDedicatedServersServiceErr,
-				DedicatedServerService: auth.DedicatedServersService{
+				DedicatedServerService: auth.DedicatedServerService{
 					Active:    test.isServiceActive,
 					ExpiresAt: "exp date"}}
 

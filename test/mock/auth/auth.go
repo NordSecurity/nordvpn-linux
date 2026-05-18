@@ -7,7 +7,7 @@ type AuthCheckerMock struct {
 	MFAEnabled             bool
 	VPNExpired             bool
 	DIPServices            []auth.DedicatedIPService
-	DedicatedServerService auth.DedicatedServersService
+	DedicatedServerService auth.DedicatedServerService
 
 	IsMFAEnabledErr              error
 	IsVPNExpiredErr              error
@@ -31,6 +31,6 @@ func (a *AuthCheckerMock) GetDedicatedIPServices() ([]auth.DedicatedIPService, e
 	return a.DIPServices, a.GetDedicatedIPServicesErr
 }
 
-func (a *AuthCheckerMock) GetDedicatedServersService() (auth.DedicatedServersService, error) {
+func (a *AuthCheckerMock) GetDedicatedServerService() (auth.DedicatedServerService, error) {
 	return a.DedicatedServerService, a.GetDedicatedServerServiceErr
 }
