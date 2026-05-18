@@ -7,6 +7,8 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
+	"github.com/google/uuid"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -265,4 +267,35 @@ func TestLoadWithCopyReturnsIndependentCopies(t *testing.T) {
 
 	// Verify second copy is unchanged (independent)
 	assert.NotEqual(t, first, second, "Modifications to the first copy should not affect the second copy")
+}
+
+func TestConfigMigratesFromEncryptedToUnencrypted(t *testing.T) {
+	category.Set(t, category.File)
+	salt, ok := os.LookupEnv("SALT")
+	require.True(t, ok)
+
+	filesystem := fs.NewSystemFileHandleMock(t)
+	configManager := NewFilesystemConfigManager(
+		"/location", "/vault", salt,
+		NewMachineID(os.ReadFile, os.Hostname),
+		&filesystem,
+		nil)
+	data, err := internal.FileRead("testdata/settings_4.6.0.dat")
+	assert.NoError(t, err)
+	filesystem.WriteFile("/location", data, internal.PermUserRW)
+	data, err = internal.FileRead("testdata/install_4.6.0.dat")
+	assert.NoError(t, err)
+	filesystem.WriteFile("/vault", data, internal.PermUserRW)
+	var cfg Config
+	err = configManager.Load(&cfg)
+	require.NoError(t, err)
+	err = configManager.SaveWith(func(c Config) Config {
+		c.MachineID = uuid.MustParse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+		c.LanDiscovery = true
+		return c
+	})
+	require.NoError(t, err)
+	encrypt_removed_config, _ := internal.FileRead("testdata/settings_5.0.0.dat")
+	post_save_config, _ := filesystem.ReadFile("/location")
+	assert.Equal(t, encrypt_removed_config, post_save_config)
 }

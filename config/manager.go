@@ -20,7 +20,7 @@ var (
 	// InstallFilePath defines filename of install id file
 	InstallFilePath = filepath.Join(internal.DatFilesPathCommon, "install.dat")
 	// SettingsDataFilePath defines path to app configs file
-	SettingsDataFilePath = filepath.Join(internal.DatFilesPath, "settings.dat")
+	SettingsDataFilePath      = filepath.Join(internal.DatFilesPath, "settings.dat")
 	decryptedConfigFileHeader = []byte{0x2E, 0x44, 0x41, 0x54}
 )
 
@@ -132,22 +132,12 @@ func (f *FilesystemConfigManager) SaveWith(fn SaveFunc) error {
 }
 
 func (f *FilesystemConfigManager) save(c Config) error {
-	// pass, err := f.getPassphrase()
-	// if err != nil {
-	// 	return err
-	// }
-
 	data, err := json.Marshal(c)
 	if err != nil {
 		return err
 	}
 	dataWithHeader := decryptedConfigFileHeader
 	dataWithHeader = append(dataWithHeader, data...)
-
-	// encrypted, err := internal.Encrypt(data, pass)
-	// if err != nil {
-	// 	return err
-	// }
 
 	return f.fsHandle.WriteFile(f.location, dataWithHeader, internal.PermUserRW)
 }
@@ -210,7 +200,6 @@ func (f *FilesystemConfigManager) Load(c *Config) error {
 func (f *FilesystemConfigManager) load(c *Config, copy *Config) error {
 	// always init with default settings and override later with the values from the file
 	*c = *newConfig(f.machineIDGetter)
-
 	// TODO(LVPN-9628): revisit how this mechanism works
 	if !f.fsHandle.FileExists(f.location) {
 		f.NewInstallation = true
@@ -220,11 +209,6 @@ func (f *FilesystemConfigManager) load(c *Config, copy *Config) error {
 	// Reset for subsequent calls
 	f.NewInstallation = false
 
-	pass, err := f.getPassphrase()
-	if err != nil {
-		return err
-	}
-
 	// #nosec G304 -- no input comes from the user
 	data, err := f.fsHandle.ReadFile(f.location)
 	if err != nil {
@@ -233,7 +217,11 @@ func (f *FilesystemConfigManager) load(c *Config, copy *Config) error {
 	var decryptedData []byte
 	// Checking if file header matches the expected decrypted file header
 	if !bytes.Equal(data[:4], decryptedConfigFileHeader) {
-		log.Debug("do a little loading file headers did not match")
+		log.Debug("No decrypted header detected, assuming migration from older version")
+		pass, err := f.getPassphrase()
+		if err != nil {
+			return err
+		}
 		decryptedJSON, err := internal.Decrypt(data, pass)
 		if err != nil {
 			return err
@@ -242,7 +230,6 @@ func (f *FilesystemConfigManager) load(c *Config, copy *Config) error {
 	} else {
 		decryptedData = data[4:]
 	}
-
 
 	if err := json.Unmarshal(decryptedData, c); err != nil {
 		return err
