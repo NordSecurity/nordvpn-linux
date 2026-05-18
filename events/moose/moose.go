@@ -46,7 +46,7 @@ import (
 )
 
 type (
-	mooseConsentFunc               func(bool) uint32
+	mooseConsentFunc               func(moose.UserConsent) uint32
 	mooseSetConsentIntoContextFunc func(moose.NordvpnappConsentLevel) uint32
 	mooseSetTokenRenewDateFunc     func(int32) uint32
 	mooseSetTPLiteUserPrefFunc     func(bool) uint32
@@ -146,9 +146,9 @@ func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error 
 		return nil
 	}
 
-	enabled := newState == config.ConsentGranted
-	log.Println(internal.InfoPrefix, LogComponentPrefix, "request to set consent level to", enabled)
-	if err := s.response(s.mooseFuncs.setAppConsentLevel(enabled)); err != nil {
+	level := toAnalyticsConsentLevel(newState)
+	log.Println(internal.InfoPrefix, LogComponentPrefix, "request to set consent level to", level)
+	if err := s.response(s.mooseFuncs.setAppConsentLevel(level)); err != nil {
 		return fmt.Errorf("setting new consent level: %w", err)
 	}
 
@@ -173,6 +173,17 @@ func setUserConsentLevelIntoContext(s *Subscriber, consent config.AnalyticsConse
 		return fmt.Errorf("setting user consent level: %w", err)
 	}
 	return nil
+}
+
+func toAnalyticsConsentLevel(consent config.AnalyticsConsent) moose.UserConsent {
+	switch consent {
+	case config.ConsentGranted:
+		return moose.UserConsentNonEssential
+	case config.ConsentDenied:
+		return moose.UserConsentEssential
+	default:
+		return moose.UserConsentRejectAll
+	}
 }
 
 // Enable moose analytics engine
@@ -246,11 +257,14 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		internal.IsProdEnv(s.buildTarget.Environment),
 		s,
 		s,
-		s.canSendAllEvents.Load(),
 	)); err != nil {
 		if !strings.Contains(err.Error(), "moose: already initiated") {
 			return fmt.Errorf("starting tracker: %w", err)
 		}
+	}
+
+	if err := s.response(s.mooseFuncs.setAppConsentLevel(toAnalyticsConsentLevel(consent))); err != nil {
+		return fmt.Errorf("setting initial consent level: %w", err)
 	}
 
 	// TODO (LVPN-9654): currently, it should be safe to assume moose got correctly initialized when both worker and the app got started properly
@@ -583,7 +597,8 @@ func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
 }
 
 func (s *Subscriber) NotifyHeartBeat(period time.Duration) error {
-	if err := s.response(moose.NordvpnappSendServiceQualityStatusHeartbeat(int32(period.Minutes()), nil)); err != nil {
+	mooseRet := moose.NordvpnappSendServiceQualityStatusHeartbeat(int32(period.Minutes()), moose.MemoryUsageParams{}, nil)
+	if err := s.response(mooseRet); err != nil {
 		return fmt.Errorf("sending heartbeat event (period=%s): %w", period, err)
 	}
 	if !s.initialHeartbeatSent {
@@ -764,7 +779,6 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			TargetServerCountry: data.TargetServerCountryCode,
 			TargetServerDomain:  data.TargetServerDomain,
 			TargetServerGroup:   data.TargetServerGroup,
-			TargetServerIp:      data.TargetServerIP.String(),
 			TargetTechnology:    connectionTechnologyToInternalType(data.Technology),
 		},
 		moose.ConnectionParams{
