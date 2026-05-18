@@ -627,7 +627,7 @@ func selectDedicatedServer(authChecker auth.Checker,
 	}
 
 	if !service.Active {
-		return nil, internal.NewErrorWithCode(internal.CodeDedicatedServerRenewError)
+		return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersRenewError)
 	}
 
 	dedicatedServers, err := api.DedicatedServers()
