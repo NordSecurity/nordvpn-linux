@@ -206,7 +206,7 @@ func TestChangeConsentState(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			consentFunc := func(enable bool) uint32 {
+			consentFunc := func(userConsent moose.UserConsent) uint32 {
 				if test.consentErrCode != 0 {
 					return test.consentErrCode
 				}
@@ -238,6 +238,21 @@ func TestChangeConsentState(t *testing.T) {
 			assert.Equal(t, test.expectedEssentialAnalyticsState, s.canSendAllEvents.Load(), "Unexpected consent state saved.")
 		})
 	}
+}
+
+func TestAnalyticsConsentLevel_Granted(t *testing.T) {
+	category.Set(t, category.Unit)
+	assert.Equal(t, moose.UserConsentNonEssential, toAnalyticsConsentLevel(config.ConsentGranted))
+}
+
+func TestAnalyticsConsentLevel_Denied(t *testing.T) {
+	category.Set(t, category.Unit)
+	assert.Equal(t, moose.UserConsentEssential, toAnalyticsConsentLevel(config.ConsentDenied))
+}
+
+func TestAnalyticsConsentLevel_Undefined(t *testing.T) {
+	category.Set(t, category.Unit)
+	assert.Equal(t, moose.UserConsentRejectAll, toAnalyticsConsentLevel(config.ConsentUndefined))
 }
 
 func TestGetTokenRenewDate(t *testing.T) {
