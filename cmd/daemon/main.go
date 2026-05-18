@@ -508,6 +508,10 @@ func main() {
 	accountUpdateEvents := daemonevents.NewAccountUpdateEvents()
 	accountUpdateEvents.Subscribe(statePublisher)
 
+	servicesState := auth.NewServicesState(clientAPI)
+	userServicesEvents := daemonevents.NewUserServicesEvents()
+	userServicesEvents.Subscribe(&servicesState)
+
 	// Create auth checker with all session stores
 	authChecker := auth.NewRenewingChecker(
 		fsystem,
@@ -516,6 +520,7 @@ func main() {
 		daemonEvents.User.Logout,
 		errSubject,
 		accountUpdateEvents,
+		servicesState,
 		sessionBuilder.GetStores()...,
 	)
 
@@ -524,6 +529,7 @@ func main() {
 		infoSubject,
 		errSubject,
 		meshnetEvents.PeerUpdate,
+		userServicesEvents.ServicesUpdate,
 		nc.NewCredsFetcher(clientAPI, fsystem))
 
 	// on session unrecoverable error perform user log-out action

@@ -200,7 +200,7 @@ func TestIsMFAEnabled(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rc := NewRenewingChecker(test.cm, test.api, test.mfaPub, test.loutPub, test.errPub, daemonevents.NewAccountUpdateEvents(), &mocksession.MockSessionStore{})
+			rc := NewRenewingChecker(test.cm, test.api, test.mfaPub, test.loutPub, test.errPub, daemonevents.NewAccountUpdateEvents(), ServicesState{}, &mocksession.MockSessionStore{})
 			enabled, err := rc.isMFAEnabled()
 			assert.Equal(t, test.isEnabled, enabled)
 
@@ -284,6 +284,7 @@ func TestIsVPNExpired(t *testing.T) {
 				&mockAuthPublisher{},
 				&mockErrPublisher{},
 				&daemonevents.AccountUpdateEvents{SubscriptionUpdate: test.accPub},
+				ServicesState{},
 				&mocksession.MockSessionStore{},
 			)
 
@@ -312,6 +313,7 @@ func TestIsVPNExpired(t *testing.T) {
 		&mockAuthPublisher{},
 		&mockErrPublisher{},
 		&daemonevents.AccountUpdateEvents{SubscriptionUpdate: accPub},
+		ServicesState{},
 		nil,
 	)
 
@@ -504,9 +506,10 @@ func TestGetDedicatedIPServices(t *testing.T) {
 			}
 
 			rc := RenewingChecker{
-				cm:         &configMock,
-				creds:      &mockAPI,
-				expChecker: expirationChecker,
+				cm:            &configMock,
+				creds:         &mockAPI,
+				expChecker:    expirationChecker,
+				servicesState: ServicesState{credentialsAPI: &mockAPI},
 			}
 
 			dipServices, err := rc.GetDedicatedIPServices()
@@ -531,6 +534,7 @@ func TestIsLoggedIn_Success(t *testing.T) {
 		&mockAuthPublisher{},
 		&mockErrPublisher{},
 		&daemonevents.AccountUpdateEvents{},
+		ServicesState{},
 		mockSS)
 
 	yes, err := checker.IsLoggedIn()
@@ -550,6 +554,7 @@ func TestIsLoggedIn_InvalidToken(t *testing.T) {
 		&mockAuthPublisher{},
 		&mockErrPublisher{},
 		&daemonevents.AccountUpdateEvents{},
+		ServicesState{},
 		mockSS)
 
 	yes, err := checker.IsLoggedIn()
@@ -570,6 +575,7 @@ func TestIsLoggedIn_ConfigLoadFailed(t *testing.T) {
 		&mockAuthPublisher{},
 		&mockErrPublisher{},
 		&daemonevents.AccountUpdateEvents{},
+		ServicesState{},
 		mockSS)
 
 	yes, err := checker.IsLoggedIn()
@@ -591,6 +597,7 @@ func TestIsLoggedIn_CheckerRenewFailed(t *testing.T) {
 		&mockAuthPublisher{},
 		&mockErrPublisher{},
 		&daemonevents.AccountUpdateEvents{},
+		ServicesState{},
 		mockSS)
 
 	yes, err := checker.IsLoggedIn()

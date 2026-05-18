@@ -15,6 +15,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/network"
 
@@ -23,7 +24,8 @@ import (
 )
 
 const (
-	typeMeshnet = "meshnet_network_update"
+	typeMeshnet           = "meshnet_network_update"
+	typeUserServiceUpdate = "user_service_update"
 
 	topicDelivered    = "delivered"
 	topicAcknowledged = "ack"
@@ -37,9 +39,10 @@ const (
 )
 
 var subscriptions = map[string]byte{
-	"content": byte(1),
-	"linux":   byte(1),
-	"meshnet": byte(1),
+	"content":             byte(1),
+	"linux":               byte(1),
+	"meshnet":             byte(1),
+	"user_service_update": byte(1),
 }
 
 var unsubscriptions = []string{"content", "linux", "meshnet"}
@@ -124,11 +127,12 @@ type Client struct {
 	// MQTT Docs say that reusing client after doing Disconnect can lead to panics.
 	// Since we are doing connect manually with our exponential backoff, we are in risk of those panics.
 	// That's why this mutex must be locked every time client is used.
-	subjectInfo       events.Publisher[string]
-	subjectErr        events.Publisher[error]
-	subjectPeerUpdate events.Publisher[[]string]
-	credsFetcher      CredentialsGetter
-	retryDelayFunc    CalculateRetryDelayForAttempt
+	subjectInfo           events.Publisher[string]
+	subjectErr            events.Publisher[error]
+	subjectPeerUpdate     events.Publisher[[]string]
+	subjectServicesUpdate events.Publisher[any]
+	credsFetcher          CredentialsGetter
+	retryDelayFunc        CalculateRetryDelayForAttempt
 
 	startMu          sync.Mutex
 	started          bool
@@ -142,15 +146,17 @@ func NewClient(
 	subjectInfo events.Publisher[string],
 	subjectErr events.Publisher[error],
 	subjectPeerUpdate events.Publisher[[]string],
+	subjectServicesUpdate events.Publisher[any],
 	credsFetcher CredentialsGetter,
 ) *Client {
 	return &Client{
-		clientBuilder:     clientBuilder,
-		subjectInfo:       subjectInfo,
-		subjectErr:        subjectErr,
-		subjectPeerUpdate: subjectPeerUpdate,
-		credsFetcher:      credsFetcher,
-		retryDelayFunc:    network.ExponentialBackoff,
+		clientBuilder:         clientBuilder,
+		subjectInfo:           subjectInfo,
+		subjectErr:            subjectErr,
+		subjectPeerUpdate:     subjectPeerUpdate,
+		subjectServicesUpdate: subjectServicesUpdate,
+		credsFetcher:          credsFetcher,
+		retryDelayFunc:        network.ExponentialBackoff,
 	}
 }
 
@@ -420,8 +426,13 @@ func (c *Client) handleMessage(client mqtt.Client, msg mqtt.Message, ctx context
 		)
 	}
 
-	if payload.Message.Data.Event.Type == typeMeshnet {
+	switch payload.Message.Data.Event.Type {
+	case typeUserServiceUpdate:
+		c.subjectServicesUpdate.Publish(true)
+	case typeMeshnet:
 		c.subjectPeerUpdate.Publish(payload.Message.Data.Event.Attributes.AffectedMachines)
+	default:
+		log.Println(internal.WarningPrefix, logPrefix, "received unknown MQTT message type:", payload.Message.Data.Event.Type)
 	}
 }
 
