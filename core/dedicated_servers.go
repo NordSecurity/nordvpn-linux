@@ -27,6 +27,7 @@ type DedicatedServers []DedicatedServer
 type DedicatedServerStatus string
 
 const (
+	DedicatedServerStatusNew     DedicatedServerStatus = "new"
 	DedicatedServerStatusRunning DedicatedServerStatus = "running"
 )
 
