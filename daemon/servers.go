@@ -38,6 +38,13 @@ type serverSelection struct {
 	remote             bool
 }
 
+type dedicatedServerSelection struct {
+	server *core.Server
+	// Status from the API response. Empty if the API was
+	// never reached (no service, auth error, no servers).
+	status core.DedicatedServerStatus
+}
+
 // PickServer by the specified criteria.
 func PickServer(
 	api core.ServersAPI,
@@ -475,7 +482,13 @@ func isAnyDIPServersAvailable(dedicatedIPServices []auth.DedicatedIPService) boo
 	return index != -1
 }
 
-func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string, groupFlag string) (serverSelection, error) {
+func selectServer(
+	r *RPC,
+	insights *core.Insights,
+	cfg config.Config,
+	tag string,
+	groupFlag string,
+) (serverSelection, core.DedicatedServerStatus, error) {
 	serversList := r.dm.GetServersData().Servers
 	selection, err := PickServer(
 		r.serversAPI,
@@ -496,39 +509,39 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 		switch {
 		case errors.Is(err, core.ErrUnauthorized):
 			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, r.events.User.Logout, events.ReasonUnauthorized)); err != nil {
-				return serverSelection{}, err
+				return serverSelection{}, "", err
 			}
-			return serverSelection{}, internal.ErrNotLoggedIn
+			return serverSelection{}, "", internal.ErrNotLoggedIn
 		case errors.Is(err, internal.ErrTagDoesNotExist),
 			errors.Is(err, internal.ErrGroupDoesNotExist),
 			errors.Is(err, internal.ErrServerIsUnavailable),
 			errors.Is(err, internal.ErrDoubleGroup),
 			errors.Is(err, internal.ErrVirtualServerSelected):
-			return serverSelection{}, err
+			return serverSelection{}, "", err
 
 		case errors.Is(err, ErrDedicatedIPServer):
 			dedicatedIPServer, err := selectDedicatedIPServer(r.ac, serversList)
 			if err != nil {
-				return serverSelection{}, err
+				return serverSelection{}, "", err
 			}
 			selection.server = dedicatedIPServer
 			// There can be cases where we query the recommended servers and we have a UUID
 			// But we use a dedicated IP server. In this case we should not use the recommended UUID.
 			selection.recommendationUUID = emptyUuid
 		case errors.Is(err, ErrDedicatedServer):
-			dedicatedServer, err := selectDedicatedServer(r.ac,
+			ds, dsErr := selectDedicatedServer(r.ac,
 				r.dedicatedServersAPI,
 				r.dedicatedServerKeyManager)
-			if err != nil {
-				return serverSelection{}, err
+			if dsErr != nil {
+				return serverSelection{}, ds.status, dsErr
 			}
 			return serverSelection{
-				server:             dedicatedServer,
+				server:             ds.server,
 				recommendationUUID: emptyUuid,
-			}, nil
+			}, ds.status, nil
 
 		default:
-			return serverSelection{}, internal.ErrUnhandled
+			return serverSelection{}, "", internal.ErrUnhandled
 		}
 	}
 
@@ -539,17 +552,17 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "getting dedicated IP service data:", err)
 			if errors.Is(err, core.ErrUnauthorized) {
-				return serverSelection{}, err
+				return serverSelection{}, "", err
 			}
-			return serverSelection{}, internal.ErrUnhandled
+			return serverSelection{}, "", internal.ErrUnhandled
 		}
 
 		if len(dedicatedIPServices) == 0 {
-			return serverSelection{}, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
+			return serverSelection{}, "", internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
 		}
 
 		if !isAnyDIPServersAvailable(dedicatedIPServices) {
-			return serverSelection{}, internal.NewErrorWithCode(internal.CodeDedicatedIPServiceButNoServers)
+			return serverSelection{}, "", internal.NewErrorWithCode(internal.CodeDedicatedIPServiceButNoServers)
 		}
 
 		index := slices.IndexFunc(dedicatedIPServices, func(s auth.DedicatedIPService) bool {
@@ -558,17 +571,17 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 		})
 		if index == -1 {
 			log.Println(internal.ErrorPrefix, "server is not in the DIP servers list")
-			return serverSelection{}, internal.NewErrorWithCode(internal.CodeDedicatedIPNoServer)
+			return serverSelection{}, "", internal.NewErrorWithCode(internal.CodeDedicatedIPNoServer)
 		}
 
 		if !core.IsConnectableWithProtocol(cfg.Technology, cfg.AutoConnectData.Protocol)(*selection.server) ||
 			(core.IsObfuscated()(*selection.server) != cfg.AutoConnectData.Obfuscate) {
 			log.Println(internal.ErrorPrefix, "failed to connect because the server doesn't support user settings")
-			return serverSelection{}, internal.ErrServerIsUnavailable
+			return serverSelection{}, "", internal.ErrServerIsUnavailable
 		}
 	}
 
-	return selection, nil
+	return selection, "", nil
 }
 
 func getServerByID(servers core.Servers, serverID int64) (*core.Server, error) {
@@ -616,42 +629,47 @@ func selectDedicatedIPServer(authChecker auth.Checker, servers core.Servers) (*c
 
 func selectDedicatedServer(authChecker auth.Checker,
 	api core.DedicatedServersAPI,
-	keyManager devicekey.DedicatedServersKeyManager) (*core.Server, error) {
+	keyManager devicekey.DedicatedServersKeyManager,
+) (dedicatedServerSelection, error) {
+	//ok, err := authChecker.HasDedicatedServerService()
 	service, err := authChecker.GetDedicatedServerService()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "checking dedicated servers service status:", err)
 		if errors.Is(err, core.ErrUnauthorized) {
-			return nil, internal.NewErrorWithCode(internal.CodeRevokedAccessToken)
+			return dedicatedServerSelection{}, internal.NewErrorWithCode(internal.CodeRevokedAccessToken)
 		}
-		return nil, internal.ErrUnhandled
+		return dedicatedServerSelection{}, internal.ErrUnhandled
 	}
 
 	if !service.Active {
-		return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersRenewError)
+		return dedicatedServerSelection{}, internal.NewErrorWithCode(internal.CodeDedicatedServersRenewError)
 	}
 
 	dedicatedServers, err := api.DedicatedServers()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "getting dedicated servers list:", err)
-		return nil, internal.ErrUnhandled
+		return dedicatedServerSelection{}, internal.ErrUnhandled
 	}
 
 	if len(dedicatedServers) == 0 {
-		return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersServiceButNoServers)
+		return dedicatedServerSelection{},
+			internal.NewErrorWithCode(internal.CodeDedicatedServersServiceButNoServers)
 	}
 
 	// Currently there can be only one dedicated server per user.
 	dedicatedServer := dedicatedServers[0]
+	result := dedicatedServerSelection{status: dedicatedServer.Status}
+
 	if dedicatedServer.Status != core.DedicatedServerStatusRunning {
-		return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersNotReady)
+		return result, internal.NewErrorWithCode(internal.CodeDedicatedServersNotReady)
 	}
 
 	dedicatedServerRegistrationData := keyManager.CheckAndRegisterDedicatedServers()
 	if dedicatedServerRegistrationData == nil {
-		return nil, fmt.Errorf("failed to register the dedicated server")
+		return result, fmt.Errorf("failed to register the dedicated server")
 	}
 
-	return &core.Server{
+	result.server = &core.Server{
 		Name:   dedicatedServer.Name,
 		Status: core.Online,
 		Groups: core.Groups{core.Group{
@@ -663,7 +681,8 @@ func selectDedicatedServer(authChecker auth.Checker,
 		// Invariant: dedicated servers are always of Nordlynx, hence Wireguard tech.
 		// This is needed to correctly display dedicated servers in the recent connections list.
 		Technologies: core.Technologies{core.Technology{ID: core.WireguardTech}},
-	}, nil
+	}
+	return result, nil
 }
 
 type ServerParameters struct {

@@ -12,6 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/uievent"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
@@ -90,7 +91,14 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		}
 	}(ch)
 
-	resp, err := c.client.Connect(context.Background(), &pb.ConnectRequest{
+	connectCtx := context.Background()
+	if iv := uievent.ItemValueFromServerGroupString(serverGroup); iv != pb.UIEvent_ITEM_VALUE_UNSPECIFIED {
+		uiCtx := uievent.NewClickContext(pb.UIEvent_CLI, pb.UIEvent_CONNECT)
+		uiCtx.ItemValue = iv
+		connectCtx = uievent.AttachToOutgoingContext(connectCtx, uiCtx)
+	}
+
+	resp, err := c.client.Connect(connectCtx, &pb.ConnectRequest{
 		ServerTag:   serverTag,
 		ServerGroup: serverGroup,
 	})

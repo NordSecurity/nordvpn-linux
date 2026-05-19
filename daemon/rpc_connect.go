@@ -242,7 +242,16 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	log.Println(internal.DebugPrefix, "picking servers for", cfg.Technology, "technology", "input",
 		in.GetServerTag(), in.GetServerGroup())
 
-	serverSelection, err := selectServer(r, &insights, cfg, inputServerTag, in.GetServerGroup())
+	serverSelection, dsStatus, err := selectServer(r, &insights, cfg, inputServerTag, in.GetServerGroup())
+
+	// Publish DS status event when the API was queried (status is non-empty).
+	// This fires regardless of whether server selection succeeded or failed.
+	if dsStatus != "" {
+		r.events.Service.DedicatedServerStatus.Publish(
+			events.DataDedicatedServerStatus{Status: string(dsStatus)},
+		)
+	}
+
 	if err != nil {
 		var errorCode *internal.ErrorWithCode
 		if errors.As(err, &errorCode) {

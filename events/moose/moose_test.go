@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -846,6 +847,102 @@ func TestHasSensitiveServerGroup(t *testing.T) {
 	}
 }
 
+func TestSetDedicatedServerServiceStatus(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name           string
+		services       core.ServicesResponse
+		mooseErrCode   uint32
+		expectErr      bool
+		expectCalled   bool
+		expectedActive bool
+	}{
+		{
+			name: "service ID 33 present - sets true",
+			services: core.ServicesResponse{
+				{Service: core.Service{ID: auth.DedicatedServersServiceID}},
+			},
+			mooseErrCode:   0,
+			expectCalled:   true,
+			expectedActive: true,
+		},
+		{
+			name: "service ID 33 among others - sets true",
+			services: core.ServicesResponse{
+				{Service: core.Service{ID: 1}},
+				{Service: core.Service{ID: auth.DedicatedServersServiceID}},
+				{Service: core.Service{ID: 11}},
+			},
+			mooseErrCode:   0,
+			expectCalled:   true,
+			expectedActive: true,
+		},
+		{
+			name: "no service ID 33 - sets false",
+			services: core.ServicesResponse{
+				{Service: core.Service{ID: 1}},
+				{Service: core.Service{ID: 11}},
+			},
+			mooseErrCode:   0,
+			expectCalled:   true,
+			expectedActive: false,
+		},
+		{
+			name:           "empty services - sets false",
+			services:       core.ServicesResponse{},
+			mooseErrCode:   0,
+			expectCalled:   true,
+			expectedActive: false,
+		},
+		{
+			name:           "nil services - sets false",
+			services:       nil,
+			mooseErrCode:   0,
+			expectCalled:   true,
+			expectedActive: false,
+		},
+		{
+			name: "moose setter fails - propagates error",
+			services: core.ServicesResponse{
+				{Service: core.Service{ID: auth.DedicatedServersServiceID}},
+			},
+			mooseErrCode: 7,
+			expectErr:    true,
+			expectCalled: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			called := false
+			var gotValue bool
+
+			s := &Subscriber{
+				mooseFuncs: mooseFunctions{
+					setDSIsActive: func(active bool) uint32 {
+						called = true
+						gotValue = active
+						return tt.mooseErrCode
+					},
+				},
+			}
+
+			err := s.setDedicatedServerServiceStatus(tt.services)
+
+			assert.Equal(t, tt.expectCalled, called)
+			if called && tt.mooseErrCode == 0 {
+				assert.Equal(t, tt.expectedActive, gotValue)
+			}
+			if tt.expectErr {
+				assert.Assert(t, err != nil)
+			} else {
+				assert.NilError(t, err)
+			}
+		})
+	}
+}
+
 func TestNotifyConnect_DedicatedIP_StripsBodyAndUnsetsContext(t *testing.T) {
 	category.Set(t, category.Unit)
 	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
@@ -1466,4 +1563,70 @@ func TestNotifyDisconnect_UnsetsServerGroupValueAfterEvent(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Equal(t, 1, groupUnsets)
 	assert.Equal(t, true, sendDisconnectCallOrder < groupUnsetOrder)
+}
+func TestNotifyDedicatedServerStatus(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name         string
+		status       string
+		mooseErrCode uint32
+		expectValue  bool
+		expectErr    bool
+	}{
+		{
+			name:        "running - sets true",
+			status:      "running",
+			expectValue: true,
+		},
+		{
+			name:        "provisioning - sets true",
+			status:      "provisioning",
+			expectValue: true,
+		},
+		{
+			name:        "new - sets false",
+			status:      "new",
+			expectValue: false,
+		},
+		{
+			name:        "empty - sets false",
+			status:      "",
+			expectValue: false,
+		},
+		{
+			name:         "setter fails - propagates error",
+			status:       "running",
+			mooseErrCode: 7,
+			expectErr:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var gotValue bool
+
+			s := &Subscriber{
+				mooseFuncs: mooseFunctions{
+					setDSEnabled: func(v bool) uint32 {
+						gotValue = v
+						return tt.mooseErrCode
+					},
+				},
+			}
+
+			err := s.NotifyDedicatedServerStatus(
+				events.DataDedicatedServerStatus{Status: tt.status},
+			)
+
+			if tt.mooseErrCode == 0 {
+				assert.Equal(t, tt.expectValue, gotValue)
+			}
+			if tt.expectErr {
+				assert.Assert(t, err != nil)
+			} else {
+				assert.NilError(t, err)
+			}
+		})
+	}
 }
