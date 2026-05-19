@@ -68,7 +68,14 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 		}, nil
 	}
 	r.netw.SetVPN(v)
-	_ = r.netw.SetARPIgnore(cfg.ARPIgnore.Get())
+
+	if err = r.netw.SetARPIgnore(cfg.ARPIgnore.Get()); err != nil {
+		log.Warn("resetting arp ignore failed:", err)
+	}
+	r.netw.SetLanDiscovery(cfg.LanDiscovery)
+	if err = r.netw.SetAllowlist(cfg.AutoConnectData.Allowlist); err != nil {
+		log.Warn("resetting allowlist failed:", err)
+	}
 
 	r.events.Settings.Defaults.Publish(nil)
 	r.events.Settings.Publish(cfg)
