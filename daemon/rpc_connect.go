@@ -187,18 +187,16 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	}
 	r.connectionInfo.SetInitialConnecting()
 
-	if (groupConvert(in.ServerGroup) == config.ServerGroup_DEDICATED_SERVER ||
-		groupConvert(in.ServerTag) == config.ServerGroup_DEDICATED_SERVER) &&
-		cfg.Technology != config.Technology_NORDLYNX {
-		return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
-	}
-
-	if (groupConvert(in.ServerGroup) == config.ServerGroup_DEDICATED_SERVER ||
-		groupConvert(in.ServerTag) == config.ServerGroup_DEDICATED_SERVER) &&
-		!r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServers) {
-		// if user is trying to connect here while this feature is disabled,
-		// show general error because anyways he should not get here
-		return true, srv.Send(&pb.Payload{Type: internal.CodeFailure})
+	if groupConvert(in.ServerGroup) == config.ServerGroup_DEDICATED_SERVER ||
+		groupConvert(in.ServerTag) == config.ServerGroup_DEDICATED_SERVER {
+		if cfg.Technology != config.Technology_NORDLYNX {
+			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
+		}
+		if !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServers) {
+			// if user is trying to connect here while this feature is disabled,
+			// show general error because anyways he should not get here
+			return true, srv.Send(&pb.Payload{Type: internal.CodeFailure})
+		}
 	}
 
 	// Set status to "Connecting" and send the connection attempt event without details
