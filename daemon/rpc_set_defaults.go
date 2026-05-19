@@ -73,7 +73,7 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 		log.Warn("resetting arp ignore failed:", err)
 	}
 	r.netw.SetLanDiscovery(cfg.LanDiscovery)
-	if err := r.netw.SetAllowlist(cfg.AutoConnectData.Allowlist); err != nil {
+	if err = r.netw.SetAllowlist(cfg.AutoConnectData.Allowlist); err != nil {
 		log.Warn("resetting allowlist failed:", err)
 	}
 
