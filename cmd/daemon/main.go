@@ -181,6 +181,10 @@ func main() {
 		}
 	}
 
+	if err := daemon.MigrateDeprecatedRegionalAutoconnect(fsystem); err != nil {
+		log.Println(internal.WarningPrefix, "failed to migrate regional autoconnect group:", err)
+	}
+
 	// Events
 
 	daemonEvents := daemonevents.NewEventsEmpty()

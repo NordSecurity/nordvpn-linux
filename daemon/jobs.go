@@ -303,6 +303,9 @@ func (r *RPC) StartAutoConnect(timeoutFn network.CalculateRetryDelayForAttempt) 
 		}
 
 		if err := r.doAutoConnect(); err != nil {
+			if errors.Is(err, errAutoConnectDisabled) {
+				return nil
+			}
 			log.Println(internal.ErrorPrefix, "autoconnect failed:", err)
 		} else {
 			return nil
@@ -314,12 +317,20 @@ func (r *RPC) StartAutoConnect(timeoutFn network.CalculateRetryDelayForAttempt) 
 	}
 }
 
+// errAutoConnectDisabled is returned when autoconnect was turned off between retries
+var errAutoConnectDisabled = errors.New("autoconnect disabled")
+
 func (r *RPC) doAutoConnect() error {
 	var cfg config.Config
 	err := r.cm.Load(&cfg)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "auto-connect failed:", err)
 		return err
+	}
+
+	if !cfg.AutoConnect {
+		log.Println(internal.InfoPrefix, "skipping auto-connect: disabled in config")
+		return errAutoConnectDisabled
 	}
 
 	if cfg.Technology == config.Technology_NORDWHISPER && !features.NordWhisperEnabled {
@@ -335,18 +346,8 @@ func (r *RPC) doAutoConnect() error {
 
 	server := connectServer{}
 
-	serverTag := cfg.AutoConnectData.ServerTag
 	groupTag := ""
-	groupParam := cfg.AutoConnectData.Group
-
-	// runtime migration for deprecated regional groups.
-	if config.IsRegionalGroup(cfg.AutoConnectData.Group) {
-		groupParam = config.ServerGroup_UNDEFINED
-		if cfg.AutoConnectData.Country == "" && cfg.AutoConnectData.City == "" {
-			// the configured target was purely regional, so fall back to fastest server
-			serverTag = ""
-		}
-	} else if cfg.AutoConnectData.Group != config.ServerGroup_UNDEFINED &&
+	if cfg.AutoConnectData.Group != config.ServerGroup_UNDEFINED &&
 		cfg.AutoConnectData.ServerTag != strings.ToLower(cfg.AutoConnectData.Group.String()) &&
 		cfg.AutoConnectData.ServerTag != config.GroupTitleForId(cfg.AutoConnectData.Group) {
 		groupTag = cfg.AutoConnectData.Group.String()
@@ -354,7 +355,7 @@ func (r *RPC) doAutoConnect() error {
 
 	err = r.connectFromRequest(
 		&pb.ConnectRequest{
-			ServerTag:   serverTag,
+			ServerTag:   cfg.AutoConnectData.ServerTag,
 			ServerGroup: groupTag,
 		},
 		&server,
@@ -367,7 +368,7 @@ func (r *RPC) doAutoConnect() error {
 			ServerParameters{
 				Country: cfg.AutoConnectData.Country,
 				City:    cfg.AutoConnectData.City,
-				Group:   groupParam,
+				Group:   cfg.AutoConnectData.Group,
 			},
 		)
 		return nil
