@@ -284,6 +284,7 @@ final class NordVpnTheme {
       borderRadiusSmall: AppBorderRadius.sm,
       padding: 10,
       margin: 8,
+      bigMargin: AppSpacing.spacing5,
       outerPadding: 16,
       borderColor: design.semanticColors.borderSecondary,
       verticalSpaceVerySmall: 2,
@@ -291,6 +292,7 @@ final class NordVpnTheme {
       verticalSpaceMedium: 16,
       verticalSpaceLarge: 24,
       verticalSpaceExtraLarge: 48,
+      horizontalSpaceVerySmall: AppSpacing.spacing1,
       horizontalSpaceSmall: 8,
       horizontalSpace: 16,
       textErrorColor: design.semanticColors.textCritical,
@@ -356,7 +358,7 @@ final class NordVpnTheme {
       ),
       margin: EdgeInsets.only(
         top: AppSpacing.spacing3,
-        right: AppSpacing.spacing2,
+        right: AppSpacing.spacing5,
       ),
       borderRadius: AppBorderRadius.lg,
       minWidth: 520,
@@ -469,6 +471,7 @@ final class NordVpnTheme {
       flagSize: 32,
       loaderSize: 28,
       listItemHeight: 44,
+      labelPadding: AppSpacing.spacing2,
       paddingSearchGroupsLabel: const EdgeInsets.symmetric(
         horizontal: 32,
         vertical: 8,
@@ -483,7 +486,6 @@ final class NordVpnTheme {
         color: design.semanticColors.textSecondary,
       ),
       obfuscatedItemBackgroundColor: design.semanticColors.bgSecondaryActive,
-      horizontalSpace: 16,
     );
   }
 

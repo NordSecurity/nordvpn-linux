@@ -14,6 +14,7 @@ final class AppTheme extends ThemeExtension<AppTheme>
     required this.borderRadiusSmall,
     required this.padding,
     required this.margin,
+    required this.bigMargin,
     required this.outerPadding,
     required this.borderColor,
     required this.verticalSpaceVerySmall,
@@ -21,6 +22,7 @@ final class AppTheme extends ThemeExtension<AppTheme>
     required this.verticalSpaceMedium,
     required this.verticalSpaceLarge,
     required this.verticalSpaceExtraLarge,
+    required this.horizontalSpaceVerySmall,
     required this.horizontalSpaceSmall,
     required this.horizontalSpace,
     required this.textErrorColor,
@@ -62,6 +64,9 @@ final class AppTheme extends ThemeExtension<AppTheme>
   final double margin;
 
   @override
+  final double bigMargin;
+
+  @override
   final double outerPadding;
 
   @override
@@ -81,6 +86,9 @@ final class AppTheme extends ThemeExtension<AppTheme>
 
   @override
   final double verticalSpaceExtraLarge;
+
+  @override
+  final double horizontalSpaceVerySmall;
 
   @override
   final double horizontalSpaceSmall;
