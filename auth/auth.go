@@ -84,7 +84,7 @@ type RenewingChecker struct {
 	mu                  sync.Mutex
 	accountUpdateEvents *daemonevents.AccountUpdateEvents
 	sessionStores       []session.SessionStore
-	servicesState       ServicesState
+	servicesState       *ServicesState
 }
 
 // NewRenewingChecker is a default constructor for RenewingChecker.
@@ -94,7 +94,7 @@ func NewRenewingChecker(cm config.Manager,
 	logoutPub events.Publisher[events.DataAuthorization],
 	errPub events.Publisher[error],
 	accountUpdateEvents *daemonevents.AccountUpdateEvents,
-	servicesState ServicesState,
+	servicesState *ServicesState,
 	sessionStores ...session.SessionStore,
 ) *RenewingChecker {
 	return &RenewingChecker{
@@ -193,9 +193,6 @@ func (r *RenewingChecker) IsVPNExpired() (bool, error) {
 }
 
 func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
 	services, err := r.servicesState.fetchServices()
 	if err != nil {
 		return nil, fmt.Errorf("fetching available services: %w", err)

@@ -13,9 +13,9 @@ type ServicesState struct {
 	cache *caching.Cache[core.ServicesResponse]
 }
 
-func NewServicesState(credentialsAPI core.CredentialsAPI) ServicesState {
+func NewServicesState(credentialsAPI core.CredentialsAPI) *ServicesState {
 	cache := caching.NewCacheWithTTL(time.Hour*5, credentialsAPI.Services)
-	return ServicesState{
+	return &ServicesState{
 		cache: cache,
 	}
 }

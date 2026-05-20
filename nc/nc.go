@@ -428,7 +428,7 @@ func (c *Client) handleMessage(client mqtt.Client, msg mqtt.Message, ctx context
 
 	switch payload.Message.Data.Event.Type {
 	case typeUserServiceUpdate:
-		c.subjectServicesUpdate.Publish(true)
+		c.subjectServicesUpdate.Publish(struct{}{})
 	case typeMeshnet:
 		c.subjectPeerUpdate.Publish(payload.Message.Data.Event.Attributes.AffectedMachines)
 	default:
