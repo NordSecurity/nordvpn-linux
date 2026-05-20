@@ -45,6 +45,10 @@ import (
 	worker "moose/worker"
 )
 
+// TODO: When the analytics schema migrates to enum identifiers, replace this
+// constant with a typed enum comparison.
+const dedicatedIPGroupTitle = "Dedicated IP"
+
 type (
 	mooseConsentFunc               func(moose.UserConsent) uint32
 	mooseSetConsentIntoContextFunc func(moose.NordvpnappConsentLevel) uint32
@@ -54,6 +58,28 @@ type (
 	mooseUnsetTPLiteCurrentFunc    func() uint32
 	mooseSetCustomDNSMetaFunc      func(string) uint32
 	mooseSetCustomDNSValueFunc     func(bool) uint32
+	mooseUnsetContextFunc          func() uint32
+	mooseSetRecommendationUuidFunc func(string) uint32
+	mooseSetServerCountryValueFunc func(string) uint32
+	mooseSetIsOnVpnValueFunc       func(bool) uint32
+	mooseSendConnectFunc           func(
+		moose.EventParams,
+		moose.TargetConnectionParams,
+		moose.TargetConnectionAdditionalParams,
+		moose.ConnectionParams,
+		moose.NordvpnappOptBool,
+		int32,
+		string,
+		*string,
+	) uint32
+	mooseSendDisconnectFunc func(
+		moose.EventParams,
+		moose.TargetConnectionParams,
+		moose.ConnectionParams,
+		int32,
+		int32,
+		*string,
+	) uint32
 )
 
 type mooseFunctions struct {
@@ -65,27 +91,35 @@ type mooseFunctions struct {
 	unsetTPLiteCurrentState       mooseUnsetTPLiteCurrentFunc
 	setCustomDNSMeta              mooseSetCustomDNSMetaFunc
 	setCustomDNSValue             mooseSetCustomDNSValueFunc
+	unsetServerDomainValue        mooseUnsetContextFunc
+	unsetRecommendationUuid       mooseUnsetContextFunc
+	setRecommendationUuid         mooseSetRecommendationUuidFunc
+	setServerCountryValue         mooseSetServerCountryValueFunc
+	setIsOnVpnValue               mooseSetIsOnVpnValueFunc
+	sendConnect                   mooseSendConnectFunc
+	sendDisconnect                mooseSendDisconnectFunc
 }
 
 // Subscriber listen events, send to moose engine
 type Subscriber struct {
-	eventsDbPath            string
-	config                  config.Manager
-	buildTarget             config.BuildTarget
-	domain                  string
-	subdomain               string
-	deviceID                string
-	clientAPI               core.ClientAPI
-	currentDomain           string
-	connectionStartTime     time.Time
-	connectionToMeshnetPeer bool
-	initialHeartbeatSent    bool
-	mooseFuncs              mooseFunctions
-	httpClient              *http.Client
-	canSendAllEvents        atomic.Bool
-	mux                     sync.RWMutex
-	isInitialized           bool
-	configChangeHandlers    []configChangeHandler
+	eventsDbPath                     string
+	config                           config.Manager
+	buildTarget                      config.BuildTarget
+	domain                           string
+	subdomain                        string
+	deviceID                         string
+	clientAPI                        core.ClientAPI
+	currentDomain                    string
+	connectionStartTime              time.Time
+	connectionToMeshnetPeer          bool
+	connectionToSensitiveServerGroup bool
+	initialHeartbeatSent             bool
+	mooseFuncs                       mooseFunctions
+	httpClient                       *http.Client
+	canSendAllEvents                 atomic.Bool
+	mux                              sync.RWMutex
+	isInitialized                    bool
+	configChangeHandlers             []configChangeHandler
 }
 
 func NewSubscriber(
@@ -117,6 +151,13 @@ func NewSubscriber(
 			unsetTPLiteCurrentState:       moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
 			setCustomDNSMeta:              moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledMeta,
 			setCustomDNSValue:             moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledValue,
+			unsetServerDomainValue:        moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerDomainValue,
+			unsetRecommendationUuid:       moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid,
+			setRecommendationUuid:         moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid,
+			setServerCountryValue:         moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue,
+			setIsOnVpnValue:               moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue,
+			sendConnect:                   moose.NordvpnappSendServiceQualityServersConnect,
+			sendDisconnect:                moose.NordvpnappSendServiceQualityServersDisconnect,
 		},
 	}
 	// Add more handlers here as needed
@@ -726,13 +767,34 @@ func (s *Subscriber) NotifyTechnology(data config.Technology) error {
 	return nil
 }
 
+// isSensitiveServerGroup reports whether the chosen target server group
+// requires stripping of identifying fields from analytics.
+//
+// When the analytics schema migrates to enum identifiers, switch to a typed check over the
+// new enum field instead of the string comparison below.
+func isSensitiveServerGroup(groupTitle string) bool {
+	switch groupTitle {
+	case dedicatedIPGroupTitle:
+		return true
+	}
+	return false
+}
+
 func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
+	sensitive := isSensitiveServerGroup(data.TargetServerGroup)
+
+	s.mux.Lock()
+	// Track sensitivity on every server-connect event (not just success) so
+	// that a failed connect attempt to a sensitive group still prevents from leaking
+	// some metrics
+	if !data.IsMeshnetPeer {
+		s.connectionToSensitiveServerGroup = sensitive
+	}
 	if data.EventStatus == events.StatusSuccess {
-		s.mux.Lock()
 		s.connectionStartTime = time.Now()
 		s.connectionToMeshnetPeer = data.IsMeshnetPeer
-		s.mux.Unlock()
 	}
+	s.mux.Unlock()
 
 	if data.IsMeshnetPeer {
 		if err := s.response(moose.NordvpnappSendServiceQualityServersConnectToMeshnetDevice(
@@ -762,7 +824,23 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		connectionFunnel = durationToConnectionFunnel(data.PauseInterval)
 	}
 
-	if err := s.response(moose.NordvpnappSendServiceQualityServersConnect(
+	targetServerDomain := data.TargetServerDomain
+	recommendationUUID := data.RecommendationUUID
+	if sensitive {
+		targetServerDomain = ""
+		recommendationUUID = ""
+
+		if err := s.response(s.mooseFuncs.unsetServerDomainValue()); err != nil {
+			log.Println(internal.WarningPrefix, LogComponentPrefix,
+				"failed to unset serverDomain context for sensitive group:", err)
+		}
+		if err := s.response(s.mooseFuncs.unsetRecommendationUuid()); err != nil {
+			log.Println(internal.WarningPrefix, LogComponentPrefix,
+				"failed to unset recommendationUuid context for sensitive group:", err)
+		}
+	}
+
+	if err := s.response(s.mooseFuncs.sendConnect(
 		moose.EventParams{
 			EventDuration: int32(data.DurationMs),
 			EventStatus:   eventStatusToInternalType(data.EventStatus),
@@ -777,7 +855,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			TargetProtocol:      connectionProtocolToInternalType(data.Protocol),
 			TargetServerCity:    data.TargetServerCity,
 			TargetServerCountry: data.TargetServerCountryCode,
-			TargetServerDomain:  data.TargetServerDomain,
+			TargetServerDomain:  targetServerDomain,
 			TargetServerGroup:   data.TargetServerGroup,
 			TargetTechnology:    connectionTechnologyToInternalType(data.Technology),
 		},
@@ -787,7 +865,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		},
 		threatProtectionLiteToInternalType(data.ThreatProtectionLite),
 		-1,
-		data.RecommendationUUID,
+		recommendationUUID,
 		nil,
 	)); err != nil {
 		return fmt.Errorf("sending VPN connect event (status=%v, server=%q, country=%q): %w",
@@ -795,15 +873,15 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	}
 
 	if data.EventStatus == events.StatusSuccess {
-		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue(data.ThreatProtectionLite)); err != nil {
+		if err := s.response(s.mooseFuncs.setTPLiteCurrentState(data.ThreatProtectionLite)); err != nil {
 			return fmt.Errorf("setting TP Lite current state after successful connect (enabled=%v): %w", data.ThreatProtectionLite, err)
 		}
 
-		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue(true)); err != nil {
+		if err := s.response(s.mooseFuncs.setIsOnVpnValue(true)); err != nil {
 			return fmt.Errorf("setting is-on-VPN current state after successful connect: %w", err)
 		}
 
-		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue(data.TargetServerCountryCode)); err != nil {
+		if err := s.response(s.mooseFuncs.setServerCountryValue(data.TargetServerCountryCode)); err != nil {
 			return fmt.Errorf("setting server country current state after successful connect (%q): %w", data.TargetServerCountryCode, err)
 		}
 	}
@@ -818,6 +896,8 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		connectionDuration = -1
 	}
 	s.connectionStartTime = time.Time{}
+	wasSensitive := s.connectionToSensitiveServerGroup
+	s.connectionToSensitiveServerGroup = false
 	s.mux.Unlock()
 
 	if s.connectionToMeshnetPeer {
@@ -837,15 +917,15 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		return nil
 	}
 
-	if data.RecommendationUUID != "" {
-		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid(data.RecommendationUUID)); err != nil {
+	if data.RecommendationUUID != "" && !wasSensitive {
+		if err := s.response(s.mooseFuncs.setRecommendationUuid(data.RecommendationUUID)); err != nil {
 			// We can ignore setting the recommendation Uuid
 			// Sending the disconnect event is much more important
 			log.Println(internal.WarningPrefix, "Failed to set RecommendationUUID into the moose context ", err)
 		}
 
 		defer func() {
-			if err := s.response(moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid()); err != nil {
+			if err := s.response(s.mooseFuncs.unsetRecommendationUuid()); err != nil {
 				log.Println(internal.WarningPrefix, "Failed to unset RecommendationUUID into the moose context ", err)
 			}
 		}()
@@ -858,7 +938,7 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		connectionFunnel = durationToConnectionFunnel(data.PauseInterval)
 	}
 
-	if err := s.response(moose.NordvpnappSendServiceQualityServersDisconnect(
+	if err := s.response(s.mooseFuncs.sendDisconnect(
 		moose.EventParams{
 			EventDuration: int32(data.Duration.Milliseconds()),
 			EventStatus:   eventStatusToInternalType(data.EventStatus),
@@ -888,11 +968,11 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		return fmt.Errorf("unsetting TP Lite current state after disconnect: %w", err)
 	}
 
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue(UnavailableEventParameterValue)); err != nil {
+	if err := s.response(s.mooseFuncs.setServerCountryValue(UnavailableEventParameterValue)); err != nil {
 		return fmt.Errorf("clearing server country current state after disconnect: %w", err)
 	}
 
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue(false)); err != nil {
+	if err := s.response(s.mooseFuncs.setIsOnVpnValue(false)); err != nil {
 		return fmt.Errorf("setting is-on-VPN current state after disconnect: %w", err)
 	}
 
