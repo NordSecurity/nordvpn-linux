@@ -17,7 +17,7 @@ func TestSyncDevice(t *testing.T) {
 
 	tests := []struct {
 		name                             string
-		dedicatedServersService          auth.DedicatedServerService
+		dedicatedServerService           auth.DedicatedServerService
 		hasDedicatedServerServiceErr     error
 		dedicatedServersRegistrationData *devicekey.DedicatedServersConnectionData
 		shouldReturnError                bool
@@ -25,21 +25,21 @@ func TestSyncDevice(t *testing.T) {
 	}{
 		{
 			name:                             "user has dedicated servers service, key is registered",
-			dedicatedServersService:          auth.DedicatedServerService{Active: true},
+			dedicatedServerService:           auth.DedicatedServerService{Active: true},
 			dedicatedServersRegistrationData: &devicekey.DedicatedServersConnectionData{},
 			expectedKeyRegistered:            true,
 			shouldReturnError:                false,
 		},
 		{
 			name:                             "user doesn't have dedicated servers service, key is not registered",
-			dedicatedServersService:          auth.DedicatedServerService{Active: false},
+			dedicatedServerService:           auth.DedicatedServerService{Active: false},
 			dedicatedServersRegistrationData: &devicekey.DedicatedServersConnectionData{},
 			expectedKeyRegistered:            false,
 			shouldReturnError:                false,
 		},
 		{
 			name:                             "user has dedicated servers service, key registration fails, error is returned",
-			dedicatedServersService:          auth.DedicatedServerService{Active: true},
+			dedicatedServerService:           auth.DedicatedServerService{Active: true},
 			dedicatedServersRegistrationData: nil,
 			expectedKeyRegistered:            false,
 			shouldReturnError:                true,
@@ -54,15 +54,15 @@ func TestSyncDevice(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			authCheckerMock := testauth.AuthCheckerMock{
-				DedicatedServerService:       test.dedicatedServersService,
+				DedicatedServerService:       test.dedicatedServerService,
 				GetDedicatedServerServiceErr: test.hasDedicatedServerServiceErr,
 			}
 			deviceKeyManagerMock := testdevicekey.MockDeviceKeyManager{
 				DedicatedServerRegistrationData: test.dedicatedServersRegistrationData,
 			}
 			r := RPC{
-				ac:                         &authCheckerMock,
-				dedicatedServersKeyManager: &deviceKeyManagerMock,
+				ac:                        &authCheckerMock,
+				dedicatedServerKeyManager: &deviceKeyManagerMock,
 			}
 
 			err := r.RegisterDedicatedServers()

@@ -518,7 +518,7 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 		case errors.Is(err, ErrDedicatedServer):
 			dedicatedServer, err := selectDedicatedServer(r.ac,
 				r.dedicatedServersAPI,
-				r.dedicatedServersKeyManager)
+				r.dedicatedServerKeyManager)
 			if err != nil {
 				return serverSelection{}, err
 			}

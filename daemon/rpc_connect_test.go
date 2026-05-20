@@ -1199,7 +1199,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 				isDedicatedServersExpired: test.isDedicatedServersExpired,
 				dedicatedServerErr:        test.serviceCheckErr,
 			}
-			rpc.dedicatedServersKeyManager = &testdevicekey.MockDeviceKeyManager{
+			rpc.dedicatedServerKeyManager = &testdevicekey.MockDeviceKeyManager{
 				DedicatedServerRegistrationData: &devicekey.DedicatedServersConnectionData{
 					DevicePublicKey: devicePublicKey,
 					DeviceUUID:      deviceUUID,
@@ -1259,7 +1259,7 @@ func TestDedicatedServers_Internals(t *testing.T) {
 	rpc.ac = &workingLoginChecker{
 		isDedicatedServersExpired: false,
 	}
-	rpc.dedicatedServersKeyManager = &testdevicekey.MockDeviceKeyManager{
+	rpc.dedicatedServerKeyManager = &testdevicekey.MockDeviceKeyManager{
 		DedicatedServerRegistrationData: &devicekey.DedicatedServersConnectionData{
 			DevicePublicKey:  deviceKey,
 			DevicePrivateKey: devicePrivateKey,

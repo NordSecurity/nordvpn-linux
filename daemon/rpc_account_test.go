@@ -29,12 +29,12 @@ var user2 core.CurrentUserResponse = core.CurrentUserResponse{
 
 func userResponseToAccountResponse(userResponse core.CurrentUserResponse) *pb.AccountResponse {
 	return &pb.AccountResponse{
-		Type:                   internal.CodeSuccess,
-		Username:               userResponse.Username,
-		Email:                  userResponse.Email,
-		DedicatedIpStatus:      internal.CodeNoService,
-		DedicatedServersStatus: internal.CodeNoService,
-		MfaStatus:              pb.TriState_DISABLED,
+		Type:                  internal.CodeSuccess,
+		Username:              userResponse.Username,
+		Email:                 userResponse.Email,
+		DedicatedIpStatus:     internal.CodeNoService,
+		DedicatedServerStatus: internal.CodeNoService,
+		MfaStatus:             pb.TriState_DISABLED,
 	}
 }
 
@@ -255,7 +255,7 @@ func TestAccountInfo_ContainsServiceData(t *testing.T) {
 			response, err := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: true})
 			assert.NoError(t, err, "Unexpected error returned by AccountInfo")
 			assert.Equal(t,
-				response.DedicatedServersStatus,
+				response.DedicatedServerStatus,
 				test.expectedStatus,
 				"Invalid dedicated servers service status in AccountInfo response.")
 		})

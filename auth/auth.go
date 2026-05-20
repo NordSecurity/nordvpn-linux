@@ -213,7 +213,7 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 	return dipServices, nil
 }
 
-// GetDedicatedServerService returns dedicated servers service status and expiration date
+// GetDedicatedServerService returns dedicated server service status and expiration date
 func (r *RenewingChecker) GetDedicatedServerService() (DedicatedServerService, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

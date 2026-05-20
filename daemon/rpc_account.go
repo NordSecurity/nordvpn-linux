@@ -112,9 +112,9 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 		return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
 	}
 
-	accountInfo.DedicatedServersStatus = internal.CodeNoService
+	accountInfo.DedicatedServerStatus = internal.CodeNoService
 	if dedicatedServerService.Active {
-		accountInfo.DedicatedServersStatus = internal.CodeSuccess
+		accountInfo.DedicatedServerStatus = internal.CodeSuccess
 		accountInfo.DedicatedServersServiceExpiresAt = dedicatedServerService.ExpiresAt
 	}
 

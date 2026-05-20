@@ -92,7 +92,7 @@ class AccountResponse extends $pb.GeneratedMessage {
     $core.Iterable<DedidcatedIPService>? dedicatedIpServices,
     $0.TriState? mfaStatus,
     $core.String? createdOn,
-    $fixnum.Int64? dedicatedServersStatus,
+    $fixnum.Int64? dedicatedServerStatus,
     $core.String? dedicatedServersServiceExpiresAt,
   }) {
     final result = create();
@@ -108,8 +108,8 @@ class AccountResponse extends $pb.GeneratedMessage {
       result.dedicatedIpServices.addAll(dedicatedIpServices);
     if (mfaStatus != null) result.mfaStatus = mfaStatus;
     if (createdOn != null) result.createdOn = createdOn;
-    if (dedicatedServersStatus != null)
-      result.dedicatedServersStatus = dedicatedServersStatus;
+    if (dedicatedServerStatus != null)
+      result.dedicatedServerStatus = dedicatedServerStatus;
     if (dedicatedServersServiceExpiresAt != null)
       result.dedicatedServersServiceExpiresAt =
           dedicatedServersServiceExpiresAt;
@@ -140,7 +140,7 @@ class AccountResponse extends $pb.GeneratedMessage {
     ..aE<$0.TriState>(8, _omitFieldNames ? '' : 'mfaStatus',
         enumValues: $0.TriState.values)
     ..aOS(9, _omitFieldNames ? '' : 'createdOn')
-    ..aInt64(10, _omitFieldNames ? '' : 'dedicatedServersStatus')
+    ..aInt64(10, _omitFieldNames ? '' : 'dedicatedServerStatus')
     ..aOS(11, _omitFieldNames ? '' : 'dedicatedServersServiceExpiresAt')
     ..hasRequiredFields = false;
 
@@ -239,13 +239,13 @@ class AccountResponse extends $pb.GeneratedMessage {
   void clearCreatedOn() => $_clearField(9);
 
   @$pb.TagNumber(10)
-  $fixnum.Int64 get dedicatedServersStatus => $_getI64(9);
+  $fixnum.Int64 get dedicatedServerStatus => $_getI64(9);
   @$pb.TagNumber(10)
-  set dedicatedServersStatus($fixnum.Int64 value) => $_setInt64(9, value);
+  set dedicatedServerStatus($fixnum.Int64 value) => $_setInt64(9, value);
   @$pb.TagNumber(10)
-  $core.bool hasDedicatedServersStatus() => $_has(9);
+  $core.bool hasDedicatedServerStatus() => $_has(9);
   @$pb.TagNumber(10)
-  void clearDedicatedServersStatus() => $_clearField(10);
+  void clearDedicatedServerStatus() => $_clearField(10);
 
   @$pb.TagNumber(11)
   $core.String get dedicatedServersServiceExpiresAt => $_getSZ(10);
