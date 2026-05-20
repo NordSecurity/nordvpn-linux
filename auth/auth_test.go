@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -12,6 +13,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/internal/caching"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	mocksession "github.com/NordSecurity/nordvpn-linux/test/mock/session"
 
@@ -496,7 +498,7 @@ func TestGetDedicatedIPServices(t *testing.T) {
 
 	for _, test := range test {
 		t.Run(test.name, func(t *testing.T) {
-			mockAPI := authAPI{
+			mockAuthAPI := authAPI{
 				resp: test.servicesResponse,
 				err:  test.servicesErr,
 			}
@@ -505,11 +507,13 @@ func TestGetDedicatedIPServices(t *testing.T) {
 				loadErr: test.configLoadErr,
 			}
 
+			cache := caching.NewCacheWithTTL(time.Hour*5, mockAuthAPI.Services)
+
 			rc := RenewingChecker{
 				cm:            &configMock,
-				creds:         &mockAPI,
+				creds:         &mockAuthAPI,
 				expChecker:    expirationChecker,
-				servicesState: ServicesState{credentialsAPI: &mockAPI},
+				servicesState: ServicesState{cache: cache},
 			}
 
 			dipServices, err := rc.GetDedicatedIPServices()

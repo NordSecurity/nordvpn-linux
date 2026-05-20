@@ -2,51 +2,33 @@ package auth
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
-	"github.com/NordSecurity/nordvpn-linux/internal"
-	"github.com/NordSecurity/nordvpn-linux/log"
+	"github.com/NordSecurity/nordvpn-linux/internal/caching"
 )
 
 // ServicesState is responsible for fetching and storing user's available services.
 type ServicesState struct {
-	credentialsAPI core.CredentialsAPI
-
-	servicesFetched bool
-	services        core.ServicesResponse
+	cache *caching.Cache[core.ServicesResponse]
 }
 
 func NewServicesState(credentialsAPI core.CredentialsAPI) ServicesState {
+	cache := caching.NewCacheWithTTL(time.Hour*5, credentialsAPI.Services)
 	return ServicesState{
-		credentialsAPI: credentialsAPI,
+		cache: cache,
 	}
 }
 
 // fetchServices fetches user's services from the API and saves them so that they will be returned on subsequent calls.
 func (s *ServicesState) fetchServices() (core.ServicesResponse, error) {
-	if s.servicesFetched {
-		return s.services, nil
-	}
-
-	services, err := s.credentialsAPI.Services()
-	if err != nil {
-		return core.ServicesResponse{}, fmt.Errorf("fetching services: %w", err)
-	}
-
-	s.services = services
-	s.servicesFetched = true
-
-	return services, nil
+	return s.cache.Get()
 }
 
 func (s *ServicesState) NotifyUserServicesChanged(any) error {
-	log.Println(internal.InfoPrefix, "received user services update, fetching new services")
-	services, err := s.credentialsAPI.Services()
+	_, err := s.cache.Fetch()
 	if err != nil {
-		return fmt.Errorf("fetching services: %w", err)
+		return fmt.Errorf("fetching new services: %w", err)
 	}
-
-	s.services = services
-	s.servicesFetched = true
 	return nil
 }
