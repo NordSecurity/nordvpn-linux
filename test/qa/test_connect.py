@@ -1,6 +1,7 @@
 import random
 import socket
 import time
+import warnings
 
 import pytest
 import sh
@@ -128,7 +129,10 @@ def test_connect_to_group_random_server_by_name_standard(tech, proto, obfuscated
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    server_info = server.get_hostname_by(tech, proto, obfuscated, group)
+    server_info = server.get_hostname_by(tech, proto, obfuscated, group, exclude_dip=True)
+    if server_info is None:
+        warnings.warn(f"no non-DIP servers available for group {group}", stacklevel=2)
+        pytest.skip(f"no non-DIP servers available for group {group}")
     connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
 
     disconnect_base_test()

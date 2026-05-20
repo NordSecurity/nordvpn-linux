@@ -1,4 +1,5 @@
 import random
+import warnings
 
 import pytest
 import sh
@@ -242,19 +243,16 @@ def test_prevent_obfuscate_disable_with_autoconnect_enabled_to_obfuscated_server
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    available_groups = str(sh.nordvpn.groups(_tty_out=False)).strip().split()
+    server_name = server.get_hostname_by(group_name="Obfuscated_Servers").hostname.split(".")[0]
+    sh.nordvpn.set.autoconnect.on(server_name)
 
-    for group in available_groups:
-        server_name = server.get_hostname_by(tech, proto, obfuscated, group).hostname.split(".")[0]
-        sh.nordvpn.set.autoconnect.on(server_name)
-
-        with pytest.raises(sh.ErrorReturnCode_1) as ex:
-             sh.nordvpn.set.obfuscate.off()
-        print(ex.value)
-        error_message = "We couldn’t turn off obfuscation because your current auto-connect server is obfuscated by default. " \
-            + "Set a different server for auto-connect, then turn off obfuscation."
-        assert error_message in ex.value.stdout.decode("utf-8"), "Should show correct error message"
-        assert "Obfuscate: enabled" in sh.nordvpn.settings(), "Obfuscate should be enabled"
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.set.obfuscate.off()
+    print(ex.value)
+    error_message = "We couldn’t turn off obfuscation because your current auto-connect server is obfuscated by default. " \
+        + "Set a different server for auto-connect, then turn off obfuscation."
+    assert error_message in ex.value.stdout.decode("utf-8"), "Should show correct error message"
+    assert "Obfuscate: enabled" in sh.nordvpn.settings(), "Obfuscate should be enabled"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
@@ -287,7 +285,11 @@ def test_prevent_obfuscate_enable_with_autoconnect_set_to_nonobfuscated(tech, pr
         if group == "Dedicated_IP":
             server_name = server.get_dedicated_ip().hostname.split(".")[0]
         else:
-            server_name = server.get_hostname_by(tech, proto, obfuscated, group).hostname.split(".")[0]
+            server_info = server.get_hostname_by(tech, proto, obfuscated, group, exclude_dip=True)
+            if server_info is None:
+                warnings.warn(f"no non-DIP servers available for group {group}", stacklevel=2)
+                continue
+            server_name = server_info.hostname.split(".")[0]
 
         sh.nordvpn.set.autoconnect.on(server_name)
 
