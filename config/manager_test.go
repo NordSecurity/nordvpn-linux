@@ -295,7 +295,22 @@ func TestConfigMigratesFromEncryptedToUnencrypted(t *testing.T) {
 		return c
 	})
 	require.NoError(t, err)
-	encrypt_removed_config, _ := internal.FileRead("testdata/settings_5.0.0.dat")
-	post_save_config, _ := filesystem.ReadFile("/location")
-	assert.Equal(t, encrypt_removed_config, post_save_config)
+	encryptRemovedConfig, _ := internal.FileRead("testdata/settings_5.0.0.dat")
+	postSaveConfig, _ := filesystem.ReadFile("/location")
+	assert.Equal(t, encryptRemovedConfig, postSaveConfig)
+}
+
+func TestConfigReadEmptyConfig(t *testing.T) {
+	category.Set(t, category.File)
+	filesystem := fs.NewSystemFileHandleMock(t)
+	configManager := NewFilesystemConfigManager(
+		"/location", "/vault", "",
+		NewMachineID(os.ReadFile, os.Hostname),
+		&filesystem,
+		nil)
+	emptyData := make([]byte, 0)
+	filesystem.WriteFile("/location", emptyData, internal.PermUserRW)
+	var conf Config
+	err := configManager.Load(&conf)
+	assert.Error(t, err)
 }

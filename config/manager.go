@@ -136,7 +136,8 @@ func (f *FilesystemConfigManager) save(c Config) error {
 	if err != nil {
 		return err
 	}
-	dataWithHeader := decryptedConfigFileHeader
+	dataWithHeader := make([]byte, 0, len(decryptedConfigFileHeader)+len(data))
+	dataWithHeader = append(dataWithHeader, decryptedConfigFileHeader...)
 	dataWithHeader = append(dataWithHeader, data...)
 
 	return f.fsHandle.WriteFile(f.location, dataWithHeader, internal.PermUserRW)
@@ -185,7 +186,7 @@ func (f *FilesystemConfigManager) Reset(preserveLoginData bool, disableKillswitc
 	return
 }
 
-// Load encrypted config from the filesystem.
+// Load config from the filesystem.
 //
 // Thread-safe.
 func (f *FilesystemConfigManager) Load(c *Config) error {
@@ -194,7 +195,7 @@ func (f *FilesystemConfigManager) Load(c *Config) error {
 	return f.load(c, nil)
 }
 
-// load loads encrypted config from the filesystem into c. If copy is not nil, it
+// load loads config from the filesystem into c. If copy is not nil, it
 // also loads an independent copy into copy. This is used to get the previous config
 // before changes are applied.
 func (f *FilesystemConfigManager) load(c *Config, copy *Config) error {
@@ -214,9 +215,12 @@ func (f *FilesystemConfigManager) load(c *Config, copy *Config) error {
 	if err != nil {
 		return err
 	}
+	if len(data) <= len(decryptedConfigFileHeader) {
+		return fmt.Errorf("Empty config read, aborting load of config")
+	}
 	var decryptedData []byte
 	// Checking if file header matches the expected decrypted file header
-	if !bytes.Equal(data[:4], decryptedConfigFileHeader) {
+	if !bytes.Equal(data[:len(decryptedConfigFileHeader)], decryptedConfigFileHeader) {
 		log.Debug("No decrypted header detected, assuming migration from older version")
 		pass, err := f.getPassphrase()
 		if err != nil {
