@@ -149,8 +149,17 @@ func (r *RPC) connectWithStoredServerSelection(ctx context.Context,
 	}
 	r.connectionInfo.SetInitialConnecting()
 
-	if IsServerDedicated(*r.lastServerSelection.server) && cfg.Technology != config.Technology_NORDLYNX {
-		return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
+	if IsServerDedicated(*r.lastServerSelection.server) {
+		// first, check if feature is enabled at all
+		if !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
+			// if user is trying to connect here while this feature is disabled,
+			// show general error because anyways he should not get here
+			return true, srv.Send(&pb.Payload{Type: internal.CodeFailure})
+		}
+		// second, if feature is enabled, check if technology is correct
+		if cfg.Technology != config.Technology_NORDLYNX {
+			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
+		}
 	}
 
 	expirationCheckResult := r.isVPNExpired()
@@ -189,13 +198,15 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 
 	if groupConvert(in.ServerGroup) == config.ServerGroup_DEDICATED_SERVER ||
 		groupConvert(in.ServerTag) == config.ServerGroup_DEDICATED_SERVER {
-		if cfg.Technology != config.Technology_NORDLYNX {
-			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
-		}
-		if !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServers) {
+		// first, check if feature is enabled at all
+		if !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
 			// if user is trying to connect here while this feature is disabled,
 			// show general error because anyways he should not get here
 			return true, srv.Send(&pb.Payload{Type: internal.CodeFailure})
+		}
+		// second, if feature is enabled, check if technology is correct
+		if cfg.Technology != config.Technology_NORDLYNX {
+			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
 		}
 	}
 

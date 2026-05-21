@@ -91,7 +91,7 @@ func testRPC() *RPC {
 	analytics := testevents.NewAnalytics(config.ConsentUndefined)
 
 	rcMock := mock.NewRemoteConfigMock()
-	rcMock.AddFeatureToggle(remote.FeatureDedicatedServers, true)
+	rcMock.AddFeatureToggle(remote.FeatureDedicatedServer, true)
 
 	return NewRPC(
 		internal.Development,

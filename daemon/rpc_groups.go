@@ -20,8 +20,8 @@ func (r *RPC) Groups(ctx context.Context, in *pb.Empty) (*pb.ServerGroupsList, e
 		}, nil
 	}
 
-	dedicatedserversEnabled := r.remoteConfigGetter.IsFeatureEnabled(
-		remote.FeatureDedicatedServers,
+	dedicatedServerEnabled := r.remoteConfigGetter.IsFeatureEnabled(
+		remote.FeatureDedicatedServer,
 	)
 
 	groups, err := r.dm.Groups(
@@ -29,7 +29,7 @@ func (r *RPC) Groups(ctx context.Context, in *pb.Empty) (*pb.ServerGroupsList, e
 		cfg.AutoConnectData.Protocol,
 		cfg.AutoConnectData.Obfuscate,
 		cfg.VirtualLocation.Get(),
-		dedicatedserversEnabled,
+		dedicatedServerEnabled,
 	)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to get group names", err)

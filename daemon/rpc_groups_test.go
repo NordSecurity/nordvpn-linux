@@ -136,7 +136,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 			dm.serversData.Servers = test.servers
 
 			rc := mock.NewRemoteConfigMock()
-			rc.AddFeatureToggle(remote.FeatureDedicatedServers, !test.disableDedicatedServers)
+			rc.AddFeatureToggle(remote.FeatureDedicatedServer, !test.disableDedicatedServers)
 
 			if cm, ok := test.cm.(*mockConfigManager); ok {
 				cm.c.AutoConnectData.Protocol = config.Protocol_UDP

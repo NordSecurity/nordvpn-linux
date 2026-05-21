@@ -19,12 +19,12 @@ export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 class FeatureToggles extends $pb.GeneratedMessage {
   factory FeatureToggles({
     $core.bool? meshnetEnabled,
-    $core.bool? dedicatedserversEnabled,
+    $core.bool? dedicatedServerEnabled,
   }) {
     final result = create();
     if (meshnetEnabled != null) result.meshnetEnabled = meshnetEnabled;
-    if (dedicatedserversEnabled != null)
-      result.dedicatedserversEnabled = dedicatedserversEnabled;
+    if (dedicatedServerEnabled != null)
+      result.dedicatedServerEnabled = dedicatedServerEnabled;
     return result;
   }
 
@@ -42,7 +42,7 @@ class FeatureToggles extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
     ..aOB(1, _omitFieldNames ? '' : 'meshnetEnabled')
-    ..aOB(2, _omitFieldNames ? '' : 'dedicatedserversEnabled')
+    ..aOB(2, _omitFieldNames ? '' : 'dedicatedServerEnabled')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -74,13 +74,13 @@ class FeatureToggles extends $pb.GeneratedMessage {
   void clearMeshnetEnabled() => $_clearField(1);
 
   @$pb.TagNumber(2)
-  $core.bool get dedicatedserversEnabled => $_getBF(1);
+  $core.bool get dedicatedServerEnabled => $_getBF(1);
   @$pb.TagNumber(2)
-  set dedicatedserversEnabled($core.bool value) => $_setBool(1, value);
+  set dedicatedServerEnabled($core.bool value) => $_setBool(1, value);
   @$pb.TagNumber(2)
-  $core.bool hasDedicatedserversEnabled() => $_has(1);
+  $core.bool hasDedicatedServerEnabled() => $_has(1);
   @$pb.TagNumber(2)
-  void clearDedicatedserversEnabled() => $_clearField(2);
+  void clearDedicatedServerEnabled() => $_clearField(2);
 }
 
 const $core.bool _omitFieldNames =
