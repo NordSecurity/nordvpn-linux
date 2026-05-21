@@ -511,6 +511,7 @@ func main() {
 	servicesState := auth.NewServicesState(clientAPI)
 	userServicesEvents := daemonevents.NewUserServicesEvents()
 	userServicesEvents.Subscribe(servicesState)
+	daemonEvents.User.Logout.Subscribe(servicesState.NotifyLogout)
 
 	// Create auth checker with all session stores
 	authChecker := auth.NewRenewingChecker(

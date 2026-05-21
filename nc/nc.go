@@ -426,6 +426,8 @@ func (c *Client) handleMessage(client mqtt.Client, msg mqtt.Message, ctx context
 		)
 	}
 
+	log.Println(internal.InfoPrefix, logPrefix, "received", payload.Message.Data.Event.Type)
+
 	switch payload.Message.Data.Event.Type {
 	case typeUserServiceUpdate:
 		c.subjectServicesUpdate.Publish(struct{}{})

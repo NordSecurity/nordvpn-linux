@@ -1,10 +1,10 @@
 package auth
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal/caching"
 )
 
@@ -26,9 +26,11 @@ func (s *ServicesState) fetchServices() (core.ServicesResponse, error) {
 }
 
 func (s *ServicesState) NotifyUserServicesChanged(any) error {
-	_, err := s.cache.Fetch()
-	if err != nil {
-		return fmt.Errorf("fetching new services: %w", err)
-	}
+	s.cache.Invalidate()
+	return nil
+}
+
+func (s *ServicesState) NotifyLogout(events.DataAuthorization) error {
+	s.cache.Invalidate()
 	return nil
 }
