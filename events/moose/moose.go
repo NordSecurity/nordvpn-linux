@@ -97,6 +97,7 @@ type mooseFunctions struct {
 	setRecommendationUuid         mooseSetRecommendationUuidFunc
 	setServerCountryValue         mooseSetServerCountryValueFunc
 	setServerGroupValue           mooseSetServerGroupValueFunc
+	unsetServerGroupValue         mooseUnsetContextFunc
 	setIsOnVpnValue               mooseSetIsOnVpnValueFunc
 	sendConnect                   mooseSendConnectFunc
 	sendDisconnect                mooseSendDisconnectFunc
@@ -158,6 +159,7 @@ func NewSubscriber(
 			setRecommendationUuid:         moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid,
 			setServerCountryValue:         moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue,
 			setServerGroupValue:           moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerGroupValue,
+			unsetServerGroupValue:         moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerGroupValue,
 			setIsOnVpnValue:               moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue,
 			sendConnect:                   moose.NordvpnappSendServiceQualityServersConnect,
 			sendDisconnect:                moose.NordvpnappSendServiceQualityServersDisconnect,
@@ -360,8 +362,8 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		return fmt.Errorf("setting moose is on vpn: %w", err)
 	}
 
-	if err := s.response(s.mooseFuncs.setServerGroupValue(UnavailableEventParameterValue)); err != nil {
-		return fmt.Errorf("setting initial server group: %w", err)
+	if err := s.response(s.mooseFuncs.unsetServerGroupValue()); err != nil {
+		return fmt.Errorf("unsetting initial server group: %w", err)
 	}
 
 	sub := &Subscriber{}
@@ -951,10 +953,6 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		connectionFunnel = durationToConnectionFunnel(data.PauseInterval)
 	}
 
-	if err := s.response(s.mooseFuncs.setServerGroupValue(UnavailableEventParameterValue)); err != nil {
-		return fmt.Errorf("clearing server group current state on disconnect: %w", err)
-	}
-
 	if err := s.response(s.mooseFuncs.sendDisconnect(
 		moose.EventParams{
 			EventDuration: int32(data.Duration.Milliseconds()),
@@ -987,6 +985,10 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 
 	if err := s.response(s.mooseFuncs.setServerCountryValue(UnavailableEventParameterValue)); err != nil {
 		return fmt.Errorf("clearing server country current state after disconnect: %w", err)
+	}
+
+	if err := s.response(s.mooseFuncs.unsetServerGroupValue()); err != nil {
+		return fmt.Errorf("unsetting server group current state after disconnect: %w", err)
 	}
 
 	if err := s.response(s.mooseFuncs.setIsOnVpnValue(false)); err != nil {

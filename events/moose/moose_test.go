@@ -1012,6 +1012,7 @@ func noopDisconnectAmbientMooseFuncs(sub *Subscriber) {
 	sub.mooseFuncs.unsetTPLiteCurrentState = func() uint32 { return 0 }
 	sub.mooseFuncs.setServerCountryValue = func(_ string) uint32 { return 0 }
 	sub.mooseFuncs.setServerGroupValue = func(_ string) uint32 { return 0 }
+	sub.mooseFuncs.unsetServerGroupValue = func() uint32 { return 0 }
 	sub.mooseFuncs.setIsOnVpnValue = func(_ bool) uint32 { return 0 }
 }
 
@@ -1231,21 +1232,19 @@ func TestNotifyConnect_Failure_DoesNotWriteServerGroupContext(t *testing.T) {
 	assert.Equal(t, 1, uuidUnsets)
 }
 
-func TestNotifyDisconnect_SetsServerGroupValueToNotAvailable(t *testing.T) {
+func TestNotifyDisconnect_UnsetsServerGroupValueAfterEvent(t *testing.T) {
 	category.Set(t, category.Unit)
 	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
 
-	var groupCallOrder, sendDisconnectCallOrder int
+	var groupUnsetOrder, sendDisconnectCallOrder int
 	var nextCall int
-	var capturedGroup string
-	var groupCalls int
+	var groupUnsets int
 
-	sub.mooseFuncs.setServerGroupValue = func(group string) uint32 {
+	sub.mooseFuncs.unsetServerGroupValue = func() uint32 {
 		nextCall++
-		groupCallOrder = nextCall
-		capturedGroup = group
-		groupCalls++
+		groupUnsetOrder = nextCall
+		groupUnsets++
 		return 0
 	}
 	sub.mooseFuncs.sendDisconnect = func(
@@ -1266,7 +1265,6 @@ func TestNotifyDisconnect_SetsServerGroupValueToNotAvailable(t *testing.T) {
 	})
 
 	assert.NilError(t, err)
-	assert.Equal(t, 1, groupCalls)
-	assert.Equal(t, UnavailableEventParameterValue, capturedGroup)
-	assert.Equal(t, true, groupCallOrder < sendDisconnectCallOrder)
+	assert.Equal(t, 1, groupUnsets)
+	assert.Equal(t, true, sendDisconnectCallOrder < groupUnsetOrder)
 }
