@@ -329,6 +329,9 @@ func (r *RPC) StartAutoConnect(timeoutFn network.CalculateRetryDelayForAttempt) 
 		}
 
 		if err := r.doAutoConnect(); err != nil {
+			if errors.Is(err, errAutoConnectDisabled) {
+				return nil
+			}
 			log.Println(internal.ErrorPrefix, "autoconnect failed:", err)
 		} else {
 			return nil
@@ -340,12 +343,20 @@ func (r *RPC) StartAutoConnect(timeoutFn network.CalculateRetryDelayForAttempt) 
 	}
 }
 
+// errAutoConnectDisabled is returned when autoconnect was turned off between retries
+var errAutoConnectDisabled = errors.New("autoconnect disabled")
+
 func (r *RPC) doAutoConnect() error {
 	var cfg config.Config
 	err := r.cm.Load(&cfg)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "auto-connect failed:", err)
 		return err
+	}
+
+	if !cfg.AutoConnect {
+		log.Println(internal.InfoPrefix, "skipping auto-connect: disabled in config")
+		return errAutoConnectDisabled
 	}
 
 	if cfg.Technology == config.Technology_NORDWHISPER && !features.NordWhisperEnabled {

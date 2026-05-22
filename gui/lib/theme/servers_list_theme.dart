@@ -16,6 +16,9 @@ final class ServersListTheme extends ThemeExtension<ServersListTheme>
   final double listItemHeight;
 
   @override
+  final double labelPadding;
+
+  @override
   final EdgeInsetsGeometry paddingSearchGroupsLabel;
 
   @override
@@ -30,18 +33,15 @@ final class ServersListTheme extends ThemeExtension<ServersListTheme>
   @override
   final Color obfuscatedItemBackgroundColor;
 
-  @override
-  final double horizontalSpace;
-
   ServersListTheme({
     required this.flagSize,
     required this.loaderSize,
     required this.listItemHeight,
+    required this.labelPadding,
     required this.paddingSearchGroupsLabel,
     required this.searchHintStyle,
     required this.searchErrorStyle,
     required this.obfuscationSearchWarningStyle,
     required this.obfuscatedItemBackgroundColor,
-    required this.horizontalSpace,
   });
 }

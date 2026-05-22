@@ -142,6 +142,8 @@ final class _ServersListCardState extends State<ServersListCard> {
     WidgetRef ref,
     bool isObfuscationEnabled,
   ) {
+    final serverListTheme = context.serversListTheme;
+
     return Column(
       children: [
         if (widget.withRecentConnectionsWidget)
@@ -160,6 +162,9 @@ final class _ServersListCardState extends State<ServersListCard> {
                     Expanded(
                       child: TabBar(
                         isScrollable: true,
+                        labelPadding: EdgeInsets.symmetric(
+                          horizontal: serverListTheme.labelPadding,
+                        ),
                         tabs: [
                           Tab(text: t.ui.countries),
                           Tab(
@@ -237,6 +242,9 @@ final class _ServersListCardState extends State<ServersListCard> {
               if (widget.withQuickConnectTile && index == 0) {
                 return CustomExpansionTile(
                   leading: DynamicThemeImage("fastest_server.svg"),
+                  contentPadding: EdgeInsets.only(
+                    left: appTheme.horizontalSpaceVerySmall,
+                  ),
                   title: Text(fastestServerLabel, style: appTheme.body),
                   onTap: () async => await widget.onSelected(
                     ConnectArguments(

@@ -54,6 +54,34 @@ func TestGetRecentConnections_Filtering(t *testing.T) {
 	assert.False(t, resp.Connections[0].IsVirtual)
 }
 
+func TestGetRecentConnections_FiltersDeprecatedRegionalGroups(t *testing.T) {
+	category.Set(t, category.Unit)
+	r := testRPCLocal(t)
+
+	r.recentVPNConnStore.Add(recents.Model{
+		Country:            "France",
+		ConnectionType:     config.ServerSelectionRule_COUNTRY,
+		ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
+	})
+	r.recentVPNConnStore.Add(recents.Model{
+		Group:              regionalGroupEurope,
+		ConnectionType:     config.ServerSelectionRule_GROUP,
+		ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
+	})
+	r.recentVPNConnStore.Add(recents.Model{
+		Country:            "Germany",
+		ConnectionType:     config.ServerSelectionRule_COUNTRY,
+		ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
+	})
+
+	resp, err := r.GetRecentConnections(context.Background(), &pb.RecentConnectionsRequest{})
+	assert.NoError(t, err)
+	assert.Len(t, resp.Connections, 2)
+	for _, c := range resp.Connections {
+		assert.False(t, config.IsRegionalGroup(c.Group), "regional group leaked into response: %v", c)
+	}
+}
+
 func TestGetRecentConnections_Limit(t *testing.T) {
 	category.Set(t, category.Unit)
 	r := testRPCLocal(t)

@@ -738,8 +738,8 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	eventTrigger := moose.NordvpnappEventTriggerUser
 	vpnConnectionTrigger := moose.NordvpnappVpnConnectionTriggerNone
 	connectionFunnel := ""
-	// we only want Pause data in attempt events
-	if data.PauseInterval > 0 && data.EventStatus == events.StatusAttempt {
+	if data.PauseInterval > 0 {
+		// params specific for pause-related events
 		if !data.UnpausedByUser {
 			eventTrigger = moose.NordvpnappEventTriggerApp
 		}
