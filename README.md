@@ -101,10 +101,10 @@ To fix this, create `/etc/docker/daemon.json` with the following content:
 }
 ```
 
-Then restart the Docker socket service:
+Then reboot the system, for example:
 
 ```sh
-sudo systemctl restart docker.socket
+sudo reboot
 ```
 
 ## Installing
