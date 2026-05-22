@@ -77,7 +77,7 @@ func TestLogout_Token(t *testing.T) {
 	for _, test := range tests {
 		deviceKeyManagerMock := testdevicekey.MockDeviceKeyManager{}
 		t.Run(test.name, func(t *testing.T) {
-			rpc.dedicatedServersKeyManager = &deviceKeyManagerMock
+			rpc.dedicatedServerKeyManager = &deviceKeyManagerMock
 			err := rpc.cm.SaveWith(func(c config.Config) config.Config {
 				tokenData := c.TokensData[c.AutoConnectData.ID]
 				if test.loggedInWithToken {
@@ -136,10 +136,10 @@ func TestLogout_Pause(t *testing.T) {
 					User:    &daemonevents.LoginEvents{Logout: &daemonevents.MockPublisherSubscriber[events.DataAuthorization]{}},
 					Service: &daemonevents.ServiceEvents{Disconnect: mockedDisconnectEvents},
 				},
-				pauseManager:               pauseSchedulerMock,
-				connectionInfo:             connectionInfo,
-				recentVPNConnStore:         recents.NewRecentConnectionsStore("/test/path", &fs, nil),
-				dedicatedServersKeyManager: &testdevicekey.MockDeviceKeyManager{},
+				pauseManager:              pauseSchedulerMock,
+				connectionInfo:            connectionInfo,
+				recentVPNConnStore:        recents.NewRecentConnectionsStore("/test/path", &fs, nil),
+				dedicatedServerKeyManager: &testdevicekey.MockDeviceKeyManager{},
 			}
 
 			if test.isDataDisconnectExpected {

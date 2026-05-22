@@ -184,11 +184,8 @@ func (c *workingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPServic
 
 	return c.dedicatedIPService, nil
 }
-func (c *workingLoginChecker) HasDedicatedServerService() (bool, error) {
-	if c.isDedicatedServersExpired {
-		return false, c.dedicatedServerErr
-	}
-	return true, c.dedicatedServerErr
+func (c *workingLoginChecker) GetDedicatedServerService() (auth.DedicatedServerService, error) {
+	return auth.DedicatedServerService{Active: !c.isDedicatedServersExpired}, c.dedicatedServerErr
 }
 
 func TestRPCConnect(t *testing.T) {
@@ -1185,7 +1182,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 				isDedicatedServersExpired: test.isDedicatedServersExpired,
 				dedicatedServerErr:        test.serviceCheckErr,
 			}
-			rpc.dedicatedServersKeyManager = &testdevicekey.MockDeviceKeyManager{
+			rpc.dedicatedServerKeyManager = &testdevicekey.MockDeviceKeyManager{
 				DedicatedServerRegistrationData: &devicekey.DedicatedServersConnectionData{
 					DevicePublicKey: devicePublicKey,
 					DeviceUUID:      deviceUUID,
@@ -1245,7 +1242,7 @@ func TestDedicatedServers_Internals(t *testing.T) {
 	rpc.ac = &workingLoginChecker{
 		isDedicatedServersExpired: false,
 	}
-	rpc.dedicatedServersKeyManager = &testdevicekey.MockDeviceKeyManager{
+	rpc.dedicatedServerKeyManager = &testdevicekey.MockDeviceKeyManager{
 		DedicatedServerRegistrationData: &devicekey.DedicatedServersConnectionData{
 			DevicePublicKey:  deviceKey,
 			DevicePrivateKey: devicePrivateKey,

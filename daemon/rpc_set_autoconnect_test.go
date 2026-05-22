@@ -22,8 +22,8 @@ func (mockAutoconnectAuthChecker) IsVPNExpired() (bool, error) { return false, n
 func (mockAutoconnectAuthChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
 	return []auth.DedicatedIPService{}, nil
 }
-func (mockAutoconnectAuthChecker) HasDedicatedServerService() (bool, error) {
-	return false, nil
+func (mockAutoconnectAuthChecker) GetDedicatedServerService() (auth.DedicatedServerService, error) {
+	return auth.DedicatedServerService{}, nil
 }
 
 func TestAutoconnect(t *testing.T) {

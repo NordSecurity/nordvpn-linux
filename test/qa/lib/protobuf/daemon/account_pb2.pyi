@@ -15,7 +15,7 @@ class DedidcatedIPService(_message.Message):
     def __init__(self, server_ids: _Optional[_Iterable[int]] = ..., dedicated_ip_expires_at: _Optional[str] = ...) -> None: ...
 
 class AccountResponse(_message.Message):
-    __slots__ = ("type", "username", "email", "subscription_expires_at", "dedicated_ip_status", "last_dedicated_ip_expires_at", "dedicated_ip_services", "mfa_status", "created_on")
+    __slots__ = ("type", "username", "email", "subscription_expires_at", "dedicated_ip_status", "last_dedicated_ip_expires_at", "dedicated_ip_services", "mfa_status", "created_on", "dedicated_server_status", "dedicated_servers_service_expires_at")
     TYPE_FIELD_NUMBER: _ClassVar[int]
     USERNAME_FIELD_NUMBER: _ClassVar[int]
     EMAIL_FIELD_NUMBER: _ClassVar[int]
@@ -25,6 +25,8 @@ class AccountResponse(_message.Message):
     DEDICATED_IP_SERVICES_FIELD_NUMBER: _ClassVar[int]
     MFA_STATUS_FIELD_NUMBER: _ClassVar[int]
     CREATED_ON_FIELD_NUMBER: _ClassVar[int]
+    DEDICATED_SERVER_STATUS_FIELD_NUMBER: _ClassVar[int]
+    DEDICATED_SERVERS_SERVICE_EXPIRES_AT_FIELD_NUMBER: _ClassVar[int]
     type: int
     username: str
     email: str
@@ -34,7 +36,9 @@ class AccountResponse(_message.Message):
     dedicated_ip_services: _containers.RepeatedCompositeFieldContainer[DedidcatedIPService]
     mfa_status: _common_pb2.TriState
     created_on: str
-    def __init__(self, type: _Optional[int] = ..., username: _Optional[str] = ..., email: _Optional[str] = ..., subscription_expires_at: _Optional[str] = ..., dedicated_ip_status: _Optional[int] = ..., last_dedicated_ip_expires_at: _Optional[str] = ..., dedicated_ip_services: _Optional[_Iterable[_Union[DedidcatedIPService, _Mapping]]] = ..., mfa_status: _Optional[_Union[_common_pb2.TriState, str]] = ..., created_on: _Optional[str] = ...) -> None: ...
+    dedicated_server_status: int
+    dedicated_servers_service_expires_at: str
+    def __init__(self, type: _Optional[int] = ..., username: _Optional[str] = ..., email: _Optional[str] = ..., subscription_expires_at: _Optional[str] = ..., dedicated_ip_status: _Optional[int] = ..., last_dedicated_ip_expires_at: _Optional[str] = ..., dedicated_ip_services: _Optional[_Iterable[_Union[DedidcatedIPService, _Mapping]]] = ..., mfa_status: _Optional[_Union[_common_pb2.TriState, str]] = ..., created_on: _Optional[str] = ..., dedicated_server_status: _Optional[int] = ..., dedicated_servers_service_expires_at: _Optional[str] = ...) -> None: ...
 
 class AccountRequest(_message.Message):
     __slots__ = ("full",)

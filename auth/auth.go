@@ -26,6 +26,11 @@ type DedicatedIPService struct {
 	ServerIDs []int64
 }
 
+type DedicatedServerService struct {
+	ExpiresAt string
+	Active    bool
+}
+
 // Checker provides information about current authentication.
 type Checker interface {
 	// IsLoggedIn returns true when the user is logged in.
@@ -37,8 +42,8 @@ type Checker interface {
 	// GetDedicatedIPServices returns all available server IDs, if server is not selected by the user it will set
 	// ServerID for that service to NoServerSelected
 	GetDedicatedIPServices() ([]DedicatedIPService, error)
-	// HasDedicatedServerService returns true if user has dedicated servers service that is not expired.
-	HasDedicatedServerService() (bool, error)
+	// GetDedicatedServerService returns dedicated servers service status and expiration date
+	GetDedicatedServerService() (DedicatedServerService, error)
 }
 
 const (
@@ -208,19 +213,29 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 	return dipServices, nil
 }
 
-// HasDedicatedServerService returns true if user has dedicated servers service that is not expired.
-func (r *RenewingChecker) HasDedicatedServerService() (bool, error) {
+// GetDedicatedServerService returns dedicated server service status and expiration date
+func (r *RenewingChecker) GetDedicatedServerService() (DedicatedServerService, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	services, err := r.fetchServices()
 	if err != nil {
-		return false, fmt.Errorf("fetching services: %w", err)
+		return DedicatedServerService{}, fmt.Errorf("fetching services: %w", err)
 	}
 
-	return slices.ContainsFunc(services, func(service core.ServiceData) bool {
-		return service.Service.ID == DedicatedServersServiceID && !r.expChecker.IsExpired(service.ExpiresAt)
-	}), nil
+	dedicatedServersServiceIndex := slices.IndexFunc(services, func(serviceData core.ServiceData) bool {
+		return serviceData.Service.ID == DedicatedServersServiceID
+	})
+
+	if dedicatedServersServiceIndex == -1 {
+		return DedicatedServerService{Active: false}, nil
+	}
+
+	dedicatedServersServiceData := services[dedicatedServersServiceIndex]
+	return DedicatedServerService{
+		ExpiresAt: dedicatedServersServiceData.ExpiresAt,
+		Active:    !r.expChecker.IsExpired(dedicatedServersServiceData.ExpiresAt),
+	}, nil
 }
 
 // FindVpnServiceExpiration returns VPN service expiration date in the format of YYY-MM-DD HH:MM:SS
