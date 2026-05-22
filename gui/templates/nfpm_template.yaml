@@ -44,7 +44,7 @@ mtime: "${VERSION_DATE}"
 
 # Dependencies. (overridable)
 depends:
-  - "nordvpn (>= 4.0.0)"
+  - "nordvpn (>= 5.0.0)"
 
 # Basic file that applies to all packagers
 contents:
