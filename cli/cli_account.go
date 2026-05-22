@@ -92,7 +92,7 @@ func (c *cmd) Account(ctx *cli.Context) error {
 		return err
 	}
 
-	if err := displayExpiryInfo("Dedicated Servers",
+	if err := displayExpiryInfo("Dedicated Server",
 		payload.DedicatedServerStatus,
 		payload.DedicatedServersServiceExpiresAt); err != nil {
 		return err
