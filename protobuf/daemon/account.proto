@@ -21,6 +21,8 @@ message AccountResponse {
   repeated DedidcatedIPService dedicated_ip_services = 7;
   TriState mfa_status = 8;
   string created_on = 9;
+  int64 dedicated_server_status = 10;
+  string dedicated_servers_service_expires_at = 11;
 }
 
 message AccountRequest {

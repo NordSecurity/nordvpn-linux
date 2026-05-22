@@ -44,28 +44,28 @@ type RPC struct {
 	version             string
 	events              *daemonevents.Events
 	// factory picks which VPN implementation to use
-	factory                    FactoryFunc
-	endpointResolver           network.EndpointResolver
-	endpoint                   network.Endpoint
-	scheduler                  gocron.Scheduler
-	netw                       networker.Networker
-	publisher                  events.Publisher[string]
-	nameservers                dns.Getter
-	ncClient                   nc.NotificationClient
-	analytics                  events.Analytics
-	norduser                   service.Service
-	systemShutdown             atomic.Bool
-	statePublisher             *state.StatePublisher
-	RequestedConnParams        RequestedConnParamsStorage
-	connectContext             *sharedctx.Context
-	remoteConfigGetter         remote.ConfigGetter
-	connectionInfo             *state.ConnectionInfo
-	consentChecker             ConsentChecker
-	recentVPNConnStore         *recents.RecentConnectionsStore
-	dataUpdateEvents           *daemonevents.DataUpdateEvents
-	initialLoginType           *atomicLoginType // memorize what action started: Login or Signup (Register) - thread-safe
-	pauseManager               ReconnectScheduler
-	dedicatedServersKeyManager devicekey.DedicatedServersKeyManager
+	factory                   FactoryFunc
+	endpointResolver          network.EndpointResolver
+	endpoint                  network.Endpoint
+	scheduler                 gocron.Scheduler
+	netw                      networker.Networker
+	publisher                 events.Publisher[string]
+	nameservers               dns.Getter
+	ncClient                  nc.NotificationClient
+	analytics                 events.Analytics
+	norduser                  service.Service
+	systemShutdown            atomic.Bool
+	statePublisher            *state.StatePublisher
+	RequestedConnParams       RequestedConnParamsStorage
+	connectContext            *sharedctx.Context
+	remoteConfigGetter        remote.ConfigGetter
+	connectionInfo            *state.ConnectionInfo
+	consentChecker            ConsentChecker
+	recentVPNConnStore        *recents.RecentConnectionsStore
+	dataUpdateEvents          *daemonevents.DataUpdateEvents
+	initialLoginType          *atomicLoginType // memorize what action started: Login or Signup (Register) - thread-safe
+	pauseManager              ReconnectScheduler
+	dedicatedServerKeyManager devicekey.DedicatedServersKeyManager
 	pb.UnimplementedDaemonServer
 }
 
@@ -102,37 +102,37 @@ func NewRPC(
 ) *RPC {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	r := &RPC{
-		environment:                environment,
-		ac:                         ac,
-		cm:                         cm,
-		dm:                         dm,
-		api:                        api,
-		serversAPI:                 serversAPI,
-		credentialsAPI:             credentialsAPI,
-		dedicatedServersAPI:        dedicatedServersAPI,
-		cdn:                        cdn,
-		repo:                       repo,
-		authentication:             authentication,
-		version:                    version,
-		factory:                    factory,
-		events:                     events,
-		endpointResolver:           endpointResolver,
-		scheduler:                  scheduler,
-		netw:                       netw,
-		publisher:                  publisher,
-		nameservers:                nameservers,
-		ncClient:                   ncClient,
-		analytics:                  analytics,
-		norduser:                   norduser,
-		statePublisher:             statePublisher,
-		connectContext:             connectContext,
-		remoteConfigGetter:         remoteConfigGetter,
-		connectionInfo:             connectionInfo,
-		consentChecker:             consentChecker,
-		recentVPNConnStore:         recentVPNConnStore,
-		dataUpdateEvents:           dataUpdateEvents,
-		dedicatedServersKeyManager: dedicatedServersKeyManager,
-		initialLoginType:           NewAtomicLoginType(),
+		environment:               environment,
+		ac:                        ac,
+		cm:                        cm,
+		dm:                        dm,
+		api:                       api,
+		serversAPI:                serversAPI,
+		credentialsAPI:            credentialsAPI,
+		dedicatedServersAPI:       dedicatedServersAPI,
+		cdn:                       cdn,
+		repo:                      repo,
+		authentication:            authentication,
+		version:                   version,
+		factory:                   factory,
+		events:                    events,
+		endpointResolver:          endpointResolver,
+		scheduler:                 scheduler,
+		netw:                      netw,
+		publisher:                 publisher,
+		nameservers:               nameservers,
+		ncClient:                  ncClient,
+		analytics:                 analytics,
+		norduser:                  norduser,
+		statePublisher:            statePublisher,
+		connectContext:            connectContext,
+		remoteConfigGetter:        remoteConfigGetter,
+		connectionInfo:            connectionInfo,
+		consentChecker:            consentChecker,
+		recentVPNConnStore:        recentVPNConnStore,
+		dataUpdateEvents:          dataUpdateEvents,
+		dedicatedServerKeyManager: dedicatedServersKeyManager,
+		initialLoginType:          NewAtomicLoginType(),
 	}
 	reconnectScheduler := NewReconnectScheduler(r.connectFromLastSelection, connectionInfo)
 	r.pauseManager = reconnectScheduler

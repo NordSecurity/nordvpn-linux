@@ -269,7 +269,7 @@ func (r *RPC) connect(
 	isServerDedicated := IsServerDedicated(*serverSelection.server)
 	// if server is a dedicated server, we need to use the device key instead of NordLynx private key
 	if isServerDedicated {
-		dedicatedServersDeviceData := r.dedicatedServersKeyManager.CheckAndRegisterDedicatedServers()
+		dedicatedServersDeviceData := r.dedicatedServerKeyManager.CheckAndRegisterDedicatedServers()
 		if dedicatedServersDeviceData == nil {
 			log.Println(internal.ErrorPrefix, "failed to fetch the device key for dedicated server connection")
 			return false, internal.ErrUnhandled

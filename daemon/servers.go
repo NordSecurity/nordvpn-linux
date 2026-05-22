@@ -518,7 +518,7 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 		case errors.Is(err, ErrDedicatedServer):
 			dedicatedServer, err := selectDedicatedServer(r.ac,
 				r.dedicatedServersAPI,
-				r.dedicatedServersKeyManager)
+				r.dedicatedServerKeyManager)
 			if err != nil {
 				return serverSelection{}, err
 			}
@@ -617,7 +617,7 @@ func selectDedicatedIPServer(authChecker auth.Checker, servers core.Servers) (*c
 func selectDedicatedServer(authChecker auth.Checker,
 	api core.DedicatedServersAPI,
 	keyManager devicekey.DedicatedServersKeyManager) (*core.Server, error) {
-	ok, err := authChecker.HasDedicatedServerService()
+	service, err := authChecker.GetDedicatedServerService()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "checking dedicated servers service status:", err)
 		if errors.Is(err, core.ErrUnauthorized) {
@@ -626,7 +626,7 @@ func selectDedicatedServer(authChecker auth.Checker,
 		return nil, internal.ErrUnhandled
 	}
 
-	if !ok {
+	if !service.Active {
 		return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersRenewError)
 	}
 
