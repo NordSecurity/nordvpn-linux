@@ -25,7 +25,7 @@ func buildRules(verdict expr.Any, parts ...[]expr.Any) []expr.Any {
 
 // ct state == established
 // ctValue: expr.CtStateBitESTABLISHED | expr.CtStateBitRELATED | CtStateBitNEW
-func checkCtState(ctState uint32) []expr.Any {
+func checkCtState(ctState uint32) []expr.Any { //nolint:unparam
 	return []expr.Any{
 		&expr.Ct{Register: 1, Key: expr.CtKeySTATE},
 		&expr.Bitwise{
@@ -52,7 +52,7 @@ const (
 
 // udp port 53
 // portType: unix.IPPROTO_UDP | IPPROTO_TCP...
-func checkPortNumber(port uint16, portType byte, match matchType) []expr.Any {
+func checkPortNumber(port uint16, portType byte, match matchType) []expr.Any { //nolint:unparam
 	// Offset: 0, Len: 2  → sport
 	// Offset: 2, Len: 2  → dport
 
