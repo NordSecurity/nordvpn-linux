@@ -7,13 +7,14 @@ After=network-pre.target
 ExecStart=/usr/sbin/nordvpnd
 NonBlocking=true
 KillMode=process
-Restart=on-failure
+Restart=always
 RestartSec=5
 # centos7 RuntimeDirectory ignored
 RuntimeDirectory=nordvpn
 RuntimeDirectoryMode=0750
-# User=root
 Group=nordvpn
+RuntimeDirectoryGroup=nordvpn
+RuntimeDirectoryPreserve=yes
 
 [Install]
 WantedBy=default.target
