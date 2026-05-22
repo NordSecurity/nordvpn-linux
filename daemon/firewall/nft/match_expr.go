@@ -25,7 +25,7 @@ func buildRules(verdict expr.Any, parts ...[]expr.Any) []expr.Any {
 
 // ct state == established
 // ctValue: expr.CtStateBitESTABLISHED | expr.CtStateBitRELATED | CtStateBitNEW
-func checkCtState(ctState uint32) []expr.Any {
+func checkCtState(ctState uint32) []expr.Any { //nolint:unparam
 	return []expr.Any{
 		&expr.Ct{Register: 1, Key: expr.CtKeySTATE},
 		&expr.Bitwise{
@@ -52,7 +52,7 @@ const (
 
 // udp port 53
 // portType: unix.IPPROTO_UDP | IPPROTO_TCP...
-func checkPortNumber(port uint16, portType byte, match matchType) []expr.Any {
+func checkPortNumber(port uint16, portType byte, match matchType) []expr.Any { //nolint:unparam
 	// Offset: 0, Len: 2  → sport
 	// Offset: 2, Len: 2  → dport
 
@@ -222,21 +222,6 @@ func checkCtMark(fwmark uint32) []expr.Any {
 	return []expr.Any{
 		&expr.Ct{
 			Key:      expr.CtKeyMARK,
-			Register: 1,
-		},
-		&expr.Cmp{
-			Register: 1,
-			Op:       expr.CmpOpEq,
-			Data:     binaryutil.NativeEndian.PutUint32(fwmark),
-		},
-	}
-}
-
-// meta mark 0xe1f1
-func checkMetaMark(fwmark uint32) []expr.Any {
-	return []expr.Any{
-		&expr.Meta{
-			Key:      expr.MetaKeyMARK,
 			Register: 1,
 		},
 		&expr.Cmp{
