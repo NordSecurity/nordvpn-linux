@@ -61,6 +61,26 @@ echo "debug" | sudo tee /run/nordvpn/loglevel
 
 Valid values are `debug`, `info`, `warn`, `error`, `fatal` and `off`.
 
+### Meshnet peer routing not working on Fedora with Docker installed
+
+When Docker is installed on Fedora, it drops all forwarded traffic that did not
+originate from Docker. This means meshnet routing through a Fedora machine will
+not work.
+
+To fix this, create `/etc/docker/daemon.json` with the following content:
+
+```json
+{
+  "ip-forward-no-drop": true
+}
+```
+
+Then restart the Docker socket service:
+
+```sh
+sudo systemctl restart docker.socket
+```
+
 ## Installing
 
 For installing an already released version please follow the
