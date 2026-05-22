@@ -232,21 +232,6 @@ func checkCtMark(fwmark uint32) []expr.Any {
 	}
 }
 
-// meta mark 0xe1f1
-func checkMetaMark(fwmark uint32) []expr.Any {
-	return []expr.Any{
-		&expr.Meta{
-			Key:      expr.MetaKeyMARK,
-			Register: 1,
-		},
-		&expr.Cmp{
-			Register: 1,
-			Op:       expr.CmpOpEq,
-			Data:     binaryutil.NativeEndian.PutUint32(fwmark),
-		},
-	}
-}
-
 // meta mark 0xe1f1 ct mark set meta mark
 func checkMetaMarkAndSetCtMark(fwmark uint32) []expr.Any {
 	return []expr.Any{
