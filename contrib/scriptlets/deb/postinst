@@ -37,10 +37,22 @@ ldconfig -v > /dev/null 2>&1
 # adjust permissions of shared objects
 chmod 0644 "${LIBS_DIR}"/*.so
 
-set -e
-sqlite=$(ldconfig -p 2>/dev/null | grep 'libsqlite3.so.0' | sed -n 's/.*=>[[:space:]]*//p' | head -n1)
-ln -sf "${sqlite}" "${LIBS_DIR}/libsqlite3.so"
-set +e
+# Iterate over all of the results, so symlink is not created pointing to an actual .so file
+# which might cause issues upon library bump.
+#
+sqlite=""
+for path in $(ldconfig -p 2>/dev/null | grep 'libsqlite3.so.0' | sed -n 's/.*=>[[:space:]]*//p'); do
+    if [ -L "$path" ]; then
+        sqlite="$path"
+        break
+    fi
+done
+
+if [ -n "$sqlite" ]; then
+    ln -sf "$sqlite" "${LIBS_DIR}/libsqlite3.so"
+else
+    echo "WARNING: no symlink to libsqlite3.so.0 found in ldconfig cache; nordvpnd may fail to start" >&2
+fi
 
 # ldconfig needs to be executed twice in case libsqlite3.so.0 was not available during a lookup
 ldconfig -v > /dev/null 2>&1
