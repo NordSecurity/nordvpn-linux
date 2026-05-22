@@ -89,8 +89,8 @@ Valid values are `debug`, `info`, `warn`, `error`, `fatal` and `off`.
 
 ### Meshnet peer routing not working on Fedora with Docker installed
 
-When Docker is installed on Fedora, it drops all forwarded traffic that did not
-originate from Docker. This means meshnet routing through a Fedora machine will
+When Docker is installed on Fedora, it drops all forwarded traffic that does
+not come from Docker. As a result, Meshnet routing through a Fedora machine will
 not work.
 
 To fix this, create `/etc/docker/daemon.json` with the following content:
