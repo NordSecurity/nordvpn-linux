@@ -57,15 +57,56 @@ class ServerInfo:
         self.country = server_info["locations"][0]["country"]["name"]
 
 
-def get_hostname_by(technology="", protocol="", obfuscated="", group_name=""):
-    """Returns server name and hostname from core API."""
+def _server_is_dedicated_ip(server: dict) -> bool:
+    """
+    True if the server belongs to the Dedicated_IP group.
+
+    Example:
+        _server_is_dedicated_ip({"groups": [{"id": GROUP_DEDICATED_IP}]})  # -> True
+        _server_is_dedicated_ip({"groups": [{"id": GROUP_EUROPE}]})        # -> False
+    """
+    groups: list[dict] = server.get("groups", [])
+    for group in groups:  # noqa: SIM110
+        if group.get("id") == GROUP_DEDICATED_IP:
+            return True
+    return False
+
+
+def _exclude_dedicated_ip_servers(servers: list[dict]) -> list[dict]:
+    """
+    Returns the input list with any Dedicated_IP servers removed.
+
+    The API also returns DIP servers when querying by a region group
+    (e.g. Europe), since one server may belong to several groups.
+
+    Example:
+        _exclude_dedicated_ip_servers([dip_server, eu_server])  # -> [eu_server]
+    """
+    non_dip_servers: list[dict] = []
+    for server in servers:
+        if not _server_is_dedicated_ip(server):
+            non_dip_servers.append(server)
+    return non_dip_servers
+
+
+def get_hostname_by(technology="", protocol="", obfuscated="", group_name="", exclude_dip=False):
+    """
+    Returns server name and hostname from core API.
+
+    If exclude_dip is True, skips Dedicated_IP servers.
+    """
 
     (tech_id, group_id) = get_request_parameters(technology, protocol, obfuscated, group_name)
 
     # api limits
     time.sleep(2)
 
-    url = f"https://api.nordvpn.com/v1/servers?limit=10&filters[servers.status]=online&filters[servers_technologies][id]={tech_id}&filters[servers_groups][id]={group_id}"
+    # fetch extra when post-filtering DIP
+    # a queried group can include DIP servers and dropping them on client could
+    # leave us with an empty list
+    limit = 20 if exclude_dip else 10
+
+    url = f"https://api.nordvpn.com/v1/servers?limit={limit}&filters[servers.status]=online&filters[servers_technologies][id]={tech_id}&filters[servers_groups][id]={group_id}"
     logging.debug(url)
 
     response = requests.get(url, timeout=5)
@@ -84,6 +125,12 @@ def get_hostname_by(technology="", protocol="", obfuscated="", group_name=""):
 
     assert len(response) > 0, "Core API returned an empty servers list"
     logging.debug("Core API response (truncated): %s", str(response)[:300])
+
+    if exclude_dip:
+        response = _exclude_dedicated_ip_servers(response)
+        if not response:
+            return None
+
     server = response[0]
     validate_server(server_json=str(server), tech_id=tech_id, group_id=group_id)
     return ServerInfo(server_info=server)
