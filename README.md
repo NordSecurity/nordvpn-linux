@@ -1,10 +1,36 @@
-# NordVPN for Linux
+<div align="center">
 
-![icon](./assets/icon.svg)
+  <img src="./assets/icon.svg" alt="NordVPN icon" width="100" />
 
----
+  <h1>NordVPN for Linux</h1>
 
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/NordSecurity/nordvpn-linux/badge)](https://scorecard.dev/viewer/?uri=github.com/NordSecurity/nordvpn-linux)
+  <h3>
+    <strong>Privacy and security for Linux users</strong>
+  </h3>
+
+  <p>
+    <a href="https://scorecard.dev/viewer/?uri=github.com/NordSecurity/nordvpn-linux">
+      <img src="https://api.scorecard.dev/projects/github.com/NordSecurity/nordvpn-linux/badge" alt="OpenSSF Scorecard" />
+    </a>
+  </p>
+
+  <h3>
+    <a href="#about">About</a>
+    <span> | </span>
+    <a href="#versioning">Versioning</a>
+    <span> | </span>
+    <a href="#contributing">Contributing</a>
+    <span> | </span>
+    <a href="#building">Building</a>
+    <span> | </span>
+    <a href="#troubleshooting">Troubleshooting</a>
+    <span> | </span>
+    <a href="#installing">Installing</a>
+  </h3>
+
+</div>
+
+# <p id="about">About</p>
 
 The [NordVPN](https://nordvpn.com/features/) Linux application provides a
 simple and user-friendly command line interface for accessing all the
