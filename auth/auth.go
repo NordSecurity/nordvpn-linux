@@ -195,7 +195,7 @@ func (r *RenewingChecker) IsVPNExpired() (bool, error) {
 func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error) {
 	services, err := r.servicesState.fetchServices()
 	if err != nil {
-		return nil, fmt.Errorf("fetching available services: %w", err)
+		return nil, fmt.Errorf("fetching available dedicated IP services: %w", err)
 	}
 
 	dipServices := []DedicatedIPService{}

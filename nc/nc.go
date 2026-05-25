@@ -10,6 +10,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 	"sync"
 	"time"
 
@@ -44,8 +46,6 @@ var subscriptions = map[string]byte{
 	"meshnet":             byte(1),
 	"user_service_update": byte(1),
 }
-
-var unsubscriptions = []string{"content", "linux", "meshnet"}
 
 // RecPayload defines a payload sent by a NC
 type RecPayload struct {
@@ -323,7 +323,7 @@ func (c *Client) connectWithBackoff(client mqtt.Client,
 	token := client.SubscribeMultiple(subscriptions, nil)
 	if token.WaitTimeout(timeout) && token.Error() != nil {
 		c.subjectErr.Publish(
-			fmt.Errorf(logPrefix+" subscribing to %v topics: %s", unsubscriptions, token.Error()),
+			fmt.Errorf(logPrefix+" subscribing to topics: %s", token.Error()),
 		)
 	}
 
@@ -471,6 +471,7 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan any, error)
 			log.Println(logPrefix, "stopping management loop")
 			cancelConnectionFunc()
 			if client != nil {
+				unsubscriptions := slices.Collect(maps.Keys(subscriptions))
 				client.Unsubscribe(unsubscriptions...)
 				client.Disconnect(0)
 				client = nil
