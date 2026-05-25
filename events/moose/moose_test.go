@@ -240,19 +240,24 @@ func TestChangeConsentState(t *testing.T) {
 	}
 }
 
-func TestAnalyticsConsentLevel_Granted(t *testing.T) {
+func TestAnalyticsConsentLevel(t *testing.T) {
 	category.Set(t, category.Unit)
-	assert.Equal(t, moose.UserConsentNonEssential, toAnalyticsConsentLevel(config.ConsentGranted))
-}
 
-func TestAnalyticsConsentLevel_Denied(t *testing.T) {
-	category.Set(t, category.Unit)
-	assert.Equal(t, moose.UserConsentEssential, toAnalyticsConsentLevel(config.ConsentDenied))
-}
+	cases := []struct {
+		name  string
+		input config.AnalyticsConsent
+		want  moose.UserConsent
+	}{
+		{"granted", config.ConsentGranted, moose.UserConsentNonEssential},
+		{"denied", config.ConsentDenied, moose.UserConsentEssential},
+		{"undefined", config.ConsentUndefined, moose.UserConsentRejectAll},
+	}
 
-func TestAnalyticsConsentLevel_Undefined(t *testing.T) {
-	category.Set(t, category.Unit)
-	assert.Equal(t, moose.UserConsentRejectAll, toAnalyticsConsentLevel(config.ConsentUndefined))
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.want, toAnalyticsConsentLevel(c.input))
+		})
+	}
 }
 
 func TestGetTokenRenewDate(t *testing.T) {
@@ -781,14 +786,52 @@ func TestNotifyDNS(t *testing.T) {
 	}
 }
 
-func TestIsSensitiveServerGroup_DedicatedIP(t *testing.T) {
+func TestHasSensitiveServerGroup(t *testing.T) {
 	category.Set(t, category.Unit)
-	assert.Equal(t, true, isSensitiveServerGroup("Dedicated IP"))
-}
 
-func TestIsSensitiveServerGroup_NonSensitive(t *testing.T) {
-	category.Set(t, category.Unit)
-	assert.Equal(t, false, isSensitiveServerGroup("Standard VPN servers"))
+	cases := []struct {
+		name   string
+		groups []config.ServerGroup
+		want   bool
+	}{
+		{
+			name: "contains_dedicated_ip",
+			groups: []config.ServerGroup{
+				config.ServerGroup_DEDICATED_IP,
+				config.ServerGroup_STANDARD_VPN_SERVERS,
+			},
+			want: true,
+		},
+		{
+			name:   "only_dedicated_ip",
+			groups: []config.ServerGroup{config.ServerGroup_DEDICATED_IP},
+			want:   true,
+		},
+		{
+			name: "no_sensitive_groups",
+			groups: []config.ServerGroup{
+				config.ServerGroup_STANDARD_VPN_SERVERS,
+				config.ServerGroup_P2P,
+			},
+			want: false,
+		},
+		{
+			name:   "empty_slice",
+			groups: []config.ServerGroup{},
+			want:   false,
+		},
+		{
+			name:   "nil_slice",
+			groups: nil,
+			want:   false,
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.want, hasSensitiveServerGroup(c.groups))
+		})
+	}
 }
 
 func TestNotifyConnect_DedicatedIP_StripsBodyAndUnsetsContext(t *testing.T) {
@@ -826,7 +869,11 @@ func TestNotifyConnect_DedicatedIP_StripsBodyAndUnsetsContext(t *testing.T) {
 	}
 
 	err := sub.NotifyConnect(events.DataConnect{
-		TargetServerGroup:  dedicatedIPGroupTitle,
+		TargetServerGroup: dedicatedIPGroupTitle,
+		ServerGroups: []config.ServerGroup{
+			config.ServerGroup_DEDICATED_IP,
+			config.ServerGroup_STANDARD_VPN_SERVERS,
+		},
 		TargetServerDomain: "dip-1234.nordvpn.com",
 		RecommendationUUID: "rec-abc",
 		EventStatus:        events.StatusAttempt,
@@ -836,6 +883,139 @@ func TestNotifyConnect_DedicatedIP_StripsBodyAndUnsetsContext(t *testing.T) {
 	assert.Equal(t, "", capturedDomain)
 	assert.Equal(t, "", capturedUUID)
 	assert.DeepEqual(t, []string{"unsetServerDomainValue", "unsetRecommendationUuid", "sendConnect"}, calls)
+}
+
+func TestNotifyConnect_DedicatedIPByHostname_StripsBodyAndUnsetsContext(t *testing.T) {
+	category.Set(t, category.Unit)
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+
+	var capturedDomain, capturedUUID string
+	var calls []string
+	sub.mooseFuncs.sendConnect = func(
+		_ moose.EventParams,
+		_ moose.TargetConnectionParams,
+		additional moose.TargetConnectionAdditionalParams,
+		_ moose.ConnectionParams,
+		_ moose.NordvpnappOptBool,
+		_ int32,
+		uuid string,
+		_ *string,
+	) uint32 {
+		capturedDomain = additional.TargetServerDomain
+		capturedUUID = uuid
+		calls = append(calls, "sendConnect")
+		return 0
+	}
+	sub.mooseFuncs.unsetServerDomainValue = func() uint32 {
+		calls = append(calls, "unsetServerDomainValue")
+		return 0
+	}
+	sub.mooseFuncs.unsetRecommendationUuid = func() uint32 {
+		calls = append(calls, "unsetRecommendationUuid")
+		return 0
+	}
+	sub.mooseFuncs.setServerGroupValue = func(_ string) uint32 {
+		calls = append(calls, "setServerGroupValue")
+		return 0
+	}
+
+	err := sub.NotifyConnect(events.DataConnect{
+		TargetServerGroup: "Standard VPN servers",
+		ServerGroups: []config.ServerGroup{
+			config.ServerGroup_DEDICATED_IP,
+			config.ServerGroup_STANDARD_VPN_SERVERS,
+		},
+		TargetServerDomain: "dip-1234.nordvpn.com",
+		RecommendationUUID: "rec-abc",
+		EventStatus:        events.StatusAttempt,
+	})
+
+	assert.NilError(t, err)
+	assert.Equal(t, "", capturedDomain)
+	assert.Equal(t, "", capturedUUID)
+	assert.DeepEqual(t, []string{"unsetServerDomainValue", "unsetRecommendationUuid", "sendConnect"}, calls)
+}
+
+func TestNotifyConnect_Success_DedicatedIPByHostname_ContextValueIsUserTarget(t *testing.T) {
+	category.Set(t, category.Unit)
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+	noopDisconnectAmbientMooseFuncs(sub)
+
+	var capturedGroup string
+	var groupCalls int
+	sub.mooseFuncs.sendConnect = func(
+		_ moose.EventParams,
+		_ moose.TargetConnectionParams,
+		_ moose.TargetConnectionAdditionalParams,
+		_ moose.ConnectionParams,
+		_ moose.NordvpnappOptBool,
+		_ int32,
+		_ string,
+		_ *string,
+	) uint32 {
+		return 0
+	}
+	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.unsetServerDomainValue = func() uint32 { return 0 }
+	sub.mooseFuncs.unsetRecommendationUuid = func() uint32 { return 0 }
+	sub.mooseFuncs.setServerGroupValue = func(group string) uint32 {
+		capturedGroup = group
+		groupCalls++
+		return 0
+	}
+
+	err := sub.NotifyConnect(events.DataConnect{
+		TargetServerGroup: "Standard VPN servers",
+		ServerGroups: []config.ServerGroup{
+			config.ServerGroup_DEDICATED_IP,
+			config.ServerGroup_STANDARD_VPN_SERVERS,
+		},
+		TargetServerDomain: "dip-9999.nordvpn.com",
+		RecommendationUUID: "rec-dip-uuid",
+		EventStatus:        events.StatusSuccess,
+	})
+
+	assert.NilError(t, err)
+	assert.Equal(t, "Standard VPN servers", capturedGroup)
+	assert.Equal(t, 1, groupCalls)
+}
+
+func TestNotifyConnect_Success_EmptyTargetServerGroup_UnsetsServerGroupContext(t *testing.T) {
+	category.Set(t, category.Unit)
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+	noopDisconnectAmbientMooseFuncs(sub)
+
+	var setCalls, unsetCalls int
+	sub.mooseFuncs.sendConnect = func(
+		_ moose.EventParams,
+		_ moose.TargetConnectionParams,
+		_ moose.TargetConnectionAdditionalParams,
+		_ moose.ConnectionParams,
+		_ moose.NordvpnappOptBool,
+		_ int32,
+		_ string,
+		_ *string,
+	) uint32 {
+		return 0
+	}
+	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.setServerGroupValue = func(_ string) uint32 {
+		setCalls++
+		return 0
+	}
+	sub.mooseFuncs.unsetServerGroupValue = func() uint32 {
+		unsetCalls++
+		return 0
+	}
+
+	err := sub.NotifyConnect(events.DataConnect{
+		TargetServerGroup: "",
+		EventStatus:       events.StatusSuccess,
+	})
+
+	assert.NilError(t, err)
+	assert.Equal(t, 0, setCalls)
+	assert.Equal(t, 1, unsetCalls)
 }
 
 func TestNotifyConnect_StandardVPN_PreservesBodyAndSkipsUnsets(t *testing.T) {
@@ -914,6 +1094,7 @@ func TestNotifyConnect_DedicatedIP_UnsetContinuesAfterFirstError(t *testing.T) {
 
 	err := sub.NotifyConnect(events.DataConnect{
 		TargetServerGroup: dedicatedIPGroupTitle,
+		ServerGroups:      []config.ServerGroup{config.ServerGroup_DEDICATED_IP},
 		EventStatus:       events.StatusAttempt,
 	})
 
@@ -928,6 +1109,7 @@ func TestNotifyConnect_MeshnetPeerWithSensitiveGroup_DoesNotSetFlag(t *testing.T
 	_ = sub.NotifyConnect(events.DataConnect{
 		IsMeshnetPeer:     true,
 		TargetServerGroup: dedicatedIPGroupTitle,
+		ServerGroups:      []config.ServerGroup{config.ServerGroup_DEDICATED_IP},
 		EventStatus:       events.StatusAttempt,
 	})
 
@@ -1177,7 +1359,11 @@ func TestNotifyConnect_Success_DedicatedIP_SetsGroupAndKeepsDependentsEmpty(t *t
 	}
 
 	err := sub.NotifyConnect(events.DataConnect{
-		TargetServerGroup:  dedicatedIPGroupTitle,
+		TargetServerGroup: dedicatedIPGroupTitle,
+		ServerGroups: []config.ServerGroup{
+			config.ServerGroup_DEDICATED_IP,
+			config.ServerGroup_STANDARD_VPN_SERVERS,
+		},
 		TargetServerDomain: "dip-9999.nordvpn.com",
 		RecommendationUUID: "rec-dip-uuid",
 		EventStatus:        events.StatusSuccess,
@@ -1223,6 +1409,7 @@ func TestNotifyConnect_Failure_DoesNotWriteServerGroupContext(t *testing.T) {
 
 	err := sub.NotifyConnect(events.DataConnect{
 		TargetServerGroup: dedicatedIPGroupTitle,
+		ServerGroups:      []config.ServerGroup{config.ServerGroup_DEDICATED_IP},
 		EventStatus:       events.StatusFailure,
 	})
 

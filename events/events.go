@@ -79,6 +79,7 @@ type DataConnect struct {
 	TargetServerCountryCode string
 	TargetServerDomain      string
 	TargetServerGroup       string
+	ServerGroups            []config.ServerGroup
 	TargetServerIP          netip.Addr
 	TargetServerName        string
 	Error                   error

@@ -26,6 +26,15 @@ func isDedicatedIP(server core.Server) bool {
 	return index != -1
 }
 
+// determineServerGroupIDs returns the IDs of every group the server belongs to.
+func determineServerGroupIDs(server *core.Server) []config.ServerGroup {
+	ids := make([]config.ServerGroup, 0, len(server.Groups))
+	for _, g := range server.Groups {
+		ids = append(ids, g.ID)
+	}
+	return ids
+}
+
 // Connect initiates and handles the VPN connection process
 func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retErr error) {
 	return r.connectFromRequest(in, srv, pb.ConnectionSource_MANUAL)
@@ -302,6 +311,7 @@ func (r *RPC) connect(
 		TargetServerCountryCode: country.Code,
 		TargetServerDomain:      serverSelection.server.Hostname,
 		TargetServerGroup:       determineTargetServerGroup(serverSelection.server, parameters),
+		ServerGroups:            determineServerGroupIDs(serverSelection.server),
 		TargetServerIP:          subnet.Addr(),
 		TargetServerName:        serverSelection.server.Name,
 		RecommendationUUID:      string(serverSelection.recommendationUUID),
