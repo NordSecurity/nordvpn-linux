@@ -23,6 +23,7 @@ func (*mockPostquantumVpnConfigManager) SaveWith(f config.SaveFunc) error {
 
 func (m *mockPostquantumVpnConfigManager) Load(c *config.Config) error {
 	c.Mesh = m.c.Mesh
+	c.AutoConnect = m.c.AutoConnect
 	c.AutoConnectData = m.c.AutoConnectData
 	c.Technology = m.c.Technology
 	return nil
@@ -74,14 +75,20 @@ func TestSetPostquantumVpn(t *testing.T) {
 		Data: []string{"NordWhisper"},
 	}
 
+	conflictDedicatedServerPayload := pb.Payload{
+		Type: internal.CodeDedicatedServersPq,
+	}
+
 	tests := []struct {
-		testName       string
-		pq             bool
-		meshnet        bool
-		vpnActive      bool
-		tech           config.Technology
-		payload        *pb.Payload
-		eventPublished bool
+		testName               string
+		pq                     bool
+		meshnet                bool
+		vpnActive              bool
+		tech                   config.Technology
+		autoconnect            bool
+		autoconnectTargetGroup config.ServerGroup
+		payload                *pb.Payload
+		eventPublished         bool
 	}{
 		{
 			testName:       "pq off mesh is off tech unknown",
@@ -154,12 +161,24 @@ func TestSetPostquantumVpn(t *testing.T) {
 			payload:        &conflictNordWhisperPayload,
 			eventPublished: false,
 		},
+		{
+			testName:               "pq is off autoconnect target is a dedicated server",
+			pq:                     true,
+			meshnet:                false,
+			vpnActive:              false,
+			autoconnect:            true,
+			autoconnectTargetGroup: config.ServerGroup_DEDICATED_SERVER,
+			tech:                   config.Technology_NORDLYNX,
+			payload:                &conflictDedicatedServerPayload,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
 			mockConfigManager.c.Mesh = test.meshnet
 			mockConfigManager.c.Technology = test.tech
+			mockConfigManager.c.AutoConnect = test.autoconnect
+			mockConfigManager.c.AutoConnectData.Group = test.autoconnectTargetGroup
 			mockConfigManager.c.AutoConnectData.PostquantumVpn = !test.pq
 
 			mockNetworker.ConnectRetries = 0

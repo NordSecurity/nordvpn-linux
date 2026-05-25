@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -67,6 +68,8 @@ func (c *cmd) SetTechnology(ctx *cli.Context) error {
 		color.Yellow(fmt.Sprintf(MsgAlreadySet, "Technology", strings.Join(resp.Data, " ")))
 	case internal.CodeFeatureHidden:
 		return formatError(argsParseError(ctx))
+	case internal.CodeDedicatedServersNoNordlynx:
+		return errors.New(DedicatedServersAutoconnectNordlynxMessage)
 	case internal.CodeSuccessWithoutAC:
 		// must be right before CodeSuccess
 		color.Yellow(SetAutoConnectForceOff)

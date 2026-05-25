@@ -13,6 +13,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
@@ -191,6 +192,70 @@ func TestDoAutoConnect(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
+}
+
+func TestDoAutoConnect_DedicatedServerFallback_ServiceExpired(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	mockConfigManager := newMockConfigManager()
+	updateAutoconnectData(mockConfigManager, config.AutoConnectData{
+		Group:     config.ServerGroup_DEDICATED_SERVER,
+		ServerTag: "Dedicated Server",
+	})
+
+	rpc := testRPC()
+	rpc.cm = mockConfigManager
+	rpc.doAutoConnect()
+
+	// Verify that settings are not modified if service is available
+	assert.Equal(t, config.ServerGroup_DEDICATED_SERVER, mockConfigManager.c.AutoConnectData.Group,
+		"Unexpected autoconnect group target change after doAutoConnect. Group should remain set to %s.", config.ServerGroup_DEDICATED_SERVER.String())
+	assert.Equal(t, "Dedicated Server", mockConfigManager.c.AutoConnectData.ServerTag,
+		"Unexpected autoconnect target ServerTag change after doAutoConnect. ServerTag should remain set to DedicatedServer.")
+
+	authMock := rpc.ac.(*workingLoginChecker)
+	authMock.dedicatedServerErr = errors.New("failed to fetch ds service")
+
+	rpc.doAutoConnect()
+	// Verify that setting are not modified if service fetch failed
+	assert.Equal(t, config.ServerGroup_DEDICATED_SERVER, mockConfigManager.c.AutoConnectData.Group,
+		"Unexpected autoconnect group target change after doAutoConnect. Group should remain set to %s.", config.ServerGroup_DEDICATED_SERVER.String())
+	assert.Equal(t, "Dedicated Server", mockConfigManager.c.AutoConnectData.ServerTag,
+		"Unexpected autoconnect target ServerTag change after doAutoConnect. ServerTag should remain set to DedicatedServer.")
+
+	authMock.dedicatedServerErr = nil
+	authMock.isDedicatedServersExpired = true
+
+	rpc.doAutoConnect()
+
+	// Verify that settings are  modified if service is not available
+	assert.NotEqual(t, config.ServerGroup_DEDICATED_SERVER, mockConfigManager.c.AutoConnectData.Group,
+		"Group should be unset when dedicated servers service is not available.")
+	assert.Equal(t, "", mockConfigManager.c.AutoConnectData.ServerTag,
+		"ServerTag should be unset when dedicated servers service is not available.")
+}
+
+func TestDoAutoConnect_DedicatedServerFallback_FeatureDisabledInRemoteConfig(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	mockConfigManager := newMockConfigManager()
+	updateAutoconnectData(mockConfigManager, config.AutoConnectData{
+		Group:     config.ServerGroup_DEDICATED_SERVER,
+		ServerTag: "Dedicated Server",
+	})
+
+	remoteConfigMock := mock.NewRemoteConfigMock()
+	remoteConfigMock.AddFeatureToggle(remote.FeatureDedicatedServer, false)
+
+	rpc := testRPC()
+	rpc.cm = mockConfigManager
+	rpc.remoteConfigGetter = remoteConfigMock
+
+	rpc.doAutoConnect()
+	assert.NotEqual(t, config.ServerGroup_DEDICATED_SERVER, mockConfigManager.c.AutoConnectData.Group,
+		"Group should be unset when dedicated servers feature is disabled in remote config.")
+	assert.Equal(t, "", mockConfigManager.c.AutoConnectData.ServerTag,
+		"ServerTag should be unset when dedicated servers feature is disabled in remote config.")
 }
 
 type meshRenewChecker struct{}
