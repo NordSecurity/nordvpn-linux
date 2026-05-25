@@ -45,7 +45,6 @@ type RPC struct {
 	events              *daemonevents.Events
 	// factory picks which VPN implementation to use
 	factory                   FactoryFunc
-	endpointResolver          network.EndpointResolver
 	endpoint                  network.Endpoint
 	scheduler                 gocron.Scheduler
 	netw                      networker.Networker
@@ -84,7 +83,6 @@ func NewRPC(
 	version string,
 	events *daemonevents.Events,
 	factory FactoryFunc,
-	endpointResolver network.EndpointResolver,
 	netw networker.Networker,
 	publisher events.Publisher[string],
 	nameservers dns.Getter,
@@ -109,14 +107,12 @@ func NewRPC(
 		api:                       api,
 		serversAPI:                serversAPI,
 		credentialsAPI:            credentialsAPI,
-		dedicatedServersAPI:       dedicatedServersAPI,
 		cdn:                       cdn,
 		repo:                      repo,
 		authentication:            authentication,
 		version:                   version,
 		factory:                   factory,
 		events:                    events,
-		endpointResolver:          endpointResolver,
 		scheduler:                 scheduler,
 		netw:                      netw,
 		publisher:                 publisher,
@@ -131,8 +127,8 @@ func NewRPC(
 		consentChecker:            consentChecker,
 		recentVPNConnStore:        recentVPNConnStore,
 		dataUpdateEvents:          dataUpdateEvents,
-		dedicatedServerKeyManager: dedicatedServersKeyManager,
 		initialLoginType:          NewAtomicLoginType(),
+		dedicatedServerKeyManager: dedicatedServersKeyManager,
 	}
 	reconnectScheduler := NewReconnectScheduler(r.connectFromLastSelection, connectionInfo)
 	r.pauseManager = reconnectScheduler

@@ -1,18 +1,17 @@
-import os
+import random
 
 import pytest
 import sh
 
 import lib
-from lib import (
-    allowlist,
-    firewall,
-    network,
-    IS_NIGHTLY
-)
+from lib import IS_NIGHTLY, allowlist, firewall, network
 from lib.dynamic_parametrize import dynamic_parametrize
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
+
+
+def setup_module(module):  # noqa: ARG001
+    firewall.setup_port_sock_server(None)
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -91,7 +90,10 @@ def test_firewall_enable_connect(tech, proto, obfuscated):
 
 @dynamic_parametrize(
     [
-        "tech", "proto", "obfuscated", "port",
+        "tech",
+        "proto",
+        "obfuscated",
+        "port",
     ],
     ordered_source=[lib.TECHNOLOGIES],
     randomized_source=[lib.PORTS],
@@ -107,21 +109,28 @@ def test_firewall_02_allowlist_port(tech, proto, obfuscated, port):
 
             lib.set_firewall("on")
             allowlist.add_ports_to_allowlist([port])
-            assert not firewall.is_active([port]), "Firewall should not be active for allowlisted port before connecting"
+            assert not firewall.is_active(), "Firewall is not configured"
+            assert firewall.is_source_port_reachable([port]), "Whitelisted port is not blocked"
 
             sh.nordvpn.connect()
-            assert network.is_connected(), "Network should be connected"
-            assert firewall.is_active([port]), "Firewall should be active for allowlisted port when connected"
+            assert network.is_connected(), "VPN is connected and there is internet"
+            assert firewall.is_active(), "Firewall is configured"
+            assert firewall.is_source_port_reachable([port]), "Whitelisted port is not blocked"
 
             lib.set_firewall("off")
-            assert not firewall.is_active([port]), "Firewall should not be active for allowlisted port when disabled"
-        assert network.is_disconnected(), "Network should be disconnected after context"
-    assert not firewall.is_active([port]), "Firewall should not be active for allowlisted port after disconnecting"
+            assert not firewall.is_active(), "Firewall is not configured"
+            # Firewall off means that allowlisted packets are not told to not go through vpn
+            assert not firewall.is_source_port_reachable([port]), "Routing to the ports is broken if firewall is off"
+        assert network.is_disconnected(), "VPN is disconnected and internet is working"
+    assert not firewall.is_active() and firewall.is_source_port_reachable([port]), "Firewall is not configured and whitelisted port is working"
 
 
 @dynamic_parametrize(
     [
-        "tech", "proto", "obfuscated", "ports",
+        "tech",
+        "proto",
+        "obfuscated",
+        "ports",
     ],
     ordered_source=[lib.TECHNOLOGIES],
     randomized_source=[lib.PORTS_RANGE],
@@ -137,16 +146,19 @@ def test_firewall_03_allowlist_ports_range(tech, proto, obfuscated, ports):
 
             lib.set_firewall("on")
             allowlist.add_ports_to_allowlist([ports])
-            assert not firewall.is_active([ports]), "Firewall should not be active for allowlisted ports before connecting"
+            assert not firewall.is_active(), "Firewall is not configured"
+            assert firewall.is_source_port_reachable([ports]), "Port is reachable"
 
             sh.nordvpn.connect()
-            assert network.is_connected(), "Network should be connected"
-            assert firewall.is_active([ports]), "Firewall should be active for allowlisted ports when connected"
+            assert network.is_connected(), "VPN is connected"
+            assert firewall.is_active(), "Firewall is configured"
+            assert firewall.is_source_port_reachable([ports]), "Port is reachable outside of the tunnel"
 
             lib.set_firewall("off")
-            assert not firewall.is_active([ports]), "Firewall should not be active for allowlisted ports when disabled"
-        assert network.is_disconnected(), "Network should be disconnected after context"
-    assert not firewall.is_active([ports]), "Firewall should not be active for allowlisted ports after disconnecting"
+            assert not firewall.is_active(), "Firewall is not configured"
+            assert not firewall.is_source_port_reachable([ports]), "Port routing is broken because firewall is disabled"
+        assert network.is_disconnected(), "VPN disconnected"
+    assert not firewall.is_active(), "Firewall is not configured"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -160,16 +172,16 @@ def test_firewall_05_allowlist_subnet(tech, proto, obfuscated, subnet):
 
             lib.set_firewall("on")
             allowlist.add_subnet_to_allowlist([subnet])
-            assert not firewall.is_active(None, [subnet]), "Firewall should not be active for allowlisted subnet before connecting"
+            assert not firewall.is_ip_routed_via_VPN([subnet]), "Whitelisted IP not routed thru VPN"
 
             sh.nordvpn.connect()
-            assert network.is_connected(), "Network should be connected"
-            assert firewall.is_active(None, [subnet]), "Firewall should be active for allowlisted subnet when connected"
+            assert network.is_connected(), "VPN is connected"
+            assert not firewall.is_ip_routed_via_VPN([subnet]), "Whitelisted port is not routed thru VPN"
 
             lib.set_firewall("off")
-            assert not firewall.is_active(None, [subnet]), "Firewall should not be active for allowlisted subnet when disabled"
-        assert network.is_disconnected(), "Network should be disconnected after context"
-    assert not firewall.is_active(None, [subnet]), "Firewall should not be active for allowlisted subnet after disconnecting"
+            assert not firewall.is_ip_routed_via_VPN([subnet]), "Whitelisted port is not routed thru VPN"
+        assert network.is_disconnected(), "VPN is disconnected"
+    assert not firewall.is_ip_routed_via_VPN([subnet]), "Whitelisted port is not routed thru VPN"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -219,6 +231,7 @@ def test_firewall_lan_discovery(tech, proto, obfuscated, before_connect):
     with lib.Defer(lambda: sh.nordvpn.set("lan-discovery", "off", _ok_code=(0, 1))):
         with lib.Defer(sh.nordvpn.disconnect):
             lib.set_technology_and_protocol(tech, proto, obfuscated)
+            rand_lan_subnet = random.choice(firewall.LAN_DISCOVERY_SUBNETS)
 
             if before_connect:
                 sh.nordvpn.set("lan-discovery", "on")
@@ -228,23 +241,11 @@ def test_firewall_lan_discovery(tech, proto, obfuscated, before_connect):
             if not before_connect:
                 sh.nordvpn.set("lan-discovery", "on")
 
-            rules = os.popen("sudo iptables -S PREROUTING -t mangle").read()
-            for rule in firewall.PREROUTING_LAN_DISCOVERY_RULES:
-                assert rule in rules, f"{rule} prerouting rule not found in iptables."
-
-            rules = os.popen("sudo iptables -S POSTROUTING -t mangle").read()
-            for rule in firewall.POSTROUTING_LAN_DISCOVERY_RULES:
-                assert rule in rules, f"{rule} postrouting rule not found in iptables"
+            assert not firewall.is_ip_routed_via_VPN([rand_lan_subnet])
 
             sh.nordvpn.set("lan-discovery", "off")
 
-            rules = os.popen("sudo iptables -S PREROUTING -t mangle").read()
-            for rule in firewall.PREROUTING_LAN_DISCOVERY_RULES:
-                assert rule not in rules, f"{rule} prerouting rule found in iptables."
-
-            rules = os.popen("sudo iptables -S POSTROUTING -t mangle").read()
-            for rule in firewall.POSTROUTING_LAN_DISCOVERY_RULES:
-                assert rule not in rules, f"{rule} postrouting rule found in iptables"
+            assert firewall.is_ip_routed_via_VPN([rand_lan_subnet])
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -258,25 +259,17 @@ def test_firewall_lan_allowlist_interaction(tech, proto, obfuscated):
             sh.nordvpn.connect()
 
             subnet = "192.168.0.0/18"
-
+            # 192.168.200.255 is routed through tunnel iface since it it not in the 192.168.0.0/18 subnet
+            ip_not_in_subnet = "192.168.200.255"
             sh.nordvpn.allowlist.add.subnet(subnet)
+            assert firewall.is_ip_routed_via_VPN([ip_not_in_subnet])
             sh.nordvpn.set("lan-discovery", "on")
-
-            rules = os.popen("sudo iptables -S PREROUTING -t mangle").read()
-            assert f"-A PREROUTING -s {subnet} -i eth0 -m comment --comment nordvpn -j ACCEPT" not in rules, "Whitelist rule was not removed from the INPUT chain when LAN discovery was enabled."
-
-            rules = os.popen("sudo iptables -S POSTROUTING -t mangle").read()
-            assert f"-A POSTROUTING -s {subnet} -o eth0 -m comment --comment nordvpn -j ACCEPT" not in rules, "Whitelist rule was not removed from the OUTPUT chain when LAN discovery was enabled."
+            # with lan discovery on 192.168.200.255 is in the lan discovery 192.168.0.0/16 subnet
+            assert not firewall.is_ip_routed_via_VPN([ip_not_in_subnet]), "LAN discovery did not replace existing smaller subnet"
 
             sh.nordvpn.set("lan-discovery", "off")
 
-            rules = os.popen("sudo iptables -S PREROUTING").read()
-            for rule in firewall.PREROUTING_LAN_DISCOVERY_RULES:
-                assert rule not in rules, f"{rule} prerouting rule not found in iptables."
-
-            rules = os.popen("sudo iptables -S POSTROUTING").read()
-            for rule in firewall.POSTROUTING_LAN_DISCOVERY_RULES:
-                assert rule not in rules, f"{rule} postrouting rule not found in iptables"
+            assert firewall.is_ip_routed_via_VPN([ip_not_in_subnet])
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -287,12 +280,10 @@ def test_firewall_lan_allowlist_work_together(tech, proto, obfuscated):
         with lib.Defer(sh.nordvpn.disconnect):
             subnet = "1.1.1.1/32"
             with lib.Defer(lambda: sh.nordvpn.allowlist.remove.subnet(subnet, _ok_code=(0, 1))):
-
                 lib.set_technology_and_protocol(tech, proto, obfuscated)
-                pre_allow_out = sh.ip.route.get("1.1.1.1")
 
                 sh.nordvpn.allowlist.add.subnet(subnet)
                 sh.nordvpn.set("lan-discovery", "on")
                 sh.nordvpn.connect()
-                assert pre_allow_out == sh.ip.route.get("1.1.1.1"), "Allowlisted subnet is not going through default interface"
-                assert pre_allow_out != sh.ip.route.get("1.0.0.1"), "Non-allowlisted subnet should not go through default interface"
+                assert not firewall.is_ip_routed_via_VPN(["1.1.1.1"]), "Allowlisted subnet is not going through VPN"
+                assert firewall.is_ip_routed_via_VPN(["1.0.0.1"]), "Not whitelisted subnet is going through VPN"

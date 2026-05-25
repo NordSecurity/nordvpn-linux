@@ -96,3 +96,26 @@ func TestResetToDefaults_PauseVariants(t *testing.T) {
 		})
 	}
 }
+
+func TestSetDefaults_ResetsNetworkerLanDiscoveryAndAllowlist(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	netw := &networker.Mock{
+		LanDiscovery: true,
+		Allowlist: config.Allowlist{
+			Ports: config.Ports{
+				TCP: config.PortSet{80: true},
+				UDP: config.PortSet{53: true},
+			},
+			Subnets: []string{"192.168.1.0/24"},
+		},
+	}
+
+	rpc := testRPC()
+	rpc.netw = netw
+
+	_, err := rpc.SetDefaults(context.Background(), &pb.SetDefaultsRequest{NoLogout: true})
+	assert.NoError(t, err)
+	assert.False(t, netw.LanDiscovery)
+	assert.Equal(t, config.Allowlist{}, netw.Allowlist)
+}

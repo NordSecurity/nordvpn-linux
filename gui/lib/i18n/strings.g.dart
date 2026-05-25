@@ -4,7 +4,11 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 1
+<<<<<<< HEAD
 /// Strings: 694
+=======
+/// Strings: 695
+>>>>>>> b9a3913d (LVPN-6078: Migrate to nftables (#1463))
 
 // coverage:ignore-file
 // ignore_for_file: type=lint, unused_import

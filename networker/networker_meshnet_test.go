@@ -1,8 +1,9 @@
 package networker
 
 import (
-	"net/netip"
 	"testing"
+
+	"net/netip"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"

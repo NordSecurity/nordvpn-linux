@@ -291,19 +291,20 @@ def test_direct_connection_rtt_and_loss():
         base_test(log_content, qapeer_hostname)
 
 
-@pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
+@pytest.mark.core_meshnet
 def test_incoming_connections():
     """Manual TC: LVPN-1259"""
 
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname
     peer_hostname = peer_list.get_external_peer().hostname
-
+    assert meshnet.is_peer_reachable(peer_list.get_external_peer(), port=8000, retry=1)
     sh_no_tty.nordvpn.mesh.peer.incoming.deny(peer_hostname)
     assert not ssh_client.network.ping(local_hostname, retry=1), "Local device should not be reachable when incoming denied"
-
+    # This still needs to work after denying incoming, but having the peer allow incoming
+    assert meshnet.is_peer_reachable(peer_list.get_external_peer(), port=8000, retry=1)
     ssh_client.exec_command(f"nordvpn mesh peer incoming deny {local_hostname}")
-    assert not meshnet.is_peer_reachable(peer_list.get_external_peer(), retry=1), "Peer should not be reachable when incoming denied"
+    assert not meshnet.is_peer_reachable(peer_list.get_external_peer(), port=8000, retry=3), "Peer should not be reachable when incoming denied"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")

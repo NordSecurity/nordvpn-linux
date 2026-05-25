@@ -2,8 +2,15 @@ package config
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
+	"net/netip"
 	"slices"
 )
+
+// ErrSubnetAlreadyCovered is returned when a subnet being added
+// is already covered by a wider existing subnet.
+var ErrSubnetAlreadyCovered = errors.New("subnet is already covered by existing subnet")
 
 // NewAllowlist ready to use
 func NewAllowlist(udpPorts []int64, tcpPorts []int64, subnets []string) Allowlist {
@@ -52,12 +59,133 @@ func (a *Allowlist) UpdateTCPPorts(ports []int64, remove bool) {
 	}
 }
 
-func (a *Allowlist) UpdateSubnets(subnet string, remove bool) {
+// NormalizeSubnets find overlapping subnets and merge them, also cleanup any invalid
+// subnet values, if any found, do not return errors
+func (a *Allowlist) NormalizeSubnets(onRemove func(removed, reason string)) {
+	type parsed struct {
+		raw    string
+		prefix netip.Prefix
+	}
+
+	items := make([]parsed, 0, len(a.Subnets))
+	for _, s := range a.Subnets {
+		p, err := netip.ParsePrefix(s)
+		if err != nil {
+			if onRemove != nil {
+				onRemove(s, "invalid value")
+			}
+			continue
+		}
+		if !p.Addr().Is4() {
+			if onRemove != nil {
+				onRemove(s, "invalid value (non IPv4)")
+			}
+			continue
+		}
+		items = append(items, parsed{raw: s, prefix: p})
+	}
+
+	var result []string
+	for outerIdx, outerVal := range items {
+		coveredByWider := false
+		var coveredBy string
+		for innerIdx, innerVal := range items {
+			if outerIdx == innerIdx {
+				continue
+			}
+			if !outerVal.prefix.Overlaps(innerVal.prefix) {
+				continue
+			}
+			// innerVal is strictly wider (fewer bits) — outerVal is redundant.
+			// On equal bits keep the one that appears first.
+			isWider := innerVal.prefix.Bits() < outerVal.prefix.Bits()
+			isEqualButEarlier := outerVal.prefix.Bits() == innerVal.prefix.Bits() && outerIdx < innerIdx
+			if isWider || isEqualButEarlier {
+				coveredByWider = true
+				coveredBy = innerVal.raw
+				break
+			}
+		}
+		if coveredByWider {
+			if onRemove != nil {
+				onRemove(outerVal.raw, fmt.Sprintf("covered by: %s", coveredBy))
+			}
+		} else {
+			result = append(result, outerVal.raw)
+		}
+	}
+	a.Subnets = result
+}
+
+// SubnetsCoveredBy check if new subnet would cover (i.e. eliminate) some existing subnet(-s)
+func (a *Allowlist) SubnetsCoveredBy(subnet string) ([]string, error) {
+	wouldbeEliminatedSubnets := []string{}
+	newPrefix, err := netip.ParsePrefix(subnet)
+	if err != nil {
+		return nil, fmt.Errorf("parsing subnet %q: %w", subnet, err)
+	}
+
+	for _, existingSubnet := range a.Subnets {
+		existingPrefix, err := netip.ParsePrefix(existingSubnet)
+		if err != nil {
+			return nil, fmt.Errorf("parsing existing subnet %q: %w", existingSubnet, err)
+		}
+
+		if !newPrefix.Overlaps(existingPrefix) {
+			continue
+		}
+
+		// if new subnet is wider
+		if newPrefix.Bits() < existingPrefix.Bits() {
+			wouldbeEliminatedSubnets = append(wouldbeEliminatedSubnets, existingSubnet)
+		}
+	}
+	return wouldbeEliminatedSubnets, nil
+}
+
+// addSubnet try to add subnet, check if subnet being added is covered by some existing subnet,
+// also check if subnet being added covers (i.e. eliminates) some existing subnet
+func (a *Allowlist) addSubnet(subnet string, onRemove func(removed, coveredBy string)) error {
+	newPrefix, err := netip.ParsePrefix(subnet)
+	if err != nil {
+		return fmt.Errorf("parsing subnet %q: %w", subnet, err)
+	}
+
+	for i := 0; i < len(a.Subnets); i++ {
+		existingPrefix, err := netip.ParsePrefix(a.Subnets[i])
+		if err != nil {
+			return fmt.Errorf("parsing existing subnet %q: %w", a.Subnets[i], err)
+		}
+
+		if !newPrefix.Overlaps(existingPrefix) {
+			continue
+		}
+
+		// New subnet is smaller or equal — existing already covers it.
+		if newPrefix.Bits() >= existingPrefix.Bits() {
+			return fmt.Errorf("%w: %s", ErrSubnetAlreadyCovered, a.Subnets[i])
+		}
+
+		// New subnet is wider — remove the existing narrower one and
+		// keep checking remaining entries.
+		if onRemove != nil {
+			onRemove(a.Subnets[i], subnet)
+		}
+		a.Subnets = slices.Delete(a.Subnets, i, i+1)
+		i--
+	}
+
+	a.Subnets = append(a.Subnets, subnet)
+	return nil
+}
+
+func (a *Allowlist) UpdateSubnets(subnet string, remove bool, onRemove func(removed, coveredBy string)) error {
 	if remove {
 		a.Subnets = slices.DeleteFunc(a.Subnets, func(element string) bool { return element == subnet })
 	} else {
-		a.Subnets = append(a.Subnets, subnet)
+		return a.addSubnet(subnet, onRemove)
 	}
+	return nil
 }
 
 // GetUDPPorts returns a slice of all UDP ports within the allowlist
