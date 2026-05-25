@@ -68,7 +68,7 @@ contents:
 overrides:
   deb:
     depends:
-      - "nordvpn (>= 4.0.0)"
+      - "nordvpn (>= 5.0.0)"
     # Deb specific scripts.
     scripts:
       postinstall: ${APP_BUNDLE_DIR}/scriptlets/deb/postinst
@@ -76,7 +76,7 @@ overrides:
       postremove: ${APP_BUNDLE_DIR}/scriptlets/deb/postrm
   rpm:
     depends:
-      - "nordvpn >= 4.0.0"
+      - "nordvpn >= 5.0.0"
     # RPM specific scripts.
     scripts:
       postinstall: ${APP_BUNDLE_DIR}/scriptlets/rpm/post
