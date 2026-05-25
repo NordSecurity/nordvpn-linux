@@ -1,6 +1,7 @@
 import asyncio
 import threading
 import os
+import time
 
 import pyshark
 
@@ -40,9 +41,13 @@ class BackgroundCapture:
     def start(self):
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
+        # Give tshark time to initialise and start capturing before traffic is generated
+        time.sleep(1)
 
 
     def stop(self):
+        # Give tshark time to flush the last packets before closing the capture
+        time.sleep(1)
         try:
             if self._capture is not None:
                 self._capture.close()
