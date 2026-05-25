@@ -61,6 +61,7 @@ type (
 	mooseUnsetContextFunc          func() uint32
 	mooseSetRecommendationUuidFunc func(string) uint32
 	mooseSetServerCountryValueFunc func(string) uint32
+	mooseSetServerGroupValueFunc   func(string) uint32
 	mooseSetIsOnVpnValueFunc       func(bool) uint32
 	mooseSendConnectFunc           func(
 		moose.EventParams,
@@ -95,6 +96,8 @@ type mooseFunctions struct {
 	unsetRecommendationUuid       mooseUnsetContextFunc
 	setRecommendationUuid         mooseSetRecommendationUuidFunc
 	setServerCountryValue         mooseSetServerCountryValueFunc
+	setServerGroupValue           mooseSetServerGroupValueFunc
+	unsetServerGroupValue         mooseUnsetContextFunc
 	setIsOnVpnValue               mooseSetIsOnVpnValueFunc
 	sendConnect                   mooseSendConnectFunc
 	sendDisconnect                mooseSendDisconnectFunc
@@ -155,6 +158,8 @@ func NewSubscriber(
 			unsetRecommendationUuid:       moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid,
 			setRecommendationUuid:         moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid,
 			setServerCountryValue:         moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue,
+			setServerGroupValue:           moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerGroupValue,
+			unsetServerGroupValue:         moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerGroupValue,
 			setIsOnVpnValue:               moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue,
 			sendConnect:                   moose.NordvpnappSendServiceQualityServersConnect,
 			sendDisconnect:                moose.NordvpnappSendServiceQualityServersDisconnect,
@@ -353,8 +358,12 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		return fmt.Errorf("setting moose device type: %w", err)
 	}
 
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue(false)); err != nil {
+	if err := s.response(s.mooseFuncs.setIsOnVpnValue(false)); err != nil {
 		return fmt.Errorf("setting moose is on vpn: %w", err)
+	}
+
+	if err := s.response(s.mooseFuncs.unsetServerGroupValue()); err != nil {
+		return fmt.Errorf("unsetting initial server group: %w", err)
 	}
 
 	sub := &Subscriber{}
@@ -840,6 +849,12 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		}
 	}
 
+	if data.EventStatus == events.StatusSuccess {
+		if err := s.response(s.mooseFuncs.setServerGroupValue(data.TargetServerGroup)); err != nil {
+			return fmt.Errorf("setting server group current state on successful connect (%q): %w", data.TargetServerGroup, err)
+		}
+	}
+
 	if err := s.response(s.mooseFuncs.sendConnect(
 		moose.EventParams{
 			EventDuration: int32(data.DurationMs),
@@ -970,6 +985,10 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 
 	if err := s.response(s.mooseFuncs.setServerCountryValue(UnavailableEventParameterValue)); err != nil {
 		return fmt.Errorf("clearing server country current state after disconnect: %w", err)
+	}
+
+	if err := s.response(s.mooseFuncs.unsetServerGroupValue()); err != nil {
+		return fmt.Errorf("unsetting server group current state after disconnect: %w", err)
 	}
 
 	if err := s.response(s.mooseFuncs.setIsOnVpnValue(false)); err != nil {
