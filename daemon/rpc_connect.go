@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
@@ -157,8 +158,17 @@ func (r *RPC) connectWithStoredServerSelection(ctx context.Context,
 	}
 	r.connectionInfo.SetInitialConnecting()
 
-	if IsServerDedicated(*r.lastServerSelection.server) && cfg.Technology != config.Technology_NORDLYNX {
-		return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
+	if IsServerDedicated(*r.lastServerSelection.server) {
+		// first, check if feature is enabled at all
+		if !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
+			// if user is trying to connect here while this feature is disabled,
+			// show general error because anyways he should not get here
+			return true, srv.Send(&pb.Payload{Type: internal.CodeFailure})
+		}
+		// second, if feature is enabled, check if technology is correct
+		if cfg.Technology != config.Technology_NORDLYNX {
+			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
+		}
 	}
 
 	expirationCheckResult := r.isVPNExpired()
@@ -195,10 +205,18 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	}
 	r.connectionInfo.SetInitialConnecting()
 
-	if (groupConvert(in.ServerGroup) == config.ServerGroup_DEDICATED_SERVER ||
-		groupConvert(in.ServerTag) == config.ServerGroup_DEDICATED_SERVER) &&
-		cfg.Technology != config.Technology_NORDLYNX {
-		return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
+	if groupConvert(in.ServerGroup) == config.ServerGroup_DEDICATED_SERVER ||
+		groupConvert(in.ServerTag) == config.ServerGroup_DEDICATED_SERVER {
+		// first, check if feature is enabled at all
+		if !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
+			// if user is trying to connect here while this feature is disabled,
+			// show general error because anyways he should not get here
+			return true, srv.Send(&pb.Payload{Type: internal.CodeFailure})
+		}
+		// second, if feature is enabled, check if technology is correct
+		if cfg.Technology != config.Technology_NORDLYNX {
+			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
+		}
 	}
 
 	// Set status to "Connecting" and send the connection attempt event without details
