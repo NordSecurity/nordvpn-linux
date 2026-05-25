@@ -508,7 +508,7 @@ func main() {
 	accountUpdateEvents := daemonevents.NewAccountUpdateEvents()
 	accountUpdateEvents.Subscribe(statePublisher)
 
-	servicesState := auth.NewServicesState(clientAPI)
+	servicesState := auth.NewServicesState(clientAPI, deviceKeyManager)
 	userServicesEvents := daemonevents.NewUserServicesEvents()
 	userServicesEvents.Subscribe(servicesState)
 	daemonEvents.User.Logout.Subscribe(servicesState.NotifyLogout)

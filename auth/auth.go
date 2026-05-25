@@ -68,6 +68,12 @@ func (systemTimeExpirationChecker) IsExpired(expiryTime string) bool {
 	return time.Now().After(expiry)
 }
 
+func hasDedicatedServerService(services core.ServicesResponse, expirationChecker core.ExpirationChecker) bool {
+	return slices.ContainsFunc(services, func(service core.ServiceData) bool {
+		return service.Service.ID == DedicatedServersServiceID && !expirationChecker.IsExpired(service.ExpiresAt)
+	})
+}
+
 // NewTokenExpirationChecker
 func NewTokenExpirationChecker() core.ExpirationChecker {
 	return &systemTimeExpirationChecker{}
