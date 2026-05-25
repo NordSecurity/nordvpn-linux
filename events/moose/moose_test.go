@@ -240,19 +240,24 @@ func TestChangeConsentState(t *testing.T) {
 	}
 }
 
-func TestAnalyticsConsentLevel_Granted(t *testing.T) {
+func TestAnalyticsConsentLevel(t *testing.T) {
 	category.Set(t, category.Unit)
-	assert.Equal(t, moose.UserConsentNonEssential, toAnalyticsConsentLevel(config.ConsentGranted))
-}
 
-func TestAnalyticsConsentLevel_Denied(t *testing.T) {
-	category.Set(t, category.Unit)
-	assert.Equal(t, moose.UserConsentEssential, toAnalyticsConsentLevel(config.ConsentDenied))
-}
+	cases := []struct {
+		name  string
+		input config.AnalyticsConsent
+		want  moose.UserConsent
+	}{
+		{"granted", config.ConsentGranted, moose.UserConsentNonEssential},
+		{"denied", config.ConsentDenied, moose.UserConsentEssential},
+		{"undefined", config.ConsentUndefined, moose.UserConsentRejectAll},
+	}
 
-func TestAnalyticsConsentLevel_Undefined(t *testing.T) {
-	category.Set(t, category.Unit)
-	assert.Equal(t, moose.UserConsentRejectAll, toAnalyticsConsentLevel(config.ConsentUndefined))
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.want, toAnalyticsConsentLevel(c.input))
+		})
+	}
 }
 
 func TestGetTokenRenewDate(t *testing.T) {
@@ -781,37 +786,52 @@ func TestNotifyDNS(t *testing.T) {
 	}
 }
 
-func TestHasSensitiveServerGroup_ContainsDedicatedIP_ReturnsTrue(t *testing.T) {
+func TestHasSensitiveServerGroup(t *testing.T) {
 	category.Set(t, category.Unit)
-	assert.Equal(t, true, hasSensitiveServerGroup([]config.ServerGroup{
-		config.ServerGroup_DEDICATED_IP,
-		config.ServerGroup_STANDARD_VPN_SERVERS,
-	}))
-}
 
-func TestHasSensitiveServerGroup_OnlyDedicatedIP_ReturnsTrue(t *testing.T) {
-	category.Set(t, category.Unit)
-	assert.Equal(t, true, hasSensitiveServerGroup([]config.ServerGroup{
-		config.ServerGroup_DEDICATED_IP,
-	}))
-}
+	cases := []struct {
+		name   string
+		groups []config.ServerGroup
+		want   bool
+	}{
+		{
+			name: "contains_dedicated_ip",
+			groups: []config.ServerGroup{
+				config.ServerGroup_DEDICATED_IP,
+				config.ServerGroup_STANDARD_VPN_SERVERS,
+			},
+			want: true,
+		},
+		{
+			name:   "only_dedicated_ip",
+			groups: []config.ServerGroup{config.ServerGroup_DEDICATED_IP},
+			want:   true,
+		},
+		{
+			name: "no_sensitive_groups",
+			groups: []config.ServerGroup{
+				config.ServerGroup_STANDARD_VPN_SERVERS,
+				config.ServerGroup_P2P,
+			},
+			want: false,
+		},
+		{
+			name:   "empty_slice",
+			groups: []config.ServerGroup{},
+			want:   false,
+		},
+		{
+			name:   "nil_slice",
+			groups: nil,
+			want:   false,
+		},
+	}
 
-func TestHasSensitiveServerGroup_NoSensitiveGroups_ReturnsFalse(t *testing.T) {
-	category.Set(t, category.Unit)
-	assert.Equal(t, false, hasSensitiveServerGroup([]config.ServerGroup{
-		config.ServerGroup_STANDARD_VPN_SERVERS,
-		config.ServerGroup_P2P,
-	}))
-}
-
-func TestHasSensitiveServerGroup_EmptySlice_ReturnsFalse(t *testing.T) {
-	category.Set(t, category.Unit)
-	assert.Equal(t, false, hasSensitiveServerGroup([]config.ServerGroup{}))
-}
-
-func TestHasSensitiveServerGroup_NilSlice_ReturnsFalse(t *testing.T) {
-	category.Set(t, category.Unit)
-	assert.Equal(t, false, hasSensitiveServerGroup(nil))
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			assert.Equal(t, c.want, hasSensitiveServerGroup(c.groups))
+		})
+	}
 }
 
 func TestNotifyConnect_DedicatedIP_StripsBodyAndUnsetsContext(t *testing.T) {
