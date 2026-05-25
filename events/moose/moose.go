@@ -776,21 +776,26 @@ func (s *Subscriber) NotifyTechnology(data config.Technology) error {
 	return nil
 }
 
-// isSensitiveServerGroup reports whether the chosen target server group
-// requires stripping of identifying fields from analytics.
-//
-// When the analytics schema migrates to enum identifiers, switch to a typed check over the
-// new enum field instead of the string comparison below.
-func isSensitiveServerGroup(groupTitle string) bool {
-	switch groupTitle {
-	case dedicatedIPGroupTitle:
-		return true
+// sensitiveServerGroups lists server groups whose connections require stripping
+// sensitive fields from analytics.
+var sensitiveServerGroups = []config.ServerGroup{
+	config.ServerGroup_DEDICATED_IP,
+}
+
+// hasSensitiveServerGroup reports whether any group the chosen server belongs to
+// is on the sensitive list.
+// Note. Independent of the user-requested group.
+func hasSensitiveServerGroup(groups []config.ServerGroup) bool {
+	for _, g := range groups {
+		if slices.Contains(sensitiveServerGroups, g) {
+			return true
+		}
 	}
 	return false
 }
 
 func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
-	sensitive := isSensitiveServerGroup(data.TargetServerGroup)
+	sensitive := hasSensitiveServerGroup(data.ServerGroups)
 
 	s.mux.Lock()
 	// Track sensitivity on every server-connect event (not just success) so
@@ -850,8 +855,14 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	}
 
 	if data.EventStatus == events.StatusSuccess {
-		if err := s.response(s.mooseFuncs.setServerGroupValue(data.TargetServerGroup)); err != nil {
-			return fmt.Errorf("setting server group current state on successful connect (%q): %w", data.TargetServerGroup, err)
+		if data.TargetServerGroup != "" {
+			if err := s.response(s.mooseFuncs.setServerGroupValue(data.TargetServerGroup)); err != nil {
+				return fmt.Errorf("setting server group current state on successful connect (%q): %w", data.TargetServerGroup, err)
+			}
+		} else {
+			if err := s.response(s.mooseFuncs.unsetServerGroupValue()); err != nil {
+				return fmt.Errorf("unsetting server group current state on successful connect with empty target: %w", err)
+			}
 		}
 	}
 
