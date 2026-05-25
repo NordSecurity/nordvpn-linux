@@ -1,13 +1,12 @@
 package networker
 
 import (
-	"context"
 	"errors"
-	"fmt"
+	"testing"
+
+	"context"
 	"net"
 	"net/netip"
-	"strings"
-	"testing"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -15,16 +14,14 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
-	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/allowlist"
 	"github.com/NordSecurity/nordvpn-linux/daemon/routes"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/meshnet"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
-	testfirewall "github.com/NordSecurity/nordvpn-linux/test/mock/firewall"
+	firewallmock "github.com/NordSecurity/nordvpn-linux/test/mock/firewall"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
-
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -36,18 +33,18 @@ func GetTestCombined() *Combined {
 		&subs.Subject[string]{},
 		workingRouter{},
 		&workingDNS{},
-		newWorkingFirewall(),
-		workingAllowlistRouting{},
+		firewallmock.NewFirewall(),
 		workingDeviceList,
 		&workingRoutingSetup{},
 		&workingHostSetter{},
 		workingRouter{},
 		workingRouter{},
-		&workingExitNode{},
 		0,
 		false,
 		&workingIpv6{},
 		false,
+		&mock.SysctlSetterMock{},
+		config.Allowlist{},
 		&mock.SysctlSetterMock{},
 	)
 }
@@ -89,85 +86,9 @@ type workingIpv6 struct{}
 func (workingIpv6) Block() error   { return nil }
 func (workingIpv6) Unblock() error { return nil }
 
-type workingFirewall struct {
-	rules map[string]firewall.Rule
+func workingDeviceList(mapset.Set[string]) mapset.Set[string] {
+	return mapset.NewSet(mock.En0Interface.Name)
 }
-
-func newWorkingFirewall() *workingFirewall {
-	return &workingFirewall{
-		rules: make(map[string]firewall.Rule),
-	}
-}
-
-func (f *workingFirewall) Add(rules []firewall.Rule) error {
-	if f.rules == nil {
-		return nil
-	}
-
-	for _, rule := range rules {
-		f.rules[rule.Name] = rule
-	}
-
-	return nil
-}
-
-func (f *workingFirewall) Delete(rules []string) error {
-	if f.rules == nil {
-		return nil
-	}
-
-	for _, ruleName := range rules {
-		delete(f.rules, ruleName)
-	}
-
-	return nil
-}
-
-func (workingFirewall) Enable() error   { return nil }
-func (workingFirewall) Disable() error  { return nil }
-func (workingFirewall) IsEnabled() bool { return true }
-func (workingFirewall) Flush() error    { return nil }
-
-type workingAllowlistRouting struct{}
-
-func (workingAllowlistRouting) EnablePorts([]int, string, string) error    { return nil }
-func (workingAllowlistRouting) EnableSubnets([]netip.Prefix, string) error { return nil }
-func (workingAllowlistRouting) Disable() error                             { return nil }
-
-type failingFirewall struct{}
-
-func (failingFirewall) Add([]firewall.Rule) error { return mock.ErrOnPurpose }
-func (failingFirewall) Delete([]string) error     { return mock.ErrOnPurpose }
-func (failingFirewall) Enable() error             { return mock.ErrOnPurpose }
-func (failingFirewall) Disable() error            { return mock.ErrOnPurpose }
-func (failingFirewall) IsEnabled() bool           { return false }
-func (failingFirewall) Flush() error              { return mock.ErrOnPurpose }
-
-type meshnetterFirewall struct{}
-
-// Check if fw rule generated correctly
-func (meshnetterFirewall) Add(rules []firewall.Rule) error {
-	for _, rule := range rules {
-		if rule.Direction != firewall.Inbound {
-			return fmt.Errorf("Rule direction is not inbound")
-		}
-		if rule.Allow != true {
-			return fmt.Errorf("Rule blocks packets")
-		}
-	}
-	return nil
-}
-func (meshnetterFirewall) Delete([]string) error { return nil }
-func (meshnetterFirewall) Enable() error         { return nil }
-func (meshnetterFirewall) Disable() error        { return nil }
-func (meshnetterFirewall) IsEnabled() bool       { return true }
-func (meshnetterFirewall) Flush() error          { return nil }
-
-func workingDeviceList() ([]net.Interface, error) {
-	return []net.Interface{mock.En0Interface}, nil
-}
-
-func failingDeviceList() ([]net.Interface, error) { return nil, mock.ErrOnPurpose }
 
 type workingRoutingSetup struct {
 	EnableLocalTraffic bool
@@ -182,44 +103,6 @@ func (*workingRoutingSetup) TableID() uint         { return 0 }
 func (*workingRoutingSetup) Enable() error         { return nil }
 func (*workingRoutingSetup) Disable() error        { return nil }
 func (*workingRoutingSetup) IsEnabled() bool       { return true }
-
-type workingExitNode struct {
-	enabled      bool
-	peers        mesh.MachinePeers
-	LanAvailable bool
-}
-
-func newWorkingExitNode() *workingExitNode {
-	return &workingExitNode{
-		peers: mesh.MachinePeers{},
-	}
-}
-
-func (e *workingExitNode) Enable() error {
-	e.enabled = true
-	return nil
-}
-
-func (e *workingExitNode) ResetPeers(peers mesh.MachinePeers,
-	lan bool,
-	killswitch bool,
-	allowlistedSubnets config.Allowlist,
-) error {
-	e.peers = peers
-	e.LanAvailable = lan
-	return nil
-}
-
-func (*workingExitNode) DisablePeer(netip.Addr) error { return nil }
-func (*workingExitNode) Disable() error               { return nil }
-
-func (e *workingExitNode) ResetFirewall(lan bool,
-	killswitch bool,
-	allowlist config.Allowlist,
-) error {
-	e.LanAvailable = lan
-	return nil
-}
 
 type workingMesh struct {
 	enableErr         error
@@ -267,9 +150,6 @@ func TestCombined_Start(t *testing.T) {
 		dns                      dns.Setter
 		vpn                      vpn.VPN
 		fw                       firewall.Service
-		allowlist                allowlist.Routing
-		devices                  device.ListFunc
-		routing                  routes.PolicyService
 		arpIgnore                bool
 		expectedARPIgnore        bool
 		disconnectCallbackCalled bool
@@ -282,10 +162,7 @@ func TestCombined_Start(t *testing.T) {
 			allowlistRouter: workingRouter{},
 			dns:             &workingDNS{},
 			vpn:             nil,
-			fw:              &workingFirewall{},
-			allowlist:       &workingAllowlistRouting{},
-			devices:         workingDeviceList,
-			routing:         &workingRoutingSetup{},
+			fw:              firewallmock.NewFirewall(),
 			err:             errNilVPN,
 		},
 		{
@@ -294,10 +171,7 @@ func TestCombined_Start(t *testing.T) {
 			allowlistRouter: workingRouter{},
 			dns:             &workingDNS{},
 			vpn:             mock.FailingVPN{},
-			fw:              &workingFirewall{},
-			allowlist:       &workingAllowlistRouting{},
-			devices:         workingDeviceList,
-			routing:         &workingRoutingSetup{},
+			fw:              firewallmock.NewFirewall(),
 			err:             mock.ErrOnPurpose,
 		},
 		{
@@ -306,10 +180,7 @@ func TestCombined_Start(t *testing.T) {
 			allowlistRouter: workingRouter{},
 			dns:             &workingDNS{},
 			vpn:             mock.WorkingInactiveVPN{},
-			fw:              failingFirewall{},
-			allowlist:       &workingAllowlistRouting{},
-			devices:         workingDeviceList,
-			routing:         &workingRoutingSetup{},
+			fw:              &firewallmock.Firewall{Err: mock.ErrOnPurpose},
 			err:             mock.ErrOnPurpose,
 		},
 		{
@@ -318,22 +189,7 @@ func TestCombined_Start(t *testing.T) {
 			allowlistRouter: workingRouter{},
 			dns:             failingDNS{},
 			vpn:             mock.WorkingInactiveVPN{},
-			fw:              &workingFirewall{},
-			allowlist:       &workingAllowlistRouting{},
-			devices:         workingDeviceList,
-			routing:         &workingRoutingSetup{},
-			err:             mock.ErrOnPurpose,
-		},
-		{
-			name:            "device listing failure",
-			gateway:         workingGateway{},
-			allowlistRouter: workingRouter{},
-			dns:             &workingDNS{},
-			vpn:             mock.WorkingInactiveVPN{},
-			fw:              &workingFirewall{},
-			allowlist:       &workingAllowlistRouting{},
-			devices:         failingDeviceList,
-			routing:         &workingRoutingSetup{},
+			fw:              firewallmock.NewFirewall(),
 			err:             mock.ErrOnPurpose,
 		},
 		{
@@ -342,10 +198,7 @@ func TestCombined_Start(t *testing.T) {
 			allowlistRouter: workingRouter{},
 			dns:             &workingDNS{},
 			vpn:             &mock.WorkingVPN{},
-			fw:              &workingFirewall{},
-			allowlist:       &workingAllowlistRouting{},
-			devices:         workingDeviceList,
-			routing:         &workingRoutingSetup{},
+			fw:              firewallmock.NewFirewall(),
 			err:             nil,
 		},
 		{
@@ -354,10 +207,7 @@ func TestCombined_Start(t *testing.T) {
 			allowlistRouter:          workingRouter{},
 			dns:                      &workingDNS{},
 			vpn:                      &mock.ActiveVPN{},
-			fw:                       &workingFirewall{},
-			allowlist:                &workingAllowlistRouting{},
-			devices:                  workingDeviceList,
-			routing:                  &workingRoutingSetup{},
+			fw:                       firewallmock.NewFirewall(),
 			disconnectCallbackCalled: true,
 			err:                      nil,
 		},
@@ -367,10 +217,7 @@ func TestCombined_Start(t *testing.T) {
 			allowlistRouter:   workingRouter{},
 			dns:               &workingDNS{},
 			vpn:               &mock.WorkingVPN{},
-			fw:                &workingFirewall{},
-			allowlist:         &workingAllowlistRouting{},
-			devices:           workingDeviceList,
-			routing:           &workingRoutingSetup{},
+			fw:                firewallmock.NewFirewall(),
 			err:               nil,
 			arpIgnore:         true,
 			expectedARPIgnore: true,
@@ -381,10 +228,7 @@ func TestCombined_Start(t *testing.T) {
 			allowlistRouter:          workingRouter{},
 			dns:                      &workingDNS{},
 			vpn:                      &mock.ActiveVPN{},
-			fw:                       &workingFirewall{},
-			allowlist:                &workingAllowlistRouting{},
-			devices:                  workingDeviceList,
-			routing:                  &workingRoutingSetup{},
+			fw:                       firewallmock.NewFirewall(),
 			err:                      nil,
 			arpIgnore:                true,
 			expectedARPIgnore:        true,
@@ -396,10 +240,7 @@ func TestCombined_Start(t *testing.T) {
 			allowlistRouter: workingRouter{},
 			dns:             &workingDNS{},
 			vpn:             &mock.WorkingVPN{},
-			fw:              &workingFirewall{},
-			allowlist:       &workingAllowlistRouting{},
-			devices:         workingDeviceList,
-			routing:         &workingRoutingSetup{},
+			fw:              firewallmock.NewFirewall(),
 			err:             mock.ErrOnPurpose,
 			arpIgnore:       true,
 			setARPIgnoreErr: mock.ErrOnPurpose,
@@ -410,10 +251,7 @@ func TestCombined_Start(t *testing.T) {
 			allowlistRouter:          workingRouter{},
 			dns:                      &workingDNS{},
 			vpn:                      &mock.ActiveVPN{},
-			fw:                       &workingFirewall{},
-			allowlist:                &workingAllowlistRouting{},
-			devices:                  workingDeviceList,
-			routing:                  &workingRoutingSetup{},
+			fw:                       firewallmock.NewFirewall(),
 			err:                      mock.ErrOnPurpose,
 			arpIgnore:                true,
 			setARPIgnoreErr:          mock.ErrOnPurpose,
@@ -434,18 +272,18 @@ func TestCombined_Start(t *testing.T) {
 				test.allowlistRouter,
 				test.dns,
 				test.fw,
-				test.allowlist,
-				test.devices,
-				test.routing,
+				nil,
+				&workingRoutingSetup{},
 				nil,
 				workingRouter{},
 				nil,
-				&workingExitNode{},
 				0,
 				false,
 				&workingIpv6{},
 				test.arpIgnore,
 				&arpIgnoreSetter,
+				config.Allowlist{},
+				&mock.SysctlSetterMock{},
 			)
 
 			disconnectCallbackCalled := false
@@ -537,20 +375,21 @@ func TestCombined_Stop(t *testing.T) {
 				&subs.Subject[string]{},
 				workingRouter{},
 				test.dns,
-				&workingFirewall{},
-				workingAllowlistRouting{},
+				firewallmock.NewFirewall(),
 				nil,
 				&workingRoutingSetup{},
 				nil,
 				workingRouter{},
 				nil,
-				&workingExitNode{},
 				0,
 				false,
 				&workingIpv6{},
 				test.arpIgnore,
 				&arpIgnoreSetter,
+				config.Allowlist{},
+				&mock.SysctlSetterMock{},
 			)
+
 			netw.vpnet = test.vpn
 			err := netw.stop()
 			assert.ErrorIs(t, err, test.err)
@@ -603,9 +442,7 @@ func TestCombined_SetDNS(t *testing.T) {
 				&subs.Subject[string]{},
 				workingRouter{},
 				test.dns,
-				&workingFirewall{},
-				nil,
-				nil,
+				firewallmock.NewFirewall(),
 				nil,
 				nil,
 				nil,
@@ -615,6 +452,8 @@ func TestCombined_SetDNS(t *testing.T) {
 				false,
 				&workingIpv6{},
 				false,
+				&mock.SysctlSetterMock{},
+				config.Allowlist{},
 				&mock.SysctlSetterMock{},
 			)
 			netw.vpnet = &mock.WorkingVPN{}
@@ -653,9 +492,7 @@ func TestCombined_UnsetDNS(t *testing.T) {
 				&subs.Subject[string]{},
 				workingRouter{},
 				test.dns,
-				&workingFirewall{},
-				nil,
-				nil,
+				firewallmock.NewFirewall(),
 				nil,
 				nil,
 				nil,
@@ -665,6 +502,8 @@ func TestCombined_UnsetDNS(t *testing.T) {
 				false,
 				&workingIpv6{},
 				false,
+				&mock.SysctlSetterMock{},
+				config.Allowlist{},
 				&mock.SysctlSetterMock{},
 			)
 			err := netw.UnsetDNS()
@@ -677,35 +516,15 @@ func TestCombined_ResetAllowlist(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name      string
-		fw        firewall.Service
-		allowlist allowlist.Routing
-		devices   device.ListFunc
-		routing   routes.PolicyService
-		err       error
+		name    string
+		fw      firewall.Service
+		routing routes.PolicyService
+		err     error
 	}{
 		{
-			name:      "firewall failure",
-			fw:        failingFirewall{},
-			allowlist: workingAllowlistRouting{},
-			devices:   workingDeviceList,
-			routing:   &workingRoutingSetup{},
-			err:       mock.ErrOnPurpose,
-		},
-		{
-			name:      "device listing failure",
-			fw:        &workingFirewall{},
-			allowlist: workingAllowlistRouting{},
-			devices:   failingDeviceList,
-			err:       mock.ErrOnPurpose,
-			routing:   &workingRoutingSetup{},
-		},
-		{
-			name:      "success",
-			fw:        &workingFirewall{},
-			allowlist: workingAllowlistRouting{},
-			devices:   workingDeviceList,
-			routing:   &workingRoutingSetup{},
+			name:    "success",
+			fw:      firewallmock.NewFirewall(),
+			routing: &workingRoutingSetup{},
 		},
 	}
 
@@ -719,131 +538,20 @@ func TestCombined_ResetAllowlist(t *testing.T) {
 				workingRouter{},
 				&workingDNS{},
 				test.fw,
-				test.allowlist,
-				test.devices,
+				nil,
 				test.routing,
 				nil,
 				nil,
 				nil,
-				newWorkingExitNode(),
 				0,
 				false,
 				&workingIpv6{},
 				false,
+				&mock.SysctlSetterMock{},
+				config.Allowlist{},
 				&mock.SysctlSetterMock{},
 			)
 			assert.ErrorIs(t, netw.resetAllowlist(), test.err)
-		})
-	}
-}
-
-func TestCombined_BlockTraffic(t *testing.T) {
-	category.Set(t, category.Route)
-
-	tests := []struct {
-		name    string
-		fw      firewall.Service
-		devices device.ListFunc
-		routing routes.PolicyService
-		err     error
-	}{
-		{
-			name:    "firewall failure",
-			fw:      failingFirewall{},
-			devices: workingDeviceList,
-			err:     mock.ErrOnPurpose,
-			routing: &workingRoutingSetup{},
-		},
-		{
-			name:    "device listing failure",
-			fw:      &workingFirewall{},
-			devices: failingDeviceList,
-			err:     mock.ErrOnPurpose,
-			routing: &workingRoutingSetup{},
-		},
-		{
-			name:    "success",
-			fw:      &workingFirewall{},
-			devices: workingDeviceList,
-			routing: &workingRoutingSetup{},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			// It's fine to pass nils to values provided via constructor
-			// which are not used in the test.
-			netw := NewCombined(
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				test.fw,
-				nil,
-				test.devices,
-				test.routing,
-				nil,
-				nil,
-				nil,
-				nil,
-				0,
-				false,
-				&workingIpv6{},
-				false,
-				&mock.SysctlSetterMock{},
-			)
-			assert.ErrorIs(t, netw.blockTraffic(), test.err)
-		})
-	}
-}
-
-func TestCombined_UnblockTraffic(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	tests := []struct {
-		name string
-		fw   firewall.Service
-		err  error
-	}{
-		{
-			name: "firewall failure",
-			fw:   failingFirewall{},
-			err:  mock.ErrOnPurpose,
-		},
-		{
-			name: "success",
-			fw:   &workingFirewall{},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			// It's fine to pass nils to values provided via constructor
-			// which are not used in the test.
-			netw := NewCombined(
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				test.fw,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				0,
-				false,
-				&workingIpv6{},
-				false,
-				&mock.SysctlSetterMock{},
-			)
-			assert.ErrorIs(t, netw.unblockTraffic(), test.err)
 		})
 	}
 }
@@ -852,67 +560,31 @@ func TestCombined_SetAllowlist(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name             string
-		devices          device.ListFunc
-		routing          routes.PolicyService
-		rt               routes.Service
-		fw               firewall.Service
-		allowlistRouting allowlist.Routing
-		allowlist        config.Allowlist
-		err              error
+		name      string
+		routing   routes.PolicyService
+		rt        routes.Service
+		allowlist config.Allowlist
+		err       error
 	}{
 		{
-			name:             "device listing failure",
-			devices:          failingDeviceList,
-			routing:          &workingRoutingSetup{},
-			rt:               workingRouter{},
-			fw:               &workingFirewall{},
-			allowlistRouting: workingAllowlistRouting{},
-			allowlist: config.NewAllowlist(
-				[]int64{22}, []int64{22}, []string{"1.1.1.1/32"},
-			),
-			err: mock.ErrOnPurpose,
-		},
-		{
-			name:             "router failure",
-			devices:          workingDeviceList,
-			routing:          &workingRoutingSetup{},
-			rt:               failingRouter{},
-			fw:               &workingFirewall{},
-			allowlistRouting: workingAllowlistRouting{},
+			name:    "router failure",
+			routing: &workingRoutingSetup{},
+			rt:      failingRouter{},
 			allowlist: config.NewAllowlist(
 				[]int64{22}, []int64{22}, []string{"1.1.1.1/32"},
 			),
 			err: nil, // not connected - router is not invoked, no error
 		},
 		{
-			name:             "firewall failure",
-			devices:          workingDeviceList,
-			routing:          &workingRoutingSetup{},
-			rt:               workingRouter{},
-			fw:               failingFirewall{},
-			allowlistRouting: workingAllowlistRouting{},
-			allowlist: config.NewAllowlist(
-				[]int64{22}, []int64{22}, []string{"1.1.1.1/32"},
-			),
-			err: mock.ErrOnPurpose,
+			name:      "invalid allowlist",
+			routing:   &workingRoutingSetup{},
+			rt:        workingRouter{},
+			allowlist: config.NewAllowlist(nil, nil, nil),
 		},
 		{
-			name:             "invalid allowlist",
-			devices:          workingDeviceList,
-			routing:          &workingRoutingSetup{},
-			rt:               workingRouter{},
-			fw:               &workingFirewall{},
-			allowlistRouting: &workingAllowlistRouting{},
-			allowlist:        config.NewAllowlist(nil, nil, nil),
-		},
-		{
-			name:             "success",
-			devices:          workingDeviceList,
-			routing:          &workingRoutingSetup{},
-			rt:               workingRouter{},
-			fw:               &workingFirewall{},
-			allowlistRouting: workingAllowlistRouting{},
+			name:    "success",
+			routing: &workingRoutingSetup{},
+			rt:      workingRouter{},
 			allowlist: config.NewAllowlist(
 				[]int64{22}, []int64{22}, []string{"1.1.1.1/32"},
 			),
@@ -928,18 +600,18 @@ func TestCombined_SetAllowlist(t *testing.T) {
 				&subs.Subject[string]{},
 				test.rt,
 				&workingDNS{},
-				test.fw,
-				test.allowlistRouting,
-				test.devices,
+				firewallmock.NewFirewall(),
+				nil,
 				test.routing,
 				nil,
 				nil,
 				nil,
-				newWorkingExitNode(),
 				0,
 				false,
 				&workingIpv6{},
 				false,
+				&mock.SysctlSetterMock{},
+				config.Allowlist{},
 				&mock.SysctlSetterMock{},
 			)
 			assert.ErrorIs(t, netw.setAllowlist(test.allowlist), test.err)
@@ -951,30 +623,17 @@ func TestCombined_UnsetAllowlist(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name      string
-		fw        firewall.Service
-		allowlist allowlist.Routing
-		rt        routes.Service
-		err       error
+		name string
+		rt   routes.Service
+		err  error
 	}{
 		{
-			name:      "firewall failure",
-			fw:        failingFirewall{},
-			allowlist: workingAllowlistRouting{},
-			rt:        workingRouter{},
-			err:       mock.ErrOnPurpose,
+			name: "router failure",
+			rt:   failingRouter{},
 		},
 		{
-			name:      "router failure",
-			fw:        &workingFirewall{},
-			allowlist: workingAllowlistRouting{},
-			rt:        failingRouter{},
-		},
-		{
-			name:      "success",
-			fw:        &workingFirewall{},
-			allowlist: workingAllowlistRouting{},
-			rt:        workingRouter{},
+			name: "success",
+			rt:   workingRouter{},
 		},
 	}
 
@@ -987,18 +646,18 @@ func TestCombined_UnsetAllowlist(t *testing.T) {
 				&subs.Subject[string]{},
 				test.rt,
 				&workingDNS{},
-				test.fw,
-				test.allowlist,
+				firewallmock.NewFirewall(),
 				workingDeviceList,
 				&workingRoutingSetup{},
 				nil,
 				nil,
 				nil,
-				newWorkingExitNode(),
 				0,
 				false,
 				&workingIpv6{},
 				false,
+				&mock.SysctlSetterMock{},
+				config.Allowlist{},
 				&mock.SysctlSetterMock{},
 			)
 			err := netw.unsetAllowlist()
@@ -1014,48 +673,22 @@ func TestCombined_SetNetwork(t *testing.T) {
 	TCPPorts := []int64{220, 35}
 
 	tests := []struct {
-		name      string
-		fw        firewall.Service
-		allowlist allowlist.Routing
-		rt        routes.Service
-		devices   device.ListFunc
-		routing   routes.PolicyService
-		err       error
+		name    string
+		rt      routes.Service
+		devices device.ListFunc
+		routing routes.PolicyService
+		err     error
 	}{
 		{
-			name:      "firewall failure",
-			fw:        failingFirewall{},
-			allowlist: workingAllowlistRouting{},
-			rt:        workingRouter{},
-			devices:   workingDeviceList,
-			routing:   &workingRoutingSetup{},
-			err:       mock.ErrOnPurpose,
+			name:    "router failure",
+			rt:      failingRouter{},
+			routing: &workingRoutingSetup{},
+			err:     nil, // not connected - router is not invoked, no error
 		},
 		{
-			name:      "router failure",
-			fw:        &workingFirewall{},
-			allowlist: workingAllowlistRouting{},
-			rt:        failingRouter{},
-			devices:   workingDeviceList,
-			routing:   &workingRoutingSetup{},
-			err:       nil, // not connected - router is not invoked, no error
-		},
-		{
-			name:      "device listing failure",
-			fw:        &workingFirewall{},
-			allowlist: workingAllowlistRouting{},
-			rt:        workingRouter{},
-			devices:   failingDeviceList,
-			routing:   &workingRoutingSetup{},
-			err:       mock.ErrOnPurpose,
-		},
-		{
-			name:      "success",
-			fw:        &workingFirewall{},
-			allowlist: workingAllowlistRouting{},
-			rt:        workingRouter{},
-			routing:   &workingRoutingSetup{},
-			devices:   workingDeviceList,
+			name:    "success",
+			rt:      workingRouter{},
+			routing: &workingRoutingSetup{},
 		},
 	}
 
@@ -1068,18 +701,18 @@ func TestCombined_SetNetwork(t *testing.T) {
 				&subs.Subject[string]{},
 				test.rt,
 				&workingDNS{},
-				test.fw,
-				test.allowlist,
-				test.devices,
+				firewallmock.NewFirewall(),
+				workingDeviceList,
 				test.routing,
 				nil,
 				nil,
 				nil,
-				&workingExitNode{},
 				0,
 				false,
 				&workingIpv6{},
 				false,
+				&mock.SysctlSetterMock{},
+				config.Allowlist{},
 				&mock.SysctlSetterMock{},
 			)
 			assert.False(t, netw.IsNetworkSet())
@@ -1098,30 +731,17 @@ func TestCombined_UnsetNetwork(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name      string
-		fw        firewall.Service
-		allowlist allowlist.Routing
-		rt        routes.Service
-		err       error
+		name string
+		rt   routes.Service
+		err  error
 	}{
 		{
-			name:      "firewall failure",
-			fw:        failingFirewall{},
-			allowlist: workingAllowlistRouting{},
-			rt:        workingRouter{},
-			err:       mock.ErrOnPurpose,
+			name: "router failure",
+			rt:   failingRouter{},
 		},
 		{
-			name:      "router failure",
-			fw:        &workingFirewall{},
-			allowlist: workingAllowlistRouting{},
-			rt:        failingRouter{},
-		},
-		{
-			name:      "success",
-			fw:        &workingFirewall{},
-			allowlist: workingAllowlistRouting{},
-			rt:        workingRouter{},
+			name: "success",
+			rt:   workingRouter{},
 		},
 	}
 
@@ -1134,18 +754,18 @@ func TestCombined_UnsetNetwork(t *testing.T) {
 				&subs.Subject[string]{},
 				test.rt,
 				&workingDNS{},
-				test.fw,
-				test.allowlist,
+				firewallmock.NewFirewall(),
 				workingDeviceList,
 				&workingRoutingSetup{},
 				nil,
 				nil,
 				nil,
-				&workingExitNode{},
 				0,
 				false,
 				&workingIpv6{},
 				false,
+				&mock.SysctlSetterMock{},
+				config.Allowlist{},
 				&mock.SysctlSetterMock{},
 			)
 			assert.ErrorIs(t, netw.unsetNetwork(), test.err)
@@ -1157,26 +777,32 @@ func TestCombined_SetMesh(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
+		name      string
 		fw        firewall.Service
-		allowlist allowlist.Routing
 		rt        routes.Service
 		publicKey string
 		address   string
-		ruleName  string
 		err       error
 	}{
 		{
-			fw:        &workingFirewall{},
-			allowlist: workingAllowlistRouting{},
+			name:      "works setting meshnet",
+			fw:        firewallmock.NewFirewall(),
 			rt:        workingRouter{},
 			publicKey: "c2513324-7bac-4dcc-b059-e12df48d7418",
 			address:   "100.100.10.1",
-			ruleName:  "c2513324-7bac-4dcc-b059-e12df48d7418-allow-rule-100.100.10.1",
+		},
+		{
+			name:      "fails when firewall returns error",
+			fw:        &firewallmock.Firewall{Err: mock.ErrOnPurpose},
+			rt:        workingRouter{},
+			publicKey: "c2513324-7bac-4dcc-b059-e12df48d7418",
+			address:   "100.100.10.1",
+			err:       mock.ErrOnPurpose,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.publicKey, func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			netw := NewCombined(
 				nil,
 				&workingMesh{},
@@ -1185,24 +811,26 @@ func TestCombined_SetMesh(t *testing.T) {
 				test.rt,
 				&workingDNS{},
 				test.fw,
-				test.allowlist,
 				workingDeviceList,
 				&workingRoutingSetup{},
 				&workingHostSetter{},
 				workingRouter{},
 				workingRouter{},
-				&workingExitNode{},
 				0,
 				false,
 				&workingIpv6{},
 				false,
 				&mock.SysctlSetterMock{},
+				config.Allowlist{},
+				&mock.SysctlSetterMock{},
 			)
-			assert.ErrorIs(t, test.err, netw.SetMesh(
-				mesh.MachineMap{},
+			err := netw.SetMesh(
+				mesh.MachineMap{Peers: mesh.MachinePeers{mesh.MachinePeer{DoIAllowInbound: false}}},
 				netip.Addr{},
 				"",
-			))
+			)
+
+			assert.ErrorIs(t, err, test.err)
 		})
 	}
 }
@@ -1211,26 +839,32 @@ func TestCombined_UnSetMesh(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
+		name      string
 		fw        firewall.Service
-		allowlist allowlist.Routing
 		rt        routes.Service
 		publicKey string
 		address   string
-		ruleName  string
 		err       error
 	}{
 		{
-			fw:        &workingFirewall{},
-			allowlist: workingAllowlistRouting{},
+			name:      "working unset",
+			fw:        firewallmock.NewFirewall(),
 			rt:        workingRouter{},
 			publicKey: "d2513324-7bac-4dcc-b059-e12df48d7418",
 			address:   "100.100.10.1",
-			ruleName:  "d2513324-7bac-4dcc-b059-e12df48d7418-allow-rule-100.100.10.1",
+		},
+		{
+			name:      "fails when firewall returns error",
+			fw:        &firewallmock.Firewall{Err: mock.ErrOnPurpose},
+			rt:        workingRouter{},
+			publicKey: "c2513324-7bac-4dcc-b059-e12df48d7418",
+			address:   "100.100.10.1",
+			err:       mock.ErrOnPurpose,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.publicKey, func(t *testing.T) {
+		t.Run(test.name, func(t *testing.T) {
 			netw := NewCombined(
 				nil,
 				&workingMesh{},
@@ -1239,21 +873,21 @@ func TestCombined_UnSetMesh(t *testing.T) {
 				test.rt,
 				&workingDNS{},
 				test.fw,
-				test.allowlist,
 				workingDeviceList,
 				&workingRoutingSetup{},
 				&workingHostSetter{},
 				workingRouter{},
 				workingRouter{},
-				&workingExitNode{},
 				0,
 				false,
 				&workingIpv6{},
 				false,
 				&mock.SysctlSetterMock{},
+				config.Allowlist{},
+				&mock.SysctlSetterMock{},
 			)
 			netw.isMeshnetSet = true
-			assert.ErrorIs(t, test.err, netw.UnSetMesh())
+			assert.ErrorIs(t, netw.UnSetMesh(), test.err)
 		})
 	}
 }
@@ -1265,7 +899,7 @@ func TestCombined_Reconnect(t *testing.T) {
 	// on UnsetMesh get default value `true`
 
 	router := &workingRoutingSetup{}
-	fw := &workingFirewall{}
+	fw := firewallmock.NewFirewall()
 
 	tests := []struct {
 		name      string
@@ -1273,7 +907,6 @@ func TestCombined_Reconnect(t *testing.T) {
 		router    routes.PolicyService
 		publicKey string
 		address   string
-		ruleName  string
 		err       error
 	}{
 		{
@@ -1298,25 +931,26 @@ func TestCombined_Reconnect(t *testing.T) {
 				nil,
 				&workingDNS{},
 				fw,
-				nil,
 				workingDeviceList,
 				router,
 				&workingHostSetter{},
 				workingRouter{},
 				workingRouter{},
-				&workingExitNode{},
 				0,
 				false,
 				&workingIpv6{},
 				false,
 				&mock.SysctlSetterMock{},
+				config.Allowlist{},
+				&mock.SysctlSetterMock{},
 			)
 			// activate meshnet
-			assert.ErrorIs(t, test.err, netw.SetMesh(
+			errSet := netw.SetMesh(
 				mesh.MachineMap{},
 				netip.Addr{},
 				"",
-			))
+			)
+			assert.ErrorIs(t, errSet, test.err)
 			// connect to exit node
 			_ = netw.Start(
 				context.Background(),
@@ -1335,306 +969,8 @@ func TestCombined_Reconnect(t *testing.T) {
 	}
 }
 
-func TestCombined_allowIncoming(t *testing.T) {
-	tests := []struct {
-		name               string
-		ruleName           string
-		lanAllowedRuleName string
-		address            string
-		lanAllowed         bool
-	}{
-		{
-			name:       "ac30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e",
-			address:    "100.100.10.1",
-			ruleName:   "ac30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e-allow-rule-100.100.10.1",
-			lanAllowed: true,
-		},
-		{
-			name:       "a70ad213-fa09-4ae4-890b-bea12697b9f0",
-			address:    "100.100.10.1",
-			ruleName:   "a70ad213-fa09-4ae4-890b-bea12697b9f0-allow-rule-100.100.10.1",
-			lanAllowed: true,
-		},
-		{
-			name:       "a2513324-7bac-4dcc-b059-e12df48d7418",
-			address:    "100.100.10.1",
-			ruleName:   "a2513324-7bac-4dcc-b059-e12df48d7418-allow-rule-100.100.10.1",
-			lanAllowed: true,
-		},
-		{
-			name:               "1f391849-f94b-4826-a5ce-acb6e8a4e432",
-			address:            "100.100.10.1",
-			ruleName:           "1f391849-f94b-4826-a5ce-acb6e8a4e432-allow-rule-100.100.10.1",
-			lanAllowedRuleName: "1f391849-f94b-4826-a5ce-acb6e8a4e432-block-lan-rule-100.100.10.1",
-			lanAllowed:         false,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			mockFirewall := testfirewall.NewMockFirewall()
-			netw := NewCombined(
-				nil,
-				nil,
-				nil,
-				&subs.Subject[string]{},
-				nil,
-				nil,
-				&mockFirewall,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				0,
-				false,
-				&workingIpv6{},
-				false,
-				&mock.SysctlSetterMock{},
-			)
-			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address), test.lanAllowed)
-
-			assert.Nil(t, err)
-			if !test.lanAllowed {
-				assert.Equal(t, test.lanAllowedRuleName, netw.rules[0])
-				assert.Equal(t, test.ruleName, netw.rules[1])
-
-				assert.Equal(t, test.lanAllowedRuleName, mockFirewall.Rules[1].Name)
-				assert.Equal(t, firewall.Inbound, mockFirewall.Rules[1].Direction)
-
-				assert.Equal(t, test.ruleName, mockFirewall.Rules[0].Name)
-				assert.Equal(t, firewall.Inbound, mockFirewall.Rules[0].Direction)
-			} else {
-				assert.Equal(t, test.ruleName, netw.rules[0])
-
-				assert.Equal(t, test.ruleName, mockFirewall.Rules[0].Name)
-				assert.Equal(t, firewall.Inbound, mockFirewall.Rules[0].Direction)
-			}
-		})
-	}
-}
-
-func TestCombined_blockIncoming(t *testing.T) {
-	tests := []struct {
-		name     string
-		ruleName string
-		address  string
-		fw       firewall.Service
-	}{
-		{
-			name:     "bc30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e",
-			address:  "100.100.10.1",
-			ruleName: "bc30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e-allow-rule-100.100.10.1",
-			fw:       meshnetterFirewall{},
-		},
-		{
-			name:     "b70ad213-fa09-4ae4-890b-bea12697b9f0",
-			address:  "100.100.10.1",
-			ruleName: "b70ad213-fa09-4ae4-890b-bea12697b9f0-allow-rule-100.100.10.1",
-			fw:       meshnetterFirewall{},
-		},
-		{
-			name:     "b2513324-7bac-4dcc-b059-e12df48d7418",
-			address:  "100.100.10.1",
-			ruleName: "b2513324-7bac-4dcc-b059-e12df48d7418-allow-rule-100.100.10.1",
-			fw:       meshnetterFirewall{},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			netw := NewCombined(
-				nil,
-				nil,
-				nil,
-				&subs.Subject[string]{},
-				nil,
-				nil,
-				test.fw,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				0,
-				false,
-				&workingIpv6{},
-				false,
-				&mock.SysctlSetterMock{},
-			)
-			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address), true)
-			assert.Nil(t, err)
-			assert.Equal(t, netw.rules[0], test.ruleName)
-
-			err = netw.blockIncoming(meshnet.UniqueAddress{UID: test.name, Address: netip.MustParseAddr(test.address)})
-			assert.Nil(t, err)
-			assert.Equal(t, 0, len(netw.rules))
-		})
-	}
-}
-
-func TestCombined_allowGeneratedRule(t *testing.T) {
-	tests := []struct {
-		name     string
-		ruleName string
-		address  string
-		fw       firewall.Service
-	}{
-		{
-			name:     "cc30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e",
-			address:  "100.100.10.1",
-			ruleName: "cc30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e-allow-rule-100.100.10.1",
-			fw:       meshnetterFirewall{},
-		},
-		{
-			name:     "c70ad213-fa09-4ae4-890b-bea12697b9f0",
-			address:  "100.100.10.1",
-			ruleName: "c70ad213-fa09-4ae4-890b-bea12697b9f0-allow-rule-100.100.10.1",
-			fw:       meshnetterFirewall{},
-		},
-		{
-			name:     "c2513324-7bac-4dcc-b059-e12df48d7418",
-			address:  "100.100.10.1",
-			ruleName: "c2513324-7bac-4dcc-b059-e12df48d7418-allow-rule-100.100.10.1",
-			fw:       meshnetterFirewall{},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			netw := NewCombined(
-				nil,
-				nil,
-				nil,
-				&subs.Subject[string]{},
-				nil,
-				nil,
-				test.fw,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				0,
-				false,
-				&workingIpv6{},
-				false,
-				&mock.SysctlSetterMock{},
-			)
-			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address), true)
-			assert.Equal(t, nil, err)
-			assert.Equal(t, netw.rules[0], test.ruleName)
-		})
-	}
-}
-
-func TestCombined_BlockNonExistingRuleFail(t *testing.T) {
-	tests := []struct {
-		name     string
-		ruleName string
-		address  string
-		fw       firewall.Service
-	}{
-		{
-			name:     "dc30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e",
-			address:  "100.100.10.1",
-			ruleName: "dc30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e-allow-rule-100.100.10.1",
-			fw:       meshnetterFirewall{},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			netw := NewCombined(
-				nil,
-				nil,
-				nil,
-				&subs.Subject[string]{},
-				nil,
-				nil,
-				test.fw,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				0,
-				false,
-				&workingIpv6{},
-				false,
-				&mock.SysctlSetterMock{},
-			)
-			// Should fail to block rule non existing
-			expectedErrorMsg := fmt.Sprintf("allow rule does not exist for %s", test.ruleName)
-			err := netw.blockIncoming(meshnet.UniqueAddress{UID: test.name, Address: netip.MustParseAddr(test.address)})
-			assert.EqualErrorf(t, err, expectedErrorMsg, "Error should be: %v, got: %v", expectedErrorMsg, err)
-		})
-	}
-}
-
-func TestCombined_allowExistingRuleFail(t *testing.T) {
-	tests := []struct {
-		name          string
-		allowRuleName string
-		expectedRules []string
-		address       string
-	}{
-		{
-			name:          "ec30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e",
-			address:       "100.100.10.1",
-			allowRuleName: "ec30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e-allow-rule-100.100.10.1",
-			expectedRules: []string{"ec30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e-block-lan-rule-100.100.10.1", "ec30c01d-9ab8-4b25-9d5f-8a4bb2c5c78e-allow-rule-100.100.10.1"},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			mockFirewall := testfirewall.NewMockFirewall()
-
-			netw := NewCombined(
-				nil,
-				nil,
-				nil,
-				&subs.Subject[string]{},
-				nil,
-				nil,
-				&mockFirewall,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				nil,
-				0,
-				false,
-				&workingIpv6{},
-				false,
-				&mock.SysctlSetterMock{},
-			)
-			err := netw.allowIncoming(test.name, netip.MustParseAddr(test.address), false)
-			assert.Equal(t, nil, err)
-			assert.Equal(t, netw.rules, test.expectedRules)
-			// Should fail to add rule second time
-			expectedErrorMsg := fmt.Sprintf("allow rule already exist for %s", test.allowRuleName)
-			err = netw.allowIncoming(test.name, netip.MustParseAddr(test.address), false)
-			assert.EqualErrorf(t, err, expectedErrorMsg, "Error should be: %v, got: %v", expectedErrorMsg, err)
-		})
-	}
-}
-
 func TestCombined_Refresh(t *testing.T) {
 	hostSetter := newMockHostSetter()
-	fw := newWorkingFirewall()
-	exitNode := newWorkingExitNode()
 
 	netw := NewCombined(
 		nil,
@@ -1643,18 +979,18 @@ func TestCombined_Refresh(t *testing.T) {
 		&subs.Subject[string]{},
 		workingRouter{},
 		&workingDNS{},
-		fw,
-		nil,
+		firewallmock.NewFirewall(),
 		workingDeviceList,
 		&workingRoutingSetup{},
 		hostSetter,
 		workingRouter{},
 		workingRouter{},
-		exitNode,
 		0,
 		false,
 		&workingIpv6{},
 		false,
+		&mock.SysctlSetterMock{},
+		config.Allowlist{},
 		&mock.SysctlSetterMock{},
 	)
 
@@ -1716,113 +1052,6 @@ func TestCombined_Refresh(t *testing.T) {
 	assert.Equal(t, expectedPeer1DnsHost, hostSetter.hosts[1],
 		"DNS host was not configured properly for %s, \nexpected config: \n%v, \nactual config: \n%v",
 		expectedPeer1DnsHost, hostSetter.hosts[1])
-
-	// transform rules to rule names for printing in case of assertion failure
-	ruleNames := []string{}
-	for _, rule := range fw.rules {
-		fmt.Println(rule)
-		ruleNames = append(ruleNames, rule.Name)
-	}
-
-	// fileshare is forbidden here, so no new fileshare rules were added
-	assert.Equal(t, 5, len(fw.rules), "%d firewall rules were configured, expected 5, rules content: \n%s",
-		len(fw.rules),
-		strings.Join(ruleNames, "\n"))
-
-	// permit fileshare
-	netw.isFilesharePermitted = true
-
-	netw.Refresh(machineMap)
-
-	// now after refresh, fileshare rules are also added
-	assert.Equal(t, 6, len(fw.rules), "%d firewall rules were configured, expected 6, rules content: \n%s",
-		len(fw.rules),
-		strings.Join(ruleNames, "\n"))
-
-	defaultMeshBlockRuleName := "default-mesh-block"
-
-	expectedDefaultMeshBlockFwRule := firewall.Rule{
-		Name:           defaultMeshBlockRuleName,
-		Direction:      firewall.Inbound,
-		RemoteNetworks: []netip.Prefix{defaultMeshSubnet},
-		Allow:          false,
-		Comment:        "nordvpn-meshnet",
-	}
-
-	assert.Equal(t, expectedDefaultMeshBlockFwRule, fw.rules[defaultMeshBlockRuleName],
-		"default-mesh-block rule is incorrectly configured, \nexpected config: \n%v, \nactual config: \n%v",
-		expectedDefaultMeshBlockFwRule, fw.rules[defaultMeshBlockRuleName])
-
-	expectedDefaultMeshAllowEstablishedFwRule := firewall.Rule{
-		Name:           "default-mesh-allow-established",
-		Direction:      firewall.Inbound,
-		RemoteNetworks: []netip.Prefix{defaultMeshSubnet},
-		ConnectionStates: firewall.ConnectionStates{
-			SrcAddr: machineAddress,
-			States: []firewall.ConnectionState{
-				firewall.Related,
-				firewall.Established,
-			},
-		},
-		Allow:   true,
-		Comment: "nordvpn-meshnet",
-	}
-
-	assert.Equal(t, expectedDefaultMeshAllowEstablishedFwRule, fw.rules["default-mesh-allow-established"],
-		"default-mesh-allow-established is incorrectly configured, \nexpected config: \n%v, \nactual config: \n%v",
-		expectedDefaultMeshAllowEstablishedFwRule, fw.rules["default-mesh-allow-established"])
-
-	machineFwAllowRuleName := fmt.Sprintf("%s-allow-rule-%s", machinePublicKey, machineAddress.String())
-	expectedAllowMachineFwRule := firewall.Rule{
-		Name:           machineFwAllowRuleName,
-		Direction:      firewall.Inbound,
-		RemoteNetworks: []netip.Prefix{netip.PrefixFrom(machineAddress, machineAddress.BitLen())},
-		Allow:          true,
-		Comment:        "nordvpn-meshnet",
-		SimplifiedName: "-allow-rule-" + machineAddress.String(),
-	}
-
-	assert.Equal(t, expectedAllowMachineFwRule, fw.rules[machineFwAllowRuleName],
-		"allow rule for the host machine is incorrectly configured, \nexpected config: \n%v, \nactual config: \n%v",
-		expectedAllowMachineFwRule, fw.rules[machineFwAllowRuleName])
-
-	peer1FwAllowRuleName := fmt.Sprintf("%s-allow-rule-%s", peer1PublicKey, peer1Address.String())
-	expectedAllowPeer1Rule := firewall.Rule{
-		Name:           peer1FwAllowRuleName,
-		Direction:      firewall.Inbound,
-		RemoteNetworks: []netip.Prefix{netip.PrefixFrom(peer1Address, peer1Address.BitLen())},
-		Allow:          true,
-		Comment:        "nordvpn-meshnet",
-		SimplifiedName: "-allow-rule-" + peer1Address.String(),
-	}
-
-	assert.Equal(t, expectedAllowPeer1Rule, fw.rules[peer1FwAllowRuleName],
-		"allow rule for the peer is incorrectly configured, \nexpected config: \n%v, \nactual config: \n%v",
-		expectedAllowPeer1Rule, fw.rules[peer1FwAllowRuleName],
-	)
-
-	peer1FwAllowFileshareRuleName := fmt.Sprintf("%s-allow-fileshare-rule-%s", peer1PublicKey, peer1Address.String())
-	expectedAllowFilesharePeer1Rule := firewall.Rule{
-		Name:           peer1FwAllowFileshareRuleName,
-		Direction:      firewall.Inbound,
-		Ports:          []int{49111},
-		Protocols:      []string{"tcp"},
-		PortsDirection: firewall.Destination,
-		RemoteNetworks: []netip.Prefix{netip.PrefixFrom(peer1Address, peer1Address.BitLen())},
-		Allow:          true,
-		Comment:        "nordvpn-meshnet",
-		SimplifiedName: "-allow-fileshare-rule-" + peer1Address.String(),
-	}
-
-	assert.Equal(t, expectedAllowFilesharePeer1Rule, fw.rules[peer1FwAllowFileshareRuleName],
-		"allow fileshare rule for the peer is incorrectly configured, \nexpected config: \n%v, \nactual config: \n%v",
-		expectedAllowFilesharePeer1Rule, fw.rules[peer1FwAllowFileshareRuleName],
-	)
-
-	assert.True(t, exitNode.enabled, "Exit node is not enabled after network refresh.")
-	assert.Equal(t, peers, exitNode.peers,
-		"Exit node peers are not configured properly after network refresh: \nexpected:\n%v\nactual:\n%v",
-		peers, exitNode.peers)
 }
 
 func TestDnsAfterVPNRefresh(t *testing.T) {
@@ -1834,18 +1063,18 @@ func TestDnsAfterVPNRefresh(t *testing.T) {
 		&subs.Subject[string]{},
 		workingRouter{},
 		dns,
-		newWorkingFirewall(),
-		workingAllowlistRouting{},
+		firewallmock.NewFirewall(),
 		workingDeviceList,
 		&workingRoutingSetup{},
 		nil,
 		workingRouter{},
 		nil,
-		&workingExitNode{},
 		0,
 		false,
 		&workingIpv6{},
 		false,
+		&mock.SysctlSetterMock{},
+		config.Allowlist{},
 		&mock.SysctlSetterMock{},
 	)
 
@@ -1867,216 +1096,6 @@ func TestDnsAfterVPNRefresh(t *testing.T) {
 	err = netw.refreshVPN(ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, "2.2.2.2", dns.setDNS[0])
-}
-
-func TestExitNodeLanAvailability(t *testing.T) {
-	tests := []struct {
-		name         string
-		actions      func(*Combined)
-		lanAvailable bool
-	}{
-		{
-			name:         "no actions",
-			actions:      func(c *Combined) {},
-			lanAvailable: false,
-		},
-		{
-			name:         "killswitch enabled",
-			actions:      func(c *Combined) { _ = c.SetKillSwitch(config.Allowlist{}) },
-			lanAvailable: false,
-		},
-		{
-			name: "VPN enabled",
-			actions: func(c *Combined) {
-				_ = c.Start(
-					context.Background(),
-					vpn.Credentials{},
-					vpn.ServerData{},
-					config.Allowlist{},
-					nil,
-					true,
-					noopNetworkerCallback,
-				)
-			},
-			lanAvailable: false,
-		},
-		{
-			name:         "LAN discovery enabled",
-			actions:      func(c *Combined) { c.SetLanDiscovery(true) },
-			lanAvailable: true,
-		},
-		{
-			name:         "LAN discovery disabled",
-			actions:      func(c *Combined) { c.SetLanDiscovery(false) },
-			lanAvailable: true,
-		},
-		{
-			name:         "killswitch then lan discovery",
-			actions:      func(c *Combined) { _ = c.SetKillSwitch(config.Allowlist{}); c.SetLanDiscovery(true) },
-			lanAvailable: true,
-		},
-		{
-			name:         "lan discovery then killswitch",
-			actions:      func(c *Combined) { c.SetLanDiscovery(true); _ = c.SetKillSwitch(config.Allowlist{}) },
-			lanAvailable: true,
-		},
-		{
-			name: "vpn then lan discovery",
-			actions: func(c *Combined) {
-				_ = c.Start(
-					context.Background(),
-					vpn.Credentials{},
-					vpn.ServerData{},
-					config.Allowlist{},
-					nil,
-					true,
-					noopNetworkerCallback,
-				)
-				c.SetLanDiscovery(true)
-			},
-			lanAvailable: true,
-		},
-		{
-			name: "lan discovery then vpn",
-			actions: func(c *Combined) {
-				c.SetLanDiscovery(true)
-				_ = c.Start(
-					context.Background(),
-					vpn.Credentials{},
-					vpn.ServerData{},
-					config.Allowlist{},
-					nil,
-					true,
-					noopNetworkerCallback,
-				)
-			},
-			lanAvailable: true,
-		},
-		{
-			name: "lan discovery then killswitch then lan discovery off",
-			actions: func(c *Combined) {
-				c.SetLanDiscovery(true)
-				_ = c.SetKillSwitch(config.Allowlist{})
-				c.SetLanDiscovery(false)
-			},
-			lanAvailable: false,
-		},
-		{
-			name: "lan discovery then vpn then lan discovery off",
-			actions: func(c *Combined) {
-				c.SetLanDiscovery(true)
-				_ = c.Start(
-					context.Background(),
-					vpn.Credentials{},
-					vpn.ServerData{},
-					config.Allowlist{},
-					nil,
-					true,
-					noopNetworkerCallback,
-				)
-				c.SetLanDiscovery(false)
-			},
-			lanAvailable: false,
-		},
-		{
-			name: "vpn then killswitch",
-			actions: func(c *Combined) {
-				_ = c.Start(
-					context.Background(),
-					vpn.Credentials{},
-					vpn.ServerData{},
-					config.Allowlist{},
-					nil,
-					true,
-					noopNetworkerCallback,
-				)
-				_ = c.SetKillSwitch(config.Allowlist{})
-			},
-			lanAvailable: false,
-		},
-		{
-			name: "vpn then killswitch then lan discovery",
-			actions: func(c *Combined) {
-				_ = c.Start(
-					context.Background(),
-					vpn.Credentials{},
-					vpn.ServerData{},
-					config.Allowlist{},
-					nil,
-					true,
-					noopNetworkerCallback,
-				)
-				_ = c.SetKillSwitch(config.Allowlist{})
-				c.SetLanDiscovery(true)
-			},
-			lanAvailable: true,
-		},
-		{
-			name: "vpn then killswitch then lan discovery then killswitch off",
-			actions: func(c *Combined) {
-				_ = c.Start(
-					context.Background(),
-					vpn.Credentials{},
-					vpn.ServerData{},
-					config.Allowlist{},
-					nil,
-					true,
-					noopNetworkerCallback,
-				)
-				_ = c.SetKillSwitch(config.Allowlist{})
-				c.SetLanDiscovery(true)
-				_ = c.UnsetKillSwitch()
-			},
-			lanAvailable: true,
-		},
-		{
-			name: "vpn then killswitch then lan discovery then killswitch off then lan discovery off",
-			actions: func(c *Combined) {
-				_ = c.Start(
-					context.Background(),
-					vpn.Credentials{},
-					vpn.ServerData{},
-					config.Allowlist{},
-					nil,
-					true,
-					noopNetworkerCallback,
-				)
-				_ = c.SetKillSwitch(config.Allowlist{})
-				c.SetLanDiscovery(true)
-				_ = c.UnsetKillSwitch()
-				c.SetLanDiscovery(false)
-			},
-			lanAvailable: false,
-		},
-		{
-			name: "vpn then killswitch then lan discovery then killswitch off then lan discovery off then vpn off",
-			actions: func(c *Combined) {
-				_ = c.Start(
-					context.Background(),
-					vpn.Credentials{},
-					vpn.ServerData{},
-					config.Allowlist{},
-					nil,
-					true,
-					noopNetworkerCallback,
-				)
-				_ = c.SetKillSwitch(config.Allowlist{})
-				c.SetLanDiscovery(true)
-				_ = c.UnsetKillSwitch()
-				c.SetLanDiscovery(false)
-				_ = c.Stop()
-			},
-			lanAvailable: true,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			combined := GetTestCombined()
-			test.actions(combined)
-			assert.Equal(t, test.lanAvailable, combined.exitNode.(*workingExitNode).LanAvailable)
-		})
-	}
 }
 
 func TestCombined_SetARPIgnore(t *testing.T) {
@@ -2182,13 +1201,13 @@ func TestCombined_SetARPIgnore(t *testing.T) {
 				nil,
 				nil,
 				nil,
-				nil,
-				nil,
 				0,
 				false,
 				nil,
 				false,
 				&arpIgnoreSetter,
+				config.Allowlist{},
+				&mock.SysctlSetterMock{},
 			)
 
 			netw.ignoreARP = test.currentARPIgnoreNetworker

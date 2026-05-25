@@ -994,7 +994,8 @@ type LoaderInterceptor struct {
 }
 
 func (i *LoaderInterceptor) UnaryInterceptor(ctx context.Context, method string, req interface{}, reply interface{}, cc *grpc.ClientConn,
-	invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	invoker grpc.UnaryInvoker, opts ...grpc.CallOption,
+) error {
 	if i.enabled {
 		loader := NewLoader()
 		loader.Start()
@@ -1006,7 +1007,8 @@ func (i *LoaderInterceptor) UnaryInterceptor(ctx context.Context, method string,
 }
 
 func (i *LoaderInterceptor) StreamInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string,
-	streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+	streamer grpc.Streamer, opts ...grpc.CallOption,
+) (grpc.ClientStream, error) {
 	stream, err := streamer(ctx, desc, cc, method, opts...)
 	return loaderStream{ClientStream: stream, loaderEnabled: i.enabled}, err
 }
@@ -1079,7 +1081,9 @@ func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) e
 			}
 			switch {
 			case errors.Is(err, ErrUpdateAvailable):
-				color.Yellow(UpdateAvailableMessage)
+				if term.IsTerminal(int(os.Stdout.Fd())) {
+					color.Yellow(UpdateAvailableMessage)
+				}
 			case errors.Is(err, ErrInternetConnection):
 				color.Red(ErrInternetConnection.Error())
 				os.Exit(1)

@@ -71,6 +71,9 @@ const (
 	CodeARPIgnoreError                      int64 = 3056
 	CodeVirtualLocationDisabled             int64 = 3057
 	CodePauseAttemptWhenConnectedToMeshPeer int64 = 3058
+	CodeAllowlistSubnetSmallerNoop          int64 = 3059
+	CodeAllowlistSubnetTooWideWarn          int64 = 3060
+	CodeAllowlistSubnetWider                int64 = 3061
 )
 
 type ErrorWithCode struct {
