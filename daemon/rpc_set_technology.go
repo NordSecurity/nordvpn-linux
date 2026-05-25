@@ -34,6 +34,14 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 		}, nil
 	}
 
+	if cfg.AutoConnect &&
+		cfg.AutoConnectData.Group == config.ServerGroup_DEDICATED_SERVER &&
+		in.GetTechnology() != config.Technology_NORDLYNX {
+		return &pb.Payload{
+			Type: internal.CodeDedicatedServersNoNordlynx,
+		}, nil
+	}
+
 	v, err := r.factory(in.GetTechnology())
 	if err != nil {
 		log.Println(internal.ErrorPrefix, err)

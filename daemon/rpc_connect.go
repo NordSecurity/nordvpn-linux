@@ -39,6 +39,12 @@ func determineServerGroupIDs(server *core.Server) []config.ServerGroup {
 	return ids
 }
 
+// IsDedicatedServer returns true if either serverTag or serverGroup represent the dedicated server group
+func IsDedicatedServer(servetTag string, serverGroup string) bool {
+	return groupConvert(servetTag) == config.ServerGroup_DEDICATED_SERVER ||
+		groupConvert(serverGroup) == config.ServerGroup_DEDICATED_SERVER
+}
+
 // Connect initiates and handles the VPN connection process
 func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retErr error) {
 	return r.connectFromRequest(in, srv, pb.ConnectionSource_MANUAL)
@@ -205,8 +211,7 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	}
 	r.connectionInfo.SetInitialConnecting()
 
-	if groupConvert(in.ServerGroup) == config.ServerGroup_DEDICATED_SERVER ||
-		groupConvert(in.ServerTag) == config.ServerGroup_DEDICATED_SERVER {
+	if IsDedicatedServer(in.ServerTag, in.ServerGroup) {
 		// first, check if feature is enabled at all
 		if !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
 			// if user is trying to connect here while this feature is disabled,

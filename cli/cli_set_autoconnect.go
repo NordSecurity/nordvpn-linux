@@ -96,6 +96,14 @@ func (c *cmd) SetAutoConnect(ctx *cli.Context) error {
 		return formatError(errors.New(NoDedidcatedIPServerMessage))
 	case internal.CodeDedicatedIPServiceButNoServers:
 		return formatError(errors.New(NoPreferredDedicatedIPLocationSelected))
+	case internal.CodeDedicatedServersRenewError:
+		return errors.New(c.injectLinkIntoMessage(client.DedicatedServersUpselURL, client.DedicatedServersUpselURLLogin, DedicatedServersNoServiceMessage))
+	case internal.CodeDedicatedServersServiceButNoServers:
+		return errors.New(c.injectLinkIntoMessage(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin, DedicatedServersNoServersAvailable))
+	case internal.CodeDedicatedServersNotReady:
+		return errors.New(DedicatedServersServerNotReadyMessage)
+	case internal.CodeDedicatedServersNoNordlynx:
+		return errors.New(DedicatedServersAutoconnectNordlynxMessage)
 	case internal.CodeSuccess:
 		color.Green(fmt.Sprintf(MsgSetSuccess, "Auto-connect", nstrings.GetBoolLabel(flag)))
 	}
