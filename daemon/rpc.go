@@ -124,7 +124,7 @@ func NewRPC(
 		dataUpdateEvents:   dataUpdateEvents,
 		initialLoginType:   NewAtomicLoginType(),
 	}
-	reconnectScheduler := NewReconnectScheduler(r.connectFromLastSelection, connectionInfo)
+	reconnectScheduler := NewReconnectScheduler(r.connectFromLastSelection, connectionInfo, statePublisher)
 	r.pauseManager = reconnectScheduler
 	return r
 }
