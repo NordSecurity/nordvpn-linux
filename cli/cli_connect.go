@@ -92,10 +92,15 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 	}(ch)
 
 	connectCtx := context.Background()
-	if iv := uievent.ItemValueFromServerGroupString(serverGroup); iv != pb.UIEvent_ITEM_VALUE_UNSPECIFIED {
-		uiCtx := uievent.NewClickContext(pb.UIEvent_CLI, pb.UIEvent_CONNECT)
-		uiCtx.ItemValue = iv
-		connectCtx = uievent.AttachToOutgoingContext(connectCtx, uiCtx)
+	// server group can be specified explicitly via cli param `--group`
+	// or without it as server tag then we try to detect if it's group
+	for _, groupSearchStr := range []string{serverGroup, serverTag} {
+		if iv := uievent.ItemValueFromServerGroupString(groupSearchStr); iv != pb.UIEvent_ITEM_VALUE_UNSPECIFIED {
+			uiCtx := uievent.NewClickContext(pb.UIEvent_CLI, pb.UIEvent_CONNECT)
+			uiCtx.ItemValue = iv
+			connectCtx = uievent.AttachToOutgoingContext(connectCtx, uiCtx)
+			break
+		}
 	}
 
 	resp, err := c.client.Connect(connectCtx, &pb.ConnectRequest{
