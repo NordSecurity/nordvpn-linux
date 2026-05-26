@@ -326,6 +326,26 @@ func NewAccountUpdateEvents() *AccountUpdateEvents {
 	}
 }
 
+// Pause events
+
+type PauseEventsPublisher interface {
+	NotifyPauseEvent(*pb.PauseEvent) error
+}
+
+type PauseEvents struct {
+	PauseNotifications events.PublishSubcriber[*pb.PauseEvent]
+}
+
+func (p *PauseEvents) Subscribe(to PauseEventsPublisher) {
+	p.PauseNotifications.Subscribe(to.NotifyPauseEvent)
+}
+
+func NewPauseEvents() *PauseEvents {
+	return &PauseEvents{
+		PauseNotifications: &subs.Subject[*pb.PauseEvent]{},
+	}
+}
+
 // TODO: remove/replace with the mock
 type MockPublisherSubscriber[T any] struct {
 	Handler        events.Handler[T]

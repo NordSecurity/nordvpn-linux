@@ -92,6 +92,7 @@ func NewRPC(
 	consentChecker ConsentChecker,
 	recentVPNConnStore *recents.RecentConnectionsStore,
 	dataUpdateEvents *daemonevents.DataUpdateEvents,
+	pauseEvents *daemonevents.PauseEvents,
 ) *RPC {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	r := &RPC{
@@ -124,7 +125,7 @@ func NewRPC(
 		dataUpdateEvents:   dataUpdateEvents,
 		initialLoginType:   NewAtomicLoginType(),
 	}
-	reconnectScheduler := NewReconnectScheduler(r.connectFromLastSelection, connectionInfo)
+	reconnectScheduler := NewReconnectScheduler(r.connectFromLastSelection, connectionInfo, pauseEvents)
 	r.pauseManager = reconnectScheduler
 	return r
 }

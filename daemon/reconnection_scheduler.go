@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -26,12 +27,14 @@ type ReconnectSchedulerImpl struct {
 	reconnectionScheduledChan <-chan any
 	connectFunc               connectFunc
 	connectionInfo            *state.ConnectionInfo
+	pauseEvents               *daemonevents.PauseEvents
 }
 
-func NewReconnectScheduler(connectFunc connectFunc, connectionInfo *state.ConnectionInfo) ReconnectScheduler {
+func NewReconnectScheduler(connectFunc connectFunc, connectionInfo *state.ConnectionInfo, pauseEvents *daemonevents.PauseEvents) ReconnectScheduler {
 	return &ReconnectSchedulerImpl{
 		connectFunc:    connectFunc,
 		connectionInfo: connectionInfo,
+		pauseEvents:    pauseEvents,
 	}
 }
 
@@ -63,6 +66,7 @@ func (s *ReconnectSchedulerImpl) ScheduleReconnection(duration time.Duration) {
 			if err != nil || connServer.err != nil {
 				log.Println(internal.ErrorPrefix,
 					"failed to reconnect after a pause: connection error:", err, "server error:", connServer.err)
+				s.pauseEvents.PauseNotifications.Publish(&pb.PauseEvent{Type: pb.PauseEventType_RECONNECT_FAILED})
 			}
 		case <-ctx.Done():
 			return

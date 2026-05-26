@@ -40,6 +40,10 @@ abstract class RecentConnectionsListObserver {
   void onRecentConnectionsListChanged(List<RecentConnection> recentConnections);
 }
 
+abstract class PauseEventsObserver {
+  void onPauseEvent(PauseEventType type);
+}
+
 // This will observe the daemon changes and notify the observers
 // At the moment this will pull for status, in future the daemon will notify it instead
 class AppStateChange {
@@ -53,6 +57,7 @@ class AppStateChange {
   final Set<VpnSettingsObserver> _settingsObservers = {};
   final Set<ServersListObserver> _serversListObservers = {};
   final Set<RecentConnectionsListObserver> _recentConnectionsListObservers = {};
+  final Set<PauseEventsObserver> _pauseEventsObservers = {};
 
   AppStateChange(
     AppStateRepository repository,
@@ -93,6 +98,14 @@ class AppStateChange {
 
   void removeVpnStatusObserver(VpnStatusObserver observer) {
     _vpnObservers.remove(observer);
+  }
+
+  void addPauseEventsObserver(PauseEventsObserver observer) {
+    _pauseEventsObservers.add(observer);
+  }
+
+  void removePauseEventsObserver(PauseEventsObserver observer) {
+    _pauseEventsObservers.remove(observer);
   }
 
   void addSettingsObserver(VpnSettingsObserver observer) {
@@ -136,6 +149,8 @@ class AppStateChange {
           _notifyAccountChanged(value.loginEvent);
         } else if (value.hasAccountModification()) {
           _notifyAccountModified(value.accountModification);
+        } else if (value.hasPauseEvent()) {
+          _notifyPauseEvent(value.pauseEvent);
         } else if (value.hasUpdateEvent()) {
           switch (value.updateEvent) {
             case UpdateEvent.SERVERS_LIST_UPDATE:
@@ -213,6 +228,16 @@ class AppStateChange {
 
     for (final observer in _vpnObservers) {
       observer.onVpnStatusChanged(state);
+    }
+  }
+
+  void _notifyPauseEvent(PauseEvent event) {
+    if (_pauseEventsObservers.isEmpty) {
+      return;
+    }
+
+    for (final observer in _pauseEventsObservers) {
+      observer.onPauseEvent(event.type);
     }
   }
 
