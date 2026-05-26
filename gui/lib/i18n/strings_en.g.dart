@@ -462,9 +462,6 @@ class TranslationsCitiesEn {
 	/// en: 'Phoenix'
 	String get phoenix => 'Phoenix';
 
-	/// en: 'Pittsburgh'
-	String get pittsburgh => 'Pittsburgh';
-
 	/// en: 'Saint Louis'
 	String get saint_louis => 'Saint Louis';
 
@@ -566,132 +563,6 @@ class TranslationsCitiesEn {
 
 	/// en: 'Lewiston'
 	String get lewiston => 'Lewiston';
-
-	/// en: 'New Orleans'
-	String get new_orleans => 'New Orleans';
-
-	/// en: 'Oklahoma City'
-	String get oklahoma_city => 'Oklahoma City';
-
-	/// en: 'Portland'
-	String get portland => 'Portland';
-
-	/// en: 'Des Moines'
-	String get des_moines => 'Des Moines';
-
-	/// en: 'Honolulu'
-	String get honolulu => 'Honolulu';
-
-	/// en: 'Huntington'
-	String get huntington => 'Huntington';
-
-	/// en: 'Bordeaux'
-	String get bordeaux => 'Bordeaux';
-
-	/// en: 'Burlington'
-	String get burlington => 'Burlington';
-
-	/// en: 'Charleston'
-	String get charleston => 'Charleston';
-
-	/// en: 'Cheyenne'
-	String get cheyenne => 'Cheyenne';
-
-	/// en: 'Fargo'
-	String get fargo => 'Fargo';
-
-	/// en: 'Providence'
-	String get providence => 'Providence';
-
-	/// en: 'Columbus'
-	String get columbus => 'Columbus';
-
-	/// en: 'Trenton'
-	String get trenton => 'Trenton';
-
-	/// en: 'Jackson'
-	String get jackson => 'Jackson';
-
-	/// en: 'New Haven'
-	String get new_haven => 'New Haven';
-
-	/// en: 'Sioux Falls'
-	String get sioux_falls => 'Sioux Falls';
-
-	/// en: 'Wichita'
-	String get wichita => 'Wichita';
-
-	/// en: 'Nashua'
-	String get nashua => 'Nashua';
-
-	/// en: 'Las Vegas'
-	String get las_vegas => 'Las Vegas';
-
-	/// en: 'Little Rock'
-	String get little_rock => 'Little Rock';
-
-	/// en: 'Louisville'
-	String get louisville => 'Louisville';
-
-	/// en: 'Milwaukee'
-	String get milwaukee => 'Milwaukee';
-
-	/// en: 'Minneapolis'
-	String get minneapolis => 'Minneapolis';
-
-	/// en: 'Montgomery'
-	String get montgomery => 'Montgomery';
-
-	/// en: 'Indianapolis'
-	String get indianapolis => 'Indianapolis';
-
-	/// en: 'Boise'
-	String get boise => 'Boise';
-
-	/// en: 'Baltimore'
-	String get baltimore => 'Baltimore';
-
-	/// en: 'Billings'
-	String get billings => 'Billings';
-
-	/// en: 'Albuquerque'
-	String get albuquerque => 'Albuquerque';
-
-	/// en: 'Anchorage'
-	String get anchorage => 'Anchorage';
-
-	/// en: 'Wilmington'
-	String get wilmington => 'Wilmington';
-
-	/// en: 'Fujairah'
-	String get fujairah => 'Fujairah';
-
-	/// en: 'Bridgetown'
-	String get bridgetown => 'Bridgetown';
-
-	/// en: 'Sarajevo'
-	String get sarajevo => 'Sarajevo';
-
-	/// en: 'NDjamena'
-	String get ndjamena => 'NDjamena';
-
-	/// en: 'Yamoussoukro'
-	String get yamoussoukro => 'Yamoussoukro';
-
-	/// en: 'Suva'
-	String get suva => 'Suva';
-
-	/// en: 'Paramaribo'
-	String get paramaribo => 'Paramaribo';
-
-	/// en: 'Dodoma'
-	String get dodoma => 'Dodoma';
-
-	/// en: 'Sanaa'
-	String get sanaa => 'Sanaa';
-
-	/// en: 'Lome'
-	String get lome => 'Lome';
 }
 
 // Path: countries
@@ -1065,6 +936,12 @@ class TranslationsDaemonEn {
 
 	// Translations
 
+	/// en: 'Reconnect to VPN to apply changes'
+	String get code_2002_title => 'Reconnect to VPN to apply changes';
+
+	/// en: 'You're connected to the VPN. Please reconnect to apply the setting.'
+	String get code_2002_msg => 'You\'re connected to the VPN. Please reconnect to apply the setting.';
+
 	/// en: 'Unauthorized'
 	String get code_3001_title => 'Unauthorized';
 
@@ -1269,12 +1146,6 @@ class TranslationsDaemonEn {
 	/// en: 'Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.'
 	String get code_3051_msg => 'Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.';
 
-	/// en: 'Server access not allowed'
-	String get code_3057_title => 'Server access not allowed';
-
-	/// en: 'To connect to the selected server, turn on virtual location access using the app’s command-line interface.'
-	String get code_3057_msg => 'To connect to the selected server, turn on virtual location access using the app’s command-line interface.';
-
 	/// en: 'Restart daemon to apply setting'
 	String get code_5007_title => 'Restart daemon to apply setting';
 
@@ -1376,6 +1247,9 @@ class TranslationsUiEn {
 
 	/// en: 'Connected'
 	String get connected => 'Connected';
+
+	/// en: 'Not connected'
+	String get notConnected => 'Not connected';
 
 	/// en: 'Connect now or pick a country'
 	String get connectOrPickCountry => 'Connect now or pick a country';
@@ -1488,8 +1362,8 @@ class TranslationsUiEn {
 	/// en: 'Auto - renewal terms'
 	String get autoRenewalTerms => 'Auto - renewal terms';
 
-	/// en: 'Subscription'
-	String get subscription => 'Subscription';
+	/// en: 'Subscription info'
+	String get subscriptionInfo => 'Subscription info';
 
 	/// en: 'Log out'
 	String get logout => 'Log out';
@@ -1602,9 +1476,6 @@ class TranslationsUiEn {
 	/// en: 'Obfuscated'
 	String get obfuscated => 'Obfuscated';
 
-	/// en: 'Obfuscated Servers'
-	String get obfuscatedServers => 'Obfuscated Servers';
-
 	/// en: 'Pick a location for your IP'
 	String get selectServerForDip => 'Pick a location for your IP';
 
@@ -1677,11 +1548,8 @@ class TranslationsUiEn {
 	/// en: 'Automatically connect to the fastest available server or your chosen server location when the app starts.'
 	String get autoConnectDescription => 'Automatically connect to the fastest available server or your chosen server location when the app starts.';
 
-	/// en: 'Fastest server'
-	String get fastestServer => 'Fastest server';
-
 	/// en: 'Fastest'
-	String get fastest => 'Fastest';
+	String get fastestServer => 'Fastest';
 
 	/// en: 'Change'
 	String get change => 'Change';
@@ -1724,6 +1592,9 @@ class TranslationsUiEn {
 
 	/// en: 'Reset and disconnect'
 	String get resetAndDisconnect => 'Reset and disconnect';
+
+	/// en: 'Add ports, port ranges, and subnets that don’t require the VPN.'
+	String get allowListDescription => 'Add ports, port ranges, and subnets that don’t require the VPN.';
 
 	/// en: 'LAN discovery'
 	String get lanDiscovery => 'LAN discovery';
@@ -1797,8 +1668,8 @@ class TranslationsUiEn {
 	/// en: 'Turn off'
 	String get turnOff => 'Turn off';
 
-	/// en: 'Active until ${expirationDate: String}'
-	String subscriptionValidationDate({required String expirationDate}) => 'Active until ${expirationDate}';
+	/// en: 'Subscription active until ${expirationDate: String}'
+	String subscriptionValidationDate({required String expirationDate}) => 'Subscription active until ${expirationDate}';
 
 	/// en: 'Log in'
 	String get logIn => 'Log in';
@@ -1854,6 +1725,9 @@ class TranslationsUiEn {
 	/// en: 'Turn off Kill Switch'
 	String get turnOffKillSwitch => 'Turn off Kill Switch';
 
+	/// en: 'Connect now'
+	String get connectNow => 'Connect now';
+
 	/// en: 'Setting auto-connect to [$target]...'
 	String settingAutoconnectTo({required Object target}) => 'Setting auto-connect to [${target}]...';
 
@@ -1899,11 +1773,8 @@ class TranslationsUiEn {
 	/// en: 'Use allowlist'
 	String get useAllowList => 'Use allowlist';
 
-	/// en: 'Exclude ports, port ranges, or subnets from VPN protection.'
-	String get useAllowListSettingDescription => 'Exclude ports, port ranges, or subnets from VPN protection.';
-
-	/// en: 'Specify ports, port ranges, or subnets to exclude from VPN protection. Allowlisted ports may accept incoming connections from any external source outside your network.'
-	String get useAllowListScreenDescription => 'Specify ports, port ranges, or subnets to exclude from VPN protection. Allowlisted ports may accept incoming connections from any external source outside your network.';
+	/// en: 'Specify ports, port ranges, or subnets to exclude from VPN protection.'
+	String get useAllowListDescription => 'Specify ports, port ranges, or subnets to exclude from VPN protection.';
 
 	/// en: 'Turn off allowlist?'
 	String get turnOffAllowList => 'Turn off allowlist?';
@@ -1973,21 +1844,6 @@ class TranslationsUiEn {
 
 	/// en: 'Enabling LAN discovery will remove any private subnets from allowlist. Continue?'
 	String get removePrivateSubnetsDescription => 'Enabling LAN discovery will remove any private subnets from allowlist. Continue?';
-
-	/// en: 'Remove overlapping subnets?'
-	String get removeOverlappingSubnets => 'Remove overlapping subnets?';
-
-	/// en: 'The range you are trying to add includes previously allowed subnets. To prevent conflicts, we’ll delete the redundant ones.'
-	String get removeOverlappingSubnetsDescription => 'The range you are trying to add includes previously allowed subnets. To prevent conflicts, we’ll delete the redundant ones.';
-
-	/// en: 'Remove'
-	String get removeWord => 'Remove';
-
-	/// en: 'Adding this range may be unsafe'
-	String get addingTooWideSubnet => 'Adding this range may be unsafe';
-
-	/// en: 'The subnet range you entered is too large and may allow unprotected traffic to enter or leave your device.'
-	String get addingTooWideSubnetDescription => 'The subnet range you entered is too large and may allow unprotected traffic to enter or leave your device.';
 
 	/// en: 'Private subnet can't be added'
 	String get privateSubnetCantBeAdded => 'Private subnet can\'t be added';
@@ -2097,86 +1953,8 @@ class TranslationsUiEn {
 	/// en: 'Using third-party DNS may limit website availability. For the best browsing experience, use our default settings.'
 	String get customDnsWarning => 'Using third-party DNS may limit website availability. For the best browsing experience, use our default settings.';
 
-	/// en: 'Account created: ${creation_date: String}'
-	String accountCreatedOn({required String creation_date}) => 'Account created: ${creation_date}';
-
-	/// en: 'Manage subscription'
-	String get manageSubscription => 'Manage subscription';
-
-	/// en: 'Change password'
-	String get changePassword => 'Change password';
-
-	/// en: 'Product Hub'
-	String get productHub => 'Product Hub';
-
-	/// en: 'Inactive'
-	String get subscriptionInactive => 'Inactive';
-
 	/// en: 'Recent connections'
 	String get recentConnections => 'Recent connections';
-
-	/// en: 'Standard VPN Servers'
-	String get standardVpnServer => 'Standard VPN Servers';
-
-	/// en: 'Reconnect now'
-	String get reconnectNow => 'Reconnect now';
-
-	/// en: 'Reconnect to change protocol'
-	String get reconnectToChangeProtocol => 'Reconnect to change protocol';
-
-	/// en: 'To apply this change, we'll reconnect you to the VPN.'
-	String get reconnectToChangeProtocolDescription => 'To apply this change, we\'ll reconnect you to the VPN.';
-
-	/// en: 'Reconnect to apply changes'
-	String get reconnectToApplyChanges => 'Reconnect to apply changes';
-
-	/// en: 'Your new settings will take effect after you reconnect to the VPN.'
-	String get reconnectToApplyChangesDescription => 'Your new settings will take effect after you reconnect to the VPN.';
-
-	/// en: 'Got it'
-	String get gotIt => 'Got it';
-
-	/// en: 'Pause for 5 minutes'
-	String get pauseFor5Min => 'Pause for 5 minutes';
-
-	/// en: 'Pause for 15 minutes'
-	String get pauseFor15Min => 'Pause for 15 minutes';
-
-	/// en: 'Pause for 30 minutes'
-	String get pauseFor30Min => 'Pause for 30 minutes';
-
-	/// en: 'Pause for 1 hour'
-	String get pauseFor1Hour => 'Pause for 1 hour';
-
-	/// en: 'Pause for 24 hours'
-	String get pauseFor24Hours => 'Pause for 24 hours';
-
-	/// en: 'Secured'
-	String get secured => 'Secured';
-
-	/// en: 'Not secured'
-	String get notSecured => 'Not secured';
-
-	/// en: 'Secure my connection'
-	String get secureMyConnection => 'Secure my connection';
-
-	/// en: 'VPN connection resumes in $minutes:$seconds'
-	String VPNResumesIn({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes}:${seconds}';
-
-	/// en: 'VPN connection resumes in $hours:$minutes:$seconds'
-	String VPNResumesInWithHours({required Object hours, required Object minutes, required Object seconds}) => 'VPN connection resumes in ${hours}:${minutes}:${seconds}';
-
-	/// en: 'Reconnect'
-	String get reconnect => 'Reconnect';
-
-	/// en: 'Change VPN settings'
-	String get changeVPNsettings => 'Change VPN settings';
-
-	/// en: 'Get help'
-	String get getHelp => 'Get help';
-
-	/// en: 'Pause connection'
-	String get pauseConnection => 'Pause connection';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -2323,7 +2101,6 @@ extension on Translations {
 			'cities.miami' => 'Miami',
 			'cities.new_york' => 'New York',
 			'cities.phoenix' => 'Phoenix',
-			'cities.pittsburgh' => 'Pittsburgh',
 			'cities.saint_louis' => 'Saint Louis',
 			'cities.salt_lake_city' => 'Salt Lake City',
 			'cities.san_francisco' => 'San Francisco',
@@ -2358,48 +2135,6 @@ extension on Translations {
 			'cities.port_louis' => 'Port Louis',
 			'cities.dushanbe' => 'Dushanbe',
 			'cities.lewiston' => 'Lewiston',
-			'cities.new_orleans' => 'New Orleans',
-			'cities.oklahoma_city' => 'Oklahoma City',
-			'cities.portland' => 'Portland',
-			'cities.des_moines' => 'Des Moines',
-			'cities.honolulu' => 'Honolulu',
-			'cities.huntington' => 'Huntington',
-			'cities.bordeaux' => 'Bordeaux',
-			'cities.burlington' => 'Burlington',
-			'cities.charleston' => 'Charleston',
-			'cities.cheyenne' => 'Cheyenne',
-			'cities.fargo' => 'Fargo',
-			'cities.providence' => 'Providence',
-			'cities.columbus' => 'Columbus',
-			'cities.trenton' => 'Trenton',
-			'cities.jackson' => 'Jackson',
-			'cities.new_haven' => 'New Haven',
-			'cities.sioux_falls' => 'Sioux Falls',
-			'cities.wichita' => 'Wichita',
-			'cities.nashua' => 'Nashua',
-			'cities.las_vegas' => 'Las Vegas',
-			'cities.little_rock' => 'Little Rock',
-			'cities.louisville' => 'Louisville',
-			'cities.milwaukee' => 'Milwaukee',
-			'cities.minneapolis' => 'Minneapolis',
-			'cities.montgomery' => 'Montgomery',
-			'cities.indianapolis' => 'Indianapolis',
-			'cities.boise' => 'Boise',
-			'cities.baltimore' => 'Baltimore',
-			'cities.billings' => 'Billings',
-			'cities.albuquerque' => 'Albuquerque',
-			'cities.anchorage' => 'Anchorage',
-			'cities.wilmington' => 'Wilmington',
-			'cities.fujairah' => 'Fujairah',
-			'cities.bridgetown' => 'Bridgetown',
-			'cities.sarajevo' => 'Sarajevo',
-			'cities.ndjamena' => 'NDjamena',
-			'cities.yamoussoukro' => 'Yamoussoukro',
-			'cities.suva' => 'Suva',
-			'cities.paramaribo' => 'Paramaribo',
-			'cities.dodoma' => 'Dodoma',
-			'cities.sanaa' => 'Sanaa',
-			'cities.lome' => 'Lome',
 			'countries.AL' => 'Albania',
 			'countries.DZ' => 'Algeria',
 			'countries.AD' => 'Andorra',
@@ -2518,6 +2253,8 @@ extension on Translations {
 			'countries.UZ' => 'Uzbekistan',
 			'countries.VE' => 'Venezuela',
 			'countries.VN' => 'Vietnam',
+			'daemon.code_2002_title' => 'Reconnect to VPN to apply changes',
+			'daemon.code_2002_msg' => 'You\'re connected to the VPN. Please reconnect to apply the setting.',
 			'daemon.code_3001_title' => 'Unauthorized',
 			'daemon.code_3001_msg' => 'We couldn\'t log you in. Make sure your credentials are correct. If you have turned on MFA, log in using the \'nordvpn login\' command.',
 			'daemon.code_3003_title' => 'Format error',
@@ -2586,8 +2323,6 @@ extension on Translations {
 			'daemon.code_3049_msg' => 'This setting is not compatible with post-quantum encryption. To use it, turn off post-quantum encryption first.',
 			'daemon.code_3051_title' => 'Disabled technology',
 			'daemon.code_3051_msg' => 'Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.',
-			'daemon.code_3057_title' => 'Server access not allowed',
-			'daemon.code_3057_msg' => 'To connect to the selected server, turn on virtual location access using the app’s command-line interface.',
 			'daemon.code_5007_title' => 'Restart daemon to apply setting',
 			'daemon.code_5007_msg' => 'Restart the daemon to apply this setting. For example, use the command `sudo systemctl restart nordvpnd` on systemd distributions.',
 			'daemon.code_5008_title' => 'gRPC timeout error',
@@ -2619,6 +2354,7 @@ extension on Translations {
 			'ui.onion_over_vpn' => 'Onion Over VPN',
 			'ui.fatalErrorMessage' => 'Fatal error',
 			'ui.connected' => 'Connected',
+			'ui.notConnected' => 'Not connected',
 			'ui.connectOrPickCountry' => 'Connect now or pick a country',
 			'ui.general' => 'General',
 			'ui.generalSettingsSubtitle' => 'Appearance, notifications and analytics settings',
@@ -2656,7 +2392,7 @@ extension on Translations {
 			'ui.termsOfService' => 'Terms of Service',
 			'ui.privacyPolicy' => 'Privacy Policy',
 			'ui.autoRenewalTerms' => 'Auto - renewal terms',
-			'ui.subscription' => 'Subscription',
+			'ui.subscriptionInfo' => 'Subscription info',
 			'ui.logout' => 'Log out',
 			'ui.accountExpireIn' => ({required num n, required Object date}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Expires in ${n} day on ${date}', other: 'Expires in ${n} days on ${date}', ), 
 			'ui.connectTo' => 'Connect to',
@@ -2693,14 +2429,11 @@ extension on Translations {
 			'ui.asiaPacific' => 'Asia Pacific',
 			'ui.africaTheMiddleEastAndIndia' => 'Africa, the Middle East, and India',
 			'ui.obfuscated' => 'Obfuscated',
-			'ui.obfuscatedServers' => 'Obfuscated Servers',
 			'ui.selectServerForDip' => 'Pick a location for your IP',
 			'ui.selectLocation' => 'Select location',
 			'ui.dipSelectLocationDescription' => 'You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.',
 			'ui.chooseLocationForDip' => 'Choose a location for your dedicated IP',
 			'ui.getDip' => 'Get dedicated IP',
-			_ => null,
-		} ?? switch (path) {
 			'ui.getYourDip' => 'Get your personal IP',
 			'ui.getDipDescription' => 'Get a personal IP address that belongs only to you. Enjoy all the benefits of VPN encryption without dealing with blocklists, identity checks, and selecting images of boats in CAPTCHAs.',
 			'ui.notifications' => 'Notifications',
@@ -2720,8 +2453,7 @@ extension on Translations {
 			'ui.vpnConnection' => 'VPN connection',
 			'ui.vpnConnectionSubtitle' => 'Auto-connect, Kill Switch, protocol',
 			'ui.autoConnectDescription' => 'Automatically connect to the fastest available server or your chosen server location when the app starts.',
-			'ui.fastestServer' => 'Fastest server',
-			'ui.fastest' => 'Fastest',
+			'ui.fastestServer' => 'Fastest',
 			'ui.change' => 'Change',
 			'ui.nordLynx' => 'NordLynx',
 			'ui.openVpnTcp' => 'OpenVPN (TCP)',
@@ -2736,6 +2468,7 @@ extension on Translations {
 			'ui.resetAndDisconnectDesc' => 'This will remove your personalized configurations across the app and disconnect you from the VPN.',
 			'ui.resetSettings' => 'Reset settings',
 			'ui.resetAndDisconnect' => 'Reset and disconnect',
+			'ui.allowListDescription' => 'Add ports, port ranges, and subnets that don’t require the VPN.',
 			'ui.lanDiscovery' => 'LAN discovery',
 			'ui.lanDiscoveryDescription' => 'Make your device visible to other devices on your local network while connected to the VPN. Access printers, TVs, and other LAN devices.',
 			'ui.customDns' => 'Custom DNS',
@@ -2744,6 +2477,8 @@ extension on Translations {
 			'ui.postQuantumVpn' => 'Post-quantum encryption',
 			'ui.postQuantumDescription' => 'Activate next-generation encryption that protects your data from threats posed by quantum computing.',
 			'ui.obfuscationDescription' => 'Avoid detection by traffic sensors in restricted networks while using a VPN. When enabled, only obfuscated servers are available.',
+			_ => null,
+		} ?? switch (path) {
 			'ui.obfuscation' => 'Obfuscation',
 			'ui.add' => 'Add',
 			'ui.customDnsEntries' => ({required Object n}) => 'Custom DNS: ${n}/3',
@@ -2760,7 +2495,7 @@ extension on Translations {
 			'ui.turnOffCustomDns' => 'Turn off custom DNS?',
 			'ui.turnOffCustomDnsDescription' => 'This will remove all your previously added DNS servers.',
 			'ui.turnOff' => 'Turn off',
-			'ui.subscriptionValidationDate' => ({required String expirationDate}) => 'Active until ${expirationDate}',
+			'ui.subscriptionValidationDate' => ({required String expirationDate}) => 'Subscription active until ${expirationDate}',
 			'ui.logIn' => 'Log in',
 			'ui.createAccount' => 'Create account',
 			'ui.whatIsNordAccount' => 'What is a Nord Account?',
@@ -2779,6 +2514,7 @@ extension on Translations {
 			'ui.appVersionCompatibilityRecommendation' => ({required Uri compatibilityUrl}) => 'For more options, check our [compatibility guide](${compatibilityUrl})',
 			'ui.turnOffKillSwitchDescription' => 'Kill Switch is blocking the login. Turn it off for now to continue.',
 			'ui.turnOffKillSwitch' => 'Turn off Kill Switch',
+			'ui.connectNow' => 'Connect now',
 			'ui.settingAutoconnectTo' => ({required Object target}) => 'Setting auto-connect to [${target}]...',
 			'ui.doubleVpnDesc' => 'Encrypt your traffic twice for extra security',
 			'ui.onionOverVpnDesc' => 'Use the Onion network with VPN protection',
@@ -2794,8 +2530,7 @@ extension on Translations {
 			'ui.obfuscationErrorNoServerFound' => 'No results found. To access all available servers, turn off obfuscation.',
 			'ui.goToSettings' => 'Go to Settings',
 			'ui.useAllowList' => 'Use allowlist',
-			'ui.useAllowListSettingDescription' => 'Exclude ports, port ranges, or subnets from VPN protection.',
-			'ui.useAllowListScreenDescription' => 'Specify ports, port ranges, or subnets to exclude from VPN protection. Allowlisted ports may accept incoming connections from any external source outside your network.',
+			'ui.useAllowListDescription' => 'Specify ports, port ranges, or subnets to exclude from VPN protection.',
 			'ui.turnOffAllowList' => 'Turn off allowlist?',
 			'ui.turnOffAllowListDescription' => 'Disabling the allowlist will delete all your previously added ports, port ranges, and subnets.',
 			'ui.port' => 'Port',
@@ -2819,11 +2554,6 @@ extension on Translations {
 			'ui.system' => 'System',
 			'ui.removePrivateSubnets' => 'We\'ll remove private subnets from allowlist',
 			'ui.removePrivateSubnetsDescription' => 'Enabling LAN discovery will remove any private subnets from allowlist. Continue?',
-			'ui.removeOverlappingSubnets' => 'Remove overlapping subnets?',
-			'ui.removeOverlappingSubnetsDescription' => 'The range you are trying to add includes previously allowed subnets. To prevent conflicts, we’ll delete the redundant ones.',
-			'ui.removeWord' => 'Remove',
-			'ui.addingTooWideSubnet' => 'Adding this range may be unsafe',
-			'ui.addingTooWideSubnetDescription' => 'The subnet range you entered is too large and may allow unprotected traffic to enter or leave your device.',
 			'ui.privateSubnetCantBeAdded' => 'Private subnet can\'t be added',
 			'ui.privateSubnetCantBeAddedDescription' => 'Allowlisting a private subnet isn’t available while local network discovery is enabled. To add a private subnet, turn off LAN discovery.',
 			'ui.turnOffLanDiscovery' => 'Turn off LAN discovery',
@@ -2860,33 +2590,7 @@ extension on Translations {
 			'ui.termsAgreementDescription' => 'By continuing to use this app, you agree to our terms and how we handle your data. To read the terms and privacy policy check the links below.',
 			'ui.readMore' => 'Read more',
 			'ui.customDnsWarning' => 'Using third-party DNS may limit website availability. For the best browsing experience, use our default settings.',
-			'ui.accountCreatedOn' => ({required String creation_date}) => 'Account created: ${creation_date}',
-			'ui.manageSubscription' => 'Manage subscription',
-			'ui.changePassword' => 'Change password',
-			'ui.productHub' => 'Product Hub',
-			'ui.subscriptionInactive' => 'Inactive',
 			'ui.recentConnections' => 'Recent connections',
-			'ui.standardVpnServer' => 'Standard VPN Servers',
-			'ui.reconnectNow' => 'Reconnect now',
-			'ui.reconnectToChangeProtocol' => 'Reconnect to change protocol',
-			'ui.reconnectToChangeProtocolDescription' => 'To apply this change, we\'ll reconnect you to the VPN.',
-			'ui.reconnectToApplyChanges' => 'Reconnect to apply changes',
-			'ui.reconnectToApplyChangesDescription' => 'Your new settings will take effect after you reconnect to the VPN.',
-			'ui.gotIt' => 'Got it',
-			'ui.pauseFor5Min' => 'Pause for 5 minutes',
-			'ui.pauseFor15Min' => 'Pause for 15 minutes',
-			'ui.pauseFor30Min' => 'Pause for 30 minutes',
-			'ui.pauseFor1Hour' => 'Pause for 1 hour',
-			'ui.pauseFor24Hours' => 'Pause for 24 hours',
-			'ui.secured' => 'Secured',
-			'ui.notSecured' => 'Not secured',
-			'ui.secureMyConnection' => 'Secure my connection',
-			'ui.VPNResumesIn' => ({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes}:${seconds}',
-			'ui.VPNResumesInWithHours' => ({required Object hours, required Object minutes, required Object seconds}) => 'VPN connection resumes in ${hours}:${minutes}:${seconds}',
-			'ui.reconnect' => 'Reconnect',
-			'ui.changeVPNsettings' => 'Change VPN settings',
-			'ui.getHelp' => 'Get help',
-			'ui.pauseConnection' => 'Pause connection',
 			_ => null,
 		};
 	}

@@ -326,7 +326,7 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	env["ENVIRONMENT"] = string(internal.Development)
 	env["PACKAGE"] = devPackageType
 	// TODO (LVPN-9228) remove usage of ENABLE_GUI_BUILD variable, once the way of building is unified
-	env["ENABLE_GUI_BUILD"] = "1"
+	env["ENABLE_GUI_BUILD"] = "0"
 
 	switch packageType {
 	case packageTypeSnap:
@@ -422,24 +422,21 @@ func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 	env["BUILD_FLAGS"] = buildFlags
 
 	// build core part
-	if err = RunDocker(
+	return RunDocker(
 		ctx,
 		env,
 		imageBuilder,
 		[]string{"ci/compile.sh"},
-		dockerWorkDir,
-	); err != nil {
-		return fmt.Errorf("error while compiling core: %w", err)
-	}
+		dockerWorkDir)
 
 	// build GUI binaries
-	return RunDocker(
-		ctx,
-		env,
-		imageGUIFlutter,
-		[]string{"scripts/build_application.sh", "release"},
-		guiDockerWorkDir,
-	)
+	// return RunDocker(
+	// 	ctx,
+	// 	env,
+	// 	imageGUIFlutter,
+	// 	[]string{"scripts/build_application.sh", "release"},
+	// 	guiDockerWorkDir,
+	// )
 }
 
 // Builds all binaries using Docker builder

@@ -89,6 +89,8 @@ mv "${WORKDIR}"/*."${PKG_TO_BUILD}" "${APP_DIR}/${PKG_TO_BUILD}"
 # remove leftovers
 rm -rf "${BASEDIR}"
 
+echo "Enable GUI BUILD: ${ENABLE_GUI_BUILD}"
+
 # TODO (LVPN-9228) remove usage of ENABLE_GUI_BUILD variable, once the way of building is unified
 # Only build GUI package if GUI build is enabled and the architecture supports Flutter
 if [[ -n "${ENABLE_GUI_BUILD:-}" && -n "${ARCHS_FLUTTER[$ARCH]:-}" ]]; then
