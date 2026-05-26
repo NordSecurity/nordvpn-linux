@@ -119,9 +119,8 @@ type Subscriber struct {
 	initialHeartbeatSent             bool
 	mooseFuncs                       mooseFunctions
 	httpClient                       *http.Client
-	canSendAllEvents                 atomic.Bool
 	mux                              sync.RWMutex
-	isInitialized                    bool
+	isInitialized                    atomic.Bool
 	configChangeHandlers             []configChangeHandler
 }
 
@@ -136,15 +135,14 @@ func NewSubscriber(
 	eventsSubdomain string,
 ) *Subscriber {
 	sub := &Subscriber{
-		eventsDbPath:  eventsDbPath,
-		config:        fs,
-		buildTarget:   buildTarget,
-		domain:        eventsDomain,
-		subdomain:     eventsSubdomain,
-		deviceID:      id,
-		clientAPI:     clientAPI,
-		httpClient:    httpClient,
-		isInitialized: false,
+		eventsDbPath: eventsDbPath,
+		config:       fs,
+		buildTarget:  buildTarget,
+		domain:       eventsDomain,
+		subdomain:    eventsSubdomain,
+		deviceID:     id,
+		clientAPI:    clientAPI,
+		httpClient:   httpClient,
 		mooseFuncs: mooseFunctions{
 			setAppConsentLevel:            moose.MooseNordvpnappSetConsentLevel,
 			setConsentUserPreference:      moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel,
@@ -202,7 +200,6 @@ func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error 
 	if err := setUserConsentLevelIntoContext(s, newState); err != nil {
 		return fmt.Errorf("updating consent level in moose context: %w", err)
 	}
-	s.canSendAllEvents.Store(newState == config.ConsentGranted)
 
 	return nil
 }
@@ -246,16 +243,12 @@ func (s *Subscriber) Disable() error {
 	return s.changeConsentState(config.ConsentDenied)
 }
 
-func (s *Subscriber) isEnabled() bool {
-	return s.canSendAllEvents.Load()
-}
-
 // Init initializes moose libs. It has to be done before usage regardless of the enabled state.
 // Disabled case should be handled by `set_opt_out` value.
 func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	if s.isInitialized {
+	if s.isInitialized.Load() {
 		return nil
 	}
 	log.Println(internal.InfoPrefix, LogComponentPrefix, "initializing")
@@ -294,10 +287,6 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		return fmt.Errorf("starting worker: %w", err)
 	}
 
-	// can we send only essential or all?
-	s.canSendAllEvents.Store(consent == config.ConsentGranted)
-	log.Println(internal.InfoPrefix, LogComponentPrefix, "all events are sent:", s.canSendAllEvents.Load())
-
 	if err := s.response(moose.MooseNordvpnappInit(
 		s.eventsDbPath,
 		internal.IsProdEnv(s.buildTarget.Environment),
@@ -309,13 +298,13 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		}
 	}
 
+	// TODO (LVPN-9654): currently, it should be safe to assume moose got correctly initialized when both worker and the app got started properly
+	// however this mechanism of initialization might need to be revisited in the future
+	s.isInitialized.Store(true)
+
 	if err := s.response(s.mooseFuncs.setAppConsentLevel(toAnalyticsConsentLevel(consent))); err != nil {
 		return fmt.Errorf("setting initial consent level: %w", err)
 	}
-
-	// TODO (LVPN-9654): currently, it should be safe to assume moose got correctly initialized when both worker and the app got started properly
-	// however this mechanism of initialization might need to be revisited in the future
-	s.isInitialized = true
 
 	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
 		log.Println(internal.WarningPrefix, LogComponentPrefix, "failed to flush changes before setting analytics opt in: %w", err)
