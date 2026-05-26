@@ -12,13 +12,15 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 var (
 	// InstallFilePath defines filename of install id file
 	InstallFilePath = filepath.Join(internal.DatFilesPathCommon, "install.dat")
 	// SettingsDataFilePath defines path to app configs file
-	SettingsDataFilePath = filepath.Join(internal.DatFilesPath, "settings.dat")
+	SettingsDataFilePath      = filepath.Join(internal.DatFilesPath, "settings.dat")
+	decryptedConfigFileHeader = []byte{0x2E, 0x44, 0x41, 0x54}
 )
 
 var errNoInstallFile = errors.New("install file doesn't exist")
@@ -120,22 +122,15 @@ func (f *FilesystemConfigManager) SaveWith(fn SaveFunc) error {
 }
 
 func (f *FilesystemConfigManager) save(c Config) error {
-	pass, err := f.getPassphrase()
-	if err != nil {
-		return err
-	}
-
 	data, err := json.Marshal(c)
 	if err != nil {
 		return err
 	}
+	dataWithHeader := make([]byte, 0, len(decryptedConfigFileHeader)+len(data))
+	dataWithHeader = append(dataWithHeader, decryptedConfigFileHeader...)
+	dataWithHeader = append(dataWithHeader, data...)
 
-	encrypted, err := internal.Encrypt(data, pass)
-	if err != nil {
-		return err
-	}
-
-	return f.fsHandle.WriteFile(f.location, encrypted, internal.PermUserRW)
+	return f.fsHandle.WriteFile(f.location, dataWithHeader, internal.PermUserRW)
 }
 
 // Reset config values to defaults.
@@ -181,7 +176,7 @@ func (f *FilesystemConfigManager) Reset(preserveLoginData bool, disableKillswitc
 	return
 }
 
-// Load encrypted config from the filesystem.
+// Load config from the filesystem.
 //
 // Thread-safe.
 func (f *FilesystemConfigManager) Load(c *Config) error {
@@ -190,13 +185,12 @@ func (f *FilesystemConfigManager) Load(c *Config) error {
 	return f.load(c, nil)
 }
 
-// load loads encrypted config from the filesystem into c. If copy is not nil, it
+// load loads config from the filesystem into c. If copy is not nil, it
 // also loads an independent copy into copy. This is used to get the previous config
 // before changes are applied.
 func (f *FilesystemConfigManager) load(c *Config, copy *Config) error {
 	// always init with default settings and override later with the values from the file
 	*c = *newConfig(f.machineIDGetter)
-
 	// TODO(LVPN-9628): revisit how this mechanism works
 	if !f.fsHandle.FileExists(f.location) {
 		f.NewInstallation = true
@@ -206,29 +200,38 @@ func (f *FilesystemConfigManager) load(c *Config, copy *Config) error {
 	// Reset for subsequent calls
 	f.NewInstallation = false
 
-	pass, err := f.getPassphrase()
-	if err != nil {
-		return err
-	}
-
 	// #nosec G304 -- no input comes from the user
 	data, err := f.fsHandle.ReadFile(f.location)
 	if err != nil {
 		return err
 	}
-
-	decryptedJSON, err := internal.Decrypt(data, pass)
-	if err != nil {
-		return err
+	if len(data) <= len(decryptedConfigFileHeader) {
+		return fmt.Errorf("Empty config read, aborting load of config")
+	}
+	var decryptedData []byte
+	// Checking if file header matches the expected decrypted file header
+	if !bytes.Equal(data[:len(decryptedConfigFileHeader)], decryptedConfigFileHeader) {
+		log.Debug("No decrypted header detected, assuming migration from older version")
+		pass, err := f.getPassphrase()
+		if err != nil {
+			return err
+		}
+		decryptedJSON, err := internal.Decrypt(data, pass)
+		if err != nil {
+			return err
+		}
+		decryptedData = decryptedJSON
+	} else {
+		decryptedData = data[4:]
 	}
 
-	if err := json.Unmarshal(decryptedJSON, c); err != nil {
+	if err := json.Unmarshal(decryptedData, c); err != nil {
 		return err
 	}
 
 	if copy != nil {
 		*copy = *newConfig(f.machineIDGetter)
-		if err := json.Unmarshal(decryptedJSON, copy); err != nil {
+		if err := json.Unmarshal(decryptedData, copy); err != nil {
 			return err
 		}
 	}
