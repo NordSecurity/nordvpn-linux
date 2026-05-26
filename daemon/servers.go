@@ -33,9 +33,10 @@ type recommendationUUID string
 const emptyUuid = ""
 
 type serverSelection struct {
-	server             *core.Server
-	recommendationUUID recommendationUUID
-	remote             bool
+	server                *core.Server
+	recommendationUUID    recommendationUUID
+	remote                bool
+	dedicatedServerStatus core.DedicatedServerStatus
 }
 
 type dedicatedServerSelection struct {
@@ -488,7 +489,7 @@ func selectServer(
 	cfg config.Config,
 	tag string,
 	groupFlag string,
-) (serverSelection, core.DedicatedServerStatus, error) {
+) (serverSelection, error) {
 	serversList := r.dm.GetServersData().Servers
 	selection, err := PickServer(
 		r.serversAPI,
@@ -513,20 +514,20 @@ func selectServer(
 		switch {
 		case errors.Is(err, core.ErrUnauthorized):
 			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, r.events.User.Logout, events.ReasonUnauthorized)); err != nil {
-				return serverSelection{}, "", err
+				return serverSelection{}, err
 			}
-			return serverSelection{}, "", internal.ErrNotLoggedIn
+			return serverSelection{}, internal.ErrNotLoggedIn
 		case errors.Is(err, internal.ErrTagDoesNotExist),
 			errors.Is(err, internal.ErrGroupDoesNotExist),
 			errors.Is(err, internal.ErrServerIsUnavailable),
 			errors.Is(err, internal.ErrDoubleGroup),
 			errors.Is(err, internal.ErrVirtualServerSelected):
-			return serverSelection{}, "", err
+			return serverSelection{}, err
 
 		case errors.Is(err, ErrDedicatedIPServer):
 			dedicatedIPServer, err := selectDedicatedIPServer(r.ac, serversList)
 			if err != nil {
-				return serverSelection{}, "", err
+				return serverSelection{}, err
 			}
 			selection.server = dedicatedIPServer
 			// There can be cases where we query the recommended servers and we have a UUID
@@ -537,15 +538,16 @@ func selectServer(
 				r.dedicatedServersAPI,
 				r.dedicatedServerKeyManager)
 			if dsErr != nil {
-				return serverSelection{}, ds.status, dsErr
+				return serverSelection{dedicatedServerStatus: ds.status}, dsErr
 			}
 			return serverSelection{
-				server:             ds.server,
-				recommendationUUID: emptyUuid,
-			}, ds.status, nil
+				server:                ds.server,
+				recommendationUUID:    emptyUuid,
+				dedicatedServerStatus: ds.status,
+			}, nil
 
 		default:
-			return serverSelection{}, "", internal.ErrUnhandled
+			return serverSelection{}, internal.ErrUnhandled
 		}
 	}
 
@@ -556,17 +558,17 @@ func selectServer(
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "getting dedicated IP service data:", err)
 			if errors.Is(err, core.ErrUnauthorized) {
-				return serverSelection{}, "", err
+				return serverSelection{}, err
 			}
-			return serverSelection{}, "", internal.ErrUnhandled
+			return serverSelection{}, internal.ErrUnhandled
 		}
 
 		if len(dedicatedIPServices) == 0 {
-			return serverSelection{}, "", internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
+			return serverSelection{}, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
 		}
 
 		if !isAnyDIPServersAvailable(dedicatedIPServices) {
-			return serverSelection{}, "", internal.NewErrorWithCode(internal.CodeDedicatedIPServiceButNoServers)
+			return serverSelection{}, internal.NewErrorWithCode(internal.CodeDedicatedIPServiceButNoServers)
 		}
 
 		index := slices.IndexFunc(dedicatedIPServices, func(s auth.DedicatedIPService) bool {
@@ -575,17 +577,17 @@ func selectServer(
 		})
 		if index == -1 {
 			log.Println(internal.ErrorPrefix, "server is not in the DIP servers list")
-			return serverSelection{}, "", internal.NewErrorWithCode(internal.CodeDedicatedIPNoServer)
+			return serverSelection{}, internal.NewErrorWithCode(internal.CodeDedicatedIPNoServer)
 		}
 
 		if !core.IsConnectableWithProtocol(cfg.Technology, cfg.AutoConnectData.Protocol)(*selection.server) ||
 			(core.IsObfuscated()(*selection.server) != cfg.AutoConnectData.Obfuscate) {
 			log.Println(internal.ErrorPrefix, "failed to connect because the server doesn't support user settings")
-			return serverSelection{}, "", internal.ErrServerIsUnavailable
+			return serverSelection{}, internal.ErrServerIsUnavailable
 		}
 	}
 
-	return selection, "", nil
+	return selection, nil
 }
 
 func getServerByID(servers core.Servers, serverID int64) (*core.Server, error) {
@@ -635,7 +637,6 @@ func selectDedicatedServer(authChecker auth.Checker,
 	api core.DedicatedServersAPI,
 	keyManager devicekey.DedicatedServersKeyManager,
 ) (dedicatedServerSelection, error) {
-	//ok, err := authChecker.HasDedicatedServerService()
 	service, err := authChecker.GetDedicatedServerService()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "checking dedicated servers service status:", err)

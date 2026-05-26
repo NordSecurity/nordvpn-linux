@@ -1,6 +1,8 @@
 package uievent
 
 import (
+	"strings"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 )
@@ -34,7 +36,7 @@ func ItemValueFromServerGroup(
 func ItemValueFromServerGroupString(
 	group string,
 ) pb.UIEvent_ItemValue {
-	serverGroup, ok := config.GroupMap[group]
+	serverGroup, ok := config.GroupMap[strings.ToLower(group)]
 	if !ok {
 		return pb.UIEvent_ITEM_VALUE_UNSPECIFIED
 	}

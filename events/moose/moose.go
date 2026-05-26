@@ -1254,7 +1254,7 @@ func (s *Subscriber) setDedicatedServerEnabled(enabled bool) error {
 func (s *Subscriber) NotifyDedicatedServerStatus(
 	data events.DataDedicatedServerStatus,
 ) error {
-	enabled := data.Status != "" && data.Status != "new"
+	enabled := data.Status != "" && data.Status != string(core.DedicatedServerStatusNew)
 	if err := s.setDedicatedServerEnabled(enabled); err != nil {
 		return fmt.Errorf("setting dedicated server enabled: %w", err)
 	}
