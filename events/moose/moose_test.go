@@ -6,7 +6,6 @@ import (
 	"math"
 	moose "moose/events"
 	"reflect"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -150,63 +149,60 @@ func TestChangeConsentState(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name                            string
-		currentConsentState             config.AnalyticsConsent
-		currentOptInState               bool
-		newConsentState                 config.AnalyticsConsent
-		consentErrCode                  uint32
-		expectedEssentialAnalyticsState bool
-		shouldFail                      bool
+		name                string
+		currentConsentState config.AnalyticsConsent
+		newConsentState     config.AnalyticsConsent
+		expectedLevel       moose.UserConsent
+		consentErrCode      uint32
+		shouldFail          bool
 	}{
 		{
-			name:                            "undefined to enabled success",
-			currentConsentState:             config.ConsentUndefined,
-			currentOptInState:               false,
-			newConsentState:                 config.ConsentGranted,
-			expectedEssentialAnalyticsState: true,
+			name:                "undefined to enabled success",
+			currentConsentState: config.ConsentUndefined,
+			newConsentState:     config.ConsentGranted,
+			expectedLevel:       moose.UserConsentNonEssential,
 		},
 		{
-			name:                            "undefined to disabled success",
-			currentConsentState:             config.ConsentUndefined,
-			currentOptInState:               false,
-			newConsentState:                 config.ConsentDenied,
-			expectedEssentialAnalyticsState: false,
+			name:                "undefined to disabled success",
+			currentConsentState: config.ConsentUndefined,
+			newConsentState:     config.ConsentDenied,
+			expectedLevel:       moose.UserConsentEssential,
 		},
 		{
-			name:                            "enabled to disabled success",
-			currentConsentState:             config.ConsentGranted,
-			currentOptInState:               true,
-			newConsentState:                 config.ConsentDenied,
-			expectedEssentialAnalyticsState: false,
+			name:                "enabled to disabled success",
+			currentConsentState: config.ConsentGranted,
+			newConsentState:     config.ConsentDenied,
+			expectedLevel:       moose.UserConsentEssential,
 		},
 		{
-			name:                            "disabled to enabled success",
-			currentConsentState:             config.ConsentDenied,
-			currentOptInState:               true,
-			newConsentState:                 config.ConsentGranted,
-			expectedEssentialAnalyticsState: true,
+			name:                "disabled to enabled success",
+			currentConsentState: config.ConsentDenied,
+			newConsentState:     config.ConsentGranted,
+			expectedLevel:       moose.UserConsentNonEssential,
 		},
 		{
-			name:                            "undefined to enabled failure to consent",
-			currentConsentState:             config.ConsentUndefined,
-			currentOptInState:               false,
-			newConsentState:                 config.ConsentGranted,
-			consentErrCode:                  1,
-			expectedEssentialAnalyticsState: false,
+			name:                "undefined to enabled failure to consent",
+			currentConsentState: config.ConsentUndefined,
+			newConsentState:     config.ConsentGranted,
+			expectedLevel:       moose.UserConsentNonEssential,
+			consentErrCode:      1,
 		},
 		{
-			name:                            "undefined to disabled failure to consent",
-			currentConsentState:             config.ConsentUndefined,
-			currentOptInState:               false,
-			newConsentState:                 config.ConsentDenied,
-			consentErrCode:                  1,
-			expectedEssentialAnalyticsState: false,
+			name:                "undefined to disabled failure to consent",
+			currentConsentState: config.ConsentUndefined,
+			newConsentState:     config.ConsentDenied,
+			expectedLevel:       moose.UserConsentEssential,
+			consentErrCode:      1,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			var capturedLevel moose.UserConsent
+			var consentCalls int
 			consentFunc := func(userConsent moose.UserConsent) uint32 {
+				consentCalls++
+				capturedLevel = userConsent
 				if test.consentErrCode != 0 {
 					return test.consentErrCode
 				}
@@ -225,17 +221,18 @@ func TestChangeConsentState(t *testing.T) {
 					setAppConsentLevel:       consentFunc,
 					setConsentUserPreference: setConsentToCtx,
 				},
-				canSendAllEvents: atomic.Bool{},
 			}
 
-			s.canSendAllEvents.Store(test.currentOptInState)
 			err := s.changeConsentState(test.newConsentState)
 
 			if test.consentErrCode != 0 || test.shouldFail {
 				assert.Assert(t, err != nil)
+			} else {
+				assert.NilError(t, err)
 			}
 
-			assert.Equal(t, test.expectedEssentialAnalyticsState, s.canSendAllEvents.Load(), "Unexpected consent state saved.")
+			assert.Equal(t, 1, consentCalls, "setAppConsentLevel should be called exactly once")
+			assert.Equal(t, test.expectedLevel, capturedLevel, "Unexpected consent level passed to setAppConsentLevel.")
 		})
 	}
 }
