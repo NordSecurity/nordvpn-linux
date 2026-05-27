@@ -13,7 +13,6 @@ RestartSec=5
 RuntimeDirectory=nordvpn
 RuntimeDirectoryMode=0750
 Group=nordvpn
-RuntimeDirectoryGroup=nordvpn
 RuntimeDirectoryPreserve=yes
 
 [Install]
