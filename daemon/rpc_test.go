@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/netip"
 	"os"
 	"strconv"
 	"strings"
@@ -103,7 +102,6 @@ func testRPC() *RPC {
 		func(config.Technology) (vpn.VPN, error) {
 			return &mock.WorkingVPN{}, nil
 		},
-		newEndpointResolverMock(netip.MustParseAddr("127.0.0.1")),
 		&testnetworker.Mock{},
 		&subs.Subject[string]{},
 		&mock.DNSGetter{Names: []string{"1.1.1.1"}},

@@ -5,18 +5,45 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"syscall"
 	"time"
 
-	"github.com/go-ping/ping"
+	"golang.org/x/sys/unix"
 )
 
-// LookupAddressWithCustomDNS looks up address in a specified DNS server
-func LookupAddressWithCustomDNS(addr string, dns string, protocol string) ([]netip.Addr, error) {
+const noFwMark uint32 = 0
+
+func lookupAddress(addr string, dns string, protocol string, fwmark uint32) ([]netip.Addr, error) {
 	resolver := net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-			dialer := net.Dialer{Timeout: time.Second * 7}
-			return dialer.DialContext(ctx, protocol, net.JoinHostPort(dns, "53"))
+			var operr error
+			dialer := &net.Dialer{
+				Timeout: time.Second * 7,
+			}
+
+			if fwmark != noFwMark {
+				fwmarkFn := func(fd uintptr) {
+					operr = syscall.SetsockoptInt(
+						int(fd),
+						unix.SOL_SOCKET,
+						unix.SO_MARK,
+						int(fwmark),
+					)
+				}
+				dialer.Control = func(network, address string, conn syscall.RawConn) error {
+					if err := conn.Control(fwmarkFn); err != nil {
+						return err
+					}
+					return operr
+				}
+			}
+			// if the server address doesn't have port number then add port 53
+			hostAndPortAddress := dns
+			if _, _, err := net.SplitHostPort(hostAndPortAddress); err != nil {
+				hostAndPortAddress = net.JoinHostPort(dns, "53")
+			}
+			return dialer.DialContext(ctx, protocol, hostAndPortAddress)
 		},
 	}
 	ipAddrs, err := resolver.LookupIPAddr(context.Background(), addr)
@@ -31,23 +58,4 @@ func LookupAddressWithCustomDNS(addr string, dns string, protocol string) ([]net
 		}
 	}
 	return ips, nil
-}
-
-func Ping(addr string, count int) error {
-	pinger, err := ping.NewPinger(addr)
-	pinger.Timeout = 500 * time.Millisecond
-	pinger.SetPrivileged(true)
-	if err != nil {
-		return fmt.Errorf("unable resolve %s to ping: %w", addr, err)
-	}
-	pinger.Count = count
-	err = pinger.Run()
-	if err != nil {
-		return fmt.Errorf("unable to ping: %w", err)
-	}
-	stats := pinger.Statistics()
-	if stats.PacketsRecv > 0 {
-		return nil
-	}
-	return fmt.Errorf("no ping response received")
 }

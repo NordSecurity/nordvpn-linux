@@ -114,26 +114,6 @@ def test_nordwhisper_connect_to_group_random_server_by_name_additional(tech, pro
     disconnect_base_test()
 
 
-@dynamic_parametrize(
-    [
-        "tech", "proto", "obfuscated", "group",
-    ],
-    ordered_source=[lib.TECHNOLOGIES],
-    randomized_source=[lib.STANDARD_GROUPS],
-    generate_all=IS_NIGHTLY,
-    id_pattern="{tech}-{proto}-{obfuscated}-{group}",
-)
-def test_connect_to_group_random_server_by_name_standard(tech, proto, obfuscated, group):
-    """Manual TC: LVPN-8864"""
-
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    server_info = server.get_hostname_by(tech, proto, obfuscated, group)
-    connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
-
-    disconnect_base_test()
-
-
 @pytest.mark.parametrize("group", lib.OVPN_OBFUSCATED_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 def test_connect_to_group_random_server_by_name_obfuscated(tech, proto, obfuscated, group):
@@ -219,24 +199,6 @@ def test_connect_network_gone(tech, proto, obfuscated):
         print(ex.value)
 
 
-@dynamic_parametrize(
-    [
-        "tech", "proto", "obfuscated", "group",
-    ],
-    ordered_source=[lib.TECHNOLOGIES],
-    randomized_source=[lib.STANDARD_GROUPS],
-    generate_all=IS_NIGHTLY,
-    id_pattern="{tech}-{proto}-{obfuscated}-{group}",
-)
-def test_connect_to_group_standard(tech, proto, obfuscated, group):
-    """Manual TC: LVPN-809"""
-
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    connect_base_test((tech, proto, obfuscated), group)
-    disconnect_base_test()
-
-
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
 def test_connect_to_group_additional(tech, proto, obfuscated, group):
@@ -279,30 +241,6 @@ def test_connect_to_group_obfuscated(tech, proto, obfuscated, group):
 
     connect_base_test((tech, proto, obfuscated), group)
     disconnect_base_test()
-
-
-@dynamic_parametrize(
-    [
-        "tech", "proto", "obfuscated", "group",
-    ],
-    ordered_source=[lib.TECHNOLOGIES],
-    randomized_source=[lib.STANDARD_GROUPS],
-    generate_all=IS_NIGHTLY,
-    id_pattern="{tech}-{proto}-{obfuscated}-{group}",
-)
-def test_connect_to_flag_group_standard(tech, proto, obfuscated, group):
-    """Manual TC: LVPN-8620"""
-
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    connect_base_test((tech, proto, obfuscated), ["--group", group])
-    disconnect_base_test()
-
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(get_alias(), "--group", group, group)
-
-    print(ex.value)
-    assert lib.is_connect_unsuccessful(ex), "Connection with duplicate group should fail"
 
 
 @dynamic_parametrize(

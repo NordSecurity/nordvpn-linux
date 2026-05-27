@@ -373,13 +373,15 @@ const SetAllowlistSubnetRequest$json = {
   '1': 'SetAllowlistSubnetRequest',
   '2': [
     {'1': 'subnet', '3': 1, '4': 1, '5': 9, '10': 'subnet'},
+    {'1': 'force', '3': 2, '4': 1, '5': 8, '10': 'force'},
   ],
 };
 
 /// Descriptor for `SetAllowlistSubnetRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List setAllowlistSubnetRequestDescriptor =
     $convert.base64Decode(
-        'ChlTZXRBbGxvd2xpc3RTdWJuZXRSZXF1ZXN0EhYKBnN1Ym5ldBgBIAEoCVIGc3VibmV0');
+        'ChlTZXRBbGxvd2xpc3RTdWJuZXRSZXF1ZXN0EhYKBnN1Ym5ldBgBIAEoCVIGc3VibmV0EhQKBW'
+        'ZvcmNlGAIgASgIUgVmb3JjZQ==');
 
 @$core.Deprecated('Use setAllowlistPortsRequestDescriptor instead')
 const SetAllowlistPortsRequest$json = {

@@ -14,20 +14,21 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/test/golden"
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )
 
 const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
-	imageBuilder           = registryPrefix + "builder:1.4.3"
+	imageBuilder           = registryPrefix + "builder:1.4.4"
 	imageGUIFlutter        = registryPrefix + "flutter-3.38.1:1.0.2"
 	imagePackager          = registryPrefix + "packager:1.3.4"
 	imageDepender          = registryPrefix + "depender:1.3.3"
 	imageSnapPackager      = registryPrefix + "snaper:1.2.2"
 	imageProtobufGenerator = registryPrefix + "generator:1.4.2"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
-	imageTester            = registryPrefix + "tester:1.6.3"
+	imageTester            = registryPrefix + "tester:1.6.4"
 	imageQAPeer            = registryPrefix + "qa-peer:1.0.4"
 	imageRuster            = registryPrefix + "ruster:1.4.1"
 	imageCodeQL            = registryPrefix + "codeql:1.0.0"
@@ -324,7 +325,7 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
 	env["PACKAGE"] = devPackageType
-	//TODO (LVPN-9228) remove usage of ENABLE_GUI_BUILD variable, once the way of building is unified
+	// TODO (LVPN-9228) remove usage of ENABLE_GUI_BUILD variable, once the way of building is unified
 	env["ENABLE_GUI_BUILD"] = "1"
 
 	switch packageType {
@@ -592,6 +593,9 @@ func (Test) CgoDocker(ctx context.Context) error {
 	}
 	env["WORKDIR"] = dockerWorkDir
 	env["ENVIRONMENT"] = string(internal.Development)
+	if v := os.Getenv(golden.UpdateGoldenFilesEnvVar); v != "" {
+		env[golden.UpdateGoldenFilesEnvVar] = v
+	}
 
 	return RunDockerWithSettings(
 		ctx,

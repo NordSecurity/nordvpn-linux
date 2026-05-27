@@ -234,16 +234,11 @@ func getNetworkInfo() string {
 
 	builder.WriteString("IP rules for ipv4" + ":\n" + string(out) + "\n")
 
-	tableRules := ""
-	for _, table := range []string{"filter", "nat", "mangle", "raw", "security"} {
-		// #nosec G204 -- input is properly sanitized
-		out, err := exec.Command("iptables", "-S", "-t", table, "-w", internal.SecondsToWaitForIptablesLock).CombinedOutput()
-		if err == nil {
-			tableRules += table + ":\n" + string(out) + "\n"
-		}
+	if out, err := exec.Command("nft", "list", "ruleset").CombinedOutput(); err != nil {
+		builder.WriteString("nft failed with: " + err.Error())
+	} else {
+		builder.WriteString("nft:\n" + string(out))
 	}
-	version := "4"
-	builder.WriteString("IP tables for ipv" + version + ":\n" + tableRules)
 
 	return builder.String()
 }

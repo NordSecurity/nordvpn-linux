@@ -4,19 +4,14 @@ import (
 	"slices"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 // addLANPermissions creates a new Allowlist. Subnets map is copied and updated with LANs, Port maps
 // remain unchanged.
 func addLANPermissions(allowlist config.Allowlist) config.Allowlist {
-	localNetworks := []string{
-		"10.0.0.0/8",
-		"172.16.0.0/12",
-		"192.168.0.0/16",
-		"169.254.0.0/16"}
-
 	newSubnets := append([]string{}, allowlist.Subnets...)
-	for _, network := range localNetworks {
+	for _, network := range internal.LocalNetworks {
 		if !slices.Contains(newSubnets, network) {
 			newSubnets = append(newSubnets, network)
 		}

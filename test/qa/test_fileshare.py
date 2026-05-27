@@ -1109,6 +1109,21 @@ def test_permissions_send(peer_name, background):
 
     shutil.rmtree(directory.dir_path)
 
+@pytest.mark.core_meshnet
+def test_permissions_fileshare_deny_receive_no_packets():
+    peer_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_internal_peer().hostname
+
+    expected_transfer_list = sh_no_tty.nordvpn.fileshare.list().stdout.decode("utf-8")
+    file_name = "/tmp/file_allowed"
+    ssh_client.exec_command(f"echo > {file_name}")
+    tester_address = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_this_device().hostname
+    sh.nordvpn.mesh.peer.fileshare.deny(peer_address, _ok_code=[0, 1]).stdout.decode("utf-8")
+    ssh_client.exec_command(f"nordvpn fileshare send --background {tester_address} {file_name}")
+    actual_transfer_list = sh_no_tty.nordvpn.fileshare.list().stdout.decode("utf-8")
+
+    assert expected_transfer_list == actual_transfer_list, "Transfer list is not empty even after disallowing fileshare"
+    sh.nordvpn.mesh.peer.fileshare.allow(peer_address, _ok_code=[0, 1]).stdout.decode("utf-8")
+
 
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
 def test_permissions_meshnet_receive_forbidden(peer_name):
