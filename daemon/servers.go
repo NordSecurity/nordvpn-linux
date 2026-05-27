@@ -637,6 +637,27 @@ func selectDedicatedServer(authChecker auth.Checker,
 	dedicatedServers, err := api.DedicatedServers()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "getting dedicated servers list:", err)
+		if errors.Is(err, core.ErrDedicatedServersSessionMaxLimitReached) {
+			return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersSessionMaxLimitReached)
+		}
+		if errors.Is(err, core.ErrDedicatedServersDeviceNotFound) {
+			return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersCanNotConnect)
+		}
+		if errors.Is(err, core.ErrDedicatedServersDeviceNotRegistered) {
+			return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersCanNotConnect)
+		}
+		if errors.Is(err, core.ErrDedicatedServersPublicKeyMismatch) {
+			return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersCanNotConnect)
+		}
+		if errors.Is(err, core.ErrDedicatedServersServerOffline) {
+			return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersCanNotConnect)
+		}
+		if errors.Is(err, core.ErrDedicatedServersServerNotFound) {
+			return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersCanNotConnect)
+		}
+		if errors.Is(err, core.ErrDedicatedServersInvalidFormData) {
+			return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersCanNotConnect)
+		}
 		return nil, internal.ErrUnhandled
 	}
 
@@ -646,7 +667,13 @@ func selectDedicatedServer(authChecker auth.Checker,
 
 	// Currently there can be only one dedicated server per user.
 	dedicatedServer := dedicatedServers[0]
-	if dedicatedServer.Status != core.DedicatedServerStatusRunning {
+
+	normalizedStatusValue := strings.ToLower(string(dedicatedServer.Status))
+	if normalizedStatusValue == string(core.DedicatedServerStatusStopped) ||
+		normalizedStatusValue == string(core.DedicatedServerStatusStopping) {
+		return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersCanNotConnect)
+	}
+	if normalizedStatusValue != string(core.DedicatedServerStatusRunning) {
 		return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersNotReady)
 	}
 

@@ -27,7 +27,9 @@ type DedicatedServers []DedicatedServer
 type DedicatedServerStatus string
 
 const (
-	DedicatedServerStatusRunning DedicatedServerStatus = "running"
+	DedicatedServerStatusRunning  DedicatedServerStatus = "running"
+	DedicatedServerStatusStopped  DedicatedServerStatus = "stopped"
+	DedicatedServerStatusStopping DedicatedServerStatus = "stopping"
 )
 
 type DedicatedServer struct {
