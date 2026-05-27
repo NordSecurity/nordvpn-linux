@@ -82,6 +82,7 @@ apps:
   nordvpnd:
     command: bin/nordvpnd
     daemon: simple
+    restart-condition: always
     environment:
       PREFIX_COMMON: $SNAP_COMMON
       PREFIX_DATA: $SNAP_DATA
