@@ -130,6 +130,11 @@ func TestConnect_DedicatedServersErrorPaths(t *testing.T) {
 			code:     internal.CodeDedicatedServersNoNordlynx,
 			wantBody: cli.DedicatedServersNoNordlynxMessage,
 		},
+		{
+			name:     "server is stopping or stopped",
+			code:     internal.CodeDedicatedServersCanNotConnect,
+			wantBody: cli.DedicatedServersCanNotConnectMessage,
+		},
 	}
 
 	for _, tc := range tests {
