@@ -14,18 +14,18 @@ import (
 
 // ServicesState is responsible for fetching and storing user's available services.
 type ServicesState struct {
-	cache                    *caching.Cache[core.ServicesResponse]
-	dedicatdServerKeyManager devicekey.DedicatedServersKeyManager
-	expChecker               core.ExpirationChecker
+	cache                     *caching.Cache[core.ServicesResponse]
+	dedicatedServerKeyManager devicekey.DedicatedServersKeyManager
+	expChecker                core.ExpirationChecker
 }
 
 func NewServicesState(credentialsAPI core.CredentialsAPI,
 	dedicatdServerKeyManager devicekey.DedicatedServersKeyManager) *ServicesState {
 	cache := caching.NewCacheWithTTL(time.Hour*5, credentialsAPI.Services)
 	return &ServicesState{
-		cache:                    cache,
-		expChecker:               systemTimeExpirationChecker{},
-		dedicatdServerKeyManager: dedicatdServerKeyManager,
+		cache:                     cache,
+		expChecker:                systemTimeExpirationChecker{},
+		dedicatedServerKeyManager: dedicatdServerKeyManager,
 	}
 }
 
@@ -43,7 +43,7 @@ func (s *ServicesState) NotifyUserServicesChanged(any) error {
 	}
 
 	if hasDedicatedServerService(newServices, s.expChecker) {
-		s.dedicatdServerKeyManager.CheckAndRegisterDedicatedServers()
+		s.dedicatedServerKeyManager.CheckAndRegisterDedicatedServers()
 	}
 
 	return nil

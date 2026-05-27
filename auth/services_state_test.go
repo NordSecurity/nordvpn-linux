@@ -31,9 +31,9 @@ func TestNotifyUserServicesChanged(t *testing.T) {
 	cache.Set(oldServiceResponse)
 
 	servicesState := ServicesState{
-		cache:                    cache,
-		expChecker:               newMockExpirationChecker(),
-		dedicatdServerKeyManager: &testdevicekey.MockDeviceKeyManager{},
+		cache:                     cache,
+		expChecker:                newMockExpirationChecker(),
+		dedicatedServerKeyManager: &testdevicekey.MockDeviceKeyManager{},
 	}
 
 	err := servicesState.NotifyUserServicesChanged(struct{}{})
@@ -61,9 +61,9 @@ func TestNotifyUserServicesChanged_DedicatedServersHandling(t *testing.T) {
 
 	expiredDate := "2027-05-02"
 	servicesState := ServicesState{
-		cache:                    cache,
-		expChecker:               newMockExpirationChecker(expiredDate),
-		dedicatdServerKeyManager: &dedicatedServersKeyManagerMock,
+		cache:                     cache,
+		expChecker:                newMockExpirationChecker(expiredDate),
+		dedicatedServerKeyManager: &dedicatedServersKeyManagerMock,
 	}
 
 	err := servicesState.NotifyUserServicesChanged(struct{}{})

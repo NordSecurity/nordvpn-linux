@@ -221,9 +221,6 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 
 // GetDedicatedServerService returns dedicated server service status and expiration date
 func (r *RenewingChecker) GetDedicatedServerService() (DedicatedServerService, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
 	services, err := r.servicesState.fetchServices()
 	if err != nil {
 		return DedicatedServerService{}, fmt.Errorf("fetching services: %w", err)
