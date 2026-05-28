@@ -69,7 +69,7 @@ class MockRecentConnections {
     recentConnections.add(
       RecentConnectionModel(
         connectionType: ServerSelectionRule.GROUP,
-        group: cfg.ServerGroup.ASIA_PACIFIC,
+        group: cfg.ServerGroup.P2P,
       ),
     );
 

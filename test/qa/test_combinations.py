@@ -148,41 +148,6 @@ def test_status_change_technology_and_protocol(
         "target_tech", "target_proto", "target_obfuscated", "target_group",
         "source_tech", "source_proto", "source_obfuscated", "source_group",
     ],
-    ordered_source=[[(*tech, group) for tech, group in product(lib.STANDARD_TECHNOLOGIES, lib.STANDARD_GROUPS[-2:])]],
-    randomized_source=[[(*tech, group) for tech, group in product(lib.STANDARD_TECHNOLOGIES, lib.STANDARD_GROUPS[-2:])]],
-    generate_all=IS_NIGHTLY,
-    id_pattern="{source_tech}-{source_proto}-{source_obfuscated}-"
-               "{target_tech}-{target_proto}-{target_obfuscated}-"
-               "{source_group}-{target_group}",
-)
-def test_reconnect_to_standard_group(
-    source_tech,
-    target_tech,
-    source_proto,
-    target_proto,
-    source_obfuscated,
-    target_obfuscated,
-    source_group,
-    target_group,
-):
-    """Manual TC: LVPN-8681"""
-
-    lib.set_technology_and_protocol(source_tech, source_proto, source_obfuscated)
-
-    connect_base_test(source_group)
-
-    lib.set_technology_and_protocol(target_tech, target_proto, target_obfuscated)
-
-    connect_base_test(target_group)
-
-    disconnect_base_test()
-
-
-@dynamic_parametrize(
-    [
-        "target_tech", "target_proto", "target_obfuscated", "target_group",
-        "source_tech", "source_proto", "source_obfuscated", "source_group",
-    ],
     ordered_source=[[(*tech, group) for tech, group in product(lib.STANDARD_TECHNOLOGIES, lib.ADDITIONAL_GROUPS[-2:])]],
     randomized_source=[[(*tech, group) for tech, group in product(lib.STANDARD_TECHNOLOGIES, lib.ADDITIONAL_GROUPS[-2:])]],
     generate_all=IS_NIGHTLY,

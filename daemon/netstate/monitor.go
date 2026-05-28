@@ -34,7 +34,7 @@ func NewNetlinkMonitor(ignoreIntfs []string) (*NetlinkMonitor, error) {
 		mtx:              sync.Mutex{},
 	}
 	nlmon.ignored = mapset.NewSet(ignoreIntfs...)
-	nlmon.cached = device.OutsideCapableTrafficIfNames(nlmon.ignored)
+	nlmon.cached = device.DefaultRouteIfNames(nlmon.ignored)
 
 	if err := netlink.LinkSubscribe(nlmon.linkUpdatesChan, nlmon.doneChan); err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func (m *NetlinkMonitor) run(re Reconnector) {
 }
 
 func (m *NetlinkMonitor) checkForChanges(re Reconnector) {
-	interfaces := device.OutsideCapableTrafficIfNames(m.ignored)
+	interfaces := device.DefaultRouteIfNames(m.ignored)
 
 	if m.setCachedInterfaces(interfaces) {
 		re.Reconnect(!interfaces.IsEmpty())

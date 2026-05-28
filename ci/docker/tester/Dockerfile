@@ -11,7 +11,7 @@ RUN apt-get update && \
         # linux app
         apt-utils curl git iputils-ping sudo kmod systemd \
         # preinstall deps required by nordvpn
-        xsltproc iproute2 iptables \
+        xsltproc iproute2 iptables nftables \
         # install wireguard tools for tests
         wireguard-tools \
         # install python for tests
@@ -21,7 +21,9 @@ RUN apt-get update && \
         # changelog parsing
         dpkg-dev \
         # deb package tools
-        devscripts && \
+        devscripts \
+        # conntrack used in tests
+        conntrack && \
     # make sure, that Docker does not hang during installation, when we get TUI screen
     yes yes | DEBIAN_FRONTEND=teletype dpkg-reconfigure wireshark-common && \
     # cleanup

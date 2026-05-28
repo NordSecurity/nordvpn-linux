@@ -15,6 +15,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
+	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/iptables"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -184,13 +186,37 @@ func (r *RPC) StartKillSwitch() {
 	}
 
 	if cfg.KillSwitch {
-		allowlist := cfg.AutoConnectData.Allowlist
-		if err := r.netw.SetKillSwitch(allowlist); err != nil {
+		// Check if iptables rules exist before applying nftables.
+		// If they exist, this is a migration from iptables to nftables.
+		isMigration := iptables.HasNordVPNRules()
+
+		err := r.netw.SetKillSwitch()
+		if isMigration {
+			r.emitMigrationEvent(firewall.NewNftablesApplyEvent(err))
+		}
+		if err != nil {
 			log.Println(internal.ErrorPrefix, "starting killswitch:", err)
 			return
 		}
+
+		if isMigration {
+			err := iptables.CleanUpIptables()
+			r.emitMigrationEvent(firewall.NewIptablesCleanupEvent(err))
+			if err != nil {
+				log.Println(internal.ErrorPrefix, "cleaning iptables", err)
+				return
+			}
+		}
 		return
 	}
+}
+
+// emitMigrationEvent publishes a firewall migration analytics event.
+func (r *RPC) emitMigrationEvent(event *firewall.MigrationEvent) {
+	if r.events == nil || r.events.Debugger == nil {
+		return
+	}
+	r.events.Debugger.DebuggerEvents.Publish(*event.ToDebuggerEvent())
 }
 
 func (r *RPC) StopKillSwitch() error {
@@ -303,6 +329,9 @@ func (r *RPC) StartAutoConnect(timeoutFn network.CalculateRetryDelayForAttempt) 
 		}
 
 		if err := r.doAutoConnect(); err != nil {
+			if errors.Is(err, errAutoConnectDisabled) {
+				return nil
+			}
 			log.Println(internal.ErrorPrefix, "autoconnect failed:", err)
 		} else {
 			return nil
@@ -314,12 +343,20 @@ func (r *RPC) StartAutoConnect(timeoutFn network.CalculateRetryDelayForAttempt) 
 	}
 }
 
+// errAutoConnectDisabled is returned when autoconnect was turned off between retries
+var errAutoConnectDisabled = errors.New("autoconnect disabled")
+
 func (r *RPC) doAutoConnect() error {
 	var cfg config.Config
 	err := r.cm.Load(&cfg)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "auto-connect failed:", err)
 		return err
+	}
+
+	if !cfg.AutoConnect {
+		log.Println(internal.InfoPrefix, "skipping auto-connect: disabled in config")
+		return errAutoConnectDisabled
 	}
 
 	if cfg.Technology == config.Technology_NORDWHISPER && !features.NordWhisperEnabled {

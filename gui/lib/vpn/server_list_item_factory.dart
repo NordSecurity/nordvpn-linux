@@ -53,7 +53,7 @@ final class ServerListItemFactory {
 
     return CustomExpansionTile(
       minTileHeight: serversListThemeData.listItemHeight,
-      childrenPadding: EdgeInsets.only(left: serversListThemeData.flagSize),
+      contentPadding: EdgeInsets.only(left: appTheme.horizontalSpaceVerySmall),
       leading: ServerItemImage(
         image: imagesManager.forCountry(country.country),
         shouldHighlight: (status) =>
@@ -153,6 +153,7 @@ final class ServerListItemFactory {
       key: key,
       enabled: isEnabled,
       minTileHeight: serversListThemeData.listItemHeight,
+      contentPadding: EdgeInsets.only(left: appTheme.horizontalSpaceVerySmall),
       leading: ServerItemImage(
         image: imagesManager.forSpecialtyServer(type),
         shouldHighlight: (status) =>

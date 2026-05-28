@@ -119,34 +119,37 @@ func Fatalf(format string, v ...any) {
 func logAt(l logLevel, prefix string, v []any) {
 	if level.Load() <= uint32(l) {
 		msg := strings.TrimRight(fmt.Sprintln(v...), "\n")
-		output(prefix + " " + msg)
+		output(showCallerAsSource, prefix+" "+msg)
 	}
 }
 
-func output(msg string) {
-	if err := log.Output(showCallerAsSource, msg); err != nil {
+func output(calldepth int, msg string) {
+	if err := log.Output(calldepth, msg); err != nil {
 		fmt.Fprintf(os.Stderr, "log.Output: %v\n", err)
 	}
 }
 
 func logAtf(l logLevel, prefix, format string, v []any) {
 	if level.Load() <= uint32(l) {
-		output(fmt.Sprintf(prefix+" "+format, v...))
+		output(showCallerAsSource, fmt.Sprintf(prefix+" "+format, v...))
 	}
 }
 
+const legacyLogCalldepth = 3
+
 func Print(v ...any) {
-	log.Print(v...)
+	output(legacyLogCalldepth, fmt.Sprint(v...))
 }
 
 func Println(v ...any) {
-	log.Println(v...)
+	output(legacyLogCalldepth, fmt.Sprintln(v...))
 }
 
 func Printf(format string, v ...any) {
-	log.Printf(format, v...)
+	output(legacyLogCalldepth, fmt.Sprintf(format, v...))
 }
 
 func Fatalln(v ...any) {
-	log.Fatalln(v...)
+	output(legacyLogCalldepth, fmt.Sprintln(v...))
+	os.Exit(1)
 }

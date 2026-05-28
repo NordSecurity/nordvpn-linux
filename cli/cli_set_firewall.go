@@ -18,7 +18,7 @@ const (
 	SetFirewallUsageText     = "Enables or disables use of the firewall."
 	SetFirewallMarkUsageText = "Traffic control filter used in " +
 		"policy-based routing. It allows classifying packets " +
-		"based on a previously set fwmark by iptables."
+		"based on a previously set fwmark by the firewall."
 )
 
 func (c *cmd) SetFirewall(ctx *cli.Context) error {
