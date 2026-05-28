@@ -87,8 +87,15 @@ func TestRPCGroups_RegionalGroupsFiltered(t *testing.T) {
 	cm.c.Technology = config.Technology_NORDLYNX
 
 	rpc := RPC{
-		cm: cm,
-		dm: dm,
+		ac:                 &workingLoginChecker{},
+		cm:                 cm,
+		dm:                 dm,
+		norduser:           &testnorduser.MockNorduserCombinedService{},
+		netw:               &networker.Mock{},
+		ncClient:           &mock.NotificationClientMock{},
+		publisher:          &subs.Subject[string]{},
+		api:                &coremock.CredentialsAPIMock{},
+		remoteConfigGetter: mock.NewRemoteConfigMock(),
 	}
 	payload, _ := rpc.Groups(context.Background(), &pb.Empty{})
 
