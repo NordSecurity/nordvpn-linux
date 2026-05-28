@@ -7,6 +7,7 @@ import (
 )
 
 func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
+	log.Debugf("app state received %v\n", item)
 	changed := false
 	switch st := item.GetState().(type) {
 	case *pb.AppState_Error:

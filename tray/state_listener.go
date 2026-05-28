@@ -46,7 +46,7 @@ func (l *stateListener) Stop() {
 	}
 }
 
-func (l *stateListener) consumeStream(server grpc.ServerStreamingClient[pb.AppState]) {
+func (l *stateListener) consumeStream(ctx context.Context, server grpc.ServerStreamingClient[pb.AppState]) {
 	for {
 		state, err := server.Recv()
 		if err != nil {
@@ -57,19 +57,20 @@ func (l *stateListener) consumeStream(server grpc.ServerStreamingClient[pb.AppSt
 		select {
 		case l.queue <- state:
 		case <-time.After(time.Second):
-			log.Printf("%s %s App state consumer's queue is full, dropping\n", logTag, internal.WarningPrefix)
+			log.Warnf(logTag, "App state consumer's queue is full, dropping: %v\n", state)
+		case <-ctx.Done():
+			return
 		}
 	}
 }
 
-func (c *stateListener) handleAppState(ctx context.Context) {
+func (l *stateListener) handleAppState(ctx context.Context) {
 	for {
 		select {
-		case item := <-c.queue:
-			c.onDataFunc(item)
+		case item := <-l.queue:
+			l.onDataFunc(item)
 
 		case <-ctx.Done():
-			defer close(c.queue)
 			return
 		}
 	}
@@ -95,9 +96,11 @@ func (l *stateListener) listen(ctx context.Context) {
 	for {
 		if err := RetryWithBackoff(ctx, backoffConfig, op); err != nil {
 			log.Printf("%s %s listen to daemon's state stream: %s\n", logTag, internal.InfoPrefix, err)
-			return
+			break
 		}
 
-		l.consumeStream(server)
+		l.consumeStream(ctx, server)
 	}
+
+	close(l.queue)
 }
