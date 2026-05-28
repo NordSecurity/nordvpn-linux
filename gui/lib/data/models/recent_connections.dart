@@ -55,6 +55,7 @@ class RecentConnection {
     cfg.ServerGroup.P2P: t.ui.p2p,
     cfg.ServerGroup.OBFUSCATED: t.ui.obfuscatedServers,
     cfg.ServerGroup.DEDICATED_IP: t.ui.dedicatedIp,
+    cfg.ServerGroup.DEDICATED_SERVER: t.ui.dedicatedServer,
   };
 
   String get specialtyServer => _groupTitles[group] ?? "";
