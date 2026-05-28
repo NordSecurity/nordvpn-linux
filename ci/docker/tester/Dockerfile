@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
@@ -12,6 +12,8 @@ RUN apt-get update && \
         apt-utils curl git iputils-ping sudo kmod systemd \
         # preinstall deps required by nordvpn
         xsltproc iproute2 iptables nftables \
+        # systemd-resolved provides resolvectl
+        systemd-resolved \
         # install wireguard tools for tests
         wireguard-tools \
         # install python for tests
@@ -31,13 +33,26 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Python packages for tests
-RUN python3 -m pip install --no-cache-dir -r /tmp/requirements.txt && rm -rf /tmp/*
+RUN python3 -m pip install --break-system-packages --no-cache-dir -r /tmp/requirements.txt && rm -rf /tmp/*
 
 ARG USER_ID=1000
 ARG GROUP_ID=1000
 
-RUN groupadd --system nordvpn && groupadd -g ${GROUP_ID} qa && useradd -l -m -u ${USER_ID} -g qa -G nordvpn qa && echo "qa ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+# Ubuntu 24.04 base image ships with a default "ubuntu" user/group pre-occupying
+# UID/GID 1000, which causes "groupadd: GID '1000' already exists" and
+# "useradd: UID 1000 is not unique" errors. Remove the conflicting user/group
+# first before creating qa with the desired UID/GID.
+RUN groupadd --system nordvpn \
+    && (getent passwd ${USER_ID} | cut -d: -f1 | xargs -r userdel -r || true) \
+    && (getent group ${GROUP_ID} | cut -d: -f1 | xargs -r groupdel || true) \
+    && groupadd -g ${GROUP_ID} qa \
+    && useradd -l -m -u ${USER_ID} -g qa -G nordvpn qa \
+    && echo "qa ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/99-qa \
+    && chmod 0440 /etc/sudoers.d/99-qa \
+    && visudo -cf /etc/sudoers.d/99-qa
+
 RUN usermod -a -G wireshark qa
 
 USER qa
-CMD ["exec", "$@"]
+
+CMD ["/bin/bash"]
