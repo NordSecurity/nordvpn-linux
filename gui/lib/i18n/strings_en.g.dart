@@ -1578,6 +1578,9 @@ class TranslationsUiEn {
 	/// en: 'Dedicated IP'
 	String get dedicatedIp => 'Dedicated IP';
 
+	/// en: 'Dedicated Server'
+	String get dedicatedServer => 'Dedicated Server';
+
 	/// en: 'Double VPN'
 	String get doubleVpn => 'Double VPN';
 
@@ -2673,6 +2676,7 @@ extension on Translations {
 			'ui.citiesAvailable' => ({required Object n}) => '${n} cities available',
 			'ui.virtual' => 'Virtual',
 			'ui.dedicatedIp' => 'Dedicated IP',
+			'ui.dedicatedServer' => 'Dedicated Server',
 			'ui.doubleVpn' => 'Double VPN',
 			'ui.onionOverVpn' => 'Onion over VPN',
 			'ui.p2p' => 'P2P',
