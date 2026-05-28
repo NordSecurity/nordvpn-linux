@@ -30,6 +30,7 @@ final class ServerInfo {
 
 enum ServerType {
   dedicatedIP,
+  dedicatedServer,
   doubleVpn,
   onionOverVpn,
   p2p,
@@ -52,6 +53,8 @@ extension Daemon on ServerType {
         return doubleVpn;
       case ServerType.dedicatedIP:
         return dedicatedIp;
+      case ServerType.dedicatedServer:
+        return dedicatedServer;
       case ServerType.onionOverVpn:
         return onionOverVpn;
       case ServerType.p2p:
@@ -81,6 +84,8 @@ extension Daemon on ServerType {
         return config.ServerGroup.DOUBLE_VPN;
       case ServerType.dedicatedIP:
         return config.ServerGroup.DEDICATED_IP;
+      case ServerType.dedicatedServer:
+        return config.ServerGroup.DEDICATED_SERVER;
       case ServerType.onionOverVpn:
         return config.ServerGroup.ONION_OVER_VPN;
       case ServerType.p2p:
@@ -112,6 +117,7 @@ const Map<config.ServerGroup, ServerType> _groupTitles = {
   config.ServerGroup.P2P: ServerType.p2p,
   config.ServerGroup.OBFUSCATED: ServerType.obfuscated,
   config.ServerGroup.DEDICATED_IP: ServerType.dedicatedIP,
+  config.ServerGroup.DEDICATED_SERVER: ServerType.dedicatedServer,
   // [Deprecated] Region
   config.ServerGroup.EUROPE: ServerType.europe,
   // [Deprecated] Region

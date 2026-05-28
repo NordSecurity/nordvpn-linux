@@ -43,6 +43,9 @@ String labelForServerType(ServerType type) {
     case ServerType.dedicatedIP:
       return t.ui.dedicatedIp;
 
+    case ServerType.dedicatedServer:
+      return t.ui.dedicatedServer;
+
     case ServerType.standardVpn:
       return t.ui.standardVpn;
 
