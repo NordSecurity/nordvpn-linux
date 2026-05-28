@@ -108,7 +108,6 @@ func NewRPC(
 		api:                       api,
 		serversAPI:                serversAPI,
 		credentialsAPI:            credentialsAPI,
-		dedicatedServersAPI:       dedicatedServersAPI,
 		cdn:                       cdn,
 		repo:                      repo,
 		authentication:            authentication,

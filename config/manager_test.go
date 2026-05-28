@@ -291,6 +291,7 @@ func TestConfigMigratesFromEncryptedToUnencrypted(t *testing.T) {
 	require.NoError(t, err)
 	err = configManager.SaveWith(func(c Config) Config {
 		c.MachineID = uuid.MustParse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+		c.DeviceUUID = uuid.MustParse("00000000-1234-4321-0000-999999999999")
 		c.LanDiscovery = true
 		return c
 	})
