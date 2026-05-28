@@ -227,8 +227,6 @@ def test_prevent_obfuscate_disable_with_autoconnect_enabled_to_obfuscated_server
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    # # TODO(LVPN-10389): restore Dedicated_Server group once the infrastructure is ready
-    # available_groups = [g for g in str(sh.nordvpn.groups(_tty_out=False)).strip().split() if g != "Dedicated_Server"]
     server_name = server.get_hostname_by(group_name="Obfuscated_Servers").hostname.split(".")[0]
     sh.nordvpn.set.autoconnect.on(server_name)
 
