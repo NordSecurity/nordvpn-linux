@@ -31,7 +31,7 @@ for path in $(ldconfig -p 2>/dev/null | grep 'libsqlite3.so.0' | sed -n 's/.*=>[
 done
 
 if [ -n "$sqlite" ]; then
-    ln -sf "$sqlite" "${LIBS_DIR}/libsqlite3.so"
+    ln -sf "$sqlite" "/usr/lib/nordvpn/libsqlite3.so"
 else
     echo "WARNING: no symlink to libsqlite3.so.0 found in ldconfig cache; nordvpnd may fail to start" >&2
 fi
