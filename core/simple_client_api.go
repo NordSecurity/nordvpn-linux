@@ -12,8 +12,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
-	"github.com/NordSecurity/nordvpn-linux/internal"
-	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/request"
 	"github.com/google/uuid"
 )
@@ -507,7 +505,6 @@ func (api *SimpleClientAPI) DedicatedServers(token string) (DedicatedServers, er
 	}
 	resp, err := api.doRequest(req)
 	if err != nil {
-		log.Println(internal.WarningPrefix, "Executing HTTP GET request for DedicatedServers fail with error: ", err)
 		return DedicatedServers{}, err
 	}
 	defer resp.Body.Close()

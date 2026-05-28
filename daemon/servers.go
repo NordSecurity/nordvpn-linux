@@ -637,25 +637,15 @@ func selectDedicatedServer(authChecker auth.Checker,
 	dedicatedServers, err := api.DedicatedServers()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "getting dedicated servers list:", err)
-		if errors.Is(err, core.ErrDedicatedServersSessionMaxLimitReached) {
+		switch {
+		case errors.Is(err, core.ErrDedicatedServersSessionMaxLimitReached):
 			return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersSessionMaxLimitReached)
-		}
-		if errors.Is(err, core.ErrDedicatedServersDeviceNotFound) {
-			return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersCanNotConnect)
-		}
-		if errors.Is(err, core.ErrDedicatedServersDeviceNotRegistered) {
-			return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersCanNotConnect)
-		}
-		if errors.Is(err, core.ErrDedicatedServersPublicKeyMismatch) {
-			return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersCanNotConnect)
-		}
-		if errors.Is(err, core.ErrDedicatedServersServerOffline) {
-			return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersCanNotConnect)
-		}
-		if errors.Is(err, core.ErrDedicatedServersServerNotFound) {
-			return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersCanNotConnect)
-		}
-		if errors.Is(err, core.ErrDedicatedServersInvalidFormData) {
+		case errors.Is(err, core.ErrDedicatedServersDeviceNotFound),
+			errors.Is(err, core.ErrDedicatedServersDeviceNotRegistered),
+			errors.Is(err, core.ErrDedicatedServersPublicKeyMismatch),
+			errors.Is(err, core.ErrDedicatedServersServerOffline),
+			errors.Is(err, core.ErrDedicatedServersServerNotFound),
+			errors.Is(err, core.ErrDedicatedServersInvalidFormData):
 			return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersCanNotConnect)
 		}
 		return nil, internal.ErrUnhandled

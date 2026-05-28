@@ -1042,6 +1042,15 @@ func TestConnect_DedicatedServers(t *testing.T) {
 	dedicatedServerNotReady := dedicatedServer
 	dedicatedServerNotReady.Status = "not running"
 
+	dedicatedServerStopped := dedicatedServer
+	dedicatedServerStopped.Status = core.DedicatedServerStatusStopped
+
+	dedicatedServerStopping := dedicatedServer
+	dedicatedServerStopping.Status = core.DedicatedServerStatusStopping
+
+	dedicatedServerUppercaseStopped := dedicatedServer
+	dedicatedServerUppercaseStopped.Status = "STOPPED"
+
 	serverPublicKey := "public_key"
 	deviceUUID := uuid.MustParse("a25b9415-c77b-4a18-b8ff-ef06042aa450")
 	connectResponse := core.DedicatedServerConnectResponse{
@@ -1085,26 +1094,23 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			expectedStatus:            internal.CodeDedicatedServersRenewError,
 		},
 		{
-			name:                      "empty dedicated servers list",
-			isDedicatedServersExpired: false,
-			dedicatedServersResponse:  core.DedicatedServers{},
-			technology:                config.Technology_NORDLYNX,
-			expectedStatus:            internal.CodeDedicatedServersServiceButNoServers,
+			name:                     "empty dedicated servers list",
+			dedicatedServersResponse: core.DedicatedServers{},
+			technology:               config.Technology_NORDLYNX,
+			expectedStatus:           internal.CodeDedicatedServersServiceButNoServers,
 		},
 		{
-			name:                      "dedicated server not ready",
-			isDedicatedServersExpired: false,
-			dedicatedServersResponse:  core.DedicatedServers{dedicatedServerNotReady},
-			technology:                config.Technology_NORDLYNX,
-			expectedStatus:            internal.CodeDedicatedServersNotReady,
+			name:                     "dedicated server not ready",
+			dedicatedServersResponse: core.DedicatedServers{dedicatedServerNotReady},
+			technology:               config.Technology_NORDLYNX,
+			expectedStatus:           internal.CodeDedicatedServersNotReady,
 		},
 		{
-			name:                      "technology is not nordlynx",
-			isDedicatedServersExpired: false,
-			dedicatedServersResponse:  dedicatedServers,
-			connectResponse:           connectResponse,
-			technology:                config.Technology_OPENVPN,
-			expectedStatus:            internal.CodeDedicatedServersNoNordlynx,
+			name:                     "technology is not nordlynx",
+			dedicatedServersResponse: dedicatedServers,
+			connectResponse:          connectResponse,
+			technology:               config.Technology_OPENVPN,
+			expectedStatus:           internal.CodeDedicatedServersNoNordlynx,
 		},
 		{
 			name:            "dedicated server service check fails",
@@ -1113,11 +1119,10 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			expectedErr:     internal.ErrUnhandled,
 		},
 		{
-			name:                      "dedicated servers fetch fails",
-			isDedicatedServersExpired: false,
-			technology:                config.Technology_NORDLYNX,
-			dedicatedServersFetchErr:  errors.New("error"),
-			expectedErr:               internal.ErrUnhandled,
+			name:                     "dedicated servers fetch fails",
+			technology:               config.Technology_NORDLYNX,
+			dedicatedServersFetchErr: errors.New("error"),
+			expectedErr:              internal.ErrUnhandled,
 		},
 		{
 			name:                       "connect fails",
@@ -1131,6 +1136,66 @@ func TestConnect_DedicatedServers(t *testing.T) {
 				DeviceUUID:      deviceUUID.String(),
 				DevicePublicKey: devicePublicKey,
 			},
+		},
+		{
+			name:                     "dedicated server is stopped",
+			dedicatedServersResponse: core.DedicatedServers{dedicatedServerStopped},
+			technology:               config.Technology_NORDLYNX,
+			expectedStatus:           internal.CodeDedicatedServersCanNotConnect,
+		},
+		{
+			name:                     "dedicated server is stopping",
+			dedicatedServersResponse: core.DedicatedServers{dedicatedServerStopping},
+			technology:               config.Technology_NORDLYNX,
+			expectedStatus:           internal.CodeDedicatedServersCanNotConnect,
+		},
+		{
+			name:                     "dedicated server status is case-insensitive",
+			dedicatedServersResponse: core.DedicatedServers{dedicatedServerUppercaseStopped},
+			technology:               config.Technology_NORDLYNX,
+			expectedStatus:           internal.CodeDedicatedServersCanNotConnect,
+		},
+		{
+			name:                     "API returns 400 - session limit reached",
+			technology:               config.Technology_NORDLYNX,
+			dedicatedServersFetchErr: core.ErrDedicatedServersSessionMaxLimitReached,
+			expectedStatus:           internal.CodeDedicatedServersSessionMaxLimitReached,
+		},
+		{
+			name:                     "API returns 400 - device not found",
+			technology:               config.Technology_NORDLYNX,
+			dedicatedServersFetchErr: core.ErrDedicatedServersDeviceNotFound,
+			expectedStatus:           internal.CodeDedicatedServersCanNotConnect,
+		},
+		{
+			name:                     "API returns 400 - device not registered",
+			technology:               config.Technology_NORDLYNX,
+			dedicatedServersFetchErr: core.ErrDedicatedServersDeviceNotRegistered,
+			expectedStatus:           internal.CodeDedicatedServersCanNotConnect,
+		},
+		{
+			name:                     "API returns 400 - public key mismatch",
+			technology:               config.Technology_NORDLYNX,
+			dedicatedServersFetchErr: core.ErrDedicatedServersPublicKeyMismatch,
+			expectedStatus:           internal.CodeDedicatedServersCanNotConnect,
+		},
+		{
+			name:                     "API returns 400 - server offline",
+			technology:               config.Technology_NORDLYNX,
+			dedicatedServersFetchErr: core.ErrDedicatedServersServerOffline,
+			expectedStatus:           internal.CodeDedicatedServersCanNotConnect,
+		},
+		{
+			name:                     "API returns 400 - server not found",
+			technology:               config.Technology_NORDLYNX,
+			dedicatedServersFetchErr: core.ErrDedicatedServersServerNotFound,
+			expectedStatus:           internal.CodeDedicatedServersCanNotConnect,
+		},
+		{
+			name:                     "API returns 400 - invalid form data",
+			technology:               config.Technology_NORDLYNX,
+			dedicatedServersFetchErr: core.ErrDedicatedServersInvalidFormData,
+			expectedStatus:           internal.CodeDedicatedServersCanNotConnect,
 		},
 	}
 
