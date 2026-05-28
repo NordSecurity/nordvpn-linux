@@ -3,7 +3,6 @@ package networker
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/netip"
 	"testing"
 
@@ -13,6 +12,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	firewallmock "github.com/NordSecurity/nordvpn-linux/test/mock/firewall"
+	mapset "github.com/deckarep/golang-set/v2"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -57,12 +58,12 @@ func TestVPNNetworker_IsVPNActive(t *testing.T) {
 				nil,
 				nil,
 				nil,
-				nil,
-				nil,
 				0,
 				false,
 				&workingIpv6{},
 				false,
+				&mock.SysctlSetterMock{},
+				config.Allowlist{},
 				&mock.SysctlSetterMock{},
 			)
 			// injecting VPN implementation without calling netw.Start
@@ -115,7 +116,6 @@ func TestRefreshVPN_VPNFailure(t *testing.T) {
 
 	combined := GetTestCombined()
 	ctx := context.Background()
-	assert.Empty(t, combined.fw.(*workingFirewall).rules)
 	assert.NoError(t, combined.setMesh(mesh.MachineMap{}, netip.IPv4Unspecified(), ""))
 	assert.NoError(t, combined.start(
 		ctx,
@@ -124,7 +124,6 @@ func TestRefreshVPN_VPNFailure(t *testing.T) {
 		config.Allowlist{},
 		config.DNS{},
 	))
-	assert.NotEmpty(t, combined.fw.(*workingFirewall).rules)
 
 	assert.True(t, combined.isConnectedToVPN())
 	assert.True(t, combined.isMeshnetSet)
@@ -136,105 +135,57 @@ func TestRefreshVPN_VPNFailure(t *testing.T) {
 
 	assert.False(t, combined.isConnectedToVPN())
 	assert.True(t, combined.isMeshnetSet)
-	assert.NotEmpty(t, combined.fw.(*workingFirewall).rules) // We want to keep rules to avoid leaking
 }
 
-func TestRefreshVPN_KillswitchNewInterface(t *testing.T) {
+func TestRefreshVPNWhenKsIsOffAtNetworkChange(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	// check if nics contains all of the nicNames, return names of all interfaces that were not found
-	findMissingInterfacesFunc := func(nics []net.Interface, nicNames ...string) []string {
-		missingNICs := []string{}
-		for _, nicName := range nicNames {
-			nicFound := false
-			for _, nic := range nics {
-				if nic.Name == nicName {
-					nicFound = true
-					break
-				}
-			}
-			if !nicFound {
-				missingNICs = append(missingNICs, nicName)
-			}
-		}
-
-		return missingNICs
-	}
-
-	firewall := newWorkingFirewall()
 	combined := NewCombined(
-		&mock.WorkingVPN{},
+		&mock.FailingVPN{},
 		&workingMesh{},
 		workingGateway{},
 		&subs.Subject[string]{},
 		workingRouter{},
 		&workingDNS{},
-		firewall,
-		workingAllowlistRouting{},
-		workingDeviceList,
+		firewallmock.NewFirewall(),
+		nil,
 		&workingRoutingSetup{},
 		&workingHostSetter{},
 		workingRouter{},
 		workingRouter{},
-		&workingExitNode{},
 		0,
 		false,
 		&workingIpv6{},
 		false,
 		&mock.SysctlSetterMock{},
+		config.Allowlist{},
+		&mock.SysctlSetterMock{},
 	)
+
+	combined.isVpnSet = true
 
 	nic1Name := "nic1"
 	nic2Name := "nic2"
-	combined.devices = func() ([]net.Interface, error) {
-		return []net.Interface{
-			{Name: nic1Name},
-			{Name: nic2Name},
-		}, nil
+	combined.devices = func(mapset.Set[string]) mapset.Set[string] {
+		return mapset.NewSet(nic1Name, nic2Name)
 	}
-	combined.isKillSwitchSet = true
 
+	// refresh fails => kill switch is kept with internallyEnabled state
 	ctx := context.Background()
 	err := combined.refreshVPN(ctx)
-	assert.NoError(t, err)
+	assert.ErrorIs(t, err, mock.ErrOnPurpose)
+	assert.Equal(t, internallyEnabled, combined.KillSwitchState, "kill switch is kept to prevent leaks")
 
-	dropRule := firewall.rules[dropIpv4Rule]
-	missingNICs := findMissingInterfacesFunc(dropRule.Interfaces, nic1Name, nic2Name)
-
-	assert.Len(t, missingNICs, 0, "Block rule was not added for the following interfaces: %s", missingNICs)
-
-	// new interface added
+	// refresh is successful => kill switch is kept with internallyEnabled state
+	combined.vpnet = &mock.WorkingVPN{ErrNetworkChanges: mock.ErrOnPurpose}
 	nic3Name := "nic3"
-	combined.devices = func() ([]net.Interface, error) {
-		return []net.Interface{
-			{Name: nic1Name},
-			{Name: nic2Name},
-			{Name: nic3Name},
-		}, nil
+	combined.devices = func(mapset.Set[string]) mapset.Set[string] {
+		return mapset.NewSet(nic1Name, nic3Name)
 	}
 	err = combined.refreshVPN(ctx)
 	assert.NoError(t, err)
 
-	dropRule = firewall.rules[dropIpv4Rule]
-	missingNICs = findMissingInterfacesFunc(dropRule.Interfaces, nic1Name, nic2Name, nic3Name)
-
-	assert.Len(t, missingNICs, 0, "Block rule was not added for the following interfaces: %s", missingNICs)
-
-	// interface removed
-	combined.devices = func() ([]net.Interface, error) {
-		return []net.Interface{
-			{Name: nic1Name},
-			{Name: nic3Name},
-		}, nil
-	}
-	err = combined.refreshVPN(ctx)
-	assert.NoError(t, err)
-
-	dropRule = firewall.rules[dropIpv4Rule]
-	missingNICs = findMissingInterfacesFunc(dropRule.Interfaces, nic1Name, nic2Name, nic3Name)
-
-	assert.Len(t, missingNICs, 1, "Block rule was not updated properly when interface was removed: %s", missingNICs)
-	assert.Contains(t, missingNICs, nic2Name, "Block rule for NIC 2 was not removed.")
+	assert.Equal(t, disabledByUser, combined.KillSwitchState, "kill switch is disabled again")
 }
 
 func TestNetworkChange(t *testing.T) {

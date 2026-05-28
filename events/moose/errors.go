@@ -43,7 +43,7 @@ func (s *Subscriber) response(respCode uint32) error {
 	case 0:
 		return nil
 	case 2:
-		if !s.isEnabled() {
+		if !s.isInitialized.Load() {
 			return nil
 		}
 		return errors.New("moose: not initiated")

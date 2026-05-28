@@ -326,6 +326,7 @@ func NewAccountUpdateEvents() *AccountUpdateEvents {
 	}
 }
 
+// TODO: remove/replace with the mock
 type MockPublisherSubscriber[T any] struct {
 	Handler        events.Handler[T]
 	EventPublished bool

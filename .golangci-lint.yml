@@ -28,8 +28,8 @@ linters:
     paths:
       - third-party
     rules:
-      - linters: 
-        - staticcheck
+      - linters:
+          - staticcheck
         text: "ST1005:" # systematically, disable all the linter issues on errors strings capitalization, or ending with a punctuation mark
   settings:
     depguard:

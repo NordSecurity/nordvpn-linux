@@ -284,6 +284,7 @@ final class NordVpnTheme {
       borderRadiusSmall: AppBorderRadius.sm,
       padding: 10,
       margin: 8,
+      bigMargin: AppSpacing.spacing5,
       outerPadding: 16,
       borderColor: design.semanticColors.borderSecondary,
       verticalSpaceVerySmall: 2,
@@ -291,6 +292,7 @@ final class NordVpnTheme {
       verticalSpaceMedium: 16,
       verticalSpaceLarge: 24,
       verticalSpaceExtraLarge: 48,
+      horizontalSpaceVerySmall: AppSpacing.spacing1,
       horizontalSpaceSmall: 8,
       horizontalSpace: 16,
       textErrorColor: design.semanticColors.textCritical,
@@ -356,7 +358,7 @@ final class NordVpnTheme {
       ),
       margin: EdgeInsets.only(
         top: AppSpacing.spacing3,
-        right: AppSpacing.spacing2,
+        right: AppSpacing.spacing5,
       ),
       borderRadius: AppBorderRadius.lg,
       minWidth: 520,
@@ -387,79 +389,106 @@ final class NordVpnTheme {
       ),
       buttonTheme: ConnectionCardButtonTheme(
         maxConnectButtonWidth: 330,
-        secureMyConnectionButtonStyle: OutlinedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            side: BorderSide(
-              color: design.semanticColors.borderAccent,
-              width: AppBorderWidth.md,
+        secureMyConnectionButtonStyle:
+            OutlinedButton.styleFrom(
+              shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.full),
+              textStyle: design.typography.subHeading.copyWith(
+                fontWeight: FontWeight.w400,
+              ),
+              padding: const EdgeInsets.symmetric(
+                vertical: AppSpacing.spacing3,
+                horizontal: AppSpacing.spacing7,
+              ),
+              overlayColor: Colors.transparent,
+              foregroundColor: design.semanticColors.textPrimaryOnColor,
+              fixedSize: const Size.fromHeight(48),
+              enabledMouseCursor: SystemMouseCursors.basic,
+            ).copyWith(
+              backgroundColor: _hoverButtonBackgroundColor(
+                defaultColor: design.semanticColors.bgAccent,
+                hoverColor: design.semanticColors.bgAccentActive,
+              ),
+              side: WidgetStateProperty.resolveWith<BorderSide?>((states) {
+                if (states.contains(WidgetState.hovered)) {
+                  return BorderSide(
+                    color: design.semanticColors.borderAccentActive,
+                    width: AppBorderWidth.md,
+                  );
+                }
+
+                return BorderSide(
+                  color: design.semanticColors.borderAccent,
+                  width: AppBorderWidth.md,
+                );
+              }),
             ),
-            borderRadius: AppBorderRadius.full,
-          ),
-          textStyle: design.typography.subHeading.copyWith(
-            fontWeight: FontWeight.w400,
-          ),
-          padding: const EdgeInsets.symmetric(
-            vertical: AppSpacing.spacing3,
-            horizontal: AppSpacing.spacing7,
-          ),
-          backgroundColor: design.semanticColors.bgAccent,
-          foregroundColor: design.semanticColors.textPrimaryOnColor,
-          fixedSize: const Size.fromHeight(48),
-          enabledMouseCursor: SystemMouseCursors.basic,
-        ),
-        cancelButtonStyle: OutlinedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            side: BorderSide(
-              color: design.semanticColors.borderPrimary,
-              width: AppBorderWidth.md,
+        cancelButtonStyle:
+            OutlinedButton.styleFrom(
+              shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.full),
+              side: BorderSide(
+                color: design.semanticColors.borderPrimary,
+                width: AppBorderWidth.md,
+              ),
+              textStyle: design.typography.subHeading,
+              padding: const EdgeInsets.symmetric(
+                vertical: AppSpacing.spacing3,
+                horizontal: AppSpacing.spacing7,
+              ),
+              overlayColor: Colors.transparent,
+              foregroundColor: design.semanticColors.textPrimary,
+              fixedSize: const Size.fromHeight(48),
+              enabledMouseCursor: SystemMouseCursors.basic,
+            ).copyWith(
+              backgroundColor: _hoverButtonBackgroundColor(
+                defaultColor: design.semanticColors.bgTertiary,
+                hoverColor: design.semanticColors.bgPrimary,
+              ),
             ),
-            borderRadius: AppBorderRadius.full,
-          ),
-          textStyle: design.typography.subHeading,
-          padding: const EdgeInsets.symmetric(
-            vertical: AppSpacing.spacing3,
-            horizontal: AppSpacing.spacing7,
-          ),
-          backgroundColor: design.semanticColors.bgGlass,
-          foregroundColor: design.semanticColors.textPrimary,
-          fixedSize: const Size.fromHeight(48),
-          enabledMouseCursor: SystemMouseCursors.basic,
-        ),
-        pauseConnectionButtonStyle: OutlinedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            side: BorderSide(
-              color: design.semanticColors.borderPrimary,
-              width: AppBorderWidth.md,
+        pauseConnectionButtonStyle:
+            OutlinedButton.styleFrom(
+              shape: RoundedRectangleBorder(borderRadius: AppBorderRadius.full),
+              side: BorderSide(
+                color: design.semanticColors.borderPrimary,
+                width: AppBorderWidth.md,
+              ),
+              textStyle: design.typography.subHeading.copyWith(
+                color: design.semanticColors.textPrimary,
+              ),
+              padding: const EdgeInsets.symmetric(
+                vertical: AppSpacing.spacing3,
+                horizontal: AppSpacing.spacing7,
+              ),
+              overlayColor: Colors.transparent,
+              foregroundColor: design.semanticColors.textPrimary,
+              fixedSize: const Size.fromHeight(48),
+              enabledMouseCursor: SystemMouseCursors.basic,
+            ).copyWith(
+              backgroundColor: _hoverButtonBackgroundColor(
+                defaultColor: design.semanticColors.bgTertiary,
+                hoverColor: design.semanticColors.bgPrimary,
+              ),
             ),
-            borderRadius: AppBorderRadius.full,
-          ),
-          textStyle: design.typography.subHeading.copyWith(
-            color: design.semanticColors.textPrimary,
-          ),
-          padding: const EdgeInsets.symmetric(
-            vertical: AppSpacing.spacing3,
-            horizontal: AppSpacing.spacing7,
-          ),
-          backgroundColor: design.semanticColors.bgGlass,
-          foregroundColor: design.semanticColors.textPrimary,
-          fixedSize: const Size.fromHeight(48),
-          enabledMouseCursor: SystemMouseCursors.basic,
-        ),
-        connectionDetailsButtonStyle: OutlinedButton.styleFrom(
-          shape: const CircleBorder(),
-          side: BorderSide(
-            color: design.semanticColors.borderPrimary,
-            width: AppBorderWidth.md,
-          ),
-          textStyle: design.typography.subHeading.copyWith(
-            color: design.semanticColors.textPrimary,
-          ),
-          padding: const EdgeInsets.all(AppSpacing.spacing3),
-          backgroundColor: design.semanticColors.bgGlass,
-          foregroundColor: design.semanticColors.textPrimary,
-          fixedSize: const Size(48, 48),
-          enabledMouseCursor: SystemMouseCursors.basic,
-        ),
+        connectionDetailsButtonStyle:
+            OutlinedButton.styleFrom(
+              shape: const CircleBorder(),
+              side: BorderSide(
+                color: design.semanticColors.borderPrimary,
+                width: AppBorderWidth.md,
+              ),
+              textStyle: design.typography.subHeading.copyWith(
+                color: design.semanticColors.textPrimary,
+              ),
+              padding: const EdgeInsets.all(AppSpacing.spacing3),
+              overlayColor: Colors.transparent,
+              foregroundColor: design.semanticColors.textPrimary,
+              fixedSize: const Size(48, 48),
+              enabledMouseCursor: SystemMouseCursors.basic,
+            ).copyWith(
+              backgroundColor: _hoverButtonBackgroundColor(
+                defaultColor: design.semanticColors.bgTertiary,
+                hoverColor: design.semanticColors.bgPrimary,
+              ),
+            ),
       ),
     );
   }
@@ -469,6 +498,7 @@ final class NordVpnTheme {
       flagSize: 32,
       loaderSize: 28,
       listItemHeight: 44,
+      labelPadding: AppSpacing.spacing2,
       paddingSearchGroupsLabel: const EdgeInsets.symmetric(
         horizontal: 32,
         vertical: 8,
@@ -483,7 +513,6 @@ final class NordVpnTheme {
         color: design.semanticColors.textSecondary,
       ),
       obfuscatedItemBackgroundColor: design.semanticColors.bgSecondaryActive,
-      horizontalSpace: 16,
     );
   }
 
@@ -874,5 +903,18 @@ final class NordVpnTheme {
       widgetPositionRight: 20,
       widgetPositionBottom: 16,
     );
+  }
+
+  WidgetStateProperty<Color?> _hoverButtonBackgroundColor({
+    required Color defaultColor,
+    required Color hoverColor,
+  }) {
+    return WidgetStateProperty.resolveWith<Color?>((states) {
+      if (states.contains(WidgetState.hovered)) {
+        return hoverColor;
+      }
+
+      return defaultColor;
+    });
   }
 }

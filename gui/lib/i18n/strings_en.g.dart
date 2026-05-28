@@ -1587,18 +1587,6 @@ class TranslationsUiEn {
 	/// en: 'P2P'
 	String get p2p => 'P2P';
 
-	/// en: 'Europe'
-	String get europe => 'Europe';
-
-	/// en: 'The Americas'
-	String get theAmericas => 'The Americas';
-
-	/// en: 'Asia Pacific'
-	String get asiaPacific => 'Asia Pacific';
-
-	/// en: 'Africa, the Middle East, and India'
-	String get africaTheMiddleEastAndIndia => 'Africa, the Middle East, and India';
-
 	/// en: 'Obfuscated'
 	String get obfuscated => 'Obfuscated';
 
@@ -1973,6 +1961,21 @@ class TranslationsUiEn {
 
 	/// en: 'Enabling LAN discovery will remove any private subnets from allowlist. Continue?'
 	String get removePrivateSubnetsDescription => 'Enabling LAN discovery will remove any private subnets from allowlist. Continue?';
+
+	/// en: 'Remove overlapping subnets?'
+	String get removeOverlappingSubnets => 'Remove overlapping subnets?';
+
+	/// en: 'The range you are trying to add includes previously allowed subnets. To prevent conflicts, we’ll delete the redundant ones.'
+	String get removeOverlappingSubnetsDescription => 'The range you are trying to add includes previously allowed subnets. To prevent conflicts, we’ll delete the redundant ones.';
+
+	/// en: 'Remove'
+	String get removeWord => 'Remove';
+
+	/// en: 'Adding this range may be unsafe'
+	String get addingTooWideSubnet => 'Adding this range may be unsafe';
+
+	/// en: 'The subnet range you entered is too large and may allow unprotected traffic to enter or leave your device.'
+	String get addingTooWideSubnetDescription => 'The subnet range you entered is too large and may allow unprotected traffic to enter or leave your device.';
 
 	/// en: 'Private subnet can't be added'
 	String get privateSubnetCantBeAdded => 'Private subnet can\'t be added';
@@ -2673,10 +2676,6 @@ extension on Translations {
 			'ui.doubleVpn' => 'Double VPN',
 			'ui.onionOverVpn' => 'Onion over VPN',
 			'ui.p2p' => 'P2P',
-			'ui.europe' => 'Europe',
-			'ui.theAmericas' => 'The Americas',
-			'ui.asiaPacific' => 'Asia Pacific',
-			'ui.africaTheMiddleEastAndIndia' => 'Africa, the Middle East, and India',
 			'ui.obfuscated' => 'Obfuscated',
 			'ui.obfuscatedServers' => 'Obfuscated Servers',
 			'ui.selectServerForDip' => 'Pick a location for your IP',
@@ -2684,12 +2683,12 @@ extension on Translations {
 			'ui.dipSelectLocationDescription' => 'You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.',
 			'ui.chooseLocationForDip' => 'Choose a location for your dedicated IP',
 			'ui.getDip' => 'Get dedicated IP',
-			_ => null,
-		} ?? switch (path) {
 			'ui.getYourDip' => 'Get your personal IP',
 			'ui.getDipDescription' => 'Get a personal IP address that belongs only to you. Enjoy all the benefits of VPN encryption without dealing with blocklists, identity checks, and selecting images of boats in CAPTCHAs.',
 			'ui.notifications' => 'Notifications',
 			'ui.specialtyServersSearchHint' => 'Search country or city',
+			_ => null,
+		} ?? switch (path) {
 			'ui.on' => 'On',
 			'ui.off' => 'Off',
 			'ui.invalidFormat' => 'Invalid format',
@@ -2804,6 +2803,11 @@ extension on Translations {
 			'ui.system' => 'System',
 			'ui.removePrivateSubnets' => 'We\'ll remove private subnets from allowlist',
 			'ui.removePrivateSubnetsDescription' => 'Enabling LAN discovery will remove any private subnets from allowlist. Continue?',
+			'ui.removeOverlappingSubnets' => 'Remove overlapping subnets?',
+			'ui.removeOverlappingSubnetsDescription' => 'The range you are trying to add includes previously allowed subnets. To prevent conflicts, we’ll delete the redundant ones.',
+			'ui.removeWord' => 'Remove',
+			'ui.addingTooWideSubnet' => 'Adding this range may be unsafe',
+			'ui.addingTooWideSubnetDescription' => 'The subnet range you entered is too large and may allow unprotected traffic to enter or leave your device.',
 			'ui.privateSubnetCantBeAdded' => 'Private subnet can\'t be added',
 			'ui.privateSubnetCantBeAddedDescription' => 'Allowlisting a private subnet isn’t available while local network discovery is enabled. To add a private subnet, turn off LAN discovery.',
 			'ui.turnOffLanDiscovery' => 'Turn off LAN discovery',

@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -11,6 +12,11 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"gotest.tools/v3/assert"
 )
+
+// resetSettingsMigrationOnces resets the package-level sync
+func resetSettingsMigrationOnces() {
+	adjustAutoconnectCfgOnce = sync.Once{}
+}
 
 func TestSettings_NoPeerContext(t *testing.T) {
 	category.Set(t, category.Unit)
@@ -24,10 +30,10 @@ func TestSettings_NoPeerContext(t *testing.T) {
 
 func TestSettings_AutoconnectMigrationRunsOnlyOnce(t *testing.T) {
 	category.Set(t, category.Unit)
+	resetSettingsMigrationOnces()
 
 	cm := mock.NewMockConfigManager()
 
-	// conditions for triggering migration of autoconnect
 	cm.Cfg.AutoConnect = true
 	cm.Cfg.AutoConnectData.ServerTag = "not-empty"
 	cm.Cfg.AutoConnectData.Country = ""
@@ -48,6 +54,6 @@ func TestSettings_AutoconnectMigrationRunsOnlyOnce(t *testing.T) {
 	_, err = r.Settings(ctx, &pb.Empty{})
 	assert.NilError(t, err, "second Settings() call returned error: %v", err)
 
-	// still 1 - migration was not executed again
+	// migration was not executed again
 	assert.Equal(t, cm.SaveCallCount, 1)
 }
