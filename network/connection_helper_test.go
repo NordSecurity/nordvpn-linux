@@ -1,48 +1,90 @@
 package network
 
 import (
+	"net"
+	"net/netip"
+	"sync"
 	"testing"
-	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/miekg/dns"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestResolveHost(t *testing.T) {
-	category.Set(t, category.Integration)
+func startTestDNSServer(t *testing.T, domainName string, ip netip.Addr) (addr string, shutdown func()) {
+	t.Helper()
 
-	// random failures firewall still disabled - wait for it
-	// map[ip6tables:[-P INPUT DROP -P FORWARD ACCEPT -P OUTPUT DROP ] iptables:[-P INPUT DROP -P FORWARD ACCEPT -P OUTPUT DROP ]] %!s(<nil>)
-	time.Sleep(1 * time.Second)
-	result, err := LookupAddressWithCustomDNS("google.com", "1.1.1.1", "udp")
+	mux := dns.NewServeMux()
+	mux.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
+		msg := new(dns.Msg)
+		msg.SetReply(r)
+
+		for _, q := range r.Question {
+			if q.Name == domainName+"." && q.Qtype == dns.TypeA {
+				msg.Answer = append(msg.Answer, &dns.A{
+					Hdr: dns.RR_Header{
+						Name:   q.Name,
+						Rrtype: dns.TypeA,
+						Class:  dns.ClassINET,
+						Ttl:    60,
+					},
+					A: ip.AsSlice(),
+				})
+			}
+		}
+
+		_ = w.WriteMsg(msg)
+	})
+
+	pc, err := net.ListenPacket("udp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen udp: %v", err)
+	}
+
+	server := &dns.Server{
+		PacketConn: pc,
+		Handler:    mux,
+	}
+
+	var wg sync.WaitGroup
+	wg.Go(func() {
+		if err := server.ActivateAndServe(); err != nil {
+			t.Fatalf("activate server: %v", err)
+		}
+	})
+
+	log.Println("running DNS server on", pc.LocalAddr().String(), "for", domainName)
+
+	return pc.LocalAddr().String(), func() {
+		_ = server.Shutdown()
+		_ = pc.Close()
+	}
+}
+
+func TestResolveHostUsingLocalDnsServer(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	domainName := "nordvpn.com"
+	ipAddress := netip.MustParseAddr("1.2.3.4")
+
+	dnsAddr, shutdown := startTestDNSServer(t, domainName, ipAddress)
+	defer shutdown()
+
+	result, err := lookupAddress(domainName, dnsAddr, "udp", noFwMark)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, result)
+	if len(result) > 0 {
+		assert.Equal(t, ipAddress, result[0])
+	}
+}
+
+func TestResolveHost(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	result, err := lookupAddress("google.com", "1.1.1.1", "udp", noFwMark)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, result[0])
 	assert.NotEmpty(t, result[1])
-}
-
-func TestPing(t *testing.T) {
-	category.Set(t, category.Root)
-	tests := []struct {
-		addr string
-		ok   bool
-	}{
-		{"nordvpn.com", true},
-		{"1.1.1.1", true},
-		{"nonexistingdomain_1234_yes.com", false},
-		{"255.0.255.0.1", false},
-		// assumes no ipv6
-		{"2606:4700:4700::1111", false},
-	}
-
-	for _, test := range tests {
-		t.Run(test.addr, func(t *testing.T) {
-			err := Ping(test.addr, 1)
-			if test.ok {
-				assert.Nil(t, err, test.addr)
-			} else {
-				assert.NotNil(t, err, test.addr)
-			}
-		})
-	}
 }

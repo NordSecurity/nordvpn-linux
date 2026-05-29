@@ -45,8 +45,12 @@ import (
 	worker "moose/worker"
 )
 
+// TODO: When the analytics schema migrates to enum identifiers, replace this
+// constant with a typed enum comparison.
+const dedicatedIPGroupTitle = "Dedicated IP"
+
 type (
-	mooseConsentFunc               func(bool) uint32
+	mooseConsentFunc               func(moose.UserConsent) uint32
 	mooseSetConsentIntoContextFunc func(moose.NordvpnappConsentLevel) uint32
 	mooseSetTokenRenewDateFunc     func(int32) uint32
 	mooseSetTPLiteUserPrefFunc     func(bool) uint32
@@ -54,6 +58,29 @@ type (
 	mooseUnsetTPLiteCurrentFunc    func() uint32
 	mooseSetCustomDNSMetaFunc      func(string) uint32
 	mooseSetCustomDNSValueFunc     func(bool) uint32
+	mooseUnsetContextFunc          func() uint32
+	mooseSetRecommendationUuidFunc func(string) uint32
+	mooseSetServerCountryValueFunc func(string) uint32
+	mooseSetServerGroupValueFunc   func(string) uint32
+	mooseSetIsOnVpnValueFunc       func(bool) uint32
+	mooseSendConnectFunc           func(
+		moose.EventParams,
+		moose.TargetConnectionParams,
+		moose.TargetConnectionAdditionalParams,
+		moose.ConnectionParams,
+		moose.NordvpnappOptBool,
+		int32,
+		string,
+		*string,
+	) uint32
+	mooseSendDisconnectFunc func(
+		moose.EventParams,
+		moose.TargetConnectionParams,
+		moose.ConnectionParams,
+		int32,
+		int32,
+		*string,
+	) uint32
 )
 
 type mooseFunctions struct {
@@ -65,27 +92,36 @@ type mooseFunctions struct {
 	unsetTPLiteCurrentState       mooseUnsetTPLiteCurrentFunc
 	setCustomDNSMeta              mooseSetCustomDNSMetaFunc
 	setCustomDNSValue             mooseSetCustomDNSValueFunc
+	unsetServerDomainValue        mooseUnsetContextFunc
+	unsetRecommendationUuid       mooseUnsetContextFunc
+	setRecommendationUuid         mooseSetRecommendationUuidFunc
+	setServerCountryValue         mooseSetServerCountryValueFunc
+	setServerGroupValue           mooseSetServerGroupValueFunc
+	unsetServerGroupValue         mooseUnsetContextFunc
+	setIsOnVpnValue               mooseSetIsOnVpnValueFunc
+	sendConnect                   mooseSendConnectFunc
+	sendDisconnect                mooseSendDisconnectFunc
 }
 
 // Subscriber listen events, send to moose engine
 type Subscriber struct {
-	eventsDbPath            string
-	config                  config.Manager
-	buildTarget             config.BuildTarget
-	domain                  string
-	subdomain               string
-	deviceID                string
-	clientAPI               core.ClientAPI
-	currentDomain           string
-	connectionStartTime     time.Time
-	connectionToMeshnetPeer bool
-	initialHeartbeatSent    bool
-	mooseFuncs              mooseFunctions
-	httpClient              *http.Client
-	canSendAllEvents        atomic.Bool
-	mux                     sync.RWMutex
-	isInitialized           bool
-	configChangeHandlers    []configChangeHandler
+	eventsDbPath                     string
+	config                           config.Manager
+	buildTarget                      config.BuildTarget
+	domain                           string
+	subdomain                        string
+	deviceID                         string
+	clientAPI                        core.ClientAPI
+	currentDomain                    string
+	connectionStartTime              time.Time
+	connectionToMeshnetPeer          bool
+	connectionToSensitiveServerGroup bool
+	initialHeartbeatSent             bool
+	mooseFuncs                       mooseFunctions
+	httpClient                       *http.Client
+	mux                              sync.RWMutex
+	isInitialized                    atomic.Bool
+	configChangeHandlers             []configChangeHandler
 }
 
 func NewSubscriber(
@@ -99,15 +135,14 @@ func NewSubscriber(
 	eventsSubdomain string,
 ) *Subscriber {
 	sub := &Subscriber{
-		eventsDbPath:  eventsDbPath,
-		config:        fs,
-		buildTarget:   buildTarget,
-		domain:        eventsDomain,
-		subdomain:     eventsSubdomain,
-		deviceID:      id,
-		clientAPI:     clientAPI,
-		httpClient:    httpClient,
-		isInitialized: false,
+		eventsDbPath: eventsDbPath,
+		config:       fs,
+		buildTarget:  buildTarget,
+		domain:       eventsDomain,
+		subdomain:    eventsSubdomain,
+		deviceID:     id,
+		clientAPI:    clientAPI,
+		httpClient:   httpClient,
 		mooseFuncs: mooseFunctions{
 			setAppConsentLevel:            moose.MooseNordvpnappSetConsentLevel,
 			setConsentUserPreference:      moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel,
@@ -117,6 +152,15 @@ func NewSubscriber(
 			unsetTPLiteCurrentState:       moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
 			setCustomDNSMeta:              moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledMeta,
 			setCustomDNSValue:             moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledValue,
+			unsetServerDomainValue:        moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerDomainValue,
+			unsetRecommendationUuid:       moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid,
+			setRecommendationUuid:         moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid,
+			setServerCountryValue:         moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue,
+			setServerGroupValue:           moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerGroupValue,
+			unsetServerGroupValue:         moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerGroupValue,
+			setIsOnVpnValue:               moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue,
+			sendConnect:                   moose.NordvpnappSendServiceQualityServersConnect,
+			sendDisconnect:                moose.NordvpnappSendServiceQualityServersDisconnect,
 		},
 	}
 	// Add more handlers here as needed
@@ -146,9 +190,9 @@ func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error 
 		return nil
 	}
 
-	enabled := newState == config.ConsentGranted
-	log.Println(internal.InfoPrefix, LogComponentPrefix, "request to set consent level to", enabled)
-	if err := s.response(s.mooseFuncs.setAppConsentLevel(enabled)); err != nil {
+	level := toAnalyticsConsentLevel(newState)
+	log.Println(internal.InfoPrefix, LogComponentPrefix, "request to set consent level to", level)
+	if err := s.response(s.mooseFuncs.setAppConsentLevel(level)); err != nil {
 		return fmt.Errorf("setting new consent level: %w", err)
 	}
 
@@ -156,7 +200,6 @@ func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error 
 	if err := setUserConsentLevelIntoContext(s, newState); err != nil {
 		return fmt.Errorf("updating consent level in moose context: %w", err)
 	}
-	s.canSendAllEvents.Store(newState == config.ConsentGranted)
 
 	return nil
 }
@@ -175,6 +218,17 @@ func setUserConsentLevelIntoContext(s *Subscriber, consent config.AnalyticsConse
 	return nil
 }
 
+func toAnalyticsConsentLevel(consent config.AnalyticsConsent) moose.UserConsent {
+	switch consent {
+	case config.ConsentGranted:
+		return moose.UserConsentNonEssential
+	case config.ConsentDenied:
+		return moose.UserConsentEssential
+	default:
+		return moose.UserConsentRejectAll
+	}
+}
+
 // Enable moose analytics engine
 func (s *Subscriber) Enable() error {
 	s.mux.Lock()
@@ -189,16 +243,12 @@ func (s *Subscriber) Disable() error {
 	return s.changeConsentState(config.ConsentDenied)
 }
 
-func (s *Subscriber) isEnabled() bool {
-	return s.canSendAllEvents.Load()
-}
-
 // Init initializes moose libs. It has to be done before usage regardless of the enabled state.
 // Disabled case should be handled by `set_opt_out` value.
 func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	if s.isInitialized {
+	if s.isInitialized.Load() {
 		return nil
 	}
 	log.Println(internal.InfoPrefix, LogComponentPrefix, "initializing")
@@ -237,16 +287,11 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		return fmt.Errorf("starting worker: %w", err)
 	}
 
-	// can we send only essential or all?
-	s.canSendAllEvents.Store(consent == config.ConsentGranted)
-	log.Println(internal.InfoPrefix, LogComponentPrefix, "all events are sent:", s.canSendAllEvents.Load())
-
 	if err := s.response(moose.MooseNordvpnappInit(
 		s.eventsDbPath,
 		internal.IsProdEnv(s.buildTarget.Environment),
 		s,
 		s,
-		s.canSendAllEvents.Load(),
 	)); err != nil {
 		if !strings.Contains(err.Error(), "moose: already initiated") {
 			return fmt.Errorf("starting tracker: %w", err)
@@ -255,7 +300,11 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 
 	// TODO (LVPN-9654): currently, it should be safe to assume moose got correctly initialized when both worker and the app got started properly
 	// however this mechanism of initialization might need to be revisited in the future
-	s.isInitialized = true
+	s.isInitialized.Store(true)
+
+	if err := s.response(s.mooseFuncs.setAppConsentLevel(toAnalyticsConsentLevel(consent))); err != nil {
+		return fmt.Errorf("setting initial consent level: %w", err)
+	}
 
 	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
 		log.Println(internal.WarningPrefix, LogComponentPrefix, "failed to flush changes before setting analytics opt in: %w", err)
@@ -298,8 +347,12 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		return fmt.Errorf("setting moose device type: %w", err)
 	}
 
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue(false)); err != nil {
+	if err := s.response(s.mooseFuncs.setIsOnVpnValue(false)); err != nil {
 		return fmt.Errorf("setting moose is on vpn: %w", err)
+	}
+
+	if err := s.response(s.mooseFuncs.unsetServerGroupValue()); err != nil {
+		return fmt.Errorf("unsetting initial server group: %w", err)
 	}
 
 	sub := &Subscriber{}
@@ -583,7 +636,8 @@ func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
 }
 
 func (s *Subscriber) NotifyHeartBeat(period time.Duration) error {
-	if err := s.response(moose.NordvpnappSendServiceQualityStatusHeartbeat(int32(period.Minutes()), nil)); err != nil {
+	mooseRet := moose.NordvpnappSendServiceQualityStatusHeartbeat(int32(period.Minutes()), moose.MemoryUsageParams{}, nil)
+	if err := s.response(mooseRet); err != nil {
 		return fmt.Errorf("sending heartbeat event (period=%s): %w", period, err)
 	}
 	if !s.initialHeartbeatSent {
@@ -711,13 +765,39 @@ func (s *Subscriber) NotifyTechnology(data config.Technology) error {
 	return nil
 }
 
+// sensitiveServerGroups lists server groups whose connections require stripping
+// sensitive fields from analytics.
+var sensitiveServerGroups = []config.ServerGroup{
+	config.ServerGroup_DEDICATED_IP,
+}
+
+// hasSensitiveServerGroup reports whether any group the chosen server belongs to
+// is on the sensitive list.
+// Note. Independent of the user-requested group.
+func hasSensitiveServerGroup(groups []config.ServerGroup) bool {
+	for _, g := range groups {
+		if slices.Contains(sensitiveServerGroups, g) {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
+	sensitive := hasSensitiveServerGroup(data.ServerGroups)
+
+	s.mux.Lock()
+	// Track sensitivity on every server-connect event (not just success) so
+	// that a failed connect attempt to a sensitive group still prevents from leaking
+	// some metrics
+	if !data.IsMeshnetPeer {
+		s.connectionToSensitiveServerGroup = sensitive
+	}
 	if data.EventStatus == events.StatusSuccess {
-		s.mux.Lock()
 		s.connectionStartTime = time.Now()
 		s.connectionToMeshnetPeer = data.IsMeshnetPeer
-		s.mux.Unlock()
 	}
+	s.mux.Unlock()
 
 	if data.IsMeshnetPeer {
 		if err := s.response(moose.NordvpnappSendServiceQualityServersConnectToMeshnetDevice(
@@ -738,8 +818,8 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	eventTrigger := moose.NordvpnappEventTriggerUser
 	vpnConnectionTrigger := moose.NordvpnappVpnConnectionTriggerNone
 	connectionFunnel := ""
-	// we only want Pause data in attempt events
-	if data.PauseInterval > 0 && data.EventStatus == events.StatusAttempt {
+	if data.PauseInterval > 0 {
+		// params specific for pause-related events
 		if !data.UnpausedByUser {
 			eventTrigger = moose.NordvpnappEventTriggerApp
 		}
@@ -747,7 +827,35 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		connectionFunnel = durationToConnectionFunnel(data.PauseInterval)
 	}
 
-	if err := s.response(moose.NordvpnappSendServiceQualityServersConnect(
+	targetServerDomain := data.TargetServerDomain
+	recommendationUUID := data.RecommendationUUID
+	if sensitive {
+		targetServerDomain = ""
+		recommendationUUID = ""
+
+		if err := s.response(s.mooseFuncs.unsetServerDomainValue()); err != nil {
+			log.Println(internal.WarningPrefix, LogComponentPrefix,
+				"failed to unset serverDomain context for sensitive group:", err)
+		}
+		if err := s.response(s.mooseFuncs.unsetRecommendationUuid()); err != nil {
+			log.Println(internal.WarningPrefix, LogComponentPrefix,
+				"failed to unset recommendationUuid context for sensitive group:", err)
+		}
+	}
+
+	if data.EventStatus == events.StatusSuccess {
+		if data.TargetServerGroup != "" {
+			if err := s.response(s.mooseFuncs.setServerGroupValue(data.TargetServerGroup)); err != nil {
+				return fmt.Errorf("setting server group current state on successful connect (%q): %w", data.TargetServerGroup, err)
+			}
+		} else {
+			if err := s.response(s.mooseFuncs.unsetServerGroupValue()); err != nil {
+				return fmt.Errorf("unsetting server group current state on successful connect with empty target: %w", err)
+			}
+		}
+	}
+
+	if err := s.response(s.mooseFuncs.sendConnect(
 		moose.EventParams{
 			EventDuration: int32(data.DurationMs),
 			EventStatus:   eventStatusToInternalType(data.EventStatus),
@@ -762,9 +870,8 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			TargetProtocol:      connectionProtocolToInternalType(data.Protocol),
 			TargetServerCity:    data.TargetServerCity,
 			TargetServerCountry: data.TargetServerCountryCode,
-			TargetServerDomain:  data.TargetServerDomain,
+			TargetServerDomain:  targetServerDomain,
 			TargetServerGroup:   data.TargetServerGroup,
-			TargetServerIp:      data.TargetServerIP.String(),
 			TargetTechnology:    connectionTechnologyToInternalType(data.Technology),
 		},
 		moose.ConnectionParams{
@@ -773,7 +880,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		},
 		threatProtectionLiteToInternalType(data.ThreatProtectionLite),
 		-1,
-		data.RecommendationUUID,
+		recommendationUUID,
 		nil,
 	)); err != nil {
 		return fmt.Errorf("sending VPN connect event (status=%v, server=%q, country=%q): %w",
@@ -781,15 +888,15 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	}
 
 	if data.EventStatus == events.StatusSuccess {
-		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue(data.ThreatProtectionLite)); err != nil {
+		if err := s.response(s.mooseFuncs.setTPLiteCurrentState(data.ThreatProtectionLite)); err != nil {
 			return fmt.Errorf("setting TP Lite current state after successful connect (enabled=%v): %w", data.ThreatProtectionLite, err)
 		}
 
-		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue(true)); err != nil {
+		if err := s.response(s.mooseFuncs.setIsOnVpnValue(true)); err != nil {
 			return fmt.Errorf("setting is-on-VPN current state after successful connect: %w", err)
 		}
 
-		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue(data.TargetServerCountryCode)); err != nil {
+		if err := s.response(s.mooseFuncs.setServerCountryValue(data.TargetServerCountryCode)); err != nil {
 			return fmt.Errorf("setting server country current state after successful connect (%q): %w", data.TargetServerCountryCode, err)
 		}
 	}
@@ -804,6 +911,8 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		connectionDuration = -1
 	}
 	s.connectionStartTime = time.Time{}
+	wasSensitive := s.connectionToSensitiveServerGroup
+	s.connectionToSensitiveServerGroup = false
 	s.mux.Unlock()
 
 	if s.connectionToMeshnetPeer {
@@ -823,15 +932,15 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		return nil
 	}
 
-	if data.RecommendationUUID != "" {
-		if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid(data.RecommendationUUID)); err != nil {
+	if data.RecommendationUUID != "" && !wasSensitive {
+		if err := s.response(s.mooseFuncs.setRecommendationUuid(data.RecommendationUUID)); err != nil {
 			// We can ignore setting the recommendation Uuid
 			// Sending the disconnect event is much more important
 			log.Println(internal.WarningPrefix, "Failed to set RecommendationUUID into the moose context ", err)
 		}
 
 		defer func() {
-			if err := s.response(moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid()); err != nil {
+			if err := s.response(s.mooseFuncs.unsetRecommendationUuid()); err != nil {
 				log.Println(internal.WarningPrefix, "Failed to unset RecommendationUUID into the moose context ", err)
 			}
 		}()
@@ -844,7 +953,7 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		connectionFunnel = durationToConnectionFunnel(data.PauseInterval)
 	}
 
-	if err := s.response(moose.NordvpnappSendServiceQualityServersDisconnect(
+	if err := s.response(s.mooseFuncs.sendDisconnect(
 		moose.EventParams{
 			EventDuration: int32(data.Duration.Milliseconds()),
 			EventStatus:   eventStatusToInternalType(data.EventStatus),
@@ -874,11 +983,15 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		return fmt.Errorf("unsetting TP Lite current state after disconnect: %w", err)
 	}
 
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue(UnavailableEventParameterValue)); err != nil {
+	if err := s.response(s.mooseFuncs.setServerCountryValue(UnavailableEventParameterValue)); err != nil {
 		return fmt.Errorf("clearing server country current state after disconnect: %w", err)
 	}
 
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue(false)); err != nil {
+	if err := s.response(s.mooseFuncs.unsetServerGroupValue()); err != nil {
+		return fmt.Errorf("unsetting server group current state after disconnect: %w", err)
+	}
+
+	if err := s.response(s.mooseFuncs.setIsOnVpnValue(false)); err != nil {
 		return fmt.Errorf("setting is-on-VPN current state after disconnect: %w", err)
 	}
 

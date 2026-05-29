@@ -19,7 +19,7 @@ final class VpnWidget extends ConsumerWidget {
     final theme = context.appTheme;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
-      spacing: theme.verticalSpaceSmall,
+      spacing: theme.bigMargin,
       children: [
         ConnectionCard(key: VpnWidget.connectionCardKey),
         Expanded(
@@ -27,7 +27,7 @@ final class VpnWidget extends ConsumerWidget {
             margin: EdgeInsets.only(
               top: 0,
               bottom: theme.margin,
-              right: theme.margin,
+              right: theme.bigMargin,
               left: 0,
             ),
             child: ServersListCard(

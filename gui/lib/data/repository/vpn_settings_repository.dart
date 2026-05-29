@@ -150,11 +150,15 @@ class VpnSettingsRepository {
     return DaemonStatusCode.success;
   }
 
-  Future<int> addToAllowList({PortInterval? port, String? subnet}) async {
+  Future<int> addToAllowList({
+    PortInterval? port,
+    String? subnet,
+    bool force = false,
+  }) async {
     final result = await _client.setAllowlist(
       SetAllowlistRequest(
         setAllowlistSubnetRequest: (subnet != null)
-            ? SetAllowlistSubnetRequest(subnet: subnet)
+            ? SetAllowlistSubnetRequest(subnet: subnet, force: force)
             : null,
         setAllowlistPortsRequest: (port != null)
             ? SetAllowlistPortsRequest(

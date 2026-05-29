@@ -104,6 +104,7 @@ message PortRange {
 
 message SetAllowlistSubnetRequest {
   string subnet = 1;
+  bool force = 2;
 }
 
 message SetAllowlistPortsRequest {

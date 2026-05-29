@@ -83,9 +83,10 @@ Example: nordvpn set %s on`
 	AllowlistAddPortsExistsError = "Ports %d - %d (%s) are already on the allowlist."
 	AllowlistAddPortsSuccess     = "Ports %d - %d (%s) have been successfully added to the allowlist."
 
-	AllowlistAddSubnetExistsError  = "Subnet %s is already on the allowlist."
-	AllowlistAddSubnetSuccess      = "Subnet %s has been successfully added to the allowlist."
-	AllowlistAddSubnetLANDiscovery = "Allowlisting a private subnet is not available while local network discovery is turned on."
+	AllowlistAddSubnetExistsError    = "Subnet %s is already on the allowlist."
+	AllowlistAddSubnetTooWideWarning = "Adding this subnet range may be unsafe. The subnet range you entered is too large and may allow unprotected traffic to enter or leave your device."
+	AllowlistAddSubnetSuccess        = "Subnet %s has been successfully added to the allowlist."
+	AllowlistAddSubnetLANDiscovery   = "Allowlisting a private subnet is not available while local network discovery is turned on."
 
 	AllowlistRemovePortExistsError = "Port %d (%s) is not on the allowlist."
 	AllowlistRemovePortSuccess     = "Port %d (%s) has been deleted from the allowlist."
@@ -388,6 +389,8 @@ Your browsing activities remain private, regardless of your choice.
 
 `
 	MsgConsentAgreementPrompt = "Do you allow us to collect and use limited app performance data? (y/n)"
+
+	MsgRemoveNarrowConfirmPrompt = "The range you are trying to add includes previously allowed subnets. To prevent conflicts, we'll delete the redundant ones. Do you want to remove overlapping subnets?"
 
 	SetARPIgnoreUsageText    = "Controls whether your device ignores or responds to ARP requests while the VPN is active.\nBy default, arp-ignore is on. This means ARP requests are ignored to prevent VPN exposure."
 	SetARPIgnoreSuccess      = "ARP ignore set to '%s' successfully."

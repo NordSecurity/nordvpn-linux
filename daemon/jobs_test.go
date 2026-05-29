@@ -46,6 +46,7 @@ func (failingLoginChecker) GetDedicatedServerService() (auth.DedicatedServerServ
 }
 
 func updateAutoconnectData(c *mockConfigManager, data config.AutoConnectData) {
+	c.c.AutoConnect = true
 	c.c.AutoConnectData.ServerTag = data.ServerTag
 	c.c.AutoConnectData.Country = data.Country
 	c.c.AutoConnectData.City = data.City
@@ -91,6 +92,18 @@ func TestStartAutoConnect(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDoAutoConnect_BailsOutWhenAutoConnectDisabled(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	rpc := testRPC()
+	cm := newMockConfigManager()
+	cm.c.AutoConnect = false
+	rpc.cm = cm
+
+	err := rpc.doAutoConnect()
+	assert.ErrorIs(t, err, errAutoConnectDisabled)
 }
 
 func TestDoAutoconnectHandlesServerAvailabilityIssues(t *testing.T) {

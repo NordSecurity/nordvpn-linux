@@ -79,14 +79,6 @@ THREAT_PROTECTION_LITE = [
     "off",
 ]
 
-# Used for test parametrization, when the same test has to be run for obfuscated technologies.
-STANDARD_GROUPS = [
-    "Africa_The_Middle_East_And_India",
-    "Asia_Pacific",
-    "The_Americas",
-    "Europe",
-]
-
 # Used for test parametrization, when the tested functionality does not work with obfuscated.
 ADDITIONAL_GROUPS = [
     "Double_VPN",
@@ -110,9 +102,6 @@ DEDICATED_IP_GROUPS = [
 OVPN_OBFUSCATED_GROUPS = [
     "Obfuscated_Servers"
 ]
-
-# Used for test parametrization, when the same test has to be run for different groups.
-GROUPS = STANDARD_GROUPS + ADDITIONAL_GROUPS
 
 # Used for test parametrization, when the same test has to be run for different countries.
 COUNTRIES = [
@@ -198,9 +187,9 @@ SUBNETS = [
 
 # Used for test parametrization, when the same test has to be run for different ports.
 PORTS = [
-    Port("22", Protocol.UDP),
-    Port("22", Protocol.TCP),
-    Port("22", Protocol.ALL),
+    Port("2500", Protocol.UDP),
+    Port("2500", Protocol.TCP),
+    Port("2500", Protocol.ALL),
 ]
 
 # Used for test parametrization, when the same test has to be run for different ports.

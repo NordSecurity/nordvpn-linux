@@ -15,6 +15,7 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
   BorderRadius get borderRadiusSmall;
   double get padding;
   double get margin;
+  double get bigMargin;
   double get outerPadding;
   Color get borderColor;
   double get verticalSpaceVerySmall;
@@ -22,6 +23,7 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
   double get verticalSpaceMedium;
   double get verticalSpaceLarge;
   double get verticalSpaceExtraLarge;
+  double get horizontalSpaceVerySmall;
   double get horizontalSpaceSmall;
   double get horizontalSpace;
   Color get textErrorColor;
@@ -53,6 +55,7 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
     BorderRadius? borderRadiusSmall,
     double? padding,
     double? margin,
+    double? bigMargin,
     double? outerPadding,
     Color? borderColor,
     double? verticalSpaceVerySmall,
@@ -60,6 +63,7 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
     double? verticalSpaceMedium,
     double? verticalSpaceLarge,
     double? verticalSpaceExtraLarge,
+    double? horizontalSpaceVerySmall,
     double? horizontalSpaceSmall,
     double? horizontalSpace,
     Color? textErrorColor,
@@ -90,6 +94,7 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
       borderRadiusSmall: borderRadiusSmall ?? this.borderRadiusSmall,
       padding: padding ?? this.padding,
       margin: margin ?? this.margin,
+      bigMargin: bigMargin ?? this.bigMargin,
       outerPadding: outerPadding ?? this.outerPadding,
       borderColor: borderColor ?? this.borderColor,
       verticalSpaceVerySmall:
@@ -99,6 +104,8 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
       verticalSpaceLarge: verticalSpaceLarge ?? this.verticalSpaceLarge,
       verticalSpaceExtraLarge:
           verticalSpaceExtraLarge ?? this.verticalSpaceExtraLarge,
+      horizontalSpaceVerySmall:
+          horizontalSpaceVerySmall ?? this.horizontalSpaceVerySmall,
       horizontalSpaceSmall: horizontalSpaceSmall ?? this.horizontalSpaceSmall,
       horizontalSpace: horizontalSpace ?? this.horizontalSpace,
       textErrorColor: textErrorColor ?? this.textErrorColor,
@@ -138,6 +145,7 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
       borderRadiusSmall: t < 0.5 ? borderRadiusSmall : other.borderRadiusSmall,
       padding: t < 0.5 ? padding : other.padding,
       margin: t < 0.5 ? margin : other.margin,
+      bigMargin: t < 0.5 ? bigMargin : other.bigMargin,
       outerPadding: t < 0.5 ? outerPadding : other.outerPadding,
       borderColor: Color.lerp(borderColor, other.borderColor, t)!,
       verticalSpaceVerySmall: t < 0.5
@@ -155,6 +163,9 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
       verticalSpaceExtraLarge: t < 0.5
           ? verticalSpaceExtraLarge
           : other.verticalSpaceExtraLarge,
+      horizontalSpaceVerySmall: t < 0.5
+          ? horizontalSpaceVerySmall
+          : other.horizontalSpaceVerySmall,
       horizontalSpaceSmall: t < 0.5
           ? horizontalSpaceSmall
           : other.horizontalSpaceSmall,
@@ -214,6 +225,7 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
             ) &&
             const DeepCollectionEquality().equals(padding, other.padding) &&
             const DeepCollectionEquality().equals(margin, other.margin) &&
+            const DeepCollectionEquality().equals(bigMargin, other.bigMargin) &&
             const DeepCollectionEquality().equals(
               outerPadding,
               other.outerPadding,
@@ -241,6 +253,10 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
             const DeepCollectionEquality().equals(
               verticalSpaceExtraLarge,
               other.verticalSpaceExtraLarge,
+            ) &&
+            const DeepCollectionEquality().equals(
+              horizontalSpaceVerySmall,
+              other.horizontalSpaceVerySmall,
             ) &&
             const DeepCollectionEquality().equals(
               horizontalSpaceSmall,
@@ -330,6 +346,7 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
       const DeepCollectionEquality().hash(borderRadiusSmall),
       const DeepCollectionEquality().hash(padding),
       const DeepCollectionEquality().hash(margin),
+      const DeepCollectionEquality().hash(bigMargin),
       const DeepCollectionEquality().hash(outerPadding),
       const DeepCollectionEquality().hash(borderColor),
       const DeepCollectionEquality().hash(verticalSpaceVerySmall),
@@ -337,6 +354,7 @@ mixin _$AppThemeTailorMixin on ThemeExtension<AppTheme> {
       const DeepCollectionEquality().hash(verticalSpaceMedium),
       const DeepCollectionEquality().hash(verticalSpaceLarge),
       const DeepCollectionEquality().hash(verticalSpaceExtraLarge),
+      const DeepCollectionEquality().hash(horizontalSpaceVerySmall),
       const DeepCollectionEquality().hash(horizontalSpaceSmall),
       const DeepCollectionEquality().hash(horizontalSpace),
       const DeepCollectionEquality().hash(textErrorColor),
@@ -371,6 +389,7 @@ extension AppThemeBuildContextProps on BuildContext {
   BorderRadius get borderRadiusSmall => appTheme.borderRadiusSmall;
   double get padding => appTheme.padding;
   double get margin => appTheme.margin;
+  double get bigMargin => appTheme.bigMargin;
   double get outerPadding => appTheme.outerPadding;
   Color get borderColor => appTheme.borderColor;
   double get verticalSpaceVerySmall => appTheme.verticalSpaceVerySmall;
@@ -378,6 +397,7 @@ extension AppThemeBuildContextProps on BuildContext {
   double get verticalSpaceMedium => appTheme.verticalSpaceMedium;
   double get verticalSpaceLarge => appTheme.verticalSpaceLarge;
   double get verticalSpaceExtraLarge => appTheme.verticalSpaceExtraLarge;
+  double get horizontalSpaceVerySmall => appTheme.horizontalSpaceVerySmall;
   double get horizontalSpaceSmall => appTheme.horizontalSpaceSmall;
   double get horizontalSpace => appTheme.horizontalSpace;
   Color get textErrorColor => appTheme.textErrorColor;

@@ -1,10 +1,36 @@
-# NordVPN for Linux
+<div align="center">
 
-![icon](./assets/icon.svg)
+  <img src="./assets/icon.svg" alt="NordVPN icon" width="100" />
 
----
+  <h1>NordVPN for Linux</h1>
 
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/NordSecurity/nordvpn-linux/badge)](https://scorecard.dev/viewer/?uri=github.com/NordSecurity/nordvpn-linux)
+  <h3>
+    <strong>Privacy and security for Linux users</strong>
+  </h3>
+
+  <p>
+    <a href="https://scorecard.dev/viewer/?uri=github.com/NordSecurity/nordvpn-linux">
+      <img src="https://api.scorecard.dev/projects/github.com/NordSecurity/nordvpn-linux/badge" alt="OpenSSF Scorecard" />
+    </a>
+  </p>
+
+  <h3>
+    <a href="#about">About</a>
+    <span> | </span>
+    <a href="#versioning">Versioning</a>
+    <span> | </span>
+    <a href="#contributing">Contributing</a>
+    <span> | </span>
+    <a href="#building">Building</a>
+    <span> | </span>
+    <a href="#troubleshooting">Troubleshooting</a>
+    <span> | </span>
+    <a href="#installing">Installing</a>
+  </h3>
+
+</div>
+
+# <p id="about">About</p>
 
 The [NordVPN](https://nordvpn.com/features/) Linux application provides a
 simple and user-friendly command line interface for accessing all the
@@ -19,7 +45,7 @@ The application manages:
 - network interfaces using
   [WireGuard](https://www.wireguard.com/) (NordLynx) and tun (OpenVPN),
 - firewall with the help of
-  [iptables](https://www.netfilter.org/projects/iptables/index.html),
+  [nftables](https://nftables.org),
 - routing via the
   [netlink](https://www.man7.org/linux/man-pages/man7/netlink.7.html)
   kernel interface and
@@ -60,6 +86,26 @@ echo "debug" | sudo tee /run/nordvpn/loglevel
 ```
 
 Valid values are `debug`, `info`, `warn`, `error`, `fatal` and `off`.
+
+### Meshnet peer routing not working on Fedora with Docker installed
+
+When Docker is installed on Fedora, it drops all forwarded traffic that does
+not come from Docker. As a result, Meshnet routing through a Fedora machine will
+not work.
+
+To fix this, create `/etc/docker/daemon.json` with the following content:
+
+```json
+{
+  "ip-forward-no-drop": true
+}
+```
+
+Then reboot the system, for example:
+
+```sh
+sudo reboot
+```
 
 ## Installing
 

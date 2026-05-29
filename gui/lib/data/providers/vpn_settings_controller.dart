@@ -160,11 +160,19 @@ class VpnSettingsController extends _$VpnSettingsController
     state = AsyncData(state.value!.copyWith(allowList: value));
   }
 
-  Future<int> addToAllowList({PortInterval? port, Subnet? subnet}) async {
+  Future<int> addToAllowList({
+    PortInterval? port,
+    Subnet? subnet,
+    bool force = false,
+  }) async {
     assert((port != null) || (subnet != null), " port or subnet must be valid");
     return await _setValue(
-      (repository) =>
-          repository.addToAllowList(port: port, subnet: subnet?.value),
+      (repository) => repository.addToAllowList(
+        port: port,
+        subnet: subnet?.value,
+        force: force,
+      ),
+      userData: subnet,
     );
   }
 
@@ -330,6 +338,7 @@ class VpnSettingsController extends _$VpnSettingsController
   Future<int> _setValue(
     Future<int> Function(VpnSettingsRepository repository) callback, {
     Map<int, int>? popupCodeOverrides,
+    Object? userData,
   }) async {
     final repository = ref.read(vpnSettingsProvider);
     int status = DaemonStatusCode.failure;
@@ -346,7 +355,7 @@ class VpnSettingsController extends _$VpnSettingsController
       logger.e("Unexpected error: $e");
     }
 
-    // Use overridden popup code if provided, otherwise use the daemon status code
+    // Use overridden popup code if provided, otherwise use the daemon status code.
     final popupCode = popupCodeOverrides?[status] ?? status;
 
     // don't show popup when code is on ignore list
@@ -357,7 +366,7 @@ class VpnSettingsController extends _$VpnSettingsController
     // We do that to avoid the toggle of on/off button in case of failure
     state = state;
 
-    ref.read(popupsProvider.notifier).show(popupCode);
+    ref.read(popupsProvider.notifier).show(popupCode, userData: userData);
 
     return status;
   }
