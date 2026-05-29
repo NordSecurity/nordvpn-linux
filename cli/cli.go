@@ -1068,7 +1068,7 @@ func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) e
 	return func(ctx *cli.Context) error {
 		c.loaderInterceptor.enabled = isLoaderEnabled()
 		if err != nil {
-			log.Println(internal.ErrorPrefix, err)
+			log.Error(err)
 			color.Red(internal.ErrDaemonConnectionRefused.Error())
 			os.Exit(1)
 		}
@@ -1110,7 +1110,7 @@ func (c *cmd) action(err error, f func(*cli.Context) error) func(*cli.Context) e
 				color.Red("The NordVPN background service isn't running. Execute the \"systemctl enable --now nordvpnd\" command with root privileges to start the background service. If you're using NordVPN in an environment without systemd (a container, for example), use the \"/etc/init.d/nordvpn start\" command.")
 				os.Exit(1)
 			default:
-				log.Println(internal.ErrorPrefix, err)
+				log.Error(err)
 				color.Red(internal.UnhandledMessage)
 				os.Exit(1)
 			}
@@ -1297,7 +1297,7 @@ func (c *cmd) printServersForAutoComplete(country string, hasGroupFlag bool, gro
 	if hasGroupFlag || country == "" {
 		resp, err := c.client.Groups(context.Background(), &pb.Empty{})
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "failed to get the groups", err)
+			log.Error("failed to get the groups", err)
 			return
 		}
 
@@ -1319,7 +1319,7 @@ func (c *cmd) printServersForAutoComplete(country string, hasGroupFlag bool, gro
 
 		resp, err = c.client.Countries(context.Background(), &pb.Empty{})
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "failed to get the countries", err)
+			log.Error("failed to get the countries", err)
 			return
 		}
 		for _, server := range resp.Servers {
@@ -1331,7 +1331,7 @@ func (c *cmd) printServersForAutoComplete(country string, hasGroupFlag bool, gro
 			Country: country,
 		})
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "failed to get the cities", err)
+			log.Error("failed to get the cities", err)
 			return
 		}
 

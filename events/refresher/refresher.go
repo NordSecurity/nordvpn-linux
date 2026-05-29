@@ -58,13 +58,13 @@ func (m *Meshnet) NotifyPeerUpdate(peerIds []string) error {
 
 	if internal.Contains(peerIds, cfg.MeshDevice.ID.String()) && !cfg.MeshDevice.IsEqual(resp.Machine) {
 		// update info about current device when meshnet info are different
-		log.Println(internal.InfoPrefix, "update current machine information")
+		log.Info("update current machine information")
 		err := m.man.SaveWith(func(c config.Config) config.Config {
 			c.MeshDevice = &resp.Machine
 			return c
 		})
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "failed to save new machine information", err)
+			log.Error("failed to save new machine information", err)
 		}
 	}
 	// TODO: check if this should not be called only when current machine is affected

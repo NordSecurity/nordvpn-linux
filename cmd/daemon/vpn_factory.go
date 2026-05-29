@@ -7,7 +7,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/openvpn"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -26,12 +25,12 @@ func getVpnFactory(
 	if nordLynxErr != nil {
 		// don't exit with `err` here in case the factory will be called with
 		// technology different than `config.Technology_NORDLYNX`
-		log.Println(internal.ErrorPrefix, "getting NordLynx vpn:", nordLynxErr)
+		log.Error("getting NordLynx vpn:", nordLynxErr)
 	}
 
 	nordWhisperVPN, nordWhisperErr := getNordWhisperVPN(fwmark, envIsDev, eventsPublisher, libquenchCfg)
 	if nordWhisperErr != nil {
-		log.Println(internal.ErrorPrefix, "getting NordWhisper vpn:", nordWhisperErr)
+		log.Error("getting NordWhisper vpn:", nordWhisperErr)
 	}
 
 	return func(tech config.Technology) (vpn.VPN, error) {

@@ -87,7 +87,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 	if err != nil {
 		eventReason = events.ReasonLoginGetUserInfoFailed
 
-		log.Println(internal.ErrorPrefix, "retrieving credentials:", err)
+		log.Error("retrieving credentials:", err)
 		if errors.Is(err, core.ErrServerInternal) {
 			return &pb.LoginResponse{
 				Type: internal.CodeInternalError,
@@ -105,7 +105,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.LoginResponse{
 			Type: internal.CodeConfigError,
 		}, nil
@@ -128,7 +128,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 		c.AutoConnectData.ID = credentials.ID
 		return c
 	}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.LoginResponse{
 			Type: internal.CodeConfigError,
 		}, nil

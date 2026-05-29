@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/norduser/pb"
 	"github.com/NordSecurity/nordvpn-linux/norduser/process"
@@ -30,7 +29,7 @@ func (n NorduserGRPCClient) StartFileshare(uid uint32) error {
 
 	defer func() {
 		if err := clientConn.Close(); err != nil {
-			log.Println(internal.ErrorPrefix, "failed to close client connection to nord user: ", err)
+			log.Error("failed to close client connection to nord user: ", err)
 		}
 	}()
 
@@ -51,7 +50,7 @@ func (n NorduserGRPCClient) StopFileshare(uid uint32) error {
 
 	defer func() {
 		if err := clientConn.Close(); err != nil {
-			log.Println(internal.ErrorPrefix, "failed to close client connection to nord user: ", err)
+			log.Error("failed to close client connection to nord user: ", err)
 		}
 	}()
 

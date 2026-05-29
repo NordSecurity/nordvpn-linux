@@ -14,8 +14,7 @@ import (
 func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*pb.Payload, error) {
 	if in.Technology == config.Technology_NORDWHISPER {
 		if !features.NordWhisperEnabled {
-			log.Println(internal.DebugPrefix,
-				"user requested a NordWhisper technology but the feature is hidden based on compile flag.")
+			log.Debug("user requested a NordWhisper technology but the feature is hidden based on compile flag.")
 			return &pb.Payload{
 				Type: internal.CodeFeatureHidden,
 			}, nil
@@ -24,7 +23,7 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 
 	if cfg.Technology == in.GetTechnology() {
@@ -36,7 +35,7 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 
 	v, err := r.factory(in.GetTechnology())
 	if err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.Payload{
 			Type: internal.CodeConfigError,
 		}, nil
@@ -75,7 +74,7 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 		c.AutoConnectData.Obfuscate = obfuscate
 		return c
 	}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.Payload{
 			Type: internal.CodeConfigError,
 		}, nil

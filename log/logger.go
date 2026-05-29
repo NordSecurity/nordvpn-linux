@@ -134,22 +134,3 @@ func logAtf(l logLevel, prefix, format string, v []any) {
 		output(showCallerAsSource, fmt.Sprintf(prefix+" "+format, v...))
 	}
 }
-
-const legacyLogCalldepth = 3
-
-func Print(v ...any) {
-	output(legacyLogCalldepth, fmt.Sprint(v...))
-}
-
-func Println(v ...any) {
-	output(legacyLogCalldepth, fmt.Sprintln(v...))
-}
-
-func Printf(format string, v ...any) {
-	output(legacyLogCalldepth, fmt.Sprintf(format, v...))
-}
-
-func Fatalln(v ...any) {
-	output(legacyLogCalldepth, fmt.Sprintln(v...))
-	os.Exit(1)
-}

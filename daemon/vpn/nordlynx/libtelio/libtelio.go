@@ -87,9 +87,9 @@ func newTelioCallbackHandler(statesChan chan<- state) *telioCallbackHandler {
 func (t *telioCallbackHandler) handleEvent(e teliogo.Event) error {
 	eventBytes, err := json.Marshal(&e)
 	if err != nil {
-		log.Printf(internal.WarningPrefix+" can't marshal telio Event %T: %s\n", e, err)
+		log.Warnf("can't marshal telio Event %T: %s", e, err)
 	} else {
-		log.Printf(internal.InfoPrefix+" received event %T: %s\n", e, maskPublicKey(string(eventBytes)))
+		log.Infof("received event %T: %s", e, maskPublicKey(string(eventBytes)))
 	}
 
 	var st state
@@ -112,11 +112,11 @@ func (t *telioCallbackHandler) handleEvent(e teliogo.Event) error {
 		case t.statesChan <- st:
 		case <-t.monitoringContext.Done(): // drop if nobody is listening
 			if t.monitoringContext.Err() != nil {
-				log.Println(internal.ErrorPrefix, "canceling event monitoring:", t.monitoringContext.Err())
+				log.Error("canceling event monitoring:", t.monitoringContext.Err())
 			}
 			t.monitoringContext = nil
 		case <-time.After(1 * time.Second):
-			log.Println(internal.ErrorPrefix, "telio event was dropped because of timeout:", st)
+			log.Error("telio event was dropped because of timeout:", st)
 		}
 	}
 
@@ -143,8 +143,7 @@ func eventsBuffer(recvChan <-chan state, sendChan chan<- state, ctx context.Cont
 		buff = append(buff, event)
 		events++
 		if len(buff) >= numEventsLimit {
-			log.Println(internal.WarningPrefix,
-				"over", numEventsLimit, "events in the telio event buffer, dropping", numEventsDrop, "events")
+			log.Warn("over", numEventsLimit, "events in the telio event buffer, dropping", numEventsDrop, "events")
 			return buff[numEventsDrop:]
 		}
 
@@ -171,7 +170,7 @@ func eventsBuffer(recvChan <-chan state, sendChan chan<- state, ctx context.Cont
 		}
 
 		if time.Now().After(nextLogTime) && len(buff) > 0 {
-			log.Println(internal.DebugPrefix, len(buff), "events in telio event queue, received", events, "in 10s.")
+			log.Debug(len(buff), "events in telio event queue, received", events, "in 10s.")
 			nextLogTime = time.Now().Add(time.Second * 10)
 			events = 0
 		}
@@ -239,7 +238,7 @@ func handleTelioConfig(eventPath string, prod bool, vpnLibCfg vpn.LibConfigGette
 type telioLoggerCb struct{}
 
 func (cb *telioLoggerCb) Log(logLevel teliogo.TelioLogLevel, payload string) error {
-	log.Println(logLevelToPrefix(logLevel), "TELIO("+teliogo.GetVersionTag()+"): "+payload)
+	log.Info(logLevelToPrefix(logLevel), "TELIO("+teliogo.GetVersionTag()+"): "+payload)
 	return nil
 }
 
@@ -254,7 +253,7 @@ func New(
 	events := make(chan state)
 	features, err := handleTelioConfig(eventPath, prod, vpnLibCfg)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to get telio config:", err)
+		log.Error("failed to get telio config:", err)
 
 		defaultTelioConfig := teliogo.NewFeaturesDefaultsBuilder().
 			EnableDirect().
@@ -272,10 +271,10 @@ func New(
 
 	featuresString, err := json.Marshal(features)
 	if err != nil {
-		log.Println(internal.WarningPrefix, "failed to encode telio config:", err)
+		log.Warn("failed to encode telio config:", err)
 		// pass through - encoding is for the logging purposes
 	} else {
-		log.Println(internal.InfoPrefix, "telio final config:", string(featuresString))
+		log.Info("telio final config:", string(featuresString))
 	}
 
 	var loggerCb teliogo.TelioLoggerCb = &telioLoggerCb{}
@@ -283,7 +282,7 @@ func New(
 	telioCallbackHandler := newTelioCallbackHandler(events)
 	lib, err := teliogo.NewTelio(*features, eventCallbackWrap(telioCallbackHandler))
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to create telio instance:", err)
+		log.Error("failed to create telio instance:", err)
 		return nil, err
 	}
 
@@ -326,7 +325,7 @@ func (l *Libtelio) Start(
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	log.Println(internal.InfoPrefix, "libtelio version:", teliogo.GetVersionTag())
+	log.Info("libtelio version:", teliogo.GetVersionTag())
 
 	if err = l.openTunnel(nordlynx.DefaultPrefix, creds.NordLynxPrivateKey); err != nil {
 		return fmt.Errorf("opening the tunnel: %w", err)
@@ -479,7 +478,7 @@ func (l *Libtelio) Enable(ip netip.Addr, privateKey string) (err error) {
 	defer func() {
 		// Err defer. Revert changes in case something failed
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "enabling libtelio:", err)
+			log.Error("enabling libtelio:", err)
 			// #nosec G104 -- errors.Join would be useful here
 			l.disable()
 		}
@@ -553,7 +552,7 @@ func (l *Libtelio) NetworkChanged() error {
 	defer l.mu.Unlock()
 
 	if err := l.lib.NotifyNetworkChange(""); err != nil {
-		log.Println(internal.ErrorPrefix, "failed to notify network change:", err)
+		log.Error("failed to notify network change:", err)
 
 		if l.active {
 			serverIP := l.currentServer.IP
@@ -638,7 +637,7 @@ func nodeStateToString(state teliogo.NodeState) string {
 	case teliogo.NodeStateDisconnected:
 		return "disconnected"
 	default:
-		log.Printf(internal.ErrorPrefix+" not supported node state: %T, returning 'unknown'\n", state)
+		log.Errorf("not supported node state: %T, returning 'unknown'", state)
 		return "unknown"
 	}
 }
@@ -653,7 +652,7 @@ func (l *Libtelio) openTunnel(prefix netip.Prefix, privateKey string) (err error
 	if _, err := net.InterfaceByName(nordlynx.InterfaceName); err == nil {
 		// #nosec G204 -- input is properly sanitized
 		if err := exec.Command("ip", "link", "del", nordlynx.InterfaceName).Run(); err != nil {
-			log.Println(internal.WarningPrefix, err)
+			log.Warn(err)
 		}
 	}
 

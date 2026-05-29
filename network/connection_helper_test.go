@@ -55,7 +55,7 @@ func startTestDNSServer(t *testing.T, domainName string, ip netip.Addr) (addr st
 		}
 	})
 
-	log.Println("running DNS server on", pc.LocalAddr().String(), "for", domainName)
+	log.Info("running DNS server on", pc.LocalAddr().String(), "for", domainName)
 
 	return pc.LocalAddr().String(), func() {
 		_ = server.Shutdown()

@@ -133,7 +133,7 @@ func configureNft(cmd string) error {
 
 	out, err := c.CombinedOutput()
 	if err != nil {
-		log.Println("failed to execute nft", cmd, err)
+		log.Error("failed to execute nft", cmd, err)
 
 		return fmt.Errorf("nft failed: %v\noutput:\n%s", err, string(out))
 	}

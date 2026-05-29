@@ -3,7 +3,6 @@ package networker
 import (
 	"context"
 
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -19,7 +18,7 @@ func (c *Combined) Reconnect(stateIsUp bool) {
 
 	if stateIsUp {
 		if err := c.refreshVPN(context.Background()); err != nil {
-			log.Println(internal.ErrorPrefix, "refreshing vpn", err)
+			log.Error("refreshing vpn", err)
 		}
 	}
 }
