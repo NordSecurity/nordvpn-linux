@@ -8,7 +8,6 @@ import (
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -44,7 +43,7 @@ func (s *ReconnectSchedulerImpl) ScheduleReconnection(duration time.Duration) {
 	defer s.mu.Unlock()
 
 	if s.reconnectCancelFunc != nil {
-		log.Println(internal.DebugPrefix, "cancelling previous reconnection before initiating a new one")
+		log.Debug("cancelling previous reconnection before initiating a new one")
 		s.reconnectCancelFunc()
 	}
 
@@ -55,18 +54,16 @@ func (s *ReconnectSchedulerImpl) ScheduleReconnection(duration time.Duration) {
 	s.connectionInfo.Pause(time.Now(), duration)
 	go func() {
 		defer close(reconnectionScheduledChan)
-		log.Println(internal.DebugPrefix, "pausing connection for", duration.String())
+		log.Debug("pausing connection for", duration.String())
 		select {
 		case <-time.After(duration):
-			log.Println(internal.DebugPrefix, "resuming connection after a pause")
+			log.Debug("resuming connection after a pause")
 			pauseDuration := s.connectionInfo.Unpause()
 
 			connServer := connectServer{}
 			err := s.connectFunc(&connServer, pb.ConnectionSource_AUTO, pauseDuration)
 			if err != nil || connServer.err != nil {
-				log.Println(internal.ErrorPrefix,
-					"failed to reconnect after a pause: connection error:", err, "server error:", connServer.err)
-				s.pauseEvents.PauseNotifications.Publish(&pb.PauseEvent{Type: pb.PauseEventType_RECONNECT_FAILED})
+				log.Error("failed to reconnect after a pause: connection error:", err, "server error:", connServer.err)
 			}
 		case <-ctx.Done():
 			return
@@ -93,7 +90,7 @@ func (s *ReconnectSchedulerImpl) CancelReconnection() time.Duration {
 	defer s.mu.Unlock()
 
 	if s.reconnectCancelFunc != nil && s.isReconnectionScheduled() {
-		log.Println(internal.DebugPrefix, "cancelling the reconnection after a pause")
+		log.Debug("cancelling the reconnection after a pause")
 		s.reconnectCancelFunc()
 		s.reconnectCancelFunc = nil
 		return s.connectionInfo.CancelPause()

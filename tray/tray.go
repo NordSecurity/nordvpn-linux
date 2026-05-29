@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 	"github.com/NordSecurity/nordvpn-linux/notify"
@@ -253,7 +252,7 @@ func (ti *Instance) syncWithDaemon() {
 		}
 		err := waitUntilTrayStatusIsReceived(getTrayStatusFunc, ti.initialDataLoadChan)
 		if err != nil {
-			log.Printf("%s %s Waiting for tray state: %s. Retrying.\n", logTag, internal.ErrorPrefix, err)
+			log.Errorf("%s Waiting for tray state: %s. Retrying.", logTag, err)
 			continue
 		}
 		break
@@ -310,6 +309,10 @@ func (ti *Instance) renderLoop(ctx context.Context) {
 
 		ti.rebuildTray()
 		<-ti.renderChan
+
+		if ti.debugMode {
+			log.Debug("Render")
+		}
 
 		select {
 		case <-ctx.Done():

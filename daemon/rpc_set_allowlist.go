@@ -17,7 +17,7 @@ import (
 // containsPrivateNetwork returns true if subnets contains a private network
 func containsPrivateNetwork(subnet string) bool {
 	if net, err := netip.ParsePrefix(subnet); err != nil {
-		log.Println("Failed to parse subnet: ", err)
+		log.Info("Failed to parse subnet: ", err)
 	} else if net.Addr().IsPrivate() || net.Addr().IsLinkLocalUnicast() {
 		return true
 	}
@@ -78,7 +78,7 @@ func (r *RPC) getNewAllowlist(req *pb.SetAllowlistRequest, forceRemoveNarrower, 
 	var cfg config.Config
 	err := r.cm.Load(&cfg)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "reading config:", err)
+		log.Error("reading config:", err)
 		return config.Allowlist{}, internal.CodeConfigError
 	}
 
@@ -100,7 +100,7 @@ func (r *RPC) getNewAllowlist(req *pb.SetAllowlistRequest, forceRemoveNarrower, 
 		// try to detect if new subnet is wider and some narrower subnets would be eliminated
 		narrowerSubnets, err := allowlist.SubnetsCoveredBy(subnet)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "checking for overlapping subnets:", err)
+			log.Error("checking for overlapping subnets:", err)
 			return config.Allowlist{}, internal.CodeAllowlistInvalidSubnet
 		}
 
@@ -113,7 +113,7 @@ func (r *RPC) getNewAllowlist(req *pb.SetAllowlistRequest, forceRemoveNarrower, 
 		// UpdateSubnets takes logger function to be invoked in case existing subnet gets
 		// removed if it is covered by new subnet being added
 		if err := allowlist.UpdateSubnets(subnet, remove, func(removed, coveredBy string) {
-			log.Println(internal.WarningPrefix, "On add, allowlist removed subnet:", removed, "covered by:", coveredBy)
+			log.Warn("On add, allowlist removed subnet:", removed, "covered by:", coveredBy)
 		}); err != nil {
 			if errors.Is(err, config.ErrSubnetAlreadyCovered) {
 				return config.Allowlist{}, internal.CodeAllowlistSubnetSmallerNoop
@@ -146,7 +146,7 @@ func (r *RPC) getNewAllowlist(req *pb.SetAllowlistRequest, forceRemoveNarrower, 
 
 func (r *RPC) handleNewAllowlist(allowlist config.Allowlist) int64 {
 	if err := r.netw.SetAllowlist(allowlist); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return internal.CodeFailure
 	}
 
@@ -154,7 +154,7 @@ func (r *RPC) handleNewAllowlist(allowlist config.Allowlist) int64 {
 		c.AutoConnectData.Allowlist = allowlist
 		return c
 	}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return internal.CodeConfigError
 	}
 
@@ -236,7 +236,7 @@ func (r *RPC) UnsetAllowlist(ctx context.Context, in *pb.SetAllowlistRequest) (*
 func (r *RPC) emitAllowlistSnapshot() {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.WarningPrefix, "failed to load config for allowlist snapshot:", err)
+		log.Warn("failed to load config for allowlist snapshot:", err)
 		return
 	}
 

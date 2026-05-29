@@ -28,20 +28,18 @@ const (
 
 type Logger struct{}
 
-func (l *Logger) Log(logLevel quenchBindigns.LogLevel, message string) {
-	logPrefix := ""
-	//nolint:exhaustive // We do not use prefixes for other log levels
+func (l *Logger) Log(logLevel quenchBindigns.LogLevel, payload string) {
+	msg := quenchPrefix + " " + payload
 	switch logLevel {
-	case quenchBindigns.LogLevelInfo:
-		logPrefix = internal.InfoPrefix
-	case quenchBindigns.LogLevelDebug:
-		logPrefix = internal.DebugPrefix
 	case quenchBindigns.LogLevelError:
-		logPrefix = internal.ErrorPrefix
+		log.Error(msg)
+	case quenchBindigns.LogLevelWarning:
+		log.Warn(msg)
+	case quenchBindigns.LogLevelDebug, quenchBindigns.LogLevelTrace:
+		log.Debug(msg)
 	default:
-		logPrefix = internal.DebugPrefix
+		log.Info(msg)
 	}
-	log.Println(logPrefix, quenchPrefix, message)
 }
 
 type observer struct {
@@ -89,7 +87,7 @@ func (o *observer) SubscribeToEvents(ctx context.Context) <-chan vpn.State {
 func (o *observer) notifyConnectionStateChange(state vpn.State) {
 	o.currentState = state
 	if o.eventsChan != nil {
-		log.Println(internal.DebugPrefix, quenchPrefix, "notifying about connection state change")
+		log.Debug(quenchPrefix, "notifying about connection state change")
 		select {
 		case o.eventsChan <- state:
 		case <-o.eventsSubscribtionContext.Done():
@@ -105,7 +103,7 @@ func (o *observer) Connecting(uint32) {
 	// Log only when state has changed to ConnectingState from some other state. This will prevent log flood when
 	// libquench attempts to reconnect multiple times in no-net scenario.
 	if o.currentState != vpn.ConnectingState {
-		log.Println(internal.DebugPrefix, quenchPrefix, "connecting to quench server")
+		log.Debug(quenchPrefix, "connecting to quench server")
 	}
 
 	o.notifyConnectionStateChange(vpn.ConnectingState)
@@ -121,7 +119,7 @@ func (o *observer) Connected(uint32) {
 
 	o.notifyConnectionStateChange(vpn.ConnectedState)
 
-	log.Println(internal.DebugPrefix, quenchPrefix, "connected")
+	log.Debug(quenchPrefix, "connected")
 	o.eventNotifier.Connected.Publish(vpn.ConnectEvent{
 		Status:     events.StatusSuccess,
 		TunnelName: o.nicName,
@@ -134,7 +132,7 @@ func (o *observer) Disconnected(_ uint32, reason quenchBindigns.DisconnectReason
 
 	o.notifyConnectionStateChange(vpn.ExitedState)
 
-	log.Println(internal.DebugPrefix, quenchPrefix, "disconnected:", reason)
+	log.Debug(quenchPrefix, "disconnected:", reason)
 
 	o.eventNotifier.Disconnected.Publish(events.StatusSuccess)
 }
@@ -209,10 +207,10 @@ func (q *Quench) Start(ctx context.Context, creds vpn.Credentials, server vpn.Se
 	features, err := q.cfg.GetConfig()
 	if err != nil {
 		// In case we fail to fetch the remote config, we will use the defaults
-		log.Println(internal.WarningPrefix, "Failed to fetch NordWhisper features:", err)
+		log.Warn("Failed to fetch NordWhisper features:", err)
 		features = vpn.NewNordWhisperFeatureConfig()
 	}
-	log.Println(internal.InfoPrefix, "Using NordWhisper with features", features)
+	log.Info("Using NordWhisper with features", features)
 
 	config := Config{
 		Protocol: Protocol{
@@ -229,7 +227,7 @@ func (q *Quench) Start(ctx context.Context, creds vpn.Credentials, server vpn.Se
 		return fmt.Errorf("marshaling json config: %w", err)
 	}
 
-	log.Println(internal.DebugPrefix, "quench config:", string(jsonConfig))
+	log.Debug("quench config:", string(jsonConfig))
 
 	quenchCreds := quenchBindigns.Credentials{
 		User: creds.OpenVPNUsername,
@@ -251,12 +249,12 @@ func (q *Quench) Start(ctx context.Context, creds vpn.Credentials, server vpn.Se
 	q.tun = tun
 	q.server = server
 
-	log.Println(internal.DebugPrefix, "waiting for connection")
+	log.Debug("waiting for connection")
 CONNECTION_LOOP:
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println(internal.DebugPrefix, "context cancelled before connection was established")
+			log.Debug("context cancelled before connection was established")
 			return ctx.Err()
 		case ev := <-eventsChan:
 			q.state = ev

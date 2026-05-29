@@ -2011,7 +2011,7 @@ func (s *Server) getPeerWithIdentifier(id string, peers mesh.MachinePeers) *mesh
 func (s *Server) RemoteConfigUpdate(config remote.RemoteConfigEvent) error {
 	if !config.MeshnetFeatureEnabled {
 		if _, err := s.DisableMeshnet(context.Background(), &pb.Empty{}); err != nil {
-			log.Println(internal.WarningPrefix, "Failed to disable meshnet after remote config update:", err)
+			log.Warn("Failed to disable meshnet after remote config update:", err)
 		}
 	}
 	return nil

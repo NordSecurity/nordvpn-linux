@@ -260,7 +260,7 @@ func (c *cmd) FileshareAccept(ctx *cli.Context) error {
 	} else {
 		path, err = fileshare.GetDefaultDownloadDirectory()
 		if err != nil {
-			log.Print("determining user home directory: " + err.Error())
+			log.Error("determining user home directory: " + err.Error())
 			return errors.New(MsgFileshareAcceptHomeError)
 		}
 	}

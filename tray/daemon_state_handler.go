@@ -25,7 +25,7 @@ func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
 	case *pb.AppState_VersionHealth:
 		changed = ti.handleVersionHealthState(st)
 	default:
-		log.Printf("%s %s Unknown state type: %T\n", logTag, internal.WarningPrefix, item)
+		log.Warnf("%s Unknown state type: %T", logTag, item)
 	}
 
 	ti.redraw(changed)
@@ -33,17 +33,13 @@ func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
 
 // handleErrorState handles the daemon error state.
 func (ti *Instance) handleErrorState() bool {
-	log.Printf("%s %s Received daemon error state\n", logTag, internal.ErrorPrefix)
+	log.Errorf("%s Received daemon error state", logTag)
 	return ti.updateDaemonConnectionStatus(internal.ErrDaemonConnectionRefused.Error())
 }
 
 // handleConnectionStatusState handles the connection status state from the daemon.
 func (ti *Instance) handleConnectionStatusState(st *pb.AppState_ConnectionStatus) bool {
-	log.Printf("%s %s New connection status: %s\n",
-		logTag,
-		internal.InfoPrefix,
-		st.ConnectionStatus.GetState(),
-	)
+	log.Infof("%s New connection status: %s", logTag, st.ConnectionStatus.GetState())
 	changed := ti.updateVpnStatus()
 	changed = ti.updateRecentConnections() || changed
 	return changed

@@ -5,7 +5,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -40,15 +39,15 @@ func setDNSWithResolvectl(iface string, addresses []string) error {
 	// "Catch-all" domain routing for interface, more here: https://github.com/poettering/systemd/commit/8cedb0aef94da880e61b4c8cfeb7f450f8760ec6
 	// #nosec G204 -- input is properly validated
 	if out, err := exec.Command(execResolvectl, "domain", iface, "~.").CombinedOutput(); err != nil {
-		log.Println(internal.WarningPrefix, "dns domain routing with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
+		log.Warn("dns domain routing with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
 	}
 	// #nosec G204 -- input is properly validated
 	if out, err := exec.Command(execResolvectl, "default-route", iface, "true").CombinedOutput(); err != nil {
-		log.Println(internal.WarningPrefix, "dns domain default-route with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
+		log.Warn("dns domain default-route with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
 	}
 	// #nosec G204 -- input is properly validated
 	if out, err := exec.Command(execResolvectl, "flush-caches").CombinedOutput(); err != nil {
-		log.Println(internal.WarningPrefix, "flushing dns caches resolvectl:", strings.TrimSpace(string(out)), "err:", err)
+		log.Warn("flushing dns caches resolvectl:", strings.TrimSpace(string(out)), "err:", err)
 	}
 	return nil
 }
@@ -61,15 +60,15 @@ func unsetDNSWithResolvectl(iface string) error {
 	}
 	// #nosec G204 -- input is properly validated
 	if out, err := exec.Command(execResolvectl, "domain", iface, "").CombinedOutput(); err != nil {
-		log.Println(internal.WarningPrefix, "dns domain routing with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
+		log.Warn("dns domain routing with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
 	}
 	// #nosec G204 -- input is properly validated
 	if out, err := exec.Command(execResolvectl, "default-route", iface, "false").CombinedOutput(); err != nil {
-		log.Println(internal.WarningPrefix, "dns domain default-route with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
+		log.Warn("dns domain default-route with resolvectl:", strings.TrimSpace(string(out)), "err:", err)
 	}
 	// #nosec G204 -- input is properly validated
 	if out, err := exec.Command(execResolvectl, "flush-caches").CombinedOutput(); err != nil {
-		log.Println(internal.WarningPrefix, "flushing dns caches resolvectl:", strings.TrimSpace(string(out)), "err:", err)
+		log.Warn("flushing dns caches resolvectl:", strings.TrimSpace(string(out)), "err:", err)
 	}
 	return nil
 }

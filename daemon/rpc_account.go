@@ -124,7 +124,7 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 
 	vpnExpired, err := r.ac.IsVPNExpired()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "checking VPN expiration: ", err)
+		log.Error("checking VPN expiration: ", err)
 		return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
 	} else if vpnExpired {
 		accountInfo.Type = internal.CodeNoService
@@ -132,9 +132,29 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 		accountInfo.Type = internal.CodeSuccess
 	}
 
-	accountInfo = r.setDedicatedIPServerData(accountInfo)
-	if accountInfo.Type != internal.CodeSuccess {
-		return accountInfo, nil
+	accountInfo.DedicatedIpStatus = internal.CodeSuccess
+	dipServices, err := r.ac.GetDedicatedIPServices()
+	if err != nil {
+		log.Error("getting dedicated ip services:", err)
+		if errors.Is(err, core.ErrUnauthorized) {
+			return &pb.AccountResponse{Type: internal.CodeExpiredAccessToken}, nil
+		} else {
+			return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
+		}
+	}
+
+	if len(dipServices) < 1 {
+		accountInfo.DedicatedIpStatus = internal.CodeNoService
+	}
+
+	dedicatedIPExpirationDate := ""
+	if len(dipServices) != 0 {
+		accountInfo.DedicatedIpServices = dipServicesToProtobuf(dipServices)
+		dedicatedIPExpirationDate, err = findLatestDIPExpirationData(dipServices)
+		if err != nil {
+			log.Error("getting latest dedicated ip expiration date:", err)
+			return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
+		}
 	}
 
 	// get user's current mfa status
@@ -158,7 +178,7 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 
 	currentUser, err := r.credentialsAPI.CurrentUser()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "retrieving user:", err)
+		log.Error("retrieving user:", err)
 		switch {
 		case errors.Is(err, core.ErrUnauthorized):
 			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, r.events.User.Logout, events.ReasonUnauthorized)); err != nil {

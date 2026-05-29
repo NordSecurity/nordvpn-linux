@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"google.golang.org/grpc"
 )
@@ -27,11 +26,11 @@ func newStateListener(client pb.DaemonClient, onDataFunc func(item *pb.AppState)
 
 func (l *stateListener) Start() {
 	if l.cancelFunc != nil {
-		log.Printf("%s %s Already listening to daemon events\n", logTag, internal.WarningPrefix)
+		log.Warnf("%s Already listening to daemon events", logTag)
 		return
 	}
 
-	log.Printf("%s %s Starting to listen to daemon events\n", logTag, internal.InfoPrefix)
+	log.Infof("%s Starting to listen to daemon events", logTag)
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	l.cancelFunc = cancelFunc
 
@@ -40,7 +39,7 @@ func (l *stateListener) Start() {
 
 func (l *stateListener) Stop() {
 	if l.cancelFunc != nil {
-		log.Printf("%s %s Stopping from listening to daemon events\n", logTag, internal.InfoPrefix)
+		log.Infof("%s Stopping from listening to daemon events", logTag)
 		l.cancelFunc()
 		l.cancelFunc = nil
 	}
@@ -50,16 +49,14 @@ func (l *stateListener) consumeStream(ctx context.Context, server grpc.ServerStr
 	for {
 		state, err := server.Recv()
 		if err != nil {
-			log.Printf("%s %s Stream receive error: %v\n", logTag, internal.ErrorPrefix, err)
+			log.Errorf("%s Stream receive error: %v", logTag, err)
 			return
 		}
 
 		select {
 		case l.queue <- state:
 		case <-time.After(time.Second):
-			log.Warnf("%s App state consumer's queue is full, dropping: %v\n", logTag, state)
-		case <-ctx.Done():
-			return
+			log.Warnf("%s App state consumer's queue is full, dropping", logTag)
 		}
 	}
 }
@@ -95,8 +92,8 @@ func (l *stateListener) listen(ctx context.Context) {
 
 	for {
 		if err := RetryWithBackoff(ctx, backoffConfig, op); err != nil {
-			log.Printf("%s %s listen to daemon's state stream: %s\n", logTag, internal.InfoPrefix, err)
-			break
+			log.Infof("%s listen to daemon's state stream: %s", logTag, err)
+			return
 		}
 
 		l.consumeStream(ctx, server)

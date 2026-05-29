@@ -210,9 +210,9 @@ func (cdn *mockedCdn) setupCDNConfigFiles() {
 		filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json"): makeHashJson([]byte(libtelioInc2Cfg)),
 	}
 
-	log.Println("libtelio hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio-hash.json")]))
-	log.Println("libtelio inc1 hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")]))
-	log.Println("libtelio inc2 hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")]))
+	log.Info("libtelio hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio-hash.json")]))
+	log.Info("libtelio inc1 hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")]))
+	log.Info("libtelio inc2 hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")]))
 }
 
 func (cdn *mockedCdn) updateCDNConfigFiles() {
@@ -227,9 +227,9 @@ func (cdn *mockedCdn) updateCDNConfigFiles() {
 	cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")] = makeHashJson([]byte(libtelioInc1Cfg))
 	cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")] = makeHashJson([]byte(libtelioInc2Cfg))
 
-	log.Println("libtelio hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio-hash.json")]))
-	log.Println("libtelio inc1 hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")]))
-	log.Println("libtelio inc2 hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")]))
+	log.Info("libtelio hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "libtelio-hash.json")]))
+	log.Info("libtelio inc1 hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio1-hash.json")]))
+	log.Info("libtelio inc2 hash:", string(cdn.cdnFiles[filepath.Join(cdnDevRemotePath, "include/libtelio2-hash.json")]))
 }
 
 // mockedFileEntry serves as in-memory representation of a file
@@ -570,7 +570,7 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	libtelioInc2ConfigFile := filepath.Join(localPath, "include/libtelio2.json")
 
 	rc := newTestRemoteConfig("3.4.1", "dev", cdn, fileIO, defaultRolloutGroup)
-	log.Println("~~~~ first attempt to load - should load whole config from web server")
+	log.Info("~~~~ first attempt to load - should load whole config from web server")
 
 	err := rc.Load()
 	assert.NoError(t, err)
@@ -585,7 +585,7 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, info1inc2)
 
-	log.Println("~~~~ second attempt to load - should check hash is the same and should not load main config from web server")
+	log.Info("~~~~ second attempt to load - should check hash is the same and should not load main config from web server")
 
 	err = rc.Load()
 	assert.NoError(t, err)
@@ -609,7 +609,7 @@ func TestGetUpdatedTelioConfig(t *testing.T) {
 
 	cdn.updateCDNConfigFiles()
 
-	log.Println("~~~~ try to load again - libtelio config hash is not the same, should try to load whole libtelio config from web server")
+	log.Info("~~~~ try to load again - libtelio config hash is not the same, should try to load whole libtelio config from web server")
 
 	err = rc.Load()
 	assert.NoError(t, err)
