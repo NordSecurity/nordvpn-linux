@@ -20,7 +20,7 @@ case "$1" in
         update-desktop-database 2> /dev/null
         rm -f /usr/share/zsh/functions/Completion/Unix/_nordvpn
         rm -f /usr/share/bash-completion/completions/nordvpn
-        rm -f /usr/lib/systemd/system/nordvpnd.*
+        rm -f /usr/lib/systemd/system/nordvpnd*
         rm -f /usr/lib/systemd/tmpfiles.d/nordvpn.conf
         rm -f /etc/init.d/nordvpn
         rm -rf /root/.{cache,config}/nordvpn

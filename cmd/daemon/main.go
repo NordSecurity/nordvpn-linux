@@ -6,11 +6,13 @@ import (
 	"crypto/sha256"
 	_ "embed"
 	"errors"
+	"flag"
 	"fmt"
 	"net"
 	"net/http"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -127,7 +129,11 @@ func initializeStaticConfig(machineID uuid.UUID) config.StaticConfigManager {
 
 func main() {
 	appStartTime := time.Now()
-
+	ksMode := flag.Bool("killswitch-mode", false, "sets killswitch rules and stops")
+	flag.Parse()
+	if *ksMode{
+		log.Info("Daemon running in killswitch mode")
+	}
 	stopLevelWatcher := log.SetupLogger(
 		os.Stdout,
 		internal.LogLevelFile,
@@ -216,6 +222,20 @@ func main() {
 		Environment,
 		daemonEvents.Debugger.DebuggerEvents,
 	)
+	if *ksMode {
+		if cfg.KillSwitch {
+			log.Info("Enabling killswitch")
+			fw.Configure(firewall.NewConfig(
+			firewall.WithKillSwitch(true)))
+			out, err := exec.Command("nft", "list", "ruleset").CombinedOutput() 
+			if err != nil {
+				log.Debug(err)
+			}
+			log.Debug("nft: ", string(out))
+		}
+		log.Info("Killswitch mode daemon stopping, waiting for internet")
+		return
+	}
 
 	// API
 	var err error

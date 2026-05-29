@@ -31,15 +31,18 @@ create_socket_dir() {
 # Function that starts the daemon
 #
 start() {
+  daemon_args=$1
   create_socket_dir
   # Return
   #   0 if daemon has been started
   #   1 if daemon was already running
   #   2 if daemon could not be started
-  start-stop-daemon --start --quiet -g "$NORDVPN_GROUP" --pidfile $PIDFILE --exec $DAEMON \
-    --background --make-pidfile --no-close --test > /dev/null || return 1
-  start-stop-daemon --start --quiet -g "$NORDVPN_GROUP" --pidfile $PIDFILE --exec $DAEMON \
-    --background --make-pidfile --no-close >> $LOGFILE 2>&1 || return 2
+  start-stop-daemon --start --quiet -g "$NORDVPN_GROUP" --pidfile $PIDFILE \
+    --background --make-pidfile --no-close --test \
+    --exec $DAEMON -- $daemon_args > /dev/null || return 1
+  start-stop-daemon --start --quiet -g "$NORDVPN_GROUP" --pidfile $PIDFILE \
+    --background --make-pidfile --no-close \
+    --exec $DAEMON -- $daemon_args >> $LOGFILE 2>&1 || return 2
 }
 
 #
@@ -96,7 +99,7 @@ restart() {
 
 case "$1" in
   start)
-    start
+    start $2
     ;;
   stop)
     stop
