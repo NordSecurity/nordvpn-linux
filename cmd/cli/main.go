@@ -71,20 +71,16 @@ func main() {
 		}
 	}()
 
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatalln(err)
-	}
-	configDir, err := internal.GetConfigDirPath(homeDir)
+	configDir, err := internal.GetConfigDirPath()
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Setup logging
 	fileLogger := &lumberjack.Logger{
-		Filename:   filepath.Join(configDir, "cli.log"),
-		MaxSize:    500,
-		MaxBackups: 3,
+		Filename:   filepath.Join(configDir, internal.CLILogFileName),
+		MaxSize:    100,
+		MaxBackups: 1,
 		MaxAge:     28,
 		Compress:   true,
 	}

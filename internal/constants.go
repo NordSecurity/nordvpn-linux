@@ -78,6 +78,8 @@ const (
 	Norduserd = "norduserd"
 
 	NorduserdLogFileName = "norduserd" + LogFileExtension
+	CLILogFileName       = "cli" + LogFileExtension
+	MaxUserLogSizeMB     = 100
 
 	// FileshareHistoryFile is the storage file used by libdrop
 	FileshareHistoryFileName = "fileshare_history.db"
@@ -189,10 +191,17 @@ func GetNorduserSocketFork(uid int) string {
 	return fmt.Sprintf("/tmp/%d-%s.sock", uid, Norduserd)
 }
 
-func getHomeDirPath(homeDirectory string) (string, error) {
+func getHomeDirPath() (string, error) {
+	var homeDirectory string
 	snapUserDataDir := os.Getenv("SNAP_USER_COMMON")
 	if snapUserDataDir != "" {
 		homeDirectory = snapUserDataDir
+	} else {
+		if dir, err := os.UserHomeDir(); err != nil {
+			return "", errors.New("cannot get user home dir")
+		} else {
+			homeDirectory = dir
+		}
 	}
 
 	_, err := os.Stat(homeDirectory)
@@ -204,8 +213,8 @@ func getHomeDirPath(homeDirectory string) (string, error) {
 }
 
 // GetConfigDirPath returns the directory used to store local user config
-func GetConfigDirPath(homeDirectory string) (string, error) {
-	homeDirectory, err := getHomeDirPath(homeDirectory)
+func GetConfigDirPath() (string, error) {
+	homeDirectory, err := getHomeDirPath()
 	if err != nil {
 		return "", err
 	}
@@ -219,8 +228,8 @@ func GetConfigDirPath(homeDirectory string) (string, error) {
 }
 
 // GetCacheDirPath returns the directory used to store local user logs
-func GetCacheDirPath(homeDirectory string) (string, error) {
-	homeDirectory, err := getHomeDirPath(homeDirectory)
+func GetCacheDirPath() (string, error) {
+	homeDirectory, err := getHomeDirPath()
 	if err != nil {
 		return "", err
 	}

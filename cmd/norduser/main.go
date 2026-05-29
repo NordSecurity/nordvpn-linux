@@ -202,13 +202,6 @@ func startFileshare(uid uint32) (chan<- norduser.FileshareManagementMsg, <-chan 
 }
 
 func startSnap() {
-	stopLevelWatcher := log.SetupLogger(
-		internal.UserLogOutput(internal.NorduserdLogFileName),
-		internal.LogLevelFile,
-		log.DefaultLevel(),
-	)
-	defer stopLevelWatcher()
-
 	group, err := user.LookupGroup(internal.NordvpnGroup)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "Unable to retrieve nordvpn group:", err)
@@ -305,13 +298,6 @@ func startSnap() {
 }
 
 func start() {
-	stopLevelWatcher := log.SetupLogger(
-		internal.UserLogOutput(internal.NorduserdLogFileName),
-		internal.LogLevelFile,
-		log.DefaultLevel(),
-	)
-	defer stopLevelWatcher()
-
 	connURL := internal.GetNorduserSocketFork(os.Geteuid())
 	if err := os.Remove(connURL); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Println(internal.ErrorPrefix, "Failed to remove old socket file:", err)
@@ -363,6 +349,13 @@ func start() {
 }
 
 func main() {
+	stopLevelWatcher := log.SetupLogger(
+		internal.UserLogOutput(internal.NorduserdLogFileName, internal.MaxUserLogSizeMB),
+		internal.LogLevelFile,
+		log.DefaultLevel(),
+	)
+	defer stopLevelWatcher()
+
 	if snapconf.IsUnderSnap() {
 		startSnap()
 	} else {
