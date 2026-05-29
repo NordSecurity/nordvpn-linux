@@ -49,10 +49,18 @@ for path in $(ldconfig -p 2>/dev/null | grep 'libsqlite3.so.0' | sed -n 's/.*=>[
     fi
 done
 
+# if no symlink found, try to assign anything (probably a direct .so file)
+if [ -z "$sqlite" ]; then
+    sqlite=$(ldconfig -p 2>/dev/null | grep 'libsqlite3.so.0' | sed -n 's/.*=>[[:space:]]*//p' | head -n1)
+    echo "WARNING: no symlink to libsqlite3.so.0 found in ldconfig cache; using $sqlite for nordvpnd, which may fail to start after lib update" >&2
+fi
+
 if [ -n "$sqlite" ]; then
     ln -sf "$sqlite" "${LIBS_DIR}/libsqlite3.so"
 else
-    echo "WARNING: no symlink to libsqlite3.so.0 found in ldconfig cache; nordvpnd may fail to start" >&2
+    # if still no symlink nor actual file found, simply stop installation
+    echo "ERROR: no symlink to libsqlite3.so.0 found in ldconfig cache; nordvpnd might not be able to start" >&2
+    exit 1
 fi
 set +e
 
