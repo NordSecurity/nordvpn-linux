@@ -557,7 +557,6 @@ def test_settings_are_kept_after_reboot():
     assert app_settings.get("DNS") == "disabled", "DNS must be disabled because TP is enabled"
 
     # set DNS and reboot the system
-
     assert "DNS has been successfully set to '1.1.1.1'." in sh.nordvpn.set("dns", "1.1.1.1"), "Failed to set custom DNS"
 
     daemon.restart()
