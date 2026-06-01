@@ -562,5 +562,5 @@ def test_settings_are_kept_after_reboot():
     daemon.restart()
 
     app_settings = settings.Settings()
-    assert app_settings.get("Threat Protection Lite") == "disabled", f"Tpl must be disabled, because of custom DNS"
-    assert app_settings.get("DNS") == "1.1.1.1", f"Custom DNS value is not kept after reboot"
+    assert app_settings.get("Threat Protection Lite") == "disabled", "Tpl must be disabled, because of custom DNS"
+    assert app_settings.get("DNS") == "1.1.1.1", "Custom DNS value is not kept after reboot"
