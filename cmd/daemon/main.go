@@ -568,7 +568,7 @@ func main() {
 		clientAPI,
 		cdnAPI,
 		repoAPI,
-		core.NewOAuth2(httpClientWithRotator, daemon.BaseURL),
+		core.NewOAuth2(httpClientWithRotator, daemon.BaseURL, validator),
 		Version,
 		daemonEvents,
 		vpnFactory,
