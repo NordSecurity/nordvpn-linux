@@ -10,7 +10,7 @@ table inet nordvpn {
 		type filter hook input priority filter; policy drop;
 		iifname "lo" accept comment "local to local"
 		ct mark 0x0000e1f1 accept comment "response for sockets with SO_MARK"
-		iifname "nordlynx" ct state established,related accept comment "response to connections inside tunnel"
+		iifname "nordlynx" accept comment "traffic from the tunnel"
 	}
 
 	chain output {
