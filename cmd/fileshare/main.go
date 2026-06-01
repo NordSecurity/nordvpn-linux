@@ -39,7 +39,7 @@ var (
 func main() {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Info("panic:", r)
+			log.Error("panic:", r)
 			if internal.IsDevEnv(Environment) {
 				log.Info(string(debug.Stack()))
 			}
