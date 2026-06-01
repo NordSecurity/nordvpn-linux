@@ -7,7 +7,7 @@ import (
 	"gotest.tools/v3/assert"
 )
 
-func TestIsDNSAddressValid(t *testing.T) {
+func TestIsAddressValidAsDNSServer(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
@@ -25,8 +25,8 @@ func TestIsDNSAddressValid(t *testing.T) {
 		{name: "broadcast", address: "255.255.255.255", expected: true},
 		{name: "max single octet", address: "0.0.0.255", expected: true},
 
-		// IPv4-mapped IPv6 collapses to a 4-byte address, so To4() is non-nil.
-		{name: "ipv4-mapped ipv6", address: "::ffff:192.168.1.1", expected: true},
+		// IPv4-mapped IPv6 is written in IPv6 notation, so it is rejected.
+		{name: "ipv4-mapped ipv6", address: "::ffff:192.168.1.1", expected: false},
 
 		// Valid IPv6 addresses are rejected because To4() is nil.
 		{name: "ipv6 loopback", address: "::1", expected: false},
@@ -59,7 +59,7 @@ func TestIsDNSAddressValid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, IsDNSAddressValid(tt.address))
+			assert.Equal(t, tt.expected, IsAddressValidAsDNSServer(tt.address))
 		})
 	}
 }
