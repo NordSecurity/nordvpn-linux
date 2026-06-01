@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // MigrateDeprecatedRegionalAutoconnect removes the deprecated regional group from autoconnect.
@@ -24,4 +26,25 @@ func MigrateDeprecatedRegionalAutoconnect(cm config.Manager) error {
 		}
 		return c
 	})
+}
+
+// configCleanup - validate/cleanup DNS addresses, allowlist subnets
+func ConfigCleanup(c config.Config) config.Config {
+	// Remove all nameservers with IPv6 addresses
+	var dnsList []string
+	for _, addr := range c.AutoConnectData.DNS {
+		if internal.IsDNSAddressValid(addr) {
+			dnsList = append(dnsList, addr)
+		} else {
+			log.Warn("remove invalid DNS address from the list", addr)
+		}
+	}
+	c.AutoConnectData.DNS = dnsList
+
+	// Remove overlapping, invalid and IPv6 subnets, if any
+	c.AutoConnectData.Allowlist.NormalizeSubnets(func(removed, reason string) {
+		log.Println(internal.WarningPrefix, "On start, allowlist remove subnet:", removed, "; reason:", reason)
+	})
+
+	return c
 }
