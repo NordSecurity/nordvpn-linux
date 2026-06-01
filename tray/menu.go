@@ -42,6 +42,11 @@ const (
 	labelSettings              = "Settings"
 	labelNotifications         = "Notifications"
 	labelTrayIcon              = "Tray icon"
+	labelPause5Min             = "Pause for 5 minutes"
+	labelPause15Min            = "Pause for 15 minutes"
+	labelPause30Min            = "Pause for 30 minutes"
+	labelPause1H               = "Pause for 1 hour"
+	labelPause24H              = "Pause for 24 hours"
 
 	// Menu item tooltips
 	tooltipConnectionSelection = "Choose connection type"
@@ -204,7 +209,11 @@ func buildConnectionSection(ti *Instance) {
 	buildVPNStatusLabel(ti)
 	if ti.state.vpnStatus == pb.ConnectionState_CONNECTED {
 		buildConnectedToSection(ti)
-		buildDisconnectButton(ti)
+		if ti.state.vpnIsMeshPeer {
+			buildDisconnectButton(ti)
+		} else {
+			buildPauseMenu(ti)
+		}
 	} else {
 		buildQuickConnectButton(ti)
 	}
@@ -280,6 +289,62 @@ func buildQuickConnectButton(ti *Instance) {
 	}
 	item := systray.AddMenuItem(labelSecureMyConnection, labelSecureMyConnection)
 	go handleQuickConnectClick(ti, item)
+}
+
+type PauseLength struct {
+	Name            string
+	Tooltip         string
+	DurationSeconds uint32
+}
+
+var PauseLengths = []PauseLength{
+	{
+		Name:            labelPause5Min,
+		Tooltip:         labelPause5Min,
+		DurationSeconds: 5 * 60,
+	},
+	{
+		Name:            labelPause15Min,
+		Tooltip:         labelPause15Min,
+		DurationSeconds: 15 * 60,
+	},
+	{
+		Name:            labelPause30Min,
+		Tooltip:         labelPause30Min,
+		DurationSeconds: 30 * 60,
+	},
+	{
+		Name:            labelPause1H,
+		Tooltip:         labelPause1H,
+		DurationSeconds: 60 * 60,
+	},
+	{
+		Name:            labelPause24H,
+		Tooltip:         labelPause24H,
+		DurationSeconds: 24 * 60 * 60,
+	},
+}
+
+func buildPauseMenu(ti *Instance) {
+	if ti == nil {
+		return
+	}
+
+	pauseMenu := systray.AddMenuItem("Pause", "Pause tooltip")
+	for _, pauseLength := range PauseLengths {
+		pause := pauseMenu.AddSubMenuItem(pauseLength.Name, pauseLength.Tooltip)
+		go handlePauseClick(ti, pause, pauseLength)
+	}
+
+	disconnect := pauseMenu.AddSubMenuItem(labelDisconnect, labelDisconnect)
+	go handleDisconnectClick(ti, disconnect)
+}
+
+func handlePauseClick(ti *Instance, item *systray.MenuItem, pauseLength PauseLength) {
+	if ti == nil {
+		return
+	}
+	handleMenuItemClick(item, func() { ti.pause(pauseLength) })
 }
 
 func handleDisconnectClick(ti *Instance, item *systray.MenuItem) {

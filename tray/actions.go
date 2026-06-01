@@ -258,6 +258,25 @@ func (ti *Instance) disconnect() bool {
 	return true
 }
 
+func (ti *Instance) pause(pauseLength PauseLength) bool {
+	resp, err := ti.client.PauseConnection(context.Background(), &pb.PauseRequest{Seconds: pauseLength.DurationSeconds})
+	if err != nil {
+		ti.notify(NoForce, "Pause error: %s", err)
+		return false
+	}
+
+	switch resp.Type {
+	case internal.CodePauseAttemptWhenConnectedToMeshPeer:
+		log.Printf("%s Pause attempt when connected to meshnet peer", internal.ErrorPrefix)
+		return false
+	case internal.CodeFailure:
+		log.Printf("%s Pause attempt failed", internal.ErrorPrefix)
+		ti.notify(NoForce, "Pause attempt failed")
+		return false
+	}
+	return true
+}
+
 func (ti *Instance) setNotify(flag bool) bool {
 	flagText := getFlagText(flag)
 	resp, err := ti.client.SetNotify(context.Background(), &pb.SetNotifyRequest{

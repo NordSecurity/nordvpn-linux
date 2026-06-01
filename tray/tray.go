@@ -153,6 +153,7 @@ type trayState struct {
 	vpnCity              string
 	vpnCountry           string
 	vpnVirtualLocation   bool
+	vpnIsMeshPeer        bool
 	initialSyncCompleted bool
 	connSelector         ConnectionSelector
 	mu                   sync.RWMutex
