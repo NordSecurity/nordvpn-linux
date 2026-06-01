@@ -33,7 +33,7 @@ func ConfigCleanup(c config.Config) config.Config {
 	// Remove all nameservers with IPv6 addresses
 	var dnsList []string
 	for _, addr := range c.AutoConnectData.DNS {
-		if internal.IsDNSAddressValid(addr) {
+		if internal.IsAddressValidAsDNSServer(addr) {
 			dnsList = append(dnsList, addr)
 		} else {
 			log.Warn("remove invalid DNS address from the list", addr)
@@ -43,7 +43,7 @@ func ConfigCleanup(c config.Config) config.Config {
 
 	// Remove overlapping, invalid and IPv6 subnets, if any
 	c.AutoConnectData.Allowlist.NormalizeSubnets(func(removed, reason string) {
-		log.Println(internal.WarningPrefix, "On start, allowlist remove subnet:", removed, "; reason:", reason)
+		log.Warn("On start, allowlist remove subnet:", removed, "; reason:", reason)
 	})
 
 	return c
