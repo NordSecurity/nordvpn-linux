@@ -592,6 +592,9 @@ func main() {
 		),
 		dataUpdateEvents,
 	)
+
+	internalVpnEvents.ConnectionError.Subscribe(rpc.HandleVPNConnectionError)
+
 	meshService := meshnet.NewServer(
 		authChecker,
 		fsystem,
