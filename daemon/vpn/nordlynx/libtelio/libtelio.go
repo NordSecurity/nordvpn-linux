@@ -71,17 +71,21 @@ func eventCallbackWrap(callbackHandler *telioCallbackHandler) eventCb {
 
 type callbackHandler interface {
 	handleEvent(teliogo.Event) error
-	setMonitoringContext(ctx context.Context)
+	setConnectionMonitoringContext(ctx context.Context)
 }
 
 type telioCallbackHandler struct {
-	mu                sync.Mutex
-	statesChan        chan<- state
-	monitoringContext context.Context
+	mu                          sync.Mutex
+	statesChan                  chan<- state
+	connectionMonitoringContext context.Context
+	vpnErrorsChan               chan<- teliogo.VpnConnectionError
 }
 
-func newTelioCallbackHandler(statesChan chan<- state) *telioCallbackHandler {
-	return &telioCallbackHandler{statesChan: statesChan}
+func newTelioCallbackHandler(
+	statesChan chan<- state,
+	vpnErrorsChan chan<- teliogo.VpnConnectionError,
+) *telioCallbackHandler {
+	return &telioCallbackHandler{statesChan: statesChan, vpnErrorsChan: vpnErrorsChan}
 }
 
 func (t *telioCallbackHandler) handleEvent(e teliogo.Event) error {
@@ -92,6 +96,13 @@ func (t *telioCallbackHandler) handleEvent(e teliogo.Event) error {
 		log.Printf(internal.InfoPrefix+" received event %T: %s\n", e, maskPublicKey(string(eventBytes)))
 	}
 
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	ctx := t.connectionMonitoringContext
+	if ctx == nil {
+		return nil
+	}
+
 	var st state
 	switch evt := e.(type) {
 	case teliogo.EventNode:
@@ -100,34 +111,39 @@ func (t *telioCallbackHandler) handleEvent(e teliogo.Event) error {
 			PublicKey: evt.Body.PublicKey,
 			IsExit:    evt.Body.IsExit,
 		}
-	default:
-		// ignore
-		return nil
-	}
 
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	if t.monitoringContext != nil {
 		select {
 		case t.statesChan <- st:
-		case <-t.monitoringContext.Done(): // drop if nobody is listening
-			if t.monitoringContext.Err() != nil {
-				log.Println(internal.ErrorPrefix, "canceling event monitoring:", t.monitoringContext.Err())
+		case <-ctx.Done(): // drop if nobody is listening
+			if ctx.Err() != nil {
+				log.Debug("canceling connection state monitoring:", ctx.Err())
 			}
-			t.monitoringContext = nil
+			t.connectionMonitoringContext = nil
+			return nil
 		case <-time.After(1 * time.Second):
 			log.Println(internal.ErrorPrefix, "telio event was dropped because of timeout:", st)
 		}
+
+		if evt.Body.VpnConnectionError != nil {
+			select {
+			case t.vpnErrorsChan <- *evt.Body.VpnConnectionError:
+			default:
+				log.Debug("dropping ENS connection error, monitor busy:", *evt.Body.VpnConnectionError)
+			}
+		}
+
+	default:
+		// ignore
 	}
 
 	return nil
 }
 
-func (t *telioCallbackHandler) setMonitoringContext(ctx context.Context) {
+func (t *telioCallbackHandler) setConnectionMonitoringContext(ctx context.Context) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	t.monitoringContext = ctx
+	t.connectionMonitoringContext = ctx
 }
 
 func eventsBuffer(recvChan <-chan state, sendChan chan<- state, ctx context.Context) {
@@ -195,12 +211,13 @@ func eventsBuffer(recvChan <-chan state, sendChan chan<- state, ctx context.Cont
 // 7. VPN connected, calling Disable - tunnel must be re-initiated with the originally saved values provided to Start
 // 8. VPN disconnected, calling Disable - tunnel must be destroyed
 type Libtelio struct {
-	state                   vpn.State
-	lib                     lib
-	events                  <-chan state
-	cancelConnectionMonitor func()
-	active                  bool
-	tun                     tunnel.T
+	state                      vpn.State
+	lib                        lib
+	stateEvents                <-chan state
+	vpnErrorEvents             <-chan teliogo.VpnConnectionError
+	cancelConnectionMonitoring func()
+	active                     bool
+	tun                        tunnel.T
 	// This must be the one given from the public interface and
 	// retrieved from the API
 	currentServer     vpn.ServerData
@@ -212,6 +229,18 @@ type Libtelio struct {
 	eventsPublisher   *vpn.Events
 	callbackHandler   callbackHandler
 	mu                sync.Mutex
+}
+
+func defaultErrorNotificationService() *teliogo.FeatureErrorNotificationService {
+	return &teliogo.FeatureErrorNotificationService{
+		BufferSize:  5,
+		AllowOnlyPq: false,
+		Backoff: teliogo.Backoff{
+			InitialS: 2,
+			MaximalS: nil,
+		},
+		RootCertificateOverride: nil,
+	}
 }
 
 // defaultPrefix is the default address used by NordLynx when meshnet is not enabled
@@ -233,6 +262,10 @@ func handleTelioConfig(eventPath string, prod bool, vpnLibCfg vpn.LibConfigGette
 		telioConfig.Nurse = nil
 	}
 
+	if telioConfig.ErrorNotificationService == nil {
+		telioConfig.ErrorNotificationService = defaultErrorNotificationService()
+	}
+
 	return &telioConfig, nil
 }
 
@@ -251,7 +284,8 @@ func New(
 	appVersion string,
 	eventsPublisher *vpn.Events,
 ) (*Libtelio, error) {
-	events := make(chan state)
+	stateEvents := make(chan state)
+	errorEvents := make(chan teliogo.VpnConnectionError, 1)
 	features, err := handleTelioConfig(eventPath, prod, vpnLibCfg)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to get telio config:", err)
@@ -263,6 +297,7 @@ func New(
 			EnableBatterySavingDefaults().
 			EnableFlushEventsOnStopTimeoutSeconds().
 			EnableNicknames().
+			EnableErrorNotificationService().
 			Build()
 
 		defaultTelioConfig.Nurse.HeartbeatInterval = defaultHeartbeatInterval
@@ -280,7 +315,7 @@ func New(
 
 	var loggerCb teliogo.TelioLoggerCb = &telioLoggerCb{}
 	teliogo.SetGlobalLogger(teliogo.TelioLogLevelInfo, loggerCb)
-	telioCallbackHandler := newTelioCallbackHandler(events)
+	telioCallbackHandler := newTelioCallbackHandler(stateEvents, errorEvents)
 	lib, err := teliogo.NewTelio(*features, eventCallbackWrap(telioCallbackHandler))
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to create telio instance:", err)
@@ -289,8 +324,9 @@ func New(
 
 	return &Libtelio{
 		lib:             lib,
-		events:          events,
+		stateEvents:     stateEvents,
 		state:           vpn.ExitedState,
+		vpnErrorEvents:  errorEvents,
 		fwmark:          fwmark,
 		eventsPublisher: eventsPublisher,
 		callbackHandler: telioCallbackHandler,
@@ -351,17 +387,20 @@ func (l *Libtelio) connect(
 	postQuantum bool,
 ) error {
 	ctx, cancel := context.WithCancel(context.Background())
-	l.cancelConnectionMonitor = cancel
-	l.callbackHandler.setMonitoringContext(ctx)
+	l.cancelConnectionMonitoring = cancel
+	l.callbackHandler.setConnectionMonitoringContext(ctx)
 
 	bufferedEventsChan := make(chan state)
-	go eventsBuffer(l.events, bufferedEventsChan, ctx)
+	go eventsBuffer(l.stateEvents, bufferedEventsChan, ctx)
 
 	// Start monitoring connection events before connecting to not miss any
 	isConnectedC := isConnected(ctx,
 		bufferedEventsChan,
 		connParameters{pubKey: serverPublicKey, server: l.currentServer},
 		l.eventsPublisher)
+
+	// Start monitoring ENS connection errors before connecting so no early error is missed.
+	startConnectionErrorMonitor(ctx, l.vpnErrorEvents, l.eventsPublisher)
 
 	var err error
 	endpoint := net.JoinHostPort(serverIP.String(), "51820")
@@ -431,8 +470,8 @@ func (l *Libtelio) Stop() error {
 
 // disconnect from all the exit nodes, including VPN server
 func (l *Libtelio) disconnect() error {
-	if l.cancelConnectionMonitor != nil {
-		l.cancelConnectionMonitor()
+	if l.cancelConnectionMonitoring != nil {
+		l.cancelConnectionMonitoring()
 	}
 
 	if err := l.lib.DisconnectFromExitNodes(); err != nil {
@@ -772,7 +811,7 @@ func isConnected(ctx context.Context,
 	connectedCh := make(chan interface{})
 	go func() {
 		wg.Done() // signal that goroutine has started
-		monitorConnection(ctx, stateCh, connectedCh, connParams, eventsPublisher)
+		monitorConnectionState(ctx, stateCh, connectedCh, connParams, eventsPublisher)
 	}()
 
 	wg.Wait() // wait until goroutine is started
@@ -785,10 +824,10 @@ type connParameters struct {
 	server vpn.ServerData
 }
 
-// monitorConnection awaits for incoming state changes from the states chan and publishes appropriate events. Upon
+// monitorConnectionState awaits for incoming state changes from the states chan and publishes appropriate events. Upon
 // detecting the 'connected' state for the first time it will send true via isConnected channel and close it afterwards.
 // If goroutine is canceled before detecting 'connected', false will be sent via isConnected channel.
-func monitorConnection(
+func monitorConnectionState(
 	ctx context.Context,
 	states <-chan state,
 	isConnected chan<- interface{},
@@ -843,5 +882,60 @@ func monitorConnection(
 			}
 			return
 		}
+	}
+}
+
+// startConnectionErrorMonitor starts connection error monitoring in a goroutine and returns only
+// once it is running
+func startConnectionErrorMonitor(
+	ctx context.Context,
+	errorsChan <-chan teliogo.VpnConnectionError,
+	eventsPublisher *vpn.Events,
+) {
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	go func() {
+		wg.Done()
+		monitorConnectionErrors(ctx, errorsChan, eventsPublisher)
+	}()
+
+	wg.Wait()
+}
+
+// monitorConnectionErrors awaits ENS connection errors extracted from telio node events,
+// maps them to the protocol-agnostic events and publishes them on the internal VPN event bus.
+func monitorConnectionErrors(
+	ctx context.Context,
+	errorsChan <-chan teliogo.VpnConnectionError,
+	eventsPublisher *vpn.Events,
+) {
+	for {
+		select {
+		case connErr := <-errorsChan:
+			eventsPublisher.ConnectionError.Publish(events.VPNConnectionErrorEvent{
+				Code: toVPNConnectionError(connErr),
+			})
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+// toVPNConnectionError maps a libtelio ENS error to the protocol-agnostic events enum.
+func toVPNConnectionError(connErr teliogo.VpnConnectionError) events.VPNConnectionError {
+	switch connErr {
+	case teliogo.VpnConnectionErrorUnknown:
+		return events.VPNConnectionErrorUnknown
+	case teliogo.VpnConnectionErrorConnectionLimitReached:
+		return events.VPNConnectionErrorConnectionLimitReached
+	case teliogo.VpnConnectionErrorServerMaintenance:
+		return events.VPNConnectionErrorServerMaintenance
+	case teliogo.VpnConnectionErrorUnauthenticated:
+		return events.VPNConnectionErrorUnauthenticated
+	case teliogo.VpnConnectionErrorSuperseded:
+		return events.VPNConnectionErrorSuperseded
+	default:
+		return events.VPNConnectionErrorUnknown
 	}
 }
