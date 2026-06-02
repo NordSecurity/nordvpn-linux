@@ -84,6 +84,7 @@ type (
 	mooseSetDSIsActiveFunc   func(bool) uint32
 	mooseUnsetDSIsActiveFunc func() uint32
 	mooseSetDSEnabledFunc    func(bool) uint32
+	mooseUnsetDSEnabledFunc  func() uint32
 )
 
 type mooseFunctions struct {
@@ -107,6 +108,7 @@ type mooseFunctions struct {
 	setDSIsActive                 mooseSetDSIsActiveFunc
 	unsetDSIsActive               mooseUnsetDSIsActiveFunc
 	setDSEnabled                  mooseSetDSEnabledFunc
+	unsetDSEnabled                mooseUnsetDSEnabledFunc
 }
 
 // Subscriber listen events, send to moose engine
@@ -170,6 +172,7 @@ func NewSubscriber(
 			setDSIsActive:                 moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateDedicatedServerIsActive,
 			unsetDSIsActive:               moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateDedicatedServerIsActive,
 			setDSEnabled:                  moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateDedicatedServerEnabled,
+			unsetDSEnabled:                moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateDedicatedServerEnabled,
 		},
 	}
 	// Add more handlers here as needed
@@ -1238,6 +1241,15 @@ func (s *Subscriber) setDedicatedServerServiceStatus(
 			hasDS, err,
 		)
 	}
+	if !hasDS {
+		// explicitly reset DS server enabled in case when DS service not active
+		if err := s.setDedicatedServerEnabled(false); err != nil {
+			return fmt.Errorf(
+				"resetting dedicated server enabled (DS service not active): %w",
+				err,
+			)
+		}
+	}
 	return nil
 }
 
@@ -1478,6 +1490,7 @@ func (s *Subscriber) clearSubscriptions() error {
 			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateServiceExpiresAt()
 		},
 		s.mooseFuncs.unsetDSIsActive,
+		s.mooseFuncs.unsetDSEnabled,
 	} {
 		if err := s.response(fn()); err != nil {
 			return err

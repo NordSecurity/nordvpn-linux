@@ -247,6 +247,9 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	if err != nil {
 		var errorCode *internal.ErrorWithCode
 		if errors.As(err, &errorCode) {
+			if errorCode.Code == internal.CodeDedicatedServersNotReady {
+				r.publishDedicatedServerStatus(serverSelection.dedicatedServerStatus)
+			}
 			return true, srv.Send(&pb.Payload{Type: errorCode.Code})
 		}
 
@@ -316,12 +319,7 @@ func (r *RPC) connect(
 		serverSelection.server.DedicatedServersPort = dedicatedServerConnectionData.port
 		serverSelection.server.NordLynxPublicKey = dedicatedServerConnectionData.publicKey
 
-		// publish DS status event early right after API query
-		if serverSelection.dedicatedServerStatus != "" {
-			r.events.Service.DedicatedServerStatus.Publish(
-				events.DataDedicatedServerStatus{Status: string(serverSelection.dedicatedServerStatus)},
-			)
-		}
+		r.publishDedicatedServerStatus(serverSelection.dedicatedServerStatus)
 	}
 
 	ip, err := serverSelection.server.IPv4()
@@ -481,6 +479,14 @@ func (r *RPC) connect(
 	}
 
 	return false, nil
+}
+
+func (r *RPC) publishDedicatedServerStatus(status core.DedicatedServerStatus) {
+	if status != "" {
+		r.events.Service.DedicatedServerStatus.Publish(
+			events.DataDedicatedServerStatus{Status: string(status)},
+		)
+	}
 }
 
 // getElapsedTime calculates the time elapsed since the given start time in milliseconds.
