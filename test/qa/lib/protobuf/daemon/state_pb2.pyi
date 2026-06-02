@@ -20,11 +20,16 @@ class UpdateEvent(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
     SERVERS_LIST_UPDATE: _ClassVar[UpdateEvent]
     RECENTS_LIST_UPDATE: _ClassVar[UpdateEvent]
+
+class PauseEventType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    RECONNECT_FAILED: _ClassVar[PauseEventType]
 FAILED_TO_GET_UID: AppStateError
 LOGIN: LoginEventType
 LOGOUT: LoginEventType
 SERVERS_LIST_UPDATE: UpdateEvent
 RECENTS_LIST_UPDATE: UpdateEvent
+RECONNECT_FAILED: PauseEventType
 
 class LoginEvent(_message.Message):
     __slots__ = ("type",)
@@ -44,8 +49,14 @@ class VersionHealthStatus(_message.Message):
     status_code: int
     def __init__(self, status_code: _Optional[int] = ...) -> None: ...
 
+class PauseEvent(_message.Message):
+    __slots__ = ("type",)
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    type: PauseEventType
+    def __init__(self, type: _Optional[_Union[PauseEventType, str]] = ...) -> None: ...
+
 class AppState(_message.Message):
-    __slots__ = ("error", "connection_status", "login_event", "settings_change", "update_event", "account_modification", "version_health")
+    __slots__ = ("error", "connection_status", "login_event", "settings_change", "update_event", "account_modification", "version_health", "pause_event")
     ERROR_FIELD_NUMBER: _ClassVar[int]
     CONNECTION_STATUS_FIELD_NUMBER: _ClassVar[int]
     LOGIN_EVENT_FIELD_NUMBER: _ClassVar[int]
@@ -53,6 +64,7 @@ class AppState(_message.Message):
     UPDATE_EVENT_FIELD_NUMBER: _ClassVar[int]
     ACCOUNT_MODIFICATION_FIELD_NUMBER: _ClassVar[int]
     VERSION_HEALTH_FIELD_NUMBER: _ClassVar[int]
+    PAUSE_EVENT_FIELD_NUMBER: _ClassVar[int]
     error: AppStateError
     connection_status: _status_pb2.StatusResponse
     login_event: LoginEvent
@@ -60,4 +72,5 @@ class AppState(_message.Message):
     update_event: UpdateEvent
     account_modification: AccountModification
     version_health: VersionHealthStatus
-    def __init__(self, error: _Optional[_Union[AppStateError, str]] = ..., connection_status: _Optional[_Union[_status_pb2.StatusResponse, _Mapping]] = ..., login_event: _Optional[_Union[LoginEvent, _Mapping]] = ..., settings_change: _Optional[_Union[_settings_pb2.Settings, _Mapping]] = ..., update_event: _Optional[_Union[UpdateEvent, str]] = ..., account_modification: _Optional[_Union[AccountModification, _Mapping]] = ..., version_health: _Optional[_Union[VersionHealthStatus, _Mapping]] = ...) -> None: ...
+    pause_event: PauseEvent
+    def __init__(self, error: _Optional[_Union[AppStateError, str]] = ..., connection_status: _Optional[_Union[_status_pb2.StatusResponse, _Mapping]] = ..., login_event: _Optional[_Union[LoginEvent, _Mapping]] = ..., settings_change: _Optional[_Union[_settings_pb2.Settings, _Mapping]] = ..., update_event: _Optional[_Union[UpdateEvent, str]] = ..., account_modification: _Optional[_Union[AccountModification, _Mapping]] = ..., version_health: _Optional[_Union[VersionHealthStatus, _Mapping]] = ..., pause_event: _Optional[_Union[PauseEvent, _Mapping]] = ...) -> None: ...

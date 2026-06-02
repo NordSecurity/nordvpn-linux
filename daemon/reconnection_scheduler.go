@@ -26,12 +26,14 @@ type ReconnectSchedulerImpl struct {
 	reconnectionScheduledChan <-chan any
 	connectFunc               connectFunc
 	connectionInfo            *state.ConnectionInfo
+	statePublisher            *state.StatePublisher
 }
 
-func NewReconnectScheduler(connectFunc connectFunc, connectionInfo *state.ConnectionInfo) ReconnectScheduler {
+func NewReconnectScheduler(connectFunc connectFunc, connectionInfo *state.ConnectionInfo, statePublisher *state.StatePublisher) ReconnectScheduler {
 	return &ReconnectSchedulerImpl{
 		connectFunc:    connectFunc,
 		connectionInfo: connectionInfo,
+		statePublisher: statePublisher,
 	}
 }
 
@@ -63,6 +65,7 @@ func (s *ReconnectSchedulerImpl) ScheduleReconnection(duration time.Duration) {
 			if err != nil || connServer.err != nil {
 				log.Println(internal.ErrorPrefix,
 					"failed to reconnect after a pause: connection error:", err, "server error:", connServer.err)
+				_ = s.statePublisher.NotifyPauseEvent(&pb.PauseEvent{Type: pb.PauseEventType_RECONNECT_FAILED})
 			}
 		case <-ctx.Done():
 			return
