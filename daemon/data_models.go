@@ -49,7 +49,7 @@ func (data *InsightsData) save() error {
 		return err
 	}
 
-	err = internal.FileWrite(data.filePath, buffer.Bytes(), internal.PermUserRWGroupROthersR)
+	err = internal.FileWrite(data.filePath, buffer.Bytes(), internal.PermUserRW)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (data *CountryData) save() error {
 		return err
 	}
 
-	err = internal.FileWrite(data.filePath, buffer.Bytes(), internal.PermUserRWGroupROthersR)
+	err = internal.FileWrite(data.filePath, buffer.Bytes(), internal.PermUserRW)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func (data *ServersData) save() error {
 		return fmt.Errorf("encoding data: %w", err)
 	}
 
-	err = internal.FileWrite(data.filePath, buffer.Bytes(), internal.PermUserRWGroupROthersR)
+	err = internal.FileWrite(data.filePath, buffer.Bytes(), internal.PermUserRW)
 	if err != nil {
 		return fmt.Errorf("writing data: %w", err)
 	}
