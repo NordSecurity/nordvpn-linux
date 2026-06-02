@@ -1,6 +1,7 @@
 package core
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -8,9 +9,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOAuth2_Login(t *testing.T) {
@@ -85,13 +88,161 @@ func TestOAuth2_Login(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewOAuth2(http.DefaultClient, server.URL)
+			api := NewOAuth2(http.DefaultClient, server.URL, response.NoopValidator{})
 			url, err := api.Login(test.regularLogin)
 			assert.Equal(t, test.hasError, err != nil)
 			if test.hasError {
 				assert.True(t, strings.Contains(err.Error(), test.name))
 			}
 			assert.Equal(t, test.expectedURL, url)
+		})
+	}
+}
+
+func TestOAuth2_Login_Validation(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	loginFixture, err := os.ReadFile("testdata/login_200.json")
+	require.NoError(t, err)
+
+	tests := []struct {
+		name         string
+		validatorErr error
+		wantEmptyURI bool
+		wantCode     int
+		wantBody     []byte
+		wantHeaders  http.Header
+	}{
+		{
+			name:         "validator rejection blocks login",
+			validatorErr: errors.New("signature mismatch"),
+			wantEmptyURI: true,
+		},
+		{
+			name:     "validator receives correct status code",
+			wantCode: http.StatusOK,
+		},
+		{
+			name:     "validator receives unmodified response body",
+			wantBody: loginFixture,
+		},
+		{
+			name:        "validator receives response headers",
+			wantHeaders: http.Header{"Content-Type": []string{"application/json"}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+				rw.Header().Set("Content-Type", "application/json")
+				rw.WriteHeader(http.StatusOK)
+				rw.Write(loginFixture)
+			}))
+			defer server.Close()
+
+			spy := &spyValidator{err: tt.validatorErr}
+			api := NewOAuth2(http.DefaultClient, server.URL, spy)
+
+			uri, err := api.Login(true)
+
+			if tt.validatorErr != nil {
+				assert.Error(t, err)
+				assert.ErrorIs(t, err, tt.validatorErr)
+				assert.NotZero(t, spy.calledWith.code)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			if tt.wantEmptyURI {
+				assert.Empty(t, uri)
+			}
+
+			if tt.wantCode != 0 {
+				assert.Equal(t, tt.wantCode, spy.calledWith.code)
+			}
+
+			if tt.wantBody != nil {
+				assert.JSONEq(t, string(tt.wantBody), string(spy.calledWith.body))
+			}
+
+			for key, vals := range tt.wantHeaders {
+				assert.Equal(t, vals, spy.calledWith.headers[key])
+			}
+		})
+	}
+}
+
+func TestOAuth2_Token_Validation(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tokenFixture, err := os.ReadFile("testdata/token_200.json")
+	require.NoError(t, err)
+
+	tests := []struct {
+		name         string
+		validatorErr error
+		wantNilResp  bool
+		wantCode     int
+		wantBody     []byte
+		wantHeaders  http.Header
+	}{
+		{
+			name:         "validator rejection blocks token exchange",
+			validatorErr: errors.New("signature mismatch"),
+			wantNilResp:  true,
+		},
+		{
+			name:     "validator receives correct status code",
+			wantCode: http.StatusOK,
+		},
+		{
+			name:     "validator receives unmodified response body",
+			wantBody: tokenFixture,
+		},
+		{
+			name:        "validator receives response headers",
+			wantHeaders: http.Header{"Content-Type": []string{"application/json"}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+				rw.Header().Set("Content-Type", "application/json")
+				rw.WriteHeader(http.StatusOK)
+				rw.Write(tokenFixture)
+			}))
+			defer server.Close()
+
+			spy := &spyValidator{err: tt.validatorErr}
+			api := NewOAuth2(http.DefaultClient, server.URL, spy)
+
+			resp, err := api.Token("exchange")
+
+			if tt.validatorErr != nil {
+				assert.Error(t, err)
+				assert.ErrorIs(t, err, tt.validatorErr)
+				assert.NotZero(t, spy.calledWith.code)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			if tt.wantNilResp {
+				assert.Nil(t, resp)
+			}
+
+			if tt.wantCode != 0 {
+				assert.Equal(t, tt.wantCode, spy.calledWith.code)
+			}
+
+			if tt.wantBody != nil {
+				assert.JSONEq(t, string(tt.wantBody), string(spy.calledWith.body))
+			}
+
+			for key, vals := range tt.wantHeaders {
+				assert.Equal(t, vals, spy.calledWith.headers[key])
+			}
 		})
 	}
 }
@@ -152,7 +303,7 @@ func TestOAuth2_Token(t *testing.T) {
 			server := httptest.NewServer(test.handler)
 			defer server.Close()
 
-			api := NewOAuth2(http.DefaultClient, server.URL)
+			api := NewOAuth2(http.DefaultClient, server.URL, response.NoopValidator{})
 			resp, err := api.Token("exchange")
 			assert.Equal(t, test.hasError, err != nil)
 			if test.hasError {
@@ -163,4 +314,22 @@ func TestOAuth2_Token(t *testing.T) {
 			}
 		})
 	}
+}
+
+type spyValidator struct {
+	err        error
+	calledWith calledWith
+}
+
+type calledWith struct {
+	code    int
+	headers http.Header
+	body    []byte
+}
+
+func (v *spyValidator) Validate(code int, headers http.Header, body []byte) error {
+	v.calledWith.code = code
+	v.calledWith.headers = headers
+	v.calledWith.body = body
+	return v.err
 }

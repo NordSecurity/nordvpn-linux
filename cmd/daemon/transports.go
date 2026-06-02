@@ -44,7 +44,11 @@ func SetBufferSizeForHTTP3() error {
 	return nil
 }
 
-func createH1Transport(resolver network.DNSResolver, fwmark uint32) func() http.RoundTripper {
+func createH1Transport(
+	resolver network.DNSResolver,
+	fwmark uint32,
+	environment string,
+) func() http.RoundTripper {
 	return func() http.RoundTripper {
 		var operr error
 		fwmark := func(fd uintptr) {
@@ -64,7 +68,8 @@ func createH1Transport(resolver network.DNSResolver, fwmark uint32) func() http.
 			},
 			Timeout: request.DefaultTimeout,
 		}
-		return &http.Transport{
+
+		transport := &http.Transport{
 			DialContext: func(ctx context.Context, netw, addr string) (net.Conn, error) {
 				domain, _, ok := strings.Cut(addr, ":")
 				if !ok {
@@ -89,6 +94,27 @@ func createH1Transport(resolver network.DNSResolver, fwmark uint32) func() http.
 			},
 			TLSHandshakeTimeout: request.TransportTimeout,
 		}
+
+		if internal.IsDevEnv(environment) {
+			transport.Proxy = http.ProxyFromEnvironment
+		}
+
+		return transport
+	}
+}
+
+func createSimpleH1Transport(environment string) func() http.RoundTripper {
+	return func() http.RoundTripper {
+		t := &http.Transport{
+			DialContext:         (&net.Dialer{Timeout: request.TransportTimeout}).DialContext,
+			TLSHandshakeTimeout: request.TransportTimeout,
+		}
+
+		if internal.IsDevEnv(environment) {
+			t.Proxy = http.ProxyFromEnvironment
+		}
+
+		return t
 	}
 }
 
@@ -144,6 +170,7 @@ func createTimedOutTransport(
 	httpCallsSubject events.Publisher[events.DataRequestAPI],
 	connectSubject events.PublishSubcriber[events.DataConnect],
 	ctx context.Context,
+	environment string,
 ) http.RoundTripper {
 	transportsStr := os.Getenv(envHTTPTransportsKey)
 	log.Println(internal.InfoPrefix, "http transports to use (environment):", transportsStr)
@@ -160,7 +187,7 @@ func createTimedOutTransport(
 			1,
 			1,
 			"HTTP/1.1",
-			createH1Transport(resolver, fwmark),
+			createH1Transport(resolver, fwmark, environment),
 			nil,
 		)
 		connectSubject.Subscribe(h1Transport.NotifyConnect)
