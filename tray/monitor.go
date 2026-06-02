@@ -484,6 +484,7 @@ func (ti *Instance) setVpnStatus(
 ) bool {
 	changed := false
 	var notificationText, notificationArg string
+
 	func() {
 		ti.state.mu.Lock()
 		defer ti.state.mu.Unlock()
@@ -498,8 +499,10 @@ func (ti *Instance) setVpnStatus(
 		ti.state.vpnHostname = vpnHostname
 		ti.state.vpnStatus = vpnStatus
 
+		newServerName := ti.state.serverName()
+
 		statusChanged := oldVpnStatus != vpnStatus
-		serverNameChanged := oldServerName != ti.state.serverName()
+		serverNameChanged := oldServerName != newServerName
 		changed = statusChanged || serverNameChanged
 
 		if statusChanged {
@@ -507,7 +510,7 @@ func (ti *Instance) setVpnStatus(
 			switch vpnStatus {
 			case pb.ConnectionState_CONNECTED:
 				notificationText = labelConnectedFormat
-				notificationArg = ti.state.serverName()
+				notificationArg = newServerName
 			case pb.ConnectionState_PAUSED:
 				fallthrough
 			case pb.ConnectionState_DISCONNECTED:
@@ -518,10 +521,10 @@ func (ti *Instance) setVpnStatus(
 			case pb.ConnectionState_UNKNOWN_STATE, pb.ConnectionState_CONNECTING:
 			}
 		} else if serverNameChanged {
-			log.Printf("%s VPN server name changed from %s to %s\n", logTag, oldServerName, ti.state.serverName())
-			if ti.state.serverName() != "" && oldServerName != "" && vpnStatus == pb.ConnectionState_CONNECTED {
+			log.Printf("%s VPN server name changed from %s to %s\n", logTag, oldServerName, newServerName)
+			if newServerName != "" && oldServerName != "" && vpnStatus == pb.ConnectionState_CONNECTED {
 				notificationText = labelConnectedFormat
-				notificationArg = ti.state.serverName()
+				notificationArg = newServerName
 			}
 		}
 	}()

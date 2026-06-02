@@ -447,10 +447,8 @@ func buildSettingsSubitems(ti *Instance, menu *systray.MenuItem) {
 		return
 	}
 
-	ti.state.mu.RLock()
 	notificationsEnabled := ti.state.notificationsStatus == Enabled
 	trayEnabled := ti.state.trayStatus == Enabled
-	ti.state.mu.RUnlock()
 
 	notificationsCheckbox := menu.AddSubMenuItemCheckbox(
 		labelNotifications,
