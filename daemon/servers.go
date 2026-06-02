@@ -492,7 +492,7 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 	)
 
 	if err != nil {
-		// Dedicated IP/Servers are handled separately, avoid logging an error to avoid confusion
+		// Dedicated IP/Servers are handled separately, avoid logging an error to prevent confusion
 		if !errors.Is(err, ErrDedicatedIPServer) && !errors.Is(err, ErrDedicatedServer) {
 			log.Println(internal.ErrorPrefix, "picking servers:", err)
 		}
