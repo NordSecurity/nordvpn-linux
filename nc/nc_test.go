@@ -2,11 +2,13 @@ package nc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	cfgmock "github.com/NordSecurity/nordvpn-linux/test/mock"
@@ -18,12 +20,25 @@ import (
 	mqttp "github.com/eclipse/paho.mqtt.golang/packets"
 )
 
+type mockMqttMessage struct {
+	payload []byte
+}
+
+func (m *mockMqttMessage) Duplicate() bool   { return false }
+func (m *mockMqttMessage) Qos() byte         { return 0 }
+func (m *mockMqttMessage) Retained() bool    { return false }
+func (m *mockMqttMessage) Topic() string     { return "" }
+func (m *mockMqttMessage) MessageID() uint16 { return 0 }
+func (m *mockMqttMessage) Payload() []byte   { return m.payload }
+func (m *mockMqttMessage) Ack()              {}
+
 type mockMqttClient struct {
 	mqtt.Client
 	// connecting indicates if client is in connecting or disconnecting state
 	connecting     bool
 	connectToken   mockMqttToken
 	subscribeToken mockMqttToken
+	clientID       string
 }
 
 func (m *mockMqttClient) Connect() mqtt.Token {
@@ -41,6 +56,16 @@ func (m *mockMqttClient) SubscribeMultiple(filters map[string]byte, callback mqt
 	return &m.subscribeToken
 }
 
+func (m *mockMqttClient) OptionsReader() mqtt.ClientOptionsReader {
+	return mqtt.NewOptionsReader(&mqtt.ClientOptions{
+		ClientID: m.clientID,
+	})
+}
+
+func (m *mockMqttClient) Publish(topic string, qos byte, retained bool, payload interface{}) mqtt.Token {
+	return &mockMqttToken{}
+}
+
 type mockMqttToken struct {
 	mqtt.Token
 	timesOut bool
@@ -53,6 +78,12 @@ func (m *mockMqttToken) WaitTimeout(time.Duration) bool {
 
 func (m *mockMqttToken) Error() error {
 	return m.err
+}
+
+func (m *mockMqttToken) Done() <-chan struct{} {
+	ch := make(chan struct{})
+	close(ch)
+	return ch
 }
 
 func connectionStateToString(t *testing.T, state connectionState) string {
@@ -170,6 +201,7 @@ func TestStartStopNotificationClient(t *testing.T) {
 			&subs.Subject[string]{},
 			&subs.Subject[error]{},
 			&subs.Subject[[]string]{},
+			&subs.Subject[any]{},
 			credsFetcher)
 
 		t.Run(test.name, func(t *testing.T) {
@@ -274,4 +306,66 @@ func TestConnectionCancellation(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMessageHandling(t *testing.T) {
+	connectionToken := mockMqttToken{
+		timesOut: false,
+	}
+	mockMqttClient := mockMqttClient{
+		connectToken: connectionToken,
+		clientID:     "target-uuid",
+	}
+
+	peerUpdateCalled := false
+	peerUpdateHandler := events.Handler[[]string](func(s []string) error {
+		peerUpdateCalled = true
+		return nil
+	})
+
+	peerUpdateSubject := subs.Subject[[]string]{}
+	peerUpdateSubject.Subscribe(peerUpdateHandler)
+
+	serviceUpdateCalled := false
+	serviceUpdateHandler := events.Handler[any](func(s any) error {
+		serviceUpdateCalled = true
+		return nil
+	})
+
+	serviceUpdateSubject := subs.Subject[any]{}
+	serviceUpdateSubject.Subscribe(serviceUpdateHandler)
+
+	notificationClient := Client{
+		subjectPeerUpdate:     &peerUpdateSubject,
+		subjectServicesUpdate: &serviceUpdateSubject,
+	}
+
+	payload := RecPayload{
+		Message: MessagePayload{
+			Data: DataPayload{
+				Event: EventPayload{
+					Type: typeMeshnet,
+				},
+				Metadata: MetadataPayload{
+					TargetUID: "target-uuid",
+				},
+			},
+		},
+	}
+	serializedPayload, _ := json.Marshal(payload)
+	message := mockMqttMessage{
+		payload: serializedPayload,
+	}
+
+	notificationClient.handleMessage(&mockMqttClient, &message, context.Background())
+	assert.True(t, peerUpdateCalled, "Peer update should be triggered by meshnet network notification.")
+
+	payload.Message.Data.Event.Type = typeUserServiceUpdate
+	serializedPayload, _ = json.Marshal(payload)
+	message = mockMqttMessage{
+		payload: serializedPayload,
+	}
+
+	notificationClient.handleMessage(&mockMqttClient, &message, context.Background())
+	assert.True(t, serviceUpdateCalled, "Service update should be triggered by user service notification.")
 }

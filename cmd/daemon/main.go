@@ -508,6 +508,11 @@ func main() {
 	accountUpdateEvents := daemonevents.NewAccountUpdateEvents()
 	accountUpdateEvents.Subscribe(statePublisher)
 
+	servicesState := auth.NewServicesState(clientAPI, deviceKeyManager)
+	userServicesEvents := daemonevents.NewUserServicesEvents()
+	userServicesEvents.Subscribe(servicesState)
+	daemonEvents.User.Logout.Subscribe(servicesState.NotifyLogout)
+
 	// Create auth checker with all session stores
 	authChecker := auth.NewRenewingChecker(
 		fsystem,
@@ -516,6 +521,7 @@ func main() {
 		daemonEvents.User.Logout,
 		errSubject,
 		accountUpdateEvents,
+		servicesState,
 		sessionBuilder.GetStores()...,
 	)
 
@@ -524,6 +530,7 @@ func main() {
 		infoSubject,
 		errSubject,
 		meshnetEvents.PeerUpdate,
+		userServicesEvents.ServicesUpdate,
 		nc.NewCredsFetcher(clientAPI, fsystem))
 
 	// on session unrecoverable error perform user log-out action
@@ -737,7 +744,7 @@ func main() {
 	if ok, _ := authChecker.IsLoggedIn(); ok {
 		go daemon.StartNC("[startup]", notificationClient)
 		if err := rpc.RegisterDedicatedServers(); err != nil {
-			log.Println(internal.ErrorPrefix, "failed to sync device: %s", err)
+			log.Println(internal.ErrorPrefix, "failed to sync device:", err)
 		}
 	}
 	if cfg.Mesh {
