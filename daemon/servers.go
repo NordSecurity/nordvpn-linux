@@ -637,17 +637,6 @@ func selectDedicatedServer(authChecker auth.Checker,
 	dedicatedServers, err := api.DedicatedServers()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "getting dedicated servers list:", err)
-		switch {
-		case errors.Is(err, core.ErrDedicatedServersSessionMaxLimitReached):
-			return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersSessionMaxLimitReached)
-		case errors.Is(err, core.ErrDedicatedServersDeviceNotFound),
-			errors.Is(err, core.ErrDedicatedServersDeviceNotRegistered),
-			errors.Is(err, core.ErrDedicatedServersPublicKeyMismatch),
-			errors.Is(err, core.ErrDedicatedServersServerOffline),
-			errors.Is(err, core.ErrDedicatedServersServerNotFound),
-			errors.Is(err, core.ErrDedicatedServersInvalidFormData):
-			return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersCanNotConnect)
-		}
 		return nil, internal.ErrUnhandled
 	}
 
