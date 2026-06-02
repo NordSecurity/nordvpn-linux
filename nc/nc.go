@@ -184,12 +184,11 @@ func (c *Client) createClientOptions(
 	// Example: "ssl://mqtt.example.com:8883" -> hostname="mqtt.example.com", port="8883"
 	log.Println(logPrefix, "try DNS resolution for original endpoint:", credentials.Endpoint)
 	u, err := url.Parse(credentials.Endpoint)
-	hostname := ""
 	if err != nil {
 		return nil, fmt.Errorf("NC original endpoint URL parse error: %w", err)
 	}
 
-	hostname = u.Hostname()
+	hostname := u.Hostname()
 	port := u.Port()
 
 	// Resolve hostname to IPs using resolver with fwmark (bypasses killswitch).
@@ -225,12 +224,10 @@ func (c *Client) createClientOptions(
 
 	// Set TLS config with original hostname for certificate verification.
 	// Required when connecting to IP address instead of hostname.
-	if hostname != "" {
-		opts.SetTLSConfig(&tls.Config{
-			ServerName: hostname,
-			MinVersion: tls.VersionTLS12,
-		})
-	}
+	opts.SetTLSConfig(&tls.Config{
+		ServerName: hostname,
+		MinVersion: tls.VersionTLS12,
+	})
 
 	if c.fwmark != 0 {
 		// Create dialer with fwmark on TCP socket to bypass killswitch.
