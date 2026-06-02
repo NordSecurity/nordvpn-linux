@@ -58,6 +58,30 @@ const (
 	TriggerUser
 )
 
+// VPNConnectionError is a generic VPN connection error code.
+// Errors from VPN protocol libraries are mapped to these values so the daemon
+// does not depend on any one VPN protocol's error types.
+type VPNConnectionError int
+
+const (
+	// VPNConnectionErrorUnknown is reported when a generic/undefined error happens.
+	VPNConnectionErrorUnknown VPNConnectionError = iota
+	// VPNConnectionErrorConnectionLimitReached is reported when the session limit is hit.
+	VPNConnectionErrorConnectionLimitReached
+	// VPNConnectionErrorServerMaintenance is reported when the server is about to go into maintenance.
+	VPNConnectionErrorServerMaintenance
+	// VPNConnectionErrorUnauthenticated is reported when there's an authentication error.
+	VPNConnectionErrorUnauthenticated
+	// VPNConnectionErrorSuperseded is reported when a newer connection using the same key replaces
+	// current one
+	VPNConnectionErrorSuperseded
+)
+
+// VPNConnectionErrorEvent is sent on the internal VPN event bus when a VPN connection error happens.
+type VPNConnectionErrorEvent struct {
+	Code VPNConnectionError
+}
+
 type TypeLoginType int
 
 const (
