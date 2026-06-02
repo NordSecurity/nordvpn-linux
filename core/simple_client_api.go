@@ -505,7 +505,7 @@ func (api *SimpleClientAPI) DedicatedServers(token string) (DedicatedServers, er
 	}
 	resp, err := api.doRequest(req)
 	if err != nil {
-		return DedicatedServers{}, fmt.Errorf("executing HTTP GET request: %w", err)
+		return DedicatedServers{}, err
 	}
 	defer resp.Body.Close()
 

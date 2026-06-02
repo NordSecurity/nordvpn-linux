@@ -646,7 +646,13 @@ func selectDedicatedServer(authChecker auth.Checker,
 
 	// Currently there can be only one dedicated server per user.
 	dedicatedServer := dedicatedServers[0]
-	if dedicatedServer.Status != core.DedicatedServerStatusRunning {
+
+	normalizedStatusValue := strings.ToLower(string(dedicatedServer.Status))
+	if normalizedStatusValue == string(core.DedicatedServerStatusStopped) ||
+		normalizedStatusValue == string(core.DedicatedServerStatusStopping) {
+		return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersCanNotConnect)
+	}
+	if normalizedStatusValue != string(core.DedicatedServerStatusRunning) {
 		return nil, internal.NewErrorWithCode(internal.CodeDedicatedServersNotReady)
 	}
 

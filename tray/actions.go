@@ -214,6 +214,10 @@ func (ti *Instance) connectWithUIEvent(
 			ti.notify(Force, cli.DedicatedServersServerNotReadyMessage)
 		case internal.CodeDedicatedServersNoNordlynx:
 			ti.notify(Force, cli.DedicatedServersNoNordlynxMessage)
+		case internal.CodeDedicatedServersCanNotConnect:
+			ti.notify(Force, cli.DedicatedServersCanNotConnectMessage)
+		case internal.CodeDedicatedServersSessionMaxLimitReached:
+			ti.notify(Force, cli.DedicatedServersConnectionLimitReached)
 		case internal.CodeConnecting:
 		case internal.CodeConnected:
 			return true
