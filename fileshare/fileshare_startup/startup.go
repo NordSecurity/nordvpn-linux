@@ -35,10 +35,10 @@ func (f *FileshareHandle) Shutdown() {
 	f.grpcServer.Stop()
 
 	if err := f.fileshareImplementation.Disable(); err != nil {
-		log.Println(internal.ErrorPrefix, "disabling fileshare:", err)
+		log.Error("disabling fileshare:", err)
 	}
 	if err := f.grpcConn.Close(); err != nil {
-		log.Println(internal.ErrorPrefix, "closing grpc connection:", err)
+		log.Error("closing grpc connection:", err)
 	}
 }
 
@@ -71,7 +71,7 @@ func Startup(storagePath string,
 
 	go func() {
 		if err := grpcServer.Serve(serverListener); err != nil {
-			log.Fatalln(err)
+			log.Fatal(err)
 		}
 	}()
 

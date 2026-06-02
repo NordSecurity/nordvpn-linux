@@ -68,13 +68,13 @@ func CleanUpIptables() error {
 	var finalErr error = nil
 	for _, iptableVersion := range binaryNames {
 		if !internal.IsCommandAvailable(iptableVersion) {
-			log.Printf("%s could not find %s, aborting cleanup", internal.WarningPrefix, iptableVersion)
+			log.Warnf("could not find %s, aborting cleanup", iptableVersion)
 			continue
 		}
 		for _, table := range tableNames {
 			out, err := getRuleOutput(iptableVersion, table)
 			if err != nil {
-				log.Println(internal.ErrorPrefix, err)
+				log.Error(err)
 				continue
 			}
 			rules := string(out)
@@ -82,7 +82,7 @@ func CleanUpIptables() error {
 				// #nosec G204
 				err := exec.Command(iptableVersion, strings.Split(rule, " ")...).Run()
 				if err != nil {
-					log.Printf("%s failed to delete rule %s: %s", internal.ErrorPrefix, rule, err)
+					log.Errorf("failed to delete rule %s: %s", rule, err)
 					finalErr = fmt.Errorf("failed to delete all rules")
 				}
 			}

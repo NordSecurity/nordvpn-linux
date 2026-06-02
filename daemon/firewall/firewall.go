@@ -49,9 +49,9 @@ func (fw *Firewall) Configure(config Config) error {
 		return nil
 	}
 
-	log.Println(internal.InfoPrefix, logPrefix, "configuring firewall")
+	log.Info(logPrefix, "configuring firewall")
 	if internal.IsDevEnv(fw.appEnvironment) {
-		log.Println(internal.DebugPrefix, logPrefix, "configure fw from", internal.GetStack())
+		log.Debug(logPrefix, "configure fw from", internal.GetStack())
 	}
 
 	err := fw.impl.Configure(config)
@@ -72,7 +72,7 @@ func (fw *Firewall) Enable() error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
-	log.Println(internal.InfoPrefix, logPrefix, "enabling firewall")
+	log.Info(logPrefix, "enabling firewall")
 
 	if fw.enabled {
 		return NewError(ErrFirewallAlreadyEnabled)
@@ -87,7 +87,7 @@ func (fw *Firewall) Disable() error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
-	log.Println(internal.InfoPrefix, logPrefix, "disabling firewall")
+	log.Info(logPrefix, "disabling firewall")
 
 	if !fw.enabled {
 		return NewError(ErrFirewallAlreadyDisabled)
@@ -102,15 +102,15 @@ func (fw *Firewall) Flush() error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
-	log.Println(internal.InfoPrefix, logPrefix, "flush firewall rules")
+	log.Info(logPrefix, "flush firewall rules")
 
 	if !fw.enabled {
-		log.Println(internal.InfoPrefix, logPrefix, "ignoring flush because firewall is disabled")
+		log.Info(logPrefix, "ignoring flush because firewall is disabled")
 		return nil
 	}
 
 	if internal.IsDevEnv(fw.appEnvironment) {
-		log.Println(internal.DebugPrefix, logPrefix, "flush fw", internal.GetStack())
+		log.Debug(logPrefix, "flush fw", internal.GetStack())
 	}
 
 	return fw.impl.Flush()

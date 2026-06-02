@@ -35,7 +35,7 @@ func (r *RPC) PauseConnection(ctx context.Context, in *pb.PauseRequest) (*pb.Pay
 	_, err := r.DoPause(pauseDuration)
 	if err != nil {
 		r.pauseManager.CancelReconnection()
-		log.Println(internal.ErrorPrefix, "failed to disconnect when pausing the connection:", err)
+		log.Error("failed to disconnect when pausing the connection:", err)
 		return &pb.Payload{Type: internal.CodeFailure}, nil
 	}
 

@@ -59,7 +59,7 @@ func mergeMaps(m1, m2 map[string]string) map[string]string {
 	for key, value := range m2 {
 		val, exists := result[key]
 		if exists {
-			log.Println("you are overriding:", val)
+			log.Info("you are overriding:", val)
 		}
 		result[key] = value
 	}

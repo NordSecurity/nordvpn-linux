@@ -117,7 +117,7 @@ func (s *Server) startTransferStatusStream(srv pb.Fileshare_SendServer, transfer
 				Progress:   ev.Transferred,
 				Status:     pb.Status_ONGOING,
 			}); err != nil {
-				log.Printf("error while streaming transfer %s status: %s", transferID, err)
+				log.Errorf("error while streaming transfer %s status: %s", transferID, err)
 			}
 		case pb.Status_SUCCESS:
 			return srv.Send(&pb.StatusResponse{TransferId: ev.TransferID, Status: pb.Status_SUCCESS})
@@ -136,7 +136,7 @@ func (s *Server) startTransferStatusStream(srv pb.Fileshare_SendServer, transfer
 func (s *Server) getPeers() (map[string]*meshpb.Peer, map[string]*meshpb.Peer, error) {
 	resp, err := s.meshClient.GetPeers(context.Background(), &meshpb.Empty{})
 	if err != nil {
-		log.Printf("GetPeers failed: %s", err)
+		log.Errorf("GetPeers failed: %s", err)
 		return nil, nil, errGetPeersFailed
 	}
 
@@ -145,10 +145,10 @@ func (s *Server) getPeers() (map[string]*meshpb.Peer, map[string]*meshpb.Peer, e
 		peerPubkeyToPeer, peerNameToPeer := meshnet.MakePeerMaps(resp.Peers)
 		return peerPubkeyToPeer, peerNameToPeer, nil
 	case *meshpb.GetPeersResponse_Error:
-		log.Printf("GetPeers failed, error: %s", resp.Error.String())
+		log.Errorf("GetPeers failed, error: %s", resp.Error.String())
 		return nil, nil, errGetPeersFailed
 	default:
-		log.Printf("GetPeers failed, unknown error")
+		log.Errorf("GetPeers failed, unknown error")
 		return nil, nil, errGetPeersFailed
 	}
 }
@@ -291,7 +291,7 @@ func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) er
 	case err == nil:
 		break
 	default:
-		log.Printf("error while accepting transfer %s: %s", req.TransferId, err)
+		log.Errorf("error while accepting transfer %s: %s", req.TransferId, err)
 		return srv.Send(&pb.StatusResponse{Error: fileshareError(pb.FileshareErrorCode_LIB_FAILURE)})
 	}
 
@@ -307,13 +307,13 @@ func (s *Server) Accept(req *pb.AcceptRequest, srv pb.Fileshare_AcceptServer) er
 
 		if isAccepted {
 			if err := s.fileshare.Accept(req.TransferId, req.DstPath, file.Id); err != nil {
-				log.Printf("error accepting file %s in transfer %s: %s", file.Id, req.TransferId, err)
+				log.Errorf("error accepting file %s in transfer %s: %s", file.Id, req.TransferId, err)
 			} else {
 				transferStarted = true
 			}
 		} else {
 			if err := s.fileshare.CancelFile(req.TransferId, file.Id); err != nil {
-				log.Printf("error cancelling file %s in transfer %s: %s", file.Id, req.TransferId, err)
+				log.Errorf("error cancelling file %s in transfer %s: %s", file.Id, req.TransferId, err)
 			}
 		}
 	}
@@ -350,7 +350,7 @@ func (s *Server) Cancel(
 	case err == nil:
 		break
 	default:
-		log.Printf("error while cancelling transfer %s: %s", req.TransferId, err)
+		log.Errorf("error while cancelling transfer %s: %s", req.TransferId, err)
 		return fileshareError(pb.FileshareErrorCode_LIB_FAILURE), nil
 	}
 
@@ -379,7 +379,7 @@ func (s *Server) List(_ *pb.Empty, srv pb.Fileshare_ListServer) error {
 
 	transfers, err := s.eventManager.GetTransfers()
 	if err != nil {
-		log.Printf("getting transfer list: %s", err)
+		log.Errorf("getting transfer list: %s", err)
 		return srv.Send(&pb.ListResponse{Error: fileshareError(pb.FileshareErrorCode_LIB_FAILURE)})
 	}
 	for _, transfer := range transfers {
@@ -431,7 +431,7 @@ func (s *Server) CancelFile(ctx context.Context, req *pb.CancelFileRequest) (*pb
 	case err == nil:
 		break
 	default:
-		log.Printf("error while cancelling transfer %s: %s", req.TransferId, err)
+		log.Errorf("error while cancelling transfer %s: %s", req.TransferId, err)
 		return fileshareError(pb.FileshareErrorCode_LIB_FAILURE), nil
 	}
 
@@ -450,7 +450,7 @@ func (s *Server) CancelFile(ctx context.Context, req *pb.CancelFileRequest) (*pb
 	}
 
 	if err := s.fileshare.CancelFile(req.TransferId, file.Id); err != nil {
-		log.Printf("failed to cancel file in transfer %s: %s", req.TransferId, err)
+		log.Errorf("failed to cancel file in transfer %s: %s", req.TransferId, err)
 		return fileshareError(pb.FileshareErrorCode_LIB_FAILURE), nil
 	}
 
@@ -487,7 +487,7 @@ func (s *Server) PurgeTransfersUntil(ctx context.Context, req *pb.PurgeTransfers
 
 	err = s.eventManager.storage.PurgeTransfersUntil(req.Until.AsTime())
 	if err != nil {
-		log.Printf("error while purging transfers: %s", err)
+		log.Errorf("error while purging transfers: %s", err)
 		return fileshareError(pb.FileshareErrorCode_PURGE_FAILURE), nil
 	}
 

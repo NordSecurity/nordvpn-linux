@@ -31,7 +31,7 @@ func main() {
 	client := request.NewStdHTTP()
 	validator, err := response.NewNordValidator()
 	if err != nil {
-		log.Fatalln("creating nord validator:", err)
+		log.Fatal("creating nord validator:", err)
 	}
 
 	api := core.NewSimpleAPI(
@@ -42,10 +42,10 @@ func main() {
 	)
 	daemon.JobInsights(dm, api, vpnChecker{}, nil, true)()
 	if err := daemon.JobCountries(dm, api)(); err != nil {
-		log.Fatalln("producing countries cache", err)
+		log.Fatal("producing countries cache", err)
 	}
 
 	if err := daemon.JobServers(dm, api, false)(); err != nil {
-		log.Fatalln("producing server cache", err)
+		log.Fatal("producing server cache", err)
 	}
 }

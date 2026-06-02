@@ -63,7 +63,7 @@ func (dm *DataManager) LoadData() error {
 	if err := dm.serversData.load(); err != nil {
 		errs = append(errs, fmt.Errorf("loading servers data: %w", err))
 	} else {
-		log.Println(internal.InfoPrefix, "server data successfully loaded")
+		log.Info("server data successfully loaded")
 	}
 	if err := dm.versionData.load(); err != nil {
 		errs = append(errs, fmt.Errorf("loading version data: %w", err))
@@ -148,7 +148,7 @@ func (dm *DataManager) SetServersData(updatedAt time.Time, servers core.Servers,
 		Hash:      hash,
 		filePath:  dm.serversData.filePath,
 	}
-	log.Println(internal.InfoPrefix, "saving new servers data")
+	log.Info("saving new servers data")
 	err = dm.serversData.save()
 	if err != nil {
 		return fmt.Errorf("saving servers data: %w", err)
@@ -207,7 +207,7 @@ func (dm *DataManager) SetVersionData(version semver.Version, newerAvailable boo
 	dm.versionData.version = version
 	dm.versionData.newerVersionAvailable = newerAvailable
 	if err := dm.versionData.save(); err != nil {
-		log.Println(internal.WarningPrefix, err)
+		log.Warn(err)
 	}
 }
 

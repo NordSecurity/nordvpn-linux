@@ -21,7 +21,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 
 	if !cfg.AutoConnect && !in.GetEnabled() {
@@ -58,7 +58,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 
 		serverSelection, err := selectServer(r, &insights, cfg, serverTag, serverGroup)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "no server found for autoconnect", serverTag, err)
+			log.Error("no server found for autoconnect", serverTag, err)
 
 			var errorCode *internal.ErrorWithCode
 			if errors.As(err, &errorCode) {
@@ -69,7 +69,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 
 			return nil, err
 		}
-		log.Println(internal.InfoPrefix, "server for autoconnect found", serverSelection.server)
+		log.Info("server for autoconnect found", serverSelection.server)
 		parameters = GetServerParameters(serverTag, serverGroup, r.dm.GetCountryData().Countries)
 
 		if err := r.cm.SaveWith(func(c config.Config) config.Config {
@@ -89,7 +89,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 			}
 			return c
 		}); err != nil {
-			log.Println(internal.ErrorPrefix, err)
+			log.Error(err)
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil
@@ -99,7 +99,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 			c.AutoConnect = in.GetEnabled()
 			return c
 		}); err != nil {
-			log.Println(internal.ErrorPrefix, err)
+			log.Error(err)
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil

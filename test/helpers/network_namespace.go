@@ -21,7 +21,7 @@ func OpenNewNamespace(t *testing.T) netns.NsHandle {
 		t.Fatalf("netns.New() failed: %v", err)
 	}
 
-	log.Println("namespace created:", ns.UniqueId())
+	log.Info("namespace created:", ns.UniqueId())
 
 	cmd := exec.Command("ip", "link", "set", "lo", "up")
 	if out, err := cmd.CombinedOutput(); err != nil {

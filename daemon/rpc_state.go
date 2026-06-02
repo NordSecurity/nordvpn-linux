@@ -5,7 +5,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config/consent"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -84,7 +83,7 @@ func statusStream(stateChan <-chan any,
 	for {
 		select {
 		case <-srv.Context().Done():
-			log.Println(internal.InfoPrefix, "Subscription has been cancelled.")
+			log.Info("Subscription has been cancelled.")
 			close(stopChan)
 			return
 		case ev := <-stateChan:
@@ -127,35 +126,35 @@ func statusStream(stateChan <-chan any,
 
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_ConnectionStatus{ConnectionStatus: &status}}); err != nil {
-					log.Println(internal.ErrorPrefix, "vpn enabled failed to send state update:", err)
+					log.Error("vpn enabled failed to send state update:", err)
 				}
 			case pb.LoginEventType:
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_LoginEvent{
 						LoginEvent: &pb.LoginEvent{Type: e},
 					}}); err != nil {
-					log.Println(internal.ErrorPrefix, "login event failed to send state update:", err)
+					log.Error("login event failed to send state update:", err)
 				}
 			case *config.Config:
 				config := configToProtobuf(e, uid)
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_SettingsChange{SettingsChange: config}}); err != nil {
-					log.Println(internal.ErrorPrefix, "config change failed to send state update:", err)
+					log.Error("config change failed to send state update:", err)
 				}
 			case pb.UpdateEvent:
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_UpdateEvent{UpdateEvent: e}}); err != nil {
-					log.Println(internal.ErrorPrefix, "update event failed to send state update:", err)
+					log.Error("update event failed to send state update:", err)
 				}
 			case *pb.AccountModification:
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_AccountModification{AccountModification: e}}); err != nil {
-					log.Println(internal.ErrorPrefix, "account updated failed to send state update:", err)
+					log.Error("account updated failed to send state update:", err)
 				}
 			case *pb.VersionHealthStatus:
 				if err := srv.Send(
 					&pb.AppState{State: &pb.AppState_VersionHealth{VersionHealth: e}}); err != nil {
-					log.Println(internal.ErrorPrefix, "version health failed to send state update:", err)
+					log.Error("version health failed to send state update:", err)
 				}
 			default:
 			}
@@ -164,11 +163,11 @@ func statusStream(stateChan <-chan any,
 }
 
 func (r *RPC) SubscribeToStateChanges(_ *pb.Empty, srv pb.Daemon_SubscribeToStateChangesServer) error {
-	log.Println(internal.InfoPrefix, "Received new subscription request")
+	log.Info("Received new subscription request")
 
 	cred, err := getCallerCred(srv.Context())
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "SubscribeToStateChanges:", err)
+		log.Error("SubscribeToStateChanges:", err)
 		return srv.Send(&pb.AppState{
 			State: &pb.AppState_Error{
 				Error: pb.AppStateError_FAILED_TO_GET_UID,
@@ -190,10 +189,10 @@ func (r *RPC) SubscribeToStateChanges(_ *pb.Empty, srv pb.Daemon_SubscribeToStat
 		if sendErr := srv.Send(&pb.AppState{
 			State: &pb.AppState_ConnectionStatus{ConnectionStatus: currentStatus},
 		}); sendErr != nil {
-			log.Println(internal.ErrorPrefix, "failed to send initial state to subscriber:", sendErr)
+			log.Error("failed to send initial state to subscriber:", sendErr)
 		}
 	} else {
-		log.Println(internal.ErrorPrefix, "failed to fetch current status for new subscriber:", err)
+		log.Error("failed to fetch current status for new subscriber:", err)
 	}
 
 	statusStream(stateChan, stopChan, uid, srv, &r.RequestedConnParams)
