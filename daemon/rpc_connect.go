@@ -243,6 +243,7 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 		in.GetServerTag(), in.GetServerGroup())
 
 	serverSelection, err := selectServer(r, &insights, cfg, inputServerTag, in.GetServerGroup())
+
 	if err != nil {
 		var errorCode *internal.ErrorWithCode
 		if errors.As(err, &errorCode) {
@@ -314,6 +315,13 @@ func (r *RPC) connect(
 		serverSelection.server.Station = dedicatedServerConnectionData.ip
 		serverSelection.server.DedicatedServersPort = dedicatedServerConnectionData.port
 		serverSelection.server.NordLynxPublicKey = dedicatedServerConnectionData.publicKey
+
+		// publish DS status event early right after API query
+		if serverSelection.dedicatedServerStatus != "" {
+			r.events.Service.DedicatedServerStatus.Publish(
+				events.DataDedicatedServerStatus{Status: string(serverSelection.dedicatedServerStatus)},
+			)
+		}
 	}
 
 	ip, err := serverSelection.server.IPv4()

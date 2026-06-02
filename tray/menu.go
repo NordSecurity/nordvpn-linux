@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"runtime"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/NordSecurity/systray"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -397,7 +399,14 @@ func handleSpecialtyServerClick(ti *Instance, item *systray.MenuItem, server str
 	if ti == nil {
 		return
 	}
-	handleMenuItemClick(item, func() { ti.connect("", server) })
+	itemValue := pb.UIEvent_ITEM_VALUE_UNSPECIFIED
+	serverSearchStr := strings.ToLower(server)
+	if group, ok := config.GroupMap[serverSearchStr]; ok {
+		itemValue = ItemValueFromServerGroup(group)
+	}
+	handleMenuItemClick(item, func() {
+		ti.connectWithUIEvent("", server, pb.UIEvent_CONNECT, itemValue)
+	})
 }
 
 func buildAccountSection(ti *Instance) {
