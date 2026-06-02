@@ -492,7 +492,11 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 	)
 
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "picking servers:", err)
+		// Dedicated IP/Servers are handled separately, avoid logging an error to prevent confusion
+		if !errors.Is(err, ErrDedicatedIPServer) && !errors.Is(err, ErrDedicatedServer) {
+			log.Println(internal.ErrorPrefix, "picking servers:", err)
+		}
+
 		switch {
 		case errors.Is(err, core.ErrUnauthorized):
 			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, r.events.User.Logout, events.ReasonUnauthorized)); err != nil {
