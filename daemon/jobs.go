@@ -319,6 +319,31 @@ func (r *RPC) fallbackTechnology(targetTechnology config.Technology) error {
 	return nil
 }
 
+// fallbackDedicatedServer changes autoconnection target to a generic(fastest) server if the current target is set to a
+// dedicated server and user doesn't have a dedicated server subscription or feature is disabled in the remote config.
+// New config is saved and returned.
+func (r *RPC) fallbackDedicatedServer(cfg config.Config) config.Config {
+	serviceData, err := r.ac.GetDedicatedServerService()
+	if err != nil {
+		log.Println(internal.ErrorPrefix,
+			"getting dedicated servers service status to determine if fallback is needed:", err)
+	}
+
+	if err != nil || !serviceData.Active || !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
+		cfg.AutoConnectData.Group = config.ServerGroup_UNDEFINED
+		cfg.AutoConnectData.ServerTag = ""
+		if err := r.cm.SaveWith(func(c config.Config) config.Config {
+			c.AutoConnectData = cfg.AutoConnectData
+			return c
+		}); err != nil {
+			log.Println(internal.ErrorPrefix,
+				"failed to save config after a fallback from dedicated server:", err)
+		}
+	}
+
+	return cfg
+}
+
 // StartAutoConnect connect to VPN server if autoconnect is enabled
 func (r *RPC) StartAutoConnect(timeoutFn network.CalculateRetryDelayForAttempt) error {
 	tries := 1
@@ -368,6 +393,10 @@ func (r *RPC) doAutoConnect() error {
 				return fmt.Errorf("falling back to OpenVPN technology: %s", err)
 			}
 		}
+	}
+
+	if cfg.AutoConnectData.Group == config.ServerGroup_DEDICATED_SERVER {
+		cfg = r.fallbackDedicatedServer(cfg)
 	}
 
 	server := connectServer{}
