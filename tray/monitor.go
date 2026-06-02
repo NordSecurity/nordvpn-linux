@@ -144,7 +144,7 @@ func (ti *Instance) updateLoginStatus() bool {
 
 		if ti.state.loggedIn && ti.state.vpnStatus == pb.ConnectionState_CONNECTED {
 			// reset the VPN info if the user logs out while connected to VPN
-			changedVpn := ti.setVpnStatus(pb.ConnectionState_DISCONNECTED, "", "", "", "", false)
+			changedVpn := ti.setVpnStatus(pb.ConnectionState_DISCONNECTED, "", "", "", "", false, false)
 			if changedVpn {
 				changed = true
 			}
@@ -192,7 +192,7 @@ func (ti *Instance) updateVpnStatus() bool {
 		vpnName = vpnHostname
 	}
 
-	changed := ti.setVpnStatus(vpnStatus, vpnName, vpnHostname, vpnCity, vpnCountry, resp.VirtualLocation)
+	changed := ti.setVpnStatus(vpnStatus, vpnName, vpnHostname, vpnCity, vpnCountry, resp.VirtualLocation, resp.IsMeshPeer)
 	return changed
 }
 
@@ -481,6 +481,7 @@ func (ti *Instance) setVpnStatus(
 	vpnCity string,
 	vpnCountry string,
 	virtualLocation bool,
+	isMeshPeer bool,
 ) bool {
 	changed := false
 	var notificationText, notificationArg string
@@ -497,6 +498,7 @@ func (ti *Instance) setVpnStatus(
 		ti.state.vpnVirtualLocation = virtualLocation
 		ti.state.vpnHostname = vpnHostname
 		ti.state.vpnStatus = vpnStatus
+		ti.state.vpnIsMeshPeer = isMeshPeer
 
 		statusChanged := oldVpnStatus != vpnStatus
 		serverNameChanged := oldServerName != ti.state.serverName()
