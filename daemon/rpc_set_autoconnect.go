@@ -31,7 +31,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		}, nil
 	}
 
-	if IsDedicatedServer(in.ServerTag, in.ServerGroup) {
+	if in.GetEnabled() && IsDedicatedServer(in.ServerTag, in.ServerGroup) {
 		if !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
 			return &pb.Payload{Type: internal.CodeFailure}, nil
 		}

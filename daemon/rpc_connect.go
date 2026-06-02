@@ -40,8 +40,8 @@ func determineServerGroupIDs(server *core.Server) []config.ServerGroup {
 }
 
 // IsDedicatedServer returns true if either serverTag or serverGroup represent the dedicated server group
-func IsDedicatedServer(servetTag string, serverGroup string) bool {
-	return groupConvert(servetTag) == config.ServerGroup_DEDICATED_SERVER ||
+func IsDedicatedServer(serverTag string, serverGroup string) bool {
+	return groupConvert(serverTag) == config.ServerGroup_DEDICATED_SERVER ||
 		groupConvert(serverGroup) == config.ServerGroup_DEDICATED_SERVER
 }
 

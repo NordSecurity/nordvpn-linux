@@ -326,7 +326,7 @@ func (r *RPC) fallbackDedicatedServer(cfg config.Config) config.Config {
 	serviceData, err := r.ac.GetDedicatedServerService()
 	if err != nil {
 		log.Println(internal.ErrorPrefix,
-			"getting dedicated servers service status to determine if fallback is needed: %w", err)
+			"getting dedicated servers service status to determine if fallback is needed:", err)
 	}
 
 	if err != nil || !serviceData.Active || !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
@@ -337,7 +337,7 @@ func (r *RPC) fallbackDedicatedServer(cfg config.Config) config.Config {
 			return c
 		}); err != nil {
 			log.Println(internal.ErrorPrefix,
-				"failed to save config after a fallback from dedicated server: %w", err)
+				"failed to save config after a fallback from dedicated server:", err)
 		}
 	}
 
