@@ -525,3 +525,42 @@ def test_lan_discovery_on_off():
     assert "LAN Discovery has been successfully set to 'disabled'." in sh.nordvpn.set("lan-discovery", "off"), "LAN Discovery should be successfully disabled"
     assert not settings.is_lan_discovery_enabled(), "LAN Discovery should be disabled"
 
+
+def test_settings_are_kept_after_reboot():
+    # (set arguments, expected message, settings key, expected value after reboot)
+    toggles = [
+        (("firewall", "off"),         "Firewall has been successfully set to 'disabled'.",               "Firewall",               "disabled"),
+        (("routing", "off"),          "Routing has been successfully set to 'disabled'.",                "Routing",                "disabled"),
+        (("analytics", "off"),        "Analytics has been successfully set to 'disabled'.",              "User Consent",           "disabled"),
+        (("tpl", "on"),               "Threat Protection Lite has been successfully set to 'enabled'.",  "Threat Protection Lite", "enabled"),
+        (("notify", "off"),           "Notifications are set to 'disabled' successfully.",               "Notify",                 "disabled"),
+        (("tray", "off"),             "Tray set to 'disabled' successfully.",                            "Tray",                   "disabled"),
+        (("autoconnect", "on"),       "Auto-connect has been successfully set to 'enabled'.",            "Auto-connect",           "enabled"),
+        (("lan-discovery", "on"),     "LAN Discovery has been successfully set to 'enabled'.",           "LAN Discovery",          "enabled"),
+        (("virtual-location", "off"), "Virtual location has been successfully set to 'disabled'.",       "Virtual Location",       "disabled"),
+        (("arp-ignore", "off"),       "ARP ignore set to 'disabled' successfully.",                      "ARP Ignore",             "disabled"),
+    ]
+
+    for args, message, _, _ in toggles:
+        assert message in sh.nordvpn.set(*args), f"Expected message not shown: {message}"
+
+    assert "Firewall Mark has been successfully set to '0x1234'." in sh.nordvpn.set("fwmark", "0x1234"), "Failed to set firewall mark"
+
+    daemon.restart()
+
+    app_settings = settings.Settings()
+
+    for _, _, key, expected in toggles:
+        assert app_settings.get(key) == expected, f"{key} is incorrect after reboot '{expected}'"
+
+    assert app_settings.get("Firewall Mark") == "0x1234", "Firewall mark is not kept after reboot"
+    assert app_settings.get("DNS") == "disabled", "DNS must be disabled because TP is enabled"
+
+    # set DNS and reboot the system
+    assert "DNS has been successfully set to '1.1.1.1'." in sh.nordvpn.set("dns", "1.1.1.1"), "Failed to set custom DNS"
+
+    daemon.restart()
+
+    app_settings = settings.Settings()
+    assert app_settings.get("Threat Protection Lite") == "disabled", "Tpl must be disabled, because of custom DNS"
+    assert app_settings.get("DNS") == "1.1.1.1", "Custom DNS value is not kept after reboot"

@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
-	"net/netip"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -166,7 +165,7 @@ func main() {
 	)
 
 	// Remove any remains of IPv6 settings and remove overlapping allowlist subnets
-	if err := fsystem.SaveWith(configCleanup); err != nil {
+	if err := fsystem.SaveWith(daemon.ConfigCleanup); err != nil {
 		log.Println(internal.ErrorPrefix, "failed to cleanup config:", err)
 	}
 
@@ -787,27 +786,6 @@ func assignMooseDBPermissions(eventsDbPath string) error {
 		log.Println(err)
 	}
 	return nil
-}
-
-// configCleanup - validate/cleanup DNS addresses, allowlist subnets
-func configCleanup(c config.Config) config.Config {
-	// Remove all nameservers with IPv6 addresses
-	var dnsList []string
-	for _, addr := range c.AutoConnectData.DNS {
-		p, err := netip.ParsePrefix(addr)
-		if err != nil || !p.Addr().Is4() {
-			continue
-		}
-		dnsList = append(dnsList, addr)
-	}
-	c.AutoConnectData.DNS = dnsList
-
-	// Remove overlapping, invalid and IPv6 subnets, if any
-	c.AutoConnectData.Allowlist.NormalizeSubnets(func(removed, reason string) {
-		log.Println(internal.WarningPrefix, "On start, allowlist remove subnet:", removed, "; reason:", reason)
-	})
-
-	return c
 }
 
 // buildClientAPIAndSessionStores creates and configures the client API and session stores
