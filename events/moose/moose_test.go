@@ -851,12 +851,14 @@ func TestSetDedicatedServerServiceStatus(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name           string
-		services       core.ServicesResponse
-		mooseErrCode   uint32
-		expectErr      bool
-		expectCalled   bool
-		expectedActive bool
+		name              string
+		services          core.ServicesResponse
+		DSEnabled         bool
+		mooseErrCode      uint32
+		expectErr         bool
+		expectCalled      bool
+		expectedActive    bool
+		expectedDSEnabled bool
 	}{
 		{
 			name: "service ID 33 present - sets true",
@@ -907,9 +909,11 @@ func TestSetDedicatedServerServiceStatus(t *testing.T) {
 			services: core.ServicesResponse{
 				{Service: core.Service{ID: auth.DedicatedServersServiceID}},
 			},
-			mooseErrCode: 7,
-			expectErr:    true,
-			expectCalled: true,
+			mooseErrCode:      7,
+			expectErr:         true,
+			expectCalled:      true,
+			DSEnabled:         true,
+			expectedDSEnabled: true,
 		},
 	}
 
@@ -917,6 +921,7 @@ func TestSetDedicatedServerServiceStatus(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			called := false
 			var gotValue bool
+			hasDS := false
 
 			s := &Subscriber{
 				mooseFuncs: mooseFunctions{
@@ -925,11 +930,15 @@ func TestSetDedicatedServerServiceStatus(t *testing.T) {
 						gotValue = active
 						return tt.mooseErrCode
 					},
-					setDSEnabled: func(bool) uint32 { return 0 },
+					setDSEnabled: func(bool) uint32 {
+						hasDS = tt.DSEnabled
+						return 0
+					},
 				},
 			}
 
-			err := s.setDedicatedServerServiceStatus(tt.services)
+			hasDSService := hasDedicatedServerService(tt.services)
+			err := s.setDedicatedServerServiceStatus(hasDSService, hasDS)
 
 			assert.Equal(t, tt.expectCalled, called)
 			if called && tt.mooseErrCode == 0 {
