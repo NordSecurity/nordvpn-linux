@@ -3,6 +3,7 @@ package core
 import (
 	"bytes"
 	"compress/gzip"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -17,6 +18,11 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/stretchr/testify/assert"
+)
+
+const (
+	mockEmail          = "email@one.lt"
+	mockSecurePassword = "securepswd"
 )
 
 type testCase struct {
@@ -54,10 +60,10 @@ func testNewCase(t *testing.T, httpStatus int, url, fixture string, err error) t
 func TestCreateUser(t *testing.T) {
 	category.Set(t, category.Integration)
 
-	email := "email@one.lt"
+	email := mockEmail
 
 	api := testNewSimpleAPI(GeneralInfo)
-	resp, err := api.CreateUser(email, "securepswd")
+	resp, err := api.CreateUser(email, mockSecurePassword)
 	assert.NoError(t, err)
 	assert.Equal(t, email, resp.Email)
 	assert.Equal(t, email, resp.Username)
@@ -67,8 +73,25 @@ func TestCreateUser_Error(t *testing.T) {
 	category.Set(t, category.Integration)
 
 	api := testNewSimpleAPI(InvalidInfo)
-	_, err := api.CreateUser("email@one.lt", "securepswd")
+	_, err := api.CreateUser(mockEmail, mockSecurePassword)
 	assert.Error(t, err)
+}
+
+// TestCreateUser_DoesNotParsePasswordExpiresAt covers the LVPN-10593 deprecation
+func TestCreateUser_DoesNotParsePasswordExpiresAt(t *testing.T) {
+	category.Set(t, category.Integration)
+
+	fixture, err := os.ReadFile(TestUserCreateJSON)
+	assert.NoError(t, err)
+	assert.Contains(t, string(fixture), "password_expires_at")
+
+	api := testNewSimpleAPI(GeneralInfo)
+	resp, err := api.CreateUser(mockEmail, mockSecurePassword)
+	assert.NoError(t, err)
+
+	out, err := json.Marshal(resp)
+	assert.NoError(t, err)
+	assert.NotContains(t, string(out), "password_expires_at")
 }
 
 func TestPlans(t *testing.T) {
