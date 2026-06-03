@@ -925,6 +925,7 @@ func TestSetDedicatedServerServiceStatus(t *testing.T) {
 						gotValue = active
 						return tt.mooseErrCode
 					},
+					setDSEnabled: func(bool) uint32 { return 0 },
 				},
 			}
 
