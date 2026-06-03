@@ -1197,9 +1197,25 @@ func (s *Subscriber) fetchAndSetServiceContext() error {
 		return fmt.Errorf("fetching services: %w", err)
 	}
 
+	hasDSService := hasDedicatedServerService(services)
+	hasDSActivated := false
+
+	if hasDSService {
+		dedicatedServers, err := s.clientAPI.DedicatedServers()
+		if err != nil {
+			return fmt.Errorf("fetching dedicated servers: %w", err)
+		}
+		if len(dedicatedServers) > 0 {
+			hasDSActivated =
+				dedicatedServers[0].Status != "" &&
+					dedicatedServers[0].Status != core.DedicatedServerStatusNew
+
+		}
+	}
+
 	return errors.Join(
 		s.setVpnServiceExpiration(services),
-		s.setDedicatedServerServiceStatus(services),
+		s.setDedicatedServerServiceStatus(hasDSService, hasDSActivated),
 	)
 }
 
@@ -1227,28 +1243,26 @@ func (s *Subscriber) setVpnServiceExpiration(
 	return nil
 }
 
-func (s *Subscriber) setDedicatedServerServiceStatus(
-	services core.ServicesResponse,
-) error {
-	hasDS := slices.ContainsFunc(services,
+func hasDedicatedServerService(services core.ServicesResponse) bool {
+	return slices.ContainsFunc(services,
 		func(sd core.ServiceData) bool {
 			return sd.Service.ID == auth.DedicatedServersServiceID
 		},
 	)
-	if err := s.response(s.mooseFuncs.setDSIsActive(hasDS)); err != nil {
+}
+
+func (s *Subscriber) setDedicatedServerServiceStatus(hasDSService, hasDS bool) error {
+	if err := s.response(s.mooseFuncs.setDSIsActive(hasDSService)); err != nil {
 		return fmt.Errorf(
 			"setting dedicated server service status (active=%v): %w",
-			hasDS, err,
+			hasDSService, err,
 		)
 	}
-	if !hasDS {
-		// explicitly reset DS server enabled in case when DS service not active
-		if err := s.setDedicatedServerEnabled(false); err != nil {
-			return fmt.Errorf(
-				"resetting dedicated server enabled (DS service not active): %w",
-				err,
-			)
-		}
+	if err := s.setDedicatedServerEnabled(hasDS); err != nil {
+		return fmt.Errorf(
+			"setting dedicated server enabled status (enabled=%v): %w",
+			hasDS, err,
+		)
 	}
 	return nil
 }
