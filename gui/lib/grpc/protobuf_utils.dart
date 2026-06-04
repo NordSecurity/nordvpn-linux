@@ -44,6 +44,8 @@ extension _ProtobufServerGroupExt on pb.ServerGroup {
         return p2p;
       case pb.ServerGroup.OBFUSCATED:
         return obfuscatedServers;
+      case pb.ServerGroup.DEDICATED_SERVER:
+        return dedicatedServer;
       default:
         return null;
     }

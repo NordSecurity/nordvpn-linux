@@ -54,5 +54,6 @@ message UIEvent {
     PAUSE_1_HOUR = 12;
     PAUSE_24_HOURS = 13;
     PAUSE_DISCONNECT = 14;
+    DEDICATED_SERVER = 15;
   }
 }
