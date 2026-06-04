@@ -28,7 +28,7 @@ func MigrateDeprecatedRegionalAutoconnect(cm config.Manager) error {
 	})
 }
 
-// configCleanup - validate/cleanup DNS addresses, allowlist subnets
+// ConfigCleanup - validate/cleanup DNS addresses, allowlist subnets
 func ConfigCleanup(c config.Config) config.Config {
 	// Remove all nameservers with IPv6 addresses
 	var dnsList []string
