@@ -43,6 +43,7 @@ func NewEventsEmpty() *Events {
 		&subs.Subject[bool]{},
 		&subs.Subject[events.DebuggerEvent]{},
 		&subs.Subject[any]{},
+		&subs.Subject[events.DataDedicatedServerStatus]{},
 	)
 }
 
@@ -73,6 +74,7 @@ func NewEvents(
 	mfa events.PublishSubcriber[bool],
 	devLogs events.PublishSubcriber[events.DebuggerEvent],
 	appFirstTimeOpened events.PublishSubcriber[any],
+	dedicatedServerStatus events.PublishSubcriber[events.DataDedicatedServerStatus],
 ) *Events {
 	return &Events{
 		Settings: &SettingsEvents{
@@ -94,12 +96,13 @@ func NewEvents(
 			PostquantumVPN:       postquantumVpn,
 		},
 		Service: &ServiceEvents{
-			Connect:         connect,
-			Disconnect:      disconnect,
-			AccountCheck:    accountCheck,
-			UiItemsClick:    uiItemsClick,
-			DeviceLocation:  deviceLocation,
-			FirstTimeOpened: appFirstTimeOpened,
+			Connect:               connect,
+			Disconnect:            disconnect,
+			AccountCheck:          accountCheck,
+			UiItemsClick:          uiItemsClick,
+			DeviceLocation:        deviceLocation,
+			FirstTimeOpened:       appFirstTimeOpened,
+			DedicatedServerStatus: dedicatedServerStatus,
 		},
 		User: &LoginEvents{
 			Login:  login,
@@ -189,15 +192,17 @@ type ServicePublisher interface {
 	NotifyAccountCheck(any) error
 	NotifyUiItemsClick(events.UiItemsAction) error
 	NotifyDeviceLocation(core.Insights) error
+	NotifyDedicatedServerStatus(events.DataDedicatedServerStatus) error
 }
 
 type ServiceEvents struct {
-	Connect         events.PublishSubcriber[events.DataConnect]
-	Disconnect      events.PublishSubcriber[events.DataDisconnect]
-	AccountCheck    events.PublishSubcriber[any]
-	UiItemsClick    events.PublishSubcriber[events.UiItemsAction]
-	DeviceLocation  events.PublishSubcriber[core.Insights]
-	FirstTimeOpened events.PublishSubcriber[any]
+	Connect               events.PublishSubcriber[events.DataConnect]
+	Disconnect            events.PublishSubcriber[events.DataDisconnect]
+	AccountCheck          events.PublishSubcriber[any]
+	UiItemsClick          events.PublishSubcriber[events.UiItemsAction]
+	DeviceLocation        events.PublishSubcriber[core.Insights]
+	FirstTimeOpened       events.PublishSubcriber[any]
+	DedicatedServerStatus events.PublishSubcriber[events.DataDedicatedServerStatus]
 }
 
 func (s *ServiceEvents) Subscribe(to ServicePublisher) {
@@ -206,6 +211,7 @@ func (s *ServiceEvents) Subscribe(to ServicePublisher) {
 	s.AccountCheck.Subscribe(to.NotifyAccountCheck)
 	s.UiItemsClick.Subscribe(to.NotifyUiItemsClick)
 	s.DeviceLocation.Subscribe(to.NotifyDeviceLocation)
+	s.DedicatedServerStatus.Subscribe(to.NotifyDedicatedServerStatus)
 }
 
 func (s *SettingsEvents) Publish(cfg config.Config) {
