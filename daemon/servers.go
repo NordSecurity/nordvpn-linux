@@ -665,7 +665,12 @@ func selectDedicatedServer(authChecker auth.Checker,
 	dedicatedServer := dedicatedServers[0]
 	result := dedicatedServerSelection{status: dedicatedServer.Status}
 
-	if dedicatedServer.Status != core.DedicatedServerStatusRunning {
+	normalizedStatusValue := strings.ToLower(string(dedicatedServer.Status))
+	if normalizedStatusValue == string(core.DedicatedServerStatusStopped) ||
+		normalizedStatusValue == string(core.DedicatedServerStatusStopping) {
+		return result, internal.NewErrorWithCode(internal.CodeDedicatedServersCanNotConnect)
+	}
+	if normalizedStatusValue != string(core.DedicatedServerStatusRunning) {
 		return result, internal.NewErrorWithCode(internal.CodeDedicatedServersNotReady)
 	}
 

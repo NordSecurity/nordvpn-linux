@@ -130,6 +130,16 @@ func TestConnect_DedicatedServersErrorPaths(t *testing.T) {
 			code:     internal.CodeDedicatedServersNoNordlynx,
 			wantBody: cli.DedicatedServersNoNordlynxMessage,
 		},
+		{
+			name:     "server is stopping or stopped",
+			code:     internal.CodeDedicatedServersCanNotConnect,
+			wantBody: cli.DedicatedServersCanNotConnectMessage,
+		},
+		{
+			name:     "user hit device limit",
+			code:     internal.CodeDedicatedServersSessionMaxLimitReached,
+			wantBody: cli.DedicatedServersConnectionLimitReached,
+		},
 	}
 
 	for _, tc := range tests {
