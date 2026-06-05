@@ -33,8 +33,8 @@ const (
 
 type callbackHandlerStub struct{}
 
-func (callbackHandlerStub) handleEvent(teliogo.Event) error          { return nil }
-func (callbackHandlerStub) setMonitoringContext(ctx context.Context) {}
+func (callbackHandlerStub) handleEvent(teliogo.Event) error                    { return nil }
+func (callbackHandlerStub) setConnectionMonitoringContext(ctx context.Context) {}
 
 type mockLib struct{}
 
@@ -129,7 +129,8 @@ func TestIsConnected(t *testing.T) {
 
 func TestEventCallback_DoesntBlock(t *testing.T) {
 	stateC := make(chan state)
-	callbackHandler := newTelioCallbackHandler(stateC)
+	vpnErrorsC := make(chan teliogo.VpnConnectionError)
+	callbackHandler := newTelioCallbackHandler(stateC, vpnErrorsC)
 	cb := eventCallbackWrap(callbackHandler)
 	var event teliogo.Event
 
@@ -170,6 +171,7 @@ func Test_TelioConfig(t *testing.T) {
 	category.Set(t, category.Integration)
 
 	expectedCfg := toTelioFeatures(t, telioRemoteTestConfig)
+	expectedCfg.ErrorNotificationService = defaultErrorNotificationService()
 
 	remoteConfigGetter := mockVersionGetter{telioRemoteTestConfig}
 
@@ -493,7 +495,7 @@ func TestLibtelio_connect(t *testing.T) {
 			// Create instance
 			libtelio := &Libtelio{
 				lib:             mockLib{},
-				events:          events,
+				stateEvents:     events,
 				state:           vpn.ExitedState,
 				fwmark:          123,
 				eventsPublisher: pub,
@@ -546,7 +548,8 @@ func Test_EventCallback(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	stateChan := make(chan state)
-	callbackHandler := newTelioCallbackHandler(stateChan)
+	vpnErrorsChan := make(chan teliogo.VpnConnectionError)
+	callbackHandler := newTelioCallbackHandler(stateChan, vpnErrorsChan)
 
 	var wg sync.WaitGroup
 	callbackHandlerEventNonBlocking := func() {
@@ -567,7 +570,7 @@ func Test_EventCallback(t *testing.T) {
 
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	// add a context, callbackHandled should start sending events via stateChan
-	callbackHandler.setMonitoringContext(ctx)
+	callbackHandler.setConnectionMonitoringContext(ctx)
 
 	wg.Add(1)
 	go func() {
@@ -593,5 +596,186 @@ func Test_EventCallback(t *testing.T) {
 	case <-stateChan:
 		assert.Fail(t, "Event sent when no context was provided.")
 	default:
+	}
+}
+
+func TestToVPNConnectionError_MapsAllCodes(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		input    teliogo.VpnConnectionError
+		expected events.VPNConnectionError
+	}{
+		{
+			name:     "unknown",
+			input:    teliogo.VpnConnectionErrorUnknown,
+			expected: events.VPNConnectionErrorUnknown,
+		},
+		{
+			name:     "connection limit reached",
+			input:    teliogo.VpnConnectionErrorConnectionLimitReached,
+			expected: events.VPNConnectionErrorConnectionLimitReached,
+		},
+		{
+			name:     "server maintenance",
+			input:    teliogo.VpnConnectionErrorServerMaintenance,
+			expected: events.VPNConnectionErrorServerMaintenance,
+		},
+		{
+			name:     "unauthenticated",
+			input:    teliogo.VpnConnectionErrorUnauthenticated,
+			expected: events.VPNConnectionErrorUnauthenticated,
+		},
+		{
+			name:     "superseded",
+			input:    teliogo.VpnConnectionErrorSuperseded,
+			expected: events.VPNConnectionErrorSuperseded,
+		},
+		{
+			name:     "unmapped value falls back to unknown",
+			input:    teliogo.VpnConnectionError(99),
+			expected: events.VPNConnectionErrorUnknown,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, toVPNConnectionError(tt.input))
+		})
+	}
+}
+
+func TestHandleEvent_ForwardsVPNConnectionError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	stateChan := make(chan state, 1)
+	vpnErrorsChan := make(chan teliogo.VpnConnectionError, 1)
+	callbackHandler := newTelioCallbackHandler(stateChan, vpnErrorsChan)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	callbackHandler.setConnectionMonitoringContext(ctx)
+
+	connErr := teliogo.VpnConnectionErrorServerMaintenance
+	callbackHandler.handleEvent(teliogo.EventNode{
+		Body: teliogo.TelioNode{
+			State:              teliogo.NodeStateConnected,
+			IsExit:             true,
+			VpnConnectionError: &connErr,
+		},
+	})
+
+	select {
+	case <-stateChan:
+	default:
+		assert.Fail(t, "node state was not forwarded")
+	}
+
+	select {
+	case got := <-vpnErrorsChan:
+		assert.Equal(t, connErr, got)
+	default:
+		assert.Fail(t, "VPN connection error was not forwarded")
+	}
+}
+
+func TestHandleEvent_NoVPNConnectionError_DoesNotForwardError(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	stateChan := make(chan state, 1)
+	vpnErrorsChan := make(chan teliogo.VpnConnectionError, 1)
+	callbackHandler := newTelioCallbackHandler(stateChan, vpnErrorsChan)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	callbackHandler.setConnectionMonitoringContext(ctx)
+
+	callbackHandler.handleEvent(teliogo.EventNode{
+		Body: teliogo.TelioNode{
+			State:  teliogo.NodeStateConnected,
+			IsExit: true,
+		},
+	})
+
+	select {
+	case <-stateChan:
+	default:
+		assert.Fail(t, "node state was not forwarded")
+	}
+
+	select {
+	case <-vpnErrorsChan:
+		assert.Fail(t, "no error should be forwarded for a healthy node event")
+	default:
+	}
+}
+
+func TestHandleEvent_DropsVPNConnectionError_WhenMonitorBusy(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	stateChan := make(chan state, 1)
+	vpnErrorsChan := make(chan teliogo.VpnConnectionError, 1)
+	callbackHandler := newTelioCallbackHandler(stateChan, vpnErrorsChan)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	callbackHandler.setConnectionMonitoringContext(ctx)
+
+	buffered := teliogo.VpnConnectionErrorUnauthenticated
+	vpnErrorsChan <- buffered
+
+	dropped := teliogo.VpnConnectionErrorServerMaintenance
+	callbackHandler.handleEvent(teliogo.EventNode{
+		Body: teliogo.TelioNode{
+			State:              teliogo.NodeStateConnected,
+			IsExit:             true,
+			VpnConnectionError: &dropped,
+		},
+	})
+
+	select {
+	case <-stateChan:
+	default:
+		assert.Fail(t, "node state was not forwarded")
+	}
+
+	select {
+	case got := <-vpnErrorsChan:
+		assert.Equal(t, buffered, got)
+	default:
+		assert.Fail(t, "the already-buffered error should have been kept")
+	}
+
+	select {
+	case <-vpnErrorsChan:
+		assert.Fail(t, "the second error should have been dropped, not buffered")
+	default:
+	}
+}
+
+func TestMonitorConnectionErrors_PublishesMappedEvent(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	pub := vpn.NewInternalVPNEvents()
+	received := make(chan events.VPNConnectionErrorEvent, 1)
+	pub.ConnectionError.Subscribe(func(e events.VPNConnectionErrorEvent) error {
+		received <- e
+		return nil
+	})
+
+	errorsChan := make(chan teliogo.VpnConnectionError, 1)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go monitorConnectionErrors(ctx, errorsChan, pub)
+
+	errorsChan <- teliogo.VpnConnectionErrorSuperseded
+
+	select {
+	case got := <-received:
+		assert.Equal(t, events.VPNConnectionErrorSuperseded, got.Code)
+	case <-time.After(time.Second):
+		assert.Fail(t, "ConnectionError event was not published")
 	}
 }

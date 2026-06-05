@@ -77,6 +77,23 @@ const (
 	VPNConnectionErrorSuperseded
 )
 
+func (e VPNConnectionError) String() string {
+	switch e {
+	case VPNConnectionErrorUnknown:
+		return "unknown error"
+	case VPNConnectionErrorConnectionLimitReached:
+		return "connection limit reached"
+	case VPNConnectionErrorServerMaintenance:
+		return "server maintenance"
+	case VPNConnectionErrorUnauthenticated:
+		return "unauthenticated"
+	case VPNConnectionErrorSuperseded:
+		return "superseded by newer connection"
+	default:
+		return "unrecognized error code"
+	}
+}
+
 // VPNConnectionErrorEvent is sent on the internal VPN event bus when a VPN connection error happens.
 type VPNConnectionErrorEvent struct {
 	Code VPNConnectionError
