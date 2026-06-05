@@ -2686,6 +2686,8 @@ extension on Translations {
 			'ui.selectLocation' => 'Select location',
 			'ui.dipSelectLocationDescription' => 'You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.',
 			'ui.chooseLocationForDip' => 'Choose a location for your dedicated IP',
+			_ => null,
+		} ?? switch (path) {
 			'ui.getDip' => 'Get dedicated IP',
 			'ui.getYourDip' => 'Get your personal IP',
 			'ui.getDipDescription' => 'Get a personal IP address that belongs only to you. Enjoy all the benefits of VPN encryption without dealing with blocklists, identity checks, and selecting images of boats in CAPTCHAs.',
