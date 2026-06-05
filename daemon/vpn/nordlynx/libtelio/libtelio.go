@@ -936,6 +936,7 @@ func toVPNConnectionError(connErr teliogo.VpnConnectionError) events.VPNConnecti
 	case teliogo.VpnConnectionErrorSuperseded:
 		return events.VPNConnectionErrorSuperseded
 	default:
+		log.Debug("unhandled telio VPN connection error, mapping to unknown:", connErr)
 		return events.VPNConnectionErrorUnknown
 	}
 }
