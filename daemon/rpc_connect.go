@@ -313,6 +313,17 @@ func (r *RPC) connect(
 			*dedicatedServersDeviceData)
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "fetching dedicated server connection data:", err)
+			switch {
+			case errors.Is(err, core.ErrDedicatedServersSessionMaxLimitReached):
+				return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersSessionMaxLimitReached})
+			case errors.Is(err, core.ErrDedicatedServersDeviceNotFound),
+				errors.Is(err, core.ErrDedicatedServersDeviceNotRegistered),
+				errors.Is(err, core.ErrDedicatedServersPublicKeyMismatch),
+				errors.Is(err, core.ErrDedicatedServersServerOffline),
+				errors.Is(err, core.ErrDedicatedServersServerNotFound),
+				errors.Is(err, core.ErrDedicatedServersInvalidFormData):
+				return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersCanNotConnect})
+			}
 			return false, internal.ErrUnhandled
 		}
 		serverSelection.server.Station = dedicatedServerConnectionData.ip

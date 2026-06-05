@@ -25,6 +25,14 @@ var (
 	ErrNicknameWithDoubleHyphens = errors.New("nickname contains double hyphens")
 	ErrContainsInvalidChars      = errors.New("nickname contains invalid characters")
 
+	ErrDedicatedServersDeviceNotFound         = errors.New("device not found")
+	ErrDedicatedServersDeviceNotRegistered    = errors.New("device not registered")
+	ErrDedicatedServersInvalidFormData        = errors.New("invalid form data")
+	ErrDedicatedServersPublicKeyMismatch      = errors.New("public key mismatch")
+	ErrDedicatedServersSessionMaxLimitReached = errors.New("reached limit of maximum active sessions")
+	ErrDedicatedServersServerOffline          = errors.New("server is offline")
+	ErrDedicatedServersServerNotFound         = errors.New("server not found")
+
 	// ErrUnauthorized is returned for 401 HTTP responses.
 	ErrUnauthorized = errors.New(http.StatusText(http.StatusUnauthorized))
 	// ErrForbidden is returned for 403 HTTP responses.
@@ -97,6 +105,9 @@ func extractError(resp *http.Response, acceptedCode int) error {
 		if err := extractErrorForMeshnet(info); err != nil {
 			return err
 		}
+		if err := extractErrorForDedicatedServer(info); err != nil {
+			return err
+		}
 		return internal.NewCodedError(info.Errors.Code, info.Errors.Message, ErrBadRequest)
 
 	case http.StatusUnauthorized:
@@ -148,6 +159,36 @@ func extractErrorForMeshnet(info apiError) error {
 		return ErrContainsInvalidChars
 	case maxMachineCountReached, maxMachinePerPeerCountReached, maxPeerCountReachedOnExternalMachine:
 		return ErrMaximumDeviceCount
+	}
+	return nil
+}
+
+func extractErrorForDedicatedServer(info apiError) error {
+	const (
+		deviceNotFound      = 910001
+		deviceNotRegistered = 910007
+		invalidFormData     = 100101
+		publicKeyMismatch   = 910002
+		sessionLimitHit     = 910005
+		serverOffline       = 910004
+		serverNotFound      = 910003
+	)
+
+	switch info.Errors.Code {
+	case deviceNotFound:
+		return ErrDedicatedServersDeviceNotFound
+	case deviceNotRegistered:
+		return ErrDedicatedServersDeviceNotRegistered
+	case invalidFormData:
+		return ErrDedicatedServersInvalidFormData
+	case publicKeyMismatch:
+		return ErrDedicatedServersPublicKeyMismatch
+	case sessionLimitHit:
+		return ErrDedicatedServersSessionMaxLimitReached
+	case serverOffline:
+		return ErrDedicatedServersServerOffline
+	case serverNotFound:
+		return ErrDedicatedServersServerNotFound
 	}
 	return nil
 }
