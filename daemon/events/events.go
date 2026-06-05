@@ -332,6 +332,24 @@ func NewAccountUpdateEvents() *AccountUpdateEvents {
 	}
 }
 
+type UserServicesPublisher interface {
+	NotifyUserServicesChanged(any) error
+}
+
+type UserServicesEvents struct {
+	ServicesUpdate events.PublishSubcriber[any]
+}
+
+func NewUserServicesEvents() *UserServicesEvents {
+	return &UserServicesEvents{
+		ServicesUpdate: &subs.Subject[any]{},
+	}
+}
+
+func (u *UserServicesEvents) Subscribe(to UserServicesPublisher) {
+	u.ServicesUpdate.Subscribe(to.NotifyUserServicesChanged)
+}
+
 // TODO: remove/replace with the mock
 type MockPublisherSubscriber[T any] struct {
 	Handler        events.Handler[T]
