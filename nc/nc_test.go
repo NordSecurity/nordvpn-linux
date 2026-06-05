@@ -202,6 +202,7 @@ func TestStartStopNotificationClient(t *testing.T) {
 			&subs.Subject[error]{},
 			&subs.Subject[[]string]{},
 			&subs.Subject[any]{},
+			&subs.Subject[any]{},
 			credsFetcher)
 
 		t.Run(test.name, func(t *testing.T) {
