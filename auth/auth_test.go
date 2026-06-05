@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -12,6 +13,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/internal/caching"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	mocksession "github.com/NordSecurity/nordvpn-linux/test/mock/session"
 
@@ -200,7 +202,7 @@ func TestIsMFAEnabled(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			rc := NewRenewingChecker(test.cm, test.api, test.mfaPub, test.loutPub, test.errPub, daemonevents.NewAccountUpdateEvents(), &mocksession.MockSessionStore{})
+			rc := NewRenewingChecker(test.cm, test.api, test.mfaPub, test.loutPub, test.errPub, daemonevents.NewAccountUpdateEvents(), &ServicesState{}, &mocksession.MockSessionStore{})
 			enabled, err := rc.isMFAEnabled()
 			assert.Equal(t, test.isEnabled, enabled)
 
@@ -284,6 +286,7 @@ func TestIsVPNExpired(t *testing.T) {
 				&mockAuthPublisher{},
 				&mockErrPublisher{},
 				&daemonevents.AccountUpdateEvents{SubscriptionUpdate: test.accPub},
+				&ServicesState{},
 				&mocksession.MockSessionStore{},
 			)
 
@@ -312,6 +315,7 @@ func TestIsVPNExpired(t *testing.T) {
 		&mockAuthPublisher{},
 		&mockErrPublisher{},
 		&daemonevents.AccountUpdateEvents{SubscriptionUpdate: accPub},
+		&ServicesState{},
 		nil,
 	)
 
@@ -494,7 +498,7 @@ func TestGetDedicatedIPServices(t *testing.T) {
 
 	for _, test := range test {
 		t.Run(test.name, func(t *testing.T) {
-			mockAPI := authAPI{
+			mockAuthAPI := authAPI{
 				resp: test.servicesResponse,
 				err:  test.servicesErr,
 			}
@@ -503,10 +507,13 @@ func TestGetDedicatedIPServices(t *testing.T) {
 				loadErr: test.configLoadErr,
 			}
 
+			cache := caching.NewCacheWithTTL(time.Hour*5, mockAuthAPI.Services)
+
 			rc := RenewingChecker{
-				cm:         &configMock,
-				creds:      &mockAPI,
-				expChecker: expirationChecker,
+				cm:            &configMock,
+				creds:         &mockAuthAPI,
+				expChecker:    expirationChecker,
+				servicesState: &ServicesState{cache: cache},
 			}
 
 			dipServices, err := rc.GetDedicatedIPServices()
@@ -531,6 +538,7 @@ func TestIsLoggedIn_Success(t *testing.T) {
 		&mockAuthPublisher{},
 		&mockErrPublisher{},
 		&daemonevents.AccountUpdateEvents{},
+		&ServicesState{},
 		mockSS)
 
 	yes, err := checker.IsLoggedIn()
@@ -550,6 +558,7 @@ func TestIsLoggedIn_InvalidToken(t *testing.T) {
 		&mockAuthPublisher{},
 		&mockErrPublisher{},
 		&daemonevents.AccountUpdateEvents{},
+		&ServicesState{},
 		mockSS)
 
 	yes, err := checker.IsLoggedIn()
@@ -570,6 +579,7 @@ func TestIsLoggedIn_ConfigLoadFailed(t *testing.T) {
 		&mockAuthPublisher{},
 		&mockErrPublisher{},
 		&daemonevents.AccountUpdateEvents{},
+		&ServicesState{},
 		mockSS)
 
 	yes, err := checker.IsLoggedIn()
@@ -591,6 +601,7 @@ func TestIsLoggedIn_CheckerRenewFailed(t *testing.T) {
 		&mockAuthPublisher{},
 		&mockErrPublisher{},
 		&daemonevents.AccountUpdateEvents{},
+		&ServicesState{},
 		mockSS)
 
 	yes, err := checker.IsLoggedIn()

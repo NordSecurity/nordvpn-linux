@@ -37,12 +37,25 @@ func newMockResolver(ips ...string) *mockResolver {
 	return &mockResolver{ips: addrs}
 }
 
+type mockMqttMessage struct {
+	payload []byte
+}
+
+func (m *mockMqttMessage) Duplicate() bool   { return false }
+func (m *mockMqttMessage) Qos() byte         { return 0 }
+func (m *mockMqttMessage) Retained() bool    { return false }
+func (m *mockMqttMessage) Topic() string     { return "" }
+func (m *mockMqttMessage) MessageID() uint16 { return 0 }
+func (m *mockMqttMessage) Payload() []byte   { return m.payload }
+func (m *mockMqttMessage) Ack()              {}
+
 type mockMqttClient struct {
 	mqtt.Client
 	// connecting indicates if client is in connecting or disconnecting state
 	connecting     bool
 	connectToken   mockMqttToken
 	subscribeToken mockMqttToken
+	clientID       string
 }
 
 func (m *mockMqttClient) Connect() mqtt.Token {
@@ -60,6 +73,16 @@ func (m *mockMqttClient) SubscribeMultiple(filters map[string]byte, callback mqt
 	return &m.subscribeToken
 }
 
+func (m *mockMqttClient) OptionsReader() mqtt.ClientOptionsReader {
+	return mqtt.NewOptionsReader(&mqtt.ClientOptions{
+		ClientID: m.clientID,
+	})
+}
+
+func (m *mockMqttClient) Publish(topic string, qos byte, retained bool, payload interface{}) mqtt.Token {
+	return &mockMqttToken{}
+}
+
 type mockMqttToken struct {
 	mqtt.Token
 	timesOut bool
@@ -72,6 +95,12 @@ func (m *mockMqttToken) WaitTimeout(time.Duration) bool {
 
 func (m *mockMqttToken) Error() error {
 	return m.err
+}
+
+func (m *mockMqttToken) Done() <-chan struct{} {
+	ch := make(chan struct{})
+	close(ch)
+	return ch
 }
 
 func connectionStateToString(t *testing.T, state connectionState) string {
@@ -189,6 +218,7 @@ func TestStartStopNotificationClient(t *testing.T) {
 			&subs.Subject[string]{},
 			&subs.Subject[error]{},
 			&subs.Subject[[]string]{},
+			&subs.Subject[any]{},
 			credsFetcher,
 			0,
 			newMockResolver("127.0.0.1"),

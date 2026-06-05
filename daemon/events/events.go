@@ -333,7 +333,6 @@ func NewAccountUpdateEvents() *AccountUpdateEvents {
 }
 
 // Pause events
-
 type PauseEventsPublisher interface {
 	NotifyPauseEvent(*pb.PauseEvent) error
 }
@@ -350,6 +349,24 @@ func NewPauseEvents() *PauseEvents {
 	return &PauseEvents{
 		PauseNotifications: &subs.Subject[*pb.PauseEvent]{},
 	}
+}
+
+type UserServicesPublisher interface {
+	NotifyUserServicesChanged(any) error
+}
+
+type UserServicesEvents struct {
+	ServicesUpdate events.PublishSubcriber[any]
+}
+
+func NewUserServicesEvents() *UserServicesEvents {
+	return &UserServicesEvents{
+		ServicesUpdate: &subs.Subject[any]{},
+	}
+}
+
+func (u *UserServicesEvents) Subscribe(to UserServicesPublisher) {
+	u.ServicesUpdate.Subscribe(to.NotifyUserServicesChanged)
 }
 
 // TODO: remove/replace with the mock

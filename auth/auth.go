@@ -68,6 +68,12 @@ func (systemTimeExpirationChecker) IsExpired(expiryTime string) bool {
 	return time.Now().After(expiry)
 }
 
+func hasDedicatedServerService(services core.ServicesResponse, expirationChecker core.ExpirationChecker) bool {
+	return slices.ContainsFunc(services, func(service core.ServiceData) bool {
+		return service.Service.ID == DedicatedServersServiceID && !expirationChecker.IsExpired(service.ExpiresAt)
+	})
+}
+
 // NewTokenExpirationChecker
 func NewTokenExpirationChecker() core.ExpirationChecker {
 	return &systemTimeExpirationChecker{}
@@ -84,6 +90,7 @@ type RenewingChecker struct {
 	mu                  sync.Mutex
 	accountUpdateEvents *daemonevents.AccountUpdateEvents
 	sessionStores       []session.SessionStore
+	servicesState       *ServicesState
 }
 
 // NewRenewingChecker is a default constructor for RenewingChecker.
@@ -93,6 +100,7 @@ func NewRenewingChecker(cm config.Manager,
 	logoutPub events.Publisher[events.DataAuthorization],
 	errPub events.Publisher[error],
 	accountUpdateEvents *daemonevents.AccountUpdateEvents,
+	servicesState *ServicesState,
 	sessionStores ...session.SessionStore,
 ) *RenewingChecker {
 	return &RenewingChecker{
@@ -104,6 +112,7 @@ func NewRenewingChecker(cm config.Manager,
 		errPub:              errPub,
 		accountUpdateEvents: accountUpdateEvents,
 		sessionStores:       sessionStores,
+		servicesState:       servicesState,
 	}
 }
 
@@ -190,12 +199,9 @@ func (r *RenewingChecker) IsVPNExpired() (bool, error) {
 }
 
 func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	services, err := r.fetchServices()
+	services, err := r.servicesState.fetchServices()
 	if err != nil {
-		return nil, fmt.Errorf("fetching available services: %w", err)
+		return nil, fmt.Errorf("fetching available dedicated IP services: %w", err)
 	}
 
 	dipServices := []DedicatedIPService{}
@@ -215,10 +221,7 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 
 // GetDedicatedServerService returns dedicated server service status and expiration date
 func (r *RenewingChecker) GetDedicatedServerService() (DedicatedServerService, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	services, err := r.fetchServices()
+	services, err := r.servicesState.fetchServices()
 	if err != nil {
 		return DedicatedServerService{}, fmt.Errorf("fetching services: %w", err)
 	}
@@ -273,14 +276,6 @@ func (r *RenewingChecker) fetchSaveServices(userID int64, data *config.TokenData
 	})
 
 	return nil
-}
-
-func (r *RenewingChecker) fetchServices() ([]core.ServiceData, error) {
-	services, err := r.creds.Services()
-	if err != nil {
-		return nil, err
-	}
-	return services, nil
 }
 
 func saveVpnExpirationDate(userID int64, data config.TokenData) config.SaveFunc {
