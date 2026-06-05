@@ -85,7 +85,6 @@ type UserCreateResponse struct {
 	ID        int64  `json:"id"`
 	Email     string `json:"email"`
 	Username  string `json:"username"`
-	ExpiresAt string `json:"password_expires_at"`
 	CreateAt  string `json:"create_at"`
 	UpdatedAt string `json:"updated_at"`
 }
