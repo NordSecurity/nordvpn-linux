@@ -75,7 +75,7 @@ func setupCdnApi() (*CDNAPI, context.CancelFunc) {
 				request.NewContextRoundTripper(request.NewStdTransport(), httpGlobalCtx),
 				httpCallsSubject,
 			)
-		}, nil)
+		}, nil, true)
 
 	cdnAPI := NewCDNAPI(
 		userAgent,

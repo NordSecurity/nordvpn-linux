@@ -286,4 +286,3 @@ def test_killswitch_autoconnect_to_fastest_debug():
     assert duration < 6, "Autoconnect with killswitch on should connect in less than 6 seconds"
     status_data = daemon.get_status_data()
     assert device_country in status_data["country"], "Fastest server should be in the same country"
-    

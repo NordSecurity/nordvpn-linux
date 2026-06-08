@@ -1,7 +1,7 @@
 [Unit]
 Description=NordVPN Daemon
 Requires=nordvpnd.socket
-Wants=nordvpnd-killswitch.service
+Wants=nordvpnd-killswitch.service network-online.target
 After=nordvpnd-killswitch.service network-online.target
 
 [Service]

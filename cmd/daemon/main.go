@@ -131,7 +131,7 @@ func main() {
 	appStartTime := time.Now()
 	ksMode := flag.Bool("killswitch-mode", false, "sets killswitch rules and stops")
 	flag.Parse()
-	if *ksMode{
+	if *ksMode {
 		log.Info("Daemon running in killswitch mode")
 	}
 	stopLevelWatcher := log.SetupLogger(
@@ -225,9 +225,12 @@ func main() {
 	if *ksMode {
 		if cfg.KillSwitch {
 			log.Info("Enabling killswitch")
-			fw.Configure(firewall.NewConfig(
-			firewall.WithKillSwitch(true)))
-			out, err := exec.Command("nft", "list", "ruleset").CombinedOutput() 
+			err := fw.Configure(firewall.NewConfig(
+				firewall.WithKillSwitch(true)))
+			if err != nil {
+				log.Debug(err)
+			}
+			out, err := exec.Command("nft", "list", "ruleset").CombinedOutput()
 			if err != nil {
 				log.Debug(err)
 			}

@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -23,6 +24,7 @@ import (
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 	"golang.org/x/exp/slices"
+	"golang.org/x/sys/unix"
 )
 
 const (
@@ -110,11 +112,14 @@ func createH3Transport(resolver network.DNSResolver, fwmark uint32) func() http.
 		if err != nil {
 			log.Fatal(err)
 		}
-		// // as of quic-go 0.40.1, GSO handling causes race conditions
+		// as of quic-go 0.40.1, GSO handling causes race conditions
 		_ = os.Setenv("QUIC_GO_DISABLE_GSO", "true")
-		// #nosec G402 -- minimum tls version is controlled by the standard library
 		udpConn, err := NewMarkedUDPConn(fwmark)
+		if err != nil {
+			log.Fatal(err)
+		}
 		quicTransport := &quic.Transport{Conn: udpConn}
+		// #nosec G402 -- minimum tls version is controlled by the standard library
 		return &http3.Transport{
 			QUICConfig: &quic.Config{
 				MaxIdleTimeout: request.TransportTimeout,
@@ -122,12 +127,14 @@ func createH3Transport(resolver network.DNSResolver, fwmark uint32) func() http.
 			TLSClientConfig: &tls.Config{
 				RootCAs: pool,
 			},
-			Dial : func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
+			// Custom dial is needed to resolve domain names with fwmarked resolver as well as
+			// dialing with fwmarked connection
+			Dial: func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
 				domain, portStr, ok := strings.Cut(addr, ":")
 				if !ok {
 					return nil, fmt.Errorf("malformed address: %s", addr)
 				}
-				port, err := strconv.Atoi(portStr)
+				port, err := strconv.ParseUint(portStr, 10, 16)
 				if err != nil {
 					return nil, fmt.Errorf("port conversion failed: %s", portStr)
 				}
@@ -135,13 +142,13 @@ func createH3Transport(resolver network.DNSResolver, fwmark uint32) func() http.
 				if err != nil {
 					return nil, err
 				}
-				if !ips[0].IsValid(){
+				if !ips[0].IsValid() {
 					return nil, fmt.Errorf("invalid IP resolved: %s", ips[0])
 				}
 				udpAddrPort := netip.AddrPortFrom(ips[0], uint16(port))
 				udpAddr := net.UDPAddrFromAddrPort(udpAddrPort)
 				c, err := quicTransport.DialEarly(ctx, udpAddr, tlsCfg, cfg)
-				if err != nil{
+				if err != nil {
 					return nil, err
 				}
 				return c, nil
@@ -149,7 +156,6 @@ func createH3Transport(resolver network.DNSResolver, fwmark uint32) func() http.
 		}
 	}
 }
-
 
 func NewMarkedUDPConn(fwmark uint32) (*net.UDPConn, error) {
 	lc := net.ListenConfig{

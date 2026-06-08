@@ -1,6 +1,6 @@
 [Unit]
 Description=Nordvpn Daemon launched in killswitch mode
-Before=nordvpnd.service
+Before=network-pre.target nordvpnd.service
 
 [Service]
 Type=oneshot
