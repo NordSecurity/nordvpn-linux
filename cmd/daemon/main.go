@@ -258,6 +258,7 @@ func main() {
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 
 	// simple standard http client with dialer wrapped inside
+	simpleTransportNeedsRecreate := true
 	httpClientSimple := request.NewStdHTTP()
 	httpClientSimple.Transport = request.NewHTTPReTransport(
 		1, 1, "HTTP/1.1", func() http.RoundTripper {
@@ -265,7 +266,7 @@ func main() {
 				request.NewContextRoundTripper(createSimpleH1Transport(Environment)(), httpGlobalCtx),
 				httpCallsSubject,
 			)
-		}, nil)
+		}, nil, simpleTransportNeedsRecreate)
 
 	cdnUrl := core.CDNURL
 	if !internal.IsProdEnv(Environment) && os.Getenv(EnvNordCdnUrl) != "" {

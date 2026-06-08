@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // HTTPReTransport is modified/enhanced RoundTripper.
@@ -18,6 +19,7 @@ type HTTPReTransport struct {
 	protoMinor      int
 	proto           string
 	shouldRetryFunc ShouldRetryFunc
+	NeedRecreate 	bool
 	// counter provides a mechanism to check whether the inner RoundTripper was re-created
 	// in the background during this round trip. Integer overflow is not important here as only
 	// inequality operator is used.
@@ -39,12 +41,14 @@ func NewHTTPReTransport(
 	proto string,
 	createFn RoundTripperCreateFunc,
 	shouldRetryFn ShouldRetryFunc,
+	needRecreate bool,
 ) *HTTPReTransport {
 	return &HTTPReTransport{
 		mu:              sync.RWMutex{},
 		inner:           createFn(),
 		createFn:        createFn,
 		shouldRetryFunc: shouldRetryFn,
+		NeedRecreate: needRecreate,
 	}
 }
 
@@ -95,10 +99,15 @@ func (m *HTTPReTransport) executeRequest(req *http.Request) (*http.Response, err
 func (m *HTTPReTransport) recreateRoundTrip(counter int) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if !m.NeedRecreate {
+		log.Debug("Transport does not need recreation, skipping")
+		return
+	}
 	if counter != m.counter {
 		return
 	}
 	if inner, ok := m.inner.(io.Closer); ok {
+		log.Debug("Recreating round trip, closing inner transport")
 		_ = inner.Close()
 	}
 	m.counter++

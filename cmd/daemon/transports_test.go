@@ -78,7 +78,7 @@ func TestTransports(t *testing.T) {
 		{
 			comment:     "test quic transport small req/resp",
 			inputURL:    serverListSmallURL,
-			transport:   createH3Transport(),
+			transport:   createH3Transport(workingResolver{}, 0)(),
 			expectError: false,
 		},
 		// { Fix in LVPN-6886
@@ -96,7 +96,7 @@ func TestTransports(t *testing.T) {
 		{
 			comment:     "test non quic/H3 url with H3 transport",
 			inputURL:    nonH3serverURL,
-			transport:   createH3Transport(),
+			transport:   createH3Transport(workingResolver{}, 0)(),
 			expectError: true,
 		},
 	}
