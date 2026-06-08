@@ -28,8 +28,8 @@ const (
 	imageSnapPackager      = registryPrefix + "snaper:1.2.2"
 	imageProtobufGenerator = registryPrefix + "generator:1.4.2"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
-	imageTester            = registryPrefix + "tester:1.6.4"
-	imageQAPeer            = registryPrefix + "qa-peer:1.0.4"
+	imageTester            = registryPrefix + "tester:1.6.5"
+	imageQAPeer            = registryPrefix + "qa-peer:1.0.5"
 	imageRuster            = registryPrefix + "ruster:1.4.1"
 	imageCodeQL            = registryPrefix + "codeql:1.0.0"
 
