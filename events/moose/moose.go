@@ -785,6 +785,7 @@ func (s *Subscriber) NotifyTechnology(data config.Technology) error {
 // sensitive fields from analytics.
 var sensitiveServerGroups = []config.ServerGroup{
 	config.ServerGroup_DEDICATED_IP,
+	config.ServerGroup_DEDICATED_SERVER,
 }
 
 // hasSensitiveServerGroup reports whether any group the chosen server belongs to
