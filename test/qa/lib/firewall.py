@@ -55,7 +55,10 @@ def is_active() -> bool:
         return False
 
     print(out)
-    print(sh.nordvpn.settings())
+    try:
+        print(sh.nordvpn.settings())
+    except Exception: # noqa: BLE001
+        pass
     return "nordvpn" in out
 
 tun_interface_names = [
