@@ -56,7 +56,7 @@ func main() {
 	defer stopLevelWatcher()
 
 	if lj, ok := logFile.(*lumberjack.Logger); ok {
-		if cleanup, err := redirectFDsToLumberjack(lj); err != nil {
+		if cleanup, err := redirectStdOutputToLumberjack(lj); err != nil {
 			log.Error("failed to redirect stdout to logger", err)
 		} else {
 			defer cleanup()
