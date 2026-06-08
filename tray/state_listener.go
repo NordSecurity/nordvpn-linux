@@ -57,7 +57,7 @@ func (l *stateListener) consumeStream(ctx context.Context, server grpc.ServerStr
 		select {
 		case l.queue <- state:
 		case <-time.After(time.Second):
-			log.Warnf(logTag, "App state consumer's queue is full, dropping: %v\n", state)
+			log.Warnf("%s App state consumer's queue is full, dropping: %v\n", logTag, state)
 		case <-ctx.Done():
 			return
 		}
