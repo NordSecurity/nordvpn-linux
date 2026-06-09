@@ -324,6 +324,18 @@ func (r *RPC) connect(
 			r.dedicatedServersAPI,
 			serverSelection.server.DedicatedServerUUID,
 			*dedicatedServersDeviceData)
+		if errors.Is(err, core.ErrDedicatedServersDeviceNotFound) {
+			dedicatedServersDeviceData := r.dedicatedServerKeyManager.ForceRegisterDedicatedServers()
+			if dedicatedServersDeviceData == nil {
+				log.Println(internal.ErrorPrefix, "failed to force dedicated server device registration")
+				return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersCanNotConnect})
+			}
+			dedicatedServerConnectionData, err = getDedicatedServerConnectionData(
+				r.dedicatedServersAPI,
+				serverSelection.server.DedicatedServerUUID,
+				*dedicatedServersDeviceData)
+		}
+
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "fetching dedicated server connection data:", err)
 			switch {

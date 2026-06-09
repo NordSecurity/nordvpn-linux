@@ -16,6 +16,9 @@ type DedicatedServersAPIMock struct {
 
 	DedicatedServerErr error
 	ConnectErr         error
+	// GetConnectErrFunc is called when it is not nil. The returned error will be returned by
+	// DedicatedServerConnectCheck. Used to test handling of device not existing error fallbacks.
+	GetConnectErrFunc func() error
 }
 
 func (*DedicatedServersAPIMock) RegisterDevice(core.DevicesRequest) (core.DevicesResponse, error) {
@@ -33,5 +36,13 @@ func (d *DedicatedServersAPIMock) DedicatedServers() (core.DedicatedServers, err
 func (d *DedicatedServersAPIMock) DedicatedServerConnectCheck(serverUUID string, connectRequest core.DedicatedServerConnectRequest) (core.DedicatedServerConnectResponse, error) {
 	d.ConnectRequest = connectRequest
 	d.ConnectServerUUID = serverUUID
-	return d.ConnectResponse, d.ConnectErr
+
+	var connectErr error
+	if d.ConnectErr != nil {
+		connectErr = d.ConnectErr
+	} else if d.GetConnectErrFunc != nil {
+		connectErr = d.GetConnectErrFunc()
+	}
+
+	return d.ConnectResponse, connectErr
 }

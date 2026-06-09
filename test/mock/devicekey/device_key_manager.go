@@ -3,9 +3,11 @@ package devicekey
 import devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 
 type MockDeviceKeyManager struct {
-	DedicatedServerRegistrationData *devicekey.DedicatedServersConnectionData
+	DedicatedServerRegistrationData       *devicekey.DedicatedServersConnectionData
+	DedicatedServerForcedRegistrationData *devicekey.DedicatedServersConnectionData
 
 	WasKeyRegistered        bool
+	WasKeyForceRegistered   bool
 	WasDeviceKeyInvalidated bool
 }
 
@@ -15,6 +17,14 @@ func (m *MockDeviceKeyManager) CheckAndRegisterDedicatedServers() *devicekey.Ded
 	}
 	m.WasKeyRegistered = true
 	return m.DedicatedServerRegistrationData
+}
+
+func (m *MockDeviceKeyManager) ForceRegisterDedicatedServers() *devicekey.DedicatedServersConnectionData {
+	if m.DedicatedServerForcedRegistrationData == nil {
+		return nil
+	}
+	m.WasKeyForceRegistered = true
+	return m.DedicatedServerForcedRegistrationData
 }
 
 func (m *MockDeviceKeyManager) InvalidateDeviceKeyData() error {

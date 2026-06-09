@@ -1278,7 +1278,7 @@ func TestDedicatedServers_Internals(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	serverUUID := uuid.MustParse("af0bc2b1-785a-4455-bfe0-5397c39c4f4e")
-	serverAddress := "1.2.3.4"
+	serverAddress := "100.34.50.2"
 	serverPort := int64(55555)
 	dedicatedServer := core.DedicatedServer{
 		UUID:   serverUUID.String(),
@@ -1324,6 +1324,78 @@ func TestDedicatedServers_Internals(t *testing.T) {
 	assert.Equal(t, devicePrivateKey, networkerMock.ProvidedCredentials.NordLynxPrivateKey,
 		"DeviceKey should be used in place of NordlynxPrivateKey in case of dedicated server connections.")
 	assert.Equal(t, serverPort, networkerMock.ProvidedServerData.DedicatedServerPort)
+}
+
+func TestDedicatedServers_ForceRegistration(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	serverUUID := uuid.MustParse("af0bc2b1-785a-4455-bfe0-5397c39c4f4e")
+	serverAddress := "44.44.44.44"
+	serverPort := int64(55555)
+	dedicatedServer := core.DedicatedServer{
+		UUID:   serverUUID.String(),
+		Name:   "server 1",
+		Status: core.DedicatedServerStatusRunning,
+		IP:     serverAddress,
+	}
+	dedicatedServers := core.DedicatedServers{dedicatedServer}
+
+	serverPublicKey := "server_public_key"
+	rpc := testRPCLocal(t)
+
+	connectResponse := core.DedicatedServerConnectResponse{
+		ServerEndpoint:  serverAddress + ":" + strconv.Itoa(int(serverPort)),
+		ServerPublicKey: serverPublicKey,
+	}
+
+	connectErr := core.ErrDedicatedServersDeviceNotFound
+	getConnectErrFunc := func() error {
+		err := connectErr
+		// set to nil so that no error will be returned for the next call
+		connectErr = nil
+		return err
+	}
+
+	dedicatedServersAPIMock := testcore.DedicatedServersAPIMock{
+		DedicatedServersResponse: dedicatedServers,
+		ConnectResponse:          connectResponse,
+		GetConnectErrFunc:        getConnectErrFunc,
+	}
+	rpc.dedicatedServersAPI = &dedicatedServersAPIMock
+
+	rpc.ac = &workingLoginChecker{
+		isDedicatedServersExpired: false,
+	}
+
+	staleDeviceKey := "stale device key"
+	staleDevicePrivateKey := "stale device private key"
+
+	newDeviceKey := "new device key"
+	newDevicePrivateKey := "new device private key"
+
+	deviceKeyManagerMock := testdevicekey.MockDeviceKeyManager{
+		DedicatedServerRegistrationData: &devicekey.DedicatedServersConnectionData{
+			DevicePublicKey:  staleDeviceKey,
+			DevicePrivateKey: staleDevicePrivateKey,
+		},
+		DedicatedServerForcedRegistrationData: &devicekey.DedicatedServersConnectionData{
+			DevicePublicKey:  newDeviceKey,
+			DevicePrivateKey: newDevicePrivateKey,
+		},
+	}
+	rpc.dedicatedServerKeyManager = &deviceKeyManagerMock
+
+	configManagerMock := rpc.cm.(*mockConfigManager)
+	configManagerMock.c.Technology = config.Technology_NORDLYNX
+
+	mockRPCServer := &mockRPCServer{}
+	err := rpc.Connect(&pb.ConnectRequest{ServerTag: "dedicated_server"}, mockRPCServer)
+	assert.Nil(t, err, "Unexpected error returned by Connect.")
+
+	assert.True(t, deviceKeyManagerMock.WasKeyForceRegistered, "Key should be forcibly registered when API returns %w",
+		core.ErrDedicatedServersDeviceNotFound)
+	assert.Equal(t, newDeviceKey, dedicatedServersAPIMock.ConnectRequest.DevicePublicKey,
+		"Key sent in a connect request should be equal to newly registered key.")
 }
 
 func Test_serverGroupIDs_ExtractsAllIDs(t *testing.T) {
