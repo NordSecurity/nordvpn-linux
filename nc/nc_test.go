@@ -37,18 +37,6 @@ func newMockResolver(ips ...string) *mockResolver {
 	return &mockResolver{ips: addrs}
 }
 
-type mockMqttMessage struct {
-	payload []byte
-}
-
-func (m *mockMqttMessage) Duplicate() bool   { return false }
-func (m *mockMqttMessage) Qos() byte         { return 0 }
-func (m *mockMqttMessage) Retained() bool    { return false }
-func (m *mockMqttMessage) Topic() string     { return "" }
-func (m *mockMqttMessage) MessageID() uint16 { return 0 }
-func (m *mockMqttMessage) Payload() []byte   { return m.payload }
-func (m *mockMqttMessage) Ack()              {}
-
 type mockMqttClient struct {
 	mqtt.Client
 	// connecting indicates if client is in connecting or disconnecting state

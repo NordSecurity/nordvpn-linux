@@ -89,14 +89,17 @@ func TestRPCGroups_RegionalGroupsFiltered(t *testing.T) {
 	rpc := RPC{
 		cm: cm,
 		dm: dm,
+		remoteConfigGetter: &mock.RemoteConfigMock{
+			FeatureToggles: map[string]bool{
+				remote.FeatureDedicatedServer: false,
+			},
+		},
 	}
 	payload, _ := rpc.Groups(context.Background(), &pb.Empty{})
 
 	assert.Equal(t, internal.CodeSuccess, payload.Type)
-	assert.Equal(t, 2, len(payload.Servers))
-	// dedicated server group is always appended to the server groups list
-	assert.Equal(t, "Dedicated_Server", payload.Servers[0].Name)
-	assert.Equal(t, "P2P", payload.Servers[1].Name)
+	assert.Equal(t, 1, len(payload.Servers))
+	assert.Equal(t, "P2P", payload.Servers[0].Name)
 }
 
 func TestRPCGroups_Successful(t *testing.T) {

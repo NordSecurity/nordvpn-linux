@@ -298,7 +298,10 @@ func TestConfigMigratesFromEncryptedToUnencrypted(t *testing.T) {
 	require.NoError(t, err)
 	encryptRemovedConfig, _ := internal.FileRead("testdata/settings_5.0.0.dat")
 	postSaveConfig, _ := filesystem.ReadFile("/location")
-	assert.Equal(t, encryptRemovedConfig, postSaveConfig)
+	assert.Equal(t, encryptRemovedConfig, postSaveConfig,
+		"Configuration has changed post decryption:\nbefore decryption:\n%s\nafter decryption:\n%s",
+		string(encryptRemovedConfig),
+		string(postSaveConfig))
 }
 
 func TestConfigReadEmptyConfig(t *testing.T) {

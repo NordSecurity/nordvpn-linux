@@ -1025,40 +1025,6 @@ func Test_determineServerGroup(t *testing.T) {
 	}
 }
 
-func Test_serverGroupIDs_ExtractsAllIDs(t *testing.T) {
-	category.Set(t, category.Unit)
-	server := core.Server{Groups: []core.Group{
-		{ID: config.ServerGroup_DEDICATED_IP, Title: "Dedicated IP"},
-		{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
-	}}
-
-	got := determineServerGroupIDs(&server)
-
-	want := []config.ServerGroup{
-		config.ServerGroup_DEDICATED_IP,
-		config.ServerGroup_STANDARD_VPN_SERVERS,
-	}
-	assert.Equal(t, want, got)
-}
-
-func Test_serverGroupIDs_EmptyGroups_ReturnsEmptySlice(t *testing.T) {
-	category.Set(t, category.Unit)
-	server := core.Server{Groups: []core.Group{}}
-
-	got := determineServerGroupIDs(&server)
-
-	assert.Equal(t, 0, len(got))
-}
-
-func Test_serverGroupIDs_NilGroups_ReturnsEmptySlice(t *testing.T) {
-	category.Set(t, category.Unit)
-	server := core.Server{}
-
-	got := determineServerGroupIDs(&server)
-
-	assert.Equal(t, 0, len(got))
-}
-
 func TestConnect_DedicatedServers(t *testing.T) {
 	category.Set(t, category.Unit)
 
