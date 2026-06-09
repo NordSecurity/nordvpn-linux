@@ -1068,6 +1068,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 	tests := []struct {
 		name                       string
 		isDedicatedServersExpired  bool
+		postQuantum                bool
 		dedicatedServersResponse   core.DedicatedServers
 		connectResponse            core.DedicatedServerConnectResponse
 		technology                 config.Technology
@@ -1220,6 +1221,13 @@ func TestConnect_DedicatedServers(t *testing.T) {
 			connectErr:                 core.ErrDedicatedServersInvalidFormData,
 			expectedStatus:             internal.CodeDedicatedServersCanNotConnect,
 		},
+		{
+			name:                      "post quantum is on",
+			isDedicatedServersExpired: false,
+			postQuantum:               true,
+			technology:                config.Technology_NORDLYNX,
+			expectedStatus:            internal.CodeDedicatedServersPq,
+		},
 	}
 
 	for _, test := range tests {
@@ -1245,6 +1253,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 
 			configManagerMock := rpc.cm.(*mockConfigManager)
 			configManagerMock.c.Technology = test.technology
+			configManagerMock.c.AutoConnectData.PostquantumVpn = test.postQuantum
 
 			mockRPCServer := &mockRPCServer{}
 			err := rpc.Connect(&pb.ConnectRequest{ServerTag: "dedicated_server"}, mockRPCServer)

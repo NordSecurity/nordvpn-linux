@@ -171,11 +171,15 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		case internal.CodeDedicatedServersNotReady:
 			rpcErr = errors.New(DedicatedServersServerNotReadyMessage)
 		case internal.CodeDedicatedServersNoNordlynx:
-			rpcErr = errors.New(DedicatedServersNoNordlynxMessage)
+			rpcErr = errors.New(MsgNordlynxMustBeEnabled)
 		case internal.CodeDedicatedServersCanNotConnect:
 			rpcErr = errors.New(DedicatedServersCanNotConnectMessage)
 		case internal.CodeDedicatedServersSessionMaxLimitReached:
 			rpcErr = errors.New(DedicatedServersConnectionLimitReached)
+		case internal.CodeDedicatedServersPq:
+			rpcErr = errors.New(internal.ServerUnavailableErrorMessage)
+		case internal.CodeDedicatedServersServerNotSetUp:
+			rpcErr = errors.New(c.injectLinkIntoMessage(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin, DedicatedServersNoServersAvailable))
 		case internal.CodeVPNRunning:
 			color.Yellow(client.ConnectConnected)
 		case internal.CodeNothingToDo:

@@ -39,6 +39,12 @@ func determineServerGroupIDs(server *core.Server) []config.ServerGroup {
 	return ids
 }
 
+// isDedicatedServer returns true if either serverTag or serverGroup represents the dedicated server group
+func isDedicatedServer(serverTag string, serverGroup string) bool {
+	return groupConvert(serverTag) == config.ServerGroup_DEDICATED_SERVER ||
+		groupConvert(serverGroup) == config.ServerGroup_DEDICATED_SERVER
+}
+
 // Connect initiates and handles the VPN connection process
 func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retErr error) {
 	return r.connectFromRequest(in, srv, pb.ConnectionSource_MANUAL)
@@ -169,6 +175,10 @@ func (r *RPC) connectWithStoredServerSelection(ctx context.Context,
 		if cfg.Technology != config.Technology_NORDLYNX {
 			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
 		}
+		// third, if technology is correct, check if post quantum is enabled(pq is not supported for dedicated servers)
+		if cfg.AutoConnectData.PostquantumVpn {
+			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersPq})
+		}
 	}
 
 	expirationCheckResult := r.isVPNExpired()
@@ -205,17 +215,20 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	}
 	r.connectionInfo.SetInitialConnecting()
 
-	if groupConvert(in.ServerGroup) == config.ServerGroup_DEDICATED_SERVER ||
-		groupConvert(in.ServerTag) == config.ServerGroup_DEDICATED_SERVER {
+	if isDedicatedServer(in.ServerTag, in.ServerGroup) {
 		// first, check if feature is enabled at all
 		if !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
 			// if user is trying to connect here while this feature is disabled,
 			// show general error because anyways he should not get here
-			return true, srv.Send(&pb.Payload{Type: internal.CodeFailure})
+			return true, srv.Send(&pb.Payload{Type: internal.CodeGroupNonexisting})
 		}
 		// second, if feature is enabled, check if technology is correct
 		if cfg.Technology != config.Technology_NORDLYNX {
 			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
+		}
+		// third, if technology is correct, check if post quantum is enabled(pq is not supported for dedicated servers)
+		if cfg.AutoConnectData.PostquantumVpn {
+			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersPq})
 		}
 	}
 

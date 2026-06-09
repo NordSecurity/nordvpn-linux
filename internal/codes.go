@@ -79,6 +79,8 @@ const (
 	CodeDedicatedServersNoNordlynx             int64 = 3065
 	CodeDedicatedServersCanNotConnect          int64 = 3066
 	CodeDedicatedServersSessionMaxLimitReached int64 = 3067
+	CodeDedicatedServersPq                     int64 = 3068
+	CodeDedicatedServersServerNotSetUp         int64 = 3069
 )
 
 type ErrorWithCode struct {

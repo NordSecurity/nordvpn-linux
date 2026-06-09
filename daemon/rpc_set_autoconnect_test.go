@@ -6,37 +6,35 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
+	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	testauth "github.com/NordSecurity/nordvpn-linux/test/mock/auth"
+	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
+	testdevicekey "github.com/NordSecurity/nordvpn-linux/test/mock/devicekey"
 
 	"github.com/stretchr/testify/assert"
 )
-
-type mockAutoconnectAuthChecker struct{}
-
-func (mockAutoconnectAuthChecker) IsLoggedIn() (bool, error)   { return true, nil }
-func (mockAutoconnectAuthChecker) IsMFAEnabled() (bool, error) { return false, nil }
-func (mockAutoconnectAuthChecker) IsVPNExpired() (bool, error) { return false, nil }
-func (mockAutoconnectAuthChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
-	return []auth.DedicatedIPService{}, nil
-}
-func (mockAutoconnectAuthChecker) GetDedicatedServerService() (auth.DedicatedServerService, error) {
-	return auth.DedicatedServerService{}, nil
-}
 
 func TestAutoconnect(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		testName             string
-		server               string
-		config               config.Config
-		isDedicatedIPExpired bool
-		returnCode           int64
-		eventPublished       bool
-		expectedError        error
+		testName                        string
+		server                          string
+		config                          config.Config
+		isDedicatedIPExpired            bool
+		isDedicatedServerExpired        bool
+		isDedicatedServerFeatureEnabled bool
+		dedicatedServerList             core.DedicatedServers
+		returnCode                      int64
+		eventPublished                  bool
+		expectedError                   error
 	}{
 		{
 			testName:       "autoconnect works for OpenVPN, obfuscate = off",
@@ -151,6 +149,14 @@ func TestAutoconnect(t *testing.T) {
 			eventPublished: false,
 		},
 		{
+			testName:             "works for dedicated ip if subscription is not expired",
+			server:               "dedicated_ip",
+			config:               config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			isDedicatedIPExpired: false,
+			returnCode:           internal.CodeSuccess,
+			eventPublished:       true,
+		},
+		{
 			testName:             "fails to connect dedicated IP when subscription expired",
 			server:               "dedicated_ip",
 			config:               config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
@@ -158,15 +164,116 @@ func TestAutoconnect(t *testing.T) {
 			returnCode:           internal.CodeDedicatedIPRenewError,
 			eventPublished:       false,
 		},
+		{
+			testName:                        "works for dedicated servers if subscription is available and tech is set to NordLynx",
+			server:                          "dedicated_server",
+			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			isDedicatedServerExpired:        false,
+			isDedicatedServerFeatureEnabled: true,
+			dedicatedServerList:             core.DedicatedServers{core.DedicatedServer{Status: core.DedicatedServerStatusRunning}},
+			returnCode:                      internal.CodeSuccess,
+			eventPublished:                  true,
+		},
+		{
+			testName:                        "fails to connect to a dedicated server if tech is not set to NordLynx",
+			server:                          "dedicated_server",
+			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_OPENVPN},
+			isDedicatedServerExpired:        false,
+			isDedicatedServerFeatureEnabled: true,
+			dedicatedServerList:             core.DedicatedServers{core.DedicatedServer{Status: core.DedicatedServerStatusRunning}},
+			returnCode:                      internal.CodeDedicatedServersNoNordlynx,
+			eventPublished:                  false,
+		},
+		{
+			testName:                        "fails to connect to a dedicated server if server is not ready",
+			server:                          "dedicated_server",
+			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			isDedicatedServerExpired:        false,
+			isDedicatedServerFeatureEnabled: true,
+			dedicatedServerList:             core.DedicatedServers{core.DedicatedServer{Status: "not running"}},
+			returnCode:                      internal.CodeDedicatedServersNotReady,
+			eventPublished:                  false,
+		},
+		{
+			testName:                        "fails to connect to a dedicated server if dedicated server list is empty",
+			server:                          "dedicated_server",
+			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			isDedicatedServerExpired:        false,
+			isDedicatedServerFeatureEnabled: true,
+			dedicatedServerList:             core.DedicatedServers{},
+			returnCode:                      internal.CodeDedicatedServersServiceButNoServers,
+			eventPublished:                  false,
+		},
+		{
+			testName:                        "fails to connect to a dedicated server if service is expired",
+			server:                          "dedicated_server",
+			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			isDedicatedServerExpired:        true,
+			isDedicatedServerFeatureEnabled: true,
+			dedicatedServerList:             core.DedicatedServers{},
+			returnCode:                      internal.CodeDedicatedServersRenewError,
+			eventPublished:                  false,
+		},
+		{
+			testName:                        "fails to connect to a dedicated server if feature is disabled in remote config",
+			server:                          "dedicated_server",
+			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			isDedicatedServerExpired:        false,
+			isDedicatedServerFeatureEnabled: false,
+			dedicatedServerList:             core.DedicatedServers{core.DedicatedServer{Status: core.DedicatedServerStatusRunning}},
+			returnCode:                      internal.CodeGroupNonexisting,
+			eventPublished:                  false,
+		},
+		{
+			testName:                        "fails to connect to a dedicated server if post quantum is on",
+			server:                          "dedicated_server",
+			config:                          config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP, PostquantumVpn: true}, Technology: config.Technology_NORDLYNX},
+			isDedicatedServerExpired:        false,
+			isDedicatedServerFeatureEnabled: true,
+			dedicatedServerList:             core.DedicatedServers{core.DedicatedServer{Status: core.DedicatedServerStatusRunning}},
+			returnCode:                      internal.CodeDedicatedServersPq,
+			eventPublished:                  false,
+		},
 	}
 
 	for _, test := range tests {
-		mockAuthChecker := mockAutoconnectAuthChecker{}
+		mockRemoteConfig := mock.NewRemoteConfigMock()
+		mockRemoteConfig.AddFeatureToggle(remote.FeatureDedicatedServer, test.isDedicatedServerFeatureEnabled)
+
+		dipServices := []auth.DedicatedIPService{
+			{
+				ServerIDs: []int64{1},
+			},
+		}
+		if test.isDedicatedIPExpired {
+			dipServices = []auth.DedicatedIPService{}
+		}
+		mockAuthChecker := testauth.AuthCheckerMock{
+			LoggedIn: true,
+			DedicatedServerService: auth.DedicatedServerService{
+				Active: !test.isDedicatedServerExpired,
+			},
+			DIPServices: dipServices}
+
+		mockDedicatedServersAPI := testcore.DedicatedServersAPIMock{
+			DedicatedServersResponse: test.dedicatedServerList,
+			ConnectResponse:          core.DedicatedServerConnectResponse{},
+		}
+
 		mockConfigManager := newMockConfigManager()
 		mockPublisherSubscriber := events.MockPublisherSubscriber[bool]{}
 		mockEvents := events.Events{Settings: &events.SettingsEvents{Autoconnect: &mockPublisherSubscriber}}
 		dm := DataManager{serversData: ServersData{Servers: serversList()}}
-		r := RPC{cm: mockConfigManager, ac: mockAuthChecker, events: &mockEvents, dm: &dm, serversAPI: &mockServersAPI{}}
+		r := RPC{cm: mockConfigManager,
+			ac:                  &mockAuthChecker,
+			events:              &mockEvents,
+			dm:                  &dm,
+			serversAPI:          &mockServersAPI{},
+			dedicatedServersAPI: &mockDedicatedServersAPI,
+			dedicatedServerKeyManager: &testdevicekey.MockDeviceKeyManager{
+				DedicatedServerRegistrationData: &devicekey.DedicatedServersConnectionData{},
+			},
+			remoteConfigGetter: mockRemoteConfig}
 		request := pb.SetAutoconnectRequest{Enabled: true}
 
 		request.ServerTag = test.server
@@ -243,7 +350,8 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		mockAuthChecker := mockAutoconnectAuthChecker{}
+		mockAuthChecker := testauth.AuthCheckerMock{
+			LoggedIn: true}
 		mockConfigManager := newMockConfigManager()
 		mockPublisherSubscriber := events.MockPublisherSubscriber[bool]{}
 		mockEvents := events.Events{
@@ -261,7 +369,7 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 		}
 		r := RPC{
 			cm:         mockConfigManager,
-			ac:         mockAuthChecker,
+			ac:         &mockAuthChecker,
 			events:     &mockEvents,
 			dm:         &dm,
 			serversAPI: &mockServersAPI{},

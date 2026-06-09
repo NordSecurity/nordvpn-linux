@@ -744,7 +744,7 @@ func main() {
 	if ok, _ := authChecker.IsLoggedIn(); ok {
 		go daemon.StartNC("[startup]", notificationClient)
 		if err := rpc.RegisterDedicatedServers(); err != nil {
-			log.Println(internal.ErrorPrefix, "failed to sync device:", err)
+			log.Println(internal.WarningPrefix, "failed to sync device:", err)
 		}
 	}
 	if cfg.Mesh {

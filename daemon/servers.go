@@ -670,6 +670,9 @@ func selectDedicatedServer(authChecker auth.Checker,
 		normalizedStatusValue == string(core.DedicatedServerStatusStopping) {
 		return result, internal.NewErrorWithCode(internal.CodeDedicatedServersCanNotConnect)
 	}
+	if normalizedStatusValue == string(core.DedicatedServerStatusNew) {
+		return result, internal.NewErrorWithCode(internal.CodeDedicatedServersServerNotSetUp)
+	}
 	if normalizedStatusValue != string(core.DedicatedServerStatusRunning) {
 		return result, internal.NewErrorWithCode(internal.CodeDedicatedServersNotReady)
 	}
