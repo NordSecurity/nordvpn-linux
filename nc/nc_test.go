@@ -219,6 +219,7 @@ func TestStartStopNotificationClient(t *testing.T) {
 			&subs.Subject[error]{},
 			&subs.Subject[[]string]{},
 			&subs.Subject[any]{},
+			&subs.Subject[any]{},
 			credsFetcher,
 			0,
 			newMockResolver("127.0.0.1"),
