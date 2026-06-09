@@ -16,6 +16,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"golang.org/x/sys/unix"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 const (
@@ -620,33 +621,21 @@ func isProcessRunning(executablePath string, readdir readdirFunc, readfile readf
 
 // UserLogOutput opens logFileName in the user's cache directory and returns it.
 // Falls back to os.Stdout if the file cannot be opened.
-func UserLogOutput(logFileName string) *os.File {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return os.Stdout
-	}
-	cacheDirPath, err := GetCacheDirPath(homeDir)
+func UserLogOutput(logFileName string, maxSizeMb int) io.Writer {
+	cacheDirPath, err := GetCacheDirPath()
 	if err != nil {
 		return os.Stdout
 	}
 
-	root, err := os.OpenRoot(cacheDirPath)
-	if err != nil {
-		return os.Stdout
+	// Setup logging
+	logFile := filepath.Join(cacheDirPath, logFileName)
+	fileLogger := &lumberjack.Logger{
+		Filename:   logFile,
+		MaxSize:    maxSizeMb,
+		MaxBackups: 1,
+		MaxAge:     28,
+		Compress:   true,
 	}
-	defer func() {
-		if err := root.Close(); err != nil {
-			log.Errorf("failed to close root '%s': %v", cacheDirPath, err)
-		}
-	}()
 
-	logFile, err := root.OpenFile(
-		logFileName,
-		os.O_WRONLY|os.O_APPEND|os.O_CREATE,
-		PermUserRW,
-	)
-	if err != nil {
-		return os.Stdout
-	}
-	return logFile
+	return fileLogger
 }
