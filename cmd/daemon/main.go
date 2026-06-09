@@ -525,12 +525,18 @@ func main() {
 		sessionBuilder.GetStores()...,
 	)
 
+	dedicatedServerStateEvents := daemonevents.NewDedicatedServerStateEvents()
+	dedicatedServerStatePublisher := daemon.NewDedicatedServerState(daemonEvents.Service.DedicatedServerStatus,
+		clientAPI)
+	dedicatedServerStateEvents.Subscribe(dedicatedServerStatePublisher)
+
 	notificationClient := nc.NewClient(
 		nc.MqttClientBuilder{},
 		infoSubject,
 		errSubject,
 		meshnetEvents.PeerUpdate,
 		userServicesEvents.ServicesUpdate,
+		dedicatedServerStateEvents.DedicatedServerStateUpdate,
 		nc.NewCredsFetcher(clientAPI, fsystem))
 
 	// on session unrecoverable error perform user log-out action

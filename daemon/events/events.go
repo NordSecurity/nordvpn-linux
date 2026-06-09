@@ -350,6 +350,24 @@ func (u *UserServicesEvents) Subscribe(to UserServicesPublisher) {
 	u.ServicesUpdate.Subscribe(to.NotifyUserServicesChanged)
 }
 
+type DedicatedServerStatePublisher interface {
+	NotifyDedicatedServerStateChange(any) error
+}
+
+type DedicatedServerStateEvents struct {
+	DedicatedServerStateUpdate events.PublishSubcriber[any]
+}
+
+func NewDedicatedServerStateEvents() *DedicatedServerStateEvents {
+	return &DedicatedServerStateEvents{
+		DedicatedServerStateUpdate: &subs.Subject[any]{},
+	}
+}
+
+func (d *DedicatedServerStateEvents) Subscribe(to DedicatedServerStatePublisher) {
+	d.DedicatedServerStateUpdate.Subscribe(to.NotifyDedicatedServerStateChange)
+}
+
 // TODO: remove/replace with the mock
 type MockPublisherSubscriber[T any] struct {
 	Handler        events.Handler[T]
