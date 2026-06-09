@@ -2,8 +2,6 @@ package daemon
 
 import (
 	"errors"
-	"fmt"
-	"net/http"
 	"reflect"
 	"testing"
 	"time"
@@ -15,77 +13,10 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	core_test "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 
 	"github.com/stretchr/testify/assert"
 )
-
-const TestRecommendedUUID string = "c0b4c990-3000-457f-8b81-6850b8cdb54e"
-
-type mockServersAPI struct{}
-
-func (mockServersAPI) Servers() (core.Servers, http.Header, error) {
-	return serversList(), nil, nil
-}
-
-func (mockServersAPI) RecommendedServers(filter core.ServersFilter, _ float64, _ float64) (core.Servers, http.Header, error) {
-	if filter.Group == config.ServerGroup_DEDICATED_IP {
-		return nil, nil, fmt.Errorf("API must not be called for Dedicated IP")
-	}
-
-	var servers core.Servers
-	for _, server := range serversList() {
-		if server.Status != core.Online || isDedicatedIP(server) {
-			continue
-		}
-
-		servers = append(servers, server)
-	}
-
-	header := http.Header{}
-	header.Set("X-Recommendation-Uuid", TestRecommendedUUID)
-
-	return servers, header, nil
-}
-
-func (mockServersAPI) Server(serverID int64) (*core.Server, error) {
-	for _, server := range serversList() {
-		if server.ID == serverID {
-			return &server, nil
-		}
-	}
-
-	return nil, fmt.Errorf("not found")
-}
-
-func (mockServersAPI) ServersCountries() (core.Countries, http.Header, error) {
-	return countriesList(), nil, nil
-}
-
-func (mockServersAPI) ServersTechnologiesConfigurations(string, int64, core.ServerTechnology) ([]byte, error) {
-	return nil, nil
-}
-
-type mockFailingServersAPI struct{}
-
-func (mockFailingServersAPI) Servers() (core.Servers, http.Header, error) {
-	return nil, nil, fmt.Errorf("500")
-}
-
-func (mockFailingServersAPI) RecommendedServers(core.ServersFilter, float64, float64) (core.Servers, http.Header, error) {
-	return nil, nil, fmt.Errorf("500")
-}
-
-func (mockFailingServersAPI) Server(int64) (*core.Server, error) {
-	return nil, fmt.Errorf("500")
-}
-
-func (mockFailingServersAPI) ServersCountries() (core.Countries, http.Header, error) {
-	return nil, nil, fmt.Errorf("500")
-}
-
-func (mockFailingServersAPI) ServersTechnologiesConfigurations(string, int64, core.ServerTechnology) ([]byte, error) {
-	return nil, fmt.Errorf("500")
-}
 
 type mockConfigManager struct {
 	c config.Config
@@ -163,7 +94,7 @@ func TestJobServers(t *testing.T) {
 	category.Set(t, category.Integration)
 	defer testsCleanup()
 	dm := testNewDataManager()
-	err := JobServers(dm, &mockServersAPI{}, true)()
+	err := JobServers(dm, core_test.NewMockServersAPI(), true)()
 	assert.NoError(t, err)
 
 	t.Run("obfuscated server exists", func(t *testing.T) {
@@ -232,7 +163,7 @@ func TestJobServers_InvalidData(t *testing.T) {
 	category.Set(t, category.Integration)
 	defer testsCleanup()
 	dm := testNewDataManager()
-	err := JobServers(dm, &mockFailingServersAPI{}, true)()
+	err := JobServers(dm, core_test.NewMockFailingServersAPI(errors.New("500")), true)()
 	assert.Error(t, err)
 }
 
@@ -252,7 +183,7 @@ func TestJobServers_Valid(t *testing.T) {
 	original := dm.GetServersData().Servers
 	dm.SetServersData(time.Now(), original, "")
 
-	err := JobServers(dm, &mockFailingServersAPI{}, true)()
+	err := JobServers(dm, core_test.NewMockFailingServersAPI(errors.New("500")), true)()
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, dm.GetServersData().Servers, original)
 }
@@ -266,9 +197,9 @@ func TestJobServers_Expired(t *testing.T) {
 	internal.FileCopy(TestdataS2DatPath, TestdataPath+TestServersFile)
 
 	dm := testNewDataManager()
-	original, _, _ := mockServersAPI{}.Servers() // do not use filesystem
+	original := core_test.ServersList() // do not use filesystem
 	dm.SetServersData(time.Now().Add(time.Duration(-300)*time.Minute), original, "")
-	err := JobServers(dm, &mockServersAPI{}, true)()
+	err := JobServers(dm, core_test.NewMockServersAPI(), true)()
 	assert.NoError(t, err)
 	assert.False(t, reflect.DeepEqual(dm.GetServersData().Servers, original))
 }

@@ -12,10 +12,12 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	core_test "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"github.com/stretchr/testify/assert"
@@ -36,11 +38,11 @@ type deterministicServersAPI struct {
 }
 
 func (deterministicServersAPI) Servers() (core.Servers, http.Header, error) {
-	return serversList(), nil, nil
+	return core_test.ServersList(), nil, nil
 }
 
 func (d *deterministicServersAPI) RecommendedServers(filter core.ServersFilter, _ float64, _ float64) (core.Servers, http.Header, error) {
-	allServers := serversList()
+	allServers := core_test.ServersList()
 
 	if filter.Tag.Action == core.ServerByUnknown && filter.Group == config.ServerGroup_UNDEFINED {
 		return getServersByID(allServers, 1), nil, nil
@@ -112,7 +114,7 @@ func (d *deterministicServersAPI) RecommendedServers(filter core.ServersFilter, 
 }
 
 func (deterministicServersAPI) Server(serverID int64) (*core.Server, error) {
-	allServers := serversList()
+	allServers := core_test.ServersList()
 	for _, server := range allServers {
 		if server.ID == serverID {
 			return &server, nil
@@ -122,7 +124,7 @@ func (deterministicServersAPI) Server(serverID int64) (*core.Server, error) {
 }
 
 func (deterministicServersAPI) ServersCountries() (core.Countries, http.Header, error) {
-	return countriesList(), nil, nil
+	return core_test.CountriesList(), nil, nil
 }
 
 func (deterministicServersAPI) ServersTechnologiesConfigurations(string, int64, core.ServerTechnology) ([]byte, error) {
@@ -148,7 +150,7 @@ func testRPCLocal(t *testing.T) *RPC {
 
 	rpc.serversAPI = &deterministicServersAPI{}
 
-	rpc.dm.SetCountryData(time.Now(), countriesList(), "")
+	rpc.dm.SetCountryData(time.Now(), core_test.CountriesList(), "")
 
 	return rpc
 }
@@ -375,8 +377,8 @@ func TestRPCConnect(t *testing.T) {
 		// run each test using working API for servers list and using local cached servers
 		// list
 		servers := map[string]core.ServersAPI{
-			"Remote": mockServersAPI{},
-			"Local":  mockFailingServersAPI{},
+			"Remote": core_test.NewMockServersAPI(),
+			"Local":  core_test.NewMockFailingServersAPI(errors.New("500")),
 		}
 		for key, serversAPI := range servers {
 			t.Run(test.name+" "+key, func(t *testing.T) {
@@ -658,7 +660,7 @@ func TestRPCConnect_RecentConnectionsMultiple(t *testing.T) {
 		return &mock.WorkingVPN{}, nil
 	}
 
-	rpc.dm.SetCountryData(time.Now(), countriesList(), "")
+	rpc.dm.SetCountryData(time.Now(), core_test.CountriesList(), "")
 
 	server := &mockRPCServer{}
 	err := rpc.Connect(&pb.ConnectRequest{ServerTag: "germany"}, server)
@@ -710,17 +712,17 @@ func TestRPCReconnect(t *testing.T) {
 func Test_determineServerSelectionRule(t *testing.T) {
 	tests := []struct {
 		name   string
-		params ServerParameters
+		params serverpicker.ServerParameters
 		want   config.ServerSelectionRule
 	}{
 		{
 			name:   "All empty params returns RECOMMENDED",
-			params: ServerParameters{},
+			params: serverpicker.ServerParameters{},
 			want:   config.ServerSelectionRule_RECOMMENDED,
 		},
 		{
 			name: "Country, country-code, city is set returns CITY",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:     "Germany",
 				City:        "Berlin",
 				CountryCode: "DE",
@@ -729,7 +731,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Country, country-code set, group undefined returns COUNTRY",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:     "Lithuania",
 				Group:       config.ServerGroup_UNDEFINED,
 				CountryCode: "LT",
@@ -738,7 +740,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Country, country code, group set returns COUNTRY_WITH_GROUP",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:     "Lithuania",
 				Group:       config.ServerGroup_OBFUSCATED,
 				CountryCode: "LT",
@@ -747,7 +749,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "ServerName set, group undefined returns SPECIFIC_SERVER",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				ServerName: "lt11",
 				Group:      config.ServerGroup_UNDEFINED,
 			},
@@ -755,7 +757,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "ServerName set, group set returns SPECIFIC_SERVER_WITH_GROUP",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				ServerName: "lt11",
 				Group:      config.ServerGroup_OBFUSCATED,
 			},
@@ -763,14 +765,14 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Group set returns GROUP",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Group: config.ServerGroup_OBFUSCATED,
 			},
 			want: config.ServerSelectionRule_GROUP,
 		},
 		{
 			name: "Unknown combination returns RECOMMENDED",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:     "",
 				City:        "",
 				Group:       config.ServerGroup_UNDEFINED,
@@ -781,7 +783,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "All fields set (should not match anything)",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:     "Germany",
 				City:        "Berlin",
 				Group:       config.ServerGroup_OBFUSCATED,
@@ -792,7 +794,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Only ServerName set, others empty/undefined",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				ServerName: "us123",
 				Group:      config.ServerGroup_UNDEFINED,
 			},
@@ -800,14 +802,14 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Only Group set, others empty/undefined",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Group: config.ServerGroup_DOUBLE_VPN,
 			},
 			want: config.ServerSelectionRule_GROUP,
 		},
 		{
 			name: "Country and ServerName set, group undefined",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:    "France",
 				ServerName: "fr123",
 				Group:      config.ServerGroup_UNDEFINED,
@@ -816,7 +818,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Country, City, ServerName, group undefined",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:    "France",
 				City:       "Paris",
 				ServerName: "fr123",
@@ -826,7 +828,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Country, City, ServerName, group set",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:    "France",
 				City:       "Paris",
 				ServerName: "fr123",
@@ -836,7 +838,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Country set, group set to UNDEFINED, ServerName set",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:    "Italy",
 				Group:      config.ServerGroup_UNDEFINED,
 				ServerName: "it123",
@@ -845,7 +847,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Country set, group set, ServerName set",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:    "Italy",
 				Group:      config.ServerGroup_DOUBLE_VPN,
 				ServerName: "it123",
@@ -854,7 +856,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "ServerName set, group set to undefined, City set",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				ServerName: "es123",
 				Group:      config.ServerGroup_UNDEFINED,
 				City:       "Madrid",
@@ -863,7 +865,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "ServerName set, group set, City set",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				ServerName: "es123",
 				Group:      config.ServerGroup_DOUBLE_VPN,
 				City:       "Madrid",
@@ -872,14 +874,14 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Group is UNDEFINED, all other fields empty",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Group: config.ServerGroup_UNDEFINED,
 			},
 			want: config.ServerSelectionRule_RECOMMENDED,
 		},
 		{
 			name: "Edge: Group is invalid (not in enum), should fallback to invalid/empty",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Group: config.ServerGroup(9999),
 			},
 			want: config.ServerSelectionRule_NONE,
@@ -899,7 +901,7 @@ func Test_determineServerGroup(t *testing.T) {
 	tests := []struct {
 		name   string
 		server core.Server
-		params ServerParameters
+		params serverpicker.ServerParameters
 		want   string
 	}{
 		{
@@ -908,7 +910,7 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 				{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double VPN"},
 			}},
-			params: ServerParameters{},
+			params: serverpicker.ServerParameters{},
 			want:   "Standard VPN servers",
 		},
 		{
@@ -917,7 +919,7 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 				{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double VPN"},
 			}},
-			params: ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
 			want:   "Double VPN",
 		},
 		{
@@ -926,7 +928,7 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 				{ID: config.ServerGroup_OBFUSCATED, Title: "Obfuscated"},
 			}},
-			params: ServerParameters{Group: config.ServerGroup_OBFUSCATED},
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_OBFUSCATED},
 			want:   "Obfuscated",
 		},
 		{
@@ -935,7 +937,7 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_DEDICATED_IP, Title: "Dedicated IP"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
-			params: ServerParameters{Group: config.ServerGroup_DEDICATED_IP},
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_DEDICATED_IP},
 			want:   "Dedicated IP",
 		},
 		{
@@ -944,7 +946,7 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_NETFLIX_USA, Title: "Netflix USA"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
-			params: ServerParameters{Group: config.ServerGroup_NETFLIX_USA},
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_NETFLIX_USA},
 			want:   "Netflix USA",
 		},
 		{
@@ -953,7 +955,7 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_P2P, Title: "P2P"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
-			params: ServerParameters{Group: config.ServerGroup_P2P},
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_P2P},
 			want:   "P2P",
 		},
 		{
@@ -962,7 +964,7 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_ULTRA_FAST_TV, Title: "Ultra Fast TV"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
-			params: ServerParameters{Group: config.ServerGroup_ULTRA_FAST_TV},
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_ULTRA_FAST_TV},
 			want:   "Ultra Fast TV",
 		},
 		{
@@ -971,13 +973,13 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_ANTI_DDOS, Title: "Anti DDoS"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
-			params: ServerParameters{Group: config.ServerGroup_ANTI_DDOS},
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_ANTI_DDOS},
 			want:   "Anti DDoS",
 		},
 		{
 			name:   "Server has no groups returns empty string",
 			server: core.Server{Groups: []core.Group{}},
-			params: ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
 			want:   "",
 		},
 		{
@@ -985,7 +987,7 @@ func Test_determineServerGroup(t *testing.T) {
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_OBFUSCATED, Title: "Obfuscated"},
 			}},
-			params: ServerParameters{Group: config.ServerGroup_OBFUSCATED},
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_OBFUSCATED},
 			want:   "Obfuscated",
 		},
 		{
@@ -994,13 +996,13 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_P2P, Title: "P2P"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
-			params: ServerParameters{},
+			params: serverpicker.ServerParameters{},
 			want:   "Standard VPN servers",
 		},
 		{
 			name:   "Group is not set (zero value), server has no groups",
 			server: core.Server{Groups: []core.Group{}},
-			params: ServerParameters{},
+			params: serverpicker.ServerParameters{},
 			want:   "",
 		},
 	}
