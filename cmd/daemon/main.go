@@ -551,6 +551,9 @@ func main() {
 		dataUpdateEvents,
 	)
 
+	pauseEvents := daemonevents.NewPauseEvents()
+	pauseEvents.Subscribe(statePublisher)
+
 	consentChecker := newConsentChecker(
 		internal.IsDevEnv(Environment),
 		fsystem,
@@ -594,6 +597,7 @@ func main() {
 			},
 		),
 		dataUpdateEvents,
+		pauseEvents,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,

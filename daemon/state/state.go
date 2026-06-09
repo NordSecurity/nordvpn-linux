@@ -144,6 +144,16 @@ func (s *StatePublisher) NotifyVersionHealth(healthStatus *pb.VersionHealthStatu
 	return nil
 }
 
+func (s *StatePublisher) NotifyPauseEvent(pauseEvent *pb.PauseEvent) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	log.Warn("failed to reconnect after pause expired")
+	s.notify(pauseEvent)
+
+	return nil
+}
+
 func (s *StatePublisher) AddSubscriber() (<-chan any, chan<- struct{}) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

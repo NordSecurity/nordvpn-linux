@@ -193,3 +193,23 @@ func TestRpcState_HandleDataConnectChangedEvents(t *testing.T) {
 		})
 	}
 }
+
+// TestRpcState_PauseEvents tests the handling of the pb.PauseEvent
+func TestRpcState_HandlePauseEvents(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	t.Run("pause event reconnect failure", func(t *testing.T) {
+		ts := setupTest(t)
+
+		go statusStream(ts.stateChan, ts.stopChan, testUID, ts.srv, ts.connParams)
+
+		ts.stateChan <- &pb.PauseEvent{Type: pb.PauseEventType_RECONNECT_FAILED}
+
+		ts.srv.wg.Wait()
+
+		require.Len(t, ts.srv.states, 1)
+		status := ts.srv.states[0].GetPauseEvent()
+		require.NotNil(t, status)
+		require.Equal(t, pb.PauseEventType_RECONNECT_FAILED, status.Type)
+	})
+}

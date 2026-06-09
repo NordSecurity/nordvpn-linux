@@ -185,6 +185,60 @@ class VersionHealthStatus extends $pb.GeneratedMessage {
   void clearStatusCode() => $_clearField(1);
 }
 
+class PauseEvent extends $pb.GeneratedMessage {
+  factory PauseEvent({
+    PauseEventType? type,
+  }) {
+    final result = create();
+    if (type != null) result.type = type;
+    return result;
+  }
+
+  PauseEvent._();
+
+  factory PauseEvent.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory PauseEvent.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'PauseEvent',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
+      createEmptyInstance: create)
+    ..aE<PauseEventType>(1, _omitFieldNames ? '' : 'type',
+        enumValues: PauseEventType.values)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PauseEvent clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PauseEvent copyWith(void Function(PauseEvent) updates) =>
+      super.copyWith((message) => updates(message as PauseEvent)) as PauseEvent;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PauseEvent create() => PauseEvent._();
+  @$core.override
+  PauseEvent createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static PauseEvent getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<PauseEvent>(create);
+  static PauseEvent? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  PauseEventType get type => $_getN(0);
+  @$pb.TagNumber(1)
+  set type(PauseEventType value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasType() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearType() => $_clearField(1);
+}
+
 enum AppState_State {
   error,
   connectionStatus,
@@ -193,6 +247,7 @@ enum AppState_State {
   updateEvent,
   accountModification,
   versionHealth,
+  pauseEvent,
   notSet
 }
 
@@ -205,6 +260,7 @@ class AppState extends $pb.GeneratedMessage {
     UpdateEvent? updateEvent,
     AccountModification? accountModification,
     VersionHealthStatus? versionHealth,
+    PauseEvent? pauseEvent,
   }) {
     final result = create();
     if (error != null) result.error = error;
@@ -215,6 +271,7 @@ class AppState extends $pb.GeneratedMessage {
     if (accountModification != null)
       result.accountModification = accountModification;
     if (versionHealth != null) result.versionHealth = versionHealth;
+    if (pauseEvent != null) result.pauseEvent = pauseEvent;
     return result;
   }
 
@@ -235,13 +292,14 @@ class AppState extends $pb.GeneratedMessage {
     5: AppState_State.updateEvent,
     6: AppState_State.accountModification,
     7: AppState_State.versionHealth,
+    8: AppState_State.pauseEvent,
     0: AppState_State.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'AppState',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..oo(0, [1, 2, 3, 4, 5, 6, 7])
+    ..oo(0, [1, 2, 3, 4, 5, 6, 7, 8])
     ..aE<AppStateError>(1, _omitFieldNames ? '' : 'error',
         enumValues: AppStateError.values)
     ..aOM<$0.StatusResponse>(2, _omitFieldNames ? '' : 'connectionStatus',
@@ -256,6 +314,8 @@ class AppState extends $pb.GeneratedMessage {
         subBuilder: AccountModification.create)
     ..aOM<VersionHealthStatus>(7, _omitFieldNames ? '' : 'versionHealth',
         subBuilder: VersionHealthStatus.create)
+    ..aOM<PauseEvent>(8, _omitFieldNames ? '' : 'pauseEvent',
+        subBuilder: PauseEvent.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -283,6 +343,7 @@ class AppState extends $pb.GeneratedMessage {
   @$pb.TagNumber(5)
   @$pb.TagNumber(6)
   @$pb.TagNumber(7)
+  @$pb.TagNumber(8)
   AppState_State whichState() => _AppState_StateByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
@@ -291,6 +352,7 @@ class AppState extends $pb.GeneratedMessage {
   @$pb.TagNumber(5)
   @$pb.TagNumber(6)
   @$pb.TagNumber(7)
+  @$pb.TagNumber(8)
   void clearState() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -365,6 +427,17 @@ class AppState extends $pb.GeneratedMessage {
   void clearVersionHealth() => $_clearField(7);
   @$pb.TagNumber(7)
   VersionHealthStatus ensureVersionHealth() => $_ensure(6);
+
+  @$pb.TagNumber(8)
+  PauseEvent get pauseEvent => $_getN(7);
+  @$pb.TagNumber(8)
+  set pauseEvent(PauseEvent value) => $_setField(8, value);
+  @$pb.TagNumber(8)
+  $core.bool hasPauseEvent() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearPauseEvent() => $_clearField(8);
+  @$pb.TagNumber(8)
+  PauseEvent ensurePauseEvent() => $_ensure(7);
 }
 
 const $core.bool _omitFieldNames =

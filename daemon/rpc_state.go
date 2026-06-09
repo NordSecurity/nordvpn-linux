@@ -157,6 +157,11 @@ func statusStream(stateChan <-chan any,
 					&pb.AppState{State: &pb.AppState_VersionHealth{VersionHealth: e}}); err != nil {
 					log.Println(internal.ErrorPrefix, "version health failed to send state update:", err)
 				}
+			case *pb.PauseEvent:
+				if err := srv.Send(
+					&pb.AppState{State: &pb.AppState_PauseEvent{PauseEvent: e}}); err != nil {
+					log.Error("pause event failed to send state update:", err)
+				}
 			default:
 			}
 		}
