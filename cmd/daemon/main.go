@@ -242,7 +242,7 @@ func main() {
 	httpClientSimple.Transport = request.NewHTTPReTransport(
 		1, 1, "HTTP/1.1", func() http.RoundTripper {
 			return request.NewPublishingRoundTripper(
-				request.NewContextRoundTripper(request.NewStdTransport(), httpGlobalCtx),
+				request.NewContextRoundTripper(createSimpleH1Transport(Environment)(), httpGlobalCtx),
 				httpCallsSubject,
 			)
 		}, nil)
@@ -270,6 +270,7 @@ func main() {
 		httpCallsSubject,
 		daemonEvents.Service.Connect,
 		httpGlobalCtx,
+		Environment,
 	)
 
 	cdnAPI := core.NewCDNAPI(
@@ -570,7 +571,7 @@ func main() {
 		clientAPI,
 		cdnAPI,
 		repoAPI,
-		core.NewOAuth2(httpClientWithRotator, daemon.BaseURL),
+		core.NewOAuth2(httpClientWithRotator, daemon.BaseURL, validator),
 		Version,
 		daemonEvents,
 		vpnFactory,
