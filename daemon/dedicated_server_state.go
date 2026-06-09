@@ -15,8 +15,8 @@ type DedicatedServerState struct {
 }
 
 func NewDedicatedServerState(dedicatedServerStatusPublisher events.Publisher[events.DataDedicatedServerStatus],
-	dedicatedServersAPI core.DedicatedServersAPI) DedicatedServerState {
-	return DedicatedServerState{
+	dedicatedServersAPI core.DedicatedServersAPI) *DedicatedServerState {
+	return &DedicatedServerState{
 		dedicatedServerStatusPublisher: dedicatedServerStatusPublisher,
 		dedicatedServersAPI:            dedicatedServersAPI,
 	}

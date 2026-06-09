@@ -528,7 +528,7 @@ func main() {
 	dedicatedServerStateEvents := daemonevents.NewDedicatedServerStateEvents()
 	dedicatedServerStatePublisher := daemon.NewDedicatedServerState(daemonEvents.Service.DedicatedServerStatus,
 		clientAPI)
-	dedicatedServerStateEvents.Subscribe(&dedicatedServerStatePublisher)
+	dedicatedServerStateEvents.Subscribe(dedicatedServerStatePublisher)
 
 	notificationClient := nc.NewClient(
 		nc.MqttClientBuilder{},
