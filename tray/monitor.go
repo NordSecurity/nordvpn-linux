@@ -500,7 +500,6 @@ func (ti *Instance) setVpnStatus(
 		ti.state.vpnHostname = vpnHostname
 		ti.state.vpnStatus = vpnStatus
 		ti.state.vpnIsMeshPeer = isMeshPeer
-
 		newServerName := ti.state.serverName()
 
 		statusChanged := oldVpnStatus != vpnStatus

@@ -205,6 +205,7 @@ func buildConnectionSection(ti *Instance) {
 	}
 
 	buildVPNStatusLabel(ti)
+	buildPauseTimer()
 	if ti.state.vpnStatus == pb.ConnectionState_CONNECTED {
 		buildConnectedToSection(ti)
 		if ti.state.vpnIsMeshPeer {
@@ -336,6 +337,24 @@ func buildPauseMenu(ti *Instance) {
 
 	disconnect := pauseMenu.AddSubMenuItem(labelDisconnect, labelDisconnect)
 	go handleDisconnectClick(ti, disconnect)
+}
+
+func buildPauseTimer() {
+	timer := systray.AddMenuItem("05:00", "")
+	timer.Disable()
+
+	go func() {
+		remaining := 5 * 60
+
+		for remaining >= 0 {
+			timer.SetTitle(
+				fmt.Sprintf("%02d:%02d", remaining/60, remaining%60),
+			)
+
+			time.Sleep(time.Second)
+			remaining--
+		}
+	}()
 }
 
 func handlePauseClick(ti *Instance, item *systray.MenuItem, pauseLength PauseLength) {
