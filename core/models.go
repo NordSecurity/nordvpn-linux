@@ -401,6 +401,15 @@ func (s *Server) IsVirtualLocation() bool {
 	return false
 }
 
+// IsDedicatedIP reports whether the server belongs to the dedicated IP group.
+func IsDedicatedIP(server Server) bool {
+	index := slices.IndexFunc(server.Groups, func(group Group) bool {
+		return group.ID == config.ServerGroup_DEDICATED_IP
+	})
+
+	return index != -1
+}
+
 func (s *Server) Country() *Country {
 	if len(s.Locations) > 0 {
 		return &s.Locations[0].Country

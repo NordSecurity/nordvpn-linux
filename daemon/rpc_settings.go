@@ -6,6 +6,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
@@ -37,7 +38,7 @@ func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse,
 			cfg.AutoConnectData.Group == config.ServerGroup_UNDEFINED
 		if cfg.AutoConnect && cfg.AutoConnectData.ServerTag != "" && autoconnectParamsNotSet {
 			// use group tag as a second parameter once it is implemented
-			parameters := GetServerParameters(
+			parameters := serverpicker.GetServerParameters(
 				cfg.AutoConnectData.ServerTag,
 				cfg.AutoConnectData.ServerTag,
 				r.dm.GetCountryData().Countries,

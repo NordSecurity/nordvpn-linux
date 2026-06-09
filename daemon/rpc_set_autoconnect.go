@@ -7,6 +7,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
@@ -50,7 +51,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		}
 	}
 
-	var parameters ServerParameters
+	var parameters serverpicker.ServerParameters
 	serverTag := in.GetServerTag()
 	serverGroup := in.GetServerGroup()
 	if in.GetEnabled() {
@@ -69,8 +70,8 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 
 			return nil, err
 		}
-		log.Println(internal.InfoPrefix, "server for autoconnect found", serverSelection.server)
-		parameters = GetServerParameters(serverTag, serverGroup, r.dm.GetCountryData().Countries)
+		log.Println(internal.InfoPrefix, "server for autoconnect found", serverSelection.Server)
+		parameters = serverpicker.GetServerParameters(serverTag, serverGroup, r.dm.GetCountryData().Countries)
 
 		if err := r.cm.SaveWith(func(c config.Config) config.Config {
 			c.AutoConnect = in.GetEnabled()

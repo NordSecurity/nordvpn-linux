@@ -4,11 +4,12 @@ import (
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 )
 
 type ConnectionParameters struct {
 	ConnectionSource pb.ConnectionSource
-	ServerParameters
+	serverpicker.ServerParameters
 }
 
 // RequestedConnParamsStorage stores connection parameters as requested by user.
@@ -19,7 +20,7 @@ type RequestedConnParamsStorage struct {
 	parameters ConnectionParameters
 }
 
-func (c *RequestedConnParamsStorage) Set(connectionSource pb.ConnectionSource, parameters ServerParameters) {
+func (c *RequestedConnParamsStorage) Set(connectionSource pb.ConnectionSource, parameters serverpicker.ServerParameters) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
