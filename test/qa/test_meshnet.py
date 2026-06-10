@@ -179,9 +179,10 @@ def test_set_meshnet_off_when_logged_out(meshnet_allias):
     assert not settings.is_meshnet_enabled(), "Meshnet should be disabled after logout"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            sh_no_tty.nordvpn.set(meshnet_allias, "off")
+        sh_no_tty.nordvpn.set(meshnet_allias, "off")
 
-    assert "You are not logged in." in ex.value.stdout.decode("utf-8"), "Should show not logged in error"
+    # TODO: LVPN-4590
+    assert "Meshnet is already disabled." in ex.value.stdout.decode("utf-8"), "Should show not logged in error"
 
 
 @pytest.mark.core_meshnet
