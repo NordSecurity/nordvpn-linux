@@ -128,7 +128,7 @@ func TestConnect_DedicatedServersErrorPaths(t *testing.T) {
 		{
 			name:     "no nordlynx notifies user",
 			code:     internal.CodeDedicatedServersNoNordlynx,
-			wantBody: cli.MsgNordlynxMustBeEnabled,
+			wantBody: cli.DedicatedServersNoNordlynxMessage,
 		},
 		{
 			name:     "server is stopping or stopped",
