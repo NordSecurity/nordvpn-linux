@@ -86,7 +86,10 @@ def test_mesh_removed_machine_by_other():
 
     # machine not found error should be handled by disabling meshnet
     try:
-        sh_no_tty.nordvpn.mesh.peer.list()
+        # TODO: LVPN-10689
+        with pytest.raises(sh.ErrorReturnCode_1):
+            sh_no_tty.nordvpn.mesh.peer.refresh()
+        sh_no_tty.nordvpn.mesh.peer.refresh()
     except Exception as e:  # noqa: BLE001
         assert "Meshnet is not enabled." in str(e), "Should show meshnet disabled error after machine removal"
 
