@@ -67,6 +67,7 @@ class Ssh:
             else:
                 return True
 
+
     class Network:
         def __init__(self, ssh_class_instance):
             self.ssh_class_instance: Ssh = ssh_class_instance

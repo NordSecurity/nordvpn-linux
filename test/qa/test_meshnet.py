@@ -6,7 +6,7 @@ import requests
 import sh
 
 import lib
-from lib import logging, login, meshnet, settings, ssh
+from lib import daemon, logging, login, meshnet, settings, ssh
 from lib.shell import sh_no_tty
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
@@ -101,9 +101,25 @@ def test_mesh_removed_machine_by_other():
 def test_exitnode_permissions():
     """Manual TCs: LVPN-1261, LVPN-1262"""
 
-    peer_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().ip
-    #meshnet.set_permissions(peer_ip, routing, local, incoming, fileshare)
+    peers = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
+    tester_hostname = peers.get_this_device().hostname
+    qapeer_hostname = peers.get_external_peer().hostname
 
+    # Routing denied test
+    meshnet.set_permissions(qapeer_hostname, routing=False, local=False, incoming=False, fileshare=False)
+    ssh_client.exec_command("nordvpn mesh peer refresh")
+    with pytest.raises(RuntimeError) as ex:
+        ssh_client.exec_command(f"nordvpn mesh peer connect {tester_hostname}")
+    assert (meshnet.MSG_ROUTING_FAIL % tester_hostname) in str(ex.value), "qa-peer should not be able to route traffic"
+    assert not daemon.is_connected(ssh_client), "status of qa-peer should be disconnected"
+
+    # Routing allowed test
+    meshnet.set_permissions(qapeer_hostname, routing=True, local=False, incoming=False, fileshare=False)
+    ssh_client.exec_command("nordvpn mesh peer refresh")
+    with lib.Defer(lambda: ssh_client.exec_command("nordvpn disconnect")):
+        connect_output = ssh_client.exec_command(f"nordvpn mesh peer connect {tester_hostname}")
+        assert (meshnet.MSG_ROUTING_SUCCESS % tester_hostname) in connect_output, "qa-peer should be able to route traffic"
+        assert daemon.is_connected(ssh_client), "status of qa-peer should be connected"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
