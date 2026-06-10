@@ -136,6 +136,16 @@ def test_exitnode_permissions():
         tester_default_gateway = network.get_default_gateway()
         assert not ssh_client.network.ping(tester_default_gateway, retry=3), "qa-peer should not be able to ping default gateway of tester"
 
+    # Incoming allowed test
+    meshnet.set_permissions(qapeer_hostname, False, False, True, False)
+    ssh_client.exec_command("nordvpn mesh peer refresh")
+    assert ssh_client.network.ping(tester_hostname, retry=3), "qa-peer should be able to ping tester"
+
+    # Incoming denied test
+    meshnet.set_permissions(qapeer_hostname, False, False, False, False)
+    ssh_client.exec_command("nordvpn mesh peer refresh")
+    assert not ssh_client.network.ping(tester_hostname, retry=3), "qa-peer should not be able to ping tester"
+
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
 def test_remove_peer_firewall_update():
