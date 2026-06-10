@@ -24,7 +24,7 @@ func NewServicesState(credentialsAPI core.CredentialsAPI,
 	cache := caching.NewCacheWithTTL(time.Hour*5, credentialsAPI.Services)
 	return &ServicesState{
 		cache:                     cache,
-		expChecker:                systemTimeExpirationChecker{},
+		expChecker:                internal.SystemTimeExpirationChecker{},
 		dedicatedServerKeyManager: dedicatdServerKeyManager,
 	}
 }

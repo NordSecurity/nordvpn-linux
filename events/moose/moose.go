@@ -1245,9 +1245,10 @@ func (s *Subscriber) setVpnServiceExpiration(
 }
 
 func hasDedicatedServerService(services core.ServicesResponse) bool {
+	expirationChecker := internal.SystemTimeExpirationChecker{}
 	return slices.ContainsFunc(services,
 		func(sd core.ServiceData) bool {
-			return sd.Service.ID == auth.DedicatedServersServiceID
+			return sd.Service.ID == auth.DedicatedServersServiceID && !expirationChecker.IsExpired(sd.ExpiresAt)
 		},
 	)
 }

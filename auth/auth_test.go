@@ -610,3 +610,81 @@ func TestIsLoggedIn_CheckerRenewFailed(t *testing.T) {
 	assert.ErrorIs(t, err, expectedErr)
 	assert.Equal(t, 1, mockSS.RenewCallCount)
 }
+
+func TestHasDedicatedServerService(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	expiredDate := "2023-08-22 00:00:00"
+	validDate := "2050-06-04 00:00:00"
+	expirationChecker := newMockExpirationChecker(expiredDate)
+
+	tests := []struct {
+		name     string
+		services core.ServicesResponse
+		expected bool
+	}{
+		{
+			name:     "empty services",
+			services: core.ServicesResponse{},
+			expected: false,
+		},
+		{
+			name: "matching non-expired service",
+			services: core.ServicesResponse{
+				{Service: core.Service{ID: DedicatedServersServiceID}, ExpiresAt: validDate},
+			},
+			expected: true,
+		},
+		{
+			name: "matching expired service",
+			services: core.ServicesResponse{
+				{Service: core.Service{ID: DedicatedServersServiceID}, ExpiresAt: expiredDate},
+			},
+			expected: false,
+		},
+		{
+			name: "non-matching service",
+			services: core.ServicesResponse{
+				{Service: core.Service{ID: VPNServiceID}, ExpiresAt: validDate},
+			},
+			expected: false,
+		},
+		{
+			name: "mixed services with matching non-expired",
+			services: core.ServicesResponse{
+				{Service: core.Service{ID: VPNServiceID}, ExpiresAt: validDate},
+				{Service: core.Service{ID: DedicatedServersServiceID}, ExpiresAt: validDate},
+			},
+			expected: true,
+		},
+		{
+			name: "matching expired among non-matching",
+			services: core.ServicesResponse{
+				{Service: core.Service{ID: VPNServiceID}, ExpiresAt: validDate},
+				{Service: core.Service{ID: DedicatedServersServiceID}, ExpiresAt: expiredDate},
+			},
+			expected: false,
+		},
+		{
+			name: "real API response with expired dedicated server",
+			services: core.ServicesResponse{
+				{ExpiresAt: "2028-02-19 00:00:00", Service: core.Service{ID: 1}},
+				{ExpiresAt: "2028-02-19 00:00:00", Service: core.Service{ID: 5}},
+				{ExpiresAt: "2028-02-19 00:00:00", Service: core.Service{ID: 14}},
+				{ExpiresAt: "2028-02-19 00:00:00", Service: core.Service{ID: 17}},
+				{ExpiresAt: "2028-02-19 00:00:00", Service: core.Service{ID: 23}},
+				{ExpiresAt: "2028-02-19 00:00:00", Service: core.Service{ID: 25}},
+				{ExpiresAt: expiredDate, Service: core.Service{ID: DedicatedServersServiceID}},
+				{ExpiresAt: "2050-01-01 00:00:00", Service: core.Service{ID: 19}},
+			},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := hasDedicatedServerService(tt.services, expirationChecker)
+			assert.Equal(t, tt.expected, got)
+		})
+	}
+}

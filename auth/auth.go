@@ -8,7 +8,6 @@ import (
 	"slices"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -52,22 +51,6 @@ const (
 	DedicatedServersServiceID = 33
 )
 
-type systemTimeExpirationChecker struct{}
-
-// isTokenExpired reports whether the token is expired or not.
-func (systemTimeExpirationChecker) IsExpired(expiryTime string) bool {
-	if expiryTime == "" {
-		return true
-	}
-
-	expiry, err := time.Parse(internal.ServerDateFormat, expiryTime)
-	if err != nil {
-		return true
-	}
-
-	return time.Now().After(expiry)
-}
-
 func hasDedicatedServerService(services core.ServicesResponse, expirationChecker core.ExpirationChecker) bool {
 	return slices.ContainsFunc(services, func(service core.ServiceData) bool {
 		return service.Service.ID == DedicatedServersServiceID && !expirationChecker.IsExpired(service.ExpiresAt)
@@ -76,7 +59,7 @@ func hasDedicatedServerService(services core.ServicesResponse, expirationChecker
 
 // NewTokenExpirationChecker
 func NewTokenExpirationChecker() core.ExpirationChecker {
-	return &systemTimeExpirationChecker{}
+	return &internal.SystemTimeExpirationChecker{}
 }
 
 // RenewingChecker does both authentication checks and renewals in case of expiration.
@@ -106,7 +89,7 @@ func NewRenewingChecker(cm config.Manager,
 	return &RenewingChecker{
 		cm:                  cm,
 		creds:               creds,
-		expChecker:          systemTimeExpirationChecker{},
+		expChecker:          internal.SystemTimeExpirationChecker{},
 		mfaPub:              mfaPub,
 		logoutPub:           logoutPub,
 		errPub:              errPub,
