@@ -6,7 +6,7 @@ import requests
 import sh
 
 import lib
-from lib import daemon, logging, login, meshnet, settings, ssh
+from lib import daemon, logging, login, meshnet, network, settings, ssh
 from lib.shell import sh_no_tty
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
@@ -120,6 +120,22 @@ def test_exitnode_permissions():
         connect_output = ssh_client.exec_command(f"nordvpn mesh peer connect {tester_hostname}")
         assert (meshnet.MSG_ROUTING_SUCCESS % tester_hostname) in connect_output, "qa-peer should be able to route traffic"
         assert daemon.is_connected(ssh_client), "status of qa-peer should be connected"
+
+    # Local allowed test
+    meshnet.set_permissions(qapeer_hostname, routing=True, local=True, incoming=False, fileshare=False)
+    ssh_client.exec_command("nordvpn mesh peer refresh")
+    with lib.Defer(lambda: ssh_client.exec_command("nordvpn disconnect")):
+        ssh_client.exec_command(f"nordvpn mesh peer connect {tester_hostname}")
+        tester_default_gateway = network.get_default_gateway()
+        assert ssh_client.network.ping(tester_default_gateway, retry=3), "qa-peer should be able to ping default gateway of tester"
+
+    # Local denied test
+    meshnet.set_permissions(qapeer_hostname, routing=True, local=False, incoming=False, fileshare=False)
+    ssh_client.exec_command("nordvpn mesh peer refresh")
+    with lib.Defer(lambda: ssh_client.exec_command("nordvpn disconnect")):
+        ssh_client.exec_command(f"nordvpn mesh peer connect {tester_hostname}")
+        tester_default_gateway = network.get_default_gateway()
+        assert not ssh_client.network.ping(tester_default_gateway, retry=3), "qa-peer should not be able to ping default gateway of tester"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
