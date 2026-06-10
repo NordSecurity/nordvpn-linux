@@ -259,7 +259,9 @@ def test_route_to_peer_that_is_disconnected():
 
     ssh_client.exec_command("nordvpn set mesh off")
 
-    time.sleep(140)
+    # Needed for peer to show up as disconnected
+    daemon.stop()
+    daemon.start()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh_no_tty.nordvpn.mesh.peer.connect(peer_hostname)
