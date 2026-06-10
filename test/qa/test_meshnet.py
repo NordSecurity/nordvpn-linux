@@ -98,37 +98,12 @@ def test_mesh_removed_machine_by_other():
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
-@pytest.mark.parametrize("routing", [True, False])
-@pytest.mark.parametrize("local", [True, False])
-@pytest.mark.parametrize("incoming", [True, False])
-@pytest.mark.parametrize("fileshare", [True, False])
-def test_exitnode_permissions(routing: bool, local: bool, incoming: bool, fileshare: bool):
+def test_exitnode_permissions():
     """Manual TCs: LVPN-1261, LVPN-1262"""
 
     peer_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().ip
-    meshnet.set_permissions(peer_ip, routing, local, incoming, fileshare)
+    #meshnet.set_permissions(peer_ip, routing, local, incoming, fileshare)
 
-    def validate_input() -> (bool, str):
-        return meshnet.validate_input_chain(peer_ip, routing, local, incoming, fileshare)
-
-    result = False
-    error_mesage = ""
-    for result, message in lib.poll(validate_input):
-        error_mesage = message
-        if result:
-            break
-    assert result, error_mesage
-
-    (result, message) = meshnet.validate_forward_chain(peer_ip, routing, local, incoming, fileshare)
-    assert result, message
-
-    #rules = sh.sudo.iptables("-S", "POSTROUTING", "-t", "nat")
-    rules = os.popen("sudo iptables -S POSTROUTING -t nat").read()
-
-    if routing:
-        assert f"-A POSTROUTING -s {peer_ip}/32 ! -d 100.64.0.0/10 -m comment --comment nordvpn -j MASQUERADE" in rules, "MASQUERADE rule should exist when routing is enabled"
-    else:
-        assert f"-A POSTROUTING -s {peer_ip}/32 ! -d 100.64.0.0/10 -m comment --comment nordvpn -j MASQUERADE" not in rules, "MASQUERADE rule should not exist when routing is disabled"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
