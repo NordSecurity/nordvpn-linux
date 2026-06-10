@@ -388,6 +388,7 @@ MESHNET_ALIAS = [
 
 MSG_PEER_UNKNOWN = "Peer '%s' is unknown."
 MSG_PEER_OFFLINE = "Connect to other mesh peer failed - check if peer '%s' is online."
+MSG_ROUTING_FAIL = "Meshnet peer '%s' does not allow traffic routing."
 MSG_ROUTING_NEED_NORDLYNX = "NordLynx technology must be set to use this feature."
 MSG_ROUTING_SUCCESS = "You are connected to Meshnet exit node '%s'."
 
