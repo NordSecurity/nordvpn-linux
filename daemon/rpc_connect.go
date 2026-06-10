@@ -318,14 +318,13 @@ func (r *RPC) connect(
 			log.Println(internal.ErrorPrefix, "failed to fetch the device key for dedicated server connection")
 			return false, internal.ErrUnhandled
 		}
-		creds.NordLynxPrivateKey = dedicatedServersDeviceData.DevicePrivateKey
 
 		dedicatedServerConnectionData, err := getDedicatedServerConnectionData(
 			r.dedicatedServersAPI,
 			serverSelection.server.DedicatedServerUUID,
 			*dedicatedServersDeviceData)
 		if errors.Is(err, core.ErrDedicatedServersDeviceNotFound) {
-			dedicatedServersDeviceData := r.dedicatedServerKeyManager.ForceRegisterDedicatedServers()
+			dedicatedServersDeviceData = r.dedicatedServerKeyManager.ForceRegisterDedicatedServers()
 			if dedicatedServersDeviceData == nil {
 				log.Println(internal.ErrorPrefix, "failed to force dedicated server device registration")
 				return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersCanNotConnect})
@@ -351,6 +350,8 @@ func (r *RPC) connect(
 			}
 			return false, internal.ErrUnhandled
 		}
+
+		creds.NordLynxPrivateKey = dedicatedServersDeviceData.DevicePrivateKey
 		serverSelection.server.Station = dedicatedServerConnectionData.ip
 		serverSelection.server.DedicatedServersPort = dedicatedServerConnectionData.port
 		serverSelection.server.NordLynxPublicKey = dedicatedServerConnectionData.publicKey

@@ -1396,6 +1396,10 @@ func TestDedicatedServers_ForceRegistration(t *testing.T) {
 		core.ErrDedicatedServersDeviceNotFound)
 	assert.Equal(t, newDeviceKey, dedicatedServersAPIMock.ConnectRequest.DevicePublicKey,
 		"Key sent in a connect request should be equal to newly registered key.")
+
+	networkerMock := rpc.netw.(*testnetworker.Mock)
+	assert.Equal(t, newDevicePrivateKey, networkerMock.ProvidedCredentials.NordLynxPrivateKey,
+		"Key used to connect to the VPN server should be equal to newly registered key.")
 }
 
 func Test_serverGroupIDs_ExtractsAllIDs(t *testing.T) {
