@@ -6,7 +6,7 @@ import requests
 import sh
 
 import lib
-from lib import daemon, logging, login, meshnet, network, settings, ssh
+from lib import fileshare, logging, login, meshnet, network, settings, ssh
 from lib.shell import sh_no_tty
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
@@ -145,6 +145,21 @@ def test_exitnode_permissions():
     meshnet.set_permissions(qapeer_hostname, False, False, False, False)
     ssh_client.exec_command("nordvpn mesh peer refresh")
     assert not ssh_client.network.ping(tester_hostname, retry=3), "qa-peer should not be able to ping tester"
+
+    # Fileshare allowed test
+    meshnet.set_permissions(qapeer_hostname, False, False, False, True)
+    ssh_client.exec_command("nordvpn mesh peer refresh")
+    transfer_started_msg = ssh_client.exec_command(f"nordvpn fileshare send --background {tester_hostname} /usr/bin/echo")
+    last_qapeer_tsfr = fileshare.get_last_transfer(True, ssh_client)
+    with lib.Defer(lambda: ssh_client.exec_command(f"nordvpn fileshare cancel {last_qapeer_tsfr}")):
+        assert f"File transfer {last_qapeer_tsfr} has started in the background." in transfer_started_msg, "qa-peer should be able to send file to tester"
+
+    # Fileshare denied test
+    meshnet.set_permissions(qapeer_hostname, False, False, False, False)
+    ssh_client.exec_command("nordvpn mesh peer refresh")
+    with pytest.raises(RuntimeError) as ex:
+        ssh_client.exec_command(f"nordvpn fileshare send --background {tester_hostname} /usr/bin/echo")
+        assert "This peer does not allow file transfers from you." in transfer_started_msg, "qa-peer should not be able to send file to tester"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
