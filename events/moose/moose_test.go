@@ -863,7 +863,7 @@ func TestSetDedicatedServerServiceStatus(t *testing.T) {
 		{
 			name: "service ID 33 present - sets true",
 			services: core.ServicesResponse{
-				{Service: core.Service{ID: auth.DedicatedServersServiceID}},
+				{Service: core.Service{ID: auth.DedicatedServersServiceID}, ExpiresAt: "2050-06-04 00:00:00"},
 			},
 			mooseErrCode:   0,
 			expectCalled:   true,
@@ -872,19 +872,28 @@ func TestSetDedicatedServerServiceStatus(t *testing.T) {
 		{
 			name: "service ID 33 among others - sets true",
 			services: core.ServicesResponse{
-				{Service: core.Service{ID: 1}},
-				{Service: core.Service{ID: auth.DedicatedServersServiceID}},
-				{Service: core.Service{ID: 11}},
+				{Service: core.Service{ID: 1}, ExpiresAt: "2050-06-04 00:00:00"},
+				{Service: core.Service{ID: auth.DedicatedServersServiceID}, ExpiresAt: "2050-06-04 00:00:00"},
+				{Service: core.Service{ID: 11}, ExpiresAt: "2050-06-04 00:00:00"},
 			},
 			mooseErrCode:   0,
 			expectCalled:   true,
 			expectedActive: true,
 		},
 		{
+			name: "service ID 33 expired - sets false",
+			services: core.ServicesResponse{
+				{Service: core.Service{ID: auth.DedicatedServersServiceID}, ExpiresAt: "2023-08-22 00:00:00"},
+			},
+			mooseErrCode:   0,
+			expectCalled:   true,
+			expectedActive: false,
+		},
+		{
 			name: "no service ID 33 - sets false",
 			services: core.ServicesResponse{
-				{Service: core.Service{ID: 1}},
-				{Service: core.Service{ID: 11}},
+				{Service: core.Service{ID: 1}, ExpiresAt: "2050-06-04 00:00:00"},
+				{Service: core.Service{ID: 11}, ExpiresAt: "2050-06-04 00:00:00"},
 			},
 			mooseErrCode:   0,
 			expectCalled:   true,
@@ -907,7 +916,7 @@ func TestSetDedicatedServerServiceStatus(t *testing.T) {
 		{
 			name: "moose setter fails - propagates error",
 			services: core.ServicesResponse{
-				{Service: core.Service{ID: auth.DedicatedServersServiceID}},
+				{Service: core.Service{ID: auth.DedicatedServersServiceID}, ExpiresAt: "2050-06-04 00:00:00"},
 			},
 			mooseErrCode:      7,
 			expectErr:         true,
