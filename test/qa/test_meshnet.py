@@ -168,7 +168,7 @@ def test_set_meshnet_on_when_logged_out(meshnet_allias):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh_no_tty.nordvpn.set(meshnet_allias, "on")
 
-    assert "You are not logged in." in ex.value.stdout.decode("utf-8"), "Should show not logged in error"
+    assert "You're not logged in." in ex.value.stdout.decode("utf-8"), "Should show not logged in error"
 
 
 @pytest.mark.skipif(meshnet.is_meshnet_test_disabled_from_run(), reason="LVPN-4590")
