@@ -140,6 +140,19 @@ func TestConnect_DedicatedServersErrorPaths(t *testing.T) {
 			code:     internal.CodeDedicatedServersSessionMaxLimitReached,
 			wantBody: cli.DedicatedServersConnectionLimitReached,
 		},
+		{
+			name: "server is in new state",
+			code: internal.CodeDedicatedServersServerNotSetUp,
+			wantBody: fmt.Sprintf(
+				cli.DedicatedServersNoServersAvailable,
+				client.DedicatedServersSetupURL,
+			),
+		},
+		{
+			name:     "with post-quantun cryptography enabled, connection can't be established",
+			code:     internal.CodeDedicatedServersPq,
+			wantBody: internal.ServerUnavailableErrorMessage,
+		},
 	}
 
 	for _, tc := range tests {

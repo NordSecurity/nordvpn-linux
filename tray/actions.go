@@ -210,6 +210,8 @@ func (ti *Instance) connectWithUIEvent(
 			ti.notifyServiceExpired(client.DedicatedServersUpselURL, client.DedicatedServersUpselURLLogin, cli.DedicatedServersNoServiceMessage)
 		case internal.CodeDedicatedServersServiceButNoServers:
 			ti.notifyServiceExpired(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin, cli.DedicatedServersNoServersAvailable)
+		case internal.CodeDedicatedServersServerNotSetUp:
+			ti.notifyServiceExpired(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin, cli.DedicatedServersNoServersAvailable)
 		case internal.CodeDedicatedServersNotReady:
 			ti.notify(Force, cli.DedicatedServersServerNotReadyMessage)
 		case internal.CodeDedicatedServersNoNordlynx:
@@ -218,6 +220,8 @@ func (ti *Instance) connectWithUIEvent(
 			ti.notify(Force, cli.DedicatedServersCanNotConnectMessage)
 		case internal.CodeDedicatedServersSessionMaxLimitReached:
 			ti.notify(Force, cli.DedicatedServersConnectionLimitReached)
+		case internal.CodeDedicatedServersPq:
+			ti.notify(Force, internal.ServerUnavailableErrorMessage)
 		case internal.CodeConnecting:
 		case internal.CodeConnected:
 			return true
