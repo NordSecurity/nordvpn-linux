@@ -83,7 +83,7 @@ const (
 	CodeDedicatedServersNoNordlynx             int64 = 3068
 	CodeDedicatedServersCanNotConnect          int64 = 3069
 	CodeDedicatedServersSessionMaxLimitReached int64 = 3070
-	CodeDedicatedServersPq                     int64 = 71
+	CodeDedicatedServersPq                     int64 = 3071
 	CodeDedicatedServersServerNotSetUp         int64 = 3072
 )
 
