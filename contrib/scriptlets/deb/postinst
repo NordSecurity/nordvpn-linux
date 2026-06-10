@@ -37,9 +37,31 @@ ldconfig -v > /dev/null 2>&1
 # adjust permissions of shared objects
 chmod 0644 "${LIBS_DIR}"/*.so
 
+# Iterate over all of the results, so symlink is not created pointing to an actual .so file
+# which might cause issues upon library bump.
+#
 set -e
-sqlite=$(ldconfig -p 2>/dev/null | grep 'libsqlite3.so.0' | sed -n 's/.*=>[[:space:]]*//p' | head -n1)
-ln -sf "${sqlite}" "${LIBS_DIR}/libsqlite3.so"
+sqlite=""
+for path in $(ldconfig -p 2>/dev/null | grep 'libsqlite3.so.0' | sed -n 's/.*=>[[:space:]]*//p'); do
+    if [ -L "$path" ]; then
+        sqlite="$path"
+        break
+    fi
+done
+
+# if no symlink found, try to assign anything (probably a direct .so file)
+if [ -z "$sqlite" ]; then
+    sqlite=$(ldconfig -p 2>/dev/null | grep 'libsqlite3.so.0' | sed -n 's/.*=>[[:space:]]*//p' | head -n1)
+    echo "WARNING: no symlink to libsqlite3.so.0 found in ldconfig cache; using $sqlite for nordvpnd, which may fail to start after lib update" >&2
+fi
+
+if [ -n "$sqlite" ]; then
+    ln -sf "$sqlite" "${LIBS_DIR}/libsqlite3.so"
+else
+    # if still no symlink nor actual file found, simply stop installation
+    echo "ERROR: no symlink to libsqlite3.so.0 found in ldconfig cache; nordvpnd might not be able to start" >&2
+    exit 1
+fi
 set +e
 
 # ldconfig needs to be executed twice in case libsqlite3.so.0 was not available during a lookup
