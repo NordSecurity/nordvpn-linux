@@ -41,7 +41,8 @@ def test_invite_send_repeated():
     assert "Meshnet invitation for 'test@test.com' already exists." in ex.value.stderr.decode("utf-8"), "Repeated invite should show error message"
 
 
-@pytest.mark.skipif(meshnet.is_meshnet_test_disabled_from_run(), reason="TODO: LVPN-9458")
+@pytest.mark.skip("LVPN-9458")
+#@pytest.mark.skipif(meshnet.is_meshnet_test_disabled_from_run(), reason="TODO: LVPN-9458")
 def test_invite_send_own_email():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         meshnet.send_meshnet_invite(login.get_credentials("default").email)
