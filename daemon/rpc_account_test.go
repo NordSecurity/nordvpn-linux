@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -28,11 +29,12 @@ var user2 core.CurrentUserResponse = core.CurrentUserResponse{
 
 func userResponseToAccountResponse(userResponse core.CurrentUserResponse) *pb.AccountResponse {
 	return &pb.AccountResponse{
-		Type:              internal.CodeSuccess,
-		Username:          userResponse.Username,
-		Email:             userResponse.Email,
-		DedicatedIpStatus: internal.CodeNoService,
-		MfaStatus:         pb.TriState_DISABLED,
+		Type:                  internal.CodeSuccess,
+		Username:              userResponse.Username,
+		Email:                 userResponse.Email,
+		DedicatedIpStatus:     internal.CodeNoService,
+		DedicatedServerStatus: internal.CodeNoService,
+		MfaStatus:             pb.TriState_DISABLED,
 	}
 }
 
@@ -196,6 +198,66 @@ func TestAccountInfo_FailedRequestDoesntUpdateTheCache(t *testing.T) {
 			resp, _ := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: false})
 			assert.Equal(t, userResponseToAccountResponse(user1).String(), resp.String(),
 				"Invalid data returned from the RPC(should be the cached data)")
+		})
+	}
+}
+
+func TestAccountInfo_ContainsServiceData(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                          string
+		isServiceActive               bool
+		getDedicatedServersServiceErr error
+		expectedResponseType          int64
+		expectedStatus                int64
+	}{
+		{
+			name:                 "user has dedicated servers service",
+			isServiceActive:      true,
+			expectedResponseType: internal.CodeSuccess,
+			expectedStatus:       internal.CodeSuccess,
+		},
+		{
+			name:                 "user doesn't have dedicated servers service",
+			isServiceActive:      false,
+			expectedResponseType: internal.CodeSuccess,
+			expectedStatus:       internal.CodeNoService,
+		},
+		{
+			name:                          "getting service status fails",
+			getDedicatedServersServiceErr: errors.New("failed to get dedicated servers service"),
+			expectedResponseType:          internal.CodeTokenRenewError,
+			expectedStatus:                0,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dataManager := NewDataManager("", "", "", "", events.NewDataUpdateEvents())
+			configManagerMock := mock.NewMockConfigManager()
+			credentialsAPIMock := testcore.CredentialsAPIMock{}
+			authCheckerMock := testauth.AuthCheckerMock{
+				LoggedIn:                     true,
+				GetDedicatedServerServiceErr: test.getDedicatedServersServiceErr,
+				DedicatedServerService: auth.DedicatedServerService{
+					Active:    test.isServiceActive,
+					ExpiresAt: "exp date"}}
+
+			r := RPC{
+				dm:             dataManager,
+				ac:             &authCheckerMock,
+				cm:             configManagerMock,
+				credentialsAPI: &credentialsAPIMock,
+				events:         events.NewEventsEmpty(),
+			}
+
+			response, err := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: true})
+			assert.NoError(t, err, "Unexpected error returned by AccountInfo")
+			assert.Equal(t,
+				response.DedicatedServerStatus,
+				test.expectedStatus,
+				"Invalid dedicated servers service status in AccountInfo response.")
 		})
 	}
 }

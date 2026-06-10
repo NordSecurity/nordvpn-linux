@@ -9,7 +9,8 @@ import (
 )
 
 type FeatureToggles struct {
-	meshnetEnabled bool
+	meshnetEnabled         bool
+	dedicatedServerEnabled bool
 }
 
 func defaultToggles() FeatureToggles {
@@ -24,5 +25,8 @@ func (c *cmd) GetFeatureToggles() FeatureToggles {
 		return defaultToggles()
 	}
 
-	return FeatureToggles{meshnetEnabled: featureToggles.GetMeshnetEnabled()}
+	return FeatureToggles{
+		meshnetEnabled:         featureToggles.GetMeshnetEnabled(),
+		dedicatedServerEnabled: featureToggles.GetDedicatedServerEnabled(),
+	}
 }

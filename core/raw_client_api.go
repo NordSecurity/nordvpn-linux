@@ -8,6 +8,7 @@ type RawClientAPI interface {
 	RawServersAPI
 	RawCombinedAPI
 	RawSubscriptionAPI
+	RawDedicatedServersAPI
 	mesh.Mapper
 	mesh.Registry
 	mesh.Inviter

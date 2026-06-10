@@ -47,6 +47,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/openvpn"
+	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/firstopen"
 	"github.com/NordSecurity/nordvpn-linux/events/logger"
@@ -479,10 +480,11 @@ func main() {
 	norduserClient := norduserservice.NewNorduserGRPCClient()
 
 	meshRegistry := registry.NewNotifyingRegistry(clientAPI, meshnetEvents.PeerUpdate)
-	meshnetChecker := meshnet.NewRegisteringChecker(
+	deviceKeyManager := devicekey.NewDeviceKeyManager(
 		fsystem,
 		keygen,
 		meshRegistry,
+		clientAPI,
 	)
 
 	meshMapper := mapper.NewNotifyingMapper(
@@ -492,7 +494,7 @@ func main() {
 	)
 
 	meshnetEvents.PeerUpdate.Subscribe(refresher.NewMeshnet(
-		meshMapper, meshnetChecker, fsystem, netw,
+		meshMapper, deviceKeyManager, fsystem, netw,
 	).NotifyPeerUpdate)
 
 	meshUnsetter := meshunsetter.NewMeshnet(
@@ -506,6 +508,11 @@ func main() {
 	accountUpdateEvents := daemonevents.NewAccountUpdateEvents()
 	accountUpdateEvents.Subscribe(statePublisher)
 
+	servicesState := auth.NewServicesState(clientAPI, deviceKeyManager)
+	userServicesEvents := daemonevents.NewUserServicesEvents()
+	userServicesEvents.Subscribe(servicesState)
+	daemonEvents.User.Logout.Subscribe(servicesState.NotifyLogout)
+
 	// Create auth checker with all session stores
 	authChecker := auth.NewRenewingChecker(
 		fsystem,
@@ -514,14 +521,22 @@ func main() {
 		daemonEvents.User.Logout,
 		errSubject,
 		accountUpdateEvents,
+		servicesState,
 		sessionBuilder.GetStores()...,
 	)
+
+	dedicatedServerStateEvents := daemonevents.NewDedicatedServerStateEvents()
+	dedicatedServerStatePublisher := daemon.NewDedicatedServerState(daemonEvents.Service.DedicatedServerStatus,
+		clientAPI)
+	dedicatedServerStateEvents.Subscribe(dedicatedServerStatePublisher)
 
 	notificationClient := nc.NewClient(
 		nc.MqttClientBuilder{},
 		infoSubject,
 		errSubject,
 		meshnetEvents.PeerUpdate,
+		userServicesEvents.ServicesUpdate,
+		dedicatedServerStateEvents.DedicatedServerStateUpdate,
 		nc.NewCredsFetcher(clientAPI, fsystem),
 		cfg.FirewallMark,
 		resolver,
@@ -536,6 +551,7 @@ func main() {
 		PublishLogoutEventFunc: daemonEvents.User.Logout.Publish,
 		PublishDisconnectFunc:  daemonEvents.Service.Disconnect.Publish,
 		DebugPublisherFunc:     debugSubject.Publish,
+		DeviceKeyInvalidator:   deviceKeyManager,
 	})
 
 	// Configure error handlers for all session stores
@@ -560,6 +576,7 @@ func main() {
 		clientAPI,
 		authChecker,
 		analytics,
+		deviceKeyManager,
 	)
 	consentChecker.PrepareDaemonIfConsentNotCompleted()
 
@@ -569,6 +586,7 @@ func main() {
 		authChecker,
 		fsystem,
 		dm,
+		clientAPI,
 		clientAPI,
 		clientAPI,
 		clientAPI,
@@ -598,11 +616,12 @@ func main() {
 		),
 		dataUpdateEvents,
 		pauseEvents,
+		deviceKeyManager,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,
 		fsystem,
-		meshnetChecker,
+		deviceKeyManager,
 		inviter.NewNotifyingInviter(clientAPI, meshnetEvents.PeerUpdate),
 		netw,
 		meshRegistry,
@@ -737,6 +756,9 @@ func main() {
 
 	if ok, _ := authChecker.IsLoggedIn(); ok {
 		go daemon.StartNC("[startup]", notificationClient)
+		if err := rpc.RegisterDedicatedServers(); err != nil {
+			log.Println(internal.WarningPrefix, "failed to sync device:", err)
+		}
 	}
 	if cfg.Mesh {
 		go rpc.StartAutoMeshnet(meshService, network.ExponentialBackoff)

@@ -174,4 +174,14 @@ const (
 
 	// RepoTypeTest defines non-production (qa, development) repo type
 	RepoTypeTest = "nordvpn-test"
+
+	DedicatedServersURL = "/v1/dedicated-servers"
+
+	DevicesURL = DedicatedServersURL + "/devices"
+
+	// /v1/dedicated-servers/devices/<device-uuid>
+	DevicesUpdateURL = DevicesURL + "/%s"
+
+	// /v1/dedicated-servers/<dedicated-server-uuid>/connect
+	DedicatedServersConnectURL = DedicatedServersURL + "/%s/connect"
 )

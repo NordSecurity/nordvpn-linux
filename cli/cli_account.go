@@ -92,6 +92,12 @@ func (c *cmd) Account(ctx *cli.Context) error {
 		return err
 	}
 
+	if err := displayExpiryInfo("Dedicated Server",
+		payload.DedicatedServerStatus,
+		payload.DedicatedServersServiceExpiresAt); err != nil {
+		return err
+	}
+
 	var mfa string
 	switch payload.MfaStatus {
 	case pb.TriState_ENABLED:

@@ -42,6 +42,7 @@ var groupTitles = map[config.ServerGroup]string{
 	config.ServerGroup_ULTRA_FAST_TV:        "Ultra Fast TV",
 	config.ServerGroup_ANTI_DDOS:            "Anti DDOS",
 	config.ServerGroup_NETFLIX_USA:          "Netflix USA",
+	config.ServerGroup_DEDICATED_SERVER:     "Dedicated Server",
 }
 
 func formatGroupTitle(group config.ServerGroup) string {

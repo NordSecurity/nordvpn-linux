@@ -81,6 +81,10 @@ type (
 		int32,
 		*string,
 	) uint32
+	mooseSetDSIsActiveFunc   func(bool) uint32
+	mooseUnsetDSIsActiveFunc func() uint32
+	mooseSetDSEnabledFunc    func(bool) uint32
+	mooseUnsetDSEnabledFunc  func() uint32
 )
 
 type mooseFunctions struct {
@@ -101,6 +105,10 @@ type mooseFunctions struct {
 	setIsOnVpnValue               mooseSetIsOnVpnValueFunc
 	sendConnect                   mooseSendConnectFunc
 	sendDisconnect                mooseSendDisconnectFunc
+	setDSIsActive                 mooseSetDSIsActiveFunc
+	unsetDSIsActive               mooseUnsetDSIsActiveFunc
+	setDSEnabled                  mooseSetDSEnabledFunc
+	unsetDSEnabled                mooseUnsetDSEnabledFunc
 }
 
 // Subscriber listen events, send to moose engine
@@ -161,6 +169,10 @@ func NewSubscriber(
 			setIsOnVpnValue:               moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue,
 			sendConnect:                   moose.NordvpnappSendServiceQualityServersConnect,
 			sendDisconnect:                moose.NordvpnappSendServiceQualityServersDisconnect,
+			setDSIsActive:                 moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateDedicatedServerIsActive,
+			unsetDSIsActive:               moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateDedicatedServerIsActive,
+			setDSEnabled:                  moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateDedicatedServerEnabled,
+			unsetDSEnabled:                moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateDedicatedServerEnabled,
 		},
 	}
 	// Add more handlers here as needed
@@ -298,6 +310,10 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		}
 	}
 
+	if err := s.response(s.mooseFuncs.setAppConsentLevel(toAnalyticsConsentLevel(consent))); err != nil {
+		return fmt.Errorf("setting initial consent level: %w", err)
+	}
+
 	// TODO (LVPN-9654): currently, it should be safe to assume moose got correctly initialized when both worker and the app got started properly
 	// however this mechanism of initialization might need to be revisited in the future
 	s.isInitialized.Store(true)
@@ -409,7 +425,7 @@ func (s *Subscriber) NotifyKillswitch(data bool) error {
 }
 
 func (s *Subscriber) NotifyAccountCheck(any) error {
-	return errors.Join(s.fetchSubscriptions(), s.fetchAndSetVpnServiceExpiration())
+	return errors.Join(s.fetchSubscriptions(), s.fetchAndSetServiceContext())
 }
 
 func (s *Subscriber) NotifyAutoconnect(data bool) error {
@@ -523,7 +539,7 @@ func (s *Subscriber) NotifyLogin(data events.DataAuthorization) error { // regul
 	}
 
 	if data.EventStatus == events.StatusSuccess {
-		return errors.Join(s.fetchSubscriptions(), s.fetchAndSetVpnServiceExpiration())
+		return errors.Join(s.fetchSubscriptions(), s.fetchAndSetServiceContext())
 	}
 	return nil
 }
@@ -769,6 +785,7 @@ func (s *Subscriber) NotifyTechnology(data config.Technology) error {
 // sensitive fields from analytics.
 var sensitiveServerGroups = []config.ServerGroup{
 	config.ServerGroup_DEDICATED_IP,
+	config.ServerGroup_DEDICATED_SERVER,
 }
 
 // hasSensitiveServerGroup reports whether any group the chosen server belongs to
@@ -1175,12 +1192,37 @@ func (s *Subscriber) OnTelemetry(metric telemetry.Metric, value any) error {
 	return nil
 }
 
-func (s *Subscriber) fetchAndSetVpnServiceExpiration() error {
+func (s *Subscriber) fetchAndSetServiceContext() error {
 	services, err := s.clientAPI.Services()
 	if err != nil {
 		return fmt.Errorf("fetching services: %w", err)
 	}
 
+	hasDSService := hasDedicatedServerService(services)
+	hasDSActivated := false
+
+	if hasDSService {
+		dedicatedServers, err := s.clientAPI.DedicatedServers()
+		if err != nil {
+			return fmt.Errorf("fetching dedicated servers: %w", err)
+		}
+		if len(dedicatedServers) > 0 {
+			hasDSActivated =
+				dedicatedServers[0].Status != "" &&
+					dedicatedServers[0].Status != core.DedicatedServerStatusNew
+
+		}
+	}
+
+	return errors.Join(
+		s.setVpnServiceExpiration(services),
+		s.setDedicatedServerServiceStatus(hasDSService, hasDSActivated),
+	)
+}
+
+func (s *Subscriber) setVpnServiceExpiration(
+	services core.ServicesResponse,
+) error {
 	// Will return in YYYY-MM-DD HH:MM:SS format
 	expiresAt, err := auth.FindVpnServiceExpiration(services)
 	if err != nil {
@@ -1199,6 +1241,50 @@ func (s *Subscriber) fetchAndSetVpnServiceExpiration() error {
 		return fmt.Errorf("setting VPN service expiration date (%q): %w", date, err)
 	}
 
+	return nil
+}
+
+func hasDedicatedServerService(services core.ServicesResponse) bool {
+	return slices.ContainsFunc(services,
+		func(sd core.ServiceData) bool {
+			return sd.Service.ID == auth.DedicatedServersServiceID
+		},
+	)
+}
+
+func (s *Subscriber) setDedicatedServerServiceStatus(hasDSService, hasDS bool) error {
+	if err := s.response(s.mooseFuncs.setDSIsActive(hasDSService)); err != nil {
+		return fmt.Errorf(
+			"setting dedicated server service status (active=%v): %w",
+			hasDSService, err,
+		)
+	}
+	if err := s.setDedicatedServerEnabled(hasDS); err != nil {
+		return fmt.Errorf(
+			"setting dedicated server enabled status (enabled=%v): %w",
+			hasDS, err,
+		)
+	}
+	return nil
+}
+
+func (s *Subscriber) setDedicatedServerEnabled(enabled bool) error {
+	if err := s.response(s.mooseFuncs.setDSEnabled(enabled)); err != nil {
+		return fmt.Errorf(
+			"setting dedicated server enabled (enabled=%v): %w",
+			enabled, err,
+		)
+	}
+	return nil
+}
+
+func (s *Subscriber) NotifyDedicatedServerStatus(
+	data events.DataDedicatedServerStatus,
+) error {
+	enabled := data.Status != "" && data.Status != string(core.DedicatedServerStatusNew)
+	if err := s.setDedicatedServerEnabled(enabled); err != nil {
+		return fmt.Errorf("setting dedicated server enabled: %w", err)
+	}
 	return nil
 }
 
@@ -1418,6 +1504,8 @@ func (s *Subscriber) clearSubscriptions() error {
 		func() uint32 {
 			return moose.NordvpnappUnsetContextUserNordvpnappSubscriptionCurrentStateServiceExpiresAt()
 		},
+		s.mooseFuncs.unsetDSIsActive,
+		s.mooseFuncs.unsetDSEnabled,
 	} {
 		if err := s.response(fn()); err != nil {
 			return err
