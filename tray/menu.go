@@ -22,6 +22,7 @@ const (
 	labelCityPrefix            = "City:"
 	labelCountryPrefix         = "Country:"
 	labelDisconnect            = "Disconnect"
+	labelPause                 = "Pause"
 	labelSecureMyConnection    = "Secure my connection"
 	labelConnectionSelection   = "All connections"
 	labelRecentConnections     = "Recent Connections:"
@@ -280,7 +281,7 @@ func buildDisconnectButton(ti *Instance) {
 		return
 	}
 	item := systray.AddMenuItem(labelDisconnect, labelDisconnect)
-	go handleDisconnectClick(ti, item)
+	go handleDisconnectClick(ti, item, pb.UIEvent_DISCONNECT, pb.UIEvent_ITEM_VALUE_UNSPECIFIED)
 }
 
 func buildQuickConnectButton(ti *Instance) {
@@ -291,14 +292,14 @@ func buildQuickConnectButton(ti *Instance) {
 	go handleQuickConnectClick(ti, item)
 }
 
-type PauseLength struct {
+type pauseLength struct {
 	Name            string
 	Tooltip         string
 	DurationSeconds uint32
 	EventValue      pb.UIEvent_ItemValue
 }
 
-var PauseLengths = []PauseLength{
+var pauseLengths = []pauseLength{
 	{
 		Name:            labelPause5Min,
 		Tooltip:         labelPause5Min,
@@ -336,28 +337,28 @@ func buildPauseMenu(ti *Instance) {
 		return
 	}
 
-	pauseMenu := systray.AddMenuItem("Pause", "Pause tooltip")
-	for _, pauseLength := range PauseLengths {
+	pauseMenu := systray.AddMenuItem(labelPause, labelPause)
+	for _, pauseLength := range pauseLengths {
 		pause := pauseMenu.AddSubMenuItem(pauseLength.Name, pauseLength.Tooltip)
 		go handlePauseClick(ti, pause, pauseLength)
 	}
 
 	disconnect := pauseMenu.AddSubMenuItem(labelDisconnect, labelDisconnect)
-	go handleDisconnectClick(ti, disconnect)
+	go handleDisconnectClick(ti, disconnect, pb.UIEvent_PAUSE, pb.UIEvent_PAUSE_DISCONNECT)
 }
 
-func handlePauseClick(ti *Instance, item *systray.MenuItem, pauseLength PauseLength) {
+func handlePauseClick(ti *Instance, item *systray.MenuItem, pauseLength pauseLength) {
 	if ti == nil {
 		return
 	}
 	handleMenuItemClick(item, func() { ti.pause(pauseLength) })
 }
 
-func handleDisconnectClick(ti *Instance, item *systray.MenuItem) {
+func handleDisconnectClick(ti *Instance, item *systray.MenuItem, itemName pb.UIEvent_ItemName, itemValue pb.UIEvent_ItemValue) {
 	if ti == nil {
 		return
 	}
-	handleMenuItemClick(item, func() { ti.disconnect() })
+	handleMenuItemClick(item, func() { ti.disconnect(itemName, itemValue) })
 }
 
 func handleQuickConnectClick(ti *Instance, item *systray.MenuItem) {
