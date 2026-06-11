@@ -1193,7 +1193,7 @@ func meshnetErrorToError(code meshpb.MeshnetErrorCode) error {
 	case meshpb.MeshnetErrorCode_NOT_ENABLED:
 		return errors.New(MsgMeshnetNotEnabled)
 	case meshpb.MeshnetErrorCode_TECH_FAILURE:
-		return errors.New(MsgNordlynxMustBeEnabled)
+		return errors.New(MsgMeshnetNordlynxMustBeEnabled)
 	case meshpb.MeshnetErrorCode_TUNNEL_CLOSED:
 		return errors.New(DisconnectNotConnected)
 	case meshpb.MeshnetErrorCode_CONFLICT_WITH_PQ:
