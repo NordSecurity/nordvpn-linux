@@ -404,5 +404,5 @@ Your browsing activities remain private, regardless of your choice.
 	DedicatedServersConnectionLimitReached     = "Too many connections or device limit reached"
 	DedicatedServersAutoconnectNordlynxMessage = "Auto-connect to Dedicated Server requires NordLynx protocol."
 	DedicatedServerPQMessage                   = "Post-quantum encryption is not compatible with Dedicated Server."
-	DedicatedServersNoNordlynxMessage          = "Connection to Dedicated Server requires NordLynx protocol."
+	DedicatedServersNoNordlynxMessage          = "Connection to Dedicated Server requires NordLynx technology."
 )
