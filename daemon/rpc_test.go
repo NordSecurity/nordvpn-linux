@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	daemonEvents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
@@ -86,6 +87,9 @@ func testRPC() *RPC {
 	cm := newMockConfigManager()
 	analytics := testevents.NewAnalytics(config.ConsentUndefined)
 
+	rcMock := mock.NewRemoteConfigMock()
+	rcMock.AddFeatureToggle(remote.FeatureENS, true)
+
 	return NewRPC(
 		internal.Development,
 		&workingLoginChecker{},
@@ -110,7 +114,7 @@ func testRPC() *RPC {
 		&testnorduser.MockNorduserCombinedService{},
 		nil,
 		sharedctx.New(),
-		mock.NewRemoteConfigMock(),
+		rcMock,
 		state.NewConnectionInfo(),
 		NewConsentChecker(false, cm, api, &workingLoginChecker{}, &analytics),
 		recents.NewRecentConnectionsStore(TestdataPath+TestRecentConnFile, &internal.StdFilesystemHandle{}, nil),

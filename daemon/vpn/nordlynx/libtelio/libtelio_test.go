@@ -23,7 +23,6 @@ import (
 )
 
 const (
-	exampleDeviceID                    = "11111"
 	exampleEventPath                   = "/var/data.db"
 	vpnPeersPersistentKeepaliveSeconds = uint32(25)
 	directPersistentKeepaliveSeconds   = uint32(5)
@@ -183,6 +182,35 @@ func Test_TelioConfig(t *testing.T) {
 		return a < b
 	})); diff != "" {
 		t.Errorf("Telio Config mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func Test_applyENSFeature(t *testing.T) {
+	category.Set(t, category.Integration)
+
+	tests := []struct {
+		name       string
+		ensEnabled bool
+		wantNil    bool
+	}{
+		{name: "ENS disabled clears the feature", ensEnabled: false, wantNil: true},
+		{name: "ENS enabled keeps the feature", ensEnabled: true, wantNil: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			features := &teliogo.Features{
+				ErrorNotificationService: defaultErrorNotificationService(),
+			}
+
+			applyENSFeature(features, tt.ensEnabled)
+
+			if tt.wantNil {
+				assert.Nil(t, features.ErrorNotificationService)
+			} else {
+				assert.NotNil(t, features.ErrorNotificationService)
+			}
+		})
 	}
 }
 
