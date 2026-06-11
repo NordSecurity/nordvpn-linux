@@ -10,8 +10,8 @@ github.com/NordSecurity/libdrop-go/v9 v9.0.0 h1:Jk46jiQFWFS/9oXzKVLjoEYCCb18YchW
 github.com/NordSecurity/libdrop-go/v9 v9.0.0/go.mod h1:EkRRrgEM+Lih3EssmSy4H9LO16NN3meqQsX5wbuIUjY=
 github.com/NordSecurity/libtelio-go/v6 v6.1.0 h1:C0EyCj3cJyyxfCe1udVkGOdTvH6+lENpODqkPHF1RTo=
 github.com/NordSecurity/libtelio-go/v6 v6.1.0/go.mod h1:Y68pMZmZ90NKt9veEjyDMZy7cecqoFJ7caHUf9dTebs=
-github.com/NordSecurity/systray v0.0.0-20260611084421-1fd8770ea8af h1:sY9FwCiwBzDf5rZxxZUOY48vMmLBe7bJcjhVfXj3TBE=
-github.com/NordSecurity/systray v0.0.0-20260611084421-1fd8770ea8af/go.mod h1:PqJ9YgQXNUYUuoLvVrbMmZACufI5xM8JJ5aSuRX5ljg=
+github.com/NordSecurity/systray v0.0.0-20260611095735-70b5bae928e6 h1:Ax5WWbX/6TdhZTcSmptzQgnx8a56MiWgUzROXD0WrJ8=
+github.com/NordSecurity/systray v0.0.0-20260611095735-70b5bae928e6/go.mod h1:PqJ9YgQXNUYUuoLvVrbMmZACufI5xM8JJ5aSuRX5ljg=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
 github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
