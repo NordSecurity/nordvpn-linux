@@ -34,14 +34,16 @@ type ServerSelection struct {
 }
 
 type SearchParams struct {
-	Tag   string
-	Group string
+	Tag            string
+	Group          string
+	ExcludedServer string
 }
 
-func NewSearchParams(tag, group string) SearchParams {
+func NewSearchParams(tag, group string, excludedServer string) SearchParams {
 	return SearchParams{
-		Tag:   tag,
-		Group: group,
+		Tag:            tag,
+		Group:          group,
+		ExcludedServer: excludedServer,
 	}
 }
 
@@ -91,6 +93,7 @@ func PickServer(
 	localSelFn := selectFilterForLocalServers(input.Tag, serverGroup, obfuscated)
 	filterServersFn := func(s core.Server) bool {
 		return MatchesUserSettings(s, cfg) &&
+			s.Hostname != input.ExcludedServer &&
 			// for local servers only, take into account also the server.Keys
 			((len(s.Keys) == 0) || localSelFn(s))
 	}

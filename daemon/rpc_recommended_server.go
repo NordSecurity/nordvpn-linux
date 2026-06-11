@@ -18,7 +18,7 @@ func (r *RPC) RecommendedServer(ctx context.Context, in *pb.Empty) (*pb.Recommen
 	}
 	insights := r.dm.GetInsightsData().Insights
 
-	serverSelection, err := selectServer(r, &insights, cfg, "", "")
+	serverSelection, err := selectServer(r, &insights, cfg, "", "", "")
 	if err == nil {
 		country := serverSelection.Server.Country()
 		return &pb.RecommendedServerLocation{

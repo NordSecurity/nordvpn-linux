@@ -166,43 +166,43 @@ func TestResolveServerGroup(t *testing.T) {
 			err:           nil,
 		},
 		{
-			input:         NewSearchParams("", "p2p"),
+			input:         NewSearchParams("", "p2p", ""),
 			expectedGroup: config.ServerGroup_P2P,
 			err:           nil,
 		},
 		{
-			input:         NewSearchParams("p2p", ""),
+			input:         NewSearchParams("p2p", "", ""),
 			tagChanged:    true,
 			expectedGroup: config.ServerGroup_P2P,
 			err:           nil,
 		},
 		{
-			input:         NewSearchParams("p2p", "p2p"),
+			input:         NewSearchParams("p2p", "p2p", ""),
 			expectedGroup: config.ServerGroup_UNDEFINED,
 			err:           internal.ErrDoubleGroup,
 		},
 		{
-			input:         NewSearchParams("p2p", "quantum_vpn"),
+			input:         NewSearchParams("p2p", "quantum_vpn", ""),
 			expectedGroup: config.ServerGroup_UNDEFINED,
 			err:           internal.ErrGroupDoesNotExist,
 		},
 		{
-			input:         NewSearchParams("quantum_vpn", "p2p"),
+			input:         NewSearchParams("quantum_vpn", "p2p", ""),
 			expectedGroup: config.ServerGroup_P2P,
 			err:           nil,
 		},
 		{
-			input:         NewSearchParams("quantum_vpn", ""),
+			input:         NewSearchParams("quantum_vpn", "", ""),
 			expectedGroup: config.ServerGroup_UNDEFINED,
 			err:           nil,
 		},
 		{
-			input:         NewSearchParams("p2p us1234", ""),
+			input:         NewSearchParams("p2p us1234", "", ""),
 			expectedGroup: config.ServerGroup_UNDEFINED,
 			err:           nil,
 		},
 		{
-			input:         NewSearchParams("quantum_vpn", "quantum_vpn"),
+			input:         NewSearchParams("quantum_vpn", "quantum_vpn", ""),
 			expectedGroup: config.ServerGroup_UNDEFINED,
 			err:           internal.ErrGroupDoesNotExist,
 		},
@@ -593,6 +593,7 @@ func TestPickServer(t *testing.T) {
 		tag                  string
 		groupFlag            string
 		onlyPhysicServers    bool
+		excludedServer       string
 		expectedServerName   string
 		expectedRemoteServer bool
 		expectedError        error
@@ -660,6 +661,15 @@ func TestPickServer(t *testing.T) {
 			tech:          config.Technology_NORDLYNX,
 			expectedError: internal.ErrServerIsUnavailable,
 		},
+		{
+			name:           "exclude server de3.nordvpn.com",
+			api:            core_test.NewMockFailingServersAPI(errors.New("500")),
+			servers:        core_test.ServersList(),
+			tech:           config.Technology_NORDLYNX,
+			tag:            "de berlin",
+			excludedServer: "de3.nordvpn.com",
+			expectedError:  internal.ErrServerIsUnavailable,
+		},
 	}
 
 	for _, test := range tests {
@@ -684,7 +694,7 @@ func TestPickServer(t *testing.T) {
 					Latitude:  test.latitude,
 				},
 				cfg,
-				NewSearchParams(test.tag, test.groupFlag),
+				NewSearchParams(test.tag, test.groupFlag, test.excludedServer),
 			)
 
 			assert.Equal(t, test.expectedError, err)
