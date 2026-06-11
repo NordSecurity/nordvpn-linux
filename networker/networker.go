@@ -196,14 +196,30 @@ func (netw *Combined) Start(
 	nameservers config.DNS,
 	enableLocalTraffic bool,
 	disconnectCallback events.DisconnectCallback,
-) (err error) {
+) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
 	netw.allowlist = allowlist
 	netw.enableLocalTraffic = enableLocalTraffic
 	if netw.isConnectedToVPN() {
-		return netw.restart(ctx, creds, serverData, nameservers, disconnectCallback)
+		tempKSEnabled := false
+		if netw.KillSwitchState != enabledByUser {
+			if err := netw.internallyEnabledKillSwitch(); err == nil {
+				tempKSEnabled = true
+			} else {
+				log.Warn("failed to activate temporary KS", err)
+			}
+		}
+
+		err := netw.restart(ctx, creds, serverData, nameservers, disconnectCallback)
+		if err == nil && tempKSEnabled {
+			if err := netw.unsetKillSwitch(); err != nil {
+				log.Error("failed to disable temporary KS", err)
+			}
+		}
+
+		return err
 	}
 	return netw.start(ctx, creds, serverData, allowlist, nameservers)
 }

@@ -53,6 +53,14 @@ func CountriesList() core.Countries {
 				{Name: "Algiers"},
 			},
 		},
+		{
+			Name: "Italy",
+			Code: "IT",
+			ID:   150,
+			Cities: []core.City{
+				{ID: 1, Name: "Rome"},
+			},
+		},
 	}
 }
 
@@ -330,6 +338,46 @@ func ServersList() core.Servers {
 				},
 			},
 			Groups: obfuscatedGroups,
+		},
+		core.Server{
+			ID:           12,
+			Name:         "Italy #1",
+			Hostname:     "it1.nordvpn.com",
+			Status:       core.Online,
+			Technologies: technologies,
+			CreatedAt:    "2006-01-02 15:04:05",
+			Station:      "127.0.0.1",
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{
+						Name: "Italy",
+						Code: "IT",
+						ID:   150,
+						City: core.City{ID: 1, Name: "Rome"},
+					},
+				},
+			},
+			Groups: standardGroups,
+		},
+		core.Server{
+			ID:           13,
+			Name:         "Italy #2",
+			Hostname:     "it2.nordvpn.com",
+			Status:       core.Online,
+			Technologies: technologies,
+			CreatedAt:    "2006-01-02 15:04:05",
+			Station:      "127.0.0.1",
+			Locations: core.Locations{
+				core.Location{
+					Country: core.Country{
+						Name: "Italy",
+						Code: "IT",
+						ID:   150,
+						City: core.City{ID: 1, Name: "Rome"},
+					},
+				},
+			},
+			Groups: standardGroups,
 		},
 	}
 

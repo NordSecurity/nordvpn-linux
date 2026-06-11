@@ -133,7 +133,7 @@ func NewRPC(
 		dedicatedServerKeyManager: dedicatedServersKeyManager,
 		initialLoginType:          NewAtomicLoginType(),
 	}
-	reconnectScheduler := NewReconnectScheduler(r.connectFromLastSelection, connectionInfo, pauseEvents)
+	reconnectScheduler := NewReconnectScheduler(r.ConnectFromLastSelection, connectionInfo, pauseEvents)
 	r.pauseManager = reconnectScheduler
 	return r
 }

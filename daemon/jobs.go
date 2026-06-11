@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -410,14 +411,14 @@ func (r *RPC) doAutoConnect() error {
 		groupTag = cfg.AutoConnectData.Group.String()
 	}
 
-	err = r.connectFromRequest(
-		&pb.ConnectRequest{
+	err = r.executeConnect(&server, func(ctx context.Context) (bool, error) {
+		param := &pb.ConnectRequest{
 			ServerTag:   cfg.AutoConnectData.ServerTag,
 			ServerGroup: groupTag,
-		},
-		&server,
-		pb.ConnectionSource_AUTO,
-	)
+		}
+		return r.connectWithParameters(ctx, param, &server, pb.ConnectionSource_AUTO, "")
+	})
+
 	if err == nil && server.err == nil {
 		log.Println(internal.InfoPrefix, "auto-connect success")
 		r.RequestedConnParams.Set(
