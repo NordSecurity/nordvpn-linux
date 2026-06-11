@@ -54,6 +54,7 @@ type DedicatedServersKeyManager interface {
 	// isn't.
 	// Returns the connection data if it is available. Returns nil if data is not available.
 	CheckAndRegisterDedicatedServers() *DedicatedServersConnectionData
+	ForceRegisterDedicatedServers() *DedicatedServersConnectionData
 	DeviceKeyInvalidator
 }
 
@@ -188,29 +189,24 @@ type registerFunc func(deviceKey string,
 	isKeyNew bool,
 	cfg *config.Config) (*config.Config, error)
 
-// CheckAndRegisterDedicatedServers checks if device key is registered for the dedicated servers and registers it if not.
-// Returns true if the key was successfully registered.
-//
-// Thread-safe.
-func (d *DeviceKeyManagerImpl) CheckAndRegisterDedicatedServers() *DedicatedServersConnectionData {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
+func (d *DeviceKeyManagerImpl) registerDedicatedServer(force bool) *DedicatedServersConnectionData {
 	var cfg config.Config
 	if err := d.configManager.Load(&cfg); err != nil {
 		log.Println(internal.ErrorPrefix, err)
 		return nil
 	}
 
-	if isDedicatedServersRegistrationInfoCorrect(cfg) {
-		return &DedicatedServersConnectionData{
-			DeviceUUID:       cfg.DeviceUUID,
-			DevicePublicKey:  d.keyGenerator.Public(cfg.DeviceKey),
-			DevicePrivateKey: cfg.DeviceKey,
+	if !force {
+		if isDedicatedServersRegistrationInfoCorrect(cfg) {
+			return &DedicatedServersConnectionData{
+				DeviceUUID:       cfg.DeviceUUID,
+				DevicePublicKey:  d.keyGenerator.Public(cfg.DeviceKey),
+				DevicePrivateKey: cfg.DeviceKey,
+			}
 		}
 	}
 
-	newConfig, err := d.registerKey(&cfg, d.registerDedicatedServer)
+	newConfig, err := d.registerKey(&cfg, d.registerDedicatedServerKey)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to register device key for dedicated servers:", err)
 		return nil
@@ -230,6 +226,28 @@ func (d *DeviceKeyManagerImpl) CheckAndRegisterDedicatedServers() *DedicatedServ
 		DevicePublicKey:  d.keyGenerator.Public(newConfig.DeviceKey),
 		DevicePrivateKey: newConfig.DeviceKey,
 	}
+}
+
+// CheckAndRegisterDedicatedServers checks if device key is registered for the dedicated servers and registers it if not.
+// Returns nil if key was not successfully registered.
+//
+// Thread-safe.
+func (d *DeviceKeyManagerImpl) CheckAndRegisterDedicatedServers() *DedicatedServersConnectionData {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	return d.registerDedicatedServer(false)
+}
+
+// ForceRegisterDedicatedServers registers device key for dedicated servers ignoring existing registration data.
+// Returns nil if key was not successfully registered.
+//
+// Thread-safe.
+func (d *DeviceKeyManagerImpl) ForceRegisterDedicatedServers() *DedicatedServersConnectionData {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	return d.registerDedicatedServer(true)
 }
 
 func (d *DeviceKeyManagerImpl) InvalidateDeviceKeyData() error {
@@ -314,7 +332,7 @@ func (d *DeviceKeyManagerImpl) registerMeshnet(deviceKey string,
 	return cfg, nil
 }
 
-func (d *DeviceKeyManagerImpl) registerDedicatedServer(deviceKey string,
+func (d *DeviceKeyManagerImpl) registerDedicatedServerKey(deviceKey string,
 	distroName string,
 	_ bool,
 	cfg *config.Config) (*config.Config, error) {
