@@ -6,11 +6,13 @@ import (
 	"crypto/sha256"
 	_ "embed"
 	"errors"
+	"flag"
 	"fmt"
 	"net"
 	"net/http"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -128,7 +130,11 @@ func initializeStaticConfig(machineID uuid.UUID) config.StaticConfigManager {
 
 func main() {
 	appStartTime := time.Now()
-
+	ksMode := flag.Bool("killswitch-mode", false, "sets killswitch rules and stops")
+	flag.Parse()
+	if *ksMode {
+		log.Info("Daemon running in killswitch mode")
+	}
 	stopLevelWatcher := log.SetupLogger(
 		os.Stdout,
 		internal.LogLevelFile,
@@ -217,6 +223,23 @@ func main() {
 		Environment,
 		daemonEvents.Debugger.DebuggerEvents,
 	)
+	if *ksMode {
+		if cfg.KillSwitch {
+			log.Info("Enabling killswitch")
+			err := fw.Configure(firewall.NewConfig(
+				firewall.WithKillSwitch(true)))
+			if err != nil {
+				log.Debug(err)
+			}
+			out, err := exec.Command("nft", "list", "ruleset").CombinedOutput()
+			if err != nil {
+				log.Debug(err)
+			}
+			log.Debug("nft: ", string(out))
+		}
+		log.Info("Killswitch mode daemon stopping, waiting for internet")
+		return
+	}
 
 	// API
 	var err error
@@ -239,6 +262,7 @@ func main() {
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 
 	// simple standard http client with dialer wrapped inside
+	simpleTransportNeedsRecreate := true
 	httpClientSimple := request.NewStdHTTP()
 	httpClientSimple.Transport = request.NewHTTPReTransport(
 		1, 1, "HTTP/1.1", func() http.RoundTripper {
@@ -246,7 +270,7 @@ func main() {
 				request.NewContextRoundTripper(createSimpleH1Transport(Environment)(), httpGlobalCtx),
 				httpCallsSubject,
 			)
-		}, nil)
+		}, nil, simpleTransportNeedsRecreate)
 
 	cdnUrl := core.CDNURL
 	if !internal.IsProdEnv(Environment) && os.Getenv(EnvNordCdnUrl) != "" {
