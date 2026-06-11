@@ -340,19 +340,28 @@ func buildPauseMenu(ti *Instance) {
 }
 
 func buildPauseTimer() {
-	timer := systray.AddMenuItem("05:00", "")
+	remaining := 5 * 60
+	timer := systray.AddMenuItem(
+		fmt.Sprintf("%02d:%02d", remaining/60, remaining%60), "",
+	)
 	timer.Disable()
 
 	go func() {
-		remaining := 5 * 60
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
 
-		for remaining >= 0 {
-			timer.SetTitle(
-				fmt.Sprintf("%02d:%02d", remaining/60, remaining%60),
-			)
-
-			time.Sleep(time.Second)
-			remaining--
+		for remaining > 0 {
+			select {
+			case _, open := <-timer.ClickedCh:
+				if !open {
+					return
+				}
+			case <-ticker.C:
+				remaining--
+				timer.SetTitleQuiet(
+					fmt.Sprintf("%02d:%02d", remaining/60, remaining%60),
+				)
+			}
 		}
 	}()
 }
