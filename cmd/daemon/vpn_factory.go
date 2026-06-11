@@ -21,8 +21,17 @@ func getVpnFactory(
 	libquenchCfg vpn.NordWhisperConfigGetter,
 	appVersion string,
 	eventsPublisher *vpn.Events,
+	ensEnabled bool,
 ) daemon.FactoryFunc {
-	nordlynxVPN, nordLynxErr := getNordlynxVPN(envIsDev, eventsDbPath, fwmark, libtelioCfg, appVersion, eventsPublisher)
+	nordlynxVPN, nordLynxErr := getNordlynxVPN(
+		envIsDev,
+		eventsDbPath,
+		fwmark,
+		libtelioCfg,
+		appVersion,
+		eventsPublisher,
+		ensEnabled)
+
 	if nordLynxErr != nil {
 		// don't exit with `err` here in case the factory will be called with
 		// technology different than `config.Technology_NORDLYNX`

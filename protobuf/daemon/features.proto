@@ -6,4 +6,5 @@ option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
 message FeatureToggles {
   bool meshnet_enabled = 1;
+  bool ens_enabled     = 2;
 }
