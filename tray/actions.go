@@ -259,7 +259,8 @@ func (ti *Instance) disconnect() bool {
 }
 
 func (ti *Instance) pause(pauseLength PauseLength) bool {
-	resp, err := ti.client.PauseConnection(context.Background(), &pb.PauseRequest{Seconds: pauseLength.DurationSeconds})
+	ctx := attachUIEventMetadata(context.Background(), pb.UIEvent_PAUSE, pauseLength.EventValue)
+	resp, err := ti.client.PauseConnection(ctx, &pb.PauseRequest{Seconds: pauseLength.DurationSeconds})
 	if err != nil {
 		ti.notify(NoForce, "Pause error: %s", err)
 		return false

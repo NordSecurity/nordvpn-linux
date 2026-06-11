@@ -295,6 +295,7 @@ type PauseLength struct {
 	Name            string
 	Tooltip         string
 	DurationSeconds uint32
+	EventValue      pb.UIEvent_ItemValue
 }
 
 var PauseLengths = []PauseLength{
@@ -302,26 +303,31 @@ var PauseLengths = []PauseLength{
 		Name:            labelPause5Min,
 		Tooltip:         labelPause5Min,
 		DurationSeconds: 5 * 60,
+		EventValue:      pb.UIEvent_PAUSE_5_MIN,
 	},
 	{
 		Name:            labelPause15Min,
 		Tooltip:         labelPause15Min,
 		DurationSeconds: 15 * 60,
+		EventValue:      pb.UIEvent_PAUSE_15_MIN,
 	},
 	{
 		Name:            labelPause30Min,
 		Tooltip:         labelPause30Min,
 		DurationSeconds: 30 * 60,
+		EventValue:      pb.UIEvent_PAUSE_30_MIN,
 	},
 	{
 		Name:            labelPause1H,
 		Tooltip:         labelPause1H,
 		DurationSeconds: 60 * 60,
+		EventValue:      pb.UIEvent_PAUSE_1_HOUR,
 	},
 	{
 		Name:            labelPause24H,
 		Tooltip:         labelPause24H,
 		DurationSeconds: 24 * 60 * 60,
+		EventValue:      pb.UIEvent_PAUSE_24_HOURS,
 	},
 }
 
