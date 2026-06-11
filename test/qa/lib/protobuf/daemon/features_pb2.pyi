@@ -5,7 +5,9 @@ from typing import ClassVar as _ClassVar, Optional as _Optional
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class FeatureToggles(_message.Message):
-    __slots__ = ("meshnet_enabled",)
+    __slots__ = ("meshnet_enabled", "ens_enabled")
     MESHNET_ENABLED_FIELD_NUMBER: _ClassVar[int]
+    ENS_ENABLED_FIELD_NUMBER: _ClassVar[int]
     meshnet_enabled: bool
-    def __init__(self, meshnet_enabled: bool = ...) -> None: ...
+    ens_enabled: bool
+    def __init__(self, meshnet_enabled: bool = ..., ens_enabled: bool = ...) -> None: ...
