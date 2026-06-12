@@ -106,53 +106,68 @@ func createSimpleH1Transport(environment string) func() http.RoundTripper {
 	}
 }
 
+type h3Wrapper struct {
+	rt http.RoundTripper
+	err error
+}
+
+func (h *h3Wrapper) RoundTrip(r *http.Request) (*http.Response, error){
+	if h.err != nil{
+		return nil, h.err
+	}
+	return h.rt.RoundTrip(r)
+}
+
 func createH3Transport(resolver network.DNSResolver, fwmark uint32) func() http.RoundTripper {
 	return func() http.RoundTripper {
 		pool, err := x509.SystemCertPool()
 		if err != nil {
-			log.Fatal(err)
+			return &h3Wrapper{nil, err}
 		}
 		// as of quic-go 0.40.1, GSO handling causes race conditions
 		_ = os.Setenv("QUIC_GO_DISABLE_GSO", "true")
 		udpConn, err := NewMarkedUDPConn(fwmark)
 		if err != nil {
-			log.Fatal(err)
+			return &h3Wrapper{nil, err}
 		}
 		quicTransport := &quic.Transport{Conn: udpConn}
 		// #nosec G402 -- minimum tls version is controlled by the standard library
-		return &http3.Transport{
-			QUICConfig: &quic.Config{
-				MaxIdleTimeout: request.TransportTimeout,
+		return &h3Wrapper{
+			&http3.Transport{
+				QUICConfig: &quic.Config{
+					MaxIdleTimeout: request.TransportTimeout,
+				},
+				TLSClientConfig: &tls.Config{
+					RootCAs: pool,
+				},
+				// Custom dial is needed to resolve domain names with fwmarked resolver as well as
+				// dialing with fwmarked connection
+				Dial: func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
+					domain, portStr, ok := strings.Cut(addr, ":")
+					if !ok {
+						return nil, fmt.Errorf("malformed address: %s", addr)
+					}
+					port, err := strconv.ParseUint(portStr, 10, 16)
+					if err != nil {
+						return nil, fmt.Errorf("port conversion failed: %s", portStr)
+					}
+					ips, err := resolver.Resolve(domain)
+					if err != nil {
+						return nil, err
+					}
+					if !ips[0].IsValid() {
+						return nil, fmt.Errorf("invalid IP resolved: %s", ips[0])
+					}
+					udpAddrPort := netip.AddrPortFrom(ips[0], uint16(port))
+					udpAddr := net.UDPAddrFromAddrPort(udpAddrPort)
+					c, err := quicTransport.DialEarly(ctx, udpAddr, tlsCfg, cfg)
+					if err != nil {
+						return nil, err
+					}
+					return c, nil
+				},
 			},
-			TLSClientConfig: &tls.Config{
-				RootCAs: pool,
-			},
-			// Custom dial is needed to resolve domain names with fwmarked resolver as well as
-			// dialing with fwmarked connection
-			Dial: func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
-				domain, portStr, ok := strings.Cut(addr, ":")
-				if !ok {
-					return nil, fmt.Errorf("malformed address: %s", addr)
-				}
-				port, err := strconv.ParseUint(portStr, 10, 16)
-				if err != nil {
-					return nil, fmt.Errorf("port conversion failed: %s", portStr)
-				}
-				ips, err := resolver.Resolve(domain)
-				if err != nil {
-					return nil, err
-				}
-				if !ips[0].IsValid() {
-					return nil, fmt.Errorf("invalid IP resolved: %s", ips[0])
-				}
-				udpAddrPort := netip.AddrPortFrom(ips[0], uint16(port))
-				udpAddr := net.UDPAddrFromAddrPort(udpAddrPort)
-				c, err := quicTransport.DialEarly(ctx, udpAddr, tlsCfg, cfg)
-				if err != nil {
-					return nil, err
-				}
-				return c, nil
-			},
+			nil,
 		}
 	}
 }
