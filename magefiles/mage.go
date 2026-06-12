@@ -29,7 +29,7 @@ const (
 	imageProtobufGenerator = registryPrefix + "generator:1.4.2"
 	imageScanner           = registryPrefix + "scanner:1.1.0"
 	imageTester            = registryPrefix + "tester:1.6.5"
-	imageQAPeer            = registryPrefix + "qa-peer:1.0.5"
+	imageQAPeer            = registryPrefix + "qa-peer:1.0.6"
 	imageRuster            = registryPrefix + "ruster:1.4.1"
 	imageCodeQL            = registryPrefix + "codeql:1.0.0"
 
