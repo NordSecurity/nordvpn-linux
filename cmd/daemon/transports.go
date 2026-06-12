@@ -107,12 +107,12 @@ func createSimpleH1Transport(environment string) func() http.RoundTripper {
 }
 
 type h3Wrapper struct {
-	rt http.RoundTripper
+	rt  http.RoundTripper
 	err error
 }
 
-func (h *h3Wrapper) RoundTrip(r *http.Request) (*http.Response, error){
-	if h.err != nil{
+func (h *h3Wrapper) RoundTrip(r *http.Request) (*http.Response, error) {
+	if h.err != nil {
 		return nil, h.err
 	}
 	return h.rt.RoundTrip(r)
