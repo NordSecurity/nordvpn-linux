@@ -202,7 +202,7 @@ func maskIPRouteOutput(output string) string {
 	for _, ip := range ips {
 		parsed, err := netip.ParseAddr(ip)
 		if err != nil {
-			log.Warn("Failed to parse ip address %s for masking: %v", ip, err)
+			log.Warnf("Failed to parse ip address %s for masking: %v", ip, err)
 			continue
 		}
 

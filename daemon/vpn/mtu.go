@@ -52,7 +52,7 @@ func getDefaultGatewayMTU() (int, error) {
 func retrieveAndCalculateMTU(headerSize int) int {
 	defaultRouteMTU, err := getDefaultGatewayMTU()
 	if err != nil {
-		log.Error("failed to retrieve default interface, will use default value of: %w",
+		log.Errorf("failed to retrieve default interface, will use default value of: %w",
 			defaultMTU, err)
 		return defaultMTU
 	}

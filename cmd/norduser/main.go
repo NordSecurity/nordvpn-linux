@@ -184,7 +184,7 @@ func waitForShutdown(stopChan <-chan norduser.StopRequest,
 			// #nosec G204 - restart, reusing arguments is acceptable
 			err = syscall.Exec(execpath, os.Args, os.Environ())
 			if err != nil {
-				log.Info("Norduser daemon restart error:", err)
+				log.Error("Norduser daemon restart error:", err)
 			}
 		}
 	}
