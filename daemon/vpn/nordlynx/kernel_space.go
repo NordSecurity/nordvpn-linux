@@ -67,7 +67,7 @@ func (k *KernelSpace) Start(
 	iface, err := net.InterfaceByName(InterfaceName)
 	if err != nil {
 		if err := k.Stop(); err != nil {
-			log.Defer(err)
+			log.Error(err)
 		}
 		return err
 	}

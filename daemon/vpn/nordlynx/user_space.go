@@ -114,7 +114,7 @@ func (u *UserSpace) Start(
 	iface, err := net.InterfaceByName(InterfaceName)
 	if err != nil {
 		if err := u.stop(); err != nil {
-			log.Defer(err)
+			log.Error(err)
 		}
 		return err
 	}
@@ -125,21 +125,21 @@ func (u *UserSpace) Start(
 	u.tun = tun
 	if err := tun.AddAddrs(); err != nil {
 		if err := u.stop(); err != nil {
-			log.Defer(err)
+			log.Error(err)
 		}
 		return err
 	}
 
 	if err := tun.Up(); err != nil {
 		if err := u.stop(); err != nil {
-			log.Defer(err)
+			log.Error(err)
 		}
 		return err
 	}
 
 	if err := vpn.SetMTU(tun.Interface(), WireguardHeaderSize); err != nil {
 		if err := u.stop(); err != nil {
-			log.Defer(err)
+			log.Error(err)
 		}
 		return fmt.Errorf("setting MTU for nordlynx interface: %w", err)
 	}
@@ -258,7 +258,7 @@ func wgGoTurnOn(iface string, settings string) (int32, error) {
 	uapi, err = ipc.UAPIListen(interfaceName, uapiFile)
 	if err != nil {
 		if err := uapiFile.Close(); err != nil {
-			log.Defer(err)
+			log.Error(err)
 		}
 		return i, fmt.Errorf("listening for UAPI: %w", err)
 	}

@@ -67,7 +67,7 @@ func clearFormatting(input string) string {
 func main() {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Defer(internal.UnhandledMessage)
+			log.Warn(internal.UnhandledMessage)
 		}
 	}()
 

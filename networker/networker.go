@@ -212,21 +212,21 @@ func (netw *Combined) Start(
 func failureRecover(netw *Combined) {
 	if !netw.isMeshnetSet {
 		if err := netw.policyRouter.CleanupRouting(); err != nil {
-			log.Defer(err)
+			log.Error(err)
 		}
 	}
 
 	if err := netw.router.Flush(); err != nil {
-		log.Defer(err)
+		log.Error(err)
 	}
 
 	if err := netw.vpnet.Stop(); err != nil {
-		log.Defer(err)
+		log.Error(err)
 	}
 
 	if netw.isNetworkSet && netw.KillSwitchState == disabledByUser {
 		if err := netw.unsetNetwork(); err != nil {
-			log.Defer(err)
+			log.Error(err)
 		}
 	}
 
@@ -234,7 +234,7 @@ func failureRecover(netw *Combined) {
 		firewall.WithTunnelInterface(""),
 	)
 	if err := netw.configureFirewall(cfg); err != nil {
-		log.Defer(err)
+		log.Error(err)
 	}
 
 	netw.unblockIPv6()
@@ -280,7 +280,7 @@ func (netw *Combined) start(
 	}
 	if err = netw.vpnet.Start(ctx, creds, serverData); err != nil {
 		if err := netw.vpnet.Stop(); err != nil {
-			log.Defer(err)
+			log.Error(err)
 		}
 		return err
 	}
@@ -416,7 +416,7 @@ func (netw *Combined) restart(
 	}
 	if err = netw.vpnet.Start(ctx, creds, serverData); err != nil {
 		if err := netw.vpnet.Stop(); err != nil {
-			log.Defer(err)
+			log.Error(err)
 		}
 		return err
 	}
@@ -925,31 +925,31 @@ func (netw *Combined) setMesh(
 		if err != nil {
 			if routingRulesSet {
 				if err := netw.policyRouter.CleanupRouting(); err != nil {
-					log.Defer(err)
+					log.Error(err)
 				}
 			}
 
 			if err := netw.ipForwardSetter.Unset(); err != nil {
-				log.Defer(err)
+				log.Error(err)
 			}
 
 			cfg := netw.fwConfig.CopyWith(
 				firewall.WithMeshnetInfo(nil),
 			)
 			if err := netw.configureFirewall(cfg); err != nil {
-				log.Defer(err)
+				log.Error(err)
 			}
 
 			if err := netw.dnsHostSetter.UnsetHosts(); err != nil {
-				log.Defer(err)
+				log.Error(err)
 			}
 
 			if err := netw.peerRouter.Flush(); err != nil {
-				log.Defer(err)
+				log.Error(err)
 			}
 
 			if err := netw.mesh.Disable(); err != nil {
-				log.Defer(err)
+				log.Error(err)
 			}
 		}
 	}()

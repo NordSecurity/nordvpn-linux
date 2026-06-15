@@ -118,7 +118,7 @@ func ReadCredentialsFromTerminal() (string, string, error) {
 	}
 	defer func() {
 		if err := term.Restore(0, oldState); err != nil {
-			log.Defer(err)
+			log.Error(err)
 		}
 	}()
 
@@ -166,7 +166,7 @@ func ReadPlanFromTerminal() (int, error) {
 	}
 	defer func() {
 		if err := term.Restore(0, oldState); err != nil {
-			log.Defer(err)
+			log.Error(err)
 		}
 	}()
 

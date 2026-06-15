@@ -91,13 +91,13 @@ func systemDFile(unsetEnv bool) *os.File {
 	defer func() {
 		if unsetEnv {
 			if err := os.Unsetenv(ListenPID); err != nil {
-				log.Defer(err)
+				log.Error(err)
 			}
 			if err := os.Unsetenv(ListenFDS); err != nil {
-				log.Defer(err)
+				log.Error(err)
 			}
 			if err := os.Unsetenv(ListenFDNames); err != nil {
-				log.Defer(err)
+				log.Error(err)
 			}
 		}
 	}()
@@ -123,7 +123,7 @@ func SystemDListener() (net.Listener, error) {
 	file := systemDFile(true)
 	defer func() {
 		if err := file.Close(); err != nil {
-			log.Defer(err)
+			log.Error(err)
 		}
 	}()
 	return net.FileListener(file)

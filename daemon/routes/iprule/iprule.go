@@ -62,10 +62,10 @@ func (r *Router) SetupRoutingRules(
 		}
 
 		if err := removeSuppressRule(); err != nil {
-			log.Defer(err)
+			log.Error(err)
 		}
 		if err := removeFwmarkRule(r.fwmark); err != nil {
-			log.Defer(err)
+			log.Error(err)
 		}
 		r.removeAllowSubnetRules()
 	}()

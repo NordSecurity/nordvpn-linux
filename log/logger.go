@@ -32,7 +32,6 @@ const (
 	debugPrefix   = "[Debug]"
 	infoPrefix    = "[Info]"
 	warningPrefix = "[Warning]"
-	deferPrefix   = "[Defer]"
 	errorPrefix   = "[Error]"
 	fatalPrefix   = "[Fatal]"
 )
@@ -99,8 +98,6 @@ func Debug(v ...any)                 { logAt(levelDebug, debugPrefix, v) }
 func Debugf(format string, v ...any) { logAtf(levelDebug, debugPrefix, format, v) }
 func Info(v ...any)                  { logAt(levelInfo, infoPrefix, v) }
 func Infof(format string, v ...any)  { logAtf(levelInfo, infoPrefix, format, v) }
-func Defer(v ...any)                 { logAt(levelInfo, deferPrefix, v) }
-func Deferf(format string, v ...any) { logAtf(levelInfo, deferPrefix, format, v) }
 func Warn(v ...any)                  { logAt(levelWarn, warningPrefix, v) }
 func Warnf(format string, v ...any)  { logAtf(levelWarn, warningPrefix, format, v) }
 func Error(v ...any)                 { logAt(levelError, errorPrefix, v) }
