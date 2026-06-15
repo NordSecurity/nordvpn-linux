@@ -154,3 +154,18 @@ const ServerGroupsList$json = {
 final $typed_data.Uint8List serverGroupsListDescriptor = $convert.base64Decode(
     'ChBTZXJ2ZXJHcm91cHNMaXN0EhIKBHR5cGUYASABKANSBHR5cGUSKQoHc2VydmVycxgCIAMoCz'
     'IPLnBiLlNlcnZlckdyb3VwUgdzZXJ2ZXJz');
+
+@$core.Deprecated('Use diagnosticsProgressDescriptor instead')
+const DiagnosticsProgress$json = {
+  '1': 'DiagnosticsProgress',
+  '2': [
+    {'1': 'step', '3': 2, '4': 1, '5': 9, '10': 'step'},
+    {'1': 'file_path', '3': 4, '4': 1, '5': 9, '10': 'filePath'},
+    {'1': 'error', '3': 5, '4': 1, '5': 9, '10': 'error'},
+  ],
+};
+
+/// Descriptor for `DiagnosticsProgress`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List diagnosticsProgressDescriptor = $convert.base64Decode(
+    'ChNEaWFnbm9zdGljc1Byb2dyZXNzEhIKBHN0ZXAYAiABKAlSBHN0ZXASGwoJZmlsZV9wYXRoGA'
+    'QgASgJUghmaWxlUGF0aBIUCgVlcnJvchgFIAEoCVIFZXJyb3I=');

@@ -393,4 +393,13 @@ final class MockDaemon extends DaemonServiceBase {
     // dev-only daemon endpoint not used by the GUI.
     throw UnimplementedError();
   }
+
+  @override
+  Stream<DiagnosticsProgress> collectDiagnostics(
+    ServiceCall call,
+    Empty request,
+  ) {
+    // TODO: implement collectDiagnostics
+    throw UnimplementedError();
+  }
 }

@@ -11,7 +11,7 @@
 set -euxo pipefail
 
 NAME=nordvpn
-HASH=$(git rev-parse --short HEAD)
+HASH=$(git rev-parse --short HEAD || echo "badf00")
 
 format_date_utc() {
   local date_input="$1"

@@ -164,6 +164,7 @@ def _run_troubleshoot() -> str:
     Run `nordvpn troubleshoot`, assert the success banner, and return the
     zip path the daemon reports.
     """
+
     output = str(sh.nordvpn.troubleshoot())
     assert "Diagnostics collected successfully." in output, output
     match = re.search(r"File saved to:\s*(\S+)", output)
@@ -174,10 +175,8 @@ def _run_troubleshoot() -> str:
 def _cleanup_zip(path: str | None) -> None:
     if not path:
         return
-    try:
+    contextlib.suppress(FileNotFoundError):
         os.remove(path)
-    except FileNotFoundError:
-        pass
 
 
 def test_troubleshoot():
@@ -192,6 +191,7 @@ def test_troubleshoot():
 
     The success banner check is performed inside `_run_troubleshoot`.
     """
+
     zip_path = _run_troubleshoot()
     second_zip_path = None
     try:
