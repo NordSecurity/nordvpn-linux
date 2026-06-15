@@ -14,11 +14,13 @@ class UIEvent(_message.Message):
         TRAY: _ClassVar[UIEvent.FormReference]
         HOME_SCREEN: _ClassVar[UIEvent.FormReference]
         GUI: _ClassVar[UIEvent.FormReference]
+        CONNECTION_INFO: _ClassVar[UIEvent.FormReference]
     FORM_REFERENCE_UNSPECIFIED: UIEvent.FormReference
     CLI: UIEvent.FormReference
     TRAY: UIEvent.FormReference
     HOME_SCREEN: UIEvent.FormReference
     GUI: UIEvent.FormReference
+    CONNECTION_INFO: UIEvent.FormReference
     class ItemName(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         ITEM_NAME_UNSPECIFIED: _ClassVar[UIEvent.ItemName]
@@ -31,6 +33,9 @@ class UIEvent(_message.Message):
         MESHNET_INVITE_SEND: _ClassVar[UIEvent.ItemName]
         LOGIN_TOKEN: _ClassVar[UIEvent.ItemName]
         PAUSE: _ClassVar[UIEvent.ItemName]
+        RECONNECT: _ClassVar[UIEvent.ItemName]
+        CHANGE_SETTINGS: _ClassVar[UIEvent.ItemName]
+        GET_HELP: _ClassVar[UIEvent.ItemName]
     ITEM_NAME_UNSPECIFIED: UIEvent.ItemName
     CONNECT: UIEvent.ItemName
     CONNECT_RECENTS: UIEvent.ItemName
@@ -41,6 +46,9 @@ class UIEvent(_message.Message):
     MESHNET_INVITE_SEND: UIEvent.ItemName
     LOGIN_TOKEN: UIEvent.ItemName
     PAUSE: UIEvent.ItemName
+    RECONNECT: UIEvent.ItemName
+    CHANGE_SETTINGS: UIEvent.ItemName
+    GET_HELP: UIEvent.ItemName
     class ItemType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         ITEM_TYPE_UNSPECIFIED: _ClassVar[UIEvent.ItemType]

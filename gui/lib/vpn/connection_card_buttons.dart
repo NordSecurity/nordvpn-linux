@@ -78,7 +78,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
               child: Text(t.ui.disconnect),
             ),
           ),
-          _buildConnectionDetailsButton(context, buttonTheme),
+          _buildConnectionDetailsButton(context, ref, buttonTheme),
         ];
       }
       return [
@@ -111,6 +111,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
         ),
         _buildConnectionDetailsButton(
           context,
+          ref,
           buttonTheme,
           extraItems: [
             ContextMenuItem(
@@ -184,6 +185,16 @@ final class ConnectionCardButtons extends ConsumerWidget {
     ref.read(vpnStatusControllerProvider.notifier).pauseConnection(pauseLength);
   }
 
+  Future<void> _changeSettings(BuildContext context, WidgetRef ref) async {
+    context.navigateToRoute(AppRoute.settingsVpnConnection);
+    ref.read(vpnStatusControllerProvider.notifier).changeSettings();
+  }
+
+  Future<void> _getHelp(WidgetRef ref) async {
+    getHelpUrl.launch();
+    ref.read(vpnStatusControllerProvider.notifier).getHelp();
+  }
+
   static String _pauseLabel(PauseLength pause) => switch (pause) {
     PauseLength.mins5 => t.ui.pauseFor5Min,
     PauseLength.mins15 => t.ui.pauseFor15Min,
@@ -194,6 +205,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
 
   Widget _buildConnectionDetailsButton(
     BuildContext context,
+    WidgetRef ref,
     ConnectionCardButtonTheme buttonTheme, {
     List<ContextMenuItem> extraItems = const [],
   }) {
@@ -203,13 +215,9 @@ final class ConnectionCardButtons extends ConsumerWidget {
           ...extraItems,
           ContextMenuItem(
             label: t.ui.changeVPNsettings,
-            onTap: () =>
-                context.navigateToRoute(AppRoute.settingsVpnConnection),
+            onTap: () => _changeSettings(context, ref),
           ),
-          ContextMenuItem(
-            label: t.ui.getHelp,
-            onTap: () => getHelpUrl.launch(),
-          ),
+          ContextMenuItem(label: t.ui.getHelp, onTap: () => _getHelp(ref)),
         ],
         anchorBuilder: (toggleMenu) => OutlinedButton(
           style: buttonTheme.connectionDetailsButtonStyle,

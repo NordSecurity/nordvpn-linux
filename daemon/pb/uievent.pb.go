@@ -30,6 +30,7 @@ const (
 	UIEvent_TRAY                       UIEvent_FormReference = 2
 	UIEvent_HOME_SCREEN                UIEvent_FormReference = 3
 	UIEvent_GUI                        UIEvent_FormReference = 4 // temporary, to be replaced with more specific references
+	UIEvent_CONNECTION_INFO            UIEvent_FormReference = 5
 )
 
 // Enum value maps for UIEvent_FormReference.
@@ -40,6 +41,7 @@ var (
 		2: "TRAY",
 		3: "HOME_SCREEN",
 		4: "GUI",
+		5: "CONNECTION_INFO",
 	}
 	UIEvent_FormReference_value = map[string]int32{
 		"FORM_REFERENCE_UNSPECIFIED": 0,
@@ -47,6 +49,7 @@ var (
 		"TRAY":                       2,
 		"HOME_SCREEN":                3,
 		"GUI":                        4,
+		"CONNECTION_INFO":            5,
 	}
 )
 
@@ -91,21 +94,27 @@ const (
 	UIEvent_MESHNET_INVITE_SEND   UIEvent_ItemName = 7
 	UIEvent_LOGIN_TOKEN           UIEvent_ItemName = 8 // CLI-only: login via token (nordvpn login --token)
 	UIEvent_PAUSE                 UIEvent_ItemName = 9
+	UIEvent_RECONNECT             UIEvent_ItemName = 10
+	UIEvent_CHANGE_SETTINGS       UIEvent_ItemName = 11
+	UIEvent_GET_HELP              UIEvent_ItemName = 12
 )
 
 // Enum value maps for UIEvent_ItemName.
 var (
 	UIEvent_ItemName_name = map[int32]string{
-		0: "ITEM_NAME_UNSPECIFIED",
-		1: "CONNECT",
-		2: "CONNECT_RECENTS",
-		3: "DISCONNECT",
-		4: "LOGIN",
-		5: "LOGOUT",
-		6: "RATE_CONNECTION",
-		7: "MESHNET_INVITE_SEND",
-		8: "LOGIN_TOKEN",
-		9: "PAUSE",
+		0:  "ITEM_NAME_UNSPECIFIED",
+		1:  "CONNECT",
+		2:  "CONNECT_RECENTS",
+		3:  "DISCONNECT",
+		4:  "LOGIN",
+		5:  "LOGOUT",
+		6:  "RATE_CONNECTION",
+		7:  "MESHNET_INVITE_SEND",
+		8:  "LOGIN_TOKEN",
+		9:  "PAUSE",
+		10: "RECONNECT",
+		11: "CHANGE_SETTINGS",
+		12: "GET_HELP",
 	}
 	UIEvent_ItemName_value = map[string]int32{
 		"ITEM_NAME_UNSPECIFIED": 0,
@@ -118,6 +127,9 @@ var (
 		"MESHNET_INVITE_SEND":   7,
 		"LOGIN_TOKEN":           8,
 		"PAUSE":                 9,
+		"RECONNECT":             10,
+		"CHANGE_SETTINGS":       11,
+		"GET_HELP":              12,
 	}
 )
 

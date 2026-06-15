@@ -34,6 +34,7 @@ const UIEvent_FormReference$json = {
     {'1': 'TRAY', '2': 2},
     {'1': 'HOME_SCREEN', '2': 3},
     {'1': 'GUI', '2': 4},
+    {'1': 'CONNECTION_INFO', '2': 5},
   ],
 };
 
@@ -51,6 +52,9 @@ const UIEvent_ItemName$json = {
     {'1': 'MESHNET_INVITE_SEND', '2': 7},
     {'1': 'LOGIN_TOKEN', '2': 8},
     {'1': 'PAUSE', '2': 9},
+    {'1': 'RECONNECT', '2': 10},
+    {'1': 'CHANGE_SETTINGS', '2': 11},
+    {'1': 'GET_HELP', '2': 12},
   ],
 };
 

@@ -118,6 +118,36 @@ func TestToMooseStrings(t *testing.T) {
 			},
 		},
 		{
+			name: "change settings event",
+			ctx: &UIEventContext{
+				FormReference: pb.UIEvent_HOME_SCREEN,
+				ItemName:      pb.UIEvent_CHANGE_SETTINGS,
+				ItemType:      pb.UIEvent_CLICK,
+				ItemValue:     pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "home_screen",
+				ItemName:      "change_settings",
+				ItemType:      "click",
+				ItemValue:     "",
+			},
+		},
+		{
+			name: "get help event",
+			ctx: &UIEventContext{
+				FormReference: pb.UIEvent_HOME_SCREEN,
+				ItemName:      pb.UIEvent_GET_HELP,
+				ItemType:      pb.UIEvent_CLICK,
+				ItemValue:     pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "home_screen",
+				ItemName:      "get_help",
+				ItemType:      "click",
+				ItemValue:     "",
+			},
+		},
+		{
 			name: "pause event disconnect",
 			ctx: &UIEventContext{
 				FormReference: pb.UIEvent_CLI,
@@ -192,6 +222,9 @@ func TestItemNameToString(t *testing.T) {
 		{pb.UIEvent_RATE_CONNECTION, "rate_connection"},
 		{pb.UIEvent_MESHNET_INVITE_SEND, "meshnet_invite_send"},
 		{pb.UIEvent_PAUSE, "pause"},
+		{pb.UIEvent_RECONNECT, "reconnect"},
+		{pb.UIEvent_CHANGE_SETTINGS, "change_settings"},
+		{pb.UIEvent_GET_HELP, "get_help"},
 	}
 
 	for _, tt := range tests {

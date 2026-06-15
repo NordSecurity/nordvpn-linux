@@ -391,6 +391,13 @@ class DaemonClient extends $grpc.Client {
     return $createUnaryCall(_$ping, request, options: options);
   }
 
+  $grpc.ResponseFuture<$0.Payload> sendUIEvent(
+    $0.Empty request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$sendUIEvent, request, options: options);
+  }
+
   $grpc.ResponseStream<$19.AppState> subscribeToStateChanges(
     $0.Empty request, {
     $grpc.CallOptions? options,
@@ -626,6 +633,10 @@ class DaemonClient extends $grpc.Client {
       '/pb.Daemon/Ping',
       ($0.Empty value) => value.writeToBuffer(),
       $18.PingResponse.fromBuffer);
+  static final _$sendUIEvent = $grpc.ClientMethod<$0.Empty, $0.Payload>(
+      '/pb.Daemon/SendUIEvent',
+      ($0.Empty value) => value.writeToBuffer(),
+      $0.Payload.fromBuffer);
   static final _$subscribeToStateChanges =
       $grpc.ClientMethod<$0.Empty, $19.AppState>(
           '/pb.Daemon/SubscribeToStateChanges',
@@ -991,6 +1002,13 @@ abstract class DaemonServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
         ($18.PingResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.Empty, $0.Payload>(
+        'SendUIEvent',
+        sendUIEvent_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
+        ($0.Payload value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.Empty, $19.AppState>(
         'SubscribeToStateChanges',
         subscribeToStateChanges_Pre,
@@ -1380,6 +1398,14 @@ abstract class DaemonServiceBase extends $grpc.Service {
   }
 
   $async.Future<$18.PingResponse> ping(
+      $grpc.ServiceCall call, $0.Empty request);
+
+  $async.Future<$0.Payload> sendUIEvent_Pre(
+      $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async {
+    return sendUIEvent($call, await $request);
+  }
+
+  $async.Future<$0.Payload> sendUIEvent(
       $grpc.ServiceCall call, $0.Empty request);
 
   $async.Stream<$19.AppState> subscribeToStateChanges_Pre(

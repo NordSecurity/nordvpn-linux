@@ -61,7 +61,29 @@ class VpnRepository {
   }
 
   Future<int> reconnect(ConnectionParameters args) {
-    return _connect(args.toConnectRequest());
+    final options = createUiEventCallOptions(
+      formReference: UIEvent_FormReference.CONNECTION_INFO,
+      itemName: UIEvent_ItemName.RECONNECT,
+    );
+    return _connect(args.toConnectRequest(), options: options);
+  }
+
+  Future<int> changeSettings() async {
+    final options = createUiEventCallOptions(
+      formReference: UIEvent_FormReference.CONNECTION_INFO,
+      itemName: UIEvent_ItemName.CHANGE_SETTINGS,
+    );
+    final response = await _client.sendUIEvent(Empty(), options: options);
+    return response.type.toInt();
+  }
+
+  Future<int> getHelp() async {
+    final options = createUiEventCallOptions(
+      formReference: UIEvent_FormReference.CONNECTION_INFO,
+      itemName: UIEvent_ItemName.GET_HELP,
+    );
+    final response = await _client.sendUIEvent(Empty(), options: options);
+    return response.type.toInt();
   }
 
   /// Disconnects from the current VPN server.

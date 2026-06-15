@@ -63,6 +63,10 @@ class VpnStatusController extends _$VpnStatusController
   Future<void> reconnect(ConnectionParameters args) =>
       _doAndShowPopup((vpn) => vpn.reconnect(args));
 
+  Future<void> changeSettings() =>
+      _doAndShowPopup((vpn) => vpn.changeSettings());
+  Future<void> getHelp() => _doAndShowPopup((vpn) => vpn.getHelp());
+
   Future<void> disconnect() => _doAndShowPopup((vpn) => vpn.disconnect());
 
   Future<void> pauseConnection(PauseLength pauseValue) =>

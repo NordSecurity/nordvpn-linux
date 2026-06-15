@@ -283,6 +283,11 @@ class DaemonStub(object):
                 request_serializer=common__pb2.Empty.SerializeToString,
                 response_deserializer=ping__pb2.PingResponse.FromString,
                 _registered_method=True)
+        self.SendUIEvent = channel.unary_unary(
+                '/pb.Daemon/SendUIEvent',
+                request_serializer=common__pb2.Empty.SerializeToString,
+                response_deserializer=common__pb2.Payload.FromString,
+                _registered_method=True)
         self.SubscribeToStateChanges = channel.unary_stream(
                 '/pb.Daemon/SubscribeToStateChanges',
                 request_serializer=common__pb2.Empty.SerializeToString,
@@ -586,6 +591,12 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SendUIEvent(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def SubscribeToStateChanges(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -830,6 +841,11 @@ def add_DaemonServicer_to_server(servicer, server):
                     servicer.Ping,
                     request_deserializer=common__pb2.Empty.FromString,
                     response_serializer=ping__pb2.PingResponse.SerializeToString,
+            ),
+            'SendUIEvent': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendUIEvent,
+                    request_deserializer=common__pb2.Empty.FromString,
+                    response_serializer=common__pb2.Payload.SerializeToString,
             ),
             'SubscribeToStateChanges': grpc.unary_stream_rpc_method_handler(
                     servicer.SubscribeToStateChanges,
@@ -2084,6 +2100,33 @@ class Daemon(object):
             '/pb.Daemon/Ping',
             common__pb2.Empty.SerializeToString,
             ping__pb2.PingResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SendUIEvent(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/SendUIEvent',
+            common__pb2.Empty.SerializeToString,
+            common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,

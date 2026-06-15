@@ -160,6 +160,11 @@ final class MockDaemon extends DaemonServiceBase {
   }
 
   @override
+  Future<Payload> sendUIEvent(ServiceCall call, Empty request) async {
+    return Payload(type: Int64(DaemonStatusCode.success));
+  }
+
+  @override
   Future<Payload> rateConnection(ServiceCall call, RateRequest request) {
     throw UnimplementedError();
   }

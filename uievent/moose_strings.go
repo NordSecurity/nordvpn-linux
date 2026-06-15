@@ -32,6 +32,8 @@ func formReferenceToString(ref pb.UIEvent_FormReference) string {
 		return "home_screen"
 	case pb.UIEvent_GUI:
 		return "gui"
+	case pb.UIEvent_CONNECTION_INFO:
+		return "connection_info"
 	}
 	return ""
 }
@@ -59,6 +61,12 @@ func itemNameToString(name pb.UIEvent_ItemName) string {
 		return "meshnet_invite_send"
 	case pb.UIEvent_PAUSE:
 		return "pause"
+	case pb.UIEvent_RECONNECT:
+		return "reconnect"
+	case pb.UIEvent_CHANGE_SETTINGS:
+		return "change_vpn_settings"
+	case pb.UIEvent_GET_HELP:
+		return "help"
 	}
 	return ""
 }
