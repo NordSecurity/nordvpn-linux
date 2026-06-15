@@ -263,7 +263,8 @@ def test_prevent_obfuscate_enable_with_autoconnect_set_to_nonobfuscated(tech, pr
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    available_groups = str(sh.nordvpn.groups(_tty_out=False)).strip().split()
+    # TODO(LVPN-10389): restore Dedicated_Server group once the infrastructure is ready
+    available_groups = [g for g in str(sh.nordvpn.groups(_tty_out=False)).strip().split() if g != "Dedicated_Server"]
 
     for group in available_groups:
         if group == "Dedicated_IP":

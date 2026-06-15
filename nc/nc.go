@@ -11,13 +11,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"net"
 	"net/url"
+	"slices"
 	"sync"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/network"
 
@@ -26,7 +29,9 @@ import (
 )
 
 const (
-	typeMeshnet = "meshnet_network_update"
+	typeMeshnet               = "meshnet_network_update"
+	typeUserServiceUpdate     = "user_service_update"
+	typeDedicatedServerUpdate = "dedicated_server_update"
 
 	topicDelivered    = "delivered"
 	topicAcknowledged = "ack"
@@ -40,12 +45,12 @@ const (
 )
 
 var subscriptions = map[string]byte{
-	"content": byte(1),
-	"linux":   byte(1),
-	"meshnet": byte(1),
+	"content":                 byte(1),
+	"linux":                   byte(1),
+	"meshnet":                 byte(1),
+	"user_service_update":     byte(1),
+	"dedicated_server_update": byte(1),
 }
-
-var unsubscriptions = []string{"content", "linux", "meshnet"}
 
 // RecPayload defines a payload sent by a NC
 type RecPayload struct {
@@ -127,13 +132,15 @@ type Client struct {
 	// MQTT Docs say that reusing client after doing Disconnect can lead to panics.
 	// Since we are doing connect manually with our exponential backoff, we are in risk of those panics.
 	// That's why this mutex must be locked every time client is used.
-	subjectInfo       events.Publisher[string]
-	subjectErr        events.Publisher[error]
-	subjectPeerUpdate events.Publisher[[]string]
-	credsFetcher      CredentialsGetter
-	retryDelayFunc    CalculateRetryDelayForAttempt
-	fwmark            uint32
-	resolver          network.DNSResolver
+	subjectInfo                   events.Publisher[string]
+	subjectErr                    events.Publisher[error]
+	subjectPeerUpdate             events.Publisher[[]string]
+	subjectServicesUpdate         events.Publisher[any]
+	subjectDedicatedServersUpdate events.Publisher[any]
+	credsFetcher                  CredentialsGetter
+	retryDelayFunc                CalculateRetryDelayForAttempt
+	fwmark                        uint32
+	resolver                      network.DNSResolver
 
 	startMu          sync.Mutex
 	started          bool
@@ -147,19 +154,23 @@ func NewClient(
 	subjectInfo events.Publisher[string],
 	subjectErr events.Publisher[error],
 	subjectPeerUpdate events.Publisher[[]string],
+	subjectServicesUpdate events.Publisher[any],
+	subjectDedicatedServersUpdate events.Publisher[any],
 	credsFetcher CredentialsGetter,
 	fwmark uint32,
 	resolver network.DNSResolver,
 ) *Client {
 	return &Client{
-		clientBuilder:     clientBuilder,
-		subjectInfo:       subjectInfo,
-		subjectErr:        subjectErr,
-		subjectPeerUpdate: subjectPeerUpdate,
-		credsFetcher:      credsFetcher,
-		retryDelayFunc:    network.ExponentialBackoff,
-		fwmark:            fwmark,
-		resolver:          resolver,
+		clientBuilder:                 clientBuilder,
+		subjectInfo:                   subjectInfo,
+		subjectErr:                    subjectErr,
+		subjectPeerUpdate:             subjectPeerUpdate,
+		subjectServicesUpdate:         subjectServicesUpdate,
+		subjectDedicatedServersUpdate: subjectDedicatedServersUpdate,
+		credsFetcher:                  credsFetcher,
+		retryDelayFunc:                network.ExponentialBackoff,
+		fwmark:                        fwmark,
+		resolver:                      resolver,
 	}
 }
 
@@ -383,7 +394,7 @@ func (c *Client) connectWithBackoff(client mqtt.Client,
 	token := client.SubscribeMultiple(subscriptions, nil)
 	if token.WaitTimeout(timeout) && token.Error() != nil {
 		c.subjectErr.Publish(
-			fmt.Errorf(logPrefix+" subscribing to %v topics: %s", unsubscriptions, token.Error()),
+			fmt.Errorf(logPrefix+" subscribing to topics: %s", token.Error()),
 		)
 	}
 
@@ -486,8 +497,17 @@ func (c *Client) handleMessage(client mqtt.Client, msg mqtt.Message, ctx context
 		)
 	}
 
-	if payload.Message.Data.Event.Type == typeMeshnet {
+	log.Println(internal.InfoPrefix, logPrefix, "received", payload.Message.Data.Event.Type)
+
+	switch payload.Message.Data.Event.Type {
+	case typeUserServiceUpdate:
+		c.subjectServicesUpdate.Publish(struct{}{})
+	case typeMeshnet:
 		c.subjectPeerUpdate.Publish(payload.Message.Data.Event.Attributes.AffectedMachines)
+	case typeDedicatedServerUpdate:
+		c.subjectDedicatedServersUpdate.Publish(struct{}{})
+	default:
+		log.Println(internal.WarningPrefix, logPrefix, "received unknown MQTT message type:", payload.Message.Data.Event.Type)
 	}
 }
 
@@ -524,6 +544,7 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan any, error)
 			log.Println(logPrefix, "stopping management loop")
 			cancelConnectionFunc()
 			if client != nil {
+				unsubscriptions := slices.Collect(maps.Keys(subscriptions))
 				client.Unsubscribe(unsubscriptions...)
 				client.Disconnect(0)
 				client = nil

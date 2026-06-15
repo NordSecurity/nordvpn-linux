@@ -242,6 +242,12 @@ def get_external_device_ip(timeout=5) -> str:
         return session.get(API_EXTERNAL_IP, timeout=timeout).json().get("ip")
 
 
+def get_external_device_country(timeout=5) -> str:
+    """Returns external device country."""
+    with requests.Session() as session:
+        return session.get(API_EXTERNAL_IP, timeout=timeout).json().get("country")
+
+
 def generate_traffic(retry=1):
     # use an invalid server name to be sure that there will be DNS requests and that the result will not be from OS cache
     _is_dns_resolvable(domain="invalid-server-name.com", retry=retry)

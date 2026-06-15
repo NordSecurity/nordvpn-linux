@@ -103,6 +103,10 @@ def start():
     while not is_running():
         time.sleep(1)
 
+def start_with_arg(arg : str):
+    _rewrite_log_path()
+    sh.sudo("/etc/init.d/nordvpn", "start", arg)
+
 
 def start_peer(ssh_client: ssh.Ssh):
     """Starts daemon in peer and blocks until it is actually started."""

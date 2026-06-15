@@ -7,8 +7,11 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/netip"
 	"os"
+	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -21,6 +24,7 @@ import (
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 	"golang.org/x/exp/slices"
+	"golang.org/x/sys/unix"
 )
 
 const (
@@ -42,13 +46,18 @@ func SetBufferSizeForHTTP3() error {
 	return nil
 }
 
-func createH1Transport(resolver network.DNSResolver, fwmark uint32) func() http.RoundTripper {
+func createH1Transport(
+	resolver network.DNSResolver,
+	fwmark uint32,
+	environment string,
+) func() http.RoundTripper {
 	return func() http.RoundTripper {
 		dialer := &net.Dialer{
 			Control: network.NewFwmarkControlFn(fwmark),
 			Timeout: request.DefaultTimeout,
 		}
-		return &http.Transport{
+
+		transport := &http.Transport{
 			DialContext: func(ctx context.Context, netw, addr string) (net.Conn, error) {
 				domain, _, ok := strings.Cut(addr, ":")
 				if !ok {
@@ -73,30 +82,117 @@ func createH1Transport(resolver network.DNSResolver, fwmark uint32) func() http.
 			},
 			TLSHandshakeTimeout: request.TransportTimeout,
 		}
+
+		if internal.IsDevEnv(environment) {
+			transport.Proxy = http.ProxyFromEnvironment
+		}
+
+		return transport
 	}
 }
 
-func createH3Transport() http.RoundTripper {
-	pool, err := x509.SystemCertPool()
+func createSimpleH1Transport(environment string) func() http.RoundTripper {
+	return func() http.RoundTripper {
+		t := &http.Transport{
+			DialContext:         (&net.Dialer{Timeout: request.TransportTimeout}).DialContext,
+			TLSHandshakeTimeout: request.TransportTimeout,
+		}
+
+		if internal.IsDevEnv(environment) {
+			t.Proxy = http.ProxyFromEnvironment
+		}
+
+		return t
+	}
+}
+
+type h3Wrapper struct {
+	rt  http.RoundTripper
+	err error
+}
+
+func (h *h3Wrapper) RoundTrip(r *http.Request) (*http.Response, error) {
+	if h.err != nil {
+		return nil, h.err
+	}
+	return h.rt.RoundTrip(r)
+}
+
+func createH3Transport(resolver network.DNSResolver, fwmark uint32) func() http.RoundTripper {
+	return func() http.RoundTripper {
+		pool, err := x509.SystemCertPool()
+		if err != nil {
+			return &h3Wrapper{nil, err}
+		}
+		// as of quic-go 0.40.1, GSO handling causes race conditions
+		_ = os.Setenv("QUIC_GO_DISABLE_GSO", "true")
+		udpConn, err := NewMarkedUDPConn(fwmark)
+		if err != nil {
+			return &h3Wrapper{nil, err}
+		}
+		quicTransport := &quic.Transport{Conn: udpConn}
+		// #nosec G402 -- minimum tls version is controlled by the standard library
+		return &h3Wrapper{
+			&http3.Transport{
+				QUICConfig: &quic.Config{
+					MaxIdleTimeout: request.TransportTimeout,
+				},
+				TLSClientConfig: &tls.Config{
+					RootCAs: pool,
+				},
+				// Custom dial is needed to resolve domain names with fwmarked resolver as well as
+				// dialing with fwmarked connection
+				Dial: func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
+					domain, portStr, ok := strings.Cut(addr, ":")
+					if !ok {
+						return nil, fmt.Errorf("malformed address: %s", addr)
+					}
+					port, err := strconv.ParseUint(portStr, 10, 16)
+					if err != nil {
+						return nil, fmt.Errorf("port conversion failed: %s", portStr)
+					}
+					ips, err := resolver.Resolve(domain)
+					if err != nil {
+						return nil, err
+					}
+					if !ips[0].IsValid() {
+						return nil, fmt.Errorf("invalid IP resolved: %s", ips[0])
+					}
+					udpAddrPort := netip.AddrPortFrom(ips[0], uint16(port))
+					udpAddr := net.UDPAddrFromAddrPort(udpAddrPort)
+					c, err := quicTransport.DialEarly(ctx, udpAddr, tlsCfg, cfg)
+					if err != nil {
+						return nil, err
+					}
+					return c, nil
+				},
+			},
+			nil,
+		}
+	}
+}
+
+func NewMarkedUDPConn(fwmark uint32) (*net.UDPConn, error) {
+	lc := net.ListenConfig{
+		Control: func(network, address string, c syscall.RawConn) error {
+			var sockErr error
+			err := c.Control(func(fd uintptr) {
+				sockErr = unix.SetsockoptInt(
+					int(fd), unix.SOL_SOCKET, unix.SO_MARK, int(fwmark),
+				)
+			})
+			if err != nil {
+				return err
+			}
+			return sockErr
+		},
+	}
+
+	pc, err := lc.ListenPacket(context.Background(), "udp", ":0")
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("listen udp: %w", err)
 	}
-
-	// as of quic-go 0.40.1, GSO handling causes race conditions
-	_ = os.Setenv("QUIC_GO_DISABLE_GSO", "1")
-	// #nosec G402 -- minimum tls version is controlled by the standard library
-	h3Transport := &http3.Transport{
-		QUICConfig: &quic.Config{
-			MaxIdleTimeout: request.TransportTimeout,
-		},
-		TLSClientConfig: &tls.Config{
-			RootCAs: pool,
-		},
-	}
-
-	// wrap the transport to prevent data races during concurrent connection establishment
-	// TODO: remove when `quic-go` issue is resolved: https://github.com/quic-go/quic-go/issues/5307
-	return request.NewH3TransportWrapper(h3Transport)
+	return pc.(*net.UDPConn), nil
 }
 
 var validTransportTypes = []string{"http1", "http3"}
@@ -128,6 +224,7 @@ func createTimedOutTransport(
 	httpCallsSubject events.Publisher[events.DataRequestAPI],
 	connectSubject events.PublishSubcriber[events.DataConnect],
 	ctx context.Context,
+	environment string,
 ) http.RoundTripper {
 	transportsStr := os.Getenv(envHTTPTransportsKey)
 	log.Println(internal.InfoPrefix, "http transports to use (environment):", transportsStr)
@@ -139,13 +236,15 @@ func createTimedOutTransport(
 
 	var h1Transport *request.HTTPReTransport
 	var h3Transport *request.HTTPReTransport
+	transportNeedsRecreate := false
 	if containsH1 {
 		h1Transport = request.NewHTTPReTransport(
 			1,
 			1,
 			"HTTP/1.1",
-			createH1Transport(resolver, fwmark),
+			createH1Transport(resolver, fwmark, environment),
 			nil,
+			transportNeedsRecreate,
 		)
 		connectSubject.Subscribe(h1Transport.NotifyConnect)
 		if !containsH3 {
@@ -163,8 +262,9 @@ func createTimedOutTransport(
 			3,
 			0,
 			"HTTP/3",
-			createH3Transport,
+			createH3Transport(resolver, fwmark),
 			shouldRetryHTTP3,
+			transportNeedsRecreate,
 		)
 		connectSubject.Subscribe(h3Transport.NotifyConnect)
 		if !containsH1 {

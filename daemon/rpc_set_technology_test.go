@@ -94,3 +94,37 @@ func TestSetTechnology_NordWhisper(t *testing.T) {
 		})
 	}
 }
+
+func TestSetTechnology_DedicatedServer(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	configManager := mock.NewMockConfigManager()
+	configManager.Cfg = &config.Config{
+		Technology:  config.Technology_NORDLYNX,
+		AutoConnect: true,
+		AutoConnectData: config.AutoConnectData{
+			Group: config.ServerGroup_DEDICATED_SERVER,
+		},
+	}
+
+	networker := networker.Mock{}
+
+	remoteConfigGetter := mock.NewRemoteConfigMock()
+	remoteConfigGetter.NordWhisperEnabled = true
+
+	r := RPC{
+		remoteConfigGetter: remoteConfigGetter,
+		cm:                 configManager,
+		netw:               &networker,
+		factory:            func(t config.Technology) (vpn.VPN, error) { return nil, nil },
+		events:             events.NewEventsEmpty(),
+	}
+
+	resp, _ := r.SetTechnology(context.Background(), &pb.SetTechnologyRequest{
+		Technology: config.Technology_OPENVPN,
+	})
+
+	assert.Equal(t, internal.CodeDedicatedServersNoNordlynx, resp.Type, "Invalid response code by the daemon.")
+	assert.Equal(t, config.Technology_NORDLYNX, configManager.Cfg.Technology,
+		"Technology should not be changed when daemon responds with a non-success code.")
+}

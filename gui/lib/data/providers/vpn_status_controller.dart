@@ -10,6 +10,7 @@ import 'package:nordvpn/data/providers/toasts_provider.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/data/repository/vpn_repository.dart';
 import 'package:nordvpn/logger.dart';
+import 'package:nordvpn/pb/daemon/state.pbenum.dart';
 import 'package:nordvpn/pb/daemon/status.pb.dart';
 import 'package:nordvpn/pb/daemon/uievent.pbenum.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -21,7 +22,7 @@ typedef _VpnRepoFn = Future<int> Function(VpnRepository);
 /// Handles the VPN connection functionality
 @riverpod
 class VpnStatusController extends _$VpnStatusController
-    implements VpnStatusObserver {
+    implements VpnStatusObserver, PauseEventsObserver {
   @override
   FutureOr<VpnStatus> build() async {
     final status = await ref.read(vpnRepositoryProvider).fetchStatus();
@@ -96,7 +97,9 @@ class VpnStatusController extends _$VpnStatusController
   void _registerNotifications() {
     final notification = ref.read(appStateProvider);
     notification.addVpnStatusObserver(this);
+    notification.addPauseEventsObserver(this);
     ref.onDispose(() {
+      notification.removePauseEventsObserver(this);
       notification.removeVpnStatusObserver(this);
     });
   }
@@ -138,5 +141,16 @@ class VpnStatusController extends _$VpnStatusController
     );
 
     state = AsyncData(vpnStatus);
+  }
+
+  @override
+  void onPauseEvent(PauseEventType type) {
+    var status = DaemonStatusCode.success;
+
+    if (type == PauseEventType.RECONNECT_FAILED) {
+      status = DaemonStatusCode.failedToConnectToVpn;
+    }
+
+    ref.read(popupsProvider.notifier).show(status);
   }
 }

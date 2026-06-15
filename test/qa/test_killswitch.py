@@ -2,12 +2,14 @@ import pytest
 import sh
 import os
 import glob
+import time
 
 from pathlib import Path
 
 import lib
 from lib import (
     daemon,
+    firewall,
     login,
     logging,
     network,
@@ -257,3 +259,30 @@ def test_nc_mqtt_connection_with_killswitch():
     output = sh.nordvpn.set.killswitch("off")
     assert MSG_KILLSWITCH_OFF in output, "Kill switch disable message should be shown"
     assert network.is_available(), "Network should be available after test"
+
+
+def test_killswitch_mode_daemon_debug():
+    sh.nordvpn.set.killswitch.on()
+    daemon.stop()
+    daemon.start_with_arg("--killswitch-mode")
+    assert firewall.is_active(), "Firewall should have been setup by the killswitch mode daemon"
+    assert network.is_not_available(), "Killswitch should be blocking network"
+    assert not daemon.is_running(), "Killswitch mode daemon should stop running after setting up the firewall"
+    daemon.start()
+    assert firewall.is_active(), "Firewall should still be up after running regular daemon"
+    assert network.is_not_available(), "Killswitch should still be blocking network after running regular daemon"
+    sh.nordvpn.set.killswitch.off()
+    assert network.is_available(), "Network should be available"
+
+
+def test_killswitch_autoconnect_to_fastest_debug():
+    device_country = network.get_external_device_country()
+    sh.nordvpn.set.killswitch.on()
+    sh.nordvpn.set.autoconnect.on()
+    daemon.restart()
+    start_time =  time.monotonic()
+    daemon.wait_for_autoconnect()
+    duration = time.monotonic() - start_time
+    assert duration < 7, "Autoconnect with killswitch on should connect in less than 7 seconds"
+    status_data = daemon.get_status_data()
+    assert device_country in status_data["country"], "Fastest server should be in the same country"

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -30,6 +31,11 @@ func (r *RPC) Groups(ctx context.Context, in *pb.Empty) (*pb.ServerGroupsList, e
 		return &pb.ServerGroupsList{
 			Type: internal.CodeEmptyPayloadError,
 		}, nil
+	}
+
+	if r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
+		// Dedicated Server is to be always present in Tray
+		groups = append(groups, &pb.ServerGroup{Name: internal.Title(dedicatedServersGroupTitle), VirtualLocation: false})
 	}
 
 	return &pb.ServerGroupsList{

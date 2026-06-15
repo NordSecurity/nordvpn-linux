@@ -49,6 +49,7 @@ func TestReproduceHTTP3DataRace(t *testing.T) {
 			"HTTP/3",
 			func() http.RoundTripper { return h3Transport },
 			nil,
+			true,
 		)
 	}
 

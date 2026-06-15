@@ -7,6 +7,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -30,6 +31,7 @@ type LogoutInput struct {
 	DebugPublisherFunc           func(string)
 	PersistToken                 bool
 	DisconnectFunc               func() (bool, error)
+	DeviceKeyInvalidator         devicekey.DeviceKeyInvalidator
 }
 
 type LogoutResult struct {
@@ -141,6 +143,10 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 		return LogoutResult{Status: internal.CodeConfigError, Err: err}
 	}
 
+	if err := input.DeviceKeyInvalidator.InvalidateDeviceKeyData(); err != nil {
+		return LogoutResult{Status: internal.CodeConfigError, Err: err}
+	}
+
 	input.DebugPublisherFunc("user logged out")
 
 	if !input.PersistToken && tokenData.RenewToken == "" {
@@ -159,6 +165,7 @@ type ForceLogoutWithoutTokenInput struct {
 	DebugPublisherFunc     func(string)
 	DisconnectFunc         func() (bool, error)
 	Reason                 events.ReasonCode
+	DeviceKeyInvalidator   devicekey.DeviceKeyInvalidator
 }
 
 // ForceLogoutWithoutToken performs user logout operation without using login toking
@@ -213,6 +220,10 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 		return LogoutResult{Status: internal.CodeConfigError, Err: err}
 	}
 
+	if err := input.DeviceKeyInvalidator.InvalidateDeviceKeyData(); err != nil {
+		return LogoutResult{Status: internal.CodeConfigError, Err: err}
+	}
+
 	input.DebugPublisherFunc("user logged out")
 	return LogoutResult{Status: internal.CodeSuccess, Err: nil}
 }
@@ -222,7 +233,6 @@ func clearConfigData() config.SaveFunc {
 		delete(c.TokensData, c.AutoConnectData.ID)
 		c.AutoConnectData.ID = 0
 		c.Mesh = false
-		c.MeshPrivateKey = ""
 		return c
 	}
 }

@@ -33,6 +33,14 @@ message VersionHealthStatus {
   int32 status_code = 1;
 }
 
+message PauseEvent {
+  PauseEventType type = 1;
+}
+
+enum PauseEventType {
+  RECONNECT_FAILED = 0;
+}
+
 message AppState {
   oneof state {
     AppStateError error = 1;
@@ -42,5 +50,6 @@ message AppState {
     UpdateEvent update_event = 5;
     AccountModification account_modification = 6;
     VersionHealthStatus version_health = 7;
+    PauseEvent pause_event = 8;
   }
 }

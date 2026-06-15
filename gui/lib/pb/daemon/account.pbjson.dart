@@ -79,6 +79,20 @@ const AccountResponse$json = {
       '10': 'mfaStatus'
     },
     {'1': 'created_on', '3': 9, '4': 1, '5': 9, '10': 'createdOn'},
+    {
+      '1': 'dedicated_server_status',
+      '3': 10,
+      '4': 1,
+      '5': 3,
+      '10': 'dedicatedServerStatus'
+    },
+    {
+      '1': 'dedicated_servers_service_expires_at',
+      '3': 11,
+      '4': 1,
+      '5': 9,
+      '10': 'dedicatedServersServiceExpiresAt'
+    },
   ],
 };
 
@@ -91,7 +105,9 @@ final $typed_data.Uint8List accountResponseDescriptor = $convert.base64Decode(
     'dBgGIAEoCVIYbGFzdERlZGljYXRlZElwRXhwaXJlc0F0EksKFWRlZGljYXRlZF9pcF9zZXJ2aW'
     'NlcxgHIAMoCzIXLnBiLkRlZGlkY2F0ZWRJUFNlcnZpY2VSE2RlZGljYXRlZElwU2VydmljZXMS'
     'KwoKbWZhX3N0YXR1cxgIIAEoDjIMLnBiLlRyaVN0YXRlUgltZmFTdGF0dXMSHQoKY3JlYXRlZF'
-    '9vbhgJIAEoCVIJY3JlYXRlZE9u');
+    '9vbhgJIAEoCVIJY3JlYXRlZE9uEjYKF2RlZGljYXRlZF9zZXJ2ZXJfc3RhdHVzGAogASgDUhVk'
+    'ZWRpY2F0ZWRTZXJ2ZXJTdGF0dXMSTgokZGVkaWNhdGVkX3NlcnZlcnNfc2VydmljZV9leHBpcm'
+    'VzX2F0GAsgASgJUiBkZWRpY2F0ZWRTZXJ2ZXJzU2VydmljZUV4cGlyZXNBdA==');
 
 @$core.Deprecated('Use accountRequestDescriptor instead')
 const AccountRequest$json = {

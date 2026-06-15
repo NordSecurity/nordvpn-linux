@@ -6,11 +6,13 @@ import (
 	"crypto/sha256"
 	_ "embed"
 	"errors"
+	"flag"
 	"fmt"
 	"net"
 	"net/http"
 	_ "net/http/pprof" // #nosec G108 -- http server is not run in production builds
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -47,6 +49,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/openvpn"
+	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/firstopen"
 	"github.com/NordSecurity/nordvpn-linux/events/logger"
@@ -127,7 +130,11 @@ func initializeStaticConfig(machineID uuid.UUID) config.StaticConfigManager {
 
 func main() {
 	appStartTime := time.Now()
-
+	ksMode := flag.Bool("killswitch-mode", false, "sets killswitch rules and stops")
+	flag.Parse()
+	if *ksMode {
+		log.Info("Daemon running in killswitch mode")
+	}
 	stopLevelWatcher := log.SetupLogger(
 		os.Stdout,
 		internal.LogLevelFile,
@@ -216,6 +223,23 @@ func main() {
 		Environment,
 		daemonEvents.Debugger.DebuggerEvents,
 	)
+	if *ksMode {
+		if cfg.KillSwitch {
+			log.Info("Enabling killswitch")
+			err := fw.Configure(firewall.NewConfig(
+				firewall.WithKillSwitch(true)))
+			if err != nil {
+				log.Debug(err)
+			}
+			out, err := exec.Command("nft", "list", "ruleset").CombinedOutput()
+			if err != nil {
+				log.Debug(err)
+			}
+			log.Debug("nft: ", string(out))
+		}
+		log.Info("Killswitch mode daemon stopping, waiting for internet")
+		return
+	}
 
 	// API
 	var err error
@@ -238,14 +262,15 @@ func main() {
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
 
 	// simple standard http client with dialer wrapped inside
+	simpleTransportNeedsRecreate := true
 	httpClientSimple := request.NewStdHTTP()
 	httpClientSimple.Transport = request.NewHTTPReTransport(
 		1, 1, "HTTP/1.1", func() http.RoundTripper {
 			return request.NewPublishingRoundTripper(
-				request.NewContextRoundTripper(request.NewStdTransport(), httpGlobalCtx),
+				request.NewContextRoundTripper(createSimpleH1Transport(Environment)(), httpGlobalCtx),
 				httpCallsSubject,
 			)
-		}, nil)
+		}, nil, simpleTransportNeedsRecreate)
 
 	cdnUrl := core.CDNURL
 	if !internal.IsProdEnv(Environment) && os.Getenv(EnvNordCdnUrl) != "" {
@@ -270,6 +295,7 @@ func main() {
 		httpCallsSubject,
 		daemonEvents.Service.Connect,
 		httpGlobalCtx,
+		Environment,
 	)
 
 	cdnAPI := core.NewCDNAPI(
@@ -478,10 +504,11 @@ func main() {
 	norduserClient := norduserservice.NewNorduserGRPCClient()
 
 	meshRegistry := registry.NewNotifyingRegistry(clientAPI, meshnetEvents.PeerUpdate)
-	meshnetChecker := meshnet.NewRegisteringChecker(
+	deviceKeyManager := devicekey.NewDeviceKeyManager(
 		fsystem,
 		keygen,
 		meshRegistry,
+		clientAPI,
 	)
 
 	meshMapper := mapper.NewNotifyingMapper(
@@ -491,7 +518,7 @@ func main() {
 	)
 
 	meshnetEvents.PeerUpdate.Subscribe(refresher.NewMeshnet(
-		meshMapper, meshnetChecker, fsystem, netw,
+		meshMapper, deviceKeyManager, fsystem, netw,
 	).NotifyPeerUpdate)
 
 	meshUnsetter := meshunsetter.NewMeshnet(
@@ -505,6 +532,11 @@ func main() {
 	accountUpdateEvents := daemonevents.NewAccountUpdateEvents()
 	accountUpdateEvents.Subscribe(statePublisher)
 
+	servicesState := auth.NewServicesState(clientAPI, deviceKeyManager)
+	userServicesEvents := daemonevents.NewUserServicesEvents()
+	userServicesEvents.Subscribe(servicesState)
+	daemonEvents.User.Logout.Subscribe(servicesState.NotifyLogout)
+
 	// Create auth checker with all session stores
 	authChecker := auth.NewRenewingChecker(
 		fsystem,
@@ -513,14 +545,22 @@ func main() {
 		daemonEvents.User.Logout,
 		errSubject,
 		accountUpdateEvents,
+		servicesState,
 		sessionBuilder.GetStores()...,
 	)
+
+	dedicatedServerStateEvents := daemonevents.NewDedicatedServerStateEvents()
+	dedicatedServerStatePublisher := daemon.NewDedicatedServerState(daemonEvents.Service.DedicatedServerStatus,
+		clientAPI)
+	dedicatedServerStateEvents.Subscribe(dedicatedServerStatePublisher)
 
 	notificationClient := nc.NewClient(
 		nc.MqttClientBuilder{},
 		infoSubject,
 		errSubject,
 		meshnetEvents.PeerUpdate,
+		userServicesEvents.ServicesUpdate,
+		dedicatedServerStateEvents.DedicatedServerStateUpdate,
 		nc.NewCredsFetcher(clientAPI, fsystem),
 		cfg.FirewallMark,
 		resolver,
@@ -535,6 +575,7 @@ func main() {
 		PublishLogoutEventFunc: daemonEvents.User.Logout.Publish,
 		PublishDisconnectFunc:  daemonEvents.Service.Disconnect.Publish,
 		DebugPublisherFunc:     debugSubject.Publish,
+		DeviceKeyInvalidator:   deviceKeyManager,
 	})
 
 	// Configure error handlers for all session stores
@@ -550,12 +591,16 @@ func main() {
 		dataUpdateEvents,
 	)
 
+	pauseEvents := daemonevents.NewPauseEvents()
+	pauseEvents.Subscribe(statePublisher)
+
 	consentChecker := newConsentChecker(
 		internal.IsDevEnv(Environment),
 		fsystem,
 		clientAPI,
 		authChecker,
 		analytics,
+		deviceKeyManager,
 	)
 	consentChecker.PrepareDaemonIfConsentNotCompleted()
 
@@ -568,9 +613,10 @@ func main() {
 		clientAPI,
 		clientAPI,
 		clientAPI,
+		clientAPI,
 		cdnAPI,
 		repoAPI,
-		core.NewOAuth2(httpClientWithRotator, daemon.BaseURL),
+		core.NewOAuth2(httpClientWithRotator, daemon.BaseURL, validator),
 		Version,
 		daemonEvents,
 		vpnFactory,
@@ -593,11 +639,13 @@ func main() {
 			},
 		),
 		dataUpdateEvents,
+		pauseEvents,
+		deviceKeyManager,
 	)
 	meshService := meshnet.NewServer(
 		authChecker,
 		fsystem,
-		meshnetChecker,
+		deviceKeyManager,
 		inviter.NewNotifyingInviter(clientAPI, meshnetEvents.PeerUpdate),
 		netw,
 		meshRegistry,
@@ -732,6 +780,9 @@ func main() {
 
 	if ok, _ := authChecker.IsLoggedIn(); ok {
 		go daemon.StartNC("[startup]", notificationClient)
+		if err := rpc.RegisterDedicatedServers(); err != nil {
+			log.Println(internal.WarningPrefix, "failed to sync device:", err)
+		}
 	}
 	if cfg.Mesh {
 		go rpc.StartAutoMeshnet(meshService, network.ExponentialBackoff)

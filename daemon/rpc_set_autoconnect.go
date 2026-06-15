@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -28,6 +29,20 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		return &pb.Payload{
 			Type: internal.CodeNothingToDo,
 		}, nil
+	}
+
+	if in.GetEnabled() && isDedicatedServer(in.ServerTag, in.ServerGroup) {
+		if !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
+			return &pb.Payload{Type: internal.CodeGroupNonexisting}, nil
+		}
+
+		if cfg.Technology != config.Technology_NORDLYNX {
+			return &pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx}, nil
+		}
+
+		if cfg.AutoConnectData.PostquantumVpn {
+			return &pb.Payload{Type: internal.CodeDedicatedServersPq}, nil
+		}
 	}
 
 	if in.GetEnabled() {
