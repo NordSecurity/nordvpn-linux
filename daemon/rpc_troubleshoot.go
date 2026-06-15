@@ -66,16 +66,17 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 	}
 	zipPath := zipFile.Name()
 	defer func() {
-		zipFile.Close()
+		retErr = errors.Join(retErr, zipFile.Close())
 		if retErr != nil {
-			os.Remove(zipPath)
+			if err := os.Remove(zipPath); err != nil {
+				log.Error(logPrefix, "failed to delete zip", err)
+			}
 		}
 	}()
 
 	// Change ownership immediately so user can access the file
 	if err := os.Chown(zipPath, int(caller.uid), int(caller.gid)); err != nil {
 		log.Error(logPrefix, "failed to change file ownership:", err)
-		srv.Send(&pb.DiagnosticsProgress{Error: fmt.Sprintf(failedChownZipMsg, err)})
 		return err
 	}
 
@@ -83,17 +84,14 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 	if err := collectDiagnosticsData(srv, zipFile, caller.user.HomeDir, state); err != nil {
 		if errors.Is(err, errZipSizeLimitExceeded) {
 			log.Error(logPrefix, "diagnostics zip exceeded 40 MB limit")
-			srv.Send(&pb.DiagnosticsProgress{Error: zipTooLargeMsg})
 			return err
 		}
 		log.Error(logPrefix, "failed to collect diagnostics:", err)
-		srv.Send(&pb.DiagnosticsProgress{Error: fmt.Sprintf(failedCollectMsg, err)})
 		return err
 	}
 
 	if err := zipFile.Close(); err != nil {
 		log.Error(logPrefix, "failed to close zip file:", err)
-		srv.Send(&pb.DiagnosticsProgress{Error: fmt.Sprintf(failedCloseZipMsg, err)})
 		return err
 	}
 
@@ -316,7 +314,9 @@ func collectDiagnosticsData(
 	total := len(steps)
 	for i, step := range steps {
 		desc := fmt.Sprintf("[%d/%d] %s", i+1, total, step.description)
-		srv.Send(&pb.DiagnosticsProgress{Step: desc})
+		if err := srv.Send(&pb.DiagnosticsProgress{Step: desc}); err != nil {
+			log.Warn(logPrefix, "failed to report the progress", err)
+		}
 		logf("step started: %s", step.description)
 		err := step.collect()
 		if err == nil {
@@ -400,6 +400,9 @@ func addDaemonLogs(zipWriter *zip.Writer, supervisor daemonSupervisor) error {
 		return streamCommandToWriter(writer, "journalctl", "-u", "snap.nordvpn.nordvpnd", "--no-pager", "-r")
 	case daemonSupervisorSystemd:
 		return streamCommandToWriter(writer, "journalctl", "-u", "nordvpnd", "--no-pager", "-r")
+
+	case daemonSupervisorUnknown:
+		fallthrough
 	default:
 		// Last-resort fallback: if the daemon's own stdout (fd 1) is a
 		// regular file, the operator likely redirected logs there manually
@@ -443,8 +446,10 @@ func streamCommandToWriter(writer io.Writer, name string, args ...string) error 
 			written, writeErr := writer.Write(buf[:toWrite])
 			totalWritten += int64(written)
 			if writeErr != nil {
-				cmd.Process.Kill()
-				cmd.Wait()
+				if err := cmd.Process.Kill(); err != nil {
+					log.Error(logPrefix, "failed to kill process", err)
+				}
+				_ = cmd.Wait()
 				return writeErr
 			}
 		}
@@ -452,19 +457,23 @@ func streamCommandToWriter(writer io.Writer, name string, args ...string) error 
 			if readErr == io.EOF {
 				break
 			}
-			cmd.Process.Kill()
-			cmd.Wait()
+			if err := cmd.Process.Kill(); err != nil {
+				log.Error(logPrefix, "failed to kill process", err)
+			}
+			_ = cmd.Wait()
 			return readErr
 		}
 	}
 
 	// If we hit the limit, kill the command and note truncation
 	if totalWritten >= maxDaemonLogSize {
-		cmd.Process.Kill()
+		if err := cmd.Process.Kill(); err != nil {
+			log.Error(logPrefix, "kill process", err)
+		}
 		fmt.Fprintf(writer, "\n... (log truncated at 500 MB) ...\n")
 	}
 
-	cmd.Wait()
+	_ = cmd.Wait()
 	return nil
 }
 
@@ -474,23 +483,23 @@ func streamCommandToWriter(writer io.Writer, name string, args ...string) error 
 // line order — newest first — so the file path matches the newest-first
 // behaviour of the snap/systemd paths (`journalctl -r`).
 func streamFileToWriter(writer io.Writer, filePath string) error {
-	file, err := os.Open(filePath)
+	f, err := os.Open(filePath)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer f.Close()
 
-	info, err := file.Stat()
+	info, err := f.Stat()
 	if err != nil {
 		return err
 	}
 
 	if info.Size() > maxDaemonLogSize {
 		fmt.Fprintf(writer, "... (log truncated to last 500 MB, reversed) ...\n")
-		return writeFileTailReversed(writer, file, info.Size(), maxDaemonLogSize)
+		return writeFileTailReversed(writer, f, info.Size(), maxDaemonLogSize)
 	}
 
-	_, err = io.Copy(writer, file)
+	_, err = io.Copy(writer, f)
 	return err
 }
 
