@@ -56,7 +56,9 @@ func (l *stateListener) consumeStream(ctx context.Context, server grpc.ServerStr
 		select {
 		case l.queue <- state:
 		case <-time.After(time.Second):
-			log.Warnf("%s App state consumer's queue is full, dropping", logTag)
+			log.Warnf("%s App state consumer's queue is full, dropping: %v\n", logTag, state)
+		case <-ctx.Done():
+			return
 		}
 	}
 }
@@ -92,8 +94,8 @@ func (l *stateListener) listen(ctx context.Context) {
 
 	for {
 		if err := RetryWithBackoff(ctx, backoffConfig, op); err != nil {
-			log.Infof("%s listen to daemon's state stream: %s", logTag, err)
-			return
+			log.Infof("%s listen to daemon's state stream: %s\n", logTag, err)
+			break
 		}
 
 		l.consumeStream(ctx, server)

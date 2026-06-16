@@ -71,11 +71,7 @@ func main() {
 		}
 	}()
 
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal(err)
-	}
-	configDir, err := internal.GetConfigDirPath(homeDir)
+	configDir, err := internal.GetConfigDirPath()
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -252,7 +252,7 @@ func (ti *Instance) syncWithDaemon() {
 		}
 		err := waitUntilTrayStatusIsReceived(getTrayStatusFunc, ti.initialDataLoadChan)
 		if err != nil {
-			log.Errorf("%s Waiting for tray state: %s. Retrying.", logTag, err)
+			log.Errorf("%s Waiting for tray state: %s. Retrying.\n", logTag, err)
 			continue
 		}
 		break
@@ -309,10 +309,6 @@ func (ti *Instance) renderLoop(ctx context.Context) {
 
 		ti.rebuildTray()
 		<-ti.renderChan
-
-		if ti.debugMode {
-			log.Debug("Render")
-		}
 
 		select {
 		case <-ctx.Done():

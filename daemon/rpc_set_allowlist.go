@@ -17,7 +17,7 @@ import (
 // containsPrivateNetwork returns true if subnets contains a private network
 func containsPrivateNetwork(subnet string) bool {
 	if net, err := netip.ParsePrefix(subnet); err != nil {
-		log.Info("Failed to parse subnet: ", err)
+		log.Error("Failed to parse subnet: ", err)
 	} else if net.Addr().IsPrivate() || net.Addr().IsLinkLocalUnicast() {
 		return true
 	}

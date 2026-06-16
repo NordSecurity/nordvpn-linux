@@ -324,8 +324,7 @@ func (r *RPC) fallbackTechnology(targetTechnology config.Technology) error {
 func (r *RPC) fallbackDedicatedServer(cfg config.Config) config.Config {
 	serviceData, err := r.ac.GetDedicatedServerService()
 	if err != nil {
-		log.Println(internal.WarningPrefix,
-			"getting dedicated servers service status to determine if fallback is needed:", err)
+		log.Error("getting dedicated servers service status to determine if fallback is needed:", err)
 		return cfg
 	}
 
@@ -336,8 +335,7 @@ func (r *RPC) fallbackDedicatedServer(cfg config.Config) config.Config {
 			c.AutoConnectData = cfg.AutoConnectData
 			return c
 		}); err != nil {
-			log.Println(internal.ErrorPrefix,
-				"failed to save config after a fallback from dedicated server:", err)
+			log.Error("failed to save config after a fallback from dedicated server:", err)
 		}
 	}
 

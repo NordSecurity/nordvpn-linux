@@ -1,6 +1,6 @@
 // Package log wraps the standard library logger with level-filtered functions
-// (Debug, Info, Warn, Error, Defer). The active level is stored atomically and
-// can be changed at runtime by writing to the file watched by SetupLogger.
+// (Debug, Info, Warn, Error). The active level is stored atomically and can
+// be changed at runtime by writing to the file watched by SetupLogger.
 package log
 
 import (

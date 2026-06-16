@@ -57,7 +57,7 @@ func dipServicesToProtobuf(dipServices []auth.DedicatedIPService) []*pb.Dedidcat
 func (r *RPC) setDedicatedIPServerData(accountInfo *pb.AccountResponse) *pb.AccountResponse {
 	dipServices, err := r.ac.GetDedicatedIPServices()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "getting dedicated ip services:", err)
+		log.Error("getting dedicated ip services:", err)
 		if errors.Is(err, core.ErrUnauthorized) {
 			return &pb.AccountResponse{Type: internal.CodeExpiredAccessToken}
 		} else {
@@ -76,7 +76,7 @@ func (r *RPC) setDedicatedIPServerData(accountInfo *pb.AccountResponse) *pb.Acco
 		accountInfo.DedicatedIpServices = dipServicesToProtobuf(dipServices)
 		dedicatedIPExpirationDate, err = findLatestDIPExpirationData(dipServices)
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "getting latest dedicated ip expiration date:", err)
+			log.Error("getting latest dedicated ip expiration date:", err)
 			return &pb.AccountResponse{Type: internal.CodeTokenRenewError}
 		}
 	}
@@ -85,7 +85,7 @@ func (r *RPC) setDedicatedIPServerData(accountInfo *pb.AccountResponse) *pb.Acco
 
 	dedicatedServerService, err := r.ac.GetDedicatedServerService()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "getting dedicated server service:", err)
+		log.Error("getting dedicated server service:", err)
 		if errors.Is(err, core.ErrUnauthorized) {
 			return &pb.AccountResponse{Type: internal.CodeExpiredAccessToken}
 		}
@@ -132,29 +132,9 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 		accountInfo.Type = internal.CodeSuccess
 	}
 
-	accountInfo.DedicatedIpStatus = internal.CodeSuccess
-	dipServices, err := r.ac.GetDedicatedIPServices()
-	if err != nil {
-		log.Error("getting dedicated ip services:", err)
-		if errors.Is(err, core.ErrUnauthorized) {
-			return &pb.AccountResponse{Type: internal.CodeExpiredAccessToken}, nil
-		} else {
-			return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
-		}
-	}
-
-	if len(dipServices) < 1 {
-		accountInfo.DedicatedIpStatus = internal.CodeNoService
-	}
-
-	dedicatedIPExpirationDate := ""
-	if len(dipServices) != 0 {
-		accountInfo.DedicatedIpServices = dipServicesToProtobuf(dipServices)
-		dedicatedIPExpirationDate, err = findLatestDIPExpirationData(dipServices)
-		if err != nil {
-			log.Error("getting latest dedicated ip expiration date:", err)
-			return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
-		}
+	accountInfo = r.setDedicatedIPServerData(accountInfo)
+	if accountInfo.Type != internal.CodeSuccess {
+		return accountInfo, nil
 	}
 
 	// get user's current mfa status

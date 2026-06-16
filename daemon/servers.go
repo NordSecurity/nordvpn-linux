@@ -506,7 +506,11 @@ func selectServer(
 	)
 
 	if err != nil {
-		log.Error("picking servers:", err)
+		// Dedicated IP/Servers are handled separately, avoid logging an error to prevent confusion
+		if !errors.Is(err, ErrDedicatedIPServer) && !errors.Is(err, ErrDedicatedServer) {
+			log.Error("picking servers:", err)
+		}
+
 		switch {
 		case errors.Is(err, core.ErrUnauthorized):
 			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, r.events.User.Logout, events.ReasonUnauthorized)); err != nil {
@@ -635,7 +639,7 @@ func selectDedicatedServer(authChecker auth.Checker,
 ) (dedicatedServerSelection, error) {
 	service, err := authChecker.GetDedicatedServerService()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "checking dedicated servers service status:", err)
+		log.Error("checking dedicated servers service status:", err)
 		if errors.Is(err, core.ErrUnauthorized) {
 			return dedicatedServerSelection{}, internal.NewErrorWithCode(internal.CodeRevokedAccessToken)
 		}
@@ -648,7 +652,7 @@ func selectDedicatedServer(authChecker auth.Checker,
 
 	dedicatedServers, err := api.DedicatedServers()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "getting dedicated servers list:", err)
+		log.Error("getting dedicated servers list:", err)
 		return dedicatedServerSelection{}, internal.ErrUnhandled
 	}
 

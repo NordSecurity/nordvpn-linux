@@ -172,7 +172,7 @@ func main() {
 	)
 
 	// Remove any remains of IPv6 settings and remove overlapping allowlist subnets
-	if err := fsystem.SaveWith(configCleanup); err != nil {
+	if err := fsystem.SaveWith(daemon.ConfigCleanup); err != nil {
 		log.Error("failed to cleanup config:", err)
 	}
 
@@ -256,7 +256,7 @@ func main() {
 	userAgent, err := request.GetUserAgentValue(Version, sysinfo.GetHostOSPrettyName)
 	if err != nil {
 		userAgent = fmt.Sprintf("%s/%s (unknown)", request.AppName, Version)
-		log.Errorf("Error while constructing UA value: %s. Falls back to default: %s", err, userAgent)
+		log.Errorf("Error while constructing UA value: %s. Falls back to default: %s\n", err, userAgent)
 	}
 
 	httpGlobalCtx, httpCancel := context.WithCancel(context.Background())
@@ -307,7 +307,7 @@ func main() {
 
 	// Detect package type at startup
 	detectedPackageType := internal.DetectPackageType()
-	log.Infof("Detected package type: %s", detectedPackageType)
+	log.Infof("Detected package type: %s\n", detectedPackageType)
 
 	repoAPI := daemon.NewRepoAPI(
 		userAgent,
@@ -781,7 +781,7 @@ func main() {
 	if ok, _ := authChecker.IsLoggedIn(); ok {
 		go daemon.StartNC("[startup]", notificationClient)
 		if err := rpc.RegisterDedicatedServers(); err != nil {
-			log.Println(internal.WarningPrefix, "failed to sync device:", err)
+			log.Warn("failed to sync device:", err)
 		}
 	}
 	if cfg.Mesh {
@@ -840,27 +840,6 @@ func assignMooseDBPermissions(eventsDbPath string) error {
 		log.Error(err)
 	}
 	return nil
-}
-
-// configCleanup - validate/cleanup DNS addresses, allowlist subnets
-func configCleanup(c config.Config) config.Config {
-	// Remove all nameservers with IPv6 addresses
-	var dnsList []string
-	for _, addr := range c.AutoConnectData.DNS {
-		p, err := netip.ParsePrefix(addr)
-		if err != nil || !p.Addr().Is4() {
-			continue
-		}
-		dnsList = append(dnsList, addr)
-	}
-	c.AutoConnectData.DNS = dnsList
-
-	// Remove overlapping, invalid and IPv6 subnets, if any
-	c.AutoConnectData.Allowlist.NormalizeSubnets(func(removed, reason string) {
-		log.Warn("On start, allowlist remove subnet:", removed, "; reason:", reason)
-	})
-
-	return c
 }
 
 // buildClientAPIAndSessionStores creates and configures the client API and session stores

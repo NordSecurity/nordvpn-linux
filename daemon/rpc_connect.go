@@ -314,7 +314,7 @@ func (r *RPC) connect(
 	if isServerDedicated {
 		dedicatedServersDeviceData := r.dedicatedServerKeyManager.CheckAndRegisterDedicatedServers()
 		if dedicatedServersDeviceData == nil {
-			log.Println(internal.ErrorPrefix, "failed to fetch the device key for dedicated server connection")
+			log.Error("failed to fetch the device key for dedicated server connection")
 			return false, internal.ErrUnhandled
 		}
 
@@ -325,7 +325,7 @@ func (r *RPC) connect(
 		if errors.Is(err, core.ErrDedicatedServersDeviceNotFound) {
 			dedicatedServersDeviceData = r.dedicatedServerKeyManager.ForceRegisterDedicatedServers()
 			if dedicatedServersDeviceData == nil {
-				log.Println(internal.ErrorPrefix, "failed to force dedicated server device registration")
+				log.Error("failed to force dedicated server device registration")
 				return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersCanNotConnect})
 			}
 			dedicatedServerConnectionData, err = getDedicatedServerConnectionData(
@@ -335,7 +335,7 @@ func (r *RPC) connect(
 		}
 
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "fetching dedicated server connection data:", err)
+			log.Error("fetching dedicated server connection data:", err)
 			switch {
 			case errors.Is(err, core.ErrDedicatedServersSessionMaxLimitReached):
 				return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersSessionMaxLimitReached})
@@ -584,7 +584,7 @@ func getDedicatedServerConnectionData(api core.DedicatedServersAPI,
 	if len(addrPort) > 1 {
 		port, err := strconv.Atoi(addrPort[1])
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "parsing dedicated server port:", err)
+			log.Error("parsing dedicated server port:", err)
 			return dedicatedServerConnectionData{}, fmt.Errorf("parsing dedicated server port: %w", err)
 		}
 		dedicatedServerPort = int64(port)

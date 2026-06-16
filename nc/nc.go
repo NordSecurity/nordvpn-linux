@@ -20,7 +20,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/network"
 
@@ -193,7 +192,7 @@ func (c *Client) createClientOptions(
 
 	// Parse endpoint URL to extract hostname for DNS resolution and TLS verification.
 	// Example: "ssl://mqtt.example.com:8883" -> hostname="mqtt.example.com", port="8883"
-	log.Println(logPrefix, "try DNS resolution for original endpoint:", credentials.Endpoint)
+	log.Info(logPrefix, "try DNS resolution for original endpoint:", credentials.Endpoint)
 	u, err := url.Parse(credentials.Endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("NC original endpoint URL parse error: %w", err)
@@ -208,7 +207,7 @@ func (c *Client) createClientOptions(
 	if resolveErr == nil && len(ips) > 0 {
 		for _, ip := range ips {
 			if ip.Is6() {
-				log.Println(logPrefix, "got IPv6 address:", ip, " ignore.")
+				log.Debug(logPrefix, "got IPv6 address:", ip, " ignore.")
 				continue
 			}
 			brokerURL := fmt.Sprintf("%s://%s", u.Scheme, ip.String())
@@ -221,9 +220,9 @@ func (c *Client) createClientOptions(
 
 	if len(opts.Servers) == 0 {
 		if resolveErr != nil {
-			log.Println(logPrefix, "DNS resolution failed, using original endpoint, err:", resolveErr)
+			log.Error(logPrefix, "DNS resolution failed, using original endpoint, err:", resolveErr)
 		} else {
-			log.Println(logPrefix, "no usable IPv4 addresses resolved, using original endpoint")
+			log.Warn(logPrefix, "no usable IPv4 addresses resolved, using original endpoint")
 		}
 		opts.AddBroker(credentials.Endpoint)
 	}
@@ -497,7 +496,7 @@ func (c *Client) handleMessage(client mqtt.Client, msg mqtt.Message, ctx context
 		)
 	}
 
-	log.Println(internal.InfoPrefix, logPrefix, "received", payload.Message.Data.Event.Type)
+	log.Info(logPrefix, "received", payload.Message.Data.Event.Type)
 
 	switch payload.Message.Data.Event.Type {
 	case typeUserServiceUpdate:
@@ -507,7 +506,7 @@ func (c *Client) handleMessage(client mqtt.Client, msg mqtt.Message, ctx context
 	case typeDedicatedServerUpdate:
 		c.subjectDedicatedServersUpdate.Publish(struct{}{})
 	default:
-		log.Println(internal.WarningPrefix, logPrefix, "received unknown MQTT message type:", payload.Message.Data.Event.Type)
+		log.Warn(logPrefix, "received unknown MQTT message type:", payload.Message.Data.Event.Type)
 	}
 }
 
@@ -556,7 +555,7 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan any, error)
 		connectedChan := make(chan mqtt.Client)
 		opts, err := c.createClientOptions(credentials, managementChan, connectionContext)
 		if err != nil {
-			log.Println(logPrefix, "failed to create client options, err:", err.Error())
+			log.Error(logPrefix, "failed to create client options, err:", err.Error())
 			return
 		}
 		client = c.clientBuilder.Build(opts)

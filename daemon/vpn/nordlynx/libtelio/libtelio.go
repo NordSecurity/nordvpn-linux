@@ -239,6 +239,7 @@ type telioLoggerCb struct{}
 
 func (cb *telioLoggerCb) Log(logLevel teliogo.TelioLogLevel, payload string) error {
 	msg := "TELIO(" + teliogo.GetVersionTag() + "): " + payload
+	//exhaustive:ignore
 	switch logLevel {
 	case teliogo.TelioLogLevelError:
 		log.Error(msg)
