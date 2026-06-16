@@ -20,7 +20,7 @@ func (r *RPC) RecommendedServer(ctx context.Context, in *pb.Empty) (*pb.Recommen
 
 	serverSelection, err := selectServer(r, &insights, cfg, "", "")
 	if err == nil {
-		country := serverSelection.server.Country()
+		country := serverSelection.Server.Country()
 		return &pb.RecommendedServerLocation{
 			CityName:    country.City.Name,
 			CountryCode: country.Code,

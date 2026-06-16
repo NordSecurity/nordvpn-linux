@@ -43,7 +43,7 @@ func TestRPCCountries(t *testing.T) {
 		{
 			name:       "virtual and physical servers",
 			cm:         newMockConfigManager(),
-			servers:    serversList(),
+			servers:    coremock.ServersList(),
 			statusCode: internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
 				{Name: "Algeria", VirtualLocation: true},
@@ -55,7 +55,7 @@ func TestRPCCountries(t *testing.T) {
 		{
 			name:                  "return physical servers only",
 			cm:                    newMockConfigManager(),
-			servers:               serversList(),
+			servers:               coremock.ServersList(),
 			disableVirtualServers: true,
 			statusCode:            internal.CodeSuccess,
 			expected: []*pb.ServerGroup{

@@ -10,6 +10,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/features"
@@ -17,14 +18,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/network"
 )
-
-func isDedicatedIP(server core.Server) bool {
-	index := slices.IndexFunc(server.Groups, func(group core.Group) bool {
-		return group.ID == config.ServerGroup_DEDICATED_IP
-	})
-
-	return index != -1
-}
 
 // determineServerGroupIDs returns the IDs of every group the server belongs to.
 func determineServerGroupIDs(server *core.Server) []config.ServerGroup {
@@ -87,7 +80,7 @@ func (r *RPC) connectFromLastSelection(srv pb.Daemon_ConnectServer,
 
 // determineServerSelectionRule determines the server selection rule based on the provided
 // parameters.
-func determineServerSelectionRule(params ServerParameters) config.ServerSelectionRule {
+func determineServerSelectionRule(params serverpicker.ServerParameters) config.ServerSelectionRule {
 	// defensive checks for all fields
 	hasCountry := params.Country != ""
 	hasCity := params.City != ""
@@ -234,7 +227,7 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	}
 	r.lastServerSelection = serverSelection
 
-	parameters := GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
+	parameters := serverpicker.GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
 	r.RequestedConnParams.Set(source, parameters)
 
 	return r.connect(ctx, srv, cfg, serverSelection, parameters, connectingStartTime, true, pauseDuration)
@@ -244,18 +237,18 @@ func (r *RPC) connect(
 	ctx context.Context,
 	srv pb.Daemon_ConnectServer,
 	cfg config.Config,
-	serverSelection serverSelection,
-	parameters ServerParameters,
+	serverSelection serverpicker.ServerSelection,
+	parameters serverpicker.ServerParameters,
 	connectingStartTime time.Time,
 	pauseInterrupted bool,
 	pauseDuration time.Duration,
 ) (didFail bool, retErr error) {
-	country, err := serverSelection.server.Locations.Country()
+	country, err := serverSelection.Server.Locations.Country()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, err)
 	}
 
-	ip, err := serverSelection.server.IPv4()
+	ip, err := serverSelection.Server.IPv4()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, err)
 		return false, internal.ErrUnhandled
@@ -276,24 +269,24 @@ func (r *RPC) connect(
 	}
 	serverData := vpn.ServerData{
 		IP:                subnet.Addr(),
-		Hostname:          serverSelection.server.Hostname,
+		Hostname:          serverSelection.Server.Hostname,
 		Protocol:          cfg.AutoConnectData.Protocol,
-		NordLynxPublicKey: serverSelection.server.NordLynxPublicKey,
+		NordLynxPublicKey: serverSelection.Server.NordLynxPublicKey,
 		Obfuscated:        cfg.AutoConnectData.Obfuscate,
 		PostQuantum:       cfg.AutoConnectData.PostquantumVpn,
-		OpenVPNVersion:    serverSelection.server.Version(),
-		NordWhisperPort:   serverSelection.server.NordWhisperPort,
+		OpenVPNVersion:    serverSelection.Server.Version(),
+		NordWhisperPort:   serverSelection.Server.NordWhisperPort,
 	}
 
 	allowlist := cfg.AutoConnectData.Allowlist
 
 	city := country.City.Name
-	if len(serverSelection.server.Locations) > 0 {
-		city = serverSelection.server.Locations[0].City.Name
+	if len(serverSelection.Server.Locations) > 0 {
+		city = serverSelection.Server.Locations[0].City.Name
 	}
 
 	serverSelectionRule := determineServerSelectionRule(parameters)
-	r.connectionInfo.SetServerSelectionData(serverSelectionRule, serverSelection.remote)
+	r.connectionInfo.SetServerSelectionData(serverSelectionRule, serverSelection.Remote)
 
 	event := events.DataConnect{
 		Protocol:                cfg.AutoConnectData.Protocol,
@@ -304,17 +297,17 @@ func (r *RPC) connect(
 		DurationMs:              getElapsedTime(connectingStartTime),
 		EventStatus:             events.StatusAttempt,
 		TargetServerSelection:   determineServerSelectionRule(parameters),
-		ServerFromAPI:           serverSelection.remote,
-		IsVirtualLocation:       serverSelection.server.IsVirtualLocation(),
+		ServerFromAPI:           serverSelection.Remote,
+		IsVirtualLocation:       serverSelection.Server.IsVirtualLocation(),
 		TargetServerCity:        city,
 		TargetServerCountry:     country.Name,
 		TargetServerCountryCode: country.Code,
-		TargetServerDomain:      serverSelection.server.Hostname,
-		TargetServerGroup:       determineTargetServerGroup(serverSelection.server, parameters),
-		ServerGroups:            determineServerGroupIDs(serverSelection.server),
+		TargetServerDomain:      serverSelection.Server.Hostname,
+		TargetServerGroup:       determineTargetServerGroup(serverSelection.Server, parameters),
+		ServerGroups:            determineServerGroupIDs(serverSelection.Server),
 		TargetServerIP:          subnet.Addr(),
-		TargetServerName:        serverSelection.server.Name,
-		RecommendationUUID:      string(serverSelection.recommendationUUID),
+		TargetServerName:        serverSelection.Server.Name,
+		RecommendationUUID:      string(serverSelection.RecommendationUUID),
 		PauseInterval:           pauseDuration,
 		UnpausedByUser:          pauseInterrupted,
 	}
@@ -337,10 +330,10 @@ func (r *RPC) connect(
 	}()
 
 	virtualServer := ""
-	if serverSelection.server.IsVirtualLocation() {
+	if serverSelection.Server.IsVirtualLocation() {
 		virtualServer = " - Virtual"
 	}
-	lastServer := r.lastServerSelection.server
+	lastServer := r.lastServerSelection.Server
 	data := []string{lastServer.Name, lastServer.Hostname, virtualServer}
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnecting, Data: data}); err != nil {
@@ -351,7 +344,7 @@ func (r *RPC) connect(
 		Protocol:             cfg.AutoConnectData.Protocol,
 		Technology:           cfg.Technology,
 		ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
-		RecommendationUUID:   string(serverSelection.recommendationUUID),
+		RecommendationUUID:   string(serverSelection.RecommendationUUID),
 	}, r.events.Service.Disconnect.Publish)
 
 	err = r.netw.Start(
@@ -370,7 +363,7 @@ func (r *RPC) connect(
 		storePendingRecentConnection(r.recentVPNConnStore)
 		connectionEstablished := event.EventStatus == events.StatusSuccess
 		if connectionEstablished && isRecentConnectionSupported(event.TargetServerSelection) {
-			recentModel, err := buildRecentConnectionModel(event, parameters, serverSelection.server, r.dm, cfg)
+			recentModel, err := buildRecentConnectionModel(event, parameters, serverSelection.Server, r.dm, cfg)
 			if err != nil {
 				log.Println(internal.WarningPrefix, "Failed to build recent VPN connection model:", err)
 				return
@@ -422,7 +415,7 @@ func getElapsedTime(startTime time.Time) int {
 
 // determineTargetServerGroup returns the title of the server group based on the selected server and
 // parameters. This function assumes parameters are already validated and contains a valid group ID.
-func determineTargetServerGroup(server *core.Server, parameters ServerParameters) string {
+func determineTargetServerGroup(server *core.Server, parameters serverpicker.ServerParameters) string {
 	findServerGroupTitle := func(gid config.ServerGroup) (string, bool) {
 		index := slices.IndexFunc(server.Groups, func(g core.Group) bool { return g.ID == gid })
 		if index != -1 {

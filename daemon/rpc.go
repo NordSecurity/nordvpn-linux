@@ -14,6 +14,7 @@ import (
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -38,7 +39,7 @@ type RPC struct {
 	cdn                 core.CDN
 	repo                *RepoAPI
 	authentication      core.Authentication
-	lastServerSelection serverSelection
+	lastServerSelection serverpicker.ServerSelection
 	version             string
 	events              *daemonevents.Events
 	// factory picks which VPN implementation to use
