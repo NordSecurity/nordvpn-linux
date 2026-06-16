@@ -53,7 +53,7 @@ def setup_function(function):  # noqa: ARG001
 
     # in order to simulate actual upgrade, always install current-but-one version
     # the exact version to be installed, is determined based on the presence of changelogs in the repository.
-    # finally, use the fetched previous version and provide it to the isntallation script
+    # finally, use the fetched previous version and provide it to the installation script
     previous_version = _previous_app_version()
     logging.log(data=f"Installing previous production version: {previous_version}")
     sh.sh("-s", "--", "-n", "-v", previous_version, _in=sh.curl("-sSf", "https://downloads.nordcdn.com/apps/linux/install.sh"))
