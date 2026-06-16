@@ -161,4 +161,123 @@ void main() {
       );
     });
   });
+
+  // To run regression tests:
+  // cd gui && flutter test test/grpc/ui_event_interceptor_test.dart 2>&1
+
+  // Inventory tests matching exact repository call sites.
+  // Run before and after UI event refactoring to verify equivalence.
+  group('GUI event inventory — repository call sites', () {
+    void expectMetadata(
+      String description, {
+      required UIEvent_FormReference formReference,
+      required UIEvent_ItemName itemName,
+      UIEvent_ItemValue? itemValue,
+      required String expectedFormRef,
+      required String expectedItemName,
+      String? expectedItemValue,
+    }) {
+      test(description, () {
+        final options = createUiEventCallOptions(
+          formReference: formReference,
+          itemName: itemName,
+          itemValue: itemValue,
+        );
+
+        expect(options.metadata[metadataKeyFormReference], expectedFormRef);
+        expect(options.metadata[metadataKeyItemName], expectedItemName);
+        expect(
+          options.metadata[metadataKeyItemType],
+          '1', // CLICK
+        );
+        if (expectedItemValue != null) {
+          expect(options.metadata[metadataKeyItemValue], expectedItemValue);
+        } else {
+          expect(options.metadata.containsKey(metadataKeyItemValue), isFalse);
+        }
+      });
+    }
+
+    // vpn_repository.dart: reconnect()
+    expectMetadata(
+      'reconnect — CONNECTION_INFO / RECONNECT',
+      formReference: UIEvent_FormReference.CONNECTION_INFO,
+      itemName: UIEvent_ItemName.RECONNECT,
+      expectedFormRef: '5',
+      expectedItemName: '10',
+    );
+
+    // vpn_repository.dart: changeSettings()
+    expectMetadata(
+      'changeSettings — CONNECTION_INFO / CHANGE_SETTINGS',
+      formReference: UIEvent_FormReference.CONNECTION_INFO,
+      itemName: UIEvent_ItemName.CHANGE_SETTINGS,
+      expectedFormRef: '5',
+      expectedItemName: '11',
+    );
+
+    // vpn_repository.dart: getHelp()
+    expectMetadata(
+      'getHelp — CONNECTION_INFO / GET_HELP',
+      formReference: UIEvent_FormReference.CONNECTION_INFO,
+      itemName: UIEvent_ItemName.GET_HELP,
+      expectedFormRef: '5',
+      expectedItemName: '12',
+    );
+
+    // vpn_repository.dart: disconnect()
+    expectMetadata(
+      'disconnect — HOME_SCREEN / PAUSE / PAUSE_DISCONNECT',
+      formReference: UIEvent_FormReference.HOME_SCREEN,
+      itemName: UIEvent_ItemName.PAUSE,
+      itemValue: UIEvent_ItemValue.PAUSE_DISCONNECT,
+      expectedFormRef: '3',
+      expectedItemName: '9',
+      expectedItemValue: '14',
+    );
+
+    // vpn_repository.dart: pauseConnection(PauseLength.mins5)
+    expectMetadata(
+      'pause 5 min — HOME_SCREEN / PAUSE / PAUSE_5_MIN',
+      formReference: UIEvent_FormReference.HOME_SCREEN,
+      itemName: UIEvent_ItemName.PAUSE,
+      itemValue: UIEvent_ItemValue.PAUSE_5_MIN,
+      expectedFormRef: '3',
+      expectedItemName: '9',
+      expectedItemValue: '9',
+    );
+
+    // vpn_repository.dart: pauseConnection(PauseLength.mins15)
+    expectMetadata(
+      'pause 15 min — HOME_SCREEN / PAUSE / PAUSE_15_MIN',
+      formReference: UIEvent_FormReference.HOME_SCREEN,
+      itemName: UIEvent_ItemName.PAUSE,
+      itemValue: UIEvent_ItemValue.PAUSE_15_MIN,
+      expectedFormRef: '3',
+      expectedItemName: '9',
+      expectedItemValue: '10',
+    );
+
+    // vpn_repository.dart: pauseConnection(PauseLength.mins30)
+    expectMetadata(
+      'pause 30 min — HOME_SCREEN / PAUSE / PAUSE_30_MIN',
+      formReference: UIEvent_FormReference.HOME_SCREEN,
+      itemName: UIEvent_ItemName.PAUSE,
+      itemValue: UIEvent_ItemValue.PAUSE_30_MIN,
+      expectedFormRef: '3',
+      expectedItemName: '9',
+      expectedItemValue: '11',
+    );
+
+    // vpn_repository.dart: pauseConnection(PauseLength.hour1)
+    expectMetadata(
+      'pause 1 hour — HOME_SCREEN / PAUSE / PAUSE_1_HOUR',
+      formReference: UIEvent_FormReference.HOME_SCREEN,
+      itemName: UIEvent_ItemName.PAUSE,
+      itemValue: UIEvent_ItemValue.PAUSE_1_HOUR,
+      expectedFormRef: '3',
+      expectedItemName: '9',
+      expectedItemValue: '12',
+    );
+  });
 }
