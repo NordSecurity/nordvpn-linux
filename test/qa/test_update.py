@@ -15,8 +15,7 @@ DEB_PATH = glob.glob(f'{PROJECT_ROOT}/dist/app/deb/nordvpn_*amd64.deb')[0]
 
 
 def _previous_app_version() -> str:
-    """Return the current-but-one (N-1) app version derived from the prod changelog.
-    """
+    """Return the current-but-one (N-1) app version derived from the prod changelog."""
 
     changelog_dir = os.path.join(PROJECT_ROOT, "contrib", "changelog", "prod")
     versions = set()
