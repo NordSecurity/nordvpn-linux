@@ -84,8 +84,7 @@ func PickServer(
 	// construct the servers list filters, for matching the current settings
 	localSelFn := selectFilterForLocalServers(input.Tag, serverGroup, obfuscated)
 	filterServersFn := func(s core.Server) bool {
-		return core.IsConnectableWithProtocol(tech, protocol)(s) &&
-			(core.IsObfuscated()(s) == obfuscated) &&
+		return MatchesUserSettings(s, cfg) &&
 			// for local servers only, take into account also the server.Keys
 			((len(s.Keys) == 0) || localSelFn(s))
 	}
@@ -161,7 +160,7 @@ func fetchServersFromAPI(
 	if serverTag.Action == core.ServerByName {
 		// the search is made after a specific server name, e.g. lt1234
 		servers, err := getServerByNameFromRemote(api, serverTag, filterServersFn)
-		return servers, emptyUUUID, err
+		return servers, emptyUUID, err
 	}
 
 	return getRecommendedServers(api, insights.Longitude, insights.Latitude, filter, filterServersFn)

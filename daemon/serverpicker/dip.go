@@ -77,8 +77,7 @@ func SelectDedicatedIPServer(authChecker auth.Checker, servers core.Servers, cfg
 			continue
 		}
 
-		if !core.IsConnectableWithProtocol(cfg.Technology, cfg.AutoConnectData.Protocol)(*server) ||
-			(core.IsObfuscated()(*server) != cfg.AutoConnectData.Obfuscate) {
+		if !MatchesUserSettings(*server, cfg) {
 			log.Error(logPrefix, "cannot use server to connect because the server doesn't support user settings")
 			continue
 		}
@@ -115,8 +114,7 @@ func CheckDIPServerInSubscription(authChecker auth.Checker, server core.Server, 
 		return internal.NewErrorWithCode(internal.CodeDedicatedIPNoServer)
 	}
 
-	if !core.IsConnectableWithProtocol(cfg.Technology, cfg.AutoConnectData.Protocol)(server) ||
-		(core.IsObfuscated()(server) != cfg.AutoConnectData.Obfuscate) {
+	if !MatchesUserSettings(server, cfg) {
 		log.Error(logPrefix, "failed to connect because the server doesn't support user settings")
 		return internal.ErrServerIsUnavailable
 	}

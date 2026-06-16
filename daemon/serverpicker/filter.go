@@ -6,6 +6,13 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+// MatchesUserSettings reports whether the server can be connected to with the
+// technology and protocol from cfg and matches the requested obfuscation.
+func MatchesUserSettings(s core.Server, cfg config.Config) bool {
+	return core.IsConnectableWithProtocol(cfg.Technology, cfg.AutoConnectData.Protocol)(s) &&
+		core.IsObfuscated()(s) == cfg.AutoConnectData.Obfuscate
+}
+
 // selectFilterForLocalServers - it will return a filter function that is compatible only with local cached server
 // This is because most of the checks are based on server.Key, which is only computed for cached list
 func selectFilterForLocalServers(tag string, group config.ServerGroup, obfuscated bool) core.Predicate {

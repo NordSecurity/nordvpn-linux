@@ -503,6 +503,32 @@ func (s *Server) IsValid() bool {
 		len(s.Locations) > 0
 }
 
+// Compute a list of keys for each server to speedup the server picking process at connect
+func (s *Server) GenerateKeys() []string {
+	loweredHostnameID := strings.ToLower(strings.Split(s.Hostname, ".")[0])
+	country := s.Country()
+	loweredCountryName := internal.SnakeCase(country.Name)
+	loweredCountryCode := internal.SnakeCase(country.Code)
+	loweredCityName := internal.SnakeCase(country.City.Name)
+	loweredGroupTitles := make([]string, len(s.Groups))
+	for idx, group := range s.Groups {
+		loweredGroupTitles[idx] = internal.SnakeCase(group.Title)
+	}
+
+	if loweredCountryCode == "gb" {
+		loweredCountryCode = "uk"
+	}
+
+	return append([]string{
+		loweredCountryName,
+		loweredCountryCode,
+		loweredCountryName + " " + loweredCityName,
+		loweredCountryCode + " " + loweredCityName,
+		loweredCityName,
+		loweredHostnameID,
+	}, loweredGroupTitles...)
+}
+
 func (s *Servers) Validate() error {
 	for idx, itm := range *s {
 		if !itm.IsValid() {

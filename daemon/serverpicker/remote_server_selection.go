@@ -13,7 +13,7 @@ import (
 
 const (
 	recommendationUUIDHeader = "X-Recommendation-Uuid"
-	emptyUUUID               = ""
+	emptyUUID                = ""
 )
 
 func getServerByNameFromRemote(
@@ -48,19 +48,19 @@ func getRecommendedServers(
 ) ([]core.Server, RecommendationUUID, error) {
 	servers, header, err := api.RecommendedServers(apiFilter, longitude, latitude)
 	if err != nil {
-		return nil, emptyUUUID, err
+		return nil, emptyUUID, err
 	}
 
 	servers = internal.Filter(servers, filterFn)
 
 	if len(servers) == 0 {
-		return nil, emptyUUUID, internal.ErrServerIsUnavailable
+		return nil, emptyUUID, internal.ErrServerIsUnavailable
 	}
 
 	recommendationUUID, err := extractRecommendationUUID(header)
 	if err != nil {
 		log.Warn(logPrefix, "failed to extract recommendation UUID from the HTTP header", err)
-		return servers, emptyUUUID, nil
+		return servers, emptyUUID, nil
 	}
 	return servers, recommendationUUID, nil
 }
@@ -68,12 +68,12 @@ func getRecommendedServers(
 func extractRecommendationUUID(h http.Header) (RecommendationUUID, error) {
 	raw := h.Get(recommendationUUIDHeader)
 	if raw == "" {
-		return emptyUUUID, fmt.Errorf("missing the recommendation UUID header")
+		return emptyUUID, fmt.Errorf("missing the recommendation UUID header")
 	}
 
 	u, err := uuid.Parse(raw)
 	if err != nil {
-		return emptyUUUID, err
+		return emptyUUID, err
 	}
 
 	return RecommendationUUID(u.String()), nil

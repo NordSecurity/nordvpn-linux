@@ -803,14 +803,14 @@ func TestRecommendationUUID_ExtractRecommendationUUID(t *testing.T) {
 			headerKey:               "NOT-Recommendation-Uuid",
 			headerValue:             "random-value",
 			expectedError:           true,
-			expectedRecommendedUUID: emptyUUUID,
+			expectedRecommendedUUID: emptyUUID,
 		},
 		{
 			name:                    "bad uuid",
 			headerKey:               recommendationUUIDHeader,
 			headerValue:             "not-a-uuid",
 			expectedError:           true,
-			expectedRecommendedUUID: emptyUUUID,
+			expectedRecommendedUUID: emptyUUID,
 		},
 	}
 

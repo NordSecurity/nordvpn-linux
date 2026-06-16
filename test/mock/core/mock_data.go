@@ -1,11 +1,8 @@
 package core_test
 
 import (
-	"strings"
-
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
 func CountriesList() core.Countries {
@@ -342,34 +339,8 @@ func ServersList() core.Servers {
 	}
 
 	for i, server := range servers {
-		servers[i].Keys = generateKeys(server)
+		servers[i].Keys = server.GenerateKeys()
 	}
 
 	return servers
-}
-
-// duplicate from jobs_servers.go
-func generateKeys(server core.Server) []string {
-	loweredHostnameID := strings.ToLower(strings.Split(server.Hostname, ".")[0])
-	country := server.Country()
-	loweredCountryName := internal.SnakeCase(country.Name)
-	loweredCountryCode := internal.SnakeCase(country.Code)
-	loweredCityName := internal.SnakeCase(country.City.Name)
-	loweredGroupTitles := make([]string, len(server.Groups))
-	for idx, group := range server.Groups {
-		loweredGroupTitles[idx] = internal.SnakeCase(group.Title)
-	}
-
-	if loweredCountryCode == "gb" {
-		loweredCountryCode = "uk"
-	}
-
-	return append([]string{
-		loweredCountryName,
-		loweredCountryCode,
-		loweredCountryName + " " + loweredCityName,
-		loweredCountryCode + " " + loweredCityName,
-		loweredCityName,
-		loweredHostnameID,
-	}, loweredGroupTitles...)
 }
