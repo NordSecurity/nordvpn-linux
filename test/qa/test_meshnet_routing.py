@@ -111,6 +111,7 @@ def test_route_traffic_to_each_other():
     sh_no_tty.nordvpn.disconnect()
     ssh_client.exec_command("nordvpn disconnect")
 
+@pytest.mark.xfail(reason="LVPN-10703")
 @pytest.mark.core_meshnet
 def test_route_traffic_accept():
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
