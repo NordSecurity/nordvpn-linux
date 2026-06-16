@@ -9,7 +9,7 @@ from lib import daemon, logging, meshnet, network, ssh, capture_utils
 from lib.shell import sh_no_tty
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
-http_bin_ip = socket.gethostbyname("httpbin.org")
+nordvpn_ip = socket.gethostbyname("nordvpn.com")
 
 
 def setup_module(module):  # noqa: ARG001
@@ -118,17 +118,19 @@ def test_route_traffic_accept():
     this_device = peer_list.get_this_device()
     cap = capture_utils.BackgroundCapture(
         interface="any",
-        display_filter=f"ip.addr == {http_bin_ip}"
+        display_filter=f"ip.addr == {nordvpn_ip}"
     )
     output = ssh_client.exec_command("nordvpn mesh peer connect " + this_device.ip)
     assert meshnet.is_connect_successful(output, this_device.hostname), "Remote peer connect should be successful"
     cap.start()
     time.sleep(2)
-    output = ssh_client.exec_command(f'wget --header="Host: httpbin.org" --output-document - http://{http_bin_ip}/get')
+    output = ssh_client.exec_command(
+        f'wget --header="Host: nordvpn.com" --output-document - --timeout=10 --tries=3 http://{nordvpn_ip}/'
+    )
     print(output)
     cap.stop()
     capture_utils.summarize(cap.packets)
-    assert capture_utils.is_routed_through_host(cap.packets, peer_ip, http_bin_ip), "Routing pattern not found"
+    assert capture_utils.is_routed_through_host(cap.packets, peer_ip, nordvpn_ip), "Routing pattern not found"
     ssh_client.exec_command("nordvpn disconnect")
 
 
