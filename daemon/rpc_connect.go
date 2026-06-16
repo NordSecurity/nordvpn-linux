@@ -212,6 +212,11 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Error(err)
 	}
+	prelimGroup := groupConvert(in.GetServerTag())
+	if prelimGroup == config.ServerGroup_UNDEFINED {
+		prelimGroup = groupConvert(in.GetServerGroup())
+	}
+	r.RequestedConnParams.Set(source, ServerParameters{Group: prelimGroup})
 	r.connectionInfo.SetInitialConnecting()
 
 	if isDedicatedServer(in.ServerTag, in.ServerGroup) {
