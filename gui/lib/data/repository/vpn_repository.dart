@@ -1,5 +1,4 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:grpc/grpc.dart';
 import 'package:nordvpn/config.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
 import 'package:nordvpn/data/models/pause.dart';
@@ -7,7 +6,7 @@ import 'package:nordvpn/pb/daemon/pause.pb.dart';
 import 'package:nordvpn/pb/daemon/recent_connections.pb.dart';
 import 'package:nordvpn/grpc/grpc_service.dart';
 import 'package:nordvpn/grpc/protobuf_utils.dart';
-import 'package:nordvpn/grpc/ui_event_interceptor.dart';
+import 'package:nordvpn/grpc/uievent_reporter.dart';
 import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/pb/daemon/common.pb.dart';
 import 'package:nordvpn/pb/daemon/connect.pb.dart';
@@ -37,16 +36,17 @@ class VpnRepository {
     ConnectArguments args, {
     required UIEvent_ItemName itemName,
   }) {
-    final options = createUiEventCallOptions(
+    reportUIEvent(
+      _client,
       formReference: UIEvent_FormReference.HOME_SCREEN,
       itemName: itemName,
       itemValue: args.toUIEventItemValue(),
     );
-    return _connect(args.toConnectRequest(), options: options);
+    return _connect(args.toConnectRequest());
   }
 
-  Future<int> _connect(ConnectRequest req, {CallOptions? options}) async {
-    final stream = _client.connect(req, options: options);
+  Future<int> _connect(ConnectRequest req) async {
+    final stream = _client.connect(req);
 
     await for (var data in stream) {
       final status = data.type.toInt();
@@ -61,39 +61,41 @@ class VpnRepository {
   }
 
   Future<int> reconnect(ConnectionParameters args) {
-    final options = createUiEventCallOptions(
+    reportUIEvent(
+      _client,
       formReference: UIEvent_FormReference.CONNECTION_INFO,
       itemName: UIEvent_ItemName.RECONNECT,
     );
-    return _connect(args.toConnectRequest(), options: options);
+    return _connect(args.toConnectRequest());
   }
 
   Future<int> changeSettings() async {
-    final options = createUiEventCallOptions(
+    reportUIEvent(
+      _client,
       formReference: UIEvent_FormReference.CONNECTION_INFO,
       itemName: UIEvent_ItemName.CHANGE_SETTINGS,
     );
-    final response = await _client.sendUIEvent(Empty(), options: options);
-    return response.type.toInt();
+    return DaemonStatusCode.success;
   }
 
   Future<int> getHelp() async {
-    final options = createUiEventCallOptions(
+    reportUIEvent(
+      _client,
       formReference: UIEvent_FormReference.CONNECTION_INFO,
       itemName: UIEvent_ItemName.GET_HELP,
     );
-    final response = await _client.sendUIEvent(Empty(), options: options);
-    return response.type.toInt();
+    return DaemonStatusCode.success;
   }
 
   /// Disconnects from the current VPN server.
   Future<int> disconnect() async {
-    final options = createUiEventCallOptions(
+    reportUIEvent(
+      _client,
       formReference: UIEvent_FormReference.HOME_SCREEN,
       itemName: UIEvent_ItemName.PAUSE,
       itemValue: UIEvent_ItemValue.PAUSE_DISCONNECT,
     );
-    final stream = _client.disconnect(Empty(), options: options);
+    final stream = _client.disconnect(Empty());
 
     try {
       await for (var data in stream) {
@@ -114,14 +116,14 @@ class VpnRepository {
   }
 
   Future<int> pauseConnection(PauseLength pauseValue) async {
-    final options = createUiEventCallOptions(
+    reportUIEvent(
+      _client,
       formReference: UIEvent_FormReference.HOME_SCREEN,
       itemName: UIEvent_ItemName.PAUSE,
       itemValue: pauseValue.eventValue,
     );
     final response = await _client.pauseConnection(
       PauseRequest(seconds: pauseValue.seconds),
-      options: options,
     );
     return response.type.toInt();
   }
