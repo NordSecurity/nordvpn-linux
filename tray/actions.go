@@ -38,9 +38,13 @@ func (ti *Instance) login() {
 		return
 	}
 
-	ctx := attachUIEventMetadata(context.Background(), pb.UIEvent_LOGIN, pb.UIEvent_ITEM_VALUE_UNSPECIFIED)
+	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+		FormReference: pb.UIEvent_TRAY,
+		ItemName:      pb.UIEvent_LOGIN,
+		ItemType:      pb.UIEvent_CLICK,
+	})
 	loginResp, err := ti.client.LoginOAuth2(
-		ctx,
+		context.Background(),
 		&pb.LoginOAuth2Request{
 			Type: pb.LoginType_LoginType_LOGIN,
 		},
@@ -105,8 +109,12 @@ func tryDbus(uri string) error {
 }
 
 func (ti *Instance) logout(persistToken bool) bool {
-	ctx := attachUIEventMetadata(context.Background(), pb.UIEvent_LOGOUT, pb.UIEvent_ITEM_VALUE_UNSPECIFIED)
-	resp, err := ti.client.Logout(ctx, &pb.LogoutRequest{
+	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+		FormReference: pb.UIEvent_TRAY,
+		ItemName:      pb.UIEvent_LOGOUT,
+		ItemType:      pb.UIEvent_CLICK,
+	})
+	resp, err := ti.client.Logout(context.Background(), &pb.LogoutRequest{
 		PersistToken: persistToken,
 	})
 	if err != nil {
@@ -155,8 +163,13 @@ func (ti *Instance) connectWithUIEvent(
 		}
 	}(ch)
 
-	ctx := attachUIEventMetadata(context.Background(), itemName, itemValue)
-	resp, err := ti.client.Connect(ctx, &pb.ConnectRequest{
+	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+		FormReference: pb.UIEvent_TRAY,
+		ItemName:      itemName,
+		ItemType:      pb.UIEvent_CLICK,
+		ItemValue:     itemValue,
+	})
+	resp, err := ti.client.Connect(context.Background(), &pb.ConnectRequest{
 		ServerTag:   strings.ToLower(serverTag),
 		ServerGroup: strings.ToLower(serverGroup),
 	})
@@ -231,9 +244,13 @@ func (ti *Instance) connectWithUIEvent(
 	return false
 }
 
-func (ti *Instance) disconnect(itemName pb.UIEvent_ItemName, itemValue pb.UIEvent_ItemValue) bool {
-	ctx := attachUIEventMetadata(context.Background(), itemName, itemValue)
-	resp, err := ti.client.Disconnect(ctx, &pb.Empty{})
+func (ti *Instance) disconnect() bool {
+	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+		FormReference: pb.UIEvent_TRAY,
+		ItemName:      pb.UIEvent_DISCONNECT,
+		ItemType:      pb.UIEvent_CLICK,
+	})
+	resp, err := ti.client.Disconnect(context.Background(), &pb.Empty{})
 	if err != nil {
 		ti.notify(NoForce, "Disconnect error: %s", err)
 		return false
