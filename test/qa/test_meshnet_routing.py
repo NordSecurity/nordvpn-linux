@@ -118,14 +118,15 @@ def test_route_traffic_accept():
     this_device = peer_list.get_this_device()
     cap = capture_utils.BackgroundCapture(
         interface="any",
-        display_filter=f"ip.addr == {nordvpn_ip}"
+        display_filter=f"ip.addr == {nordvpn_ip} and tcp"
     )
+
     output = ssh_client.exec_command("nordvpn mesh peer connect " + this_device.ip)
     assert meshnet.is_connect_successful(output, this_device.hostname), "Remote peer connect should be successful"
     cap.start()
     time.sleep(2)
     output = ssh_client.exec_command(
-        f'wget --header="Host: nordvpn.com" --output-document - --timeout=10 --tries=3 http://{nordvpn_ip}/'
+        f'wget -S --header="Host: nordvpn.com" --output-document=/dev/null --max-redirect=0 --timeout=10 --tries=3 http://{nordvpn_ip}/ 2>&1 || true'
     )
     print(output)
     cap.stop()
