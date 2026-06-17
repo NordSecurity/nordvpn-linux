@@ -9,7 +9,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	cmesh "github.com/NordSecurity/nordvpn-linux/core/mesh"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	sysinfo "github.com/NordSecurity/nordvpn-linux/sysinfo"
 
@@ -134,7 +133,7 @@ func (d *DeviceKeyManagerImpl) CheckAndRegisterMeshnet() bool {
 
 	var cfg config.Config
 	if err := d.configManager.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return false
 	}
 
@@ -144,17 +143,17 @@ func (d *DeviceKeyManagerImpl) CheckAndRegisterMeshnet() bool {
 
 	newConfig, err := d.registerKey(&cfg, d.registerMeshnet)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to register new device key:", err)
+		log.Error("failed to register new device key:", err)
 		return false
 	}
 
 	if err := d.configManager.SaveWith(keyConfig(*newConfig)); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return false
 	}
 
 	if err := isMeshnetRegistrationInfoCorrect(*newConfig); err != nil {
-		log.Println(internal.ErrorPrefix, "registration failed:", err)
+		log.Error("registration failed:", err)
 		return false
 	}
 	return true
@@ -192,7 +191,7 @@ type registerFunc func(deviceKey string,
 func (d *DeviceKeyManagerImpl) registerDedicatedServer(force bool) *DedicatedServersConnectionData {
 	var cfg config.Config
 	if err := d.configManager.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return nil
 	}
 
@@ -208,12 +207,12 @@ func (d *DeviceKeyManagerImpl) registerDedicatedServer(force bool) *DedicatedSer
 
 	newConfig, err := d.registerKey(&cfg, d.registerDedicatedServerKey)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to register device key for dedicated servers:", err)
+		log.Error("failed to register device key for dedicated servers:", err)
 		return nil
 	}
 
 	if err := d.configManager.SaveWith(keyConfig(*newConfig)); err != nil {
-		log.Println(internal.ErrorPrefix, "failed to save dedicated servers config:", err)
+		log.Error("failed to save dedicated servers config:", err)
 		return nil
 	}
 

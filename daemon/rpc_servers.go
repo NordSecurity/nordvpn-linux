@@ -114,7 +114,7 @@ func (r *RPC) GetServers(ctx context.Context, in *pb.Empty) (*pb.ServersResponse
 	var cfg config.Config
 	err := r.cm.Load(&cfg)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "loading config:", err)
+		log.Error("loading config:", err)
 		return &pb.ServersResponse{Response: &pb.ServersResponse_Error{
 			Error: pb.ServersError_GET_CONFIG_ERROR,
 		}}, nil
@@ -126,7 +126,7 @@ func (r *RPC) GetServers(ctx context.Context, in *pb.Empty) (*pb.ServersResponse
 	})
 
 	if len(servers) == 0 {
-		log.Println(internal.ErrorPrefix, "filtering servers", err)
+		log.Error("filtering servers", err)
 		return &pb.ServersResponse{Response: &pb.ServersResponse_Error{
 			Error: pb.ServersError_FILTER_SERVERS_ERROR,
 		}}, nil

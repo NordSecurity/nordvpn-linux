@@ -11,7 +11,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 )
@@ -169,7 +168,7 @@ func buildQuitButton(ti *Instance) {
 		if !open {
 			return
 		}
-		log.Printf("%s %s", internal.InfoPrefix, msgShutdownNotification)
+		log.Info(msgShutdownNotification)
 		ti.notify(Force, msgShutdownNotification)
 		select {
 		case ti.quitChan <- norduser.StopRequest{}:

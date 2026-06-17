@@ -39,13 +39,13 @@ func (c *cmd) AllowlistRemovePorts(ctx *cli.Context) error {
 
 	startPort, err := strconv.ParseInt(args.First(), 10, 64)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return formatError(argsParseError(ctx))
 	}
 
 	endPort, err := strconv.ParseInt(args.Get(1), 10, 64)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return formatError(argsParseError(ctx))
 	}
 

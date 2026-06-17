@@ -35,7 +35,7 @@ func (c *Combined) Load() (map[string]*pb.Transfer, error) {
 			libdropTransfers[key] = value
 		}
 	} else if !errors.Is(err, os.ErrNotExist) {
-		log.Printf("json history file corrupted: %s", err)
+		log.Errorf("json history file corrupted: %s", err)
 	}
 
 	return libdropTransfers, nil

@@ -35,7 +35,7 @@ func (s *ServicesState) fetchServices() (core.ServicesResponse, error) {
 }
 
 func (s *ServicesState) NotifyUserServicesChanged(any) error {
-	log.Println(internal.DebugPrefix, "received user service change notification, invalidating service cache")
+	log.Debug("received user service change notification, invalidating service cache")
 
 	newServices, err := s.cache.Fetch()
 	if err != nil {

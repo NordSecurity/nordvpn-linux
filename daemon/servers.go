@@ -115,7 +115,7 @@ func PickServer(
 	if err != nil {
 		// if server cannot be selected from the API, try from locally cached servers
 		remote = false
-		log.Println(internal.ErrorPrefix, "failed to select server from remote", err)
+		log.Error("failed to select server from remote", err)
 		selectedServers, err = filterServers(
 			servers,
 			tech,
@@ -198,7 +198,7 @@ func getSpecificServerRemote(
 	})
 
 	if len(filteredServers) == 0 {
-		log.Println(internal.DebugPrefix, "server", tag, "not available for:", tech, protocol, group, obfuscated)
+		log.Debug("server", tag, "not available for:", tech, protocol, group, obfuscated)
 		return nil, internal.ErrServerIsUnavailable
 	}
 	return filteredServers, nil
@@ -242,7 +242,7 @@ func getServersRemote(
 
 	recommendationUUID, err := extractRecommendationUUID(header)
 	if err != nil {
-		log.Println(internal.WarningPrefix, "failed to extract recommendation UUID from the HTTP header", err)
+		log.Warn("failed to extract recommendation UUID from the HTTP header", err)
 		// In case of err extractRecommendationUuid will return ""
 		// Make it here "" again so it is more visible we will use an empty
 		// string in case of error
@@ -275,7 +275,7 @@ func filterServers(
 ) ([]core.Server, error) {
 	ret := internal.Filter(servers, canConnect(tech, protocol, serverTag, group, obfuscated))
 	if len(ret) == 0 {
-		log.Println(internal.ErrorPrefix, "no servers found locally for:", tech, protocol, serverTag, group, obfuscated)
+		log.Error("no servers found locally for:", tech, protocol, serverTag, group, obfuscated)
 		return nil, internal.ErrServerIsUnavailable
 	}
 	return ret, nil
@@ -508,7 +508,7 @@ func selectServer(
 	if err != nil {
 		// Dedicated IP/Servers are handled separately, avoid logging an error to prevent confusion
 		if !errors.Is(err, ErrDedicatedIPServer) && !errors.Is(err, ErrDedicatedServer) {
-			log.Println(internal.ErrorPrefix, "picking servers:", err)
+			log.Error("picking servers:", err)
 		}
 
 		switch {
@@ -551,12 +551,12 @@ func selectServer(
 		}
 	}
 
-	log.Println(internal.InfoPrefix, "server", selection.server.Hostname, "remote", selection.remote)
+	log.Info("server", selection.server.Hostname, "remote", selection.remote)
 
 	if isDedicatedIP(*selection.server) {
 		dedicatedIPServices, err := r.ac.GetDedicatedIPServices()
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "getting dedicated IP service data:", err)
+			log.Error("getting dedicated IP service data:", err)
 			if errors.Is(err, core.ErrUnauthorized) {
 				return serverSelection{}, err
 			}
@@ -576,13 +576,13 @@ func selectServer(
 			return index != -1
 		})
 		if index == -1 {
-			log.Println(internal.ErrorPrefix, "server is not in the DIP servers list")
+			log.Error("server is not in the DIP servers list")
 			return serverSelection{}, internal.NewErrorWithCode(internal.CodeDedicatedIPNoServer)
 		}
 
 		if !core.IsConnectableWithProtocol(cfg.Technology, cfg.AutoConnectData.Protocol)(*selection.server) ||
 			(core.IsObfuscated()(*selection.server) != cfg.AutoConnectData.Obfuscate) {
-			log.Println(internal.ErrorPrefix, "failed to connect because the server doesn't support user settings")
+			log.Error("failed to connect because the server doesn't support user settings")
 			return serverSelection{}, internal.ErrServerIsUnavailable
 		}
 	}
@@ -605,7 +605,7 @@ func getServerByID(servers core.Servers, serverID int64) (*core.Server, error) {
 func selectDedicatedIPServer(authChecker auth.Checker, servers core.Servers) (*core.Server, error) {
 	dedicatedIPServices, err := authChecker.GetDedicatedIPServices()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "getting dedicated IP service data:", err)
+		log.Error("getting dedicated IP service data:", err)
 		if errors.Is(err, core.ErrUnauthorized) {
 			return nil, internal.NewErrorWithCode(internal.CodeRevokedAccessToken)
 		}
@@ -626,7 +626,7 @@ func selectDedicatedIPServer(authChecker auth.Checker, servers core.Servers) (*c
 	serverID := service.ServerIDs[rand.Intn(len(service.ServerIDs))]
 	server, err := getServerByID(servers, serverID)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "DIP server not found:", err)
+		log.Error("DIP server not found:", err)
 		return nil, internal.ErrServerIsUnavailable
 	}
 
@@ -639,7 +639,7 @@ func selectDedicatedServer(authChecker auth.Checker,
 ) (dedicatedServerSelection, error) {
 	service, err := authChecker.GetDedicatedServerService()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "checking dedicated servers service status:", err)
+		log.Error("checking dedicated servers service status:", err)
 		if errors.Is(err, core.ErrUnauthorized) {
 			return dedicatedServerSelection{}, internal.NewErrorWithCode(internal.CodeRevokedAccessToken)
 		}
@@ -652,7 +652,7 @@ func selectDedicatedServer(authChecker auth.Checker,
 
 	dedicatedServers, err := api.DedicatedServers()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "getting dedicated servers list:", err)
+		log.Error("getting dedicated servers list:", err)
 		return dedicatedServerSelection{}, internal.ErrUnhandled
 	}
 

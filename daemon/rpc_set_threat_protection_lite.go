@@ -5,7 +5,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -15,7 +14,7 @@ func (r *RPC) SetThreatProtectionLite(
 ) (*pb.SetThreatProtectionLiteResponse, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 
 	threatProtectionLite := in.GetThreatProtectionLite()
@@ -29,7 +28,7 @@ func (r *RPC) SetThreatProtectionLite(
 	nameservers := r.nameservers.Get(threatProtectionLite)
 
 	if err := r.netw.SetDNS(nameservers); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.SetThreatProtectionLiteResponse{
 			Response: &pb.SetThreatProtectionLiteResponse_ErrorCode{ErrorCode: pb.SetErrorCode_CONFIG_ERROR},
 		}, nil
@@ -40,7 +39,7 @@ func (r *RPC) SetThreatProtectionLite(
 		c.AutoConnectData.DNS = nil
 		return c
 	}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.SetThreatProtectionLiteResponse{
 			Response: &pb.SetThreatProtectionLiteResponse_ErrorCode{ErrorCode: pb.SetErrorCode_CONFIG_ERROR},
 		}, nil

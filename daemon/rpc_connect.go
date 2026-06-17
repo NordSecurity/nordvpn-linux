@@ -130,8 +130,7 @@ func determineServerSelectionRule(params ServerParameters) config.ServerSelectio
 	}
 
 	// Fallback for any unexpected combination
-	log.Println(internal.WarningPrefix,
-		"Failed to determine 'server-selection-rule':", params,
+	log.Warn("Failed to determine 'server-selection-rule':", params,
 		". Defaulting to :", config.ServerSelectionRule_NONE)
 	return config.ServerSelectionRule_NONE
 }
@@ -139,7 +138,7 @@ func determineServerSelectionRule(params ServerParameters) config.ServerSelectio
 func (r *RPC) isVPNExpired() int64 {
 	vpnExpired, err := r.ac.IsVPNExpired()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "checking VPN expiration: ", err)
+		log.Error("checking VPN expiration: ", err)
 		return internal.CodeTokenRenewError
 	} else if vpnExpired {
 		return internal.CodeAccountExpired
@@ -159,7 +158,7 @@ func (r *RPC) connectWithStoredServerSelection(ctx context.Context,
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return false, fmt.Errorf("reading config: %w", err)
 	}
 	r.connectionInfo.SetInitialConnecting()
@@ -211,7 +210,7 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 	r.connectionInfo.SetInitialConnecting()
 
@@ -252,7 +251,7 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 
 	inputServerTag := internal.RemoveNonAlphanumeric(in.GetServerTag())
 
-	log.Println(internal.DebugPrefix, "picking servers for", cfg.Technology, "technology", "input",
+	log.Debug("picking servers for", cfg.Technology, "technology", "input",
 		in.GetServerTag(), in.GetServerGroup())
 
 	serverSelection, err := selectServer(r, &insights, cfg, inputServerTag, in.GetServerGroup())
@@ -300,7 +299,7 @@ func (r *RPC) connect(
 ) (didFail bool, retErr error) {
 	country, err := serverSelection.server.Locations.Country()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 
 	tokenData := cfg.TokensData[cfg.AutoConnectData.ID]
@@ -315,7 +314,7 @@ func (r *RPC) connect(
 	if isServerDedicated {
 		dedicatedServersDeviceData := r.dedicatedServerKeyManager.CheckAndRegisterDedicatedServers()
 		if dedicatedServersDeviceData == nil {
-			log.Println(internal.ErrorPrefix, "failed to fetch the device key for dedicated server connection")
+			log.Error("failed to fetch the device key for dedicated server connection")
 			return false, internal.ErrUnhandled
 		}
 
@@ -326,7 +325,7 @@ func (r *RPC) connect(
 		if errors.Is(err, core.ErrDedicatedServersDeviceNotFound) {
 			dedicatedServersDeviceData = r.dedicatedServerKeyManager.ForceRegisterDedicatedServers()
 			if dedicatedServersDeviceData == nil {
-				log.Println(internal.ErrorPrefix, "failed to force dedicated server device registration")
+				log.Error("failed to force dedicated server device registration")
 				return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersCanNotConnect})
 			}
 			dedicatedServerConnectionData, err = getDedicatedServerConnectionData(
@@ -336,7 +335,7 @@ func (r *RPC) connect(
 		}
 
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "fetching dedicated server connection data:", err)
+			log.Error("fetching dedicated server connection data:", err)
 			switch {
 			case errors.Is(err, core.ErrDedicatedServersSessionMaxLimitReached):
 				return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersSessionMaxLimitReached})
@@ -361,14 +360,14 @@ func (r *RPC) connect(
 
 	ip, err := serverSelection.server.IPv4()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return false, internal.ErrUnhandled
 	}
 	r.endpoint = network.NewIPv4Endpoint(ip)
 
 	subnet, err := r.endpoint.Network()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return false, internal.ErrUnhandled
 	}
 
@@ -448,7 +447,7 @@ func (r *RPC) connect(
 	}
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnecting, Data: data}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 
 	disconnectSender := events.NewDisconnectSender(events.DataDisconnect{
@@ -476,7 +475,7 @@ func (r *RPC) connect(
 		if connectionEstablished && isRecentConnectionSupported(event.TargetServerSelection) {
 			recentModel, err := buildRecentConnectionModel(event, parameters, serverSelection.server, r.dm, cfg)
 			if err != nil {
-				log.Println(internal.WarningPrefix, "Failed to build recent VPN connection model:", err)
+				log.Warn("Failed to build recent VPN connection model:", err)
 				return
 			}
 			r.recentVPNConnStore.AddPending(recentModel)
@@ -498,7 +497,7 @@ func (r *RPC) connect(
 			Type: t,
 			Data: data,
 		}); err != nil {
-			log.Println(internal.ErrorPrefix, err)
+			log.Error(err)
 		}
 		return false, nil
 	}
@@ -512,7 +511,7 @@ func (r *RPC) connect(
 	r.events.Service.FirstTimeOpened.Publish(struct{}{})
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnected, Data: data}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 
 	return false, nil
@@ -585,7 +584,7 @@ func getDedicatedServerConnectionData(api core.DedicatedServersAPI,
 	if len(addrPort) > 1 {
 		port, err := strconv.Atoi(addrPort[1])
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "parsing dedicated server port:", err)
+			log.Error("parsing dedicated server port:", err)
 			return dedicatedServerConnectionData{}, fmt.Errorf("parsing dedicated server port: %w", err)
 		}
 		dedicatedServerPort = int64(port)

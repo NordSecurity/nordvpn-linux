@@ -100,7 +100,7 @@ func hasAllowlist(allowlist config.Allowlist) bool {
 func (e *ConfigureEvent) ToDebuggerEvent() *events.DebuggerEvent {
 	jsonData, err := json.Marshal(e)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to marshal firewall configure event:", err)
+		log.Error("failed to marshal firewall configure event:", err)
 		// Fallback: provide basic information we know for certain
 		jsonData = []byte(fmt.Sprintf(
 			`{"namespace":"%s","subscope":"%s","event":"%s","status":"%s","purpose":[],"error":"marshal_error"}`,
@@ -160,7 +160,7 @@ func newMigrationEvent(eventType string, err error) *MigrationEvent {
 func (e *MigrationEvent) ToDebuggerEvent() *events.DebuggerEvent {
 	jsonData, err := json.Marshal(e)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to marshal migration event:", err)
+		log.Error("failed to marshal migration event:", err)
 		// Fallback: provide basic information we know for certain
 		jsonData = []byte(fmt.Sprintf(
 			`{"namespace":"%s","subscope":"%s","event":"%s","status":"%s","error":"marshal_error"}`,

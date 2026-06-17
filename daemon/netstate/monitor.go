@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/vishvananda/netlink"
@@ -85,7 +84,7 @@ func (m *NetlinkMonitor) setCachedInterfaces(interfaces mapset.Set[string]) bool
 	// replace existing interface only if they are different
 	// don't replace with empty list because it might come back the same interface
 	if !interfaces.IsEmpty() && !m.cached.Equal(interfaces) {
-		log.Println(internal.InfoPrefix, "monitored interfaces changed from", m.cached, "to", interfaces)
+		log.Info("monitored interfaces changed from", m.cached, "to", interfaces)
 		m.cached = interfaces
 		return true
 	}

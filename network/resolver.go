@@ -9,7 +9,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/events"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -81,6 +80,6 @@ func (r *Resolver) resolveWithNameservers(domain string, nameservers []string, p
 }
 
 func (r *Resolver) updateVpnStatus(isConnected bool) {
-	log.Println(internal.InfoPrefix, "resolver set VPN connected to", isConnected)
+	log.Info("resolver set VPN connected to", isConnected)
 	r.isVpnConnected.Store(isConnected)
 }
