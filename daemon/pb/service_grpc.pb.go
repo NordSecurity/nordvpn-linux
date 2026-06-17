@@ -65,7 +65,7 @@ const (
 	Daemon_SetAnalytics_FullMethodName            = "/pb.Daemon/SetAnalytics"
 	Daemon_SetThreatProtectionLite_FullMethodName = "/pb.Daemon/SetThreatProtectionLite"
 	Daemon_Ping_FullMethodName                    = "/pb.Daemon/Ping"
-	Daemon_SendUIEvent_FullMethodName             = "/pb.Daemon/SendUIEvent"
+	Daemon_ReportUIEvent_FullMethodName           = "/pb.Daemon/ReportUIEvent"
 	Daemon_SubscribeToStateChanges_FullMethodName = "/pb.Daemon/SubscribeToStateChanges"
 	Daemon_GetDaemonApiVersion_FullMethodName     = "/pb.Daemon/GetDaemonApiVersion"
 )
@@ -132,7 +132,7 @@ type DaemonClient interface {
 	SetThreatProtectionLite(ctx context.Context, in *SetThreatProtectionLiteRequest, opts ...grpc.CallOption) (*SetThreatProtectionLiteResponse, error)
 	// ==================== System & Monitoring ====================
 	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error)
-	SendUIEvent(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error)
+	ReportUIEvent(ctx context.Context, in *UIEvent, opts ...grpc.CallOption) (*Payload, error)
 	SubscribeToStateChanges(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[AppState], error)
 	GetDaemonApiVersion(ctx context.Context, in *GetDaemonApiVersionRequest, opts ...grpc.CallOption) (*GetDaemonApiVersionResponse, error)
 }
@@ -623,10 +623,10 @@ func (c *daemonClient) Ping(ctx context.Context, in *Empty, opts ...grpc.CallOpt
 	return out, nil
 }
 
-func (c *daemonClient) SendUIEvent(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Payload, error) {
+func (c *daemonClient) ReportUIEvent(ctx context.Context, in *UIEvent, opts ...grpc.CallOption) (*Payload, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_SendUIEvent_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Daemon_ReportUIEvent_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -724,7 +724,7 @@ type DaemonServer interface {
 	SetThreatProtectionLite(context.Context, *SetThreatProtectionLiteRequest) (*SetThreatProtectionLiteResponse, error)
 	// ==================== System & Monitoring ====================
 	Ping(context.Context, *Empty) (*PingResponse, error)
-	SendUIEvent(context.Context, *Empty) (*Payload, error)
+	ReportUIEvent(context.Context, *UIEvent) (*Payload, error)
 	SubscribeToStateChanges(*Empty, grpc.ServerStreamingServer[AppState]) error
 	GetDaemonApiVersion(context.Context, *GetDaemonApiVersionRequest) (*GetDaemonApiVersionResponse, error)
 	mustEmbedUnimplementedDaemonServer()
@@ -875,8 +875,8 @@ func (UnimplementedDaemonServer) SetThreatProtectionLite(context.Context, *SetTh
 func (UnimplementedDaemonServer) Ping(context.Context, *Empty) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
-func (UnimplementedDaemonServer) SendUIEvent(context.Context, *Empty) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendUIEvent not implemented")
+func (UnimplementedDaemonServer) ReportUIEvent(context.Context, *UIEvent) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportUIEvent not implemented")
 }
 func (UnimplementedDaemonServer) SubscribeToStateChanges(*Empty, grpc.ServerStreamingServer[AppState]) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeToStateChanges not implemented")
@@ -1719,20 +1719,20 @@ func _Daemon_Ping_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Daemon_SendUIEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+func _Daemon_ReportUIEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UIEvent)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(DaemonServer).SendUIEvent(ctx, in)
+		return srv.(DaemonServer).ReportUIEvent(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Daemon_SendUIEvent_FullMethodName,
+		FullMethod: Daemon_ReportUIEvent_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SendUIEvent(ctx, req.(*Empty))
+		return srv.(DaemonServer).ReportUIEvent(ctx, req.(*UIEvent))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1950,8 +1950,8 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Daemon_Ping_Handler,
 		},
 		{
-			MethodName: "SendUIEvent",
-			Handler:    _Daemon_SendUIEvent_Handler,
+			MethodName: "ReportUIEvent",
+			Handler:    _Daemon_ReportUIEvent_Handler,
 		},
 		{
 			MethodName: "GetDaemonApiVersion",

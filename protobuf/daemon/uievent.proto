@@ -60,4 +60,9 @@ message UIEvent {
     PAUSE_DISCONNECT = 14;
     DEDICATED_SERVER = 15;
   }
+
+  FormReference form_reference = 1;
+  ItemName item_name = 2;
+  ItemType item_type = 3;
+  ItemValue item_value = 4;
 }

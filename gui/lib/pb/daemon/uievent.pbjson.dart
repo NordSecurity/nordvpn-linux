@@ -17,6 +17,40 @@ import 'dart:typed_data' as $typed_data;
 @$core.Deprecated('Use uIEventDescriptor instead')
 const UIEvent$json = {
   '1': 'UIEvent',
+  '2': [
+    {
+      '1': 'form_reference',
+      '3': 1,
+      '4': 1,
+      '5': 14,
+      '6': '.pb.UIEvent.FormReference',
+      '10': 'formReference'
+    },
+    {
+      '1': 'item_name',
+      '3': 2,
+      '4': 1,
+      '5': 14,
+      '6': '.pb.UIEvent.ItemName',
+      '10': 'itemName'
+    },
+    {
+      '1': 'item_type',
+      '3': 3,
+      '4': 1,
+      '5': 14,
+      '6': '.pb.UIEvent.ItemType',
+      '10': 'itemType'
+    },
+    {
+      '1': 'item_value',
+      '3': 4,
+      '4': 1,
+      '5': 14,
+      '6': '.pb.UIEvent.ItemValue',
+      '10': 'itemValue'
+    },
+  ],
   '4': [
     UIEvent_FormReference$json,
     UIEvent_ItemName$json,
@@ -92,7 +126,11 @@ const UIEvent_ItemValue$json = {
 
 /// Descriptor for `UIEvent`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List uIEventDescriptor = $convert.base64Decode(
-    'CgdVSUV2ZW50InEKDUZvcm1SZWZlcmVuY2USHgoaRk9STV9SRUZFUkVOQ0VfVU5TUEVDSUZJRU'
+    'CgdVSUV2ZW50EkAKDmZvcm1fcmVmZXJlbmNlGAEgASgOMhkucGIuVUlFdmVudC5Gb3JtUmVmZX'
+    'JlbmNlUg1mb3JtUmVmZXJlbmNlEjEKCWl0ZW1fbmFtZRgCIAEoDjIULnBiLlVJRXZlbnQuSXRl'
+    'bU5hbWVSCGl0ZW1OYW1lEjEKCWl0ZW1fdHlwZRgDIAEoDjIULnBiLlVJRXZlbnQuSXRlbVR5cG'
+    'VSCGl0ZW1UeXBlEjQKCml0ZW1fdmFsdWUYBCABKA4yFS5wYi5VSUV2ZW50Lkl0ZW1WYWx1ZVIJ'
+    'aXRlbVZhbHVlInEKDUZvcm1SZWZlcmVuY2USHgoaRk9STV9SRUZFUkVOQ0VfVU5TUEVDSUZJRU'
     'QQABIHCgNDTEkQARIICgRUUkFZEAISDwoLSE9NRV9TQ1JFRU4QAxIHCgNHVUkQBBITCg9DT05O'
     'RUNUSU9OX0lORk8QBSLqAQoISXRlbU5hbWUSGQoVSVRFTV9OQU1FX1VOU1BFQ0lGSUVEEAASCw'
     'oHQ09OTkVDVBABEhMKD0NPTk5FQ1RfUkVDRU5UUxACEg4KCkRJU0NPTk5FQ1QQAxIJCgVMT0dJ'
