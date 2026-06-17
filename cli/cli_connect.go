@@ -105,6 +105,7 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 			break
 		}
 	}
+	// #nosec G104 -- fire-and-forget analytics
 	c.client.ReportUIEvent(context.Background(), connectEvent)
 
 	resp, err := c.client.Connect(context.Background(), &pb.ConnectRequest{

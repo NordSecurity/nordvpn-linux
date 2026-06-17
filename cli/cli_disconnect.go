@@ -15,6 +15,7 @@ import (
 const DisconnectUsageText = "Disconnects you from VPN"
 
 func (c *cmd) Disconnect(ctx *cli.Context) error {
+	// #nosec G104 -- fire-and-forget analytics
 	c.client.ReportUIEvent(context.Background(), &pb.UIEvent{
 		FormReference: pb.UIEvent_CLI,
 		ItemName:      pb.UIEvent_DISCONNECT,

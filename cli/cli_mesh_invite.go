@@ -97,6 +97,7 @@ func (c *cmd) MeshInviteSend(ctx *cli.Context) error {
 		}
 	}
 
+	// #nosec G104 -- fire-and-forget analytics
 	c.client.ReportUIEvent(context.Background(), &daemonpb.UIEvent{
 		FormReference: daemonpb.UIEvent_CLI,
 		ItemName:      daemonpb.UIEvent_MESHNET_INVITE_SEND,

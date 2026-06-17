@@ -38,6 +38,7 @@ func (ti *Instance) login() {
 		return
 	}
 
+	// #nosec G104 -- fire-and-forget analytics
 	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
 		FormReference: pb.UIEvent_TRAY,
 		ItemName:      pb.UIEvent_LOGIN,
@@ -109,6 +110,7 @@ func tryDbus(uri string) error {
 }
 
 func (ti *Instance) logout(persistToken bool) bool {
+	// #nosec G104 -- fire-and-forget analytics
 	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
 		FormReference: pb.UIEvent_TRAY,
 		ItemName:      pb.UIEvent_LOGOUT,
@@ -163,6 +165,7 @@ func (ti *Instance) connectWithUIEvent(
 		}
 	}(ch)
 
+	// #nosec G104 -- fire-and-forget analytics
 	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
 		FormReference: pb.UIEvent_TRAY,
 		ItemName:      itemName,
@@ -245,6 +248,7 @@ func (ti *Instance) connectWithUIEvent(
 }
 
 func (ti *Instance) disconnect() bool {
+	// #nosec G104 -- fire-and-forget analytics
 	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
 		FormReference: pb.UIEvent_TRAY,
 		ItemName:      pb.UIEvent_DISCONNECT,

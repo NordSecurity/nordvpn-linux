@@ -61,6 +61,7 @@ func (c *cmd) loginCmd(ctx *cli.Context) error {
 }
 
 func (c *cmd) login(requestType pb.LoginType) error {
+	// #nosec G104 -- fire-and-forget analytics
 	c.client.ReportUIEvent(context.Background(), &pb.UIEvent{
 		FormReference: pb.UIEvent_CLI,
 		ItemName:      pb.UIEvent_LOGIN,
@@ -129,6 +130,7 @@ func (c *cmd) loginWithToken(ctx *cli.Context) error {
 		}
 	}
 
+	// #nosec G104 -- fire-and-forget analytics
 	c.client.ReportUIEvent(context.Background(), &pb.UIEvent{
 		FormReference: pb.UIEvent_CLI,
 		ItemName:      pb.UIEvent_LOGIN_TOKEN,
