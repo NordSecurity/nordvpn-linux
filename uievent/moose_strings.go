@@ -5,17 +5,17 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 )
 
-// ToMooseStrings converts a UIEventContext to Moose analytics string values.
-func ToMooseStrings(ctx *UIEventContext) events.UiItemsAction {
-	if ctx == nil {
+// ProtoToMooseStrings converts a protobuf UIEvent directly to Moose analytics.
+func ProtoToMooseStrings(e *pb.UIEvent) events.UiItemsAction {
+	if e == nil {
 		return events.UiItemsAction{}
 	}
 
 	return events.UiItemsAction{
-		FormReference: formReferenceToString(ctx.FormReference),
-		ItemName:      itemNameToString(ctx.ItemName),
-		ItemType:      itemTypeToString(ctx.ItemType),
-		ItemValue:     itemValueToString(ctx.ItemValue),
+		FormReference: formReferenceToString(e.GetFormReference()),
+		ItemName:      itemNameToString(e.GetItemName()),
+		ItemType:      itemTypeToString(e.GetItemType()),
+		ItemValue:     itemValueToString(e.GetItemValue()),
 	}
 }
 

@@ -15,6 +15,12 @@ import (
 const DisconnectUsageText = "Disconnects you from VPN"
 
 func (c *cmd) Disconnect(ctx *cli.Context) error {
+	c.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+		FormReference: pb.UIEvent_CLI,
+		ItemName:      pb.UIEvent_DISCONNECT,
+		ItemType:      pb.UIEvent_CLICK,
+	})
+
 	resp, err := c.client.Disconnect(context.Background(), &pb.Empty{})
 	if err != nil {
 		return formatError(err)

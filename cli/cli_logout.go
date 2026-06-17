@@ -17,6 +17,12 @@ const (
 )
 
 func (c *cmd) Logout(ctx *cli.Context) error {
+	c.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+		FormReference: pb.UIEvent_CLI,
+		ItemName:      pb.UIEvent_LOGOUT,
+		ItemType:      pb.UIEvent_CLICK,
+	})
+
 	persistToken := ctx.IsSet(flagPersistToken)
 
 	payload, err := c.client.Logout(context.Background(), &pb.LogoutRequest{

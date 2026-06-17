@@ -5,12 +5,17 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/uievent"
 )
 
-// SendUIEvent is a lightweight RPC endpoint for standalone UI analytics events.
-// The actual event extraction and publishing is handled by the gRPC middleware
-// (uievent.Middleware), which intercepts all incoming requests and publishes
-// any UI event metadata to the Moose analytics pipeline.
-func (r *RPC) SendUIEvent(_ context.Context, _ *pb.Empty) (*pb.Payload, error) {
+// ReportUIEvent receives a UIEvent from any client and publishes the
+// corresponding analytics action to the Moose pipeline.
+func (r *RPC) ReportUIEvent(
+	_ context.Context, in *pb.UIEvent,
+) (*pb.Payload, error) {
+	if in != nil {
+		action := uievent.ProtoToMooseStrings(in)
+		r.events.Service.UiItemsClick.Publish(action)
+	}
 	return &pb.Payload{Type: internal.CodeSuccess}, nil
 }
