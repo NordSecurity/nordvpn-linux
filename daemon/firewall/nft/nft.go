@@ -181,16 +181,15 @@ func (n *nft) addInputChain(config firewall.Config, nftCtx *nftContext) {
 	}
 
 	if len(config.TunnelInterface) > 0 {
-		// iifname "nordlynx" ct state established,related accept
+		// iifname "nordlynx" accept
 		n.conn.AddRule(&nftables.Rule{
 			Table: nftCtx.table,
 			Chain: inputChain,
 			Exprs: buildRules(
 				&expr.Verdict{Kind: expr.VerdictAccept},
 				checkInterfaceName(config.TunnelInterface, ifNameInput, expr.CmpOpEq),
-				checkCtState(expr.CtStateBitESTABLISHED|expr.CtStateBitRELATED),
 			),
-			UserData: userdata.AppendString(nil, userdata.TypeComment, "response to connections inside tunnel"),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "traffic from the tunnel"),
 		})
 	}
 

@@ -46,7 +46,7 @@ func TestHTTPReTransport_RoundTrip(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	transport := NewHTTPReTransport(1, 1, "HTTP/1.1", func() http.RoundTripper {
 		return &roundTripper{closeCh: closeCh, errCh: errCh, wg: wg}
-	}, nil)
+	}, nil, true)
 
 	// Wrap access to `errs` with mutex to avoid modifying from same value twice.
 	mu := sync.Mutex{}

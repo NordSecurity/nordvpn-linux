@@ -85,6 +85,7 @@
   "citiesAvailable": "$n cities available",
   "virtual": "Virtual",
   "dedicatedIp": "Dedicated IP",
+  "dedicatedServer": "Dedicated Server",
   "doubleVpn": "Double VPN",
   "onionOverVpn": "Onion over VPN",
   "p2p": "P2P",

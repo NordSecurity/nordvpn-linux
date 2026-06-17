@@ -12,6 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/uievent"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
@@ -50,6 +51,15 @@ func (c *cmd) getTrustedPassTokenData() (trustedPassTokenData, error) {
 	return trustedPassTokenData{token: resp.TrustedPassToken, owner_id: resp.TrustedPassOwnerId}, nil
 }
 
+func (c *cmd) injectLinkIntoMessage(url string, trustedPassURL string, message string) string {
+	link := url
+	tokenData, err := c.getTrustedPassTokenData()
+	if err == nil {
+		link = fmt.Sprintf(trustedPassURL, tokenData.token, tokenData.owner_id)
+	}
+	return fmt.Sprintf(message, link)
+}
+
 func (c *cmd) Connect(ctx *cli.Context) error {
 	args := ctx.Args()
 
@@ -81,7 +91,19 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		}
 	}(ch)
 
-	resp, err := c.client.Connect(context.Background(), &pb.ConnectRequest{
+	connectCtx := context.Background()
+	// server group can be specified explicitly via cli param `--group`
+	// or without it as server tag then we try to detect if it's group
+	for _, groupSearchStr := range []string{serverGroup, serverTag} {
+		if iv := uievent.ItemValueFromServerGroupString(groupSearchStr); iv != pb.UIEvent_ITEM_VALUE_UNSPECIFIED {
+			uiCtx := uievent.NewClickContext(pb.UIEvent_CLI, pb.UIEvent_CONNECT)
+			uiCtx.ItemValue = iv
+			connectCtx = uievent.AttachToOutgoingContext(connectCtx, uiCtx)
+			break
+		}
+	}
+
+	resp, err := c.client.Connect(connectCtx, &pb.ConnectRequest{
 		ServerTag:   serverTag,
 		ServerGroup: serverGroup,
 	})
@@ -101,7 +123,6 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 				return formatError(err)
 			}
 		}
-
 		switch out.Type {
 		case internal.CodeFailure:
 			rpcErr = errors.New(client.ConnectCantConnect)
@@ -118,25 +139,19 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		case internal.CodeRevokedAccessToken:
 			return formatError(errors.New(client.AccessTokenExpired))
 		case internal.CodeAccountExpired:
-			link := client.SubscriptionURL
-			tokenData, err := c.getTrustedPassTokenData()
-			if err == nil {
-				link = fmt.Sprintf(client.SubscriptionURLLogin, tokenData.token, tokenData.owner_id)
-			}
-			rpcErr = fmt.Errorf(ExpiredAccountMessage, link)
+			rpcErr = errors.New(c.injectLinkIntoMessage(client.SubscriptionURL, client.SubscriptionURLLogin, ExpiredAccountMessage))
 		case internal.CodeDedicatedIPRenewError:
-			link := client.SubscriptionDedicatedIPURL
-			tokenData, err := c.getTrustedPassTokenData()
-			if err == nil {
-				link = fmt.Sprintf(client.SubscriptionDedicatedIPURLLogin, tokenData.token, tokenData.owner_id)
-			}
-			rpcErr = fmt.Errorf(NoDedicatedIPMessage, link)
+			rpcErr = errors.New(c.injectLinkIntoMessage(client.SubscriptionDedicatedIPURL, client.SubscriptionDedicatedIPURLLogin, NoDedicatedIPMessage))
 		case internal.CodeDedicatedIPNoServer:
 			rpcErr = errors.New(NoDedidcatedIPServerMessage)
 		case internal.CodeDedicatedIPServiceButNoServers:
 			rpcErr = errors.New(NoPreferredDedicatedIPLocationSelected)
 		case internal.CodeDisconnected:
-			color.Yellow(fmt.Sprintf(client.ConnectCanceled, internal.StringsToInterfaces(out.Data)...))
+			message := client.ConnectCanceled
+			if len(out.Data) == 1 {
+				message = client.ConnectCanceledNoHostname
+			}
+			color.Yellow(fmt.Sprintf(message, internal.StringsToInterfaces(out.Data)...))
 		case internal.CodeTagNonexisting:
 			rpcErr = errors.New(internal.TagNonexistentErrorMessage)
 		case internal.CodeGroupNonexisting:
@@ -149,6 +164,22 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 			rpcErr = errors.New(internal.DoubleGroupErrorMessage)
 		case internal.CodeTechnologyDisabled:
 			rpcErr = errors.New(TechnologyDisabledMessage)
+		case internal.CodeDedicatedServersRenewError:
+			rpcErr = errors.New(c.injectLinkIntoMessage(client.DedicatedServersUpselURL, client.DedicatedServersUpselURLLogin, DedicatedServersNoServiceMessage))
+		case internal.CodeDedicatedServersServiceButNoServers:
+			rpcErr = errors.New(c.injectLinkIntoMessage(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin, DedicatedServersNoServersAvailable))
+		case internal.CodeDedicatedServersNotReady:
+			rpcErr = errors.New(DedicatedServersServerNotReadyMessage)
+		case internal.CodeDedicatedServersNoNordlynx:
+			rpcErr = errors.New(DedicatedServersNoNordlynxMessage)
+		case internal.CodeDedicatedServersCanNotConnect:
+			rpcErr = errors.New(DedicatedServersCanNotConnectMessage)
+		case internal.CodeDedicatedServersSessionMaxLimitReached:
+			rpcErr = errors.New(DedicatedServersConnectionLimitReached)
+		case internal.CodeDedicatedServersPq:
+			rpcErr = errors.New(internal.ServerUnavailableErrorMessage)
+		case internal.CodeDedicatedServersServerNotSetUp:
+			rpcErr = errors.New(c.injectLinkIntoMessage(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin, DedicatedServersNoServersAvailable))
 		case internal.CodeVPNRunning:
 			color.Yellow(client.ConnectConnected)
 		case internal.CodeNothingToDo:
@@ -156,9 +187,17 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		case internal.CodeUFWDisabled:
 			color.Yellow(client.UFWDisabledMessage)
 		case internal.CodeConnecting:
-			color.Green(fmt.Sprintf(client.ConnectStart, internal.StringsToInterfaces(out.Data)...))
+			message := client.ConnectStart
+			if len(out.Data) == 1 {
+				message = client.ConnectStartNoHostname
+			}
+			color.Green(fmt.Sprintf(message, internal.StringsToInterfaces(out.Data)...))
 		case internal.CodeConnected:
-			color.Green(fmt.Sprintf(internal.ConnectSuccess, internal.StringsToInterfaces(out.Data)...))
+			message := internal.ConnectSuccess
+			if len(out.Data) == 1 {
+				message = internal.ConnectSuccessNoHostname
+			}
+			color.Green(fmt.Sprintf(message, internal.StringsToInterfaces(out.Data)...))
 		}
 	}
 

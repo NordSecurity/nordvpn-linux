@@ -116,12 +116,17 @@ func sortedConnections(sgs []*pb.ServerGroup) []Server {
 	return list
 }
 
+type notifier interface {
+	start()
+	sendNotification(summary string, body string) error
+}
+
 type Instance struct {
 	client              pb.DaemonClient
 	fileshare           FileshareManager
 	accountInfo         accountInfo
 	debugMode           bool
-	notifier            dbusNotifier
+	notifier            notifier
 	renderChan          chan struct{}
 	initialDataLoadChan chan struct{}
 	iconConnected       string
@@ -171,6 +176,7 @@ func NewTrayInstance(client pb.DaemonClient, quitChan chan<- norduser.StopReques
 	obj := &Instance{
 		client:            client,
 		fileshare:         NewFileshareManager(),
+		notifier:          &dbusNotifier{},
 		quitChan:          quitChan,
 		connSensor:        newConnectionSettingsChangeSensor(),
 		recentConnections: newRecentConnectionsManager(client),
@@ -260,7 +266,9 @@ func (ti *Instance) Start() {
 
 	ti.state.vpnStatus = pb.ConnectionState_DISCONNECTED
 	ti.state.notificationsStatus = Invalid
-	ti.renderChan = make(chan struct{})
+	// allow more events to be queued in case one goroutine is busy building the UI,
+	// while multiple events are received from the daemon
+	ti.renderChan = make(chan struct{}, 5)
 	ti.initialDataLoadChan = make(chan struct{})
 
 	go ti.syncWithDaemon()
@@ -294,25 +302,14 @@ func (ti *Instance) updateIcon() {
 
 func (ti *Instance) renderLoop(ctx context.Context) {
 	for {
+		log.Debug("Render tray loop")
+
 		// Wait for any checkbox operations to complete before rebuilding menu
 		ti.checkboxSync.WaitForOperations()
 		systray.ResetMenu()
 
-		ti.state.mu.RLock()
-		ti.updateIcon()
-		buildConnectionSection(ti)
-		buildSettingsSection(ti)
-		buildAccountSection(ti)
-		buildDaemonErrorSection(ti)
-		addDebugSection(ti)
-		buildQuitButton(ti)
-		systray.Refresh()
-		ti.state.mu.RUnlock()
+		ti.rebuildTray()
 		<-ti.renderChan
-
-		if ti.debugMode {
-			log.Println(internal.DebugPrefix, "Render")
-		}
 
 		select {
 		case <-ctx.Done():
@@ -320,4 +317,19 @@ func (ti *Instance) renderLoop(ctx context.Context) {
 		default:
 		}
 	}
+}
+
+func (ti *Instance) rebuildTray() {
+	ti.state.mu.RLock()
+	defer ti.state.mu.RUnlock()
+
+	// called functions must not contain Lock or RLock calls
+	ti.updateIcon()
+	buildConnectionSection(ti)
+	buildSettingsSection(ti)
+	buildAccountSection(ti)
+	buildDaemonErrorSection(ti)
+	addDebugSection(ti)
+	buildQuitButton(ti)
+	systray.Refresh()
 }

@@ -1,9 +1,11 @@
 package core
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -22,6 +24,14 @@ var (
 	ErrInvalidPrefixOrSuffix     = errors.New("nickname contains invalid prefix or suffix")
 	ErrNicknameWithDoubleHyphens = errors.New("nickname contains double hyphens")
 	ErrContainsInvalidChars      = errors.New("nickname contains invalid characters")
+
+	ErrDedicatedServersDeviceNotFound         = errors.New("device not found")
+	ErrDedicatedServersDeviceNotRegistered    = errors.New("device not registered")
+	ErrDedicatedServersInvalidFormData        = errors.New("invalid form data")
+	ErrDedicatedServersPublicKeyMismatch      = errors.New("public key mismatch")
+	ErrDedicatedServersSessionMaxLimitReached = errors.New("reached limit of maximum active sessions")
+	ErrDedicatedServersServerOffline          = errors.New("server is offline")
+	ErrDedicatedServersServerNotFound         = errors.New("server not found")
 
 	// ErrUnauthorized is returned for 401 HTTP responses.
 	ErrUnauthorized = errors.New(http.StatusText(http.StatusUnauthorized))
@@ -48,6 +58,18 @@ type apiError struct {
 //
 // if an error was returned, do not try to read a response again.
 func ExtractError(resp *http.Response) error {
+	return extractError(resp, NoAcceptedErrorCode)
+}
+
+const NoAcceptedErrorCode = -1
+
+// extractError from the response if it exist.
+//
+// In case of an error, response body will be preserved if error code matches the acceptedCode. Otherwise don't try to
+// read the response body if an error was returned.
+//
+// acceptedCode will be ignored if set to -1.
+func extractError(resp *http.Response, acceptedCode int) error {
 	if resp.StatusCode < 400 {
 		return nil
 	}
@@ -74,9 +96,16 @@ func ExtractError(resp *http.Response) error {
 		)
 	}
 
+	if acceptedCode != -1 && resp.StatusCode == acceptedCode {
+		resp.Body = io.NopCloser(bytes.NewBuffer(body))
+	}
+
 	switch resp.StatusCode {
 	case http.StatusBadRequest:
 		if err := extractErrorForMeshnet(info); err != nil {
+			return err
+		}
+		if err := extractErrorForDedicatedServer(info); err != nil {
 			return err
 		}
 		return internal.NewCodedError(info.Errors.Code, info.Errors.Message, ErrBadRequest)
@@ -130,6 +159,36 @@ func extractErrorForMeshnet(info apiError) error {
 		return ErrContainsInvalidChars
 	case maxMachineCountReached, maxMachinePerPeerCountReached, maxPeerCountReachedOnExternalMachine:
 		return ErrMaximumDeviceCount
+	}
+	return nil
+}
+
+func extractErrorForDedicatedServer(info apiError) error {
+	const (
+		deviceNotFound      = 910001
+		deviceNotRegistered = 910007
+		invalidFormData     = 100101
+		publicKeyMismatch   = 910002
+		sessionLimitHit     = 910005
+		serverOffline       = 910004
+		serverNotFound      = 910003
+	)
+
+	switch info.Errors.Code {
+	case deviceNotFound:
+		return ErrDedicatedServersDeviceNotFound
+	case deviceNotRegistered:
+		return ErrDedicatedServersDeviceNotRegistered
+	case invalidFormData:
+		return ErrDedicatedServersInvalidFormData
+	case publicKeyMismatch:
+		return ErrDedicatedServersPublicKeyMismatch
+	case sessionLimitHit:
+		return ErrDedicatedServersSessionMaxLimitReached
+	case serverOffline:
+		return ErrDedicatedServersServerOffline
+	case serverNotFound:
+		return ErrDedicatedServersServerNotFound
 	}
 	return nil
 }

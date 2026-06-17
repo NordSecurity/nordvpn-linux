@@ -39,8 +39,8 @@ type Config struct {
 	// If `ConsentMode_NONE`, the consent flow was not yet completed by user.
 	AnalyticsConsent AnalyticsConsent `json:"analytics_consent"`
 	Mesh             bool             `json:"mesh"`
-	// MeshPrivateKey is base64 encoded
-	MeshPrivateKey  string              `json:"mesh_private_key"`
+	// DeviceKey is base64 encoded
+	DeviceKey       string              `json:"mesh_private_key"`
 	MeshDevice      *mesh.Machine       `json:"mesh_device"`
 	KillSwitch      bool                `json:"kill_switch,omitempty"`
 	AutoConnect     bool                `json:"auto_connect,omitempty"`
@@ -55,6 +55,7 @@ type Config struct {
 	// Indicates whether the virtual servers are used. True by default
 	VirtualLocation TrueField `json:"virtual_location,omitempty"`
 	ARPIgnore       TrueField `json:"arp_ignore,omitempty"`
+	DeviceUUID      uuid.UUID `json:"device_uuid"`
 }
 
 // withLoginData makes a copy of current configuration

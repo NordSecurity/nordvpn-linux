@@ -5,10 +5,12 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"sync"
 
+	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -19,8 +21,9 @@ type Authentication interface {
 }
 
 type OAuth2 struct {
-	baseURL string
-	client  *http.Client
+	baseURL   string
+	client    *http.Client
+	validator response.Validator
 	// challenge is used to login
 	challenge string
 	// verifier is used to retrieve the token
@@ -30,10 +33,11 @@ type OAuth2 struct {
 	sync.Mutex
 }
 
-func NewOAuth2(client *http.Client, baseURL string) *OAuth2 {
+func NewOAuth2(client *http.Client, baseURL string, validator response.Validator) *OAuth2 {
 	return &OAuth2{
-		baseURL: baseURL,
-		client:  client,
+		baseURL:   baseURL,
+		client:    client,
+		validator: validator,
 	}
 }
 
@@ -66,32 +70,20 @@ func (o *OAuth2) Login(regularLogin bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := o.client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	err = ExtractError(resp)
+	body, err := o.doValidatedRequest(req, "validating login response")
 	if err != nil {
 		return "", err
 	}
 
-	body, err := MaxBytesReadAll(resp.Body)
+	var loginResp oAuth2LoginResponse
+	err = json.Unmarshal(body, &loginResp)
 	if err != nil {
 		return "", err
 	}
 
-	var response oAuth2LoginResponse
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		return "", err
-	}
-
-	o.attempt = response.Attempt
-	return response.URI, nil
+	o.attempt = loginResp.Attempt
+	return loginResp.URI, nil
 }
 
 // Token to be used for further API requests.
@@ -114,6 +106,22 @@ func (o *OAuth2) Token(exchangeToken string) (*LoginResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	body, err := o.doValidatedRequest(req, "validating token response")
+	if err != nil {
+		return nil, err
+	}
+
+	var tokenResp LoginResponse
+	err = json.Unmarshal(body, &tokenResp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tokenResp, nil
+}
+
+func (o *OAuth2) doValidatedRequest(req *http.Request, errContext string) ([]byte, error) {
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := o.client.Do(req)
@@ -122,8 +130,7 @@ func (o *OAuth2) Token(exchangeToken string) (*LoginResponse, error) {
 	}
 	defer resp.Body.Close()
 
-	err = ExtractError(resp)
-	if err != nil {
+	if err := ExtractError(resp); err != nil {
 		return nil, err
 	}
 
@@ -132,13 +139,11 @@ func (o *OAuth2) Token(exchangeToken string) (*LoginResponse, error) {
 		return nil, err
 	}
 
-	var response LoginResponse
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		return nil, err
+	if err := o.validator.Validate(resp.StatusCode, resp.Header, body); err != nil {
+		return nil, fmt.Errorf("%s: %w", errContext, err)
 	}
 
-	return &response, nil
+	return body, nil
 }
 
 // newProofKeyPair implements PKCE code pair generation from RFC7636.

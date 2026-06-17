@@ -39,22 +39,22 @@ func getServerByID(servers core.Servers, serverID int64) (*core.Server, error) {
 
 // SelectDedicatedIPServer picks a random dedicated IP server available to the
 // user from their subscription services.
-func SelectDedicatedIPServer(authChecker auth.Checker, servers core.Servers, cfg config.Config) (*core.Server, error) {
+func SelectDedicatedIPServer(authChecker auth.Checker, servers core.Servers, cfg config.Config) (ServerSelection, error) {
 	dedicatedIPServices, err := authChecker.GetDedicatedIPServices()
 	if err != nil {
 		log.Error(logPrefix, "getting dedicated IP service data:", err)
 		if errors.Is(err, core.ErrUnauthorized) {
-			return nil, internal.NewErrorWithCode(internal.CodeRevokedAccessToken)
+			return ServerSelection{}, internal.NewErrorWithCode(internal.CodeRevokedAccessToken)
 		}
-		return nil, internal.ErrUnhandled
+		return ServerSelection{}, internal.ErrUnhandled
 	}
 
 	if len(dedicatedIPServices) == 0 {
-		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
+		return ServerSelection{}, internal.NewErrorWithCode(internal.CodeDedicatedIPRenewError)
 	}
 
 	if !IsAnyDIPServersAvailable(dedicatedIPServices) {
-		return nil, internal.NewErrorWithCode(internal.CodeDedicatedIPServiceButNoServers)
+		return ServerSelection{}, internal.NewErrorWithCode(internal.CodeDedicatedIPServiceButNoServers)
 	}
 
 	serverIDs := []int64{}
@@ -81,10 +81,10 @@ func SelectDedicatedIPServer(authChecker auth.Checker, servers core.Servers, cfg
 			log.Error(logPrefix, "cannot use server to connect because the server doesn't support user settings")
 			continue
 		}
-		return server, nil
+		return ServerSelection{Server: server}, nil
 	}
 
-	return nil, internal.ErrServerIsUnavailable
+	return ServerSelection{}, internal.ErrServerIsUnavailable
 }
 
 func CheckDIPServerInSubscription(authChecker auth.Checker, server core.Server, cfg config.Config) error {

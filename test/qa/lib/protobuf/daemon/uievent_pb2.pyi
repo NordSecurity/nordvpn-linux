@@ -64,6 +64,7 @@ class UIEvent(_message.Message):
         PAUSE_1_HOUR: _ClassVar[UIEvent.ItemValue]
         PAUSE_24_HOURS: _ClassVar[UIEvent.ItemValue]
         PAUSE_DISCONNECT: _ClassVar[UIEvent.ItemValue]
+        DEDICATED_SERVER: _ClassVar[UIEvent.ItemValue]
     ITEM_VALUE_UNSPECIFIED: UIEvent.ItemValue
     COUNTRY: UIEvent.ItemValue
     CITY: UIEvent.ItemValue
@@ -79,4 +80,5 @@ class UIEvent(_message.Message):
     PAUSE_1_HOUR: UIEvent.ItemValue
     PAUSE_24_HOURS: UIEvent.ItemValue
     PAUSE_DISCONNECT: UIEvent.ItemValue
+    DEDICATED_SERVER: UIEvent.ItemValue
     def __init__(self) -> None: ...

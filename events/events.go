@@ -275,6 +275,13 @@ type DataPauseCancelled struct {
 	ServerSelectionRule config.ServerSelectionRule
 }
 
+// DataDedicatedServerStatus carries the API-reported status of the
+// user's dedicated server. Published during the connect flow when
+// the DS group is selected and the API has been queried.
+type DataDedicatedServerStatus struct {
+	Status string
+}
+
 // DisconnectCallback is called when Networker needs to disconnect when establishing a connection. This usually happens
 // in case of a connection refresh.
 type DisconnectCallback func(startTime time.Time, err error)

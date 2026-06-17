@@ -1,0 +1,8 @@
+[Unit]
+Description=Nordvpn Daemon launched in killswitch mode
+Before=network-pre.target nordvpnd.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nordvpnd --killswitch-mode

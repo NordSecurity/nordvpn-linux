@@ -19,6 +19,10 @@ import (
 	mapset "github.com/deckarep/golang-set/v2"
 )
 
+// dedicatedServersGroupTitle is the group title used for the "Dedicated Server" specialty group.
+// It is assumed to be always present.
+const dedicatedServersGroupTitle = "Dedicated server"
+
 type InsightsDataManager interface {
 	GetInsightsData() InsightsData
 	SetInsightsData(core.Insights) error

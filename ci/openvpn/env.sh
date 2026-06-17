@@ -3,20 +3,20 @@
 set -euxo pipefail
 
 # This needs to be in sync with TUNNELBLICK_TAG
-OPENVPN_VERSION="2.6.12"
+OPENVPN_VERSION="2.6.20"
 export OPENVPN_VERSION
-OPENVPN_SHA256SUM="1c610fddeb686e34f1367c347e027e418e07523a10f4d8ce4a2c2af2f61a1929"
+OPENVPN_SHA256SUM="952ecee5b911a5353c0a6d40af62a7076c6dea1481ef204ce6d3f10481531315"
 export OPENVPN_SHA256SUM
 
 # Used to download the patches for OpenVPN obfuscation. This needs to be in sync with OPENVPN_VERSION.
-TUNNELBLICK_TAG="v6.0beta09" # it is a beta tag, because no other non-beta still has version 2.6.12
+TUNNELBLICK_TAG="v9.0beta05" # patch for 2.6.20 version is currently only available as a beta release
 export TUNNELBLICK_TAG
 TUNNELBLICK_SHA256SUM="ea4e810e15c963a53fe3625cf37e078ed118b9a6879d92ce9a01c3395c9aad42"
 export TUNNELBLICK_SHA256SUM
 
-OPENSSL_VERSION="3.0.19"
+OPENSSL_VERSION="3.0.20"
 export OPENSSL_VERSION
-OPENSSL_SHA256SUM="fa5a4143b8aae18be53ef2f3caf29a2e0747430b8bc74d32d88335b94ab63072"
+OPENSSL_SHA256SUM="c80a01dfc70ece4dc21168932c37739042d404d46ccc81a5986dd75314ecda6f"
 export OPENSSL_SHA256SUM
 
 LZO_VERSION="2.10"

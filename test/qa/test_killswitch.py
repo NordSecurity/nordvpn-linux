@@ -2,18 +2,21 @@ import pytest
 import sh
 import os
 import glob
+import time
 
 from pathlib import Path
 
 import lib
 from lib import (
     daemon,
+    firewall,
     login,
     logging,
     network,
     IS_NIGHTLY
 )
 from lib.dynamic_parametrize import dynamic_parametrize
+from lib.log_reader import LogReader
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
@@ -206,3 +209,80 @@ def test_killswitch_on_after_update():
     assert network.is_available(), "Network should be available"
     # Restore to normal if more tests are run afterwards
     sh.sudo.mv("/usr/bin/pso", "/usr/bin/ps")
+
+
+def test_nc_mqtt_connection_with_killswitch():
+    """
+    Verify MQTT Notification Centre connects successfully when kill switch is enabled.
+
+    This test ensures that the NC client's socket has fwmark set correctly,
+    allowing it to bypass kill switch firewall rules.
+    """
+    daemon_log_reader = LogReader(logging.FILE)
+
+    assert network.is_available(), "Network should be available before test"
+
+    # Enable kill switch - blocks all non-marked traffic
+    output = sh.nordvpn.set.killswitch("on")
+    assert MSG_KILLSWITCH_ON in output, "Kill switch enable message should be shown"
+    assert daemon.is_killswitch_on(), "Kill switch should be enabled"
+
+    with lib.ErrorDefer(sh.nordvpn.set.killswitch.off):
+        # Verify network is blocked for regular traffic
+        assert network.is_not_available(2), "Network should be blocked by kill switch"
+
+        # Get cursor position before triggering NC reconnection
+        cursor = daemon_log_reader.get_cursor()
+
+        # Restart daemon to trigger fresh NC connection attempt
+        # NC client starts on daemon startup when user is logged in
+        daemon.restart()
+
+        # Wait for NC connection success message in logs
+        # NC should connect despite kill switch because its sockets have fwmark set
+        nc_connected = daemon_log_reader.wait_for_messages(
+            messages=["[NC] Connected"],
+            cursor=cursor,
+            timeout=90,
+            interval=3,
+        )
+
+        if not nc_connected:
+            # Collect NC logs for debugging on failure
+            partial_log = daemon_log_reader.get_partial_log(cursor)
+            nc_logs = [line for line in partial_log.splitlines() if "[NC]" in line]
+            logging.log(f"NC logs during test: {nc_logs}")
+
+        assert nc_connected, "NC client should connect successfully with kill switch enabled"
+
+    # Cleanup
+    output = sh.nordvpn.set.killswitch("off")
+    assert MSG_KILLSWITCH_OFF in output, "Kill switch disable message should be shown"
+    assert network.is_available(), "Network should be available after test"
+
+
+def test_killswitch_mode_daemon_debug():
+    sh.nordvpn.set.killswitch.on()
+    daemon.stop()
+    daemon.start_with_arg("--killswitch-mode")
+    assert firewall.is_active(), "Firewall should have been setup by the killswitch mode daemon"
+    assert network.is_not_available(), "Killswitch should be blocking network"
+    assert not daemon.is_running(), "Killswitch mode daemon should stop running after setting up the firewall"
+    daemon.start()
+    assert firewall.is_active(), "Firewall should still be up after running regular daemon"
+    assert network.is_not_available(), "Killswitch should still be blocking network after running regular daemon"
+    sh.nordvpn.set.killswitch.off()
+    assert network.is_available(), "Network should be available"
+
+
+def test_killswitch_autoconnect_to_fastest_debug():
+    device_country = network.get_external_device_country()
+    sh.nordvpn.set.killswitch.on()
+    sh.nordvpn.set.autoconnect.on()
+    daemon.restart()
+    start_time =  time.monotonic()
+    daemon.wait_for_autoconnect()
+    duration = time.monotonic() - start_time
+    assert duration < 7, "Autoconnect with killswitch on should connect in less than 7 seconds"
+    status_data = daemon.get_status_data()
+    assert device_country in status_data["country"], "Fastest server should be in the same country"

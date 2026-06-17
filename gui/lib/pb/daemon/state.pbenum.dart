@@ -68,5 +68,21 @@ class UpdateEvent extends $pb.ProtobufEnum {
   const UpdateEvent._(super.value, super.name);
 }
 
+class PauseEventType extends $pb.ProtobufEnum {
+  static const PauseEventType RECONNECT_FAILED =
+      PauseEventType._(0, _omitEnumNames ? '' : 'RECONNECT_FAILED');
+
+  static const $core.List<PauseEventType> values = <PauseEventType>[
+    RECONNECT_FAILED,
+  ];
+
+  static final $core.List<PauseEventType?> _byValue =
+      $pb.ProtobufEnum.$_initByValueList(values, 0);
+  static PauseEventType? valueOf($core.int value) =>
+      value < 0 || value >= _byValue.length ? null : _byValue[value];
+
+  const PauseEventType._(super.value, super.name);
+}
+
 const $core.bool _omitEnumNames =
     $core.bool.fromEnvironment('protobuf.omit_enum_names');

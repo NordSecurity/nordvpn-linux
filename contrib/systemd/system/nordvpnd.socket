@@ -1,13 +1,13 @@
 [Unit]
 Description=NordVPN Daemon Socket
-PartOf=nordvpnd.service
+BindsTo=nordvpnd.service
 
 [Socket]
 ListenStream=/run/nordvpn/nordvpnd.sock
-# SocketUser=root
 SocketGroup=nordvpn
-SocketMode=0770
+SocketMode=0660
 DirectoryMode=0750
+RemoveOnStop=true
 
 [Install]
 WantedBy=sockets.target

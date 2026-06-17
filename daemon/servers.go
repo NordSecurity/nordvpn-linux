@@ -12,7 +12,13 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
-func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string, groupFlag string) (serverpicker.ServerSelection, error) {
+func selectServer(
+	r *RPC,
+	insights *core.Insights,
+	cfg config.Config,
+	tag string,
+	groupFlag string,
+) (serverpicker.ServerSelection, error) {
 	serversList := r.dm.GetServersData().Servers
 	searchParams := serverpicker.NewSearchParams(tag, groupFlag)
 	selection, err := serverpicker.PickServer(
@@ -25,7 +31,9 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 	)
 
 	if err != nil {
-		log.Error("picking servers:", err)
+		if !errors.Is(err, serverpicker.ErrDedicatedIPServer) && !errors.Is(err, serverpicker.ErrDedicatedServer) {
+			log.Error("picking servers error", err)
+		}
 		switch {
 		case errors.Is(err, core.ErrUnauthorized):
 			if err := r.cm.SaveWith(auth.Logout(cfg.AutoConnectData.ID, r.events.User.Logout, events.ReasonUnauthorized)); err != nil {
@@ -40,11 +48,13 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 			return serverpicker.ServerSelection{}, err
 
 		case errors.Is(err, serverpicker.ErrDedicatedIPServer):
-			dedicatedIPServer, err := serverpicker.SelectDedicatedIPServer(r.ac, serversList, cfg)
-			if err != nil {
-				return serverpicker.ServerSelection{}, err
-			}
-			return serverpicker.ServerSelection{Server: dedicatedIPServer}, nil
+			return serverpicker.SelectDedicatedIPServer(r.ac, serversList, cfg)
+
+		case errors.Is(err, serverpicker.ErrDedicatedServer):
+			return serverpicker.SelectDedicatedServer(
+				r.ac, r.dedicatedServersAPI,
+				r.dedicatedServerKeyManager,
+			)
 
 		default:
 			return serverpicker.ServerSelection{}, internal.ErrUnhandled
@@ -57,6 +67,8 @@ func selectServer(r *RPC, insights *core.Insights, cfg config.Config, tag string
 		if err := serverpicker.CheckDIPServerInSubscription(r.ac, *selection.Server, cfg); err != nil {
 			return serverpicker.ServerSelection{}, err
 		}
+	} else if core.IsServerDedicated(*selection.Server) {
+
 	}
 
 	return selection, nil

@@ -27,6 +27,7 @@ import (
 	"golang.org/x/net/netutil"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 var (
@@ -45,19 +46,24 @@ func main() {
 			panic(r)
 		}
 	}()
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		os.Exit(int(childprocess.CodeFailedToEnable))
-	}
 
-	logFile := internal.UserLogOutput(internal.FileshareLogFileName)
-	redirectNativeOutput(logFile)
+	logFile := internal.UserLogOutput(internal.FileshareLogFileName, internal.MaxUserLogSizeMB)
 	stopLevelWatcher := log.SetupLogger(
 		logFile,
 		internal.LogLevelFile,
 		log.DefaultLevel(),
 	)
 	defer stopLevelWatcher()
+
+	if lj, ok := logFile.(*lumberjack.Logger); ok {
+		if cleanup, err := redirectStdOutputToLumberjack(lj); err != nil {
+			log.Error("failed to redirect stdout to logger", err)
+		} else {
+			defer cleanup()
+		}
+	} else if f, ok := logFile.(*os.File); ok {
+		redirectNativeOutput(f)
+	}
 
 	processStatus := fileshare_process.NewFileshareGRPCProcessManager().ProcessStatus()
 	switch processStatus {
@@ -160,7 +166,7 @@ func main() {
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
-	configDirPath, err := internal.GetConfigDirPath(homeDir)
+	configDirPath, err := internal.GetConfigDirPath()
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to get path to OS configuration directory:", err)
 		os.Exit(int(childprocess.CodeFailedToEnable))

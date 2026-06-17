@@ -107,6 +107,8 @@ func itemValueToString(value pb.UIEvent_ItemValue) string {
 		return "24_hours"
 	case pb.UIEvent_PAUSE_DISCONNECT:
 		return "disconnect"
+	case pb.UIEvent_DEDICATED_SERVER:
+		return "dedicated_server"
 	}
 	return ""
 }

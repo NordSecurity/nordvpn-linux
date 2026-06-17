@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -37,6 +38,13 @@ type RawServersAPI interface {
 	RecommendedServers(filter ServersFilter, longitude, latitude float64) (Servers, http.Header, error)
 	Server(id int64) (*Server, error)
 	ServersCountries() (Countries, http.Header, error)
+}
+
+type RawDedicatedServersAPI interface {
+	RegisterDevice(token string, request DevicesRequest) (DevicesResponse, error)
+	UpdateDevice(token string, deviceUUID uuid.UUID, request UpdateDeviceRequest) (DevicesResponse, error)
+	DedicatedServers(token string) (DedicatedServers, error)
+	DedicatedServerConnectCheck(token string, serverUUID string, connectRequest DedicatedServerConnectRequest) (DedicatedServerConnectResponse, error)
 }
 
 type RawCombinedAPI interface {
@@ -89,11 +97,21 @@ func (api *SimpleClientAPI) request(path, method string, data []byte, token stri
 		return nil, err
 	}
 
-	return api.do(req)
+	return api.doRequest(req)
+}
+
+// doRequest request regardless of the authentication.
+//
+// Response's body will be consumed if an error code is returned. Do not try to read the body in this case.
+func (api *SimpleClientAPI) doRequest(req *http.Request) (*http.Response, error) {
+	return api.do(req, NoAcceptedErrorCode)
 }
 
 // do request regardless of the authentication.
-func (api *SimpleClientAPI) do(req *http.Request) (*http.Response, error) {
+//
+// Response's body will be consumed if an error code is returned and is not equal to acceptedCode. Do not try to read
+// the body in this case.
+func (api *SimpleClientAPI) do(req *http.Request, acceptedCode int) (*http.Response, error) {
 	resp, err := api.client.Do(req)
 
 	// Transport of the request is already up to date
@@ -133,9 +151,9 @@ func (api *SimpleClientAPI) do(req *http.Request) (*http.Response, error) {
 		return nil, fmt.Errorf("validating headers: %w", err)
 	}
 
-	err = ExtractError(resp)
+	err = extractError(resp, acceptedCode)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	return resp, nil
@@ -148,7 +166,7 @@ func (api *SimpleClientAPI) Plans() (*Plans, error) {
 		return nil, err
 	}
 
-	resp, err := api.do(req)
+	resp, err := api.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +224,7 @@ func (api *SimpleClientAPI) CreateUser(email, password string) (*UserCreateRespo
 		return nil, err
 	}
 
-	resp, err := api.do(req)
+	resp, err := api.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -295,7 +313,7 @@ func (api *SimpleClientAPI) TokenRenew(token string, idempotencyKey uuid.UUID) (
 	}
 	req.Header.Add("Idempotency-Key", idempotencyKey.String())
 
-	resp, err := api.do(req)
+	resp, err := api.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -315,7 +333,7 @@ func (api *SimpleClientAPI) Servers() (Servers, http.Header, error) {
 		return nil, nil, err
 	}
 
-	resp, err := api.do(req)
+	resp, err := api.doRequest(req)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -341,7 +359,7 @@ func (api *SimpleClientAPI) ServersCountries() (Countries, http.Header, error) {
 		return nil, nil, err
 	}
 
-	resp, err := api.do(req)
+	resp, err := api.doRequest(req)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -363,7 +381,7 @@ func (api *SimpleClientAPI) RecommendedServers(filter ServersFilter, longitude, 
 		return nil, nil, err
 	}
 
-	resp, err := api.do(req)
+	resp, err := api.doRequest(req)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -417,7 +435,7 @@ func (api *SimpleClientAPI) Server(id int64) (*Server, error) {
 		return nil, err
 	}
 
-	resp, err := api.do(req)
+	resp, err := api.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -434,6 +452,95 @@ func (api *SimpleClientAPI) Server(id int64) (*Server, error) {
 	return &ret[0], nil
 }
 
+func (api *SimpleClientAPI) RegisterDevice(token string, deviceRequest DevicesRequest) (DevicesResponse, error) {
+	data, err := json.Marshal(deviceRequest)
+	if err != nil {
+		return DevicesResponse{}, fmt.Errorf("marshaling the request data: %w", err)
+	}
+	req, err := request.NewRequestWithBearerToken(http.MethodPost, api.agent, api.baseURL, DevicesURL, "application/json", "", "gzip, deflate", bytes.NewBuffer(data), token)
+	if err != nil {
+		return DevicesResponse{}, fmt.Errorf("creating register device request: %w", err)
+	}
+	resp, apiErr := api.do(req, http.StatusConflict)
+	if apiErr != nil && !errors.Is(apiErr, ErrConflict) {
+		return DevicesResponse{}, fmt.Errorf("executing HTTP POST request: %w", apiErr)
+	}
+	defer resp.Body.Close()
+
+	var devicesResponse DevicesResponse
+	if err = json.NewDecoder(resp.Body).Decode(&devicesResponse); err != nil {
+		return DevicesResponse{}, err
+	}
+
+	return devicesResponse, apiErr
+}
+
+func (api *SimpleClientAPI) UpdateDevice(token string, deviceUUID uuid.UUID, updateDeviceRequest UpdateDeviceRequest) (DevicesResponse, error) {
+	data, err := json.Marshal(updateDeviceRequest)
+	if err != nil {
+		return DevicesResponse{}, fmt.Errorf("marshaling the request data: %w", err)
+	}
+	req, err := request.NewRequestWithBearerToken(http.MethodPatch, api.agent, api.baseURL, fmt.Sprintf(DevicesUpdateURL, deviceUUID.String()), "application/json", "", "gzip, deflate", bytes.NewBuffer(data), token)
+	if err != nil {
+		return DevicesResponse{}, fmt.Errorf("creating device update request: %w", err)
+	}
+	resp, err := api.doRequest(req)
+	if err != nil {
+		return DevicesResponse{}, fmt.Errorf("executing HTTP PATCH request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var devicesResponse DevicesResponse
+	if err = json.NewDecoder(resp.Body).Decode(&devicesResponse); err != nil {
+		return DevicesResponse{}, err
+	}
+
+	return devicesResponse, nil
+}
+
+func (api *SimpleClientAPI) DedicatedServers(token string) (DedicatedServers, error) {
+	req, err := request.NewRequestWithBearerToken(http.MethodGet, api.agent, api.baseURL, DedicatedServersURL, "application/json", "", "gzip, deflate", nil, token)
+	if err != nil {
+		return DedicatedServers{}, fmt.Errorf("creating dedicated servers request: %w", err)
+	}
+	resp, err := api.doRequest(req)
+	if err != nil {
+		return DedicatedServers{}, err
+	}
+	defer resp.Body.Close()
+
+	var dedicatedServers DedicatedServers
+	if err = json.NewDecoder(resp.Body).Decode(&dedicatedServers); err != nil {
+		return DedicatedServers{}, err
+	}
+
+	return dedicatedServers, nil
+}
+
+func (api *SimpleClientAPI) DedicatedServerConnectCheck(token string, serverUUID string, connectRequest DedicatedServerConnectRequest) (DedicatedServerConnectResponse, error) {
+	data, err := json.Marshal(connectRequest)
+	if err != nil {
+		return DedicatedServerConnectResponse{}, fmt.Errorf("marshaling the request data: %w", err)
+	}
+	dedicatedServerURL := fmt.Sprintf(DedicatedServersConnectURL, serverUUID)
+	req, err := request.NewRequestWithBearerToken(http.MethodPost, api.agent, api.baseURL, dedicatedServerURL, "application/json", "", "gzip, deflate", bytes.NewBuffer(data), token)
+	if err != nil {
+		return DedicatedServerConnectResponse{}, fmt.Errorf("creating connect request: %w", err)
+	}
+	resp, err := api.doRequest(req)
+	if err != nil {
+		return DedicatedServerConnectResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var connectResponse DedicatedServerConnectResponse
+	if err = json.NewDecoder(resp.Body).Decode(&connectResponse); err != nil {
+		return DedicatedServerConnectResponse{}, err
+	}
+
+	return connectResponse, nil
+}
+
 // Insights returns insights about user
 func (api *SimpleClientAPI) Insights() (*Insights, error) {
 	req, err := request.NewRequest(http.MethodGet, api.agent, api.baseURL, InsightsURL, "application/json", "", "gzip, deflate", nil)
@@ -441,7 +548,7 @@ func (api *SimpleClientAPI) Insights() (*Insights, error) {
 		return nil, err
 	}
 
-	resp, err := api.do(req)
+	resp, err := api.doRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -488,7 +595,7 @@ func (api *SimpleClientAPI) NotificationCredentials(token, appUserID string) (No
 	if err != nil {
 		return NotificationCredentialsResponse{}, fmt.Errorf("creating nc credentials request: %w", err)
 	}
-	rawResp, err := api.do(req)
+	rawResp, err := api.doRequest(req)
 	if err != nil {
 		return NotificationCredentialsResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
 	}
@@ -532,7 +639,7 @@ func (api *SimpleClientAPI) NotificationCredentialsRevoke(token, appUserID strin
 	if err != nil {
 		return NotificationCredentialsRevokeResponse{}, fmt.Errorf("creating nc credentials revoke request: %w", err)
 	}
-	rawResp, err := api.do(req)
+	rawResp, err := api.doRequest(req)
 	if err != nil {
 		return NotificationCredentialsRevokeResponse{}, fmt.Errorf("executing HTTP POST request: %w", err)
 	}

@@ -291,13 +291,17 @@ func TestConfigMigratesFromEncryptedToUnencrypted(t *testing.T) {
 	require.NoError(t, err)
 	err = configManager.SaveWith(func(c Config) Config {
 		c.MachineID = uuid.MustParse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
+		c.DeviceUUID = uuid.MustParse("00000000-1234-4321-0000-999999999999")
 		c.LanDiscovery = true
 		return c
 	})
 	require.NoError(t, err)
 	encryptRemovedConfig, _ := internal.FileRead("testdata/settings_5.0.0.dat")
 	postSaveConfig, _ := filesystem.ReadFile("/location")
-	assert.Equal(t, encryptRemovedConfig, postSaveConfig)
+	assert.Equal(t, encryptRemovedConfig, postSaveConfig,
+		"Configuration has changed post decryption:\nbefore decryption:\n%s\nafter decryption:\n%s",
+		string(encryptRemovedConfig),
+		string(postSaveConfig))
 }
 
 func TestConfigReadEmptyConfig(t *testing.T) {

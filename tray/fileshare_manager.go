@@ -22,11 +22,11 @@ func NewFileshareManager() FileshareManager {
 
 // UpdateFileshareConnection updates the fileshare gRPC connection based on the meshnetEnabled status
 func (fs *FileshareManager) UpdateFileshareConnection(meshnetEnabled bool) {
-	log.Println(internal.InfoPrefix, "Updating tray's fileshare connection", getFlagText(meshnetEnabled))
 	if !meshnetEnabled {
 		fs.fileshareClient = nil
 		return
 	}
+	log.Debug("Updating tray's fileshare connection", getFlagText(meshnetEnabled))
 
 	if fs.fileshareClient == nil {
 		// Meshnet is enabled, we must connect to the fileshare daemon
