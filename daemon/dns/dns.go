@@ -212,7 +212,7 @@ func (d *DNSServiceSetter) getManagementServiceBasedOnResolvconfLinkTarget() (dn
 	}
 
 	if managedResolvConfFileInfo, err := d.filesystemHandle.Stat(resolvConfLinkTarget); err != nil {
-		log.Warn(internal.WarningPrefix, "failed to stat resolvconf resolv.conf:", err)
+		log.Warn(dnsPrefix, "failed to stat resolvconf resolv.conf:", err)
 	} else if d.filesystemHandle.SameFile(resolvConfFileInfo, managedResolvConfFileInfo) {
 		return resolvConfManagementService, nil
 	}
@@ -315,23 +315,23 @@ func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
 		//nolint:exhaustive
 		switch d.currentManagementService {
 		case systemdResolvedManagementService:
-			log.Info(internal.InfoPrefix, dnsPrefix, "setting DNS using systemd-resolved")
+			log.Info(dnsPrefix, "setting DNS using systemd-resolved")
 			err = d.set(d.systemdResolvedSetter, iface, nameservers)
 		case nmcliManagementService:
-			log.Info(internal.InfoPrefix, dnsPrefix, "setting DNS using NetworkManager nmcli tool")
+			log.Info("setting DNS using NetworkManager nmcli tool")
 			err = d.set(d.nmcliSetter, iface, nameservers)
 		case resolvConfManagementService:
-			log.Info(internal.InfoPrefix, dnsPrefix, "setting DNS using resolv.conf")
+			log.Info(dnsPrefix, "setting DNS using resolv.conf")
 			err = d.set(d.resolvconfSetter, iface, nameservers)
 		default:
-			log.Info(internal.WarningPrefix, dnsPrefix, "unknown DNS service")
+			log.Info(dnsPrefix, "unknown DNS service")
 		}
 
 		if err == nil {
 			return nil
 		}
 
-		log.Warn(internal.ErrorPrefix, dnsPrefix, "failed to set DNS using inferred management service:", err)
+		log.Warn(dnsPrefix, "failed to set DNS using inferred management service:", err)
 		if errors.Is(err, errDNSSetFailedNoBinaries) {
 			d.analytics.emitDNSConfigurationErrorEvent(d.currentManagementService, binaryNotFoundSetErrorType)
 		} else if errors.Is(err, errCannotGuaranteeConfig) {
