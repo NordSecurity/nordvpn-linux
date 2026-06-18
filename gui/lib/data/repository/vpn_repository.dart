@@ -69,23 +69,7 @@ class VpnRepository {
     return _connect(args.toConnectRequest());
   }
 
-  Future<int> changeSettings() async {
-    reportUIEvent(
-      _client,
-      formReference: UIEvent_FormReference.CONNECTION_INFO,
-      itemName: UIEvent_ItemName.CHANGE_SETTINGS,
-    );
-    return DaemonStatusCode.success;
-  }
 
-  Future<int> getHelp() async {
-    reportUIEvent(
-      _client,
-      formReference: UIEvent_FormReference.CONNECTION_INFO,
-      itemName: UIEvent_ItemName.GET_HELP,
-    );
-    return DaemonStatusCode.success;
-  }
 
   /// Disconnects from the current VPN server.
   Future<int> disconnect() async {

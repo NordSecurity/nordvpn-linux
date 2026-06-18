@@ -7,6 +7,7 @@ import 'package:nordvpn/data/models/server_info.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
+import 'package:nordvpn/data/repository/uievent_repository.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
 import 'package:nordvpn/router/routes.dart';
@@ -187,12 +188,12 @@ final class ConnectionCardButtons extends ConsumerWidget {
 
   Future<void> _changeSettings(BuildContext context, WidgetRef ref) async {
     context.navigateToRoute(AppRoute.settingsVpnConnection);
-    ref.read(vpnStatusControllerProvider.notifier).changeSettings();
+    ref.read(uiEventRepositoryProvider).reportChangeSettings();
   }
 
   Future<void> _getHelp(WidgetRef ref) async {
     getHelpUrl.launch();
-    ref.read(vpnStatusControllerProvider.notifier).getHelp();
+    ref.read(uiEventRepositoryProvider).reportGetHelp();
   }
 
   static String _pauseLabel(PauseLength pause) => switch (pause) {
