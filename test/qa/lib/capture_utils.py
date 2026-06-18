@@ -89,14 +89,12 @@ def summarize(packets):
             pass
 
 def is_routed_through_host(packets: list, peer_ip, endpoint_ip) -> bool:
-    first_len = packets[0].length
-    handshake_group = [p for p in packets if p.length == first_len]
-    for index, _ in enumerate(handshake_group):
+    for index in range(len(packets) - 3):
         try:
-            packet1 = handshake_group[index]
-            packet2 = handshake_group[index + 1]
-            packet3 = handshake_group[index + 2]
-            packet4 = handshake_group[index + 3]
+            packet1 = packets[index]
+            packet2 = packets[index + 1]
+            packet3 = packets[index + 2]
+            packet4 = packets[index + 3]
                 # initial request of peer -> endpoint
             if (ifindex_to_name(packet1.sll.ifindex) == "nordlynx" and packet1.ip.src == peer_ip and packet1.ip.dst == endpoint_ip and
                 # second packet in order is the device being routed through's interface passing to endpoint
@@ -106,9 +104,8 @@ def is_routed_through_host(packets: list, peer_ip, endpoint_ip) -> bool:
                 # fourth packet is sending this ack now back to the peer over the tunnel
                 ifindex_to_name(packet4.sll.ifindex) == "nordlynx" and packet4.ip.src == endpoint_ip and packet4.ip.dst == peer_ip):
                 return True
+        except (IndexError, AttributeError):
             continue
-        except IndexError:
-            return False
     return False
 
 
