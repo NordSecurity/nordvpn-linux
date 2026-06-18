@@ -67,6 +67,15 @@ class Ssh:
             else:
                 return True
 
+        def is_connected(self) -> bool:
+            """Returns True when connected to VPN server."""
+            try:
+                status = self.ssh_class_instance.exec_command("nordvpn status")
+                connected = "Connected" in status
+                return connected
+            except RuntimeError:
+                return False
+
     class Network:
         def __init__(self, ssh_class_instance):
             self.ssh_class_instance: Ssh = ssh_class_instance

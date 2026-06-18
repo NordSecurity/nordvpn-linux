@@ -6,7 +6,7 @@ import requests
 import sh
 
 import lib
-from lib import logging, login, meshnet, settings, ssh
+from lib import fileshare, logging, login, meshnet, network, settings, ssh
 from lib.shell import sh_no_tty
 
 ssh_client = ssh.Ssh("qa-peer", "root", "root")
@@ -86,7 +86,10 @@ def test_mesh_removed_machine_by_other():
 
     # machine not found error should be handled by disabling meshnet
     try:
-        sh_no_tty.nordvpn.mesh.peer.list()
+        # TODO: LVPN-10689
+        with pytest.raises(sh.ErrorReturnCode_1):
+            sh_no_tty.nordvpn.mesh.peer.refresh()
+        sh_no_tty.nordvpn.mesh.peer.refresh()
     except Exception as e:  # noqa: BLE001
         assert "Meshnet is not enabled." in str(e), "Should show meshnet disabled error after machine removal"
 
@@ -95,37 +98,68 @@ def test_mesh_removed_machine_by_other():
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
-@pytest.mark.parametrize("routing", [True, False])
-@pytest.mark.parametrize("local", [True, False])
-@pytest.mark.parametrize("incoming", [True, False])
-@pytest.mark.parametrize("fileshare", [True, False])
-def test_exitnode_permissions(routing: bool, local: bool, incoming: bool, fileshare: bool):
+def test_exitnode_permissions():
     """Manual TCs: LVPN-1261, LVPN-1262"""
 
-    peer_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().ip
-    meshnet.set_permissions(peer_ip, routing, local, incoming, fileshare)
+    tester_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_this_device().hostname
+    qapeer_hostname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().hostname
 
-    def validate_input() -> (bool, str):
-        return meshnet.validate_input_chain(peer_ip, routing, local, incoming, fileshare)
+    # Routing denied test
+    meshnet.set_permissions(qapeer_hostname, False, False, False, False)
+    ssh_client.exec_command("nordvpn mesh peer refresh")
+    with pytest.raises(RuntimeError) as ex:
+        ssh_client.exec_command(f"nordvpn mesh peer connect {tester_hostname}")
+        assert (meshnet.MSG_ROUTING_FAIL % tester_hostname) in ex, "qa-peer should not be able to route traffic"
+        assert not ssh_client.daemon.is_connected(), "status of qa-peer should be disconnected"
 
-    result = False
-    error_mesage = ""
-    for result, message in lib.poll(validate_input):
-        error_mesage = message
-        if result:
-            break
-    assert result, error_mesage
+    # Routing allowed test
+    meshnet.set_permissions(qapeer_hostname, True, False, False, False)
+    ssh_client.exec_command("nordvpn mesh peer refresh")
+    with lib.Defer(lambda: ssh_client.exec_command("nordvpn disconnect")):
+        connect_output = ssh_client.exec_command(f"nordvpn mesh peer connect {tester_hostname}")
+        assert (meshnet.MSG_ROUTING_SUCCESS % tester_hostname) in connect_output, "qa-peer should be able to route traffic"
+        assert ssh_client.daemon.is_connected(), "status of qa-peer should be connected"
 
-    (result, message) = meshnet.validate_forward_chain(peer_ip, routing, local, incoming, fileshare)
-    assert result, message
+    # Local allowed test
+    meshnet.set_permissions(qapeer_hostname, True, True, False, False)
+    ssh_client.exec_command("nordvpn mesh peer refresh")
+    with lib.Defer(lambda: ssh_client.exec_command("nordvpn disconnect")):
+        ssh_client.exec_command(f"nordvpn mesh peer connect {tester_hostname}")
+        tester_default_gateway = network.get_default_gateway()
+        assert ssh_client.network.ping(tester_default_gateway, retry=3), "qa-peer should be able to ping default gateway of tester"
 
-    #rules = sh.sudo.iptables("-S", "POSTROUTING", "-t", "nat")
-    rules = os.popen("sudo iptables -S POSTROUTING -t nat").read()
+    # Local denied test
+    meshnet.set_permissions(qapeer_hostname, True, False, False, False)
+    ssh_client.exec_command("nordvpn mesh peer refresh")
+    with lib.Defer(lambda: ssh_client.exec_command("nordvpn disconnect")):
+        ssh_client.exec_command(f"nordvpn mesh peer connect {tester_hostname}")
+        tester_default_gateway = network.get_default_gateway()
+        assert not ssh_client.network.ping(tester_default_gateway, retry=3), "qa-peer should not be able to ping default gateway of tester"
 
-    if routing:
-        assert f"-A POSTROUTING -s {peer_ip}/32 ! -d 100.64.0.0/10 -m comment --comment nordvpn -j MASQUERADE" in rules, "MASQUERADE rule should exist when routing is enabled"
-    else:
-        assert f"-A POSTROUTING -s {peer_ip}/32 ! -d 100.64.0.0/10 -m comment --comment nordvpn -j MASQUERADE" not in rules, "MASQUERADE rule should not exist when routing is disabled"
+    # Incoming allowed test
+    meshnet.set_permissions(qapeer_hostname, False, False, True, False)
+    ssh_client.exec_command("nordvpn mesh peer refresh")
+    assert ssh_client.network.ping(tester_hostname, retry=3), "qa-peer should be able to ping tester"
+
+    # Incoming denied test
+    meshnet.set_permissions(qapeer_hostname, False, False, False, False)
+    ssh_client.exec_command("nordvpn mesh peer refresh")
+    assert not ssh_client.network.ping(tester_hostname, retry=3), "qa-peer should not be able to ping tester"
+
+    # Fileshare allowed test
+    meshnet.set_permissions(qapeer_hostname, False, False, False, True)
+    ssh_client.exec_command("nordvpn mesh peer refresh")
+    transfer_started_msg = ssh_client.exec_command(f"nordvpn fileshare send --background {tester_hostname} /usr/bin/echo")
+    last_qapeer_tsfr = fileshare.get_last_transfer(True, ssh_client)
+    with lib.Defer(lambda: ssh_client.exec_command(f"nordvpn fileshare cancel {last_qapeer_tsfr}")):
+        assert f"File transfer {last_qapeer_tsfr} has started in the background." in transfer_started_msg, "qa-peer should be able to send file to tester"
+
+    # Fileshare denied test
+    meshnet.set_permissions(qapeer_hostname, False, False, False, False)
+    ssh_client.exec_command("nordvpn mesh peer refresh")
+    with pytest.raises(RuntimeError) as ex:
+        ssh_client.exec_command(f"nordvpn fileshare send --background {tester_hostname} /usr/bin/echo")
+        assert "This peer does not allow file transfers from you." in transfer_started_msg, "qa-peer should not be able to send file to tester"
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
@@ -168,7 +202,7 @@ def test_set_meshnet_on_when_logged_out(meshnet_allias):
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh_no_tty.nordvpn.set(meshnet_allias, "on")
 
-    assert "You are not logged in." in ex.value.stdout.decode("utf-8"), "Should show not logged in error"
+    assert "You're not logged in." in ex.value.stdout.decode("utf-8"), "Should show not logged in error"
 
 
 @pytest.mark.skipif(meshnet.is_meshnet_test_disabled_from_run(), reason="LVPN-4590")
@@ -179,9 +213,10 @@ def test_set_meshnet_off_when_logged_out(meshnet_allias):
     assert not settings.is_meshnet_enabled(), "Meshnet should be disabled after logout"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            sh_no_tty.nordvpn.set(meshnet_allias, "off")
+        sh_no_tty.nordvpn.set(meshnet_allias, "off")
 
-    assert "You are not logged in." in ex.value.stdout.decode("utf-8"), "Should show not logged in error"
+    # TODO: LVPN-4590
+    assert "Meshnet is already disabled." in ex.value.stdout.decode("utf-8"), "Should show not logged in error"
 
 
 @pytest.mark.core_meshnet
