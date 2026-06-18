@@ -87,7 +87,7 @@ func (netw *Combined) fixForLinuxMint20() error {
 // 1. try to let each VPN implementation to handle, if the system interfaces didn't change
 // 2. fully re-creates the VPN tunnel but keeps the firewall rules
 // Thread unsafe.
-func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
+func (netw *Combined) refreshVPN(ctx context.Context) error {
 	isVPNStarted := netw.isVpnSet
 	isMeshStarted := netw.isMeshnetSet
 
@@ -114,69 +114,22 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 
 	netw.interfaces = newInterfaces
 
-	var ip netip.Addr
-	var vpnErr, meshErr error
-	defer func() { err = errors.Join(vpnErr, meshErr) }()
+	return netw.reconnect(ctx, func() error { return nil })
+}
 
-	if isVPNStarted {
-		if netw.KillSwitchState != enabledByUser {
-			if err := netw.internallyEnabledKillSwitch(); err != nil {
-				return fmt.Errorf("setting killswitch: %w", err)
-			}
-			defer func() {
-				if vpnErr == nil {
-					vpnErr = netw.unsetKillSwitch()
-				} else {
-					log.Println(internal.InfoPrefix, "keeping killswitch, VPN failed to reconnect in background:", vpnErr)
-				}
-			}()
-		}
+// XXX: probably something can be reused
+func (netw *Combined) RecreateVPN(recreateFn func() error) error {
+	netw.mu.Lock()
+	defer netw.mu.Unlock()
 
-		if netw.vpnet.Tun() != nil {
-			if tunnelIP, ok := netw.vpnet.Tun().IP(); ok {
-				ip = tunnelIP
-			}
-		}
+	// XXX: checks etc.
 
-		if vpnErr = netw.stop(); vpnErr != nil {
-			vpnErr = fmt.Errorf("stopping networker: %w", vpnErr)
-			return
-		}
-	}
+	return netw.reconnect(context.Background(), recreateFn)
+}
 
-	if isMeshStarted {
-		if netw.mesh.Tun() != nil {
-			if meshIP, ok := netw.mesh.Tun().IP(); ok {
-				ip = meshIP
-			}
-		}
-
-		// Don't return on mesh errors yet, still have to try to start VPN
-		meshErr = netw.unSetMesh()
-		if meshErr != nil {
-			meshErr = fmt.Errorf("unsetting mesh: %w", meshErr)
-		} else {
-			meshErr = netw.setMesh(netw.cfg, ip, netw.lastPrivateKey)
-			if meshErr != nil {
-				meshErr = fmt.Errorf("setting mesh: %w", meshErr)
-			}
-		}
-	}
-
-	if isVPNStarted {
-		if vpnErr = netw.start(
-			ctx,
-			netw.lastCreds,
-			netw.lastServer,
-			netw.allowlist,
-			netw.lastNameservers,
-		); vpnErr != nil {
-			vpnErr = fmt.Errorf("starting networker: %w", vpnErr)
-			return
-		}
-	}
-
-	return nil
+func (netw *Combined) reconnect(ctx context.Context, hook func() error) (err error) {
+	// XXX: Almost same as refreshVPN, but call `hook` in the middle
+	return
 }
 
 // Thread unsafe.

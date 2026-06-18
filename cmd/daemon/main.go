@@ -386,7 +386,7 @@ func main() {
 		vpnNordWhisperConfigGetter,
 		Version,
 		internalVpnEvents,
-		rcConfig.IsFeatureEnabled(remote.FeatureENS),
+		rcConfig,
 	)
 
 	vpn, err := vpnFactory(cfg.Technology)
@@ -464,6 +464,8 @@ func main() {
 			networker.IpForwardParamName, 1,
 		),
 	)
+
+	wireENSRecreation(vpnFactory, netw.RecreateVPN, rcConfig)
 
 	keygen, err := keygenImplementation(vpnFactory)
 	if err != nil {

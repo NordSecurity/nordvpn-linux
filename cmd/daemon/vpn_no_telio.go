@@ -20,7 +20,7 @@ func getNordlynxVPN(envIsDev bool,
 	cfg vpn.LibConfigGetter,
 	appVersion string,
 	eventsPublisher *vpn.Events,
-	ensEnabled bool,
+	ensEnabledFn func() bool,
 ) (*nordlynx.KernelSpace, error) {
 	return nordlynx.NewKernelSpace(fwmark, eventsPublisher), nil
 }

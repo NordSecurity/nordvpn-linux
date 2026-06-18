@@ -20,11 +20,19 @@ func getNordlynxVPN(
 	cfg vpn.LibConfigGetter,
 	appVersion string,
 	eventsPublisher *vpn.Events,
-	ensEnabled bool,
-) (*libtelio.Libtelio, error) {
-	telio, err := libtelio.New(!envIsDev, eventsDbPath, fwmark, cfg, appVersion, eventsPublisher, ensEnabled)
+	ensEnabledFn func() bool,
+) (*libtelio.Holder, error) {
+	telio, err := libtelio.NewHolder(
+		!envIsDev,
+		eventsDbPath,
+		fwmark,
+		cfg,
+		appVersion,
+		eventsPublisher,
+		ensEnabledFn,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("creating telio instance:", err)
+		return telio, fmt.Errorf("creating telio instance: %w", err)
 	}
 	return telio, nil
 }

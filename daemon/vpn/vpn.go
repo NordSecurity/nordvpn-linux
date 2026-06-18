@@ -9,6 +9,12 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 )
 
+// Recreatable is implemented by VPN backends that support being torn down and rebuilt at
+// runtime without replacing the outer object (e.g. to apply a remote config change).
+type Recreatable interface {
+	Recreate() error
+}
+
 // VPN defines a set of operations that any type that wants to act as a vpn must implement.
 type VPN interface {
 	Start(context.Context, Credentials, ServerData) error
