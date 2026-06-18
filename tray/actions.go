@@ -231,8 +231,8 @@ func (ti *Instance) connectWithUIEvent(
 	return false
 }
 
-func (ti *Instance) disconnect() bool {
-	ctx := attachUIEventMetadata(context.Background(), pb.UIEvent_DISCONNECT, pb.UIEvent_ITEM_VALUE_UNSPECIFIED)
+func (ti *Instance) disconnect(itemName pb.UIEvent_ItemName, itemValue pb.UIEvent_ItemValue) bool {
+	ctx := attachUIEventMetadata(context.Background(), itemName, itemValue)
 	resp, err := ti.client.Disconnect(ctx, &pb.Empty{})
 	if err != nil {
 		ti.notify(NoForce, "Disconnect error: %s", err)
@@ -254,6 +254,27 @@ func (ti *Instance) disconnect() bool {
 			ti.notify(NoForce, cli.DisconnectNotConnected)
 		case internal.CodeDisconnected:
 		}
+	}
+	return true
+}
+
+func (ti *Instance) pause(pauseLength pauseLength) bool {
+	ctx := attachUIEventMetadata(context.Background(), pb.UIEvent_PAUSE, pauseLength.EventValue)
+	resp, err := ti.client.PauseConnection(ctx, &pb.PauseRequest{Seconds: pauseLength.DurationSeconds})
+	if err != nil {
+		ti.notify(NoForce, "Pause failed. Please try again.")
+		return false
+	}
+
+	switch resp.Type {
+	case internal.CodePauseAttemptWhenConnectedToMeshPeer:
+		log.Error("Pause attempt when connected to meshnet peer")
+		ti.notify(NoForce, "Pause is not available while connected to a Meshnet device.")
+		return false
+	case internal.CodeFailure:
+		log.Error("Pause attempt failed")
+		ti.notify(NoForce, "Pause failed. Please try again.")
+		return false
 	}
 	return true
 }
