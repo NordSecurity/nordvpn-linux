@@ -545,3 +545,14 @@ func (ti *Instance) setVpnStatus(
 
 	return changed
 }
+
+func (ti *Instance) handlePauseEvent(event *pb.PauseEvent) bool {
+	switch event.Type {
+	case pb.PauseEventType_RECONNECT_FAILED:
+		ti.notify(NoForce, "Connect error: %s", client.ConnectCantConnect)
+		log.Error("Reconnect failed after pause expired")
+	default:
+		log.Warn("Unexpected pause event received ", event.Type)
+	}
+	return false
+}
