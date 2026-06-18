@@ -67,8 +67,6 @@ func selectServer(
 		if err := serverpicker.CheckDIPServerInSubscription(r.ac, *selection.Server, cfg); err != nil {
 			return serverpicker.ServerSelection{}, err
 		}
-	} else if core.IsServerDedicated(*selection.Server) {
-
 	}
 
 	return selection, nil
