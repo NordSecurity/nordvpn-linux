@@ -207,6 +207,11 @@ func buildConnectionSection(ti *Instance) {
 	}
 
 	buildVPNStatusLabel(ti)
+
+	if ti.state.vpnStatus == pb.ConnectionState_PAUSED {
+		buildPauseTimer(ti)
+	}
+
 	if ti.state.vpnStatus == pb.ConnectionState_CONNECTED {
 		buildConnectedToSection(ti)
 		if ti.state.vpnIsMeshPeer {
@@ -344,6 +349,61 @@ func buildPauseMenu(ti *Instance) {
 
 	disconnect := pauseMenu.AddSubMenuItem(labelDisconnect, labelDisconnect)
 	go handleDisconnectClick(ti, disconnect, pb.UIEvent_PAUSE, pb.UIEvent_PAUSE_DISCONNECT)
+}
+
+func buildPauseTimer(ti *Instance) {
+	initialValue := ti.state.pauseRemainingSec
+	if initialValue <= 0 {
+		return
+	}
+
+	timer := systray.AddMenuItem(
+		buildTimerString(initialValue), "",
+	)
+	timer.Disable()
+
+	go func() {
+		ticker := time.NewTicker(time.Second)
+		defer ticker.Stop()
+
+		currentValue := initialValue
+		for currentValue > 0 {
+			select {
+			case _, open := <-timer.ClickedCh:
+				if !open {
+					return
+				}
+			case <-ticker.C:
+				ti.state.mu.Lock()
+
+				currentValue = ti.state.pauseRemainingSec
+				if currentValue > 0 {
+					currentValue--
+					ti.state.pauseRemainingSec = currentValue
+				}
+
+				ti.state.mu.Unlock()
+
+				if ti.isVisible.Load() {
+					timer.SetTitleQuiet(
+						buildTimerString(currentValue),
+					)
+				}
+			}
+		}
+	}()
+}
+
+func buildTimerString(remaining int) string {
+	hours := remaining / 3600
+	minutes := (remaining % 3600) / 60
+	seconds := remaining % 60
+
+	if hours > 0 {
+		return fmt.Sprintf("VPN connection resumes in %02d:%02d:%02d", hours, minutes, seconds)
+	} else {
+		return fmt.Sprintf("VPN connection resumes in %02d:%02d", minutes, seconds)
+	}
 }
 
 func handlePauseClick(ti *Instance, item *systray.MenuItem, pauseLength pauseLength) {
