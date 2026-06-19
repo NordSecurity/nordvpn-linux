@@ -54,15 +54,16 @@ func dipServicesToProtobuf(dipServices []auth.DedicatedIPService) []*pb.Dedidcat
 }
 
 // setDedicatedIPServerData sets Dedicated IP and Dedicated Server related fields in the accountInfo
-func (r *RPC) setDedicatedIPServerData(accountInfo *pb.AccountResponse) *pb.AccountResponse {
+func (r *RPC) setDedicatedIPServerData(accountInfo *pb.AccountResponse) (*pb.AccountResponse, error) {
 	dipServices, err := r.ac.GetDedicatedIPServices()
 	if err != nil {
 		log.Error("getting dedicated ip services:", err)
 		if errors.Is(err, core.ErrUnauthorized) {
-			return &pb.AccountResponse{Type: internal.CodeExpiredAccessToken}
-		} else {
-			return &pb.AccountResponse{Type: internal.CodeTokenRenewError}
+			return &pb.AccountResponse{Type: internal.CodeExpiredAccessToken},
+				fmt.Errorf("getting dedicated ip services: %w", err)
 		}
+		return &pb.AccountResponse{Type: internal.CodeTokenRenewError},
+			fmt.Errorf("getting dedicated ip services: %w", err)
 	}
 
 	accountInfo.DedicatedIpStatus = internal.CodeSuccess
@@ -76,8 +77,8 @@ func (r *RPC) setDedicatedIPServerData(accountInfo *pb.AccountResponse) *pb.Acco
 		accountInfo.DedicatedIpServices = dipServicesToProtobuf(dipServices)
 		dedicatedIPExpirationDate, err = findLatestDIPExpirationData(dipServices)
 		if err != nil {
-			log.Error("getting latest dedicated ip expiration date:", err)
-			return &pb.AccountResponse{Type: internal.CodeTokenRenewError}
+			return &pb.AccountResponse{Type: internal.CodeTokenRenewError},
+				fmt.Errorf("getting latest dedicated ip expiration date: %w", err)
 		}
 	}
 
@@ -85,11 +86,12 @@ func (r *RPC) setDedicatedIPServerData(accountInfo *pb.AccountResponse) *pb.Acco
 
 	dedicatedServerService, err := r.ac.GetDedicatedServerService()
 	if err != nil {
-		log.Error("getting dedicated server service:", err)
 		if errors.Is(err, core.ErrUnauthorized) {
-			return &pb.AccountResponse{Type: internal.CodeExpiredAccessToken}
+			return &pb.AccountResponse{Type: internal.CodeExpiredAccessToken},
+				fmt.Errorf("getting dedicated server service: %w", err)
 		}
-		return &pb.AccountResponse{Type: internal.CodeTokenRenewError}
+		return &pb.AccountResponse{Type: internal.CodeTokenRenewError},
+			fmt.Errorf("getting dedicated server service: %w", err)
 	}
 
 	accountInfo.DedicatedServerStatus = internal.CodeNoService
@@ -98,7 +100,7 @@ func (r *RPC) setDedicatedIPServerData(accountInfo *pb.AccountResponse) *pb.Acco
 		accountInfo.DedicatedServersServiceExpiresAt = dedicatedServerService.ExpiresAt
 	}
 
-	return accountInfo
+	return accountInfo, nil
 }
 
 // AccountInfo returns user account information.
@@ -113,18 +115,19 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 	if accountInfo, ok := r.dm.GetAccountData(req.Full); ok {
 		// because Dedicated IP and Dedicated Servers service data is using it's own caching that is updated with NC
 		// events, we can always try to fetch it to keep the returned information more accurate
-		dedicatedIPServerAccountInfo := r.setDedicatedIPServerData(accountInfo)
-		if dedicatedIPServerAccountInfo.Type == internal.CodeSuccess {
-			return dedicatedIPServerAccountInfo, nil
+		dedicatedIPServerAccountInfo, err := r.setDedicatedIPServerData(accountInfo)
+		if err != nil {
+			log.Error("getting dedicated servers/ip service data:", err)
+			return accountInfo, nil
 		}
-		return accountInfo, nil
+		return dedicatedIPServerAccountInfo, nil
 	}
 
 	accountInfo := &pb.AccountResponse{}
 
 	vpnExpired, err := r.ac.IsVPNExpired()
 	if err != nil {
-		log.Error("checking VPN expiration: ", err)
+		log.Error("checking VPN expiration:", err)
 		return &pb.AccountResponse{Type: internal.CodeTokenRenewError}, nil
 	} else if vpnExpired {
 		accountInfo.Type = internal.CodeNoService
@@ -132,8 +135,9 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 		accountInfo.Type = internal.CodeSuccess
 	}
 
-	accountInfo = r.setDedicatedIPServerData(accountInfo)
-	if accountInfo.Type != internal.CodeSuccess {
+	accountInfo, err = r.setDedicatedIPServerData(accountInfo)
+	if err != nil {
+		log.Error("getting dedicated servers/ip service data:", err)
 		return accountInfo, nil
 	}
 

@@ -159,11 +159,12 @@ func TestAccountInfo_FailedRequestDoesntUpdateTheCache(t *testing.T) {
 	}
 
 	tests := []struct {
-		name                      string
-		isVPNExpiredErr           error
-		getDedicatedIPServicesErr error
-		loadConfigErr             error
-		currentUserErr            error
+		name                          string
+		isVPNExpiredErr               error
+		getDedicatedIPServicesErr     error
+		getDedicatedServersServiceErr error
+		loadConfigErr                 error
+		currentUserErr                error
 	}{
 		{
 			name:            "get vpn expired fail",
@@ -181,12 +182,17 @@ func TestAccountInfo_FailedRequestDoesntUpdateTheCache(t *testing.T) {
 			name:           "get current user fail",
 			currentUserErr: errors.New("get current user error"),
 		},
+		{
+			name:                          "get dedicated servers service fail",
+			getDedicatedServersServiceErr: errors.New("get dedicated servers error"),
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			authCheckerMock.IsVPNExpiredErr = test.isVPNExpiredErr
 			authCheckerMock.GetDedicatedIPServicesErr = test.getDedicatedIPServicesErr
+			authCheckerMock.GetDedicatedServerServiceErr = test.getDedicatedServersServiceErr
 			configManagerMock.LoadErr = test.loadConfigErr
 			credentialsAPIMock.CurrentUserErr = test.currentUserErr
 
@@ -258,6 +264,45 @@ func TestAccountInfo_ContainsServiceData(t *testing.T) {
 				response.DedicatedServerStatus,
 				test.expectedStatus,
 				"Invalid dedicated servers service status in AccountInfo response.")
+		})
+	}
+}
+
+func TestAccountInfo_CacheIsUpdatedIfDedicatedServersIPServiceIsNotAvailable(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name                   string
+		dedicatedIPServices    []auth.DedicatedIPService
+		dedicatedServerService auth.DedicatedServerService
+	}{}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cachedResponse := userResponseToAccountResponse(user1)
+			dataManager := NewDataManager("", "", "", "", events.NewDataUpdateEvents())
+			dataManager.SetAccountData(cachedResponse)
+
+			authCheckerMock := testauth.AuthCheckerMock{LoggedIn: true}
+			configManagerMock := mock.NewMockConfigManager()
+
+			credentialsAPIMock := testcore.CredentialsAPIMock{}
+			credentialsAPIMock.CurrentUserResponse = user2
+
+			r := RPC{
+				dm:             dataManager,
+				ac:             &authCheckerMock,
+				cm:             configManagerMock,
+				credentialsAPI: &credentialsAPIMock,
+				events:         events.NewEventsEmpty(),
+			}
+
+			resp, _ := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: false})
+			assert.Equal(t, cachedResponse.String(), resp.String(), "Non-full request should not update the cache.")
+
+			updatedResponse, _ := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: true})
+			resp, _ = r.AccountInfo(context.Background(), &pb.AccountRequest{Full: false})
+			assert.Equal(t, updatedResponse.String(), resp.String(), "Cache should be updated after a full request.")
 		})
 	}
 }
