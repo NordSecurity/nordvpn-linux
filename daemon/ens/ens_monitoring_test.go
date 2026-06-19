@@ -73,7 +73,6 @@ func TestENSMonitoring(t *testing.T) {
 func TestENSMonitoringWhenENSIsDisabledFromRC(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	ctx, _ := context.WithCancel(context.Background())
 	netw := &networker.Mock{
 		VpnActive: true,
 	}
@@ -82,7 +81,7 @@ func TestENSMonitoringWhenENSIsDisabledFromRC(t *testing.T) {
 	callbackCount := atomic.Int32{}
 	ch := make(chan any)
 	monitor := NewMonitor(
-		ctx,
+		context.Background(),
 		netw,
 		rc,
 		func() error {
