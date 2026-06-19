@@ -299,9 +299,11 @@ func (d *DNSServiceSetter) setUsingAvailable(iface string, nameservers []string)
 //  1. Infer which method to use from the comment in /etc/resolv.conf
 //     1a. If systemd-resolved is detected, it tries to set DNS using systemd-resolved handler
 //     1b. If network manager is detected, it tries to set DNS using nmcli handler
+//     1c. If resolvconf is detected, it tries to set DNS using resolvconf handler
 //  2. If the above fails, infer which method to use based on /etc/resolv.conf link target
 //     2a. If systemd-resolved sym-link is detected, it tries to set DNS using systemd-resolved handler
 //     2b. If network manager sym-link is detected, it tries to set DNS using nmcli handler
+//     2c. If resolvconf sym-link is detected, it tries to set DNS using resolvconf handler
 //  3. If the above fails, it attempts to use best available method(see setUsingAvailable)
 //  4. If all of the above fail, it returns an error
 func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
@@ -342,7 +344,7 @@ func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
 	}
 
 	log.Info(dnsPrefix, "attempting to set DNS using available methods")
-	if err := d.setUsingAvailable(iface, nameservers); err != nil {
+	if err = d.setUsingAvailable(iface, nameservers); err != nil {
 		return fmt.Errorf("failed to set DNS using available methods: %w", err)
 	}
 
