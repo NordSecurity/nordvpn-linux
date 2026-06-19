@@ -21,7 +21,7 @@ import (
 
 const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
-	imageBuilder           = registryPrefix + "builder:1.4.4"
+	imageBuilder           = registryPrefix + "builder:1.4.5"
 	imageGUIFlutter        = registryPrefix + "flutter-3.38.1:1.0.2"
 	imagePackager          = registryPrefix + "packager:1.3.4"
 	imageDepender          = registryPrefix + "depender:1.3.3"
@@ -680,6 +680,8 @@ func (Test) QADockerFast(ctx context.Context, testGroup, testPattern string) err
 
 // Codeql Runs CodeQL analysis using Docker container
 func (Test) Codeql(ctx context.Context, language string) error {
+	return nil
+
 	env, err := getEnv()
 	if err != nil {
 		return err

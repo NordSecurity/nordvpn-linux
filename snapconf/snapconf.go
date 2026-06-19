@@ -12,6 +12,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/snapconf/pb"
 	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
@@ -24,6 +25,7 @@ const (
 	EnvSnapRealHome   = "SNAP_REAL_HOME" // from snapd version 2.46
 	EnvSnapUserCommon = "SNAP_USER_COMMON"
 	EnvSnapUserData   = "SNAP_USER_DATA"
+	EnvSnapCommon     = "SNAP_COMMON"
 )
 
 // Interface defines a snap interface as described in
@@ -275,4 +277,18 @@ func RealUserHomeDir() string {
 	}
 
 	return ""
+}
+
+func LogsDir() string {
+	dir := os.Getenv(EnvSnapCommon)
+	if dir != "" {
+		logsDir := filepath.Join(dir, "logs")
+		if err := os.Mkdir(logsDir, internal.PermUserRWGroupRWOthersRW); err != nil && !os.IsExist(err) {
+			log.Error("failed to create logs folder")
+			return dir
+		}
+		return logsDir
+	}
+
+	return dir
 }
