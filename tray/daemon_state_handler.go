@@ -24,6 +24,8 @@ func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
 		changed = ti.handleAccountModificationState()
 	case *pb.AppState_VersionHealth:
 		changed = ti.handleVersionHealthState(st)
+	case *pb.AppState_PauseEvent:
+		changed = ti.handlePauseEventState(st)
 	default:
 		log.Warnf("%s Unknown state type: %T", logTag, item)
 	}
@@ -102,4 +104,9 @@ func (ti *Instance) handleAccountModificationState() bool {
 // handleVersionHealthState handles the version health state from the daemon.
 func (ti *Instance) handleVersionHealthState(st *pb.AppState_VersionHealth) bool {
 	return ti.handleVersionHealthChange(st.VersionHealth)
+}
+
+// handlePauseEventState handles pause state notifications from the daemon.
+func (ti *Instance) handlePauseEventState(st *pb.AppState_PauseEvent) bool {
+	return ti.handlePauseEvent(st.PauseEvent)
 }
