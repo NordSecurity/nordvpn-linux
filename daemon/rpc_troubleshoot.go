@@ -21,6 +21,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/godbus/dbus/v5"
+	"github.com/snapcore/snapd/client"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/encoding/prototext"
 )
@@ -66,18 +67,24 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 	}
 	zipPath := zipFile.Name()
 	defer func() {
-		retErr = errors.Join(retErr, zipFile.Close())
 		if retErr != nil {
+			retErr = errors.Join(retErr, zipFile.Close())
 			if err := os.Remove(zipPath); err != nil {
 				log.Error(logPrefix, "failed to delete zip", err)
 			}
 		}
 	}()
 
-	// Change ownership immediately so user can access the file
-	if err := os.Chown(zipPath, int(caller.uid), int(caller.gid)); err != nil {
-		log.Error(logPrefix, "failed to change file ownership:", err)
-		return err
+	if !snapconf.IsUnderSnap() {
+		// Change ownership immediately so user can access the file
+		if err := os.Chown(zipPath, int(caller.uid), int(caller.gid)); err != nil {
+			log.Error(logPrefix, "failed to change file ownership:", err)
+			return err
+		}
+	} else {
+		if err := os.Chmod(zipPath, internal.PermUserRWGroupRWOthersRW); err != nil {
+			log.Error(logPrefix, "failed to change file permissions", err)
+		}
 	}
 
 	state := r.collectAppState(srv.Context())
@@ -191,14 +198,18 @@ func resolveDiagnosticsCaller(ctx context.Context) (*diagnosticsCaller, error) {
 // the chosen directory is a symlink, /tmp is used instead to avoid writing
 // through user-controlled symlinks.
 func resolveOutputDir(homeDir string) string {
+	if snapconf.IsUnderSnap() {
+		return snapconf.LogsDir()
+	}
 	outputDir := homeDir
 	downloadsDir := filepath.Join(homeDir, "Downloads")
-	if internal.FileExists(downloadsDir) && !internal.IsSymLink(downloadsDir) {
+	if internal.FileWritable(downloadsDir) && !internal.IsSymLink(downloadsDir) {
 		outputDir = downloadsDir
 	}
-	if internal.IsSymLink(outputDir) {
+	if !internal.FileWritable(outputDir) || internal.IsSymLink(outputDir) {
 		outputDir = "/tmp"
 	}
+
 	return outputDir
 }
 
@@ -391,13 +402,15 @@ func addDaemonLogs(zipWriter *zip.Writer, supervisor daemonSupervisor) error {
 		return err
 	}
 
-	// Use journalctl -r (reverse, newest first) for both systemd and snap so
-	// the 500 MB streaming cap drops the *oldest* entries instead of the newest.
-	// The snap path queries the snap-managed unit directly rather than `snap
-	// logs`, since snap logs has no reverse mode.
+	// Two separate paths because inside snap confinement neither `journalctl`
+	// nor sdjournal can reach the host journal — they only see the snap's
+	// private mount-namespace view. snapd's own Logs API is the only thing on
+	// the snap side with privileged host-journal access. Outside snap we
+	// shell out to `journalctl -r` (newest first) so the 500 MB cap drops the
+	// *oldest* entries instead of the newest.
 	switch supervisor {
 	case daemonSupervisorSnap:
-		return streamCommandToWriter(writer, "journalctl", "-u", "snap.nordvpn.nordvpnd", "--no-pager", "-r")
+		return streamSnapLogs(writer, "nordvpn.nordvpnd")
 	case daemonSupervisorSystemd:
 		return streamCommandToWriter(writer, "journalctl", "-u", "nordvpnd", "--no-pager", "-r")
 
@@ -477,11 +490,47 @@ func streamCommandToWriter(writer io.Writer, name string, args ...string) error 
 	return nil
 }
 
+// snapLogsMaxLines bounds how many journal entries snapd will return for the
+// daemon's service. snapd's Logs API emits entries chronologically (oldest →
+// newest within the kept window), so we can't byte-cap from the newest end the
+// way `journalctl -r` allows; instead we cap on line count and let snapd drop
+// the oldest entries beyond this window. At ~200 B/line this is ~20 MB —
+// comfortably below the 500 MB diagnostics-archive cap.
+const snapLogsMaxLines = 100000
+
+// streamSnapLogs fetches the last snapLogsMaxLines entries of the named snap
+// service's logs via snapd's privileged Logs API and writes them
+// chronologically to writer. snapd is the only thing on the snap side with
+// access to the host journal; sdjournal and journalctl run from inside snap
+// confinement see only the snap's private mount-namespace view.
+func streamSnapLogs(writer io.Writer, service string) error {
+	c := client.New(nil)
+	logs, err := c.Logs([]string{service}, client.LogOptions{
+		N:      snapLogsMaxLines,
+		Follow: false,
+	})
+	if err != nil {
+		return err
+	}
+
+	var count int
+	for entry := range logs {
+		count++
+		fmt.Fprintf(writer, "%s %s[%s]: %s\n",
+			entry.Timestamp.Format("Jan 02 15:04:05"),
+			service, entry.PID, entry.Message)
+	}
+	if count == 0 {
+		return fmt.Errorf("snapd returned no log entries for %s", service)
+	}
+	return nil
+}
+
 // streamFileToWriter streams the contents of filePath into writer, capped at
 // maxDaemonLogSize bytes. For files within the cap the data is copied as-is
 // (chronological). For oversized files the kept tail is emitted in reverse
 // line order — newest first — so the file path matches the newest-first
-// behaviour of the snap/systemd paths (`journalctl -r`).
+// behaviour of the systemd `journalctl -r` path.
 func streamFileToWriter(writer io.Writer, filePath string) error {
 	f, err := os.Open(filePath)
 	if err != nil {
@@ -660,7 +709,7 @@ func runCommand(name string, args ...string) string {
 // readFile returns the contents of path as a string. On failure the error is
 // rendered inline (mirroring runCommand) so blocks are never silently empty.
 func readFile(path string) string {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return fmt.Sprintf("error reading %s: %v\n", path, err)
 	}
@@ -723,6 +772,7 @@ func collectDesktopEnvironment() string {
 		}
 		sessionID := fields[0]
 		fmt.Fprintf(&b, "--- Session %s ---\n", sessionID)
+		// #nosec G204 -- sessionID is safe to use
 		if props, err := exec.Command("loginctl", "show-session", sessionID,
 			"-p", "Type", "-p", "Desktop", "-p", "Remote", "-p", "User").Output(); err == nil {
 			b.Write(props)

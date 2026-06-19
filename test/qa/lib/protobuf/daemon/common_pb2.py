@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0c\x63ommon.proto\x12\x02pb\"\x07\n\x05\x45mpty\"\x15\n\x04\x42ool\x12\r\n\x05value\x18\x01 \x01(\x08\"%\n\x07Payload\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12\x0c\n\x04\x64\x61ta\x18\x02 \x03(\t\"G\n\x1fInjectVpnConnectionErrorRequest\x12\x12\n\ntelio_code\x18\x01 \x01(\x05\x12\x10\n\x08\x65ndpoint\x18\x02 \x01(\t\"6\n\tAllowlist\x12\x18\n\x05ports\x18\x01 \x01(\x0b\x32\t.pb.Ports\x12\x0f\n\x07subnets\x18\x02 \x03(\t\"!\n\x05Ports\x12\x0b\n\x03udp\x18\x01 \x03(\x03\x12\x0b\n\x03tcp\x18\x02 \x03(\x03\"4\n\x0bServerGroup\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x17\n\x0fvirtualLocation\x18\x02 \x01(\x08\"B\n\x10ServerGroupsList\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12 \n\x07servers\x18\x02 \x03(\x0b\x32\x0f.pb.ServerGroup*2\n\x08TriState\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0c\n\x08\x44ISABLED\x10\x01\x12\x0b\n\x07\x45NABLED\x10\x02*:\n\x08\x43lientID\x12\x12\n\x0eUNKNOWN_CLIENT\x10\x00\x12\x07\n\x03\x43LI\x10\x01\x12\x07\n\x03GUI\x10\x02\x12\x08\n\x04TRAY\x10\x03\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0c\x63ommon.proto\x12\x02pb\"\x07\n\x05\x45mpty\"\x15\n\x04\x42ool\x12\r\n\x05value\x18\x01 \x01(\x08\"%\n\x07Payload\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12\x0c\n\x04\x64\x61ta\x18\x02 \x03(\t\"G\n\x1fInjectVpnConnectionErrorRequest\x12\x12\n\ntelio_code\x18\x01 \x01(\x05\x12\x10\n\x08\x65ndpoint\x18\x02 \x01(\t\"6\n\tAllowlist\x12\x18\n\x05ports\x18\x01 \x01(\x0b\x32\t.pb.Ports\x12\x0f\n\x07subnets\x18\x02 \x03(\t\"!\n\x05Ports\x12\x0b\n\x03udp\x18\x01 \x03(\x03\x12\x0b\n\x03tcp\x18\x02 \x03(\x03\"4\n\x0bServerGroup\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x17\n\x0fvirtualLocation\x18\x02 \x01(\x08\"B\n\x10ServerGroupsList\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12 \n\x07servers\x18\x02 \x03(\x0b\x32\x0f.pb.ServerGroup\"E\n\x13\x44iagnosticsProgress\x12\x0c\n\x04step\x18\x02 \x01(\t\x12\x11\n\tfile_path\x18\x04 \x01(\t\x12\r\n\x05\x65rror\x18\x05 \x01(\t*2\n\x08TriState\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0c\n\x08\x44ISABLED\x10\x01\x12\x0b\n\x07\x45NABLED\x10\x02*:\n\x08\x43lientID\x12\x12\n\x0eUNKNOWN_CLIENT\x10\x00\x12\x07\n\x03\x43LI\x10\x01\x12\x07\n\x03GUI\x10\x02\x12\x08\n\x04TRAY\x10\x03\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,10 +32,10 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'common_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z/github.com/NordSecurity/nordvpn-linux/daemon/pb'
-  _globals['_TRISTATE']._serialized_start=377
-  _globals['_TRISTATE']._serialized_end=427
-  _globals['_CLIENTID']._serialized_start=429
-  _globals['_CLIENTID']._serialized_end=487
+  _globals['_TRISTATE']._serialized_start=448
+  _globals['_TRISTATE']._serialized_end=498
+  _globals['_CLIENTID']._serialized_start=500
+  _globals['_CLIENTID']._serialized_end=558
   _globals['_EMPTY']._serialized_start=20
   _globals['_EMPTY']._serialized_end=27
   _globals['_BOOL']._serialized_start=29
@@ -52,4 +52,6 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_SERVERGROUP']._serialized_end=307
   _globals['_SERVERGROUPSLIST']._serialized_start=309
   _globals['_SERVERGROUPSLIST']._serialized_end=375
+  _globals['_DIAGNOSTICSPROGRESS']._serialized_start=377
+  _globals['_DIAGNOSTICSPROGRESS']._serialized_end=446
 # @@protoc_insertion_point(module_scope)

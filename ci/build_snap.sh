@@ -3,8 +3,8 @@ set -euxo pipefail
 
 # configure git safe-directories when running in containerized environment
 if [[ -n ${DOCKER_ENV+x} ]]; then
-  git config --global --add safe.directory "${WORKDIR}"
-  git config --global --add safe.directory "${WORKDIR}/parts/nordvpn/build"
+  git config --global --add safe.directory "${WORKDIR}" || true
+  git config --global --add safe.directory "${WORKDIR}/parts/nordvpn/build" || true
 fi
 
 source "${WORKDIR}/ci/env.sh"
