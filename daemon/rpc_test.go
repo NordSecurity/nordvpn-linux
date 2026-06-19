@@ -91,6 +91,7 @@ func testRPC() *RPC {
 
 	rcMock := mock.NewRemoteConfigMock()
 	rcMock.AddFeatureToggle(remote.FeatureDedicatedServer, true)
+	rcMock.AddFeatureToggle(remote.FeatureENS, true)
 
 	return NewRPC(
 		internal.Development,

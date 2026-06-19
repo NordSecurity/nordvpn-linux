@@ -244,6 +244,14 @@ func defaultErrorNotificationService() *teliogo.FeatureErrorNotificationService 
 	}
 }
 
+// applyENSFeature is the master gate for the Error Notification Service: when disabled,
+// ENS is removed so libtelio does not run it, overriding the telio config.
+func applyENSFeature(features *teliogo.Features, ensEnabled bool) {
+	if !ensEnabled {
+		features.ErrorNotificationService = nil
+	}
+}
+
 // defaultPrefix is the default address used by NordLynx when meshnet is not enabled
 func handleTelioConfig(eventPath string, prod bool, vpnLibCfg vpn.LibConfigGetter) (*teliogo.Features, error) {
 	cfgString, err := vpnLibCfg.GetConfig()
@@ -284,6 +292,7 @@ func New(
 	vpnLibCfg vpn.LibConfigGetter,
 	appVersion string,
 	eventsPublisher *vpn.Events,
+	ensEnabled bool,
 ) (*Libtelio, error) {
 	stateEvents := make(chan state)
 	errorEvents := make(chan teliogo.VpnConnectionError, 1)
@@ -305,6 +314,8 @@ func New(
 
 		features = &defaultTelioConfig
 	}
+
+	applyENSFeature(features, ensEnabled)
 
 	featuresString, err := json.Marshal(features)
 	if err != nil {

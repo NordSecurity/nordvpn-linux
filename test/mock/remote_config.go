@@ -7,7 +7,9 @@ type RemoteConfigMock struct {
 }
 
 func NewRemoteConfigMock() *RemoteConfigMock {
-	return &RemoteConfigMock{FeatureToggles: make(map[string]bool)}
+	return &RemoteConfigMock{
+		FeatureToggles: make(map[string]bool),
+	}
 }
 
 func (r *RemoteConfigMock) AddFeatureToggle(featureName string, toggle bool) {
@@ -26,5 +28,6 @@ func (r *RemoteConfigMock) IsFeatureEnabled(featureName string) bool {
 	val, ok := r.FeatureToggles[featureName]
 	return ok && val
 }
+
 func (r *RemoteConfigMock) GetFeatureParam(_, _ string) (string, error) { return "", nil }
 func (r *RemoteConfigMock) LoadConfig() error                           { return nil }
