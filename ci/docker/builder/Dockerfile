@@ -45,6 +45,7 @@ RUN dpkg --add-architecture i386 && \
         python3 \
         nftables \
         conntrack \
+        libsystemd-dev \
         file && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
