@@ -260,7 +260,7 @@ func (c *CdnRemoteConfig) Load() error {
 		c.notifier.Publish(RemoteConfigEvent{
 			MeshnetFeatureEnabled:  c.IsFeatureEnabled(FeatureMeshnet),
 			DedicatedServerEnabled: c.IsFeatureEnabled(FeatureDedicatedServer),
-			ENSFeatureEnabled:     c.IsFeatureEnabled(FeatureENS),
+			ENSFeatureEnabled:      c.IsFeatureEnabled(FeatureENS),
 		})
 		// reset event flags for some events to control emit frequency
 		c.analytics.ClearEventFlags()
