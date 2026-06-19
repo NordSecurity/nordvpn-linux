@@ -10,10 +10,5 @@ import (
 // Returns the list of feature toggles fetched from the remote config
 func (r *RPC) GetFeatureToggles(ctx context.Context, in *pb.Empty) (*pb.FeatureToggles, error) {
 	meshnetEnabled := r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureMeshnet)
-	ensEnabled := r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureENS)
-
-	return &pb.FeatureToggles{
-		MeshnetEnabled: meshnetEnabled,
-		EnsEnabled:     ensEnabled,
-	}, nil
+	return &pb.FeatureToggles{MeshnetEnabled: meshnetEnabled}, nil
 }
