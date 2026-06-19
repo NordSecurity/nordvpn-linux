@@ -1,3 +1,4 @@
+import contextlib
 import os
 import socket
 import struct
@@ -55,7 +56,8 @@ def is_active() -> bool:
         return False
 
     print(out)
-    print(sh.nordvpn.settings())
+    with contextlib.suppress(Exception):
+        print(sh.nordvpn.settings())
     return "nordvpn" in out
 
 tun_interface_names = [

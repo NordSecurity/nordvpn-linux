@@ -27,9 +27,10 @@ type RecommendationUUID string
 
 // ServerSelection is the result of picking a server.
 type ServerSelection struct {
-	Server             *core.Server
-	RecommendationUUID RecommendationUUID
-	Remote             bool
+	Server                *core.Server
+	RecommendationUUID    RecommendationUUID
+	Remote                bool
+	DedicatedServerStatus core.DedicatedServerStatus
 }
 
 type SearchParams struct {
@@ -79,6 +80,11 @@ func PickServer(
 	if serverGroup == config.ServerGroup_DEDICATED_IP {
 		// DIP servers are selected from the user subscription services
 		return ServerSelection{}, ErrDedicatedIPServer
+	}
+
+	if serverGroup == config.ServerGroup_DEDICATED_SERVER {
+		// DS servers are taken from another API endpoint
+		return ServerSelection{}, ErrDedicatedServer
 	}
 
 	// construct the servers list filters, for matching the current settings

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
@@ -44,14 +45,15 @@ func TestRPCGroups(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			rpc := RPC{
-				ac:        &workingLoginChecker{},
-				cm:        test.cm,
-				dm:        test.dm,
-				norduser:  &testnorduser.MockNorduserCombinedService{},
-				netw:      &networker.Mock{},
-				ncClient:  &mock.NotificationClientMock{},
-				publisher: &subs.Subject[string]{},
-				api:       &coremock.CredentialsAPIMock{},
+				ac:                 &workingLoginChecker{},
+				cm:                 test.cm,
+				dm:                 test.dm,
+				norduser:           &testnorduser.MockNorduserCombinedService{},
+				netw:               &networker.Mock{},
+				ncClient:           &mock.NotificationClientMock{},
+				publisher:          &subs.Subject[string]{},
+				api:                &coremock.CredentialsAPIMock{},
+				remoteConfigGetter: mock.NewRemoteConfigMock(),
 			}
 			payload, _ := rpc.Groups(context.Background(), &pb.Empty{})
 
@@ -87,6 +89,11 @@ func TestRPCGroups_RegionalGroupsFiltered(t *testing.T) {
 	rpc := RPC{
 		cm: cm,
 		dm: dm,
+		remoteConfigGetter: &mock.RemoteConfigMock{
+			FeatureToggles: map[string]bool{
+				remote.FeatureDedicatedServer: false,
+			},
+		},
 	}
 	payload, _ := rpc.Groups(context.Background(), &pb.Empty{})
 
@@ -100,12 +107,13 @@ func TestRPCGroups_Successful(t *testing.T) {
 	defer testsCleanup()
 
 	tests := []struct {
-		name                  string
-		cm                    config.Manager
-		servers               core.Servers
-		disableVirtualServers bool
-		statusCode            int64
-		expected              []*pb.ServerGroup
+		name                    string
+		cm                      config.Manager
+		servers                 core.Servers
+		disableVirtualServers   bool
+		disableDedicatedServers bool
+		statusCode              int64
+		expected                []*pb.ServerGroup
 	}{
 		{
 			name:       "missing configuration file",
@@ -113,16 +121,32 @@ func TestRPCGroups_Successful(t *testing.T) {
 			statusCode: internal.CodeConfigError,
 		},
 		{
-			name:       "no results when no servers exist",
+			name:       "dedicated servers group present",
 			cm:         newMockConfigManager(),
 			statusCode: internal.CodeSuccess,
-			expected:   []*pb.ServerGroup{},
+			expected: []*pb.ServerGroup{
+				{Name: "Dedicated_Server", VirtualLocation: false},
+			},
 		},
 		{
 			name:       "virtual and physical servers",
 			cm:         newMockConfigManager(),
 			servers:    coremock.ServersList(),
 			statusCode: internal.CodeSuccess,
+			expected: []*pb.ServerGroup{
+				{Name: "Dedicated_IP", VirtualLocation: false},
+				{Name: "Double_VPN", VirtualLocation: false},
+				{Name: "P2P", VirtualLocation: false},
+				{Name: "Standard_VPN_Servers", VirtualLocation: false},
+				{Name: "Dedicated_Server", VirtualLocation: false},
+			},
+		},
+		{
+			name:                    "virtual and physical servers, exclude dedicated servers via feature toggle",
+			cm:                      newMockConfigManager(),
+			servers:                 coremock.ServersList(),
+			disableDedicatedServers: true,
+			statusCode:              internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
 				{Name: "Dedicated_IP", VirtualLocation: false},
 				{Name: "Double_VPN", VirtualLocation: false},
@@ -141,6 +165,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 				{Name: "Double_VPN", VirtualLocation: false},
 				{Name: "P2P", VirtualLocation: false},
 				{Name: "Standard_VPN_Servers", VirtualLocation: false},
+				{Name: "Dedicated_Server", VirtualLocation: false},
 			},
 		},
 	}
@@ -150,6 +175,9 @@ func TestRPCGroups_Successful(t *testing.T) {
 			dm := testNewDataManager()
 			dm.serversData.Servers = test.servers
 
+			rc := mock.NewRemoteConfigMock()
+			rc.AddFeatureToggle(remote.FeatureDedicatedServer, !test.disableDedicatedServers)
+
 			if cm, ok := test.cm.(*mockConfigManager); ok {
 				cm.c.AutoConnectData.Protocol = config.Protocol_UDP
 				cm.c.Technology = config.Technology_NORDLYNX
@@ -157,20 +185,21 @@ func TestRPCGroups_Successful(t *testing.T) {
 			}
 
 			rpc := RPC{
-				ac:        &workingLoginChecker{},
-				cm:        test.cm,
-				dm:        dm,
-				norduser:  &testnorduser.MockNorduserCombinedService{},
-				netw:      &networker.Mock{},
-				ncClient:  &mock.NotificationClientMock{},
-				publisher: &subs.Subject[string]{},
-				api:       &coremock.CredentialsAPIMock{},
+				ac:                 &workingLoginChecker{},
+				cm:                 test.cm,
+				dm:                 dm,
+				norduser:           &testnorduser.MockNorduserCombinedService{},
+				netw:               &networker.Mock{},
+				ncClient:           &mock.NotificationClientMock{},
+				publisher:          &subs.Subject[string]{},
+				api:                &coremock.CredentialsAPIMock{},
+				remoteConfigGetter: rc,
 			}
 			payload, _ := rpc.Groups(context.Background(), &pb.Empty{})
 
 			assert.Equal(t, test.statusCode, payload.Type)
 			assert.Equal(t, len(test.expected), len(payload.Servers))
-			assert.Equal(t, test.expected, payload.Servers)
+			assert.ElementsMatch(t, test.expected, payload.Servers)
 		})
 	}
 }

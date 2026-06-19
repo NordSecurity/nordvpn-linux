@@ -12,6 +12,7 @@ import (
 	"net/netip"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"sync"
 	"time"
 
@@ -380,7 +381,7 @@ func (l *Libtelio) Start(
 	}
 
 	l.currentServer = serverData
-	if err = l.connect(ctx, serverData.IP, serverData.NordLynxPublicKey, serverData.PostQuantum); err != nil {
+	if err = l.connect(ctx, serverData.IP, serverData.DedicatedServerPort, serverData.NordLynxPublicKey, serverData.PostQuantum); err != nil {
 		return err
 	}
 
@@ -391,9 +392,12 @@ func (l *Libtelio) Start(
 }
 
 // connect to the VPN server
+//
+// If serverPort is 0, default port of 51820 will be used.
 func (l *Libtelio) connect(
 	connectCtx context.Context,
 	serverIP netip.Addr,
+	serverPort int64,
 	serverPublicKey string,
 	postQuantum bool,
 ) error {
@@ -414,7 +418,11 @@ func (l *Libtelio) connect(
 	startConnectionErrorMonitor(ctx, l.vpnErrorEvents, l.eventsPublisher)
 
 	var err error
-	endpoint := net.JoinHostPort(serverIP.String(), "51820")
+	port := "51820"
+	if serverPort != 0 {
+		port = strconv.Itoa(int(serverPort))
+	}
+	endpoint := net.JoinHostPort(serverIP.String(), port)
 	allowedIPs := []string{"0.0.0.0/0"}
 	if postQuantum {
 		identifier := uuid.NewString()
@@ -559,6 +567,7 @@ func (l *Libtelio) Enable(ip netip.Addr, privateKey string) (err error) {
 		if err = l.connect(
 			ctx,
 			l.currentServer.IP,
+			l.currentServer.DedicatedServerPort,
 			l.currentServer.NordLynxPublicKey,
 			l.currentServer.PostQuantum,
 		); err != nil {
@@ -607,6 +616,7 @@ func (l *Libtelio) NetworkChanged() error {
 
 		if l.active {
 			serverIP := l.currentServer.IP
+			serverPort := l.currentServer.DedicatedServerPort
 			serverPublicKey := l.currentServer.NordLynxPublicKey
 			serverPQ := l.currentServer.PostQuantum
 			if err := l.disconnect(); err != nil {
@@ -618,6 +628,7 @@ func (l *Libtelio) NetworkChanged() error {
 			if err := l.connect(
 				ctx,
 				serverIP,
+				serverPort,
 				serverPublicKey,
 				serverPQ,
 			); err != nil {

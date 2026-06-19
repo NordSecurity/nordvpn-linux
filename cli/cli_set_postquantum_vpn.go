@@ -38,6 +38,8 @@ func (c *cmd) SetPostquantumVpn(ctx *cli.Context) error {
 		return formatError(errors.New(SetPqAndMeshnet))
 	case internal.CodePqWithoutNordlynx:
 		return formatError(fmt.Errorf(SetPqUnavailable, resp.Data[0]))
+	case internal.CodeDedicatedServersPq:
+		return formatError(errors.New(DedicatedServerPQMessage))
 	case internal.CodeSuccess:
 		color.Green(fmt.Sprintf(MsgSetSuccess, "Post-quantum VPN", nstrings.GetBoolLabel(flag)))
 		flag, _ := strconv.ParseBool(resp.Data[0])

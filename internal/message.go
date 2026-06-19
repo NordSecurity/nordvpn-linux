@@ -1,9 +1,10 @@
 package internal
 
 const (
-	ConnectSuccess    = "You are connected to %s (%s)%s!"
-	ReconnectSuccess  = "You have been reconnected to %s (%s)"
-	DisconnectSuccess = "You are disconnected from NordVPN."
+	ConnectSuccess           = "You are connected to %s (%s)%s!"
+	ConnectSuccessNoHostname = "You are connected to %s!"
+	ReconnectSuccess         = "You have been reconnected to %s (%s)"
+	DisconnectSuccess        = "You are disconnected from NordVPN."
 
 	ProtocolErrorMessage   = "protocol: failed to parse %s"
 	TechnologyErrorMessage = "technology: failed to parse %s"

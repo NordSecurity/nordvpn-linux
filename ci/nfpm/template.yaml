@@ -66,6 +66,10 @@ contents:
     dst: /usr/lib/systemd/system/nordvpnd.service
     file_info:
       mode: 0644
+  - src: ${WORKDIR}/contrib/systemd/system/nordvpnd-killswitch.service
+    dst: /usr/lib/systemd/system/nordvpnd-killswitch.service
+    file_info:
+      mode: 0644
   - src: /dev/null
     dst: /usr/lib/systemd/system/nordvpn.service
     type: symlink

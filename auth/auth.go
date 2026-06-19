@@ -5,9 +5,9 @@ package auth
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -25,6 +25,11 @@ type DedicatedIPService struct {
 	ServerIDs []int64
 }
 
+type DedicatedServerService struct {
+	ExpiresAt string
+	Active    bool
+}
+
 // Checker provides information about current authentication.
 type Checker interface {
 	// IsLoggedIn returns true when the user is logged in.
@@ -36,32 +41,25 @@ type Checker interface {
 	// GetDedicatedIPServices returns all available server IDs, if server is not selected by the user it will set
 	// ServerID for that service to NoServerSelected
 	GetDedicatedIPServices() ([]DedicatedIPService, error)
+	// GetDedicatedServerService returns dedicated servers service status and expiration date
+	GetDedicatedServerService() (DedicatedServerService, error)
 }
 
 const (
-	VPNServiceID         = 1
-	DedicatedIPServiceID = 11
+	VPNServiceID              = 1
+	DedicatedIPServiceID      = 11
+	DedicatedServersServiceID = 33
 )
 
-type systemTimeExpirationChecker struct{}
-
-// isTokenExpired reports whether the token is expired or not.
-func (systemTimeExpirationChecker) IsExpired(expiryTime string) bool {
-	if expiryTime == "" {
-		return true
-	}
-
-	expiry, err := time.Parse(internal.ServerDateFormat, expiryTime)
-	if err != nil {
-		return true
-	}
-
-	return time.Now().After(expiry)
+func hasDedicatedServerService(services core.ServicesResponse, expirationChecker core.ExpirationChecker) bool {
+	return slices.ContainsFunc(services, func(service core.ServiceData) bool {
+		return service.Service.ID == DedicatedServersServiceID && !expirationChecker.IsExpired(service.ExpiresAt)
+	})
 }
 
 // NewTokenExpirationChecker
 func NewTokenExpirationChecker() core.ExpirationChecker {
-	return &systemTimeExpirationChecker{}
+	return &internal.SystemTimeExpirationChecker{}
 }
 
 // RenewingChecker does both authentication checks and renewals in case of expiration.
@@ -75,6 +73,7 @@ type RenewingChecker struct {
 	mu                  sync.Mutex
 	accountUpdateEvents *daemonevents.AccountUpdateEvents
 	sessionStores       []session.SessionStore
+	servicesState       *ServicesState
 }
 
 // NewRenewingChecker is a default constructor for RenewingChecker.
@@ -84,17 +83,19 @@ func NewRenewingChecker(cm config.Manager,
 	logoutPub events.Publisher[events.DataAuthorization],
 	errPub events.Publisher[error],
 	accountUpdateEvents *daemonevents.AccountUpdateEvents,
+	servicesState *ServicesState,
 	sessionStores ...session.SessionStore,
 ) *RenewingChecker {
 	return &RenewingChecker{
 		cm:                  cm,
 		creds:               creds,
-		expChecker:          systemTimeExpirationChecker{},
+		expChecker:          internal.SystemTimeExpirationChecker{},
 		mfaPub:              mfaPub,
 		logoutPub:           logoutPub,
 		errPub:              errPub,
 		accountUpdateEvents: accountUpdateEvents,
 		sessionStores:       sessionStores,
+		servicesState:       servicesState,
 	}
 }
 
@@ -181,12 +182,9 @@ func (r *RenewingChecker) IsVPNExpired() (bool, error) {
 }
 
 func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	services, err := r.fetchServices()
+	services, err := r.servicesState.fetchServices()
 	if err != nil {
-		return nil, fmt.Errorf("fetching available services: %w", err)
+		return nil, fmt.Errorf("fetching available dedicated IP services: %w", err)
 	}
 
 	dipServices := []DedicatedIPService{}
@@ -202,6 +200,28 @@ func (r *RenewingChecker) GetDedicatedIPServices() ([]DedicatedIPService, error)
 	}
 
 	return dipServices, nil
+}
+
+// GetDedicatedServerService returns dedicated server service status and expiration date
+func (r *RenewingChecker) GetDedicatedServerService() (DedicatedServerService, error) {
+	services, err := r.servicesState.fetchServices()
+	if err != nil {
+		return DedicatedServerService{}, fmt.Errorf("fetching services: %w", err)
+	}
+
+	dedicatedServersServiceIndex := slices.IndexFunc(services, func(serviceData core.ServiceData) bool {
+		return serviceData.Service.ID == DedicatedServersServiceID
+	})
+
+	if dedicatedServersServiceIndex == -1 {
+		return DedicatedServerService{Active: false}, nil
+	}
+
+	dedicatedServersServiceData := services[dedicatedServersServiceIndex]
+	return DedicatedServerService{
+		ExpiresAt: dedicatedServersServiceData.ExpiresAt,
+		Active:    !r.expChecker.IsExpired(dedicatedServersServiceData.ExpiresAt),
+	}, nil
 }
 
 // FindVpnServiceExpiration returns VPN service expiration date in the format of YYY-MM-DD HH:MM:SS
@@ -239,14 +259,6 @@ func (r *RenewingChecker) fetchSaveServices(userID int64, data *config.TokenData
 	})
 
 	return nil
-}
-
-func (r *RenewingChecker) fetchServices() ([]core.ServiceData, error) {
-	services, err := r.creds.Services()
-	if err != nil {
-		return nil, err
-	}
-	return services, nil
 }
 
 func saveVpnExpirationDate(userID int64, data config.TokenData) config.SaveFunc {

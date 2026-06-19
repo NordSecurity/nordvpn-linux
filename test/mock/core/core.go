@@ -16,6 +16,9 @@ type CredentialsAPIMock struct {
 	CurrentUserErr      error
 
 	ServiceCredentialsErr error
+
+	ServicesResponse core.ServicesResponse
+	ServicesErr      error
 }
 
 func (c *CredentialsAPIMock) NotificationCredentials(appUserID string) (core.NotificationCredentialsResponse, error) {
@@ -43,8 +46,8 @@ func (*CredentialsAPIMock) MultifactorAuthStatus() (*core.MultifactorAuthStatusR
 	return nil, nil
 }
 
-func (*CredentialsAPIMock) Services() (core.ServicesResponse, error) {
-	return core.ServicesResponse{}, nil
+func (c *CredentialsAPIMock) Services() (core.ServicesResponse, error) {
+	return c.ServicesResponse, c.ServicesErr
 }
 
 func (c *CredentialsAPIMock) CurrentUser() (*core.CurrentUserResponse, error) {

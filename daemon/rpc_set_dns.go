@@ -2,7 +2,6 @@ package daemon
 
 import (
 	"context"
-	"net"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -38,7 +37,7 @@ func (r *RPC) SetDNS(ctx context.Context, in *pb.SetDNSRequest) (*pb.SetDNSRespo
 
 	for _, address := range nameservers {
 		// Do not allow IPv6 servers
-		if parsedAddress := net.ParseIP(address); parsedAddress == nil || parsedAddress.To4() == nil {
+		if !internal.IsAddressValidAsDNSServer(address) {
 			return &pb.SetDNSResponse{
 				Response: &pb.SetDNSResponse_SetDnsStatus{SetDnsStatus: pb.SetDNSStatus_INVALID_DNS_ADDRESS},
 			}, nil

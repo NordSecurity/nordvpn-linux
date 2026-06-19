@@ -7,14 +7,20 @@ package nc
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
+	"net"
+	"net/url"
+	"slices"
 	"sync"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/network"
 
@@ -23,7 +29,9 @@ import (
 )
 
 const (
-	typeMeshnet = "meshnet_network_update"
+	typeMeshnet               = "meshnet_network_update"
+	typeUserServiceUpdate     = "user_service_update"
+	typeDedicatedServerUpdate = "dedicated_server_update"
 
 	topicDelivered    = "delivered"
 	topicAcknowledged = "ack"
@@ -37,12 +45,12 @@ const (
 )
 
 var subscriptions = map[string]byte{
-	"content": byte(1),
-	"linux":   byte(1),
-	"meshnet": byte(1),
+	"content":                 byte(1),
+	"linux":                   byte(1),
+	"meshnet":                 byte(1),
+	"user_service_update":     byte(1),
+	"dedicated_server_update": byte(1),
 }
-
-var unsubscriptions = []string{"content", "linux", "meshnet"}
 
 // RecPayload defines a payload sent by a NC
 type RecPayload struct {
@@ -124,11 +132,15 @@ type Client struct {
 	// MQTT Docs say that reusing client after doing Disconnect can lead to panics.
 	// Since we are doing connect manually with our exponential backoff, we are in risk of those panics.
 	// That's why this mutex must be locked every time client is used.
-	subjectInfo       events.Publisher[string]
-	subjectErr        events.Publisher[error]
-	subjectPeerUpdate events.Publisher[[]string]
-	credsFetcher      CredentialsGetter
-	retryDelayFunc    CalculateRetryDelayForAttempt
+	subjectInfo                   events.Publisher[string]
+	subjectErr                    events.Publisher[error]
+	subjectPeerUpdate             events.Publisher[[]string]
+	subjectServicesUpdate         events.Publisher[any]
+	subjectDedicatedServersUpdate events.Publisher[any]
+	credsFetcher                  CredentialsGetter
+	retryDelayFunc                CalculateRetryDelayForAttempt
+	fwmark                        uint32
+	resolver                      network.DNSResolver
 
 	startMu          sync.Mutex
 	started          bool
@@ -142,15 +154,23 @@ func NewClient(
 	subjectInfo events.Publisher[string],
 	subjectErr events.Publisher[error],
 	subjectPeerUpdate events.Publisher[[]string],
+	subjectServicesUpdate events.Publisher[any],
+	subjectDedicatedServersUpdate events.Publisher[any],
 	credsFetcher CredentialsGetter,
+	fwmark uint32,
+	resolver network.DNSResolver,
 ) *Client {
 	return &Client{
-		clientBuilder:     clientBuilder,
-		subjectInfo:       subjectInfo,
-		subjectErr:        subjectErr,
-		subjectPeerUpdate: subjectPeerUpdate,
-		credsFetcher:      credsFetcher,
-		retryDelayFunc:    network.ExponentialBackoff,
+		clientBuilder:                 clientBuilder,
+		subjectInfo:                   subjectInfo,
+		subjectErr:                    subjectErr,
+		subjectPeerUpdate:             subjectPeerUpdate,
+		subjectServicesUpdate:         subjectServicesUpdate,
+		subjectDedicatedServersUpdate: subjectDedicatedServersUpdate,
+		credsFetcher:                  credsFetcher,
+		retryDelayFunc:                network.ExponentialBackoff,
+		fwmark:                        fwmark,
+		resolver:                      resolver,
 	}
 }
 
@@ -165,16 +185,69 @@ type mqttMessage struct {
 func (c *Client) createClientOptions(
 	credentials config.NCData,
 	managementChan chan<- interface{},
-	ctx context.Context) *mqtt.ClientOptions {
+	ctx context.Context) (*mqtt.ClientOptions, error) {
 	opts := mqtt.NewClientOptions()
 	opts.SetCleanSession(false)
 	opts.SetOrderMatters(false)
 	opts.SetAutoReconnect(false) // handled manually with the exponential backoff
-	opts.AddBroker(credentials.Endpoint)
+
+	// Parse endpoint URL to extract hostname for DNS resolution and TLS verification.
+	// Example: "ssl://mqtt.example.com:8883" -> hostname="mqtt.example.com", port="8883"
+	log.Println(logPrefix, "try DNS resolution for original endpoint:", credentials.Endpoint)
+	u, err := url.Parse(credentials.Endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("NC original endpoint URL parse error: %w", err)
+	}
+
+	hostname := u.Hostname()
+	port := u.Port()
+
+	// Resolve hostname to IPs using resolver with fwmark (bypasses killswitch).
+	// Add each IP as a separate broker - MQTT library will try them sequentially.
+	ips, resolveErr := c.resolver.Resolve(hostname)
+	if resolveErr == nil && len(ips) > 0 {
+		for _, ip := range ips {
+			if ip.Is6() {
+				log.Println(logPrefix, "got IPv6 address:", ip, " ignore.")
+				continue
+			}
+			brokerURL := fmt.Sprintf("%s://%s", u.Scheme, ip.String())
+			if port != "" {
+				brokerURL = fmt.Sprintf("%s:%s", brokerURL, port)
+			}
+			opts.AddBroker(brokerURL)
+		}
+	}
+
+	if len(opts.Servers) == 0 {
+		if resolveErr != nil {
+			log.Println(logPrefix, "DNS resolution failed, using original endpoint, err:", resolveErr)
+		} else {
+			log.Println(logPrefix, "no usable IPv4 addresses resolved, using original endpoint")
+		}
+		opts.AddBroker(credentials.Endpoint)
+	}
+
 	opts.SetUsername(credentials.Username)
 	opts.SetPassword(credentials.Password)
 	opts.SetClientID(credentials.UserID.String())
 	opts.SetConnectTimeout(timeout)
+
+	// Set TLS config with original hostname for certificate verification.
+	// Required when connecting to IP address instead of hostname.
+	opts.SetTLSConfig(&tls.Config{
+		ServerName: hostname,
+		MinVersion: tls.VersionTLS12,
+	})
+
+	if c.fwmark != 0 {
+		// Create dialer with fwmark on TCP socket to bypass killswitch.
+		dialer := &net.Dialer{
+			Timeout: timeout,
+			Control: network.NewFwmarkControlFn(c.fwmark),
+		}
+		opts.SetDialer(dialer)
+	}
 
 	opts.SetDefaultPublishHandler(func(_ mqtt.Client, m mqtt.Message) {
 		log.Println(logPrefix, "MQTT message received.")
@@ -203,7 +276,7 @@ func (c *Client) createClientOptions(
 		}
 	})
 
-	return opts
+	return opts, nil
 }
 
 type connectionState int
@@ -249,7 +322,11 @@ func (c *Client) tryConnect(
 			return client, connectionState
 		}
 
-		opts := c.createClientOptions(credentials, managementChan, ctx)
+		opts, err := c.createClientOptions(credentials, managementChan, ctx)
+		if err != nil {
+			logFunc(logPrefix, "failed to create client options, err:", err.Error())
+			return client, connectionState
+		}
 		client = c.clientBuilder.Build(opts)
 		connectionState = connecting
 	}
@@ -317,7 +394,7 @@ func (c *Client) connectWithBackoff(client mqtt.Client,
 	token := client.SubscribeMultiple(subscriptions, nil)
 	if token.WaitTimeout(timeout) && token.Error() != nil {
 		c.subjectErr.Publish(
-			fmt.Errorf(logPrefix+" subscribing to %v topics: %s", unsubscriptions, token.Error()),
+			fmt.Errorf(logPrefix+" subscribing to topics: %s", token.Error()),
 		)
 	}
 
@@ -420,8 +497,17 @@ func (c *Client) handleMessage(client mqtt.Client, msg mqtt.Message, ctx context
 		)
 	}
 
-	if payload.Message.Data.Event.Type == typeMeshnet {
+	log.Println(internal.InfoPrefix, logPrefix, "received", payload.Message.Data.Event.Type)
+
+	switch payload.Message.Data.Event.Type {
+	case typeUserServiceUpdate:
+		c.subjectServicesUpdate.Publish(struct{}{})
+	case typeMeshnet:
 		c.subjectPeerUpdate.Publish(payload.Message.Data.Event.Attributes.AffectedMachines)
+	case typeDedicatedServerUpdate:
+		c.subjectDedicatedServersUpdate.Publish(struct{}{})
+	default:
+		log.Println(internal.WarningPrefix, logPrefix, "received unknown MQTT message type:", payload.Message.Data.Event.Type)
 	}
 }
 
@@ -458,6 +544,7 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan any, error)
 			log.Println(logPrefix, "stopping management loop")
 			cancelConnectionFunc()
 			if client != nil {
+				unsubscriptions := slices.Collect(maps.Keys(subscriptions))
 				client.Unsubscribe(unsubscriptions...)
 				client.Disconnect(0)
 				client = nil
@@ -467,7 +554,11 @@ func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan any, error)
 		}()
 
 		connectedChan := make(chan mqtt.Client)
-		opts := c.createClientOptions(credentials, managementChan, connectionContext)
+		opts, err := c.createClientOptions(credentials, managementChan, connectionContext)
+		if err != nil {
+			log.Println(logPrefix, "failed to create client options, err:", err.Error())
+			return
+		}
 		client = c.clientBuilder.Build(opts)
 		go c.connect(client, credentialsInvalidated, connectionContext, managementChan, connectedChan)
 

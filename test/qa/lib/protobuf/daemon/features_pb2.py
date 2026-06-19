@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0e\x66\x65\x61tures.proto\x12\x02pb\")\n\x0e\x46\x65\x61tureToggles\x12\x17\n\x0fmeshnet_enabled\x18\x01 \x01(\x08\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0e\x66\x65\x61tures.proto\x12\x02pb\"K\n\x0e\x46\x65\x61tureToggles\x12\x17\n\x0fmeshnet_enabled\x18\x01 \x01(\x08\x12 \n\x18\x64\x65\x64icated_server_enabled\x18\x02 \x01(\x08\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,5 +33,5 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z/github.com/NordSecurity/nordvpn-linux/daemon/pb'
   _globals['_FEATURETOGGLES']._serialized_start=22
-  _globals['_FEATURETOGGLES']._serialized_end=63
+  _globals['_FEATURETOGGLES']._serialized_end=97
 # @@protoc_insertion_point(module_scope)

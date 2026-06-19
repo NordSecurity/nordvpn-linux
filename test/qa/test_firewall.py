@@ -1,11 +1,19 @@
+import contextlib
 import random
 
 import pytest
+import socket
+import subprocess
+import time
+
+import requests
 import sh
 
 import lib
 from lib import IS_NIGHTLY, allowlist, firewall, network
 from lib.dynamic_parametrize import dynamic_parametrize
+from lib import capture_utils
+from lib.firewall import tun_interface_names
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
@@ -287,3 +295,208 @@ def test_firewall_lan_allowlist_work_together(tech, proto, obfuscated):
                 sh.nordvpn.connect()
                 assert not firewall.is_ip_routed_via_VPN(["1.1.1.1"]), "Allowlisted subnet is not going through VPN"
                 assert firewall.is_ip_routed_via_VPN(["1.0.0.1"]), "Not whitelisted subnet is going through VPN"
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_firewall_dns_udp_53_to_lan_resolver_dropped(tech, proto, obfuscated):
+    """
+    Verify UDP port 53 to the local resolver is dropped when VPN is connected.
+
+    Manual TC: LVPN-10477
+
+    Steps:
+      1. Connect to VPN.
+      2. Assert the query fails, - port 53 must be blocked by the firewall.
+      3. Disconnect from VPN.
+      4. Assert UDP port 53 is reachable again after disconnecting.
+
+    :raises AssertionError: If UDP port 53 is not reachable after VPN,
+     or if it is reachable while VPN is connected.
+    """
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+
+        assert not firewall.is_port_accessible_UDP(src_port=53), (
+            "UDP port 53 must be blocked by the firewall when VPN is connected"
+        )
+
+    assert firewall.is_port_accessible_UDP(src_port=53), (
+        "UDP port 53 must be reachable again after disconnecting from VPN"
+    )
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_firewall_dns_tcp_53_to_lan_resolver_dropped(tech, proto, obfuscated):
+    """
+    Verify TCP port 53 to the local resolver is dropped when VPN is connected.
+
+    Manual TC: LVPN-10478
+
+    Steps:
+      1. Connect to VPN.
+      2. Assert the connection fails, - port 53 must be blocked by the firewall.
+      3. Disconnect from VPN.
+      4. Assert TCP port 53 is reachable again after disconnecting.
+
+
+    :raises AssertionError: If TCP port 53 is not reachable after VPN,
+     or if it is reachable while VPN is connected.
+    """
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+
+        assert not firewall.is_port_accessible_TCP(src_port=53), (
+            "TCP port 53 must be blocked by the firewall when VPN is connected"
+        )
+
+    assert firewall.is_port_accessible_TCP(src_port=53), (
+        "TCP port 53 must be reachable again after disconnecting from VPN"
+    )
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_firewall_tcp_established_connection_response_accepted_via_tunnel(tech, proto, obfuscated):
+    """
+    Verify that response traffic for an established TCP connection is accepted via the tunnel.
+
+    Manual TC: LVPN-10476
+
+    Steps:
+      1. Connect to VPN.
+      2. Start tunnel packet capture.
+      3. Send an HTTP request to nordvpn.com.
+      4. Stop capture.
+      5. Assert a valid HTTP response code is returned.
+      6. Assert tunnel packets were captured traffic went through the VPN tunnel.
+      7. Disconnect from VPN.
+
+     :raises AssertionError: If HTTP request does not return a valid response code or no tunnel packets were captured.
+    """
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    host = "nordvpn.com"
+
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+
+        nordvpn_ip = socket.gethostbyname(host)
+
+        cap = capture_utils.BackgroundCapture(
+            "any",
+            bpf_filter=f"ip.addr == {nordvpn_ip}",
+        )
+        cap.start()
+
+        try:
+            response = requests.get(f"http://{host}", timeout=10, allow_redirects=False)
+        except requests.exceptions.RequestException as e:
+            pytest.fail(f"{host} must be reachable when connected to VPN: {e}")
+
+        cap.stop()
+
+        assert response.status_code in (200, 301, 302), (
+            f"{host} must return a valid response when connected to VPN, got {response.status_code}"
+        )
+
+        assert all(
+            capture_utils.ifindex_to_name(p.sll.ifindex) in tun_interface_names
+            for p in cap.packets
+        ), (
+            f"Traffic to {host} must go through a tunnel interface {tun_interface_names}, "
+            f"but packets were only seen on: "
+            f"{set(capture_utils.ifindex_to_name(p.sll.ifindex) for p in cap.packets)}"
+        )
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_firewall_outgoing_and_incoming_loopback_accepted(tech, proto, obfuscated):
+    """
+    Verify loopback traffic is accepted when VPN is connected.
+
+    Manual TC: LVPN-10475
+
+    Steps:
+      1. Connect to VPN.
+      2. Start a local HTTP server on port 18080.
+      3. Send an HTTP request to http://127.0.0.1:18080.
+      4. Assert a valid HTTP response code is returned, - both loopback directions verified.
+      5. Disconnect from VPN.
+
+    :raises AssertionError: If HTTP request does not return a valid HTTP response code.
+    """
+    local_http_port = 18080
+
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+
+        http_server = subprocess.Popen(
+            ["python3", "-m", "http.server", str(local_http_port)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        time.sleep(1)
+
+        try:
+            try:
+                response = requests.get(f"http://127.0.0.1:{local_http_port}", timeout=5, allow_redirects=False)
+            except requests.exceptions.RequestException as e:
+                pytest.fail(f"Loopback traffic must be accepted when VPN is connected: {e}")
+
+            assert response.status_code in (200, 301, 302), (
+                f"Loopback traffic must be accepted when VPN is connected, got {response.status_code}"
+            )
+        finally:
+            http_server.terminate()
+            try:
+                http_server.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                http_server.kill()
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+def test_firewall_tcp_to_lan_host_goes_via_tunnel(tech, proto, obfuscated):
+    """
+    Verify TCP traffic to a LAN host routes through the VPN tunnel and not the physical interface.
+
+    Manual TC: LVPN-10481
+
+    Steps:
+      1. Connect to VPN.
+      2. Start packet capture on all interfaces filtered to other lan ip.
+      3. Attempt HTTP request to other lan ip — no response expected.
+      4. Assert other lan ip is routed via VPN.
+      5. Assert all captured packets went through a known tunnel interface.
+      6. Disconnect from VPN.
+
+    :raises AssertionError: If other lan ip is not routed via VPN or packets appear outside the tunnel.
+    """
+    other_lan_ip = network.get_default_gateway()
+
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    with lib.Defer(sh.nordvpn.disconnect):
+        sh.nordvpn.connect()
+
+        cap = capture_utils.BackgroundCapture(
+            "any",
+            bpf_filter=f"ip.addr == {other_lan_ip}",
+        )
+        cap.start()
+
+        with contextlib.suppress(requests.exceptions.RequestException):
+            requests.get(f"http://{other_lan_ip}", timeout=3, allow_redirects=False)
+
+        cap.stop()
+
+        assert all(
+            capture_utils.ifindex_to_name(p.sll.ifindex) in tun_interface_names
+            for p in cap.packets
+        ), (
+            f"Traffic to {other_lan_ip} must go through a tunnel interface {tun_interface_names}, "
+            f"but packets were only seen on: "
+            f"{set(capture_utils.ifindex_to_name(p.sll.ifindex) for p in cap.packets)}"
+        )

@@ -11,9 +11,10 @@ import (
 const TestRecommendedUUID string = "c0b4c990-3000-457f-8b81-6850b8cdb54e"
 
 type MockServersAPI struct {
-	Error         error
-	ServersList   core.Servers
-	CountriesList core.Countries
+	Error                error
+	ServersList          core.Servers
+	CountriesList        core.Countries
+	ServerEndpointCalled bool
 }
 
 func NewMockServersAPI() *MockServersAPI {
@@ -57,6 +58,7 @@ func (m *MockServersAPI) RecommendedServers(filter core.ServersFilter, _ float64
 }
 
 func (m *MockServersAPI) Server(serverID int64) (*core.Server, error) {
+	m.ServerEndpointCalled = true
 	if m.Error != nil {
 		return nil, m.Error
 	}

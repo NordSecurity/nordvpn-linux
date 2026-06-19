@@ -59,6 +59,7 @@ case "$1" in
                 systemd-tmpfiles --create || :
                 systemctl enable nordvpnd.socket &>/dev/null || :
                 systemctl enable nordvpnd.service &>/dev/null || :
+                systemctl enable nordvpnd-killswitch.service &>/dev/null || :
                 systemctl start nordvpnd.socket &>/dev/null || :
                 systemctl start nordvpnd.service &>/dev/null || :
             ;;

@@ -100,8 +100,9 @@ func (fileOpsDefaultImpl) IsValidExistingDir(path string) (bool, error) {
 }
 
 type RemoteConfigEvent struct {
-	MeshnetFeatureEnabled bool
-	ENSFeatureEnabled     bool
+	MeshnetFeatureEnabled  bool
+	DedicatedServerEnabled bool
+	ENSFeatureEnabled      bool
 }
 
 type RemoteConfigNotifier interface {
@@ -149,6 +150,7 @@ func NewCdnRemoteConfig(buildTarget config.BuildTarget, remotePath, localPath st
 	rc.features.add(FeatureLibtelio)
 	rc.features.add(FeatureMeshnet)
 	rc.features.add(FeatureNordWhisper)
+	rc.features.add(FeatureDedicatedServer)
 	rc.features.add(FeatureENS)
 	return rc
 }
@@ -256,8 +258,9 @@ func (c *CdnRemoteConfig) Load() error {
 	if reloadDone {
 		// notify what is current state after config reload
 		c.notifier.Publish(RemoteConfigEvent{
-			MeshnetFeatureEnabled: c.IsFeatureEnabled(FeatureMeshnet),
-			ENSFeatureEnabled:     c.IsFeatureEnabled(FeatureENS),
+			MeshnetFeatureEnabled:  c.IsFeatureEnabled(FeatureMeshnet),
+			DedicatedServerEnabled: c.IsFeatureEnabled(FeatureDedicatedServer),
+			ENSFeatureEnabled:      c.IsFeatureEnabled(FeatureENS),
 		})
 		// reset event flags for some events to control emit frequency
 		c.analytics.ClearEventFlags()

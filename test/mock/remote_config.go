@@ -25,10 +25,8 @@ func (r *RemoteConfigMock) GetNordWhisperEnabled() (bool, error) {
 }
 
 func (r *RemoteConfigMock) IsFeatureEnabled(featureName string) bool {
-	if toggle, exists := r.FeatureToggles[featureName]; exists {
-		return toggle
-	}
-	return false
+	val, ok := r.FeatureToggles[featureName]
+	return ok && val
 }
 
 func (r *RemoteConfigMock) GetFeatureParam(_, _ string) (string, error) { return "", nil }

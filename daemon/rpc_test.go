@@ -20,12 +20,14 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
+	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	core_test "github.com/NordSecurity/nordvpn-linux/test/mock/core"
+	testdevicekey "github.com/NordSecurity/nordvpn-linux/test/mock/devicekey"
 	testevents "github.com/NordSecurity/nordvpn-linux/test/mock/events"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
@@ -88,6 +90,7 @@ func testRPC() *RPC {
 	analytics := testevents.NewAnalytics(config.ConsentUndefined)
 
 	rcMock := mock.NewRemoteConfigMock()
+	rcMock.AddFeatureToggle(remote.FeatureDedicatedServer, true)
 	rcMock.AddFeatureToggle(remote.FeatureENS, true)
 
 	return NewRPC(
@@ -98,6 +101,7 @@ func testRPC() *RPC {
 		api,
 		core_test.NewMockServersAPI(),
 		&core_test.CredentialsAPIMock{},
+		&core_test.DedicatedServersAPIMock{},
 		testNewCDNAPI(),
 		testNewRepoAPI(),
 		&core_test.AuthenticationAPImock{},
@@ -116,9 +120,11 @@ func testRPC() *RPC {
 		sharedctx.New(),
 		rcMock,
 		state.NewConnectionInfo(),
-		NewConsentChecker(false, cm, api, &workingLoginChecker{}, &analytics),
+		NewConsentChecker(false, cm, api, &workingLoginChecker{}, &analytics, &testdevicekey.MockDeviceKeyManager{}),
 		recents.NewRecentConnectionsStore(TestdataPath+TestRecentConnFile, &internal.StdFilesystemHandle{}, nil),
 		daemonEvents.NewDataUpdateEvents(),
+		daemonEvents.NewPauseEvents(),
+		&devicekey.DeviceKeyManagerImpl{},
 	)
 }
 

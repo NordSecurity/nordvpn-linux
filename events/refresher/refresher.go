@@ -7,6 +7,7 @@ package refresher
 import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
+	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	meshn "github.com/NordSecurity/nordvpn-linux/meshnet"
@@ -20,7 +21,7 @@ type Refresher interface {
 // Meshnet refreshes peers.
 type Meshnet struct {
 	api     mesh.CachingMapper
-	checker meshn.Checker
+	checker devicekey.MeshnetDeviceKeyManager
 	man     config.Manager
 	netw    Refresher
 }
@@ -28,7 +29,7 @@ type Meshnet struct {
 // NewMeshnet is a default constructor for Meshnet.
 func NewMeshnet(
 	api mesh.CachingMapper,
-	checker meshn.Checker,
+	checker devicekey.MeshnetDeviceKeyManager,
 	man config.Manager,
 	netw Refresher,
 ) *Meshnet {
@@ -46,7 +47,7 @@ func (m *Meshnet) NotifyPeerUpdate(peerIds []string) error {
 		return meshn.ErrMeshnetNotEnabled
 	}
 
-	if !m.checker.IsRegistrationInfoCorrect() {
+	if !m.checker.CheckAndRegisterMeshnet() {
 		return meshn.ErrDeviceNotRegistered
 	}
 

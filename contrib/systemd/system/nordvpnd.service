@@ -1,19 +1,20 @@
 [Unit]
 Description=NordVPN Daemon
 Requires=nordvpnd.socket
-After=network-pre.target
+Wants=nordvpnd-killswitch.service network-online.target
+After=nordvpnd-killswitch.service network-online.target
 
 [Service]
 ExecStart=/usr/sbin/nordvpnd
 NonBlocking=true
 KillMode=process
-Restart=on-failure
+Restart=always
 RestartSec=5
 # centos7 RuntimeDirectory ignored
 RuntimeDirectory=nordvpn
 RuntimeDirectoryMode=0750
-# User=root
 Group=nordvpn
+RuntimeDirectoryPreserve=yes
 
 [Install]
 WantedBy=default.target

@@ -53,6 +53,18 @@ final $typed_data.Uint8List updateEventDescriptor = $convert.base64Decode(
     'CgtVcGRhdGVFdmVudBIXChNTRVJWRVJTX0xJU1RfVVBEQVRFEAASFwoTUkVDRU5UU19MSVNUX1'
     'VQREFURRAB');
 
+@$core.Deprecated('Use pauseEventTypeDescriptor instead')
+const PauseEventType$json = {
+  '1': 'PauseEventType',
+  '2': [
+    {'1': 'RECONNECT_FAILED', '2': 0},
+  ],
+};
+
+/// Descriptor for `PauseEventType`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List pauseEventTypeDescriptor = $convert
+    .base64Decode('Cg5QYXVzZUV2ZW50VHlwZRIUChBSRUNPTk5FQ1RfRkFJTEVEEAA=');
+
 @$core.Deprecated('Use loginEventDescriptor instead')
 const LoginEvent$json = {
   '1': 'LoginEvent',
@@ -107,6 +119,25 @@ const VersionHealthStatus$json = {
 /// Descriptor for `VersionHealthStatus`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List versionHealthStatusDescriptor = $convert.base64Decode(
     'ChNWZXJzaW9uSGVhbHRoU3RhdHVzEh8KC3N0YXR1c19jb2RlGAEgASgFUgpzdGF0dXNDb2Rl');
+
+@$core.Deprecated('Use pauseEventDescriptor instead')
+const PauseEvent$json = {
+  '1': 'PauseEvent',
+  '2': [
+    {
+      '1': 'type',
+      '3': 1,
+      '4': 1,
+      '5': 14,
+      '6': '.pb.PauseEventType',
+      '10': 'type'
+    },
+  ],
+};
+
+/// Descriptor for `PauseEvent`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List pauseEventDescriptor = $convert.base64Decode(
+    'CgpQYXVzZUV2ZW50EiYKBHR5cGUYASABKA4yEi5wYi5QYXVzZUV2ZW50VHlwZVIEdHlwZQ==');
 
 @$core.Deprecated('Use appStateDescriptor instead')
 const AppState$json = {
@@ -175,6 +206,15 @@ const AppState$json = {
       '9': 0,
       '10': 'versionHealth'
     },
+    {
+      '1': 'pause_event',
+      '3': 8,
+      '4': 1,
+      '5': 11,
+      '6': '.pb.PauseEvent',
+      '9': 0,
+      '10': 'pauseEvent'
+    },
   ],
   '8': [
     {'1': 'state'},
@@ -190,4 +230,5 @@ final $typed_data.Uint8List appStateDescriptor = $convert.base64Decode(
     'Q2hhbmdlEjQKDHVwZGF0ZV9ldmVudBgFIAEoDjIPLnBiLlVwZGF0ZUV2ZW50SABSC3VwZGF0ZU'
     'V2ZW50EkwKFGFjY291bnRfbW9kaWZpY2F0aW9uGAYgASgLMhcucGIuQWNjb3VudE1vZGlmaWNh'
     'dGlvbkgAUhNhY2NvdW50TW9kaWZpY2F0aW9uEkAKDnZlcnNpb25faGVhbHRoGAcgASgLMhcucG'
-    'IuVmVyc2lvbkhlYWx0aFN0YXR1c0gAUg12ZXJzaW9uSGVhbHRoQgcKBXN0YXRl');
+    'IuVmVyc2lvbkhlYWx0aFN0YXR1c0gAUg12ZXJzaW9uSGVhbHRoEjEKC3BhdXNlX2V2ZW50GAgg'
+    'ASgLMg4ucGIuUGF1c2VFdmVudEgAUgpwYXVzZUV2ZW50QgcKBXN0YXRl');
