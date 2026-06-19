@@ -275,7 +275,26 @@ func TestAccountInfo_CacheIsUpdatedIfDedicatedServersIPServiceIsNotAvailable(t *
 		name                   string
 		dedicatedIPServices    []auth.DedicatedIPService
 		dedicatedServerService auth.DedicatedServerService
-	}{}
+	}{
+		{
+			name:                   "no dedicated servers/ip service",
+			dedicatedIPServices:    []auth.DedicatedIPService{},
+			dedicatedServerService: auth.DedicatedServerService{Active: false},
+		},
+		{
+			name: "no dedicated servers service, dedicated ip service is available",
+			dedicatedIPServices: []auth.DedicatedIPService{
+				{
+					ExpiresAt: "2026-02-24",
+				},
+			},
+		},
+		{
+			name:                   "no dedicated ip service, dedicated server is available",
+			dedicatedIPServices:    []auth.DedicatedIPService{},
+			dedicatedServerService: auth.DedicatedServerService{Active: true},
+		},
+	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -299,6 +318,8 @@ func TestAccountInfo_CacheIsUpdatedIfDedicatedServersIPServiceIsNotAvailable(t *
 
 			resp, _ := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: false})
 			assert.Equal(t, cachedResponse.String(), resp.String(), "Non-full request should not update the cache.")
+
+			dataManager.accountData.unset()
 
 			updatedResponse, _ := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: true})
 			resp, _ = r.AccountInfo(context.Background(), &pb.AccountRequest{Full: false})

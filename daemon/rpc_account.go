@@ -57,7 +57,6 @@ func dipServicesToProtobuf(dipServices []auth.DedicatedIPService) []*pb.Dedidcat
 func (r *RPC) setDedicatedIPServerData(accountInfo *pb.AccountResponse) (*pb.AccountResponse, error) {
 	dipServices, err := r.ac.GetDedicatedIPServices()
 	if err != nil {
-		log.Error("getting dedicated ip services:", err)
 		if errors.Is(err, core.ErrUnauthorized) {
 			return &pb.AccountResponse{Type: internal.CodeExpiredAccessToken},
 				fmt.Errorf("getting dedicated ip services: %w", err)
