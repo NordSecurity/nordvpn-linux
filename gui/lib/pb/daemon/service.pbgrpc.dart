@@ -407,6 +407,18 @@ class DaemonClient extends $grpc.Client {
     return $createUnaryCall(_$getDaemonApiVersion, request, options: options);
   }
 
+  /// InjectVpnConnectionError is a DEV-only endpoint that injects a simulated
+  /// ENS (Error Notification Service) connection error as if libtelio produced it,
+  /// so it flows through the same mapping, publishing, and handling path. It is a
+  /// no-op outside dev and when there is no active NordLynx connection.
+  $grpc.ResponseFuture<$0.Payload> injectVpnConnectionError(
+    $0.InjectVpnConnectionErrorRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$injectVpnConnectionError, request,
+        options: options);
+  }
+
   // method descriptors
 
   static final _$isLoggedIn =
@@ -636,6 +648,11 @@ class DaemonClient extends $grpc.Client {
       '/pb.Daemon/GetDaemonApiVersion',
       ($0.GetDaemonApiVersionRequest value) => value.writeToBuffer(),
       $0.GetDaemonApiVersionResponse.fromBuffer);
+  static final _$injectVpnConnectionError =
+      $grpc.ClientMethod<$0.InjectVpnConnectionErrorRequest, $0.Payload>(
+          '/pb.Daemon/InjectVpnConnectionError',
+          ($0.InjectVpnConnectionErrorRequest value) => value.writeToBuffer(),
+          $0.Payload.fromBuffer);
 }
 
 @$pb.GrpcServiceName('pb.Daemon')
@@ -1007,6 +1024,15 @@ abstract class DaemonServiceBase extends $grpc.Service {
         ($core.List<$core.int> value) =>
             $0.GetDaemonApiVersionRequest.fromBuffer(value),
         ($0.GetDaemonApiVersionResponse value) => value.writeToBuffer()));
+    $addMethod(
+        $grpc.ServiceMethod<$0.InjectVpnConnectionErrorRequest, $0.Payload>(
+            'InjectVpnConnectionError',
+            injectVpnConnectionError_Pre,
+            false,
+            false,
+            ($core.List<$core.int> value) =>
+                $0.InjectVpnConnectionErrorRequest.fromBuffer(value),
+            ($0.Payload value) => value.writeToBuffer()));
   }
 
   $async.Future<$1.IsLoggedInResponse> isLoggedIn_Pre(
@@ -1398,4 +1424,13 @@ abstract class DaemonServiceBase extends $grpc.Service {
 
   $async.Future<$0.GetDaemonApiVersionResponse> getDaemonApiVersion(
       $grpc.ServiceCall call, $0.GetDaemonApiVersionRequest request);
+
+  $async.Future<$0.Payload> injectVpnConnectionError_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.InjectVpnConnectionErrorRequest> $request) async {
+    return injectVpnConnectionError($call, await $request);
+  }
+
+  $async.Future<$0.Payload> injectVpnConnectionError(
+      $grpc.ServiceCall call, $0.InjectVpnConnectionErrorRequest request);
 }
