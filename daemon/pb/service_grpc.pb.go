@@ -67,6 +67,7 @@ const (
 	Daemon_Ping_FullMethodName                    = "/pb.Daemon/Ping"
 	Daemon_SubscribeToStateChanges_FullMethodName = "/pb.Daemon/SubscribeToStateChanges"
 	Daemon_GetDaemonApiVersion_FullMethodName     = "/pb.Daemon/GetDaemonApiVersion"
+	Daemon_CollectDiagnostics_FullMethodName      = "/pb.Daemon/CollectDiagnostics"
 )
 
 // DaemonClient is the client API for Daemon service.
@@ -133,6 +134,8 @@ type DaemonClient interface {
 	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error)
 	SubscribeToStateChanges(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[AppState], error)
 	GetDaemonApiVersion(ctx context.Context, in *GetDaemonApiVersionRequest, opts ...grpc.CallOption) (*GetDaemonApiVersionResponse, error)
+	// ==================== Troubleshooting ====================
+	CollectDiagnostics(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DiagnosticsProgress], error)
 }
 
 type daemonClient struct {
@@ -650,6 +653,25 @@ func (c *daemonClient) GetDaemonApiVersion(ctx context.Context, in *GetDaemonApi
 	return out, nil
 }
 
+func (c *daemonClient) CollectDiagnostics(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DiagnosticsProgress], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Daemon_ServiceDesc.Streams[3], Daemon_CollectDiagnostics_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[Empty, DiagnosticsProgress]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Daemon_CollectDiagnosticsClient = grpc.ServerStreamingClient[DiagnosticsProgress]
+
 // DaemonServer is the server API for Daemon service.
 // All implementations must embed UnimplementedDaemonServer
 // for forward compatibility.
@@ -714,6 +736,8 @@ type DaemonServer interface {
 	Ping(context.Context, *Empty) (*PingResponse, error)
 	SubscribeToStateChanges(*Empty, grpc.ServerStreamingServer[AppState]) error
 	GetDaemonApiVersion(context.Context, *GetDaemonApiVersionRequest) (*GetDaemonApiVersionResponse, error)
+	// ==================== Troubleshooting ====================
+	CollectDiagnostics(*Empty, grpc.ServerStreamingServer[DiagnosticsProgress]) error
 	mustEmbedUnimplementedDaemonServer()
 }
 
@@ -867,6 +891,9 @@ func (UnimplementedDaemonServer) SubscribeToStateChanges(*Empty, grpc.ServerStre
 }
 func (UnimplementedDaemonServer) GetDaemonApiVersion(context.Context, *GetDaemonApiVersionRequest) (*GetDaemonApiVersionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDaemonApiVersion not implemented")
+}
+func (UnimplementedDaemonServer) CollectDiagnostics(*Empty, grpc.ServerStreamingServer[DiagnosticsProgress]) error {
+	return status.Errorf(codes.Unimplemented, "method CollectDiagnostics not implemented")
 }
 func (UnimplementedDaemonServer) mustEmbedUnimplementedDaemonServer() {}
 func (UnimplementedDaemonServer) testEmbeddedByValue()                {}
@@ -1732,6 +1759,17 @@ func _Daemon_GetDaemonApiVersion_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Daemon_CollectDiagnostics_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(DaemonServer).CollectDiagnostics(m, &grpc.GenericServerStream[Empty, DiagnosticsProgress]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Daemon_CollectDiagnosticsServer = grpc.ServerStreamingServer[DiagnosticsProgress]
+
 // Daemon_ServiceDesc is the grpc.ServiceDesc for Daemon service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1934,6 +1972,11 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "SubscribeToStateChanges",
 			Handler:       _Daemon_SubscribeToStateChanges_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "CollectDiagnostics",
+			Handler:       _Daemon_CollectDiagnostics_Handler,
 			ServerStreams: true,
 		},
 	},

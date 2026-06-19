@@ -293,6 +293,11 @@ class DaemonStub(object):
                 request_serializer=common__pb2.GetDaemonApiVersionRequest.SerializeToString,
                 response_deserializer=common__pb2.GetDaemonApiVersionResponse.FromString,
                 _registered_method=True)
+        self.CollectDiagnostics = channel.unary_stream(
+                '/pb.Daemon/CollectDiagnostics',
+                request_serializer=common__pb2.Empty.SerializeToString,
+                response_deserializer=common__pb2.DiagnosticsProgress.FromString,
+                _registered_method=True)
 
 
 class DaemonServicer(object):
@@ -598,6 +603,13 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def CollectDiagnostics(self, request, context):
+        """==================== Troubleshooting ====================
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_DaemonServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -840,6 +852,11 @@ def add_DaemonServicer_to_server(servicer, server):
                     servicer.GetDaemonApiVersion,
                     request_deserializer=common__pb2.GetDaemonApiVersionRequest.FromString,
                     response_serializer=common__pb2.GetDaemonApiVersionResponse.SerializeToString,
+            ),
+            'CollectDiagnostics': grpc.unary_stream_rpc_method_handler(
+                    servicer.CollectDiagnostics,
+                    request_deserializer=common__pb2.Empty.FromString,
+                    response_serializer=common__pb2.DiagnosticsProgress.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -2138,6 +2155,33 @@ class Daemon(object):
             '/pb.Daemon/GetDaemonApiVersion',
             common__pb2.GetDaemonApiVersionRequest.SerializeToString,
             common__pb2.GetDaemonApiVersionResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def CollectDiagnostics(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/pb.Daemon/CollectDiagnostics',
+            common__pb2.Empty.SerializeToString,
+            common__pb2.DiagnosticsProgress.FromString,
             options,
             channel_credentials,
             insecure,

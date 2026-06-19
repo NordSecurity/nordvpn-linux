@@ -393,8 +393,8 @@ Your browsing activities remain private, regardless of your choice.
 	MsgRemoveNarrowConfirmPrompt = "The range you are trying to add includes previously allowed subnets. To prevent conflicts, we'll delete the redundant ones. Do you want to remove overlapping subnets?"
 
 	SetARPIgnoreUsageText    = "Controls whether your device ignores or responds to ARP requests while the VPN is active.\nBy default, arp-ignore is on. This means ARP requests are ignored to prevent VPN exposure."
-	SetARPIgnoreSuccess      = "ARP ignore set to '%s' successfully."
-	SetARPIgnoreNothingToSet = "ARP ignore is already set to '%s'."
+	SetARPIgnoreSuccess      = "ARP ignore set to ‘%s’ successfully."
+	SetARPIgnoreNothingToSet = "ARP ignore is already set to ‘%s’."
 	SetARPIgnoreWarning      = "You’ve turned off arp-ignore. This is an advanced privacy setting and should only be off if your network setup requires ARP responses."
 
 	DedicatedServersNoServiceMessage           = "Get a server that's exclusively yours. Enjoy your own IP with resources and speed reserved entirely for you. Use it with port forwarding to host services and access devices remotely. To get a personal dedicated server, continue in the browser: %s"
@@ -405,4 +405,8 @@ Your browsing activities remain private, regardless of your choice.
 	DedicatedServersAutoconnectNordlynxMessage = "Auto-connect to Dedicated Server requires NordLynx protocol."
 	DedicatedServerPQMessage                   = "Post-quantum encryption is not compatible with Dedicated Server."
 	DedicatedServersNoNordlynxMessage          = "Connection to Dedicated Server requires NordLynx technology."
+	// Troubleshoot
+	MsgTroubleshootSuccess    = "Diagnostics collected successfully.\nFile saved to: %s"
+	MsgTroubleshootFailure    = "Failed to collect diagnostics. Please try again or contact support."
+	MsgTroubleshootDisclaimer = "WARNING: this archive contains sensitive information about your system and configuration. Share it only with NordVPN customer support, and only over a secure channel."
 )

@@ -508,6 +508,84 @@ class ServerGroupsList extends $pb.GeneratedMessage {
   $pb.PbList<ServerGroup> get servers => $_getList(1);
 }
 
+class DiagnosticsProgress extends $pb.GeneratedMessage {
+  factory DiagnosticsProgress({
+    $core.String? step,
+    $core.String? filePath,
+    $core.String? error,
+  }) {
+    final result = create();
+    if (step != null) result.step = step;
+    if (filePath != null) result.filePath = filePath;
+    if (error != null) result.error = error;
+    return result;
+  }
+
+  DiagnosticsProgress._();
+
+  factory DiagnosticsProgress.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory DiagnosticsProgress.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'DiagnosticsProgress',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
+      createEmptyInstance: create)
+    ..aOS(2, _omitFieldNames ? '' : 'step')
+    ..aOS(4, _omitFieldNames ? '' : 'filePath')
+    ..aOS(5, _omitFieldNames ? '' : 'error')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  DiagnosticsProgress clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  DiagnosticsProgress copyWith(void Function(DiagnosticsProgress) updates) =>
+      super.copyWith((message) => updates(message as DiagnosticsProgress))
+          as DiagnosticsProgress;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DiagnosticsProgress create() => DiagnosticsProgress._();
+  @$core.override
+  DiagnosticsProgress createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static DiagnosticsProgress getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<DiagnosticsProgress>(create);
+  static DiagnosticsProgress? _defaultInstance;
+
+  @$pb.TagNumber(2)
+  $core.String get step => $_getSZ(0);
+  @$pb.TagNumber(2)
+  set step($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(2)
+  $core.bool hasStep() => $_has(0);
+  @$pb.TagNumber(2)
+  void clearStep() => $_clearField(2);
+
+  @$pb.TagNumber(4)
+  $core.String get filePath => $_getSZ(1);
+  @$pb.TagNumber(4)
+  set filePath($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(4)
+  $core.bool hasFilePath() => $_has(1);
+  @$pb.TagNumber(4)
+  void clearFilePath() => $_clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get error => $_getSZ(2);
+  @$pb.TagNumber(5)
+  set error($core.String value) => $_setString(2, value);
+  @$pb.TagNumber(5)
+  $core.bool hasError() => $_has(2);
+  @$pb.TagNumber(5)
+  void clearError() => $_clearField(5);
+}
+
 const $core.bool _omitFieldNames =
     $core.bool.fromEnvironment('protobuf.omit_field_names');
 const $core.bool _omitMessageNames =

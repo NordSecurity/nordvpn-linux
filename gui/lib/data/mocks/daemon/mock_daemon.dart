@@ -388,4 +388,13 @@ final class MockDaemon extends DaemonServiceBase {
       return Future.value(recommendedServerLocation!);
     }
   }
+
+  @override
+  Stream<DiagnosticsProgress> collectDiagnostics(
+    ServiceCall call,
+    Empty request,
+  ) {
+    // TODO: implement collectDiagnostics
+    throw UnimplementedError();
+  }
 }

@@ -101,4 +101,7 @@ service Daemon {
   rpc SubscribeToStateChanges(Empty) returns (stream AppState);
   rpc GetDaemonApiVersion(GetDaemonApiVersionRequest)
       returns (GetDaemonApiVersionResponse);
+
+  // ==================== Troubleshooting ====================
+  rpc CollectDiagnostics(Empty) returns (stream DiagnosticsProgress);
 }
