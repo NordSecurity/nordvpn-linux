@@ -386,6 +386,7 @@ func main() {
 		vpnNordWhisperConfigGetter,
 		Version,
 		internalVpnEvents,
+		rcConfig.IsFeatureEnabled(remote.FeatureENS),
 	)
 
 	vpn, err := vpnFactory(cfg.Technology)

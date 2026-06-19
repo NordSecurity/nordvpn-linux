@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -100,10 +102,14 @@ func TestRPC_HandleVPNConnectionError_PublishesDebuggerEvent(t *testing.T) {
 		return nil
 	})
 
+	rcMock := mock.NewRemoteConfigMock()
+	rcMock.AddFeatureToggle(remote.FeatureENS, true)
+
 	r := &RPC{
 		events: &daemonevents.Events{
 			Debugger: &daemonevents.DebuggerEvents{DebuggerEvents: subject},
 		},
+		remoteConfigGetter: rcMock,
 	}
 
 	err := r.HandleVPNConnectionError(events.VPNConnectionErrorEvent{

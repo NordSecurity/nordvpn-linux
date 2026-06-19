@@ -62,6 +62,7 @@ const (
 	FeatureLibtelio    = "libtelio"
 	FeatureMeshnet     = "meshnet"
 	FeatureNordWhisper = "nordwhisper"
+	FeatureENS         = "ens"
 )
 
 const (
