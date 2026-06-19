@@ -9,5 +9,6 @@ import (
 // error events published on the internal VPN events bus
 func (r *RPC) HandleVPNConnectionError(e events.VPNConnectionErrorEvent) error {
 	log.Debug("received VPN connection error event, code:", e.Code.String())
+	r.events.Debugger.DebuggerEvents.Publish(*newVPNConnectionErrorEvent(e.Code).ToDebuggerEvent())
 	return nil
 }
