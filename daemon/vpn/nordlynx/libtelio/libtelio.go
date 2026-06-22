@@ -848,8 +848,11 @@ func (l *Libtelio) InjectVPNConnectionError(code int32, publicKey string) error 
 		}
 	}
 
+	// #nosec G115 - dev-only injection — out-of-range codes map to Unknown
+	connErr := vpnConnError{code: teliogo.VpnConnectionError(code), publicKey: publicKey}
+
 	select {
-	case l.injectedErrors <- vpnConnError{code: teliogo.VpnConnectionError(code), publicKey: publicKey}:
+	case l.injectedErrors <- connErr:
 		return nil
 	default:
 		return errors.New("no active NordLynx connection monitor; connect with NordLynx first")
