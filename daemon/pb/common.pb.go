@@ -382,8 +382,7 @@ func (x *Payload) GetData() []string {
 	return nil
 }
 
-// InjectVpnConnectionErrorRequest is the request for the DEV-only
-// InjectVpnConnectionError endpoint.
+// InjectVpnConnectionErrorRequest is the request for the DEV-only endpoint.
 type InjectVpnConnectionErrorRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

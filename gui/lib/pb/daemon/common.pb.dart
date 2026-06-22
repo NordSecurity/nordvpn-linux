@@ -266,8 +266,7 @@ class Payload extends $pb.GeneratedMessage {
   $pb.PbList<$core.String> get data => $_getList(1);
 }
 
-/// InjectVpnConnectionErrorRequest is the request for the DEV-only
-/// InjectVpnConnectionError endpoint.
+/// InjectVpnConnectionErrorRequest is the request for the DEV-only endpoint.
 class InjectVpnConnectionErrorRequest extends $pb.GeneratedMessage {
   factory InjectVpnConnectionErrorRequest({
     $core.int? telioCode,

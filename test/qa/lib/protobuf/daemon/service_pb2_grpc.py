@@ -604,10 +604,7 @@ class DaemonServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def InjectVpnConnectionError(self, request, context):
-        """InjectVpnConnectionError is a DEV-only endpoint that injects a simulated
-        ENS (Error Notification Service) connection error as if libtelio produced it,
-        so it flows through the same mapping, publishing, and handling path. It is a
-        no-op outside dev and when there is no active NordLynx connection.
+        """InjectVpnConnectionError is a DEV-only endpoint that injects a simulated ENS event
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')

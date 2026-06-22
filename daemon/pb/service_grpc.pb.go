@@ -134,10 +134,7 @@ type DaemonClient interface {
 	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error)
 	SubscribeToStateChanges(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[AppState], error)
 	GetDaemonApiVersion(ctx context.Context, in *GetDaemonApiVersionRequest, opts ...grpc.CallOption) (*GetDaemonApiVersionResponse, error)
-	// InjectVpnConnectionError is a DEV-only endpoint that injects a simulated
-	// ENS (Error Notification Service) connection error as if libtelio produced it,
-	// so it flows through the same mapping, publishing, and handling path. It is a
-	// no-op outside dev and when there is no active NordLynx connection.
+	// InjectVpnConnectionError is a DEV-only endpoint that injects a simulated ENS event
 	InjectVpnConnectionError(ctx context.Context, in *InjectVpnConnectionErrorRequest, opts ...grpc.CallOption) (*Payload, error)
 }
 
@@ -730,10 +727,7 @@ type DaemonServer interface {
 	Ping(context.Context, *Empty) (*PingResponse, error)
 	SubscribeToStateChanges(*Empty, grpc.ServerStreamingServer[AppState]) error
 	GetDaemonApiVersion(context.Context, *GetDaemonApiVersionRequest) (*GetDaemonApiVersionResponse, error)
-	// InjectVpnConnectionError is a DEV-only endpoint that injects a simulated
-	// ENS (Error Notification Service) connection error as if libtelio produced it,
-	// so it flows through the same mapping, publishing, and handling path. It is a
-	// no-op outside dev and when there is no active NordLynx connection.
+	// InjectVpnConnectionError is a DEV-only endpoint that injects a simulated ENS event
 	InjectVpnConnectionError(context.Context, *InjectVpnConnectionErrorRequest) (*Payload, error)
 	mustEmbedUnimplementedDaemonServer()
 }

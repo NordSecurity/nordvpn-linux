@@ -407,10 +407,7 @@ class DaemonClient extends $grpc.Client {
     return $createUnaryCall(_$getDaemonApiVersion, request, options: options);
   }
 
-  /// InjectVpnConnectionError is a DEV-only endpoint that injects a simulated
-  /// ENS (Error Notification Service) connection error as if libtelio produced it,
-  /// so it flows through the same mapping, publishing, and handling path. It is a
-  /// no-op outside dev and when there is no active NordLynx connection.
+  /// InjectVpnConnectionError is a DEV-only endpoint that injects a simulated ENS event
   $grpc.ResponseFuture<$0.Payload> injectVpnConnectionError(
     $0.InjectVpnConnectionErrorRequest request, {
     $grpc.CallOptions? options,
