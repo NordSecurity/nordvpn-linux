@@ -128,7 +128,7 @@ func TestIsConnected(t *testing.T) {
 
 func TestEventCallback_DoesntBlock(t *testing.T) {
 	stateC := make(chan state)
-	vpnErrorsC := make(chan teliogo.VpnConnectionError)
+	vpnErrorsC := make(chan vpnConnError)
 	callbackHandler := newTelioCallbackHandler(stateC, vpnErrorsC)
 	cb := eventCallbackWrap(callbackHandler)
 	var event teliogo.Event
@@ -576,7 +576,7 @@ func Test_EventCallback(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	stateChan := make(chan state)
-	vpnErrorsChan := make(chan teliogo.VpnConnectionError)
+	vpnErrorsChan := make(chan vpnConnError)
 	callbackHandler := newTelioCallbackHandler(stateChan, vpnErrorsChan)
 
 	var wg sync.WaitGroup
@@ -678,7 +678,7 @@ func TestHandleEvent_ForwardsVPNConnectionError(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	stateChan := make(chan state, 1)
-	vpnErrorsChan := make(chan teliogo.VpnConnectionError, 1)
+	vpnErrorsChan := make(chan vpnConnError, 1)
 	callbackHandler := newTelioCallbackHandler(stateChan, vpnErrorsChan)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -690,6 +690,7 @@ func TestHandleEvent_ForwardsVPNConnectionError(t *testing.T) {
 		Body: teliogo.TelioNode{
 			State:              teliogo.NodeStateConnected,
 			IsExit:             true,
+			PublicKey:          "server-pubkey-abc",
 			VpnConnectionError: &connErr,
 		},
 	})
@@ -702,7 +703,7 @@ func TestHandleEvent_ForwardsVPNConnectionError(t *testing.T) {
 
 	select {
 	case got := <-vpnErrorsChan:
-		assert.Equal(t, connErr, got)
+		assert.Equal(t, vpnConnError{code: connErr, publicKey: "server-pubkey-abc"}, got)
 	default:
 		assert.Fail(t, "VPN connection error was not forwarded")
 	}
@@ -712,7 +713,7 @@ func TestHandleEvent_NoVPNConnectionError_DoesNotForwardError(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	stateChan := make(chan state, 1)
-	vpnErrorsChan := make(chan teliogo.VpnConnectionError, 1)
+	vpnErrorsChan := make(chan vpnConnError, 1)
 	callbackHandler := newTelioCallbackHandler(stateChan, vpnErrorsChan)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -743,14 +744,14 @@ func TestHandleEvent_DropsVPNConnectionError_WhenMonitorBusy(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	stateChan := make(chan state, 1)
-	vpnErrorsChan := make(chan teliogo.VpnConnectionError, 1)
+	vpnErrorsChan := make(chan vpnConnError, 1)
 	callbackHandler := newTelioCallbackHandler(stateChan, vpnErrorsChan)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	callbackHandler.setConnectionMonitoringContext(ctx)
 
-	buffered := teliogo.VpnConnectionErrorUnauthenticated
+	buffered := vpnConnError{code: teliogo.VpnConnectionErrorUnauthenticated}
 	vpnErrorsChan <- buffered
 
 	dropped := teliogo.VpnConnectionErrorServerMaintenance
@@ -792,18 +793,118 @@ func TestMonitorConnectionErrors_PublishesMappedEvent(t *testing.T) {
 		return nil
 	})
 
-	errorsChan := make(chan teliogo.VpnConnectionError, 1)
+	errorsChan := make(chan vpnConnError, 1)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	go monitorConnectionErrors(ctx, errorsChan, pub)
+	go monitorConnectionErrors(ctx, errorsChan, nil, pub)
 
-	errorsChan <- teliogo.VpnConnectionErrorSuperseded
+	errorsChan <- vpnConnError{code: teliogo.VpnConnectionErrorSuperseded, publicKey: "srv-key"}
 
 	select {
 	case got := <-received:
 		assert.Equal(t, events.VPNConnectionErrorSuperseded, got.Code)
+		assert.Equal(t, "srv-key", got.ServerPublicKey)
 	case <-time.After(time.Second):
 		assert.Fail(t, "ConnectionError event was not published")
+	}
+}
+
+func TestInjectVPNConnectionError_UnavailableOutsideDev(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	// In production the injectedErrors channel is nil, so injection is rejected
+	// and nothing can be published.
+	l := &Libtelio{}
+
+	err := l.InjectVPNConnectionError(int32(teliogo.VpnConnectionErrorServerMaintenance), "")
+
+	assert.Error(t, err)
+}
+
+func TestInjectVPNConnectionError_NoActiveMonitor(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	// The dev channel exists but no monitor goroutine is draining it (no active
+	// NordLynx connection).
+	l := &Libtelio{injectedErrors: make(chan vpnConnError)}
+
+	err := l.InjectVPNConnectionError(int32(teliogo.VpnConnectionErrorServerMaintenance), "")
+
+	assert.Error(t, err)
+}
+
+func TestInjectVPNConnectionError_DeliversThroughMonitor(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name         string
+		code         int32
+		inputKey     string
+		connectedKey string
+		expectedCode events.VPNConnectionError
+		expectedKey  string
+	}{
+		{
+			name:         "explicit key is used verbatim",
+			code:         int32(teliogo.VpnConnectionErrorServerMaintenance),
+			inputKey:     "explicit-server-key",
+			connectedKey: "connected-server-key",
+			expectedCode: events.VPNConnectionErrorServerMaintenance,
+			expectedKey:  "explicit-server-key",
+		},
+		{
+			name:         "empty key auto-fills the connected server key",
+			code:         int32(teliogo.VpnConnectionErrorServerMaintenance),
+			inputKey:     "",
+			connectedKey: "connected-server-key",
+			expectedCode: events.VPNConnectionErrorServerMaintenance,
+			expectedKey:  "connected-server-key",
+		},
+		{
+			name:         "out-of-range code maps to unknown",
+			code:         99,
+			inputKey:     "explicit-server-key",
+			connectedKey: "connected-server-key",
+			expectedCode: events.VPNConnectionErrorUnknown,
+			expectedKey:  "explicit-server-key",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pub := vpn.NewInternalVPNEvents()
+			received := make(chan events.VPNConnectionErrorEvent, 1)
+			pub.ConnectionError.Subscribe(func(e events.VPNConnectionErrorEvent) error {
+				received <- e
+				return nil
+			})
+
+			injectedChan := make(chan vpnConnError)
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			go monitorConnectionErrors(ctx, nil, injectedChan, pub)
+
+			l := &Libtelio{
+				injectedErrors: injectedChan,
+				active:         true,
+				currentServer:  vpn.ServerData{NordLynxPublicKey: tt.connectedKey},
+			}
+
+			injected := assert.Eventually(t, func() bool {
+				return l.InjectVPNConnectionError(tt.code, tt.inputKey) == nil
+			}, time.Second, 5*time.Millisecond)
+			if !injected {
+				t.Fatal("injection never succeeded; monitor not draining")
+			}
+
+			select {
+			case got := <-received:
+				assert.Equal(t, tt.expectedCode, got.Code)
+				assert.Equal(t, tt.expectedKey, got.ServerPublicKey)
+			case <-time.After(time.Second):
+				assert.Fail(t, "injected ENS event was not published")
+			}
+		})
 	}
 }

@@ -388,4 +388,13 @@ final class MockDaemon extends DaemonServiceBase {
       return Future.value(recommendedServerLocation!);
     }
   }
+
+  @override
+  Future<Payload> injectVpnConnectionError(
+    ServiceCall call,
+    InjectVpnConnectionErrorRequest request,
+  ) {
+    // dev-only daemon endpoint not used by the GUI.
+    throw UnimplementedError();
+  }
 }

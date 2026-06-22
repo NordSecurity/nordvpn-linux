@@ -26,6 +26,15 @@ message Payload {
   repeated string data = 2;
 }
 
+// InjectVpnConnectionErrorRequest is the request for the DEV-only endpoint.
+message InjectVpnConnectionErrorRequest {
+  // Raw libtelio (teliogo) ENS code
+  int32 telio_code = 1;
+  // Optional. When empty, the daemon stamps the currently-connected server's
+  // NordLynx public key (automatic)
+  string pubkey = 2;
+}
+
 message Allowlist {
   Ports ports = 1;
   repeated string subnets = 2;

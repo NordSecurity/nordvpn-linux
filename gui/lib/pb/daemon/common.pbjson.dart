@@ -115,6 +115,21 @@ const Payload$json = {
 final $typed_data.Uint8List payloadDescriptor = $convert.base64Decode(
     'CgdQYXlsb2FkEhIKBHR5cGUYASABKANSBHR5cGUSEgoEZGF0YRgCIAMoCVIEZGF0YQ==');
 
+@$core.Deprecated('Use injectVpnConnectionErrorRequestDescriptor instead')
+const InjectVpnConnectionErrorRequest$json = {
+  '1': 'InjectVpnConnectionErrorRequest',
+  '2': [
+    {'1': 'telio_code', '3': 1, '4': 1, '5': 5, '10': 'telioCode'},
+    {'1': 'pubkey', '3': 2, '4': 1, '5': 9, '10': 'pubkey'},
+  ],
+};
+
+/// Descriptor for `InjectVpnConnectionErrorRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List injectVpnConnectionErrorRequestDescriptor =
+    $convert.base64Decode(
+        'Ch9JbmplY3RWcG5Db25uZWN0aW9uRXJyb3JSZXF1ZXN0Eh0KCnRlbGlvX2NvZGUYASABKAVSCX'
+        'RlbGlvQ29kZRIWCgZwdWJrZXkYAiABKAlSBnB1YmtleQ==');
+
 @$core.Deprecated('Use allowlistDescriptor instead')
 const Allowlist$json = {
   '1': 'Allowlist',

@@ -7,6 +7,7 @@ package libtelio
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/netip"
@@ -75,16 +76,21 @@ type callbackHandler interface {
 	setConnectionMonitoringContext(ctx context.Context)
 }
 
+type vpnConnError struct {
+	code      teliogo.VpnConnectionError
+	publicKey string
+}
+
 type telioCallbackHandler struct {
 	mu                          sync.Mutex
 	statesChan                  chan<- state
 	connectionMonitoringContext context.Context
-	vpnErrorsChan               chan<- teliogo.VpnConnectionError
+	vpnErrorsChan               chan<- vpnConnError
 }
 
 func newTelioCallbackHandler(
 	statesChan chan<- state,
-	vpnErrorsChan chan<- teliogo.VpnConnectionError,
+	vpnErrorsChan chan<- vpnConnError,
 ) *telioCallbackHandler {
 	return &telioCallbackHandler{statesChan: statesChan, vpnErrorsChan: vpnErrorsChan}
 }
@@ -127,7 +133,10 @@ func (t *telioCallbackHandler) handleEvent(e teliogo.Event) error {
 
 		if evt.Body.VpnConnectionError != nil {
 			select {
-			case t.vpnErrorsChan <- *evt.Body.VpnConnectionError:
+			case t.vpnErrorsChan <- vpnConnError{
+				code:      *evt.Body.VpnConnectionError,
+				publicKey: evt.Body.PublicKey,
+			}:
 			default:
 				log.Debug("dropping ENS connection error, monitor busy:", *evt.Body.VpnConnectionError)
 			}
@@ -212,10 +221,12 @@ func eventsBuffer(recvChan <-chan state, sendChan chan<- state, ctx context.Cont
 // 7. VPN connected, calling Disable - tunnel must be re-initiated with the originally saved values provided to Start
 // 8. VPN disconnected, calling Disable - tunnel must be destroyed
 type Libtelio struct {
-	state                      vpn.State
-	lib                        lib
-	stateEvents                <-chan state
-	vpnErrorEvents             <-chan teliogo.VpnConnectionError
+	state          vpn.State
+	lib            lib
+	stateEvents    <-chan state
+	vpnErrorEvents <-chan vpnConnError
+	// injectedErrors carries DEV-only simulated ENS errors. nil in production.
+	injectedErrors             chan vpnConnError
 	cancelConnectionMonitoring func()
 	active                     bool
 	tun                        tunnel.T
@@ -295,7 +306,15 @@ func New(
 	ensEnabled bool,
 ) (*Libtelio, error) {
 	stateEvents := make(chan state)
-	errorEvents := make(chan teliogo.VpnConnectionError, 1)
+	errorEvents := make(chan vpnConnError, 1)
+
+	// DEV only
+	var injectedErrors chan vpnConnError
+	if !prod {
+		injectedErrors = make(chan vpnConnError)
+	}
+	// end of DEV only
+
 	features, err := handleTelioConfig(eventPath, prod, vpnLibCfg)
 	if err != nil {
 		log.Println(internal.ErrorPrefix, "failed to get telio config:", err)
@@ -339,6 +358,7 @@ func New(
 		stateEvents:     stateEvents,
 		state:           vpn.ExitedState,
 		vpnErrorEvents:  errorEvents,
+		injectedErrors:  injectedErrors,
 		fwmark:          fwmark,
 		eventsPublisher: eventsPublisher,
 		callbackHandler: telioCallbackHandler,
@@ -415,7 +435,7 @@ func (l *Libtelio) connect(
 		l.eventsPublisher)
 
 	// Start monitoring ENS connection errors before connecting so no early error is missed.
-	startConnectionErrorMonitor(ctx, l.vpnErrorEvents, l.eventsPublisher)
+	startConnectionErrorMonitor(ctx, l.vpnErrorEvents, l.injectedErrors, l.eventsPublisher)
 
 	var err error
 	port := "51820"
@@ -815,6 +835,30 @@ func (l *Libtelio) GetConnectionParameters() (vpn.ServerData, bool) {
 	return l.currentServer, l.active
 }
 
+// InjectVPNConnectionError is a DEV-only helper that feeds a simulated ENS error
+// through the same monitor that real libtelio events use.
+func (l *Libtelio) InjectVPNConnectionError(code int32, publicKey string) error {
+	if l.injectedErrors == nil {
+		return errors.New("ENS injection is unavailable outside the dev environment")
+	}
+
+	if publicKey == "" {
+		if params, ok := l.GetConnectionParameters(); ok {
+			publicKey = params.NordLynxPublicKey
+		}
+	}
+
+	// #nosec G115 - dev-only injection — out-of-range codes map to Unknown
+	connErr := vpnConnError{code: teliogo.VpnConnectionError(code), publicKey: publicKey}
+
+	select {
+	case l.injectedErrors <- connErr:
+		return nil
+	default:
+		return errors.New("no active NordLynx connection monitor; connect with NordLynx first")
+	}
+}
+
 // isConnected function designed to be called before performing an action which trigger events.
 // libtelio is sending back events via callback, to properly catch event from libtelio, event
 // is being received in goroutine, but this goroutine has to be 100% started before invoking
@@ -911,7 +955,8 @@ func monitorConnectionState(
 // once it is running
 func startConnectionErrorMonitor(
 	ctx context.Context,
-	errorsChan <-chan teliogo.VpnConnectionError,
+	errorsChan <-chan vpnConnError,
+	injectedChan <-chan vpnConnError,
 	eventsPublisher *vpn.Events,
 ) {
 	var wg sync.WaitGroup
@@ -919,7 +964,7 @@ func startConnectionErrorMonitor(
 
 	go func() {
 		wg.Done()
-		monitorConnectionErrors(ctx, errorsChan, eventsPublisher)
+		monitorConnectionErrors(ctx, errorsChan, injectedChan, eventsPublisher)
 	}()
 
 	wg.Wait()
@@ -929,19 +974,34 @@ func startConnectionErrorMonitor(
 // maps them to the protocol-agnostic events and publishes them on the internal VPN event bus.
 func monitorConnectionErrors(
 	ctx context.Context,
-	errorsChan <-chan teliogo.VpnConnectionError,
+	errorsChan <-chan vpnConnError,
+	injectedChan <-chan vpnConnError,
 	eventsPublisher *vpn.Events,
 ) {
 	for {
 		select {
 		case connErr := <-errorsChan:
-			eventsPublisher.ConnectionError.Publish(events.VPNConnectionErrorEvent{
-				Code: toVPNConnectionError(connErr),
-			})
+			publishConnError(eventsPublisher, connErr)
+
+		// DEV only: a simulated ENS error injected via the gRPC tool. It's nil in production.
+		case injErr := <-injectedChan:
+			log.Println(internal.InfoPrefix, "[DEV] injecting simulated ENS connection error:", injErr.code)
+			publishConnError(eventsPublisher, injErr)
+
 		case <-ctx.Done():
 			return
 		}
 	}
+}
+
+// publishConnError maps and publishes a vpnConnError on the internal VPN event bus.
+// Both the real-event and the dev-injection paths route through here, so an injected
+// error produces a byte-for-byte identical event to a real one.
+func publishConnError(eventsPublisher *vpn.Events, e vpnConnError) {
+	eventsPublisher.ConnectionError.Publish(events.VPNConnectionErrorEvent{
+		Code:            toVPNConnectionError(e.code),
+		ServerPublicKey: e.publicKey,
+	})
 }
 
 // toVPNConnectionError maps a libtelio ENS error to the protocol-agnostic events enum.
