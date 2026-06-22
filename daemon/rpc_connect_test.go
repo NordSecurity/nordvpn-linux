@@ -186,6 +186,7 @@ func (c *workingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPServic
 
 	return c.dedicatedIPService, nil
 }
+
 func (c *workingLoginChecker) GetDedicatedServerService() (auth.DedicatedServerService, error) {
 	return auth.DedicatedServerService{Active: !c.isDedicatedServersExpired}, c.dedicatedServerErr
 }
@@ -1465,7 +1466,7 @@ func TestReconnectOnServerMaintenance(t *testing.T) {
 	assert.Equal(t, "it1.nordvpn.com", rpc.lastServerSelection.Server.Hostname)
 
 	// reconnect will take the server city + country. Server selection finds second server, it2
-	failed, err = rpc.reconnectOnServerMaintenance(ctx, server)
+	failed, err = rpc.reconnectOnServerMaintenance(ctx, server, "")
 	assert.False(t, failed)
 	assert.NoError(t, err)
 	assert.Equal(t, "it2.nordvpn.com", rpc.lastServerSelection.Server.Hostname)
@@ -1475,7 +1476,7 @@ func TestReconnectOnServerMaintenance(t *testing.T) {
 	assert.Equal(t, "Rome", p.City)
 
 	// reconnect will use the city + country, and server selection finds first server, it1
-	failed, err = rpc.reconnectOnServerMaintenance(ctx, server)
+	failed, err = rpc.reconnectOnServerMaintenance(ctx, server, "")
 	assert.False(t, failed)
 	assert.NoError(t, err)
 	assert.Equal(t, "it1.nordvpn.com", rpc.lastServerSelection.Server.Hostname)
@@ -1483,4 +1484,56 @@ func TestReconnectOnServerMaintenance(t *testing.T) {
 	p = rpc.RequestedConnParams.Get()
 	assert.Equal(t, "IT", p.CountryCode)
 	assert.Equal(t, "Rome", p.City)
+}
+
+func TestReconnectOnServerMaintenance_ServerKeyGuard(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	const activeKey = "current-nordlynx-key"
+
+	tests := []struct {
+		name          string
+		eventKey      string
+		expectSkipped bool
+	}{
+		{
+			name:          "skips reconnect when connected server changed since ENS check",
+			eventKey:      "stale-key",
+			expectSkipped: true,
+		},
+		{
+			name:          "proceeds with reconnect when server key still matches",
+			eventKey:      activeKey,
+			expectSkipped: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rpc := testRPCLocal(t)
+			rpc.serversAPI = core_test.NewMockServersAPI()
+			rpc.netw = &testnetworker.Mock{
+				VpnActive:               true,
+				ActiveServerDataPresent: true,
+				ActiveServerData:        vpn.ServerData{NordLynxPublicKey: activeKey},
+			}
+			rpc.cm.SaveWith(func(c config.Config) config.Config {
+				return config.Config{Technology: config.Technology_NORDLYNX}
+			})
+			rpc.RequestedConnParams.Set(pb.ConnectionSource_AUTO, serverpicker.ServerParameters{
+				CountryCode: "IT",
+				City:        "Rome",
+			})
+
+			failed, err := rpc.reconnectOnServerMaintenance(context.Background(), &mockRPCServer{}, tt.eventKey)
+
+			assert.False(t, failed)
+			assert.NoError(t, err)
+			if tt.expectSkipped {
+				assert.Nil(t, rpc.lastServerSelection.Server)
+			} else {
+				assert.NotNil(t, rpc.lastServerSelection.Server)
+			}
+		})
+	}
 }

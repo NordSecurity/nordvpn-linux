@@ -415,7 +415,7 @@ func (l *Libtelio) connect(
 		l.eventsPublisher)
 
 	// Start monitoring ENS connection errors before connecting so no early error is missed.
-	startConnectionErrorMonitor(ctx, l.vpnErrorEvents, l.eventsPublisher)
+	startConnectionErrorMonitor(ctx, l.vpnErrorEvents, l.eventsPublisher, serverPublicKey)
 
 	var err error
 	port := "51820"
@@ -913,6 +913,7 @@ func startConnectionErrorMonitor(
 	ctx context.Context,
 	errorsChan <-chan teliogo.VpnConnectionError,
 	eventsPublisher *vpn.Events,
+	serverPublicKey string,
 ) {
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -931,12 +932,14 @@ func monitorConnectionErrors(
 	ctx context.Context,
 	errorsChan <-chan teliogo.VpnConnectionError,
 	eventsPublisher *vpn.Events,
+	serverPublicKey string,
 ) {
 	for {
 		select {
 		case connErr := <-errorsChan:
 			eventsPublisher.ConnectionError.Publish(events.VPNConnectionErrorEvent{
-				Code: toVPNConnectionError(connErr),
+				Code:            toVPNConnectionError(connErr),
+				ServerPublicKey: serverPublicKey,
 			})
 		case <-ctx.Done():
 			return

@@ -96,7 +96,8 @@ func (e VPNConnectionError) String() string {
 
 // VPNConnectionErrorEvent is sent on the internal VPN event bus when a VPN connection error happens.
 type VPNConnectionErrorEvent struct {
-	Code VPNConnectionError
+	Code            VPNConnectionError
+	ServerPublicKey string
 }
 
 type TypeLoginType int

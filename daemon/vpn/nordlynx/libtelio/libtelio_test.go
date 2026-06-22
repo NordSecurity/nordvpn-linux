@@ -793,16 +793,16 @@ func TestMonitorConnectionErrors_PublishesMappedEvent(t *testing.T) {
 	})
 
 	errorsChan := make(chan teliogo.VpnConnectionError, 1)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
-	go monitorConnectionErrors(ctx, errorsChan, pub)
+	const serverPublicKey = "test-server-key"
+	go monitorConnectionErrors(t.Context(), errorsChan, pub, serverPublicKey)
 
 	errorsChan <- teliogo.VpnConnectionErrorSuperseded
 
 	select {
 	case got := <-received:
 		assert.Equal(t, events.VPNConnectionErrorSuperseded, got.Code)
+		assert.Equal(t, serverPublicKey, got.ServerPublicKey)
 	case <-time.After(time.Second):
 		assert.Fail(t, "ConnectionError event was not published")
 	}

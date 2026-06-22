@@ -45,7 +45,7 @@ func (r *RPC) ConnectFromLastSelection(srv pb.Daemon_ConnectServer,
 	})
 }
 
-func (r *RPC) ReconnectOnServerMaintenanceEvent() (exitErr error) {
+func (r *RPC) ReconnectOnServerMaintenanceEvent(serverPublicKey string) (exitErr error) {
 	srv := &connectServer{}
 	defer func() {
 		if exitErr != nil || srv.err != nil {
@@ -54,7 +54,7 @@ func (r *RPC) ReconnectOnServerMaintenanceEvent() (exitErr error) {
 	}()
 
 	return r.executeConnect(srv, func(ctx context.Context) (bool, error) {
-		return r.reconnectOnServerMaintenance(ctx, srv)
+		return r.reconnectOnServerMaintenance(ctx, srv, serverPublicKey)
 	})
 }
 
@@ -88,7 +88,15 @@ func (r *RPC) executeConnect(srv pb.Daemon_ConnectServer, fn func(context.Contex
 func (r *RPC) reconnectOnServerMaintenance(
 	ctx context.Context,
 	srv pb.Daemon_ConnectServer,
+	serverPublicKey string,
 ) (bool, error) {
+	currConn, isCurrConnActive := r.netw.GetConnectionParameters()
+	eventIsForDifferentServer := currConn.NordLynxPublicKey != serverPublicKey
+	if isCurrConnActive && eventIsForDifferentServer {
+		log.Debug("ignoring maintenance event, server has changed since ENS check")
+		return false, nil
+	}
+
 	reqParams := r.RequestedConnParams.Get()
 	currentServer := r.lastServerSelection.Server
 	log.Debug("[ens]", reqParams, currentServer)
