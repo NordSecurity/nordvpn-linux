@@ -40,8 +40,10 @@ type mockLib struct{}
 func (mockLib) ConnectToExitNode(teliogo.PublicKey, *[]teliogo.IpNet, *teliogo.SocketAddr) error {
 	return nil
 }
+
 func (mockLib) ConnectToExitNodePostquantum(
-	*string, teliogo.PublicKey, *[]teliogo.IpNet, teliogo.SocketAddr) error {
+	*string, teliogo.PublicKey, *[]teliogo.IpNet, teliogo.SocketAddr,
+) error {
 	return nil
 }
 func (mockLib) DisconnectFromExitNodes() error                                       { return nil }
@@ -794,10 +796,8 @@ func TestMonitorConnectionErrors_PublishesMappedEvent(t *testing.T) {
 	})
 
 	errorsChan := make(chan vpnConnError, 1)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
-	go monitorConnectionErrors(ctx, errorsChan, nil, pub)
+	go monitorConnectionErrors(t.Context(), errorsChan, nil, pub)
 
 	errorsChan <- vpnConnError{code: teliogo.VpnConnectionErrorSuperseded, publicKey: "srv-key"}
 

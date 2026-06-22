@@ -29,8 +29,9 @@ type Mock struct {
 
 	// ProvidedCredentials contain vpn.Credentials provided to the networker in the last Start call
 	ProvidedCredentials vpn.Credentials
-	// ProvidedCredentials contains vpn.ServerData provided to the networker in the last Start call
+	// ProvidedServerData contains vpn.ServerData provided to the networker in the last Start call
 	ProvidedServerData vpn.ServerData
+	ActiveServerData   *vpn.ServerData
 }
 
 func (m *Mock) Start(
@@ -113,7 +114,12 @@ func (m *Mock) SetLanDiscovery(enabled bool) {
 
 func (*Mock) UnsetFirewall() error { return nil }
 
-func (*Mock) GetConnectionParameters() (vpn.ServerData, bool) { return vpn.ServerData{}, false }
+func (m *Mock) GetConnectionParameters() (vpn.ServerData, bool) {
+	if m.ActiveServerData == nil {
+		return vpn.ServerData{}, false
+	}
+	return *m.ActiveServerData, true
+}
 
 func (*Mock) SetARPIgnore(bool) error { return nil }
 

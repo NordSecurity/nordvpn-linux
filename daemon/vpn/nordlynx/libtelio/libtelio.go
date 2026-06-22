@@ -869,7 +869,8 @@ func (l *Libtelio) InjectVPNConnectionError(code int32, publicKey string) error 
 func isConnected(ctx context.Context,
 	stateCh <-chan state,
 	connParams connParameters,
-	eventsPublisher *vpn.Events) <-chan interface{} {
+	eventsPublisher *vpn.Events,
+) <-chan interface{} {
 	// we need waitgroup just to make sure goroutine has started
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -898,7 +899,8 @@ func monitorConnectionState(
 	states <-chan state,
 	isConnected chan<- interface{},
 	connParameters connParameters,
-	eventsPublisher *vpn.Events) {
+	eventsPublisher *vpn.Events,
+) {
 	type notifyState int
 	const (
 		disconnected notifyState = iota
