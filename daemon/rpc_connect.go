@@ -93,7 +93,7 @@ func (r *RPC) reconnectOnServerMaintenance(
 	currentServer := r.lastServerSelection.Server
 	log.Debug("[ens]", reqParams, currentServer)
 
-	group := ""
+	var group string
 	if reqParams.Group != config.ServerGroup_UNDEFINED {
 		group = reqParams.Group.String()
 	}
@@ -280,8 +280,8 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 
 	inputServerTag := internal.RemoveNonAlphanumeric(in.GetServerTag())
 
-	log.Debug("picking servers for", cfg.Technology, "technology", "input",
-		in.GetServerTag(), in.GetServerGroup(), excludedServer)
+	log.Debugf("picking servers for %v technology, input serverTag=%q serverGroup=%q, server excluded from lookup=%q",
+		cfg.Technology, in.GetServerTag(), in.GetServerGroup(), excludedServer)
 
 	serverSelection, err := selectServer(r, &insights, cfg, inputServerTag, in.GetServerGroup(), excludedServer)
 	if err != nil {

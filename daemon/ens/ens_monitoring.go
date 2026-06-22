@@ -26,6 +26,9 @@ type Monitor struct {
 }
 
 func NewMonitor(ctx context.Context, netw networker.Networker, rc remote.ConfigGetter, connectCallback ConnectCallback) *Monitor {
+	if connectCallback == nil {
+		log.Fatal(logPrefix, "connect callback is nil")
+	}
 	return &Monitor{
 		eventsCh:    make(chan events.VPNConnectionErrorEvent, evChSize),
 		ctx:         ctx,
@@ -47,9 +50,6 @@ func (m *Monitor) HandleENSNotification(e events.VPNConnectionErrorEvent) error 
 }
 
 func (m *Monitor) Start() {
-	if m.reconnectFn == nil {
-		log.Fatal(logPrefix, "connect callback is nil")
-	}
 	go m.run()
 }
 
@@ -60,7 +60,8 @@ func (m *Monitor) run() {
 		select {
 		case e, ok := <-m.eventsCh:
 			if !ok {
-				continue
+				log.Warn(logPrefix, "events channel closed, stopping ENS monitoring")
+				return
 			}
 
 			if !m.rc.IsFeatureEnabled(remote.FeatureENS) {
