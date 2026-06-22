@@ -40,8 +40,10 @@ type mockLib struct{}
 func (mockLib) ConnectToExitNode(teliogo.PublicKey, *[]teliogo.IpNet, *teliogo.SocketAddr) error {
 	return nil
 }
+
 func (mockLib) ConnectToExitNodePostquantum(
-	*string, teliogo.PublicKey, *[]teliogo.IpNet, teliogo.SocketAddr) error {
+	*string, teliogo.PublicKey, *[]teliogo.IpNet, teliogo.SocketAddr,
+) error {
 	return nil
 }
 func (mockLib) DisconnectFromExitNodes() error                                       { return nil }
@@ -105,11 +107,9 @@ func TestIsConnected(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ch := make(chan state, 1)
 			var connectionEstablishedWG sync.WaitGroup
-			connectionEstablishedWG.Add(1)
-			go func() {
+			connectionEstablishedWG.Go(func() {
 				ch <- test.state
-				connectionEstablishedWG.Done()
-			}()
+			})
 
 			ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 			defer cancel()
@@ -160,7 +160,7 @@ func Test_TelioDefaultConfig(t *testing.T) {
 	} else {
 		fmt.Println(string(jsn))
 	}
-	var intf interface{}
+	var intf any
 	err = json.Unmarshal(jsn, &intf)
 
 	assert.NoError(t, err)
@@ -555,7 +555,7 @@ func TestLibtelio_connect(t *testing.T) {
 			assert.Equal(t, tt.active, libtelio.active)
 
 			if tt.events > 0 {
-				eventsReceivedChan := make(chan interface{})
+				eventsReceivedChan := make(chan any)
 				go func() {
 					eventsReceivedWG.Wait()
 					close(eventsReceivedChan)
@@ -681,9 +681,7 @@ func TestHandleEvent_ForwardsVPNConnectionError(t *testing.T) {
 	vpnErrorsChan := make(chan teliogo.VpnConnectionError, 1)
 	callbackHandler := newTelioCallbackHandler(stateChan, vpnErrorsChan)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	callbackHandler.setConnectionMonitoringContext(ctx)
+	callbackHandler.setConnectionMonitoringContext(t.Context())
 
 	connErr := teliogo.VpnConnectionErrorServerMaintenance
 	callbackHandler.handleEvent(teliogo.EventNode{
@@ -715,9 +713,7 @@ func TestHandleEvent_NoVPNConnectionError_DoesNotForwardError(t *testing.T) {
 	vpnErrorsChan := make(chan teliogo.VpnConnectionError, 1)
 	callbackHandler := newTelioCallbackHandler(stateChan, vpnErrorsChan)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	callbackHandler.setConnectionMonitoringContext(ctx)
+	callbackHandler.setConnectionMonitoringContext(t.Context())
 
 	callbackHandler.handleEvent(teliogo.EventNode{
 		Body: teliogo.TelioNode{
@@ -746,9 +742,7 @@ func TestHandleEvent_DropsVPNConnectionError_WhenMonitorBusy(t *testing.T) {
 	vpnErrorsChan := make(chan teliogo.VpnConnectionError, 1)
 	callbackHandler := newTelioCallbackHandler(stateChan, vpnErrorsChan)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	callbackHandler.setConnectionMonitoringContext(ctx)
+	callbackHandler.setConnectionMonitoringContext(t.Context())
 
 	buffered := teliogo.VpnConnectionErrorUnauthenticated
 	vpnErrorsChan <- buffered
