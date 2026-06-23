@@ -117,7 +117,8 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 		// events, we can always try to fetch it to keep the returned information more accurate
 		// because account info is provided by reference, it is cloned so that it is not overwritten in case of errors.
 		dedicatedServerIPAccountInfo := proto.Clone(accountInfo).(*pb.AccountResponse)
-		dedicatedServerIPAccountInfo, err := r.setDedicatedIPServerData(accountInfo)
+		var err error
+		dedicatedServerIPAccountInfo, err = r.setDedicatedIPServerData(dedicatedServerIPAccountInfo)
 		if err != nil {
 			log.Error("getting dedicated servers/ip service data:", err)
 			return accountInfo, nil
