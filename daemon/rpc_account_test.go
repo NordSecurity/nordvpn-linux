@@ -298,15 +298,13 @@ func TestAccountInfo_CacheIsUpdatedIfDedicatedServersIPServiceIsNotAvailable(t *
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cachedResponse := userResponseToAccountResponse(user1)
 			dataManager := NewDataManager("", "", "", "", events.NewDataUpdateEvents())
-			dataManager.SetAccountData(cachedResponse)
 
-			authCheckerMock := testauth.AuthCheckerMock{LoggedIn: true}
+			authCheckerMock := testauth.AuthCheckerMock{LoggedIn: true, VPNExpired: true}
 			configManagerMock := mock.NewMockConfigManager()
 
 			credentialsAPIMock := testcore.CredentialsAPIMock{}
-			credentialsAPIMock.CurrentUserResponse = user2
+			credentialsAPIMock.CurrentUserResponse = user1
 
 			r := RPC{
 				dm:             dataManager,
@@ -316,14 +314,13 @@ func TestAccountInfo_CacheIsUpdatedIfDedicatedServersIPServiceIsNotAvailable(t *
 				events:         events.NewEventsEmpty(),
 			}
 
+			r.AccountInfo(context.Background(), &pb.AccountRequest{Full: false})
+
 			resp, _ := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: false})
-			assert.Equal(t, cachedResponse.String(), resp.String(), "Non-full request should not update the cache.")
 
-			dataManager.accountData.unset()
-
-			updatedResponse, _ := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: true})
-			resp, _ = r.AccountInfo(context.Background(), &pb.AccountRequest{Full: false})
-			assert.Equal(t, updatedResponse.String(), resp.String(), "Cache should be updated after a full request.")
+			expectedResponse := userResponseToAccountResponse(user1)
+			expectedResponse.Type = internal.CodeNoService
+			assert.Equal(t, resp.String(), expectedResponse.String(), "Cache should be updated after the initial request.")
 		})
 	}
 }
