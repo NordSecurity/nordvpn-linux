@@ -12,11 +12,13 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	daemonEvents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
 	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
@@ -1465,17 +1467,25 @@ func TestReconnectOnServerMaintenance(t *testing.T) {
 		}
 	})
 
+	// capture the connect telemetry events so we can assert how the reconnect is attributed
+	connectEvents := &daemonEvents.MockPublisherSubscriber[events.DataConnect]{}
+	rpc.events.Service.Connect = connectEvents
+
 	// connect to a specific server name, it1
-	failed, err := rpc.connectWithParameters(ctx, &pb.ConnectRequest{ServerTag: "it1"}, server, pb.ConnectionSource_MANUAL, "")
+	failed, err := rpc.connectWithParameters(ctx, &pb.ConnectRequest{ServerTag: "it1"}, server, pb.ConnectionSource_MANUAL, "", events.VPNConnectionReasonNone)
 	assert.False(t, failed)
 	assert.NoError(t, err)
 	assert.Equal(t, "it1.nordvpn.com", rpc.lastServerSelection.Server.Hostname)
+	// a user-initiated connect carries no special trigger
+	assert.Equal(t, events.VPNConnectionReasonNone, connectEvents.Event.VPNConnReason)
 
 	// reconnect will take the server city + country. Server selection finds second server, it2
 	failed, err = rpc.reconnectOnServerMaintenance(ctx, server, activeKey)
 	assert.False(t, failed)
 	assert.NoError(t, err)
 	assert.Equal(t, "it2.nordvpn.com", rpc.lastServerSelection.Server.Hostname)
+	// an ENS server-maintenance reconnect stamps the trigger so telemetry reports it as such
+	assert.Equal(t, events.VPNConnectionReasonServerMaintenance, connectEvents.Event.VPNConnReason)
 
 	p := rpc.RequestedConnParams.Get()
 	assert.Equal(t, "IT", p.CountryCode)

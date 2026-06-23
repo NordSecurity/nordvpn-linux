@@ -1649,3 +1649,154 @@ func TestNotifyDedicatedServerStatus(t *testing.T) {
 		})
 	}
 }
+
+func TestVPNConnReasonToMoose(t *testing.T) {
+	category.Set(t, category.Unit)
+	tests := []struct {
+		name              string
+		trigger           events.VPNConnectionReason
+		wantMooseTrigger  moose.NordvpnappVpnConnectionTrigger
+		wantExceptionCode int32
+		wantEventTrigger  moose.NordvpnappEventTrigger
+	}{
+		{
+			name:              "server maintenance is app-triggered with ServerMaintenance trigger + 1000076",
+			trigger:           events.VPNConnectionReasonServerMaintenance,
+			wantMooseTrigger:  moose.NordvpnappVpnConnectionTriggerServerMaintenance,
+			wantExceptionCode: 1000076,
+			wantEventTrigger:  moose.NordvpnappEventTriggerApp,
+		},
+		{
+			name:              "auto-connect is app-triggered with AutoConnectUserSetting trigger + -1",
+			trigger:           events.VPNConnectionReasonAutoConnect,
+			wantMooseTrigger:  moose.NordvpnappVpnConnectionTriggerAutoConnectUserSetting,
+			wantExceptionCode: -1,
+			wantEventTrigger:  moose.NordvpnappEventTriggerApp,
+		},
+		{
+			name:              "none is user-triggered with None trigger + -1",
+			trigger:           events.VPNConnectionReasonNone,
+			wantMooseTrigger:  moose.NordvpnappVpnConnectionTriggerNone,
+			wantExceptionCode: -1,
+			wantEventTrigger:  moose.NordvpnappEventTriggerUser,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := vpnConnReasonToMoose(tt.trigger)
+			assert.Equal(t, tt.wantMooseTrigger, got.trigger)
+			assert.Equal(t, tt.wantExceptionCode, got.exceptionCode)
+			assert.Equal(t, tt.wantEventTrigger, got.eventTrigger)
+		})
+	}
+}
+
+func TestNotifyConnect_VPNConnReason(t *testing.T) {
+	category.Set(t, category.Unit)
+	tests := []struct {
+		name                  string
+		trigger               events.VPNConnectionReason
+		wantEventTrigger      moose.NordvpnappEventTrigger
+		wantConnectionTrigger moose.NordvpnappVpnConnectionTrigger
+	}{
+		{
+			name:                  "server maintenance reconnect is app-triggered",
+			trigger:               events.VPNConnectionReasonServerMaintenance,
+			wantEventTrigger:      moose.NordvpnappEventTriggerApp,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerServerMaintenance,
+		},
+		{
+			name:                  "user connect is user-triggered",
+			trigger:               events.VPNConnectionReasonNone,
+			wantEventTrigger:      moose.NordvpnappEventTriggerUser,
+			wantConnectionTrigger: moose.NordvpnappVpnConnectionTriggerNone,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+			var gotEvent moose.EventParams
+			var gotConn moose.ConnectionParams
+			sub.mooseFuncs.sendConnect = func(
+				eventParams moose.EventParams,
+				_ moose.TargetConnectionParams,
+				_ moose.TargetConnectionAdditionalParams,
+				connectionParams moose.ConnectionParams,
+				_ moose.NordvpnappOptBool,
+				_ int32,
+				_ string,
+				_ *string,
+			) uint32 {
+				gotEvent = eventParams
+				gotConn = connectionParams
+				return 0
+			}
+
+			err := sub.NotifyConnect(events.DataConnect{
+				EventStatus:   events.StatusAttempt,
+				VPNConnReason: tt.trigger,
+			})
+
+			assert.NilError(t, err)
+			assert.Equal(t, tt.wantEventTrigger, gotEvent.EventTrigger)
+			assert.Equal(t, tt.wantConnectionTrigger, gotConn.VpnConnectionTrigger)
+		})
+	}
+}
+
+func TestNotifyDisconnect_VPNConnReason(t *testing.T) {
+	category.Set(t, category.Unit)
+	tests := []struct {
+		name              string
+		trigger           events.VPNConnectionReason
+		wantEventTrigger  moose.NordvpnappEventTrigger
+		wantExceptionCode int32
+	}{
+		{
+			name:              "server maintenance disconnect is app-triggered with code 1000076",
+			trigger:           events.VPNConnectionReasonServerMaintenance,
+			wantEventTrigger:  moose.NordvpnappEventTriggerApp,
+			wantExceptionCode: 1000076,
+		},
+		{
+			name:              "user disconnect is user-triggered with no exception code",
+			trigger:           events.VPNConnectionReasonNone,
+			wantEventTrigger:  moose.NordvpnappEventTriggerUser,
+			wantExceptionCode: -1,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+			var gotEvent moose.EventParams
+			var gotCode int32
+			sub.mooseFuncs.sendDisconnect = func(
+				eventParams moose.EventParams,
+				_ moose.TargetConnectionParams,
+				_ moose.ConnectionParams,
+				_ int32,
+				exceptionCode int32,
+				_ *string,
+			) uint32 {
+				gotEvent = eventParams
+				gotCode = exceptionCode
+				return 0
+			}
+			// NotifyDisconnect also updates context state after sending; no-op those so the test
+			// does not depend on the native moose context.
+			sub.mooseFuncs.unsetTPLiteCurrentState = func() uint32 { return 0 }
+			sub.mooseFuncs.setServerCountryValue = func(_ string) uint32 { return 0 }
+			sub.mooseFuncs.unsetServerGroupValue = func() uint32 { return 0 }
+			sub.mooseFuncs.setIsOnVpnValue = func(_ bool) uint32 { return 0 }
+
+			err := sub.NotifyDisconnect(events.DataDisconnect{
+				EventStatus:   events.StatusSuccess,
+				VPNConnReason: tt.trigger,
+			})
+
+			assert.NilError(t, err)
+			assert.Equal(t, tt.wantEventTrigger, gotEvent.EventTrigger)
+			assert.Equal(t, tt.wantExceptionCode, gotCode)
+		})
+	}
+}

@@ -416,7 +416,7 @@ func (r *RPC) doAutoConnect() error {
 			ServerTag:   cfg.AutoConnectData.ServerTag,
 			ServerGroup: groupTag,
 		}
-		return r.connectWithParameters(ctx, param, &server, pb.ConnectionSource_AUTO, "")
+		return r.connectWithParameters(ctx, param, &server, pb.ConnectionSource_AUTO, "", events.VPNConnectionReasonAutoConnect)
 	})
 
 	if err == nil && server.err == nil {

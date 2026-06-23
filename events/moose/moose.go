@@ -843,6 +843,11 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		vpnConnectionTrigger = moose.NordvpnappVpnConnectionTriggerAfterSnooze
 		connectionFunnel = durationToConnectionFunnel(data.PauseInterval)
 	}
+	if data.VPNConnReason != events.VPNConnectionReasonNone {
+		attrs := vpnConnReasonToMoose(data.VPNConnReason)
+		vpnConnectionTrigger = attrs.trigger
+		eventTrigger = attrs.eventTrigger
+	}
 
 	targetServerDomain := data.TargetServerDomain
 	recommendationUUID := data.RecommendationUUID
@@ -970,13 +975,19 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		connectionFunnel = durationToConnectionFunnel(data.PauseInterval)
 	}
 
+	eventTrigger := moose.NordvpnappEventTriggerUser
+	exceptionCode := errToExceptionCode(data.Error)
+	if data.VPNConnReason != events.VPNConnectionReasonNone {
+		attrs := vpnConnReasonToMoose(data.VPNConnReason)
+		eventTrigger = attrs.eventTrigger
+		exceptionCode = attrs.exceptionCode
+	}
+
 	if err := s.response(s.mooseFuncs.sendDisconnect(
 		moose.EventParams{
 			EventDuration: int32(data.Duration.Milliseconds()),
 			EventStatus:   eventStatusToInternalType(data.EventStatus),
-			// App should never disconnect from VPN by itself. It has to receive either
-			// user command (logout, set defaults) or be shut down.
-			EventTrigger: moose.NordvpnappEventTriggerUser,
+			EventTrigger:  eventTrigger,
 		},
 		moose.TargetConnectionParams{
 			TargetServerListSource:    serverListOriginToInternalType(data.ServerFromAPI),
@@ -988,7 +999,7 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 			VpnConnectionTrigger: vpnConnectionTrigger, // pass proper trigger
 		},
 		connectionDuration, // seconds
-		errToExceptionCode(data.Error),
+		exceptionCode,
 		nil,
 	)); err != nil {
 		return fmt.Errorf("sending VPN disconnect event (status=%v, duration=%ds): %w",
@@ -1553,6 +1564,38 @@ func errToExceptionCode(err error) int32 {
 		return 2
 	}
 	return -1
+}
+
+const serverMaintenanceExceptionCode int32 = 1000076
+
+type mooseConnReasonAttrs struct {
+	trigger       moose.NordvpnappVpnConnectionTrigger
+	exceptionCode int32
+	eventTrigger  moose.NordvpnappEventTrigger
+}
+
+// vpnConnReasonToMoose maps a VPN connection reason to its Moose telemetry attributes.
+func vpnConnReasonToMoose(t events.VPNConnectionReason) mooseConnReasonAttrs {
+	switch t {
+	case events.VPNConnectionReasonServerMaintenance:
+		return mooseConnReasonAttrs{
+			trigger:       moose.NordvpnappVpnConnectionTriggerServerMaintenance,
+			exceptionCode: serverMaintenanceExceptionCode,
+			eventTrigger:  moose.NordvpnappEventTriggerApp,
+		}
+	case events.VPNConnectionReasonAutoConnect:
+		return mooseConnReasonAttrs{
+			trigger:       moose.NordvpnappVpnConnectionTriggerAutoConnectUserSetting,
+			exceptionCode: -1,
+			eventTrigger:  moose.NordvpnappEventTriggerApp,
+		}
+	default:
+		return mooseConnReasonAttrs{
+			trigger:       moose.NordvpnappVpnConnectionTriggerNone,
+			exceptionCode: -1,
+			eventTrigger:  moose.NordvpnappEventTriggerUser,
+		}
+	}
 }
 
 // eventTriggerDomainToInternalType converts the domain-specific event trigger type to the internal

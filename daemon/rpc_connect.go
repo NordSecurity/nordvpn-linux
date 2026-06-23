@@ -32,7 +32,7 @@ func determineServerGroupIDs(server *core.Server) []config.ServerGroup {
 // Connect initiates and handles the VPN connection process
 func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retErr error) {
 	return r.executeConnect(srv, func(ctx context.Context) (bool, error) {
-		return r.connectWithParameters(ctx, in, srv, pb.ConnectionSource_MANUAL, "")
+		return r.connectWithParameters(ctx, in, srv, pb.ConnectionSource_MANUAL, "", events.VPNConnectionReasonNone)
 	})
 }
 
@@ -125,7 +125,7 @@ func (r *RPC) reconnectOnServerMaintenance(
 		ServerTag:   serverTag,
 	}
 
-	return r.connectWithParameters(ctx, &req, srv, pb.ConnectionSource_AUTO, hostname)
+	return r.connectWithParameters(ctx, &req, srv, pb.ConnectionSource_AUTO, hostname, events.VPNConnectionReasonServerMaintenance)
 }
 
 // determineServerSelectionRule determines the server selection rule based on the provided
@@ -228,6 +228,7 @@ func (r *RPC) connectWithStoredServerSelection(
 		time.Now(),
 		false,
 		pauseDuration,
+		events.VPNConnectionReasonNone,
 	)
 }
 
@@ -236,6 +237,7 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	srv pb.Daemon_ConnectServer,
 	source pb.ConnectionSource,
 	excludedServer string,
+	vpnConnReason events.VPNConnectionReason,
 ) (didFail bool, retErr error) {
 	pauseDuration := r.pauseManager.CancelReconnection()
 	if ok, err := r.ac.IsLoggedIn(); !ok {
@@ -320,7 +322,7 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	parameters := serverpicker.GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
 	r.RequestedConnParams.Set(source, parameters)
 
-	return r.connect(ctx, srv, cfg, serverSelection, parameters, connectingStartTime, true, pauseDuration)
+	return r.connect(ctx, srv, cfg, serverSelection, parameters, connectingStartTime, true, pauseDuration, vpnConnReason)
 }
 
 func (r *RPC) connect(
@@ -332,6 +334,7 @@ func (r *RPC) connect(
 	connectingStartTime time.Time,
 	pauseInterrupted bool,
 	pauseDuration time.Duration,
+	vpnConnReason events.VPNConnectionReason,
 ) (didFail bool, retErr error) {
 	country, err := serverSelection.Server.Locations.Country()
 	if err != nil {
@@ -433,6 +436,7 @@ func (r *RPC) connect(
 		RecommendationUUID:      string(serverSelection.RecommendationUUID),
 		PauseInterval:           pauseDuration,
 		UnpausedByUser:          pauseInterrupted,
+		VPNConnReason:           vpnConnReason,
 	}
 
 	// Send the connection attempt event
@@ -473,6 +477,7 @@ func (r *RPC) connect(
 		Technology:           cfg.Technology,
 		ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
 		RecommendationUUID:   string(serverSelection.RecommendationUUID),
+		VPNConnReason:        vpnConnReason,
 	}, r.events.Service.Disconnect.Publish)
 
 	err = r.netw.Start(
