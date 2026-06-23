@@ -31,6 +31,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const activeKey = "current-nordlynx-key"
+
 type mockRPCServer struct {
 	pb.Daemon_ConnectServer
 	msg *pb.Payload
@@ -1505,8 +1507,6 @@ func TestReconnectOnServerMaintenance(t *testing.T) {
 func TestReconnectOnServerMaintenance_ConnectionGuard(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	const activeKey = "current-nordlynx-key"
-
 	tests := []struct {
 		name          string
 		eventKey      string
@@ -1559,4 +1559,35 @@ func TestReconnectOnServerMaintenance_ConnectionGuard(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestReconnectOnServerMaintenance_CountryOnly(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	rpc := testRPCLocal(t)
+	ctx := context.Background()
+	server := &mockRPCServer{}
+	rpc.serversAPI = core_test.NewMockServersAPI()
+	rpc.netw = &testnetworker.Mock{
+		VpnActive:        true,
+		ActiveServerData: &vpn.ServerData{NordLynxPublicKey: activeKey},
+	}
+
+	rpc.cm.SaveWith(func(c config.Config) config.Config {
+		return config.Config{
+			Technology: config.Technology_NORDLYNX,
+		}
+	})
+
+	failed, err := rpc.connectWithParameters(ctx, &pb.ConnectRequest{ServerTag: "it"}, server, pb.ConnectionSource_MANUAL, "", events.VPNConnectionReasonNone)
+	assert.False(t, failed)
+	assert.NoError(t, err)
+
+	p := rpc.RequestedConnParams.Get()
+	assert.Equal(t, "IT", p.CountryCode)
+	assert.Equal(t, "", p.City)
+
+	failed, err = rpc.reconnectOnServerMaintenance(ctx, server, activeKey)
+	assert.False(t, failed)
+	assert.NoError(t, err)
 }

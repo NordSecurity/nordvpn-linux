@@ -106,6 +106,15 @@ func (r *RPC) reconnectOnServerMaintenance(
 		group = reqParams.Group.String()
 	}
 
+	// builds a "<country>[ <city>]" server tag, omitting the city when it is empty
+	locationTag := func(code, city string) string {
+		tag := internal.SnakeCase(code)
+		if city != "" {
+			tag += " " + internal.SnakeCase(city)
+		}
+		return tag
+	}
+
 	var serverTag string
 	var hostname string
 	if currentServer != nil {
@@ -115,10 +124,10 @@ func (r *RPC) reconnectOnServerMaintenance(
 	if currentServer != nil && reqParams.ServerName != "" {
 		// specific server name was selected. Use server country + city instead
 		c := currentServer.Country()
-		serverTag = internal.SnakeCase(c.Code) + " " + internal.SnakeCase(c.City.Name)
+		serverTag = locationTag(c.Code, c.City.Name)
 	} else {
 		// otherwise reuse whatever was already used to connect
-		serverTag = internal.SnakeCase(reqParams.CountryCode) + " " + internal.SnakeCase(reqParams.City)
+		serverTag = locationTag(reqParams.CountryCode, reqParams.City)
 	}
 	req := pb.ConnectRequest{
 		ServerGroup: group,
