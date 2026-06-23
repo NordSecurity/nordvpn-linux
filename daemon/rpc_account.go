@@ -13,6 +13,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
+	"google.golang.org/protobuf/proto"
 )
 
 func findLatestDIPExpirationData(dipServices []auth.DedicatedIPService) (string, error) {
@@ -114,12 +115,14 @@ func (r *RPC) AccountInfo(ctx context.Context, req *pb.AccountRequest) (*pb.Acco
 	if accountInfo, ok := r.dm.GetAccountData(req.Full); ok {
 		// because Dedicated IP and Dedicated Servers service data is using it's own caching that is updated with NC
 		// events, we can always try to fetch it to keep the returned information more accurate
-		dedicatedIPServerAccountInfo, err := r.setDedicatedIPServerData(accountInfo)
+		// because account info is provided by reference, it is cloned so that it is not overwritten in case of errors.
+		dedicatedServerIPAccountInfo := proto.Clone(accountInfo).(*pb.AccountResponse)
+		dedicatedServerIPAccountInfo, err := r.setDedicatedIPServerData(accountInfo)
 		if err != nil {
 			log.Error("getting dedicated servers/ip service data:", err)
 			return accountInfo, nil
 		}
-		return dedicatedIPServerAccountInfo, nil
+		return dedicatedServerIPAccountInfo, nil
 	}
 
 	accountInfo := &pb.AccountResponse{}
