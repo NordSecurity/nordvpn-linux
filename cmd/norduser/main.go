@@ -84,6 +84,7 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 	onExit := func() {
 		log.Info("Exiting systray")
 		ReportTelemetry(conn, ReportOnExit, true)
+		ti.StopVisibilityMonitor()
 		ti.OnExit()
 		topLevelCancelFunc()
 	}
@@ -91,6 +92,7 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 	onReady := func() {
 		log.Info("Starting systray")
 		go ti.MonitorConnection(topLevelCtx, conn)
+		go ti.MonitorTrayVisibility()
 		ti.OnReady(topLevelCtx)
 	}
 
