@@ -429,7 +429,7 @@ func (r *RPC) connect(
 		TargetServerCountry:     country.Name,
 		TargetServerCountryCode: country.Code,
 		TargetServerDomain:      serverSelection.Server.Hostname,
-		TargetServerGroup:       determineTargetServerGroup(serverSelection.Server, parameters),
+		TargetServerGroupID:     determineTargetServerGroup(serverSelection.Server, parameters),
 		ServerGroups:            determineServerGroupIDs(serverSelection.Server),
 		TargetServerIP:          subnet.Addr(),
 		TargetServerName:        serverSelection.Server.Name,
@@ -554,32 +554,26 @@ func getElapsedTime(startTime time.Time) int {
 	return max(int(time.Since(startTime).Milliseconds()), 1)
 }
 
-// determineTargetServerGroup returns the title of the server group based on the selected server and
-// parameters. This function assumes parameters are already validated and contains a valid group ID.
-func determineTargetServerGroup(server *core.Server, parameters serverpicker.ServerParameters) string {
-	findServerGroupTitle := func(gid config.ServerGroup) (string, bool) {
-		index := slices.IndexFunc(server.Groups, func(g core.Group) bool { return g.ID == gid })
-		if index != -1 {
-			return server.Groups[index].Title, true
-		}
-		return "", false
+// determineTargetServerGroup returns the server group the connection should be attributed to in
+// telemetry, based on the selected server's groups and the requested parameters.
+func determineTargetServerGroup(server *core.Server, parameters serverpicker.ServerParameters) config.ServerGroup {
+	hasGroup := func(gid config.ServerGroup) bool {
+		return slices.ContainsFunc(server.Groups, func(g core.Group) bool { return g.ID == gid })
 	}
 
-	if parameters.Group != config.ServerGroup_UNDEFINED {
-		if title, ok := findServerGroupTitle(parameters.Group); ok {
-			return title
-		}
+	if parameters.Group != config.ServerGroup_UNDEFINED && hasGroup(parameters.Group) {
+		return parameters.Group
 	}
 
-	if title, ok := findServerGroupTitle(config.ServerGroup_OBFUSCATED); ok {
-		return title
+	if hasGroup(config.ServerGroup_OBFUSCATED) {
+		return config.ServerGroup_OBFUSCATED
 	}
 
-	if title, ok := findServerGroupTitle(config.ServerGroup_STANDARD_VPN_SERVERS); ok {
-		return title
+	if hasGroup(config.ServerGroup_STANDARD_VPN_SERVERS) {
+		return config.ServerGroup_STANDARD_VPN_SERVERS
 	}
 
-	return ""
+	return config.ServerGroup_UNDEFINED
 }
 
 type FactoryFunc func(config.Technology) (vpn.VPN, error)

@@ -61,7 +61,7 @@ type (
 	mooseUnsetContextFunc          func() uint32
 	mooseSetRecommendationUuidFunc func(string) uint32
 	mooseSetServerCountryValueFunc func(string) uint32
-	mooseSetServerGroupValueFunc   func(string) uint32
+	mooseSetServerGroupValueFunc   func(moose.NordvpnappServerGroup) uint32
 	mooseSetIsOnVpnValueFunc       func(bool) uint32
 	mooseSendConnectFunc           func(
 		moose.EventParams,
@@ -866,9 +866,9 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	}
 
 	if data.EventStatus == events.StatusSuccess {
-		if data.TargetServerGroup != "" {
-			if err := s.response(s.mooseFuncs.setServerGroupValue(data.TargetServerGroup)); err != nil {
-				return fmt.Errorf("setting server group current state on successful connect (%q): %w", data.TargetServerGroup, err)
+		if data.TargetServerGroupID != config.ServerGroup_UNDEFINED {
+			if err := s.response(s.mooseFuncs.setServerGroupValue(serverGroupToInternalType(data.TargetServerGroupID))); err != nil {
+				return fmt.Errorf("setting server group current state on successful connect (%v): %w", data.TargetServerGroupID, err)
 			}
 		} else {
 			if err := s.response(s.mooseFuncs.unsetServerGroupValue()); err != nil {
@@ -893,7 +893,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			TargetServerCity:    data.TargetServerCity,
 			TargetServerCountry: data.TargetServerCountryCode,
 			TargetServerDomain:  targetServerDomain,
-			TargetServerGroup:   data.TargetServerGroup,
+			TargetServerGroup:   serverGroupToInternalType(data.TargetServerGroupID),
 			TargetTechnology:    connectionTechnologyToInternalType(data.Technology),
 		},
 		moose.ConnectionParams{
@@ -1687,6 +1687,28 @@ func serverSelectionRuleToInternalType(rule config.ServerSelectionRule) moose.No
 		return moose.NordvpnappServerSelectionRuleSpecialtyServerWithSpecificServer
 	default:
 		return moose.NordvpnappServerSelectionRuleNone
+	}
+}
+
+// serverGroupToInternalType converts the internal config server group to the Moose representation
+func serverGroupToInternalType(group config.ServerGroup) moose.NordvpnappServerGroup {
+	switch group {
+	case config.ServerGroup_DOUBLE_VPN:
+		return moose.NordvpnappServerGroupDoubleVpn
+	case config.ServerGroup_ONION_OVER_VPN:
+		return moose.NordvpnappServerGroupOnionOverVpn
+	case config.ServerGroup_DEDICATED_IP:
+		return moose.NordvpnappServerGroupDedicatedIp
+	case config.ServerGroup_STANDARD_VPN_SERVERS:
+		return moose.NordvpnappServerGroupStandard
+	case config.ServerGroup_P2P:
+		return moose.NordvpnappServerGroupP2p
+	case config.ServerGroup_OBFUSCATED:
+		return moose.NordvpnappServerGroupObfuscated
+	case config.ServerGroup_DEDICATED_SERVER:
+		return moose.NordvpnappServerGroupDedicatedServer
+	default:
+		return moose.NordvpnappServerGroupNone
 	}
 }
 

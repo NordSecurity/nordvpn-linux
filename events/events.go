@@ -134,7 +134,7 @@ type DataConnect struct {
 	TargetServerCountry     string
 	TargetServerCountryCode string
 	TargetServerDomain      string
-	TargetServerGroup       string
+	TargetServerGroupID     config.ServerGroup
 	ServerGroups            []config.ServerGroup
 	TargetServerIP          netip.Addr
 	TargetServerName        string
