@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -398,9 +399,9 @@ func TestRPCConnect(t *testing.T) {
 				if test.setup != nil {
 					test.setup(rpc)
 				}
-				firstOpenEventCouter := 0
+				firstOpenEventCounter := 0
 				firstOpenListener := func(any) error {
-					firstOpenEventCouter++
+					firstOpenEventCounter++
 					return nil
 				}
 				rpc.events.Service.FirstTimeOpened.Subscribe(firstOpenListener)
@@ -423,13 +424,13 @@ func TestRPCConnect(t *testing.T) {
 				switch test.resp {
 				case internal.CodeConnected:
 					assert.NoError(t, err)
-					assert.Equal(t, firstOpenEventCouter, 1)
+					assert.Equal(t, firstOpenEventCounter, 1)
 				case 0:
 					assert.ErrorIs(t, internal.ErrUnhandled, err)
-					assert.Equal(t, firstOpenEventCouter, 0)
+					assert.Equal(t, firstOpenEventCounter, 0)
 				default:
 					assert.Equal(t, test.resp, server.msg.Type)
-					assert.Equal(t, firstOpenEventCouter, 0)
+					assert.Equal(t, firstOpenEventCounter, 0)
 				}
 			})
 		}
@@ -1435,4 +1436,51 @@ func Test_serverGroupIDs_NilGroups_ReturnsEmptySlice(t *testing.T) {
 	got := determineServerGroupIDs(&server)
 
 	assert.Equal(t, 0, len(got))
+}
+
+func TestReconnectOnServerMaintenance(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	rpc := testRPCLocal(t)
+	ctx := context.Background()
+	server := &mockRPCServer{}
+
+	params := serverpicker.ServerParameters{
+		ServerName: "it1",
+	}
+	rpc.RequestedConnParams.Set(pb.ConnectionSource_MANUAL, params)
+	rpc.serversAPI = core_test.NewMockServersAPI()
+
+	// select NordLynx because servers list has 2 servers in Italy
+	rpc.cm.SaveWith(func(c config.Config) config.Config {
+		return config.Config{
+			Technology: config.Technology_NORDLYNX,
+		}
+	})
+
+	// connect to a specific server name, it1
+	failed, err := rpc.connectWithParameters(ctx, &pb.ConnectRequest{ServerTag: "it1"}, server, pb.ConnectionSource_MANUAL, "")
+	assert.False(t, failed)
+	assert.NoError(t, err)
+	assert.Equal(t, "it1.nordvpn.com", rpc.lastServerSelection.Server.Hostname)
+
+	// reconnect will take the server city + country. Server selection finds second server, it2
+	failed, err = rpc.reconnectOnServerMaintenance(ctx, server)
+	assert.False(t, failed)
+	assert.NoError(t, err)
+	assert.Equal(t, "it2.nordvpn.com", rpc.lastServerSelection.Server.Hostname)
+
+	p := rpc.RequestedConnParams.Get()
+	assert.Equal(t, "IT", p.CountryCode)
+	assert.Equal(t, "Rome", p.City)
+
+	// reconnect will use the city + country, and server selection finds first server, it1
+	failed, err = rpc.reconnectOnServerMaintenance(ctx, server)
+	assert.False(t, failed)
+	assert.NoError(t, err)
+	assert.Equal(t, "it1.nordvpn.com", rpc.lastServerSelection.Server.Hostname)
+
+	p = rpc.RequestedConnParams.Get()
+	assert.Equal(t, "IT", p.CountryCode)
+	assert.Equal(t, "Rome", p.City)
 }

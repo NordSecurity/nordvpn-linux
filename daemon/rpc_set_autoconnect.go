@@ -71,8 +71,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 	serverGroup := in.GetServerGroup()
 	if in.GetEnabled() {
 		insights := r.dm.GetInsightsData().Insights
-
-		serverSelection, err := selectServer(r, &insights, cfg, serverTag, serverGroup)
+		serverSelection, err := selectServer(r, &insights, cfg, serverTag, serverGroup, "")
 		if err != nil {
 			log.Println(internal.ErrorPrefix, "no server found for autoconnect", serverTag, err)
 

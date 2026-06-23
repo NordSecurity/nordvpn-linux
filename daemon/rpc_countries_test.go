@@ -49,6 +49,7 @@ func TestRPCCountries(t *testing.T) {
 				{Name: "Algeria", VirtualLocation: true},
 				{Name: "France", VirtualLocation: false},
 				{Name: "Germany", VirtualLocation: false},
+				{Name: "Italy", VirtualLocation: false},
 				{Name: "Lithuania", VirtualLocation: false},
 			},
 		},
@@ -61,6 +62,7 @@ func TestRPCCountries(t *testing.T) {
 			expected: []*pb.ServerGroup{
 				{Name: "France", VirtualLocation: false},
 				{Name: "Germany", VirtualLocation: false},
+				{Name: "Italy", VirtualLocation: false},
 				{Name: "Lithuania", VirtualLocation: false},
 			},
 		},

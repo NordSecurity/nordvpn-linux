@@ -18,9 +18,10 @@ func selectServer(
 	cfg config.Config,
 	tag string,
 	groupFlag string,
+	excludedServer string,
 ) (serverpicker.ServerSelection, error) {
 	serversList := r.dm.GetServersData().Servers
-	searchParams := serverpicker.NewSearchParams(tag, groupFlag)
+	searchParams := serverpicker.NewSearchParams(tag, groupFlag, excludedServer)
 	selection, err := serverpicker.PickServer(
 		r.serversAPI,
 		serversList,

@@ -31,10 +31,35 @@ func determineServerGroupIDs(server *core.Server) []config.ServerGroup {
 
 // Connect initiates and handles the VPN connection process
 func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retErr error) {
-	return r.connectFromRequest(in, srv, pb.ConnectionSource_MANUAL)
+	return r.executeConnect(srv, func(ctx context.Context) (bool, error) {
+		return r.connectWithParameters(ctx, in, srv, pb.ConnectionSource_MANUAL, "")
+	})
 }
 
-func (r *RPC) connectFromRequest(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer, source pb.ConnectionSource) error {
+func (r *RPC) ConnectFromLastSelection(srv pb.Daemon_ConnectServer,
+	source pb.ConnectionSource,
+	pauseDuration time.Duration,
+) error {
+	return r.executeConnect(srv, func(ctx context.Context) (bool, error) {
+		return r.connectWithStoredServerSelection(ctx, srv, pauseDuration)
+	})
+}
+
+func (r *RPC) ReconnectOnServerMaintenanceEvent() (exitErr error) {
+	srv := &connectServer{}
+	defer func() {
+		if exitErr != nil || srv.err != nil {
+			exitErr = errors.Join(exitErr, srv.err)
+		}
+	}()
+
+	return r.executeConnect(srv, func(ctx context.Context) (bool, error) {
+		return r.reconnectOnServerMaintenance(ctx, srv)
+	})
+}
+
+// executeConnect - ensures that no two connect functions are executed in the same time
+func (r *RPC) executeConnect(srv pb.Daemon_ConnectServer, fn func(context.Context) (bool, error)) error {
 	var err error
 	var didFail bool
 	// TODO: Currently this only listens to a given context in `netw.Start()`, therefore gets
@@ -47,7 +72,7 @@ func (r *RPC) connectFromRequest(in *pb.ConnectRequest, srv pb.Daemon_ConnectSer
 	// In order to fix this, all of expensive operations should implement `ctx.Done()` handling
 	// and have context bypassed to them.
 	if !r.connectContext.TryExecuteWith(func(ctx context.Context) {
-		didFail, err = r.connectWithParameters(ctx, in, srv, source)
+		didFail, err = fn(ctx)
 	}) {
 		return srv.Send(&pb.Payload{Type: internal.CodeNothingToDo})
 	}
@@ -60,23 +85,39 @@ func (r *RPC) connectFromRequest(in *pb.ConnectRequest, srv pb.Daemon_ConnectSer
 	return err
 }
 
-func (r *RPC) connectFromLastSelection(srv pb.Daemon_ConnectServer,
-	source pb.ConnectionSource,
-	pauseDuration time.Duration) error {
-	var err error
-	var didFail bool
-	if !r.connectContext.TryExecuteWith(func(ctx context.Context) {
-		didFail, err = r.connectWithStoredServerSelection(ctx, srv, pauseDuration)
-	}) {
-		return srv.Send(&pb.Payload{Type: internal.CodeNothingToDo})
+func (r *RPC) reconnectOnServerMaintenance(
+	ctx context.Context,
+	srv pb.Daemon_ConnectServer,
+) (bool, error) {
+	reqParams := r.RequestedConnParams.Get()
+	currentServer := r.lastServerSelection.Server
+	log.Debug("[ens]", reqParams, currentServer)
+
+	var group string
+	if reqParams.Group != config.ServerGroup_UNDEFINED {
+		group = reqParams.Group.String()
 	}
 
-	// set connection status to "Disconnected"
-	if didFail || err != nil {
-		r.events.Service.Disconnect.Publish(events.DataDisconnect{})
+	var serverTag string
+	var hostname string
+	if currentServer != nil {
+		hostname = currentServer.Hostname
 	}
 
-	return err
+	if currentServer != nil && reqParams.ServerName != "" {
+		// specific server name was selected. Use server country + city instead
+		c := currentServer.Country()
+		serverTag = internal.SnakeCase(c.Code) + " " + internal.SnakeCase(c.City.Name)
+	} else {
+		// otherwise reuse whatever was already used to connect
+		serverTag = internal.SnakeCase(reqParams.CountryCode) + " " + internal.SnakeCase(reqParams.City)
+	}
+	req := pb.ConnectRequest{
+		ServerGroup: group,
+		ServerTag:   serverTag,
+	}
+
+	return r.connectWithParameters(ctx, &req, srv, pb.ConnectionSource_AUTO, hostname)
 }
 
 // determineServerSelectionRule determines the server selection rule based on the provided
@@ -131,9 +172,11 @@ func (r *RPC) isVPNExpired() int64 {
 	return internal.CodeSuccess
 }
 
-func (r *RPC) connectWithStoredServerSelection(ctx context.Context,
+func (r *RPC) connectWithStoredServerSelection(
+	ctx context.Context,
 	srv pb.Daemon_ConnectServer,
-	pauseDuration time.Duration) (bool, error) {
+	pauseDuration time.Duration,
+) (bool, error) {
 	if ok, err := r.ac.IsLoggedIn(); !ok {
 		if errors.Is(err, core.ErrUnauthorized) {
 			_ = srv.Send(&pb.Payload{Type: internal.CodeRevokedAccessToken})
@@ -169,7 +212,6 @@ func (r *RPC) connectWithStoredServerSelection(ctx context.Context,
 	if expirationCheckResult != internal.CodeSuccess {
 		return true, srv.Send(&pb.Payload{Type: expirationCheckResult})
 	}
-
 	return r.connect(ctx,
 		srv,
 		cfg,
@@ -177,13 +219,15 @@ func (r *RPC) connectWithStoredServerSelection(ctx context.Context,
 		r.RequestedConnParams.Get().ServerParameters,
 		time.Now(),
 		false,
-		pauseDuration)
+		pauseDuration,
+	)
 }
 
 func (r *RPC) connectWithParameters(ctx context.Context,
 	in *pb.ConnectRequest,
 	srv pb.Daemon_ConnectServer,
 	source pb.ConnectionSource,
+	excludedServer string,
 ) (didFail bool, retErr error) {
 	pauseDuration := r.pauseManager.CancelReconnection()
 	if ok, err := r.ac.IsLoggedIn(); !ok {
@@ -236,11 +280,10 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 
 	inputServerTag := internal.RemoveNonAlphanumeric(in.GetServerTag())
 
-	log.Println(internal.DebugPrefix, "picking servers for", cfg.Technology, "technology", "input",
-		in.GetServerTag(), in.GetServerGroup())
+	log.Debugf("picking servers for %v technology, input serverTag=%q serverGroup=%q, server excluded from lookup=%q",
+		cfg.Technology, in.GetServerTag(), in.GetServerGroup(), excludedServer)
 
-	serverSelection, err := selectServer(r, &insights, cfg, inputServerTag, in.GetServerGroup())
-
+	serverSelection, err := selectServer(r, &insights, cfg, inputServerTag, in.GetServerGroup(), excludedServer)
 	if err != nil {
 		var errorCode *internal.ErrorWithCode
 		if errors.As(err, &errorCode) {
