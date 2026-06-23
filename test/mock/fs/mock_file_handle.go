@@ -10,8 +10,7 @@ type SystemFileHandleMock struct {
 	files    map[string][]byte
 	WriteErr error
 	ReadErr  error
-	// IsSameFile determines the result of SameFile calls.
-	IsSameFile bool
+	Links    map[string]string
 	// StatErrors maps file location to a potential stat error
 	StatErrors map[string]error
 	RemoveErr  error
@@ -43,11 +42,14 @@ func (fm *SystemFileHandleMock) Stat(location string) (os.FileInfo, error) {
 	if statErr, ok := fm.StatErrors[location]; ok {
 		return &MockFileInfo{}, statErr
 	}
-	return &MockFileInfo{}, nil
+	return &MockFileInfo{name: location}, nil
 }
 
 func (fm *SystemFileHandleMock) SameFile(fi1 os.FileInfo, fi2 os.FileInfo) bool {
-	return fm.IsSameFile
+	if linkName, ok := fm.Links[fi1.Name()]; ok {
+		return fi2.Name() == linkName
+	}
+	return false
 }
 
 func (fm *SystemFileHandleMock) WriteFile(location string, data []byte, mode fs.FileMode) error {
@@ -74,6 +76,7 @@ func NewSystemFileHandleMock(t *testing.T) SystemFileHandleMock {
 
 	return SystemFileHandleMock{
 		files:      make(map[string][]byte),
+		Links:      make(map[string]string),
 		StatErrors: make(map[string]error),
 	}
 }
