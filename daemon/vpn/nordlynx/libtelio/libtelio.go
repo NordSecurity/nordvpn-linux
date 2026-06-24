@@ -681,7 +681,7 @@ func (l *Libtelio) Refresh(c mesh.MachineMap) error {
 		return fmt.Errorf("failed to deserialize meshnet config: %w", err)
 	}
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		if err = l.lib.SetMeshnet(config); err == nil {
 			break
 		}
@@ -870,12 +870,12 @@ func isConnected(ctx context.Context,
 	stateCh <-chan state,
 	connParams connParameters,
 	eventsPublisher *vpn.Events,
-) <-chan interface{} {
+) <-chan any {
 	// we need waitgroup just to make sure goroutine has started
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	connectedCh := make(chan interface{})
+	connectedCh := make(chan any)
 	go func() {
 		wg.Done() // signal that goroutine has started
 		monitorConnectionState(ctx, stateCh, connectedCh, connParams, eventsPublisher)
@@ -897,7 +897,7 @@ type connParameters struct {
 func monitorConnectionState(
 	ctx context.Context,
 	states <-chan state,
-	isConnected chan<- interface{},
+	isConnected chan<- any,
 	connParameters connParameters,
 	eventsPublisher *vpn.Events,
 ) {

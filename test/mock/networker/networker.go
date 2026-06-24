@@ -47,6 +47,7 @@ func (m *Mock) Start(
 	m.ProvidedServerData = serverData
 	return nil
 }
+
 func (m *Mock) Stop() error {
 	if m.StopErr != nil {
 		return m.StopErr
