@@ -24,7 +24,6 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
   Duration get animationDuration;
   Curve get animationCurve;
   List<BoxShadow> get menuBoxShadow;
-  double get menuShadowMargin;
   double get menuGap;
 
   @override
@@ -43,7 +42,6 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
     Duration? animationDuration,
     Curve? animationCurve,
     List<BoxShadow>? menuBoxShadow,
-    double? menuShadowMargin,
     double? menuGap,
   }) {
     return ContextMenuTheme(
@@ -61,7 +59,6 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
       animationDuration: animationDuration ?? this.animationDuration,
       animationCurve: animationCurve ?? this.animationCurve,
       menuBoxShadow: menuBoxShadow ?? this.menuBoxShadow,
-      menuShadowMargin: menuShadowMargin ?? this.menuShadowMargin,
       menuGap: menuGap ?? this.menuGap,
     );
   }
@@ -87,7 +84,6 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
       animationDuration: t < 0.5 ? animationDuration : other.animationDuration,
       animationCurve: t < 0.5 ? animationCurve : other.animationCurve,
       menuBoxShadow: t < 0.5 ? menuBoxShadow : other.menuBoxShadow,
-      menuShadowMargin: t < 0.5 ? menuShadowMargin : other.menuShadowMargin,
       menuGap: t < 0.5 ? menuGap : other.menuGap,
     );
   }
@@ -147,10 +143,6 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
               menuBoxShadow,
               other.menuBoxShadow,
             ) &&
-            const DeepCollectionEquality().equals(
-              menuShadowMargin,
-              other.menuShadowMargin,
-            ) &&
             const DeepCollectionEquality().equals(menuGap, other.menuGap));
   }
 
@@ -172,7 +164,6 @@ mixin _$ContextMenuThemeTailorMixin on ThemeExtension<ContextMenuTheme> {
       const DeepCollectionEquality().hash(animationDuration),
       const DeepCollectionEquality().hash(animationCurve),
       const DeepCollectionEquality().hash(menuBoxShadow),
-      const DeepCollectionEquality().hash(menuShadowMargin),
       const DeepCollectionEquality().hash(menuGap),
     );
   }
@@ -195,6 +186,5 @@ extension ContextMenuThemeBuildContextProps on BuildContext {
   Duration get animationDuration => contextMenuTheme.animationDuration;
   Curve get animationCurve => contextMenuTheme.animationCurve;
   List<BoxShadow> get menuBoxShadow => contextMenuTheme.menuBoxShadow;
-  double get menuShadowMargin => contextMenuTheme.menuShadowMargin;
   double get menuGap => contextMenuTheme.menuGap;
 }
