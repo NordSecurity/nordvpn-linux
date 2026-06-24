@@ -788,8 +788,14 @@ func TestMonitorConnectionErrors_PublishesMappedEvent(t *testing.T) {
 	})
 
 	errorsChan := make(chan vpnConnError, 1)
+	l := &Libtelio{
+		eventsPublisher: pub,
+		vpnErrorEvents:  errorsChan,
+		active:          true,
+		currentServer:   vpn.ServerData{NordLynxPublicKey: "lel"},
+	}
 
-	go monitorConnectionErrors(t.Context(), errorsChan, nil, pub)
+	go l.monitorConnectionErrors(t.Context())
 
 	errorsChan <- vpnConnError{code: teliogo.VpnConnectionErrorSuperseded, publicKey: "srv-key"}
 
@@ -873,13 +879,14 @@ func TestInjectVPNConnectionError_DeliversThroughMonitor(t *testing.T) {
 			})
 
 			injectedChan := make(chan vpnConnError)
-			go monitorConnectionErrors(t.Context(), nil, injectedChan, pub)
-
 			l := &Libtelio{
-				injectedErrors: injectedChan,
-				active:         true,
-				currentServer:  vpn.ServerData{NordLynxPublicKey: tt.connectedKey},
+				eventsPublisher: pub,
+				injectedErrors:  injectedChan,
+				active:          true,
+				currentServer:   vpn.ServerData{NordLynxPublicKey: tt.connectedKey},
 			}
+
+			go l.monitorConnectionErrors(t.Context())
 
 			injected := assert.Eventually(t, func() bool {
 				return l.InjectVPNConnectionError(tt.code, tt.inputKey) == nil
