@@ -99,6 +99,4 @@ service Daemon {
   // ==================== System & Monitoring ====================
   rpc Ping(Empty) returns (PingResponse);
   rpc SubscribeToStateChanges(Empty) returns (stream AppState);
-  rpc GetDaemonApiVersion(GetDaemonApiVersionRequest)
-      returns (GetDaemonApiVersionResponse);
 }

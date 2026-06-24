@@ -9,12 +9,6 @@ enum DaemonApiVersion {
   CURRENT_VERSION = 4; // set Daemon API version value here e.g. 1,2,3,4 etc.
 }
 
-message GetDaemonApiVersionRequest {} // empty is ok, for future compatibility
-
-message GetDaemonApiVersionResponse {
-  uint32 apiVersion = 1;
-}
-
 message Empty {}
 
 message Bool {

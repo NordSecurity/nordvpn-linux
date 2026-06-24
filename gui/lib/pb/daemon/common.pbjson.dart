@@ -58,29 +58,6 @@ final $typed_data.Uint8List clientIDDescriptor = $convert.base64Decode(
     'CghDbGllbnRJRBISCg5VTktOT1dOX0NMSUVOVBAAEgcKA0NMSRABEgcKA0dVSRACEggKBFRSQV'
     'kQAw==');
 
-@$core.Deprecated('Use getDaemonApiVersionRequestDescriptor instead')
-const GetDaemonApiVersionRequest$json = {
-  '1': 'GetDaemonApiVersionRequest',
-};
-
-/// Descriptor for `GetDaemonApiVersionRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List getDaemonApiVersionRequestDescriptor =
-    $convert.base64Decode('ChpHZXREYWVtb25BcGlWZXJzaW9uUmVxdWVzdA==');
-
-@$core.Deprecated('Use getDaemonApiVersionResponseDescriptor instead')
-const GetDaemonApiVersionResponse$json = {
-  '1': 'GetDaemonApiVersionResponse',
-  '2': [
-    {'1': 'apiVersion', '3': 1, '4': 1, '5': 13, '10': 'apiVersion'},
-  ],
-};
-
-/// Descriptor for `GetDaemonApiVersionResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List getDaemonApiVersionResponseDescriptor =
-    $convert.base64Decode(
-        'ChtHZXREYWVtb25BcGlWZXJzaW9uUmVzcG9uc2USHgoKYXBpVmVyc2lvbhgBIAEoDVIKYXBpVm'
-        'Vyc2lvbg==');
-
 @$core.Deprecated('Use emptyDescriptor instead')
 const Empty$json = {
   '1': 'Empty',

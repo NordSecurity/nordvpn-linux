@@ -33,16 +33,6 @@ CLI: ClientID
 GUI: ClientID
 TRAY: ClientID
 
-class GetDaemonApiVersionRequest(_message.Message):
-    __slots__ = ()
-    def __init__(self) -> None: ...
-
-class GetDaemonApiVersionResponse(_message.Message):
-    __slots__ = ("apiVersion",)
-    APIVERSION_FIELD_NUMBER: _ClassVar[int]
-    apiVersion: int
-    def __init__(self, apiVersion: _Optional[int] = ...) -> None: ...
-
 class Empty(_message.Message):
     __slots__ = ()
     def __init__(self) -> None: ...
