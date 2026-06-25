@@ -119,22 +119,21 @@ func dataRequestAPIToString(
 ) string {
 	b := strings.Builder{}
 	headers := processHeaders(hideSensitiveHeaders, data.Request.Header)
-	b.WriteString(fmt.Sprintf("Duration: %s\n", data.Duration))
+	fmt.Fprintf(&b, "Duration: %s\n", data.Duration)
 	if data.Request != nil {
 		tmpBody := "(binary data)"
 		if !isRequestBinary(data.Request) {
 			tmpBody = string(reqBody)
 		}
-		b.WriteString(fmt.Sprintf("Request: %s %s %s %s %s\n",
+		fmt.Fprintf(&b, "Request: %s %s %s %s %s\n",
 			data.Request.Proto,
 			data.Request.Method,
 			data.Request.URL,
 			headers,
-			tmpBody,
-		))
+			tmpBody)
 	}
 	if data.Error != nil {
-		b.WriteString(fmt.Sprintf("Error: %s\n", data.Error))
+		fmt.Fprintf(&b, "Error: %s\n", data.Error)
 	}
 	if data.Response != nil {
 		tmpBody := "(binary data)"
@@ -142,12 +141,11 @@ func dataRequestAPIToString(
 		if !isResponseBinary(data.Response) {
 			tmpBody = string(respBody)
 		}
-		b.WriteString(fmt.Sprintf("Response: %s %d - %s %s\n",
+		fmt.Fprintf(&b, "Response: %s %d - %s %s\n",
 			data.Response.Proto,
 			data.Response.StatusCode,
 			data.Response.Header,
-			tmpBody,
-		))
+			tmpBody)
 	}
 
 	return b.String()
