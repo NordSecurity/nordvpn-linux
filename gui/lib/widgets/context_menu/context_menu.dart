@@ -150,15 +150,26 @@ class _ContextMenuState extends State<ContextMenu>
             alignment: AlignmentDirectional.topStart,
             child: FadeTransition(
               opacity: _animation,
-              child: SizeTransition(
-                sizeFactor: _animation,
-                axisAlignment: -1,
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: theme.menuShadowMargin),
-                  child: _MenuPanel(
-                    items: widget.items,
-                    width: menuWidth,
-                    onItemTapped: _onItemTapped,
+              // Shadow around the menu panel. Needs to be a parent of SizeTransition to avoid clipping.
+              child: SizedBox(
+                width: menuWidth,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: theme.menuRadius,
+                    border: Border.all(
+                      color: theme.menuBorderColor,
+                      width: theme.menuBorderWidth,
+                    ),
+                    boxShadow: theme.menuBoxShadow,
+                  ),
+                  child: SizeTransition(
+                    sizeFactor: _animation,
+                    axisAlignment: -1,
+                    child: _MenuPanel(
+                      items: widget.items,
+                      width: menuWidth,
+                      onItemTapped: _onItemTapped,
+                    ),
                   ),
                 ),
               ),
@@ -185,16 +196,8 @@ class _MenuPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = context.contextMenuTheme;
 
-    return Container(
+    return SizedBox(
       width: width,
-      decoration: BoxDecoration(
-        borderRadius: theme.menuRadius,
-        border: Border.all(
-          color: theme.menuBorderColor,
-          width: theme.menuBorderWidth,
-        ),
-        boxShadow: theme.menuBoxShadow,
-      ),
       child: Material(
         color: theme.menuColor,
         borderRadius: theme.menuRadius,
