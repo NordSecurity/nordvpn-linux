@@ -1,4 +1,4 @@
-FROM ghcr.io/nordsecurity/nordvpn-linux/golang:debian-bullseye-20251014@sha256:a5156248a5497a3b261bd5288abb3ddc4b0f8177803e06ea53f50d95bbda5c7e
+FROM ghcr.io/nordsecurity/nordvpn-linux/golang:debian-bullseye-20260706@sha256:4b086806ab44e4be65568463d2a3b7f2b8387e0be38974628809b26fd630e23a
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 

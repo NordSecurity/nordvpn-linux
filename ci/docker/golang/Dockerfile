@@ -7,8 +7,8 @@ FROM debian:bullseye-slim
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
 # Based on: https://github.com/docker-library/golang/blob/master/1.25/bookworm/Dockerfile
-ENV GOLANG_VERSION 1.25.3
-ENV GOLANG_SHA256 0335f314b6e7bfe08c3d0cfaa7c19db961b7b99fb20be62b0a826c992ad14e0f
+ENV GOLANG_VERSION 1.25.11
+ENV GOLANG_SHA256 34f14304e856893f4ba30c2cacfe93906e9de7915c5f6aaaf3a81cdccd7ba30b
 
 RUN apt-get update && \
     apt-get -y --no-install-recommends upgrade && \
