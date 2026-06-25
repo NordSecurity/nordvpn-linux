@@ -1,5 +1,6 @@
 import random
 import re
+import subprocess
 import time
 from collections import namedtuple
 from collections.abc import Callable
@@ -463,6 +464,15 @@ def ensure_mesh_is_on() -> None:
     except sh.ErrorReturnCode_1 as e:
         if "Meshnet is already enabled." not in str(e):
             raise e
+
+
+def is_process_running() -> bool:
+    """Check if nordfileshare process exists using pgrep."""
+    result = subprocess.run(
+        ["pgrep", "-x", "nordfileshare"],
+        capture_output=True,
+    )
+    return result.returncode == 0
 
 
 def restart_mesh() -> None:

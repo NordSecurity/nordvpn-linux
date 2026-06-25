@@ -73,7 +73,11 @@ func main() {
 		log.Info("Cannot start fileshare daemon, it is already running for another user.")
 		os.Exit(int(childprocess.CodeAlreadyRunningForOtherUser))
 	case childprocess.NotRunning:
-		// Continue with normal startup
+		// try to cleanup, if any stale process is still running from previous run
+		if pids := internal.FindProcessPIDsByName(internal.Fileshare); len(pids) > 0 {
+			log.Warnf("found %d stale %s process(es), killing: %v", len(pids), internal.Fileshare, pids)
+			internal.KillStaleProcesses(internal.Fileshare, pids)
+		}
 	}
 
 	eventsDBPath := filepath.Join(internal.DatFilesPath, "moose.db")

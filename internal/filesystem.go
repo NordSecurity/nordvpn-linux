@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"golang.org/x/sys/unix"
@@ -617,6 +619,88 @@ func isProcessRunning(executablePath string, readdir readdirFunc, readfile readf
 	}
 
 	return false, nil
+}
+
+// FindProcessPIDsByName scans /proc for processes whose binary basename matches
+// binaryName, excluding the calling process. Handles snap revision path changes
+// where the full path differs but the binary name is the same.
+func FindProcessPIDsByName(binaryName string) []int {
+	pids, err := findProcessPIDsByName(binaryName, os.Getpid(), defaultReaddir, defaultReadfile)
+	if err != nil {
+		log.Warn("failed to find processes by name:", err)
+		return nil
+	}
+	return pids
+}
+
+func findProcessPIDsByName(
+	binaryName string,
+	selfPID int,
+	readdir readdirFunc,
+	readfile readfileFunc,
+) ([]int, error) {
+	procDirs, err := readdir("/proc")
+	if err != nil {
+		return nil, fmt.Errorf("reading /proc directories: %w", err)
+	}
+
+	var pids []int
+	for _, dir := range procDirs {
+		pid, err := strconv.Atoi(dir.Name())
+		if err != nil {
+			continue
+		}
+		if pid == selfPID {
+			continue
+		}
+
+		cmdline, err := readfile(filepath.Join("/proc", dir.Name(), "cmdline"))
+		if err != nil {
+			continue
+		}
+		args := strings.Split(string(cmdline), "\x00")
+		if len(args) > 0 && filepath.Base(args[0]) == binaryName {
+			pids = append(pids, pid)
+		}
+	}
+
+	return pids, nil
+}
+
+// KillStaleProcesses sends SIGTERM to each PID, waits up to 3 seconds for exit,
+// then sends SIGKILL if the process is still alive.
+func KillStaleProcesses(binaryName string, pids []int) {
+	for _, pid := range pids {
+		killStaleProcess(binaryName, pid)
+	}
+}
+
+func killStaleProcess(binaryName string, pid int) {
+	if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
+		if errors.Is(err, syscall.ESRCH) {
+			return
+		}
+		log.Warnf("failed to send SIGTERM to %s (pid %d): %s", binaryName, pid, err)
+		return
+	}
+	log.Infof("sent SIGTERM to stale %s (pid %d)", binaryName, pid)
+
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		if err := syscall.Kill(pid, 0); err != nil {
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	if err := syscall.Kill(pid, syscall.SIGKILL); err != nil {
+		if errors.Is(err, syscall.ESRCH) {
+			return
+		}
+		log.Warnf("failed to send SIGKILL to %s (pid %d): %s", binaryName, pid, err)
+		return
+	}
+	log.Warnf("sent SIGKILL to stale %s (pid %d) after SIGTERM timeout", binaryName, pid)
 }
 
 // UserLogOutput opens logFileName in the user's cache directory and returns it.
