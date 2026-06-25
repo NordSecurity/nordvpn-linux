@@ -12,11 +12,13 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	daemonEvents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
 	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
@@ -28,6 +30,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+const activeKey = "current-nordlynx-key"
 
 type mockRPCServer struct {
 	pb.Daemon_ConnectServer
@@ -915,85 +919,85 @@ func Test_determineServerGroup(t *testing.T) {
 		name   string
 		server core.Server
 		params serverpicker.ServerParameters
-		want   string
+		want   config.ServerGroup
 	}{
 		{
-			name: "Group is UNDEFINED returns first group title",
+			name: "Group is UNDEFINED falls back to standard group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 				{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double VPN"},
 			}},
 			params: serverpicker.ServerParameters{},
-			want:   "Standard VPN servers",
+			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
-			name: "Group is DOUBLE_VPN returns matching group title",
+			name: "Group is DOUBLE_VPN returns matching group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 				{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double VPN"},
 			}},
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
-			want:   "Double VPN",
+			want:   config.ServerGroup_DOUBLE_VPN,
 		},
 		{
-			name: "Group is OBFUSCATED returns matching group title",
+			name: "Group is OBFUSCATED returns matching group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 				{ID: config.ServerGroup_OBFUSCATED, Title: "Obfuscated"},
 			}},
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_OBFUSCATED},
-			want:   "Obfuscated",
+			want:   config.ServerGroup_OBFUSCATED,
 		},
 		{
-			name: "Group is DEDICATED_IP returns matching group title",
+			name: "Group is DEDICATED_IP returns matching group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_DEDICATED_IP, Title: "Dedicated IP"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_DEDICATED_IP},
-			want:   "Dedicated IP",
+			want:   config.ServerGroup_DEDICATED_IP,
 		},
 		{
-			name: "Group is NETFLIX_USA returns matching group title",
+			name: "Group is NETFLIX_USA returns matching group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_NETFLIX_USA, Title: "Netflix USA"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_NETFLIX_USA},
-			want:   "Netflix USA",
+			want:   config.ServerGroup_NETFLIX_USA,
 		},
 		{
-			name: "Group is P2P returns matching group title",
+			name: "Group is P2P returns matching group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_P2P, Title: "P2P"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_P2P},
-			want:   "P2P",
+			want:   config.ServerGroup_P2P,
 		},
 		{
-			name: "Group is ULTRA_FAST_TV returns matching group title",
+			name: "Group is ULTRA_FAST_TV returns matching group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_ULTRA_FAST_TV, Title: "Ultra Fast TV"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_ULTRA_FAST_TV},
-			want:   "Ultra Fast TV",
+			want:   config.ServerGroup_ULTRA_FAST_TV,
 		},
 		{
-			name: "Group is ANTI_DDOS returns matching group title",
+			name: "Group is ANTI_DDOS returns matching group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_ANTI_DDOS, Title: "Anti DDoS"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_ANTI_DDOS},
-			want:   "Anti DDoS",
+			want:   config.ServerGroup_ANTI_DDOS,
 		},
 		{
-			name:   "Server has no groups returns empty string",
+			name:   "Server has no groups returns UNDEFINED",
 			server: core.Server{Groups: []core.Group{}},
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
-			want:   "",
+			want:   config.ServerGroup_UNDEFINED,
 		},
 		{
 			name: "Server has only one group, params group matches",
@@ -1001,7 +1005,7 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_OBFUSCATED, Title: "Obfuscated"},
 			}},
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_OBFUSCATED},
-			want:   "Obfuscated",
+			want:   config.ServerGroup_OBFUSCATED,
 		},
 		{
 			name: "Group is not set (zero value), server has multiple groups",
@@ -1010,13 +1014,13 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
 			params: serverpicker.ServerParameters{},
-			want:   "Standard VPN servers",
+			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
 			name:   "Group is not set (zero value), server has no groups",
 			server: core.Server{Groups: []core.Group{}},
 			params: serverpicker.ServerParameters{},
-			want:   "",
+			want:   config.ServerGroup_UNDEFINED,
 		},
 	}
 	for _, tt := range tests {
@@ -1465,17 +1469,25 @@ func TestReconnectOnServerMaintenance(t *testing.T) {
 		}
 	})
 
+	// capture the connect telemetry events so we can assert how the reconnect is attributed
+	connectEvents := &daemonEvents.MockPublisherSubscriber[events.DataConnect]{}
+	rpc.events.Service.Connect = connectEvents
+
 	// connect to a specific server name, it1
-	failed, err := rpc.connectWithParameters(ctx, &pb.ConnectRequest{ServerTag: "it1"}, server, pb.ConnectionSource_MANUAL, "")
+	failed, err := rpc.connectWithParameters(ctx, &pb.ConnectRequest{ServerTag: "it1"}, server, pb.ConnectionSource_MANUAL, "", events.VPNConnectionReasonNone)
 	assert.False(t, failed)
 	assert.NoError(t, err)
 	assert.Equal(t, "it1.nordvpn.com", rpc.lastServerSelection.Server.Hostname)
+	// a user-initiated connect carries no special trigger
+	assert.Equal(t, events.VPNConnectionReasonNone, connectEvents.Event.VPNConnReason)
 
 	// reconnect will take the server city + country. Server selection finds second server, it2
 	failed, err = rpc.reconnectOnServerMaintenance(ctx, server, activeKey)
 	assert.False(t, failed)
 	assert.NoError(t, err)
 	assert.Equal(t, "it2.nordvpn.com", rpc.lastServerSelection.Server.Hostname)
+	// an ENS server-maintenance reconnect stamps the trigger so telemetry reports it as such
+	assert.Equal(t, events.VPNConnectionReasonServerMaintenance, connectEvents.Event.VPNConnReason)
 
 	p := rpc.RequestedConnParams.Get()
 	assert.Equal(t, "IT", p.CountryCode)
@@ -1494,8 +1506,6 @@ func TestReconnectOnServerMaintenance(t *testing.T) {
 
 func TestReconnectOnServerMaintenance_ConnectionGuard(t *testing.T) {
 	category.Set(t, category.Unit)
-
-	const activeKey = "current-nordlynx-key"
 
 	tests := []struct {
 		name          string
@@ -1549,4 +1559,35 @@ func TestReconnectOnServerMaintenance_ConnectionGuard(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestReconnectOnServerMaintenance_CountryOnly(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	rpc := testRPCLocal(t)
+	ctx := context.Background()
+	server := &mockRPCServer{}
+	rpc.serversAPI = core_test.NewMockServersAPI()
+	rpc.netw = &testnetworker.Mock{
+		VpnActive:        true,
+		ActiveServerData: &vpn.ServerData{NordLynxPublicKey: activeKey},
+	}
+
+	rpc.cm.SaveWith(func(c config.Config) config.Config {
+		return config.Config{
+			Technology: config.Technology_NORDLYNX,
+		}
+	})
+
+	failed, err := rpc.connectWithParameters(ctx, &pb.ConnectRequest{ServerTag: "it"}, server, pb.ConnectionSource_MANUAL, "", events.VPNConnectionReasonNone)
+	assert.False(t, failed)
+	assert.NoError(t, err)
+
+	p := rpc.RequestedConnParams.Get()
+	assert.Equal(t, "IT", p.CountryCode)
+	assert.Equal(t, "", p.City)
+
+	failed, err = rpc.reconnectOnServerMaintenance(ctx, server, activeKey)
+	assert.False(t, failed)
+	assert.NoError(t, err)
 }

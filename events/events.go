@@ -102,6 +102,18 @@ type VPNConnectionErrorEvent struct {
 	ServerPublicKey string
 }
 
+// VPNConnectionReason identifies the reason an app-initiated (re)connect and its matching disconnect was started, for telemetry.
+type VPNConnectionReason int
+
+const (
+	// VPNConnectionReasonNone is the default - no special trigger
+	VPNConnectionReasonNone VPNConnectionReason = iota
+	// VPNConnectionReasonServerMaintenance is set when reconnects after the connected server enters maintenance
+	VPNConnectionReasonServerMaintenance
+	// VPNConnectionReasonAutoConnect is set when the app auto-connects based on the user's auto-connect setting
+	VPNConnectionReasonAutoConnect
+)
+
 type TypeLoginType int
 
 const (
@@ -122,7 +134,7 @@ type DataConnect struct {
 	TargetServerCountry     string
 	TargetServerCountryCode string
 	TargetServerDomain      string
-	TargetServerGroup       string
+	TargetServerGroupID     config.ServerGroup
 	ServerGroups            []config.ServerGroup
 	TargetServerIP          netip.Addr
 	TargetServerName        string
@@ -133,6 +145,7 @@ type DataConnect struct {
 	RecommendationUUID      string
 	PauseInterval           time.Duration
 	UnpausedByUser          bool
+	VPNConnReason           VPNConnectionReason
 }
 
 // DataConnectChangeNotif is used to provide notifications for internal listeners of ConnectionStatus
@@ -207,6 +220,7 @@ type DataDisconnect struct {
 	IsRefresh             bool
 	RecommendationUUID    string
 	PauseInterval         time.Duration
+	VPNConnReason         VPNConnectionReason
 }
 
 type ReasonCode int32

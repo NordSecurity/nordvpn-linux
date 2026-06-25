@@ -32,7 +32,7 @@ func determineServerGroupIDs(server *core.Server) []config.ServerGroup {
 // Connect initiates and handles the VPN connection process
 func (r *RPC) Connect(in *pb.ConnectRequest, srv pb.Daemon_ConnectServer) (retErr error) {
 	return r.executeConnect(srv, func(ctx context.Context) (bool, error) {
-		return r.connectWithParameters(ctx, in, srv, pb.ConnectionSource_MANUAL, "")
+		return r.connectWithParameters(ctx, in, srv, pb.ConnectionSource_MANUAL, "", events.VPNConnectionReasonNone)
 	})
 }
 
@@ -106,6 +106,15 @@ func (r *RPC) reconnectOnServerMaintenance(
 		group = reqParams.Group.String()
 	}
 
+	// builds a "<country>[ <city>]" server tag, omitting the city when it is empty
+	locationTag := func(code, city string) string {
+		tag := internal.SnakeCase(code)
+		if city != "" {
+			tag += " " + internal.SnakeCase(city)
+		}
+		return tag
+	}
+
 	var serverTag string
 	var hostname string
 	if currentServer != nil {
@@ -115,17 +124,17 @@ func (r *RPC) reconnectOnServerMaintenance(
 	if currentServer != nil && reqParams.ServerName != "" {
 		// specific server name was selected. Use server country + city instead
 		c := currentServer.Country()
-		serverTag = internal.SnakeCase(c.Code) + " " + internal.SnakeCase(c.City.Name)
+		serverTag = locationTag(c.Code, c.City.Name)
 	} else {
 		// otherwise reuse whatever was already used to connect
-		serverTag = internal.SnakeCase(reqParams.CountryCode) + " " + internal.SnakeCase(reqParams.City)
+		serverTag = locationTag(reqParams.CountryCode, reqParams.City)
 	}
 	req := pb.ConnectRequest{
 		ServerGroup: group,
 		ServerTag:   serverTag,
 	}
 
-	return r.connectWithParameters(ctx, &req, srv, pb.ConnectionSource_AUTO, hostname)
+	return r.connectWithParameters(ctx, &req, srv, pb.ConnectionSource_AUTO, hostname, events.VPNConnectionReasonServerMaintenance)
 }
 
 // determineServerSelectionRule determines the server selection rule based on the provided
@@ -228,6 +237,7 @@ func (r *RPC) connectWithStoredServerSelection(
 		time.Now(),
 		false,
 		pauseDuration,
+		events.VPNConnectionReasonNone,
 	)
 }
 
@@ -236,6 +246,7 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	srv pb.Daemon_ConnectServer,
 	source pb.ConnectionSource,
 	excludedServer string,
+	vpnConnReason events.VPNConnectionReason,
 ) (didFail bool, retErr error) {
 	pauseDuration := r.pauseManager.CancelReconnection()
 	if ok, err := r.ac.IsLoggedIn(); !ok {
@@ -320,7 +331,7 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	parameters := serverpicker.GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
 	r.RequestedConnParams.Set(source, parameters)
 
-	return r.connect(ctx, srv, cfg, serverSelection, parameters, connectingStartTime, true, pauseDuration)
+	return r.connect(ctx, srv, cfg, serverSelection, parameters, connectingStartTime, true, pauseDuration, vpnConnReason)
 }
 
 func (r *RPC) connect(
@@ -332,6 +343,7 @@ func (r *RPC) connect(
 	connectingStartTime time.Time,
 	pauseInterrupted bool,
 	pauseDuration time.Duration,
+	vpnConnReason events.VPNConnectionReason,
 ) (didFail bool, retErr error) {
 	country, err := serverSelection.Server.Locations.Country()
 	if err != nil {
@@ -426,13 +438,14 @@ func (r *RPC) connect(
 		TargetServerCountry:     country.Name,
 		TargetServerCountryCode: country.Code,
 		TargetServerDomain:      serverSelection.Server.Hostname,
-		TargetServerGroup:       determineTargetServerGroup(serverSelection.Server, parameters),
+		TargetServerGroupID:     determineTargetServerGroup(serverSelection.Server, parameters),
 		ServerGroups:            determineServerGroupIDs(serverSelection.Server),
 		TargetServerIP:          subnet.Addr(),
 		TargetServerName:        serverSelection.Server.Name,
 		RecommendationUUID:      string(serverSelection.RecommendationUUID),
 		PauseInterval:           pauseDuration,
 		UnpausedByUser:          pauseInterrupted,
+		VPNConnReason:           vpnConnReason,
 	}
 
 	// Send the connection attempt event
@@ -473,6 +486,7 @@ func (r *RPC) connect(
 		Technology:           cfg.Technology,
 		ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
 		RecommendationUUID:   string(serverSelection.RecommendationUUID),
+		VPNConnReason:        vpnConnReason,
 	}, r.events.Service.Disconnect.Publish)
 
 	err = r.netw.Start(
@@ -549,32 +563,26 @@ func getElapsedTime(startTime time.Time) int {
 	return max(int(time.Since(startTime).Milliseconds()), 1)
 }
 
-// determineTargetServerGroup returns the title of the server group based on the selected server and
-// parameters. This function assumes parameters are already validated and contains a valid group ID.
-func determineTargetServerGroup(server *core.Server, parameters serverpicker.ServerParameters) string {
-	findServerGroupTitle := func(gid config.ServerGroup) (string, bool) {
-		index := slices.IndexFunc(server.Groups, func(g core.Group) bool { return g.ID == gid })
-		if index != -1 {
-			return server.Groups[index].Title, true
-		}
-		return "", false
+// determineTargetServerGroup returns the server group the connection should be attributed to in
+// telemetry, based on the selected server's groups and the requested parameters.
+func determineTargetServerGroup(server *core.Server, parameters serverpicker.ServerParameters) config.ServerGroup {
+	hasGroup := func(gid config.ServerGroup) bool {
+		return slices.ContainsFunc(server.Groups, func(g core.Group) bool { return g.ID == gid })
 	}
 
-	if parameters.Group != config.ServerGroup_UNDEFINED {
-		if title, ok := findServerGroupTitle(parameters.Group); ok {
-			return title
-		}
+	if parameters.Group != config.ServerGroup_UNDEFINED && hasGroup(parameters.Group) {
+		return parameters.Group
 	}
 
-	if title, ok := findServerGroupTitle(config.ServerGroup_OBFUSCATED); ok {
-		return title
+	if hasGroup(config.ServerGroup_OBFUSCATED) {
+		return config.ServerGroup_OBFUSCATED
 	}
 
-	if title, ok := findServerGroupTitle(config.ServerGroup_STANDARD_VPN_SERVERS); ok {
-		return title
+	if hasGroup(config.ServerGroup_STANDARD_VPN_SERVERS) {
+		return config.ServerGroup_STANDARD_VPN_SERVERS
 	}
 
-	return ""
+	return config.ServerGroup_UNDEFINED
 }
 
 type FactoryFunc func(config.Technology) (vpn.VPN, error)
