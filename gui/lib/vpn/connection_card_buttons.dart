@@ -186,12 +186,12 @@ final class ConnectionCardButtons extends ConsumerWidget {
     ref.read(vpnStatusControllerProvider.notifier).pauseConnection(pauseLength);
   }
 
-  Future<void> _changeSettings(BuildContext context, WidgetRef ref) async {
+  void _changeSettings(BuildContext context, WidgetRef ref) {
     context.navigateToRoute(AppRoute.settingsVpnConnection);
     ref.read(uiEventRepositoryProvider).reportChangeSettings();
   }
 
-  Future<void> _getHelp(WidgetRef ref) async {
+  void _getHelp(WidgetRef ref) {
     getHelpUrl.launch();
     ref.read(uiEventRepositoryProvider).reportGetHelp();
   }

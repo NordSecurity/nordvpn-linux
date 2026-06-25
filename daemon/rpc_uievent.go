@@ -13,7 +13,11 @@ import (
 func (r *RPC) ReportUIEvent(
 	_ context.Context, in *pb.UIEvent,
 ) (*pb.Payload, error) {
-	if in != nil {
+	if in != nil &&
+		in.FormReference != pb.UIEvent_FORM_REFERENCE_UNSPECIFIED &&
+		in.ItemName != pb.UIEvent_ITEM_NAME_UNSPECIFIED &&
+		in.ItemType != pb.UIEvent_ITEM_TYPE_UNSPECIFIED {
+		// only valid event should be sent
 		action := uievent.ProtoToMooseStrings(in)
 		r.events.Service.UiItemsClick.Publish(action)
 	}
