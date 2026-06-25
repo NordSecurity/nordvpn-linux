@@ -435,7 +435,7 @@ func (l *Libtelio) connect(
 		l.eventsPublisher)
 
 	// Start monitoring ENS connection errors before connecting so no early error is missed.
-	startConnectionErrorMonitor(ctx, l.vpnErrorEvents, l.injectedErrors, l.eventsPublisher)
+	l.startConnectionErrorMonitor(ctx)
 
 	var err error
 	port := "51820"
@@ -681,7 +681,7 @@ func (l *Libtelio) Refresh(c mesh.MachineMap) error {
 		return fmt.Errorf("failed to deserialize meshnet config: %w", err)
 	}
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		if err = l.lib.SetMeshnet(config); err == nil {
 			break
 		}
@@ -869,12 +869,13 @@ func (l *Libtelio) InjectVPNConnectionError(code int32, publicKey string) error 
 func isConnected(ctx context.Context,
 	stateCh <-chan state,
 	connParams connParameters,
-	eventsPublisher *vpn.Events) <-chan interface{} {
+	eventsPublisher *vpn.Events,
+) <-chan any {
 	// we need waitgroup just to make sure goroutine has started
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	connectedCh := make(chan interface{})
+	connectedCh := make(chan any)
 	go func() {
 		wg.Done() // signal that goroutine has started
 		monitorConnectionState(ctx, stateCh, connectedCh, connParams, eventsPublisher)
@@ -896,9 +897,10 @@ type connParameters struct {
 func monitorConnectionState(
 	ctx context.Context,
 	states <-chan state,
-	isConnected chan<- interface{},
+	isConnected chan<- any,
 	connParameters connParameters,
-	eventsPublisher *vpn.Events) {
+	eventsPublisher *vpn.Events,
+) {
 	type notifyState int
 	const (
 		disconnected notifyState = iota
@@ -951,20 +953,15 @@ func monitorConnectionState(
 	}
 }
 
-// startConnectionErrorMonitor starts connection error monitoring in a goroutine and returns only
-// once it is running
-func startConnectionErrorMonitor(
-	ctx context.Context,
-	errorsChan <-chan vpnConnError,
-	injectedChan <-chan vpnConnError,
-	eventsPublisher *vpn.Events,
-) {
+// startConnectionErrorMonitor starts connection error monitoring in a goroutine and returns
+// once goroutine started
+func (l *Libtelio) startConnectionErrorMonitor(ctx context.Context) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
 	go func() {
 		wg.Done()
-		monitorConnectionErrors(ctx, errorsChan, injectedChan, eventsPublisher)
+		l.monitorConnectionErrors(ctx)
 	}()
 
 	wg.Wait()
@@ -972,21 +969,16 @@ func startConnectionErrorMonitor(
 
 // monitorConnectionErrors awaits ENS connection errors extracted from telio node events,
 // maps them to the protocol-agnostic events and publishes them on the internal VPN event bus.
-func monitorConnectionErrors(
-	ctx context.Context,
-	errorsChan <-chan vpnConnError,
-	injectedChan <-chan vpnConnError,
-	eventsPublisher *vpn.Events,
-) {
+func (l *Libtelio) monitorConnectionErrors(ctx context.Context) {
 	for {
 		select {
-		case connErr := <-errorsChan:
-			publishConnError(eventsPublisher, connErr)
+		case connErr := <-l.vpnErrorEvents:
+			publishConnError(l.eventsPublisher, connErr)
 
 		// DEV only: a simulated ENS error injected via the gRPC tool. It's nil in production.
-		case injErr := <-injectedChan:
+		case injErr := <-l.injectedErrors:
 			log.Println(internal.InfoPrefix, "[DEV] injecting simulated ENS connection error:", injErr.code)
-			publishConnError(eventsPublisher, injErr)
+			publishConnError(l.eventsPublisher, injErr)
 
 		case <-ctx.Done():
 			return

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
+	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/helpers"
@@ -18,82 +19,134 @@ import (
 func TestENSMonitoring(t *testing.T) {
 	category.Set(t, category.Unit)
 
+	const serverKey = "current-server-key"
+
 	ctx, cancelFn := context.WithCancel(context.Background())
 	netw := &networker.Mock{
-		VpnActive: true,
+		VpnActive:        true,
+		ActiveServerData: &vpn.ServerData{NordLynxPublicKey: serverKey},
 	}
 	rc := mock.NewRemoteConfigMock()
 	rc.FeatureToggles[remote.FeatureENS] = true
 
 	callbackCount := atomic.Int32{}
 	ch := make(chan any)
-	monitor := NewMonitor(
-		ctx,
-		netw,
-		rc,
-		func() error {
-			callbackCount.Add(1)
-			ch <- 1
-			return nil
-		},
-	)
-
+	monitor := NewMonitor(ctx, netw, rc, func(_ string) error {
+		callbackCount.Add(1)
+		ch <- 1
+		return nil
+	})
 	monitor.Start()
 
-	monitor.HandleENSNotification(events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance})
-
+	assert.NilError(t, monitor.HandleENSNotification(events.VPNConnectionErrorEvent{
+		Code:            events.VPNConnectionErrorServerMaintenance,
+		ServerPublicKey: serverKey,
+	}))
 	helpers.WaitWithTimeout(t, ch, time.Millisecond*10)
 	assert.Equal(t, 1, int(callbackCount.Load()))
 
-	// events except VPNConnectionErrorServerMaintenance are ignored
-	for _, ev := range []events.VPNConnectionError{
-		events.VPNConnectionErrorSuperseded,
-		events.VPNConnectionErrorUnknown,
-		events.VPNConnectionErrorConnectionLimitReached,
-		events.VPNConnectionErrorUnauthenticated,
-		events.VPNConnectionErrorSuperseded,
-	} {
-		monitor.HandleENSNotification(events.VPNConnectionErrorEvent{Code: ev})
-		helpers.WaitWithTimeout(t, ch, time.Millisecond*10)
-		assert.Equal(t, 1, int(callbackCount.Load()))
-	}
-
-	monitor.HandleENSNotification(events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance})
+	assert.NilError(t, monitor.HandleENSNotification(events.VPNConnectionErrorEvent{
+		Code:            events.VPNConnectionErrorServerMaintenance,
+		ServerPublicKey: serverKey,
+	}))
 	helpers.WaitWithTimeout(t, ch, time.Millisecond*10)
 	assert.Equal(t, 2, int(callbackCount.Load()))
 
 	cancelFn()
 
 	// after stopping the monitoring, events are ignored
-	monitor.HandleENSNotification(events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance})
+	assert.NilError(t, monitor.HandleENSNotification(events.VPNConnectionErrorEvent{
+		Code:            events.VPNConnectionErrorServerMaintenance,
+		ServerPublicKey: serverKey,
+	}))
 	helpers.WaitWithTimeout(t, ch, time.Millisecond*10)
 	assert.Equal(t, 2, int(callbackCount.Load()))
 }
 
-func TestENSMonitoringWhenENSIsDisabledFromRC(t *testing.T) {
+func TestENSMonitoringEventFiltering(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	netw := &networker.Mock{
-		VpnActive: true,
-	}
-	rc := mock.NewRemoteConfigMock()
-	rc.FeatureToggles[remote.FeatureENS] = false
-	callbackCount := atomic.Int32{}
-	ch := make(chan any)
-	monitor := NewMonitor(
-		context.Background(),
-		netw,
-		rc,
-		func() error {
-			callbackCount.Add(1)
-			ch <- 1
-			return nil
+	const serverKey = "server-key"
+
+	tests := []struct {
+		name            string
+		ensEnabled      bool
+		serverKey       string
+		event           events.VPNConnectionErrorEvent
+		expectReconnect bool
+	}{
+		{
+			name:            "maintenance event for current server triggers reconnect",
+			ensEnabled:      true,
+			serverKey:       serverKey,
+			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance, ServerPublicKey: serverKey},
+			expectReconnect: true,
 		},
-	)
+		{
+			name:            "maintenance event with stale server key is ignored",
+			ensEnabled:      true,
+			serverKey:       serverKey,
+			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance, ServerPublicKey: "stale-key"},
+			expectReconnect: false,
+		},
+		{
+			name:            "ENS feature disabled ignores maintenance event",
+			ensEnabled:      false,
+			serverKey:       serverKey,
+			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance, ServerPublicKey: serverKey},
+			expectReconnect: false,
+		},
+		{
+			name:            "superseded error is ignored",
+			ensEnabled:      true,
+			serverKey:       serverKey,
+			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorSuperseded, ServerPublicKey: serverKey},
+			expectReconnect: false,
+		},
+		{
+			name:            "unknown error is ignored",
+			ensEnabled:      true,
+			serverKey:       serverKey,
+			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorUnknown, ServerPublicKey: serverKey},
+			expectReconnect: false,
+		},
+		{
+			name:            "connection limit error is ignored",
+			ensEnabled:      true,
+			serverKey:       serverKey,
+			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorConnectionLimitReached, ServerPublicKey: serverKey},
+			expectReconnect: false,
+		},
+		{
+			name:            "unauthenticated error is ignored",
+			ensEnabled:      true,
+			serverKey:       serverKey,
+			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorUnauthenticated, ServerPublicKey: serverKey},
+			expectReconnect: false,
+		},
+	}
 
-	monitor.Start()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			netw := &networker.Mock{
+				VpnActive:        true,
+				ActiveServerData: &vpn.ServerData{NordLynxPublicKey: tt.serverKey},
+			}
+			rc := mock.NewRemoteConfigMock()
+			rc.FeatureToggles[remote.FeatureENS] = tt.ensEnabled
 
-	monitor.HandleENSNotification(events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance})
-	helpers.WaitWithTimeout(t, ch, time.Millisecond*10)
-	assert.Equal(t, 0, int(callbackCount.Load()))
+			callbackCalled := atomic.Bool{}
+			ch := make(chan any, 1)
+			monitor := NewMonitor(t.Context(), netw, rc, func(_ string) error {
+				callbackCalled.Store(true)
+				ch <- 1
+				return nil
+			})
+			monitor.Start()
+
+			assert.NilError(t, monitor.HandleENSNotification(tt.event))
+			helpers.WaitWithTimeout(t, ch, time.Millisecond*10)
+			assert.Equal(t, tt.expectReconnect, callbackCalled.Load())
+		})
+	}
 }
