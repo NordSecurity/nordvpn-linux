@@ -953,7 +953,7 @@ func monitorConnectionState(
 	}
 }
 
-// startConnectionErrorMonitor starts connection error monitoring in a goroutine and returns only
+// startConnectionErrorMonitor starts connection error monitoring in a goroutine and returns
 // once goroutine started
 func (l *Libtelio) startConnectionErrorMonitor(ctx context.Context) {
 	var wg sync.WaitGroup
