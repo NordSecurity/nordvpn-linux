@@ -65,8 +65,8 @@ const (
 )
 
 func setupResponseHeaders(headersStr string) http.Header {
-	result := http.Header{} // map[string]string
-	for _, pair := range strings.Split(headersStr, " ") {
+	result := http.Header{}
+	for pair := range strings.SplitSeq(headersStr, " ") {
 		parts := strings.SplitN(pair, ":", 2)
 		if len(parts) == 2 {
 			key := strings.TrimSpace(parts[0])
