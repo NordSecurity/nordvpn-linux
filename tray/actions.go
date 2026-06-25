@@ -42,6 +42,7 @@ func (ti *Instance) login() {
 	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
 		FormReference: pb.UIEvent_TRAY,
 		ItemName:      pb.UIEvent_LOGIN,
+		ItemValue:     pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
 		ItemType:      pb.UIEvent_CLICK,
 	})
 	loginResp, err := ti.client.LoginOAuth2(
@@ -114,6 +115,7 @@ func (ti *Instance) logout(persistToken bool) bool {
 	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
 		FormReference: pb.UIEvent_TRAY,
 		ItemName:      pb.UIEvent_LOGOUT,
+		ItemValue:     pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
 		ItemType:      pb.UIEvent_CLICK,
 	})
 	resp, err := ti.client.Logout(context.Background(), &pb.LogoutRequest{
@@ -247,11 +249,12 @@ func (ti *Instance) connectWithUIEvent(
 	return false
 }
 
-func (ti *Instance) disconnect() bool {
+func (ti *Instance) disconnect(itemName pb.UIEvent_ItemName, itemValue pb.UIEvent_ItemValue) bool {
 	// #nosec G104 -- fire-and-forget analytics
 	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
 		FormReference: pb.UIEvent_TRAY,
-		ItemName:      pb.UIEvent_DISCONNECT,
+		ItemName:      itemName,
+		ItemValue:     itemValue,
 		ItemType:      pb.UIEvent_CLICK,
 	})
 	resp, err := ti.client.Disconnect(context.Background(), &pb.Empty{})
@@ -280,8 +283,14 @@ func (ti *Instance) disconnect() bool {
 }
 
 func (ti *Instance) pause(pauseLength pauseLength) bool {
-	ctx := attachUIEventMetadata(context.Background(), pb.UIEvent_PAUSE, pauseLength.EventValue)
-	resp, err := ti.client.PauseConnection(ctx, &pb.PauseRequest{Seconds: pauseLength.DurationSeconds})
+	// #nosec G104 -- fire-and-forget analytics
+	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+		FormReference: pb.UIEvent_TRAY,
+		ItemName:      pb.UIEvent_PAUSE,
+		ItemValue:     pauseLength.EventValue,
+		ItemType:      pb.UIEvent_CLICK,
+	})
+	resp, err := ti.client.PauseConnection(context.Background(), &pb.PauseRequest{Seconds: pauseLength.DurationSeconds})
 	if err != nil {
 		ti.notify(NoForce, "Pause failed. Please try again.")
 		return false
