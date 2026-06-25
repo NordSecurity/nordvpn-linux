@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/netip"
+	"net/url"
 	"os"
 	"os/exec"
 	"regexp"
@@ -15,6 +16,11 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
+)
+
+var (
+	sensitiveHeaders = [...]string{"Authorization"}
+	sensitiveParams  = [...]string{"attempt", "verifier", "exchange_token"}
 )
 
 // Subscriber is a subscriber for logging debug messages, info messages
@@ -115,20 +121,21 @@ func dataRequestAPIToString(
 	data events.DataRequestAPI,
 	reqBody []byte,
 	respBody []byte,
-	hideSensitiveHeaders bool,
+	hideSensitiveValues bool,
 ) string {
 	b := strings.Builder{}
-	headers := processHeaders(hideSensitiveHeaders, data.Request.Header)
 	fmt.Fprintf(&b, "Duration: %s\n", data.Duration)
 	if data.Request != nil {
+		headers := processHeaders(hideSensitiveValues, data.Request.Header)
 		tmpBody := "(binary data)"
 		if !isRequestBinary(data.Request) {
 			tmpBody = string(reqBody)
 		}
+		reqURL := processQueryParams(hideSensitiveValues, data.Request.URL)
 		fmt.Fprintf(&b, "Request: %s %s %s %s %s\n",
 			data.Request.Proto,
 			data.Request.Method,
-			data.Request.URL,
+			reqURL,
 			headers,
 			tmpBody)
 	}
@@ -156,15 +163,27 @@ func processHeaders(hide bool, headers http.Header) http.Header {
 		return headers
 	}
 	headers = headers.Clone()
-	sensitiveHeaders := []string{
-		"Authorization",
-	}
 	for _, header := range sensitiveHeaders {
 		if headers.Get(header) != "" {
 			headers.Set(header, "hidden")
 		}
 	}
 	return headers
+}
+
+func processQueryParams(hide bool, u *url.URL) *url.URL {
+	if !hide || u == nil {
+		return u
+	}
+	clone := *u
+	query := clone.Query()
+	for _, param := range sensitiveParams {
+		if query.Get(param) != "" {
+			query.Set(param, "hidden")
+		}
+	}
+	clone.RawQuery = query.Encode()
+	return &clone
 }
 
 func getSystemInfo() string {
