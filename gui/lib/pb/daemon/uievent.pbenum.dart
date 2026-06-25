@@ -28,6 +28,8 @@ class UIEvent_FormReference extends $pb.ProtobufEnum {
       UIEvent_FormReference._(3, _omitEnumNames ? '' : 'HOME_SCREEN');
   static const UIEvent_FormReference GUI =
       UIEvent_FormReference._(4, _omitEnumNames ? '' : 'GUI');
+  static const UIEvent_FormReference CONNECTION_INFO =
+      UIEvent_FormReference._(5, _omitEnumNames ? '' : 'CONNECTION_INFO');
 
   static const $core.List<UIEvent_FormReference> values =
       <UIEvent_FormReference>[
@@ -36,10 +38,11 @@ class UIEvent_FormReference extends $pb.ProtobufEnum {
     TRAY,
     HOME_SCREEN,
     GUI,
+    CONNECTION_INFO,
   ];
 
   static final $core.List<UIEvent_FormReference?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 4);
+      $pb.ProtobufEnum.$_initByValueList(values, 5);
   static UIEvent_FormReference? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
@@ -68,6 +71,12 @@ class UIEvent_ItemName extends $pb.ProtobufEnum {
       UIEvent_ItemName._(8, _omitEnumNames ? '' : 'LOGIN_TOKEN');
   static const UIEvent_ItemName PAUSE =
       UIEvent_ItemName._(9, _omitEnumNames ? '' : 'PAUSE');
+  static const UIEvent_ItemName RECONNECT =
+      UIEvent_ItemName._(10, _omitEnumNames ? '' : 'RECONNECT');
+  static const UIEvent_ItemName CHANGE_SETTINGS =
+      UIEvent_ItemName._(11, _omitEnumNames ? '' : 'CHANGE_SETTINGS');
+  static const UIEvent_ItemName GET_HELP =
+      UIEvent_ItemName._(12, _omitEnumNames ? '' : 'GET_HELP');
 
   static const $core.List<UIEvent_ItemName> values = <UIEvent_ItemName>[
     ITEM_NAME_UNSPECIFIED,
@@ -80,10 +89,13 @@ class UIEvent_ItemName extends $pb.ProtobufEnum {
     MESHNET_INVITE_SEND,
     LOGIN_TOKEN,
     PAUSE,
+    RECONNECT,
+    CHANGE_SETTINGS,
+    GET_HELP,
   ];
 
   static final $core.List<UIEvent_ItemName?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 9);
+      $pb.ProtobufEnum.$_initByValueList(values, 12);
   static UIEvent_ItemName? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 

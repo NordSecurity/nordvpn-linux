@@ -38,9 +38,15 @@ func (ti *Instance) login() {
 		return
 	}
 
-	ctx := attachUIEventMetadata(context.Background(), pb.UIEvent_LOGIN, pb.UIEvent_ITEM_VALUE_UNSPECIFIED)
+	// #nosec G104 -- fire-and-forget analytics
+	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+		FormReference: pb.UIEvent_TRAY,
+		ItemName:      pb.UIEvent_LOGIN,
+		ItemValue:     pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
+		ItemType:      pb.UIEvent_CLICK,
+	})
 	loginResp, err := ti.client.LoginOAuth2(
-		ctx,
+		context.Background(),
 		&pb.LoginOAuth2Request{
 			Type: pb.LoginType_LoginType_LOGIN,
 		},
@@ -105,8 +111,14 @@ func tryDbus(uri string) error {
 }
 
 func (ti *Instance) logout(persistToken bool) bool {
-	ctx := attachUIEventMetadata(context.Background(), pb.UIEvent_LOGOUT, pb.UIEvent_ITEM_VALUE_UNSPECIFIED)
-	resp, err := ti.client.Logout(ctx, &pb.LogoutRequest{
+	// #nosec G104 -- fire-and-forget analytics
+	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+		FormReference: pb.UIEvent_TRAY,
+		ItemName:      pb.UIEvent_LOGOUT,
+		ItemValue:     pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
+		ItemType:      pb.UIEvent_CLICK,
+	})
+	resp, err := ti.client.Logout(context.Background(), &pb.LogoutRequest{
 		PersistToken: persistToken,
 	})
 	if err != nil {
@@ -155,8 +167,14 @@ func (ti *Instance) connectWithUIEvent(
 		}
 	}(ch)
 
-	ctx := attachUIEventMetadata(context.Background(), itemName, itemValue)
-	resp, err := ti.client.Connect(ctx, &pb.ConnectRequest{
+	// #nosec G104 -- fire-and-forget analytics
+	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+		FormReference: pb.UIEvent_TRAY,
+		ItemName:      itemName,
+		ItemType:      pb.UIEvent_CLICK,
+		ItemValue:     itemValue,
+	})
+	resp, err := ti.client.Connect(context.Background(), &pb.ConnectRequest{
 		ServerTag:   strings.ToLower(serverTag),
 		ServerGroup: strings.ToLower(serverGroup),
 	})
@@ -232,8 +250,14 @@ func (ti *Instance) connectWithUIEvent(
 }
 
 func (ti *Instance) disconnect(itemName pb.UIEvent_ItemName, itemValue pb.UIEvent_ItemValue) bool {
-	ctx := attachUIEventMetadata(context.Background(), itemName, itemValue)
-	resp, err := ti.client.Disconnect(ctx, &pb.Empty{})
+	// #nosec G104 -- fire-and-forget analytics
+	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+		FormReference: pb.UIEvent_TRAY,
+		ItemName:      itemName,
+		ItemValue:     itemValue,
+		ItemType:      pb.UIEvent_CLICK,
+	})
+	resp, err := ti.client.Disconnect(context.Background(), &pb.Empty{})
 	if err != nil {
 		ti.notify(NoForce, "Disconnect error: %s", err)
 		return false
@@ -259,8 +283,14 @@ func (ti *Instance) disconnect(itemName pb.UIEvent_ItemName, itemValue pb.UIEven
 }
 
 func (ti *Instance) pause(pauseLength pauseLength) bool {
-	ctx := attachUIEventMetadata(context.Background(), pb.UIEvent_PAUSE, pauseLength.EventValue)
-	resp, err := ti.client.PauseConnection(ctx, &pb.PauseRequest{Seconds: pauseLength.DurationSeconds})
+	// #nosec G104 -- fire-and-forget analytics
+	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+		FormReference: pb.UIEvent_TRAY,
+		ItemName:      pb.UIEvent_PAUSE,
+		ItemValue:     pauseLength.EventValue,
+		ItemType:      pb.UIEvent_CLICK,
+	})
+	resp, err := ti.client.PauseConnection(context.Background(), &pb.PauseRequest{Seconds: pauseLength.DurationSeconds})
 	if err != nil {
 		ti.notify(NoForce, "Pause failed. Please try again.")
 		return false

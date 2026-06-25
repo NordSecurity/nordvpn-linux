@@ -33,9 +33,10 @@ import 'recent_connections.pb.dart' as $16;
 import 'servers.pb.dart' as $11;
 import 'set.pb.dart' as $15;
 import 'settings.pb.dart' as $13;
-import 'state.pb.dart' as $19;
+import 'state.pb.dart' as $20;
 import 'status.pb.dart' as $8;
 import 'token.pb.dart' as $5;
+import 'uievent.pb.dart' as $19;
 
 export 'service.pb.dart';
 
@@ -391,7 +392,14 @@ class DaemonClient extends $grpc.Client {
     return $createUnaryCall(_$ping, request, options: options);
   }
 
-  $grpc.ResponseStream<$19.AppState> subscribeToStateChanges(
+  $grpc.ResponseFuture<$0.Payload> reportUIEvent(
+    $19.UIEvent request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$reportUIEvent, request, options: options);
+  }
+
+  $grpc.ResponseStream<$20.AppState> subscribeToStateChanges(
     $0.Empty request, {
     $grpc.CallOptions? options,
   }) {
@@ -626,11 +634,15 @@ class DaemonClient extends $grpc.Client {
       '/pb.Daemon/Ping',
       ($0.Empty value) => value.writeToBuffer(),
       $18.PingResponse.fromBuffer);
+  static final _$reportUIEvent = $grpc.ClientMethod<$19.UIEvent, $0.Payload>(
+      '/pb.Daemon/ReportUIEvent',
+      ($19.UIEvent value) => value.writeToBuffer(),
+      $0.Payload.fromBuffer);
   static final _$subscribeToStateChanges =
-      $grpc.ClientMethod<$0.Empty, $19.AppState>(
+      $grpc.ClientMethod<$0.Empty, $20.AppState>(
           '/pb.Daemon/SubscribeToStateChanges',
           ($0.Empty value) => value.writeToBuffer(),
-          $19.AppState.fromBuffer);
+          $20.AppState.fromBuffer);
   static final _$getDaemonApiVersion = $grpc.ClientMethod<
           $0.GetDaemonApiVersionRequest, $0.GetDaemonApiVersionResponse>(
       '/pb.Daemon/GetDaemonApiVersion',
@@ -991,13 +1003,20 @@ abstract class DaemonServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
         ($18.PingResponse value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$0.Empty, $19.AppState>(
+    $addMethod($grpc.ServiceMethod<$19.UIEvent, $0.Payload>(
+        'ReportUIEvent',
+        reportUIEvent_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $19.UIEvent.fromBuffer(value),
+        ($0.Payload value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.Empty, $20.AppState>(
         'SubscribeToStateChanges',
         subscribeToStateChanges_Pre,
         false,
         true,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
-        ($19.AppState value) => value.writeToBuffer()));
+        ($20.AppState value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.GetDaemonApiVersionRequest,
             $0.GetDaemonApiVersionResponse>(
         'GetDaemonApiVersion',
@@ -1382,12 +1401,20 @@ abstract class DaemonServiceBase extends $grpc.Service {
   $async.Future<$18.PingResponse> ping(
       $grpc.ServiceCall call, $0.Empty request);
 
-  $async.Stream<$19.AppState> subscribeToStateChanges_Pre(
+  $async.Future<$0.Payload> reportUIEvent_Pre(
+      $grpc.ServiceCall $call, $async.Future<$19.UIEvent> $request) async {
+    return reportUIEvent($call, await $request);
+  }
+
+  $async.Future<$0.Payload> reportUIEvent(
+      $grpc.ServiceCall call, $19.UIEvent request);
+
+  $async.Stream<$20.AppState> subscribeToStateChanges_Pre(
       $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async* {
     yield* subscribeToStateChanges($call, await $request);
   }
 
-  $async.Stream<$19.AppState> subscribeToStateChanges(
+  $async.Stream<$20.AppState> subscribeToStateChanges(
       $grpc.ServiceCall call, $0.Empty request);
 
   $async.Future<$0.GetDaemonApiVersionResponse> getDaemonApiVersion_Pre(

@@ -1,8 +1,6 @@
 package tray
 
 import (
-	"context"
-
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/uievent"
@@ -34,27 +32,4 @@ func ItemValueFromRecentConnection(conn *RecentConnection) pb.UIEvent_ItemValue 
 	default:
 		return pb.UIEvent_ITEM_VALUE_UNSPECIFIED
 	}
-}
-
-// newUIEventContext creates a UIEventContext for tray actions.
-func newUIEventContext(
-	itemName pb.UIEvent_ItemName,
-	itemValue pb.UIEvent_ItemValue,
-) *uievent.UIEventContext {
-	return &uievent.UIEventContext{
-		FormReference: pb.UIEvent_TRAY,
-		ItemName:      itemName,
-		ItemType:      pb.UIEvent_CLICK,
-		ItemValue:     itemValue,
-	}
-}
-
-// attachUIEventMetadata attaches UI event metadata to a context for gRPC calls.
-func attachUIEventMetadata(
-	ctx context.Context,
-	itemName pb.UIEvent_ItemName,
-	itemValue pb.UIEvent_ItemValue,
-) context.Context {
-	uiCtx := newUIEventContext(itemName, itemValue)
-	return uievent.AttachToOutgoingContext(ctx, uiCtx)
 }

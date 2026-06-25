@@ -30,6 +30,7 @@ import 'package:nordvpn/pb/daemon/settings.pb.dart';
 import 'package:nordvpn/pb/daemon/state.pb.dart';
 import 'package:nordvpn/pb/daemon/status.pb.dart';
 import 'package:nordvpn/pb/daemon/token.pb.dart';
+import 'package:nordvpn/pb/daemon/uievent.pb.dart';
 
 // The mocked implementation for the daemon. It is created by the GrpcServer.
 final class MockDaemon extends DaemonServiceBase {
@@ -157,6 +158,11 @@ final class MockDaemon extends DaemonServiceBase {
   @override
   Future<PingResponse> ping(ServiceCall call, Empty request) async {
     return PingResponse();
+  }
+
+  @override
+  Future<Payload> reportUIEvent(ServiceCall call, UIEvent request) async {
+    return Payload(type: Int64(DaemonStatusCode.success));
   }
 
   @override

@@ -28,7 +28,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/norduser/process"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/NordSecurity/nordvpn-linux/tray"
-	"github.com/NordSecurity/nordvpn-linux/uievent"
 )
 
 // Value set when building the application
@@ -58,13 +57,9 @@ func addAutostart() (string, error) {
 
 func startTray(quitChan chan<- norduser.StopRequest) {
 	daemonURL := fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
-	uiEventInterceptor := uievent.NewClientInterceptor(daemonpb.UIEvent_TRAY)
-
 	conn, err := grpc.NewClient(
 		daemonURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(uiEventInterceptor.UnaryInterceptor),
-		grpc.WithStreamInterceptor(uiEventInterceptor.StreamInterceptor),
 	)
 
 	var client daemonpb.DaemonClient
