@@ -2,6 +2,7 @@ package logger
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -115,4 +116,150 @@ func Test_dataRequestAPIToString(t *testing.T) {
 			assert.True(t, strings.Contains(rc, string(test.responseBody)))
 		}
 	}
+}
+
+func Test_processHeaders(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		hide     bool
+		input    http.Header
+		expected http.Header
+	}{
+		{
+			name:     "hide=false returns headers unchanged",
+			hide:     false,
+			input:    http.Header{"Authorization": []string{"Bearer secret"}},
+			expected: http.Header{"Authorization": []string{"Bearer secret"}},
+		},
+		{
+			name:     "hides Authorization header",
+			hide:     true,
+			input:    http.Header{"Authorization": []string{"Bearer secret"}},
+			expected: http.Header{"Authorization": []string{"hidden"}},
+		},
+		{
+			name:     "absent Authorization header is not added",
+			hide:     true,
+			input:    http.Header{"Content-Type": []string{"application/json"}},
+			expected: http.Header{"Content-Type": []string{"application/json"}},
+		},
+		{
+			name:     "non-sensitive headers are not modified",
+			hide:     true,
+			input:    http.Header{"Authorization": []string{"Bearer secret"}, "Content-Type": []string{"application/json"}},
+			expected: http.Header{"Authorization": []string{"hidden"}, "Content-Type": []string{"application/json"}},
+		},
+		{
+			name:  "does not modify original headers",
+			hide:  true,
+			input: http.Header{"Authorization": []string{"Bearer secret"}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			original := tt.input.Clone()
+			result := processHeaders(tt.hide, tt.input)
+			if tt.expected != nil {
+				assert.Equal(t, tt.expected, result)
+			}
+			assert.Equal(t, original, tt.input)
+		})
+	}
+}
+
+func Test_processQueryParams(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name          string
+		hide          bool
+		input         *url.URL
+		expectedQuery url.Values
+	}{
+		{
+			name:          "hide=false returns URL unchanged",
+			hide:          false,
+			input:         mustParse(t, "https://example.com?exchange_token=secret&attempt=abc&verifier=lel"),
+			expectedQuery: url.Values{"exchange_token": []string{"secret"}, "attempt": []string{"abc"}, "verifier": []string{"lel"}},
+		},
+		{
+			name:          "nil URL is returned as-is",
+			hide:          true,
+			input:         nil,
+			expectedQuery: nil,
+		},
+		{
+			name:          "hides attempt",
+			hide:          true,
+			input:         mustParse(t, "https://example.com?attempt=lel"),
+			expectedQuery: url.Values{"attempt": []string{"hidden"}},
+		},
+		{
+			name:          "hides verifier",
+			hide:          true,
+			input:         mustParse(t, "https://example.com?verifier=xyz"),
+			expectedQuery: url.Values{"verifier": []string{"hidden"}},
+		},
+		{
+			name:          "hides exchange_token",
+			hide:          true,
+			input:         mustParse(t, "https://example.com?exchange_token=secret"),
+			expectedQuery: url.Values{"exchange_token": []string{"hidden"}},
+		},
+		{
+			name:          "hides all sensitive params",
+			hide:          true,
+			input:         mustParse(t, "https://example.com?attempt=abc&verifier=xyz&exchange_token=secret"),
+			expectedQuery: url.Values{"attempt": []string{"hidden"}, "verifier": []string{"hidden"}, "exchange_token": []string{"hidden"}},
+		},
+		{
+			name:          "non-sensitive params are not modified",
+			hide:          true,
+			input:         mustParse(t, "https://example.com?attempt=abc&foo=bar"),
+			expectedQuery: url.Values{"attempt": []string{"hidden"}, "foo": []string{"bar"}},
+		},
+		{
+			name:          "does not modify original URL",
+			hide:          true,
+			input:         mustParse(t, "https://example.com?exchange_token=secret"),
+			expectedQuery: url.Values{"exchange_token": []string{"hidden"}},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var originalRaw string
+			if tt.input != nil {
+				originalRaw = tt.input.RawQuery
+			}
+
+			result := processQueryParams(tt.hide, tt.input)
+
+			if tt.input == nil {
+				assert.Nil(t, result)
+				return
+			}
+
+			assert.Equal(t, originalRaw, tt.input.RawQuery)
+
+			if tt.hide {
+				assert.Equal(t, tt.expectedQuery, result.Query())
+			} else {
+				assert.Equal(t, tt.input, result)
+				assert.Equal(t, tt.expectedQuery, result.Query())
+			}
+		})
+	}
+}
+
+func mustParse(t *testing.T, raw string) *url.URL {
+	t.Helper()
+	u, err := url.Parse(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return u
 }
