@@ -21,7 +21,6 @@ import (
 )
 
 const (
-	quenchPrefix          = "[quench]"
 	quenchInterfaceAddr   = "10.3.0.2/16"
 	nordWhisperHeaderSize = 80
 )
@@ -29,16 +28,15 @@ const (
 type Logger struct{}
 
 func (l *Logger) Log(logLevel quenchBindigns.LogLevel, payload string) {
-	msg := quenchPrefix + " " + payload
 	switch logLevel {
 	case quenchBindigns.LogLevelError:
-		log.Error(msg)
+		log.Quench.Error(payload)
 	case quenchBindigns.LogLevelWarning:
-		log.Warn(msg)
+		log.Quench.Warn(payload)
 	case quenchBindigns.LogLevelDebug, quenchBindigns.LogLevelTrace:
-		log.Debug(msg)
+		log.Quench.Debug(payload)
 	default:
-		log.Info(msg)
+		log.Quench.Info(payload)
 	}
 }
 
@@ -87,7 +85,7 @@ func (o *observer) SubscribeToEvents(ctx context.Context) <-chan vpn.State {
 func (o *observer) notifyConnectionStateChange(state vpn.State) {
 	o.currentState = state
 	if o.eventsChan != nil {
-		log.Debug(quenchPrefix, "notifying about connection state change")
+		log.Quench.Debug("notifying about connection state change")
 		select {
 		case o.eventsChan <- state:
 		case <-o.eventsSubscribtionContext.Done():
@@ -103,7 +101,7 @@ func (o *observer) Connecting(uint32) {
 	// Log only when state has changed to ConnectingState from some other state. This will prevent log flood when
 	// libquench attempts to reconnect multiple times in no-net scenario.
 	if o.currentState != vpn.ConnectingState {
-		log.Debug(quenchPrefix, "connecting to quench server")
+		log.Quench.Debug("connecting to quench server")
 	}
 
 	o.notifyConnectionStateChange(vpn.ConnectingState)
@@ -119,7 +117,7 @@ func (o *observer) Connected(uint32) {
 
 	o.notifyConnectionStateChange(vpn.ConnectedState)
 
-	log.Debug(quenchPrefix, "connected")
+	log.Quench.Debug("connected")
 	o.eventNotifier.Connected.Publish(vpn.ConnectEvent{
 		Status:     events.StatusSuccess,
 		TunnelName: o.nicName,
@@ -132,7 +130,7 @@ func (o *observer) Disconnected(_ uint32, reason quenchBindigns.DisconnectReason
 
 	o.notifyConnectionStateChange(vpn.ExitedState)
 
-	log.Debug(quenchPrefix, "disconnected:", reason)
+	log.Quench.Debug("disconnected:", reason)
 
 	o.eventNotifier.Disconnected.Publish(events.StatusSuccess)
 }

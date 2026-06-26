@@ -1,0 +1,17 @@
+package log
+
+var (
+	NC        = NewLogger("[NC]")
+	FW        = NewLogger("[FW]")
+	RC        = NewLogger("[Remote Config]")
+	Moose     = NewLogger("[moose]")
+	Systray   = NewLogger("[systray]")
+	Telemetry = NewLogger("[telemetry]")
+	Recents   = NewLogger("[recents]")
+	DNS       = NewLogger("[DNS]")
+	Access    = NewLogger("[access]")
+	Nordlynx  = NewLogger("[nordlynx]")
+	Quench    = NewLogger("[quench]")
+	DBusUtil  = NewLogger("[dbusutil]")
+	Sysinfo   = NewLogger("[sysinfo]")
+)

@@ -11,10 +11,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
-const (
-	logPrefix = "[fw]"
-)
-
 // Firewall is responsible for correctly changing one firewall agent over another.
 //
 // Thread-safe.
@@ -49,9 +45,9 @@ func (fw *Firewall) Configure(config Config) error {
 		return nil
 	}
 
-	log.Info(logPrefix, "configuring firewall")
+	log.FW.Info("configuring firewall")
 	if internal.IsDevEnv(fw.appEnvironment) {
-		log.Debug(logPrefix, "configure fw from", internal.GetStack())
+		log.FW.Debug("configure fw from", internal.GetStack())
 	}
 
 	err := fw.impl.Configure(config)
@@ -72,7 +68,7 @@ func (fw *Firewall) Enable() error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
-	log.Info(logPrefix, "enabling firewall")
+	log.FW.Info("enabling firewall")
 
 	if fw.enabled {
 		return NewError(ErrFirewallAlreadyEnabled)
@@ -87,7 +83,7 @@ func (fw *Firewall) Disable() error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
-	log.Info(logPrefix, "disabling firewall")
+	log.FW.Info("disabling firewall")
 
 	if !fw.enabled {
 		return NewError(ErrFirewallAlreadyDisabled)
@@ -102,15 +98,15 @@ func (fw *Firewall) Flush() error {
 	fw.mu.Lock()
 	defer fw.mu.Unlock()
 
-	log.Info(logPrefix, "flush firewall rules")
+	log.FW.Info("flush firewall rules")
 
 	if !fw.enabled {
-		log.Info(logPrefix, "ignoring flush because firewall is disabled")
+		log.FW.Info("ignoring flush because firewall is disabled")
 		return nil
 	}
 
 	if internal.IsDevEnv(fw.appEnvironment) {
-		log.Debug(logPrefix, "flush fw", internal.GetStack())
+		log.FW.Debug("flush fw", internal.GetStack())
 	}
 
 	return fw.impl.Flush()

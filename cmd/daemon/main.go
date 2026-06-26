@@ -779,7 +779,7 @@ func main() {
 	monitor.Start(netw)
 
 	if ok, _ := authChecker.IsLoggedIn(); ok {
-		go daemon.StartNC("[startup]", notificationClient)
+		go daemon.StartNC(notificationClient)
 		if err := rpc.RegisterDedicatedServers(); err != nil {
 			log.Warn("failed to sync device:", err)
 		}
