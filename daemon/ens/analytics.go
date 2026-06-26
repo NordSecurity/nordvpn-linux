@@ -1,4 +1,4 @@
-package daemon
+package ens
 
 import (
 	"encoding/json"

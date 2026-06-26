@@ -9,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/helpers"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
@@ -35,7 +36,7 @@ func TestENSMonitoring(t *testing.T) {
 		callbackCount.Add(1)
 		ch <- 1
 		return nil
-	})
+	}, &subs.Subject[events.DebuggerEvent]{})
 	monitor.Start()
 
 	assert.NilError(t, monitor.HandleENSNotification(events.VPNConnectionErrorEvent{
@@ -63,7 +64,7 @@ func TestENSMonitoring(t *testing.T) {
 	assert.Equal(t, 2, int(callbackCount.Load()))
 }
 
-func TestENSMonitoringEventFiltering(t *testing.T) {
+func TestENSMonitoringEventHandling(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	const serverKey = "server-key"
@@ -73,55 +74,63 @@ func TestENSMonitoringEventFiltering(t *testing.T) {
 		ensEnabled      bool
 		serverKey       string
 		event           events.VPNConnectionErrorEvent
+		expectReport    bool
 		expectReconnect bool
 	}{
 		{
-			name:            "maintenance event for current server triggers reconnect",
+			name:            "maintenance event for current server is reported and reconnects",
 			ensEnabled:      true,
 			serverKey:       serverKey,
 			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance, ServerPublicKey: serverKey},
+			expectReport:    true,
 			expectReconnect: true,
 		},
 		{
-			name:            "maintenance event with stale server key is ignored",
+			name:            "maintenance event with stale server key is reported but does not reconnect",
 			ensEnabled:      true,
 			serverKey:       serverKey,
 			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance, ServerPublicKey: "stale-key"},
+			expectReport:    true,
 			expectReconnect: false,
 		},
 		{
-			name:            "ENS feature disabled ignores maintenance event",
+			name:            "disabled ENS feature reports nothing and does not reconnect",
 			ensEnabled:      false,
 			serverKey:       serverKey,
 			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance, ServerPublicKey: serverKey},
+			expectReport:    false,
 			expectReconnect: false,
 		},
 		{
-			name:            "superseded error is ignored",
+			name:            "superseded error is reported but does not reconnect",
 			ensEnabled:      true,
 			serverKey:       serverKey,
 			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorSuperseded, ServerPublicKey: serverKey},
+			expectReport:    true,
 			expectReconnect: false,
 		},
 		{
-			name:            "unknown error is ignored",
+			name:            "unknown error is reported but does not reconnect",
 			ensEnabled:      true,
 			serverKey:       serverKey,
 			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorUnknown, ServerPublicKey: serverKey},
+			expectReport:    true,
 			expectReconnect: false,
 		},
 		{
-			name:            "connection limit error is ignored",
+			name:            "connection limit error is reported but does not reconnect",
 			ensEnabled:      true,
 			serverKey:       serverKey,
 			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorConnectionLimitReached, ServerPublicKey: serverKey},
+			expectReport:    true,
 			expectReconnect: false,
 		},
 		{
-			name:            "unauthenticated error is ignored",
+			name:            "unauthenticated error is reported but does not reconnect",
 			ensEnabled:      true,
 			serverKey:       serverKey,
 			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorUnauthenticated, ServerPublicKey: serverKey},
+			expectReport:    true,
 			expectReconnect: false,
 		},
 	}
@@ -135,18 +144,25 @@ func TestENSMonitoringEventFiltering(t *testing.T) {
 			rc := mock.NewRemoteConfigMock()
 			rc.FeatureToggles[remote.FeatureENS] = tt.ensEnabled
 
-			callbackCalled := atomic.Bool{}
-			ch := make(chan any, 1)
-			monitor := NewMonitor(t.Context(), netw, rc, func(_ string) error {
-				callbackCalled.Store(true)
-				ch <- 1
+			reported := make(chan bool, 1)
+			debuggerEvents := &subs.Subject[events.DebuggerEvent]{}
+			debuggerEvents.Subscribe(func(events.DebuggerEvent) error {
+				reported <- true
 				return nil
 			})
+			reconnected := make(chan bool, 1)
+			monitor := NewMonitor(t.Context(), netw, rc,
+				func(_ string) error {
+					reconnected <- true
+					return nil
+				},
+				debuggerEvents,
+			)
 			monitor.Start()
 
 			assert.NilError(t, monitor.HandleENSNotification(tt.event))
-			helpers.WaitWithTimeout(t, ch, time.Millisecond*10)
-			assert.Equal(t, tt.expectReconnect, callbackCalled.Load())
+			assert.Equal(t, tt.expectReport, helpers.WaitWithTimeout(t, reported, time.Millisecond*50))
+			assert.Equal(t, tt.expectReconnect, helpers.WaitWithTimeout(t, reconnected, time.Millisecond*50))
 		})
 	}
 }

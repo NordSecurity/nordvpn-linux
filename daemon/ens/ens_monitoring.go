@@ -18,23 +18,34 @@ const (
 type ConnectCallback func(serverPublicKey string) error
 
 type Monitor struct {
-	eventsCh    chan events.VPNConnectionErrorEvent
-	ctx         context.Context
-	netw        networker.Networker
-	reconnectFn ConnectCallback
-	rc          remote.ConfigGetter
+	eventsCh       chan events.VPNConnectionErrorEvent
+	ctx            context.Context
+	netw           networker.Networker
+	reconnectFn    ConnectCallback
+	debuggerEvents events.Publisher[events.DebuggerEvent]
+	rc             remote.ConfigGetter
 }
 
-func NewMonitor(ctx context.Context, netw networker.Networker, rc remote.ConfigGetter, connectCallback ConnectCallback) *Monitor {
+func NewMonitor(
+	ctx context.Context,
+	netw networker.Networker,
+	rc remote.ConfigGetter,
+	connectCallback ConnectCallback,
+	debuggerEvents events.Publisher[events.DebuggerEvent],
+) *Monitor {
 	if connectCallback == nil {
 		log.Fatal(logPrefix, "connect callback is nil")
 	}
+	if debuggerEvents == nil {
+		log.Warn(logPrefix, "debugger events publisher is nil")
+	}
 	return &Monitor{
-		eventsCh:    make(chan events.VPNConnectionErrorEvent, evChSize),
-		ctx:         ctx,
-		netw:        netw,
-		rc:          rc,
-		reconnectFn: connectCallback,
+		eventsCh:       make(chan events.VPNConnectionErrorEvent, evChSize),
+		ctx:            ctx,
+		netw:           netw,
+		rc:             rc,
+		reconnectFn:    connectCallback,
+		debuggerEvents: debuggerEvents,
 	}
 }
 
@@ -69,6 +80,10 @@ func (m *Monitor) run() {
 			}
 
 			log.Debug(logPrefix, "event received", e)
+			if m.debuggerEvents != nil {
+				m.debuggerEvents.Publish(*newVPNConnectionErrorEvent(e.Code).ToDebuggerEvent())
+			}
+
 			if e.Code != events.VPNConnectionErrorServerMaintenance {
 				log.Debug(logPrefix, "ignoring", e)
 				continue
