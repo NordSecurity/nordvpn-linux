@@ -17,17 +17,30 @@ const (
 
 type ConnectCallback func(serverPublicKey string) error
 
+// ErrorReporter publishes a VPN connection error code for telemetry.
+type ErrorReporter func(code events.VPNConnectionError)
+
 type Monitor struct {
 	eventsCh    chan events.VPNConnectionErrorEvent
 	ctx         context.Context
 	netw        networker.Networker
 	reconnectFn ConnectCallback
+	reportFn    ErrorReporter
 	rc          remote.ConfigGetter
 }
 
-func NewMonitor(ctx context.Context, netw networker.Networker, rc remote.ConfigGetter, connectCallback ConnectCallback) *Monitor {
+func NewMonitor(
+	ctx context.Context,
+	netw networker.Networker,
+	rc remote.ConfigGetter,
+	connectCallback ConnectCallback,
+	reportCallback ErrorReporter,
+) *Monitor {
 	if connectCallback == nil {
 		log.Fatal(logPrefix, "connect callback is nil")
+	}
+	if reportCallback == nil {
+		log.Fatal(logPrefix, "report callback is nil")
 	}
 	return &Monitor{
 		eventsCh:    make(chan events.VPNConnectionErrorEvent, evChSize),
@@ -35,6 +48,7 @@ func NewMonitor(ctx context.Context, netw networker.Networker, rc remote.ConfigG
 		netw:        netw,
 		rc:          rc,
 		reconnectFn: connectCallback,
+		reportFn:    reportCallback,
 	}
 }
 
@@ -69,6 +83,8 @@ func (m *Monitor) run() {
 			}
 
 			log.Debug(logPrefix, "event received", e)
+			m.reportFn(e.Code)
+
 			if e.Code != events.VPNConnectionErrorServerMaintenance {
 				log.Debug(logPrefix, "ignoring", e)
 				continue

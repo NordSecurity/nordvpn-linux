@@ -42,6 +42,11 @@ type vpnConnectionErrorEvent struct {
 	Description string `json:"description"`
 }
 
+// ReportVPNConnectionError publishes a debugger event describing a VPN connection error code
+func (r *RPC) ReportVPNConnectionError(code events.VPNConnectionError) {
+	r.events.Debugger.DebuggerEvents.Publish(*newVPNConnectionErrorEvent(code).ToDebuggerEvent())
+}
+
 // newVPNConnectionErrorEvent builds the debugger-event payload for a connection
 // error code.
 func newVPNConnectionErrorEvent(code events.VPNConnectionError) *vpnConnectionErrorEvent {

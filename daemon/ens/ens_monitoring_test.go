@@ -35,7 +35,7 @@ func TestENSMonitoring(t *testing.T) {
 		callbackCount.Add(1)
 		ch <- 1
 		return nil
-	})
+	}, func(events.VPNConnectionError) {})
 	monitor.Start()
 
 	assert.NilError(t, monitor.HandleENSNotification(events.VPNConnectionErrorEvent{
@@ -63,7 +63,7 @@ func TestENSMonitoring(t *testing.T) {
 	assert.Equal(t, 2, int(callbackCount.Load()))
 }
 
-func TestENSMonitoringEventFiltering(t *testing.T) {
+func TestENSMonitoringEventHandling(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	const serverKey = "server-key"
@@ -73,55 +73,63 @@ func TestENSMonitoringEventFiltering(t *testing.T) {
 		ensEnabled      bool
 		serverKey       string
 		event           events.VPNConnectionErrorEvent
+		expectReport    bool
 		expectReconnect bool
 	}{
 		{
-			name:            "maintenance event for current server triggers reconnect",
+			name:            "maintenance event for current server is reported and reconnects",
 			ensEnabled:      true,
 			serverKey:       serverKey,
 			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance, ServerPublicKey: serverKey},
+			expectReport:    true,
 			expectReconnect: true,
 		},
 		{
-			name:            "maintenance event with stale server key is ignored",
+			name:            "maintenance event with stale server key is reported but does not reconnect",
 			ensEnabled:      true,
 			serverKey:       serverKey,
 			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance, ServerPublicKey: "stale-key"},
+			expectReport:    true,
 			expectReconnect: false,
 		},
 		{
-			name:            "ENS feature disabled ignores maintenance event",
+			name:            "disabled ENS feature reports nothing and does not reconnect",
 			ensEnabled:      false,
 			serverKey:       serverKey,
 			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance, ServerPublicKey: serverKey},
+			expectReport:    false,
 			expectReconnect: false,
 		},
 		{
-			name:            "superseded error is ignored",
+			name:            "superseded error is reported but does not reconnect",
 			ensEnabled:      true,
 			serverKey:       serverKey,
 			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorSuperseded, ServerPublicKey: serverKey},
+			expectReport:    true,
 			expectReconnect: false,
 		},
 		{
-			name:            "unknown error is ignored",
+			name:            "unknown error is reported but does not reconnect",
 			ensEnabled:      true,
 			serverKey:       serverKey,
 			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorUnknown, ServerPublicKey: serverKey},
+			expectReport:    true,
 			expectReconnect: false,
 		},
 		{
-			name:            "connection limit error is ignored",
+			name:            "connection limit error is reported but does not reconnect",
 			ensEnabled:      true,
 			serverKey:       serverKey,
 			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorConnectionLimitReached, ServerPublicKey: serverKey},
+			expectReport:    true,
 			expectReconnect: false,
 		},
 		{
-			name:            "unauthenticated error is ignored",
+			name:            "unauthenticated error is reported but does not reconnect",
 			ensEnabled:      true,
 			serverKey:       serverKey,
 			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorUnauthenticated, ServerPublicKey: serverKey},
+			expectReport:    true,
 			expectReconnect: false,
 		},
 	}
@@ -135,18 +143,40 @@ func TestENSMonitoringEventFiltering(t *testing.T) {
 			rc := mock.NewRemoteConfigMock()
 			rc.FeatureToggles[remote.FeatureENS] = tt.ensEnabled
 
-			callbackCalled := atomic.Bool{}
-			ch := make(chan any, 1)
-			monitor := NewMonitor(t.Context(), netw, rc, func(_ string) error {
-				callbackCalled.Store(true)
-				ch <- 1
-				return nil
-			})
+			reported := make(chan events.VPNConnectionError, 1)
+			reconnected := make(chan struct{}, 1)
+			monitor := NewMonitor(t.Context(), netw, rc,
+				func(_ string) error {
+					reconnected <- struct{}{}
+					return nil
+				},
+				func(code events.VPNConnectionError) {
+					reported <- code
+				},
+			)
 			monitor.Start()
 
 			assert.NilError(t, monitor.HandleENSNotification(tt.event))
-			helpers.WaitWithTimeout(t, ch, time.Millisecond*10)
-			assert.Equal(t, tt.expectReconnect, callbackCalled.Load())
+
+			var reportedCode events.VPNConnectionError
+			gotReport := false
+			select {
+			case reportedCode = <-reported:
+				gotReport = true
+			case <-time.After(time.Millisecond * 50):
+			}
+			assert.Equal(t, tt.expectReport, gotReport)
+			if tt.expectReport {
+				assert.Equal(t, tt.event.Code, reportedCode)
+			}
+
+			gotReconnect := false
+			select {
+			case <-reconnected:
+				gotReconnect = true
+			case <-time.After(time.Millisecond * 50):
+			}
+			assert.Equal(t, tt.expectReconnect, gotReconnect)
 		})
 	}
 }

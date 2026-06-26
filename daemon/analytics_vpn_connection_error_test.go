@@ -4,12 +4,10 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -92,7 +90,7 @@ func TestVPNConnectionErrorEvent_ToDebuggerEvent(t *testing.T) {
 	}
 }
 
-func TestRPC_HandleVPNConnectionError_PublishesDebuggerEvent(t *testing.T) {
+func TestRPC_ReportVPNConnectionError_PublishesDebuggerEvent(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	var captured []events.DebuggerEvent
@@ -102,21 +100,14 @@ func TestRPC_HandleVPNConnectionError_PublishesDebuggerEvent(t *testing.T) {
 		return nil
 	})
 
-	rcMock := mock.NewRemoteConfigMock()
-	rcMock.AddFeatureToggle(remote.FeatureENS, true)
-
 	r := &RPC{
 		events: &daemonevents.Events{
 			Debugger: &daemonevents.DebuggerEvents{DebuggerEvents: subject},
 		},
-		remoteConfigGetter: rcMock,
 	}
 
-	err := r.HandleVPNConnectionError(events.VPNConnectionErrorEvent{
-		Code: events.VPNConnectionErrorServerMaintenance,
-	})
+	r.ReportVPNConnectionError(events.VPNConnectionErrorServerMaintenance)
 
-	require.NoError(t, err)
 	require.Len(t, captured, 1)
 	assert.Equal(t, "server_maintenance", contextValueByPath(captured[0].KeyBasedContextPaths, "ens.code"))
 
