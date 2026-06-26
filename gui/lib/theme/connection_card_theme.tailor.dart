@@ -332,6 +332,7 @@ mixin _$ConnectionCardThemeTailorMixin on ThemeExtension<ConnectionCardTheme> {
   ConnectionCardLabelTheme get labelTheme;
   ConnectionCardIconTheme get iconTheme;
   ConnectionCardButtonTheme get buttonTheme;
+  List<BoxShadow> get cardShadow;
 
   @override
   ConnectionCardTheme copyWith({
@@ -346,6 +347,7 @@ mixin _$ConnectionCardThemeTailorMixin on ThemeExtension<ConnectionCardTheme> {
     ConnectionCardLabelTheme? labelTheme,
     ConnectionCardIconTheme? iconTheme,
     ConnectionCardButtonTheme? buttonTheme,
+    List<BoxShadow>? cardShadow,
   }) {
     return ConnectionCardTheme(
       primaryFont: primaryFont ?? this.primaryFont,
@@ -360,6 +362,7 @@ mixin _$ConnectionCardThemeTailorMixin on ThemeExtension<ConnectionCardTheme> {
       labelTheme: labelTheme ?? this.labelTheme,
       iconTheme: iconTheme ?? this.iconTheme,
       buttonTheme: buttonTheme ?? this.buttonTheme,
+      cardShadow: cardShadow ?? this.cardShadow,
     );
   }
 
@@ -383,6 +386,7 @@ mixin _$ConnectionCardThemeTailorMixin on ThemeExtension<ConnectionCardTheme> {
       labelTheme: labelTheme.lerp(other.labelTheme, t),
       iconTheme: iconTheme.lerp(other.iconTheme, t),
       buttonTheme: buttonTheme.lerp(other.buttonTheme, t),
+      cardShadow: t < 0.5 ? cardShadow : other.cardShadow,
     );
   }
 
@@ -425,6 +429,10 @@ mixin _$ConnectionCardThemeTailorMixin on ThemeExtension<ConnectionCardTheme> {
             const DeepCollectionEquality().equals(
               buttonTheme,
               other.buttonTheme,
+            ) &&
+            const DeepCollectionEquality().equals(
+              cardShadow,
+              other.cardShadow,
             ));
   }
 
@@ -443,6 +451,7 @@ mixin _$ConnectionCardThemeTailorMixin on ThemeExtension<ConnectionCardTheme> {
       const DeepCollectionEquality().hash(labelTheme),
       const DeepCollectionEquality().hash(iconTheme),
       const DeepCollectionEquality().hash(buttonTheme),
+      const DeepCollectionEquality().hash(cardShadow),
     );
   }
 }
@@ -462,4 +471,5 @@ extension ConnectionCardThemeBuildContextProps on BuildContext {
   ConnectionCardLabelTheme get labelTheme => connectionCardTheme.labelTheme;
   ConnectionCardIconTheme get iconTheme => connectionCardTheme.iconTheme;
   ConnectionCardButtonTheme get buttonTheme => connectionCardTheme.buttonTheme;
+  List<BoxShadow> get cardShadow => connectionCardTheme.cardShadow;
 }

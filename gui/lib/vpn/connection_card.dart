@@ -19,6 +19,7 @@ final class ConnectionCard extends StatelessWidget {
     final connectionCardTheme = context.connectionCardTheme;
 
     return RoundContainer(
+      shadow: connectionCardTheme.cardShadow,
       radius: connectionCardTheme.borderRadius,
       padding: connectionCardTheme.mapPadding,
       margin: connectionCardTheme.margin,

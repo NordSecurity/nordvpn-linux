@@ -14,6 +14,7 @@ final class RoundContainer extends StatelessWidget {
   final EdgeInsetsGeometry? margin;
   final BorderRadius? radius;
   final Color? color;
+  final List<BoxShadow>? shadow;
 
   const RoundContainer({
     super.key,
@@ -27,6 +28,7 @@ final class RoundContainer extends StatelessWidget {
     this.margin,
     this.radius,
     this.color,
+    this.shadow,
   });
 
   @override
@@ -46,6 +48,7 @@ final class RoundContainer extends StatelessWidget {
       decoration: BoxDecoration(
         color: color ?? theme.colorScheme.surface,
         borderRadius: radius ?? appTheme.borderRadiusMedium,
+        boxShadow: shadow,
       ),
       margin: margin ?? EdgeInsets.all(appTheme.margin),
       child: child,
