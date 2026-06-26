@@ -347,6 +347,7 @@ final class NordVpnTheme {
 
   ConnectionCardTheme _connectionCardThemeExt(ThemeMode mode) {
     return ConnectionCardTheme(
+      cardShadow: mode == ThemeMode.light ? AppBoxShadows.lightBevel : AppBoxShadows.darkBevel,
       primaryFont: design.typography.heading.copyWith(
         color: design.semanticColors.textPrimary,
       ),
@@ -513,6 +514,7 @@ final class NordVpnTheme {
         color: design.semanticColors.textSecondary,
       ),
       obfuscatedItemBackgroundColor: design.semanticColors.bgSecondaryActive,
+      cardShadow: mode == ThemeMode.light ? AppBoxShadows.lightBevel : AppBoxShadows.darkBevel,
     );
   }
 
@@ -542,6 +544,7 @@ final class NordVpnTheme {
       ),
       fwMarkInputSize: 250,
       itemPadding: EdgeInsets.symmetric(horizontal: 4, vertical: 16),
+      cardShadow: mode == ThemeMode.light ? AppBoxShadows.lightBevel : AppBoxShadows.darkBevel,
     );
   }
 
