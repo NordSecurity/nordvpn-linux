@@ -9,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/helpers"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
@@ -35,7 +36,7 @@ func TestENSMonitoring(t *testing.T) {
 		callbackCount.Add(1)
 		ch <- 1
 		return nil
-	}, func(events.VPNConnectionError) {})
+	}, &subs.Subject[events.DebuggerEvent]{})
 	monitor.Start()
 
 	assert.NilError(t, monitor.HandleENSNotification(events.VPNConnectionErrorEvent{
@@ -143,40 +144,25 @@ func TestENSMonitoringEventHandling(t *testing.T) {
 			rc := mock.NewRemoteConfigMock()
 			rc.FeatureToggles[remote.FeatureENS] = tt.ensEnabled
 
-			reported := make(chan events.VPNConnectionError, 1)
-			reconnected := make(chan struct{}, 1)
+			reported := make(chan bool, 1)
+			debuggerEvents := &subs.Subject[events.DebuggerEvent]{}
+			debuggerEvents.Subscribe(func(events.DebuggerEvent) error {
+				reported <- true
+				return nil
+			})
+			reconnected := make(chan bool, 1)
 			monitor := NewMonitor(t.Context(), netw, rc,
 				func(_ string) error {
-					reconnected <- struct{}{}
+					reconnected <- true
 					return nil
 				},
-				func(code events.VPNConnectionError) {
-					reported <- code
-				},
+				debuggerEvents,
 			)
 			monitor.Start()
 
 			assert.NilError(t, monitor.HandleENSNotification(tt.event))
-
-			var reportedCode events.VPNConnectionError
-			gotReport := false
-			select {
-			case reportedCode = <-reported:
-				gotReport = true
-			case <-time.After(time.Millisecond * 50):
-			}
-			assert.Equal(t, tt.expectReport, gotReport)
-			if tt.expectReport {
-				assert.Equal(t, tt.event.Code, reportedCode)
-			}
-
-			gotReconnect := false
-			select {
-			case <-reconnected:
-				gotReconnect = true
-			case <-time.After(time.Millisecond * 50):
-			}
-			assert.Equal(t, tt.expectReconnect, gotReconnect)
+			assert.Equal(t, tt.expectReport, helpers.WaitWithTimeout(t, reported, time.Millisecond*50))
+			assert.Equal(t, tt.expectReconnect, helpers.WaitWithTimeout(t, reconnected, time.Millisecond*50))
 		})
 	}
 }

@@ -650,7 +650,7 @@ func main() {
 		netw,
 		rcConfig,
 		rpc.ReconnectOnServerMaintenanceEvent,
-		rpc.ReportVPNConnectionError,
+		daemonEvents.Debugger.DebuggerEvents,
 	)
 	internalVpnEvents.ConnectionError.Subscribe(ensMonitor.HandleENSNotification)
 	ensMonitor.Start()

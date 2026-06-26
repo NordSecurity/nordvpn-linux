@@ -1,4 +1,4 @@
-package daemon
+package ens
 
 import (
 	"encoding/json"
@@ -40,11 +40,6 @@ type vpnConnectionErrorEvent struct {
 	Event       string `json:"event"`
 	Code        string `json:"code"`
 	Description string `json:"description"`
-}
-
-// ReportVPNConnectionError publishes a debugger event describing a VPN connection error code
-func (r *RPC) ReportVPNConnectionError(code events.VPNConnectionError) {
-	r.events.Debugger.DebuggerEvents.Publish(*newVPNConnectionErrorEvent(code).ToDebuggerEvent())
 }
 
 // newVPNConnectionErrorEvent builds the debugger-event payload for a connection
