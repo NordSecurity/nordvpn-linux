@@ -21,15 +21,14 @@ func (ti *Instance) notify(ntype NotificationType, text string, a ...any) {
 
 	if ti.state.initialSyncCompleted && (notificationsStatus == Enabled || ntype == Force) {
 		text = fmt.Sprintf(text, a...)
-		log.Infof("%s Sending notification: %s", logTag, text)
+		log.Systray.Infof("Sending notification: %s", text)
 		if err := ti.notifier.sendNotification("NordVPN", text); err != nil {
 			if !errors.Is(err, errDbusNotifierNotConnected) {
 				log.Error("Failed to send notification:", err)
 			}
 		}
 	} else {
-		log.Infof("%s Notification suppressed: %s (status: %d, force: %v)",
-			logTag,
+		log.Systray.Infof("Notification suppressed: %s (status: %d, force: %v)",
 			fmt.Sprintf(text, a...),
 			notificationsStatus,
 			ntype == Force)

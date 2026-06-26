@@ -47,11 +47,11 @@ func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context, do
 		}
 	}()
 
-	log.Info(dnsPrefix, "starting resolv.conf file watcher")
+	log.DNS.Info("starting resolv.conf file watcher")
 	for {
 		select {
 		case e, ok := <-watcher.Events:
-			log.Info(dnsPrefix, "resolv.conf overwrite detected")
+			log.DNS.Info("resolv.conf overwrite detected")
 			if !ok {
 				return fmt.Errorf("file watcher closed")
 			}
@@ -65,9 +65,9 @@ func (r *resolvConfFileWatcherMonitor) monitorResolvConf(ctx context.Context, do
 			if !ok {
 				return fmt.Errorf("file watcher closed")
 			}
-			log.Error(dnsPrefix, "file watcher error:", err)
+			log.DNS.Error("file watcher error:", err)
 		case <-ctx.Done():
-			log.Info(dnsPrefix, "resolv.conf monitoring context closed")
+			log.DNS.Info("resolv.conf monitoring context closed")
 			return nil
 		}
 	}
@@ -81,7 +81,7 @@ func (r *resolvConfFileWatcherMonitor) start() {
 	r.doneChan = doneChan
 	go func() {
 		if err := r.monitorResolvConf(ctx, doneChan); err != nil {
-			log.Error(dnsPrefix, "resolv.conf monitoring failed:", err)
+			log.DNS.Error("resolv.conf monitoring failed:", err)
 		}
 	}()
 }
@@ -89,13 +89,13 @@ func (r *resolvConfFileWatcherMonitor) start() {
 // stop stops the monitoring goroutine and ensures that it exits before the function return.
 func (r *resolvConfFileWatcherMonitor) stop() {
 	if r.cancelFunc != nil {
-		log.Info(dnsPrefix, "stopping resolv.conf file watcher")
+		log.DNS.Info("stopping resolv.conf file watcher")
 		r.cancelFunc()
 		// wait for the monitor goroutine to finish
 		select {
 		case <-r.doneChan:
 		case <-time.After(1 * time.Second):
-			log.Warn(dnsPrefix, "timed out waiting for the monitoring goroutine to stop")
+			log.DNS.Warn("timed out waiting for the monitoring goroutine to stop")
 		}
 	}
 }

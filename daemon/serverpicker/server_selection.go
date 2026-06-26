@@ -17,10 +17,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-const (
-	apiServersLimit = 20
-	logPrefix       = "[server_sel]"
-)
+const apiServersLimit = 20
 
 // RecommendationUUID identifies a server recommendation returned by the API.
 type RecommendationUUID string
@@ -56,7 +53,7 @@ func PickServer(
 	cfg config.Config,
 	input SearchParams,
 ) (ServerSelection, error) {
-	var remote = true
+	remote := true
 	var recommendationUUID RecommendationUUID
 	var selectedServer *core.Server
 
@@ -65,7 +62,7 @@ func PickServer(
 	tech := cfg.Technology
 	protocol := cfg.AutoConnectData.Protocol
 	obfuscated := cfg.AutoConnectData.Obfuscate
-	log.Debug(logPrefix, "search server", tech, protocol, obfuscated, "with input", input)
+	log.ServerSel.Debug("search server", tech, protocol, obfuscated, "with input", input)
 
 	serverTech := TechToServerTech(tech, protocol, obfuscated)
 	if serverTech == core.Unknown {
@@ -74,7 +71,7 @@ func PickServer(
 
 	// detect the group from the input params
 	serverGroup, err := resolveServerGroup(&input, obfuscated)
-	log.Debug(logPrefix, "resolved server group", serverGroup)
+	log.ServerSel.Debug("resolved server group", serverGroup)
 	if err != nil {
 		return ServerSelection{}, err
 	}
@@ -102,7 +99,7 @@ func PickServer(
 	serverTag, err := serverTagFromString(input.Tag, serverGroup, countries, servers)
 
 	if err != nil {
-		log.Debug(logPrefix, "unable to detect server tag", err)
+		log.ServerSel.Debug("unable to detect server tag", err)
 		if errors.Is(err, internal.ErrTagDoesNotExist) {
 			return ServerSelection{}, err
 		}
@@ -121,7 +118,7 @@ func PickServer(
 
 	if len(selectedServers) == 0 {
 		// if no servers were received from the API, try from locally cached servers
-		log.Error(logPrefix, "failed to select server from remote", err)
+		log.ServerSel.Error("failed to select server from remote", err)
 		remote = false
 		selectedServers, err = findServersLocally(servers, serverTag, filterServersFn)
 	}
@@ -131,7 +128,7 @@ func PickServer(
 	}
 
 	if len(selectedServers) == 0 {
-		log.Debug(logPrefix, "no server found")
+		log.ServerSel.Debug("no server found")
 		// We were not guarded against this case before
 		// So I assume it should not happen, but better be safe
 		return ServerSelection{}, internal.ErrServerIsUnavailable
@@ -182,18 +179,18 @@ func findServersLocally(
 	serverTag core.ServerTag,
 	filterServersFn func(server core.Server) bool,
 ) ([]core.Server, error) {
-	log.Debug(logPrefix, "search locally the server", serverTag)
+	log.ServerSel.Debug("search locally the server", serverTag)
 
 	selectedServers := internal.Filter(servers, filterServersFn)
 	if len(selectedServers) == 0 {
 		return nil, internal.ErrServerIsUnavailable
 	}
 
-	log.Debug(logPrefix, "found local servers", selectedServers)
+	log.ServerSel.Debug("found local servers", selectedServers)
 
 	// remove all DIP servers from the list if the search wasn't made for a server name and there is more than 1 server found
 	if serverTag.Action != core.ServerByName && len(selectedServers) > 1 {
-		log.Debug(logPrefix, "removing DIP servers")
+		log.ServerSel.Debug("removing DIP servers")
 		selectedServers = slices.DeleteFunc(selectedServers, func(s core.Server) bool { return core.IsDedicatedIP(s) })
 	}
 

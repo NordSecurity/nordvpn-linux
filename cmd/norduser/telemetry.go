@@ -13,7 +13,6 @@ import (
 
 const (
 	telemetryTimeout = 5 * time.Second
-	tag              = "[telemetry]"
 )
 
 const ( // possible DE values
@@ -50,7 +49,7 @@ func ReportTelemetry(conn *grpc.ClientConn, evt ReportEvent, wait bool) {
 }
 
 func logErrorMessage(metric string, value string, err error) {
-	log.Warnf("%s Failed to send metric: metric=%s, value=%s, error=%v", tag, metric, value, err)
+	log.Telemetry.Warnf("Failed to send metric: metric=%s, value=%s, error=%v", metric, value, err)
 }
 
 // sendDesktopEnvironmentMetric sends the current desktop environment

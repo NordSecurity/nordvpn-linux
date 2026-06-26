@@ -26,7 +26,6 @@ const (
 	IconGray  string = "nordvpn-tray-gray"
 	IconWhite string = "nordvpn-tray-white"
 	IconBlue  string = "nordvpn-tray-blue"
-	logTag           = "[systray]"
 )
 
 type Status int
@@ -276,7 +275,7 @@ func (ti *Instance) syncWithDaemon() {
 		}
 		err := waitUntilTrayStatusIsReceived(getTrayStatusFunc, ti.initialDataLoadChan)
 		if err != nil {
-			log.Errorf("%s Waiting for tray state: %s. Retrying.\n", logTag, err)
+			log.Systray.Errorf("Waiting for tray state: %s. Retrying.\n", err)
 			continue
 		}
 		break
