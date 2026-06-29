@@ -80,7 +80,7 @@ func NewHandleWithFileContent(pattern string, path string) Handler {
 		Fn: func() ([]byte, *HTTPError) {
 			byteData, err := internal.FileRead(path)
 			if err != nil {
-				fmt.Println(internal.ErrorPrefix, "Failed to read file", path, err)
+				fmt.Println("Failed to read file", path, err)
 			}
 			return byteData, nil
 		},
