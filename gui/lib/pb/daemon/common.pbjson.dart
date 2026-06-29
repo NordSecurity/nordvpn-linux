@@ -14,20 +14,6 @@ import 'dart:convert' as $convert;
 import 'dart:core' as $core;
 import 'dart:typed_data' as $typed_data;
 
-@$core.Deprecated('Use daemonApiVersionDescriptor instead')
-const DaemonApiVersion$json = {
-  '1': 'DaemonApiVersion',
-  '2': [
-    {'1': 'UNKNOWN_VERSION', '2': 0},
-    {'1': 'CURRENT_VERSION', '2': 4},
-  ],
-};
-
-/// Descriptor for `DaemonApiVersion`. Decode as a `google.protobuf.EnumDescriptorProto`.
-final $typed_data.Uint8List daemonApiVersionDescriptor = $convert.base64Decode(
-    'ChBEYWVtb25BcGlWZXJzaW9uEhMKD1VOS05PV05fVkVSU0lPThAAEhMKD0NVUlJFTlRfVkVSU0'
-    'lPThAE');
-
 @$core.Deprecated('Use triStateDescriptor instead')
 const TriState$json = {
   '1': 'TriState',
