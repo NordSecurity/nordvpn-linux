@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,14 +12,17 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	daemonEvents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
-	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
+	core_test "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 	testdevicekey "github.com/NordSecurity/nordvpn-linux/test/mock/devicekey"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
 	testnetworker "github.com/NordSecurity/nordvpn-linux/test/mock/networker"
@@ -26,6 +30,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+const activeKey = "current-nordlynx-key"
 
 type mockRPCServer struct {
 	pb.Daemon_ConnectServer
@@ -41,11 +47,11 @@ type deterministicServersAPI struct {
 }
 
 func (deterministicServersAPI) Servers() (core.Servers, http.Header, error) {
-	return serversList(), nil, nil
+	return core_test.ServersList(), nil, nil
 }
 
 func (d *deterministicServersAPI) RecommendedServers(filter core.ServersFilter, _ float64, _ float64) (core.Servers, http.Header, error) {
-	allServers := serversList()
+	allServers := core_test.ServersList()
 
 	if filter.Tag.Action == core.ServerByUnknown && filter.Group == config.ServerGroup_UNDEFINED {
 		return getServersByID(allServers, 1), nil, nil
@@ -119,7 +125,7 @@ func (d *deterministicServersAPI) RecommendedServers(filter core.ServersFilter, 
 }
 
 func (deterministicServersAPI) Server(serverID int64) (*core.Server, error) {
-	allServers := serversList()
+	allServers := core_test.ServersList()
 	for _, server := range allServers {
 		if server.ID == serverID {
 			return &server, nil
@@ -129,7 +135,7 @@ func (deterministicServersAPI) Server(serverID int64) (*core.Server, error) {
 }
 
 func (deterministicServersAPI) ServersCountries() (core.Countries, http.Header, error) {
-	return countriesList(), nil, nil
+	return core_test.CountriesList(), nil, nil
 }
 
 func (deterministicServersAPI) ServersTechnologiesConfigurations(string, int64, core.ServerTechnology) ([]byte, error) {
@@ -155,7 +161,7 @@ func testRPCLocal(t *testing.T) *RPC {
 
 	rpc.serversAPI = &deterministicServersAPI{}
 
-	rpc.dm.SetCountryData(time.Now(), countriesList(), "")
+	rpc.dm.SetCountryData(time.Now(), core_test.CountriesList(), "")
 
 	return rpc
 }
@@ -184,6 +190,7 @@ func (c *workingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPServic
 
 	return c.dedicatedIPService, nil
 }
+
 func (c *workingLoginChecker) GetDedicatedServerService() (auth.DedicatedServerService, error) {
 	return auth.DedicatedServerService{Active: !c.isDedicatedServersExpired}, c.dedicatedServerErr
 }
@@ -387,8 +394,8 @@ func TestRPCConnect(t *testing.T) {
 		// run each test using working API for servers list and using local cached servers
 		// list
 		servers := map[string]core.ServersAPI{
-			"Remote": mockServersAPI{},
-			"Local":  mockFailingServersAPI{},
+			"Remote": core_test.NewMockServersAPI(),
+			"Local":  core_test.NewMockFailingServersAPI(errors.New("500")),
 		}
 		for key, serversAPI := range servers {
 			t.Run(test.name+" "+key, func(t *testing.T) {
@@ -397,9 +404,9 @@ func TestRPCConnect(t *testing.T) {
 				if test.setup != nil {
 					test.setup(rpc)
 				}
-				firstOpenEventCouter := 0
+				firstOpenEventCounter := 0
 				firstOpenListener := func(any) error {
-					firstOpenEventCouter++
+					firstOpenEventCounter++
 					return nil
 				}
 				rpc.events.Service.FirstTimeOpened.Subscribe(firstOpenListener)
@@ -422,13 +429,13 @@ func TestRPCConnect(t *testing.T) {
 				switch test.resp {
 				case internal.CodeConnected:
 					assert.NoError(t, err)
-					assert.Equal(t, firstOpenEventCouter, 1)
+					assert.Equal(t, firstOpenEventCounter, 1)
 				case 0:
 					assert.ErrorIs(t, internal.ErrUnhandled, err)
-					assert.Equal(t, firstOpenEventCouter, 0)
+					assert.Equal(t, firstOpenEventCounter, 0)
 				default:
 					assert.Equal(t, test.resp, server.msg.Type)
-					assert.Equal(t, firstOpenEventCouter, 0)
+					assert.Equal(t, firstOpenEventCounter, 0)
 				}
 			})
 		}
@@ -670,7 +677,7 @@ func TestRPCConnect_RecentConnectionsMultiple(t *testing.T) {
 		return &mock.WorkingVPN{}, nil
 	}
 
-	rpc.dm.SetCountryData(time.Now(), countriesList(), "")
+	rpc.dm.SetCountryData(time.Now(), core_test.CountriesList(), "")
 
 	server := &mockRPCServer{}
 	err := rpc.Connect(&pb.ConnectRequest{ServerTag: "germany"}, server)
@@ -722,17 +729,17 @@ func TestRPCReconnect(t *testing.T) {
 func Test_determineServerSelectionRule(t *testing.T) {
 	tests := []struct {
 		name   string
-		params ServerParameters
+		params serverpicker.ServerParameters
 		want   config.ServerSelectionRule
 	}{
 		{
 			name:   "All empty params returns RECOMMENDED",
-			params: ServerParameters{},
+			params: serverpicker.ServerParameters{},
 			want:   config.ServerSelectionRule_RECOMMENDED,
 		},
 		{
 			name: "Country, country-code, city is set returns CITY",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:     "Germany",
 				City:        "Berlin",
 				CountryCode: "DE",
@@ -741,7 +748,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Country, country-code set, group undefined returns COUNTRY",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:     "Lithuania",
 				Group:       config.ServerGroup_UNDEFINED,
 				CountryCode: "LT",
@@ -750,7 +757,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Country, country code, group set returns COUNTRY_WITH_GROUP",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:     "Lithuania",
 				Group:       config.ServerGroup_OBFUSCATED,
 				CountryCode: "LT",
@@ -759,7 +766,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "ServerName set, group undefined returns SPECIFIC_SERVER",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				ServerName: "lt11",
 				Group:      config.ServerGroup_UNDEFINED,
 			},
@@ -767,7 +774,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "ServerName set, group set returns SPECIFIC_SERVER_WITH_GROUP",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				ServerName: "lt11",
 				Group:      config.ServerGroup_OBFUSCATED,
 			},
@@ -775,14 +782,14 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Group set returns GROUP",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Group: config.ServerGroup_OBFUSCATED,
 			},
 			want: config.ServerSelectionRule_GROUP,
 		},
 		{
 			name: "Unknown combination returns RECOMMENDED",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:     "",
 				City:        "",
 				Group:       config.ServerGroup_UNDEFINED,
@@ -793,7 +800,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "All fields set (should not match anything)",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:     "Germany",
 				City:        "Berlin",
 				Group:       config.ServerGroup_OBFUSCATED,
@@ -804,7 +811,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Only ServerName set, others empty/undefined",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				ServerName: "us123",
 				Group:      config.ServerGroup_UNDEFINED,
 			},
@@ -812,14 +819,14 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Only Group set, others empty/undefined",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Group: config.ServerGroup_DOUBLE_VPN,
 			},
 			want: config.ServerSelectionRule_GROUP,
 		},
 		{
 			name: "Country and ServerName set, group undefined",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:    "France",
 				ServerName: "fr123",
 				Group:      config.ServerGroup_UNDEFINED,
@@ -828,7 +835,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Country, City, ServerName, group undefined",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:    "France",
 				City:       "Paris",
 				ServerName: "fr123",
@@ -838,7 +845,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Country, City, ServerName, group set",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:    "France",
 				City:       "Paris",
 				ServerName: "fr123",
@@ -848,7 +855,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Country set, group set to UNDEFINED, ServerName set",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:    "Italy",
 				Group:      config.ServerGroup_UNDEFINED,
 				ServerName: "it123",
@@ -857,7 +864,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Country set, group set, ServerName set",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Country:    "Italy",
 				Group:      config.ServerGroup_DOUBLE_VPN,
 				ServerName: "it123",
@@ -866,7 +873,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "ServerName set, group set to undefined, City set",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				ServerName: "es123",
 				Group:      config.ServerGroup_UNDEFINED,
 				City:       "Madrid",
@@ -875,7 +882,7 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "ServerName set, group set, City set",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				ServerName: "es123",
 				Group:      config.ServerGroup_DOUBLE_VPN,
 				City:       "Madrid",
@@ -884,14 +891,14 @@ func Test_determineServerSelectionRule(t *testing.T) {
 		},
 		{
 			name: "Group is UNDEFINED, all other fields empty",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Group: config.ServerGroup_UNDEFINED,
 			},
 			want: config.ServerSelectionRule_RECOMMENDED,
 		},
 		{
 			name: "Edge: Group is invalid (not in enum), should fallback to invalid/empty",
-			params: ServerParameters{
+			params: serverpicker.ServerParameters{
 				Group: config.ServerGroup(9999),
 			},
 			want: config.ServerSelectionRule_NONE,
@@ -911,94 +918,94 @@ func Test_determineServerGroup(t *testing.T) {
 	tests := []struct {
 		name   string
 		server core.Server
-		params ServerParameters
-		want   string
+		params serverpicker.ServerParameters
+		want   config.ServerGroup
 	}{
 		{
-			name: "Group is UNDEFINED returns first group title",
+			name: "Group is UNDEFINED falls back to standard group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 				{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double VPN"},
 			}},
-			params: ServerParameters{},
-			want:   "Standard VPN servers",
+			params: serverpicker.ServerParameters{},
+			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
-			name: "Group is DOUBLE_VPN returns matching group title",
+			name: "Group is DOUBLE_VPN returns matching group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 				{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double VPN"},
 			}},
-			params: ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
-			want:   "Double VPN",
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
+			want:   config.ServerGroup_DOUBLE_VPN,
 		},
 		{
-			name: "Group is OBFUSCATED returns matching group title",
+			name: "Group is OBFUSCATED returns matching group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 				{ID: config.ServerGroup_OBFUSCATED, Title: "Obfuscated"},
 			}},
-			params: ServerParameters{Group: config.ServerGroup_OBFUSCATED},
-			want:   "Obfuscated",
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_OBFUSCATED},
+			want:   config.ServerGroup_OBFUSCATED,
 		},
 		{
-			name: "Group is DEDICATED_IP returns matching group title",
+			name: "Group is DEDICATED_IP returns matching group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_DEDICATED_IP, Title: "Dedicated IP"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
-			params: ServerParameters{Group: config.ServerGroup_DEDICATED_IP},
-			want:   "Dedicated IP",
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_DEDICATED_IP},
+			want:   config.ServerGroup_DEDICATED_IP,
 		},
 		{
-			name: "Group is NETFLIX_USA returns matching group title",
+			name: "Group is NETFLIX_USA returns matching group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_NETFLIX_USA, Title: "Netflix USA"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
-			params: ServerParameters{Group: config.ServerGroup_NETFLIX_USA},
-			want:   "Netflix USA",
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_NETFLIX_USA},
+			want:   config.ServerGroup_NETFLIX_USA,
 		},
 		{
-			name: "Group is P2P returns matching group title",
+			name: "Group is P2P returns matching group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_P2P, Title: "P2P"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
-			params: ServerParameters{Group: config.ServerGroup_P2P},
-			want:   "P2P",
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_P2P},
+			want:   config.ServerGroup_P2P,
 		},
 		{
-			name: "Group is ULTRA_FAST_TV returns matching group title",
+			name: "Group is ULTRA_FAST_TV returns matching group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_ULTRA_FAST_TV, Title: "Ultra Fast TV"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
-			params: ServerParameters{Group: config.ServerGroup_ULTRA_FAST_TV},
-			want:   "Ultra Fast TV",
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_ULTRA_FAST_TV},
+			want:   config.ServerGroup_ULTRA_FAST_TV,
 		},
 		{
-			name: "Group is ANTI_DDOS returns matching group title",
+			name: "Group is ANTI_DDOS returns matching group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_ANTI_DDOS, Title: "Anti DDoS"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
-			params: ServerParameters{Group: config.ServerGroup_ANTI_DDOS},
-			want:   "Anti DDoS",
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_ANTI_DDOS},
+			want:   config.ServerGroup_ANTI_DDOS,
 		},
 		{
-			name:   "Server has no groups returns empty string",
+			name:   "Server has no groups returns UNDEFINED",
 			server: core.Server{Groups: []core.Group{}},
-			params: ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
-			want:   "",
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
+			want:   config.ServerGroup_UNDEFINED,
 		},
 		{
 			name: "Server has only one group, params group matches",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_OBFUSCATED, Title: "Obfuscated"},
 			}},
-			params: ServerParameters{Group: config.ServerGroup_OBFUSCATED},
-			want:   "Obfuscated",
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_OBFUSCATED},
+			want:   config.ServerGroup_OBFUSCATED,
 		},
 		{
 			name: "Group is not set (zero value), server has multiple groups",
@@ -1006,14 +1013,14 @@ func Test_determineServerGroup(t *testing.T) {
 				{ID: config.ServerGroup_P2P, Title: "P2P"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
-			params: ServerParameters{},
-			want:   "Standard VPN servers",
+			params: serverpicker.ServerParameters{},
+			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
 			name:   "Group is not set (zero value), server has no groups",
 			server: core.Server{Groups: []core.Group{}},
-			params: ServerParameters{},
-			want:   "",
+			params: serverpicker.ServerParameters{},
+			want:   config.ServerGroup_UNDEFINED,
 		},
 	}
 	for _, tt := range tests {
@@ -1233,7 +1240,7 @@ func TestConnect_DedicatedServers(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			rpc := testRPCLocal(t)
-			mockDedicatedServersAPI := testcore.DedicatedServersAPIMock{
+			mockDedicatedServersAPI := core_test.DedicatedServersAPIMock{
 				DedicatedServersResponse: test.dedicatedServersResponse,
 				ConnectResponse:          test.connectResponse,
 				DedicatedServerErr:       test.dedicatedServersFetchErr,
@@ -1298,7 +1305,7 @@ func TestDedicatedServers_Internals(t *testing.T) {
 	devicePrivateKey := "device private key"
 
 	rpc := testRPCLocal(t)
-	rpc.dedicatedServersAPI = &testcore.DedicatedServersAPIMock{
+	rpc.dedicatedServersAPI = &core_test.DedicatedServersAPIMock{
 		DedicatedServersResponse: dedicatedServers,
 		ConnectResponse:          connectResponse,
 	}
@@ -1356,7 +1363,7 @@ func TestDedicatedServers_ForceRegistration(t *testing.T) {
 		return err
 	}
 
-	dedicatedServersAPIMock := testcore.DedicatedServersAPIMock{
+	dedicatedServersAPIMock := core_test.DedicatedServersAPIMock{
 		DedicatedServersResponse: dedicatedServers,
 		ConnectResponse:          connectResponse,
 		GetConnectErrFunc:        getConnectErrFunc,
@@ -1434,4 +1441,153 @@ func Test_serverGroupIDs_NilGroups_ReturnsEmptySlice(t *testing.T) {
 	got := determineServerGroupIDs(&server)
 
 	assert.Equal(t, 0, len(got))
+}
+
+func TestReconnectOnServerMaintenance(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	rpc := testRPCLocal(t)
+	ctx := context.Background()
+	server := &mockRPCServer{}
+
+	params := serverpicker.ServerParameters{
+		ServerName: "it1",
+	}
+	const activeKey = "nordlynx-server-key"
+
+	rpc.RequestedConnParams.Set(pb.ConnectionSource_MANUAL, params)
+	rpc.netw = &testnetworker.Mock{
+		VpnActive:        true,
+		ActiveServerData: &vpn.ServerData{NordLynxPublicKey: activeKey},
+	}
+	rpc.serversAPI = core_test.NewMockServersAPI()
+
+	// select NordLynx because servers list has 2 servers in Italy
+	rpc.cm.SaveWith(func(c config.Config) config.Config {
+		return config.Config{
+			Technology: config.Technology_NORDLYNX,
+		}
+	})
+
+	// capture the connect telemetry events so we can assert how the reconnect is attributed
+	connectEvents := &daemonEvents.MockPublisherSubscriber[events.DataConnect]{}
+	rpc.events.Service.Connect = connectEvents
+
+	// connect to a specific server name, it1
+	failed, err := rpc.connectWithParameters(ctx, &pb.ConnectRequest{ServerTag: "it1"}, server, pb.ConnectionSource_MANUAL, "", events.VPNConnectionReasonNone)
+	assert.False(t, failed)
+	assert.NoError(t, err)
+	assert.Equal(t, "it1.nordvpn.com", rpc.lastServerSelection.Server.Hostname)
+	// a user-initiated connect carries no special trigger
+	assert.Equal(t, events.VPNConnectionReasonNone, connectEvents.Event.VPNConnReason)
+
+	// reconnect will take the server city + country. Server selection finds second server, it2
+	failed, err = rpc.reconnectOnServerMaintenance(ctx, server, activeKey)
+	assert.False(t, failed)
+	assert.NoError(t, err)
+	assert.Equal(t, "it2.nordvpn.com", rpc.lastServerSelection.Server.Hostname)
+	// an ENS server-maintenance reconnect stamps the trigger so telemetry reports it as such
+	assert.Equal(t, events.VPNConnectionReasonServerMaintenance, connectEvents.Event.VPNConnReason)
+
+	p := rpc.RequestedConnParams.Get()
+	assert.Equal(t, "IT", p.CountryCode)
+	assert.Equal(t, "Rome", p.City)
+
+	// reconnect will use the city + country, and server selection finds first server, it1
+	failed, err = rpc.reconnectOnServerMaintenance(ctx, server, activeKey)
+	assert.False(t, failed)
+	assert.NoError(t, err)
+	assert.Equal(t, "it1.nordvpn.com", rpc.lastServerSelection.Server.Hostname)
+
+	p = rpc.RequestedConnParams.Get()
+	assert.Equal(t, "IT", p.CountryCode)
+	assert.Equal(t, "Rome", p.City)
+}
+
+func TestReconnectOnServerMaintenance_ConnectionGuard(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name          string
+		eventKey      string
+		connParams    *vpn.ServerData
+		expectSkipped bool
+	}{
+		{
+			name:          "skips reconnect when connected server changed since ENS check",
+			eventKey:      "stale-key",
+			connParams:    &vpn.ServerData{NordLynxPublicKey: activeKey},
+			expectSkipped: true,
+		},
+		{
+			name:          "skips reconnect when connection is not active anymore",
+			eventKey:      activeKey,
+			expectSkipped: true,
+		},
+		{
+			name:          "proceeds with reconnect when server key still matches and connection is active",
+			eventKey:      activeKey,
+			connParams:    &vpn.ServerData{NordLynxPublicKey: activeKey},
+			expectSkipped: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rpc := testRPCLocal(t)
+			rpc.serversAPI = core_test.NewMockServersAPI()
+			rpc.netw = &testnetworker.Mock{
+				VpnActive:        true,
+				ActiveServerData: tt.connParams,
+			}
+			rpc.cm.SaveWith(func(c config.Config) config.Config {
+				return config.Config{Technology: config.Technology_NORDLYNX}
+			})
+			rpc.RequestedConnParams.Set(pb.ConnectionSource_AUTO, serverpicker.ServerParameters{
+				CountryCode: "IT",
+				City:        "Rome",
+			})
+
+			failed, err := rpc.reconnectOnServerMaintenance(context.Background(), &mockRPCServer{}, tt.eventKey)
+
+			assert.False(t, failed)
+			assert.NoError(t, err)
+			if tt.expectSkipped {
+				assert.Nil(t, rpc.lastServerSelection.Server)
+			} else {
+				assert.NotNil(t, rpc.lastServerSelection.Server)
+			}
+		})
+	}
+}
+
+func TestReconnectOnServerMaintenance_CountryOnly(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	rpc := testRPCLocal(t)
+	ctx := context.Background()
+	server := &mockRPCServer{}
+	rpc.serversAPI = core_test.NewMockServersAPI()
+	rpc.netw = &testnetworker.Mock{
+		VpnActive:        true,
+		ActiveServerData: &vpn.ServerData{NordLynxPublicKey: activeKey},
+	}
+
+	rpc.cm.SaveWith(func(c config.Config) config.Config {
+		return config.Config{
+			Technology: config.Technology_NORDLYNX,
+		}
+	})
+
+	failed, err := rpc.connectWithParameters(ctx, &pb.ConnectRequest{ServerTag: "it"}, server, pb.ConnectionSource_MANUAL, "", events.VPNConnectionReasonNone)
+	assert.False(t, failed)
+	assert.NoError(t, err)
+
+	p := rpc.RequestedConnParams.Get()
+	assert.Equal(t, "IT", p.CountryCode)
+	assert.Equal(t, "", p.City)
+
+	failed, err = rpc.reconnectOnServerMaintenance(ctx, server, activeKey)
+	assert.False(t, failed)
+	assert.NoError(t, err)
 }

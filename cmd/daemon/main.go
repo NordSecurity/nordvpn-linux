@@ -30,6 +30,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon"
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
+	"github.com/NordSecurity/nordvpn-linux/daemon/ens"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/nft"
@@ -410,6 +411,7 @@ func main() {
 		vpnNordWhisperConfigGetter,
 		Version,
 		internalVpnEvents,
+		rcConfig.IsFeatureEnabled(remote.FeatureENS),
 	)
 
 	vpn, err := vpnFactory(cfg.Technology)
@@ -641,6 +643,17 @@ func main() {
 		pauseEvents,
 		deviceKeyManager,
 	)
+
+	ensMonitor := ens.NewMonitor(
+		httpGlobalCtx,
+		netw,
+		rcConfig,
+		rpc.ReconnectOnServerMaintenanceEvent,
+		daemonEvents.Debugger.DebuggerEvents,
+	)
+	internalVpnEvents.ConnectionError.Subscribe(ensMonitor.HandleENSNotification)
+	ensMonitor.Start()
+
 	meshService := meshnet.NewServer(
 		authChecker,
 		fsystem,

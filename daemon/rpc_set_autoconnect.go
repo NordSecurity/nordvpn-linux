@@ -8,6 +8,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
@@ -31,7 +32,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		}, nil
 	}
 
-	if in.GetEnabled() && isDedicatedServer(in.ServerTag, in.ServerGroup) {
+	if in.GetEnabled() && serverpicker.IsDedicatedServer(in.ServerTag, in.ServerGroup) {
 		if !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
 			return &pb.Payload{Type: internal.CodeGroupNonexisting}, nil
 		}
@@ -65,13 +66,12 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		}
 	}
 
-	var parameters ServerParameters
+	var parameters serverpicker.ServerParameters
 	serverTag := in.GetServerTag()
 	serverGroup := in.GetServerGroup()
 	if in.GetEnabled() {
 		insights := r.dm.GetInsightsData().Insights
-
-		serverSelection, err := selectServer(r, &insights, cfg, serverTag, serverGroup)
+		serverSelection, err := selectServer(r, &insights, cfg, serverTag, serverGroup, "")
 		if err != nil {
 			log.Error("no server found for autoconnect", serverTag, err)
 
@@ -84,8 +84,8 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 
 			return nil, err
 		}
-		log.Info("server for autoconnect found", serverSelection.server)
-		parameters = GetServerParameters(serverTag, serverGroup, r.dm.GetCountryData().Countries)
+		log.Info("server for autoconnect found", serverSelection.Server)
+		parameters = serverpicker.GetServerParameters(serverTag, serverGroup, r.dm.GetCountryData().Countries)
 
 		if err := r.cm.SaveWith(func(c config.Config) config.Config {
 			c.AutoConnect = in.GetEnabled()

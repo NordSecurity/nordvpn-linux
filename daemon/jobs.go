@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -18,6 +19,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/iptables"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/features"
@@ -70,8 +72,8 @@ func (r *RPC) StartJobs(
 	// TODO if autoconnect runs before servers job, it will return zero servers list
 
 	var server core.Server
-	if r.lastServerSelection.server != nil {
-		server = *r.lastServerSelection.server
+	if r.lastServerSelection.Server != nil {
+		server = *r.lastServerSelection.Server
 	}
 	if _, err := r.scheduler.NewJob(gocron.DurationJob(15*time.Minute),
 		gocron.NewTask(JobServerCheck(r.dm, r.serversAPI, r.netw, server)),
@@ -405,19 +407,19 @@ func (r *RPC) doAutoConnect() error {
 		groupTag = cfg.AutoConnectData.Group.String()
 	}
 
-	err = r.connectFromRequest(
-		&pb.ConnectRequest{
+	err = r.executeConnect(&server, func(ctx context.Context) (bool, error) {
+		param := &pb.ConnectRequest{
 			ServerTag:   cfg.AutoConnectData.ServerTag,
 			ServerGroup: groupTag,
-		},
-		&server,
-		pb.ConnectionSource_AUTO,
-	)
+		}
+		return r.connectWithParameters(ctx, param, &server, pb.ConnectionSource_AUTO, "", events.VPNConnectionReasonAutoConnect)
+	})
+
 	if err == nil && server.err == nil {
 		log.Info("auto-connect success")
 		r.RequestedConnParams.Set(
 			pb.ConnectionSource_AUTO,
-			ServerParameters{
+			serverpicker.ServerParameters{
 				Country: cfg.AutoConnectData.Country,
 				City:    cfg.AutoConnectData.City,
 				Group:   cfg.AutoConnectData.Group,

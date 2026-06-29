@@ -53,7 +53,7 @@ func TestRPCCities(t *testing.T) {
 		{
 			name:        "results for country name with virtual servers only",
 			cm:          newMockConfigManager(),
-			servers:     serversList(),
+			servers:     coremock.ServersList(),
 			countryName: "alGeria",
 			statusCode:  internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
@@ -63,7 +63,7 @@ func TestRPCCities(t *testing.T) {
 		{
 			name:        "results for country code with virtual servers only",
 			cm:          newMockConfigManager(),
-			servers:     serversList(),
+			servers:     coremock.ServersList(),
 			countryName: "dz",
 			statusCode:  internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
@@ -73,7 +73,7 @@ func TestRPCCities(t *testing.T) {
 		{
 			name:                  "no servers for country with virtual servers only and virtual location is off",
 			cm:                    newMockConfigManager(),
-			servers:               serversList(),
+			servers:               coremock.ServersList(),
 			countryName:           "dZ",
 			disableVirtualServers: true,
 			statusCode:            internal.CodeSuccess,
@@ -82,7 +82,7 @@ func TestRPCCities(t *testing.T) {
 		{
 			name:        "results for country code with physical servers only",
 			cm:          newMockConfigManager(),
-			servers:     serversList(),
+			servers:     coremock.ServersList(),
 			countryName: "fR",
 			statusCode:  internal.CodeSuccess,
 			expected: []*pb.ServerGroup{

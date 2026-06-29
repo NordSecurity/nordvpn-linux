@@ -15,7 +15,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testauth "github.com/NordSecurity/nordvpn-linux/test/mock/auth"
-	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
+	core_test "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 	testdevicekey "github.com/NordSecurity/nordvpn-linux/test/mock/devicekey"
 
 	"github.com/stretchr/testify/assert"
@@ -73,7 +73,7 @@ func TestAutoconnect(t *testing.T) {
 		},
 		{
 			testName:       "autoconnect works for country code using OpenVPN and obfuscate = on",
-			server:         "de",
+			server:         "lt",
 			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: true, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
 			returnCode:     internal.CodeSuccess,
 			eventPublished: true,
@@ -255,7 +255,7 @@ func TestAutoconnect(t *testing.T) {
 			},
 			DIPServices: dipServices}
 
-		mockDedicatedServersAPI := testcore.DedicatedServersAPIMock{
+		mockDedicatedServersAPI := core_test.DedicatedServersAPIMock{
 			DedicatedServersResponse: test.dedicatedServerList,
 			ConnectResponse:          core.DedicatedServerConnectResponse{},
 		}
@@ -263,12 +263,12 @@ func TestAutoconnect(t *testing.T) {
 		mockConfigManager := newMockConfigManager()
 		mockPublisherSubscriber := events.MockPublisherSubscriber[bool]{}
 		mockEvents := events.Events{Settings: &events.SettingsEvents{Autoconnect: &mockPublisherSubscriber}}
-		dm := DataManager{serversData: ServersData{Servers: serversList()}}
+		dm := DataManager{serversData: ServersData{Servers: core_test.ServersList()}}
 		r := RPC{cm: mockConfigManager,
 			ac:                  &mockAuthChecker,
 			events:              &mockEvents,
 			dm:                  &dm,
-			serversAPI:          &mockServersAPI{},
+			serversAPI:          core_test.NewMockServersAPI(),
 			dedicatedServersAPI: &mockDedicatedServersAPI,
 			dedicatedServerKeyManager: &testdevicekey.MockDeviceKeyManager{
 				DedicatedServerRegistrationData: &devicekey.DedicatedServersConnectionData{},
@@ -295,10 +295,11 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		testName    string
-		serverGroup string
-		tag         string
-		expected    config.AutoConnectData
+		testName     string
+		serverGroup  string
+		tag          string
+		isObfuscated bool
+		expected     config.AutoConnectData
 	}{
 		{
 			testName:    "for standard",
@@ -311,9 +312,10 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 			expected:    config.AutoConnectData{Group: config.ServerGroup_P2P},
 		},
 		{
-			testName:    "for obfuscated servers",
-			serverGroup: "obfuscated_servers",
-			expected:    config.AutoConnectData{Group: config.ServerGroup_OBFUSCATED},
+			testName:     "for obfuscated servers",
+			serverGroup:  "obfuscated_servers",
+			isObfuscated: true,
+			expected:     config.AutoConnectData{Group: config.ServerGroup_OBFUSCATED},
 		},
 		{
 			testName:    "for double_vpn",
@@ -359,12 +361,17 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 				Autoconnect: &mockPublisherSubscriber,
 			},
 		}
+
+		if test.isObfuscated {
+			mockConfigManager.c.Technology = config.Technology_OPENVPN
+			mockConfigManager.c.AutoConnectData.Obfuscate = true
+		}
 		dm := DataManager{
 			serversData: ServersData{
-				Servers: serversList(),
+				Servers: core_test.ServersList(),
 			},
 			countryData: CountryData{
-				Countries: countriesList(),
+				Countries: core_test.CountriesList(),
 			},
 		}
 		r := RPC{
@@ -372,7 +379,7 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 			ac:         &mockAuthChecker,
 			events:     &mockEvents,
 			dm:         &dm,
-			serversAPI: &mockServersAPI{},
+			serversAPI: core_test.NewMockServersAPI(),
 		}
 		request := pb.SetAutoconnectRequest{
 			Enabled:     true,

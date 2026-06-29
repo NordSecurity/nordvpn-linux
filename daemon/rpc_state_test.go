@@ -8,6 +8,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state/types"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -27,7 +28,7 @@ const (
 
 var (
 	testServerGroup      = config.ServerGroup_ONION_OVER_VPN
-	testConnectionParams = ServerParameters{
+	testConnectionParams = serverpicker.ServerParameters{
 		ServerName:  testServerName,
 		Country:     testCountry,
 		City:        testCity,
@@ -239,7 +240,7 @@ func TestRpcState_PreliminaryGroupAttachedToConnectingStatus(t *testing.T) {
 			ts := setupTest(t)
 			ts.connParams.Set(
 				pb.ConnectionSource_MANUAL,
-				ServerParameters{Group: tt.prelimGroup},
+				serverpicker.ServerParameters{Group: tt.prelimGroup},
 			)
 
 			go statusStream(ts.stateChan, ts.stopChan, testUID, ts.srv, ts.connParams)

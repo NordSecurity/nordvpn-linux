@@ -12,6 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	core_test "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -489,7 +490,7 @@ func TestServersValidation(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	// here expecting valid list of servers
-	servers := serversList()
+	servers := core_test.ServersList()
 
 	assert.NotNil(t, servers)
 	assert.NoError(t, servers.Validate())

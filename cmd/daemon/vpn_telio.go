@@ -14,13 +14,16 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
 )
 
-func getNordlynxVPN(envIsDev bool,
+func getNordlynxVPN(
+	envIsDev bool,
 	eventsDbPath string,
 	fwmark uint32,
 	cfg vpn.LibConfigGetter,
 	appVersion string,
-	eventsPublisher *vpn.Events) (*libtelio.Libtelio, error) {
-	telio, err := libtelio.New(!envIsDev, eventsDbPath, fwmark, cfg, appVersion, eventsPublisher)
+	eventsPublisher *vpn.Events,
+	ensEnabled bool,
+) (*libtelio.Libtelio, error) {
+	telio, err := libtelio.New(!envIsDev, eventsDbPath, fwmark, cfg, appVersion, eventsPublisher, ensEnabled)
 	if err != nil {
 		return nil, fmt.Errorf("creating telio instance:", err)
 	}

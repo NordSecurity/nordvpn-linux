@@ -266,6 +266,80 @@ class Payload extends $pb.GeneratedMessage {
   $pb.PbList<$core.String> get data => $_getList(1);
 }
 
+/// InjectVpnConnectionErrorRequest is the request for the DEV-only endpoint.
+class InjectVpnConnectionErrorRequest extends $pb.GeneratedMessage {
+  factory InjectVpnConnectionErrorRequest({
+    $core.int? telioCode,
+    $core.String? pubkey,
+  }) {
+    final result = create();
+    if (telioCode != null) result.telioCode = telioCode;
+    if (pubkey != null) result.pubkey = pubkey;
+    return result;
+  }
+
+  InjectVpnConnectionErrorRequest._();
+
+  factory InjectVpnConnectionErrorRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory InjectVpnConnectionErrorRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'InjectVpnConnectionErrorRequest',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
+      createEmptyInstance: create)
+    ..aI(1, _omitFieldNames ? '' : 'telioCode')
+    ..aOS(2, _omitFieldNames ? '' : 'pubkey')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  InjectVpnConnectionErrorRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  InjectVpnConnectionErrorRequest copyWith(
+          void Function(InjectVpnConnectionErrorRequest) updates) =>
+      super.copyWith(
+              (message) => updates(message as InjectVpnConnectionErrorRequest))
+          as InjectVpnConnectionErrorRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static InjectVpnConnectionErrorRequest create() =>
+      InjectVpnConnectionErrorRequest._();
+  @$core.override
+  InjectVpnConnectionErrorRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static InjectVpnConnectionErrorRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<InjectVpnConnectionErrorRequest>(
+          create);
+  static InjectVpnConnectionErrorRequest? _defaultInstance;
+
+  /// Raw libtelio (teliogo) ENS code
+  @$pb.TagNumber(1)
+  $core.int get telioCode => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set telioCode($core.int value) => $_setSignedInt32(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasTelioCode() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearTelioCode() => $_clearField(1);
+
+  /// Optional. When empty, the daemon stamps the currently-connected server's
+  /// NordLynx public key (automatic)
+  @$pb.TagNumber(2)
+  $core.String get pubkey => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set pubkey($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasPubkey() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearPubkey() => $_clearField(2);
+}
+
 class Allowlist extends $pb.GeneratedMessage {
   factory Allowlist({
     Ports? ports,

@@ -3,8 +3,8 @@ package network
 import (
 	"net"
 	"net/netip"
-	"sync"
 	"testing"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -48,12 +48,18 @@ func startTestDNSServer(t *testing.T, domainName string, ip netip.Addr) (addr st
 		Handler:    mux,
 	}
 
-	var wg sync.WaitGroup
-	wg.Go(func() {
-		if err := server.ActivateAndServe(); err != nil {
+	ready := make(chan error, 1)
+	go func() {
+		ready <- server.ActivateAndServe()
+	}()
+
+	select {
+	case err := <-ready:
+		if err != nil {
 			t.Fatalf("activate server: %v", err)
 		}
-	})
+	case <-time.After(500 * time.Microsecond):
+	}
 
 	log.Info("running DNS server on", pc.LocalAddr().String(), "for", domainName)
 

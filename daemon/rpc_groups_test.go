@@ -131,7 +131,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 		{
 			name:       "virtual and physical servers",
 			cm:         newMockConfigManager(),
-			servers:    serversList(),
+			servers:    coremock.ServersList(),
 			statusCode: internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
 				{Name: "Dedicated_IP", VirtualLocation: false},
@@ -144,7 +144,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 		{
 			name:                    "virtual and physical servers, exclude dedicated servers via feature toggle",
 			cm:                      newMockConfigManager(),
-			servers:                 serversList(),
+			servers:                 coremock.ServersList(),
 			disableDedicatedServers: true,
 			statusCode:              internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
@@ -157,7 +157,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 		{
 			name:                  "return physical servers only",
 			cm:                    newMockConfigManager(),
-			servers:               serversList(),
+			servers:               coremock.ServersList(),
 			disableVirtualServers: true,
 			statusCode:            internal.CodeSuccess,
 			expected: []*pb.ServerGroup{

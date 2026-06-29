@@ -11,8 +11,9 @@ type InternalVPNPublisher interface {
 }
 
 type Events struct {
-	Connected    events.PublishSubcriber[ConnectEvent]
-	Disconnected events.PublishSubcriber[events.TypeEventStatus]
+	Connected       events.PublishSubcriber[ConnectEvent]
+	Disconnected    events.PublishSubcriber[events.TypeEventStatus]
+	ConnectionError events.PublishSubcriber[events.VPNConnectionErrorEvent]
 }
 
 type ConnectEvent struct {
@@ -22,8 +23,9 @@ type ConnectEvent struct {
 
 func NewInternalVPNEvents() *Events {
 	return &Events{
-		Connected:    &subs.Subject[ConnectEvent]{},
-		Disconnected: &subs.Subject[events.TypeEventStatus]{},
+		Connected:       &subs.Subject[ConnectEvent]{},
+		Disconnected:    &subs.Subject[events.TypeEventStatus]{},
+		ConnectionError: &subs.Subject[events.VPNConnectionErrorEvent]{},
 	}
 }
 
