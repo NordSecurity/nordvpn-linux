@@ -8,7 +8,6 @@ import 'package:nordvpn/grpc/error_handling_interceptor.dart';
 import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/pb/daemon/common.pb.dart';
 import 'package:nordvpn/pb/daemon/service.pbgrpc.dart';
-import 'package:nordvpn/pb/daemon/ping.pb.dart';
 import 'package:nordvpn/service_locator.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -129,7 +128,7 @@ class GrpcConnectionController extends _$GrpcConnectionController {
       );
 
       // notify dependant providers only when there is actual change in the state
-      if (state is AsyncData<bool> && state.value == false) {
+      if (!(state is AsyncData<bool> && state.value == true)) {
         state = const AsyncData(true);
       }
     } catch (error) {
