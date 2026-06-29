@@ -39,6 +39,7 @@ func (c Credentials) IsOpenVPNDefined() bool {
 // ServerData required to connect to VPN server.
 type ServerData struct {
 	IP                  netip.Addr
+	Endpoint            string
 	Hostname            string // used in openvpn server certificate validation
 	Protocol            config.Protocol
 	NordLynxPublicKey   string

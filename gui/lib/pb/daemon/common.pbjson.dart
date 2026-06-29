@@ -120,7 +120,7 @@ const InjectVpnConnectionErrorRequest$json = {
   '1': 'InjectVpnConnectionErrorRequest',
   '2': [
     {'1': 'telio_code', '3': 1, '4': 1, '5': 5, '10': 'telioCode'},
-    {'1': 'pubkey', '3': 2, '4': 1, '5': 9, '10': 'pubkey'},
+    {'1': 'endpoint', '3': 2, '4': 1, '5': 9, '10': 'endpoint'},
   ],
 };
 
@@ -128,7 +128,7 @@ const InjectVpnConnectionErrorRequest$json = {
 final $typed_data.Uint8List injectVpnConnectionErrorRequestDescriptor =
     $convert.base64Decode(
         'Ch9JbmplY3RWcG5Db25uZWN0aW9uRXJyb3JSZXF1ZXN0Eh0KCnRlbGlvX2NvZGUYASABKAVSCX'
-        'RlbGlvQ29kZRIWCgZwdWJrZXkYAiABKAlSBnB1YmtleQ==');
+        'RlbGlvQ29kZRIaCghlbmRwb2ludBgCIAEoCVIIZW5kcG9pbnQ=');
 
 @$core.Deprecated('Use allowlistDescriptor instead')
 const Allowlist$json = {

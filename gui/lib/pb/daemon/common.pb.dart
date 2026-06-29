@@ -270,11 +270,11 @@ class Payload extends $pb.GeneratedMessage {
 class InjectVpnConnectionErrorRequest extends $pb.GeneratedMessage {
   factory InjectVpnConnectionErrorRequest({
     $core.int? telioCode,
-    $core.String? pubkey,
+    $core.String? endpoint,
   }) {
     final result = create();
     if (telioCode != null) result.telioCode = telioCode;
-    if (pubkey != null) result.pubkey = pubkey;
+    if (endpoint != null) result.endpoint = endpoint;
     return result;
   }
 
@@ -292,7 +292,7 @@ class InjectVpnConnectionErrorRequest extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
     ..aI(1, _omitFieldNames ? '' : 'telioCode')
-    ..aOS(2, _omitFieldNames ? '' : 'pubkey')
+    ..aOS(2, _omitFieldNames ? '' : 'endpoint')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -329,15 +329,15 @@ class InjectVpnConnectionErrorRequest extends $pb.GeneratedMessage {
   void clearTelioCode() => $_clearField(1);
 
   /// Optional. When empty, the daemon stamps the currently-connected server's
-  /// NordLynx public key (automatic)
+  /// endpoint
   @$pb.TagNumber(2)
-  $core.String get pubkey => $_getSZ(1);
+  $core.String get endpoint => $_getSZ(1);
   @$pb.TagNumber(2)
-  set pubkey($core.String value) => $_setString(1, value);
+  set endpoint($core.String value) => $_setString(1, value);
   @$pb.TagNumber(2)
-  $core.bool hasPubkey() => $_has(1);
+  $core.bool hasEndpoint() => $_has(1);
   @$pb.TagNumber(2)
-  void clearPubkey() => $_clearField(2);
+  void clearEndpoint() => $_clearField(2);
 }
 
 class Allowlist extends $pb.GeneratedMessage {
