@@ -116,6 +116,16 @@ case "$PKG_TO_BUILD" in
   ;;
 esac
 
+# for dev builds strong dependency on daemon is relaxed, for release builds let's keep it strict
+if [ "${ENVIRONMENT:-dev}" = "dev" ]; then
+  DAEMON_DEPENDENCY_DEB="nordvpn (>= 5.0.0)"
+  DAEMON_DEPENDENCY_RPM="nordvpn >= 5.0.0"
+else
+  DAEMON_DEPENDENCY_DEB="nordvpn (= ${PKG_VERSION})"
+  DAEMON_DEPENDENCY_RPM="nordvpn = ${PKG_VERSION}"
+fi
+export DAEMON_DEPENDENCY_DEB DAEMON_DEPENDENCY_RPM
+
 # create nfpm package description
 envsubst <templates/nfpm_template.yaml >"${APP_BUNDLE_DIR}"/packages.yaml
 

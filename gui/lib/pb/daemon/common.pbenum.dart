@@ -14,24 +14,6 @@ import 'dart:core' as $core;
 
 import 'package:protobuf/protobuf.dart' as $pb;
 
-class DaemonApiVersion extends $pb.ProtobufEnum {
-  static const DaemonApiVersion UNKNOWN_VERSION =
-      DaemonApiVersion._(0, _omitEnumNames ? '' : 'UNKNOWN_VERSION');
-  static const DaemonApiVersion CURRENT_VERSION =
-      DaemonApiVersion._(4, _omitEnumNames ? '' : 'CURRENT_VERSION');
-
-  static const $core.List<DaemonApiVersion> values = <DaemonApiVersion>[
-    UNKNOWN_VERSION,
-    CURRENT_VERSION,
-  ];
-
-  static final $core.Map<$core.int, DaemonApiVersion> _byValue =
-      $pb.ProtobufEnum.initByValue(values);
-  static DaemonApiVersion? valueOf($core.int value) => _byValue[value];
-
-  const DaemonApiVersion._(super.value, super.name);
-}
-
 class TriState extends $pb.ProtobufEnum {
   static const TriState UNKNOWN =
       TriState._(0, _omitEnumNames ? '' : 'UNKNOWN');
