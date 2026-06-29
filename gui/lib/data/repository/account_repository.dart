@@ -4,7 +4,7 @@ import 'package:nordvpn/pb/daemon/common.pb.dart';
 import 'package:nordvpn/pb/daemon/login.pb.dart';
 import 'package:nordvpn/pb/daemon/logout.pb.dart';
 import 'package:nordvpn/grpc/grpc_service.dart';
-import 'package:nordvpn/grpc/ui_event_interceptor.dart';
+import 'package:nordvpn/grpc/uievent_reporter.dart';
 import 'package:nordvpn/pb/daemon/service.pbgrpc.dart';
 import 'package:nordvpn/pb/daemon/token.pb.dart';
 import 'package:nordvpn/pb/daemon/uievent.pbenum.dart';
@@ -21,14 +21,12 @@ final class AccountRepository {
       _doLogin(LoginType.LoginType_SIGNUP);
 
   Future<LoginOAuth2Response> _doLogin(LoginType type) async {
-    final options = createUiEventCallOptions(
+    reportUIEvent(
+      _client,
       formReference: UIEvent_FormReference.GUI,
       itemName: UIEvent_ItemName.LOGIN,
     );
-    return await _client.loginOAuth2(
-      LoginOAuth2Request(type: type),
-      options: options,
-    );
+    return await _client.loginOAuth2(LoginOAuth2Request(type: type));
   }
 
   Future<bool> isLoggedIn() async {
@@ -41,13 +39,13 @@ final class AccountRepository {
 
   /// Logs out the current user.
   Future<int> logout() async {
-    final options = createUiEventCallOptions(
+    reportUIEvent(
+      _client,
       formReference: UIEvent_FormReference.GUI,
       itemName: UIEvent_ItemName.LOGOUT,
     );
     final result = await _client.logout(
       LogoutRequest(persistToken: false),
-      options: options,
     );
     return result.type.toInt();
   }

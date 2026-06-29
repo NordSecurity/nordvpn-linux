@@ -115,7 +115,7 @@ func (s *NCCredentialsSessionStore) Renew(opts ...RenewalOption) error {
 func (s *NCCredentialsSessionStore) HandleError(err error) error {
 	handlers := s.errHandlerRegistry.GetHandlers(err)
 	if len(handlers) == 0 {
-		log.Println(internal.InfoPrefix, "No handlers for nc creds session store is registered")
+		log.Info("No handlers for nc creds session store is registered")
 		return nil
 	}
 

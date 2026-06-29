@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	mapset "github.com/deckarep/golang-set/v2"
 )
@@ -35,7 +34,7 @@ func (netw *Combined) IsMeshnetActive() bool {
 
 func (netw *Combined) handleNetworkChanged() error {
 	if netw.isMeshnetSet {
-		log.Println(internal.InfoPrefix, "handle network changes for meshnet")
+		log.Info("handle network changes for meshnet")
 		if err := netw.mesh.NetworkChanged(); err != nil {
 			return err
 		}
@@ -45,9 +44,9 @@ func (netw *Combined) handleNetworkChanged() error {
 		// for Nordlynx VPN + Meshnet NetworkChanged was already executed, so skip
 		vpn, ok := netw.mesh.(vpn.VPN)
 		if netw.isMeshnetSet && ok && vpn == netw.vpnet {
-			log.Println(internal.InfoPrefix, "skip network changed for VPN, already executed for meshnet")
+			log.Info("skip network changed for VPN, already executed for meshnet")
 		} else {
-			log.Println(internal.InfoPrefix, "handle network changes for VPN")
+			log.Info("handle network changes for VPN")
 
 			if err := netw.vpnet.NetworkChanged(); err != nil {
 				return err
@@ -101,15 +100,14 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 	}
 	newInterfaces := netw.devices(mapset.NewSet(tunnelName))
 	newInterfaceDetected := !newInterfaces.IsSubset(netw.interfaces)
-	log.Println(internal.InfoPrefix,
-		"refresh VPN, new interface detected[]:",
+	log.Info("refresh VPN, new interface detected[]:",
 		newInterfaceDetected,
 		netw.interfaces, "->", newInterfaces)
 
 	if err := netw.handleNetworkChanged(); err == nil {
 		return nil
 	} else {
-		log.Println(internal.ErrorPrefix, "failed to handle network changes, reinit the tunnel", err)
+		log.Error("failed to handle network changes, reinit the tunnel", err)
 	}
 
 	netw.interfaces = newInterfaces
@@ -127,7 +125,7 @@ func (netw *Combined) refreshVPN(ctx context.Context) (err error) {
 				if vpnErr == nil {
 					vpnErr = netw.unsetKillSwitch()
 				} else {
-					log.Println(internal.InfoPrefix, "keeping killswitch, VPN failed to reconnect in background:", vpnErr)
+					log.Info("keeping killswitch, VPN failed to reconnect in background:", vpnErr)
 				}
 			}()
 		}

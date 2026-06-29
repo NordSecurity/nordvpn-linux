@@ -68,3 +68,7 @@ func (c MockDaemonClient) LoginWithToken(ctx context.Context, in *pb.LoginWithTo
 	}
 	return &pb.LoginResponse{Type: internal.CodeSuccess}, nil
 }
+
+func (c MockDaemonClient) ReportUIEvent(ctx context.Context, in *pb.UIEvent, opts ...grpc.CallOption) (*pb.Payload, error) {
+	return &pb.Payload{}, nil
+}

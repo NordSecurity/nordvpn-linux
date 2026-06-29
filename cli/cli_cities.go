@@ -36,7 +36,7 @@ func (c *cmd) Cities(ctx *cli.Context) error {
 
 	if resp.Type != internal.CodeSuccess {
 		err := fmt.Errorf(MsgListIsEmpty, "cities")
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return formatError(err)
 	}
 
@@ -53,7 +53,7 @@ func (c *cmd) Cities(ctx *cli.Context) error {
 	if err == nil {
 		fmt.Println(formattedList)
 	} else {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 
 		columns, _ := formatTable(resp.Servers, serverNameLen, formatServerName, 1, footer)
 		fmt.Println(columns)

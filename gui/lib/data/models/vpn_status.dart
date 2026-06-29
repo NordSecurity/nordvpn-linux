@@ -68,6 +68,7 @@ abstract class VpnStatus with _$VpnStatus {
             convertToVpnProtocol(
               statusResponse.technology,
               statusResponse.protocol,
-            );
+            ) &&
+        connectionParameters.group == statusResponse.parameters.group;
   }
 }

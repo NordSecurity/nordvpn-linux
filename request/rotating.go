@@ -67,7 +67,7 @@ func (rt *RotatingRoundTripper) RoundTrip(req *http.Request) (*http.Response, er
 		if err == nil {
 			return resp, err
 		}
-		log.Println(internal.ErrorPrefix, "HTTP/3 request failed:", err, "rotating to HTTP/1")
+		log.Error("HTTP/3 request failed:", err, "rotating to HTTP/1")
 		rt.isCurrentH3.Store(false)
 	}
 	return rt.roundTripperH1.RoundTrip(req)

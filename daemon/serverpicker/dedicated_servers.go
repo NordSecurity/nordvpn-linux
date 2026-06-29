@@ -30,7 +30,7 @@ func SelectDedicatedServer(
 ) (ServerSelection, error) {
 	service, err := authChecker.GetDedicatedServerService()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "checking dedicated servers service status:", err)
+		log.Error("checking dedicated servers service status:", err)
 		if errors.Is(err, core.ErrUnauthorized) {
 			return ServerSelection{}, internal.NewErrorWithCode(internal.CodeRevokedAccessToken)
 		}
@@ -43,7 +43,7 @@ func SelectDedicatedServer(
 
 	dedicatedServers, err := api.DedicatedServers()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "getting dedicated servers list:", err)
+		log.Error("getting dedicated servers list:", err)
 		return ServerSelection{}, internal.ErrUnhandled
 	}
 
@@ -148,7 +148,7 @@ func getDedicatedServerConnectionData(
 	if len(addrPort) > 1 {
 		port, err := strconv.Atoi(addrPort[1])
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "parsing dedicated server port:", err)
+			log.Error("parsing dedicated server port:", err)
 			return DSConnectionData{}, fmt.Errorf("parsing dedicated server port: %w", err)
 		}
 		dedicatedServerPort = int64(port)

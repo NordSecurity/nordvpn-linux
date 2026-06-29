@@ -13,6 +13,24 @@ from test_connect import connect_base_test, disconnect_base_test
 PROJECT_ROOT = os.environ['WORKDIR']
 DEB_PATH = glob.glob(f'{PROJECT_ROOT}/dist/app/deb/nordvpn_*amd64.deb')[0]
 
+
+def _previous_app_version() -> str:
+    """Return the current-but-one (N-1) app version derived from the prod changelog."""
+
+    changelog_dir = os.path.join(PROJECT_ROOT, "contrib", "changelog", "prod")
+    versions = set()
+    for name in os.listdir(changelog_dir):
+        if not name.endswith(".md"):
+            continue
+        bare = name[:-len(".md")].split("_", 1)[0]
+        parts = bare.split(".")
+        if len(parts) == 3 and all(part.isdigit() for part in parts):
+            versions.add(tuple(int(part) for part in parts))
+
+    ordered = sorted(versions)
+    assert len(ordered) >= 2, f"need at least two changelog versions in {changelog_dir} to pick the previous one"
+    return ".".join(str(num) for num in ordered[-2])
+
 class TestData:
     INVOLVES_MESHNET = None
 
@@ -33,7 +51,12 @@ def setup_function(function):  # noqa: ARG001
 
     sh.sudo.apt.purge("-y", "nordvpn")
 
-    sh.sh(_in=sh.curl("-sSf", "https://downloads.nordcdn.com/apps/linux/install.sh"))
+    # in order to simulate actual upgrade, always install current-but-one version
+    # the exact version to be installed, is determined based on the presence of changelogs in the repository.
+    # finally, use the fetched previous version and provide it to the installation script
+    previous_version = _previous_app_version()
+    logging.log(data=f"Installing previous production version: {previous_version}")
+    sh.sh("-s", "--", "-n", "-v", previous_version, _in=sh.curl("-sSf", "https://downloads.nordcdn.com/apps/linux/install.sh"))
     ProductionApplicationData.APP_VERSION = sh.nordvpn("-v").split()[2]
 
     daemon.start()

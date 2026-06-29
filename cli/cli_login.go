@@ -61,6 +61,13 @@ func (c *cmd) loginCmd(ctx *cli.Context) error {
 }
 
 func (c *cmd) login(requestType pb.LoginType) error {
+	// #nosec G104 -- fire-and-forget analytics
+	c.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+		FormReference: pb.UIEvent_CLI,
+		ItemName:      pb.UIEvent_LOGIN,
+		ItemType:      pb.UIEvent_CLICK,
+	})
+
 	resp, err := c.client.LoginOAuth2(
 		context.Background(),
 		&pb.LoginOAuth2Request{
@@ -122,6 +129,13 @@ func (c *cmd) loginWithToken(ctx *cli.Context) error {
 			return formatError(err)
 		}
 	}
+
+	// #nosec G104 -- fire-and-forget analytics
+	c.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+		FormReference: pb.UIEvent_CLI,
+		ItemName:      pb.UIEvent_LOGIN_TOKEN,
+		ItemType:      pb.UIEvent_CLICK,
+	})
 
 	resp, err := c.client.LoginWithToken(context.Background(), &pb.LoginWithTokenRequest{
 		Token: token,

@@ -58,7 +58,7 @@ func newVPNConnectionErrorEvent(code events.VPNConnectionError) *vpnConnectionEr
 func (e *vpnConnectionErrorEvent) ToDebuggerEvent() *events.DebuggerEvent {
 	jsonData, err := json.Marshal(e)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "failed to marshal ENS connection error event:", err)
+		log.Error("failed to marshal ENS connection error event:", err)
 		jsonData = []byte(fmt.Sprintf(
 			`{"namespace":"%s","subscope":"%s","event":"%s","code":"%s","error":"marshal_error"}`,
 			e.Namespace, e.Subscope, e.Event, e.Code,

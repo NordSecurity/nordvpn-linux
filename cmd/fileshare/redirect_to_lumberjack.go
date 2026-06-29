@@ -44,8 +44,18 @@ func redirectStdOutputToLumberjack(lj *lumberjack.Logger) (cleanup func() error,
 	}()
 
 	cleanup = func() error {
-		_ = w.Close() // EOF for the goroutine
-		<-done        // wait for drain
+		// Dup2 created independent copies of the pipe write end on fd 1
+		// (stdout) and fd 2 (stderr). w.Close() only closes the original
+		// fd from os.Pipe. Redirect fd 1 and fd 2 to /dev/null so ALL
+		// pipe write ends are closed and io.Copy receives EOF.
+		devNull, err := unix.Open(os.DevNull, unix.O_WRONLY, 0)
+		if err == nil {
+			_ = unix.Dup2(devNull, 1)
+			_ = unix.Dup2(devNull, 2)
+			_ = unix.Close(devNull)
+		}
+		_ = w.Close()
+		<-done
 		return lj.Close()
 	}
 	if internal.IsProdEnv(Environment) {

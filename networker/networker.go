@@ -228,21 +228,21 @@ func (netw *Combined) Start(
 func failureRecover(netw *Combined) {
 	if !netw.isMeshnetSet {
 		if err := netw.policyRouter.CleanupRouting(); err != nil {
-			log.Println(internal.DeferPrefix, err)
+			log.Error(err)
 		}
 	}
 
 	if err := netw.router.Flush(); err != nil {
-		log.Println(internal.DeferPrefix, err)
+		log.Error(err)
 	}
 
 	if err := netw.vpnet.Stop(); err != nil {
-		log.Println(internal.DeferPrefix, err)
+		log.Error(err)
 	}
 
 	if netw.isNetworkSet && netw.KillSwitchState == disabledByUser {
 		if err := netw.unsetNetwork(); err != nil {
-			log.Println(internal.DeferPrefix, err)
+			log.Error(err)
 		}
 	}
 
@@ -250,13 +250,13 @@ func failureRecover(netw *Combined) {
 		firewall.WithTunnelInterface(""),
 	)
 	if err := netw.configureFirewall(cfg); err != nil {
-		log.Println(internal.DeferPrefix, err)
+		log.Error(err)
 	}
 
 	netw.unblockIPv6()
 
 	if err := netw.arpIgnoreSetter.Unset(); err != nil {
-		log.Println(internal.DebugPrefix, "unsetting arp ignore when recovering from failure:", err)
+		log.Debug("unsetting arp ignore when recovering from failure:", err)
 	}
 
 	netw.isVpnSet = false
@@ -287,7 +287,7 @@ func (netw *Combined) start(
 	// Always disable IPv6 with sysctl in the system
 	// We also do that when there is a change in network interfaces
 	if err = netw.ipv6Blocker.Block(); err != nil {
-		log.Println(internal.ErrorPrefix, "Failed to block ipv6 during start using sysctl ", err)
+		log.Error("Failed to block ipv6 during start using sysctl ", err)
 		return err
 	}
 
@@ -296,7 +296,7 @@ func (netw *Combined) start(
 	}
 	if err = netw.vpnet.Start(ctx, creds, serverData); err != nil {
 		if err := netw.vpnet.Stop(); err != nil {
-			log.Println(internal.DeferPrefix, err)
+			log.Error(err)
 		}
 		return err
 	}
@@ -413,7 +413,7 @@ func (netw *Combined) restart(
 
 	// remove default route
 	if err := netw.router.Flush(); err != nil {
-		log.Println(internal.WarningPrefix, err)
+		log.Warn(err)
 	}
 
 	stopStartTime := time.Now()
@@ -432,7 +432,7 @@ func (netw *Combined) restart(
 	}
 	if err = netw.vpnet.Start(ctx, creds, serverData); err != nil {
 		if err := netw.vpnet.Stop(); err != nil {
-			log.Println(internal.DeferPrefix, err)
+			log.Error(err)
 		}
 		return err
 	}
@@ -450,7 +450,7 @@ func (netw *Combined) restart(
 	// Always disable IPv6 with sysctl in the system
 	// We also do that when there is a change in network interfaces
 	if err = netw.ipv6Blocker.Block(); err != nil {
-		log.Println(internal.ErrorPrefix, "Failed to block ipv6 during restart using sysctl ", err)
+		log.Error("Failed to block ipv6 during restart using sysctl ", err)
 		return err
 	}
 
@@ -504,7 +504,7 @@ func (netw *Combined) stop() error {
 	netw.publisher.Publish("removing route to tunnel")
 	if !netw.isMeshnetSet {
 		if err := netw.policyRouter.CleanupRouting(); err != nil {
-			log.Println(internal.WarningPrefix, err)
+			log.Warn(err)
 		}
 	} else {
 		// if routing rules were set - they will be adjusted as needed
@@ -519,7 +519,7 @@ func (netw *Combined) stop() error {
 
 	netw.publisher.Publish("removing route to the vpn server")
 	if err := netw.router.Flush(); err != nil {
-		log.Println(internal.WarningPrefix, err)
+		log.Warn(err)
 	}
 
 	netw.publisher.Publish("stopping vpn")
@@ -619,7 +619,7 @@ func (netw *Combined) configureFirewall(config firewall.Config) error {
 
 func (netw *Combined) resetAllowlist() error {
 	// this is done in order to maintain the order of the firewall rules
-	log.Println(internal.InfoPrefix, "reset allow list")
+	log.Info("reset allow list")
 	if err := netw.allowlistRouter.Flush(); err != nil {
 		return fmt.Errorf("flushing allowlist router: %w", err)
 	}
@@ -663,20 +663,20 @@ func (netw *Combined) EnableRouting() {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 	if err := netw.policyRouter.Enable(); err != nil {
-		log.Println(internal.WarningPrefix)
+		log.Warn(err)
 	}
 
 	tableID := netw.policyRouter.TableID()
 	if err := netw.allowlistRouter.Enable(tableID); err != nil {
-		log.Println(internal.WarningPrefix)
+		log.Warn(err)
 	}
 
 	if err := netw.router.Enable(tableID); err != nil {
-		log.Println(internal.WarningPrefix)
+		log.Warn(err)
 	}
 
 	if err := netw.peerRouter.Enable(tableID); err != nil {
-		log.Println(internal.WarningPrefix)
+		log.Warn(err)
 	}
 }
 
@@ -684,19 +684,19 @@ func (netw *Combined) DisableRouting() {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 	if err := netw.allowlistRouter.Disable(); err != nil {
-		log.Println(internal.WarningPrefix)
+		log.Warn(err)
 	}
 
 	if err := netw.router.Disable(); err != nil {
-		log.Println(internal.WarningPrefix)
+		log.Warn(err)
 	}
 
 	if err := netw.peerRouter.Disable(); err != nil {
-		log.Println(internal.WarningPrefix)
+		log.Warn(err)
 	}
 
 	if err := netw.policyRouter.Disable(); err != nil {
-		log.Println(internal.WarningPrefix)
+		log.Warn(err)
 	}
 }
 
@@ -704,7 +704,7 @@ func (netw *Combined) blockIPv6() {
 	// Always disable IPv6 with sysctl in the system
 	err := netw.ipv6Blocker.Block()
 	if err != nil {
-		log.Println(internal.WarningPrefix, "Failed to block ipv6 using sysctl", err)
+		log.Warn("Failed to block ipv6 using sysctl", err)
 	}
 }
 
@@ -712,7 +712,7 @@ func (netw *Combined) unblockIPv6() {
 	// Unblock from sysctl
 	err := netw.ipv6Blocker.Unblock()
 	if err != nil {
-		log.Println(internal.WarningPrefix, "Failed to unblock ipv6 using sysctl", err)
+		log.Warn("Failed to unblock ipv6 using sysctl", err)
 	}
 }
 
@@ -771,9 +771,9 @@ func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 }
 
 func (netw *Combined) unsetAllowlist() error {
-	log.Println(internal.InfoPrefix, "unset allow list")
+	log.Info("unset allow list")
 	if err := netw.allowlistRouter.Flush(); err != nil {
-		log.Println(internal.WarningPrefix, "flushing allowlist router:", err)
+		log.Warn("flushing allowlist router:", err)
 	}
 	return nil
 }
@@ -941,31 +941,31 @@ func (netw *Combined) setMesh(
 		if err != nil {
 			if routingRulesSet {
 				if err := netw.policyRouter.CleanupRouting(); err != nil {
-					log.Println(internal.DeferPrefix, err)
+					log.Error(err)
 				}
 			}
 
 			if err := netw.ipForwardSetter.Unset(); err != nil {
-				log.Println(internal.DeferPrefix, err)
+				log.Error(err)
 			}
 
 			cfg := netw.fwConfig.CopyWith(
 				firewall.WithMeshnetInfo(nil),
 			)
 			if err := netw.configureFirewall(cfg); err != nil {
-				log.Println(internal.DeferPrefix, err)
+				log.Error(err)
 			}
 
 			if err := netw.dnsHostSetter.UnsetHosts(); err != nil {
-				log.Println(internal.DeferPrefix, err)
+				log.Error(err)
 			}
 
 			if err := netw.peerRouter.Flush(); err != nil {
-				log.Println(internal.DeferPrefix, err)
+				log.Error(err)
 			}
 
 			if err := netw.mesh.Disable(); err != nil {
-				log.Println(internal.DeferPrefix, err)
+				log.Error(err)
 			}
 		}
 	}()
@@ -974,7 +974,7 @@ func (netw *Combined) setMesh(
 	// be destroyed, therefore it's safe just to flush it here
 	if netw.isVpnSet {
 		if err := netw.router.Flush(); err != nil {
-			log.Println(internal.WarningPrefix, err)
+			log.Warn(err)
 		}
 	}
 
@@ -1041,7 +1041,7 @@ func (netw *Combined) setMesh(
 
 func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 	if err := netw.dnsHostSetter.UnsetHosts(); err != nil {
-		log.Println(internal.WarningPrefix, err)
+		log.Warn(err)
 	}
 
 	if err := netw.mesh.Refresh(cfg); err != nil {
@@ -1128,14 +1128,14 @@ func (netw *Combined) unSetMesh() error {
 	}
 
 	if err := netw.peerRouter.Flush(); err != nil {
-		log.Println(internal.WarningPrefix, "clearing peer routes:", err)
+		log.Warn("clearing peer routes:", err)
 	}
 
 	// If network is started, default might (in libtelio case will)
 	// be destroyed, therefore it's safe just to flush it here
 	if netw.isVpnSet {
 		if err := netw.router.Flush(); err != nil {
-			log.Println(internal.WarningPrefix, err)
+			log.Warn(err)
 		}
 	}
 
@@ -1229,11 +1229,7 @@ func (netw *Combined) SetLanDiscovery(enabled bool) {
 			netw.lanDiscovery,
 			netw.allowlist.Subnets,
 		); err != nil {
-			log.Println(
-				internal.ErrorPrefix,
-				"failed to set routing rules up after enabling lan discovery:",
-				err,
-			)
+			log.Error("failed to set routing rules up after enabling lan discovery:", err)
 		}
 	}
 }

@@ -214,3 +214,55 @@ func TestRpcState_HandlePauseEvents(t *testing.T) {
 		require.Equal(t, pb.PauseEventType_RECONNECT_FAILED, status.Type)
 	})
 }
+
+func TestRpcState_PreliminaryGroupAttachedToConnectingStatus(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name          string
+		prelimGroup   config.ServerGroup
+		expectedGroup config.ServerGroup
+	}{
+		{
+			name:          "specialty group is attached to connecting status",
+			prelimGroup:   config.ServerGroup_P2P,
+			expectedGroup: config.ServerGroup_P2P,
+		},
+		{
+			name:          "undefined group when connecting by server name",
+			prelimGroup:   config.ServerGroup_UNDEFINED,
+			expectedGroup: config.ServerGroup_UNDEFINED,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ts := setupTest(t)
+			ts.connParams.Set(
+				pb.ConnectionSource_MANUAL,
+				serverpicker.ServerParameters{Group: tt.prelimGroup},
+			)
+
+			go statusStream(ts.stateChan, ts.stopChan, testUID, ts.srv, ts.connParams)
+
+			ts.stateChan <- events.DataConnectChangeNotif{
+				Status: types.ConnectionStatus{
+					State: pb.ConnectionState_CONNECTING,
+					IP:    netip.MustParseAddr(testIP),
+				},
+			}
+
+			ts.srv.wg.Wait()
+
+			require.Len(t, ts.srv.states, 1)
+			status := ts.srv.states[0].GetConnectionStatus()
+			require.NotNil(t, status)
+			assert.Equal(t, pb.ConnectionState_CONNECTING, status.State)
+			require.NotNil(t, status.Parameters)
+			assert.Empty(t, status.Parameters.ServerName)
+			assert.Empty(t, status.Parameters.Country)
+			assert.Empty(t, status.Parameters.City)
+			assert.Equal(t, tt.expectedGroup, status.Parameters.Group)
+		})
+	}
+}

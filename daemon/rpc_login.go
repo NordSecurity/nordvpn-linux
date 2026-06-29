@@ -87,7 +87,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 	if err != nil {
 		eventReason = events.ReasonLoginGetUserInfoFailed
 
-		log.Println(internal.ErrorPrefix, "retrieving credentials:", err)
+		log.Error("retrieving credentials:", err)
 		if errors.Is(err, core.ErrServerInternal) {
 			return &pb.LoginResponse{
 				Type: internal.CodeInternalError,
@@ -105,7 +105,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.LoginResponse{
 			Type: internal.CodeConfigError,
 		}, nil
@@ -128,7 +128,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 		c.AutoConnectData.ID = credentials.ID
 		return c
 	}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.LoginResponse{
 			Type: internal.CodeConfigError,
 		}, nil
@@ -141,7 +141,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 	go StartNC("[login]", r.ncClient)
 
 	if err := r.RegisterDedicatedServers(); err != nil {
-		log.Println(internal.ErrorPrefix, "failed to sync device for dedicated servers:", err)
+		log.Error("failed to sync device for dedicated servers:", err)
 	}
 
 	r.publisher.Publish("user logged in")
@@ -308,7 +308,7 @@ func (r *RPC) LoginOAuth2Callback(ctx context.Context, in *pb.LoginOAuth2Callbac
 	go StartNC("[login callback]", r.ncClient)
 
 	if err := r.RegisterDedicatedServers(); err != nil {
-		log.Println(internal.ErrorPrefix, "failed to sync device for dedicated servers:", err)
+		log.Error("failed to sync device for dedicated servers:", err)
 	}
 
 	return &pb.LoginOAuth2CallbackResponse{

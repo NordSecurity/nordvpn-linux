@@ -13,7 +13,6 @@ import (
 	norddrop "github.com/NordSecurity/libdrop-go/v9"
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -26,21 +25,6 @@ type Fileshare struct {
 	storagePath  string
 	isProd       bool
 	mutex        sync.Mutex
-}
-
-func logLevelToPrefix(level norddrop.LogLevel) string {
-	switch level {
-	case norddrop.LogLevelCritical, norddrop.LogLevelError:
-		return internal.ErrorPrefix
-	case norddrop.LogLevelWarning:
-		return internal.WarningPrefix
-	case norddrop.LogLevelDebug, norddrop.LogLevelTrace:
-		return internal.DebugPrefix
-	case norddrop.LogLevelInfo:
-		return internal.InfoPrefix
-	default:
-		return internal.InfoPrefix
-	}
 }
 
 type defaultKeyStore struct {
@@ -61,8 +45,20 @@ type defaultLogger struct {
 	logLevel norddrop.LogLevel
 }
 
-func (dl defaultLogger) OnLog(level norddrop.LogLevel, msg string) {
-	log.Println(logLevelToPrefix(level), "DROP("+norddrop.Version()+"): "+msg)
+func (dl defaultLogger) OnLog(level norddrop.LogLevel, payload string) {
+	msg := "DROP(" + norddrop.Version() + "): " + payload
+	switch level {
+	case norddrop.LogLevelCritical, norddrop.LogLevelError:
+		log.Error(msg)
+	case norddrop.LogLevelWarning:
+		log.Warn(msg)
+	case norddrop.LogLevelDebug, norddrop.LogLevelTrace:
+		log.Debug(msg)
+	case norddrop.LogLevelInfo:
+		log.Info(msg)
+	default:
+		log.Info(msg)
+	}
 }
 
 func (dl defaultLogger) Level() norddrop.LogLevel {
@@ -151,7 +147,7 @@ func toInternalEventKind(kind norddrop.EventKind) fileshare.EventKind {
 			ByPeer:     v.ByPeer,
 		}
 	default:
-		log.Printf(internal.WarningPrefix+" unexpected norddrop.EventKind: %T\n", v)
+		log.Warnf("unexpected norddrop.EventKind: %T", v)
 		return fileshare.EventKindUnknown{}
 	}
 }
@@ -220,7 +216,7 @@ func (f *Fileshare) Enable(listenAddr netip.Addr) (err error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
-	log.Println(internal.InfoPrefix, "libdrop version:", norddrop.Version())
+	log.Info("libdrop version:", norddrop.Version())
 
 	if err = f.start(listenAddr, f.eventsDbPath, f.isProd, f.storagePath); err != nil {
 		if errors.Is(err, norddrop.ErrLibdropErrorAddrInUse) {
@@ -252,7 +248,7 @@ func (f *Fileshare) start(
 		err = f.norddrop.Start(listenAddr.String(), config)
 		if err != nil && !f.isProd && errors.Is(err, norddrop.ErrLibdropErrorUnknown) {
 			// for debug libdrop fails with unknown error when moose init fails to initialize, in this case add retry
-			log.Println(internal.DebugPrefix, "failed to start libdrop. Retry", i)
+			log.Debug("failed to start libdrop. Retry", i)
 			time.Sleep(10 * time.Millisecond)
 			continue
 		}
@@ -384,7 +380,7 @@ func directionFromTransferInfo(ti *norddrop.TransferInfo) pb.Direction {
 	case norddrop.TransferKindIncoming:
 		direction = pb.Direction_INCOMING
 	default:
-		log.Printf(internal.WarningPrefix+" unknown direction found when parsing libdrop transfers: %T\n", ti.Kind)
+		log.Warnf("unknown direction found when parsing libdrop transfers: %T", ti.Kind)
 		direction = pb.Direction_UNKNOWN_DIRECTION
 	}
 	return direction
@@ -405,7 +401,7 @@ func filesFromTransferInfo(ri *norddrop.TransferInfo) []*pb.File {
 		}
 		return files
 	default:
-		log.Printf(internal.WarningPrefix+" unknown transfer kind: %T\n", ti)
+		log.Warnf("unknown transfer kind: %T", ti)
 		return []*pb.File{}
 	}
 }
@@ -447,7 +443,7 @@ func statusFromOutgoingPath(outPath *norddrop.OutgoingPath) pb.Status {
 		case norddrop.OutgoingPathStateKindPaused:
 			status = pb.Status_PAUSED
 		default:
-			log.Printf(internal.WarningPrefix+" unknown file status in transfer: %T\n", lastState)
+			log.Warnf("unknown file status in transfer: %T", lastState)
 			status = pb.Status_BAD_STATUS
 		}
 	}
@@ -478,7 +474,7 @@ func determineFullOutgoingPath(outPath *norddrop.OutgoingPath) string {
 	case norddrop.OutgoingFileSourceBasePath:
 		return filepath.Join(pathSource.BasePath, outPath.RelativePath)
 	default:
-		log.Printf(internal.WarningPrefix+" unsupported path source: %T\n", outPath.Source)
+		log.Warnf("unsupported path source: %T", outPath.Source)
 		return ""
 	}
 }
@@ -509,7 +505,7 @@ func statusFromIncomingPath(inPath *norddrop.IncomingPath) pb.Status {
 		case norddrop.IncomingPathStateKindCompleted:
 			status = pb.Status_SUCCESS
 		case norddrop.IncomingPathStateKindFailed:
-			//no gosec violation, values from the enumeration are within the int32 max range
+			// no gosec violation, values from the enumeration are within the int32 max range
 			// #nosec G115
 			status = pb.Status(lastState.Status)
 		case norddrop.IncomingPathStateKindPaused:
@@ -521,7 +517,7 @@ func statusFromIncomingPath(inPath *norddrop.IncomingPath) pb.Status {
 		case norddrop.IncomingPathStateKindStarted:
 			status = pb.Status_ONGOING
 		default:
-			log.Printf(internal.WarningPrefix+" unknown file status in transfer: %T\n", lastState)
+			log.Warnf("unknown file status in transfer: %T", lastState)
 			status = pb.Status_BAD_STATUS
 		}
 	}
@@ -602,7 +598,7 @@ func determineTransferStatusAndAdjustFileStatuses(libdropTransfer *norddrop.Tran
 				}
 			}
 		case norddrop.TransferStateKindFailed:
-			//no gosec violation, values from the enumeration are within the int32 max range
+			// no gosec violation, values from the enumeration are within the int32 max range
 			// #nosec G115
 			status = pb.Status(lastState.Status)
 		}
@@ -685,7 +681,7 @@ func determineTransferPath(libdropTransfer *norddrop.TransferInfo, allFiles []*p
 					case norddrop.OutgoingFileSourceBasePath:
 						transferPath = filepath.Join(source.BasePath, dir)
 					default:
-						log.Printf(internal.WarningPrefix+" unsupported path source: %T\n", source)
+						log.Warnf("unsupported path source: %T", source)
 					}
 				}
 			}

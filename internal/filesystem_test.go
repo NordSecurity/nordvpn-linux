@@ -621,3 +621,159 @@ func TestIsProcessRunning(t *testing.T) {
 		})
 	}
 }
+
+func TestFindProcessPIDsByName(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	selfPID := 999
+
+	tests := []struct {
+		name      string
+		binary    string
+		selfPID   int
+		readdir   readdirFunc
+		readfile  readfileFunc
+		expected  []int
+		withError bool
+	}{
+		{
+			name:     "empty proc returns empty slice",
+			binary:   "nordfileshare",
+			selfPID:  selfPID,
+			readdir:  func(string) ([]os.DirEntry, error) { return []os.DirEntry{}, nil },
+			readfile: defaultReadfile,
+			expected: nil,
+		},
+		{
+			name:    "single matching process returns its PID",
+			binary:  "nordfileshare",
+			selfPID: selfPID,
+			readdir: func(string) ([]os.DirEntry, error) {
+				return []os.DirEntry{
+					&fs.MockDirEntry{DirName: "42"},
+				}, nil
+			},
+			readfile: func(string) ([]byte, error) {
+				return []byte("/usr/lib/nordvpn/nordfileshare\x00"), nil
+			},
+			expected: []int{42},
+		},
+		{
+			name:    "matches snap path by basename",
+			binary:  "nordfileshare",
+			selfPID: selfPID,
+			readdir: func(string) ([]os.DirEntry, error) {
+				return []os.DirEntry{
+					&fs.MockDirEntry{DirName: "100"},
+				}, nil
+			},
+			readfile: func(string) ([]byte, error) {
+				return []byte("/snap/nordvpn/x1/usr/lib/nordvpn/nordfileshare\x00"), nil
+			},
+			expected: []int{100},
+		},
+		{
+			name:    "matches different snap revisions",
+			binary:  "nordfileshare",
+			selfPID: selfPID,
+			readdir: func(string) ([]os.DirEntry, error) {
+				return []os.DirEntry{
+					&fs.MockDirEntry{DirName: "100"},
+					&fs.MockDirEntry{DirName: "200"},
+				}, nil
+			},
+			readfile: func(name string) ([]byte, error) {
+				if strings.Contains(name, "100") {
+					return []byte("/snap/nordvpn/x1/usr/lib/nordvpn/nordfileshare\x00"), nil
+				}
+				return []byte("/snap/nordvpn/x2/usr/lib/nordvpn/nordfileshare\x00"), nil
+			},
+			expected: []int{100, 200},
+		},
+		{
+			name:    "excludes self PID",
+			binary:  "nordfileshare",
+			selfPID: 42,
+			readdir: func(string) ([]os.DirEntry, error) {
+				return []os.DirEntry{
+					&fs.MockDirEntry{DirName: "42"},
+					&fs.MockDirEntry{DirName: "43"},
+				}, nil
+			},
+			readfile: func(string) ([]byte, error) {
+				return []byte("/usr/lib/nordvpn/nordfileshare\x00"), nil
+			},
+			expected: []int{43},
+		},
+		{
+			name:    "ignores non-matching processes",
+			binary:  "nordfileshare",
+			selfPID: selfPID,
+			readdir: func(string) ([]os.DirEntry, error) {
+				return []os.DirEntry{
+					&fs.MockDirEntry{DirName: "10"},
+					&fs.MockDirEntry{DirName: "20"},
+					&fs.MockDirEntry{DirName: "30"},
+				}, nil
+			},
+			readfile: func(name string) ([]byte, error) {
+				if strings.Contains(name, "20") {
+					return []byte("/usr/lib/nordvpn/nordfileshare\x00"), nil
+				}
+				return []byte("/usr/bin/other-binary\x00"), nil
+			},
+			expected: []int{20},
+		},
+		{
+			name:    "skips non-numeric dirs",
+			binary:  "nordfileshare",
+			selfPID: selfPID,
+			readdir: func(string) ([]os.DirEntry, error) {
+				return []os.DirEntry{
+					&fs.MockDirEntry{DirName: "not-a-pid"},
+					&fs.MockDirEntry{DirName: "self"},
+				}, nil
+			},
+			readfile: func(string) ([]byte, error) {
+				return []byte("/usr/lib/nordvpn/nordfileshare\x00"), nil
+			},
+			expected: nil,
+		},
+		{
+			name:    "skips unreadable cmdline",
+			binary:  "nordfileshare",
+			selfPID: selfPID,
+			readdir: func(string) ([]os.DirEntry, error) {
+				return []os.DirEntry{
+					&fs.MockDirEntry{DirName: "42"},
+				}, nil
+			},
+			readfile:  func(string) ([]byte, error) { return nil, errors.New("permission denied") },
+			expected:  nil,
+			withError: false,
+		},
+		{
+			name:    "readdir error returns error",
+			binary:  "nordfileshare",
+			selfPID: selfPID,
+			readdir: func(string) ([]os.DirEntry, error) {
+				return nil, errors.New("test error")
+			},
+			readfile:  defaultReadfile,
+			expected:  nil,
+			withError: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			pids, err := findProcessPIDsByName(test.binary, test.selfPID, test.readdir, test.readfile)
+			if test.withError {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+			}
+			assert.Equal(t, test.expected, pids)
+		})
+	}
+}

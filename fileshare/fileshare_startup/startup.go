@@ -2,6 +2,7 @@ package fileshare_startup
 
 import (
 	"net"
+	"time"
 
 	"google.golang.org/grpc"
 
@@ -13,6 +14,7 @@ import (
 )
 
 const transferHistoryChunkSize = 10000
+const disableTimeout = 5 * time.Second
 
 type FileshareHandle struct {
 	shutdownChan            <-chan struct{}
@@ -34,11 +36,23 @@ func (f *FileshareHandle) Shutdown() {
 
 	f.grpcServer.Stop()
 
-	if err := f.fileshareImplementation.Disable(); err != nil {
-		log.Println(internal.ErrorPrefix, "disabling fileshare:", err)
+	// Disable() is an FFI call into libdrop that can hang
+	done := make(chan error, 1)
+	go func() {
+		done <- f.fileshareImplementation.Disable()
+	}()
+
+	select {
+	case err := <-done:
+		if err != nil {
+			log.Error("disabling fileshare:", err)
+		}
+	case <-time.After(disableTimeout):
+		log.Error("fileshare Disable() timed out after", disableTimeout)
 	}
+
 	if err := f.grpcConn.Close(); err != nil {
-		log.Println(internal.ErrorPrefix, "closing grpc connection:", err)
+		log.Error("closing grpc connection:", err)
 	}
 }
 
@@ -71,7 +85,7 @@ func Startup(storagePath string,
 
 	go func() {
 		if err := grpcServer.Serve(serverListener); err != nil {
-			log.Fatalln(err)
+			log.Fatal(err)
 		}
 	}()
 

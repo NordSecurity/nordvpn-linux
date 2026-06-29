@@ -29,12 +29,12 @@ func main() {
 	path, glibcVersion := os.Args[1], os.Args[2]
 	file, err := elf.Open(path)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 
 	symbols, err := file.DynamicSymbols()
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatal(err)
 	}
 
 	versionSet := map[string]bool{}

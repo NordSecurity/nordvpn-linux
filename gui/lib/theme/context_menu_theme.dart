@@ -22,7 +22,6 @@ final class ContextMenuTheme extends ThemeExtension<ContextMenuTheme>
   final Duration animationDuration;
   final Curve animationCurve;
   final List<BoxShadow> menuBoxShadow;
-  final double menuShadowMargin;
   final double menuGap;
 
   ContextMenuTheme({
@@ -40,7 +39,6 @@ final class ContextMenuTheme extends ThemeExtension<ContextMenuTheme>
     required this.animationDuration,
     required this.animationCurve,
     required this.menuBoxShadow,
-    required this.menuShadowMargin,
     required this.menuGap,
   });
 }

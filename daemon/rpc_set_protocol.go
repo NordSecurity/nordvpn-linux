@@ -5,14 +5,13 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 func (r *RPC) SetProtocol(ctx context.Context, in *pb.SetProtocolRequest) (*pb.SetProtocolResponse, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 	}
 
 	if cfg.AutoConnectData.Protocol == in.Protocol {
@@ -35,7 +34,7 @@ func (r *RPC) SetProtocol(ctx context.Context, in *pb.SetProtocolRequest) (*pb.S
 		c.AutoConnectData.Protocol = in.GetProtocol()
 		return c
 	}); err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return &pb.SetProtocolResponse{
 			Response: &pb.SetProtocolResponse_ErrorCode{
 				ErrorCode: pb.SetErrorCode_CONFIG_ERROR,

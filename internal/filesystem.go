@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"golang.org/x/sys/unix"
@@ -91,13 +93,13 @@ func systemDFile(unsetEnv bool) *os.File {
 	defer func() {
 		if unsetEnv {
 			if err := os.Unsetenv(ListenPID); err != nil {
-				log.Println(DeferPrefix, err)
+				log.Error(err)
 			}
 			if err := os.Unsetenv(ListenFDS); err != nil {
-				log.Println(DeferPrefix, err)
+				log.Error(err)
 			}
 			if err := os.Unsetenv(ListenFDNames); err != nil {
-				log.Println(DeferPrefix, err)
+				log.Error(err)
 			}
 		}
 	}()
@@ -123,7 +125,7 @@ func SystemDListener() (net.Listener, error) {
 	file := systemDFile(true)
 	defer func() {
 		if err := file.Close(); err != nil {
-			log.Println(DeferPrefix, err)
+			log.Error(err)
 		}
 	}()
 	return net.FileListener(file)
@@ -176,7 +178,7 @@ func ManualListenerIfNotInUse(socket string, perm fs.FileMode, pidfile string) f
 		// and should be removed otherwise new socket listener will fail to start
 		if FileExists(socket) {
 			if err := FileDelete(socket); err != nil {
-				log.Println(WarningPrefix, "cleaning socket file:", err)
+				log.Warn("cleaning socket file:", err)
 			}
 		}
 
@@ -248,7 +250,7 @@ func checkPidFile(pidfile string) error {
 		pidFromFile, err := strconv.Atoi(strings.TrimSpace(string(out)))
 		if err != nil {
 			// pid value is not valid integer, some garbage from previous run/failure?
-			log.Println(WarningPrefix, fmt.Errorf("daemon pid file does not contain valid integer value: %w", err))
+			log.Warn(fmt.Errorf("daemon pid file does not contain valid integer value: %w", err))
 		} else {
 			procFile := fmt.Sprintf("/proc/%d/cmdline", pidFromFile)
 			out, err := FileRead(procFile)
@@ -259,7 +261,7 @@ func checkPidFile(pidfile string) error {
 		}
 		// invalid pid or process not found - remove pid file
 		if err := FileDelete(pidfile); err != nil {
-			log.Println(WarningPrefix, "cleaning pid file:", err)
+			log.Warn("cleaning pid file:", err)
 		}
 	}
 	return nil
@@ -268,7 +270,7 @@ func checkPidFile(pidfile string) error {
 func cleanPidFile(pidFile string) {
 	if pidFile != "" && FileExists(pidFile) {
 		if err := FileDelete(pidFile); err != nil {
-			log.Println(ErrorPrefix, "removing pid file:", err)
+			log.Error("removing pid file:", err)
 		}
 	}
 }
@@ -591,7 +593,7 @@ var (
 func IsProcessRunning(execPath string) bool {
 	isRunning, err := isProcessRunning(execPath, defaultReaddir, defaultReadfile)
 	if err != nil {
-		log.Println(WarningPrefix, "failed to check if process is running, returning false:", err)
+		log.Warn("failed to check if process is running, returning false:", err)
 		return false
 	}
 	return isRunning
@@ -617,6 +619,88 @@ func isProcessRunning(executablePath string, readdir readdirFunc, readfile readf
 	}
 
 	return false, nil
+}
+
+// FindProcessPIDsByName scans /proc for processes whose binary basename matches
+// binaryName, excluding the calling process. Handles snap revision path changes
+// where the full path differs but the binary name is the same.
+func FindProcessPIDsByName(binaryName string) []int {
+	pids, err := findProcessPIDsByName(binaryName, os.Getpid(), defaultReaddir, defaultReadfile)
+	if err != nil {
+		log.Warn("failed to find processes by name:", err)
+		return nil
+	}
+	return pids
+}
+
+func findProcessPIDsByName(
+	binaryName string,
+	selfPID int,
+	readdir readdirFunc,
+	readfile readfileFunc,
+) ([]int, error) {
+	procDirs, err := readdir("/proc")
+	if err != nil {
+		return nil, fmt.Errorf("reading /proc directories: %w", err)
+	}
+
+	var pids []int
+	for _, dir := range procDirs {
+		pid, err := strconv.Atoi(dir.Name())
+		if err != nil {
+			continue
+		}
+		if pid == selfPID {
+			continue
+		}
+
+		cmdline, err := readfile(filepath.Join("/proc", dir.Name(), "cmdline"))
+		if err != nil {
+			continue
+		}
+		args := strings.Split(string(cmdline), "\x00")
+		if len(args) > 0 && filepath.Base(args[0]) == binaryName {
+			pids = append(pids, pid)
+		}
+	}
+
+	return pids, nil
+}
+
+// KillStaleProcesses sends SIGTERM to each PID, waits up to 3 seconds for exit,
+// then sends SIGKILL if the process is still alive.
+func KillStaleProcesses(binaryName string, pids []int) {
+	for _, pid := range pids {
+		killStaleProcess(binaryName, pid)
+	}
+}
+
+func killStaleProcess(binaryName string, pid int) {
+	if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
+		if errors.Is(err, syscall.ESRCH) {
+			return
+		}
+		log.Warnf("failed to send SIGTERM to %s (pid %d): %s", binaryName, pid, err)
+		return
+	}
+	log.Infof("sent SIGTERM to stale %s (pid %d)", binaryName, pid)
+
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		if err := syscall.Kill(pid, 0); err != nil {
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	if err := syscall.Kill(pid, syscall.SIGKILL); err != nil {
+		if errors.Is(err, syscall.ESRCH) {
+			return
+		}
+		log.Warnf("failed to send SIGKILL to %s (pid %d): %s", binaryName, pid, err)
+		return
+	}
+	log.Warnf("sent SIGKILL to stale %s (pid %d) after SIGTERM timeout", binaryName, pid)
 }
 
 // UserLogOutput opens logFileName in the user's cache directory and returns it.

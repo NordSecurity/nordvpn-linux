@@ -43,7 +43,7 @@ func (r *RPC) StartJobs(
 	go r.emitAllowlistSnapshot()
 
 	gocronErrorLogger := func(_ uuid.UUID, jobName string, err error) {
-		log.Println(internal.ErrorPrefix, "job:", jobName, "failed:", err)
+		log.Error("job:", jobName, "failed:", err)
 	}
 
 	// order of the jobs below matters
@@ -53,7 +53,7 @@ func (r *RPC) StartJobs(
 		gocron.NewTask(JobCountries(r.dm, r.serversAPI)),
 		gocron.WithName("job countries"),
 		gocron.WithEventListeners(gocron.AfterJobRunsWithError(gocronErrorLogger))); err != nil {
-		log.Println(internal.WarningPrefix, "job countries schedule error:", err)
+		log.Warn("job countries schedule error:", err)
 	}
 
 	jobInsights, err := r.scheduler.NewJob(gocron.DurationJob(30*time.Minute),
@@ -61,13 +61,13 @@ func (r *RPC) StartJobs(
 		gocron.WithName("job insights"),
 		gocron.WithEventListeners(gocron.AfterJobRunsWithError(gocronErrorLogger)))
 	if err != nil {
-		log.Println(internal.WarningPrefix, "job insights schedule error:", err)
+		log.Warn("job insights schedule error:", err)
 	}
 
 	if _, err := r.scheduler.NewJob(gocron.DurationJob(1*time.Hour),
 		gocron.NewTask(JobServers(r.dm, r.serversAPI, true)),
 		gocron.WithName("job servers"), gocron.WithEventListeners(gocron.AfterJobRunsWithError(gocronErrorLogger))); err != nil {
-		log.Println(internal.WarningPrefix, "job servers schedule error:", err)
+		log.Warn("job servers schedule error:", err)
 	}
 	// TODO if autoconnect runs before servers job, it will return zero servers list
 
@@ -79,40 +79,40 @@ func (r *RPC) StartJobs(
 		gocron.NewTask(JobServerCheck(r.dm, r.serversAPI, r.netw, server)),
 		gocron.WithName("job servers check"),
 		gocron.WithEventListeners(gocron.AfterJobRunsWithError(gocronErrorLogger))); err != nil {
-		log.Println(internal.WarningPrefix, "job servers check schedule error:", err)
+		log.Warn("job servers check schedule error:", err)
 	}
 
 	if _, err := r.scheduler.NewJob(gocron.DurationJob(24*time.Hour),
 		gocron.NewTask(JobTemplates(r.cdn)),
 		gocron.WithName("job templates"),
 		gocron.WithEventListeners(gocron.AfterJobRunsWithError(gocronErrorLogger))); err != nil {
-		log.Println(internal.WarningPrefix, "job templates schedule error:", err)
+		log.Warn("job templates schedule error:", err)
 	}
 
 	if _, err := r.scheduler.NewJob(gocron.DurationJob(3*time.Hour),
 		gocron.NewTask(JobVersionCheck(r.dm, r.repo, r.statePublisher)),
 		gocron.WithName("job version"),
 		gocron.WithEventListeners(gocron.AfterJobRunsWithError(gocronErrorLogger))); err != nil {
-		log.Println(internal.WarningPrefix, "job version schedule error:", err)
+		log.Warn("job version schedule error:", err)
 	}
 
 	if _, err := r.scheduler.NewJob(gocron.DurationJob(heartBeatPeriod),
 		gocron.NewTask(JobHeartBeat(r.ac, heartBeatPublisher, heartBeatPeriod)),
 		gocron.WithName("job heart beat"),
 		gocron.WithEventListeners(gocron.AfterJobRunsWithError(gocronErrorLogger))); err != nil {
-		log.Println(internal.WarningPrefix, "job heart beat schedule error:", err)
+		log.Warn("job heart beat schedule error:", err)
 	}
 	if _, err := r.scheduler.NewJob(gocron.DurationJob(7*24*time.Hour), gocron.NewTask(func() {
 		r.events.Service.AccountCheck.Publish(nil)
 	})); err != nil {
-		log.Println(internal.WarningPrefix, "job account check schedule error:", err)
+		log.Warn("job account check schedule error:", err)
 	}
 
 	r.scheduler.Start()
 	for _, job := range r.scheduler.Jobs() {
 		err := job.RunNow()
 		if err != nil {
-			log.Println(internal.WarningPrefix, job.Name(), "first run error:", err)
+			log.Warn(job.Name(), "first run error:", err)
 		}
 	}
 
@@ -124,12 +124,12 @@ func (r *RPC) StartJobs(
 			case events.DataDisconnect:
 				last, err := jobInsights.LastRun()
 				if err != nil {
-					log.Println(internal.WarningPrefix, jobInsights.Name(), "getting last run time error:", err)
+					log.Warn(jobInsights.Name(), "getting last run time error:", err)
 				}
 				if time.Since(last).Minutes() > 1 {
 					err = jobInsights.RunNow()
 					if err != nil {
-						log.Println(internal.WarningPrefix, jobInsights.Name(), "after event run error:", err)
+						log.Warn(jobInsights.Name(), "after event run error:", err)
 					}
 				}
 			default:
@@ -150,7 +150,7 @@ func (r *RPC) StartRemoteConfigLoaderJob(
 				return
 			}
 			tryAfterDuration := network.ExponentialBackoff(i)
-			log.Println(internal.WarningPrefix, "loading remote config, attempt:", i, "; next try after:", tryAfterDuration, "; error:", err)
+			log.Warn("loading remote config, attempt:", i, "; next try after:", tryAfterDuration, "; error:", err)
 			<-time.After(tryAfterDuration)
 		}
 	}(remoteConfigLoader)
@@ -161,21 +161,21 @@ func (r *RPC) StartRemoteConfigLoaderJob(
 	if internal.IsDevEnv(string(r.environment)) && os.Getenv(envRcLoadTime) != "" {
 		tm, err := strconv.Atoi(os.Getenv(envRcLoadTime))
 		if err != nil {
-			log.Println(internal.WarningPrefix, "converting remote config load time:", err)
+			log.Warn("converting remote config load time:", err)
 		} else {
 			if tm >= 1 && tm < 100 {
 				rcLoadTime = time.Duration(tm) * time.Minute
 			}
 		}
 	}
-	log.Println(internal.InfoPrefix, "remote config download job time period:", rcLoadTime)
+	log.Info("remote config download job time period:", rcLoadTime)
 	_, err := r.scheduler.NewJob(gocron.DurationJob(rcLoadTime), gocron.NewTask(func() {
 		if err := remoteConfigLoader.Load(); err != nil {
-			log.Println(internal.ErrorPrefix, "remote config load error:", err)
+			log.Error("remote config load error:", err)
 		}
 	}), gocron.WithName("job config loader"))
 	if err != nil {
-		log.Println(internal.WarningPrefix, "job remote config loader schedule error:", err)
+		log.Warn("job remote config loader schedule error:", err)
 	}
 }
 
@@ -183,7 +183,7 @@ func (r *RPC) StartKillSwitch() {
 	var cfg config.Config
 	err := r.cm.Load(&cfg)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, err)
+		log.Error(err)
 		return
 	}
 
@@ -197,7 +197,7 @@ func (r *RPC) StartKillSwitch() {
 			r.emitMigrationEvent(firewall.NewNftablesApplyEvent(err))
 		}
 		if err != nil {
-			log.Println(internal.ErrorPrefix, "starting killswitch:", err)
+			log.Error("starting killswitch:", err)
 			return
 		}
 
@@ -205,7 +205,7 @@ func (r *RPC) StartKillSwitch() {
 			err := iptables.CleanUpIptables()
 			r.emitMigrationEvent(firewall.NewIptablesCleanupEvent(err))
 			if err != nil {
-				log.Println(internal.ErrorPrefix, "cleaning iptables", err)
+				log.Error("cleaning iptables", err)
 				return
 			}
 		}
@@ -232,7 +232,7 @@ func (r *RPC) StopKillSwitch() error {
 		// do not unset killswitch rules if system is in shutdown or reboot
 		shutdownIsActive := r.systemShutdown.Load() || internal.IsSystemShutdown()
 		if shutdownIsActive {
-			log.Println(internal.InfoPrefix, "detected system reboot - do not remove killswitch protection.")
+			log.Info("detected system reboot - do not remove killswitch protection.")
 			return nil
 		}
 		if err := r.netw.UnsetKillSwitch(); err != nil {
@@ -247,7 +247,7 @@ func (r *RPC) StartSystemShutdownMonitor() {
 	// get connection to system dbus
 	conn, err := dbus.SystemBus()
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "getting system dbus:", err)
+		log.Error("getting system dbus:", err)
 		return
 	}
 	defer conn.Close()
@@ -259,7 +259,7 @@ func (r *RPC) StartSystemShutdownMonitor() {
 		dbus.WithMatchMember("JobNew"),
 	)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "registering dbus signal monitor:", err)
+		log.Error("registering dbus signal monitor:", err)
 		return
 	}
 
@@ -270,13 +270,13 @@ func (r *RPC) StartSystemShutdownMonitor() {
 	   string "reboot.target"
 	*/
 
-	log.Println(internal.InfoPrefix, "dbus monitor started, waiting for signals...")
+	log.Info("dbus monitor started, waiting for signals...")
 
 	dbusSignalCh := make(chan *dbus.Signal, 1)
 	conn.Signal(dbusSignalCh)
 	for signal := range dbusSignalCh {
 		if isSystemShutdownSignal(signal) {
-			log.Println(internal.InfoPrefix, "got dbus signal - shutdown detected!")
+			log.Info("got dbus signal - shutdown detected!")
 			r.systemShutdown.Store(true)
 			return
 		}
@@ -300,8 +300,7 @@ func isSystemShutdownSignal(sig *dbus.Signal) bool {
 }
 
 func (r *RPC) fallbackTechnology(targetTechnology config.Technology) error {
-	log.Println(internal.DebugPrefix,
-		"technology was configured to NordWhisper, but NordWhisper was disabled, switching to",
+	log.Debug("technology was configured to NordWhisper, but NordWhisper was disabled, switching to",
 		targetTechnology.String())
 	v, err := r.factory(targetTechnology)
 	if err != nil {
@@ -327,8 +326,7 @@ func (r *RPC) fallbackTechnology(targetTechnology config.Technology) error {
 func (r *RPC) fallbackDedicatedServer(cfg config.Config) config.Config {
 	serviceData, err := r.ac.GetDedicatedServerService()
 	if err != nil {
-		log.Println(internal.WarningPrefix,
-			"getting dedicated servers service status to determine if fallback is needed:", err)
+		log.Error("getting dedicated servers service status to determine if fallback is needed:", err)
 		return cfg
 	}
 
@@ -339,8 +337,7 @@ func (r *RPC) fallbackDedicatedServer(cfg config.Config) config.Config {
 			c.AutoConnectData = cfg.AutoConnectData
 			return c
 		}); err != nil {
-			log.Println(internal.ErrorPrefix,
-				"failed to save config after a fallback from dedicated server:", err)
+			log.Error("failed to save config after a fallback from dedicated server:", err)
 		}
 	}
 
@@ -352,7 +349,7 @@ func (r *RPC) StartAutoConnect(timeoutFn network.CalculateRetryDelayForAttempt) 
 	tries := 1
 	for {
 		if r.netw.IsVPNActive() {
-			log.Println(internal.InfoPrefix, "auto-connect success (already connected)")
+			log.Info("auto-connect success (already connected)")
 			return nil
 		}
 
@@ -360,13 +357,13 @@ func (r *RPC) StartAutoConnect(timeoutFn network.CalculateRetryDelayForAttempt) 
 			if errors.Is(err, errAutoConnectDisabled) {
 				return nil
 			}
-			log.Println(internal.ErrorPrefix, "autoconnect failed:", err)
+			log.Error("autoconnect failed:", err)
 		} else {
 			return nil
 		}
 		tryAfterDuration := timeoutFn(tries)
 		tries++
-		log.Println(internal.WarningPrefix, "will retry(", tries, ") auto-connect after:", tryAfterDuration)
+		log.Warn("will retry(", tries, ") auto-connect after:", tryAfterDuration)
 		<-time.After(tryAfterDuration)
 	}
 }
@@ -378,20 +375,19 @@ func (r *RPC) doAutoConnect() error {
 	var cfg config.Config
 	err := r.cm.Load(&cfg)
 	if err != nil {
-		log.Println(internal.ErrorPrefix, "auto-connect failed:", err)
+		log.Error("auto-connect failed:", err)
 		return err
 	}
 
 	if !cfg.AutoConnect {
-		log.Println(internal.InfoPrefix, "skipping auto-connect: disabled in config")
+		log.Info("skipping auto-connect: disabled in config")
 		return errAutoConnectDisabled
 	}
 
 	if cfg.Technology == config.Technology_NORDWHISPER && !features.NordWhisperEnabled {
-		log.Println(internal.DebugPrefix,
-			"technology was configured to NordWhisper, but NordWhisper was disabled, switching to NordLynx")
+		log.Debug("technology was configured to NordWhisper, but NordWhisper was disabled, switching to NordLynx")
 		if err := r.fallbackTechnology(config.Technology_NORDLYNX); err != nil {
-			log.Println(internal.ErrorPrefix, "failed to fall back to NordLynx technology, will try OpenVPN")
+			log.Error("failed to fall back to NordLynx technology, will try OpenVPN")
 			if err := r.fallbackTechnology(config.Technology_OPENVPN); err != nil {
 				return fmt.Errorf("falling back to OpenVPN technology: %s", err)
 			}
@@ -420,7 +416,7 @@ func (r *RPC) doAutoConnect() error {
 	})
 
 	if err == nil && server.err == nil {
-		log.Println(internal.InfoPrefix, "auto-connect success")
+		log.Info("auto-connect success")
 		r.RequestedConnParams.Set(
 			pb.ConnectionSource_AUTO,
 			serverpicker.ServerParameters{
@@ -431,7 +427,7 @@ func (r *RPC) doAutoConnect() error {
 		)
 		return nil
 	}
-	log.Println(internal.ErrorPrefix, "auto-connect failed, err1:", server.err, "| err2:", err)
+	log.Error("auto-connect failed, err1:", server.err, "| err2:", err)
 
 	return errors.Join(err, server.err)
 }
@@ -448,24 +444,24 @@ func (r *RPC) StartAutoMeshnet(meshService *meshnet.Server, timeoutFn network.Ca
 	tries := 1
 	for {
 		if r.netw.IsMeshnetActive() {
-			log.Println(internal.InfoPrefix, "auto-enable mesh success (already enabled)")
+			log.Info("auto-enable mesh success (already enabled)")
 			return nil
 		}
 
 		err := meshService.StartMeshnet()
 		if meshErrorCheck(err) {
 			if err != nil {
-				log.Println(internal.ErrorPrefix, "auto-enable mesh failed with error:", err)
+				log.Error("auto-enable mesh failed with error:", err)
 				return err
 			} else {
-				log.Println(internal.InfoPrefix, "auto-enable mesh success")
+				log.Info("auto-enable mesh success")
 				return nil
 			}
 		}
-		log.Println(internal.ErrorPrefix, "err1:", err)
+		log.Error("err1:", err)
 		tryAfterDuration := timeoutFn(tries)
 		tries++
-		log.Println(internal.WarningPrefix, "will retry(", tries, ") enable mesh after:", tryAfterDuration)
+		log.Warn("will retry(", tries, ") enable mesh after:", tryAfterDuration)
 		<-time.After(tryAfterDuration)
 	}
 }

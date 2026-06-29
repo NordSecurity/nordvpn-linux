@@ -5,17 +5,17 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 )
 
-// ToMooseStrings converts a UIEventContext to Moose analytics string values.
-func ToMooseStrings(ctx *UIEventContext) events.UiItemsAction {
-	if ctx == nil {
+// ProtoToMooseStrings converts a protobuf UIEvent directly to Moose analytics.
+func ProtoToMooseStrings(e *pb.UIEvent) events.UiItemsAction {
+	if e == nil {
 		return events.UiItemsAction{}
 	}
 
 	return events.UiItemsAction{
-		FormReference: formReferenceToString(ctx.FormReference),
-		ItemName:      itemNameToString(ctx.ItemName),
-		ItemType:      itemTypeToString(ctx.ItemType),
-		ItemValue:     itemValueToString(ctx.ItemValue),
+		FormReference: formReferenceToString(e.GetFormReference()),
+		ItemName:      itemNameToString(e.GetItemName()),
+		ItemType:      itemTypeToString(e.GetItemType()),
+		ItemValue:     itemValueToString(e.GetItemValue()),
 	}
 }
 
@@ -32,6 +32,8 @@ func formReferenceToString(ref pb.UIEvent_FormReference) string {
 		return "home_screen"
 	case pb.UIEvent_GUI:
 		return "gui"
+	case pb.UIEvent_CONNECTION_INFO:
+		return "connection_info"
 	}
 	return ""
 }
@@ -59,6 +61,12 @@ func itemNameToString(name pb.UIEvent_ItemName) string {
 		return "meshnet_invite_send"
 	case pb.UIEvent_PAUSE:
 		return "pause"
+	case pb.UIEvent_RECONNECT:
+		return "reconnect"
+	case pb.UIEvent_CHANGE_SETTINGS:
+		return "change_vpn_settings"
+	case pb.UIEvent_GET_HELP:
+		return "help"
 	}
 	return ""
 }

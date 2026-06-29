@@ -4,12 +4,16 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"google.golang.org/grpc/status"
 )
+
+const processStopTimeout = 5 * time.Second
 
 type ProcessClient interface {
 	Ping(nowait bool) error
@@ -53,7 +57,7 @@ func (g *GRPCChildProcessManager) StartProcess() (StartupErrorCode, error) {
 		var exiterr *exec.ExitError
 		if errors.As(err, &exiterr) {
 			exitCode := StartupErrorCode(exiterr.ExitCode())
-			log.Println(internal.ErrorPrefix, "failed to start:", err)
+			log.Error("failed to start:", err)
 			return exitCode, nil
 		}
 		return 0, fmt.Errorf("failed to start the process: %w", err)
@@ -70,10 +74,36 @@ func (g *GRPCChildProcessManager) StartProcess() (StartupErrorCode, error) {
 func (g *GRPCChildProcessManager) StopProcess(disable bool) error {
 	err := g.processClient.Stop(disable)
 	if err != nil {
-		return fmt.Errorf("stopping process: %w", err)
+		log.Warnf("gRPC stop for %s: %s",
+			filepath.Base(g.processBinaryPath), err)
 	}
 
-	return nil
+	// ensure process is terminated
+	g.confirmProcessDeath()
+
+	return err
+}
+
+func (g *GRPCChildProcessManager) confirmProcessDeath() {
+	binaryName := filepath.Base(g.processBinaryPath)
+
+	if pids := internal.FindProcessPIDsByName(binaryName); len(pids) == 0 {
+		return
+	}
+
+	deadline := time.Now().Add(processStopTimeout)
+	for time.Now().Before(deadline) {
+		time.Sleep(1 * time.Second)
+		if pids := internal.FindProcessPIDsByName(binaryName); len(pids) == 0 {
+			return
+		}
+	}
+
+	if pids := internal.FindProcessPIDsByName(binaryName); len(pids) > 0 {
+		log.Warnf("%s still running after %s, force killing PIDs: %v",
+			binaryName, processStopTimeout, pids)
+		internal.KillStaleProcesses(binaryName, pids)
+	}
 }
 
 func (g *GRPCChildProcessManager) RestartProcess() error {

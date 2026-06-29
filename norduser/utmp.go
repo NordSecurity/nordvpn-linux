@@ -56,7 +56,6 @@ import (
 	"fmt"
 	"unsafe"
 
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -115,7 +114,7 @@ func getActiveUsers() (userData, error) {
 
 		desktopSession, err := findEnvVariableForPID(loginPID, "XDG_CURRENT_DESKTOP")
 		if err != nil {
-			log.Printf("%s looking up XDG_CURRENT_DESKTOP for %s: %s", internal.ErrorPrefix, username, err)
+			log.Errorf("looking up XDG_CURRENT_DESKTOP for %s: %s", username, err)
 			continue
 		}
 
