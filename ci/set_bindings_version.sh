@@ -30,7 +30,7 @@ new_module="${repo_path}/${major_version}"
 if [[ -n "${current_major}" && -n "${major_version}" && "${current_major}" != "${major_version}" ]]; then
   # NOTE: GONOSUMDB allows ignoring module checksum check made by go. This is
   # not needed for regular builds, because we commit changed go.sum which is
-  # trusted by go tooling, but when we are changing module on the fly, go
+  # trusted by go tooling. But when we are changing module on the fly, go
   # needs to recompute checksum database and we don't allow to do this in
   # docker, so this temporary override here allows module change on the fly
   # without compilation errors.
