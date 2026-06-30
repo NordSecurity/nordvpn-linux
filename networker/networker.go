@@ -731,7 +731,7 @@ func (netw *Combined) SetAllowlist(allowlist config.Allowlist) error {
 	} else {
 		netw.allowlist = allowlist
 		if netw.lanDiscovery {
-			netw.allowlist = addLANPermissions(allowlist)
+			netw.allowlist = addLANDiscoverySubnets(allowlist)
 		}
 	}
 
@@ -751,7 +751,7 @@ func (netw *Combined) SetAllowlist(allowlist config.Allowlist) error {
 func (netw *Combined) setAllowlist(allowlist config.Allowlist) error {
 	// allow traffic to LAN - only when user enabled lan-discovery
 	if netw.lanDiscovery {
-		allowlist = addLANPermissions(allowlist)
+		allowlist = addLANDiscoverySubnets(allowlist)
 	}
 
 	// adjust allow subnet routing rules
