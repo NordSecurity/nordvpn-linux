@@ -17,14 +17,16 @@ func (r *RPC) SetLANDiscovery(ctx context.Context, in *pb.SetLANDiscoveryRequest
 		return &pb.SetLANDiscoveryResponse{
 			Response: &pb.SetLANDiscoveryResponse_ErrorCode{
 				ErrorCode: pb.SetErrorCode_CONFIG_ERROR,
-			}}, nil
+			},
+		}, nil
 	}
 
 	if cfg.LanDiscovery == in.GetEnabled() {
 		return &pb.SetLANDiscoveryResponse{
 			Response: &pb.SetLANDiscoveryResponse_ErrorCode{
 				ErrorCode: pb.SetErrorCode_ALREADY_SET,
-			}}, nil
+			},
+		}, nil
 	}
 
 	subnets := cfg.AutoConnectData.Allowlist.Subnets
@@ -68,7 +70,8 @@ func (r *RPC) SetLANDiscovery(ctx context.Context, in *pb.SetLANDiscoveryRequest
 		return &pb.SetLANDiscoveryResponse{
 			Response: &pb.SetLANDiscoveryResponse_ErrorCode{
 				ErrorCode: pb.SetErrorCode_CONFIG_ERROR,
-			}}, nil
+			},
+		}, nil
 	}
 
 	r.events.Settings.LANDiscovery.Publish(in.GetEnabled())
@@ -83,5 +86,7 @@ func (r *RPC) SetLANDiscovery(ctx context.Context, in *pb.SetLANDiscoveryRequest
 
 	return &pb.SetLANDiscoveryResponse{
 		Response: &pb.SetLANDiscoveryResponse_SetLanDiscoveryStatus{
-			SetLanDiscoveryStatus: status}}, nil
+			SetLanDiscoveryStatus: status,
+		},
+	}, nil
 }
