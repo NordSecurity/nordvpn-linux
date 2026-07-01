@@ -43,19 +43,25 @@ Future<void> resizeMainWindow() async {
     final textScaleFactor =
         WidgetsBinding.instance.platformDispatcher.textScaleFactor;
 
+    final targetSize = isTrayMode ? trayWindowSize : windowDefaultSize;
+    final targetMinSize = isTrayMode ? trayWindowSize : windowMinSize;
+
     WindowOptions windowOptions = WindowOptions(
-      size: windowDefaultSize * textScaleFactor,
-      minimumSize: windowMinSize * textScaleFactor,
+      size: targetSize * textScaleFactor,
+      minimumSize: targetMinSize * textScaleFactor,
     );
     windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show();
-      await windowManager.focus();
-      // Hackish fix to set minimum window size.
-      // First setMinimumSize is not working, but works calling with delay.
-      // Sometimes works also without delayed future. to be sure call with delay.
-      Future.delayed(Duration(microseconds: 0), () async {
-        await windowManager.setMinimumSize(windowMinSize * textScaleFactor);
-      });
+      if (!isTrayMode) {
+        // In tray mode the Go side controls show/hide via SIGUSR1; don't
+        // auto-show here or the toggle state gets out of sync.
+        await windowManager.show();
+        await windowManager.focus();
+        // Hackish fix to set minimum window size.
+        // First setMinimumSize is not working, but works calling with delay.
+        Future.delayed(Duration(microseconds: 0), () async {
+          await windowManager.setMinimumSize(windowMinSize * textScaleFactor);
+        });
+      }
     });
   }
 }

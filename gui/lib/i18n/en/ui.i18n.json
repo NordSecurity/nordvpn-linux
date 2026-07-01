@@ -281,5 +281,6 @@
   "reconnect": "Reconnect",
   "changeVPNsettings": "Change VPN settings",
   "getHelp": "Get help",
-  "pauseConnection": "Pause connection"
+  "pauseConnection": "Pause connection",
+  "openApp": "Open App"
 }

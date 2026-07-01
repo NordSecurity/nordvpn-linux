@@ -12,14 +12,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/NordSecurity/systray"
 	"golang.org/x/net/netutil"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
 	childprocess "github.com/NordSecurity/nordvpn-linux/child_process"
-	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
@@ -28,7 +26,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/norduser/process"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/NordSecurity/nordvpn-linux/tray"
-	"github.com/NordSecurity/nordvpn-linux/uievent"
 )
 
 // Value set when building the application
@@ -56,56 +53,10 @@ func addAutostart() (string, error) {
 	return path, internal.FileWrite(path, []byte(autostartDesktopFileContents), internal.PermUserRW)
 }
 
-func startTray(quitChan chan<- norduser.StopRequest) {
-	daemonURL := fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
-	uiEventInterceptor := uievent.NewClientInterceptor(daemonpb.UIEvent_TRAY)
-
-	conn, err := grpc.NewClient(
-		daemonURL,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(uiEventInterceptor.UnaryInterceptor),
-		grpc.WithStreamInterceptor(uiEventInterceptor.StreamInterceptor),
-	)
-
-	var client daemonpb.DaemonClient
-	if err == nil {
-		client = daemonpb.NewDaemonClient(conn)
-	} else {
-		log.Error("Error connecting to the NordVPN daemon:", err)
-		return
-	}
-	ReportTelemetry(conn, ReportOnStart, false)
-
-	ti := tray.NewTrayInstance(client, quitChan)
-	ti.Start()
-
-	topLevelCtx, topLevelCancelFunc := context.WithCancel(context.Background())
-
-	onExit := func() {
-		log.Info("Exiting systray")
-		ReportTelemetry(conn, ReportOnExit, true)
-		ti.OnExit()
-		topLevelCancelFunc()
-	}
-
-	onReady := func() {
-		log.Info("Starting systray")
-		go ti.MonitorConnection(topLevelCtx, conn)
-		ti.OnReady(topLevelCtx)
-	}
-
-	trayStatus := ti.WaitInitialTrayStatus()
-	if trayStatus != tray.Enabled {
-		return
-	}
-
-	for {
-		if systray.IsAvailable() {
-			systray.Run(onReady, onExit)
-			break
-		}
-		<-time.After(10 * time.Second)
-	}
+func startTray() {
+	log.Info("Starting systray")
+	tray.Start()
+	log.Info("Exiting systray")
 }
 
 func shouldEnableFileshare(uid uint32) (bool, error) {
@@ -170,9 +121,7 @@ func waitForShutdown(stopChan <-chan norduser.StopRequest,
 	// shutdownChan will be closed once the shutdown operation is finished
 	<-fileshareShutdownChan
 
-	systray.Quit()
-	// We need to give systray some time to clean up after quiting. Otherwise, when the main app is restarted
-	// two trays will be visible for a split second.
+	tray.Stop()
 	<-time.After(500 * time.Millisecond)
 
 	log.Info("Norduser daemon has stopped")
@@ -281,7 +230,7 @@ func startSnap() {
 		}
 	}()
 
-	go startTray(stopChan)
+	go startTray()
 
 	log.Info("Daemon has started")
 
@@ -338,7 +287,7 @@ func start() {
 		}
 	}()
 
-	go startTray(stopChan)
+	go startTray()
 
 	log.Info("Norduser daemon has started")
 

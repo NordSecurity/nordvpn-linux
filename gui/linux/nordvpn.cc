@@ -1,11 +1,75 @@
 #include "nordvpn.h"
 
 #include <flutter_linux/flutter_linux.h>
+#include <glib-unix.h>
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
 #endif
 
 #include "flutter/generated_plugin_registrant.h"
+
+// Tray popup: pointer to the window so the SIGUSR1 handler can reach it.
+static GtkWindow* gTrayWindow = nullptr;
+
+// Positions the tray popup window in the corner near the panel.
+// Must be called on X11; no-op on other backends.
+static void tray_window_reposition(GtkWindow* window) {
+#ifdef GDK_WINDOWING_X11
+  GdkDisplay* gdk_display = gdk_display_get_default();
+  if (!GDK_IS_X11_DISPLAY(gdk_display)) return;
+
+  GdkMonitor* monitor = gdk_display_get_primary_monitor(gdk_display);
+  if (monitor == nullptr) monitor = gdk_display_get_monitor(gdk_display, 0);
+  if (monitor == nullptr) return;
+
+  GdkRectangle geometry;
+  GdkRectangle workarea;
+  gdk_monitor_get_geometry(monitor, &geometry);
+  gdk_monitor_get_workarea(monitor, &workarea);
+
+  const int window_width  = 380;
+  const int window_height = 640;
+  const int margin = 8;
+
+  int x = (workarea.x + workarea.width) - window_width - margin;
+
+  gboolean panel_at_bottom =
+      (workarea.y + workarea.height) < (geometry.y + geometry.height);
+  int y = panel_at_bottom
+      ? (workarea.y + workarea.height) - window_height - margin
+      : workarea.y + margin;
+
+  gtk_window_move(window, x, y);
+#endif
+}
+
+// Called on the GLib main loop when SIGUSR1 is received. Toggles visibility.
+static gboolean on_tray_toggle(gpointer) {
+  if (gTrayWindow == nullptr) return G_SOURCE_CONTINUE;
+  if (gtk_widget_is_visible(GTK_WIDGET(gTrayWindow))) {
+    gtk_widget_hide(GTK_WIDGET(gTrayWindow));
+  } else {
+    tray_window_reposition(gTrayWindow);
+    gtk_widget_show(GTK_WIDGET(gTrayWindow));
+    gtk_window_present(gTrayWindow);
+  }
+  return G_SOURCE_CONTINUE;
+}
+
+// Called ~150 ms after focus-out: hide only if the window still lacks focus.
+// The delay absorbs transient focus changes (e.g. GNOME's AppIndicator briefly
+// stealing focus while it opens/closes its empty menu popup on icon click).
+static gboolean on_focus_out_delayed(GtkWidget* widget) {
+  if (!gtk_window_has_toplevel_focus(GTK_WINDOW(widget))) {
+    gtk_widget_hide(widget);
+  }
+  return G_SOURCE_REMOVE;
+}
+
+static gboolean on_focus_out(GtkWidget* widget, GdkEventFocus*, gpointer) {
+  g_timeout_add(150, (GSourceFunc)on_focus_out_delayed, widget);
+  return FALSE;
+}
 
 struct _NordVPNApplication {
   GtkApplication parent_instance;
@@ -48,15 +112,50 @@ static void nordvpn_application_activate(GApplication* application) {
   }
 
   // The minimum size is replaced in flutter code, but it is not always working.
-  // As a backup set also here to a minimum value.
-  GdkGeometry hints;
-  hints.min_width = 900;
-  hints.min_height = 700;
-  gtk_window_set_geometry_hints(window, NULL, &hints, GDK_HINT_MIN_SIZE);
+  // Skip in tray mode: the window is 380x640 and Flutter sets its own minimum.
+  if (g_getenv("NORDVPN_TRAY_LAUNCH") == nullptr) {
+    GdkGeometry hints;
+    hints.min_width = 900;
+    hints.min_height = 700;
+    gtk_window_set_geometry_hints(window, NULL, &hints, GDK_HINT_MIN_SIZE);
+  }
 
-  // Creates the window hidden to reduce size flickering. The size and display are handled by flutter
+  if (g_getenv("NORDVPN_TRAY_LAUNCH") != nullptr) {
+    // No title bar or borders.
+    gtk_window_set_decorated(window, FALSE);
+    // Popup-menu hint: WM will not allow moving or resizing, and the window
+    // won't appear in the taskbar/pager.
+    gtk_window_set_type_hint(window, GDK_WINDOW_TYPE_HINT_POPUP_MENU);
+    // The popup-menu hint disables keyboard focus by default; re-enable it so
+    // focus-out events fire and Flutter input works.
+    gtk_window_set_accept_focus(window, TRUE);
+    // Keep the popup above all other windows.
+    gtk_window_set_keep_above(window, TRUE);
+    // Hide when the user clicks outside (focus moves to another window).
+    g_signal_connect(window, "focus-out-event", G_CALLBACK(on_focus_out), nullptr);
+    // SIGUSR1 toggles show/hide; g_unix_signal_add routes it safely through
+    // the GLib main loop so we can call GTK functions in the callback.
+    gTrayWindow = window;
+    g_unix_signal_add(SIGUSR1, on_tray_toggle, nullptr);
+  }
+
   gtk_widget_realize(GTK_WIDGET(window));
-  gtk_widget_hide(GTK_WIDGET(window));
+
+  // Position before showing to avoid a flash at (0,0).
+  // gtk_window_move only takes effect on X11/XWayland, which is the only
+  // backend used in tray mode.
+  if (g_getenv("NORDVPN_TRAY_LAUNCH") != nullptr) {
+    tray_window_reposition(window);
+  }
+
+  if (g_getenv("NORDVPN_TRAY_LAUNCH") != nullptr) {
+    // Show immediately; the window is already positioned above.
+    gtk_widget_show(GTK_WIDGET(window));
+    gtk_window_present(window);
+  } else {
+    // Normal mode: start hidden, Flutter calls windowManager.show() when ready.
+    gtk_widget_hide(GTK_WIDGET(window));
+  }
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(project, self->dart_entrypoint_arguments);

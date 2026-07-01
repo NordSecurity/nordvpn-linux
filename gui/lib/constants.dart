@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -41,10 +43,24 @@ final RegExp ipv4Regex = RegExp(
 
 const defaultTheme = ThemeMode.system;
 
+// True when the app was launched from the system tray (set by tray/gui.go).
+final isTrayMode = !kIsWeb && _checkTrayMode();
+
+bool _checkTrayMode() {
+  try {
+    return Platform.environment['NORDVPN_TRAY_LAUNCH'] == '1';
+  } catch (_) {
+    return false;
+  }
+}
+
 // Main window sizes
 final windowMinSize = Size(900, 700);
 final windowDefaultSize = Size(900, 700);
 final windowMaxSize = Size.fromWidth(1200);
+
+// Tray popup size — compact, no nav rail
+final trayWindowSize = Size(380, 640);
 final fastestServerLabel = "${t.ui.fastestServer} (${t.ui.quickConnect})";
 
 // server group backend names

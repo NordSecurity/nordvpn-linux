@@ -2168,6 +2168,9 @@ class TranslationsUiEn {
 
 	/// en: 'Pause connection'
 	String get pauseConnection => 'Pause connection';
+
+	/// en: 'Open App'
+	String get openApp => 'Open App';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -2877,6 +2880,7 @@ extension on Translations {
 			'ui.changeVPNsettings' => 'Change VPN settings',
 			'ui.getHelp' => 'Get help',
 			'ui.pauseConnection' => 'Pause connection',
+			'ui.openApp' => 'Open App',
 			_ => null,
 		};
 	}

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:go_router/go_router.dart';
+import 'package:nordvpn/constants.dart';
 import 'package:nordvpn/data/providers/account_controller.dart';
 import 'package:nordvpn/data/providers/consent_status_provider.dart';
 import 'package:nordvpn/data/providers/grpc_connection_controller.dart';
@@ -152,7 +153,7 @@ final class RedirectState extends ChangeNotifier {
     if (!isLoggedIn) return AppRoute.login;
 
     if (_shouldRedirectToVpnScreen(uri)) {
-      return AppRoute.vpn;
+      return isTrayMode ? AppRoute.tray : AppRoute.vpn;
     }
     return null;
   }

@@ -19,6 +19,7 @@ import 'package:nordvpn/settings/settings_home_screen.dart';
 import 'package:nordvpn/settings/terms_screen.dart';
 import 'package:nordvpn/settings/threat_protection_settings.dart';
 import 'package:nordvpn/settings/vpn_connection_settings.dart';
+import 'package:nordvpn/tray/tray_app_widget.dart';
 import 'package:nordvpn/vpn/vpn.dart';
 import 'package:nordvpn/widgets/widgets_showcase.dart';
 
@@ -46,7 +47,10 @@ enum AppRoute {
   login,
   loadingScreen,
   errorScreen,
-  consentScreen;
+  consentScreen,
+
+  // tray popup mode
+  tray;
 
   @override
   String toString() {
@@ -68,6 +72,7 @@ enum AppRoute {
       AppRoute.loadingScreen => "/loading",
       AppRoute.errorScreen => "/error",
       AppRoute.consentScreen => "/consent",
+      AppRoute.tray => "/tray",
     };
   }
 }
@@ -113,6 +118,14 @@ List<RouteBase> configureRoutes() {
       RouteMetadata(
         route: AppRoute.vpn,
         screen: const VpnWidget(),
+        isBlocking: false,
+      ),
+    ),
+
+    _route(
+      RouteMetadata(
+        route: AppRoute.tray,
+        screen: const TrayAppWidget(),
         isBlocking: false,
       ),
     ),

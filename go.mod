@@ -13,7 +13,6 @@ require (
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4
-	github.com/NordSecurity/systray v0.0.0-20240327004800-3e3b59c1b83d
 	github.com/coreos/go-semver v0.3.1
 	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/docker/docker v28.5.1+incompatible
@@ -23,7 +22,7 @@ require (
 	github.com/fatih/color v1.15.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-co-op/gocron/v2 v2.5.0
-	github.com/godbus/dbus/v5 v5.1.0
+	github.com/godbus/dbus/v5 v5.2.2
 	github.com/google/go-cmp v0.7.0
 	github.com/google/nftables v0.3.0
 	github.com/google/uuid v1.6.0
@@ -42,7 +41,7 @@ require (
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	golang.org/x/mod v0.31.0
 	golang.org/x/net v0.48.0
-	golang.org/x/sys v0.39.0
+	golang.org/x/sys v0.46.0
 	golang.org/x/term v0.38.0
 	golang.org/x/text v0.32.0
 	golang.zx2c4.com/wireguard v0.0.0-20230313165553-0ad14a89f5f9
