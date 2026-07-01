@@ -7,8 +7,6 @@ import (
 	"github.com/godbus/dbus/v5"
 )
 
-const logTag = "[dbusutil]"
-
 // DBusPropertyClient defines the interface for interacting with DBus properties.
 type DBusPropertyClient interface {
 	GetProperty(name string) (dbus.Variant, error)
@@ -30,7 +28,7 @@ func (c *genericDBusPropertyClient) GetProperty(name string) (dbus.Variant, erro
 // This can be used for any service and object path.
 func NewPropertyClient(conn *dbus.Conn, service string, objectPath dbus.ObjectPath) DBusPropertyClient {
 	if conn == nil {
-		log.Errorf("%s D-Bus connection is nil; cannot create property client", logTag)
+		log.DBusUtil.Errorf("D-Bus connection is nil; cannot create property client")
 		return nil
 	}
 

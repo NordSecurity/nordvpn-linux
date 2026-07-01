@@ -26,11 +26,11 @@ func newStateListener(client pb.DaemonClient, onDataFunc func(item *pb.AppState)
 
 func (l *stateListener) Start() {
 	if l.cancelFunc != nil {
-		log.Warnf("%s Already listening to daemon events", logTag)
+		log.Systray.Warnf("Already listening to daemon events")
 		return
 	}
 
-	log.Infof("%s Starting to listen to daemon events", logTag)
+	log.Systray.Infof("Starting to listen to daemon events")
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	l.cancelFunc = cancelFunc
 
@@ -39,7 +39,7 @@ func (l *stateListener) Start() {
 
 func (l *stateListener) Stop() {
 	if l.cancelFunc != nil {
-		log.Infof("%s Stopping from listening to daemon events", logTag)
+		log.Systray.Infof("Stopping from listening to daemon events")
 		l.cancelFunc()
 		l.cancelFunc = nil
 	}
@@ -49,14 +49,14 @@ func (l *stateListener) consumeStream(ctx context.Context, server grpc.ServerStr
 	for {
 		state, err := server.Recv()
 		if err != nil {
-			log.Errorf("%s Stream receive error: %v", logTag, err)
+			log.Systray.Errorf("Stream receive error: %v", err)
 			return
 		}
 
 		select {
 		case l.queue <- state:
 		case <-time.After(time.Second):
-			log.Warnf("%s App state consumer's queue is full, dropping: %v\n", logTag, state)
+			log.Systray.Warnf("App state consumer's queue is full, dropping: %v\n", state)
 		case <-ctx.Done():
 			return
 		}
@@ -94,7 +94,7 @@ func (l *stateListener) listen(ctx context.Context) {
 
 	for {
 		if err := RetryWithBackoff(ctx, backoffConfig, op); err != nil {
-			log.Infof("%s listen to daemon's state stream: %s\n", logTag, err)
+			log.Systray.Infof("listen to daemon's state stream: %s\n", err)
 			break
 		}
 

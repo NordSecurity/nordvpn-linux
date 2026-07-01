@@ -100,8 +100,8 @@ func (e Event) ToDebuggerEvent() *events.DebuggerEvent {
 
 	jsonData, err := json.Marshal(eventToMarshal)
 	if err != nil {
-		//in case of any marshalling error, let's at least provide basic information, we know anyway
-		log.Warnf("%s Failed to marshal Event to JSON %s. Fallback to a limited set of data", logPrefix, err)
+		// in case of any marshalling error, let's at least provide basic information, we know anyway
+		log.RC.Warnf("Failed to marshal Event to JSON %s. Fallback to a limited set of data", err)
 
 		fallbackData := struct {
 			MessageNamespace string `json:"namespace"`
@@ -124,9 +124,9 @@ func (e Event) ToDebuggerEvent() *events.DebuggerEvent {
 		}
 
 		jsonData, err = json.Marshal(fallbackData)
-		//this should never happen...
+		// this should never happen...
 		if err != nil {
-			log.Errorf("%s Failed to marshal fallback data to JSON %s. Defaulting to empty JSON", logPrefix, err)
+			log.RC.Errorf("Failed to marshal fallback data to JSON %s. Defaulting to empty JSON", err)
 			jsonData = []byte(`{}`)
 		}
 	}

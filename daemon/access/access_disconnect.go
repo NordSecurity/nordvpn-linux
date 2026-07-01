@@ -23,7 +23,7 @@ func Disconnect(input DisconnectInput) (bool, error) {
 	startTime := time.Now()
 	if !input.Networker.IsVPNActive() {
 		if err := input.Networker.UnsetFirewall(); err != nil {
-			log.Warn(logTag, "failed to force unset firewall on disconnect:", err)
+			log.Access.Warn("failed to force unset firewall on disconnect:", err)
 		}
 		return false, nil
 	}
@@ -32,7 +32,7 @@ func Disconnect(input DisconnectInput) (bool, error) {
 	defer func() {
 		var cfg config.Config
 		if err := input.ConfigManager.Load(&cfg); err != nil {
-			log.Warnf("%s loading config during disconnect: %v", logTag, err)
+			log.Access.Warnf("loading config during disconnect: %v", err)
 			return
 		}
 

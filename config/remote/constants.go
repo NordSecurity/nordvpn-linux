@@ -12,7 +12,6 @@ const (
 	// defaultMaxGroup represents the maximum value for a rollout group,
 	// effectively making the value to be in range of 1-100 (inclusive) to reflect percentage-based groups.
 	defaultMaxGroup                uint32 = 100
-	logPrefix                             = "[Remote Config]"
 	messageNamespace                      = "nordvpn-linux"
 	rcFailure                             = analytics.ResultFailure
 	rcSuccess                             = analytics.ResultSuccess
