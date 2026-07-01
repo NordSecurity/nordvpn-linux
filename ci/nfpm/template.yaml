@@ -55,6 +55,7 @@ depends:
   - xsltproc
 recommends:
   - iptables
+  - nordvpn-gui
 
 # Basic file that applies to all packagers
 contents:
@@ -174,6 +175,7 @@ overrides:
       - (xsltproc or libxslt)
     recommends:
       - iptables
+      - nordvpn-gui
     # RPM specific scripts.
     scripts:
       preinstall: ${WORKDIR}/contrib/scriptlets/rpm/preinst
