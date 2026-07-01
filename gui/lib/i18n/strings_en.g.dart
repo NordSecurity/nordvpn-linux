@@ -2157,6 +2157,12 @@ class TranslationsUiEn {
 	/// en: 'VPN connection resumes in $hours:$minutes:$seconds'
 	String VPNResumesInWithHours({required Object hours, required Object minutes, required Object seconds}) => 'VPN connection resumes in ${hours}:${minutes}:${seconds}';
 
+	/// en: 'Paused. VPN connection resumes in $minutes minutes $seconds seconds'
+	String a11yToastPaused({required Object minutes, required Object seconds}) => 'Paused. VPN connection resumes in ${minutes} minutes ${seconds} seconds';
+
+	/// en: 'Paused. VPN connection resumes in $hours hours $minutes minutes $seconds seconds'
+	String a11yToastPausedWithHours({required Object hours, required Object minutes, required Object seconds}) => 'Paused. VPN connection resumes in ${hours} hours ${minutes} minutes ${seconds} seconds';
+
 	/// en: 'Reconnect'
 	String get reconnect => 'Reconnect';
 
@@ -2686,8 +2692,6 @@ extension on Translations {
 			'ui.selectLocation' => 'Select location',
 			'ui.dipSelectLocationDescription' => 'You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.',
 			'ui.chooseLocationForDip' => 'Choose a location for your dedicated IP',
-			_ => null,
-		} ?? switch (path) {
 			'ui.getDip' => 'Get dedicated IP',
 			'ui.getYourDip' => 'Get your personal IP',
 			'ui.getDipDescription' => 'Get a personal IP address that belongs only to you. Enjoy all the benefits of VPN encryption without dealing with blocklists, identity checks, and selecting images of boats in CAPTCHAs.',
@@ -2873,6 +2877,8 @@ extension on Translations {
 			'ui.secureMyConnection' => 'Secure my connection',
 			'ui.VPNResumesIn' => ({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes}:${seconds}',
 			'ui.VPNResumesInWithHours' => ({required Object hours, required Object minutes, required Object seconds}) => 'VPN connection resumes in ${hours}:${minutes}:${seconds}',
+			'ui.a11yToastPaused' => ({required Object minutes, required Object seconds}) => 'Paused. VPN connection resumes in ${minutes} minutes ${seconds} seconds',
+			'ui.a11yToastPausedWithHours' => ({required Object hours, required Object minutes, required Object seconds}) => 'Paused. VPN connection resumes in ${hours} hours ${minutes} minutes ${seconds} seconds',
 			'ui.reconnect' => 'Reconnect',
 			'ui.changeVPNsettings' => 'Change VPN settings',
 			'ui.getHelp' => 'Get help',
