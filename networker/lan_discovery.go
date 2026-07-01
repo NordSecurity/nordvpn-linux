@@ -12,7 +12,7 @@ import (
 // discovery. Ports are shared with the original; Subnets are copied.
 func addLANDiscoverySubnets(allowlist config.Allowlist) config.Allowlist {
 	newSubnets := append([]string{}, allowlist.Subnets...)
-	for _, network := range append(internal.LocalNetworks, internal.MDNSSubnet) {
+	for _, network := range slices.Concat(internal.LocalNetworks, []string{internal.MDNSSubnet}) {
 		if !slices.Contains(newSubnets, network) {
 			newSubnets = append(newSubnets, network)
 		}
