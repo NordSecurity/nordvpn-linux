@@ -108,6 +108,9 @@ func extractError(resp *http.Response, acceptedCode int) error {
 		if err := extractErrorForDedicatedServer(info); err != nil {
 			return err
 		}
+		if err := extractErrorForLogin(info); err != nil {
+			return err
+		}
 		return internal.NewCodedError(info.Errors.Code, info.Errors.Message, ErrBadRequest)
 
 	case http.StatusUnauthorized:
@@ -126,6 +129,18 @@ func extractError(resp *http.Response, acceptedCode int) error {
 		status := http.StatusText(resp.StatusCode)
 		return internal.NewCodedError(info.Errors.Code, info.Errors.Message, errors.New(status))
 	}
+}
+
+func extractErrorForLogin(info apiError) error {
+	const (
+		invalidAuthorizationHeader = 100106
+	)
+
+	switch info.Errors.Code {
+	case invalidAuthorizationHeader:
+		return ErrUnauthorized
+	}
+	return nil
 }
 
 func extractErrorForMeshnet(info apiError) error {
