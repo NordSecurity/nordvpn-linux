@@ -31,7 +31,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const activeKey = "current-nordlynx-key"
+const activeEndpoint = "192.168.1.1:51820"
 
 type mockRPCServer struct {
 	pb.Daemon_ConnectServer
@@ -161,7 +161,7 @@ func testRPCLocal(t *testing.T) *RPC {
 
 	rpc.serversAPI = &deterministicServersAPI{}
 
-	rpc.dm.SetCountryData(time.Now(), core_test.CountriesList(), "")
+	_ = rpc.dm.SetCountryData(time.Now(), core_test.CountriesList(), "")
 
 	return rpc
 }
@@ -677,7 +677,7 @@ func TestRPCConnect_RecentConnectionsMultiple(t *testing.T) {
 		return &mock.WorkingVPN{}, nil
 	}
 
-	rpc.dm.SetCountryData(time.Now(), core_test.CountriesList(), "")
+	_ = rpc.dm.SetCountryData(time.Now(), core_test.CountriesList(), "")
 
 	server := &mockRPCServer{}
 	err := rpc.Connect(&pb.ConnectRequest{ServerTag: "germany"}, server)
@@ -1453,17 +1453,17 @@ func TestReconnectOnServerMaintenance(t *testing.T) {
 	params := serverpicker.ServerParameters{
 		ServerName: "it1",
 	}
-	const activeKey = "nordlynx-server-key"
+	const activeEndpoint = "192.168.1.1:51820"
 
 	rpc.RequestedConnParams.Set(pb.ConnectionSource_MANUAL, params)
 	rpc.netw = &testnetworker.Mock{
 		VpnActive:        true,
-		ActiveServerData: &vpn.ServerData{NordLynxPublicKey: activeKey},
+		ActiveServerData: &vpn.ServerData{Endpoint: activeEndpoint},
 	}
 	rpc.serversAPI = core_test.NewMockServersAPI()
 
 	// select NordLynx because servers list has 2 servers in Italy
-	rpc.cm.SaveWith(func(c config.Config) config.Config {
+	_ = rpc.cm.SaveWith(func(c config.Config) config.Config {
 		return config.Config{
 			Technology: config.Technology_NORDLYNX,
 		}
@@ -1482,7 +1482,7 @@ func TestReconnectOnServerMaintenance(t *testing.T) {
 	assert.Equal(t, events.VPNConnectionReasonNone, connectEvents.Event.VPNConnReason)
 
 	// reconnect will take the server city + country. Server selection finds second server, it2
-	failed, err = rpc.reconnectOnServerMaintenance(ctx, server, activeKey)
+	failed, err = rpc.reconnectOnServerMaintenance(ctx, server, activeEndpoint)
 	assert.False(t, failed)
 	assert.NoError(t, err)
 	assert.Equal(t, "it2.nordvpn.com", rpc.lastServerSelection.Server.Hostname)
@@ -1494,7 +1494,7 @@ func TestReconnectOnServerMaintenance(t *testing.T) {
 	assert.Equal(t, "Rome", p.City)
 
 	// reconnect will use the city + country, and server selection finds first server, it1
-	failed, err = rpc.reconnectOnServerMaintenance(ctx, server, activeKey)
+	failed, err = rpc.reconnectOnServerMaintenance(ctx, server, activeEndpoint)
 	assert.False(t, failed)
 	assert.NoError(t, err)
 	assert.Equal(t, "it1.nordvpn.com", rpc.lastServerSelection.Server.Hostname)
@@ -1509,25 +1509,25 @@ func TestReconnectOnServerMaintenance_ConnectionGuard(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		eventKey      string
+		eventEndpoint string
 		connParams    *vpn.ServerData
 		expectSkipped bool
 	}{
 		{
 			name:          "skips reconnect when connected server changed since ENS check",
-			eventKey:      "stale-key",
-			connParams:    &vpn.ServerData{NordLynxPublicKey: activeKey},
+			eventEndpoint: "10.0.0.1:51820",
+			connParams:    &vpn.ServerData{Endpoint: activeEndpoint},
 			expectSkipped: true,
 		},
 		{
 			name:          "skips reconnect when connection is not active anymore",
-			eventKey:      activeKey,
+			eventEndpoint: activeEndpoint,
 			expectSkipped: true,
 		},
 		{
-			name:          "proceeds with reconnect when server key still matches and connection is active",
-			eventKey:      activeKey,
-			connParams:    &vpn.ServerData{NordLynxPublicKey: activeKey},
+			name:          "proceeds with reconnect when server endpoint still matches and connection is active",
+			eventEndpoint: activeEndpoint,
+			connParams:    &vpn.ServerData{Endpoint: activeEndpoint},
 			expectSkipped: false,
 		},
 	}
@@ -1540,7 +1540,7 @@ func TestReconnectOnServerMaintenance_ConnectionGuard(t *testing.T) {
 				VpnActive:        true,
 				ActiveServerData: tt.connParams,
 			}
-			rpc.cm.SaveWith(func(c config.Config) config.Config {
+			_ = rpc.cm.SaveWith(func(c config.Config) config.Config {
 				return config.Config{Technology: config.Technology_NORDLYNX}
 			})
 			rpc.RequestedConnParams.Set(pb.ConnectionSource_AUTO, serverpicker.ServerParameters{
@@ -1548,7 +1548,7 @@ func TestReconnectOnServerMaintenance_ConnectionGuard(t *testing.T) {
 				City:        "Rome",
 			})
 
-			failed, err := rpc.reconnectOnServerMaintenance(context.Background(), &mockRPCServer{}, tt.eventKey)
+			failed, err := rpc.reconnectOnServerMaintenance(context.Background(), &mockRPCServer{}, tt.eventEndpoint)
 
 			assert.False(t, failed)
 			assert.NoError(t, err)
@@ -1570,10 +1570,10 @@ func TestReconnectOnServerMaintenance_CountryOnly(t *testing.T) {
 	rpc.serversAPI = core_test.NewMockServersAPI()
 	rpc.netw = &testnetworker.Mock{
 		VpnActive:        true,
-		ActiveServerData: &vpn.ServerData{NordLynxPublicKey: activeKey},
+		ActiveServerData: &vpn.ServerData{Endpoint: activeEndpoint},
 	}
 
-	rpc.cm.SaveWith(func(c config.Config) config.Config {
+	_ = rpc.cm.SaveWith(func(c config.Config) config.Config {
 		return config.Config{
 			Technology: config.Technology_NORDLYNX,
 		}
@@ -1587,7 +1587,7 @@ func TestReconnectOnServerMaintenance_CountryOnly(t *testing.T) {
 	assert.Equal(t, "IT", p.CountryCode)
 	assert.Equal(t, "", p.City)
 
-	failed, err = rpc.reconnectOnServerMaintenance(ctx, server, activeKey)
+	failed, err = rpc.reconnectOnServerMaintenance(ctx, server, activeEndpoint)
 	assert.False(t, failed)
 	assert.NoError(t, err)
 }
