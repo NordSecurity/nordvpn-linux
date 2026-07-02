@@ -2157,11 +2157,11 @@ class TranslationsUiEn {
 	/// en: 'VPN connection resumes in $hours:$minutes:$seconds'
 	String VPNResumesInWithHours({required Object hours, required Object minutes, required Object seconds}) => 'VPN connection resumes in ${hours}:${minutes}:${seconds}';
 
-	/// en: 'Paused. VPN connection resumes in $minutes minutes $seconds seconds'
-	String a11yToastPaused({required Object minutes, required Object seconds}) => 'Paused. VPN connection resumes in ${minutes} minutes ${seconds} seconds';
+	/// en: 'VPN connection resumes in $minutes minutes $seconds seconds'
+	String VPNResumesIn_a11y({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes} minutes ${seconds} seconds';
 
-	/// en: 'Paused. VPN connection resumes in $hours hours $minutes minutes $seconds seconds'
-	String a11yToastPausedWithHours({required Object hours, required Object minutes, required Object seconds}) => 'Paused. VPN connection resumes in ${hours} hours ${minutes} minutes ${seconds} seconds';
+	/// en: 'VPN connection resumes in $hours hours $minutes minutes $seconds seconds'
+	String VPNResumesInWithHours_a11y({required Object hours, required Object minutes, required Object seconds}) => 'VPN connection resumes in ${hours} hours ${minutes} minutes ${seconds} seconds';
 
 	/// en: 'Reconnect'
 	String get reconnect => 'Reconnect';
@@ -2877,8 +2877,8 @@ extension on Translations {
 			'ui.secureMyConnection' => 'Secure my connection',
 			'ui.VPNResumesIn' => ({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes}:${seconds}',
 			'ui.VPNResumesInWithHours' => ({required Object hours, required Object minutes, required Object seconds}) => 'VPN connection resumes in ${hours}:${minutes}:${seconds}',
-			'ui.a11yToastPaused' => ({required Object minutes, required Object seconds}) => 'Paused. VPN connection resumes in ${minutes} minutes ${seconds} seconds',
-			'ui.a11yToastPausedWithHours' => ({required Object hours, required Object minutes, required Object seconds}) => 'Paused. VPN connection resumes in ${hours} hours ${minutes} minutes ${seconds} seconds',
+			'ui.VPNResumesIn_a11y' => ({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes} minutes ${seconds} seconds',
+			'ui.VPNResumesInWithHours_a11y' => ({required Object hours, required Object minutes, required Object seconds}) => 'VPN connection resumes in ${hours} hours ${minutes} minutes ${seconds} seconds',
 			'ui.reconnect' => 'Reconnect',
 			'ui.changeVPNsettings' => 'Change VPN settings',
 			'ui.getHelp' => 'Get help',
