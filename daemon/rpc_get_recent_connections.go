@@ -7,6 +7,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 )
 
 // GetRecentConnections retrieves recent vpn connections from store
@@ -24,7 +25,7 @@ func (r *RPC) GetRecentConnections(
 		return nil, fmt.Errorf("reading config for recent vpn connections: %w", err)
 	}
 
-	serverTech := techToServerTech(
+	serverTech := serverpicker.TechToServerTech(
 		cfg.Technology,
 		cfg.AutoConnectData.Protocol,
 		cfg.AutoConnectData.Obfuscate,

@@ -64,6 +64,7 @@ func (s *ReconnectSchedulerImpl) ScheduleReconnection(duration time.Duration) {
 			err := s.connectFunc(&connServer, pb.ConnectionSource_AUTO, pauseDuration)
 			if err != nil || connServer.err != nil {
 				log.Error("failed to reconnect after a pause: connection error:", err, "server error:", connServer.err)
+				s.pauseEvents.PauseNotifications.Publish(&pb.PauseEvent{Type: pb.PauseEventType_RECONNECT_FAILED})
 			}
 		case <-ctx.Done():
 			return

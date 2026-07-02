@@ -23,6 +23,7 @@ import settings_pb2 as settings__pb2
 import state_pb2 as state__pb2
 import status_pb2 as status__pb2
 import token_pb2 as token__pb2
+import uievent_pb2 as uievent__pb2
 
 GRPC_GENERATED_VERSION = '1.68.1'
 GRPC_VERSION = grpc.__version__
@@ -283,10 +284,20 @@ class DaemonStub(object):
                 request_serializer=common__pb2.Empty.SerializeToString,
                 response_deserializer=ping__pb2.PingResponse.FromString,
                 _registered_method=True)
+        self.ReportUIEvent = channel.unary_unary(
+                '/pb.Daemon/ReportUIEvent',
+                request_serializer=uievent__pb2.UIEvent.SerializeToString,
+                response_deserializer=common__pb2.Payload.FromString,
+                _registered_method=True)
         self.SubscribeToStateChanges = channel.unary_stream(
                 '/pb.Daemon/SubscribeToStateChanges',
                 request_serializer=common__pb2.Empty.SerializeToString,
                 response_deserializer=state__pb2.AppState.FromString,
+                _registered_method=True)
+        self.InjectVpnConnectionError = channel.unary_unary(
+                '/pb.Daemon/InjectVpnConnectionError',
+                request_serializer=common__pb2.InjectVpnConnectionErrorRequest.SerializeToString,
+                response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
 
 
@@ -581,8 +592,21 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ReportUIEvent(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def SubscribeToStateChanges(self, request, context):
         """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def InjectVpnConnectionError(self, request, context):
+        """InjectVpnConnectionError is a DEV-only endpoint that injects a simulated ENS event
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -820,10 +844,20 @@ def add_DaemonServicer_to_server(servicer, server):
                     request_deserializer=common__pb2.Empty.FromString,
                     response_serializer=ping__pb2.PingResponse.SerializeToString,
             ),
+            'ReportUIEvent': grpc.unary_unary_rpc_method_handler(
+                    servicer.ReportUIEvent,
+                    request_deserializer=uievent__pb2.UIEvent.FromString,
+                    response_serializer=common__pb2.Payload.SerializeToString,
+            ),
             'SubscribeToStateChanges': grpc.unary_stream_rpc_method_handler(
                     servicer.SubscribeToStateChanges,
                     request_deserializer=common__pb2.Empty.FromString,
                     response_serializer=state__pb2.AppState.SerializeToString,
+            ),
+            'InjectVpnConnectionError': grpc.unary_unary_rpc_method_handler(
+                    servicer.InjectVpnConnectionError,
+                    request_deserializer=common__pb2.InjectVpnConnectionErrorRequest.FromString,
+                    response_serializer=common__pb2.Payload.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -2079,6 +2113,33 @@ class Daemon(object):
             _registered_method=True)
 
     @staticmethod
+    def ReportUIEvent(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/ReportUIEvent',
+            uievent__pb2.UIEvent.SerializeToString,
+            common__pb2.Payload.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
     def SubscribeToStateChanges(request,
             target,
             options=(),
@@ -2095,6 +2156,33 @@ class Daemon(object):
             '/pb.Daemon/SubscribeToStateChanges',
             common__pb2.Empty.SerializeToString,
             state__pb2.AppState.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def InjectVpnConnectionError(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/InjectVpnConnectionError',
+            common__pb2.InjectVpnConnectionErrorRequest.SerializeToString,
+            common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,

@@ -7,6 +7,7 @@ import 'package:nordvpn/data/models/server_info.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
+import 'package:nordvpn/data/repository/uievent_repository.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
 import 'package:nordvpn/router/routes.dart';
@@ -78,7 +79,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
               child: Text(t.ui.disconnect),
             ),
           ),
-          _buildConnectionDetailsButton(context, buttonTheme),
+          _buildConnectionDetailsButton(context, ref, buttonTheme),
         ];
       }
       return [
@@ -111,6 +112,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
         ),
         _buildConnectionDetailsButton(
           context,
+          ref,
           buttonTheme,
           extraItems: [
             ContextMenuItem(
@@ -184,6 +186,16 @@ final class ConnectionCardButtons extends ConsumerWidget {
     ref.read(vpnStatusControllerProvider.notifier).pauseConnection(pauseLength);
   }
 
+  void _changeSettings(BuildContext context, WidgetRef ref) {
+    context.navigateToRoute(AppRoute.settingsVpnConnection);
+    ref.read(uiEventRepositoryProvider).reportChangeSettings();
+  }
+
+  void _getHelp(WidgetRef ref) {
+    getHelpUrl.launch();
+    ref.read(uiEventRepositoryProvider).reportGetHelp();
+  }
+
   static String _pauseLabel(PauseLength pause) => switch (pause) {
     PauseLength.mins5 => t.ui.pauseFor5Min,
     PauseLength.mins15 => t.ui.pauseFor15Min,
@@ -194,6 +206,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
 
   Widget _buildConnectionDetailsButton(
     BuildContext context,
+    WidgetRef ref,
     ConnectionCardButtonTheme buttonTheme, {
     List<ContextMenuItem> extraItems = const [],
   }) {
@@ -203,13 +216,9 @@ final class ConnectionCardButtons extends ConsumerWidget {
           ...extraItems,
           ContextMenuItem(
             label: t.ui.changeVPNsettings,
-            onTap: () =>
-                context.navigateToRoute(AppRoute.settingsVpnConnection),
+            onTap: () => _changeSettings(context, ref),
           ),
-          ContextMenuItem(
-            label: t.ui.getHelp,
-            onTap: () => getHelpUrl.launch(),
-          ),
+          ContextMenuItem(label: t.ui.getHelp, onTap: () => _getHelp(ref)),
         ],
         anchorBuilder: (toggleMenu) => OutlinedButton(
           style: buttonTheme.connectionDetailsButtonStyle,

@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -121,21 +122,23 @@ type notifier interface {
 }
 
 type Instance struct {
-	client              pb.DaemonClient
-	fileshare           FileshareManager
-	accountInfo         accountInfo
-	debugMode           bool
-	notifier            notifier
-	renderChan          chan struct{}
-	initialDataLoadChan chan struct{}
-	iconConnected       string
-	iconDisconnected    string
-	state               trayState
-	quitChan            chan<- norduser.StopRequest
-	stateListener       *stateListener
-	connSensor          *connectionSettingsChangeSensor
-	recentConnections   *recentConnectionsManager
-	checkboxSync        *CheckboxSynchronizer
+	client                pb.DaemonClient
+	fileshare             FileshareManager
+	accountInfo           accountInfo
+	debugMode             bool
+	notifier              notifier
+	renderChan            chan struct{}
+	initialDataLoadChan   chan struct{}
+	iconConnected         string
+	iconDisconnected      string
+	state                 trayState
+	quitChan              chan<- norduser.StopRequest
+	stateListener         *stateListener
+	connSensor            *connectionSettingsChangeSensor
+	recentConnections     *recentConnectionsManager
+	checkboxSync          *CheckboxSynchronizer
+	isVisible             atomic.Bool
+	stopVisibilityMonitor chan struct{}
 }
 
 type trayState struct {
@@ -152,8 +155,10 @@ type trayState struct {
 	vpnCity              string
 	vpnCountry           string
 	vpnVirtualLocation   bool
+	vpnIsMeshPeer        bool
 	initialSyncCompleted bool
 	connSelector         ConnectionSelector
+	pauseRemainingSec    int
 	mu                   sync.RWMutex
 }
 
@@ -173,16 +178,35 @@ func (state *trayState) serverName() string {
 
 func NewTrayInstance(client pb.DaemonClient, quitChan chan<- norduser.StopRequest) *Instance {
 	obj := &Instance{
-		client:            client,
-		fileshare:         NewFileshareManager(),
-		notifier:          &dbusNotifier{},
-		quitChan:          quitChan,
-		connSensor:        newConnectionSettingsChangeSensor(),
-		recentConnections: newRecentConnectionsManager(client),
-		checkboxSync:      NewCheckboxSynchronizer(),
+		client:                client,
+		fileshare:             NewFileshareManager(),
+		notifier:              &dbusNotifier{},
+		quitChan:              quitChan,
+		connSensor:            newConnectionSettingsChangeSensor(),
+		recentConnections:     newRecentConnectionsManager(client),
+		checkboxSync:          NewCheckboxSynchronizer(),
+		stopVisibilityMonitor: make(chan struct{}),
 	}
+	obj.isVisible.Store(false)
 	obj.stateListener = newStateListener(client, obj.onDaemonStateEvent)
 	return obj
+}
+
+func (ti *Instance) MonitorTrayVisibility() {
+	for {
+		select {
+		case <-systray.TrayOpenedCh:
+			ti.isVisible.Store(true)
+		case <-systray.TrayClosedCh:
+			ti.isVisible.Store(false)
+		case <-ti.stopVisibilityMonitor:
+			return
+		}
+	}
+}
+
+func (ti *Instance) StopVisibilityMonitor() {
+	ti.stopVisibilityMonitor <- struct{}{}
 }
 
 func (ti *Instance) WaitInitialTrayStatus() Status {

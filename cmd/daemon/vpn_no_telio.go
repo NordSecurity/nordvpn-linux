@@ -19,7 +19,9 @@ func getNordlynxVPN(envIsDev bool,
 	fwmark uint32,
 	cfg vpn.LibConfigGetter,
 	appVersion string,
-	eventsPublisher *vpn.Events) (*nordlynx.KernelSpace, error) {
+	eventsPublisher *vpn.Events,
+	ensEnabled bool,
+) (*nordlynx.KernelSpace, error) {
 	return nordlynx.NewKernelSpace(fwmark, eventsPublisher), nil
 }
 

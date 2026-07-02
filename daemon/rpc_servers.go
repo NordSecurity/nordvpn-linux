@@ -7,6 +7,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
@@ -121,8 +122,7 @@ func (r *RPC) GetServers(ctx context.Context, in *pb.Empty) (*pb.ServersResponse
 	}
 
 	servers := internal.Filter(r.dm.GetServersData().Servers, func(s core.Server) bool {
-		return core.IsConnectableWithProtocol(cfg.Technology, cfg.AutoConnectData.Protocol)(s) &&
-			(core.IsObfuscated()(s) == cfg.AutoConnectData.Obfuscate)
+		return serverpicker.MatchesUserSettings(s, cfg)
 	})
 
 	if len(servers) == 0 {

@@ -1,7 +1,7 @@
 package daemon
 
 import (
-	"fmt"
+	"errors"
 	"net/http"
 	"testing"
 	"time"
@@ -9,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	core_test "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -32,32 +33,10 @@ func (mockCountriesAPI) Server(int64) (*core.Server, error) {
 }
 
 func (m mockCountriesAPI) ServersCountries() (core.Countries, http.Header, error) {
-	return countriesList(), nil, nil
+	return core_test.CountriesList(), nil, nil
 }
 
 func (mockCountriesAPI) ServersTechnologiesConfigurations(string, int64, core.ServerTechnology) ([]byte, error) {
-	return nil, nil
-}
-
-type mockFailingCountriesAPI struct{}
-
-func (mockFailingCountriesAPI) Servers() (core.Servers, http.Header, error) {
-	return nil, nil, nil
-}
-
-func (mockFailingCountriesAPI) RecommendedServers(core.ServersFilter, float64, float64) (core.Servers, http.Header, error) {
-	return nil, nil, nil
-}
-
-func (mockFailingCountriesAPI) Server(int64) (*core.Server, error) {
-	return nil, nil
-}
-
-func (mockFailingCountriesAPI) ServersCountries() (core.Countries, http.Header, error) {
-	return nil, nil, fmt.Errorf("500")
-}
-
-func (mockFailingCountriesAPI) ServersTechnologiesConfigurations(string, int64, core.ServerTechnology) ([]byte, error) {
 	return nil, nil
 }
 
@@ -66,7 +45,7 @@ func TestJobCountries(t *testing.T) {
 	category.Set(t, category.File)
 	defer testsCleanup()
 	dm := testNewDataManager()
-	err := JobCountries(dm, mockCountriesAPI{})()
+	err := JobCountries(dm, core_test.NewMockServersAPI())()
 	assert.NoError(t, err)
 
 	// check if Latvia exist
@@ -102,7 +81,7 @@ func TestJobCountries_InvalidData(t *testing.T) {
 	category.Set(t, category.File)
 
 	dm := testNewDataManager()
-	err := JobCountries(dm, &mockFailingCountriesAPI{})()
+	err := JobCountries(dm, core_test.NewMockFailingServersAPI(errors.New("expected")))()
 	assert.Error(t, err)
 }
 

@@ -54,6 +54,14 @@ type trayDaemonClient struct {
 	tokenInfoResponse *pb.TokenInfoResponse
 }
 
+func (c *trayDaemonClient) ReportUIEvent(
+	ctx context.Context,
+	in *pb.UIEvent,
+	opts ...grpc.CallOption,
+) (*pb.Payload, error) {
+	return &pb.Payload{}, nil
+}
+
 func (c *trayDaemonClient) Connect(
 	ctx context.Context,
 	in *pb.ConnectRequest,

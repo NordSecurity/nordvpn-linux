@@ -86,8 +86,10 @@ const (
 		"&fields[servers.technologies.pivot.status]" +
 		"&fields[servers.specifications.identifier]" +
 		"&fields[servers.specifications.values.value]" +
+		"&fields[servers.locations.country.id]" +
 		"&fields[servers.locations.country.name]" +
 		"&fields[servers.locations.country.code]" +
+		"&fields[servers.locations.country.city.id]" +
 		"&fields[servers.locations.country.city.name]" +
 		"&fields[servers.locations.country.city.latitude]" +
 		"&fields[servers.locations.country.city.longitude]" +

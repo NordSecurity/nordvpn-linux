@@ -61,6 +61,7 @@ func (r *RPC) Status(context.Context, *pb.Empty) (*pb.StatusResponse, error) {
 		Obfuscated:                status.IsObfuscated,
 		PausedAt:                  timestamppb.New(status.PausedAt),
 		PauseRemainingDurationSec: status.PauseRemainingTimeSec,
+		IsMeshPeer:                status.IsMeshnetPeer,
 	}, nil
 }
 

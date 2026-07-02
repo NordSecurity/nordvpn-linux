@@ -9,17 +9,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestToMooseStrings(t *testing.T) {
+func TestProtoToMooseStrings(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
 		name     string
-		ctx      *UIEventContext
+		input    *pb.UIEvent
 		expected events.UiItemsAction
 	}{
 		{
-			name: "nil context returns empty",
-			ctx:  nil,
+			name:  "nil event returns empty",
+			input: nil,
 			expected: events.UiItemsAction{
 				FormReference: "",
 				ItemName:      "",
@@ -29,7 +29,7 @@ func TestToMooseStrings(t *testing.T) {
 		},
 		{
 			name: "all fields set",
-			ctx: &UIEventContext{
+			input: &pb.UIEvent{
 				FormReference: pb.UIEvent_CLI,
 				ItemName:      pb.UIEvent_CONNECT,
 				ItemType:      pb.UIEvent_CLICK,
@@ -44,7 +44,7 @@ func TestToMooseStrings(t *testing.T) {
 		},
 		{
 			name: "pause event for 5 minutes",
-			ctx: &UIEventContext{
+			input: &pb.UIEvent{
 				FormReference: pb.UIEvent_CLI,
 				ItemName:      pb.UIEvent_PAUSE,
 				ItemType:      pb.UIEvent_CLICK,
@@ -59,7 +59,7 @@ func TestToMooseStrings(t *testing.T) {
 		},
 		{
 			name: "pause event for 15 minutes",
-			ctx: &UIEventContext{
+			input: &pb.UIEvent{
 				FormReference: pb.UIEvent_CLI,
 				ItemName:      pb.UIEvent_PAUSE,
 				ItemType:      pb.UIEvent_CLICK,
@@ -74,7 +74,7 @@ func TestToMooseStrings(t *testing.T) {
 		},
 		{
 			name: "pause event for 30 minutes",
-			ctx: &UIEventContext{
+			input: &pb.UIEvent{
 				FormReference: pb.UIEvent_CLI,
 				ItemName:      pb.UIEvent_PAUSE,
 				ItemType:      pb.UIEvent_CLICK,
@@ -89,7 +89,7 @@ func TestToMooseStrings(t *testing.T) {
 		},
 		{
 			name: "pause event for 1 hour",
-			ctx: &UIEventContext{
+			input: &pb.UIEvent{
 				FormReference: pb.UIEvent_CLI,
 				ItemName:      pb.UIEvent_PAUSE,
 				ItemType:      pb.UIEvent_CLICK,
@@ -104,7 +104,7 @@ func TestToMooseStrings(t *testing.T) {
 		},
 		{
 			name: "pause event for 24 hours",
-			ctx: &UIEventContext{
+			input: &pb.UIEvent{
 				FormReference: pb.UIEvent_CLI,
 				ItemName:      pb.UIEvent_PAUSE,
 				ItemType:      pb.UIEvent_CLICK,
@@ -118,8 +118,36 @@ func TestToMooseStrings(t *testing.T) {
 			},
 		},
 		{
+			name: "change settings event",
+			input: &pb.UIEvent{
+				FormReference: pb.UIEvent_CONNECTION_INFO,
+				ItemName:      pb.UIEvent_CHANGE_SETTINGS,
+				ItemType:      pb.UIEvent_CLICK,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "connection_info",
+				ItemName:      "change_vpn_settings",
+				ItemType:      "click",
+				ItemValue:     "",
+			},
+		},
+		{
+			name: "get help event",
+			input: &pb.UIEvent{
+				FormReference: pb.UIEvent_CONNECTION_INFO,
+				ItemName:      pb.UIEvent_GET_HELP,
+				ItemType:      pb.UIEvent_CLICK,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "connection_info",
+				ItemName:      "help",
+				ItemType:      "click",
+				ItemValue:     "",
+			},
+		},
+		{
 			name: "pause event disconnect",
-			ctx: &UIEventContext{
+			input: &pb.UIEvent{
 				FormReference: pb.UIEvent_CLI,
 				ItemName:      pb.UIEvent_PAUSE,
 				ItemType:      pb.UIEvent_CLICK,
@@ -134,7 +162,7 @@ func TestToMooseStrings(t *testing.T) {
 		},
 		{
 			name: "dedicated server connect from tray",
-			ctx: &UIEventContext{
+			input: &pb.UIEvent{
 				FormReference: pb.UIEvent_TRAY,
 				ItemName:      pb.UIEvent_CONNECT,
 				ItemType:      pb.UIEvent_CLICK,
@@ -151,7 +179,7 @@ func TestToMooseStrings(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, ToMooseStrings(tt.ctx))
+			assert.Equal(t, tt.expected, ProtoToMooseStrings(tt.input))
 		})
 	}
 }
@@ -167,6 +195,7 @@ func TestFormReferenceToString(t *testing.T) {
 		{pb.UIEvent_TRAY, "tray"},
 		{pb.UIEvent_HOME_SCREEN, "home_screen"},
 		{pb.UIEvent_GUI, "gui"},
+		{pb.UIEvent_CONNECTION_INFO, "connection_info"},
 	}
 
 	for _, tt := range tests {
@@ -192,6 +221,9 @@ func TestItemNameToString(t *testing.T) {
 		{pb.UIEvent_RATE_CONNECTION, "rate_connection"},
 		{pb.UIEvent_MESHNET_INVITE_SEND, "meshnet_invite_send"},
 		{pb.UIEvent_PAUSE, "pause"},
+		{pb.UIEvent_RECONNECT, "reconnect"},
+		{pb.UIEvent_CHANGE_SETTINGS, "change_vpn_settings"},
+		{pb.UIEvent_GET_HELP, "help"},
 	}
 
 	for _, tt := range tests {

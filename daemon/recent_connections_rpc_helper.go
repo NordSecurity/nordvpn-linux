@@ -8,6 +8,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/events"
 )
 
@@ -110,7 +111,7 @@ func isSingleCityCountry(countryCode string, dm *DataManager, cfg config.Config)
 // event.
 func buildRecentConnectionModel(
 	event events.DataConnect,
-	parameters ServerParameters,
+	parameters serverpicker.ServerParameters,
 	server *core.Server,
 	dm *DataManager,
 	cfg config.Config,

@@ -1525,6 +1525,28 @@ def test_fileshare_process_monitoring_cuts_the_port_access_even_when_it_was_take
         fileshare.ensure_mesh_is_on()
 
 
+def test_no_stale_fileshare_process_after_mesh_off():
+    """Verify nordfileshare exits when meshnet is disabled."""
+    try:
+        assert fileshare.is_process_running(), \
+            "nordfileshare should be running when meshnet is on"
+
+        sh.nordvpn.set.meshnet.off()
+
+        # Poll for process death. The shutdown sequence needs time:
+        # Stop RPC -> Disable() (up to 5s) -> cleanup() -> confirmProcessDeath (up to 5s).
+        deadline = time.time() + 15
+        while time.time() < deadline:
+            if not fileshare.is_process_running():
+                break
+            time.sleep(1)
+
+        assert not fileshare.is_process_running(), \
+            "nordfileshare should not be running after mesh off"
+    finally:
+        fileshare.ensure_mesh_is_on()
+
+
 @pytest.mark.core_meshnet
 @pytest.mark.parametrize("background_accept", [True, False], ids=["accept_bg", "accept_int"])
 @pytest.mark.parametrize("background_send", [True, False], ids=["send_bg", "send_int"])

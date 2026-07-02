@@ -24,6 +24,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	core_test "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 )
 
@@ -74,7 +75,7 @@ func TestStartAutoConnect(t *testing.T) {
 		},
 		{
 			name:        "failing servers API",
-			setup:       func(rpc *RPC) { rpc.serversAPI = &mockFailingServersAPI{} },
+			setup:       func(rpc *RPC) { rpc.serversAPI = core_test.NewMockFailingServersAPI(errors.New("500")) },
 			expectError: false,
 		},
 	}
@@ -111,7 +112,7 @@ func TestDoAutoconnectHandlesServerAvailabilityIssues(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	rpc := testRPC()
-	rpc.serversAPI = mockFailingServersAPI{}
+	rpc.serversAPI = core_test.NewMockFailingServersAPI(errors.New("500"))
 	mockConfigManager := newMockConfigManager()
 	updateAutoconnectData(mockConfigManager, config.AutoConnectData{Country: "DE"})
 	rpc.cm = mockConfigManager
@@ -121,7 +122,7 @@ func TestDoAutoconnectHandlesServerAvailabilityIssues(t *testing.T) {
 	err := rpc.doAutoConnect()
 	assert.ErrorIs(t, err, errServersUnavailable, "doAutoconnect has ignored server availability errors")
 
-	rpc.dm.SetServersData(time.Now(), serversList(), "")
+	rpc.dm.SetServersData(time.Now(), core_test.ServersList(), "")
 	err = rpc.doAutoConnect()
 	assert.Nil(t, err, "unexpected error returned by doAutoconnect")
 }
@@ -136,7 +137,7 @@ func TestDoAutoConnect(t *testing.T) {
 		{
 			name: "connects to obfuscated group",
 			setup: func(rpc *RPC) {
-				rpc.serversAPI = &mockServersAPI{}
+				rpc.serversAPI = core_test.NewMockServersAPI()
 				mockConfigManager := newMockConfigManager()
 
 				// For obfuscated the server group from API is Obfuscated_servers
@@ -150,7 +151,7 @@ func TestDoAutoConnect(t *testing.T) {
 		{
 			name: "connects to country code",
 			setup: func(rpc *RPC) {
-				rpc.serversAPI = &mockServersAPI{}
+				rpc.serversAPI = core_test.NewMockServersAPI()
 				mockConfigManager := newMockConfigManager()
 
 				updateAutoconnectData(mockConfigManager, config.AutoConnectData{Country: "DE"})
@@ -161,7 +162,7 @@ func TestDoAutoConnect(t *testing.T) {
 		{
 			name: "connects to country + city",
 			setup: func(rpc *RPC) {
-				rpc.serversAPI = &mockServersAPI{}
+				rpc.serversAPI = core_test.NewMockServersAPI()
 				mockConfigManager := newMockConfigManager()
 
 				updateAutoconnectData(mockConfigManager, config.AutoConnectData{Country: "DE", City: "Berlin"})
@@ -172,7 +173,7 @@ func TestDoAutoConnect(t *testing.T) {
 		{
 			name: "connects to country + city + group",
 			setup: func(rpc *RPC) {
-				rpc.serversAPI = &mockServersAPI{}
+				rpc.serversAPI = core_test.NewMockServersAPI()
 				mockConfigManager := newMockConfigManager()
 
 				updateAutoconnectData(mockConfigManager, config.AutoConnectData{Country: "DE", City: "Berlin", Group: config.ServerGroup_P2P, ServerTag: "p2p"})
@@ -335,7 +336,7 @@ func TestStartAutoMeshnet(t *testing.T) {
 		},
 		{
 			name:        "failing servers API",
-			serversAPI:  &mockFailingServersAPI{},
+			serversAPI:  core_test.NewMockFailingServersAPI(errors.New("500")),
 			expectError: false,
 		},
 		{
