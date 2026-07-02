@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/theme/toast_theme.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
@@ -18,11 +19,28 @@ final class Toast extends StatefulWidget {
 final class _ToastState extends State<Toast> {
   late Duration _remainingTime;
   Timer? _timer;
+  FocusNode? _previousFocus;
+  final FocusNode _closeButtonFocusNode = FocusNode(
+    debugLabel: 'ToastCloseButton',
+  );
+  bool _isCloseButtonFocused = false;
 
   @override
   void initState() {
     super.initState();
     _remainingTime = widget.duration;
+    _previousFocus = FocusManager.instance.primaryFocus;
+
+    _closeButtonFocusNode.addListener(() {
+      if (_isCloseButtonFocused != _closeButtonFocusNode.hasFocus) {
+        setState(() => _isCloseButtonFocused = _closeButtonFocusNode.hasFocus);
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _closeButtonFocusNode.requestFocus();
+    });
 
     void tick() {
       _remainingTime -= Toast._defaultTimerStep;
@@ -54,38 +72,91 @@ final class _ToastState extends State<Toast> {
         borderRadius: theme.borderRadius,
         color: theme.backgroundColor,
         border: Border.all(width: theme.borderWidth, color: theme.borderColor),
+        boxShadow: theme.shadow,
       ),
-      child: Container(
-        padding: EdgeInsets.all(textScaler.scale(theme.spacing)),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildPauseIcon(),
-            Expanded(child: _buildWidgetText(theme)),
-            _buildCloseButton(theme),
-          ],
+      child: MergeSemantics(
+        child: Focus(
+          onKeyEvent: _onKeyEvent,
+          child: Padding(
+            padding: EdgeInsets.all(textScaler.scale(theme.spacing)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ExcludeSemantics(child: _buildPauseIcon()),
+                Expanded(
+                  child: Semantics(
+                    excludeSemantics: true,
+                    label: _semanticsLabel(),
+                    child: _buildWidgetText(theme),
+                  ),
+                ),
+                _buildCloseButton(theme),
+              ],
+            ),
+          ),
         ),
       ),
     );
+  }
+
+  KeyEventResult _onKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+
+    if (key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.numpadEnter ||
+        key == LogicalKeyboardKey.space) {
+      _restorePreviousFocus();
+      widget.onClose?.call();
+    }
+
+    if (key == LogicalKeyboardKey.escape || key == LogicalKeyboardKey.tab) {
+      _restorePreviousFocus();
+    }
+
+    return KeyEventResult.handled;
+  }
+
+  void _restorePreviousFocus() {
+    final prev = _previousFocus;
+    if (prev != null && prev.context != null) {
+      prev.requestFocus();
+    }
   }
 
   Widget _buildPauseIcon() {
     return DynamicThemeImage("toast_pause_icon.svg");
   }
 
-  Widget _buildWidgetText(ToastTheme theme) {
+  String _resumeMessage() {
     final m = _remainingTime.inMinutes.remainder(60).toString().padLeft(2, '0');
     final s = _remainingTime.inSeconds.remainder(60).toString().padLeft(2, '0');
     final h = _remainingTime.inHours.remainder(60);
-    final text = h > 0
+    return h > 0
         ? t.ui.VPNResumesInWithHours(
             hours: h.toString().padLeft(2, '0'),
             minutes: m,
             seconds: s,
           )
         : t.ui.VPNResumesIn(minutes: m, seconds: s);
+  }
+
+  String _semanticsLabel() {
+    final seconds = _remainingTime.inSeconds.remainder(60);
+    final minutes = _remainingTime.inMinutes.remainder(60);
+    final hours = _remainingTime.inHours.remainder(60);
+    return hours > 0
+        ? t.ui.VPNResumesInWithHours_a11y(
+            hours: hours,
+            minutes: minutes,
+            seconds: seconds,
+          )
+        : t.ui.VPNResumesIn_a11y(minutes: minutes, seconds: seconds);
+  }
+
+  Widget _buildWidgetText(ToastTheme theme) {
     return Text(
-      text,
+      _resumeMessage(),
       style: theme.messageTextStyle,
       textAlign: TextAlign.center,
     );
@@ -94,11 +165,31 @@ final class _ToastState extends State<Toast> {
   Widget _buildCloseButton(ToastTheme theme) {
     return Padding(
       padding: theme.closeButtonPadding,
-      child: GestureDetector(
-        onTap: () {
-          widget.onClose?.call();
-        },
-        child: DynamicThemeImage("toast_close_icon.svg"),
+      child: Semantics(
+        button: true,
+        label: t.ui.close,
+        child: Focus(
+          focusNode: _closeButtonFocusNode,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(
+                color: _isCloseButtonFocused
+                    ? theme.focusBorderColor
+                    : Colors.transparent,
+                width: theme.borderWidth,
+              ),
+            ),
+            child: GestureDetector(
+              onTap: () => widget.onClose?.call(),
+              child: SizedBox(
+                height: 20,
+                width: 20,
+                child: DynamicThemeImage("toast_close_icon.svg"),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -106,6 +197,7 @@ final class _ToastState extends State<Toast> {
   @override
   void dispose() {
     _timer?.cancel();
+    _closeButtonFocusNode.dispose();
     super.dispose();
   }
 }
