@@ -42,6 +42,9 @@ final class ToastTheme extends ThemeExtension<ToastTheme>
   @override
   final Color focusBorderColor;
 
+  @override
+  final List<BoxShadow> shadow;
+
   ToastTheme({
     required this.messageTextStyle,
     required this.backgroundColor,
@@ -55,5 +58,6 @@ final class ToastTheme extends ThemeExtension<ToastTheme>
     required this.focusBorderColor,
     required this.widgetPositionRight,
     required this.widgetPositionBottom,
+    required this.shadow,
   });
 }

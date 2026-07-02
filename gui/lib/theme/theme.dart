@@ -903,6 +903,9 @@ final class NordVpnTheme {
       focusBorderColor: design.semanticColors.borderAccent,
       widgetPositionRight: 20,
       widgetPositionBottom: 16,
+      shadow: mode == ThemeMode.light
+          ? AppBoxShadows.lightModal
+          : AppBoxShadows.darkModal,
     );
   }
 

@@ -72,6 +72,7 @@ final class _ToastState extends State<Toast> {
         borderRadius: theme.borderRadius,
         color: theme.backgroundColor,
         border: Border.all(width: theme.borderWidth, color: theme.borderColor),
+        boxShadow: theme.shadow,
       ),
       child: MergeSemantics(
         child: Focus(
