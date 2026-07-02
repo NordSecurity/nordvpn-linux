@@ -900,6 +900,7 @@ final class NordVpnTheme {
       closeButtonPadding: EdgeInsets.all(5),
       borderWidth: AppBorderWidth.md,
       borderColor: design.semanticColors.borderPrimary,
+      focusBorderColor: design.semanticColors.borderAccent,
       widgetPositionRight: 20,
       widgetPositionBottom: 16,
     );

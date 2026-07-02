@@ -39,6 +39,9 @@ final class ToastTheme extends ThemeExtension<ToastTheme>
   @override
   final Color borderColor;
 
+  @override
+  final Color focusBorderColor;
+
   ToastTheme({
     required this.messageTextStyle,
     required this.backgroundColor,
@@ -49,6 +52,7 @@ final class ToastTheme extends ThemeExtension<ToastTheme>
     required this.closeButtonPadding,
     required this.borderWidth,
     required this.borderColor,
+    required this.focusBorderColor,
     required this.widgetPositionRight,
     required this.widgetPositionBottom,
   });
