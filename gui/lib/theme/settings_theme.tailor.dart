@@ -20,6 +20,7 @@ mixin _$SettingsThemeTailorMixin on ThemeExtension<SettingsTheme> {
   TextStyle get otherProductsSubtitle;
   double get fwMarkInputSize;
   EdgeInsets get itemPadding;
+  List<BoxShadow> get cardShadow;
 
   @override
   SettingsTheme copyWith({
@@ -33,6 +34,7 @@ mixin _$SettingsThemeTailorMixin on ThemeExtension<SettingsTheme> {
     TextStyle? otherProductsSubtitle,
     double? fwMarkInputSize,
     EdgeInsets? itemPadding,
+    List<BoxShadow>? cardShadow,
   }) {
     return SettingsTheme(
       currentPageNameStyle: currentPageNameStyle ?? this.currentPageNameStyle,
@@ -46,6 +48,7 @@ mixin _$SettingsThemeTailorMixin on ThemeExtension<SettingsTheme> {
           otherProductsSubtitle ?? this.otherProductsSubtitle,
       fwMarkInputSize: fwMarkInputSize ?? this.fwMarkInputSize,
       itemPadding: itemPadding ?? this.itemPadding,
+      cardShadow: cardShadow ?? this.cardShadow,
     );
   }
 
@@ -83,6 +86,7 @@ mixin _$SettingsThemeTailorMixin on ThemeExtension<SettingsTheme> {
       )!,
       fwMarkInputSize: t < 0.5 ? fwMarkInputSize : other.fwMarkInputSize,
       itemPadding: t < 0.5 ? itemPadding : other.itemPadding,
+      cardShadow: t < 0.5 ? cardShadow : other.cardShadow,
     );
   }
 
@@ -130,6 +134,10 @@ mixin _$SettingsThemeTailorMixin on ThemeExtension<SettingsTheme> {
             const DeepCollectionEquality().equals(
               itemPadding,
               other.itemPadding,
+            ) &&
+            const DeepCollectionEquality().equals(
+              cardShadow,
+              other.cardShadow,
             ));
   }
 
@@ -147,6 +155,7 @@ mixin _$SettingsThemeTailorMixin on ThemeExtension<SettingsTheme> {
       const DeepCollectionEquality().hash(otherProductsSubtitle),
       const DeepCollectionEquality().hash(fwMarkInputSize),
       const DeepCollectionEquality().hash(itemPadding),
+      const DeepCollectionEquality().hash(cardShadow),
     );
   }
 }
@@ -163,4 +172,5 @@ extension SettingsThemeBuildContextProps on BuildContext {
   TextStyle get otherProductsSubtitle => settingsTheme.otherProductsSubtitle;
   double get fwMarkInputSize => settingsTheme.fwMarkInputSize;
   EdgeInsets get itemPadding => settingsTheme.itemPadding;
+  List<BoxShadow> get cardShadow => settingsTheme.cardShadow;
 }

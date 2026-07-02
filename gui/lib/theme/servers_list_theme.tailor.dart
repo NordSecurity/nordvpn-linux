@@ -19,6 +19,7 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
   TextStyle get obfuscationSearchWarningStyle;
   TextStyle get searchErrorStyle;
   Color get obfuscatedItemBackgroundColor;
+  List<BoxShadow> get cardShadow;
 
   @override
   ServersListTheme copyWith({
@@ -31,6 +32,7 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
     TextStyle? obfuscationSearchWarningStyle,
     TextStyle? searchErrorStyle,
     Color? obfuscatedItemBackgroundColor,
+    List<BoxShadow>? cardShadow,
   }) {
     return ServersListTheme(
       flagSize: flagSize ?? this.flagSize,
@@ -45,6 +47,7 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
       searchErrorStyle: searchErrorStyle ?? this.searchErrorStyle,
       obfuscatedItemBackgroundColor:
           obfuscatedItemBackgroundColor ?? this.obfuscatedItemBackgroundColor,
+      cardShadow: cardShadow ?? this.cardShadow,
     );
   }
 
@@ -82,6 +85,7 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
         other.obfuscatedItemBackgroundColor,
         t,
       )!,
+      cardShadow: t < 0.5 ? cardShadow : other.cardShadow,
     );
   }
 
@@ -122,6 +126,10 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
             const DeepCollectionEquality().equals(
               obfuscatedItemBackgroundColor,
               other.obfuscatedItemBackgroundColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              cardShadow,
+              other.cardShadow,
             ));
   }
 
@@ -138,6 +146,7 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
       const DeepCollectionEquality().hash(obfuscationSearchWarningStyle),
       const DeepCollectionEquality().hash(searchErrorStyle),
       const DeepCollectionEquality().hash(obfuscatedItemBackgroundColor),
+      const DeepCollectionEquality().hash(cardShadow),
     );
   }
 }
@@ -157,4 +166,5 @@ extension ServersListThemeBuildContextProps on BuildContext {
   TextStyle get searchErrorStyle => serversListTheme.searchErrorStyle;
   Color get obfuscatedItemBackgroundColor =>
       serversListTheme.obfuscatedItemBackgroundColor;
+  List<BoxShadow> get cardShadow => serversListTheme.cardShadow;
 }
