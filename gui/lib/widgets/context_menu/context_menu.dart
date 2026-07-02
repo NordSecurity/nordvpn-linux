@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:nordvpn/theme/context_menu_theme.dart';
 import 'package:nordvpn/widgets/context_menu/context_menu_item.dart';
 
@@ -8,6 +9,11 @@ export 'package:nordvpn/widgets/context_menu/context_menu_item.dart';
 ///
 /// Opens below the anchor when tapped. Tapping outside the menu closes it
 /// without propagating the tap to elements underneath.
+///
+/// Keyboard behavior:
+/// - Opening the menu moves focus to the first item.
+/// - Tab / Shift+Tab move between items.
+/// - Escape closes the menu and returns focus to the anchor.
 ///
 /// Example:
 /// ```dart
@@ -56,6 +62,14 @@ class _ContextMenuState extends State<ContextMenu>
     with SingleTickerProviderStateMixin {
   final _layerLink = LayerLink();
   final _overlayController = OverlayPortalController();
+
+  // Owns focus for the open menu panel, so Escape can be scoped to it.
+  final _menuScopeNode = FocusScopeNode(debugLabel: 'ContextMenuPanel');
+
+  // Whatever had focus right before the menu opened (almost always the
+  // anchor button's own internal FocusNode). Restored on close.
+  FocusNode? _previousFocus;
+
   late final AnimationController _animationController;
   late final Animation<double> _animation;
   bool _initialized = false;
@@ -80,17 +94,28 @@ class _ContextMenuState extends State<ContextMenu>
   @override
   void dispose() {
     _animationController.dispose();
+    _menuScopeNode.dispose();
     super.dispose();
   }
 
   void _open() {
+    _previousFocus = FocusManager.instance.primaryFocus;
     _overlayController.show();
     _animationController.forward();
+    // Deliberately no manual requestFocus() here — the first menu item
+    // uses `autofocus: true` instead, which Flutter resolves correctly
+    // once the overlay content actually mounts. A postFrameCallback here
+    // fires before the overlay's next build, so it would request focus
+    // on items that don't exist yet.
   }
 
   void _close() {
     _animationController.reverse().then((_) {
-      if (mounted) _overlayController.hide();
+      if (mounted) {
+        _overlayController.hide();
+        _previousFocus?.requestFocus();
+        _previousFocus = null;
+      }
     });
   }
 
@@ -155,10 +180,32 @@ class _ContextMenuState extends State<ContextMenu>
                 axisAlignment: -1,
                 child: Padding(
                   padding: EdgeInsets.only(bottom: theme.menuShadowMargin),
-                  child: _MenuPanel(
-                    items: widget.items,
-                    width: menuWidth,
-                    onItemTapped: _onItemTapped,
+                  child: FocusScope(
+                    node: _menuScopeNode,
+                    child: Shortcuts(
+                      shortcuts: const <ShortcutActivator, Intent>{
+                        SingleActivator(LogicalKeyboardKey.escape):
+                            DismissIntent(),
+                      },
+                      child: Actions(
+                        actions: <Type, Action<Intent>>{
+                          DismissIntent: CallbackAction<DismissIntent>(
+                            onInvoke: (intent) {
+                              _close();
+                              return null;
+                            },
+                          ),
+                        },
+                        child: FocusTraversalGroup(
+                          policy: OrderedTraversalPolicy(),
+                          child: _MenuPanel(
+                            items: widget.items,
+                            width: menuWidth,
+                            onItemTapped: _onItemTapped,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -203,11 +250,14 @@ class _MenuPanel extends StatelessWidget {
           padding: theme.menuPadding,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: items
-                .map(
-                  (item) => _MenuItemTile(item: item, onTapped: onItemTapped),
-                )
-                .toList(),
+            children: [
+              for (var i = 0; i < items.length; i++)
+                _MenuItemTile(
+                  item: items[i],
+                  onTapped: onItemTapped,
+                  autofocus: i == 0,
+                ),
+            ],
           ),
         ),
       ),
@@ -218,8 +268,13 @@ class _MenuPanel extends StatelessWidget {
 class _MenuItemTile extends StatelessWidget {
   final ContextMenuItem item;
   final void Function(VoidCallback) onTapped;
+  final bool autofocus;
 
-  const _MenuItemTile({required this.item, required this.onTapped});
+  const _MenuItemTile({
+    required this.item,
+    required this.onTapped,
+    this.autofocus = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -228,17 +283,23 @@ class _MenuItemTile extends StatelessWidget {
 
     return InkWell(
       key: item.key,
+      autofocus: autofocus,
       onTap: () => onTapped(item.onTap),
       hoverColor: theme.itemHoverColor,
       borderRadius: theme.itemBorderRadius,
       mouseCursor: SystemMouseCursors.basic,
-      child: Padding(
-        padding: theme.itemPadding,
-        child: SizedBox(
-          height: theme.itemHeight,
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: Text(item.label, style: labelStyle),
+      child: Semantics(
+        label: item.label,
+        button: true,
+        excludeSemantics: true,
+        child: Padding(
+          padding: theme.itemPadding,
+          child: SizedBox(
+            height: theme.itemHeight,
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(item.label, style: labelStyle),
+            ),
           ),
         ),
       ),
