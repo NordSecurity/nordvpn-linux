@@ -21,6 +21,7 @@ mixin _$ToastThemeTailorMixin on ThemeExtension<ToastTheme> {
   EdgeInsets get closeButtonPadding;
   double get borderWidth;
   Color get borderColor;
+  Color get focusBorderColor;
 
   @override
   ToastTheme copyWith({
@@ -35,6 +36,7 @@ mixin _$ToastThemeTailorMixin on ThemeExtension<ToastTheme> {
     EdgeInsets? closeButtonPadding,
     double? borderWidth,
     Color? borderColor,
+    Color? focusBorderColor,
   }) {
     return ToastTheme(
       messageTextStyle: messageTextStyle ?? this.messageTextStyle,
@@ -48,6 +50,7 @@ mixin _$ToastThemeTailorMixin on ThemeExtension<ToastTheme> {
       closeButtonPadding: closeButtonPadding ?? this.closeButtonPadding,
       borderWidth: borderWidth ?? this.borderWidth,
       borderColor: borderColor ?? this.borderColor,
+      focusBorderColor: focusBorderColor ?? this.focusBorderColor,
     );
   }
 
@@ -76,6 +79,11 @@ mixin _$ToastThemeTailorMixin on ThemeExtension<ToastTheme> {
           : other.closeButtonPadding,
       borderWidth: t < 0.5 ? borderWidth : other.borderWidth,
       borderColor: Color.lerp(borderColor, other.borderColor, t)!,
+      focusBorderColor: Color.lerp(
+        focusBorderColor,
+        other.focusBorderColor,
+        t,
+      )!,
     );
   }
 
@@ -124,6 +132,10 @@ mixin _$ToastThemeTailorMixin on ThemeExtension<ToastTheme> {
             const DeepCollectionEquality().equals(
               borderColor,
               other.borderColor,
+            ) &&
+            const DeepCollectionEquality().equals(
+              focusBorderColor,
+              other.focusBorderColor,
             ));
   }
 
@@ -142,6 +154,7 @@ mixin _$ToastThemeTailorMixin on ThemeExtension<ToastTheme> {
       const DeepCollectionEquality().hash(closeButtonPadding),
       const DeepCollectionEquality().hash(borderWidth),
       const DeepCollectionEquality().hash(borderColor),
+      const DeepCollectionEquality().hash(focusBorderColor),
     );
   }
 }
@@ -159,4 +172,5 @@ extension ToastThemeBuildContextProps on BuildContext {
   EdgeInsets get closeButtonPadding => toastTheme.closeButtonPadding;
   double get borderWidth => toastTheme.borderWidth;
   Color get borderColor => toastTheme.borderColor;
+  Color get focusBorderColor => toastTheme.focusBorderColor;
 }

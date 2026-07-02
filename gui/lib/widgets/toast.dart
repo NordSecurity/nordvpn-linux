@@ -174,7 +174,7 @@ final class _ToastState extends State<Toast> {
               borderRadius: BorderRadius.circular(4),
               border: Border.all(
                 color: _isCloseButtonFocused
-                    ? theme.borderColor
+                    ? theme.focusBorderColor
                     : Colors.transparent,
                 width: theme.borderWidth,
               ),
