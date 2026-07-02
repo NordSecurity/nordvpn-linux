@@ -52,10 +52,6 @@ final loginUrl = UriWithToken.parse(
   "https://nordaccount.com/login?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=home-log_in&nm=app&ns=nordvpn-linux-gui&nc=home-log_in",
 );
 
-final countriesApiUrl = Uri.parse(
-  "https://api.nordvpn.com/v1/servers/countries",
-);
-
 final autoRenewalTermsUrl = Uri.parse(
   "https://my.nordaccount.com/legal/terms-of-service/subscription/?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=settings_terms-auto_renewal_terms&nm=app&ns=nordvpn-linux-gui&nc=settings-auto_renewal_terms",
 );

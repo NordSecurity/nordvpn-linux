@@ -351,16 +351,6 @@ final class MockDaemon extends DaemonServiceBase {
   }
 
   @override
-  Future<GetDaemonApiVersionResponse> getDaemonApiVersion(
-    ServiceCall call,
-    GetDaemonApiVersionRequest request,
-  ) async {
-    return GetDaemonApiVersionResponse(
-      apiVersion: DaemonApiVersion.CURRENT_VERSION.value,
-    );
-  }
-
-  @override
   Future<FeatureToggles> getFeatureToggles(ServiceCall call, Empty request) {
     // not used
     throw UnimplementedError();

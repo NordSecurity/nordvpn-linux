@@ -765,10 +765,10 @@ func main() {
 		}
 	}()
 
+	rpc.StartKillSwitch()
 	rpc.StartJobs(statePublisher, heartBeatSubject)
 	rpc.StartRemoteConfigLoaderJob(rcConfig)
 	meshService.StartJobs()
-	rpc.StartKillSwitch()
 	if internal.IsSystemd() {
 		go rpc.StartSystemShutdownMonitor()
 	}

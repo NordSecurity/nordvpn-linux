@@ -46,7 +46,6 @@ const (
 	TestVersionFile         = "tempversion.dat"
 	TestTokenRenewJSON      = "tokenrenew.json"
 	MixedServersJSON        = "mixed.json"
-	CountryDataJSON         = "country.json"
 	LocalServerPath         = "http://localhost"
 	InsightsJSON            = "testinsights.json"
 	TestVersionDeb          = "testdebparse"
@@ -133,7 +132,6 @@ func TestMain(m *testing.M) {
 	servers := make([]*http.Server, 0)
 	generalInfoHandler := []Handler{
 		{"/v1/servers", mockAPI(MixedServersJSON).handler},
-		{"/v1/servers/countries", mockAPI(CountryDataJSON).handler},
 		{"/v1/helpers/ips/insights/", mockAPI(InsightsJSON).handler},
 		{"/v1/users", mockAPI(TestUserCreateJSON).handler},
 		{"/v1/users/services/credentials/", mockAPI(TestUserCredentialsJSON).handler},
@@ -144,7 +142,6 @@ func TestMain(m *testing.M) {
 
 	invalidInfoHandler := []Handler{
 		{"/v1/servers", mockAPI(MixedServersJSON).invalidHandler},
-		{"/v1/servers/countries", mockAPI(MixedServersJSON).invalidHandler},
 		{"/v1/users", mockAPI(MixedServersJSON).invalidHandler},
 		{"/v1/plans", mockAPI(MixedServersJSON).invalidHandler},
 	}

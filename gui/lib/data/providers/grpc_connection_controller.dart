@@ -112,43 +112,25 @@ class GrpcConnectionController extends _$GrpcConnectionController {
     _errorInterceptorSubscription.cancel();
   }
 
-  void _checkApiCompatibility(int apiVersion) {
-    if (_disposed) return;
-
-    if (apiVersion != DaemonApiVersion.CURRENT_VERSION.value) {
-      logger.e(
-        "API version error, GUI API: ${DaemonApiVersion.CURRENT_VERSION.value}, Daemon API: $apiVersion",
-      );
-      _updateState(
-        AsyncError(
-          ApplicationError(AppStatusCode.compatibilityIssue),
-          StackTrace.current,
-        ),
-      );
-      return;
-    }
-
-    // notify dependant providers only when there is actual change in the state
-    if (state is AsyncData<bool> && state.value == true) return;
-
-    state = const AsyncData(true);
-  }
-
   Future<void> _pingDaemon() async {
     try {
       // Timeout is used for when the user was part of the nordvpn group,
       // but later was removed without rebooting the system. Because of this
       // there is a mismatch in the system: user is still part of the group
-      //until reboot, but into the groups file it is not part of the group
+      // until reboot, but into the groups file it is not part of the group
       // anymore. In this case the daemon will reject the connection, after
       // socket is connected. This case is not handled by dart implementation
       // and the only way to detect this, is based on the deadline timeout
       // (but only for this call).
-      final response = await _client.getDaemonApiVersion(
-        GetDaemonApiVersionRequest(),
+      final _ = await _client.ping(
+        Empty(),
         options: CallOptions(timeout: _pingCallTimeout),
       );
-      _checkApiCompatibility(response.apiVersion);
+
+      // notify dependant providers only when there is actual change in the state
+      if (!(state is AsyncData<bool> && state.value == true)) {
+        state = const AsyncData(true);
+      }
     } catch (error) {
       _onConnectionError(error);
     }
