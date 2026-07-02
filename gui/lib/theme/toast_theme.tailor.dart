@@ -22,6 +22,7 @@ mixin _$ToastThemeTailorMixin on ThemeExtension<ToastTheme> {
   double get borderWidth;
   Color get borderColor;
   Color get focusBorderColor;
+  List<BoxShadow> get shadow;
 
   @override
   ToastTheme copyWith({
@@ -37,6 +38,7 @@ mixin _$ToastThemeTailorMixin on ThemeExtension<ToastTheme> {
     double? borderWidth,
     Color? borderColor,
     Color? focusBorderColor,
+    List<BoxShadow>? shadow,
   }) {
     return ToastTheme(
       messageTextStyle: messageTextStyle ?? this.messageTextStyle,
@@ -51,6 +53,7 @@ mixin _$ToastThemeTailorMixin on ThemeExtension<ToastTheme> {
       borderWidth: borderWidth ?? this.borderWidth,
       borderColor: borderColor ?? this.borderColor,
       focusBorderColor: focusBorderColor ?? this.focusBorderColor,
+      shadow: shadow ?? this.shadow,
     );
   }
 
@@ -84,6 +87,7 @@ mixin _$ToastThemeTailorMixin on ThemeExtension<ToastTheme> {
         other.focusBorderColor,
         t,
       )!,
+      shadow: t < 0.5 ? shadow : other.shadow,
     );
   }
 
@@ -136,7 +140,8 @@ mixin _$ToastThemeTailorMixin on ThemeExtension<ToastTheme> {
             const DeepCollectionEquality().equals(
               focusBorderColor,
               other.focusBorderColor,
-            ));
+            ) &&
+            const DeepCollectionEquality().equals(shadow, other.shadow));
   }
 
   @override
@@ -155,6 +160,7 @@ mixin _$ToastThemeTailorMixin on ThemeExtension<ToastTheme> {
       const DeepCollectionEquality().hash(borderWidth),
       const DeepCollectionEquality().hash(borderColor),
       const DeepCollectionEquality().hash(focusBorderColor),
+      const DeepCollectionEquality().hash(shadow),
     );
   }
 }
@@ -173,4 +179,5 @@ extension ToastThemeBuildContextProps on BuildContext {
   double get borderWidth => toastTheme.borderWidth;
   Color get borderColor => toastTheme.borderColor;
   Color get focusBorderColor => toastTheme.focusBorderColor;
+  List<BoxShadow> get shadow => toastTheme.shadow;
 }
