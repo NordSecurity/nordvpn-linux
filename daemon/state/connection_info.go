@@ -45,7 +45,12 @@ type serverSelectionData struct {
 type ConnectionInfo struct {
 	status         types.ConnectionStatus
 	fullyConnected bool
-	pauseData      *pauseData
+	// statusBeforeConnecting is a snapshot of status captured by SetInitialConnecting,
+	// used to roll back the reported status when a connection attempt aborts without
+	// touching the existing tunnel (see RestorePreviousStatus).
+	statusBeforeConnecting types.ConnectionStatus
+	fullyConnectedBefore   bool
+	pauseData              *pauseData
 	// serverSelectionData stores data used to build PauseCancelled events
 	serverSelectionData   serverSelectionData
 	remainingDurationFunc remainingDurationFunc
@@ -105,11 +110,30 @@ func (cs *ConnectionInfo) setStatus(s types.ConnectionStatus, fullyConnected boo
 }
 
 // SetInitialConnecting should be executed as soon as connection started, even when no target server
-// is known yet.
+// is known yet. It snapshots the current status so it can be restored if the attempt aborts before
+// the existing tunnel is touched (see RestorePreviousStatus).
 func (c *ConnectionInfo) SetInitialConnecting() {
+	c.mu.Lock()
+	c.statusBeforeConnecting = c.status
+	c.fullyConnectedBefore = c.fullyConnected
+	c.mu.Unlock()
+
 	status := types.ConnectionStatus{State: pb.ConnectionState_CONNECTING}
 	c.setStatus(status, false)
 	c.internalNotif.Publish(events.DataConnectChangeNotif{Status: status})
+}
+
+// RestorePreviousStatus reverts the reported status to the snapshot captured by the most recent
+// SetInitialConnecting call. Use it when a connection attempt fails but the existing tunnel was
+// left intact, so the reported state must not falsely become DISCONNECTED.
+func (c *ConnectionInfo) RestorePreviousStatus() {
+	c.mu.RLock()
+	prev := c.statusBeforeConnecting
+	fully := c.fullyConnectedBefore
+	c.mu.RUnlock()
+
+	c.setStatus(prev, fully)
+	c.internalNotif.Publish(events.DataConnectChangeNotif{Status: prev})
 }
 
 func (c *ConnectionInfo) ConnectionStatusNotifyConnect(e events.DataConnect) error {
