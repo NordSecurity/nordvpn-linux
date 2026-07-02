@@ -23,30 +23,29 @@ final class DecisionPopup extends Popup {
         Row(
           spacing: theme.gapBetweenElements,
           children: [
-            Expanded(child: _noButton(ref, context)),
-            Expanded(child: _yesButton(ref, context)),
+            Expanded(child: _noButton(context)),
+            Expanded(child: _yesButton(context)),
           ],
         ),
       ],
     );
   }
 
-  Widget _noButton(WidgetRef ref, BuildContext context) {
+  // The yes/no actions are intentionally not invoked here. Closing the dialog
+  // disposes this widget's `ref`, so an async action that uses it after an
+  // `await` would crash with "Cannot use ref after the widget was disposed".
+  // Instead we pop with the user's choice and let PopupsListener run the
+  // action with its long-lived ref once the dialog is gone.
+  Widget _noButton(BuildContext context) {
     return OutlinedButton(
-      onPressed: () {
-        closePopup(context);
-        decisionMetadata.noAction?.call(ref);
-      },
+      onPressed: () => Navigator.of(context).pop(false),
       child: Text(decisionMetadata.noButtonText),
     );
   }
 
-  Widget _yesButton(WidgetRef ref, BuildContext context) {
+  Widget _yesButton(BuildContext context) {
     return ElevatedButton(
-      onPressed: () {
-        closePopup(context);
-        decisionMetadata.yesAction(ref);
-      },
+      onPressed: () => Navigator.of(context).pop(true),
       child: Text(decisionMetadata.yesButtonText),
     );
   }
