@@ -43,14 +43,16 @@ final class ConnectionCardButtons extends ConsumerWidget {
     return ScalerResponsiveBox(
       maxWidth: buttonTheme.maxConnectButtonWidth,
       child: IntrinsicHeight(
-        child: Row(
-          spacing: appTheme.horizontalSpaceSmall,
-          children: _buildButtons(
-            context,
-            ref,
-            appTheme,
-            buttonTheme,
-            vpnStatus,
+        child: FocusTraversalGroup(
+          child: Row(
+            spacing: appTheme.horizontalSpaceSmall,
+            children: _buildButtons(
+              context,
+              ref,
+              appTheme,
+              buttonTheme,
+              vpnStatus,
+            ),
           ),
         ),
       ),
@@ -75,7 +77,12 @@ final class ConnectionCardButtons extends ConsumerWidget {
               onPressed: () async => await ref
                   .read(vpnStatusControllerProvider.notifier)
                   .disconnect(),
-              child: Text(t.ui.disconnect),
+              child: Semantics(
+                label: t.ui.disconnect,
+                button: true,
+                excludeSemantics: true,
+                child: Text(t.ui.disconnect),
+              ),
             ),
           ),
           _buildConnectionDetailsButton(context, buttonTheme),
@@ -83,29 +90,36 @@ final class ConnectionCardButtons extends ConsumerWidget {
       }
       return [
         Expanded(
-          child: ContextMenu(
-            key: ConnectionCardButtons.pauseConnectionButtonKey,
-            matchAnchorWidth: true,
-            items: [
-              ..._pauseLengths.map(
-                (pause) => ContextMenuItem(
-                  label: _pauseLabel(pause),
-                  onTap: () async => await _pauseConnection(ref, pause),
+          child: FocusTraversalGroup(
+            child: ContextMenu(
+              key: ConnectionCardButtons.pauseConnectionButtonKey,
+              matchAnchorWidth: true,
+              items: [
+                ..._pauseLengths.map(
+                  (pause) => ContextMenuItem(
+                    label: _pauseLabel(pause),
+                    onTap: () async => await _pauseConnection(ref, pause),
+                  ),
+                ),
+                ContextMenuItem(
+                  key: ConnectionCardButtons.disconnectMenuItemKey,
+                  label: t.ui.disconnect,
+                  labelColor: context.appTheme.textErrorColor,
+                  onTap: () async => await ref
+                      .read(vpnStatusControllerProvider.notifier)
+                      .disconnect(),
+                ),
+              ],
+              anchorBuilder: (toggleMenu) => OutlinedButton(
+                style: buttonTheme.pauseConnectionButtonStyle,
+                onPressed: toggleMenu,
+                child: Semantics(
+                  label: t.ui.pauseConnection,
+                  button: true,
+                  excludeSemantics: true,
+                  child: Text(t.ui.pauseConnection),
                 ),
               ),
-              ContextMenuItem(
-                key: ConnectionCardButtons.disconnectMenuItemKey,
-                label: t.ui.disconnect,
-                labelColor: context.appTheme.textErrorColor,
-                onTap: () async => await ref
-                    .read(vpnStatusControllerProvider.notifier)
-                    .disconnect(),
-              ),
-            ],
-            anchorBuilder: (toggleMenu) => OutlinedButton(
-              style: buttonTheme.pauseConnectionButtonStyle,
-              onPressed: toggleMenu,
-              child: Text(t.ui.pauseConnection),
             ),
           ),
         ),
@@ -146,7 +160,12 @@ final class ConnectionCardButtons extends ConsumerWidget {
           await ref.read(vpnStatusControllerProvider.notifier).connect(args);
         },
         style: buttonTheme.secureMyConnectionButtonStyle,
-        child: Text(t.ui.secureMyConnection),
+        child: Semantics(
+          label: t.ui.secureMyConnection,
+          button: true,
+          excludeSemantics: true,
+          child: Text(t.ui.secureMyConnection),
+        ),
       ),
     );
   }
@@ -162,7 +181,12 @@ final class ConnectionCardButtons extends ConsumerWidget {
           await ref.read(vpnStatusControllerProvider.notifier).cancelConnect();
         },
         style: buttonTheme.cancelButtonStyle,
-        child: Text(t.ui.cancel),
+        child: Semantics(
+          label: t.ui.cancel,
+          button: true,
+          excludeSemantics: true,
+          child: Text(t.ui.cancel),
+        ),
       ),
     );
   }
@@ -198,23 +222,30 @@ final class ConnectionCardButtons extends ConsumerWidget {
     List<ContextMenuItem> extraItems = const [],
   }) {
     return IntrinsicWidth(
-      child: ContextMenu(
-        items: [
-          ...extraItems,
-          ContextMenuItem(
-            label: t.ui.changeVPNsettings,
-            onTap: () =>
-                context.navigateToRoute(AppRoute.settingsVpnConnection),
+      child: FocusTraversalGroup(
+        child: ContextMenu(
+          items: [
+            ...extraItems,
+            ContextMenuItem(
+              label: t.ui.changeVPNsettings,
+              onTap: () =>
+                  context.navigateToRoute(AppRoute.settingsVpnConnection),
+            ),
+            ContextMenuItem(
+              label: t.ui.getHelp,
+              onTap: () => getHelpUrl.launch(),
+            ),
+          ],
+          anchorBuilder: (toggleMenu) => OutlinedButton(
+            style: buttonTheme.connectionDetailsButtonStyle,
+            onPressed: toggleMenu,
+            child: Semantics(
+              label: "More",
+              button: true,
+              excludeSemantics: true,
+              child: DynamicThemeImage("connection_details.svg"),
+            ),
           ),
-          ContextMenuItem(
-            label: t.ui.getHelp,
-            onTap: () => getHelpUrl.launch(),
-          ),
-        ],
-        anchorBuilder: (toggleMenu) => OutlinedButton(
-          style: buttonTheme.connectionDetailsButtonStyle,
-          onPressed: toggleMenu,
-          child: DynamicThemeImage("connection_details.svg"),
         ),
       ),
     );

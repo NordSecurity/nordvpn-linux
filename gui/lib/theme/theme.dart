@@ -914,6 +914,10 @@ final class NordVpnTheme {
         return hoverColor;
       }
 
+      if (states.contains(WidgetState.focused)) {
+        return hoverColor;
+      }
+
       return defaultColor;
     });
   }
