@@ -5,7 +5,6 @@ import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/theme/toast_theme.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 
-
 final class Toast extends StatefulWidget {
   const Toast({super.key, required this.duration, required this.onClose});
   static const Duration _defaultTimerStep = Duration(seconds: 1);
@@ -146,12 +145,12 @@ final class _ToastState extends State<Toast> {
     final minutes = _remainingTime.inMinutes.remainder(60);
     final hours = _remainingTime.inHours.remainder(60);
     return hours > 0
-        ? t.ui.a11yToastPausedWithHours(
+        ? t.ui.VPNResumesInWithHours_a11y(
             hours: hours,
             minutes: minutes,
             seconds: seconds,
           )
-        : t.ui.a11yToastPaused(minutes: minutes, seconds: seconds);
+        : t.ui.VPNResumesIn_a11y(minutes: minutes, seconds: seconds);
   }
 
   Widget _buildWidgetText(ToastTheme theme) {
