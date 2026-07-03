@@ -364,3 +364,47 @@ func TestSimpleAPI_OversizedCompressedResponseRejected(t *testing.T) {
 	_, err := api.Plans()
 	assert.ErrorContains(t, err, "max limit")
 }
+
+// TestSimpleAPI_DecompressionBombRejected is a bug-fix-first proof test for LVPN-10540.
+func TestSimpleAPI_DecompressionBombRejected(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	// Inflates to > internal.MaxDecompressedBytesLimit from only a few KB on the wire.
+	decompressedSize := internal.MaxDecompressedBytesLimit + 1024*1024 // just over the cap
+	// Stream the source into the gzip writer in chunks so the test never holds the full
+	// (100+ MiB) uncompressed payload in memory.
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	chunk := bytes.Repeat([]byte{'A'}, 1024*1024)
+	for written := int64(0); written < decompressedSize; written += int64(len(chunk)) {
+		_, _ = gz.Write(chunk)
+	}
+	_ = gz.Close()
+
+	// Sanity: the compressed payload must pass the wire cap so it reaches the
+	// decompression step.
+	assert.Less(t, int64(buf.Len()), internal.MaxBytesLimit,
+		"compressed payload must be under the wire cap for this test to exercise decompression")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Encoding", "gzip")
+		w.Header().Set("Content-Type", "application/json")
+		t.Logf("compressed (wire) size: %d bytes; decompressed size: %d bytes; ratio: %.0fx",
+			buf.Len(), decompressedSize, float64(decompressedSize)/float64(buf.Len()))
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(buf.Bytes())
+	}))
+	defer server.Close()
+
+	api := NewSimpleAPI(
+		"test-agent",
+		server.URL,
+		&http.Client{},
+		response.NoopValidator{},
+	)
+
+	_, err := api.Plans()
+	// A correctly-hardened client must reject the oversized DECOMPRESSED body.
+	// Current code does not -> this fails, proving the vulnerability.
+	assert.ErrorContains(t, err, "max limit")
+}

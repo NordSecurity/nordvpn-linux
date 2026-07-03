@@ -4,6 +4,8 @@ Package core provides Go HTTP client for interacting with Core API a.k.a. NordVP
 package core
 
 import (
+	"bytes"
+	"compress/gzip"
 	"fmt"
 	"io"
 	"net/http"
@@ -71,13 +73,22 @@ func (err *ErrMaxBytesLimit) Error() string {
 	return fmt.Sprintf("input exceeded the max limit of %d bytes", err.Limit)
 }
 
-// MaxBytesReadAll is a wrapper around io.ReadAll that limits the number of bytes read from the reader.
+// MaxBytesReadAll is a wrapper around io.ReadAll that limits the number of bytes read from the reader
+// to internal.MaxBytesLimit.
 //
-// If the reader exceeds the maxBytesLimit, the function returns an error.
+// If the reader exceeds the limit, the function returns an error.
 func MaxBytesReadAll(r io.Reader) ([]byte, error) {
+	return MaxBytesReadAllWithLimit(r, internal.MaxBytesLimit)
+}
+
+// MaxBytesReadAllWithLimit is a wrapper around io.ReadAll that limits the number of bytes read from
+// the reader to the given limit.
+//
+// If the reader exceeds the limit, the function returns an *ErrMaxBytesLimit.
+func MaxBytesReadAllWithLimit(r io.Reader, limit int64) ([]byte, error) {
 	limitedReader := &io.LimitedReader{
 		R: r,
-		N: internal.MaxBytesLimit,
+		N: limit,
 	}
 	data, err := io.ReadAll(limitedReader)
 	if err != nil {
@@ -89,8 +100,23 @@ func MaxBytesReadAll(r io.Reader) ([]byte, error) {
 	// limit reached       - limitedReader.N <= 0
 	// io.Reader is empty  - limitedReader.N > 0
 	if limitedReader.N <= 0 {
-		return nil, &ErrMaxBytesLimit{Limit: internal.MaxBytesLimit}
+		return nil, &ErrMaxBytesLimit{Limit: limit}
 	}
 
 	return data, nil
+}
+
+// DecompressGzip decompresses gzip-encoded data, capping the decompressed size at
+// internal.MaxDecompressedBytesLimit to guard against decompression ("zip") bombs.
+//
+// Callers must apply MaxBytesReadAll to the compressed body first; this bounds the
+// decompressed output separately, since a compressed body within MaxBytesLimit can still
+// inflate to gigabytes.
+func DecompressGzip(compressed []byte) ([]byte, error) {
+	reader, err := gzip.NewReader(bytes.NewReader(compressed))
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+	return MaxBytesReadAllWithLimit(reader, internal.MaxDecompressedBytesLimit)
 }

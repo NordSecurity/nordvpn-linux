@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
@@ -63,7 +64,7 @@ func (Subscriber) NotifyRequestAPIVerbose(data events.DataRequestAPI) error {
 	// Additional read of response body. Do not use in production builds
 	var respBodyBytes []byte
 	if data.Response != nil {
-		rawRespBodyBytes, _ := io.ReadAll(data.Response.Body)
+		rawRespBodyBytes, _ := io.ReadAll(io.LimitReader(data.Response.Body, internal.MaxBytesLimit))
 		_ = data.Response.Body.Close()
 		var reader io.Reader = bytes.NewBuffer(bytes.Clone(rawRespBodyBytes))
 		if data.Response.Header.Get("Content-Encoding") == "gzip" {
@@ -74,7 +75,7 @@ func (Subscriber) NotifyRequestAPIVerbose(data events.DataRequestAPI) error {
 		}
 		data.Response.Body = io.NopCloser(bytes.NewBuffer(rawRespBodyBytes))
 
-		respBodyBytes, _ = io.ReadAll(reader)
+		respBodyBytes, _ = io.ReadAll(io.LimitReader(reader, internal.MaxDecompressedBytesLimit))
 	}
 	log.Infof("HTTP CALL %s", dataRequestAPIToString(data, reqBodyBytes, respBodyBytes, false))
 	return nil
