@@ -1,10 +1,10 @@
 /// Generated file. Do not edit.
 ///
-/// Source: lib/i18n/en
+/// Source: en
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 1
-/// Strings: 696
+/// Strings: 2
 
 // coverage:ignore-file
 // ignore_for_file: type=lint, unused_import
@@ -16,7 +16,7 @@ import 'package:slang/generated.dart';
 import 'package:slang_flutter/slang_flutter.dart';
 export 'package:slang_flutter/slang_flutter.dart';
 
-part 'strings_en.g.dart';
+part 'strings_a11y_en.g.dart';
 
 /// Supported locales.
 ///
@@ -24,7 +24,7 @@ part 'strings_en.g.dart';
 /// - LocaleSettings.setLocale(AppLocale.en) // set locale
 /// - Locale locale = AppLocale.en.flutterLocale // get flutter locale from enum
 /// - if (LocaleSettings.currentLocale == AppLocale.en) // locale check
-enum AppLocale with BaseAppLocale<AppLocale, Translations> {
+enum AppLocale with BaseAppLocale<AppLocale, TranslationsA11y> {
 	en(languageCode: 'en');
 
 	const AppLocale({
@@ -38,14 +38,14 @@ enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 	@override final String? countryCode;
 
 	@override
-	Future<Translations> build({
+	Future<TranslationsA11y> build({
 		Map<String, Node>? overrides,
 		PluralResolver? cardinalResolver,
 		PluralResolver? ordinalResolver,
 	}) async {
 		switch (this) {
 			case AppLocale.en:
-				return TranslationsEn(
+				return TranslationsA11yEn(
 					overrides: overrides,
 					cardinalResolver: cardinalResolver,
 					ordinalResolver: ordinalResolver,
@@ -54,14 +54,14 @@ enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 	}
 
 	@override
-	Translations buildSync({
+	TranslationsA11y buildSync({
 		Map<String, Node>? overrides,
 		PluralResolver? cardinalResolver,
 		PluralResolver? ordinalResolver,
 	}) {
 		switch (this) {
 			case AppLocale.en:
-				return TranslationsEn(
+				return TranslationsA11yEn(
 					overrides: overrides,
 					cardinalResolver: cardinalResolver,
 					ordinalResolver: ordinalResolver,
@@ -70,19 +70,19 @@ enum AppLocale with BaseAppLocale<AppLocale, Translations> {
 	}
 
 	/// Gets current instance managed by [LocaleSettings].
-	Translations get translations => LocaleSettings.instance.getTranslations(this);
+	TranslationsA11y get translations => LocaleSettings.instance.getTranslations(this);
 }
 
 /// Method A: Simple
 ///
 /// No rebuild after locale change.
-/// Translation happens during initialization of the widget (call of t).
+/// Translation happens during initialization of the widget (call of a11y).
 /// Configurable via 'translate_var'.
 ///
 /// Usage:
-/// String a = t.someKey.anotherKey;
-/// String b = t['someKey.anotherKey']; // Only for edge cases!
-Translations get t => LocaleSettings.instance.currentTranslations;
+/// String a = a11y.someKey.anotherKey;
+/// String b = a11y['someKey.anotherKey']; // Only for edge cases!
+TranslationsA11y get a11y => LocaleSettings.instance.currentTranslations;
 
 /// Method B: Advanced
 ///
@@ -96,26 +96,26 @@ Translations get t => LocaleSettings.instance.currentTranslations;
 /// );
 ///
 /// Step 2:
-/// final t = Translations.of(context); // Get t variable.
-/// String a = t.someKey.anotherKey; // Use t variable.
-/// String b = t['someKey.anotherKey']; // Only for edge cases!
-class TranslationProvider extends BaseTranslationProvider<AppLocale, Translations> {
+/// final a11y = TranslationsA11y.of(context); // Get a11y variable.
+/// String a = a11y.someKey.anotherKey; // Use a11y variable.
+/// String b = a11y['someKey.anotherKey']; // Only for edge cases!
+class TranslationProvider extends BaseTranslationProvider<AppLocale, TranslationsA11y> {
 	TranslationProvider({required super.child}) : super(settings: LocaleSettings.instance);
 
-	static InheritedLocaleData<AppLocale, Translations> of(BuildContext context) => InheritedLocaleData.of<AppLocale, Translations>(context);
+	static InheritedLocaleData<AppLocale, TranslationsA11y> of(BuildContext context) => InheritedLocaleData.of<AppLocale, TranslationsA11y>(context);
 }
 
 /// Method B shorthand via [BuildContext] extension method.
 /// Configurable via 'translate_var'.
 ///
 /// Usage (e.g. in a widget's build method):
-/// context.t.someKey.anotherKey
+/// context.a11y.someKey.anotherKey
 extension BuildContextTranslationsExtension on BuildContext {
-	Translations get t => TranslationProvider.of(this).translations;
+	TranslationsA11y get a11y => TranslationProvider.of(this).translations;
 }
 
 /// Manages all translation instances and the current locale
-class LocaleSettings extends BaseFlutterLocaleSettings<AppLocale, Translations> {
+class LocaleSettings extends BaseFlutterLocaleSettings<AppLocale, TranslationsA11y> {
 	LocaleSettings._() : super(
 		utils: AppLocaleUtils.instance,
 		lazy: true,
@@ -149,7 +149,7 @@ class LocaleSettings extends BaseFlutterLocaleSettings<AppLocale, Translations> 
 }
 
 /// Provides utility functions without any side effects.
-class AppLocaleUtils extends BaseAppLocaleUtils<AppLocale, Translations> {
+class AppLocaleUtils extends BaseAppLocaleUtils<AppLocale, TranslationsA11y> {
 	AppLocaleUtils._() : super(
 		baseLocale: AppLocale.en,
 		locales: AppLocale.values,

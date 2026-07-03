@@ -1,0 +1,9 @@
+  base_locale: en                                                                                                                                                                                                                                                                                                                                                                                                                   
+  timestamp: false
+  input_file_pattern: .a11y.json                                                                                                                                                                                                                                                                                                                                                                                                    
+  output_directory: .
+  output_file_name: strings_a11y.g.dart                                                                                                                                                                                                                                                                                                                                                                                             
+  namespaces: true
+  translate_var: a11y
+  class_name: TranslationsA11y
+  

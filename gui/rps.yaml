@@ -17,7 +17,7 @@ scripts:
       $description: Regenerate protobufs
 
     translations: # rps generate translations
-      $script: dart run slang -v
+      $script: dart run slang -v && (cd lib/a11y && dart run slang -v)
       $description: Regenerate translation files
 
     code:
