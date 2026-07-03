@@ -282,7 +282,7 @@ func collectDiagnosticsData(
 ) error {
 	limited := &sizeLimitedWriter{w: output, limit: maxZipFileSize}
 	zipWriter := zip.NewWriter(limited)
-	defer zipWriter.Close()
+	defer zipWriter.Close() // nolint:errcheck
 
 	// Buffered so the log_extraction_report.log entry can be written as the last zip
 	// entry; zip.Writer finalizes each entry when the next Create is called,
@@ -496,7 +496,7 @@ func streamCommandToWriter(writer io.Writer, name string, args ...string) error 
 		if err := cmd.Process.Kill(); err != nil {
 			log.Error(logPrefix, "kill process", err)
 		}
-		fmt.Fprintf(writer, "\n... (log truncated at 500 MB) ...\n")
+		fmt.Fprintf(writer, "\n... (log truncated at 500 MB) ...\n") // nolint:errcheck
 	}
 
 	_ = cmd.Wait()
@@ -529,6 +529,7 @@ func streamSnapLogs(writer io.Writer, service string) error {
 	var count int
 	for entry := range logs {
 		count++
+		// nolint:errcheck
 		fmt.Fprintf(writer, "%s %s[%s]: %s\n",
 			entry.Timestamp.Format("Jan 02 15:04:05"),
 			service, entry.PID, entry.Message)
@@ -545,11 +546,11 @@ func streamSnapLogs(writer io.Writer, service string) error {
 // line order — newest first — so the file path matches the newest-first
 // behaviour of the systemd `journalctl -r` path.
 func streamFileToWriter(writer io.Writer, filePath string) error {
-	f, err := os.Open(filePath)
+	f, err := os.Open(filePath) // #nosec G304 -- filePath comes from known system paths, not user input
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer f.Close() // nolint:errcheck
 
 	info, err := f.Stat()
 	if err != nil {
@@ -557,7 +558,7 @@ func streamFileToWriter(writer io.Writer, filePath string) error {
 	}
 
 	if info.Size() > maxDaemonLogSize {
-		fmt.Fprintf(writer, "... (log truncated to last 500 MB, reversed) ...\n")
+		fmt.Fprintf(writer, "... (log truncated to last 500 MB, reversed) ...\n") // nolint:errcheck
 		return writeFileTailReversed(writer, f, info.Size(), maxDaemonLogSize)
 	}
 
@@ -670,11 +671,11 @@ func addDirectoryToZip(zipWriter *zip.Writer, dirPath, zipPrefix string) error {
 }
 
 func addFileToZip(zipWriter *zip.Writer, filePath, zipPath string) error {
-	file, err := os.Open(filePath)
+	file, err := os.Open(filePath) // #nosec G304 -- filePath is from filepath.Walk over hardcoded directories
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer file.Close() // nolint:errcheck
 
 	info, err := file.Stat()
 	if err != nil {
@@ -703,9 +704,12 @@ func addFileToZip(zipWriter *zip.Writer, filePath, zipPath string) error {
 //	<content>
 //	=========
 func writeBlock(w io.Writer, title, content string) {
-	fmt.Fprintf(w, "=== %s ===\n", title)
-	fmt.Fprint(w, content)
-	fmt.Fprint(w, "=========\n\n")
+	// nolint:errcheck
+	{
+		fmt.Fprintf(w, "=== %s ===\n", title)
+		fmt.Fprint(w, content)
+		fmt.Fprint(w, "=========\n\n")
+	}
 }
 
 // runCommand executes name with args and returns the combined stdout/stderr.
@@ -822,7 +826,7 @@ func readDisableIPv6Status() string {
 	var b strings.Builder
 	for _, m := range matches {
 		iface := filepath.Base(filepath.Dir(m))
-		data, err := os.ReadFile(m)
+		data, err := os.ReadFile(m) // #nosec G304 -- m is from filepath.Glob with hardcoded /proc/sys pattern
 		if err != nil {
 			fmt.Fprintf(&b, "net.ipv6.conf.%s.disable_ipv6 = error: %v\n", iface, err)
 			continue

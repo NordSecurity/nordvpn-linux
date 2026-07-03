@@ -1,3 +1,4 @@
+import contextlib
 import os
 import re
 import zipfile
@@ -131,10 +132,7 @@ def _has_any_file(path: str) -> bool:
     """True if path is a directory with at least one file under it (recursive)."""
     if not os.path.isdir(path):
         return False
-    for _root, _dirs, files in os.walk(path):
-        if files:
-            return True
-    return False
+    return any(files for _root, _dirs, files in os.walk(path))
 
 
 # Zip entries the daemon always produces, independent of host state.
@@ -161,8 +159,9 @@ CONDITIONAL_ZIP_ENTRIES = (
 
 def _run_troubleshoot() -> str:
     """
-    Run `nordvpn troubleshoot`, assert the success banner, and return the
-    zip path the daemon reports.
+    Run `nordvpn troubleshoot`.
+
+    Assert the success banner, and return the zip path the daemon reports.
     """
 
     output = str(sh.nordvpn.troubleshoot())
@@ -175,13 +174,14 @@ def _run_troubleshoot() -> str:
 def _cleanup_zip(path: str | None) -> None:
     if not path:
         return
-    contextlib.suppress(FileNotFoundError):
-        os.remove(path)
+    contextlib.suppress(FileNotFoundError)
+    os.remove(path)
 
 
 def test_troubleshoot():
     """
     Single end-to-end check for `nordvpn troubleshoot`:
+
       - the file exists, ends in .zip, has the diagnostics naming scheme
       - the file is owned by the invoking user and readable
       - the zip is CRC-valid and contains every expected entry
