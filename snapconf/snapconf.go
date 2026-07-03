@@ -1,4 +1,4 @@
-// snapconf package contains the code required when code is run under snapd as snap package.
+// Package snapconf contains the code required when code is run under snapd as snap package.
 // It is named snapconf because snap directory name under root is reserved by snapctl.
 package snapconf
 
@@ -127,7 +127,7 @@ func NewConnChecker(
 }
 
 func (c *ConnChecker) StreamInterceptor(
-	srv interface{},
+	srv any,
 	ss grpc.ServerStream,
 	info *grpc.StreamServerInfo,
 ) error {
@@ -139,9 +139,9 @@ func (c *ConnChecker) StreamInterceptor(
 
 func (c *ConnChecker) UnaryInterceptor(
 	ctx context.Context,
-	req interface{},
+	req any,
 	info *grpc.UnaryServerInfo,
-) (interface{}, error) {
+) (any, error) {
 	if err := c.PermissionCheck(); err != nil {
 		return nil, err
 	}
@@ -270,7 +270,7 @@ func RealUserHomeDir() string {
 	if homeDir == dir {
 		// For non-classic snaps, HOME environment variable is re-written to SNAP_USER_DATA
 		// Typical value: /home/_user_name_/snap/_snap_name_/_snap_revision_
-		for i := 0; i < 3; i++ {
+		for range 3 {
 			dir = filepath.Dir(dir)
 		}
 		return dir
@@ -279,11 +279,12 @@ func RealUserHomeDir() string {
 	return ""
 }
 
+// LogsDir returns $SNAP_COMMON/logs, creating it if necessary.
 func LogsDir() string {
 	dir := os.Getenv(EnvSnapCommon)
 	if dir != "" {
 		logsDir := filepath.Join(dir, "logs")
-		if err := os.Mkdir(logsDir, internal.PermUserRWGroupRWOthersRW); err != nil && !os.IsExist(err) {
+		if err := os.Mkdir(logsDir, internal.PermUserRWXGroupRXOthersRX); err != nil && !os.IsExist(err) {
 			log.Error("failed to create logs folder")
 			return dir
 		}
