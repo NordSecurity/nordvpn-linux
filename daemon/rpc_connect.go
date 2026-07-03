@@ -91,7 +91,7 @@ func (r *RPC) reconnectOnServerMaintenance(
 	endpointFromEvent string,
 ) (bool, error) {
 	currConn, isCurrConnActive := r.netw.GetConnectionParameters()
-	eventIsForDifferentServer := currConn.Endpoint != endpointFromEvent
+	eventIsForDifferentServer := !currConn.EndpointEqual(endpointFromEvent)
 	if !isCurrConnActive || eventIsForDifferentServer {
 		log.Debug("ignoring maintenance event, connection has changed since ENS check")
 		return false, nil

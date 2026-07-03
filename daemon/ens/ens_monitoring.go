@@ -95,7 +95,7 @@ func (m *Monitor) run() {
 			}
 
 			currServer, _ := m.netw.GetConnectionParameters()
-			eventIsForDifferentServer := currServer.Endpoint != e.ServerEndpoint
+			eventIsForDifferentServer := !currServer.EndpointEqual(e.ServerEndpoint)
 			if eventIsForDifferentServer {
 				log.Debug(logPrefix, "ignoring ENS event for non-current server", e)
 				continue

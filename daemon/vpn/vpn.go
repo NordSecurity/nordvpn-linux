@@ -49,3 +49,12 @@ type ServerData struct {
 	NordWhisperPort     int64
 	DedicatedServerPort int64
 }
+
+func (s ServerData) EndpointEqual(other string) bool {
+	ap, errA := netip.ParseAddrPort(s.Endpoint)
+	bp, errB := netip.ParseAddrPort(other)
+	if errA != nil || errB != nil {
+		return false
+	}
+	return ap == bp
+}
