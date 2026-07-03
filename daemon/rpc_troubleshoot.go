@@ -75,15 +75,14 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 		}
 	}()
 
-	if !snapconf.IsUnderSnap() {
-		// Change ownership immediately so user can access the file
+	if snapconf.IsUnderSnap() {
+		if err := os.Chmod(zipPath, internal.PermUserRWGroupROthersR); err != nil {
+			log.Error(logPrefix, "failed to change file permissions:", err)
+		}
+	} else {
 		if err := os.Chown(zipPath, int(caller.uid), int(caller.gid)); err != nil {
 			log.Error(logPrefix, "failed to change file ownership:", err)
 			return err
-		}
-	} else {
-		if err := os.Chmod(zipPath, internal.PermUserRWGroupRWOthersRW); err != nil {
-			log.Error(logPrefix, "failed to change file permissions", err)
 		}
 	}
 
@@ -301,10 +300,24 @@ func collectDiagnosticsData(
 			return addDaemonLogs(zipWriter, detectDaemonSupervisor())
 		}, true},
 		{"Collecting CLI logs...", func() error {
+			if snapconf.IsUnderSnap() {
+				// NOTE: AppArmor's home interface uses owner-qualified rules: nordvpnd
+				// (root) cannot read paths owned by the user's UID, so these
+				// files are inaccessible from daemon context under snap.
+				// We are skipping it for now.
+				return nil
+			}
 			cliLog := filepath.Join(homeDir, ".config", "nordvpn", "cli.log")
 			return addFileToZip(zipWriter, cliLog, "cli.log")
 		}, false},
 		{"Collecting user logs...", func() error {
+			if snapconf.IsUnderSnap() {
+				// NOTE: AppArmor's home interface uses owner-qualified rules: nordvpnd
+				// (root) cannot read paths owned by the user's UID, so these
+				// files are inaccessible from daemon context under snap.
+				// We are skipping it for now.
+				return nil
+			}
 			cacheDir := filepath.Join(homeDir, ".cache", "nordvpn")
 			return addDirectoryToZip(zipWriter, cacheDir, "cache")
 		}, false},
