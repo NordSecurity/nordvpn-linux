@@ -132,6 +132,9 @@ func (t *telioCallbackHandler) handleEvent(e teliogo.Event) error {
 
 		if evt.Body.VpnConnectionError != nil {
 			if evt.Body.Endpoint == nil {
+				// if the endpoint is not present, we have nothing to compare current
+				// connection with so the needed disconnect won't happen anyway, thus
+				// I'm skipping the processing early here
 				log.Error("dropping ENS connection error: libtelio event missing endpoint", *evt.Body.VpnConnectionError)
 				break
 			}
