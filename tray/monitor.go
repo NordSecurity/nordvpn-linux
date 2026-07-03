@@ -3,6 +3,7 @@ package tray
 import (
 	"context"
 	"fmt"
+	"math"
 	"slices"
 	"strings"
 
@@ -144,7 +145,7 @@ func (ti *Instance) updateLoginStatus() bool {
 
 		if ti.state.loggedIn && ti.state.vpnStatus == pb.ConnectionState_CONNECTED {
 			// reset the VPN info if the user logs out while connected to VPN
-			changedVpn := ti.setVpnStatus(pb.ConnectionState_DISCONNECTED, "", "", "", "", false)
+			changedVpn := ti.setVpnStatus(pb.ConnectionState_DISCONNECTED, "", "", "", "", false, false, 0)
 			if changedVpn {
 				changed = true
 			}
@@ -192,7 +193,7 @@ func (ti *Instance) updateVpnStatus() bool {
 		vpnName = vpnHostname
 	}
 
-	changed := ti.setVpnStatus(vpnStatus, vpnName, vpnHostname, vpnCity, vpnCountry, resp.VirtualLocation)
+	changed := ti.setVpnStatus(vpnStatus, vpnName, vpnHostname, vpnCity, vpnCountry, resp.VirtualLocation, resp.IsMeshPeer, resp.PauseRemainingDurationSec)
 	return changed
 }
 
@@ -481,6 +482,8 @@ func (ti *Instance) setVpnStatus(
 	vpnCity string,
 	vpnCountry string,
 	virtualLocation bool,
+	isMeshPeer bool,
+	pauseRemainingDurationSec uint32,
 ) bool {
 	changed := false
 	var notificationText, notificationArg string
@@ -498,7 +501,7 @@ func (ti *Instance) setVpnStatus(
 		ti.state.vpnVirtualLocation = virtualLocation
 		ti.state.vpnHostname = vpnHostname
 		ti.state.vpnStatus = vpnStatus
-
+		ti.state.vpnIsMeshPeer = isMeshPeer
 		newServerName := ti.state.serverName()
 
 		statusChanged := oldVpnStatus != vpnStatus
@@ -511,7 +514,13 @@ func (ti *Instance) setVpnStatus(
 			case pb.ConnectionState_CONNECTED:
 				notificationText = labelConnectedFormat
 				notificationArg = newServerName
+				ti.state.pauseRemainingSec = 0
 			case pb.ConnectionState_PAUSED:
+				if uint64(pauseRemainingDurationSec) < uint64(math.MaxInt) {
+					ti.state.pauseRemainingSec = int(pauseRemainingDurationSec)
+				} else {
+					log.Error("Received pause remaining duration greater than MaxInt")
+				}
 				fallthrough
 			case pb.ConnectionState_DISCONNECTED:
 				if oldServerName != "" {
@@ -519,6 +528,7 @@ func (ti *Instance) setVpnStatus(
 					notificationArg = oldServerName
 				}
 			case pb.ConnectionState_UNKNOWN_STATE, pb.ConnectionState_CONNECTING:
+				ti.state.pauseRemainingSec = 0
 			}
 		} else if serverNameChanged {
 			log.Infof("%s VPN server name changed from %s to %s", logTag, oldServerName, ti.state.serverName())
@@ -534,4 +544,15 @@ func (ti *Instance) setVpnStatus(
 	}
 
 	return changed
+}
+
+func (ti *Instance) handlePauseEvent(event *pb.PauseEvent) bool {
+	switch event.Type {
+	case pb.PauseEventType_RECONNECT_FAILED:
+		ti.notify(NoForce, "Connect error: %s", client.ConnectCantConnect)
+		log.Error("Reconnect failed after pause expired")
+	default:
+		log.Warn("Unexpected pause event received ", event.Type)
+	}
+	return false
 }

@@ -30,6 +30,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon"
 	"github.com/NordSecurity/nordvpn-linux/daemon/device"
 	"github.com/NordSecurity/nordvpn-linux/daemon/dns"
+	"github.com/NordSecurity/nordvpn-linux/daemon/ens"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall/nft"
@@ -75,7 +76,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo"
-	"github.com/NordSecurity/nordvpn-linux/uievent"
 )
 
 // Values set when building the application
@@ -411,6 +411,7 @@ func main() {
 		vpnNordWhisperConfigGetter,
 		Version,
 		internalVpnEvents,
+		rcConfig.IsFeatureEnabled(remote.FeatureENS),
 	)
 
 	vpn, err := vpnFactory(cfg.Technology)
@@ -642,6 +643,17 @@ func main() {
 		pauseEvents,
 		deviceKeyManager,
 	)
+
+	ensMonitor := ens.NewMonitor(
+		httpGlobalCtx,
+		netw,
+		rcConfig,
+		rpc.ReconnectOnServerMaintenanceEvent,
+		daemonEvents.Debugger.DebuggerEvents,
+	)
+	internalVpnEvents.ConnectionError.Subscribe(ensMonitor.HandleENSNotification)
+	ensMonitor.Start()
+
 	meshService := meshnet.NewServer(
 		authChecker,
 		fsystem,
@@ -686,10 +698,6 @@ func main() {
 		middleware.AddStreamMiddleware(norduserMiddleware.StreamMiddleware)
 		middleware.AddUnaryMiddleware(norduserMiddleware.UnaryMiddleware)
 	}
-
-	uiEventMiddleware := uievent.NewMiddleware(daemonEvents.Service.UiItemsClick)
-	middleware.AddStreamMiddleware(uiEventMiddleware.StreamMiddleware)
-	middleware.AddUnaryMiddleware(uiEventMiddleware.UnaryMiddleware)
 
 	opts = append(opts, grpc.StreamInterceptor(middleware.StreamIntercept))
 	opts = append(opts, grpc.UnaryInterceptor(middleware.UnaryIntercept))

@@ -14,7 +14,7 @@ func JobServerCheck(
 ) func() {
 	return func() {
 		// dedicated servers are not kept on the server list, so we have to skip them
-		if !netw.IsVPNActive() || IsServerDedicated(server) {
+		if !netw.IsVPNActive() || core.IsServerDedicated(server) {
 			return
 		}
 

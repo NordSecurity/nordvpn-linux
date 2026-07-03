@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -63,7 +62,7 @@ func JobServers(dm *DataManager, api core.ServersAPI, validate bool) func() erro
 			// store keys to find server easier
 			country := server.Country()
 
-			servers[idx].Keys = generateKeys(server)
+			servers[idx].Keys = server.GenerateKeys()
 
 			// calculate minmax distance and timestamp
 			parsedTime, err := time.Parse(internal.ServerDateFormat, server.CreatedAt)
@@ -123,30 +122,4 @@ func JobServers(dm *DataManager, api core.ServersAPI, validate bool) func() erro
 		}
 		return nil
 	}
-}
-
-// Compute a list of keys for each server to speedup the server picking process at connect
-func generateKeys(server core.Server) []string {
-	loweredHostnameID := strings.ToLower(strings.Split(server.Hostname, ".")[0])
-	country := server.Country()
-	loweredCountryName := internal.SnakeCase(country.Name)
-	loweredCountryCode := internal.SnakeCase(country.Code)
-	loweredCityName := internal.SnakeCase(country.City.Name)
-	loweredGroupTitles := make([]string, len(server.Groups))
-	for idx, group := range server.Groups {
-		loweredGroupTitles[idx] = internal.SnakeCase(group.Title)
-	}
-
-	if loweredCountryCode == "gb" {
-		loweredCountryCode = "uk"
-	}
-
-	return append([]string{
-		loweredCountryName,
-		loweredCountryCode,
-		loweredCountryName + " " + loweredCityName,
-		loweredCountryCode + " " + loweredCityName,
-		loweredCityName,
-		loweredHostnameID,
-	}, loweredGroupTitles...)
 }

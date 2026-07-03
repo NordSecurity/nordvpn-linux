@@ -57,6 +57,62 @@ const (
 	TriggerUser
 )
 
+// VPNConnectionError is a generic VPN connection error code.
+// Errors from VPN protocol libraries are mapped to these values so the daemon
+// does not depend on any one VPN protocol's error types.
+type VPNConnectionError int
+
+const (
+	// VPNConnectionErrorUnknown is reported when a generic/undefined error happens.
+	VPNConnectionErrorUnknown VPNConnectionError = iota
+	// VPNConnectionErrorConnectionLimitReached is reported when the session limit is hit.
+	VPNConnectionErrorConnectionLimitReached
+	// VPNConnectionErrorServerMaintenance is reported when the server is about to go into maintenance.
+	VPNConnectionErrorServerMaintenance
+	// VPNConnectionErrorUnauthenticated is reported when there's an authentication error.
+	VPNConnectionErrorUnauthenticated
+	// VPNConnectionErrorSuperseded is reported when a newer connection using the same key replaces
+	// current one
+	VPNConnectionErrorSuperseded
+)
+
+func (e VPNConnectionError) String() string {
+	switch e {
+	case VPNConnectionErrorUnknown:
+		return "unknown error"
+	case VPNConnectionErrorConnectionLimitReached:
+		return "connection limit reached"
+	case VPNConnectionErrorServerMaintenance:
+		return "server maintenance"
+	case VPNConnectionErrorUnauthenticated:
+		return "unauthenticated"
+	case VPNConnectionErrorSuperseded:
+		return "superseded by newer connection"
+	default:
+		return "unrecognized error code"
+	}
+}
+
+// VPNConnectionErrorEvent is sent on the internal VPN event bus when a VPN connection error happens.
+type VPNConnectionErrorEvent struct {
+	Code VPNConnectionError
+	// ServerPublicKey is the NordLynx public key of the exit node the error originated from.
+	// Empty if unknown.
+	ServerPublicKey string
+}
+
+// VPNConnectionReason identifies the reason an app-initiated (re)connect and its matching disconnect was started, for telemetry.
+type VPNConnectionReason int
+
+const (
+	// VPNConnectionReasonNone is the default - no special trigger
+	VPNConnectionReasonNone VPNConnectionReason = iota
+	// VPNConnectionReasonServerMaintenance is set when reconnects after the connected server enters maintenance
+	VPNConnectionReasonServerMaintenance
+	// VPNConnectionReasonAutoConnect is set when the app auto-connects based on the user's auto-connect setting
+	VPNConnectionReasonAutoConnect
+)
+
 type TypeLoginType int
 
 const (
@@ -77,7 +133,7 @@ type DataConnect struct {
 	TargetServerCountry     string
 	TargetServerCountryCode string
 	TargetServerDomain      string
-	TargetServerGroup       string
+	TargetServerGroupID     config.ServerGroup
 	ServerGroups            []config.ServerGroup
 	TargetServerIP          netip.Addr
 	TargetServerName        string
@@ -88,6 +144,7 @@ type DataConnect struct {
 	RecommendationUUID      string
 	PauseInterval           time.Duration
 	UnpausedByUser          bool
+	VPNConnReason           VPNConnectionReason
 }
 
 // DataConnectChangeNotif is used to provide notifications for internal listeners of ConnectionStatus
@@ -162,6 +219,7 @@ type DataDisconnect struct {
 	IsRefresh             bool
 	RecommendationUUID    string
 	PauseInterval         time.Duration
+	VPNConnReason         VPNConnectionReason
 }
 
 type ReasonCode int32

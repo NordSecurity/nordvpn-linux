@@ -7,7 +7,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc/metadata"
 )
 
 func TestItemValueFromServerGroup(t *testing.T) {
@@ -103,30 +102,4 @@ func TestItemValueFromRecentConnection(t *testing.T) {
 			assert.Equal(t, tt.expected, ItemValueFromRecentConnection(tt.conn))
 		})
 	}
-}
-
-func TestAttachUIEventMetadata(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	ctx := attachUIEventMetadata(
-		t.Context(),
-		pb.UIEvent_CONNECT,
-		pb.UIEvent_COUNTRY,
-	)
-
-	md, ok := metadata.FromOutgoingContext(ctx)
-	assert.True(t, ok)
-	assert.NotEmpty(t, md.Get("ui-form-reference"))
-	assert.NotEmpty(t, md.Get("ui-item-name"))
-	assert.NotEmpty(t, md.Get("ui-item-type"))
-	assert.NotEmpty(t, md.Get("ui-item-value"))
-
-	// Verify TRAY form reference (enum value 2)
-	assert.Equal(t, "2", md.Get("ui-form-reference")[0])
-	// Verify CONNECT item name (enum value 1)
-	assert.Equal(t, "1", md.Get("ui-item-name")[0])
-	// Verify CLICK item type (enum value 1)
-	assert.Equal(t, "1", md.Get("ui-item-type")[0])
-	// Verify COUNTRY item value (enum value 1)
-	assert.Equal(t, "1", md.Get("ui-item-value")[0])
 }

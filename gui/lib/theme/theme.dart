@@ -882,7 +882,6 @@ final class NordVpnTheme {
       menuBoxShadow: mode == ThemeMode.light
           ? AppBoxShadows.lightPopover
           : AppBoxShadows.darkPopover,
-      menuShadowMargin: 6,
       menuGap: AppSpacing.spacing2,
     );
   }

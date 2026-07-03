@@ -1,12 +1,12 @@
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import ClassVar as _ClassVar
+from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class UIEvent(_message.Message):
-    __slots__ = ()
+    __slots__ = ("form_reference", "item_name", "item_type", "item_value")
     class FormReference(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         FORM_REFERENCE_UNSPECIFIED: _ClassVar[UIEvent.FormReference]
@@ -14,11 +14,13 @@ class UIEvent(_message.Message):
         TRAY: _ClassVar[UIEvent.FormReference]
         HOME_SCREEN: _ClassVar[UIEvent.FormReference]
         GUI: _ClassVar[UIEvent.FormReference]
+        CONNECTION_INFO: _ClassVar[UIEvent.FormReference]
     FORM_REFERENCE_UNSPECIFIED: UIEvent.FormReference
     CLI: UIEvent.FormReference
     TRAY: UIEvent.FormReference
     HOME_SCREEN: UIEvent.FormReference
     GUI: UIEvent.FormReference
+    CONNECTION_INFO: UIEvent.FormReference
     class ItemName(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         ITEM_NAME_UNSPECIFIED: _ClassVar[UIEvent.ItemName]
@@ -31,6 +33,9 @@ class UIEvent(_message.Message):
         MESHNET_INVITE_SEND: _ClassVar[UIEvent.ItemName]
         LOGIN_TOKEN: _ClassVar[UIEvent.ItemName]
         PAUSE: _ClassVar[UIEvent.ItemName]
+        RECONNECT: _ClassVar[UIEvent.ItemName]
+        CHANGE_SETTINGS: _ClassVar[UIEvent.ItemName]
+        GET_HELP: _ClassVar[UIEvent.ItemName]
     ITEM_NAME_UNSPECIFIED: UIEvent.ItemName
     CONNECT: UIEvent.ItemName
     CONNECT_RECENTS: UIEvent.ItemName
@@ -41,6 +46,9 @@ class UIEvent(_message.Message):
     MESHNET_INVITE_SEND: UIEvent.ItemName
     LOGIN_TOKEN: UIEvent.ItemName
     PAUSE: UIEvent.ItemName
+    RECONNECT: UIEvent.ItemName
+    CHANGE_SETTINGS: UIEvent.ItemName
+    GET_HELP: UIEvent.ItemName
     class ItemType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         ITEM_TYPE_UNSPECIFIED: _ClassVar[UIEvent.ItemType]
@@ -81,4 +89,12 @@ class UIEvent(_message.Message):
     PAUSE_24_HOURS: UIEvent.ItemValue
     PAUSE_DISCONNECT: UIEvent.ItemValue
     DEDICATED_SERVER: UIEvent.ItemValue
-    def __init__(self) -> None: ...
+    FORM_REFERENCE_FIELD_NUMBER: _ClassVar[int]
+    ITEM_NAME_FIELD_NUMBER: _ClassVar[int]
+    ITEM_TYPE_FIELD_NUMBER: _ClassVar[int]
+    ITEM_VALUE_FIELD_NUMBER: _ClassVar[int]
+    form_reference: UIEvent.FormReference
+    item_name: UIEvent.ItemName
+    item_type: UIEvent.ItemType
+    item_value: UIEvent.ItemValue
+    def __init__(self, form_reference: _Optional[_Union[UIEvent.FormReference, str]] = ..., item_name: _Optional[_Union[UIEvent.ItemName, str]] = ..., item_type: _Optional[_Union[UIEvent.ItemType, str]] = ..., item_value: _Optional[_Union[UIEvent.ItemValue, str]] = ...) -> None: ...

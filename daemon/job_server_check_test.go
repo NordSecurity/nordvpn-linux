@@ -74,11 +74,11 @@ func TestServerCheck_DedicatedServersAreNotChecked(t *testing.T) {
 				},
 			}}
 
-			serversAPIMock := testcore.ServersAPIMock{ServerResponse: test.severResponse}
+			serversAPIMock := testcore.MockServersAPI{ServersList: core.Servers{test.severResponse}}
 			jobFunc := JobServerCheck(&dataManager,
 				&serversAPIMock,
 				&testnetworker.Mock{VpnActive: test.isVPNActive},
-				core.Server{Groups: core.Groups{core.Group{ID: test.serverGroup}}})
+				core.Server{ID: 1122, Groups: core.Groups{core.Group{ID: test.serverGroup}}})
 			jobFunc()
 
 			assert.Equal(t, test.expectedServerStatus, dataManager.serversData.Servers[0].Status)

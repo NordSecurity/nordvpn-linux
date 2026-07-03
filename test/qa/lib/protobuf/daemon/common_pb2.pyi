@@ -44,6 +44,14 @@ class Payload(_message.Message):
     data: _containers.RepeatedScalarFieldContainer[str]
     def __init__(self, type: _Optional[int] = ..., data: _Optional[_Iterable[str]] = ...) -> None: ...
 
+class InjectVpnConnectionErrorRequest(_message.Message):
+    __slots__ = ("telio_code", "pubkey")
+    TELIO_CODE_FIELD_NUMBER: _ClassVar[int]
+    PUBKEY_FIELD_NUMBER: _ClassVar[int]
+    telio_code: int
+    pubkey: str
+    def __init__(self, telio_code: _Optional[int] = ..., pubkey: _Optional[str] = ...) -> None: ...
+
 class Allowlist(_message.Message):
     __slots__ = ("ports", "subnets")
     PORTS_FIELD_NUMBER: _ClassVar[int]

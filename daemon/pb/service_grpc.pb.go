@@ -19,53 +19,55 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Daemon_IsLoggedIn_FullMethodName              = "/pb.Daemon/IsLoggedIn"
-	Daemon_LoginWithToken_FullMethodName          = "/pb.Daemon/LoginWithToken"
-	Daemon_LoginOAuth2_FullMethodName             = "/pb.Daemon/LoginOAuth2"
-	Daemon_LoginOAuth2Callback_FullMethodName     = "/pb.Daemon/LoginOAuth2Callback"
-	Daemon_Logout_FullMethodName                  = "/pb.Daemon/Logout"
-	Daemon_AccountInfo_FullMethodName             = "/pb.Daemon/AccountInfo"
-	Daemon_TokenInfo_FullMethodName               = "/pb.Daemon/TokenInfo"
-	Daemon_ClaimOnlinePurchase_FullMethodName     = "/pb.Daemon/ClaimOnlinePurchase"
-	Daemon_Connect_FullMethodName                 = "/pb.Daemon/Connect"
-	Daemon_ConnectCancel_FullMethodName           = "/pb.Daemon/ConnectCancel"
-	Daemon_Disconnect_FullMethodName              = "/pb.Daemon/Disconnect"
-	Daemon_Status_FullMethodName                  = "/pb.Daemon/Status"
-	Daemon_RateConnection_FullMethodName          = "/pb.Daemon/RateConnection"
-	Daemon_PauseConnection_FullMethodName         = "/pb.Daemon/PauseConnection"
-	Daemon_GetServers_FullMethodName              = "/pb.Daemon/GetServers"
-	Daemon_Countries_FullMethodName               = "/pb.Daemon/Countries"
-	Daemon_Cities_FullMethodName                  = "/pb.Daemon/Cities"
-	Daemon_Groups_FullMethodName                  = "/pb.Daemon/Groups"
-	Daemon_RecommendedServer_FullMethodName       = "/pb.Daemon/RecommendedServer"
-	Daemon_Settings_FullMethodName                = "/pb.Daemon/Settings"
-	Daemon_SetDefaults_FullMethodName             = "/pb.Daemon/SetDefaults"
-	Daemon_SetAutoConnect_FullMethodName          = "/pb.Daemon/SetAutoConnect"
-	Daemon_SetProtocol_FullMethodName             = "/pb.Daemon/SetProtocol"
-	Daemon_SetTechnology_FullMethodName           = "/pb.Daemon/SetTechnology"
-	Daemon_SetObfuscate_FullMethodName            = "/pb.Daemon/SetObfuscate"
-	Daemon_SetPostQuantum_FullMethodName          = "/pb.Daemon/SetPostQuantum"
-	Daemon_GetRecentConnections_FullMethodName    = "/pb.Daemon/GetRecentConnections"
-	Daemon_SetDNS_FullMethodName                  = "/pb.Daemon/SetDNS"
-	Daemon_SetFirewall_FullMethodName             = "/pb.Daemon/SetFirewall"
-	Daemon_SetFirewallMark_FullMethodName         = "/pb.Daemon/SetFirewallMark"
-	Daemon_SetRouting_FullMethodName              = "/pb.Daemon/SetRouting"
-	Daemon_SetKillSwitch_FullMethodName           = "/pb.Daemon/SetKillSwitch"
-	Daemon_SetLANDiscovery_FullMethodName         = "/pb.Daemon/SetLANDiscovery"
-	Daemon_SetVirtualLocation_FullMethodName      = "/pb.Daemon/SetVirtualLocation"
-	Daemon_SetNotify_FullMethodName               = "/pb.Daemon/SetNotify"
-	Daemon_SetTray_FullMethodName                 = "/pb.Daemon/SetTray"
-	Daemon_SettingsProtocols_FullMethodName       = "/pb.Daemon/SettingsProtocols"
-	Daemon_SettingsTechnologies_FullMethodName    = "/pb.Daemon/SettingsTechnologies"
-	Daemon_GetFeatureToggles_FullMethodName       = "/pb.Daemon/GetFeatureToggles"
-	Daemon_SetAllowlist_FullMethodName            = "/pb.Daemon/SetAllowlist"
-	Daemon_SetARPIgnore_FullMethodName            = "/pb.Daemon/SetARPIgnore"
-	Daemon_UnsetAllowlist_FullMethodName          = "/pb.Daemon/UnsetAllowlist"
-	Daemon_UnsetAllAllowlist_FullMethodName       = "/pb.Daemon/UnsetAllAllowlist"
-	Daemon_SetAnalytics_FullMethodName            = "/pb.Daemon/SetAnalytics"
-	Daemon_SetThreatProtectionLite_FullMethodName = "/pb.Daemon/SetThreatProtectionLite"
-	Daemon_Ping_FullMethodName                    = "/pb.Daemon/Ping"
-	Daemon_SubscribeToStateChanges_FullMethodName = "/pb.Daemon/SubscribeToStateChanges"
+	Daemon_IsLoggedIn_FullMethodName               = "/pb.Daemon/IsLoggedIn"
+	Daemon_LoginWithToken_FullMethodName           = "/pb.Daemon/LoginWithToken"
+	Daemon_LoginOAuth2_FullMethodName              = "/pb.Daemon/LoginOAuth2"
+	Daemon_LoginOAuth2Callback_FullMethodName      = "/pb.Daemon/LoginOAuth2Callback"
+	Daemon_Logout_FullMethodName                   = "/pb.Daemon/Logout"
+	Daemon_AccountInfo_FullMethodName              = "/pb.Daemon/AccountInfo"
+	Daemon_TokenInfo_FullMethodName                = "/pb.Daemon/TokenInfo"
+	Daemon_ClaimOnlinePurchase_FullMethodName      = "/pb.Daemon/ClaimOnlinePurchase"
+	Daemon_Connect_FullMethodName                  = "/pb.Daemon/Connect"
+	Daemon_ConnectCancel_FullMethodName            = "/pb.Daemon/ConnectCancel"
+	Daemon_Disconnect_FullMethodName               = "/pb.Daemon/Disconnect"
+	Daemon_Status_FullMethodName                   = "/pb.Daemon/Status"
+	Daemon_RateConnection_FullMethodName           = "/pb.Daemon/RateConnection"
+	Daemon_PauseConnection_FullMethodName          = "/pb.Daemon/PauseConnection"
+	Daemon_GetServers_FullMethodName               = "/pb.Daemon/GetServers"
+	Daemon_Countries_FullMethodName                = "/pb.Daemon/Countries"
+	Daemon_Cities_FullMethodName                   = "/pb.Daemon/Cities"
+	Daemon_Groups_FullMethodName                   = "/pb.Daemon/Groups"
+	Daemon_RecommendedServer_FullMethodName        = "/pb.Daemon/RecommendedServer"
+	Daemon_Settings_FullMethodName                 = "/pb.Daemon/Settings"
+	Daemon_SetDefaults_FullMethodName              = "/pb.Daemon/SetDefaults"
+	Daemon_SetAutoConnect_FullMethodName           = "/pb.Daemon/SetAutoConnect"
+	Daemon_SetProtocol_FullMethodName              = "/pb.Daemon/SetProtocol"
+	Daemon_SetTechnology_FullMethodName            = "/pb.Daemon/SetTechnology"
+	Daemon_SetObfuscate_FullMethodName             = "/pb.Daemon/SetObfuscate"
+	Daemon_SetPostQuantum_FullMethodName           = "/pb.Daemon/SetPostQuantum"
+	Daemon_GetRecentConnections_FullMethodName     = "/pb.Daemon/GetRecentConnections"
+	Daemon_SetDNS_FullMethodName                   = "/pb.Daemon/SetDNS"
+	Daemon_SetFirewall_FullMethodName              = "/pb.Daemon/SetFirewall"
+	Daemon_SetFirewallMark_FullMethodName          = "/pb.Daemon/SetFirewallMark"
+	Daemon_SetRouting_FullMethodName               = "/pb.Daemon/SetRouting"
+	Daemon_SetKillSwitch_FullMethodName            = "/pb.Daemon/SetKillSwitch"
+	Daemon_SetLANDiscovery_FullMethodName          = "/pb.Daemon/SetLANDiscovery"
+	Daemon_SetVirtualLocation_FullMethodName       = "/pb.Daemon/SetVirtualLocation"
+	Daemon_SetNotify_FullMethodName                = "/pb.Daemon/SetNotify"
+	Daemon_SetTray_FullMethodName                  = "/pb.Daemon/SetTray"
+	Daemon_SettingsProtocols_FullMethodName        = "/pb.Daemon/SettingsProtocols"
+	Daemon_SettingsTechnologies_FullMethodName     = "/pb.Daemon/SettingsTechnologies"
+	Daemon_GetFeatureToggles_FullMethodName        = "/pb.Daemon/GetFeatureToggles"
+	Daemon_SetAllowlist_FullMethodName             = "/pb.Daemon/SetAllowlist"
+	Daemon_SetARPIgnore_FullMethodName             = "/pb.Daemon/SetARPIgnore"
+	Daemon_UnsetAllowlist_FullMethodName           = "/pb.Daemon/UnsetAllowlist"
+	Daemon_UnsetAllAllowlist_FullMethodName        = "/pb.Daemon/UnsetAllAllowlist"
+	Daemon_SetAnalytics_FullMethodName             = "/pb.Daemon/SetAnalytics"
+	Daemon_SetThreatProtectionLite_FullMethodName  = "/pb.Daemon/SetThreatProtectionLite"
+	Daemon_Ping_FullMethodName                     = "/pb.Daemon/Ping"
+	Daemon_ReportUIEvent_FullMethodName            = "/pb.Daemon/ReportUIEvent"
+	Daemon_SubscribeToStateChanges_FullMethodName  = "/pb.Daemon/SubscribeToStateChanges"
+	Daemon_InjectVpnConnectionError_FullMethodName = "/pb.Daemon/InjectVpnConnectionError"
 )
 
 // DaemonClient is the client API for Daemon service.
@@ -130,7 +132,10 @@ type DaemonClient interface {
 	SetThreatProtectionLite(ctx context.Context, in *SetThreatProtectionLiteRequest, opts ...grpc.CallOption) (*SetThreatProtectionLiteResponse, error)
 	// ==================== System & Monitoring ====================
 	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error)
+	ReportUIEvent(ctx context.Context, in *UIEvent, opts ...grpc.CallOption) (*Payload, error)
 	SubscribeToStateChanges(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[AppState], error)
+	// InjectVpnConnectionError is a DEV-only endpoint that injects a simulated ENS event
+	InjectVpnConnectionError(ctx context.Context, in *InjectVpnConnectionErrorRequest, opts ...grpc.CallOption) (*Payload, error)
 }
 
 type daemonClient struct {
@@ -619,6 +624,16 @@ func (c *daemonClient) Ping(ctx context.Context, in *Empty, opts ...grpc.CallOpt
 	return out, nil
 }
 
+func (c *daemonClient) ReportUIEvent(ctx context.Context, in *UIEvent, opts ...grpc.CallOption) (*Payload, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, Daemon_ReportUIEvent_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *daemonClient) SubscribeToStateChanges(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[AppState], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &Daemon_ServiceDesc.Streams[2], Daemon_SubscribeToStateChanges_FullMethodName, cOpts...)
@@ -637,6 +652,16 @@ func (c *daemonClient) SubscribeToStateChanges(ctx context.Context, in *Empty, o
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Daemon_SubscribeToStateChangesClient = grpc.ServerStreamingClient[AppState]
+
+func (c *daemonClient) InjectVpnConnectionError(ctx context.Context, in *InjectVpnConnectionErrorRequest, opts ...grpc.CallOption) (*Payload, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, Daemon_InjectVpnConnectionError_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
 
 // DaemonServer is the server API for Daemon service.
 // All implementations must embed UnimplementedDaemonServer
@@ -700,7 +725,10 @@ type DaemonServer interface {
 	SetThreatProtectionLite(context.Context, *SetThreatProtectionLiteRequest) (*SetThreatProtectionLiteResponse, error)
 	// ==================== System & Monitoring ====================
 	Ping(context.Context, *Empty) (*PingResponse, error)
+	ReportUIEvent(context.Context, *UIEvent) (*Payload, error)
 	SubscribeToStateChanges(*Empty, grpc.ServerStreamingServer[AppState]) error
+	// InjectVpnConnectionError is a DEV-only endpoint that injects a simulated ENS event
+	InjectVpnConnectionError(context.Context, *InjectVpnConnectionErrorRequest) (*Payload, error)
 	mustEmbedUnimplementedDaemonServer()
 }
 
@@ -849,8 +877,14 @@ func (UnimplementedDaemonServer) SetThreatProtectionLite(context.Context, *SetTh
 func (UnimplementedDaemonServer) Ping(context.Context, *Empty) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
+func (UnimplementedDaemonServer) ReportUIEvent(context.Context, *UIEvent) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportUIEvent not implemented")
+}
 func (UnimplementedDaemonServer) SubscribeToStateChanges(*Empty, grpc.ServerStreamingServer[AppState]) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeToStateChanges not implemented")
+}
+func (UnimplementedDaemonServer) InjectVpnConnectionError(context.Context, *InjectVpnConnectionErrorRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InjectVpnConnectionError not implemented")
 }
 func (UnimplementedDaemonServer) mustEmbedUnimplementedDaemonServer() {}
 func (UnimplementedDaemonServer) testEmbeddedByValue()                {}
@@ -1687,6 +1721,24 @@ func _Daemon_Ping_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Daemon_ReportUIEvent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UIEvent)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).ReportUIEvent(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_ReportUIEvent_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).ReportUIEvent(ctx, req.(*UIEvent))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Daemon_SubscribeToStateChanges_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(Empty)
 	if err := stream.RecvMsg(m); err != nil {
@@ -1697,6 +1749,24 @@ func _Daemon_SubscribeToStateChanges_Handler(srv interface{}, stream grpc.Server
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Daemon_SubscribeToStateChangesServer = grpc.ServerStreamingServer[AppState]
+
+func _Daemon_InjectVpnConnectionError_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InjectVpnConnectionErrorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).InjectVpnConnectionError(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_InjectVpnConnectionError_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).InjectVpnConnectionError(ctx, req.(*InjectVpnConnectionErrorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
 
 // Daemon_ServiceDesc is the grpc.ServiceDesc for Daemon service.
 // It's only intended for direct use with grpc.RegisterService,
@@ -1880,6 +1950,14 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Ping",
 			Handler:    _Daemon_Ping_Handler,
+		},
+		{
+			MethodName: "ReportUIEvent",
+			Handler:    _Daemon_ReportUIEvent_Handler,
+		},
+		{
+			MethodName: "InjectVpnConnectionError",
+			Handler:    _Daemon_InjectVpnConnectionError_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

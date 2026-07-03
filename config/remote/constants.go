@@ -63,6 +63,7 @@ const (
 	FeatureMeshnet         = "meshnet"
 	FeatureNordWhisper     = "nordwhisper"
 	FeatureDedicatedServer = "dedicatedservers"
+	FeatureENS             = "ens"
 )
 
 const (

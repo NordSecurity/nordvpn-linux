@@ -14,6 +14,7 @@ message UIEvent {
     TRAY = 2;
     HOME_SCREEN = 3;
     GUI = 4; // temporary, to be replaced with more specific references
+    CONNECTION_INFO = 5;
   }
 
   // ItemName represents a user interface event item name
@@ -28,6 +29,9 @@ message UIEvent {
     MESHNET_INVITE_SEND = 7;
     LOGIN_TOKEN = 8; // CLI-only: login via token (nordvpn login --token)
     PAUSE = 9;
+    RECONNECT = 10;
+    CHANGE_SETTINGS = 11;
+    GET_HELP = 12;
   }
 
   // ItemType represents the type of user interface event
@@ -56,4 +60,9 @@ message UIEvent {
     PAUSE_DISCONNECT = 14;
     DEDICATED_SERVER = 15;
   }
+
+  FormReference form_reference = 1;
+  ItemName item_name = 2;
+  ItemType item_type = 3;
+  ItemValue item_value = 4;
 }

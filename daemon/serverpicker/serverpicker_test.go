@@ -1,6 +1,7 @@
-package daemon
+package serverpicker
 
 import (
+	"errors"
 	"net/http"
 	"testing"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	core_test "github.com/NordSecurity/nordvpn-linux/test/mock/core"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -136,14 +138,13 @@ func TestFilterServers(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			servers, err := filterServers(
-				test.servers,
-				test.tech,
-				test.proto,
-				"",
-				test.group,
-				false,
-			)
+			localSelFn := selectFilterForLocalServers("", test.group, false)
+			filterFn := func(s core.Server) bool {
+				return core.IsConnectableWithProtocol(test.tech, test.proto)(s) &&
+					!core.IsObfuscated()(s) &&
+					localSelFn(s)
+			}
+			servers, err := findServersLocally(test.servers, core.ServerTag{Action: core.ServerByUnknown}, filterFn)
 			assert.Equal(t, test.hasError, err != nil)
 			assert.Equal(t, test.expectedCount, len(servers))
 		})
@@ -154,59 +155,65 @@ func TestResolveServerGroup(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		flag  string
-		tag   string
-		group config.ServerGroup
-		err   error
+		input         SearchParams
+		tagChanged    bool
+		expectedGroup config.ServerGroup
+		err           error
 	}{
 		{
-			"",
-			"",
-			config.ServerGroup_UNDEFINED,
-			nil,
+			input:         SearchParams{},
+			expectedGroup: config.ServerGroup_UNDEFINED,
+			err:           nil,
 		},
 		{
-			"p2p",
-			"",
-			config.ServerGroup_P2P,
-			nil,
+			input:         NewSearchParams("", "p2p", ""),
+			expectedGroup: config.ServerGroup_P2P,
+			err:           nil,
 		},
 		{
-			"",
-			"p2p",
-			config.ServerGroup_P2P,
-			nil,
+			input:         NewSearchParams("p2p", "", ""),
+			tagChanged:    true,
+			expectedGroup: config.ServerGroup_P2P,
+			err:           nil,
 		},
 		{
-			"p2p",
-			"p2p",
-			config.ServerGroup_UNDEFINED,
-			internal.ErrDoubleGroup,
+			input:         NewSearchParams("p2p", "p2p", ""),
+			expectedGroup: config.ServerGroup_UNDEFINED,
+			err:           internal.ErrDoubleGroup,
 		},
 		{
-			"quantum_vpn",
-			"",
-			config.ServerGroup_UNDEFINED,
-			internal.ErrGroupDoesNotExist,
+			input:         NewSearchParams("p2p", "quantum_vpn", ""),
+			expectedGroup: config.ServerGroup_UNDEFINED,
+			err:           internal.ErrGroupDoesNotExist,
 		},
 		{
-			"",
-			"quantum_vpn",
-			config.ServerGroup_UNDEFINED,
-			nil,
+			input:         NewSearchParams("quantum_vpn", "p2p", ""),
+			expectedGroup: config.ServerGroup_P2P,
+			err:           nil,
 		},
 		{
-			"quantum_vpn",
-			"quantum_vpn",
-			config.ServerGroup_UNDEFINED,
-			internal.ErrGroupDoesNotExist,
+			input:         NewSearchParams("quantum_vpn", "", ""),
+			expectedGroup: config.ServerGroup_UNDEFINED,
+			err:           nil,
+		},
+		{
+			input:         NewSearchParams("p2p us1234", "", ""),
+			expectedGroup: config.ServerGroup_UNDEFINED,
+			err:           nil,
+		},
+		{
+			input:         NewSearchParams("quantum_vpn", "quantum_vpn", ""),
+			expectedGroup: config.ServerGroup_UNDEFINED,
+			err:           internal.ErrGroupDoesNotExist,
 		},
 	}
 
 	for _, tt := range tests {
-		group, err := resolveServerGroup(tt.flag, tt.tag)
-		assert.Equal(t, tt.group, group)
+		tag := tt.input.Tag
+		group, err := resolveServerGroup(&tt.input, false)
+		assert.Equal(t, tt.expectedGroup, group)
 		assert.Equal(t, tt.err, err)
+		assert.Equal(t, tt.tagChanged, tt.input.Tag != tag)
 	}
 }
 
@@ -265,77 +272,8 @@ func TestGroupConvert(t *testing.T) {
 	}
 }
 
-func TestServerTagToServerBy(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	t.Run("action fastest", func(t *testing.T) {
-		tag := "double_vpn"
-		server := core.Server{}
-		groups := core.Groups{}
-		locs := core.Locations{}
-
-		groups = append(groups, core.Group{Title: "Double VPN"})
-		server.Groups = groups
-
-		locs = append(locs, core.Location{Country: core.Country{Name: "China", City: core.City{Name: "Beijing"}}})
-		server.Locations = locs
-
-		got := serverTagToServerBy(tag, server)
-		assert.Equal(t, core.ServerBySpeed, got)
-	})
-
-	t.Run("action server", func(t *testing.T) {
-		tag := "de666"
-		server := core.Server{Hostname: "de666.nordvpn.com"}
-		locs := core.Locations{}
-
-		locs = append(locs, core.Location{Country: core.Country{Name: "Germany", City: core.City{Name: "Frankfurt"}}})
-		server.Locations = locs
-
-		got := serverTagToServerBy(tag, server)
-		assert.Equal(t, core.ServerByName, got)
-	})
-
-	t.Run("action country", func(t *testing.T) {
-		tag := "Japan"
-		server := core.Server{}
-		locs := core.Locations{}
-
-		locs = append(locs, core.Location{Country: core.Country{Name: "Japan"}})
-		server.Locations = locs
-
-		got := serverTagToServerBy(tag, server)
-		assert.Equal(t, core.ServerByCountry, got)
-	})
-
-	t.Run("action fastest", func(t *testing.T) {
-		tag := ""
-		server := core.Server{}
-		locs := core.Locations{}
-
-		locs = append(locs, core.Location{Country: core.Country{}})
-		server.Locations = locs
-
-		got := serverTagToServerBy(tag, server)
-		assert.Equal(t, core.ServerBySpeed, got)
-	})
-
-	t.Run("action city", func(t *testing.T) {
-		tag := "London"
-		server := core.Server{}
-		locs := core.Locations{}
-
-		locs = append(locs, core.Location{Country: core.Country{City: core.City{Name: "London"}}})
-		server.Locations = locs
-
-		got := serverTagToServerBy(tag, server)
-		assert.Equal(t, core.ServerByCity, got)
-	})
-}
-
 func TestServerTagFromString(t *testing.T) {
-	category.Set(t, category.File)
-	defer testsCleanup()
+	category.Set(t, category.Unit)
 
 	tests := []struct {
 		name      string
@@ -343,7 +281,6 @@ func TestServerTagFromString(t *testing.T) {
 		servers   core.Servers
 		tag       string
 		group     config.ServerGroup
-		groupFlag bool
 		expected  core.ServerTag
 		hasError  bool
 	}{
@@ -354,15 +291,6 @@ func TestServerTagFromString(t *testing.T) {
 			tag:       "",
 			group:     config.ServerGroup_UNDEFINED,
 			expected:  core.ServerTag{Action: core.ServerByUnknown, ID: 0},
-			hasError:  false,
-		},
-		{
-			name:      "group tag",
-			countries: core.Countries{},
-			servers:   core.Servers{},
-			tag:       "P2P",
-			group:     config.ServerGroup_P2P,
-			expected:  core.ServerTag{Action: core.ServerBySpeed, ID: int64(config.ServerGroup_P2P)},
 			hasError:  false,
 		},
 		{
@@ -487,11 +415,10 @@ func TestServerTagFromString(t *testing.T) {
 					Hostname: "ca944.nordvpn.com",
 				},
 			},
-			tag:       "",
-			group:     config.ServerGroup_P2P,
-			groupFlag: true,
-			expected:  core.ServerTag{Action: core.ServerByUnknown, ID: 0},
-			hasError:  false,
+			tag:      "",
+			group:    config.ServerGroup_P2P,
+			expected: core.ServerTag{Action: core.ServerBySpeed, ID: int64(config.ServerGroup_P2P)},
+			hasError: false,
 		},
 		{
 			name: "country tag & group flag",
@@ -517,11 +444,10 @@ func TestServerTagFromString(t *testing.T) {
 					Hostname: "ca944.nordvpn.com",
 				},
 			},
-			tag:       "Spain",
-			group:     config.ServerGroup_P2P,
-			groupFlag: true,
-			expected:  core.ServerTag{Action: core.ServerByCountry, ID: 202},
-			hasError:  false,
+			tag:      "Spain",
+			group:    config.ServerGroup_P2P,
+			expected: core.ServerTag{Action: core.ServerByCountry, ID: 202},
+			hasError: false,
 		},
 		{
 			name: "non-existing tag",
@@ -591,7 +517,7 @@ func TestServerTagFromString(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := serverTagFromString(test.countries, &mockServersAPI{}, test.tag, test.group, test.servers, test.groupFlag)
+			got, err := serverTagFromString(test.tag, test.group, test.countries, test.servers)
 			assert.Equal(t, test.hasError, err != nil)
 			assert.EqualValues(t, test.expected, got)
 		})
@@ -647,7 +573,7 @@ func TestTechToServerTech(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := techToServerTech(test.tech, test.protocol, test.obfuscated)
+			got := TechToServerTech(test.tech, test.protocol, test.obfuscated)
 			assert.Equal(t, test.expected, got)
 		})
 	}
@@ -659,69 +585,75 @@ func TestPickServer(t *testing.T) {
 		name                 string
 		api                  core.ServersAPI
 		servers              core.Servers
-		longitude            float64
-		latitude             float64
 		tech                 config.Technology
-		protocol             config.Protocol
 		obfuscated           bool
 		tag                  string
-		groupFlag            string
 		onlyPhysicServers    bool
+		excludedServer       string
 		expectedServerName   string
 		expectedRemoteServer bool
 		expectedError        error
 	}{
 		{
 			name:               "find server using country code",
-			api:                mockFailingServersAPI{},
-			servers:            serversList(),
+			api:                core_test.NewMockFailingServersAPI(errors.New("500")),
+			servers:            core_test.ServersList(),
 			tech:               config.Technology_NORDLYNX,
 			tag:                "de",
 			expectedServerName: "Germany #3",
 		},
 		{
 			name:               "find server using country name",
-			api:                mockFailingServersAPI{},
-			servers:            serversList(),
+			api:                core_test.NewMockFailingServersAPI(errors.New("500")),
+			servers:            core_test.ServersList(),
 			tech:               config.Technology_NORDLYNX,
 			tag:                "germany",
 			expectedServerName: "Germany #3",
 		},
 		{
 			name:               "find server using city name",
-			api:                mockFailingServersAPI{},
-			servers:            serversList(),
+			api:                core_test.NewMockFailingServersAPI(errors.New("500")),
+			servers:            core_test.ServersList(),
 			tech:               config.Technology_NORDLYNX,
 			tag:                "berlin",
 			expectedServerName: "Germany #3",
 		},
 		{
 			name:               "find server using country + city name",
-			api:                mockFailingServersAPI{},
-			servers:            serversList(),
+			api:                core_test.NewMockFailingServersAPI(errors.New("500")),
+			servers:            core_test.ServersList(),
 			tech:               config.Technology_NORDLYNX,
 			tag:                "germany berlin",
 			expectedServerName: "Germany #3",
 		},
 		{
 			name:               "find server using country code + city name",
-			api:                mockFailingServersAPI{},
-			servers:            serversList(),
+			api:                core_test.NewMockFailingServersAPI(errors.New("500")),
+			servers:            core_test.ServersList(),
 			tech:               config.Technology_NORDLYNX,
 			tag:                "de berlin",
 			expectedServerName: "Germany #3",
 		},
 		{
+			name:                 "server selected from the API is marked as remote",
+			api:                  core_test.NewMockServersAPI(),
+			servers:              core_test.ServersList(),
+			tech:                 config.Technology_NORDLYNX,
+			tag:                  "de3",
+			expectedServerName:   "Germany #3",
+			expectedRemoteServer: true,
+		},
+		{
 			name:              "find server when virtual locations are disabled",
-			api:               mockFailingServersAPI{},
-			servers:           serversList(),
+			api:               core_test.NewMockFailingServersAPI(errors.New("500")),
+			servers:           core_test.ServersList(),
 			tech:              config.Technology_NORDLYNX,
 			onlyPhysicServers: true,
 		},
 		{
 			name:              "virtual location disabled returns error when only virtual servers match",
-			api:               mockFailingServersAPI{},
-			servers:           serversList(),
+			api:               core_test.NewMockFailingServersAPI(errors.New("500")),
+			servers:           core_test.ServersList(),
 			tech:              config.Technology_NORDLYNX,
 			tag:               "algeria",
 			onlyPhysicServers: true,
@@ -729,22 +661,47 @@ func TestPickServer(t *testing.T) {
 		},
 		{
 			name:          "can't find a server",
-			api:           mockFailingServersAPI{},
+			api:           core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:       core.Servers{},
 			tech:          config.Technology_NORDLYNX,
 			expectedError: internal.ErrServerIsUnavailable,
+		},
+		{
+			name:           "exclude server de3.nordvpn.com",
+			api:            core_test.NewMockFailingServersAPI(errors.New("500")),
+			servers:        core_test.ServersList(),
+			tech:           config.Technology_NORDLYNX,
+			tag:            "de berlin",
+			excludedServer: "de3.nordvpn.com",
+			expectedError:  internal.ErrServerIsUnavailable,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			serverSelection, err := PickServer(test.api,
-				countriesList(), test.servers, test.longitude, test.latitude, test.tech, test.protocol, test.obfuscated, test.tag, test.groupFlag, !test.onlyPhysicServers)
+			cfg := config.Config{
+				Technology: test.tech,
+				AutoConnectData: config.AutoConnectData{
+					Obfuscate: test.obfuscated,
+				},
+			}
+			if test.onlyPhysicServers {
+				cfg.VirtualLocation.Set(false)
+			}
+
+			serverSelection, err := PickServer(
+				test.api,
+				test.servers,
+				core_test.CountriesList(),
+				core.Insights{},
+				cfg,
+				NewSearchParams(test.tag, "", test.excludedServer),
+			)
 
 			assert.Equal(t, test.expectedError, err)
-			assert.Equal(t, test.expectedRemoteServer, serverSelection.remote)
+			assert.Equal(t, test.expectedRemoteServer, serverSelection.Remote)
 			if len(test.expectedServerName) > 0 {
-				assert.Equal(t, test.expectedServerName, serverSelection.server.Name)
+				assert.Equal(t, test.expectedServerName, serverSelection.Server.Name)
 			}
 		})
 	}
@@ -828,7 +785,7 @@ func TestGetServerParameters(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			params := GetServerParameters(test.tag, test.group, countriesList())
+			params := GetServerParameters(test.tag, test.group, core_test.CountriesList())
 
 			assert.Equal(t, test.expected, params)
 		})
@@ -843,28 +800,28 @@ func TestRecommendationUUID_ExtractRecommendationUUID(t *testing.T) {
 		headerKey               string
 		headerValue             string
 		expectedError           bool
-		expectedRecommendedUUID recommendationUUID
+		expectedRecommendedUUID RecommendationUUID
 	}{
 		{
 			name:                    "valid uuid",
 			headerKey:               recommendationUUIDHeader,
 			headerValue:             "c0b4c990-3000-457f-8b81-6850b8cdb54e",
 			expectedError:           false,
-			expectedRecommendedUUID: recommendationUUID(TestRecommendedUUID),
+			expectedRecommendedUUID: RecommendationUUID(core_test.TestRecommendedUUID),
 		},
 		{
 			name:                    "missing uuid",
 			headerKey:               "NOT-Recommendation-Uuid",
 			headerValue:             "random-value",
 			expectedError:           true,
-			expectedRecommendedUUID: emptyUuid,
+			expectedRecommendedUUID: emptyUUID,
 		},
 		{
 			name:                    "bad uuid",
 			headerKey:               recommendationUUIDHeader,
 			headerValue:             "not-a-uuid",
 			expectedError:           true,
-			expectedRecommendedUUID: emptyUuid,
+			expectedRecommendedUUID: emptyUUID,
 		},
 	}
 
@@ -898,20 +855,32 @@ func TestRecommendationUUID_GetServersRemote(t *testing.T) {
 		tag                     core.ServerTag
 		group                   config.ServerGroup
 		expectedError           error
-		expectedRecommendedUUID recommendationUUID
+		expectedRecommendedUUID RecommendationUUID
 	}{
 		{
 			name:                    "recommended uuid",
-			api:                     mockServersAPI{},
+			api:                     core_test.NewMockServersAPI(),
 			tech:                    config.Technology_NORDLYNX,
 			expectedError:           nil,
-			expectedRecommendedUUID: recommendationUUID(TestRecommendedUUID),
+			expectedRecommendedUUID: RecommendationUUID(core_test.TestRecommendedUUID),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			_, recommendedUUID, err := getServersRemote(test.api, test.longitude, test.latitude, test.tech, test.protocol, test.obfuscated, test.tag, test.group)
+			filter := core.ServersFilter{
+				Group: test.group,
+				Tech:  TechToServerTech(test.tech, test.protocol, test.obfuscated),
+				Tag:   test.tag,
+				Limit: apiServersLimit,
+			}
+			_, recommendedUUID, err := getRecommendedServers(
+				test.api,
+				test.longitude,
+				test.latitude,
+				filter,
+				func(core.Server) bool { return true },
+			)
 			assert.Equal(t, test.expectedError, err)
 			assert.Equal(t, test.expectedRecommendedUUID, recommendedUUID)
 		})

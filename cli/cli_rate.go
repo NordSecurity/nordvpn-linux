@@ -53,6 +53,13 @@ func (c *cmd) Rate(ctx *cli.Context) error {
 		return formatError(argsParseError(ctx))
 	}
 
+	// #nosec G104 -- fire-and-forget analytics
+	c.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+		FormReference: pb.UIEvent_CLI,
+		ItemName:      pb.UIEvent_RATE_CONNECTION,
+		ItemType:      pb.UIEvent_CLICK,
+	})
+
 	payload, err := c.client.RateConnection(context.Background(), &pb.RateRequest{Rating: rating})
 	if err != nil {
 		return formatError(err)

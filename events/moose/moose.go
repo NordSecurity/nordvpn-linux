@@ -61,7 +61,7 @@ type (
 	mooseUnsetContextFunc          func() uint32
 	mooseSetRecommendationUuidFunc func(string) uint32
 	mooseSetServerCountryValueFunc func(string) uint32
-	mooseSetServerGroupValueFunc   func(string) uint32
+	mooseSetServerGroupValueFunc   func(moose.NordvpnappServerGroup) uint32
 	mooseSetIsOnVpnValueFunc       func(bool) uint32
 	mooseSendConnectFunc           func(
 		moose.EventParams,
@@ -843,6 +843,11 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		vpnConnectionTrigger = moose.NordvpnappVpnConnectionTriggerAfterSnooze
 		connectionFunnel = durationToConnectionFunnel(data.PauseInterval)
 	}
+	if data.VPNConnReason != events.VPNConnectionReasonNone {
+		attrs := vpnConnReasonToMoose(data.VPNConnReason)
+		vpnConnectionTrigger = attrs.trigger
+		eventTrigger = attrs.eventTrigger
+	}
 
 	targetServerDomain := data.TargetServerDomain
 	recommendationUUID := data.RecommendationUUID
@@ -861,9 +866,9 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	}
 
 	if data.EventStatus == events.StatusSuccess {
-		if data.TargetServerGroup != "" {
-			if err := s.response(s.mooseFuncs.setServerGroupValue(data.TargetServerGroup)); err != nil {
-				return fmt.Errorf("setting server group current state on successful connect (%q): %w", data.TargetServerGroup, err)
+		if data.TargetServerGroupID != config.ServerGroup_UNDEFINED {
+			if err := s.response(s.mooseFuncs.setServerGroupValue(serverGroupToInternalType(data.TargetServerGroupID))); err != nil {
+				return fmt.Errorf("setting server group current state on successful connect (%v): %w", data.TargetServerGroupID, err)
 			}
 		} else {
 			if err := s.response(s.mooseFuncs.unsetServerGroupValue()); err != nil {
@@ -888,7 +893,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			TargetServerCity:    data.TargetServerCity,
 			TargetServerCountry: data.TargetServerCountryCode,
 			TargetServerDomain:  targetServerDomain,
-			TargetServerGroup:   data.TargetServerGroup,
+			TargetServerGroup:   serverGroupToInternalType(data.TargetServerGroupID),
 			TargetTechnology:    connectionTechnologyToInternalType(data.Technology),
 		},
 		moose.ConnectionParams{
@@ -970,13 +975,19 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		connectionFunnel = durationToConnectionFunnel(data.PauseInterval)
 	}
 
+	eventTrigger := moose.NordvpnappEventTriggerUser
+	exceptionCode := errToExceptionCode(data.Error)
+	if data.VPNConnReason != events.VPNConnectionReasonNone {
+		attrs := vpnConnReasonToMoose(data.VPNConnReason)
+		eventTrigger = attrs.eventTrigger
+		exceptionCode = attrs.exceptionCode
+	}
+
 	if err := s.response(s.mooseFuncs.sendDisconnect(
 		moose.EventParams{
 			EventDuration: int32(data.Duration.Milliseconds()),
 			EventStatus:   eventStatusToInternalType(data.EventStatus),
-			// App should never disconnect from VPN by itself. It has to receive either
-			// user command (logout, set defaults) or be shut down.
-			EventTrigger: moose.NordvpnappEventTriggerUser,
+			EventTrigger:  eventTrigger,
 		},
 		moose.TargetConnectionParams{
 			TargetServerListSource:    serverListOriginToInternalType(data.ServerFromAPI),
@@ -988,7 +999,7 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 			VpnConnectionTrigger: vpnConnectionTrigger, // pass proper trigger
 		},
 		connectionDuration, // seconds
-		errToExceptionCode(data.Error),
+		exceptionCode,
 		nil,
 	)); err != nil {
 		return fmt.Errorf("sending VPN disconnect event (status=%v, duration=%ds): %w",
@@ -1555,6 +1566,38 @@ func errToExceptionCode(err error) int32 {
 	return -1
 }
 
+const serverMaintenanceExceptionCode int32 = 1000076
+
+type mooseConnReasonAttrs struct {
+	trigger       moose.NordvpnappVpnConnectionTrigger
+	exceptionCode int32
+	eventTrigger  moose.NordvpnappEventTrigger
+}
+
+// vpnConnReasonToMoose maps a VPN connection reason to its Moose telemetry attributes.
+func vpnConnReasonToMoose(t events.VPNConnectionReason) mooseConnReasonAttrs {
+	switch t {
+	case events.VPNConnectionReasonServerMaintenance:
+		return mooseConnReasonAttrs{
+			trigger:       moose.NordvpnappVpnConnectionTriggerServerMaintenance,
+			exceptionCode: serverMaintenanceExceptionCode,
+			eventTrigger:  moose.NordvpnappEventTriggerApp,
+		}
+	case events.VPNConnectionReasonAutoConnect:
+		return mooseConnReasonAttrs{
+			trigger:       moose.NordvpnappVpnConnectionTriggerAutoConnectUserSetting,
+			exceptionCode: -1,
+			eventTrigger:  moose.NordvpnappEventTriggerApp,
+		}
+	default:
+		return mooseConnReasonAttrs{
+			trigger:       moose.NordvpnappVpnConnectionTriggerNone,
+			exceptionCode: -1,
+			eventTrigger:  moose.NordvpnappEventTriggerUser,
+		}
+	}
+}
+
 // eventTriggerDomainToInternalType converts the domain-specific event trigger type to the internal
 // representation
 func eventTriggerDomainToInternalType(trigger events.TypeEventTrigger) moose.NordvpnappEventTrigger {
@@ -1644,6 +1687,28 @@ func serverSelectionRuleToInternalType(rule config.ServerSelectionRule) moose.No
 		return moose.NordvpnappServerSelectionRuleSpecialtyServerWithSpecificServer
 	default:
 		return moose.NordvpnappServerSelectionRuleNone
+	}
+}
+
+// serverGroupToInternalType converts the internal config server group to the Moose representation
+func serverGroupToInternalType(group config.ServerGroup) moose.NordvpnappServerGroup {
+	switch group {
+	case config.ServerGroup_DOUBLE_VPN:
+		return moose.NordvpnappServerGroupDoubleVpn
+	case config.ServerGroup_ONION_OVER_VPN:
+		return moose.NordvpnappServerGroupOnionOverVpn
+	case config.ServerGroup_DEDICATED_IP:
+		return moose.NordvpnappServerGroupDedicatedIp
+	case config.ServerGroup_STANDARD_VPN_SERVERS:
+		return moose.NordvpnappServerGroupStandard
+	case config.ServerGroup_P2P:
+		return moose.NordvpnappServerGroupP2p
+	case config.ServerGroup_OBFUSCATED:
+		return moose.NordvpnappServerGroupObfuscated
+	case config.ServerGroup_DEDICATED_SERVER:
+		return moose.NordvpnappServerGroupDedicatedServer
+	default:
+		return moose.NordvpnappServerGroupNone
 	}
 }
 

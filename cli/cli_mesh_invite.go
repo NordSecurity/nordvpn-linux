@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	daemonpb "github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 
 	"github.com/fatih/color"
@@ -95,6 +96,13 @@ func (c *cmd) MeshInviteSend(ctx *cli.Context) error {
 			}
 		}
 	}
+
+	// #nosec G104 -- fire-and-forget analytics
+	c.client.ReportUIEvent(context.Background(), &daemonpb.UIEvent{
+		FormReference: daemonpb.UIEvent_CLI,
+		ItemName:      daemonpb.UIEvent_MESHNET_INVITE_SEND,
+		ItemType:      daemonpb.UIEvent_CLICK,
+	})
 
 	permissions := c.meshPermissions(ctx)
 	resp, err := c.meshClient.Invite(
