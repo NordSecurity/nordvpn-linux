@@ -40,10 +40,26 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	Translations $copyWith({TranslationMetadata<AppLocale, Translations>? meta}) => Translations(meta: meta ?? this.$meta);
 
 	// Translations
+	late final TranslationsA11yEn a11y = TranslationsA11yEn._(_root);
 	late final TranslationsCitiesEn cities = TranslationsCitiesEn._(_root);
 	late final TranslationsCountriesEn countries = TranslationsCountriesEn._(_root);
 	late final TranslationsDaemonEn daemon = TranslationsDaemonEn._(_root);
 	late final TranslationsUiEn ui = TranslationsUiEn._(_root);
+}
+
+// Path: a11y
+class TranslationsA11yEn {
+	TranslationsA11yEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'VPN connection resumes in $minutes minutes $seconds seconds'
+	String VPNResumesIn({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes} minutes ${seconds} seconds';
+
+	/// en: 'VPN connection resumes in $hours hours $minutes minutes $seconds seconds'
+	String VPNResumesInWithHours({required Object hours, required Object minutes, required Object seconds}) => 'VPN connection resumes in ${hours} hours ${minutes} minutes ${seconds} seconds';
 }
 
 // Path: cities
@@ -2178,6 +2194,8 @@ class TranslationsUiEn {
 extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
+			'a11y.VPNResumesIn' => ({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes} minutes ${seconds} seconds',
+			'a11y.VPNResumesInWithHours' => ({required Object hours, required Object minutes, required Object seconds}) => 'VPN connection resumes in ${hours} hours ${minutes} minutes ${seconds} seconds',
 			'cities.tirana' => 'Tirana',
 			'cities.algiers' => 'Algiers',
 			'cities.addis_ababa' => 'Addis Ababa',
@@ -2688,10 +2706,10 @@ extension on Translations {
 			'ui.chooseLocationForDip' => 'Choose a location for your dedicated IP',
 			'ui.getDip' => 'Get dedicated IP',
 			'ui.getYourDip' => 'Get your personal IP',
-			'ui.getDipDescription' => 'Get a personal IP address that belongs only to you. Enjoy all the benefits of VPN encryption without dealing with blocklists, identity checks, and selecting images of boats in CAPTCHAs.',
-			'ui.notifications' => 'Notifications',
 			_ => null,
 		} ?? switch (path) {
+			'ui.getDipDescription' => 'Get a personal IP address that belongs only to you. Enjoy all the benefits of VPN encryption without dealing with blocklists, identity checks, and selecting images of boats in CAPTCHAs.',
+			'ui.notifications' => 'Notifications',
 			'ui.specialtyServersSearchHint' => 'Search country or city',
 			'ui.on' => 'On',
 			'ui.off' => 'Off',

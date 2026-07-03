@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
-import 'package:nordvpn/a11y/strings_a11y.g.dart';
 import 'package:nordvpn/theme/toast_theme.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 
@@ -147,12 +146,12 @@ final class _ToastState extends State<Toast> {
     final minutes = _remainingTime.inMinutes.remainder(60);
     final hours = _remainingTime.inHours.remainder(60);
     return hours > 0
-        ? a11y.ui.VPNResumesInWithHours(
+        ? t.a11y.VPNResumesInWithHours(
             hours: hours,
             minutes: minutes,
             seconds: seconds,
           )
-        : a11y.ui.VPNResumesIn(minutes: minutes, seconds: seconds);
+        : t.ui.VPNResumesIn(minutes: minutes, seconds: seconds);
   }
 
   Widget _buildWidgetText(ToastTheme theme) {
