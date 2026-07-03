@@ -186,6 +186,12 @@ func Download() error {
 		return err
 	}
 
+	if needsDownload(env, versions) {
+		if err := ensureCIJobToken(env); err != nil {
+			return err
+		}
+	}
+
 	environment := mergeMaps(env, versions)
 
 	cwd, err := os.Getwd()
@@ -195,6 +201,38 @@ func Download() error {
 
 	environment["WORKDIR"] = cwd
 	return sh.RunWith(environment, "ci/check_dependencies.sh")
+}
+
+// needsDownload mirrors the checkout-completed-flag check in ci/check_dependencies.sh:
+// returns true if any library required by FEATURES hasn't been downloaded yet.
+func needsDownload(env, versions map[string]string) bool {
+	features := env["FEATURES"]
+	type entry struct {
+		feature    string
+		lib        string
+		versionKey string
+	}
+	entries := []entry{
+		{"telio", "libtelio", "LIBTELIO_VERSION"},
+		{"drop", "libdrop", "LIBDROP_VERSION"},
+		{"quench", "libquench", "LIBQUENCH_VERSION"},
+		{"moose", "libmoose-worker", "LIBMOOSE_WORKER_VERSION"},
+		{"moose", "libmoose-nordvpnapp", "LIBMOOSE_NORDVPNAPP_VERSION"},
+	}
+	for _, e := range entries {
+		if !strings.Contains(features, e.feature) {
+			continue
+		}
+		version := versions[e.versionKey]
+		if version == "" {
+			return true
+		}
+		flag := filepath.Join("bin", "deps", "lib", e.lib, version, "checkout-completed-flag")
+		if !internal.FileExists(flag) {
+			return true
+		}
+	}
+	return false
 }
 
 // Download OpenVPN external dependencies
