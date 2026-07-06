@@ -1046,7 +1046,6 @@ func (s *Subscriber) OnPauseCancelled(data events.DataPauseCancelled) error {
 		-1,
 		nil,
 	))
-
 	if err != nil {
 		return fmt.Errorf("sending VPN pause event: %w", err)
 	}
@@ -1218,10 +1217,8 @@ func (s *Subscriber) fetchAndSetServiceContext() error {
 			return fmt.Errorf("fetching dedicated servers: %w", err)
 		}
 		if len(dedicatedServers) > 0 {
-			hasDSActivated =
-				dedicatedServers[0].Status != "" &&
-					dedicatedServers[0].Status != core.DedicatedServerStatusNew
-
+			hasDSActivated = dedicatedServers[0].Status != "" &&
+				dedicatedServers[0].Status != core.DedicatedServerStatusNew
 		}
 	}
 

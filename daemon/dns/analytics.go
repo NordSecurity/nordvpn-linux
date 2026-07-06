@@ -73,7 +73,8 @@ type errorEvent struct {
 func newErrorEvent(eventType eventType,
 	managementService dnsManagementService,
 	errorType errorType,
-	critical bool) errorEvent {
+	critical bool,
+) errorEvent {
 	return errorEvent{
 		event:     newEvent(eventType, managementService),
 		ErrorType: errorType.String(),
@@ -207,7 +208,8 @@ func (d *dnsAnalytics) emitDNSConfigurationErrorEvent(managementService dnsManag
 }
 
 func (d *dnsAnalytics) emitDNSConfigurationCriticalErrorEvent(managementService dnsManagementService,
-	errorType errorType) {
+	errorType errorType,
+) {
 	debuggerEvent := newErrorEvent(dnsConfigurationErrorEventType,
 		managementService,
 		errorType,

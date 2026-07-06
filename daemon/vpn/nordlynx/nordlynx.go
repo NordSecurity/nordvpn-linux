@@ -20,9 +20,7 @@ const (
 	WireguardHeaderSize = 80
 )
 
-var (
-	errNoKernelModule = errors.New("interface of type wireguard not supported")
-)
+var errNoKernelModule = errors.New("interface of type wireguard not supported")
 
 var DefaultPrefix = netip.MustParsePrefix("10.5.0.2/16")
 

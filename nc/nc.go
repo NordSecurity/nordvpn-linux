@@ -183,7 +183,8 @@ type mqttMessage struct {
 func (c *Client) createClientOptions(
 	credentials config.NCData,
 	managementChan chan<- interface{},
-	ctx context.Context) (*mqtt.ClientOptions, error) {
+	ctx context.Context,
+) (*mqtt.ClientOptions, error) {
 	opts := mqtt.NewClientOptions()
 	opts.SetCleanSession(false)
 	opts.SetOrderMatters(false)
@@ -294,7 +295,8 @@ func (c *Client) tryConnect(
 	logFunc func(v ...any),
 	connectionState connectionState,
 	managementChan chan<- interface{},
-	ctx context.Context) (mqtt.Client, connectionState) {
+	ctx context.Context,
+) (mqtt.Client, connectionState) {
 	if logFunc == nil {
 		logFunc = func(args ...any) {}
 	}
@@ -359,7 +361,8 @@ func (c *Client) tryConnect(
 func (c *Client) connectWithBackoff(client mqtt.Client,
 	credentialsInvalidated bool,
 	managementChan chan<- interface{},
-	ctx context.Context) mqtt.Client {
+	ctx context.Context,
+) mqtt.Client {
 	log.NC.Info("start connection loop")
 
 	connectionState := connecting
@@ -405,7 +408,8 @@ func (c *Client) connect(client mqtt.Client,
 	credentialsInvalidated bool,
 	connectionContext context.Context,
 	managementChan chan<- interface{},
-	connectedChan chan<- mqtt.Client) {
+	connectedChan chan<- mqtt.Client,
+) {
 	client = c.connectWithBackoff(client, credentialsInvalidated, managementChan, connectionContext)
 	select {
 	case connectedChan <- client:
