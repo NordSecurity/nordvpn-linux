@@ -268,6 +268,31 @@ func TestAddDirectoryToZip_Missing(t *testing.T) {
 	assert.Error(t, addDirectoryToZip(zw, "/nonexistent/xyz", "p"))
 }
 
+func TestAddDirectoryToZip_SymlinksSkipped(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	dir := t.TempDir()
+
+	// A real file that should be included.
+	realFile := uuid.NewString() + ".txt"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, realFile), []byte("real"), 0600))
+
+	// A symlink pointing at a file outside the directory — should be skipped.
+	target := filepath.Join(t.TempDir(), "secret.txt")
+	require.NoError(t, os.WriteFile(target, []byte("secret"), 0600))
+	require.NoError(t, os.Symlink(target, filepath.Join(dir, "link.txt")))
+
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	require.NoError(t, addDirectoryToZip(zw, dir, "prefix"))
+	require.NoError(t, zw.Close())
+
+	entries := readZipEntries(t, buf.Bytes())
+	assert.Equal(t, "real", entries["prefix/"+realFile], "real file should be included")
+	assert.NotContains(t, entries, "prefix/link.txt", "symlink must not be followed into the zip")
+	assert.Len(t, entries, 1)
+}
+
 func TestWriteLogExtractionReport(t *testing.T) {
 	category.Set(t, category.Unit)
 
