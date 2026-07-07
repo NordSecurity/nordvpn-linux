@@ -155,7 +155,7 @@ func TestReadFile(t *testing.T) {
 			name: "present file returns its contents",
 			setup: func(t *testing.T) string {
 				path := filepath.Join(t.TempDir(), uuid.NewString()+".txt")
-				require.NoError(t, os.WriteFile(path, []byte("hello"), 0600))
+				require.NoError(t, os.WriteFile(path, []byte("hello"), 0o600))
 				return path
 			},
 			expectedOutput: "hello",
@@ -214,26 +214,47 @@ func TestRunCommand(t *testing.T) {
 func TestAddFileToZip(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	srcPath := filepath.Join(t.TempDir(), uuid.NewString()+".txt")
-	require.NoError(t, os.WriteFile(srcPath, []byte("file-content"), 0600))
+	tests := []struct {
+		name        string
+		setup       func(t *testing.T) (filePath, zipEntry string)
+		expectErr   bool
+		expectEntry string // expected zip entry content; empty when expectErr
+	}{
+		{
+			name: "present file is added with correct content",
+			setup: func(t *testing.T) (string, string) {
+				path := filepath.Join(t.TempDir(), uuid.NewString()+".txt")
+				require.NoError(t, os.WriteFile(path, []byte("file-content"), 0o600))
+				return path, "dest/" + uuid.NewString() + ".txt"
+			},
+			expectEntry: "file-content",
+		},
+		{
+			name: "missing file returns error",
+			setup: func(t *testing.T) (string, string) {
+				return "/nonexistent/abc", "e.txt"
+			},
+			expectErr: true,
+		},
+	}
 
-	zipEntry := "dest/" + uuid.NewString() + ".txt"
-	var buf bytes.Buffer
-	zw := zip.NewWriter(&buf)
-	require.NoError(t, addFileToZip(zw, srcPath, zipEntry))
-	require.NoError(t, zw.Close())
-
-	entries := readZipEntries(t, buf.Bytes())
-	require.Contains(t, entries, zipEntry)
-	assert.Equal(t, "file-content", entries[zipEntry])
-}
-
-func TestAddFileToZip_Missing(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	var buf bytes.Buffer
-	zw := zip.NewWriter(&buf)
-	assert.Error(t, addFileToZip(zw, "/nonexistent/abc", "e.txt"))
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			filePath, zipEntry := tc.setup(t)
+			var buf bytes.Buffer
+			zw := zip.NewWriter(&buf)
+			err := addFileToZip(zw, filePath, zipEntry)
+			if tc.expectErr {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.NoError(t, zw.Close())
+			entries := readZipEntries(t, buf.Bytes())
+			require.Contains(t, entries, zipEntry)
+			assert.Equal(t, tc.expectEntry, entries[zipEntry])
+		})
+	}
 }
 
 func TestAddDirectoryToZip(t *testing.T) {
@@ -242,12 +263,12 @@ func TestAddDirectoryToZip(t *testing.T) {
 	dir := t.TempDir()
 	subName := uuid.NewString()
 	sub := filepath.Join(dir, subName)
-	require.NoError(t, os.MkdirAll(sub, 0700))
+	require.NoError(t, os.MkdirAll(sub, 0o700))
 
 	fileA := uuid.NewString() + ".txt"
 	fileB := uuid.NewString() + ".txt"
-	require.NoError(t, os.WriteFile(filepath.Join(dir, fileA), []byte("aa"), 0600))
-	require.NoError(t, os.WriteFile(filepath.Join(sub, fileB), []byte("bb"), 0600))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, fileA), []byte("aa"), 0o600))
+	require.NoError(t, os.WriteFile(filepath.Join(sub, fileB), []byte("bb"), 0o600))
 
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
@@ -275,11 +296,11 @@ func TestAddDirectoryToZip_SymlinksSkipped(t *testing.T) {
 
 	// A real file that should be included.
 	realFile := uuid.NewString() + ".txt"
-	require.NoError(t, os.WriteFile(filepath.Join(dir, realFile), []byte("real"), 0600))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, realFile), []byte("real"), 0o600))
 
 	// A symlink pointing at a file outside the directory — should be skipped.
 	target := filepath.Join(t.TempDir(), "secret.txt")
-	require.NoError(t, os.WriteFile(target, []byte("secret"), 0600))
+	require.NoError(t, os.WriteFile(target, []byte("secret"), 0o600))
 	require.NoError(t, os.Symlink(target, filepath.Join(dir, "link.txt")))
 
 	var buf bytes.Buffer
@@ -307,22 +328,45 @@ func TestWriteLogExtractionReport(t *testing.T) {
 	assert.Equal(t, "line1\nline2\n", entries["log_extraction_report.log"])
 }
 
-func TestStreamFileToWriter_Small(t *testing.T) {
+func TestStreamFileToWriter(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	path := filepath.Join(t.TempDir(), uuid.NewString()+".log")
-	require.NoError(t, os.WriteFile(path, []byte("small log"), 0600))
+	tests := []struct {
+		name        string
+		setup       func(t *testing.T) string // returns path to stream
+		expectErr   bool
+		expectBytes string
+	}{
+		{
+			name: "small file is copied verbatim",
+			setup: func(t *testing.T) string {
+				path := filepath.Join(t.TempDir(), uuid.NewString()+".log")
+				require.NoError(t, os.WriteFile(path, []byte("small log"), 0o600))
+				return path
+			},
+			expectBytes: "small log",
+		},
+		{
+			name: "missing file returns error",
+			setup: func(t *testing.T) string {
+				return "/nonexistent/x.log"
+			},
+			expectErr: true,
+		},
+	}
 
-	var buf bytes.Buffer
-	require.NoError(t, streamFileToWriter(&buf, path))
-	assert.Equal(t, "small log", buf.String())
-}
-
-func TestStreamFileToWriter_Missing(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	var buf bytes.Buffer
-	assert.Error(t, streamFileToWriter(&buf, "/nonexistent/x.log"))
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			err := streamFileToWriter(&buf, tc.setup(t))
+			if tc.expectErr {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tc.expectBytes, buf.String())
+		})
+	}
 }
 
 func TestStreamCommandToWriter(t *testing.T) {
@@ -376,7 +420,7 @@ func TestStreamFileToWriter_RespectsDaemonLogCap(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		fmt.Fprintf(&content, "line %03d\n", i) // 9 bytes/line incl. newline
 	}
-	require.NoError(t, os.WriteFile(path, content.Bytes(), 0600))
+	require.NoError(t, os.WriteFile(path, content.Bytes(), 0o600))
 
 	f, err := os.Open(path)
 	require.NoError(t, err)
@@ -437,9 +481,9 @@ func TestAddDaemonLogs_StdoutAsRegularFile(t *testing.T) {
 
 	logPath := filepath.Join(t.TempDir(), uuid.NewString()+".log")
 	content := "alpha\nbeta\ngamma\n"
-	require.NoError(t, os.WriteFile(logPath, []byte(content), 0600))
+	require.NoError(t, os.WriteFile(logPath, []byte(content), 0o600))
 
-	logFile, err := os.OpenFile(logPath, os.O_RDWR, 0600)
+	logFile, err := os.OpenFile(logPath, os.O_RDWR, 0o600)
 	require.NoError(t, err)
 	t.Cleanup(func() { logFile.Close() })
 
