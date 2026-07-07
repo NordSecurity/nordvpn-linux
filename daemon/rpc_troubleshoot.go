@@ -659,6 +659,12 @@ func addDirectoryToZip(zipWriter *zip.Writer, dirPath, zipPrefix string) error {
 			return nil
 		}
 
+		// Skip symlinks to prevent the daemon from reading files
+		// outside the intended directory via user-planted links.
+		if info.Mode()&os.ModeSymlink != 0 {
+			return nil
+		}
+
 		// Get relative path from dirPath
 		relPath, err := filepath.Rel(dirPath, path)
 		if err != nil {
@@ -671,7 +677,7 @@ func addDirectoryToZip(zipWriter *zip.Writer, dirPath, zipPrefix string) error {
 }
 
 func addFileToZip(zipWriter *zip.Writer, filePath, zipPath string) error {
-	file, err := os.Open(filePath) // #nosec G304 -- filePath is from filepath.Walk over hardcoded directories
+	file, err := os.Open(filePath) // #nosec G304 -- symlinks are filtered by addDirectoryToZip before this is called
 	if err != nil {
 		return err
 	}
