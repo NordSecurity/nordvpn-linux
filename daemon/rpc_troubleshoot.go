@@ -49,7 +49,7 @@ const (
 // diagnostics zip past maxZipFileSize.
 var errZipSizeLimitExceeded = errors.New("diagnostics zip exceeds size limit")
 
-func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsServer) (retErr error) {
+func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsServer) error {
 	caller, err := resolveDiagnosticsCaller(srv.Context())
 	if err != nil {
 		log.Error(logPrefix, "troubleshot failed with:", err)
@@ -66,14 +66,6 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 		return srv.Send(&pb.DiagnosticsProgress{Error: fmt.Sprintf(failedCreateZipMsg, err)})
 	}
 	zipPath := zipFile.Name()
-	defer func() {
-		if retErr != nil {
-			retErr = errors.Join(retErr, zipFile.Close())
-			if err := os.Remove(zipPath); err != nil {
-				log.Error(logPrefix, "failed to delete zip", err)
-			}
-		}
-	}()
 
 	if snapconf.IsUnderSnap() {
 		if err := os.Chmod(zipPath, internal.PermUserRWGroupROthersR); err != nil {
@@ -82,7 +74,7 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 	} else {
 		if err := os.Chown(zipPath, int(caller.uid), int(caller.gid)); err != nil {
 			log.Error(logPrefix, "failed to change file ownership:", err)
-			return err
+			return abortDiagnosticsWithMsg(zipFile, srv, fmt.Sprintf(failedChownZipMsg, err))
 		}
 	}
 
@@ -90,21 +82,34 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 	if err := collectDiagnosticsData(srv, zipFile, caller.user.HomeDir, state); err != nil {
 		if errors.Is(err, errZipSizeLimitExceeded) {
 			log.Error(logPrefix, "diagnostics zip exceeded 40 MB limit")
-			return err
+			return abortDiagnosticsWithMsg(zipFile, srv, zipTooLargeMsg)
 		}
 		log.Error(logPrefix, "failed to collect diagnostics:", err)
-		return err
+		return abortDiagnosticsWithMsg(zipFile, srv, fmt.Sprintf(failedCollectMsg, err))
 	}
 
 	if err := zipFile.Close(); err != nil {
 		log.Error(logPrefix, "failed to close zip file:", err)
-		return err
+		if removeErr := os.Remove(zipPath); removeErr != nil {
+			log.Error(logPrefix, "failed to delete zip", removeErr)
+		}
+		return srv.Send(&pb.DiagnosticsProgress{Error: fmt.Sprintf(failedCloseZipMsg, err)})
 	}
 
 	return srv.Send(&pb.DiagnosticsProgress{
 		Step:     "Done",
 		FilePath: zipPath,
 	})
+}
+
+// abortDiagnosticsWithMsg closes and deletes the partial zip file, then sends
+// a user-facing error on the stream.
+func abortDiagnosticsWithMsg(zipFile *os.File, srv pb.Daemon_CollectDiagnosticsServer, msg string) error {
+	_ = zipFile.Close()
+	if err := os.Remove(zipFile.Name()); err != nil {
+		log.Error(logPrefix, "failed to delete zip", err)
+	}
+	return srv.Send(&pb.DiagnosticsProgress{Error: msg})
 }
 
 // createDiagnosticsZip atomically creates a uniquely-named diagnostics zip
@@ -442,64 +447,31 @@ func addDaemonLogs(zipWriter *zip.Writer, supervisor daemonSupervisor) error {
 	}
 }
 
-// streamCommandToWriter runs a command and streams its output directly to the writer
-// with a maximum of maxDaemonLogSize bytes
+// streamCommandToWriter runs a command and streams its stdout to writer, capped
+// at maxDaemonLogSize bytes. The process is always killed and reaped on return
+// so the caller doesn't have to deal with orphaned children.
 func streamCommandToWriter(writer io.Writer, name string, args ...string) error {
 	cmd := exec.Command(name, args...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
 	}
-
 	if err := cmd.Start(); err != nil {
 		return err
 	}
+	defer func() {
+		_ = cmd.Process.Kill()
+		_ = cmd.Wait()
+	}()
 
-	// Copy in chunks, tracking total written
-	buf := make([]byte, 32*1024) // 32KB buffer
-	var totalWritten int64
-
-	for totalWritten < maxDaemonLogSize {
-		n, readErr := stdout.Read(buf)
-		if n > 0 {
-			// Check if this chunk would exceed the limit
-			remaining := maxDaemonLogSize - totalWritten
-			toWrite := int64(n)
-			if toWrite > remaining {
-				toWrite = remaining
-			}
-
-			written, writeErr := writer.Write(buf[:toWrite])
-			totalWritten += int64(written)
-			if writeErr != nil {
-				if err := cmd.Process.Kill(); err != nil {
-					log.Error(logPrefix, "failed to kill process", err)
-				}
-				_ = cmd.Wait()
-				return writeErr
-			}
-		}
-		if readErr != nil {
-			if readErr == io.EOF {
-				break
-			}
-			if err := cmd.Process.Kill(); err != nil {
-				log.Error(logPrefix, "failed to kill process", err)
-			}
-			_ = cmd.Wait()
-			return readErr
-		}
+	n, err := io.Copy(writer, io.LimitReader(stdout, maxDaemonLogSize))
+	if err != nil {
+		return err
 	}
-
-	// If we hit the limit, kill the command and note truncation
-	if totalWritten >= maxDaemonLogSize {
-		if err := cmd.Process.Kill(); err != nil {
-			log.Error(logPrefix, "kill process", err)
-		}
-		fmt.Fprintf(writer, "\n... (log truncated at 500 MB) ...\n") // nolint:errcheck
+	if n >= maxDaemonLogSize {
+		_, err = fmt.Fprintf(writer, "\n... (log truncated at 500 MB) ...\n")
+		return err
 	}
-
-	_ = cmd.Wait()
 	return nil
 }
 
