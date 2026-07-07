@@ -32,7 +32,7 @@ func (c *cmd) Troubleshoot(ctx *cli.Context) error {
 			break
 		}
 		if err != nil {
-			return formatError(err)
+			return errors.New(MsgTroubleshootFailure)
 		}
 
 		// Check for error in response
