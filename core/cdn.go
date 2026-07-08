@@ -2,7 +2,6 @@ package core
 
 import (
 	"bytes"
-	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -79,14 +78,9 @@ func (api *CDNAPI) request(path, method string) (*CDNAPIResponse, error) {
 			return nil, err
 		}
 
-		// Decompress after applying the size limit
+		// Decompress after applying the size limit, capping the decompressed size too
 		if resp.Header.Get("Content-Encoding") == "gzip" {
-			reader, err := gzip.NewReader(bytes.NewReader(body))
-			if err != nil {
-				return nil, err
-			}
-			defer reader.Close()
-			body, err = io.ReadAll(reader)
+			body, err = DecompressGzip(body)
 			if err != nil {
 				return nil, err
 			}
