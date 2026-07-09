@@ -11,9 +11,12 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/helpers"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 )
+
+const trayTestUID uint32 = 1000
 
 func TestSetTray_NoPeerContext(t *testing.T) {
 	category.Set(t, category.Unit)
@@ -51,7 +54,7 @@ func TestSetTray_Disable(t *testing.T) {
 	norduserMock := testnorduser.NewMockNorduserCombinedService()
 	rpc := &RPC{cm: cm, norduser: &norduserMock}
 
-	resp, err := rpc.SetTray(peerCtx(trayTestUID), &pb.SetTrayRequest{Tray: false})
+	resp, err := rpc.SetTray(helpers.PeerCtx(trayTestUID), &pb.SetTrayRequest{Tray: false})
 
 	assert.NoError(t, err)
 	assert.Equal(t, internal.CodeSuccess, resp.Type)
@@ -67,7 +70,7 @@ func TestSetTray_Enable(t *testing.T) {
 	norduserMock := testnorduser.NewMockNorduserCombinedService()
 	rpc := &RPC{cm: cm, norduser: &norduserMock}
 
-	resp, err := rpc.SetTray(peerCtx(trayTestUID), &pb.SetTrayRequest{Tray: true})
+	resp, err := rpc.SetTray(helpers.PeerCtx(trayTestUID), &pb.SetTrayRequest{Tray: true})
 
 	assert.NoError(t, err)
 	assert.Equal(t, internal.CodeSuccess, resp.Type)
@@ -82,7 +85,7 @@ func TestSetTray_AlreadyEnabled_NothingToDo(t *testing.T) {
 	norduserMock := testnorduser.NewMockNorduserCombinedService()
 	rpc := &RPC{cm: cm, norduser: &norduserMock}
 
-	resp, err := rpc.SetTray(peerCtx(trayTestUID), &pb.SetTrayRequest{Tray: true})
+	resp, err := rpc.SetTray(helpers.PeerCtx(trayTestUID), &pb.SetTrayRequest{Tray: true})
 
 	assert.NoError(t, err)
 	assert.Equal(t, internal.CodeNothingToDo, resp.Type)
@@ -98,7 +101,7 @@ func TestSetTray_AlreadyDisabled_NothingToDo(t *testing.T) {
 	norduserMock := testnorduser.NewMockNorduserCombinedService()
 	rpc := &RPC{cm: cm, norduser: &norduserMock}
 
-	resp, err := rpc.SetTray(peerCtx(trayTestUID), &pb.SetTrayRequest{Tray: false})
+	resp, err := rpc.SetTray(helpers.PeerCtx(trayTestUID), &pb.SetTrayRequest{Tray: false})
 
 	assert.NoError(t, err)
 	assert.Equal(t, internal.CodeNothingToDo, resp.Type)
@@ -114,7 +117,7 @@ func TestSetTray_ConfigSaveError(t *testing.T) {
 	norduserMock := testnorduser.NewMockNorduserCombinedService()
 	rpc := &RPC{cm: cm, norduser: &norduserMock}
 
-	resp, err := rpc.SetTray(peerCtx(trayTestUID), &pb.SetTrayRequest{Tray: false})
+	resp, err := rpc.SetTray(helpers.PeerCtx(trayTestUID), &pb.SetTrayRequest{Tray: false})
 
 	assert.NoError(t, err)
 	assert.Equal(t, internal.CodeConfigError, resp.Type)
@@ -131,7 +134,7 @@ func TestSetTray_UidIsolation(t *testing.T) {
 	norduserMock := testnorduser.NewMockNorduserCombinedService()
 	rpc := &RPC{cm: cm, norduser: &norduserMock}
 
-	resp, err := rpc.SetTray(peerCtx(uidA), &pb.SetTrayRequest{Tray: false})
+	resp, err := rpc.SetTray(helpers.PeerCtx(uidA), &pb.SetTrayRequest{Tray: false})
 
 	assert.NoError(t, err)
 	assert.Equal(t, internal.CodeSuccess, resp.Type)
