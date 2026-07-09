@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim
+FROM ubuntu:22.04
 # (glibc 2.31)
 # TODO: Change base image to ubuntu:22.04 on 2026-06-30 (glibc 2.35)
 # Then to debian:bookworm-slim on 2027-06-01 (glibc 2.36)
