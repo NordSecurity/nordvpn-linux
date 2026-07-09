@@ -1319,6 +1319,9 @@ func noopDisconnectAmbientMooseFuncs(sub *Subscriber) {
 	sub.mooseFuncs.setServerGroupValue = func(_ moose.NordvpnappServerGroup) uint32 { return 0 }
 	sub.mooseFuncs.unsetServerGroupValue = func() uint32 { return 0 }
 	sub.mooseFuncs.setIsOnVpnValue = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.setServerDomainValue = func(_ string) uint32 { return 0 }
+	sub.mooseFuncs.setServerCityValue = func(_ string) uint32 { return 0 }
+	sub.mooseFuncs.unsetServerCityValue = func() uint32 { return 0 }
 }
 
 func TestNotifyDisconnect_AfterSensitiveConnect_SkipsRecommendationUuidContext(t *testing.T) {
@@ -1577,6 +1580,176 @@ func TestNotifyDisconnect_UnsetsServerGroupValueAfterEvent(t *testing.T) {
 	assert.Equal(t, 1, groupUnsets)
 	assert.Equal(t, true, sendDisconnectCallOrder < groupUnsetOrder)
 }
+
+func TestNotifyConnect_Success_StandardVPN_SetsServerDomainAndCity(t *testing.T) {
+	category.Set(t, category.Unit)
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+	noopDisconnectAmbientMooseFuncs(sub)
+	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.sendConnect = func(
+		_ moose.EventParams,
+		_ moose.TargetConnectionParams,
+		_ moose.TargetConnectionAdditionalParams,
+		_ moose.ConnectionParams,
+		_ moose.NordvpnappOptBool,
+		_ int32,
+		_ string,
+		_ *string,
+	) uint32 {
+		return 0
+	}
+
+	var capturedDomain, capturedCity string
+	var domainSets, citySets int
+	sub.mooseFuncs.setServerDomainValue = func(domain string) uint32 {
+		capturedDomain = domain
+		domainSets++
+		return 0
+	}
+	sub.mooseFuncs.setServerCityValue = func(city string) uint32 {
+		capturedCity = city
+		citySets++
+		return 0
+	}
+
+	err := sub.NotifyConnect(events.DataConnect{
+		TargetServerGroupID:     config.ServerGroup_STANDARD_VPN_SERVERS,
+		TargetServerDomain:      "us-1234.nordvpn.com",
+		TargetServerCity:        "New York",
+		TargetServerCountryCode: "us",
+		EventStatus:             events.StatusSuccess,
+	})
+
+	assert.NilError(t, err)
+	assert.Equal(t, 1, domainSets)
+	assert.Equal(t, "us-1234.nordvpn.com", capturedDomain)
+	assert.Equal(t, 1, citySets)
+	assert.Equal(t, "New York", capturedCity)
+}
+
+func TestNotifyConnect_Success_SensitiveGroup_SuppressesServerDomainButSetsCity(t *testing.T) {
+	category.Set(t, category.Unit)
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+	noopDisconnectAmbientMooseFuncs(sub)
+	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.unsetServerDomainValue = func() uint32 { return 0 }
+	sub.mooseFuncs.unsetRecommendationUuid = func() uint32 { return 0 }
+	sub.mooseFuncs.sendConnect = func(
+		_ moose.EventParams,
+		_ moose.TargetConnectionParams,
+		_ moose.TargetConnectionAdditionalParams,
+		_ moose.ConnectionParams,
+		_ moose.NordvpnappOptBool,
+		_ int32,
+		_ string,
+		_ *string,
+	) uint32 {
+		return 0
+	}
+
+	var capturedCity string
+	var domainSets, citySets int
+	sub.mooseFuncs.setServerDomainValue = func(_ string) uint32 {
+		domainSets++
+		return 0
+	}
+	sub.mooseFuncs.setServerCityValue = func(city string) uint32 {
+		capturedCity = city
+		citySets++
+		return 0
+	}
+
+	err := sub.NotifyConnect(events.DataConnect{
+		TargetServerGroupID: config.ServerGroup_DEDICATED_IP,
+		ServerGroups: []config.ServerGroup{
+			config.ServerGroup_DEDICATED_IP,
+			config.ServerGroup_STANDARD_VPN_SERVERS,
+		},
+		TargetServerDomain:      "dip-9999.nordvpn.com",
+		TargetServerCity:        "Amsterdam",
+		TargetServerCountryCode: "nl",
+		EventStatus:             events.StatusSuccess,
+	})
+
+	assert.NilError(t, err)
+	assert.Equal(t, 0, domainSets)
+	assert.Equal(t, 1, citySets)
+	assert.Equal(t, "Amsterdam", capturedCity)
+}
+
+func TestNotifyConnect_Success_NonSensitiveEmptyDomain_RefreshesServerDomain(t *testing.T) {
+	category.Set(t, category.Unit)
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+	noopDisconnectAmbientMooseFuncs(sub)
+	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.sendConnect = func(
+		_ moose.EventParams,
+		_ moose.TargetConnectionParams,
+		_ moose.TargetConnectionAdditionalParams,
+		_ moose.ConnectionParams,
+		_ moose.NordvpnappOptBool,
+		_ int32,
+		_ string,
+		_ *string,
+	) uint32 {
+		return 0
+	}
+
+	var capturedDomain string
+	var domainSets int
+	sub.mooseFuncs.setServerDomainValue = func(domain string) uint32 {
+		capturedDomain = domain
+		domainSets++
+		return 0
+	}
+
+	err := sub.NotifyConnect(events.DataConnect{
+		TargetServerGroupID:     config.ServerGroup_STANDARD_VPN_SERVERS,
+		TargetServerDomain:      "",
+		TargetServerCity:        "New York",
+		TargetServerCountryCode: "us",
+		EventStatus:             events.StatusSuccess,
+	})
+
+	assert.NilError(t, err)
+	assert.Equal(t, 1, domainSets)
+	assert.Equal(t, "", capturedDomain)
+}
+
+func TestNotifyDisconnect_UnsetsServerDomainAndCityAfterEvent(t *testing.T) {
+	category.Set(t, category.Unit)
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+	noopDisconnectAmbientMooseFuncs(sub)
+	sub.mooseFuncs.sendDisconnect = func(
+		_ moose.EventParams,
+		_ moose.TargetConnectionParams,
+		_ moose.ConnectionParams,
+		_ int32,
+		_ int32,
+		_ *string,
+	) uint32 {
+		return 0
+	}
+
+	var domainUnsets, cityUnsets int
+	sub.mooseFuncs.unsetServerDomainValue = func() uint32 {
+		domainUnsets++
+		return 0
+	}
+	sub.mooseFuncs.unsetServerCityValue = func() uint32 {
+		cityUnsets++
+		return 0
+	}
+
+	err := sub.NotifyDisconnect(events.DataDisconnect{
+		EventStatus: events.StatusSuccess,
+	})
+
+	assert.NilError(t, err)
+	assert.Equal(t, 1, domainUnsets)
+	assert.Equal(t, 1, cityUnsets)
+}
+
 func TestNotifyDedicatedServerStatus(t *testing.T) {
 	category.Set(t, category.Unit)
 
