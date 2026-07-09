@@ -45,11 +45,16 @@ var errZipSizeLimitExceeded = errors.New("diagnostics zip exceeds size limit")
 // detected and no fallback log file is available.
 var errNoDaemonLogSource = errors.New(noDaemonLogSourceMsg)
 
-func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsServer) error {
+func (r *RPC) CollectDiagnostics(
+	in *pb.Empty,
+	srv pb.Daemon_CollectDiagnosticsServer,
+) error {
 	caller, err := resolveDiagnosticsCaller(srv.Context())
 	if err != nil {
 		log.Error(logPrefix, "troubleshot failed with:", err)
-		return srv.Send(&pb.DiagnosticsProgress{ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_INTERNAL})
+		return srv.Send(&pb.DiagnosticsProgress{
+			ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_INTERNAL,
+		})
 	}
 
 	// createDiagnosticsZip uses os.CreateTemp under the hood, so we always
@@ -59,7 +64,9 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 	zipFile, err := createDiagnosticsZip(caller.outputDir)
 	if err != nil {
 		log.Error(logPrefix, "failed to create diagnostics zip:", err)
-		return srv.Send(&pb.DiagnosticsProgress{ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_FAILED_TO_CREATE_ZIP})
+		return srv.Send(&pb.DiagnosticsProgress{
+			ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_FAILED_TO_CREATE_ZIP,
+		})
 	}
 	zipPath := zipFile.Name()
 
@@ -70,22 +77,36 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 	} else {
 		if err := os.Chown(zipPath, int(caller.uid), int(caller.gid)); err != nil {
 			log.Error(logPrefix, "failed to change file ownership:", err)
-			return abortDiagnosticsWithCode(zipFile, srv, pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_CHOWN_FAILED)
+			return abortDiagnosticsWithCode(
+				zipFile, srv,
+				pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_CHOWN_FAILED,
+			)
 		}
 	}
 
 	state := r.collectAppState(srv.Context())
-	if err := collectDiagnosticsData(srv, zipFile, caller.user.HomeDir, state); err != nil {
+	if err := collectDiagnosticsData(
+		srv, zipFile, caller.user.HomeDir, state,
+	); err != nil {
 		if errors.Is(err, errZipSizeLimitExceeded) {
 			log.Error(logPrefix, "diagnostics zip exceeded 40 MB limit")
-			return abortDiagnosticsWithCode(zipFile, srv, pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_ZIP_TOO_LARGE)
+			return abortDiagnosticsWithCode(
+				zipFile, srv,
+				pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_ZIP_TOO_LARGE,
+			)
 		}
 		if errors.Is(err, errNoDaemonLogSource) {
 			log.Error(logPrefix, "no daemon log source available:", err)
-			return abortDiagnosticsWithCode(zipFile, srv, pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_NO_DAEMON_LOG_SOURCE)
+			return abortDiagnosticsWithCode(
+				zipFile, srv,
+				pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_NO_DAEMON_LOG_SOURCE,
+			)
 		}
 		log.Error(logPrefix, "failed to collect diagnostics:", err)
-		return abortDiagnosticsWithCode(zipFile, srv, pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED)
+		return abortDiagnosticsWithCode(
+			zipFile, srv,
+			pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED,
+		)
 	}
 
 	if err := zipFile.Close(); err != nil {
@@ -93,7 +114,9 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 		if removeErr := os.Remove(zipPath); removeErr != nil {
 			log.Error(logPrefix, "failed to delete zip", removeErr)
 		}
-		return srv.Send(&pb.DiagnosticsProgress{ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_FAILED_TO_CLOSE_ZIP})
+		return srv.Send(&pb.DiagnosticsProgress{
+			ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_FAILED_TO_CLOSE_ZIP,
+		})
 	}
 
 	return srv.Send(&pb.DiagnosticsProgress{
@@ -104,7 +127,11 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 
 // abortDiagnosticsWithCode closes and deletes the partial zip file, then sends
 // an error code on the stream.
-func abortDiagnosticsWithCode(zipFile *os.File, srv pb.Daemon_CollectDiagnosticsServer, code pb.DiagnosticsErrorCode) error {
+func abortDiagnosticsWithCode(
+	zipFile *os.File,
+	srv pb.Daemon_CollectDiagnosticsServer,
+	code pb.DiagnosticsErrorCode,
+) error {
 	_ = zipFile.Close()
 	if err := os.Remove(zipFile.Name()); err != nil {
 		log.Error(logPrefix, "failed to delete zip", err)
@@ -117,12 +144,15 @@ func abortDiagnosticsWithCode(zipFile *os.File, srv pb.Daemon_CollectDiagnostics
 // random suffix from os.CreateTemp's `*` substitution, guaranteeing
 // different paths even for back-to-back calls within the same second.
 func createDiagnosticsZip(outputDir string) (*os.File, error) {
-	pattern := fmt.Sprintf("nordvpn-diagnostics-%s-*.zip", time.Now().Format("20060102-150405"))
+	pattern := fmt.Sprintf(
+		"nordvpn-diagnostics-%s-*.zip",
+		time.Now().Format("20060102-150405"),
+	)
 	return os.CreateTemp(outputDir, pattern)
 }
 
-// appState bundles the daemon's view of itself for inclusion in system-info.txt.
-// Captured up front so addSystemInfo doesn't depend on the *RPC.
+// appState bundles the daemon's view of itself for inclusion in
+// system-info.txt. Captured up front so addSystemInfo doesn't depend on *RPC.
 type appState struct {
 	version  string
 	status   string
@@ -289,16 +319,17 @@ func collectDiagnosticsData(
 	zipWriter := zip.NewWriter(limited)
 	defer zipWriter.Close() // nolint:errcheck
 
-	// Buffered so the log_extraction_report.log entry can be written as the last zip
-	// entry; zip.Writer finalizes each entry when the next Create is called,
-	// so we can't keep this entry open while other entries are being written.
+	// Buffered so the log_extraction_report.log entry can be written as the
+	// last zip entry; zip.Writer finalizes each entry when the next Create is
+	// called, so we can't keep this entry open while other entries are written.
 	var logExtractionReport bytes.Buffer
 	logf := func(format string, args ...any) {
 		fmt.Fprintf(&logExtractionReport, "%s %s\n",
 			time.Now().Format("2006/01/02 15:04:05"),
 			fmt.Sprintf(format, args...))
 	}
-	logf("diagnostics collection started (version=%s)", strings.TrimSpace(state.version))
+	logf("diagnostics collection started (version=%s)",
+		strings.TrimSpace(state.version))
 
 	steps := []diagnosticsStep{
 		{"Collecting daemon logs...", func() error {
@@ -375,9 +406,8 @@ func collectDiagnosticsData(
 }
 
 // writeLogExtractionReport flushes the in-memory progress log into the zip as
-// log_extraction_report.log. Best-effort: any failure here is logged to stderr and
-// swallowed, since we don't want a log-writing error to mask the original
-// collection outcome.
+// log_extraction_report.log. Best-effort: failures are logged and swallowed
+// so a log-write error never masks the original collection outcome.
 func writeLogExtractionReport(zipWriter *zip.Writer, buf *bytes.Buffer) {
 	w, err := zipWriter.Create("log_extraction_report.log")
 	if err != nil {
@@ -430,7 +460,9 @@ func addDaemonLogs(zipWriter *zip.Writer, supervisor daemonSupervisor) error {
 	case daemonSupervisorSnap:
 		return streamSnapLogs(writer, "nordvpn.nordvpnd")
 	case daemonSupervisorSystemd:
-		return streamCommandToWriter(writer, "journalctl", "-u", "nordvpnd", "--no-pager", "-r")
+		return streamCommandToWriter(
+			writer, "journalctl", "-u", "nordvpnd", "--no-pager", "-r",
+		)
 
 	case daemonSupervisorUnknown:
 		fallthrough
@@ -450,7 +482,9 @@ func addDaemonLogs(zipWriter *zip.Writer, supervisor daemonSupervisor) error {
 // streamCommandToWriter runs a command and streams its stdout to writer, capped
 // at maxDaemonLogSize bytes. The process is always killed and reaped on return
 // so the caller doesn't have to deal with orphaned children.
-func streamCommandToWriter(writer io.Writer, name string, args ...string) error {
+func streamCommandToWriter(
+	writer io.Writer, name string, args ...string,
+) error {
 	cmd := exec.Command(name, args...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -518,7 +552,8 @@ func streamSnapLogs(writer io.Writer, service string) error {
 // line order — newest first — so the file path matches the newest-first
 // behaviour of the systemd `journalctl -r` path.
 func streamFileToWriter(writer io.Writer, filePath string) error {
-	f, err := os.Open(filePath) // #nosec G304 -- filePath comes from known system paths, not user input
+	// #nosec G304 -- filePath comes from known system paths, not user input
+	f, err := os.Open(filePath)
 	if err != nil {
 		return err
 	}
@@ -530,7 +565,8 @@ func streamFileToWriter(writer io.Writer, filePath string) error {
 	}
 
 	if info.Size() > maxDaemonLogSize {
-		fmt.Fprintf(writer, "... (log truncated to last 500 MB, reversed) ...\n") // nolint:errcheck
+		//nolint:errcheck
+		fmt.Fprintf(writer, "... (log truncated to last 500 MB, reversed) ...\n")
 		return writeFileTailReversed(writer, f, info.Size(), maxDaemonLogSize)
 	}
 
@@ -649,7 +685,8 @@ func addDirectoryToZip(zipWriter *zip.Writer, dirPath, zipPrefix string) error {
 }
 
 func addFileToZip(zipWriter *zip.Writer, filePath, zipPath string) error {
-	file, err := os.Open(filePath) // #nosec G304 -- symlinks are filtered by addDirectoryToZip before this is called
+	// #nosec G304 -- symlinks are filtered by addDirectoryToZip before this
+	file, err := os.Open(filePath)
 	if err != nil {
 		return err
 	}
@@ -719,7 +756,8 @@ func dbusGetProperty(service, path, iface, property string) string {
 	if err != nil {
 		return fmt.Sprintf("dbus connect error: %v\n", err)
 	}
-	v, err := conn.Object(service, dbus.ObjectPath(path)).GetProperty(iface + "." + property)
+	v, err := conn.Object(service, dbus.ObjectPath(path)).
+		GetProperty(iface + "." + property)
 	if err != nil {
 		return fmt.Sprintf("error: %v\n", err)
 	}
@@ -755,12 +793,16 @@ func addSystemInfo(zipWriter *zip.Writer, state appState) error {
 // collectDesktopEnvironment returns per-session loginctl properties for each
 // active session, formatted for inclusion in the system-info block.
 func collectDesktopEnvironment() string {
-	output, err := exec.Command("loginctl", "list-sessions", "--no-legend").Output()
+	output, err := exec.Command(
+		"loginctl", "list-sessions", "--no-legend",
+	).Output()
 	if err != nil {
 		return fmt.Sprintf("loginctl error: %v\n", err)
 	}
 	var b strings.Builder
-	for _, session := range strings.Split(strings.TrimSpace(string(output)), "\n") {
+	for _, session := range strings.Split(
+		strings.TrimSpace(string(output)), "\n",
+	) {
 		fields := strings.Fields(session)
 		if len(fields) < 1 {
 			continue
@@ -769,7 +811,9 @@ func collectDesktopEnvironment() string {
 		fmt.Fprintf(&b, "--- Session %s ---\n", sessionID)
 		// #nosec G204 -- sessionID is safe to use
 		if props, err := exec.Command("loginctl", "show-session", sessionID,
-			"-p", "Type", "-p", "Desktop", "-p", "Remote", "-p", "User").Output(); err == nil {
+			"-p", "Type", "-p", "Desktop",
+			"-p", "Remote", "-p", "User",
+		).Output(); err == nil {
 			b.Write(props)
 		}
 	}
@@ -784,10 +828,12 @@ func addNetworkInfo(zipWriter *zip.Writer) error {
 
 	writeBlock(w, "ip addr", runCommand("ip", "addr"))
 	writeBlock(w, "ip rule show", runCommand("ip", "rule", "show"))
-	writeBlock(w, "ip route show table all", runCommand("ip", "route", "show", "table", "all"))
+	writeBlock(w, "ip route show table all",
+		runCommand("ip", "route", "show", "table", "all"))
 
 	writeBlock(w, "net.ipv6.conf.*.disable_ipv6", readDisableIPv6Status())
-	writeBlock(w, "net.ipv4.conf.all.rp_filter", readFile("/proc/sys/net/ipv4/conf/all/rp_filter"))
+	writeBlock(w, "net.ipv4.conf.all.rp_filter",
+		readFile("/proc/sys/net/ipv4/conf/all/rp_filter"))
 
 	return nil
 }
@@ -804,7 +850,8 @@ func readDisableIPv6Status() string {
 	var b strings.Builder
 	for _, m := range matches {
 		iface := filepath.Base(filepath.Dir(m))
-		data, err := os.ReadFile(m) // #nosec G304 -- m is from filepath.Glob with hardcoded /proc/sys pattern
+		// #nosec G304 -- m is from filepath.Glob with hardcoded /proc/sys pattern
+		data, err := os.ReadFile(m)
 		if err != nil {
 			fmt.Fprintf(&b, "net.ipv6.conf.%s.disable_ipv6 = error: %v\n", iface, err)
 			continue
@@ -836,7 +883,8 @@ func addDNSInfo(zipWriter *zip.Writer) error {
 		return err
 	}
 
-	writeBlock(w, "/etc/resolv.conf (ls -la)", runCommand("ls", "-la", "/etc/resolv.conf"))
+	writeBlock(w, "/etc/resolv.conf (ls -la)",
+		runCommand("ls", "-la", "/etc/resolv.conf"))
 	writeBlock(w, "/etc/resolv.conf", readFile("/etc/resolv.conf"))
 
 	writeBlock(w, "systemd-resolve / resolvectl status", resolvectlStatus())
@@ -853,21 +901,28 @@ func addDNSInfo(zipWriter *zip.Writer) error {
 		"/org/freedesktop/NetworkManager/DnsManager",
 		"org.freedesktop.NetworkManager.DnsManager", "Configuration"))
 
-	writeBlock(w, "/etc/systemd/resolved.conf", readFile("/etc/systemd/resolved.conf"))
+	writeBlock(w, "/etc/systemd/resolved.conf",
+		readFile("/etc/systemd/resolved.conf"))
 
 	// conf.d drop-ins land as real zip subdirectories so each file keeps its
 	// name and can be inspected individually. A missing directory is logged
 	// rather than skipped silently so support can tell the difference between
 	// "no drop-ins configured" and "we forgot to collect them".
 	if _, err := os.Stat("/etc/NetworkManager/conf.d"); err == nil {
-		if err := addDirectoryToZip(zipWriter, "/etc/NetworkManager/conf.d", "etc/NetworkManager/conf.d"); err != nil {
+		if err := addDirectoryToZip(zipWriter,
+			"/etc/NetworkManager/conf.d",
+			"etc/NetworkManager/conf.d",
+		); err != nil {
 			return err
 		}
 	} else {
 		log.Info(logPrefix, "/etc/NetworkManager/conf.d:", err)
 	}
 	if _, err := os.Stat("/etc/systemd/resolved.conf.d"); err == nil {
-		if err := addDirectoryToZip(zipWriter, "/etc/systemd/resolved.conf.d", "etc/systemd/resolved.conf.d"); err != nil {
+		if err := addDirectoryToZip(zipWriter,
+			"/etc/systemd/resolved.conf.d",
+			"etc/systemd/resolved.conf.d",
+		); err != nil {
 			return err
 		}
 	} else {
