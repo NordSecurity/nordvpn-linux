@@ -11,6 +11,7 @@ import (
 
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/peer"
 )
 
 // getUnixCreds returns info from unix socket connection about the process on the other end.
@@ -153,13 +154,22 @@ func (cr *UnixSocketCredentials) OverrideServerName(string) error {
 type UcredAuth unix.Ucred
 
 // AuthType returns "pid:uid:gid", for example "5555:1000:1000"
-// Use StringToUcred to convert string back to unix.Ucred
 func (u UcredAuth) AuthType() string {
 	return strconv.Itoa(int(u.Pid)) + ":" + strconv.Itoa(int(u.Uid)) + ":" + strconv.Itoa(int(u.Gid))
 }
 
-// StringToUcred to convert string received from AuthType back to unix.Ucred
-func StringToUcred(ucredStr string) (unix.Ucred, error) {
+// UcredFromContext extracts the Unix peer credentials from a gRPC context.
+// It returns an error when no peer is present, auth info is missing, or the
+// auth info cannot be parsed as a ucred.
+func UcredFromContext(ctx context.Context) (unix.Ucred, error) {
+	p, ok := peer.FromContext(ctx)
+	if !ok || p.AuthInfo == nil {
+		return unix.Ucred{}, fmt.Errorf("no peer in context")
+	}
+	return stringToUcred(p.AuthInfo.AuthType())
+}
+
+func stringToUcred(ucredStr string) (unix.Ucred, error) {
 	idsStr := strings.Split(ucredStr, ":")
 	if len(idsStr) != 3 {
 		return unix.Ucred{}, fmt.Errorf("invalid ucred string: %s", ucredStr)
@@ -181,7 +191,7 @@ func StringToUcred(ucredStr string) (unix.Ucred, error) {
 		return unix.Ucred{}, fmt.Errorf("invalid ucred string: %s", ucredStr)
 	}
 
-	//all of the conversion here happens on values parsed  within the 32 bits range
+	// all of the conversion here happens on values parsed  within the 32 bits range
 	// #nosec G115
 	return unix.Ucred{Pid: int32(pid), Uid: uint32(uid), Gid: uint32(gid)}, nil
 }
@@ -190,9 +200,9 @@ func StringToUcred(ucredStr string) (unix.Ucred, error) {
 // which wraps original `net.UnixConn` value inside by embeding abstract interface `net.Conn`
 // this way we cannot access `net.UnixConn` value, because of that we use `go reflection`
 // to extract original wrapped value.
-func extractConnection(c interface{}) net.Conn {
+func extractConnection(c any) net.Conn {
 	v := reflect.ValueOf(c)
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		v = reflect.Indirect(v)
 	}
 	if v.Kind() == reflect.Struct {
