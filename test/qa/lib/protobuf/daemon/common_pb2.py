@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0c\x63ommon.proto\x12\x02pb\"\x07\n\x05\x45mpty\"\x15\n\x04\x42ool\x12\r\n\x05value\x18\x01 \x01(\x08\"%\n\x07Payload\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12\x0c\n\x04\x64\x61ta\x18\x02 \x03(\t\"E\n\x1fInjectVpnConnectionErrorRequest\x12\x12\n\ntelio_code\x18\x01 \x01(\x05\x12\x0e\n\x06pubkey\x18\x02 \x01(\t\"6\n\tAllowlist\x12\x18\n\x05ports\x18\x01 \x01(\x0b\x32\t.pb.Ports\x12\x0f\n\x07subnets\x18\x02 \x03(\t\"!\n\x05Ports\x12\x0b\n\x03udp\x18\x01 \x03(\x03\x12\x0b\n\x03tcp\x18\x02 \x03(\x03\"4\n\x0bServerGroup\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x17\n\x0fvirtualLocation\x18\x02 \x01(\x08\"B\n\x10ServerGroupsList\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12 \n\x07servers\x18\x02 \x03(\x0b\x32\x0f.pb.ServerGroup\"E\n\x13\x44iagnosticsProgress\x12\x0c\n\x04step\x18\x01 \x01(\t\x12\x11\n\tfile_path\x18\x02 \x01(\t\x12\r\n\x05\x65rror\x18\x03 \x01(\t*2\n\x08TriState\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0c\n\x08\x44ISABLED\x10\x01\x12\x0b\n\x07\x45NABLED\x10\x02*:\n\x08\x43lientID\x12\x12\n\x0eUNKNOWN_CLIENT\x10\x00\x12\x07\n\x03\x43LI\x10\x01\x12\x07\n\x03GUI\x10\x02\x12\x08\n\x04TRAY\x10\x03\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0c\x63ommon.proto\x12\x02pb\"\x07\n\x05\x45mpty\"\x15\n\x04\x42ool\x12\r\n\x05value\x18\x01 \x01(\x08\"%\n\x07Payload\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12\x0c\n\x04\x64\x61ta\x18\x02 \x03(\t\"E\n\x1fInjectVpnConnectionErrorRequest\x12\x12\n\ntelio_code\x18\x01 \x01(\x05\x12\x0e\n\x06pubkey\x18\x02 \x01(\t\"6\n\tAllowlist\x12\x18\n\x05ports\x18\x01 \x01(\x0b\x32\t.pb.Ports\x12\x0f\n\x07subnets\x18\x02 \x03(\t\"!\n\x05Ports\x12\x0b\n\x03udp\x18\x01 \x03(\x03\x12\x0b\n\x03tcp\x18\x02 \x03(\x03\"4\n\x0bServerGroup\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x17\n\x0fvirtualLocation\x18\x02 \x01(\x08\"B\n\x10ServerGroupsList\x12\x0c\n\x04type\x18\x01 \x01(\x03\x12 \n\x07servers\x18\x02 \x03(\x0b\x32\x0f.pb.ServerGroup\"d\n\x13\x44iagnosticsProgress\x12\x0c\n\x04step\x18\x01 \x01(\t\x12\x11\n\tfile_path\x18\x02 \x01(\t\x12,\n\nerror_code\x18\x03 \x01(\x0e\x32\x18.pb.DiagnosticsErrorCode*2\n\x08TriState\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0c\n\x08\x44ISABLED\x10\x01\x12\x0b\n\x07\x45NABLED\x10\x02*:\n\x08\x43lientID\x12\x12\n\x0eUNKNOWN_CLIENT\x10\x00\x12\x07\n\x03\x43LI\x10\x01\x12\x07\n\x03GUI\x10\x02\x12\x08\n\x04TRAY\x10\x03*\xf6\x02\n\x14\x44iagnosticsErrorCode\x12&\n\"DIAGNOSTICS_ERROR_CODE_UNSPECIFIED\x10\x00\x12#\n\x1f\x44IAGNOSTICS_ERROR_CODE_INTERNAL\x10\x01\x12/\n+DIAGNOSTICS_ERROR_CODE_FAILED_TO_CREATE_ZIP\x10\x02\x12\'\n#DIAGNOSTICS_ERROR_CODE_CHOWN_FAILED\x10\x03\x12(\n$DIAGNOSTICS_ERROR_CODE_ZIP_TOO_LARGE\x10\x04\x12,\n(DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED\x10\x05\x12.\n*DIAGNOSTICS_ERROR_CODE_FAILED_TO_CLOSE_ZIP\x10\x06\x12/\n+DIAGNOSTICS_ERROR_CODE_NO_DAEMON_LOG_SOURCE\x10\x07\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,10 +32,12 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'common_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z/github.com/NordSecurity/nordvpn-linux/daemon/pb'
-  _globals['_TRISTATE']._serialized_start=446
-  _globals['_TRISTATE']._serialized_end=496
-  _globals['_CLIENTID']._serialized_start=498
-  _globals['_CLIENTID']._serialized_end=556
+  _globals['_TRISTATE']._serialized_start=477
+  _globals['_TRISTATE']._serialized_end=527
+  _globals['_CLIENTID']._serialized_start=529
+  _globals['_CLIENTID']._serialized_end=587
+  _globals['_DIAGNOSTICSERRORCODE']._serialized_start=590
+  _globals['_DIAGNOSTICSERRORCODE']._serialized_end=964
   _globals['_EMPTY']._serialized_start=20
   _globals['_EMPTY']._serialized_end=27
   _globals['_BOOL']._serialized_start=29
@@ -53,5 +55,5 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_SERVERGROUPSLIST']._serialized_start=307
   _globals['_SERVERGROUPSLIST']._serialized_end=373
   _globals['_DIAGNOSTICSPROGRESS']._serialized_start=375
-  _globals['_DIAGNOSTICSPROGRESS']._serialized_end=444
+  _globals['_DIAGNOSTICSPROGRESS']._serialized_end=475
 # @@protoc_insertion_point(module_scope)
