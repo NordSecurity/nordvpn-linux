@@ -41,7 +41,6 @@ final class ConnectionCardServerInfo extends ConsumerWidget {
     }
 
     if (vpnStatus.isConnected()) {
-      logger.w("Status is connected, but we don't know to what we connected");
       assert(
         vpnStatus.isMeshnetRouting ||
             (vpnStatus.country != null && vpnStatus.city != null),

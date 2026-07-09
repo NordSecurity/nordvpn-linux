@@ -159,6 +159,6 @@ final class ConnectionCardTheme extends ThemeExtension<ConnectionCardTheme>
     required this.labelTheme,
     required this.iconTheme,
     required this.buttonTheme,
-    required this.cardShadow
+    required this.cardShadow,
   });
 }

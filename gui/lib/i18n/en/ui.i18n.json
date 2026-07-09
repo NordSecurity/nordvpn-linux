@@ -281,5 +281,9 @@
   "reconnect": "Reconnect",
   "changeVPNsettings": "Change VPN settings",
   "getHelp": "Get help",
-  "pauseConnection": "Pause connection"
+  "pauseConnection": "Pause connection",
+  "vpnPanel": "VPN Panel",
+  "more": "More options",
+  "preferredLocation": "Preferred location",
+  "loading": "Loading"
 }

@@ -2168,6 +2168,18 @@ class TranslationsUiEn {
 
 	/// en: 'Pause connection'
 	String get pauseConnection => 'Pause connection';
+
+	/// en: 'VPN Panel'
+	String get vpnPanel => 'VPN Panel';
+
+	/// en: 'More options'
+	String get more => 'More options';
+
+	/// en: 'Preferred location'
+	String get preferredLocation => 'Preferred location';
+
+	/// en: 'Loading'
+	String get loading => 'Loading';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -2686,8 +2698,6 @@ extension on Translations {
 			'ui.selectLocation' => 'Select location',
 			'ui.dipSelectLocationDescription' => 'You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.',
 			'ui.chooseLocationForDip' => 'Choose a location for your dedicated IP',
-			_ => null,
-		} ?? switch (path) {
 			'ui.getDip' => 'Get dedicated IP',
 			'ui.getYourDip' => 'Get your personal IP',
 			'ui.getDipDescription' => 'Get a personal IP address that belongs only to you. Enjoy all the benefits of VPN encryption without dealing with blocklists, identity checks, and selecting images of boats in CAPTCHAs.',
@@ -2877,6 +2887,10 @@ extension on Translations {
 			'ui.changeVPNsettings' => 'Change VPN settings',
 			'ui.getHelp' => 'Get help',
 			'ui.pauseConnection' => 'Pause connection',
+			'ui.vpnPanel' => 'VPN Panel',
+			'ui.more' => 'More options',
+			'ui.preferredLocation' => 'Preferred location',
+			'ui.loading' => 'Loading',
 			_ => null,
 		};
 	}
