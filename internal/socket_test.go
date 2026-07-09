@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"net"
 	"testing"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/sys/unix"
+	"google.golang.org/grpc/peer"
 )
 
 func TestAuthType(t *testing.T) {
@@ -15,13 +17,16 @@ func TestAuthType(t *testing.T) {
 	assert.Equal(t, "123:456:789", ucred.AuthType())
 }
 
-func FuzzUcredToStringToUcred(f *testing.F) {
+func FuzzUcredFromContext(f *testing.F) {
 	f.Add(int32(0), uint32(0), uint32(0))
 	f.Add(int32(1000), uint32(1000), uint32(1000))
 	f.Add(int32(-1), uint32(1), uint32(1))
 	f.Fuzz(func(t *testing.T, a int32, b uint32, c uint32) {
 		ucred := UcredAuth{a, b, c}
-		resUcred, err := StringToUcred(ucred.AuthType())
+		ctx := peer.NewContext(context.Background(), &peer.Peer{
+			AuthInfo: ucred,
+		})
+		resUcred, err := UcredFromContext(ctx)
 		assert.NoError(t, err)
 		assert.Equal(t, ucred.Pid, resUcred.Pid)
 		assert.Equal(t, ucred.Gid, resUcred.Gid)
@@ -119,4 +124,58 @@ func Test_ExtractConnection(t *testing.T) {
 	c02 := &MockWrappConnection{Conn: c01}
 	c03 := extractConnection(c02)
 	assert.NotNil(t, c03)
+}
+
+type otherAuthInfo struct{}
+
+func (otherAuthInfo) AuthType() string { return "other" }
+
+func TestUcredFromContext(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name    string
+		ctx     context.Context
+		want    unix.Ucred
+		wantErr bool
+	}{
+		{
+			name:    "no peer in context",
+			ctx:     context.Background(),
+			wantErr: true,
+		},
+		{
+			name: "peer with nil auth info",
+			ctx: peer.NewContext(context.Background(), &peer.Peer{
+				AuthInfo: nil,
+			}),
+			wantErr: true,
+		},
+		{
+			name: "peer with wrong auth info type",
+			ctx: peer.NewContext(context.Background(), &peer.Peer{
+				AuthInfo: otherAuthInfo{},
+			}),
+			wantErr: true,
+		},
+		{
+			name: "peer with ucred auth info",
+			ctx: peer.NewContext(context.Background(), &peer.Peer{
+				AuthInfo: UcredAuth{Pid: 123, Uid: 456, Gid: 789},
+			}),
+			want: unix.Ucred{Pid: 123, Uid: 456, Gid: 789},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := UcredFromContext(tt.ctx)
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }

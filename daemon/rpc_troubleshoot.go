@@ -22,7 +22,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/godbus/dbus/v5"
 	"github.com/snapcore/snapd/client"
-	"google.golang.org/grpc/peer"
 	"google.golang.org/protobuf/encoding/prototext"
 )
 
@@ -207,13 +206,9 @@ type diagnosticsCaller struct {
 // diagnostics zip will land. The actual filename is generated atomically by
 // os.CreateTemp at write time.
 func resolveDiagnosticsCaller(ctx context.Context) (*diagnosticsCaller, error) {
-	p, ok := peer.FromContext(ctx)
-	if !ok {
-		return nil, fmt.Errorf("failed to get peer from context")
-	}
-	cred, ok := p.AuthInfo.(internal.UcredAuth)
-	if !ok {
-		return nil, fmt.Errorf("failed to get credentials from peer")
+	cred, err := internal.UcredFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 	userInfo, err := user.LookupId(strconv.FormatUint(uint64(cred.Uid), 10))
 	if err != nil {
