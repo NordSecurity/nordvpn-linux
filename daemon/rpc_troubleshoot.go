@@ -69,7 +69,7 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 
 	if snapconf.IsUnderSnap() {
 		if err := os.Chmod(zipPath, internal.PermUserRWGroupROthersR); err != nil {
-			log.Error(logPrefix, "failed to change file permissions:", err)
+			log.Warn(logPrefix, "failed to change file permissions:", err)
 		}
 	} else {
 		if err := os.Chown(zipPath, int(caller.uid), int(caller.gid)); err != nil {
