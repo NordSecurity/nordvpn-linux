@@ -14,19 +14,19 @@ class UiEventRepository {
   final DaemonClient _client;
 
   UiEventRepository([DaemonClient? client])
-      : _client = client ?? createDaemonClient();
+    : _client = client ?? createDaemonClient();
 
   void reportChangeSettings() => reportUIEvent(
-        _client,
-        formReference: UIEvent_FormReference.CONNECTION_INFO,
-        itemName: UIEvent_ItemName.CHANGE_SETTINGS,
-      );
+    _client,
+    formReference: UIEvent_FormReference.CONNECTION_INFO,
+    itemName: UIEvent_ItemName.CHANGE_SETTINGS,
+  );
 
   void reportGetHelp() => reportUIEvent(
-        _client,
-        formReference: UIEvent_FormReference.CONNECTION_INFO,
-        itemName: UIEvent_ItemName.GET_HELP,
-      );
+    _client,
+    formReference: UIEvent_FormReference.CONNECTION_INFO,
+    itemName: UIEvent_ItemName.GET_HELP,
+  );
 }
 
 @Riverpod(keepAlive: true)

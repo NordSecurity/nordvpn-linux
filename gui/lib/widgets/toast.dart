@@ -145,13 +145,40 @@ final class _ToastState extends State<Toast> {
     final seconds = _remainingTime.inSeconds.remainder(60);
     final minutes = _remainingTime.inMinutes.remainder(60);
     final hours = _remainingTime.inHours;
-    return hours > 0
+    final label = hours > 0
         ? t.a11y.VPNResumesInWithHours(
             hours: hours,
             minutes: minutes,
             seconds: seconds,
           )
         : t.a11y.VPNResumesIn(minutes: minutes, seconds: seconds);
+
+    return _singularizeTimeUnits(
+      label,
+      hours: hours,
+      minutes: minutes,
+      seconds: seconds,
+    );
+  }
+
+  String _singularizeTimeUnits(
+    String label, {
+    required int hours,
+    required int minutes,
+    required int seconds,
+  }) {
+    var result = label;
+    if (hours == 1) {
+      result = result.replaceAll('hours', 'hour');
+    }
+    if (minutes == 1) {
+      result = result.replaceAll('minutes', 'minute');
+    }
+    //this is probably a bit petty, but let's keep it consistent with other units
+    if (seconds == 1) {
+      result = result.replaceAll('seconds', 'second');
+    }
+    return result;
   }
 
   Widget _buildWidgetText(ToastTheme theme) {
