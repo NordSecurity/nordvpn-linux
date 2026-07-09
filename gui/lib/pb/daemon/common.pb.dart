@@ -510,9 +510,9 @@ class DiagnosticsProgress extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'DiagnosticsProgress',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..aOS(2, _omitFieldNames ? '' : 'step')
-    ..aOS(4, _omitFieldNames ? '' : 'filePath')
-    ..aOS(5, _omitFieldNames ? '' : 'error')
+    ..aOS(1, _omitFieldNames ? '' : 'step')
+    ..aOS(2, _omitFieldNames ? '' : 'filePath')
+    ..aOS(3, _omitFieldNames ? '' : 'error')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -534,32 +534,32 @@ class DiagnosticsProgress extends $pb.GeneratedMessage {
       $pb.GeneratedMessage.$_defaultFor<DiagnosticsProgress>(create);
   static DiagnosticsProgress? _defaultInstance;
 
-  @$pb.TagNumber(2)
+  @$pb.TagNumber(1)
   $core.String get step => $_getSZ(0);
-  @$pb.TagNumber(2)
+  @$pb.TagNumber(1)
   set step($core.String value) => $_setString(0, value);
-  @$pb.TagNumber(2)
+  @$pb.TagNumber(1)
   $core.bool hasStep() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearStep() => $_clearField(1);
+
   @$pb.TagNumber(2)
-  void clearStep() => $_clearField(2);
-
-  @$pb.TagNumber(4)
   $core.String get filePath => $_getSZ(1);
-  @$pb.TagNumber(4)
+  @$pb.TagNumber(2)
   set filePath($core.String value) => $_setString(1, value);
-  @$pb.TagNumber(4)
+  @$pb.TagNumber(2)
   $core.bool hasFilePath() => $_has(1);
-  @$pb.TagNumber(4)
-  void clearFilePath() => $_clearField(4);
+  @$pb.TagNumber(2)
+  void clearFilePath() => $_clearField(2);
 
-  @$pb.TagNumber(5)
+  @$pb.TagNumber(3)
   $core.String get error => $_getSZ(2);
-  @$pb.TagNumber(5)
+  @$pb.TagNumber(3)
   set error($core.String value) => $_setString(2, value);
-  @$pb.TagNumber(5)
+  @$pb.TagNumber(3)
   $core.bool hasError() => $_has(2);
-  @$pb.TagNumber(5)
-  void clearError() => $_clearField(5);
+  @$pb.TagNumber(3)
+  void clearError() => $_clearField(3);
 }
 
 const $core.bool _omitFieldNames =
