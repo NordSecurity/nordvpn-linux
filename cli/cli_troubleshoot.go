@@ -5,13 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/term"
 )
 
 const TroubleshootUsageText = "Collects diagnostic logs and system information for troubleshooting. Share the generated file with NordVPN support to investigate the issue."
@@ -22,7 +20,7 @@ func (c *cmd) Troubleshoot(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	isTTY := term.IsTerminal(int(os.Stdout.Fd()))
+	isTTY := isStdoutTerminal()
 
 	for {
 		resp, err := stream.Recv()
