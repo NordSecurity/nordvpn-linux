@@ -20,8 +20,8 @@ message InjectVpnConnectionErrorRequest {
   // Raw libtelio (teliogo) ENS code
   int32 telio_code = 1;
   // Optional. When empty, the daemon stamps the currently-connected server's
-  // NordLynx public key (automatic)
-  string pubkey = 2;
+  // endpoint
+  string endpoint = 2;
 }
 
 message Allowlist {

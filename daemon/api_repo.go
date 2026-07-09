@@ -1,10 +1,7 @@
 package daemon
 
 import (
-	"bytes"
-	"compress/gzip"
 	"fmt"
-	"io"
 	"net/http"
 	"regexp"
 	"strings"
@@ -115,14 +112,8 @@ func (api *RepoAPI) request(path string) (*RepoAPIResponse, error) {
 		return nil, err
 	}
 
-	// Decompress after applying the size limit
-	reader, err := gzip.NewReader(bytes.NewReader(body))
-	if err != nil {
-		return nil, err
-	}
-	defer reader.Close()
-
-	body, err = io.ReadAll(reader)
+	// Decompress after applying the size limit, capping the decompressed size too
+	body, err = core.DecompressGzip(body)
 	if err != nil {
 		return nil, err
 	}

@@ -964,7 +964,9 @@ final class AppBoxShadows {
     BoxShadow(
       offset: Offset(0, 0.5),
       blurRadius: 0,
-      spreadRadius: 0,
+      // Setting a shadow creates a slight halo effect around the Widged which is visible in dark mode. Setting spread
+      // radius to -2 prevents this.
+      spreadRadius: -2,
       color: Color.fromRGBO(255, 255, 255, 0.16),
     ),
   ];

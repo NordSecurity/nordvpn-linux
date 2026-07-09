@@ -144,6 +144,9 @@ final class ConnectionCardTheme extends ThemeExtension<ConnectionCardTheme>
   @override
   final ConnectionCardButtonTheme buttonTheme;
 
+  @override
+  final List<BoxShadow> cardShadow;
+
   ConnectionCardTheme({
     required this.primaryFont,
     required this.mapPadding,
@@ -156,5 +159,6 @@ final class ConnectionCardTheme extends ThemeExtension<ConnectionCardTheme>
     required this.labelTheme,
     required this.iconTheme,
     required this.buttonTheme,
+    required this.cardShadow
   });
 }

@@ -85,7 +85,7 @@ func TestInjectVpnConnectionError(t *testing.T) {
 
 			resp, err := r.InjectVpnConnectionError(context.Background(), &pb.InjectVpnConnectionErrorRequest{
 				TelioCode: maintenanceCode,
-				Pubkey:    "test-key",
+				Endpoint:  "test-endpoint",
 			})
 
 			if tt.wantErr {

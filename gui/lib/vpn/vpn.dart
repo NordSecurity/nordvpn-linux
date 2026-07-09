@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/connect_arguments.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/theme/app_theme.dart';
+import 'package:nordvpn/theme/servers_list_theme.dart';
 import 'package:nordvpn/vpn/servers_list_card.dart';
 import 'package:nordvpn/vpn/connection_card.dart';
 import 'package:nordvpn/widgets/round_container.dart';
@@ -17,6 +18,7 @@ final class VpnWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = context.appTheme;
+    final serversListThme = context.serversListTheme;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       spacing: theme.bigMargin,
@@ -24,6 +26,7 @@ final class VpnWidget extends ConsumerWidget {
         ConnectionCard(key: VpnWidget.connectionCardKey),
         Expanded(
           child: RoundContainer(
+            shadow: serversListThme.cardShadow,
             margin: EdgeInsets.only(
               top: 0,
               bottom: theme.margin,

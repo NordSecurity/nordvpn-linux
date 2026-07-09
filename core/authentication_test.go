@@ -1,10 +1,10 @@
 package core
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"strings"
 	"testing"
@@ -29,10 +29,13 @@ func TestOAuth2_Login(t *testing.T) {
 		{
 			name: http.StatusText(http.StatusOK),
 			handler: func(rw http.ResponseWriter, r *http.Request) {
-				url, err := url.Parse(r.URL.String())
-				assert.NoError(t, err)
-				assert.Equal(t, url.Path, urlOAuth2Login)
-				assert.True(t, url.Query().Get("preferred_flow") == "login")
+				assert.Equal(t, http.MethodPost, r.Method)
+				assert.Equal(t, r.URL.Path, urlOAuth2Login)
+				var body loginBody
+				assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+				assert.NotEmpty(t, body.Challenge)
+				assert.Equal(t, "login", body.PreferredFlow)
+				assert.Equal(t, "default", body.RedirectFlow)
 				data, err := os.ReadFile("testdata/login_200.json")
 				if err != nil {
 					rw.WriteHeader(http.StatusInternalServerError)
@@ -47,10 +50,13 @@ func TestOAuth2_Login(t *testing.T) {
 		{
 			name: http.StatusText(http.StatusBadRequest),
 			handler: func(rw http.ResponseWriter, r *http.Request) {
-				url, err := url.Parse(r.URL.String())
-				assert.NoError(t, err)
-				assert.Equal(t, url.Path, urlOAuth2Login)
-				assert.True(t, url.Query().Get("preferred_flow") == "login")
+				assert.Equal(t, http.MethodPost, r.Method)
+				assert.Equal(t, r.URL.Path, urlOAuth2Login)
+				var body loginBody
+				assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+				assert.NotEmpty(t, body.Challenge)
+				assert.Equal(t, "login", body.PreferredFlow)
+				assert.Equal(t, "default", body.RedirectFlow)
 				data, err := os.ReadFile("testdata/login_400.json")
 				if err != nil {
 					rw.WriteHeader(http.StatusInternalServerError)
@@ -65,10 +71,13 @@ func TestOAuth2_Login(t *testing.T) {
 		{
 			name: http.StatusText(http.StatusOK),
 			handler: func(rw http.ResponseWriter, r *http.Request) {
-				url, err := url.Parse(r.URL.String())
-				assert.NoError(t, err)
-				assert.Equal(t, url.Path, urlOAuth2Login)
-				assert.True(t, url.Query().Get("preferred_flow") == "registration")
+				assert.Equal(t, http.MethodPost, r.Method)
+				assert.Equal(t, r.URL.Path, urlOAuth2Login)
+				var body loginBody
+				assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+				assert.NotEmpty(t, body.Challenge)
+				assert.Equal(t, "registration", body.PreferredFlow)
+				assert.Equal(t, "default", body.RedirectFlow)
 				data, err := os.ReadFile("testdata/login_200.json")
 				if err != nil {
 					rw.WriteHeader(http.StatusInternalServerError)
@@ -258,7 +267,9 @@ func TestOAuth2_Token(t *testing.T) {
 		{
 			name: http.StatusText(http.StatusOK),
 			handler: func(rw http.ResponseWriter, r *http.Request) {
-				assert.True(t, strings.HasPrefix(r.URL.String(), urlOAuth2Token))
+				assert.Equal(t, http.MethodGet, r.Method)
+				assert.Equal(t, r.URL.Path, urlOAuth2Token)
+				assert.Equal(t, "exchange", r.URL.Query().Get("exchange_token"))
 				data, err := os.ReadFile("testdata/token_200.json")
 				if err != nil {
 					rw.WriteHeader(http.StatusInternalServerError)
@@ -271,7 +282,9 @@ func TestOAuth2_Token(t *testing.T) {
 		{
 			name: http.StatusText(http.StatusBadRequest),
 			handler: func(rw http.ResponseWriter, r *http.Request) {
-				assert.True(t, strings.HasPrefix(r.URL.String(), urlOAuth2Token))
+				assert.Equal(t, http.MethodGet, r.Method)
+				assert.Equal(t, r.URL.Path, urlOAuth2Token)
+				assert.Equal(t, "exchange", r.URL.Query().Get("exchange_token"))
 				data, err := os.ReadFile("testdata/token_400.json")
 				if err != nil {
 					rw.WriteHeader(http.StatusInternalServerError)
@@ -285,7 +298,9 @@ func TestOAuth2_Token(t *testing.T) {
 		{
 			name: http.StatusText(http.StatusNotFound),
 			handler: func(rw http.ResponseWriter, r *http.Request) {
-				assert.True(t, strings.HasPrefix(r.URL.String(), urlOAuth2Token))
+				assert.Equal(t, http.MethodGet, r.Method)
+				assert.Equal(t, r.URL.Path, urlOAuth2Token)
+				assert.Equal(t, "exchange", r.URL.Query().Get("exchange_token"))
 				data, err := os.ReadFile("testdata/token_404.json")
 				if err != nil {
 					rw.WriteHeader(http.StatusInternalServerError)

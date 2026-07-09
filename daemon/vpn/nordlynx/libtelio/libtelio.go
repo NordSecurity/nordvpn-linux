@@ -76,8 +76,8 @@ type callbackHandler interface {
 }
 
 type vpnConnError struct {
-	code      teliogo.VpnConnectionError
-	publicKey string
+	code           teliogo.VpnConnectionError
+	serverEndpoint string
 }
 
 type telioCallbackHandler struct {
@@ -131,10 +131,17 @@ func (t *telioCallbackHandler) handleEvent(e teliogo.Event) error {
 		}
 
 		if evt.Body.VpnConnectionError != nil {
+			if evt.Body.Endpoint == nil {
+				// if the endpoint is not present, we have nothing to compare current
+				// connection with so the needed disconnect won't happen anyway, thus
+				// I'm skipping the processing early here
+				log.Error("dropping ENS connection error: libtelio event missing endpoint", *evt.Body.VpnConnectionError)
+				break
+			}
 			select {
 			case t.vpnErrorsChan <- vpnConnError{
-				code:      *evt.Body.VpnConnectionError,
-				publicKey: evt.Body.PublicKey,
+				code:           *evt.Body.VpnConnectionError,
+				serverEndpoint: *evt.Body.Endpoint,
 			}:
 			default:
 				log.Debug("dropping ENS connection error, monitor busy:", *evt.Body.VpnConnectionError)
@@ -437,6 +444,7 @@ func (l *Libtelio) connect(
 		port = strconv.Itoa(int(serverPort))
 	}
 	endpoint := net.JoinHostPort(serverIP.String(), port)
+	l.currentServer.Endpoint = endpoint
 	allowedIPs := []string{"0.0.0.0/0"}
 	if postQuantum {
 		identifier := uuid.NewString()
@@ -831,19 +839,19 @@ func (l *Libtelio) GetConnectionParameters() (vpn.ServerData, bool) {
 
 // InjectVPNConnectionError is a DEV-only helper that feeds a simulated ENS error
 // through the same monitor that real libtelio events use.
-func (l *Libtelio) InjectVPNConnectionError(code int32, publicKey string) error {
+func (l *Libtelio) InjectVPNConnectionError(code int32, serverEndpoint string) error {
 	if l.injectedErrors == nil {
 		return errors.New("ENS injection is unavailable outside the dev environment")
 	}
 
-	if publicKey == "" {
+	if serverEndpoint == "" {
 		if params, ok := l.GetConnectionParameters(); ok {
-			publicKey = params.NordLynxPublicKey
+			serverEndpoint = params.Endpoint
 		}
 	}
 
 	// #nosec G115 - dev-only injection — out-of-range codes map to Unknown
-	connErr := vpnConnError{code: teliogo.VpnConnectionError(code), publicKey: publicKey}
+	connErr := vpnConnError{code: teliogo.VpnConnectionError(code), serverEndpoint: serverEndpoint}
 
 	select {
 	case l.injectedErrors <- connErr:
@@ -985,8 +993,8 @@ func (l *Libtelio) monitorConnectionErrors(ctx context.Context) {
 // error produces a byte-for-byte identical event to a real one.
 func publishConnError(eventsPublisher *vpn.Events, e vpnConnError) {
 	eventsPublisher.ConnectionError.Publish(events.VPNConnectionErrorEvent{
-		Code:            toVPNConnectionError(e.code),
-		ServerPublicKey: e.publicKey,
+		Code:           toVPNConnectionError(e.code),
+		ServerEndpoint: e.serverEndpoint,
 	})
 }
 

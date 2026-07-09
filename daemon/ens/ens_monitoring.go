@@ -15,7 +15,7 @@ const (
 	evChSize  = 2
 )
 
-type ConnectCallback func(serverPublicKey string) error
+type ConnectCallback func(serverEndpoint string) error
 
 type Monitor struct {
 	eventsCh       chan events.VPNConnectionErrorEvent
@@ -95,13 +95,13 @@ func (m *Monitor) run() {
 			}
 
 			currServer, _ := m.netw.GetConnectionParameters()
-			eventIsForDifferentServer := currServer.NordLynxPublicKey != e.ServerPublicKey
+			eventIsForDifferentServer := !currServer.EndpointEqual(e.ServerEndpoint)
 			if eventIsForDifferentServer {
 				log.Debug(logPrefix, "ignoring ENS event for non-current server", e)
 				continue
 			}
 
-			if err := m.reconnectFn(e.ServerPublicKey); err != nil {
+			if err := m.reconnectFn(e.ServerEndpoint); err != nil {
 				log.Error(logPrefix, "failed to reconnect", err)
 			}
 
