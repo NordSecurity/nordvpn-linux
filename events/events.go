@@ -95,10 +95,8 @@ func (e VPNConnectionError) String() string {
 
 // VPNConnectionErrorEvent is sent on the internal VPN event bus when a VPN connection error happens.
 type VPNConnectionErrorEvent struct {
-	Code VPNConnectionError
-	// ServerPublicKey is the NordLynx public key of the exit node the error originated from.
-	// Empty if unknown.
-	ServerPublicKey string
+	Code           VPNConnectionError
+	ServerEndpoint string
 }
 
 // VPNConnectionReason identifies the reason an app-initiated (re)connect and its matching disconnect was started, for telemetry.

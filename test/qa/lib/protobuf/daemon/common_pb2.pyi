@@ -45,12 +45,12 @@ class Payload(_message.Message):
     def __init__(self, type: _Optional[int] = ..., data: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class InjectVpnConnectionErrorRequest(_message.Message):
-    __slots__ = ("telio_code", "pubkey")
+    __slots__ = ("telio_code", "endpoint")
     TELIO_CODE_FIELD_NUMBER: _ClassVar[int]
-    PUBKEY_FIELD_NUMBER: _ClassVar[int]
+    ENDPOINT_FIELD_NUMBER: _ClassVar[int]
     telio_code: int
-    pubkey: str
-    def __init__(self, telio_code: _Optional[int] = ..., pubkey: _Optional[str] = ...) -> None: ...
+    endpoint: str
+    def __init__(self, telio_code: _Optional[int] = ..., endpoint: _Optional[str] = ...) -> None: ...
 
 class Allowlist(_message.Message):
     __slots__ = ("ports", "subnets")
