@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
@@ -11,7 +12,6 @@ import (
 	"sync"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
-	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // Authentication is responsible for verifying user's identity.
@@ -55,18 +55,23 @@ func (o *OAuth2) Login(regularLogin bool) (string, error) {
 		return "", err
 	}
 
-	query := url.Values{}
-	query.Add("challenge", o.challenge)
+	preferredFlow := "registration"
 	if regularLogin {
-		query.Add("preferred_flow", "login")
-	} else {
-		query.Add("preferred_flow", "registration")
+		preferredFlow = "login"
 	}
-	query.Add("redirect_flow", "default")
-	path.RawQuery = query.Encode()
-	log.Info("oauth2 login url", path.String())
 
-	req, err := http.NewRequest(http.MethodPost, path.String(), nil)
+	jsonBody, err := json.Marshal(loginBody{
+		Challenge:     o.challenge,
+		PreferredFlow: preferredFlow,
+		RedirectFlow:  "default",
+	})
+	if err != nil {
+		return "", err
+	}
+
+	reqBody := bytes.NewReader(jsonBody)
+
+	req, err := http.NewRequest(http.MethodPost, path.String(), reqBody)
 	if err != nil {
 		return "", err
 	}
@@ -122,7 +127,9 @@ func (o *OAuth2) Token(exchangeToken string) (*LoginResponse, error) {
 }
 
 func (o *OAuth2) doValidatedRequest(req *http.Request, errContext string) ([]byte, error) {
-	req.Header.Set("Content-Type", "application/json")
+	if req.Method != http.MethodGet {
+		req.Header.Set("Content-Type", "application/json")
+	}
 
 	resp, err := o.client.Do(req)
 	if err != nil {
@@ -163,4 +170,10 @@ func newProofKeyPair(length int) (string, string, error) {
 
 	challenge := hex.EncodeToString(hasher.Sum(nil))
 	return verifier, challenge, nil
+}
+
+type loginBody struct {
+	Challenge     string `json:"challenge"`
+	PreferredFlow string `json:"preferred_flow"`
+	RedirectFlow  string `json:"redirect_flow"`
 }
