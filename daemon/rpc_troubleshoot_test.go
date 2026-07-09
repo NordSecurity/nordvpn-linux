@@ -560,7 +560,7 @@ func TestTroubleshootFailsWhengRPCPeerIsInvalid(t *testing.T) {
 	// as a populated ErrorCode field on the sent message.
 	assert.NoError(t, err)
 	require.Len(t, srv.msgs, 1)
-	assert.NotEqual(t, pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_UNSET, srv.msgs[0].ErrorCode)
+	assert.NotEqual(t, pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_UNSPECIFIED, srv.msgs[0].ErrorCode)
 	assert.Empty(t, srv.msgs[0].FilePath)
 }
 
