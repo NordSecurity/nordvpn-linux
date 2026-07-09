@@ -34,14 +34,6 @@ const (
 	maxZipFileSize = 40 * 1024 * 1024
 	logPrefix      = "[troubleshoot]"
 
-	// User-facing messages sent via pb.DiagnosticsProgress.Error. Centralised
-	// here so support can grep them, and so we never accidentally diverge two
-	// copies of the same wording.
-	zipTooLargeMsg       = "Diagnostics file exceeds 40 MB limit. Please contact support for assistance."
-	failedCreateZipMsg   = "Failed to create zip file: %v"
-	failedChownZipMsg    = "Failed to change file ownership: %v"
-	failedCollectMsg     = "Failed to collect diagnostics: %v"
-	failedCloseZipMsg    = "Failed to close zip file: %v"
 	noDaemonLogSourceMsg = "We couldn't extract daemon logs automatically because the daemon was not started via systemd or snap. Contact our support team for help collecting logs manually."
 )
 
@@ -49,11 +41,15 @@ const (
 // diagnostics zip past maxZipFileSize.
 var errZipSizeLimitExceeded = errors.New("diagnostics zip exceeds size limit")
 
+// errNoDaemonLogSource is returned by addDaemonLogs when no supervisor was
+// detected and no fallback log file is available.
+var errNoDaemonLogSource = errors.New(noDaemonLogSourceMsg)
+
 func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsServer) error {
 	caller, err := resolveDiagnosticsCaller(srv.Context())
 	if err != nil {
 		log.Error(logPrefix, "troubleshot failed with:", err)
-		return srv.Send(&pb.DiagnosticsProgress{Error: err.Error()})
+		return srv.Send(&pb.DiagnosticsProgress{ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_INTERNAL})
 	}
 
 	// createDiagnosticsZip uses os.CreateTemp under the hood, so we always
@@ -63,7 +59,7 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 	zipFile, err := createDiagnosticsZip(caller.outputDir)
 	if err != nil {
 		log.Error(logPrefix, "failed to create diagnostics zip:", err)
-		return srv.Send(&pb.DiagnosticsProgress{Error: fmt.Sprintf(failedCreateZipMsg, err)})
+		return srv.Send(&pb.DiagnosticsProgress{ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_FAILED_TO_CREATE_ZIP})
 	}
 	zipPath := zipFile.Name()
 
@@ -74,7 +70,7 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 	} else {
 		if err := os.Chown(zipPath, int(caller.uid), int(caller.gid)); err != nil {
 			log.Error(logPrefix, "failed to change file ownership:", err)
-			return abortDiagnosticsWithMsg(zipFile, srv, fmt.Sprintf(failedChownZipMsg, err))
+			return abortDiagnosticsWithCode(zipFile, srv, pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_CHOWN_FAILED)
 		}
 	}
 
@@ -82,10 +78,14 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 	if err := collectDiagnosticsData(srv, zipFile, caller.user.HomeDir, state); err != nil {
 		if errors.Is(err, errZipSizeLimitExceeded) {
 			log.Error(logPrefix, "diagnostics zip exceeded 40 MB limit")
-			return abortDiagnosticsWithMsg(zipFile, srv, zipTooLargeMsg)
+			return abortDiagnosticsWithCode(zipFile, srv, pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_ZIP_TOO_LARGE)
+		}
+		if errors.Is(err, errNoDaemonLogSource) {
+			log.Error(logPrefix, "no daemon log source available:", err)
+			return abortDiagnosticsWithCode(zipFile, srv, pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_NO_DAEMON_LOG_SOURCE)
 		}
 		log.Error(logPrefix, "failed to collect diagnostics:", err)
-		return abortDiagnosticsWithMsg(zipFile, srv, fmt.Sprintf(failedCollectMsg, err))
+		return abortDiagnosticsWithCode(zipFile, srv, pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED)
 	}
 
 	if err := zipFile.Close(); err != nil {
@@ -93,7 +93,7 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 		if removeErr := os.Remove(zipPath); removeErr != nil {
 			log.Error(logPrefix, "failed to delete zip", removeErr)
 		}
-		return srv.Send(&pb.DiagnosticsProgress{Error: fmt.Sprintf(failedCloseZipMsg, err)})
+		return srv.Send(&pb.DiagnosticsProgress{ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_FAILED_TO_CLOSE_ZIP})
 	}
 
 	return srv.Send(&pb.DiagnosticsProgress{
@@ -102,14 +102,14 @@ func (r *RPC) CollectDiagnostics(in *pb.Empty, srv pb.Daemon_CollectDiagnosticsS
 	})
 }
 
-// abortDiagnosticsWithMsg closes and deletes the partial zip file, then sends
-// a user-facing error on the stream.
-func abortDiagnosticsWithMsg(zipFile *os.File, srv pb.Daemon_CollectDiagnosticsServer, msg string) error {
+// abortDiagnosticsWithCode closes and deletes the partial zip file, then sends
+// an error code on the stream.
+func abortDiagnosticsWithCode(zipFile *os.File, srv pb.Daemon_CollectDiagnosticsServer, code pb.DiagnosticsErrorCode) error {
 	_ = zipFile.Close()
 	if err := os.Remove(zipFile.Name()); err != nil {
 		log.Error(logPrefix, "failed to delete zip", err)
 	}
-	return srv.Send(&pb.DiagnosticsProgress{Error: msg})
+	return srv.Send(&pb.DiagnosticsProgress{ErrorCode: code})
 }
 
 // createDiagnosticsZip atomically creates a uniquely-named diagnostics zip
@@ -443,7 +443,7 @@ func addDaemonLogs(zipWriter *zip.Writer, supervisor daemonSupervisor) error {
 		if path, ok := stdoutAsRegularFile(); ok {
 			return streamFileToWriter(writer, path)
 		}
-		return errors.New(noDaemonLogSourceMsg)
+		return errNoDaemonLogSource
 	}
 }
 

@@ -44,6 +44,31 @@ final $typed_data.Uint8List clientIDDescriptor = $convert.base64Decode(
     'CghDbGllbnRJRBISCg5VTktOT1dOX0NMSUVOVBAAEgcKA0NMSRABEgcKA0dVSRACEggKBFRSQV'
     'kQAw==');
 
+@$core.Deprecated('Use diagnosticsErrorCodeDescriptor instead')
+const DiagnosticsErrorCode$json = {
+  '1': 'DiagnosticsErrorCode',
+  '2': [
+    {'1': 'DIAGNOSTICS_ERROR_CODE_UNSPECIFIED', '2': 0},
+    {'1': 'DIAGNOSTICS_ERROR_CODE_INTERNAL', '2': 1},
+    {'1': 'DIAGNOSTICS_ERROR_CODE_FAILED_TO_CREATE_ZIP', '2': 2},
+    {'1': 'DIAGNOSTICS_ERROR_CODE_CHOWN_FAILED', '2': 3},
+    {'1': 'DIAGNOSTICS_ERROR_CODE_ZIP_TOO_LARGE', '2': 4},
+    {'1': 'DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED', '2': 5},
+    {'1': 'DIAGNOSTICS_ERROR_CODE_FAILED_TO_CLOSE_ZIP', '2': 6},
+    {'1': 'DIAGNOSTICS_ERROR_CODE_NO_DAEMON_LOG_SOURCE', '2': 7},
+  ],
+};
+
+/// Descriptor for `DiagnosticsErrorCode`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List diagnosticsErrorCodeDescriptor = $convert.base64Decode(
+    'ChREaWFnbm9zdGljc0Vycm9yQ29kZRImCiJESUFHTk9TVElDU19FUlJPUl9DT0RFX1VOU1BFQ0'
+    'lGSUVEEAASIwofRElBR05PU1RJQ1NfRVJST1JfQ09ERV9JTlRFUk5BTBABEi8KK0RJQUdOT1NU'
+    'SUNTX0VSUk9SX0NPREVfRkFJTEVEX1RPX0NSRUFURV9aSVAQAhInCiNESUFHTk9TVElDU19FUl'
+    'JPUl9DT0RFX0NIT1dOX0ZBSUxFRBADEigKJERJQUdOT1NUSUNTX0VSUk9SX0NPREVfWklQX1RP'
+    'T19MQVJHRRAEEiwKKERJQUdOT1NUSUNTX0VSUk9SX0NPREVfQ09MTEVDVElPTl9GQUlMRUQQBR'
+    'IuCipESUFHTk9TVElDU19FUlJPUl9DT0RFX0ZBSUxFRF9UT19DTE9TRV9aSVAQBhIvCitESUFH'
+    'Tk9TVElDU19FUlJPUl9DT0RFX05PX0RBRU1PTl9MT0dfU09VUkNFEAc=');
+
 @$core.Deprecated('Use emptyDescriptor instead')
 const Empty$json = {
   '1': 'Empty',
@@ -161,11 +186,19 @@ const DiagnosticsProgress$json = {
   '2': [
     {'1': 'step', '3': 1, '4': 1, '5': 9, '10': 'step'},
     {'1': 'file_path', '3': 2, '4': 1, '5': 9, '10': 'filePath'},
-    {'1': 'error', '3': 3, '4': 1, '5': 9, '10': 'error'},
+    {
+      '1': 'error_code',
+      '3': 3,
+      '4': 1,
+      '5': 14,
+      '6': '.pb.DiagnosticsErrorCode',
+      '10': 'errorCode'
+    },
   ],
 };
 
 /// Descriptor for `DiagnosticsProgress`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List diagnosticsProgressDescriptor = $convert.base64Decode(
     'ChNEaWFnbm9zdGljc1Byb2dyZXNzEhIKBHN0ZXAYASABKAlSBHN0ZXASGwoJZmlsZV9wYXRoGA'
-    'IgASgJUghmaWxlUGF0aBIUCgVlcnJvchgDIAEoCVIFZXJyb3I=');
+    'IgASgJUghmaWxlUGF0aBI3CgplcnJvcl9jb2RlGAMgASgOMhgucGIuRGlhZ25vc3RpY3NFcnJv'
+    'ckNvZGVSCWVycm9yQ29kZQ==');
