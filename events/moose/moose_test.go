@@ -983,16 +983,16 @@ func TestNotifyConnect_DedicatedIP_StripsBodyAndUnsetsContext(t *testing.T) {
 		calls = append(calls, "sendConnect")
 		return 0
 	}
-	sub.mooseFuncs.unsetServerDomainValue = func() uint32 {
-		calls = append(calls, "unsetServerDomainValue")
+	sub.mooseFuncs.unsetServerDomainCurrentState = func() uint32 {
+		calls = append(calls, "unsetServerDomainCurrentState")
 		return 0
 	}
 	sub.mooseFuncs.unsetRecommendationUuid = func() uint32 {
 		calls = append(calls, "unsetRecommendationUuid")
 		return 0
 	}
-	sub.mooseFuncs.setServerGroupValue = func(_ moose.NordvpnappServerGroup) uint32 {
-		calls = append(calls, "setServerGroupValue")
+	sub.mooseFuncs.setServerGroupCurrentState = func(_ moose.NordvpnappServerGroup) uint32 {
+		calls = append(calls, "setServerGroupCurrentState")
 		return 0
 	}
 
@@ -1009,7 +1009,7 @@ func TestNotifyConnect_DedicatedIP_StripsBodyAndUnsetsContext(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Equal(t, "", capturedDomain)
 	assert.Equal(t, "", capturedUUID)
-	assert.DeepEqual(t, []string{"unsetServerDomainValue", "unsetRecommendationUuid", "sendConnect"}, calls)
+	assert.DeepEqual(t, []string{"unsetServerDomainCurrentState", "unsetRecommendationUuid", "sendConnect"}, calls)
 }
 
 func TestNotifyConnect_DedicatedIPByHostname_StripsBodyAndUnsetsContext(t *testing.T) {
@@ -1033,16 +1033,16 @@ func TestNotifyConnect_DedicatedIPByHostname_StripsBodyAndUnsetsContext(t *testi
 		calls = append(calls, "sendConnect")
 		return 0
 	}
-	sub.mooseFuncs.unsetServerDomainValue = func() uint32 {
-		calls = append(calls, "unsetServerDomainValue")
+	sub.mooseFuncs.unsetServerDomainCurrentState = func() uint32 {
+		calls = append(calls, "unsetServerDomainCurrentState")
 		return 0
 	}
 	sub.mooseFuncs.unsetRecommendationUuid = func() uint32 {
 		calls = append(calls, "unsetRecommendationUuid")
 		return 0
 	}
-	sub.mooseFuncs.setServerGroupValue = func(_ moose.NordvpnappServerGroup) uint32 {
-		calls = append(calls, "setServerGroupValue")
+	sub.mooseFuncs.setServerGroupCurrentState = func(_ moose.NordvpnappServerGroup) uint32 {
+		calls = append(calls, "setServerGroupCurrentState")
 		return 0
 	}
 
@@ -1059,7 +1059,7 @@ func TestNotifyConnect_DedicatedIPByHostname_StripsBodyAndUnsetsContext(t *testi
 	assert.NilError(t, err)
 	assert.Equal(t, "", capturedDomain)
 	assert.Equal(t, "", capturedUUID)
-	assert.DeepEqual(t, []string{"unsetServerDomainValue", "unsetRecommendationUuid", "sendConnect"}, calls)
+	assert.DeepEqual(t, []string{"unsetServerDomainCurrentState", "unsetRecommendationUuid", "sendConnect"}, calls)
 }
 
 func TestNotifyConnect_Success_DedicatedIPByHostname_ContextValueIsUserTarget(t *testing.T) {
@@ -1082,9 +1082,9 @@ func TestNotifyConnect_Success_DedicatedIPByHostname_ContextValueIsUserTarget(t 
 		return 0
 	}
 	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
-	sub.mooseFuncs.unsetServerDomainValue = func() uint32 { return 0 }
+	sub.mooseFuncs.unsetServerDomainCurrentState = func() uint32 { return 0 }
 	sub.mooseFuncs.unsetRecommendationUuid = func() uint32 { return 0 }
-	sub.mooseFuncs.setServerGroupValue = func(group moose.NordvpnappServerGroup) uint32 {
+	sub.mooseFuncs.setServerGroupCurrentState = func(group moose.NordvpnappServerGroup) uint32 {
 		capturedGroup = group
 		groupCalls++
 		return 0
@@ -1125,11 +1125,11 @@ func TestNotifyConnect_Success_EmptyTargetServerGroup_UnsetsServerGroupContext(t
 		return 0
 	}
 	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
-	sub.mooseFuncs.setServerGroupValue = func(_ moose.NordvpnappServerGroup) uint32 {
+	sub.mooseFuncs.setServerGroupCurrentState = func(_ moose.NordvpnappServerGroup) uint32 {
 		setCalls++
 		return 0
 	}
-	sub.mooseFuncs.unsetServerGroupValue = func() uint32 {
+	sub.mooseFuncs.unsetServerGroupCurrentState = func() uint32 {
 		unsetCalls++
 		return 0
 	}
@@ -1163,7 +1163,7 @@ func TestNotifyConnect_StandardVPN_PreservesBodyAndSkipsUnsets(t *testing.T) {
 		capturedUUID = uuid
 		return 0
 	}
-	sub.mooseFuncs.unsetServerDomainValue = func() uint32 {
+	sub.mooseFuncs.unsetServerDomainCurrentState = func() uint32 {
 		domainUnsets++
 		return 0
 	}
@@ -1171,7 +1171,7 @@ func TestNotifyConnect_StandardVPN_PreservesBodyAndSkipsUnsets(t *testing.T) {
 		uuidUnsets++
 		return 0
 	}
-	sub.mooseFuncs.setServerGroupValue = func(_ moose.NordvpnappServerGroup) uint32 {
+	sub.mooseFuncs.setServerGroupCurrentState = func(_ moose.NordvpnappServerGroup) uint32 {
 		groupSetCalls++
 		return 0
 	}
@@ -1206,7 +1206,7 @@ func TestNotifyConnect_DedicatedIP_UnsetContinuesAfterFirstError(t *testing.T) {
 	) uint32 {
 		return 0
 	}
-	sub.mooseFuncs.unsetServerDomainValue = func() uint32 {
+	sub.mooseFuncs.unsetServerDomainCurrentState = func() uint32 {
 		return 7 // moose: context set error — logged, must not block second unset
 	}
 	var uuidUnsets int
@@ -1214,7 +1214,7 @@ func TestNotifyConnect_DedicatedIP_UnsetContinuesAfterFirstError(t *testing.T) {
 		uuidUnsets++
 		return 0
 	}
-	sub.mooseFuncs.setServerGroupValue = func(_ moose.NordvpnappServerGroup) uint32 { return 0 }
+	sub.mooseFuncs.setServerGroupCurrentState = func(_ moose.NordvpnappServerGroup) uint32 { return 0 }
 
 	err := sub.NotifyConnect(events.DataConnect{
 		ServerGroups: []config.ServerGroup{config.ServerGroup_DEDICATED_IP},
@@ -1264,17 +1264,17 @@ func TestNotifyConnect_Success_InvokesPostConnectContextSetters(t *testing.T) {
 		tpLiteCalls++
 		return 0
 	}
-	sub.mooseFuncs.setIsOnVpnValue = func(onVpn bool) uint32 {
+	sub.mooseFuncs.setIsOnVpnCurrentState = func(onVpn bool) uint32 {
 		capturedIsOnVpn = onVpn
 		isOnVpnCalls++
 		return 0
 	}
-	sub.mooseFuncs.setServerCountryValue = func(country string) uint32 {
+	sub.mooseFuncs.setServerCountryCurrentState = func(country string) uint32 {
 		capturedCountry = country
 		countryCalls++
 		return 0
 	}
-	sub.mooseFuncs.setServerGroupValue = func(group moose.NordvpnappServerGroup) uint32 {
+	sub.mooseFuncs.setServerGroupCurrentState = func(group moose.NordvpnappServerGroup) uint32 {
 		capturedGroup = group
 		groupCalls++
 		return 0
@@ -1315,13 +1315,13 @@ func TestNotifyConnect_MeshnetPeer_PreservesPriorSensitiveFlag(t *testing.T) {
 
 func noopDisconnectAmbientMooseFuncs(sub *Subscriber) {
 	sub.mooseFuncs.unsetTPLiteCurrentState = func() uint32 { return 0 }
-	sub.mooseFuncs.setServerCountryValue = func(_ string) uint32 { return 0 }
-	sub.mooseFuncs.setServerGroupValue = func(_ moose.NordvpnappServerGroup) uint32 { return 0 }
-	sub.mooseFuncs.unsetServerGroupValue = func() uint32 { return 0 }
-	sub.mooseFuncs.setIsOnVpnValue = func(_ bool) uint32 { return 0 }
-	sub.mooseFuncs.setServerDomainValue = func(_ string) uint32 { return 0 }
-	sub.mooseFuncs.setServerCityValue = func(_ string) uint32 { return 0 }
-	sub.mooseFuncs.unsetServerCityValue = func() uint32 { return 0 }
+	sub.mooseFuncs.setServerCountryCurrentState = func(_ string) uint32 { return 0 }
+	sub.mooseFuncs.setServerGroupCurrentState = func(_ moose.NordvpnappServerGroup) uint32 { return 0 }
+	sub.mooseFuncs.unsetServerGroupCurrentState = func() uint32 { return 0 }
+	sub.mooseFuncs.setIsOnVpnCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.setServerDomainCurrentState = func(_ string) uint32 { return 0 }
+	sub.mooseFuncs.setServerCityCurrentState = func(_ string) uint32 { return 0 }
+	sub.mooseFuncs.unsetServerCityCurrentState = func() uint32 { return 0 }
 }
 
 func TestNotifyDisconnect_AfterSensitiveConnect_SkipsRecommendationUuidContext(t *testing.T) {
@@ -1468,14 +1468,14 @@ func TestNotifyConnect_Success_DedicatedIP_SetsGroupAndKeepsDependentsEmpty(t *t
 		return 0
 	}
 	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
-	sub.mooseFuncs.setServerGroupValue = func(group moose.NordvpnappServerGroup) uint32 {
+	sub.mooseFuncs.setServerGroupCurrentState = func(group moose.NordvpnappServerGroup) uint32 {
 		nextCall++
 		groupCallOrder = nextCall
 		capturedGroup = group
 		groupCalls++
 		return 0
 	}
-	sub.mooseFuncs.unsetServerDomainValue = func() uint32 {
+	sub.mooseFuncs.unsetServerDomainCurrentState = func() uint32 {
 		domainUnsets++
 		return 0
 	}
@@ -1520,11 +1520,11 @@ func TestNotifyConnect_Failure_DoesNotWriteServerGroupContext(t *testing.T) {
 	) uint32 {
 		return 0
 	}
-	sub.mooseFuncs.setServerGroupValue = func(_ moose.NordvpnappServerGroup) uint32 {
+	sub.mooseFuncs.setServerGroupCurrentState = func(_ moose.NordvpnappServerGroup) uint32 {
 		groupSetCalls++
 		return 0
 	}
-	sub.mooseFuncs.unsetServerDomainValue = func() uint32 {
+	sub.mooseFuncs.unsetServerDomainCurrentState = func() uint32 {
 		domainUnsets++
 		return 0
 	}
@@ -1553,7 +1553,7 @@ func TestNotifyDisconnect_UnsetsServerGroupValueAfterEvent(t *testing.T) {
 	var nextCall int
 	var groupUnsets int
 
-	sub.mooseFuncs.unsetServerGroupValue = func() uint32 {
+	sub.mooseFuncs.unsetServerGroupCurrentState = func() uint32 {
 		nextCall++
 		groupUnsetOrder = nextCall
 		groupUnsets++
@@ -1601,12 +1601,12 @@ func TestNotifyConnect_Success_StandardVPN_SetsServerDomainAndCity(t *testing.T)
 
 	var capturedDomain, capturedCity string
 	var domainSets, citySets int
-	sub.mooseFuncs.setServerDomainValue = func(domain string) uint32 {
+	sub.mooseFuncs.setServerDomainCurrentState = func(domain string) uint32 {
 		capturedDomain = domain
 		domainSets++
 		return 0
 	}
-	sub.mooseFuncs.setServerCityValue = func(city string) uint32 {
+	sub.mooseFuncs.setServerCityCurrentState = func(city string) uint32 {
 		capturedCity = city
 		citySets++
 		return 0
@@ -1632,7 +1632,7 @@ func TestNotifyConnect_Success_SensitiveGroup_SuppressesServerDomainButSetsCity(
 	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
 	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
-	sub.mooseFuncs.unsetServerDomainValue = func() uint32 { return 0 }
+	sub.mooseFuncs.unsetServerDomainCurrentState = func() uint32 { return 0 }
 	sub.mooseFuncs.unsetRecommendationUuid = func() uint32 { return 0 }
 	sub.mooseFuncs.sendConnect = func(
 		_ moose.EventParams,
@@ -1649,11 +1649,11 @@ func TestNotifyConnect_Success_SensitiveGroup_SuppressesServerDomainButSetsCity(
 
 	var capturedCity string
 	var domainSets, citySets int
-	sub.mooseFuncs.setServerDomainValue = func(_ string) uint32 {
+	sub.mooseFuncs.setServerDomainCurrentState = func(_ string) uint32 {
 		domainSets++
 		return 0
 	}
-	sub.mooseFuncs.setServerCityValue = func(city string) uint32 {
+	sub.mooseFuncs.setServerCityCurrentState = func(city string) uint32 {
 		capturedCity = city
 		citySets++
 		return 0
@@ -1697,7 +1697,7 @@ func TestNotifyConnect_Success_NonSensitiveEmptyDomain_RefreshesServerDomain(t *
 
 	var capturedDomain string
 	var domainSets int
-	sub.mooseFuncs.setServerDomainValue = func(domain string) uint32 {
+	sub.mooseFuncs.setServerDomainCurrentState = func(domain string) uint32 {
 		capturedDomain = domain
 		domainSets++
 		return 0
@@ -1732,11 +1732,11 @@ func TestNotifyDisconnect_UnsetsServerDomainAndCityAfterEvent(t *testing.T) {
 	}
 
 	var domainUnsets, cityUnsets int
-	sub.mooseFuncs.unsetServerDomainValue = func() uint32 {
+	sub.mooseFuncs.unsetServerDomainCurrentState = func() uint32 {
 		domainUnsets++
 		return 0
 	}
-	sub.mooseFuncs.unsetServerCityValue = func() uint32 {
+	sub.mooseFuncs.unsetServerCityCurrentState = func() uint32 {
 		cityUnsets++
 		return 0
 	}
@@ -1952,9 +1952,9 @@ func TestNotifyDisconnect_VPNConnReason(t *testing.T) {
 			// NotifyDisconnect also updates context state after sending; no-op those so the test
 			// does not depend on the native moose context.
 			sub.mooseFuncs.unsetTPLiteCurrentState = func() uint32 { return 0 }
-			sub.mooseFuncs.setServerCountryValue = func(_ string) uint32 { return 0 }
-			sub.mooseFuncs.unsetServerGroupValue = func() uint32 { return 0 }
-			sub.mooseFuncs.setIsOnVpnValue = func(_ bool) uint32 { return 0 }
+			sub.mooseFuncs.setServerCountryCurrentState = func(_ string) uint32 { return 0 }
+			sub.mooseFuncs.unsetServerGroupCurrentState = func() uint32 { return 0 }
+			sub.mooseFuncs.setIsOnVpnCurrentState = func(_ bool) uint32 { return 0 }
 
 			err := sub.NotifyDisconnect(events.DataDisconnect{
 				EventStatus:   events.StatusSuccess,

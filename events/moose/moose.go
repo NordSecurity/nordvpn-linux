@@ -50,22 +50,22 @@ import (
 const dedicatedIPGroupTitle = "Dedicated IP"
 
 type (
-	mooseConsentFunc               func(moose.UserConsent) uint32
-	mooseSetConsentIntoContextFunc func(moose.NordvpnappConsentLevel) uint32
-	mooseSetTokenRenewDateFunc     func(int32) uint32
-	mooseSetTPLiteUserPrefFunc     func(bool) uint32
-	mooseSetTPLiteCurrentFunc      func(bool) uint32
-	mooseUnsetTPLiteCurrentFunc    func() uint32
-	mooseSetCustomDNSMetaFunc      func(string) uint32
-	mooseSetCustomDNSValueFunc     func(bool) uint32
-	mooseUnsetContextFunc          func() uint32
-	mooseSetRecommendationUuidFunc func(string) uint32
-	mooseSetServerCountryValueFunc func(string) uint32
-	mooseSetServerDomainValueFunc  func(string) uint32
-	mooseSetServerCityValueFunc    func(string) uint32
-	mooseSetServerGroupValueFunc   func(moose.NordvpnappServerGroup) uint32
-	mooseSetIsOnVpnValueFunc       func(bool) uint32
-	mooseSendConnectFunc           func(
+	mooseConsentFunc                      func(moose.UserConsent) uint32
+	mooseSetConsentIntoContextFunc        func(moose.NordvpnappConsentLevel) uint32
+	mooseSetTokenRenewDateFunc            func(int32) uint32
+	mooseSetTPLiteUserPrefFunc            func(bool) uint32
+	mooseSetTPLiteCurrentFunc             func(bool) uint32
+	mooseUnsetTPLiteCurrentFunc           func() uint32
+	mooseSetCustomDNSMetaFunc             func(string) uint32
+	mooseSetCustomDNSValueFunc            func(bool) uint32
+	mooseUnsetContextFunc                 func() uint32
+	mooseSetRecommendationUuidFunc        func(string) uint32
+	mooseSetServerCountryCurrentStateFunc func(string) uint32
+	mooseSetServerDomainCurrentStateFunc  func(string) uint32
+	mooseSetServerCityCurrentStateFunc    func(string) uint32
+	mooseSetServerGroupCurrentStateFunc   func(moose.NordvpnappServerGroup) uint32
+	mooseSetIsOnVpnCurrentStateFunc       func(bool) uint32
+	mooseSendConnectFunc                  func(
 		moose.EventParams,
 		moose.TargetConnectionParams,
 		moose.TargetConnectionAdditionalParams,
@@ -98,16 +98,16 @@ type mooseFunctions struct {
 	unsetTPLiteCurrentState       mooseUnsetTPLiteCurrentFunc
 	setCustomDNSMeta              mooseSetCustomDNSMetaFunc
 	setCustomDNSValue             mooseSetCustomDNSValueFunc
-	unsetServerDomainValue        mooseUnsetContextFunc
-	setServerDomainValue          mooseSetServerDomainValueFunc
-	setServerCityValue            mooseSetServerCityValueFunc
-	unsetServerCityValue          mooseUnsetContextFunc
+	unsetServerDomainCurrentState mooseUnsetContextFunc
+	setServerDomainCurrentState   mooseSetServerDomainCurrentStateFunc
+	setServerCityCurrentState     mooseSetServerCityCurrentStateFunc
+	unsetServerCityCurrentState   mooseUnsetContextFunc
 	unsetRecommendationUuid       mooseUnsetContextFunc
 	setRecommendationUuid         mooseSetRecommendationUuidFunc
-	setServerCountryValue         mooseSetServerCountryValueFunc
-	setServerGroupValue           mooseSetServerGroupValueFunc
-	unsetServerGroupValue         mooseUnsetContextFunc
-	setIsOnVpnValue               mooseSetIsOnVpnValueFunc
+	setServerCountryCurrentState  mooseSetServerCountryCurrentStateFunc
+	setServerGroupCurrentState    mooseSetServerGroupCurrentStateFunc
+	unsetServerGroupCurrentState  mooseUnsetContextFunc
+	setIsOnVpnCurrentState        mooseSetIsOnVpnCurrentStateFunc
 	sendConnect                   mooseSendConnectFunc
 	sendDisconnect                mooseSendDisconnectFunc
 	setDSIsActive                 mooseSetDSIsActiveFunc
@@ -165,16 +165,16 @@ func NewSubscriber(
 			unsetTPLiteCurrentState:       moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
 			setCustomDNSMeta:              moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledMeta,
 			setCustomDNSValue:             moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledValue,
-			unsetServerDomainValue:        moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerDomainValue,
-			setServerDomainValue:          moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerDomainValue,
-			setServerCityValue:            moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCityValue,
-			unsetServerCityValue:          moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerCityValue,
+			unsetServerDomainCurrentState: moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerDomainValue,
+			setServerDomainCurrentState:   moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerDomainValue,
+			setServerCityCurrentState:     moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCityValue,
+			unsetServerCityCurrentState:   moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerCityValue,
 			unsetRecommendationUuid:       moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid,
 			setRecommendationUuid:         moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateRecommendationUuid,
-			setServerCountryValue:         moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue,
-			setServerGroupValue:           moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerGroupValue,
-			unsetServerGroupValue:         moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerGroupValue,
-			setIsOnVpnValue:               moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue,
+			setServerCountryCurrentState:  moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerCountryValue,
+			setServerGroupCurrentState:    moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateServerGroupValue,
+			unsetServerGroupCurrentState:  moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerGroupValue,
+			setIsOnVpnCurrentState:        moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateIsOnVpnValue,
 			sendConnect:                   moose.NordvpnappSendServiceQualityServersConnect,
 			sendDisconnect:                moose.NordvpnappSendServiceQualityServersDisconnect,
 			setDSIsActive:                 moose.NordvpnappSetContextUserNordvpnappSubscriptionCurrentStateDedicatedServerIsActive,
@@ -371,11 +371,11 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		return fmt.Errorf("setting moose device type: %w", err)
 	}
 
-	if err := s.response(s.mooseFuncs.setIsOnVpnValue(false)); err != nil {
+	if err := s.response(s.mooseFuncs.setIsOnVpnCurrentState(false)); err != nil {
 		return fmt.Errorf("setting moose is on vpn: %w", err)
 	}
 
-	if err := s.response(s.mooseFuncs.unsetServerGroupValue()); err != nil {
+	if err := s.response(s.mooseFuncs.unsetServerGroupCurrentState()); err != nil {
 		return fmt.Errorf("unsetting initial server group: %w", err)
 	}
 
@@ -863,7 +863,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		targetServerDomain = ""
 		recommendationUUID = ""
 
-		if err := s.response(s.mooseFuncs.unsetServerDomainValue()); err != nil {
+		if err := s.response(s.mooseFuncs.unsetServerDomainCurrentState()); err != nil {
 			log.Moose.Warn(
 				"failed to unset serverDomain context for sensitive group:", err)
 		}
@@ -875,11 +875,11 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 
 	if data.EventStatus == events.StatusSuccess {
 		if data.TargetServerGroupID != config.ServerGroup_UNDEFINED {
-			if err := s.response(s.mooseFuncs.setServerGroupValue(serverGroupToInternalType(data.TargetServerGroupID))); err != nil {
+			if err := s.response(s.mooseFuncs.setServerGroupCurrentState(serverGroupToInternalType(data.TargetServerGroupID))); err != nil {
 				return fmt.Errorf("setting server group current state on successful connect (%v): %w", data.TargetServerGroupID, err)
 			}
 		} else {
-			if err := s.response(s.mooseFuncs.unsetServerGroupValue()); err != nil {
+			if err := s.response(s.mooseFuncs.unsetServerGroupCurrentState()); err != nil {
 				return fmt.Errorf("unsetting server group current state on successful connect with empty target: %w", err)
 			}
 		}
@@ -922,20 +922,20 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			return fmt.Errorf("setting TP Lite current state after successful connect (enabled=%v): %w", data.ThreatProtectionLite, err)
 		}
 
-		if err := s.response(s.mooseFuncs.setIsOnVpnValue(true)); err != nil {
+		if err := s.response(s.mooseFuncs.setIsOnVpnCurrentState(true)); err != nil {
 			return fmt.Errorf("setting is-on-VPN current state after successful connect: %w", err)
 		}
 
-		if err := s.response(s.mooseFuncs.setServerCountryValue(data.TargetServerCountryCode)); err != nil {
+		if err := s.response(s.mooseFuncs.setServerCountryCurrentState(data.TargetServerCountryCode)); err != nil {
 			return fmt.Errorf("setting server country current state after successful connect (%q): %w", data.TargetServerCountryCode, err)
 		}
 
-		if err := s.response(s.mooseFuncs.setServerCityValue(data.TargetServerCity)); err != nil {
+		if err := s.response(s.mooseFuncs.setServerCityCurrentState(data.TargetServerCity)); err != nil {
 			return fmt.Errorf("setting server city current state after successful connect (%q): %w", data.TargetServerCity, err)
 		}
 
 		if !sensitive {
-			if err := s.response(s.mooseFuncs.setServerDomainValue(targetServerDomain)); err != nil {
+			if err := s.response(s.mooseFuncs.setServerDomainCurrentState(targetServerDomain)); err != nil {
 				return fmt.Errorf("setting server domain current state after successful connect (%q): %w", targetServerDomain, err)
 			}
 		}
@@ -1029,23 +1029,23 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		return fmt.Errorf("unsetting TP Lite current state after disconnect: %w", err)
 	}
 
-	if err := s.response(s.mooseFuncs.setServerCountryValue(UnavailableEventParameterValue)); err != nil {
+	if err := s.response(s.mooseFuncs.setServerCountryCurrentState(UnavailableEventParameterValue)); err != nil {
 		return fmt.Errorf("clearing server country current state after disconnect: %w", err)
 	}
 
-	if err := s.response(s.mooseFuncs.unsetServerGroupValue()); err != nil {
+	if err := s.response(s.mooseFuncs.unsetServerGroupCurrentState()); err != nil {
 		return fmt.Errorf("unsetting server group current state after disconnect: %w", err)
 	}
 
-	if err := s.response(s.mooseFuncs.unsetServerDomainValue()); err != nil {
+	if err := s.response(s.mooseFuncs.unsetServerDomainCurrentState()); err != nil {
 		return fmt.Errorf("unsetting server domain current state after disconnect: %w", err)
 	}
 
-	if err := s.response(s.mooseFuncs.unsetServerCityValue()); err != nil {
+	if err := s.response(s.mooseFuncs.unsetServerCityCurrentState()); err != nil {
 		return fmt.Errorf("unsetting server city current state after disconnect: %w", err)
 	}
 
-	if err := s.response(s.mooseFuncs.setIsOnVpnValue(false)); err != nil {
+	if err := s.response(s.mooseFuncs.setIsOnVpnCurrentState(false)); err != nil {
 		return fmt.Errorf("setting is-on-VPN current state after disconnect: %w", err)
 	}
 
