@@ -144,14 +144,14 @@ final class _ToastState extends State<Toast> {
   String _semanticsLabel() {
     final seconds = _remainingTime.inSeconds.remainder(60);
     final minutes = _remainingTime.inMinutes.remainder(60);
-    final hours = _remainingTime.inHours.remainder(60);
+    final hours = _remainingTime.inHours;
     return hours > 0
         ? t.a11y.VPNResumesInWithHours(
             hours: hours,
             minutes: minutes,
             seconds: seconds,
           )
-        : t.ui.VPNResumesIn(minutes: minutes, seconds: seconds);
+        : t.a11y.VPNResumesIn(minutes: minutes, seconds: seconds);
   }
 
   Widget _buildWidgetText(ToastTheme theme) {
