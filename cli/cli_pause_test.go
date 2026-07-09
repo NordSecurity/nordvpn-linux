@@ -14,35 +14,35 @@ func TestPauseArgumentsParsing(t *testing.T) {
 		shouldReturnError bool
 	}{
 		{
-			name:           "success hours",
-			pauseDuration:  "5h",
-			expectedResult: 18000,
+			name:           "success 1h",
+			pauseDuration:  "1h",
+			expectedResult: 3600,
 		},
 		{
-			name:           "success minutes",
-			pauseDuration:  "30m",
-			expectedResult: 1800,
+			name:           "success 5m",
+			pauseDuration:  "5m",
+			expectedResult: 300,
 		},
 		{
-			name:              "invalid argument(unit in front)",
-			pauseDuration:     "m30",
+			name:              "invalid interval",
+			pauseDuration:     "17m",
 			shouldReturnError: true,
 		},
 		{
-			name:              "invalid argument(unit not recognized)",
-			pauseDuration:     "30s",
+			name:              "invalid argument",
+			pauseDuration:     "aaaaa",
 			shouldReturnError: true,
 		},
 		{
 			name:              "invalid argument(no value)",
-			pauseDuration:     "m",
+			pauseDuration:     "",
 			shouldReturnError: true,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := parsePauseArg(test.pauseDuration)
+			result, err := pauseArgToDuration(test.pauseDuration)
 
 			assert.Equal(t, test.expectedResult, result)
 			if test.shouldReturnError {

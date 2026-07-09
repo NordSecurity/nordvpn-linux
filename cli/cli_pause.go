@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -12,27 +11,21 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func parsePauseArg(arg string) (uint32, error) {
-	unit := arg[len(arg)-1:]
-	value, err := strconv.Atoi(arg[:len(arg)-1])
-	if err != nil {
-		return 0, fmt.Errorf("parsing arguments: %w", err)
+func pauseArgToDuration(arg string) (uint32, error) {
+	switch arg {
+	case "5m":
+		return 300, nil
+	case "15m":
+		return 900, nil
+	case "30m":
+		return 1800, nil
+	case "1h":
+		return 3600, nil
+	case "24h":
+		return 86400, nil
+	default:
+		return 0, fmt.Errorf("unrecognized duration")
 	}
-
-	const minutesUnit = "m"
-	const hoursUnit = "h"
-
-	if unit == minutesUnit {
-		const secondsInMinute = 60
-		return uint32(value * secondsInMinute), nil
-	}
-
-	if unit == hoursUnit {
-		const secondsInHour = 3600
-		return uint32(value * secondsInHour), nil
-	}
-
-	return 0, fmt.Errorf("unrecognized unit")
 }
 
 func (c *cmd) Pause(ctx *cli.Context) error {
@@ -42,7 +35,7 @@ func (c *cmd) Pause(ctx *cli.Context) error {
 		return formatError(argsCountError(ctx))
 	}
 
-	pauseDuration, err := parsePauseArg(args.First())
+	pauseDuration, err := pauseArgToDuration(args.First())
 	if err != nil {
 		return formatError(errors.New(ArgumentParsingError))
 	}
