@@ -194,6 +194,7 @@ final class _ToastState extends State<Toast> {
       padding: theme.closeButtonPadding,
       child: Semantics(
         button: true,
+        enabled: true,
         label: t.ui.close,
         child: Focus(
           focusNode: _closeButtonFocusNode,
