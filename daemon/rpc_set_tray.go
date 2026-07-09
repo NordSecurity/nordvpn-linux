@@ -10,7 +10,7 @@ import (
 )
 
 func (r *RPC) SetTray(ctx context.Context, in *pb.SetTrayRequest) (*pb.Payload, error) {
-	cred, err := getCallerCred(ctx)
+	cred, err := internal.UcredFromContext(ctx)
 	if err != nil {
 		log.Error("SetTray:", err)
 		return &pb.Payload{Type: internal.CodeInternalError}, nil

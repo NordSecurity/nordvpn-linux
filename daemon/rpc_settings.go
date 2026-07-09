@@ -15,7 +15,7 @@ var adjustAutoconnectCfgOnce sync.Once
 
 // Settings returns system daemon settings
 func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse, error) {
-	cred, err := getCallerCred(ctx)
+	cred, err := internal.UcredFromContext(ctx)
 	if err != nil {
 		log.Error("Settings:", err)
 		return &pb.SettingsResponse{Type: internal.CodeFailure}, nil

@@ -19,17 +19,16 @@ import (
 	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
-	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/sharedctx"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/helpers"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testnorduser "github.com/NordSecurity/nordvpn-linux/test/mock/norduser/service"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/peer"
 )
 
 const (
@@ -222,8 +221,7 @@ func TestServer_EnableMeshnet(t *testing.T) {
 			assert.False(t, cfg.Mesh)
 
 			// Enable Mesh
-			peerCtx := peer.NewContext(context.Background(), &peer.Peer{AuthInfo: internal.UcredAuth{}})
-			resp, err := mserver.EnableMeshnet(peerCtx, &pb.Empty{})
+			resp, err := mserver.EnableMeshnet(helpers.PeerCtx(0), &pb.Empty{})
 			assert.NoError(t, err)
 			_, ok := resp.GetResponse().(*pb.MeshnetResponse_Empty)
 			assert.Equal(t, test.success, ok)
