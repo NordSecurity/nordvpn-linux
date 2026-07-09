@@ -516,9 +516,10 @@ func TestFailToExtractDaemonLogs(t *testing.T) {
 	zw := zip.NewWriter(&buf)
 	err := addDaemonLogs(zw, daemonSupervisorUnknown)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "unable to extract daemon logs automatically")
+	assert.ErrorIs(t, err, errNoDaemonLogSource)
+	assert.Contains(t, err.Error(), "couldn't extract daemon logs automatically")
 	assert.Contains(t, err.Error(), "systemd or snap")
-	assert.Contains(t, err.Error(), "contact customer support")
+	assert.Contains(t, err.Error(), "support team")
 }
 
 // TestCreateDiagnosticsZip_UniqueFilename verifies that back-to-back calls
@@ -556,10 +557,10 @@ func TestTroubleshootFailsWhengRPCPeerIsInvalid(t *testing.T) {
 
 	err := rpc.CollectDiagnostics(&pb.Empty{}, srv)
 	// Send itself succeeds, so the return value is nil; the error surfaces
-	// as a populated Error field on the sent message.
+	// as a populated ErrorCode field on the sent message.
 	assert.NoError(t, err)
 	require.Len(t, srv.msgs, 1)
-	assert.NotEmpty(t, srv.msgs[0].Error)
+	assert.NotEqual(t, pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_UNSET, srv.msgs[0].ErrorCode)
 	assert.Empty(t, srv.msgs[0].FilePath)
 }
 

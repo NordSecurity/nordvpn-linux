@@ -15,6 +15,8 @@ import 'dart:core' as $core;
 import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 
+import 'common.pbenum.dart';
+
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
 export 'common.pbenum.dart';
@@ -488,12 +490,12 @@ class DiagnosticsProgress extends $pb.GeneratedMessage {
   factory DiagnosticsProgress({
     $core.String? step,
     $core.String? filePath,
-    $core.String? error,
+    DiagnosticsErrorCode? errorCode,
   }) {
     final result = create();
     if (step != null) result.step = step;
     if (filePath != null) result.filePath = filePath;
-    if (error != null) result.error = error;
+    if (errorCode != null) result.errorCode = errorCode;
     return result;
   }
 
@@ -512,7 +514,8 @@ class DiagnosticsProgress extends $pb.GeneratedMessage {
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'step')
     ..aOS(2, _omitFieldNames ? '' : 'filePath')
-    ..aOS(3, _omitFieldNames ? '' : 'error')
+    ..aE<DiagnosticsErrorCode>(3, _omitFieldNames ? '' : 'errorCode',
+        enumValues: DiagnosticsErrorCode.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -553,13 +556,13 @@ class DiagnosticsProgress extends $pb.GeneratedMessage {
   void clearFilePath() => $_clearField(2);
 
   @$pb.TagNumber(3)
-  $core.String get error => $_getSZ(2);
+  DiagnosticsErrorCode get errorCode => $_getN(2);
   @$pb.TagNumber(3)
-  set error($core.String value) => $_setString(2, value);
+  set errorCode(DiagnosticsErrorCode value) => $_setField(3, value);
   @$pb.TagNumber(3)
-  $core.bool hasError() => $_has(2);
+  $core.bool hasErrorCode() => $_has(2);
   @$pb.TagNumber(3)
-  void clearError() => $_clearField(3);
+  void clearErrorCode() => $_clearField(3);
 }
 
 const $core.bool _omitFieldNames =

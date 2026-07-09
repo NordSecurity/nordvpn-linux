@@ -58,5 +58,50 @@ class ClientID extends $pb.ProtobufEnum {
   const ClientID._(super.value, super.name);
 }
 
+class DiagnosticsErrorCode extends $pb.ProtobufEnum {
+  static const DiagnosticsErrorCode DIAGNOSTICS_ERROR_CODE_UNSPECIFIED =
+      DiagnosticsErrorCode._(
+          0, _omitEnumNames ? '' : 'DIAGNOSTICS_ERROR_CODE_UNSPECIFIED');
+  static const DiagnosticsErrorCode DIAGNOSTICS_ERROR_CODE_INTERNAL =
+      DiagnosticsErrorCode._(
+          1, _omitEnumNames ? '' : 'DIAGNOSTICS_ERROR_CODE_INTERNAL');
+  static const DiagnosticsErrorCode
+      DIAGNOSTICS_ERROR_CODE_FAILED_TO_CREATE_ZIP = DiagnosticsErrorCode._(2,
+          _omitEnumNames ? '' : 'DIAGNOSTICS_ERROR_CODE_FAILED_TO_CREATE_ZIP');
+  static const DiagnosticsErrorCode DIAGNOSTICS_ERROR_CODE_CHOWN_FAILED =
+      DiagnosticsErrorCode._(
+          3, _omitEnumNames ? '' : 'DIAGNOSTICS_ERROR_CODE_CHOWN_FAILED');
+  static const DiagnosticsErrorCode DIAGNOSTICS_ERROR_CODE_ZIP_TOO_LARGE =
+      DiagnosticsErrorCode._(
+          4, _omitEnumNames ? '' : 'DIAGNOSTICS_ERROR_CODE_ZIP_TOO_LARGE');
+  static const DiagnosticsErrorCode DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED =
+      DiagnosticsErrorCode._(
+          5, _omitEnumNames ? '' : 'DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED');
+  static const DiagnosticsErrorCode DIAGNOSTICS_ERROR_CODE_FAILED_TO_CLOSE_ZIP =
+      DiagnosticsErrorCode._(6,
+          _omitEnumNames ? '' : 'DIAGNOSTICS_ERROR_CODE_FAILED_TO_CLOSE_ZIP');
+  static const DiagnosticsErrorCode
+      DIAGNOSTICS_ERROR_CODE_NO_DAEMON_LOG_SOURCE = DiagnosticsErrorCode._(7,
+          _omitEnumNames ? '' : 'DIAGNOSTICS_ERROR_CODE_NO_DAEMON_LOG_SOURCE');
+
+  static const $core.List<DiagnosticsErrorCode> values = <DiagnosticsErrorCode>[
+    DIAGNOSTICS_ERROR_CODE_UNSPECIFIED,
+    DIAGNOSTICS_ERROR_CODE_INTERNAL,
+    DIAGNOSTICS_ERROR_CODE_FAILED_TO_CREATE_ZIP,
+    DIAGNOSTICS_ERROR_CODE_CHOWN_FAILED,
+    DIAGNOSTICS_ERROR_CODE_ZIP_TOO_LARGE,
+    DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED,
+    DIAGNOSTICS_ERROR_CODE_FAILED_TO_CLOSE_ZIP,
+    DIAGNOSTICS_ERROR_CODE_NO_DAEMON_LOG_SOURCE,
+  ];
+
+  static final $core.List<DiagnosticsErrorCode?> _byValue =
+      $pb.ProtobufEnum.$_initByValueList(values, 7);
+  static DiagnosticsErrorCode? valueOf($core.int value) =>
+      value < 0 || value >= _byValue.length ? null : _byValue[value];
+
+  const DiagnosticsErrorCode._(super.value, super.name);
+}
+
 const $core.bool _omitEnumNames =
     $core.bool.fromEnvironment('protobuf.omit_enum_names');
