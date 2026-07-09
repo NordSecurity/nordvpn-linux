@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
+import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/theme/context_menu_theme.dart';
 import 'package:nordvpn/widgets/context_menu/context_menu_item.dart';
 
@@ -8,6 +11,10 @@ export 'package:nordvpn/widgets/context_menu/context_menu_item.dart';
 ///
 /// Opens below the anchor when tapped. Tapping outside the menu closes it
 /// without propagating the tap to elements underneath.
+///
+/// Keyboard behavior:
+/// - Tab / Shift+Tab move between items.
+/// - Escape closes the menu and returns focus to the anchor.
 ///
 /// Example:
 /// ```dart
@@ -56,6 +63,10 @@ class _ContextMenuState extends State<ContextMenu>
     with SingleTickerProviderStateMixin {
   final _layerLink = LayerLink();
   final _overlayController = OverlayPortalController();
+
+  // Owns focus for the open menu panel, so Escape can be scoped to it.
+  final _menuScopeNode = FocusScopeNode(debugLabel: 'ContextMenuPanel');
+
   late final AnimationController _animationController;
   late final Animation<double> _animation;
   bool _initialized = false;
@@ -80,17 +91,25 @@ class _ContextMenuState extends State<ContextMenu>
   @override
   void dispose() {
     _animationController.dispose();
+    _menuScopeNode.dispose();
     super.dispose();
   }
 
   void _open() {
     _overlayController.show();
     _animationController.forward();
+    SemanticsService.sendAnnouncement(
+      View.of(context),
+      t.a11y.listWithItems(number: widget.items.length),
+      Directionality.of(context),
+    );
   }
 
   void _close() {
     _animationController.reverse().then((_) {
-      if (mounted) _overlayController.hide();
+      if (mounted) {
+        _overlayController.hide();
+      }
     });
   }
 
@@ -113,12 +132,21 @@ class _ContextMenuState extends State<ContextMenu>
 
   @override
   Widget build(BuildContext context) {
-    return OverlayPortal(
-      controller: _overlayController,
-      overlayChildBuilder: _buildOverlay,
-      child: CompositedTransformTarget(
-        link: _layerLink,
-        child: widget.anchorBuilder(_toggle),
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onFocusChange: (hasFocus) {
+        if (!hasFocus && _overlayController.isShowing) {
+          _close();
+        }
+      },
+      child: OverlayPortal(
+        controller: _overlayController,
+        overlayChildBuilder: _buildOverlay,
+        child: CompositedTransformTarget(
+          link: _layerLink,
+          child: widget.anchorBuilder(_toggle),
+        ),
       ),
     );
   }
@@ -165,10 +193,31 @@ class _ContextMenuState extends State<ContextMenu>
                   child: SizeTransition(
                     sizeFactor: _animation,
                     axisAlignment: -1,
-                    child: _MenuPanel(
-                      items: widget.items,
-                      width: menuWidth,
-                      onItemTapped: _onItemTapped,
+                    child: FocusScope(
+                      node: _menuScopeNode,
+                      child: Shortcuts(
+                        shortcuts: const <ShortcutActivator, Intent>{
+                          SingleActivator(LogicalKeyboardKey.escape):
+                              DismissIntent(),
+                        },
+                        child: Actions(
+                          actions: <Type, Action<Intent>>{
+                            DismissIntent: CallbackAction<DismissIntent>(
+                              onInvoke: (intent) {
+                                _close();
+                                return null;
+                              },
+                            ),
+                          },
+                          child: FocusTraversalGroup(
+                            child: _MenuPanel(
+                              items: widget.items,
+                              width: menuWidth,
+                              onItemTapped: _onItemTapped,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -235,13 +284,19 @@ class _MenuItemTile extends StatelessWidget {
       hoverColor: theme.itemHoverColor,
       borderRadius: theme.itemBorderRadius,
       mouseCursor: SystemMouseCursors.basic,
-      child: Padding(
-        padding: theme.itemPadding,
-        child: SizedBox(
-          height: theme.itemHeight,
-          child: Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: Text(item.label, style: labelStyle),
+      child: Semantics(
+        label: item.label,
+        button: true,
+        enabled: true,
+        excludeSemantics: true,
+        child: Padding(
+          padding: theme.itemPadding,
+          child: SizedBox(
+            height: theme.itemHeight,
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(item.label, style: labelStyle),
+            ),
           ),
         ),
       ),
