@@ -1,4 +1,8 @@
 {                                                                                                                                                                                                                                                                                                                                                                                                                                 
   "VPNResumesIn": "VPN connection resumes in $minutes minutes $seconds seconds",
-  "VPNResumesInWithHours": "VPN connection resumes in $hours hours $minutes minutes $seconds seconds"
+  "VPNResumesInWithHours": "VPN connection resumes in $hours hours $minutes minutes $seconds seconds",
+  "vpnPanel": "VPN Panel",
+  "more": "More options",
+  "preferredLocation": "Preferred location",
+  "loading": "Loading"
 }

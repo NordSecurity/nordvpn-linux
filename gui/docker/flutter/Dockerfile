@@ -2,7 +2,7 @@
 FROM ubuntu:20.04
 
 LABEL org.opencontainers.image.source="https://github.com/NordSecurity/nordvpn-linux/blob/main/gui/docker/flutter/Dockerfile"
-LABEL org.opencontainers.image.description="Builds the GUI. Must be build for arm64 and amd64. e.g. ./docker/generate_docker_image.sh ghcr.io/nordsecurity/nordvpn-linux/flutter-3.38.1 1.0.0 linux/amd64,linux/arm64 docker/flutter"
+LABEL org.opencontainers.image.description="Builds the GUI. Must be build for arm64 and amd64. e.g. ./docker/generate_docker_image.sh ghcr.io/nordsecurity/nordvpn-linux/flutter-3.44.7 1.0.0 linux/amd64,linux/arm64 docker/flutter"
 
 # this is needed for dpkg not to be interactive
 ARG DEBIAN_FRONTEND=noninteractive
@@ -32,7 +32,7 @@ ARG USER_ID=1000
 ARG GROUP_ID=1000
 ARG USER_NAME=flutter_user
 ARG HOME=/home/${USER_NAME}
-ARG FLUTTER_VERSION=3.38.1
+ARG FLUTTER_VERSION=3.44.7
 
 RUN groupadd -g ${GROUP_ID} ${USER_NAME} && useradd -l -m -u ${USER_ID} -g ${USER_NAME} ${USER_NAME}
 USER ${USER_NAME}
