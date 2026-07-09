@@ -14,9 +14,7 @@ import (
 	"golang.org/x/term"
 )
 
-const (
-	TroubleshootUsageText = "Collects diagnostic logs and system information for troubleshooting"
-)
+const TroubleshootUsageText = "Collects diagnostic logs and system information for troubleshooting. Share the generated file with NordVPN support to investigate the issue."
 
 func (c *cmd) Troubleshoot(ctx *cli.Context) error {
 	stream, err := c.client.CollectDiagnostics(context.Background(), &pb.Empty{})

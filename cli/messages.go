@@ -407,6 +407,6 @@ Your browsing activities remain private, regardless of your choice.
 	DedicatedServersNoNordlynxMessage          = "Connection to Dedicated Server requires NordLynx technology."
 	// Troubleshoot
 	MsgTroubleshootSuccess    = "Diagnostics collected successfully.\nFile saved to: %s"
-	MsgTroubleshootFailure    = "Failed to collect diagnostics. Please try again or contact support."
-	MsgTroubleshootDisclaimer = "WARNING: this archive contains sensitive information about your system and configuration. Share it only with NordVPN customer support, and only over a secure channel."
+	MsgTroubleshootFailure    = "We couldn't collect diagnostic logs. Please try again or contact our support team."
+	MsgTroubleshootDisclaimer = "WARNING: This file contains sensitive information about your system and configuration. Share it only with our support team through a secure channel."
 )

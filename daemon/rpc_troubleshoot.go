@@ -42,7 +42,7 @@ const (
 	failedChownZipMsg    = "Failed to change file ownership: %v"
 	failedCollectMsg     = "Failed to collect diagnostics: %v"
 	failedCloseZipMsg    = "Failed to close zip file: %v"
-	noDaemonLogSourceMsg = "unable to extract daemon logs automatically: the daemon was not started via systemd or snap. Please contact customer support to send the logs manually"
+	noDaemonLogSourceMsg = "We couldn't extract daemon logs automatically because the daemon was not started via systemd or snap. Contact our support team for help collecting logs manually."
 )
 
 // errZipSizeLimitExceeded is returned when writing more data would push the
@@ -335,7 +335,7 @@ func collectDiagnosticsData(
 		{"Collecting DNS info...", func() error {
 			return addDNSInfo(zipWriter)
 		}, false},
-		{"Collecting NFTables ruleset...", func() error {
+		{"Collecting firewall rules...", func() error {
 			return addNFTablesInfo(zipWriter)
 		}, false},
 	}
