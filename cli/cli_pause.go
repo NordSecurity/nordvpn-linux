@@ -32,12 +32,12 @@ func (c *cmd) Pause(ctx *cli.Context) error {
 	args := ctx.Args()
 
 	if args.Len() != 1 {
-		return formatError(argsCountError(ctx))
+		return formatError(errors.New(PauseNoArgsText))
 	}
 
 	pauseDuration, err := pauseArgToDuration(args.First())
 	if err != nil {
-		return formatError(errors.New(ArgumentParsingError))
+		return formatError(errors.New(PauseNoArgsText))
 	}
 
 	resp, err := c.client.PauseConnection(context.Background(), &pb.PauseRequest{Seconds: pauseDuration})
@@ -53,7 +53,7 @@ func (c *cmd) Pause(ctx *cli.Context) error {
 	case internal.CodeFailure:
 		return formatError(errors.New(internal.UnhandledMessage))
 	case internal.CodeSuccess:
-		color.Green(PauseSuccess)
+		color.Green(fmt.Sprintf(PauseSuccess, args.First()))
 	}
 
 	return nil
