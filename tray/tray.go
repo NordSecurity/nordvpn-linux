@@ -349,6 +349,7 @@ func (ti *Instance) rebuildTray() {
 	ti.updateIcon()
 	buildConnectionSection(ti)
 	buildSettingsSection(ti)
+	buildGuiSection(ti)
 	buildAccountSection(ti)
 	buildDaemonErrorSection(ti)
 	addDebugSection(ti)
