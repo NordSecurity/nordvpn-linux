@@ -101,13 +101,16 @@ func (o *OAuth2) Token(exchangeToken string) (*LoginResponse, error) {
 		return nil, err
 	}
 
-	query := url.Values{}
-	query.Add("attempt", o.attempt)
-	query.Add("verifier", o.verifier)
-	query.Add("exchange_token", exchangeToken)
-	path.RawQuery = query.Encode()
+	jsonBody, err := json.Marshal(tokenBody{
+		Attempt:       o.attempt,
+		Verifier:      o.verifier,
+		ExchangeToken: exchangeToken,
+	})
+	if err != nil {
+		return nil, err
+	}
 
-	req, err := http.NewRequest(http.MethodGet, path.String(), nil)
+	req, err := http.NewRequest(http.MethodPost, path.String(), bytes.NewReader(jsonBody))
 	if err != nil {
 		return nil, err
 	}
@@ -176,4 +179,10 @@ type loginBody struct {
 	Challenge     string `json:"challenge"`
 	PreferredFlow string `json:"preferred_flow"`
 	RedirectFlow  string `json:"redirect_flow"`
+}
+
+type tokenBody struct {
+	Attempt       string `json:"attempt"`
+	Verifier      string `json:"verifier"`
+	ExchangeToken string `json:"exchange_token"`
 }
