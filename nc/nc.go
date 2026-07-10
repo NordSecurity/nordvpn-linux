@@ -182,7 +182,7 @@ type mqttMessage struct {
 
 func (c *Client) createClientOptions(
 	credentials config.NCData,
-	managementChan chan<- interface{},
+	managementChan chan<- any,
 	ctx context.Context,
 ) (*mqtt.ClientOptions, error) {
 	opts := mqtt.NewClientOptions()
@@ -261,7 +261,7 @@ func (c *Client) createClientOptions(
 
 	opts.SetConnectionLostHandler(func(_ mqtt.Client, err error) {
 		log.NC.Info("connection lost: ", err)
-		var message interface{}
+		var message any
 		if errors.Is(err, mqttp.ErrorRefusedNotAuthorised) {
 			message = authLost{}
 		} else {
@@ -294,7 +294,7 @@ func (c *Client) tryConnect(
 	client mqtt.Client,
 	logFunc func(v ...any),
 	connectionState connectionState,
-	managementChan chan<- interface{},
+	managementChan chan<- any,
 	ctx context.Context,
 ) (mqtt.Client, connectionState) {
 	if logFunc == nil {
@@ -360,7 +360,7 @@ func (c *Client) tryConnect(
 
 func (c *Client) connectWithBackoff(client mqtt.Client,
 	credentialsInvalidated bool,
-	managementChan chan<- interface{},
+	managementChan chan<- any,
 	ctx context.Context,
 ) mqtt.Client {
 	log.NC.Info("start connection loop")
@@ -407,7 +407,7 @@ func (c *Client) connectWithBackoff(client mqtt.Client,
 func (c *Client) connect(client mqtt.Client,
 	credentialsInvalidated bool,
 	connectionContext context.Context,
-	managementChan chan<- interface{},
+	managementChan chan<- any,
 	connectedChan chan<- mqtt.Client,
 ) {
 	client = c.connectWithBackoff(client, credentialsInvalidated, managementChan, connectionContext)
@@ -517,7 +517,7 @@ func (c *Client) handleMessage(client mqtt.Client, msg mqtt.Message, ctx context
 // attempts reconnection in case of disconnection. It returns a status channel that will be closed once the control
 // loop stops its operations.
 func (c *Client) ncClientManagementLoop(ctx context.Context) (<-chan any, error) {
-	managementChan := make(chan interface{})
+	managementChan := make(chan any)
 
 	log.NC.Info("starting management loop")
 
