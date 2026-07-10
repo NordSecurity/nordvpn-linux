@@ -104,6 +104,8 @@ func NewLogger(prefix string) *Logger {
 	return &Logger{prefix: prefix}
 }
 
+func (l *Logger) Prefix() string { return l.prefix }
+
 func (l *Logger) Debug(v ...any) { logAt(levelDebug, debugPrefix, prepend(l.prefix, v)) }
 func (l *Logger) Debugf(format string, v ...any) {
 	logAtf(levelDebug, debugPrefix, l.prefix+" "+format, v)

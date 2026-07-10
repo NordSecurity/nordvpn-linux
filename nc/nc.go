@@ -351,7 +351,7 @@ func (c *Client) tryConnect(
 			}
 		}
 
-		c.subjectInfo.Publish("[NC] Connected")
+		c.subjectInfo.Publish(log.NC.Prefix() + " Connected")
 		return client, connectedSuccessfully
 	}
 
@@ -395,7 +395,7 @@ func (c *Client) connectWithBackoff(client mqtt.Client,
 	token := client.SubscribeMultiple(subscriptions, nil)
 	if token.WaitTimeout(timeout) && token.Error() != nil {
 		c.subjectErr.Publish(
-			fmt.Errorf("[NC] subscribing to topics: %s", token.Error()),
+			fmt.Errorf("%s subscribing to topics: %s", log.NC.Prefix(), token.Error()),
 		)
 	}
 
@@ -469,33 +469,33 @@ func (c *Client) handleMessage(client mqtt.Client, msg mqtt.Message, ctx context
 	log.NC.Info("handle message")
 	var payload RecPayload
 	if err := json.Unmarshal(msg.Payload(), &payload); err != nil {
-		c.subjectErr.Publish(fmt.Errorf("[NC] parsing message payload: %s", err))
+		c.subjectErr.Publish(fmt.Errorf("%s parsing message payload: %s", log.NC.Prefix(), err))
 	}
 
 	metadata := payload.Message.Data.Metadata
 	if opts := client.OptionsReader(); metadata.TargetUID != opts.ClientID() {
 		c.subjectErr.Publish(
-			fmt.Errorf("[NC] attempted to publish message to incorrect recipient"),
+			fmt.Errorf("%s attempted to publish message to incorrect recipient", log.NC.Prefix()),
 		)
 		return
 	}
 
 	if metadata.Acked {
 		c.subjectErr.Publish(
-			fmt.Errorf("[NC] message was already published successfully"),
+			fmt.Errorf("%s message was already published successfully", log.NC.Prefix()),
 		)
 		return
 	}
 
 	if err := c.sendDeliveryConfirmation(client, metadata.MessageID, ctx); err != nil {
 		c.subjectErr.Publish(
-			fmt.Errorf("[NC] Delivery confirmation: %v", err),
+			fmt.Errorf("%s Delivery confirmation: %v", log.NC.Prefix(), err),
 		)
 	}
 
 	if err := c.sendAcknowledgement(client, metadata.MessageID, trackTypeProcessed, "", ctx); err != nil {
 		c.subjectErr.Publish(
-			fmt.Errorf("[NC] Acknowledgement: %v", err),
+			fmt.Errorf("%s Acknowledgement: %v", log.NC.Prefix(), err),
 		)
 	}
 
