@@ -19,7 +19,6 @@ final class Toast extends StatefulWidget {
 final class _ToastState extends State<Toast> {
   late Duration _remainingTime;
   Timer? _timer;
-  FocusNode? _previousFocus;
   final FocusNode _closeButtonFocusNode = FocusNode(
     debugLabel: 'ToastCloseButton',
   );
@@ -29,7 +28,6 @@ final class _ToastState extends State<Toast> {
   void initState() {
     super.initState();
     _remainingTime = widget.duration;
-    _previousFocus = FocusManager.instance.primaryFocus;
 
     _closeButtonFocusNode.addListener(() {
       if (_isCloseButtonFocused != _closeButtonFocusNode.hasFocus) {
@@ -106,22 +104,11 @@ final class _ToastState extends State<Toast> {
     if (key == LogicalKeyboardKey.enter ||
         key == LogicalKeyboardKey.numpadEnter ||
         key == LogicalKeyboardKey.space) {
-      _restorePreviousFocus();
       widget.onClose?.call();
+      return KeyEventResult.handled;
     }
 
-    if (key == LogicalKeyboardKey.escape || key == LogicalKeyboardKey.tab) {
-      _restorePreviousFocus();
-    }
-
-    return KeyEventResult.handled;
-  }
-
-  void _restorePreviousFocus() {
-    final prev = _previousFocus;
-    if (prev != null && prev.context != null) {
-      prev.requestFocus();
-    }
+    return KeyEventResult.ignored;
   }
 
   Widget _buildPauseIcon() {
