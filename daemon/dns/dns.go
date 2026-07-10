@@ -319,7 +319,7 @@ func (d *DNSServiceSetter) Set(iface string, nameservers []string) error {
 			log.DNS.Info("setting DNS using systemd-resolved")
 			err = d.set(d.systemdResolvedSetter, iface, nameservers)
 		case nmcliManagementService:
-			log.Info("setting DNS using NetworkManager nmcli tool")
+			log.DNS.Info("setting DNS using NetworkManager nmcli tool")
 			err = d.set(d.nmcliSetter, iface, nameservers)
 		case resolvConfManagementService:
 			log.DNS.Info("setting DNS using resolv.conf")
@@ -359,7 +359,7 @@ func (d *DNSServiceSetter) Unset(iface string) error {
 	d.resolvConfMonitor.stop()
 	if err := d.unsetter.Unset(iface); err != nil {
 		d.analytics.emitDNSConfigurationCriticalErrorEvent(d.currentManagementService, unsetFailedErrorType)
-		log.Error("unsetting DNS:", err)
+		log.DNS.Error("unsetting DNS:", err)
 	}
 
 	d.unsetter = nil
@@ -402,7 +402,7 @@ func (d *DNSMethodSetter) Set(iface string, nameservers []string) error {
 				binariesAvailable = true
 			}
 			returnErr = errors.Join(returnErr, err)
-			log.Error(fmt.Errorf("setting dns with %s: %w", method.Name(), err))
+			log.DNS.Error(fmt.Errorf("setting dns with %s: %w", method.Name(), err))
 			continue
 		}
 
