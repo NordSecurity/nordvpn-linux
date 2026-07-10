@@ -4,11 +4,19 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"go/build"
+	"maps"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/log"
+)
+
+const (
+	ciJobTokenEnvVar    = "CI_JOB_TOKEN"
+	ciJobTokenPassEntry = "nordvpn-linux/ci_job_token"
 )
 
 func getEnv() (map[string]string, error) {
@@ -30,7 +38,7 @@ func readVarsFromFile(filename string) (map[string]string, error) {
 	}
 
 	env := map[string]string{}
-	for _, line := range strings.Split(string(content), "\n") {
+	for line := range strings.SplitSeq(string(content), "\n") {
 		key, value, ok := strings.Cut(line, "=")
 		if !ok {
 			continue
@@ -39,6 +47,25 @@ func readVarsFromFile(filename string) (map[string]string, error) {
 	}
 
 	return env, nil
+}
+
+func ensureCIJobToken(env map[string]string) error {
+	cmd := exec.Command("pass", "show", ciJobTokenPassEntry)
+	out, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf(
+			"reading %s from pass entry %q: %w (store it with `pass insert %s`)",
+			ciJobTokenEnvVar, ciJobTokenPassEntry, err, ciJobTokenPassEntry,
+		)
+	}
+
+	token := strings.TrimSpace(strings.SplitN(string(out), "\n", 2)[0])
+	if token == "" {
+		return fmt.Errorf("pass entry %q for %s is empty", ciJobTokenPassEntry, ciJobTokenEnvVar)
+	}
+
+	env[ciJobTokenEnvVar] = token
+	return nil
 }
 
 func getVersions() (map[string]string, error) {
@@ -52,9 +79,7 @@ func getVersions() (map[string]string, error) {
 func mergeMaps(m1, m2 map[string]string) map[string]string {
 	result := make(map[string]string)
 
-	for key, value := range m1 {
-		result[key] = value
-	}
+	maps.Copy(result, m1)
 
 	for key, value := range m2 {
 		val, exists := result[key]
