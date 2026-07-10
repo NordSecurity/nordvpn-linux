@@ -323,7 +323,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 	}
 
 	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
-		log.Moose.Warn("failed to flush changes before setting analytics opt in: %w", err)
+		log.Moose.Warnf("failed to flush changes before setting analytics opt in: %w", err)
 	}
 
 	applicationName := "linux-app"
