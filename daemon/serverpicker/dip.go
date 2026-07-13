@@ -42,7 +42,7 @@ func getServerByID(servers core.Servers, serverID int64) (*core.Server, error) {
 func SelectDedicatedIPServer(authChecker auth.Checker, servers core.Servers, cfg config.Config) (ServerSelection, error) {
 	dedicatedIPServices, err := authChecker.GetDedicatedIPServices()
 	if err != nil {
-		log.Error(logPrefix, "getting dedicated IP service data:", err)
+		log.ServerSel.Error("getting dedicated IP service data:", err)
 		if errors.Is(err, core.ErrUnauthorized) {
 			return ServerSelection{}, internal.NewErrorWithCode(internal.CodeRevokedAccessToken)
 		}
@@ -73,12 +73,12 @@ func SelectDedicatedIPServer(authChecker auth.Checker, servers core.Servers, cfg
 	for _, serverID := range serverIDs {
 		server, err := getServerByID(servers, serverID)
 		if err != nil || server == nil {
-			log.Error(logPrefix, "DIP server not found:", err)
+			log.ServerSel.Error("DIP server not found:", err)
 			continue
 		}
 
 		if !MatchesUserSettings(*server, cfg) {
-			log.Error(logPrefix, "cannot use server to connect because the server doesn't support user settings")
+			log.ServerSel.Error("cannot use server to connect because the server doesn't support user settings")
 			continue
 		}
 		return ServerSelection{Server: server}, nil
@@ -90,7 +90,7 @@ func SelectDedicatedIPServer(authChecker auth.Checker, servers core.Servers, cfg
 func CheckDIPServerInSubscription(authChecker auth.Checker, server core.Server, cfg config.Config) error {
 	dedicatedIPServices, err := authChecker.GetDedicatedIPServices()
 	if err != nil {
-		log.Error(logPrefix, "getting dedicated IP service data:", err)
+		log.ServerSel.Error("getting dedicated IP service data:", err)
 		if errors.Is(err, core.ErrUnauthorized) {
 			return err
 		}
@@ -110,12 +110,12 @@ func CheckDIPServerInSubscription(authChecker auth.Checker, server core.Server, 
 		return index != -1
 	})
 	if index == -1 {
-		log.Error(logPrefix, "server is not in the DIP servers list")
+		log.ServerSel.Error("server is not in the DIP servers list")
 		return internal.NewErrorWithCode(internal.CodeDedicatedIPNoServer)
 	}
 
 	if !MatchesUserSettings(server, cfg) {
-		log.Error(logPrefix, "failed to connect because the server doesn't support user settings")
+		log.ServerSel.Error("failed to connect because the server doesn't support user settings")
 		return internal.ErrServerIsUnavailable
 	}
 

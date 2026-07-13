@@ -28,6 +28,8 @@ final class SettingsTheme extends ThemeExtension<SettingsTheme>
   // default padding for settings items
   @override
   final EdgeInsets itemPadding;
+  @override
+  final List<BoxShadow> cardShadow;
 
   SettingsTheme({
     required this.itemTitleStyle,
@@ -40,5 +42,6 @@ final class SettingsTheme extends ThemeExtension<SettingsTheme>
     required this.otherProductsSubtitle,
     required this.fwMarkInputSize,
     required this.itemPadding,
+    required this.cardShadow,
   });
 }

@@ -7,13 +7,20 @@ import (
 	"io"
 	"net/http"
 	"net/netip"
+	"net/url"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
+)
+
+var (
+	sensitiveHeaders = [...]string{"Authorization"}
+	sensitiveParams  = [...]string{"attempt", "verifier", "exchange_token"}
 )
 
 // Subscriber is a subscriber for logging debug messages, info messages
@@ -63,7 +70,7 @@ func (Subscriber) NotifyRequestAPIVerbose(data events.DataRequestAPI) error {
 	// Additional read of response body. Do not use in production builds
 	var respBodyBytes []byte
 	if data.Response != nil {
-		rawRespBodyBytes, _ := io.ReadAll(data.Response.Body)
+		rawRespBodyBytes, _ := io.ReadAll(io.LimitReader(data.Response.Body, internal.MaxBytesLimit))
 		_ = data.Response.Body.Close()
 		var reader io.Reader = bytes.NewBuffer(bytes.Clone(rawRespBodyBytes))
 		if data.Response.Header.Get("Content-Encoding") == "gzip" {
@@ -74,7 +81,7 @@ func (Subscriber) NotifyRequestAPIVerbose(data events.DataRequestAPI) error {
 		}
 		data.Response.Body = io.NopCloser(bytes.NewBuffer(rawRespBodyBytes))
 
-		respBodyBytes, _ = io.ReadAll(reader)
+		respBodyBytes, _ = io.ReadAll(io.LimitReader(reader, internal.MaxDecompressedBytesLimit))
 	}
 	log.Infof("HTTP CALL %s", dataRequestAPIToString(data, reqBodyBytes, respBodyBytes, false))
 	return nil
@@ -114,26 +121,26 @@ func dataRequestAPIToString(
 	data events.DataRequestAPI,
 	reqBody []byte,
 	respBody []byte,
-	hideSensitiveHeaders bool,
+	hideSensitiveValues bool,
 ) string {
 	b := strings.Builder{}
-	headers := processHeaders(hideSensitiveHeaders, data.Request.Header)
-	b.WriteString(fmt.Sprintf("Duration: %s\n", data.Duration))
+	fmt.Fprintf(&b, "Duration: %s\n", data.Duration)
 	if data.Request != nil {
+		headers := processHeaders(hideSensitiveValues, data.Request.Header)
 		tmpBody := "(binary data)"
 		if !isRequestBinary(data.Request) {
 			tmpBody = string(reqBody)
 		}
-		b.WriteString(fmt.Sprintf("Request: %s %s %s %s %s\n",
+		reqURL := processQueryParams(hideSensitiveValues, data.Request.URL)
+		fmt.Fprintf(&b, "Request: %s %s %s %s %s\n",
 			data.Request.Proto,
 			data.Request.Method,
-			data.Request.URL,
+			reqURL,
 			headers,
-			tmpBody,
-		))
+			tmpBody)
 	}
 	if data.Error != nil {
-		b.WriteString(fmt.Sprintf("Error: %s\n", data.Error))
+		fmt.Fprintf(&b, "Error: %s\n", data.Error)
 	}
 	if data.Response != nil {
 		tmpBody := "(binary data)"
@@ -141,12 +148,11 @@ func dataRequestAPIToString(
 		if !isResponseBinary(data.Response) {
 			tmpBody = string(respBody)
 		}
-		b.WriteString(fmt.Sprintf("Response: %s %d - %s %s\n",
+		fmt.Fprintf(&b, "Response: %s %d - %s %s\n",
 			data.Response.Proto,
 			data.Response.StatusCode,
 			data.Response.Header,
-			tmpBody,
-		))
+			tmpBody)
 	}
 
 	return b.String()
@@ -157,15 +163,27 @@ func processHeaders(hide bool, headers http.Header) http.Header {
 		return headers
 	}
 	headers = headers.Clone()
-	sensitiveHeaders := []string{
-		"Authorization",
-	}
 	for _, header := range sensitiveHeaders {
 		if headers.Get(header) != "" {
 			headers.Set(header, "hidden")
 		}
 	}
 	return headers
+}
+
+func processQueryParams(hide bool, u *url.URL) *url.URL {
+	if !hide || u == nil {
+		return u
+	}
+	clone := *u
+	query := clone.Query()
+	for _, param := range sensitiveParams {
+		if query.Get(param) != "" {
+			query.Set(param, "hidden")
+		}
+	}
+	clone.RawQuery = query.Encode()
+	return &clone
 }
 
 func getSystemInfo() string {

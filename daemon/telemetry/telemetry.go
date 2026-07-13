@@ -10,8 +10,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-const logTag = "[telemetry]"
-
 // MetricsFunc defines a callback function used to report collected metrics.
 type MetricsFunc func(metric Metric, value any) error
 
@@ -34,7 +32,7 @@ func (t Telemetry) submitMetric(metric Metric, value any) error {
 	}
 
 	if err := t.metricReporter(metric, value); err != nil {
-		log.Warnf("%s Failed to report metric %s: %s", logTag, metric, err)
+		log.Telemetry.Warnf("Failed to report metric %s: %s", metric, err)
 		return status.Errorf(codes.Internal, "failed to report metric: %v", err)
 	}
 

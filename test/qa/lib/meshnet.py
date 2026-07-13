@@ -388,6 +388,7 @@ MESHNET_ALIAS = [
 
 MSG_PEER_UNKNOWN = "Peer '%s' is unknown."
 MSG_PEER_OFFLINE = "Connect to other mesh peer failed - check if peer '%s' is online."
+MSG_ROUTING_FAIL = "Meshnet peer '%s' does not allow traffic routing."
 MSG_ROUTING_NEED_NORDLYNX = "NordLynx technology must be set to use this feature."
 MSG_ROUTING_SUCCESS = "You are connected to Meshnet exit node '%s'."
 
@@ -560,90 +561,6 @@ def deny_meshnet_invite(ssh_client: ssh.Ssh):
     output = ssh_client.exec_command(f"yes | nordvpn mesh inv deny {local_user}")
 
     return output
-
-def validate_input_chain(peer_ip: str, routing: bool, local: bool, incoming: bool, fileshare: bool) -> (bool, str):
-    #rules = sh_no_tty.sudo.iptables("-S", "INPUT")
-    rules = os.popen("sudo iptables -S INPUT").read()
-
-    fileshare_rule = f"-A INPUT -s {peer_ip}/32 -p tcp -m tcp --dport 49111 -m comment --comment nordvpn-meshnet -j ACCEPT"
-    if (fileshare_rule in rules) != fileshare:
-        return False, f"Fileshare permissions configured incorrectly, rule expected: {fileshare_rule}\nrules:{rules}"
-
-    incoming_rule = f"-A INPUT -s {peer_ip}/32 -m comment --comment nordvpn-meshnet -j ACCEPT"
-    if (incoming_rule in rules) != incoming:
-        return False, f"Incoming permissions configured incorrectly, rule expected: {incoming_rule}\nrules:{rules}"
-
-    # If incoming is not enabled, no rules other than fileshare(if enabled) for that peer should be added
-    if not incoming:
-        if fileshare:
-            rules = rules.replace(fileshare_rule, "")
-        if peer_ip not in rules:
-            return True, ""
-        return False, f"Rules for peer({peer_ip}) found in the INCOMING chain but peer does not have the incoming permissions\nrules:\n{rules}"
-
-    incoming_rule_idx = rules.find(incoming_rule)
-
-    for lan in LANS:
-        lan_rule = f"-A INPUT -s {peer_ip}/32 -d {lan} -m comment --comment nordvpn -j DROP"
-        lan_rule_idx = rules.find(lan_rule)
-        if (routing and local) and lan_rule_idx != -1:
-            return False, f"LAN/Routing permissions configured incorrectly\nlocal enabled: {local}\nrouting enabled: {routing}\nrules:\n{rules}"
-        # verify that lan_rule is located above the local rule
-        if lan_rule_idx > incoming_rule_idx:
-            return False, f"LAN/Routing rules ineffective(added after incoming traffic rule)\nlocal enabled: {local}\nrouting enabled: {routing}\nrules:\n{rules}"
-
-    return True, ""
-
-
-def validate_forward_chain(peer_ip: str, routing: bool, local: bool, incoming: bool, fileshare: bool) -> (bool, str):
-    _, _ = incoming, fileshare
-    #rules = sh.sudo.iptables("-S", "FORWARD")
-    rules = os.popen("sudo iptables -S FORWARD").read()
-
-    # This rule is added above the LAN denial rules if both local and routing is allowed to peer, or bellow LAN denial
-    # if only routing is allowed.
-    routing_enabled_rule = f"-A FORWARD -s {peer_ip}/32 -m comment --comment nordvpn-exitnode-transient -j ACCEPT"
-    routing_enabled_rule_index = rules.find(routing_enabled_rule)
-
-    if routing and (routing_enabled_rule_index == -1):
-        return False, f"Routing permission not found\nrules:{rules}"
-    if not routing and (routing_enabled_rule_index != -1):
-        return False, f"Routing permission found\nrules:{rules}"
-
-    for lan in LANS:
-        lan_drop_rule = f"-A FORWARD -s 100.64.0.0/10 -d {lan} -m comment --comment nordvpn-exitnode-transient -j DROP"
-        lan_drop_rule_index = rules.find(lan_drop_rule)
-
-        # If any peer has routing or local permission, lan block rules should be added, otherwise no rules should be added.
-        if (routing or local) and lan_drop_rule_index == -1:
-            return False, f"LAN drop rule not added for subnet {lan}\nrules:\n{rules}"
-        if (not routing) and (not lan) and lan_drop_rule_index != -1:
-            return False, f"LAN drop rule added for subnet {lan}\nrules:\n{rules}"
-
-        if routing:
-            # Local is allowed, routing rule should be above LAN block rules to allow peer to access any subnet.
-            if local and (lan_drop_rule_index < routing_enabled_rule_index):
-                return False, f"LAN drop rule for subnet {lan} added before routing\nrules: {rules}"
-            # Local is not allowed, routing rule should be below LAN block rules to deny peer access to local subnets.
-            if (not local) and (lan_drop_rule_index > routing_enabled_rule_index):
-                return False, f"LAN drop rule for subnet {lan} added after routing\nrules: {rules}"
-            continue
-
-        # If routing is not enabled, but lan is enabled, there should be one rule for each local network for the peer.
-        # They should be located above the LAN block rules.
-        if not local:
-            continue
-
-        lan_allow_rule = f"-A FORWARD -s {peer_ip}/32 -d {lan} -m comment --comment nordvpn-exitnode-transient -j ACCEPT"
-        lan_allow_rule_index = rules.find(lan_allow_rule)
-
-        if lan_allow_rule not in rules:
-            return False, f"LAN allow rule for subnet {lan} not found\nrules:\n{rules}"
-
-        if lan_allow_rule_index > lan_drop_rule_index:
-            return False, f"LAN allow rule is added after LAN drop rule\nrules:\n{rules}"
-
-    return True, ""
 
 
 def set_permission(peer: str, permission: bool, permission_state: bool):

@@ -20,12 +20,12 @@ import (
 func TestENSMonitoring(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	const serverKey = "current-server-key"
+	const serverEndpoint = "192.168.1.1:51820"
 
 	ctx, cancelFn := context.WithCancel(context.Background())
 	netw := &networker.Mock{
 		VpnActive:        true,
-		ActiveServerData: &vpn.ServerData{NordLynxPublicKey: serverKey},
+		ActiveServerData: &vpn.ServerData{Endpoint: serverEndpoint},
 	}
 	rc := mock.NewRemoteConfigMock()
 	rc.FeatureToggles[remote.FeatureENS] = true
@@ -40,15 +40,15 @@ func TestENSMonitoring(t *testing.T) {
 	monitor.Start()
 
 	assert.NilError(t, monitor.HandleENSNotification(events.VPNConnectionErrorEvent{
-		Code:            events.VPNConnectionErrorServerMaintenance,
-		ServerPublicKey: serverKey,
+		Code:           events.VPNConnectionErrorServerMaintenance,
+		ServerEndpoint: serverEndpoint,
 	}))
 	helpers.WaitWithTimeout(t, ch, time.Millisecond*10)
 	assert.Equal(t, 1, int(callbackCount.Load()))
 
 	assert.NilError(t, monitor.HandleENSNotification(events.VPNConnectionErrorEvent{
-		Code:            events.VPNConnectionErrorServerMaintenance,
-		ServerPublicKey: serverKey,
+		Code:           events.VPNConnectionErrorServerMaintenance,
+		ServerEndpoint: serverEndpoint,
 	}))
 	helpers.WaitWithTimeout(t, ch, time.Millisecond*10)
 	assert.Equal(t, 2, int(callbackCount.Load()))
@@ -57,8 +57,8 @@ func TestENSMonitoring(t *testing.T) {
 
 	// after stopping the monitoring, events are ignored
 	assert.NilError(t, monitor.HandleENSNotification(events.VPNConnectionErrorEvent{
-		Code:            events.VPNConnectionErrorServerMaintenance,
-		ServerPublicKey: serverKey,
+		Code:           events.VPNConnectionErrorServerMaintenance,
+		ServerEndpoint: serverEndpoint,
 	}))
 	helpers.WaitWithTimeout(t, ch, time.Millisecond*10)
 	assert.Equal(t, 2, int(callbackCount.Load()))
@@ -67,12 +67,12 @@ func TestENSMonitoring(t *testing.T) {
 func TestENSMonitoringEventHandling(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	const serverKey = "server-key"
+	const serverEndpoint = "192.168.1.1:51820"
 
 	tests := []struct {
 		name            string
 		ensEnabled      bool
-		serverKey       string
+		serverEndpoint  string
 		event           events.VPNConnectionErrorEvent
 		expectReport    bool
 		expectReconnect bool
@@ -80,56 +80,56 @@ func TestENSMonitoringEventHandling(t *testing.T) {
 		{
 			name:            "maintenance event for current server is reported and reconnects",
 			ensEnabled:      true,
-			serverKey:       serverKey,
-			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance, ServerPublicKey: serverKey},
+			serverEndpoint:  serverEndpoint,
+			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance, ServerEndpoint: serverEndpoint},
 			expectReport:    true,
 			expectReconnect: true,
 		},
 		{
-			name:            "maintenance event with stale server key is reported but does not reconnect",
+			name:            "maintenance event with stale server endpoint is reported but does not reconnect",
 			ensEnabled:      true,
-			serverKey:       serverKey,
-			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance, ServerPublicKey: "stale-key"},
+			serverEndpoint:  serverEndpoint,
+			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance, ServerEndpoint: "10.0.0.1:51820"},
 			expectReport:    true,
 			expectReconnect: false,
 		},
 		{
 			name:            "disabled ENS feature reports nothing and does not reconnect",
 			ensEnabled:      false,
-			serverKey:       serverKey,
-			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance, ServerPublicKey: serverKey},
+			serverEndpoint:  serverEndpoint,
+			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorServerMaintenance, ServerEndpoint: serverEndpoint},
 			expectReport:    false,
 			expectReconnect: false,
 		},
 		{
 			name:            "superseded error is reported but does not reconnect",
 			ensEnabled:      true,
-			serverKey:       serverKey,
-			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorSuperseded, ServerPublicKey: serverKey},
+			serverEndpoint:  serverEndpoint,
+			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorSuperseded, ServerEndpoint: serverEndpoint},
 			expectReport:    true,
 			expectReconnect: false,
 		},
 		{
 			name:            "unknown error is reported but does not reconnect",
 			ensEnabled:      true,
-			serverKey:       serverKey,
-			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorUnknown, ServerPublicKey: serverKey},
+			serverEndpoint:  serverEndpoint,
+			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorUnknown, ServerEndpoint: serverEndpoint},
 			expectReport:    true,
 			expectReconnect: false,
 		},
 		{
 			name:            "connection limit error is reported but does not reconnect",
 			ensEnabled:      true,
-			serverKey:       serverKey,
-			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorConnectionLimitReached, ServerPublicKey: serverKey},
+			serverEndpoint:  serverEndpoint,
+			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorConnectionLimitReached, ServerEndpoint: serverEndpoint},
 			expectReport:    true,
 			expectReconnect: false,
 		},
 		{
 			name:            "unauthenticated error is reported but does not reconnect",
 			ensEnabled:      true,
-			serverKey:       serverKey,
-			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorUnauthenticated, ServerPublicKey: serverKey},
+			serverEndpoint:  serverEndpoint,
+			event:           events.VPNConnectionErrorEvent{Code: events.VPNConnectionErrorUnauthenticated, ServerEndpoint: serverEndpoint},
 			expectReport:    true,
 			expectReconnect: false,
 		},
@@ -139,7 +139,7 @@ func TestENSMonitoringEventHandling(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			netw := &networker.Mock{
 				VpnActive:        true,
-				ActiveServerData: &vpn.ServerData{NordLynxPublicKey: tt.serverKey},
+				ActiveServerData: &vpn.ServerData{Endpoint: tt.serverEndpoint},
 			}
 			rc := mock.NewRemoteConfigMock()
 			rc.FeatureToggles[remote.FeatureENS] = tt.ensEnabled

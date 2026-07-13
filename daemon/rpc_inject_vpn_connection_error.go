@@ -11,7 +11,7 @@ import (
 )
 
 type ensErrorInjector interface {
-	InjectVPNConnectionError(code int32, publicKey string) error
+	InjectVPNConnectionError(code int32, serverEndpoint string) error
 }
 
 // InjectVpnConnectionError injects a simulated ENS connection error for DEV.
@@ -33,7 +33,7 @@ func (r *RPC) InjectVpnConnectionError(
 		return nil, errors.New("active VPN backend does not support ENS injection")
 	}
 
-	if err := injector.InjectVPNConnectionError(in.GetTelioCode(), in.GetPubkey()); err != nil {
+	if err := injector.InjectVPNConnectionError(in.GetTelioCode(), in.GetEndpoint()); err != nil {
 		return nil, fmt.Errorf("injecting ENS connection error: %w", err)
 	}
 

@@ -10,12 +10,9 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/networker"
 )
 
-const (
-	logPrefix = "[ens]"
-	evChSize  = 2
-)
+const evChSize = 2
 
-type ConnectCallback func(serverPublicKey string) error
+type ConnectCallback func(serverEndpoint string) error
 
 type Monitor struct {
 	eventsCh       chan events.VPNConnectionErrorEvent
@@ -34,10 +31,10 @@ func NewMonitor(
 	debuggerEvents events.Publisher[events.DebuggerEvent],
 ) *Monitor {
 	if connectCallback == nil {
-		log.Fatal(logPrefix, "connect callback is nil")
+		log.ENS.Fatal("connect callback is nil")
 	}
 	if debuggerEvents == nil {
-		log.Warn(logPrefix, "debugger events publisher is nil")
+		log.ENS.Warn("debugger events publisher is nil")
 	}
 	return &Monitor{
 		eventsCh:       make(chan events.VPNConnectionErrorEvent, evChSize),
@@ -53,9 +50,9 @@ func (m *Monitor) HandleENSNotification(e events.VPNConnectionErrorEvent) error 
 	select {
 	case m.eventsCh <- e:
 	case <-m.ctx.Done():
-		log.Debug(logPrefix, "ignore event because context is done", e)
+		log.ENS.Debug("ignore event because context is done", e)
 	case <-time.After(10 * time.Millisecond):
-		log.Warn(logPrefix, "channel is full dropping ENS event", e)
+		log.ENS.Warn("channel is full dropping ENS event", e)
 	}
 	return nil
 }
@@ -65,13 +62,13 @@ func (m *Monitor) Start() {
 }
 
 func (m *Monitor) run() {
-	log.Info(logPrefix, "start ENS monitoring")
+	log.ENS.Info("start ENS monitoring")
 
 	for {
 		select {
 		case e, ok := <-m.eventsCh:
 			if !ok {
-				log.Warn(logPrefix, "events channel closed, stopping ENS monitoring")
+				log.ENS.Warn("events channel closed, stopping ENS monitoring")
 				return
 			}
 
@@ -79,34 +76,34 @@ func (m *Monitor) run() {
 				continue
 			}
 
-			log.Debug(logPrefix, "event received", e)
+			log.ENS.Debug("event received", e)
 			if m.debuggerEvents != nil {
 				m.debuggerEvents.Publish(*newVPNConnectionErrorEvent(e.Code).ToDebuggerEvent())
 			}
 
 			if e.Code != events.VPNConnectionErrorServerMaintenance {
-				log.Debug(logPrefix, "ignoring", e)
+				log.ENS.Debug("ignoring", e)
 				continue
 			}
 
 			if !m.netw.IsVPNActive() {
-				log.Debug(logPrefix, "ignoring because VPN is not connected", e)
+				log.ENS.Debug("ignoring because VPN is not connected", e)
 				continue
 			}
 
 			currServer, _ := m.netw.GetConnectionParameters()
-			eventIsForDifferentServer := currServer.NordLynxPublicKey != e.ServerPublicKey
+			eventIsForDifferentServer := !currServer.EndpointEqual(e.ServerEndpoint)
 			if eventIsForDifferentServer {
-				log.Debug(logPrefix, "ignoring ENS event for non-current server", e)
+				log.ENS.Debug("ignoring ENS event for non-current server", e)
 				continue
 			}
 
-			if err := m.reconnectFn(e.ServerPublicKey); err != nil {
-				log.Error(logPrefix, "failed to reconnect", err)
+			if err := m.reconnectFn(e.ServerEndpoint); err != nil {
+				log.ENS.Error("failed to reconnect", err)
 			}
 
 		case <-m.ctx.Done():
-			log.Info(logPrefix, "stop ENS monitoring")
+			log.ENS.Info("stop ENS monitoring")
 			return
 		}
 	}

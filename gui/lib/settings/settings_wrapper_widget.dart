@@ -30,8 +30,10 @@ final class SettingsWrapperWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appTheme = context.appTheme;
+    final settingsTheme = context.settingsTheme;
 
     return RoundContainer(
+      shadow: settingsTheme.cardShadow,
       padding: EdgeInsets.zero,
       child: Column(
         children: [

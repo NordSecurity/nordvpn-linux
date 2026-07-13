@@ -52,7 +52,7 @@ func (ti *Instance) handleVersionHealthChange(health *pb.VersionHealthStatus) bo
 }
 
 func (ti *Instance) MonitorConnection(ctx context.Context, conn *grpc.ClientConn) {
-	log.Info(logTag, "Starting to monitor daemon connection state")
+	log.Systray.Info("Starting to monitor daemon connection state")
 	state := conn.GetState()
 	// check if connection is already in ready state
 	if state == connectivity.Ready {
@@ -68,7 +68,7 @@ func (ti *Instance) MonitorConnection(ctx context.Context, conn *grpc.ClientConn
 	for {
 		connExpired := !conn.WaitForStateChange(ctx, state)
 		if connExpired {
-			log.Info(logTag, "Daemon connection state changed to: EXPIRED")
+			log.Systray.Info("Daemon connection state changed to: EXPIRED")
 			return // ctx cancelled
 		}
 
@@ -78,17 +78,17 @@ func (ti *Instance) MonitorConnection(ctx context.Context, conn *grpc.ClientConn
 		case connectivity.Connecting:
 		case connectivity.Idle:
 		case connectivity.Ready:
-			log.Info(logTag, "Daemon connection state changed to: READY")
+			log.Systray.Info("Daemon connection state changed to: READY")
 			dataChanged = ti.updateDaemonConnectionStatus("")
 			dataChanged = ti.update() || dataChanged
 
 		case connectivity.Shutdown:
-			log.Info(logTag, "Daemon connection state changed to: SHUTDOWN")
+			log.Systray.Info("Daemon connection state changed to: SHUTDOWN")
 			return
 
 		case connectivity.TransientFailure:
 			// server likely down
-			log.Info(logTag, "Daemon connection state changed to: TRANSIENT_FAILURE")
+			log.Systray.Info("Daemon connection state changed to: TRANSIENT_FAILURE")
 			ti.state.mu.Lock()
 			ti.state.initialSyncCompleted = false
 			ti.state.mu.Unlock()
@@ -179,7 +179,7 @@ func (ti *Instance) updateLoginStatus() bool {
 func (ti *Instance) updateVpnStatus() bool {
 	resp, err := ti.client.Status(context.Background(), &pb.Empty{})
 	if err != nil {
-		log.Error(logTag, "Error getting VPN status:", err)
+		log.Systray.Error("Error getting VPN status:", err)
 		changed := ti.updateDaemonConnectionStatus(messageForDaemonError(err))
 		return changed
 	}
@@ -204,7 +204,7 @@ func (ti *Instance) updateCountryList() bool {
 
 	newList, err := ti.state.connSelector.fetchCountries(ti.client)
 	if err != nil {
-		log.Error(logTag, "Error retrieving available country list:", err)
+		log.Systray.Error("Error retrieving available country list:", err)
 		return false
 	}
 
@@ -218,7 +218,7 @@ func (ti *Instance) updateSpecialtyServerList() bool {
 
 	newList, err := ti.state.connSelector.fetchSpecialtyServers(ti.client)
 	if err != nil {
-		log.Error(logTag, "Error retrieving available specialty server list:", err)
+		log.Systray.Error("Error retrieving available specialty server list:", err)
 		return false
 	}
 
@@ -230,7 +230,7 @@ func (ti *Instance) updateRecentConnections() bool {
 
 	err := ti.recentConnections.UpdateRecentConnections()
 	if err != nil {
-		log.Error(logTag, "Error retrieving recent connections:", err)
+		log.Systray.Error("Error retrieving recent connections:", err)
 		return false
 	}
 
@@ -509,7 +509,7 @@ func (ti *Instance) setVpnStatus(
 		changed = statusChanged || serverNameChanged
 
 		if statusChanged {
-			log.Infof("%s VPN status changed from %s to %s", logTag, oldVpnStatus, vpnStatus)
+			log.Systray.Infof("VPN status changed from %s to %s", oldVpnStatus, vpnStatus)
 			switch vpnStatus {
 			case pb.ConnectionState_CONNECTED:
 				notificationText = labelConnectedFormat
@@ -531,7 +531,7 @@ func (ti *Instance) setVpnStatus(
 				ti.state.pauseRemainingSec = 0
 			}
 		} else if serverNameChanged {
-			log.Infof("%s VPN server name changed from %s to %s", logTag, oldServerName, ti.state.serverName())
+			log.Systray.Infof("VPN server name changed from %s to %s", oldServerName, ti.state.serverName())
 			if ti.state.serverName() != "" && oldServerName != "" && vpnStatus == pb.ConnectionState_CONNECTED {
 				notificationText = labelConnectedFormat
 				notificationArg = newServerName
