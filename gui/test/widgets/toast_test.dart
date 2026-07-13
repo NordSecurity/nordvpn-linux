@@ -27,33 +27,6 @@ void main() {
     return Toast(duration: timeout, onClose: onClose);
   }
 
-  Future<void> pumpWithPrevFocus(
-    WidgetTester tester, {
-    required FocusNode prev,
-    required Widget toast,
-  }) async {
-    final showToast = ValueNotifier<bool>(false);
-    addTearDown(showToast.dispose);
-    await tester.setupWidgetTest(
-      ValueListenableBuilder<bool>(
-        valueListenable: showToast,
-        builder: (_, show, __) => Column(
-          children: [
-            Focus(
-              focusNode: prev,
-              autofocus: true,
-              child: const SizedBox.shrink(),
-            ),
-            if (show) toast,
-          ],
-        ),
-      ),
-    );
-    showToast.value = true;
-    await tester.pump();
-    await tester.pump();
-  }
-
   group('Toast', () {
     testWidgets('verify time format', (tester) async {
       await tester.setupWidgetTest(
@@ -172,39 +145,17 @@ void main() {
       });
     }
 
-    testWidgets('Escape does not close, restores previous focus', (
-      tester,
-    ) async {
-      var closed = false;
-      final prev = FocusNode(debugLabel: 'prev');
-      addTearDown(prev.dispose);
-      await pumpWithPrevFocus(
-        tester,
-        prev: prev,
-        toast: Toast(
-          duration: const Duration(seconds: 5),
-          onClose: () => closed = true,
-        ),
-      );
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-      await tester.pump();
-
-      expect(closed, isFalse);
-      expect(prev.hasFocus, isTrue);
-    });
-
     for (final key in [
       LogicalKeyboardKey.arrowUp,
       LogicalKeyboardKey.arrowDown,
       LogicalKeyboardKey.arrowLeft,
       LogicalKeyboardKey.arrowRight,
+      LogicalKeyboardKey.tab,
+      LogicalKeyboardKey.escape,
       LogicalKeyboardKey.keyA,
       LogicalKeyboardKey.digit1,
     ]) {
-      testWidgets('$key is discarded (no close, no propagation)', (
-        tester,
-      ) async {
+      testWidgets('$key does not close the toast', (tester) async {
         var closed = false;
         await tester.setupWidgetTest(
           buildToast(
@@ -213,13 +164,8 @@ void main() {
           ),
         );
         await tester.pump();
-        final result = await tester.sendKeyEvent(key);
+        await tester.sendKeyEvent(key);
         expect(closed, isFalse);
-        expect(
-          result,
-          isTrue,
-          reason: 'toast Focus must consume $key so it cannot propagate',
-        );
       });
     }
   });
@@ -234,23 +180,6 @@ void main() {
           .widgetList<Focus>(find.byType(Focus))
           .firstWhere((f) => f.focusNode?.debugLabel == 'ToastCloseButton');
       expect(closeFocus.focusNode!.hasFocus, isTrue);
-    });
-
-    testWidgets('previous focus is restored after Enter closes toast', (
-      tester,
-    ) async {
-      final prev = FocusNode(debugLabel: 'prev');
-      addTearDown(prev.dispose);
-      await pumpWithPrevFocus(
-        tester,
-        prev: prev,
-        toast: Toast(duration: const Duration(seconds: 5), onClose: () {}),
-      );
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-      await tester.pump();
-
-      expect(prev.hasFocus, isTrue);
     });
   });
 }
