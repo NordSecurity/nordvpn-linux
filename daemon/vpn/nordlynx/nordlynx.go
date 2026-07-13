@@ -20,9 +20,7 @@ const (
 	WireguardHeaderSize = 80
 )
 
-var (
-	errNoKernelModule = errors.New("interface of type wireguard not supported")
-)
+var errNoKernelModule = errors.New("interface of type wireguard not supported")
 
 var DefaultPrefix = netip.MustParsePrefix("10.5.0.2/16")
 
@@ -72,5 +70,5 @@ func removeDevice(device string) ([]byte, error) {
 }
 
 func debug(data ...string) {
-	log.Debug("[nordlynx]", strings.Join(data, " "))
+	log.Nordlynx.Debug(strings.Join(data, " "))
 }

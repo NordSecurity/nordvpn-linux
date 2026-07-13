@@ -99,7 +99,7 @@ func (r *RPC) reconnectOnServerMaintenance(
 
 	reqParams := r.RequestedConnParams.Get()
 	currentServer := r.lastServerSelection.Server
-	log.Debug("[ens]", reqParams, currentServer)
+	log.ENS.Debug(reqParams, currentServer)
 
 	var group string
 	if reqParams.Group != config.ServerGroup_UNDEFINED {

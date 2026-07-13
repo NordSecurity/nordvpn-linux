@@ -15,10 +15,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/networker"
 )
 
-const (
-	logTag = "[access]"
-)
-
 // TODO: Refactor 'Logout' and 'ForceLogoutWithoutToken` functions to reuse core logic
 
 type LogoutInput struct {
@@ -174,7 +170,7 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 
 	// Log the reason if provided
 	if input.Reason != events.ReasonNotSpecified {
-		log.Infof("%s Forcing logout. Reason: %v", logTag, input.Reason)
+		log.Access.Infof("Forcing logout. Reason: %v", input.Reason)
 	}
 
 	input.PublishLogoutEventFunc(events.DataAuthorization{
@@ -202,7 +198,7 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 	}()
 
 	if _, err := input.DisconnectFunc(); err != nil {
-		log.Error(logTag, "disconnect failed:", err)
+		log.Access.Error("disconnect failed:", err)
 		return LogoutResult{Status: internal.CodeFailure, Err: nil}
 	}
 
@@ -216,7 +212,7 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 	}
 
 	if err := input.ConfigManager.SaveWith(clearConfigData()); err != nil {
-		log.Error(logTag, "Failed to wipe config on logout:", err)
+		log.Access.Error("Failed to wipe config on logout:", err)
 		return LogoutResult{Status: internal.CodeConfigError, Err: err}
 	}
 

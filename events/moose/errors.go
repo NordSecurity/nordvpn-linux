@@ -17,10 +17,9 @@ func (s *Subscriber) PostInit(initResult moose.InitResult, errCode int32, errMsg
 	case moose.InitResultOkEmptyContext,
 		moose.InitResultOkExistingContext,
 		moose.InitResultOkAlreadyStarted:
-		log.Info(LogComponentPrefix, "Initialization OK:", initResult)
+		log.Moose.Info("Initialization OK:", initResult)
 	default:
-		log.Errorf("%s Initialization error: %d: %d: %s",
-			LogComponentPrefix,
+		log.Moose.Errorf("Initialization error: %d: %d: %s",
 			initResult,
 			errCode,
 			errMsg,
