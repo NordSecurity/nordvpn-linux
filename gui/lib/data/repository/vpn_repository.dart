@@ -69,8 +69,6 @@ class VpnRepository {
     return _connect(args.toConnectRequest());
   }
 
-
-
   /// Disconnects from the current VPN server.
   Future<int> disconnect() async {
     reportUIEvent(

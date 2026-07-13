@@ -44,9 +44,7 @@ final class AccountRepository {
       formReference: UIEvent_FormReference.GUI,
       itemName: UIEvent_ItemName.LOGOUT,
     );
-    final result = await _client.logout(
-      LogoutRequest(persistToken: false),
-    );
+    final result = await _client.logout(LogoutRequest(persistToken: false));
     return result.type.toInt();
   }
 

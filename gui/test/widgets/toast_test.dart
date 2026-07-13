@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/widgets/toast.dart';
@@ -120,6 +122,64 @@ void main() {
       await tester.pump();
 
       expect(onCloseCalled, isTrue);
+    });
+  });
+
+  group('Toast keyboard', () {
+    for (final key in [
+      LogicalKeyboardKey.enter,
+      LogicalKeyboardKey.numpadEnter,
+      LogicalKeyboardKey.space,
+    ]) {
+      testWidgets('$key closes the toast', (tester) async {
+        var closed = false;
+        await tester.setupWidgetTest(
+          buildToast(
+            timeout: const Duration(seconds: 5),
+            onClose: () => closed = true,
+          ),
+        );
+        await tester.pump(); // let postFrameCallback run focus
+        await tester.sendKeyEvent(key);
+        expect(closed, isTrue);
+      });
+    }
+
+    for (final key in [
+      LogicalKeyboardKey.arrowUp,
+      LogicalKeyboardKey.arrowDown,
+      LogicalKeyboardKey.arrowLeft,
+      LogicalKeyboardKey.arrowRight,
+      LogicalKeyboardKey.tab,
+      LogicalKeyboardKey.escape,
+      LogicalKeyboardKey.keyA,
+      LogicalKeyboardKey.digit1,
+    ]) {
+      testWidgets('$key does not close the toast', (tester) async {
+        var closed = false;
+        await tester.setupWidgetTest(
+          buildToast(
+            timeout: const Duration(seconds: 5),
+            onClose: () => closed = true,
+          ),
+        );
+        await tester.pump();
+        await tester.sendKeyEvent(key);
+        expect(closed, isFalse);
+      });
+    }
+  });
+
+  group('Toast focus', () {
+    testWidgets('close button gains focus after first frame', (tester) async {
+      await tester.setupWidgetTest(
+        buildToast(timeout: const Duration(seconds: 5), onClose: () {}),
+      );
+      await tester.pump();
+      final closeFocus = tester
+          .widgetList<Focus>(find.byType(Focus))
+          .firstWhere((f) => f.focusNode?.debugLabel == 'ToastCloseButton');
+      expect(closeFocus.focusNode!.hasFocus, isTrue);
     });
   });
 }
