@@ -30,7 +30,7 @@ func resolveServerGroup(input *SearchParams, obfuscated bool) (config.ServerGrou
 
 	if tagServerGroup != config.ServerGroup_UNDEFINED {
 		// the group was sent not using --group flag
-		log.Debug(logPrefix, "reset tag because group is specified in tag")
+		log.ServerSel.Debug("reset tag because group is specified in tag")
 		input.Tag = ""
 	} else if obfuscated {
 		return config.ServerGroup_OBFUSCATED, nil

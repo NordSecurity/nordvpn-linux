@@ -94,6 +94,49 @@ func SetFlags(flag int) {
 	log.SetFlags(flag)
 }
 
+// Logger is a logger with a fixed prefix prepended to every message.
+type Logger struct {
+	prefix string
+}
+
+// NewLogger returns a Logger that prepends prefix to every log message.
+func NewLogger(prefix string) *Logger {
+	return &Logger{prefix: prefix}
+}
+
+func (l *Logger) Prefix() string { return l.prefix }
+
+func (l *Logger) Debug(v ...any) { logAt(levelDebug, debugPrefix, prepend(l.prefix, v)) }
+func (l *Logger) Debugf(format string, v ...any) {
+	logAtf(levelDebug, debugPrefix, l.prefix+" "+format, v)
+}
+func (l *Logger) Info(v ...any) { logAt(levelInfo, infoPrefix, prepend(l.prefix, v)) }
+func (l *Logger) Infof(format string, v ...any) {
+	logAtf(levelInfo, infoPrefix, l.prefix+" "+format, v)
+}
+func (l *Logger) Warn(v ...any) { logAt(levelWarn, warningPrefix, prepend(l.prefix, v)) }
+func (l *Logger) Warnf(format string, v ...any) {
+	logAtf(levelWarn, warningPrefix, l.prefix+" "+format, v)
+}
+func (l *Logger) Error(v ...any) { logAt(levelError, errorPrefix, prepend(l.prefix, v)) }
+func (l *Logger) Errorf(format string, v ...any) {
+	logAtf(levelError, errorPrefix, l.prefix+" "+format, v)
+}
+
+func (l *Logger) Fatal(v ...any) {
+	logAt(levelFatal, fatalPrefix, prepend(l.prefix, v))
+	os.Exit(1)
+}
+
+func (l *Logger) Fatalf(format string, v ...any) {
+	logAtf(levelFatal, fatalPrefix, l.prefix+" "+format, v)
+	os.Exit(1)
+}
+
+func prepend(prefix string, v []any) []any {
+	return append([]any{prefix}, v...)
+}
+
 func Debug(v ...any)                 { logAt(levelDebug, debugPrefix, v) }
 func Debugf(format string, v ...any) { logAtf(levelDebug, debugPrefix, format, v) }
 func Info(v ...any)                  { logAt(levelInfo, infoPrefix, v) }

@@ -52,7 +52,7 @@ func (e event) toContextPaths() []events.ContextValue {
 func (e event) toDebuggerEvent() *events.DebuggerEvent {
 	jsonData, err := json.Marshal(e)
 	if err != nil {
-		log.Warn(dnsPrefix, "failed to serialize event json for resolv.conf overwrite:", err)
+		log.DNS.Warn("failed to serialize event json for resolv.conf overwrite:", err)
 		jsonData = []byte("{}")
 	}
 
@@ -73,7 +73,8 @@ type errorEvent struct {
 func newErrorEvent(eventType eventType,
 	managementService dnsManagementService,
 	errorType errorType,
-	critical bool) errorEvent {
+	critical bool,
+) errorEvent {
 	return errorEvent{
 		event:     newEvent(eventType, managementService),
 		ErrorType: errorType.String(),
@@ -99,8 +100,7 @@ func (e errorEvent) toContextPaths() []events.ContextValue {
 func (e errorEvent) toDebuggerEvent() *events.DebuggerEvent {
 	jsonData, err := json.Marshal(e)
 	if err != nil {
-		log.Warn(dnsPrefix,
-			"failed to serialize error event json for resolv.conf overwrite:", err)
+		log.DNS.Warn("failed to serialize error event json for resolv.conf overwrite:", err)
 		jsonData = []byte("{}")
 	}
 
@@ -183,7 +183,7 @@ func newDNSAnalytics(publisher events.Publisher[events.DebuggerEvent]) *dnsAnaly
 }
 
 func (d *dnsAnalytics) publish(event *events.DebuggerEvent) {
-	log.Debugf("%s publishing event: %+v", dnsPrefix, event)
+	log.DNS.Debugf("publishing event: %+v", event)
 	d.debugPublisher.Publish(*event)
 }
 
@@ -208,7 +208,8 @@ func (d *dnsAnalytics) emitDNSConfigurationErrorEvent(managementService dnsManag
 }
 
 func (d *dnsAnalytics) emitDNSConfigurationCriticalErrorEvent(managementService dnsManagementService,
-	errorType errorType) {
+	errorType errorType,
+) {
 	debuggerEvent := newErrorEvent(dnsConfigurationErrorEventType,
 		managementService,
 		errorType,

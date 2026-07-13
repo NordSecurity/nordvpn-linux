@@ -35,8 +35,8 @@ const (
 func GetHostOSPrettyName() (string, error) {
 	conn, err := dbus.SystemBus()
 	if err != nil {
-		log.Errorf("%s connecting to system dbus: %s", logTag, err)
-		log.Warn(logTag, "falling back to alternative OS detection method")
+		log.Sysinfo.Errorf("connecting to system dbus: %s", err)
+		log.Sysinfo.Warn("falling back to alternative OS detection method")
 		return GetHostOSName()
 	}
 	defer conn.Close()
@@ -49,8 +49,8 @@ func GetHostOSPrettyName() (string, error) {
 
 	name, err := dbusutil.GetStringProperty(client, dbusHostname1PropOperatingSystemPrettyName)
 	if err != nil {
-		log.Warnf("%s retrieving OS pretty name: %s", logTag, err)
-		log.Warn(logTag, "falling back to alternative OS detection method")
+		log.Sysinfo.Warnf("retrieving OS pretty name: %s", err)
+		log.Sysinfo.Warn("falling back to alternative OS detection method")
 		return GetHostOSName()
 	}
 

@@ -29,11 +29,11 @@ func getServerByNameFromRemote(
 		return nil, err
 	}
 
-	log.Debug(logPrefix, "server received from the API", server.Hostname)
+	log.ServerSel.Debug("server received from the API", server.Hostname)
 
 	filteredServers := internal.Filter(core.Servers{*server}, filterFn)
 	if len(filteredServers) == 0 {
-		log.Warn(logPrefix, "server is not matching the user settings")
+		log.ServerSel.Warn("server is not matching the user settings")
 		return nil, internal.ErrServerIsUnavailable
 	}
 	return filteredServers, nil
@@ -59,7 +59,7 @@ func getRecommendedServers(
 
 	recommendationUUID, err := extractRecommendationUUID(header)
 	if err != nil {
-		log.Warn(logPrefix, "failed to extract recommendation UUID from the HTTP header", err)
+		log.ServerSel.Warn("failed to extract recommendation UUID from the HTTP header", err)
 		return servers, emptyUUID, nil
 	}
 	return servers, recommendationUUID, nil

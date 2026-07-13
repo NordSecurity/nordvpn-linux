@@ -42,10 +42,10 @@ def is_under_snap():
     return "snap" in sh.which("nordvpn")
 
 
-def is_connected() -> bool:
+def is_connected(ssh_client: ssh.Ssh = None) -> bool:
     """Returns True when connected to VPN server."""
     try:
-        status = sh.nordvpn.status()
+        status = ssh_client.exec_command("nordvpn status") if ssh_client else sh.nordvpn.status()
         connected = "Connected" in status
         if not connected:
             logging.log(f"Not connected {status}")

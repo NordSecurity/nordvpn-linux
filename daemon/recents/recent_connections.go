@@ -15,8 +15,6 @@ import (
 const (
 	// maxRecentConnections defines the maximum number of recent connections to store
 	maxRecentConnections = 10
-
-	logTag = "[recents]"
 )
 
 type RecentConnectionsStore struct {
@@ -55,7 +53,7 @@ func (r *RecentConnectionsStore) Get() ([]Model, error) {
 
 	conns, err := r.load()
 	if err != nil {
-		log.Warnf("%s Getting recent VPN connections: %s", logTag, err)
+		log.Recents.Warnf("Getting recent VPN connections: %s", err)
 		if saveErr := r.save([]Model{}); saveErr != nil {
 			return nil, errors.Join(
 				fmt.Errorf("getting recent vpn connections: %w", err),
@@ -79,7 +77,7 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 
 	connections, err := r.load()
 	if err != nil {
-		log.Warnf("%s Adding new recent VPN connection: %s", logTag, err)
+		log.Recents.Warnf("Adding new recent VPN connection: %s", err)
 		if saveErr := r.save([]Model{}); saveErr != nil {
 			return errors.Join(
 				fmt.Errorf("adding new recent vpn connection: %w", err),

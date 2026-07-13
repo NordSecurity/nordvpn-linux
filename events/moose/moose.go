@@ -203,12 +203,12 @@ func (s *Subscriber) changeConsentState(newState config.AnalyticsConsent) error 
 	}
 
 	level := toAnalyticsConsentLevel(newState)
-	log.Info(LogComponentPrefix, "request to set consent level to", level)
+	log.Moose.Info("request to set consent level to", level)
 	if err := s.response(s.mooseFuncs.setAppConsentLevel(level)); err != nil {
 		return fmt.Errorf("setting new consent level: %w", err)
 	}
 
-	log.Info(LogComponentPrefix, "update consent level into context with new value", newState.String())
+	log.Moose.Info("update consent level into context with new value", newState.String())
 	if err := setUserConsentLevelIntoContext(s, newState); err != nil {
 		return fmt.Errorf("updating consent level in moose context: %w", err)
 	}
@@ -263,7 +263,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 	if s.isInitialized.Load() {
 		return nil
 	}
-	log.Info(LogComponentPrefix, "initializing")
+	log.Moose.Info("initializing")
 
 	cfg, err := s.getConfig()
 	if err != nil {
@@ -323,7 +323,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 	}
 
 	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
-		log.Warn(LogComponentPrefix, "failed to flush changes before setting analytics opt in: %w", err)
+		log.Moose.Warnf("failed to flush changes before setting analytics opt in: %w", err)
 	}
 
 	applicationName := "linux-app"
@@ -389,7 +389,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 	}
 
 	if err := s.handleTokenRenewDateChange(nil, &cfg); err != nil {
-		log.Warn(LogComponentPrefix, "failed to restore token renew date:", err)
+		log.Moose.Warn("failed to restore token renew date:", err)
 	}
 
 	if err := s.response(s.mooseFuncs.setTPLiteUserPreference(cfg.AutoConnectData.ThreatProtectionLite)); err != nil {
@@ -400,7 +400,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 }
 
 func (s *Subscriber) Stop() error {
-	log.Debug(LogComponentPrefix, "flushing changes")
+	log.Moose.Debug("flushing changes")
 	if err := s.response(moose.MooseNordvpnappFlushChanges()); err != nil {
 		return fmt.Errorf("flushing changes: %w", err)
 	}
@@ -409,7 +409,7 @@ func (s *Subscriber) Stop() error {
 		return fmt.Errorf("stopping moose worker: %w", err)
 	}
 
-	log.Debug(LogComponentPrefix, "deinitializing")
+	log.Moose.Debug("deinitializing")
 	if err := s.response(moose.MooseNordvpnappDeinit()); err != nil {
 		return fmt.Errorf("deinitializing: %w", err)
 	}
@@ -856,11 +856,11 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		recommendationUUID = ""
 
 		if err := s.response(s.mooseFuncs.unsetServerDomainValue()); err != nil {
-			log.Warn(LogComponentPrefix,
+			log.Moose.Warn(
 				"failed to unset serverDomain context for sensitive group:", err)
 		}
 		if err := s.response(s.mooseFuncs.unsetRecommendationUuid()); err != nil {
-			log.Warn(LogComponentPrefix,
+			log.Moose.Warn(
 				"failed to unset recommendationUuid context for sensitive group:", err)
 		}
 	}
@@ -1046,7 +1046,6 @@ func (s *Subscriber) OnPauseCancelled(data events.DataPauseCancelled) error {
 		-1,
 		nil,
 	))
-
 	if err != nil {
 		return fmt.Errorf("sending VPN pause event: %w", err)
 	}
@@ -1141,7 +1140,7 @@ func (s *Subscriber) NotifyDebuggerEvent(e events.DebuggerEvent) error {
 			moose.MooseNordvpnappSetDeveloperEventContextString(ctx.Path, v)
 			combinedPaths = append(combinedPaths, path)
 		default:
-			log.Warnf("%s Discarding unsupported type (%T) on path: %s", LogComponentPrefix, ctx.Value, path)
+			log.Moose.Warnf("Discarding unsupported type (%T) on path: %s", ctx.Value, path)
 		}
 	}
 	if err := s.response(moose.NordvpnappSendDebuggerLoggingLog(e.JsonData, combinedPaths, nil)); err != nil {
@@ -1218,10 +1217,8 @@ func (s *Subscriber) fetchAndSetServiceContext() error {
 			return fmt.Errorf("fetching dedicated servers: %w", err)
 		}
 		if len(dedicatedServers) > 0 {
-			hasDSActivated =
-				dedicatedServers[0].Status != "" &&
-					dedicatedServers[0].Status != core.DedicatedServerStatusNew
-
+			hasDSActivated = dedicatedServers[0].Status != "" &&
+				dedicatedServers[0].Status != core.DedicatedServerStatusNew
 		}
 	}
 
