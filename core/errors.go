@@ -33,6 +33,8 @@ var (
 	ErrDedicatedServersServerOffline          = errors.New("server is offline")
 	ErrDedicatedServersServerNotFound         = errors.New("server not found")
 
+	ErrInvalidAuthHeader = errors.New("invalid authorization header")
+
 	// ErrUnauthorized is returned for 401 HTTP responses.
 	ErrUnauthorized = errors.New(http.StatusText(http.StatusUnauthorized))
 	// ErrForbidden is returned for 403 HTTP responses.
@@ -138,7 +140,7 @@ func extractErrorForLogin(info apiError) error {
 
 	switch info.Errors.Code {
 	case invalidAuthorizationHeader:
-		return ErrUnauthorized
+		return ErrInvalidAuthHeader
 	}
 	return nil
 }
