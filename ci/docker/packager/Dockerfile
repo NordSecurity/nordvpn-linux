@@ -1,4 +1,4 @@
-FROM ghcr.io/nordsecurity/nordvpn-linux/golang:debian-bullseye-20251014@sha256:a5156248a5497a3b261bd5288abb3ddc4b0f8177803e06ea53f50d95bbda5c7e
+FROM ghcr.io/nordsecurity/nordvpn-linux/golang:ubuntu22.04-20260709@sha256:b26ebd8e021c721dba2ce57b7d12dd269eab038dcd36df9a7e4ee239e340a3fb
 
 ENV GOBIN=/usr/bin
 

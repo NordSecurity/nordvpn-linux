@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim
+FROM ubuntu:22.04
 # (glibc 2.31)
 # TODO: Change base image to ubuntu:22.04 on 2026-06-30 (glibc 2.35)
 # Then to debian:bookworm-slim on 2027-06-01 (glibc 2.36)
@@ -7,8 +7,8 @@ FROM debian:bullseye-slim
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
 # Based on: https://github.com/docker-library/golang/blob/master/1.25/bookworm/Dockerfile
-ENV GOLANG_VERSION 1.25.3
-ENV GOLANG_SHA256 0335f314b6e7bfe08c3d0cfaa7c19db961b7b99fb20be62b0a826c992ad14e0f
+ENV GOLANG_VERSION 1.26.3
+ENV GOLANG_SHA256 2b2cfc7148493da5e73981bffbf3353af381d5f93e789c82c79aff64962eb556
 
 RUN apt-get update && \
     apt-get -y --no-install-recommends upgrade && \

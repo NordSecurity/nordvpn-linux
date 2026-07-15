@@ -1,4 +1,4 @@
-FROM ghcr.io/nordsecurity/nordvpn-linux/golang:debian-bullseye-20251014@sha256:a5156248a5497a3b261bd5288abb3ddc4b0f8177803e06ea53f50d95bbda5c7e
+FROM ghcr.io/nordsecurity/nordvpn-linux/golang:ubuntu22.04-20260709@sha256:b26ebd8e021c721dba2ce57b7d12dd269eab038dcd36df9a7e4ee239e340a3fb
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
 
@@ -7,6 +7,12 @@ RUN mkdir -p /.cache && chmod -R 777 /.cache
 RUN dpkg --add-architecture i386 && \
     dpkg --add-architecture arm64 && \
     dpkg --add-architecture armhf && \
+        # Point foreign architectures to ports.ubuntu.com
+    sed -i 's/^deb /deb [arch=amd64,i386] /' /etc/apt/sources.list && \
+    echo "deb [arch=arm64,armhf] http://ports.ubuntu.com/ubuntu-ports jammy main restricted universe multiverse" >> /etc/apt/sources.list && \
+    echo "deb [arch=arm64,armhf] http://ports.ubuntu.com/ubuntu-ports jammy-updates main restricted universe multiverse" >> /etc/apt/sources.list && \
+    echo "deb [arch=arm64,armhf] http://ports.ubuntu.com/ubuntu-ports jammy-security main restricted universe multiverse" >> /etc/apt/sources.list && \
+    echo "deb [arch=arm64,armhf] http://ports.ubuntu.com/ubuntu-ports jammy-backports main restricted universe multiverse" >> /etc/apt/sources.list && \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get -y --no-install-recommends install \
         pkg-config \
