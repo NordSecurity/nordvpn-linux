@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"strings"
 	"time"
 
@@ -1067,8 +1068,7 @@ func (s *Server) ChangePeerNickname(
 		// resolve the new nickname only if old and new are not case insensitive equal
 		if !strings.EqualFold(peer.Nickname, req.Nickname) {
 			// check that the DNS name is not already used
-			ips, err := s.nameservers.LookupIP(req.Nickname)
-			if err == nil && len(ips) != 0 {
+			if hasRoutableAddress(s.nameservers.LookupIP(req.Nickname)) {
 				return &pb.ChangeNicknameResponse{
 					Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
 						ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS,
@@ -1150,8 +1150,7 @@ func (s *Server) ChangeMachineNickname(
 		// resolve the new nickname only if old and new are not case insensitive equal
 		if !strings.EqualFold(cfg.MeshDevice.Nickname, req.Nickname) {
 			// check that the DNS name is not already used
-			ips, err := s.nameservers.LookupIP(req.Nickname)
-			if err == nil && len(ips) != 0 {
+			if hasRoutableAddress(s.nameservers.LookupIP(req.Nickname)) {
 				return changeNicknameError(pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS), nil
 			}
 		}
@@ -2030,6 +2029,22 @@ func MakePeerMaps(peers *pb.PeerList) (map[string]*pb.Peer, map[string]*pb.Peer)
 	}
 	return peerPubkeyToPeer, peerNameToPeer
 }
+// hasRoutableAddress returns true when at least one IP is globally routable.
+// Link-local (fe80::/10, 169.254.0.0/16) and loopback addresses are excluded:
+// they may be returned by host-local resolvers (e.g. myhostname NSS module or
+// Docker DNS forwarding to the host) and do not conflict with meshnet routing.
+func hasRoutableAddress(ips []net.IP, err error) bool {
+	if err != nil {
+		return false
+	}
+	for _, ip := range ips {
+		if !ip.IsLinkLocalUnicast() && !ip.IsLoopback() {
+			return true
+		}
+	}
+	return false
+}
+
 func changeNicknameError(code pb.ChangeNicknameErrorCode) *pb.ChangeNicknameResponse {
 	return &pb.ChangeNicknameResponse{
 		Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{

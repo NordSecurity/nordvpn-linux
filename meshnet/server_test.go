@@ -1015,6 +1015,18 @@ func TestServer_Peer_Nickname(t *testing.T) {
 			},
 		},
 		{
+			name: "succeeds when nickname resolves only to link-local address",
+			peersList: []mesh.MachinePeer{
+				{
+					ID: uuid.MustParse(exampleUUID1),
+				},
+			},
+			peerId:           exampleUUID1,
+			newNickname:      "peer1",
+			reservedDNSNames: mock.RegisteredDomainsList{"peer1": []net.IP{net.ParseIP("fe80::1")}},
+			expectedResponse: changedSuccessfully,
+		},
+		{
 			name: "successful change nickname for same value but different caps",
 			peersList: []mesh.MachinePeer{
 				{
@@ -1202,6 +1214,13 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS,
 				},
 			},
+		},
+		{
+			name:             "succeeds when nickname resolves only to link-local address",
+			newNickname:      "peer1",
+			machine:          mesh.Machine{SupportsRouting: true},
+			reservedDNSNames: mock.RegisteredDomainsList{"peer1": []net.IP{net.ParseIP("fe80::1")}},
+			expectedResponse: changedSuccessfully,
 		},
 		{
 			name:        "generic API error",
