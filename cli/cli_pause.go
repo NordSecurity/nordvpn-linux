@@ -4,12 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
+
+var durations = map[string]uint32{"5m": 300, "15m": 900, "30m": 1800, "1h": 3600, "24h": 86400}
 
 func pauseArgToDuration(arg string) (uint32, error) {
 	switch arg {
@@ -53,8 +56,17 @@ func (c *cmd) Pause(ctx *cli.Context) error {
 	case internal.CodeFailure:
 		return formatError(errors.New(internal.UnhandledMessage))
 	case internal.CodeSuccess:
-		color.Green(fmt.Sprintf(PauseSuccess, args.First()))
+		color.Green(PauseSuccess, args.First())
 	}
 
 	return nil
+}
+
+func PauseAutoComplete(ctx *cli.Context) {
+	arg := ctx.Args().First()
+	for duration := range durations {
+		if strings.Contains(duration, arg) {
+			fmt.Println(duration)
+		}
+	}
 }

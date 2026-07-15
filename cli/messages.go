@@ -406,10 +406,9 @@ Your browsing activities remain private, regardless of your choice.
 	DedicatedServerPQMessage                   = "Post-quantum encryption is not compatible with Dedicated Server."
 	DedicatedServersNoNordlynxMessage          = "Connection to Dedicated Server requires NordLynx technology."
 
-	PauseNoArgsText = "Provide a <duration > argument to specify how long you want to pause your connection.\nAvailable durations are 5m, 15m, 30m, 1h, and 24h. For example: nordvpn pause 15m."
-	PauseUsageText  = `Usage: nordvpn pause <duration>
-Pauses your VPN connection for a specified duration. Available durations are 5m, 15m, 30m, 1h, and 24h. To resume before the timer expires, use the "nordvpn connect" command.
-Options: --help, -h Show help`
+	PauseNoArgsText    = "Provide a <duration> argument to specify how long you want to pause your connection.\nAvailable durations are 5m, 15m, 30m, 1h, and 24h. For example: nordvpn pause 15m."
+	PauseArgsUsage     = "<duration>"
+	PauseUsageText     = "Pauses your VPN connection for a specified duration. Available durations are 5m, 15m, 30m, 1h, and 24h. To resume before the timer expires, use the \"nordvpn connect\" command."
 	PauseNothingToDo   = "You are not connected to the VPN."
 	PauseWhenMeshnetOn = "Pausing is not available while you’re connected to a Meshnet device. Use “nordvpn disconnect” instead."
 	PauseSuccess       = "Connection paused for %s"

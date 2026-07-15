@@ -47,6 +47,8 @@ func TestPauseArgumentsParsing(t *testing.T) {
 			assert.Equal(t, test.expectedResult, result)
 			if test.shouldReturnError {
 				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
