@@ -331,6 +331,8 @@ def test_direct_connection_rtt_and_loss():
 def test_incoming_connections():
     """Manual TC: LVPN-1259"""
 
+    meshnet.are_peers_connected(ssh_client)
+
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname
     peer_hostname = peer_list.get_external_peer().hostname
