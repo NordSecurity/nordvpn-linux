@@ -28,7 +28,7 @@ def teardown_function(function):  # noqa: ARG001
     meshnet.TestUtils.teardown_function(ssh_client)
 
 
-@pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
+@pytest.mark.core_meshnet
 def test_meshnet_connect():
     """Manual TCs: LVPN-473, LVPN-1260"""
 
@@ -36,6 +36,21 @@ def test_meshnet_connect():
     this_device = meshnet.PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list")).get_external_peer()
 
     nickname = "remote-machine"
+    getent_result = sh.getent("hosts", nickname, _ok_code=[0, 2])
+    nsswitch = open("/etc/nsswitch.conf").read()
+    resolv = open("/etc/resolv.conf").read()
+    hosts = open("/etc/hosts").read()
+    peer_hostname = ssh_client.exec_command("hostname").strip()
+    peer_hosts = ssh_client.exec_command("cat /etc/hosts")
+    logging.log(data=(
+        f"[test_meshnet_connect] DNS diagnostics before setting nickname '{nickname}':\n"
+        f"--- /etc/hosts ---\n{hosts}"
+        f"--- /etc/nsswitch.conf ---\n{nsswitch}"
+        f"--- /etc/resolv.conf ---\n{resolv}"
+        f"--- getent hosts {nickname} ---\n{getent_result or '(no result)'}\n"
+        f"--- peer hostname (Docker) ---\n{peer_hostname}\n"
+        f"--- peer /etc/hosts ---\n{peer_hosts}"
+    ))
     sh_no_tty.nordvpn.mesh.peer.nick.set(peer.hostname, nickname)
 
     peer = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer() # Refresh nickname
@@ -46,6 +61,7 @@ def test_meshnet_connect():
     assert nickname == peer.nickname, "Peer nickname should be set correctly"
 
     nickname = "local-machine"
+    logging.log(data=f"[test_meshnet_connect] /etc/hosts on peer before setting nickname '{nickname}':\n" + ssh_client.exec_command("cat /etc/hosts"))
     ssh_client.exec_command(f"nordvpn mesh peer nick set {this_device.hostname} {nickname}")
 
     this_device = meshnet.PeerList.from_str(ssh_client.exec_command("nordvpn mesh peer list")).get_external_peer() # Refresh nickname
