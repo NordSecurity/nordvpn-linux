@@ -16,6 +16,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events/logger"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
+	"github.com/NordSecurity/nordvpn-linux/features"
 	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -942,6 +943,23 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 				"arp-ignore",
 			),
 		},
+	}
+
+	if features.NordWhisperEnabled {
+		setSubcommands = append(setSubcommands, &cli.Command{
+			Name:         "ech",
+			Usage:        SetECHUsageText,
+			Action:       cmd.SetECH,
+			BashComplete: cmd.SetBoolAutocomplete,
+			ArgsUsage:    MsgSetBoolArgsUsage,
+			Description: fmt.Sprintf(
+				MsgSetBoolDescription,
+				SetECHUsageText,
+				"ech",
+				"ech",
+			),
+			Hidden: cmd.Except(config.Technology_NORDWHISPER),
+		})
 	}
 
 	setMeshCommand := cli.Command{
