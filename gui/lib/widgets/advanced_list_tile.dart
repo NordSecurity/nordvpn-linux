@@ -18,6 +18,7 @@ final class AdvancedListTile extends StatelessWidget {
   final bool enabled;
   final EdgeInsetsGeometry? padding;
   final Color? color;
+  final bool autofocus;
 
   const AdvancedListTile({
     super.key,
@@ -31,6 +32,7 @@ final class AdvancedListTile extends StatelessWidget {
     this.enabled = true,
     this.padding,
     this.color,
+    this.autofocus = false,
   });
 
   @override
@@ -44,6 +46,7 @@ final class AdvancedListTile extends StatelessWidget {
         child: Ink(
           color: enabled ? color : appTheme.area,
           child: InkWell(
+            autofocus: autofocus,
             onTap: enabled ? onTap : null,
             child: Padding(
               padding:
