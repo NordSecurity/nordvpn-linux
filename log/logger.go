@@ -20,6 +20,7 @@ const showCallerAsSource = 4
 
 const (
 	levelUnknown logLevel = iota
+	levelTrace
 	levelDebug
 	levelInfo
 	levelWarn
@@ -34,10 +35,13 @@ const (
 	warningPrefix = "[Warning]"
 	errorPrefix   = "[Error]"
 	fatalPrefix   = "[Fatal]"
+	tracePrefix   = "[Trace]"
 )
 
 func (l logLevel) String() string {
 	switch l {
+	case levelTrace:
+		return "trace"
 	case levelDebug:
 		return "debug"
 	case levelInfo:
@@ -122,6 +126,10 @@ func (l *Logger) Error(v ...any) { logAt(levelError, errorPrefix, prepend(l.pref
 func (l *Logger) Errorf(format string, v ...any) {
 	logAtf(levelError, errorPrefix, l.prefix+" "+format, v)
 }
+func (l *Logger) Trace(v ...any) { logAt(levelTrace, tracePrefix, prepend(l.prefix, v)) }
+func (l *Logger) Traceff(format string, v ...any) {
+	logAtf(levelTrace, tracePrefix, l.prefix+" "+format, v)
+}
 
 func (l *Logger) Fatal(v ...any) {
 	logAt(levelFatal, fatalPrefix, prepend(l.prefix, v))
@@ -145,6 +153,8 @@ func Warn(v ...any)                  { logAt(levelWarn, warningPrefix, v) }
 func Warnf(format string, v ...any)  { logAtf(levelWarn, warningPrefix, format, v) }
 func Error(v ...any)                 { logAt(levelError, errorPrefix, v) }
 func Errorf(format string, v ...any) { logAtf(levelError, errorPrefix, format, v) }
+func Trace(v ...any)                 { logAt(levelTrace, tracePrefix, v) }
+func Tracef(format string, v ...any) { logAtf(levelTrace, tracePrefix, format, v) }
 
 func Fatal(v ...any) {
 	logAt(levelFatal, fatalPrefix, v)
