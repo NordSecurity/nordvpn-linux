@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -30,6 +31,10 @@ func (c *cmd) SetECH(ctx *cli.Context) error {
 	switch resp.Type {
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
+	case internal.CodeECHTechUnsupported:
+		return formatError(errors.New(SetECHTechUnsupported))
+	case internal.CodeECHGloballyDisabled:
+		return formatError(errors.New(SetECHGloballyDisabled))
 	case internal.CodeNothingToDo:
 		color.Yellow(fmt.Sprintf(MsgAlreadySet, "ECH", nstrings.GetBoolLabel(flag)))
 	case internal.CodeSuccess:

@@ -2,9 +2,11 @@ package daemon
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -13,11 +15,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// echRemoteGetterMock is a controllable remote.ConfigGetter for the ECH remote gate.
+type echRemoteGetterMock struct {
+	param string
+	err   error
+}
+
+func (echRemoteGetterMock) GetTelioConfig() (string, error) { return "", nil }
+func (echRemoteGetterMock) IsFeatureEnabled(string) bool    { return false }
+func (m echRemoteGetterMock) GetFeatureParam(_, _ string) (string, error) {
+	return m.param, m.err
+}
+
 func TestSetECH(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
 		name          string
+		tech          config.Technology
+		remoteParam   string // remote enable_ech value; "" with no err means default-on
+		remoteErr     error
 		currentECH    bool
 		requested     bool
 		vpnActive     bool
@@ -29,6 +46,8 @@ func TestSetECH(t *testing.T) {
 	}{
 		{
 			name:          "enable when disabled",
+			tech:          config.Technology_NORDWHISPER,
+			remoteParam:   "true",
 			currentECH:    false,
 			requested:     true,
 			expectedType:  internal.CodeSuccess,
@@ -37,6 +56,8 @@ func TestSetECH(t *testing.T) {
 		},
 		{
 			name:          "disable when enabled",
+			tech:          config.Technology_NORDWHISPER,
+			remoteParam:   "true",
 			currentECH:    true,
 			requested:     false,
 			expectedType:  internal.CodeSuccess,
@@ -45,20 +66,17 @@ func TestSetECH(t *testing.T) {
 		},
 		{
 			name:         "no-op when already enabled",
+			tech:         config.Technology_NORDWHISPER,
+			remoteParam:  "true",
 			currentECH:   true,
 			requested:    true,
 			expectedType: internal.CodeNothingToDo,
 			expectSaved:  false,
 		},
 		{
-			name:         "no-op when already disabled",
-			currentECH:   false,
-			requested:    false,
-			expectedType: internal.CodeNothingToDo,
-			expectSaved:  false,
-		},
-		{
 			name:          "enable while vpn active reports active",
+			tech:          config.Technology_NORDWHISPER,
+			remoteParam:   "true",
 			currentECH:    false,
 			requested:     true,
 			vpnActive:     true,
@@ -67,7 +85,65 @@ func TestSetECH(t *testing.T) {
 			expectedValue: true,
 		},
 		{
+			name:          "remote missing defaults to enabled",
+			tech:          config.Technology_NORDWHISPER,
+			remoteParam:   "",
+			currentECH:    false,
+			requested:     true,
+			expectedType:  internal.CodeSuccess,
+			expectSaved:   true,
+			expectedValue: true,
+		},
+		{
+			name:          "remote error defaults to enabled",
+			tech:          config.Technology_NORDWHISPER,
+			remoteErr:     errors.New("boom"),
+			currentECH:    false,
+			requested:     true,
+			expectedType:  internal.CodeSuccess,
+			expectSaved:   true,
+			expectedValue: true,
+		},
+		{
+			name:         "wrong technology openvpn",
+			tech:         config.Technology_OPENVPN,
+			remoteParam:  "true",
+			currentECH:   false,
+			requested:    true,
+			expectedType: internal.CodeECHTechUnsupported,
+			expectSaved:  false,
+		},
+		{
+			name:         "wrong technology nordlynx",
+			tech:         config.Technology_NORDLYNX,
+			remoteParam:  "true",
+			currentECH:   false,
+			requested:    true,
+			expectedType: internal.CodeECHTechUnsupported,
+			expectSaved:  false,
+		},
+		{
+			name:         "globally disabled by remote config",
+			tech:         config.Technology_NORDWHISPER,
+			remoteParam:  "false",
+			currentECH:   false,
+			requested:    true,
+			expectedType: internal.CodeECHGloballyDisabled,
+			expectSaved:  false,
+		},
+		{
+			name:         "globally disabled blocks even matching value",
+			tech:         config.Technology_NORDWHISPER,
+			remoteParam:  "false",
+			currentECH:   true,
+			requested:    true, // matches current, but guard runs before no-op
+			expectedType: internal.CodeECHGloballyDisabled,
+			expectSaved:  false,
+		},
+		{
 			name:         "load error",
+			tech:         config.Technology_NORDWHISPER,
+			remoteParam:  "true",
 			currentECH:   false,
 			requested:    true,
 			loadErr:      true,
@@ -76,6 +152,8 @@ func TestSetECH(t *testing.T) {
 		},
 		{
 			name:         "save error",
+			tech:         config.Technology_NORDWHISPER,
+			remoteParam:  "true",
 			currentECH:   false,
 			requested:    true,
 			saveErr:      true,
@@ -87,6 +165,7 @@ func TestSetECH(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			cm := mock.NewMockConfigManager()
+			cm.Cfg.Technology = test.tech
 			cm.Cfg.ECH.Set(test.currentECH)
 			if test.loadErr {
 				cm.LoadErr = assert.AnError
@@ -97,7 +176,11 @@ func TestSetECH(t *testing.T) {
 
 			netw := networker.Mock{VpnActive: test.vpnActive}
 
-			r := RPC{cm: cm, netw: &netw}
+			r := RPC{
+				cm:                 cm,
+				netw:               &netw,
+				remoteConfigGetter: echRemoteGetterMock{param: test.remoteParam, err: test.remoteErr},
+			}
 
 			resp, err := r.SetECH(context.Background(), &pb.SetGenericRequest{Enabled: test.requested})
 			assert.NoError(t, err)
@@ -111,7 +194,7 @@ func TestSetECH(t *testing.T) {
 				assert.True(t, cm.Saved)
 				assert.Equal(t, test.expectedValue, cm.Cfg.ECH.Get())
 			} else if !test.loadErr {
-				// On no-op the value must be unchanged; save must not have persisted a change.
+				// When not saved, the stored value must be unchanged.
 				assert.Equal(t, test.currentECH, cm.Cfg.ECH.Get())
 			}
 		})
