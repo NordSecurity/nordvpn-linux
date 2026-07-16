@@ -347,7 +347,7 @@ func NewApp(version, environment, hash, salt string,
 		},
 		{
 			Name:         "pause",
-			ArgsUsage:    "<duration>",
+			ArgsUsage:    PauseArgsUsage,
 			Usage:        PauseUsageText,
 			Action:       cmd.Pause,
 			BashComplete: PauseAutoComplete,

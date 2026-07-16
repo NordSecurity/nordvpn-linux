@@ -12,23 +12,13 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var durations = map[string]uint32{"5m": 300, "15m": 900, "30m": 1800, "1h": 3600, "24h": 86400}
+var argToPauseDurationSeconds = map[string]uint32{"5m": 300, "15m": 900, "30m": 1800, "1h": 3600, "24h": 86400}
 
 func pauseArgToDuration(arg string) (uint32, error) {
-	switch arg {
-	case "5m":
-		return 300, nil
-	case "15m":
-		return 900, nil
-	case "30m":
-		return 1800, nil
-	case "1h":
-		return 3600, nil
-	case "24h":
-		return 86400, nil
-	default:
-		return 0, fmt.Errorf("unrecognized duration")
+	if pauseDurationSeconds, ok := argToPauseDurationSeconds[arg]; ok {
+		return pauseDurationSeconds, nil
 	}
+	return 0, fmt.Errorf("unrecognized duration")
 }
 
 func (c *cmd) Pause(ctx *cli.Context) error {
@@ -64,7 +54,7 @@ func (c *cmd) Pause(ctx *cli.Context) error {
 
 func PauseAutoComplete(ctx *cli.Context) {
 	arg := ctx.Args().First()
-	for duration := range durations {
+	for duration := range argToPauseDurationSeconds {
 		if strings.Contains(duration, arg) {
 			fmt.Println(duration)
 		}
