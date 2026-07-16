@@ -1,9 +1,24 @@
 #!/usr/bin/env bash
 
 case "$1" in
-    purge|remove)
-    ${UNINSTALL_SCRIPT}
-    
+    purge)
+        usrInfo=$(
+        while IFS=: read -r user pass uid gid gecos home shell; do
+            if [ "$uid" -ge 1000 ] && [ "$uid" -le 2000 ]; then
+                echo "$home"
+            fi
+        done < /etc/passwd
+        )
+        (
+            IFS=$'\n'
+            for usrLine in $usrInfo; do
+                # for each user remove gui logs
+                rm -f $usrLine/.cache/nordvpn/nordvpn-gui.log
+            done
+        )
+    ;&  # fallthrough
+    remove)
+        ${UNINSTALL_SCRIPT}
     ;;
     disappear|upgrade|failed-upgrade|abort-install|abort-upgrade)
     ;;
