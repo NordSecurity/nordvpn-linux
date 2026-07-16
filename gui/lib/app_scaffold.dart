@@ -213,6 +213,7 @@ final class _NavItemState extends State<NavItem> {
 
     return Semantics(
       button: true,
+      enabled: true,
       selected: widget.selected,
       label: widget.label,
       child: FocusableActionDetector(
