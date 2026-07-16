@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nordvpn/constants.dart';
+import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
 import 'package:nordvpn/router/routes.dart';
 import 'package:nordvpn/theme/nav_rail_theme.dart';
@@ -52,6 +53,12 @@ enum NavDestination {
     }
     return null;
   }
+
+  String get semanticLabel => switch (this) {
+    NavDestination.home => t.ui.nordVpn,
+    NavDestination.settings => t.ui.settings,
+    NavDestination.showcase => 'Showcase',
+  };
 }
 
 // The widget will be created for each route and will contain a navigation bar,
@@ -135,6 +142,7 @@ final class NavRail extends StatelessWidget {
       iconOff: dest.iconOff,
       iconOn: dest.iconOn,
       selected: selectedIndex == index,
+      label: dest.semanticLabel,
       onClick: () => onDestinationSelected(dest),
     );
 
@@ -167,6 +175,8 @@ final class NavItem extends StatefulWidget {
 
   final bool selected;
 
+  final String label;
+
   final VoidCallback onClick;
 
   const NavItem({
@@ -174,6 +184,7 @@ final class NavItem extends StatefulWidget {
     required this.iconOff,
     required this.iconOn,
     required this.selected,
+    required this.label,
     required this.onClick,
   });
 
@@ -183,32 +194,49 @@ final class NavItem extends StatefulWidget {
 
 final class _NavItemState extends State<NavItem> {
   bool _hovered = false;
+  bool _focused = false;
+
+  late final Map<Type, Action<Intent>> _actions = <Type, Action<Intent>>{
+    ActivateIntent: CallbackAction<ActivateIntent>(
+      onInvoke: (_) {
+        widget.onClick();
+        return null;
+      },
+    ),
+  };
 
   @override
   Widget build(BuildContext context) {
     final navTheme = context.navRailTheme;
     final textScaler = MediaQuery.textScalerOf(context);
-    final active = widget.selected || _hovered;
+    final active = widget.selected || _hovered || _focused;
 
-    return GestureDetector(
-      onTap: widget.onClick,
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _hovered = true),
-        onExit: (_) => setState(() => _hovered = false),
-        child: Container(
-          width: textScaler.scale(navTheme.containerWidth),
-          height: textScaler.scale(navTheme.containerHeight),
-          decoration: active
-              ? BoxDecoration(
-                  color: navTheme.selectedItemBg,
-                  borderRadius: navTheme.radius,
-                )
-              : null,
-          child: Center(
-            child: Padding(
-              padding: EdgeInsets.all(navTheme.iconsMargin),
-              child: DynamicThemeImage(
-                widget.selected ? widget.iconOn : widget.iconOff,
+    return Semantics(
+      button: true,
+      selected: widget.selected,
+      label: widget.label,
+      child: FocusableActionDetector(
+        actions: _actions,
+        mouseCursor: SystemMouseCursors.click,
+        onShowHoverHighlight: (value) => setState(() => _hovered = value),
+        onShowFocusHighlight: (value) => setState(() => _focused = value),
+        child: GestureDetector(
+          onTap: widget.onClick,
+          child: Container(
+            width: textScaler.scale(navTheme.containerWidth),
+            height: textScaler.scale(navTheme.containerHeight),
+            decoration: active
+                ? BoxDecoration(
+                    color: navTheme.selectedItemBg,
+                    borderRadius: navTheme.radius,
+                  )
+                : null,
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.all(navTheme.iconsMargin),
+                child: DynamicThemeImage(
+                  widget.selected ? widget.iconOn : widget.iconOff,
+                ),
               ),
             ),
           ),
