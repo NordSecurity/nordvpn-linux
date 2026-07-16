@@ -116,6 +116,41 @@ func TestNormalizeCommandCase(t *testing.T) {
 			input:    []string{"nordvpn", "SET", "autoconnect", "ON", "set"},
 			expected: []string{"nordvpn", "set", "autoconnect", "ON", "set"},
 		},
+		{
+			name:     "help as trailing subcommand uppercase",
+			input:    []string{"nordvpn", "mesh", "HELP"},
+			expected: []string{"nordvpn", "meshnet", "help"},
+		},
+		{
+			name:     "help mixed case on command group",
+			input:    []string{"nordvpn", "MESH", "Help"},
+			expected: []string{"nordvpn", "meshnet", "help"},
+		},
+		{
+			name:     "help alias h canonicalized",
+			input:    []string{"nordvpn", "meshnet", "H"},
+			expected: []string{"nordvpn", "meshnet", "help"},
+		},
+		{
+			name:     "top-level help uppercase",
+			input:    []string{"nordvpn", "HELP"},
+			expected: []string{"nordvpn", "help"},
+		},
+		{
+			name:     "help followed by sibling command is canonicalized",
+			input:    []string{"nordvpn", "HELP", "MESH"},
+			expected: []string{"nordvpn", "help", "meshnet"},
+		},
+		{
+			name:     "help on nested group canonicalizes following subcommand",
+			input:    []string{"nordvpn", "MESH", "HELP", "PEER"},
+			expected: []string{"nordvpn", "meshnet", "help", "peer"},
+		},
+		{
+			name:     "help not recognized on leaf command without subcommands",
+			input:    []string{"nordvpn", "LOGIN", "HELP"},
+			expected: []string{"nordvpn", "login", "HELP"},
+		},
 	}
 
 	tree := testCommandTree()

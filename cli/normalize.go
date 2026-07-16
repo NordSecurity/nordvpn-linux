@@ -6,6 +6,13 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+// Names of the implicit help command that urfave/cli injects at runtime; it is
+// not present in the static command tree, so normalization handles it by name.
+const (
+	helpName  = "help"
+	helpAlias = "h"
+)
+
 // NormalizeCommandCase canonicalizes the case of command and subcommand name
 // tokens in args so that commands can be invoked case-insensitively, e.g.
 // "SET MESH on" and "Set Mesh On" both resolve to "set meshnet on".
@@ -44,6 +51,17 @@ func NormalizeCommandCase(commands []*cli.Command, args []string) []string {
 		if cmd := findCommandFold(level, arg); cmd != nil {
 			out = append(out, cmd.Name)
 			level = cmd.Subcommands
+			continue
+		}
+
+		// urfave/cli injects an implicit "help" command (alias "h") into the app
+		// and into every command group that has subcommands. That injection
+		// happens inside Run (after this normalization), so the help command is
+		// never present in the tree above. Recognize it explicitly, mirroring
+		// urfave's rule that help exists wherever the current level has commands.
+		// help's argument is a sibling command name, so keep the current level.
+		if len(level) > 0 && (strings.EqualFold(arg, helpName) || strings.EqualFold(arg, helpAlias)) {
+			out = append(out, helpName)
 			continue
 		}
 
