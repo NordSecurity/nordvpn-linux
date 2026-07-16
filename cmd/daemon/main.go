@@ -109,6 +109,7 @@ func init() {
 }
 
 // socketType used by gRPC listener
+// test
 type socketType string
 
 const (
