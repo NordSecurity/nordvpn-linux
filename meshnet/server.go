@@ -2028,7 +2028,7 @@ func MakePeerMaps(peers *pb.PeerList) (map[string]*pb.Peer, map[string]*pb.Peer)
 	return peerPubkeyToPeer, peerNameToPeer
 }
 
-// hasRoutableAddress returns true when at least one IP is globally routable.
+// hasRoutableAddress returns true when at least one IP is globally routable, false otherwise.
 // Link-local (fe80::/10, 169.254.0.0/16) and loopback addresses are excluded:
 // they may be returned by host-local resolvers (e.g. myhostname NSS module or
 // Docker DNS forwarding to the host) and do not conflict with meshnet routing.
