@@ -55,6 +55,7 @@ func (meshRenewChecker) IsVPNExpired() (bool, error) { return false, nil }
 func (meshRenewChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
 	return nil, fmt.Errorf("Not implemented")
 }
+
 func (meshRenewChecker) GetDedicatedServerService() (auth.DedicatedServerService, error) {
 	return auth.DedicatedServerService{}, fmt.Errorf("Not implemented")
 }
@@ -1015,6 +1016,46 @@ func TestServer_Peer_Nickname(t *testing.T) {
 			},
 		},
 		{
+			name: "succeeds when nickname resolves only to link-local address",
+			peersList: []mesh.MachinePeer{
+				{
+					ID: uuid.MustParse(exampleUUID1),
+				},
+			},
+			peerId:           exampleUUID1,
+			newNickname:      "peer1",
+			reservedDNSNames: mock.RegisteredDomainsList{"peer1": []net.IP{net.ParseIP("fe80::1")}},
+			expectedResponse: changedSuccessfully,
+		},
+		{
+			name: "succeeds when nickname resolves only to loopback address",
+			peersList: []mesh.MachinePeer{
+				{
+					ID: uuid.MustParse(exampleUUID1),
+				},
+			},
+			peerId:           exampleUUID1,
+			newNickname:      "peer1",
+			reservedDNSNames: mock.RegisteredDomainsList{"peer1": []net.IP{net.ParseIP("127.0.0.1")}},
+			expectedResponse: changedSuccessfully,
+		},
+		{
+			name: "fails when nickname resolves to routable address alongside link-local",
+			peersList: []mesh.MachinePeer{
+				{
+					ID: uuid.MustParse(exampleUUID1),
+				},
+			},
+			peerId:           exampleUUID1,
+			newNickname:      "peer1",
+			reservedDNSNames: mock.RegisteredDomainsList{"peer1": []net.IP{net.ParseIP("fe80::1"), net.ParseIP("1.2.3.4")}},
+			expectedResponse: &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS,
+				},
+			},
+		},
+		{
 			name: "successful change nickname for same value but different caps",
 			peersList: []mesh.MachinePeer{
 				{
@@ -1197,6 +1238,31 @@ func TestServer_Current_Machine_Nickname(t *testing.T) {
 			newNickname:      "peer1",
 			machine:          mesh.Machine{SupportsRouting: true},
 			reservedDNSNames: mock.RegisteredDomainsList{"peer1": []net.IP{net.IPv4bcast}},
+			expectedResponse: &pb.ChangeNicknameResponse{
+				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
+					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS,
+				},
+			},
+		},
+		{
+			name:             "succeeds when nickname resolves only to link-local address",
+			newNickname:      "peer1",
+			machine:          mesh.Machine{SupportsRouting: true},
+			reservedDNSNames: mock.RegisteredDomainsList{"peer1": []net.IP{net.ParseIP("fe80::1")}},
+			expectedResponse: changedSuccessfully,
+		},
+		{
+			name:             "succeeds when nickname resolves only to loopback address",
+			newNickname:      "peer1",
+			machine:          mesh.Machine{SupportsRouting: true},
+			reservedDNSNames: mock.RegisteredDomainsList{"peer1": []net.IP{net.ParseIP("127.0.0.1")}},
+			expectedResponse: changedSuccessfully,
+		},
+		{
+			name:             "fails when nickname resolves to routable address alongside link-local",
+			newNickname:      "peer1",
+			machine:          mesh.Machine{SupportsRouting: true},
+			reservedDNSNames: mock.RegisteredDomainsList{"peer1": []net.IP{net.ParseIP("fe80::1"), net.ParseIP("1.2.3.4")}},
 			expectedResponse: &pb.ChangeNicknameResponse{
 				Response: &pb.ChangeNicknameResponse_ChangeNicknameErrorCode{
 					ChangeNicknameErrorCode: pb.ChangeNicknameErrorCode_DOMAIN_NAME_EXISTS,
