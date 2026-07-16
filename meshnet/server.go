@@ -2036,12 +2036,9 @@ func hasRoutableAddress(ips []net.IP, err error) bool {
 	if err != nil {
 		return false
 	}
-	for _, ip := range ips {
-		if !ip.IsLinkLocalUnicast() && !ip.IsLoopback() {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(ips, func(ip net.IP) bool {
+		return !ip.IsLinkLocalUnicast() && !ip.IsLoopback()
+	})
 }
 
 func changeNicknameError(code pb.ChangeNicknameErrorCode) *pb.ChangeNicknameResponse {
