@@ -56,6 +56,8 @@ type Config struct {
 	VirtualLocation TrueField `json:"virtual_location,omitempty"`
 	ARPIgnore       TrueField `json:"arp_ignore,omitempty"`
 	DeviceUUID      uuid.UUID `json:"device_uuid"`
+	// ECH controls the NordWhisper Encrypted Client Hello feature. True by default.
+	ECH TrueField `json:"ech,omitempty"`
 }
 
 // withLoginData makes a copy of current configuration

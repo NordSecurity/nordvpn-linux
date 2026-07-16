@@ -10,5 +10,5 @@ import (
 )
 
 func vpnNordWhisperConfigGetterImplementation(cm config.Manager, rcConfig remote.ConfigGetter) vpn.NordWhisperConfigGetter {
-	return quench.NewNordWhisperConfig(rcConfig)
+	return quench.NewNordWhisperConfig(cm, rcConfig)
 }

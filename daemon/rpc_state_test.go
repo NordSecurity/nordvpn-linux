@@ -113,6 +113,38 @@ func (s *testStateServer) Context() context.Context {
 	return s.ctx
 }
 
+func TestConfigToProtobuf_ECH(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	newCfg := func() *config.Config {
+		return &config.Config{
+			UsersData: &config.UsersData{
+				NotifyOff: config.UidBoolMap{},
+				TrayOff:   config.UidBoolMap{},
+			},
+		}
+	}
+
+	t.Run("defaults to enabled when unset", func(t *testing.T) {
+		settings := configToProtobuf(newCfg(), testUID)
+		assert.True(t, settings.Ech)
+	})
+
+	t.Run("reflects explicit disable", func(t *testing.T) {
+		cfg := newCfg()
+		cfg.ECH.Set(false)
+		settings := configToProtobuf(cfg, testUID)
+		assert.False(t, settings.Ech)
+	})
+
+	t.Run("reflects explicit enable", func(t *testing.T) {
+		cfg := newCfg()
+		cfg.ECH.Set(true)
+		settings := configToProtobuf(cfg, testUID)
+		assert.True(t, settings.Ech)
+	})
+}
+
 func TestSubscribeToStateChanges_NoPeerContext(t *testing.T) {
 	category.Set(t, category.Unit)
 
