@@ -85,6 +85,8 @@ const (
 	CodeDedicatedServersSessionMaxLimitReached int64 = 3070
 	CodeDedicatedServersPq                     int64 = 3071
 	CodeDedicatedServersServerNotSetUp         int64 = 3072
+	CodeECHTechUnsupported                     int64 = 3073
+	CodeECHGloballyDisabled                    int64 = 3074
 )
 
 type ErrorWithCode struct {

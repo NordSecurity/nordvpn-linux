@@ -203,6 +203,7 @@ class Settings extends $pb.GeneratedMessage {
     $core.bool? postquantumVpn,
     UserSpecificSettings? userSettings,
     $core.bool? arpIgnore,
+    $core.bool? ech,
   }) {
     final result = create();
     if (technology != null) result.technology = technology;
@@ -224,6 +225,7 @@ class Settings extends $pb.GeneratedMessage {
     if (postquantumVpn != null) result.postquantumVpn = postquantumVpn;
     if (userSettings != null) result.userSettings = userSettings;
     if (arpIgnore != null) result.arpIgnore = arpIgnore;
+    if (ech != null) result.ech = ech;
     return result;
   }
 
@@ -265,6 +267,7 @@ class Settings extends $pb.GeneratedMessage {
     ..aOM<UserSpecificSettings>(18, _omitFieldNames ? '' : 'userSettings',
         subBuilder: UserSpecificSettings.create)
     ..aOB(19, _omitFieldNames ? '' : 'arpIgnore')
+    ..aOB(20, _omitFieldNames ? '' : 'ech')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -446,6 +449,15 @@ class Settings extends $pb.GeneratedMessage {
   $core.bool hasArpIgnore() => $_has(17);
   @$pb.TagNumber(19)
   void clearArpIgnore() => $_clearField(19);
+
+  @$pb.TagNumber(20)
+  $core.bool get ech => $_getBF(18);
+  @$pb.TagNumber(20)
+  set ech($core.bool value) => $_setBool(18, value);
+  @$pb.TagNumber(20)
+  $core.bool hasEch() => $_has(18);
+  @$pb.TagNumber(20)
+  void clearEch() => $_clearField(20);
 }
 
 class UserSpecificSettings extends $pb.GeneratedMessage {
