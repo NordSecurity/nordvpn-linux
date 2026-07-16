@@ -114,7 +114,7 @@ func main() {
 	}
 
 	// Canonicalize command/subcommand name case so commands can be invoked
-	// case-insensitively (e.g. "SET MESH on" == "set meshnet on").
+	// case-insensitively (e.g. "SET MESH on" == "set mesh on").
 	args = cli.NormalizeCommandCase(cmd.Commands, args)
 
 	// nolint:errcheck // we want to suppress errors in the cli app, as starting norduser is not strictly related to the
