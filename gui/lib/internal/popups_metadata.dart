@@ -165,11 +165,13 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
             .read(vpnSettingsControllerProvider.notifier)
             .applyPendingVPNProtocol();
 
-        // Reconnect with the saved connection parameters
+        // Reconnect with the saved connection parameters. If no suitable server
+        // exists for the new protocol (e.g. Double VPN has no NordWhisper
+        // servers), fall back to a quick connect for the selected technology.
         if (success && connectionParams != null) {
-          ref
+          await ref
               .read(vpnStatusControllerProvider.notifier)
-              .reconnect(connectionParams);
+              .reconnectOrQuickConnect(connectionParams);
         }
       },
       noAction: (ref) {
