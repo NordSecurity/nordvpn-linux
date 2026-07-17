@@ -412,4 +412,5 @@ Your browsing activities remain private, regardless of your choice.
 	PauseNothingToDo   = "You are not connected to the VPN."
 	PauseWhenMeshnetOn = "Pausing is not available while you’re connected to a Meshnet device. Use “nordvpn disconnect” instead."
 	PauseSuccess       = "Connection paused for %s"
+	PauseInterrupted   = "Pause has been successfully cancelled."
 )

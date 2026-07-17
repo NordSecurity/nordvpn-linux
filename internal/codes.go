@@ -85,6 +85,7 @@ const (
 	CodeDedicatedServersSessionMaxLimitReached int64 = 3070
 	CodeDedicatedServersPq                     int64 = 3071
 	CodeDedicatedServersServerNotSetUp         int64 = 3072
+	CodePauseInterrupted                       int64 = 3073
 )
 
 type ErrorWithCode struct {
