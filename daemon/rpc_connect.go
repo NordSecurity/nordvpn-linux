@@ -88,7 +88,7 @@ func (r *RPC) executeConnect(srv pb.Daemon_ConnectServer, fn func(context.Contex
 // reconcileStatusAfterFailedConnect fixes up the reported connection status after a connection
 // attempt failed. If the attempt aborted before the existing tunnel was touched, the VPN is still
 // up (netw.IsVPNActive()==true) and we restore the previous status instead of falsely reporting a
-// disconnect. Only when there is genuinely no active tunnel do we publish a Disconnect.
+// disconnect. Only when there is genuinely no active tunnel we do publish a Disconnect.
 func (r *RPC) reconcileStatusAfterFailedConnect() {
 	if r.netw.IsVPNActive() {
 		r.connectionInfo.RestorePreviousStatus()
