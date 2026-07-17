@@ -67,8 +67,8 @@ class _ConnectionCardButtonsState extends ConsumerState<ConnectionCardButtons> {
   int _stateOf(VpnStatus s) => s.isConnected()
       ? 2
       : s.isConnecting()
-          ? 1
-          : 0;
+      ? 1
+      : 0;
 
   @override
   void dispose() {
@@ -150,14 +150,7 @@ class _ConnectionCardButtonsState extends ConsumerState<ConnectionCardButtons> {
                 style: buttonTheme.pauseConnectionButtonStyle,
                 focusNode: _primaryButtonFocus,
                 onPressed: toggleMenu,
-                child: Semantics(
-                  label:
-                      "${_buildSemanticsText(status)} ${t.ui.pauseConnection}",
-                  button: true,
-                  enabled: true,
-                  excludeSemantics: true,
-                  child: Text(t.ui.pauseConnection),
-                ),
+                child: Text(t.ui.pauseConnection),
               ),
             ),
           ),
@@ -203,13 +196,7 @@ class _ConnectionCardButtonsState extends ConsumerState<ConnectionCardButtons> {
           await ref.read(vpnStatusControllerProvider.notifier).connect(args);
         },
         style: buttonTheme.secureMyConnectionButtonStyle,
-        child: Semantics(
-          label: "${_buildSemanticsText(status)} ${t.ui.secureMyConnection}",
-          enabled: true,
-          button: true,
-          excludeSemantics: true,
-          child: Text(t.ui.secureMyConnection),
-        ),
+        child: Text(t.ui.secureMyConnection),
       ),
     );
   }
@@ -227,13 +214,7 @@ class _ConnectionCardButtonsState extends ConsumerState<ConnectionCardButtons> {
           await ref.read(vpnStatusControllerProvider.notifier).cancelConnect();
         },
         style: buttonTheme.cancelButtonStyle,
-        child: Semantics(
-          label: "${_buildSemanticsText(status)} ${t.ui.cancel}",
-          enabled: true,
-          button: true,
-          excludeSemantics: true,
-          child: Text(t.ui.cancel),
-        ),
+        child: Text(t.ui.cancel),
       ),
     );
   }
@@ -294,49 +275,10 @@ class _ConnectionCardButtonsState extends ConsumerState<ConnectionCardButtons> {
           anchorBuilder: (toggleMenu) => OutlinedButton(
             style: buttonTheme.connectionDetailsButtonStyle,
             onPressed: toggleMenu,
-            child: Semantics(
-              label: "${_buildSemanticsText(status)} ${t.ui.more}",
-              button: true,
-              enabled: true,
-              excludeSemantics: true,
-              child: DynamicThemeImage("connection_details.svg"),
-            ),
+            child: DynamicThemeImage("connection_details.svg"),
           ),
         ),
       ),
     );
-  }
-
-  String _buildSemanticsText(VpnStatus vpnStatus) {
-    // VPN Panel. Preferred location: Fastest Server. Not secured. Secure my connection push button.
-    // VPN Panel. Connecting to Fastest Server. Cancel push button.
-    // VPN Panel. Connected to [City], [Country]. Pause menu push button.
-
-    var vpnPanel = "${t.ui.vpnPanel}. ";
-    if (vpnStatus.isDisconnected()) {
-      return "$vpnPanel ${t.ui.preferredLocation} ${t.ui.fastestServer}. ${t.ui.notSecured}";
-    }
-
-    if (vpnStatus.isConnecting()) {
-      return "$vpnPanel ${t.ui.connecting} to ${t.ui.fastestServer}.";
-    }
-
-    if (vpnStatus.isConnected()) {
-      return "$vpnPanel ${t.ui.connected} to ${_buildCityAndCountryText(vpnStatus)}.";
-    }
-
-    return "$vpnPanel ${t.ui.loading}";
-  }
-
-  String _buildCityAndCountryText(VpnStatus vpnStatus) {
-    if (vpnStatus.isMeshnetRouting) {
-      return vpnStatus.hostname ?? vpnStatus.ip ?? "";
-    }
-
-    if (vpnStatus.country == null) return t.ui.fastestServer;
-
-    final city = vpnStatus.city != null ? "${vpnStatus.city!}, " : "";
-    final virtual = vpnStatus.isVirtualLocation ? " ${t.ui.virtual}" : "";
-    return "$city${vpnStatus.country!.localizedName}$virtual";
   }
 }
