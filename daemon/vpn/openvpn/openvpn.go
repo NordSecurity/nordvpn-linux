@@ -116,6 +116,8 @@ func (ovpn *OpenVPN) Start(
 	process := exec.Command(
 		openVPNExec,
 		"--config", openVPNConfigFileName, // path to openVpnConfig to be used
+		"--setenv", "UV_NORD_APP", "true",
+		"--push-peer-info",
 		"--management-client",
 		"--management", openvpnManagementSocket, "unix", // enable openvpn management
 		"--pull-filter", "ignore", "redirect-gateway", // disable automatic routing
