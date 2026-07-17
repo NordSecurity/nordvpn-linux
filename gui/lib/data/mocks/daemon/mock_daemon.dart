@@ -57,12 +57,6 @@ final class MockDaemon extends DaemonServiceBase {
 
   void dispose() {
     serversList.dispose();
-    // Close the broadcast stream so any active subscribeToStateChanges RPC
-    // completes; otherwise Server.shutdown() waits forever on that still-open
-    // server stream.
-    if (!appStateStream.isClosed) {
-      appStateStream.close();
-    }
   }
 
   @override
