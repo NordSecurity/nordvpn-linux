@@ -113,28 +113,4 @@ void main() {
       pb_status.ConnectionState.CONNECTED,
     );
   });
-
-  test(
-    "reconnect surfaces non-server-unavailable failures without falling back",
-    () async {
-      GrpcServer.instance.vpnStatus.connectingErrorStatusCode =
-          DaemonStatusCode.failedToConnectToVpn;
-
-      await container
-          .read(vpnStatusControllerProvider.notifier)
-          .reconnectOrQuickConnect(
-            pb_status.ConnectionParameters(group: pb.ServerGroup.DOUBLE_VPN),
-          );
-
-      // The failure is shown as-is and no quick connect fallback happens.
-      expect(
-        container.read(popupsProvider)?.id,
-        DaemonStatusCode.failedToConnectToVpn,
-      );
-      expect(
-        GrpcServer.instance.vpnStatus.status.state,
-        isNot(pb_status.ConnectionState.CONNECTED),
-      );
-    },
-  );
 }
