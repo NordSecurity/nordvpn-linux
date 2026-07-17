@@ -1,5 +1,5 @@
 // Package log wraps the standard library logger with level-filtered functions
-// (Debug, Info, Warn, Error). The active level is stored atomically and can
+// (Debug, Info, Warn, Error, Trace). The active level is stored atomically and can
 // be changed at runtime by writing to the file watched by SetupLogger.
 package log
 
@@ -127,7 +127,7 @@ func (l *Logger) Errorf(format string, v ...any) {
 	logAtf(levelError, errorPrefix, l.prefix+" "+format, v)
 }
 func (l *Logger) Trace(v ...any) { logAt(levelTrace, tracePrefix, prepend(l.prefix, v)) }
-func (l *Logger) Traceff(format string, v ...any) {
+func (l *Logger) Tracef(format string, v ...any) {
 	logAtf(levelTrace, tracePrefix, l.prefix+" "+format, v)
 }
 
