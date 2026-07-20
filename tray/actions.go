@@ -240,50 +240,6 @@ func (ti *Instance) watchGUIInstallation(ctx context.Context) {
 	}
 }
 
-const (
-	guiBinaryName  = "nordvpn-gui"
-	guiLaunchURI   = "nordvpn-gui://open"
-	guiDownloadURL = "https://nordvpn.com/download/linux/"
-)
-
-func isGuiAvailable() bool {
-	if snapconf.IsUnderSnap() {
-		return true
-	}
-	return internal.IsCommandAvailable(guiBinaryName)
-}
-
-func (ti *Instance) openGui() {
-	var err error
-	if snapconf.IsUnderSnap() {
-		err = tryDbus(guiLaunchURI)
-	} else {
-		err = launchGuiBinary()
-	}
-	if err != nil {
-		log.Error("Failed to open GUI:", err)
-		ti.notify(Force, "Failed to open the NordVPN app")
-	}
-}
-
-func launchGuiBinary() error {
-	// #nosec G204 -- fixed command, no user input
-	cmd := exec.Command(guiBinaryName)
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-	go func() { _ = cmd.Wait() }() // reap the child process
-	return nil
-}
-
-func (ti *Instance) openDownloadPage() {
-	// #nosec G204 -- fixed URL, no user input
-	if err := exec.Command("xdg-open", guiDownloadURL).Run(); err != nil {
-		log.Error("Failed to open GUI download page:", err)
-		ti.notify(Force, "Failed to open the NordVPN download page")
-	}
-}
-
 func (ti *Instance) logout(persistToken bool) bool {
 	// #nosec G104 -- fire-and-forget analytics
 	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
