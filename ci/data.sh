@@ -63,9 +63,10 @@ go mod download github.com/urfave/cli/v2
 
 # TODO: LVPN-8375: Remove usage of built-in go variables outside go
 gomodcache=${GOMODCACHE:-$GOPATH/pkg/mod}
-cp "${gomodcache}"/github.com/urfave/cli/v2@v2.25.0/autocomplete/bash_autocomplete \
+cli_version=$(go list -m -f '{{.Version}}' github.com/urfave/cli/v2)
+cp "${gomodcache}"/github.com/urfave/cli/v2@"${cli_version}"/autocomplete/bash_autocomplete \
 	"${WORKDIR}"/dist/autocomplete/bash_autocomplete
-cp "${gomodcache}"/github.com/urfave/cli/v2@v2.25.0/autocomplete/zsh_autocomplete \
+cp "${gomodcache}"/github.com/urfave/cli/v2@"${cli_version}"/autocomplete/zsh_autocomplete \
 	"${WORKDIR}"/dist/autocomplete/zsh_autocomplete
 git apply contrib/patches/bash_autocomplete.diff
 git apply contrib/patches/zsh_autocomplete.diff
