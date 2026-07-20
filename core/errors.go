@@ -49,6 +49,30 @@ var (
 	ErrServerInternal = errors.New(http.StatusText(http.StatusInternalServerError))
 )
 
+const (
+	// Login error codes
+	InvalidAuthorizationHeader = 100106
+	// Meshnet error codes
+	RateLimitReachCode                   = 101126 // rate limit reached (max allowed nickname changes per user per week)
+	NicknameTooLongCode                  = 101127 // nickname too long
+	DuplicateNicknameCode                = 101128 // duplicate nickname (nickname already exist)
+	ForbiddenWordCode                    = 101129 // nickname with forbidden word
+	InvalidPrefixOrSuffixCode            = 101130 // nickname contains invalid prefix or suffix
+	NicknameHasDoubleHyphensCode         = 101131 // nickname contains double hyphens
+	InvalidCharsCode                     = 101132 // nickname contains invalid characters
+	MaxMachineCountReached               = 101120 // maximum machine count reached
+	MaxMachinePerPeerCountReached        = 101121 // maximum machine per peer count reached
+	MaxPeerCountReachedOnExternalMachine = 101122 // maximum peer count reach on external machine
+	// Dedicated server error codes
+	DeviceNotFound      = 910001
+	DeviceNotRegistered = 910007
+	InvalidFormData     = 100101
+	PublicKeyMismatch   = 910002
+	SessionLimitHit     = 910005
+	ServerOffline       = 910004
+	ServerNotFound      = 910003
+)
+
 type apiError struct {
 	Errors struct {
 		Code    int    `json:"code"`
@@ -134,77 +158,50 @@ func extractError(resp *http.Response, acceptedCode int) error {
 }
 
 func extractErrorForLogin(info apiError) error {
-	const (
-		invalidAuthorizationHeader = 100106
-	)
-
 	switch info.Errors.Code {
-	case invalidAuthorizationHeader:
+	case InvalidAuthorizationHeader:
 		return ErrInvalidAuthHeader
 	}
 	return nil
 }
 
 func extractErrorForMeshnet(info apiError) error {
-	const (
-		rateLimitReachCode                   = 101126 // rate limit reached (max allowed nickname changes per user per week)
-		nicknameTooLongCode                  = 101127 // nickname too long
-		duplicateNicknameCode                = 101128 // duplicate nickname (nickname already exist)
-		forbiddenWordCode                    = 101129 // nickname with forbidden word
-		invalidPrefixOrSuffixCode            = 101130 // nickname contains invalid prefix or suffix
-		nicknameHasDoubleHyphensCode         = 101131 // nickname contains double hyphens
-		invalidCharsCode                     = 101132 // nickname contains invalid characters
-		maxMachineCountReached               = 101120 // maximum machine count reached
-		maxMachinePerPeerCountReached        = 101121 // maximum machine per peer count reached
-		maxPeerCountReachedOnExternalMachine = 101122 // maximum peerp count reach on external machine
-	)
-
 	switch info.Errors.Code {
-	case rateLimitReachCode:
+	case RateLimitReachCode:
 		return ErrRateLimitReach
-	case nicknameTooLongCode:
+	case NicknameTooLongCode:
 		return ErrNicknameTooLong
-	case duplicateNicknameCode:
+	case DuplicateNicknameCode:
 		return ErrDuplicateNickname
-	case forbiddenWordCode:
+	case ForbiddenWordCode:
 		return ErrContainsForbiddenWord
-	case invalidPrefixOrSuffixCode:
+	case InvalidPrefixOrSuffixCode:
 		return ErrInvalidPrefixOrSuffix
-	case nicknameHasDoubleHyphensCode:
+	case NicknameHasDoubleHyphensCode:
 		return ErrNicknameWithDoubleHyphens
-	case invalidCharsCode:
+	case InvalidCharsCode:
 		return ErrContainsInvalidChars
-	case maxMachineCountReached, maxMachinePerPeerCountReached, maxPeerCountReachedOnExternalMachine:
+	case MaxMachineCountReached, MaxMachinePerPeerCountReached, MaxPeerCountReachedOnExternalMachine:
 		return ErrMaximumDeviceCount
 	}
 	return nil
 }
 
 func extractErrorForDedicatedServer(info apiError) error {
-	const (
-		deviceNotFound      = 910001
-		deviceNotRegistered = 910007
-		invalidFormData     = 100101
-		publicKeyMismatch   = 910002
-		sessionLimitHit     = 910005
-		serverOffline       = 910004
-		serverNotFound      = 910003
-	)
-
 	switch info.Errors.Code {
-	case deviceNotFound:
+	case DeviceNotFound:
 		return ErrDedicatedServersDeviceNotFound
-	case deviceNotRegistered:
+	case DeviceNotRegistered:
 		return ErrDedicatedServersDeviceNotRegistered
-	case invalidFormData:
+	case InvalidFormData:
 		return ErrDedicatedServersInvalidFormData
-	case publicKeyMismatch:
+	case PublicKeyMismatch:
 		return ErrDedicatedServersPublicKeyMismatch
-	case sessionLimitHit:
+	case SessionLimitHit:
 		return ErrDedicatedServersSessionMaxLimitReached
-	case serverOffline:
+	case ServerOffline:
 		return ErrDedicatedServersServerOffline
-	case serverNotFound:
+	case ServerNotFound:
 		return ErrDedicatedServersServerNotFound
 	}
 	return nil
