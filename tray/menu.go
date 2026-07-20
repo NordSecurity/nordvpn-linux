@@ -37,8 +37,8 @@ const (
 	labelNotLoggedIn           = "Not logged in"
 	labelLogIn                 = "Log in"
 	labelSettings              = "Settings"
-	labelOpenGui               = "Open NordVPN app"
-	labelDownloadGui           = "Download NordVPN app"
+	labelopenGUI               = "Open NordVPN app"
+	labelDownloadGUI           = "Download NordVPN app"
 	labelNotifications         = "Notifications"
 	labelTrayIcon              = "Tray icon"
 	labelPause5Min             = "Pause for 5 minutes"
@@ -59,8 +59,8 @@ const (
 	tooltipNotLoggedIn         = "Sign in required to use VPN"
 	tooltipLogIn               = "Sign in to your NordVPN account"
 	tooltipSettings            = "Configure application preferences"
-	tooltipOpenGui             = "Open the NordVPN app"
-	tooltipDownloadGui         = "Download the NordVPN app"
+	tooltipopenGUI             = "Open the NordVPN app"
+	tooltipDownloadGUI         = "Download the NordVPN app"
 	tooltipNotifications       = "Toggle desktop notifications"
 	tooltipTrayIcon            = "Show or hide tray icon"
 
@@ -603,20 +603,17 @@ func buildSettingsSubitems(ti *Instance, menu *systray.MenuItem) {
 	go handleTrayOption(ti, trayCheckbox)
 }
 
-func buildGuiSection(ti *Instance) {
+func buildGUISection(ti *Instance) {
 	if ti == nil {
-		return
-	}
-	if !ti.state.daemonAvailable {
 		return
 	}
 
 	systray.AddSeparator()
-	if isGuiAvailable() {
-		item := systray.AddMenuItem(labelOpenGui, tooltipOpenGui)
-		handleMenuItemClick(item, ti.openGui)
+	if isGUIAvailable() {
+		item := systray.AddMenuItem(labelopenGUI, tooltipopenGUI)
+		handleMenuItemClick(item, ti.openGUI)
 	} else {
-		item := systray.AddMenuItem(labelDownloadGui, tooltipDownloadGui)
+		item := systray.AddMenuItem(labelDownloadGUI, tooltipDownloadGUI)
 		handleMenuItemClick(item, ti.openDownloadPage)
 	}
 }
