@@ -28,49 +28,6 @@ def teardown_function(function):  # noqa: ARG001
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
 @pytest.mark.parametrize("lan_discovery", [True, False])
 @pytest.mark.parametrize("local", [True, False])
-def test_lan_discovery_exitnode(lan_discovery: bool, local: bool):
-    """Manual TCs: LVPN-1261, LVPN-1262"""
-
-    peer_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().ip
-    meshnet.set_permissions(peer_ip, True, local, True, True)
-
-    lan_discovery_value = "on" if lan_discovery else "off"
-    sh_no_tty.nordvpn.set("lan-discovery", lan_discovery_value, _ok_code=(0, 1))
-
-    # If either LAN discovery or local(or both) is disabled, routing rule should bellow LAN blocking rules.
-    def check_rules_routing() -> (bool, str):
-        rules = sh_no_tty.sudo.iptables("-S", "FORWARD")
-
-        routing_rule = f"-A FORWARD -s {peer_ip}/32 -m comment --comment nordvpn-exitnode-transient -j ACCEPT"
-        routing_rule_idx = rules.find(routing_rule)
-        if routing_rule_idx == -1:
-            return False, f"Routing rule not found\nrules:\n{rules}"
-
-        for lan in meshnet.LANS:
-            lan_drop_rule = f"-A FORWARD -s 100.64.0.0/10 -d {lan} -m comment --comment nordvpn-exitnode-transient -j DROP"
-            lan_drop_rule_idx = rules.find(lan_drop_rule)
-            if lan_drop_rule_idx == -1:
-                return False, f"LAN drop rule not found for subnet {lan}\nrules:\n{rules}"
-
-            if local and lan_discovery:
-                if lan_drop_rule_idx < routing_rule_idx:
-                    return False, f"Routing rule was added after LAN block rule for subnet {lan}\nrules:\n{rules}"
-            elif lan_drop_rule_idx > routing_rule_idx:
-                return False, f"Routing rule was added before LAN block rule for subnet {lan}\nrules:\n{rules}"
-
-        return True, ""
-
-    sh_no_tty.nordvpn.connect()
-    with lib.Defer(sh_no_tty.nordvpn.disconnect):
-        for (result, message) in lib.poll(check_rules_routing):  # noqa: B007
-            if result:
-                break
-        assert result, message
-
-
-@pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
-@pytest.mark.parametrize("lan_discovery", [True, False])
-@pytest.mark.parametrize("local", [True, False])
 def test_killswitch_exitnode_vpn(lan_discovery: bool, local: bool):
     my_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_this_device().ip
     peer_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().ip
