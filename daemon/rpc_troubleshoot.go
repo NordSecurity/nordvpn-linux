@@ -31,7 +31,6 @@ const (
 
 	// maxZipFileSize caps the resulting diagnostics archive (40 MB).
 	maxZipFileSize = 40 * 1024 * 1024
-	logPrefix      = "[troubleshoot]"
 
 	noDaemonLogSourceMsg = "We couldn't extract daemon logs automatically because the daemon was not started via systemd or snap. Contact our support team for help collecting logs manually."
 )
@@ -50,7 +49,7 @@ func (r *RPC) CollectDiagnostics(
 ) error {
 	caller, err := resolveDiagnosticsCaller(srv.Context())
 	if err != nil {
-		log.Error(logPrefix, "troubleshot failed with:", err)
+		log.Troubleshoot.Error("troubleshot failed with:", err)
 		return srv.Send(&pb.DiagnosticsProgress{
 			ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_INTERNAL,
 		})
@@ -62,7 +61,7 @@ func (r *RPC) CollectDiagnostics(
 	// land in the same second.
 	zipFile, err := createDiagnosticsZip(caller.outputDir)
 	if err != nil {
-		log.Error(logPrefix, "failed to create diagnostics zip:", err)
+		log.Troubleshoot.Error("failed to create diagnostics zip:", err)
 		return srv.Send(&pb.DiagnosticsProgress{
 			ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_FAILED_TO_CREATE_ZIP,
 		})
@@ -71,11 +70,11 @@ func (r *RPC) CollectDiagnostics(
 
 	if snapconf.IsUnderSnap() {
 		if err := os.Chmod(zipPath, internal.PermUserRWGroupROthersR); err != nil {
-			log.Warn(logPrefix, "failed to change file permissions:", err)
+			log.Troubleshoot.Warn("failed to change file permissions:", err)
 		}
 	} else {
 		if err := os.Chown(zipPath, int(caller.uid), int(caller.gid)); err != nil {
-			log.Error(logPrefix, "failed to change file ownership:", err)
+			log.Troubleshoot.Error("failed to change file ownership:", err)
 			return abortDiagnosticsWithCode(
 				zipFile, srv,
 				pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_CHOWN_FAILED,
@@ -88,20 +87,20 @@ func (r *RPC) CollectDiagnostics(
 		srv, zipFile, caller.user.HomeDir, state,
 	); err != nil {
 		if errors.Is(err, errZipSizeLimitExceeded) {
-			log.Error(logPrefix, "diagnostics zip exceeded 40 MB limit")
+			log.Troubleshoot.Error("diagnostics zip exceeded 40 MB limit")
 			return abortDiagnosticsWithCode(
 				zipFile, srv,
 				pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_ZIP_TOO_LARGE,
 			)
 		}
 		if errors.Is(err, errNoDaemonLogSource) {
-			log.Error(logPrefix, "no daemon log source available:", err)
+			log.Troubleshoot.Error("no daemon log source available:", err)
 			return abortDiagnosticsWithCode(
 				zipFile, srv,
 				pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_NO_DAEMON_LOG_SOURCE,
 			)
 		}
-		log.Error(logPrefix, "failed to collect diagnostics:", err)
+		log.Troubleshoot.Error("failed to collect diagnostics:", err)
 		return abortDiagnosticsWithCode(
 			zipFile, srv,
 			pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED,
@@ -109,9 +108,9 @@ func (r *RPC) CollectDiagnostics(
 	}
 
 	if err := zipFile.Close(); err != nil {
-		log.Error(logPrefix, "failed to close zip file:", err)
+		log.Troubleshoot.Error("failed to close zip file:", err)
 		if removeErr := os.Remove(zipPath); removeErr != nil {
-			log.Error(logPrefix, "failed to delete zip", removeErr)
+			log.Troubleshoot.Error("failed to delete zip", removeErr)
 		}
 		return srv.Send(&pb.DiagnosticsProgress{
 			ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_FAILED_TO_CLOSE_ZIP,
@@ -133,7 +132,7 @@ func abortDiagnosticsWithCode(
 ) error {
 	_ = zipFile.Close()
 	if err := os.Remove(zipFile.Name()); err != nil {
-		log.Error(logPrefix, "failed to delete zip", err)
+		log.Troubleshoot.Error("failed to delete zip", err)
 	}
 	return srv.Send(&pb.DiagnosticsProgress{ErrorCode: code})
 }
@@ -370,7 +369,7 @@ func collectDiagnosticsData(
 	for i, step := range steps {
 		desc := fmt.Sprintf("[%d/%d] %s", i+1, total, step.description)
 		if err := srv.Send(&pb.DiagnosticsProgress{Step: desc}); err != nil {
-			log.Warn(logPrefix, "failed to report the progress", err)
+			log.Troubleshoot.Warn("failed to report the progress", err)
 		}
 		logf("step started: %s", step.description)
 		err := step.collect()
@@ -389,7 +388,7 @@ func collectDiagnosticsData(
 			return err
 		}
 		logf("step failed: %s: %v", step.description, err)
-		log.Info(logPrefix, "diagnostics step failed:", step.description, err)
+		log.Troubleshoot.Info("diagnostics step failed:", step.description, err)
 	}
 
 	logf("diagnostics collection finished")
@@ -406,11 +405,11 @@ func collectDiagnosticsData(
 func writeLogExtractionReport(zipWriter *zip.Writer, buf *bytes.Buffer) {
 	w, err := zipWriter.Create("log_extraction_report.log")
 	if err != nil {
-		log.Info(logPrefix, "failed to create log_extraction_report.log:", err)
+		log.Troubleshoot.Info("failed to create log_extraction_report.log:", err)
 		return
 	}
 	if _, err := w.Write(buf.Bytes()); err != nil {
-		log.Info(logPrefix, "failed to write log_extraction_report.log:", err)
+		log.Troubleshoot.Info("failed to write log_extraction_report.log:", err)
 	}
 }
 
@@ -911,7 +910,7 @@ func addDNSInfo(zipWriter *zip.Writer) error {
 			return err
 		}
 	} else {
-		log.Info(logPrefix, "/etc/NetworkManager/conf.d:", err)
+		log.Troubleshoot.Info("/etc/NetworkManager/conf.d:", err)
 	}
 	if _, err := os.Stat("/etc/systemd/resolved.conf.d"); err == nil {
 		if err := addDirectoryToZip(zipWriter,
