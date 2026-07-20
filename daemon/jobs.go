@@ -122,7 +122,7 @@ func (r *RPC) StartJobs(
 			switch ev.(type) {
 			case events.DataConnect:
 			case events.DataDisconnect:
-				last, err := jobInsights.LastRun()
+				last, err := jobInsights.LastRunStartedAt()
 				if err != nil {
 					log.Warn(jobInsights.Name(), "getting last run time error:", err)
 				}
