@@ -9,10 +9,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIsGuiAvailableUnderSnap(t *testing.T) {
+func TestisGUIAvailableUnderSnap(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	t.Setenv(snapconf.EnvSnapName, "nordvpn")
+	t.Setenv("PATH", t.TempDir())
 
-	assert.True(t, isGuiAvailable())
+	t.Setenv(snapconf.EnvSnapName, "")
+	assert.False(t, isGUIAvailable())
+
+	t.Setenv(snapconf.EnvSnapName, "nordvpn")
+	assert.True(t, isGUIAvailable())
 }

@@ -19,6 +19,8 @@ import (
 	"github.com/godbus/dbus/v5"
 )
 
+const dbusCallTimeout = 3 * time.Second
+
 // The pattern for actions is to return 'true' on success and 'false' (along with emitting a notification) on failure
 
 func (ti *Instance) login() {
@@ -30,7 +32,9 @@ func (ti *Instance) login() {
 	}
 	if resp.Status == pb.LoginStatus_CONSENT_MISSING {
 		// ask user for consent by opening terminal with consent flow,
-		openURI(internal.SubcommandURI(internal.ConsentSubcommand))
+		if err := openURI(internal.SubcommandURI(internal.ConsentSubcommand)); err != nil {
+			log.Errorf("failed to open consent URI: %v", err)
+		}
 		return
 	}
 
@@ -83,13 +87,22 @@ func (ti *Instance) login() {
 	}
 }
 
-func openURI(uri string) {
-	if err := tryDbus(uri); err != nil {
-		log.Errorf("failed to open URI '%s' using D-Bus: %v", uri, err)
+// openURI opens uri via the desktop portal, falling back to xdg-open if the portal call fails
+func openURI(uri string) error {
+	portalErr := openURIViaPortal(uri)
+	if portalErr == nil {
+		return nil
 	}
+
+	// #nosec G204 -- callers pass fixed URIs, no user input
+	if xdgErr := exec.Command("xdg-open", uri).Run(); xdgErr != nil {
+		return fmt.Errorf("opening URI %q failed via portal (%v) and xdg-open (%w)", uri, portalErr, xdgErr)
+	}
+	return nil
 }
 
-func tryDbus(uri string) error {
+// openURIViaPortal requests the freedesktop.desktop.portal (over the DBus) to open uri.
+func openURIViaPortal(uri string) error {
 	conn, err := dbus.SessionBus()
 	if err != nil {
 		return fmt.Errorf("failed to connect to session bus: %w", err)
@@ -97,7 +110,7 @@ func tryDbus(uri string) error {
 
 	obj := conn.Object("org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), dbusCallTimeout)
 	defer cancel()
 
 	call := obj.CallWithContext(ctx,
@@ -117,17 +130,17 @@ const (
 	guiDownloadURL = "https://nordvpn.com/download/linux/"
 )
 
-func isGuiAvailable() bool {
+func isGUIAvailable() bool {
 	if snapconf.IsUnderSnap() {
 		return true
 	}
 	return internal.IsCommandAvailable(guiBinaryName)
 }
 
-func (ti *Instance) openGui() {
+func (ti *Instance) openGUI() {
 	var err error
 	if snapconf.IsUnderSnap() {
-		err = tryDbus(guiLaunchURI)
+		err = openURI(guiLaunchURI)
 	} else {
 		err = launchGuiBinary()
 	}
@@ -148,8 +161,7 @@ func launchGuiBinary() error {
 }
 
 func (ti *Instance) openDownloadPage() {
-	// #nosec G204 -- fixed URL, no user input
-	if err := exec.Command("xdg-open", guiDownloadURL).Run(); err != nil {
+	if err := openURI(guiDownloadURL); err != nil {
 		log.Error("Failed to open GUI download page:", err)
 		ti.notify(Force, "Failed to open the NordVPN download page")
 	}
