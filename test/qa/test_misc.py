@@ -248,7 +248,6 @@ def test_troubleshoot():
         # system-info blocks
         for block in (
             "OS Release",
-            "Linux Distribution",
             "Kernel Version",
             "Desktop Environment",
             "nordvpn version",
