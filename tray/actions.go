@@ -94,34 +94,74 @@ func openURI(uri string) error {
 		return nil
 	}
 
+	log.Warnf("portal open failed for %q (%v), trying xdg-open", uri, portalErr)
 	// #nosec G204 -- callers pass fixed URIs, no user input
 	if xdgErr := exec.Command("xdg-open", uri).Run(); xdgErr != nil {
 		return fmt.Errorf("opening URI %q failed via portal (%v) and xdg-open (%w)", uri, portalErr, xdgErr)
 	}
+	log.Infof("opened via xdg-open as a fallback: %q", uri)
 	return nil
 }
 
-// openURIViaPortal requests the freedesktop.desktop.portal (over the DBus) to open uri.
+// openURIViaPortal requests the freedesktop.desktop.portal (over the D-Bus) to open uri.
 func openURIViaPortal(uri string) error {
-	conn, err := dbus.SessionBus()
+	// using a private connection for a specific short-lived task
+	conn, err := dbus.ConnectSessionBus()
 	if err != nil {
-		return fmt.Errorf("failed to connect to session bus: %w", err)
+		return fmt.Errorf("connecting to session bus: %w", err)
 	}
+	defer conn.Close()
+
+	// subscribe before the actual call so a response is not missed
+	matchRules := []dbus.MatchOption{
+		dbus.WithMatchInterface("org.freedesktop.portal.Request"),
+		dbus.WithMatchMember("Response"),
+	}
+	if err := conn.AddMatchSignal(matchRules...); err != nil {
+		return fmt.Errorf("subscribing to portal's 'Response': %w", err)
+	}
+	rxChan := make(chan *dbus.Signal, 8)
+	conn.Signal(rxChan)
 
 	obj := conn.Object("org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop")
-
 	ctx, cancel := context.WithTimeout(context.Background(), dbusCallTimeout)
 	defer cancel()
 
-	call := obj.CallWithContext(ctx,
-		"org.freedesktop.portal.OpenURI.OpenURI", 0,
-		"", uri, map[string]dbus.Variant{},
-	)
+	log.Debugf("portal: OpenURI for %q", uri)
+	var requestPath dbus.ObjectPath
+	call := obj.CallWithContext(ctx, "org.freedesktop.portal.OpenURI.OpenURI", 0,
+		"", uri, map[string]dbus.Variant{})
 	if call.Err != nil {
-		return fmt.Errorf("DBus OpenURI failed: %w", call.Err)
+		return fmt.Errorf("portal OpenURI call failed: %w", call.Err)
 	}
+	if err := call.Store(&requestPath); err != nil {
+		return fmt.Errorf("storing portal request handle: %w", err)
+	}
+	log.Debugf("portal: OpenURI accepted, waiting for response on %q", requestPath)
 
-	return nil
+	timeout := time.After(dbusCallTimeout)
+	for {
+		select {
+		case <-timeout:
+			// the portal already accepted the request, so a late "Response" most
+			// likely means that the launch was dispatched
+			log.Warnf("portal 'Response' for %q timed out, assuming launch was dispatched", uri)
+			return nil
+		case sig := <-rxChan:
+			if sig == nil || sig.Path != requestPath || len(sig.Body) == 0 {
+				continue
+			}
+			code, ok := sig.Body[0].(uint32)
+			if !ok {
+				return fmt.Errorf("malformed portal response for %q: %v", uri, sig.Body)
+			}
+			log.Infof("portal: OpenURI response for %q: code=%d body=%v", uri, code, sig.Body)
+			if code == 0 {
+				return nil
+			}
+			return fmt.Errorf("portal OpenURI failed for %q (response code %d)", uri, code)
+		}
+	}
 }
 
 const (
@@ -130,6 +170,7 @@ const (
 	guiDownloadURL = "https://nordvpn.com/download/linux/"
 )
 
+// isGUIAvailable check whether the system already has the application
 func isGUIAvailable() bool {
 	if snapconf.IsUnderSnap() {
 		return true
@@ -137,30 +178,18 @@ func isGUIAvailable() bool {
 	return internal.IsCommandAvailable(guiBinaryName)
 }
 
+// openGUI tries to open GUI application
 func (ti *Instance) openGUI() {
-	var err error
-	if snapconf.IsUnderSnap() {
-		err = openURI(guiLaunchURI)
-	} else {
-		err = launchGuiBinary()
-	}
-	if err != nil {
+	log.Infof("opening NordVPN GUI via %q", guiLaunchURI)
+	if err := openURI(guiLaunchURI); err != nil {
 		log.Error("Failed to open GUI:", err)
 		ti.notify(Force, "Failed to open the NordVPN app")
 	}
 }
 
-func launchGuiBinary() error {
-	// #nosec G204 -- fixed command, no user input
-	cmd := exec.Command(guiBinaryName)
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-	go func() { _ = cmd.Wait() }() // reap the child process
-	return nil
-}
-
-func (ti *Instance) openDownloadPage() {
+// openGUIDownloadPage tries to open download page for GUI application
+func (ti *Instance) openGUIDownloadPage() {
+	log.Infof("opening NordVPN GUI download page via %q", guiDownloadURL)
 	if err := openURI(guiDownloadURL); err != nil {
 		log.Error("Failed to open GUI download page:", err)
 		ti.notify(Force, "Failed to open the NordVPN download page")

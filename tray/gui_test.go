@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestisGUIAvailableUnderSnap(t *testing.T) {
+func TestIsGUIAvailableUnderSnap(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	t.Setenv("PATH", t.TempDir())
