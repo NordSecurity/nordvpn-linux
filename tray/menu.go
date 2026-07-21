@@ -37,7 +37,7 @@ const (
 	labelNotLoggedIn           = "Not logged in"
 	labelLogIn                 = "Log in"
 	labelSettings              = "Settings"
-	labelopenGUI               = "Open NordVPN app"
+	labelOpenGUI               = "Open NordVPN app"
 	labelDownloadGUI           = "Download NordVPN app"
 	labelNotifications         = "Notifications"
 	labelTrayIcon              = "Tray icon"
@@ -59,7 +59,7 @@ const (
 	tooltipNotLoggedIn         = "Sign in required to use VPN"
 	tooltipLogIn               = "Sign in to your NordVPN account"
 	tooltipSettings            = "Configure application preferences"
-	tooltipopenGUI             = "Open the NordVPN app"
+	tooltipOpenGUI             = "Open the NordVPN app"
 	tooltipDownloadGUI         = "Download the NordVPN app"
 	tooltipNotifications       = "Toggle desktop notifications"
 	tooltipTrayIcon            = "Show or hide tray icon"
@@ -610,11 +610,11 @@ func buildGUISection(ti *Instance) {
 
 	systray.AddSeparator()
 	if isGUIAvailable() {
-		item := systray.AddMenuItem(labelopenGUI, tooltipopenGUI)
+		item := systray.AddMenuItem(labelOpenGUI, tooltipOpenGUI)
 		handleMenuItemClick(item, ti.openGUI)
 	} else {
 		item := systray.AddMenuItem(labelDownloadGUI, tooltipDownloadGUI)
-		handleMenuItemClick(item, ti.openDownloadPage)
+		handleMenuItemClick(item, ti.openGUIDownloadPage)
 	}
 }
 
