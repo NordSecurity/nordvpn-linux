@@ -416,7 +416,7 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 	// Report the configured auto-connect target at startup / on consent so the
 	// attributes are present even before the user changes auto-connect.
 	if err := s.reportAutoConnectTarget(cfg.AutoConnectData); err != nil {
-		log.Warn(LogComponentPrefix, "failed to report auto-connect target during Init:", err)
+		log.Moose.Warn("failed to report auto-connect target during Init:", err)
 	}
 
 	return nil
@@ -774,7 +774,7 @@ func (s *Subscriber) setTPLite(isTPLiteEnabled bool) error {
 	// User Preferences field in moose context is used to see what's the setting
 	// user selected - no matter if VPN is actively used or not.
 	if err := s.response(s.mooseFuncs.setTPLiteUserPreference(isTPLiteEnabled)); err != nil {
-		log.Warn("failed to set TP Lite in User Preferences:", err)
+		log.Moose.Warn("failed to set TP Lite in User Preferences:", err)
 		errs = append(errs, fmt.Errorf("setting TP Lite user preference (enabled=%v): %w", isTPLiteEnabled, err))
 	}
 
@@ -1005,12 +1005,12 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 		if err := s.response(s.mooseFuncs.setRecommendationUuid(data.RecommendationUUID)); err != nil {
 			// We can ignore setting the recommendation Uuid
 			// Sending the disconnect event is much more important
-			log.Warn("Failed to set RecommendationUUID into the moose context ", err)
+			log.Moose.Warn("Failed to set RecommendationUUID into the moose context ", err)
 		}
 
 		defer func() {
 			if err := s.response(s.mooseFuncs.unsetRecommendationUuid()); err != nil {
-				log.Warn("Failed to unset RecommendationUUID into the moose context ", err)
+				log.Moose.Warn("Failed to unset RecommendationUUID into the moose context ", err)
 			}
 		}()
 	}
