@@ -308,6 +308,7 @@ func (ti *Instance) OnReady(ctx context.Context) {
 	ti.stateListener.Start()
 
 	go ti.renderLoop(ctx)
+	go ti.watchGUIInstallation(ctx)
 
 	ti.state.mu.Lock()
 	ti.updateIcon()

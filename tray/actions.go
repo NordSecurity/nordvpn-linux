@@ -7,12 +7,14 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/cli"
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/filewatch"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
@@ -193,6 +195,48 @@ func (ti *Instance) openGUIDownloadPage() {
 	if err := openURI(guiDownloadURL); err != nil {
 		log.Error("Failed to open GUI download page:", err)
 		ti.notify(Force, "Failed to open the NordVPN download page")
+	}
+}
+
+// watchGUIInstallation redraws (async) the tray when the native GUI binary appears in the system
+// or disappears.
+func (ti *Instance) watchGUIInstallation(ctx context.Context) {
+	if snapconf.IsUnderSnap() {
+		// GUI is always bundled with the package
+		return
+	}
+
+	const guiInstallDir = "/usr/bin"
+	watcher, err := filewatch.GetFileWatcher(guiInstallDir)
+	if err != nil {
+		log.Error("Failed to get watcher for GUI installation:", err)
+		return
+	}
+	defer watcher.Close()
+
+	available := isGUIAvailable()
+	for {
+		select {
+		case <-ctx.Done():
+			// stop watching
+			return
+		case event, ok := <-watcher.Events:
+			if !ok {
+				return
+			}
+			if filepath.Base(event.Name) != guiBinaryName {
+				continue
+			}
+			if now := isGUIAvailable(); now != available {
+				available = now
+				ti.redraw(true)
+			}
+		case err, ok := <-watcher.Errors:
+			if !ok {
+				return
+			}
+			log.Error("GUI installation watcher error:", err)
+		}
 	}
 }
 
