@@ -772,12 +772,6 @@ func addSystemInfo(zipWriter *zip.Writer, state appState, logf logFunc) error {
 
 	writeBlock(w, "OS Release", readFile(logf, "/etc/os-release"))
 
-	if _, err := os.Stat("/etc/lsb-release"); err == nil {
-		writeBlock(w, "Linux Distribution", readFile("/etc/lsb-release"))
-	} else {
-		writeBlock(w, "Linux Distribution", runCommand("lsb_release", "-a"))
-	}
-
 	writeBlock(w, "Kernel Version", runCommand(logf, "uname", "-a"))
 	writeBlock(w, "Desktop Environment", collectDesktopEnvironment(logf))
 
