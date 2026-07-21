@@ -1685,6 +1685,36 @@ func TestVPNConnReasonToMoose(t *testing.T) {
 	}
 }
 
+func TestUiItemType(t *testing.T) {
+	category.Set(t, category.Unit)
+	tests := []struct {
+		name     string
+		itemType string
+		want     moose.NordvpnappUserInterfaceItemType
+	}{
+		{
+			name:     "textbox maps to text box",
+			itemType: "textbox",
+			want:     moose.NordvpnappUserInterfaceItemTypeTextBox,
+		},
+		{
+			name:     "click maps to button",
+			itemType: "click",
+			want:     moose.NordvpnappUserInterfaceItemTypeButton,
+		},
+		{
+			name:     "empty maps to button",
+			itemType: "",
+			want:     moose.NordvpnappUserInterfaceItemTypeButton,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, uiItemType(tt.itemType))
+		})
+	}
+}
+
 func TestNotifyConnect_VPNConnReason(t *testing.T) {
 	category.Set(t, category.Unit)
 	tests := []struct {

@@ -632,16 +632,20 @@ func (s *Subscriber) setTokenRenewDate(unixTimestamp int64) error {
 	return nil
 }
 
-func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
-	itemType := moose.NordvpnappUserInterfaceItemTypeButton
-	if data.ItemType == "textbox" {
-		itemType = moose.NordvpnappUserInterfaceItemTypeTextBox
+// uiItemType maps a UiItemsAction item type string to its moose enum.
+func uiItemType(itemType string) moose.NordvpnappUserInterfaceItemType {
+	if itemType == "textbox" {
+		return moose.NordvpnappUserInterfaceItemTypeTextBox
 	}
+	return moose.NordvpnappUserInterfaceItemTypeButton
+}
+
+func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
 	if err := s.response(moose.NordvpnappSendUserInterfaceUiItemsClick(
 		moose.UiItemsParams{
 			FormReference: data.FormReference,
 			ItemName:      data.ItemName,
-			ItemType:      itemType,
+			ItemType:      uiItemType(data.ItemType),
 			ItemValue:     data.ItemValue,
 		},
 		nil,

@@ -175,6 +175,36 @@ func TestProtoToMooseStrings(t *testing.T) {
 				ItemValue:     "dedicated_server",
 			},
 		},
+		{
+			name: "open gui app from the tray",
+			input: &pb.UIEvent{
+				FormReference: pb.UIEvent_TRAY,
+				ItemName:      pb.UIEvent_OPEN_APP,
+				ItemType:      pb.UIEvent_CLICK,
+				ItemValue:     pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "tray",
+				ItemName:      "open_app",
+				ItemType:      "click",
+				ItemValue:     "",
+			},
+		},
+		{
+			name: "open gui app download page from the tray",
+			input: &pb.UIEvent{
+				FormReference: pb.UIEvent_TRAY,
+				ItemName:      pb.UIEvent_DOWNLOAD_APP,
+				ItemType:      pb.UIEvent_CLICK,
+				ItemValue:     pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "tray",
+				ItemName:      "download_app",
+				ItemType:      "click",
+				ItemValue:     "",
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -224,6 +254,8 @@ func TestItemNameToString(t *testing.T) {
 		{pb.UIEvent_RECONNECT, "reconnect"},
 		{pb.UIEvent_CHANGE_SETTINGS, "change_vpn_settings"},
 		{pb.UIEvent_GET_HELP, "help"},
+		{pb.UIEvent_OPEN_APP, "open_app"},
+		{pb.UIEvent_DOWNLOAD_APP, "download_app"},
 	}
 
 	for _, tt := range tests {
