@@ -183,6 +183,14 @@ func isGUIAvailable() bool {
 // openGUI tries to open GUI application
 func (ti *Instance) openGUI() {
 	log.Infof("opening NordVPN GUI via %q", guiLaunchURI)
+	// #nosec G104 -- fire-and-forget analytics
+	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+		FormReference: pb.UIEvent_TRAY,
+		ItemName:      pb.UIEvent_OPEN_APP,
+		ItemValue:     pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
+		ItemType:      pb.UIEvent_CLICK,
+	})
+
 	if err := openURI(guiLaunchURI); err != nil {
 		log.Error("Failed to open GUI:", err)
 		ti.notify(Force, "Failed to open the NordVPN app")
@@ -192,6 +200,14 @@ func (ti *Instance) openGUI() {
 // openGUIDownloadPage tries to open download page for GUI application
 func (ti *Instance) openGUIDownloadPage() {
 	log.Infof("opening NordVPN GUI download page via %q", guiDownloadURL)
+	// #nosec G104 -- fire-and-forget analytics
+	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+		FormReference: pb.UIEvent_TRAY,
+		ItemName:      pb.UIEvent_DOWNLOAD_APP,
+		ItemValue:     pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
+		ItemType:      pb.UIEvent_CLICK,
+	})
+
 	if err := openURI(guiDownloadURL); err != nil {
 		log.Error("Failed to open GUI download page:", err)
 		ti.notify(Force, "Failed to open the NordVPN download page")

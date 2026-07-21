@@ -32,6 +32,8 @@ message UIEvent {
     RECONNECT = 10;
     CHANGE_SETTINGS = 11;
     GET_HELP = 12;
+    OPEN_APP = 13;
+    DOWNLOAD_APP = 14;
   }
 
   // ItemType represents the type of user interface event
