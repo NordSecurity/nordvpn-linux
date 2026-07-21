@@ -1321,6 +1321,7 @@ func noopDisconnectAmbientMooseFuncs(sub *Subscriber) {
 	sub.mooseFuncs.setIsOnVpnCurrentState = func(_ bool) uint32 { return 0 }
 	sub.mooseFuncs.setServerDomainCurrentState = func(_ string) uint32 { return 0 }
 	sub.mooseFuncs.setServerCityCurrentState = func(_ string) uint32 { return 0 }
+	sub.mooseFuncs.unsetServerDomainCurrentState = func() uint32 { return 0 }
 	sub.mooseFuncs.unsetServerCityCurrentState = func() uint32 { return 0 }
 }
 
