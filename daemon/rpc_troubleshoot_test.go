@@ -42,6 +42,13 @@ func (m *mockDiagnosticsServer) Context() context.Context {
 	return m.ctx
 }
 
+func capturingLogf() (logFunc, *[]string) {
+	var lines []string
+	return func(format string, args ...any) {
+		lines = append(lines, fmt.Sprintf(format, args...))
+	}, &lines
+}
+
 func TestSizeLimitedWriter(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -172,9 +179,19 @@ func TestReadFile(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			path := tc.setup(t)
-			assert.Contains(t, readFile(path), tc.expectedOutput)
+			logf, _ := capturingLogf()
+			assert.Contains(t, readFile(logf, path), tc.expectedOutput)
 		})
 	}
+}
+
+func TestReadFile_LogsErrorToReport(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	logf, lines := capturingLogf()
+	readFile(logf, "/nonexistent/path/xyz.txt")
+	require.Len(t, *lines, 1)
+	assert.Contains(t, (*lines)[0], "/nonexistent/path/xyz.txt")
 }
 
 func TestRunCommand(t *testing.T) {
@@ -206,9 +223,19 @@ func TestRunCommand(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			assert.Contains(t, runCommand(tc.cmd, tc.args...), tc.expectedOutput)
+			logf, _ := capturingLogf()
+			assert.Contains(t, runCommand(logf, tc.cmd, tc.args...), tc.expectedOutput)
 		})
 	}
+}
+
+func TestRunCommand_LogsErrorToReport(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	logf, lines := capturingLogf()
+	runCommand(logf, "/nonexistent/command-xyz")
+	require.Len(t, *lines, 1)
+	assert.Contains(t, (*lines)[0], "/nonexistent/command-xyz")
 }
 
 func TestAddFileToZip(t *testing.T) {

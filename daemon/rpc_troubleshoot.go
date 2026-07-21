@@ -286,6 +286,8 @@ func (lw *sizeLimitedWriter) Write(p []byte) (int, error) {
 	return n, errZipSizeLimitExceeded
 }
 
+type logFunc func(format string, args ...any)
+
 // diagnosticsStep represents one unit of diagnostics collection: the message
 // shown to the user and the function that performs the work.
 //
@@ -352,13 +354,13 @@ func collectDiagnosticsData(
 			return addDirectoryToZip(zipWriter, cacheDir, "cache")
 		}, false},
 		{"Collecting system info...", func() error {
-			return addSystemInfo(zipWriter, state)
+			return addSystemInfo(zipWriter, state, logf)
 		}, false},
 		{"Collecting network info...", func() error {
-			return addNetworkInfo(zipWriter)
+			return addNetworkInfo(zipWriter, logf)
 		}, false},
 		{"Collecting DNS info...", func() error {
-			return addDNSInfo(zipWriter)
+			return addDNSInfo(zipWriter, logf)
 		}, false},
 		{"Collecting firewall rules...", func() error {
 			return addNFTablesInfo(zipWriter)
@@ -724,9 +726,10 @@ func writeBlock(w io.Writer, title, content string) {
 // runCommand executes name with args and returns the combined stdout/stderr.
 // On failure the error is appended inline so the block still reports
 // something meaningful instead of being silently empty.
-func runCommand(name string, args ...string) string {
+func runCommand(logf logFunc, name string, args ...string) string {
 	out, err := exec.Command(name, args...).CombinedOutput()
 	if err != nil {
+		logf("command failed: %s %s: %v", name, strings.Join(args, " "), err)
 		return fmt.Sprintf("%serror: %v\n", out, err)
 	}
 	return string(out)
@@ -734,9 +737,10 @@ func runCommand(name string, args ...string) string {
 
 // readFile returns the contents of path as a string. On failure the error is
 // rendered inline (mirroring runCommand) so blocks are never silently empty.
-func readFile(path string) string {
+func readFile(logf logFunc, path string) string {
 	data, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
+		logf("error reading %s: %v", path, err)
 		return fmt.Sprintf("error reading %s: %v\n", path, err)
 	}
 	return string(data)
@@ -745,26 +749,28 @@ func readFile(path string) string {
 // dbusGetProperty fetches a property from the system bus and returns its
 // formatted string representation. Errors are rendered inline (mirroring
 // runCommand) so the block is never silently empty.
-func dbusGetProperty(service, path, iface, property string) string {
+func dbusGetProperty(logf logFunc, service, path, iface, property string) string {
 	conn, err := dbus.SystemBus()
 	if err != nil {
+		logf("dbus connect error: %v", err)
 		return fmt.Sprintf("dbus connect error: %v\n", err)
 	}
 	v, err := conn.Object(service, dbus.ObjectPath(path)).
 		GetProperty(iface + "." + property)
 	if err != nil {
+		logf("error reading dbus property %s.%s: %v", iface, property, err)
 		return fmt.Sprintf("error: %v\n", err)
 	}
 	return v.String() + "\n"
 }
 
-func addSystemInfo(zipWriter *zip.Writer, state appState) error {
+func addSystemInfo(zipWriter *zip.Writer, state appState, logf logFunc) error {
 	w, err := zipWriter.Create("system-info.txt")
 	if err != nil {
 		return err
 	}
 
-	writeBlock(w, "OS Release", readFile("/etc/os-release"))
+	writeBlock(w, "OS Release", readFile(logf, "/etc/os-release"))
 
 	if _, err := os.Stat("/etc/lsb-release"); err == nil {
 		writeBlock(w, "Linux Distribution", readFile("/etc/lsb-release"))
@@ -772,8 +778,8 @@ func addSystemInfo(zipWriter *zip.Writer, state appState) error {
 		writeBlock(w, "Linux Distribution", runCommand("lsb_release", "-a"))
 	}
 
-	writeBlock(w, "Kernel Version", runCommand("uname", "-a"))
-	writeBlock(w, "Desktop Environment", collectDesktopEnvironment())
+	writeBlock(w, "Kernel Version", runCommand(logf, "uname", "-a"))
+	writeBlock(w, "Desktop Environment", collectDesktopEnvironment(logf))
 
 	// nordvpn version/status/settings come from in-process state pulled in
 	// CollectDiagnostics — no shelling out to the CLI.
@@ -786,11 +792,12 @@ func addSystemInfo(zipWriter *zip.Writer, state appState) error {
 
 // collectDesktopEnvironment returns per-session loginctl properties for each
 // active session, formatted for inclusion in the system-info block.
-func collectDesktopEnvironment() string {
+func collectDesktopEnvironment(logf logFunc) string {
 	output, err := exec.Command(
 		"loginctl", "list-sessions", "--no-legend",
 	).Output()
 	if err != nil {
+		logf("loginctl list-sessions failed: %v", err)
 		return fmt.Sprintf("loginctl error: %v\n", err)
 	}
 	var b strings.Builder
@@ -804,30 +811,33 @@ func collectDesktopEnvironment() string {
 		sessionID := fields[0]
 		fmt.Fprintf(&b, "--- Session %s ---\n", sessionID)
 		// #nosec G204 -- sessionID is safe to use
-		if props, err := exec.Command("loginctl", "show-session", sessionID,
+		props, err := exec.Command("loginctl", "show-session", sessionID,
 			"-p", "Type", "-p", "Desktop",
 			"-p", "Remote", "-p", "User",
-		).Output(); err == nil {
-			b.Write(props)
+		).Output()
+		if err != nil {
+			logf("loginctl show-session %s failed: %v", sessionID, err)
+			continue
 		}
+		b.Write(props)
 	}
 	return b.String()
 }
 
-func addNetworkInfo(zipWriter *zip.Writer) error {
+func addNetworkInfo(zipWriter *zip.Writer, logf logFunc) error {
 	w, err := zipWriter.Create("network-info.txt")
 	if err != nil {
 		return err
 	}
 
-	writeBlock(w, "ip addr", runCommand("ip", "addr"))
-	writeBlock(w, "ip rule show", runCommand("ip", "rule", "show"))
+	writeBlock(w, "ip addr", runCommand(logf, "ip", "addr"))
+	writeBlock(w, "ip rule show", runCommand(logf, "ip", "rule", "show"))
 	writeBlock(w, "ip route show table all",
-		runCommand("ip", "route", "show", "table", "all"))
+		runCommand(logf, "ip", "route", "show", "table", "all"))
 
-	writeBlock(w, "net.ipv6.conf.*.disable_ipv6", readDisableIPv6Status())
+	writeBlock(w, "net.ipv6.conf.*.disable_ipv6", readDisableIPv6Status(logf))
 	writeBlock(w, "net.ipv4.conf.all.rp_filter",
-		readFile("/proc/sys/net/ipv4/conf/all/rp_filter"))
+		readFile(logf, "/proc/sys/net/ipv4/conf/all/rp_filter"))
 
 	return nil
 }
@@ -835,9 +845,10 @@ func addNetworkInfo(zipWriter *zip.Writer) error {
 // readDisableIPv6Status reads net.ipv6.conf.<iface>.disable_ipv6 for every
 // interface (including "all" and "default") and returns a sysctl-style
 // listing sorted by interface name.
-func readDisableIPv6Status() string {
+func readDisableIPv6Status(logf logFunc) string {
 	matches, err := filepath.Glob("/proc/sys/net/ipv6/conf/*/disable_ipv6")
 	if err != nil {
+		logf("failed to glob /proc/sys/net/ipv6/conf/*/disable_ipv6: %v", err)
 		return fmt.Sprintf("glob error: %v\n", err)
 	}
 	sort.Strings(matches)
@@ -847,6 +858,7 @@ func readDisableIPv6Status() string {
 		// #nosec G304 -- m is from filepath.Glob with hardcoded /proc/sys pattern
 		data, err := os.ReadFile(m)
 		if err != nil {
+			logf("error reading %s: %v", m, err)
 			fmt.Fprintf(&b, "net.ipv6.conf.%s.disable_ipv6 = error: %v\n", iface, err)
 			continue
 		}
@@ -871,32 +883,32 @@ func addNFTablesInfo(zipWriter *zip.Writer) error {
 // NetworkManager DNS state) to dns-info.txt inside the archive. DNS is a
 // frequent support topic, so these blocks live in their own entry to keep
 // them easy to find alongside the rest of the report.
-func addDNSInfo(zipWriter *zip.Writer) error {
+func addDNSInfo(zipWriter *zip.Writer, logf logFunc) error {
 	w, err := zipWriter.Create("dns-info.txt")
 	if err != nil {
 		return err
 	}
 
 	writeBlock(w, "/etc/resolv.conf (ls -la)",
-		runCommand("ls", "-la", "/etc/resolv.conf"))
-	writeBlock(w, "/etc/resolv.conf", readFile("/etc/resolv.conf"))
+		runCommand(logf, "ls", "-la", "/etc/resolv.conf"))
+	writeBlock(w, "/etc/resolv.conf", readFile(logf, "/etc/resolv.conf"))
 
-	writeBlock(w, "systemd-resolve / resolvectl status", resolvectlStatus())
+	writeBlock(w, "systemd-resolve / resolvectl status", resolvectlStatus(logf))
 
-	writeBlock(w, "nmcli general", runCommand("nmcli", "general"))
-	writeBlock(w, "nmcli device show", runCommand("nmcli", "device", "show"))
+	writeBlock(w, "nmcli general", runCommand(logf, "nmcli", "general"))
+	writeBlock(w, "nmcli device show", runCommand(logf, "nmcli", "device", "show"))
 
-	writeBlock(w, "NetworkManager DNS Mode (dbus)", dbusGetProperty(
+	writeBlock(w, "NetworkManager DNS Mode (dbus)", dbusGetProperty(logf,
 		"org.freedesktop.NetworkManager",
 		"/org/freedesktop/NetworkManager/DnsManager",
 		"org.freedesktop.NetworkManager.DnsManager", "Mode"))
-	writeBlock(w, "NetworkManager DNS Configuration (dbus)", dbusGetProperty(
+	writeBlock(w, "NetworkManager DNS Configuration (dbus)", dbusGetProperty(logf,
 		"org.freedesktop.NetworkManager",
 		"/org/freedesktop/NetworkManager/DnsManager",
 		"org.freedesktop.NetworkManager.DnsManager", "Configuration"))
 
 	writeBlock(w, "/etc/systemd/resolved.conf",
-		readFile("/etc/systemd/resolved.conf"))
+		readFile(logf, "/etc/systemd/resolved.conf"))
 
 	// conf.d drop-ins land as real zip subdirectories so each file keeps its
 	// name and can be inspected individually. A missing directory is logged
@@ -910,7 +922,7 @@ func addDNSInfo(zipWriter *zip.Writer) error {
 			return err
 		}
 	} else {
-		log.Troubleshoot.Info("/etc/NetworkManager/conf.d:", err)
+		logf("/etc/NetworkManager/conf.d: %v", err)
 	}
 	if _, err := os.Stat("/etc/systemd/resolved.conf.d"); err == nil {
 		if err := addDirectoryToZip(zipWriter,
@@ -920,7 +932,7 @@ func addDNSInfo(zipWriter *zip.Writer) error {
 			return err
 		}
 	} else {
-		writeBlock(w, "/etc/systemd/resolved.conf.d", fmt.Sprintf("error: %v\n", err))
+		logf("/etc/systemd/resolved.conf.d: %v", err)
 	}
 
 	return nil
@@ -929,9 +941,9 @@ func addDNSInfo(zipWriter *zip.Writer) error {
 // resolvectlStatus runs the resolver status command, preferring the legacy
 // systemd-resolve binary when present (old systems) and falling back to
 // resolvectl (new systems). Returns the combined output.
-func resolvectlStatus() string {
-	if _, err := exec.LookPath("systemd-resolve"); err == nil {
-		return runCommand("systemd-resolve", "--status")
+func resolvectlStatus(logf logFunc) string {
+	if internal.IsCommandAvailable("systemd-resolve") {
+		return runCommand(logf, "systemd-resolve", "--status")
 	}
-	return runCommand("resolvectl", "status")
+	return runCommand(logf, "resolvectl", "status")
 }
