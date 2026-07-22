@@ -46,6 +46,7 @@ const (
 	InterfaceSystemObserve       Interface = "system-observe"
 	InterfaceHardwareObserve     Interface = "hardware-observe"
 	InterfaceSnapdControl        Interface = "snapd-control"
+	InterfaceNetworkManager      Interface = "network-manager"
 )
 
 // IsUnderSnap defines whether the current process is executed under snapd
@@ -78,6 +79,7 @@ func NewSnapChecker(publisherErr events.Publisher[error]) *ConnChecker {
 			InterfaceHome,
 			InterfaceLoginSessionObserve,
 			InterfaceSnapdControl,
+			InterfaceNetworkManager,
 		},
 		[]Interface{
 			InterfaceSystemObserve,
@@ -90,6 +92,7 @@ func NewSnapChecker(publisherErr events.Publisher[error]) *ConnChecker {
 			InterfaceHome,
 			InterfaceLoginSessionObserve,
 			InterfaceSnapdControl,
+			InterfaceNetworkManager,
 		},
 		publisherErr,
 	)
