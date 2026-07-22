@@ -100,6 +100,8 @@ def teardown_module(module):  # noqa: ARG001
 def setup_function(function):  # noqa: ARG001
     logging.log()
     peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
+    sh_no_tty.nordvpn.mesh.peer.refresh()
+    ssh_client.exec_command("nordvpn mesh peer refresh")
     assert meshnet.is_peer_reachable(peer_list.get_internal_peer()), "Internal peer should be reachable"
     assert meshnet.is_peer_reachable(peer_list.get_this_device(), ssh_client=ssh_client), "This device should be reachable from peer"
 
