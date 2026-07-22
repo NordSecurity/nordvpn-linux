@@ -299,9 +299,11 @@ func TestAddDirectoryToZip(t *testing.T) {
 
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
-	require.NoError(t, addDirectoryToZip(zw, dir, "prefix"))
+	count, err := addDirectoryToZip(zw, dir, "prefix")
+	require.NoError(t, err)
 	require.NoError(t, zw.Close())
 
+	assert.Equal(t, 2, count)
 	entries := readZipEntries(t, buf.Bytes())
 	assert.Equal(t, "aa", entries["prefix/"+fileA])
 	assert.Equal(t, "bb", entries["prefix/"+subName+"/"+fileB])
@@ -313,7 +315,22 @@ func TestAddDirectoryToZip_Missing(t *testing.T) {
 
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
-	assert.Error(t, addDirectoryToZip(zw, "/nonexistent/xyz", "p"))
+	_, err := addDirectoryToZip(zw, "/nonexistent/xyz", "p")
+	assert.Error(t, err)
+}
+
+func TestAddDirectoryToZip_Empty(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	dir := t.TempDir()
+
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	count, err := addDirectoryToZip(zw, dir, "prefix")
+	require.NoError(t, err)
+	require.NoError(t, zw.Close())
+
+	assert.Equal(t, 0, count, "empty directory should report zero files added")
 }
 
 func TestAddDirectoryToZip_SymlinksSkipped(t *testing.T) {
@@ -332,9 +349,11 @@ func TestAddDirectoryToZip_SymlinksSkipped(t *testing.T) {
 
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
-	require.NoError(t, addDirectoryToZip(zw, dir, "prefix"))
+	count, err := addDirectoryToZip(zw, dir, "prefix")
+	require.NoError(t, err)
 	require.NoError(t, zw.Close())
 
+	assert.Equal(t, 1, count, "symlink should not be counted as an added file")
 	entries := readZipEntries(t, buf.Bytes())
 	assert.Equal(t, "real", entries["prefix/"+realFile], "real file should be included")
 	assert.NotContains(t, entries, "prefix/link.txt", "symlink must not be followed into the zip")
