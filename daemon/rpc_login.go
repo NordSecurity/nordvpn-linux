@@ -93,7 +93,7 @@ func (r *RPC) loginWithToken(token string) (payload *pb.LoginResponse, retErr er
 				Type: internal.CodeInternalError,
 			}, nil
 		}
-		if errors.Is(err, core.ErrUnauthorized) {
+		if errors.Is(err, core.ErrUnauthorized) || errors.Is(err, core.ErrInvalidAuthHeader) {
 			return &pb.LoginResponse{
 				Type: internal.CodeTokenInvalid,
 			}, nil
