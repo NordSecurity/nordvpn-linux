@@ -351,7 +351,18 @@ func collectDiagnosticsData(
 				return nil
 			}
 			cacheDir := filepath.Join(homeDir, ".cache", "nordvpn")
-			return addDirectoryToZip(zipWriter, cacheDir, "cache")
+			if _, err := os.Stat(cacheDir); err != nil {
+				logf("%s: %v", cacheDir, err)
+				return nil
+			}
+			count, err := addDirectoryToZip(zipWriter, cacheDir, "cache")
+			if err != nil {
+				return err
+			}
+			if count == 0 {
+				logf("%s: directory is empty, nothing collected", cacheDir)
+			}
+			return nil
 		}, false},
 		{"Collecting system info...", func() error {
 			return addSystemInfo(zipWriter, state, logf)
@@ -652,8 +663,14 @@ func writeFileTailReversed(w io.Writer, f *os.File, fileSize, max int64) error {
 	return nil
 }
 
-func addDirectoryToZip(zipWriter *zip.Writer, dirPath, zipPrefix string) error {
-	return filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+// addDirectoryToZip copies dirPath's regular files into the zip under
+// zipPrefix, preserving relative paths, and returns how many files were
+// added. The count lets callers tell "the directory exists but is empty"
+// apart from "collection happened" — both look identical from a nil error
+// alone.
+func addDirectoryToZip(zipWriter *zip.Writer, dirPath, zipPrefix string) (int, error) {
+	var count int
+	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -676,8 +693,13 @@ func addDirectoryToZip(zipWriter *zip.Writer, dirPath, zipPrefix string) error {
 		}
 
 		zipPath := filepath.Join(zipPrefix, relPath)
-		return addFileToZip(zipWriter, path, zipPath)
+		if err := addFileToZip(zipWriter, path, zipPath); err != nil {
+			return err
+		}
+		count++
+		return nil
 	})
+	return count, err
 }
 
 func addFileToZip(zipWriter *zip.Writer, filePath, zipPath string) error {
@@ -901,32 +923,47 @@ func addDNSInfo(zipWriter *zip.Writer, logf logFunc) error {
 		"/org/freedesktop/NetworkManager/DnsManager",
 		"org.freedesktop.NetworkManager.DnsManager", "Configuration"))
 
-	writeBlock(w, "/etc/systemd/resolved.conf",
-		readFile(logf, "/etc/systemd/resolved.conf"))
+	if _, err := os.Stat("/etc/systemd/resolved.conf"); err == nil {
+		if err := addFileToZip(zipWriter,
+			"/etc/systemd/resolved.conf",
+			"etc/systemd/resolved.conf",
+		); err != nil {
+			return err
+		}
+	} else {
+		logf("/etc/systemd/resolved.conf: %v", err)
+	}
 
 	// conf.d drop-ins land as real zip subdirectories so each file keeps its
 	// name and can be inspected individually. A missing directory is logged
 	// rather than skipped silently so support can tell the difference between
 	// "no drop-ins configured" and "we forgot to collect them".
-	if _, err := os.Stat("/etc/NetworkManager/conf.d"); err == nil {
-		if err := addDirectoryToZip(zipWriter,
-			"/etc/NetworkManager/conf.d",
-			"etc/NetworkManager/conf.d",
-		); err != nil {
-			return err
-		}
-	} else {
+	if _, err := os.Stat("/etc/NetworkManager/conf.d"); err != nil {
 		logf("/etc/NetworkManager/conf.d: %v", err)
 	}
-	if _, err := os.Stat("/etc/systemd/resolved.conf.d"); err == nil {
-		if err := addDirectoryToZip(zipWriter,
-			"/etc/systemd/resolved.conf.d",
-			"etc/systemd/resolved.conf.d",
-		); err != nil {
-			return err
-		}
-	} else {
+	count, err := addDirectoryToZip(zipWriter,
+		"/etc/NetworkManager/conf.d",
+		"etc/NetworkManager/conf.d",
+	)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		logf("/etc/NetworkManager/conf.d: directory is empty, nothing collected")
+	}
+
+	if _, err := os.Stat("/etc/systemd/resolved.conf.d"); err != nil {
 		logf("/etc/systemd/resolved.conf.d: %v", err)
+	}
+	count, err = addDirectoryToZip(zipWriter,
+		"/etc/systemd/resolved.conf.d",
+		"etc/systemd/resolved.conf.d",
+	)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		logf("/etc/systemd/resolved.conf.d: directory is empty, nothing collected")
 	}
 
 	return nil
