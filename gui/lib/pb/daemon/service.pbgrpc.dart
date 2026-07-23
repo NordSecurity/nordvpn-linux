@@ -417,6 +417,16 @@ class DaemonClient extends $grpc.Client {
         options: options);
   }
 
+  /// ==================== Troubleshooting ====================
+  $grpc.ResponseStream<$0.DiagnosticsProgress> collectDiagnostics(
+    $0.Empty request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createStreamingCall(
+        _$collectDiagnostics, $async.Stream.fromIterable([request]),
+        options: options);
+  }
+
   // method descriptors
 
   static final _$isLoggedIn =
@@ -650,6 +660,11 @@ class DaemonClient extends $grpc.Client {
           '/pb.Daemon/InjectVpnConnectionError',
           ($0.InjectVpnConnectionErrorRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
+  static final _$collectDiagnostics =
+      $grpc.ClientMethod<$0.Empty, $0.DiagnosticsProgress>(
+          '/pb.Daemon/CollectDiagnostics',
+          ($0.Empty value) => value.writeToBuffer(),
+          $0.DiagnosticsProgress.fromBuffer);
 }
 
 @$pb.GrpcServiceName('pb.Daemon')
@@ -1028,6 +1043,13 @@ abstract class DaemonServiceBase extends $grpc.Service {
             ($core.List<$core.int> value) =>
                 $0.InjectVpnConnectionErrorRequest.fromBuffer(value),
             ($0.Payload value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.Empty, $0.DiagnosticsProgress>(
+        'CollectDiagnostics',
+        collectDiagnostics_Pre,
+        false,
+        true,
+        ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
+        ($0.DiagnosticsProgress value) => value.writeToBuffer()));
   }
 
   $async.Future<$1.IsLoggedInResponse> isLoggedIn_Pre(
@@ -1427,4 +1449,12 @@ abstract class DaemonServiceBase extends $grpc.Service {
 
   $async.Future<$0.Payload> injectVpnConnectionError(
       $grpc.ServiceCall call, $0.InjectVpnConnectionErrorRequest request);
+
+  $async.Stream<$0.DiagnosticsProgress> collectDiagnostics_Pre(
+      $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async* {
+    yield* collectDiagnostics($call, await $request);
+  }
+
+  $async.Stream<$0.DiagnosticsProgress> collectDiagnostics(
+      $grpc.ServiceCall call, $0.Empty request);
 }

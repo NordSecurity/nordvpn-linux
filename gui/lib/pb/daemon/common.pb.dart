@@ -15,6 +15,8 @@ import 'dart:core' as $core;
 import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 
+import 'common.pbenum.dart';
+
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
 export 'common.pbenum.dart';
@@ -482,6 +484,85 @@ class ServerGroupsList extends $pb.GeneratedMessage {
 
   @$pb.TagNumber(2)
   $pb.PbList<ServerGroup> get servers => $_getList(1);
+}
+
+class DiagnosticsProgress extends $pb.GeneratedMessage {
+  factory DiagnosticsProgress({
+    $core.String? step,
+    $core.String? filePath,
+    DiagnosticsErrorCode? errorCode,
+  }) {
+    final result = create();
+    if (step != null) result.step = step;
+    if (filePath != null) result.filePath = filePath;
+    if (errorCode != null) result.errorCode = errorCode;
+    return result;
+  }
+
+  DiagnosticsProgress._();
+
+  factory DiagnosticsProgress.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory DiagnosticsProgress.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'DiagnosticsProgress',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'step')
+    ..aOS(2, _omitFieldNames ? '' : 'filePath')
+    ..aE<DiagnosticsErrorCode>(3, _omitFieldNames ? '' : 'errorCode',
+        enumValues: DiagnosticsErrorCode.values)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  DiagnosticsProgress clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  DiagnosticsProgress copyWith(void Function(DiagnosticsProgress) updates) =>
+      super.copyWith((message) => updates(message as DiagnosticsProgress))
+          as DiagnosticsProgress;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static DiagnosticsProgress create() => DiagnosticsProgress._();
+  @$core.override
+  DiagnosticsProgress createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static DiagnosticsProgress getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<DiagnosticsProgress>(create);
+  static DiagnosticsProgress? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get step => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set step($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasStep() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearStep() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get filePath => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set filePath($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasFilePath() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearFilePath() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  DiagnosticsErrorCode get errorCode => $_getN(2);
+  @$pb.TagNumber(3)
+  set errorCode(DiagnosticsErrorCode value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasErrorCode() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearErrorCode() => $_clearField(3);
 }
 
 const $core.bool _omitFieldNames =
