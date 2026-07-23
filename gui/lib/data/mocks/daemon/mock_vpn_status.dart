@@ -53,6 +53,13 @@ final class MockVpnStatus extends CancelableDelayed {
 
     final server = serversList.findServer(args);
     if (server == null) {
+      if (args.serverGroup.isNotEmpty) {
+        // No server matches the requested specialty group with the current
+        // settings (e.g. Double VPN has no NordWhisper servers). Mirrors the
+        // daemon returning CodeServerUnavailable instead of a hard error.
+        yield Payload(type: Int64(DaemonStatusCode.serverUnavailable));
+        return;
+      }
       throw "server not found";
     }
 

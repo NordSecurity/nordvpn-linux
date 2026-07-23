@@ -63,6 +63,21 @@ class VpnStatusController extends _$VpnStatusController
   Future<void> reconnect(ConnectionParameters args) =>
       _doAndShowPopup((vpn) => vpn.reconnect(args));
 
+  /// Reconnect using [args]; if no suitable server exists for the currently
+  /// selected technology (e.g. Double VPN has no NordWhisper servers), fall
+  /// back to a quick connect so the newly chosen technology is still applied.
+  Future<void> reconnectOrQuickConnect(ConnectionParameters args) async {
+    final status = await _run((vpn) => vpn.reconnect(args));
+    if (status == DaemonStatusCode.serverUnavailable) {
+      logger.i(
+        "no suitable server for reconnect params, falling back to quick connect",
+      );
+      await connect(null); // quick connect for the current (new) technology
+      return;
+    }
+    ref.read(popupsProvider.notifier).show(status);
+  }
+
   Future<void> disconnect() => _doAndShowPopup((vpn) => vpn.disconnect());
 
   Future<void> pauseConnection(PauseLength pauseValue) =>
@@ -71,6 +86,14 @@ class VpnStatusController extends _$VpnStatusController
   Future<int> cancelConnect() => _doAndShowPopup((vpn) => vpn.cancelConnect());
 
   Future<int> _doAndShowPopup(_VpnRepoFn fn) async {
+    final status = await _run(fn);
+    ref.read(popupsProvider.notifier).show(status);
+    return status;
+  }
+
+  /// Runs the repo call and resolves it to a [DaemonStatusCode] without showing
+  /// any popup. Use [_doAndShowPopup] when the result should also be surfaced.
+  Future<int> _run(_VpnRepoFn fn) async {
     final vpnProvider = ref.read(vpnRepositoryProvider);
     int status = DaemonStatusCode.success;
 
@@ -90,7 +113,6 @@ class VpnStatusController extends _$VpnStatusController
       status = DaemonStatusCode.failedToConnectToVpn;
     }
 
-    ref.read(popupsProvider.notifier).show(status);
     return status;
   }
 
