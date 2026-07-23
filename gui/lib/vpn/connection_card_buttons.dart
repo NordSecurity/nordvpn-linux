@@ -17,6 +17,9 @@ import 'package:nordvpn/theme/connection_card_theme.dart';
 import 'package:nordvpn/widgets/context_menu/context_menu.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 
+final FocusNode _buttonFocusNode = FocusNode();
+bool x = false;
+
 final class ConnectionCardButtons extends ConsumerWidget {
   static const secureMyConnectionButtonKey = Key("vpnSecureMyConnectionButton");
   static const cancelButtonKey = Key("vpnCancelButton");
@@ -38,17 +41,33 @@ final class ConnectionCardButtons extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (!x) {
+      debugPrint("add focus listener");
+      _buttonFocusNode.addListener(() {
+        debugPrint("focus listener");
+        if (!_buttonFocusNode.hasFocus) {
+          debugPrint('Scope lost focus');
+        } else {
+          debugPrint('HASS focus');
+        }
+      });
+      x = true;
+    }
     final appTheme = context.appTheme;
     final buttonTheme = context.connectionCardTheme.buttonTheme;
+
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   if (_buttonFocusNode.canRequestFocus) {
+    //     _buttonFocusNode.requestFocus();
+    //   }
+    // });
 
     return ScalerResponsiveBox(
       maxWidth: buttonTheme.maxConnectButtonWidth,
       child: IntrinsicHeight(
-        child: FocusTraversalGroup(
-          child: Row(
-            spacing: appTheme.horizontalSpaceSmall,
-            children: _buildButtons(context, ref, appTheme),
-          ),
+        child: Row(
+          spacing: appTheme.horizontalSpaceSmall,
+          children: _buildButtons(context, ref, appTheme),
         ),
       ),
     );
@@ -69,6 +88,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
             child: OutlinedButton(
               key: ConnectionCardButtons.disconnectButtonKey,
               style: buttonTheme.cancelButtonStyle,
+              focusNode: _buttonFocusNode,
               onPressed: () async => await ref
                   .read(vpnStatusControllerProvider.notifier)
                   .disconnect(),
@@ -86,37 +106,36 @@ final class ConnectionCardButtons extends ConsumerWidget {
       }
       return [
         Expanded(
-          child: FocusTraversalGroup(
-            child: ContextMenu(
-              key: ConnectionCardButtons.pauseConnectionButtonKey,
-              matchAnchorWidth: true,
-              items: [
-                ..._pauseLengths.map(
-                  (pause) => ContextMenuItem(
-                    label: _pauseLabel(pause),
-                    onTap: () async => await _pauseConnection(ref, pause),
-                  ),
+          child: ContextMenu(
+            key: ConnectionCardButtons.pauseConnectionButtonKey,
+            matchAnchorWidth: true,
+            items: [
+              ..._pauseLengths.map(
+                (pause) => ContextMenuItem(
+                  label: _pauseLabel(pause),
+                  onTap: () async => await _pauseConnection(ref, pause),
                 ),
-                ContextMenuItem(
-                  key: ConnectionCardButtons.disconnectMenuItemKey,
-                  label: t.ui.disconnect,
-                  labelColor: context.appTheme.textErrorColor,
-                  onTap: () async => await ref
-                      .read(vpnStatusControllerProvider.notifier)
-                      .disconnect(),
-                ),
-              ],
-              anchorBuilder: (toggleMenu) => OutlinedButton(
-                style: buttonTheme.pauseConnectionButtonStyle,
-                onPressed: toggleMenu,
-                child: Semantics(
-                  label:
-                      "${_buildSemanticsText(vpnStatus)} ${t.ui.pauseConnection}",
-                  button: true,
-                  enabled: true,
-                  excludeSemantics: true,
-                  child: Text(t.ui.pauseConnection),
-                ),
+              ),
+              ContextMenuItem(
+                key: ConnectionCardButtons.disconnectMenuItemKey,
+                label: t.ui.disconnect,
+                labelColor: context.appTheme.textErrorColor,
+                onTap: () async => await ref
+                    .read(vpnStatusControllerProvider.notifier)
+                    .disconnect(),
+              ),
+            ],
+            anchorBuilder: (toggleMenu) => OutlinedButton(
+              style: buttonTheme.pauseConnectionButtonStyle,
+              onPressed: toggleMenu,
+              focusNode: _buttonFocusNode,
+              child: Semantics(
+                label:
+                    "${_buildSemanticsText(vpnStatus)} ${t.ui.pauseConnection}",
+                button: true,
+                enabled: true,
+                excludeSemantics: true,
+                child: Text(t.ui.pauseConnection),
               ),
             ),
           ),
@@ -150,6 +169,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
     return Expanded(
       child: OutlinedButton(
         key: ConnectionCardButtons.secureMyConnectionButtonKey,
+        focusNode: _buttonFocusNode,
         onPressed: () async {
           // Quick connect
           ConnectArguments? args;
@@ -178,6 +198,7 @@ final class ConnectionCardButtons extends ConsumerWidget {
         onPressed: () async {
           await ref.read(vpnStatusControllerProvider.notifier).cancelConnect();
         },
+        focusNode: _buttonFocusNode,
         style: buttonTheme.cancelButtonStyle,
         child: Semantics(
           label: "${_buildSemanticsText(vpnStatus)} ${t.ui.cancel}",
