@@ -90,7 +90,7 @@ func (ti *Instance) login() {
 }
 
 // openURI opens uri via the desktop portal, falling back to xdg-open if the portal call fails
-func openURI(uri string) error {
+var openURI = func(uri string) error {
 	portalErr := openURIViaPortal(uri)
 	if portalErr == nil {
 		return nil
@@ -167,9 +167,9 @@ func openURIViaPortal(uri string) error {
 }
 
 const (
-	guiBinaryName  = "nordvpn-gui"
-	guiLaunchURI   = "nordvpn-gui://open"
-	guiDownloadURL = "https://nordvpn.com/download/linux/"
+	guiBinaryName      = "nordvpn-gui"
+	guiLaunchURI       = "nordvpn-gui://open"
+	guiDownloadPageURL = "https://nordvpn.com/download/linux/?utm_medium=app&utm_source=nordvpn-linux-tray"
 )
 
 // isGUIAvailable check whether the system already has the application
@@ -199,7 +199,7 @@ func (ti *Instance) openGUI() {
 
 // openGUIDownloadPage tries to open download page for GUI application
 func (ti *Instance) openGUIDownloadPage() {
-	log.Infof("opening NordVPN GUI download page via %q", guiDownloadURL)
+	log.Infof("opening NordVPN GUI download page via %q", guiDownloadPageURL)
 	// #nosec G104 -- fire-and-forget analytics
 	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
 		FormReference: pb.UIEvent_TRAY,
@@ -208,7 +208,7 @@ func (ti *Instance) openGUIDownloadPage() {
 		ItemType:      pb.UIEvent_CLICK,
 	})
 
-	if err := openURI(guiDownloadURL); err != nil {
+	if err := openURI(guiDownloadPageURL); err != nil {
 		log.Error("Failed to open GUI download page:", err)
 		ti.notify(Force, "Failed to open the NordVPN download page")
 	}
