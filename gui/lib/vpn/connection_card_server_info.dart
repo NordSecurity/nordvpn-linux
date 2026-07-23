@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/data/providers/recommended_server_provider.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
-import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/pb/daemon/servers.pb.dart';
 import 'package:nordvpn/theme/connection_card_theme.dart';
 
@@ -41,7 +40,6 @@ final class ConnectionCardServerInfo extends ConsumerWidget {
     }
 
     if (vpnStatus.isConnected()) {
-      logger.w("Status is connected, but we don't know to what we connected");
       assert(
         vpnStatus.isMeshnetRouting ||
             (vpnStatus.country != null && vpnStatus.city != null),
