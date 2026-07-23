@@ -380,7 +380,7 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 
 That's why we want to be transparent about what data you agree to give us. We only collect the bare minimum of information required to offer a smooth and stable VPN experience.
 
-By pressing "y" (yes), you allow us to collect and use limited app performance data. This helps us keep our features relevant to your needs and fix issues faster, as explained in our Privacy Policy. 
+By pressing "y" (yes), you allow us to collect and use limited app performance data. This helps us keep our features relevant to your needs and fix issues faster, as explained in our Privacy Policy.
 ` + AnalyticsPolicyLink + `
 
 Press "n" (no) to send only the essential data our app needs to work.
@@ -405,4 +405,12 @@ Your browsing activities remain private, regardless of your choice.
 	DedicatedServersAutoconnectNordlynxMessage = "Auto-connect to Dedicated Server requires NordLynx protocol."
 	DedicatedServerPQMessage                   = "Post-quantum encryption is not compatible with Dedicated Server."
 	DedicatedServersNoNordlynxMessage          = "Connection to Dedicated Server requires NordLynx technology."
+
+	PauseNoArgsText    = "Provide a <duration> argument to specify how long you want to pause your connection.\nAvailable durations are 5m, 15m, 30m, 1h, and 24h. For example: nordvpn pause 15m."
+	PauseArgsUsage     = "<duration>"
+	PauseUsageText     = "Pauses your VPN connection for a specified duration. Available durations are 5m, 15m, 30m, 1h, and 24h. To resume before the timer expires, use the \"nordvpn connect\" command."
+	PauseNothingToDo   = "You are not connected to the VPN."
+	PauseWhenMeshnetOn = "Pausing is not available while you’re connected to a Meshnet device. Use “nordvpn disconnect” instead."
+	PauseSuccess       = "Connection paused for %s"
+	PauseInterrupted   = "Pause has been successfully cancelled."
 )

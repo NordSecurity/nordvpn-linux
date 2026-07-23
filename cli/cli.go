@@ -345,6 +345,13 @@ func NewApp(version, environment, hash, salt string,
 			Action: cmd.User,
 			Hidden: true,
 		},
+		{
+			Name:         "pause",
+			ArgsUsage:    PauseArgsUsage,
+			Usage:        PauseUsageText,
+			Action:       cmd.Pause,
+			BashComplete: PauseAutoComplete,
+		},
 	}
 
 	if isMeshnetEnabled {

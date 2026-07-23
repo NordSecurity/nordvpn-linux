@@ -7,6 +7,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/auth"
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	devicekey "github.com/NordSecurity/nordvpn-linux/device_key"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
@@ -26,7 +27,7 @@ type LogoutInput struct {
 	UserLogoutEventPublisherFunc func(events.DataAuthorization)
 	DebugPublisherFunc           func(string)
 	PersistToken                 bool
-	DisconnectFunc               func() (bool, error)
+	DisconnectFunc               func() (pb.ConnectionState, error)
 	DeviceKeyInvalidator         devicekey.DeviceKeyInvalidator
 }
 

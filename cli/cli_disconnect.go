@@ -39,6 +39,8 @@ func (c *cmd) Disconnect(ctx *cli.Context) error {
 		switch out.Type {
 		case internal.CodeVPNNotRunning:
 			color.Yellow(DisconnectNotConnected)
+		case internal.CodePauseInterrupted:
+			color.Yellow(PauseInterrupted)
 		case internal.CodeDisconnected:
 			color.Green(internal.DisconnectSuccess)
 			color.Yellow(DisconnectConnectionRating, ctx.App.Name)
