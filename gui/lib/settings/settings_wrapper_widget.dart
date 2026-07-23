@@ -94,11 +94,13 @@ final class SettingsWrapperWidget extends StatelessWidget {
     bool enabled = true,
     EdgeInsetsGeometry? padding,
     Color? color,
+    bool autofocus = false,
   }) {
     final settingsTheme = context.settingsTheme;
 
     return AdvancedListTile(
       key: key ?? UniqueKey(),
+      autofocus: autofocus,
       leading: iconName != null ? DynamicThemeImage(iconName) : null,
       title: Expanded(
         child: Text(title, style: titleStyle ?? settingsTheme.itemTitleStyle),
