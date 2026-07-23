@@ -206,7 +206,7 @@ func (ti *Instance) watchGUIInstallation(ctx context.Context) {
 		return
 	}
 
-	const guiInstallDir = "/usr/bin"
+	const guiInstallDir = "/opt/nordvpn-gui"
 	watcher, err := filewatch.GetFileWatcher(guiInstallDir)
 	if err != nil {
 		log.Error("Failed to get watcher for GUI installation:", err)
