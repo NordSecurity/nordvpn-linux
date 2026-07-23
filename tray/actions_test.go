@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/url"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/cli"
@@ -52,6 +53,7 @@ type trayDaemonClient struct {
 	pb.DaemonClient
 	connectStream     *fakeConnectStream
 	tokenInfoResponse *pb.TokenInfoResponse
+	uiEvents          []*pb.UIEvent
 }
 
 func (c *trayDaemonClient) ReportUIEvent(
@@ -59,6 +61,7 @@ func (c *trayDaemonClient) ReportUIEvent(
 	in *pb.UIEvent,
 	opts ...grpc.CallOption,
 ) (*pb.Payload, error) {
+	c.uiEvents = append(c.uiEvents, in)
 	return &pb.Payload{}, nil
 }
 
@@ -178,6 +181,78 @@ func TestConnect_DedicatedServersErrorPaths(t *testing.T) {
 			require.Len(t, f.notifier.notifications, 1, "exactly one notification expected")
 			assert.Equal(t, "NordVPN", f.notifier.notifications[0].summary)
 			assert.Equal(t, tc.wantBody, f.notifier.notifications[0].body)
+		})
+	}
+}
+
+func TestGUIDownloadURL_UTMParameters(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	parsed, err := url.Parse(guiDownloadPageURL)
+	require.NoError(t, err, "guiDownloadPageURL must be a valid URL")
+
+	query := parsed.Query()
+	tests := []struct {
+		name  string
+		param string
+		want  string
+	}{
+		{name: "medium", param: "utm_medium", want: "app"},
+		{name: "source", param: "utm_source", want: "nordvpn-linux-tray"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, query.Get(tc.param),
+				"UTM parameter %q missing or wrong", tc.param)
+		})
+	}
+}
+
+func TestOpenGUIActions_ReportEventAndOpenURI(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	orig := openURI
+	defer func() { openURI = orig }()
+	var opened string
+	openURI = func(uri string) error {
+		opened = uri
+		return nil
+	}
+
+	tests := []struct {
+		name     string
+		action   func(*Instance)
+		wantItem pb.UIEvent_ItemName
+		wantURI  string
+	}{
+		{
+			name:     "open app",
+			action:   (*Instance).openGUI,
+			wantItem: pb.UIEvent_OPEN_APP,
+			wantURI:  guiLaunchURI,
+		},
+		{
+			name:     "download app",
+			action:   (*Instance).openGUIDownloadPage,
+			wantItem: pb.UIEvent_DOWNLOAD_APP,
+			wantURI:  guiDownloadPageURL,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			opened = ""
+			f := newTrayFixture(t)
+
+			tc.action(f.instance)
+
+			require.Len(t, f.client.uiEvents, 1, "expected exactly one UI event")
+			ev := f.client.uiEvents[0]
+			assert.Equal(t, pb.UIEvent_TRAY, ev.FormReference)
+			assert.Equal(t, tc.wantItem, ev.ItemName)
+			assert.Equal(t, pb.UIEvent_CLICK, ev.ItemType)
+			assert.Equal(t, tc.wantURI, opened, "opened the wrong URI")
 		})
 	}
 }
