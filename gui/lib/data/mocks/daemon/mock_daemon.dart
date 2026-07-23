@@ -300,6 +300,11 @@ final class MockDaemon extends DaemonServiceBase {
   }
 
   @override
+  Future<Payload> setECH(ServiceCall call, SetGenericRequest request) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<SettingsResponse> settings(ServiceCall call, Empty request) async {
     if (appSettings.error != null) {
       throw appSettings.error!;

@@ -244,6 +244,13 @@ class DaemonClient extends $grpc.Client {
     return $createUnaryCall(_$setPostQuantum, request, options: options);
   }
 
+  $grpc.ResponseFuture<$0.Payload> setECH(
+    $15.SetGenericRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$setECH, request, options: options);
+  }
+
   $grpc.ResponseFuture<$16.RecentConnectionsResponse> getRecentConnections(
     $16.RecentConnectionsRequest request, {
     $grpc.CallOptions? options,
@@ -539,6 +546,10 @@ class DaemonClient extends $grpc.Client {
           '/pb.Daemon/SetPostQuantum',
           ($15.SetGenericRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
+  static final _$setECH = $grpc.ClientMethod<$15.SetGenericRequest, $0.Payload>(
+      '/pb.Daemon/SetECH',
+      ($15.SetGenericRequest value) => value.writeToBuffer(),
+      $0.Payload.fromBuffer);
   static final _$getRecentConnections = $grpc.ClientMethod<
           $16.RecentConnectionsRequest, $16.RecentConnectionsResponse>(
       '/pb.Daemon/GetRecentConnections',
@@ -846,6 +857,14 @@ abstract class DaemonServiceBase extends $grpc.Service {
     $addMethod($grpc.ServiceMethod<$15.SetGenericRequest, $0.Payload>(
         'SetPostQuantum',
         setPostQuantum_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) =>
+            $15.SetGenericRequest.fromBuffer(value),
+        ($0.Payload value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$15.SetGenericRequest, $0.Payload>(
+        'SetECH',
+        setECH_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
@@ -1238,6 +1257,14 @@ abstract class DaemonServiceBase extends $grpc.Service {
   }
 
   $async.Future<$0.Payload> setPostQuantum(
+      $grpc.ServiceCall call, $15.SetGenericRequest request);
+
+  $async.Future<$0.Payload> setECH_Pre($grpc.ServiceCall $call,
+      $async.Future<$15.SetGenericRequest> $request) async {
+    return setECH($call, await $request);
+  }
+
+  $async.Future<$0.Payload> setECH(
       $grpc.ServiceCall call, $15.SetGenericRequest request);
 
   $async.Future<$16.RecentConnectionsResponse> getRecentConnections_Pre(

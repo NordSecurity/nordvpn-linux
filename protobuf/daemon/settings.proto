@@ -41,6 +41,7 @@ message Settings {
   bool postquantum_vpn = 17;
   UserSpecificSettings user_settings = 18;
   bool arp_ignore = 19;
+  bool ech = 20;
 }
 
 message UserSpecificSettings {
