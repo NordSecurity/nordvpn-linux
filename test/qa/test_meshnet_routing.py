@@ -175,20 +175,40 @@ def test_routing_access_LAN():
 
 
 @pytest.mark.core_meshnet
-def test_routing_access_LAN_when_LAN_discovery_is_on():
-    sh_no_tty.nordvpn.set("lan-discovery", "on")
+@pytest.mark.parametrize("vpn_connected", [True, False])
+@pytest.mark.parametrize("lan_discovery", [True, False])
+@pytest.mark.parametrize("lan_permission", [True, False])
+def test_routing_access_with_LAN_discovery_and_LAN_permission(lan_discovery, lan_permission, vpn_connected):
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     peer_hostname = peer_list.get_external_peer().hostname
     this_device = peer_list.get_this_device()
-    sh_no_tty.nordvpn.mesh.peer.local.deny(peer_hostname)
-    output = ssh_client.exec_command("nordvpn mesh peer connect " + this_device.ip)
-    assert meshnet.is_connect_successful(output, this_device.hostname), "Remote peer connect should be successful"
 
-    default_gateway = network.get_default_gateway()
-    assert not ssh_client.network.ping(default_gateway, retry=3)
+    meshnet.set_permissions(peer_hostname, True, lan_permission, False, False)
+    ssh_client.exec_command("nordvpn mesh peer refresh")
+    sh_no_tty.nordvpn.mesh.peer.refresh()
 
-    ssh_client.exec_command("nordvpn disconnect")
+    try:
+        sh_no_tty.nordvpn.set("lan-discovery", 'on' if lan_discovery else 'off')
+    except sh.ErrorReturnCode_1 as err:
+        if "already set" not in err.args[0]:
+            raise
 
+    with lib.Defer(sh_no_tty.nordvpn.disconnect):
+        if vpn_connected:
+            sh_no_tty.nordvpn.connect()
+
+        default_gateway = network.get_default_gateway()
+
+        with lib.Defer(lambda: ssh_client.exec_command("nordvpn disconnect")):
+            ssh_client.exec_command("nordvpn mesh peer connect " + this_device.ip)
+            ssh_client.exec_command("nordvpn mesh peer refresh")
+
+            should_ping_succeed = lan_permission and (lan_discovery or not vpn_connected)
+            assert ssh_client.network.ping(default_gateway, retry=3) == should_ping_succeed, (
+                f"Expected ping to {'succeed' if should_ping_succeed else 'fail'} "
+                f"(lan_discovery={lan_discovery}, lan_permission={lan_permission}, "
+                f"vpn_connected={vpn_connected})"
+            )
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
