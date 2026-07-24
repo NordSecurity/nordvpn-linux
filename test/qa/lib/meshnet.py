@@ -608,9 +608,7 @@ def is_peer_reachable(peer: Peer, peer_name: PeerName = PeerName.Hostname, ssh_c
     if ssh_client is None:
         return network.is_internet_reachable(peer_hostname, port, retry)
     else:  # noqa: RET505
-        work_dir = os.environ.get("WORKDIR")
-        # Usage: python3 is_host_alive.py <host> [retries] [delay]
-        return "True" in ssh_client.exec_command(f"python3 {work_dir}/test/qa/scripts/is_host_alive.py {peer_hostname} {retry} 1")
+        return ssh_client.network.ping(peer_hostname, retry=3), "qa-peer should be able to ping default gateway of tester"
 
 def is_connect_successful(output:str, peer_hostname: str):
     return (MSG_ROUTING_SUCCESS % peer_hostname) in output
