@@ -31,15 +31,14 @@ const (
 	labelSpecialtyServers      = "Specialty servers:"
 	labelActiveGoroutines      = "Active goroutines"
 	labelActiveGoroutinesCount = "Active goroutines: %d"
-	labelRedraw                = "Redraw"
-	labelUpdate                = "Update"
-	labelFullUpdate            = "Full update"
 	labelQuit                  = "Quit"
 	labelLoggedInAs            = "Account"
 	labelLogOut                = "Log out"
 	labelNotLoggedIn           = "Not logged in"
 	labelLogIn                 = "Log in"
 	labelSettings              = "Settings"
+	labelOpenGUI               = "Open NordVPN app"
+	labelDownloadGUI           = "Download NordVPN app"
 	labelNotifications         = "Notifications"
 	labelTrayIcon              = "Tray icon"
 	labelPause5Min             = "Pause for 5 minutes"
@@ -54,15 +53,14 @@ const (
 	tooltipCountries           = "Select Country"
 	tooltipSpecialtyServers    = "Select Specialty server"
 	tooltipActiveGoroutines    = "Shows number of active background processes"
-	tooltipRedraw              = "Force refresh the tray menu"
-	tooltipUpdate              = "Refresh menu with latest status"
-	tooltipFullUpdate          = "Perform complete menu refresh"
 	tooltipQuit                = "Close NordVPN tray application"
 	tooltipLoggedInAs          = "Your current account"
 	tooltipLogOut              = "Sign out of your NordVPN account"
 	tooltipNotLoggedIn         = "Sign in required to use VPN"
 	tooltipLogIn               = "Sign in to your NordVPN account"
 	tooltipSettings            = "Configure application preferences"
+	tooltipOpenGUI             = "Open the NordVPN app"
+	tooltipDownloadGUI         = "Download the NordVPN app"
 	tooltipNotifications       = "Toggle desktop notifications"
 	tooltipTrayIcon            = "Show or hide tray icon"
 
@@ -603,6 +601,21 @@ func buildSettingsSubitems(ti *Instance, menu *systray.MenuItem) {
 
 	go handleNotificationsOption(ti, notificationsCheckbox)
 	go handleTrayOption(ti, trayCheckbox)
+}
+
+func buildGUISection(ti *Instance) {
+	if ti == nil {
+		return
+	}
+
+	systray.AddSeparator()
+	if isGUIAvailable() {
+		item := systray.AddMenuItem(labelOpenGUI, tooltipOpenGUI)
+		handleMenuItemClick(item, ti.openGUI)
+	} else {
+		item := systray.AddMenuItem(labelDownloadGUI, tooltipDownloadGUI)
+		handleMenuItemClick(item, ti.openGUIDownloadPage)
+	}
 }
 
 func handleTrayOption(ti *Instance, item *systray.MenuItem) {

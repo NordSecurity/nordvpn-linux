@@ -3,6 +3,7 @@
 case "$1" in
     0)
     ${UNINSTALL_SCRIPT}
+    update-desktop-database 2> /dev/null
     ;;
 esac
 

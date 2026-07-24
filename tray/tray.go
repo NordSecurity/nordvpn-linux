@@ -308,6 +308,7 @@ func (ti *Instance) OnReady(ctx context.Context) {
 	ti.stateListener.Start()
 
 	go ti.renderLoop(ctx)
+	go ti.watchGUIInstallation(ctx)
 
 	ti.state.mu.Lock()
 	ti.updateIcon()
@@ -349,6 +350,7 @@ func (ti *Instance) rebuildTray() {
 	ti.updateIcon()
 	buildConnectionSection(ti)
 	buildSettingsSection(ti)
+	buildGUISection(ti)
 	buildAccountSection(ti)
 	buildDaemonErrorSection(ti)
 	addDebugSection(ti)

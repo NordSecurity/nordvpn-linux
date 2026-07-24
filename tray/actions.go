@@ -7,16 +7,21 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/cli"
 	"github.com/NordSecurity/nordvpn-linux/client"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/filewatch"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
+	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/godbus/dbus/v5"
 )
+
+const dbusCallTimeout = 3 * time.Second
 
 // The pattern for actions is to return 'true' on success and 'false' (along with emitting a notification) on failure
 
@@ -29,7 +34,9 @@ func (ti *Instance) login() {
 	}
 	if resp.Status == pb.LoginStatus_CONSENT_MISSING {
 		// ask user for consent by opening terminal with consent flow,
-		openURI(internal.SubcommandURI(internal.ConsentSubcommand))
+		if err := openURI(internal.SubcommandURI(internal.ConsentSubcommand)); err != nil {
+			log.Errorf("failed to open consent URI: %v", err)
+		}
 		return
 	}
 
@@ -82,32 +89,155 @@ func (ti *Instance) login() {
 	}
 }
 
-func openURI(uri string) {
-	if err := tryDbus(uri); err != nil {
-		log.Errorf("failed to open URI '%s' using D-Bus: %v", uri, err)
+// openURI opens uri via the desktop portal, falling back to xdg-open if the portal call fails
+func openURI(uri string) error {
+	portalErr := openURIViaPortal(uri)
+	if portalErr == nil {
+		return nil
+	}
+
+	log.Warnf("portal open failed for %q (%v), trying xdg-open", uri, portalErr)
+	// #nosec G204 -- callers pass fixed URIs, no user input
+	if xdgErr := exec.Command("xdg-open", uri).Run(); xdgErr != nil {
+		return fmt.Errorf("opening URI %q failed via portal (%v) and xdg-open (%w)", uri, portalErr, xdgErr)
+	}
+	log.Infof("opened via xdg-open as a fallback: %q", uri)
+	return nil
+}
+
+// openURIViaPortal requests the freedesktop.desktop.portal (over the D-Bus) to open uri.
+func openURIViaPortal(uri string) error {
+	// using a private connection for a specific short-lived task
+	conn, err := dbus.ConnectSessionBus()
+	if err != nil {
+		return fmt.Errorf("connecting to session bus: %w", err)
+	}
+	defer conn.Close()
+
+	// subscribe before the actual call so a response is not missed
+	matchRules := []dbus.MatchOption{
+		dbus.WithMatchInterface("org.freedesktop.portal.Request"),
+		dbus.WithMatchMember("Response"),
+	}
+	if err := conn.AddMatchSignal(matchRules...); err != nil {
+		return fmt.Errorf("subscribing to portal's 'Response': %w", err)
+	}
+	rxChan := make(chan *dbus.Signal, 8)
+	conn.Signal(rxChan)
+
+	obj := conn.Object("org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop")
+	ctx, cancel := context.WithTimeout(context.Background(), dbusCallTimeout)
+	defer cancel()
+
+	log.Debugf("portal: OpenURI for %q", uri)
+	var requestPath dbus.ObjectPath
+	call := obj.CallWithContext(ctx, "org.freedesktop.portal.OpenURI.OpenURI", 0,
+		"", uri, map[string]dbus.Variant{})
+	if call.Err != nil {
+		return fmt.Errorf("portal OpenURI call failed: %w", call.Err)
+	}
+	if err := call.Store(&requestPath); err != nil {
+		return fmt.Errorf("storing portal request handle: %w", err)
+	}
+	log.Debugf("portal: OpenURI accepted, waiting for response on %q", requestPath)
+
+	timeout := time.After(dbusCallTimeout)
+	for {
+		select {
+		case <-timeout:
+			// the portal already accepted the request, so a late "Response" most
+			// likely means that the launch was dispatched
+			log.Warnf("portal 'Response' for %q timed out, assuming launch was dispatched", uri)
+			return nil
+		case sig := <-rxChan:
+			if sig == nil || sig.Path != requestPath || len(sig.Body) == 0 {
+				continue
+			}
+			code, ok := sig.Body[0].(uint32)
+			if !ok {
+				return fmt.Errorf("malformed portal response for %q: %v", uri, sig.Body)
+			}
+			log.Infof("portal: OpenURI response for %q: code=%d body=%v", uri, code, sig.Body)
+			if code == 0 {
+				return nil
+			}
+			return fmt.Errorf("portal OpenURI failed for %q (response code %d)", uri, code)
+		}
 	}
 }
 
-func tryDbus(uri string) error {
-	conn, err := dbus.SessionBus()
+const (
+	guiBinaryName  = "nordvpn-gui"
+	guiLaunchURI   = "nordvpn-gui://open"
+	guiDownloadURL = "https://nordvpn.com/download/linux/"
+)
+
+// isGUIAvailable check whether the system already has the application
+func isGUIAvailable() bool {
+	if snapconf.IsUnderSnap() {
+		return true
+	}
+	return internal.IsCommandAvailable(guiBinaryName)
+}
+
+// openGUI tries to open GUI application
+func (ti *Instance) openGUI() {
+	log.Infof("opening NordVPN GUI via %q", guiLaunchURI)
+	if err := openURI(guiLaunchURI); err != nil {
+		log.Error("Failed to open GUI:", err)
+		ti.notify(Force, "Failed to open the NordVPN app")
+	}
+}
+
+// openGUIDownloadPage tries to open download page for GUI application
+func (ti *Instance) openGUIDownloadPage() {
+	log.Infof("opening NordVPN GUI download page via %q", guiDownloadURL)
+	if err := openURI(guiDownloadURL); err != nil {
+		log.Error("Failed to open GUI download page:", err)
+		ti.notify(Force, "Failed to open the NordVPN download page")
+	}
+}
+
+// watchGUIInstallation redraws (async) the tray when the native GUI binary appears in the system
+// or disappears.
+func (ti *Instance) watchGUIInstallation(ctx context.Context) {
+	if snapconf.IsUnderSnap() {
+		// GUI is always bundled with the package
+		return
+	}
+
+	const guiBinDir = "/usr/bin"
+	watcher, err := filewatch.GetFileWatcher(guiBinDir)
 	if err != nil {
-		return fmt.Errorf("failed to connect to session bus: %w", err)
+		log.Error("Failed to get watcher for GUI installation:", err)
+		return
 	}
+	defer watcher.Close()
 
-	obj := conn.Object("org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-
-	call := obj.CallWithContext(ctx,
-		"org.freedesktop.portal.OpenURI.OpenURI", 0,
-		"", uri, map[string]dbus.Variant{},
-	)
-	if call.Err != nil {
-		return fmt.Errorf("DBus OpenURI failed: %w", call.Err)
+	available := isGUIAvailable()
+	for {
+		select {
+		case <-ctx.Done():
+			// stop watching
+			return
+		case event, ok := <-watcher.Events:
+			if !ok {
+				return
+			}
+			if filepath.Base(event.Name) != guiBinaryName {
+				continue
+			}
+			if now := isGUIAvailable(); now != available {
+				available = now
+				ti.redraw(true)
+			}
+		case err, ok := <-watcher.Errors:
+			if !ok {
+				return
+			}
+			log.Error("GUI installation watcher error:", err)
+		}
 	}
-
-	return nil
 }
 
 func (ti *Instance) logout(persistToken bool) bool {

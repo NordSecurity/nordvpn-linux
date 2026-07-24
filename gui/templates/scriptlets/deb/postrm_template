@@ -19,6 +19,7 @@ case "$1" in
     ;&  # fallthrough
     remove)
         ${UNINSTALL_SCRIPT}
+        update-desktop-database 2> /dev/null
     ;;
     disappear|upgrade|failed-upgrade|abort-install|abort-upgrade)
     ;;
