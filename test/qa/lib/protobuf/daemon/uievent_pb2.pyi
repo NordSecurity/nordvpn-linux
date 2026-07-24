@@ -36,6 +36,8 @@ class UIEvent(_message.Message):
         RECONNECT: _ClassVar[UIEvent.ItemName]
         CHANGE_SETTINGS: _ClassVar[UIEvent.ItemName]
         GET_HELP: _ClassVar[UIEvent.ItemName]
+        OPEN_APP: _ClassVar[UIEvent.ItemName]
+        DOWNLOAD_APP: _ClassVar[UIEvent.ItemName]
     ITEM_NAME_UNSPECIFIED: UIEvent.ItemName
     CONNECT: UIEvent.ItemName
     CONNECT_RECENTS: UIEvent.ItemName
@@ -49,6 +51,8 @@ class UIEvent(_message.Message):
     RECONNECT: UIEvent.ItemName
     CHANGE_SETTINGS: UIEvent.ItemName
     GET_HELP: UIEvent.ItemName
+    OPEN_APP: UIEvent.ItemName
+    DOWNLOAD_APP: UIEvent.ItemName
     class ItemType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         ITEM_TYPE_UNSPECIFIED: _ClassVar[UIEvent.ItemType]

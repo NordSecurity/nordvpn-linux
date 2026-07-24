@@ -77,6 +77,10 @@ class UIEvent_ItemName extends $pb.ProtobufEnum {
       UIEvent_ItemName._(11, _omitEnumNames ? '' : 'CHANGE_SETTINGS');
   static const UIEvent_ItemName GET_HELP =
       UIEvent_ItemName._(12, _omitEnumNames ? '' : 'GET_HELP');
+  static const UIEvent_ItemName OPEN_APP =
+      UIEvent_ItemName._(13, _omitEnumNames ? '' : 'OPEN_APP');
+  static const UIEvent_ItemName DOWNLOAD_APP =
+      UIEvent_ItemName._(14, _omitEnumNames ? '' : 'DOWNLOAD_APP');
 
   static const $core.List<UIEvent_ItemName> values = <UIEvent_ItemName>[
     ITEM_NAME_UNSPECIFIED,
@@ -92,10 +96,12 @@ class UIEvent_ItemName extends $pb.ProtobufEnum {
     RECONNECT,
     CHANGE_SETTINGS,
     GET_HELP,
+    OPEN_APP,
+    DOWNLOAD_APP,
   ];
 
   static final $core.List<UIEvent_ItemName?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 12);
+      $pb.ProtobufEnum.$_initByValueList(values, 14);
   static UIEvent_ItemName? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
