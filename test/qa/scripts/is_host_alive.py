@@ -2,11 +2,11 @@ import socket
 import sys
 import time
 
-def is_host_alive(host, retries=3, delay=1):
+def is_host_alive(host, port, retries=3, delay=1):
     """Check if a host is reachable by attempting a TCP connection with retries."""
     for attempt in range(retries):
         try:
-            with socket.create_connection((host, 80), timeout=1):
+            with socket.create_connection((host, port), timeout=2):
                 return True  # Port is open, host is alive
         except TimeoutError:
             pass  # No response, retry
@@ -21,10 +21,7 @@ def is_host_alive(host, retries=3, delay=1):
     return False  # Exhausted retries, host is unreachable
 
 if __name__ == "__main__":
-    if len(sys.argv) == 4:
-        host = sys.argv[1]
-        retries = int(sys.argv[2])
-        delay = int(sys.argv[3])
-        print(is_host_alive(host, retries, delay))
+    if len(sys.argv) == 5:
+        print(is_host_alive(host=sys.argv[1], port=int(sys.argv[2]), retries=int(sys.argv[3]), delay=int(sys.argv[4])))
     else:
-        print("Usage: python3 is_host_alive.py <host> [retries] [delay]")
+        print("Usage: python3 is_host_alive.py <host> <port> [retries] [delay]")
