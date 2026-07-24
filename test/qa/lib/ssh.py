@@ -1,5 +1,6 @@
 import contextlib
 import json
+import os
 import time
 from collections import namedtuple
 
@@ -105,7 +106,8 @@ class Ssh:
             i = 0
             while i < retry:
                 try:
-                    return "icmp_seq=" in self.ssh_class_instance.exec_command(f"ping -c 1 -w 1 {target}")
+                    work_dir = os.environ.get("WORKDIR")
+                    return "True" in self.ssh_class_instance.exec_command(f"python3 {work_dir}/test/qa/scripts/is_host_alive.py {target} 22 {retry} 1")
                 except RuntimeError:
                     time.sleep(1)
                     i += 1
