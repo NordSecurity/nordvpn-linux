@@ -56,7 +56,7 @@ func (s *StatePublisher) OnStateChange(e events.DataConnectChangeNotif) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	log.Infof("notifying about data connect change event: %+v", e)
+	log.Tracef("notifying about data connect change event: %+v", e)
 	s.notify(e)
 	return nil
 }
