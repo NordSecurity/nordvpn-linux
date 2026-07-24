@@ -474,9 +474,9 @@ def is_process_running() -> bool:
     return result.returncode == 0
 
 
-def restart_mesh() -> None:
-    sh.nordvpn.set.meshnet.off()
+def restart_mesh(ssh_client: ssh.Ssh) -> None:
+    exec_command = CommandExecutor(ssh_client) if ssh_client else CommandExecutor()
+    exec_command("nordvpn set meshnet off")
     time.sleep(2)
-    sh.nordvpn.set.meshnet.on()
+    exec_command("nordvpn set meshnet on")
     time.sleep(5)
-

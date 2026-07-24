@@ -1478,7 +1478,7 @@ def test_fileshare_process_monitoring_manages_fileshare_rules_on_process_state_c
         # port is open when fileshare is running
         assert fileshare.port_is_allowed(peer_address), "Port should be allowed when fileshare is running"
 
-        sh.pkill("-SIGKILL", "nordfileshare")
+        ssh_client.exec_command("sudo pkill -SIGKILL nordfileshare")
         # at the time of writing, the monitoring job is executed periodically every second,
         # wait for 2 seconds to be sure the job executed
         time.sleep(2)
@@ -1487,7 +1487,7 @@ def test_fileshare_process_monitoring_manages_fileshare_rules_on_process_state_c
         assert fileshare.port_is_blocked(peer_address), "Port should be blocked when fileshare is down"
 
         # restart meshet to get fileshare back up
-        fileshare.restart_mesh()
+        fileshare.restart_mesh(ssh_client)
 
         # port is allowed again when fileshare process is up
         assert fileshare.port_is_allowed(peer_address), "Port should be allowed when fileshare is restarted"
