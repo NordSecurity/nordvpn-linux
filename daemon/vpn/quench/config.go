@@ -42,34 +42,33 @@ func NewNordWhisperConfig(cm config.Manager, rc remote.ConfigGetter) *NordWhispe
 // GetConfig is the implementation of NordWhisperConfigGetter interface.
 //
 // ECH is gated by both remote config and the user setting: the effective value is
-// remoteECH AND userECH. The remote config acts as a global kill switch (it can force ECH
-// off regardless of user preference), while the user can turn ECH off locally. Both default
-// to true (matching the previous remote-config-only behavior) when unavailable.
+// remoteECH AND userECH. The remote config acts as a global switch (it can force ECH
+// off regardless of user preference), while the user can turn ECH off locally.
 func (qc *NordWhisperConfig) GetConfig() (vpn.NordWhisperFeatureConfig, error) {
-	// Remote config gate. Default to enabled if the param is missing or malformed, preserving
-	// the historical default (see vpn.NewNordWhisperFeatureConfig).
-	remoteECH := vpn.NewNordWhisperFeatureConfig().EnableECH
+	featureCfg := vpn.NewNordWhisperFeatureConfig()
+	defaultEchVal := featureCfg.EnableECH
+
 	enableECHParam, err := qc.remoteConfigGetter.GetFeatureParam(remote.FeatureNordWhisper, "enable_ech")
 	if err == nil {
 		if parsed, parseErr := strconv.ParseBool(enableECHParam); parseErr == nil {
-			remoteECH = parsed
+			featureCfg.EnableECH = parsed
 		} else {
-			log.Warn("parsing remote enable_ech, defaulting to enabled:", parseErr)
+			log.Warn("parsing remote enable_ech, defaulting to: ", defaultEchVal, " err:", parseErr)
 		}
 	} else {
-		log.Warn("fetching remote enable_ech, defaulting to enabled:", err)
+		log.Warn("fetching remote enable_ech, defaulting to: ", defaultEchVal, " err:", err)
 	}
 
-	// User setting. TrueField defaults to true when unset.
-	userECH := true
+	if !featureCfg.EnableECH {
+		return featureCfg, nil
+	}
+
 	var cfg config.Config
 	if err := qc.cm.Load(&cfg); err == nil {
-		userECH = cfg.ECH.Get()
+		featureCfg.EnableECH = cfg.ECH.Get()
 	} else {
-		log.Warn("loading config for ECH setting, defaulting to enabled:", err)
+		log.Warn("loading config for ECH setting, defaulting to: ", defaultEchVal, " err:", err)
 	}
 
-	return vpn.NordWhisperFeatureConfig{
-		EnableECH: remoteECH && userECH,
-	}, nil
+	return featureCfg, nil
 }
