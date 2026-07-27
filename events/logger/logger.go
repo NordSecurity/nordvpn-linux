@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/netip"
-	"net/url"
 	"os"
 	"os/exec"
 	"regexp"
@@ -18,10 +17,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
-var (
-	sensitiveHeaders = [...]string{"Authorization"}
-	sensitiveParams  = [...]string{"attempt", "verifier", "exchange_token"}
-)
+var sensitiveHeaders = [...]string{"Authorization"}
 
 // Subscriber is a subscriber for logging debug messages, info messages
 // and error messages
@@ -131,11 +127,10 @@ func dataRequestAPIToString(
 		if !isRequestBinary(data.Request) {
 			tmpBody = string(reqBody)
 		}
-		reqURL := processQueryParams(hideSensitiveValues, data.Request.URL)
 		fmt.Fprintf(&b, "Request: %s %s %s %s %s\n",
 			data.Request.Proto,
 			data.Request.Method,
-			reqURL,
+			data.Request.URL,
 			headers,
 			tmpBody)
 	}
@@ -169,21 +164,6 @@ func processHeaders(hide bool, headers http.Header) http.Header {
 		}
 	}
 	return headers
-}
-
-func processQueryParams(hide bool, u *url.URL) *url.URL {
-	if !hide || u == nil {
-		return u
-	}
-	clone := *u
-	query := clone.Query()
-	for _, param := range sensitiveParams {
-		if query.Get(param) != "" {
-			query.Set(param, "hidden")
-		}
-	}
-	clone.RawQuery = query.Encode()
-	return &clone
 }
 
 func getSystemInfo() string {
