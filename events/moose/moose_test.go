@@ -1313,6 +1313,256 @@ func TestNotifyConnect_MeshnetPeer_PreservesPriorSensitiveFlag(t *testing.T) {
 	assert.Equal(t, true, sub.connectionToSensitiveServerGroup)
 }
 
+type capturedAutoConnectTarget struct {
+	pref    moose.NordvpnappConnectionPreference
+	country string
+	city    string
+	group   moose.NordvpnappServerGroup
+	acType  moose.NordvpnappVpnAutoConnectType
+	calls   map[string]int
+}
+
+func captureAutoConnectTargetFuncs(sub *Subscriber) *capturedAutoConnectTarget {
+	c := &capturedAutoConnectTarget{calls: map[string]int{}}
+	sub.mooseFuncs.setUserPrefConnectionPreference = func(p moose.NordvpnappConnectionPreference) uint32 {
+		c.pref = p
+		c.calls["pref"]++
+		return 0
+	}
+	sub.mooseFuncs.setUserPrefServerCountry = func(country string) uint32 {
+		c.country = country
+		c.calls["country"]++
+		return 0
+	}
+	sub.mooseFuncs.setUserPrefServerCity = func(city string) uint32 {
+		c.city = city
+		c.calls["city"]++
+		return 0
+	}
+	sub.mooseFuncs.setUserPrefServerGroup = func(group moose.NordvpnappServerGroup) uint32 {
+		c.group = group
+		c.calls["group"]++
+		return 0
+	}
+	sub.mooseFuncs.setUserPrefAutoConnectType = func(t moose.NordvpnappVpnAutoConnectType) uint32 {
+		c.acType = t
+		c.calls["type"]++
+		return 0
+	}
+	return c
+}
+
+func TestReportAutoConnectTarget(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	for _, tt := range []struct {
+		name        string
+		ac          config.AutoConnectData
+		wantPref    moose.NordvpnappConnectionPreference
+		wantCountry string
+		wantCity    string
+		wantGroup   moose.NordvpnappServerGroup
+	}{
+		{
+			name:        "quick connect - no target",
+			ac:          config.AutoConnectData{},
+			wantPref:    moose.NordvpnappConnectionPreferenceFastest,
+			wantCountry: "",
+			wantCity:    "",
+			wantGroup:   moose.NordvpnappServerGroupNone,
+		},
+		{
+			name:        "country target",
+			ac:          config.AutoConnectData{ServerTag: "us", Country: "us"},
+			wantPref:    moose.NordvpnappConnectionPreferenceSpecific,
+			wantCountry: "us",
+			wantCity:    "",
+			wantGroup:   moose.NordvpnappServerGroupNone,
+		},
+		{
+			name:        "city target",
+			ac:          config.AutoConnectData{ServerTag: "de berlin", Country: "de", City: "Berlin"},
+			wantPref:    moose.NordvpnappConnectionPreferenceSpecific,
+			wantCountry: "de",
+			wantCity:    "Berlin",
+			wantGroup:   moose.NordvpnappServerGroupNone,
+		},
+		{
+			name:        "specialty group target - no tag",
+			ac:          config.AutoConnectData{Group: config.ServerGroup_P2P},
+			wantPref:    moose.NordvpnappConnectionPreferenceSpecific,
+			wantCountry: "",
+			wantCity:    "",
+			wantGroup:   moose.NordvpnappServerGroupP2p,
+		},
+		{
+			name:      "group - onion over vpn",
+			ac:        config.AutoConnectData{Group: config.ServerGroup_ONION_OVER_VPN},
+			wantPref:  moose.NordvpnappConnectionPreferenceSpecific,
+			wantGroup: moose.NordvpnappServerGroupOnionOverVpn,
+		},
+		{
+			name:      "group - obfuscated",
+			ac:        config.AutoConnectData{Group: config.ServerGroup_OBFUSCATED},
+			wantPref:  moose.NordvpnappConnectionPreferenceSpecific,
+			wantGroup: moose.NordvpnappServerGroupObfuscated,
+		},
+		{
+			name:      "group - dedicated ip",
+			ac:        config.AutoConnectData{Group: config.ServerGroup_DEDICATED_IP},
+			wantPref:  moose.NordvpnappConnectionPreferenceSpecific,
+			wantGroup: moose.NordvpnappServerGroupDedicatedIp,
+		},
+		{
+			name:      "group - dedicated server",
+			ac:        config.AutoConnectData{Group: config.ServerGroup_DEDICATED_SERVER},
+			wantPref:  moose.NordvpnappConnectionPreferenceSpecific,
+			wantGroup: moose.NordvpnappServerGroupDedicatedServer,
+		},
+		{
+			name:      "group - standard vpn servers",
+			ac:        config.AutoConnectData{Group: config.ServerGroup_STANDARD_VPN_SERVERS},
+			wantPref:  moose.NordvpnappConnectionPreferenceSpecific,
+			wantGroup: moose.NordvpnappServerGroupStandard,
+		},
+		{
+			name:        "country with specialty group",
+			ac:          config.AutoConnectData{ServerTag: "us", Country: "us", Group: config.ServerGroup_DOUBLE_VPN},
+			wantPref:    moose.NordvpnappConnectionPreferenceSpecific,
+			wantCountry: "us",
+			wantCity:    "",
+			wantGroup:   moose.NordvpnappServerGroupDoubleVpn,
+		},
+		{
+			name:        "specific server - only tag persisted, empty geo",
+			ac:          config.AutoConnectData{ServerTag: "us1234"},
+			wantPref:    moose.NordvpnappConnectionPreferenceSpecific,
+			wantCountry: "",
+			wantCity:    "",
+			wantGroup:   moose.NordvpnappServerGroupNone,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+			captured := captureAutoConnectTargetFuncs(sub)
+
+			err := sub.reportAutoConnectTarget(tt.ac)
+
+			assert.NilError(t, err)
+			assert.Equal(t, tt.wantPref, captured.pref)
+			assert.Equal(t, tt.wantCountry, captured.country)
+			assert.Equal(t, tt.wantCity, captured.city)
+			assert.Equal(t, tt.wantGroup, captured.group)
+			assert.Equal(t, moose.NordvpnappVpnAutoConnectTypeWhenTheAppLaunches, captured.acType)
+			assert.Equal(t, 1, captured.calls["pref"])
+			assert.Equal(t, 1, captured.calls["country"])
+			assert.Equal(t, 1, captured.calls["city"])
+			assert.Equal(t, 1, captured.calls["group"])
+			assert.Equal(t, 1, captured.calls["type"])
+		})
+	}
+}
+
+func TestHandleAutoConnectChange(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	cfg := func(ac config.AutoConnectData) *config.Config {
+		return &config.Config{AutoConnectData: ac}
+	}
+	country := config.AutoConnectData{ServerTag: "us", Country: "us"}
+	city := config.AutoConnectData{ServerTag: "de berlin", Country: "de", City: "Berlin"}
+
+	for _, tt := range []struct {
+		name        string
+		prev        *config.Config
+		curr        *config.Config
+		wantReport  bool
+		wantPref    moose.NordvpnappConnectionPreference
+		wantCountry string
+		wantCity    string
+		wantGroup   moose.NordvpnappServerGroup
+	}{
+		{
+			name:       "nil previous config is ignored (startup is handled by Init)",
+			prev:       nil,
+			curr:       cfg(country),
+			wantReport: false,
+		},
+		{
+			name:       "unchanged target is not re-reported",
+			prev:       cfg(country),
+			curr:       cfg(country),
+			wantReport: false,
+		},
+		{
+			name:        "changed target is reported",
+			prev:        cfg(country),
+			curr:        cfg(city),
+			wantReport:  true,
+			wantPref:    moose.NordvpnappConnectionPreferenceSpecific,
+			wantCountry: "de",
+			wantCity:    "Berlin",
+			wantGroup:   moose.NordvpnappServerGroupNone,
+		},
+		{
+			name:        "switching to quick-connect clears the target",
+			prev:        cfg(country),
+			curr:        cfg(config.AutoConnectData{}),
+			wantReport:  true,
+			wantPref:    moose.NordvpnappConnectionPreferenceFastest,
+			wantCountry: "",
+			wantCity:    "",
+			wantGroup:   moose.NordvpnappServerGroupNone,
+		},
+		{
+			name:       "nil current config is a no-op",
+			prev:       cfg(country),
+			curr:       nil,
+			wantReport: false,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+			captured := captureAutoConnectTargetFuncs(sub)
+
+			err := sub.handleAutoConnectChange(tt.prev, tt.curr)
+
+			assert.NilError(t, err)
+			if !tt.wantReport {
+				assert.Equal(t, 0, captured.calls["pref"], "target should not be reported")
+				return
+			}
+			assert.Equal(t, 1, captured.calls["pref"])
+			assert.Equal(t, tt.wantPref, captured.pref)
+			assert.Equal(t, tt.wantCountry, captured.country)
+			assert.Equal(t, tt.wantCity, captured.city)
+			assert.Equal(t, tt.wantGroup, captured.group)
+			assert.Equal(t, moose.NordvpnappVpnAutoConnectTypeWhenTheAppLaunches, captured.acType)
+		})
+	}
+}
+
+func TestReportAutoConnectTarget_AccumulatesErrors(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
+	captured := captureAutoConnectTargetFuncs(sub)
+	// Response code 7 "context set error"
+	sub.mooseFuncs.setUserPrefServerCountry = func(string) uint32 {
+		captured.calls["country"]++
+		return 7
+	}
+
+	err := sub.reportAutoConnectTarget(config.AutoConnectData{ServerTag: "us", Country: "us"})
+
+	assert.ErrorContains(t, err, "server country")
+	assert.Equal(t, 1, captured.calls["pref"])
+	assert.Equal(t, 1, captured.calls["country"])
+	assert.Equal(t, 1, captured.calls["city"])
+	assert.Equal(t, 1, captured.calls["group"])
+	assert.Equal(t, 1, captured.calls["type"])
+}
+
 func noopDisconnectAmbientMooseFuncs(sub *Subscriber) {
 	sub.mooseFuncs.unsetTPLiteCurrentState = func() uint32 { return 0 }
 	sub.mooseFuncs.setServerCountryValue = func(_ string) uint32 { return 0 }
