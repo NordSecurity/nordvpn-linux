@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 package snappb;
-
 option go_package = "github.com/NordSecurity/nordvpn-linux/snapconf/pb";
 
 // ErrMissingConnections defines that some of the snap interfaces that are required for the gRPC

@@ -1,9 +1,9 @@
 # Build image to convert protobufs to dart code
 # Update this when flutter builder is updated or find a way to keep in sync
-FROM dart:3.10.0
+FROM dart:3.12.2
 
-LABEL org.opencontainers.image.source="https://github.com/NordSecurity/nordvpn-linux/blob/main/gui/docker/protobuf/Dockerfile"
-LABEL org.opencontainers.image.description="Generates the protobuf to dart code, e.g. ./docker/generate_docker_image.sh ghcr.io/nordsecurity/nordvpn-linux/protobuf_dart-3.10.0 1.0.0 linux/amd64 docker/protobuf/"
+LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
+LABEL org.opencontainers.image.description="Generates the protobuf to dart code, e.g. ./docker/generate_docker_image.sh ghcr.io/nordsecurity/nordvpn-linux/protobuf_dart-3.12.2 1.0.0 linux/amd64 docker/protobuf/"
 
 WORKDIR /code/app
 

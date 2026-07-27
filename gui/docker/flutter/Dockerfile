@@ -1,8 +1,8 @@
 # Used to create the image for building a Flutter application
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
-LABEL org.opencontainers.image.source="https://github.com/NordSecurity/nordvpn-linux/blob/main/gui/docker/flutter/Dockerfile"
-LABEL org.opencontainers.image.description="Builds the GUI. Must be build for arm64 and amd64. e.g. ./docker/generate_docker_image.sh ghcr.io/nordsecurity/nordvpn-linux/flutter-3.38.1 1.0.0 linux/amd64,linux/arm64 docker/flutter"
+LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
+LABEL org.opencontainers.image.description="Builds the GUI. Must be build for arm64 and amd64. e.g. ./docker/generate_docker_image.sh ghcr.io/nordsecurity/nordvpn-linux/flutter-3.44.7 1.0.0 linux/amd64,linux/arm64 docker/flutter"
 
 # this is needed for dpkg not to be interactive
 ARG DEBIAN_FRONTEND=noninteractive
@@ -32,9 +32,13 @@ ARG USER_ID=1000
 ARG GROUP_ID=1000
 ARG USER_NAME=flutter_user
 ARG HOME=/home/${USER_NAME}
-ARG FLUTTER_VERSION=3.38.1
+ARG FLUTTER_VERSION=3.44.7
 
-RUN groupadd -g ${GROUP_ID} ${USER_NAME} && useradd -l -m -u ${USER_ID} -g ${USER_NAME} ${USER_NAME}
+# Ubuntu 24.04 is shipped with pre-defined user and group, both using ID 1000.
+# Recreate the user and group with the desired name and ID to avoid conflicts.
+RUN userdel -r ubuntu 2>/dev/null || true && \
+    groupdel -f ubuntu 2>/dev/null || true && \
+    groupadd -g ${GROUP_ID} ${USER_NAME} && useradd -l -m -u ${USER_ID} -g ${USER_NAME} ${USER_NAME}
 USER ${USER_NAME}
 WORKDIR ${HOME}
 
