@@ -10,9 +10,8 @@ from threading import Thread
 import pytest
 import sh
 import socket
-import os
 
-from . import FILE_HASH_UTILITY, CommandExecutor, logging, ssh
+from . import firewall, FILE_HASH_UTILITY, CommandExecutor, logging, ssh
 
 class FileSize:
     """
@@ -437,25 +436,25 @@ def bind_port() -> socket.socket | None:
     return None
 
 
-def check_fileshare_port_status(is_allowed: bool, peer_address: str) -> bool:
+def check_fileshare_port_status(is_allowed: bool, peer_address: str, port: int = 49111) -> bool:
+    """
+    Poll port accessibility status over 3 attempts with 1-second delays.
+
+    Returns True if actual accessibility matches expected state, False otherwise.
+    """
     for _ in range(3):
-        if is_port_allowed(peer_address) == is_allowed:
+        if firewall.is_port_accessible_TCP(0, peer_address, port, True) == is_allowed:
             return True
         time.sleep(1)
     return False
 
 
-def port_is_allowed(peer_address: str) -> bool:
-    return check_fileshare_port_status(True, peer_address)
+def port_is_allowed(peer_address: str, port: int = 49111) -> bool:
+    return check_fileshare_port_status(True, peer_address, port)
 
 
-def is_port_allowed(peer_address: str) -> bool:
-    rules = os.popen("sudo iptables -S").read()
-    return f"49111 -m comment --comment nordvpn-meshnet -m comment --comment \"-allow-fileshare-rule-{peer_address}\" -j ACCEPT" in rules
-
-
-def port_is_blocked(peer_address: str) -> bool:
-    return check_fileshare_port_status(False, peer_address)
+def port_is_blocked(peer_address: str, port: int = 49111) -> bool:
+    return check_fileshare_port_status(False, peer_address, port)
 
 
 def ensure_mesh_is_on() -> None:
@@ -475,9 +474,9 @@ def is_process_running() -> bool:
     return result.returncode == 0
 
 
-def restart_mesh() -> None:
-    sh.nordvpn.set.meshnet.off()
+def restart_mesh(ssh_client: ssh.Ssh) -> None:
+    exec_command = CommandExecutor(ssh_client) if ssh_client else CommandExecutor()
+    exec_command("nordvpn set meshnet off")
     time.sleep(2)
-    sh.nordvpn.set.meshnet.on()
+    exec_command("nordvpn set meshnet on")
     time.sleep(5)
-
