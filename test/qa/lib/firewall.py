@@ -105,18 +105,18 @@ def is_source_port_reachable(ports: list[Port]) -> bool:
 def process_port(port: Port) -> bool:
     if port.protocol == Protocol.TCP:
         print("process tcp")
-        return is_port_accessible_TCP(int(port.value))
+        return is_port_accessible_TCP(src_port=int(port.value), dst_ip=IP, dst_port=TCP_DST_PORT)
     if port.protocol == Protocol.UDP:
         print("process udp")
         return is_port_accessible_UDP(int(port.value))
     print("process both, tcp")
-    tcp_retval = is_port_accessible_TCP(int(port.value))
+    tcp_retval = is_port_accessible_TCP(src_port=int(port.value), dst_ip=IP, dst_port=TCP_DST_PORT)
     print("process both, udp")
     udp_retval = is_port_accessible_UDP(int(port.value))
     return tcp_retval and udp_retval
 
 
-def is_port_accessible_TCP(src_port : int) -> bool :
+def is_port_accessible_TCP(src_port: int, dst_ip: str, dst_port: int, check_connection_only: bool = False) -> bool:
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
@@ -128,14 +128,16 @@ def is_port_accessible_TCP(src_port : int) -> bool :
     )
     s.settimeout(SOCK_TIMEOUT)
     try:
-        s.connect((IP, TCP_DST_PORT))
+        s.connect((dst_ip, dst_port))
+        if check_connection_only:
+            return True
         s.send(b"ping")
         print("TCP data sent")
         data = s.recv(4096)
         print("data received: ", data)
         retval = True
     except TimeoutError:
-        print(f"timeout of {SOCK_TIMEOUT} hit with TCP, source port {src_port}, dst port : {TCP_DST_PORT}",)
+        print(f"timeout of {SOCK_TIMEOUT} hit with TCP, source port {src_port}, dst port : {dst_port}",)
         retval = False
     # `OSError: [Errno 99] Cannot assign requested address` handling
     except OSError as e:

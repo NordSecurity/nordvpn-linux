@@ -349,11 +349,11 @@ def test_firewall_dns_tcp_53_to_lan_resolver_dropped(tech, proto, obfuscated):
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
 
-        assert not firewall.is_port_accessible_TCP(src_port=53), (
+        assert not firewall.is_port_accessible_TCP(src_port=53, dst_ip=firewall.IP, dst_port=firewall.TCP_DST_PORT), (
             "TCP port 53 must be blocked by the firewall when VPN is connected"
         )
 
-    assert firewall.is_port_accessible_TCP(src_port=53), (
+    assert firewall.is_port_accessible_TCP(src_port=53, dst_ip=firewall.IP, dst_port=firewall.TCP_DST_PORT), (
         "TCP port 53 must be reachable again after disconnecting from VPN"
     )
 
