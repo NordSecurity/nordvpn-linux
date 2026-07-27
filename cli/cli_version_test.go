@@ -20,7 +20,7 @@ func TestVersion(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	mockClient := mock.MockDaemonClient{}
-	c := cmd{&mockClient, nil, nil, "", nil}
+	c := cmd{client: &mockClient}
 	// this is constructed using composeAppVersion,
 	// covered in other tests and is expected to be set in app.Version field
 	const appVersion = "1.2.3"
