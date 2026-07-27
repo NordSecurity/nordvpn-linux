@@ -11,25 +11,35 @@ import (
 )
 
 func (r *RPC) Disconnect(_ *pb.Empty, srv pb.Daemon_DisconnectServer) error {
-	wasConnected, err := r.DoDisconnect()
+	connectionStateBeforeDisconnect, err := r.DoDisconnect()
 	if err != nil {
 		log.Error(err)
 		return internal.ErrUnhandled
 	}
-	if !wasConnected {
+	if connectionStateBeforeDisconnect == pb.ConnectionState_DISCONNECTED {
 		return srv.Send(&pb.Payload{
 			Type: internal.CodeVPNNotRunning,
 		})
+	}
+	if connectionStateBeforeDisconnect == pb.ConnectionState_PAUSED {
+		return srv.Send(&pb.Payload{Type: internal.CodePauseInterrupted})
 	}
 	return srv.Send(&pb.Payload{Type: internal.CodeDisconnected})
 }
 
 // DoDisconnect is the non-gRPC function for Disconnect to be used directly.
-func (r *RPC) DoDisconnect() (bool, error) {
+func (r *RPC) DoDisconnect() (pb.ConnectionState, error) {
+	connectionStateBeforeDisconnect := pb.ConnectionState_DISCONNECTED
 	if r.connectionInfo.IsPaused() {
+		connectionStateBeforeDisconnect = pb.ConnectionState_PAUSED
 		r.CancelPause()
 	}
-	return r.doDisconnect(0)
+	wasConnected, err := r.doDisconnect(0)
+	if wasConnected {
+		connectionStateBeforeDisconnect = pb.ConnectionState_CONNECTED
+	}
+
+	return connectionStateBeforeDisconnect, err
 }
 
 func (r *RPC) DoPause(interval time.Duration) (bool, error) {
