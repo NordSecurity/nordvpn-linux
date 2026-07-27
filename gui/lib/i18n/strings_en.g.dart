@@ -2184,6 +2184,12 @@ class TranslationsUiEn {
 
 	/// en: 'Pause connection'
 	String get pauseConnection => 'Pause connection';
+
+	/// en: 'Firewall can’t be turned off while Kill Switch is on'
+	String get cannotStopFWWhileKSOnTitle => 'Firewall can’t be turned off while Kill Switch is on';
+
+	/// en: 'Firewall is needed for Kill Switch to work. Turn off Kill Switch first in VPN connection settings.'
+	String get cannotStopFWWhileKSOnDesc => 'Firewall is needed for Kill Switch to work. Turn off Kill Switch first in VPN connection settings.';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -2893,6 +2899,8 @@ extension on Translations {
 			'ui.changeVPNsettings' => 'Change VPN settings',
 			'ui.getHelp' => 'Get help',
 			'ui.pauseConnection' => 'Pause connection',
+			'ui.cannotStopFWWhileKSOnTitle' => 'Firewall can’t be turned off while Kill Switch is on',
+			'ui.cannotStopFWWhileKSOnDesc' => 'Firewall is needed for Kill Switch to work. Turn off Kill Switch first in VPN connection settings.',
 			_ => null,
 		};
 	}
