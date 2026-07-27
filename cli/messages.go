@@ -411,6 +411,6 @@ Your browsing activities remain private, regardless of your choice.
 	PauseUsageText     = "Pauses your VPN connection for a specified duration. Available durations are 5m, 15m, 30m, 1h, and 24h. To resume before the timer expires, use the \"nordvpn connect\" command."
 	PauseNothingToDo   = "You are not connected to the VPN."
 	PauseWhenMeshnetOn = "Pausing is not available while you’re connected to a Meshnet device. Use “nordvpn disconnect” instead."
-	PauseSuccess       = "Connection paused for %s"
-	PauseInterrupted   = "Pause has been successfully cancelled."
+	PauseSuccess       = "Connection paused for %s."
+	PauseInterrupted   = "Pause canceled. You are disconnected from the VPN."
 )
