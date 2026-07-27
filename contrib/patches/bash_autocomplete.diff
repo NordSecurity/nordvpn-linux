@@ -1,9 +1,9 @@
 # Generated with git diff --no-index dist/autocomplete/bash_autocomplete dist/autocomplete/bash_autocomplete_nordvpn > contrib/patches/bash_autocomplete
 diff --git a/dist/autocomplete/bash_autocomplete b/dist/autocomplete/bash_autocomplete
-index fea6ee33..22fd802f 100644
+index fea6ee33..a4cf0db3 100644
 --- a/dist/autocomplete/bash_autocomplete
 +++ b/dist/autocomplete/bash_autocomplete
-@@ -26,10 +26,15 @@ _cli_bash_autocomplete() {
+@@ -26,10 +26,21 @@ _cli_bash_autocomplete() {
        requestComp="${words[*]} --generate-bash-completion"
      fi
      opts=$(eval "${requestComp}" 2>/dev/null)
@@ -12,7 +12,13 @@ index fea6ee33..22fd802f 100644
 +    if [[ $opts == "nordvpn_autocomplete_filepaths" ]]; then
 +      compopt -o bashdefault -o default
 +    else
-+      COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
++      # Case-insensitive prefix matching. `compgen -W` matches case-sensitively
++      # and honors neither `nocasematch` nor readline's `completion-ignore-case`,
++      # so awk does the case-folded prefix filter while preserving each
++      # candidate's canonical casing (e.g. "ger" -> "Germany"). IFS is pinned to
++      # newlines so candidates containing spaces stay intact.
++      local IFS=$'\n'
++      COMPREPLY=($(compgen -W "${opts}" | awk -v c="${cur}" 'BEGIN{c=tolower(c)} tolower(substr($0,1,length(c)))==c'))
 +    fi
      return 0
    fi

@@ -1,6 +1,6 @@
 # Generated with git diff --no-index dist/autocomplete/zsh_autocomplete dist/autocomplete/zsh_autocomplete_nordvpn > contrib/patches/zsh_autocomplete.diff
 diff --git a/dist/autocomplete/zsh_autocomplete b/dist/autocomplete/zsh_autocomplete
-index b519666f..00618811 100644
+index b519666f..9d1cf4ef 100644
 --- a/dist/autocomplete/zsh_autocomplete
 +++ b/dist/autocomplete/zsh_autocomplete
 @@ -1,4 +1,4 @@
@@ -9,7 +9,7 @@ index b519666f..00618811 100644
  
  _cli_zsh_autocomplete() {
    local -a opts
-@@ -10,11 +10,12 @@ _cli_zsh_autocomplete() {
+@@ -10,11 +10,16 @@ _cli_zsh_autocomplete() {
      opts=("${(@f)$(${words[@]:0:#words[@]-1} --generate-bash-completion)}")
    fi
  
@@ -20,7 +20,11 @@ index b519666f..00618811 100644
 +      _files
    else
 -    _files
-+    _describe 'values' opts
++    # Case-insensitive prefix matching: fold case both ways so e.g. "ger" or
++    # "GER" both match "Germany". The match spec is passed straight to the
++    # underlying compadd via _describe, so it applies only to this completion
++    # and does not mutate the user's global zstyle configuration.
++    _describe 'values' opts -M 'm:{a-zA-Z}={A-Za-z}'
    fi
  }
  
