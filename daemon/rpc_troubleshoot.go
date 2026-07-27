@@ -928,7 +928,7 @@ func addDNSInfo(zipWriter *zip.Writer, logf logFunc) error {
 			"/etc/systemd/resolved.conf",
 			"etc/systemd/resolved.conf",
 		); err != nil {
-			return err
+			logf("/etc/systemd/resolved.conf: %v", err)
 		}
 	} else {
 		logf("/etc/systemd/resolved.conf: %v", err)
@@ -940,30 +940,32 @@ func addDNSInfo(zipWriter *zip.Writer, logf logFunc) error {
 	// "no drop-ins configured" and "we forgot to collect them".
 	if _, err := os.Stat("/etc/NetworkManager/conf.d"); err != nil {
 		logf("/etc/NetworkManager/conf.d: %v", err)
-	}
-	count, err := addDirectoryToZip(zipWriter,
-		"/etc/NetworkManager/conf.d",
-		"etc/NetworkManager/conf.d",
-	)
-	if err != nil {
-		return err
-	}
-	if count == 0 {
-		logf("/etc/NetworkManager/conf.d: directory is empty, nothing collected")
+	} else {
+		count, err := addDirectoryToZip(zipWriter,
+			"/etc/NetworkManager/conf.d",
+			"etc/NetworkManager/conf.d",
+		)
+		if err != nil {
+			logf("/etc/NetworkManager/conf.d: %v", err)
+		}
+		if count == 0 {
+			logf("/etc/NetworkManager/conf.d: directory is empty, nothing collected")
+		}
 	}
 
 	if _, err := os.Stat("/etc/systemd/resolved.conf.d"); err != nil {
 		logf("/etc/systemd/resolved.conf.d: %v", err)
-	}
-	count, err = addDirectoryToZip(zipWriter,
-		"/etc/systemd/resolved.conf.d",
-		"etc/systemd/resolved.conf.d",
-	)
-	if err != nil {
-		return err
-	}
-	if count == 0 {
-		logf("/etc/systemd/resolved.conf.d: directory is empty, nothing collected")
+	} else {
+		count, err := addDirectoryToZip(zipWriter,
+			"/etc/systemd/resolved.conf.d",
+			"etc/systemd/resolved.conf.d",
+		)
+		if err != nil {
+			logf("/etc/systemd/resolved.conf.d: %v", err)
+		}
+		if count == 0 {
+			logf("/etc/systemd/resolved.conf.d: directory is empty, nothing collected")
+		}
 	}
 
 	return nil
