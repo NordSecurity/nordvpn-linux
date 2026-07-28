@@ -353,9 +353,9 @@ func NewApp(version, environment, hash, salt string,
 			BashComplete: PauseAutoComplete,
 		},
 		{
-			Name:               "troubleshoot",
-			Usage:              TroubleshootUsageText,
-			Action:             cmd.Troubleshoot,
+			Name:               "diagnostics",
+			Usage:              DiagnosticsUsageText,
+			Action:             cmd.Diagnostics,
 			CustomHelpTemplate: CommandWithoutArgsHelpTemplate,
 		},
 	}

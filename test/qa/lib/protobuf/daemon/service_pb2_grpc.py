@@ -617,7 +617,7 @@ class DaemonServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def CollectDiagnostics(self, request, context):
-        """==================== Troubleshooting ====================
+        """==================== Diagnostics ====================
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')

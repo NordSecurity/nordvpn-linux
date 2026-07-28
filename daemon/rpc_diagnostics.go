@@ -49,7 +49,7 @@ func (r *RPC) CollectDiagnostics(
 ) error {
 	caller, err := resolveDiagnosticsCaller(srv.Context())
 	if err != nil {
-		log.Troubleshoot.Error("troubleshot failed with:", err)
+		log.Diagnostics.Error("resolving diagnostics caller failed:", err)
 		return srv.Send(&pb.DiagnosticsProgress{
 			ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_INTERNAL,
 		})
@@ -61,7 +61,7 @@ func (r *RPC) CollectDiagnostics(
 	// land in the same second.
 	zipFile, err := createDiagnosticsZip(caller.outputDir)
 	if err != nil {
-		log.Troubleshoot.Error("failed to create diagnostics zip:", err)
+		log.Diagnostics.Error("failed to create diagnostics zip:", err)
 		return srv.Send(&pb.DiagnosticsProgress{
 			ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_FAILED_TO_CREATE_ZIP,
 		})
@@ -70,11 +70,11 @@ func (r *RPC) CollectDiagnostics(
 
 	if snapconf.IsUnderSnap() {
 		if err := os.Chmod(zipPath, internal.PermUserRWGroupROthersR); err != nil {
-			log.Troubleshoot.Warn("failed to change file permissions:", err)
+			log.Diagnostics.Warn("failed to change file permissions:", err)
 		}
 	} else {
 		if err := os.Chown(zipPath, int(caller.uid), int(caller.gid)); err != nil {
-			log.Troubleshoot.Error("failed to change file ownership:", err)
+			log.Diagnostics.Error("failed to change file ownership:", err)
 			return abortDiagnosticsWithCode(
 				zipFile, srv,
 				pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_CHOWN_FAILED,
@@ -87,20 +87,20 @@ func (r *RPC) CollectDiagnostics(
 		srv, zipFile, caller.user.HomeDir, state,
 	); err != nil {
 		if errors.Is(err, errZipSizeLimitExceeded) {
-			log.Troubleshoot.Error("diagnostics zip exceeded 40 MB limit")
+			log.Diagnostics.Error("diagnostics zip exceeded 40 MB limit")
 			return abortDiagnosticsWithCode(
 				zipFile, srv,
 				pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_ZIP_TOO_LARGE,
 			)
 		}
 		if errors.Is(err, errNoDaemonLogSource) {
-			log.Troubleshoot.Error("no daemon log source available:", err)
+			log.Diagnostics.Error("no daemon log source available:", err)
 			return abortDiagnosticsWithCode(
 				zipFile, srv,
 				pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_NO_DAEMON_LOG_SOURCE,
 			)
 		}
-		log.Troubleshoot.Error("failed to collect diagnostics:", err)
+		log.Diagnostics.Error("failed to collect diagnostics:", err)
 		return abortDiagnosticsWithCode(
 			zipFile, srv,
 			pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED,
@@ -108,9 +108,9 @@ func (r *RPC) CollectDiagnostics(
 	}
 
 	if err := zipFile.Close(); err != nil {
-		log.Troubleshoot.Error("failed to close zip file:", err)
+		log.Diagnostics.Error("failed to close zip file:", err)
 		if removeErr := os.Remove(zipPath); removeErr != nil {
-			log.Troubleshoot.Error("failed to delete zip", removeErr)
+			log.Diagnostics.Error("failed to delete zip", removeErr)
 		}
 		return srv.Send(&pb.DiagnosticsProgress{
 			ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_FAILED_TO_CLOSE_ZIP,
@@ -132,7 +132,7 @@ func abortDiagnosticsWithCode(
 ) error {
 	_ = zipFile.Close()
 	if err := os.Remove(zipFile.Name()); err != nil {
-		log.Troubleshoot.Error("failed to delete zip", err)
+		log.Diagnostics.Error("failed to delete zip", err)
 	}
 	return srv.Send(&pb.DiagnosticsProgress{ErrorCode: code})
 }
@@ -382,7 +382,7 @@ func collectDiagnosticsData(
 	for i, step := range steps {
 		desc := fmt.Sprintf("[%d/%d] %s", i+1, total, step.description)
 		if err := srv.Send(&pb.DiagnosticsProgress{Step: desc}); err != nil {
-			log.Troubleshoot.Warn("failed to report the progress", err)
+			log.Diagnostics.Warn("failed to report the progress", err)
 		}
 		logf("step started: %s", step.description)
 		err := step.collect()
@@ -401,7 +401,7 @@ func collectDiagnosticsData(
 			return err
 		}
 		logf("step failed: %s: %v", step.description, err)
-		log.Troubleshoot.Info("diagnostics step failed:", step.description, err)
+		log.Diagnostics.Info("diagnostics step failed:", step.description, err)
 	}
 
 	logf("diagnostics collection finished")
@@ -418,11 +418,11 @@ func collectDiagnosticsData(
 func writeLogExtractionReport(zipWriter *zip.Writer, buf *bytes.Buffer) {
 	w, err := zipWriter.Create("log_extraction_report.log")
 	if err != nil {
-		log.Troubleshoot.Info("failed to create log_extraction_report.log:", err)
+		log.Diagnostics.Info("failed to create log_extraction_report.log:", err)
 		return
 	}
 	if _, err := w.Write(buf.Bytes()); err != nil {
-		log.Troubleshoot.Info("failed to write log_extraction_report.log:", err)
+		log.Diagnostics.Info("failed to write log_extraction_report.log:", err)
 	}
 }
 

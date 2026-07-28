@@ -137,7 +137,7 @@ type DaemonClient interface {
 	SubscribeToStateChanges(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[AppState], error)
 	// InjectVpnConnectionError is a DEV-only endpoint that injects a simulated ENS event
 	InjectVpnConnectionError(ctx context.Context, in *InjectVpnConnectionErrorRequest, opts ...grpc.CallOption) (*Payload, error)
-	// ==================== Troubleshooting ====================
+	// ==================== Diagnostics ====================
 	CollectDiagnostics(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[DiagnosticsProgress], error)
 }
 
@@ -751,7 +751,7 @@ type DaemonServer interface {
 	SubscribeToStateChanges(*Empty, grpc.ServerStreamingServer[AppState]) error
 	// InjectVpnConnectionError is a DEV-only endpoint that injects a simulated ENS event
 	InjectVpnConnectionError(context.Context, *InjectVpnConnectionErrorRequest) (*Payload, error)
-	// ==================== Troubleshooting ====================
+	// ==================== Diagnostics ====================
 	CollectDiagnostics(*Empty, grpc.ServerStreamingServer[DiagnosticsProgress]) error
 	mustEmbedUnimplementedDaemonServer()
 }

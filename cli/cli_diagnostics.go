@@ -12,9 +12,9 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-const TroubleshootUsageText = "Collects diagnostic logs and system information for troubleshooting. Share the generated file with NordVPN support to investigate the issue."
+const DiagnosticsUsageText = "Collects diagnostic logs and system information for troubleshooting. Share the generated file with NordVPN support to investigate the issue."
 
-func (c *cmd) Troubleshoot(ctx *cli.Context) error {
+func (c *cmd) Diagnostics(ctx *cli.Context) error {
 	stream, err := c.client.CollectDiagnostics(context.Background(), &pb.Empty{})
 	if err != nil {
 		return formatError(err)
@@ -28,7 +28,7 @@ func (c *cmd) Troubleshoot(ctx *cli.Context) error {
 			break
 		}
 		if err != nil {
-			return errors.New(MsgTroubleshootFailure)
+			return errors.New(MsgDiagnosticsFailure)
 		}
 
 		// Check for error in response
@@ -39,8 +39,8 @@ func (c *cmd) Troubleshoot(ctx *cli.Context) error {
 		// Final response: daemon signals completion by sending the file
 		// path with no error.
 		if resp.FilePath != "" {
-			color.Green(MsgTroubleshootSuccess, resp.FilePath)
-			color.Yellow(MsgTroubleshootDisclaimer)
+			color.Green(MsgDiagnosticsSuccess, resp.FilePath)
+			color.Yellow(MsgDiagnosticsDisclaimer)
 			return nil
 		}
 
@@ -68,7 +68,7 @@ func diagnosticsErrorMessage(code pb.DiagnosticsErrorCode) string {
 	case pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_UNSPECIFIED,
 		pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_INTERNAL,
 		pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED:
-		return MsgTroubleshootFailure
+		return MsgDiagnosticsFailure
 	}
-	return MsgTroubleshootFailure
+	return MsgDiagnosticsFailure
 }
