@@ -5,6 +5,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config/consent"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -170,7 +171,7 @@ func statusStream(stateChan <-chan any,
 func (r *RPC) SubscribeToStateChanges(_ *pb.Empty, srv pb.Daemon_SubscribeToStateChangesServer) error {
 	log.Info("Received new subscription request")
 
-	cred, err := getCallerCred(srv.Context())
+	cred, err := internal.UcredFromContext(srv.Context())
 	if err != nil {
 		log.Error("SubscribeToStateChanges:", err)
 		return srv.Send(&pb.AppState{
