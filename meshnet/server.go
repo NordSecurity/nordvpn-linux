@@ -10,8 +10,6 @@ import (
 
 	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
-	"golang.org/x/sys/unix"
-	"google.golang.org/grpc/peer"
 
 	"golang.org/x/exp/slices"
 
@@ -194,17 +192,9 @@ func (s *Server) EnableMeshnet(ctx context.Context, _ *pb.Empty) (*pb.MeshnetRes
 		}, nil
 	}
 
-	// When creating gRPC server we provide credentials.TransportCredentials implementation which
-	// extracts unix.Ucred information from unix socket about the process that made the gRPC request
-	var ucred unix.Ucred
-	peer, ok := peer.FromContext(ctx)
-	if !ok || peer.AuthInfo == nil {
-		s.pub.Publish(fmt.Errorf("unable to retrieve AuthInfo from gRPC context"))
-	} else {
-		ucred, err = internal.StringToUcred(peer.AuthInfo.AuthType())
-		if err != nil {
-			s.pub.Publish(fmt.Errorf("error while parsing AuthType: %w", err))
-		}
+	ucred, err := internal.UcredFromContext(ctx)
+	if err != nil {
+		s.pub.Publish(fmt.Errorf("failed to get peer credentials when enabling meshnet: %w", err))
 	}
 
 	if err = s.cm.SaveWith(func(c config.Config) config.Config {

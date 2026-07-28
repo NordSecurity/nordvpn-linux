@@ -18,6 +18,17 @@ class ClientID(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     CLI: _ClassVar[ClientID]
     GUI: _ClassVar[ClientID]
     TRAY: _ClassVar[ClientID]
+
+class DiagnosticsErrorCode(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+    __slots__ = ()
+    DIAGNOSTICS_ERROR_CODE_UNSPECIFIED: _ClassVar[DiagnosticsErrorCode]
+    DIAGNOSTICS_ERROR_CODE_INTERNAL: _ClassVar[DiagnosticsErrorCode]
+    DIAGNOSTICS_ERROR_CODE_FAILED_TO_CREATE_ZIP: _ClassVar[DiagnosticsErrorCode]
+    DIAGNOSTICS_ERROR_CODE_CHOWN_FAILED: _ClassVar[DiagnosticsErrorCode]
+    DIAGNOSTICS_ERROR_CODE_ZIP_TOO_LARGE: _ClassVar[DiagnosticsErrorCode]
+    DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED: _ClassVar[DiagnosticsErrorCode]
+    DIAGNOSTICS_ERROR_CODE_FAILED_TO_CLOSE_ZIP: _ClassVar[DiagnosticsErrorCode]
+    DIAGNOSTICS_ERROR_CODE_NO_DAEMON_LOG_SOURCE: _ClassVar[DiagnosticsErrorCode]
 UNKNOWN: TriState
 DISABLED: TriState
 ENABLED: TriState
@@ -25,6 +36,14 @@ UNKNOWN_CLIENT: ClientID
 CLI: ClientID
 GUI: ClientID
 TRAY: ClientID
+DIAGNOSTICS_ERROR_CODE_UNSPECIFIED: DiagnosticsErrorCode
+DIAGNOSTICS_ERROR_CODE_INTERNAL: DiagnosticsErrorCode
+DIAGNOSTICS_ERROR_CODE_FAILED_TO_CREATE_ZIP: DiagnosticsErrorCode
+DIAGNOSTICS_ERROR_CODE_CHOWN_FAILED: DiagnosticsErrorCode
+DIAGNOSTICS_ERROR_CODE_ZIP_TOO_LARGE: DiagnosticsErrorCode
+DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED: DiagnosticsErrorCode
+DIAGNOSTICS_ERROR_CODE_FAILED_TO_CLOSE_ZIP: DiagnosticsErrorCode
+DIAGNOSTICS_ERROR_CODE_NO_DAEMON_LOG_SOURCE: DiagnosticsErrorCode
 
 class Empty(_message.Message):
     __slots__ = ()
@@ -83,3 +102,13 @@ class ServerGroupsList(_message.Message):
     type: int
     servers: _containers.RepeatedCompositeFieldContainer[ServerGroup]
     def __init__(self, type: _Optional[int] = ..., servers: _Optional[_Iterable[_Union[ServerGroup, _Mapping]]] = ...) -> None: ...
+
+class DiagnosticsProgress(_message.Message):
+    __slots__ = ("step", "file_path", "error_code")
+    STEP_FIELD_NUMBER: _ClassVar[int]
+    FILE_PATH_FIELD_NUMBER: _ClassVar[int]
+    ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
+    step: str
+    file_path: str
+    error_code: DiagnosticsErrorCode
+    def __init__(self, step: _Optional[str] = ..., file_path: _Optional[str] = ..., error_code: _Optional[_Union[DiagnosticsErrorCode, str]] = ...) -> None: ...

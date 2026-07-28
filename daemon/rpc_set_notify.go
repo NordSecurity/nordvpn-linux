@@ -10,7 +10,7 @@ import (
 )
 
 func (r *RPC) SetNotify(ctx context.Context, in *pb.SetNotifyRequest) (*pb.Payload, error) {
-	cred, err := getCallerCred(ctx)
+	cred, err := internal.UcredFromContext(ctx)
 	if err != nil {
 		log.Error("SetNotify:", err)
 		return &pb.Payload{Type: internal.CodeInternalError}, nil
