@@ -26,7 +26,7 @@ import settings_pb2 as settings__pb2
 import status_pb2 as status__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0bstate.proto\x12\x02pb\x1a\x0esettings.proto\x1a\x0cstatus.proto\".\n\nLoginEvent\x12 \n\x04type\x18\x01 \x01(\x0e\x32\x12.pb.LoginEventType\"W\n\x13\x41\x63\x63ountModification\x12$\n\x17subscription_expires_at\x18\x01 \x01(\tH\x00\x88\x01\x01\x42\x1a\n\x18_subscription_expires_at\"*\n\x13VersionHealthStatus\x12\x13\n\x0bstatus_code\x18\x01 \x01(\x05\".\n\nPauseEvent\x12 \n\x04type\x18\x01 \x01(\x0e\x32\x12.pb.PauseEventType\"\xf4\x02\n\x08\x41ppState\x12\"\n\x05\x65rror\x18\x01 \x01(\x0e\x32\x11.pb.AppStateErrorH\x00\x12/\n\x11\x63onnection_status\x18\x02 \x01(\x0b\x32\x12.pb.StatusResponseH\x00\x12%\n\x0blogin_event\x18\x03 \x01(\x0b\x32\x0e.pb.LoginEventH\x00\x12\'\n\x0fsettings_change\x18\x04 \x01(\x0b\x32\x0c.pb.SettingsH\x00\x12\'\n\x0cupdate_event\x18\x05 \x01(\x0e\x32\x0f.pb.UpdateEventH\x00\x12\x37\n\x14\x61\x63\x63ount_modification\x18\x06 \x01(\x0b\x32\x17.pb.AccountModificationH\x00\x12\x31\n\x0eversion_health\x18\x07 \x01(\x0b\x32\x17.pb.VersionHealthStatusH\x00\x12%\n\x0bpause_event\x18\x08 \x01(\x0b\x32\x0e.pb.PauseEventH\x00\x42\x07\n\x05state*&\n\rAppStateError\x12\x15\n\x11\x46\x41ILED_TO_GET_UID\x10\x00*\'\n\x0eLoginEventType\x12\t\n\x05LOGIN\x10\x00\x12\n\n\x06LOGOUT\x10\x01*?\n\x0bUpdateEvent\x12\x17\n\x13SERVERS_LIST_UPDATE\x10\x00\x12\x17\n\x13RECENTS_LIST_UPDATE\x10\x01*&\n\x0ePauseEventType\x12\x14\n\x10RECONNECT_FAILED\x10\x00\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0bstate.proto\x12\x02pb\x1a\x0esettings.proto\x1a\x0cstatus.proto\".\n\nLoginEvent\x12 \n\x04type\x18\x01 \x01(\x0e\x32\x12.pb.LoginEventType\"W\n\x13\x41\x63\x63ountModification\x12$\n\x17subscription_expires_at\x18\x01 \x01(\tH\x00\x88\x01\x01\x42\x1a\n\x18_subscription_expires_at\"*\n\x13VersionHealthStatus\x12\x13\n\x0bstatus_code\x18\x01 \x01(\x05\".\n\nPauseEvent\x12 \n\x04type\x18\x01 \x01(\x0e\x32\x12.pb.PauseEventType\"2\n\x14LogSanitizationEvent\x12\x1a\n\x12restricted_strings\x18\x01 \x03(\t\"\xb0\x03\n\x08\x41ppState\x12\"\n\x05\x65rror\x18\x01 \x01(\x0e\x32\x11.pb.AppStateErrorH\x00\x12/\n\x11\x63onnection_status\x18\x02 \x01(\x0b\x32\x12.pb.StatusResponseH\x00\x12%\n\x0blogin_event\x18\x03 \x01(\x0b\x32\x0e.pb.LoginEventH\x00\x12\'\n\x0fsettings_change\x18\x04 \x01(\x0b\x32\x0c.pb.SettingsH\x00\x12\'\n\x0cupdate_event\x18\x05 \x01(\x0e\x32\x0f.pb.UpdateEventH\x00\x12\x37\n\x14\x61\x63\x63ount_modification\x18\x06 \x01(\x0b\x32\x17.pb.AccountModificationH\x00\x12\x31\n\x0eversion_health\x18\x07 \x01(\x0b\x32\x17.pb.VersionHealthStatusH\x00\x12%\n\x0bpause_event\x18\x08 \x01(\x0b\x32\x0e.pb.PauseEventH\x00\x12:\n\x16log_sanitization_event\x18\t \x01(\x0b\x32\x18.pb.LogSanitizationEventH\x00\x42\x07\n\x05state*&\n\rAppStateError\x12\x15\n\x11\x46\x41ILED_TO_GET_UID\x10\x00*\'\n\x0eLoginEventType\x12\t\n\x05LOGIN\x10\x00\x12\n\n\x06LOGOUT\x10\x01*?\n\x0bUpdateEvent\x12\x17\n\x13SERVERS_LIST_UPDATE\x10\x00\x12\x17\n\x13RECENTS_LIST_UPDATE\x10\x01*&\n\x0ePauseEventType\x12\x14\n\x10RECONNECT_FAILED\x10\x00\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -34,14 +34,14 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'state_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z/github.com/NordSecurity/nordvpn-linux/daemon/pb'
-  _globals['_APPSTATEERROR']._serialized_start=653
-  _globals['_APPSTATEERROR']._serialized_end=691
-  _globals['_LOGINEVENTTYPE']._serialized_start=693
-  _globals['_LOGINEVENTTYPE']._serialized_end=732
-  _globals['_UPDATEEVENT']._serialized_start=734
-  _globals['_UPDATEEVENT']._serialized_end=797
-  _globals['_PAUSEEVENTTYPE']._serialized_start=799
-  _globals['_PAUSEEVENTTYPE']._serialized_end=837
+  _globals['_APPSTATEERROR']._serialized_start=765
+  _globals['_APPSTATEERROR']._serialized_end=803
+  _globals['_LOGINEVENTTYPE']._serialized_start=805
+  _globals['_LOGINEVENTTYPE']._serialized_end=844
+  _globals['_UPDATEEVENT']._serialized_start=846
+  _globals['_UPDATEEVENT']._serialized_end=909
+  _globals['_PAUSEEVENTTYPE']._serialized_start=911
+  _globals['_PAUSEEVENTTYPE']._serialized_end=949
   _globals['_LOGINEVENT']._serialized_start=49
   _globals['_LOGINEVENT']._serialized_end=95
   _globals['_ACCOUNTMODIFICATION']._serialized_start=97
@@ -50,6 +50,8 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_VERSIONHEALTHSTATUS']._serialized_end=228
   _globals['_PAUSEEVENT']._serialized_start=230
   _globals['_PAUSEEVENT']._serialized_end=276
-  _globals['_APPSTATE']._serialized_start=279
-  _globals['_APPSTATE']._serialized_end=651
+  _globals['_LOGSANITIZATIONEVENT']._serialized_start=278
+  _globals['_LOGSANITIZATIONEVENT']._serialized_end=328
+  _globals['_APPSTATE']._serialized_start=331
+  _globals['_APPSTATE']._serialized_end=763
 # @@protoc_insertion_point(module_scope)

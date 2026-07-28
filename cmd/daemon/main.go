@@ -606,6 +606,10 @@ func main() {
 	)
 	consentChecker.PrepareDaemonIfConsentNotCompleted()
 
+	logSanitizationEvents := daemonevents.NewLogSanitizationEvents()
+	logSanitizer := daemon.NewLogSanitizer(logSanitizationEvents.LogSanitizationUpdate)
+	logSanitizationEvents.Subscribe(statePublisher)
+
 	sharedContext := sharedctx.New()
 	rpc := daemon.NewRPC(
 		internal.Environment(Environment),
@@ -643,6 +647,7 @@ func main() {
 		dataUpdateEvents,
 		pauseEvents,
 		deviceKeyManager,
+		logSanitizer,
 	)
 
 	ensMonitor := ens.NewMonitor(

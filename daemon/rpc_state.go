@@ -164,6 +164,11 @@ func statusStream(stateChan <-chan any,
 					&pb.AppState{State: &pb.AppState_PauseEvent{PauseEvent: e}}); err != nil {
 					log.Error("pause event failed to send state update:", err)
 				}
+			case *pb.LogSanitizationEvent:
+				if err := srv.Send(
+					&pb.AppState{State: &pb.AppState_LogSanitizationEvent{LogSanitizationEvent: e}}); err != nil {
+					log.Error("log sanitization failed to send state update:", err)
+				}
 			default:
 			}
 		}

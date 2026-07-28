@@ -387,6 +387,24 @@ func (d *DedicatedServerStateEvents) Subscribe(to DedicatedServerStatePublisher)
 	d.DedicatedServerStateUpdate.Subscribe(to.NotifyDedicatedServerStateChange)
 }
 
+type LogSanitizationPublisher interface {
+	NotifyLogSanitization(*pb.LogSanitizationEvent) error
+}
+
+type LogSanitizationEvents struct {
+	LogSanitizationUpdate events.PublishSubcriber[*pb.LogSanitizationEvent]
+}
+
+func NewLogSanitizationEvents() *LogSanitizationEvents {
+	return &LogSanitizationEvents{
+		LogSanitizationUpdate: &subs.Subject[*pb.LogSanitizationEvent]{},
+	}
+}
+
+func (l *LogSanitizationEvents) Subscribe(to LogSanitizationPublisher) {
+	l.LogSanitizationUpdate.Subscribe(to.NotifyLogSanitization)
+}
+
 // TODO: remove/replace with the mock
 type MockPublisherSubscriber[T any] struct {
 	Handler        events.Handler[T]

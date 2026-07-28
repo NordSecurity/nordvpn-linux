@@ -108,6 +108,7 @@ func TestPauseConnection(t *testing.T) {
 				recentVPNConnStore: recents.NewRecentConnectionsStore(TestdataPath+TestRecentConnFile, &internal.StdFilesystemHandle{}, nil),
 				pauseManager:       pauseSchedulerMock,
 				connectionInfo:     connectionInfo,
+				logSanitizer:       NewLogSanitizer(&daemonEvents.MockPublisherSubscriber[*pb.LogSanitizationEvent]{}),
 			}
 
 			response, err := r.PauseConnection(context.Background(), &pb.PauseRequest{Seconds: uint32(test.pauseDuration)})
