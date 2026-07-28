@@ -346,6 +346,9 @@ func (r *RPC) connect(
 	pauseDuration time.Duration,
 	vpnConnReason events.VPNConnectionReason,
 ) (didFail bool, retErr error) {
+	// disable sanitization in case it was previously enabled
+	log.DisableSanitization()
+
 	country, err := serverSelection.Server.Locations.Country()
 	if err != nil {
 		log.Error(err)
@@ -385,6 +388,7 @@ func (r *RPC) connect(
 		serverSelection.Server.Station = dsData.Ip
 		serverSelection.Server.DedicatedServersPort = dsData.Port
 		serverSelection.Server.NordLynxPublicKey = dsData.ServerPublicKey
+		log.EnableSanitization(dsData.Ip)
 
 		r.publishDedicatedServerStatus(serverSelection.DedicatedServerStatus)
 	}
@@ -400,6 +404,10 @@ func (r *RPC) connect(
 	if err != nil {
 		log.Error(err)
 		return false, internal.ErrUnhandled
+	}
+
+	if core.IsDedicatedIP(*serverSelection.Server) {
+		log.EnableSanitization(serverSelection.Server.Hostname, subnet.Addr().String())
 	}
 
 	serverData := vpn.ServerData{

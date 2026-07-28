@@ -56,5 +56,6 @@ func Disconnect(input DisconnectInput) (bool, error) {
 		return true, err
 	}
 
+	log.DisableSanitization()
 	return true, nil
 }
