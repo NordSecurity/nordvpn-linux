@@ -33,7 +33,7 @@ require (
 	github.com/milosgajdos/tenus v0.0.3
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/quic-go/quic-go v0.60.0
-	github.com/snapcore/snapd v0.0.0-20260720113602-8bbab2efb256
+	github.com/snapcore/snapd v0.0.0-20260724205703-546cb6ae31b9
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v2 v2.27.7
 	github.com/vishvananda/netlink v1.3.1
