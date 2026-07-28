@@ -67,6 +67,10 @@ func itemNameToString(name pb.UIEvent_ItemName) string {
 		return "change_vpn_settings"
 	case pb.UIEvent_GET_HELP:
 		return "help"
+	case pb.UIEvent_OPEN_APP:
+		return "open_app"
+	case pb.UIEvent_DOWNLOAD_APP:
+		return "download_app"
 	}
 	return ""
 }
