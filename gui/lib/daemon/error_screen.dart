@@ -212,14 +212,17 @@ List<String> extractMissingConnections(Object? error) {
 
   if (error.details != null) {
     for (var detail in error.details!) {
-      if (detail is Any && detail.typeUrl.endsWith('ErrMissingConnections')) {
-        try {
-          return ErrMissingConnections.fromBuffer(
-            detail.value,
-          ).missingConnections;
-        } catch (e) {
-          logger.e('Failed to parse ErrMissingConnections: $e');
-          return const [];
+      if (detail.info_.qualifiedMessageName == 'google.protobuf.Any') {
+        final any = Any.fromBuffer(detail.writeToBuffer());
+        if (any.typeUrl.endsWith('ErrMissingConnections')) {
+          try {
+            return ErrMissingConnections.fromBuffer(
+              any.value,
+            ).missingConnections;
+          } catch (e) {
+            logger.e('Failed to parse ErrMissingConnections: $e');
+            return const [];
+          }
         }
       }
     }
