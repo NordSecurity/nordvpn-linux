@@ -2,6 +2,8 @@
 
 ${INSTALL_SCRIPT}
 
+update-desktop-database 2> /dev/null
+
 case "$1" in
     1)
         echo "${SUCCESS_INSTALL_MESSAGE}"
