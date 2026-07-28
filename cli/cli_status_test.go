@@ -53,6 +53,39 @@ Uptime: 13 seconds
 			expected: `Status: Disconnected
 `,
 		},
+		{
+			name: "paused hours",
+			resp: &pb.StatusResponse{
+				State:                     pb.ConnectionState_PAUSED,
+				PauseRemainingDurationSec: 5055,
+				Uptime:                    -1,
+			},
+			expected: `Status: Paused
+Pause time left: 01:24:15
+`,
+		},
+		{
+			name: "paused minutes",
+			resp: &pb.StatusResponse{
+				State:                     pb.ConnectionState_PAUSED,
+				PauseRemainingDurationSec: 1964,
+				Uptime:                    -1,
+			},
+			expected: `Status: Paused
+Pause time left: 32:44
+`,
+		},
+		{
+			name: "paused seconds",
+			resp: &pb.StatusResponse{
+				State:                     pb.ConnectionState_PAUSED,
+				PauseRemainingDurationSec: 23,
+				Uptime:                    -1,
+			},
+			expected: `Status: Paused
+Pause time left: 23s
+`,
+		},
 	}
 
 	for _, test := range tests {
