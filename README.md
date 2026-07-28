@@ -71,6 +71,20 @@ setup in [BUILD.md](./BUILD.md).
 
 ## Troubleshooting
 
+### Collecting diagnostics
+
+If you run into an issue, you can collect diagnostic logs and system
+information to share with NordVPN support:
+
+```sh
+nordvpn diagnostics
+```
+
+This gathers daemon and CLI logs, network and DNS configuration, firewall
+rules, and system information into a zip file. The file may contain
+sensitive information about your system and configuration, so share it
+only with our support team through a secure channel.
+
 ### Log level
 
 The log verbosity of the NordVPN daemons can be changed at runtime
