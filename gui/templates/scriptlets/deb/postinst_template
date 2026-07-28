@@ -4,6 +4,7 @@ ${INSTALL_SCRIPT}
 
 case "$1" in
     configure)
+        update-desktop-database 2> /dev/null
         if [[ ! "$2" ]]; then
             echo "${SUCCESS_INSTALL_MESSAGE}"
         fi

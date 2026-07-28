@@ -6,5 +6,5 @@ Comment=${PKG_DESCRIPTION}
 Exec=${NAME}
 Icon=${NAME}
 Terminal=false
-Type=Application
 Categories=Network;Security;
+MimeType=x-scheme-handler/nordvpn-gui;
