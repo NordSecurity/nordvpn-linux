@@ -56,7 +56,7 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 		},
 		PostquantumVpn: cfg.AutoConnectData.PostquantumVpn,
 		ArpIgnore:      cfg.ARPIgnore.Get(),
-		Ech:            cfg.ECH.Get(),
+		Ech:            cfg.AutoConnectData.ECH.Get(),
 	}
 
 	return &settings

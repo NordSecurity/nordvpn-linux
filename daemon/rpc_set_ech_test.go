@@ -166,7 +166,7 @@ func TestSetECH(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			cm := mock.NewMockConfigManager()
 			cm.Cfg.Technology = test.tech
-			cm.Cfg.ECH.Set(test.currentECH)
+			cm.Cfg.AutoConnectData.ECH.Set(test.currentECH)
 			if test.loadErr {
 				cm.LoadErr = assert.AnError
 			}
@@ -192,10 +192,10 @@ func TestSetECH(t *testing.T) {
 
 			if test.expectSaved {
 				assert.True(t, cm.Saved)
-				assert.Equal(t, test.expectedValue, cm.Cfg.ECH.Get())
+				assert.Equal(t, test.expectedValue, cm.Cfg.AutoConnectData.ECH.Get())
 			} else if !test.loadErr {
 				// When not saved, the stored value must be unchanged.
-				assert.Equal(t, test.currentECH, cm.Cfg.ECH.Get())
+				assert.Equal(t, test.currentECH, cm.Cfg.AutoConnectData.ECH.Get())
 			}
 		})
 	}

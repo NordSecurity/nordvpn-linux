@@ -132,14 +132,14 @@ func TestConfigToProtobuf_ECH(t *testing.T) {
 
 	t.Run("reflects explicit disable", func(t *testing.T) {
 		cfg := newCfg()
-		cfg.ECH.Set(false)
+		cfg.AutoConnectData.ECH.Set(false)
 		settings := configToProtobuf(cfg, testUID)
 		assert.False(t, settings.Ech)
 	})
 
 	t.Run("reflects explicit enable", func(t *testing.T) {
 		cfg := newCfg()
-		cfg.ECH.Set(true)
+		cfg.AutoConnectData.ECH.Set(true)
 		settings := configToProtobuf(cfg, testUID)
 		assert.True(t, settings.Ech)
 	})

@@ -402,3 +402,74 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 		})
 	}
 }
+
+// TestAutoconnect_PreservesECH guards the §3.12 relocation: SetAutoConnect rebuilds
+// AutoConnectData from a fresh literal, so ECH must be explicitly carried over or the user's
+// choice would be dropped by the rebuild.
+func TestAutoconnect_PreservesECH(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name        string
+		setECH      bool // whether to explicitly set ECH before the call
+		storedECH   bool
+		expectedECH bool
+	}{
+		{
+			name:        "explicit ECH off is preserved across set autoconnect",
+			setECH:      true,
+			storedECH:   false,
+			expectedECH: false,
+		},
+		{
+			name:        "explicit ECH on is preserved across set autoconnect",
+			setECH:      true,
+			storedECH:   true,
+			expectedECH: true,
+		},
+		{
+			name:        "unset ECH stays default (enabled) across set autoconnect",
+			setECH:      false,
+			expectedECH: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mockAuthChecker := testauth.AuthCheckerMock{LoggedIn: true}
+			mockConfigManager := newMockConfigManager()
+			mockPublisherSubscriber := events.MockPublisherSubscriber[bool]{}
+			mockEvents := events.Events{
+				Settings: &events.SettingsEvents{
+					Autoconnect: &mockPublisherSubscriber,
+				},
+			}
+
+			if test.setECH {
+				mockConfigManager.c.AutoConnectData.ECH.Set(test.storedECH)
+			}
+
+			dm := DataManager{
+				serversData: ServersData{Servers: core_test.ServersList()},
+				countryData: CountryData{Countries: core_test.CountriesList()},
+			}
+			r := RPC{
+				cm:         mockConfigManager,
+				ac:         &mockAuthChecker,
+				events:     &mockEvents,
+				dm:         &dm,
+				serversAPI: core_test.NewMockServersAPI(),
+			}
+			request := pb.SetAutoconnectRequest{
+				Enabled:     true,
+				ServerGroup: "standard_vpn_servers",
+			}
+
+			resp, err := r.SetAutoConnect(context.Background(), &request)
+			assert.Nil(t, err)
+			assert.Equal(t, internal.CodeSuccess, resp.Type)
+			assert.Equal(t, test.expectedECH, mockConfigManager.c.AutoConnectData.ECH.Get(),
+				"ECH must survive the AutoConnectData rebuild in SetAutoConnect")
+		})
+	}
+}

@@ -46,14 +46,14 @@ func (r *RPC) SetECH(ctx context.Context, in *pb.SetGenericRequest) (*pb.Payload
 		}, nil
 	}
 
-	if cfg.ECH.Get() == in.GetEnabled() {
+	if cfg.AutoConnectData.ECH.Get() == in.GetEnabled() {
 		return &pb.Payload{
 			Type: internal.CodeNothingToDo,
 		}, nil
 	}
 
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {
-		c.ECH.Set(in.GetEnabled())
+		c.AutoConnectData.ECH.Set(in.GetEnabled())
 		return c
 	}); err != nil {
 		log.Error("failed to save config:", err)

@@ -65,7 +65,7 @@ func (qc *NordWhisperConfig) GetConfig() (vpn.NordWhisperFeatureConfig, error) {
 
 	var cfg config.Config
 	if err := qc.cm.Load(&cfg); err == nil {
-		featureCfg.EnableECH = cfg.ECH.Get()
+		featureCfg.EnableECH = cfg.AutoConnectData.ECH.Get()
 	} else {
 		log.Warn("loading config for ECH setting, defaulting to:", defaultEchVal, "err:", err)
 	}

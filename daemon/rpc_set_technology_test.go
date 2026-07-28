@@ -147,7 +147,7 @@ func TestSetTechnology_ECHReset(t *testing.T) {
 					Protocol: config.Protocol_UDP,
 				},
 			}
-			cfg.ECH.Set(test.storedECH)
+			cfg.AutoConnectData.ECH.Set(test.storedECH)
 			configManager.Cfg = &cfg
 
 			networker := networker.Mock{}
@@ -164,7 +164,7 @@ func TestSetTechnology_ECHReset(t *testing.T) {
 				&pb.SetTechnologyRequest{Technology: test.targetTech})
 			assert.Nil(t, err, "Unexpected error returned by SetTechnology rpc.")
 			assert.Equal(t, internal.CodeSuccess, resp.Type, "Expected the switch to succeed.")
-			assert.Equal(t, test.expectedECH, configManager.Cfg.ECH.Get(),
+			assert.Equal(t, test.expectedECH, configManager.Cfg.AutoConnectData.ECH.Get(),
 				"Unexpected ECH value saved in config.")
 		})
 	}

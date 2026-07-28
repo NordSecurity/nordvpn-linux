@@ -50,7 +50,7 @@ func TestNordWhisperConfig_GetConfig_ECHGate(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			cm := mock.NewMockConfigManager()
 			if test.userSet {
-				cm.Cfg.ECH.Set(test.userValue)
+				cm.Cfg.AutoConnectData.ECH.Set(test.userValue)
 			}
 			if test.loadErr {
 				cm.LoadErr = errors.New("load failed")

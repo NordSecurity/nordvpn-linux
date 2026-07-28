@@ -101,6 +101,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 				DNS:                  cfg.AutoConnectData.DNS,
 				Allowlist:            cfg.AutoConnectData.Allowlist,
 				PostquantumVpn:       cfg.AutoConnectData.PostquantumVpn,
+				ECH:                  cfg.AutoConnectData.ECH,
 			}
 			return c
 		}); err != nil {
