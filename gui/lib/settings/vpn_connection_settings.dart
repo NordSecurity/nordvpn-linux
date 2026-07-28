@@ -60,6 +60,7 @@ final class VpnConnectionSettings extends ConsumerWidget {
           case _VpnConnectionItems.killSwitch:
             return SettingsWrapperWidget.buildListItem(
               context,
+              enabled: settings.firewall,
               title: t.ui.killSwitch,
               subtitle: t.ui.killSwitchDescription,
               trailing: OnOffSwitch(
