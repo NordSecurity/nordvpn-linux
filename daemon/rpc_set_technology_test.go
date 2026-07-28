@@ -95,6 +95,81 @@ func TestSetTechnology_NordWhisper(t *testing.T) {
 	}
 }
 
+func TestSetTechnology_ECHReset(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name        string
+		currentTech config.Technology
+		targetTech  config.Technology
+		storedECH   bool
+		expectedECH bool
+	}{
+		{
+			name:        "leaving NordWhisper for NordLynx resets ECH to default",
+			currentTech: config.Technology_NORDWHISPER,
+			targetTech:  config.Technology_NORDLYNX,
+			storedECH:   false,
+			expectedECH: true,
+		},
+		{
+			name:        "leaving NordWhisper for OpenVPN resets ECH to default",
+			currentTech: config.Technology_NORDWHISPER,
+			targetTech:  config.Technology_OPENVPN,
+			storedECH:   false,
+			expectedECH: true,
+		},
+		{
+			name:        "already-default ECH stays enabled when leaving NordWhisper",
+			currentTech: config.Technology_NORDWHISPER,
+			targetTech:  config.Technology_NORDLYNX,
+			storedECH:   true,
+			expectedECH: true,
+		},
+		{
+			name:        "switching between non-NordWhisper technologies also forces default",
+			currentTech: config.Technology_NORDLYNX,
+			targetTech:  config.Technology_OPENVPN,
+			storedECH:   false,
+			expectedECH: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			remoteConfigGetter := mock.NewRemoteConfigMock()
+			remoteConfigGetter.NordWhisperEnabled = true
+
+			configManager := mock.NewMockConfigManager()
+			cfg := config.Config{
+				Technology: test.currentTech,
+				AutoConnectData: config.AutoConnectData{
+					Protocol: config.Protocol_UDP,
+				},
+			}
+			cfg.ECH.Set(test.storedECH)
+			configManager.Cfg = &cfg
+
+			networker := networker.Mock{}
+
+			r := RPC{
+				remoteConfigGetter: remoteConfigGetter,
+				cm:                 configManager,
+				netw:               &networker,
+				factory:            func(t config.Technology) (vpn.VPN, error) { return nil, nil },
+				events:             events.NewEventsEmpty(),
+			}
+
+			resp, err := r.SetTechnology(context.Background(),
+				&pb.SetTechnologyRequest{Technology: test.targetTech})
+			assert.Nil(t, err, "Unexpected error returned by SetTechnology rpc.")
+			assert.Equal(t, internal.CodeSuccess, resp.Type, "Expected the switch to succeed.")
+			assert.Equal(t, test.expectedECH, configManager.Cfg.ECH.Get(),
+				"Unexpected ECH value saved in config.")
+		})
+	}
+}
+
 func TestSetTechnology_DedicatedServer(t *testing.T) {
 	category.Set(t, category.Unit)
 

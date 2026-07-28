@@ -63,6 +63,11 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 		obfuscate = false
 	}
 
+	ech := cfg.ECH
+	if in.GetTechnology() != config.Technology_NORDWHISPER {
+		ech = config.TrueField{} // zero value → Get() == true (default)
+	}
+
 	if in.GetTechnology() == config.Technology_NORDWHISPER {
 		protocol = config.Protocol_Webtunnel
 	} else {
@@ -80,6 +85,7 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 		c.Technology = in.GetTechnology()
 		c.AutoConnectData.Protocol = protocol
 		c.AutoConnectData.Obfuscate = obfuscate
+		c.ECH = ech
 		return c
 	}); err != nil {
 		log.Error(err)
