@@ -53,10 +53,10 @@ func (qc *NordWhisperConfig) GetConfig() (vpn.NordWhisperFeatureConfig, error) {
 		if parsed, parseErr := strconv.ParseBool(enableECHParam); parseErr == nil {
 			featureCfg.EnableECH = parsed
 		} else {
-			log.Warn("parsing remote enable_ech, defaulting to: ", defaultEchVal, " err:", parseErr)
+			log.Warn("parsing remote enable_ech, defaulting to:", defaultEchVal, "err:", parseErr)
 		}
 	} else {
-		log.Warn("fetching remote enable_ech, defaulting to: ", defaultEchVal, " err:", err)
+		log.Warn("fetching remote enable_ech, defaulting to:", defaultEchVal, "err:", err)
 	}
 
 	if !featureCfg.EnableECH {
@@ -67,7 +67,7 @@ func (qc *NordWhisperConfig) GetConfig() (vpn.NordWhisperFeatureConfig, error) {
 	if err := qc.cm.Load(&cfg); err == nil {
 		featureCfg.EnableECH = cfg.ECH.Get()
 	} else {
-		log.Warn("loading config for ECH setting, defaulting to: ", defaultEchVal, " err:", err)
+		log.Warn("loading config for ECH setting, defaulting to:", defaultEchVal, "err:", err)
 	}
 
 	return featureCfg, nil

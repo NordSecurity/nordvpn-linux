@@ -1149,7 +1149,7 @@ def test_local_config_usage_missing_enable_ech_field(
         sh.nordvpn.connect()
 
         missing_ech_field_message = \
-            "[Warning] Failed to fetch NordWhisper features: feature [nordwhisper] param [enable_ech] not found"
+            "[Warning] fetching remote enable_ech, defaulting to: true err: feature [nordwhisper] param [enable_ech] not found"
 
         assert daemon_log_reader.wait_for_messages(
             messages=[missing_ech_field_message], cursor=cursor
