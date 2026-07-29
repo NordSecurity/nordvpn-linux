@@ -595,7 +595,7 @@ func TestCreateDiagnosticsZip_UniqueFilename(t *testing.T) {
 	assert.Len(t, seen, N, "expected %d unique filenames", N)
 }
 
-func TestTroubleshootFailsWhengRPCPeerIsInvalid(t *testing.T) {
+func TestDiagnosticsFailsWhenGRPCPeerIsInvalid(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	srv := &mockDiagnosticsServer{ctx: context.Background()}

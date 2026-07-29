@@ -125,7 +125,7 @@ def test_account_not_logged_in():
 
 
 # ---------------------------------------------------------------------------
-# `nordvpn troubleshoot`
+# `nordvpn diagnostics`
 # ---------------------------------------------------------------------------
 
 def _has_any_file(path: str) -> bool:
@@ -157,14 +157,14 @@ CONDITIONAL_ZIP_ENTRIES = (
 )
 
 
-def _run_troubleshoot() -> str:
+def _run_diagnostics() -> str:
     """
-    Run `nordvpn troubleshoot`.
+    Run `nordvpn diagnostics`.
 
     Assert the success banner, and return the zip path the daemon reports.
     """
 
-    output = str(sh.nordvpn.troubleshoot())
+    output = str(sh.nordvpn.diagnostics())
     assert "Diagnostics collected successfully." in output, output
     match = re.search(r"File saved to:\s*(\S+)", output)
     assert match, f"Could not find zip path in output:\n{output}"
@@ -178,9 +178,9 @@ def _cleanup_zip(path: str | None) -> None:
     os.remove(path)
 
 
-def test_troubleshoot():
+def test_diagnostics():
     """
-    Single end-to-end check for `nordvpn troubleshoot`:
+    Single end-to-end check for `nordvpn diagnostics`:
 
       - the file exists, ends in .zip, has the diagnostics naming scheme
       - the file is owned by the invoking user and readable
@@ -189,10 +189,10 @@ def test_troubleshoot():
       - system-info.txt and dns-info.txt have their labelled blocks
       - a second invocation produces a different zip path (no overwrite)
 
-    The success banner check is performed inside `_run_troubleshoot`.
+    The success banner check is performed inside `_run_diagnostics`.
     """
 
-    zip_path = _run_troubleshoot()
+    zip_path = _run_diagnostics()
     second_zip_path = None
     try:
         # File on disk
@@ -266,7 +266,7 @@ def test_troubleshoot():
 
         # Second invocation must not overwrite the first — names embed a
         # timestamp, so two consecutive runs should produce distinct paths.
-        second_zip_path = _run_troubleshoot()
+        second_zip_path = _run_diagnostics()
         assert second_zip_path != zip_path, (
             f"second invocation reused first path: {second_zip_path}"
         )

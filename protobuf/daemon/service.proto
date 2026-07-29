@@ -102,6 +102,6 @@ service Daemon {
   // InjectVpnConnectionError is a DEV-only endpoint that injects a simulated ENS event
   rpc InjectVpnConnectionError(InjectVpnConnectionErrorRequest) returns (Payload);
 
-  // ==================== Troubleshooting ====================
+  // ==================== Diagnostics ====================
   rpc CollectDiagnostics(Empty) returns (stream DiagnosticsProgress);
 }

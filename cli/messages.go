@@ -414,8 +414,8 @@ Your browsing activities remain private, regardless of your choice.
 	PauseSuccess       = "Connection paused for %s."
 	PauseInterrupted   = "Pause canceled. You are disconnected from the VPN."
 
-	// Troubleshoot
-	MsgTroubleshootSuccess    = "Diagnostics collected successfully.\nFile saved to: %s"
-	MsgTroubleshootFailure    = "We couldn't collect diagnostic logs. Please try again or contact our support team."
-	MsgTroubleshootDisclaimer = "WARNING: This file contains sensitive information about your system and configuration. Share it only with our support team through a secure channel."
+	// Diagnostics
+	MsgDiagnosticsSuccess    = "Diagnostics collected successfully.\nFile saved to: %s"
+	MsgDiagnosticsFailure    = "We couldn't collect diagnostic logs. Please try again or contact our support team."
+	MsgDiagnosticsDisclaimer = "WARNING: This file contains sensitive information about your system and configuration. Share it only with our support team through a secure channel."
 )

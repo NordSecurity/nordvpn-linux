@@ -417,7 +417,7 @@ class DaemonClient extends $grpc.Client {
         options: options);
   }
 
-  /// ==================== Troubleshooting ====================
+  /// ==================== Diagnostics ====================
   $grpc.ResponseStream<$0.DiagnosticsProgress> collectDiagnostics(
     $0.Empty request, {
     $grpc.CallOptions? options,
