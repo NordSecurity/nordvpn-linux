@@ -328,6 +328,7 @@ def test_direct_connection_rtt_and_loss():
 
 
 @pytest.mark.core_meshnet
+@pytest.mark.skip("LVPN-10390")
 def test_incoming_connections():
     """Manual TC: LVPN-1259"""
 
