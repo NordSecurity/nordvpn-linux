@@ -328,7 +328,6 @@ def test_direct_connection_rtt_and_loss():
 
 
 @pytest.mark.core_meshnet
-@pytest.mark.skip("LVPN-10390")
 def test_incoming_connections():
     """Manual TC: LVPN-1259"""
 
@@ -337,7 +336,7 @@ def test_incoming_connections():
     peer_list = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list())
     local_hostname = peer_list.get_this_device().hostname
     peer_hostname = peer_list.get_external_peer().hostname
-    assert meshnet.is_peer_reachable(peer_list.get_external_peer(), port=8000, retry=1)
+    assert meshnet.is_peer_reachable(peer_list.get_external_peer(), port=8000, retry=3)
     sh_no_tty.nordvpn.mesh.peer.incoming.deny(peer_hostname)
     assert not ssh_client.network.ping(local_hostname, retry=1), "Local device should not be reachable when incoming denied"
     # This still needs to work after denying incoming, but having the peer allow incoming
