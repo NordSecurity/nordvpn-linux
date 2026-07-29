@@ -10,6 +10,10 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
+const (
+	tokenCharsToShow = 6
+)
+
 // TokenInfo returns token information.
 func (r *RPC) TokenInfo(ctx context.Context, _ *pb.Empty) (*pb.TokenInfoResponse, error) {
 	if ok, err := r.ac.IsLoggedIn(); !ok {
@@ -27,11 +31,19 @@ func (r *RPC) TokenInfo(ctx context.Context, _ *pb.Empty) (*pb.TokenInfoResponse
 	tokenData := cfg.TokensData[cfg.AutoConnectData.ID]
 	tokenInfo := &pb.TokenInfoResponse{
 		Type:               internal.CodeSuccess,
-		Token:              tokenData.Token,
+		Token:              truncateMiddle(tokenData.Token, tokenCharsToShow),
 		ExpiresAt:          tokenData.TokenExpiry,
 		TrustedPassToken:   tokenData.TrustedPassToken,
 		TrustedPassOwnerId: tokenData.TrustedPassOwnerID,
 	}
 
 	return tokenInfo, nil
+}
+
+func truncateMiddle(s string, charsToShow int) string {
+	front, end := charsToShow, charsToShow
+	if len(s) >= front+end {
+		return s[:front] + "..." + s[len(s)-end:]
+	}
+	return "Invalid token"
 }
