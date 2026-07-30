@@ -18,5 +18,4 @@ jobs:
       project-id: ${{ secrets.PROJECT_ID }}
     with:
       cancel-outdated-pipelines: ${{ github.ref_name != 'main' }}
-      #TODO: fix before delivery
-      triggered-ref: skubiak/LVPN-10890_bump_flutter_image_ver
+      triggered-ref: v1.8.0
