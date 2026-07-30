@@ -374,7 +374,7 @@ func collectDiagnosticsData(
 			return addDNSInfo(zipWriter, logf)
 		}, false},
 		{"Collecting firewall rules...", func() error {
-			return addNFTablesInfo(zipWriter)
+			return addFirewallInfo(zipWriter, logf)
 		}, false},
 	}
 
@@ -795,6 +795,7 @@ func addSystemInfo(zipWriter *zip.Writer, state appState, logf logFunc) error {
 	writeBlock(w, "OS Release", readFile(logf, "/etc/os-release"))
 
 	writeBlock(w, "Kernel Version", runCommand(logf, "uname", "-a"))
+	writeBlock(w, "Kernel modules", runCommand(logf, "lsmod"))
 	writeBlock(w, "Desktop Environment", collectDesktopEnvironment(logf))
 
 	// nordvpn version/status/settings come from in-process state pulled in
@@ -883,16 +884,16 @@ func readDisableIPv6Status(logf logFunc) string {
 	return b.String()
 }
 
-// addNFTablesInfo streams the full nftables ruleset into nftables-ruleset.txt.
-// It lives in its own entry (rather than being a block inside network-info.txt)
-// because the ruleset dump can be large enough to drown out the surrounding
-// report.
-func addNFTablesInfo(zipWriter *zip.Writer) error {
-	w, err := zipWriter.Create("nftables-ruleset.txt")
+func addFirewallInfo(zipWriter *zip.Writer, logf logFunc) error {
+	w, err := zipWriter.Create("firewall-info.txt")
 	if err != nil {
 		return err
 	}
-	return streamCommandToWriter(w, "nft", "list", "ruleset")
+	writeBlock(w, "nft version", runCommand(logf, "nft", "-v"))
+	writeBlock(w, "iptables version", runCommand(logf, "iptables", "-v"))
+	writeBlock(w, "nft ruleset", runCommand(logf, "nft", "list", "ruleset"))
+
+	return nil
 }
 
 // addDNSInfo writes DNS-related diagnostics (resolv.conf, systemd-resolved,
