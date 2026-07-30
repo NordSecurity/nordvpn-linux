@@ -24,6 +24,19 @@ func (c *cmd) Status(ctx *cli.Context) error {
 	return nil
 }
 
+func formatDuration(secs uint32) string {
+	h := secs / 3600
+	m := (secs % 3600) / 60
+	s := secs % 60
+
+	if h > 0 {
+		return fmt.Sprintf("%02d:%02d:%02d", h, m, s)
+	} else if m > 0 {
+		return fmt.Sprintf("%02d:%02d", m, s)
+	}
+	return fmt.Sprintf("%02d", s)
+}
+
 // Status returns ready to print status string.
 func Status(resp *pb.StatusResponse) string {
 	state := "Disconnected"
@@ -34,10 +47,15 @@ func Status(resp *pb.StatusResponse) string {
 	case pb.ConnectionState_CONNECTING:
 		state = "Connecting"
 	case pb.ConnectionState_PAUSED:
-		state = "Disconnected"
+		state = "Paused"
 	}
 	var b strings.Builder
 	b.WriteString(fmt.Sprintf("Status: %s\n", state))
+
+	if resp.PauseRemainingDurationSec != 0 {
+		duration := formatDuration(resp.PauseRemainingDurationSec)
+		b.WriteString(fmt.Sprintf("Pause time left: %s\n", duration))
+	}
 
 	if resp.Name != "" {
 		serverName := resp.Name
