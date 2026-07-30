@@ -212,7 +212,17 @@ final class MockDaemon extends DaemonServiceBase {
   }
 
   @override
-  Future<Payload> setFirewall(ServiceCall call, SetGenericRequest request) {
+  Future<Payload> setFirewall(
+    ServiceCall call,
+    SetGenericRequest request,
+  ) async {
+    final settings = appSettings.currentSettings;
+    if (settings.firewall == request.enabled) {
+      return Payload(type: Int64(DaemonStatusCode.nothingToDo));
+    }
+    if (!request.enabled && settings.killSwitch) {
+      return Payload(type: Int64(DaemonStatusCode.dependencyError));
+    }
     return appSettings.setSettings(firewall: request.enabled);
   }
 
