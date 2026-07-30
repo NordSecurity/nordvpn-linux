@@ -418,7 +418,7 @@ func (dm *DataManager) GetAccountData(requestFreshFetch bool) (*pb.AccountRespon
 }
 
 func (dm *DataManager) InvalidateAccountData() {
-	dm.accountData.unset()
+	dm.accountData.clear()
 }
 
 func (dm *DataManager) NotifyLogout(event.DataAuthorization) error {
