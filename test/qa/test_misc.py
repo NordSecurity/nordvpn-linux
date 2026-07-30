@@ -141,7 +141,7 @@ ALWAYS_IN_ZIP_FILES = {
     "system-info.txt",
     "network-info.txt",
     "dns-info.txt",
-    "nftables-ruleset.txt",
+    "firewall-info.txt",
     "log_extraction_report.log",
 }
 
@@ -249,6 +249,7 @@ def test_diagnostics():
         for block in (
             "OS Release",
             "Kernel Version",
+            "Kernel modules",
             "Desktop Environment",
             "nordvpn version",
             "nordvpn status",
