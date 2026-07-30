@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grpc/grpc.dart';
 import 'package:nordvpn/analytics/consent_screen.dart';
@@ -372,6 +373,14 @@ class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
                     onPressed: () =>
                         ref.read(toastsProvider.notifier).closeToast(),
                     child: const Text("Close Toast"),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => SemanticsService.sendAnnouncement(
+                      View.of(context),
+                      "Sending an announcement",
+                      Directionality.of(context),
+                    ),
+                    child: const Text("Announce"),
                   ),
                   Input(
                     submitText: "Error Popup",

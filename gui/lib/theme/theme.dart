@@ -922,7 +922,8 @@ final class NordVpnTheme {
     required Color hoverColor,
   }) {
     return WidgetStateProperty.resolveWith<Color?>((states) {
-      if (states.contains(WidgetState.hovered)) {
+      if (states.contains(WidgetState.hovered) ||
+          states.contains(WidgetState.focused)) {
         return hoverColor;
       }
 

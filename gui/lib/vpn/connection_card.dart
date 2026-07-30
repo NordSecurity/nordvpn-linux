@@ -43,14 +43,12 @@ final class ConnectionCard extends StatelessWidget {
 
   Widget _build(WidgetRef ref, BuildContext context, VpnStatus vpnStatus) {
     final connectionCardTheme = context.connectionCardTheme;
-
     return ConstrainedBox(
       constraints: BoxConstraints(minWidth: connectionCardTheme.minWidth),
       child: Container(
         padding: connectionCardTheme.connectionCardPadding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          key: ValueKey(vpnStatus.status),
           children: [
             Row(
               spacing: connectionCardTheme.smallSpacing,

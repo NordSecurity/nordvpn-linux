@@ -60,6 +60,24 @@ class TranslationsA11yEn {
 
 	/// en: 'VPN connection resumes in $hours hours $minutes minutes $seconds seconds'
 	String VPNResumesInWithHours({required Object hours, required Object minutes, required Object seconds}) => 'VPN connection resumes in ${hours} hours ${minutes} minutes ${seconds} seconds';
+
+	/// en: 'VPN Panel. Preferred location $location. Not secured.'
+	String VPNPanelDisconnected({required Object location}) => 'VPN Panel. Preferred location ${location}. Not secured.';
+
+	/// en: 'VPN Panel. Connecting to $location.'
+	String VPNPanelConnecting({required Object location}) => 'VPN Panel. Connecting to ${location}.';
+
+	/// en: 'VPN Panel. Connected to $location.'
+	String VPNPanelConnected({required Object location}) => 'VPN Panel. Connected to ${location}.';
+
+	/// en: 'VPN Panel. Loading.'
+	String get VPNPanelLoading => 'VPN Panel. Loading.';
+
+	/// en: 'More options'
+	String get moreOptions => 'More options';
+
+	/// en: 'List with $number items'
+	String listWithItems({required Object number}) => 'List with ${number} items';
 }
 
 // Path: cities
@@ -2202,6 +2220,12 @@ extension on Translations {
 		return switch (path) {
 			'a11y.VPNResumesIn' => ({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes} minutes ${seconds} seconds',
 			'a11y.VPNResumesInWithHours' => ({required Object hours, required Object minutes, required Object seconds}) => 'VPN connection resumes in ${hours} hours ${minutes} minutes ${seconds} seconds',
+			'a11y.VPNPanelDisconnected' => ({required Object location}) => 'VPN Panel. Preferred location ${location}. Not secured.',
+			'a11y.VPNPanelConnecting' => ({required Object location}) => 'VPN Panel. Connecting to ${location}.',
+			'a11y.VPNPanelConnected' => ({required Object location}) => 'VPN Panel. Connected to ${location}.',
+			'a11y.VPNPanelLoading' => 'VPN Panel. Loading.',
+			'a11y.moreOptions' => 'More options',
+			'a11y.listWithItems' => ({required Object number}) => 'List with ${number} items',
 			'cities.tirana' => 'Tirana',
 			'cities.algiers' => 'Algiers',
 			'cities.addis_ababa' => 'Addis Ababa',
@@ -2706,14 +2730,14 @@ extension on Translations {
 			'ui.p2p' => 'P2P',
 			'ui.obfuscated' => 'Obfuscated',
 			'ui.obfuscatedServers' => 'Obfuscated Servers',
+			_ => null,
+		} ?? switch (path) {
 			'ui.selectServerForDip' => 'Pick a location for your IP',
 			'ui.selectLocation' => 'Select location',
 			'ui.dipSelectLocationDescription' => 'You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.',
 			'ui.chooseLocationForDip' => 'Choose a location for your dedicated IP',
 			'ui.getDip' => 'Get dedicated IP',
 			'ui.getYourDip' => 'Get your personal IP',
-			_ => null,
-		} ?? switch (path) {
 			'ui.getDipDescription' => 'Get a personal IP address that belongs only to you. Enjoy all the benefits of VPN encryption without dealing with blocklists, identity checks, and selecting images of boats in CAPTCHAs.',
 			'ui.notifications' => 'Notifications',
 			'ui.specialtyServersSearchHint' => 'Search country or city',
