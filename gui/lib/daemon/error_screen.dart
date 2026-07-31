@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:grpc/grpc.dart';
+import 'package:protobuf/well_known_types/google/protobuf/any.pb.dart';
 import 'package:nordvpn/data/models/application_error.dart';
 import 'package:nordvpn/data/providers/account_controller.dart';
 import 'package:nordvpn/data/providers/consent_status_provider.dart';
@@ -211,14 +212,17 @@ List<String> extractMissingConnections(Object? error) {
 
   if (error.details != null) {
     for (var detail in error.details!) {
-      if (detail is Any && detail.typeUrl.endsWith('ErrMissingConnections')) {
-        try {
-          return ErrMissingConnections.fromBuffer(
-            detail.value,
-          ).missingConnections;
-        } catch (e) {
-          logger.e('Failed to parse ErrMissingConnections: $e');
-          return const [];
+      if (detail.info_.qualifiedMessageName == 'google.protobuf.Any') {
+        final any = Any.fromBuffer(detail.writeToBuffer());
+        if (any.typeUrl.endsWith('ErrMissingConnections')) {
+          try {
+            return ErrMissingConnections.fromBuffer(
+              any.value,
+            ).missingConnections;
+          } catch (e) {
+            logger.e('Failed to parse ErrMissingConnections: $e');
+            return const [];
+          }
         }
       }
     }
