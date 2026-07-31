@@ -375,11 +375,12 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 			},
 		}
 		r := RPC{
-			cm:         mockConfigManager,
-			ac:         &mockAuthChecker,
-			events:     &mockEvents,
-			dm:         &dm,
-			serversAPI: core_test.NewMockServersAPI(),
+			cm:                 mockConfigManager,
+			ac:                 &mockAuthChecker,
+			events:             &mockEvents,
+			dm:                 &dm,
+			remoteConfigGetter: mock.NewRemoteConfigMock(),
+			serversAPI:         core_test.NewMockServersAPI(),
 		}
 		request := pb.SetAutoconnectRequest{
 			Enabled:     true,
@@ -454,11 +455,12 @@ func TestAutoconnect_PreservesECH(t *testing.T) {
 				countryData: CountryData{Countries: core_test.CountriesList()},
 			}
 			r := RPC{
-				cm:         mockConfigManager,
-				ac:         &mockAuthChecker,
-				events:     &mockEvents,
-				dm:         &dm,
-				serversAPI: core_test.NewMockServersAPI(),
+				cm:                 mockConfigManager,
+				ac:                 &mockAuthChecker,
+				events:             &mockEvents,
+				dm:                 &dm,
+				remoteConfigGetter: mock.NewRemoteConfigMock(),
+				serversAPI:         core_test.NewMockServersAPI(),
 			}
 			request := pb.SetAutoconnectRequest{
 				Enabled:     true,
