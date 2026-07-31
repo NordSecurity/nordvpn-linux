@@ -186,6 +186,10 @@ func (a *AccountData) unset() {
 	a.cache.Invalidate()
 }
 
+func (a *AccountData) clear() {
+	a.cache.Clear()
+}
+
 // get retrieves account data from cache.
 // Parameters:
 //   - respectDataExpiry: Controls cache retrieval
