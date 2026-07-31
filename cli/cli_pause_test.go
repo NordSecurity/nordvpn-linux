@@ -3,40 +3,65 @@ package cli
 import (
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPauseArgumentsParsing(t *testing.T) {
 	tests := []struct {
-		name              string
-		pauseDuration     string
-		expectedResult    uint32
-		shouldReturnError bool
+		name                        string
+		pauseDuration               string
+		expectedPauseDurationResult uint32
+		expectedUIEventResult       pb.UIEvent_ItemValue
+		shouldReturnError           bool
 	}{
 		{
-			name:           "success 1h",
-			pauseDuration:  "1h",
-			expectedResult: 3600,
+			name:                        "success 5m",
+			pauseDuration:               "5m",
+			expectedPauseDurationResult: 300,
+			expectedUIEventResult:       pb.UIEvent_PAUSE_5_MIN,
 		},
 		{
-			name:           "success 5m",
-			pauseDuration:  "5m",
-			expectedResult: 300,
+			name:                        "success 15m",
+			pauseDuration:               "15m",
+			expectedPauseDurationResult: 900,
+			expectedUIEventResult:       pb.UIEvent_PAUSE_5_MIN,
 		},
 		{
-			name:              "invalid interval",
-			pauseDuration:     "17m",
-			shouldReturnError: true,
+			name:                        "success 30m",
+			pauseDuration:               "30m",
+			expectedPauseDurationResult: 1800,
+			expectedUIEventResult:       pb.UIEvent_PAUSE_5_MIN,
 		},
 		{
-			name:              "invalid argument",
-			pauseDuration:     "aaaaa",
-			shouldReturnError: true,
+			name:                        "success 1h",
+			pauseDuration:               "1h",
+			expectedPauseDurationResult: 3600,
+			expectedUIEventResult:       pb.UIEvent_PAUSE_1_HOUR,
 		},
 		{
-			name:              "invalid argument(no value)",
-			pauseDuration:     "",
-			shouldReturnError: true,
+			name:                        "success 24h",
+			pauseDuration:               "24h",
+			expectedPauseDurationResult: 86400,
+			expectedUIEventResult:       pb.UIEvent_PAUSE_24_HOURS,
+		},
+		{
+			name:                  "invalid interval",
+			pauseDuration:         "17m",
+			shouldReturnError:     true,
+			expectedUIEventResult: pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
+		},
+		{
+			name:                  "invalid argument",
+			pauseDuration:         "aaaaa",
+			shouldReturnError:     true,
+			expectedUIEventResult: pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
+		},
+		{
+			name:                  "invalid argument(no value)",
+			pauseDuration:         "",
+			shouldReturnError:     true,
+			expectedUIEventResult: pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
 		},
 	}
 
@@ -44,7 +69,7 @@ func TestPauseArgumentsParsing(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := pauseArgToDuration(test.pauseDuration)
 
-			assert.Equal(t, test.expectedResult, result)
+			assert.Equal(t, test.expectedPauseDurationResult, result)
 			if test.shouldReturnError {
 				assert.Error(t, err)
 			} else {
