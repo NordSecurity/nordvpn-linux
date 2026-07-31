@@ -65,7 +65,7 @@ func (r *RPC) SetTechnology(ctx context.Context, in *pb.SetTechnologyRequest) (*
 
 	ech := cfg.AutoConnectData.ECH
 	if in.GetTechnology() != config.Technology_NORDWHISPER {
-		ech = config.TrueField{} // zero value → Get() == true (default)
+		ech = r.resetECHEnabledField()
 	}
 
 	if in.GetTechnology() == config.Technology_NORDWHISPER {

@@ -430,7 +430,7 @@ func (r *RPC) connect(
 		ThreatProtectionLite:    cfg.AutoConnectData.ThreatProtectionLite,
 		IsObfuscated:            cfg.AutoConnectData.Obfuscate,
 		IsPostQuantum:           cfg.AutoConnectData.PostquantumVpn,
-		IsECHEnabled:            cfg.AutoConnectData.ECH.Get(),
+		IsECHEnabled:            r.getECHEnabledField(cfg).Get(),
 		DurationMs:              getElapsedTime(connectingStartTime),
 		EventStatus:             events.StatusAttempt,
 		TargetServerSelection:   determineServerSelectionRule(parameters),

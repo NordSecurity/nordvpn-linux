@@ -82,3 +82,15 @@ func (r *RPC) remoteECHEnabled() bool {
 	}
 	return enabled
 }
+
+func (r *RPC) getECHEnabledField(cfg config.Config) config.TrueField {
+	var echField config.TrueField
+	echField.Set(r.remoteECHEnabled() && cfg.AutoConnectData.ECH.Get())
+	return echField
+}
+
+func (r *RPC) resetECHEnabledField() config.TrueField {
+	var echField config.TrueField
+	echField.Set(r.remoteECHEnabled())
+	return echField
+}

@@ -51,6 +51,7 @@ func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse,
 				c.AutoConnectData.Country = cfg.AutoConnectData.Country
 				c.AutoConnectData.City = cfg.AutoConnectData.City
 				c.AutoConnectData.Group = cfg.AutoConnectData.Group
+				c.AutoConnectData.ECH = r.getECHEnabledField(cfg)
 
 				return c
 			})
