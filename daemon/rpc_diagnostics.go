@@ -890,7 +890,8 @@ func addFirewallInfo(zipWriter *zip.Writer, logf logFunc) error {
 		return err
 	}
 	writeBlock(w, "nft version", runCommand(logf, "nft", "-v"))
-	writeBlock(w, "iptables version", runCommand(logf, "iptables", "-v"))
+	writeBlock(w, "iptables version", runCommand(logf, "iptables", "--version"))
+	writeBlock(w, "ufw status", runCommand(logf, "ufw", "status", "verbose"))
 	writeBlock(w, "nft ruleset", runCommand(logf, "nft", "list", "ruleset"))
 
 	return nil
