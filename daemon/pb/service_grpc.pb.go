@@ -45,6 +45,7 @@ const (
 	Daemon_SetTechnology_FullMethodName            = "/pb.Daemon/SetTechnology"
 	Daemon_SetObfuscate_FullMethodName             = "/pb.Daemon/SetObfuscate"
 	Daemon_SetPostQuantum_FullMethodName           = "/pb.Daemon/SetPostQuantum"
+	Daemon_SetECH_FullMethodName                   = "/pb.Daemon/SetECH"
 	Daemon_GetRecentConnections_FullMethodName     = "/pb.Daemon/GetRecentConnections"
 	Daemon_SetDNS_FullMethodName                   = "/pb.Daemon/SetDNS"
 	Daemon_SetFirewall_FullMethodName              = "/pb.Daemon/SetFirewall"
@@ -107,6 +108,7 @@ type DaemonClient interface {
 	SetTechnology(ctx context.Context, in *SetTechnologyRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetObfuscate(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetPostQuantum(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
+	SetECH(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	GetRecentConnections(ctx context.Context, in *RecentConnectionsRequest, opts ...grpc.CallOption) (*RecentConnectionsResponse, error)
 	// ==================== Network Settings ====================
 	SetDNS(ctx context.Context, in *SetDNSRequest, opts ...grpc.CallOption) (*SetDNSResponse, error)
@@ -427,6 +429,16 @@ func (c *daemonClient) SetPostQuantum(ctx context.Context, in *SetGenericRequest
 	return out, nil
 }
 
+func (c *daemonClient) SetECH(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Payload)
+	err := c.cc.Invoke(ctx, Daemon_SetECH_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *daemonClient) GetRecentConnections(ctx context.Context, in *RecentConnectionsRequest, opts ...grpc.CallOption) (*RecentConnectionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RecentConnectionsResponse)
@@ -721,6 +733,7 @@ type DaemonServer interface {
 	SetTechnology(context.Context, *SetTechnologyRequest) (*Payload, error)
 	SetObfuscate(context.Context, *SetGenericRequest) (*Payload, error)
 	SetPostQuantum(context.Context, *SetGenericRequest) (*Payload, error)
+	SetECH(context.Context, *SetGenericRequest) (*Payload, error)
 	GetRecentConnections(context.Context, *RecentConnectionsRequest) (*RecentConnectionsResponse, error)
 	// ==================== Network Settings ====================
 	SetDNS(context.Context, *SetDNSRequest) (*SetDNSResponse, error)
@@ -840,6 +853,9 @@ func (UnimplementedDaemonServer) SetObfuscate(context.Context, *SetGenericReques
 }
 func (UnimplementedDaemonServer) SetPostQuantum(context.Context, *SetGenericRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetPostQuantum not implemented")
+}
+func (UnimplementedDaemonServer) SetECH(context.Context, *SetGenericRequest) (*Payload, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetECH not implemented")
 }
 func (UnimplementedDaemonServer) GetRecentConnections(context.Context, *RecentConnectionsRequest) (*RecentConnectionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRecentConnections not implemented")
@@ -1388,6 +1404,24 @@ func _Daemon_SetPostQuantum_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Daemon_SetECH_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetGenericRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).SetECH(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_SetECH_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).SetECH(ctx, req.(*SetGenericRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Daemon_GetRecentConnections_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RecentConnectionsRequest)
 	if err := dec(in); err != nil {
@@ -1908,6 +1942,10 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetPostQuantum",
 			Handler:    _Daemon_SetPostQuantum_Handler,
+		},
+		{
+			MethodName: "SetECH",
+			Handler:    _Daemon_SetECH_Handler,
 		},
 		{
 			MethodName: "GetRecentConnections",

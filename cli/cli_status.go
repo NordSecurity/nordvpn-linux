@@ -6,7 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/nstrings"
 
 	"github.com/hako/durafmt"
 	"github.com/urfave/cli/v2"
@@ -88,13 +91,16 @@ func Status(resp *pb.StatusResponse) string {
 		b.WriteString(
 			fmt.Sprintf("Current protocol: %s\n", resp.Protocol.String()),
 		)
-		pqLabel := "Disabled"
-		if resp.PostQuantum {
-			pqLabel = "Enabled"
-		}
 		b.WriteString(
-			fmt.Sprintf("Post-quantum VPN: %s\n", pqLabel),
+			fmt.Sprintf("Post-quantum VPN: %s\n",
+				internal.Title(nstrings.GetBoolLabel(resp.PostQuantum))),
 		)
+		if resp.Technology == config.Technology_NORDWHISPER {
+			b.WriteString(
+				fmt.Sprintf("ECH: %s\n",
+					internal.Title(nstrings.GetBoolLabel(resp.Ech))),
+			)
+		}
 	}
 
 	// show transfer rates only if running
