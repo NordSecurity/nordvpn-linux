@@ -299,12 +299,24 @@ func start() {
 	if err := os.Remove(connURL); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Error("Failed to remove old socket file:", err)
 	}
-	listenerFunction := internal.ManualListener(connURL, internal.PermUserRWX)
+	listenerFunction := internal.ManualListener(connURL, internal.PermUserRWGroupRW)
 
 	listener, err := listenerFunction()
 	if err != nil {
 		log.Fatalf("Error on listening to UNIX domain socket: %s", err)
 	}
+
+	nordvpnGID, err := internal.GetNordvpnGid()
+	if err != nil {
+		log.Error("Unable to retrieve nordvpn gid:", err)
+		os.Exit(int(childprocess.CodeFailedToEnable))
+	}
+	log.Infof("changing group of socket %s to gid=%d", connURL, nordvpnGID)
+	if err := os.Chown(connURL, -1, nordvpnGID); err != nil {
+		log.Error("Failed to set socket group:", err)
+		os.Exit(int(childprocess.CodeFailedToEnable))
+	}
+
 	listener = netutil.LimitListener(listener, 100)
 
 	usr, err := user.Current()
