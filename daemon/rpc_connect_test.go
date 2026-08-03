@@ -1620,6 +1620,12 @@ func TestLocationTag(t *testing.T) {
 			expected: "rome",
 		},
 		{
+			name:     "city only, with leading space",
+			code:     "",
+			city:     " Rome",
+			expected: "rome",
+		},
+		{
 			name:     "both empty",
 			code:     "",
 			city:     "",
