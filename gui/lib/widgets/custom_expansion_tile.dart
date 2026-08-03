@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
+import 'package:nordvpn/i18n/strings.g.dart';
 
 // This is a custom implementation for ExpansionTile, because by default
 // clicking on the ExpansionTile would expand/collapse the subitems.
@@ -84,16 +86,32 @@ class _CustomExpansionTileState extends State<CustomExpansionTile> {
     if (widget.children == null) {
       return null;
     }
-    return IconButton(
-      icon: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
-      onPressed: () {
-        setState(() {
-          _isExpanded = !_isExpanded;
-        });
-      },
-      hoverColor: Colors.transparent,
-      splashColor: Colors.transparent,
-      highlightColor: Colors.transparent,
+    return Semantics(
+      label: _isExpanded ? t.ui.serverEntryCollapse : t.ui.serverEntryExpand,
+      expanded: _isExpanded,
+      child: IconButton(
+        icon: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
+        onPressed: _toggleExpanded,
+        hoverColor: Colors.transparent,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+      ),
+    );
+  }
+
+  void _toggleExpanded() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+    });
+
+    if (!MediaQuery.supportsAnnounceOf(context)) {
+      return;
+    }
+
+    SemanticsService.sendAnnouncement(
+      View.of(context),
+      _isExpanded ? t.ui.serverEntryExpanded : t.ui.serverEntryCollapsed,
+      Directionality.of(context),
     );
   }
 }
