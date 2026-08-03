@@ -1591,3 +1591,57 @@ func TestReconnectOnServerMaintenance_CountryOnly(t *testing.T) {
 	assert.False(t, failed)
 	assert.NoError(t, err)
 }
+
+func TestLocationTag(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		code     string
+		city     string
+		expected string
+	}{
+		{
+			name:     "code and city",
+			code:     "IT",
+			city:     "Rome",
+			expected: "it rome",
+		},
+		{
+			name:     "code only",
+			code:     "IT",
+			city:     "",
+			expected: "it",
+		},
+		{
+			name:     "city only, no leading space",
+			code:     "",
+			city:     "Rome",
+			expected: "rome",
+		},
+		{
+			name:     "both empty",
+			code:     "",
+			city:     "",
+			expected: "",
+		},
+		{
+			name:     "city with multiple words",
+			code:     "US",
+			city:     "New York",
+			expected: "us new_york",
+		},
+		{
+			name:     "lowercase code is preserved as snake case",
+			code:     "US",
+			city:     "Las Vegas",
+			expected: "us las_vegas",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, locationTag(tt.code, tt.city))
+		})
+	}
+}
