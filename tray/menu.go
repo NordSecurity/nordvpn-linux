@@ -295,42 +295,36 @@ func buildQuickConnectButton(ti *Instance) {
 }
 
 type pauseLength struct {
-	Name            string
-	Tooltip         string
-	DurationSeconds uint32
-	EventValue      pb.UIEvent_ItemValue
+	Name     string
+	Tooltip  string
+	Interval pb.PauseInverval
 }
 
 var pauseLengths = []pauseLength{
 	{
-		Name:            labelPause5Min,
-		Tooltip:         labelPause5Min,
-		DurationSeconds: 5 * 60,
-		EventValue:      pb.UIEvent_PAUSE_5_MIN,
+		Name:     labelPause5Min,
+		Tooltip:  labelPause5Min,
+		Interval: pb.PauseInverval_PAUSE_5_MIN,
 	},
 	{
-		Name:            labelPause15Min,
-		Tooltip:         labelPause15Min,
-		DurationSeconds: 15 * 60,
-		EventValue:      pb.UIEvent_PAUSE_15_MIN,
+		Name:     labelPause15Min,
+		Tooltip:  labelPause15Min,
+		Interval: pb.PauseInverval_PAUSE_15_MIN,
 	},
 	{
-		Name:            labelPause30Min,
-		Tooltip:         labelPause30Min,
-		DurationSeconds: 30 * 60,
-		EventValue:      pb.UIEvent_PAUSE_30_MIN,
+		Name:     labelPause30Min,
+		Tooltip:  labelPause30Min,
+		Interval: pb.PauseInverval_PAUSE_30_MIN,
 	},
 	{
-		Name:            labelPause1H,
-		Tooltip:         labelPause1H,
-		DurationSeconds: 60 * 60,
-		EventValue:      pb.UIEvent_PAUSE_1_HOUR,
+		Name:     labelPause1H,
+		Tooltip:  labelPause1H,
+		Interval: pb.PauseInverval_PAUSE_1_HOUR,
 	},
 	{
-		Name:            labelPause24H,
-		Tooltip:         labelPause24H,
-		DurationSeconds: 24 * 60 * 60,
-		EventValue:      pb.UIEvent_PAUSE_24_HOURS,
+		Name:     labelPause24H,
+		Tooltip:  labelPause24H,
+		Interval: pb.PauseInverval_PAUSE_24_HOURS,
 	},
 }
 
@@ -342,7 +336,7 @@ func buildPauseMenu(ti *Instance) {
 	pauseMenu := systray.AddMenuItem(labelPause, labelPause)
 	for _, pauseLength := range pauseLengths {
 		pause := pauseMenu.AddSubMenuItem(pauseLength.Name, pauseLength.Tooltip)
-		go handlePauseClick(ti, pause, pauseLength)
+		go handlePauseClick(ti, pause, pauseLength.Interval)
 	}
 
 	disconnect := pauseMenu.AddSubMenuItem(labelDisconnect, labelDisconnect)
@@ -404,11 +398,11 @@ func buildTimerString(remaining int) string {
 	}
 }
 
-func handlePauseClick(ti *Instance, item *systray.MenuItem, pauseLength pauseLength) {
+func handlePauseClick(ti *Instance, item *systray.MenuItem, pauseInterval pb.PauseInverval) {
 	if ti == nil {
 		return
 	}
-	handleMenuItemClick(item, func() { ti.pause(pauseLength) })
+	handleMenuItemClick(item, func() { ti.pause(pauseInterval) })
 }
 
 func handleDisconnectClick(ti *Instance, item *systray.MenuItem, itemName pb.UIEvent_ItemName, itemValue pb.UIEvent_ItemValue) {

@@ -24,7 +24,7 @@ func TestPauseConnection(t *testing.T) {
 	tests := []struct {
 		name                  string
 		isVPNActive           bool
-		pauseDuration         int
+		pauseInterval         pb.PauseInverval
 		disconnectErr         error
 		isMeshPeer            bool
 		isPaused              bool
@@ -40,25 +40,25 @@ func TestPauseConnection(t *testing.T) {
 			expectedVPNState:     false,
 		},
 		{
-			name:                  "VPN is active, VPN is disconnected after pause 10sec",
+			name:                  "VPN is active, VPN is disconnected after pause 5min",
 			isVPNActive:           true,
-			pauseDuration:         10,
+			pauseInterval:         pb.PauseInverval_PAUSE_5_MIN,
 			expectedResponseType:  internal.CodeSuccess,
-			expectedPauseDuration: 10 * time.Second,
+			expectedPauseDuration: 5 * time.Minute,
 			expectedVPNState:      false,
 		},
 		{
-			name:                  "VPN is active, VPN is disconnected after pause 20sec",
+			name:                  "VPN is active, VPN is disconnected after pause 15min",
 			isVPNActive:           true,
-			pauseDuration:         20,
+			pauseInterval:         pb.PauseInverval_PAUSE_15_MIN,
 			expectedResponseType:  internal.CodeSuccess,
-			expectedPauseDuration: 20 * time.Second,
+			expectedPauseDuration: 15 * time.Minute,
 			expectedVPNState:      false,
 		},
 		{
 			name:                 "VPN is paused, pause returns nothing to do",
 			isVPNActive:          true,
-			pauseDuration:        20,
+			pauseInterval:        pb.PauseInverval_PAUSE_5_MIN,
 			isPaused:             true,
 			expectedResponseType: internal.CodeNothingToDo,
 			expectedVPNState:     true,
@@ -66,7 +66,7 @@ func TestPauseConnection(t *testing.T) {
 		{
 			name:                 "disconnect failure",
 			isVPNActive:          true,
-			pauseDuration:        10,
+			pauseInterval:        pb.PauseInverval_PAUSE_5_MIN,
 			disconnectErr:        errors.New("failed to disconnect"),
 			expectedResponseType: internal.CodeFailure,
 			expectedVPNState:     true,
@@ -76,13 +76,6 @@ func TestPauseConnection(t *testing.T) {
 			isVPNActive:          true,
 			isMeshPeer:           true,
 			expectedResponseType: internal.CodePauseAttemptWhenConnectedToMeshPeer,
-			expectedVPNState:     true,
-		},
-		{
-			name:                 "0 seconds duration pause is a noop",
-			isVPNActive:          true,
-			pauseDuration:        0,
-			expectedResponseType: internal.CodeNothingToDo,
 			expectedVPNState:     true,
 		},
 	}
@@ -110,7 +103,9 @@ func TestPauseConnection(t *testing.T) {
 				connectionInfo:     connectionInfo,
 			}
 
-			response, err := r.PauseConnection(context.Background(), &pb.PauseRequest{Seconds: uint32(test.pauseDuration)})
+			response, err := r.PauseConnection(context.Background(), &pb.PauseRequest{
+				Interval: test.pauseInterval,
+			})
 			assert.NilError(t, err, "Unexpected error returned by PauseConnection RPC.")
 			assert.Equal(t, test.expectedResponseType, response.Type, "Unexpected response type returned by pause RPC.")
 			assert.Equal(t, test.expectedPauseDuration, pauseSchedulerMock.PauseDuration, "Unexpected pause duration.")

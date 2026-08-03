@@ -8,6 +8,7 @@ import 'package:nordvpn/data/mocks/daemon/mock_application_settings.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/pb/daemon/common.pb.dart';
 import 'package:nordvpn/pb/daemon/connect.pb.dart';
+import 'package:nordvpn/pb/daemon/pause.pb.dart';
 import 'package:nordvpn/pb/daemon/state.pb.dart';
 import 'package:nordvpn/pb/daemon/status.pb.dart';
 import 'package:nordvpn/pb/daemon/config/group.pbenum.dart' as config;
@@ -142,16 +143,24 @@ final class MockVpnStatus extends CancelableDelayed {
     await delayed(delayDuration);
   }
 
-  Future<Payload> pauseConnection(int pauseSeconds) async {
+  Future<Payload> pauseConnection(PauseInverval pauseInterval) async {
+    final int pauseDurationSec = switch (pauseInterval) {
+      PauseInverval.PAUSE_5_MIN => 5 * 60,
+      PauseInverval.PAUSE_15_MIN => 15 * 60,
+      PauseInverval.PAUSE_30_MIN => 30 * 60,
+      PauseInverval.PAUSE_1_HOUR =>  60 * 60,
+      PauseInverval.PAUSE_24_HOURS => 24 * 60 * 60,
+      _ => throw UnimplementedError('unknown status'),
+    }; 
     final previousStatus = _status;
     setStatus(
       StatusResponse(
         state: ConnectionState.PAUSED,
-        pauseRemainingDurationSec: pauseSeconds,
+        pauseRemainingDurationSec: pauseDurationSec,
       ),
     );
 
-    final resumeDelay = Duration(seconds: pauseSeconds);
+    final resumeDelay = Duration(seconds: pauseDurationSec);
     delayed(resumeDelay).then((_) {
       if (_status.state == ConnectionState.PAUSED) {
         previousStatus.state = ConnectionState.CONNECTED;

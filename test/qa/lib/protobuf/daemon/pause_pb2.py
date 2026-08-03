@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0bpause.proto\x12\x02pb\"\x1f\n\x0cPauseRequest\x12\x0f\n\x07seconds\x18\x01 \x01(\rB1Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0bpause.proto\x12\x02pb\"3\n\x0cPauseRequest\x12#\n\x08interval\x18\x01 \x01(\x0e\x32\x11.pb.PauseInverval*j\n\rPauseInverval\x12\x0f\n\x0bPAUSE_5_MIN\x10\x00\x12\x10\n\x0cPAUSE_15_MIN\x10\x01\x12\x10\n\x0cPAUSE_30_MIN\x10\x02\x12\x10\n\x0cPAUSE_1_HOUR\x10\x03\x12\x12\n\x0ePAUSE_24_HOURS\x10\x04\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,6 +32,8 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'pause_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z/github.com/NordSecurity/nordvpn-linux/daemon/pb'
+  _globals['_PAUSEINVERVAL']._serialized_start=72
+  _globals['_PAUSEINVERVAL']._serialized_end=178
   _globals['_PAUSEREQUEST']._serialized_start=19
-  _globals['_PAUSEREQUEST']._serialized_end=50
+  _globals['_PAUSEREQUEST']._serialized_end=70
 # @@protoc_insertion_point(module_scope)

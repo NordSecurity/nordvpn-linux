@@ -15,14 +15,39 @@ import 'dart:convert' as $convert;
 import 'dart:core' as $core;
 import 'dart:typed_data' as $typed_data;
 
+@$core.Deprecated('Use pauseInvervalDescriptor instead')
+const PauseInverval$json = {
+  '1': 'PauseInverval',
+  '2': [
+    {'1': 'PAUSE_5_MIN', '2': 0},
+    {'1': 'PAUSE_15_MIN', '2': 1},
+    {'1': 'PAUSE_30_MIN', '2': 2},
+    {'1': 'PAUSE_1_HOUR', '2': 3},
+    {'1': 'PAUSE_24_HOURS', '2': 4},
+  ],
+};
+
+/// Descriptor for `PauseInverval`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List pauseInvervalDescriptor = $convert.base64Decode(
+    'Cg1QYXVzZUludmVydmFsEg8KC1BBVVNFXzVfTUlOEAASEAoMUEFVU0VfMTVfTUlOEAESEAoMUE'
+    'FVU0VfMzBfTUlOEAISEAoMUEFVU0VfMV9IT1VSEAMSEgoOUEFVU0VfMjRfSE9VUlMQBA==');
+
 @$core.Deprecated('Use pauseRequestDescriptor instead')
 const PauseRequest$json = {
   '1': 'PauseRequest',
   '2': [
-    {'1': 'seconds', '3': 1, '4': 1, '5': 13, '10': 'seconds'},
+    {
+      '1': 'interval',
+      '3': 1,
+      '4': 1,
+      '5': 14,
+      '6': '.pb.PauseInverval',
+      '10': 'interval'
+    },
   ],
 };
 
 /// Descriptor for `PauseRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List pauseRequestDescriptor = $convert
-    .base64Decode('CgxQYXVzZVJlcXVlc3QSGAoHc2Vjb25kcxgBIAEoDVIHc2Vjb25kcw==');
+final $typed_data.Uint8List pauseRequestDescriptor = $convert.base64Decode(
+    'CgxQYXVzZVJlcXVlc3QSLQoIaW50ZXJ2YWwYASABKA4yES5wYi5QYXVzZUludmVydmFsUghpbn'
+    'RlcnZhbA==');

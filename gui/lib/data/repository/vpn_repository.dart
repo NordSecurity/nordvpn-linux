@@ -105,7 +105,7 @@ class VpnRepository {
       itemValue: pauseValue.eventValue,
     );
     final response = await _client.pauseConnection(
-      PauseRequest(seconds: pauseValue.seconds),
+      PauseRequest(interval: pauseValue.interval),
     );
     return response.type.toInt();
   }

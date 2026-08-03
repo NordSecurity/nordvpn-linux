@@ -67,7 +67,7 @@ func TestPauseArgumentsParsing(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result, err := pauseArgToDuration(test.pauseDuration)
+			result, err := pauseArgToInterval(test.pauseDuration)
 
 			assert.Equal(t, test.expectedPauseDurationResult, result)
 			if test.shouldReturnError {

@@ -24,9 +24,10 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/nstrings"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	snappb "github.com/NordSecurity/nordvpn-linux/snapconf/pb"
+	"github.com/urfave/cli/v2"
 
 	"github.com/fatih/color"
-	"github.com/urfave/cli/v2"
+
 	"golang.org/x/term"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"

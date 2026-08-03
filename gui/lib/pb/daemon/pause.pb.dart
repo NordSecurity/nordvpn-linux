@@ -14,14 +14,18 @@ import 'dart:core' as $core;
 
 import 'package:protobuf/protobuf.dart' as $pb;
 
+import 'pause.pbenum.dart';
+
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
+
+export 'pause.pbenum.dart';
 
 class PauseRequest extends $pb.GeneratedMessage {
   factory PauseRequest({
-    $core.int? seconds,
+    PauseInverval? interval,
   }) {
     final result = create();
-    if (seconds != null) result.seconds = seconds;
+    if (interval != null) result.interval = interval;
     return result;
   }
 
@@ -38,7 +42,8 @@ class PauseRequest extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'PauseRequest',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..aI(1, _omitFieldNames ? '' : 'seconds', fieldType: $pb.PbFieldType.OU3)
+    ..aE<PauseInverval>(1, _omitFieldNames ? '' : 'interval',
+        enumValues: PauseInverval.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -61,13 +66,13 @@ class PauseRequest extends $pb.GeneratedMessage {
   static PauseRequest? _defaultInstance;
 
   @$pb.TagNumber(1)
-  $core.int get seconds => $_getIZ(0);
+  PauseInverval get interval => $_getN(0);
   @$pb.TagNumber(1)
-  set seconds($core.int value) => $_setUnsignedInt32(0, value);
+  set interval(PauseInverval value) => $_setField(1, value);
   @$pb.TagNumber(1)
-  $core.bool hasSeconds() => $_has(0);
+  $core.bool hasInterval() => $_has(0);
   @$pb.TagNumber(1)
-  void clearSeconds() => $_clearField(1);
+  void clearInterval() => $_clearField(1);
 }
 
 const $core.bool _omitFieldNames =
