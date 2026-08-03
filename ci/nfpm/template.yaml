@@ -170,7 +170,7 @@ overrides:
       - libidn2
       - zlib
       - (libnl3 or libnl3-200)
-      - glibc >= 2.29
+      - glibc >= 2.35
       - (libsqlite3-0 or sqlite-libs)
       - (xsltproc or libxslt)
     recommends:

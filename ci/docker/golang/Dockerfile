@@ -1,7 +1,6 @@
 FROM ubuntu:22.04
-# (glibc 2.31)
-# TODO: Change base image to ubuntu:22.04 on 2026-06-30 (glibc 2.35)
-# Then to debian:bookworm-slim on 2027-06-01 (glibc 2.36)
+# (glibc 2.35)
+# TODO: Change base image to debian:bookworm-slim on 2027-06-01 (glibc 2.36)
 # Then to ubuntu:24:04 on 2028-06-30 (glibc 2.39)
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
