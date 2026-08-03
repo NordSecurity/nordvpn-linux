@@ -129,14 +129,17 @@ func (r *RPC) reconnectOnServerMaintenance(
 }
 
 func locationTag(code, city string) string {
-	tag := internal.SnakeCase(code)
-	if city != "" {
-		if tag != "" {
-			tag += " "
-		}
-		tag += internal.SnakeCase(city)
+	codeTag := internal.SnakeCase(code)
+	cityTag := internal.SnakeCase(city)
+
+	if codeTag == "" {
+		return cityTag
 	}
-	return tag
+	if cityTag == "" {
+		return codeTag
+	}
+
+	return codeTag + " " + cityTag
 }
 
 // determineServerSelectionRule determines the server selection rule based on the provided
