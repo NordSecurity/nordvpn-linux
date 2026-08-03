@@ -8,6 +8,7 @@ package serverpicker
 import (
 	"errors"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -38,9 +39,9 @@ type SearchParams struct {
 
 func NewSearchParams(tag, group string, excludedServer string) SearchParams {
 	return SearchParams{
-		Tag:            tag,
-		Group:          group,
-		ExcludedServer: excludedServer,
+		Tag:            strings.TrimSpace(tag),
+		Group:          strings.TrimSpace(group),
+		ExcludedServer: strings.TrimSpace(excludedServer),
 	}
 }
 
@@ -99,7 +100,7 @@ func PickServer(
 	serverTag, err := serverTagFromString(input.Tag, serverGroup, countries, servers)
 
 	if err != nil {
-		log.ServerSel.Debug("unable to detect server tag", err)
+		log.ServerSel.Debug("unable to detect server tag:", err)
 		if errors.Is(err, internal.ErrTagDoesNotExist) {
 			return ServerSelection{}, err
 		}
