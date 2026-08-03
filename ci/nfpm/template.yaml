@@ -50,7 +50,7 @@ depends:
   - libidn2-0
   - zlib1g
   - libnl-genl-3-200
-  - libc6 (>= 2.29)
+  - libc6 (>= 2.35)
   - libsqlite3-0
   - xsltproc
 recommends:
