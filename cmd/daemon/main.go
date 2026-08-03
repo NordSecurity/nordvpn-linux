@@ -645,12 +645,12 @@ func main() {
 	)
 
 	ensMonitor := ens.NewMonitor(
-		httpGlobalCtx,
 		netw,
 		rcConfig,
 		rpc.ReconnectOnServerMaintenanceEvent,
 		daemonEvents.Debugger.DebuggerEvents,
 	)
+	defer ensMonitor.Stop()
 	internalVpnEvents.ConnectionError.Subscribe(ensMonitor.HandleENSNotification)
 	ensMonitor.Start()
 

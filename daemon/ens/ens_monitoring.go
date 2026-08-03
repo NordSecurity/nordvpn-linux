@@ -2,6 +2,7 @@ package ens
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
@@ -17,6 +18,8 @@ type ConnectCallback func(serverEndpoint string) error
 type Monitor struct {
 	eventsCh       chan events.VPNConnectionErrorEvent
 	ctx            context.Context
+	cancel         context.CancelFunc
+	wg             sync.WaitGroup
 	netw           networker.Networker
 	reconnectFn    ConnectCallback
 	debuggerEvents events.Publisher[events.DebuggerEvent]
@@ -24,7 +27,6 @@ type Monitor struct {
 }
 
 func NewMonitor(
-	ctx context.Context,
 	netw networker.Networker,
 	rc remote.ConfigGetter,
 	connectCallback ConnectCallback,
@@ -36,9 +38,13 @@ func NewMonitor(
 	if debuggerEvents == nil {
 		log.ENS.Warn("debugger events publisher is nil")
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+
 	return &Monitor{
 		eventsCh:       make(chan events.VPNConnectionErrorEvent, evChSize),
 		ctx:            ctx,
+		cancel:         cancel,
 		netw:           netw,
 		rc:             rc,
 		reconnectFn:    connectCallback,
@@ -58,7 +64,7 @@ func (m *Monitor) HandleENSNotification(e events.VPNConnectionErrorEvent) error 
 }
 
 func (m *Monitor) Start() {
-	go m.run()
+	m.wg.Go(m.run)
 }
 
 func (m *Monitor) run() {
@@ -107,4 +113,12 @@ func (m *Monitor) run() {
 			return
 		}
 	}
+}
+
+func (m *Monitor) Stop() {
+	log.ENS.Info("stopping ENS monitoring")
+	if m.cancel != nil {
+		m.cancel()
+	}
+	m.wg.Wait()
 }
