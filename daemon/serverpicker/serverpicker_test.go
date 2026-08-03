@@ -886,3 +886,77 @@ func TestRecommendationUUID_GetServersRemote(t *testing.T) {
 		})
 	}
 }
+
+func TestNewSearchParams(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name           string
+		tag            string
+		group          string
+		excludedServer string
+		expected       SearchParams
+	}{
+		{
+			name:           "plain values are kept as is",
+			tag:            "it rome",
+			group:          "P2P",
+			excludedServer: "it1.nordvpn.com",
+			expected: SearchParams{
+				Tag:            "it rome",
+				Group:          "P2P",
+				ExcludedServer: "it1.nordvpn.com",
+			},
+		},
+		{
+			name:           "leading and trailing whitespace is trimmed from tag and group",
+			tag:            "  it rome  ",
+			group:          "  P2P ",
+			excludedServer: "it1.nordvpn.com",
+			expected: SearchParams{
+				Tag:            "it rome",
+				Group:          "P2P",
+				ExcludedServer: "it1.nordvpn.com",
+			},
+		},
+		{
+			name:           "whitespace-only tag and group become empty",
+			tag:            "   ",
+			group:          "\t\n ",
+			excludedServer: "",
+			expected:       SearchParams{},
+		},
+		{
+			name:           "internal whitespace in tag is preserved",
+			tag:            "it rome",
+			group:          "",
+			excludedServer: "",
+			expected: SearchParams{
+				Tag: "it rome",
+			},
+		},
+		{
+			name:           "excluded server is trimmed",
+			tag:            "it",
+			group:          "",
+			excludedServer: " it1.nordvpn.com ",
+			expected: SearchParams{
+				Tag:            "it",
+				ExcludedServer: "it1.nordvpn.com",
+			},
+		},
+		{
+			name:           "all empty",
+			tag:            "",
+			group:          "",
+			excludedServer: "",
+			expected:       SearchParams{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, NewSearchParams(tt.tag, tt.group, tt.excludedServer))
+		})
+	}
+}
