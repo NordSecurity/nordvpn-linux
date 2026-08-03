@@ -1,6 +1,7 @@
 package nft
 
 import (
+	"errors"
 	"fmt"
 	"net/netip"
 
@@ -8,9 +9,11 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	"github.com/NordSecurity/nordvpn-linux/daemon/firewall"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/google/nftables"
 	"github.com/google/nftables/expr"
 	"github.com/google/nftables/userdata"
+	"github.com/mdlayher/netlink"
 	"golang.org/x/sys/unix"
 )
 
@@ -64,7 +67,17 @@ func NewNft(fwmark uint32) firewall.FirewallBackend {
 }
 
 func (n *nft) Configure(config firewall.Config) error {
-	return n.configure(config)
+	err := n.configure(config)
+	if err != nil {
+		// check if netfilter exists in kernel
+		log.FW.Info("failed to configure firewall, check if netfilter exists", err)
+		if err := n.checkIfNetfilterExistInKernel(); err != nil {
+			log.FW.Error("failed to validate netfilter", err)
+			return errors.Join(firewall.ErrNetfilterMissing, err)
+		}
+	}
+
+	return err
 }
 
 func (n *nft) Flush() error {
@@ -980,4 +993,32 @@ func (n *nft) addMainTable() *nftables.Table {
 		Family: nftables.TableFamilyINet,
 		Name:   tableName,
 	})
+}
+
+func (n *nft) checkIfNetfilterExistInKernel() error {
+	msgType := (unix.NFNL_SUBSYS_NFTABLES << 8) | unix.NFT_MSG_GETGEN
+
+	conn, err := netlink.Dial(unix.NETLINK_NETFILTER, nil)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	msg := netlink.Message{
+		Header: netlink.Header{
+			Type:  netlink.HeaderType(msgType),
+			Flags: netlink.Request | netlink.Acknowledge,
+		},
+	}
+
+	log.FW.Info("can connect to NETLINK_NETFILTER")
+
+	rsp, err := conn.Execute(msg)
+	if err != nil {
+		// Execute returns an error if NLMSG_ERROR was received.
+		return err
+	}
+	log.FW.Info("netfilter responded", rsp)
+
+	return nil
 }

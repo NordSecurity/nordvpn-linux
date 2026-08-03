@@ -1,6 +1,9 @@
 package firewall
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 var (
 	// ErrRuleNotFound defines that rule was not found in the firewall
@@ -13,6 +16,7 @@ var (
 	ErrFirewallAlreadyEnabled = fmt.Errorf("firewall is already enabled")
 	// ErrFirewallAlreadyDisabled defines that disable was called twice in a row
 	ErrFirewallAlreadyDisabled = fmt.Errorf("firewall is already disabled")
+	ErrNetfilterMissing        = errors.New("netfilter missing in kernel")
 )
 
 // Error marks that it originated in firewall package
