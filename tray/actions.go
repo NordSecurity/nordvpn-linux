@@ -108,7 +108,7 @@ func (ti *Instance) login() {
 				return
 			}
 
-			log.Warn("Desktop related environment variables not set, attemtpting to load them manually")
+			log.Warn("Desktop related environment variables not set, attempting to load them manually")
 			environment, err := getDesktopEnvironment()
 			if err != nil {
 				log.Error("Failed to read desktop environment manually:", err)
