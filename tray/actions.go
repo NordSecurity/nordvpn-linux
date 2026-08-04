@@ -29,7 +29,7 @@ func getDesktopEnvironment() ([]string, error) {
 	environment := []string{}
 	out, err := exec.Command("systemctl", "--user", "show-environment").Output()
 	if err != nil {
-		return environment, fmt.Errorf("getting desktop environment: %w", err)
+		return environment, err
 	}
 	for _, line := range strings.Split(string(out), "\n") {
 		if strings.HasPrefix(line, "DISPLAY=") ||
