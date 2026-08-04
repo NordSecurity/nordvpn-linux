@@ -478,7 +478,7 @@ func (l *Libtelio) connect(
 	select {
 	case <-connectCtx.Done():
 		_ = l.disconnect()
-		return connectCtx.Err()
+		return context.Cause(connectCtx)
 	case <-ctx.Done():
 		_ = l.disconnect()
 		return ctx.Err()
@@ -845,8 +845,9 @@ func (l *Libtelio) InjectVPNConnectionError(code int32, serverEndpoint string) e
 	}
 
 	if serverEndpoint == "" {
-		if params, ok := l.GetConnectionParameters(); ok {
-			serverEndpoint = params.Endpoint
+		if l.mu.TryLock() {
+			serverEndpoint = l.currentServer.Endpoint
+			l.mu.Unlock()
 		}
 	}
 

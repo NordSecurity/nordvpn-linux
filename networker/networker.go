@@ -82,6 +82,7 @@ type Networker interface {
 	UnsetFirewall() error
 	GetConnectionParameters() (vpn.ServerData, bool)
 	SetARPIgnore(bool) error
+	CancelConnecting(error) bool
 }
 
 type killSwitchState int
@@ -136,6 +137,8 @@ type Combined struct {
 	KillSwitchState killSwitchState
 	fwConfig        firewall.Config
 	ipForwardSetter kernel.SysctlSetter
+
+	cancelConnectingCh chan error
 }
 
 // NewCombined returns a ready made version of
@@ -184,42 +187,46 @@ func NewCombined(
 		allowlist:          allowlist,
 		fwConfig:           firewall.Config{Allowlist: allowlist},
 		ipForwardSetter:    ipForwardSetter,
+		cancelConnectingCh: make(chan error),
 	}
 }
 
 // Start VPN connection after preparing the network.
 func (netw *Combined) Start(
-	ctx context.Context,
+	parent context.Context,
 	creds vpn.Credentials,
 	serverData vpn.ServerData,
 	allowlist config.Allowlist,
 	nameservers config.DNS,
 	enableLocalTraffic bool,
 	disconnectCallback events.DisconnectCallback,
-) error {
+) (retErr error) {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
+
+	ctx, cancelFn := context.WithCancelCause(parent)
+	finishCh := make(chan any)
+	defer close(finishCh)
+
+	// check if connection is canceled from outside, e.g. ENS events
+	internal.RunAsync(func() {
+		select {
+		case <-ctx.Done():
+			return
+		case err, ok := <-netw.cancelConnectingCh:
+			if !ok {
+				return
+			}
+			log.Netw.Info("canceling connection", err)
+			cancelFn(err)
+		case <-finishCh:
+		}
+	})
 
 	netw.allowlist = allowlist
 	netw.enableLocalTraffic = enableLocalTraffic
 	if netw.isConnectedToVPN() {
-		tempKSEnabled := false
-		if netw.KillSwitchState != enabledByUser {
-			if err := netw.internallyEnabledKillSwitch(); err == nil {
-				tempKSEnabled = true
-			} else {
-				log.Warn("failed to activate temporary KS", err)
-			}
-		}
-
-		err := netw.restart(ctx, creds, serverData, nameservers, disconnectCallback)
-		if err == nil && tempKSEnabled {
-			if err := netw.unsetKillSwitch(); err != nil {
-				log.Error("failed to disable temporary KS", err)
-			}
-		}
-
-		return err
+		return netw.restart(ctx, creds, serverData, nameservers, disconnectCallback)
 	}
 	return netw.start(ctx, creds, serverData, allowlist, nameservers)
 }
@@ -1265,4 +1272,11 @@ func (netw *Combined) SetARPIgnore(ignoreARP bool) error {
 	netw.ignoreARP = ignoreARP
 
 	return nil
+}
+
+// CancelConnecting - cancels the current running connection to VPN.
+// If there is no connection taking place now, then this has no effect and the error is ignored
+// Not thread safe, because it must be executed while netw.mu is locked from
+func (netw *Combined) CancelConnecting(reason error) bool {
+	return internal.TrySendTimeout(netw.cancelConnectingCh, reason, 1*time.Millisecond)
 }

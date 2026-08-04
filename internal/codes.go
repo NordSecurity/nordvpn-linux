@@ -88,6 +88,7 @@ const (
 	CodePauseInterrupted                       int64 = 3073
 	CodeECHTechUnsupported                     int64 = 3074
 	CodeECHGloballyDisabled                    int64 = 3075
+	CodeConnectionLimitReached                 int64 = 3076
 )
 
 type ErrorWithCode struct {
