@@ -29,7 +29,7 @@ func getDesktopEnvironment() ([]string, error) {
 	environment := []string{}
 	out, err := exec.Command("systemctl", "--user", "show-environment").Output()
 	if err != nil {
-		return environment, fmt.Errorf("getting desktop environment:", err)
+		return environment, fmt.Errorf("getting desktop environment: %w", err)
 	}
 	for _, line := range strings.Split(string(out), "\n") {
 		if strings.HasPrefix(line, "DISPLAY=") ||
@@ -116,6 +116,7 @@ func (ti *Instance) login() {
 				return
 			}
 
+			// #nosec G204 -- user input is not passed in
 			cmd = exec.Command("xdg-open", url)
 			cmd.Env = environment
 			err = cmd.Run()
