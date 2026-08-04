@@ -763,8 +763,6 @@ func (s *Subscriber) NotifyObfuscate(data bool) error {
 
 func (s *Subscriber) NotifyPeerUpdate([]string) error { return nil }
 
-func (s *Subscriber) NotifySelfRemoved(any) error { return nil }
-
 func (s *Subscriber) NotifyThreatProtectionLite(isTPLiteEnabled bool) error {
 	if err := s.setTPLite(isTPLiteEnabled); err != nil {
 		return fmt.Errorf("setting TP Lite state (enabled=%v): %w", isTPLiteEnabled, err)

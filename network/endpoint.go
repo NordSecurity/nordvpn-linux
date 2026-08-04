@@ -36,9 +36,3 @@ func (e Endpoint) Network() (netip.Prefix, error) {
 func NewIPv4Endpoint(ip netip.Addr) Endpoint {
 	return Endpoint{ips: []netip.Addr{ip}}
 }
-
-func NewLocalEndpoint(ips []netip.Addr) Endpoint {
-	return Endpoint{
-		ips: ips,
-	}
-}

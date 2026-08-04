@@ -38,11 +38,6 @@ func (m *Meshnet) NotifyDisabled(any) error {
 	return m.unsetMesh()
 }
 
-// NotifySelfRemoved unsets meshnet.
-func (m *Meshnet) NotifySelfRemoved(any) error {
-	return m.unsetMesh()
-}
-
 func (m *Meshnet) unsetMesh() error {
 	var cfg config.Config
 	if err := m.man.Load(&cfg); err != nil {
