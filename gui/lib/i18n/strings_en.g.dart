@@ -2213,16 +2213,16 @@ class TranslationsUiEn {
 	String get cannotStopFWWhileKSOnDesc => 'Firewall is needed for Kill Switch to work. Turn off Kill Switch first in VPN connection settings.';
 
 	/// en: 'Expand'
-	String get serverEntryExpand => 'Expand';
+	String get expandibleEntryExpand => 'Expand';
 
 	/// en: 'Collapse'
-	String get serverEntryCollapse => 'Collapse';
+	String get expandibleEntryCollapse => 'Collapse';
 
 	/// en: 'Expanded'
-	String get serverEntryExpanded => 'Expanded';
+	String get expandibleEntryExpanded => 'Expanded';
 
 	/// en: 'Collapsed'
-	String get serverEntryCollapsed => 'Collapsed';
+	String get expandibleEntryCollapsed => 'Collapsed';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -2941,10 +2941,10 @@ extension on Translations {
 			'ui.pauseConnection' => 'Pause connection',
 			'ui.cannotStopFWWhileKSOnTitle' => 'Firewall can’t be turned off while Kill Switch is on',
 			'ui.cannotStopFWWhileKSOnDesc' => 'Firewall is needed for Kill Switch to work. Turn off Kill Switch first in VPN connection settings.',
-			'ui.serverEntryExpand' => 'Expand',
-			'ui.serverEntryCollapse' => 'Collapse',
-			'ui.serverEntryExpanded' => 'Expanded',
-			'ui.serverEntryCollapsed' => 'Collapsed',
+			'ui.expandibleEntryExpand' => 'Expand',
+			'ui.expandibleEntryCollapse' => 'Collapse',
+			'ui.expandibleEntryExpanded' => 'Expanded',
+			'ui.expandibleEntryCollapsed' => 'Collapsed',
 			_ => null,
 		};
 	}
