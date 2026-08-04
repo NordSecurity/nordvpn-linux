@@ -178,7 +178,10 @@ final class _ServersListCardState extends State<ServersListCard> {
                       padding: EdgeInsets.only(right: context.appTheme.padding),
                       child: IconButton(
                         key: ServerListWidgetKeys.search,
-                        icon: DynamicThemeImage("search.svg"),
+                        icon: Semantics(
+                          label: t.ui.search,
+                          child: DynamicThemeImage("search.svg"),
+                        ),
                         onPressed: () => setState(() => _showSearchView = true),
                       ),
                     ),
