@@ -25,6 +25,23 @@ const dbusCallTimeout = 3 * time.Second
 
 // The pattern for actions is to return 'true' on success and 'false' (along with emitting a notification) on failure
 
+func getDesktopEnvironment() ([]string, error) {
+	environment := []string{}
+	out, err := exec.Command("systemctl", "--user", "show-environment").Output()
+	if err != nil {
+		return environment, err
+	}
+	for _, line := range strings.Split(string(out), "\n") {
+		if strings.HasPrefix(line, "DISPLAY=") ||
+			strings.HasPrefix(line, "WAYLAND_DISPLAY=") ||
+			strings.HasPrefix(line, "XAUTHORITY=") ||
+			strings.HasPrefix(line, "DBUS_SESSION_BUS_ADDRESS=") {
+			environment = append(environment, line)
+		}
+	}
+	return environment, nil
+}
+
 func (ti *Instance) login() {
 	resp, err := ti.client.IsLoggedIn(context.Background(), &pb.Empty{})
 	if err != nil {
@@ -79,10 +96,32 @@ func (ti *Instance) login() {
 		if url := loginResp.Url; url != "" {
 			// #nosec G204 -- user input is not passed in
 			cmd := exec.Command("xdg-open", url)
-			err = cmd.Run()
+			out, err := cmd.CombinedOutput()
 			if err != nil {
 				log.Error("Failed to open login webpage:", err)
 				// we want to force a notification here, otherwise there will be no reaction to user action
+				ti.notify(Force, "Continue log in in the browser: %s", url)
+				return
+			}
+
+			if !strings.Contains(string(out), "Error: no DISPLAY environment variable specified") {
+				return
+			}
+
+			log.Warn("Desktop related environment variables not set, attempting to load them manually")
+			environment, err := getDesktopEnvironment()
+			if err != nil {
+				log.Error("Failed to read desktop environment manually:", err)
+				ti.notify(Force, "Continue log in in the browser: %s", url)
+				return
+			}
+
+			// #nosec G204 -- user input is not passed in
+			cmd = exec.Command("xdg-open", url)
+			cmd.Env = environment
+			err = cmd.Run()
+			if err != nil {
+				log.Error("Failed to open login webpage with manually loaded environment:", err)
 				ti.notify(Force, "Continue log in in the browser: %s", url)
 			}
 		}
