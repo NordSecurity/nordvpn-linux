@@ -122,7 +122,7 @@ func TestRecentConnectionsStore_Add_RespectsCapacityLimit(t *testing.T) {
 	fs := fs.NewSystemFileHandleMock(t)
 	store := NewRecentConnectionsStore("/test/path", &fs, nil)
 
-	for i := 0; i < maxRecentConnections+5; i++ {
+	for i := range maxRecentConnections + 5 {
 		conn := Model{
 			Country:        string(rune('A' + i)),
 			ConnectionType: config.ServerSelectionRule_COUNTRY,
@@ -286,6 +286,7 @@ func TestRecentConnectionsStore_Persistence(t *testing.T) {
 		assert.Equal(t, connections[len(connections)-1-i], loadedConnections[i])
 	}
 }
+
 func TestRecentConnectionsStore_ConcurrentAccess(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -314,32 +315,26 @@ func TestRecentConnectionsStore_ConcurrentAccess(t *testing.T) {
 	var wg sync.WaitGroup
 	errChan := make(chan error, 100)
 
-	for i := 0; i < 5; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range 5 {
+		wg.Go(func() {
 			if err := store.Add(denmark); err != nil {
 				errChan <- fmt.Errorf("add Denmark: %w", err)
 			}
-		}()
+		})
 
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			if err := store.Add(finland); err != nil {
 				errChan <- fmt.Errorf("add Finland: %w", err)
 			}
-		}()
+		})
 	}
 
-	for i := 0; i < 3; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range 3 {
+		wg.Go(func() {
 			if err := store.Add(norway); err != nil {
 				errChan <- fmt.Errorf("add Norway: %w", err)
 			}
-		}()
+		})
 	}
 
 	wg.Wait()
@@ -347,7 +342,7 @@ func TestRecentConnectionsStore_ConcurrentAccess(t *testing.T) {
 	err := store.Clean()
 	require.NoError(t, err)
 
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		country := Model{
 			Country:        fmt.Sprintf("Country%d", i),
 			ConnectionType: config.ServerSelectionRule_COUNTRY,
@@ -356,10 +351,8 @@ func TestRecentConnectionsStore_ConcurrentAccess(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range 10 {
+		wg.Go(func() {
 			connections, err := store.Get()
 			if err != nil {
 				errChan <- fmt.Errorf("get connections: %w", err)
@@ -367,7 +360,7 @@ func TestRecentConnectionsStore_ConcurrentAccess(t *testing.T) {
 			if len(connections) != 3 {
 				errChan <- fmt.Errorf("expected 3 connections, got %d", len(connections))
 			}
-		}()
+		})
 	}
 
 	wg.Wait()
@@ -404,7 +397,7 @@ func TestRecentConnectionsStore_RaceCondition(t *testing.T) {
 	var wg sync.WaitGroup
 	const iterations = 100
 
-	for i := 0; i < iterations; i++ {
+	for i := range iterations {
 		wg.Add(3)
 
 		go func(idx int) {
@@ -449,13 +442,11 @@ func TestRecentConnectionsStore_ConcurrentAdd_OrderingGuarantee(t *testing.T) {
 	var wg sync.WaitGroup
 	const goroutines = 50
 
-	for i := 0; i < goroutines; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range goroutines {
+		wg.Go(func() {
 			err := store.Add(denmark)
 			assert.NoError(t, err)
-		}()
+		})
 	}
 
 	wg.Wait()
@@ -907,7 +898,7 @@ func TestRecentConnectionsStore_AddPending_ConcurrentAccess(t *testing.T) {
 	var wg sync.WaitGroup
 	const goroutines = 50
 
-	for i := 0; i < goroutines; i++ {
+	for i := range goroutines {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
@@ -1015,10 +1006,8 @@ func TestRecentConnectionsStore_PopPending_ConcurrentAccess(t *testing.T) {
 
 	const goroutines = 10
 
-	for i := 0; i < goroutines; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range goroutines {
+		wg.Go(func() {
 			exists, _ := store.PopPending()
 			mu.Lock()
 			defer mu.Unlock()
@@ -1027,7 +1016,7 @@ func TestRecentConnectionsStore_PopPending_ConcurrentAccess(t *testing.T) {
 			} else {
 				errorCount++
 			}
-		}()
+		})
 	}
 
 	wg.Wait()
@@ -1234,7 +1223,7 @@ func TestRecentConnectionsStore_EventPublisher_MultipleOperations(t *testing.T) 
 
 	store := NewRecentConnectionsStore("/test/path", &fs, eventPublisher)
 
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		conn := Model{
 			Country:        fmt.Sprintf("Country%d", i),
 			ConnectionType: config.ServerSelectionRule_COUNTRY,
@@ -1275,7 +1264,7 @@ func TestRecentConnectionsStore_EventPublisher_ConcurrentOperations(t *testing.T
 	var wg sync.WaitGroup
 	const operations = 50
 
-	for i := 0; i < operations; i++ {
+	for i := range operations {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()

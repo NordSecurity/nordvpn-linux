@@ -118,7 +118,7 @@ type ServiceData struct {
 	ID        int64          `json:"ID"`
 	ExpiresAt string         `json:"expires_at"`
 	Service   Service        `json:"service"`
-	Details   ServiceDetails `json:"details,omitempty"`
+	Details   ServiceDetails `json:"details"`
 }
 
 type Service struct {
@@ -150,14 +150,14 @@ type Order struct {
 }
 
 type PaymentResponse struct {
-	Payment Payment `json:"payment,omitempty"`
+	Payment Payment `json:"payment"`
 }
 
 type Payment struct {
-	CreatedAt    time.Time    `json:"created_at,omitempty"`
-	Subscription Subscription `json:"subscription,omitempty"`
+	CreatedAt    time.Time    `json:"created_at"`
+	Subscription Subscription `json:"subscription"`
 	Status       string       `json:"status,omitempty"`
-	Payer        Payer        `json:"payer,omitempty"`
+	Payer        Payer        `json:"payer"`
 	Amount       float32      `json:"amount,omitempty"`
 	Currency     string       `json:"currency,omitempty"`
 	Provider     string       `json:"provider,omitempty"`
@@ -234,8 +234,8 @@ type Technology struct {
 	ID       ServerTechnology `json:"id"`
 	Pivot    Pivot            `json:"pivot"`
 	Metadata []struct {
-		Name  string      `json:"name,omitempty"`
-		Value interface{} `json:"value,omitempty"`
+		Name  string `json:"name,omitempty"`
+		Value any    `json:"value,omitempty"`
 	} `json:"metadata"`
 }
 
@@ -584,7 +584,7 @@ type Country struct {
 	ID     int64  `json:"id"`
 	Name   string `json:"name"`
 	Code   string `json:"code"`
-	City   `json:"city,omitempty"`
+	City   `json:"city"`
 	Cities `json:"cities,omitempty"`
 }
 

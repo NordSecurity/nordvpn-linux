@@ -523,7 +523,7 @@ func IsNetworkLinkUnmanaged(link string) bool {
 	if err != nil {
 		return false
 	}
-	for _, line := range strings.Split(strings.Trim(string(out), "\n"), "\n") {
+	for line := range strings.SplitSeq(strings.Trim(string(out), "\n"), "\n") {
 		if strings.Contains(line, "State") && strings.Contains(line, "unmanaged") {
 			return true
 		}

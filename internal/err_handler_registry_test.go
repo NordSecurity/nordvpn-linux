@@ -171,14 +171,14 @@ func Test_ThreadSafety(t *testing.T) {
 	// Concurrently add handlers for different errors
 	go func() {
 		defer wg.Done()
-		for i := 0; i < 100; i++ {
+		for range 100 {
 			registry.Add(func(int) {}, err1)
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
-		for i := 0; i < 100; i++ {
+		for range 100 {
 			registry.Add(func(int) {}, err2)
 		}
 	}()

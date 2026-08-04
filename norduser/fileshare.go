@@ -19,16 +19,16 @@ const (
 // StartFileshareManagementLoop starts the management loop in separate goroutine and returns a control channel and a
 // shutdown channel. Management loop will try to disable fileshare and close the shutdown chan when Shutdown message is
 // received.
-func StartFileshareManagementLoop() (chan<- FileshareManagementMsg, <-chan interface{}) {
+func StartFileshareManagementLoop() (chan<- FileshareManagementMsg, <-chan any) {
 	managementChan := make(chan FileshareManagementMsg)
-	shutdownChan := make(chan interface{})
+	shutdownChan := make(chan any)
 
 	go fileshareManagementLoop(managementChan, shutdownChan)
 
 	return managementChan, shutdownChan
 }
 
-func fileshareManagementLoop(managementChan <-chan FileshareManagementMsg, shutdownChan chan interface{}) {
+func fileshareManagementLoop(managementChan <-chan FileshareManagementMsg, shutdownChan chan any) {
 	fileshareProcessManager := fileshare_process.NewFileshareGRPCProcessManager()
 	for msg := range managementChan {
 		switch msg {
@@ -77,7 +77,7 @@ func startFileshare(fileshareProcessManager *childprocess.GRPCChildProcessManage
 
 func fileshareStartupLoop(fileshareProcessManager *childprocess.GRPCChildProcessManager,
 	managementChan <-chan FileshareManagementMsg,
-	shutdownChan chan interface{},
+	shutdownChan chan any,
 ) {
 	if startFileshare(fileshareProcessManager) {
 		return

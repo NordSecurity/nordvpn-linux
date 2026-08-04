@@ -105,8 +105,8 @@ func NewApp(version, environment, hash, salt string,
 	cli.CommandHelpTemplate = CommandHelpTemplate
 	// Configure line wrapping for command descriptions
 	width, _, err := term.GetSize(int(os.Stdout.Fd()))
-	cli.HelpPrinter = func(w io.Writer, templ string, data interface{}) {
-		funcMap := map[string]interface{}{"wrapAt": func() int { return width }}
+	cli.HelpPrinter = func(w io.Writer, templ string, data any) {
+		funcMap := map[string]any{"wrapAt": func() int { return width }}
 		cli.HelpPrinterCustom(w, templ, data, funcMap)
 	}
 
@@ -1006,7 +1006,7 @@ type LoaderInterceptor struct {
 	enabled bool
 }
 
-func (i *LoaderInterceptor) UnaryInterceptor(ctx context.Context, method string, req interface{}, reply interface{}, cc *grpc.ClientConn,
+func (i *LoaderInterceptor) UnaryInterceptor(ctx context.Context, method string, req any, reply any, cc *grpc.ClientConn,
 	invoker grpc.UnaryInvoker, opts ...grpc.CallOption,
 ) error {
 	if i.enabled {
@@ -1061,7 +1061,7 @@ type loaderStream struct {
 	loaderEnabled bool
 }
 
-func (s loaderStream) RecvMsg(m interface{}) error {
+func (s loaderStream) RecvMsg(m any) error {
 	if s.loaderEnabled {
 		loader := NewLoader()
 		loader.Start()
@@ -1314,16 +1314,16 @@ func (c *cmd) printServersForAutoComplete(country string, hasGroupFlag bool, gro
 			return
 		}
 
-		output := ""
+		var output strings.Builder
 		for _, server := range resp.Servers {
 			if hasGroupFlag && groupName == server.Name {
 				// if the group is equal to one of the group names then exists don't return anything
 				return
 			}
-			output += server.Name + "\n"
+			output.WriteString(server.Name + "\n")
 		}
 
-		fmt.Print(output)
+		fmt.Print(output.String())
 
 		if hasGroupFlag {
 			// if --group flag exists don't show the countries

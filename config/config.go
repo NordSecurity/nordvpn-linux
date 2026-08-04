@@ -51,10 +51,10 @@ type Config struct {
 	MachineID       uuid.UUID           `json:"machine_id,omitempty"`
 	LanDiscovery    bool                `json:"lan_discovery"`
 	RemoteConfig    string              `json:"remote_config,omitempty"`
-	RCLastUpdate    time.Time           `json:"rc_last_update,omitempty"`
+	RCLastUpdate    time.Time           `json:"rc_last_update"`
 	// Indicates whether the virtual servers are used. True by default
-	VirtualLocation TrueField `json:"virtual_location,omitempty"`
-	ARPIgnore       TrueField `json:"arp_ignore,omitempty"`
+	VirtualLocation TrueField `json:"virtual_location"`
+	ARPIgnore       TrueField `json:"arp_ignore"`
 	DeviceUUID      uuid.UUID `json:"device_uuid"`
 }
 
@@ -85,7 +85,7 @@ type AutoConnectData struct {
 	ThreatProtectionLite bool      `json:"cybersec,omitempty"`
 	Obfuscate            bool      `json:"obfuscate,omitempty"`
 	DNS                  DNS       `json:"dns,omitempty"`
-	Allowlist            Allowlist `json:"whitelist,omitempty"`
+	Allowlist            Allowlist `json:"whitelist"`
 	PostquantumVpn       bool      `json:"postquantum_vpn"`
 }
 
@@ -105,7 +105,7 @@ type NCData struct {
 	Username       string    `json:"username,omitempty"`
 	Password       string    `json:"password,omitempty"`
 	Endpoint       string    `json:"endpoint,omitempty"`
-	ExpirationDate time.Time `json:"timestamp,omitempty"`
+	ExpirationDate time.Time `json:"timestamp"`
 }
 
 type meshnet struct {

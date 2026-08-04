@@ -118,8 +118,7 @@ func TestSubscribeToStateChanges_NoPeerContext(t *testing.T) {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 	srv := &testStateServer{ctx: ctx, wg: &wg, states: make([]*pb.AppState, 0)}
 
 	r := testRPC()

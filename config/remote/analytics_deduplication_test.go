@@ -611,7 +611,7 @@ func TestClearEventFlagsRaceCondition(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		<-startSignal // Wait for signal to start
-		for i := 0; i < iterations; i++ {
+		for i := range iterations {
 			feature := features[i%len(features)]
 			analytics.EmitPartialRolloutEvent(ClientCli, feature, i%100, true)
 		}
@@ -621,7 +621,7 @@ func TestClearEventFlagsRaceCondition(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		<-startSignal // Wait for signal to start
-		for i := 0; i < iterations; i++ {
+		for range iterations {
 			analytics.ClearEventFlags()
 		}
 	}()
@@ -630,7 +630,7 @@ func TestClearEventFlagsRaceCondition(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		<-startSignal // Wait for signal to start
-		for i := 0; i < iterations; i++ {
+		for i := range iterations {
 			if i%2 == 0 {
 				analytics.ClearEventFlags()
 			} else {

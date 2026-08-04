@@ -1,5 +1,4 @@
 //go:build race_repro
-// +build race_repro
 
 package request
 

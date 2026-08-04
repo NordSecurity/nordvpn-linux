@@ -463,7 +463,7 @@ func TestStreamFileToWriter_RespectsDaemonLogCap(t *testing.T) {
 	path := filepath.Join(t.TempDir(), uuid.NewString()+".log")
 	// 1 KiB of recognisable lines: 100 lines × ~10 bytes each.
 	var content bytes.Buffer
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		fmt.Fprintf(&content, "line %03d\n", i) // 9 bytes/line incl. newline
 	}
 	require.NoError(t, os.WriteFile(path, content.Bytes(), 0o600))
@@ -580,7 +580,7 @@ func TestCreateDiagnosticsZip_UniqueFilename(t *testing.T) {
 
 	const N = 5
 	seen := make(map[string]bool, N)
-	for i := 0; i < N; i++ {
+	for i := range N {
 		f, err := createDiagnosticsZip(dir)
 		require.NoError(t, err)
 		require.NoError(t, f.Close())

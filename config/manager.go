@@ -285,7 +285,7 @@ func generateKey() []byte {
 	source := rand.NewSource(time.Now().UnixNano())
 	// #nosec G404 -- config encryption will go away after OSS
 	r := rand.New(source)
-	for i := 0; i < 32; i++ {
+	for range 32 {
 		character := r.Intn(max-min) + min
 		key = append(key, byte(character))
 	}

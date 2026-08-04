@@ -51,16 +51,14 @@ func TestHTTPReTransport_RoundTrip(t *testing.T) {
 	// Wrap access to `errs` with mutex to avoid modifying from same value twice.
 	mu := sync.Mutex{}
 	var errs []error
-	for i := 0; i < iterations; i++ {
-		wg.Add(1)
-		go func() {
+	for range iterations {
+		wg.Go(func() {
 			//nolint:bodyclose
 			_, err := transport.RoundTrip(&http.Request{})
 			mu.Lock()
 			errs = append(errs, err)
 			mu.Unlock()
-			wg.Done()
-		}()
+		})
 	}
 	// Wait until all of RoundTrip calls are started.
 	wg.Wait()

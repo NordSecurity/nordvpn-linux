@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 )
 
-func InterfaceToInt64(item interface{}) int64 {
+func InterfaceToInt64(item any) int64 {
 	var i int64
 	switch item := item.(type) {
 	case json.Number:
