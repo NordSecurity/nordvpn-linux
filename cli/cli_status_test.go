@@ -157,7 +157,7 @@ Pause time left: 32:44
 				Uptime:                    -1,
 			},
 			expected: `Status: Paused
-Pause time left: 23
+Pause time left: 00:23
 `,
 		},
 	}

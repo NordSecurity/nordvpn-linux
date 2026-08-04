@@ -34,10 +34,8 @@ func formatDuration(secs uint32) string {
 
 	if h > 0 {
 		return fmt.Sprintf("%02d:%02d:%02d", h, m, s)
-	} else if m > 0 {
-		return fmt.Sprintf("%02d:%02d", m, s)
 	}
-	return fmt.Sprintf("%02d", s)
+	return fmt.Sprintf("%02d:%02d", m, s)
 }
 
 // Status returns ready to print status string.
