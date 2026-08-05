@@ -64,23 +64,11 @@ final class _PopupsListenerState extends ConsumerState<PopupsListener> {
     // so we disable barrier dismissal to prevent accidental dismissal
     final barrierDismissible = metadata is! DecisionPopupMetadata;
 
-    final result = await showDialog<bool>(
+    await showDialog(
       context: ctx,
       barrierDismissible: barrierDismissible,
       builder: (_) => buildPopup(metadata),
     );
-
-    // The decision action runs only after the dialog is closed, using this
-    // (long-lived) widget's ref. The dialog has its own ref scoped to the
-    // dialog route, which is disposed on close, so running async actions with
-    // it would throw "Cannot use ref after the widget was disposed".
-    if (mounted && metadata is DecisionPopupMetadata) {
-      if (result == true) {
-        await metadata.yesAction(ref);
-      } else if (result == false) {
-        metadata.noAction?.call(ref);
-      }
-    }
 
     if (!mounted) return;
     ref.read(popupsProvider.notifier).pop();
