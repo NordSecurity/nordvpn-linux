@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/snapconf"
 
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
@@ -15,6 +16,11 @@ import (
 const DiagnosticsUsageText = "Collects diagnostic logs and system information for troubleshooting. Share the generated file with NordVPN support to investigate the issue."
 
 func (c *cmd) Diagnostics(ctx *cli.Context) error {
+	if snapconf.IsUnderSnap() {
+		color.Yellow("This command is currently unavailable for Snap package installations.")
+		return nil
+	}
+
 	stream, err := c.client.CollectDiagnostics(context.Background(), &pb.Empty{})
 	if err != nil {
 		return formatError(err)
