@@ -62,7 +62,7 @@ final class RecentConnectionsItemFactory {
     final details = parts.secondary == null
         ? parts.primary
         : "${parts.primary}, ${parts.secondary}";
-    return "${t.ui.recentConnections}. $details";
+    return t.a11y.recentConnectionWithDetails(details: details);
   }
 
   Widget _buildImage(RecentConnection model, bool isSpecialtyServer) {
