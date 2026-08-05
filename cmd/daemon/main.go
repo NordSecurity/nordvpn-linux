@@ -650,7 +650,6 @@ func main() {
 		rpc.ReconnectOnServerMaintenanceEvent,
 		daemonEvents.Debugger.DebuggerEvents,
 	)
-	defer ensMonitor.Stop()
 	internalVpnEvents.ConnectionError.Subscribe(ensMonitor.HandleENSNotification)
 	ensMonitor.Start()
 
@@ -801,6 +800,7 @@ func main() {
 	signals := internal.GetSignalChan()
 	sig := <-signals
 	log.Info("Received signal:", sig)
+	ensMonitor.Stop()
 	s.Stop()
 	norduserService.StopAll()
 
