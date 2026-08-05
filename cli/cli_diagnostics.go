@@ -73,7 +73,8 @@ func diagnosticsErrorMessage(code pb.DiagnosticsErrorCode) string {
 		return "We couldn't extract daemon logs automatically because the daemon was not started via systemd or snap. Contact our support team for help collecting logs manually."
 	case pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_UNSPECIFIED,
 		pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_INTERNAL,
-		pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED:
+		pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED,
+		pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_NOT_SUPPORTED:
 		return MsgDiagnosticsFailure
 	}
 	return MsgDiagnosticsFailure
