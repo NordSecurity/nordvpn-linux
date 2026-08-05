@@ -263,6 +263,8 @@
   "recentConnections": "Recent connections",
   "standardVpnServer": "Standard VPN Servers",
   "reconnectNow": "Reconnect now",
+  "reconnecting": "Reconnecting...",
+  "applyingChanges": "Applying changes...",
   "reconnectToChangeProtocol": "Reconnect to change protocol",
   "reconnectToChangeProtocolDescription": "To apply this change, we'll reconnect you to the VPN.",
   "reconnectToApplyChanges": "Reconnect to apply changes",

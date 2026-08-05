@@ -8,6 +8,7 @@ import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/grpc/error_handling_interceptor.dart';
 import 'package:nordvpn/grpc/grpc_service.dart';
+import 'package:nordvpn/i18n/country_names_service.dart';
 import 'package:nordvpn/pb/daemon/config/group.pbenum.dart' as pb;
 import 'package:nordvpn/pb/daemon/servers.pb.dart' as pb_servers;
 import 'package:nordvpn/pb/daemon/status.pb.dart' as pb_status;
@@ -53,6 +54,14 @@ void main() {
     }
     if (!sl.isRegistered<ErrorHandlingInterceptor>()) {
       sl.registerSingleton(ErrorHandlingInterceptor());
+    }
+    // The status events from the mocked daemon carry a country code, which
+    // Country.fromCode resolves through this service. Without it the test fails
+    // depending on when the event is delivered.
+    if (!sl.isRegistered<CountryNamesService>()) {
+      sl.registerSingleton(
+        CountryNamesService()..register(code: "FR", name: "France"),
+      );
     }
   });
 

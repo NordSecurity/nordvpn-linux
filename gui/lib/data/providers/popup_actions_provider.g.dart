@@ -1,29 +1,26 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'vpn_status_controller.dart';
+part of 'popup_actions_provider.dart';
 
 // **************************************************************************
 // RiverpodGenerator
 // **************************************************************************
 
-String _$vpnStatusControllerHash() =>
-    r'f4f59932a5e3c229bb59505a2e506446c120b835';
+String _$popupActionsHash() => r'bb49756b7a66cf8cba7fb326a8c7db665db42769';
 
-/// Handles the VPN connection functionality
-///
-/// Copied from [VpnStatusController].
-@ProviderFor(VpnStatusController)
-final vpnStatusControllerProvider =
-    AutoDisposeAsyncNotifierProvider<VpnStatusController, VpnStatus>.internal(
-      VpnStatusController.new,
-      name: r'vpnStatusControllerProvider',
+/// See also [PopupActions].
+@ProviderFor(PopupActions)
+final popupActionsProvider =
+    NotifierProvider<PopupActions, PopupActionProgress?>.internal(
+      PopupActions.new,
+      name: r'popupActionsProvider',
       debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
           ? null
-          : _$vpnStatusControllerHash,
+          : _$popupActionsHash,
       dependencies: null,
       allTransitiveDependencies: null,
     );
 
-typedef _$VpnStatusController = AutoDisposeAsyncNotifier<VpnStatus>;
+typedef _$PopupActions = Notifier<PopupActionProgress?>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
