@@ -45,12 +45,119 @@ Uptime: 13 seconds
 `,
 		},
 		{
+			name: "nordwhisper with ech enabled",
+			resp: &pb.StatusResponse{
+				State:      pb.ConnectionState_CONNECTED,
+				Technology: config.Technology_NORDWHISPER,
+				Protocol:   config.Protocol_UDP,
+				Hostname:   "Verona",
+				Ip:         "127.0.0.1",
+				Country:    "Lithuania",
+				City:       "Vilnius",
+				Uptime:     13e9,
+				Ech:        true,
+			},
+			expected: `Status: Connected
+Hostname: Verona
+IP: 127.0.0.1
+Country: Lithuania
+City: Vilnius
+Current technology: NORDWHISPER
+Current protocol: UDP
+Post-quantum VPN: Disabled
+ECH: Enabled
+Uptime: 13 seconds
+`,
+		},
+		{
+			name: "nordwhisper with ech disabled",
+			resp: &pb.StatusResponse{
+				State:      pb.ConnectionState_CONNECTED,
+				Technology: config.Technology_NORDWHISPER,
+				Protocol:   config.Protocol_UDP,
+				Hostname:   "Verona",
+				Ip:         "127.0.0.1",
+				Country:    "Lithuania",
+				City:       "Vilnius",
+				Uptime:     13e9,
+				Ech:        false,
+			},
+			expected: `Status: Connected
+Hostname: Verona
+IP: 127.0.0.1
+Country: Lithuania
+City: Vilnius
+Current technology: NORDWHISPER
+Current protocol: UDP
+Post-quantum VPN: Disabled
+ECH: Disabled
+Uptime: 13 seconds
+`,
+		},
+		{
+			name: "non-nordwhisper hides ech line even when ech is set",
+			resp: &pb.StatusResponse{
+				State:      pb.ConnectionState_CONNECTED,
+				Technology: config.Technology_NORDLYNX,
+				Protocol:   config.Protocol_UDP,
+				Hostname:   "Verona",
+				Ip:         "127.0.0.1",
+				Country:    "Lithuania",
+				City:       "Vilnius",
+				Uptime:     13e9,
+				Ech:        true,
+			},
+			expected: `Status: Connected
+Hostname: Verona
+IP: 127.0.0.1
+Country: Lithuania
+City: Vilnius
+Current technology: NORDLYNX
+Current protocol: UDP
+Post-quantum VPN: Disabled
+Uptime: 13 seconds
+`,
+		},
+		{
 			name: "disconnected",
 			resp: &pb.StatusResponse{
 				State:  pb.ConnectionState_DISCONNECTED,
 				Uptime: -1,
 			},
 			expected: `Status: Disconnected
+`,
+		},
+		{
+			name: "paused hours",
+			resp: &pb.StatusResponse{
+				State:                     pb.ConnectionState_PAUSED,
+				PauseRemainingDurationSec: 5055,
+				Uptime:                    -1,
+			},
+			expected: `Status: Paused
+Pause time left: 01:24:15
+`,
+		},
+		{
+			name: "paused minutes",
+			resp: &pb.StatusResponse{
+				State:                     pb.ConnectionState_PAUSED,
+				PauseRemainingDurationSec: 1964,
+				Uptime:                    -1,
+			},
+			expected: `Status: Paused
+Pause time left: 32:44
+`,
+		},
+		{
+			name: "paused seconds",
+			resp: &pb.StatusResponse{
+				State:                     pb.ConnectionState_PAUSED,
+				PauseRemainingDurationSec: 23,
+				Uptime:                    -1,
+			},
+			expected: `Status: Paused
+Pause time left: 00:23
 `,
 		},
 	}

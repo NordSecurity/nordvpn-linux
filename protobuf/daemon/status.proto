@@ -53,4 +53,5 @@ message StatusResponse {
   bool obfuscated = 18;
   google.protobuf.Timestamp paused_at = 19;
   uint32 pause_remaining_duration_sec = 20;
+  bool ech = 21;
 }

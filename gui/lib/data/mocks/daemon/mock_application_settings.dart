@@ -38,6 +38,8 @@ final class MockApplicationSettings extends CancelableDelayed {
   SetErrorCode? errorDns;
 
   SettingsResponse get settings => _settings;
+  Settings get currentSettings => settings.data;
+
   void replaceSettings(Settings value) {
     setSettings(
       killSwitch: value.hasKillSwitch() ? value.killSwitch : null,

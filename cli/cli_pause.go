@@ -21,6 +21,23 @@ func pauseArgToDuration(arg string) (uint32, error) {
 	return 0, fmt.Errorf("unrecognized duration")
 }
 
+func pauseArgToItemValue(arg string) pb.UIEvent_ItemValue {
+	switch arg {
+	case "5m":
+		return pb.UIEvent_PAUSE_5_MIN
+	case "15m":
+		return pb.UIEvent_PAUSE_15_MIN
+	case "30m":
+		return pb.UIEvent_PAUSE_30_MIN
+	case "1h":
+		return pb.UIEvent_PAUSE_1_HOUR
+	case "24h":
+		return pb.UIEvent_PAUSE_24_HOURS
+	default:
+		return pb.UIEvent_ITEM_VALUE_UNSPECIFIED
+	}
+}
+
 func (c *cmd) Pause(ctx *cli.Context) error {
 	args := ctx.Args()
 
@@ -32,6 +49,15 @@ func (c *cmd) Pause(ctx *cli.Context) error {
 	if err != nil {
 		return formatError(errors.New(PauseNoArgsText))
 	}
+
+	itemValue := pauseArgToItemValue(args.First())
+	// #nosec G104 -- fire-and-forget analytics
+	c.client.ReportUIEvent(context.Background(),
+		&pb.UIEvent{
+			FormReference: pb.UIEvent_CLI,
+			ItemName:      pb.UIEvent_PAUSE,
+			ItemType:      pb.UIEvent_CLICK,
+			ItemValue:     itemValue})
 
 	resp, err := c.client.PauseConnection(context.Background(), &pb.PauseRequest{Seconds: pauseDuration})
 	if err != nil {

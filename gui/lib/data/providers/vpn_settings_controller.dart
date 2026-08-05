@@ -128,7 +128,13 @@ class VpnSettingsController extends _$VpnSettingsController
   }
 
   Future<int> setFirewall(bool value) async {
-    return await _setValue((repository) => repository.setFirewall(value));
+    return await _setValue(
+      (repository) => repository.setFirewall(value),
+      popupCodeOverrides: {
+        DaemonStatusCode.dependencyError:
+            DaemonStatusCode.ksIsOnCannotDisableFirewall,
+      },
+    );
   }
 
   Future<int> setNotifications(bool value) async {

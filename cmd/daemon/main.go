@@ -591,6 +591,7 @@ func main() {
 		daemon.VersionFilePath,
 		dataUpdateEvents,
 	)
+	daemonEvents.User.Logout.Subscribe(dm.NotifyLogout)
 
 	pauseEvents := daemonevents.NewPauseEvents()
 	pauseEvents.Subscribe(statePublisher)

@@ -17,7 +17,7 @@ import (
 func TestGroupsList(t *testing.T) {
 	category.Set(t, category.Unit)
 	mockClient := mock.MockDaemonClient{}
-	c := cmd{&mockClient, nil, nil, "", nil}
+	c := cmd{client: &mockClient}
 
 	tests := []struct {
 		name          string

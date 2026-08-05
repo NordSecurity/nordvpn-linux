@@ -56,6 +56,7 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 		},
 		PostquantumVpn: cfg.AutoConnectData.PostquantumVpn,
 		ArpIgnore:      cfg.ARPIgnore.Get(),
+		Ech:            cfg.AutoConnectData.ECH.Get(),
 	}
 
 	return &settings
@@ -105,6 +106,7 @@ func statusStream(stateChan <-chan any,
 					Protocol:                  e.Status.Protocol,
 					Obfuscated:                e.Status.IsObfuscated,
 					PostQuantum:               e.Status.IsPostQuantum,
+					Ech:                       e.Status.IsECHEnabled,
 					Upload:                    e.Status.Tx,
 					Download:                  e.Status.Rx,
 					PausedAt:                  timestamppb.New(e.Status.PausedAt),

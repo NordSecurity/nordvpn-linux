@@ -6,7 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/nstrings"
 
 	"github.com/hako/durafmt"
 	"github.com/urfave/cli/v2"
@@ -24,6 +27,17 @@ func (c *cmd) Status(ctx *cli.Context) error {
 	return nil
 }
 
+func formatDuration(secs uint32) string {
+	h := secs / 3600
+	m := (secs % 3600) / 60
+	s := secs % 60
+
+	if h > 0 {
+		return fmt.Sprintf("%02d:%02d:%02d", h, m, s)
+	}
+	return fmt.Sprintf("%02d:%02d", m, s)
+}
+
 // Status returns ready to print status string.
 func Status(resp *pb.StatusResponse) string {
 	state := "Disconnected"
@@ -34,10 +48,15 @@ func Status(resp *pb.StatusResponse) string {
 	case pb.ConnectionState_CONNECTING:
 		state = "Connecting"
 	case pb.ConnectionState_PAUSED:
-		state = "Disconnected"
+		state = "Paused"
 	}
 	var b strings.Builder
 	b.WriteString(fmt.Sprintf("Status: %s\n", state))
+
+	if resp.PauseRemainingDurationSec != 0 {
+		duration := formatDuration(resp.PauseRemainingDurationSec)
+		b.WriteString(fmt.Sprintf("Pause time left: %s\n", duration))
+	}
 
 	if resp.Name != "" {
 		serverName := resp.Name
@@ -70,13 +89,16 @@ func Status(resp *pb.StatusResponse) string {
 		b.WriteString(
 			fmt.Sprintf("Current protocol: %s\n", resp.Protocol.String()),
 		)
-		pqLabel := "Disabled"
-		if resp.PostQuantum {
-			pqLabel = "Enabled"
-		}
 		b.WriteString(
-			fmt.Sprintf("Post-quantum VPN: %s\n", pqLabel),
+			fmt.Sprintf("Post-quantum VPN: %s\n",
+				internal.Title(nstrings.GetBoolLabel(resp.PostQuantum))),
 		)
+		if resp.Technology == config.Technology_NORDWHISPER {
+			b.WriteString(
+				fmt.Sprintf("ECH: %s\n",
+					internal.Title(nstrings.GetBoolLabel(resp.Ech))),
+			)
+		}
 	}
 
 	// show transfer rates only if running

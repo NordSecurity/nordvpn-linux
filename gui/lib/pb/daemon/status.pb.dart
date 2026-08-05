@@ -164,6 +164,7 @@ class StatusResponse extends $pb.GeneratedMessage {
     $core.bool? obfuscated,
     $0.Timestamp? pausedAt,
     $core.int? pauseRemainingDurationSec,
+    $core.bool? ech,
   }) {
     final result = create();
     if (state != null) result.state = state;
@@ -187,6 +188,7 @@ class StatusResponse extends $pb.GeneratedMessage {
     if (pausedAt != null) result.pausedAt = pausedAt;
     if (pauseRemainingDurationSec != null)
       result.pauseRemainingDurationSec = pauseRemainingDurationSec;
+    if (ech != null) result.ech = ech;
     return result;
   }
 
@@ -233,6 +235,7 @@ class StatusResponse extends $pb.GeneratedMessage {
         subBuilder: $0.Timestamp.create)
     ..aI(20, _omitFieldNames ? '' : 'pauseRemainingDurationSec',
         fieldType: $pb.PbFieldType.OU3)
+    ..aOB(21, _omitFieldNames ? '' : 'ech')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -438,6 +441,15 @@ class StatusResponse extends $pb.GeneratedMessage {
   $core.bool hasPauseRemainingDurationSec() => $_has(19);
   @$pb.TagNumber(20)
   void clearPauseRemainingDurationSec() => $_clearField(20);
+
+  @$pb.TagNumber(21)
+  $core.bool get ech => $_getBF(20);
+  @$pb.TagNumber(21)
+  set ech($core.bool value) => $_setBool(20, value);
+  @$pb.TagNumber(21)
+  $core.bool hasEch() => $_has(20);
+  @$pb.TagNumber(21)
+  void clearEch() => $_clearField(21);
 }
 
 const $core.bool _omitFieldNames =
