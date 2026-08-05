@@ -1,7 +1,6 @@
 package ens
 
 import (
-	"context"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -22,7 +21,6 @@ func TestENSMonitoring(t *testing.T) {
 
 	const serverEndpoint = "192.168.1.1:51820"
 
-	ctx, cancelFn := context.WithCancel(context.Background())
 	netw := &networker.Mock{
 		VpnActive:        true,
 		ActiveServerData: &vpn.ServerData{Endpoint: serverEndpoint},
@@ -32,7 +30,7 @@ func TestENSMonitoring(t *testing.T) {
 
 	callbackCount := atomic.Int32{}
 	ch := make(chan any)
-	monitor := NewMonitor(ctx, netw, rc, func(_ string) error {
+	monitor := NewMonitor(netw, rc, func(_ string) error {
 		callbackCount.Add(1)
 		ch <- 1
 		return nil
@@ -53,7 +51,7 @@ func TestENSMonitoring(t *testing.T) {
 	helpers.WaitWithTimeout(t, ch, time.Millisecond*10)
 	assert.Equal(t, 2, int(callbackCount.Load()))
 
-	cancelFn()
+	monitor.Stop()
 
 	// after stopping the monitoring, events are ignored
 	assert.NilError(t, monitor.HandleENSNotification(events.VPNConnectionErrorEvent{
@@ -151,7 +149,7 @@ func TestENSMonitoringEventHandling(t *testing.T) {
 				return nil
 			})
 			reconnected := make(chan bool, 1)
-			monitor := NewMonitor(t.Context(), netw, rc,
+			monitor := NewMonitor(netw, rc,
 				func(_ string) error {
 					reconnected <- true
 					return nil
@@ -159,6 +157,7 @@ func TestENSMonitoringEventHandling(t *testing.T) {
 				debuggerEvents,
 			)
 			monitor.Start()
+			defer monitor.Stop()
 
 			assert.NilError(t, monitor.HandleENSNotification(tt.event))
 			assert.Equal(t, tt.expectReport, helpers.WaitWithTimeout(t, reported, time.Millisecond*50))

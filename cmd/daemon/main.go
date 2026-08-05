@@ -645,7 +645,6 @@ func main() {
 	)
 
 	ensMonitor := ens.NewMonitor(
-		httpGlobalCtx,
 		netw,
 		rcConfig,
 		rpc.ReconnectOnServerMaintenanceEvent,
@@ -801,6 +800,7 @@ func main() {
 	signals := internal.GetSignalChan()
 	sig := <-signals
 	log.Info("Received signal:", sig)
+	ensMonitor.Stop()
 	s.Stop()
 	norduserService.StopAll()
 
