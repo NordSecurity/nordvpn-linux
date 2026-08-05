@@ -166,7 +166,10 @@ final class ServerListItemFactory {
       onTap: () => onTap(ConnectArguments(specialtyGroup: type)),
       trailing: servers.isNotEmpty
           ? IconButton(
-              icon: DynamicThemeImage("three_dots.svg"),
+              icon: Semantics(
+                label: t.a11y.moreOptions,
+                child: DynamicThemeImage("three_dots.svg"),
+              ),
               onPressed: () => showDetails(),
               hoverColor: Colors.transparent,
               splashColor: Colors.transparent,
