@@ -29,6 +29,7 @@ class DiagnosticsErrorCode(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED: _ClassVar[DiagnosticsErrorCode]
     DIAGNOSTICS_ERROR_CODE_FAILED_TO_CLOSE_ZIP: _ClassVar[DiagnosticsErrorCode]
     DIAGNOSTICS_ERROR_CODE_NO_DAEMON_LOG_SOURCE: _ClassVar[DiagnosticsErrorCode]
+    DIAGNOSTICS_ERROR_CODE_NOT_SUPPORTED: _ClassVar[DiagnosticsErrorCode]
 UNKNOWN: TriState
 DISABLED: TriState
 ENABLED: TriState
@@ -44,6 +45,7 @@ DIAGNOSTICS_ERROR_CODE_ZIP_TOO_LARGE: DiagnosticsErrorCode
 DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED: DiagnosticsErrorCode
 DIAGNOSTICS_ERROR_CODE_FAILED_TO_CLOSE_ZIP: DiagnosticsErrorCode
 DIAGNOSTICS_ERROR_CODE_NO_DAEMON_LOG_SOURCE: DiagnosticsErrorCode
+DIAGNOSTICS_ERROR_CODE_NOT_SUPPORTED: DiagnosticsErrorCode
 
 class Empty(_message.Message):
     __slots__ = ()

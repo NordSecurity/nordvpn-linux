@@ -99,7 +99,6 @@ apps:
       - system-observe
       - hardware-observe
       - log-observe
-      - snapd-control
       - network-manager
   nordvpn-gui:
     command: bin/gui/nordvpn-gui

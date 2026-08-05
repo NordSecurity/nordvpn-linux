@@ -47,6 +47,12 @@ func (r *RPC) CollectDiagnostics(
 	in *pb.Empty,
 	srv pb.Daemon_CollectDiagnosticsServer,
 ) error {
+	if snapconf.IsUnderSnap() {
+		return srv.Send(&pb.DiagnosticsProgress{
+			ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_NOT_SUPPORTED,
+		})
+	}
+
 	caller, err := resolveDiagnosticsCaller(srv.Context())
 	if err != nil {
 		log.Diagnostics.Error("resolving diagnostics caller failed:", err)
