@@ -16,6 +16,7 @@ final class DaemonStatusCode {
   static const configError = 3004;
   static const offline = 3007;
   static const accountExpired = 3008;
+  static const dependencyError = 3017;
   static const noService = 3020;
   static const tokenRenewError = 3022;
   static const tokenLoginFailure = 3035;
@@ -50,6 +51,7 @@ final class DaemonStatusCode {
   static const failedToOpenBrowserToCreateAccount = 5014;
   // generic error when application is not able to connect to VPN, but it returns failure=3000
   static const failedToConnectToVpn = 5015;
+  static const ksIsOnCannotDisableFirewall = 5016;
 
   static const notLoggedInErrorMsg = "You're not logged in";
 

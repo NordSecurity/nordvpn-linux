@@ -139,6 +139,7 @@ type DataConnect struct {
 	IsVirtualLocation       bool
 	IsObfuscated            bool
 	IsPostQuantum           bool
+	IsECHEnabled            bool
 	RecommendationUUID      string
 	PauseInterval           time.Duration
 	UnpausedByUser          bool

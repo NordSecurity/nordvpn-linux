@@ -87,6 +87,8 @@ type AutoConnectData struct {
 	DNS                  DNS       `json:"dns,omitempty"`
 	Allowlist            Allowlist `json:"whitelist,omitempty"`
 	PostquantumVpn       bool      `json:"postquantum_vpn"`
+	// ECH controls the NordWhisper Encrypted Client Hello feature. True by default.
+	ECH TrueField `json:"ech,omitempty"`
 }
 
 type DNS []string

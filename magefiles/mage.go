@@ -46,7 +46,7 @@ const (
 	packageTypeDeb  = "deb"
 )
 
-// Aliases shorthands for daily commands
+// Aliases shorthands for daily commands.
 var Aliases = map[string]any{
 	"bb":  Build.Binaries,
 	"bbd": Build.BinariesDocker,

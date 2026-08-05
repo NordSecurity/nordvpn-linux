@@ -86,6 +86,8 @@ const (
 	CodeDedicatedServersPq                     int64 = 3071
 	CodeDedicatedServersServerNotSetUp         int64 = 3072
 	CodePauseInterrupted                       int64 = 3073
+	CodeECHTechUnsupported                     int64 = 3074
+	CodeECHGloballyDisabled                    int64 = 3075
 )
 
 type ErrorWithCode struct {

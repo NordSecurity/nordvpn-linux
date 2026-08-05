@@ -83,6 +83,9 @@ class DiagnosticsErrorCode extends $pb.ProtobufEnum {
   static const DiagnosticsErrorCode
       DIAGNOSTICS_ERROR_CODE_NO_DAEMON_LOG_SOURCE = DiagnosticsErrorCode._(7,
           _omitEnumNames ? '' : 'DIAGNOSTICS_ERROR_CODE_NO_DAEMON_LOG_SOURCE');
+  static const DiagnosticsErrorCode DIAGNOSTICS_ERROR_CODE_NOT_SUPPORTED =
+      DiagnosticsErrorCode._(
+          8, _omitEnumNames ? '' : 'DIAGNOSTICS_ERROR_CODE_NOT_SUPPORTED');
 
   static const $core.List<DiagnosticsErrorCode> values = <DiagnosticsErrorCode>[
     DIAGNOSTICS_ERROR_CODE_UNSPECIFIED,
@@ -93,10 +96,11 @@ class DiagnosticsErrorCode extends $pb.ProtobufEnum {
     DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED,
     DIAGNOSTICS_ERROR_CODE_FAILED_TO_CLOSE_ZIP,
     DIAGNOSTICS_ERROR_CODE_NO_DAEMON_LOG_SOURCE,
+    DIAGNOSTICS_ERROR_CODE_NOT_SUPPORTED,
   ];
 
   static final $core.List<DiagnosticsErrorCode?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 7);
+      $pb.ProtobufEnum.$_initByValueList(values, 8);
   static DiagnosticsErrorCode? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 

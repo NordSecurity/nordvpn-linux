@@ -281,5 +281,7 @@
   "reconnect": "Reconnect",
   "changeVPNsettings": "Change VPN settings",
   "getHelp": "Get help",
-  "pauseConnection": "Pause connection"
+  "pauseConnection": "Pause connection",
+  "cannotStopFWWhileKSOnTitle": "Firewall can’t be turned off while Kill Switch is on",
+  "cannotStopFWWhileKSOnDesc": "Firewall is needed for Kill Switch to work. Turn off Kill Switch first in VPN connection settings."
 }

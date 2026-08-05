@@ -147,6 +147,7 @@ const StatusResponse$json = {
       '5': 13,
       '10': 'pauseRemainingDurationSec'
     },
+    {'1': 'ech', '3': 21, '4': 1, '5': 8, '10': 'ech'},
   ],
 };
 
@@ -165,4 +166,4 @@ final $typed_data.Uint8List statusResponseDescriptor = $convert.base64Decode(
     'ASgJUgtjb3VudHJ5Q29kZRIeCgpvYmZ1c2NhdGVkGBIgASgIUgpvYmZ1c2NhdGVkEjcKCXBhdX'
     'NlZF9hdBgTIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBSCHBhdXNlZEF0Ej8KHHBh'
     'dXNlX3JlbWFpbmluZ19kdXJhdGlvbl9zZWMYFCABKA1SGXBhdXNlUmVtYWluaW5nRHVyYXRpb2'
-    '5TZWM=');
+    '5TZWMSEAoDZWNoGBUgASgIUgNlY2g=');

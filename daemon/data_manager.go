@@ -12,6 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	event "github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 
@@ -417,5 +418,10 @@ func (dm *DataManager) GetAccountData(requestFreshFetch bool) (*pb.AccountRespon
 }
 
 func (dm *DataManager) InvalidateAccountData() {
-	dm.accountData.unset()
+	dm.accountData.clear()
+}
+
+func (dm *DataManager) NotifyLogout(event.DataAuthorization) error {
+	dm.InvalidateAccountData()
+	return nil
 }

@@ -106,15 +106,6 @@ func (r *RPC) reconnectOnServerMaintenance(
 		group = reqParams.Group.String()
 	}
 
-	// builds a "<country>[ <city>]" server tag, omitting the city when it is empty
-	locationTag := func(code, city string) string {
-		tag := internal.SnakeCase(code)
-		if city != "" {
-			tag += " " + internal.SnakeCase(city)
-		}
-		return tag
-	}
-
 	var serverTag string
 	var hostname string
 	if currentServer != nil {
@@ -135,6 +126,20 @@ func (r *RPC) reconnectOnServerMaintenance(
 	}
 
 	return r.connectWithParameters(ctx, &req, srv, pb.ConnectionSource_AUTO, hostname, events.VPNConnectionReasonServerMaintenance)
+}
+
+func locationTag(code, city string) string {
+	codeTag := internal.SnakeCase(code)
+	cityTag := internal.SnakeCase(city)
+
+	if codeTag == "" {
+		return cityTag
+	}
+	if cityTag == "" {
+		return codeTag
+	}
+
+	return codeTag + " " + cityTag
 }
 
 // determineServerSelectionRule determines the server selection rule based on the provided
@@ -430,6 +435,7 @@ func (r *RPC) connect(
 		ThreatProtectionLite:    cfg.AutoConnectData.ThreatProtectionLite,
 		IsObfuscated:            cfg.AutoConnectData.Obfuscate,
 		IsPostQuantum:           cfg.AutoConnectData.PostquantumVpn,
+		IsECHEnabled:            r.getECHEnabledField(cfg).Get(),
 		DurationMs:              getElapsedTime(connectingStartTime),
 		EventStatus:             events.StatusAttempt,
 		TargetServerSelection:   determineServerSelectionRule(parameters),

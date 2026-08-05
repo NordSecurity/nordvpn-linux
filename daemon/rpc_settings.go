@@ -60,6 +60,9 @@ func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse,
 		}
 	})
 
+	// ECH value is stored in config but controlled by remote config as well
+	cfg.AutoConnectData.ECH = r.getECHEnabledField(cfg)
+
 	settings := configToProtobuf(&cfg, uid)
 
 	return &pb.SettingsResponse{

@@ -34,6 +34,8 @@ type ConnectionStatus struct {
 	IsVirtualLocation bool
 	// Is post quantum on
 	IsPostQuantum bool
+	// Is ECH (Encrypted Client Hello) on. NordWhisper-only.
+	IsECHEnabled bool
 	// Is obfuscation on
 	IsObfuscated bool
 	// Currently set tunnel name

@@ -16,6 +16,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/events/logger"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
+	"github.com/NordSecurity/nordvpn-linux/features"
 	filesharepb "github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -957,6 +958,23 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 		},
 	}
 
+	if features.NordWhisperEnabled {
+		setSubcommands = append(setSubcommands, &cli.Command{
+			Name:         "ech",
+			Usage:        SetECHUsageText,
+			Action:       cmd.SetECH,
+			BashComplete: cmd.SetBoolAutocomplete,
+			ArgsUsage:    MsgSetBoolArgsUsage,
+			Description: fmt.Sprintf(
+				MsgSetBoolDescription,
+				SetECHUsageText,
+				"ech",
+				"ech",
+			),
+			Hidden: cmd.Except(config.Technology_NORDWHISPER),
+		})
+	}
+
 	setMeshCommand := cli.Command{
 		Name:         "meshnet",
 		Aliases:      []string{"mesh"},
@@ -980,6 +998,11 @@ type cmd struct {
 	fileshareClient   filesharepb.FileshareClient
 	environment       internal.Environment
 	loaderInterceptor *LoaderInterceptor
+	// settingsCache memoizes the daemon Settings response for the lifetime of this cmd.
+	// The CLI process builds its whole command tree (which evaluates several Hidden:
+	// cmd.Except(...) gates) and runs a single command before exiting, so fetching Settings
+	// once and reusing it avoids repeated gRPC round-trips for the same data.
+	settingsCache *pb.Settings
 }
 
 func newCommander(environment internal.Environment) *cmd {

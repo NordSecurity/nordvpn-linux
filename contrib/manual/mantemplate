@@ -283,6 +283,14 @@ $ \fBnordvpn set dns off\fR
 $ \fBnordvpn set dns 1.1.1.1 1.0.0.1\fR
 .fi
 .RE
+.PP
+\fBExample \&21. Toggle Encrypted Client Hello (NordWhisper)\fR
+.RS 4
+.nf
+$ \fBnordvpn set ech on\fR
+$ \fBnordvpn set ech off\fR
+.fi
+.RE
 
 .SH "POST-QUANTUM VPN SUPPORT"
 NordVPN now supports post-quantum cryptography, offering enhanced protection designed to resist attacks from quantum computers. Follow the instructions below to enable and configure this feature.
@@ -342,6 +350,26 @@ Similarly, Meshnet cannot be used simultaneously with post-quantum encryption. Y
 .RS 4
 .B The post-quantum VPN and Meshnet can't run at the same time. Please disable one feature to use the other.
 .RE
+
+.SH "ENCRYPTED CLIENT HELLO (ECH)"
+Encrypted Client Hello (ECH) is a privacy feature of the \fBNordWhisper\fR technology that encrypts the server name in the TLS handshake, preventing on-path observers from seeing which host you are connecting to. ECH is enabled by default and applies only to NordWhisper.
+
+.SS "Enabling or disabling ECH"
+To turn ECH on or off, run:
+.P
+.RS 4
+.nf
+$ \fBnordvpn set ech on/off\fR
+.fi
+.RE
+.P
+The change takes effect on your next connection. If you are already connected, reconnect to apply it.
+
+.SS "Requirements and limitations"
+.IP \[bu] 2
+\fBNordWhisper only:\fR ECH applies exclusively to the NordWhisper technology. Set your technology with \fBnordvpn set technology NordWhisper\fR before configuring ECH.
+.IP \[bu] 2
+\fBRemote availability:\fR ECH can be disabled globally by NordVPN. When it is, the setting cannot be changed from the client.
 
 .SH "MESHNET"
 .P

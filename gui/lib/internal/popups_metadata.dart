@@ -230,6 +230,13 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       message: (_) => t.ui.couldNotSave,
     ),
 
+    DaemonStatusCode.ksIsOnCannotDisableFirewall => InfoPopupMetadata(
+      id: DaemonStatusCode.ksIsOnCannotDisableFirewall,
+      title: t.ui.cannotStopFWWhileKSOnTitle,
+      message: (_) => t.ui.cannotStopFWWhileKSOnDesc,
+      buttonText: t.ui.gotIt,
+    ),
+
     // not matched, display generic error message
     _ => infoForDaemonCode(code),
   };

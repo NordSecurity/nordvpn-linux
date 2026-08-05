@@ -12,6 +12,7 @@ import 'package:nordvpn/data/providers/popups_provider.dart';
 import 'package:nordvpn/data/providers/servers_list_controller.dart';
 import 'package:nordvpn/data/repository/account_repository.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
+import 'package:nordvpn/internal/dates_util.dart';
 import 'package:nordvpn/internal/uri_launch_extension.dart';
 import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/pb/daemon/account.pb.dart';
@@ -273,18 +274,15 @@ final class AccountController extends _$AccountController
   }
 
   @override
-  void onAccountModified(AccountModification _) {
-    // NOTE: This method is supposed to update the account with the
-    // [AccountModification] passed as an argument. I'm refreshing the whole
-    // account here instead because of LVPN-7955 - the account cache is not
-    // invalidated properly, so the first [AccountController._refreshAccount]
-    // call made in [AccountController.onAccountChanged] is insufficient.
-    // When this method is triggered by account modification event, the
-    // cache is already refreshed and we get correct account data.
-    // The downside of this hack is that this method is called with some delay
-    // relative to the act of logging in, so for few seconds, the account
-    // information displayed in GUI is incorrect.
-    _refreshAccount();
+  void onAccountModified(AccountModification modification) {
+    _updateState(_modifyAccountWith(modification));
+  }
+
+  UserAccount? _modifyAccountWith(AccountModification modification) {
+    final newAccount = state.value?.copyWith(
+      vpnExpirationDate: parseDate(modification.subscriptionExpiresAt),
+    );
+    return newAccount;
   }
 
   void _updateState(UserAccount? userAccount) {

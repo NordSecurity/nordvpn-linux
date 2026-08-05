@@ -142,6 +142,7 @@ func (c *ConnectionInfo) ConnectionStatusNotifyConnect(e events.DataConnect) err
 		StartTime:          startTime,
 		IsVirtualLocation:  e.IsVirtualLocation,
 		IsPostQuantum:      e.IsPostQuantum,
+		IsECHEnabled:       e.IsECHEnabled,
 		IsObfuscated:       e.IsObfuscated,
 		IsMeshnetPeer:      e.IsMeshnetPeer,
 		RecommendationUUID: e.RecommendationUUID,
