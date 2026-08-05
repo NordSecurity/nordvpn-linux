@@ -78,6 +78,9 @@ class TranslationsA11yEn {
 
 	/// en: 'List with $number items'
 	String listWithItems({required Object number}) => 'List with ${number} items';
+
+	/// en: 'Recent connections. $details'
+	String recentConnectionWithDetails({required Object details}) => 'Recent connections. ${details}';
 }
 
 // Path: cities
@@ -2226,6 +2229,7 @@ extension on Translations {
 			'a11y.VPNPanelLoading' => 'VPN Panel. Loading.',
 			'a11y.moreOptions' => 'More options',
 			'a11y.listWithItems' => ({required Object number}) => 'List with ${number} items',
+			'a11y.recentConnectionWithDetails' => ({required Object details}) => 'Recent connections. ${details}',
 			'cities.tirana' => 'Tirana',
 			'cities.algiers' => 'Algiers',
 			'cities.addis_ababa' => 'Addis Ababa',
@@ -2729,9 +2733,9 @@ extension on Translations {
 			'ui.onionOverVpn' => 'Onion over VPN',
 			'ui.p2p' => 'P2P',
 			'ui.obfuscated' => 'Obfuscated',
-			'ui.obfuscatedServers' => 'Obfuscated Servers',
 			_ => null,
 		} ?? switch (path) {
+			'ui.obfuscatedServers' => 'Obfuscated Servers',
 			'ui.selectServerForDip' => 'Pick a location for your IP',
 			'ui.selectLocation' => 'Select location',
 			'ui.dipSelectLocationDescription' => 'You have successfully purchased a dedicated IP – great! To start using it, select a location for your dedicated IP from the many options that we offer.',
