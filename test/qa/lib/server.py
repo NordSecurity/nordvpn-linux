@@ -1,4 +1,5 @@
 import logging
+import random
 import time
 from urllib.parse import quote
 
@@ -131,7 +132,7 @@ def get_hostname_by(technology="", protocol="", obfuscated="", group_name="", ex
         if not response:
             return None
 
-    server = response[0]
+    server = random.choice(response)
     validate_server(server_json=str(server), tech_id=tech_id, group_id=group_id)
     return ServerInfo(server_info=server)
 
