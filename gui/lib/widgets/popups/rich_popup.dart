@@ -66,13 +66,7 @@ final class RichNotificationPopup extends Popup {
         if (richMetadata.autoClose) {
           closePopup(context);
         }
-        unawaited(
-          actions.run(
-            richMetadata.action,
-            popupId: richMetadata.id,
-            progressMessage: richMetadata.progressMessage,
-          ),
-        );
+        unawaited(actions.run(richMetadata.action, popupId: richMetadata.id));
       },
       child: Text(richMetadata.actionButtonText),
     );

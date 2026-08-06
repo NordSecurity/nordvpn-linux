@@ -2128,12 +2128,6 @@ class TranslationsUiEn {
 	/// en: 'Reconnect now'
 	String get reconnectNow => 'Reconnect now';
 
-	/// en: 'Reconnecting...'
-	String get reconnecting => 'Reconnecting...';
-
-	/// en: 'Applying changes...'
-	String get applyingChanges => 'Applying changes...';
-
 	/// en: 'Reconnect to change protocol'
 	String get reconnectToChangeProtocol => 'Reconnect to change protocol';
 
@@ -2886,8 +2880,6 @@ extension on Translations {
 			'ui.recentConnections' => 'Recent connections',
 			'ui.standardVpnServer' => 'Standard VPN Servers',
 			'ui.reconnectNow' => 'Reconnect now',
-			'ui.reconnecting' => 'Reconnecting...',
-			'ui.applyingChanges' => 'Applying changes...',
 			'ui.reconnectToChangeProtocol' => 'Reconnect to change protocol',
 			'ui.reconnectToChangeProtocolDescription' => 'To apply this change, we\'ll reconnect you to the VPN.',
 			'ui.reconnectToApplyChanges' => 'Reconnect to apply changes',

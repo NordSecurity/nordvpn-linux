@@ -32,32 +32,12 @@ void main() {
         readAfterAwait = true;
       }, popupId: popupId);
 
-      expect(container.read(popupActionsProvider), isNotNull);
+      expect(container.read(popupActionsProvider), contains(popupId));
       completer.complete();
       await done;
 
       expect(readAfterAwait, isTrue);
-      expect(container.read(popupActionsProvider), isNull);
-    });
-
-    test('progress holds the popup id and the message', () async {
-      final container = createContainer();
-      final completer = Completer<void>();
-
-      final done = container.read(popupActionsProvider.notifier).run(
-        (_) => completer.future,
-        popupId: popupId,
-        progressMessage: "applying",
-      );
-
-      final progress = container.read(popupActionsProvider);
-      expect(progress?.popupId, popupId);
-      expect(progress?.message, "applying");
-      // The indicator is displayed only after the delay passed.
-      expect(progress?.showIndicator, isFalse);
-
-      completer.complete();
-      await done;
+      expect(container.read(popupActionsProvider), isEmpty);
     });
 
     test('failing action displays the generic error popup', () async {
@@ -67,7 +47,7 @@ void main() {
         throw Exception("action failed");
       }, popupId: popupId);
 
-      expect(container.read(popupActionsProvider), isNull);
+      expect(container.read(popupActionsProvider), isEmpty);
       expect(container.read(popupsProvider)?.id, DaemonStatusCode.failure);
     });
 
@@ -78,12 +58,38 @@ void main() {
           .read(popupActionsProvider.notifier)
           .run((_) async {}, popupId: popupId);
 
-      expect(container.read(popupActionsProvider), isNull);
+      expect(container.read(popupActionsProvider), isEmpty);
       // Successful actions report nothing.
       expect(container.read(popupsProvider), isNull);
     });
 
-    test('only one action runs at a time', () async {
+    // Guards against running the same action twice when the confirmation button
+    // is clicked repeatedly.
+    test('the same popup id is not started twice', () async {
+      final container = createContainer();
+      final completer = Completer<void>();
+      var secondActionExecuted = false;
+
+      final first = container
+          .read(popupActionsProvider.notifier)
+          .run((_) => completer.future, popupId: popupId);
+
+      await container.read(popupActionsProvider.notifier).run((_) async {
+        secondActionExecuted = true;
+      }, popupId: popupId);
+
+      expect(secondActionExecuted, isFalse);
+      expect(container.read(popupActionsProvider), contains(popupId));
+
+      completer.complete();
+      await first;
+      expect(container.read(popupActionsProvider), isEmpty);
+    });
+
+    // Nothing blocks the UI while an action runs, so the user can confirm
+    // another popup meanwhile. Those actions have to run instead of being
+    // silently dropped.
+    test('different popup ids run concurrently', () async {
       final container = createContainer();
       final completer = Completer<void>();
       var secondActionExecuted = false;
@@ -96,28 +102,33 @@ void main() {
         secondActionExecuted = true;
       }, popupId: popupId + 1);
 
-      expect(secondActionExecuted, isFalse);
-      expect(container.read(popupActionsProvider)?.popupId, popupId);
+      expect(secondActionExecuted, isTrue);
+      // The first action is still running and was not affected by the second.
+      expect(container.read(popupActionsProvider), contains(popupId));
+      expect(
+        container.read(popupActionsProvider),
+        isNot(contains(popupId + 1)),
+      );
 
       completer.complete();
       await first;
-      expect(container.read(popupActionsProvider), isNull);
+      expect(container.read(popupActionsProvider), isEmpty);
     });
 
-    test('action receiving no await still reports progress', () async {
+    test('synchronous action is tracked while it runs', () async {
       final container = createContainer();
-      PopupActionProgress? progressDuringAction;
+      Set<int>? stateDuringAction;
 
       void action(Ref ref) {
-        progressDuringAction = container.read(popupActionsProvider);
+        stateDuringAction = container.read(popupActionsProvider);
       }
 
       await container
           .read(popupActionsProvider.notifier)
           .run(action, popupId: popupId);
 
-      expect(progressDuringAction?.popupId, popupId);
-      expect(container.read(popupActionsProvider), isNull);
+      expect(stateDuringAction, contains(popupId));
+      expect(container.read(popupActionsProvider), isEmpty);
     });
   });
 }

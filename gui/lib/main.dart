@@ -9,7 +9,6 @@ import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/router/router.dart';
 import 'package:nordvpn/service_locator.dart';
 import 'package:nordvpn/theme/theme.dart';
-import 'package:nordvpn/widgets/popup_action_progress_overlay.dart';
 import 'package:nordvpn/widgets/popups_listener.dart';
 import 'package:nordvpn/widgets/toasts_listener.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -97,13 +96,11 @@ final class _NordVpnAppState extends ConsumerState<NordVpnApp> {
       routerConfig: ref.watch(routerProvider),
       // wrap into a scaffold without maximum width to allow some screen to use
       // the entire windows size
-      builder: (context, child) => Scaffold(
-        body: PopupsListener(
-          child: PopupActionProgressOverlay(
-            child: ToastsListener(child: child!),
-          ),
-        ),
-      ),
+      // The popups listener sits above the routed child on purpose, so that a
+      // popup queued by a long running action is displayed on whatever screen
+      // the user navigated to meanwhile.
+      builder: (context, child) =>
+          Scaffold(body: PopupsListener(child: ToastsListener(child: child!))),
       title: t.ui.nordVpn,
       theme: lightTheme(),
       darkTheme: darkTheme(),

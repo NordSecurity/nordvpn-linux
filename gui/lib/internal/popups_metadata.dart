@@ -31,7 +31,6 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       message: (_) => t.ui.turnOffCustomDnsDescription,
       noButtonText: t.ui.cancel,
       yesButtonText: t.ui.turnOff,
-      progressMessage: t.ui.applyingChanges,
       yesAction: (ref) async {
         await ref.read(vpnSettingsControllerProvider.notifier).clearCustomDns();
       },
@@ -44,7 +43,6 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       message: (_) => t.ui.threatProtectionWillTurnOffDescription,
       noButtonText: t.ui.cancel,
       yesButtonText: t.ui.setCustomDns,
-      progressMessage: t.ui.applyingChanges,
       yesAction: (ref) async {
         await ref
             .read(vpnSettingsControllerProvider.notifier)
@@ -60,7 +58,6 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       message: (_) => t.ui.resetCustomDnsDescription,
       noButtonText: t.ui.cancel,
       yesButtonText: t.ui.continueWord,
-      progressMessage: t.ui.applyingChanges,
       yesAction: (ref) async {
         ref.read(vpnSettingsControllerProvider.notifier).setCustomDns(false);
         await ref
@@ -101,7 +98,6 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       message: (_) => t.ui.turnOffAllowListDescription,
       noButtonText: t.ui.cancel,
       yesButtonText: t.ui.turnOff,
-      progressMessage: t.ui.applyingChanges,
       yesAction: (ref) async {
         await ref
             .read(vpnSettingsControllerProvider.notifier)
@@ -116,7 +112,6 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       message: (_) => t.ui.removePrivateSubnetsDescription,
       noButtonText: t.ui.cancel,
       yesButtonText: t.ui.continueWord,
-      progressMessage: t.ui.applyingChanges,
       yesAction: (ref) async {
         await ref
             .read(vpnSettingsControllerProvider.notifier)
@@ -130,7 +125,6 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       message: (_) => t.ui.removeOverlappingSubnetsDescription,
       noButtonText: t.ui.cancel,
       yesButtonText: t.ui.removeWord,
-      progressMessage: t.ui.applyingChanges,
       yesAction: (ref) {
         if (userData is! Subnet) {
           logger.e(
@@ -161,7 +155,6 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       message: (_) => t.ui.reconnectToChangeProtocolDescription,
       noButtonText: t.ui.cancel,
       yesButtonText: t.ui.reconnectNow,
-      progressMessage: t.ui.reconnecting,
       yesAction: (ref) async {
         // Get current connection parameters before applying protocol change
         final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
@@ -225,7 +218,6 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       message: (_) => t.ui.privateSubnetCantBeAddedDescription,
       noButtonText: t.ui.close,
       yesButtonText: t.ui.turnOffLanDiscovery,
-      progressMessage: t.ui.applyingChanges,
       yesAction: (ref) async {
         await ref
             .read(vpnSettingsControllerProvider.notifier)
@@ -295,7 +287,6 @@ PopupMetadata _resetToDefaults(int code) {
     yesButtonText: resetAndDisconnect
         ? t.ui.resetAndDisconnect
         : t.ui.resetSettings,
-    progressMessage: t.ui.applyingChanges,
     yesAction: (ref) async {
       await ref.read(vpnSettingsControllerProvider.notifier).resetToDefaults();
       await ref.read(preferencesControllerProvider.notifier).resetToDefaults();

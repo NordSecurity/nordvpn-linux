@@ -37,14 +37,12 @@ sealed class PopupMetadata {
 // Metadata for popups with yes/no decision. Besides the base of [PopupMetadata],
 // it specifies also labels for "no" and "yes" buttons and actions executed
 // after clicking on "yes" or "no" button. The popup is closed before the action
-// is started and the progress is displayed by [PopupActionProgressOverlay].
+// is started, the action then runs without blocking the screen.
 final class DecisionPopupMetadata extends PopupMetadata {
   final String noButtonText;
   final String yesButtonText;
   final PopupAction yesAction;
   final PopupAction? noAction;
-  // Displayed together with the progress indicator while the action runs.
-  final String? progressMessage;
 
   DecisionPopupMetadata({
     required super.id,
@@ -53,7 +51,6 @@ final class DecisionPopupMetadata extends PopupMetadata {
     required this.yesButtonText,
     required this.yesAction,
     this.noAction,
-    this.progressMessage,
     super.title,
   });
 }
@@ -80,8 +77,6 @@ final class RichPopupMetadata extends PopupMetadata {
   final PopupAction action;
   final Widget image;
   bool autoClose;
-  // Displayed together with the progress indicator while the action runs.
-  final String? progressMessage;
 
   RichPopupMetadata({
     required super.id,
@@ -92,6 +87,5 @@ final class RichPopupMetadata extends PopupMetadata {
     required this.image,
     super.title,
     this.autoClose = true,
-    this.progressMessage,
   });
 }

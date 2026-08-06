@@ -38,13 +38,11 @@ final class _PopupsListenerState extends ConsumerState<PopupsListener> {
       });
     });
 
-    // Nothing is displayed while a popup action is running, so that the error
-    // reported by the action is displayed only after the progress indicator is
-    // dismissed. Dialogs are routes in the navigator overlay and would be drawn
-    // on top of the progress indicator otherwise.
-    final isActionRunning = ref.watch(popupActionsProvider) != null;
+    // Popups are not withheld while an action is running. An error reported by a
+    // long running action has to reach the user as soon as the daemon answers,
+    // even if that is after the user navigated to another screen.
     final popupMetadata = ref.watch(popupsProvider);
-    if (!isActionRunning && popupMetadata != null) {
+    if (popupMetadata != null) {
       _showNextPopup(popupMetadata);
     }
     return widget.child;
@@ -105,16 +103,9 @@ final class _PopupsListenerState extends ConsumerState<PopupsListener> {
     };
     if (action == null) return;
 
-    // Not awaited on purpose: the dialog is closed and from here on the progress
-    // overlay and the popups queue take over. Awaiting would keep the queue
-    // blocked for the whole duration of the action.
-    unawaited(
-      actions.run(
-        action,
-        popupId: metadata.id,
-        progressMessage: metadata.progressMessage,
-      ),
-    );
+    // Not awaited on purpose: the dialog is closed and the action must not block
+    // the popups queue nor the UI while it talks to the daemon.
+    unawaited(actions.run(action, popupId: metadata.id));
   }
 }
 

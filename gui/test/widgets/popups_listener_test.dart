@@ -12,8 +12,6 @@ import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/router/router.dart';
 import 'package:nordvpn/service_locator.dart';
 import 'package:nordvpn/theme/theme.dart';
-import 'package:nordvpn/widgets/loading_indicator.dart';
-import 'package:nordvpn/widgets/popup_action_progress_overlay.dart';
 import 'package:nordvpn/widgets/popups_listener.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
@@ -25,6 +23,9 @@ void main() {
   const popupMessage = "Do you want to apply this change?";
   const yesButton = "Yes";
   const noButton = "No";
+  const firstScreen = "First screen";
+  const secondScreen = "Second screen";
+  const pageButton = "Page button";
 
   // Keeps the daemon connection in the loading state, so that the controllers
   // which the listener depends on don't try to reach the daemon.
@@ -40,7 +41,6 @@ void main() {
   DecisionPopupMetadata decisionMetadata({
     required PopupAction yesAction,
     PopupAction? noAction,
-    String? progressMessage,
   }) {
     return DecisionPopupMetadata(
       id: popupId,
@@ -50,13 +50,12 @@ void main() {
       yesButtonText: yesButton,
       yesAction: yesAction,
       noAction: noAction,
-      progressMessage: progressMessage,
     );
   }
 
-  // Mirrors the production layout from main.dart: the listener and the progress
-  // overlay are above the navigator, so that the dialogs are displayed on top
-  // of them.
+  // Mirrors the production layout from main.dart: the listener is above the
+  // navigator, so that the dialogs are displayed on top of it and a popup
+  // survives a navigation between the routed pages.
   Future<ProviderContainer> pumpListener(
     WidgetTester tester, {
     Widget page = const SizedBox.shrink(),
@@ -70,11 +69,8 @@ void main() {
         child: MaterialApp(
           navigatorKey: goRouterKey,
           theme: lightTheme(),
-          builder: (_, child) => Scaffold(
-            body: PopupsListener(
-              child: PopupActionProgressOverlay(child: child!),
-            ),
-          ),
+          builder: (_, child) =>
+              Scaffold(body: PopupsListener(child: child!)),
           home: page,
         ),
       ),
@@ -92,16 +88,6 @@ void main() {
     container.read(popupsProvider.notifier).showWithMetadata(metadata);
     await tester.pumpAndSettle();
     expect(find.text(popupMessage), findsOneWidget);
-  }
-
-  // pumpAndSettle can't be used while the progress indicator is displayed,
-  // because the spinner animates forever.
-  const closeAnimation = Duration(milliseconds: 300);
-
-  Future<void> pumpUntilIndicatorHidden(WidgetTester tester) async {
-    await tester.pump();
-    await tester.pump(PopupActions.minIndicatorDuration);
-    await tester.pump(closeAnimation);
   }
 
   group('PopupsListener', () {
@@ -128,56 +114,64 @@ void main() {
       );
 
       await tester.tap(find.text(yesButton));
-      await tester.pump();
-      await tester.pump(closeAnimation);
+      await tester.pumpAndSettle();
 
       // The dialog is closed while the action is still running.
       expect(find.text(popupMessage), findsNothing);
-      expect(container.read(popupActionsProvider), isNotNull);
+      expect(container.read(popupActionsProvider), contains(popupId));
 
       completer.complete();
-      await pumpUntilIndicatorHidden(tester);
+      await tester.pumpAndSettle();
 
       expect(readAfterAwait, isTrue);
       expect(tester.takeException(), isNull);
-      expect(container.read(popupActionsProvider), isNull);
+      expect(container.read(popupActionsProvider), isEmpty);
     });
 
-    testWidgets('progress indicator is displayed while the action runs', (
+    // The action keeps running without any indicator on top of the app, so that
+    // the user can continue using the screen while the daemon is working.
+    testWidgets('the screen is not blocked while the action runs', (
       tester,
     ) async {
-      final container = await pumpListener(tester);
+      var pageTaps = 0;
+      // Never completed, the action stays in progress until the end of the test.
       final completer = Completer<void>();
+      final container = await pumpListener(
+        tester,
+        page: TextButton(
+          onPressed: () => pageTaps++,
+          child: const Text(pageButton),
+        ),
+      );
 
       await showPopup(
         tester,
         container,
-        decisionMetadata(
-          yesAction: (_) => completer.future,
-          progressMessage: "applying",
-        ),
+        decisionMetadata(yesAction: (_) => completer.future),
       );
 
       await tester.tap(find.text(yesButton));
-      await tester.pump();
-      await tester.pump(closeAnimation);
+      await tester.pumpAndSettle();
 
-      expect(find.text(popupMessage), findsNothing);
-      expect(find.byType(LoadingIndicator), findsOneWidget);
-      expect(find.text("applying"), findsOneWidget);
+      expect(container.read(popupActionsProvider), contains(popupId));
+      // Nothing is drawn over the app while the action runs.
+      expect(find.byType(ModalBarrier), findsNothing);
 
-      completer.complete();
-      await pumpUntilIndicatorHidden(tester);
-
-      expect(find.byType(LoadingIndicator), findsNothing);
+      // The page below still receives the input.
+      await tester.tap(find.text(pageButton));
+      await tester.pumpAndSettle();
+      expect(pageTaps, 1);
     });
 
-    // The error reported by the action must be displayed only after the progress
-    // indicator is dismissed, never on top of it.
-    testWidgets('error reported by the action is displayed after the progress', (
+    // The action outlives the screen which started it, so its error has to be
+    // displayed wherever the user is when the daemon answers.
+    testWidgets('error is displayed after navigating to another screen', (
       tester,
     ) async {
-      final container = await pumpListener(tester);
+      final container = await pumpListener(
+        tester,
+        page: const Text(firstScreen),
+      );
       final completer = Completer<void>();
 
       await showPopup(
@@ -185,25 +179,32 @@ void main() {
         container,
         decisionMetadata(
           yesAction: (ref) async {
-            ref.read(popupsProvider.notifier).show(DaemonStatusCode.configError);
             await completer.future;
+            // This is how the controllers report the daemon status, with their
+            // own container scoped ref.
+            ref.read(popupsProvider.notifier).show(DaemonStatusCode.configError);
           },
         ),
       );
 
       await tester.tap(find.text(yesButton));
-      await tester.pump();
-      await tester.pump(closeAnimation);
+      await tester.pumpAndSettle();
+      expect(find.text(popupMessage), findsNothing);
 
-      // Queued, but not displayed while the action is running.
-      expect(find.byType(LoadingIndicator), findsOneWidget);
-      expect(find.text(t.ui.settingsWereNotSaved), findsNothing);
+      // The user leaves the screen which started the action while it still runs.
+      unawaited(
+        goRouterKey.currentState!.push(
+          MaterialPageRoute<void>(builder: (_) => const Text(secondScreen)),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text(secondScreen), findsOneWidget);
 
       completer.complete();
-      await pumpUntilIndicatorHidden(tester);
+      await tester.pumpAndSettle();
 
-      expect(find.byType(LoadingIndicator), findsNothing);
       expect(find.text(t.ui.settingsWereNotSaved), findsOneWidget);
+      expect(find.text(secondScreen), findsOneWidget);
 
       // Close it, so that the queue is drained before the test ends.
       await tester.tap(find.text(t.ui.close));
@@ -275,7 +276,6 @@ void main() {
       expect(find.text(popupMessage), findsNothing);
       expect(yesExecuted, isFalse);
       expect(noExecuted, isFalse);
-      expect(find.byType(LoadingIndicator), findsNothing);
     });
 
     // The popup is displayed as a side effect of build, so a rebuild while the
@@ -292,7 +292,7 @@ void main() {
       );
 
       // Any provider change rebuilds the listener.
-      container.read(popupActionsProvider.notifier).state = null;
+      container.read(popupActionsProvider.notifier).state = {1};
       await tester.pumpAndSettle();
 
       expect(find.text(popupMessage), findsOneWidget);
