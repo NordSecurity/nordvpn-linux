@@ -87,7 +87,7 @@ class _CustomExpansionTileState extends State<CustomExpansionTile> {
       return null;
     }
     return Semantics(
-      label: _isExpanded ? t.ui.expandibleEntryCollapse : t.ui.expandibleEntryExpand,
+      label: _isExpanded ? t.a11y.expandibleEntryCollapse : t.a11y.expandibleEntryExpand,
       expanded: _isExpanded,
       child: IconButton(
         icon: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
@@ -110,7 +110,7 @@ class _CustomExpansionTileState extends State<CustomExpansionTile> {
 
     SemanticsService.sendAnnouncement(
       View.of(context),
-      _isExpanded ? t.ui.expandibleEntryExpanded : t.ui.expandibleEntryCollapsed,
+      _isExpanded ? t.a11y.expandibleEntryExpanded : t.a11y.expandibleEntryCollapsed,
       Directionality.of(context),
     );
   }
