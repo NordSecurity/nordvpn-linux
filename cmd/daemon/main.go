@@ -131,6 +131,7 @@ func initializeStaticConfig(machineID uuid.UUID) config.StaticConfigManager {
 func main() {
 	appStartTime := time.Now()
 	ksMode := flag.Bool("killswitch-mode", false, "sets killswitch rules and stops")
+	hostsReadOnly := flag.Bool("hosts-readonly", false, "treat /etc/hosts as read-only")
 	flag.Parse()
 	if *ksMode {
 		log.Info("Daemon running in killswitch mode")
@@ -321,7 +322,7 @@ func main() {
 	gwret := netlinkrouter.Retriever{}
 
 	dnsSetter := dns.NewDNSServiceSetter(daemonEvents.Debugger.DebuggerEvents)
-	dnsHostSetter := dns.NewHostsFileSetter(dns.HostsFilePath)
+	dnsHostSetter := dns.NewHostnameSetter(*hostsReadOnly, dns.HostsFilePath)
 
 	eventsDbPath := filepath.Join(internal.DatFilesPathCommon, "moose.db")
 	if err := assignMooseDBPermissions(eventsDbPath); err != nil {
