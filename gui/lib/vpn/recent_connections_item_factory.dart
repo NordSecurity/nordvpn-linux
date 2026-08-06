@@ -13,6 +13,9 @@ import 'package:nordvpn/theme/servers_list_theme.dart';
 import 'package:nordvpn/vpn/server_item_image.dart';
 import 'package:nordvpn/widgets/custom_list_tile.dart';
 
+/// The two title lines shown on a recent connection item.
+typedef _TitleParts = ({String primary, String? secondary});
+
 /// Factory for building list items for recent connections
 final class RecentConnectionsItemFactory {
   final ImagesManager imagesManager;
@@ -28,20 +31,38 @@ final class RecentConnectionsItemFactory {
     final appTheme = context.appTheme;
     final serversListTheme = context.serversListTheme;
 
-    final isSpecialtyServer =
-        model.group != ServerGroup.UNDEFINED &&
-        model.group != ServerGroup.STANDARD_VPN_SERVERS;
+    final isSpecialtyServer = _isSpecialtyServer(model);
 
     // Pre-compute connect arguments to avoid recalculation on each tap
     final connectArgs = _buildConnectArgs(model, isSpecialtyServer);
+    final titleParts = _buildTitleParts(model, isSpecialtyServer);
 
-    return CustomListTile(
-      minTileHeight: serversListTheme.listItemHeight,
-      contentPadding: EdgeInsets.only(left: 0),
-      leading: ServerItemImage(image: _buildImage(model, isSpecialtyServer)),
-      title: _buildTitle(appTheme, model, isSpecialtyServer),
-      onTap: () => onTap(connectArgs),
+    return MergeSemantics(
+      child: CustomListTile(
+        minTileHeight: serversListTheme.listItemHeight,
+        contentPadding: EdgeInsets.only(left: 0),
+        leading: ServerItemImage(image: _buildImage(model, isSpecialtyServer)),
+        title: Semantics(
+          label: semanticsLabelFor(model),
+          button: true,
+          excludeSemantics: true,
+          child: _buildTitle(appTheme, titleParts),
+        ),
+        onTap: () => onTap(connectArgs),
+      ),
     );
+  }
+
+  bool _isSpecialtyServer(RecentConnection model) =>
+      model.group != ServerGroup.UNDEFINED &&
+      model.group != ServerGroup.STANDARD_VPN_SERVERS;
+
+  String semanticsLabelFor(RecentConnection model) {
+    final parts = _buildTitleParts(model, _isSpecialtyServer(model));
+    final details = parts.secondary == null
+        ? parts.primary
+        : "${parts.primary}, ${parts.secondary}";
+    return t.a11y.recentConnectionWithDetails(details: details);
   }
 
   Widget _buildImage(RecentConnection model, bool isSpecialtyServer) {
@@ -67,61 +88,36 @@ final class RecentConnectionsItemFactory {
         : const Icon(Icons.history);
   }
 
-  Widget _buildTitle(
-    AppTheme appTheme,
-    RecentConnection model,
-    bool isSpecialtyServer,
-  ) {
+  _TitleParts _buildTitleParts(RecentConnection model, bool isSpecialtyServer) {
     if (isSpecialtyServer) {
-      var specialtyTitle = Text(model.specialtyServer, style: appTheme.body);
       if (model.country.isNotEmpty) {
         final country = Country.fromCode(model.countryCode);
-        var subtitle = country.localizedName;
         final city = model.city;
-        subtitle +=
-            " - ${city.isEmpty ? t.ui.fastest : City(city).localizedName}";
+        final location = city.isEmpty ? t.ui.fastest : City(city).localizedName;
+        final subtitle = "${country.localizedName} - $location";
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            specialtyTitle,
-            Text(
-              _maybeAddVirtualLabel(subtitle, model.isVirtual),
-              style: appTheme.caption,
-            ),
-          ],
+        return (
+          primary: model.specialtyServer,
+          secondary: _maybeAddVirtualLabel(subtitle, model.isVirtual),
         );
       }
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          specialtyTitle,
-          Text(t.ui.fastest, style: appTheme.caption),
-        ],
-      );
+      return (primary: model.specialtyServer, secondary: t.ui.fastest);
     }
+
+    final country = Country.fromCode(model.countryCode);
 
     final isCity =
         model.city.isNotEmpty &&
         model.connectionType == ServerSelectionRule.CITY;
 
     if (isCity) {
-      final country = Country.fromCode(model.countryCode);
-      final city = City(model.city);
-      final cityText = _maybeAddVirtualLabel(
-        city.localizedName,
-        model.isVirtual,
-      );
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(country.localizedName, style: appTheme.body),
-          Text(cityText, style: appTheme.caption),
-        ],
+      return (
+        primary: country.localizedName,
+        secondary: _maybeAddVirtualLabel(
+          City(model.city).localizedName,
+          model.isVirtual,
+        ),
       );
     }
 
@@ -130,29 +126,26 @@ final class RecentConnectionsItemFactory {
         model.connectionType == ServerSelectionRule.SPECIFIC_SERVER;
 
     if (isSpecificServer) {
-      final country = Country.fromCode(model.countryCode);
       final serverId = model.serverId;
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(country.localizedName, style: appTheme.body),
-          if (serverId != null)
-            Text(
-              _maybeAddVirtualLabel(serverId, model.isVirtual),
-              style: appTheme.caption,
-            ),
-        ],
+      return (
+        primary: country.localizedName,
+        secondary: serverId != null
+            ? _maybeAddVirtualLabel(serverId, model.isVirtual)
+            : null,
       );
     }
 
-    final country = Country.fromCode(model.countryCode);
+    return (primary: country.localizedName, secondary: t.ui.fastest);
+  }
+
+  Widget _buildTitle(AppTheme appTheme, _TitleParts parts) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(country.localizedName, style: appTheme.body),
-        Text(t.ui.fastest, style: appTheme.caption),
+        Text(parts.primary, style: appTheme.body),
+        if (parts.secondary != null)
+          Text(parts.secondary!, style: appTheme.caption),
       ],
     );
   }
