@@ -90,12 +90,12 @@ func (m *Monitor) run() {
 				m.debuggerEvents.Publish(*newVPNConnectionErrorEvent(e.Code).ToDebuggerEvent())
 			}
 
+			//exhaustive:ignore
 			switch e.Code {
 			case events.VPNConnectionErrorServerMaintenance:
 				m.serverMaintenanceEventProcessing(e)
 			case events.VPNConnectionErrorConnectionLimitReached:
 				m.connectionLimitReachedEventProcessing(e)
-
 			default:
 				log.ENS.Debug("ignoring", e)
 			}

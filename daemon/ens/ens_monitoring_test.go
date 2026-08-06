@@ -1,38 +1,69 @@
 package ens
 
 import (
+	"context"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
+	netw "github.com/NordSecurity/nordvpn-linux/networker"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/helpers"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	firewallmock "github.com/NordSecurity/nordvpn-linux/test/mock/firewall"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/networker"
 	"gotest.tools/v3/assert"
 )
+
+type callCounter struct {
+	counter atomic.Int32
+	ch      chan int32
+}
+
+func newCallCounter() *callCounter {
+	return &callCounter{
+		counter: atomic.Int32{},
+		ch:      make(chan int32),
+	}
+}
+
+func (c *callCounter) add(delta int32) {
+	c.ch <- c.counter.Add(delta)
+}
+
+func (c *callCounter) waitAndCmp(t *testing.T, expected int) {
+	t.Helper()
+	helpers.WaitWithTimeout[int32](t, c.ch, time.Millisecond*10)
+	assert.Equal(t, expected, int(c.counter.Load()))
+}
 
 func TestENSMonitoring(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	const serverEndpoint = "192.168.1.1:51820"
 
+	connectCallbackCounter := newCallCounter()
+	cancelConnCounter := newCallCounter()
+
 	netw := &networker.Mock{
 		VpnActive:        true,
 		ActiveServerData: &vpn.ServerData{Endpoint: serverEndpoint},
+		CancelConnectingFn: func(err error) bool {
+			assert.ErrorIs(t, err, ErrConnectionLimitReached)
+			cancelConnCounter.add(1)
+			return true
+		},
 	}
 	rc := mock.NewRemoteConfigMock()
 	rc.FeatureToggles[remote.FeatureENS] = true
 
-	callbackCount := atomic.Int32{}
-	ch := make(chan any)
 	monitor := NewMonitor(netw, rc, func(_ string) error {
-		callbackCount.Add(1)
-		ch <- 1
+		connectCallbackCounter.add(1)
 		return nil
 	}, &subs.Subject[events.DebuggerEvent]{})
 	monitor.Start()
@@ -41,15 +72,22 @@ func TestENSMonitoring(t *testing.T) {
 		Code:           events.VPNConnectionErrorServerMaintenance,
 		ServerEndpoint: serverEndpoint,
 	}))
-	helpers.WaitWithTimeout(t, ch, time.Millisecond*10)
-	assert.Equal(t, 1, int(callbackCount.Load()))
+
+	connectCallbackCounter.waitAndCmp(t, 1)
+	cancelConnCounter.waitAndCmp(t, 0)
 
 	assert.NilError(t, monitor.HandleENSNotification(events.VPNConnectionErrorEvent{
 		Code:           events.VPNConnectionErrorServerMaintenance,
 		ServerEndpoint: serverEndpoint,
 	}))
-	helpers.WaitWithTimeout(t, ch, time.Millisecond*10)
-	assert.Equal(t, 2, int(callbackCount.Load()))
+	connectCallbackCounter.waitAndCmp(t, 2)
+
+	assert.NilError(t, monitor.HandleENSNotification(events.VPNConnectionErrorEvent{
+		Code:           events.VPNConnectionErrorConnectionLimitReached,
+		ServerEndpoint: serverEndpoint,
+	}))
+	connectCallbackCounter.waitAndCmp(t, 2)
+	cancelConnCounter.waitAndCmp(t, 1)
 
 	monitor.Stop()
 
@@ -58,8 +96,13 @@ func TestENSMonitoring(t *testing.T) {
 		Code:           events.VPNConnectionErrorServerMaintenance,
 		ServerEndpoint: serverEndpoint,
 	}))
-	helpers.WaitWithTimeout(t, ch, time.Millisecond*10)
-	assert.Equal(t, 2, int(callbackCount.Load()))
+
+	assert.NilError(t, monitor.HandleENSNotification(events.VPNConnectionErrorEvent{
+		Code:           events.VPNConnectionErrorConnectionLimitReached,
+		ServerEndpoint: serverEndpoint,
+	}))
+	connectCallbackCounter.waitAndCmp(t, 2)
+	cancelConnCounter.waitAndCmp(t, 1)
 }
 
 func TestENSMonitoringEventHandling(t *testing.T) {
@@ -164,4 +207,58 @@ func TestENSMonitoringEventHandling(t *testing.T) {
 			assert.Equal(t, tt.expectReconnect, helpers.WaitWithTimeout(t, reconnected, time.Millisecond*50))
 		})
 	}
+}
+
+func TestCombined_ENSConnectionsLimitReached(t *testing.T) {
+	netw := netw.NewCombined(
+		&mock.WorkingVPN{
+			ConnectingFn: func(ctx context.Context, c vpn.Credentials, sd vpn.ServerData) error {
+				<-ctx.Done()
+				return context.Cause(ctx)
+			},
+		},
+		nil,
+		nil,
+		&subs.Subject[string]{},
+		nil,
+		nil,
+		firewallmock.NewFirewall(),
+		nil,
+		&mock.PolicyRouter{},
+		nil,
+		mock.Router{},
+		nil,
+		0,
+		false,
+		&mock.IpV6Blocker{},
+		false,
+		&mock.SysctlSetterMock{},
+		config.Allowlist{},
+		&mock.SysctlSetterMock{},
+	)
+
+	rc := mock.NewRemoteConfigMock()
+	rc.FeatureToggles[remote.FeatureENS] = true
+	monitor := NewMonitor(netw, rc, func(_ string) error {
+		return nil
+	}, &subs.Subject[events.DebuggerEvent]{})
+	monitor.Start()
+
+	assert.NilError(t, monitor.HandleENSNotification(events.VPNConnectionErrorEvent{
+		Code:           events.VPNConnectionErrorConnectionLimitReached,
+		ServerEndpoint: "",
+	}))
+
+	err := netw.Start(
+		context.Background(),
+		vpn.Credentials{},
+		vpn.ServerData{},
+		config.NewAllowlist(nil, nil, nil),
+		[]string{"1.1.1.1"},
+		true,
+		func(startTime time.Time, err error) {
+		},
+	)
+
+	assert.ErrorIs(t, err, ErrConnectionLimitReached)
 }
