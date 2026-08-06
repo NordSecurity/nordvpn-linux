@@ -81,6 +81,18 @@ class TranslationsA11yEn {
 
 	/// en: 'Recent connections. $details'
 	String recentConnectionWithDetails({required Object details}) => 'Recent connections. ${details}';
+
+	/// en: 'Expand'
+	String get expandibleEntryExpand => 'Expand';
+
+	/// en: 'Collapse'
+	String get expandibleEntryCollapse => 'Collapse';
+
+	/// en: 'Expanded'
+	String get expandibleEntryExpanded => 'Expanded';
+
+	/// en: 'Collapsed'
+	String get expandibleEntryCollapsed => 'Collapsed';
 }
 
 // Path: cities
@@ -2211,18 +2223,6 @@ class TranslationsUiEn {
 
 	/// en: 'Firewall is needed for Kill Switch to work. Turn off Kill Switch first in VPN connection settings.'
 	String get cannotStopFWWhileKSOnDesc => 'Firewall is needed for Kill Switch to work. Turn off Kill Switch first in VPN connection settings.';
-
-	/// en: 'Expand'
-	String get expandibleEntryExpand => 'Expand';
-
-	/// en: 'Collapse'
-	String get expandibleEntryCollapse => 'Collapse';
-
-	/// en: 'Expanded'
-	String get expandibleEntryExpanded => 'Expanded';
-
-	/// en: 'Collapsed'
-	String get expandibleEntryCollapsed => 'Collapsed';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -2242,6 +2242,10 @@ extension on Translations {
 			'a11y.moreOptions' => 'More options',
 			'a11y.listWithItems' => ({required Object number}) => 'List with ${number} items',
 			'a11y.recentConnectionWithDetails' => ({required Object details}) => 'Recent connections. ${details}',
+			'a11y.expandibleEntryExpand' => 'Expand',
+			'a11y.expandibleEntryCollapse' => 'Collapse',
+			'a11y.expandibleEntryExpanded' => 'Expanded',
+			'a11y.expandibleEntryCollapsed' => 'Collapsed',
 			'cities.tirana' => 'Tirana',
 			'cities.algiers' => 'Algiers',
 			'cities.addis_ababa' => 'Addis Ababa',
@@ -2741,12 +2745,12 @@ extension on Translations {
 			'ui.virtual' => 'Virtual',
 			'ui.dedicatedIp' => 'Dedicated IP',
 			'ui.dedicatedServer' => 'Dedicated Server',
+			_ => null,
+		} ?? switch (path) {
 			'ui.doubleVpn' => 'Double VPN',
 			'ui.onionOverVpn' => 'Onion over VPN',
 			'ui.p2p' => 'P2P',
 			'ui.obfuscated' => 'Obfuscated',
-			_ => null,
-		} ?? switch (path) {
 			'ui.obfuscatedServers' => 'Obfuscated Servers',
 			'ui.selectServerForDip' => 'Pick a location for your IP',
 			'ui.selectLocation' => 'Select location',
@@ -2941,10 +2945,6 @@ extension on Translations {
 			'ui.pauseConnection' => 'Pause connection',
 			'ui.cannotStopFWWhileKSOnTitle' => 'Firewall can’t be turned off while Kill Switch is on',
 			'ui.cannotStopFWWhileKSOnDesc' => 'Firewall is needed for Kill Switch to work. Turn off Kill Switch first in VPN connection settings.',
-			'ui.expandibleEntryExpand' => 'Expand',
-			'ui.expandibleEntryCollapse' => 'Collapse',
-			'ui.expandibleEntryExpanded' => 'Expanded',
-			'ui.expandibleEntryCollapsed' => 'Collapsed',
 			_ => null,
 		};
 	}
