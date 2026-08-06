@@ -23,7 +23,7 @@ var (
 func generateFlushRules(rules string, table string) []string {
 	re := regexp.MustCompile(fmt.Sprintf(`--comment\s+%s(?:\s|$)`, regexp.QuoteMeta(defaultComment)))
 	flushRules := []string{}
-	for _, rule := range strings.Split(rules, "\n") {
+	for rule := range strings.SplitSeq(rules, "\n") {
 		if re.MatchString(rule) {
 			newRule := fmt.Sprintf("-t %s %s", table, strings.Replace(rule, "-A", "-D", 1))
 			flushRules = append(flushRules, newRule)

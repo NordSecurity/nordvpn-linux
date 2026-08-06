@@ -22,7 +22,7 @@ func areParametersEqual(a string, b string) bool {
 		return false
 	}
 
-	for _, parameter := range strings.Split(a, "&") {
+	for parameter := range strings.SplitSeq(a, "&") {
 		if !strings.Contains(b, parameter) {
 			return false
 		}

@@ -1025,7 +1025,7 @@ func TestHandleIncludeFilesEdgeCases(t *testing.T) {
 				return &mockFileSystem{
 					files: map[string][]byte{
 						"test.json":      []byte(nonJsonInclude),
-						"test-hash.json": []byte(fmt.Sprintf(`{"hash": "%s"}`, nonJsonHash)),
+						"test-hash.json": fmt.Appendf(nil, `{"hash": "%s"}`, nonJsonHash),
 					},
 				}
 			}(),
@@ -1042,7 +1042,7 @@ func TestHandleIncludeFilesEdgeCases(t *testing.T) {
 				return &mockFileSystem{
 					files: map[string][]byte{
 						"test.json":             []byte(mainJson),
-						"test-hash.json":        []byte(fmt.Sprintf(`{"hash": "%s"}`, mainHash)),
+						"test-hash.json":        fmt.Appendf(nil, `{"hash": "%s"}`, mainHash),
 						"include/settings.json": []byte(`{"key": "value"}`),
 						// Missing include/settings-hash.json
 					},
@@ -1061,7 +1061,7 @@ func TestHandleIncludeFilesEdgeCases(t *testing.T) {
 				return &mockFileSystem{
 					files: map[string][]byte{
 						"test.json":                  []byte(mainJson),
-						"test-hash.json":             []byte(fmt.Sprintf(`{"hash": "%s"}`, mainHash)),
+						"test-hash.json":             fmt.Appendf(nil, `{"hash": "%s"}`, mainHash),
 						"include/settings.json":      []byte(`{"key": "value"}`),
 						"include/settings-hash.json": []byte("invalid json"),
 					},
@@ -1080,7 +1080,7 @@ func TestHandleIncludeFilesEdgeCases(t *testing.T) {
 				return &mockFileSystem{
 					files: map[string][]byte{
 						"test.json":                  []byte(mainJson),
-						"test-hash.json":             []byte(fmt.Sprintf(`{"hash": "%s"}`, mainHash)),
+						"test-hash.json":             fmt.Appendf(nil, `{"hash": "%s"}`, mainHash),
 						"include/settings.json":      []byte(`{"key": "value"}`),
 						"include/settings-hash.json": []byte(`{"hash": "wronghash"}`),
 					},

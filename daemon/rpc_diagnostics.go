@@ -824,7 +824,7 @@ func collectDesktopEnvironment(logf logFunc) string {
 		return fmt.Sprintf("loginctl error: %v\n", err)
 	}
 	var b strings.Builder
-	for _, session := range strings.Split(
+	for session := range strings.SplitSeq(
 		strings.TrimSpace(string(output)), "\n",
 	) {
 		fields := strings.Fields(session)

@@ -127,12 +127,14 @@ func TestPenalty(t *testing.T) {
 		userCountry, serverCountry                           string
 		hubscore, randomComponent, expected, expectedPartial float64
 	}{
-		{true, 7000, 500, 8579,
+		{
+			true, 7000, 500, 8579,
 			1552329600, 1545329600, 1555329600,
 			20, "us", "uk", 0.68, 0,
 			4.936194, 0.936194,
 		},
-		{false, 500, 500, 10000,
+		{
+			false, 500, 500, 10000,
 			1552329600, 1522781999, 1522981000,
 			45, "tl", "tl", 0, 0,
 			869.8740656, 0.000142,
@@ -145,7 +147,7 @@ func TestPenalty(t *testing.T) {
 		if item.hubscore == 0 {
 			hubScore = nil
 		}
-		for i := 0; i < 500; i++ {
+		for range 500 {
 			// run through some different random values
 			item.randomComponent = randFloat(time.Now().UnixNano(), 0, 0.001)
 			got, gotPartial := penalty(item.obfuscated, item.d, item.dmin, item.dmax, item.t, item.tmin, item.tmax,

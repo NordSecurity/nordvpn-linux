@@ -237,12 +237,9 @@ func formatTable[T any](
 
 	// Calculate the number of columns that can fit in the terminal width
 	columnWidth := min(width, maxItemWidth+4)
-	columns := width / columnWidth
-
-	if columns < 1 {
+	columns := max(width/columnWidth,
 		// if the width is very small then display everything in one column
-		columns = 1
-	}
+		1)
 
 	var builder strings.Builder
 	for i, item := range data {
