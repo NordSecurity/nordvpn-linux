@@ -2,7 +2,6 @@ package internal
 
 import (
 	"regexp"
-	"strconv"
 	"strings"
 
 	"golang.org/x/text/cases"
@@ -41,38 +40,4 @@ func SnakeCase(name string) string {
 
 func RemoveNonAlphanumeric(name string) string {
 	return notAlphanumeric.ReplaceAllString(name, "")
-}
-
-func StringsContains(haystack []string, needle string) bool {
-	for _, item := range haystack {
-		if item == needle {
-			return true
-		}
-	}
-	return false
-}
-
-func StringsGetNext(haystack []string, needle string) string {
-	var i int
-	for i = range haystack {
-		if haystack[i] == needle {
-			break
-		}
-	}
-	return haystack[(i+1)%len(haystack)]
-}
-
-func IntsToStrings(numbers []int) []string {
-	if len(numbers) == 0 {
-		return nil
-	}
-	strs := make([]string, 0, len(numbers))
-	for _, n := range numbers {
-		strs = append(strs, strconv.Itoa(n))
-	}
-	return strs
-}
-
-func CopyStringSlice(src []string) []string {
-	return append(make([]string, 0, len(src)), src...)
 }

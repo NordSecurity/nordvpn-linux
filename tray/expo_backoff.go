@@ -21,15 +21,6 @@ type BackoffConfig struct {
 	MaxRetries int
 }
 
-// DefaultBackoffConfig provides default backoff configuration
-func DefaultBackoffConfig() BackoffConfig {
-	return BackoffConfig{
-		InitialDelay: time.Second,
-		MaxDelay:     time.Minute,
-		MaxRetries:   7,
-	}
-}
-
 // RetryWithBackoff attempts to execute an operation, retrying with exponential backoff on failure.
 func RetryWithBackoff(
 	ctx context.Context,

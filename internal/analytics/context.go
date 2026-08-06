@@ -11,13 +11,6 @@ var CommonContextPaths = []string{
 	"application.nordvpnapp.platform",
 }
 
-// GetCommonContextPaths returns a copy of the common context paths.
-func GetCommonContextPaths() []string {
-	paths := make([]string, len(CommonContextPaths))
-	copy(paths, CommonContextPaths)
-	return paths
-}
-
 // MergeContextPaths combines common context paths with additional feature-specific paths.
 func MergeContextPaths(additionalPaths ...string) []string {
 	total := len(CommonContextPaths) + len(additionalPaths)

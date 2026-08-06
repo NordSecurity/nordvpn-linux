@@ -12,9 +12,3 @@ func GetSignalChan() <-chan os.Signal {
 	signal.Notify(signals, os.Interrupt, linux.SIGTERM, linux.SIGHUP, linux.SIGUSR1)
 	return signals
 }
-
-// WaitSignal for app to shutdown
-func WaitSignal() {
-	signals := GetSignalChan()
-	<-signals
-}

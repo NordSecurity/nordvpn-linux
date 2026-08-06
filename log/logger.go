@@ -128,11 +128,6 @@ func (l *Logger) Fatal(v ...any) {
 	os.Exit(1)
 }
 
-func (l *Logger) Fatalf(format string, v ...any) {
-	logAtf(levelFatal, fatalPrefix, l.prefix+" "+format, v)
-	os.Exit(1)
-}
-
 func prepend(prefix string, v []any) []any {
 	return append([]any{prefix}, v...)
 }

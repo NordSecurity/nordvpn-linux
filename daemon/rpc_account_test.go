@@ -60,7 +60,7 @@ func TestAccountInfo(t *testing.T) {
 		cachedResponse    *pb.AccountResponse
 		expectedResponse  *pb.AccountResponse
 		cacheExpired      bool
-		respectDataExpiry bool //former "Full" flag
+		respectDataExpiry bool // former "Full" flag
 	}{
 		{
 			name:              "Request only valid cache data. Cache is valid.",
@@ -100,7 +100,7 @@ func TestAccountInfo(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			dataManager.SetAccountData(test.cachedResponse)
 			if test.cacheExpired {
-				dataManager.accountData.unset()
+				dataManager.accountData.cache.Invalidate()
 			}
 			credentialsAPIMock.CurrentUserResponse = test.apiResponse
 			resp, err := r.AccountInfo(context.Background(), &pb.AccountRequest{Full: test.respectDataExpiry})
@@ -248,7 +248,9 @@ func TestAccountInfo_ContainsServiceData(t *testing.T) {
 				GetDedicatedServerServiceErr: test.getDedicatedServersServiceErr,
 				DedicatedServerService: auth.DedicatedServerService{
 					Active:    test.isServiceActive,
-					ExpiresAt: "exp date"}}
+					ExpiresAt: "exp date",
+				},
+			}
 
 			r := RPC{
 				dm:             dataManager,

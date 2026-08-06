@@ -173,12 +173,6 @@ type DebuggerEvent struct {
 	KeyBasedContextPaths []ContextValue
 }
 
-// WithJsonData adds JSON payload to the event
-func (e *DebuggerEvent) WithJsonData(json string) *DebuggerEvent {
-	e.JsonData = json
-	return e
-}
-
 // WithKeyBasedContextPaths adds arbitrary number of key-based context paths to the event
 func (e *DebuggerEvent) WithKeyBasedContextPaths(paths ...ContextValue) *DebuggerEvent {
 	e.KeyBasedContextPaths = append(e.KeyBasedContextPaths, paths...)

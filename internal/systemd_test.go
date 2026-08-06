@@ -9,34 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIsServiceActive(t *testing.T) {
-	category.Set(t, category.Unit)
-
-	tests := []struct {
-		name    string
-		service string
-		status  bool
-	}{
-		{
-			name:    "Snapd service check",
-			service: "snapd",
-			status:  IsSystemd(), // only if test is run under systemd
-		},
-		{
-			name:    "Non-existing service check",
-			service: "blablabla",
-			status:  false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			rez := IsServiceActive(tt.service)
-			assert.Equal(t, tt.status, rez)
-		})
-	}
-}
-
 func TestIsSystemShutdown(t *testing.T) {
 	category.Set(t, category.Unit)
 

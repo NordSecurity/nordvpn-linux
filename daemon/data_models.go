@@ -182,10 +182,6 @@ func (a *AccountData) set(data *pb.AccountResponse) {
 	a.cache.Set(dataCopy)
 }
 
-func (a *AccountData) unset() {
-	a.cache.Invalidate()
-}
-
 func (a *AccountData) clear() {
 	a.cache.Clear()
 }

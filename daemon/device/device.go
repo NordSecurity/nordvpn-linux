@@ -123,14 +123,6 @@ func ifaceListContains(list []net.Interface, device net.Interface) bool {
 	return false
 }
 
-func InterfacesAreEqual(a net.Interface, b net.Interface) bool {
-	return a.Index == b.Index &&
-		a.MTU == b.MTU &&
-		a.Name == b.Name &&
-		a.HardwareAddr.String() == b.HardwareAddr.String() &&
-		a.Flags == b.Flags
-}
-
 // DefaultRouteInterfaces returns all the interfaces that have a default route.
 func DefaultRouteInterfaces() ([]net.Interface, error) {
 	routeList, err := sysDepsImpl.RouteList(nil, netlink.FAMILY_V4)

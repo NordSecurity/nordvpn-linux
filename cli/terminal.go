@@ -3,10 +3,8 @@ package cli
 import (
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -99,101 +97,6 @@ func checkUsernamePasswordIsEmpty(username, password string) error {
 	}
 
 	return nil
-}
-
-// ReadCredentialsFromTerminal reads username and password from terminal
-// this overrides current terminal and restores it upon completion
-func ReadCredentialsFromTerminal() (string, string, error) {
-	var (
-		username string
-		password string
-	)
-
-	if !term.IsTerminal(0) || !term.IsTerminal(1) {
-		return username, password, fmt.Errorf("Stdin/Stdout should be terminal")
-	}
-	oldState, err := term.MakeRaw(0)
-	if err != nil {
-		return username, password, err
-	}
-	defer func() {
-		if err := term.Restore(0, oldState); err != nil {
-			log.Error(err)
-		}
-	}()
-
-	screen := struct {
-		io.Reader
-		io.Writer
-	}{os.Stdin, os.Stdout}
-	term := term.NewTerminal(screen, "")
-	term.SetPrompt("Email: ")
-	username, err = term.ReadLine()
-	if err != nil {
-		return username, password, err
-	}
-
-	term.AutoCompleteCallback = func(line string, pos int, key rune) (string, int, bool) {
-		// Mask the password output to the console with '*'
-		line += "*"
-		// Handle backspaces.
-		password = string([]rune(password)[:pos])
-		// Advance the cursor.
-		pos++
-		// Add the actual key presses to the password.
-		password += string(key)
-		return line, pos, true
-	}
-	term.SetPrompt("Password: ")
-	_, err = term.ReadLine()
-	if err != nil {
-		return username, password, err
-	}
-
-	err = checkUsernamePasswordIsEmpty(username, password)
-	return username, password, err
-}
-
-func ReadPlanFromTerminal() (int, error) {
-	var planID int
-	if !term.IsTerminal(0) || !term.IsTerminal(1) {
-		return planID, fmt.Errorf("Stdin/Stdout should be terminal")
-	}
-
-	oldState, err := term.MakeRaw(0)
-	if err != nil {
-		return planID, err
-	}
-	defer func() {
-		if err := term.Restore(0, oldState); err != nil {
-			log.Error(err)
-		}
-	}()
-
-	screen := struct {
-		io.Reader
-		io.Writer
-	}{os.Stdin, os.Stdout}
-	term := term.NewTerminal(screen, "")
-
-	for {
-		term.SetPrompt("Plan number: ")
-		plan, err := term.ReadLine()
-		if err != nil {
-			return planID, err
-		}
-
-		planID, err = strconv.Atoi(plan)
-		if err != nil {
-			switch err.(type) {
-			case *strconv.NumError:
-				continue
-			}
-			return planID, err
-		}
-		break
-	}
-	return planID, nil
 }
 
 // formats a list of strings to a tidy column representation

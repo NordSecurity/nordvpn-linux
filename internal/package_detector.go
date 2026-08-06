@@ -102,13 +102,3 @@ func isRpmBasedSystem() bool {
 func (pm PackageType) String() string {
 	return string(pm)
 }
-
-// IsDeb returns true if the package manager is Deb-based
-func (pm PackageType) IsDeb() bool {
-	return pm == PackageTypeDeb
-}
-
-// IsRpm returns true if the package manager is Rpm-based
-func (pm PackageType) IsRpm() bool {
-	return pm == PackageTypeRpm
-}
