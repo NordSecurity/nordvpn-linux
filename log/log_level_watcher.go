@@ -90,6 +90,8 @@ func applyLevelFile(path string) {
 
 	text := strings.TrimSpace(strings.ToLower(string(data)))
 	switch text {
+	case "trace":
+		SetLevel(levelTrace)
 	case "debug":
 		SetLevel(levelDebug)
 	case "info":

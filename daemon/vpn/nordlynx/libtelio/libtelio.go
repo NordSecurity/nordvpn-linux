@@ -99,7 +99,7 @@ func (t *telioCallbackHandler) handleEvent(e teliogo.Event) error {
 	if err != nil {
 		log.Warnf("can't marshal telio Event %T: %s", e, err)
 	} else {
-		log.Infof("received event %T: %s", e, maskPublicKey(string(eventBytes)))
+		log.Tracef("received event %T: %s", e, maskPublicKey(string(eventBytes)))
 	}
 
 	t.mu.Lock()
