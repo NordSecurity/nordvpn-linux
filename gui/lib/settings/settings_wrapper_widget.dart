@@ -79,7 +79,7 @@ final class SettingsWrapperWidget extends StatelessWidget {
   }
 
   // helper function to create the items from the list
-  static AdvancedListTile buildListItem(
+  static Widget buildListItem(
     BuildContext context, {
     Key? key,
     String? iconName,
@@ -97,22 +97,31 @@ final class SettingsWrapperWidget extends StatelessWidget {
   }) {
     final settingsTheme = context.settingsTheme;
 
-    return AdvancedListTile(
-      key: key ?? UniqueKey(),
-      leading: iconName != null ? DynamicThemeImage(iconName) : null,
-      title: Expanded(
-        child: Text(title, style: titleStyle ?? settingsTheme.itemTitleStyle),
+    return MergeSemantics(
+      child: Semantics(
+        button: true,
+        enabled: enabled,
+        child: AdvancedListTile(
+          key: key ?? UniqueKey(),
+          leading: iconName != null ? DynamicThemeImage(iconName) : null,
+          title: Expanded(
+            child: Text(
+              title,
+              style: titleStyle ?? settingsTheme.itemTitleStyle,
+            ),
+          ),
+          subtitle: subtitle != null
+              ? Text(subtitle, style: settingsTheme.itemSubtitleStyle)
+              : subtitleWidget,
+          center: center,
+          trailing: trailing,
+          onTap: onTap,
+          trailingLocation: trailingLocation,
+          enabled: enabled,
+          padding: padding ?? settingsTheme.itemPadding,
+          color: color,
+        ),
       ),
-      subtitle: subtitle != null
-          ? Text(subtitle, style: settingsTheme.itemSubtitleStyle)
-          : subtitleWidget,
-      center: center,
-      trailing: trailing,
-      onTap: onTap,
-      trailingLocation: trailingLocation,
-      enabled: enabled,
-      padding: padding ?? settingsTheme.itemPadding,
-      color: color,
     );
   }
 }
