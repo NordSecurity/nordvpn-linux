@@ -34,7 +34,7 @@ func (c *cmd) TokenInfo(ctx *cli.Context) error {
 	}
 
 	fmt.Println("Token Information:")
-	fmt.Printf("Token: %s\n", payload.Token)
+	fmt.Printf("Token: %s\n", payload.Token+" (Truncated)")
 	fmt.Println("Expires at:", payload.ExpiresAt)
 	fmt.Printf("Trusted Pass Owner ID: %s\n", payload.TrustedPassOwnerId)
 
