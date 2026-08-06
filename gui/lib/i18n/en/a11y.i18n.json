@@ -6,5 +6,6 @@
   "VPNPanelConnected": "VPN Panel. Connected to $location.",
   "VPNPanelLoading": "VPN Panel. Loading.",
   "moreOptions": "More options",
-  "listWithItems": "List with $number items"
+  "listWithItems": "List with $number items",
+  "recentConnectionWithDetails": "Recent connections. $details"
 }
