@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import socket
 import struct
 import time
@@ -215,6 +216,17 @@ def stop() -> dict:
     assert is_not_available(), "Network should not be available after stopping it"
     logging.log(info.collect())
     return default_gateway
+
+
+@contextmanager
+def remove_default_gateway():
+    default_gateway = ""
+    try:
+        default_gateway = stop()
+        yield
+    finally:
+        if default_gateway != "":
+            start(default_gateway=default_gateway)
 
 
 # block url by domain

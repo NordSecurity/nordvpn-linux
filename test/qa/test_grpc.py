@@ -3,6 +3,7 @@ import threading
 import sh
 import grpc
 from collections.abc import Sequence
+from constants import NORDVPND_SOCKET
 from lib import logging
 from lib.protobuf.daemon import (common_pb2, service_pb2_grpc, state_pb2, status_pb2, pause_pb2)
 from threading import Barrier
@@ -11,7 +12,6 @@ from threading import Barrier
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
 
 
-NORDVPND_SOCKET = 'unix:///run/nordvpn/nordvpnd.sock'
 SUCCESS_RESPONSE_TYPE = 1000
 
 

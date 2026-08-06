@@ -213,6 +213,7 @@ func TestCombined_ENSConnectionsLimitReached(t *testing.T) {
 	netw := netw.NewCombined(
 		&mock.WorkingVPN{
 			ConnectingFn: func(ctx context.Context, c vpn.Credentials, sd vpn.ServerData) error {
+				// block until the context is canceled by an ENS connection limit reached
 				<-ctx.Done()
 				return context.Cause(ctx)
 			},

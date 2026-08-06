@@ -141,8 +141,6 @@ func (m *Monitor) connectionLimitReachedEventProcessing(e events.VPNConnectionEr
 	if e.Code != events.VPNConnectionErrorConnectionLimitReached {
 		return
 	}
-	log.ENS.Debug("connection limit reach received")
-
 	if !m.netw.CancelConnecting(ErrConnectionLimitReached) {
 		log.ENS.Info("connection limit reach ignored")
 	}

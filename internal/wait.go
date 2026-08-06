@@ -16,12 +16,6 @@ func GetSignalChan() <-chan os.Signal {
 	return signals
 }
 
-// WaitSignal for app to shutdown
-func WaitSignal() {
-	signals := GetSignalChan()
-	<-signals
-}
-
 // RunAsync executes the function on a different goroutine and waits until goroutine starts
 func RunAsync(fn func()) {
 	var wg sync.WaitGroup

@@ -137,7 +137,8 @@ type Combined struct {
 	KillSwitchState killSwitchState
 	fwConfig        firewall.Config
 	ipForwardSetter kernel.SysctlSetter
-
+	// Channel used to cancel a running VPN connecting process.
+	// When CancelConnecting is called while connecting to VPN, then the connection attempt fails with the given error.
 	cancelConnectingCh chan error
 }
 
@@ -220,6 +221,7 @@ func (netw *Combined) Start(
 			log.Netw.Info("canceling connection", err)
 			cancelFn(err)
 		case <-finishCh:
+			return
 		}
 	})
 
@@ -1276,7 +1278,7 @@ func (netw *Combined) SetARPIgnore(ignoreARP bool) error {
 
 // CancelConnecting - cancels the current running connection to VPN.
 // If there is no connection taking place now, then this has no effect and the error is ignored
-// Not thread safe, because it must be executed while netw.mu is locked from
+// Not thread safe, because it must be executed while netw.mu is locked from Start.
 func (netw *Combined) CancelConnecting(reason error) bool {
 	return internal.TrySendTimeout(netw.cancelConnectingCh, reason, 1*time.Millisecond)
 }
