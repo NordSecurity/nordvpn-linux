@@ -385,7 +385,7 @@ final class MockDaemon extends DaemonServiceBase {
 
   @override
   Future<Payload> pauseConnection(ServiceCall call, PauseRequest request) {
-    return vpnStatus.pauseConnection(request.seconds);
+    return vpnStatus.pauseConnection(request.interval);
   }
 
   @override

@@ -17,6 +17,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/filewatch"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
+	"github.com/NordSecurity/nordvpn-linux/pause"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/godbus/dbus/v5"
 )
@@ -467,15 +468,15 @@ func (ti *Instance) disconnect(itemName pb.UIEvent_ItemName, itemValue pb.UIEven
 	return true
 }
 
-func (ti *Instance) pause(pauseLength pauseLength) bool {
+func (ti *Instance) pause(pauseInterval pb.PauseInverval) bool {
 	// #nosec G104 -- fire-and-forget analytics
 	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
 		FormReference: pb.UIEvent_TRAY,
 		ItemName:      pb.UIEvent_PAUSE,
-		ItemValue:     pauseLength.EventValue,
+		ItemValue:     pause.PauseIntervalToPauseUIEventItemValue(pauseInterval),
 		ItemType:      pb.UIEvent_CLICK,
 	})
-	resp, err := ti.client.PauseConnection(context.Background(), &pb.PauseRequest{Seconds: pauseLength.DurationSeconds})
+	resp, err := ti.client.PauseConnection(context.Background(), &pb.PauseRequest{Interval: pauseInterval})
 	if err != nil {
 		ti.notify(NoForce, "Pause failed. Please try again.")
 		return false

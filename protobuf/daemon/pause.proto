@@ -4,6 +4,14 @@ package pb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
+enum PauseInverval {
+  PAUSE_5_MIN = 0;
+  PAUSE_15_MIN = 1;
+  PAUSE_30_MIN = 2;
+  PAUSE_1_HOUR = 3;
+  PAUSE_24_HOURS = 4;
+}
+
 message PauseRequest {
-  uint32 seconds = 1;
+  PauseInverval interval = 1;
 }

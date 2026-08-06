@@ -8,34 +8,23 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/pause"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
 
-var argToPauseDurationSeconds = map[string]uint32{"5m": 300, "15m": 900, "30m": 1800, "1h": 3600, "24h": 86400}
+var argToPauseDurationSeconds = map[string]pb.PauseInverval{
+	"5m":  pb.PauseInverval_PAUSE_5_MIN,
+	"15m": pb.PauseInverval_PAUSE_15_MIN,
+	"30m": pb.PauseInverval_PAUSE_30_MIN,
+	"1h":  pb.PauseInverval_PAUSE_1_HOUR,
+	"24h": pb.PauseInverval_PAUSE_24_HOURS}
 
-func pauseArgToDuration(arg string) (uint32, error) {
+func pauseArgToInterval(arg string) (pb.PauseInverval, error) {
 	if pauseDurationSeconds, ok := argToPauseDurationSeconds[arg]; ok {
 		return pauseDurationSeconds, nil
 	}
 	return 0, fmt.Errorf("unrecognized duration")
-}
-
-func pauseArgToItemValue(arg string) pb.UIEvent_ItemValue {
-	switch arg {
-	case "5m":
-		return pb.UIEvent_PAUSE_5_MIN
-	case "15m":
-		return pb.UIEvent_PAUSE_15_MIN
-	case "30m":
-		return pb.UIEvent_PAUSE_30_MIN
-	case "1h":
-		return pb.UIEvent_PAUSE_1_HOUR
-	case "24h":
-		return pb.UIEvent_PAUSE_24_HOURS
-	default:
-		return pb.UIEvent_ITEM_VALUE_UNSPECIFIED
-	}
 }
 
 func (c *cmd) Pause(ctx *cli.Context) error {
@@ -45,21 +34,19 @@ func (c *cmd) Pause(ctx *cli.Context) error {
 		return formatError(errors.New(PauseNoArgsText))
 	}
 
-	pauseDuration, err := pauseArgToDuration(args.First())
+	pauseInterval, err := pauseArgToInterval(args.First())
 	if err != nil {
 		return formatError(errors.New(PauseNoArgsText))
 	}
 
-	itemValue := pauseArgToItemValue(args.First())
 	// #nosec G104 -- fire-and-forget analytics
 	c.client.ReportUIEvent(context.Background(),
 		&pb.UIEvent{
 			FormReference: pb.UIEvent_CLI,
 			ItemName:      pb.UIEvent_PAUSE,
 			ItemType:      pb.UIEvent_CLICK,
-			ItemValue:     itemValue})
-
-	resp, err := c.client.PauseConnection(context.Background(), &pb.PauseRequest{Seconds: pauseDuration})
+			ItemValue:     pause.PauseIntervalToPauseUIEventItemValue(pauseInterval)})
+	resp, err := c.client.PauseConnection(context.Background(), &pb.PauseRequest{Interval: pauseInterval})
 	if err != nil {
 		return formatError(err)
 	}
