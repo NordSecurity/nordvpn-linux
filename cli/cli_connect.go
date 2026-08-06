@@ -185,6 +185,8 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 			rpcErr = errors.New(internal.ServerUnavailableErrorMessage)
 		case internal.CodeDedicatedServersServerNotSetUp:
 			rpcErr = errors.New(c.injectLinkIntoMessage(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin, DedicatedServersNoServersAvailable))
+		case internal.CodeConnectionLimitReached:
+			rpcErr = errors.New("TODO: connection limit reached")
 		case internal.CodeVPNRunning:
 			color.Yellow(client.ConnectConnected)
 		case internal.CodeNothingToDo:

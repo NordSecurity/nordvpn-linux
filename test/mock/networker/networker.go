@@ -32,6 +32,7 @@ type Mock struct {
 	// ProvidedServerData contains vpn.ServerData provided to the networker in the last Start call
 	ProvidedServerData vpn.ServerData
 	ActiveServerData   *vpn.ServerData
+	CancelConnectingFn func(error) bool
 }
 
 func (m *Mock) Start(
@@ -123,6 +124,12 @@ func (m *Mock) GetConnectionParameters() (vpn.ServerData, bool) {
 }
 
 func (*Mock) SetARPIgnore(bool) error { return nil }
+func (m *Mock) CancelConnecting(err error) bool {
+	if m.CancelConnectingFn == nil {
+		return true
+	}
+	return m.CancelConnectingFn(err)
+}
 
 type Failing struct{}
 
@@ -165,3 +172,4 @@ func (Failing) SetLanDiscovery(bool)                                {}
 func (Failing) UnsetFirewall() error                                { return mock.ErrOnPurpose }
 func (Failing) GetConnectionParameters() (vpn.ServerData, bool)     { return vpn.ServerData{}, false }
 func (Failing) SetARPIgnore(bool) error                             { return nil }
+func (Failing) CancelConnecting(error) bool                         { return false }

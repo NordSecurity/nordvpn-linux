@@ -478,7 +478,8 @@ func (l *Libtelio) connect(
 	select {
 	case <-connectCtx.Done():
 		_ = l.disconnect()
-		return connectCtx.Err()
+		// using context.Cause allows to cancel from outside the context with different reasons, e.g. ENS event
+		return context.Cause(connectCtx)
 	case <-ctx.Done():
 		_ = l.disconnect()
 		return ctx.Err()
@@ -845,8 +846,10 @@ func (l *Libtelio) InjectVPNConnectionError(code int32, serverEndpoint string) e
 	}
 
 	if serverEndpoint == "" {
-		if params, ok := l.GetConnectionParameters(); ok {
-			serverEndpoint = params.Endpoint
+		// Allow ENS events to be generated while connecting, when l.mu is locked
+		if l.mu.TryLock() {
+			serverEndpoint = l.currentServer.Endpoint
+			l.mu.Unlock()
 		}
 	}
 
