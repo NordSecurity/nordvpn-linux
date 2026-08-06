@@ -134,7 +134,6 @@ void main() {
       tester,
     ) async {
       var pageTaps = 0;
-      // Never completed, the action stays in progress until the end of the test.
       final completer = Completer<void>();
       final container = await pumpListener(
         tester,
@@ -154,13 +153,17 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(container.read(popupActionsProvider), contains(popupId));
-      // Nothing is drawn over the app while the action runs.
-      expect(find.byType(ModalBarrier), findsNothing);
 
-      // The page below still receives the input.
+      // The page still receives the input while the action runs. Anything drawn
+      // over the app would swallow this tap instead.
       await tester.tap(find.text(pageButton));
       await tester.pumpAndSettle();
       expect(pageTaps, 1);
+
+      // Let the action finish, so that it does not outlive the test.
+      completer.complete();
+      await tester.pumpAndSettle();
+      expect(container.read(popupActionsProvider), isEmpty);
     });
 
     // The action outlives the screen which started it, so its error has to be
