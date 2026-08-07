@@ -17,6 +17,8 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/core/mesh"
 	daemonevents "github.com/NordSecurity/nordvpn-linux/daemon/events"
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
@@ -43,6 +45,7 @@ func (failingLoginChecker) IsVPNExpired() (bool, error) {
 func (failingLoginChecker) GetDedicatedIPServices() ([]auth.DedicatedIPService, error) {
 	return nil, fmt.Errorf("Not implemented")
 }
+
 func (failingLoginChecker) GetDedicatedServerService() (auth.DedicatedServerService, error) {
 	return auth.DedicatedServerService{}, fmt.Errorf("Not implemented")
 }
@@ -276,8 +279,10 @@ func (invitationsAPI) Received(string, uuid.UUID) (mesh.Invitations, error) {
 }
 
 func (invitationsAPI) Accept(string, uuid.UUID, uuid.UUID, bool, bool, bool, bool) error { return nil }
-func (invitationsAPI) Revoke(string, uuid.UUID, uuid.UUID) error                         { return nil }
-func (invitationsAPI) Reject(string, uuid.UUID, uuid.UUID) error                         { return nil }
+
+func (invitationsAPI) Revoke(string, uuid.UUID, uuid.UUID) error { return nil }
+
+func (invitationsAPI) Reject(string, uuid.UUID, uuid.UUID) error { return nil }
 
 type meshNetworker struct{}
 
@@ -385,6 +390,90 @@ func TestStartAutoMeshnet(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
+		})
+	}
+}
+
+func TestDoAutoConnect_SetsRequestedConnectionParams(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name            string
+		autoConnectData config.AutoConnectData
+		expectedParams  ConnectionParameters
+	}{
+		{
+			name:            "no autoconnect data",
+			autoConnectData: config.AutoConnectData{},
+			expectedParams: ConnectionParameters{
+				ConnectionSource: pb.ConnectionSource_AUTO,
+				ServerParameters: serverpicker.ServerParameters{
+					Country:     "",
+					CountryCode: "",
+					City:        "",
+					Group:       config.ServerGroup_UNDEFINED,
+				},
+			},
+		},
+		{
+			name:            "country is stored as country code",
+			autoConnectData: config.AutoConnectData{Country: "DE"},
+			expectedParams: ConnectionParameters{
+				ConnectionSource: pb.ConnectionSource_AUTO,
+				ServerParameters: serverpicker.ServerParameters{
+					Country:     "DE",
+					CountryCode: "DE",
+					City:        "",
+					Group:       config.ServerGroup_UNDEFINED,
+				},
+			},
+		},
+		{
+			name:            "country and city",
+			autoConnectData: config.AutoConnectData{Country: "DE", City: "Berlin"},
+			expectedParams: ConnectionParameters{
+				ConnectionSource: pb.ConnectionSource_AUTO,
+				ServerParameters: serverpicker.ServerParameters{
+					Country:     "DE",
+					CountryCode: "DE",
+					City:        "Berlin",
+					Group:       config.ServerGroup_UNDEFINED,
+				},
+			},
+		},
+		{
+			name: "country, city and group",
+			autoConnectData: config.AutoConnectData{
+				Country:   "US",
+				City:      "New York",
+				Group:     config.ServerGroup_P2P,
+				ServerTag: "p2p",
+			},
+			expectedParams: ConnectionParameters{
+				ConnectionSource: pb.ConnectionSource_AUTO,
+				ServerParameters: serverpicker.ServerParameters{
+					Country:     "US",
+					CountryCode: "US",
+					City:        "New York",
+					Group:       config.ServerGroup_P2P,
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			rpc := testRPC()
+			rpc.serversAPI = core_test.NewMockServersAPI()
+			mockConfigManager := newMockConfigManager()
+			updateAutoconnectData(mockConfigManager, test.autoConnectData)
+			rpc.cm = mockConfigManager
+
+			err := rpc.doAutoConnect()
+			assert.NoError(t, err)
+
+			params := rpc.RequestedConnParams.Get()
+			assert.Equal(t, test.expectedParams, params)
 		})
 	}
 }
