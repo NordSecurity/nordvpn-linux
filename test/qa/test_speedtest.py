@@ -142,8 +142,9 @@ def test_speed_thresholds(speedtest_results_path):
     lib.set_technology_and_protocol(tech, "", "")
 
     with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
-
+        output = sh.nordvpn.connect(_tty_out=False)
+        assert lib.is_connect_successful(output), "Connection should be successful"
+        assert network.is_connected(), "Network should be connected"
         assert network.is_available(), "Network should be available when connected"
 
         vpn_data = _run_speedtest()
@@ -190,8 +191,9 @@ def test_speed_degradation(speedtest_results_path):
     lib.set_technology_and_protocol(tech, "", "")
 
     with lib.Defer(sh.nordvpn.disconnect):
-        sh.nordvpn.connect()
-
+        output = sh.nordvpn.connect(_tty_out=False)
+        assert lib.is_connect_successful(output), "Connection should be successful"
+        assert network.is_connected(), "Network should be connected"
         assert network.is_available(), "Network should be available when connected"
 
         vpn_data = _run_speedtest()
