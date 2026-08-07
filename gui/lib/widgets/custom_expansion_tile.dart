@@ -86,15 +86,19 @@ class _CustomExpansionTileState extends State<CustomExpansionTile> {
     if (widget.children == null) {
       return null;
     }
-    return Semantics(
-      label: _isExpanded ? t.a11y.expandibleEntryCollapse : t.a11y.expandibleEntryExpand,
-      expanded: _isExpanded,
-      child: IconButton(
-        icon: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
-        onPressed: _toggleExpanded,
-        hoverColor: Colors.transparent,
-        splashColor: Colors.transparent,
-        highlightColor: Colors.transparent,
+    return MergeSemantics(
+      child: Semantics(
+        label: _isExpanded
+            ? t.a11y.expandibleEntryCollapse
+            : t.a11y.expandibleEntryExpand,
+        expanded: _isExpanded,
+        child: IconButton(
+          icon: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
+          onPressed: _toggleExpanded,
+          hoverColor: Colors.transparent,
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+        ),
       ),
     );
   }
