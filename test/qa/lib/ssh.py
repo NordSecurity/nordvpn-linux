@@ -1,12 +1,11 @@
 import contextlib
 import json
-import time
 from collections import namedtuple
 
 import paramiko
 import pytest
 
-import lib
+from . import retry_on_exc, API_EXTERNAL_IP
 
 Directory = namedtuple("Directory", "dir_path paths transfer_paths filenames filehashes")
 
@@ -74,46 +73,39 @@ class Ssh:
 
         def _is_internet_reachable(self, retry=5) -> bool:
             """Returns True when remote host is reachable by it's public IP."""
-            i = 0
-            while i < retry:
-                try:
-                    return "icmp_seq=" in self.ssh_class_instance.exec_command("ping -c 1 -w 1 1.1.1.1")
-                except RuntimeError:
-                    time.sleep(1)
-                    i += 1
-            return False
+            def _check():
+                return "icmp_seq=" in self.ssh_class_instance.exec_command("ping -c 1 -w 1 1.1.1.1")
+
+            result = retry_on_exc(attempts=retry, delay=1, raise_exc=False)(_check)()
+            return bool(result)
 
         def _is_dns_not_resolvable(self, retry=5) -> bool:
             """Returns True when domain resolution is not working."""
-            for _ in range(retry):
-                try:
-                    with pytest.raises(RuntimeError) as ex:
-                        self.ssh_class_instance.exec_command("ping -c 1 -w 1 nordvpn.com", timeout=30)
+            def _check():
+                with pytest.raises(RuntimeError) as ex:
+                    self.ssh_class_instance.exec_command("ping -c 1 -w 1 nordvpn.com", timeout=30)
+                return "Network is unreachable" in str(ex) or \
+                    "Name or service not known" in str(ex) or \
+                    "Temporary failure in name resolution" in str(ex)
 
-                    return "Network is unreachable" in str(ex) or \
-                        "Name or service not known" in str(ex) or \
-                        "Temporary failure in name resolution" in str(ex)
-                except RuntimeError as ex:
-                    time.sleep(1)
-            return False
+            result = retry_on_exc(attempts=retry, delay=1, raise_exc=False)(_check)()
+            return bool(result)
+
 
         def is_not_available(self, retry=5) -> bool:
             """Returns True when network access is not available."""
             return not self._is_internet_reachable(retry=retry) and self._is_dns_not_resolvable(retry=retry)
 
         def ping(self, target: str, retry=5) -> bool:
-            i = 0
-            while i < retry:
-                try:
-                    return "icmp_seq=" in self.ssh_class_instance.exec_command(f"ping -c 1 -w 1 {target}")
-                except RuntimeError:
-                    time.sleep(1)
-                    i += 1
-            return False
+            def _check():
+                return "icmp_seq=" in self.ssh_class_instance.exec_command(f"ping -c 1 -w 1 {target}")
+
+            result = retry_on_exc(attempts=retry, delay=1, raise_exc=False)(_check)()
+            return bool(result)
 
         def get_external_device_ip(self) -> str:
             """Returns external device IP."""
-            cmd = f"wget -qO- {lib.API_EXTERNAL_IP}"
+            cmd = f"wget -qO- {API_EXTERNAL_IP}"
             output = self.ssh_class_instance.exec_command(cmd)
 
             try:
