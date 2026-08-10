@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/app_settings.dart';
 import 'package:nordvpn/data/models/vpn_protocol.dart';
@@ -20,6 +19,7 @@ import 'package:nordvpn/widgets/enabled_widget.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:nordvpn/widgets/loading_indicator.dart';
 import 'package:nordvpn/widgets/on_off_switch.dart';
+import 'package:nordvpn/widgets/accessible_item.dart';
 import 'package:nordvpn/widgets/radio_button.dart';
 
 enum _VpnConnectionItems { autoConnect, killSwitch, protocol }
@@ -115,7 +115,7 @@ final class VpnConnectionSettings extends ConsumerWidget {
       if (enabled) context.navigateToRoute(AppRoute.settingsAutoconnect);
     }
 
-    return _AccessibleItem(
+    return AccessibleItem(
       enabled: enabled,
       button: true,
       excludeChildSemantics: false,
@@ -179,6 +179,7 @@ final class VpnConnectionSettings extends ConsumerWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Visual-only header; "VPN protocol" is folded into each radio's label.
         ExcludeSemantics(
           child: SettingsWrapperWidget.buildListItem(
             context,
@@ -220,7 +221,7 @@ final class VpnConnectionSettings extends ConsumerWidget {
     required Future<void> Function(bool) onChanged,
     bool enabled = true,
   }) {
-    return _AccessibleItem(
+    return AccessibleItem(
       enabled: enabled,
       toggled: value,
       label: subtitle == null ? title : '$title. $subtitle',
@@ -246,7 +247,7 @@ final class VpnConnectionSettings extends ConsumerWidget {
     final selected = value == groupValue;
     final base = groupLabel == null ? label : '$groupLabel, $label';
 
-    return _AccessibleItem(
+    return AccessibleItem(
       enabled: enabled,
       inMutuallyExclusiveGroup: true,
       checked: selected,
@@ -274,89 +275,5 @@ final class VpnConnectionSettings extends ConsumerWidget {
     await ref
         .read(vpnSettingsControllerProvider.notifier)
         .setVpnProtocol(value);
-  }
-}
-
-class _AccessibleItem extends StatefulWidget {
-  const _AccessibleItem({
-    required this.child,
-    required this.onActivate,
-    this.label,
-    this.enabled = true,
-    this.excludeChildSemantics = true,
-    this.button = false,
-    this.toggled,
-    this.checked,
-    this.inMutuallyExclusiveGroup = false,
-  });
-
-  final Widget child;
-
-  final VoidCallback onActivate;
-
-  final String? label;
-  final bool enabled;
-
-  final bool excludeChildSemantics;
-
-  final bool button;
-  final bool? toggled;
-  final bool? checked;
-  final bool inMutuallyExclusiveGroup;
-
-  @override
-  State<_AccessibleItem> createState() => _AccessibleItemState();
-}
-
-class _AccessibleItemState extends State<_AccessibleItem> {
-  bool _focused = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final onActivate = widget.enabled ? widget.onActivate : null;
-
-    Widget visual = widget.child;
-    if (widget.excludeChildSemantics) {
-      visual = ExcludeSemantics(child: visual);
-    }
-
-    visual = ColoredBox(
-      color: _focused ? Theme.of(context).hoverColor : Colors.transparent,
-      child: visual,
-    );
-
-    return MergeSemantics(
-      child: Semantics(
-        button: widget.button,
-        toggled: widget.toggled,
-        checked: widget.checked,
-        inMutuallyExclusiveGroup: widget.inMutuallyExclusiveGroup,
-        enabled: widget.enabled,
-        label: widget.label,
-        onTap: onActivate,
-        child: FocusableActionDetector(
-          enabled: widget.enabled,
-          mouseCursor: widget.enabled
-              ? SystemMouseCursors.click
-              : SystemMouseCursors.basic,
-          onShowFocusHighlight: (value) {
-            if (value != _focused) setState(() => _focused = value);
-          },
-          shortcuts: const <ShortcutActivator, Intent>{
-            SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
-            SingleActivator(LogicalKeyboardKey.space): ActivateIntent(),
-          },
-          actions: <Type, Action<Intent>>{
-            ActivateIntent: CallbackAction<ActivateIntent>(
-              onInvoke: (_) {
-                onActivate?.call();
-                return null;
-              },
-            ),
-          },
-          child: visual,
-        ),
-      ),
-    );
   }
 }

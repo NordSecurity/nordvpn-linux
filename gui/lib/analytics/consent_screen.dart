@@ -6,9 +6,6 @@ import 'package:nordvpn/data/providers/consent_status_provider.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
 import 'package:nordvpn/theme/consent_screen_theme.dart';
 
-final _navigatorKey = GlobalKey<NavigatorState>();
-const _customizePath = "/customize";
-
 // ConsentScreen - represents the entire consent screen in which also the
 // navigation to customize is made
 final class ConsentScreen extends ConsumerStatefulWidget {
@@ -20,6 +17,7 @@ final class ConsentScreen extends ConsumerStatefulWidget {
 
 final class _ConsentScreenState extends ConsumerState<ConsentScreen> {
   bool _allowNonEssentials = true;
+  bool _showCustomize = false;
 
   @override
   Widget build(BuildContext context) {
@@ -31,37 +29,20 @@ final class _ConsentScreenState extends ConsumerState<ConsentScreen> {
           alignment: Alignment.center,
           maxWidth: consentTheme.width,
           maxHeight: consentTheme.height,
-          child: Navigator(
-            key: _navigatorKey,
-            onGenerateRoute: (settings) {
-              WidgetBuilder builder;
-              switch (settings.name) {
-                case _customizePath:
-                  builder = (context) => CustomizeConsent(
-                    onBack: () {
-                      if (_navigatorKey.currentState?.canPop() == true) {
-                        _navigatorKey.currentState?.pop();
-                      }
-                    },
-                    onConfirm: _submitCustomizedLevel,
-                    onNonEssentialsToggle: (allowNonEssentials) =>
-                        _allowNonEssentials = allowNonEssentials,
-                    allowNonEssentials: _allowNonEssentials,
-                  );
-                  break;
-
-                default:
-                  builder = (context) => MainConsentDialog(
-                    onAccept: _submitCustomizedLevel,
-                    onAcceptNonEssentials: () =>
-                        _setConsentLevel(ConsentLevel.essentialOnly),
-                    onCustomize: () =>
-                        _navigatorKey.currentState?.pushNamed(_customizePath),
-                  );
-              }
-              return MaterialPageRoute(builder: builder, settings: settings);
-            },
-          ),
+          child: _showCustomize
+              ? CustomizeConsent(
+                  onBack: () => setState(() => _showCustomize = false),
+                  onConfirm: _submitCustomizedLevel,
+                  onNonEssentialsToggle: (allowNonEssentials) =>
+                      _allowNonEssentials = allowNonEssentials,
+                  allowNonEssentials: _allowNonEssentials,
+                )
+              : MainConsentDialog(
+                  onAccept: _submitCustomizedLevel,
+                  onAcceptNonEssentials: () =>
+                      _setConsentLevel(ConsentLevel.essentialOnly),
+                  onCustomize: () => setState(() => _showCustomize = true),
+                ),
         ),
       ),
     );
