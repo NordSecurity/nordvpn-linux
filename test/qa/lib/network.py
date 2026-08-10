@@ -1,18 +1,15 @@
 import socket
 import struct
 import time
-from itertools import cycle
 
 import dns.resolver
 import requests
 import sh
 
-from . import daemon, firewall, info, logging
+from . import daemon, firewall, info, logging, retry_on_exc, API_EXTERNAL_IP
 
 # private variable for storing routes
 _blackholes = []
-
-API_EXTERNAL_IP = "https://api.nordvpn.com/v1/helpers/ips/insights"
 
 FWMARK = 0xE1F1
 
@@ -75,9 +72,7 @@ class RouteInfo:
 
 
 def is_internet_reachable(ip_address="1.1.1.1", port=443, retry=5) -> bool:
-    """Returns True when remote host is reachable by its public IP."""
-    i = 0
-    while i < retry:
+    def _check():
         try:
             sock = socket.create_connection((ip_address, port), timeout=2)
             sock.close()
@@ -86,46 +81,27 @@ def is_internet_reachable(ip_address="1.1.1.1", port=443, retry=5) -> bool:
             logging.log(f"is_internet_reachable failed {ip_address}: {e}")
             res = sh.sudo.nft.list.ruleset()
             logging.log(f"is_internet_reachable {res}")
-            time.sleep(1)
-            i += 1
-    return False
+            raise
+    result = retry_on_exc(attempts=retry, delay=1, raise_exc=False)(_check)()
+    return bool(result)
 
 
 def is_internet_reachable_outside_vpn(retry=5, ip_address="1.0.0.1") -> bool:
     """Returns True when remote host is reachable by its public IP outside VPN tunnel."""
-    i = 0
-    response = ""
-    while i < retry:
+    def _check():
         try:
-            # ping can remain since it is executed with FWMARK
-            response = ""
             response = sh.sudo.ping("-c", "1", "-m", f"{FWMARK}", "-w", "1", ip_address)
             return "icmp_seq=" in response
         except sh.ErrorReturnCode as ex:
-            print(f"is_internet_reachable_outside_vpn({i}) - failed {ex}: {response}")
-            time.sleep(1)
-            i += 1
-    return False
-
-
-def _is_ipv6_internet_reachable(retry=5) -> bool:
-    i = 0
-    last = Exception("_is_ipv6_internet_reachable", "error")
-    anycast_ips = cycle(["2400:bb40:4444::100", "2400:bb40:8888::100"])
-    while i < retry:
-        try:
-            return "icmp_seq=" in sh.ping("-c", "1", next(anycast_ips))
-        except sh.ErrorReturnCode as e:
-            time.sleep(1)
-            i += 1
-            last = e
-    raise last
+            print(f"is_internet_reachable_outside_vpn - failed {ex}")
+            raise
+    result = retry_on_exc(attempts=retry, delay=1, raise_exc=False)(_check)()
+    return bool(result)
 
 
 def _is_dns_resolvable(domain="nordvpn.com", retry=5) -> bool:
     """Returns True when domain resolution is working."""
-    i = 0
-    while i < retry:
+    def _check():
         try:
             resolver = dns.resolver.Resolver()
             resolver.nameservers = ["103.86.96.100"]  # specify server so it will not get the result from the docker host
@@ -134,9 +110,9 @@ def _is_dns_resolvable(domain="nordvpn.com", retry=5) -> bool:
             return True
         except Exception as e:  # noqa: BLE001
             logging.log(f"_is_dns_resolvable: DNS {domain} FAILURE. Error: {e}")
-            time.sleep(1)
-            i += 1
-    return False
+            raise
+    result = retry_on_exc(attempts=retry, delay=1, raise_exc=False)(_check)()
+    return bool(result)
 
 
 def is_not_available(retry=5) -> bool:

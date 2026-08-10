@@ -4,6 +4,7 @@ import random
 import os
 from collections.abc import Callable
 from enum import Enum
+from functools import wraps
 
 import sh
 
@@ -404,3 +405,36 @@ def get_random_virtual_country() -> str:
     assert len(virtual_countries) > 0, "Virtual countries list should not be empty"
     virtual_country = random.choice(virtual_countries)
     return virtual_country
+
+
+def retry_on_exc(attempts=3, delay=2, raise_exc=True):
+    """
+    Decorator that retries a function on failure.
+
+    Args:
+        attempts: Number of attempts before giving up.
+        delay: Seconds to wait between attempts.
+        raise_exc: If True, re-raises the last exception after all attempts.
+                   If False, returns False instead.
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(1, attempts + 1):
+                try:
+                    return func(*args, **kwargs)
+                except Exception as err:
+                    if attempt == attempts:
+                        print(
+                            f"{func.__name__} failed after {attempts} attempts. Error: {err}"
+                        )
+                        if raise_exc:
+                            raise
+                        return False
+                    print(
+                        f"{func.__name__} failed on attempt {attempt}/{attempts}: {err}. Retrying in {delay}s..."
+                    )
+                    time.sleep(delay)
+            return None  # explicit return to satisfy RET503
+        return wrapper
+    return decorator
