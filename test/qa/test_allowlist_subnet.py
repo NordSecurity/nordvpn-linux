@@ -1,4 +1,5 @@
 import socket
+import time
 from urllib.parse import urlparse
 
 import pytest
@@ -9,6 +10,7 @@ from lib import (
     allowlist,
     firewall,
     network,
+    retry,
 )
 
 pytestmark = pytest.mark.usefixtures("add_and_delete_random_route", "nordvpnd_scope_function")
@@ -45,14 +47,16 @@ def test_connect_allowlist_subnet(tech, proto, obfuscated):
     my_ip = network.get_external_device_ip()
 
     sh.nordvpn.connect()
+
     assert network.is_connected(), "VPN should be connected"
-    assert my_ip != network.get_external_device_ip(), "IP should change when connected"
+    assert my_ip != retry()(network.get_external_device_ip)(), "IP should change when connected"
 
     ip_provider_addresses = socket.gethostbyname_ex(urlparse(lib.API_EXTERNAL_IP).netloc)[2]
     ip_addresses_with_subnet = [ip + CIDR_32 for ip in ip_provider_addresses]
     allowlist.add_subnet_to_allowlist(ip_addresses_with_subnet)
+
     assert not firewall.is_ip_routed_via_VPN(ip_addresses_with_subnet), "Subnet should be active when connected"
-    assert my_ip == network.get_external_device_ip(), "IP should return to original when subnet is allowlisted"
+    assert my_ip == retry()(network.get_external_device_ip)(), "IP should return to original when subnet is allowlisted"
 
     sh.nordvpn.disconnect()
     assert not firewall.is_active(), "Subnet should not be active when disconnected"
