@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	tokenCharsToShow = 6
+	edgeCharsToShow = 6
 )
 
 // TokenInfo returns token information.
@@ -31,7 +31,7 @@ func (r *RPC) TokenInfo(ctx context.Context, _ *pb.Empty) (*pb.TokenInfoResponse
 	tokenData := cfg.TokensData[cfg.AutoConnectData.ID]
 	tokenInfo := &pb.TokenInfoResponse{
 		Type:               internal.CodeSuccess,
-		Token:              truncateMiddle(tokenData.Token, tokenCharsToShow),
+		Token:              truncateMiddle(tokenData.Token, edgeCharsToShow),
 		ExpiresAt:          tokenData.TokenExpiry,
 		TrustedPassToken:   tokenData.TrustedPassToken,
 		TrustedPassOwnerId: tokenData.TrustedPassOwnerID,
@@ -45,5 +45,5 @@ func truncateMiddle(s string, charsToShow int) string {
 	if len(s) >= front+end {
 		return s[:front] + "..." + s[len(s)-end:]
 	}
-	return "Invalid token"
+	return "Invalid"
 }
