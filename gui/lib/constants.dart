@@ -17,6 +17,8 @@ final daemonDateFormat = DateFormat("yyyy-MM-dd h:m:s");
 const animationDuration = Duration(milliseconds: 200);
 const loginTimeoutDuration = Duration(seconds: 10);
 
+const focusRingWidth = 2.0;
+
 const maxInt32 = 0xffffffff;
 const maxInt16 = 0xffff;
 const maxCustomDnsServers = 3;

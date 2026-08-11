@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:nordvpn/constants.dart';
 import 'package:nordvpn/internal/delayed_loading_manager.dart';
 import 'package:nordvpn/logger.dart';
@@ -15,6 +16,7 @@ final class RadioButton<T> extends StatefulWidget {
   final FutureOr<void> Function(T value) onChanged;
   final String label;
   final TextStyle? labelStyle;
+  final String? semanticLabel;
 
   const RadioButton({
     super.key,
@@ -23,6 +25,7 @@ final class RadioButton<T> extends StatefulWidget {
     required this.onChanged,
     required this.label,
     this.labelStyle,
+    this.semanticLabel,
   });
 
   @override
@@ -33,6 +36,7 @@ final class RadioButtonState<T> extends State<RadioButton<T>> {
   late DelayedLoadingManager _loadingManager;
   bool isSelected = false;
   bool _isLoading = false;
+  bool _hasFocus = false;
 
   @override
   void initState() {
@@ -61,23 +65,69 @@ final class RadioButtonState<T> extends State<RadioButton<T>> {
     final radioTheme = context.radioButtonTheme;
     isSelected = (widget.value == widget.groupValue);
 
-    return GestureDetector(
-      onTap: _onTap,
-      child: Padding(
-        padding: EdgeInsets.all(radioTheme.padding),
-        child: Row(
-          children: [
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                if (_isLoading) InlineLoadingIndicator(),
-                EnabledWidget(enabled: !_isLoading, child: _radio(radioTheme)),
-              ],
+    return MergeSemantics(
+      child: Semantics(
+        inMutuallyExclusiveGroup: true,
+        checked: isSelected,
+        label: widget.semanticLabel ?? widget.label,
+        enabled: true,
+        onTap: isSelected ? null : _onTap,
+        child: FocusableActionDetector(
+          mouseCursor: SystemMouseCursors.click,
+          onShowFocusHighlight: (value) {
+            if (mounted) setState(() => _hasFocus = value);
+          },
+          shortcuts: const <ShortcutActivator, Intent>{
+            SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
+            SingleActivator(LogicalKeyboardKey.space): ActivateIntent(),
+          },
+          actions: <Type, Action<Intent>>{
+            ActivateIntent: CallbackAction<ActivateIntent>(
+              onInvoke: (_) {
+                unawaited(_onTap());
+                return null;
+              },
             ),
-            _label(radioTheme, appTheme),
-          ],
+          },
+          child: GestureDetector(
+            onTap: _onTap,
+            child: Padding(
+              padding: EdgeInsets.all(radioTheme.padding),
+              child: Row(
+                children: [
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      if (_isLoading) InlineLoadingIndicator(),
+                      EnabledWidget(
+                        enabled: !_isLoading,
+                        child: _focusRing(_radio(radioTheme)),
+                      ),
+                    ],
+                  ),
+                  ExcludeSemantics(child: _label(radioTheme, appTheme)),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _focusRing(Widget child) {
+    return Container(
+      padding: EdgeInsets.all(focusRingWidth),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: _hasFocus
+              ? Theme.of(context).colorScheme.primary
+              : Colors.transparent,
+          width: focusRingWidth,
+        ),
+      ),
+      child: child,
     );
   }
 

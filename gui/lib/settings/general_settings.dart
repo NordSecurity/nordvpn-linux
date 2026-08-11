@@ -69,6 +69,7 @@ class GeneralSettings extends ConsumerWidget {
               context,
               title: t.ui.showNotifications,
               trailing: OnOffSwitch(
+                semanticLabel: t.ui.showNotifications,
                 value: settings.notifications,
                 onChanged: (value) => ref
                     .read(vpnSettingsControllerProvider.notifier)
@@ -92,13 +93,18 @@ class GeneralSettings extends ConsumerWidget {
                       termsUrl: termsOfServiceUrl,
                     ),
                   ),
-                  trailing: OnOffSwitch(value: true, onChanged: null),
+                  trailing: OnOffSwitch(
+                    semanticLabel: t.ui.essentialRequired,
+                    value: true,
+                    onChanged: null,
+                  ),
                 ),
                 SettingsWrapperWidget.buildListItem(
                   context,
                   title: t.ui.analytics,
                   subtitle: t.ui.analyticsDescription,
                   trailing: OnOffSwitch(
+                    semanticLabel: t.ui.analytics,
                     value:
                         settings.analyticsConsent == ConsentLevel.acceptedAll,
                     onChanged: (value) => ref
@@ -139,6 +145,7 @@ Widget _buildAppearanceTrailing(
         groupValue: mode,
         onChanged: (value) => _setAppearance(ref, value),
         label: t.ui.system,
+        semanticLabel: t.ui.system,
         labelStyle: appTheme.body,
       ),
       RadioButton(
@@ -146,6 +153,7 @@ Widget _buildAppearanceTrailing(
         groupValue: mode,
         onChanged: (value) => _setAppearance(ref, value),
         label: t.ui.light,
+        semanticLabel: t.ui.light,
         labelStyle: appTheme.body,
       ),
       RadioButton(
@@ -153,6 +161,7 @@ Widget _buildAppearanceTrailing(
         groupValue: mode,
         onChanged: (value) => _setAppearance(ref, value),
         label: t.ui.dark,
+        semanticLabel: t.ui.dark,
         labelStyle: appTheme.body,
       ),
     ],

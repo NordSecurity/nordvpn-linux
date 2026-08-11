@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:nordvpn/constants.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/delayed_loading_manager.dart';
@@ -20,12 +21,14 @@ final class OnOffSwitch extends StatefulWidget {
 
   // When onChanged is null the widget is disabled
   final Future<void> Function(bool)? onChanged;
+  final String? semanticLabel;
 
   const OnOffSwitch({
     super.key,
     required this.onChanged,
     this.value = false,
     this.shouldChange,
+    this.semanticLabel,
   });
 
   @override
@@ -35,6 +38,7 @@ final class OnOffSwitch extends StatefulWidget {
 final class OnOffSwitchState extends State<OnOffSwitch> {
   bool _isSwitched = false;
   bool _isDisabled = false;
+  bool _hasFocus = false;
   late DelayedLoadingManager _loadingManager;
 
   @override
@@ -57,21 +61,32 @@ final class OnOffSwitchState extends State<OnOffSwitch> {
     final appTheme = context.appTheme;
     final switchTheme = context.onOffSwitchTheme;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _label(appTheme, switchTheme),
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            if (_loadingManager.isLoading) InlineLoadingIndicator(),
-            EnabledWidget(
-              enabled: !_loadingManager.isLoading,
-              child: _thumbSlider(switchTheme),
-            ),
-          ],
+    return MergeSemantics(
+      child: Semantics(
+        toggled: _isSwitched,
+        enabled: !_isDisabled,
+        label: widget.semanticLabel,
+        onTap: _isDisabled ? null : _toggle,
+        child: _focusableArea(
+          switchTheme,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ExcludeSemantics(child: _label(appTheme, switchTheme)),
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  if (_loadingManager.isLoading) InlineLoadingIndicator(),
+                  EnabledWidget(
+                    enabled: !_loadingManager.isLoading,
+                    child: _thumbSlider(switchTheme),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 
@@ -90,7 +105,50 @@ final class OnOffSwitchState extends State<OnOffSwitch> {
     );
   }
 
+  Widget _focusableArea(OnOffSwitchTheme switchTheme, Widget child) {
+    return FocusableActionDetector(
+      enabled: !_isDisabled,
+      mouseCursor: SystemMouseCursors.click,
+      onShowFocusHighlight: (value) {
+        if (mounted) setState(() => _hasFocus = value);
+      },
+      shortcuts: const <ShortcutActivator, Intent>{
+        SingleActivator(LogicalKeyboardKey.enter): ActivateIntent(),
+        SingleActivator(LogicalKeyboardKey.space): ActivateIntent(),
+      },
+      actions: <Type, Action<Intent>>{
+        ActivateIntent: CallbackAction<ActivateIntent>(
+          onInvoke: (_) {
+            unawaited(_toggle());
+            return null;
+          },
+        ),
+      },
+      child: child,
+    );
+  }
+
   Widget _thumbSlider(OnOffSwitchTheme switchTheme) {
+    return _focusRing(switchTheme, _gestureSlider(switchTheme));
+  }
+
+  Widget _focusRing(OnOffSwitchTheme switchTheme, Widget child) {
+    return Container(
+      padding: EdgeInsets.all(focusRingWidth),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(switchTheme.slider.borderRadius),
+        border: Border.all(
+          color: _hasFocus
+              ? Theme.of(context).colorScheme.primary
+              : Colors.transparent,
+          width: focusRingWidth,
+        ),
+      ),
+      child: child,
+    );
+  }
+
+  Widget _gestureSlider(OnOffSwitchTheme switchTheme) {
     return GestureDetector(
       onTap: _isDisabled ? null : _toggle,
       child: AnimatedContainer(
