@@ -283,5 +283,7 @@
   "getHelp": "Get help",
   "pauseConnection": "Pause connection",
   "cannotStopFWWhileKSOnTitle": "Firewall can’t be turned off while Kill Switch is on",
-  "cannotStopFWWhileKSOnDesc": "Firewall is needed for Kill Switch to work. Turn off Kill Switch first in VPN connection settings."
+  "cannotStopFWWhileKSOnDesc": "Firewall is needed for Kill Switch to work. Turn off Kill Switch first in VPN connection settings.",
+  "connectionLimitReachedTitle": "Too many connection attempts",
+  "connectionLimitReachedBody": "You initiated too many connections in a short time. Wait a while and retry. If you’re connected on 10 devices, disconnect one of them and try again.\n[Learn more](https://support.nordvpn.com/hc/en-us/articles/47181405478417-I-get-the-Session-Limit-Reached-error-on-NordVPN?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=ens_error-session_limit&nm=app&ns=nordvpn-linux-gui&nc=ens_error-session_limit)"
 }

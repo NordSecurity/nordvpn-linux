@@ -4,6 +4,7 @@ import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/theme/popup_theme.dart';
 import 'package:nordvpn/widgets/popups/popup.dart';
+import 'package:nordvpn/widgets/rich_text_markdown_links.dart';
 
 // Popup for showing information (like failed action). It can be only closed.
 final class InfoPopup extends Popup {
@@ -21,7 +22,7 @@ final class InfoPopup extends Popup {
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: theme.verticalElementSpacing,
       children: [
-        Text(message(ref), style: theme.textSecondary),
+        RichTextMarkdownLinks(text: message(ref), style: theme.textSecondary),
         Align(alignment: Alignment.centerRight, child: _closeButton(context)),
       ],
     );

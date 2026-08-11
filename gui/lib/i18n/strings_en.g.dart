@@ -2190,6 +2190,12 @@ class TranslationsUiEn {
 
 	/// en: 'Firewall is needed for Kill Switch to work. Turn off Kill Switch first in VPN connection settings.'
 	String get cannotStopFWWhileKSOnDesc => 'Firewall is needed for Kill Switch to work. Turn off Kill Switch first in VPN connection settings.';
+
+	/// en: 'Too many connection attempts'
+	String get connectionLimitReachedTitle => 'Too many connection attempts';
+
+	/// en: 'You initiated too many connections in a short time. Wait a while and retry. If you’re connected on 10 devices, disconnect one of them and try again. [Learn more](https://support.nordvpn.com/hc/en-us/articles/47181405478417-I-get-the-Session-Limit-Reached-error-on-NordVPN?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=ens_error-session_limit&nm=app&ns=nordvpn-linux-gui&nc=ens_error-session_limit)'
+	String get connectionLimitReachedBody => 'You initiated too many connections in a short time. Wait a while and retry. If you’re connected on 10 devices, disconnect one of them and try again.\n[Learn more](https://support.nordvpn.com/hc/en-us/articles/47181405478417-I-get-the-Session-Limit-Reached-error-on-NordVPN?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=ens_error-session_limit&nm=app&ns=nordvpn-linux-gui&nc=ens_error-session_limit)';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -2901,6 +2907,8 @@ extension on Translations {
 			'ui.pauseConnection' => 'Pause connection',
 			'ui.cannotStopFWWhileKSOnTitle' => 'Firewall can’t be turned off while Kill Switch is on',
 			'ui.cannotStopFWWhileKSOnDesc' => 'Firewall is needed for Kill Switch to work. Turn off Kill Switch first in VPN connection settings.',
+			'ui.connectionLimitReachedTitle' => 'Too many connection attempts',
+			'ui.connectionLimitReachedBody' => 'You initiated too many connections in a short time. Wait a while and retry. If you’re connected on 10 devices, disconnect one of them and try again.\n[Learn more](https://support.nordvpn.com/hc/en-us/articles/47181405478417-I-get-the-Session-Limit-Reached-error-on-NordVPN?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=ens_error-session_limit&nm=app&ns=nordvpn-linux-gui&nc=ens_error-session_limit)',
 			_ => null,
 		};
 	}
