@@ -154,7 +154,7 @@ const (
 	ServersURLSpecificQuery = "?filters[servers.id]=%d"
 
 	// ovpnTemplateURL defines url to ovpn server template
-	ovpnTemplateURL = "/configs/templates/ovpn/1.0/template.xslt"
+	ovpnTemplateURL = "/configs/templates/v2/ovpn/1.0/template.xslt"
 
 	// ovpnObfsTemplateURL defines url to ovpn obfuscated server template
 	ovpnObfsTemplateURL = "/configs/templates/ovpn_xor/1.1/template.xslt"

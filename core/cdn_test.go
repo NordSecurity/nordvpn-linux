@@ -35,7 +35,7 @@ func TestCdnApi(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotZero(t, len(fileBytes))
 
-	fileBytes, err = cdnApi.GetRemoteFile("/configs/templates/ovpn/1.0/template.xslt")
+	fileBytes, err = cdnApi.GetRemoteFile("/configs/templates/v2/ovpn/1.0/template.xslt")
 	assert.NoError(t, err)
 	assert.NotZero(t, len(fileBytes))
 
