@@ -69,6 +69,7 @@ class GeneralSettings extends ConsumerWidget {
             return SettingsWrapperWidget.buildListItem(
               context,
               title: t.ui.showNotifications,
+              mergeSemantics: false,
               trailing: OnOffSwitch(
                 semanticLabel: t.ui.showNotifications,
                 value: settings.notifications,
