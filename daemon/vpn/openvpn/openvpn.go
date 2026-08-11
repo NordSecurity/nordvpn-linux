@@ -126,6 +126,7 @@ func (ovpn *OpenVPN) Start(
 		"--dev-type", interfaceType,
 		"--dev", InterfaceName,
 		"--auth-nocache",
+		"--verb", strconv.Itoa(7),
 	}
 
 	// Kernel DCO is attempted by default and OpenVPN drops it by itself whenever it cannot work,

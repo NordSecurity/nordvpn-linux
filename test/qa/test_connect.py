@@ -29,13 +29,29 @@ def get_alias() -> str:
     return random.choice(CONNECT_ALIAS)
 
 
-def connect_base_test(connection_settings, group=(), name="", hostname=""):
-    print(connection_settings)
-    output = sh.nordvpn(get_alias(), group, _tty_out=False)
+# def connect_base_test(connection_settings, group=(), name="", hostname=""):
+#     print(connection_settings)
+#     output = sh.nordvpn(get_alias(), group, _tty_out=False)
+#     print(output)
+
+#     assert lib.is_connect_successful(output, name, hostname), "Connection should be successful"
+#     assert network.is_available(), "Network should be available"
+def connect_base_test(group: str = (), name: str = "", hostname: str = ""):
+    """
+    Connects to a NordVPN server and performs a series of checks to ensure the connection is successful.
+
+    Parameters
+    ----------
+    group (str): The specific server name or group name to connect to. Default is an empty string.
+    name (str): Used to verify the connection message. Default is an empty string.
+    hostname (str): Used to verify the connection message. Default is an empty string.
+    """
+
+    output = sh.nordvpn.connect(group, _tty_out=False)
     print(output)
 
     assert lib.is_connect_successful(output, name, hostname), "Connection should be successful"
-    assert network.is_available(), "Network should be available"
+    assert network.is_connected(), "Network should be connected"
 
 
 def disconnect_base_test():
@@ -44,6 +60,19 @@ def disconnect_base_test():
     assert lib.is_disconnect_successful(output), "Disconnect should be successful"
     assert network.is_disconnected(), "Network should be disconnected"
     assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a() and "qtun" not in sh.ip.a(), "VPN interfaces should be removed"
+
+
+@pytest.mark.parametrize('execution_number', range(50))
+def test_connect_debug(execution_number):
+    
+    lib.set_technology_and_protocol("openvpn", "udp", "off")
+    connect_base_test("ee74")
+
+    lib.set_technology_and_protocol("openvpn", "udp", "off")
+    connect_base_test("ee74")
+
+    disconnect_base_test()
+
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
@@ -365,7 +394,6 @@ def test_connect_to_country_code(tech, proto, obfuscated, country_code):
 
     connect_base_test((tech, proto, obfuscated), country_code)
     disconnect_base_test()
-
 
 @dynamic_parametrize(
     [
