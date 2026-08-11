@@ -28,4 +28,5 @@ void main() async {
   runObfuscatedServersTests();
   runLegalInformationTests();
   runSnapErrorScreenTests();
+  runEnsTests();
 }
