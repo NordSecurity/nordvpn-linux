@@ -30,7 +30,7 @@ func RunAsync(fn func()) {
 }
 
 // TrySendTimeout - tries to send value on channel.
-// Blocks for the specified duration. If channel is block for the entire duration, value is discarded.
+// Blocks for the specified duration. If channel is blocked for the entire duration, value is discarded.
 func TrySendTimeout[Type any](ch chan<- Type, v Type, d time.Duration) bool {
 	select {
 	case ch <- v:

@@ -194,18 +194,18 @@ func NewCombined(
 
 // Start VPN connection after preparing the network.
 func (netw *Combined) Start(
-	parent context.Context,
+	parentCtx context.Context,
 	creds vpn.Credentials,
 	serverData vpn.ServerData,
 	allowlist config.Allowlist,
 	nameservers config.DNS,
 	enableLocalTraffic bool,
 	disconnectCallback events.DisconnectCallback,
-) (retErr error) {
+) error {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
-	ctx, cancelFn := context.WithCancelCause(parent)
+	ctx, cancelFn := context.WithCancelCause(parentCtx)
 	finishCh := make(chan any)
 	defer close(finishCh)
 
