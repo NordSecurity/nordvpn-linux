@@ -63,6 +63,7 @@ class GeneralSettings extends ConsumerWidget {
               context,
               title: t.ui.appearance,
               trailing: _buildAppearanceTrailing(context, ref, mode),
+              mergeSemantics: false,
             );
           case _GeneralSettingsItems.notifications:
             return SettingsWrapperWidget.buildListItem(
@@ -145,7 +146,7 @@ Widget _buildAppearanceTrailing(
         groupValue: mode,
         onChanged: (value) => _setAppearance(ref, value),
         label: t.ui.system,
-        semanticLabel: t.ui.system,
+        semanticLabel: '${t.ui.appearance} ${t.ui.system}',
         labelStyle: appTheme.body,
       ),
       RadioButton(
@@ -153,7 +154,7 @@ Widget _buildAppearanceTrailing(
         groupValue: mode,
         onChanged: (value) => _setAppearance(ref, value),
         label: t.ui.light,
-        semanticLabel: t.ui.light,
+        semanticLabel: '${t.ui.appearance} ${t.ui.light}',
         labelStyle: appTheme.body,
       ),
       RadioButton(
@@ -161,7 +162,7 @@ Widget _buildAppearanceTrailing(
         groupValue: mode,
         onChanged: (value) => _setAppearance(ref, value),
         label: t.ui.dark,
-        semanticLabel: t.ui.dark,
+        semanticLabel: '${t.ui.appearance} ${t.ui.dark}',
         labelStyle: appTheme.body,
       ),
     ],

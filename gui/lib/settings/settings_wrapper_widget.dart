@@ -94,34 +94,42 @@ final class SettingsWrapperWidget extends StatelessWidget {
     bool enabled = true,
     EdgeInsetsGeometry? padding,
     Color? color,
+    bool mergeSemantics = true,
   }) {
     final settingsTheme = context.settingsTheme;
 
-    return MergeSemantics(
-      child: Semantics(
-        button: true,
-        enabled: enabled,
-        child: AdvancedListTile(
-          key: key ?? UniqueKey(),
-          leading: iconName != null ? DynamicThemeImage(iconName) : null,
-          title: Expanded(
-            child: Text(
-              title,
-              style: titleStyle ?? settingsTheme.itemTitleStyle,
-            ),
-          ),
-          subtitle: subtitle != null
-              ? Text(subtitle, style: settingsTheme.itemSubtitleStyle)
-              : subtitleWidget,
-          center: center,
-          trailing: trailing,
-          onTap: onTap,
-          trailingLocation: trailingLocation,
-          enabled: enabled,
-          padding: padding ?? settingsTheme.itemPadding,
-          color: color,
-        ),
+    final titleText = Text(
+      title,
+      style: titleStyle ?? settingsTheme.itemTitleStyle,
+    );
+
+    final tile = AdvancedListTile(
+      key: key ?? UniqueKey(),
+      leading: iconName != null ? DynamicThemeImage(iconName) : null,
+      title: Expanded(
+        child: mergeSemantics
+            ? titleText
+            : Semantics(container: true, child: titleText),
       ),
+      subtitle: subtitle != null
+          ? Text(subtitle, style: settingsTheme.itemSubtitleStyle)
+          : subtitleWidget,
+      center: center,
+      trailing: trailing,
+      onTap: onTap,
+      trailingLocation: trailingLocation,
+      enabled: enabled,
+      padding: padding ?? settingsTheme.itemPadding,
+      color: color,
+    );
+
+    if (!mergeSemantics) {
+      //this is to keep separate semantics across all sub-widgets of a single list item
+      return Semantics(container: true, explicitChildNodes: true, child: tile);
+    }
+
+    return MergeSemantics(
+      child: Semantics(button: true, enabled: enabled, child: tile),
     );
   }
 }
