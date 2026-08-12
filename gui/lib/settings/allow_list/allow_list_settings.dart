@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/allow_list.dart';
@@ -10,6 +12,7 @@ import 'package:nordvpn/internal/popup_codes.dart';
 import 'package:nordvpn/settings/allow_list/add_to_allow_list_card.dart';
 import 'package:nordvpn/settings/allow_list/allow_list_content_display.dart';
 import 'package:nordvpn/settings/settings_wrapper_widget.dart';
+import 'package:nordvpn/widgets/accessible_item.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/widgets/advanced_list_tile.dart';
 import 'package:nordvpn/widgets/custom_error_widget.dart';
@@ -66,15 +69,22 @@ class _AllowListSettingsState extends ConsumerState<AllowListSettings> {
         child: Column(
           spacing: appTheme.verticalSpaceSmall,
           children: [
-            SettingsWrapperWidget.buildListItem(
-              context,
-              title: t.ui.useAllowList,
-              subtitle: t.ui.useAllowListScreenDescription,
-              trailingLocation: TrailingLocation.center,
-              trailing: OnOffSwitch(
-                value: isAllowListEnabled,
-                shouldChange: (toValue) => _canChange(settings, toValue),
-                onChanged: (value) => _toggleAllowList(settings, value),
+            AccessibleItem(
+              toggled: isAllowListEnabled,
+              label:
+                  '${t.ui.useAllowList}. ${t.ui.useAllowListScreenDescription}',
+              onActivate: () =>
+                  unawaited(_activateAllowList(settings, isAllowListEnabled)),
+              child: SettingsWrapperWidget.buildListItem(
+                context,
+                title: t.ui.useAllowList,
+                subtitle: t.ui.useAllowListScreenDescription,
+                trailingLocation: TrailingLocation.center,
+                trailing: OnOffSwitch(
+                  value: isAllowListEnabled,
+                  shouldChange: (toValue) => _canChange(settings, toValue),
+                  onChanged: (value) => _toggleAllowList(settings, value),
+                ),
               ),
             ),
             AddToAllowListCard(
@@ -99,6 +109,15 @@ class _AllowListSettingsState extends ConsumerState<AllowListSettings> {
             )
           : SizedBox.shrink(),
     );
+  }
+
+  Future<void> _activateAllowList(
+    ApplicationSettings settings,
+    bool value,
+  ) async {
+    final toValue = !value;
+    if (!(await _canChange(settings, toValue))) return;
+    await _toggleAllowList(settings, toValue);
   }
 
   Future<bool> _canChange(ApplicationSettings settings, bool toValue) async {
@@ -132,6 +151,8 @@ class _AllowListSettingsState extends ConsumerState<AllowListSettings> {
     PortInterval? port,
     Subnet? subnet,
   }) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     await ref
         .read(vpnSettingsControllerProvider.notifier)
         .removeFromAllowList(port: port, subnet: subnet);

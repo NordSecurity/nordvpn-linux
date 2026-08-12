@@ -100,6 +100,7 @@ final class AllowListContentDisplay extends StatelessWidget {
                   ),
                   Spacer(),
                   BinButton(
+                    semanticLabel: '${t.ui.delete} ${subnet.value}',
                     onPressed: () async => await onDeleted(subnet: subnet),
                   ),
                 ],
@@ -147,6 +148,7 @@ final class AllowListContentDisplay extends StatelessWidget {
                     ),
                     Spacer(),
                     BinButton(
+                      semanticLabel: _portDeleteLabel(port),
                       onPressed: () async => await onDeleted(port: port),
                     ),
                   ],
@@ -172,5 +174,12 @@ final class AllowListContentDisplay extends StatelessWidget {
       );
     }
     return Text("${port.start}", style: allowListTheme.tableItemsStyle);
+  }
+
+  String _portDeleteLabel(PortInterval port) {
+    final value = port.isRange
+        ? "${port.start} ${t.ui.to} ${port.end}"
+        : "${port.start}";
+    return "${t.ui.delete} $value ${portTypeToString(port.type)}";
   }
 }
