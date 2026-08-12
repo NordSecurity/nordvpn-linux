@@ -80,23 +80,34 @@ class GeneralSettings extends ConsumerWidget {
             );
           case _GeneralSettingsItems.analytics:
             return CustomExpansionTile(
-              title: Text(t.ui.privacyPreferences, style: appTheme.body),
-              subtitle: Text(
-                t.ui.privacyPreferencesDescription,
-                style: appTheme.caption,
+              title: Semantics(
+                container: true,
+                child: Text(t.ui.privacyPreferences, style: appTheme.body),
+              ),
+              subtitle: Semantics(
+                container: true,
+                child: Text(
+                  t.ui.privacyPreferencesDescription,
+                  style: appTheme.caption,
+                ),
               ),
               contentPadding: EdgeInsets.zero,
+              expandButtonSemanticLabel:
+                  '${t.ui.privacyPreferences} ${t.ui.privacyPreferencesDescription}',
               children: [
                 SettingsWrapperWidget.buildListItem(
                   context,
                   title: t.ui.essentialRequired,
+                  mergeSemantics: false,
+                  excludeTextSemantics: true,
                   subtitleWidget: RichTextMarkdownLinks(
                     text: t.ui.requiredAnalyticsDescription(
                       termsUrl: termsOfServiceUrl,
                     ),
                   ),
                   trailing: OnOffSwitch(
-                    semanticLabel: t.ui.essentialRequired,
+                    semanticLabel:
+                        '${t.ui.privacyPreferences} ${t.ui.essentialRequired}',
                     value: true,
                     onChanged: null,
                   ),
@@ -104,9 +115,12 @@ class GeneralSettings extends ConsumerWidget {
                 SettingsWrapperWidget.buildListItem(
                   context,
                   title: t.ui.analytics,
+                  mergeSemantics: false,
+                  excludeTextSemantics: true,
                   subtitle: t.ui.analyticsDescription,
                   trailing: OnOffSwitch(
-                    semanticLabel: t.ui.analytics,
+                    semanticLabel:
+                        '${t.ui.privacyPreferences} ${t.ui.analytics}',
                     value:
                         settings.analyticsConsent == ConsentLevel.acceptedAll,
                     onChanged: (value) => ref

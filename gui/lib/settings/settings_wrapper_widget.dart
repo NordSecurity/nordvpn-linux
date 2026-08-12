@@ -95,25 +95,32 @@ final class SettingsWrapperWidget extends StatelessWidget {
     EdgeInsetsGeometry? padding,
     Color? color,
     bool mergeSemantics = true,
+    bool excludeTextSemantics = false,
   }) {
     final settingsTheme = context.settingsTheme;
 
-    final titleText = Text(
+    Widget titleChild = Text(
       title,
       style: titleStyle ?? settingsTheme.itemTitleStyle,
     );
 
+    if (excludeTextSemantics) {
+      titleChild = ExcludeSemantics(child: titleChild);
+    } else if (!mergeSemantics) {
+      titleChild = Semantics(container: true, child: titleChild);
+    }
+
+    final subtitleChild = subtitle != null
+        ? Text(subtitle, style: settingsTheme.itemSubtitleStyle)
+        : subtitleWidget;
+
     final tile = AdvancedListTile(
       key: key ?? UniqueKey(),
       leading: iconName != null ? DynamicThemeImage(iconName) : null,
-      title: Expanded(
-        child: mergeSemantics
-            ? titleText
-            : Semantics(container: true, child: titleText),
-      ),
-      subtitle: subtitle != null
-          ? Text(subtitle, style: settingsTheme.itemSubtitleStyle)
-          : subtitleWidget,
+      title: Expanded(child: titleChild),
+      subtitle: excludeTextSemantics && subtitleChild != null
+          ? ExcludeSemantics(child: subtitleChild)
+          : subtitleChild,
       center: center,
       trailing: trailing,
       onTap: onTap,
@@ -124,7 +131,7 @@ final class SettingsWrapperWidget extends StatelessWidget {
     );
 
     if (!mergeSemantics) {
-      //this is to keep separate semantics across all sub-widgets of a single list item
+      //this is to keep semantics separated across all sub-widgets of a single list item
       return Semantics(container: true, explicitChildNodes: true, child: tile);
     }
 

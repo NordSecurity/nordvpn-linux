@@ -17,6 +17,7 @@ final class CustomExpansionTile extends StatefulWidget {
   final bool enabled;
   final Widget? trailing;
   final EdgeInsetsGeometry? contentPadding;
+  final String? expandButtonSemanticLabel;
 
   const CustomExpansionTile({
     super.key,
@@ -32,6 +33,7 @@ final class CustomExpansionTile extends StatefulWidget {
     this.enabled = true,
     this.trailing,
     this.contentPadding,
+    this.expandButtonSemanticLabel,
   });
 
   @override
@@ -86,11 +88,17 @@ class _CustomExpansionTileState extends State<CustomExpansionTile> {
     if (widget.children == null) {
       return null;
     }
+    // if the trailing widget is provided with a custom semantics label, announce it in following format:
+    // <custom label> <expand/collapse>
+    // otherwise, announce only expand/collapse
+    final expandLabel = _isExpanded
+        ? t.a11y.expandibleEntryCollapse
+        : t.a11y.expandibleEntryExpand;
+    final entryLabel = widget.expandButtonSemanticLabel;
+
     return MergeSemantics(
       child: Semantics(
-        label: _isExpanded
-            ? t.a11y.expandibleEntryCollapse
-            : t.a11y.expandibleEntryExpand,
+        label: entryLabel == null ? expandLabel : '$entryLabel $expandLabel',
         expanded: _isExpanded,
         child: IconButton(
           icon: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
