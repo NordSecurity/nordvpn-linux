@@ -81,6 +81,18 @@ class TranslationsA11yEn {
 
 	/// en: 'Recent connections. $details'
 	String recentConnectionWithDetails({required Object details}) => 'Recent connections. ${details}';
+
+	/// en: 'Expand'
+	String get expandibleEntryExpand => 'Expand';
+
+	/// en: 'Collapse'
+	String get expandibleEntryCollapse => 'Collapse';
+
+	/// en: 'Expanded'
+	String get expandibleEntryExpanded => 'Expanded';
+
+	/// en: 'Collapsed'
+	String get expandibleEntryCollapsed => 'Collapsed';
 }
 
 // Path: cities
@@ -2230,6 +2242,10 @@ extension on Translations {
 			'a11y.moreOptions' => 'More options',
 			'a11y.listWithItems' => ({required Object number}) => 'List with ${number} items',
 			'a11y.recentConnectionWithDetails' => ({required Object details}) => 'Recent connections. ${details}',
+			'a11y.expandibleEntryExpand' => 'Expand',
+			'a11y.expandibleEntryCollapse' => 'Collapse',
+			'a11y.expandibleEntryExpanded' => 'Expanded',
+			'a11y.expandibleEntryCollapsed' => 'Collapsed',
 			'cities.tirana' => 'Tirana',
 			'cities.algiers' => 'Algiers',
 			'cities.addis_ababa' => 'Addis Ababa',
@@ -2729,12 +2745,12 @@ extension on Translations {
 			'ui.virtual' => 'Virtual',
 			'ui.dedicatedIp' => 'Dedicated IP',
 			'ui.dedicatedServer' => 'Dedicated Server',
+			_ => null,
+		} ?? switch (path) {
 			'ui.doubleVpn' => 'Double VPN',
 			'ui.onionOverVpn' => 'Onion over VPN',
 			'ui.p2p' => 'P2P',
 			'ui.obfuscated' => 'Obfuscated',
-			_ => null,
-		} ?? switch (path) {
 			'ui.obfuscatedServers' => 'Obfuscated Servers',
 			'ui.selectServerForDip' => 'Pick a location for your IP',
 			'ui.selectLocation' => 'Select location',
