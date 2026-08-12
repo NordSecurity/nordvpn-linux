@@ -277,6 +277,42 @@ func checkCtOriginalSrcIP(ip netip.Addr) []expr.Any {
 }
 
 // ip saddr 100.64.0.0/10
+func checkIPIsNotEqual(addr netip.Addr, match matchType) []expr.Any {
+	var offset uint32 = 12
+	if match == matchDest {
+		offset = 16
+	}
+
+	networkAddr := addr.As4()
+
+	return []expr.Any{
+		&expr.Meta{
+			Key:      expr.MetaKeyNFPROTO,
+			Register: 1,
+		},
+		&expr.Cmp{
+			Register: 1,
+			Op:       expr.CmpOpEq,
+			Data:     []byte{unix.NFPROTO_IPV4},
+		},
+
+		// Load IPv4 address
+		&expr.Payload{
+			DestRegister: 1,
+			Base:         expr.PayloadBaseNetworkHeader,
+			Offset:       offset, // IPv4 saddr
+			Len:          4,
+		},
+
+		&expr.Cmp{
+			Register: 1,
+			Op:       expr.CmpOpNeq,
+			Data:     networkAddr[:],
+		},
+	}
+}
+
+// ip saddr 100.64.0.0/10
 func checkIPIsPartOfSubnet(pfx netip.Prefix, match matchType, op expr.CmpOp) []expr.Any {
 	var offset uint32 = 12
 	if match == matchDest {

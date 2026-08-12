@@ -314,6 +314,18 @@ func (n *nft) addOutputChain(config firewall.Config, nftCtx *nftContext) {
 		})
 	}
 
+	if config.TunnelIP.IsValid() {
+		n.conn.AddRule(&nftables.Rule{
+			Table: nftCtx.table,
+			Chain: outputChain,
+			Exprs: buildRules(
+					&expr.Verdict{Kind: expr.VerdictDrop},
+					checkIPIsNotEqual(config.TunnelIP, matchSource),
+				),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "Drop non tunnel source packets"),
+		})
+	}
+
 	if len(config.TunnelInterface) > 0 {
 		// oif "nordtun" accept
 		n.conn.AddRule(&nftables.Rule{
