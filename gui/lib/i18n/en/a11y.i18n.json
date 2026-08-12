@@ -7,5 +7,9 @@
   "VPNPanelLoading": "VPN Panel. Loading.",
   "moreOptions": "More options",
   "listWithItems": "List with $number items",
-  "recentConnectionWithDetails": "Recent connections. $details"
+  "recentConnectionWithDetails": "Recent connections. $details",
+  "expandibleEntryExpand": "Expand",
+  "expandibleEntryCollapse": "Collapse",
+  "expandibleEntryExpanded": "Expanded",
+  "expandibleEntryCollapsed": "Collapsed"
 }
