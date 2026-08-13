@@ -72,6 +72,7 @@ class VpnStatusController extends _$VpnStatusController
 
   Future<int> _doAndShowPopup(_VpnRepoFn fn) async {
     final vpnProvider = ref.read(vpnRepositoryProvider);
+    final popups = ref.read(popupsProvider.notifier);
     int status = DaemonStatusCode.success;
 
     try {
@@ -90,7 +91,7 @@ class VpnStatusController extends _$VpnStatusController
       status = DaemonStatusCode.failedToConnectToVpn;
     }
 
-    ref.read(popupsProvider.notifier).show(status);
+    popups.show(status);
     return status;
   }
 
