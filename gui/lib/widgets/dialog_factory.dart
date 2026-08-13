@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:nordvpn/widgets/round_container.dart';
@@ -40,7 +41,10 @@ final class DialogFactory {
                   leading: icon,
                   title: Text(title, style: appTheme.bodyStrong),
                   trailing: IconButton(
-                    icon: DynamicThemeImage("close.svg"),
+                    icon: Semantics(
+                      label: t.ui.close,
+                      child: DynamicThemeImage("close.svg"),
+                    ),
                     onPressed: () {
                       Navigator.of(context).pop();
                     },

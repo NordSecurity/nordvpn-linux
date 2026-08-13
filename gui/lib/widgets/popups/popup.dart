@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
@@ -20,25 +21,30 @@ abstract class Popup extends ConsumerWidget {
     final popupTheme = context.popupTheme;
     final theme = Theme.of(context);
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: popupTheme.widgetRadius,
-        ),
-        padding: EdgeInsets.all(popupTheme.verticalElementSpacing),
-        width: min(
-          dynamicScale(popupTheme.widgetWidth),
-          screenSize.width * 0.8,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _titleBar(context, popupTheme),
-            buildContent(context, ref),
-          ],
+    return _AnnounceOnShow(
+      announcement: t.a11y.popupWithContent(
+        content: "$title. ${message(ref)}",
+      ),
+      child: Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: popupTheme.widgetRadius,
+          ),
+          padding: EdgeInsets.all(popupTheme.verticalElementSpacing),
+          width: min(
+            dynamicScale(popupTheme.widgetWidth),
+            screenSize.width * 0.8,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _titleBar(context, popupTheme),
+              buildContent(context, ref),
+            ],
+          ),
         ),
       ),
     );
@@ -62,15 +68,23 @@ abstract class Popup extends ConsumerWidget {
     );
   }
 
+  // the title and the message are kept in their own semantics nodes, otherwise
+  // they are merged into the dialog and read again for each of its buttons
   Widget _title(PopupTheme theme) {
-    return Text(title, style: theme.textPrimary);
+    return Semantics(
+      container: true,
+      child: Text(title, style: theme.textPrimary),
+    );
   }
 
   Widget _closeIcon(BuildContext context) {
     final theme = context.popupTheme;
     return IconButton(
       padding: EdgeInsetsGeometry.all(theme.xButtonAllPadding),
-      icon: DynamicThemeImage("close.svg"),
+      icon: Semantics(
+        label: t.ui.close,
+        child: DynamicThemeImage("close.svg"),
+      ),
       onPressed: () => Navigator.of(context).pop(),
     );
   }
@@ -81,4 +95,37 @@ abstract class Popup extends ConsumerWidget {
 
   Widget? get leadingIcon => null;
   Widget buildContent(BuildContext context, WidgetRef ref);
+}
+
+final class _AnnounceOnShow extends StatefulWidget {
+  final String announcement;
+  final Widget child;
+
+  const _AnnounceOnShow({required this.announcement, required this.child});
+
+  @override
+  State<_AnnounceOnShow> createState() => _AnnounceOnShowState();
+}
+
+final class _AnnounceOnShowState extends State<_AnnounceOnShow> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _announce());
+  }
+
+  void _announce() {
+    if (!mounted || !MediaQuery.supportsAnnounceOf(context)) {
+      return;
+    }
+
+    SemanticsService.sendAnnouncement(
+      View.of(context),
+      widget.announcement,
+      Directionality.of(context),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

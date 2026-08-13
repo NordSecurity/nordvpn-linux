@@ -47,11 +47,17 @@ final class RichNotificationPopup extends Popup {
   }
 
   Widget _header(AppTheme theme) {
-    return Text(richMetadata.header, style: theme.title);
+    return Semantics(
+      container: true,
+      child: Text(richMetadata.header, style: theme.title),
+    );
   }
 
   Widget _message(WidgetRef ref, AppTheme theme) {
-    return Text(richMetadata.message(ref), style: theme.body);
+    return Semantics(
+      container: true,
+      child: Text(richMetadata.message(ref), style: theme.body),
+    );
   }
 
   Widget _actionButton(BuildContext context, WidgetRef ref) {
