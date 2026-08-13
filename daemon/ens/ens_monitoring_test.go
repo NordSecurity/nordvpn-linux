@@ -259,7 +259,6 @@ func TestCombined_ENSConnectionsLimitReached(t *testing.T) {
 			Code:           events.VPNConnectionErrorConnectionLimitReached,
 			ServerEndpoint: "",
 		}))
-
 	}()
 
 	err := netw.Start(
