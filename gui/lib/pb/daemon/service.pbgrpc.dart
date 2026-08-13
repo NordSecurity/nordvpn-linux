@@ -415,6 +415,14 @@ class DaemonClient extends $grpc.Client {
         options: options);
   }
 
+  $grpc.ResponseFuture<$20.LogSanitizationEvent> getRestrictedLogStrings(
+    $0.Empty request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$getRestrictedLogStrings, request,
+        options: options);
+  }
+
   /// InjectVpnConnectionError is a DEV-only endpoint that injects a simulated ENS event
   $grpc.ResponseFuture<$0.Payload> injectVpnConnectionError(
     $0.InjectVpnConnectionErrorRequest request, {
@@ -666,6 +674,11 @@ class DaemonClient extends $grpc.Client {
           '/pb.Daemon/SubscribeToStateChanges',
           ($0.Empty value) => value.writeToBuffer(),
           $20.AppState.fromBuffer);
+  static final _$getRestrictedLogStrings =
+      $grpc.ClientMethod<$0.Empty, $20.LogSanitizationEvent>(
+          '/pb.Daemon/GetRestrictedLogStrings',
+          ($0.Empty value) => value.writeToBuffer(),
+          $20.LogSanitizationEvent.fromBuffer);
   static final _$injectVpnConnectionError =
       $grpc.ClientMethod<$0.InjectVpnConnectionErrorRequest, $0.Payload>(
           '/pb.Daemon/InjectVpnConnectionError',
@@ -1053,6 +1066,13 @@ abstract class DaemonServiceBase extends $grpc.Service {
         true,
         ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
         ($20.AppState value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.Empty, $20.LogSanitizationEvent>(
+        'GetRestrictedLogStrings',
+        getRestrictedLogStrings_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $0.Empty.fromBuffer(value),
+        ($20.LogSanitizationEvent value) => value.writeToBuffer()));
     $addMethod(
         $grpc.ServiceMethod<$0.InjectVpnConnectionErrorRequest, $0.Payload>(
             'InjectVpnConnectionError',
@@ -1466,6 +1486,14 @@ abstract class DaemonServiceBase extends $grpc.Service {
   }
 
   $async.Stream<$20.AppState> subscribeToStateChanges(
+      $grpc.ServiceCall call, $0.Empty request);
+
+  $async.Future<$20.LogSanitizationEvent> getRestrictedLogStrings_Pre(
+      $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async {
+    return getRestrictedLogStrings($call, await $request);
+  }
+
+  $async.Future<$20.LogSanitizationEvent> getRestrictedLogStrings(
       $grpc.ServiceCall call, $0.Empty request);
 
   $async.Future<$0.Payload> injectVpnConnectionError_Pre(

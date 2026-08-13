@@ -8,3 +8,11 @@ var stringsToSanitize atomic.Pointer[[]string]
 func SetRestrictedStrings(restrictedStrings ...string) {
 	stringsToSanitize.Store(&restrictedStrings)
 }
+
+func GetRestrictedStrings() []string {
+	restrictedStrings := stringsToSanitize.Load()
+	if restrictedStrings != nil {
+		return *restrictedStrings
+	}
+	return []string{}
+}
