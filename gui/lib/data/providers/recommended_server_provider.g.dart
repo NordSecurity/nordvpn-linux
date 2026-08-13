@@ -6,24 +6,60 @@ part of 'recommended_server_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+
+@ProviderFor(RecommendedServer)
+const recommendedServerProvider = RecommendedServerProvider._();
+
+final class RecommendedServerProvider
+    extends
+        $AsyncNotifierProvider<RecommendedServer, RecommendedServerLocation> {
+  const RecommendedServerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'recommendedServerProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$recommendedServerHash();
+
+  @$internal
+  @override
+  RecommendedServer create() => RecommendedServer();
+}
+
 String _$recommendedServerHash() => r'3cb3940c85c955e503e25e4efa333a9957edb1ba';
 
-/// See also [RecommendedServer].
-@ProviderFor(RecommendedServer)
-final recommendedServerProvider =
-    AsyncNotifierProvider<
-      RecommendedServer,
-      RecommendedServerLocation
-    >.internal(
-      RecommendedServer.new,
-      name: r'recommendedServerProvider',
-      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-          ? null
-          : _$recommendedServerHash,
-      dependencies: null,
-      allTransitiveDependencies: null,
-    );
-
-typedef _$RecommendedServer = AsyncNotifier<RecommendedServerLocation>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+abstract class _$RecommendedServer
+    extends $AsyncNotifier<RecommendedServerLocation> {
+  FutureOr<RecommendedServerLocation> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref =
+        this.ref
+            as $Ref<
+              AsyncValue<RecommendedServerLocation>,
+              RecommendedServerLocation
+            >;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<
+                AsyncValue<RecommendedServerLocation>,
+                RecommendedServerLocation
+              >,
+              AsyncValue<RecommendedServerLocation>,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}

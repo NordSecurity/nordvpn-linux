@@ -6,22 +6,52 @@ part of 'uievent_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$uiEventRepositoryHash() => r'fd5d8144d24a17b2ece0ade727a5420d9b55cd13';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [uiEventRepository].
 @ProviderFor(uiEventRepository)
-final uiEventRepositoryProvider = Provider<UiEventRepository>.internal(
-  uiEventRepository,
-  name: r'uiEventRepositoryProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$uiEventRepositoryHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+const uiEventRepositoryProvider = UiEventRepositoryProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef UiEventRepositoryRef = ProviderRef<UiEventRepository>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class UiEventRepositoryProvider
+    extends
+        $FunctionalProvider<
+          UiEventRepository,
+          UiEventRepository,
+          UiEventRepository
+        >
+    with $Provider<UiEventRepository> {
+  const UiEventRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'uiEventRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$uiEventRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<UiEventRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  UiEventRepository create(Ref ref) {
+    return uiEventRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(UiEventRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<UiEventRepository>(value),
+    );
+  }
+}
+
+String _$uiEventRepositoryHash() => r'fd5d8144d24a17b2ece0ade727a5420d9b55cd13';

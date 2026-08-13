@@ -6,20 +6,57 @@ part of 'popups_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+
+@ProviderFor(Popups)
+const popupsProvider = PopupsProvider._();
+
+final class PopupsProvider extends $NotifierProvider<Popups, PopupMetadata?> {
+  const PopupsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'popupsProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$popupsHash();
+
+  @$internal
+  @override
+  Popups create() => Popups();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(PopupMetadata? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<PopupMetadata?>(value),
+    );
+  }
+}
+
 String _$popupsHash() => r'fd8a7ba721b83574d4e3f73e62c2bcdc9b06cac3';
 
-/// See also [Popups].
-@ProviderFor(Popups)
-final popupsProvider = NotifierProvider<Popups, PopupMetadata?>.internal(
-  Popups.new,
-  name: r'popupsProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$popupsHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-typedef _$Popups = Notifier<PopupMetadata?>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+abstract class _$Popups extends $Notifier<PopupMetadata?> {
+  PopupMetadata? build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<PopupMetadata?, PopupMetadata?>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<PopupMetadata?, PopupMetadata?>,
+              PopupMetadata?,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}
