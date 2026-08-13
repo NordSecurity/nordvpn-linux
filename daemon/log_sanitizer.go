@@ -13,8 +13,8 @@ type LogSanitizer struct {
 	logSanitizationUpdate events.Publisher[*pb.LogSanitizationEvent]
 }
 
-func NewLogSanitizer(logSanitizationUpdate events.Publisher[*pb.LogSanitizationEvent]) LogSanitizer {
-	return LogSanitizer{
+func NewLogSanitizer(logSanitizationUpdate events.Publisher[*pb.LogSanitizationEvent]) *LogSanitizer {
+	return &LogSanitizer{
 		logSanitizationUpdate: logSanitizationUpdate,
 	}
 }
