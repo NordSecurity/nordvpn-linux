@@ -417,4 +417,13 @@ final class MockDaemon extends DaemonServiceBase {
     // TODO: implement collectDiagnostics
     throw UnimplementedError();
   }
+
+  @override
+  Future<LogSanitizationEvent> getRestrictedLogStrings(
+    ServiceCall call,
+    Empty request,
+  ) {
+    // TODO: implement getRestrictedLogStrings
+    throw UnimplementedError();
+  }
 }
