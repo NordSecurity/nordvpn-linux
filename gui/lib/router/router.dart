@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nordvpn/data/providers/account_controller.dart';
@@ -93,14 +94,10 @@ final redirectStateProvider = ChangeNotifierProvider((ref) {
     );
   }
 
-  for (final provider in [
-    loginStatusProvider,
-    grpcConnectionControllerProvider,
-    accountControllerProvider,
-    consentStatusProvider,
-  ]) {
-    ref.listen(provider, (_, _) => updateRedirect());
-  }
+  ref.listen(loginStatusProvider, (_, _) => updateRedirect());
+  ref.listen(grpcConnectionControllerProvider, (_, _) => updateRedirect());
+  ref.listen(accountControllerProvider, (_, _) => updateRedirect());
+  ref.listen(consentStatusProvider, (_, _) => updateRedirect());
 
   updateRedirect();
 

@@ -157,7 +157,7 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       yesButtonText: t.ui.reconnectNow,
       yesAction: (ref) async {
         // Get current connection parameters before applying protocol change
-        final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
+        final vpnStatus = ref.read(vpnStatusControllerProvider).value;
         final connectionParams = vpnStatus?.connectionParameters;
 
         // Apply the pending protocol change
@@ -196,7 +196,7 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       id: DaemonStatusCode.accountExpired,
       header: t.ui.subscriptionHasEnded,
       message: (ref) {
-        final account = ref.read(accountControllerProvider).valueOrNull;
+        final account = ref.read(accountControllerProvider).value;
         // if account is not set, we'll be redirected to login
         // page so the message returned here doesn't matter
         if (account == null) return "";
