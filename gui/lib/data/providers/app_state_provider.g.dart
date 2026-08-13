@@ -6,22 +6,46 @@ part of 'app_state_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$appStateHash() => r'b54466029523e85ecb03e71bffa6a92a35fb767c';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [appState].
 @ProviderFor(appState)
-final appStateProvider = Provider<AppStateChange>.internal(
-  appState,
-  name: r'appStateProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$appStateHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+final appStateProvider = AppStateProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef AppStateRef = ProviderRef<AppStateChange>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class AppStateProvider
+    extends $FunctionalProvider<AppStateChange, AppStateChange, AppStateChange>
+    with $Provider<AppStateChange> {
+  AppStateProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'appStateProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$appStateHash();
+
+  @$internal
+  @override
+  $ProviderElement<AppStateChange> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  AppStateChange create(Ref ref) {
+    return appState(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AppStateChange value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AppStateChange>(value),
+    );
+  }
+}
+
+String _$appStateHash() => r'b54466029523e85ecb03e71bffa6a92a35fb767c';

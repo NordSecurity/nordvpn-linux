@@ -40,16 +40,16 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	Translations $copyWith({TranslationMetadata<AppLocale, Translations>? meta}) => Translations(meta: meta ?? this.$meta);
 
 	// Translations
-	late final TranslationsA11yEn a11y = TranslationsA11yEn._(_root);
-	late final TranslationsCitiesEn cities = TranslationsCitiesEn._(_root);
-	late final TranslationsCountriesEn countries = TranslationsCountriesEn._(_root);
-	late final TranslationsDaemonEn daemon = TranslationsDaemonEn._(_root);
-	late final TranslationsUiEn ui = TranslationsUiEn._(_root);
+	late final Translations$a11y$en a11y = Translations$a11y$en._(_root);
+	late final Translations$cities$en cities = Translations$cities$en._(_root);
+	late final Translations$countries$en countries = Translations$countries$en._(_root);
+	late final Translations$daemon$en daemon = Translations$daemon$en._(_root);
+	late final Translations$ui$en ui = Translations$ui$en._(_root);
 }
 
 // Path: a11y
-class TranslationsA11yEn {
-	TranslationsA11yEn._(this._root);
+class Translations$a11y$en {
+	Translations$a11y$en._(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -99,8 +99,8 @@ class TranslationsA11yEn {
 }
 
 // Path: cities
-class TranslationsCitiesEn {
-	TranslationsCitiesEn._(this._root);
+class Translations$cities$en {
+	Translations$cities$en._(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -747,8 +747,8 @@ class TranslationsCitiesEn {
 }
 
 // Path: countries
-class TranslationsCountriesEn {
-	TranslationsCountriesEn._(this._root);
+class Translations$countries$en {
+	Translations$countries$en._(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1110,8 +1110,8 @@ class TranslationsCountriesEn {
 }
 
 // Path: daemon
-class TranslationsDaemonEn {
-	TranslationsDaemonEn._(this._root);
+class Translations$daemon$en {
+	Translations$daemon$en._(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1371,8 +1371,8 @@ class TranslationsDaemonEn {
 }
 
 // Path: ui
-class TranslationsUiEn {
-	TranslationsUiEn._(this._root);
+class Translations$ui$en {
+	Translations$ui$en._(this._root);
 
 	final Translations _root; // ignore: unused_field
 
