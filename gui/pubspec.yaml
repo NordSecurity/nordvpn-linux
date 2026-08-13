@@ -28,7 +28,7 @@ dependencies:
   flutter_web_plugins:
     sdk: flutter
   flutter_riverpod: ^3.0.0
-  riverpod_annotation: ^3.0.0
+  riverpod_annotation: ^4.0.0
   riverpod: ^3.0.0
   protobuf: ^6.0.0
   grpc: ^5.1.0
@@ -67,8 +67,8 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
   build_runner: ^2.4.15
-  custom_lint:
-  riverpod_generator: ^3.0.0
+  custom_lint: ^0.8.1
+  riverpod_generator: ^4.0.0+1
   riverpod_lint: ^3.0.0
   theme_tailor: ^3.0.3
   freezed: ^3.0.0

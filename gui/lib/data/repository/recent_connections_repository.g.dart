@@ -10,7 +10,7 @@ part of 'recent_connections_repository.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(recentConnectionsRepository)
-const recentConnectionsRepositoryProvider =
+final recentConnectionsRepositoryProvider =
     RecentConnectionsRepositoryProvider._();
 
 final class RecentConnectionsRepositoryProvider
@@ -21,7 +21,7 @@ final class RecentConnectionsRepositoryProvider
           RecentConnectionsRepository
         >
     with $Provider<RecentConnectionsRepository> {
-  const RecentConnectionsRepositoryProvider._()
+  RecentConnectionsRepositoryProvider._()
     : super(
         from: null,
         argument: null,

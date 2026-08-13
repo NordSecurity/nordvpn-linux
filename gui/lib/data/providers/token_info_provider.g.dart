@@ -10,11 +10,11 @@ part of 'token_info_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(TokenInfo)
-const tokenInfoProvider = TokenInfoProvider._();
+final tokenInfoProvider = TokenInfoProvider._();
 
 final class TokenInfoProvider
     extends $AsyncNotifierProvider<TokenInfo, TokenInfoResponse?> {
-  const TokenInfoProvider._()
+  TokenInfoProvider._()
     : super(
         from: null,
         argument: null,
@@ -40,7 +40,6 @@ abstract class _$TokenInfo extends $AsyncNotifier<TokenInfoResponse?> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref =
         this.ref as $Ref<AsyncValue<TokenInfoResponse?>, TokenInfoResponse?>;
     final element =
@@ -51,6 +50,6 @@ abstract class _$TokenInfo extends $AsyncNotifier<TokenInfoResponse?> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

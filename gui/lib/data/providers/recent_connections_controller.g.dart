@@ -10,7 +10,7 @@ part of 'recent_connections_controller.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(RecentConnectionsController)
-const recentConnectionsControllerProvider =
+final recentConnectionsControllerProvider =
     RecentConnectionsControllerProvider._();
 
 final class RecentConnectionsControllerProvider
@@ -19,7 +19,7 @@ final class RecentConnectionsControllerProvider
           RecentConnectionsController,
           List<RecentConnection>
         > {
-  const RecentConnectionsControllerProvider._()
+  RecentConnectionsControllerProvider._()
     : super(
         from: null,
         argument: null,
@@ -47,7 +47,6 @@ abstract class _$RecentConnectionsController
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref =
         this.ref
             as $Ref<AsyncValue<List<RecentConnection>>, List<RecentConnection>>;
@@ -62,6 +61,6 @@ abstract class _$RecentConnectionsController
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

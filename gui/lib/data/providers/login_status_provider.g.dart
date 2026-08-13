@@ -10,11 +10,11 @@ part of 'login_status_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(LoginStatus)
-const loginStatusProvider = LoginStatusProvider._();
+final loginStatusProvider = LoginStatusProvider._();
 
 final class LoginStatusProvider
     extends $AsyncNotifierProvider<LoginStatus, bool> {
-  const LoginStatusProvider._()
+  LoginStatusProvider._()
     : super(
         from: null,
         argument: null,
@@ -40,7 +40,6 @@ abstract class _$LoginStatus extends $AsyncNotifier<bool> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<AsyncValue<bool>, bool>;
     final element =
         ref.element
@@ -50,6 +49,6 @@ abstract class _$LoginStatus extends $AsyncNotifier<bool> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

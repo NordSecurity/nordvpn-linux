@@ -11,13 +11,13 @@ part of 'vpn_status_controller.dart';
 /// Handles the VPN connection functionality
 
 @ProviderFor(VpnStatusController)
-const vpnStatusControllerProvider = VpnStatusControllerProvider._();
+final vpnStatusControllerProvider = VpnStatusControllerProvider._();
 
 /// Handles the VPN connection functionality
 final class VpnStatusControllerProvider
     extends $AsyncNotifierProvider<VpnStatusController, VpnStatus> {
   /// Handles the VPN connection functionality
-  const VpnStatusControllerProvider._()
+  VpnStatusControllerProvider._()
     : super(
         from: null,
         argument: null,
@@ -46,7 +46,6 @@ abstract class _$VpnStatusController extends $AsyncNotifier<VpnStatus> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<AsyncValue<VpnStatus>, VpnStatus>;
     final element =
         ref.element
@@ -56,6 +55,6 @@ abstract class _$VpnStatusController extends $AsyncNotifier<VpnStatus> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

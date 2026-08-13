@@ -10,7 +10,7 @@ part of 'app_state_repository.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(appStateRepository)
-const appStateRepositoryProvider = AppStateRepositoryProvider._();
+final appStateRepositoryProvider = AppStateRepositoryProvider._();
 
 final class AppStateRepositoryProvider
     extends
@@ -20,7 +20,7 @@ final class AppStateRepositoryProvider
           AppStateRepository
         >
     with $Provider<AppStateRepository> {
-  const AppStateRepositoryProvider._()
+  AppStateRepositoryProvider._()
     : super(
         from: null,
         argument: null,

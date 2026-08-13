@@ -10,12 +10,12 @@ part of 'vpn_repository.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(vpnRepository)
-const vpnRepositoryProvider = VpnRepositoryProvider._();
+final vpnRepositoryProvider = VpnRepositoryProvider._();
 
 final class VpnRepositoryProvider
     extends $FunctionalProvider<VpnRepository, VpnRepository, VpnRepository>
     with $Provider<VpnRepository> {
-  const VpnRepositoryProvider._()
+  VpnRepositoryProvider._()
     : super(
         from: null,
         argument: null,

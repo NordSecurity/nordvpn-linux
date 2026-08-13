@@ -10,10 +10,10 @@ part of 'toasts_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(Toasts)
-const toastsProvider = ToastsProvider._();
+final toastsProvider = ToastsProvider._();
 
 final class ToastsProvider extends $NotifierProvider<Toasts, Duration?> {
-  const ToastsProvider._()
+  ToastsProvider._()
     : super(
         from: null,
         argument: null,
@@ -47,7 +47,6 @@ abstract class _$Toasts extends $Notifier<Duration?> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<Duration?, Duration?>;
     final element =
         ref.element
@@ -57,6 +56,6 @@ abstract class _$Toasts extends $Notifier<Duration?> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

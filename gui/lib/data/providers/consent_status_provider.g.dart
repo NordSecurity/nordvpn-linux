@@ -10,11 +10,11 @@ part of 'consent_status_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(ConsentStatus)
-const consentStatusProvider = ConsentStatusProvider._();
+final consentStatusProvider = ConsentStatusProvider._();
 
 final class ConsentStatusProvider
     extends $AsyncNotifierProvider<ConsentStatus, ConsentLevel> {
-  const ConsentStatusProvider._()
+  ConsentStatusProvider._()
     : super(
         from: null,
         argument: null,
@@ -40,7 +40,6 @@ abstract class _$ConsentStatus extends $AsyncNotifier<ConsentLevel> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<AsyncValue<ConsentLevel>, ConsentLevel>;
     final element =
         ref.element
@@ -50,6 +49,6 @@ abstract class _$ConsentStatus extends $AsyncNotifier<ConsentLevel> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

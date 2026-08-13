@@ -10,11 +10,11 @@ part of 'grpc_connection_controller.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(GrpcConnectionController)
-const grpcConnectionControllerProvider = GrpcConnectionControllerProvider._();
+final grpcConnectionControllerProvider = GrpcConnectionControllerProvider._();
 
 final class GrpcConnectionControllerProvider
     extends $AsyncNotifierProvider<GrpcConnectionController, bool> {
-  const GrpcConnectionControllerProvider._()
+  GrpcConnectionControllerProvider._()
     : super(
         from: null,
         argument: null,
@@ -41,7 +41,6 @@ abstract class _$GrpcConnectionController extends $AsyncNotifier<bool> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<AsyncValue<bool>, bool>;
     final element =
         ref.element
@@ -51,6 +50,6 @@ abstract class _$GrpcConnectionController extends $AsyncNotifier<bool> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

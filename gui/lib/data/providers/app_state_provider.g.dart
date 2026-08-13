@@ -10,12 +10,12 @@ part of 'app_state_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(appState)
-const appStateProvider = AppStateProvider._();
+final appStateProvider = AppStateProvider._();
 
 final class AppStateProvider
     extends $FunctionalProvider<AppStateChange, AppStateChange, AppStateChange>
     with $Provider<AppStateChange> {
-  const AppStateProvider._()
+  AppStateProvider._()
     : super(
         from: null,
         argument: null,

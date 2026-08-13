@@ -10,11 +10,11 @@ part of 'account_controller.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(AccountController)
-const accountControllerProvider = AccountControllerProvider._();
+final accountControllerProvider = AccountControllerProvider._();
 
 final class AccountControllerProvider
     extends $AsyncNotifierProvider<AccountController, UserAccount?> {
-  const AccountControllerProvider._()
+  AccountControllerProvider._()
     : super(
         from: null,
         argument: null,
@@ -40,7 +40,6 @@ abstract class _$AccountController extends $AsyncNotifier<UserAccount?> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<AsyncValue<UserAccount?>, UserAccount?>;
     final element =
         ref.element
@@ -50,6 +49,6 @@ abstract class _$AccountController extends $AsyncNotifier<UserAccount?> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

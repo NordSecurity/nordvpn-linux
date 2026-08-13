@@ -10,11 +10,11 @@ part of 'servers_list_controller.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(ServersListController)
-const serversListControllerProvider = ServersListControllerProvider._();
+final serversListControllerProvider = ServersListControllerProvider._();
 
 final class ServersListControllerProvider
     extends $AsyncNotifierProvider<ServersListController, ServersList> {
-  const ServersListControllerProvider._()
+  ServersListControllerProvider._()
     : super(
         from: null,
         argument: null,
@@ -34,14 +34,13 @@ final class ServersListControllerProvider
 }
 
 String _$serversListControllerHash() =>
-    r'cc1ddb5dfe29bdfafd70456dcb4a68745ab4838f';
+    r'07666dc1ca4577a3d4ca71e654bbe065f4555b70';
 
 abstract class _$ServersListController extends $AsyncNotifier<ServersList> {
   FutureOr<ServersList> build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<AsyncValue<ServersList>, ServersList>;
     final element =
         ref.element
@@ -51,6 +50,6 @@ abstract class _$ServersListController extends $AsyncNotifier<ServersList> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

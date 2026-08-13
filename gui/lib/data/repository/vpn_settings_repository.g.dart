@@ -10,7 +10,7 @@ part of 'vpn_settings_repository.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(vpnSettings)
-const vpnSettingsProvider = VpnSettingsProvider._();
+final vpnSettingsProvider = VpnSettingsProvider._();
 
 final class VpnSettingsProvider
     extends
@@ -20,7 +20,7 @@ final class VpnSettingsProvider
           VpnSettingsRepository
         >
     with $Provider<VpnSettingsRepository> {
-  const VpnSettingsProvider._()
+  VpnSettingsProvider._()
     : super(
         from: null,
         argument: null,

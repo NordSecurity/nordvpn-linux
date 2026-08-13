@@ -14,7 +14,7 @@ part of 'pending_settings_provider.dart';
 /// simpler implementation similar to how `allowlistSubnetWiderConfirm` is handled.
 
 @ProviderFor(PendingVPNProtocol)
-const pendingVPNProtocolProvider = PendingVPNProtocolProvider._();
+final pendingVPNProtocolProvider = PendingVPNProtocolProvider._();
 
 /// A notifier for storing a pending VPN protocol value that awaits user confirmation.
 /// Used when a VPN protocol change requires user confirmation (e.g., reconnect popup).
@@ -26,7 +26,7 @@ final class PendingVPNProtocolProvider
   /// Used when a VPN protocol change requires user confirmation (e.g., reconnect popup).
   /// TODO: PendingVPNProtocol does not need Riverpod, and should be replaced with
   /// simpler implementation similar to how `allowlistSubnetWiderConfirm` is handled.
-  const PendingVPNProtocolProvider._()
+  PendingVPNProtocolProvider._()
     : super(
         from: null,
         argument: null,
@@ -66,7 +66,6 @@ abstract class _$PendingVPNProtocol extends $Notifier<VpnProtocol?> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<VpnProtocol?, VpnProtocol?>;
     final element =
         ref.element
@@ -76,6 +75,6 @@ abstract class _$PendingVPNProtocol extends $Notifier<VpnProtocol?> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

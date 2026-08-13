@@ -10,10 +10,10 @@ part of 'popups_provider.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(Popups)
-const popupsProvider = PopupsProvider._();
+final popupsProvider = PopupsProvider._();
 
 final class PopupsProvider extends $NotifierProvider<Popups, PopupMetadata?> {
-  const PopupsProvider._()
+  PopupsProvider._()
     : super(
         from: null,
         argument: null,
@@ -47,7 +47,6 @@ abstract class _$Popups extends $Notifier<PopupMetadata?> {
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref = this.ref as $Ref<PopupMetadata?, PopupMetadata?>;
     final element =
         ref.element
@@ -57,6 +56,6 @@ abstract class _$Popups extends $Notifier<PopupMetadata?> {
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }

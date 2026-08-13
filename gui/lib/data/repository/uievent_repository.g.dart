@@ -10,7 +10,7 @@ part of 'uievent_repository.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(uiEventRepository)
-const uiEventRepositoryProvider = UiEventRepositoryProvider._();
+final uiEventRepositoryProvider = UiEventRepositoryProvider._();
 
 final class UiEventRepositoryProvider
     extends
@@ -20,7 +20,7 @@ final class UiEventRepositoryProvider
           UiEventRepository
         >
     with $Provider<UiEventRepository> {
-  const UiEventRepositoryProvider._()
+  UiEventRepositoryProvider._()
     : super(
         from: null,
         argument: null,

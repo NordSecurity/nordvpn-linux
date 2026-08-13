@@ -10,11 +10,11 @@ part of 'vpn_settings_controller.dart';
 // ignore_for_file: type=lint, type=warning
 
 @ProviderFor(VpnSettingsController)
-const vpnSettingsControllerProvider = VpnSettingsControllerProvider._();
+final vpnSettingsControllerProvider = VpnSettingsControllerProvider._();
 
 final class VpnSettingsControllerProvider
     extends $AsyncNotifierProvider<VpnSettingsController, ApplicationSettings> {
-  const VpnSettingsControllerProvider._()
+  VpnSettingsControllerProvider._()
     : super(
         from: null,
         argument: null,
@@ -34,7 +34,7 @@ final class VpnSettingsControllerProvider
 }
 
 String _$vpnSettingsControllerHash() =>
-    r'f1117132ac32ca220637bdb790a8bb0156bef8bf';
+    r'f97a5bd53a86c1dd2b83498f77b20447a09e8709';
 
 abstract class _$VpnSettingsController
     extends $AsyncNotifier<ApplicationSettings> {
@@ -42,7 +42,6 @@ abstract class _$VpnSettingsController
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
     final ref =
         this.ref as $Ref<AsyncValue<ApplicationSettings>, ApplicationSettings>;
     final element =
@@ -53,6 +52,6 @@ abstract class _$VpnSettingsController
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleCreate(ref, build);
   }
 }
