@@ -12,5 +12,6 @@
   "expandibleEntryCollapse": "Collapse",
   "expandibleEntryExpanded": "Expanded",
   "expandibleEntryCollapsed": "Collapsed",
-  "clear": "Clear"
+  "clear": "Clear",
+  "popupWithContent": "Popup: $content"
 }
