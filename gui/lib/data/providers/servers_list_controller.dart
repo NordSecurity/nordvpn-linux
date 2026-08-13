@@ -18,7 +18,7 @@ class ServersListController extends _$ServersListController
     implements ServersListObserver {
   @override
   FutureOr<ServersList> build() async {
-    final isConnected = ref.watch(grpcConnectionControllerProvider).valueOrNull;
+    final isConnected = ref.watch(grpcConnectionControllerProvider).value;
     if (isConnected != true) return ServersList.empty();
 
     _registerNotifications();

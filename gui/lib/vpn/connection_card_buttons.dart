@@ -86,7 +86,7 @@ final class _ConnectionCardButtonsState
     BuildContext context,
     RecommendedServerLocation? recommendedServerLocation,
   ) {
-    final settings = ref.watch(vpnSettingsControllerProvider).valueOrNull;
+    final settings = ref.watch(vpnSettingsControllerProvider).value;
     final buttonTheme = context.connectionCardTheme.buttonTheme;
 
     if (widget.vpnStatus.isConnected()) {
