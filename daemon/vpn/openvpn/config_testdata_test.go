@@ -165,7 +165,7 @@ aeb893d9a96d1f15519bb3c4dcb40ee3
 -----END OpenVPN Static key V1-----
 </tls-auth>
 `
-	// https://downloads.nordcdn.com/configs/templates/ovpn/1.0/template.xslt
+	// https://downloads.nordcdn.com/configs/templates/v2/ovpn/1.0/template.xslt
 	configV1Template = `<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 <xsl:output method="text"/>
 <xsl:template match="/">client
@@ -173,33 +173,33 @@ dev tun
 <xsl:for-each select="/config/ips/ip">
   <xsl:choose>
     <xsl:when test="/config/technology/@identifier='openvpn_udp'">
-remote <xsl:value-of select="./@address"/> 1194 udp
+remote <xsl:value-of select="./@address"/> 53 udp
+fast-io
+mssfix 1450
     </xsl:when>
     <xsl:when test="/config/technology/@identifier='openvpn_tcp'">
-remote <xsl:value-of select="./@address"/> 443 tcp
+remote <xsl:value-of select="./@address"/> 80 tcp
     </xsl:when>
     <xsl:otherwise>
 #remote missing
     </xsl:otherwise>
   </xsl:choose>
 </xsl:for-each>
+<xsl:choose>
+    <xsl:when test="/config/hostname != ''">
+verify-x509-name CN=<xsl:value-of select="/config/hostname"/>
+    </xsl:when>
+</xsl:choose>
 resolv-retry infinite
-remote-random
 nobind
-tun-mtu 1500
-tun-mtu-extra 32
-mssfix 1450
-persist-key
-persist-tun
+ping-timer-rem
 reneg-sec 0
 server-poll-timeout 5
 remote-cert-tls server
 auth-user-pass
 verb 3
 pull
-fast-io
-cipher AES-256-CBC
-auth SHA512
+tls-version-min 1.2
 &lt;ca&gt;
 -----BEGIN CERTIFICATE-----
 MIIFCjCCAvKgAwIBAgIBATANBgkqhkiG9w0BAQ0FADA5MQswCQYDVQQGEwJQQTEQ
@@ -232,7 +232,7 @@ PApL8PytggYKeQmRhl499+6jLxcZ2IegLfqq41dzIjwHwTMplg+1pKIOVojpWA==
 -----END CERTIFICATE-----
 &lt;/ca&gt;
 key-direction 1
-&lt;tls-auth&gt;
+&lt;tls-crypt&gt;
 #
 # 2048 bit OpenVPN static key
 #
@@ -254,7 +254,7 @@ a196c9de96012090e333519ae18d3509
 9427e7b372d348d352dc4c85e18cd4b9
 3f8a56ddb2e64eb67adfc9b337157ff4
 -----END OpenVPN Static key V1-----
-&lt;/tls-auth&gt;
+&lt;/tls-crypt&gt;
 <xsl:for-each select="/config/local/setting">
   <xsl:value-of select="."/>
   <xsl:text>&#10;</xsl:text>
