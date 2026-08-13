@@ -252,8 +252,6 @@ func TestCombined_ENSConnectionsLimitReached(t *testing.T) {
 	}, &subs.Subject[events.DebuggerEvent]{})
 	monitor.Start()
 
-	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-
 	go func() {
 		// wait until in connecting state
 		wg.Wait()
@@ -265,7 +263,7 @@ func TestCombined_ENSConnectionsLimitReached(t *testing.T) {
 	}()
 
 	err := netw.Start(
-		ctx,
+		context.Background(),
 		vpn.Credentials{},
 		vpn.ServerData{},
 		config.NewAllowlist(nil, nil, nil),

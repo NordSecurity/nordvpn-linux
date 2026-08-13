@@ -4,7 +4,6 @@ import time
 
 import pytest
 import sh
-import subprocess
 import grpc
 
 from constants import NORDVPND_SOCKET
