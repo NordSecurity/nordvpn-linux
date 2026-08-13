@@ -27,5 +27,5 @@ void main() async {
   runCustomDnsTests();
   runObfuscatedServersTests();
   runLegalInformationTests();
-  // runSnapErrorScreenTests();
+  runSnapErrorScreenTests();
 }
