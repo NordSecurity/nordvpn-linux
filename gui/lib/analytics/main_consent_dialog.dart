@@ -46,17 +46,27 @@ class _MainConsentDialogState extends State<MainConsentDialog> {
     final consentTheme = context.consentScreenTheme;
 
     return ConsentDialogTemplate(
-      windowIcon: IconButton(
-        onPressed: null,
-        icon: DynamicThemeImage("nordvpn_logo.svg"),
+      windowIcon: ExcludeSemantics(
+        child: IconButton(
+          onPressed: null,
+          icon: DynamicThemeImage("nordvpn_logo.svg"),
+        ),
       ),
       windowTitle: "NordVPN",
       title: t.ui.weValueYourPrivacy,
       content: Expanded(
         child: SingleChildScrollView(
-          child: RichTextMarkdownLinks(
-            text: t.ui.consentDescription(privacyUrl: privacyPolicyUrl),
-            style: consentTheme.bodyTextStyle,
+          child: MergeSemantics(
+            child: Focus(
+              child: Semantics(
+                label: t.ui.weValueYourPrivacy,
+                liveRegion: true,
+                child: RichTextMarkdownLinks(
+                  text: t.ui.consentDescription(privacyUrl: privacyPolicyUrl),
+                  style: consentTheme.bodyTextStyle,
+                ),
+              ),
+            ),
           ),
         ),
       ),
