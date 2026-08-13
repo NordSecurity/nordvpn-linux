@@ -210,6 +210,8 @@ func TestENSMonitoringEventHandling(t *testing.T) {
 }
 
 func TestCombined_ENSConnectionsLimitReached(t *testing.T) {
+	category.Set(t, category.Unit)
+
 	netw := netw.NewCombined(
 		&mock.WorkingVPN{
 			ConnectingFn: func(ctx context.Context, c vpn.Credentials, sd vpn.ServerData) error {
@@ -250,8 +252,9 @@ func TestCombined_ENSConnectionsLimitReached(t *testing.T) {
 		ServerEndpoint: "",
 	}))
 
+	ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
 	err := netw.Start(
-		context.Background(),
+		ctx,
 		vpn.Credentials{},
 		vpn.ServerData{},
 		config.NewAllowlist(nil, nil, nil),

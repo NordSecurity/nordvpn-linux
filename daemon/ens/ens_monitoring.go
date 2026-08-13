@@ -116,10 +116,6 @@ func (m *Monitor) Stop() {
 }
 
 func (m *Monitor) serverMaintenanceEventProcessing(e events.VPNConnectionErrorEvent) {
-	if e.Code != events.VPNConnectionErrorServerMaintenance {
-		return
-	}
-
 	if !m.netw.IsVPNActive() {
 		log.ENS.Debug("ignoring because VPN is not connected", e)
 		return
@@ -138,9 +134,6 @@ func (m *Monitor) serverMaintenanceEventProcessing(e events.VPNConnectionErrorEv
 }
 
 func (m *Monitor) connectionLimitReachedEventProcessing(e events.VPNConnectionErrorEvent) {
-	if e.Code != events.VPNConnectionErrorConnectionLimitReached {
-		return
-	}
 	if !m.netw.CancelConnecting(ErrConnectionLimitReached) {
 		log.ENS.Info("connection limit reach ignored")
 	}
