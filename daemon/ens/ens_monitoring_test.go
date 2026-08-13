@@ -2,6 +2,7 @@ package ens
 
 import (
 	"context"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -212,9 +213,13 @@ func TestENSMonitoringEventHandling(t *testing.T) {
 func TestCombined_ENSConnectionsLimitReached(t *testing.T) {
 	category.Set(t, category.Unit)
 
+	// synchronize connecting with send ENS event
+	var wg sync.WaitGroup
+	wg.Add(1)
 	netw := netw.NewCombined(
 		&mock.WorkingVPN{
 			ConnectingFn: func(ctx context.Context, c vpn.Credentials, sd vpn.ServerData) error {
+				wg.Done()
 				// block until the context is canceled by an ENS connection limit reached
 				<-ctx.Done()
 				return context.Cause(ctx)
@@ -247,12 +252,18 @@ func TestCombined_ENSConnectionsLimitReached(t *testing.T) {
 	}, &subs.Subject[events.DebuggerEvent]{})
 	monitor.Start()
 
-	assert.NilError(t, monitor.HandleENSNotification(events.VPNConnectionErrorEvent{
-		Code:           events.VPNConnectionErrorConnectionLimitReached,
-		ServerEndpoint: "",
-	}))
+	ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
 
-	ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
+	go func() {
+		// wait until in connecting state
+		wg.Wait()
+		assert.NilError(t, monitor.HandleENSNotification(events.VPNConnectionErrorEvent{
+			Code:           events.VPNConnectionErrorConnectionLimitReached,
+			ServerEndpoint: "",
+		}))
+
+	}()
+
 	err := netw.Start(
 		ctx,
 		vpn.Credentials{},
