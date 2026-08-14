@@ -277,6 +277,7 @@ def test_killswitch_mode_daemon():
 
 def test_killswitch_autoconnect_to_fastest():
     device_country = network.get_external_device_country()
+    assert "Germany" in device_country
     sh.nordvpn.set.killswitch.on()
     sh.nordvpn.set.autoconnect.on()
     daemon.restart()
