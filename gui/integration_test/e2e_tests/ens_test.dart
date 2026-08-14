@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
-import 'package:nordvpn/i18n/strings.g.dart';
 
 import '../../test/utils/test_helpers.dart';
 
@@ -16,13 +15,10 @@ void runEnsTests() async {
 
       await mainScreen.quickConnect();
 
-      final txtFinder = find.text(t.ui.connectionLimitReachedTitle);
-      await tester.pumpUntilFound(txtFinder);
-      expect(txtFinder.evaluate().isNotEmpty, isTrue);
-      expect(
-        find.text(t.ui.connectionLimitReachedTitle).evaluate().isNotEmpty,
-        isTrue,
+      await tester.pumpUntilFound(
+        tester.findPopupWithId(DaemonStatusCode.connectionLimitReached),
       );
+      expect(mainScreen.isConnectionLimitReachedVisible(), isTrue);
     });
   });
 }

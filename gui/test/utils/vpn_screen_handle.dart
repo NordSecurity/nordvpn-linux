@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/vpn/connection_card_buttons.dart';
 import 'package:nordvpn/vpn/servers_list_card.dart';
@@ -7,6 +8,8 @@ import 'package:nordvpn/vpn/vpn.dart';
 
 import 'finders.dart';
 import 'screen_handle.dart';
+import 'string_extension.dart';
+import 'test_helpers.dart';
 
 final class VpnScreenHandle extends ScreenHandle {
   VpnScreenHandle(super.app);
@@ -44,6 +47,33 @@ final class VpnScreenHandle extends ScreenHandle {
 
   bool isSubscriptionPopupVisible() {
     return subscriptionPopupText().evaluate().isNotEmpty;
+  }
+
+  bool isConnectionLimitReachedVisible() {
+    final popup = app.tester.findPopupWithId(
+      DaemonStatusCode.connectionLimitReached,
+    );
+    expect(popup, findsOne);
+
+    final title = find.descendant(
+      matching: find.text(t.ui.connectionLimitReachedTitle),
+      of: popup,
+    );
+
+    // popup body has clickable URL, which will not be part of the widget text
+    // Because of this, is checked that the common prefix to be bigger that x%
+    final finder = find.byWidgetPredicate((widget) {
+      if (widget is! RichText) {
+        return false;
+      }
+      final text = widget.text.toPlainText();
+      int common = t.ui.connectionLimitReachedBody.commonPrefixLength(text);
+      return (common * 100 / text.length >= 80);
+    });
+
+    final body = find.descendant(matching: finder, of: popup);
+
+    return title.evaluate().isNotEmpty && body.evaluate().isNotEmpty;
   }
 
   Future<bool> serversListHasVirtualServers() async {

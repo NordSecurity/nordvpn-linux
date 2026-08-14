@@ -21,6 +21,7 @@ abstract class Popup extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Dialog(
+      key: ValueKey(metadata.id),
       backgroundColor: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
@@ -52,7 +53,7 @@ abstract class Popup extends ConsumerWidget {
           child: Row(
             spacing: theme.contentAllPadding,
             children: [
-              if (leadingIcon != null) leadingIcon!,
+              ?leadingIcon,
               Flexible(child: _title(theme)),
             ],
           ),
