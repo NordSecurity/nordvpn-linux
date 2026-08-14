@@ -9,22 +9,32 @@ class Link<T> extends StatelessWidget {
   final String title;
   final LaunchableUri launchableUri;
   final LinkSize size;
+  final String? semanticLabel;
 
   Link({
     super.key,
     required this.title,
     required T uri,
     this.size = LinkSize.normal,
+    this.semanticLabel,
   }) : launchableUri = _toLaunchable(uri);
 
   @override
   Widget build(BuildContext context) {
     return TextButton(
-      style: TextButton.styleFrom(
-        padding: EdgeInsets.symmetric(vertical: 2),
-        minimumSize: Size.zero,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
+      style:
+          TextButton.styleFrom(
+            padding: EdgeInsets.symmetric(vertical: 2),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ).copyWith(
+            backgroundColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.focused)) {
+                return Theme.of(context).hoverColor;
+              }
+              return null;
+            }),
+          ),
       onPressed: () async => await launchableUri.launch(),
       child: _buildContent(context),
     );
@@ -34,6 +44,8 @@ class Link<T> extends StatelessWidget {
     final theme = context.appTheme;
     return Text(
       title,
+      // Visible text is [title]; screen reader announces this when set.
+      semanticsLabel: semanticLabel,
       style: size == LinkSize.normal ? theme.linkNormal : theme.linkSmall,
       overflow: TextOverflow.ellipsis,
     );
