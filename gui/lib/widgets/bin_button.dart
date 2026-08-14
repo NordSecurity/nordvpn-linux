@@ -8,16 +8,18 @@ import 'package:nordvpn/widgets/loading_button.dart';
 // Class that defines a remove button with the bin.svg icon
 final class BinButton extends StatelessWidget {
   final FutureOr<void> Function()? onPressed;
+  final String? semanticLabel;
 
-  const BinButton({super.key, this.onPressed});
+  const BinButton({super.key, this.onPressed, this.semanticLabel});
 
   @override
   Widget build(BuildContext context) {
+    final label = semanticLabel ?? t.ui.delete;
     return Tooltip(
-      message: t.ui.delete,
+      message: label,
       child: LoadingIconButton(
         onPressed: onPressed,
-        child: DynamicThemeImage("bin.svg"),
+        child: Semantics(label: label, child: DynamicThemeImage("bin.svg")),
       ),
     );
   }

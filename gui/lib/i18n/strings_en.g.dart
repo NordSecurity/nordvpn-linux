@@ -93,6 +93,9 @@ class TranslationsA11yEn {
 
 	/// en: 'Collapsed'
 	String get expandibleEntryCollapsed => 'Collapsed';
+
+	/// en: 'Clear'
+	String get clear => 'Clear';
 }
 
 // Path: cities
@@ -2246,6 +2249,7 @@ extension on Translations {
 			'a11y.expandibleEntryCollapse' => 'Collapse',
 			'a11y.expandibleEntryExpanded' => 'Expanded',
 			'a11y.expandibleEntryCollapsed' => 'Collapsed',
+			'a11y.clear' => 'Clear',
 			'cities.tirana' => 'Tirana',
 			'cities.algiers' => 'Algiers',
 			'cities.addis_ababa' => 'Addis Ababa',
@@ -2744,9 +2748,9 @@ extension on Translations {
 			'ui.citiesAvailable' => ({required Object n}) => '${n} cities available',
 			'ui.virtual' => 'Virtual',
 			'ui.dedicatedIp' => 'Dedicated IP',
-			'ui.dedicatedServer' => 'Dedicated Server',
 			_ => null,
 		} ?? switch (path) {
+			'ui.dedicatedServer' => 'Dedicated Server',
 			'ui.doubleVpn' => 'Double VPN',
 			'ui.onionOverVpn' => 'Onion over VPN',
 			'ui.p2p' => 'P2P',

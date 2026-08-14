@@ -114,7 +114,9 @@ class _CustomExpansionTileState extends State<CustomExpansionTile> {
 
     SemanticsService.sendAnnouncement(
       View.of(context),
-      _isExpanded ? t.a11y.expandibleEntryExpanded : t.a11y.expandibleEntryCollapsed,
+      _isExpanded
+          ? t.a11y.expandibleEntryExpanded
+          : t.a11y.expandibleEntryCollapsed,
       Directionality.of(context),
     );
   }

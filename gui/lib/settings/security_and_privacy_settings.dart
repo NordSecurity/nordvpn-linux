@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/constants.dart';
@@ -10,6 +12,7 @@ import 'package:nordvpn/internal/popup_codes.dart';
 import 'package:nordvpn/router/routes.dart';
 import 'package:nordvpn/settings/settings_wrapper_widget.dart';
 import 'package:nordvpn/theme/settings_theme.dart';
+import 'package:nordvpn/widgets/accessible_item.dart';
 import 'package:nordvpn/widgets/advanced_list_tile.dart';
 import 'package:nordvpn/widgets/custom_error_widget.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
@@ -77,47 +80,41 @@ class _SecurityAndPrivacySettingsState
           case _SecurityAndPrivacySettingsItems.customDns:
             return _buildCustomDns(context, settings);
           case _SecurityAndPrivacySettingsItems.postQuantum:
-            return SettingsWrapperWidget.buildListItem(
+            return _accessibleSwitchTile(
               context,
               title: t.ui.postQuantumVpn,
               subtitle: t.ui.postQuantumDescription,
-              trailing: OnOffSwitch(
-                value: settings.postQuantum,
-                onChanged: (value) async {
-                  await ref
-                      .read(vpnSettingsControllerProvider.notifier)
-                      .setPostQuantum(value);
-                },
-              ),
+              value: settings.postQuantum,
+              onChanged: (value) async {
+                await ref
+                    .read(vpnSettingsControllerProvider.notifier)
+                    .setPostQuantum(value);
+              },
             );
           case _SecurityAndPrivacySettingsItems.obfuscated:
-            return SettingsWrapperWidget.buildListItem(
+            return _accessibleSwitchTile(
               context,
               title: t.ui.obfuscation,
               subtitle: t.ui.obfuscationDescription,
-              trailing: OnOffSwitch(
-                value: settings.obfuscatedServers,
-                onChanged: (value) async {
-                  await ref
-                      .read(vpnSettingsControllerProvider.notifier)
-                      .setObfuscated(value);
-                },
-              ),
+              value: settings.obfuscatedServers,
+              onChanged: (value) async {
+                await ref
+                    .read(vpnSettingsControllerProvider.notifier)
+                    .setObfuscated(value);
+              },
             );
           case _SecurityAndPrivacySettingsItems.firewall:
-            return SettingsWrapperWidget.buildListItem(
+            return _accessibleSwitchTile(
               context,
+              key: firewallKey,
               title: t.ui.firewall,
               subtitle: t.ui.firewallDescription,
-              trailing: OnOffSwitch(
-                key: firewallKey,
-                value: settings.firewall,
-                onChanged: (value) async {
-                  await ref
-                      .read(vpnSettingsControllerProvider.notifier)
-                      .setFirewall(value);
-                },
-              ),
+              value: settings.firewall,
+              onChanged: (value) async {
+                await ref
+                    .read(vpnSettingsControllerProvider.notifier)
+                    .setFirewall(value);
+              },
               padding: settingsTheme.itemPadding.copyWith(bottom: 0),
             );
           case _SecurityAndPrivacySettingsItems.firewallMark:
@@ -127,13 +124,80 @@ class _SecurityAndPrivacySettingsState
     );
   }
 
+  Widget _accessibleSwitchTile(
+    BuildContext context, {
+    Key? key,
+    required String title,
+    String? subtitle,
+    required bool value,
+    required Future<void> Function(bool) onChanged,
+    Future<bool> Function(bool toValue)? shouldChange,
+    bool enabled = true,
+    EdgeInsets? padding,
+  }) {
+    return AccessibleItem(
+      enabled: enabled,
+      toggled: value,
+      label: subtitle == null ? title : '$title. $subtitle',
+      onActivate: () =>
+          unawaited(_activateSwitch(value, onChanged, shouldChange)),
+      child: SettingsWrapperWidget.buildListItem(
+        context,
+        title: title,
+        subtitle: subtitle,
+        enabled: enabled,
+        padding: padding,
+        trailing: OnOffSwitch(
+          key: key,
+          value: value,
+          shouldChange: shouldChange,
+          onChanged: onChanged,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _activateSwitch(
+    bool value,
+    Future<void> Function(bool) onChanged,
+    Future<bool> Function(bool toValue)? shouldChange,
+  ) async {
+    final toValue = !value;
+    if (shouldChange != null && !(await shouldChange(toValue))) return;
+    await onChanged(toValue);
+  }
+
+  // Navigation row -> announced as a button; title + subtitle are read as part
+  // of it (excludeChildSemantics: false keeps them, the arrow image is silent).
+  Widget _accessibleNavTile(
+    BuildContext context, {
+    required String title,
+    String? subtitle,
+    required VoidCallback onTap,
+    bool enabled = true,
+  }) {
+    return AccessibleItem(
+      enabled: enabled,
+      button: true,
+      excludeChildSemantics: false,
+      onActivate: onTap,
+      child: SettingsWrapperWidget.buildListItem(
+        context,
+        title: title,
+        subtitle: subtitle,
+        enabled: enabled,
+        trailingLocation: TrailingLocation.center,
+        trailing: DynamicThemeImage("right_arrow.svg"),
+        onTap: onTap,
+      ),
+    );
+  }
+
   Widget _buildAllowListItem(BuildContext context) {
-    return SettingsWrapperWidget.buildListItem(
+    return _accessibleNavTile(
       context,
       title: t.ui.allowlist,
       subtitle: t.ui.useAllowListSettingDescription,
-      trailingLocation: TrailingLocation.center,
-      trailing: DynamicThemeImage("right_arrow.svg"),
       onTap: () => context.navigateToRoute(AppRoute.settingsAllowList),
     );
   }
@@ -142,15 +206,13 @@ class _SecurityAndPrivacySettingsState
     BuildContext context,
     ApplicationSettings settings,
   ) {
-    return SettingsWrapperWidget.buildListItem(
+    return _accessibleSwitchTile(
       context,
       title: t.ui.lanDiscovery,
       subtitle: t.ui.lanDiscoveryDescription,
-      trailing: OnOffSwitch(
-        value: settings.lanDiscovery,
-        shouldChange: (toValue) => _canChange(settings, toValue),
-        onChanged: (value) => _toggleLanDiscovery(value),
-      ),
+      value: settings.lanDiscovery,
+      shouldChange: (toValue) => _canChange(settings, toValue),
+      onChanged: (value) => _toggleLanDiscovery(value),
     );
   }
 
@@ -174,12 +236,10 @@ class _SecurityAndPrivacySettingsState
   }
 
   Widget _buildCustomDns(BuildContext context, ApplicationSettings settings) {
-    return SettingsWrapperWidget.buildListItem(
+    return _accessibleNavTile(
       context,
       title: t.ui.customDns,
       subtitle: t.ui.customDnsDescription,
-      trailingLocation: TrailingLocation.center,
-      trailing: DynamicThemeImage("right_arrow.svg"),
       onTap: () => context.navigateToRoute(AppRoute.settingsCustomDns),
     );
   }
