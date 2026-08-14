@@ -49,7 +49,7 @@ final class VpnScreenHandle extends ScreenHandle {
     return subscriptionPopupText().evaluate().isNotEmpty;
   }
 
-  bool isConnectionLimitReachedVisible() {
+  bool isConnectionLimitReachedPopupVisible() {
     final popup = app.tester.findPopupWithId(
       DaemonStatusCode.connectionLimitReached,
     );
@@ -72,7 +72,6 @@ final class VpnScreenHandle extends ScreenHandle {
     });
 
     final body = find.descendant(matching: finder, of: popup);
-
     return title.evaluate().isNotEmpty && body.evaluate().isNotEmpty;
   }
 

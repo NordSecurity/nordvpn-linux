@@ -9,7 +9,7 @@ void runEnsTests() async {
       final app = await tester.setupIntegrationTests();
 
       final mainScreen = await app.goToVpnScreen();
-      // set error code returned by the daemon to be
+      // set error code returned by the daemon when connecting to the VPN
       app.vpnStatus.connectingErrorStatusCode =
           DaemonStatusCode.connectionLimitReached;
 
@@ -18,7 +18,7 @@ void runEnsTests() async {
       await tester.pumpUntilFound(
         tester.findPopupWithId(DaemonStatusCode.connectionLimitReached),
       );
-      expect(mainScreen.isConnectionLimitReachedVisible(), isTrue);
+      expect(mainScreen.isConnectionLimitReachedPopupVisible(), isTrue);
     });
   });
 }
