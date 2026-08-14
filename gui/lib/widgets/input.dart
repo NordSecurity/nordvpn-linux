@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/input_theme.dart';
@@ -151,7 +152,11 @@ final class InputState extends State<Input> {
       padding: EdgeInsets.zero,
       color: inputTheme.icon.color,
       hoverColor: inputTheme.icon.hoverColor,
-      icon: DynamicThemeImage("close.svg"),
+      tooltip: t.a11y.clear,
+      icon: Semantics(
+        label: t.a11y.clear,
+        child: DynamicThemeImage("close.svg"),
+      ),
       onPressed: () {
         _focus.requestFocus();
         _controller.clear();

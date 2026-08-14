@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/constants.dart';
@@ -9,6 +11,7 @@ import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/popup_codes.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
 import 'package:nordvpn/settings/settings_wrapper_widget.dart';
+import 'package:nordvpn/widgets/accessible_item.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/custom_dns_theme.dart';
 import 'package:nordvpn/widgets/advanced_list_tile.dart';
@@ -84,16 +87,22 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
       itemBuilder: (context, index) {
         switch (_CustomDnsSections.values[index]) {
           case _CustomDnsSections.status:
-            return SettingsWrapperWidget.buildListItem(
-              context,
-              title: t.ui.useCustomDns,
-              subtitle: t.ui.useCustomDnsDescription,
-              trailingLocation: TrailingLocation.center,
-              trailing: OnOffSwitch(
-                key: CustomDnsKeys.dnsSwitch,
-                value: isCustomDnsEnabled,
-                shouldChange: (toValue) => _canChange(settings, toValue),
-                onChanged: (value) => _toggleCustomDns(value),
+            return AccessibleItem(
+              toggled: isCustomDnsEnabled,
+              label: '${t.ui.useCustomDns}. ${t.ui.useCustomDnsDescription}',
+              onActivate: () =>
+                  unawaited(_activateCustomDns(settings, isCustomDnsEnabled)),
+              child: SettingsWrapperWidget.buildListItem(
+                context,
+                title: t.ui.useCustomDns,
+                subtitle: t.ui.useCustomDnsDescription,
+                trailingLocation: TrailingLocation.center,
+                trailing: OnOffSwitch(
+                  key: CustomDnsKeys.dnsSwitch,
+                  value: isCustomDnsEnabled,
+                  shouldChange: (toValue) => _canChange(settings, toValue),
+                  onChanged: (value) => _toggleCustomDns(value),
+                ),
               ),
             );
           case _CustomDnsSections.addForm:
@@ -178,10 +187,11 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
             final server = settings.customDnsServers[index];
             return Row(
               children: [
-                Text(server, style: appTheme.body),
+                ExcludeSemantics(child: Text(server, style: appTheme.body)),
                 Spacer(),
                 BinButton(
                   key: CustomDnsKeys.dnsRemoveButton(server),
+                  semanticLabel: '${t.ui.delete} $server',
                   onPressed: () =>
                       _deleteServer(settings.customDnsServers[index]),
                 ),
@@ -234,6 +244,8 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
   }
 
   Future<void> _deleteServer(String server) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     final res = await ref
         .read(vpnSettingsControllerProvider.notifier)
         .removeCustomDns(server);
@@ -241,6 +253,15 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
     if (res == DaemonStatusCode.success) {
       _controller.clear();
     }
+  }
+
+  Future<void> _activateCustomDns(
+    ApplicationSettings settings,
+    bool value,
+  ) async {
+    final toValue = !value;
+    if (!(await _canChange(settings, toValue))) return;
+    await _toggleCustomDns(toValue);
   }
 
   Future<bool> _canChange(ApplicationSettings settings, bool toValue) async {

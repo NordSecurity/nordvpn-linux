@@ -11,5 +11,6 @@
   "expandibleEntryExpand": "Expand",
   "expandibleEntryCollapse": "Collapse",
   "expandibleEntryExpanded": "Expanded",
-  "expandibleEntryCollapsed": "Collapsed"
+  "expandibleEntryCollapsed": "Collapsed",
+  "clear": "Clear"
 }
