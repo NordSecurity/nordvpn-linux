@@ -529,7 +529,6 @@ func TestLibtelio_connect(t *testing.T) {
 				eventsPublisher: pub,
 				tun:             mockTunnel{},
 				callbackHandler: callbackHandlerStub{},
-				injectedErrors:  newEnsDev(false),
 			}
 
 			// connect ctx
@@ -813,7 +812,6 @@ func TestMonitorConnectionErrors_PublishesMappedEvent(t *testing.T) {
 		vpnErrorEvents:  errorsChan,
 		active:          true,
 		currentServer:   serverData,
-		injectedErrors:  newEnsDev(true),
 	}
 
 	go l.monitorConnectionErrors(t.Context(), serverData)
@@ -835,7 +833,7 @@ func TestInjectVPNConnectionError_UnavailableOutsideDev(t *testing.T) {
 
 	// In production the injectedErrors channel is nil, so injection is rejected
 	// and nothing can be published.
-	l := &Libtelio{injectedErrors: newEnsDev(true)}
+	l := &Libtelio{}
 
 	err := l.InjectVPNConnectionError(int32(teliogo.VpnConnectionErrorServerMaintenance), "")
 
@@ -847,7 +845,7 @@ func TestInjectVPNConnectionError_NoActiveMonitor(t *testing.T) {
 
 	// The dev channel exists but no monitor goroutine is draining it (no active
 	// NordLynx connection).
-	l := &Libtelio{injectedErrors: newEnsDev(true)}
+	l := &Libtelio{injectedErrors: newEnsDev(false)}
 
 	err := l.InjectVPNConnectionError(int32(teliogo.VpnConnectionErrorServerMaintenance), "")
 

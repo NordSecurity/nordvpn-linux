@@ -7,6 +7,7 @@ package libtelio
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/netip"
@@ -833,6 +834,9 @@ func (l *Libtelio) GetConnectionParameters() (vpn.ServerData, bool) {
 // InjectVPNConnectionError is a DEV-only helper that feeds a simulated ENS error
 // through the same monitor that real libtelio events use.
 func (l *Libtelio) InjectVPNConnectionError(code int32, serverEndpoint string) error {
+	if l.injectedErrors == nil {
+		return errors.New("It works only on dev builds")
+	}
 	// #nosec G115 - dev-only injection — out-of-range codes map to Unknown
 	connErr := vpnConnError{code: teliogo.VpnConnectionError(code), serverEndpoint: serverEndpoint}
 	return l.injectedErrors.add(connErr)
@@ -944,19 +948,25 @@ func (l *Libtelio) startConnectionErrorMonitor(ctx context.Context, serverData v
 	}()
 
 	wg.Wait()
-	l.injectedErrors.startNewConnect()
+	if l.injectedErrors != nil {
+		l.injectedErrors.startNewConnect()
+	}
 }
 
 // monitorConnectionErrors awaits ENS connection errors extracted from telio node events,
 // maps them to the protocol-agnostic events and publishes them on the internal VPN event bus.
 func (l *Libtelio) monitorConnectionErrors(ctx context.Context, serverData vpn.ServerData) {
+	var ch chan vpnConnError
+	if l.injectedErrors != nil {
+		ch = l.injectedErrors.ch
+	}
 	for {
 		select {
 		case connErr := <-l.vpnErrorEvents:
 			publishConnError(l.eventsPublisher, connErr)
 
 		// DEV only: a simulated ENS error injected via the gRPC tool. It's nil in production.
-		case injErr := <-l.injectedErrors.ch:
+		case injErr := <-ch:
 			if injErr.serverEndpoint == "" {
 				injErr.serverEndpoint = serverData.Endpoint
 			}
