@@ -529,6 +529,7 @@ func TestLibtelio_connect(t *testing.T) {
 				eventsPublisher: pub,
 				tun:             mockTunnel{},
 				callbackHandler: callbackHandlerStub{},
+				injectedErrors:  newEnsDev(false),
 			}
 
 			// connect ctx
