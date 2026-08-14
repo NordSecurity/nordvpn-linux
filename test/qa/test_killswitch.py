@@ -261,7 +261,7 @@ def test_nc_mqtt_connection_with_killswitch():
     assert network.is_available(), "Network should be available after test"
 
 
-def test_killswitch_mode_daemon_debug():
+def test_killswitch_mode_daemon():
     sh.nordvpn.set.killswitch.on()
     daemon.stop()
     daemon.start_with_arg("--killswitch-mode")
@@ -275,7 +275,7 @@ def test_killswitch_mode_daemon_debug():
     assert network.is_available(), "Network should be available"
 
 
-def test_killswitch_autoconnect_to_fastest_debug():
+def test_killswitch_autoconnect_to_fastest():
     device_country = network.get_external_device_country()
     sh.nordvpn.set.killswitch.on()
     sh.nordvpn.set.autoconnect.on()
