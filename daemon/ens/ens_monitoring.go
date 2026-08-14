@@ -133,7 +133,7 @@ func (m *Monitor) serverMaintenanceEventProcessing(e events.VPNConnectionErrorEv
 	}
 }
 
-func (m *Monitor) connectionLimitReachedEventProcessing(e events.VPNConnectionErrorEvent) {
+func (m *Monitor) connectionLimitReachedEventProcessing(events.VPNConnectionErrorEvent) {
 	if !m.netw.CancelConnecting(ErrConnectionLimitReached) {
 		log.ENS.Info("connection limit reach ignored")
 	}

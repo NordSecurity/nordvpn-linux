@@ -252,9 +252,8 @@ func TestCombined_ENSConnectionsLimitReached(t *testing.T) {
 		ServerEndpoint: "",
 	}))
 
-	ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
 	err := netw.Start(
-		ctx,
+		context.Background(),
 		vpn.Credentials{},
 		vpn.ServerData{},
 		config.NewAllowlist(nil, nil, nil),
