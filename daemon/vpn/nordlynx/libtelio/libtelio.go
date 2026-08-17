@@ -361,7 +361,7 @@ func New(
 	}
 
 	var loggerCb teliogo.TelioLoggerCb = &telioLoggerCb{}
-	teliogo.SetGlobalLogger(teliogo.TelioLogLevelInfo, loggerCb)
+	teliogo.SetGlobalLogger(teliogo.TelioLogLevelDebug, loggerCb)
 	telioCallbackHandler := newTelioCallbackHandler(stateEvents, errorEvents)
 	lib, err := teliogo.NewTelio(*features, eventCallbackWrap(telioCallbackHandler))
 	if err != nil {
