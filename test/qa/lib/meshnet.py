@@ -50,7 +50,7 @@ class TestUtils:
     def teardown_module(ssh_client: ssh.Ssh):
         # Preserve other peer log
         dest_logs_path = f"{os.environ['WORKDIR']}/dist/logs"
-        ssh_client.download_file("/var/log/nordvpn/daemon.log", f"{dest_logs_path}/other-peer-daemon.log")
+        download_remote_peer_logs(ssh_client, dest_logs_path)
         daemon.uninstall_peer(ssh_client)
         ssh_client.disconnect()
 
