@@ -12,27 +12,12 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/alert"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
-
-type capturedNotification struct {
-	summary string
-	body    string
-}
-
-type fakeNotifier struct {
-	notifications []capturedNotification
-}
-
-func (f *fakeNotifier) start() {}
-
-func (f *fakeNotifier) sendNotification(summary, body string) error {
-	f.notifications = append(f.notifications, capturedNotification{summary: summary, body: body})
-	return nil
-}
 
 type fakeConnectStream struct {
 	grpc.ServerStreamingClient[pb.Payload]
@@ -86,25 +71,29 @@ func (c *trayDaemonClient) TokenInfo(
 
 type trayFixture struct {
 	instance *Instance
-	notifier *fakeNotifier
+	n        *alert.NotifierMock
 	client   *trayDaemonClient
 }
 
 func newTrayFixture(t *testing.T, payloads ...*pb.Payload) *trayFixture {
 	t.Helper()
 
-	notifier := &fakeNotifier{}
+	notifier := &alert.NotifierMock{
+		Alerts:   []alert.Alert{},
+		NextID:   0,
+		UpdateCh: make(chan struct{}, 1),
+	}
 	client := &trayDaemonClient{
 		connectStream: &fakeConnectStream{payloads: payloads},
 	}
 	ti := &Instance{
-		client:   client,
-		notifier: notifier,
+		client: client,
+		n:      notifier,
 	}
 	ti.state.initialSyncCompleted = true
 	ti.state.notificationsStatus = Enabled
 
-	return &trayFixture{instance: ti, notifier: notifier, client: client}
+	return &trayFixture{instance: ti, n: notifier, client: client}
 }
 
 func TestConnect_DedicatedServersErrorPaths(t *testing.T) {
@@ -178,9 +167,9 @@ func TestConnect_DedicatedServersErrorPaths(t *testing.T) {
 			)
 
 			assert.False(t, ok, "connect should fail on dedicated-servers error code")
-			require.Len(t, f.notifier.notifications, 1, "exactly one notification expected")
-			assert.Equal(t, "NordVPN", f.notifier.notifications[0].summary)
-			assert.Equal(t, tc.wantBody, f.notifier.notifications[0].body)
+			require.Len(t, f.n.Alerts, 1, "exactly one notification expected")
+			assert.Equal(t, "NordVPN", f.n.Alerts[0].Summary)
+			assert.Equal(t, tc.wantBody, f.n.Alerts[0].Body)
 		})
 	}
 }
