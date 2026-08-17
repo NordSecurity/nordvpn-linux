@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/stretchr/testify/assert"
 )
@@ -80,4 +81,49 @@ func TestHTTPReTransport_RoundTrip(t *testing.T) {
 
 	// Check if transports were recreated only once.
 	assert.Equal(t, 1, transport.counter)
+}
+
+// idleClosingRoundTripper stands for http.Transport, which does not implement io.Closer.
+type idleClosingRoundTripper struct {
+	closeCount int
+}
+
+func (rt *idleClosingRoundTripper) RoundTrip(*http.Request) (*http.Response, error) {
+	return nil, nil
+}
+
+func (rt *idleClosingRoundTripper) CloseIdleConnections() { rt.closeCount++ }
+
+// TestHTTPReTransport_ClosesIdleConnections covers the simple HTTP/1.1 transport, whose connections
+// have no fwmark and become unusable once the VPN is connected.
+func TestHTTPReTransport_ClosesIdleConnections(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name               string
+		needRecreate       bool
+		expectedCloseCount int
+	}{
+		{
+			name:               "re-creation enabled",
+			needRecreate:       true,
+			expectedCloseCount: 1,
+		},
+		{
+			name:         "re-creation disabled",
+			needRecreate: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			inner := &idleClosingRoundTripper{}
+			transport := NewHTTPReTransport(1, 1, "HTTP/1.1", func() http.RoundTripper {
+				return inner
+			}, nil, test.needRecreate)
+
+			assert.NoError(t, transport.NotifyConnect(events.DataConnect{}))
+			assert.Equal(t, test.expectedCloseCount, inner.closeCount)
+		})
+	}
 }

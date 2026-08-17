@@ -265,14 +265,12 @@ func main() {
 	simpleTransportNeedsRecreate := true
 	httpClientSimple := request.NewStdHTTP()
 	h1SimpleTransport := request.NewHTTPReTransport(
-		1, 1, "HTTP/1.1", func() http.RoundTripper {
-			return request.NewPublishingRoundTripper(
-				request.NewContextRoundTripper(createSimpleH1Transport(Environment)(), httpGlobalCtx),
-				httpCallsSubject,
-			)
-		}, nil, simpleTransportNeedsRecreate)
+		1, 1, "HTTP/1.1", createSimpleH1Transport(Environment), nil, simpleTransportNeedsRecreate)
 	daemonEvents.Service.Connect.Subscribe(h1SimpleTransport.NotifyConnect)
-	httpClientSimple.Transport = h1SimpleTransport
+	httpClientSimple.Transport = request.NewPublishingRoundTripper(
+		request.NewContextRoundTripper(h1SimpleTransport, httpGlobalCtx),
+		httpCallsSubject,
+	)
 
 	cdnUrl := core.CDNURL
 	if !internal.IsProdEnv(Environment) && os.Getenv(EnvNordCdnUrl) != "" {

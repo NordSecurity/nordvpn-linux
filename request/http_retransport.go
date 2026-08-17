@@ -65,6 +65,9 @@ func (m *HTTPReTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 // NotifyConnect initiates re-creating the inner round tripper when called.
 func (m *HTTPReTransport) NotifyConnect(events.DataConnect) error {
+	if !m.NeedRecreate {
+		return nil
+	}
 	m.mu.RLock()
 	counter := m.counter
 	m.mu.RUnlock()
@@ -99,15 +102,18 @@ func (m *HTTPReTransport) executeRequest(req *http.Request) (*http.Response, err
 func (m *HTTPReTransport) recreateRoundTrip(counter int) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if !m.NeedRecreate {
-		return
-	}
 	if counter != m.counter {
 		return
 	}
-	if inner, ok := m.inner.(io.Closer); ok {
+	switch inner := m.inner.(type) {
+	case io.Closer:
+		// HTTP3 branch when transport implements Close
 		log.Debug("Recreating round trip, closing inner transport")
 		_ = inner.Close()
+	case interface{ CloseIdleConnections() }:
+		// HTTP1 branch when transport does not implement close, we instead close all the idle connections
+		log.Debug("Recreating round trip, closing idle connections of inner transport")
+		inner.CloseIdleConnections()
 	}
 	m.counter++
 	m.inner = m.createFn()
