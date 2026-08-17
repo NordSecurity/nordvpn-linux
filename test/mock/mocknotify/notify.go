@@ -1,4 +1,4 @@
-package notify
+package mocknotify
 
 import "github.com/esiqveland/notify"
 

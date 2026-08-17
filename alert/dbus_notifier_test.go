@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/test/category"
-	mocknotify "github.com/NordSecurity/nordvpn-linux/test/mock/notify"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/mocknotify"
 	"github.com/esiqveland/notify"
 	"github.com/godbus/dbus/v5"
 	"github.com/stretchr/testify/assert"
