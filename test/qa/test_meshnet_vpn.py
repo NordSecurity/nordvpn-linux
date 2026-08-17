@@ -32,21 +32,8 @@ def test_killswitch_exitnode_vpn(lan_discovery: bool, local: bool):
     my_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_this_device().ip
     peer_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().ip
 
-    try:
-        ssh_client.exec_command(f"nordvpn mesh peer incoming allow {my_ip}")
-    except RuntimeError as err:
-        if "already allowed" not in err.args[0]:
-            raise
-    try:
-        ssh_client.exec_command(f"nordvpn mesh peer routing allow {my_ip}")
-    except RuntimeError as err:
-        if "already allowed" not in err.args[0]:
-            raise
-    try:
-        ssh_client.exec_command(f"nordvpn mesh peer local {'allow' if local else 'deny'} {my_ip}")
-    except RuntimeError as err:
-        if "already allowed" not in err.args[0]:
-            raise
+    ssh_client.meshnet.set_permissions(my_ip, routing=True, local=local, incoming=True)
+
     try:
         ssh_client.exec_command(f"nordvpn set lan-discovery {'on' if lan_discovery else 'off'}")
     except RuntimeError as err:
