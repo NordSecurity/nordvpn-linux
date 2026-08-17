@@ -66,23 +66,25 @@ class _CustomizeConsentState extends State<CustomizeConsent> {
           child: Column(
             spacing: appTheme.verticalSpaceMedium,
             children: [
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  t.ui.essentialRequired,
-                  style: consentTheme.listItemTitle,
-                ),
-                subtitle: RichTextMarkdownLinks(
-                  text: t.ui.requiredAnalyticsDescription(
-                    termsUrl: termsOfServiceUrl,
+              AccessibleItem(
+                enabled: false,
+                focusable: _isEnabled,
+                toggled: true,
+                excludeChildSemantics: false,
+                onActivate: () {},
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    t.ui.essentialRequired,
+                    style: consentTheme.listItemTitle,
                   ),
-                  style: consentTheme.listItemSubtitle,
-                ),
-                trailing: Semantics(
-                  toggled: true,
-                  enabled: false,
-                  label: t.ui.essentialRequired,
-                  child: ExcludeSemantics(
+                  subtitle: RichTextMarkdownLinks(
+                    text: t.ui.requiredAnalyticsDescription(
+                      termsUrl: termsOfServiceUrl,
+                    ),
+                    style: consentTheme.listItemSubtitle,
+                  ),
+                  trailing: ExcludeSemantics(
                     child: OnOffSwitch(
                       value: true,
                       onChanged: null,
@@ -134,6 +136,7 @@ class _CustomizeConsentState extends State<CustomizeConsent> {
   }
 
   Future<void> _submit() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       _isEnabled = false;
     });

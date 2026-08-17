@@ -48,10 +48,12 @@ class LegalInformation extends StatelessWidget {
       spacing: appTheme.verticalSpaceMedium,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          key: LegalInformationKeys.descriptionKey,
-          t.ui.termsAgreementDescription,
-          style: appTheme.body,
+        MergeSemantics(
+          child: Text(
+            key: LegalInformationKeys.descriptionKey,
+            t.ui.termsAgreementDescription,
+            style: appTheme.body,
+          ),
         ),
         ListView.separated(
           shrinkWrap: true,
@@ -74,11 +76,13 @@ class LegalInformation extends StatelessWidget {
     Key key,
   ) {
     final appTheme = context.appTheme;
-    return Row(
-      children: [
-        Expanded(child: Text(title, style: appTheme.body)),
-        FirstPartyLink(key: key, title: t.ui.readMore, uri: link),
-      ],
+    return MergeSemantics(
+      child: Row(
+        children: [
+          Expanded(child: Text(title, style: appTheme.body)),
+          FirstPartyLink(key: key, title: t.ui.readMore, uri: link),
+        ],
+      ),
     );
   }
 
