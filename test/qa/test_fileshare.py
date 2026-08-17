@@ -1,4 +1,3 @@
-import contextlib
 import os
 import random
 import re
@@ -1553,11 +1552,7 @@ def test_all_permissions_denied_send_file(background_send: bool, background_acce
     local_peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
     local_address = local_peer_list.get_this_device().hostname
 
-    permissions = ["incoming", "routing", "local"]
-
-    for permission in permissions:
-        with contextlib.suppress(RuntimeError):
-            ssh_client.exec_command(f"nordvpn mesh peer {permission} deny {local_address}")
+    ssh_client.meshnet.set_permissions(local_address, routing=False, local=False, incoming=False)
 
     wdir = fileshare.create_directory(1)
     peer_address = local_peer_list.get_internal_peer().hostname
@@ -1593,8 +1588,6 @@ def test_all_permissions_denied_send_file(background_send: bool, background_acce
     assert fileshare.files_from_transfer_exist_in_filesystem(remote_transfer_id, [wdir], ssh_client), "Files should be transferred to filesystem"
     ssh_client.exec_command(f"rm -rf {peer_filepath}/{wdir.filenames[0]}")
 
-    for permission in permissions:
-        with contextlib.suppress(RuntimeError):
-            ssh_client.exec_command(f"nordvpn mesh peer {permission} allow {local_address}")
+    ssh_client.meshnet.set_permissions(local_address, routing=True, local=True, incoming=True)
 
     shutil.rmtree(wdir.dir_path)
