@@ -77,10 +77,6 @@ def test_mesh_removed_machine_by_other():
             mymachineid = itm['identifier']
 
     # remove myself using api call
-    headers = {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer token:' + mytoken,
-    }
     requests.delete('https://api.nordvpn.com/v1/meshnet/machines/' + mymachineid, headers=headers, timeout=5)
 
     # machine not found error should be handled by disabling meshnet
