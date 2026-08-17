@@ -13,6 +13,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/norduser"
+	"github.com/NordSecurity/nordvpn-linux/uievent"
 )
 
 const (
@@ -301,37 +302,23 @@ type pauseLength struct {
 	EventValue      pb.UIEvent_ItemValue
 }
 
+// newPauseLength builds a pause menu entry, deriving the reported UI event
+// item value from the duration.
+func newPauseLength(label string, durationSeconds uint32) pauseLength {
+	return pauseLength{
+		Name:            label,
+		Tooltip:         label,
+		DurationSeconds: durationSeconds,
+		EventValue:      uievent.PauseDurationToItemValue(durationSeconds),
+	}
+}
+
 var pauseLengths = []pauseLength{
-	{
-		Name:            labelPause5Min,
-		Tooltip:         labelPause5Min,
-		DurationSeconds: 5 * 60,
-		EventValue:      pb.UIEvent_PAUSE_5_MIN,
-	},
-	{
-		Name:            labelPause15Min,
-		Tooltip:         labelPause15Min,
-		DurationSeconds: 15 * 60,
-		EventValue:      pb.UIEvent_PAUSE_15_MIN,
-	},
-	{
-		Name:            labelPause30Min,
-		Tooltip:         labelPause30Min,
-		DurationSeconds: 30 * 60,
-		EventValue:      pb.UIEvent_PAUSE_30_MIN,
-	},
-	{
-		Name:            labelPause1H,
-		Tooltip:         labelPause1H,
-		DurationSeconds: 60 * 60,
-		EventValue:      pb.UIEvent_PAUSE_1_HOUR,
-	},
-	{
-		Name:            labelPause24H,
-		Tooltip:         labelPause24H,
-		DurationSeconds: 24 * 60 * 60,
-		EventValue:      pb.UIEvent_PAUSE_24_HOURS,
-	},
+	newPauseLength(labelPause5Min, 5*60),
+	newPauseLength(labelPause15Min, 15*60),
+	newPauseLength(labelPause30Min, 30*60),
+	newPauseLength(labelPause1H, 60*60),
+	newPauseLength(labelPause24H, 24*60*60),
 }
 
 func buildPauseMenu(ti *Instance) {
