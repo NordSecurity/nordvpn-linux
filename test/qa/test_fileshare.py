@@ -704,7 +704,7 @@ def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transf
     transfer_accept_thread = PeerTransferAcceptThread(transfer_id)
     transfer_accept_thread.start()
 
-    for transfer_in_progress in poll(lambda: "downloading" in fileshare.get_transfer(transfer_id, ssh_client)):
+    for transfer_in_progress in poll(lambda: fileshare.TransferState.DOWNLOADING in fileshare.get_transfer(transfer_id, ssh_client)):
         if transfer_in_progress:
             break
 
