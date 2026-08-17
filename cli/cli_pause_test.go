@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/uievent"
 	"github.com/stretchr/testify/assert"
 )
 
