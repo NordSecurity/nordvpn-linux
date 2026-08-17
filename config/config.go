@@ -76,11 +76,12 @@ func (c Config) withAnalyticsConsent(value AnalyticsConsent) Config {
 type AutoConnectData struct {
 	ID int64 `json:"id,omitempty"`
 	// TODO: remove this in v4 and only use the country, city and group fields
-	ServerTag string `json:"server_tag,omitempty"`
-	Country   string
-	City      string
-	Group     ServerGroup
-	Protocol  Protocol `json:"protocol,omitempty"`
+	ServerTag   string `json:"server_tag,omitempty"`
+	Country     string
+	CountryCode string
+	City        string
+	Group       ServerGroup
+	Protocol    Protocol `json:"protocol,omitempty"`
 	// TODO: rename json key when v4 comes out.
 	ThreatProtectionLite bool      `json:"cybersec,omitempty"`
 	Obfuscate            bool      `json:"obfuscate,omitempty"`

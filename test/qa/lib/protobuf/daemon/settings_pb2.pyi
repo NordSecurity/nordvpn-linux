@@ -1,8 +1,8 @@
 import common_pb2 as _common_pb2
-from config import technology_pb2 as _technology_pb2
 from config import analytics_consent_pb2 as _analytics_consent_pb2
-from config import protocol_pb2 as _protocol_pb2
 from config import group_pb2 as _group_pb2
+from config import protocol_pb2 as _protocol_pb2
+from config import technology_pb2 as _technology_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
@@ -19,16 +19,18 @@ class SettingsResponse(_message.Message):
     def __init__(self, type: _Optional[int] = ..., data: _Optional[_Union[Settings, _Mapping]] = ...) -> None: ...
 
 class AutoconnectData(_message.Message):
-    __slots__ = ("enabled", "country", "city", "server_group")
+    __slots__ = ("enabled", "country", "city", "server_group", "country_code")
     ENABLED_FIELD_NUMBER: _ClassVar[int]
     COUNTRY_FIELD_NUMBER: _ClassVar[int]
     CITY_FIELD_NUMBER: _ClassVar[int]
     SERVER_GROUP_FIELD_NUMBER: _ClassVar[int]
+    COUNTRY_CODE_FIELD_NUMBER: _ClassVar[int]
     enabled: bool
     country: str
     city: str
     server_group: _group_pb2.ServerGroup
-    def __init__(self, enabled: bool = ..., country: _Optional[str] = ..., city: _Optional[str] = ..., server_group: _Optional[_Union[_group_pb2.ServerGroup, str]] = ...) -> None: ...
+    country_code: str
+    def __init__(self, enabled: bool = ..., country: _Optional[str] = ..., city: _Optional[str] = ..., server_group: _Optional[_Union[_group_pb2.ServerGroup, str]] = ..., country_code: _Optional[str] = ...) -> None: ...
 
 class Settings(_message.Message):
     __slots__ = ("technology", "firewall", "kill_switch", "auto_connect_data", "meshnet", "routing", "fwmark", "analytics_consent", "dns", "threat_protection_lite", "protocol", "lan_discovery", "allowlist", "obfuscate", "virtualLocation", "postquantum_vpn", "user_settings", "arp_ignore", "ech")
