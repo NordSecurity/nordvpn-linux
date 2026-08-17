@@ -293,13 +293,6 @@ class PeerList:
     def clear_external_peer_list(self):
         self.external_peers = []
 
-    def find_peer(self, peer: str) -> Peer:
-        for peer_info in self.external_peers + self.internal_peers:
-            if peer_info.ip == peer or peer_info.hostname == peer or peer_info.nickname == peer:
-                return peer_info
-        raise Exception("peer not found")
-
-
     def parse_peer_list(self, filter_list: str | None = None) -> list[str]:
         """Builds expected Meshnet peer list string according to passed list of filters."""
 
