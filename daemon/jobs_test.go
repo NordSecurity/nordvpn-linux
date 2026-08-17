@@ -54,6 +54,7 @@ func updateAutoconnectData(c *mockConfigManager, data config.AutoConnectData) {
 	c.c.AutoConnect = true
 	c.c.AutoConnectData.ServerTag = data.ServerTag
 	c.c.AutoConnectData.Country = data.Country
+	c.c.AutoConnectData.CountryCode = data.CountryCode
 	c.c.AutoConnectData.City = data.City
 	c.c.AutoConnectData.Group = data.Group
 }

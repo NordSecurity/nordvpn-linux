@@ -417,15 +417,21 @@ func (r *RPC) doAutoConnect() error {
 
 	if err == nil && server.err == nil {
 		log.Info("auto-connect success")
+
+		// NOTE: `CountryCode` in `AutoConnectData` was introduced later, so for those
+		// cases where country code is not yet saved on user's side, do a fallback to
+		// country name.
+		// This should be removed with LVPN-10972.
+		countryCodeOrCountryName := cfg.AutoConnectData.CountryCode
+		if countryCodeOrCountryName == "" {
+			countryCodeOrCountryName = cfg.AutoConnectData.Country
+		}
+
 		r.RequestedConnParams.Set(
 			pb.ConnectionSource_AUTO,
 			serverpicker.ServerParameters{
-				Country: cfg.AutoConnectData.Country,
-				// NOTE: This is not a mistake. At the time of writing, `AutoConnectData`
-				// does not store country code, but we need to rely on it so we are setting
-				// `AutoConnectData.Country` field to country code, see
-				// https://github.com/NordSecurity/nordvpn-linux/blob/5.3.0/daemon/rpc_set_autoconnect.go#L95.
-				CountryCode: cfg.AutoConnectData.Country,
+				Country:     cfg.AutoConnectData.Country,
+				CountryCode: countryCodeOrCountryName,
 				City:        cfg.AutoConnectData.City,
 				Group:       cfg.AutoConnectData.Group,
 			},
