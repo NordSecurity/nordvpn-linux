@@ -8,8 +8,13 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
+// The was extracted from libtelio to handle the ENS events injection in dev builds.
+// It also handles the cases where the application is "put" in error mode,
+// e.g. ENS VpnConnectionErrorConnectionLimitReached is injected, for the next VPN connect
+
 type ensDev struct {
-	ch                      chan vpnConnError
+	ch chan vpnConnError
+	// Setting this to true will result in an ENS event generated next time startNewConnect is executed.
 	nextConnectLimitReached atomic.Bool
 }
 
@@ -23,6 +28,7 @@ func newEnsDev(prod bool) *ensDev {
 	}
 }
 
+// This needs to be called when libtelio starts the events monitoring, for the new VPN connect
 func (ed *ensDev) startNewConnect() {
 	if ed.ch == nil {
 		return
