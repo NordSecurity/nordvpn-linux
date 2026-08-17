@@ -314,6 +314,20 @@ func (n *nft) addOutputChain(config firewall.Config, nftCtx *nftContext) {
 		})
 	}
 
+	if config.TunnelIP.IsValid() && len(config.TunnelInterface) > 0 {
+		// oifname <tun interface> ip saddr != <tun ip> drop
+		n.conn.AddRule(&nftables.Rule{
+			Table: nftCtx.table,
+			Chain: outputChain,
+			Exprs: buildRules(
+				&expr.Verdict{Kind: expr.VerdictDrop},
+				checkInterfaceName(config.TunnelInterface, ifNameOutput, expr.CmpOpEq),
+				checkIPIsNotEqual(config.TunnelIP, matchSource),
+			),
+			UserData: userdata.AppendString(nil, userdata.TypeComment, "Drop non tunnel source ip packets that are going through tunnel interface"),
+		})
+	}
+
 	if len(config.TunnelInterface) > 0 {
 		// oif "nordtun" accept
 		n.conn.AddRule(&nftables.Rule{
