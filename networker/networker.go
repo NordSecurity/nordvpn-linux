@@ -248,6 +248,7 @@ func failureRecover(netw *Combined) {
 
 	cfg := netw.fwConfig.CopyWith(
 		firewall.WithTunnelInterface(""),
+		firewall.WithTunnelIP(netip.Addr{}),
 	)
 	if err := netw.configureFirewall(cfg); err != nil {
 		log.Error(err)
@@ -331,12 +332,14 @@ func (netw *Combined) start(
 	}
 
 	tunnelInterface := netw.vpnet.Tun().Interface().Name
+	tunnelIP, _ := netw.vpnet.Tun().IP()
 	// configure firewall
 	// update tunnel name and allowlist
 	// use netw.allowlist because it is populated in setAllowlist and there will be
 	// updated to also contain LAN addresses for LAN discovery enabled
 	newCfg := netw.fwConfig.CopyWith(
 		firewall.WithTunnelInterface(tunnelInterface),
+		firewall.WithTunnelIP(tunnelIP),
 		firewall.WithAllowlist(netw.allowlist),
 	)
 	if err := netw.configureFirewall(newCfg); err != nil {
@@ -471,8 +474,10 @@ func (netw *Combined) restart(
 
 	// configure firewall
 	// update only the interface name, in case there is a different VPN technology used
+	tunnelIP, _ := netw.vpnet.Tun().IP()
 	newCfg := netw.fwConfig.CopyWith(
 		firewall.WithTunnelInterface(netw.vpnet.Tun().Interface().Name),
+		firewall.WithTunnelIP(tunnelIP),
 	)
 	if err := netw.configureFirewall(newCfg); err != nil {
 		return fmt.Errorf("configuring firewall: %w", err)
@@ -550,6 +555,7 @@ func (netw *Combined) stop() error {
 	// configure firewall
 	newCfg := netw.fwConfig.CopyWith(
 		firewall.WithTunnelInterface(""),
+		firewall.WithTunnelIP(netip.Addr{}),
 	)
 	if err := netw.configureFirewall(newCfg); err != nil {
 		return fmt.Errorf("configuring firewall at stop: %w", err)
@@ -1035,6 +1041,7 @@ func (netw *Combined) setMesh(
 	// configure firewall
 	newCfg := netw.fwConfig.CopyWith(
 		firewall.WithMeshnetInfo(firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)),
+		firewall.WithTunnelIP(self),
 	)
 	if !netw.fwConfig.HasSimilarMeshInfo(&newCfg) {
 		if err := netw.configureFirewall(newCfg); err != nil {

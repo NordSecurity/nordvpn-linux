@@ -26,6 +26,11 @@ func (b *FirewallConfigBuilder) TunnelInterface(iface string) *FirewallConfigBui
 	return b
 }
 
+func (b *FirewallConfigBuilder) TunnelIP(ip netip.Addr) *FirewallConfigBuilder {
+	b.cfg.TunnelIP = ip
+	return b
+}
+
 func (b *FirewallConfigBuilder) AllowlistTCPPort(port int64) *FirewallConfigBuilder {
 	if b.cfg.Allowlist.Ports.TCP == nil {
 		b.cfg.Allowlist.Ports.TCP = config.PortSet{}
