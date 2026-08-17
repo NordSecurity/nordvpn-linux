@@ -48,8 +48,8 @@ func TestGatedNotifierSuppressesUntilInitialSyncCompleted(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockalert.NotifierMock{}
-			state := &trayState{initialSyncCompleted: tt.initialSyncCompleted}
-			g := &gatedNotifier{Notifier: mock, state: state}
+			ready := tt.initialSyncCompleted
+			g := &gatedNotifier{Notifier: mock, isReady: func() bool { return ready }}
 
 			b := g.Alert("body")
 			if tt.urgent {

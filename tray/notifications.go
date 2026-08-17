@@ -16,15 +16,11 @@ import (
 // until the tray has completed its sync with the daemon.
 type gatedNotifier struct {
 	alert.Notifier
-	state *trayState
+	isReady func() bool
 }
 
 func (g *gatedNotifier) Alert(body string) *alert.AlertBuilder {
-	g.state.mu.RLock()
-	ready := g.state.initialSyncCompleted
-	g.state.mu.RUnlock()
-
-	if !ready {
+	if !g.isReady() {
 		log.Systray.Infof("Notification suppressed (initial sync not completed): %s", body)
 		return alert.NewAlertBuilder(func(alert.Alert) {}, body)
 	}

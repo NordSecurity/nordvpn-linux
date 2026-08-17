@@ -190,7 +190,14 @@ func NewTrayInstance(client pb.DaemonClient, quitChan chan<- norduser.StopReques
 		checkboxSync:          NewCheckboxSynchronizer(),
 		stopVisibilityMonitor: make(chan struct{}),
 	}
-	obj.n = &gatedNotifier{Notifier: n, state: &obj.state}
+	obj.n = &gatedNotifier{
+		Notifier: n,
+		isReady: func() bool {
+			obj.state.mu.RLock()
+			defer obj.state.mu.RUnlock()
+			return obj.state.initialSyncCompleted
+		},
+	}
 	// disable notifier until we have up to date settings with
 	// information if notifications are allowed or not
 	obj.n.Mute()
