@@ -7,10 +7,13 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/alert"
 	"github.com/NordSecurity/nordvpn-linux/cli"
 	"github.com/NordSecurity/nordvpn-linux/client"
+	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
+
+const actionKeyOpenHelpGuide = "open-connection-limit-help-guide"
 
 // gatedNotifier suppresses every alert, even Urgent ones,
 // until the tray has completed its sync with the daemon.
@@ -83,6 +86,14 @@ func (ti *Instance) connectionResultAlert(out *pb.Payload) *alert.AlertBuilder {
 		return ti.n.Alert(cli.DedicatedServersConnectionLimitReached).Urgent()
 	case internal.CodeDedicatedServersPq:
 		return ti.n.Alert(internal.ServerUnavailableErrorMessage).Urgent()
+	case internal.CodeConnectionLimitReached:
+		return ti.n.Alert(fmt.Sprintf(client.ENSConnectionLimitReachedTemplate, "", ".")).
+			Summary(client.ENSConnectionLimitReachedSummary).
+			Action(actionKeyOpenHelpGuide, "Open help guide", func() {
+				if err := openURI(core.ConnectonLimitReachedGuideURL); err != nil {
+					log.Systray.Errorf("failed to open URI: %v", err)
+				}
+			})
 	case internal.CodeConnecting: // no notification
 	case internal.CodeConnected:
 		// NOTE: connection success is not handled here on purpose

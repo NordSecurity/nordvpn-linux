@@ -186,4 +186,6 @@ const (
 
 	// /v1/dedicated-servers/<dedicated-server-uuid>/connect
 	DedicatedServersConnectURL = DedicatedServersURL + "/%s/connect"
+
+	ConnectonLimitReachedGuideURL = "https://support.nordvpn.com/hc/en-us/articles/47181405478417-I-get-the-Session-Limit-Reached-error-on-NordVPN?utm_medium=app&utm_source=nordvpn-linux-gui&utm_campaign=ens_error-session_limit&nm=app&ns=nordvpn-linux-gui&nc=ens_error-session_limit"
 )
