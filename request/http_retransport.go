@@ -19,7 +19,7 @@ type HTTPReTransport struct {
 	protoMinor      int
 	proto           string
 	shouldRetryFunc ShouldRetryFunc
-	NeedRecreate    bool
+	needRecreate    bool
 	// counter provides a mechanism to check whether the inner RoundTripper was re-created
 	// in the background during this round trip. Integer overflow is not important here as only
 	// inequality operator is used.
@@ -48,7 +48,7 @@ func NewHTTPReTransport(
 		inner:           createFn(),
 		createFn:        createFn,
 		shouldRetryFunc: shouldRetryFn,
-		NeedRecreate:    needRecreate,
+		needRecreate:    needRecreate,
 	}
 }
 
@@ -65,12 +65,13 @@ func (m *HTTPReTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 // NotifyConnect initiates re-creating the inner round tripper when called.
 func (m *HTTPReTransport) NotifyConnect(events.DataConnect) error {
-	if !m.NeedRecreate {
-		return nil
-	}
 	m.mu.RLock()
+	needRecreate := m.needRecreate
 	counter := m.counter
 	m.mu.RUnlock()
+	if !needRecreate {
+		return nil
+	}
 	m.recreateRoundTrip(counter)
 	return nil
 }
