@@ -4,7 +4,6 @@ import time
 
 import pytest
 import sh
-import subprocess
 import grpc
 
 from constants import NORDVPND_SOCKET
@@ -605,28 +604,14 @@ def test_obfuscation_prevents_virtual_location_connection(tech, proto, obfuscate
 ENS_CONN_LIMIT_REACHED = 2
 def test_ens_connection_limit():
     """Test ENS connection limit"""
-    if "dev" not in sh.nordvpn("version"):
+    if "dev" not in sh.nordvpn.version():
         pytest.skip("can run only for dev builds")
 
     sh.nordvpn.set.technology("nordlynx")
-    # fetch account info before stopping the internet otherwise connect fails because account info fails
-    sh.nordvpn.account()
+    with grpc.insecure_channel(NORDVPND_SOCKET) as channel:
+        stub = service_pb2_grpc.DaemonStub(channel)
+        stub.InjectVpnConnectionError(common_pb2.InjectVpnConnectionErrorRequest(telio_code=ENS_CONN_LIMIT_REACHED))
 
-    with network.remove_default_gateway():
-        helper = subprocess.Popen(
-            ["nordvpn", "c"],
-            stdout=subprocess.PIPE,
-            text=True,
-        )
-        with grpc.insecure_channel(NORDVPND_SOCKET) as channel:
-            stub = service_pb2_grpc.DaemonStub(channel)
-            # try to send the event multiple times, until libtelio starts the connection
-            while True:
-                try:
-                    stub.InjectVpnConnectionError(common_pb2.InjectVpnConnectionErrorRequest(telio_code=ENS_CONN_LIMIT_REACHED))
-                    break
-                except Exception as e:  # noqa: BLE001
-                    print(e)
-                    time.sleep(1)
-        output = helper.stdout.read()
-        assert "TODO: connection limit reached." in output
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.connect()
+    assert "TODO: connection limit reached." in ex.value.stdout.decode("utf-8")
