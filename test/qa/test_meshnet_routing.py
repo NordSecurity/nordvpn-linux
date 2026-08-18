@@ -156,13 +156,14 @@ def test_routing_access_LAN():
     peer_hostname = peer_list.get_external_peer().hostname
     this_device = peer_list.get_this_device()
     sh_no_tty.nordvpn.mesh.peer.local.deny(peer_hostname)
-
+    ssh_client.exec_command("nordvpn mesh peer refresh")
     output = ssh_client.exec_command("nordvpn mesh peer connect " + this_device.ip)
     assert meshnet.is_connect_successful(output, this_device.hostname), "Remote peer connect should be successful"
     default_gateway = network.get_default_gateway()
 
     assert not ssh_client.network.ping(default_gateway, retry=3)
     sh_no_tty.nordvpn.mesh.peer.local.allow(peer_hostname)
+    ssh_client.exec_command("nordvpn mesh peer refresh")
     cap = capture_utils.BackgroundCapture("any", display_filter=f"ip.addr == {default_gateway}")
     cap.start()
     time.sleep(2)
