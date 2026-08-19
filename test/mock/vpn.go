@@ -10,10 +10,10 @@ import (
 )
 
 const (
-	StatsStart         = iota
-	StatsStop          = iota
-	StatsNetworkChange = iota
-	statsLastValue     = iota
+	StatsStart = iota
+	StatsStop
+	StatsNetworkChange
+	statsLastValue
 )
 
 // WorkingVPN stub of a github.com/NordSecurity/nordvpn-linux/daemon/vpn.VPN interface.
@@ -22,9 +22,14 @@ type WorkingVPN struct {
 	StartErr          error
 	ErrNetworkChanges error
 	ExecutionStats    [statsLastValue]int
+
+	ConnectingFn func(context.Context, vpn.Credentials, vpn.ServerData) error
 }
 
-func (w *WorkingVPN) Start(context.Context, vpn.Credentials, vpn.ServerData) error {
+func (w *WorkingVPN) Start(ctx context.Context, creds vpn.Credentials, data vpn.ServerData) error {
+	if w.ConnectingFn != nil {
+		return w.ConnectingFn(ctx, creds, data)
+	}
 	w.ExecutionStats[StatsStart]++
 
 	w.isActive = w.StartErr == nil
@@ -49,6 +54,7 @@ func (w *WorkingVPN) NetworkChanged() error {
 
 	return w.ErrNetworkChanges
 }
+
 func (w *WorkingVPN) GetConnectionParameters() (vpn.ServerData, bool) {
 	return vpn.ServerData{}, false
 }

@@ -1,4 +1,4 @@
-package notify
+package alert
 
 import (
 	"path"

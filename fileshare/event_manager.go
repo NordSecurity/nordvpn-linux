@@ -155,7 +155,7 @@ func (em *EventManager) DisableNotifications() error {
 		return ErrNotificationsAlreadyDisabled
 	}
 
-	if err := em.notificationManager.notifier.Close(); err != nil {
+	if err := em.notificationManager.n.Close(); err != nil {
 		return fmt.Errorf("failed to disable notifier: %s", err)
 	}
 	em.notificationManager = nil
@@ -351,7 +351,7 @@ func (em *EventManager) handleFileFailedEvent(event EventKindFileFailed) {
 	}
 	file.Finished = true
 
-	//no gosec violation, values from the enumeration are within the int32 max range
+	// no gosec violation, values from the enumeration are within the int32 max range
 	// #nosec G115
 	fileStatusInNotification := pb.Status(event.Status.Status)
 	removeFileFromLiveTransfer(transfer, file)
@@ -626,17 +626,17 @@ func isFileWriteable(fileInfo fs.FileInfo, user *user.User, gids []string) bool 
 	isOwner := uid == ownerUID
 
 	if isOwner {
-		return fileInfo.Mode().Perm()&os.FileMode(0200) != 0
+		return fileInfo.Mode().Perm()&os.FileMode(0o200) != 0
 	}
 
 	ownerGIDStr := strconv.Itoa(ownerGID)
 	gidIndex := slices.Index(gids, ownerGIDStr)
 	isGroup := gidIndex != -1
 	if isGroup {
-		return fileInfo.Mode().Perm()&os.FileMode(0020) != 0
+		return fileInfo.Mode().Perm()&os.FileMode(0o020) != 0
 	}
 
-	return fileInfo.Mode().Perm()&os.FileMode(0002) != 0
+	return fileInfo.Mode().Perm()&os.FileMode(0o002) != 0
 }
 
 // TransferProgressInfo info to report to the user

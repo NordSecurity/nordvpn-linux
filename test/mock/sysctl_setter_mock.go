@@ -21,3 +21,10 @@ func (s *SysctlSetterMock) Unset() error {
 	s.IsSet = false
 	return nil
 }
+
+type IpV6Blocker struct {
+	BlockErr error
+}
+
+func (i IpV6Blocker) Block() error   { return i.BlockErr }
+func (i IpV6Blocker) Unblock() error { return i.BlockErr }
