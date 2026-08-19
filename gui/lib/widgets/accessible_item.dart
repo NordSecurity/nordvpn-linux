@@ -13,6 +13,7 @@ class AccessibleItem extends StatefulWidget {
     this.toggled,
     this.checked,
     this.inMutuallyExclusiveGroup = false,
+    this.focusable,
   });
 
   final Widget child;
@@ -29,6 +30,8 @@ class AccessibleItem extends StatefulWidget {
   final bool? checked;
   final bool inMutuallyExclusiveGroup;
 
+  final bool? focusable;
+
   @override
   State<AccessibleItem> createState() => _AccessibleItemState();
 }
@@ -39,6 +42,7 @@ class _AccessibleItemState extends State<AccessibleItem> {
   @override
   Widget build(BuildContext context) {
     final onActivate = widget.enabled ? widget.onActivate : null;
+    final canFocus = widget.focusable ?? widget.enabled;
 
     Widget visual = ExcludeFocus(child: widget.child);
     if (widget.excludeChildSemantics) {
@@ -60,7 +64,7 @@ class _AccessibleItemState extends State<AccessibleItem> {
         label: widget.label,
         onTap: onActivate,
         child: FocusableActionDetector(
-          enabled: widget.enabled,
+          enabled: canFocus,
           mouseCursor: widget.enabled
               ? SystemMouseCursors.click
               : SystemMouseCursors.basic,

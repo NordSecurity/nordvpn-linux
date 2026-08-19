@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/constants.dart';
@@ -12,6 +14,8 @@ import 'package:nordvpn/internal/popup_codes.dart';
 import 'package:nordvpn/internal/urls.dart';
 import 'package:nordvpn/settings/settings_wrapper_widget.dart';
 import 'package:nordvpn/theme/app_theme.dart';
+import 'package:nordvpn/theme/settings_theme.dart';
+import 'package:nordvpn/widgets/accessible_item.dart';
 import 'package:nordvpn/widgets/custom_error_widget.dart';
 import 'package:nordvpn/widgets/custom_expansion_tile.dart';
 import 'package:nordvpn/widgets/loading_indicator.dart';
@@ -59,52 +63,60 @@ class GeneralSettings extends ConsumerWidget {
       itemBuilder: (context, index) {
         switch (_GeneralSettingsItems.values[index]) {
           case _GeneralSettingsItems.appearance:
-            return SettingsWrapperWidget.buildListItem(
-              context,
-              title: t.ui.appearance,
-              trailing: _buildAppearanceTrailing(context, ref, mode),
-            );
+            return _buildAppearance(context, ref, mode);
           case _GeneralSettingsItems.notifications:
-            return SettingsWrapperWidget.buildListItem(
+            return _accessibleSwitchTile(
               context,
               title: t.ui.showNotifications,
-              trailing: OnOffSwitch(
-                value: settings.notifications,
-                onChanged: (value) => ref
-                    .read(vpnSettingsControllerProvider.notifier)
-                    .setNotifications(value),
-              ),
+              value: settings.notifications,
+              onChanged: (value) => ref
+                  .read(vpnSettingsControllerProvider.notifier)
+                  .setNotifications(value),
             );
           case _GeneralSettingsItems.analytics:
             return CustomExpansionTile(
-              title: Text(t.ui.privacyPreferences, style: appTheme.body),
-              subtitle: Text(
-                t.ui.privacyPreferencesDescription,
-                style: appTheme.caption,
+              title: MergeSemantics(
+                child: Semantics(
+                  header: true,
+                  child: Text(t.ui.privacyPreferences, style: appTheme.body),
+                ),
+              ),
+              subtitle: MergeSemantics(
+                child: Text(
+                  t.ui.privacyPreferencesDescription,
+                  style: appTheme.caption,
+                ),
               ),
               contentPadding: EdgeInsets.zero,
+              semanticTitle: t.ui.privacyPreferences,
               children: [
-                SettingsWrapperWidget.buildListItem(
-                  context,
-                  title: t.ui.essentialRequired,
-                  subtitleWidget: RichTextMarkdownLinks(
-                    text: t.ui.requiredAnalyticsDescription(
-                      termsUrl: termsOfServiceUrl,
+                AccessibleItem(
+                  enabled: false,
+                  focusable: true,
+                  toggled: true,
+                  excludeChildSemantics: false,
+                  onActivate: () {},
+                  child: SettingsWrapperWidget.buildListItem(
+                    context,
+                    title: t.ui.essentialRequired,
+                    subtitleWidget: RichTextMarkdownLinks(
+                      text: t.ui.requiredAnalyticsDescription(
+                        termsUrl: termsOfServiceUrl,
+                      ),
+                    ),
+                    trailing: ExcludeSemantics(
+                      child: OnOffSwitch(value: true, onChanged: null),
                     ),
                   ),
-                  trailing: OnOffSwitch(value: true, onChanged: null),
                 ),
-                SettingsWrapperWidget.buildListItem(
+                _accessibleSwitchTile(
                   context,
                   title: t.ui.analytics,
                   subtitle: t.ui.analyticsDescription,
-                  trailing: OnOffSwitch(
-                    value:
-                        settings.analyticsConsent == ConsentLevel.acceptedAll,
-                    onChanged: (value) => ref
-                        .read(vpnSettingsControllerProvider.notifier)
-                        .setAnalytics(value),
-                  ),
+                  value: settings.analyticsConsent == ConsentLevel.acceptedAll,
+                  onChanged: (value) => ref
+                      .read(vpnSettingsControllerProvider.notifier)
+                      .setAnalytics(value),
                 ),
               ],
             );
@@ -123,39 +135,73 @@ class GeneralSettings extends ConsumerWidget {
   }
 }
 
-Widget _buildAppearanceTrailing(
-  BuildContext context,
-  WidgetRef ref,
-  ThemeMode mode,
-) {
+Widget _buildAppearance(BuildContext context, WidgetRef ref, ThemeMode mode) {
+  final settingsTheme = context.settingsTheme;
   final appTheme = context.appTheme;
 
-  return Row(
-    mainAxisSize: MainAxisSize.min,
-    spacing: appTheme.verticalSpaceSmall,
-    children: [
-      RadioButton(
-        value: ThemeMode.system,
-        groupValue: mode,
-        onChanged: (value) => _setAppearance(ref, value),
-        label: t.ui.system,
-        labelStyle: appTheme.body,
-      ),
-      RadioButton(
-        value: ThemeMode.light,
-        groupValue: mode,
-        onChanged: (value) => _setAppearance(ref, value),
-        label: t.ui.light,
-        labelStyle: appTheme.body,
-      ),
-      RadioButton(
-        value: ThemeMode.dark,
-        groupValue: mode,
-        onChanged: (value) => _setAppearance(ref, value),
-        label: t.ui.dark,
-        labelStyle: appTheme.body,
-      ),
-    ],
+  return Padding(
+    padding: settingsTheme.itemPadding,
+    child: Row(
+      children: [
+        Expanded(
+          child: ExcludeSemantics(
+            child: Text(t.ui.appearance, style: settingsTheme.itemTitleStyle),
+          ),
+        ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          spacing: appTheme.verticalSpaceSmall,
+          children: [
+            _appearanceRadio(context, ref, ThemeMode.system, t.ui.system, mode),
+            _appearanceRadio(context, ref, ThemeMode.light, t.ui.light, mode),
+            _appearanceRadio(context, ref, ThemeMode.dark, t.ui.dark, mode),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _appearanceRadio(
+  BuildContext context,
+  WidgetRef ref,
+  ThemeMode value,
+  String label,
+  ThemeMode groupValue,
+) {
+  final appTheme = context.appTheme;
+  return AccessibleItem(
+    inMutuallyExclusiveGroup: true,
+    checked: value == groupValue,
+    label: '${t.ui.appearance}, $label',
+    onActivate: () => _setAppearance(ref, value),
+    child: RadioButton(
+      value: value,
+      groupValue: groupValue,
+      onChanged: (v) => _setAppearance(ref, v),
+      label: label,
+      labelStyle: appTheme.body,
+    ),
+  );
+}
+
+Widget _accessibleSwitchTile(
+  BuildContext context, {
+  required String title,
+  String? subtitle,
+  required bool value,
+  required Future<void> Function(bool) onChanged,
+}) {
+  return AccessibleItem(
+    toggled: value,
+    label: subtitle == null ? title : '$title. $subtitle',
+    onActivate: () => unawaited(onChanged(!value)),
+    child: SettingsWrapperWidget.buildListItem(
+      context,
+      title: title,
+      subtitle: subtitle,
+      trailing: OnOffSwitch(value: value, onChanged: onChanged),
+    ),
   );
 }
 
