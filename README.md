@@ -101,6 +101,26 @@ echo "debug" | sudo tee /run/nordvpn/loglevel
 
 Valid values are `debug`, `info`, `warn`, `error`, `fatal` and `off`.
 
+### libtelio log level
+
+The verbosity of libtelio can be changed by writing to:
+
+- `/run/nordvpn/teliologlevel` for DEB and RPM
+- `/var/snap/nordvpn/common/run/nordvpn/teliologlevel` for SNAP
+
+Example:
+
+```sh
+echo "debug" | sudo tee /run/nordvpn/teliologlevel
+```
+
+Valid values are `debug`, `info`, `warn`, `error` and `trace`.
+
+libtelio log level is capped by the global log level. E.g. lib level logs will be printed only if global level
+logs are equal or higher. Global `debug` log level matches both `debug` and `trace` for the lib log level.
+
+Unlike the global log level, the changes require a deamon restart to take effect.
+
 ### Meshnet peer routing not working on Fedora with Docker installed
 
 When Docker is installed on Fedora, it drops all forwarded traffic that does
