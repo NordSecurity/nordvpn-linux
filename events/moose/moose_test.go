@@ -2076,6 +2076,7 @@ func TestVPNConnReasonToMoose(t *testing.T) {
 		wantMooseTrigger  moose.NordvpnappVpnConnectionTrigger
 		wantExceptionCode int32
 		wantEventTrigger  moose.NordvpnappEventTrigger
+		isWhileConnecting bool
 	}{
 		{
 			name:              "server maintenance is app-triggered with ServerMaintenance trigger + 1000076",
@@ -2083,6 +2084,15 @@ func TestVPNConnReasonToMoose(t *testing.T) {
 			wantMooseTrigger:  moose.NordvpnappVpnConnectionTriggerServerMaintenance,
 			wantExceptionCode: 1000076,
 			wantEventTrigger:  moose.NordvpnappEventTriggerApp,
+			isWhileConnecting: false,
+		},
+		{
+			name:              "server maintenance while connecting",
+			trigger:           events.VPNConnectionReasonServerMaintenance,
+			wantMooseTrigger:  moose.NordvpnappVpnConnectionTriggerServerMaintenance,
+			wantExceptionCode: -1,
+			wantEventTrigger:  moose.NordvpnappEventTriggerApp,
+			isWhileConnecting: false,
 		},
 		{
 			name:              "auto-connect is app-triggered with AutoConnectUserSetting trigger + -1",
@@ -2090,6 +2100,7 @@ func TestVPNConnReasonToMoose(t *testing.T) {
 			wantMooseTrigger:  moose.NordvpnappVpnConnectionTriggerAutoConnectUserSetting,
 			wantExceptionCode: -1,
 			wantEventTrigger:  moose.NordvpnappEventTriggerApp,
+			isWhileConnecting: false,
 		},
 		{
 			name:              "none is user-triggered with None trigger + -1",
@@ -2097,11 +2108,20 @@ func TestVPNConnReasonToMoose(t *testing.T) {
 			wantMooseTrigger:  moose.NordvpnappVpnConnectionTriggerNone,
 			wantExceptionCode: -1,
 			wantEventTrigger:  moose.NordvpnappEventTriggerUser,
+			isWhileConnecting: false,
+		},
+		{
+			name:              "ENS connection limit reached",
+			trigger:           events.VPNConnectionReasonNone,
+			wantMooseTrigger:  moose.NordvpnappVpnConnectionTriggerNone,
+			wantExceptionCode: connectionLimitReachedExceptionCode,
+			wantEventTrigger:  moose.NordvpnappEventTriggerApp,
+			isWhileConnecting: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := vpnConnReasonToMoose(tt.trigger)
+			got := vpnConnReasonToMoose(tt.trigger, tt.isWhileConnecting)
 			assert.Equal(t, tt.wantMooseTrigger, got.trigger)
 			assert.Equal(t, tt.wantExceptionCode, got.exceptionCode)
 			assert.Equal(t, tt.wantEventTrigger, got.eventTrigger)
