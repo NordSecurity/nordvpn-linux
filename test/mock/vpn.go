@@ -54,6 +54,7 @@ func (w *WorkingVPN) NetworkChanged() error {
 
 	return w.ErrNetworkChanges
 }
+
 func (w *WorkingVPN) GetConnectionParameters() (vpn.ServerData, bool) {
 	return vpn.ServerData{}, false
 }

@@ -15,9 +15,11 @@ import (
 	"testing/fstest"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/alert"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
+	mockalert "github.com/NordSecurity/nordvpn-linux/test/mock/alert"
 	"golang.org/x/sys/unix"
 
 	"github.com/stretchr/testify/assert"
@@ -31,54 +33,19 @@ const (
 	tmpDir         = "/tmp"
 )
 
-type mockNotification struct {
-	id      uint32
-	summary string
-	body    string
-	actions []Action
-}
-
-type mockNotifier struct {
-	notifications []mockNotification
-	nextID        uint32
-	updateCh      chan struct{}
-}
-
-func (mn *mockNotifier) Wait() {
-	select {
-	case <-time.After(1 * time.Second):
-	case <-mn.updateCh:
+func actionsWithoutCallbacks(actions []alert.Action) []alert.Action {
+	if actions == nil {
+		return nil
 	}
-}
-
-func (mn *mockNotifier) SendNotification(summary string, body string, actions []Action) (uint32, error) {
-	notificationID := mn.nextID
-	mn.notifications = append(mn.notifications, mockNotification{id: notificationID, summary: summary, body: body, actions: actions})
-	mn.nextID++
-
-	if mn.updateCh != nil {
-		select {
-		case mn.updateCh <- struct{}{}:
-		default:
-			<-mn.updateCh
-			mn.updateCh <- struct{}{}
-		}
+	stripped := make([]alert.Action, len(actions))
+	for i, action := range actions {
+		stripped[i] = alert.Action{Key: action.Key, Label: action.Label}
 	}
-	return notificationID, nil
-}
-
-func (mn *mockNotifier) Close() error {
-	return nil
-}
-
-func (mn *mockNotifier) getLastNotification() mockNotification {
-	return mn.notifications[len(mn.notifications)-1]
+	return stripped
 }
 
 func NewMockNotificationManager(osInfo *mockEventManagerOsInfo) NotificationManager {
-	return NotificationManager{
-		notifications: newNotificationStorage(),
-	}
+	return NotificationManager{}
 }
 
 type mockEventManagerFilesystem struct {
@@ -194,7 +161,7 @@ func newMockSystemEnvironment(t *testing.T) mockSystemEnvironment {
 
 	destinationDirectoryFilename := "tmp"
 	directories := fstest.MapFS{
-		destinationDirectoryFilename: &fstest.MapFile{Mode: os.ModeDir | 0777, Sys: stat_t},
+		destinationDirectoryFilename: &fstest.MapFile{Mode: os.ModeDir | 0o777, Sys: stat_t},
 	}
 
 	osInfo := mockEventManagerOsInfo{
@@ -575,14 +542,14 @@ func TestTransferFinishedNotifications(t *testing.T) {
 	fileID := "file_id"
 	filePath := "file_path"
 
-	initializeEventManager := func(direction pb.Direction) (*EventManager, *mockNotifier) {
-		notifier := mockNotifier{
-			notifications: []mockNotification{},
-			nextID:        0,
-			updateCh:      make(chan struct{}, 1),
+	initializeEventManager := func(direction pb.Direction) (*EventManager, *mockalert.NotifierMock) {
+		notifier := mockalert.NotifierMock{
+			Alerts:   []mockalert.Alert{},
+			NextID:   0,
+			UpdateCh: make(chan struct{}, 1),
 		}
 		notificationManager := NewMockNotificationManager(&mockEventManagerOsInfo{})
-		notificationManager.notifier = &notifier
+		notificationManager.n = &notifier
 
 		eventManager := NewEventManager(false,
 			&mockMeshClient{},
@@ -615,7 +582,7 @@ func TestTransferFinishedNotifications(t *testing.T) {
 		reason          string
 		expectedSummary string
 		expectedBody    string
-		expectedActions []Action
+		expectedActions []alert.Action
 	}{
 		{
 			name: "download finished success",
@@ -630,7 +597,7 @@ func TestTransferFinishedNotifications(t *testing.T) {
 			direction:       pb.Direction_INCOMING,
 			reason:          "FileDownloaded",
 			expectedSummary: "downloaded",
-			expectedActions: []Action{{actionKeyOpenFile, "Open"}},
+			expectedActions: []alert.Action{{Key: actionKeyOpenFile, Label: "Open"}},
 		},
 		{
 			name: "download finished failure",
@@ -689,16 +656,16 @@ func TestTransferFinishedNotifications(t *testing.T) {
 			)
 			notifier.Wait()
 
-			assert.Equal(t, 1, len(notifier.notifications),
+			assert.Equal(t, 1, len(notifier.Alerts),
 				"TransferFinished event was received, but EventManager did not send any notifications.")
 
-			notification := notifier.notifications[0]
+			notification := notifier.Alerts[0]
 
-			assert.Equal(t, test.expectedSummary, notification.summary,
+			assert.Equal(t, test.expectedSummary, notification.Summary,
 				"Invalid notification summary")
-			assert.Equal(t, filePath, notification.body,
+			assert.Equal(t, filePath, notification.Body,
 				"Notification body should be a filename")
-			assert.Equal(t, test.expectedActions, notification.actions,
+			assert.Equal(t, test.expectedActions, actionsWithoutCallbacks(notification.Actions),
 				"Actions associated with notifications are invalid.")
 		})
 	}
@@ -709,10 +676,10 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 	fileID := "file_id"
 	filePath := "file_path"
 
-	notifier := mockNotifier{
-		notifications: []mockNotification{},
-		nextID:        0,
-		updateCh:      make(chan struct{}, 1),
+	notifier := mockalert.NotifierMock{
+		Alerts:   []mockalert.Alert{},
+		NextID:   0,
+		UpdateCh: make(chan struct{}, 1),
 	}
 
 	openedFiles := []string{}
@@ -721,7 +688,7 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 	}
 
 	notificationManager := NewMockNotificationManager(&mockEventManagerOsInfo{})
-	notificationManager.notifier = &notifier
+	notificationManager.n = &notifier
 	notificationManager.openFileFunc = openFileFunc
 
 	eventManager := NewEventManager(false,
@@ -753,23 +720,22 @@ func TestTransferFinishedNotificationsOpenFile(t *testing.T) {
 	})
 
 	notifier.Wait()
-	notification := notifier.notifications[0]
+	notification := notifier.Alerts[0]
 
-	notificationManager.OpenFile(notification.id)
-	assert.Equal(t, 1, len(openedFiles), "Open event was emitted, but no files were opened.")
+	if assert.Len(t, notification.Actions, 1, "Expected exactly one action on the file notification.") {
+		notification.Actions[0].Callback()
+	}
+	assert.Equal(t, 1, len(openedFiles), "Open action callback did not open the file.")
 	assert.Equal(t, filePath, openedFiles[0], "Invalid file opened.")
-
-	notificationManager.OpenFile(notification.id)
-	assert.Equal(t, 1, len(openedFiles), "File was opened but it was already opened once.")
 }
 
 func TestTransferRequestNotification(t *testing.T) {
 	transferID := exampleUUID
 
-	notifier := mockNotifier{
-		notifications: []mockNotification{},
-		nextID:        0,
-		updateCh:      make(chan struct{}, 1),
+	notifier := mockalert.NotifierMock{
+		Alerts:   []mockalert.Alert{},
+		NextID:   0,
+		UpdateCh: make(chan struct{}, 1),
 	}
 
 	openedFiles := []string{}
@@ -778,7 +744,7 @@ func TestTransferRequestNotification(t *testing.T) {
 	}
 
 	notificationManager := NewMockNotificationManager(&mockEventManagerOsInfo{})
-	notificationManager.notifier = &notifier
+	notificationManager.n = &notifier
 	notificationManager.openFileFunc = openFileFunc
 
 	eventManager := NewEventManager(false,
@@ -815,28 +781,28 @@ func TestTransferRequestNotification(t *testing.T) {
 	eventManager.Event(event)
 	notifier.Wait()
 
-	assert.Equal(t, 1, len(notifier.notifications),
+	assert.Equal(t, 1, len(notifier.Alerts),
 		"Transfer request notification was not sent after transfer request event was received.")
 
-	transferRequestNotification := notifier.getLastNotification()
-	assert.Equal(t, notifyNewTransferSummary, transferRequestNotification.summary)
+	transferRequestNotification := notifier.GetLastNotification()
+	assert.Equal(t, notifyNewTransferSummary, transferRequestNotification.Summary)
 
 	expectedNotificationBody := fmt.Sprintf(notifyNewTransferBody, transferID, hostname)
-	assert.Equal(t, expectedNotificationBody, transferRequestNotification.body,
+	assert.Equal(t, expectedNotificationBody, transferRequestNotification.Body,
 		"Invalid notification body.")
 
-	expectedActions := []Action{
+	expectedActions := []alert.Action{
 		{
-			Action: transferAcceptAction,
-			Key:    actionKeyAcceptTransfer,
+			Label: transferAcceptAction,
+			Key:   actionKeyAcceptTransfer,
 		},
 		{
-			Action: transferCancelAction,
-			Key:    actionKeyCancelTransfer,
+			Label: transferCancelAction,
+			Key:   actionKeyCancelTransfer,
 		},
 	}
 
-	assert.Equal(t, expectedActions, transferRequestNotification.actions)
+	assert.Equal(t, expectedActions, actionsWithoutCallbacks(transferRequestNotification.Actions))
 }
 
 func TestTransferRequestNotificationAccept(t *testing.T) {
@@ -846,12 +812,11 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 	pendingTransferNotificationID := uint32(0)
 
 	transferFinishedID := "022cb1eb-ee22-431a-80c5-ba3050493c17"
-	transferFinishedNotificationID := uint32(1)
 
 	type testEnv struct {
 		notificationManager *NotificationManager
 		eventManager        *EventManager
-		notifier            *mockNotifier
+		notifier            *mockalert.NotifierMock
 		fileshare           *mockEventManagerFileshare
 	}
 
@@ -868,9 +833,9 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 			Gid: currentUserGID,
 		}
 		directories := fstest.MapFS{
-			"directory": &fstest.MapFile{Mode: os.ModeDir | 0777, Sys: stat_t},
-			"symlink":   &fstest.MapFile{Mode: os.ModeSymlink | 0777, Sys: stat_t},
-			"file":      &fstest.MapFile{Mode: 0777, Sys: stat_t},
+			"directory": &fstest.MapFile{Mode: os.ModeDir | 0o777, Sys: stat_t},
+			"symlink":   &fstest.MapFile{Mode: os.ModeSymlink | 0o777, Sys: stat_t},
+			"file":      &fstest.MapFile{Mode: 0o777, Sys: stat_t},
 		}
 
 		filesystem := mockEventManagerFilesystem{
@@ -878,10 +843,10 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 			freeSpace: freeSpace,
 		}
 
-		notifier := mockNotifier{
-			notifications: []mockNotification{},
-			nextID:        pendingTransferNotificationID,
-			updateCh:      make(chan struct{}, 1),
+		notifier := mockalert.NotifierMock{
+			Alerts:   []mockalert.Alert{},
+			NextID:   pendingTransferNotificationID,
+			UpdateCh: make(chan struct{}, 1),
 		}
 
 		osInfo := mockEventManagerOsInfo{
@@ -892,7 +857,7 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 		}
 
 		notificationManager := NewMockNotificationManager(&osInfo)
-		notificationManager.notifier = &notifier
+		notificationManager.n = &notifier
 
 		eventManager := NewEventManager(false,
 			&mockMeshClient{},
@@ -928,11 +893,6 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 		notificationManager.fileshare = fileshare
 		notificationManager.defaultDownloadDir = destinationDirectory
 
-		notificationManager.notifications.transfers = map[uint32]string{
-			pendingTransferNotificationID:  pendingTransferID,
-			transferFinishedNotificationID: transferFinishedID,
-		}
-
 		eventManager.meshClient = &mockMeshClient{externalPeers: []*meshpb.Peer{
 			{
 				Ip:                peer,
@@ -951,7 +911,6 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 	tests := []struct {
 		name                      string
 		destinationDirectoryName  string
-		notificationID            uint32
 		transferID                string
 		freeSpace                 uint64
 		expectedTransferStatus    pb.Status
@@ -960,7 +919,6 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 		{
 			name:                      "transfer successfully accepted",
 			destinationDirectoryName:  "directory",
-			notificationID:            pendingTransferNotificationID,
 			transferID:                pendingTransferID,
 			freeSpace:                 math.MaxUint64,
 			expectedTransferStatus:    pb.Status_ONGOING,
@@ -969,7 +927,6 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 		{
 			name:                      "destination directory is a symlink",
 			destinationDirectoryName:  "symlink",
-			notificationID:            pendingTransferNotificationID,
 			transferID:                pendingTransferID,
 			freeSpace:                 math.MaxUint64,
 			expectedTransferStatus:    pb.Status_REQUESTED,
@@ -978,7 +935,6 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 		{
 			name:                      "destination directory is a file",
 			destinationDirectoryName:  "file",
-			notificationID:            pendingTransferNotificationID,
 			transferID:                pendingTransferID,
 			freeSpace:                 math.MaxUint64,
 			expectedTransferStatus:    pb.Status_REQUESTED,
@@ -987,7 +943,6 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 		{
 			name:                      "directory doesn't exist",
 			destinationDirectoryName:  "no_dir",
-			notificationID:            pendingTransferNotificationID,
 			transferID:                pendingTransferID,
 			freeSpace:                 math.MaxUint64,
 			expectedTransferStatus:    pb.Status_REQUESTED,
@@ -996,7 +951,6 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 		{
 			name:                      "not enough free space",
 			destinationDirectoryName:  "directory",
-			notificationID:            pendingTransferNotificationID,
 			transferID:                pendingTransferID,
 			freeSpace:                 1,
 			expectedTransferStatus:    pb.Status_REQUESTED,
@@ -1005,7 +959,6 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 		{
 			name:                      "transfer already finished",
 			destinationDirectoryName:  "directory",
-			notificationID:            transferFinishedNotificationID,
 			transferID:                transferFinishedID,
 			freeSpace:                 math.MaxUint64,
 			expectedTransferStatus:    pb.Status_SUCCESS,
@@ -1016,28 +969,28 @@ func TestTransferRequestNotificationAccept(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			testEnv := setup(test.destinationDirectoryName, test.freeSpace)
-			testEnv.notificationManager.AcceptTransfer(test.notificationID)
+			testEnv.notificationManager.acceptTransfer(test.transferID)
 
 			if test.expectedErrorNotification == "" {
-				assert.Empty(t, testEnv.notifier.notifications,
+				assert.Empty(t, testEnv.notifier.Alerts,
 					"Unexpected notifications received: %v",
-					testEnv.notifier.notifications)
+					testEnv.notifier.Alerts)
 
 				acceptedTransfer := testEnv.fileshare.getLastAcceptedTransferID()
 				assert.Equal(t, test.transferID, acceptedTransfer, "Invalid transfer was accepted")
 				return
 			}
 
-			assert.Equal(t, 1, len(testEnv.notifier.notifications), "Accept error notification was not received")
+			assert.Equal(t, 1, len(testEnv.notifier.Alerts), "Accept error notification was not received")
 
-			errorNotification := testEnv.notifier.getLastNotification()
-			assert.Equal(t, acceptFailedNotificationSummary, errorNotification.summary,
+			errorNotification := testEnv.notifier.GetLastNotification()
+			assert.Equal(t, acceptFailedNotificationSummary, errorNotification.Summary,
 				"Error notification has invalid summary.")
-			assert.Equal(t, test.expectedErrorNotification, errorNotification.body,
+			assert.Equal(t, test.expectedErrorNotification, errorNotification.Body,
 				"Error notification has invalid body.")
-			assert.Equal(t, 0, len(errorNotification.actions),
+			assert.Equal(t, 0, len(errorNotification.Actions),
 				"Unexpected actions found in error notification: \n%v",
-				errorNotification.actions)
+				errorNotification.Actions)
 		})
 	}
 }
@@ -1046,18 +999,16 @@ func TestTransterRequestNotificationAcceptInvalidTransfer(t *testing.T) {
 	peer := exampleIP1
 
 	transferID := exampleUUID
-	transferNotificationID := uint32(0)
 
 	mockOsEnvironment := newMockSystemEnvironment(t)
 
-	notifier := mockNotifier{
-		notifications: []mockNotification{},
-		nextID:        transferNotificationID,
-		updateCh:      make(chan struct{}, 1),
+	notifier := mockalert.NotifierMock{
+		Alerts:   []mockalert.Alert{},
+		UpdateCh: make(chan struct{}, 1),
 	}
 
 	notificationManager := NewMockNotificationManager(&mockOsEnvironment.mockEventManagerOsInfo)
-	notificationManager.notifier = &notifier
+	notificationManager.n = &notifier
 
 	eventManager := NewEventManager(false,
 		&mockMeshClient{},
@@ -1071,10 +1022,6 @@ func TestTransterRequestNotificationAcceptInvalidTransfer(t *testing.T) {
 	notificationManager.fileshare = &mockEventManagerFileshare{}
 	notificationManager.defaultDownloadDir = mockOsEnvironment.destinationDirectory
 
-	notificationManager.notifications.transfers = map[uint32]string{
-		transferNotificationID: transferID,
-	}
-
 	eventManager.meshClient = &mockMeshClient{externalPeers: []*meshpb.Peer{
 		{
 			Ip:                peer,
@@ -1082,47 +1029,38 @@ func TestTransterRequestNotificationAcceptInvalidTransfer(t *testing.T) {
 		},
 	}}
 
-	notificationManager.AcceptTransfer(transferNotificationID)
+	notificationManager.acceptTransfer(transferID)
 
-	assert.Equal(t, 1, len(notifier.notifications), "Accept error notification was not received")
+	assert.Equal(t, 1, len(notifier.Alerts), "Accept error notification was not received")
 
-	errorNotification := notifier.getLastNotification()
-	assert.Equal(t, acceptFailedNotificationSummary, errorNotification.summary,
+	errorNotification := notifier.GetLastNotification()
+	assert.Equal(t, acceptFailedNotificationSummary, errorNotification.Summary,
 		"Error notification has invalid summary.")
-	assert.Equal(t, genericError, errorNotification.body,
+	assert.Equal(t, genericError, errorNotification.Body,
 		"Error notification has invalid body.")
-	assert.Equal(t, 0, len(errorNotification.actions),
+	assert.Equal(t, 0, len(errorNotification.Actions),
 		"Unexpected actions found in error notification: \n%v",
-		errorNotification.actions)
+		errorNotification.Actions)
 }
 
 func TestTransferRequestNotificationCancel(t *testing.T) {
 	peer := exampleIP1
 
 	pendingTransferID := exampleUUID
-	pendingTransferNotificationID := uint32(0)
 
 	transferAlreadyCanceledID := "5f4c3ec4-d4fe-4335-beb6-5db2ffbae351"
-	transferAlreadyCanceledNotificationID := uint32(1)
 
 	transferFinishedID := "022cb1eb-ee22-431a-80c5-ba3050493c17"
-	transferFinishedNotificationID := uint32(2)
 
 	invalidTransferID := "022cb1eb-invalid-ba3050493c17"
-	invalidTransferNotificationID := uint32(3)
 
-	setup := func() (*NotificationManager, *mockEventManagerFileshare, *mockNotifier) {
-		notifier := mockNotifier{
-			notifications: []mockNotification{},
-			nextID:        pendingTransferNotificationID,
+	setup := func() (*NotificationManager, *mockEventManagerFileshare, *mockalert.NotifierMock) {
+		notifier := mockalert.NotifierMock{
+			Alerts: []mockalert.Alert{},
 		}
 
 		notificationManager := NewMockNotificationManager(&mockEventManagerOsInfo{})
-		notificationManager.notifications.transfers[pendingTransferNotificationID] = pendingTransferID
-		notificationManager.notifications.transfers[transferAlreadyCanceledNotificationID] = transferAlreadyCanceledID
-		notificationManager.notifications.transfers[transferFinishedNotificationID] = transferFinishedID
-		notificationManager.notifications.transfers[invalidTransferNotificationID] = invalidTransferID
-		notificationManager.notifier = &notifier
+		notificationManager.n = &notifier
 
 		eventManager := NewEventManager(false,
 			&mockMeshClient{},
@@ -1154,31 +1092,26 @@ func TestTransferRequestNotificationCancel(t *testing.T) {
 
 	tests := []struct {
 		name                      string
-		notificationID            uint32
 		transferID                string
 		expectedErrorNotification string // empty for no error notifications
 	}{
 		{
 			name:                      "transfer successfully canceled",
-			notificationID:            pendingTransferNotificationID,
 			transferID:                pendingTransferID,
 			expectedErrorNotification: "",
 		},
 		{
 			name:                      "transfer already canceled",
-			notificationID:            transferAlreadyCanceledNotificationID,
 			transferID:                transferAlreadyCanceledID,
 			expectedErrorNotification: transferInvalidated,
 		},
 		{
 			name:                      "transfer finished",
-			notificationID:            transferFinishedNotificationID,
-			transferID:                transferAlreadyCanceledID,
+			transferID:                transferFinishedID,
 			expectedErrorNotification: transferInvalidated,
 		},
 		{
 			name:                      "transfer does not exist",
-			notificationID:            invalidTransferNotificationID,
 			transferID:                invalidTransferID,
 			expectedErrorNotification: genericError,
 		},
@@ -1187,29 +1120,29 @@ func TestTransferRequestNotificationCancel(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			notificationManager, fileshare, notifier := setup()
-			notificationManager.CancelTransfer(test.notificationID)
+			notificationManager.cancelTransfer(test.transferID)
 
 			if test.expectedErrorNotification == "" {
 				// Assert that only the transfer request notification was received
 				assert.NotEmpty(t, fileshare.canceledTransferIDs, "No transfers were canceled")
 				assert.Equal(t, test.transferID, fileshare.getLastCanceledTransferID(),
 					"Invalid transfer was canceled")
-				assert.Empty(t, notifier.notifications,
+				assert.Empty(t, notifier.Alerts,
 					"Unexpected notification received: %v",
-					notifier.notifications)
+					notifier.Alerts)
 				return
 			}
 
-			assert.Equal(t, 1, len(notifier.notifications), "Cancel error notification was not received")
+			assert.Equal(t, 1, len(notifier.Alerts), "Cancel error notification was not received")
 
-			errorNotification := notifier.getLastNotification()
-			assert.Equal(t, cancelFailedNotificationSummary, errorNotification.summary,
+			errorNotification := notifier.GetLastNotification()
+			assert.Equal(t, cancelFailedNotificationSummary, errorNotification.Summary,
 				"Error notification has invalid summary.")
-			assert.Equal(t, test.expectedErrorNotification, errorNotification.body,
+			assert.Equal(t, test.expectedErrorNotification, errorNotification.Body,
 				"Error notification has invalid body.")
-			assert.Equal(t, 0, len(errorNotification.actions),
+			assert.Equal(t, 0, len(errorNotification.Actions),
 				"Unexpected actions found in error notification: \n%v",
-				errorNotification.actions)
+				errorNotification.Actions)
 		})
 	}
 }
@@ -1219,7 +1152,7 @@ func TestAutoaccept(t *testing.T) {
 
 	symlinkDirectoryName := "symlink"
 	mockOsEnvironment.MapFS[symlinkDirectoryName] = &fstest.MapFile{
-		Mode: os.ModeSymlink | 0777,
+		Mode: os.ModeSymlink | 0o777,
 		Sys: &syscall.Stat_t{
 			Uid: mockOsEnvironment.currentUserUID,
 			Gid: mockOsEnvironment.currentUserGID,
@@ -1228,21 +1161,21 @@ func TestAutoaccept(t *testing.T) {
 
 	fileDirectoryName := "not_dir"
 	mockOsEnvironment.MapFS[fileDirectoryName] = &fstest.MapFile{
-		Mode: 0777,
+		Mode: 0o777,
 		Sys: &syscall.Stat_t{
 			Uid: mockOsEnvironment.currentUserUID,
 			Gid: mockOsEnvironment.currentUserGID,
 		},
 	}
 
-	notifier := mockNotifier{
-		notifications: []mockNotification{},
-		nextID:        0,
-		updateCh:      make(chan struct{}, 1),
+	notifier := mockalert.NotifierMock{
+		Alerts:   []mockalert.Alert{},
+		NextID:   0,
+		UpdateCh: make(chan struct{}, 1),
 	}
 
 	notificationManager := NewMockNotificationManager(&mockOsEnvironment.mockEventManagerOsInfo)
-	notificationManager.notifier = &notifier
+	notificationManager.n = &notifier
 
 	eventManager := NewEventManager(false,
 		&mockMeshClient{},
@@ -1255,8 +1188,6 @@ func TestAutoaccept(t *testing.T) {
 
 	notificationManager.eventManager = eventManager
 	notificationManager.defaultDownloadDir = mockOsEnvironment.destinationDirectory
-
-	notificationManager.notifications.transfers = map[uint32]string{}
 
 	peerAutoAcceptIP := exampleIP1
 	peerAutoacceptHostname := "internal.peer1.nord"
@@ -1363,13 +1294,13 @@ func TestAutoaccept(t *testing.T) {
 					"Unexpected incoming transfer was accepted")
 			}
 
-			notification := notifier.getLastNotification()
-			assert.Equal(t, test.expectedNotificationSummary, notification.summary,
+			notification := notifier.GetLastNotification()
+			assert.Equal(t, test.expectedNotificationSummary, notification.Summary,
 				"Invalid notification summary")
 
-			assert.Equal(t, test.expectedNotificationBody, notification.body, "Invalid notification body")
+			assert.Equal(t, test.expectedNotificationBody, notification.Body, "Invalid notification body")
 
-			assert.Empty(t, notification.actions,
+			assert.Empty(t, notification.Actions,
 				"Unexpected actions found in autoaccepted transfer notification")
 		})
 	}
