@@ -51,6 +51,9 @@ stage
 # GUI has its own .gitignore
 !gui/**
 
+# Leftover from building and installing GUI deb inside container
+/nordvpn-gui
+
 # Core dumps
 /core
 core.*
