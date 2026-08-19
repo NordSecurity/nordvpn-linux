@@ -50,3 +50,12 @@ stage
 
 # GUI has its own .gitignore
 !gui/**
+
+# Core dumps
+/core
+core.*
+*.core
+vgcore.*
+
+# Don't ignore core directory
+!core/
