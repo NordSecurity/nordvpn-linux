@@ -4,10 +4,12 @@ import time
 
 import pytest
 import sh
+import grpc
 
+from constants import NORDVPND_SOCKET
 import lib
 from lib import daemon, info, logging, network, server, IS_NIGHTLY
-
+from lib.protobuf.daemon import (common_pb2, service_pb2_grpc)
 from lib.dynamic_parametrize import dynamic_parametrize
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
@@ -598,3 +600,18 @@ def test_obfuscation_prevents_virtual_location_connection(tech, proto, obfuscate
         sh.nordvpn(get_alias(), virtual_country)
 
     assert "The specified server is not available at the moment or does not support your connection settings." in ex.value.stdout.decode(), "Should show server unavailable error"
+
+ENS_CONN_LIMIT_REACHED = 2
+def test_ens_connection_limit():
+    """Test ENS connection limit"""
+    if "dev" not in sh.nordvpn.version():
+        pytest.skip("can run only for dev builds")
+
+    sh.nordvpn.set.technology("nordlynx")
+    with grpc.insecure_channel(NORDVPND_SOCKET) as channel:
+        stub = service_pb2_grpc.DaemonStub(channel)
+        stub.InjectVpnConnectionError(common_pb2.InjectVpnConnectionErrorRequest(telio_code=ENS_CONN_LIMIT_REACHED))
+
+    with pytest.raises(sh.ErrorReturnCode_1) as ex:
+        sh.nordvpn.connect()
+    assert "TODO: connection limit reached." in ex.value.stdout.decode("utf-8")

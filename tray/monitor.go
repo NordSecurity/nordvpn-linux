@@ -171,7 +171,7 @@ func (ti *Instance) updateLoginStatus() bool {
 	}()
 
 	if notificationText != "" {
-		ti.notify(NoForce, notificationText)
+		ti.n.Alert(notificationText).Show()
 	}
 	return changed
 }
@@ -260,8 +260,10 @@ func (ti *Instance) setSettings(settings *pb.Settings) bool {
 		var newNotificationsStatus Status
 		if userSettings.Notify {
 			newNotificationsStatus = Enabled
+			ti.n.Unmute()
 		} else {
 			newNotificationsStatus = Disabled
+			ti.n.Mute()
 		}
 
 		if ti.state.notificationsStatus == Invalid {
@@ -309,18 +311,18 @@ func (ti *Instance) setSettings(settings *pb.Settings) bool {
 	}()
 
 	if notificationsText != "" {
-		notificationType := NoForce
+		b := ti.n.Alert(notificationsText)
 		if forceNotifications {
-			notificationType = Force
+			b = b.Urgent()
 		}
-		ti.notify(notificationType, notificationsText)
+		b.Show()
 	}
 	if trayText != "" {
-		notificationType := NoForce
+		b := ti.n.Alert(trayText)
 		if forceTray {
-			notificationType = Force
+			b = b.Urgent()
 		}
-		ti.notify(notificationType, trayText)
+		b.Show()
 	}
 
 	return changed
@@ -470,7 +472,7 @@ func (ti *Instance) updateDaemonConnectionStatus(errorMessage string) bool {
 	ti.state.mu.Unlock()
 
 	if ti.state.initialSyncCompleted && notificationText != "" {
-		ti.notify(NoForce, notificationText)
+		ti.n.Alert(notificationText).Show()
 	}
 	return changed
 }
@@ -540,7 +542,7 @@ func (ti *Instance) setVpnStatus(
 	}()
 
 	if notificationText != "" {
-		ti.notify(NoForce, notificationText, notificationArg)
+		ti.n.Alert(fmt.Sprintf(notificationText, notificationArg)).Show()
 	}
 
 	return changed
@@ -549,7 +551,7 @@ func (ti *Instance) setVpnStatus(
 func (ti *Instance) handlePauseEvent(event *pb.PauseEvent) bool {
 	switch event.Type {
 	case pb.PauseEventType_RECONNECT_FAILED:
-		ti.notify(NoForce, "Connect error: %s", client.ConnectCantConnect)
+		ti.n.Alert(fmt.Sprintf("Connect error: %s", client.ConnectCantConnect)).Show()
 		log.Error("Reconnect failed after pause expired")
 	default:
 		log.Warn("Unexpected pause event received ", event.Type)
