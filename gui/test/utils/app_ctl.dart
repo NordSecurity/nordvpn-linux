@@ -74,25 +74,52 @@ final class AppCtl {
   }
 
   Future<void> connect({
-    String? country,
+    String? countryCode,
     String? city,
     String? hostname,
     bool? isVirtualLocation,
     ServerType? group,
   }) async {
+    final countryName = countryCode == null ? null : _countryNameForCode(countryCode);
     final status = StatusResponse(
-      country: country,
+      country: countryName,
+      countryCode: countryCode,
       city: city,
       state: pbstatus.ConnectionState.CONNECTED,
       hostname: hostname,
       virtualLocation: isVirtualLocation,
       parameters: ConnectionParameters(
-        country: country,
+        country: countryName,
+        countryCode: countryCode,
         city: city,
         group: group?.toServerGroup(),
       ),
     );
     vpnStatus.setStatus(status);
+  }
+
+  String? _countryNameForCode(String code) {
+    for (final country in daemon.serversList.serversList.servers.serversByCountry) {
+      if (country.countryCode == code) {
+        return country.countryName;
+      }
+    }
+    return null;
+  }
+
+  Future<void> waitUntilConnected({
+    String? country,
+    String? city,
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    await tester.pumpUntilTrue(() {
+      final status = vpnStatus.status;
+      if (status.state != pbstatus.ConnectionState.CONNECTED) return false;
+      if (country != null && status.countryCode != country) return false;
+      if (city != null && status.city != city) return false;
+      return true;
+    }, timeout: timeout);
+    await tester.pumpAndSettle();
   }
 
   Future<void> setThreatProtection(bool enabled) async {

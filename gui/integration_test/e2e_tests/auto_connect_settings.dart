@@ -15,30 +15,32 @@ void runAutoConnectSettingsTests() async {
     });
 
     testWidgets(
-      "disables 'Connect now' button when connected to selected location",
+      "disables 'Secure my connection' button when connected to selected location",
       (tester) async {
         final app = await tester.setupIntegrationTests();
         final screen = await app.goToAutoConnectSettingsScreen();
 
         // connect right after opening auto-connect settings - to Fastest server
-        expect(screen.isConnectNowButtonEnabled(), isTrue);
-        await screen.connectNow();
-        // 'Connect now' is now disabled after connecting
-        await screen.waitFor(() => !screen.isConnectNowButtonEnabled());
-        expect(screen.isConnectNowButtonEnabled(), isFalse);
+        expect(screen.isSecureMyConnectionButtonEnabled(), isTrue);
+        await screen.secureMyConnection();
+        // 'Secure my connection' is now disabled after connecting
+        await app.waitUntilConnected();
+        expect(screen.isSecureMyConnectionButtonEnabled(), isFalse);
 
-        // pick some location, connect now is enabled again
+        // pick some location, 'Secure my connection' is enabled again
         await screen.clickListTile(withText: "Spain");
-        expect(screen.isConnectNowButtonEnabled(), isTrue);
+        await app.waitForUiUpdates();
+        expect(screen.isSecureMyConnectionButtonEnabled(), isTrue);
         // connect to this selected location and it becomes disabled
-        await screen.connectNow();
-        expect(screen.isConnectNowButtonEnabled(), isFalse);
+        await screen.secureMyConnection();
+        await app.waitUntilConnected(country: "ES");
+        expect(screen.isSecureMyConnectionButtonEnabled(), isFalse);
 
-        // connect to different location and 'Connect now' is enabled again
-        app.connect(country: "FR", city: "Paris");
-        await screen.waitFor(screen.isConnectNowButtonEnabled);
+        // connect to different location and 'Secure my connection' is enabled again
+        app.connect(countryCode: "FR", city: "Paris");
+        await app.waitUntilConnected(country: "FR", city: "Paris");
 
-        expect(screen.isConnectNowButtonEnabled(), isTrue);
+        expect(screen.isSecureMyConnectionButtonEnabled(), isTrue);
       },
     );
   });

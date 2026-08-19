@@ -56,11 +56,13 @@ final class MockVpnStatus extends CancelableDelayed {
       throw "server not found";
     }
 
-    String? country;
+    String? countryName;
+    String? countryCode;
     String? city;
 
     if (args.hasServerTag()) {
-      country = server.countryCode;
+      countryName = server.countryName;
+      countryCode = server.countryCode;
       if (server.countryCode.toLowerCase() != args.serverTag) {
         city = server.cityName;
       }
@@ -76,7 +78,8 @@ final class MockVpnStatus extends CancelableDelayed {
     StatusResponse newStatus = StatusResponse(
       state: ConnectionState.CONNECTING,
       city: server.cityName,
-      country: server.countryCode,
+      country: server.countryName,
+      countryCode: server.countryCode,
       hostname: server.server.hostName,
       virtualLocation: server.server.virtual,
       name: "NOT SET",
@@ -88,7 +91,8 @@ final class MockVpnStatus extends CancelableDelayed {
       uptime: Int64(0),
       technology: settings.technology,
       parameters: ConnectionParameters(
-        country: country,
+        country: countryName,
+        countryCode: countryCode,
         city: city,
         group: group,
       ),

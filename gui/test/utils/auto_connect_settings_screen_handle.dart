@@ -7,8 +7,8 @@ import 'screen_handle.dart';
 final class AutoConnectSettingsScreenHandle extends ScreenHandle {
   AutoConnectSettingsScreenHandle(super.app);
 
-  bool isConnectNowButtonEnabled() {
-    final widget = app.tester.widget<LoadingElevatedButton>(connectNowButton());
+  bool isSecureMyConnectionButtonEnabled() {
+    final widget = app.tester.widget<LoadingElevatedButton>(secureMyConnectionButton());
     return widget.onPressed != null;
   }
 
@@ -22,8 +22,8 @@ final class AutoConnectSettingsScreenHandle extends ScreenHandle {
     return serverLabel.data;
   }
 
-  Future<void> connectNow() async {
-    await app.tester.tap(connectNowButton());
+  Future<void> secureMyConnection() async {
+    await app.tester.tap(secureMyConnectionButton());
     await app.tester.pumpAndSettle();
   }
 }
