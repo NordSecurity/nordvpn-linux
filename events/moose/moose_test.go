@@ -2092,7 +2092,7 @@ func TestVPNConnReasonToMoose(t *testing.T) {
 			wantMooseTrigger:  moose.NordvpnappVpnConnectionTriggerServerMaintenance,
 			wantExceptionCode: -1,
 			wantEventTrigger:  moose.NordvpnappEventTriggerApp,
-			isWhileConnecting: false,
+			isWhileConnecting: true,
 		},
 		{
 			name:              "auto-connect is app-triggered with AutoConnectUserSetting trigger + -1",
@@ -2112,9 +2112,9 @@ func TestVPNConnReasonToMoose(t *testing.T) {
 		},
 		{
 			name:              "ENS connection limit reached",
-			trigger:           events.VPNConnectionReasonNone,
+			trigger:           events.VPNConnectionReasonConnectionLimitReached,
 			wantMooseTrigger:  moose.NordvpnappVpnConnectionTriggerNone,
-			wantExceptionCode: connectionLimitReachedExceptionCode,
+			wantExceptionCode: 1000075,
 			wantEventTrigger:  moose.NordvpnappEventTriggerApp,
 			isWhileConnecting: false,
 		},
