@@ -196,11 +196,11 @@ final class _ConnectNowButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isEnabled =
+    final isDisabled =
         isUpdating || _isConnectedToSelectedLocation(vpnStatus, savedLocation);
     return LoadingElevatedButton(
       key: AutoConnectWidgetKeys.connectNowButton,
-      onPressed: isEnabled
+      onPressed: isDisabled
           ? null
           : () => ref
                 .read(vpnStatusControllerProvider.notifier)
@@ -309,7 +309,7 @@ bool _isConnectedToSelectedLocation(
   // connected to default - Fastest server (Quick Connect)
   if (location == null ||
       (location.country == null && location.specialtyGroup == null)) {
-    return connParams.country.isEmpty &&
+    return connParams.countryCode.isEmpty &&
         connParams.city.isEmpty &&
         (connParams.group == ServerGroup.UNDEFINED ||
             connParams.group == ServerGroup.STANDARD_VPN_SERVERS);
@@ -323,7 +323,7 @@ bool _isConnectedToSelectedLocation(
 
   // If a country is specified in the setting, it must match the connection.
   if (location.country != null &&
-      location.country!.code != connParams.country) {
+      location.country!.code != connParams.countryCode) {
     return false;
   }
 

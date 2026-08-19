@@ -12,11 +12,13 @@ import 'package:fixnum/fixnum.dart';
 final class ServerData {
   final Server server;
   final String countryCode;
+  final String countryName;
   final String cityName;
 
   ServerData({
     required this.server,
     required this.countryCode,
+    required this.countryName,
     required this.cityName,
   });
 }
@@ -220,6 +222,7 @@ final class MockServersList {
                 return ServerData(
                   server: server,
                   countryCode: country.countryCode,
+                  countryName: country.countryName,
                   cityName: city.cityName,
                 );
               }

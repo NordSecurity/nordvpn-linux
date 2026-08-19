@@ -33,7 +33,7 @@ void runVpnScreenTests() async {
       expect(mainScreen.findServerInfoText(), equals(t.ui.fastestServer));
 
       // connect
-      app.connect(country: "FR", city: "Paris", isVirtualLocation: true);
+      app.connect(countryCode: "FR", city: "Paris", isVirtualLocation: true);
       await mainScreen.waitUntilFound(find.textContaining(t.ui.secured));
 
       // now the server info changed
