@@ -1657,7 +1657,7 @@ func vpnConnReasonToMoose(t events.VPNConnectionReason, isConnectEvent bool) moo
 	case events.VPNConnectionReasonServerMaintenance:
 		// it must only be set while disconnecting
 		exceptionCode := serverMaintenanceExceptionCode
-		if !isConnectEvent {
+		if isConnectEvent {
 			exceptionCode = -1
 		}
 		return mooseConnReasonAttrs{
