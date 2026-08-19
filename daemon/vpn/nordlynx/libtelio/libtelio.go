@@ -11,9 +11,12 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -22,6 +25,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 	"github.com/google/uuid"
@@ -294,6 +298,40 @@ func handleTelioConfig(eventPath string, prod bool, vpnLibCfg vpn.LibConfigGette
 	return &telioConfig, nil
 }
 
+// getTelioLogLevel returns telio log level saved in the log level file. The default log level is Info and it is
+// returned in case of file read errors and unrecognized log levels.
+func getTelioLogLevel() teliogo.TelioLogLevel {
+	root, err := os.OpenRoot(filepath.Dir(internal.TelioLogLevelFile))
+	if err != nil {
+		log.Error("failed to open runtime dir:", err)
+		return teliogo.TelioLogLevelInfo
+	}
+	defer root.Close()
+
+	raw, err := root.ReadFile(filepath.Base(internal.TelioLogLevelFile))
+	if err != nil {
+		log.Error("failed to read log level file:", err)
+	}
+
+	logLevelString := strings.TrimSpace(strings.ToLower(string(raw)))
+	log.Info("setting custom telio log level:", logLevelString)
+	switch string(logLevelString) {
+	case "error":
+		return teliogo.TelioLogLevelError
+	case "warn":
+		return teliogo.TelioLogLevelWarning
+	case "info":
+		return teliogo.TelioLogLevelInfo
+	case "debug":
+		return teliogo.TelioLogLevelDebug
+	case "trace":
+		return teliogo.TelioLogLevelTrace
+	default:
+		log.Error("unrecognized telio log level:", logLevelString)
+		return teliogo.TelioLogLevelInfo
+	}
+}
+
 type telioLoggerCb struct{}
 
 func (cb *telioLoggerCb) Log(logLevel teliogo.TelioLogLevel, payload string) error {
@@ -360,8 +398,10 @@ func New(
 		log.Info("telio final config:", string(featuresString))
 	}
 
+	// telio logger can be set up only once per telio instance. Setting a new log level requires a daemon restart.
 	var loggerCb teliogo.TelioLoggerCb = &telioLoggerCb{}
-	teliogo.SetGlobalLogger(teliogo.TelioLogLevelInfo, loggerCb)
+	teliogo.SetGlobalLogger(getTelioLogLevel(), loggerCb)
+
 	telioCallbackHandler := newTelioCallbackHandler(stateEvents, errorEvents)
 	lib, err := teliogo.NewTelio(*features, eventCallbackWrap(telioCallbackHandler))
 	if err != nil {
