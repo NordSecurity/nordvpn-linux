@@ -17,4 +17,5 @@ var (
 	ENS         = NewLogger("[ens]")
 	ServerSel   = NewLogger("[server_sel]")
 	Diagnostics = NewLogger("[diagnostics]")
+	Netw        = NewLogger("[netw]")
 )

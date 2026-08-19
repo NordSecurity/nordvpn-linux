@@ -1,126 +1,98 @@
 package tray
 
 import (
-	"errors"
+	"context"
 	"fmt"
-	"sync"
 
-	"github.com/esiqveland/notify"
-	"github.com/godbus/dbus/v5"
-
+	"github.com/NordSecurity/nordvpn-linux/alert"
+	"github.com/NordSecurity/nordvpn-linux/cli"
+	"github.com/NordSecurity/nordvpn-linux/client"
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
-	inotify "github.com/NordSecurity/nordvpn-linux/notify"
 )
 
-var errDbusNotifierNotConnected = errors.New("dbus notifier not connected")
-
-func (ti *Instance) notify(ntype NotificationType, text string, a ...any) {
-	ti.state.mu.RLock()
-	notificationsStatus := ti.state.notificationsStatus
-	ti.state.mu.RUnlock()
-
-	if ti.state.initialSyncCompleted && (notificationsStatus == Enabled || ntype == Force) {
-		text = fmt.Sprintf(text, a...)
-		log.Systray.Infof("Sending notification: %s", text)
-		if err := ti.notifier.sendNotification("NordVPN", text); err != nil {
-			if !errors.Is(err, errDbusNotifierNotConnected) {
-				log.Error("Failed to send notification:", err)
-			}
-		}
-	} else {
-		log.Systray.Infof("Notification suppressed: %s (status: %d, force: %v)",
-			fmt.Sprintf(text, a...),
-			notificationsStatus,
-			ntype == Force)
-	}
+// gatedNotifier suppresses every alert, even Urgent ones,
+// until the tray has completed its sync with the daemon.
+type gatedNotifier struct {
+	alert.Notifier
+	isReady func() bool
 }
 
-// dbusNotifier wraps github.com/esiqveland/notify notifier implementation
-type dbusNotifier struct {
-	mu       sync.Mutex
-	notifier notify.Notifier
+func (g *gatedNotifier) Alert(body string) *alert.AlertBuilder {
+	if !g.isReady() {
+		log.Systray.Infof("Notification suppressed (initial sync not completed): %s", body)
+		return alert.NewAlertBuilder(func(alert.Alert) {}, body)
+	}
+
+	return g.Notifier.Alert(body)
 }
 
-func (n *dbusNotifier) start() {
-	ntf, err := newNotifier()
-	if err == nil {
-		log.Info("Started dbus notifier")
-		n.mu.Lock()
-		n.notifier = ntf
-		n.mu.Unlock()
-	} else {
-		log.Error("Failed to start dbus notifier:", err)
+func (ti *Instance) connectionResultAlert(out *pb.Payload) *alert.AlertBuilder {
+	switch out.Type {
+	case internal.CodeFailure:
+		return ti.n.Alert(fmt.Sprintf("Connect error: %s", client.ConnectCantConnect))
+	case internal.CodeExpiredRenewToken:
+		return ti.n.Alert(client.RelogRequest)
+	case internal.CodeTokenRenewError:
+		return ti.n.Alert(client.AccountTokenRenewError)
+	case internal.CodeAccountExpired:
+		link := ti.trustedPassURLOrDefault(client.SubscriptionURL, client.SubscriptionURLLogin)
+		return ti.n.Alert(fmt.Sprintf(cli.ExpiredAccountMessage, link)).Urgent()
+	case internal.CodeDedicatedIPRenewError:
+		link := ti.trustedPassURLOrDefault(client.SubscriptionDedicatedIPURL, client.SubscriptionDedicatedIPURLLogin)
+		return ti.n.Alert(fmt.Sprintf(cli.NoDedicatedIPMessage, link)).Urgent()
+	case internal.CodeDisconnected:
+		return ti.n.Alert(fmt.Sprintf(client.ConnectCanceled, internal.StringsToInterfaces(out.Data)...))
+	case internal.CodeTagNonexisting:
+		return ti.n.Alert(internal.TagNonexistentErrorMessage)
+	case internal.CodeGroupNonexisting:
+		return ti.n.Alert(internal.GroupNonexistentErrorMessage)
+	case internal.CodeServerUnavailable:
+		return ti.n.Alert(internal.ServerUnavailableErrorMessage)
+	case internal.CodeVirtualLocationDisabled:
+		return ti.n.Alert(internal.SpecifiedServerIsVirtualLocation)
+	case internal.CodeDoubleGroupError:
+		return ti.n.Alert(internal.DoubleGroupErrorMessage)
+	case internal.CodeVPNRunning:
+		return ti.n.Alert(client.ConnectConnected)
+	case internal.CodeNothingToDo:
+		return ti.n.Alert(client.ConnectConnecting)
+	case internal.CodeUFWDisabled:
+		return ti.n.Alert(client.UFWDisabledMessage)
+	case internal.CodeDedicatedServersRenewError:
+		link := ti.trustedPassURLOrDefault(client.DedicatedServersUpselURL, client.DedicatedServersUpselURLLogin)
+		return ti.n.Alert(fmt.Sprintf(cli.DedicatedServersNoServiceMessage, link)).Urgent()
+	case internal.CodeDedicatedServersServiceButNoServers:
+		link := ti.trustedPassURLOrDefault(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin)
+		return ti.n.Alert(fmt.Sprintf(cli.DedicatedServersNoServersAvailable, link)).Urgent()
+	case internal.CodeDedicatedServersServerNotSetUp:
+		link := ti.trustedPassURLOrDefault(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin)
+		return ti.n.Alert(fmt.Sprintf(cli.DedicatedServersNoServersAvailable, link)).Urgent()
+	case internal.CodeDedicatedServersNotReady:
+		return ti.n.Alert(cli.DedicatedServersServerNotReadyMessage).Urgent()
+	case internal.CodeDedicatedServersNoNordlynx:
+		return ti.n.Alert(cli.DedicatedServersNoNordlynxMessage).Urgent()
+	case internal.CodeDedicatedServersCanNotConnect:
+		return ti.n.Alert(cli.DedicatedServersCanNotConnectMessage).Urgent()
+	case internal.CodeDedicatedServersSessionMaxLimitReached:
+		return ti.n.Alert(cli.DedicatedServersConnectionLimitReached).Urgent()
+	case internal.CodeDedicatedServersPq:
+		return ti.n.Alert(internal.ServerUnavailableErrorMessage).Urgent()
+	case internal.CodeConnecting: // no notification
+	case internal.CodeConnected:
+		// NOTE: connection success is not handled here on purpose
 	}
+	return nil
 }
 
-// sendNotification sends notification via dbus. Thread safe.
-func (n *dbusNotifier) sendNotification(summary string, body string) error {
-	n.mu.Lock()
-	defer n.mu.Unlock()
+func (ti *Instance) trustedPassURLOrDefault(defaultURL string, trustedPassURL string) string {
+	resp, err := ti.client.TokenInfo(context.Background(), &pb.Empty{})
 
-	if n.notifier != nil {
-		notification := notify.Notification{
-			AppName:       "NordVPN",
-			Summary:       summary,
-			AppIcon:       inotify.GetIconPath("nordvpn"),
-			Body:          body,
-			ExpireTimeout: notify.ExpireTimeoutSetByNotificationServer,
-			Hints: map[string]dbus.Variant{
-				"transient": dbus.MakeVariant(1),
-			},
-		}
-		if _, err := n.notifier.SendNotification(notification); err != nil {
-			return err
-		}
-		return nil
-	} else {
-		return errDbusNotifierNotConnected
+	link := defaultURL
+	if err == nil && (resp.TrustedPassToken != "" && resp.TrustedPassOwnerId != "") {
+		link = fmt.Sprintf(trustedPassURL, resp.TrustedPassToken, resp.TrustedPassOwnerId)
 	}
+
+	return link
 }
-
-func newNotifier() (notify.Notifier, error) {
-	dbusConn, err := dbus.SessionBusPrivate()
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		if err != nil {
-			if err := dbusConn.Close(); err != nil {
-				log.Error("Failed to close dbus connection:", err)
-			}
-		}
-	}()
-
-	if err = dbusConn.Auth(nil); err != nil {
-		return nil, err
-	}
-
-	if err = dbusConn.Hello(); err != nil {
-		return nil, err
-	}
-
-	ntf, err := notify.New(dbusConn)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		if err != nil {
-			if err := ntf.Close(); err != nil {
-				log.Error("Failed to close notifier:", err)
-			}
-		}
-	}()
-
-	return ntf, nil
-}
-
-type NotificationType bool
-
-const (
-	// NoForce indicates that the notification should respect the user's settings.
-	NoForce NotificationType = false
-	// Force indicates that the notification should be shown regardless of the user's settings.
-	Force NotificationType = true
-)
