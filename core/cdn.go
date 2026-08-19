@@ -12,10 +12,20 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/request"
 )
 
+// OvpnTemplateVariant identifies which OpenVPN config template to fetch.
+type OvpnTemplateVariant int
+
+const (
+	// OvpnTemplateStandard is used when the data channel is not offloaded to the kernel.
+	OvpnTemplateStandard OvpnTemplateVariant = iota
+	// OvpnTemplateObfuscated is used for XOR obfuscated connections.
+	OvpnTemplateObfuscated
+)
+
 // CDN provides methods to interact with Nord's Content Delivery Network
 type CDN interface {
-	ThreatProtectionLite() (*NameServers, error)
-	ConfigTemplate(isObfuscated bool, method string) (http.Header, []byte, error)
+	FetchThreatProtectionLite() (*NameServers, error)
+	FetchConfigTemplate(variant OvpnTemplateVariant, method string) (http.Header, []byte, error)
 	RemoteStorage
 }
 
@@ -109,13 +119,20 @@ func mandatoryHeadersExist(headers http.Header) bool {
 	return okAuth && okDigest && okAccept && okSign
 }
 
-func (api *CDNAPI) ConfigTemplate(isObfuscated bool, method string) (http.Header, []byte, error) {
+func (api *CDNAPI) FetchConfigTemplate(
+	variant OvpnTemplateVariant,
+	method string,
+) (http.Header, []byte, error) {
 	var path string
-	if isObfuscated {
-		path = ovpnObfsTemplateURL
-	} else {
+	switch variant {
+	case OvpnTemplateStandard:
 		path = ovpnTemplateURL
+	case OvpnTemplateObfuscated:
+		path = ovpnObfsTemplateURL
+	default:
+		return nil, nil, fmt.Errorf("unknown OpenVPN config template variant: %d", variant)
 	}
+
 	resp, err := api.request(path, method)
 	if err != nil {
 		return nil, nil, err
@@ -128,7 +145,7 @@ func (api *CDNAPI) ConfigTemplate(isObfuscated bool, method string) (http.Header
 	return resp.Headers, body, nil
 }
 
-func (api *CDNAPI) ThreatProtectionLite() (*NameServers, error) {
+func (api *CDNAPI) FetchThreatProtectionLite() (*NameServers, error) {
 	resp, err := api.request(ThreatProtectionLiteURL, http.MethodGet)
 	if err != nil {
 		return nil, err

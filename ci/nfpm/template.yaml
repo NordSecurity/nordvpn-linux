@@ -152,10 +152,14 @@ contents:
     # like rpm-ostree.
     file_info:
       mode: 0755
-    
+
 # All fields above marked as `overridable` can be overridden for a given package format in this section.
 overrides:
   deb:
+    # Package provides the out-of-tree kernel module the bundled OpenVPN 2.6.x needs for
+    # data channel offload.
+    suggests:
+      - openvpn-dco-dkms
     # Deb specific scripts.
     scripts:
       preinstall: ${WORKDIR}/contrib/scriptlets/deb/preinst
@@ -173,6 +177,10 @@ overrides:
       - glibc >= 2.35
       - (libsqlite3-0 or sqlite-libs)
       - (xsltproc or libxslt)
+    # Package provides the out-of-tree kernel module the bundled OpenVPN 2.6.x needs for
+    # data channel offload.
+    suggests:
+      - (kmod-ovpn-dco or ovpn-dco-kmp-default)
     recommends:
       - iptables
       - nordvpn-gui

@@ -887,7 +887,7 @@ func buildTpServersAndResolver(
 	cdn := core.NewCDNAPI(userAgent, cdnUrl, httpClientSimple, validator)
 	tpServers := dns.NewNameServers()
 	// fetch async the TP servers, because FetchTPServers will retry until is successful
-	go tpServers.FetchTPServers(cdn.ThreatProtectionLite, timeoutFn)
+	go tpServers.FetchTPServers(cdn.FetchThreatProtectionLite, timeoutFn)
 
 	resolver := network.NewResolver(tpServers, fwmark, serviceEvents)
 	return tpServers, resolver

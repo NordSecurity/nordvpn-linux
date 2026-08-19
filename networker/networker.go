@@ -294,6 +294,15 @@ func (netw *Combined) start(
 	if serverData.IP == (netip.Addr{}) {
 		serverData = netw.lastServer
 	}
+
+	// Apply the firewall before the VPN starts so "meta mark -> ct mark set" exists
+	// during the handshake. That is the only chance to mark the transport connection,
+	// since nothing sets the mark once DCO hands the socket to the kernel module.
+	// Re-applying the current config changes no filtering.
+	if err = netw.fw.Configure(netw.fwConfig); err != nil {
+		return fmt.Errorf("configuring firewall before vpn start: %w", err)
+	}
+
 	if err = netw.vpnet.Start(ctx, creds, serverData); err != nil {
 		if err := netw.vpnet.Stop(); err != nil {
 			log.Error(err)

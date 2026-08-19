@@ -27,11 +27,11 @@ func TestCdnApi(t *testing.T) {
 	cdnApi, cancel := setupCdnApi()
 	assert.NotNil(t, cdnApi)
 
-	nameservers, err := cdnApi.ThreatProtectionLite()
+	nameservers, err := cdnApi.FetchThreatProtectionLite()
 	assert.NoError(t, err)
 	assert.NotNil(t, nameservers)
 
-	_, fileBytes, err := cdnApi.ConfigTemplate(false, http.MethodGet)
+	_, fileBytes, err := cdnApi.FetchConfigTemplate(OvpnTemplateStandard, http.MethodGet)
 	assert.NoError(t, err)
 	assert.NotZero(t, len(fileBytes))
 
@@ -250,7 +250,7 @@ func TestCDNAPI_Request_HeadMissingHeaders(t *testing.T) {
 	defer server.Close()
 
 	api := NewCDNAPI("test-agent", server.URL, &http.Client{}, response.NoopValidator{})
-	_, _, err := api.ConfigTemplate(false, http.MethodHead)
+	_, _, err := api.FetchConfigTemplate(OvpnTemplateStandard, http.MethodHead)
 
 	assert.ErrorContains(t, err, "mandatory response headers")
 }
@@ -268,11 +268,50 @@ func TestCDNAPI_Request_HeadWithMandatoryHeaders(t *testing.T) {
 	defer server.Close()
 
 	api := NewCDNAPI("test-agent", server.URL, &http.Client{}, response.NoopValidator{})
-	headers, body, err := api.ConfigTemplate(false, http.MethodHead)
+	headers, body, err := api.FetchConfigTemplate(OvpnTemplateStandard, http.MethodHead)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, headers)
 	assert.Empty(t, body)
+}
+
+func TestCDNAPI_FetchConfigTemplate_PathByVariant(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		variant  OvpnTemplateVariant
+		wantPath string
+	}{
+		{"standard", OvpnTemplateStandard, ovpnTemplateURL},
+		{"obfuscated", OvpnTemplateObfuscated, ovpnObfsTemplateURL},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var gotPath string
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				gotPath = r.URL.Path
+				w.WriteHeader(http.StatusOK)
+			}))
+			defer server.Close()
+
+			api := NewCDNAPI("test-agent", server.URL, &http.Client{}, response.NoopValidator{})
+			_, _, err := api.FetchConfigTemplate(test.variant, http.MethodGet)
+
+			assert.NoError(t, err)
+			assert.Equal(t, test.wantPath, gotPath)
+		})
+	}
+}
+
+func TestCDNAPI_FetchConfigTemplate_UnknownVariant(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	api := NewCDNAPI("test-agent", "http://localhost", &http.Client{}, response.NoopValidator{})
+	_, _, err := api.FetchConfigTemplate(OvpnTemplateVariant(99), http.MethodGet)
+
+	assert.ErrorContains(t, err, "unknown OpenVPN config template variant")
 }
 
 func TestCDNAPI_Request_NetworkError(t *testing.T) {

@@ -10,6 +10,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSetOpenVPNConfigRequiresServerVersion(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	err := setOpenVPNConfig(config.Protocol_UDP, netip.MustParseAddr("192.0.2.1"), false, "")
+
+	assert.ErrorIs(t, err, ErrServerVersion)
+}
+
 func TestGetConfigIdentifier(t *testing.T) {
 	category.Set(t, category.Unit)
 
