@@ -114,6 +114,7 @@ pushd "${current_dir}"
 
   pushd "${sources}/openvpn-${OPENVPN_VERSION}"
     configure_openvpn "${compiler}" "${target}" "${openvpn_cflags}" "${openvpn_ldflags}"
+    sed -i 's/^#define PACKAGE_VERSION ".*"$/#define PACKAGE_VERSION "v'"${OPENVPN_VERSION}"'"/' config.h
     make -j"$cores" > /dev/null
     make install -j"$cores" /dev/null
   popd
