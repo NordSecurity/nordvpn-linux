@@ -616,3 +616,4 @@ def test_ens_connection_limit():
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.connect()
     assert ENS_CONN_LIMIT_REACHED_MSG in ex.value.stdout.decode("utf-8")
+    assert "Disconnected" in sh.nordvpn.status()
