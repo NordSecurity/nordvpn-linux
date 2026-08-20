@@ -33,6 +33,7 @@ abstract class Popup extends ConsumerWidget {
         scopesRoute: true,
         explicitChildNodes: true,
         child: Dialog(
+          key: ValueKey(metadata.id),
           backgroundColor: Colors.transparent,
           child: Container(
             decoration: BoxDecoration(
@@ -66,7 +67,7 @@ abstract class Popup extends ConsumerWidget {
           child: Row(
             spacing: theme.contentAllPadding,
             children: [
-              if (leadingIcon != null) leadingIcon!,
+              ?leadingIcon,
               Flexible(child: _title(theme)),
             ],
           ),

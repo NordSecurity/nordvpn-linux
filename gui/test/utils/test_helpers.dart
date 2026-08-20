@@ -161,4 +161,9 @@ extension Helper on WidgetTester {
           (widget.bytesLoader as SvgAssetLoader).assetName.endsWith("/$path"),
     );
   }
+
+  // id is a value from DaemonStatusCode
+  Finder findPopupWithId(int id) {
+    return find.byKey(ValueKey(id));
+  }
 }
