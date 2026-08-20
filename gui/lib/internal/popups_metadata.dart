@@ -235,6 +235,13 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       buttonText: t.ui.gotIt,
     ),
 
+    DaemonStatusCode.connectionLimitReached => InfoPopupMetadata(
+      id: DaemonStatusCode.connectionLimitReached,
+      title: t.ui.connectionLimitReachedTitle,
+      message: (_) => t.ui.connectionLimitReachedBody,
+      buttonText: t.ui.gotIt,
+    ),
+
     // not matched, display generic error message
     _ => infoForDaemonCode(code),
   };

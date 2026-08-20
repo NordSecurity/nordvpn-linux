@@ -7,7 +7,7 @@ import 'package:grpc/grpc.dart';
 class MockErrorInterceptor extends ServerInterceptor {
   GrpcError? _error;
 
-  MockErrorInterceptor({GrpcError? error}) : _error = error;
+  MockErrorInterceptor({this._error});
 
   void setError(GrpcError? error) {
     _error = error;

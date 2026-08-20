@@ -22,9 +22,6 @@ final class GrpcServer {
   Server? _server;
   MockDaemon? _daemon;
 
-  // By default it's disabled
-  final MockSnapErrorInterceptor _snapInterceptor = MockSnapErrorInterceptor();
-
   bool get isRunning => _daemon != null;
 
   MockDaemon get daemon => _daemon!;
@@ -32,7 +29,7 @@ final class GrpcServer {
   MockApplicationSettings get appSettings => daemon.appSettings;
   MockServersList get serversList => daemon.serversList;
   MockVpnStatus get vpnStatus => daemon.vpnStatus;
-  MockSnapErrorInterceptor get snapInterceptor => _snapInterceptor;
+  MockSnapErrorInterceptor get snapInterceptor => daemon.snapInterceptor;
 
   /// Starts the gRPC server
   Future<void> start() async {
@@ -42,7 +39,7 @@ final class GrpcServer {
     _daemon = MockDaemon();
     _server = Server.create(
       services: [_daemon!],
-      serverInterceptors: [_snapInterceptor],
+      serverInterceptors: [snapInterceptor],
     );
     await _server!.serve(port: defaultPortNumber, shared: true);
     logger.i('✅ gRPC Server started on port $defaultPortNumber');
