@@ -1,5 +1,12 @@
 package client
 
+import (
+	"fmt"
+
+	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/log"
+)
+
 const (
 	ConfigMessage = "We ran into an issue with the config file. If the problem persists, please contact our customer support."
 
@@ -11,22 +18,21 @@ const (
 	AccessTokenExpired           = "Your current access token has expired or been revoked. Please request a new one to continue."
 	RecentConnectionErrorMessage = "It seems there's an issue with the recent connections file. If the issue persists, please contact our customer support."
 
-	AccountTokenRenewError = "We couldn't load your account data. Check your internet connection and try again. If the issue persists, please contact our customer support."
-	ConnectStart           = "Connecting to %v (%v)%v"
-	ConnectStartNoHostname = "Connecting to %v"
-	ConnectTimeoutError    = "It's not you, it's us. We're having trouble reaching our servers. If the issue persists, please contact our customer support."
-	ConnectCantConnect     = "We couldn't connect you to the VPN. Please check your internet connection and try again. If the issue persists, contact our customer support."
-	ConnectConnected       = "You are already connected to NordVPN."
-	// TODO: copy review
-	ConnectConnecting = "Connecting to NordVPN is already in progress."
-	// TODO: copy review
+	AccountTokenRenewError    = "We couldn't load your account data. Check your internet connection and try again. If the issue persists, please contact our customer support."
+	ConnectStart              = "Connecting to %v (%v)%v"
+	ConnectStartNoHostname    = "Connecting to %v"
+	ConnectTimeoutError       = "It's not you, it's us. We're having trouble reaching our servers. If the issue persists, please contact our customer support."
+	ConnectCantConnect        = "We couldn't connect you to the VPN. Please check your internet connection and try again. If the issue persists, contact our customer support."
+	ConnectConnected          = "You are already connected to NordVPN."
+	ConnectConnecting         = "Connecting to NordVPN is already in progress."
 	ConnectCanceled           = "Connection to %s (%s)%s canceled."
 	ConnectCanceledNoHostname = "Connection to %s canceled."
 	RelogRequest              = "For security purposes, please log in again."
 	MsgTryAgain               = "We're having trouble reaching our servers. Please try again later. If the issue persists, please contact our customer support."
 	UFWDisabledMessage        = "The active UFW firewall on your system prevents us from setting up our firewall properly. We've turned off UFW for the duration of your VPN connection and activated our firewall to ensure your online security. Your custom UFW rules have been imported to our firewall ruleset."
 
-	ENSConnectionLimitReachedMessage = "Too many connection attempts. Wait a while before trying again. Retrying now can make the waiting period longer. If the issue persists, check our help guide for other possible causes: https://support.nordvpn.com/hc/en-us/articles/47181405478417-I-get-the-Session-Limit-Reached-error-on-NordVPN?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=ens_error-session_limit&nm=app&ns=nordvpn-linux-cli&nc=ens_error-session_limit"
+	ENSConnectionLimitReachedSummary  = "Too many connection attempts"
+	ensConnectionLimitReachedTemplate = "%sWait a while before trying again. Retrying now can make the waiting period longer. If the issue persists, check our help guide for other possible causes%s"
 
 	SubscriptionURL                 = "https://my.nordaccount.com/plans/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=home-choose_plan&nm=app&ns=nordvpn-linux-cli&nc=home-choose_plan&redirect_uri=nordvpn://claim-online-purchase"
 	SubscriptionURLLogin            = "https://my.nordaccount.com/plans/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=home-choose_plan&nm=app&ns=nordvpn-linux-cli&nc=home-choose_plan&trusted_pass_token=%s&owner_id=%s&redirect_uri=nordvpn://claim-online-purchase"
@@ -37,3 +43,20 @@ const (
 	DedicatedServersSetupURL        = "https://my.nordaccount.com/dashboard/nordvpn/dedicated-server/?owner_id=nordvpn&utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=server_list-setup-dedicated_server&nm=app&ns=nordvpn-linux-cli&nc=server_list-setup-dedicated_server"
 	DedicatedServersSetupURLLogin   = "https://my.nordaccount.com/dashboard/nordvpn/dedicated-server/?owner_id=nordvpn&utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=server_list-setup-dedicated_server&nm=app&ns=nordvpn-linux-cli&nc=server_list-setup-dedicated_server&trusted_pass_token=%s&owner_id=%s"
 )
+
+func ENSConnectionLimitReached(appID core.AppID) string {
+	switch appID {
+	case core.CLIAppID:
+		cliGuideURL := core.ConnectionLimitReachedGuideURL(appID)
+		return fmt.Sprintf(
+			ensConnectionLimitReachedTemplate,
+			ENSConnectionLimitReachedSummary+". ",
+			": "+cliGuideURL,
+		)
+	case core.TrayAppID:
+		return fmt.Sprintf(ensConnectionLimitReachedTemplate, "", ".")
+	default:
+		log.Warn("unknown AppID specified:", appID)
+		return ""
+	}
+}
