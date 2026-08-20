@@ -13,7 +13,7 @@ part 'login_status_provider.g.dart';
 //  * loading - data is being fetched
 //  * error   - something went wrong
 // *  data    - store the login status reported by the daemon (true/false)
-@riverpod
+@Riverpod(keepAlive: true)
 final class LoginStatus extends _$LoginStatus implements AccountObserver {
   @override
   FutureOr<bool> build() async {
@@ -50,9 +50,12 @@ final class LoginStatus extends _$LoginStatus implements AccountObserver {
 
   Future<void> _refreshState() async {
     try {
-      state = AsyncData(await _fetchLoginState());
+      final loginState = await _fetchLoginState();
+      if (!ref.mounted) return;
+      state = AsyncData(loginState);
     } catch (error, stack) {
       logger.e("failed to get login status $error");
+      if (!ref.mounted) return;
       state = AsyncError(error, stack);
     }
   }

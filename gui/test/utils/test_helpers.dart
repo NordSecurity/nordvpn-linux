@@ -97,6 +97,7 @@ extension Helper on WidgetTester {
 
     await pumpWidget(
       ProviderScope(
+        retry: (retryCount, error) => null,
         child: Builder(
           builder: (context) {
             final MediaQueryData data = MediaQuery.of(context);
@@ -129,6 +130,7 @@ extension Helper on WidgetTester {
     await pumpWidget(
       ProviderScope(
         overrides: [],
+        retry: (retryCount, error) => null,
         child: Builder(
           builder: (context) {
             final MediaQueryData data = MediaQuery.of(context);
