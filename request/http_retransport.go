@@ -19,7 +19,7 @@ type HTTPReTransport struct {
 	protoMinor      int
 	proto           string
 	shouldRetryFunc ShouldRetryFunc
-	NeedRecreate    bool
+	needRecreate    bool
 	// counter provides a mechanism to check whether the inner RoundTripper was re-created
 	// in the background during this round trip. Integer overflow is not important here as only
 	// inequality operator is used.
@@ -48,7 +48,7 @@ func NewHTTPReTransport(
 		inner:           createFn(),
 		createFn:        createFn,
 		shouldRetryFunc: shouldRetryFn,
-		NeedRecreate:    needRecreate,
+		needRecreate:    needRecreate,
 	}
 }
 
@@ -66,8 +66,12 @@ func (m *HTTPReTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 // NotifyConnect initiates re-creating the inner round tripper when called.
 func (m *HTTPReTransport) NotifyConnect(events.DataConnect) error {
 	m.mu.RLock()
+	needRecreate := m.needRecreate
 	counter := m.counter
 	m.mu.RUnlock()
+	if !needRecreate {
+		return nil
+	}
 	m.recreateRoundTrip(counter)
 	return nil
 }
@@ -99,15 +103,18 @@ func (m *HTTPReTransport) executeRequest(req *http.Request) (*http.Response, err
 func (m *HTTPReTransport) recreateRoundTrip(counter int) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if !m.NeedRecreate {
-		return
-	}
 	if counter != m.counter {
 		return
 	}
-	if inner, ok := m.inner.(io.Closer); ok {
+	switch inner := m.inner.(type) {
+	case io.Closer:
+		// HTTP3 branch when transport implements Close
 		log.Debug("Recreating round trip, closing inner transport")
 		_ = inner.Close()
+	case interface{ CloseIdleConnections() }:
+		// HTTP1 branch when transport does not implement close, we instead close all the idle connections
+		log.Debug("Recreating round trip, closing idle connections of inner transport")
+		inner.CloseIdleConnections()
 	}
 	m.counter++
 	m.inner = m.createFn()
