@@ -7,6 +7,8 @@ import 'package:nordvpn/widgets/popups/popup.dart';
 
 // Popup with styled header, message, one button and image on the right.
 final class RichNotificationPopup extends Popup {
+  static const headerKey = Key("rich_popup_header");
+
   final RichPopupMetadata richMetadata;
 
   const RichNotificationPopup({super.key, required super.metadata})
@@ -47,18 +49,29 @@ final class RichNotificationPopup extends Popup {
   }
 
   Widget _header(AppTheme theme) {
-    return Semantics(
-      container: true,
-      child: Text(richMetadata.header, style: theme.title),
+    return MergeSemantics(
+      child: Semantics(
+        header: true,
+        child: Text(richMetadata.header, key: headerKey, style: theme.title),
+      ),
     );
   }
 
   Widget _message(WidgetRef ref, AppTheme theme) {
     return Semantics(
       container: true,
-      child: Text(richMetadata.message(ref), style: theme.body),
+      child: Text(
+        richMetadata.message(ref),
+        key: Popup.messageKey,
+        style: theme.body,
+      ),
     );
   }
+
+  // The visible heading of a rich popup is `header`, not the title bar text.
+  @override
+  String semanticLabel(WidgetRef ref) =>
+      joinSemanticLabel(richMetadata.header, richMetadata.message(ref));
 
   Widget _actionButton(BuildContext context, WidgetRef ref) {
     return ElevatedButton(
