@@ -1,8 +1,8 @@
 # Used to create the image for building a Flutter application
-FROM ubuntu:24.04
+FROM ubuntu:22.04
 
-LABEL org.opencontainers.image.source=https://github.com/NordSecurity/nordvpn-linux
-LABEL org.opencontainers.image.description="Builds the GUI. Must be build for arm64 and amd64. e.g. ./docker/generate_docker_image.sh ghcr.io/nordsecurity/nordvpn-linux/flutter-3.44.7 1.0.0 linux/amd64,linux/arm64 docker/flutter"
+LABEL org.opencontainers.image.source="https://github.com/NordSecurity/nordvpn-linux"
+LABEL org.opencontainers.image.description="Builds the GUI. Must be build for arm64 and amd64. e.g. ./docker/generate_docker_image.sh ghcr.io/nordsecurity/nordvpn-linux/flutter 3.44.7-1.0.1 linux/amd64,linux/arm64 docker/flutter"
 
 # this is needed for dpkg not to be interactive
 ARG DEBIAN_FRONTEND=noninteractive
@@ -34,7 +34,7 @@ ARG USER_NAME=flutter_user
 ARG HOME=/home/${USER_NAME}
 ARG FLUTTER_VERSION=3.44.7
 
-# Ubuntu 24.04 is shipped with pre-defined user and group, both using ID 1000.
+# Ubuntu is shipped with pre-defined user and group, both using ID 1000.
 # Recreate the user and group with the desired name and ID to avoid conflicts.
 RUN userdel -r ubuntu 2>/dev/null || true && \
     groupdel -f ubuntu 2>/dev/null || true && \
@@ -48,10 +48,10 @@ ENV PATH="${PATH}:${HOME}/.pub-cache/bin:${HOME}/flutter/bin"
 # create and build a project to ensure everything works
 RUN git clone https://github.com/flutter/flutter.git && \
     cd flutter && \
-    git checkout -f tags/${FLUTTER_VERSION} && \
-    flutter doctor -v && \
-    flutter config --no-enable-android --no-enable-windows-desktop --no-enable-macos-desktop --no-enable-ios --no-enable-fuchsia --no-enable-swift-package-manager && \
-    rm -rf flutter/dev flutter/docs flutter/examples flutter/.github flutter/.vscode flutter/.idea && \
+    git checkout -f tags/${FLUTTER_VERSION}
+
+RUN flutter config --no-enable-android --no-enable-windows-desktop --no-enable-macos-desktop --no-enable-ios --no-enable-fuchsia --no-enable-swift-package-manager
+RUN rm -rf flutter/dev flutter/docs flutter/examples flutter/.github flutter/.vscode flutter/.idea && \
     rm -rf ${HOME}/flutter/bin/cache/artifacts/engine/android-* && \
     cd ~ && flutter create tst_build && cd tst_build && flutter build linux && cd .. && rm -fr tst_build && \
-    flutter doctor
+    flutter doctor -v

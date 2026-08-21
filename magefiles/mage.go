@@ -22,7 +22,7 @@ import (
 const (
 	registryPrefix         = "ghcr.io/nordsecurity/nordvpn-linux/"
 	imageBuilder           = registryPrefix + "builder:1.4.7"
-	imageGUIFlutter        = registryPrefix + "flutter-3.44.7:1.0.0"
+	imageGUIFlutter        = registryPrefix + "flutter:3.44.7-1.0.1"
 	imagePackager          = registryPrefix + "packager:1.3.6"
 	imageDepender          = registryPrefix + "depender:1.3.5"
 	imageSnapPackager      = registryPrefix + "snaper:1.2.2"
@@ -473,6 +473,31 @@ func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 	}
 
 	// build GUI binaries
+	return buildGuiBinariesInDocker(ctx, buildFlags)
+}
+
+func buildGuiBinariesInDocker(ctx context.Context, buildFlags string) error {
+	if err := installHookIfNordsec(); err != nil {
+		return err
+	}
+
+	env, err := getEnv()
+	if err != nil {
+		return err
+	}
+
+	if strings.Contains(env["FEATURES"], "internal") {
+		mg.Deps(Download)
+	} else {
+		mg.Deps(Build.RustDocker)
+	}
+
+	env["WORKDIR"] = dockerWorkDir
+	env["ENVIRONMENT"] = string(internal.Development)
+	env["PACKAGE"] = devPackageType
+	env["BUILD_FLAGS"] = buildFlags
+
+	// build GUI binaries
 	return RunDocker(
 		ctx,
 		env,
@@ -485,6 +510,11 @@ func buildBinariesDocker(ctx context.Context, buildFlags string) error {
 // Builds all binaries using Docker builder
 func (Build) BinariesDocker(ctx context.Context) error {
 	return buildBinariesDocker(ctx, "")
+}
+
+// Builds GUI binaries using Docker builder
+func (Build) GuiBinariesDocker(ctx context.Context) error {
+	return buildGuiBinariesInDocker(ctx, "")
 }
 
 // Builds Openvpn binaries for the host architecture
