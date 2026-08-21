@@ -5,25 +5,20 @@ const (
 	configV1 = `client
 dev tun
 
-remote 1.1.1.1 1194 udp
+remote 1.1.1.1 53 udp
+fast-io
+mssfix 1450
     
 resolv-retry infinite
-remote-random
 nobind
-tun-mtu 1500
-tun-mtu-extra 32
-mssfix 1450
-persist-key
-persist-tun
+ping-timer-rem
 reneg-sec 0
 server-poll-timeout 5
 remote-cert-tls server
 auth-user-pass
 verb 3
 pull
-fast-io
-cipher AES-256-CBC
-auth SHA512
+tls-version-min 1.2
 <ca>
 -----BEGIN CERTIFICATE-----
 MIIFCjCCAvKgAwIBAgIBATANBgkqhkiG9w0BAQ0FADA5MQswCQYDVQQGEwJQQTEQ
@@ -56,7 +51,7 @@ PApL8PytggYKeQmRhl499+6jLxcZ2IegLfqq41dzIjwHwTMplg+1pKIOVojpWA==
 -----END CERTIFICATE-----
 </ca>
 key-direction 1
-<tls-auth>
+<tls-crypt>
 #
 # 2048 bit OpenVPN static key
 #
@@ -78,7 +73,7 @@ a196c9de96012090e333519ae18d3509
 9427e7b372d348d352dc4c85e18cd4b9
 3f8a56ddb2e64eb67adfc9b337157ff4
 -----END OpenVPN Static key V1-----
-</tls-auth>
+</tls-crypt>
 `
 	configXORV1 = `client
 dev tun
@@ -102,6 +97,7 @@ persist-tun
 reneg-sec 0
 server-poll-timeout 5
 scramble obfuscate tiecohbeengik9eiGheeshidohtai8hiegeelai3Am9Cee8eePhohRa
+hand-window 10
 remote-cert-tls server
 auth-user-pass
 verb 3
@@ -291,6 +287,11 @@ remote <xsl:value-of select="./@address"/> 80 tcp
     </xsl:otherwise>
   </xsl:choose>
 </xsl:for-each>
+<xsl:choose>
+    <xsl:when test="/config/hostname != ''">
+verify-x509-name CN=<xsl:value-of select="/config/hostname"/>
+    </xsl:when>
+</xsl:choose>
 resolv-retry infinite
 remote-random
 nobind

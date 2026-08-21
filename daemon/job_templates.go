@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"encoding/hex"
+	"fmt"
 	"net/http"
 
 	"github.com/NordSecurity/nordvpn-linux/core"
@@ -9,40 +10,49 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
-func JobTemplates(cdn core.CDN) func() {
-	return func() {
-		getTemplate := func(isObfuscated bool) {
-			var digest string
-			filepath := internal.OvpnTemplatePath
-			if isObfuscated {
-				filepath = internal.OvpnObfsTemplatePath
-			}
-			if internal.FileExists(filepath) {
-				if hash, err := internal.FileSha256(filepath); err == nil {
-					digest = hex.EncodeToString(hash)
-				}
-			}
-
-			headers, _, err := cdn.ConfigTemplate(isObfuscated, http.MethodHead)
-			if err != nil {
-				log.Warn("downloading (MethodHead) config template:", err)
-				return
-			}
-
-			if digest != headers.Get(core.HeaderDigest) {
-				_, body, err := cdn.ConfigTemplate(isObfuscated, http.MethodGet)
-				if err != nil {
-					log.Warn("downloading (MethodGet) config template:", err)
-					return
-				}
-				err = internal.FileWrite(filepath, body, internal.PermUserRW)
-				if err != nil {
-					log.Warn("writing doanloded config template:", err)
-					return
-				}
-			}
+// updateTemplateCache downloads the config template to cachePath unless the cached copy matches
+// the CDN digest.
+func updateTemplateCache(cdn core.CDN, variant core.OvpnTemplateVariant, cachePath string) error {
+	var digest string
+	if internal.FileExists(cachePath) {
+		if hash, err := internal.FileSha256(cachePath); err == nil {
+			digest = hex.EncodeToString(hash)
 		}
-		go getTemplate(false)
-		go getTemplate(true)
+	}
+
+	headers, _, err := cdn.FetchConfigTemplate(variant, http.MethodHead)
+	if err != nil {
+		return fmt.Errorf("downloading (MethodHead) config template: %w", err)
+	}
+
+	if digest == headers.Get(core.HeaderDigest) {
+		return nil
+	}
+
+	_, body, err := cdn.FetchConfigTemplate(variant, http.MethodGet)
+	if err != nil {
+		return fmt.Errorf("downloading (MethodGet) config template: %w", err)
+	}
+	if err := internal.FileWrite(cachePath, body, internal.PermUserRW); err != nil {
+		return fmt.Errorf("writing downloaded config template: %w", err)
+	}
+	return nil
+}
+
+func JobTemplates(cdn core.CDN) func() {
+	// ovpnTemplates maps every OpenVPN config template variant to the file it is cached in.
+	var ovpnTemplates = map[core.OvpnTemplateVariant]string{
+		core.OvpnTemplateStandard:   internal.OvpnTemplatePath,
+		core.OvpnTemplateObfuscated: internal.OvpnObfsTemplatePath,
+	}
+
+	return func() {
+		for variant, cachePath := range ovpnTemplates {
+			go func() {
+				if err := updateTemplateCache(cdn, variant, cachePath); err != nil {
+					log.Warn("updating config template cache:", err)
+				}
+			}()
+		}
 	}
 }

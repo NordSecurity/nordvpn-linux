@@ -24,6 +24,10 @@ func TestVPNRuleset(t *testing.T) {
 		config *helpers.FirewallConfigBuilder
 	}{
 		{
+			name:   "pre connect nothing set",
+			config: helpers.NewFWConfig(),
+		},
+		{
 			name:   "kill switch only",
 			config: helpers.NewFWConfig().KillSwitch(),
 		},

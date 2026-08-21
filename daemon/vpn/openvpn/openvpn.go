@@ -112,9 +112,7 @@ func (ovpn *OpenVPN) Start(
 	defer close(mErrCh)
 
 	ovpn.active = true
-	// #nosec G204 -- input is properly sanitized
-	process := exec.Command(
-		openVPNExec,
+	args := []string{
 		"--config", openVPNConfigFileName, // path to openVpnConfig to be used
 		"--management-client",
 		"--management", openvpnManagementSocket, "unix", // enable openvpn management
@@ -127,10 +125,17 @@ func (ovpn *OpenVPN) Start(
 		"--mark", strconv.Itoa(int(ovpn.fwmark)),
 		"--dev-type", interfaceType,
 		"--dev", InterfaceName,
-		// DCO cannot be used because currently servers are pushing `comp-lzo no`
-		"--disable-dco",
 		"--auth-nocache",
-	)
+	}
+
+	// Kernel DCO is attempted by default and OpenVPN drops it by itself whenever it cannot work,
+	// e.g. no kernel module, an unsupported cipher, compression -> back to the userspace.
+	if serverData.Obfuscated {
+		args = append(args, "--disable-dco")
+	}
+
+	// #nosec G204 -- input is properly sanitized
+	process := exec.Command(openVPNExec, args...)
 	err = startOpenVPN(process)
 
 	ovpn.stopCh = make(chan error, 1)
