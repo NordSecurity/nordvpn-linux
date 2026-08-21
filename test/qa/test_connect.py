@@ -11,6 +11,7 @@ import lib
 from lib import daemon, info, logging, network, server, IS_NIGHTLY
 from lib.protobuf.daemon import (common_pb2, service_pb2_grpc)
 from lib.dynamic_parametrize import dynamic_parametrize
+from test_grpc import pause_connection
 
 pytestmark = pytest.mark.usefixtures("nordvpnd_scope_function")
 
@@ -603,16 +604,33 @@ def test_obfuscation_prevents_virtual_location_connection(tech, proto, obfuscate
 
 ENS_CONN_LIMIT_REACHED = 2
 ENS_CONN_LIMIT_REACHED_MSG = "Too many connection attempts. Wait a while before trying again. Retrying now can make the waiting period longer. If the issue persists, check our help guide for other possible causes: https://support.nordvpn.com/hc/en-us/articles/47181405478417-I-get-the-Session-Limit-Reached-error-on-NordVPN?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=ens_error-session_limit&nm=app&ns=nordvpn-linux-cli&nc=ens_error-session_limit"
-def test_ens_connection_limit():
+@pytest.mark.parametrize("reconnect", [True, False])
+@pytest.mark.parametrize("pause", [True, False])
+def test_ens_connection_limit(reconnect: bool, pause: bool):
     """Test ENS connection limit"""
     if "dev" not in sh.nordvpn.version():
         pytest.skip("can run only for dev builds")
 
     sh.nordvpn.set.technology("nordlynx")
-    with grpc.insecure_channel(NORDVPND_SOCKET) as channel:
-        stub = service_pb2_grpc.DaemonStub(channel)
-        stub.InjectVpnConnectionError(common_pb2.InjectVpnConnectionErrorRequest(telio_code=ENS_CONN_LIMIT_REACHED))
 
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.connect()
-    assert ENS_CONN_LIMIT_REACHED_MSG in ex.value.stdout.decode("utf-8")
+    with lib.Defer(sh.nordvpn.disconnect):
+        if reconnect:
+            sh.nordvpn.connect()
+
+            if pause:
+                pause_connection(1)
+
+            with grpc.insecure_channel(NORDVPND_SOCKET) as channel:
+                stub = service_pb2_grpc.DaemonStub(channel)
+                stub.InjectVpnConnectionError(common_pb2.InjectVpnConnectionErrorRequest(telio_code=ENS_CONN_LIMIT_REACHED))
+
+            if pause:
+                while any(state in sh.nordvpn.status() for state in ["Pause", "Connecting"]):
+                    time.sleep(1)
+            else:
+                with pytest.raises(sh.ErrorReturnCode_1) as ex:
+                    sh.nordvpn.connect()
+                assert ENS_CONN_LIMIT_REACHED_MSG in ex.value.stdout.decode("utf-8"), "Wrong error message"
+
+            assert "Disconnected" in sh.nordvpn.status(), "Wrong status"
+            assert network.is_available(), "Network should be available"
