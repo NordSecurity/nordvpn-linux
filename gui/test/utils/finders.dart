@@ -13,6 +13,7 @@ import 'package:nordvpn/vpn/connection_card_server_info.dart';
 import 'package:nordvpn/vpn/servers_list_card.dart';
 import 'package:nordvpn/vpn/vpn.dart';
 import 'package:nordvpn/widgets/login_form.dart';
+import 'package:nordvpn/widgets/popups/popup.dart';
 
 Finder serverInfoText() {
   final serverInfoTextFinder = find.byKey(ConnectionCardServerInfo.textKey);
@@ -252,4 +253,20 @@ Finder snapErrorScreenDescription() {
 
 Finder snapErrorScreenCopyField() {
   return find.byKey(SnapWidgetKeys.copyField);
+}
+
+Finder popupSemantics() {
+  return find.byKey(Popup.semanticsKey);
+}
+
+Finder popupTitle() {
+  return find.byKey(Popup.titleKey);
+}
+
+Finder popupMessage() {
+  return find.byKey(Popup.messageKey);
+}
+
+Finder popupCloseButton() {
+  return find.byKey(Popup.closeButtonKey);
 }

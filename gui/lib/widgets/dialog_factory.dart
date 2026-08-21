@@ -41,6 +41,7 @@ final class DialogFactory {
                   leading: icon,
                   title: Text(title, style: appTheme.bodyStrong),
                   trailing: IconButton(
+                    tooltip: t.ui.close,
                     icon: Semantics(
                       label: t.ui.close,
                       child: DynamicThemeImage("close.svg"),

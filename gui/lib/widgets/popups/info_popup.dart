@@ -23,7 +23,11 @@ final class InfoPopup extends Popup {
       children: [
         Semantics(
           container: true,
-          child: Text(message(ref), style: theme.textSecondary),
+          child: Text(
+            message(ref),
+            key: Popup.messageKey,
+            style: theme.textSecondary,
+          ),
         ),
         Align(alignment: Alignment.centerRight, child: _closeButton(context)),
       ],

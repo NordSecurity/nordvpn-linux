@@ -97,8 +97,8 @@ class Translations$a11y$en {
 	/// en: 'Clear'
 	String get clear => 'Clear';
 
-	/// en: 'Popup: $content'
-	String popupWithContent({required Object content}) => 'Popup: ${content}';
+	/// en: '$title. $message'
+	String popupWithContent({required Object title, required Object message}) => '${title}. ${message}';
 }
 
 // Path: cities
@@ -2253,7 +2253,7 @@ extension on Translations {
 			'a11y.expandibleEntryExpanded' => 'Expanded',
 			'a11y.expandibleEntryCollapsed' => 'Collapsed',
 			'a11y.clear' => 'Clear',
-			'a11y.popupWithContent' => ({required Object content}) => 'Popup: ${content}',
+			'a11y.popupWithContent' => ({required Object title, required Object message}) => '${title}. ${message}',
 			'cities.tirana' => 'Tirana',
 			'cities.algiers' => 'Algiers',
 			'cities.addis_ababa' => 'Addis Ababa',
