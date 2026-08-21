@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
+import 'package:nordvpn/data/providers/popup_actions_provider.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:nordvpn/widgets/popups/popup.dart';
@@ -56,12 +59,14 @@ final class RichNotificationPopup extends Popup {
 
   Widget _actionButton(BuildContext context, WidgetRef ref) {
     return ElevatedButton(
-      onPressed: () async {
-        await richMetadata.action(ref);
+      onPressed: () {
+        // The notifier is owned by the ProviderContainer, so it stays usable
+        // after this popup is closed, unlike `ref` itself.
+        final actions = ref.read(popupActionsProvider.notifier);
         if (richMetadata.autoClose) {
-          if (!context.mounted) return;
           closePopup(context);
         }
+        unawaited(actions.run(richMetadata.action, popupId: richMetadata.id));
       },
       child: Text(richMetadata.actionButtonText),
     );

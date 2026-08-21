@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/internal/popups_metadata.dart';
@@ -21,7 +22,7 @@ final class Popups extends _$Popups {
     logger.i("showing popup for id: $id");
 
     final metadata = givePopupMetadata(id, userData: userData);
-    _showWithMetadata(metadata);
+    showWithMetadata(metadata);
   }
 
   bool _shouldIgnore(int code) {
@@ -30,7 +31,10 @@ final class Popups extends _$Popups {
         code == DaemonStatusCode.allowlistPortNoop;
   }
 
-  void _showWithMetadata(PopupMetadata metadata) {
+  // Displays the popup for an already built metadata. Production code uses
+  // [show], this is used by tests to inject metadata with custom actions.
+  @visibleForTesting
+  void showWithMetadata(PopupMetadata metadata) {
     if (metadata.id == DaemonStatusCode.success) {
       return;
     }
