@@ -417,12 +417,23 @@ func (r *RPC) doAutoConnect() error {
 
 	if err == nil && server.err == nil {
 		log.Info("auto-connect success")
+
+		// NOTE: `CountryCode` in `AutoConnectData` was introduced later, so for those
+		// cases where country code is not yet saved on user's side, do a fallback to
+		// country name.
+		// This should be removed with LVPN-10972.
+		countryCodeOrCountryName := cfg.AutoConnectData.CountryCode
+		if countryCodeOrCountryName == "" {
+			countryCodeOrCountryName = cfg.AutoConnectData.Country
+		}
+
 		r.RequestedConnParams.Set(
 			pb.ConnectionSource_AUTO,
 			serverpicker.ServerParameters{
-				Country: cfg.AutoConnectData.Country,
-				City:    cfg.AutoConnectData.City,
-				Group:   cfg.AutoConnectData.Group,
+				Country:     cfg.AutoConnectData.Country,
+				CountryCode: countryCodeOrCountryName,
+				City:        cfg.AutoConnectData.City,
+				Group:       cfg.AutoConnectData.Group,
 			},
 		)
 		return nil

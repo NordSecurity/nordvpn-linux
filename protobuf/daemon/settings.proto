@@ -2,13 +2,13 @@ syntax = "proto3";
 
 package pb;
 
-option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
-
 import "common.proto";
-import "config/technology.proto";
 import "config/analytics_consent.proto";
-import "config/protocol.proto";
 import "config/group.proto";
+import "config/protocol.proto";
+import "config/technology.proto";
+
+option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
 message SettingsResponse {
   int64 type = 1;
@@ -20,6 +20,7 @@ message AutoconnectData {
   string country = 2;
   string city = 3;
   config.ServerGroup server_group = 4;
+  string country_code = 5;
 }
 
 message Settings {

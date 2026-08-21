@@ -35,6 +35,7 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 		AutoConnectData: &pb.AutoconnectData{
 			Enabled:     cfg.AutoConnect,
 			Country:     cfg.AutoConnectData.Country,
+			CountryCode: cfg.AutoConnectData.CountryCode,
 			City:        cfg.AutoConnectData.City,
 			ServerGroup: cfg.AutoConnectData.Group,
 		},
