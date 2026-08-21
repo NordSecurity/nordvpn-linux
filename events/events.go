@@ -109,6 +109,8 @@ const (
 	VPNConnectionReasonServerMaintenance
 	// VPNConnectionReasonAutoConnect is set when the app auto-connects based on the user's auto-connect setting
 	VPNConnectionReasonAutoConnect
+	// VPNConnectionReasonConnectionLimitReached is set when connection is canceled after and connection limit reached event is received
+	VPNConnectionReasonConnectionLimitReached
 )
 
 type TypeLoginType int
