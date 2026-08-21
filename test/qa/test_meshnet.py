@@ -1,4 +1,3 @@
-import os
 from datetime import datetime
 
 import pytest
@@ -78,10 +77,6 @@ def test_mesh_removed_machine_by_other():
             mymachineid = itm['identifier']
 
     # remove myself using api call
-    headers = {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer token:' + mytoken,
-    }
     requests.delete('https://api.nordvpn.com/v1/meshnet/machines/' + mymachineid, headers=headers, timeout=5)
 
     # machine not found error should be handled by disabling meshnet
@@ -163,27 +158,15 @@ def test_exitnode_permissions():
     assert "This peer does not allow file transfers from you." in str(ex.value), "qa-peer should not be able to send file to tester"
 
 
-@pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
-def test_remove_peer_firewall_update():
-    peer_ip = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer().ip
-    meshnet.set_permissions(peer_ip, True, True, True, True)
+@pytest.mark.core_meshnet
+def test_peer_unreachable_after_remove():
+    peer = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_external_peer()
+    meshnet.set_permissions(peer.ip, True, True, True, True)
 
-    sh_no_tty.nordvpn.mesh.peer.remove(peer_ip)
+    sh_no_tty.nordvpn.mesh.peer.remove(peer.ip)
     sh_no_tty.nordvpn.mesh.peer.refresh()
 
-    def all_peer_permissions_removed() -> (bool, str):
-        #rules = sh.sudo.iptables("-S")
-        rules = os.popen("sudo iptables -S").read()
-        if peer_ip not in rules:
-            return True, ""
-        return False, f"Rules for peer were not removed from firewall\nPeer IP: {peer_ip}\nrules:\n{rules}"
-
-    result, message = None, None
-    for (result, message) in lib.poll(all_peer_permissions_removed):  # noqa: B007
-        if result:
-            break
-
-    assert result, message
+    assert not meshnet.is_peer_reachable(peer, meshnet.PeerName.Ip)
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")

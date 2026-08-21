@@ -1,4 +1,3 @@
-import contextlib
 import os
 import random
 import re
@@ -56,12 +55,7 @@ def setup_module(module):  # noqa: ARG001
     sh.nordvpn.mesh.peer.refresh()
     ssh_client.exec_command("nordvpn mesh peer refresh")
 
-    while True:
-        local_peer_list = sh_no_tty.nordvpn.mesh.peer.list()
-        remote_peer_list = ssh_client.exec_command("nordvpn mesh peer list")
-        if all("Status: connected" in peer_list for peer_list in (local_peer_list, remote_peer_list)):
-            break
-        time.sleep(1)
+    meshnet.are_peers_connected(ssh_client)
 
     if not os.path.exists(workdir):
         os.makedirs(workdir)
@@ -77,9 +71,7 @@ def setup_module(module):  # noqa: ARG001
 
 def teardown_module(module):  # noqa: ARG001
     dest_logs_path = f"{os.environ['WORKDIR']}/dist/logs"
-    ssh_client.download_file("/var/log/nordvpn/daemon.log", f"{dest_logs_path}/daemon-qapeer.log")
-    ssh_client.download_file("/root/.cache/nordvpn/nordfileshare.log", f"{dest_logs_path}/nordfileshare-qapeer.log")
-    ssh_client.download_file("/root/.cache/nordvpn/norduserd.log", f"{dest_logs_path}/norduserd-qapeer.log")
+    meshnet.download_remote_peer_logs(ssh_client, dest_logs_path)
     shutil.copy("/home/qa/.cache/nordvpn/norduserd.log", dest_logs_path)
     shutil.copy("/home/qa/.cache/nordvpn/nordfileshare.log", dest_logs_path)
     shutil.copy("/home/qa/.config/nordvpn/fileshare_history.db", dest_logs_path)
@@ -710,7 +702,7 @@ def test_fileshare_graceful_cancel_transfer_ongoing(sender_cancels: bool, transf
     transfer_accept_thread = PeerTransferAcceptThread(transfer_id)
     transfer_accept_thread.start()
 
-    for transfer_in_progress in poll(lambda: "downloading" in fileshare.get_transfer(transfer_id, ssh_client)):
+    for transfer_in_progress in poll(lambda: fileshare.TransferState.DOWNLOADING in fileshare.get_transfer(transfer_id, ssh_client)):
         if transfer_in_progress:
             break
 
@@ -1558,11 +1550,7 @@ def test_all_permissions_denied_send_file(background_send: bool, background_acce
     local_peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
     local_address = local_peer_list.get_this_device().hostname
 
-    permissions = ["incoming", "routing", "local"]
-
-    for permission in permissions:
-        with contextlib.suppress(RuntimeError):
-            ssh_client.exec_command(f"nordvpn mesh peer {permission} deny {local_address}")
+    ssh_client.meshnet.set_permissions(local_address, routing=False, local=False, incoming=False)
 
     wdir = fileshare.create_directory(1)
     peer_address = local_peer_list.get_internal_peer().hostname
@@ -1598,8 +1586,6 @@ def test_all_permissions_denied_send_file(background_send: bool, background_acce
     assert fileshare.files_from_transfer_exist_in_filesystem(remote_transfer_id, [wdir], ssh_client), "Files should be transferred to filesystem"
     ssh_client.exec_command(f"rm -rf {peer_filepath}/{wdir.filenames[0]}")
 
-    for permission in permissions:
-        with contextlib.suppress(RuntimeError):
-            ssh_client.exec_command(f"nordvpn mesh peer {permission} allow {local_address}")
+    ssh_client.meshnet.set_permissions(local_address, routing=True, local=True, incoming=True)
 
     shutil.rmtree(wdir.dir_path)

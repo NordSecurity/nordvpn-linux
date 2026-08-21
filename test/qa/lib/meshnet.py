@@ -50,7 +50,7 @@ class TestUtils:
     def teardown_module(ssh_client: ssh.Ssh):
         # Preserve other peer log
         dest_logs_path = f"{os.environ['WORKDIR']}/dist/logs"
-        ssh_client.download_file("/var/log/nordvpn/daemon.log", f"{dest_logs_path}/other-peer-daemon.log")
+        download_remote_peer_logs(ssh_client, dest_logs_path)
         daemon.uninstall_peer(ssh_client)
         ssh_client.disconnect()
 
@@ -292,13 +292,6 @@ class PeerList:
 
     def clear_external_peer_list(self):
         self.external_peers = []
-
-    def find_peer(self, peer: str) -> Peer:
-        for peer_info in self.external_peers + self.internal_peers:
-            if peer_info.ip == peer or peer_info.hostname == peer or peer_info.nickname == peer:
-                return peer_info
-        raise Exception("peer not found")
-
 
     def parse_peer_list(self, filter_list: str | None = None) -> list[str]:
         """Builds expected Meshnet peer list string according to passed list of filters."""
