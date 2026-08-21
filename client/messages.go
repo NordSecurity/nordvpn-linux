@@ -26,6 +26,8 @@ const (
 	MsgTryAgain               = "We're having trouble reaching our servers. Please try again later. If the issue persists, please contact our customer support."
 	UFWDisabledMessage        = "The active UFW firewall on your system prevents us from setting up our firewall properly. We've turned off UFW for the duration of your VPN connection and activated our firewall to ensure your online security. Your custom UFW rules have been imported to our firewall ruleset."
 
+	ENSConnectionLimitReachedMessage = "Too many connection attempts. Wait a while before trying again. Retrying now can make the waiting period longer. If the issue persists, check our help guide for other possible causes: https://support.nordvpn.com/hc/en-us/articles/47181405478417-I-get-the-Session-Limit-Reached-error-on-NordVPN?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=ens_error-session_limit&nm=app&ns=nordvpn-linux-cli&nc=ens_error-session_limit"
+
 	SubscriptionURL                 = "https://my.nordaccount.com/plans/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=home-choose_plan&nm=app&ns=nordvpn-linux-cli&nc=home-choose_plan&redirect_uri=nordvpn://claim-online-purchase"
 	SubscriptionURLLogin            = "https://my.nordaccount.com/plans/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=home-choose_plan&nm=app&ns=nordvpn-linux-cli&nc=home-choose_plan&trusted_pass_token=%s&owner_id=%s&redirect_uri=nordvpn://claim-online-purchase"
 	SubscriptionDedicatedIPURL      = "https://my.nordaccount.com/plans/dedicated-ip/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=dedicatedip-choose_plan&nm=app&ns=nordvpn-linux-cli&nc=dedicatedip-choose_plan"
