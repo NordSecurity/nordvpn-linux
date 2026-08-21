@@ -25,13 +25,13 @@ func TestPauseArgumentsParsing(t *testing.T) {
 			name:                        "success 15m",
 			pauseDuration:               "15m",
 			expectedPauseDurationResult: 900,
-			expectedUIEventResult:       pb.UIEvent_PAUSE_5_MIN,
+			expectedUIEventResult:       pb.UIEvent_PAUSE_15_MIN,
 		},
 		{
 			name:                        "success 30m",
 			pauseDuration:               "30m",
 			expectedPauseDurationResult: 1800,
-			expectedUIEventResult:       pb.UIEvent_PAUSE_5_MIN,
+			expectedUIEventResult:       pb.UIEvent_PAUSE_30_MIN,
 		},
 		{
 			name:                        "success 1h",
