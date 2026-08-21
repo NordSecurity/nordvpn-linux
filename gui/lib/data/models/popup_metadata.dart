@@ -45,13 +45,16 @@ final class DecisionPopupMetadata extends PopupMetadata {
 // Metadata for popups that can be only closed. Has just `id`, `title` nad `message`
 // Optionally accepts [buttonText] to customize the close button label.
 // If not provided, defaults to "Close".
+// [onLinkTap] is invoked when the user taps a link inside the popup body
 final class InfoPopupMetadata extends PopupMetadata {
   final String? buttonText;
+  final void Function(WidgetRef ref)? onLinkTap;
   InfoPopupMetadata({
     required super.id,
     required super.title,
     required super.message,
     this.buttonText,
+    this.onLinkTap,
   });
 }
 

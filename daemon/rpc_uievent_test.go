@@ -88,6 +88,19 @@ func TestReportUIEvent_PublishesValidEvents(t *testing.T) {
 				ItemType:      "click",
 			},
 		},
+		{
+			name: "GUI session limit learn more",
+			input: &pb.UIEvent{
+				FormReference: pb.UIEvent_SESSION_LIMIT_NOTIFICATION,
+				ItemName:      pb.UIEvent_LEARN_MORE,
+				ItemType:      pb.UIEvent_CLICK,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "session_limit",
+				ItemName:      "learn_more",
+				ItemType:      "click",
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -111,6 +124,93 @@ func TestReportUIEvent_PublishesValidEvents(t *testing.T) {
 	}
 }
 
+func TestReportUIEvent_ShowEvents(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	tests := []struct {
+		name     string
+		input    *pb.UIEvent
+		expected events.UiItemsAction
+	}{
+		{
+			name: "session limit popup shown in the GUI",
+			input: &pb.UIEvent{
+				FormReference: pb.UIEvent_GUI,
+				ItemName:      pb.UIEvent_SESSION_LIMIT,
+				ItemType:      pb.UIEvent_SHOW,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "gui",
+				ItemName:      "session_limit",
+				ItemType:      "show",
+			},
+		},
+		{
+			name: "show event from the tray",
+			input: &pb.UIEvent{
+				FormReference: pb.UIEvent_TRAY,
+				ItemName:      pb.UIEvent_SESSION_LIMIT,
+				ItemType:      pb.UIEvent_SHOW,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "tray",
+				ItemName:      "session_limit",
+				ItemType:      "show",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := testRPC()
+			var shows, clicks []events.UiItemsAction
+			r.events.Service.UiItemsShow.Subscribe(
+				func(a events.UiItemsAction) error {
+					shows = append(shows, a)
+					return nil
+				},
+			)
+			r.events.Service.UiItemsClick.Subscribe(
+				func(a events.UiItemsAction) error {
+					clicks = append(clicks, a)
+					return nil
+				},
+			)
+
+			resp, err := r.ReportUIEvent(context.Background(), tt.input)
+
+			require.NoError(t, err)
+			assert.Equal(t, internal.CodeSuccess, resp.Type)
+			require.Len(t, shows, 1)
+			assert.Equal(t, tt.expected, shows[0])
+			assert.Empty(t, clicks, "show event must not land on the click channel")
+		})
+	}
+}
+
+func TestReportUIEvent_ClickNotPublishedAsShow(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	r := testRPC()
+	var shows []events.UiItemsAction
+	r.events.Service.UiItemsShow.Subscribe(
+		func(a events.UiItemsAction) error {
+			shows = append(shows, a)
+			return nil
+		},
+	)
+
+	resp, err := r.ReportUIEvent(context.Background(), &pb.UIEvent{
+		FormReference: pb.UIEvent_SESSION_LIMIT_NOTIFICATION,
+		ItemName:      pb.UIEvent_LEARN_MORE,
+		ItemType:      pb.UIEvent_CLICK,
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, internal.CodeSuccess, resp.Type)
+	assert.Empty(t, shows, "click event must not land on the show channel")
+}
+
 func TestReportUIEvent_DropsIncompleteEvents(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -119,10 +219,17 @@ func TestReportUIEvent_DropsIncompleteEvents(t *testing.T) {
 		input *pb.UIEvent
 	}{
 		{
-			name: "missing form reference",
+			name: "click missing form reference",
 			input: &pb.UIEvent{
 				ItemName: pb.UIEvent_OPEN_APP,
 				ItemType: pb.UIEvent_CLICK,
+			},
+		},
+		{
+			name: "show missing form reference",
+			input: &pb.UIEvent{
+				ItemName: pb.UIEvent_SESSION_LIMIT,
+				ItemType: pb.UIEvent_SHOW,
 			},
 		},
 		{
@@ -130,6 +237,13 @@ func TestReportUIEvent_DropsIncompleteEvents(t *testing.T) {
 			input: &pb.UIEvent{
 				FormReference: pb.UIEvent_TRAY,
 				ItemType:      pb.UIEvent_CLICK,
+			},
+		},
+		{
+			name: "show missing item name",
+			input: &pb.UIEvent{
+				FormReference: pb.UIEvent_GUI,
+				ItemType:      pb.UIEvent_SHOW,
 			},
 		},
 		{
@@ -146,6 +260,12 @@ func TestReportUIEvent_DropsIncompleteEvents(t *testing.T) {
 			r := testRPC()
 			var captured []events.UiItemsAction
 			r.events.Service.UiItemsClick.Subscribe(
+				func(a events.UiItemsAction) error {
+					captured = append(captured, a)
+					return nil
+				},
+			)
+			r.events.Service.UiItemsShow.Subscribe(
 				func(a events.UiItemsAction) error {
 					captured = append(captured, a)
 					return nil

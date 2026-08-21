@@ -39,6 +39,7 @@ func (*dummyAnalytics) NotifyAccountCheck(any) error                   { return 
 func (*dummyAnalytics) NotifyDebuggerEvent(events.DebuggerEvent) error { return nil }
 func (*dummyAnalytics) NotifyRequestAPI(events.DataRequestAPI) error   { return nil }
 func (*dummyAnalytics) NotifyUiItemsClick(events.UiItemsAction) error  { return nil }
+func (*dummyAnalytics) NotifyUiItemsShow(events.UiItemsAction) error   { return nil }
 func (*dummyAnalytics) NotifyHeartBeat(time.Duration) error            { return nil }
 func (*dummyAnalytics) NotifyDeviceLocation(core.Insights) error       { return nil }
 func (*dummyAnalytics) NotifyDedicatedServerStatus(
