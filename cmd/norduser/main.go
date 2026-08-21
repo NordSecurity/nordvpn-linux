@@ -108,8 +108,7 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 func shouldEnableFileshare(uid uint32) (bool, error) {
 	daemonURL := fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
 
-	//nolint:staticcheck
-	grpcConn, err := grpc.Dial(
+	grpcConn, err := grpc.NewClient(
 		daemonURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
