@@ -16,6 +16,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
 	"github.com/NordSecurity/nordvpn-linux/core"
 	daemonEvents "github.com/NordSecurity/nordvpn-linux/daemon/events"
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
 	"github.com/NordSecurity/nordvpn-linux/daemon/response"
 	"github.com/NordSecurity/nordvpn-linux/daemon/state"
@@ -124,6 +125,7 @@ func testRPC() *RPC {
 		daemonEvents.NewDataUpdateEvents(),
 		daemonEvents.NewPauseEvents(),
 		&devicekey.DeviceKeyManagerImpl{},
+		NewLogSanitizer(&daemonEvents.MockPublisherSubscriber[*pb.LogSanitizationEvent]{}),
 	)
 }
 

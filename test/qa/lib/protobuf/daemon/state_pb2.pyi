@@ -1,9 +1,10 @@
 import settings_pb2 as _settings_pb2
 import status_pb2 as _status_pb2
+from google.protobuf.internal import containers as _containers
 from google.protobuf.internal import enum_type_wrapper as _enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import ClassVar as _ClassVar, Mapping as _Mapping, Optional as _Optional, Union as _Union
+from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -55,8 +56,14 @@ class PauseEvent(_message.Message):
     type: PauseEventType
     def __init__(self, type: _Optional[_Union[PauseEventType, str]] = ...) -> None: ...
 
+class LogSanitizationEvent(_message.Message):
+    __slots__ = ("restricted_strings",)
+    RESTRICTED_STRINGS_FIELD_NUMBER: _ClassVar[int]
+    restricted_strings: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, restricted_strings: _Optional[_Iterable[str]] = ...) -> None: ...
+
 class AppState(_message.Message):
-    __slots__ = ("error", "connection_status", "login_event", "settings_change", "update_event", "account_modification", "version_health", "pause_event")
+    __slots__ = ("error", "connection_status", "login_event", "settings_change", "update_event", "account_modification", "version_health", "pause_event", "log_sanitization_event")
     ERROR_FIELD_NUMBER: _ClassVar[int]
     CONNECTION_STATUS_FIELD_NUMBER: _ClassVar[int]
     LOGIN_EVENT_FIELD_NUMBER: _ClassVar[int]
@@ -65,6 +72,7 @@ class AppState(_message.Message):
     ACCOUNT_MODIFICATION_FIELD_NUMBER: _ClassVar[int]
     VERSION_HEALTH_FIELD_NUMBER: _ClassVar[int]
     PAUSE_EVENT_FIELD_NUMBER: _ClassVar[int]
+    LOG_SANITIZATION_EVENT_FIELD_NUMBER: _ClassVar[int]
     error: AppStateError
     connection_status: _status_pb2.StatusResponse
     login_event: LoginEvent
@@ -73,4 +81,5 @@ class AppState(_message.Message):
     account_modification: AccountModification
     version_health: VersionHealthStatus
     pause_event: PauseEvent
-    def __init__(self, error: _Optional[_Union[AppStateError, str]] = ..., connection_status: _Optional[_Union[_status_pb2.StatusResponse, _Mapping]] = ..., login_event: _Optional[_Union[LoginEvent, _Mapping]] = ..., settings_change: _Optional[_Union[_settings_pb2.Settings, _Mapping]] = ..., update_event: _Optional[_Union[UpdateEvent, str]] = ..., account_modification: _Optional[_Union[AccountModification, _Mapping]] = ..., version_health: _Optional[_Union[VersionHealthStatus, _Mapping]] = ..., pause_event: _Optional[_Union[PauseEvent, _Mapping]] = ...) -> None: ...
+    log_sanitization_event: LogSanitizationEvent
+    def __init__(self, error: _Optional[_Union[AppStateError, str]] = ..., connection_status: _Optional[_Union[_status_pb2.StatusResponse, _Mapping]] = ..., login_event: _Optional[_Union[LoginEvent, _Mapping]] = ..., settings_change: _Optional[_Union[_settings_pb2.Settings, _Mapping]] = ..., update_event: _Optional[_Union[UpdateEvent, str]] = ..., account_modification: _Optional[_Union[AccountModification, _Mapping]] = ..., version_health: _Optional[_Union[VersionHealthStatus, _Mapping]] = ..., pause_event: _Optional[_Union[PauseEvent, _Mapping]] = ..., log_sanitization_event: _Optional[_Union[LogSanitizationEvent, _Mapping]] = ...) -> None: ...

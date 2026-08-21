@@ -239,6 +239,55 @@ class PauseEvent extends $pb.GeneratedMessage {
   void clearType() => $_clearField(1);
 }
 
+class LogSanitizationEvent extends $pb.GeneratedMessage {
+  factory LogSanitizationEvent({
+    $core.Iterable<$core.String>? restrictedStrings,
+  }) {
+    final result = create();
+    if (restrictedStrings != null)
+      result.restrictedStrings.addAll(restrictedStrings);
+    return result;
+  }
+
+  LogSanitizationEvent._();
+
+  factory LogSanitizationEvent.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory LogSanitizationEvent.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'LogSanitizationEvent',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
+      createEmptyInstance: create)
+    ..pPS(1, _omitFieldNames ? '' : 'restrictedStrings')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  LogSanitizationEvent clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  LogSanitizationEvent copyWith(void Function(LogSanitizationEvent) updates) =>
+      super.copyWith((message) => updates(message as LogSanitizationEvent))
+          as LogSanitizationEvent;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static LogSanitizationEvent create() => LogSanitizationEvent._();
+  @$core.override
+  LogSanitizationEvent createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static LogSanitizationEvent getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<LogSanitizationEvent>(create);
+  static LogSanitizationEvent? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $pb.PbList<$core.String> get restrictedStrings => $_getList(0);
+}
+
 enum AppState_State {
   error,
   connectionStatus,
@@ -248,6 +297,7 @@ enum AppState_State {
   accountModification,
   versionHealth,
   pauseEvent,
+  logSanitizationEvent,
   notSet
 }
 
@@ -261,6 +311,7 @@ class AppState extends $pb.GeneratedMessage {
     AccountModification? accountModification,
     VersionHealthStatus? versionHealth,
     PauseEvent? pauseEvent,
+    LogSanitizationEvent? logSanitizationEvent,
   }) {
     final result = create();
     if (error != null) result.error = error;
@@ -272,6 +323,8 @@ class AppState extends $pb.GeneratedMessage {
       result.accountModification = accountModification;
     if (versionHealth != null) result.versionHealth = versionHealth;
     if (pauseEvent != null) result.pauseEvent = pauseEvent;
+    if (logSanitizationEvent != null)
+      result.logSanitizationEvent = logSanitizationEvent;
     return result;
   }
 
@@ -293,13 +346,14 @@ class AppState extends $pb.GeneratedMessage {
     6: AppState_State.accountModification,
     7: AppState_State.versionHealth,
     8: AppState_State.pauseEvent,
+    9: AppState_State.logSanitizationEvent,
     0: AppState_State.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'AppState',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..oo(0, [1, 2, 3, 4, 5, 6, 7, 8])
+    ..oo(0, [1, 2, 3, 4, 5, 6, 7, 8, 9])
     ..aE<AppStateError>(1, _omitFieldNames ? '' : 'error',
         enumValues: AppStateError.values)
     ..aOM<$0.StatusResponse>(2, _omitFieldNames ? '' : 'connectionStatus',
@@ -316,6 +370,9 @@ class AppState extends $pb.GeneratedMessage {
         subBuilder: VersionHealthStatus.create)
     ..aOM<PauseEvent>(8, _omitFieldNames ? '' : 'pauseEvent',
         subBuilder: PauseEvent.create)
+    ..aOM<LogSanitizationEvent>(
+        9, _omitFieldNames ? '' : 'logSanitizationEvent',
+        subBuilder: LogSanitizationEvent.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -344,6 +401,7 @@ class AppState extends $pb.GeneratedMessage {
   @$pb.TagNumber(6)
   @$pb.TagNumber(7)
   @$pb.TagNumber(8)
+  @$pb.TagNumber(9)
   AppState_State whichState() => _AppState_StateByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
@@ -353,6 +411,7 @@ class AppState extends $pb.GeneratedMessage {
   @$pb.TagNumber(6)
   @$pb.TagNumber(7)
   @$pb.TagNumber(8)
+  @$pb.TagNumber(9)
   void clearState() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -438,6 +497,17 @@ class AppState extends $pb.GeneratedMessage {
   void clearPauseEvent() => $_clearField(8);
   @$pb.TagNumber(8)
   PauseEvent ensurePauseEvent() => $_ensure(7);
+
+  @$pb.TagNumber(9)
+  LogSanitizationEvent get logSanitizationEvent => $_getN(8);
+  @$pb.TagNumber(9)
+  set logSanitizationEvent(LogSanitizationEvent value) => $_setField(9, value);
+  @$pb.TagNumber(9)
+  $core.bool hasLogSanitizationEvent() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearLogSanitizationEvent() => $_clearField(9);
+  @$pb.TagNumber(9)
+  LogSanitizationEvent ensureLogSanitizationEvent() => $_ensure(8);
 }
 
 const $core.bool _omitFieldNames =

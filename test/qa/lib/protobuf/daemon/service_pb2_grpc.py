@@ -299,6 +299,11 @@ class DaemonStub(object):
                 request_serializer=common__pb2.Empty.SerializeToString,
                 response_deserializer=state__pb2.AppState.FromString,
                 _registered_method=True)
+        self.GetRestrictedLogStrings = channel.unary_unary(
+                '/pb.Daemon/GetRestrictedLogStrings',
+                request_serializer=common__pb2.Empty.SerializeToString,
+                response_deserializer=state__pb2.LogSanitizationEvent.FromString,
+                _registered_method=True)
         self.InjectVpnConnectionError = channel.unary_unary(
                 '/pb.Daemon/InjectVpnConnectionError',
                 request_serializer=common__pb2.InjectVpnConnectionErrorRequest.SerializeToString,
@@ -620,6 +625,12 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetRestrictedLogStrings(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def InjectVpnConnectionError(self, request, context):
         """InjectVpnConnectionError is a DEV-only endpoint that injects a simulated ENS event
         """
@@ -881,6 +892,11 @@ def add_DaemonServicer_to_server(servicer, server):
                     servicer.SubscribeToStateChanges,
                     request_deserializer=common__pb2.Empty.FromString,
                     response_serializer=state__pb2.AppState.SerializeToString,
+            ),
+            'GetRestrictedLogStrings': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetRestrictedLogStrings,
+                    request_deserializer=common__pb2.Empty.FromString,
+                    response_serializer=state__pb2.LogSanitizationEvent.SerializeToString,
             ),
             'InjectVpnConnectionError': grpc.unary_unary_rpc_method_handler(
                     servicer.InjectVpnConnectionError,
@@ -2216,6 +2232,33 @@ class Daemon(object):
             '/pb.Daemon/SubscribeToStateChanges',
             common__pb2.Empty.SerializeToString,
             state__pb2.AppState.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetRestrictedLogStrings(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/pb.Daemon/GetRestrictedLogStrings',
+            common__pb2.Empty.SerializeToString,
+            state__pb2.LogSanitizationEvent.FromString,
             options,
             channel_credentials,
             insecure,

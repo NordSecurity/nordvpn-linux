@@ -153,6 +153,16 @@ func (s *StatePublisher) NotifyPauseEvent(pauseEvent *pb.PauseEvent) error {
 	return nil
 }
 
+func (s *StatePublisher) NotifyLogSanitization(logSanitizationEvent *pb.LogSanitizationEvent) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	log.Info("notifying about log sanitization update")
+	s.notify(logSanitizationEvent)
+
+	return nil
+}
+
 func (s *StatePublisher) AddSubscriber() (<-chan any, chan<- struct{}) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

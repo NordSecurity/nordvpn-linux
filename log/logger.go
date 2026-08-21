@@ -159,6 +159,12 @@ func logAt(l logLevel, prefix string, v []any) {
 }
 
 func output(calldepth int, msg string) {
+	s := stringsToSanitize.Load()
+	if s != nil && len(*s) > 0 {
+		for _, restrictedString := range *s {
+			msg = strings.ReplaceAll(msg, restrictedString, "***")
+		}
+	}
 	if err := log.Output(calldepth, msg); err != nil {
 		fmt.Fprintf(os.Stderr, "log.Output: %v\n", err)
 	}

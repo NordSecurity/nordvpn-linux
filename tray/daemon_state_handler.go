@@ -7,7 +7,6 @@ import (
 )
 
 func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
-	log.Debugf("app state received %v\n", item)
 	changed := false
 	switch st := item.GetState().(type) {
 	case *pb.AppState_Error:
@@ -26,9 +25,13 @@ func (ti *Instance) onDaemonStateEvent(item *pb.AppState) {
 		changed = ti.handleVersionHealthState(st)
 	case *pb.AppState_PauseEvent:
 		changed = ti.handlePauseEventState(st)
+	case *pb.AppState_LogSanitizationEvent:
+		log.SetRestrictedStrings(st.LogSanitizationEvent.RestrictedStrings...)
 	default:
 		log.Systray.Warnf("Unknown state type: %T", item)
 	}
+
+	log.Debugf("app state received %v\n", item)
 
 	ti.redraw(changed)
 }

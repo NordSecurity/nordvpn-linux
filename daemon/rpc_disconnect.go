@@ -65,6 +65,8 @@ func (r *RPC) doDisconnect(pauseInterval time.Duration) (bool, error) {
 		RecommendationUUID: recommendationUUID,
 	})
 
+	r.logSanitizer.DisableSanitization()
+
 	if wasConnected {
 		storePendingRecentConnection(r.recentVPNConnStore)
 	}

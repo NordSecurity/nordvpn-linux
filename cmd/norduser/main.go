@@ -135,6 +135,32 @@ func shouldEnableFileshare(uid uint32) (bool, error) {
 	return meshStatus.GetUid() == uid && meshStatus.GetValue(), nil
 }
 
+// sanitizeLogs fetches restricted strings from the main daemon and enables sanitization
+func sanitizeLogs() {
+	daemonURL := fmt.Sprintf("%s://%s", internal.Proto, internal.DaemonSocket)
+
+	grpcConn, err := grpc.NewClient(daemonURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Error("Failed to connect to main deamon to fetch restricted strings:", err)
+		return
+	}
+
+	defer func() {
+		if err := grpcConn.Close(); err != nil {
+			log.Error("Failed to close grpc connection")
+		}
+	}()
+
+	client := daemonpb.NewDaemonClient(grpcConn)
+	resp, err := client.GetRestrictedLogStrings(context.Background(), &daemonpb.Empty{})
+	if err != nil {
+		log.Error("Failed to fetch restricted log strings:", err)
+		return
+	}
+
+	log.SetRestrictedStrings(resp.RestrictedStrings...)
+}
+
 func waitForShutdown(stopChan <-chan norduser.StopRequest,
 	fileshareManagementChan chan<- norduser.FileshareManagementMsg,
 	fileshareShutdownChan <-chan interface{},
@@ -352,6 +378,9 @@ func main() {
 		log.DefaultLevel(),
 	)
 	defer stopLevelWatcher()
+
+	// enable log sanitization in case norduser crashed when sanitization was enabled
+	sanitizeLogs()
 
 	if snapconf.IsUnderSnap() {
 		startSnap()

@@ -41,6 +41,10 @@ enum PauseEventType {
   RECONNECT_FAILED = 0;
 }
 
+message LogSanitizationEvent {
+  repeated string restricted_strings = 1;
+}
+
 message AppState {
   oneof state {
     AppStateError error = 1;
@@ -51,5 +55,6 @@ message AppState {
     AccountModification account_modification = 6;
     VersionHealthStatus version_health = 7;
     PauseEvent pause_event = 8;
+    LogSanitizationEvent log_sanitization_event = 9;
   }
 }

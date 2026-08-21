@@ -140,6 +140,25 @@ const PauseEvent$json = {
 final $typed_data.Uint8List pauseEventDescriptor = $convert.base64Decode(
     'CgpQYXVzZUV2ZW50EiYKBHR5cGUYASABKA4yEi5wYi5QYXVzZUV2ZW50VHlwZVIEdHlwZQ==');
 
+@$core.Deprecated('Use logSanitizationEventDescriptor instead')
+const LogSanitizationEvent$json = {
+  '1': 'LogSanitizationEvent',
+  '2': [
+    {
+      '1': 'restricted_strings',
+      '3': 1,
+      '4': 3,
+      '5': 9,
+      '10': 'restrictedStrings'
+    },
+  ],
+};
+
+/// Descriptor for `LogSanitizationEvent`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List logSanitizationEventDescriptor = $convert.base64Decode(
+    'ChRMb2dTYW5pdGl6YXRpb25FdmVudBItChJyZXN0cmljdGVkX3N0cmluZ3MYASADKAlSEXJlc3'
+    'RyaWN0ZWRTdHJpbmdz');
+
 @$core.Deprecated('Use appStateDescriptor instead')
 const AppState$json = {
   '1': 'AppState',
@@ -216,6 +235,15 @@ const AppState$json = {
       '9': 0,
       '10': 'pauseEvent'
     },
+    {
+      '1': 'log_sanitization_event',
+      '3': 9,
+      '4': 1,
+      '5': 11,
+      '6': '.pb.LogSanitizationEvent',
+      '9': 0,
+      '10': 'logSanitizationEvent'
+    },
   ],
   '8': [
     {'1': 'state'},
@@ -232,4 +260,6 @@ final $typed_data.Uint8List appStateDescriptor = $convert.base64Decode(
     'V2ZW50EkwKFGFjY291bnRfbW9kaWZpY2F0aW9uGAYgASgLMhcucGIuQWNjb3VudE1vZGlmaWNh'
     'dGlvbkgAUhNhY2NvdW50TW9kaWZpY2F0aW9uEkAKDnZlcnNpb25faGVhbHRoGAcgASgLMhcucG'
     'IuVmVyc2lvbkhlYWx0aFN0YXR1c0gAUg12ZXJzaW9uSGVhbHRoEjEKC3BhdXNlX2V2ZW50GAgg'
-    'ASgLMg4ucGIuUGF1c2VFdmVudEgAUgpwYXVzZUV2ZW50QgcKBXN0YXRl');
+    'ASgLMg4ucGIuUGF1c2VFdmVudEgAUgpwYXVzZUV2ZW50ElAKFmxvZ19zYW5pdGl6YXRpb25fZX'
+    'ZlbnQYCSABKAsyGC5wYi5Mb2dTYW5pdGl6YXRpb25FdmVudEgAUhRsb2dTYW5pdGl6YXRpb25F'
+    'dmVudEIHCgVzdGF0ZQ==');

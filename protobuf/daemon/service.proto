@@ -99,6 +99,7 @@ service Daemon {
   rpc Ping(Empty) returns (PingResponse);
   rpc ReportUIEvent(UIEvent) returns (Payload);
   rpc SubscribeToStateChanges(Empty) returns (stream AppState);
+  rpc GetRestrictedLogStrings(Empty) returns (LogSanitizationEvent);
 
   // InjectVpnConnectionError is a DEV-only endpoint that injects a simulated ENS event
   rpc InjectVpnConnectionError(InjectVpnConnectionErrorRequest) returns (Payload);

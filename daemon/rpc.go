@@ -66,6 +66,7 @@ type RPC struct {
 	initialLoginType          *atomicLoginType // memorize what action started: Login or Signup (Register) - thread-safe
 	pauseManager              ReconnectScheduler
 	dedicatedServerKeyManager devicekey.DedicatedServersKeyManager
+	logSanitizer              *LogSanitizer
 	pb.UnimplementedDaemonServer
 }
 
@@ -99,6 +100,7 @@ func NewRPC(
 	dataUpdateEvents *daemonevents.DataUpdateEvents,
 	pauseEvents *daemonevents.PauseEvents,
 	dedicatedServersKeyManager devicekey.DedicatedServersKeyManager,
+	logSanitizer *LogSanitizer,
 ) *RPC {
 	scheduler, _ := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	r := &RPC{
@@ -132,6 +134,7 @@ func NewRPC(
 		dataUpdateEvents:          dataUpdateEvents,
 		dedicatedServerKeyManager: dedicatedServersKeyManager,
 		initialLoginType:          NewAtomicLoginType(),
+		logSanitizer:              logSanitizer,
 	}
 	reconnectScheduler := NewReconnectScheduler(r.ConnectFromLastSelection, connectionInfo, pauseEvents)
 	r.pauseManager = reconnectScheduler

@@ -68,6 +68,7 @@ const (
 	Daemon_Ping_FullMethodName                     = "/pb.Daemon/Ping"
 	Daemon_ReportUIEvent_FullMethodName            = "/pb.Daemon/ReportUIEvent"
 	Daemon_SubscribeToStateChanges_FullMethodName  = "/pb.Daemon/SubscribeToStateChanges"
+	Daemon_GetRestrictedLogStrings_FullMethodName  = "/pb.Daemon/GetRestrictedLogStrings"
 	Daemon_InjectVpnConnectionError_FullMethodName = "/pb.Daemon/InjectVpnConnectionError"
 	Daemon_CollectDiagnostics_FullMethodName       = "/pb.Daemon/CollectDiagnostics"
 )
@@ -137,6 +138,7 @@ type DaemonClient interface {
 	Ping(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PingResponse, error)
 	ReportUIEvent(ctx context.Context, in *UIEvent, opts ...grpc.CallOption) (*Payload, error)
 	SubscribeToStateChanges(ctx context.Context, in *Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[AppState], error)
+	GetRestrictedLogStrings(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*LogSanitizationEvent, error)
 	// InjectVpnConnectionError is a DEV-only endpoint that injects a simulated ENS event
 	InjectVpnConnectionError(ctx context.Context, in *InjectVpnConnectionErrorRequest, opts ...grpc.CallOption) (*Payload, error)
 	// ==================== Diagnostics ====================
@@ -668,6 +670,16 @@ func (c *daemonClient) SubscribeToStateChanges(ctx context.Context, in *Empty, o
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Daemon_SubscribeToStateChangesClient = grpc.ServerStreamingClient[AppState]
 
+func (c *daemonClient) GetRestrictedLogStrings(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*LogSanitizationEvent, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LogSanitizationEvent)
+	err := c.cc.Invoke(ctx, Daemon_GetRestrictedLogStrings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *daemonClient) InjectVpnConnectionError(ctx context.Context, in *InjectVpnConnectionErrorRequest, opts ...grpc.CallOption) (*Payload, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Payload)
@@ -762,6 +774,7 @@ type DaemonServer interface {
 	Ping(context.Context, *Empty) (*PingResponse, error)
 	ReportUIEvent(context.Context, *UIEvent) (*Payload, error)
 	SubscribeToStateChanges(*Empty, grpc.ServerStreamingServer[AppState]) error
+	GetRestrictedLogStrings(context.Context, *Empty) (*LogSanitizationEvent, error)
 	// InjectVpnConnectionError is a DEV-only endpoint that injects a simulated ENS event
 	InjectVpnConnectionError(context.Context, *InjectVpnConnectionErrorRequest) (*Payload, error)
 	// ==================== Diagnostics ====================
@@ -922,6 +935,9 @@ func (UnimplementedDaemonServer) ReportUIEvent(context.Context, *UIEvent) (*Payl
 }
 func (UnimplementedDaemonServer) SubscribeToStateChanges(*Empty, grpc.ServerStreamingServer[AppState]) error {
 	return status.Errorf(codes.Unimplemented, "method SubscribeToStateChanges not implemented")
+}
+func (UnimplementedDaemonServer) GetRestrictedLogStrings(context.Context, *Empty) (*LogSanitizationEvent, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRestrictedLogStrings not implemented")
 }
 func (UnimplementedDaemonServer) InjectVpnConnectionError(context.Context, *InjectVpnConnectionErrorRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InjectVpnConnectionError not implemented")
@@ -1811,6 +1827,24 @@ func _Daemon_SubscribeToStateChanges_Handler(srv interface{}, stream grpc.Server
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type Daemon_SubscribeToStateChangesServer = grpc.ServerStreamingServer[AppState]
 
+func _Daemon_GetRestrictedLogStrings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DaemonServer).GetRestrictedLogStrings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Daemon_GetRestrictedLogStrings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DaemonServer).GetRestrictedLogStrings(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Daemon_InjectVpnConnectionError_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(InjectVpnConnectionErrorRequest)
 	if err := dec(in); err != nil {
@@ -2030,6 +2064,10 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReportUIEvent",
 			Handler:    _Daemon_ReportUIEvent_Handler,
+		},
+		{
+			MethodName: "GetRestrictedLogStrings",
+			Handler:    _Daemon_GetRestrictedLogStrings_Handler,
 		},
 		{
 			MethodName: "InjectVpnConnectionError",
