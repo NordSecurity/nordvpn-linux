@@ -22,7 +22,11 @@ final class InfoPopup extends Popup {
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: theme.verticalElementSpacing,
       children: [
-        RichTextMarkdownLinks(text: message(ref), style: theme.textSecondary),
+        RichTextMarkdownLinks(
+          text: message(ref),
+          style: theme.textSecondary,
+          onLinkTap: () => infoMetadata.onLinkTap?.call(ref),
+        ),
         Align(alignment: Alignment.centerRight, child: _closeButton(context)),
       ],
     );

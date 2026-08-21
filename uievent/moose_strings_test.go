@@ -205,6 +205,34 @@ func TestProtoToMooseStrings(t *testing.T) {
 				ItemValue:     "",
 			},
 		},
+		{
+			name: "session limit popup shown",
+			input: &pb.UIEvent{
+				FormReference: pb.UIEvent_GUI,
+				ItemName:      pb.UIEvent_SESSION_LIMIT,
+				ItemType:      pb.UIEvent_SHOW,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "gui",
+				ItemName:      "session_limit",
+				ItemType:      "show",
+				ItemValue:     "",
+			},
+		},
+		{
+			name: "session limit learn more clicked",
+			input: &pb.UIEvent{
+				FormReference: pb.UIEvent_SESSION_LIMIT_NOTIFICATION,
+				ItemName:      pb.UIEvent_LEARN_MORE,
+				ItemType:      pb.UIEvent_CLICK,
+			},
+			expected: events.UiItemsAction{
+				FormReference: "session_limit",
+				ItemName:      "learn_more",
+				ItemType:      "click",
+				ItemValue:     "",
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -226,6 +254,7 @@ func TestFormReferenceToString(t *testing.T) {
 		{pb.UIEvent_HOME_SCREEN, "home_screen"},
 		{pb.UIEvent_GUI, "gui"},
 		{pb.UIEvent_CONNECTION_INFO, "connection_info"},
+		{pb.UIEvent_SESSION_LIMIT_NOTIFICATION, "session_limit"},
 	}
 
 	for _, tt := range tests {
@@ -256,6 +285,8 @@ func TestItemNameToString(t *testing.T) {
 		{pb.UIEvent_GET_HELP, "help"},
 		{pb.UIEvent_OPEN_APP, "open_app"},
 		{pb.UIEvent_DOWNLOAD_APP, "download_app"},
+		{pb.UIEvent_SESSION_LIMIT, "session_limit"},
+		{pb.UIEvent_LEARN_MORE, "learn_more"},
 	}
 
 	for _, tt := range tests {
@@ -273,6 +304,7 @@ func TestItemTypeToString(t *testing.T) {
 	}{
 		{pb.UIEvent_ITEM_TYPE_UNSPECIFIED, ""},
 		{pb.UIEvent_CLICK, "click"},
+		{pb.UIEvent_SHOW, "show"},
 	}
 
 	for _, tt := range tests {

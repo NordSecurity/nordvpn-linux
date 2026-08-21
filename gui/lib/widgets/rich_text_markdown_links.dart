@@ -9,8 +9,16 @@ import 'package:url_launcher/url_launcher.dart';
 class RichTextMarkdownLinks extends StatefulWidget {
   final String text;
   final TextStyle? style;
+  // Invoke on clicked link before it is launched.
+  // The URL is launched regardless of this callback.
+  final VoidCallback? onLinkTap;
 
-  const RichTextMarkdownLinks({super.key, required this.text, this.style});
+  const RichTextMarkdownLinks({
+    super.key,
+    required this.text,
+    this.style,
+    this.onLinkTap,
+  });
 
   @override
   State<RichTextMarkdownLinks> createState() => _RichTextMarkdownLinksState();
@@ -66,6 +74,7 @@ class _RichTextMarkdownLinksState extends State<RichTextMarkdownLinks> {
 
       final tap = TapGestureRecognizer()
         ..onTap = () async {
+          widget.onLinkTap?.call();
           final uri = Uri.parse(url);
           if (!await canLaunchUrl(uri)) {
             logger.e("failed to launch $uri");

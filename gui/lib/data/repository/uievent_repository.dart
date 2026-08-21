@@ -27,6 +27,20 @@ class UiEventRepository {
     formReference: UIEvent_FormReference.CONNECTION_INFO,
     itemName: UIEvent_ItemName.GET_HELP,
   );
+
+  void reportSessionLimitShown() => reportUIEvent(
+    _client,
+    formReference: UIEvent_FormReference.GUI,
+    itemName: UIEvent_ItemName.SESSION_LIMIT,
+    itemType: UIEvent_ItemType.SHOW,
+  );
+
+  void reportSessionLimitLearnMore() => reportUIEvent(
+    _client,
+    formReference: UIEvent_FormReference.SESSION_LIMIT_NOTIFICATION,
+    itemName: UIEvent_ItemName.LEARN_MORE,
+    itemType: UIEvent_ItemType.CLICK,
+  );
 }
 
 @Riverpod(keepAlive: true)
