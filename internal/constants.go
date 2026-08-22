@@ -154,6 +154,9 @@ var (
 	// LogLevelFile defines the path to the runtime log level control file
 	LogLevelFile = filepath.Join(RunDir, "loglevel")
 
+	// TelioLogLevelFile defines the path to telio log level control file
+	TelioLogLevelFile = filepath.Join(RunDir, "teliologlevel")
+
 	FileshareBinaryPath = filepath.Join(AppDataPathStatic, Fileshare)
 
 	NorduserdBinaryPath = filepath.Join(AppDataPathStatic, Norduserd)
