@@ -47,7 +47,7 @@ abstract class ApplicationSettings with _$ApplicationSettings {
             settings.autoConnectData.hasServerGroup())) {
       final countryCode = settings.autoConnectData.countryCode;
       autoConnectData = ConnectArguments(
-        country: countryCode.isNotEmpty ? Country.fromCode(countryCode) : null,
+        country: countryCode.isNotEmpty ? Country.fromCodeOrName(countryCode) : null,
         city: settings.autoConnectData.city.isNotEmpty
             ? City(settings.autoConnectData.city)
             : null,

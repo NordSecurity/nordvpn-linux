@@ -131,7 +131,7 @@ class VpnStatusController extends _$VpnStatusController
     final vpnStatus = state.value!.copyWith(
       ip: status.ip.isNotEmpty ? status.ip : null,
       hostname: status.hostname.isNotEmpty ? status.hostname : null,
-      country: status.hasCountry() ? Country.fromCode(status.country) : null,
+      country: status.hasCountry() ? Country.fromCodeOrName(status.country) : null,
       city: status.city.isNotEmpty ? City(status.city) : null,
       status: status.state,
       isVirtualLocation: status.virtualLocation,

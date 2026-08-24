@@ -29,7 +29,7 @@ abstract class VpnStatus with _$VpnStatus {
       hostname: status.hostname,
       city: status.city.isNotEmpty ? City(status.city) : null,
       country: status.country.isNotEmpty
-          ? Country.fromCode(status.country)
+          ? Country.fromCodeOrName(status.country)
           : null,
       status: status.state,
       protocol: convertToVpnProtocol(status.technology, status.protocol),

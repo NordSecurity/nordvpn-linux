@@ -29,7 +29,7 @@ void main() {
 
     test('Convert from country code', () async {
       expect(
-        ConnectArguments(country: Country.fromCode("DE")).toConnectRequest(),
+        ConnectArguments(country: Country.fromCodeOrName("DE")).toConnectRequest(),
         ConnectRequest(serverTag: "de"),
       );
     });
@@ -37,7 +37,7 @@ void main() {
     test('Convert from country code and city name', () async {
       expect(
         ConnectArguments(
-          country: Country.fromCode("DE"),
+          country: Country.fromCodeOrName("DE"),
           city: City("Berlin"),
         ).toConnectRequest(),
         ConnectRequest(serverTag: "de berlin"),
@@ -56,7 +56,7 @@ void main() {
     test('Convert for specialty group and country', () async {
       expect(
         ConnectArguments(
-          country: Country.fromCode("DE"),
+          country: Country.fromCodeOrName("DE"),
           city: City("Berlin"),
           specialtyGroup: ServerType.p2p,
         ).toConnectRequest(),

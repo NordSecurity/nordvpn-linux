@@ -57,7 +57,7 @@ final class RecentConnectionsItemFactory {
 
     // handle country-based images (works for both specialty and standard servers)
     if (isCountry) {
-      return imagesManager.forCountry(Country.fromCode(model.countryCode));
+      return imagesManager.forCountry(Country.fromCodeOrName(model.countryCode));
     }
 
     // fallback: try to get specialty server image or default icon
@@ -75,7 +75,7 @@ final class RecentConnectionsItemFactory {
     if (isSpecialtyServer) {
       var specialtyTitle = Text(model.specialtyServer, style: appTheme.body);
       if (model.country.isNotEmpty) {
-        final country = Country.fromCode(model.countryCode);
+        final country = Country.fromCodeOrName(model.countryCode);
         var subtitle = country.localizedName;
         final city = model.city;
         subtitle +=
@@ -109,7 +109,7 @@ final class RecentConnectionsItemFactory {
         model.connectionType == ServerSelectionRule.CITY;
 
     if (isCity) {
-      final country = Country.fromCode(model.countryCode);
+      final country = Country.fromCodeOrName(model.countryCode);
       final city = City(model.city);
       final cityText = _maybeAddVirtualLabel(
         city.localizedName,
@@ -130,7 +130,7 @@ final class RecentConnectionsItemFactory {
         model.connectionType == ServerSelectionRule.SPECIFIC_SERVER;
 
     if (isSpecificServer) {
-      final country = Country.fromCode(model.countryCode);
+      final country = Country.fromCodeOrName(model.countryCode);
       final serverId = model.serverId;
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,7 +146,7 @@ final class RecentConnectionsItemFactory {
       );
     }
 
-    final country = Country.fromCode(model.countryCode);
+    final country = Country.fromCodeOrName(model.countryCode);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -177,7 +177,7 @@ final class RecentConnectionsItemFactory {
     } else {
       Country? country;
       if (model.countryCode.isNotEmpty) {
-        country = Country.fromCode(model.countryCode);
+        country = Country.fromCodeOrName(model.countryCode);
       }
       return ConnectArguments(
         country: country,
