@@ -33,6 +33,7 @@ final class SettingsHomeScreen extends StatelessWidget {
           case _SettingsGroups.vpnConnection:
             return SettingsWrapperWidget.buildListItem(
               context,
+              key: const Key("settingsVpnConnectionItem"),
               iconName: "settings_connection.svg",
               title: t.ui.vpnConnection,
               subtitle: t.ui.vpnConnectionSubtitle,

@@ -43,7 +43,6 @@ class _InteractiveListViewState extends State<InteractiveListView> {
   final _searchController = TextEditingController();
   final _searchFieldNodeFocus = FocusNode();
 
-  // The controller actually in use (parent-provided or our own).
   TextEditingController get _activeController =>
       widget.searchTextController ?? _searchController;
 
