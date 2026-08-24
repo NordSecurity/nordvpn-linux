@@ -47,7 +47,7 @@ class VpnSettingsController extends _$VpnSettingsController
     // We need to check VPN status here because protocol change requires
     // a different flow: store pending protocol and show confirmation popup.
     // The daemon doesn't return vpnIsRunning for protocol changes.
-    final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
+    final vpnStatus = ref.read(vpnStatusControllerProvider).value;
     if (vpnStatus != null) {
       if (vpnStatus.isConnected() || vpnStatus.isPaused()) {
         // VPN is connected - store pending protocol and show popup
@@ -113,7 +113,7 @@ class VpnSettingsController extends _$VpnSettingsController
     // (IsVPNActive()=false), so _setValue skips the popup (success is in the
     // ignore list). Show the popup explicitly here.
     if (status == DaemonStatusCode.success) {
-      final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
+      final vpnStatus = ref.read(vpnStatusControllerProvider).value;
       if (vpnStatus != null && vpnStatus.isPaused()) {
         ref
             .read(popupsProvider.notifier)
@@ -220,7 +220,7 @@ class VpnSettingsController extends _$VpnSettingsController
     if (address.isEmpty) {
       return DaemonStatusCode.invalidDnsAddress;
     }
-    List<String> dnsServers = [...?state.valueOrNull?.customDnsServers];
+    List<String> dnsServers = [...?state.value?.customDnsServers];
     if (dnsServers.contains(address)) {
       return DaemonStatusCode.alreadyExists;
     }
@@ -233,7 +233,7 @@ class VpnSettingsController extends _$VpnSettingsController
     if (address.isEmpty) {
       return DaemonStatusCode.invalidDnsAddress;
     }
-    final dnsServers = [...?state.valueOrNull?.customDnsServers];
+    final dnsServers = [...?state.value?.customDnsServers];
     if (!dnsServers.contains(address)) {
       return DaemonStatusCode.nothingToDo;
     }
@@ -279,7 +279,7 @@ class VpnSettingsController extends _$VpnSettingsController
     // (IsVPNActive()=false), so _setValue skips the popup (success is in the
     // ignore list). Show the popup explicitly here.
     if (status == DaemonStatusCode.success) {
-      final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
+      final vpnStatus = ref.read(vpnStatusControllerProvider).value;
       if (vpnStatus != null && vpnStatus.isPaused()) {
         ref
             .read(popupsProvider.notifier)

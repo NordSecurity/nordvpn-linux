@@ -20,7 +20,7 @@ part 'vpn_status_controller.g.dart';
 typedef _VpnRepoFn = Future<int> Function(VpnRepository);
 
 /// Handles the VPN connection functionality
-@riverpod
+@Riverpod(keepAlive: true)
 class VpnStatusController extends _$VpnStatusController
     implements VpnStatusObserver, PauseEventsObserver {
   @override
@@ -89,6 +89,8 @@ class VpnStatusController extends _$VpnStatusController
     if (status == DaemonStatusCode.failure) {
       status = DaemonStatusCode.failedToConnectToVpn;
     }
+
+    if (!ref.mounted) return status;
 
     ref.read(popupsProvider.notifier).show(status);
     return status;

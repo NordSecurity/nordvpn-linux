@@ -6,22 +6,52 @@ part of 'vpn_settings_repository.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$vpnSettingsHash() => r'c4ee594879dba1d6bad0717c5eca821b255a38d6';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [vpnSettings].
 @ProviderFor(vpnSettings)
-final vpnSettingsProvider = Provider<VpnSettingsRepository>.internal(
-  vpnSettings,
-  name: r'vpnSettingsProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$vpnSettingsHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+final vpnSettingsProvider = VpnSettingsProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef VpnSettingsRef = ProviderRef<VpnSettingsRepository>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class VpnSettingsProvider
+    extends
+        $FunctionalProvider<
+          VpnSettingsRepository,
+          VpnSettingsRepository,
+          VpnSettingsRepository
+        >
+    with $Provider<VpnSettingsRepository> {
+  VpnSettingsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'vpnSettingsProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$vpnSettingsHash();
+
+  @$internal
+  @override
+  $ProviderElement<VpnSettingsRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  VpnSettingsRepository create(Ref ref) {
+    return vpnSettings(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(VpnSettingsRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<VpnSettingsRepository>(value),
+    );
+  }
+}
+
+String _$vpnSettingsHash() => r'c4ee594879dba1d6bad0717c5eca821b255a38d6';
