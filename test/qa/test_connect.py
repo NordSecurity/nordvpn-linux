@@ -602,13 +602,14 @@ def test_obfuscation_prevents_virtual_location_connection(tech, proto, obfuscate
 
     assert "The specified server is not available at the moment or does not support your connection settings." in ex.value.stdout.decode(), "Should show server unavailable error"
 
-ENS_CONN_LIMIT_REACHED = 2
-ENS_CONN_LIMIT_REACHED_MSG = "Too many connection attempts. Wait a while before trying again. Retrying now can make the waiting period longer. If the issue persists, check our help guide for other possible causes: https://support.nordvpn.com/hc/en-us/articles/47181405478417-I-get-the-Session-Limit-Reached-error-on-NordVPN?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=ens_error-session_limit&nm=app&ns=nordvpn-linux-cli&nc=ens_error-session_limit"
+
 @pytest.mark.parametrize(("reconnect", "pause"), [(True, True), (True, False), (False, False)])
 def test_ens_connection_limit(reconnect: bool, pause: bool):
     """Test ENS connection limit"""
     if "dev" not in sh.nordvpn.version():
         pytest.skip("can run only for dev builds")
+
+    ens_conn_limit_reached = 2
 
     sh.nordvpn.set.technology("nordlynx")
 
@@ -621,7 +622,7 @@ def test_ens_connection_limit(reconnect: bool, pause: bool):
 
         with grpc.insecure_channel(NORDVPND_SOCKET) as channel:
             stub = service_pb2_grpc.DaemonStub(channel)
-            stub.InjectVpnConnectionError(common_pb2.InjectVpnConnectionErrorRequest(telio_code=ENS_CONN_LIMIT_REACHED))
+            stub.InjectVpnConnectionError(common_pb2.InjectVpnConnectionErrorRequest(telio_code=ens_conn_limit_reached))
 
         if pause:
             while any(state in sh.nordvpn.status() for state in ["Pause", "Connecting"]):
@@ -629,7 +630,17 @@ def test_ens_connection_limit(reconnect: bool, pause: bool):
         else:
             with pytest.raises(sh.ErrorReturnCode_1) as ex:
                 sh.nordvpn.connect()
-            assert ENS_CONN_LIMIT_REACHED_MSG in ex.value.stdout.decode("utf-8"), "Wrong error message"
+
+            ens_conn_limit_reached_msg = (
+                "Too many connection attempts. Wait a while before trying again. "
+                "Retrying now can make the waiting period longer. If the issue persists, "
+                "check our help guide for other possible causes: "
+                "https://support.nordvpn.com/hc/en-us/articles/47181405478417-"
+                "I-get-the-Session-Limit-Reached-error-on-NordVPN?"
+                "utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=ens_error-session_limit&"
+                "nm=app&ns=nordvpn-linux-cli&nc=ens_error-session_limit"
+            )
+            assert ens_conn_limit_reached_msg in ex.value.stdout.decode("utf-8"), "Wrong error message"
 
         assert "Disconnected" in sh.nordvpn.status(), "Wrong status"
         assert network.is_available(), "Network should be available"
