@@ -1504,17 +1504,14 @@ class Translations$ui$en {
 	/// en: 'Disable internet access if the VPN connection drops to secure your data from accidental exposure.'
 	String get killSwitchDescription => 'Disable internet access if the VPN connection drops to secure your data from accidental exposure.';
 
-	/// en: 'Threat Protection Lite'
-	String get tpLite => 'Threat Protection Lite';
+	/// en: 'Real-time protection'
+	String get realTimeProtection => 'Real-time protection';
 
-	/// en: 'When you're connected to VPN, DNS filtering blocks ads and malicious domains before any threats reach your device.'
-	String get tpLiteDescription => 'When you\'re connected to VPN, DNS filtering blocks ads and malicious domains before any threats reach your device.';
+	/// en: 'Stop online scams and phishing attempts'
+	String get realTimeProtectionSubtitle => 'Stop online scams and phishing attempts';
 
-	/// en: 'Enabling Threat Protection Lite will result in the removal of the custom DNS configuration. Continue?'
-	String get tpLiteWillDisableDns => 'Enabling Threat Protection Lite will result in the removal of the custom DNS configuration. Continue?';
-
-	/// en: 'Enabling custom DNS configuration will result in the removal of the Threat Protection Lite. Continue?'
-	String get customDnsWillDisableTpLite => 'Enabling custom DNS configuration will result in the removal of the Threat Protection Lite. Continue?';
+	/// en: 'Stops online scams and phishing attempts while you’re connected to the VPN.'
+	String get realTimeProtectionDescription => 'Stops online scams and phishing attempts while you’re connected to the VPN.';
 
 	/// en: 'Add custom DNS'
 	String get addCustomDns => 'Add custom DNS';
@@ -1696,12 +1693,6 @@ class Translations$ui$en {
 	/// en: 'Allowlist, DNS, LAN discovery, obfuscation, firewall'
 	String get securityAndPrivacySubtitle => 'Allowlist, DNS, LAN discovery, obfuscation, firewall';
 
-	/// en: 'Threat Protection'
-	String get threatProtection => 'Threat Protection';
-
-	/// en: 'Blocks harmful websites, ads, and trackers'
-	String get threatProtectionSubtitle => 'Blocks harmful websites, ads, and trackers';
-
 	/// en: 'Appearance'
 	String get appearance => 'Appearance';
 
@@ -1813,23 +1804,20 @@ class Translations$ui$en {
 	/// en: 'To activate custom DNS, add at least one DNS server.'
 	String get addCustomDnsDescription => 'To activate custom DNS, add at least one DNS server.';
 
-	/// en: 'Blocks dangerous websites and flashy ads at the domain level. Works only when you’re connected to a VPN.'
-	String get threatProtectionDescription => 'Blocks dangerous websites and flashy ads at the domain level. Works only when you’re connected to a VPN.';
+	/// en: 'Turn off custom DNS?'
+	String get realTimeDisableCustomDNS => 'Turn off custom DNS?';
 
-	/// en: 'Custom DNS will be reset'
-	String get resetCustomDns => 'Custom DNS will be reset';
-
-	/// en: 'Turning on Threat Protection will set your custom DNS settings to default. Continue anyway?'
-	String get resetCustomDnsDescription => 'Turning on Threat Protection will set your custom DNS settings to default. Continue anyway?';
+	/// en: 'Real-time protection works with our default DNS servers only.'
+	String get realTimeDisableCustomDNSDescription => 'Real-time protection works with our default DNS servers only.';
 
 	/// en: 'Continue'
 	String get continueWord => 'Continue';
 
-	/// en: 'Threat Protection will be turned off'
-	String get threatProtectionWillTurnOff => 'Threat Protection will be turned off';
+	/// en: 'Scam and phishing protection will be turned off'
+	String get realTimeProtectionWillTurnOff => 'Scam and phishing protection will be turned off';
 
-	/// en: 'Threat Protection works only with the default DNS. Set a custom DNS server anyway?'
-	String get threatProtectionWillTurnOffDescription => 'Threat Protection works only with the default DNS. Set a custom DNS server anyway?';
+	/// en: 'Scam and phishing protection works only with the default DNS. Set a custom DNS server anyway?'
+	String get realTimeProtectionWillTurnOffDescription => 'Scam and phishing protection works only with the default DNS. Set a custom DNS server anyway?';
 
 	/// en: 'Set custom DNS'
 	String get setCustomDns => 'Set custom DNS';
@@ -2710,10 +2698,9 @@ extension on Translations {
 			'ui.confirm' => 'Confirm',
 			'ui.cancel' => 'Cancel',
 			'ui.killSwitchDescription' => 'Disable internet access if the VPN connection drops to secure your data from accidental exposure.',
-			'ui.tpLite' => 'Threat Protection Lite',
-			'ui.tpLiteDescription' => 'When you\'re connected to VPN, DNS filtering blocks ads and malicious domains before any threats reach your device.',
-			'ui.tpLiteWillDisableDns' => 'Enabling Threat Protection Lite will result in the removal of the custom DNS configuration. Continue?',
-			'ui.customDnsWillDisableTpLite' => 'Enabling custom DNS configuration will result in the removal of the Threat Protection Lite. Continue?',
+			'ui.realTimeProtection' => 'Real-time protection',
+			'ui.realTimeProtectionSubtitle' => 'Stop online scams and phishing attempts',
+			'ui.realTimeProtectionDescription' => 'Stops online scams and phishing attempts while you’re connected to the VPN.',
 			'ui.addCustomDns' => 'Add custom DNS',
 			'ui.addPort' => 'Add port',
 			'ui.addPortRange' => 'Add port range',
@@ -2751,9 +2738,9 @@ extension on Translations {
 			'ui.searchServersHint' => 'Search countries, cities, or servers',
 			'ui.citiesAvailable' => ({required Object n}) => '${n} cities available',
 			'ui.virtual' => 'Virtual',
+			'ui.dedicatedIp' => 'Dedicated IP',
 			_ => null,
 		} ?? switch (path) {
-			'ui.dedicatedIp' => 'Dedicated IP',
 			'ui.dedicatedServer' => 'Dedicated Server',
 			'ui.doubleVpn' => 'Double VPN',
 			'ui.onionOverVpn' => 'Onion over VPN',
@@ -2775,8 +2762,6 @@ extension on Translations {
 			'ui.servers' => 'Servers',
 			'ui.securityAndPrivacy' => 'Security and privacy',
 			'ui.securityAndPrivacySubtitle' => 'Allowlist, DNS, LAN discovery, obfuscation, firewall',
-			'ui.threatProtection' => 'Threat Protection',
-			'ui.threatProtectionSubtitle' => 'Blocks harmful websites, ads, and trackers',
 			'ui.appearance' => 'Appearance',
 			'ui.light' => 'Light',
 			'ui.dark' => 'Dark',
@@ -2814,12 +2799,11 @@ extension on Translations {
 			'ui.addUpTo3DnsServers' => 'Add up to 3 DNS servers',
 			'ui.nothingHereYet' => 'Nothing here yet',
 			'ui.addCustomDnsDescription' => 'To activate custom DNS, add at least one DNS server.',
-			'ui.threatProtectionDescription' => 'Blocks dangerous websites and flashy ads at the domain level. Works only when you’re connected to a VPN.',
-			'ui.resetCustomDns' => 'Custom DNS will be reset',
-			'ui.resetCustomDnsDescription' => 'Turning on Threat Protection will set your custom DNS settings to default. Continue anyway?',
+			'ui.realTimeDisableCustomDNS' => 'Turn off custom DNS?',
+			'ui.realTimeDisableCustomDNSDescription' => 'Real-time protection works with our default DNS servers only.',
 			'ui.continueWord' => 'Continue',
-			'ui.threatProtectionWillTurnOff' => 'Threat Protection will be turned off',
-			'ui.threatProtectionWillTurnOffDescription' => 'Threat Protection works only with the default DNS. Set a custom DNS server anyway?',
+			'ui.realTimeProtectionWillTurnOff' => 'Scam and phishing protection will be turned off',
+			'ui.realTimeProtectionWillTurnOffDescription' => 'Scam and phishing protection works only with the default DNS. Set a custom DNS server anyway?',
 			'ui.setCustomDns' => 'Set custom DNS',
 			'ui.turnOffCustomDns' => 'Turn off custom DNS?',
 			'ui.turnOffCustomDnsDescription' => 'This will remove all your previously added DNS servers.',

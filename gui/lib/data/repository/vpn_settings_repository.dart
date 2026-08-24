@@ -203,7 +203,7 @@ class VpnSettingsRepository {
     return result.type.toInt();
   }
 
-  Future<int> setThreatProtection(bool value) async {
+  Future<int> setRealTimeProtection(bool value) async {
     final response = await _client.setThreatProtectionLite(
       SetThreatProtectionLiteRequest(threatProtectionLite: value),
     );

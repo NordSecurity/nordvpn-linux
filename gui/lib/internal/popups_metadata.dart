@@ -34,33 +34,33 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       },
     ),
 
-    // Enabling Custom DNS - Turn off Threat Protection?
-    PopupCodes.turnOffThreatProtection => DecisionPopupMetadata(
-      id: PopupCodes.turnOffThreatProtection,
-      title: t.ui.threatProtectionWillTurnOff,
-      message: (_) => t.ui.threatProtectionWillTurnOffDescription,
+    // Enabling Custom DNS - Turn off Real time Protection?
+    PopupCodes.turnOffRealTimeProtection => DecisionPopupMetadata(
+      id: PopupCodes.turnOffRealTimeProtection,
+      title: t.ui.realTimeProtectionWillTurnOff,
+      message: (_) => t.ui.realTimeProtectionWillTurnOffDescription,
       noButtonText: t.ui.cancel,
       yesButtonText: t.ui.setCustomDns,
       yesAction: (ref) async {
-        await ref
+        ref
             .read(vpnSettingsControllerProvider.notifier)
-            .setThreatProtection(false);
+            .setRealTimeProtection(false);
         ref.read(vpnSettingsControllerProvider.notifier).setCustomDns(true);
       },
     ),
 
-    // Enabling Threat Protection - Turn off Custom DNS?
-    PopupCodes.resetCustomDns => DecisionPopupMetadata(
-      id: PopupCodes.resetCustomDns,
-      title: t.ui.resetCustomDns,
-      message: (_) => t.ui.resetCustomDnsDescription,
+    // Enabling Real time Protection - Turn off Custom DNS?
+    PopupCodes.realTimeDisableCustomDNS => DecisionPopupMetadata(
+      id: PopupCodes.realTimeDisableCustomDNS,
+      title: t.ui.realTimeDisableCustomDNS,
+      message: (_) => t.ui.realTimeDisableCustomDNSDescription,
       noButtonText: t.ui.cancel,
-      yesButtonText: t.ui.continueWord,
+      yesButtonText: t.ui.turnOff,
       yesAction: (ref) async {
         ref.read(vpnSettingsControllerProvider.notifier).setCustomDns(false);
         await ref
             .read(vpnSettingsControllerProvider.notifier)
-            .setThreatProtection(true);
+            .setRealTimeProtection(true);
       },
     ),
 

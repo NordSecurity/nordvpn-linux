@@ -78,7 +78,9 @@ final class RecentConnectionsItemFactory {
 
     // handle country-based images (works for both specialty and standard servers)
     if (isCountry) {
-      return imagesManager.forCountry(Country.fromCodeOrName(model.countryCode));
+      return imagesManager.forCountry(
+        Country.fromCodeOrName(model.countryCode),
+      );
     }
 
     // fallback: try to get specialty server image or default icon

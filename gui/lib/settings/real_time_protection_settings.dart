@@ -12,8 +12,8 @@ import 'package:nordvpn/widgets/custom_error_widget.dart';
 import 'package:nordvpn/widgets/loading_indicator.dart';
 import 'package:nordvpn/widgets/on_off_switch.dart';
 
-class ThreatProtectionSettings extends ConsumerWidget {
-  const ThreatProtectionSettings({super.key});
+class RealTimeProtectionSettings extends ConsumerWidget {
+  const RealTimeProtectionSettings({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -36,7 +36,9 @@ class ThreatProtectionSettings extends ConsumerWidget {
       // Custom DNS first - ask the user and don't allow to switch TP here (it
       // will be done in popup)
       if (toValue && settings.customDnsServers.isNotEmpty) {
-        ref.read(popupsProvider.notifier).show(PopupCodes.resetCustomDns);
+        ref
+            .read(popupsProvider.notifier)
+            .show(PopupCodes.realTimeDisableCustomDNS);
         return false;
       }
 
@@ -47,25 +49,25 @@ class ThreatProtectionSettings extends ConsumerWidget {
     Future<void> onChanged(bool value) async {
       await ref
           .read(vpnSettingsControllerProvider.notifier)
-          .setThreatProtection(value);
+          .setRealTimeProtection(value);
     }
 
     return SettingsWrapperWidget(
       itemsCount: 1,
       itemBuilder: (context, index) {
         return AccessibleItem(
-          toggled: settings.threatProtection,
+          toggled: settings.realTimeProtection,
           label:
-              '${t.ui.threatProtection}. ${t.ui.threatProtectionDescription}',
+              '${t.ui.realTimeProtection}. ${t.ui.realTimeProtectionDescription}',
           onActivate: () => unawaited(
-            _activate(settings.threatProtection, shouldChange, onChanged),
+            _activate(settings.realTimeProtection, shouldChange, onChanged),
           ),
           child: SettingsWrapperWidget.buildListItem(
             context,
-            title: t.ui.threatProtection,
-            subtitle: t.ui.threatProtectionDescription,
+            title: t.ui.realTimeProtection,
+            subtitle: t.ui.realTimeProtectionDescription,
             trailing: OnOffSwitch(
-              value: settings.threatProtection,
+              value: settings.realTimeProtection,
               shouldChange: shouldChange,
               onChanged: onChanged,
             ),

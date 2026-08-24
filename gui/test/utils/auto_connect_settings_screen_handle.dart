@@ -8,7 +8,9 @@ final class AutoConnectSettingsScreenHandle extends ScreenHandle {
   AutoConnectSettingsScreenHandle(super.app);
 
   bool isSecureMyConnectionButtonEnabled() {
-    final widget = app.tester.widget<LoadingElevatedButton>(secureMyConnectionButton());
+    final widget = app.tester.widget<LoadingElevatedButton>(
+      secureMyConnectionButton(),
+    );
     return widget.onPressed != null;
   }
 

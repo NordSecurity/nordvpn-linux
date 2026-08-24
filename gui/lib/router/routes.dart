@@ -17,7 +17,7 @@ import 'package:nordvpn/settings/general_settings.dart';
 import 'package:nordvpn/settings/security_and_privacy_settings.dart';
 import 'package:nordvpn/settings/settings_home_screen.dart';
 import 'package:nordvpn/settings/terms_screen.dart';
-import 'package:nordvpn/settings/threat_protection_settings.dart';
+import 'package:nordvpn/settings/real_time_protection_settings.dart';
 import 'package:nordvpn/settings/vpn_connection_settings.dart';
 import 'package:nordvpn/vpn/vpn.dart';
 import 'package:nordvpn/widgets/widgets_showcase.dart';
@@ -37,7 +37,7 @@ enum AppRoute {
   settingsSecurityAndPrivacy,
   settingsAllowList,
   settingsCustomDns,
-  settingsThreatProtection,
+  settingsRealTimeProtection,
   settingsAccount,
   settingsTerms,
 
@@ -59,7 +59,7 @@ enum AppRoute {
       AppRoute.settingsSecurityAndPrivacy => "/settings/security-privacy",
       AppRoute.settingsAllowList => "/settings/security-privacy/allow-list",
       AppRoute.settingsCustomDns => "/settings/security-privacy/custom-dns",
-      AppRoute.settingsThreatProtection => "/settings/threat-protection",
+      AppRoute.settingsRealTimeProtection => "/settings/real-time-protection",
       AppRoute.settingsAccount => "/settings/account",
       AppRoute.settingsTerms => "/settings/terms",
       AppRoute.showcase => "/showcase",
@@ -189,10 +189,10 @@ List<RouteBase> configureRoutes() {
     ),
     _routeWithAppScaffold(
       RouteMetadata(
-        route: AppRoute.settingsThreatProtection,
-        screen: const ThreatProtectionSettings(),
+        route: AppRoute.settingsRealTimeProtection,
+        screen: const RealTimeProtectionSettings(),
         isBlocking: false,
-        displayName: t.ui.threatProtection,
+        displayName: t.ui.realTimeProtection,
       ),
     ),
     _routeWithAppScaffold(

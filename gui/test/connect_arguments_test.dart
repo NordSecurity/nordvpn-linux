@@ -29,7 +29,9 @@ void main() {
 
     test('Convert from country code', () async {
       expect(
-        ConnectArguments(country: Country.fromCodeOrName("DE")).toConnectRequest(),
+        ConnectArguments(
+          country: Country.fromCodeOrName("DE"),
+        ).toConnectRequest(),
         ConnectRequest(serverTag: "de"),
       );
     });

@@ -348,8 +348,8 @@ class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
                   ElevatedButton(
                     onPressed: () => ref
                         .read(popupsProvider.notifier)
-                        .show(PopupCodes.turnOffThreatProtection),
-                    child: const Text("Turn off Threat Protection?"),
+                        .show(PopupCodes.turnOffRealTimeProtection),
+                    child: const Text("Turn off real time?"),
                   ),
                   ElevatedButton(
                     onPressed: () => ref

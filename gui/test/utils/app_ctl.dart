@@ -80,7 +80,9 @@ final class AppCtl {
     bool? isVirtualLocation,
     ServerType? group,
   }) async {
-    final countryName = countryCode == null ? null : _countryNameForCode(countryCode);
+    final countryName = countryCode == null
+        ? null
+        : _countryNameForCode(countryCode);
     final status = StatusResponse(
       country: countryName,
       countryCode: countryCode,
@@ -99,7 +101,8 @@ final class AppCtl {
   }
 
   String? _countryNameForCode(String code) {
-    for (final country in daemon.serversList.serversList.servers.serversByCountry) {
+    for (final country
+        in daemon.serversList.serversList.servers.serversByCountry) {
       if (country.countryCode == code) {
         return country.countryName;
       }
@@ -122,8 +125,8 @@ final class AppCtl {
     await tester.pumpAndSettle();
   }
 
-  Future<void> setThreatProtection(bool enabled) async {
-    await appSettings.setSettings(threatProtectionLite: enabled);
+  Future<void> setRealTimeProtection(bool enabled) async {
+    await appSettings.setSettings(realTimeProtection: enabled);
     await refreshAppState();
   }
 
