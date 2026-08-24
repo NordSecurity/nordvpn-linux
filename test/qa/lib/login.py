@@ -32,10 +32,12 @@ def get_credentials(key) -> Credentials:
             token=creds.get("token", None),
             password=creds.get("password", None))
 
+def get_token(username="default"):
+    return get_credentials(username).token
 
 def login_as(username, ssh_client: ssh.Ssh = None, with_user_consent: UserConsentMode = UserConsentMode.ENABLED):
     """login_as specified user, optional SSH connection and option for setting user consent before calling login."""
-    token = get_credentials(username).token
+    token = get_token(username)
 
     logging.log(f"logging in as {token}")
 

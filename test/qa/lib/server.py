@@ -4,7 +4,7 @@ import time
 from urllib.parse import quote
 
 import requests
-from . import shell
+from . import login
 
 TECH_OPENVPN_UDP_OBFUSCATION_ON = 15
 TECH_OPENVPN_UDP_OBFUSCATION_OFF = 3
@@ -150,7 +150,7 @@ def get_server_info(server_name):
 # TODO: LVPN-7744
 def get_dedicated_ip():
     """Returns Dedicated IP server name."""
-    token = shell.sh_no_tty.nordvpn.token().split("\n")[1].split(" ")[1]
+    token = login.get_token()
 
     headers = {'Accept': 'application/json', 'Authorization': 'Bearer token:' + token}
     response = requests.get('https://api.nordvpn.com/v1/users/services', headers=headers, timeout=5)
