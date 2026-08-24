@@ -19,7 +19,14 @@ final class DecisionPopup extends Popup {
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: theme.verticalElementSpacing,
       children: [
-        Text(message(ref), style: theme.textSecondary),
+        Semantics(
+          container: true,
+          child: Text(
+            message(ref),
+            key: Popup.messageKey,
+            style: theme.textSecondary,
+          ),
+        ),
         Row(
           spacing: theme.gapBetweenElements,
           children: [

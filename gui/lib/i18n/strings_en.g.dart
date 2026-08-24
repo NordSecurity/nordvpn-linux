@@ -96,6 +96,9 @@ class Translations$a11y$en {
 
 	/// en: 'Clear'
 	String get clear => 'Clear';
+
+	/// en: '$title. $message'
+	String popupWithContent({required Object title, required Object message}) => '${title}. ${message}';
 }
 
 // Path: cities
@@ -2250,6 +2253,7 @@ extension on Translations {
 			'a11y.expandibleEntryExpanded' => 'Expanded',
 			'a11y.expandibleEntryCollapsed' => 'Collapsed',
 			'a11y.clear' => 'Clear',
+			'a11y.popupWithContent' => ({required Object title, required Object message}) => '${title}. ${message}',
 			'cities.tirana' => 'Tirana',
 			'cities.algiers' => 'Algiers',
 			'cities.addis_ababa' => 'Addis Ababa',
@@ -2747,9 +2751,9 @@ extension on Translations {
 			'ui.searchServersHint' => 'Search countries, cities, or servers',
 			'ui.citiesAvailable' => ({required Object n}) => '${n} cities available',
 			'ui.virtual' => 'Virtual',
-			'ui.dedicatedIp' => 'Dedicated IP',
 			_ => null,
 		} ?? switch (path) {
+			'ui.dedicatedIp' => 'Dedicated IP',
 			'ui.dedicatedServer' => 'Dedicated Server',
 			'ui.doubleVpn' => 'Double VPN',
 			'ui.onionOverVpn' => 'Onion over VPN',
