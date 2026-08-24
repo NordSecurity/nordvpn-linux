@@ -154,6 +154,12 @@ void main() {
           tester.getSemantics(popupSemantics()),
           isSemantics(label: "", scopesRoute: true),
         );
+        // the role:dialog node is the one the screen reader names, and a bare
+        // Text inside the popup would have its label absorbed into it
+        expect(
+          tester.getSemantics(find.byType(Dialog)),
+          isSemantics(label: ""),
+        );
       });
     });
 
@@ -162,6 +168,10 @@ void main() {
         await tester.setupWidgetTest(richPopup());
 
         expect(tester.getSemantics(popupSemantics()), isSemantics(label: ""));
+        expect(
+          tester.getSemantics(find.byType(Dialog)),
+          isSemantics(label: ""),
+        );
       });
     });
   });
@@ -284,9 +294,14 @@ void main() {
       await withSemantics(tester, () async {
         await tester.setupWidgetTest(infoPopup());
 
+        final node = tester.getSemantics(popupMessage());
+        expect(node, isSemantics(label: message));
         expect(
-          tester.getSemantics(popupMessage()),
-          isSemantics(label: message),
+          node.childrenCount,
+          0,
+          reason:
+              "the message must be a leaf node, not a container that "
+              "absorbed the label from an ancestor",
         );
       });
     });
