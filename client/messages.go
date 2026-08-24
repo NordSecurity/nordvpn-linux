@@ -32,7 +32,7 @@ const (
 	UFWDisabledMessage        = "The active UFW firewall on your system prevents us from setting up our firewall properly. We've turned off UFW for the duration of your VPN connection and activated our firewall to ensure your online security. Your custom UFW rules have been imported to our firewall ruleset."
 
 	ENSConnectionLimitReachedSummary  = "Too many connection attempts"
-	ensConnectionLimitReachedTemplate = "%sWait a while before trying again. Retrying now can make the waiting period longer. If the issue persists, check our help guide for other possible causes%s"
+	ensConnectionLimitReachedTemplate = "Wait a while before trying again. Retrying now can make the waiting period longer. If the issue persists, check our help guide for other possible causes"
 
 	SubscriptionURL                 = "https://my.nordaccount.com/plans/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=home-choose_plan&nm=app&ns=nordvpn-linux-cli&nc=home-choose_plan&redirect_uri=nordvpn://claim-online-purchase"
 	SubscriptionURLLogin            = "https://my.nordaccount.com/plans/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=home-choose_plan&nm=app&ns=nordvpn-linux-cli&nc=home-choose_plan&trusted_pass_token=%s&owner_id=%s&redirect_uri=nordvpn://claim-online-purchase"
@@ -48,13 +48,13 @@ func ENSConnectionLimitReached(appID core.AppID) string {
 	switch appID {
 	case core.CLIAppID:
 		cliGuideURL := core.ConnectionLimitReachedGuideURL(appID)
-		return fmt.Sprintf(
+		return fmt.Sprintf("%s. %s: %s",
+			ENSConnectionLimitReachedSummary,
 			ensConnectionLimitReachedTemplate,
-			ENSConnectionLimitReachedSummary+". ",
-			": "+cliGuideURL,
+			cliGuideURL,
 		)
 	case core.TrayAppID:
-		return fmt.Sprintf(ensConnectionLimitReachedTemplate, "", ".")
+		return ensConnectionLimitReachedTemplate + "."
 	default:
 		log.Warn("unknown AppID specified:", appID)
 		return ""
