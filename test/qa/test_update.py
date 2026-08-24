@@ -82,7 +82,7 @@ def setup_function(function):  # noqa: ARG001
         ssh_client.exec_command("nordvpn set mesh on")
         sh.nordvpn.mesh.peer.refresh()
 
-        meshnet.are_peers_connected(ssh_client)
+        meshnet.wait_for_peers_connection(ssh_client)
 
 
 def teardown_function(function):  # noqa: ARG001

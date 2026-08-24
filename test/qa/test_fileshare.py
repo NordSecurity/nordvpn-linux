@@ -55,7 +55,7 @@ def setup_module(module):  # noqa: ARG001
     sh.nordvpn.mesh.peer.refresh()
     ssh_client.exec_command("nordvpn mesh peer refresh")
 
-    meshnet.are_peers_connected(ssh_client)
+    meshnet.wait_for_peers_connection(ssh_client)
 
     if not os.path.exists(workdir):
         os.makedirs(workdir)
