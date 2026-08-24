@@ -51,7 +51,7 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
   @override
   void initState() {
     super.initState();
-    final settings = ref.read(vpnSettingsControllerProvider).valueOrNull;
+    final settings = ref.read(vpnSettingsControllerProvider).value;
     if (settings == null || settings.customDnsServers.isNotEmpty) return;
     // Custom DNS servers are not set and user just opened this page - switch
     // Custom DNS setting to false so the OnOffSwitch is off.

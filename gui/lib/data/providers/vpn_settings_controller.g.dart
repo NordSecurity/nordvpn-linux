@@ -6,25 +6,52 @@ part of 'vpn_settings_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$vpnSettingsControllerHash() =>
-    r'f1117132ac32ca220637bdb790a8bb0156bef8bf';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
 
-/// See also [VpnSettingsController].
 @ProviderFor(VpnSettingsController)
-final vpnSettingsControllerProvider =
-    AutoDisposeAsyncNotifierProvider<
-      VpnSettingsController,
-      ApplicationSettings
-    >.internal(
-      VpnSettingsController.new,
-      name: r'vpnSettingsControllerProvider',
-      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-          ? null
-          : _$vpnSettingsControllerHash,
-      dependencies: null,
-      allTransitiveDependencies: null,
-    );
+final vpnSettingsControllerProvider = VpnSettingsControllerProvider._();
 
-typedef _$VpnSettingsController = AutoDisposeAsyncNotifier<ApplicationSettings>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class VpnSettingsControllerProvider
+    extends $AsyncNotifierProvider<VpnSettingsController, ApplicationSettings> {
+  VpnSettingsControllerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'vpnSettingsControllerProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$vpnSettingsControllerHash();
+
+  @$internal
+  @override
+  VpnSettingsController create() => VpnSettingsController();
+}
+
+String _$vpnSettingsControllerHash() =>
+    r'f97a5bd53a86c1dd2b83498f77b20447a09e8709';
+
+abstract class _$VpnSettingsController
+    extends $AsyncNotifier<ApplicationSettings> {
+  FutureOr<ApplicationSettings> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref =
+        this.ref as $Ref<AsyncValue<ApplicationSettings>, ApplicationSettings>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<ApplicationSettings>, ApplicationSettings>,
+              AsyncValue<ApplicationSettings>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}

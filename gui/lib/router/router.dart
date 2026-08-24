@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nordvpn/data/providers/account_controller.dart';
@@ -8,6 +9,7 @@ import 'package:nordvpn/data/providers/consent_status_provider.dart';
 import 'package:nordvpn/data/providers/grpc_connection_controller.dart';
 import 'package:nordvpn/data/providers/login_status_provider.dart';
 import 'package:nordvpn/router/routes.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 final goRouterKey = GlobalKey<NavigatorState>();
 
@@ -93,7 +95,7 @@ final redirectStateProvider = ChangeNotifierProvider((ref) {
     );
   }
 
-  for (final provider in [
+  for (final provider in <ProviderListenable<Object?>>[
     loginStatusProvider,
     grpcConnectionControllerProvider,
     accountControllerProvider,

@@ -31,7 +31,9 @@ void main() async {
 
   await resizeMainWindow();
 
-  runApp(const ProviderScope(child: NordVpnApp()));
+  runApp(
+    ProviderScope(retry: (retryCount, error) => null, child: NordVpnApp()),
+  );
 }
 
 @visibleForTesting
