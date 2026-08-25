@@ -602,6 +602,7 @@ def test_obfuscation_prevents_virtual_location_connection(tech, proto, obfuscate
     assert "The specified server is not available at the moment or does not support your connection settings." in ex.value.stdout.decode(), "Should show server unavailable error"
 
 ENS_CONN_LIMIT_REACHED = 2
+ENS_CONN_LIMIT_REACHED_MSG = "Too many connection attempts. Wait a while before trying again. Retrying now can make the waiting period longer. If the issue persists, check our help guide for other possible causes: https://support.nordvpn.com/hc/en-us/articles/47181405478417-I-get-the-Session-Limit-Reached-error-on-NordVPN?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=ens_error-session_limit&nm=app&ns=nordvpn-linux-cli&nc=ens_error-session_limit"
 def test_ens_connection_limit():
     """Test ENS connection limit"""
     if "dev" not in sh.nordvpn.version():
@@ -614,4 +615,4 @@ def test_ens_connection_limit():
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         sh.nordvpn.connect()
-    assert "TODO: connection limit reached." in ex.value.stdout.decode("utf-8")
+    assert ENS_CONN_LIMIT_REACHED_MSG in ex.value.stdout.decode("utf-8")
