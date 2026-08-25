@@ -25,7 +25,7 @@ type gatedNotifier struct {
 func (g *gatedNotifier) Alert(body string) *alert.AlertBuilder {
 	if !g.isReady() {
 		log.Systray.Infof("Notification suppressed (initial sync not completed): %s", body)
-		return alert.NewAlertBuilder(func(alert.Alert) {}, body)
+		return alert.NewAlertBuilder(func(alert.Alert) bool { return false }, body)
 	}
 
 	return g.Notifier.Alert(body)

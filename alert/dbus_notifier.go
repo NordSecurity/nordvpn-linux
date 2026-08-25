@@ -45,7 +45,10 @@ type Alert struct {
 	Body    string
 	Actions []Action
 	Urgency Urgency
+	OnShown OnShown
 }
+
+type OnShown func()
 
 func (a Alert) String() string {
 	return fmt.Sprintf("[%s] %q (%s)", a.Summary, a.Body, a.Urgency)
@@ -121,12 +124,12 @@ func (n *DbusNotifier) Alert(body string) *AlertBuilder {
 	return NewAlertBuilder(n.doNotify, body)
 }
 
-func (n *DbusNotifier) doNotify(alert Alert) {
+func (n *DbusNotifier) doNotify(alert Alert) bool {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 	if !n.isActive && alert.Urgency == UrgencyNormal {
 		log.Infof("notification suppressed: %s", alert)
-		return
+		return false
 	}
 
 	alertActions := make([]notify.Action, 0, len(alert.Actions))
@@ -151,7 +154,7 @@ func (n *DbusNotifier) doNotify(alert Alert) {
 	id, err := n.notifier.SendNotification(notif)
 	if err != nil {
 		log.Errorf("failed to send notification '%s': %v", notif, err)
-		return
+		return false
 	}
 
 	if len(alert.Actions) > 0 {
@@ -163,6 +166,8 @@ func (n *DbusNotifier) doNotify(alert Alert) {
 		}
 		n.actions[id] = callbacks
 	}
+
+	return true
 }
 
 func (n *DbusNotifier) dispatchAction(action *notify.ActionInvokedSignal) {
