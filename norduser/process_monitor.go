@@ -7,6 +7,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 
 	"github.com/NordSecurity/nordvpn-linux/filewatch"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/norduser/service"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
@@ -108,16 +109,18 @@ type userSet map[string]norduserState
 // NorduserProcessMonitor monitors the nordvpn system group and starts/stops norduserd for users added/removed from the
 // group.
 type NorduserProcessMonitor struct {
-	norduserd service.Service
-	isSnap    bool
+	norduserd        service.Service
+	isSnap           bool
+	filesystemHandle internal.FileSystemHandle
 	userIDGetter
 }
 
 func NewNorduserProcessMonitor(service service.Service) NorduserProcessMonitor {
 	return NorduserProcessMonitor{
-		norduserd:    service,
-		isSnap:       snapconf.IsUnderSnap(),
-		userIDGetter: osGetter{},
+		norduserd:        service,
+		isSnap:           snapconf.IsUnderSnap(),
+		filesystemHandle: internal.StdFilesystemHandle{},
+		userIDGetter:     osGetter{},
 	}
 }
 
@@ -139,6 +142,12 @@ func (n *NorduserProcessMonitor) handleGroupFileUpdate(currentGroupMembers userS
 			continue
 		}
 
+		err := createSocketDirectory(newGroupMemberUsername, n.userIDGetter, n.filesystemHandle)
+		if err != nil {
+			log.Error("failed to create users socket directory:", err)
+			continue
+		}
+
 		state := notActive
 		userStatus, ok := activeUsers[newGroupMemberUsername]
 		if ok {
@@ -152,6 +161,9 @@ func (n *NorduserProcessMonitor) handleGroupFileUpdate(currentGroupMembers userS
 		if contains := slices.Contains(newGroupMembers, memberUsername); !contains {
 			memberState.changeState(notActive, memberUsername, n.userIDGetter, n.norduserd)
 			delete(currentGroupMembers, memberUsername)
+			if err := removeSocketDirectory(memberUsername, n.userIDGetter, n.filesystemHandle); err != nil {
+				log.Error("failed to remove user socket directory:", err)
+			}
 		}
 	}
 

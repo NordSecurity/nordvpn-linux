@@ -180,6 +180,10 @@ var (
 	TrustedPassTokenFormatValidatorFunc = regexp.MustCompile(`^[A-Za-z0-9_-]+$`).MatchString
 )
 
+func GetUserSocketDirectoryPath(uid int) string {
+	return fmt.Sprintf("%s/%d", RunDir, uid)
+}
+
 func GetNorduserSocketSnap(uid int) string {
 	return fmt.Sprintf("%s%d-%s.sock", TmpDir, uid, Norduserd)
 }

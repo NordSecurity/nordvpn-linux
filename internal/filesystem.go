@@ -51,6 +51,24 @@ type FileSystemHandle interface {
 
 	// Remove removes file under the given location.
 	Remove(location string) error
+
+	// RemoveAll removes path and any children it contains.
+	// It removes everything it can but returns the first error it encounters.
+	// If the path does not exist, RemoveAll returns nil (no error).
+	// If there is an error, it will be of type [*PathError].
+	RemoveAll(path string) error
+
+	// Mkdir creates a new directory with the specified name and permission bits (before umask).
+	// If there is an error, it will be of type [*PathError].
+	Mkdir(path string, perm os.FileMode) error
+
+	// Chown changes the numeric uid and gid of the named file.
+	// If the file is a symbolic link, it changes the uid and gid of the link's target.
+	// A uid or gid of -1 means to not change that value. If there is an error, it will be of type [*PathError].
+	Chown(name string, uid int, gid int) error
+
+	// Chmod changes the mode of the named file to mode.
+	Chmod(name string, perm os.FileMode) error
 }
 
 type StdFilesystemHandle struct{}
@@ -81,6 +99,22 @@ func (StdFilesystemHandle) WriteFile(location string, data []byte, mode fs.FileM
 
 func (StdFilesystemHandle) Remove(location string) error {
 	return os.Remove(location)
+}
+
+func (StdFilesystemHandle) RemoveAll(path string) error {
+	return os.RemoveAll(path)
+}
+
+func (StdFilesystemHandle) Mkdir(path string, perm os.FileMode) error {
+	return os.Mkdir(path, perm)
+}
+
+func (StdFilesystemHandle) Chown(name string, uid int, gid int) error {
+	return os.Chown(name, uid, gid)
+}
+
+func (StdFilesystemHandle) Chmod(name string, perm os.FileMode) error {
+	return os.Chmod(name, perm)
 }
 
 // systemDFile returns a `os.systemDFile` object for
