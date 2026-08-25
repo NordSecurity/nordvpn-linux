@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/client"
+	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/uievent"
@@ -186,7 +187,7 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 		case internal.CodeDedicatedServersServerNotSetUp:
 			rpcErr = errors.New(c.injectLinkIntoMessage(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin, DedicatedServersNoServersAvailable))
 		case internal.CodeConnectionLimitReached:
-			rpcErr = errors.New(client.ENSConnectionLimitReachedMessage)
+			rpcErr = errors.New(client.ENSConnectionLimitReached(core.CLIAppID))
 		case internal.CodeVPNRunning:
 			color.Yellow(client.ConnectConnected)
 		case internal.CodeNothingToDo:

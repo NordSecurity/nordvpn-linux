@@ -14,6 +14,13 @@ import (
 	"github.com/google/uuid"
 )
 
+type AppID string
+
+const (
+	CLIAppID  AppID = "nordvpn-linux-cli"
+	TrayAppID AppID = "nordvpn-linux-tray"
+)
+
 const (
 	// linuxPlatformID defines the linux platform ID on the Notification Centre
 	linuxPlatformID = 500
