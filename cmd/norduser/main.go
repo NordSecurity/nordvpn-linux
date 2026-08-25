@@ -71,7 +71,7 @@ func startTray(quitChan chan<- norduser.StopRequest) {
 	}
 	ReportTelemetry(conn, ReportOnStart, false)
 
-	ti := tray.NewTrayInstance(client, quitChan)
+	ti := tray.NewTrayInstance(client, quitChan, tray.OpenURI)
 	ti.Start()
 
 	topLevelCtx, topLevelCancelFunc := context.WithCancel(context.Background())

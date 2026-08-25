@@ -86,7 +86,7 @@ func (ti *Instance) connectionResultAlert(out *pb.Payload) *alert.AlertBuilder {
 		return ti.n.Alert(client.ENSConnectionLimitReached(core.TrayAppID)).
 			Summary(client.ENSConnectionLimitReachedSummary).
 			Action(actionKeyOpenHelpGuide, "Open help guide", func() {
-				if err := openURI(core.ConnectionLimitReachedGuideURL(core.TrayAppID)); err != nil {
+				if err := ti.openURI(core.ConnectionLimitReachedGuideURL(core.TrayAppID)); err != nil {
 					log.Systray.Errorf("failed to open URI: %v", err)
 				}
 			}).
