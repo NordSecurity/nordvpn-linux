@@ -133,7 +133,7 @@ Finder autoConnectPanel() {
   return autoConnectPanelFinder;
 }
 
-Finder connectNowButton() {
+Finder secureMyConnectionButton() {
   final connectButtonFinder = find.byKey(
     AutoConnectWidgetKeys.connectNowButton,
   );

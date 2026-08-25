@@ -399,7 +399,7 @@ final class MockApplicationSettings extends CancelableDelayed {
         serverGroup: request.serverGroup.isEmpty
             ? null
             : params.toServerGroup(),
-        country: request.serverTag.length <= 2 ? null : server.countryCode,
+        countryCode: request.serverTag.isEmpty ? null : server.countryCode,
         city: request.serverTag.isEmpty ? null : server.cityName,
       ),
     );
