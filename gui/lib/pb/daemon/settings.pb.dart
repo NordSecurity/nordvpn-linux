@@ -98,12 +98,14 @@ class AutoconnectData extends $pb.GeneratedMessage {
     $core.String? country,
     $core.String? city,
     $1.ServerGroup? serverGroup,
+    $core.String? countryCode,
   }) {
     final result = create();
     if (enabled != null) result.enabled = enabled;
     if (country != null) result.country = country;
     if (city != null) result.city = city;
     if (serverGroup != null) result.serverGroup = serverGroup;
+    if (countryCode != null) result.countryCode = countryCode;
     return result;
   }
 
@@ -125,6 +127,7 @@ class AutoconnectData extends $pb.GeneratedMessage {
     ..aOS(3, _omitFieldNames ? '' : 'city')
     ..aE<$1.ServerGroup>(4, _omitFieldNames ? '' : 'serverGroup',
         enumValues: $1.ServerGroup.values)
+    ..aOS(5, _omitFieldNames ? '' : 'countryCode')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -181,6 +184,15 @@ class AutoconnectData extends $pb.GeneratedMessage {
   $core.bool hasServerGroup() => $_has(3);
   @$pb.TagNumber(4)
   void clearServerGroup() => $_clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get countryCode => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set countryCode($core.String value) => $_setString(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasCountryCode() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearCountryCode() => $_clearField(5);
 }
 
 class Settings extends $pb.GeneratedMessage {

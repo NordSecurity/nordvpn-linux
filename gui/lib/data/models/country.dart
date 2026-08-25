@@ -17,9 +17,9 @@ abstract class Country with _$Country {
     return Country.internal(code: sanitizedCode, name: name);
   }
 
-  factory Country.fromCode(String code) {
+  factory Country.fromCodeOrName(String codeOrName) {
     return sl<CountryNamesService>().country(
-      code.length == 2 ? code.toUpperCase() : code,
+      codeOrName.length == 2 ? codeOrName.toUpperCase() : codeOrName,
     );
   }
 

@@ -52,13 +52,13 @@ final class CountryNamesService {
   }
 
   // Map country name in english or country code to a country object
-  Country country(String code) {
-    final country = _countries[code];
-    assert(country != null, "country not found $code");
+  Country country(String codeOrName) {
+    final country = _countries[codeOrName];
+    assert(country != null, "country not found $codeOrName");
     if (country != null) {
       return country;
     }
 
-    return Country(code: code, name: code);
+    return Country(code: codeOrName, name: codeOrName);
   }
 }

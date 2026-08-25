@@ -78,7 +78,7 @@ final class RecentConnectionsItemFactory {
 
     // handle country-based images (works for both specialty and standard servers)
     if (isCountry) {
-      return imagesManager.forCountry(Country.fromCode(model.countryCode));
+      return imagesManager.forCountry(Country.fromCodeOrName(model.countryCode));
     }
 
     // fallback: try to get specialty server image or default icon
@@ -91,7 +91,7 @@ final class RecentConnectionsItemFactory {
   _TitleParts _buildTitleParts(RecentConnection model, bool isSpecialtyServer) {
     if (isSpecialtyServer) {
       if (model.country.isNotEmpty) {
-        final country = Country.fromCode(model.countryCode);
+        final country = Country.fromCodeOrName(model.countryCode);
         final city = model.city;
         final location = city.isEmpty ? t.ui.fastest : City(city).localizedName;
         final subtitle = "${country.localizedName} - $location";
@@ -105,7 +105,7 @@ final class RecentConnectionsItemFactory {
       return (primary: model.specialtyServer, secondary: t.ui.fastest);
     }
 
-    final country = Country.fromCode(model.countryCode);
+    final country = Country.fromCodeOrName(model.countryCode);
 
     final isCity =
         model.city.isNotEmpty &&
@@ -170,7 +170,7 @@ final class RecentConnectionsItemFactory {
     } else {
       Country? country;
       if (model.countryCode.isNotEmpty) {
-        country = Country.fromCode(model.countryCode);
+        country = Country.fromCodeOrName(model.countryCode);
       }
       return ConnectArguments(
         country: country,

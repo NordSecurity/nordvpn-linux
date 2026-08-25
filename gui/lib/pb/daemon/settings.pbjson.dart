@@ -44,6 +44,7 @@ const AutoconnectData$json = {
       '6': '.config.ServerGroup',
       '10': 'serverGroup'
     },
+    {'1': 'country_code', '3': 5, '4': 1, '5': 9, '10': 'countryCode'},
   ],
 };
 
@@ -51,7 +52,8 @@ const AutoconnectData$json = {
 final $typed_data.Uint8List autoconnectDataDescriptor = $convert.base64Decode(
     'Cg9BdXRvY29ubmVjdERhdGESGAoHZW5hYmxlZBgBIAEoCFIHZW5hYmxlZBIYCgdjb3VudHJ5GA'
     'IgASgJUgdjb3VudHJ5EhIKBGNpdHkYAyABKAlSBGNpdHkSNgoMc2VydmVyX2dyb3VwGAQgASgO'
-    'MhMuY29uZmlnLlNlcnZlckdyb3VwUgtzZXJ2ZXJHcm91cA==');
+    'MhMuY29uZmlnLlNlcnZlckdyb3VwUgtzZXJ2ZXJHcm91cBIhCgxjb3VudHJ5X2NvZGUYBSABKA'
+    'lSC2NvdW50cnlDb2Rl');
 
 @$core.Deprecated('Use settingsDescriptor instead')
 const Settings$json = {

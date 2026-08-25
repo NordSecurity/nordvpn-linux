@@ -336,18 +336,18 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 		{
 			testName: "for country name",
 			tag:      "germany",
-			expected: config.AutoConnectData{Group: config.ServerGroup_UNDEFINED, Country: "DE", ServerTag: "germany"},
+			expected: config.AutoConnectData{Group: config.ServerGroup_UNDEFINED, Country: "Germany", CountryCode: "DE", ServerTag: "germany"},
 		},
 		{
 			testName: "for country code and city name",
 			tag:      "de berlin",
-			expected: config.AutoConnectData{Group: config.ServerGroup_UNDEFINED, Country: "DE", City: "Berlin", ServerTag: "de berlin"},
+			expected: config.AutoConnectData{Group: config.ServerGroup_UNDEFINED, Country: "Germany", CountryCode: "DE", City: "Berlin", ServerTag: "de berlin"},
 		},
 		{
 			testName:    "for country code, city name and group",
 			tag:         "de berlin",
 			serverGroup: "p2p",
-			expected:    config.AutoConnectData{Group: config.ServerGroup_P2P, Country: "DE", City: "Berlin", ServerTag: "de berlin"},
+			expected:    config.AutoConnectData{Group: config.ServerGroup_P2P, Country: "Germany", CountryCode: "DE", City: "Berlin", ServerTag: "de berlin"},
 		},
 	}
 
@@ -398,6 +398,7 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 
 			assert.Equal(t, test.expected.ServerTag, mockConfigManager.c.AutoConnectData.ServerTag)
 			assert.Equal(t, test.expected.Country, mockConfigManager.c.AutoConnectData.Country)
+			assert.Equal(t, test.expected.CountryCode, mockConfigManager.c.AutoConnectData.CountryCode)
 			assert.Equal(t, test.expected.City, mockConfigManager.c.AutoConnectData.City)
 			assert.Equal(t, test.expected.Group, mockConfigManager.c.AutoConnectData.Group)
 		})

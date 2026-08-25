@@ -44,11 +44,13 @@ func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse,
 				r.dm.GetCountryData().Countries,
 			)
 			cfg.AutoConnectData.Country = parameters.Country
+			cfg.AutoConnectData.CountryCode = parameters.CountryCode
 			cfg.AutoConnectData.City = parameters.City
 			cfg.AutoConnectData.Group = parameters.Group
 
 			err := r.cm.SaveWith(func(c config.Config) config.Config {
 				c.AutoConnectData.Country = cfg.AutoConnectData.Country
+				c.AutoConnectData.CountryCode = cfg.AutoConnectData.CountryCode
 				c.AutoConnectData.City = cfg.AutoConnectData.City
 				c.AutoConnectData.Group = cfg.AutoConnectData.Group
 
