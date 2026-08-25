@@ -10,7 +10,7 @@ import requests
 import sh
 
 import lib
-from lib import IS_NIGHTLY, allowlist, firewall, network
+from lib import IS_NIGHTLY, allowlist, daemon, firewall, network
 from lib.dynamic_parametrize import dynamic_parametrize
 from lib import capture_utils
 from lib.firewall import tun_interface_names
@@ -19,6 +19,8 @@ pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
 
 def setup_module(module):  # noqa: ARG001
+    if daemon.is_under_snap(): # TODO: LVPN-11026
+        return
     firewall.setup_port_sock_server(None)
 
 
@@ -96,6 +98,7 @@ def test_firewall_enable_connect(tech, proto, obfuscated):
     assert not firewall.is_active(), "Firewall should be inactive after disconnecting"
 
 
+@pytest.mark.skipif(daemon.is_under_snap(), reason="No peer in Snap env") # TODO: LVPN-11026
 @dynamic_parametrize(
     [
         "tech",
@@ -145,6 +148,7 @@ def test_firewall_02_allowlist_port(tech, proto, obfuscated, port):
     generate_all=IS_NIGHTLY,
     id_pattern="{tech}-{proto}-{obfuscated}-{ports.protocol}-{ports.value}",
 )
+@pytest.mark.skipif(daemon.is_under_snap(), reason="No peer in Snap env") # TODO: LVPN-11026
 def test_firewall_03_allowlist_ports_range(tech, proto, obfuscated, ports):
     """Manual TC: LVPN-8725"""
 
@@ -298,6 +302,7 @@ def test_firewall_lan_allowlist_work_together(tech, proto, obfuscated):
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@pytest.mark.skipif(daemon.is_under_snap(), reason="No peer in Snap env") # TODO: LVPN-11026
 def test_firewall_dns_udp_53_to_lan_resolver_dropped(tech, proto, obfuscated):
     """
     Verify UDP port 53 to the local resolver is dropped when VPN is connected.
@@ -327,6 +332,7 @@ def test_firewall_dns_udp_53_to_lan_resolver_dropped(tech, proto, obfuscated):
     )
 
 
+@pytest.mark.skipif(daemon.is_under_snap(), reason="No peer in Snap env") # TODO: LVPN-11026
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_firewall_dns_tcp_53_to_lan_resolver_dropped(tech, proto, obfuscated):
     """
