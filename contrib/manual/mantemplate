@@ -204,9 +204,9 @@ $ \fBnordvpn set protocol TCP\fR
 $ \fBnordvpn set killswitch enabled\fR
 .RE
 .PP
-\fBExample \&10. Enable ThreatProtectionLite\fR
+\fBExample \&10. Enable Real-time protection\fR
 .RS 4
-$ \fBnordvpn set threatprotectionlite enabled\fR
+$ \fBnordvpn set protection enabled\fR
 .RE
 .PP
 \fBExample \&11. Enable auto-connect\fR
@@ -698,9 +698,9 @@ Our QA team did their best to hunt for bugs before the release\&. But if it happ
 .SH "NOTES"
 .sp
 .PP
-\fBNote \&1. ThreatProtectionLite and custom DNS\fR
+\fBNote \&1. Real-time protection and custom DNS\fR
 .RS 4
-Enabling ThreatProtectionLite disables custom DNS and vice versa\&.
+Real-time protection isn’t compatible with custom DNS. Activating one turns the other off.\&.
 .RE
 .sp
 \fBNote \&2. Nord Account login without graphical user interface\fR

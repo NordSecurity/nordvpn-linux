@@ -49,7 +49,7 @@ Example: nordvpn set %s on`
 	SetAutoConnectForceOff                      = "Auto-connect was turned off because the setting change is incompatible with your current auto-connect preferences. Please turn on auto-connect again if you wish to continue using it."
 
 	SetThreatProtectionLiteDisableDNS = "Disabling DNS."
-	SetThreatProtectionLiteAlreadySet = "Threat Protection is already set to %s."
+	SetRealTimeProtectionAlreadySet   = "Real-time protection is already set to %s."
 
 	SetDefaultsSuccess = "Settings were successfully restored to defaults."
 
@@ -68,10 +68,10 @@ Example: nordvpn set %s on`
 
 	SetTechnologyDepsError = "%s kernel module or configuration utility is missing."
 
-	SetDNSDisableThreatProtectionLite = "Turning off Threat Protection"
-	SetDNSInvalidAddress              = "The provided IP address is invalid."
-	SetDNSTooManyValues               = "You can add up to 3 DNS addresses only."
-	SetDNSAlreadySet                  = "DNS is already set to %s."
+	SetDNSDisableRealTimeProtection = "Turning off Real-time protection"
+	SetDNSInvalidAddress            = "The provided IP address is invalid."
+	SetDNSTooManyValues             = "You can add up to 3 DNS addresses only."
+	SetDNSAlreadySet                = "DNS is already set to %s."
 
 	SetLANDiscoveryUsage          = "Access printers, TVs, and other devices on your local network while connected to a VPN."
 	SetLANDiscoveryAlreadyEnabled = "LAN discovery is already set to %s."

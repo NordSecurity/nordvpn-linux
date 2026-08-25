@@ -12,20 +12,21 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// Set Threat Protection Lite help text
+// Set Real-time protection help text
 const (
-	SetThreatProtectionLiteUsageText     = "Enables or disables ThreatProtectionLite. When enabled, the ThreatProtectionLite feature will automatically block suspicious websites so that no malware or other cyber threats can infect your device. Additionally, no flashy ads will come into your sight. More information on how it works: https://nordvpn.com/features/threat-protection/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=settings-explore_threat_protection&nm=app&ns=nordvpn-linux-cli&nc=settings-explore_threat_protection."
-	SetThreatProtectionLiteArgsUsageText = `<enabled>|<disabled>`
-	SetThreatProtectionLiteDescription   = `Use this command to enable or disable ThreatProtectionLite. When enabled, the ThreatProtectionLite feature will automatically block suspicious websites so that no malware or other cyber threats can infect your device. Additionally, no flashy ads will come into your sight. More information on how it works: https://nordvpn.com/features/threat-protection/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=settings-explore_threat_protection&nm=app&ns=nordvpn-linux-cli&nc=settings-explore_threat_protection
+	SetRealTimeProtectionUsageText     = "Turns real-time protection on or off. Real-time protection blocks scam and phishing attempts and reduces intrusive ads while you’re connected to the VPN. Learn more about how it works: " + realTimeProtectionLearnMoreUrl + "."
+	SetRealTimeProtectionArgsUsageText = `<enabled>|<disabled>`
+	SetRealTimeProtectionDescription   = `Use this command to enable or disable Real-time protection. When enabled, the Real-time protection feature will automatically block suspicious websites so that no malware or other cyber threats can infect your device. Additionally, no flashy ads will come into your sight. More information on how it works: ` + realTimeProtectionLearnMoreUrl + "\n\n" + realTimeProtectionExamples
 
-Supported values for <disabled>: 0, false, disable, off, disabled
-Example: nordvpn set threatprotectionlite off
+	realTimeProtectionLearnMoreUrl = "https://nordvpn.com/features/threat-protection/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=settings-explore_threat_protection&nm=app&ns=nordvpn-linux-cli&nc=settings-explore_threat_protection"
+	realTimeProtectionExamples     = `Supported values for <disabled>: 0, false, disable, off, disabled
+Example: nordvpn set protection off
 
 Supported values for <enabled>: 1, true, enable, on, enabled
-Example: nordvpn set threatprotectionlite on
+Example: nordvpn set protection on
 
 Notes:
-  Setting ThreatProtectionLite disables user defined DNS servers`
+  Real-time protection isn’t compatible with custom DNS. Activating one turns the other off.`
 )
 
 func setTPLErrorCodeToError(code pb.SetErrorCode, args ...any) error {
@@ -35,7 +36,7 @@ func setTPLErrorCodeToError(code pb.SetErrorCode, args ...any) error {
 	case pb.SetErrorCode_CONFIG_ERROR:
 		return formatError(ErrConfig)
 	case pb.SetErrorCode_ALREADY_SET:
-		color.Yellow(fmt.Sprintf(SetThreatProtectionLiteAlreadySet, args...))
+		color.Yellow(fmt.Sprintf(SetRealTimeProtectionAlreadySet, args...))
 		return nil
 	}
 	return nil
@@ -70,7 +71,7 @@ func (c *cmd) SetThreatProtectionLite(ctx *cli.Context) error {
 		if err != nil {
 			return formatError(ErrConfig)
 		}
-		color.Green(fmt.Sprintf(MsgSetSuccess, "Threat Protection Lite", nstrings.GetBoolLabel(flag)))
+		color.Green(fmt.Sprintf(MsgSetSuccess, "Real-time protection", nstrings.GetBoolLabel(flag)))
 	}
 	return nil
 }

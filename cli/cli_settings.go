@@ -42,7 +42,7 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	fmt.Printf("Routing: %+v\n", nstrings.GetBoolLabel(settings.GetRouting()))
 	fmt.Printf("User Consent: %s\n", nstrings.UserConsent(settings.AnalyticsConsent))
 	fmt.Printf("Kill Switch: %+v\n", nstrings.GetBoolLabel(settings.GetKillSwitch()))
-	fmt.Printf("Threat Protection Lite: %+v\n", nstrings.GetBoolLabel(settings.ThreatProtectionLite))
+	fmt.Printf("Real-time protection: %+v\n", nstrings.GetBoolLabel(settings.ThreatProtectionLite))
 	if settings.Technology == config.Technology_OPENVPN {
 		fmt.Printf("Obfuscate: %+v\n", nstrings.GetBoolLabel(settings.GetObfuscate()))
 	}
