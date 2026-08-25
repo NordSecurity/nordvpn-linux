@@ -197,7 +197,7 @@ func GetNorduserdSocket(uid int) string {
 }
 
 func GetNorduserSocketFork(uid int) string {
-	return fmt.Sprintf("/tmp/%d-%s.sock", uid, Norduserd)
+	return fmt.Sprintf("%s/%s/%s.sock", RunDir, uid, Norduserd)
 }
 
 func getHomeDirPath() (string, error) {
