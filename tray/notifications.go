@@ -89,6 +89,21 @@ func (ti *Instance) connectionResultAlert(out *pb.Payload) *alert.AlertBuilder {
 				if err := ti.openURI(core.ConnectionLimitReachedGuideURL(core.TrayAppID)); err != nil {
 					log.Systray.Errorf("failed to open URI: %v", err)
 				}
+
+				_, _ = ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+					FormReference: pb.UIEvent_TRAY,
+					ItemName:      pb.UIEvent_SESSION_LIMIT,
+					ItemType:      pb.UIEvent_CLICK,
+					ItemValue:     pb.UIEvent_ITEM_VALUE_LEARN_MORE,
+				})
+			}).
+			OnShown(func() {
+				_, _ = ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+					FormReference: pb.UIEvent_TRAY,
+					ItemName:      pb.UIEvent_SESSION_LIMIT,
+					ItemType:      pb.UIEvent_SHOW,
+					ItemValue:     pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
+				})
 			}).
 			Urgent()
 	case internal.CodeConnecting: // no notification

@@ -65,6 +65,8 @@ message UIEvent {
     PAUSE_24_HOURS   = 13;
     PAUSE_DISCONNECT = 14;
     DEDICATED_SERVER = 15;
+
+    ITEM_VALUE_LEARN_MORE = 16;
   }
 
   FormReference form_reference = 1;
