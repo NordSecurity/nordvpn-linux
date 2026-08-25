@@ -505,6 +505,61 @@ func TestConnectionInfo_RestorePreviousStatus(t *testing.T) {
 		assert.False(t, tf.sut.fullyConnected)
 	})
 
+	// Reproduces additional defect: reconcileStatusAfterFailedConnect also runs for
+	// attempts that fail before SetInitialConnecting is reached (not logged in, config load
+	// error, ENS bail-out). Such an attempt never changed the reported status, yet the restore
+	// resurrects the snapshot of an earlier attempt and drops a live connection to DISCONNECTED.
+	t.Run("restoring without a snapshot from the current attempt keeps the status", func(t *testing.T) {
+		tf := newTestFixture(t)
+		// one from the initial disconnect, one from SetInitialConnecting, one from the
+		// restore and one from the connect - the stray restore must not emit anything
+		tf.notificationSubscriber.stateChangeHandler.ExpectEvents(4)
+
+		tf.sut.ConnectionStatusNotifyDisconnect(events.DataDisconnect{})
+
+		// first attempt starts while disconnected and fails without touching the tunnel
+		tf.sut.SetInitialConnecting()
+		tf.sut.RestorePreviousStatus()
+		assert.Equal(t, pb.ConnectionState_DISCONNECTED, tf.sut.Status().State)
+
+		// afterwards the user connects successfully
+		tf.sut.ConnectionStatusNotifyConnect(events.DataConnect{EventStatus: events.StatusSuccess})
+		assert.Equal(t, pb.ConnectionState_CONNECTED, tf.sut.Status().State)
+
+		// a later attempt fails before it ever reaches SetInitialConnecting, so the failure
+		// cleanup restores a snapshot that does not belong to it
+		tf.sut.RestorePreviousStatus()
+
+		assert.Equal(t, pb.ConnectionState_CONNECTED, tf.sut.Status().State,
+			"a restore without a snapshot taken by the current attempt must not change the status")
+		assert.True(t, tf.sut.fullyConnected)
+	})
+
+	t.Run("the snapshot is consumed by the first restore", func(t *testing.T) {
+		tf := newTestFixture(t)
+		// one from the connect, one from SetInitialConnecting, one from the first restore
+		tf.notificationSubscriber.stateChangeHandler.ExpectEvents(3)
+
+		tf.sut.ConnectionStatusNotifyConnect(events.DataConnect{EventStatus: events.StatusSuccess})
+		tf.sut.SetInitialConnecting()
+
+		tf.sut.RestorePreviousStatus()
+		assert.Equal(t, pb.ConnectionState_CONNECTED, tf.sut.Status().State)
+		notificationsAfterRestore := tf.notificationSubscriber.stateChangeHandler.GetNotificationsCount()
+
+		// the tunnel is torn down by something else, then a second restore arrives
+		tf.notificationSubscriber.stateChangeHandler.ExpectEvents(1)
+		tf.sut.ConnectionStatusNotifyDisconnect(events.DataDisconnect{})
+		tf.sut.RestorePreviousStatus()
+
+		assert.Equal(t, pb.ConnectionState_DISCONNECTED, tf.sut.Status().State,
+			"a second restore must not re-apply an already consumed snapshot")
+		assert.False(t, tf.sut.fullyConnected)
+		assert.Equal(t, notificationsAfterRestore+1,
+			tf.notificationSubscriber.stateChangeHandler.GetNotificationsCount(),
+			"only the disconnect should have been notified, not the second restore")
+	})
+
 	t.Run("restored connected status keeps pause info", func(t *testing.T) {
 		tf := newTestFixture(t)
 		// one from the connect, one from SetInitialConnecting, one from restore

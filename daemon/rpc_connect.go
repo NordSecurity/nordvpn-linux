@@ -61,7 +61,6 @@ func (r *RPC) ReconnectOnServerMaintenanceEvent(endpointFromEvent string) (exitE
 // executeConnect - ensures that no two connect functions are executed in the same time
 func (r *RPC) executeConnect(srv pb.Daemon_ConnectServer, fn func(context.Context) (bool, error)) error {
 	var err error
-	var didFail bool
 	// TODO: Currently this only listens to a given context in `netw.Start()`, therefore gets
 	// stopped on `ctx.Done()` only if it happens while `netw.Start()` is being executed.
 	// Otherwise:
@@ -72,14 +71,13 @@ func (r *RPC) executeConnect(srv pb.Daemon_ConnectServer, fn func(context.Contex
 	// In order to fix this, all of expensive operations should implement `ctx.Done()` handling
 	// and have context bypassed to them.
 	if !r.connectContext.TryExecuteWith(func(ctx context.Context) {
+		var didFail bool
 		didFail, err = fn(ctx)
+		if didFail || err != nil {
+			r.reconcileStatusAfterFailedConnect()
+		}
 	}) {
 		return srv.Send(&pb.Payload{Type: internal.CodeNothingToDo})
-	}
-
-	// reconcile connection status after a failed attempt
-	if didFail || err != nil {
-		r.reconcileStatusAfterFailedConnect()
 	}
 
 	return err

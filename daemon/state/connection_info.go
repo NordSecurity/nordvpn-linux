@@ -50,6 +50,7 @@ type ConnectionInfo struct {
 	// touching the existing tunnel (see RestorePreviousStatus).
 	statusBeforeConnecting types.ConnectionStatus
 	fullyConnectedBefore   bool
+	hasStatusSnapshot      bool
 	pauseData              *pauseData
 	// serverSelectionData stores data used to build PauseCancelled events
 	serverSelectionData   serverSelectionData
@@ -116,6 +117,7 @@ func (c *ConnectionInfo) SetInitialConnecting() {
 	c.mu.Lock()
 	c.statusBeforeConnecting = c.status
 	c.fullyConnectedBefore = c.fullyConnected
+	c.hasStatusSnapshot = true
 	c.mu.Unlock()
 
 	status := types.ConnectionStatus{State: pb.ConnectionState_CONNECTING}
@@ -123,14 +125,20 @@ func (c *ConnectionInfo) SetInitialConnecting() {
 	c.internalNotif.Publish(events.DataConnectChangeNotif{Status: status})
 }
 
-// RestorePreviousStatus reverts the reported status to the snapshot captured by the most recent
-// SetInitialConnecting call. Use it when a connection attempt fails but the existing tunnel was
-// left intact, so the reported state must not falsely become DISCONNECTED.
+// RestorePreviousStatus reverts the reported status to the snapshot captured by
+// SetInitialConnecting within the current connection attempt. Use it when a connection attempt
+// fails but the existing tunnel was left intact, so the reported state must not falsely become
+// DISCONNECTED.
 func (c *ConnectionInfo) RestorePreviousStatus() {
-	c.mu.RLock()
+	c.mu.Lock()
+	if !c.hasStatusSnapshot {
+		c.mu.Unlock()
+		return
+	}
 	prev := c.statusBeforeConnecting
 	fully := c.fullyConnectedBefore
-	c.mu.RUnlock()
+	c.hasStatusSnapshot = false
+	c.mu.Unlock()
 
 	c.setStatus(prev, fully)
 	c.internalNotif.Publish(events.DataConnectChangeNotif{Status: prev})
@@ -151,6 +159,7 @@ func (c *ConnectionInfo) ConnectionStatusNotifyConnect(e events.DataConnect) err
 		start := time.Now()
 		startTime = &start
 		fullyConnected = true
+		c.discardStatusSnapshot()
 	}
 
 	status := types.ConnectionStatus{
@@ -175,6 +184,12 @@ func (c *ConnectionInfo) ConnectionStatusNotifyConnect(e events.DataConnect) err
 	c.setStatus(status, fullyConnected)
 	c.internalNotif.Publish(events.DataConnectChangeNotif{Status: status})
 	return nil
+}
+
+func (c *ConnectionInfo) discardStatusSnapshot() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.hasStatusSnapshot = false
 }
 
 func (c *ConnectionInfo) ConnectionStatusNotifyDisconnect(e events.DataDisconnect) error {
