@@ -7,6 +7,7 @@ import 'package:nordvpn/settings/allow_list/add_port.dart';
 import 'package:nordvpn/settings/allow_list/add_subnet.dart';
 import 'package:nordvpn/theme/allow_list_theme.dart';
 import 'package:nordvpn/theme/app_theme.dart';
+import 'package:nordvpn/widgets/accessible_item.dart';
 import 'package:nordvpn/widgets/enabled_widget.dart';
 import 'package:nordvpn/widgets/radio_button.dart';
 import 'package:nordvpn/widgets/round_container.dart';
@@ -56,24 +57,9 @@ class _AddToAllowListCardState extends State<AddToAllowListCard> {
             Row(
               spacing: appTheme.verticalSpaceMedium,
               children: [
-                RadioButton(
-                  value: _Add.port,
-                  groupValue: _addType,
-                  onChanged: (value) => _changeAddType(value),
-                  label: t.ui.port,
-                ),
-                RadioButton(
-                  value: _Add.portRange,
-                  groupValue: _addType,
-                  onChanged: (value) => _changeAddType(value),
-                  label: t.ui.portRange,
-                ),
-                RadioButton(
-                  value: _Add.subnet,
-                  groupValue: _addType,
-                  onChanged: (value) => _changeAddType(value),
-                  label: t.ui.subnet,
-                ),
+                _accessibleRadio(value: _Add.port, label: t.ui.port),
+                _accessibleRadio(value: _Add.portRange, label: t.ui.portRange),
+                _accessibleRadio(value: _Add.subnet, label: t.ui.subnet),
               ],
             ),
             if (_addType != _Add.subnet)
@@ -90,6 +76,22 @@ class _AddToAllowListCardState extends State<AddToAllowListCard> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _accessibleRadio({required _Add value, required String label}) {
+    return AccessibleItem(
+      enabled: widget.enabled,
+      inMutuallyExclusiveGroup: true,
+      checked: _addType == value,
+      label: label,
+      onActivate: () => _changeAddType(value),
+      child: RadioButton(
+        value: value,
+        groupValue: _addType,
+        onChanged: (v) => _changeAddType(v),
+        label: label,
       ),
     );
   }

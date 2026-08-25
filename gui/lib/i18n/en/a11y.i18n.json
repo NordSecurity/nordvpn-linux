@@ -1,4 +1,17 @@
 {                                                                                                                                                                                                                                                                                                                                                                                                                                 
   "VPNResumesIn": "VPN connection resumes in $minutes minutes $seconds seconds",
-  "VPNResumesInWithHours": "VPN connection resumes in $hours hours $minutes minutes $seconds seconds"
+  "VPNResumesInWithHours": "VPN connection resumes in $hours hours $minutes minutes $seconds seconds",
+  "VPNPanelDisconnected": "VPN Panel. Preferred location $location. Not secured.",
+  "VPNPanelConnecting": "VPN Panel. Connecting to $location.",
+  "VPNPanelConnected": "VPN Panel. Connected to $location.",
+  "VPNPanelLoading": "VPN Panel. Loading.",
+  "moreOptions": "More options",
+  "listWithItems": "List with $number items",
+  "recentConnectionWithDetails": "Recent connections. $details",
+  "expandibleEntryExpand": "Expand",
+  "expandibleEntryCollapse": "Collapse",
+  "expandibleEntryExpanded": "Expanded",
+  "expandibleEntryCollapsed": "Collapsed",
+  "clear": "Clear",
+  "popupWithContent": "$title. $message"
 }

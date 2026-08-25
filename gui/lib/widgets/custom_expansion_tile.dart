@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
+import 'package:nordvpn/i18n/strings.g.dart';
 
 // This is a custom implementation for ExpansionTile, because by default
 // clicking on the ExpansionTile would expand/collapse the subitems.
@@ -15,6 +17,7 @@ final class CustomExpansionTile extends StatefulWidget {
   final bool enabled;
   final Widget? trailing;
   final EdgeInsetsGeometry? contentPadding;
+  final String? semanticTitle;
 
   const CustomExpansionTile({
     super.key,
@@ -30,6 +33,7 @@ final class CustomExpansionTile extends StatefulWidget {
     this.enabled = true,
     this.trailing,
     this.contentPadding,
+    this.semanticTitle,
   });
 
   @override
@@ -84,16 +88,41 @@ class _CustomExpansionTileState extends State<CustomExpansionTile> {
     if (widget.children == null) {
       return null;
     }
-    return IconButton(
-      icon: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
-      onPressed: () {
-        setState(() {
-          _isExpanded = !_isExpanded;
-        });
-      },
-      hoverColor: Colors.transparent,
-      splashColor: Colors.transparent,
-      highlightColor: Colors.transparent,
+    final action = _isExpanded
+        ? t.a11y.expandibleEntryCollapse
+        : t.a11y.expandibleEntryExpand;
+    return MergeSemantics(
+      child: Semantics(
+        label: widget.semanticTitle != null
+            ? '${widget.semanticTitle}. $action'
+            : action,
+        expanded: _isExpanded,
+        child: IconButton(
+          icon: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
+          onPressed: _toggleExpanded,
+          hoverColor: Colors.transparent,
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
+        ),
+      ),
+    );
+  }
+
+  void _toggleExpanded() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+    });
+
+    if (!MediaQuery.supportsAnnounceOf(context)) {
+      return;
+    }
+
+    SemanticsService.sendAnnouncement(
+      View.of(context),
+      _isExpanded
+          ? t.a11y.expandibleEntryExpanded
+          : t.a11y.expandibleEntryCollapsed,
+      Directionality.of(context),
     );
   }
 }

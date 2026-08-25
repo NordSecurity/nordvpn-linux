@@ -6,24 +6,55 @@ part of 'vpn_status_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$vpnStatusControllerHash() =>
-    r'eaf4075751e338ebb5eb3d2c388fefb199581694';
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+/// Handles the VPN connection functionality
+
+@ProviderFor(VpnStatusController)
+final vpnStatusControllerProvider = VpnStatusControllerProvider._();
 
 /// Handles the VPN connection functionality
-///
-/// Copied from [VpnStatusController].
-@ProviderFor(VpnStatusController)
-final vpnStatusControllerProvider =
-    AutoDisposeAsyncNotifierProvider<VpnStatusController, VpnStatus>.internal(
-      VpnStatusController.new,
-      name: r'vpnStatusControllerProvider',
-      debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-          ? null
-          : _$vpnStatusControllerHash,
-      dependencies: null,
-      allTransitiveDependencies: null,
-    );
+final class VpnStatusControllerProvider
+    extends $AsyncNotifierProvider<VpnStatusController, VpnStatus> {
+  /// Handles the VPN connection functionality
+  VpnStatusControllerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'vpnStatusControllerProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
 
-typedef _$VpnStatusController = AutoDisposeAsyncNotifier<VpnStatus>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+  @override
+  String debugGetCreateSourceHash() => _$vpnStatusControllerHash();
+
+  @$internal
+  @override
+  VpnStatusController create() => VpnStatusController();
+}
+
+String _$vpnStatusControllerHash() =>
+    r'fbb2c9925e5cf90ca545e99179040330fca697c9';
+
+/// Handles the VPN connection functionality
+
+abstract class _$VpnStatusController extends $AsyncNotifier<VpnStatus> {
+  FutureOr<VpnStatus> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<AsyncValue<VpnStatus>, VpnStatus>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<VpnStatus>, VpnStatus>,
+              AsyncValue<VpnStatus>,
+              Object?,
+              Object?
+            >;
+    element.handleCreate(ref, build);
+  }
+}

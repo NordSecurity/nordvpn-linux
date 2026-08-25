@@ -4,6 +4,7 @@ import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/urls.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/consent_screen_theme.dart';
+import 'package:nordvpn/widgets/accessible_item.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 import 'package:nordvpn/widgets/enabled_widget.dart';
 import 'package:nordvpn/widgets/loading_button.dart';
@@ -32,6 +33,13 @@ final class CustomizeConsent extends StatefulWidget {
 
 class _CustomizeConsentState extends State<CustomizeConsent> {
   bool _isEnabled = true;
+  late bool _allowNonEssentials = widget.allowNonEssentials;
+
+  void _toggleAnalytics() {
+    if (!_isEnabled) return;
+    setState(() => _allowNonEssentials = !_allowNonEssentials);
+    widget.onNonEssentialsToggle(_allowNonEssentials);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,8 +51,12 @@ class _CustomizeConsentState extends State<CustomizeConsent> {
         enabled: _isEnabled,
         disabledOpacity: appTheme.disabledOpacity,
         child: IconButton(
+          tooltip: t.ui.back,
           onPressed: widget.onBack,
-          icon: DynamicThemeImage("back_arrow.svg"),
+          icon: Semantics(
+            label: t.ui.back,
+            child: DynamicThemeImage("back_arrow.svg"),
+          ),
         ),
       ),
       windowTitle: t.ui.back,
@@ -54,39 +66,58 @@ class _CustomizeConsentState extends State<CustomizeConsent> {
           child: Column(
             spacing: appTheme.verticalSpaceMedium,
             children: [
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  t.ui.essentialRequired,
-                  style: consentTheme.listItemTitle,
-                ),
-                subtitle: RichTextMarkdownLinks(
-                  text: t.ui.requiredAnalyticsDescription(
-                    termsUrl: termsOfServiceUrl,
+              AccessibleItem(
+                enabled: false,
+                focusable: _isEnabled,
+                toggled: true,
+                excludeChildSemantics: false,
+                onActivate: () {},
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    t.ui.essentialRequired,
+                    style: consentTheme.listItemTitle,
                   ),
-                  style: consentTheme.listItemSubtitle,
-                ),
-                trailing: OnOffSwitch(
-                  value: true,
-                  onChanged: null,
-                  shouldChange: (toValue) async => false,
+                  subtitle: RichTextMarkdownLinks(
+                    text: t.ui.requiredAnalyticsDescription(
+                      termsUrl: termsOfServiceUrl,
+                    ),
+                    style: consentTheme.listItemSubtitle,
+                  ),
+                  trailing: ExcludeSemantics(
+                    child: OnOffSwitch(
+                      value: true,
+                      onChanged: null,
+                      shouldChange: (toValue) async => false,
+                    ),
+                  ),
                 ),
               ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(t.ui.analytics, style: consentTheme.listItemTitle),
-                subtitle: Text(
-                  t.ui.analyticsDescription,
-                  style: consentTheme.listItemSubtitle,
-                ),
-                trailing: EnabledWidget(
-                  enabled: _isEnabled,
-                  disabledOpacity: appTheme.disabledOpacity,
-                  child: OnOffSwitch(
-                    value: widget.allowNonEssentials,
-                    onChanged: _isEnabled
-                        ? (value) async => widget.onNonEssentialsToggle(value)
-                        : null,
+              AccessibleItem(
+                toggled: _allowNonEssentials,
+                enabled: _isEnabled,
+                label: '${t.ui.analytics}. ${t.ui.analyticsDescription}',
+                onActivate: _toggleAnalytics,
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    t.ui.analytics,
+                    style: consentTheme.listItemTitle,
+                  ),
+                  subtitle: Text(
+                    t.ui.analyticsDescription,
+                    style: consentTheme.listItemSubtitle,
+                  ),
+                  trailing: EnabledWidget(
+                    enabled: _isEnabled,
+                    disabledOpacity: appTheme.disabledOpacity,
+                    child: OnOffSwitch(
+                      key: ValueKey(_allowNonEssentials),
+                      value: _allowNonEssentials,
+                      onChanged: _isEnabled
+                          ? (value) async => _toggleAnalytics()
+                          : null,
+                    ),
                   ),
                 ),
               ),
@@ -105,14 +136,17 @@ class _CustomizeConsentState extends State<CustomizeConsent> {
   }
 
   Future<void> _submit() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() {
       _isEnabled = false;
     });
 
     await widget.onConfirm();
 
-    setState(() {
-      _isEnabled = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isEnabled = true;
+      });
+    }
   }
 }

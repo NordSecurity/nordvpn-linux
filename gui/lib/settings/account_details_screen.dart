@@ -113,28 +113,30 @@ final class UserInfoEntry extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = context.appTheme;
-    return Padding(
-      padding: EdgeInsetsGeometry.fromLTRB(
-        0,
-        theme.verticalSpaceMedium,
-        theme.verticalSpaceMedium,
-        theme.verticalSpaceMedium,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              spacing: 2,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: theme.bodyStrong),
-                Text(description, style: theme.caption),
-              ],
+    return MergeSemantics(
+      child: Padding(
+        padding: EdgeInsetsGeometry.fromLTRB(
+          0,
+          theme.verticalSpaceMedium,
+          theme.verticalSpaceMedium,
+          theme.verticalSpaceMedium,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                spacing: 2,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: theme.bodyStrong),
+                  Text(description, style: theme.caption),
+                ],
+              ),
             ),
-          ),
-          FirstPartyLink(title: linkText, uri: link),
-        ],
+            FirstPartyLink(title: linkText, uri: link),
+          ],
+        ),
       ),
     );
   }
@@ -223,7 +225,14 @@ final class ProductsList extends StatelessWidget {
     final appTheme = context.appTheme;
     return Column(
       children: [
-        Row(children: [Text(t.ui.productHub, style: appTheme.caption)]),
+        MergeSemantics(
+          child: Semantics(
+            header: true,
+            child: Row(
+              children: [Text(t.ui.productHub, style: appTheme.caption)],
+            ),
+          ),
+        ),
         Column(
           children: products
               .map((product) => _buildProductHubItem(context, product))
@@ -245,64 +254,64 @@ final class ProductsList extends StatelessWidget {
     const itemTextVerticalPadding = 2.0;
     const itemTextLinkSpacing = 6.0;
 
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: itemHorizontalPadding,
-        vertical: itemVerticalPadding,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: itemTextLinkSpacing,
-        children: [
-          // Row 1: Icon and Column of (title, subtitle)
-          Row(
-            spacing: iconSpacing,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Padding(
-                padding: EdgeInsetsGeometry.all(iconPadding),
-                child: SizedBox(
-                  width: iconSize,
-                  height: iconSize,
-                  child: DynamicThemeImage(product.imageName),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsetsGeometry.symmetric(
-                    horizontal: itemTextHorizontalPadding,
-                    vertical: itemTextVerticalPadding,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        product.title,
-                        style: settingsTheme.otherProductsTitle,
-                      ),
-                      Text(
-                        product.subtitle,
-                        style: settingsTheme.otherProductsSubtitle,
-                      ),
-                    ],
+    return MergeSemantics(
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: itemHorizontalPadding,
+          vertical: itemVerticalPadding,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: itemTextLinkSpacing,
+          children: [
+            Row(
+              spacing: iconSpacing,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: EdgeInsetsGeometry.all(iconPadding),
+                  child: SizedBox(
+                    width: iconSize,
+                    height: iconSize,
+                    child: DynamicThemeImage(product.imageName),
                   ),
                 ),
-              ),
-            ],
-          ),
-          // Row 2: Empty area offset + learn more link
-          Row(
-            children: [
-              SizedBox(
-                width:
-                    appTheme.trailingIconSize +
-                    iconSpacing +
-                    itemTextHorizontalPadding,
-              ),
-              FirstPartyLink(title: t.ui.learnMore, uri: product.uri),
-            ],
-          ),
-        ],
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsetsGeometry.symmetric(
+                      horizontal: itemTextHorizontalPadding,
+                      vertical: itemTextVerticalPadding,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.title,
+                          style: settingsTheme.otherProductsTitle,
+                        ),
+                        Text(
+                          product.subtitle,
+                          style: settingsTheme.otherProductsSubtitle,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                SizedBox(
+                  width:
+                      appTheme.trailingIconSize +
+                      iconSpacing +
+                      itemTextHorizontalPadding,
+                ),
+                FirstPartyLink(title: t.ui.learnMore, uri: product.uri),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

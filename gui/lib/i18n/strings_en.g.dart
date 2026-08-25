@@ -40,16 +40,16 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	Translations $copyWith({TranslationMetadata<AppLocale, Translations>? meta}) => Translations(meta: meta ?? this.$meta);
 
 	// Translations
-	late final TranslationsA11yEn a11y = TranslationsA11yEn._(_root);
-	late final TranslationsCitiesEn cities = TranslationsCitiesEn._(_root);
-	late final TranslationsCountriesEn countries = TranslationsCountriesEn._(_root);
-	late final TranslationsDaemonEn daemon = TranslationsDaemonEn._(_root);
-	late final TranslationsUiEn ui = TranslationsUiEn._(_root);
+	late final Translations$a11y$en a11y = Translations$a11y$en._(_root);
+	late final Translations$cities$en cities = Translations$cities$en._(_root);
+	late final Translations$countries$en countries = Translations$countries$en._(_root);
+	late final Translations$daemon$en daemon = Translations$daemon$en._(_root);
+	late final Translations$ui$en ui = Translations$ui$en._(_root);
 }
 
 // Path: a11y
-class TranslationsA11yEn {
-	TranslationsA11yEn._(this._root);
+class Translations$a11y$en {
+	Translations$a11y$en._(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -60,11 +60,50 @@ class TranslationsA11yEn {
 
 	/// en: 'VPN connection resumes in $hours hours $minutes minutes $seconds seconds'
 	String VPNResumesInWithHours({required Object hours, required Object minutes, required Object seconds}) => 'VPN connection resumes in ${hours} hours ${minutes} minutes ${seconds} seconds';
+
+	/// en: 'VPN Panel. Preferred location $location. Not secured.'
+	String VPNPanelDisconnected({required Object location}) => 'VPN Panel. Preferred location ${location}. Not secured.';
+
+	/// en: 'VPN Panel. Connecting to $location.'
+	String VPNPanelConnecting({required Object location}) => 'VPN Panel. Connecting to ${location}.';
+
+	/// en: 'VPN Panel. Connected to $location.'
+	String VPNPanelConnected({required Object location}) => 'VPN Panel. Connected to ${location}.';
+
+	/// en: 'VPN Panel. Loading.'
+	String get VPNPanelLoading => 'VPN Panel. Loading.';
+
+	/// en: 'More options'
+	String get moreOptions => 'More options';
+
+	/// en: 'List with $number items'
+	String listWithItems({required Object number}) => 'List with ${number} items';
+
+	/// en: 'Recent connections. $details'
+	String recentConnectionWithDetails({required Object details}) => 'Recent connections. ${details}';
+
+	/// en: 'Expand'
+	String get expandibleEntryExpand => 'Expand';
+
+	/// en: 'Collapse'
+	String get expandibleEntryCollapse => 'Collapse';
+
+	/// en: 'Expanded'
+	String get expandibleEntryExpanded => 'Expanded';
+
+	/// en: 'Collapsed'
+	String get expandibleEntryCollapsed => 'Collapsed';
+
+	/// en: 'Clear'
+	String get clear => 'Clear';
+
+	/// en: '$title. $message'
+	String popupWithContent({required Object title, required Object message}) => '${title}. ${message}';
 }
 
 // Path: cities
-class TranslationsCitiesEn {
-	TranslationsCitiesEn._(this._root);
+class Translations$cities$en {
+	Translations$cities$en._(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -711,8 +750,8 @@ class TranslationsCitiesEn {
 }
 
 // Path: countries
-class TranslationsCountriesEn {
-	TranslationsCountriesEn._(this._root);
+class Translations$countries$en {
+	Translations$countries$en._(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1074,8 +1113,8 @@ class TranslationsCountriesEn {
 }
 
 // Path: daemon
-class TranslationsDaemonEn {
-	TranslationsDaemonEn._(this._root);
+class Translations$daemon$en {
+	Translations$daemon$en._(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1335,8 +1374,8 @@ class TranslationsDaemonEn {
 }
 
 // Path: ui
-class TranslationsUiEn {
-	TranslationsUiEn._(this._root);
+class Translations$ui$en {
+	Translations$ui$en._(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2202,6 +2241,19 @@ extension on Translations {
 		return switch (path) {
 			'a11y.VPNResumesIn' => ({required Object minutes, required Object seconds}) => 'VPN connection resumes in ${minutes} minutes ${seconds} seconds',
 			'a11y.VPNResumesInWithHours' => ({required Object hours, required Object minutes, required Object seconds}) => 'VPN connection resumes in ${hours} hours ${minutes} minutes ${seconds} seconds',
+			'a11y.VPNPanelDisconnected' => ({required Object location}) => 'VPN Panel. Preferred location ${location}. Not secured.',
+			'a11y.VPNPanelConnecting' => ({required Object location}) => 'VPN Panel. Connecting to ${location}.',
+			'a11y.VPNPanelConnected' => ({required Object location}) => 'VPN Panel. Connected to ${location}.',
+			'a11y.VPNPanelLoading' => 'VPN Panel. Loading.',
+			'a11y.moreOptions' => 'More options',
+			'a11y.listWithItems' => ({required Object number}) => 'List with ${number} items',
+			'a11y.recentConnectionWithDetails' => ({required Object details}) => 'Recent connections. ${details}',
+			'a11y.expandibleEntryExpand' => 'Expand',
+			'a11y.expandibleEntryCollapse' => 'Collapse',
+			'a11y.expandibleEntryExpanded' => 'Expanded',
+			'a11y.expandibleEntryCollapsed' => 'Collapsed',
+			'a11y.clear' => 'Clear',
+			'a11y.popupWithContent' => ({required Object title, required Object message}) => '${title}. ${message}',
 			'cities.tirana' => 'Tirana',
 			'cities.algiers' => 'Algiers',
 			'cities.addis_ababa' => 'Addis Ababa',
@@ -2699,6 +2751,8 @@ extension on Translations {
 			'ui.searchServersHint' => 'Search countries, cities, or servers',
 			'ui.citiesAvailable' => ({required Object n}) => '${n} cities available',
 			'ui.virtual' => 'Virtual',
+			_ => null,
+		} ?? switch (path) {
 			'ui.dedicatedIp' => 'Dedicated IP',
 			'ui.dedicatedServer' => 'Dedicated Server',
 			'ui.doubleVpn' => 'Double VPN',
@@ -2712,8 +2766,6 @@ extension on Translations {
 			'ui.chooseLocationForDip' => 'Choose a location for your dedicated IP',
 			'ui.getDip' => 'Get dedicated IP',
 			'ui.getYourDip' => 'Get your personal IP',
-			_ => null,
-		} ?? switch (path) {
 			'ui.getDipDescription' => 'Get a personal IP address that belongs only to you. Enjoy all the benefits of VPN encryption without dealing with blocklists, identity checks, and selecting images of boats in CAPTCHAs.',
 			'ui.notifications' => 'Notifications',
 			'ui.specialtyServersSearchHint' => 'Search country or city',

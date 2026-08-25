@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nordvpn/data/models/allow_list.dart';
 import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/data/providers/account_controller.dart';
@@ -15,7 +14,6 @@ import 'package:nordvpn/internal/uri_launch_extension.dart';
 import 'package:nordvpn/internal/urls.dart';
 import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 typedef PopupOrErrorCode = int;
 
@@ -157,7 +155,7 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       yesButtonText: t.ui.reconnectNow,
       yesAction: (ref) async {
         // Get current connection parameters before applying protocol change
-        final vpnStatus = ref.read(vpnStatusControllerProvider).valueOrNull;
+        final vpnStatus = ref.read(vpnStatusControllerProvider).value;
         final connectionParams = vpnStatus?.connectionParameters;
 
         // Apply the pending protocol change
@@ -196,7 +194,7 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       id: DaemonStatusCode.accountExpired,
       header: t.ui.subscriptionHasEnded,
       message: (ref) {
-        final account = ref.read(accountControllerProvider).valueOrNull;
+        final account = ref.read(accountControllerProvider).value;
         // if account is not set, we'll be redirected to login
         // page so the message returned here doesn't matter
         if (account == null) return "";

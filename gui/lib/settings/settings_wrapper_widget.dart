@@ -48,7 +48,7 @@ final class SettingsWrapperWidget extends StatelessWidget {
           ),
           if (stickyHeader != null) stickyHeader!,
           if (stickyHeader != null) _divider(),
-          Expanded(child: _pageContents(context)),
+          Expanded(child: FocusTraversalGroup(child: _pageContents(context))),
           if (stickyFooter != null) _divider(),
           if (stickyFooter != null) stickyFooter!,
         ],
@@ -79,7 +79,7 @@ final class SettingsWrapperWidget extends StatelessWidget {
   }
 
   // helper function to create the items from the list
-  static AdvancedListTile buildListItem(
+  static Widget buildListItem(
     BuildContext context, {
     Key? key,
     String? iconName,
@@ -97,22 +97,31 @@ final class SettingsWrapperWidget extends StatelessWidget {
   }) {
     final settingsTheme = context.settingsTheme;
 
-    return AdvancedListTile(
-      key: key ?? UniqueKey(),
-      leading: iconName != null ? DynamicThemeImage(iconName) : null,
-      title: Expanded(
-        child: Text(title, style: titleStyle ?? settingsTheme.itemTitleStyle),
+    return MergeSemantics(
+      child: Semantics(
+        button: onTap != null,
+        enabled: enabled,
+        child: AdvancedListTile(
+          key: key ?? UniqueKey(),
+          leading: iconName != null ? DynamicThemeImage(iconName) : null,
+          title: Expanded(
+            child: Text(
+              title,
+              style: titleStyle ?? settingsTheme.itemTitleStyle,
+            ),
+          ),
+          subtitle: subtitle != null
+              ? Text(subtitle, style: settingsTheme.itemSubtitleStyle)
+              : subtitleWidget,
+          center: center,
+          trailing: trailing,
+          onTap: onTap,
+          trailingLocation: trailingLocation,
+          enabled: enabled,
+          padding: padding ?? settingsTheme.itemPadding,
+          color: color,
+        ),
       ),
-      subtitle: subtitle != null
-          ? Text(subtitle, style: settingsTheme.itemSubtitleStyle)
-          : subtitleWidget,
-      center: center,
-      trailing: trailing,
-      onTap: onTap,
-      trailingLocation: trailingLocation,
-      enabled: enabled,
-      padding: padding ?? settingsTheme.itemPadding,
-      color: color,
     );
   }
 }
@@ -147,7 +156,7 @@ final class SingleChildSettingsWrapperWidget extends StatelessWidget {
           ),
           if (stickyHeader != null) stickyHeader!,
           if (showDivider && stickyHeader != null) _divider(),
-          Expanded(child: child),
+          Expanded(child: FocusTraversalGroup(child: child)),
           if (showDivider && stickyFooter != null) _divider(),
           if (stickyFooter != null) stickyFooter!,
         ],

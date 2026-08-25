@@ -43,17 +43,38 @@ class _InteractiveListViewState extends State<InteractiveListView> {
   final _searchController = TextEditingController();
   final _searchFieldNodeFocus = FocusNode();
 
+  TextEditingController get _activeController =>
+      widget.searchTextController ?? _searchController;
+
   @override
   void initState() {
     super.initState();
     assert(widget.beginSearchAfter >= 1);
+    _activeController.addListener(_onQueryChanged);
   }
 
   @override
   void dispose() {
+    _activeController.removeListener(_onQueryChanged);
     _searchController.dispose();
     _searchFieldNodeFocus.dispose();
     super.dispose();
+  }
+
+  void _onQueryChanged() {
+    if (!mounted) return;
+
+    final query = _activeController.text;
+
+    if (query.isEmpty || query.length < widget.beginSearchAfter) {
+      setState(() {});
+      return;
+    }
+
+    if (widget.showEmptyListAtStartup &&
+        widget.filter(query, widget.items).isEmpty) {
+      setState(() {});
+    }
   }
 
   @override
@@ -80,18 +101,9 @@ class _InteractiveListViewState extends State<InteractiveListView> {
       initialList: initialItems,
       filter: (query) {
         if (query.isEmpty || query.length < widget.beginSearchAfter) {
-          // Return all items when query is not fulfilled
-          setState(() {});
           return widget.items;
         }
-        final filteredItems = widget.filter(query, widget.items);
-
-        if ((widget.showEmptyListAtStartup) && filteredItems.isEmpty) {
-          // rebuild the list with error
-          setState(() {});
-        }
-
-        return filteredItems;
+        return widget.filter(query, widget.items);
       },
       emptyWidget: _emptyResultsWidget(),
       inputDecoration: InputDecoration(
