@@ -14,19 +14,19 @@ import (
 
 // Set Real-time protection help text
 const (
-	SetRealTimeProtectionUsageText     = "Turns real-time protection on or off. Real-time protection blocks scam and phishing attempts and reduces intrusive ads while you’re connected to the VPN. Learn more about how it works: " + realTimeProtectionLearnMoreUrl + "."
+	SetRealTimeProtectionUsageText     = "Use this command to turn real-time protection on or off. Real-time protection blocks scam and phishing attempts and reduces intrusive ads while you’re connected to the VPN. Learn more about how it works: " + realTimeProtectionLearnMoreUrl + "."
 	SetRealTimeProtectionArgsUsageText = `<enabled>|<disabled>`
-	SetRealTimeProtectionDescription   = `Use this command to enable or disable Real-time protection. When enabled, the Real-time protection feature will automatically block suspicious websites so that no malware or other cyber threats can infect your device. Additionally, no flashy ads will come into your sight. More information on how it works: ` + realTimeProtectionLearnMoreUrl + "\n\n" + realTimeProtectionExamples
+	SetRealTimeProtectionDescription   = `Use this command to turn real-time protection on or off. Real-time protection blocks scam and phishing attempts and reduces intrusive ads while you’re connected to the VPN. Learn more about how it works: ` + realTimeProtectionLearnMoreUrl + "\n\n" + realTimeProtectionExamples
 
 	realTimeProtectionLearnMoreUrl = "https://nordvpn.com/features/threat-protection/?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=settings-explore_threat_protection&nm=app&ns=nordvpn-linux-cli&nc=settings-explore_threat_protection"
 	realTimeProtectionExamples     = `Supported values for <disabled>: 0, false, disable, off, disabled
+
+Supported values for <on>: 1, true, enable, on, enabled
+Example: nordvpn set protection on
+Supported values for <off>: 0, false, disable, off, disabled
 Example: nordvpn set protection off
 
-Supported values for <enabled>: 1, true, enable, on, enabled
-Example: nordvpn set protection on
-
-Notes:
-  Real-time protection isn’t compatible with custom DNS. Activating one turns the other off.`
+Note: Real-time protection works with our default DNS servers only. If custom DNS is active, we’ll turn it off once you turn on real-time protection.`
 )
 
 func setTPLErrorCodeToError(code pb.SetErrorCode, args ...any) error {
