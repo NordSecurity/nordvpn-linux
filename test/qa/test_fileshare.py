@@ -1552,42 +1552,41 @@ def test_all_permissions_denied_send_file(background_send: bool, background_acce
     local_peer_list = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list())
     local_address = local_peer_list.get_this_device().hostname
 
-    ssh_client.meshnet.set_permissions(local_address, routing=False, local=False, incoming=False)
+    with lib.Defer(lambda: ssh_client.meshnet.set_permissions(local_address, routing=True, local=True, incoming=True)):
+        ssh_client.meshnet.set_permissions(local_address, routing=False, local=False, incoming=False)
 
-    wdir = fileshare.create_directory(1)
-    peer_address = local_peer_list.get_internal_peer().hostname
+        wdir = fileshare.create_directory(1)
+        peer_address = local_peer_list.get_internal_peer().hostname
 
-    if background_send:
-        sh.nordvpn.fileshare.send("--background", peer_address, wdir.paths[0])
-    else:
-        fileshare.start_transfer(peer_address, wdir.paths[0])
+        if background_send:
+            sh.nordvpn.fileshare.send("--background", peer_address, wdir.paths[0])
+        else:
+            fileshare.start_transfer(peer_address, wdir.paths[0])
 
-    remote_transfer_id = None
-    error_message = None
-    for remote_transfer_id, error_message in poll(lambda: fileshare.get_new_incoming_transfer(ssh_client), attempts=4):  # noqa: B007
-        if remote_transfer_id is not None:
-            break
+        remote_transfer_id = None
+        error_message = None
+        for remote_transfer_id, error_message in poll(lambda: fileshare.get_new_incoming_transfer(ssh_client), attempts=4):  # noqa: B007
+            if remote_transfer_id is not None:
+                break
 
-    assert remote_transfer_id is not None, error_message
+        assert remote_transfer_id is not None, error_message
 
-    if background_accept:
-        ssh_client.exec_command(f"nordvpn fileshare accept --background {remote_transfer_id}")
-    else:
-        ssh_client.exec_command(f"nordvpn fileshare accept {remote_transfer_id}")
+        if background_accept:
+            ssh_client.exec_command(f"nordvpn fileshare accept --background {remote_transfer_id}")
+        else:
+            ssh_client.exec_command(f"nordvpn fileshare accept {remote_transfer_id}")
 
-    for transfers_done in poll(
-        lambda: (
-            "completed" in fileshare.get_transfer(remote_transfer_id) and
-            "completed" in fileshare.get_transfer(remote_transfer_id, ssh_client)
-        )
-    ):
-        if transfers_done:
-            break
+        for transfers_done in poll(
+            lambda: (
+                "completed" in fileshare.get_transfer(remote_transfer_id) and
+                "completed" in fileshare.get_transfer(remote_transfer_id, ssh_client)
+            )
+        ):
+            if transfers_done:
+                break
 
-    peer_filepath = "~/Downloads/"
-    assert fileshare.files_from_transfer_exist_in_filesystem(remote_transfer_id, [wdir], ssh_client), "Files should be transferred to filesystem"
-    ssh_client.exec_command(f"rm -rf {peer_filepath}/{wdir.filenames[0]}")
+        peer_filepath = "~/Downloads/"
+        assert fileshare.files_from_transfer_exist_in_filesystem(remote_transfer_id, [wdir], ssh_client), "Files should be transferred to filesystem"
+        ssh_client.exec_command(f"rm -rf {peer_filepath}/{wdir.filenames[0]}")
 
-    ssh_client.meshnet.set_permissions(local_address, routing=True, local=True, incoming=True)
-
-    shutil.rmtree(wdir.dir_path)
+        shutil.rmtree(wdir.dir_path)
