@@ -325,12 +325,28 @@ func buildPackage(packageType string, buildFlags string) error {
 	env["WORKDIR"] = cwd
 	switch packageType {
 	case packageTypeSnap:
-		return sh.RunWithV(env, "ci/build_snap.sh")
+		if err := sh.RunWithV(env, "ci/build_snap.sh"); err != nil {
+			return err
+		}
+		return reviewSnapPackage()
 	case packageTypeDeb, packageTypeRPM:
 		return sh.RunWithV(env, "ci/nfpm/build_packages_resources.sh", packageType)
 	}
 
 	return fmt.Errorf("unsupported package type: %s", packageType)
+}
+
+func reviewSnapPackage() error {
+	env, err := getEnv()
+	if err != nil {
+		return err
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	env["WORKDIR"] = cwd
+	return sh.RunWithV(env, "ci/review_snap.sh")
 }
 
 // Deb package for the host architecture
@@ -371,13 +387,16 @@ func buildPackageDocker(ctx context.Context, packageType string, buildFlags stri
 	switch packageType {
 	case packageTypeSnap:
 		env["DOCKER_ENV"] = "1"
-		return RunDockerWithSettings(
+		if err := RunDockerWithSettings(
 			ctx,
 			env,
 			imageSnapPackager,
 			[]string{"ci/build_snap.sh"},
 			DockerSettings{Privileged: true, WorkDir: dockerWorkDir},
-		)
+		); err != nil {
+			return err
+		}
+		return reviewSnapPackage()
 	case packageTypeDeb, packageTypeRPM:
 		return RunDocker(
 			ctx,
