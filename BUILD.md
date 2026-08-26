@@ -21,7 +21,9 @@ with Ubuntu 22.04):
 ### Docker builds
 
 Mage targets for building with docker are named `build:xxxDocker`. The only
-extra dependency for docker builds is [Docker](https://docs.docker.com/engine/install/ubuntu/).
+extra dependency for docker builds is [Docker](https://docs.docker.com/engine/install/ubuntu/)
+unless you are building snap package, then you also need
+[review-tools](https://snapcraft.io/review-tools)
 
 #### Idempotent docker builds
 
