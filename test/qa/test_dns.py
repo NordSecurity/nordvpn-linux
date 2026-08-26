@@ -22,14 +22,14 @@ def test_set_tpl_on_off_connected(tech, proto, obfuscated):
         sh.nordvpn.connect()
 
         tpl_alias = dns.get_tpl_alias()
-        assert "Threat Protection Lite has been successfully set to 'enabled'" in sh.nordvpn.set(tpl_alias, "on"), "TPL enable should show success message"
+        assert "Real-time protection has been successfully set to 'enabled'" in sh.nordvpn.set(tpl_alias, "on"), "TPL enable should show success message"
 
         assert settings.is_tpl_enabled(), "TPL should be enabled after setting it to on"
         assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings when TPL is enabled"
         assert dns.is_set_for(dns.DNS_TPL), "DNS should be set for TPL when connected with TPL enabled"
 
         tpl_alias = dns.get_tpl_alias()
-        assert "Threat Protection Lite has been successfully set to 'disabled'." in sh.nordvpn.set(tpl_alias, "off"), "TPL disable should show success message"
+        assert "Real-time protection has been successfully set to 'disabled'." in sh.nordvpn.set(tpl_alias, "off"), "TPL disable should show success message"
 
         assert not settings.is_tpl_enabled(), "TPL should be disabled after setting it to off"
         assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings after TPL is disabled"
@@ -46,7 +46,7 @@ def test_set_tpl_on_and_connect(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     tpl_alias = dns.get_tpl_alias()
-    assert "Threat Protection Lite has been successfully set to 'enabled'." in sh.nordvpn.set(tpl_alias, "on"), "TPL enable should show success message"
+    assert "Real-time protection has been successfully set to 'enabled'." in sh.nordvpn.set(tpl_alias, "on"), "TPL enable should show success message"
 
     assert settings.is_tpl_enabled(), "TPL should be enabled after setting it to on"
     assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings when TPL is enabled"
