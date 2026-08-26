@@ -26,7 +26,7 @@ func (n *hookedNetworker) IsVPNActive() bool {
 	if n.onIsVPNActive != nil {
 		n.onIsVPNActive()
 	}
-	return n.Mock.VpnActive
+	return n.VpnActive
 }
 
 // suspendOnReconcile returns a networker whose IsVPNActive call (the first thing
