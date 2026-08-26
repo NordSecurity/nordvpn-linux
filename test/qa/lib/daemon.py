@@ -163,6 +163,17 @@ def restart():
         time.sleep(2)
     start()
 
+# restarts the daemon without blocking
+def non_blocking_restart():
+    if is_running():
+        if is_under_snap():
+            os.popen("sudo snap restart nordvpn").read()
+        elif is_init_systemd():
+            os.popen("sudo systemctl restart nordvpn").read()
+        else:
+            sh.sudo("/etc/init.d/nordvpn", "restart")
+
+
 
 # retrieving links inside this function creates a race condition,
 # therefore it is safer to provide them as arguments

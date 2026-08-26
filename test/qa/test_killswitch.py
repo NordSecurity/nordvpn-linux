@@ -289,3 +289,17 @@ def test_killswitch_autoconnect_to_fastest():
     # list of closest countries that surround Germany
     allowed_countries = ["Germany", "Poland", "Czech_Republic", "Austria", "Switzerland", "France", "Belgium", "Netherlands", "Denmark"]
     assert status_data["country"] in allowed_countries, "Fastest server should be in the same country"
+    sh.nordvpn.set.killswitch.off()
+    sh.nordvpn.set.autoconnect.off()
+
+
+@pytest.mark.skipif(daemon.is_under_snap(), reason="feature is not supported on snap")
+def test_killswitch_on_during_restart():
+    sh.nordvpn.set.killswitch.on()
+    daemon.non_blocking_restart()
+    for _ in range(5):
+        # doing five consecutive checks, to see if the table is not gone during the stopping and restarting
+        assert firewall.is_active()
+    assert network.is_not_available()
+    sh.nordvpn.set.killswitch.off()
+    assert network.is_available(), "Network should be available"
