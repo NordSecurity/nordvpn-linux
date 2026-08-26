@@ -11,8 +11,7 @@ Please follow the instructions in the following step for setting up the
 development environment. (Note: This process was tested on a virtual machine
 with Ubuntu 22.04):
 
-1. Install [Go 1.22](https://go.dev/doc/install). Note that newer versions will
-   not work if either `telio` or `drop` are included.
+1. Install [Go 1.26.3](https://go.dev/doc/install).
 1. Install [Mage](https://github.com/magefile/mage#installation). Even though
    currently building using bash scripts directly works well, mage is the
    recommended way to go.
