@@ -545,6 +545,8 @@ func (r *RPC) connect(
 
 		case errors.Is(err, ens.ErrConnectionLimitReached):
 			t = internal.CodeConnectionLimitReached
+			event.VPNConnReason = events.VPNConnectionReasonConnectionLimitReached
+			event.Error = nil
 		}
 		r.events.Service.Connect.Publish(event)
 		if err := srv.Send(&pb.Payload{
