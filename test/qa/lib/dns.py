@@ -14,7 +14,9 @@ TPL_ALIAS = [
     "threatprotectionlite",
     "tplite",
     "tpl",
-    "cybersec"
+    "cybersec",
+    "protection",
+    "protect"
 ]
 
 # Used for test parametrization, when the same test has to be run for different values of custom dns.

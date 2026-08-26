@@ -93,12 +93,10 @@ def dns_visible_in_settings(dns: list) -> bool:
 
 
 def is_tpl_enabled():
-    """Returns True, if Threat Protection Lite is enabled in application settings."""
-    return Settings().get("Threat Protection Lite") == "enabled"
+    return Settings().get("Real-time protection") == "enabled"
 
 
 def is_notify_enabled():
-    """Returns True, if Threat Protection Lite is enabled in application settings."""
     return Settings().get("Notify") == "enabled"
 
 
