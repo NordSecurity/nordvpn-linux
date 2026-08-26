@@ -452,6 +452,8 @@ func main() {
 	connectionInfo.SubscribeToInternalStateChanges(statePublisher)
 	connectionInfo.SubscribeToPauseCancelled(analytics)
 	daemonEvents.Service.Connect.Subscribe(connectionInfo.ConnectionStatusNotifyConnect)
+	daemonEvents.Service.Connect.Subscribe(
+		openvpn.NewDCOAnalytics(daemonEvents.Debugger.DebuggerEvents).NotifyConnect)
 	daemonEvents.Service.Disconnect.Subscribe(connectionInfo.ConnectionStatusNotifyDisconnect)
 	daemonEvents.User.Subscribe(statePublisher)
 	configEvents.Subscribe(statePublisher)
