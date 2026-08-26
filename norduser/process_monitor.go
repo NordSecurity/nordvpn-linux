@@ -124,7 +124,16 @@ func NewNorduserProcessMonitor(service service.Service) NorduserProcessMonitor {
 	}
 }
 
-func (n *NorduserProcessMonitor) handleGroupFileUpdate(currentGroupMembers userSet) (userSet, error) {
+// handleGroupFileUpdate updates the system group members list and performs the following actions:
+//  1. user socket directory is created for users who were added to the system group
+//  2. norduser is started for active users who were added to the system group
+//  3. norduser is stopped for users who were removed from the system group
+//  4. user socket directory is removed for users who were removed from the system group
+//
+// If simpleMode is true, steps 2 and 3 are skipped and only user socket directory actions will be performed. This is
+// useful for environments where utmp is not available(such as docker) where it is impossible to determine if user is
+// active.
+func (n *NorduserProcessMonitor) handleGroupFileUpdate(currentGroupMembers userSet, simpleMode bool) (userSet, error) {
 	newGroupMembers, err := getNordVPNGroupMembers()
 	if err != nil {
 		return currentGroupMembers, fmt.Errorf("getting nordvpn group members: %w", err)
@@ -148,6 +157,10 @@ func (n *NorduserProcessMonitor) handleGroupFileUpdate(currentGroupMembers userS
 			continue
 		}
 
+		if simpleMode {
+			continue
+		}
+
 		state := notActive
 		userStatus, ok := activeUsers[newGroupMemberUsername]
 		if ok {
@@ -159,8 +172,11 @@ func (n *NorduserProcessMonitor) handleGroupFileUpdate(currentGroupMembers userS
 	// update state for removed group members
 	for memberUsername, memberState := range currentGroupMembers {
 		if contains := slices.Contains(newGroupMembers, memberUsername); !contains {
-			memberState.changeState(notActive, memberUsername, n.userIDGetter, n.norduserd)
-			delete(currentGroupMembers, memberUsername)
+			if !simpleMode {
+				memberState.changeState(notActive, memberUsername, n.userIDGetter, n.norduserd)
+				delete(currentGroupMembers, memberUsername)
+			}
+
 			if err := removeSocketDirectory(memberUsername, n.userIDGetter, n.filesystemHandle); err != nil {
 				log.Error("failed to remove user socket directory:", err)
 			}
@@ -192,13 +208,24 @@ func (n *NorduserProcessMonitor) handleUTMPFileUpdate(currentGroupMembers userSe
 
 // Start blocks the thread and starts monitoring for changes in the nordvpn group.
 func (n *NorduserProcessMonitor) Start() error {
+	simpleMode := false
+
 	watcher, err := filewatch.GetFileWatcher(etcPath, utmpFilePath)
 	if err != nil {
-		return fmt.Errorf("creating file watcher: %w", err)
+		// Watcher creation will fail if utmp file is not available, which is possible in certain environments such
+		// as docker. In such cases we start a simplified watcher that monitors only the group file, for user socket
+		// directory creation purposes.
+		log.Warn("failed to create group/session file watcher:", err)
+		simpleMode = true
+
+		watcher, err = filewatch.GetFileWatcher(etcPath)
+		if err != nil {
+			return fmt.Errorf("creating file watcher: %w", err)
+		}
 	}
 	defer watcher.Close()
 
-	currentGrupMembers, err := n.handleGroupFileUpdate(make(userSet))
+	currentGrupMembers, err := n.handleGroupFileUpdate(make(userSet), simpleMode)
 	if err != nil {
 		return fmt.Errorf("starting norduserd for the initial group members: %w", err)
 	}
@@ -215,7 +242,7 @@ func (n *NorduserProcessMonitor) Start() error {
 				// Because utilities used to modify the group do so atomically, we also need to monitor for creation of
 				// the file instead of modifications.
 				if event.Has(fsnotify.Create) || event.Has(fsnotify.Write) {
-					if newGroupMembers, err := n.handleGroupFileUpdate(currentGrupMembers); err != nil {
+					if newGroupMembers, err := n.handleGroupFileUpdate(currentGrupMembers, simpleMode); err != nil {
 						log.Error("failed to handle change of groupfile:", err)
 					} else {
 						currentGrupMembers = newGroupMembers
