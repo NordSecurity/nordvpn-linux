@@ -8,11 +8,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
 	"testing"
+	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -360,6 +362,418 @@ func TestAddDirectoryToZip_SymlinksSkipped(t *testing.T) {
 	assert.Len(t, entries, 1)
 }
 
+func TestOpenVerifiedUserFile(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	uid := uint32(os.Getuid())
+
+	tests := []struct {
+		name string
+		// setup prepares a home directory and returns the *os.Root anchored
+		// at it, the relative path to open, and the uid to require
+		setup         func(t *testing.T) (root *os.Root, relPath string, expectedUID uint32)
+		expectErr     bool
+		expectContent string
+	}{
+		{
+			name: "regular file owned by the expected uid succeeds",
+			setup: func(t *testing.T) (*os.Root, string, uint32) {
+				home := t.TempDir()
+				dir := filepath.Join(home, ".config", "nordvpn")
+				require.NoError(t, os.MkdirAll(dir, 0o755))
+				require.NoError(t, os.WriteFile(filepath.Join(dir, "cli.log"), []byte("hello"), 0o600))
+
+				root, err := os.OpenRoot(home)
+				require.NoError(t, err)
+				t.Cleanup(func() { _ = root.Close() })
+
+				return root, filepath.Join(".config", "nordvpn", "cli.log"), uid
+			},
+			expectContent: "hello",
+		},
+		{
+			// Mirrors the reported PoC: cli.log replaced with a symlink to
+			// a file the caller cannot read directly.
+			name: "rejects a symlink to a file outside home",
+			setup: func(t *testing.T) (*os.Root, string, uint32) {
+				home := t.TempDir()
+				outside := t.TempDir()
+				secret := filepath.Join(outside, "root-only-secret")
+				require.NoError(t, os.WriteFile(secret, []byte("ROOT-ONLY-SENTINEL"), 0o600))
+
+				dir := filepath.Join(home, ".config", "nordvpn")
+				require.NoError(t, os.MkdirAll(dir, 0o755))
+				require.NoError(t, os.Symlink(secret, filepath.Join(dir, "cli.log")))
+
+				root, err := os.OpenRoot(home)
+				require.NoError(t, err)
+				t.Cleanup(func() { _ = root.Close() })
+
+				return root, filepath.Join(".config", "nordvpn", "cli.log"), uid
+			},
+			expectErr: true,
+		},
+		{
+			name: "rejects a symlink even to a file inside home",
+			setup: func(t *testing.T) (*os.Root, string, uint32) {
+				home := t.TempDir()
+				other := filepath.Join(home, "other.txt")
+				require.NoError(t, os.WriteFile(other, []byte("other"), 0o600))
+
+				dir := filepath.Join(home, ".config", "nordvpn")
+				require.NoError(t, os.MkdirAll(dir, 0o755))
+				require.NoError(t, os.Symlink(other, filepath.Join(dir, "cli.log")))
+
+				root, err := os.OpenRoot(home)
+				require.NoError(t, err)
+				t.Cleanup(func() { _ = root.Close() })
+
+				return root, filepath.Join(".config", "nordvpn", "cli.log"), uid
+			},
+			expectErr: true,
+		},
+		{
+			// Attacker replaces ~/.config itself with a symlink pointing
+			// outside home.
+			name: "rejects an intermediate path component that symlinks out of home",
+			setup: func(t *testing.T) (*os.Root, string, uint32) {
+				home := t.TempDir()
+				outside := t.TempDir()
+				require.NoError(t, os.WriteFile(filepath.Join(outside, "cli.log"), []byte("x"), 0o600))
+				require.NoError(t, os.Symlink(outside, filepath.Join(home, ".config")))
+
+				root, err := os.OpenRoot(home)
+				require.NoError(t, err)
+				t.Cleanup(func() { _ = root.Close() })
+
+				return root, filepath.Join(".config", "cli.log"), uid
+			},
+			expectErr: true,
+		},
+		{
+			name: "rejects a file not owned by the expected uid",
+			setup: func(t *testing.T) (*os.Root, string, uint32) {
+				home := t.TempDir()
+				dir := filepath.Join(home, ".config", "nordvpn")
+				require.NoError(t, os.MkdirAll(dir, 0o755))
+				require.NoError(t, os.WriteFile(filepath.Join(dir, "cli.log"), []byte("hello"), 0o600))
+
+				root, err := os.OpenRoot(home)
+				require.NoError(t, err)
+				t.Cleanup(func() { _ = root.Close() })
+
+				return root, filepath.Join(".config", "nordvpn", "cli.log"), uid + 12345
+			},
+			expectErr: true,
+		},
+		{
+			name: "rejects a directory",
+			setup: func(t *testing.T) (*os.Root, string, uint32) {
+				home := t.TempDir()
+				dir := filepath.Join(home, ".config", "nordvpn")
+				require.NoError(t, os.MkdirAll(dir, 0o755))
+
+				root, err := os.OpenRoot(home)
+				require.NoError(t, err)
+				t.Cleanup(func() { _ = root.Close() })
+
+				return root, filepath.Join(".config", "nordvpn"), uid
+			},
+			expectErr: true,
+		},
+		{
+			name: "rejects a FIFO without blocking",
+			setup: func(t *testing.T) (*os.Root, string, uint32) {
+				home := t.TempDir()
+				require.NoError(t, syscall.Mkfifo(filepath.Join(home, "cli.log"), 0o600))
+
+				root, err := os.OpenRoot(home)
+				require.NoError(t, err)
+				t.Cleanup(func() { _ = root.Close() })
+
+				return root, "cli.log", uid
+			},
+			expectErr: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			root, relPath, expectedUID := tc.setup(t)
+
+			type result struct {
+				file *os.File
+				err  error
+			}
+			done := make(chan result, 1)
+			go func() {
+				f, err := openVerifiedUserFile(root, relPath, expectedUID)
+				done <- result{f, err}
+			}()
+
+			var res result
+			select {
+			case res = <-done:
+			case <-time.After(3 * time.Second):
+				t.Fatal("openVerifiedUserFile did not return in time (blocking open?)")
+			}
+
+			if tc.expectErr {
+				assert.Error(t, res.err)
+				return
+			}
+			require.NoError(t, res.err)
+			defer func() { _ = res.file.Close() }()
+
+			data, err := io.ReadAll(res.file)
+			require.NoError(t, err)
+			assert.Equal(t, tc.expectContent, string(data))
+		})
+	}
+}
+
+func TestAddUserFileToZip_RegressionRootFileDisclosure(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	uid := uint32(os.Getuid())
+	home := t.TempDir()
+	rootOnlyDir := t.TempDir()
+	sentinel := filepath.Join(rootOnlyDir, "root-only-sentinel")
+	require.NoError(t, os.WriteFile(sentinel, []byte("ROOT-ONLY-SENTINEL"), 0o600))
+
+	dir := filepath.Join(home, ".config", "nordvpn")
+	require.NoError(t, os.MkdirAll(dir, 0o755))
+	require.NoError(t, os.Symlink(sentinel, filepath.Join(dir, "cli.log")))
+
+	root, err := os.OpenRoot(home)
+	require.NoError(t, err)
+	defer func() { _ = root.Close() }()
+
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	err = addUserFileToZip(zw, root, filepath.Join(".config", "nordvpn", "cli.log"), "cli.log", uid)
+	assert.Error(t, err, "the daemon must refuse to follow a symlinked cli.log")
+	require.NoError(t, zw.Close())
+
+	entries := readZipEntries(t, buf.Bytes())
+	assert.NotContains(t, entries, "cli.log")
+	for _, content := range entries {
+		assert.NotContains(t, content, "ROOT-ONLY-SENTINEL")
+	}
+}
+
+func TestAddUserFileToZip(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	uid := uint32(os.Getuid())
+
+	tests := []struct {
+		name        string
+		setup       func(t *testing.T) (root *os.Root, relPath string)
+		expectErr   bool
+		expectEntry string
+	}{
+		{
+			name: "adds a genuine file",
+			setup: func(t *testing.T) (*os.Root, string) {
+				home := t.TempDir()
+				dir := filepath.Join(home, ".config", "nordvpn")
+				require.NoError(t, os.MkdirAll(dir, 0o755))
+				require.NoError(t, os.WriteFile(filepath.Join(dir, "cli.log"), []byte("log-content"), 0o600))
+
+				root, err := os.OpenRoot(home)
+				require.NoError(t, err)
+				t.Cleanup(func() { _ = root.Close() })
+
+				return root, filepath.Join(".config", "nordvpn", "cli.log")
+			},
+			expectEntry: "log-content",
+		},
+		{
+			name: "missing file returns error",
+			setup: func(t *testing.T) (*os.Root, string) {
+				root, err := os.OpenRoot(t.TempDir())
+				require.NoError(t, err)
+				t.Cleanup(func() { _ = root.Close() })
+
+				return root, filepath.Join(".config", "nordvpn", "cli.log")
+			},
+			expectErr: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			root, relPath := tc.setup(t)
+			var buf bytes.Buffer
+			zw := zip.NewWriter(&buf)
+			err := addUserFileToZip(zw, root, relPath, "cli.log", uid)
+			if tc.expectErr {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.NoError(t, zw.Close())
+
+			entries := readZipEntries(t, buf.Bytes())
+			assert.Equal(t, tc.expectEntry, entries["cli.log"])
+		})
+	}
+}
+
+func TestAddUserDirectoryToZip(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	uid := uint32(os.Getuid())
+
+	tests := []struct {
+		name          string
+		setup         func(t *testing.T) (root *os.Root, relDir string)
+		expectErr     bool
+		expectCount   int
+		expectEntries map[string]string // zip entry name -> expected content
+		expectAbsent  []string
+		expectLogged  string
+	}{
+		{
+			name: "copies regular files and skips symlinks",
+			setup: func(t *testing.T) (*os.Root, string) {
+				home := t.TempDir()
+				cacheDir := filepath.Join(home, ".cache", "nordvpn")
+				require.NoError(t, os.MkdirAll(cacheDir, 0o755))
+				require.NoError(t, os.WriteFile(filepath.Join(cacheDir, "real.txt"), []byte("real"), 0o600))
+
+				outside := t.TempDir()
+				secret := filepath.Join(outside, "secret")
+				require.NoError(t, os.WriteFile(secret, []byte("secret"), 0o600))
+				require.NoError(t, os.Symlink(secret, filepath.Join(cacheDir, "link.txt")))
+
+				root, err := os.OpenRoot(home)
+				require.NoError(t, err)
+				t.Cleanup(func() { _ = root.Close() })
+
+				return root, filepath.Join(".cache", "nordvpn")
+			},
+			expectCount:   1,
+			expectEntries: map[string]string{"cache/real.txt": "real"},
+			expectAbsent:  []string{"cache/link.txt"},
+			expectLogged:  "link.txt",
+		},
+		{
+			name: "logs and collects nothing when the directory itself escapes home, without erroring",
+			setup: func(t *testing.T) (*os.Root, string) {
+				home := t.TempDir()
+				outside := t.TempDir()
+				require.NoError(t, os.WriteFile(filepath.Join(outside, "leaked.txt"), []byte("leaked"), 0o600))
+				require.NoError(t, os.Symlink(outside, filepath.Join(home, ".cache")))
+
+				root, err := os.OpenRoot(home)
+				require.NoError(t, err)
+				t.Cleanup(func() { _ = root.Close() })
+
+				return root, filepath.Join(".cache", "nordvpn")
+			},
+			expectCount:  0,
+			expectAbsent: []string{"cache/leaked.txt"},
+			expectLogged: "escapes",
+		},
+		{
+			name: "skips a non-regular file but keeps collecting siblings",
+			setup: func(t *testing.T) (*os.Root, string) {
+				home := t.TempDir()
+				cacheDir := filepath.Join(home, ".cache", "nordvpn")
+				require.NoError(t, os.MkdirAll(cacheDir, 0o755))
+				require.NoError(t, os.WriteFile(filepath.Join(cacheDir, "a.txt"), []byte("a"), 0o600))
+				require.NoError(t, os.WriteFile(filepath.Join(cacheDir, "z.txt"), []byte("z"), 0o600))
+
+				l, err := net.Listen("unix", filepath.Join(cacheDir, "m.sock"))
+				require.NoError(t, err)
+				t.Cleanup(func() { _ = l.Close() })
+
+				root, err := os.OpenRoot(home)
+				require.NoError(t, err)
+				t.Cleanup(func() { _ = root.Close() })
+
+				return root, filepath.Join(".cache", "nordvpn")
+			},
+			expectCount: 2,
+			expectEntries: map[string]string{
+				"cache/a.txt": "a",
+				"cache/z.txt": "z",
+			},
+			expectAbsent: []string{"cache/m.sock"},
+			expectLogged: "m.sock",
+		},
+		{
+			name: "skips an unreadable subdirectory but keeps collecting siblings",
+			setup: func(t *testing.T) (*os.Root, string) {
+				if os.Getuid() == 0 {
+					t.Skip("permission checks don't apply when running as root")
+				}
+				home := t.TempDir()
+				cacheDir := filepath.Join(home, ".cache", "nordvpn")
+				require.NoError(t, os.MkdirAll(cacheDir, 0o755))
+				require.NoError(t, os.WriteFile(filepath.Join(cacheDir, "a.txt"), []byte("a"), 0o600))
+				require.NoError(t, os.WriteFile(filepath.Join(cacheDir, "z.txt"), []byte("z"), 0o600))
+
+				badDir := filepath.Join(cacheDir, "n_bad")
+				require.NoError(t, os.MkdirAll(badDir, 0o755))
+				require.NoError(t, os.WriteFile(filepath.Join(badDir, "hidden.txt"), []byte("hidden"), 0o600))
+				require.NoError(t, os.Chmod(badDir, 0o000))
+				t.Cleanup(func() { _ = os.Chmod(badDir, 0o755) }) // let TempDir cleanup remove it
+
+				root, err := os.OpenRoot(home)
+				require.NoError(t, err)
+				t.Cleanup(func() { _ = root.Close() })
+
+				return root, filepath.Join(".cache", "nordvpn")
+			},
+			expectCount: 2,
+			expectEntries: map[string]string{
+				"cache/a.txt": "a",
+				"cache/z.txt": "z",
+			},
+			expectAbsent: []string{"cache/n_bad/hidden.txt"},
+			expectLogged: "n_bad",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			root, relDir := tc.setup(t)
+			var buf bytes.Buffer
+			zw := zip.NewWriter(&buf)
+			logf, lines := capturingLogf()
+			count, err := addUserDirectoryToZip(zw, root, relDir, "cache", uid, logf)
+			if tc.expectErr {
+				assert.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tc.expectCount, count)
+			}
+			require.NoError(t, zw.Close())
+
+			entries := readZipEntries(t, buf.Bytes())
+			for name, content := range tc.expectEntries {
+				assert.Equal(t, content, entries[name])
+			}
+			for _, name := range tc.expectAbsent {
+				assert.NotContains(t, entries, name)
+			}
+			if tc.expectLogged != "" {
+				found := false
+				for _, line := range *lines {
+					if strings.Contains(line, tc.expectLogged) {
+						found = true
+						break
+					}
+				}
+				assert.True(t, found, "expected a log line containing %q, got %v", tc.expectLogged, *lines)
+			}
+		})
+	}
+}
+
 func TestWriteLogExtractionReport(t *testing.T) {
 	category.Set(t, category.Unit)
 
@@ -463,14 +877,14 @@ func TestStreamFileToWriter_RespectsDaemonLogCap(t *testing.T) {
 	path := filepath.Join(t.TempDir(), uuid.NewString()+".log")
 	// 1 KiB of recognisable lines: 100 lines × ~10 bytes each.
 	var content bytes.Buffer
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		fmt.Fprintf(&content, "line %03d\n", i) // 9 bytes/line incl. newline
 	}
 	require.NoError(t, os.WriteFile(path, content.Bytes(), 0o600))
 
 	f, err := os.Open(path)
 	require.NoError(t, err)
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	info, err := f.Stat()
 	require.NoError(t, err)
 
@@ -531,7 +945,7 @@ func TestAddDaemonLogs_StdoutAsRegularFile(t *testing.T) {
 
 	logFile, err := os.OpenFile(logPath, os.O_RDWR, 0o600)
 	require.NoError(t, err)
-	t.Cleanup(func() { logFile.Close() })
+	t.Cleanup(func() { _ = logFile.Close() })
 
 	// Save fd 1 so we can restore it; point fd 1 at logFile so
 	// /proc/self/fd/1 symlinks to logPath for the duration of this test.
@@ -542,7 +956,7 @@ func TestAddDaemonLogs_StdoutAsRegularFile(t *testing.T) {
 		if err := syscall.Dup3(savedFD, 1, 0); err != nil {
 			t.Errorf("failed to restore fd 1: %v", err)
 		}
-		syscall.Close(savedFD)
+		_ = syscall.Close(savedFD)
 	})
 
 	var zbuf bytes.Buffer
@@ -580,7 +994,7 @@ func TestCreateDiagnosticsZip_UniqueFilename(t *testing.T) {
 
 	const N = 5
 	seen := make(map[string]bool, N)
-	for i := 0; i < N; i++ {
+	for i := range N {
 		f, err := createDiagnosticsZip(dir)
 		require.NoError(t, err)
 		require.NoError(t, f.Close())
@@ -622,7 +1036,7 @@ func readZipEntries(t *testing.T, data []byte) map[string]string {
 		rc, err := f.Open()
 		require.NoError(t, err)
 		content, err := io.ReadAll(rc)
-		rc.Close()
+		_ = rc.Close()
 		require.NoError(t, err)
 		out[f.Name] = string(content)
 	}
