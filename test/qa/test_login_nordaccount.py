@@ -26,8 +26,7 @@ def teardown_function(function):  # noqa: ARG001
 
 
 @pytest.mark.skip("Does not work on Docker")
-@pytest.mark.parametrize("login_flag", selenium.LOGIN_FLAG)
-def test_selenium_login(login_flag):
+def test_selenium_login():
     """Manual TC: LVPN-497"""
 
     preferences = [
@@ -41,7 +40,7 @@ def test_selenium_login(login_flag):
 
     with lib.Defer(sel.browser_kill):
         # Get login link from NordVPN app, trim all spaces & chars after link itself
-        login_link = sh.nordvpn.login(login_flag, _tty_out=False).strip().split(": ")[1]
+        login_link = sh.nordvpn.login(_tty_out=False).strip().split(": ")[1]
         print(f"Login link: {login_link}\n")
 
         # Open login link from NordVPN app
@@ -69,8 +68,7 @@ def test_selenium_login(login_flag):
         assert selenium.LOGOUT_MSG_SUCCESS in output, "Logout should show success message"
 
 
-@pytest.mark.parametrize("login_flag", selenium.LOGIN_FLAG)
-def test_selenium_login_callback(login_flag):
+def test_selenium_login_callback():
     """Manual TC: LVPN-717"""
 
     sel = selenium.SeleniumBrowser()
@@ -79,7 +77,7 @@ def test_selenium_login_callback(login_flag):
     with lib.Defer(sel.browser_kill):
         sh.nordvpn.set.analytics("on")
         # Get login link from NordVPN app, trim all spaces & chars after link itself
-        login_link = sh.nordvpn.login(login_flag, _tty_out=False).strip().split(": ")[1]
+        login_link = sh.nordvpn.login(_tty_out=False).strip().split(": ")[1]
         print(f"Login link: {login_link}\n")
 
         # Open login link from NordVPN app
