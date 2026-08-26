@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"os/user"
@@ -14,6 +15,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -22,6 +24,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 	"github.com/godbus/dbus/v5"
 	"github.com/snapcore/snapd/client"
+	"golang.org/x/sys/unix"
 	"google.golang.org/protobuf/encoding/prototext"
 )
 
@@ -89,9 +92,7 @@ func (r *RPC) CollectDiagnostics(
 	}
 
 	state := r.collectAppState(srv.Context())
-	if err := collectDiagnosticsData(
-		srv, zipFile, caller.user.HomeDir, state,
-	); err != nil {
+	if err := collectDiagnosticsData(srv, zipFile, caller, state); err != nil {
 		if errors.Is(err, errZipSizeLimitExceeded) {
 			log.Diagnostics.Error("diagnostics zip exceeded 40 MB limit")
 			return abortDiagnosticsWithCode(
@@ -314,7 +315,7 @@ type diagnosticsStep struct {
 func collectDiagnosticsData(
 	srv pb.Daemon_CollectDiagnosticsServer,
 	output io.Writer,
-	homeDir string,
+	caller *diagnosticsCaller,
 	state appState,
 ) error {
 	limited := &sizeLimitedWriter{w: output, limit: maxZipFileSize}
@@ -345,8 +346,13 @@ func collectDiagnosticsData(
 				// We are skipping it for now.
 				return nil
 			}
-			cliLog := filepath.Join(homeDir, ".config", "nordvpn", "cli.log")
-			return addFileToZip(zipWriter, cliLog, "cli.log")
+			homeRoot, err := os.OpenRoot(caller.user.HomeDir)
+			if err != nil {
+				return err
+			}
+			defer func() { _ = homeRoot.Close() }()
+			cliLog := filepath.Join(".config", "nordvpn", "cli.log")
+			return addUserFileToZip(zipWriter, homeRoot, cliLog, "cli.log", caller.uid)
 		}, false},
 		{"Collecting user logs...", func() error {
 			if snapconf.IsUnderSnap() {
@@ -356,12 +362,17 @@ func collectDiagnosticsData(
 				// We are skipping it for now.
 				return nil
 			}
-			cacheDir := filepath.Join(homeDir, ".cache", "nordvpn")
-			if _, err := os.Stat(cacheDir); err != nil {
+			homeRoot, err := os.OpenRoot(caller.user.HomeDir)
+			if err != nil {
+				return err
+			}
+			defer func() { _ = homeRoot.Close() }()
+			cacheDir := filepath.Join(".cache", "nordvpn")
+			if _, err := homeRoot.Stat(cacheDir); err != nil {
 				logf("%s: %v", cacheDir, err)
 				return nil
 			}
-			count, err := addDirectoryToZip(zipWriter, cacheDir, "cache")
+			count, err := addUserDirectoryToZip(zipWriter, homeRoot, cacheDir, "cache", caller.uid, logf)
 			if err != nil {
 				return err
 			}
@@ -716,6 +727,10 @@ func addFileToZip(zipWriter *zip.Writer, filePath, zipPath string) error {
 	}
 	defer file.Close() // nolint:errcheck
 
+	return writeOpenFileToZip(zipWriter, file, zipPath)
+}
+
+func writeOpenFileToZip(zipWriter *zip.Writer, file *os.File, zipPath string) error {
 	info, err := file.Stat()
 	if err != nil {
 		return err
@@ -735,6 +750,106 @@ func addFileToZip(zipWriter *zip.Writer, filePath, zipPath string) error {
 
 	_, err = io.Copy(writer, file)
 	return err
+}
+
+func openVerifiedUserFile(homeRoot *os.Root, relPath string, expectedUID uint32) (*os.File, error) {
+	file, err := homeRoot.OpenFile(relPath, os.O_RDONLY|syscall.O_NOFOLLOW|syscall.O_NONBLOCK, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	info, err := file.Stat()
+	if err != nil {
+		_ = file.Close()
+		return nil, err
+	}
+
+	if !info.Mode().IsRegular() {
+		_ = file.Close()
+		return nil, fmt.Errorf("%s: not a regular file", relPath)
+	}
+
+	var stat unix.Stat_t
+	if err := unix.Fstat(int(file.Fd()), &stat); err != nil {
+		return nil, err
+	}
+
+	if stat.Uid != expectedUID {
+		_ = file.Close()
+		return nil, fmt.Errorf("%s: not owned by the requesting user", relPath)
+	}
+
+	return file, nil
+}
+
+func addUserFileToZip(
+	zipWriter *zip.Writer,
+	homeRoot *os.Root,
+	relPath, zipPath string,
+	expectedUID uint32,
+) error {
+	file, err := openVerifiedUserFile(homeRoot, relPath, expectedUID)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = file.Close() }()
+
+	return writeOpenFileToZip(zipWriter, file, zipPath)
+}
+
+func addUserDirectoryToZip(
+	zipWriter *zip.Writer,
+	homeRoot *os.Root,
+	relDir, zipPrefix string,
+	expectedUID uint32,
+	logf logFunc,
+) (int, error) {
+	var count int
+	err := fs.WalkDir(homeRoot.FS(), relDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			logf("%s: %v", path, err)
+			if d != nil && d.IsDir() {
+				return fs.SkipDir
+			}
+			return nil
+		}
+
+		if d.IsDir() {
+			return nil
+		}
+
+		if d.Type()&fs.ModeSymlink != 0 {
+			logf("%s: skipping symlink", path)
+			return nil
+		}
+
+		relPath, err := filepath.Rel(relDir, path)
+		if err != nil {
+			logf("%s: %v", path, err)
+			return nil
+		}
+
+		zipPath := filepath.Join(zipPrefix, relPath)
+
+		file, err := openVerifiedUserFile(homeRoot, path, expectedUID)
+		if err != nil {
+			logf("%s: %v", path, err)
+			return nil
+		}
+		defer func() { _ = file.Close() }()
+
+		if err := writeOpenFileToZip(zipWriter, file, zipPath); err != nil {
+			if errors.Is(err, errZipSizeLimitExceeded) {
+				return err
+			}
+			logf("%s: %v", path, err)
+			return nil
+		}
+		count++
+
+		return nil
+	})
+	return count, err
 }
 
 // writeBlock appends a titled section to w in the form:
