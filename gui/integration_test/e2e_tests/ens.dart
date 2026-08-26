@@ -1,10 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/pb/daemon/uievent.pb.dart';
-import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
-import '../../test/utils/app_ctl.dart';
-import '../../test/utils/mock_url_launcher.dart';
 import '../../test/utils/test_helpers.dart';
 
 // analytics events the GUI must send to the daemon for the popup
@@ -37,15 +34,12 @@ void runEnsTests() async {
       expect(mainScreen.isConnectionLimitReachedPopupVisible(), isTrue);
 
       // displaying the popup reports one show ui event
-      await _waitForPopupEvents(app, [_sessionLimitShown]);
+      await app.waitForUiEvents([_sessionLimitShown]);
     });
 
     testWidgets("help guide link reports click and launches the URL", (
       tester,
     ) async {
-      final urlLauncher = MockUrlLauncher();
-      UrlLauncherPlatform.instance = urlLauncher;
-
       final app = await tester.setupIntegrationTests();
       final mainScreen = await app.goToVpnScreen();
       app.vpnStatus.connectingErrorStatusCode =
@@ -56,30 +50,13 @@ void runEnsTests() async {
         tester.findPopupWithId(DaemonStatusCode.connectionLimitReached),
       );
 
-      await tester.tapOnText(find.textRange.ofSubstring("Open help guide"));
-      await tester.pumpAndSettle();
+      await app.clickConnectionLimitReachedHelpGuideLink();
 
-      await _waitForPopupEvents(app, [
-        _sessionLimitShown,
-        _sessionLimitLearnMore,
-      ]);
+      await app.waitForUiEvents([_sessionLimitShown, _sessionLimitLearnMore]);
       expect(
-        urlLauncher.launchedUrls.single,
+        app.launchedUrls.single,
         startsWith("https://support.nordvpn.com/"),
       );
     });
   });
-}
-
-Future<void> _waitForPopupEvents(AppCtl app, List<UIEvent> expected) async {
-  List<UIEvent> popupEvents() => app.daemon.uiEvents
-      .where(
-        (event) =>
-            event.itemName == UIEvent_ItemName.SESSION_LIMIT ||
-            event.itemName == UIEvent_ItemName.LEARN_MORE,
-      )
-      .toList();
-
-  await app.tester.pumpUntilTrue(() => popupEvents().length >= expected.length);
-  expect(popupEvents(), expected);
 }

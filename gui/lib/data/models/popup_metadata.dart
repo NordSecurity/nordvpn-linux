@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Base class for popups metadata, specifies `id`, optional `title`
 // and popup `message`.
-// [onShown] is invoked once each time the popup is actually displayed.
+// [onShown] is invoked once each time the popup is built before actually displaying.
 sealed class PopupMetadata {
   final int id;
   String? title;

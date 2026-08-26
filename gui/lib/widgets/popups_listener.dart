@@ -64,7 +64,6 @@ final class _PopupsListenerState extends ConsumerState<PopupsListener> {
     }
 
     _visiblePopup = metadata.id;
-    metadata.onShown?.call(ref);
 
     // Decision popups require explicit user action (yes/no button click)
     // so we disable barrier dismissal to prevent accidental dismissal
@@ -73,7 +72,10 @@ final class _PopupsListenerState extends ConsumerState<PopupsListener> {
     await showDialog(
       context: ctx,
       barrierDismissible: barrierDismissible,
-      builder: (_) => buildPopup(metadata),
+      builder: (_) {
+        metadata.onShown?.call(ref);
+        return buildPopup(metadata);
+      },
     );
 
     // clear before popping, which can immediately display a queued popup
