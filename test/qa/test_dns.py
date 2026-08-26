@@ -69,7 +69,7 @@ def test_set_tpl_off_and_connect(tech, proto, obfuscated):
     tpl_alias = dns.get_tpl_alias()
     sh.nordvpn.set(tpl_alias, "on")
 
-    assert "Threat Protection Lite has been successfully set to 'disabled'." in sh.nordvpn.set(tpl_alias, "off"), "TPL disable should show success message"
+    assert "Real-time protection has been successfully set to 'disabled'." in sh.nordvpn.set(tpl_alias, "off")
 
     assert not settings.is_tpl_enabled(), "TPL should be disabled after setting it to off"
     assert settings.dns_visible_in_settings(["disabled"]), "DNS should show as disabled in settings after TPL is disabled"
