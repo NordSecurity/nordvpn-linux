@@ -243,8 +243,12 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       title: t.ui.connectionLimitReachedTitle,
       message: (_) => t.ui.connectionLimitReachedBody,
       buttonText: t.ui.gotIt,
-      onLinkTap: (ref) =>
-          ref.read(uiEventRepositoryProvider).reportSessionLimitLearnMore(),
+      onShown: (ref) =>
+          ref.read(uiEventRepositoryProvider).reportSessionLimitShown(),
+      onLinkTaps: [
+        (ref) =>
+            ref.read(uiEventRepositoryProvider).reportSessionLimitLearnMore(),
+      ],
     ),
 
     // not matched, display generic error message

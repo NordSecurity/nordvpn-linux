@@ -25,11 +25,23 @@ final class InfoPopup extends Popup {
         RichTextMarkdownLinks(
           text: message(ref),
           style: theme.textSecondary,
-          onLinkTap: () => infoMetadata.onLinkTap?.call(ref),
+          onLinkTaps: _linkCallbacks(ref),
         ),
         Align(alignment: Alignment.centerRight, child: _closeButton(context)),
       ],
     );
+  }
+
+  List<VoidCallback>? _linkCallbacks(WidgetRef ref) {
+    final onLinkTaps = infoMetadata.onLinkTaps;
+    if (onLinkTaps == null) return null;
+
+    final callbacks = <VoidCallback>[];
+    for (final onLinkTap in onLinkTaps) {
+      callbacks.add(() => onLinkTap(ref));
+    }
+
+    return callbacks;
   }
 
   Widget _closeButton(BuildContext context) {

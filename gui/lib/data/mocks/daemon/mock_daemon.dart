@@ -42,6 +42,8 @@ final class MockDaemon extends DaemonServiceBase {
   late final MockVpnStatus vpnStatus;
   late final MockRecentConnections recentConnections;
   final MockSnapErrorInterceptor snapInterceptor = MockSnapErrorInterceptor();
+  // UI analytics events received through reportUIEvent, in order
+  final List<UIEvent> uiEvents = [];
   RecommendedServerLocation? recommendedServerLocation;
 
   MockDaemon() {
@@ -164,6 +166,7 @@ final class MockDaemon extends DaemonServiceBase {
 
   @override
   Future<Payload> reportUIEvent(ServiceCall call, UIEvent request) async {
+    uiEvents.add(request);
     return Payload(type: Int64(DaemonStatusCode.success));
   }
 

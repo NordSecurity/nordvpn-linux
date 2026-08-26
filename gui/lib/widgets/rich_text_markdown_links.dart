@@ -9,15 +9,17 @@ import 'package:url_launcher/url_launcher.dart';
 class RichTextMarkdownLinks extends StatefulWidget {
   final String text;
   final TextStyle? style;
-  // Invoke on clicked link before it is launched.
-  // The URL is launched regardless of this callback.
-  final VoidCallback? onLinkTap;
+  // One callback per link, in the order the links appear in [text].
+  // Each is invoked when its link is tapped, and before the URL is launched.
+  // The URL is launched regardless of the callback.
+  // Number of callbacks (when provided) must match the number of links in [text].
+  final List<VoidCallback>? onLinkTaps;
 
   const RichTextMarkdownLinks({
     super.key,
     required this.text,
     this.style,
-    this.onLinkTap,
+    this.onLinkTaps,
   });
 
   @override
@@ -58,10 +60,15 @@ class _RichTextMarkdownLinksState extends State<RichTextMarkdownLinks> {
   List<TextSpan> _buildSpans(BuildContext context) {
     final linkTheme = context.supportLinkTheme;
     List<TextSpan> spans = [];
-    final matches = _linkPattern.allMatches(widget.text);
+    final matches = _linkPattern.allMatches(widget.text).toList();
+    final onLinkTaps = widget.onLinkTaps;
+    assert(
+      onLinkTaps == null || onLinkTaps.length == matches.length,
+      "There are ${matches.length} link(s) but ${onLinkTaps.length} onLinkTap callbacks: ${widget.text}",
+    );
     int lastMatchEnd = 0;
 
-    for (final match in matches) {
+    for (final (index, match) in matches.indexed) {
       // Add text before the match
       if (match.start > lastMatchEnd) {
         spans.add(
@@ -74,7 +81,7 @@ class _RichTextMarkdownLinksState extends State<RichTextMarkdownLinks> {
 
       final tap = TapGestureRecognizer()
         ..onTap = () async {
-          widget.onLinkTap?.call();
+          onLinkTaps?.elementAtOrNull(index)?.call();
           final uri = Uri.parse(url);
           if (!await canLaunchUrl(uri)) {
             logger.e("failed to launch $uri");

@@ -4,7 +4,6 @@ import 'package:nordvpn/data/models/popup_metadata.dart';
 import 'package:nordvpn/data/providers/account_controller.dart';
 import 'package:nordvpn/data/providers/popups_provider.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
-import 'package:nordvpn/data/repository/uievent_repository.dart';
 import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/router/router.dart';
 import 'package:nordvpn/widgets/dialog_factory.dart';
@@ -65,7 +64,7 @@ final class _PopupsListenerState extends ConsumerState<PopupsListener> {
     }
 
     _visiblePopup = metadata.id;
-    _reportPopupShown(metadata);
+    metadata.onShown?.call(ref);
 
     // Decision popups require explicit user action (yes/no button click)
     // so we disable barrier dismissal to prevent accidental dismissal
@@ -80,14 +79,6 @@ final class _PopupsListenerState extends ConsumerState<PopupsListener> {
     // clear before popping, which can immediately display a queued popup
     _visiblePopup = null;
     ref.read(popupsProvider.notifier).pop();
-  }
-
-  // Reports show analytics for popups that track it.
-  void _reportPopupShown(PopupMetadata metadata) {
-    switch (metadata.id) {
-      case DaemonStatusCode.connectionLimitReached:
-        ref.read(uiEventRepositoryProvider).reportSessionLimitShown();
-    }
   }
 }
 
