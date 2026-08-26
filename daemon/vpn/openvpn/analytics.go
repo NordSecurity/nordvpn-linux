@@ -28,8 +28,8 @@ const (
 
 // dcoLinkKinds lists link types used by OpenVPN DCO tunnel interfaces.
 var dcoLinkKinds = map[string]bool{
-	"ovpn-dco": true,
-	"ovpn":     true,
+	"ovpn-dco": true, // out-of-tree DKMS module, used by OpenVPN 2.6.x
+	"ovpn":     true, // in-tree module (kernel >= 6.16), used by OpenVPN 2.7+
 }
 
 // dcoModuleSysfsDir exists while the out-of-tree ovpn-dco kernel module is
