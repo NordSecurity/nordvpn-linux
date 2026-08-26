@@ -95,7 +95,7 @@ func main() {
 		grpc.WithChainStreamInterceptor(loaderInterceptor.StreamInterceptor),
 	)
 	fileshareConn, _ := grpc.NewClient(
-		fileshare_process.FileshareURL,
+		fileshare_process.GetFileshareURL(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(loaderInterceptor.UnaryInterceptor),
 		grpc.WithStreamInterceptor(loaderInterceptor.StreamInterceptor),

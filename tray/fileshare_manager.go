@@ -30,7 +30,7 @@ func (fs *FileshareManager) UpdateFileshareConnection(meshnetEnabled bool) {
 	if fs.fileshareClient == nil {
 		// Meshnet is enabled, we must connect to the fileshare daemon
 		fileShareConn, err := grpc.NewClient(
-			fileshare_process.FileshareURL,
+			fileshare_process.GetFileshareURL(),
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 		)
 		if err == nil {

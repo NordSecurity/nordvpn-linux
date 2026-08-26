@@ -3,8 +3,10 @@ package fileshare_process
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/NordSecurity/nordvpn-linux/log"
+	"github.com/NordSecurity/nordvpn-linux/snapconf"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -14,7 +16,17 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 )
 
-var FileshareURL = fmt.Sprintf("%s://%s", internal.Proto, internal.FileshareSocket)
+func GetFileshareURL() string {
+	var fileshareSocketPath string
+	if snapconf.IsUnderSnap() {
+		fileshareSocketPath = internal.GetFileshareSocketSnap()
+	} else {
+		uid := os.Getuid()
+		fileshareSocketPath = internal.GetFileshareSocketFork(uid)
+	}
+
+	return fmt.Sprintf("%s://%s", internal.Proto, fileshareSocketPath)
+}
 
 type FileshareProcessClient struct{}
 
@@ -25,7 +37,7 @@ func NewFileshareProcessClient() *FileshareProcessClient {
 func getFileshareClient() (pb.FileshareClient, *grpc.ClientConn, error) {
 	//nolint:staticcheck
 	fileshareConn, err := grpc.NewClient(
-		FileshareURL,
+		GetFileshareURL(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	if err != nil {
@@ -55,9 +67,16 @@ func (f *FileshareProcessClient) Ping(nowait bool) error {
 }
 
 func (f *FileshareProcessClient) Stop(bool) error {
+	var socketPath string
+	if snapconf.IsUnderSnap() {
+		socketPath = internal.GetFileshareSocketSnap()
+	} else {
+		socketPath = internal.GetFileshareSocketFork(os.Getuid())
+	}
+
 	// There are cases when the fileshare has already been stopped when meshnet was disabled
 	// We don't want to try stop it again
-	if !internal.FileExists(internal.FileshareSocket) {
+	if !internal.FileExists(socketPath) {
 		log.Info("Fileshare has already been stopped")
 		return nil
 	}

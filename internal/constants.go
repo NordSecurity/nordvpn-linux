@@ -84,8 +84,6 @@ const (
 	// FileshareHistoryFile is the storage file used by libdrop
 	FileshareHistoryFileName = "fileshare_history.db"
 
-	FileshareSocket = TmpDir + "fileshare.sock"
-
 	FileshareLogFileName = "nordfileshare" + LogFileExtension
 
 	LogFileExtension = ".log"
@@ -197,7 +195,15 @@ func GetNorduserdSocket(uid int) string {
 }
 
 func GetNorduserSocketFork(uid int) string {
-	return fmt.Sprintf("%s/%s/%s.sock", RunDir, uid, Norduserd)
+	return fmt.Sprintf("%s/%d/%s.sock", RunDir, uid, Norduserd)
+}
+
+func GetFileshareSocketFork(uid int) string {
+	return fmt.Sprintf("%s/%d/%s.sock", RunDir, uid, Fileshare)
+}
+
+func GetFileshareSocketSnap() string {
+	return filepath.Join(TmpDir, Fileshare+".sock")
 }
 
 func getHomeDirPath() (string, error) {

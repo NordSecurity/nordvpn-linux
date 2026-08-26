@@ -82,6 +82,8 @@ func main() {
 
 	eventsDBPath := filepath.Join(internal.DatFilesPath, "moose.db")
 
+	var fileshareSocket string
+
 	if snapconf.IsUnderSnap() {
 		eventsDBPath = filepath.Join(os.Getenv("SNAP_USER_COMMON"), "moose.db")
 		// In case of snap, if default directory is determined to be under $HOME and that
@@ -96,13 +98,16 @@ func main() {
 			}
 		}
 		drainStart(eventsDBPath)
+		fileshareSocket = internal.GetFileshareSocketSnap()
+	} else {
+		fileshareSocket = internal.GetFileshareSocketFork(os.Getuid())
 	}
 
-	if err := os.Remove(internal.FileshareSocket); err != nil && !errors.Is(err, os.ErrNotExist) {
+	if err := os.Remove(fileshareSocket); err != nil && !errors.Is(err, os.ErrNotExist) {
 		log.Warn("failed to remove old socket file:", err)
 	}
 
-	listener, err := internal.ManualListener(internal.FileshareSocket, internal.PermUserRWX)()
+	listener, err := internal.ManualListener(fileshareSocket, internal.PermUserRWX)()
 	if err != nil {
 		log.Error("failed to open unix socket:", err)
 		os.Exit(int(childprocess.CodeFailedToCreateUnixScoket))
