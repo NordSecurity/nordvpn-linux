@@ -2,6 +2,7 @@ package openvpn
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,7 +32,10 @@ var dcoLinkKinds = map[string]bool{
 	"ovpn":     true,
 }
 
-// dcoModuleSysfsDir exists while the ovpn-dco kernel module is loaded.
+// dcoModuleSysfsDir exists while the out-of-tree ovpn-dco kernel module is
+// loaded, whether or not the tunnel uses it.
+// We don't check the built-in ovpn module because OpenVPN 2.6.x can't use it.
+// Revisit this when OpenVPN 2.7 is available.
 const dcoModuleSysfsDir = "/sys/module/ovpn_dco_v2"
 
 // dcoStatusEvent is the debugger-event payload describing whether a successful
@@ -44,7 +48,8 @@ type dcoStatusEvent struct {
 	DCOActive bool `json:"dco_active"`
 	// LinkKind is the tunnel interface's link kind.
 	LinkKind string `json:"link_kind"`
-	// ModuleAvailable reports whether a DCO kernel module is loaded, regardless of use.
+	// ModuleAvailable reports whether the out-of-tree DCO kernel module is
+	// loaded, regardless of use.
 	ModuleAvailable bool `json:"module_available"`
 	// ModuleVersion is the loaded module's version.
 	ModuleVersion string `json:"module_version,omitempty"`
@@ -101,8 +106,15 @@ func (a *DCOAnalytics) NotifyConnect(e events.DataConnect) error {
 
 // ToDebuggerEvent converts the event to a DebuggerEvent for publishing.
 func (e *dcoStatusEvent) ToDebuggerEvent() *events.DebuggerEvent {
-	// cannot fail: the struct holds only strings and bools
-	jsonData, _ := json.Marshal(e)
+	jsonData, err := json.Marshal(e)
+	if err != nil {
+		log.Error("failed to marshal dco status event:", err)
+		// Fallback
+		jsonData = fmt.Appendf(nil,
+			`{"namespace":"%s","subscope":"%s","event":"%s","dco_active":%t,"module_available":%t,"error":"marshal_error"}`,
+			ovpnNamespace, ovpnSubscope, dcoStatusEventName, e.DCOActive, e.ModuleAvailable,
+		)
+	}
 	return events.NewDebuggerEvent(string(jsonData)).
 		WithKeyBasedContextPaths(
 			events.ContextValue{Path: ovpnContextPathPrefix + ".namespace", Value: e.Namespace},
