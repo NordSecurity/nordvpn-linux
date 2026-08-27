@@ -190,8 +190,8 @@ def test_fancy_transport():
 
 
 # This test assumes being run on docker
+@pytest.mark.skipif(not Path("/.dockerenv").exists() and not Path("/vagrant").exists(), reason="Test must be executed in either a Docker or Vagrant environment")
 def test_killswitch_on_after_update():
-    assert Path("/.dockerenv").exists(), "Test must be executed in docker"
     # Mocking ps to pretend as if we are in an initd system
     sh.sudo.mv("/usr/bin/ps", "/usr/bin/pso")
     sh.sudo.cp("/etc/mock_ps.sh", "/usr/bin/ps")
