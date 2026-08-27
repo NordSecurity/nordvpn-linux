@@ -19,6 +19,7 @@ RUN set -eux; \
         ca-certificates \
         curl \
         gcc \
+        cmake make clang \
         libc6-dev \
         wget \
         unzip \
