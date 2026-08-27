@@ -61,7 +61,6 @@ func (r *RPC) ReconnectOnServerMaintenanceEvent(endpointFromEvent string) (exitE
 // executeConnect - ensures that no two connect functions are executed in the same time
 func (r *RPC) executeConnect(srv pb.Daemon_ConnectServer, fn func(context.Context) (bool, error)) error {
 	var err error
-	var didFail bool
 	// TODO: Currently this only listens to a given context in `netw.Start()`, therefore gets
 	// stopped on `ctx.Done()` only if it happens while `netw.Start()` is being executed.
 	// Otherwise:
@@ -72,17 +71,28 @@ func (r *RPC) executeConnect(srv pb.Daemon_ConnectServer, fn func(context.Contex
 	// In order to fix this, all of expensive operations should implement `ctx.Done()` handling
 	// and have context bypassed to them.
 	if !r.connectContext.TryExecuteWith(func(ctx context.Context) {
+		var didFail bool
 		didFail, err = fn(ctx)
+		if didFail || err != nil {
+			r.reconcileStatusAfterFailedConnect()
+		}
 	}) {
 		return srv.Send(&pb.Payload{Type: internal.CodeNothingToDo})
 	}
 
-	// set connection status to "Disconnected"
-	if didFail || err != nil {
-		r.events.Service.Disconnect.Publish(events.DataDisconnect{})
-	}
-
 	return err
+}
+
+// reconcileStatusAfterFailedConnect fixes up the reported connection status after a connection
+// attempt failed. If the attempt aborted before the existing tunnel was touched, the VPN is still
+// up (netw.IsVPNActive()==true) and we restore the previous status instead of falsely reporting a
+// disconnect. Only when there is genuinely no active tunnel do we publish a Disconnect.
+func (r *RPC) reconcileStatusAfterFailedConnect() {
+	if r.netw.IsVPNActive() {
+		r.connectionInfo.RestorePreviousStatus()
+		return
+	}
+	r.events.Service.Disconnect.Publish(events.DataDisconnect{})
 }
 
 func (r *RPC) reconnectOnServerMaintenance(
