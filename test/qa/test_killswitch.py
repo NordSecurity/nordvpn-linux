@@ -261,6 +261,7 @@ def test_nc_mqtt_connection_with_killswitch():
     assert network.is_available(), "Network should be available after test"
 
 
+@pytest.mark.skipif(daemon.is_under_snap(), reason="Passing args to Snap daemon not possible.")
 def test_killswitch_mode_daemon():
     sh.nordvpn.set.killswitch.on()
     daemon.stop()
