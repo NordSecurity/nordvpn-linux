@@ -111,5 +111,5 @@ func TestSessionLimitAlert_OpensGuideOnActionAndReportsClickEvent(t *testing.T) 
 	assert.Equal(t, pb.UIEvent_TRAY, ev.FormReference)
 	assert.Equal(t, pb.UIEvent_SESSION_LIMIT, ev.ItemName)
 	assert.Equal(t, pb.UIEvent_CLICK, ev.ItemType)
-	assert.Equal(t, pb.UIEvent_ItemValue(pb.UIEvent_LEARN_MORE), ev.ItemValue)
+	assert.Equal(t, pb.UIEvent_ITEM_VALUE_LEARN_MORE, ev.ItemValue)
 }
