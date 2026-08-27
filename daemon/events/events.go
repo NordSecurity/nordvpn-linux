@@ -34,6 +34,7 @@ func NewEventsEmpty() *Events {
 		&subs.Subject[events.DataDisconnect]{},
 		&subs.Subject[any]{},
 		&subs.Subject[events.UiItemsAction]{},
+		&subs.Subject[events.UiItemsAction]{},
 		&subs.Subject[core.Insights]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
@@ -65,6 +66,7 @@ func NewEvents(
 	disconnect events.PublishSubcriber[events.DataDisconnect],
 	accountCheck events.PublishSubcriber[any],
 	uiItemsClick events.PublishSubcriber[events.UiItemsAction],
+	uiItemsShow events.PublishSubcriber[events.UiItemsAction],
 	deviceLocation events.PublishSubcriber[core.Insights],
 	lanDiscovery events.PublishSubcriber[bool],
 	virtualLocation events.PublishSubcriber[bool],
@@ -100,6 +102,7 @@ func NewEvents(
 			Disconnect:            disconnect,
 			AccountCheck:          accountCheck,
 			UiItemsClick:          uiItemsClick,
+			UiItemsShow:           uiItemsShow,
 			DeviceLocation:        deviceLocation,
 			FirstTimeOpened:       appFirstTimeOpened,
 			DedicatedServerStatus: dedicatedServerStatus,
@@ -191,6 +194,7 @@ type ServicePublisher interface {
 	NotifyDisconnect(events.DataDisconnect) error
 	NotifyAccountCheck(any) error
 	NotifyUiItemsClick(events.UiItemsAction) error
+	NotifyUiItemsShow(events.UiItemsAction) error
 	NotifyDeviceLocation(core.Insights) error
 	NotifyDedicatedServerStatus(events.DataDedicatedServerStatus) error
 }
@@ -200,6 +204,7 @@ type ServiceEvents struct {
 	Disconnect            events.PublishSubcriber[events.DataDisconnect]
 	AccountCheck          events.PublishSubcriber[any]
 	UiItemsClick          events.PublishSubcriber[events.UiItemsAction]
+	UiItemsShow           events.PublishSubcriber[events.UiItemsAction]
 	DeviceLocation        events.PublishSubcriber[core.Insights]
 	FirstTimeOpened       events.PublishSubcriber[any]
 	DedicatedServerStatus events.PublishSubcriber[events.DataDedicatedServerStatus]
@@ -210,6 +215,7 @@ func (s *ServiceEvents) Subscribe(to ServicePublisher) {
 	s.Disconnect.Subscribe(to.NotifyDisconnect)
 	s.AccountCheck.Subscribe(to.NotifyAccountCheck)
 	s.UiItemsClick.Subscribe(to.NotifyUiItemsClick)
+	s.UiItemsShow.Subscribe(to.NotifyUiItemsShow)
 	s.DeviceLocation.Subscribe(to.NotifyDeviceLocation)
 	s.DedicatedServerStatus.Subscribe(to.NotifyDedicatedServerStatus)
 }

@@ -5,11 +5,11 @@ import 'account_settings.dart';
 import 'auto_connect_settings.dart';
 import 'connect_settings.dart';
 import 'custom_dns_settings.dart';
-import 'ens_test.dart';
+import 'ens.dart';
 import 'legal_information.dart';
 import 'login_screen.dart';
 import 'obfuscated_servers.dart';
-import 'snap_test.dart';
+import 'snap.dart';
 import 'vpn_screen.dart';
 import 'warmup.dart';
 

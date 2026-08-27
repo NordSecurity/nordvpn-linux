@@ -11,6 +11,7 @@ import 'package:nordvpn/data/models/server_info.dart';
 import 'package:nordvpn/pb/daemon/account.pb.dart';
 import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart';
 import 'package:nordvpn/pb/daemon/status.pb.dart';
+import 'package:nordvpn/pb/daemon/uievent.pb.dart';
 import 'package:nordvpn/router/router.dart';
 import 'package:nordvpn/router/routes.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
@@ -23,12 +24,14 @@ import 'fakes.dart';
 import 'finders.dart';
 import 'legal_information_screen_handle.dart';
 import 'login_screen_handle.dart';
+import 'mock_url_launcher.dart';
 import 'test_helpers.dart';
 import 'vpn_screen_handle.dart';
 
 // Convenience class to easier navigate and run the integration tests
 final class AppCtl {
   final WidgetTester tester;
+  final MockUrlLauncher urlLauncher;
   MockDaemon get daemon => GrpcServer.instance.daemon;
   MockAccountInfo get appAccount => GrpcServer.instance.account;
   MockApplicationSettings get appSettings => GrpcServer.instance.appSettings;
@@ -36,7 +39,10 @@ final class AppCtl {
   MockSnapErrorInterceptor get snapInterceptor =>
       GrpcServer.instance.snapInterceptor;
 
-  AppCtl({required this.tester});
+  AppCtl({required this.tester, required this.urlLauncher});
+
+  // URLs the app tried to open in the browser, in order
+  List<String> get launchedUrls => urlLauncher.launchedUrls;
 
   Future<void> refreshAppState() async {
     await waitForUiUpdates(duration: Duration(milliseconds: 800));
@@ -115,6 +121,28 @@ final class AppCtl {
       duration: duration,
       timeout: timeout,
     );
+  }
+
+  // Waits until the daemon has received the [expected] analytics events in  order.
+  Future<void> waitForUiEvents(
+    List<UIEvent> expected, {
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    final itemNames = expected.map((event) => event.itemName).toSet();
+    List<UIEvent> received() => daemon.uiEvents
+        .where((event) => itemNames.contains(event.itemName))
+        .toList();
+
+    await tester.pumpUntilTrue(
+      () => received().length >= expected.length,
+      timeout: timeout,
+    );
+    expect(received(), expected);
+  }
+
+  Future<void> clickConnectionLimitReachedHelpGuideLink() async {
+    await tester.tapOnText(connectionLimitReachedHelpGuideLink());
+    await waitForUiUpdates();
   }
 
   Future<LoginScreenHandle> goToLoginScreen() async {
