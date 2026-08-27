@@ -7,6 +7,7 @@ import 'package:nordvpn/data/providers/preferences_controller.dart';
 import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
+import 'package:nordvpn/data/repository/uievent_repository.dart';
 import 'package:nordvpn/i18n/daemon_code_messages.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/popup_codes.dart';
@@ -240,6 +241,12 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       title: t.ui.connectionLimitReachedTitle,
       message: (_) => t.ui.connectionLimitReachedBody,
       buttonText: t.ui.gotIt,
+      onShown: (ref) =>
+          ref.read(uiEventRepositoryProvider).reportSessionLimitShown(),
+      onLinkTaps: [
+        (ref) =>
+            ref.read(uiEventRepositoryProvider).reportSessionLimitLearnMore(),
+      ],
     ),
 
     // not matched, display generic error message

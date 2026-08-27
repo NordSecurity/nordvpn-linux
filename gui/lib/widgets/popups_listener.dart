@@ -52,6 +52,11 @@ final class _PopupsListenerState extends ConsumerState<PopupsListener> {
   }
 
   void _showNextPopup(PopupMetadata metadata) async {
+    if (_visiblePopup == metadata.id) {
+      // already visible
+      return;
+    }
+
     final ctx = goRouterKey.currentContext;
     if (ctx == null) {
       logger.e("Can't display popup. Context is null.");
@@ -67,11 +72,15 @@ final class _PopupsListenerState extends ConsumerState<PopupsListener> {
     await showDialog(
       context: ctx,
       barrierDismissible: barrierDismissible,
-      builder: (_) => buildPopup(metadata),
+      builder: (_) {
+        metadata.onShown?.call(ref);
+        return buildPopup(metadata);
+      },
     );
 
-    ref.read(popupsProvider.notifier).pop();
+    // clear before popping, which can immediately display a queued popup
     _visiblePopup = null;
+    ref.read(popupsProvider.notifier).pop();
   }
 }
 

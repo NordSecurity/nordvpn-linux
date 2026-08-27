@@ -28,11 +28,24 @@ final class InfoPopup extends Popup {
             text: message(ref), 
             key: Popup.messageKey,
             style: theme.textSecondary,
+            onLinkTaps: _linkCallbacks(ref),
           ),
         ),
         Align(alignment: Alignment.centerRight, child: _closeButton(context)),
       ],
     );
+  }
+
+  List<VoidCallback>? _linkCallbacks(WidgetRef ref) {
+    final onLinkTaps = infoMetadata.onLinkTaps;
+    if (onLinkTaps == null) return null;
+
+    final callbacks = <VoidCallback>[];
+    for (final onLinkTap in onLinkTaps) {
+      callbacks.add(() => onLinkTap(ref));
+    }
+
+    return callbacks;
   }
 
   Widget _closeButton(BuildContext context) {

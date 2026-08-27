@@ -689,8 +689,11 @@ func (s *Subscriber) setTokenRenewDate(unixTimestamp int64) error {
 
 // uiItemType maps a UiItemsAction item type string to its moose enum.
 func uiItemType(itemType string) moose.NordvpnappUserInterfaceItemType {
-	if itemType == "textbox" {
+	switch itemType {
+	case "textbox":
 		return moose.NordvpnappUserInterfaceItemTypeTextBox
+	case "show":
+		return moose.NordvpnappUserInterfaceItemTypeTabOrScreen
 	}
 	return moose.NordvpnappUserInterfaceItemTypeButton
 }
@@ -706,6 +709,21 @@ func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
 		nil,
 	)); err != nil {
 		return fmt.Errorf("sending UI item click event (form=%q, item=%q): %w", data.FormReference, data.ItemName, err)
+	}
+	return nil
+}
+
+func (s *Subscriber) NotifyUiItemsShow(data events.UiItemsAction) error {
+	if err := s.response(moose.NordvpnappSendUserInterfaceUiItemsShow(
+		moose.UiItemsParams{
+			FormReference: data.FormReference,
+			ItemName:      data.ItemName,
+			ItemType:      uiItemType(data.ItemType),
+			ItemValue:     data.ItemValue,
+		},
+		nil,
+	)); err != nil {
+		return fmt.Errorf("sending UI item show event (form=%q, item=%q): %w", data.FormReference, data.ItemName, err)
 	}
 	return nil
 }
