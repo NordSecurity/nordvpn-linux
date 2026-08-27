@@ -15,12 +15,14 @@ class UIEvent(_message.Message):
         HOME_SCREEN: _ClassVar[UIEvent.FormReference]
         GUI: _ClassVar[UIEvent.FormReference]
         CONNECTION_INFO: _ClassVar[UIEvent.FormReference]
+        SESSION_LIMIT_NOTIFICATION: _ClassVar[UIEvent.FormReference]
     FORM_REFERENCE_UNSPECIFIED: UIEvent.FormReference
     CLI: UIEvent.FormReference
     TRAY: UIEvent.FormReference
     HOME_SCREEN: UIEvent.FormReference
     GUI: UIEvent.FormReference
     CONNECTION_INFO: UIEvent.FormReference
+    SESSION_LIMIT_NOTIFICATION: UIEvent.FormReference
     class ItemName(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         ITEM_NAME_UNSPECIFIED: _ClassVar[UIEvent.ItemName]
@@ -38,6 +40,8 @@ class UIEvent(_message.Message):
         GET_HELP: _ClassVar[UIEvent.ItemName]
         OPEN_APP: _ClassVar[UIEvent.ItemName]
         DOWNLOAD_APP: _ClassVar[UIEvent.ItemName]
+        SESSION_LIMIT: _ClassVar[UIEvent.ItemName]
+        LEARN_MORE: _ClassVar[UIEvent.ItemName]
     ITEM_NAME_UNSPECIFIED: UIEvent.ItemName
     CONNECT: UIEvent.ItemName
     CONNECT_RECENTS: UIEvent.ItemName
@@ -53,12 +57,16 @@ class UIEvent(_message.Message):
     GET_HELP: UIEvent.ItemName
     OPEN_APP: UIEvent.ItemName
     DOWNLOAD_APP: UIEvent.ItemName
+    SESSION_LIMIT: UIEvent.ItemName
+    LEARN_MORE: UIEvent.ItemName
     class ItemType(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         ITEM_TYPE_UNSPECIFIED: _ClassVar[UIEvent.ItemType]
         CLICK: _ClassVar[UIEvent.ItemType]
+        SHOW: _ClassVar[UIEvent.ItemType]
     ITEM_TYPE_UNSPECIFIED: UIEvent.ItemType
     CLICK: UIEvent.ItemType
+    SHOW: UIEvent.ItemType
     class ItemValue(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
         __slots__ = ()
         ITEM_VALUE_UNSPECIFIED: _ClassVar[UIEvent.ItemValue]

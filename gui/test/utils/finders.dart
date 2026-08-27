@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/settings/account_details_screen.dart';
 import 'package:nordvpn/settings/autoconnect_settings.dart';
@@ -269,4 +270,14 @@ Finder popupMessage() {
 
 Finder popupCloseButton() {
   return find.byKey(Popup.closeButtonKey);
+}
+
+FinderBase<TextRangeContext> connectionLimitReachedHelpGuideLink() {
+  final label = RegExp(
+    r'\[([^\]]+)\]\(',
+  ).firstMatch(t.ui.connectionLimitReachedBody)!.group(1)!;
+  return find.textRange.ofSubstring(
+    label,
+    descendentOf: find.byKey(ValueKey(DaemonStatusCode.connectionLimitReached)),
+  );
 }

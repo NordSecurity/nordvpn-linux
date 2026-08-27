@@ -10,8 +10,10 @@ import 'package:nordvpn/pb/daemon/servers.pb.dart';
 import 'package:nordvpn/pb/daemon/settings.pb.dart';
 import 'package:nordvpn/service_locator.dart';
 import 'package:nordvpn/theme/theme.dart';
+import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import 'app_ctl.dart';
+import 'mock_url_launcher.dart';
 
 extension Helper on WidgetTester {
   // duration is how much time to give for the app to run
@@ -84,6 +86,8 @@ extension Helper on WidgetTester {
 
     // ensure mock gRPC server is used
     expect(useMockDaemon, true);
+    final urlLauncher = MockUrlLauncher();
+    UrlLauncherPlatform.instance = urlLauncher;
     await GrpcServer.instance.start();
     GrpcServer.instance.daemon.recommendedServerLocation = recommendedLocation;
     // Set a default window size if not provided to ensure UI elements are visible
@@ -121,7 +125,7 @@ extension Helper on WidgetTester {
       await binding.setSurfaceSize(null);
     });
 
-    return AppCtl(tester: this);
+    return AppCtl(tester: this, urlLauncher: urlLauncher);
   }
 
   // Used in widget testing to create the MaterialApp and the theme
