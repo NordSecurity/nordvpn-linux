@@ -200,10 +200,6 @@ func NewApp(version, environment, hash, salt string,
 			Description: LoginDescription,
 			Action:      cmd.Login,
 			Flags: []cli.Flag{
-				&cli.BoolFlag{ // TODO: remove in v4
-					Name:  "nordaccount",
-					Usage: LoginNordAccountUsageText,
-				},
 				&cli.BoolFlag{
 					Name:  "callback",
 					Usage: LoginCallbackUsageText,
