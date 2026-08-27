@@ -9,7 +9,6 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/cli"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
@@ -18,8 +17,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/snapconf"
 )
-
-const dbusCallTimeout = 3 * time.Second
 
 // The pattern for actions is to return 'true' on success and 'false' (along with emitting a notification) on failure
 

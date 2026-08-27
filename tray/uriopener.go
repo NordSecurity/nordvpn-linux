@@ -10,6 +10,8 @@ import (
 	"github.com/godbus/dbus/v5"
 )
 
+const dbusCallTimeout = 3 * time.Second
+
 // OpenURI opens uri via the desktop portal, falling back to xdg-open if the portal call fails
 func OpenURI(uri string) error {
 	portalErr := openURIViaPortal(uri)
