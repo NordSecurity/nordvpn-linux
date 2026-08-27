@@ -252,7 +252,7 @@ func startSnap() {
 		log.Error("Failed to remove old socket file:", err)
 	}
 
-	listener, err := internal.ManualListener(socketPath, internal.PermUserRWGroupRWOthersRW)()
+	listener, err := internal.ManualListener(socketPath, internal.PermUserRWX)()
 	if err != nil {
 		log.Errorf("Failed to open unix socket: %s", err)
 		os.Exit(int(childprocess.CodeFailedToCreateUnixScoket))

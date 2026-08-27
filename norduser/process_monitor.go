@@ -157,8 +157,8 @@ func (n *NorduserProcessMonitor) handleGroupFileUpdate(currentGroupMembers userS
 			continue
 		}
 
-		if simpleMode {
-			continue
+		if !simpleMode {
+			currentGroupMembers[newGroupMemberUsername] = notActive
 		}
 
 		state := notActive

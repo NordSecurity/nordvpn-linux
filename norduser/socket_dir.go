@@ -44,7 +44,7 @@ func removeSocketDirectory(username string, uidGetter userIDGetter, fsHandle int
 
 	path := internal.GetUserSocketDirectoryPath(int(uids.uid))
 	if err := fsHandle.RemoveAll(path); err != nil {
-		log.Error("failed to remove user socket directory:", err)
+		log.Warn("failed to remove user socket directory:", err)
 		// If it's not possible to remove the directory, try to change its ownership so that user will lose access to
 		// the socket
 		if err := fsHandle.Chown(path, 0, 0); err != nil {
