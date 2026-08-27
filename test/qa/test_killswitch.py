@@ -193,22 +193,21 @@ def test_fancy_transport():
 @pytest.mark.skipif(not Path("/.dockerenv").exists() and not Path("/vagrant").exists(), reason="Test must be executed in either a Docker or Vagrant environment")
 def test_killswitch_on_after_update():
     # Mocking ps to pretend as if we are in an initd system
-    sh.sudo.mv("/usr/bin/ps", "/usr/bin/pso")
-    sh.sudo.cp("/etc/mock_ps.sh", "/usr/bin/ps")
+    with lib.Defer(lambda: sh.sudo.mv("/usr/bin/pso", "/usr/bin/ps")):
+        sh.sudo.mv("/usr/bin/ps", "/usr/bin/pso")
+        sh.sudo.cp("/etc/mock_ps.sh", "/usr/bin/ps")
 
-    sh.nordvpn.set.killswitch.on()
-    assert daemon.is_killswitch_on(), "Kill switch should be enabled"
-    logging.log(f"Settings before update {sh.nordvpn.settings()}")
-    assert network.is_not_available(2), "Network should not be available when kill switch is on"
-    sh.sudo.dpkg("-i", DEB_PATH)
-    daemon.wait_until_daemon_is_running()
-    logging.log(f"Settings after app update {sh.nordvpn.settings()}")
-    assert network.is_not_available(2), "Network should not be available when kill switch is on"
-    assert daemon.is_killswitch_on(), "Kill switch should remain enabled after update"
-    sh.nordvpn.set.killswitch.off()
-    assert network.is_available(), "Network should be available"
-    # Restore to normal if more tests are run afterwards
-    sh.sudo.mv("/usr/bin/pso", "/usr/bin/ps")
+        sh.nordvpn.set.killswitch.on()
+        assert daemon.is_killswitch_on(), "Kill switch should be enabled"
+        logging.log(f"Settings before update {sh.nordvpn.settings()}")
+        assert network.is_not_available(2), "Network should not be available when kill switch is on"
+        sh.sudo.dpkg("-i", DEB_PATH)
+        daemon.wait_until_daemon_is_running()
+        logging.log(f"Settings after app update {sh.nordvpn.settings()}")
+        assert network.is_not_available(2), "Network should not be available when kill switch is on"
+        assert daemon.is_killswitch_on(), "Kill switch should remain enabled after update"
+        sh.nordvpn.set.killswitch.off()
+        assert network.is_available(), "Network should be available"
 
 
 def test_nc_mqtt_connection_with_killswitch():
