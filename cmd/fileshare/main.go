@@ -117,8 +117,7 @@ func main() {
 		}
 	}()
 
-	//nolint:staticcheck
-	grpcConn, err := grpc.Dial(
+	grpcConn, err := grpc.NewClient(
 		daemonURL,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
