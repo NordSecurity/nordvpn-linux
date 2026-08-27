@@ -17,6 +17,13 @@ if [[ ${#FILES[@]} -ne 1 ]]; then
 fi
 
 echo "review snap package: ${FILES[0]}"
-review-tools.snap-review "${FILES[0]}"
+
+# review-tools is a confined snap and can only access files under $HOME,
+# so copy the package there before handling it
+TMP_SNAP="$(mktemp -p "${HOME}" --suffix=.snap)"
+trap 'rm -f "${TMP_SNAP}"' EXIT
+cp "${FILES[0]}" "${TMP_SNAP}"
+
+review-tools.snap-review "${TMP_SNAP}"
 
 echo "DONE: review-tools found no issues"
