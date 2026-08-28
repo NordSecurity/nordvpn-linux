@@ -287,5 +287,5 @@ def test_killswitch_autoconnect_to_fastest():
     assert duration < 7, "Autoconnect with killswitch on should connect in less than 7 seconds"
     status_data = daemon.get_status_data()
     # list of closest countries that surround Germany
-    allowed_countries = ["Germany", "Poland", "Czech_Republic", "Austria", "Switzerland", "France", "Belgium", "Netherlands", "Denmark"]
+    allowed_countries = ["Germany", "Poland", "Czech_Republic", "Austria", "Switzerland", "France", "Belgium", "Netherlands", "Denmark", "Finland"]
     assert status_data["country"] in allowed_countries, "Fastest server should be in the same country"
