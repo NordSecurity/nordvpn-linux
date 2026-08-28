@@ -22,6 +22,11 @@ pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
 PROJECT_ROOT = os.environ['WORKDIR']
 DEB_PATH = glob.glob(f'{PROJECT_ROOT}/dist/app/deb/nordvpn_*amd64.deb')[0]
+
+SNAP_PATH = None
+if daemon.is_under_snap():
+    SNAP_PATH = glob.glob(f'{PROJECT_ROOT}/dist/app/snap/nordvpn_*amd64.snap')[0]
+
 MSG_KILLSWITCH_ON = "Kill Switch has been successfully set to 'enabled'."
 MSG_KILLSWITCH_OFF = "Kill Switch has been successfully set to 'disabled'."
 
@@ -201,7 +206,13 @@ def test_killswitch_on_after_update():
         assert daemon.is_killswitch_on(), "Kill switch should be enabled"
         logging.log(f"Settings before update {sh.nordvpn.settings()}")
         assert network.is_not_available(2), "Network should not be available when kill switch is on"
-        sh.sudo.dpkg("-i", DEB_PATH)
+        if daemon.is_under_snap():
+            # Need to kill norduserd, as otherwise we cannot install Snap package on top
+            pid = sh.pgrep("norduserd").strip()
+            sh.sudo.kill("-9", pid)
+            sh.sudo.snap.install("--dangerous", SNAP_PATH)
+        else:
+            sh.sudo.dpkg("-i", DEB_PATH)
         daemon.wait_until_daemon_is_running()
         logging.log(f"Settings after app update {sh.nordvpn.settings()}")
         assert network.is_not_available(2), "Network should not be available when kill switch is on"
