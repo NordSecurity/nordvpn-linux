@@ -29,7 +29,7 @@ func GetNorduserClientConnection(uid int) (*grpc.ClientConn, error) {
 	socket := internal.GetNorduserdSocket(uid)
 	if snapconf.IsUnderSnap() {
 		socket = internal.GetNorduserSocketSnap(uid)
-	} else if _, err := os.Stat(socket); os.IsNotExist(err) {
+	} else if _, err := os.Stat(socket); os.IsNotExist(err) || os.IsPermission(err) {
 		socket = internal.GetNorduserSocketFork(uid)
 	}
 
