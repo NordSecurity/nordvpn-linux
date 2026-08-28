@@ -3,17 +3,20 @@ package alert
 import "github.com/NordSecurity/nordvpn-linux/internal"
 
 type AlertBuilder struct {
-	send  func(Alert)
+	send  AlertSender
 	alert Alert
 }
 
-func NewAlertBuilder(send func(Alert), body string) *AlertBuilder {
+type AlertSender func(Alert) bool
+
+func NewAlertBuilder(send AlertSender, body string) *AlertBuilder {
 	return &AlertBuilder{
 		send: send,
 		alert: Alert{
 			Summary: internal.AppName,
 			Body:    body,
 			Urgency: UrgencyNormal,
+			OnShown: nil,
 		},
 	}
 }
@@ -37,6 +40,13 @@ func (b *AlertBuilder) Action(key, label string, callback func()) *AlertBuilder 
 	return b
 }
 
+func (b *AlertBuilder) OnShown(onShown func()) *AlertBuilder {
+	b.alert.OnShown = onShown
+	return b
+}
+
 func (b *AlertBuilder) Show() {
-	b.send(b.alert)
+	if b.send(b.alert) && b.alert.OnShown != nil {
+		b.alert.OnShown()
+	}
 }

@@ -134,7 +134,10 @@ type Instance struct {
 	checkboxSync          *CheckboxSynchronizer
 	isVisible             atomic.Bool
 	stopVisibilityMonitor chan struct{}
+	openURI               URIOpener
 }
+
+type URIOpener func(string) error
 
 type trayState struct {
 	daemonAvailable      bool
@@ -171,7 +174,11 @@ func (state *trayState) serverName() string {
 	return vpnServerName
 }
 
-func NewTrayInstance(client pb.DaemonClient, quitChan chan<- norduser.StopRequest) *Instance {
+func NewTrayInstance(
+	client pb.DaemonClient,
+	quitChan chan<- norduser.StopRequest,
+	openURI URIOpener,
+) *Instance {
 	var n alert.Notifier
 	notifier, err := alert.NewDbusNotifier(alert.WithTransient())
 	if err != nil {
@@ -189,6 +196,7 @@ func NewTrayInstance(client pb.DaemonClient, quitChan chan<- norduser.StopReques
 		recentConnections:     newRecentConnectionsManager(client),
 		checkboxSync:          NewCheckboxSynchronizer(),
 		stopVisibilityMonitor: make(chan struct{}),
+		openURI:               openURI,
 	}
 	obj.n = &gatedNotifier{
 		Notifier: n,

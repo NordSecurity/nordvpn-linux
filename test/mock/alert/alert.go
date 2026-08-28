@@ -28,7 +28,7 @@ func (nm *NotifierMock) Alert(body string) *alert.AlertBuilder {
 	return alert.NewAlertBuilder(nm.record, body)
 }
 
-func (nm *NotifierMock) record(alert alert.Alert) {
+func (nm *NotifierMock) record(alert alert.Alert) bool {
 	alertID := nm.NextID
 	nm.Alerts = append(nm.Alerts, Alert{ID: alertID, Alert: alert})
 	nm.NextID++
@@ -41,6 +41,8 @@ func (nm *NotifierMock) record(alert alert.Alert) {
 			nm.UpdateCh <- struct{}{}
 		}
 	}
+
+	return true
 }
 
 func (nm *NotifierMock) Mute() {}

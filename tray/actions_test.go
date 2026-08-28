@@ -70,9 +70,10 @@ func (c *trayDaemonClient) TokenInfo(
 }
 
 type trayFixture struct {
-	instance *Instance
-	n        *alert.NotifierMock
-	client   *trayDaemonClient
+	instance  *Instance
+	n         *alert.NotifierMock
+	client    *trayDaemonClient
+	openedURI string
 }
 
 func newTrayFixture(t *testing.T, payloads ...*pb.Payload) *trayFixture {
@@ -86,6 +87,7 @@ func newTrayFixture(t *testing.T, payloads ...*pb.Payload) *trayFixture {
 	client := &trayDaemonClient{
 		connectStream: &fakeConnectStream{payloads: payloads},
 	}
+
 	ti := &Instance{
 		client: client,
 		n:      notifier,
@@ -93,7 +95,14 @@ func newTrayFixture(t *testing.T, payloads ...*pb.Payload) *trayFixture {
 	ti.state.initialSyncCompleted = true
 	ti.state.notificationsStatus = Enabled
 
-	return &trayFixture{instance: ti, n: notifier, client: client}
+	trayFixture := trayFixture{instance: ti, n: notifier, client: client}
+
+	ti.openURI = func(uri string) error {
+		trayFixture.openedURI = uri
+		return nil
+	}
+
+	return &trayFixture
 }
 
 func TestConnect_DedicatedServersErrorPaths(t *testing.T) {
@@ -201,14 +210,6 @@ func TestGUIDownloadURL_UTMParameters(t *testing.T) {
 func TestOpenGUIActions_ReportEventAndOpenURI(t *testing.T) {
 	category.Set(t, category.Unit)
 
-	orig := openURI
-	defer func() { openURI = orig }()
-	var opened string
-	openURI = func(uri string) error {
-		opened = uri
-		return nil
-	}
-
 	tests := []struct {
 		name     string
 		action   func(*Instance)
@@ -231,7 +232,6 @@ func TestOpenGUIActions_ReportEventAndOpenURI(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			opened = ""
 			f := newTrayFixture(t)
 
 			tc.action(f.instance)
@@ -241,7 +241,7 @@ func TestOpenGUIActions_ReportEventAndOpenURI(t *testing.T) {
 			assert.Equal(t, pb.UIEvent_TRAY, ev.FormReference)
 			assert.Equal(t, tc.wantItem, ev.ItemName)
 			assert.Equal(t, pb.UIEvent_CLICK, ev.ItemType)
-			assert.Equal(t, tc.wantURI, opened, "opened the wrong URI")
+			assert.Equal(t, tc.wantURI, f.openedURI, "opened the wrong URI")
 		})
 	}
 }

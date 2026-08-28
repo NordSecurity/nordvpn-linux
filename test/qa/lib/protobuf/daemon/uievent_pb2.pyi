@@ -85,6 +85,7 @@ class UIEvent(_message.Message):
         PAUSE_24_HOURS: _ClassVar[UIEvent.ItemValue]
         PAUSE_DISCONNECT: _ClassVar[UIEvent.ItemValue]
         DEDICATED_SERVER: _ClassVar[UIEvent.ItemValue]
+        ITEM_VALUE_LEARN_MORE: _ClassVar[UIEvent.ItemValue]
     ITEM_VALUE_UNSPECIFIED: UIEvent.ItemValue
     COUNTRY: UIEvent.ItemValue
     CITY: UIEvent.ItemValue
@@ -101,6 +102,7 @@ class UIEvent(_message.Message):
     PAUSE_24_HOURS: UIEvent.ItemValue
     PAUSE_DISCONNECT: UIEvent.ItemValue
     DEDICATED_SERVER: UIEvent.ItemValue
+    ITEM_VALUE_LEARN_MORE: UIEvent.ItemValue
     FORM_REFERENCE_FIELD_NUMBER: _ClassVar[int]
     ITEM_NAME_FIELD_NUMBER: _ClassVar[int]
     ITEM_TYPE_FIELD_NUMBER: _ClassVar[int]
