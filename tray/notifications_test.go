@@ -3,6 +3,9 @@ package tray
 import (
 	"testing"
 
+	"github.com/NordSecurity/nordvpn-linux/core"
+	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	mockalert "github.com/NordSecurity/nordvpn-linux/test/mock/alert"
 
@@ -65,4 +68,48 @@ func TestGatedNotifierSuppressesUntilInitialSyncCompleted(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSessionLimitAlert_ReportsShowEventOnShow(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	f := newTrayFixture(t)
+	builder := f.instance.connectionResultAlert(&pb.Payload{Type: internal.CodeConnectionLimitReached})
+	require.NotNil(t, builder)
+
+	builder.Show()
+
+	require.Len(t, f.client.uiEvents, 1)
+	ev := f.client.uiEvents[0]
+	assert.Equal(t, pb.UIEvent_TRAY, ev.FormReference)
+	assert.Equal(t, pb.UIEvent_SESSION_LIMIT, ev.ItemName)
+	assert.Equal(t, pb.UIEvent_SHOW, ev.ItemType)
+	assert.Equal(t, pb.UIEvent_ITEM_VALUE_UNSPECIFIED, ev.ItemValue)
+}
+
+func TestSessionLimitAlert_OpensGuideOnActionAndReportsClickEvent(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	f := newTrayFixture(t)
+
+	builder := f.instance.connectionResultAlert(&pb.Payload{Type: internal.CodeConnectionLimitReached})
+	require.NotNil(t, builder)
+
+	builder.Show()
+	require.Len(t, f.n.Alerts, 1)
+
+	actions := f.n.Alerts[0].Actions
+	require.Len(t, actions, 1)
+	require.NotNil(t, actions[0].Callback)
+
+	actions[0].Callback()
+
+	assert.Equal(t, core.ConnectionLimitReachedGuideURL(core.TrayAppID), f.openedURI)
+
+	require.Len(t, f.client.uiEvents, 2)
+	ev := f.client.uiEvents[1]
+	assert.Equal(t, pb.UIEvent_TRAY, ev.FormReference)
+	assert.Equal(t, pb.UIEvent_SESSION_LIMIT, ev.ItemName)
+	assert.Equal(t, pb.UIEvent_CLICK, ev.ItemType)
+	assert.Equal(t, pb.UIEvent_ITEM_VALUE_LEARN_MORE, ev.ItemValue)
 }

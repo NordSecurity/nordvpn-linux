@@ -129,6 +129,8 @@ func itemValueToString(value pb.UIEvent_ItemValue) string {
 		return "disconnect"
 	case pb.UIEvent_DEDICATED_SERVER:
 		return "dedicated_server"
+	case pb.UIEvent_ITEM_VALUE_LEARN_MORE:
+		return "learn_more"
 	}
 	return ""
 }

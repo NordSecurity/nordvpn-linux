@@ -25,7 +25,7 @@ type gatedNotifier struct {
 func (g *gatedNotifier) Alert(body string) *alert.AlertBuilder {
 	if !g.isReady() {
 		log.Systray.Infof("Notification suppressed (initial sync not completed): %s", body)
-		return alert.NewAlertBuilder(func(alert.Alert) {}, body)
+		return alert.NewAlertBuilder(func(alert.Alert) bool { return false }, body)
 	}
 
 	return g.Notifier.Alert(body)
@@ -86,9 +86,24 @@ func (ti *Instance) connectionResultAlert(out *pb.Payload) *alert.AlertBuilder {
 		return ti.n.Alert(client.ENSConnectionLimitReached(core.TrayAppID)).
 			Summary(client.ENSConnectionLimitReachedSummary).
 			Action(actionKeyOpenHelpGuide, "Open help guide", func() {
-				if err := openURI(core.ConnectionLimitReachedGuideURL(core.TrayAppID)); err != nil {
+				if err := ti.openURI(core.ConnectionLimitReachedGuideURL(core.TrayAppID)); err != nil {
 					log.Systray.Errorf("failed to open URI: %v", err)
 				}
+
+				_, _ = ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+					FormReference: pb.UIEvent_TRAY,
+					ItemName:      pb.UIEvent_SESSION_LIMIT,
+					ItemType:      pb.UIEvent_CLICK,
+					ItemValue:     pb.UIEvent_ITEM_VALUE_LEARN_MORE,
+				})
+			}).
+			OnShown(func() {
+				_, _ = ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
+					FormReference: pb.UIEvent_TRAY,
+					ItemName:      pb.UIEvent_SESSION_LIMIT,
+					ItemType:      pb.UIEvent_SHOW,
+					ItemValue:     pb.UIEvent_ITEM_VALUE_UNSPECIFIED,
+				})
 			}).
 			Urgent()
 	case internal.CodeConnecting: // no notification
