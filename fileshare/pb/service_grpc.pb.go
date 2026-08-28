@@ -28,6 +28,8 @@ const (
 	Fileshare_CancelFile_FullMethodName          = "/filesharepb.Fileshare/CancelFile"
 	Fileshare_SetNotifications_FullMethodName    = "/filesharepb.Fileshare/SetNotifications"
 	Fileshare_PurgeTransfersUntil_FullMethodName = "/filesharepb.Fileshare/PurgeTransfersUntil"
+	Fileshare_Mount_FullMethodName               = "/filesharepb.Fileshare/Mount"
+	Fileshare_Unmount_FullMethodName             = "/filesharepb.Fileshare/Unmount"
 )
 
 // FileshareClient is the client API for Fileshare service.
@@ -52,6 +54,10 @@ type FileshareClient interface {
 	SetNotifications(ctx context.Context, in *SetNotificationsRequest, opts ...grpc.CallOption) (*SetNotificationsResponse, error)
 	// PurgeTransfersUntil provided time from fileshare implementation storage
 	PurgeTransfersUntil(ctx context.Context, in *PurgeTransfersUntilRequest, opts ...grpc.CallOption) (*Error, error)
+	// Mount the meshnet FUSE filesystem
+	Mount(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Error, error)
+	// Unmount the meshnet FUSE filesystem
+	Unmount(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Error, error)
 }
 
 type fileshareClient struct {
@@ -179,6 +185,26 @@ func (c *fileshareClient) PurgeTransfersUntil(ctx context.Context, in *PurgeTran
 	return out, nil
 }
 
+func (c *fileshareClient) Mount(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Error, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Error)
+	err := c.cc.Invoke(ctx, Fileshare_Mount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileshareClient) Unmount(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Error, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Error)
+	err := c.cc.Invoke(ctx, Fileshare_Unmount_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileshareServer is the server API for Fileshare service.
 // All implementations must embed UnimplementedFileshareServer
 // for forward compatibility.
@@ -201,6 +227,10 @@ type FileshareServer interface {
 	SetNotifications(context.Context, *SetNotificationsRequest) (*SetNotificationsResponse, error)
 	// PurgeTransfersUntil provided time from fileshare implementation storage
 	PurgeTransfersUntil(context.Context, *PurgeTransfersUntilRequest) (*Error, error)
+	// Mount the meshnet FUSE filesystem
+	Mount(context.Context, *Empty) (*Error, error)
+	// Unmount the meshnet FUSE filesystem
+	Unmount(context.Context, *Empty) (*Error, error)
 	mustEmbedUnimplementedFileshareServer()
 }
 
@@ -237,6 +267,12 @@ func (UnimplementedFileshareServer) SetNotifications(context.Context, *SetNotifi
 }
 func (UnimplementedFileshareServer) PurgeTransfersUntil(context.Context, *PurgeTransfersUntilRequest) (*Error, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PurgeTransfersUntil not implemented")
+}
+func (UnimplementedFileshareServer) Mount(context.Context, *Empty) (*Error, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Mount not implemented")
+}
+func (UnimplementedFileshareServer) Unmount(context.Context, *Empty) (*Error, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Unmount not implemented")
 }
 func (UnimplementedFileshareServer) mustEmbedUnimplementedFileshareServer() {}
 func (UnimplementedFileshareServer) testEmbeddedByValue()                   {}
@@ -400,6 +436,42 @@ func _Fileshare_PurgeTransfersUntil_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Fileshare_Mount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileshareServer).Mount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Fileshare_Mount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileshareServer).Mount(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Fileshare_Unmount_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileshareServer).Unmount(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Fileshare_Unmount_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileshareServer).Unmount(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Fileshare_ServiceDesc is the grpc.ServiceDesc for Fileshare service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -430,6 +502,14 @@ var Fileshare_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PurgeTransfersUntil",
 			Handler:    _Fileshare_PurgeTransfersUntil_Handler,
+		},
+		{
+			MethodName: "Mount",
+			Handler:    _Fileshare_Mount_Handler,
+		},
+		{
+			MethodName: "Unmount",
+			Handler:    _Fileshare_Unmount_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

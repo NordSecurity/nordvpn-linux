@@ -16,6 +16,10 @@ const (
 
 var ErrAddressAlreadyInUse = errors.New("address already in use")
 
+type ReceivedDirResolver interface {
+	ReceivedDir(peerIP string) (string, error)
+}
+
 // Fileshare defines a set of operations that any type that wants to act as a fileshare service
 // must implement.
 type Fileshare interface {

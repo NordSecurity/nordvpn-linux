@@ -7,14 +7,17 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/fusefs"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 )
 
-const transferHistoryChunkSize = 10000
-const disableTimeout = 5 * time.Second
+const (
+	transferHistoryChunkSize = 10000
+	disableTimeout           = 5 * time.Second
+)
 
 type FileshareHandle struct {
 	shutdownChan            <-chan struct{}
@@ -22,6 +25,7 @@ type FileshareHandle struct {
 	grpcServer              *grpc.Server
 	fileshareImplementation fileshare.Fileshare
 	grpcConn                *grpc.ClientConn
+	fuseMounter             *fusefs.FUSEMounter
 }
 
 // GetShutdownChan provides a way for the gRPC fileshare server to notify the main goroutine about a shutdown triggered
@@ -33,6 +37,12 @@ func (f *FileshareHandle) GetShutdownChan() <-chan struct{} {
 // Shutdown performs graceful shutdown
 func (f *FileshareHandle) Shutdown() {
 	f.eventManager.CancelLiveTransfers()
+
+	if f.fuseMounter != nil && f.fuseMounter.IsMounted() {
+		if err := f.fuseMounter.Unmount(); err != nil {
+			log.Error("unmounting meshnet fs:", err)
+		}
+	}
 
 	f.grpcServer.Stop()
 
@@ -64,6 +74,7 @@ func Startup(storagePath string,
 	eventManager *fileshare.EventManager,
 	meshClient meshpb.MeshnetClient,
 	grpcConn *grpc.ClientConn,
+	fuseMounter *fusefs.FUSEMounter,
 ) FileshareHandle {
 	shutdownChan := make(chan struct{})
 
@@ -74,7 +85,9 @@ func Startup(storagePath string,
 		fileshare.NewStdFilesystem("/"),
 		fileshare.StdOsInfo{},
 		transferHistoryChunkSize,
-		shutdownChan)
+		shutdownChan,
+		fuseMounter,
+	)
 
 	grpcServer := grpc.NewServer()
 	if grpcAuthenticator != nil {
@@ -95,5 +108,6 @@ func Startup(storagePath string,
 		grpcServer:              grpcServer,
 		fileshareImplementation: fileshareImpl,
 		grpcConn:                grpcConn,
+		fuseMounter:             fuseMounter,
 	}
 }

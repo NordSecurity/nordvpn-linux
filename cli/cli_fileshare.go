@@ -252,7 +252,8 @@ func (c *cmd) FileshareAccept(ctx *cli.Context) error {
 
 	var path string
 	var err error
-	if ctx.IsSet(flagFilesharePath) {
+	explicitPath := ctx.IsSet(flagFilesharePath)
+	if explicitPath {
 		path, err = filepath.Abs(ctx.String(flagFilesharePath))
 		if err != nil {
 			return fmt.Errorf(MsgFileshareInvalidPath, formatError(err))
@@ -272,10 +273,11 @@ func (c *cmd) FileshareAccept(ctx *cli.Context) error {
 	defer cancelFunc()
 
 	client, err := c.fileshareClient.Accept(acceptContext, &pb.AcceptRequest{
-		TransferId: transferID,
-		DstPath:    path,
-		Silent:     ctx.IsSet(flagFileshareNoWait),
-		Files:      args.Tail(),
+		TransferId:   transferID,
+		DstPath:      path,
+		Silent:       ctx.IsSet(flagFileshareNoWait),
+		Files:        args.Tail(),
+		ExplicitPath: explicitPath,
 	})
 	if err != nil {
 		return formatError(err)
@@ -444,6 +446,12 @@ func fileshareErrorCodeToError(code pb.FileshareErrorCode, params ...any) error 
 		return fmt.Errorf(MsgNoPermissions, params...)
 	case pb.FileshareErrorCode_PURGE_FAILURE:
 		return errors.New(MsgFileshareClearFailure)
+	case pb.FileshareErrorCode_MOUNT_FAILED:
+		return errors.New(MsgFileshareMountFailed)
+	case pb.FileshareErrorCode_ALREADY_MOUNTED:
+		return errors.New(MsgFileshareAlreadyMounted)
+	case pb.FileshareErrorCode_NOT_MOUNTED:
+		return errors.New(MsgFileshareNotMounted)
 	default:
 		return errors.New(AccountInternalError)
 	}

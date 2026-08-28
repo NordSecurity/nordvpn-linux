@@ -6,6 +6,7 @@ import (
 	"net/netip"
 	"strings"
 
+	"github.com/NordSecurity/nordvpn-linux/fileshare/fusefs"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/meshnet"
@@ -41,6 +42,7 @@ type Server struct {
 	osInfo        OsInfo
 	listChunkSize int
 	shutdownChan  chan<- struct{}
+	fuseMounter   *fusefs.FUSEMounter
 }
 
 // NewServer is a default constructor for a fileshare server
@@ -52,15 +54,17 @@ func NewServer(
 	osInfo OsInfo,
 	listChunkSize int,
 	shutdownChan chan<- struct{},
+	fuseMounter *fusefs.FUSEMounter,
 ) *Server {
 	return &Server{
-		fileshare:     fileshare,
-		eventManager:  eventManager,
-		meshClient:    meshClient,
-		filesystem:    filesystem,
-		osInfo:        osInfo,
-		listChunkSize: listChunkSize,
-		shutdownChan:  shutdownChan,
+		fileshare:      fileshare,
+		eventManager:   eventManager,
+		meshClient:     meshClient,
+		filesystem:     filesystem,
+		osInfo:         osInfo,
+		listChunkSize:  listChunkSize,
+		shutdownChan:   shutdownChan,
+		fuseMounter:    fuseMounter,
 	}
 }
 
@@ -489,6 +493,42 @@ func (s *Server) PurgeTransfersUntil(ctx context.Context, req *pb.PurgeTransfers
 	if err != nil {
 		log.Errorf("error while purging transfers: %s", err)
 		return fileshareError(pb.FileshareErrorCode_PURGE_FAILURE), nil
+	}
+
+	return empty(), nil
+}
+
+func (s *Server) Mount(ctx context.Context, _ *pb.Empty) (*pb.Error, error) {
+	resp, err := s.meshClient.IsEnabled(context.Background(), &meshpb.Empty{})
+	if err != nil || !resp.GetStatus().GetValue() {
+		return serviceError(pb.ServiceErrorCode_MESH_NOT_ENABLED), nil
+	}
+
+	if s.fuseMounter == nil {
+		log.Error("mounting meshnet fs: no fuse mounter configured")
+		return fileshareError(pb.FileshareErrorCode_MOUNT_FAILED), nil
+	}
+
+	if s.fuseMounter.IsMounted() {
+		return fileshareError(pb.FileshareErrorCode_ALREADY_MOUNTED), nil
+	}
+
+	if err := s.fuseMounter.Mount(); err != nil {
+		log.Errorf("mounting meshnet fs: %s", err)
+		return fileshareError(pb.FileshareErrorCode_MOUNT_FAILED), nil
+	}
+
+	return empty(), nil
+}
+
+func (s *Server) Unmount(ctx context.Context, _ *pb.Empty) (*pb.Error, error) {
+	if s.fuseMounter == nil || !s.fuseMounter.IsMounted() {
+		return fileshareError(pb.FileshareErrorCode_NOT_MOUNTED), nil
+	}
+
+	if err := s.fuseMounter.Unmount(); err != nil {
+		log.Errorf("unmounting meshnet fs: %s", err)
+		return fileshareError(pb.FileshareErrorCode_LIB_FAILURE), nil
 	}
 
 	return empty(), nil

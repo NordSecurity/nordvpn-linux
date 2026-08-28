@@ -149,6 +149,15 @@ Example: nordvpn set meshnet on`
 	MsgMeshnetRefreshUsage = "Refreshes the Meshnet in case it was not updated automatically."
 	MsgMeshnetPeerUnknown  = "Peer '%s' is unknown."
 
+	// meshnet mount
+	MsgMeshnetMountUsage       = "Mount Meshnet peers as directories, so files can be sent by dragging them in a file manager. While mounted, incoming files from peers are saved into the peer's directory instead of the default download directory unless specific download path was requested."
+	MsgMeshnetMountSuccess     = "Meshnet filesystem mounted."
+	MsgMeshnetUnmountUsage     = "Unmount the Meshnet filesystem."
+	MsgMeshnetUnmountSuccess   = "Meshnet filesystem unmounted."
+	MsgFileshareAlreadyMounted = "Meshnet filesystem is already mounted."
+	MsgFileshareNotMounted     = "Meshnet filesystem is not mounted."
+	MsgFileshareMountFailed    = "Failed to mount Meshnet filesystem."
+
 	// Invites
 	MsgMeshnetInviteUsage                     = "Add other users' devices to your Meshnet."
 	MsgMeshnetInviteDescription               = MsgMeshnetInviteUsage + "\n" + "Learn more: https://meshnet.nordvpn.com/features/linking-devices-in-meshnet?utm_medium=app&utm_source=nordvpn-linux-cli&utm_campaign=meshnet-linking&nm=app&ns=nordvpn-linux-cli&nc=meshnet-linking_devices"
@@ -336,7 +345,7 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 	MsgFileshareAcceptUsage       = "Accept an incoming file transfer. To download an entire transfer, specify the transfer ID. To download a single file, specify the transfer ID and the file ID."
 	MsgFileshareAcceptArgsUsage   = "<transfer_id> [file_id1] [file_id2...]"
 	MsgFileshareAcceptDescription = MsgFileshareAcceptUsage + "\n\nTo cancel a transfer in progress, press Ctrl+C"
-	MsgFileshareAcceptPathUsage   = "Specify download path (default: $XDG_DOWNLOAD_DIR or $HOME/Downloads)"
+	MsgFileshareAcceptPathUsage   = "Specify download path (default: the peer's Meshnet filesystem directory if mounted, otherwise $XDG_DOWNLOAD_DIR or $HOME/Downloads)"
 	MsgFileshareClearUsage        = "Clear entries older than the specified time period from the file transfer history."
 	MsgFileshareClearArgsUsage    = "all|<time_period> [time_period...]"
 	MsgFileshareClearDescription  = MsgFileshareClearUsage + "\n\nSpecify the time period using the systemd time span syntax: https://www.freedesktop.org/software/systemd/man/latest/systemd.time.html\n\nFor example, \"nordvpn fileshare clear 1d 12h\" clears entries older than 36 hours. Use \"nordvpn fileshare clear all\" to remove all entries."

@@ -629,6 +629,18 @@ func meshnetCommand(c *cmd) *cli.Command {
 				},
 			},
 			{
+				Name:   "mount",
+				Usage:  MsgMeshnetMountUsage,
+				Before: c.IsFileshareDaemonReachable,
+				Action: c.MeshMount,
+			},
+			{
+				Name:   "unmount",
+				Usage:  MsgMeshnetUnmountUsage,
+				Before: c.IsFileshareDaemonReachable,
+				Action: c.MeshUnmount,
+			},
+			{
 				Name:        "invite",
 				Aliases:     []string{"inv"},
 				Usage:       MsgMeshnetInviteUsage,

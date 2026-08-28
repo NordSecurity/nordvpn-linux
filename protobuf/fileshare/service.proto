@@ -25,4 +25,8 @@ service Fileshare {
 	rpc SetNotifications(SetNotificationsRequest) returns (SetNotificationsResponse);
 	// PurgeTransfersUntil provided time from fileshare implementation storage
 	rpc PurgeTransfersUntil(PurgeTransfersUntilRequest) returns (Error);
+	// Mount the meshnet FUSE filesystem
+	rpc Mount(Empty) returns (Error);
+	// Unmount the meshnet FUSE filesystem
+	rpc Unmount(Empty) returns (Error);
 }

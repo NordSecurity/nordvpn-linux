@@ -355,9 +355,8 @@ func (nm *NotificationManager) AcceptTransfer(notificationID uint32) {
 		return
 	}
 
-	transfer, err := nm.eventManager.AcceptTransfer(transferID,
-		nm.defaultDownloadDir,
-		[]string{})
+	dstDir := nm.eventManager.ResolveDownloadDirForTransfer(transferID)
+	transfer, err := nm.eventManager.AcceptTransfer(transferID, dstDir, []string{})
 
 	notificationSummary := acceptFailedNotificationSummary
 	if err == ErrTransferCanceledByPeer {
@@ -371,7 +370,7 @@ func (nm *NotificationManager) AcceptTransfer(notificationID uint32) {
 	}
 
 	for _, file := range transfer.Files {
-		if err = nm.fileshare.Accept(transferID, nm.defaultDownloadDir, file.Id); err != nil {
+		if err = nm.fileshare.Accept(transferID, dstDir, file.Id); err != nil {
 			nm.sendGenericNotification(acceptFileFailedNotificationSummary, file.Id)
 		}
 	}

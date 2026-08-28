@@ -1,8 +1,11 @@
-package fileshare
+package utils
 
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
+	"net/netip"
+	"strings"
 
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"golang.org/x/exp/slices"
@@ -17,7 +20,7 @@ func GetSelfPeer(meshClient meshpb.MeshnetClient) (*meshpb.Peer, error) {
 	return peerList.Self, nil
 }
 
-func getPeers(meshClient meshpb.MeshnetClient) ([]*meshpb.Peer, error) {
+func GetPeers(meshClient meshpb.MeshnetClient) ([]*meshpb.Peer, error) {
 	peerList, err := getAllPeers(meshClient)
 	if err != nil {
 		return nil, err
@@ -27,8 +30,8 @@ func getPeers(meshClient meshpb.MeshnetClient) ([]*meshpb.Peer, error) {
 	return peers, nil
 }
 
-func getPeerByIP(meshClient meshpb.MeshnetClient, peerIP string) (*meshpb.Peer, error) {
-	peers, err := getPeers(meshClient)
+func GetPeerByIP(meshClient meshpb.MeshnetClient, peerIP string) (*meshpb.Peer, error) {
+	peers, err := GetPeers(meshClient)
 	if err != nil {
 		return nil, err
 	}
@@ -54,4 +57,37 @@ func getAllPeers(meshClient meshpb.MeshnetClient) (*meshpb.PeerList, error) {
 	default:
 		return nil, fmt.Errorf("GetPeers failed, unknown error")
 	}
+}
+
+// XXX: Can I use nickname?
+func PeerName(p *meshpb.Peer) string {
+	name := p.Hostname
+	if p.Nickname != "" {
+		name = p.Nickname
+	}
+	return strings.Map(func(r rune) rune {
+		if r == '/' || r == '\x00' {
+			return '_'
+		}
+		return r
+	}, name)
+}
+
+// XXX: probably shouldn't be here
+func StableIno(parts ...string) uint64 {
+	h := fnv.New64a()
+	for _, p := range parts {
+		h.Write([]byte(p))
+		h.Write([]byte{0})
+	}
+	ino := h.Sum64()
+	// 0 means "auto-assign" and ^uint64(0) is reserved - can't use
+	if ino == 0 || ino == ^uint64(0) {
+		ino = 1
+	}
+	return ino
+}
+
+func PeerAddr(p *meshpb.Peer) (netip.Addr, error) {
+	return netip.ParseAddr(p.Ip)
 }

@@ -3,6 +3,7 @@ package fileshare
 import (
 	"encoding/base64"
 
+	"github.com/NordSecurity/nordvpn-linux/fileshare/utils"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 )
@@ -19,7 +20,7 @@ func NewPubkeyProvider(meshClient meshpb.MeshnetClient) *PubkeyProvider {
 
 // PubkeyFunc is called by libdrop on incoming requests to verify their validity
 func (c *PubkeyProvider) PubkeyFunc(peerIP string) []byte {
-	peers, err := getPeers(c.meshClient)
+	peers, err := utils.GetPeers(c.meshClient)
 	if err != nil {
 		log.Error(err)
 	}

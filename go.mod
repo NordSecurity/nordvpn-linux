@@ -28,6 +28,7 @@ require (
 	github.com/google/nftables v0.3.0
 	github.com/google/uuid v1.6.0
 	github.com/hako/durafmt v0.0.0-20210608085754-5c1018a4e16b
+	github.com/hanwen/go-fuse/v2 v2.11.0
 	github.com/magefile/mage v1.17.2
 	github.com/miekg/dns v1.1.72
 	github.com/milosgajdos/tenus v0.0.3

@@ -19,6 +19,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/fileshare"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_process"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/fileshare_startup"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/fusefs"
 	"github.com/NordSecurity/nordvpn-linux/fileshare/storage"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -236,6 +237,22 @@ func main() {
 		os.Exit(int(childprocess.CodeFailedToEnable))
 	}
 
+	mountPoint, err := internal.MeshnetMountPoint()
+	if err != nil {
+		log.Warn("failed to determine meshnet mount point:", err)
+		mountPoint = ""
+	}
+	fuseBackingDir := filepath.Join(configDirPath, "meshnet")
+
+	fuseMounter := fusefs.NewFUSEMounter(
+		mountPoint,
+		fuseBackingDir,
+		meshClient,
+		eventManager,
+		fileshareImplementation,
+	)
+	eventManager.SetReceivedDirResolver(fusefs.NewReceivedDirResolver(meshClient, fuseBackingDir, fuseMounter.IsMounted))
+
 	fileshareHandle := fileshare_startup.Startup(storagePath,
 		limitedListener,
 		internal.NewFileshareAuthenticator(uint32(os.Getuid())), // #nosec G115
@@ -243,6 +260,7 @@ func main() {
 		eventManager,
 		meshClient,
 		grpcConn,
+		fuseMounter,
 	)
 
 	signals := internal.GetSignalChan()

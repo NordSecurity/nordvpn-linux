@@ -988,6 +988,9 @@ func (s *Server) GetPeers(context.Context, *pb.Empty) (*pb.GetPeersResponse, err
 	}, nil
 }
 
+// XXX: In case there are files associated with peer, this should return
+// to client first so client can ask if user wants to remove peer with its
+// associated files
 func (s *Server) RemovePeer(
 	ctx context.Context,
 	req *pb.UpdatePeerRequest,

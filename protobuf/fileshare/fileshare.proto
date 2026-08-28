@@ -42,6 +42,9 @@ enum FileshareErrorCode {
 	NO_FILES = 20;
 	ACCEPT_DIR_NO_PERMISSIONS = 21;
 	PURGE_FAILURE = 22;
+	MOUNT_FAILED = 23;
+	ALREADY_MOUNTED = 24;
+	NOT_MOUNTED = 25;
 }
 
 // Generic error to be used through all responses. If empty then no error occurred.
@@ -72,6 +75,8 @@ message AcceptRequest {
 	string dst_path = 2; // Directory to store the received files
 	bool silent = 3; // Do transfer in background (true) or Report progress info back (false)
 	repeated string files = 4; // A list of specific files to be accepted
+	// true if dst_path was explicitly requested by the user
+	bool explicit_path = 5;
 }
 
 message StatusResponse {

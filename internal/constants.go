@@ -31,25 +31,25 @@ const (
 	NordvpnGroup = "nordvpn"
 
 	// PermUserRWX user permission type to read write and execute
-	PermUserRWX = 0700
+	PermUserRWX = 0o700
 
 	// PermUserRW user permission type to read and write
-	PermUserRW = 0600
+	PermUserRW = 0o600
 
 	// PermUserRWGroupRW permission type for user and group to read and write, everyone else - no access.
-	PermUserRWGroupRW = 0660
+	PermUserRWGroupRW = 0o660
 
 	// PermUserRWGroupROthersR user permission type for user to read and write to it, everyone else can only read it.
-	PermUserRWGroupROthersR = 0644
+	PermUserRWGroupROthersR = 0o644
 
 	// PermUserRWGroupRWOthersR allows user and group to read and write, other only read
-	PermUserRWGroupRWOthersR = 0664
+	PermUserRWGroupRWOthersR = 0o664
 
 	// PermUserRWGroupRWOthersRW user permission type for everyone to read and write to it.
-	PermUserRWGroupRWOthersRW = 0666
+	PermUserRWGroupRWOthersRW = 0o666
 
 	// PermUserRWXGroupRXOthersRX forbidding group and others to write to it
-	PermUserRWXGroupRXOthersRX = 0755
+	PermUserRWXGroupRXOthersRX = 0o755
 
 	// ChattrExec is the chattr command executable name
 	ChattrExec = "chattr"
@@ -213,6 +213,14 @@ func getHomeDirPath() (string, error) {
 	}
 
 	return homeDirectory, nil
+}
+
+func MeshnetMountPoint() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("getting home directory: %w", err)
+	}
+	return filepath.Join(homeDir, "Meshnet"), nil
 }
 
 // GetConfigDirPath returns the directory used to store local user config

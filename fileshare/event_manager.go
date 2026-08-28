@@ -12,6 +12,7 @@ import (
 	"syscall"
 
 	"github.com/NordSecurity/nordvpn-linux/fileshare/pb"
+	"github.com/NordSecurity/nordvpn-linux/fileshare/utils"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	meshpb "github.com/NordSecurity/nordvpn-linux/meshnet/pb"
 	"golang.org/x/exp/slices"
@@ -55,6 +56,7 @@ type EventManager struct {
 	filesystem            Filesystem
 	notificationManager   *NotificationManager
 	defaultDownloadDir    string
+	receivedDirResolver   ReceivedDirResolver
 
 	events chan []Event
 }
@@ -116,6 +118,7 @@ func (em *EventManager) Event(event ...Event) {
 
 // SetFileshare must be called before using event manager.
 // Necessary because of circular dependency between event manager and libDrop.
+// XXX: Can this be killed?
 func (em *EventManager) SetFileshare(fileshare Fileshare) {
 	em.mutex.Lock()
 	defer em.mutex.Unlock()
@@ -193,7 +196,7 @@ func (em *EventManager) handleEvent(event Event) {
 }
 
 func (em *EventManager) handleRequestReceivedEvent(event EventKindRequestReceived) {
-	peer, err := getPeerByIP(em.meshClient, event.Peer)
+	peer, err := utils.GetPeerByIP(em.meshClient, event.Peer)
 	if err != nil {
 		log.Error("failed to retrieve peer requesting transfer:", err)
 		return
@@ -213,12 +216,12 @@ func (em *EventManager) handleRequestReceivedEvent(event EventKindRequestReceive
 		return
 	}
 
-	// default download directory not set
-	if em.defaultDownloadDir == "" {
+	dstDir := em.resolveDownloadDir(event.Peer)
+	if dstDir == "" {
 		return
 	}
 
-	transfer, err := em.acceptTransfer(event.TransferId, em.defaultDownloadDir, []string{})
+	transfer, err := em.acceptTransfer(event.TransferId, dstDir, []string{})
 	if err != nil {
 		log.Error("failed to autoaccept transfer:", err)
 		if em.notificationManager != nil {
@@ -228,7 +231,7 @@ func (em *EventManager) handleRequestReceivedEvent(event EventKindRequestReceive
 	}
 
 	for _, file := range transfer.Files {
-		err = em.fileshare.Accept(event.TransferId, em.defaultDownloadDir, file.Id)
+		err = em.fileshare.Accept(event.TransferId, dstDir, file.Id)
 		if err != nil {
 			log.Warn("failed to autoaccept file:", err)
 		}
@@ -326,6 +329,10 @@ func (em *EventManager) handleFileUploadedEvent(event EventKindFileUploaded) {
 	}
 	file.Finished = true
 
+	if transfer.pendingUpload != nil {
+		transfer.pendingUpload.done <- nil
+	}
+
 	fileStatusInNotification := pb.Status_SUCCESS
 	if em.notificationManager != nil && file != nil {
 		em.notificationManager.NotifyFile(
@@ -351,7 +358,12 @@ func (em *EventManager) handleFileFailedEvent(event EventKindFileFailed) {
 	}
 	file.Finished = true
 
-	//no gosec violation, values from the enumeration are within the int32 max range
+	if transfer.pendingUpload != nil {
+		// XXX: probably something different should be sent here
+		transfer.pendingUpload.done <- syscall.EIO
+	}
+
+	// no gosec violation, values from the enumeration are within the int32 max range
 	// #nosec G115
 	fileStatusInNotification := pb.Status(event.Status.Status)
 	removeFileFromLiveTransfer(transfer, file)
@@ -379,6 +391,15 @@ func (em *EventManager) handleFileRejectedEvent(event EventKindFileRejected) {
 	}
 	file.Finished = true
 
+	if transfer.pendingUpload != nil {
+		if event.ByPeer {
+			// XXX: probably something different should be sent here
+			transfer.pendingUpload.done <- syscall.ECONNREFUSED
+		} else {
+			transfer.pendingUpload.done <- syscall.EIO
+		}
+	}
+
 	fileStatusInNotification := pb.Status_CANCELED
 	removeFileFromLiveTransfer(transfer, file)
 	if em.notificationManager != nil && file != nil {
@@ -391,6 +412,16 @@ func (em *EventManager) handleFileRejectedEvent(event EventKindFileRejected) {
 }
 
 func (em *EventManager) handleTransferFailedEvent(event EventKindTransferFailed) {
+	transfer, err := em.getLiveTransfer(event.TransferId)
+	if err != nil {
+		log.Error("failed to get live transfer:", err)
+		return
+	}
+
+	if transfer.pendingUpload != nil {
+		// XXX: probably something different should be sent here
+		transfer.pendingUpload.done <- syscall.EIO
+	}
 }
 
 func (em *EventManager) handleTransferFinalizedEvent(event EventKindTransferFinalized) {
@@ -416,6 +447,11 @@ func (em *EventManager) handleTransferFinalizedEvent(event EventKindTransferFina
 		status = pb.Status_CANCELED
 	}
 	em.finalizeTransfer(transfer, status)
+
+	if transfer.pendingUpload != nil {
+		// XXX: probably something different should be sent here
+		transfer.pendingUpload.done <- syscall.EIO
+	}
 }
 
 func (em *EventManager) finalizeTransfer(transfer *LiveTransfer, status pb.Status) {
@@ -626,17 +662,17 @@ func isFileWriteable(fileInfo fs.FileInfo, user *user.User, gids []string) bool 
 	isOwner := uid == ownerUID
 
 	if isOwner {
-		return fileInfo.Mode().Perm()&os.FileMode(0200) != 0
+		return fileInfo.Mode().Perm()&os.FileMode(0o200) != 0
 	}
 
 	ownerGIDStr := strconv.Itoa(ownerGID)
 	gidIndex := slices.Index(gids, ownerGIDStr)
 	isGroup := gidIndex != -1
 	if isGroup {
-		return fileInfo.Mode().Perm()&os.FileMode(0020) != 0
+		return fileInfo.Mode().Perm()&os.FileMode(0o020) != 0
 	}
 
-	return fileInfo.Mode().Perm()&os.FileMode(0002) != 0
+	return fileInfo.Mode().Perm()&os.FileMode(0o002) != 0
 }
 
 // TransferProgressInfo info to report to the user
@@ -656,13 +692,66 @@ func (em *EventManager) Subscribe(id string) <-chan TransferProgressInfo {
 	return em.transferSubscriptions[id]
 }
 
+func (em *EventManager) SetReceivedDirResolver(r ReceivedDirResolver) {
+	em.mutex.Lock()
+	defer em.mutex.Unlock()
+	em.receivedDirResolver = r
+}
+
+func (em *EventManager) resolveDownloadDir(peerIP string) string {
+	if em.receivedDirResolver == nil {
+		return em.defaultDownloadDir
+	}
+
+	dir, err := em.receivedDirResolver.ReceivedDir(peerIP)
+	if err != nil {
+		log.Warnf("failed to resolve received dir for peer %s, falling back to default: %s", peerIP, err)
+		return em.defaultDownloadDir
+	}
+
+	return dir
+}
+
+func (em *EventManager) ResolveDownloadDirForTransfer(transferID string) string {
+	em.mutex.Lock()
+	defer em.mutex.Unlock()
+	transfer, err := em.getTransfer(transferID)
+	if err != nil {
+		return em.defaultDownloadDir
+	}
+	return em.resolveDownloadDir(transfer.Peer)
+}
+
+func (em *EventManager) RegisterPending(transferID, tmpPath string) <-chan error {
+	em.mutex.Lock()
+	defer em.mutex.Unlock()
+
+	transfer, err := em.getLiveTransfer(transferID)
+	if err != nil {
+		log.Error("failed to get live transfer:", err)
+		return nil
+	}
+
+	done := make(chan error, 1)
+	transfer.pendingUpload = &pendingUpload{done: done, tmpPath: tmpPath}
+
+	return done
+}
+
 // LiveTransfer to track ongoing transfers live in app based on events
 type LiveTransfer struct {
+	// XXX: does it all have to be public?
 	ID               string
+	pendingUpload    *pendingUpload
 	Direction        pb.Direction
 	TotalSize        uint64
 	TotalTransferred uint64
 	Files            map[string]*LiveFile // Key is ID
+}
+
+type pendingUpload struct {
+	done    chan error
+	tmpPath string
 }
 
 // LiveFile is part of LiveTransfer
