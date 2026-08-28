@@ -210,6 +210,7 @@ def test_killswitch_on_after_update():
         assert network.is_available(), "Network should be available"
 
 
+@pytest.mark.skipif(daemon.is_under_snap(), reason="TODO: LVPN-11038")
 def test_nc_mqtt_connection_with_killswitch():
     """
     Verify MQTT Notification Centre connects successfully when kill switch is enabled.
