@@ -28,6 +28,8 @@ func (a *connectServer) Send(data *pb.Payload) error {
 		a.err = errors.New("connect failure")
 	case internal.CodeServerUnavailable:
 		a.err = errServersUnavailable
+	case internal.CodeConnectionLimitReached:
+		a.err = errors.New("failed to connect because of limit reached")
 	}
 	return nil
 }
