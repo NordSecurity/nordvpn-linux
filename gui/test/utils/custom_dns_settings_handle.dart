@@ -79,8 +79,8 @@ final class CustomDnsSettingsHandle extends ScreenHandle {
   // check if the dialog that TP is enabled is displayed
   bool isDisableTpPopupDisplayed() {
     final strings = [
-      t.ui.threatProtectionWillTurnOffDescription,
-      t.ui.threatProtectionWillTurnOffDescription,
+      t.ui.realTimeProtectionWillTurnOff,
+      t.ui.realTimeProtectionWillTurnOffDescription,
       t.ui.setCustomDns,
     ];
 

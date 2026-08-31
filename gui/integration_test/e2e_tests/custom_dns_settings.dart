@@ -73,7 +73,7 @@ void runCustomDnsTests() async {
 
   testWidgets("enable custom DNS when TP is on", (tester) async {
     final app = await tester.setupIntegrationTests();
-    app.setThreatProtection(true);
+    app.setRealTimeProtection(true);
 
     final dnsScreen = await app.goToCustomDnsSettingsScreen();
 

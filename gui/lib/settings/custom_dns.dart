@@ -273,13 +273,13 @@ class _CustomDnsState extends ConsumerState<CustomDns> {
       return false;
     }
 
-    // when user tries to enable it, but threat protection is on, we need to
+    // when user tries to enable it, but real time protection is on, we need to
     // disable TP first - ask the user and don't allow to switch custom DNS
     // here (it will be done in popup)
-    if (toValue && settings.threatProtection) {
+    if (toValue && settings.realTimeProtection) {
       ref
           .read(popupsProvider.notifier)
-          .show(PopupCodes.turnOffThreatProtection);
+          .show(PopupCodes.turnOffRealTimeProtection);
       return false;
     }
 

@@ -17,10 +17,10 @@ part 'vpn_settings_controller.g.dart';
 
 // Don't show popups for those codes:
 // - success
-// - dnsListModified - error that happens when enabling Threat Protection
+// - dnsListModified - error that happens when enabling Real time Protection
 //   and Custom DNS is set, if user allows resetting Custom DNS, this "error"
 //   will happen
-// - tpLiteDisabled - error that happens when enabling Custom DNS and Threat
+// - tpLiteDisabled - error that happens when enabling Custom DNS and Real time
 //   Protection is enabled, if user allows disabling TP, this "error" will
 //   happen
 const _popupIgnoreCodes = [
@@ -198,9 +198,9 @@ class VpnSettingsController extends _$VpnSettingsController
     return res;
   }
 
-  Future<int> setThreatProtection(bool value) async {
+  Future<int> setRealTimeProtection(bool value) async {
     return await _setValue(
-      (repository) => repository.setThreatProtection(value),
+      (repository) => repository.setRealTimeProtection(value),
     );
   }
 

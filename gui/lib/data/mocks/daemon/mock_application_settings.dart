@@ -61,7 +61,7 @@ final class MockApplicationSettings extends CancelableDelayed {
     bool? lanDiscovery,
     bool? postquantumVpn,
     bool? routing,
-    bool? threatProtectionLite,
+    bool? realTimeProtection,
     bool? notify,
     bool? tray,
     Allowlist? allowList,
@@ -90,7 +90,7 @@ final class MockApplicationSettings extends CancelableDelayed {
       lanDiscovery: lanDiscovery ?? val.lanDiscovery,
       postquantumVpn: postquantumVpn ?? val.postquantumVpn,
       routing: routing ?? val.routing,
-      threatProtectionLite: threatProtectionLite ?? val.threatProtectionLite,
+      threatProtectionLite: realTimeProtection ?? val.threatProtectionLite,
       allowlist: allowList ?? val.allowlist,
       dns: dns ?? val.dns,
       autoConnectData: autoConnectData ?? val.autoConnectData,
@@ -136,7 +136,7 @@ final class MockApplicationSettings extends CancelableDelayed {
       obfuscate: false,
       postquantumVpn: false,
       routing: false,
-      threatProtectionLite: false,
+      realTimeProtection: false,
       tray: true,
       allowList: Allowlist(),
       autoConnectData: AutoconnectData(),
@@ -318,7 +318,7 @@ final class MockApplicationSettings extends CancelableDelayed {
     bool replaceDns =
         _settings.data.dns.isNotEmpty && request.threatProtectionLite;
     final res = await setSettings(
-      threatProtectionLite: request.threatProtectionLite,
+      realTimeProtection: request.threatProtectionLite,
       dns: [],
     );
 
@@ -355,10 +355,7 @@ final class MockApplicationSettings extends CancelableDelayed {
 
     final hasTpLite = _settings.data.threatProtectionLite;
 
-    final res = await setSettings(
-      threatProtectionLite: false,
-      dns: request.dns,
-    );
+    final res = await setSettings(realTimeProtection: false, dns: request.dns);
     if (res.type.toInt() != DaemonStatusCode.success) {
       return SetDNSResponse(errorCode: SetErrorCode.FAILURE);
     }

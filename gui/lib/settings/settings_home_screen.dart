@@ -53,16 +53,16 @@ final class SettingsHomeScreen extends StatelessWidget {
               onTap: () =>
                   context.navigateToRoute(AppRoute.settingsSecurityAndPrivacy),
             );
-          case _SettingsGroups.threatProtection:
+          case _SettingsGroups.realTimeProtection:
             return SettingsWrapperWidget.buildListItem(
               context,
               iconName: "threat_protection.svg",
-              title: t.ui.threatProtection,
-              subtitle: t.ui.threatProtectionSubtitle,
+              title: t.ui.realTimeProtection,
+              subtitle: t.ui.realTimeProtectionSubtitle,
               trailing: trailing,
               trailingLocation: TrailingLocation.center,
               onTap: () =>
-                  context.navigateToRoute(AppRoute.settingsThreatProtection),
+                  context.navigateToRoute(AppRoute.settingsRealTimeProtection),
             );
           case _SettingsGroups.terms:
             return SettingsWrapperWidget.buildListItem(
@@ -115,7 +115,7 @@ final class SettingsHomeScreen extends StatelessWidget {
 enum _SettingsGroups {
   vpnConnection,
   securityAndPrivacy,
-  threatProtection,
+  realTimeProtection,
   general,
   terms,
   account,
