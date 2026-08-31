@@ -199,8 +199,9 @@ def test_fancy_transport():
 def test_killswitch_on_after_update():
     # Mocking ps to pretend as if we are in an initd system
     with lib.Defer(lambda: sh.sudo.mv("/usr/bin/pso", "/usr/bin/ps")):
-        sh.sudo.mv("/usr/bin/ps", "/usr/bin/pso")
-        sh.sudo.cp("/etc/mock_ps.sh", "/usr/bin/ps")
+        if not daemon.is_under_snap():
+            sh.sudo.mv("/usr/bin/ps", "/usr/bin/pso")
+            sh.sudo.cp("/etc/mock_ps.sh", "/usr/bin/ps")
 
         sh.nordvpn.set.killswitch.on()
         assert daemon.is_killswitch_on(), "Kill switch should be enabled"
