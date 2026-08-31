@@ -982,20 +982,18 @@ func TestFailToExtractDaemonLogs(t *testing.T) {
 	assert.Contains(t, err.Error(), "support team")
 }
 
-// TestCreateDiagnosticsZip_UniqueFilename verifies that back-to-back calls
-// produce distinct paths even when they share the same second-precision
-// timestamp — the random suffix injected by os.CreateTemp's `*` is what
-// guarantees uniqueness, so two collections in the same second cannot
-// clobber each other's output.
-func TestCreateDiagnosticsZip_UniqueFilename(t *testing.T) {
+func TestCreateDiagnosticsFile_UniqueFilename(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	dir := t.TempDir()
+	root, err := os.OpenRoot(dir)
+	require.NoError(t, err)
+	require.NotNil(t, root)
 
 	const N = 5
 	seen := make(map[string]bool, N)
 	for i := range N {
-		f, err := createDiagnosticsZip(dir)
+		f, err := createDiagnosticsFile(root)
 		require.NoError(t, err)
 		require.NoError(t, f.Close())
 

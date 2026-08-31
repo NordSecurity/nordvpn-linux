@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"io"
@@ -64,11 +65,16 @@ func (r *RPC) CollectDiagnostics(
 		})
 	}
 
-	// createDiagnosticsZip uses os.CreateTemp under the hood, so we always
-	// get a fresh file with no chance of collision — no existence check, no
-	// TOCTOU race, no overwrite of an old report, even if two collections
-	// land in the same second.
-	zipFile, err := createDiagnosticsZip(caller.outputDir)
+	outputRoot, err := os.OpenRoot(caller.outputDir)
+	if err != nil {
+		log.Diagnostics.Error("failed to open root output dir:", err)
+		return srv.Send(&pb.DiagnosticsProgress{
+			ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_FAILED_TO_CREATE_ZIP,
+		})
+	}
+	defer outputRoot.Close()
+
+	zipFile, err := createDiagnosticsFile(outputRoot)
 	if err != nil {
 		log.Diagnostics.Error("failed to create diagnostics zip:", err)
 		return srv.Send(&pb.DiagnosticsProgress{
@@ -78,14 +84,16 @@ func (r *RPC) CollectDiagnostics(
 	zipPath := zipFile.Name()
 
 	if snapconf.IsUnderSnap() {
-		if err := os.Chmod(zipPath, internal.PermUserRWGroupROthersR); err != nil {
+		if err := zipFile.Chmod(internal.PermUserRWGroupROthersR); err != nil {
 			log.Diagnostics.Warn("failed to change file permissions:", err)
 		}
 	} else {
-		if err := os.Chown(zipPath, int(caller.uid), int(caller.gid)); err != nil {
+		if err := zipFile.Chown(int(caller.uid), int(caller.gid)); err != nil {
 			log.Diagnostics.Error("failed to change file ownership:", err)
 			return abortDiagnosticsWithCode(
-				zipFile, srv,
+				zipFile,
+				outputRoot,
+				srv,
 				pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_CHOWN_FAILED,
 			)
 		}
@@ -96,32 +104,38 @@ func (r *RPC) CollectDiagnostics(
 		if errors.Is(err, errZipSizeLimitExceeded) {
 			log.Diagnostics.Error("diagnostics zip exceeded 40 MB limit")
 			return abortDiagnosticsWithCode(
-				zipFile, srv,
+				zipFile,
+				outputRoot,
+				srv,
 				pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_ZIP_TOO_LARGE,
 			)
 		}
 		if errors.Is(err, errNoDaemonLogSource) {
 			log.Diagnostics.Error("no daemon log source available:", err)
 			return abortDiagnosticsWithCode(
-				zipFile, srv,
+				zipFile,
+				outputRoot,
+				srv,
 				pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_NO_DAEMON_LOG_SOURCE,
 			)
 		}
 		log.Diagnostics.Error("failed to collect diagnostics:", err)
 		return abortDiagnosticsWithCode(
-			zipFile, srv,
+			zipFile,
+			outputRoot,
+			srv,
 			pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_COLLECTION_FAILED,
 		)
 	}
 
 	if err := zipFile.Close(); err != nil {
 		log.Diagnostics.Error("failed to close zip file:", err)
-		if removeErr := os.Remove(zipPath); removeErr != nil {
-			log.Diagnostics.Error("failed to delete zip", removeErr)
-		}
-		return srv.Send(&pb.DiagnosticsProgress{
-			ErrorCode: pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_FAILED_TO_CLOSE_ZIP,
-		})
+		return abortDiagnosticsWithCode(
+			zipFile,
+			outputRoot,
+			srv,
+			pb.DiagnosticsErrorCode_DIAGNOSTICS_ERROR_CODE_FAILED_TO_CLOSE_ZIP,
+		)
 	}
 
 	return srv.Send(&pb.DiagnosticsProgress{
@@ -134,26 +148,18 @@ func (r *RPC) CollectDiagnostics(
 // an error code on the stream.
 func abortDiagnosticsWithCode(
 	zipFile *os.File,
+	rootDir *os.Root,
 	srv pb.Daemon_CollectDiagnosticsServer,
 	code pb.DiagnosticsErrorCode,
 ) error {
 	_ = zipFile.Close()
-	if err := os.Remove(zipFile.Name()); err != nil {
+	// f.Name() returns the absolute path. root.Remove needs a relative path
+	if rel, err := filepath.Rel(rootDir.Name(), zipFile.Name()); err != nil {
+		log.Diagnostics.Error("failed to delete zip", err)
+	} else if err := rootDir.Remove(rel); err != nil {
 		log.Diagnostics.Error("failed to delete zip", err)
 	}
 	return srv.Send(&pb.DiagnosticsProgress{ErrorCode: code})
-}
-
-// createDiagnosticsZip atomically creates a uniquely-named diagnostics zip
-// inside outputDir. The filename embeds a second-precision timestamp plus a
-// random suffix from os.CreateTemp's `*` substitution, guaranteeing
-// different paths even for back-to-back calls within the same second.
-func createDiagnosticsZip(outputDir string) (*os.File, error) {
-	pattern := fmt.Sprintf(
-		"nordvpn-diagnostics-%s-*.zip",
-		time.Now().Format("20060102-150405"),
-	)
-	return os.CreateTemp(outputDir, pattern)
 }
 
 // appState bundles the daemon's view of itself for inclusion in
@@ -209,8 +215,7 @@ type diagnosticsCaller struct {
 
 // resolveDiagnosticsCaller extracts the caller's UID/GID from the gRPC
 // context, looks up their user record, and picks the directory where the
-// diagnostics zip will land. The actual filename is generated atomically by
-// os.CreateTemp at write time.
+// diagnostics zip will land.
 func resolveDiagnosticsCaller(ctx context.Context) (*diagnosticsCaller, error) {
 	cred, err := internal.UcredFromContext(ctx)
 	if err != nil {
@@ -1102,4 +1107,34 @@ func resolvectlStatus(logf logFunc) string {
 		return runCommand(logf, "systemd-resolve", "--status")
 	}
 	return runCommand(logf, "resolvectl", "status")
+}
+
+// createDiagnosticsFile - creates a unique file inside the `rootDir` directory
+func createDiagnosticsFile(rootDir *os.Root) (*os.File, error) {
+	prefix := fmt.Sprintf("nordvpn-diagnostics-%s", time.Now().Format("20060102-150405"))
+
+	name := prefix + ".zip"
+	f, err := rootDir.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, internal.PermUserRW)
+	if err == nil {
+		return f, nil
+	}
+
+	for i := 0; i < 1000; i++ {
+		var b [4]byte
+		if _, err := rand.Read(b[:]); err != nil {
+			return nil, err
+		}
+
+		name := fmt.Sprintf("%s-%x.zip", prefix, b)
+
+		f, err := rootDir.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, internal.PermUserRW)
+
+		if err == nil {
+			return f, nil
+		}
+		if !errors.Is(err, fs.ErrExist) {
+			return nil, err
+		}
+	}
+	return nil, errors.New("maximum retries reached")
 }
