@@ -10,6 +10,7 @@ NonBlocking=true
 KillMode=process
 Restart=always
 RestartSec=5
+RestartKillSignal=SIGUSR1
 # centos7 RuntimeDirectory ignored
 RuntimeDirectory=nordvpn
 RuntimeDirectoryMode=0750
