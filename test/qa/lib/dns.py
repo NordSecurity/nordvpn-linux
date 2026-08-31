@@ -14,7 +14,9 @@ TPL_ALIAS = [
     "threatprotectionlite",
     "tplite",
     "tpl",
-    "cybersec"
+    "cybersec",
+    "protection",
+    "protect"
 ]
 
 # Used for test parametrization, when the same test has to be run for different values of custom dns.
@@ -40,7 +42,7 @@ DNS_CASES_ERROR = [
 DNS_MSG_ERROR_ALREADY_SET = "DNS is already set to %s."
 DNS_MSG_ERROR_ALREADY_DISABLED = "DNS is already set to disabled."
 
-TPL_MSG_WARNING_DISABLING = "Turning off Threat Protection"
+TPL_MSG_WARNING_DISABLING = "Turning off Real-time protection"
 
 DNS_MSG_WARNING_DISABLING = "Disabling DNS."
 

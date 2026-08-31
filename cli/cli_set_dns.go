@@ -31,7 +31,7 @@ Limits:
   Can set only IPv4 servers addresses
 
 Notes:
-  Setting DNS disables ThreatProtectionLite`
+  Setting DNS disables Real-time protection`
 )
 
 func setDNSCommonErrorCodeToError(code pb.SetErrorCode, args ...any) error {
@@ -53,7 +53,7 @@ func handleSetDNSStatus(code pb.SetDNSStatus, dns []string) error {
 	case pb.SetDNSStatus_TOO_MANY_VALUES:
 		return errors.New(SetDNSTooManyValues)
 	case pb.SetDNSStatus_DNS_CONFIGURED_TPL_RESET:
-		color.Yellow(SetDNSDisableThreatProtectionLite)
+		color.Yellow(SetDNSDisableRealTimeProtection)
 		fallthrough
 	case pb.SetDNSStatus_DNS_CONFIGURED:
 		if dns == nil {

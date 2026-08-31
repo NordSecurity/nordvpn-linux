@@ -93,12 +93,10 @@ def dns_visible_in_settings(dns: list) -> bool:
 
 
 def is_tpl_enabled():
-    """Returns True, if Threat Protection Lite is enabled in application settings."""
-    return Settings().get("Threat Protection Lite") == "enabled"
+    return Settings().get("Real-time protection") == "enabled"
 
 
 def is_notify_enabled():
-    """Returns True, if Threat Protection Lite is enabled in application settings."""
     return Settings().get("Notify") == "enabled"
 
 
@@ -175,7 +173,7 @@ def app_has_defaults_settings(expectedKillswitch = False):
         # User Consent is not restored to default on reset
         ("User Consent: enabled" in settings or "User Consent: disabled" in settings) and
         f"Kill Switch: {expected_killswitch_string}" in settings and
-        "Threat Protection Lite: disabled" in settings and
+        "Real-time protection: disabled" in settings and
         "Notify: enabled" in settings and
         "Tray: enabled" in settings and
         "Auto-connect: disabled" in settings and

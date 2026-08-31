@@ -532,7 +532,7 @@ def test_settings_are_kept_after_reboot():
         (("firewall", "off"),         "Firewall has been successfully set to 'disabled'.",               "Firewall",               "disabled"),
         (("routing", "off"),          "Routing has been successfully set to 'disabled'.",                "Routing",                "disabled"),
         (("analytics", "off"),        "Analytics has been successfully set to 'disabled'.",              "User Consent",           "disabled"),
-        (("tpl", "on"),               "Threat Protection Lite has been successfully set to 'enabled'.",  "Threat Protection Lite", "enabled"),
+        (("tpl", "on"),               "Real-time protection has been successfully set to 'enabled'.",    "Real-time protection",   "enabled"),
         (("notify", "off"),           "Notifications are set to 'disabled' successfully.",               "Notify",                 "disabled"),
         (("tray", "off"),             "Tray set to 'disabled' successfully.",                            "Tray",                   "disabled"),
         (("autoconnect", "on"),       "Auto-connect has been successfully set to 'enabled'.",            "Auto-connect",           "enabled"),
@@ -562,5 +562,5 @@ def test_settings_are_kept_after_reboot():
     daemon.restart()
 
     app_settings = settings.Settings()
-    assert app_settings.get("Threat Protection Lite") == "disabled", "Tpl must be disabled, because of custom DNS"
+    assert app_settings.get("Real-time protection") == "disabled", "Real-time protection must be disabled, because of custom DNS"
     assert app_settings.get("DNS") == "1.1.1.1", "Custom DNS value is not kept after reboot"
