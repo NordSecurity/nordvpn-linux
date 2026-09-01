@@ -197,29 +197,28 @@ def test_fancy_transport():
 # This test assumes being run on docker
 @pytest.mark.skipif(not Path("/.dockerenv").exists() and not Path("/vagrant").exists(), reason="Test must be executed in either a Docker or Vagrant environment")
 def test_killswitch_on_after_update():
-    # Mocking ps to pretend as if we are in an initd system
-    with lib.Defer(lambda: sh.sudo.mv("/usr/bin/pso", "/usr/bin/ps")):
-        if not daemon.is_under_snap():
+    sh.nordvpn.set.killswitch.on()
+    assert daemon.is_killswitch_on(), "Kill switch should be enabled"
+    logging.log(f"Settings before update {sh.nordvpn.settings()}")
+    assert network.is_not_available(2), "Network should not be available when kill switch is on"
+
+    if daemon.is_under_snap():
+        # Need to kill norduserd, as otherwise we cannot install Snap package on top
+        pid = sh.pgrep("norduserd").strip()
+        sh.sudo.kill("-9", pid)
+        sh.sudo.snap.install("--dangerous", SNAP_PATH)
+    else:
+        # Mocking ps to pretend as if we are in an initd system
+        with lib.Defer(lambda: sh.sudo.mv("/usr/bin/pso", "/usr/bin/ps")):
             sh.sudo.mv("/usr/bin/ps", "/usr/bin/pso")
             sh.sudo.cp("/etc/mock_ps.sh", "/usr/bin/ps")
-
-        sh.nordvpn.set.killswitch.on()
-        assert daemon.is_killswitch_on(), "Kill switch should be enabled"
-        logging.log(f"Settings before update {sh.nordvpn.settings()}")
-        assert network.is_not_available(2), "Network should not be available when kill switch is on"
-        if daemon.is_under_snap():
-            # Need to kill norduserd, as otherwise we cannot install Snap package on top
-            pid = sh.pgrep("norduserd").strip()
-            sh.sudo.kill("-9", pid)
-            sh.sudo.snap.install("--dangerous", SNAP_PATH)
-        else:
             sh.sudo.dpkg("-i", DEB_PATH)
-        daemon.wait_until_daemon_is_running()
-        logging.log(f"Settings after app update {sh.nordvpn.settings()}")
-        assert network.is_not_available(2), "Network should not be available when kill switch is on"
-        assert daemon.is_killswitch_on(), "Kill switch should remain enabled after update"
-        sh.nordvpn.set.killswitch.off()
-        assert network.is_available(), "Network should be available"
+    daemon.wait_until_daemon_is_running()
+    logging.log(f"Settings after app update {sh.nordvpn.settings()}")
+    assert network.is_not_available(2), "Network should not be available when kill switch is on"
+    assert daemon.is_killswitch_on(), "Kill switch should remain enabled after update"
+    sh.nordvpn.set.killswitch.off()
+    assert network.is_available(), "Network should be available"
 
 
 @pytest.mark.skipif(daemon.is_under_snap(), reason="TODO: LVPN-11038")
