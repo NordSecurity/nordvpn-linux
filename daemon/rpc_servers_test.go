@@ -86,7 +86,6 @@ func getServer(id int,
 	country string,
 	countryCode string,
 	city string,
-	virtual bool,
 	groups core.Groups,
 	technologyIDs []core.ServerTechnology) core.Server {
 	technologies := core.Technologies{}
@@ -94,18 +93,6 @@ func getServer(id int,
 		technologies = append(technologies, core.Technology{
 			ID:    techID,
 			Pivot: core.Pivot{Status: core.Online},
-		})
-	}
-
-	specifications := []core.Specification{}
-	if virtual {
-		specifications = append(specifications, core.Specification{
-			Identifier: core.VirtualLocation,
-			Values: []struct {
-				Value string "json:\"value\""
-			}{
-				{Value: "True"},
-			},
 		})
 	}
 
@@ -123,9 +110,8 @@ func getServer(id int,
 					},
 				}},
 		},
-		Specifications: specifications,
-		Groups:         groups,
-		Technologies:   technologies,
+		Groups:       groups,
+		Technologies: technologies,
 	}
 }
 
@@ -168,7 +154,6 @@ func TestServers(t *testing.T) {
 			server1Country,
 			server1CountryCode,
 			server1City,
-			true,
 			core.Groups{
 				{
 					ID:    config.ServerGroup_STANDARD_VPN_SERVERS,
@@ -194,7 +179,6 @@ func TestServers(t *testing.T) {
 			server2Country,
 			server2CountryCode,
 			server2City,
-			false,
 			core.Groups{
 				{
 					ID:    config.ServerGroup_STANDARD_VPN_SERVERS,
@@ -212,7 +196,6 @@ func TestServers(t *testing.T) {
 			server3Country,
 			server3CountryCode,
 			server3City,
-			false,
 			core.Groups{
 				{
 					ID:    config.ServerGroup_STANDARD_VPN_SERVERS,
@@ -234,7 +217,6 @@ func TestServers(t *testing.T) {
 			server4Country,
 			server4CountryCode,
 			server4City,
-			true,
 			core.Groups{
 				{
 					ID:    config.ServerGroup_STANDARD_VPN_SERVERS,
@@ -267,7 +249,6 @@ func TestServers(t *testing.T) {
 			server5Country,
 			server5CountryCode,
 			server5City,
-			false,
 			core.Groups{
 				{
 					ID:    config.ServerGroup_STANDARD_VPN_SERVERS,
@@ -298,7 +279,6 @@ func TestServers(t *testing.T) {
 	expectedServer1 := pb.Server{
 		Id:           int64(server1ID),
 		HostName:     server1Hostname,
-		Virtual:      true,
 		ServerGroups: []config.ServerGroup{config.ServerGroup_P2P, config.ServerGroup_STANDARD_VPN_SERVERS},
 		Technologies: []pb.Technology{
 			pb.Technology_NORDLYNX,
@@ -308,7 +288,6 @@ func TestServers(t *testing.T) {
 	expectedServer2 := pb.Server{
 		Id:           int64(server2ID),
 		HostName:     server2Hostname,
-		Virtual:      false,
 		ServerGroups: []config.ServerGroup{config.ServerGroup_STANDARD_VPN_SERVERS},
 		Technologies: []pb.Technology{
 			pb.Technology_OPENVPN_TCP,
@@ -318,7 +297,6 @@ func TestServers(t *testing.T) {
 	expectedServer3 := pb.Server{
 		Id:           int64(server3ID),
 		HostName:     server3Hostname,
-		Virtual:      false,
 		ServerGroups: []config.ServerGroup{config.ServerGroup_STANDARD_VPN_SERVERS},
 		Technologies: []pb.Technology{
 			pb.Technology_OPENVPN_TCP,
@@ -334,7 +312,6 @@ func TestServers(t *testing.T) {
 	expectedServer4 := pb.Server{
 		Id:           int64(server4ID),
 		HostName:     server4Hostname,
-		Virtual:      true,
 		ServerGroups: []config.ServerGroup{config.ServerGroup_OBFUSCATED, config.ServerGroup_STANDARD_VPN_SERVERS},
 		Technologies: []pb.Technology{
 			pb.Technology_OBFUSCATED_OPENVPN_UDP,
@@ -347,7 +324,6 @@ func TestServers(t *testing.T) {
 	expectedServer5 := pb.Server{
 		Id:           int64(server5ID),
 		HostName:     server5Hostname,
-		Virtual:      false,
 		ServerGroups: []config.ServerGroup{config.ServerGroup_OBFUSCATED, config.ServerGroup_STANDARD_VPN_SERVERS},
 		Technologies: []pb.Technology{
 			pb.Technology_OBFUSCATED_OPENVPN_UDP,
@@ -371,16 +347,15 @@ func TestServers(t *testing.T) {
 		"Reykjavik",
 		&expectedServer5)
 
-	expectedServersWireguardNonVirtual := []*pb.ServerCountry{}
-	expectedServersWireguardNonVirtual = addToServersMap(
-		expectedServersWireguardNonVirtual,
+	expectedServersWireguard := []*pb.ServerCountry{}
+	expectedServersWireguard = addToServersMap(
+		expectedServersWireguard,
 		"lt",
 		"Lithuania",
 		"Vilnius",
 		&pb.Server{
 			Id:           int64(server3ID),
 			HostName:     server3Hostname,
-			Virtual:      false,
 			ServerGroups: []config.ServerGroup{config.ServerGroup_STANDARD_VPN_SERVERS},
 			Technologies: []pb.Technology{
 				pb.Technology_OPENVPN_TCP,
@@ -393,19 +368,17 @@ func TestServers(t *testing.T) {
 		serversList      core.Servers
 		serversErr       error
 		obfuscate        bool
-		allowVirtual     bool
 		technology       config.Technology
 		protocol         config.Protocol
 		configErr        error
 		expectedResponse *pb.ServersResponse
 	}{
 		{
-			name:         "success openvpn TCP",
-			serversList:  servers,
-			obfuscate:    false,
-			allowVirtual: true,
-			technology:   config.Technology_OPENVPN,
-			protocol:     config.Protocol_TCP,
+			name:        "success openvpn TCP",
+			serversList: servers,
+			obfuscate:   false,
+			technology:  config.Technology_OPENVPN,
+			protocol:    config.Protocol_TCP,
 			expectedResponse: &pb.ServersResponse{
 				Response: &pb.ServersResponse_Servers{Servers: &pb.ServersMap{
 					ServersByCountry: expectedServersOpenVPNTCP,
@@ -413,12 +386,11 @@ func TestServers(t *testing.T) {
 			},
 		},
 		{
-			name:         "success openvpn UDP obfuscated",
-			serversList:  servers,
-			obfuscate:    true,
-			allowVirtual: true,
-			technology:   config.Technology_OPENVPN,
-			protocol:     config.Protocol_UDP,
+			name:        "success openvpn UDP obfuscated",
+			serversList: servers,
+			obfuscate:   true,
+			technology:  config.Technology_OPENVPN,
+			protocol:    config.Protocol_UDP,
 			expectedResponse: &pb.ServersResponse{
 				Response: &pb.ServersResponse_Servers{Servers: &pb.ServersMap{
 					ServersByCountry: expectedServersOpenVPNUDPObfuscated,
@@ -426,14 +398,13 @@ func TestServers(t *testing.T) {
 			},
 		},
 		{
-			name:         "success wireguard non virtual",
-			serversList:  servers,
-			obfuscate:    false,
-			allowVirtual: false,
-			technology:   config.Technology_NORDLYNX,
+			name:        "success wireguard",
+			serversList: servers,
+			obfuscate:   false,
+			technology:  config.Technology_NORDLYNX,
 			expectedResponse: &pb.ServersResponse{
 				Response: &pb.ServersResponse_Servers{Servers: &pb.ServersMap{
-					ServersByCountry: expectedServersWireguardNonVirtual,
+					ServersByCountry: expectedServersWireguard,
 				}},
 			},
 		},
@@ -463,7 +434,6 @@ func TestServers(t *testing.T) {
 			cfgManager.LoadErr = test.configErr
 			cfgManager.Cfg.Technology = test.technology
 			cfgManager.Cfg.AutoConnectData.Obfuscate = test.obfuscate
-			cfgManager.Cfg.VirtualLocation.Set(test.allowVirtual)
 			cfgManager.Cfg.AutoConnectData.Protocol = test.protocol
 
 			dm := DataManager{}

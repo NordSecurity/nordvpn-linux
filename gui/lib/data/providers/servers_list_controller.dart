@@ -82,7 +82,6 @@ class ServersListController extends _$ServersListController
           final serverInfo = ServerInfo(
             id: server.id.toInt(),
             hostname: server.hostName,
-            isVirtual: server.virtual,
           );
 
           for (final group in server.serverGroups) {
@@ -107,11 +106,7 @@ class ServersListController extends _$ServersListController
                   name: country.countryName,
                 );
 
-                return CountryServersGroup(
-                  country: countryObj,
-                  cities: [],
-                  isVirtual: servers.first.isVirtual,
-                );
+                return CountryServersGroup(country: countryObj, cities: []);
               })
               .cities
               .add(CityServersGroup(cityName: city.cityName, servers: servers));

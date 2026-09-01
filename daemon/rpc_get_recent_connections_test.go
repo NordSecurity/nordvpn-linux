@@ -16,20 +16,12 @@ func TestGetRecentConnections_Filtering(t *testing.T) {
 	category.Set(t, category.Unit)
 	r := testRPCLocal(t)
 
-	// Enable virtual locations
-	r.cm.SaveWith(func(c config.Config) config.Config {
-		c.VirtualLocation.Set(true)
-		return c
-	})
-
 	r.recentVPNConnStore.Add(recents.Model{
 		Country:            "France",
-		IsVirtual:          false,
 		ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
 	})
 	r.recentVPNConnStore.Add(recents.Model{
 		Country:            "Lithuania",
-		IsVirtual:          true,
 		ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
 	})
 
@@ -37,21 +29,12 @@ func TestGetRecentConnections_Filtering(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, resp.Connections, 2)
 	assert.Equal(t, "Lithuania", resp.Connections[0].Country)
-	assert.True(t, resp.Connections[0].IsVirtual)
 	assert.Equal(t, "France", resp.Connections[1].Country)
-	assert.False(t, resp.Connections[1].IsVirtual)
-
-	// Disable virtual locations
-	r.cm.SaveWith(func(c config.Config) config.Config {
-		c.VirtualLocation.Set(false)
-		return c
-	})
 
 	resp, err = r.GetRecentConnections(context.Background(), &pb.RecentConnectionsRequest{})
 	assert.NoError(t, err)
 	assert.Len(t, resp.Connections, 1)
 	assert.Equal(t, "France", resp.Connections[0].Country)
-	assert.False(t, resp.Connections[0].IsVirtual)
 }
 
 func TestGetRecentConnections_FiltersDeprecatedRegionalGroups(t *testing.T) {

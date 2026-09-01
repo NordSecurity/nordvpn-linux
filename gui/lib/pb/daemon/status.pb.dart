@@ -155,7 +155,6 @@ class StatusResponse extends $pb.GeneratedMessage {
     $fixnum.Int64? upload,
     $fixnum.Int64? uptime,
     $core.String? name,
-    $core.bool? virtualLocation,
     ConnectionParameters? parameters,
     $core.bool? postQuantum,
     $core.bool? isMeshPeer,
@@ -178,7 +177,6 @@ class StatusResponse extends $pb.GeneratedMessage {
     if (upload != null) result.upload = upload;
     if (uptime != null) result.uptime = uptime;
     if (name != null) result.name = name;
-    if (virtualLocation != null) result.virtualLocation = virtualLocation;
     if (parameters != null) result.parameters = parameters;
     if (postQuantum != null) result.postQuantum = postQuantum;
     if (isMeshPeer != null) result.isMeshPeer = isMeshPeer;
@@ -222,20 +220,18 @@ class StatusResponse extends $pb.GeneratedMessage {
         defaultOrMaker: $fixnum.Int64.ZERO)
     ..aInt64(10, _omitFieldNames ? '' : 'uptime')
     ..aOS(11, _omitFieldNames ? '' : 'name')
-    ..aOB(12, _omitFieldNames ? '' : 'virtualLocation',
-        protoName: 'virtualLocation')
-    ..aOM<ConnectionParameters>(13, _omitFieldNames ? '' : 'parameters',
+    ..aOM<ConnectionParameters>(12, _omitFieldNames ? '' : 'parameters',
         subBuilder: ConnectionParameters.create)
-    ..aOB(14, _omitFieldNames ? '' : 'postQuantum', protoName: 'postQuantum')
-    ..aOB(15, _omitFieldNames ? '' : 'isMeshPeer')
-    ..aOB(16, _omitFieldNames ? '' : 'byUser')
-    ..aOS(17, _omitFieldNames ? '' : 'countryCode')
-    ..aOB(18, _omitFieldNames ? '' : 'obfuscated')
-    ..aOM<$0.Timestamp>(19, _omitFieldNames ? '' : 'pausedAt',
+    ..aOB(13, _omitFieldNames ? '' : 'postQuantum', protoName: 'postQuantum')
+    ..aOB(14, _omitFieldNames ? '' : 'isMeshPeer')
+    ..aOB(15, _omitFieldNames ? '' : 'byUser')
+    ..aOS(16, _omitFieldNames ? '' : 'countryCode')
+    ..aOB(17, _omitFieldNames ? '' : 'obfuscated')
+    ..aOM<$0.Timestamp>(18, _omitFieldNames ? '' : 'pausedAt',
         subBuilder: $0.Timestamp.create)
-    ..aI(20, _omitFieldNames ? '' : 'pauseRemainingDurationSec',
+    ..aI(19, _omitFieldNames ? '' : 'pauseRemainingDurationSec',
         fieldType: $pb.PbFieldType.OU3)
-    ..aOB(21, _omitFieldNames ? '' : 'ech')
+    ..aOB(20, _omitFieldNames ? '' : 'ech')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -357,99 +353,90 @@ class StatusResponse extends $pb.GeneratedMessage {
   void clearName() => $_clearField(11);
 
   @$pb.TagNumber(12)
-  $core.bool get virtualLocation => $_getBF(11);
+  ConnectionParameters get parameters => $_getN(11);
   @$pb.TagNumber(12)
-  set virtualLocation($core.bool value) => $_setBool(11, value);
+  set parameters(ConnectionParameters value) => $_setField(12, value);
   @$pb.TagNumber(12)
-  $core.bool hasVirtualLocation() => $_has(11);
+  $core.bool hasParameters() => $_has(11);
   @$pb.TagNumber(12)
-  void clearVirtualLocation() => $_clearField(12);
+  void clearParameters() => $_clearField(12);
+  @$pb.TagNumber(12)
+  ConnectionParameters ensureParameters() => $_ensure(11);
 
   @$pb.TagNumber(13)
-  ConnectionParameters get parameters => $_getN(12);
+  $core.bool get postQuantum => $_getBF(12);
   @$pb.TagNumber(13)
-  set parameters(ConnectionParameters value) => $_setField(13, value);
+  set postQuantum($core.bool value) => $_setBool(12, value);
   @$pb.TagNumber(13)
-  $core.bool hasParameters() => $_has(12);
+  $core.bool hasPostQuantum() => $_has(12);
   @$pb.TagNumber(13)
-  void clearParameters() => $_clearField(13);
-  @$pb.TagNumber(13)
-  ConnectionParameters ensureParameters() => $_ensure(12);
+  void clearPostQuantum() => $_clearField(13);
 
   @$pb.TagNumber(14)
-  $core.bool get postQuantum => $_getBF(13);
+  $core.bool get isMeshPeer => $_getBF(13);
   @$pb.TagNumber(14)
-  set postQuantum($core.bool value) => $_setBool(13, value);
+  set isMeshPeer($core.bool value) => $_setBool(13, value);
   @$pb.TagNumber(14)
-  $core.bool hasPostQuantum() => $_has(13);
+  $core.bool hasIsMeshPeer() => $_has(13);
   @$pb.TagNumber(14)
-  void clearPostQuantum() => $_clearField(14);
+  void clearIsMeshPeer() => $_clearField(14);
 
   @$pb.TagNumber(15)
-  $core.bool get isMeshPeer => $_getBF(14);
+  $core.bool get byUser => $_getBF(14);
   @$pb.TagNumber(15)
-  set isMeshPeer($core.bool value) => $_setBool(14, value);
+  set byUser($core.bool value) => $_setBool(14, value);
   @$pb.TagNumber(15)
-  $core.bool hasIsMeshPeer() => $_has(14);
+  $core.bool hasByUser() => $_has(14);
   @$pb.TagNumber(15)
-  void clearIsMeshPeer() => $_clearField(15);
+  void clearByUser() => $_clearField(15);
 
   @$pb.TagNumber(16)
-  $core.bool get byUser => $_getBF(15);
+  $core.String get countryCode => $_getSZ(15);
   @$pb.TagNumber(16)
-  set byUser($core.bool value) => $_setBool(15, value);
+  set countryCode($core.String value) => $_setString(15, value);
   @$pb.TagNumber(16)
-  $core.bool hasByUser() => $_has(15);
+  $core.bool hasCountryCode() => $_has(15);
   @$pb.TagNumber(16)
-  void clearByUser() => $_clearField(16);
+  void clearCountryCode() => $_clearField(16);
 
   @$pb.TagNumber(17)
-  $core.String get countryCode => $_getSZ(16);
+  $core.bool get obfuscated => $_getBF(16);
   @$pb.TagNumber(17)
-  set countryCode($core.String value) => $_setString(16, value);
+  set obfuscated($core.bool value) => $_setBool(16, value);
   @$pb.TagNumber(17)
-  $core.bool hasCountryCode() => $_has(16);
+  $core.bool hasObfuscated() => $_has(16);
   @$pb.TagNumber(17)
-  void clearCountryCode() => $_clearField(17);
+  void clearObfuscated() => $_clearField(17);
 
   @$pb.TagNumber(18)
-  $core.bool get obfuscated => $_getBF(17);
+  $0.Timestamp get pausedAt => $_getN(17);
   @$pb.TagNumber(18)
-  set obfuscated($core.bool value) => $_setBool(17, value);
+  set pausedAt($0.Timestamp value) => $_setField(18, value);
   @$pb.TagNumber(18)
-  $core.bool hasObfuscated() => $_has(17);
+  $core.bool hasPausedAt() => $_has(17);
   @$pb.TagNumber(18)
-  void clearObfuscated() => $_clearField(18);
+  void clearPausedAt() => $_clearField(18);
+  @$pb.TagNumber(18)
+  $0.Timestamp ensurePausedAt() => $_ensure(17);
 
   @$pb.TagNumber(19)
-  $0.Timestamp get pausedAt => $_getN(18);
+  $core.int get pauseRemainingDurationSec => $_getIZ(18);
   @$pb.TagNumber(19)
-  set pausedAt($0.Timestamp value) => $_setField(19, value);
-  @$pb.TagNumber(19)
-  $core.bool hasPausedAt() => $_has(18);
-  @$pb.TagNumber(19)
-  void clearPausedAt() => $_clearField(19);
-  @$pb.TagNumber(19)
-  $0.Timestamp ensurePausedAt() => $_ensure(18);
-
-  @$pb.TagNumber(20)
-  $core.int get pauseRemainingDurationSec => $_getIZ(19);
-  @$pb.TagNumber(20)
   set pauseRemainingDurationSec($core.int value) =>
-      $_setUnsignedInt32(19, value);
-  @$pb.TagNumber(20)
-  $core.bool hasPauseRemainingDurationSec() => $_has(19);
-  @$pb.TagNumber(20)
-  void clearPauseRemainingDurationSec() => $_clearField(20);
+      $_setUnsignedInt32(18, value);
+  @$pb.TagNumber(19)
+  $core.bool hasPauseRemainingDurationSec() => $_has(18);
+  @$pb.TagNumber(19)
+  void clearPauseRemainingDurationSec() => $_clearField(19);
 
-  @$pb.TagNumber(21)
-  $core.bool get ech => $_getBF(20);
-  @$pb.TagNumber(21)
-  set ech($core.bool value) => $_setBool(20, value);
-  @$pb.TagNumber(21)
-  $core.bool hasEch() => $_has(20);
-  @$pb.TagNumber(21)
-  void clearEch() => $_clearField(21);
+  @$pb.TagNumber(20)
+  $core.bool get ech => $_getBF(19);
+  @$pb.TagNumber(20)
+  set ech($core.bool value) => $_setBool(19, value);
+  @$pb.TagNumber(20)
+  $core.bool hasEch() => $_has(19);
+  @$pb.TagNumber(20)
+  void clearEch() => $_clearField(20);
 }
 
 const $core.bool _omitFieldNames =

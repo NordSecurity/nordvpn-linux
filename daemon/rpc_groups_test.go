@@ -110,7 +110,6 @@ func TestRPCGroups_Successful(t *testing.T) {
 		name                    string
 		cm                      config.Manager
 		servers                 core.Servers
-		disableVirtualServers   bool
 		disableDedicatedServers bool
 		statusCode              int64
 		expected                []*pb.ServerGroup
@@ -125,47 +124,33 @@ func TestRPCGroups_Successful(t *testing.T) {
 			cm:         newMockConfigManager(),
 			statusCode: internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
-				{Name: "Dedicated_Server", VirtualLocation: false},
+				{Name: "Dedicated_Server"},
 			},
 		},
 		{
-			name:       "virtual and physical servers",
+			name:       "all servers",
 			cm:         newMockConfigManager(),
 			servers:    coremock.ServersList(),
 			statusCode: internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
-				{Name: "Dedicated_IP", VirtualLocation: false},
-				{Name: "Double_VPN", VirtualLocation: false},
-				{Name: "P2P", VirtualLocation: false},
-				{Name: "Standard_VPN_Servers", VirtualLocation: false},
-				{Name: "Dedicated_Server", VirtualLocation: false},
+				{Name: "Dedicated_IP"},
+				{Name: "Double_VPN"},
+				{Name: "P2P"},
+				{Name: "Standard_VPN_Servers"},
+				{Name: "Dedicated_Server"},
 			},
 		},
 		{
-			name:                    "virtual and physical servers, exclude dedicated servers via feature toggle",
+			name:                    "all servers, exclude dedicated servers via feature toggle",
 			cm:                      newMockConfigManager(),
 			servers:                 coremock.ServersList(),
 			disableDedicatedServers: true,
 			statusCode:              internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
-				{Name: "Dedicated_IP", VirtualLocation: false},
-				{Name: "Double_VPN", VirtualLocation: false},
-				{Name: "P2P", VirtualLocation: false},
-				{Name: "Standard_VPN_Servers", VirtualLocation: false},
-			},
-		},
-		{
-			name:                  "return physical servers only",
-			cm:                    newMockConfigManager(),
-			servers:               coremock.ServersList(),
-			disableVirtualServers: true,
-			statusCode:            internal.CodeSuccess,
-			expected: []*pb.ServerGroup{
-				{Name: "Dedicated_IP", VirtualLocation: false},
-				{Name: "Double_VPN", VirtualLocation: false},
-				{Name: "P2P", VirtualLocation: false},
-				{Name: "Standard_VPN_Servers", VirtualLocation: false},
-				{Name: "Dedicated_Server", VirtualLocation: false},
+				{Name: "Dedicated_IP"},
+				{Name: "Double_VPN"},
+				{Name: "P2P"},
+				{Name: "Standard_VPN_Servers"},
 			},
 		},
 	}
@@ -181,7 +166,6 @@ func TestRPCGroups_Successful(t *testing.T) {
 			if cm, ok := test.cm.(*mockConfigManager); ok {
 				cm.c.AutoConnectData.Protocol = config.Protocol_UDP
 				cm.c.Technology = config.Technology_NORDLYNX
-				cm.c.VirtualLocation.Set(!test.disableVirtualServers)
 			}
 
 			rpc := RPC{

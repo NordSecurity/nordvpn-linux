@@ -30,8 +30,6 @@ type ConnectionStatus struct {
 	City string
 	// StartTime time of the connection start
 	StartTime *time.Time
-	// Is virtual server
-	IsVirtualLocation bool
 	// Is post quantum on
 	IsPostQuantum bool
 	// Is ECH (Encrypted Client Hello) on. NordWhisper-only.

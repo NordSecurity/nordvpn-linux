@@ -57,7 +57,7 @@ func groupFilter(groups core.Groups) []config.ServerGroup {
 	return desiredGroups
 }
 
-func serversListToServersMap(internalServers core.Servers, allowVirtual bool) []*pb.ServerCountry {
+func serversListToServersMap(internalServers core.Servers) []*pb.ServerCountry {
 	type serversMap map[string]map[string][]*pb.Server
 
 	sMap := make(serversMap)
@@ -65,14 +65,9 @@ func serversListToServersMap(internalServers core.Servers, allowVirtual bool) []
 	countryNames := make(map[string]string)
 
 	for _, server := range internalServers {
-		if !allowVirtual && server.IsVirtualLocation() {
-			continue
-		}
-
 		s := pb.Server{
 			Id:           server.ID,
 			HostName:     server.Hostname,
-			Virtual:      server.IsVirtualLocation(),
 			ServerGroups: groupFilter(server.Groups),
 			Technologies: technologiesToProtobuf(server.Technologies),
 		}
@@ -134,7 +129,7 @@ func (r *RPC) GetServers(ctx context.Context, in *pb.Empty) (*pb.ServersResponse
 
 	return &pb.ServersResponse{Response: &pb.ServersResponse_Servers{
 		Servers: &pb.ServersMap{
-			ServersByCountry: serversListToServersMap(servers, cfg.VirtualLocation.Get()),
+			ServersByCountry: serversListToServersMap(servers),
 		},
 	}}, nil
 }

@@ -173,7 +173,6 @@ func (c *ConnectionInfo) ConnectionStatusNotifyConnect(e events.DataConnect) err
 		CountryCode:        e.TargetServerCountryCode,
 		City:               e.TargetServerCity,
 		StartTime:          startTime,
-		IsVirtualLocation:  e.IsVirtualLocation,
 		IsPostQuantum:      e.IsPostQuantum,
 		IsECHEnabled:       e.IsECHEnabled,
 		IsObfuscated:       e.IsObfuscated,

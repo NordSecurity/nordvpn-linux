@@ -360,10 +360,6 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 
 	MsgSnapPermissionsErrorForTray = "Please grant necessary permissions for the snap using this command:\n\n%s"
 
-	MsgSetVirtualLocationUsageText   = "Enables or disables access to virtual locations. Virtual location servers let you access more locations worldwide."
-	MsgSetVirtualLocationDescription = "Enables or disables access to virtual locations."
-	MsgFooterVirtualLocationNote     = "* Virtual location servers"
-
 	MsgShowListOfServers = "Shows a list of %s where servers are available."
 
 	SetPqUnavailable       = "Post-quantum encryption is not compatible with %s. Switch to NordLynx to use this encryption."

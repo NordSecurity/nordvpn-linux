@@ -177,11 +177,10 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       },
     ),
 
-    // Reconnect to apply obfuscation, post-quantum, virtual location changes
+    // Reconnect to apply obfuscation, post-quantum changes
     // These are applied immediately and user is just informed to reconnect
     PopupCodes.reconnectToChangeObfuscation ||
-    PopupCodes.reconnectToChangePostQuantum ||
-    PopupCodes.reconnectToChangeVirtualLocation => InfoPopupMetadata(
+    PopupCodes.reconnectToChangePostQuantum => InfoPopupMetadata(
       id: PopupCodes.reconnectToChangeProtocol,
       title: t.ui.reconnectToApplyChanges,
       message: (_) => t.ui.reconnectToApplyChangesDescription,

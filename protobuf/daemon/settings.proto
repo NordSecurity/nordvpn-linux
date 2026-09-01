@@ -38,11 +38,10 @@ message Settings {
   bool lan_discovery = 13;
   Allowlist allowlist = 14;
   bool obfuscate = 15;
-  bool virtualLocation = 16;
-  bool postquantum_vpn = 17;
-  UserSpecificSettings user_settings = 18;
-  bool arp_ignore = 19;
-  bool ech = 20;
+  bool postquantum_vpn = 16;
+  UserSpecificSettings user_settings = 17;
+  bool arp_ignore = 18;
+  bool ech = 19;
 }
 
 message UserSpecificSettings {

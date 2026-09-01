@@ -151,11 +151,6 @@ def is_user_consent_declared():
     return Settings().get("user consent") != UserConsentMode.UNDEFINED
 
 
-def is_virtual_location_enabled():
-    """Returns True, if Virtual Location is enabled in application settings."""
-    return Settings().get("Virtual Location") == "enabled"
-
-
 def is_post_quantum_disabled():
     """Returns True, if Post-quantum VPN is disabled in application settings."""
     return Settings().get("Post-quantum VPN") == "disabled"
@@ -180,7 +175,6 @@ def app_has_defaults_settings(expectedKillswitch = False):
         "Meshnet: disabled" in settings and
         "DNS: disabled" in settings and
         "LAN Discovery: disabled" in settings and
-        "Virtual Location: enabled" in settings and
         "Post-quantum VPN: disabled" in settings
 
     )

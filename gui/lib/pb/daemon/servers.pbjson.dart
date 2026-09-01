@@ -55,7 +55,6 @@ const Server$json = {
   '2': [
     {'1': 'id', '3': 1, '4': 1, '5': 3, '10': 'id'},
     {'1': 'host_name', '3': 4, '4': 1, '5': 9, '10': 'hostName'},
-    {'1': 'virtual', '3': 5, '4': 1, '5': 8, '10': 'virtual'},
     {
       '1': 'server_groups',
       '3': 6,
@@ -77,10 +76,9 @@ const Server$json = {
 
 /// Descriptor for `Server`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List serverDescriptor = $convert.base64Decode(
-    'CgZTZXJ2ZXISDgoCaWQYASABKANSAmlkEhsKCWhvc3RfbmFtZRgEIAEoCVIIaG9zdE5hbWUSGA'
-    'oHdmlydHVhbBgFIAEoCFIHdmlydHVhbBI4Cg1zZXJ2ZXJfZ3JvdXBzGAYgAygOMhMuY29uZmln'
-    'LlNlcnZlckdyb3VwUgxzZXJ2ZXJHcm91cHMSMgoMdGVjaG5vbG9naWVzGAcgAygOMg4ucGIuVG'
-    'VjaG5vbG9neVIMdGVjaG5vbG9naWVz');
+    'CgZTZXJ2ZXISDgoCaWQYASABKANSAmlkEhsKCWhvc3RfbmFtZRgEIAEoCVIIaG9zdE5hbWUSOA'
+    'oNc2VydmVyX2dyb3VwcxgGIAMoDjITLmNvbmZpZy5TZXJ2ZXJHcm91cFIMc2VydmVyR3JvdXBz'
+    'EjIKDHRlY2hub2xvZ2llcxgHIAMoDjIOLnBiLlRlY2hub2xvZ3lSDHRlY2hub2xvZ2llcw==');
 
 @$core.Deprecated('Use serverCityDescriptor instead')
 const ServerCity$json = {

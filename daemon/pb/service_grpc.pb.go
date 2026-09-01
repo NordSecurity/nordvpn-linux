@@ -53,7 +53,6 @@ const (
 	Daemon_SetRouting_FullMethodName               = "/pb.Daemon/SetRouting"
 	Daemon_SetKillSwitch_FullMethodName            = "/pb.Daemon/SetKillSwitch"
 	Daemon_SetLANDiscovery_FullMethodName          = "/pb.Daemon/SetLANDiscovery"
-	Daemon_SetVirtualLocation_FullMethodName       = "/pb.Daemon/SetVirtualLocation"
 	Daemon_SetNotify_FullMethodName                = "/pb.Daemon/SetNotify"
 	Daemon_SetTray_FullMethodName                  = "/pb.Daemon/SetTray"
 	Daemon_SettingsProtocols_FullMethodName        = "/pb.Daemon/SettingsProtocols"
@@ -117,7 +116,6 @@ type DaemonClient interface {
 	SetRouting(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetKillSwitch(ctx context.Context, in *SetKillSwitchRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetLANDiscovery(ctx context.Context, in *SetLANDiscoveryRequest, opts ...grpc.CallOption) (*SetLANDiscoveryResponse, error)
-	SetVirtualLocation(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error)
 	// ==================== UI Settings ====================
 	SetNotify(ctx context.Context, in *SetNotifyRequest, opts ...grpc.CallOption) (*Payload, error)
 	SetTray(ctx context.Context, in *SetTrayRequest, opts ...grpc.CallOption) (*Payload, error)
@@ -509,16 +507,6 @@ func (c *daemonClient) SetLANDiscovery(ctx context.Context, in *SetLANDiscoveryR
 	return out, nil
 }
 
-func (c *daemonClient) SetVirtualLocation(ctx context.Context, in *SetGenericRequest, opts ...grpc.CallOption) (*Payload, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Payload)
-	err := c.cc.Invoke(ctx, Daemon_SetVirtualLocation_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *daemonClient) SetNotify(ctx context.Context, in *SetNotifyRequest, opts ...grpc.CallOption) (*Payload, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Payload)
@@ -742,7 +730,6 @@ type DaemonServer interface {
 	SetRouting(context.Context, *SetGenericRequest) (*Payload, error)
 	SetKillSwitch(context.Context, *SetKillSwitchRequest) (*Payload, error)
 	SetLANDiscovery(context.Context, *SetLANDiscoveryRequest) (*SetLANDiscoveryResponse, error)
-	SetVirtualLocation(context.Context, *SetGenericRequest) (*Payload, error)
 	// ==================== UI Settings ====================
 	SetNotify(context.Context, *SetNotifyRequest) (*Payload, error)
 	SetTray(context.Context, *SetTrayRequest) (*Payload, error)
@@ -877,9 +864,6 @@ func (UnimplementedDaemonServer) SetKillSwitch(context.Context, *SetKillSwitchRe
 }
 func (UnimplementedDaemonServer) SetLANDiscovery(context.Context, *SetLANDiscoveryRequest) (*SetLANDiscoveryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetLANDiscovery not implemented")
-}
-func (UnimplementedDaemonServer) SetVirtualLocation(context.Context, *SetGenericRequest) (*Payload, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SetVirtualLocation not implemented")
 }
 func (UnimplementedDaemonServer) SetNotify(context.Context, *SetNotifyRequest) (*Payload, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetNotify not implemented")
@@ -1548,24 +1532,6 @@ func _Daemon_SetLANDiscovery_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Daemon_SetVirtualLocation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SetGenericRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DaemonServer).SetVirtualLocation(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Daemon_SetVirtualLocation_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DaemonServer).SetVirtualLocation(ctx, req.(*SetGenericRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _Daemon_SetNotify_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetNotifyRequest)
 	if err := dec(in); err != nil {
@@ -1974,10 +1940,6 @@ var Daemon_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetLANDiscovery",
 			Handler:    _Daemon_SetLANDiscovery_Handler,
-		},
-		{
-			MethodName: "SetVirtualLocation",
-			Handler:    _Daemon_SetVirtualLocation_Handler,
 		},
 		{
 			MethodName: "SetNotify",

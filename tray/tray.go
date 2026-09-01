@@ -99,14 +99,13 @@ func sortedConnections(sgs []*pb.ServerGroup) []Server {
 	set := make(map[string]bool, len(sgs))
 	for _, sg := range sgs {
 		if c := strings.TrimSpace(sg.Name); c != "" {
-			set[c] = sg.VirtualLocation
+			set[c] = false
 		}
 	}
 
 	list := make([]Server, 0, len(set))
-	for k, virtual := range set {
-		label := tryApplyVirtualLocationSuffix(k, virtual)
-		label = strings.ReplaceAll(label, "_", " ")
+	for k, _ := range set {
+		label := strings.ReplaceAll(k, "_", " ")
 		list = append(list, Server{name: k, displayLabel: label})
 	}
 
@@ -152,7 +151,6 @@ type trayState struct {
 	vpnHostname          string
 	vpnCity              string
 	vpnCountry           string
-	vpnVirtualLocation   bool
 	vpnIsMeshPeer        bool
 	initialSyncCompleted bool
 	connSelector         ConnectionSelector
@@ -165,11 +163,6 @@ func (state *trayState) serverName() string {
 	vpnServerName := state.vpnName
 	if vpnServerName == "" {
 		vpnServerName = state.vpnHostname
-	}
-	if vpnServerName != "" {
-		if state.vpnVirtualLocation {
-			vpnServerName += " - Virtual"
-		}
 	}
 	return vpnServerName
 }

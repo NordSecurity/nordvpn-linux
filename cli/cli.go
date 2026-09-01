@@ -923,19 +923,6 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 			BashComplete: cmd.SetBoolAutocomplete,
 		},
 		{
-			Name:      "virtual-location",
-			Usage:     MsgSetVirtualLocationUsageText,
-			ArgsUsage: MsgSetBoolArgsUsage,
-			Description: fmt.Sprintf(
-				MsgSetBoolDescription,
-				MsgSetVirtualLocationDescription,
-				"virtual-location",
-				"virtual-location",
-			),
-			Action:       cmd.SetVirtualLocation,
-			BashComplete: cmd.SetBoolAutocomplete,
-		},
-		{
 			Name:         "post-quantum",
 			Aliases:      []string{"pq"},
 			Usage:        SetPqUsageText,
