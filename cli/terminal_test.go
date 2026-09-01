@@ -172,7 +172,6 @@ func TestSplitDataInColumns(t *testing.T) {
 				func(item string) int { return len(item) },
 				func(item string) string { return item },
 				test.width,
-				"",
 			)
 			if test.expectsError {
 				assert.Error(t, err)
