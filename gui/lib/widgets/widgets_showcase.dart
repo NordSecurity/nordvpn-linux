@@ -382,6 +382,12 @@ class _WidgetsShowcaseState extends ConsumerState<WidgetsShowcase> {
                     ),
                     child: const Text("Announce"),
                   ),
+                  ElevatedButton(
+                    onPressed: () => ref
+                        .read(popupsProvider.notifier)
+                        .show(DaemonStatusCode.connectionLimitReached),
+                    child: const Text("Connection limit reach"),
+                  ),
                   Input(
                     submitText: "Error Popup",
                     hintText: "Enter status code or error message",

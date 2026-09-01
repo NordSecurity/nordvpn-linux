@@ -805,15 +805,16 @@ func TestMonitorConnectionErrors_PublishesMappedEvent(t *testing.T) {
 		return nil
 	})
 
+	serverData := vpn.ServerData{NordLynxPublicKey: "lel"}
 	errorsChan := make(chan vpnConnError, 1)
 	l := &Libtelio{
 		eventsPublisher: pub,
 		vpnErrorEvents:  errorsChan,
 		active:          true,
-		currentServer:   vpn.ServerData{NordLynxPublicKey: "lel"},
+		currentServer:   serverData,
 	}
 
-	go l.monitorConnectionErrors(t.Context())
+	go l.monitorConnectionErrors(t.Context(), serverData)
 
 	serverEndpoint := "192.168.1.1:51820"
 	errorsChan <- vpnConnError{code: teliogo.VpnConnectionErrorSuperseded, serverEndpoint: serverEndpoint}
@@ -844,7 +845,7 @@ func TestInjectVPNConnectionError_NoActiveMonitor(t *testing.T) {
 
 	// The dev channel exists but no monitor goroutine is draining it (no active
 	// NordLynx connection).
-	l := &Libtelio{injectedErrors: make(chan vpnConnError)}
+	l := &Libtelio{injectedErrors: newEnsDev(false)}
 
 	err := l.InjectVPNConnectionError(int32(teliogo.VpnConnectionErrorServerMaintenance), "")
 
@@ -897,15 +898,16 @@ func TestInjectVPNConnectionError_DeliversThroughMonitor(t *testing.T) {
 				return nil
 			})
 
-			injectedChan := make(chan vpnConnError)
+			serverData := vpn.ServerData{Endpoint: tt.connectedEndpoint}
+
 			l := &Libtelio{
 				eventsPublisher: pub,
-				injectedErrors:  injectedChan,
+				injectedErrors:  newEnsDev(false),
 				active:          true,
-				currentServer:   vpn.ServerData{Endpoint: tt.connectedEndpoint},
+				currentServer:   serverData,
 			}
 
-			go l.monitorConnectionErrors(t.Context())
+			go l.monitorConnectionErrors(t.Context(), serverData)
 
 			injected := assert.Eventually(t, func() bool {
 				return l.InjectVPNConnectionError(tt.code, tt.inputEndpoint) == nil

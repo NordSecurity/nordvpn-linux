@@ -34,6 +34,8 @@ func formReferenceToString(ref pb.UIEvent_FormReference) string {
 		return "gui"
 	case pb.UIEvent_CONNECTION_INFO:
 		return "connection_info"
+	case pb.UIEvent_SESSION_LIMIT_NOTIFICATION:
+		return "session_limit"
 	}
 	return ""
 }
@@ -71,6 +73,10 @@ func itemNameToString(name pb.UIEvent_ItemName) string {
 		return "open_app"
 	case pb.UIEvent_DOWNLOAD_APP:
 		return "download_app"
+	case pb.UIEvent_SESSION_LIMIT:
+		return "session_limit"
+	case pb.UIEvent_LEARN_MORE:
+		return "learn_more"
 	}
 	return ""
 }
@@ -82,6 +88,8 @@ func itemTypeToString(itemType pb.UIEvent_ItemType) string {
 		return ""
 	case pb.UIEvent_CLICK:
 		return "click"
+	case pb.UIEvent_SHOW:
+		return "show"
 	}
 	return ""
 }
@@ -121,6 +129,8 @@ func itemValueToString(value pb.UIEvent_ItemValue) string {
 		return "disconnect"
 	case pb.UIEvent_DEDICATED_SERVER:
 		return "dedicated_server"
+	case pb.UIEvent_ITEM_VALUE_LEARN_MORE:
+		return "learn_more"
 	}
 	return ""
 }

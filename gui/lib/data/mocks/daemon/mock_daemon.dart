@@ -6,6 +6,7 @@ import 'package:nordvpn/data/mocks/daemon/mock_account_info.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_recent_connections.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_servers_list.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_application_settings.dart';
+import 'package:nordvpn/data/mocks/daemon/mock_snap_interceptor.dart';
 import 'package:nordvpn/data/mocks/daemon/mock_vpn_status.dart';
 import 'package:nordvpn/data/repository/daemon_status_codes.dart';
 import 'package:nordvpn/pb/daemon/account.pb.dart';
@@ -40,6 +41,9 @@ final class MockDaemon extends DaemonServiceBase {
   late final MockAccountInfo account;
   late final MockVpnStatus vpnStatus;
   late final MockRecentConnections recentConnections;
+  final MockSnapErrorInterceptor snapInterceptor = MockSnapErrorInterceptor();
+  // UI analytics events received through reportUIEvent, in order
+  final List<UIEvent> uiEvents = [];
   RecommendedServerLocation? recommendedServerLocation;
 
   MockDaemon() {
@@ -162,6 +166,7 @@ final class MockDaemon extends DaemonServiceBase {
 
   @override
   Future<Payload> reportUIEvent(ServiceCall call, UIEvent request) async {
+    uiEvents.add(request);
     return Payload(type: Int64(DaemonStatusCode.success));
   }
 

@@ -2,6 +2,7 @@ package ens
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
@@ -12,6 +13,8 @@ import (
 )
 
 const evChSize = 2
+
+var ErrConnectionLimitReached = errors.New("connection limit reached")
 
 type ConnectCallback func(serverEndpoint string) error
 
@@ -87,25 +90,14 @@ func (m *Monitor) run() {
 				m.debuggerEvents.Publish(*newVPNConnectionErrorEvent(e.Code).ToDebuggerEvent())
 			}
 
-			if e.Code != events.VPNConnectionErrorServerMaintenance {
+			//exhaustive:ignore
+			switch e.Code {
+			case events.VPNConnectionErrorServerMaintenance:
+				m.serverMaintenanceEventProcessing(e)
+			case events.VPNConnectionErrorConnectionLimitReached:
+				m.connectionLimitReachedEventProcessing(e)
+			default:
 				log.ENS.Debug("ignoring", e)
-				continue
-			}
-
-			if !m.netw.IsVPNActive() {
-				log.ENS.Debug("ignoring because VPN is not connected", e)
-				continue
-			}
-
-			currServer, _ := m.netw.GetConnectionParameters()
-			eventIsForDifferentServer := !currServer.EndpointEqual(e.ServerEndpoint)
-			if eventIsForDifferentServer {
-				log.ENS.Debug("ignoring ENS event for non-current server", e)
-				continue
-			}
-
-			if err := m.reconnectFn(e.ServerEndpoint); err != nil {
-				log.ENS.Error("failed to reconnect", err)
 			}
 
 		case <-m.ctx.Done():
@@ -121,4 +113,28 @@ func (m *Monitor) Stop() {
 		m.cancel()
 	}
 	m.wg.Wait()
+}
+
+func (m *Monitor) serverMaintenanceEventProcessing(e events.VPNConnectionErrorEvent) {
+	if !m.netw.IsVPNActive() {
+		log.ENS.Debug("ignoring because VPN is not connected", e)
+		return
+	}
+
+	currServer, _ := m.netw.GetConnectionParameters()
+	eventIsForDifferentServer := !currServer.EndpointEqual(e.ServerEndpoint)
+	if eventIsForDifferentServer {
+		log.ENS.Debug("ignoring ENS event for non-current server", e)
+		return
+	}
+
+	if err := m.reconnectFn(e.ServerEndpoint); err != nil {
+		log.ENS.Error("failed to reconnect", err)
+	}
+}
+
+func (m *Monitor) connectionLimitReachedEventProcessing(events.VPNConnectionErrorEvent) {
+	if !m.netw.CancelConnecting(ErrConnectionLimitReached) {
+		log.ENS.Info("connection limit reach ignored")
+	}
 }

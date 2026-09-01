@@ -3,12 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // Base class for popups metadata, specifies `id`, optional `title`
 // and popup `message`.
+// [onShown] is invoked once each time the popup is built before actually displaying.
 sealed class PopupMetadata {
   final int id;
   String? title;
   final String Function(WidgetRef) message;
+  final void Function(WidgetRef ref)? onShown;
 
-  PopupMetadata({required this.id, required this.message, this.title});
+  PopupMetadata({
+    required this.id,
+    required this.message,
+    this.title,
+    this.onShown,
+  });
 
   @override
   bool operator ==(Object other) {
@@ -39,19 +46,25 @@ final class DecisionPopupMetadata extends PopupMetadata {
     required this.yesAction,
     this.noAction,
     super.title,
+    super.onShown,
   });
 }
 
 // Metadata for popups that can be only closed. Has just `id`, `title` nad `message`
 // Optionally accepts [buttonText] to customize the close button label.
 // If not provided, defaults to "Close".
+// [onLinkTaps] holds one callback per link in the popup body in order of presentation.
+// Each one is invoked when the user taps the associated link.
 final class InfoPopupMetadata extends PopupMetadata {
   final String? buttonText;
+  final List<void Function(WidgetRef ref)>? onLinkTaps;
   InfoPopupMetadata({
     required super.id,
     required super.title,
     required super.message,
     this.buttonText,
+    this.onLinkTaps,
+    super.onShown,
   });
 }
 
@@ -73,6 +86,7 @@ final class RichPopupMetadata extends PopupMetadata {
     required this.action,
     required this.image,
     super.title,
+    super.onShown,
     this.autoClose = true,
   });
 }

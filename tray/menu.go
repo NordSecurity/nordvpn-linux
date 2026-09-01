@@ -173,7 +173,7 @@ func buildQuitButton(ti *Instance) {
 			return
 		}
 		log.Info(msgShutdownNotification)
-		ti.notify(Force, msgShutdownNotification)
+		ti.n.Alert(msgShutdownNotification).Urgent().Show()
 		select {
 		case ti.quitChan <- norduser.StopRequest{}:
 		default:

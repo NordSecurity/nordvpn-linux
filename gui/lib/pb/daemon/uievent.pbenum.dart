@@ -30,6 +30,9 @@ class UIEvent_FormReference extends $pb.ProtobufEnum {
       UIEvent_FormReference._(4, _omitEnumNames ? '' : 'GUI');
   static const UIEvent_FormReference CONNECTION_INFO =
       UIEvent_FormReference._(5, _omitEnumNames ? '' : 'CONNECTION_INFO');
+  static const UIEvent_FormReference SESSION_LIMIT_NOTIFICATION =
+      UIEvent_FormReference._(
+          6, _omitEnumNames ? '' : 'SESSION_LIMIT_NOTIFICATION');
 
   static const $core.List<UIEvent_FormReference> values =
       <UIEvent_FormReference>[
@@ -39,10 +42,11 @@ class UIEvent_FormReference extends $pb.ProtobufEnum {
     HOME_SCREEN,
     GUI,
     CONNECTION_INFO,
+    SESSION_LIMIT_NOTIFICATION,
   ];
 
   static final $core.List<UIEvent_FormReference?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 5);
+      $pb.ProtobufEnum.$_initByValueList(values, 6);
   static UIEvent_FormReference? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
@@ -81,6 +85,10 @@ class UIEvent_ItemName extends $pb.ProtobufEnum {
       UIEvent_ItemName._(13, _omitEnumNames ? '' : 'OPEN_APP');
   static const UIEvent_ItemName DOWNLOAD_APP =
       UIEvent_ItemName._(14, _omitEnumNames ? '' : 'DOWNLOAD_APP');
+  static const UIEvent_ItemName SESSION_LIMIT =
+      UIEvent_ItemName._(15, _omitEnumNames ? '' : 'SESSION_LIMIT');
+  static const UIEvent_ItemName LEARN_MORE =
+      UIEvent_ItemName._(16, _omitEnumNames ? '' : 'LEARN_MORE');
 
   static const $core.List<UIEvent_ItemName> values = <UIEvent_ItemName>[
     ITEM_NAME_UNSPECIFIED,
@@ -98,10 +106,12 @@ class UIEvent_ItemName extends $pb.ProtobufEnum {
     GET_HELP,
     OPEN_APP,
     DOWNLOAD_APP,
+    SESSION_LIMIT,
+    LEARN_MORE,
   ];
 
   static final $core.List<UIEvent_ItemName?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 14);
+      $pb.ProtobufEnum.$_initByValueList(values, 16);
   static UIEvent_ItemName? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
@@ -114,14 +124,17 @@ class UIEvent_ItemType extends $pb.ProtobufEnum {
       UIEvent_ItemType._(0, _omitEnumNames ? '' : 'ITEM_TYPE_UNSPECIFIED');
   static const UIEvent_ItemType CLICK =
       UIEvent_ItemType._(1, _omitEnumNames ? '' : 'CLICK');
+  static const UIEvent_ItemType SHOW =
+      UIEvent_ItemType._(2, _omitEnumNames ? '' : 'SHOW');
 
   static const $core.List<UIEvent_ItemType> values = <UIEvent_ItemType>[
     ITEM_TYPE_UNSPECIFIED,
     CLICK,
+    SHOW,
   ];
 
   static final $core.List<UIEvent_ItemType?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 1);
+      $pb.ProtobufEnum.$_initByValueList(values, 2);
   static UIEvent_ItemType? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
@@ -164,6 +177,8 @@ class UIEvent_ItemValue extends $pb.ProtobufEnum {
       UIEvent_ItemValue._(14, _omitEnumNames ? '' : 'PAUSE_DISCONNECT');
   static const UIEvent_ItemValue DEDICATED_SERVER =
       UIEvent_ItemValue._(15, _omitEnumNames ? '' : 'DEDICATED_SERVER');
+  static const UIEvent_ItemValue ITEM_VALUE_LEARN_MORE =
+      UIEvent_ItemValue._(16, _omitEnumNames ? '' : 'ITEM_VALUE_LEARN_MORE');
 
   static const $core.List<UIEvent_ItemValue> values = <UIEvent_ItemValue>[
     ITEM_VALUE_UNSPECIFIED,
@@ -182,10 +197,11 @@ class UIEvent_ItemValue extends $pb.ProtobufEnum {
     PAUSE_24_HOURS,
     PAUSE_DISCONNECT,
     DEDICATED_SERVER,
+    ITEM_VALUE_LEARN_MORE,
   ];
 
   static final $core.List<UIEvent_ItemValue?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 15);
+      $pb.ProtobufEnum.$_initByValueList(values, 16);
   static UIEvent_ItemValue? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 

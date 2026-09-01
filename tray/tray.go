@@ -12,10 +12,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/NordSecurity/nordvpn-linux/alert"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/norduser"
-	"github.com/NordSecurity/nordvpn-linux/notify"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo"
 
 	"github.com/NordSecurity/systray"
@@ -115,17 +116,12 @@ func sortedConnections(sgs []*pb.ServerGroup) []Server {
 	return list
 }
 
-type notifier interface {
-	start()
-	sendNotification(summary string, body string) error
-}
-
 type Instance struct {
 	client                pb.DaemonClient
 	fileshare             FileshareManager
 	accountInfo           accountInfo
 	debugMode             bool
-	notifier              notifier
+	n                     alert.Notifier
 	renderChan            chan struct{}
 	initialDataLoadChan   chan struct{}
 	iconConnected         string
@@ -138,7 +134,10 @@ type Instance struct {
 	checkboxSync          *CheckboxSynchronizer
 	isVisible             atomic.Bool
 	stopVisibilityMonitor chan struct{}
+	openURI               URIOpener
 }
+
+type URIOpener func(string) error
 
 type trayState struct {
 	daemonAvailable      bool
@@ -175,17 +174,42 @@ func (state *trayState) serverName() string {
 	return vpnServerName
 }
 
-func NewTrayInstance(client pb.DaemonClient, quitChan chan<- norduser.StopRequest) *Instance {
+func NewTrayInstance(
+	client pb.DaemonClient,
+	quitChan chan<- norduser.StopRequest,
+	openURI URIOpener,
+) *Instance {
+	var n alert.Notifier
+	notifier, err := alert.NewDbusNotifier(alert.WithTransient())
+	if err != nil {
+		log.Error("Failed to create dbus notifier, notifications will be disabled:", err)
+		n = alert.NoopNotifier{}
+	} else {
+		n = notifier
+	}
+
 	obj := &Instance{
 		client:                client,
 		fileshare:             NewFileshareManager(),
-		notifier:              &dbusNotifier{},
 		quitChan:              quitChan,
 		connSensor:            newConnectionSettingsChangeSensor(),
 		recentConnections:     newRecentConnectionsManager(client),
 		checkboxSync:          NewCheckboxSynchronizer(),
 		stopVisibilityMonitor: make(chan struct{}),
+		openURI:               openURI,
 	}
+	obj.n = &gatedNotifier{
+		Notifier: n,
+		isReady: func() bool {
+			obj.state.mu.RLock()
+			defer obj.state.mu.RUnlock()
+			return obj.state.initialSyncCompleted
+		},
+	}
+	// disable notifier until we have up to date settings with
+	// information if notifications are allowed or not
+	obj.n.Mute()
+
 	obj.isVisible.Store(false)
 	obj.stateListener = newStateListener(client, obj.onDaemonStateEvent)
 	return obj
@@ -230,8 +254,8 @@ func selectIcon(desktopEnv string) string {
 
 // updateIconsSelection selects the most appropriate icon based on the desktop environment.
 func (ti *Instance) updateIconsSelection() {
-	ti.iconDisconnected = notify.GetIconPath(selectIcon(sysinfo.GetDisplayDesktopEnvironment()))
-	ti.iconConnected = notify.GetIconPath(IconBlue)
+	ti.iconDisconnected = alert.GetIconPath(selectIcon(sysinfo.GetDisplayDesktopEnvironment()))
+	ti.iconConnected = alert.GetIconPath(IconBlue)
 }
 
 // configureDebugMode configures debug mode based on the environment variable.
@@ -298,13 +322,13 @@ func (ti *Instance) Start() {
 
 func (ti *Instance) OnExit() {
 	ti.stateListener.Stop()
+	_ = ti.n.Close()
 }
 
 func (ti *Instance) OnReady(ctx context.Context) {
-	systray.SetTitle("NordVPN")
-	systray.SetTooltip("NordVPN")
+	systray.SetTitle(internal.AppName)
+	systray.SetTooltip(internal.AppName)
 
-	ti.notifier.start()
 	ti.stateListener.Start()
 
 	go ti.renderLoop(ctx)

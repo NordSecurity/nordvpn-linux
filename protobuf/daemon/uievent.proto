@@ -10,61 +10,67 @@ message UIEvent {
   // originated
   enum FormReference {
     FORM_REFERENCE_UNSPECIFIED = 0;
-    CLI = 1;
-    TRAY = 2;
-    HOME_SCREEN = 3;
-    GUI = 4; // temporary, to be replaced with more specific references
-    CONNECTION_INFO = 5;
+    CLI                        = 1;
+    TRAY                       = 2;
+    HOME_SCREEN                = 3;
+    GUI                        = 4; // temporary, to be replaced with more specific references
+    CONNECTION_INFO            = 5;
+    SESSION_LIMIT_NOTIFICATION = 6;
   }
 
   // ItemName represents a user interface event item name
   enum ItemName {
     ITEM_NAME_UNSPECIFIED = 0;
-    CONNECT = 1;
-    CONNECT_RECENTS = 2;
-    DISCONNECT = 3;
-    LOGIN = 4;
-    LOGOUT = 5;
-    RATE_CONNECTION = 6;
-    MESHNET_INVITE_SEND = 7;
-    LOGIN_TOKEN = 8; // CLI-only: login via token (nordvpn login --token)
-    PAUSE = 9;
-    RECONNECT = 10;
-    CHANGE_SETTINGS = 11;
-    GET_HELP = 12;
-    OPEN_APP = 13;
-    DOWNLOAD_APP = 14;
+    CONNECT               = 1;
+    CONNECT_RECENTS       = 2;
+    DISCONNECT            = 3;
+    LOGIN                 = 4;
+    LOGOUT                = 5;
+    RATE_CONNECTION       = 6;
+    MESHNET_INVITE_SEND   = 7;
+    LOGIN_TOKEN           = 8; // CLI-only: login via token (nordvpn login --token)
+    PAUSE                 = 9;
+    RECONNECT             = 10;
+    CHANGE_SETTINGS       = 11;
+    GET_HELP              = 12;
+    OPEN_APP              = 13;
+    DOWNLOAD_APP          = 14;
+    SESSION_LIMIT         = 15;
+    LEARN_MORE            = 16;
   }
 
   // ItemType represents the type of user interface event
   enum ItemType {
     ITEM_TYPE_UNSPECIFIED = 0;
-    CLICK = 1;
+    CLICK                 = 1;
+    SHOW                  = 2;
   }
 
   // ItemValue represents the value associated with a user interface event
   enum ItemValue {
     ITEM_VALUE_UNSPECIFIED = 0;
-    COUNTRY = 1;
-    CITY = 2;
-    DIP = 3;
-    MESHNET = 4;
-    OBFUSCATED = 5;
-    ONION_OVER_VPN = 6;
-    DOUBLE_VPN = 7;
-    P2P = 8;
+    COUNTRY                = 1;
+    CITY                   = 2;
+    DIP                    = 3;
+    MESHNET                = 4;
+    OBFUSCATED             = 5;
+    ONION_OVER_VPN         = 6;
+    DOUBLE_VPN             = 7;
+    P2P                    = 8;
     //values for handling pause functionality analytics
-    PAUSE_5_MIN = 9;
-    PAUSE_15_MIN = 10;
-    PAUSE_30_MIN = 11;
-    PAUSE_1_HOUR = 12;
-    PAUSE_24_HOURS = 13;
+    PAUSE_5_MIN      = 9;
+    PAUSE_15_MIN     = 10;
+    PAUSE_30_MIN     = 11;
+    PAUSE_1_HOUR     = 12;
+    PAUSE_24_HOURS   = 13;
     PAUSE_DISCONNECT = 14;
     DEDICATED_SERVER = 15;
+
+    ITEM_VALUE_LEARN_MORE = 16;
   }
 
   FormReference form_reference = 1;
-  ItemName item_name = 2;
-  ItemType item_type = 3;
-  ItemValue item_value = 4;
+  ItemName      item_name      = 2;
+  ItemType      item_type      = 3;
+  ItemValue     item_value     = 4;
 }

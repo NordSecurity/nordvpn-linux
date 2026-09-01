@@ -689,8 +689,11 @@ func (s *Subscriber) setTokenRenewDate(unixTimestamp int64) error {
 
 // uiItemType maps a UiItemsAction item type string to its moose enum.
 func uiItemType(itemType string) moose.NordvpnappUserInterfaceItemType {
-	if itemType == "textbox" {
+	switch itemType {
+	case "textbox":
 		return moose.NordvpnappUserInterfaceItemTypeTextBox
+	case "show":
+		return moose.NordvpnappUserInterfaceItemTypeTabOrScreen
 	}
 	return moose.NordvpnappUserInterfaceItemTypeButton
 }
@@ -706,6 +709,21 @@ func (s *Subscriber) NotifyUiItemsClick(data events.UiItemsAction) error {
 		nil,
 	)); err != nil {
 		return fmt.Errorf("sending UI item click event (form=%q, item=%q): %w", data.FormReference, data.ItemName, err)
+	}
+	return nil
+}
+
+func (s *Subscriber) NotifyUiItemsShow(data events.UiItemsAction) error {
+	if err := s.response(moose.NordvpnappSendUserInterfaceUiItemsShow(
+		moose.UiItemsParams{
+			FormReference: data.FormReference,
+			ItemName:      data.ItemName,
+			ItemType:      uiItemType(data.ItemType),
+			ItemValue:     data.ItemValue,
+		},
+		nil,
+	)); err != nil {
+		return fmt.Errorf("sending UI item show event (form=%q, item=%q): %w", data.FormReference, data.ItemName, err)
 	}
 	return nil
 }
@@ -892,6 +910,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	eventTrigger := moose.NordvpnappEventTriggerUser
 	vpnConnectionTrigger := moose.NordvpnappVpnConnectionTriggerNone
 	connectionFunnel := ""
+	var exceptionCode int32 = -1
 	if data.PauseInterval > 0 {
 		// params specific for pause-related events
 		if !data.UnpausedByUser {
@@ -901,9 +920,10 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 		connectionFunnel = durationToConnectionFunnel(data.PauseInterval)
 	}
 	if data.VPNConnReason != events.VPNConnectionReasonNone {
-		attrs := vpnConnReasonToMoose(data.VPNConnReason)
+		attrs := vpnConnReasonToMoose(data.VPNConnReason, true)
 		vpnConnectionTrigger = attrs.trigger
 		eventTrigger = attrs.eventTrigger
+		exceptionCode = attrs.exceptionCode
 	}
 
 	targetServerDomain := data.TargetServerDomain
@@ -958,7 +978,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			VpnConnectionTrigger: vpnConnectionTrigger,
 		},
 		threatProtectionLiteToInternalType(data.ThreatProtectionLite),
-		-1,
+		exceptionCode,
 		recommendationUUID,
 		nil,
 	)); err != nil {
@@ -1045,7 +1065,7 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 	eventTrigger := moose.NordvpnappEventTriggerUser
 	exceptionCode := errToExceptionCode(data.Error)
 	if data.VPNConnReason != events.VPNConnectionReasonNone {
-		attrs := vpnConnReasonToMoose(data.VPNConnReason)
+		attrs := vpnConnReasonToMoose(data.VPNConnReason, false)
 		eventTrigger = attrs.eventTrigger
 		exceptionCode = attrs.exceptionCode
 	}
@@ -1638,7 +1658,10 @@ func errToExceptionCode(err error) int32 {
 	return -1
 }
 
-const serverMaintenanceExceptionCode int32 = 1000076
+const (
+	connectionLimitReachedExceptionCode int32 = 1000075
+	serverMaintenanceExceptionCode      int32 = 1000076
+)
 
 type mooseConnReasonAttrs struct {
 	trigger       moose.NordvpnappVpnConnectionTrigger
@@ -1647,12 +1670,23 @@ type mooseConnReasonAttrs struct {
 }
 
 // vpnConnReasonToMoose maps a VPN connection reason to its Moose telemetry attributes.
-func vpnConnReasonToMoose(t events.VPNConnectionReason) mooseConnReasonAttrs {
+func vpnConnReasonToMoose(t events.VPNConnectionReason, isConnectEvent bool) mooseConnReasonAttrs {
 	switch t {
 	case events.VPNConnectionReasonServerMaintenance:
+		// it must only be set while disconnecting
+		exceptionCode := serverMaintenanceExceptionCode
+		if isConnectEvent {
+			exceptionCode = -1
+		}
 		return mooseConnReasonAttrs{
 			trigger:       moose.NordvpnappVpnConnectionTriggerServerMaintenance,
-			exceptionCode: serverMaintenanceExceptionCode,
+			exceptionCode: exceptionCode,
+			eventTrigger:  moose.NordvpnappEventTriggerApp,
+		}
+	case events.VPNConnectionReasonConnectionLimitReached:
+		return mooseConnReasonAttrs{
+			trigger:       moose.NordvpnappVpnConnectionTriggerNone,
+			exceptionCode: connectionLimitReachedExceptionCode,
 			eventTrigger:  moose.NordvpnappEventTriggerApp,
 		}
 	case events.VPNConnectionReasonAutoConnect:

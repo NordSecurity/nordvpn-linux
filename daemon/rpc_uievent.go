@@ -19,7 +19,11 @@ func (r *RPC) ReportUIEvent(
 		in.ItemType != pb.UIEvent_ITEM_TYPE_UNSPECIFIED {
 		// only valid event should be sent
 		action := uievent.ProtoToMooseStrings(in)
-		r.events.Service.UiItemsClick.Publish(action)
+		if in.GetItemType() == pb.UIEvent_SHOW {
+			r.events.Service.UiItemsShow.Publish(action)
+		} else {
+			r.events.Service.UiItemsClick.Publish(action)
+		}
 	}
 	return &pb.Payload{Type: internal.CodeSuccess}, nil
 }

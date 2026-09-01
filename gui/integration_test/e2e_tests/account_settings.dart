@@ -1,9 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/internal/urls.dart';
-import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import '../../test/utils/fakes.dart';
-import '../../test/utils/mock_url_launcher.dart';
 import '../../test/utils/test_helpers.dart';
 
 void runAccountSettingsTests() async {
@@ -58,9 +56,6 @@ void runAccountSettingsTests() async {
     });
 
     testWidgets("clicking links launches correct URLs", (tester) async {
-      final mockUrlLauncher = MockUrlLauncher();
-      UrlLauncherPlatform.instance = mockUrlLauncher;
-
       final app = await tester.setupIntegrationTests();
       final account = fakeAccount();
 
@@ -69,22 +64,22 @@ void runAccountSettingsTests() async {
       await accountScreen.clickManageSubscriptionLink();
       await tester.pumpAndSettle();
 
-      expect(mockUrlLauncher.launchedUrls.length, 1);
+      expect(app.launchedUrls.length, 1);
       expect(
-        mockUrlLauncher.launchedUrls.first,
+        app.launchedUrls.first,
         equals(manageSubscriptionUrl.toString()),
         reason: 'Manage subscription link should launch correct URL',
       );
 
       // clear for next click
-      mockUrlLauncher.launchedUrls.clear();
+      app.launchedUrls.clear();
 
       await accountScreen.clickChangePasswordLink();
       await tester.pumpAndSettle();
 
-      expect(mockUrlLauncher.launchedUrls.length, 1);
+      expect(app.launchedUrls.length, 1);
       expect(
-        mockUrlLauncher.launchedUrls.first,
+        app.launchedUrls.first,
         equals(changePasswordUrl.toString()),
         reason: 'Change password link should launch correct URL',
       );
