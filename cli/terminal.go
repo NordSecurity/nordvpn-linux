@@ -10,7 +10,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
-	"github.com/fatih/color"
 	"golang.org/x/term"
 )
 
@@ -68,23 +67,7 @@ func serverNameLen(server *pb.ServerGroup) int {
 }
 
 func formatServerName(server *pb.ServerGroup) string {
-	if server.VirtualLocation && isStdoutTerminal() {
-		return color.HiBlueString(server.Name)
-	}
 	return server.Name
-}
-
-func footerForServerGroupsList(servers []*pb.ServerGroup) string {
-	if !isStdoutTerminal() {
-		return ""
-	}
-
-	for _, server := range servers {
-		if server.VirtualLocation {
-			return color.HiBlueString(MsgFooterVirtualLocationNote)
-		}
-	}
-	return ""
 }
 
 func checkUsernamePasswordIsEmpty(username, password string) error {

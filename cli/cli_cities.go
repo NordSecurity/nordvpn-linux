@@ -44,18 +44,17 @@ func (c *cmd) Cities(ctx *cli.Context) error {
 		return formatError(errors.New(CitiesNotFoundError))
 	}
 
-	footer := footerForServerGroupsList(resp.Servers)
 	formattedList, err := columns(resp.Servers,
 		serverNameLen,
 		formatServerName,
-		footer,
+		"",
 	)
 	if err == nil {
 		fmt.Println(formattedList)
 	} else {
 		log.Error(err)
 
-		columns, _ := formatTable(resp.Servers, serverNameLen, formatServerName, 1, footer)
+		columns, _ := formatTable(resp.Servers, serverNameLen, formatServerName, 1, "")
 		fmt.Println(columns)
 	}
 	return nil
