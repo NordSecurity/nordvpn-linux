@@ -326,7 +326,7 @@ func getTelioLogLevel() teliogo.TelioLogLevel {
 
 	logLevelString := strings.TrimSpace(strings.ToLower(string(raw)))
 	log.Infof("setting custom telio log level: %.20q", logLevelString)
-	switch string(logLevelString) {
+	switch logLevelString {
 	case "error":
 		return teliogo.TelioLogLevelError
 	case "warn":
