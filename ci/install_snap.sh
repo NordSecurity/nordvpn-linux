@@ -21,4 +21,7 @@ find "${WORKDIR}"/ -type f -name "*amd64.snap" \
 echo "~~~GRANT permissions - connect snap interfaces"
 snap_connect_interfaces
 
+echo "~~~ check is-connected"
+sudo snap run --shell nordvpn -c "snapctl is-connected --list"
+
 echo "~~~INSTALL Snap DONE."
