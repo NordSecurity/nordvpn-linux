@@ -59,11 +59,7 @@ func Status(resp *pb.StatusResponse) string {
 	}
 
 	if resp.Name != "" {
-		serverName := resp.Name
-		if resp.VirtualLocation {
-			serverName += " - Virtual"
-		}
-		b.WriteString(fmt.Sprintf("Server: %s\n", serverName))
+		b.WriteString(fmt.Sprintf("Server: %s\n", resp.Name))
 	}
 
 	if resp.Hostname != "" {

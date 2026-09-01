@@ -362,9 +362,8 @@ Provide a [transfer_id] argument to list files in the specified transfer.`
 
 	MsgSetVirtualLocationUsageText   = "Enables or disables access to virtual locations. Virtual location servers let you access more locations worldwide."
 	MsgSetVirtualLocationDescription = "Enables or disables access to virtual locations."
-	MsgFooterVirtualLocationNote     = "* Virtual location servers"
 
-	MsgShowListOfServers = "Shows a list of %s where servers are available.\n\nLocations marked with a different color in the list are virtual. Virtual location servers let you connect to more places worldwide. They run on dedicated physical servers, which are placed outside the intended location but configured to use its IP address."
+	MsgShowListOfServers = "Shows a list of %s where servers are available."
 
 	SetPqUnavailable       = "Post-quantum encryption is not compatible with %s. Switch to NordLynx to use this encryption."
 	SetTechnologyDisablePQ = "This setting is not compatible with post-quantum encryption. To use %s, turn off post-quantum encryption first."
