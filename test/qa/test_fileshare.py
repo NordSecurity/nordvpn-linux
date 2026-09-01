@@ -1060,7 +1060,8 @@ def format_time(nanoseconds):
 @pytest.mark.parametrize("background", [True, False], ids=["send_bg", "send_int"])
 @pytest.mark.parametrize("peer_name", list(meshnet.PeerName)[:-1])
 def test_permissions_send(peer_name, background):
-    tester_data = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_this_device()
+    tester_peer_list = sh.nordvpn.mesh.peer.list()
+    tester_data = meshnet.PeerList.from_str(tester_peer_list).get_this_device()
     tester_address = tester_data.get_peer_name(peer_name)
 
     with lib.Defer(lambda: meshnet.set_permissions(tester_address, fileshare=True)):
@@ -1078,7 +1079,7 @@ def test_permissions_send(peer_name, background):
         directory = fileshare.create_directory(1)
         filename = directory.paths[0]
 
-        peer_address = meshnet.PeerList.from_str(sh.nordvpn.mesh.peer.list()).get_internal_peer().get_peer_name(peer_name)
+        peer_address = meshnet.PeerList.from_str(tester_peer_list).get_internal_peer().get_peer_name(peer_name)
 
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             if background:
