@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"slices"
-	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -96,24 +95,20 @@ func (cp *ConnectionSelector) fetchSpecialtyServers(client pb.DaemonClient) ([]S
 }
 
 func sortedConnections(sgs []*pb.ServerGroup) []Server {
-	set := make(map[string]bool, len(sgs))
+	list := make([]Server, 0, len(sgs))
 	for _, sg := range sgs {
-		if c := strings.TrimSpace(sg.Name); c != "" {
-			set[c] = sg.VirtualLocation
+		if name := strings.TrimSpace(sg.Name); name != "" {
+			label := strings.ReplaceAll(name, "_", " ")
+			list = append(list, Server{name: name, displayLabel: label})
 		}
 	}
 
-	list := make([]Server, 0, len(set))
-	for k, virtual := range set {
-		label := tryApplyVirtualLocationSuffix(k, virtual)
-		label = strings.ReplaceAll(label, "_", " ")
-		list = append(list, Server{name: k, displayLabel: label})
-	}
-
-	sort.Slice(list, func(i int, j int) bool {
-		return list[i].name < list[j].name
+	slices.SortFunc(list, func(a, b Server) int {
+		return strings.Compare(a.name, b.name)
 	})
-	return list
+	return slices.CompactFunc(list, func(a, b Server) bool {
+		return a.name == b.name
+	})
 }
 
 type Instance struct {
@@ -152,7 +147,6 @@ type trayState struct {
 	vpnHostname          string
 	vpnCity              string
 	vpnCountry           string
-	vpnVirtualLocation   bool
 	vpnIsMeshPeer        bool
 	initialSyncCompleted bool
 	connSelector         ConnectionSelector
@@ -165,11 +159,6 @@ func (state *trayState) serverName() string {
 	vpnServerName := state.vpnName
 	if vpnServerName == "" {
 		vpnServerName = state.vpnHostname
-	}
-	if vpnServerName != "" {
-		if state.vpnVirtualLocation {
-			vpnServerName += " - Virtual"
-		}
 	}
 	return vpnServerName
 }
