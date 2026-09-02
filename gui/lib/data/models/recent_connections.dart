@@ -15,7 +15,6 @@ class RecentConnection {
   final String specificServerName;
   final String specificServer;
   final ServerSelectionRule connectionType;
-  final bool isVirtual;
 
   RecentConnection({
     required this.country,
@@ -25,7 +24,6 @@ class RecentConnection {
     required this.specificServerName,
     required this.specificServer,
     required this.connectionType,
-    required this.isVirtual,
   });
 
   factory RecentConnection.fromPb(RecentConnectionModel pb) {
@@ -37,7 +35,6 @@ class RecentConnection {
       specificServerName: pb.specificServerName,
       specificServer: pb.specificServer,
       connectionType: pb.connectionType,
-      isVirtual: pb.isVirtual,
     );
   }
 
@@ -45,7 +42,7 @@ class RecentConnection {
   String toString() {
     return 'RecentConnection(country: $country, city: $city, group: $group, '
         'countryCode: $countryCode, specificServerName: $specificServerName, '
-        'specificServer: $specificServer, connectionType: $connectionType, virtual: $isVirtual)';
+        'specificServer: $specificServer, connectionType: $connectionType)';
   }
 
   final Map<cfg.ServerGroup, String> _groupTitles = {

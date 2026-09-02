@@ -15,11 +15,7 @@ void main() {
   });
   group('Construct ConnectRequest from ConnectArguments Tests', () {
     test('Convert from server', () async {
-      final server = ServerInfo(
-        id: 9999,
-        hostname: "de1234.nordvpn.com",
-        isVirtual: true,
-      );
+      final server = ServerInfo(id: 9999, hostname: "de1234.nordvpn.com");
 
       expect(
         ConnectArguments(server: server).toConnectRequest(),

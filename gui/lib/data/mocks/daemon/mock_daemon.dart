@@ -306,7 +306,7 @@ final class MockDaemon extends DaemonServiceBase {
     ServiceCall call,
     SetGenericRequest request,
   ) {
-    return appSettings.setSettings(virtualLocation: request.enabled);
+    throw UnimplementedError();
   }
 
   @override

@@ -98,10 +98,7 @@ final class RecentConnectionsItemFactory {
         final location = city.isEmpty ? t.ui.fastest : City(city).localizedName;
         final subtitle = "${country.localizedName} - $location";
 
-        return (
-          primary: model.specialtyServer,
-          secondary: _maybeAddVirtualLabel(subtitle, model.isVirtual),
-        );
+        return (primary: model.specialtyServer, secondary: subtitle);
       }
 
       return (primary: model.specialtyServer, secondary: t.ui.fastest);
@@ -116,10 +113,7 @@ final class RecentConnectionsItemFactory {
     if (isCity) {
       return (
         primary: country.localizedName,
-        secondary: _maybeAddVirtualLabel(
-          City(model.city).localizedName,
-          model.isVirtual,
-        ),
+        secondary: City(model.city).localizedName,
       );
     }
 
@@ -129,12 +123,7 @@ final class RecentConnectionsItemFactory {
 
     if (isSpecificServer) {
       final serverId = model.serverId;
-      return (
-        primary: country.localizedName,
-        secondary: serverId != null
-            ? _maybeAddVirtualLabel(serverId, model.isVirtual)
-            : null,
-      );
+      return (primary: country.localizedName, secondary: serverId);
     }
 
     return (primary: country.localizedName, secondary: t.ui.fastest);
@@ -152,10 +141,6 @@ final class RecentConnectionsItemFactory {
     );
   }
 
-  String _maybeAddVirtualLabel(String text, bool isVirtual) {
-    return isVirtual ? "$text - ${t.ui.virtual}" : text;
-  }
-
   ConnectArguments _buildConnectArgs(
     RecentConnection model,
     bool isSpecialtyServer,
@@ -166,7 +151,6 @@ final class RecentConnectionsItemFactory {
         server: ServerInfo(
           id: 0,
           hostname: "${model.specificServer}.nordvpn.com",
-          isVirtual: model.isVirtual,
         ),
       );
     } else {

@@ -54,8 +54,7 @@ final class ConnectionCardServerInfo extends ConsumerWidget {
     if (vpnStatus.country == null) return t.ui.fastestServer;
 
     final city = vpnStatus.city != null ? "${vpnStatus.city!}, " : "";
-    final virtual = vpnStatus.isVirtualLocation ? " - ${t.ui.virtual}" : "";
-    return "$city${vpnStatus.country!.localizedName}$virtual";
+    return "$city${vpnStatus.country!.localizedName}";
   }
 
   String _buildDisconnectedServerInfo(
