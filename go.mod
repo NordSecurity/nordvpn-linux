@@ -16,7 +16,6 @@ require (
 	github.com/NordSecurity/systray v0.0.0-20260618073639-14a79f2708b4
 	github.com/coreos/go-semver v0.3.1
 	github.com/deckarep/golang-set/v2 v2.9.0
-	github.com/docker/docker v28.5.2+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/eclipse/paho.mqtt.golang v1.5.1
 	github.com/esiqveland/notify v0.14.0
@@ -31,6 +30,8 @@ require (
 	github.com/magefile/mage v1.17.2
 	github.com/miekg/dns v1.1.72
 	github.com/milosgajdos/tenus v0.0.3
+	github.com/moby/moby/api v1.55.0
+	github.com/moby/moby/client v0.5.1
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/quic-go/quic-go v0.60.0
 	github.com/snapcore/snapd v0.0.0-20260902114111-b33d1af92954
@@ -49,7 +50,7 @@ require (
 	google.golang.org/grpc v1.83.2
 	google.golang.org/protobuf v1.36.12
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
-	gotest.tools/v3 v3.4.0
+	gotest.tools/v3 v3.5.2
 )
 
 require (
@@ -71,7 +72,6 @@ require (
 	github.com/chai2010/gettext-go v1.0.3 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
-	github.com/containerd/log v0.1.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/go-connections v0.7.0 // indirect
@@ -86,13 +86,9 @@ require (
 	github.com/mdlayher/netlink v1.11.2 // indirect
 	github.com/mdlayher/socket v0.6.1 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
-	github.com/moby/sys/atomicwriter v0.1.0 // indirect
-	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect
-	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/pilebones/go-udev v0.9.0 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
@@ -104,7 +100,6 @@ require (
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.70.0 // indirect
 	go.opentelemetry.io/otel v1.46.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.46.0 // indirect
 	go.opentelemetry.io/otel/metric v1.46.0 // indirect
 	go.opentelemetry.io/otel/trace v1.46.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
