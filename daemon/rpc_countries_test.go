@@ -22,12 +22,11 @@ func TestRPCCountries(t *testing.T) {
 	defer testsCleanup()
 
 	tests := []struct {
-		name                  string
-		cm                    config.Manager
-		servers               core.Servers
-		disableVirtualServers bool
-		statusCode            int64
-		expected              []*pb.ServerGroup
+		name       string
+		cm         config.Manager
+		servers    core.Servers
+		statusCode int64
+		expected   []*pb.ServerGroup
 	}{
 		{
 			name:       "missing configuration file",
@@ -41,29 +40,16 @@ func TestRPCCountries(t *testing.T) {
 			expected:   []*pb.ServerGroup{},
 		},
 		{
-			name:       "virtual and physical servers",
+			name:       "all servers",
 			cm:         newMockConfigManager(),
 			servers:    coremock.ServersList(),
 			statusCode: internal.CodeSuccess,
 			expected: []*pb.ServerGroup{
-				{Name: "Algeria", VirtualLocation: true},
-				{Name: "France", VirtualLocation: false},
-				{Name: "Germany", VirtualLocation: false},
-				{Name: "Italy", VirtualLocation: false},
-				{Name: "Lithuania", VirtualLocation: false},
-			},
-		},
-		{
-			name:                  "return physical servers only",
-			cm:                    newMockConfigManager(),
-			servers:               coremock.ServersList(),
-			disableVirtualServers: true,
-			statusCode:            internal.CodeSuccess,
-			expected: []*pb.ServerGroup{
-				{Name: "France", VirtualLocation: false},
-				{Name: "Germany", VirtualLocation: false},
-				{Name: "Italy", VirtualLocation: false},
-				{Name: "Lithuania", VirtualLocation: false},
+				{Name: "Algeria"},
+				{Name: "France"},
+				{Name: "Germany"},
+				{Name: "Italy"},
+				{Name: "Lithuania"},
 			},
 		},
 	}
@@ -76,7 +62,6 @@ func TestRPCCountries(t *testing.T) {
 			if cm, ok := test.cm.(*mockConfigManager); ok {
 				cm.c.AutoConnectData.Protocol = config.Protocol_UDP
 				cm.c.Technology = config.Technology_NORDLYNX
-				cm.c.VirtualLocation.Set(!test.disableVirtualServers)
 			}
 
 			rpc := RPC{

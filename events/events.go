@@ -138,7 +138,6 @@ type DataConnect struct {
 	TargetServerIP          netip.Addr
 	TargetServerName        string
 	Error                   error
-	IsVirtualLocation       bool
 	IsObfuscated            bool
 	IsPostQuantum           bool
 	IsECHEnabled            bool

@@ -118,23 +118,22 @@ const StatusResponse$json = {
     {'1': 'upload', '3': 9, '4': 1, '5': 4, '10': 'upload'},
     {'1': 'uptime', '3': 10, '4': 1, '5': 3, '10': 'uptime'},
     {'1': 'name', '3': 11, '4': 1, '5': 9, '10': 'name'},
-    {'1': 'virtualLocation', '3': 12, '4': 1, '5': 8, '10': 'virtualLocation'},
     {
       '1': 'parameters',
-      '3': 13,
+      '3': 12,
       '4': 1,
       '5': 11,
       '6': '.pb.ConnectionParameters',
       '10': 'parameters'
     },
-    {'1': 'postQuantum', '3': 14, '4': 1, '5': 8, '10': 'postQuantum'},
-    {'1': 'is_mesh_peer', '3': 15, '4': 1, '5': 8, '10': 'isMeshPeer'},
-    {'1': 'by_user', '3': 16, '4': 1, '5': 8, '10': 'byUser'},
-    {'1': 'country_code', '3': 17, '4': 1, '5': 9, '10': 'countryCode'},
-    {'1': 'obfuscated', '3': 18, '4': 1, '5': 8, '10': 'obfuscated'},
+    {'1': 'postQuantum', '3': 13, '4': 1, '5': 8, '10': 'postQuantum'},
+    {'1': 'is_mesh_peer', '3': 14, '4': 1, '5': 8, '10': 'isMeshPeer'},
+    {'1': 'by_user', '3': 15, '4': 1, '5': 8, '10': 'byUser'},
+    {'1': 'country_code', '3': 16, '4': 1, '5': 9, '10': 'countryCode'},
+    {'1': 'obfuscated', '3': 17, '4': 1, '5': 8, '10': 'obfuscated'},
     {
       '1': 'paused_at',
-      '3': 19,
+      '3': 18,
       '4': 1,
       '5': 11,
       '6': '.google.protobuf.Timestamp',
@@ -142,12 +141,12 @@ const StatusResponse$json = {
     },
     {
       '1': 'pause_remaining_duration_sec',
-      '3': 20,
+      '3': 19,
       '4': 1,
       '5': 13,
       '10': 'pauseRemainingDurationSec'
     },
-    {'1': 'ech', '3': 21, '4': 1, '5': 8, '10': 'ech'},
+    {'1': 'ech', '3': 20, '4': 1, '5': 8, '10': 'ech'},
   ],
 };
 
@@ -159,11 +158,10 @@ final $typed_data.Uint8List statusResponseDescriptor = $convert.base64Decode(
     'EoCVICaXASGgoIaG9zdG5hbWUYBSABKAlSCGhvc3RuYW1lEhgKB2NvdW50cnkYBiABKAlSB2Nv'
     'dW50cnkSEgoEY2l0eRgHIAEoCVIEY2l0eRIaCghkb3dubG9hZBgIIAEoBFIIZG93bmxvYWQSFg'
     'oGdXBsb2FkGAkgASgEUgZ1cGxvYWQSFgoGdXB0aW1lGAogASgDUgZ1cHRpbWUSEgoEbmFtZRgL'
-    'IAEoCVIEbmFtZRIoCg92aXJ0dWFsTG9jYXRpb24YDCABKAhSD3ZpcnR1YWxMb2NhdGlvbhI4Cg'
-    'pwYXJhbWV0ZXJzGA0gASgLMhgucGIuQ29ubmVjdGlvblBhcmFtZXRlcnNSCnBhcmFtZXRlcnMS'
-    'IAoLcG9zdFF1YW50dW0YDiABKAhSC3Bvc3RRdWFudHVtEiAKDGlzX21lc2hfcGVlchgPIAEoCF'
-    'IKaXNNZXNoUGVlchIXCgdieV91c2VyGBAgASgIUgZieVVzZXISIQoMY291bnRyeV9jb2RlGBEg'
-    'ASgJUgtjb3VudHJ5Q29kZRIeCgpvYmZ1c2NhdGVkGBIgASgIUgpvYmZ1c2NhdGVkEjcKCXBhdX'
-    'NlZF9hdBgTIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBSCHBhdXNlZEF0Ej8KHHBh'
-    'dXNlX3JlbWFpbmluZ19kdXJhdGlvbl9zZWMYFCABKA1SGXBhdXNlUmVtYWluaW5nRHVyYXRpb2'
-    '5TZWMSEAoDZWNoGBUgASgIUgNlY2g=');
+    'IAEoCVIEbmFtZRI4CgpwYXJhbWV0ZXJzGAwgASgLMhgucGIuQ29ubmVjdGlvblBhcmFtZXRlcn'
+    'NSCnBhcmFtZXRlcnMSIAoLcG9zdFF1YW50dW0YDSABKAhSC3Bvc3RRdWFudHVtEiAKDGlzX21l'
+    'c2hfcGVlchgOIAEoCFIKaXNNZXNoUGVlchIXCgdieV91c2VyGA8gASgIUgZieVVzZXISIQoMY2'
+    '91bnRyeV9jb2RlGBAgASgJUgtjb3VudHJ5Q29kZRIeCgpvYmZ1c2NhdGVkGBEgASgIUgpvYmZ1'
+    'c2NhdGVkEjcKCXBhdXNlZF9hdBgSIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXBSCH'
+    'BhdXNlZEF0Ej8KHHBhdXNlX3JlbWFpbmluZ19kdXJhdGlvbl9zZWMYEyABKA1SGXBhdXNlUmVt'
+    'YWluaW5nRHVyYXRpb25TZWMSEAoDZWNoGBQgASgIUgNlY2g=');

@@ -82,7 +82,6 @@
   "noResultsFound": "No results found. Try another keyword.",
   "searchServersHint": "Search countries, cities, or servers",
   "citiesAvailable": "$n cities available",
-  "virtual": "Virtual",
   "dedicatedIp": "Dedicated IP",
   "dedicatedServer": "Dedicated Server",
   "doubleVpn": "Double VPN",

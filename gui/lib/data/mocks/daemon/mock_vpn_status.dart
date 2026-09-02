@@ -81,7 +81,6 @@ final class MockVpnStatus extends CancelableDelayed {
       country: server.countryName,
       countryCode: server.countryCode,
       hostname: server.server.hostName,
-      virtualLocation: server.server.virtual,
       name: "NOT SET",
       ip: "NOT IP",
       download: Int64(0),

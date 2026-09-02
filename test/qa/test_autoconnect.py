@@ -1,4 +1,3 @@
-import random
 import warnings
 
 import pytest
@@ -147,41 +146,6 @@ def test_autoconnect_to_obfuscated_group(tech, proto, obfuscated, group):
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     autoconnect_base_test(group)
-
-
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
-def test_autoconnect_virtual_country(tech, proto, obfuscated):
-    """Manual TC: LVPN-8549"""
-
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-    sh.nordvpn.set("virtual-location", "on")
-
-    virtual_countries = lib.get_virtual_countries()
-    assert len(virtual_countries) > 0, "Virtual countries should be available"
-    country = random.choice(virtual_countries)
-
-    autoconnect_base_test(country)
-
-
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
-def test_autoconnect_virtual_country_disabled(tech, proto, obfuscated):
-    """Manual TC: LVPN-8548"""
-
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    # fix in LVPN-8449
-    # sh.nordvpn.set("virtual-location", "on")
-    # virtual_countries = lib.get_virtual_countries()
-    # assert len(virtual_countries) > 0
-    # country = random.choice(virtual_countries)
-    # until then chose a country that has only virtual server locations
-    country = "AF"
-
-    sh.nordvpn.set("virtual-location", "off")
-
-    with pytest.raises(sh.ErrorReturnCode_1) as _:
-        output = sh_no_tty.nordvpn.set.autoconnect.on(country)
-        assert "Please enable virtual location access to connect to this server." in output, "Should show virtual location access error"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)

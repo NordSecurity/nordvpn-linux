@@ -76,7 +76,6 @@ final class ServersList {
                   servers: cityServers[cityName]!,
                 ),
             ],
-            isVirtual: country.isVirtual,
           ),
         );
       }
@@ -98,13 +97,8 @@ final class ServersList {
 final class CountryServersGroup {
   final Country country;
   final List<CityServersGroup> cities;
-  final bool isVirtual;
 
-  CountryServersGroup({
-    required this.country,
-    required this.cities,
-    required this.isVirtual,
-  });
+  CountryServersGroup({required this.country, required this.cities});
 
   String get countryName => country.name;
   String get code => country.code;

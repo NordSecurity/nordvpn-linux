@@ -29,7 +29,6 @@ final class DaemonStatusCode {
   static const allowlistPortNoop = 3047;
   static const featureHidden = 3050;
   static const technologyDisabled = 3051;
-  static const virtualLocationsDisabled = 3057;
   static const allowlistSubnetTooWideWarn = 3060;
   static const allowlistSubnetWiderConfirm = 3061;
   static const connectionLimitReached = 3076;

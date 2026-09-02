@@ -16,7 +16,6 @@ type Model struct {
 	SpecificServer     string                     `json:"specific-server"`
 	ConnectionType     config.ServerSelectionRule `json:"connection-type"`
 	ServerTechnologies []core.ServerTechnology    `json:"server-technologies"`
-	IsVirtual          bool                       `json:"is-virtual"`
 }
 
 // IsEmpty checks whether the recent connection model is empty
@@ -28,8 +27,7 @@ func (m Model) IsEmpty() bool {
 		m.SpecificServerName == "" &&
 		m.SpecificServer == "" &&
 		m.ConnectionType == config.ServerSelectionRule_NONE &&
-		len(m.ServerTechnologies) == 0 &&
-		!m.IsVirtual
+		len(m.ServerTechnologies) == 0
 }
 
 // Clone creates a deep copy of the recent connection model
@@ -43,7 +41,6 @@ func (m Model) Clone() Model {
 		SpecificServer:     m.SpecificServer,
 		ConnectionType:     m.ConnectionType,
 		ServerTechnologies: slices.Clone(m.ServerTechnologies),
-		IsVirtual:          m.IsVirtual,
 	}
 }
 
@@ -56,6 +53,5 @@ func (m Model) Equals(other Model) bool {
 		m.SpecificServerName == other.SpecificServerName &&
 		m.SpecificServer == other.SpecificServer &&
 		m.ConnectionType == other.ConnectionType &&
-		slices.Equal(m.ServerTechnologies, other.ServerTechnologies) &&
-		m.IsVirtual == other.IsVirtual
+		slices.Equal(m.ServerTechnologies, other.ServerTechnologies)
 }

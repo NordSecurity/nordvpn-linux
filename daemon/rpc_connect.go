@@ -337,10 +337,6 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 			return true, srv.Send(&pb.Payload{Type: internal.CodeServerUnavailable})
 		}
 
-		if errors.Is(err, internal.ErrVirtualServerSelected) {
-			return true, srv.Send(&pb.Payload{Type: internal.CodeVirtualLocationDisabled})
-		}
-
 		return false, err
 	}
 	r.lastServerSelection = serverSelection
@@ -451,7 +447,6 @@ func (r *RPC) connect(
 		EventStatus:             events.StatusAttempt,
 		TargetServerSelection:   determineServerSelectionRule(parameters),
 		ServerFromAPI:           serverSelection.Remote,
-		IsVirtualLocation:       serverSelection.Server.IsVirtualLocation(),
 		TargetServerCity:        city,
 		TargetServerCountry:     country.Name,
 		TargetServerCountryCode: country.Code,
@@ -483,13 +478,9 @@ func (r *RPC) connect(
 		}
 	}()
 
-	virtualServer := ""
-	if serverSelection.Server.IsVirtualLocation() {
-		virtualServer = " - Virtual"
-	}
 	lastServer := r.lastServerSelection.Server
 
-	data := []string{lastServer.Name, lastServer.Hostname, virtualServer}
+	data := []string{lastServer.Name, lastServer.Hostname}
 	// In case of dedicated servers we only return server name, as hostname is not available.
 	if isServerDedicated {
 		data = []string{lastServer.Name}

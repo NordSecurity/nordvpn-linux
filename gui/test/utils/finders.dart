@@ -88,14 +88,6 @@ Finder productsList() {
   return productsListFinder;
 }
 
-Finder virtualServersListItem() {
-  final virtualListItemFinder = find.descendant(
-    of: find.byKey(ServerListWidgetKeys.countriesServersList),
-    matching: find.textContaining(t.ui.virtual),
-  );
-  return virtualListItemFinder;
-}
-
 Finder vpnConnectionBreadcrumb() {
   final currentBreadcrumb = currentNavigationBreadcrumb();
   final vpnConnectonBreadcrumbText = find.descendant(

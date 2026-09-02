@@ -44,14 +44,13 @@ message StatusResponse {
   uint64 upload = 9;
   int64 uptime = 10;
   string name = 11;
-  bool virtualLocation = 12;
-  ConnectionParameters parameters = 13;
-  bool postQuantum = 14;
-  bool is_mesh_peer = 15;
-  bool by_user = 16;
-  string country_code = 17;
-  bool obfuscated = 18;
-  google.protobuf.Timestamp paused_at = 19;
-  uint32 pause_remaining_duration_sec = 20;
-  bool ech = 21;
+  ConnectionParameters parameters = 12;
+  bool postQuantum = 13;
+  bool is_mesh_peer = 14;
+  bool by_user = 15;
+  string country_code = 16;
+  bool obfuscated = 17;
+  google.protobuf.Timestamp paused_at = 18;
+  uint32 pause_remaining_duration_sec = 19;
+  bool ech = 20;
 }
