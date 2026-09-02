@@ -472,7 +472,6 @@ func buildRecentConnectionsSection(
 			continue
 		}
 
-		displayLabel = tryApplyVirtualLocationSuffix(displayLabel, conn.VirtualLocation)
 		tooltip := fmt.Sprintf("%s %s", labelReconnectTo, displayLabel)
 		item := parent.AddSubMenuItem(displayLabel, tooltip)
 

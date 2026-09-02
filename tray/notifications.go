@@ -53,8 +53,6 @@ func (ti *Instance) connectionResultAlert(out *pb.Payload) *alert.AlertBuilder {
 		return ti.n.Alert(internal.GroupNonexistentErrorMessage)
 	case internal.CodeServerUnavailable:
 		return ti.n.Alert(internal.ServerUnavailableErrorMessage)
-	case internal.CodeVirtualLocationDisabled:
-		return ti.n.Alert(internal.SpecifiedServerIsVirtualLocation)
 	case internal.CodeDoubleGroupError:
 		return ti.n.Alert(internal.DoubleGroupErrorMessage)
 	case internal.CodeVPNRunning:
