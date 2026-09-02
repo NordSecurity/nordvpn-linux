@@ -33,7 +33,7 @@ require (
 	github.com/milosgajdos/tenus v0.0.3
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/quic-go/quic-go v0.60.0
-	github.com/snapcore/snapd v0.0.0-20260724205703-546cb6ae31b9
+	github.com/snapcore/snapd v0.0.0-20260902114111-b33d1af92954
 	github.com/stretchr/testify v1.11.1
 	github.com/urfave/cli/v2 v2.27.7
 	github.com/vishvananda/netlink v1.3.1
@@ -91,7 +91,7 @@ require (
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/snapcore/secboot v0.0.0-20260623135244-457b03a16d19 // indirect
+	github.com/snapcore/secboot v0.0.0-20260814094831-dd95d855ad64 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
