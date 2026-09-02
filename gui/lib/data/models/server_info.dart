@@ -7,13 +7,8 @@ import 'package:nordvpn/pb/daemon/config/group.pb.dart' as config;
 final class ServerInfo {
   final int id;
   final String hostname;
-  final bool isVirtual;
 
-  ServerInfo({
-    required this.id,
-    required this.hostname,
-    required this.isVirtual,
-  });
+  ServerInfo({required this.id, required this.hostname});
 
   String get serverNumber => RegExp(r'\d+').firstMatch(hostname)?[0] ?? "";
 

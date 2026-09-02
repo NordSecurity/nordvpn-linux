@@ -287,13 +287,6 @@ class VpnSettingsRepository {
     return _checkSettingsUpdate(result);
   }
 
-  Future<int> useVirtualServers(bool value) async {
-    final result = await _client.setVirtualLocation(
-      SetGenericRequest(enabled: value),
-    );
-    return _checkSettingsUpdate(result);
-  }
-
   int _checkSettingsUpdate(Payload response) {
     int status = response.type.toInt();
     if (status == DaemonStatusCode.success) {
