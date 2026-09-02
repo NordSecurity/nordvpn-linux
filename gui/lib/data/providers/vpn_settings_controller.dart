@@ -80,9 +80,6 @@ class VpnSettingsController extends _$VpnSettingsController
     final status = await _setValue(
       (repository) => repository.setVpnProtocol(pendingVPNProtocol),
       popupCodeOverrides: {
-        // virtualLocationsDisabled needs to show a specific popup.
-        DaemonStatusCode.virtualLocationsDisabled:
-            PopupCodes.reconnectToChangeVirtualLocation,
         // Ignore vpnIsRunning here - we already showed the reconnect popup
         DaemonStatusCode.vpnIsRunning: DaemonStatusCode.success,
       },
@@ -287,16 +284,6 @@ class VpnSettingsController extends _$VpnSettingsController
       }
     }
     return status;
-  }
-
-  Future<int> useVirtualServers(bool value) async {
-    return await _setValue(
-      (repository) => repository.useVirtualServers(value),
-      popupCodeOverrides: {
-        DaemonStatusCode.vpnIsRunning:
-            PopupCodes.reconnectToChangeVirtualLocation,
-      },
-    );
   }
 
   @override
