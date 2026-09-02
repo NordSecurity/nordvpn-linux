@@ -39,14 +39,14 @@ require (
 	github.com/vishvananda/netlink v1.3.1
 	github.com/vishvananda/netns v0.0.5
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/crypto v0.54.0
+	golang.org/x/crypto v0.55.0
 	golang.org/x/exp v0.0.0-20260718201538-764159d718ef
 	golang.org/x/mod v0.38.0
-	golang.org/x/net v0.57.0
+	golang.org/x/net v0.58.0
 	golang.org/x/sys v0.47.0
 	golang.org/x/term v0.45.0
-	golang.org/x/text v0.40.0
-	google.golang.org/grpc v1.82.1
+	golang.org/x/text v0.41.0
+	google.golang.org/grpc v1.83.2
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gotest.tools/v3 v3.4.0
@@ -111,4 +111,13 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	maze.io/x/crypto v0.0.0-20190131090603-9b94c9afe066 // indirect
+	moose/events v0.0.0
+	moose/worker v0.0.0
+	quench v0.0.0
 )
+
+replace moose/events => ./third-party/moose-events/moosenordvpnappgo/v24
+
+replace moose/worker => ./third-party/moose-worker/mooseworkergo/v24
+
+replace quench => ./third-party/libquench-go
