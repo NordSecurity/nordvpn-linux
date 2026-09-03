@@ -5,6 +5,7 @@ import os
 import socket
 import time
 
+import pytest
 import sh
 
 from . import logging, ssh
@@ -104,6 +105,8 @@ def start():
         time.sleep(1)
 
 def start_with_arg(arg : str):
+    if is_under_snap():
+        pytest.fail("Passing args to Snap daemon not possible.")
     _rewrite_log_path()
     sh.sudo("/etc/init.d/nordvpn", "start", arg)
 

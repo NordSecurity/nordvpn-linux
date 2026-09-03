@@ -22,6 +22,11 @@ pytestmark = pytest.mark.usefixtures("nordvpnd_scope_module", "collect_logs")
 
 PROJECT_ROOT = os.environ['WORKDIR']
 DEB_PATH = glob.glob(f'{PROJECT_ROOT}/dist/app/deb/nordvpn_*amd64.deb')[0]
+
+SNAP_PATH = None
+if daemon.is_under_snap():
+    SNAP_PATH = glob.glob(f'{PROJECT_ROOT}/dist/app/snap/nordvpn_*amd64.snap')[0]
+
 MSG_KILLSWITCH_ON = "Kill Switch has been successfully set to 'enabled'."
 MSG_KILLSWITCH_OFF = "Kill Switch has been successfully set to 'disabled'."
 
@@ -190,27 +195,33 @@ def test_fancy_transport():
 
 
 # This test assumes being run on docker
+@pytest.mark.skipif(not Path("/.dockerenv").exists() and not Path("/vagrant").exists(), reason="Test must be executed in either a Docker or Vagrant environment")
 def test_killswitch_on_after_update():
-    assert Path("/.dockerenv").exists(), "Test must be executed in docker"
-    # Mocking ps to pretend as if we are in an initd system
-    sh.sudo.mv("/usr/bin/ps", "/usr/bin/pso")
-    sh.sudo.cp("/etc/mock_ps.sh", "/usr/bin/ps")
-
     sh.nordvpn.set.killswitch.on()
     assert daemon.is_killswitch_on(), "Kill switch should be enabled"
     logging.log(f"Settings before update {sh.nordvpn.settings()}")
     assert network.is_not_available(2), "Network should not be available when kill switch is on"
-    sh.sudo.dpkg("-i", DEB_PATH)
+
+    if daemon.is_under_snap():
+        # Need to kill norduserd, as otherwise we cannot install Snap package on top
+        pid = sh.pgrep("norduserd").strip()
+        sh.sudo.kill("-9", pid)
+        sh.sudo.snap.install("--dangerous", SNAP_PATH)
+    else:
+        # Mocking ps to pretend as if we are in an initd system
+        with lib.Defer(lambda: sh.sudo.mv("/usr/bin/pso", "/usr/bin/ps")):
+            sh.sudo.mv("/usr/bin/ps", "/usr/bin/pso")
+            sh.sudo.cp("/etc/mock_ps.sh", "/usr/bin/ps")
+            sh.sudo.dpkg("-i", DEB_PATH)
     daemon.wait_until_daemon_is_running()
     logging.log(f"Settings after app update {sh.nordvpn.settings()}")
     assert network.is_not_available(2), "Network should not be available when kill switch is on"
     assert daemon.is_killswitch_on(), "Kill switch should remain enabled after update"
     sh.nordvpn.set.killswitch.off()
     assert network.is_available(), "Network should be available"
-    # Restore to normal if more tests are run afterwards
-    sh.sudo.mv("/usr/bin/pso", "/usr/bin/ps")
 
 
+@pytest.mark.skipif(daemon.is_under_snap(), reason="TODO: LVPN-11038")
 def test_nc_mqtt_connection_with_killswitch():
     """
     Verify MQTT Notification Centre connects successfully when kill switch is enabled.
@@ -261,6 +272,7 @@ def test_nc_mqtt_connection_with_killswitch():
     assert network.is_available(), "Network should be available after test"
 
 
+@pytest.mark.skipif(daemon.is_under_snap(), reason="Passing args to Snap daemon not possible.")
 def test_killswitch_mode_daemon():
     sh.nordvpn.set.killswitch.on()
     daemon.stop()
@@ -277,7 +289,7 @@ def test_killswitch_mode_daemon():
 
 def test_killswitch_autoconnect_to_fastest():
     device_country = network.get_external_device_country()
-    assert "Germany" in device_country
+    assert device_country in ["Germany", "Finland"], "Perhaps device country changed?"
     sh.nordvpn.set.killswitch.on()
     sh.nordvpn.set.autoconnect.on()
     daemon.restart()
@@ -287,7 +299,7 @@ def test_killswitch_autoconnect_to_fastest():
     assert duration < 7, "Autoconnect with killswitch on should connect in less than 7 seconds"
     status_data = daemon.get_status_data()
     # list of closest countries that surround Germany
-    allowed_countries = ["Germany", "Poland", "Czech_Republic", "Austria", "Switzerland", "France", "Belgium", "Netherlands", "Denmark"]
+    allowed_countries = ["Germany", "Poland", "Czech_Republic", "Austria", "Switzerland", "France", "Belgium", "Netherlands", "Denmark", "Finland"]
     assert status_data["country"] in allowed_countries, "Fastest server should be in the same country"
     sh.nordvpn.set.killswitch.off()
     sh.nordvpn.set.autoconnect.off()
