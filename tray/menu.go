@@ -11,6 +11,7 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 	"github.com/NordSecurity/nordvpn-linux/uievent"
@@ -314,11 +315,11 @@ func newPauseLength(label string, durationSeconds uint32) pauseLength {
 }
 
 var pauseLengths = []pauseLength{
-	newPauseLength(labelPause5Min, 5*60),
-	newPauseLength(labelPause15Min, 15*60),
-	newPauseLength(labelPause30Min, 30*60),
-	newPauseLength(labelPause1H, 60*60),
-	newPauseLength(labelPause24H, 24*60*60),
+	newPauseLength(labelPause5Min, internal.PauseSeconds5Min),
+	newPauseLength(labelPause15Min, internal.PauseSeconds15Min),
+	newPauseLength(labelPause30Min, internal.PauseSeconds30Min),
+	newPauseLength(labelPause1H, internal.PauseSeconds1Hour),
+	newPauseLength(labelPause24H, internal.PauseSeconds24Hour),
 }
 
 func buildPauseMenu(ti *Instance) {

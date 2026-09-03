@@ -13,7 +13,13 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var argToPauseDurationSeconds = map[string]uint32{"5m": 300, "15m": 900, "30m": 1800, "1h": 3600, "24h": 86400}
+var argToPauseDurationSeconds = map[string]uint32{
+	"5m":  internal.PauseSeconds5Min,
+	"15m": internal.PauseSeconds15Min,
+	"30m": internal.PauseSeconds30Min,
+	"1h":  internal.PauseSeconds1Hour,
+	"24h": internal.PauseSeconds24Hour,
+}
 
 func pauseArgToDuration(arg string) (uint32, error) {
 	if pauseDurationSeconds, ok := argToPauseDurationSeconds[arg]; ok {
