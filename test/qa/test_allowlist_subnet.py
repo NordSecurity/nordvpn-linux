@@ -90,7 +90,7 @@ def test_allowlist_subnet_twice_disconnected(tech, proto, obfuscated, subnet):
     allowlist.add_subnet_to_allowlist([subnet])
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(allowlist.get_alias(), "add", "subnet", subnet)
+        sh.nordvpn("allowlist", "add", "subnet", subnet)
 
     expected_message = allowlist.MSG_ALLOWLIST_SUBNET_ADD_ERROR % subnet
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate subnet add failed"
@@ -110,7 +110,7 @@ def test_allowlist_subnet_twice_connected(tech, proto, obfuscated, subnet):
     allowlist.add_subnet_to_allowlist([subnet])
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(allowlist.get_alias(), "add", "subnet", subnet)
+        sh.nordvpn("allowlist", "add", "subnet", subnet)
 
     expected_message = allowlist.MSG_ALLOWLIST_SUBNET_ADD_ERROR % subnet
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate subnet add failed"
@@ -171,7 +171,7 @@ def test_allowlist_subnet_remove_nonexistent_disconnected(tech, proto, obfuscate
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(allowlist.get_alias(), "remove", "subnet", subnet)
+        sh.nordvpn("allowlist", "remove", "subnet", subnet)
 
     expected_message = allowlist.MSG_ALLOWLIST_SUBNET_REMOVE_ERROR % subnet
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate subnet remove failed"
@@ -187,7 +187,7 @@ def test_allowlist_subnet_remove_nonexistent_connected(tech, proto, obfuscated, 
     sh.nordvpn.connect()
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(allowlist.get_alias(), "remove", "subnet", subnet)
+        sh.nordvpn("allowlist", "remove", "subnet", subnet)
 
     expected_message = allowlist.MSG_ALLOWLIST_SUBNET_REMOVE_ERROR % subnet
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate subnet remove failed"
