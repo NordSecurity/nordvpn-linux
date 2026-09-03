@@ -133,6 +133,48 @@ instructions on our
 
 Distributions are not supported after their end of life.
 
+### OpenVPN data channel offload (DCO)
+
+The bundled OpenVPN can encrypt tunnel traffic in the kernel instead of
+userspace using
+[Data Channel Offload](https://community.openvpn.net/openvpn/wiki/DataChannelOffload).
+It is attempted automatically and falls back to the userspace tunnel
+when not available.
+
+The bundled OpenVPN is 2.6, which needs the out-of-tree `ovpn-dco-v2`
+module.
+
+- Debian, Ubuntu: `sudo apt install openvpn-dco-dkms`
+- RHEL, Rocky, AlmaLinux 8/9: `sudo dnf install kmod-ovpn-dco`
+- openSUSE Leap: `sudo zypper install ovpn-dco-kmp-<flavor>`
+  (`-default` for the default kernel)
+- Fedora and others: build from
+  [OpenVPN/ovpn-dco](https://github.com/OpenVPN/ovpn-dco)
+
+With Secure Boot enabled the module won't load until you enroll its
+signing key.
+
+Then just connect:
+
+```bash
+nordvpn connect
+```
+
+To confirm it's active, check the interface kind while connected
+(`ovpn-dco` when offloaded, `tun` when not):
+
+```bash
+ip -d link show nordtun
+```
+
+DCO is skipped if the module isn't installed, or obfuscation is on. The
+in-tree `ovpn` driver (Linux 6.16+) requires OpenVPN 2.7 and is not used
+yet, so it won't be picked up instead.
+
+To go back to the userspace tunnel, remove the module package.
+
+---
+
 This project is licensed under the terms of the
 [GNU General Public License v3.0](./LICENSE.md) only.
 The registered trademark Linux® is used pursuant to a sublicense from
