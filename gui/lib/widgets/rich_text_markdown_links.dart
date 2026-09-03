@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/logger.dart';
 import 'package:nordvpn/theme/support_link_theme.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -26,13 +27,20 @@ class RichTextMarkdownLinks extends StatefulWidget {
   State<RichTextMarkdownLinks> createState() => _RichTextMarkdownLinksState();
 }
 
-class _RichTextMarkdownLinksState extends State<RichTextMarkdownLinks> {
-  // Matches [label](url)
-  final _linkPattern = RegExp(
-    r'\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)',
-    caseSensitive: false,
-  );
+// Matches [label](url)
+final _linkPattern = RegExp(
+  r'\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)',
+  caseSensitive: false,
+);
 
+// drop the URL, if present in text arg, and keep only the label for the sake of
+// screen reader announcements clarity
+String dropURLLinkFromPopupMessage(String text) => text.replaceAllMapped(
+  _linkPattern,
+  (match) => t.a11y.linkWithinPopup(name: match.group(1)!),
+);
+
+class _RichTextMarkdownLinksState extends State<RichTextMarkdownLinks> {
   // keep a list with all the TapGestureRecognizer because they need to be disposed manually
   final List<TapGestureRecognizer> _tapGestureRecognizers = [];
 
