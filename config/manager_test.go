@@ -290,13 +290,18 @@ func TestConfigMigratesFromEncryptedToUnencrypted(t *testing.T) {
 	err = configManager.Load(&cfg)
 	require.NoError(t, err)
 	err = configManager.SaveWith(func(c Config) Config {
+		// "daemon.MigrateLegacyAllowlist" action on every daemon start
+		if c.AutoConnectData.LegacyAllowlist != nil {
+			c.AutoConnectData.Allowlist = *c.AutoConnectData.LegacyAllowlist
+			c.AutoConnectData.LegacyAllowlist = nil
+		}
 		c.MachineID = uuid.MustParse("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee")
 		c.DeviceUUID = uuid.MustParse("00000000-1234-4321-0000-999999999999")
 		c.LanDiscovery = true
 		return c
 	})
 	require.NoError(t, err)
-	encryptRemovedConfig, _ := internal.FileRead("testdata/settings_5.0.0.dat")
+	encryptRemovedConfig, _ := internal.FileRead("testdata/settings_6.0.0.dat")
 	postSaveConfig, _ := filesystem.ReadFile("/location")
 	assert.Equal(t, string(encryptRemovedConfig), string(postSaveConfig),
 		"Configuration has changed post decryption:\nbefore decryption:\n%s\nafter decryption:\n%s",
@@ -317,4 +322,26 @@ func TestConfigReadEmptyConfig(t *testing.T) {
 	var conf Config
 	err := configManager.Load(&conf)
 	assert.Error(t, err)
+}
+
+func TestConfigLoadsLegacyAllowlistKey(t *testing.T) {
+	category.Set(t, category.File)
+
+	filesystem := fs.NewSystemFileHandleMock(t)
+	configManager := NewFilesystemConfigManager(
+		"/location", "/vault", "",
+		NewMachineID(os.ReadFile, os.Hostname),
+		&filesystem,
+		nil)
+	// versions pre-6.0.0 stored the allowlist under the "whitelist" key.
+	data, err := internal.FileRead("testdata/settings_5.0.0.dat")
+	require.NoError(t, err)
+	filesystem.WriteFile("/location", data, internal.PermUserRW)
+
+	var cfg Config
+	require.NoError(t, configManager.Load(&cfg))
+	expected := NewAllowlist([]int64{51820}, []int64{22, 443}, []string{"192.168.1.0/24", "10.0.0.0/8"})
+	require.NotNil(t, cfg.AutoConnectData.LegacyAllowlist)
+	assert.Equal(t, expected, *cfg.AutoConnectData.LegacyAllowlist)
+	assert.Equal(t, Allowlist{}, cfg.AutoConnectData.Allowlist)
 }

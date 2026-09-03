@@ -1,11 +1,15 @@
 package daemon
 
 import (
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
+	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
 	"gotest.tools/v3/assert"
 )
 
@@ -98,4 +102,57 @@ func TestMigrateDeprecatedRegionalAutoconnect_Idempotent(t *testing.T) {
 
 	assert.NilError(t, MigrateDeprecatedRegionalAutoconnect(cm))
 	assert.Equal(t, cm.SaveCallCount, 1)
+}
+
+func TestMigrateLegacyAllowlist_MovesWhitelistIntoAllowlist(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	legacy := config.NewAllowlist([]int64{51820}, []int64{22}, []string{"192.168.1.0/24"})
+	cfg := config.Config{}
+	cfg.AutoConnectData.LegacyAllowlist = &legacy
+
+	cfg = MigrateLegacyAllowlist(cfg)
+
+	assert.DeepEqual(t, cfg.AutoConnectData.Allowlist, legacy)
+	assert.Assert(t, cfg.AutoConnectData.LegacyAllowlist == nil)
+}
+
+func TestMigrateLegacyAllowlist_NoLegacyKey_Unchanged(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	current := config.NewAllowlist(nil, []int64{443}, nil)
+	cfg := config.Config{}
+	cfg.AutoConnectData.Allowlist = current
+
+	cfg = MigrateLegacyAllowlist(cfg)
+
+	assert.DeepEqual(t, cfg.AutoConnectData.Allowlist, current)
+	assert.Assert(t, cfg.AutoConnectData.LegacyAllowlist == nil)
+}
+
+func TestMigrateLegacyAllowlist_RewritesConfigFile(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	location := "/location"
+	filesystem := fs.NewSystemFileHandleMock(t)
+	cm := config.NewFilesystemConfigManager(
+		location, "/vault", "",
+		config.NewMachineID(os.ReadFile, os.Hostname),
+		&filesystem,
+		nil)
+	// versions pre-6.0.0 stored the allowlist under the "whitelist" key
+	oldFile := `.DAT{"auto_connect_data":{"whitelist":{"ports":{"tcp":[22,443],"udp":[51820]},"subnets":["192.168.1.0/24"]}}}`
+	filesystem.WriteFile(location, []byte(oldFile), internal.PermUserRW)
+
+	// migration on daemon start
+	assert.NilError(t, cm.SaveWith(MigrateLegacyAllowlist))
+
+	var cfg config.Config
+	assert.NilError(t, cm.Load(&cfg))
+	expected := config.NewAllowlist([]int64{51820}, []int64{22, 443}, []string{"192.168.1.0/24"})
+	assert.DeepEqual(t, cfg.AutoConnectData.Allowlist, expected)
+
+	saved, _ := filesystem.ReadFile(location)
+	assert.Assert(t, strings.Contains(string(saved), `"allowlist":`))
+	assert.Assert(t, !strings.Contains(string(saved), `"whitelist"`))
 }
