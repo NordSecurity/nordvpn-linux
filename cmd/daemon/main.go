@@ -171,6 +171,12 @@ func main() {
 		configEvents.Config,
 	)
 
+	// Migrate allowlist configuration.
+	// Must run before any other save call, otherwise the old key is written back.
+	if err := fsystem.SaveWith(daemon.MigrateLegacyAllowlist); err != nil {
+		log.Error("failed to migrate legacy config:", err)
+	}
+
 	// Remove any remains of IPv6 settings and remove overlapping allowlist subnets
 	if err := fsystem.SaveWith(daemon.ConfigCleanup); err != nil {
 		log.Error("failed to cleanup config:", err)
