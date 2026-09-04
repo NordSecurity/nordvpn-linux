@@ -599,3 +599,13 @@ def test_ens_connection_limit(reconnect: bool, pause: bool):
 
         assert "Disconnected" in sh.nordvpn.status(), "Wrong status"
         assert network.is_available(), "Network should be available"
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
+def test_connect_to_virtual_server(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    server_info = server.get_random_virtual_server(tech, proto, obfuscated)
+    connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
+
+    disconnect_base_test()
