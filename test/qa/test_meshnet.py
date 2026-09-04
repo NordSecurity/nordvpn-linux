@@ -1,7 +1,6 @@
 from datetime import datetime
 
 import pytest
-import requests
 import sh
 
 import lib
@@ -57,27 +56,7 @@ def test_meshnet_connect():
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
 def test_mesh_removed_machine_by_other():
-    # find my token from cli
-    mytoken = ""
-    output = sh_no_tty.nordvpn.token()
-    for ln in output.splitlines():
-        if "Token:" in ln:
-            _, mytoken = ln.split(None, 2)
-
-    myname = meshnet.PeerList.from_str(sh_no_tty.nordvpn.mesh.peer.list()).get_this_device().hostname
-    # find my machineid from api
-    mymachineid = ""
-    headers = {
-        'Accept': 'application/json',
-        'Authorization': 'Bearer token:' + mytoken,
-    }
-    response = requests.get('https://api.nordvpn.com/v1/meshnet/machines', headers=headers, timeout=5)
-    for itm in response.json():
-        if str(itm['hostname']) in myname:
-            mymachineid = itm['identifier']
-
-    # remove myself using api call
-    requests.delete('https://api.nordvpn.com/v1/meshnet/machines/' + mymachineid, headers=headers, timeout=5)
+    meshnet.delete_machines_by_identifier(token=meshnet.LOCAL_TOKEN)
 
     # machine not found error should be handled by disabling meshnet
     try:
