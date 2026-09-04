@@ -153,9 +153,14 @@ func Fatalf(format string, v ...any) {
 
 func logAt(l logLevel, prefix string, v []any) {
 	if level.Load() <= uint32(l) {
-		msg := strings.TrimRight(fmt.Sprintln(v...), "\n")
+		sanitized := sanitize(v...)
+		msg := strings.TrimRight(fmt.Sprintln(sanitized...), "\n")
 		output(showCallerAsSource, prefix+" "+msg)
 	}
+	// if level.Load() <= uint32(l) {
+	// 	msg := strings.TrimRight(fmt.Sprintln(v...), "\n")
+	// 	output(showCallerAsSource, prefix+" "+msg)
+	// }
 }
 
 func output(calldepth int, msg string) {
@@ -166,6 +171,10 @@ func output(calldepth int, msg string) {
 
 func logAtf(l logLevel, prefix, format string, v []any) {
 	if level.Load() <= uint32(l) {
-		output(showCallerAsSource, fmt.Sprintf(prefix+" "+format, v...))
+		sanitized := sanitize(v...)
+		output(showCallerAsSource, fmt.Sprintf(prefix+" "+format, sanitized...))
 	}
+	// if level.Load() <= uint32(l) {
+	// 	output(showCallerAsSource, fmt.Sprintf(prefix+" "+format, v...))
+	// }
 }
