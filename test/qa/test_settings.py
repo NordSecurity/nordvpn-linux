@@ -42,16 +42,19 @@ def test_protocol_in_settings(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_technology_set_options(tech, proto, obfuscated):
-    """Manual TC: LVPN-6816"""
+    """
+    Manual TC: LVPN-6816.
 
+    Only OpenVPN offers `nordvpn set protocol`.
+    """
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    ovpn_list = "protocol" in sh.nordvpn.set()
+    offered = settings.get_set_subcommands()
 
     if tech == "openvpn":
-        assert ovpn_list, "OpenVPN should have the protocol option available"
+        assert "protocol" in offered, f"OpenVPN should offer 'nordvpn set protocol', got {offered}"
     else:
-        assert not ovpn_list, "Non-OpenVPN technology should not have the protocol option"
+        assert "protocol" not in offered, f"'{tech}' should not offer 'nordvpn set protocol', got {offered}"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)

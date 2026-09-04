@@ -62,6 +62,23 @@ def get_pq_alias() -> str:
     return random.choice(PQ_ALIAS)
 
 
+def get_set_subcommands() -> set:
+    """
+    Returns the names of the subcommands `nordvpn set` currently offers (+aliases).
+    Shell-completion list prints one command name per line and skips the hidden ones
+    for the active technology.
+    """
+    completions = sh.nordvpn.set("--generate-bash-completion", _tty_out=False)
+
+    result = set()
+    for line in str(completions).splitlines():
+        line = line.strip()
+        if line:
+            result.add(line)
+
+    return result
+
+
 def get_server_ip() -> str:
     """Returns str with IP Address of the server from `nordvpn status`, that NordVPN client is currently connected to."""
     return sh.nordvpn.status().split('\n')[3].replace('IP: ', '')
