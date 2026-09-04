@@ -12,6 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
+	"github.com/NordSecurity/nordvpn-linux/session"
 	"github.com/NordSecurity/nordvpn-linux/nc"
 	"github.com/NordSecurity/nordvpn-linux/networker"
 )
@@ -26,7 +27,6 @@ type LogoutInput struct {
 	ConfigManager                config.Manager
 	UserLogoutEventPublisherFunc func(events.DataAuthorization)
 	DebugPublisherFunc           func(string)
-	PersistToken                 bool
 	DisconnectFunc               func() (pb.ConnectionState, error)
 	DeviceKeyInvalidator         devicekey.DeviceKeyInvalidator
 }
@@ -106,8 +106,8 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 	if !input.NcClient.Revoke() {
 		log.Warn("error revoking NC token")
 	}
-
-	if !input.PersistToken {
+	// link LVPN ticket, regarding replacing this with token expiration date validator
+	if tokenData.TokenExpiry != session.ManualAccessTokenExpiryDateString {
 		if err := input.CredentialsAPI.DeleteToken(); err != nil {
 			log.Error("deleting token:", err)
 			switch {
@@ -146,7 +146,7 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 
 	input.DebugPublisherFunc("user logged out")
 
-	if !input.PersistToken && tokenData.RenewToken == "" {
+	if tokenData.RenewToken == "" {
 		return LogoutResult{Status: internal.CodeTokenInvalidated, Err: nil}
 	}
 
