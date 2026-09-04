@@ -8,6 +8,7 @@ import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/scaler_responsive_box.dart';
 import 'package:nordvpn/theme/popup_theme.dart';
 import 'package:nordvpn/widgets/dynamic_theme_image.dart';
+import 'package:nordvpn/widgets/rich_text_markdown_links.dart';
 
 // Base class providing "template" for popups.
 abstract class Popup extends ConsumerWidget {
@@ -114,7 +115,10 @@ abstract class Popup extends ConsumerWidget {
   @protected
   String joinSemanticLabel(String heading, String body) => body.isEmpty
       ? heading
-      : t.a11y.popupWithContent(title: heading, message: body);
+      : t.a11y.popupWithContent(
+          title: heading,
+          message: dropURLLinkFromPopupMessage(body),
+        );
 
   Widget? get leadingIcon => null;
   Widget buildContent(BuildContext context, WidgetRef ref);
