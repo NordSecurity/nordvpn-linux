@@ -90,6 +90,49 @@ def _exclude_dedicated_ip_servers(servers: list[dict]) -> list[dict]:
     return non_dip_servers
 
 
+def _server_is_virtual(server: dict) -> bool:
+    """
+    Returns True if the server is a virtual-location server.
+
+    The Core API exposes this as a "virtual_location" entry inside the
+    server's "specifications" list. The value is a *string* ("True"/"False")
+    nested under "values". Physical servers omit the spec entirely, so an
+    absent spec is treated as non-virtual.
+    """
+    for spec in server.get("specifications", []):
+        if spec.get("identifier") != "virtual_location":
+            continue
+
+        values = spec.get("values", [])
+        if not values:
+            return False
+
+        value = values[0].get("value")
+        # value is normally the string "True"/"False", but guard against a bool too
+        if isinstance(value, str):
+            return value.strip().lower() == "true"
+        return bool(value)
+
+    return False
+
+
+def _exclude_non_virtual_servers(servers: list[dict]) -> list[dict]:
+    """
+    Returns the input list with any non virtual servers removed.
+
+    The API returns both physical and virtual servers. This helps
+    us remove all the physical ones from the list.
+
+    Example:
+        _exclude_non_virtual_servers([ph_server, v_server])  # -> [v_server]
+    """
+    virtual_servers: list[dict] = []
+    for server in servers:
+        if _server_is_virtual(server):
+            virtual_servers.append(server)
+    return virtual_servers
+
+
 def get_hostname_by(technology="", protocol="", obfuscated="", group_name="", exclude_dip=False):
     """
     Returns server name and hostname from core API.
@@ -131,6 +174,51 @@ def get_hostname_by(technology="", protocol="", obfuscated="", group_name="", ex
         response = _exclude_dedicated_ip_servers(response)
         if not response:
             return None
+
+    server = random.choice(response)
+    validate_server(server_json=str(server), tech_id=tech_id, group_id=group_id)
+    return ServerInfo(server_info=server)
+
+
+def get_random_virtual_server(technology="", protocol="", obfuscated="", group_name=""):
+    """
+    Returns a virtual server's name and hostname from core API.
+    """
+
+    (tech_id, group_id) = get_request_parameters(technology, protocol, obfuscated, group_name)
+
+    # api limits
+    time.sleep(2)
+
+    limit = 20
+
+    url = f"https://api.nordvpn.com/v1/servers?limit={limit}&filters[servers.status]=online&filters[servers_technologies][id]={tech_id}&filters[servers_groups][id]={group_id}"
+    logging.debug(url)
+
+    response = requests.get(url, timeout=5)
+    content_type = response.headers.get("Content-Type", "")
+
+    assert response.ok, (
+        f"Core API HTTP {response.status_code}, ct={content_type}, "
+        f"body={response.text[:300]!r}"
+    )
+    assert "json" in content_type.lower(), (
+        f"Core API returned non-JSON response, ct={content_type}, "
+        f"body={response.text[:300]!r}"
+    )
+
+    response = response.json()
+
+    assert len(response) > 0, "Core API returned an empty servers list"
+    logging.debug("Core API response (truncated): %s", str(response)[:300])
+
+    response = _exclude_dedicated_ip_servers(response)
+    if not response:
+        return None
+
+    response = _exclude_non_virtual_servers(response)
+    if not response:
+        return None
 
     server = random.choice(response)
     validate_server(server_json=str(server), tech_id=tech_id, group_id=group_id)
