@@ -113,6 +113,13 @@ const (
 	AllowlistTooWideSubnetPrefixThreshold = 8
 
 	AppName = "NordVPN"
+
+	// Pause intervals
+	PauseSeconds5Min   uint32 = 5 * 60
+	PauseSeconds15Min  uint32 = 15 * 60
+	PauseSeconds30Min  uint32 = 30 * 60
+	PauseSeconds1Hour  uint32 = 60 * 60
+	PauseSeconds24Hour uint32 = 24 * 60 * 60
 )
 
 var (

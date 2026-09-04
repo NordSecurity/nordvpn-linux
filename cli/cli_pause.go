@@ -8,34 +8,24 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/uievent"
 	"github.com/fatih/color"
 	"github.com/urfave/cli/v2"
 )
 
-var argToPauseDurationSeconds = map[string]uint32{"5m": 300, "15m": 900, "30m": 1800, "1h": 3600, "24h": 86400}
+var argToPauseDurationSeconds = map[string]uint32{
+	"5m":  internal.PauseSeconds5Min,
+	"15m": internal.PauseSeconds15Min,
+	"30m": internal.PauseSeconds30Min,
+	"1h":  internal.PauseSeconds1Hour,
+	"24h": internal.PauseSeconds24Hour,
+}
 
 func pauseArgToDuration(arg string) (uint32, error) {
 	if pauseDurationSeconds, ok := argToPauseDurationSeconds[arg]; ok {
 		return pauseDurationSeconds, nil
 	}
 	return 0, fmt.Errorf("unrecognized duration")
-}
-
-func pauseArgToItemValue(arg string) pb.UIEvent_ItemValue {
-	switch arg {
-	case "5m":
-		return pb.UIEvent_PAUSE_5_MIN
-	case "15m":
-		return pb.UIEvent_PAUSE_15_MIN
-	case "30m":
-		return pb.UIEvent_PAUSE_30_MIN
-	case "1h":
-		return pb.UIEvent_PAUSE_1_HOUR
-	case "24h":
-		return pb.UIEvent_PAUSE_24_HOURS
-	default:
-		return pb.UIEvent_ITEM_VALUE_UNSPECIFIED
-	}
 }
 
 func (c *cmd) Pause(ctx *cli.Context) error {
@@ -50,7 +40,7 @@ func (c *cmd) Pause(ctx *cli.Context) error {
 		return formatError(errors.New(PauseNoArgsText))
 	}
 
-	itemValue := pauseArgToItemValue(args.First())
+	itemValue := uievent.PauseDurationToItemValue(pauseDuration)
 	// #nosec G104 -- fire-and-forget analytics
 	c.client.ReportUIEvent(context.Background(),
 		&pb.UIEvent{
