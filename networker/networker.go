@@ -256,7 +256,7 @@ func failureRecover(netw *Combined) {
 	}
 
 	cfg := netw.fwConfig.CopyWith(
-		firewall.WithTunnelInterface(""),
+		firewall.WithTunnelInterface("", netip.Addr{}),
 	)
 	if err := netw.configureFirewall(cfg); err != nil {
 		log.Error(err)
@@ -340,12 +340,13 @@ func (netw *Combined) start(
 	}
 
 	tunnelInterface := netw.vpnet.Tun().Interface().Name
+	tunnelIP, _ := netw.vpnet.Tun().IP()
 	// configure firewall
 	// update tunnel name and allowlist
 	// use netw.allowlist because it is populated in setAllowlist and there will be
 	// updated to also contain LAN addresses for LAN discovery enabled
 	newCfg := netw.fwConfig.CopyWith(
-		firewall.WithTunnelInterface(tunnelInterface),
+		firewall.WithTunnelInterface(tunnelInterface, tunnelIP),
 		firewall.WithAllowlist(netw.allowlist),
 	)
 	if err := netw.configureFirewall(newCfg); err != nil {
@@ -480,8 +481,9 @@ func (netw *Combined) restart(
 
 	// configure firewall
 	// update only the interface name, in case there is a different VPN technology used
+	tunnelIP, _ := netw.vpnet.Tun().IP()
 	newCfg := netw.fwConfig.CopyWith(
-		firewall.WithTunnelInterface(netw.vpnet.Tun().Interface().Name),
+		firewall.WithTunnelInterface(netw.vpnet.Tun().Interface().Name, tunnelIP),
 	)
 	if err := netw.configureFirewall(newCfg); err != nil {
 		return fmt.Errorf("configuring firewall: %w", err)
@@ -558,7 +560,7 @@ func (netw *Combined) stop() error {
 
 	// configure firewall
 	newCfg := netw.fwConfig.CopyWith(
-		firewall.WithTunnelInterface(""),
+		firewall.WithTunnelInterface("", netip.Addr{}),
 	)
 	if err := netw.configureFirewall(newCfg); err != nil {
 		return fmt.Errorf("configuring firewall at stop: %w", err)
@@ -919,7 +921,6 @@ func (netw *Combined) Refresh(c mesh.MachineMap) error {
 		if err := netw.ipForwardSetter.Set(); err != nil {
 			return fmt.Errorf("IP forwarding enabling: %w", err)
 		}
-
 		// configure firewall
 		newCfg := netw.fwConfig.CopyWith(
 			firewall.WithMeshnetInfo(firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)),
@@ -1040,11 +1041,21 @@ func (netw *Combined) setMesh(
 	if err := netw.ipForwardSetter.Set(); err != nil {
 		return fmt.Errorf("IP forwarding setting: %w", err)
 	}
-
+	// If nordlynx was used as vpnet, the interface will change IP, we refresh it here
+	var tunnelIP, ok = netip.Addr{}, false
+	if netw.isVpnSet {
+		tunnelIP, ok = netw.vpnet.Tun().IP()
+	}
 	// configure firewall
 	newCfg := netw.fwConfig.CopyWith(
 		firewall.WithMeshnetInfo(firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)),
 	)
+	if ok {
+		newCfg = newCfg.CopyWith(
+			firewall.WithTunnelIP(tunnelIP),
+		)
+	}
+
 	if !netw.fwConfig.HasSimilarMeshInfo(&newCfg) {
 		if err := netw.configureFirewall(newCfg); err != nil {
 			return fmt.Errorf("configure firewall for set meshnet: %w", err)

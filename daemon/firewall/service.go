@@ -1,6 +1,7 @@
 package firewall
 
 import (
+	"net/netip"
 	"slices"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -25,6 +26,7 @@ type FirewallBackend interface {
 // Config keeps all the information needed to configure the firewall
 type Config struct {
 	TunnelInterface string
+	TunnelIP        netip.Addr
 	Allowlist       config.Allowlist
 	KillSwitch      bool
 	// is controlled by the fileshare process monitoring
@@ -40,7 +42,8 @@ func NewConfig(opts ...Option) Config {
 func (c *Config) HasSimilarMeshInfo(cfg *Config) bool {
 	return c.MeshnetInfo != nil &&
 		cfg.MeshnetInfo != nil &&
-		c.MeshnetInfo.IsSimilar(cfg.MeshnetInfo)
+		c.MeshnetInfo.IsSimilar(cfg.MeshnetInfo) &&
+		c.TunnelIP == cfg.TunnelIP
 }
 
 type MeshInfo struct {
@@ -118,9 +121,16 @@ func WithAllowlist(allowlist config.Allowlist) Option {
 	}
 }
 
-func WithTunnelInterface(tunnelInterface string) Option {
+func WithTunnelInterface(tunnelInterface string, tunnelIP netip.Addr) Option {
 	return func(c *Config) {
 		c.TunnelInterface = tunnelInterface
+		c.TunnelIP = tunnelIP
+	}
+}
+
+func WithTunnelIP(tunnelIP netip.Addr) Option {
+	return func(c *Config) {
+		c.TunnelIP = tunnelIP
 	}
 }
 
