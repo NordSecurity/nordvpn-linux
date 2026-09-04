@@ -34,31 +34,30 @@ func TestVPNRuleset(t *testing.T) {
 		},
 		{
 			name:   "vpn only",
-			config: helpers.NewFWConfig().TunnelInterface(ifName).TunnelIP(tunnelIP),
+			config: helpers.NewFWConfig().TunnelInterface(ifName, tunnelIP),
 		},
 		{
 			name:   "vpn and kill switch",
-			config: helpers.NewFWConfig().TunnelInterface(ifName).TunnelIP(tunnelIP).KillSwitch(),
+			config: helpers.NewFWConfig().TunnelInterface(ifName, tunnelIP).KillSwitch(),
 		},
 		{
 			name:   "tcp port allowlisted",
-			config: helpers.NewFWConfig().TunnelInterface(ifName).TunnelIP(tunnelIP).AllowlistTCPPort(1337),
+			config: helpers.NewFWConfig().TunnelInterface(ifName, tunnelIP).AllowlistTCPPort(1337),
 		},
 		{
 			name:   "udp port allowlisted",
-			config: helpers.NewFWConfig().TunnelInterface(ifName).TunnelIP(tunnelIP).AllowlistUDPPort(8080),
+			config: helpers.NewFWConfig().TunnelInterface(ifName, tunnelIP).AllowlistUDPPort(8080),
 		},
 		{
 			name: "DNS port allowlisted for both protocols",
 			config: helpers.NewFWConfig().
-				TunnelInterface(ifName).
-				TunnelIP(tunnelIP).
+				TunnelInterface(ifName, tunnelIP).
 				AllowlistUDPPort(53).
 				AllowlistTCPPort(53),
 		},
 		{
 			name:   "subnet allowlisted",
-			config: helpers.NewFWConfig().TunnelInterface(ifName).TunnelIP(tunnelIP).AllowlistSubnet("10.0.0.0/24"),
+			config: helpers.NewFWConfig().TunnelInterface(ifName, tunnelIP).AllowlistSubnet("10.0.0.0/24"),
 		},
 	}
 
