@@ -65,6 +65,7 @@ def get_pq_alias() -> str:
 def get_set_subcommands() -> set:
     """
     Returns the names of the subcommands `nordvpn set` currently offers (+aliases).
+
     Shell-completion list prints one command name per line and skips the hidden ones
     for the active technology.
     """
@@ -72,9 +73,9 @@ def get_set_subcommands() -> set:
 
     result = set()
     for line in str(completions).splitlines():
-        line = line.strip()
-        if line:
-            result.add(line)
+        name = line.strip()
+        if name:
+            result.add(name)
 
     return result
 
