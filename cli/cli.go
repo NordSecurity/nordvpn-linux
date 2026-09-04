@@ -879,20 +879,6 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 			),
 		},
 		{
-			Name:         "obfuscate",
-			Usage:        SetObfuscateUsageText,
-			Action:       cmd.SetObfuscate,
-			BashComplete: cmd.SetBoolAutocomplete,
-			ArgsUsage:    MsgSetBoolArgsUsage,
-			Description: fmt.Sprintf(
-				MsgSetBoolDescription,
-				SetObfuscateUsageText,
-				"obfuscate",
-				"obfuscate",
-			),
-			Hidden: cmd.Except(config.Technology_OPENVPN),
-		},
-		{
 			Name:         "protocol",
 			Usage:        SetProtocolUsageText,
 			Action:       cmd.SetProtocol,
