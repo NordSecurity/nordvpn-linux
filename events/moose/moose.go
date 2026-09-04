@@ -520,13 +520,6 @@ func (s *Subscriber) NotifyLANDiscovery(data bool) error {
 	return nil
 }
 
-func (s *Subscriber) NotifyVirtualLocation(data bool) error {
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesVirtualServerEnabledValue(data)); err != nil {
-		return fmt.Errorf("setting virtual location preference (enabled=%v): %w", data, err)
-	}
-	return nil
-}
-
 func (s *Subscriber) NotifyPostquantumVpn(data bool) error {
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesPostQuantumEnabledValue(data)); err != nil {
 		return fmt.Errorf("setting post-quantum VPN preference (enabled=%v): %w", data, err)

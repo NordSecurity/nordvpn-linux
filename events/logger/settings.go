@@ -85,11 +85,6 @@ func (l *DaemonSettingsSubscriber) NotifyLANDiscovery(data bool) error {
 	return nil
 }
 
-func (l *DaemonSettingsSubscriber) NotifyVirtualLocation(data bool) error {
-	printSettingsChange("Virtual location", boolToString(data))
-	return nil
-}
-
 func (l *DaemonSettingsSubscriber) NotifyPostquantumVpn(data bool) error {
 	printSettingsChange("PostquantumVpn", boolToString(data))
 	return nil

@@ -10,7 +10,6 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
-	"github.com/fatih/color"
 	"golang.org/x/term"
 )
 
@@ -68,23 +67,7 @@ func serverNameLen(server *pb.ServerGroup) int {
 }
 
 func formatServerName(server *pb.ServerGroup) string {
-	if server.VirtualLocation && isStdoutTerminal() {
-		return color.HiBlueString(server.Name)
-	}
 	return server.Name
-}
-
-func footerForServerGroupsList(servers []*pb.ServerGroup) string {
-	if !isStdoutTerminal() {
-		return ""
-	}
-
-	for _, server := range servers {
-		if server.VirtualLocation {
-			return color.HiBlueString(MsgFooterVirtualLocationNote)
-		}
-	}
-	return ""
 }
 
 func checkUsernamePasswordIsEmpty(username, password string) error {
@@ -104,14 +87,13 @@ func columns[T any](
 	data []T,
 	length func(T) int,
 	display func(T) string,
-	footer string,
 ) (string, error) {
 	width, _, err := cliDimensions()
 	if err != nil {
 		return "", err
 	}
 
-	return formatTable(data, length, display, width, footer)
+	return formatTable(data, length, display, width)
 }
 
 func formatTable[T any](
@@ -119,7 +101,6 @@ func formatTable[T any](
 	length func(T) int,
 	display func(T) string,
 	width int,
-	footer string,
 ) (string, error) {
 	if width <= 0 {
 		return "", fmt.Errorf("invalid width size")
@@ -165,10 +146,6 @@ func formatTable[T any](
 			// add new line for rows, except last one
 			builder.WriteString("\n")
 		}
-	}
-
-	if len(footer) > 0 {
-		builder.WriteString("\n\n" + footer)
 	}
 
 	return builder.String(), nil
