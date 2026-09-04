@@ -10,12 +10,11 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/api/types/mount"
-	"github.com/docker/docker/api/types/network"
-	"github.com/docker/docker/client"
-	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/moby/moby/api/pkg/stdcopy"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/image"
+	"github.com/moby/moby/api/types/mount"
+	"github.com/moby/moby/client"
 	"golang.org/x/exp/slices"
 )
 
@@ -112,12 +111,12 @@ func runDocker(
 
 	pullImage := true
 	if idempotent, ok := env["IDEMPOTENT_DOCKER"]; ok && idempotent == "1" {
-		list, err := docker.ImageList(context.Background(), image.ListOptions{})
+		list, err := docker.ImageList(context.Background(), client.ImageListOptions{})
 		if err != nil {
 			return err
 		}
 
-		imageIndex := slices.IndexFunc(list, func(imageSummary image.Summary) bool {
+		imageIndex := slices.IndexFunc(list.Items, func(imageSummary image.Summary) bool {
 			tagIndex := slices.Index(imageSummary.RepoTags, img)
 			return tagIndex != -1
 		})
@@ -196,13 +195,19 @@ func runDocker(
 		NetworkMode: container.NetworkMode(network),
 	}
 
-	resp, err := docker.ContainerCreate(ctx, &containerConfig, &hostConfig, nil, nil, name)
+	options := client.ContainerCreateOptions{
+		Config:     &containerConfig,
+		HostConfig: &hostConfig,
+		Name:       name,
+	}
+
+	resp, err := docker.ContainerCreate(ctx, options)
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf("starting %s docker container\n", name)
-	if err := docker.ContainerStart(ctx, resp.ID, container.StartOptions{}); err != nil {
+	if _, err := docker.ContainerStart(ctx, resp.ID, client.ContainerStartOptions{}); err != nil {
 		return err
 	}
 
@@ -210,7 +215,7 @@ func runDocker(
 		go func() {
 			<-ctx.Done()
 			timeoutSec := 1
-			err := docker.ContainerStop(context.Background(), resp.ID, container.StopOptions{Timeout: &timeoutSec})
+			_, err := docker.ContainerStop(context.Background(), resp.ID, client.ContainerStopOptions{Timeout: &timeoutSec})
 			if containerStoppedChan != nil {
 				containerStoppedChan <- true
 			}
@@ -222,8 +227,8 @@ func runDocker(
 	}
 
 	fmt.Printf("waiting for %s docker container to finish\n", name)
-	statusCh, errCh := docker.ContainerWait(ctx, resp.ID, container.WaitConditionRemoved)
-	attach, err := docker.ContainerAttach(ctx, resp.ID, container.AttachOptions{
+	statusCh := docker.ContainerWait(ctx, resp.ID, client.ContainerWaitOptions{Condition: container.WaitConditionRemoved})
+	attach, err := docker.ContainerAttach(ctx, resp.ID, client.ContainerAttachOptions{
 		Stream: true,
 		Stdin:  true,
 		Stdout: true,
@@ -237,9 +242,9 @@ func runDocker(
 
 	for {
 		select {
-		case err := <-errCh:
+		case err := <-statusCh.Error:
 			return err
-		case status := <-statusCh:
+		case status := <-statusCh.Result:
 			if status.StatusCode != 0 {
 				return fmt.Errorf("exit code %d", status.StatusCode)
 			}
@@ -279,7 +284,7 @@ func pullDocker(
 	cli *client.Client,
 	imagePath string,
 ) error {
-	reader, err := cli.ImagePull(ctx, imagePath, image.PullOptions{})
+	reader, err := cli.ImagePull(ctx, imagePath, client.ImagePullOptions{})
 	if err != nil {
 		return fmt.Errorf("pulling %s: %w", imagePath, err)
 	}
@@ -310,7 +315,7 @@ func CreateDockerNetwork(ctx context.Context, name string) (string, error) {
 		return "", err
 	}
 
-	resp, err := docker.NetworkCreate(ctx, name, network.CreateOptions{})
+	resp, err := docker.NetworkCreate(ctx, name, client.NetworkCreateOptions{})
 	return resp.ID, err
 }
 
@@ -321,7 +326,8 @@ func RemoveDockerNetwork(ctx context.Context, id string) error {
 		return err
 	}
 
-	return docker.NetworkRemove(ctx, id)
+	_, err = docker.NetworkRemove(ctx, id, client.NetworkRemoveOptions{})
+	return err
 }
 
 func getGoModCache() (string, error) {
