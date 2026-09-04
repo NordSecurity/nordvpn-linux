@@ -42,7 +42,8 @@ func NewConfig(opts ...Option) Config {
 func (c *Config) HasSimilarMeshInfo(cfg *Config) bool {
 	return c.MeshnetInfo != nil &&
 		cfg.MeshnetInfo != nil &&
-		c.MeshnetInfo.IsSimilar(cfg.MeshnetInfo)
+		c.MeshnetInfo.IsSimilar(cfg.MeshnetInfo) &&
+		c.TunnelIP == cfg.TunnelIP
 }
 
 type MeshInfo struct {
@@ -120,9 +121,10 @@ func WithAllowlist(allowlist config.Allowlist) Option {
 	}
 }
 
-func WithTunnelInterface(tunnelInterface string) Option {
+func WithTunnelInterface(tunnelInterface string, tunnelIP netip.Addr) Option {
 	return func(c *Config) {
 		c.TunnelInterface = tunnelInterface
+		c.TunnelIP = tunnelIP
 	}
 }
 

@@ -21,8 +21,9 @@ func (b *FirewallConfigBuilder) KillSwitch() *FirewallConfigBuilder {
 	return b
 }
 
-func (b *FirewallConfigBuilder) TunnelInterface(iface string) *FirewallConfigBuilder {
+func (b *FirewallConfigBuilder) TunnelInterface(iface string, ip netip.Addr) *FirewallConfigBuilder {
 	b.cfg.TunnelInterface = iface
+	b.cfg.TunnelIP = ip
 	return b
 }
 
