@@ -47,7 +47,6 @@ func (*dummyAnalytics) NotifyDedicatedServerStatus(
 	return nil
 }
 func (*dummyAnalytics) NotifyLANDiscovery(bool) error                    { return nil }
-func (*dummyAnalytics) NotifyVirtualLocation(bool) error                 { return nil }
 func (*dummyAnalytics) NotifyPostquantumVpn(bool) error                  { return nil }
 func (*dummyAnalytics) NotifyAppStartTime(int64) error                   { return nil }
 func (*dummyAnalytics) OnPauseCancelled(events.DataPauseCancelled) error { return nil }
