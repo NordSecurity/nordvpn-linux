@@ -13,9 +13,8 @@ We couldn’t process your payment. Please try again.`
 
 	LoginSuccess          = "Welcome to NordVPN! You can now connect to the VPN by using '%s connect'."
 	LogoutSuccess         = "You're logged out."
-	LogoutTokenSuccess    = "You have been logged out. To keep your account secure, we've revoked your current access token. If you want to reuse your next access token despite the potential risks, use the --" + flagPersistToken + " option when logging out."
+	LogoutTokenSuccess    = "You have been logged out. Revoke your token to invalidate it"
 	LogoutUsageText       = "Logs you out"
-	PersistTokenUsageText = "Keep your current access token valid after logging out."
 
 	MsgNordVPNGroup = "By default, all users who are members of the 'nordvpn' group have permission to control the NordVPN application.\nTo limit access exclusively to the root user, remove all users from the 'nordvpn' group."
 

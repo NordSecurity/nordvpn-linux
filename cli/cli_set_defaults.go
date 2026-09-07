@@ -29,14 +29,14 @@ func (c *cmd) SetDefaults(ctx *cli.Context) error {
 	}
 
 	switch resp.Type {
-	case internal.CodeFailure:
-		return formatError(internal.ErrUnhandled)
 	case internal.CodeConfigError:
 		return formatError(ErrConfig)
 	case internal.CodeSuccess:
 		color.Green(SetDefaultsSuccess)
 	case internal.CodeCleanRecentConnectionError:
 		return formatError(errors.New(client.RecentConnectionErrorMessage))
+	default:
+		return formatError(internal.ErrUnhandled)
 	}
 	return nil
 }
