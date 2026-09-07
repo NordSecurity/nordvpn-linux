@@ -65,7 +65,6 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 		fmt.Printf("DNS: %+v\n", strings.Join(settings.Dns, ", "))
 	}
 	fmt.Printf("LAN Discovery: %+v\n", nstrings.GetBoolLabel(settings.LanDiscovery))
-	fmt.Printf("Virtual Location: %+v\n", nstrings.GetBoolLabel(settings.VirtualLocation))
 	if settings.Technology == config.Technology_NORDLYNX {
 		fmt.Printf("Post-quantum VPN: %+v\n", nstrings.GetBoolLabel(settings.PostquantumVpn))
 	}
