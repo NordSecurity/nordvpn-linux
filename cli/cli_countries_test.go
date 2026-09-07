@@ -33,7 +33,7 @@ func TestCountriesList(t *testing.T) {
 		{
 			name:      "return all servers",
 			expected:  "France\nGermany",
-			countries: []*pb.ServerGroup{{Name: "France", VirtualLocation: true}, {Name: "Germany", VirtualLocation: false}},
+			countries: []*pb.ServerGroup{{Name: "France"}, {Name: "Germany"}},
 		},
 	}
 

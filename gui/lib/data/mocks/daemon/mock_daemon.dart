@@ -302,14 +302,6 @@ final class MockDaemon extends DaemonServiceBase {
   }
 
   @override
-  Future<Payload> setVirtualLocation(
-    ServiceCall call,
-    SetGenericRequest request,
-  ) {
-    throw UnimplementedError();
-  }
-
-  @override
   Future<Payload> setARPIgnore(ServiceCall call, SetGenericRequest request) {
     throw UnimplementedError();
   }

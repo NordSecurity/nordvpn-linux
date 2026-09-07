@@ -20,7 +20,6 @@ func cityModel(country, city, countryCode string, techs []core.ServerTechnology)
 		SpecificServerName: "",
 		ConnectionType:     config.ServerSelectionRule_CITY,
 		ServerTechnologies: techs,
-		IsVirtual:          false,
 	}
 }
 
@@ -35,7 +34,6 @@ func specificServerModel(country, city, countryCode, server, serverName string, 
 		SpecificServer:     server,
 		SpecificServerName: serverName,
 		ServerTechnologies: techs,
-		IsVirtual:          false,
 	}
 }
 
@@ -132,7 +130,6 @@ func TestFilter_Apply_City_IgnoresSpecificServer(t *testing.T) {
 			SpecificServer:     "uk123",
 			SpecificServerName: "United Kingdom #123",
 			ServerTechnologies: []core.ServerTechnology{1, 3, 5},
-			IsVirtual:          false,
 		},
 		{
 			Country:            "UK",
@@ -143,7 +140,6 @@ func TestFilter_Apply_City_IgnoresSpecificServer(t *testing.T) {
 			SpecificServer:     "uk456",
 			SpecificServerName: "United Kingdom #456",
 			ServerTechnologies: []core.ServerTechnology{1, 3},
-			IsVirtual:          false,
 		},
 	}
 

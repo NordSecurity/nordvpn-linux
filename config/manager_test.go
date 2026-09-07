@@ -162,7 +162,6 @@ func TestConfigDefaultValues(t *testing.T) {
 			assert.False(t, cfg.Mesh)
 			assert.False(t, cfg.KillSwitch)
 			assert.Equal(t, test.autoconnect, cfg.AutoConnect)
-			assert.True(t, cfg.VirtualLocation.Get())
 		})
 	}
 }
