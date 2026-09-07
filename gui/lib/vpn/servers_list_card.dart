@@ -11,7 +11,6 @@ import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/images_manager.dart';
 import 'package:nordvpn/internal/popup_codes.dart';
-import 'package:nordvpn/router/routes.dart';
 import 'package:nordvpn/service_locator.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/i18n/string_translation_extension.dart';
@@ -126,14 +125,7 @@ final class _ServersListCardState extends State<ServersListCard> {
         ? _buildTabBarView(context, serversList, ref, isObfuscationEnabled)
         : _buildSearchList(context, serversList, ref, isObfuscationEnabled);
 
-    return Column(
-      spacing: context.appTheme.verticalSpaceSmall,
-      children: [
-        if (isObfuscationEnabled)
-          _showObfuscatedMessage(context, t.ui.turnOffObfuscationLocations),
-        Expanded(child: serverSelectionView),
-      ],
-    );
+    return serverSelectionView;
   }
 
   Widget _buildTabBarView(
@@ -488,32 +480,6 @@ final class _ServersListCardState extends State<ServersListCard> {
       specialtyServer: isObfuscationEnabled ? ServerType.obfuscated : null,
       onTap: (args) => widget.onSelected(args),
       allowServerNameSearch: widget.allowServerNameSearch,
-    );
-  }
-
-  Widget _showObfuscatedMessage(BuildContext context, String message) {
-    final appTheme = context.appTheme;
-    final serversListTheme = context.serversListTheme;
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: appTheme.horizontalSpace,
-        vertical: appTheme.verticalSpaceVerySmall,
-      ),
-      color: serversListTheme.obfuscatedItemBackgroundColor,
-      child: Row(
-        spacing: appTheme.horizontalSpace,
-        children: [
-          Expanded(child: Text(message, style: appTheme.body)),
-          TextButton(
-            onPressed: () =>
-                context.navigateToRoute(AppRoute.settingsSecurityAndPrivacy),
-            style: ButtonStyle(
-              padding: WidgetStateProperty.all(const EdgeInsets.only(right: 4)),
-            ),
-            child: Text(t.ui.goToSettings),
-          ),
-        ],
-      ),
     );
   }
 }
