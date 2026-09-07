@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0clogout.proto\x12\x02pb\"&\n\rLogoutRequest\x12\x15\n\rpersist_token\x18\x01 \x01(\x08\x42\x31Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0clogout.proto\x12\x02pb\"\x0f\n\rLogoutRequestB1Z/github.com/NordSecurity/nordvpn-linux/daemon/pbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,5 +33,5 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z/github.com/NordSecurity/nordvpn-linux/daemon/pb'
   _globals['_LOGOUTREQUEST']._serialized_start=20
-  _globals['_LOGOUTREQUEST']._serialized_end=58
+  _globals['_LOGOUTREQUEST']._serialized_end=35
 # @@protoc_insertion_point(module_scope)

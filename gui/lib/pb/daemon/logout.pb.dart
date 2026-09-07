@@ -17,13 +17,7 @@ import 'package:protobuf/protobuf.dart' as $pb;
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
 class LogoutRequest extends $pb.GeneratedMessage {
-  factory LogoutRequest({
-    $core.bool? persistToken,
-  }) {
-    final result = create();
-    if (persistToken != null) result.persistToken = persistToken;
-    return result;
-  }
+  factory LogoutRequest() => create();
 
   LogoutRequest._();
 
@@ -38,7 +32,6 @@ class LogoutRequest extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'LogoutRequest',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..aOB(1, _omitFieldNames ? '' : 'persistToken')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -59,18 +52,7 @@ class LogoutRequest extends $pb.GeneratedMessage {
   static LogoutRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<LogoutRequest>(create);
   static LogoutRequest? _defaultInstance;
-
-  @$pb.TagNumber(1)
-  $core.bool get persistToken => $_getBF(0);
-  @$pb.TagNumber(1)
-  set persistToken($core.bool value) => $_setBool(0, value);
-  @$pb.TagNumber(1)
-  $core.bool hasPersistToken() => $_has(0);
-  @$pb.TagNumber(1)
-  void clearPersistToken() => $_clearField(1);
 }
 
-const $core.bool _omitFieldNames =
-    $core.bool.fromEnvironment('protobuf.omit_field_names');
 const $core.bool _omitMessageNames =
     $core.bool.fromEnvironment('protobuf.omit_message_names');
