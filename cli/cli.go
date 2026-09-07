@@ -222,10 +222,6 @@ func NewApp(version, environment, hash, salt string,
 			Usage:              LogoutUsageText,
 			Action:             cmd.Logout,
 			CustomHelpTemplate: CommandWithoutArgsHelpTemplate,
-			Flags: []cli.Flag{&cli.BoolFlag{
-				Name:  flagPersistToken,
-				Usage: PersistTokenUsageText,
-			}},
 		},
 		{
 			Name:   "click",

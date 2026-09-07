@@ -11,11 +11,6 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// LogoutUsageText is shown next to logout command by nordvpn --help
-const (
-	flagPersistToken = "persist-token"
-)
-
 func (c *cmd) Logout(ctx *cli.Context) error {
 	// #nosec G104 -- fire-and-forget analytics
 	c.client.ReportUIEvent(context.Background(), &pb.UIEvent{
@@ -24,11 +19,8 @@ func (c *cmd) Logout(ctx *cli.Context) error {
 		ItemType:      pb.UIEvent_CLICK,
 	})
 
-	persistToken := ctx.IsSet(flagPersistToken)
 
-	payload, err := c.client.Logout(context.Background(), &pb.LogoutRequest{
-		PersistToken: persistToken,
-	})
+	payload, err := c.client.Logout(context.Background(), &pb.LogoutRequest{})
 
 	if err != nil {
 		return formatError(err)
