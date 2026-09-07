@@ -27,9 +27,9 @@ dependencies:
   go_router: ^17.1.0
   flutter_web_plugins:
     sdk: flutter
-  flutter_riverpod: ^3.0.0
+  flutter_riverpod: ^3.2.0
   riverpod_annotation: ^4.0.0
-  riverpod: ^3.0.0
+  riverpod: ^3.2.0
   protobuf: ^6.0.0
   grpc: ^5.1.0
   slang: ^4.7.3
@@ -116,3 +116,9 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+
+# riverpod_annotation 4.0.0 pins riverpod 3.1.0, so to override it following overrides are needed
+# and to also keep flutter_riverpod at 3.2.0 let's override its version as well
+dependency_overrides:
+  riverpod: 3.2.0
+  flutter_riverpod: 3.2.0
