@@ -147,7 +147,6 @@ type SettingsPublisher interface {
 	NotifyMeshnet(bool) error
 	NotifyDefaults(any) error
 	NotifyLANDiscovery(bool) error
-	NotifyVirtualLocation(bool) error
 	NotifyPostquantumVpn(bool) error
 }
 
@@ -185,7 +184,6 @@ func (s *SettingsEvents) Subscribe(to SettingsPublisher) {
 	s.Meshnet.Subscribe(to.NotifyMeshnet)
 	s.Defaults.Subscribe(to.NotifyDefaults)
 	s.LANDiscovery.Subscribe(to.NotifyLANDiscovery)
-	s.VirtualLocation.Subscribe(to.NotifyVirtualLocation)
 	s.PostquantumVPN.Subscribe(to.NotifyPostquantumVpn)
 }
 
