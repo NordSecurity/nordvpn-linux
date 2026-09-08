@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock/fs"
@@ -32,6 +31,7 @@ func TestStorePendingRecentConnection_BasicBehavior(t *testing.T) {
 				City:           "Berlin",
 				ConnectionType: config.ServerSelectionRule_CITY,
 				CountryCode:    "DE",
+				ConnectionTech: config.Technology_NORDLYNX,
 			},
 			expectedStored:  1,
 			expectedEvent:   true,
@@ -39,6 +39,7 @@ func TestStorePendingRecentConnection_BasicBehavior(t *testing.T) {
 			validateStored: func(t *testing.T, connections []recents.Model) {
 				assert.Equal(t, "Germany", connections[0].Country)
 				assert.Equal(t, "Berlin", connections[0].City)
+				assert.Equal(t, config.Technology_NORDLYNX, connections[0].ConnectionTech)
 			},
 		},
 		{
@@ -189,11 +190,11 @@ func TestStorePendingRecentConnection_WithServerTechnologies(t *testing.T) {
 	store := recents.NewRecentConnectionsStore("/test/path", &fs, nil)
 
 	model := recents.Model{
-		Country:            "Netherlands",
-		City:               "Amsterdam",
-		ConnectionType:     config.ServerSelectionRule_CITY,
-		CountryCode:        "NL",
-		ServerTechnologies: []core.ServerTechnology{1, 3, 5},
+		Country:        "Netherlands",
+		City:           "Amsterdam",
+		ConnectionType: config.ServerSelectionRule_CITY,
+		CountryCode:    "NL",
+		ConnectionTech: config.Technology_NORDWHISPER,
 	}
 
 	store.AddPending(model)
@@ -205,7 +206,7 @@ func TestStorePendingRecentConnection_WithServerTechnologies(t *testing.T) {
 	require.Len(t, connections, 1)
 	assert.Equal(t, model.Country, connections[0].Country)
 	assert.Equal(t, model.City, connections[0].City)
-	assert.ElementsMatch(t, model.ServerTechnologies, connections[0].ServerTechnologies)
+	assert.Equal(t, model.ConnectionTech, connections[0].ConnectionTech)
 }
 
 func TestStorePendingRecentConnection_FullWorkflow(t *testing.T) {
@@ -220,6 +221,7 @@ func TestStorePendingRecentConnection_FullWorkflow(t *testing.T) {
 		City:           "Warsaw",
 		ConnectionType: config.ServerSelectionRule_CITY,
 		CountryCode:    "PL",
+		ConnectionTech: config.Technology_NORDLYNX,
 	}
 
 	// Step 1: Connection is established, pending is added
@@ -240,6 +242,7 @@ func TestStorePendingRecentConnection_FullWorkflow(t *testing.T) {
 		City:           "Krakow",
 		ConnectionType: config.ServerSelectionRule_CITY,
 		CountryCode:    "PL",
+		ConnectionTech: config.Technology_NORDLYNX,
 	}
 
 	store.AddPending(reconnectModel)

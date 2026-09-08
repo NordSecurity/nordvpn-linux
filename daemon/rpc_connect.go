@@ -523,7 +523,7 @@ func (r *RPC) connect(
 		storePendingRecentConnection(r.recentVPNConnStore)
 		connectionEstablished := event.EventStatus == events.StatusSuccess
 		if connectionEstablished && isRecentConnectionSupported(event.TargetServerSelection) {
-			recentModel, err := buildRecentConnectionModel(event, parameters, serverSelection.Server, r.dm, cfg)
+			recentModel, err := buildRecentConnectionModel(event, parameters, r.dm, cfg)
 			if err != nil {
 				log.Warn("Failed to build recent VPN connection model:", err)
 				return

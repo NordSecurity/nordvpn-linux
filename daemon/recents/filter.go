@@ -4,7 +4,6 @@ import (
 	"slices"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/core"
 )
 
 // filter provides a chainable interface for filtering recent connections
@@ -14,8 +13,6 @@ type filter struct {
 	// flags for criteria
 	excludeSpecificName bool
 	excludeSpecificID   bool
-	excludeTechnologies bool
-	includeTechnologies []core.ServerTechnology
 }
 
 // newFilter creates a new filter for finding matching recent connections
@@ -36,24 +33,6 @@ func (f *filter) withSpecificServerOnlyFor(rules []config.ServerSelectionRule) *
 		f.excludeSpecificID = true
 		f.excludeSpecificName = true
 	}
-	return f
-}
-
-// withoutTechnologies excludes all technology-based criteria from the comparison.
-// Use this when you want the match logic to ignore server technologies entirely.
-// Calling this clears any previously set withTechnologies filter to avoid conflicting states.
-func (f *filter) withoutTechnologies() *filter {
-	f.includeTechnologies = nil
-	f.excludeTechnologies = true
-	return f
-}
-
-// withTechnologies requires that candidates support all of the specified server technologies.
-// Use this when you need strict matching based on supported technologies.
-// Calling this clears any previously set withoutTechnologies filter to avoid conflicting states.
-func (f *filter) withTechnologies(serverTechs []core.ServerTechnology) *filter {
-	f.excludeTechnologies = false
-	f.includeTechnologies = serverTechs
 	return f
 }
 
@@ -89,25 +68,15 @@ func (f *filter) matches(m Model) bool {
 		return false
 	}
 
+	if !m.AreTechCompatible(f.target.ConnectionTech) {
+		return false
+	}
+
 	if !f.excludeSpecificName && m.SpecificServerName != f.target.SpecificServerName {
 		return false
 	}
 	if !f.excludeSpecificID && m.SpecificServer != f.target.SpecificServer {
 		return false
-	}
-
-	if len(f.includeTechnologies) > 0 {
-		// Model candidate must contain all required technologies
-		for _, reqTech := range f.includeTechnologies {
-			if !slices.Contains(m.ServerTechnologies, reqTech) {
-				return false
-			}
-		}
-	} else if !f.excludeTechnologies {
-		// Technologies must be identical
-		if !slices.Equal(m.ServerTechnologies, f.target.ServerTechnologies) {
-			return false
-		}
 	}
 
 	return true
