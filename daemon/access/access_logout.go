@@ -27,6 +27,7 @@ type LogoutInput struct {
 	ConfigManager                config.Manager
 	UserLogoutEventPublisherFunc func(events.DataAuthorization)
 	DebugPublisherFunc           func(string)
+	RevokeToken					 bool
 	DisconnectFunc               func() (pb.ConnectionState, error)
 	DeviceKeyInvalidator         devicekey.DeviceKeyInvalidator
 }
@@ -106,8 +107,9 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 	if !input.NcClient.Revoke() {
 		log.Warn("error revoking NC token")
 	}
-	// link LVPN ticket, regarding replacing this with token expiration date validator
-	if tokenData.TokenExpiry != session.ManualAccessTokenExpiryDateString {
+	// LVPN-11093 This needs to be validated properly once API endpoint exists
+	// on logout we destroy token if we did not log in using `nordvpn login --token` or if revoke token flag was used
+	if tokenData.TokenExpiry != session.ManualAccessTokenExpiryDateString || input.RevokeToken {
 		if err := input.CredentialsAPI.DeleteToken(); err != nil {
 			log.Error("deleting token:", err)
 			switch {
@@ -146,7 +148,7 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 
 	input.DebugPublisherFunc("user logged out")
 
-	if tokenData.RenewToken == "" {
+	if input.RevokeToken && tokenData.RenewToken == "" {
 		return LogoutResult{Status: internal.CodeTokenInvalidated, Err: nil}
 	}
 

@@ -11,6 +11,10 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+const(
+	flagRevokeToken = "revoke-token"
+)
+
 func (c *cmd) Logout(ctx *cli.Context) error {
 	// #nosec G104 -- fire-and-forget analytics
 	c.client.ReportUIEvent(context.Background(), &pb.UIEvent{
@@ -19,8 +23,11 @@ func (c *cmd) Logout(ctx *cli.Context) error {
 		ItemType:      pb.UIEvent_CLICK,
 	})
 
+	revokeToken := ctx.IsSet(flagRevokeToken)
 
-	payload, err := c.client.Logout(context.Background(), &pb.LogoutRequest{})
+	payload, err := c.client.Logout(context.Background(), &pb.LogoutRequest{
+		RevokeToken: revokeToken,
+	})
 
 	if err != nil {
 		return formatError(err)

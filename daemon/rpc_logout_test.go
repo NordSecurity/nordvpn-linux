@@ -48,27 +48,27 @@ func TestLogout_Token(t *testing.T) {
 
 	tests := []struct {
 		name              string
-		persistToken      bool
+		revokeToken       bool
 		loggedInWithToken bool
 		result            int64
 	}{
 		{
-			persistToken:      true,
-			loggedInWithToken: true,
-			result:            internal.CodeSuccess,
-		},
-		{
-			persistToken:      true,
-			loggedInWithToken: false,
-			result:            internal.CodeSuccess,
-		},
-		{
-			persistToken:      false,
+			revokeToken:       true,
 			loggedInWithToken: true,
 			result:            internal.CodeTokenInvalidated,
 		},
 		{
-			persistToken:      false,
+			revokeToken:       true,
+			loggedInWithToken: false,
+			result:            internal.CodeTokenInvalidated,
+		},
+		{
+			revokeToken:       false,
+			loggedInWithToken: true,
+			result:            internal.CodeSuccess,
+		},
+		{
+			revokeToken:       false,
 			loggedInWithToken: false,
 			result:            internal.CodeSuccess,
 		},
@@ -91,7 +91,7 @@ func TestLogout_Token(t *testing.T) {
 				return c
 			})
 			assert.NoError(t, err)
-			resp, err := rpc.Logout(context.Background(), &pb.LogoutRequest{PersistToken: test.persistToken})
+			resp, err := rpc.Logout(context.Background(), &pb.LogoutRequest{RevokeToken: test.revokeToken})
 			assert.NoError(t, err)
 			assert.Equal(t, test.result, resp.Type)
 			assert.True(t, deviceKeyManagerMock.WasDeviceKeyInvalidated, "Device key was not invalidated after logout.")
@@ -147,7 +147,7 @@ func TestLogout_Pause(t *testing.T) {
 				connectionInfo.Pause(time.Now(), time.Second*60*5)
 			}
 			// actual response code is not relevant for this test
-			_, err := rpc.Logout(context.Background(), &pb.LogoutRequest{PersistToken: false})
+			_, err := rpc.Logout(context.Background(), &pb.LogoutRequest{RevokeToken: false})
 			assert.NoError(t, err)
 			assert.Equal(t, test.isDataDisconnectExpected, mockedDisconnectEvents.EventPublished)
 		})

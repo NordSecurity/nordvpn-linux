@@ -17,7 +17,13 @@ import 'package:protobuf/protobuf.dart' as $pb;
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
 class LogoutRequest extends $pb.GeneratedMessage {
-  factory LogoutRequest() => create();
+  factory LogoutRequest({
+    $core.bool? revokeToken,
+  }) {
+    final result = create();
+    if (revokeToken != null) result.revokeToken = revokeToken;
+    return result;
+  }
 
   LogoutRequest._();
 
@@ -32,6 +38,7 @@ class LogoutRequest extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'LogoutRequest',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'revokeToken')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -52,7 +59,18 @@ class LogoutRequest extends $pb.GeneratedMessage {
   static LogoutRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<LogoutRequest>(create);
   static LogoutRequest? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.bool get revokeToken => $_getBF(0);
+  @$pb.TagNumber(1)
+  set revokeToken($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasRevokeToken() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearRevokeToken() => $_clearField(1);
 }
 
+const $core.bool _omitFieldNames =
+    $core.bool.fromEnvironment('protobuf.omit_field_names');
 const $core.bool _omitMessageNames =
     $core.bool.fromEnvironment('protobuf.omit_message_names');

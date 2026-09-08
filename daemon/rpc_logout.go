@@ -20,6 +20,7 @@ func (r *RPC) Logout(ctx context.Context, in *pb.LogoutRequest) (*pb.Payload, er
 		ConfigManager:                r.cm,
 		UserLogoutEventPublisherFunc: r.events.User.Logout.Publish,
 		DebugPublisherFunc:           r.publisher.Publish,
+		RevokeToken:				  in.GetRevokeToken(),
 		DisconnectFunc:               r.DoDisconnect,
 		DeviceKeyInvalidator:         r.dedicatedServerKeyManager,
 	})

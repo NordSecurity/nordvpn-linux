@@ -4,4 +4,6 @@ package pb;
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
-message LogoutRequest {}
+message LogoutRequest {
+    bool revoke_token = 1;
+}
