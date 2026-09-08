@@ -39,10 +39,7 @@ final class MockServersList {
           return;
         }
         _settings = newSettings;
-        _serversList = _generateServersList(
-          obfuscated: _settings!.obfuscate,
-          hasVirtualServers: _settings!.virtualLocation,
-        );
+        _serversList = _generateServersList(obfuscated: _settings!.obfuscate);
       }
     });
   }
@@ -63,13 +60,8 @@ final class MockServersList {
     stream.add(AppState(updateEvent: UpdateEvent.SERVERS_LIST_UPDATE));
   }
 
-  ServersResponse _generateServersList({
-    bool hasVirtualServers = true,
-    bool obfuscated = false,
-  }) {
-    debugPrint(
-      "Servers list changed hasVirtualServers=$hasVirtualServers - obfuscated=$obfuscated",
-    );
+  ServersResponse _generateServersList({bool obfuscated = false}) {
+    debugPrint("Servers list changed obfuscated=$obfuscated");
 
     _dipServers = [];
 
@@ -153,10 +145,6 @@ final class MockServersList {
     for (final countryCode in locations.keys) {
       int serverCounter = 1;
       final cities = <ServerCity>[];
-      final isVirtual = (countryCode == "IN");
-      if (!hasVirtualServers && isVirtual) {
-        continue;
-      }
 
       for (final cityInfo in locations[countryCode]!) {
         final cityName = cityInfo.keys.first;
@@ -170,7 +158,7 @@ final class MockServersList {
           final server = Server(
             id: Int64(serverId),
             hostName: "$countryCode${serverCounter++}.nordvpn.com",
-            virtual: isVirtual,
+            virtual: false,
             technologies: technologies,
             serverGroups: groups,
           );

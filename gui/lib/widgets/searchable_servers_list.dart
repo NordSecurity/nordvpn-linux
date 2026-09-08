@@ -431,7 +431,6 @@ final class SearchableServersList extends StatelessWidget {
             cities.add(
               CountryServersGroup(
                 country: countryGroup.country,
-                isVirtual: countryGroup.isVirtual,
                 cities: [city],
               ),
             );

@@ -83,7 +83,6 @@ final class AppCtl {
     String? countryCode,
     String? city,
     String? hostname,
-    bool? isVirtualLocation,
     ServerType? group,
   }) async {
     final countryName = countryCode == null
@@ -95,7 +94,6 @@ final class AppCtl {
       city: city,
       state: pbstatus.ConnectionState.CONNECTED,
       hostname: hostname,
-      virtualLocation: isVirtualLocation,
       parameters: ConnectionParameters(
         country: countryName,
         countryCode: countryCode,
@@ -197,11 +195,6 @@ final class AppCtl {
     final accountScreenHandle = AccountScreenHandle(this);
     await accountScreenHandle.waitUntilFound(accountUserInfo());
     return accountScreenHandle;
-  }
-
-  Future<void> changeVirtualServers(bool enabled) async {
-    await appSettings.setSettings(virtualLocation: enabled);
-    await refreshAppState();
   }
 
   Future<ConnectionSettingsScreenHandle> goToConnectionSettingsScreen({
