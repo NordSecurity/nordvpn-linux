@@ -20,18 +20,6 @@ def teardown_function(function):  # noqa: ARG001
     daemon.stop()
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1 + lib.NORDWHISPER_TECHNOLOGY)
-def test_obfuscate_nonobfucated(tech, proto, obfuscated):
-    """Manual TC: LVPN-788"""
-
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-    assert network.is_available(), "Network should be available before attempting to set obfuscation"
-
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.set.obfuscate("on")
-        assert "Obfuscation is not available with the current technology. Change the technology to OpenVPN to use obfuscation." in ex.value.stdout.decode("utf-8")
-
-
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC2 + lib.TECHNOLOGIES_BASIC1 + lib.NORDWHISPER_TECHNOLOGY)
 def test_set_technology(tech, proto, obfuscated):  # noqa: ARG001
     """Manual TC: LVPN-601"""
@@ -54,16 +42,19 @@ def test_protocol_in_settings(tech, proto, obfuscated):
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
 def test_technology_set_options(tech, proto, obfuscated):
-    """Manual TC: LVPN-6816"""
+    """
+    Manual TC: LVPN-6816.
 
+    Only OpenVPN offers `nordvpn set protocol`.
+    """
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    ovpn_list = "obfuscate" in sh.nordvpn.set() and "protocol" in sh.nordvpn.set()
+    offered = settings.get_set_subcommands()
 
     if tech == "openvpn":
-        assert ovpn_list, "OpenVPN should have obfuscate and protocol options available"
+        assert "protocol" in offered, f"OpenVPN should offer 'nordvpn set protocol', got {offered}"
     else:
-        assert not ovpn_list, "Non-OpenVPN technology should not have obfuscate and protocol options"
+        assert "protocol" not in offered, f"'{tech}' should not offer 'nordvpn set protocol', got {offered}"
 
 
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)

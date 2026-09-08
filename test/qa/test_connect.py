@@ -117,6 +117,7 @@ def test_nordwhisper_connect_to_group_random_server_by_name_additional(tech, pro
     disconnect_base_test()
 
 
+@pytest.mark.skip("obfuscation is no longer settable from the CLI (LVPN-10916), retire with LVPN-10940")
 @pytest.mark.parametrize("group", lib.OVPN_OBFUSCATED_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 def test_connect_to_group_random_server_by_name_obfuscated(tech, proto, obfuscated, group):
@@ -235,6 +236,7 @@ def test_connect_to_group_ovpn(tech, proto, obfuscated, group):
     disconnect_base_test()
 
 
+@pytest.mark.skip("obfuscation is no longer settable from the CLI (LVPN-10916), retire with LVPN-10940")
 @pytest.mark.parametrize("group", lib.OVPN_OBFUSCATED_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 def test_connect_to_group_obfuscated(tech, proto, obfuscated, group):
@@ -304,6 +306,7 @@ def test_connect_to_flag_group_ovpn(tech, proto, obfuscated, group):
     assert lib.is_connect_unsuccessful(ex), "Connection with duplicate group should fail"
 
 
+@pytest.mark.skip("obfuscation is no longer settable from the CLI (LVPN-10916), retire with LVPN-10940")
 @pytest.mark.parametrize("group", lib.OVPN_OBFUSCATED_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 def test_connect_to_flag_group_obfuscated(tech, proto, obfuscated, group):
@@ -589,6 +592,7 @@ def test_connect_fails_virtual_location_disabled(tech, proto, obfuscated):
     assert "Please enable virtual location access to connect to this server." in ex.value.stdout.decode(), "Should show virtual location disabled error"
 
 
+@pytest.mark.skip("obfuscation is no longer settable from the CLI (LVPN-10916), retire with LVPN-10940")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 def test_obfuscation_prevents_virtual_location_connection(tech, proto, obfuscated):
     """Manual TC: LVPN-5771"""
