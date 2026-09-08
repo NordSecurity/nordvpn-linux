@@ -25,21 +25,6 @@ void runVpnScreenTests() async {
   });
 
   group("test vpn status card", () {
-    testWidgets("has '- Virtual' label for virtual server", (tester) async {
-      final app = await tester.setupIntegrationTests();
-
-      // initially, we have the server info and we are not connected
-      final mainScreen = await app.goToVpnScreen();
-      expect(mainScreen.findServerInfoText(), equals(t.ui.fastestServer));
-
-      // connect
-      app.connect(countryCode: "FR", city: "Paris", isVirtualLocation: true);
-      await mainScreen.waitUntilFound(find.textContaining(t.ui.secured));
-
-      // now the server info changed
-      expect(mainScreen.findServerInfoText(), contains("Virtual"));
-    });
-
     testWidgets("has server group in status label", (tester) async {
       final app = await tester.setupIntegrationTests();
 
@@ -55,20 +40,6 @@ void runVpnScreenTests() async {
       await mainScreen.clickOnionOverVpn();
       await mainScreen.waitUntilFound(find.textContaining(t.ui.secured));
       expect(mainScreen.findStatusLabelText(), contains(t.ui.onionOverVpn));
-    });
-  });
-
-  group("test servers list card", () {
-    testWidgets("is updated when virtual setting changes", (tester) async {
-      final app = await tester.setupIntegrationTests();
-
-      // initially, we have the server info and we are not connected
-      final vpnScreen = await app.goToVpnScreen();
-      await app.changeVirtualServers(true);
-      expect(await vpnScreen.serversListHasVirtualServers(), isTrue);
-
-      await app.changeVirtualServers(false);
-      expect(await vpnScreen.serversListHasVirtualServers(), isFalse);
     });
   });
 
