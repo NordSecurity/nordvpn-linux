@@ -86,9 +86,6 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 		connections = []Model{}
 	}
 
-	// Sort server technologies, so that the order does not affect equality checks
-	slices.Sort(model.ServerTechnologies)
-
 	// Find matches that have the same connection model with technologies and connection type
 	// considered
 	matches := newFilter(model, connections).
@@ -96,7 +93,6 @@ func (r *RecentConnectionsStore) Add(model Model) error {
 			config.ServerSelectionRule_SPECIFIC_SERVER,
 			config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 		}).
-		withTechnologies(model.ServerTechnologies).
 		apply()
 
 	// For now we select input model as the entry to insert
