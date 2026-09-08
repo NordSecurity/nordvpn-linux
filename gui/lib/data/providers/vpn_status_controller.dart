@@ -14,6 +14,7 @@ import 'package:nordvpn/pb/daemon/state.pbenum.dart';
 import 'package:nordvpn/pb/daemon/status.pb.dart';
 import 'package:nordvpn/pb/daemon/uievent.pbenum.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:nordvpn/data/models/vpn_protocol.dart';
 
 part 'vpn_status_controller.g.dart';
 
@@ -131,6 +132,7 @@ class VpnStatusController extends _$VpnStatusController
     }
 
     final vpnStatus = state.value!.copyWith(
+      protocol: convertToVpnProtocol(status.technology, status.protocol),
       ip: status.ip.isNotEmpty ? status.ip : null,
       hostname: status.hostname.isNotEmpty ? status.hostname : null,
       country: status.hasCountry()
