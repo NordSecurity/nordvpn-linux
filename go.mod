@@ -13,7 +13,7 @@ require (
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/NordSecurity/gopenvpn v0.0.0-20230117114932-2252c52984b4
-	github.com/NordSecurity/systray v0.0.0-20260618073639-14a79f2708b4
+	github.com/NordSecurity/nordvpn-linux/systray v0.0.0
 	github.com/coreos/go-semver v0.3.1
 	github.com/deckarep/golang-set/v2 v2.9.0
 	github.com/docker/docker v28.5.2+incompatible
@@ -112,3 +112,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	maze.io/x/crypto v0.0.0-20190131090603-9b94c9afe066 // indirect
 )
+
+replace github.com/NordSecurity/nordvpn-linux/systray => ./systray

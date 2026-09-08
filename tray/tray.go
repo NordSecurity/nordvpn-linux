@@ -19,7 +19,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/norduser"
 	"github.com/NordSecurity/nordvpn-linux/sysinfo"
 
-	"github.com/NordSecurity/systray"
+	"github.com/NordSecurity/nordvpn-linux/systray"
 )
 
 const (

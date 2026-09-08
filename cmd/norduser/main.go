@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/NordSecurity/systray"
+	"github.com/NordSecurity/nordvpn-linux/systray"
 	"golang.org/x/net/netutil"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"

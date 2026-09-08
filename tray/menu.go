@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NordSecurity/systray"
+	"github.com/NordSecurity/nordvpn-linux/systray"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
