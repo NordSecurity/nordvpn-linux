@@ -31,9 +31,6 @@ extension StringTranslation on String {
 
 String labelForServerType(ServerType type) {
   switch (type) {
-    case ServerType.p2p:
-      return t.ui.p2p;
-
     case ServerType.doubleVpn:
       return t.ui.doubleVpn;
 

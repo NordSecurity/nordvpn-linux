@@ -30,7 +30,6 @@ final class ServerListWidgetKeys {
   static const specialtyServersTab = Key("serverListSpecialtyServersTab");
   static const doubleVpn = Key("serverListDoubleVpn");
   static const onionOverVpn = Key("serverListOnionOverVpn");
-  static const p2p = Key("serverListP2P");
   static const dedicatedIp = Key("serverListDedicatedIP");
   static const search = Key("serverListSearch");
   static const countriesServersList = Key("serverListCountries");
@@ -297,11 +296,6 @@ final class _ServersListCardState extends State<ServersListCard> {
         type: ServerType.onionOverVpn,
         description: t.ui.onionOverVpnDesc,
         key: ServerListWidgetKeys.onionOverVpn,
-      ),
-      (
-        type: ServerType.p2p,
-        description: t.ui.p2pDesc,
-        key: ServerListWidgetKeys.p2p,
       ),
     ];
 
