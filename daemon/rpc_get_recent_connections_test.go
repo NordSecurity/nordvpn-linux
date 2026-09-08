@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
@@ -23,14 +22,12 @@ func TestGetRecentConnections_Filtering(t *testing.T) {
 	})
 
 	r.recentVPNConnStore.Add(recents.Model{
-		Country:            "France",
-		IsVirtual:          false,
-		ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
+		Country:        "France",
+		IsVirtual:      false,
 	})
 	r.recentVPNConnStore.Add(recents.Model{
-		Country:            "Lithuania",
-		IsVirtual:          true,
-		ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
+		Country:        "Lithuania",
+		IsVirtual:      true,
 	})
 
 	resp, err := r.GetRecentConnections(context.Background(), &pb.RecentConnectionsRequest{})
@@ -59,19 +56,16 @@ func TestGetRecentConnections_FiltersDeprecatedRegionalGroups(t *testing.T) {
 	r := testRPCLocal(t)
 
 	r.recentVPNConnStore.Add(recents.Model{
-		Country:            "France",
-		ConnectionType:     config.ServerSelectionRule_COUNTRY,
-		ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
+		Country:        "France",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
 	})
 	r.recentVPNConnStore.Add(recents.Model{
-		Group:              regionalGroupEurope,
-		ConnectionType:     config.ServerSelectionRule_GROUP,
-		ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
+		Group:          regionalGroupEurope,
+		ConnectionType: config.ServerSelectionRule_GROUP,
 	})
 	r.recentVPNConnStore.Add(recents.Model{
-		Country:            "Germany",
-		ConnectionType:     config.ServerSelectionRule_COUNTRY,
-		ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
+		Country:        "Germany",
+		ConnectionType: config.ServerSelectionRule_COUNTRY,
 	})
 
 	resp, err := r.GetRecentConnections(context.Background(), &pb.RecentConnectionsRequest{})
@@ -87,16 +81,13 @@ func TestGetRecentConnections_Limit(t *testing.T) {
 	r := testRPCLocal(t)
 
 	r.recentVPNConnStore.Add(recents.Model{
-		Country:            "France",
-		ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
+		Country:        "France",
 	})
 	r.recentVPNConnStore.Add(recents.Model{
-		Country:            "Germany",
-		ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
+		Country:        "Germany",
 	})
 	r.recentVPNConnStore.Add(recents.Model{
-		Country:            "Lithuania",
-		ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
+		Country:        "Lithuania",
 	})
 
 	// Limit to 2

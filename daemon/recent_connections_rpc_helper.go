@@ -2,11 +2,9 @@ package daemon
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/recents"
 	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	"github.com/NordSecurity/nordvpn-linux/events"
@@ -32,20 +30,9 @@ func isRecentConnectionSupported(rule config.ServerSelectionRule) bool {
 func applyObfuscationToRecentModel(
 	model recents.Model,
 	event events.DataConnect,
-	server *core.Server,
 	dm *DataManager,
 	cfg config.Config,
 ) recents.Model {
-	if !event.IsObfuscated {
-		return model
-	}
-
-	hasObfuscatedGroup := slices.ContainsFunc(server.Groups, func(g core.Group) bool {
-		return g.ID == config.ServerGroup_OBFUSCATED
-	})
-	if !hasObfuscatedGroup {
-		return model
-	}
 
 	// Set group to OBFUSCATED for all obfuscated connections
 	model.Group = config.ServerGroup_OBFUSCATED
@@ -77,15 +64,6 @@ func extractSpecificServerName(domain string) string {
 	return name
 }
 
-// extractServerTechnologies extracts technology IDs from server technologies
-func extractServerTechnologies(server *core.Server) []core.ServerTechnology {
-	var serverTechs []core.ServerTechnology
-	for _, v := range server.Technologies {
-		serverTechs = append(serverTechs, v.ID)
-	}
-	return serverTechs
-}
-
 // isSingleCityCountry checks if this is a single-city country by checking how many cities
 // are available for the given country code with current connection settings.
 func isSingleCityCountry(countryCode string, dm *DataManager, cfg config.Config) bool {
@@ -112,7 +90,6 @@ func isSingleCityCountry(countryCode string, dm *DataManager, cfg config.Config)
 func buildRecentConnectionModel(
 	event events.DataConnect,
 	parameters serverpicker.ServerParameters,
-	server *core.Server,
 	dm *DataManager,
 	cfg config.Config,
 ) (recents.Model, error) {
@@ -129,9 +106,8 @@ func buildRecentConnectionModel(
 	}
 
 	recentModel := recents.Model{
-		ConnectionType:     connectionType,
-		ServerTechnologies: extractServerTechnologies(server),
-		IsVirtual:          event.IsVirtualLocation,
+		ConnectionType: connectionType,
+		IsVirtual:      event.IsVirtualLocation,
 	}
 
 	// Populate model fields based on connection type
@@ -171,7 +147,9 @@ func buildRecentConnectionModel(
 		return recents.Model{}, fmt.Errorf("unexpected connection type in recent connections: %d", recentModel.ConnectionType)
 	}
 
-	// Apply obfuscation wrapping if needed (upgrades connection type when obfuscation is active)
-	recentModel = applyObfuscationToRecentModel(recentModel, event, server, dm, cfg)
+	if cfg.Technology == config.Technology_NORDWHISPER {
+		recentModel = applyObfuscationToRecentModel(recentModel, event, dm, cfg)
+	}
+
 	return recentModel, nil
 }

@@ -1,22 +1,18 @@
 package recents
 
 import (
-	"slices"
-
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/core"
 )
 
 type Model struct {
-	Country            string                     `json:"country"`
-	City               string                     `json:"city"`
-	Group              config.ServerGroup         `json:"group"`
-	CountryCode        string                     `json:"country-code"`
-	SpecificServerName string                     `json:"specific-server-name"`
-	SpecificServer     string                     `json:"specific-server"`
+	Country            string                     `json:"country,omitempty"`
+	City               string                     `json:"city,omitempty"`
+	Group              config.ServerGroup         `json:"group,omitempty"`
+	CountryCode        string                     `json:"country-code,omitempty"`
+	SpecificServerName string                     `json:"specific-server-name,omitempty"`
+	SpecificServer     string                     `json:"specific-server,omitempty"`
 	ConnectionType     config.ServerSelectionRule `json:"connection-type"`
-	ServerTechnologies []core.ServerTechnology    `json:"server-technologies"`
-	IsVirtual          bool                       `json:"is-virtual"`
+	IsVirtual          bool                       `json:"is-virtual,omitempty"`
 }
 
 // IsEmpty checks whether the recent connection model is empty
@@ -28,7 +24,6 @@ func (m Model) IsEmpty() bool {
 		m.SpecificServerName == "" &&
 		m.SpecificServer == "" &&
 		m.ConnectionType == config.ServerSelectionRule_NONE &&
-		len(m.ServerTechnologies) == 0 &&
 		!m.IsVirtual
 }
 
@@ -42,7 +37,6 @@ func (m Model) Clone() Model {
 		SpecificServerName: m.SpecificServerName,
 		SpecificServer:     m.SpecificServer,
 		ConnectionType:     m.ConnectionType,
-		ServerTechnologies: slices.Clone(m.ServerTechnologies),
 		IsVirtual:          m.IsVirtual,
 	}
 }
@@ -56,6 +50,5 @@ func (m Model) Equals(other Model) bool {
 		m.SpecificServerName == other.SpecificServerName &&
 		m.SpecificServer == other.SpecificServer &&
 		m.ConnectionType == other.ConnectionType &&
-		slices.Equal(m.ServerTechnologies, other.ServerTechnologies) &&
 		m.IsVirtual == other.IsVirtual
 }
