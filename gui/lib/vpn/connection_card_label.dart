@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nordvpn/data/models/server_group_extension.dart';
 import 'package:nordvpn/data/models/server_info.dart';
+import 'package:nordvpn/data/models/vpn_protocol.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/i18n/string_translation_extension.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
@@ -53,7 +54,7 @@ final class ConnectionCardLabel extends StatelessWidget {
     }
 
     var serverType = "";
-    if (vpnStatus.isObfuscated) {
+    if (vpnStatus.protocol == VpnProtocol.nordWhisper) {
       serverType = labelForServerType(ServerType.obfuscated);
     } else {
       final serverGroup = vpnStatus.connectionParameters.group
