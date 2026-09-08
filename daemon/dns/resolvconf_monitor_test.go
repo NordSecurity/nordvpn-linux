@@ -131,7 +131,8 @@ func Test_ResolvConfMonitoring(t *testing.T) {
 			eventsChan := make(chan fsnotify.Event)
 			errorChan := make(chan error)
 			getMockWatcherFunc := func(...string) (*fsnotify.Watcher, error) {
-				watcher, _ := fsnotify.NewWatcher()
+				watcher, err := fsnotify.NewWatcher()
+				assert.NoError(t, err)
 				watcher.Events = eventsChan
 				watcher.Errors = errorChan
 				return watcher, nil
@@ -162,7 +163,8 @@ func Test_ResolvConfMonitoringDoesNotDeadlock(t *testing.T) {
 	eventsChan := make(chan fsnotify.Event)
 	errorChan := make(chan error)
 	getMockWatcherFunc := func(...string) (*fsnotify.Watcher, error) {
-		watcher, _ := fsnotify.NewWatcher()
+		watcher, err := fsnotify.NewWatcher()
+		assert.NoError(t, err)
 		watcher.Events = eventsChan
 		watcher.Errors = errorChan
 		time.Sleep(time.Duration(time.Duration.Seconds(1)))
