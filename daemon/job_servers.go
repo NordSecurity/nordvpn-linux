@@ -50,8 +50,6 @@ func JobServers(dm *DataManager, api core.ServersAPI, validate bool) func() erro
 		servers[0].Distance = dist
 
 		// set initial minmax values
-		timestampMin := timestamp
-		timestampMax := timestamp
 		distanceMin := dist
 		distanceMax := dist
 
@@ -85,12 +83,6 @@ func JobServers(dm *DataManager, api core.ServersAPI, validate bool) func() erro
 			if dist > distanceMax {
 				distanceMax = dist
 			}
-			if timestamp < timestampMin {
-				timestampMin = timestamp
-			}
-			if timestamp > timestampMax {
-				timestampMax = timestamp
-			}
 
 			filteredServers = append(filteredServers, servers[idx])
 		}
@@ -99,9 +91,7 @@ func JobServers(dm *DataManager, api core.ServersAPI, validate bool) func() erro
 		// second iteration to calculate penalty scores
 		for idx, server := range servers {
 			penal, partialPenalty := penalty(
-				core.IsObfuscated()(server),
 				server.Distance, distanceMin, distanceMax,
-				server.Timestamp, timestampMin, timestampMax,
 				server.Load,
 				geoInfoData.Insights.CountryCode, server.Locations[0].Country.Code, //nolint:staticcheck
 				server.Locations[0].Country.City.HubScore, //nolint:staticcheck

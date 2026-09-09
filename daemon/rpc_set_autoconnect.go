@@ -46,26 +46,6 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		}
 	}
 
-	if in.GetEnabled() {
-		switch core.IsServerObfuscated(r.dm.GetServersData().Servers, in.GetServerTag()) {
-		case core.ServerNotObfuscated:
-			if cfg.AutoConnectData.Obfuscate {
-				return &pb.Payload{
-					Type: internal.CodeAutoConnectServerNotObfuscated,
-				}, nil
-			}
-		case core.ServerObfuscated:
-			if !cfg.AutoConnectData.Obfuscate {
-				return &pb.Payload{
-					Type: internal.CodeAutoConnectServerObfuscated,
-				}, nil
-			}
-		case core.NotAServerName:
-			// autoconnect is not set to a specific server
-			// so obfuscation doesn't need to be validated
-		}
-	}
-
 	var parameters serverpicker.ServerParameters
 	serverTag := in.GetServerTag()
 	serverGroup := in.GetServerGroup()

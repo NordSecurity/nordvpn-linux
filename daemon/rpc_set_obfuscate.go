@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
-	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -19,26 +18,6 @@ func (r *RPC) SetObfuscate(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 
 	if cfg.AutoConnectData.Obfuscate == in.GetEnabled() {
 		return &pb.Payload{Type: internal.CodeNothingToDo}, nil
-	}
-
-	if cfg.AutoConnect {
-		switch core.IsServerObfuscated(r.dm.GetServersData().Servers, cfg.AutoConnectData.ServerTag) {
-		case core.ServerNotObfuscated:
-			if in.GetEnabled() {
-				return &pb.Payload{
-					Type: internal.CodeAutoConnectServerNotObfuscated,
-				}, nil
-			}
-		case core.ServerObfuscated:
-			if !in.GetEnabled() {
-				return &pb.Payload{
-					Type: internal.CodeAutoConnectServerObfuscated,
-				}, nil
-			}
-		case core.NotAServerName:
-			// autoconnect is not set to a specific server
-			// so obfuscation doesn't need to be validated
-		}
 	}
 
 	if err := r.cm.SaveWith(func(c config.Config) config.Config {

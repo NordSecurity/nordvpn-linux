@@ -1,6 +1,6 @@
 // Package serverpicker contains the logic for selecting a VPN server that
-// matches a set of user criteria (technology, protocol, obfuscation, location,
-// group and tags). It resolves the requested target into a concrete server,
+// matches a set of user criteria (technology, protocol, location, group and
+// tags). It resolves the requested target into a concrete server,
 // preferring the recommendations API and falling back to the locally cached
 // server list.
 package serverpicker
@@ -32,8 +32,8 @@ type ServerSelection struct {
 }
 
 type SearchParams struct {
-	Tag            string
-	Group          string
+	Tag            string // argument
+	Group          string // flag
 	ExcludedServer string
 }
 
@@ -62,20 +62,23 @@ func PickServer(
 
 	tech := cfg.Technology
 	protocol := cfg.AutoConnectData.Protocol
-	obfuscated := cfg.AutoConnectData.Obfuscate
-	log.ServerSel.Debug("search server", tech, protocol, obfuscated, "with input", input)
+	log.ServerSel.Debug("search server", tech, protocol, "with input", input)
 
-	serverTech := TechToServerTech(tech, protocol, obfuscated)
+	serverTech := TechToServerTech(tech, protocol)
 	if serverTech == core.Unknown {
 		return ServerSelection{}, errors.New("unknown technology")
 	}
 
-	// detect the group from the input params
-	serverGroup, err := resolveServerGroup(&input, obfuscated)
-	log.ServerSel.Debug("resolved server group", serverGroup)
+	// detect the group from the input params (fix tag arg if needed)
+	input, requestedGroup, err := resolveServerGroup(input)
 	if err != nil {
 		return ServerSelection{}, err
 	}
+
+	// the group the servers are actually looked up by can differ from the requested ones
+	// on specific technology (edge case)
+	serverGroup := searchGroup(requestedGroup, tech)
+	log.ServerSel.Debug("resolved server group", requestedGroup, "search group", serverGroup)
 
 	if serverGroup == config.ServerGroup_DEDICATED_IP {
 		// DIP servers are selected from the user subscription services
@@ -88,7 +91,7 @@ func PickServer(
 	}
 
 	// construct the servers list filters, for matching the current settings
-	localSelFn := selectFilterForLocalServers(input.Tag, serverGroup, obfuscated)
+	localSelFn := selectFilterForLocalServers(input.Tag, serverGroup)
 	filterServersFn := func(s core.Server) bool {
 		return MatchesUserSettings(s, cfg) &&
 			s.Hostname != input.ExcludedServer &&

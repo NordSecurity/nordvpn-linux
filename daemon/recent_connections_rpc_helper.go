@@ -97,7 +97,6 @@ func isSingleCityCountry(countryCode string, dm *DataManager, cfg config.Config)
 		countryCode,
 		cfg.Technology,
 		cfg.AutoConnectData.Protocol,
-		cfg.AutoConnectData.Obfuscate,
 		cfg.VirtualLocation.Get(),
 	)
 	if err != nil {

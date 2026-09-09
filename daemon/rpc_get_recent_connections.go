@@ -28,7 +28,6 @@ func (r *RPC) GetRecentConnections(
 	serverTech := serverpicker.TechToServerTech(
 		cfg.Technology,
 		cfg.AutoConnectData.Protocol,
-		cfg.AutoConnectData.Obfuscate,
 	)
 
 	var rcValues []*pb.RecentConnectionModel
