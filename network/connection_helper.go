@@ -14,9 +14,7 @@ func lookupAddress(addr string, dns string, protocol string, fwmark uint32) ([]n
 	resolver := net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-			dialer := &net.Dialer{
-				Timeout: time.Second * 7,
-			}
+			dialer := &net.Dialer{}
 
 			if fwmark != noFwMark {
 				dialer.Control = NewFwmarkControlFn(fwmark)
@@ -29,7 +27,11 @@ func lookupAddress(addr string, dns string, protocol string, fwmark uint32) ([]n
 			return dialer.DialContext(ctx, protocol, hostAndPortAddress)
 		},
 	}
-	ipAddrs, err := resolver.LookupIPAddr(context.Background(), addr)
+
+	ctx, cancelFunc := context.WithTimeout(context.Background(), time.Second*7)
+	defer cancelFunc()
+	ipAddrs, err := resolver.LookupIPAddr(ctx, addr)
+
 	if err != nil {
 		return nil, fmt.Errorf("looking addr ip up: %w", err)
 	}
