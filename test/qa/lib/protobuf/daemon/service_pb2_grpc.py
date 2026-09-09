@@ -224,11 +224,6 @@ class DaemonStub(object):
                 request_serializer=set__pb2.SetLANDiscoveryRequest.SerializeToString,
                 response_deserializer=set__pb2.SetLANDiscoveryResponse.FromString,
                 _registered_method=True)
-        self.SetVirtualLocation = channel.unary_unary(
-                '/pb.Daemon/SetVirtualLocation',
-                request_serializer=set__pb2.SetGenericRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
-                _registered_method=True)
         self.SetNotify = channel.unary_unary(
                 '/pb.Daemon/SetNotify',
                 request_serializer=set__pb2.SetNotifyRequest.SerializeToString,
@@ -525,12 +520,6 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SetVirtualLocation(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
     def SetNotify(self, request, context):
         """==================== UI Settings ====================
         """
@@ -806,11 +795,6 @@ def add_DaemonServicer_to_server(servicer, server):
                     servicer.SetLANDiscovery,
                     request_deserializer=set__pb2.SetLANDiscoveryRequest.FromString,
                     response_serializer=set__pb2.SetLANDiscoveryResponse.SerializeToString,
-            ),
-            'SetVirtualLocation': grpc.unary_unary_rpc_method_handler(
-                    servicer.SetVirtualLocation,
-                    request_deserializer=set__pb2.SetGenericRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
             ),
             'SetNotify': grpc.unary_unary_rpc_method_handler(
                     servicer.SetNotify,
@@ -1811,33 +1795,6 @@ class Daemon(object):
             '/pb.Daemon/SetLANDiscovery',
             set__pb2.SetLANDiscoveryRequest.SerializeToString,
             set__pb2.SetLANDiscoveryResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def SetVirtualLocation(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/SetVirtualLocation',
-            set__pb2.SetGenericRequest.SerializeToString,
-            common__pb2.Payload.FromString,
             options,
             channel_credentials,
             insecure,

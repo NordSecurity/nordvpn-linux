@@ -52,10 +52,8 @@ type Config struct {
 	LanDiscovery    bool                `json:"lan_discovery"`
 	RemoteConfig    string              `json:"remote_config,omitempty"`
 	RCLastUpdate    time.Time           `json:"rc_last_update,omitempty"`
-	// Indicates whether the virtual servers are used. True by default
-	VirtualLocation TrueField `json:"virtual_location,omitempty"`
-	ARPIgnore       TrueField `json:"arp_ignore,omitempty"`
-	DeviceUUID      uuid.UUID `json:"device_uuid"`
+	ARPIgnore       TrueField           `json:"arp_ignore,omitempty"`
+	DeviceUUID      uuid.UUID           `json:"device_uuid"`
 }
 
 // withLoginData makes a copy of current configuration
