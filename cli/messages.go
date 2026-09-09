@@ -13,7 +13,7 @@ We couldn’t process your payment. Please try again.`
 
 	LoginSuccess         = "Welcome to NordVPN! You can now connect to the VPN by using '%s connect'."
 	LogoutSuccess        = "You're logged out."
-	LogoutTokenSuccess   = "You have been logged out. Your access token remains valid and can be reused to log in again. To revoke it, run nordvpn logout --" + flagRevokeToken + ", or manage your tokens at https://my.nordaccount.com/dashboard/nordvpn/access-token"
+	LogoutTokenSuccess   = "You have been logged out. Your access token remains valid and can be reused to log in again. To revoke it, run nordvpn logout --" + flagRevokeToken + ", or manage your tokens at https://my.nordaccount.com/dashboard/nordvpn/access-tokens"
 	LogoutUsageText      = "Logs you out"
 	RevokeTokenUsageText = "Revoke your long living token after logging out"
 

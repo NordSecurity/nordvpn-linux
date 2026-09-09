@@ -37,7 +37,7 @@ func (c *cmd) Logout(ctx *cli.Context) error {
 	case internal.CodeSuccess:
 		color.Green(LogoutSuccess)
 		return nil
-	case internal.CodeTokenInvalidated:
+	case internal.CodeTokenStillValid:
 		color.Green(LogoutTokenSuccess)
 		return nil
 	default:

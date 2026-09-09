@@ -60,7 +60,7 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 		}
 
 		switch result.Status {
-		case internal.CodeSuccess, internal.CodeTokenInvalidated, 0:
+		case internal.CodeSuccess, internal.CodeTokenStillValid, 0:
 			log.Info("set defaults logout successful")
 		default:
 			log.Error("logout returned non success return code", result.Status)
