@@ -16,9 +16,7 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
   double get labelPadding;
   EdgeInsetsGeometry get paddingSearchGroupsLabel;
   TextStyle get searchHintStyle;
-  TextStyle get obfuscationSearchWarningStyle;
   TextStyle get searchErrorStyle;
-  Color get obfuscatedItemBackgroundColor;
   List<BoxShadow> get cardShadow;
 
   @override
@@ -29,9 +27,7 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
     double? labelPadding,
     EdgeInsetsGeometry? paddingSearchGroupsLabel,
     TextStyle? searchHintStyle,
-    TextStyle? obfuscationSearchWarningStyle,
     TextStyle? searchErrorStyle,
-    Color? obfuscatedItemBackgroundColor,
     List<BoxShadow>? cardShadow,
   }) {
     return ServersListTheme(
@@ -42,11 +38,7 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
       paddingSearchGroupsLabel:
           paddingSearchGroupsLabel ?? this.paddingSearchGroupsLabel,
       searchHintStyle: searchHintStyle ?? this.searchHintStyle,
-      obfuscationSearchWarningStyle:
-          obfuscationSearchWarningStyle ?? this.obfuscationSearchWarningStyle,
       searchErrorStyle: searchErrorStyle ?? this.searchErrorStyle,
-      obfuscatedItemBackgroundColor:
-          obfuscatedItemBackgroundColor ?? this.obfuscatedItemBackgroundColor,
       cardShadow: cardShadow ?? this.cardShadow,
     );
   }
@@ -70,19 +62,9 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
         other.searchHintStyle,
         t,
       )!,
-      obfuscationSearchWarningStyle: TextStyle.lerp(
-        obfuscationSearchWarningStyle,
-        other.obfuscationSearchWarningStyle,
-        t,
-      )!,
       searchErrorStyle: TextStyle.lerp(
         searchErrorStyle,
         other.searchErrorStyle,
-        t,
-      )!,
-      obfuscatedItemBackgroundColor: Color.lerp(
-        obfuscatedItemBackgroundColor,
-        other.obfuscatedItemBackgroundColor,
         t,
       )!,
       cardShadow: t < 0.5 ? cardShadow : other.cardShadow,
@@ -116,16 +98,8 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
               other.searchHintStyle,
             ) &&
             const DeepCollectionEquality().equals(
-              obfuscationSearchWarningStyle,
-              other.obfuscationSearchWarningStyle,
-            ) &&
-            const DeepCollectionEquality().equals(
               searchErrorStyle,
               other.searchErrorStyle,
-            ) &&
-            const DeepCollectionEquality().equals(
-              obfuscatedItemBackgroundColor,
-              other.obfuscatedItemBackgroundColor,
             ) &&
             const DeepCollectionEquality().equals(
               cardShadow,
@@ -143,9 +117,7 @@ mixin _$ServersListThemeTailorMixin on ThemeExtension<ServersListTheme> {
       const DeepCollectionEquality().hash(labelPadding),
       const DeepCollectionEquality().hash(paddingSearchGroupsLabel),
       const DeepCollectionEquality().hash(searchHintStyle),
-      const DeepCollectionEquality().hash(obfuscationSearchWarningStyle),
       const DeepCollectionEquality().hash(searchErrorStyle),
-      const DeepCollectionEquality().hash(obfuscatedItemBackgroundColor),
       const DeepCollectionEquality().hash(cardShadow),
     );
   }
@@ -161,10 +133,6 @@ extension ServersListThemeBuildContextProps on BuildContext {
   EdgeInsetsGeometry get paddingSearchGroupsLabel =>
       serversListTheme.paddingSearchGroupsLabel;
   TextStyle get searchHintStyle => serversListTheme.searchHintStyle;
-  TextStyle get obfuscationSearchWarningStyle =>
-      serversListTheme.obfuscationSearchWarningStyle;
   TextStyle get searchErrorStyle => serversListTheme.searchErrorStyle;
-  Color get obfuscatedItemBackgroundColor =>
-      serversListTheme.obfuscatedItemBackgroundColor;
   List<BoxShadow> get cardShadow => serversListTheme.cardShadow;
 }
