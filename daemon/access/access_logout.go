@@ -12,9 +12,9 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
-	"github.com/NordSecurity/nordvpn-linux/session"
 	"github.com/NordSecurity/nordvpn-linux/nc"
 	"github.com/NordSecurity/nordvpn-linux/networker"
+	"github.com/NordSecurity/nordvpn-linux/session"
 )
 
 // TODO: Refactor 'Logout' and 'ForceLogoutWithoutToken` functions to reuse core logic
@@ -27,7 +27,7 @@ type LogoutInput struct {
 	ConfigManager                config.Manager
 	UserLogoutEventPublisherFunc func(events.DataAuthorization)
 	DebugPublisherFunc           func(string)
-	RevokeToken					 bool
+	RevokeToken                  bool
 	DisconnectFunc               func() (pb.ConnectionState, error)
 	DeviceKeyInvalidator         devicekey.DeviceKeyInvalidator
 }
