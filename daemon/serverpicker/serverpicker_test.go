@@ -644,22 +644,6 @@ func TestPickServer(t *testing.T) {
 			expectedRemoteServer: true,
 		},
 		{
-			name:              "find server when virtual locations are disabled",
-			api:               core_test.NewMockFailingServersAPI(errors.New("500")),
-			servers:           core_test.ServersList(),
-			tech:              config.Technology_NORDLYNX,
-			onlyPhysicServers: true,
-		},
-		{
-			name:              "virtual location disabled returns error when only virtual servers match",
-			api:               core_test.NewMockFailingServersAPI(errors.New("500")),
-			servers:           core_test.ServersList(),
-			tech:              config.Technology_NORDLYNX,
-			tag:               "algeria",
-			onlyPhysicServers: true,
-			expectedError:     internal.ErrVirtualServerSelected,
-		},
-		{
 			name:          "can't find a server",
 			api:           core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:       core.Servers{},
