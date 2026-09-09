@@ -1921,15 +1921,6 @@ class Translations$ui$en {
 	/// en: 'This server is already on the list.'
 	String get duplicatedDnsServer => 'This server is already on the list.';
 
-	/// en: 'Obfuscation is turned on, so only obfuscated server locations will show up.'
-	String get obfuscationSearchWarning => 'Obfuscation is turned on, so only obfuscated server locations will show up.';
-
-	/// en: 'No results found. To access all available servers, turn off obfuscation.'
-	String get obfuscationErrorNoServerFound => 'No results found. To access all available servers, turn off obfuscation.';
-
-	/// en: 'Go to Settings'
-	String get goToSettings => 'Go to Settings';
-
 	/// en: 'Use allowlist'
 	String get useAllowList => 'Use allowlist';
 
@@ -1989,12 +1980,6 @@ class Translations$ui$en {
 
 	/// en: 'We couldn't save your settings to the configuration file.'
 	String get couldNotSave => 'We couldn\'t save your settings to the configuration file.';
-
-	/// en: 'Turn off obfuscation for more server types'
-	String get turnOffObfuscationServerTypes => 'Turn off obfuscation for more server types';
-
-	/// en: 'Turn off obfuscation for more locations'
-	String get turnOffObfuscationLocations => 'Turn off obfuscation for more locations';
 
 	/// en: 'NordWhisper'
 	String get nordWhisper => 'NordWhisper';
@@ -2844,9 +2829,6 @@ extension on Translations {
 			'ui.useCustomDnsDescription' => 'Add up to three DNS servers.',
 			'ui.enterDnsAddress' => 'Enter DNS server address',
 			'ui.duplicatedDnsServer' => 'This server is already on the list.',
-			'ui.obfuscationSearchWarning' => 'Obfuscation is turned on, so only obfuscated server locations will show up.',
-			'ui.obfuscationErrorNoServerFound' => 'No results found. To access all available servers, turn off obfuscation.',
-			'ui.goToSettings' => 'Go to Settings',
 			'ui.useAllowList' => 'Use allowlist',
 			'ui.useAllowListSettingDescription' => 'Exclude ports, port ranges, or subnets from VPN protection.',
 			'ui.useAllowListScreenDescription' => 'Specify ports, port ranges, or subnets to exclude from VPN protection. Allowlisted ports may accept incoming connections from any external source outside your network.',
@@ -2867,8 +2849,6 @@ extension on Translations {
 			'ui.delete' => 'Delete',
 			'ui.settingsWereNotSaved' => 'Settings weren\'t saved',
 			'ui.couldNotSave' => 'We couldn\'t save your settings to the configuration file.',
-			'ui.turnOffObfuscationServerTypes' => 'Turn off obfuscation for more server types',
-			'ui.turnOffObfuscationLocations' => 'Turn off obfuscation for more locations',
 			'ui.nordWhisper' => 'NordWhisper',
 			'ui.system' => 'System',
 			'ui.removePrivateSubnets' => 'We\'ll remove private subnets from allowlist',

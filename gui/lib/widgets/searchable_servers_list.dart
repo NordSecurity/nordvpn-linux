@@ -7,7 +7,6 @@ import 'package:nordvpn/data/models/servers_list.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/internal/pair.dart';
 import 'package:nordvpn/logger.dart';
-import 'package:nordvpn/router/routes.dart';
 import 'package:nordvpn/service_locator.dart';
 import 'package:nordvpn/theme/app_theme.dart';
 import 'package:nordvpn/theme/servers_list_theme.dart';
@@ -143,7 +142,6 @@ final class SearchableServersList extends StatelessWidget {
       searchBarSize: appTheme.body,
       noResultsFoundWidget: Center(child: _noResultsWidget(context)),
       showEmptyListAtStartup: servers == null,
-      emptyListWidget: _warningObfuscationEnabled(context),
     );
   }
 
@@ -156,37 +154,13 @@ final class SearchableServersList extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       spacing: appTheme.verticalSpaceLarge,
       children: [
-        if (!_isObfuscatedEnabled) DynamicThemeImage("results_not_found.svg"),
+        DynamicThemeImage("results_not_found.svg"),
         Text(
-          _isObfuscatedEnabled
-              ? t.ui.obfuscationErrorNoServerFound
-              : t.ui.noResultsFound,
+          t.ui.noResultsFound,
           style: serversListTheme.searchErrorStyle,
           textAlign: TextAlign.center,
         ),
-        if (_isObfuscatedEnabled)
-          TextButton(
-            child: Text(t.ui.goToSettings),
-            onPressed: () =>
-                context.navigateToRoute(AppRoute.settingsSecurityAndPrivacy),
-          ),
       ],
-    );
-  }
-
-  Widget? _warningObfuscationEnabled(BuildContext context) {
-    if (!_isObfuscatedEnabled) {
-      return null;
-    }
-
-    final serversListTheme = context.serversListTheme;
-
-    return Center(
-      child: Text(
-        t.ui.obfuscationSearchWarning,
-        textAlign: TextAlign.center,
-        style: serversListTheme.obfuscationSearchWarningStyle,
-      ),
     );
   }
 

@@ -121,27 +121,10 @@ final class VpnScreenHandle extends ScreenHandle {
     await app.tester.pumpAndSettle();
   }
 
-  bool isObfuscationWarningDisplayed() {
-    final finder = find.text(t.ui.obfuscationSearchWarning);
-    return finder.evaluate().length == 1;
-  }
-
   Future<void> searchServer(String text) async {
     expect(_serversSearchTextField(), findsOne);
     await app.tester.enterText(_serversSearchTextField(), text);
     await app.tester.pumpAndSettle();
-  }
-
-  Future<bool> isObfuscationNoResultsFound() async {
-    final msgFinder = find.text(t.ui.obfuscationErrorNoServerFound);
-    final goToSettingsLabel = find.descendant(
-      of: _goToSettings(),
-      matching: find.text(t.ui.goToSettings),
-    );
-
-    return msgFinder.evaluate().isNotEmpty &&
-        _goToSettings().evaluate().isNotEmpty &&
-        goToSettingsLabel.evaluate().isNotEmpty;
   }
 
   // -------------- Finders -------
@@ -158,14 +141,6 @@ final class VpnScreenHandle extends ScreenHandle {
     );
     expect(finder, findsOne);
     return finder;
-  }
-
-  Finder _goToSettings() {
-    final goToSettingsFinder = find.descendant(
-      of: find.byKey(VpnWidget.serversListKey),
-      matching: find.byType(TextButton),
-    );
-    return goToSettingsFinder;
   }
 
   Finder pauseConnectionButton() {

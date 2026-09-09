@@ -4,24 +4,7 @@ import 'package:nordvpn/i18n/strings.g.dart';
 import '../../test/utils/test_helpers.dart';
 
 void runObfuscatedServersTests() async {
-  group("test obfuscated servers search", () {
-    testWidgets("obfuscation messages are displayed", (tester) async {
-      final app = await tester.setupIntegrationTests();
-
-      final vpnScreen = await app.goToVpnScreen();
-      await vpnScreen.clickSearch();
-      expect(vpnScreen.isObfuscationWarningDisplayed(), isFalse);
-      await vpnScreen.searchServer("invalid server name");
-      expect(await vpnScreen.isObfuscationNoResultsFound(), isFalse);
-
-      // switch to obfuscated servers
-      await app.setObfuscatedServers(true);
-      await vpnScreen.searchServer("");
-      expect(vpnScreen.isObfuscationWarningDisplayed(), isTrue);
-      await vpnScreen.searchServer("invalid server name");
-      expect(await vpnScreen.isObfuscationNoResultsFound(), isTrue);
-    });
-
+  group("test obfuscated servers", () {
     testWidgets("VPN card status has obfuscated", (tester) async {
       final app = await tester.setupIntegrationTests();
 
