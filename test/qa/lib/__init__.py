@@ -31,6 +31,8 @@ STANDARD_TECHNOLOGIES_NO_NORDWHISPER = [
 ]
 
 # Used for test parametrization, when the same test has to be run for obfuscated technologies.
+# Obfuscation can no longer be turned on from the CLI (LVPN-10916), so these rows are
+# not usable and the tests using them are skipped now. Both lists are retired by.
 OBFUSCATED_TECHNOLOGIES = [
     # technology, protocol, obfuscation,
     ("openvpn", "udp", "on"),
@@ -49,8 +51,7 @@ STANDARD_TECHNOLOGIES_NO_MESHNET = [
     ("nordwhisper", "", ""),
 ]
 
-TECHNOLOGIES_NO_MESHNET = OBFUSCATED_TECHNOLOGIES + STANDARD_TECHNOLOGIES_NO_MESHNET if IS_NIGHTLY \
-    else OBFUSCATED_TCP + STANDARD_TECHNOLOGIES_NO_MESHNET
+TECHNOLOGIES_NO_MESHNET = STANDARD_TECHNOLOGIES_NO_MESHNET
 
 # Used for test parametrization, when the tested functionality does not work with obfuscated.
 OVPN_STANDARD_TECHNOLOGIES = [
@@ -61,8 +62,7 @@ OVPN_STANDARD_TECHNOLOGIES = [
 
 # Used for test parametrization, when the same test has to be run for all technologies.
 
-TECHNOLOGIES = OBFUSCATED_TECHNOLOGIES + STANDARD_TECHNOLOGIES if IS_NIGHTLY \
-    else OBFUSCATED_TCP + STANDARD_TECHNOLOGIES
+TECHNOLOGIES = STANDARD_TECHNOLOGIES
 
 TECHNOLOGIES_BASIC1 = [
     ("nordlynx", "", ""),
@@ -226,9 +226,12 @@ class Defer:
         print(self.command())
 
 
-def set_technology_and_protocol(tech, proto, obfuscation):
+def set_technology_and_protocol(tech, proto, obfuscation):  # noqa: ARG001
     """
-    Allows setting technology, protocol and obfuscation regardless of whether it is already set or not.
+    Allows setting technology and protocol regardless of whether they are already set or not.
+
+    The obfuscation argument is only kept so the (tech, proto, obfuscation) parametrization tuples
+    still unpack, but obfuscation is no longer settable from the CLI.
 
     Tests do not break on reordering when using this.
     """
@@ -241,12 +244,6 @@ def set_technology_and_protocol(tech, proto, obfuscation):
     if proto:
         try:
             print(sh.nordvpn.set.protocol(proto))
-        except sh.ErrorReturnCode_1 as ex:
-            print("WARNING:", ex)
-
-    if obfuscation:
-        try:
-            print(sh.nordvpn.set.obfuscate(obfuscation))
         except sh.ErrorReturnCode_1 as ex:
             print("WARNING:", ex)
 

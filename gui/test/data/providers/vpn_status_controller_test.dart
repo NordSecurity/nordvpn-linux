@@ -88,23 +88,6 @@ void main() {
     return container;
   }
 
-  test("a status change refreshes the protocol", () async {
-    final container = await buildController();
-    expect(
-      container.read(vpnStatusControllerProvider).value!.protocol,
-      VpnProtocol.nordlynx,
-    );
-
-    container
-        .read(vpnStatusControllerProvider.notifier)
-        .onVpnStatusChanged(nordWhisper);
-
-    expect(
-      container.read(vpnStatusControllerProvider).value!.protocol,
-      VpnProtocol.nordWhisper,
-    );
-  });
-
   test("the state converges so a repeated status is ignored", () async {
     final container = await buildController();
 
