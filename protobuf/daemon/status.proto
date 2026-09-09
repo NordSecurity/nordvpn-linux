@@ -44,7 +44,7 @@ message StatusResponse {
   uint64 upload = 9;
   int64 uptime = 10;
   string name = 11;
-  bool virtualLocation = 12;
+  reserved 12;
   ConnectionParameters parameters = 13;
   bool postQuantum = 14;
   bool is_mesh_peer = 15;

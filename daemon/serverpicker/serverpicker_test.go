@@ -588,7 +588,6 @@ func TestPickServer(t *testing.T) {
 		tech                 config.Technology
 		obfuscated           bool
 		tag                  string
-		onlyPhysicServers    bool
 		excludedServer       string
 		expectedServerName   string
 		expectedRemoteServer bool
@@ -668,9 +667,6 @@ func TestPickServer(t *testing.T) {
 				AutoConnectData: config.AutoConnectData{
 					Obfuscate: test.obfuscated,
 				},
-			}
-			if test.onlyPhysicServers {
-				cfg.VirtualLocation.Set(false)
 			}
 
 			serverSelection, err := PickServer(

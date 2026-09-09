@@ -83,7 +83,6 @@ final class MockApplicationSettings extends CancelableDelayed {
       fwmark: fwmark ?? val.fwmark,
       technology: technology ?? val.technology,
       protocol: protocol ?? val.protocol,
-      virtualLocation: true,
       killSwitch: killSwitch ?? val.killSwitch,
       obfuscate: obfuscate ?? val.obfuscate,
       lanDiscovery: lanDiscovery ?? val.lanDiscovery,

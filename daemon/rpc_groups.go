@@ -24,7 +24,6 @@ func (r *RPC) Groups(ctx context.Context, in *pb.Empty) (*pb.ServerGroupsList, e
 		cfg.Technology,
 		cfg.AutoConnectData.Protocol,
 		cfg.AutoConnectData.Obfuscate,
-		cfg.VirtualLocation.Get(),
 	)
 	if err != nil {
 		log.Error("failed to get group names", err)
@@ -35,7 +34,7 @@ func (r *RPC) Groups(ctx context.Context, in *pb.Empty) (*pb.ServerGroupsList, e
 
 	if r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
 		// Dedicated Server is to be always present in Tray
-		groups = append(groups, &pb.ServerGroup{Name: internal.Title(dedicatedServersGroupTitle), VirtualLocation: false})
+		groups = append(groups, &pb.ServerGroup{Name: internal.Title(dedicatedServersGroupTitle)})
 	}
 
 	return &pb.ServerGroupsList{
