@@ -2,6 +2,7 @@ package request
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"sync/atomic"
@@ -36,7 +37,7 @@ func NewRotatingRoundTripper(
 func (rt *RotatingRoundTripper) roundTripH3(req *http.Request) (*http.Response, error) {
 	resp, err := rt.roundTripperH3.RoundTrip(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("making HTTP3 round trip: %s", err)
 	}
 
 	defer resp.Body.Close()
@@ -47,7 +48,7 @@ func (rt *RotatingRoundTripper) roundTripH3(req *http.Request) (*http.Response, 
 	reader := io.LimitReader(resp.Body, internal.MaxBytesLimit)
 	_, err = io.Copy(&buf, reader)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading HTTP3 response: %s", err)
 	}
 
 	_ = resp.Body.Close()
@@ -70,5 +71,6 @@ func (rt *RotatingRoundTripper) RoundTrip(req *http.Request) (*http.Response, er
 		log.Error("HTTP/3 request failed:", err, "rotating to HTTP/1")
 		rt.isCurrentH3.Store(false)
 	}
-	return rt.roundTripperH1.RoundTrip(req)
+	resp, err := rt.roundTripperH1.RoundTrip(req)
+	return resp, fmt.Errorf("making HTTP1 round trip: %s", err)
 }

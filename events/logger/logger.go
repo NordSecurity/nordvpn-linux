@@ -46,7 +46,10 @@ func (Subscriber) NotifyError(err error) error {
 func (Subscriber) NotifyRequestAPI(data events.DataRequestAPI) error {
 	// do not log attempt events
 	if !data.IsAttempt {
-		log.Infof("HTTP CALL %s", dataRequestAPIToString(data, nil, nil, true))
+		log.Infof("HTTP %d.%d CALL %s",
+			data.Request.ProtoMajor,
+			data.Request.ProtoMinor,
+			dataRequestAPIToString(data, nil, nil, true))
 	}
 	return nil
 }

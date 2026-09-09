@@ -66,7 +66,7 @@ func createH1Transport(
 
 				ips, err := resolver.Resolve(domain)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("resolving domain: %s", err)
 				}
 				var newAddr string
 				if ip := ips[0]; ip.Is6() {
@@ -153,7 +153,7 @@ func createH3Transport(resolver network.DNSResolver, fwmark uint32) func() http.
 					}
 					ips, err := resolver.Resolve(domain)
 					if err != nil {
-						return nil, err
+						return nil, fmt.Errorf("resolving domain: %s", err)
 					}
 					if !ips[0].IsValid() {
 						return nil, fmt.Errorf("invalid IP resolved: %s", ips[0])
