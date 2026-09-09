@@ -35,9 +35,11 @@ func TestRecentConnectionsStore_Get_ExistingConnections(t *testing.T) {
 		{
 			Country:        "Germany",
 			ConnectionType: config.ServerSelectionRule_COUNTRY,
+			ConnectionTech: config.Technology_NORDLYNX,
 		},
 		{
 			ConnectionType: config.ServerSelectionRule_RECOMMENDED,
+			ConnectionTech: config.Technology_NORDWHISPER,
 		},
 	}
 	data, _ := json.Marshal(existingConnections)
@@ -487,7 +489,7 @@ func TestRecentConnectionsStore_CheckExistence_CreatesFile(t *testing.T) {
 
 	data, err := fs.ReadFile("/test/path")
 	require.NoError(t, err)
-	assert.Equal(t, []byte("[]"), data)
+	assert.Equal(t, `{"version":1,"connections":[]}`, string(data))
 }
 
 func TestRecentConnectionsStore_Save_Error(t *testing.T) {
@@ -538,7 +540,7 @@ func TestRecentConnectionsStore_Get_LoadErrorRecreatesFile(t *testing.T) {
 
 	data, err := fs.ReadFile("/test/path")
 	require.NoError(t, err)
-	assert.Equal(t, []byte("[]"), data, "File should be recreated with empty array")
+	assert.Equal(t, `{"version":1,"connections":[]}`, string(data), "File should be recreated with empty array")
 }
 
 func TestRecentConnectionsStore_Get_LoadErrorWithSaveError(t *testing.T) {
@@ -1256,4 +1258,45 @@ func TestRecentConnectionsStore_EventPublisher_ConcurrentOperations(t *testing.T
 
 	assert.Greater(t, finalCount, 0, "Should have published events for successful operations")
 	assert.LessOrEqual(t, finalCount, operations, "Should not publish more events than operations")
+}
+
+func TestRecentConnectionsStore_FileMigration(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := fs.NewSystemFileHandleMock(t)
+	existingConnections := []Model{
+		{
+			Country:        "Germany",
+			ConnectionType: config.ServerSelectionRule_COUNTRY,
+		},
+		{
+			ConnectionType: config.ServerSelectionRule_RECOMMENDED,
+		},
+	}
+	data, _ := json.Marshal(existingConnections)
+	fs.AddFile("/test/path", data)
+
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	connections, err := store.Get()
+	// older connections didn't had ConnectionTech.
+	//  At migration they are all assigned to Nordlynx
+	connectionsWithConnTech := []Model{
+		{
+			Country:        "Germany",
+			ConnectionType: config.ServerSelectionRule_COUNTRY,
+			ConnectionTech: config.Technology_NORDLYNX,
+		},
+		{
+			ConnectionType: config.ServerSelectionRule_RECOMMENDED,
+			ConnectionTech: config.Technology_NORDLYNX,
+		},
+	}
+	require.NoError(t, err)
+	assert.Equal(t, connectionsWithConnTech, connections)
+
+	data, err = fs.ReadFile("/test/path")
+	require.NoError(t, err)
+	expectedFileContent := `{"version":1,"connections":[{"country":"Germany","connection-type":3,"connection-tech":2},{"connection-type":1,"connection-tech":2}]}`
+	assert.Equal(t, expectedFileContent, string(data))
 }
