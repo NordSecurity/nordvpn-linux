@@ -65,7 +65,7 @@ func TestLogout_Token(t *testing.T) {
 		{
 			revokeToken:       false,
 			loggedInWithToken: true,
-			result:            internal.CodeSuccess,
+			result:            internal.CodeTokenInvalidated,
 		},
 		{
 			revokeToken:       false,
