@@ -21,10 +21,6 @@ func technologiesToProtobuf(technologies core.Technologies) []pb.Technology {
 			technologiesProto = append(technologiesProto, pb.Technology_OPENVPN_UDP)
 		case core.OpenVPNTCP:
 			technologiesProto = append(technologiesProto, pb.Technology_OPENVPN_TCP)
-		case core.OpenVPNUDPObfuscated:
-			technologiesProto = append(technologiesProto, pb.Technology_OBFUSCATED_OPENVPN_UDP)
-		case core.OpenVPNTCPObfuscated:
-			technologiesProto = append(technologiesProto, pb.Technology_OBFUSCATED_OPENVPN_TCP)
 		case core.WireguardTech:
 			technologiesProto = append(technologiesProto, pb.Technology_NORDLYNX)
 		}
@@ -36,12 +32,13 @@ func technologiesToProtobuf(technologies core.Technologies) []pb.Technology {
 // groupFilter converts core.Groups to a slice of config.ServerGroup. It also filters out the groups so that only ones
 // returned are of interest to the GUI.
 func groupFilter(groups core.Groups) []config.ServerGroup {
+	// the obfuscated group is not listed. Only the OVPN XOR servers carry that tag, and that
+	// should not be connectable
 	filter := []config.ServerGroup{
 		config.ServerGroup_P2P,
 		config.ServerGroup_DOUBLE_VPN,
 		config.ServerGroup_ONION_OVER_VPN,
 		config.ServerGroup_DEDICATED_IP,
-		config.ServerGroup_OBFUSCATED,
 		config.ServerGroup_STANDARD_VPN_SERVERS,
 	}
 
@@ -69,7 +66,7 @@ func serversListToServersMap(internalServers core.Servers, allowVirtual bool) []
 			continue
 		}
 
-		s := pb.Server{
+		s := &pb.Server{
 			Id:           server.ID,
 			HostName:     server.Hostname,
 			Virtual:      server.IsVirtualLocation(),
@@ -81,15 +78,11 @@ func serversListToServersMap(internalServers core.Servers, allowVirtual bool) []
 		cityName := server.Country().City.Name
 
 		if _, ok := sMap[countryCode]; !ok {
-			sMap[countryCode] = make(map[string][]*pb.Server, 0)
+			sMap[countryCode] = make(map[string][]*pb.Server)
 			countryNames[countryCode] = server.Country().Name
 		}
 
-		if _, ok := sMap[countryCode][cityName]; !ok {
-			sMap[countryCode][cityName] = []*pb.Server{}
-		}
-
-		sMap[countryCode][cityName] = append(sMap[countryCode][cityName], &s)
+		sMap[countryCode][cityName] = append(sMap[countryCode][cityName], s)
 	}
 
 	countries := []*pb.ServerCountry{}

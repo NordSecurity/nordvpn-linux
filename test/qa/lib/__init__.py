@@ -30,17 +30,10 @@ STANDARD_TECHNOLOGIES_NO_NORDWHISPER = [
     ("nordlynx", "", ""),
 ]
 
-# Used for test parametrization, when the same test has to be run for obfuscated technologies.
-# Obfuscation can no longer be turned on from the CLI (LVPN-10916), so these rows are
-# not usable and the tests using them are skipped now. Both lists are retired by.
+# Legacy XOR OpenVPN. Retire with LVPN-10940.
 OBFUSCATED_TECHNOLOGIES = [
     # technology, protocol, obfuscation,
     ("openvpn", "udp", "on"),
-    ("openvpn", "tcp", "on"),
-]
-
-OBFUSCATED_TCP = [
-    # technology, protocol, obfuscation,
     ("openvpn", "tcp", "on"),
 ]
 
@@ -51,7 +44,7 @@ STANDARD_TECHNOLOGIES_NO_MESHNET = [
     ("nordwhisper", "", ""),
 ]
 
-TECHNOLOGIES_NO_MESHNET = STANDARD_TECHNOLOGIES_NO_MESHNET
+TECHNOLOGIES_NO_MESHNET = list(STANDARD_TECHNOLOGIES_NO_MESHNET)
 
 # Used for test parametrization, when the tested functionality does not work with obfuscated.
 OVPN_STANDARD_TECHNOLOGIES = [
@@ -61,8 +54,8 @@ OVPN_STANDARD_TECHNOLOGIES = [
 ]
 
 # Used for test parametrization, when the same test has to be run for all technologies.
-
-TECHNOLOGIES = STANDARD_TECHNOLOGIES
+# Obfuscation is a NordWhisper property since LVPN-10929, so there are no obfuscated rows to add.
+TECHNOLOGIES = list(STANDARD_TECHNOLOGIES)
 
 TECHNOLOGIES_BASIC1 = [
     ("nordlynx", "", ""),
@@ -99,8 +92,8 @@ DEDICATED_IP_GROUPS = [
     "Dedicated_IP"
 ]
 
-# Used for test parametrization, when the tested functionality only works with obfuscated OPENVPN.
-OVPN_OBFUSCATED_GROUPS = [
+# Used for test parametrization of the Obfuscated_Servers group, which NordWhisper aliases for its standard servers.
+OBFUSCATED_GROUPS = [
     "Obfuscated_Servers"
 ]
 

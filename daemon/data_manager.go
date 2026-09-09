@@ -219,7 +219,6 @@ func (dm *DataManager) SetVersionData(version semver.Version, newerAvailable boo
 func toServerTechnology(
 	technology config.Technology,
 	protocol config.Protocol,
-	obfuscated bool,
 ) (core.ServerTechnology, error) {
 	var serverTechnology core.ServerTechnology
 	switch technology {
@@ -228,17 +227,9 @@ func toServerTechnology(
 	case config.Technology_OPENVPN:
 		switch protocol {
 		case config.Protocol_TCP:
-			if obfuscated {
-				serverTechnology = core.OpenVPNTCPObfuscated
-			} else {
-				serverTechnology = core.OpenVPNTCP
-			}
+			serverTechnology = core.OpenVPNTCP
 		case config.Protocol_UDP:
-			if obfuscated {
-				serverTechnology = core.OpenVPNUDPObfuscated
-			} else {
-				serverTechnology = core.OpenVPNUDP
-			}
+			serverTechnology = core.OpenVPNUDP
 		case config.Protocol_Webtunnel:
 			return 0, errors.New("webtunnel protocol is not compatible with opevpn")
 		case config.Protocol_UNKNOWN_PROTOCOL:
@@ -255,10 +246,9 @@ func toServerTechnology(
 func (dm *DataManager) Countries(
 	technology config.Technology,
 	protocol config.Protocol,
-	obfuscated bool,
 	includeVirtualLocation bool,
 ) ([]*pb.ServerGroup, error) {
-	serverTechnology, err := toServerTechnology(technology, protocol, obfuscated)
+	serverTechnology, err := toServerTechnology(technology, protocol)
 	if err != nil {
 		return nil, err
 	}
@@ -305,10 +295,9 @@ func (dm *DataManager) Cities(
 	countryName string,
 	technology config.Technology,
 	protocol config.Protocol,
-	obfuscated bool,
 	virtualLocation bool,
 ) ([]*pb.ServerGroup, error) {
-	serverTechnology, err := toServerTechnology(technology, protocol, obfuscated)
+	serverTechnology, err := toServerTechnology(technology, protocol)
 	if err != nil {
 		return nil, err
 	}
@@ -353,10 +342,9 @@ func (dm *DataManager) Cities(
 func (dm *DataManager) Groups(
 	technology config.Technology,
 	protocol config.Protocol,
-	obfuscated bool,
 	virtualLocation bool,
 ) ([]*pb.ServerGroup, error) {
-	serverTechnology, err := toServerTechnology(technology, protocol, obfuscated)
+	serverTechnology, err := toServerTechnology(technology, protocol)
 	if err != nil {
 		return nil, err
 	}
@@ -379,6 +367,12 @@ func (dm *DataManager) Groups(
 			}
 
 			if config.IsRegionalGroup(group.ID) {
+				continue
+			}
+
+			// the current obfuscated group is not viable any more. Only the OVPN XOR servers carry
+			// it and they should not be connectable
+			if group.ID == config.ServerGroup_OBFUSCATED {
 				continue
 			}
 

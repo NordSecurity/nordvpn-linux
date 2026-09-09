@@ -139,20 +139,6 @@ func TestDoAutoConnect(t *testing.T) {
 		setup func(*RPC)
 	}{
 		{
-			name: "connects to obfuscated group",
-			setup: func(rpc *RPC) {
-				rpc.serversAPI = core_test.NewMockServersAPI()
-				mockConfigManager := newMockConfigManager()
-
-				// For obfuscated the server group from API is Obfuscated_servers
-				updateAutoconnectData(mockConfigManager, config.AutoConnectData{Group: config.ServerGroup_OBFUSCATED, ServerTag: "obfuscated_servers"})
-				mockConfigManager.c.AutoConnectData.Obfuscate = true
-				mockConfigManager.c.Technology = config.Technology_OPENVPN
-
-				rpc.cm = mockConfigManager
-			},
-		},
-		{
 			name: "connects to country code",
 			setup: func(rpc *RPC) {
 				rpc.serversAPI = core_test.NewMockServersAPI()
@@ -195,6 +181,26 @@ func TestDoAutoConnect(t *testing.T) {
 			}
 			err := rpc.doAutoConnect()
 			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestDoAutoConnect_ObfuscatedGroupNeedsNordWhisper(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	for _, tech := range []config.Technology{config.Technology_OPENVPN, config.Technology_NORDLYNX} {
+		t.Run(tech.String(), func(t *testing.T) {
+			rpc := testRPC()
+			rpc.serversAPI = core_test.NewMockServersAPI()
+			mockConfigManager := newMockConfigManager()
+			updateAutoconnectData(mockConfigManager, config.AutoConnectData{
+				Group:     config.ServerGroup_OBFUSCATED,
+				ServerTag: "obfuscated_servers",
+			})
+			mockConfigManager.c.Technology = tech
+			rpc.cm = mockConfigManager
+
+			assert.Error(t, rpc.doAutoConnect())
 		})
 	}
 }

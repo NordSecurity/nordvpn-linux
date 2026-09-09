@@ -117,8 +117,8 @@ def test_nordwhisper_connect_to_group_random_server_by_name_additional(tech, pro
     disconnect_base_test()
 
 
-@pytest.mark.skip("obfuscation is no longer settable from the CLI (LVPN-10916), retire with LVPN-10940")
-@pytest.mark.parametrize("group", lib.OVPN_OBFUSCATED_GROUPS)
+@pytest.mark.skip("no NordWhisper server carries the Obfuscated_Servers group in the API, retire with LVPN-10940")
+@pytest.mark.parametrize("group", lib.OBFUSCATED_GROUPS)
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 def test_connect_to_group_random_server_by_name_obfuscated(tech, proto, obfuscated, group):
     """Manual TC: LVPN-8665"""
@@ -132,7 +132,7 @@ def test_connect_to_group_random_server_by_name_obfuscated(tech, proto, obfuscat
 
 @pytest.mark.skip("flaky test, LVPN-6277")
 # the tun interface is recreated only for OpenVPN
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
 def test_connect_network_restart_recreates_tun_interface(tech, proto, obfuscated):
     """Manual TC is unavailable because reconnection timing and interface changes can’t be reliably checked without automation."""
 
@@ -236,9 +236,8 @@ def test_connect_to_group_ovpn(tech, proto, obfuscated, group):
     disconnect_base_test()
 
 
-@pytest.mark.skip("obfuscation is no longer settable from the CLI (LVPN-10916), retire with LVPN-10940")
-@pytest.mark.parametrize("group", lib.OVPN_OBFUSCATED_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
+@pytest.mark.parametrize("group", lib.OBFUSCATED_GROUPS)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.NORDWHISPER_TECHNOLOGY)
 def test_connect_to_group_obfuscated(tech, proto, obfuscated, group):
     """Manual TC: LVPN-762"""
 
@@ -306,9 +305,8 @@ def test_connect_to_flag_group_ovpn(tech, proto, obfuscated, group):
     assert lib.is_connect_unsuccessful(ex), "Connection with duplicate group should fail"
 
 
-@pytest.mark.skip("obfuscation is no longer settable from the CLI (LVPN-10916), retire with LVPN-10940")
-@pytest.mark.parametrize("group", lib.OVPN_OBFUSCATED_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
+@pytest.mark.parametrize("group", lib.OBFUSCATED_GROUPS)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.NORDWHISPER_TECHNOLOGY)
 def test_connect_to_flag_group_obfuscated(tech, proto, obfuscated, group):
     """Manual TC: LVPN-8629"""
 
@@ -403,6 +401,10 @@ def test_connect_to_unavailable_groups(tech, proto, obfuscated):
     unavailable_groups = daemon.get_unavailable_groups()
 
     for group in unavailable_groups:
+        # TODO(LVPN-10935)
+        if group == "Obfuscated_Servers" and tech == "nordwhisper":
+            continue
+
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh.nordvpn(get_alias(), group)
 
@@ -592,7 +594,7 @@ def test_connect_fails_virtual_location_disabled(tech, proto, obfuscated):
     assert "Please enable virtual location access to connect to this server." in ex.value.stdout.decode(), "Should show virtual location disabled error"
 
 
-@pytest.mark.skip("obfuscation is no longer settable from the CLI (LVPN-10916), retire with LVPN-10940")
+@pytest.mark.skip("obfuscation no longer excludes virtual locations")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 def test_obfuscation_prevents_virtual_location_connection(tech, proto, obfuscated):
     """Manual TC: LVPN-5771"""

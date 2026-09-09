@@ -345,7 +345,7 @@ def test_set_post_quantum_off_on_repeated():
     assert "Post-quantum VPN is already set to 'enabled'." in sh.nordvpn.set(pq_alias, "on"), "Post-quantum should be already enabled"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES + lib.OBFUSCATED_TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
 def test_set_post_quantum_on_open_vpn(tech, proto, obfuscated):
     """Manual TC: LVPN-5787"""
 

@@ -23,7 +23,6 @@ func (r *RPC) Cities(ctx context.Context, in *pb.CitiesRequest) (*pb.ServerGroup
 		in.GetCountry(),
 		cfg.Technology,
 		cfg.AutoConnectData.Protocol,
-		cfg.AutoConnectData.Obfuscate,
 		cfg.VirtualLocation.Get(),
 	)
 	if err != nil {
