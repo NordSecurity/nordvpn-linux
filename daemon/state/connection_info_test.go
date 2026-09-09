@@ -119,7 +119,6 @@ func TestConnectionInfo_VerifyDataConnectConversionToConnectionStatus(t *testing
 		TargetServerCountryCode: "TC",
 		TargetServerCity:        "Test City",
 		TargetServerIP:          netip.MustParseAddr("192.168.1.1"),
-		IsVirtualLocation:       true,
 		IsPostQuantum:           false,
 		IsObfuscated:            true,
 		IsMeshnetPeer:           false,
@@ -145,7 +144,6 @@ func TestConnectionInfo_VerifyDataConnectConversionToConnectionStatus(t *testing
 	assert.Equal(t, event.TargetServerCountryCode, status.CountryCode)
 	assert.Equal(t, event.TargetServerCity, status.City)
 	assert.Equal(t, event.TargetServerIP, status.IP)
-	assert.Equal(t, event.IsVirtualLocation, status.IsVirtualLocation)
 	assert.Equal(t, event.IsPostQuantum, status.IsPostQuantum)
 	assert.Equal(t, event.IsObfuscated, status.IsObfuscated)
 	assert.Equal(t, "", status.TunnelName)

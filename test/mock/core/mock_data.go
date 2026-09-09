@@ -128,17 +128,6 @@ func ServersList() core.Servers {
 		},
 	}
 
-	virtualServer := []core.Specification{
-		{
-			Identifier: core.VirtualLocation,
-			Values: []struct {
-				Value string "json:\"value\""
-			}{
-				{Value: "true"},
-			},
-		},
-	}
-
 	servers := core.Servers{
 		core.Server{
 			ID:           1,
@@ -220,8 +209,7 @@ func ServersList() core.Servers {
 					},
 				},
 			},
-			Specifications: virtualServer,
-			Groups:         standardGroups,
+			Groups: standardGroups,
 		},
 		core.Server{
 			ID:           5,
@@ -317,8 +305,7 @@ func ServersList() core.Servers {
 					},
 				},
 			},
-			Specifications: virtualServer,
-			Groups:         standardGroups,
+			Groups: standardGroups,
 		},
 		core.Server{
 			ID:           11,

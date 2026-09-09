@@ -158,7 +158,6 @@ final class MockServersList {
           final server = Server(
             id: Int64(serverId),
             hostName: "$countryCode${serverCounter++}.nordvpn.com",
-            virtual: false,
             technologies: technologies,
             serverGroups: groups,
           );

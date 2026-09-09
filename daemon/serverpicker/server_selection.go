@@ -135,15 +135,6 @@ func PickServer(
 		return ServerSelection{}, internal.ErrServerIsUnavailable
 	}
 
-	allowVirtualServer := cfg.VirtualLocation.Get()
-	if !allowVirtualServer && len(selectedServers) > 0 {
-		selectedServers = slices.DeleteFunc(selectedServers, func(s core.Server) bool { return s.IsVirtualLocation() })
-		if len(selectedServers) == 0 {
-			// if the selected servers are only virtual, but user has this disabled return an error
-			return ServerSelection{}, internal.ErrVirtualServerSelected
-		}
-	}
-
 	// #nosec G404 -- not used for cryptographic purposes
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	selectedServer = &selectedServers[rng.Int63n(int64(len(selectedServers)))]

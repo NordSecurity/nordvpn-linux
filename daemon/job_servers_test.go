@@ -65,7 +65,6 @@ func (m *mockConfigManager) Load(c *config.Config) error {
 	c.Mesh = m.c.Mesh
 	c.MeshDevice = m.c.MeshDevice
 	c.DeviceKey = m.c.DeviceKey
-	c.VirtualLocation = m.c.VirtualLocation
 	c.LanDiscovery = m.c.LanDiscovery
 	return nil
 }
