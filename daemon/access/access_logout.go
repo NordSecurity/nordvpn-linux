@@ -148,8 +148,8 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 
 	input.DebugPublisherFunc("user logged out")
 
-	if input.RevokeToken && tokenData.RenewToken == "" {
-		return LogoutResult{Status: internal.CodeTokenInvalidated, Err: nil}
+	if !input.RevokeToken && tokenData.RenewToken == "" {
+		return LogoutResult{Status: internal.CodeTokenStillValid, Err: nil}
 	}
 
 	return LogoutResult{Status: internal.CodeSuccess, Err: nil}

@@ -232,7 +232,7 @@ func (ti *Instance) logout(revokeToken bool) bool {
 	switch resp.Type {
 	case internal.CodeSuccess:
 		return true
-	case internal.CodeTokenInvalidated:
+	case internal.CodeTokenStillValid:
 		return true
 	default:
 		ti.n.Alert(cli.CheckYourInternetConnMessage).Show()

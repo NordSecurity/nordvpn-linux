@@ -9,10 +9,9 @@ from lib import (
     login,
     network,
     settings,
-    selenium,
 )
 
-
+LOGOUT_WITH_TOKEN_MSG = "You have been logged out. Your access token remains valid and can be reused to log in again. To revoke it, run nordvpn logout --revoke-token, or manage your tokens at https://my.nordaccount.com/dashboard/nordvpn/access-tokens" # noqa: S105
 pytestmark = pytest.mark.usefixtures("collect_logs")
 
 
@@ -197,7 +196,7 @@ def test_logout_disconnects():
 
     output = sh.nordvpn.logout()
     print(output)
-    assert "You're logged out." in output, "Logout should show success message"
+    assert LOGOUT_WITH_TOKEN_MSG in output, "Logout should show success message"
     assert network.is_disconnected(), "Network should be disconnected after logout"
 
 
@@ -296,5 +295,5 @@ def test_logout_not_connected():
 
     assert not stderr, f"Found some errors: {stderr}"
 
-    assert selenium.LOGOUT_MSG_SUCCESS in stdout, \
-        f"Couldn't find {selenium.LOGOUT_MSG_SUCCESS} in output. Output is a next: {stdout}"
+    assert LOGOUT_WITH_TOKEN_MSG in stdout, \
+        f"Couldn't find {LOGOUT_WITH_TOKEN_MSG} in output. Output is a next: {stdout}"
