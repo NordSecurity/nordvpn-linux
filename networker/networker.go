@@ -1041,19 +1041,18 @@ func (netw *Combined) setMesh(
 	if err := netw.ipForwardSetter.Set(); err != nil {
 		return fmt.Errorf("IP forwarding setting: %w", err)
 	}
-	// If nordlynx was used as vpnet, the interface will change IP, we refresh it here
-	var tunnelIP, ok = netip.Addr{}, false
-	if netw.isVpnSet {
-		tunnelIP, ok = netw.vpnet.Tun().IP()
-	}
 	// configure firewall
 	newCfg := netw.fwConfig.CopyWith(
 		firewall.WithMeshnetInfo(firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)),
 	)
-	if ok {
-		newCfg = newCfg.CopyWith(
-			firewall.WithTunnelIP(tunnelIP),
-		)
+	// If nordlynx was used as vpnet, the interface will change IP, we refresh it here
+	var tunnelIP, ok = netip.Addr{}, false
+	if netw.isVpnSet {
+		if tunnelIP, ok = netw.vpnet.Tun().IP(); ok {
+			newCfg = newCfg.CopyWith(
+				firewall.WithTunnelIP(tunnelIP),
+			)
+		}
 	}
 
 	if !netw.fwConfig.HasSimilarMeshInfo(&newCfg) {
