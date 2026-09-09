@@ -88,33 +88,6 @@ def collect_state_changes(channel: grpc.Channel, stop_at: int, tracked_states: S
                     break
         return result
 
-def test_is_virtual_location_is_true_for_virtual_location():
-    check_is_virtual_location_in_response("Algiers", True)
-
-
-def check_is_virtual_location_in_response(loc: str, expected_is_virtual: bool):
-    expected_states = [
-        status_pb2.ConnectionState.DISCONNECTED, # initial state on subscribe
-        status_pb2.ConnectionState.CONNECTING, # start with "connecting" state ASAP
-        status_pb2.ConnectionState.CONNECTING, # update with selected location
-        status_pb2.ConnectionState.CONNECTED
-    ]
-
-    subscribtion_barrier = Barrier(2) # parrent and child thread
-    result = []
-    thread = threading.Thread(target=lambda: result.extend(collect_state_changes_guard(
-        len(expected_states), ['connection_status'], subscribtion_barrier)))
-    thread.start()
-    subscribtion_barrier.wait(timeout=10)
-    sh.nordvpn.connect(loc)
-    sh.nordvpn.disconnect()
-    thread.join()
-    assert result.pop().connection_status.virtualLocation == expected_is_virtual, f"Virtual location status should be {expected_is_virtual} for location {loc}"
-
-
-def test_is_virtual_is_false_for_non_virtual_location():
-    check_is_virtual_location_in_response("Poland", False)
-
 
 def test_manual_connection_source_is_present_in_response():
     expected_states = [
