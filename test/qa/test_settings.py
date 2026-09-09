@@ -137,7 +137,7 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
     else:
         assert not settings.is_obfuscated_enabled(), "Obfuscation should be disabled"
 
-    sh.nordvpn.logout("--persist-token")
+    sh.nordvpn.logout()
 
     assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults("--logout"), "Defaults reset message should be shown"
 
