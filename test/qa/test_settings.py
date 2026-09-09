@@ -79,7 +79,6 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     sh.nordvpn.set.dns("1.1.1.1")
     sh.nordvpn.set.analytics("off")
     sh.nordvpn.set.notify("on")
-    sh.nordvpn.set("virtual-location", "off")
 
     if tech == "nordlynx":
         sh.nordvpn.set.pq("on")
@@ -89,7 +88,6 @@ def test_set_defaults_when_logged_in_1st_set(tech, proto, obfuscated):
     assert not settings.is_dns_disabled(), "DNS should be enabled"
     assert settings.is_user_consent_declared(), "User consent should be declared"
     assert settings.is_notify_enabled(), "Notifications should be enabled"
-    assert not settings.is_virtual_location_enabled(), "Virtual location should be disabled"
 
     if tech == "nordlynx":
         assert not settings.is_post_quantum_disabled(), "Post-quantum should be enabled for NordLynx"
@@ -117,7 +115,6 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
     sh.nordvpn.set.autoconnect("on")
     sh.nordvpn.set.notify("on")
     sh.nordvpn.set.dns("1.1.1.1")
-    sh.nordvpn.set("virtual-location", "off")
 
     if tech == "nordlynx":
         sh.nordvpn.set.pq("on")
@@ -127,7 +124,6 @@ def test_set_defaults_when_logged_out_2nd_set(tech, proto, obfuscated):
     assert settings.is_autoconnect_enabled(), "Autoconnect should be enabled"
     assert settings.is_notify_enabled(), "Notifications should be enabled"
     assert not settings.is_dns_disabled(), "DNS should be enabled"
-    assert not settings.is_virtual_location_enabled(), "Virtual location should be disabled"
 
     if tech == "nordlynx":
         assert not settings.is_post_quantum_disabled(), "Post-quantum should be enabled for NordLynx"
@@ -154,7 +150,6 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
     sh.nordvpn.set.dns("1.1.1.1")
     sh.nordvpn.set.analytics("off")
     sh.nordvpn.set("lan-discovery", "on")
-    sh.nordvpn.set("virtual-location", "off")
 
     if tech == "nordlynx":
         sh.nordvpn.set.pq("on")
@@ -166,7 +161,6 @@ def test_set_defaults_when_connected_1st_set(tech, proto, obfuscated):
     assert not settings.is_dns_disabled(), "DNS should be enabled"
     assert settings.is_user_consent_declared(), "User consent should be declared"
     assert settings.is_lan_discovery_enabled(), "LAN discovery should be enabled"
-    assert not settings.is_virtual_location_enabled(), "Virtual location should be disabled"
 
     if tech == "nordlynx":
         assert not settings.is_post_quantum_disabled(), "Post-quantum should be enabled for NordLynx"
@@ -281,10 +275,8 @@ def test_set_defaults_no_logout(tech, proto, obfuscated):
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
-    sh.nordvpn.set("virtual-location", "off")
     sh.nordvpn.set("lan-discovery", "on")
 
-    assert not settings.is_virtual_location_enabled(), "Virtual location should be disabled"
     assert settings.is_lan_discovery_enabled(), "LAN discovery should be enabled"
 
     assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults(), "Defaults reset message should be shown"
@@ -310,25 +302,6 @@ def test_set_analytics_on_off_repeated():
 
     sh.nordvpn.set.analytics("off")
     assert "Analytics is already set to 'disabled'." in sh.nordvpn.set.analytics("off"), "Analytics should be already disabled"
-
-
-def test_set_virtual_location_off_on():
-    """Manual TC: LVPN-5253"""
-
-    assert "Virtual location has been successfully set to 'disabled'." in sh.nordvpn.set("virtual-location", "off"), "Virtual location should be successfully disabled"
-    assert not settings.is_virtual_location_enabled(), "Virtual location should be disabled"
-
-    assert "Virtual location has been successfully set to 'enabled'." in sh.nordvpn.set("virtual-location", "on"), "Virtual location should be successfully enabled"
-    assert settings.is_virtual_location_enabled(), "Virtual location should be enabled"
-
-
-def test_set_virtual_location_on_off_repeated():
-    """Manual TC: LVPN-5254"""
-
-    assert "Virtual location is already set to 'enabled'." in sh.nordvpn.set("virtual-location", "on"), "Virtual location should be already enabled"
-
-    sh.nordvpn.set("virtual-location", "off")
-    assert "Virtual location is already set to 'disabled'." in sh.nordvpn.set("virtual-location", "off"), "Virtual location should be already disabled"
 
 
 def test_set_post_quantum_on_off():
@@ -537,7 +510,6 @@ def test_settings_are_kept_after_reboot():
         (("tray", "off"),             "Tray set to 'disabled' successfully.",                            "Tray",                   "disabled"),
         (("autoconnect", "on"),       "Auto-connect has been successfully set to 'enabled'.",            "Auto-connect",           "enabled"),
         (("lan-discovery", "on"),     "LAN Discovery has been successfully set to 'enabled'.",           "LAN Discovery",          "enabled"),
-        (("virtual-location", "off"), "Virtual location has been successfully set to 'disabled'.",       "Virtual Location",       "disabled"),
         (("arp-ignore", "off"),       "ARP ignore set to 'disabled' successfully.",                      "ARP Ignore",             "disabled"),
     ]
 
