@@ -57,13 +57,15 @@ type state struct {
 	IsExit    bool
 }
 
-var publicKeyExpr = regexp.MustCompile(`"PublicKey":(\s)*"(.*?)"`)
+var publicKeyExprContextQuotes = regexp.MustCompile(`"PublicKey":(\s)*"(.*?)"`)
+var publicKeyExprContextNoQuotes = regexp.MustCompile(`PublicKey:(\s)*([^\s,}\]]+)`)
 var publicKeyNoContextExpr = regexp.MustCompile(`[A-Za-z0-9+/]{43}=`)
 
 // maskPublicKey relies on surrounding context to mask the public key. It replaces all "PublicKey:<key>" substrings with
 // "PublicKey:***".
 func maskPublicKey(in string) string {
-	return publicKeyExpr.ReplaceAllString(in, `"PublicKey":"***"`)
+	in = publicKeyExprContextQuotes.ReplaceAllString(in, `"PublicKey":"***"`)
+	return publicKeyExprContextNoQuotes.ReplaceAllString(in, `PublicKey:***`)
 }
 
 // maskPublicKeyNoContext masks public key without relying on surrounding context. This results in more accuracy at a
@@ -141,7 +143,8 @@ func (t *telioCallbackHandler) handleEvent(e teliogo.Event) error {
 			t.connectionMonitoringContext = nil
 			return nil
 		case <-time.After(1 * time.Second):
-			log.Error("telio event was dropped because of timeout:", st)
+			errorLog := maskPublicKey(fmt.Sprintf("telio event was dropped because of timeout:", st))
+			log.Error("telio event was dropped because of timeout:", errorLog)
 		}
 
 		if evt.Body.VpnConnectionError != nil {
@@ -320,7 +323,9 @@ func getTelioLogLevel() teliogo.TelioLogLevel {
 
 	raw, err := root.ReadFile(filepath.Base(internal.TelioLogLevelFile))
 	if err != nil {
-		log.Error("failed to read log level file:", err)
+		if !errors.Is(err, os.ErrNotExist) {
+			log.Warn("failed to read log level file:", err)
+		}
 		return teliogo.TelioLogLevelInfo
 	}
 
