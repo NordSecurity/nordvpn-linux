@@ -143,7 +143,7 @@ func (t *telioCallbackHandler) handleEvent(e teliogo.Event) error {
 			t.connectionMonitoringContext = nil
 			return nil
 		case <-time.After(1 * time.Second):
-			errorLog := maskPublicKey(fmt.Sprintf("telio event was dropped because of timeout:", st))
+			errorLog := maskPublicKey(fmt.Sprintf("telio event was dropped because of timeout: %+v", st))
 			log.Error("telio event was dropped because of timeout:", errorLog)
 		}
 
