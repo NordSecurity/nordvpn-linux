@@ -11,9 +11,12 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -22,6 +25,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn"
 	"github.com/NordSecurity/nordvpn-linux/daemon/vpn/nordlynx"
 	"github.com/NordSecurity/nordvpn-linux/events"
+	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/tunnel"
 	"github.com/google/uuid"
@@ -53,9 +57,21 @@ type state struct {
 	IsExit    bool
 }
 
-func maskPublicKey(event string) string {
-	expr := regexp.MustCompile(`"PublicKey":(\s)*"(.*?)"`)
-	return expr.ReplaceAllString(event, `"PublicKey":"***"`)
+var publicKeyExprContextQuotes = regexp.MustCompile(`"PublicKey":(\s)*"(.*?)"`)
+var publicKeyExprContextNoQuotes = regexp.MustCompile(`PublicKey:(\s)*([^\s,}\]]+)`)
+var publicKeyNoContextExpr = regexp.MustCompile(`[A-Za-z0-9+/]{43}=`)
+
+// maskPublicKey relies on surrounding context to mask the public key. It replaces all "PublicKey:<key>" substrings with
+// "PublicKey:***".
+func maskPublicKey(in string) string {
+	in = publicKeyExprContextQuotes.ReplaceAllString(in, `"PublicKey":"***"`)
+	return publicKeyExprContextNoQuotes.ReplaceAllString(in, `PublicKey:***`)
+}
+
+// maskPublicKeyNoContext masks public key without relying on surrounding context. This results in more accuracy at a
+// potential cost of precision.
+func maskPublicKeyNoContext(in string) string {
+	return publicKeyNoContextExpr.ReplaceAllString(in, "***")
 }
 
 type eventCb func(teliogo.Event) error
@@ -127,7 +143,8 @@ func (t *telioCallbackHandler) handleEvent(e teliogo.Event) error {
 			t.connectionMonitoringContext = nil
 			return nil
 		case <-time.After(1 * time.Second):
-			log.Error("telio event was dropped because of timeout:", st)
+			errorLog := maskPublicKey(fmt.Sprintf("telio event was dropped because of timeout: %+v", st))
+			log.Error("telio event was dropped because of timeout:", errorLog)
 		}
 
 		if evt.Body.VpnConnectionError != nil {
@@ -294,10 +311,49 @@ func handleTelioConfig(eventPath string, prod bool, vpnLibCfg vpn.LibConfigGette
 	return &telioConfig, nil
 }
 
+// getTelioLogLevel returns telio log level saved in the log level file. The default log level is Info and it is
+// returned in case of file read errors and unrecognized log levels.
+func getTelioLogLevel() teliogo.TelioLogLevel {
+	root, err := os.OpenRoot(filepath.Dir(internal.TelioLogLevelFile))
+	if err != nil {
+		log.Error("failed to open runtime dir:", err)
+		return teliogo.TelioLogLevelInfo
+	}
+	defer root.Close()
+
+	raw, err := root.ReadFile(filepath.Base(internal.TelioLogLevelFile))
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			log.Warn("failed to read log level file:", err)
+		}
+		return teliogo.TelioLogLevelInfo
+	}
+
+	logLevelString := strings.TrimSpace(strings.ToLower(string(raw)))
+	log.Infof("setting custom telio log level: %.20q", logLevelString)
+	switch logLevelString {
+	case "error":
+		return teliogo.TelioLogLevelError
+	case "warn":
+		return teliogo.TelioLogLevelWarning
+	case "info":
+		return teliogo.TelioLogLevelInfo
+	case "debug":
+		return teliogo.TelioLogLevelDebug
+	case "trace":
+		return teliogo.TelioLogLevelTrace
+	default:
+		log.Errorf("unrecognized telio log level: %.20q", logLevelString)
+		return teliogo.TelioLogLevelInfo
+	}
+}
+
 type telioLoggerCb struct{}
 
 func (cb *telioLoggerCb) Log(logLevel teliogo.TelioLogLevel, payload string) error {
 	msg := "TELIO(" + teliogo.GetVersionTag() + "): " + payload
+	// Use no-context, greedy masking because we have less control over the logs
+	msg = maskPublicKeyNoContext(msg)
 	//exhaustive:ignore
 	switch logLevel {
 	case teliogo.TelioLogLevelError:
@@ -353,8 +409,10 @@ func New(
 		log.Info("telio final config:", string(featuresString))
 	}
 
+	// telio logger can be set up only once per telio instance. Setting a new log level requires a daemon restart.
 	var loggerCb teliogo.TelioLoggerCb = &telioLoggerCb{}
-	teliogo.SetGlobalLogger(teliogo.TelioLogLevelInfo, loggerCb)
+	teliogo.SetGlobalLogger(getTelioLogLevel(), loggerCb)
+
 	telioCallbackHandler := newTelioCallbackHandler(stateEvents, errorEvents)
 	lib, err := teliogo.NewTelio(*features, eventCallbackWrap(telioCallbackHandler))
 	if err != nil {
