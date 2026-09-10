@@ -1,5 +1,6 @@
 import 'package:nordvpn/data/mocks/daemon/mock_servers_list.dart';
 import 'package:nordvpn/pb/daemon/config/group.pb.dart' as cfg;
+import 'package:nordvpn/pb/daemon/config/technology.pb.dart' as cfg;
 import 'package:nordvpn/pb/daemon/recent_connections.pb.dart';
 import 'package:nordvpn/pb/daemon/server_selection_rule.pbenum.dart';
 import 'package:nordvpn/pb/daemon/servers.pb.dart';
@@ -27,12 +28,29 @@ class MockRecentConnections {
     return null;
   }
 
-  List<RecentConnectionModel> getConnections() {
+  List<RecentConnectionModel> getConnections(bool obfuscatedServers) {
     final servers = _serversList.serversList.servers.serversByCountry;
     final List<RecentConnectionModel> recentConnections = [];
 
     if (servers.isEmpty) {
       return [];
+    }
+
+    if (obfuscatedServers) {
+      // Obfuscated
+      final country = _findCountry(servers, 'US');
+      if (country != null) {
+        recentConnections.add(
+          RecentConnectionModel(
+            connectionType: ServerSelectionRule.COUNTRY,
+            country: country.countryName,
+            countryCode: country.countryCode,
+            connectionTech: cfg.Technology.NORDWHISPER,
+          ),
+        );
+      }
+
+      return recentConnections;
     }
 
     // 1. A city connection
@@ -53,7 +71,7 @@ class MockRecentConnections {
     }
 
     // 2. A country connection
-    country = _findCountry(servers, 'JP');
+    country = _findCountry(servers, 'IN');
     if (country != null) {
       recentConnections.add(
         RecentConnectionModel(

@@ -2,6 +2,7 @@ import 'package:nordvpn/pb/daemon/recent_connections.pb.dart';
 import 'package:nordvpn/pb/daemon/server_selection_rule.pb.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/pb/daemon/config/group.pb.dart' as cfg;
+import 'package:nordvpn/pb/daemon/config/technology.pb.dart' as cfg;
 
 class RecentConnection {
   // Matches server id from specific server name
@@ -16,6 +17,7 @@ class RecentConnection {
   final String specificServer;
   final ServerSelectionRule connectionType;
   final bool isVirtual;
+  final cfg.Technology connectionTech;
 
   RecentConnection({
     required this.country,
@@ -26,6 +28,7 @@ class RecentConnection {
     required this.specificServer,
     required this.connectionType,
     required this.isVirtual,
+    required this.connectionTech,
   });
 
   factory RecentConnection.fromPb(RecentConnectionModel pb) {
@@ -38,6 +41,7 @@ class RecentConnection {
       specificServer: pb.specificServer,
       connectionType: pb.connectionType,
       isVirtual: pb.isVirtual,
+      connectionTech: pb.connectionTech,
     );
   }
 
@@ -58,7 +62,9 @@ class RecentConnection {
     cfg.ServerGroup.DEDICATED_SERVER: t.ui.dedicatedServer,
   };
 
-  String get specialtyServer => _groupTitles[group] ?? "";
+  String get specialtyServer => connectionTech == cfg.Technology.NORDWHISPER
+      ? _groupTitles[cfg.ServerGroup.OBFUSCATED]!
+      : _groupTitles[group] ?? "";
 
   bool get isSpecialtyServer {
     return connectionType == ServerSelectionRule.GROUP;
