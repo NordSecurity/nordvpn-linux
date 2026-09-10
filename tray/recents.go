@@ -29,6 +29,21 @@ type RecentConnection struct {
 	SpecificServer     string
 	ConnectionType     config.ServerSelectionRule
 	VirtualLocation    bool
+	ConnectionTech     config.Technology
+}
+
+func NewRecentConnection(conn *pb.RecentConnectionModel) RecentConnection {
+	return RecentConnection{
+		Country:            conn.Country,
+		City:               conn.City,
+		Group:              conn.Group,
+		CountryCode:        conn.CountryCode,
+		SpecificServerName: conn.SpecificServerName,
+		SpecificServer:     conn.SpecificServer,
+		ConnectionType:     conn.ConnectionType,
+		VirtualLocation:    conn.IsVirtual,
+		ConnectionTech:     conn.ConnectionTech,
+	}
 }
 
 var groupTitles = map[config.ServerGroup]string{
@@ -59,7 +74,20 @@ func tryApplyVirtualLocationSuffix(label string, isVirtualLoc bool) string {
 	return fmt.Sprintf("%s - Virtual", label)
 }
 
-func makeDisplayLabel(conn *RecentConnection) string {
+func makeDisplayLabel(conn *RecentConnection) (label string) {
+	if conn.ConnectionTech == config.Technology_NORDWHISPER && conn.Group != config.ServerGroup_OBFUSCATED && conn.Group != config.ServerGroup_UNDEFINED {
+		// obfuscated group can only be for NordWhisper
+		return ""
+	}
+
+	defer func() {
+		if len(label) > 0 &&
+			conn.ConnectionTech == config.Technology_NORDWHISPER &&
+			conn.Group == config.ServerGroup_UNDEFINED {
+			label = fmt.Sprintf("%s (%s)", formatGroupTitle(config.ServerGroup_OBFUSCATED), label)
+		}
+	}()
+
 	switch conn.ConnectionType {
 	case config.ServerSelectionRule_CITY:
 		if conn.Country != "" && conn.City != "" {
@@ -191,16 +219,7 @@ func (m *recentConnectionsManager) UpdateRecentConnections() error {
 	// Convert gRPC models to tray models
 	connections := make([]RecentConnection, 0, len(resp.Connections))
 	for _, conn := range resp.Connections {
-		connections = append(connections, RecentConnection{
-			Country:            conn.Country,
-			City:               conn.City,
-			Group:              conn.Group,
-			CountryCode:        conn.CountryCode,
-			SpecificServerName: conn.SpecificServerName,
-			SpecificServer:     conn.SpecificServer,
-			ConnectionType:     conn.ConnectionType,
-			VirtualLocation:    conn.IsVirtual,
-		})
+		connections = append(connections, NewRecentConnection(conn))
 	}
 
 	m.mu.Lock()
