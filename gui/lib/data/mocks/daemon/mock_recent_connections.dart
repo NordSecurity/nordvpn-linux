@@ -27,12 +27,29 @@ class MockRecentConnections {
     return null;
   }
 
-  List<RecentConnectionModel> getConnections() {
+  List<RecentConnectionModel> getConnections(bool obfuscatedServers) {
     final servers = _serversList.serversList.servers.serversByCountry;
     final List<RecentConnectionModel> recentConnections = [];
 
     if (servers.isEmpty) {
       return [];
+    }
+
+    if (obfuscatedServers) {
+      // Obfuscated
+      final country = _findCountry(servers, 'US');
+      if (country != null) {
+        recentConnections.add(
+          RecentConnectionModel(
+            connectionType: ServerSelectionRule.COUNTRY,
+            country: country.countryName,
+            countryCode: country.countryCode,
+            group: cfg.ServerGroup.OBFUSCATED,
+          ),
+        );
+      }
+
+      return recentConnections;
     }
 
     // 1. A city connection
@@ -53,7 +70,7 @@ class MockRecentConnections {
     }
 
     // 2. A country connection
-    country = _findCountry(servers, 'JP');
+    country = _findCountry(servers, 'IN');
     if (country != null) {
       recentConnections.add(
         RecentConnectionModel(
