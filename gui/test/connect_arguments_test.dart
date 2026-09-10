@@ -60,9 +60,9 @@ void main() {
         ConnectArguments(
           country: Country.fromCodeOrName("DE"),
           city: City("Berlin"),
-          specialtyGroup: ServerType.p2p,
+          specialtyGroup: ServerType.doubleVpn,
         ).toConnectRequest(),
-        ConnectRequest(serverGroup: "p2p", serverTag: "de berlin"),
+        ConnectRequest(serverGroup: "Double_vpn", serverTag: "de berlin"),
       );
     });
   });

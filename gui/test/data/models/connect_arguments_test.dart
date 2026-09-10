@@ -50,11 +50,6 @@ void main() {
       expect(args.toUIEventItemValue(), UIEvent_ItemValue.DOUBLE_VPN);
     });
 
-    test('returns P2P for P2P specialty group', () {
-      final args = ConnectArguments(specialtyGroup: ServerType.p2p);
-      expect(args.toUIEventItemValue(), UIEvent_ItemValue.P2P);
-    });
-
     test('specialty group takes priority over city', () {
       final args = ConnectArguments(
         country: Country(code: 'US', name: 'United States'),
@@ -67,9 +62,9 @@ void main() {
     test('specialty group takes priority over country', () {
       final args = ConnectArguments(
         country: Country(code: 'US', name: 'United States'),
-        specialtyGroup: ServerType.p2p,
+        specialtyGroup: ServerType.doubleVpn,
       );
-      expect(args.toUIEventItemValue(), UIEvent_ItemValue.P2P);
+      expect(args.toUIEventItemValue(), UIEvent_ItemValue.DOUBLE_VPN);
     });
 
     test('returns ITEM_VALUE_UNSPECIFIED for standard VPN specialty group', () {

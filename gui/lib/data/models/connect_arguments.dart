@@ -68,7 +68,7 @@ final class ConnectArguments {
 
   /// Converts the connection arguments to a UIEvent_ItemValue for analytics.
   ///
-  /// Specialty groups (Double VPN, P2P, etc.) take priority over connection type.
+  /// Specialty groups (Double VPN, Onion VPN etc.) take priority over connection type.
   ///  Falls back to CITY/COUNTRY for standard VPN connections.
   UIEvent_ItemValue toUIEventItemValue() {
     if (specialtyGroup != null) {
@@ -81,8 +81,6 @@ final class ConnectArguments {
           return UIEvent_ItemValue.ONION_OVER_VPN;
         case ServerType.doubleVpn:
           return UIEvent_ItemValue.DOUBLE_VPN;
-        case ServerType.p2p:
-          return UIEvent_ItemValue.P2P;
         case ServerType.dedicatedServer:
           return UIEvent_ItemValue.DEDICATED_SERVER;
         default:
