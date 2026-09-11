@@ -18,6 +18,9 @@ echo "~~~INSTALL new SNAP package"
 find "${WORKDIR}"/ -type f -name "*amd64.snap" \
 	-exec sudo snap install --dangerous "{}" +
 
+echo "~~~REDIRECT logs of SNAP to daemon.log"
+redirect_logs
+
 echo "~~~GRANT permissions - connect snap interfaces"
 snap_connect_interfaces
 
