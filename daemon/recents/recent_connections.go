@@ -186,7 +186,7 @@ func (r *RecentConnectionsStore) load() ([]Model, error) {
 		return nil, fmt.Errorf("unmarshaling vpn connections store: %w", err)
 	}
 
-	if f.Version == unversionedFileFormat {
+	if f.Version == unversionedFile {
 		// migrate to version 1
 		f = migrateToVersion1(f.Connections)
 		if err := r.save(f.Connections); err != nil {

@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	unversionedFileFormat = 0
-	currentFile           = 1
+	unversionedFile   = 0
+	currentFileFormat = 1
 )
 
 type FileFormat struct {
@@ -19,7 +19,7 @@ type FileFormat struct {
 
 func encode(connections []Model) ([]byte, error) {
 	f := FileFormat{
-		Version:     currentFile,
+		Version:     currentFileFormat,
 		Connections: connections,
 	}
 	return json.Marshal(f)
@@ -28,7 +28,7 @@ func encode(connections []Model) ([]byte, error) {
 func decode(data []byte) (FileFormat, error) {
 	if len(data) == 0 {
 		return FileFormat{
-			Version:     currentFile,
+			Version:     currentFileFormat,
 			Connections: []Model{},
 		}, nil
 	}
@@ -44,7 +44,7 @@ func decode(data []byte) (FileFormat, error) {
 	}
 
 	return FileFormat{
-		Version:     unversionedFileFormat,
+		Version:     unversionedFile,
 		Connections: connections,
 	}, nil
 }
