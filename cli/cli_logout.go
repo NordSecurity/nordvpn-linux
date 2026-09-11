@@ -40,6 +40,12 @@ func (c *cmd) Logout(ctx *cli.Context) error {
 	case internal.CodeTokenStillValid:
 		color.Green(LogoutTokenSuccess)
 		return nil
+	case internal.CodeTokenInvalid:
+		color.Green(LogoutTokenAlreadyInvalid)
+		return nil
+	case internal.CodeRevokedAccessToken:
+		color.Green(LogoutRevokeTokenSuccess)
+		return nil
 	default:
 		return formatError(errors.New(CheckYourInternetConnMessage))
 	}

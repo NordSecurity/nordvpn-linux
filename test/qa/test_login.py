@@ -11,7 +11,7 @@ from lib import (
     settings,
 )
 
-LOGOUT_WITH_TOKEN_MSG = "You have been logged out. Your access token remains valid and can be reused to log in again. To revoke it, run nordvpn logout --revoke-token, or manage your tokens at https://my.nordaccount.com/dashboard/nordvpn/access-tokens" # noqa: S105
+LOGOUT_WITH_TOKEN_MSG = "You are logged out. Your access token is still valid and can be used to log in again.\nTo revoke it: log in with the same token, then run `nordvpn logout --revoke-token`\nManage tokens: https://my.nordaccount.com/dashboard/nordvpn/access-tokens" # noqa: S105
 pytestmark = pytest.mark.usefixtures("collect_logs")
 
 

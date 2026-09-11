@@ -15,6 +15,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/session"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
@@ -56,7 +57,7 @@ func TestLogout_Token(t *testing.T) {
 			name:              "Revoke token while logged in with token",
 			revokeToken:       true,
 			loggedInWithToken: true,
-			result:            internal.CodeSuccess,
+			result:            internal.CodeRevokedAccessToken,
 		},
 		{
 			name:              "Revoke token while logged in with oauth",
@@ -86,6 +87,7 @@ func TestLogout_Token(t *testing.T) {
 				tokenData := c.TokensData[c.AutoConnectData.ID]
 				if test.loggedInWithToken {
 					tokenData.RenewToken = ""
+					tokenData.TokenExpiry = session.ManualAccessTokenExpiryDateString
 				} else {
 					tokenData.RenewToken = "1234"
 				}
