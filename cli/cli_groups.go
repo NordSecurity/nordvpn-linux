@@ -24,17 +24,15 @@ func (c *cmd) Groups(ctx *cli.Context) error {
 		return formatError(fmt.Errorf(MsgListIsEmpty, "server groups"))
 	}
 
-	footer := footerForServerGroupsList(resp.Servers)
 	groupList, err := columns(
 		resp.Servers,
 		serverNameLen,
 		formatServerName,
-		footer,
 	)
 
 	if err != nil {
 		log.Error(err)
-		countries, _ := formatTable(resp.Servers, serverNameLen, formatServerName, 1, footer)
+		countries, _ := formatTable(resp.Servers, serverNameLen, formatServerName, 1)
 		fmt.Println(countries)
 	} else {
 		fmt.Println(groupList)

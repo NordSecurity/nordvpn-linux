@@ -67,7 +67,9 @@ const RecentConnectionModel$json = {
       '6': '.pb.ServerSelectionRule',
       '10': 'connectionType'
     },
-    {'1': 'is_virtual', '3': 8, '4': 1, '5': 8, '10': 'isVirtual'},
+  ],
+  '9': [
+    {'1': 8, '2': 9},
   ],
 };
 
@@ -78,8 +80,7 @@ final $typed_data.Uint8List recentConnectionModelDescriptor = $convert.base64Dec
     'cBIhCgxjb3VudHJ5X2NvZGUYBCABKAlSC2NvdW50cnlDb2RlEjAKFHNwZWNpZmljX3NlcnZlcl'
     '9uYW1lGAUgASgJUhJzcGVjaWZpY1NlcnZlck5hbWUSJwoPc3BlY2lmaWNfc2VydmVyGAYgASgJ'
     'Ug5zcGVjaWZpY1NlcnZlchJACg9jb25uZWN0aW9uX3R5cGUYByABKA4yFy5wYi5TZXJ2ZXJTZW'
-    'xlY3Rpb25SdWxlUg5jb25uZWN0aW9uVHlwZRIdCgppc192aXJ0dWFsGAggASgIUglpc1ZpcnR1'
-    'YWw=');
+    'xlY3Rpb25SdWxlUg5jb25uZWN0aW9uVHlwZUoECAgQCQ==');
 
 @$core.Deprecated('Use recentConnectionsRequestDescriptor instead')
 const RecentConnectionsRequest$json = {

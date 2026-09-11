@@ -26,14 +26,12 @@ class Server extends $pb.GeneratedMessage {
   factory Server({
     $fixnum.Int64? id,
     $core.String? hostName,
-    $core.bool? virtual,
     $core.Iterable<$0.ServerGroup>? serverGroups,
     $core.Iterable<Technology>? technologies,
   }) {
     final result = create();
     if (id != null) result.id = id;
     if (hostName != null) result.hostName = hostName;
-    if (virtual != null) result.virtual = virtual;
     if (serverGroups != null) result.serverGroups.addAll(serverGroups);
     if (technologies != null) result.technologies.addAll(technologies);
     return result;
@@ -54,7 +52,6 @@ class Server extends $pb.GeneratedMessage {
       createEmptyInstance: create)
     ..aInt64(1, _omitFieldNames ? '' : 'id')
     ..aOS(4, _omitFieldNames ? '' : 'hostName')
-    ..aOB(5, _omitFieldNames ? '' : 'virtual')
     ..pc<$0.ServerGroup>(
         6, _omitFieldNames ? '' : 'serverGroups', $pb.PbFieldType.KE,
         valueOf: $0.ServerGroup.valueOf,
@@ -103,20 +100,11 @@ class Server extends $pb.GeneratedMessage {
   @$pb.TagNumber(4)
   void clearHostName() => $_clearField(4);
 
-  @$pb.TagNumber(5)
-  $core.bool get virtual => $_getBF(2);
-  @$pb.TagNumber(5)
-  set virtual($core.bool value) => $_setBool(2, value);
-  @$pb.TagNumber(5)
-  $core.bool hasVirtual() => $_has(2);
-  @$pb.TagNumber(5)
-  void clearVirtual() => $_clearField(5);
-
   @$pb.TagNumber(6)
-  $pb.PbList<$0.ServerGroup> get serverGroups => $_getList(3);
+  $pb.PbList<$0.ServerGroup> get serverGroups => $_getList(2);
 
   @$pb.TagNumber(7)
-  $pb.PbList<Technology> get technologies => $_getList(4);
+  $pb.PbList<Technology> get technologies => $_getList(3);
 }
 
 class ServerCity extends $pb.GeneratedMessage {

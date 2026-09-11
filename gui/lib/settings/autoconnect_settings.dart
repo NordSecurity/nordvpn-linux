@@ -429,10 +429,6 @@ final class AutoConnectServerInfo extends StatelessWidget {
     final countryName = savedLocation?.country?.localizedName ?? "";
     var cityName = savedLocation?.city?.localizedName ?? "";
 
-    if (cityName.isNotEmpty) {
-      cityName += savedLocation?.server?.isVirtual == true ? "- Virtual" : "";
-    }
-
     return [
       Text(
         countryName,

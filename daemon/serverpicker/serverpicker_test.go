@@ -588,7 +588,6 @@ func TestPickServer(t *testing.T) {
 		tech                 config.Technology
 		obfuscated           bool
 		tag                  string
-		onlyPhysicServers    bool
 		excludedServer       string
 		expectedServerName   string
 		expectedRemoteServer bool
@@ -644,22 +643,6 @@ func TestPickServer(t *testing.T) {
 			expectedRemoteServer: true,
 		},
 		{
-			name:              "find server when virtual locations are disabled",
-			api:               core_test.NewMockFailingServersAPI(errors.New("500")),
-			servers:           core_test.ServersList(),
-			tech:              config.Technology_NORDLYNX,
-			onlyPhysicServers: true,
-		},
-		{
-			name:              "virtual location disabled returns error when only virtual servers match",
-			api:               core_test.NewMockFailingServersAPI(errors.New("500")),
-			servers:           core_test.ServersList(),
-			tech:              config.Technology_NORDLYNX,
-			tag:               "algeria",
-			onlyPhysicServers: true,
-			expectedError:     internal.ErrVirtualServerSelected,
-		},
-		{
 			name:          "can't find a server",
 			api:           core_test.NewMockFailingServersAPI(errors.New("500")),
 			servers:       core.Servers{},
@@ -684,9 +667,6 @@ func TestPickServer(t *testing.T) {
 				AutoConnectData: config.AutoConnectData{
 					Obfuscate: test.obfuscated,
 				},
-			}
-			if test.onlyPhysicServers {
-				cfg.VirtualLocation.Set(false)
 			}
 
 			serverSelection, err := PickServer(

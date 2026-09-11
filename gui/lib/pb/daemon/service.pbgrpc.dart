@@ -301,13 +301,6 @@ class DaemonClient extends $grpc.Client {
     return $createUnaryCall(_$setLANDiscovery, request, options: options);
   }
 
-  $grpc.ResponseFuture<$0.Payload> setVirtualLocation(
-    $15.SetGenericRequest request, {
-    $grpc.CallOptions? options,
-  }) {
-    return $createUnaryCall(_$setVirtualLocation, request, options: options);
-  }
-
   /// ==================== UI Settings ====================
   $grpc.ResponseFuture<$0.Payload> setNotify(
     $15.SetNotifyRequest request, {
@@ -595,11 +588,6 @@ class DaemonClient extends $grpc.Client {
       '/pb.Daemon/SetLANDiscovery',
       ($15.SetLANDiscoveryRequest value) => value.writeToBuffer(),
       $15.SetLANDiscoveryResponse.fromBuffer);
-  static final _$setVirtualLocation =
-      $grpc.ClientMethod<$15.SetGenericRequest, $0.Payload>(
-          '/pb.Daemon/SetVirtualLocation',
-          ($15.SetGenericRequest value) => value.writeToBuffer(),
-          $0.Payload.fromBuffer);
   static final _$setNotify =
       $grpc.ClientMethod<$15.SetNotifyRequest, $0.Payload>(
           '/pb.Daemon/SetNotify',
@@ -941,14 +929,6 @@ abstract class DaemonServiceBase extends $grpc.Service {
         ($core.List<$core.int> value) =>
             $15.SetLANDiscoveryRequest.fromBuffer(value),
         ($15.SetLANDiscoveryResponse value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetGenericRequest, $0.Payload>(
-        'SetVirtualLocation',
-        setVirtualLocation_Pre,
-        false,
-        false,
-        ($core.List<$core.int> value) =>
-            $15.SetGenericRequest.fromBuffer(value),
-        ($0.Payload value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$15.SetNotifyRequest, $0.Payload>(
         'SetNotify',
         setNotify_Pre,
@@ -1346,14 +1326,6 @@ abstract class DaemonServiceBase extends $grpc.Service {
 
   $async.Future<$15.SetLANDiscoveryResponse> setLANDiscovery(
       $grpc.ServiceCall call, $15.SetLANDiscoveryRequest request);
-
-  $async.Future<$0.Payload> setVirtualLocation_Pre($grpc.ServiceCall $call,
-      $async.Future<$15.SetGenericRequest> $request) async {
-    return setVirtualLocation($call, await $request);
-  }
-
-  $async.Future<$0.Payload> setVirtualLocation(
-      $grpc.ServiceCall call, $15.SetGenericRequest request);
 
   $async.Future<$0.Payload> setNotify_Pre($grpc.ServiceCall $call,
       $async.Future<$15.SetNotifyRequest> $request) async {

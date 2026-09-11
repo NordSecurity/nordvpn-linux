@@ -39,9 +39,6 @@ final class ServerListItemFactory {
       subtitle = t.ui.citiesAvailable(n: country.cities.length);
     } else {
       subtitle = country.cities.first.localizedName;
-      if (country.isVirtual) {
-        subtitle += " - ${t.ui.virtual}";
-      }
     }
 
     assert(

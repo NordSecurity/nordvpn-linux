@@ -31,19 +31,9 @@ func TestCountriesList(t *testing.T) {
 			expectedError: formatError(fmt.Errorf(MsgListIsEmpty, "countries")),
 		},
 		{
-			name:      "return virtual servers only",
+			name:      "return all servers",
 			expected:  "France\nGermany",
-			countries: []*pb.ServerGroup{{Name: "France", VirtualLocation: true}, {Name: "Germany", VirtualLocation: true}},
-		},
-		{
-			name:      "return virtual and physical servers",
-			expected:  "France\nGermany",
-			countries: []*pb.ServerGroup{{Name: "France", VirtualLocation: true}, {Name: "Germany", VirtualLocation: false}},
-		},
-		{
-			name:      "return physic servers only",
-			expected:  "France\nGermany",
-			countries: []*pb.ServerGroup{{Name: "France", VirtualLocation: false}, {Name: "Germany", VirtualLocation: false}},
+			countries: []*pb.ServerGroup{{Name: "France"}, {Name: "Germany"}},
 		},
 	}
 

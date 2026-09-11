@@ -36,15 +36,9 @@ func TestCitiesList(t *testing.T) {
 			expectedError: formatError(fmt.Errorf(MsgListIsEmpty, "cities")),
 		},
 		{
-			name:     "return physical cities",
+			name:     "return cities",
 			country:  "France",
-			cities:   []*pb.ServerGroup{{Name: "Paris", VirtualLocation: false}},
-			expected: "Paris",
-		},
-		{
-			name:     "return virtual cities",
-			country:  "France",
-			cities:   []*pb.ServerGroup{{Name: "Paris", VirtualLocation: true}},
+			cities:   []*pb.ServerGroup{{Name: "Paris"}},
 			expected: "Paris",
 		},
 	}

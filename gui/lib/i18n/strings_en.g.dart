@@ -1324,12 +1324,6 @@ class Translations$daemon$en {
 	/// en: 'Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.'
 	String get code_3051_msg => 'Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.';
 
-	/// en: 'Server access not allowed'
-	String get code_3057_title => 'Server access not allowed';
-
-	/// en: 'To connect to the selected server, turn on virtual location access using the app’s command-line interface.'
-	String get code_3057_msg => 'To connect to the selected server, turn on virtual location access using the app’s command-line interface.';
-
 	/// en: 'Restart daemon to apply setting'
 	String get code_5007_title => 'Restart daemon to apply setting';
 
@@ -1623,9 +1617,6 @@ class Translations$ui$en {
 
 	/// en: '$n cities available'
 	String citiesAvailable({required Object n}) => '${n} cities available';
-
-	/// en: 'Virtual'
-	String get virtual => 'Virtual';
 
 	/// en: 'Dedicated IP'
 	String get dedicatedIp => 'Dedicated IP';
@@ -2647,8 +2638,6 @@ extension on Translations {
 			'daemon.code_3049_msg' => 'This setting is not compatible with post-quantum encryption. To use it, turn off post-quantum encryption first.',
 			'daemon.code_3051_title' => 'Disabled technology',
 			'daemon.code_3051_msg' => 'Unable to connect with the current technology. Please try a different one using the command: nordvpn set technology.',
-			'daemon.code_3057_title' => 'Server access not allowed',
-			'daemon.code_3057_msg' => 'To connect to the selected server, turn on virtual location access using the app’s command-line interface.',
 			'daemon.code_5007_title' => 'Restart daemon to apply setting',
 			'daemon.code_5007_msg' => 'Restart the daemon to apply this setting. For example, use the command `sudo systemctl restart nordvpnd` on systemd distributions.',
 			'daemon.code_5008_title' => 'gRPC timeout error',
@@ -2743,13 +2732,12 @@ extension on Translations {
 			'ui.noResultsFound' => 'No results found. Try another keyword.',
 			'ui.searchServersHint' => 'Search countries, cities, or servers',
 			'ui.citiesAvailable' => ({required Object n}) => '${n} cities available',
-			'ui.virtual' => 'Virtual',
 			'ui.dedicatedIp' => 'Dedicated IP',
-			_ => null,
-		} ?? switch (path) {
 			'ui.dedicatedServer' => 'Dedicated Server',
 			'ui.doubleVpn' => 'Double VPN',
 			'ui.onionOverVpn' => 'Onion over VPN',
+			_ => null,
+		} ?? switch (path) {
 			'ui.p2p' => 'P2P',
 			'ui.obfuscated' => 'Obfuscated',
 			'ui.obfuscatedServers' => 'Obfuscated Servers',

@@ -48,7 +48,7 @@ class ConnectionParameters(_message.Message):
     def __init__(self, source: _Optional[_Union[ConnectionSource, str]] = ..., country: _Optional[str] = ..., city: _Optional[str] = ..., group: _Optional[_Union[_group_pb2.ServerGroup, str]] = ..., server_name: _Optional[str] = ..., country_code: _Optional[str] = ...) -> None: ...
 
 class StatusResponse(_message.Message):
-    __slots__ = ("state", "technology", "protocol", "ip", "hostname", "country", "city", "download", "upload", "uptime", "name", "virtualLocation", "parameters", "postQuantum", "is_mesh_peer", "by_user", "country_code", "obfuscated", "paused_at", "pause_remaining_duration_sec", "ech")
+    __slots__ = ("state", "technology", "protocol", "ip", "hostname", "country", "city", "download", "upload", "uptime", "name", "parameters", "postQuantum", "is_mesh_peer", "by_user", "country_code", "obfuscated", "paused_at", "pause_remaining_duration_sec", "ech")
     STATE_FIELD_NUMBER: _ClassVar[int]
     TECHNOLOGY_FIELD_NUMBER: _ClassVar[int]
     PROTOCOL_FIELD_NUMBER: _ClassVar[int]
@@ -60,7 +60,6 @@ class StatusResponse(_message.Message):
     UPLOAD_FIELD_NUMBER: _ClassVar[int]
     UPTIME_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
-    VIRTUALLOCATION_FIELD_NUMBER: _ClassVar[int]
     PARAMETERS_FIELD_NUMBER: _ClassVar[int]
     POSTQUANTUM_FIELD_NUMBER: _ClassVar[int]
     IS_MESH_PEER_FIELD_NUMBER: _ClassVar[int]
@@ -81,7 +80,6 @@ class StatusResponse(_message.Message):
     upload: int
     uptime: int
     name: str
-    virtualLocation: bool
     parameters: ConnectionParameters
     postQuantum: bool
     is_mesh_peer: bool
@@ -91,4 +89,4 @@ class StatusResponse(_message.Message):
     paused_at: _timestamp_pb2.Timestamp
     pause_remaining_duration_sec: int
     ech: bool
-    def __init__(self, state: _Optional[_Union[ConnectionState, str]] = ..., technology: _Optional[_Union[_technology_pb2.Technology, str]] = ..., protocol: _Optional[_Union[_protocol_pb2.Protocol, str]] = ..., ip: _Optional[str] = ..., hostname: _Optional[str] = ..., country: _Optional[str] = ..., city: _Optional[str] = ..., download: _Optional[int] = ..., upload: _Optional[int] = ..., uptime: _Optional[int] = ..., name: _Optional[str] = ..., virtualLocation: bool = ..., parameters: _Optional[_Union[ConnectionParameters, _Mapping]] = ..., postQuantum: bool = ..., is_mesh_peer: bool = ..., by_user: bool = ..., country_code: _Optional[str] = ..., obfuscated: bool = ..., paused_at: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., pause_remaining_duration_sec: _Optional[int] = ..., ech: bool = ...) -> None: ...
+    def __init__(self, state: _Optional[_Union[ConnectionState, str]] = ..., technology: _Optional[_Union[_technology_pb2.Technology, str]] = ..., protocol: _Optional[_Union[_protocol_pb2.Protocol, str]] = ..., ip: _Optional[str] = ..., hostname: _Optional[str] = ..., country: _Optional[str] = ..., city: _Optional[str] = ..., download: _Optional[int] = ..., upload: _Optional[int] = ..., uptime: _Optional[int] = ..., name: _Optional[str] = ..., parameters: _Optional[_Union[ConnectionParameters, _Mapping]] = ..., postQuantum: bool = ..., is_mesh_peer: bool = ..., by_user: bool = ..., country_code: _Optional[str] = ..., obfuscated: bool = ..., paused_at: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., pause_remaining_duration_sec: _Optional[int] = ..., ech: bool = ...) -> None: ...

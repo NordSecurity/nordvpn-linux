@@ -38,7 +38,6 @@ func NewEventsEmpty() *Events {
 		&subs.Subject[core.Insights]{},
 		&subs.Subject[bool]{},
 		&subs.Subject[bool]{},
-		&subs.Subject[bool]{},
 		&subs.Subject[events.DataAuthorization]{},
 		&subs.Subject[events.DataAuthorization]{},
 		&subs.Subject[bool]{},
@@ -69,7 +68,6 @@ func NewEvents(
 	uiItemsShow events.PublishSubcriber[events.UiItemsAction],
 	deviceLocation events.PublishSubcriber[core.Insights],
 	lanDiscovery events.PublishSubcriber[bool],
-	virtualLocation events.PublishSubcriber[bool],
 	postquantumVpn events.PublishSubcriber[bool],
 	login events.PublishSubcriber[events.DataAuthorization],
 	logout events.PublishSubcriber[events.DataAuthorization],
@@ -94,7 +92,6 @@ func NewEvents(
 			Meshnet:              meshnet,
 			Defaults:             defaults,
 			LANDiscovery:         lanDiscovery,
-			VirtualLocation:      virtualLocation,
 			PostquantumVPN:       postquantumVpn,
 		},
 		Service: &ServiceEvents{
@@ -147,7 +144,6 @@ type SettingsPublisher interface {
 	NotifyMeshnet(bool) error
 	NotifyDefaults(any) error
 	NotifyLANDiscovery(bool) error
-	NotifyVirtualLocation(bool) error
 	NotifyPostquantumVpn(bool) error
 }
 
@@ -166,7 +162,6 @@ type SettingsEvents struct {
 	Meshnet              events.PublishSubcriber[bool]
 	Defaults             events.PublishSubcriber[any]
 	LANDiscovery         events.PublishSubcriber[bool]
-	VirtualLocation      events.PublishSubcriber[bool]
 	PostquantumVPN       events.PublishSubcriber[bool]
 }
 
@@ -185,7 +180,6 @@ func (s *SettingsEvents) Subscribe(to SettingsPublisher) {
 	s.Meshnet.Subscribe(to.NotifyMeshnet)
 	s.Defaults.Subscribe(to.NotifyDefaults)
 	s.LANDiscovery.Subscribe(to.NotifyLANDiscovery)
-	s.VirtualLocation.Subscribe(to.NotifyVirtualLocation)
 	s.PostquantumVPN.Subscribe(to.NotifyPostquantumVpn)
 }
 
@@ -238,7 +232,6 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 	s.Obfuscate.Publish(cfg.AutoConnectData.Obfuscate)
 	s.Notify.Publish(len(cfg.UsersData.NotifyOff) <= 0)
 	s.LANDiscovery.Publish(cfg.LanDiscovery)
-	s.VirtualLocation.Publish(cfg.VirtualLocation.Get())
 	s.PostquantumVPN.Publish(cfg.AutoConnectData.PostquantumVpn)
 }
 
