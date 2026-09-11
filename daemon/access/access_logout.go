@@ -14,6 +14,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 	"github.com/NordSecurity/nordvpn-linux/nc"
 	"github.com/NordSecurity/nordvpn-linux/networker"
+	"github.com/NordSecurity/nordvpn-linux/session"
 )
 
 // TODO: Refactor 'Logout' and 'ForceLogoutWithoutToken` functions to reuse core logic
@@ -26,7 +27,7 @@ type LogoutInput struct {
 	ConfigManager                config.Manager
 	UserLogoutEventPublisherFunc func(events.DataAuthorization)
 	DebugPublisherFunc           func(string)
-	PersistToken                 bool
+	RevokeToken                  bool
 	DisconnectFunc               func() (pb.ConnectionState, error)
 	DeviceKeyInvalidator         devicekey.DeviceKeyInvalidator
 }
@@ -54,6 +55,9 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 	}
 
 	if isAlreadyLoggedOut(input.CredentialsAPI, input.ConfigManager) {
+		if input.RevokeToken {
+			return LogoutResult{Status: internal.CodeTokenInvalid, Err: nil}
+		}
 		return LogoutResult{Status: internal.CodeSuccess, Err: nil}
 	}
 
@@ -106,8 +110,11 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 	if !input.NcClient.Revoke() {
 		log.Warn("error revoking NC token")
 	}
-
-	if !input.PersistToken {
+	// LVPN-11093 This needs to be validated properly once API endpoint exists
+	isLoggedInWithManualToken := tokenData.TokenExpiry == session.ManualAccessTokenExpiryDateString
+	var isRevokeSuccessful = false
+	// on logout we destroy token if we did not log in using `nordvpn login --token` or if revoke token flag was used
+	if !isLoggedInWithManualToken || input.RevokeToken {
 		if err := input.CredentialsAPI.DeleteToken(); err != nil {
 			log.Error("deleting token:", err)
 			switch {
@@ -119,15 +126,16 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 				return LogoutResult{Status: internal.CodeFailure, Err: nil}
 			}
 		}
-
+		isRevokeSuccessful = true
+	}
+	// Logout endpoint does not work with manual token created via UCP, always returns a 404 after deletion
+	if !isLoggedInWithManualToken {
 		if err := input.CredentialsAPI.Logout(); err != nil {
 			log.Error("logging out:", err)
 			switch {
 			// This means that token is invalid anyway
 			case errors.Is(err, core.ErrUnauthorized):
 			case errors.Is(err, core.ErrBadRequest):
-				// NordAccount tokens do not work with Logout endpoint and return ErrNotFound
-			case errors.Is(err, core.ErrNotFound):
 			case errors.Is(err, core.ErrServerInternal):
 				return LogoutResult{Status: internal.CodeInternalError, Err: nil}
 			default:
@@ -146,8 +154,12 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 
 	input.DebugPublisherFunc("user logged out")
 
-	if !input.PersistToken && tokenData.RenewToken == "" {
-		return LogoutResult{Status: internal.CodeTokenInvalidated, Err: nil}
+	if !input.RevokeToken && tokenData.RenewToken == "" {
+		return LogoutResult{Status: internal.CodeTokenStillValid, Err: nil}
+	}
+	// Only show special message if user logged in with token and logged out with revoke token
+	if input.RevokeToken && isRevokeSuccessful && isLoggedInWithManualToken {
+		return LogoutResult{Status: internal.CodeRevokedAccessToken, Err: nil}
 	}
 
 	return LogoutResult{Status: internal.CodeSuccess, Err: nil}

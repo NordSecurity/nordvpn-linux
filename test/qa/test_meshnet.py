@@ -150,7 +150,7 @@ def test_peer_unreachable_after_remove():
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
 def test_account_switch():
-    sh_no_tty.nordvpn.logout("--persist-token")
+    sh_no_tty.nordvpn.logout()
     login.login_as("qa-peer")
     sh_no_tty.nordvpn.set.mesh.on()  # expecting failure here
 
@@ -159,7 +159,7 @@ def test_account_switch():
 @pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
 def test_set_meshnet_on_when_logged_out(meshnet_allias):
 
-    sh_no_tty.nordvpn.logout("--persist-token")
+    sh_no_tty.nordvpn.logout()
     assert not settings.is_meshnet_enabled(), "Meshnet should be disabled after logout"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
@@ -172,7 +172,7 @@ def test_set_meshnet_on_when_logged_out(meshnet_allias):
 @pytest.mark.parametrize("meshnet_allias", meshnet.MESHNET_ALIAS)
 def test_set_meshnet_off_when_logged_out(meshnet_allias):
 
-    sh_no_tty.nordvpn.logout("--persist-token")
+    sh_no_tty.nordvpn.logout()
     assert not settings.is_meshnet_enabled(), "Meshnet should be disabled after logout"
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:

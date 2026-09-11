@@ -11,9 +11,8 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// LogoutUsageText is shown next to logout command by nordvpn --help
 const (
-	flagPersistToken = "persist-token"
+	flagRevokeToken = "revoke-token"
 )
 
 func (c *cmd) Logout(ctx *cli.Context) error {
@@ -24,10 +23,10 @@ func (c *cmd) Logout(ctx *cli.Context) error {
 		ItemType:      pb.UIEvent_CLICK,
 	})
 
-	persistToken := ctx.IsSet(flagPersistToken)
+	revokeToken := ctx.IsSet(flagRevokeToken)
 
 	payload, err := c.client.Logout(context.Background(), &pb.LogoutRequest{
-		PersistToken: persistToken,
+		RevokeToken: revokeToken,
 	})
 
 	if err != nil {
@@ -38,8 +37,14 @@ func (c *cmd) Logout(ctx *cli.Context) error {
 	case internal.CodeSuccess:
 		color.Green(LogoutSuccess)
 		return nil
-	case internal.CodeTokenInvalidated:
+	case internal.CodeTokenStillValid:
 		color.Green(LogoutTokenSuccess)
+		return nil
+	case internal.CodeTokenInvalid:
+		color.Green(LogoutTokenAlreadyInvalid)
+		return nil
+	case internal.CodeRevokedAccessToken:
+		color.Green(LogoutRevokeTokenSuccess)
 		return nil
 	default:
 		return formatError(errors.New(CheckYourInternetConnMessage))

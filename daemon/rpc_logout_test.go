@@ -15,6 +15,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/events/subs"
 	"github.com/NordSecurity/nordvpn-linux/internal"
+	"github.com/NordSecurity/nordvpn-linux/session"
 	"github.com/NordSecurity/nordvpn-linux/test/category"
 	"github.com/NordSecurity/nordvpn-linux/test/mock"
 	testcore "github.com/NordSecurity/nordvpn-linux/test/mock/core"
@@ -48,27 +49,31 @@ func TestLogout_Token(t *testing.T) {
 
 	tests := []struct {
 		name              string
-		persistToken      bool
+		revokeToken       bool
 		loggedInWithToken bool
 		result            int64
 	}{
 		{
-			persistToken:      true,
+			name:              "Revoke token while logged in with token",
+			revokeToken:       true,
 			loggedInWithToken: true,
-			result:            internal.CodeSuccess,
+			result:            internal.CodeRevokedAccessToken,
 		},
 		{
-			persistToken:      true,
+			name:              "Revoke token while logged in with oauth",
+			revokeToken:       true,
 			loggedInWithToken: false,
 			result:            internal.CodeSuccess,
 		},
 		{
-			persistToken:      false,
+			name:              "No Revoke token while logged in with token",
+			revokeToken:       false,
 			loggedInWithToken: true,
-			result:            internal.CodeTokenInvalidated,
+			result:            internal.CodeTokenStillValid,
 		},
 		{
-			persistToken:      false,
+			name:              "No Revoke token while logged in with oauth",
+			revokeToken:       false,
 			loggedInWithToken: false,
 			result:            internal.CodeSuccess,
 		},
@@ -82,6 +87,7 @@ func TestLogout_Token(t *testing.T) {
 				tokenData := c.TokensData[c.AutoConnectData.ID]
 				if test.loggedInWithToken {
 					tokenData.RenewToken = ""
+					tokenData.TokenExpiry = session.ManualAccessTokenExpiryDateString
 				} else {
 					tokenData.RenewToken = "1234"
 				}
@@ -91,7 +97,7 @@ func TestLogout_Token(t *testing.T) {
 				return c
 			})
 			assert.NoError(t, err)
-			resp, err := rpc.Logout(context.Background(), &pb.LogoutRequest{PersistToken: test.persistToken})
+			resp, err := rpc.Logout(context.Background(), &pb.LogoutRequest{RevokeToken: test.revokeToken})
 			assert.NoError(t, err)
 			assert.Equal(t, test.result, resp.Type)
 			assert.True(t, deviceKeyManagerMock.WasDeviceKeyInvalidated, "Device key was not invalidated after logout.")
@@ -147,7 +153,7 @@ func TestLogout_Pause(t *testing.T) {
 				connectionInfo.Pause(time.Now(), time.Second*60*5)
 			}
 			// actual response code is not relevant for this test
-			_, err := rpc.Logout(context.Background(), &pb.LogoutRequest{PersistToken: false})
+			_, err := rpc.Logout(context.Background(), &pb.LogoutRequest{RevokeToken: false})
 			assert.NoError(t, err)
 			assert.Equal(t, test.isDataDisconnectExpected, mockedDisconnectEvents.EventPublished)
 		})

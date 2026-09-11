@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
+	"github.com/NordSecurity/nordvpn-linux/daemon/access"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -34,12 +35,38 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 	}
 
 	if !in.NoLogout {
-		if err := r.ncClient.Stop(); err != nil {
-			log.Warn("error stoping notification center client:", err)
+		result := access.Logout(access.LogoutInput{
+			AuthChecker:                  r.ac,
+			CredentialsAPI:               r.credentialsAPI,
+			Netw:                         r.netw,
+			NcClient:                     r.ncClient,
+			ConfigManager:                r.cm,
+			UserLogoutEventPublisherFunc: r.events.User.Logout.Publish,
+			DebugPublisherFunc:           r.publisher.Publish,
+			DisconnectFunc:               r.DoDisconnect,
+			DeviceKeyInvalidator:         r.dedicatedServerKeyManager,
+		})
+
+		if result.Err != nil {
+			switch result.Err {
+			case internal.ErrNotLoggedIn:
+				log.Info("trying to log out with set defaults, user already logged out")
+			default:
+				log.Error("error while trying to logout:", result.Err)
+				return &pb.Payload{
+					Type: internal.CodeFailure,
+				}, nil
+			}
 		}
 
-		if !r.ncClient.Revoke() {
-			log.Warn("error revoking notification center token")
+		switch result.Status {
+		case internal.CodeSuccess, internal.CodeTokenStillValid, 0:
+			log.Info("set defaults logout successful")
+		default:
+			log.Error("logout returned non success return code", result.Status)
+			return &pb.Payload{
+				Type: result.Status,
+			}, nil
 		}
 	}
 
