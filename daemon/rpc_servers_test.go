@@ -568,19 +568,28 @@ func TestObfuscatedGroupNeverComesFromAServerTag(t *testing.T) {
 			core.NordWhisperTech,
 		})
 
+	untagged := getServer(2, "untagged1", "France", "fr", "Paris", false,
+		core.Groups{{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"}},
+		[]core.ServerTechnology{
+			core.OpenVPNTCP,
+			core.OpenVPNUDP,
+			core.NordWhisperTech,
+		})
+
 	tests := []struct {
-		tech  config.Technology
-		proto config.Protocol
+		tech             config.Technology
+		proto            config.Protocol
+		expectObfuscated bool
 	}{
 		{tech: config.Technology_NORDLYNX, proto: config.Protocol_UDP},
 		{tech: config.Technology_OPENVPN, proto: config.Protocol_TCP},
 		{tech: config.Technology_OPENVPN, proto: config.Protocol_UDP},
-		{tech: config.Technology_NORDWHISPER, proto: config.Protocol_Webtunnel},
+		{tech: config.Technology_NORDWHISPER, proto: config.Protocol_Webtunnel, expectObfuscated: true},
 	}
 
 	for _, test := range tests {
 		t.Run(test.tech.String()+"/"+test.proto.String(), func(t *testing.T) {
-			dm := DataManager{serversData: ServersData{Servers: core.Servers{tagged}}}
+			dm := DataManager{serversData: ServersData{Servers: core.Servers{tagged, untagged}}}
 
 			groups, err := dm.Groups(test.tech, test.proto, true)
 			assert.NoError(t, err)
@@ -601,10 +610,107 @@ func TestObfuscatedGroupNeverComesFromAServerTag(t *testing.T) {
 			for _, country := range resp.GetServers().GetServersByCountry() {
 				for _, city := range country.Cities {
 					for _, server := range city.Servers {
+						if test.expectObfuscated {
+							assert.Contains(t, server.ServerGroups, config.ServerGroup_OBFUSCATED,
+								"%s is a standard server, so it must be reported as obfuscated", server.HostName)
+							continue
+						}
 						assert.NotContains(t, server.ServerGroups, config.ServerGroup_OBFUSCATED)
 					}
 				}
 			}
+		})
+	}
+}
+
+func hostnamesInGroup(serversMap []*pb.ServerCountry, group config.ServerGroup) []string {
+	hostnames := []string{}
+	for _, country := range serversMap {
+		for _, city := range country.Cities {
+			for _, server := range city.Servers {
+				if slices.Contains(server.ServerGroups, group) {
+					hostnames = append(hostnames, server.HostName)
+				}
+			}
+		}
+	}
+	slices.Sort(hostnames)
+
+	return hostnames
+}
+
+func TestObfuscatedGroupIsSynthesizedForGUI(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	standard := getServer(1, "standard1", "Germany", "de", "Berlin", false,
+		core.Groups{{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"}},
+		[]core.ServerTechnology{core.OpenVPNTCP, core.OpenVPNUDP, core.WireguardTech, core.NordWhisperTech})
+	p2p := getServer(2, "p2p1", "France", "fr", "Paris", false,
+		core.Groups{
+			{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
+			{ID: config.ServerGroup_P2P, Title: "P2P"},
+		},
+		[]core.ServerTechnology{core.OpenVPNTCP, core.OpenVPNUDP, core.WireguardTech, core.NordWhisperTech})
+	dedicatedIP := getServer(3, "dip1", "Austria", "at", "Vienna", false,
+		core.Groups{{ID: config.ServerGroup_DEDICATED_IP, Title: "Dedicated IP"}},
+		[]core.ServerTechnology{core.OpenVPNTCP, core.OpenVPNUDP, core.WireguardTech, core.NordWhisperTech})
+
+	tests := []struct {
+		name             string
+		tech             config.Technology
+		proto            config.Protocol
+		expectObfuscated bool
+	}{
+		{
+			name:             "nordwhisper mirrors the standard servers",
+			tech:             config.Technology_NORDWHISPER,
+			proto:            config.Protocol_Webtunnel,
+			expectObfuscated: true,
+		},
+		{
+			name:  "openvpn tcp reports no obfuscated servers",
+			tech:  config.Technology_OPENVPN,
+			proto: config.Protocol_TCP,
+		},
+		{
+			name:  "openvpn udp reports no obfuscated servers",
+			tech:  config.Technology_OPENVPN,
+			proto: config.Protocol_UDP,
+		},
+		{
+			name:  "nordlynx reports no obfuscated servers",
+			tech:  config.Technology_NORDLYNX,
+			proto: config.Protocol_UDP,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dm := DataManager{serversData: ServersData{Servers: core.Servers{standard, p2p, dedicatedIP}}}
+			cfgManager := mock.NewMockConfigManager()
+			cfgManager.Cfg.Technology = test.tech
+			cfgManager.Cfg.AutoConnectData.Protocol = test.proto
+			cfgManager.Cfg.VirtualLocation.Set(true)
+			r := RPC{dm: &dm, cm: cfgManager}
+
+			resp, err := r.GetServers(context.Background(), &pb.Empty{})
+			assert.NoError(t, err)
+
+			serversMap := resp.GetServers().GetServersByCountry()
+			standardServers := hostnamesInGroup(serversMap, config.ServerGroup_STANDARD_VPN_SERVERS)
+			obfuscatedServers := hostnamesInGroup(serversMap, config.ServerGroup_OBFUSCATED)
+
+			assert.NotEmpty(t, standardServers, "the standard servers are expected on every technology")
+
+			if !test.expectObfuscated {
+				assert.Empty(t, obfuscatedServers)
+				return
+			}
+
+			assert.Equal(t, standardServers, obfuscatedServers,
+				"the obfuscated servers are expected to match the standard ones exactly")
+			assert.NotContains(t, obfuscatedServers, dedicatedIP.Hostname,
+				"a server which is not a standard one must not be reported as obfuscated")
 		})
 	}
 }

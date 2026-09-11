@@ -136,6 +136,11 @@ final class AppCtl {
     await refreshAppState();
   }
 
+  Future<void> setTechnology(Technology technology) async {
+    await appSettings.setSettings(technology: technology);
+    await refreshAppState();
+  }
+
   Future<void> setObfuscatedServers(bool enabled) async {
     await appSettings.setSettings(technology: Technology.OPENVPN);
     await appSettings.setSettings(obfuscate: enabled);

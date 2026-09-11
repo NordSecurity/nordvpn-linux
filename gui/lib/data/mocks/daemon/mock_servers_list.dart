@@ -5,6 +5,7 @@ import 'package:nordvpn/data/mocks/daemon/connect_arguments_extension.dart';
 import 'package:nordvpn/pb/daemon/connect.pb.dart';
 import 'package:nordvpn/pb/daemon/servers.pb.dart';
 import 'package:nordvpn/pb/daemon/config/group.pb.dart' as config;
+import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart' as settings;
 import 'package:nordvpn/pb/daemon/settings.pb.dart';
 import 'package:nordvpn/pb/daemon/state.pb.dart';
 import 'package:fixnum/fixnum.dart';
@@ -41,6 +42,7 @@ final class MockServersList {
         _settings = newSettings;
         _serversList = _generateServersList(
           obfuscated: _settings!.obfuscate,
+          technology: _settings!.technology,
           hasVirtualServers: _settings!.virtualLocation,
         );
       }
@@ -66,18 +68,23 @@ final class MockServersList {
   ServersResponse _generateServersList({
     bool hasVirtualServers = true,
     bool obfuscated = false,
+    settings.Technology technology = settings.Technology.NORDLYNX,
   }) {
     debugPrint(
-      "Servers list changed hasVirtualServers=$hasVirtualServers - obfuscated=$obfuscated",
+      "Servers list changed hasVirtualServers=$hasVirtualServers - obfuscated=$obfuscated - technology=$technology",
     );
 
     _dipServers = [];
 
     const obfuscatedGroups = [config.ServerGroup.OBFUSCATED];
 
-    const standardGroups = [
+    // every server reachable over NordWhisper is obfuscated, so the daemon reports the standard
+    // servers as obfuscated ones as well
+    final standardGroups = [
       config.ServerGroup.P2P,
       config.ServerGroup.STANDARD_VPN_SERVERS,
+      if (technology == settings.Technology.NORDWHISPER)
+        config.ServerGroup.OBFUSCATED,
     ];
 
     final countries = <ServerCountry>[];

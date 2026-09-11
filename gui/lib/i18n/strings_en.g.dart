@@ -1900,6 +1900,9 @@ class Translations$ui$en {
 	/// en: 'Enjoy the best download speed'
 	String get p2pDesc => 'Enjoy the best download speed';
 
+	/// en: 'Avoid detection by traffic sensors in restricted networks'
+	String get obfuscatedServersDesc => 'Avoid detection by traffic sensors in restricted networks';
+
 	/// en: 'Save'
 	String get save => 'Save';
 
@@ -2822,6 +2825,7 @@ extension on Translations {
 			'ui.doubleVpnDesc' => 'Encrypt your traffic twice for extra security',
 			'ui.onionOverVpnDesc' => 'Use the Onion network with VPN protection',
 			'ui.p2pDesc' => 'Enjoy the best download speed',
+			'ui.obfuscatedServersDesc' => 'Avoid detection by traffic sensors in restricted networks',
 			'ui.save' => 'Save',
 			'ui.close' => 'Close',
 			'ui.to' => 'to',

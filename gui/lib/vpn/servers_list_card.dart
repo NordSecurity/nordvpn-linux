@@ -31,6 +31,7 @@ final class ServerListWidgetKeys {
   static const onionOverVpn = Key("serverListOnionOverVpn");
   static const p2p = Key("serverListP2P");
   static const dedicatedIp = Key("serverListDedicatedIP");
+  static const obfuscatedVpn = Key("serverListObfuscated");
   static const search = Key("serverListSearch");
   static const countriesServersList = Key("serverListCountries");
   static const recentConnections = Key("recentConnections");
@@ -294,6 +295,11 @@ final class _ServersListCardState extends State<ServersListCard> {
         type: ServerType.p2p,
         description: t.ui.p2pDesc,
         key: ServerListWidgetKeys.p2p,
+      ),
+      (
+        type: ServerType.obfuscated,
+        description: t.ui.obfuscatedServersDesc,
+        key: ServerListWidgetKeys.obfuscatedVpn,
       ),
     ];
 
