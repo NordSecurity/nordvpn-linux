@@ -1,5 +1,3 @@
-import random
-
 import sh
 
 from . import Port, Protocol, daemon
@@ -28,22 +26,6 @@ MSG_ALLOWLIST_PORT_REMOVE_ERROR = "Port %s (%s) is not on the allowlist."
 MSG_ALLOWLIST_PORT_RANGE_ADD_SUCCESS = "Ports %s (%s) have been successfully added to the allowlist."
 MSG_ALLOWLIST_PORT_RANGE_REMOVE_SUCCESS = "Ports %s (%s) have been deleted from the allowlist."
 MSG_ALLOWLIST_PORT_RANGE_REMOVE_ERROR = "Ports %s (%s) are not on the allowlist."
-
-ALLOWLIST_ALIAS = [
-    "whitelist",
-    "allowlist"
-]
-
-def get_alias() -> str:
-    """
-    This function randomly picks an alias from the predefined list 'ALLOWLIST_ALIAS' and returns it.
-
-    Returns:
-        str: A randomly selected alias from ALLOWLIST_ALIAS.
-    """
-    return random.choice(ALLOWLIST_ALIAS)
-
-
 def add_ports_to_allowlist(ports_list: list[Port]):
     for port in ports_list:
         if ":" in port.value:
@@ -65,7 +47,7 @@ def add_ports_to_allowlist(ports_list: list[Port]):
             port_value = port.value
             expected_message = MSG_ALLOWLIST_PORT_ADD_SUCCESS % (port_value, port.protocol)
 
-        cmd_message = sh.nordvpn(get_alias(), "add", cmd)
+        cmd_message = sh.nordvpn("allowlist", "add", cmd)
         print(cmd_message)
 
         assert sh.nordvpn.settings().count(f" {port_value} ({str(port.protocol)})") == 1, \
@@ -96,7 +78,7 @@ def remove_ports_from_allowlist(ports_list: list[Port]):
             port_value = port.value
             expected_message = MSG_ALLOWLIST_PORT_REMOVE_SUCCESS % (port_value, port.protocol)
 
-        cmd_message = sh.nordvpn(get_alias(), "remove", cmd)
+        cmd_message = sh.nordvpn("allowlist", "remove", cmd)
         print(cmd_message)
 
         assert sh.nordvpn.settings().count(f" {port_value} ({str(port.protocol)})") == 0, \
@@ -108,7 +90,7 @@ def remove_ports_from_allowlist(ports_list: list[Port]):
 
 def add_subnet_to_allowlist(subnet_list: list[str]):
     for subnet in subnet_list:
-        cmd_message = sh.nordvpn(get_alias(), "add", "subnet", subnet)
+        cmd_message = sh.nordvpn("allowlist", "add", "subnet", subnet)
         expected_message = MSG_ALLOWLIST_SUBNET_ADD_SUCCESS % subnet
 
         assert expected_message in cmd_message, \
@@ -128,7 +110,7 @@ def add_subnet_to_allowlist(subnet_list: list[str]):
 
 def remove_subnet_from_allowlist(subnet_list: list[str]):
     for subnet in subnet_list:
-        cmd_message = sh.nordvpn(get_alias(), "remove", "subnet", subnet)
+        cmd_message = sh.nordvpn("allowlist", "remove", "subnet", subnet)
         expected_message = MSG_ALLOWLIST_SUBNET_REMOVE_SUCCESS % subnet
 
         assert expected_message in cmd_message, \
@@ -147,7 +129,7 @@ def remove_subnet_from_allowlist(subnet_list: list[str]):
 
 def add_wider_subnet_to_allowlist(wider_subnet: str, expected_removed: list[str]):
     """Add wider subnet, auto-confirming the overlap prompt. Verifies narrower ones are removed."""
-    cmd_message = sh.nordvpn(get_alias(), "add", "subnet", wider_subnet, _in="y\n")
+    cmd_message = sh.nordvpn("allowlist", "add", "subnet", wider_subnet, _in="y\n")
     assert MSG_ALLOWLIST_SUBNET_ADD_SUCCESS % wider_subnet in cmd_message
     settings_output = str(sh.nordvpn.settings())
     assert settings_output.count(wider_subnet) == 1

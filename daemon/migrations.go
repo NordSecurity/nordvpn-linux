@@ -28,6 +28,15 @@ func MigrateDeprecatedRegionalAutoconnect(cm config.Manager) error {
 	})
 }
 
+// MigrateLegacyAllowlist moves the allowlist from the pre-6.0.0 "whitelist" key into new one.
+func MigrateLegacyAllowlist(c config.Config) config.Config {
+	if c.AutoConnectData.LegacyAllowlist != nil {
+		c.AutoConnectData.Allowlist = *c.AutoConnectData.LegacyAllowlist
+		c.AutoConnectData.LegacyAllowlist = nil
+	}
+	return c
+}
+
 // ConfigCleanup - validate/cleanup DNS addresses, allowlist subnets
 func ConfigCleanup(c config.Config) config.Config {
 	// Remove all nameservers with IPv6 addresses

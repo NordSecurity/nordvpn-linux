@@ -86,8 +86,11 @@ type AutoConnectData struct {
 	ThreatProtectionLite bool      `json:"cybersec,omitempty"`
 	Obfuscate            bool      `json:"obfuscate,omitempty"`
 	DNS                  DNS       `json:"dns,omitempty"`
-	Allowlist            Allowlist `json:"whitelist,omitempty"`
-	PostquantumVpn       bool      `json:"postquantum_vpn"`
+	Allowlist            Allowlist `json:"allowlist,omitempty"`
+	// LegacyAllowlist is the allowlist saved by versions before 6.0.0, under the
+	// "whitelist" key. Exists for the migration purposes only, and can be removed in the future.
+	LegacyAllowlist *Allowlist `json:"whitelist,omitempty"`
+	PostquantumVpn  bool       `json:"postquantum_vpn"`
 	// ECH controls the NordWhisper Encrypted Client Hello feature. True by default.
 	ECH TrueField `json:"ech,omitempty"`
 }

@@ -28,7 +28,7 @@ nordvpn \- command-line interface of the NordVPN service
 
 .SH "DESCRIPTION"
 .sp
-The NordVPN app for Linux protects your internet traffic with top-grade encryption and changes your IP address, so whatever you do online stays private and secure\&. Connect to over 7,100 high-speed servers covering 118 countries\&. 
+The NordVPN app for Linux protects your internet traffic with top-grade encryption and changes your IP address, so whatever you do online stays private and secure\&. Connect to over 7,100 high-speed servers covering 118 countries\&.
 .PP
 You can secure up to 10 devices with a single account. Enjoy a safer internet experience on all your devices\&.
 
@@ -104,7 +104,7 @@ Shows the current connection status.
 Shows the app version.
 .RE
 .PP
-\fBallowlist, whitelist\fR
+\fBallowlist\fR
 .RS 4
 Specify ports, port ranges, or subnets to exclude from VPN protection. Allowlisted ports may accept incoming connections from any external source outside your network.
 .RE

@@ -114,9 +114,9 @@ def test_allowlist_port_twice_disconnected(tech, proto, obfuscated, port):
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if port.protocol == lib.Protocol.ALL:
-            sh.nordvpn(allowlist.get_alias(), "add", "port", port.value)
+            sh.nordvpn("allowlist", "add", "port", port.value)
         else:
-            sh.nordvpn(allowlist.get_alias(), "add", "port", port.value, "protocol", port.protocol)
+            sh.nordvpn("allowlist", "add", "port", port.value, "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_ADD_ERROR % (port.value, port.protocol)
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port add failed"
@@ -148,9 +148,9 @@ def test_allowlist_port_twice_connected(tech, proto, obfuscated, port):
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if port.protocol == lib.Protocol.ALL:
-            sh.nordvpn(allowlist.get_alias(), "add", "port", port.value)
+            sh.nordvpn("allowlist", "add", "port", port.value)
         else:
-            sh.nordvpn(allowlist.get_alias(), "add", "port", port.value, "protocol", port.protocol)
+            sh.nordvpn("allowlist", "add", "port", port.value, "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_ADD_ERROR % (port.value, port.protocol)
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port add failed"
@@ -231,9 +231,9 @@ def test_allowlist_port_remove_nonexistent_disconnected(tech, proto, obfuscated,
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if port.protocol == lib.Protocol.ALL:
-            sh.nordvpn(allowlist.get_alias(), "remove", "port", port.value)
+            sh.nordvpn("allowlist", "remove", "port", port.value)
         else:
-            sh.nordvpn(allowlist.get_alias(), "remove", "port", port.value, "protocol", port.protocol)
+            sh.nordvpn("allowlist", "remove", "port", port.value, "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_REMOVE_ERROR % (port.value, port.protocol)
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port remove failed"
@@ -260,9 +260,9 @@ def test_allowlist_port_remove_nonexistent_connected(tech, proto, obfuscated, po
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if port.protocol == lib.Protocol.ALL:
-            sh.nordvpn(allowlist.get_alias(), "remove", "port", port.value)
+            sh.nordvpn("allowlist", "remove", "port", port.value)
         else:
-            sh.nordvpn(allowlist.get_alias(), "remove", "port", port.value, "protocol", port.protocol)
+            sh.nordvpn("allowlist", "remove", "port", port.value, "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_REMOVE_ERROR % (port.value, port.protocol)
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port remove failed"
@@ -289,9 +289,9 @@ def test_allowlist_port_range_remove_nonexistent_disconnected(tech, proto, obfus
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if port.protocol == lib.Protocol.ALL:
-            sh.nordvpn(allowlist.get_alias(), "remove", "ports", port_range[0], port_range[1])
+            sh.nordvpn("allowlist", "remove", "ports", port_range[0], port_range[1])
         else:
-            sh.nordvpn(allowlist.get_alias(), "remove", "ports", port_range[0], port_range[1], "protocol", port.protocol)
+            sh.nordvpn("allowlist", "remove", "ports", port_range[0], port_range[1], "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_RANGE_REMOVE_ERROR % (port.value.replace(":", " - "), port.protocol)
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port range remove failed"
@@ -320,9 +320,9 @@ def test_allowlist_port_range_remove_nonexistent_connected(tech, proto, obfuscat
 
     with pytest.raises(sh.ErrorReturnCode_1) as ex:
         if port.protocol == lib.Protocol.ALL:
-            sh.nordvpn(allowlist.get_alias(), "remove", "ports", port_range[0], port_range[1])
+            sh.nordvpn("allowlist", "remove", "ports", port_range[0], port_range[1])
         else:
-            sh.nordvpn(allowlist.get_alias(), "remove", "ports", port_range[0], port_range[1], "protocol", port.protocol)
+            sh.nordvpn("allowlist", "remove", "ports", port_range[0], port_range[1], "protocol", port.protocol)
 
     expected_message = allowlist.MSG_ALLOWLIST_PORT_RANGE_REMOVE_ERROR % (port.value.replace(":", " - "), port.protocol)
     assert expected_message in ex.value.stdout.decode("utf-8"), "Error message should indicate port range remove failed"
