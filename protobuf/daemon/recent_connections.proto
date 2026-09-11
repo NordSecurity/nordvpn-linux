@@ -3,6 +3,7 @@ syntax = "proto3";
 package pb;
 
 import "config/group.proto";
+import "config/technology.proto";
 import "server_selection_rule.proto";
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
@@ -36,6 +37,9 @@ message RecentConnectionModel {
 
   // whether the server is virtual
   bool is_virtual = 8;
+
+  // Technology used by the app to connect
+  config.Technology connectionTech = 9;
 }
 
 message RecentConnectionsRequest {

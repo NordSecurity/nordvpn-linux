@@ -3,11 +3,9 @@ package daemon
 import (
 	"context"
 	"fmt"
-	"slices"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
-	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 )
 
 // GetRecentConnections retrieves recent vpn connections from store
@@ -25,25 +23,19 @@ func (r *RPC) GetRecentConnections(
 		return nil, fmt.Errorf("reading config for recent vpn connections: %w", err)
 	}
 
-	serverTech := serverpicker.TechToServerTech(
-		cfg.Technology,
-		cfg.AutoConnectData.Protocol,
-		cfg.AutoConnectData.Obfuscate,
-	)
-
 	var rcValues []*pb.RecentConnectionModel
 	// filter by server technology used
 	for _, v := range values {
-		if !slices.Contains(v.ServerTechnologies, serverTech) {
-			continue
-		}
-
 		// filter by virtual location setting
 		if !cfg.VirtualLocation.Get() && v.IsVirtual {
 			continue
 		}
 
 		if config.IsRegionalGroup(v.Group) {
+			continue
+		}
+
+		if !v.AreTechCompatible(cfg.Technology) {
 			continue
 		}
 
@@ -56,6 +48,7 @@ func (r *RPC) GetRecentConnections(
 			Group:              v.Group,
 			ConnectionType:     v.ConnectionType,
 			IsVirtual:          v.IsVirtual,
+			ConnectionTech:     v.ConnectionTech,
 		}
 		rcValues = append(rcValues, item)
 	}

@@ -68,6 +68,14 @@ const RecentConnectionModel$json = {
       '10': 'connectionType'
     },
     {'1': 'is_virtual', '3': 8, '4': 1, '5': 8, '10': 'isVirtual'},
+    {
+      '1': 'connectionTech',
+      '3': 9,
+      '4': 1,
+      '5': 14,
+      '6': '.config.Technology',
+      '10': 'connectionTech'
+    },
   ],
 };
 
@@ -79,7 +87,8 @@ final $typed_data.Uint8List recentConnectionModelDescriptor = $convert.base64Dec
     '9uYW1lGAUgASgJUhJzcGVjaWZpY1NlcnZlck5hbWUSJwoPc3BlY2lmaWNfc2VydmVyGAYgASgJ'
     'Ug5zcGVjaWZpY1NlcnZlchJACg9jb25uZWN0aW9uX3R5cGUYByABKA4yFy5wYi5TZXJ2ZXJTZW'
     'xlY3Rpb25SdWxlUg5jb25uZWN0aW9uVHlwZRIdCgppc192aXJ0dWFsGAggASgIUglpc1ZpcnR1'
-    'YWw=');
+    'YWwSOgoOY29ubmVjdGlvblRlY2gYCSABKA4yEi5jb25maWcuVGVjaG5vbG9neVIOY29ubmVjdG'
+    'lvblRlY2g=');
 
 @$core.Deprecated('Use recentConnectionsRequestDescriptor instead')
 const RecentConnectionsRequest$json = {

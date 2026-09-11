@@ -16,6 +16,7 @@ import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 
 import 'config/group.pbenum.dart' as $0;
+import 'config/technology.pbenum.dart' as $2;
 import 'server_selection_rule.pbenum.dart' as $1;
 
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
@@ -81,6 +82,7 @@ class RecentConnectionModel extends $pb.GeneratedMessage {
     $core.String? specificServer,
     $1.ServerSelectionRule? connectionType,
     $core.bool? isVirtual,
+    $2.Technology? connectionTech,
   }) {
     final result = create();
     if (country != null) result.country = country;
@@ -92,6 +94,7 @@ class RecentConnectionModel extends $pb.GeneratedMessage {
     if (specificServer != null) result.specificServer = specificServer;
     if (connectionType != null) result.connectionType = connectionType;
     if (isVirtual != null) result.isVirtual = isVirtual;
+    if (connectionTech != null) result.connectionTech = connectionTech;
     return result;
   }
 
@@ -118,6 +121,8 @@ class RecentConnectionModel extends $pb.GeneratedMessage {
     ..aE<$1.ServerSelectionRule>(7, _omitFieldNames ? '' : 'connectionType',
         enumValues: $1.ServerSelectionRule.values)
     ..aOB(8, _omitFieldNames ? '' : 'isVirtual')
+    ..aE<$2.Technology>(9, _omitFieldNames ? '' : 'connectionTech',
+        protoName: 'connectionTech', enumValues: $2.Technology.values)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -219,6 +224,16 @@ class RecentConnectionModel extends $pb.GeneratedMessage {
   $core.bool hasIsVirtual() => $_has(7);
   @$pb.TagNumber(8)
   void clearIsVirtual() => $_clearField(8);
+
+  /// Technology used by the app to connect
+  @$pb.TagNumber(9)
+  $2.Technology get connectionTech => $_getN(8);
+  @$pb.TagNumber(9)
+  set connectionTech($2.Technology value) => $_setField(9, value);
+  @$pb.TagNumber(9)
+  $core.bool hasConnectionTech() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearConnectionTech() => $_clearField(9);
 }
 
 class RecentConnectionsRequest extends $pb.GeneratedMessage {
