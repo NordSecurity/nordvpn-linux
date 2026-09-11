@@ -322,12 +322,19 @@ var pauseLengths = []pauseLength{
 	newPauseLength(labelPause24H, internal.PauseSeconds24Hour),
 }
 
+func addParentMenuItem(label string) *systray.MenuItem {
+	m := systray.AddMenuItem(label, label)
+	// giving time for appindicator to handle parent item
+	time.Sleep(100 * time.Millisecond)
+	return m
+}
+
 func buildPauseMenu(ti *Instance) {
 	if ti == nil {
 		return
 	}
+	pauseMenu := addParentMenuItem(labelPause)
 
-	pauseMenu := systray.AddMenuItem(labelPause, labelPause)
 	for _, pauseLength := range pauseLengths {
 		pause := pauseMenu.AddSubMenuItem(pauseLength.Name, pauseLength.Tooltip)
 		go handlePauseClick(ti, pause, pauseLength)
@@ -370,11 +377,9 @@ func buildPauseTimer(ti *Instance) {
 
 				ti.state.mu.Unlock()
 
-				if ti.isVisible.Load() {
-					timer.SetTitleQuiet(
-						buildTimerString(currentValue),
-					)
-				}
+				timer.SetTitleQuiet(
+					buildTimerString(currentValue),
+				)
 			}
 		}
 	}()
@@ -431,7 +436,8 @@ func buildConnectToItem(ti *Instance) {
 	if ti == nil {
 		return
 	}
-	connectionSelector := systray.AddMenuItem(labelConnectionSelection, tooltipConnectionSelection)
+	connectionSelector := addParentMenuItem(tooltipConnectionSelection)
+
 	countries := slices.Clone(ti.state.connSelector.countries)
 	specialtyServers := slices.Clone(ti.state.connSelector.specialtyServers)
 	recentConnections := ti.recentConnections.GetRecentConnections()
@@ -563,9 +569,7 @@ func buildSettingsSection(ti *Instance) {
 	if !ti.state.daemonAvailable {
 		return
 	}
-
-	item := systray.AddMenuItem(labelSettings, tooltipSettings)
-	buildSettingsSubitems(ti, item)
+	buildSettingsSubitems(ti, addParentMenuItem(tooltipSettings))
 }
 
 func buildSettingsSubitems(ti *Instance, menu *systray.MenuItem) {
