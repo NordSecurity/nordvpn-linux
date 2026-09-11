@@ -232,7 +232,7 @@ func TestRecentConnectionsFileMigration(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			f := migrateToVersion1(test.connections)
-			assert.Equal(t, currentFileFormat, f.Version)
+			assert.Equal(t, currentFile, f.Version)
 			assert.Equal(t, test.expectedOutput, f.Connections)
 		})
 	}

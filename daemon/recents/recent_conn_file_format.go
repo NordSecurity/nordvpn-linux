@@ -7,7 +7,10 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
-const currentFileFormat = 1
+const (
+	unversionedFileFormat = 0
+	currentFile           = 1
+)
 
 type FileFormat struct {
 	Version     int     `json:"version"`
@@ -16,7 +19,7 @@ type FileFormat struct {
 
 func encode(connections []Model) ([]byte, error) {
 	f := FileFormat{
-		Version:     currentFileFormat,
+		Version:     currentFile,
 		Connections: connections,
 	}
 	return json.Marshal(f)
@@ -25,7 +28,7 @@ func encode(connections []Model) ([]byte, error) {
 func decode(data []byte) (FileFormat, error) {
 	if len(data) == 0 {
 		return FileFormat{
-			Version:     1,
+			Version:     currentFile,
 			Connections: []Model{},
 		}, nil
 	}
@@ -41,7 +44,7 @@ func decode(data []byte) (FileFormat, error) {
 	}
 
 	return FileFormat{
-		Version:     0, // return version 0 to know that the file needs to be migrated
+		Version:     unversionedFileFormat,
 		Connections: connections,
 	}, nil
 }
