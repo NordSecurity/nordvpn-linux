@@ -56,7 +56,10 @@ func (m Model) Equals(other Model) bool {
 		m.AreTechCompatible(other.ConnectionTech)
 }
 
+// AreTechCompatible - compares the model ConnectionTech with the given technology parameter.
+// The function returns true if both are NordWhisper or both are not NordWhisper, not necessary same technology.
+// This is because recent connections having NordWhisper technology are marked obfuscated, while all the others are not.
 func (m Model) AreTechCompatible(tech config.Technology) bool {
-	// only NordWhisper tech is threaded differently. The others are considered compatible
+	// only NordWhisper tech is treated differently. All the others are considered compatible
 	return (tech == config.Technology_NORDWHISPER) == (m.ConnectionTech == config.Technology_NORDWHISPER)
 }
