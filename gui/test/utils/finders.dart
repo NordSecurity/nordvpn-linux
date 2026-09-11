@@ -199,6 +199,12 @@ Finder p2pGroupTile() {
   return p2pGroupTile;
 }
 
+Finder obfuscatedGroupTile() {
+  final obfuscatedGroupTile = find.byKey(ServerListWidgetKeys.obfuscatedVpn);
+  expect(obfuscatedGroupTile, findsOne);
+  return obfuscatedGroupTile;
+}
+
 // Find the gesture area from an OnOffSwitch
 Finder tapAreaInOnOffSwitch(Finder onOffSwitch) {
   expect(onOffSwitch, findsOneWidget);

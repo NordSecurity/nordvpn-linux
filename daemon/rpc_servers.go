@@ -29,11 +29,11 @@ func technologiesToProtobuf(technologies core.Technologies) []pb.Technology {
 	return technologiesProto
 }
 
-// groupFilter converts core.Groups to a slice of config.ServerGroup. It also filters out the groups so that only ones
-// returned are of interest to the GUI.
-func groupFilter(groups core.Groups) []config.ServerGroup {
-	// the obfuscated group is not listed. Only the OVPN XOR servers carry that tag, and that
-	// should not be connectable
+// groupsToProtobuf converts core.Groups to a slice of config.ServerGroup. It also filters out the groups so that only
+// ones returned are of interest to the GUI
+func groupsToProtobuf(groups core.Groups, technology config.Technology) []config.ServerGroup {
+	// the obfuscated group is never taken from the server tags. Only the OVPN XOR servers carry
+	// that tag, and those are not connectable anymore
 	filter := []config.ServerGroup{
 		config.ServerGroup_P2P,
 		config.ServerGroup_DOUBLE_VPN,
@@ -51,10 +51,31 @@ func groupFilter(groups core.Groups) []config.ServerGroup {
 		}
 	}
 
-	return desiredGroups
+	return withObfuscatedGroup(desiredGroups, technology)
 }
 
-func serversListToServersMap(internalServers core.Servers, allowVirtual bool) []*pb.ServerCountry {
+// withObfuscatedGroup reports the standard servers as obfuscated ones as well, but only under a
+// technology which is obfuscated. No server is tagged with that group by the API anymore.
+func withObfuscatedGroup(
+	groups []config.ServerGroup,
+	technology config.Technology,
+) []config.ServerGroup {
+	if !serverpicker.IsObfuscatedTech(technology) {
+		return groups
+	}
+
+	if !slices.Contains(groups, config.ServerGroup_STANDARD_VPN_SERVERS) {
+		return groups
+	}
+
+	return append(groups, config.ServerGroup_OBFUSCATED)
+}
+
+func serversListToServersMap(
+	internalServers core.Servers,
+	allowVirtual bool,
+	technology config.Technology,
+) []*pb.ServerCountry {
 	type serversMap map[string]map[string][]*pb.Server
 
 	sMap := make(serversMap)
@@ -70,7 +91,7 @@ func serversListToServersMap(internalServers core.Servers, allowVirtual bool) []
 			Id:           server.ID,
 			HostName:     server.Hostname,
 			Virtual:      server.IsVirtualLocation(),
-			ServerGroups: groupFilter(server.Groups),
+			ServerGroups: groupsToProtobuf(server.Groups, technology),
 			Technologies: technologiesToProtobuf(server.Technologies),
 		}
 
@@ -127,7 +148,7 @@ func (r *RPC) GetServers(ctx context.Context, in *pb.Empty) (*pb.ServersResponse
 
 	return &pb.ServersResponse{Response: &pb.ServersResponse_Servers{
 		Servers: &pb.ServersMap{
-			ServersByCountry: serversListToServersMap(servers, cfg.VirtualLocation.Get()),
+			ServersByCountry: serversListToServersMap(servers, cfg.VirtualLocation.Get(), cfg.Technology),
 		},
 	}}, nil
 }
