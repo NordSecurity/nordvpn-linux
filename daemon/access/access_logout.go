@@ -55,6 +55,9 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 	}
 
 	if isAlreadyLoggedOut(input.CredentialsAPI, input.ConfigManager) {
+		if input.RevokeToken {
+			return LogoutResult{Status: internal.CodeTokenInvalid, Err: nil}
+		}
 		return LogoutResult{Status: internal.CodeSuccess, Err: nil}
 	}
 
@@ -108,8 +111,10 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 		log.Warn("error revoking NC token")
 	}
 	// LVPN-11093 This needs to be validated properly once API endpoint exists
+	isLoggedInWithManualToken := tokenData.TokenExpiry == session.ManualAccessTokenExpiryDateString
+	var isRevokeSuccessful = false
 	// on logout we destroy token if we did not log in using `nordvpn login --token` or if revoke token flag was used
-	if tokenData.TokenExpiry != session.ManualAccessTokenExpiryDateString || input.RevokeToken {
+	if !isLoggedInWithManualToken || input.RevokeToken {
 		if err := input.CredentialsAPI.DeleteToken(); err != nil {
 			log.Error("deleting token:", err)
 			switch {
@@ -121,15 +126,16 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 				return LogoutResult{Status: internal.CodeFailure, Err: nil}
 			}
 		}
-
+		isRevokeSuccessful = true
+	}
+	// Logout endpoint does not work with manual token created via UCP, always returns a 404 after deletion
+	if !isLoggedInWithManualToken {
 		if err := input.CredentialsAPI.Logout(); err != nil {
 			log.Error("logging out:", err)
 			switch {
 			// This means that token is invalid anyway
 			case errors.Is(err, core.ErrUnauthorized):
 			case errors.Is(err, core.ErrBadRequest):
-				// NordAccount tokens do not work with Logout endpoint and return ErrNotFound
-			case errors.Is(err, core.ErrNotFound):
 			case errors.Is(err, core.ErrServerInternal):
 				return LogoutResult{Status: internal.CodeInternalError, Err: nil}
 			default:
@@ -150,6 +156,10 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 
 	if !input.RevokeToken && tokenData.RenewToken == "" {
 		return LogoutResult{Status: internal.CodeTokenStillValid, Err: nil}
+	}
+	// Only show special message if user logged in with token and logged out with revoke token
+	if input.RevokeToken && isRevokeSuccessful && isLoggedInWithManualToken {
+		return LogoutResult{Status: internal.CodeRevokedAccessToken, Err: nil}
 	}
 
 	return LogoutResult{Status: internal.CodeSuccess, Err: nil}
