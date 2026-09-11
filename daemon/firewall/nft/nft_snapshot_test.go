@@ -17,6 +17,7 @@ const (
 )
 
 var selfMeshIP = netip.MustParseAddr("100.64.0.1")
+var tunnelIP = netip.MustParseAddr("10.5.0.2")
 
 func TestVPNRuleset(t *testing.T) {
 	tests := []struct {
@@ -33,30 +34,30 @@ func TestVPNRuleset(t *testing.T) {
 		},
 		{
 			name:   "vpn only",
-			config: helpers.NewFWConfig().TunnelInterface(ifName),
+			config: helpers.NewFWConfig().TunnelInterface(ifName, tunnelIP),
 		},
 		{
 			name:   "vpn and kill switch",
-			config: helpers.NewFWConfig().TunnelInterface(ifName).KillSwitch(),
+			config: helpers.NewFWConfig().TunnelInterface(ifName, tunnelIP).KillSwitch(),
 		},
 		{
 			name:   "tcp port allowlisted",
-			config: helpers.NewFWConfig().TunnelInterface(ifName).AllowlistTCPPort(1337),
+			config: helpers.NewFWConfig().TunnelInterface(ifName, tunnelIP).AllowlistTCPPort(1337),
 		},
 		{
 			name:   "udp port allowlisted",
-			config: helpers.NewFWConfig().TunnelInterface(ifName).AllowlistUDPPort(8080),
+			config: helpers.NewFWConfig().TunnelInterface(ifName, tunnelIP).AllowlistUDPPort(8080),
 		},
 		{
 			name: "DNS port allowlisted for both protocols",
 			config: helpers.NewFWConfig().
-				TunnelInterface(ifName).
+				TunnelInterface(ifName, tunnelIP).
 				AllowlistUDPPort(53).
 				AllowlistTCPPort(53),
 		},
 		{
 			name:   "subnet allowlisted",
-			config: helpers.NewFWConfig().TunnelInterface(ifName).AllowlistSubnet("10.0.0.0/24"),
+			config: helpers.NewFWConfig().TunnelInterface(ifName, tunnelIP).AllowlistSubnet("10.0.0.0/24"),
 		},
 	}
 

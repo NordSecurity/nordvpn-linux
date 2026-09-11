@@ -19,6 +19,7 @@ func TestConfigOptions(t *testing.T) {
 	meshInfo := NewMeshInfo(mesh.MachineMap{}, "nordlynx")
 	fullConfig := Config{
 		TunnelInterface: "test",
+		TunnelIP:        netip.AddrFrom4([4]byte{10, 5, 0, 2}),
 		KillSwitch:      true,
 		BlockFileshare:  true,
 		Allowlist:       allowlist,
@@ -32,8 +33,8 @@ func TestConfigOptions(t *testing.T) {
 	}{
 		{
 			name:     "tunnel interface changes",
-			options:  []Option{WithTunnelInterface("test")},
-			expected: Config{TunnelInterface: "test"},
+			options:  []Option{WithTunnelInterface("test", netip.MustParseAddr("10.5.0.2"))},
+			expected: Config{TunnelInterface: "test", TunnelIP: netip.AddrFrom4([4]byte{10, 5, 0, 2})},
 		},
 		{
 			name:     "KillSwitch interface changes",
@@ -58,7 +59,7 @@ func TestConfigOptions(t *testing.T) {
 		{
 			name: "combine all members works",
 			options: []Option{
-				WithTunnelInterface("test"),
+				WithTunnelInterface("test", netip.MustParseAddr("10.5.0.2")),
 				WithKillSwitch(true),
 				WithBlockFileshare(true),
 				WithAllowlist(allowlist),

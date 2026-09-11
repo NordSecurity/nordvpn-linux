@@ -32,6 +32,7 @@ table inet nordvpn {
 		ip daddr @lan_ranges tcp dport 53 drop comment "block to LAN DNS for TCP"
 		ip daddr @lan_ranges udp dport 53 drop comment "block to LAN DNS for UDP"
 		udp sport @udp_allowlist meta mark set 0x0000e1f1 accept comment "from allowlist UDP ports"
+		oifname "nordlynx" ip saddr != 10.5.0.2 drop comment "Drop non tunnel source ip packets that are going through tunnel interface"
 		oifname "nordlynx" accept comment "local to VPN"
 	}
 
