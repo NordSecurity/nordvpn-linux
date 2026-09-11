@@ -1,7 +1,6 @@
 package recents
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
@@ -164,7 +163,7 @@ func (r *RecentConnectionsStore) Clean() error {
 }
 
 func (r *RecentConnectionsStore) save(values []Model) error {
-	data, err := json.Marshal(values)
+	data, err := encode(values)
 	if err != nil {
 		return fmt.Errorf("marshaling vpn connections store: %w", err)
 	}
@@ -182,12 +181,22 @@ func (r *RecentConnectionsStore) load() ([]Model, error) {
 		return nil, fmt.Errorf("reading recent connections store: %w", err)
 	}
 
-	var connections []Model
-	if err := json.Unmarshal(data, &connections); err != nil {
+	f, err := decode(data)
+	if err != nil {
 		return nil, fmt.Errorf("unmarshaling vpn connections store: %w", err)
 	}
 
-	return connections, nil
+	if f.Version == unversionedFile {
+		// migrate to version 1
+		f = migrateToVersion1(f.Connections)
+		if err := r.save(f.Connections); err != nil {
+			// just log an error, the f.connections are correct
+			// so the file will be saved correctly at the next save
+			log.Recents.Error("failed to save to the new format")
+		}
+	}
+
+	return f.Connections, nil
 }
 
 func (r *RecentConnectionsStore) checkExistence() error {
