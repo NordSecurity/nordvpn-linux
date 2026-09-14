@@ -258,9 +258,14 @@ final class MockDaemon extends DaemonServiceBase {
     return appSettings.setSettings(notify: request.notify);
   }
 
+  // No longer used by the GUI. Required only because service.proto still declares it.
+  // Remove when the RPC is removed in LVPN-10919.
   @override
-  Future<Payload> setObfuscate(ServiceCall call, SetGenericRequest request) {
-    return appSettings.setSettings(obfuscate: request.enabled);
+  Future<Payload> setObfuscate(
+    ServiceCall call,
+    SetGenericRequest request,
+  ) async {
+    return Payload(type: Int64(DaemonStatusCode.success));
   }
 
   @override

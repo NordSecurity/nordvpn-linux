@@ -45,7 +45,6 @@ final class MockApplicationSettings extends CancelableDelayed {
       killSwitch: value.hasKillSwitch() ? value.killSwitch : null,
       protocol: value.hasProtocol() ? value.protocol : null,
       technology: value.hasTechnology() ? value.technology : null,
-      obfuscate: value.hasObfuscate() ? value.obfuscate : null,
     );
   }
 
@@ -57,7 +56,6 @@ final class MockApplicationSettings extends CancelableDelayed {
     Protocol? protocol,
     bool? virtualLocation,
     bool? killSwitch,
-    bool? obfuscate,
     bool? lanDiscovery,
     bool? postquantumVpn,
     bool? routing,
@@ -86,7 +84,6 @@ final class MockApplicationSettings extends CancelableDelayed {
       protocol: protocol ?? val.protocol,
       virtualLocation: virtualLocation ?? val.virtualLocation,
       killSwitch: killSwitch ?? val.killSwitch,
-      obfuscate: obfuscate ?? val.obfuscate,
       lanDiscovery: lanDiscovery ?? val.lanDiscovery,
       postquantumVpn: postquantumVpn ?? val.postquantumVpn,
       routing: routing ?? val.routing,
@@ -133,7 +130,6 @@ final class MockApplicationSettings extends CancelableDelayed {
       killSwitch: false,
       lanDiscovery: false,
       notify: false,
-      obfuscate: false,
       postquantumVpn: false,
       routing: false,
       realTimeProtection: false,

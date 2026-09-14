@@ -118,13 +118,9 @@ final class _ServersListCardState extends State<ServersListCard> {
     ServersList serversList,
     WidgetRef ref,
   ) {
-    final isObfuscationEnabled =
-        serversList.standardServersList.isEmpty &&
-        serversList.obfuscatedServersList.isNotEmpty;
-
     final serverSelectionView = (!_showSearchView)
-        ? _buildTabBarView(context, serversList, ref, isObfuscationEnabled)
-        : _buildSearchList(context, serversList, ref, isObfuscationEnabled);
+        ? _buildTabBarView(context, serversList, ref)
+        : _buildSearchList(context, serversList, ref);
 
     return serverSelectionView;
   }
@@ -133,7 +129,6 @@ final class _ServersListCardState extends State<ServersListCard> {
     BuildContext context,
     ServersList serversList,
     WidgetRef ref,
-    bool isObfuscationEnabled,
   ) {
     final serverListTheme = context.serversListTheme;
 
@@ -185,13 +180,7 @@ final class _ServersListCardState extends State<ServersListCard> {
                   thickness: 1,
                   color: context.appTheme.dividerColor,
                 ),
-                Expanded(
-                  child: _buildTabsWithServers(
-                    serversList,
-                    ref,
-                    isObfuscationEnabled,
-                  ),
-                ),
+                Expanded(child: _buildTabsWithServers(serversList, ref)),
               ],
             ),
           ),
@@ -200,28 +189,18 @@ final class _ServersListCardState extends State<ServersListCard> {
     );
   }
 
-  Widget _buildTabsWithServers(
-    ServersList serversList,
-    WidgetRef ref,
-    bool isObfuscationEnabled,
-  ) {
+  Widget _buildTabsWithServers(ServersList serversList, WidgetRef ref) {
     return TabBarView(
       children: [
-        _buildServersList(serversList, ref, isObfuscationEnabled),
-        _buildSpecialtyServersList(serversList, ref, isObfuscationEnabled),
+        _buildServersList(serversList, ref),
+        _buildSpecialtyServersList(serversList, ref),
       ],
     );
   }
 
   // Builds the countries servers list from the tabbar
-  Widget _buildServersList(
-    ServersList serversList,
-    WidgetRef ref,
-    bool isObfuscationEnabled,
-  ) {
-    final servers = isObfuscationEnabled
-        ? serversList.obfuscatedServersList
-        : serversList.standardServersList;
+  Widget _buildServersList(ServersList serversList, WidgetRef ref) {
+    final servers = serversList.standardServersList;
 
     // count additional quick connect tile if specified
     final itemsCount = servers.length + (widget.withQuickConnectTile ? 1 : 0);
@@ -242,13 +221,8 @@ final class _ServersListCardState extends State<ServersListCard> {
                     left: appTheme.horizontalSpaceVerySmall,
                   ),
                   title: Text(fastestServerLabel, style: appTheme.body),
-                  onTap: () async => await widget.onSelected(
-                    ConnectArguments(
-                      specialtyGroup: isObfuscationEnabled
-                          ? ServerType.obfuscated
-                          : null,
-                    ),
-                  ),
+                  onTap: () async =>
+                      await widget.onSelected(ConnectArguments()),
                 );
               }
               // adjust for additional quick connect tile if specified
@@ -258,9 +232,6 @@ final class _ServersListCardState extends State<ServersListCard> {
                 country: servers[idx],
                 onTap: (args) async => await widget.onSelected(args),
                 enabled: widget.enabled,
-                specialtyGroup: isObfuscationEnabled
-                    ? ServerType.obfuscated
-                    : null,
               );
             },
           ),
@@ -270,11 +241,7 @@ final class _ServersListCardState extends State<ServersListCard> {
   }
 
   // Show the specialty servers in the tabbar
-  Widget _buildSpecialtyServersList(
-    ServersList serversList,
-    WidgetRef ref,
-    bool isObfuscatedOn,
-  ) {
+  Widget _buildSpecialtyServersList(ServersList serversList, WidgetRef ref) {
     final specialtyServersOrder = [
       (
         type: ServerType.dedicatedIP,
@@ -314,14 +281,14 @@ final class _ServersListCardState extends State<ServersListCard> {
               final description = group.description;
               final key = group.key;
               if (type == ServerType.dedicatedIP) {
-                return _buildDipListItem(key, ref, serversList, isObfuscatedOn);
+                return _buildDipListItem(key, ref, serversList);
               }
               final servers = serversList.specialtyServersList(type);
               return widget.itemFactory.forSpecialtyServer(
                 key: key,
                 context: context,
                 type: type,
-                enabled: servers.isNotEmpty && !isObfuscatedOn,
+                enabled: servers.isNotEmpty,
                 servers: servers,
                 subtitle: description,
                 onTap: (args) => widget.onSelected(args),
@@ -340,12 +307,7 @@ final class _ServersListCardState extends State<ServersListCard> {
   }
 
   // Build the list item for dedicated IP
-  Widget _buildDipListItem(
-    Key key,
-    WidgetRef ref,
-    ServersList serversList,
-    bool isObfuscatedOn,
-  ) {
+  Widget _buildDipListItem(Key key, WidgetRef ref, ServersList serversList) {
     return Consumer(
       builder: (context, ref, child) {
         final accountProvider = ref.watch(accountControllerProvider);
@@ -469,7 +431,6 @@ final class _ServersListCardState extends State<ServersListCard> {
     BuildContext context,
     ServersList serversList,
     WidgetRef ref,
-    bool isObfuscationEnabled,
   ) {
     return SearchableServersList.forServersList(
       leadingWidget: IconButton(
@@ -483,7 +444,6 @@ final class _ServersListCardState extends State<ServersListCard> {
       ),
       serversList: serversList,
       searchTextController: _searchTextController,
-      specialtyServer: isObfuscationEnabled ? ServerType.obfuscated : null,
       onTap: (args) => widget.onSelected(args),
       allowServerNameSearch: widget.allowServerNameSearch,
     );
