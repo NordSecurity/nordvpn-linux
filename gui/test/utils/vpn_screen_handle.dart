@@ -111,11 +111,6 @@ final class VpnScreenHandle extends ScreenHandle {
     await app.tester.pumpAndSettle();
   }
 
-  Future<void> clickP2p() async {
-    await app.tester.tap(p2pGroupTile());
-    await app.tester.pumpAndSettle();
-  }
-
   Future<void> clickSearch() async {
     await app.tester.tap(_searchButton());
     await app.tester.pumpAndSettle();
