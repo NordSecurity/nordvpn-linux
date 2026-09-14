@@ -320,7 +320,6 @@ final class SearchableServersList extends StatelessWidget {
       ServerType.dedicatedIP,
       ServerType.doubleVpn,
       ServerType.onionOverVpn,
-      ServerType.p2p,
     ];
 
     List<ServerType> matchedSpecialtyServers = [];
