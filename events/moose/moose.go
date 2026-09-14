@@ -427,6 +427,11 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		log.Moose.Warn("failed to report auto-connect target during Init:", err)
 	}
 
+	// This is just a cleanup and needs to be removed in the near future
+	if err := s.response(moose.NordvpnappUnsetContextApplicationNordvpnappConfigUserPreferencesVirtualServerEnabledValue()); err != nil {
+		log.Moose.Warn("failed to cleanup virtual server location from context: %w", err)
+	}
+
 	return nil
 }
 
