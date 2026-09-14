@@ -1,6 +1,7 @@
 import 'package:nordvpn/data/models/app_settings.dart';
 import 'package:nordvpn/data/providers/app_state_provider.dart';
 import 'package:nordvpn/data/repository/vpn_repository.dart';
+import 'package:nordvpn/data/repository/vpn_settings_repository.dart';
 import 'package:nordvpn/pb/daemon/servers.pb.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -14,6 +15,11 @@ class RecommendedServer extends _$RecommendedServer
   @override
   FutureOr<RecommendedServerLocation> build() async {
     _registerNotifications();
+    // Load the current settings once, so that when the first settings change arrives
+    // _shouldRefetch has something to compare it against. Without this the first change
+    // would only be stored and the location would not be refetched.
+
+    _appSettings ??= await ref.read(vpnSettingsProvider).fetchSettings();
     return await ref
         .read(vpnRepositoryProvider)
         .fetchRecommendedServerLocation();
@@ -50,7 +56,6 @@ class RecommendedServer extends _$RecommendedServer
       return false;
     }
 
-    return currentSettings.obfuscatedServers != newSettings.obfuscatedServers ||
-        currentSettings.protocol != newSettings.protocol;
+    return currentSettings.protocol != newSettings.protocol;
   }
 }

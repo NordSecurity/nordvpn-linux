@@ -31,7 +31,6 @@ final class SearchableServersList extends StatelessWidget {
   final Widget? leadingWidget;
   final ServerListItemFactory itemFactory;
   late final List<Object> _serverItems;
-  final bool _isObfuscatedEnabled;
   final bool withQuickConnectTile;
 
   SearchableServersList({
@@ -46,8 +45,7 @@ final class SearchableServersList extends StatelessWidget {
     this.withQuickConnectTile = false,
     ServerListItemFactory? itemFactory,
   }) : assert((serversList != null) != (servers != null)),
-       itemFactory = itemFactory ?? sl(),
-       _isObfuscatedEnabled = (specialtyServer == ServerType.obfuscated) {
+       itemFactory = itemFactory ?? sl() {
     _initServerItems();
   }
 
@@ -70,8 +68,7 @@ final class SearchableServersList extends StatelessWidget {
     this.withQuickConnectTile = false,
     ServerListItemFactory? itemFactory,
   }) : assert((serversList != null) != (servers != null)),
-       itemFactory = itemFactory ?? sl(),
-       _isObfuscatedEnabled = (specialtyServer == ServerType.obfuscated) {
+       itemFactory = itemFactory ?? sl() {
     _initServerItems();
   }
 
@@ -282,12 +279,7 @@ final class SearchableServersList extends StatelessWidget {
     String query,
     ServersList serversList,
   ) {
-    final results = _filterServers(
-      query,
-      _isObfuscatedEnabled
-          ? serversList.obfuscatedServersList
-          : serversList.standardServersList,
-    );
+    final results = _filterServers(query, serversList.standardServersList);
 
     // search after specialty servers names
     final specialtyServersOrder = [
