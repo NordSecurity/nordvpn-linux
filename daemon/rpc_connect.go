@@ -439,7 +439,7 @@ func (r *RPC) connect(
 	event := events.DataConnect{
 		Protocol:                cfg.AutoConnectData.Protocol,
 		Technology:              cfg.Technology,
-		ThreatProtectionLite:    cfg.AutoConnectData.ThreatProtectionLite,
+		RealTimeProtection:      cfg.AutoConnectData.RealTimeProtection,
 		IsObfuscated:            cfg.AutoConnectData.Obfuscate,
 		IsPostQuantum:           cfg.AutoConnectData.PostquantumVpn,
 		IsECHEnabled:            r.getECHEnabledField(cfg).Get(),
@@ -491,11 +491,11 @@ func (r *RPC) connect(
 	}
 
 	disconnectSender := events.NewDisconnectSender(events.DataDisconnect{
-		Protocol:             cfg.AutoConnectData.Protocol,
-		Technology:           cfg.Technology,
-		ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
-		RecommendationUUID:   string(serverSelection.RecommendationUUID),
-		VPNConnReason:        vpnConnReason,
+		Protocol:           cfg.AutoConnectData.Protocol,
+		Technology:         cfg.Technology,
+		RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
+		RecommendationUUID: string(serverSelection.RecommendationUUID),
+		VPNConnReason:      vpnConnReason,
 	}, r.events.Service.Disconnect.Publish)
 
 	err = r.netw.Start(
@@ -504,7 +504,7 @@ func (r *RPC) connect(
 		serverData,
 		allowlist,
 		cfg.AutoConnectData.DNS.Or(r.nameservers.Get(
-			cfg.AutoConnectData.ThreatProtectionLite,
+			cfg.AutoConnectData.RealTimeProtection,
 		)),
 		true, // here vpn connect - enable routing to local LAN
 		disconnectSender.PublishDisconnect,

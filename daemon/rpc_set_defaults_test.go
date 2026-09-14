@@ -67,7 +67,7 @@ func TestResetToDefaults_PauseVariants(t *testing.T) {
 						Routing:              &daemonevents.MockPublisherSubscriber[bool]{},
 						Autoconnect:          &daemonevents.MockPublisherSubscriber[bool]{},
 						DNS:                  &daemonevents.MockPublisherSubscriber[events.DataDNS]{},
-						ThreatProtectionLite: &daemonevents.MockPublisherSubscriber[bool]{},
+						RealTimeProtection: &daemonevents.MockPublisherSubscriber[bool]{},
 						Protocol:             &daemonevents.MockPublisherSubscriber[config.Protocol]{},
 						Allowlist:            &daemonevents.MockPublisherSubscriber[events.DataAllowlist]{},
 						Meshnet:              &daemonevents.MockPublisherSubscriber[bool]{},

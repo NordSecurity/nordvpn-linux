@@ -56,7 +56,7 @@ final class SettingsHomeScreen extends StatelessWidget {
           case _SettingsGroups.realTimeProtection:
             return SettingsWrapperWidget.buildListItem(
               context,
-              iconName: "threat_protection.svg",
+              iconName: "real_time_protection.svg",
               title: t.ui.realTimeProtection,
               subtitle: t.ui.realTimeProtectionSubtitle,
               trailing: trailing,

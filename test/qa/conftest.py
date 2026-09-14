@@ -270,10 +270,10 @@ def add_and_delete_random_route():
 
 
 @pytest.fixture
-def disable_dns_and_threat_protection():
-    """Disable DNS and threat protection settings."""
+def disable_dns_and_real_time_protection():
+    """Disable DNS and real time protection settings."""
     lib.set_dns("off")
-    lib.set_threat_protection_lite("off")
+    lib.set_real_time_protection("off")
 
 
 @pytest.fixture

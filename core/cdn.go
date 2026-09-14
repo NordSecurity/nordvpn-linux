@@ -24,7 +24,7 @@ const (
 
 // CDN provides methods to interact with Nord's Content Delivery Network
 type CDN interface {
-	FetchThreatProtectionLite() (*NameServers, error)
+	FetchRealTimeProtection() (*NameServers, error)
 	FetchConfigTemplate(variant OvpnTemplateVariant, method string) (http.Header, []byte, error)
 	RemoteStorage
 }
@@ -145,8 +145,8 @@ func (api *CDNAPI) FetchConfigTemplate(
 	return resp.Headers, body, nil
 }
 
-func (api *CDNAPI) FetchThreatProtectionLite() (*NameServers, error) {
-	resp, err := api.request(ThreatProtectionLiteURL, http.MethodGet)
+func (api *CDNAPI) FetchRealTimeProtection() (*NameServers, error) {
+	resp, err := api.request(RealTimeProtectionURL, http.MethodGet)
 	if err != nil {
 		return nil, err
 	}

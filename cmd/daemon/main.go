@@ -284,7 +284,7 @@ func main() {
 	}
 	log.Info("CDN URL:", cdnUrl)
 
-	threatProtectionLiteServers, resolver := buildTpServersAndResolver(
+	realTimeProtectionServers, resolver := buildProtectionServersAndResolver(
 		userAgent,
 		cdnUrl,
 		httpClientSimple,
@@ -632,7 +632,7 @@ func main() {
 		vpnFactory,
 		netw,
 		debugSubject,
-		threatProtectionLiteServers,
+		realTimeProtectionServers,
 		notificationClient,
 		analytics,
 		norduserService,
@@ -670,7 +670,7 @@ func main() {
 		netw,
 		meshRegistry,
 		meshMapper,
-		threatProtectionLiteServers,
+		realTimeProtectionServers,
 		errSubject,
 		daemonEvents,
 		norduserClient,
@@ -883,7 +883,7 @@ func buildClientAPIAndSessionStores(
 	return smartAPI, builder
 }
 
-func buildTpServersAndResolver(
+func buildProtectionServersAndResolver(
 	userAgent string,
 	cdnUrl string,
 	httpClientSimple *http.Client,
@@ -893,10 +893,10 @@ func buildTpServersAndResolver(
 	serviceEvents *daemonevents.ServiceEvents,
 ) (*dns.NameServers, network.DNSResolver) {
 	cdn := core.NewCDNAPI(userAgent, cdnUrl, httpClientSimple, validator)
-	tpServers := dns.NewNameServers()
-	// fetch async the TP servers, because FetchTPServers will retry until is successful
-	go tpServers.FetchTPServers(cdn.FetchThreatProtectionLite, timeoutFn)
+	protectionServers := dns.NewNameServers()
+	// fetch async the real time protection servers, because FetchProtectionServers will retry until is successful
+	go protectionServers.FetchProtectionServers(cdn.FetchRealTimeProtection, timeoutFn)
 
-	resolver := network.NewResolver(tpServers, fwmark, serviceEvents)
-	return tpServers, resolver
+	resolver := network.NewResolver(protectionServers, fwmark, serviceEvents)
+	return protectionServers, resolver
 }

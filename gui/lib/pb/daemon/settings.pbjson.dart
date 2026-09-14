@@ -90,11 +90,11 @@ const Settings$json = {
     },
     {'1': 'dns', '3': 10, '4': 3, '5': 9, '10': 'dns'},
     {
-      '1': 'threat_protection_lite',
+      '1': 'real_time_protection',
       '3': 11,
       '4': 1,
       '5': 8,
-      '10': 'threatProtectionLite'
+      '10': 'realTimeProtection'
     },
     {
       '1': 'protocol',
@@ -139,13 +139,13 @@ final $typed_data.Uint8List settingsDescriptor = $convert.base64Decode(
     'REYXRhUg9hdXRvQ29ubmVjdERhdGESGAoHbWVzaG5ldBgGIAEoCFIHbWVzaG5ldBIYCgdyb3V0'
     'aW5nGAcgASgIUgdyb3V0aW5nEhYKBmZ3bWFyaxgIIAEoDVIGZndtYXJrEkEKEWFuYWx5dGljc1'
     '9jb25zZW50GAkgASgOMhQuY29uc2VudC5Db25zZW50TW9kZVIQYW5hbHl0aWNzQ29uc2VudBIQ'
-    'CgNkbnMYCiADKAlSA2RucxI0ChZ0aHJlYXRfcHJvdGVjdGlvbl9saXRlGAsgASgIUhR0aHJlYX'
-    'RQcm90ZWN0aW9uTGl0ZRIsCghwcm90b2NvbBgMIAEoDjIQLmNvbmZpZy5Qcm90b2NvbFIIcHJv'
-    'dG9jb2wSIwoNbGFuX2Rpc2NvdmVyeRgNIAEoCFIMbGFuRGlzY292ZXJ5EisKCWFsbG93bGlzdB'
-    'gOIAEoCzINLnBiLkFsbG93bGlzdFIJYWxsb3dsaXN0EhwKCW9iZnVzY2F0ZRgPIAEoCFIJb2Jm'
-    'dXNjYXRlEicKD3Bvc3RxdWFudHVtX3ZwbhgRIAEoCFIOcG9zdHF1YW50dW1WcG4SPQoNdXNlcl'
-    '9zZXR0aW5ncxgSIAEoCzIYLnBiLlVzZXJTcGVjaWZpY1NldHRpbmdzUgx1c2VyU2V0dGluZ3MS'
-    'HQoKYXJwX2lnbm9yZRgTIAEoCFIJYXJwSWdub3JlEhAKA2VjaBgUIAEoCFIDZWNoSgQIEBAR');
+    'CgNkbnMYCiADKAlSA2RucxIwChRyZWFsX3RpbWVfcHJvdGVjdGlvbhgLIAEoCFIScmVhbFRpbW'
+    'VQcm90ZWN0aW9uEiwKCHByb3RvY29sGAwgASgOMhAuY29uZmlnLlByb3RvY29sUghwcm90b2Nv'
+    'bBIjCg1sYW5fZGlzY292ZXJ5GA0gASgIUgxsYW5EaXNjb3ZlcnkSKwoJYWxsb3dsaXN0GA4gAS'
+    'gLMg0ucGIuQWxsb3dsaXN0UglhbGxvd2xpc3QSHAoJb2JmdXNjYXRlGA8gASgIUglvYmZ1c2Nh'
+    'dGUSJwoPcG9zdHF1YW50dW1fdnBuGBEgASgIUg5wb3N0cXVhbnR1bVZwbhI9Cg11c2VyX3NldH'
+    'RpbmdzGBIgASgLMhgucGIuVXNlclNwZWNpZmljU2V0dGluZ3NSDHVzZXJTZXR0aW5ncxIdCgph'
+    'cnBfaWdub3JlGBMgASgIUglhcnBJZ25vcmUSEAoDZWNoGBQgASgIUgNlY2hKBAgQEBE=');
 
 @$core.Deprecated('Use userSpecificSettingsDescriptor instead')
 const UserSpecificSettings$json = {

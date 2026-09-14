@@ -14,15 +14,15 @@ class SetErrorCode(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     CONFIG_ERROR: _ClassVar[SetErrorCode]
     ALREADY_SET: _ClassVar[SetErrorCode]
 
-class SetThreatProtectionLiteStatus(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
+class SetRealTimeProtectionStatus(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
-    TPL_CONFIGURED: _ClassVar[SetThreatProtectionLiteStatus]
-    TPL_CONFIGURED_DNS_RESET: _ClassVar[SetThreatProtectionLiteStatus]
+    RTP_CONFIGURED: _ClassVar[SetRealTimeProtectionStatus]
+    RTP_CONFIGURED_DNS_RESET: _ClassVar[SetRealTimeProtectionStatus]
 
 class SetDNSStatus(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
     __slots__ = ()
     DNS_CONFIGURED: _ClassVar[SetDNSStatus]
-    DNS_CONFIGURED_TPL_RESET: _ClassVar[SetDNSStatus]
+    DNS_CONFIGURED_RTP_RESET: _ClassVar[SetDNSStatus]
     INVALID_DNS_ADDRESS: _ClassVar[SetDNSStatus]
     TOO_MANY_VALUES: _ClassVar[SetDNSStatus]
 
@@ -39,10 +39,10 @@ class SetLANDiscoveryStatus(int, metaclass=_enum_type_wrapper.EnumTypeWrapper):
 FAILURE: SetErrorCode
 CONFIG_ERROR: SetErrorCode
 ALREADY_SET: SetErrorCode
-TPL_CONFIGURED: SetThreatProtectionLiteStatus
-TPL_CONFIGURED_DNS_RESET: SetThreatProtectionLiteStatus
+RTP_CONFIGURED: SetRealTimeProtectionStatus
+RTP_CONFIGURED_DNS_RESET: SetRealTimeProtectionStatus
 DNS_CONFIGURED: SetDNSStatus
-DNS_CONFIGURED_TPL_RESET: SetDNSStatus
+DNS_CONFIGURED_RTP_RESET: SetDNSStatus
 INVALID_DNS_ADDRESS: SetDNSStatus
 TOO_MANY_VALUES: SetDNSStatus
 PROTOCOL_CONFIGURED: SetProtocolStatus
@@ -73,27 +73,25 @@ class SetUint32Request(_message.Message):
     value: int
     def __init__(self, value: _Optional[int] = ...) -> None: ...
 
-class SetThreatProtectionLiteRequest(_message.Message):
-    __slots__ = ("threat_protection_lite",)
-    THREAT_PROTECTION_LITE_FIELD_NUMBER: _ClassVar[int]
-    threat_protection_lite: bool
-    def __init__(self, threat_protection_lite: bool = ...) -> None: ...
+class SetRealTimeProtectionRequest(_message.Message):
+    __slots__ = ("real_time_protection",)
+    REAL_TIME_PROTECTION_FIELD_NUMBER: _ClassVar[int]
+    real_time_protection: bool
+    def __init__(self, real_time_protection: bool = ...) -> None: ...
 
-class SetThreatProtectionLiteResponse(_message.Message):
-    __slots__ = ("error_code", "set_threat_protection_lite_status")
+class SetRealTimeProtectionResponse(_message.Message):
+    __slots__ = ("error_code", "set_real_time_protection_status")
     ERROR_CODE_FIELD_NUMBER: _ClassVar[int]
-    SET_THREAT_PROTECTION_LITE_STATUS_FIELD_NUMBER: _ClassVar[int]
+    SET_REAL_TIME_PROTECTION_STATUS_FIELD_NUMBER: _ClassVar[int]
     error_code: SetErrorCode
-    set_threat_protection_lite_status: SetThreatProtectionLiteStatus
-    def __init__(self, error_code: _Optional[_Union[SetErrorCode, str]] = ..., set_threat_protection_lite_status: _Optional[_Union[SetThreatProtectionLiteStatus, str]] = ...) -> None: ...
+    set_real_time_protection_status: SetRealTimeProtectionStatus
+    def __init__(self, error_code: _Optional[_Union[SetErrorCode, str]] = ..., set_real_time_protection_status: _Optional[_Union[SetRealTimeProtectionStatus, str]] = ...) -> None: ...
 
 class SetDNSRequest(_message.Message):
-    __slots__ = ("dns", "threat_protection_lite")
+    __slots__ = ("dns",)
     DNS_FIELD_NUMBER: _ClassVar[int]
-    THREAT_PROTECTION_LITE_FIELD_NUMBER: _ClassVar[int]
     dns: _containers.RepeatedScalarFieldContainer[str]
-    threat_protection_lite: bool
-    def __init__(self, dns: _Optional[_Iterable[str]] = ..., threat_protection_lite: bool = ...) -> None: ...
+    def __init__(self, dns: _Optional[_Iterable[str]] = ...) -> None: ...
 
 class SetDNSResponse(_message.Message):
     __slots__ = ("error_code", "set_dns_status")

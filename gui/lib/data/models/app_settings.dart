@@ -76,7 +76,7 @@ abstract class ApplicationSettings with _$ApplicationSettings {
       firewallMark: settings.fwmark,
       customDns: settings.dns.isNotEmpty,
       customDnsServers: settings.dns,
-      realTimeProtection: settings.threatProtectionLite,
+      realTimeProtection: settings.realTimeProtection,
       tray: settings.userSettings.tray,
       allowList: allowList.isNotEmpty,
       allowListData: allowList,
