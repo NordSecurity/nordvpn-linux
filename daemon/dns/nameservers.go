@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	primaryNameserver4                       = "103.86.96.100"
-	secondaryNameserver4                     = "103.86.99.100"
+	primaryNameserver4                     = "103.86.96.100"
+	secondaryNameserver4                   = "103.86.99.100"
 	realTimeProtectionPrimaryNameserver4   = "103.86.96.108"
 	realTimeProtectionSecondaryNameserver4 = "103.86.99.108"
 )

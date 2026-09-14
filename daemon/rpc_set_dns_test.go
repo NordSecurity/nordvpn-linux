@@ -23,7 +23,6 @@ import (
 var dnsMock config.DNS = config.DNS{"0.0.0.0", "8.8.8.8", "1.1.1.1"}
 var currentDNSMock config.DNS = config.DNS{"131.244.140.126", "194.182.108.28", "124.83.117.225"}
 
-
 type mockPublisherSubscriberDNS struct {
 	eventPublished bool
 }
@@ -42,8 +41,8 @@ func TestSetDNS_Success(t *testing.T) {
 		currentDNS          config.DNS
 		expectedDNS         config.DNS
 		expectedDNSInConfig config.DNS
-		protection                 bool
-		expectedProtection         bool
+		protection          bool
+		expectedProtection  bool
 	}{
 		{
 			name:                "set new DNS",
@@ -85,16 +84,16 @@ func TestSetDNS_Success(t *testing.T) {
 			currentDNS:          dnsMock,
 			expectedDNS:         mock.ProtectionNameserversV4,
 			expectedDNSInConfig: nil,
-			protection:                 true,
-			expectedProtection:         true,
+			protection:          true,
+			expectedProtection:  true,
 		},
 		{
 			name:                "overwrite protection ipv4",
 			requestedDNS:        dnsMock,
 			expectedDNS:         dnsMock,
 			expectedDNSInConfig: dnsMock,
-			protection:                 true,
-			expectedProtection:         false,
+			protection:          true,
+			expectedProtection:  false,
 		},
 	}
 
@@ -112,7 +111,7 @@ func TestSetDNS_Success(t *testing.T) {
 
 			configManager.SaveWith(func(c config.Config) config.Config {
 				c.AutoConnectData = config.AutoConnectData{
-					DNS:                  test.currentDNS,
+					DNS:                test.currentDNS,
 					RealTimeProtection: test.protection,
 				}
 

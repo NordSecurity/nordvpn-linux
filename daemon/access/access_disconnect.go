@@ -41,13 +41,13 @@ func Disconnect(input DisconnectInput) (bool, error) {
 			status = events.StatusFailure
 		}
 		input.PublishDisconnectEventFunc(events.DataDisconnect{
-			Protocol:             cfg.AutoConnectData.Protocol,
-			EventStatus:          status,
-			Technology:           cfg.Technology,
+			Protocol:           cfg.AutoConnectData.Protocol,
+			EventStatus:        status,
+			Technology:         cfg.Technology,
 			RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
-			Duration:             time.Since(startTime),
-			Error:                err,
-			RecommendationUUID:   input.RecommendationUUID,
+			Duration:           time.Since(startTime),
+			Error:              err,
+			RecommendationUUID: input.RecommendationUUID,
 		})
 	}()
 

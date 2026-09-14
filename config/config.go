@@ -84,9 +84,9 @@ type AutoConnectData struct {
 	Protocol    Protocol `json:"protocol,omitempty"`
 	// TODO: rename json key when v6 comes out.
 	RealTimeProtection bool      `json:"cybersec,omitempty"`
-	Obfuscate            bool      `json:"obfuscate,omitempty"`
-	DNS                  DNS       `json:"dns,omitempty"`
-	Allowlist            Allowlist `json:"allowlist,omitempty"`
+	Obfuscate          bool      `json:"obfuscate,omitempty"`
+	DNS                DNS       `json:"dns,omitempty"`
+	Allowlist          Allowlist `json:"allowlist,omitempty"`
 	// LegacyAllowlist is the allowlist saved by versions before 6.0.0, under the
 	// "whitelist" key. Exists for the migration purposes only, and can be removed in the future.
 	LegacyAllowlist *Allowlist `json:"whitelist,omitempty"`

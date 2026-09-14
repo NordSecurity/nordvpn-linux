@@ -90,19 +90,19 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		if err := r.cm.SaveWith(func(c config.Config) config.Config {
 			c.AutoConnect = in.GetEnabled()
 			c.AutoConnectData = config.AutoConnectData{
-				ID:                   cfg.AutoConnectData.ID,
-				ServerTag:            serverTag,
-				Country:              parameters.Country,
-				CountryCode:          parameters.CountryCode,
-				City:                 parameters.City,
-				Group:                parameters.Group,
-				Protocol:             cfg.AutoConnectData.Protocol,
+				ID:                 cfg.AutoConnectData.ID,
+				ServerTag:          serverTag,
+				Country:            parameters.Country,
+				CountryCode:        parameters.CountryCode,
+				City:               parameters.City,
+				Group:              parameters.Group,
+				Protocol:           cfg.AutoConnectData.Protocol,
 				RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
-				Obfuscate:            cfg.AutoConnectData.Obfuscate,
-				DNS:                  cfg.AutoConnectData.DNS,
-				Allowlist:            cfg.AutoConnectData.Allowlist,
-				PostquantumVpn:       cfg.AutoConnectData.PostquantumVpn,
-				ECH:                  r.getECHEnabledField(cfg),
+				Obfuscate:          cfg.AutoConnectData.Obfuscate,
+				DNS:                cfg.AutoConnectData.DNS,
+				Allowlist:          cfg.AutoConnectData.Allowlist,
+				PostquantumVpn:     cfg.AutoConnectData.PostquantumVpn,
+				ECH:                r.getECHEnabledField(cfg),
 			}
 			return c
 		}); err != nil {

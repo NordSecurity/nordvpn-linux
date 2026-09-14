@@ -443,7 +443,7 @@ func (r *RPC) connect(
 	event := events.DataConnect{
 		Protocol:                cfg.AutoConnectData.Protocol,
 		Technology:              cfg.Technology,
-		RealTimeProtection:    cfg.AutoConnectData.RealTimeProtection,
+		RealTimeProtection:      cfg.AutoConnectData.RealTimeProtection,
 		IsObfuscated:            cfg.AutoConnectData.Obfuscate,
 		IsPostQuantum:           cfg.AutoConnectData.PostquantumVpn,
 		IsECHEnabled:            r.getECHEnabledField(cfg).Get(),
@@ -500,11 +500,11 @@ func (r *RPC) connect(
 	}
 
 	disconnectSender := events.NewDisconnectSender(events.DataDisconnect{
-		Protocol:             cfg.AutoConnectData.Protocol,
-		Technology:           cfg.Technology,
+		Protocol:           cfg.AutoConnectData.Protocol,
+		Technology:         cfg.Technology,
 		RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
-		RecommendationUUID:   string(serverSelection.RecommendationUUID),
-		VPNConnReason:        vpnConnReason,
+		RecommendationUUID: string(serverSelection.RecommendationUUID),
+		VPNConnReason:      vpnConnReason,
 	}, r.events.Service.Disconnect.Publish)
 
 	err = r.netw.Start(

@@ -39,34 +39,34 @@ func TestNameservers(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name                 string
+		name               string
 		realTimeProtection bool
-		initial              []string
-		expected             []string
+		initial            []string
+		expected           []string
 	}{
 		{
-			name:                 "default DNS servers, TP=false",
+			name:               "default DNS servers, TP=false",
 			realTimeProtection: false,
-			initial:              defaultTpServers,
-			expected:             defaultServers,
+			initial:            defaultTpServers,
+			expected:           defaultServers,
 		},
 		{
-			name:                 "fetch TP list and return it",
+			name:               "fetch TP list and return it",
 			realTimeProtection: true,
-			initial:              defaultTpServers,
-			expected:             defaultTpServers,
+			initial:            defaultTpServers,
+			expected:           defaultTpServers,
 		},
 		{
-			name:                 "fetched servers are returned for TP servers",
+			name:               "fetched servers are returned for TP servers",
 			realTimeProtection: true,
-			initial:              []string{"1.2.3.4"},
-			expected:             []string{"1.2.3.4"},
+			initial:            []string{"1.2.3.4"},
+			expected:           []string{"1.2.3.4"},
 		},
 		{
-			name:                 "empty initial list",
+			name:               "empty initial list",
 			realTimeProtection: true,
-			initial:              nil,
-			expected:             defaultTpServers,
+			initial:            nil,
+			expected:           defaultTpServers,
 		},
 	}
 
@@ -103,13 +103,13 @@ func TestNameserversRandomness(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name                 string
+		name               string
 		realTimeProtection bool
-		initial              []string
-		expected             []string
+		initial            []string
+		expected           []string
 	}{
 		{
-			name:                 "randomness",
+			name:               "randomness",
 			realTimeProtection: true,
 			initial: []string{
 				"1.1.1.1", "1.0.0.1", "8.8.8.8", "8.8.4.4",

@@ -53,9 +53,9 @@ type (
 	mooseConsentFunc                      func(moose.UserConsent) uint32
 	mooseSetConsentIntoContextFunc        func(moose.NordvpnappConsentLevel) uint32
 	mooseSetTokenRenewDateFunc            func(int32) uint32
-	mooseSetProtectionUserPrefFunc            func(bool) uint32
-	mooseSetProtectionCurrentFunc             func(bool) uint32
-	mooseUnsetProtectionCurrentFunc           func() uint32
+	mooseSetProtectionUserPrefFunc        func(bool) uint32
+	mooseSetProtectionCurrentFunc         func(bool) uint32
+	mooseUnsetProtectionCurrentFunc       func() uint32
 	mooseSetCustomDNSMetaFunc             func(string) uint32
 	mooseSetCustomDNSValueFunc            func(bool) uint32
 	mooseUnsetContextFunc                 func() uint32
@@ -99,9 +99,9 @@ type mooseFunctions struct {
 	setAppConsentLevel              mooseConsentFunc
 	setConsentUserPreference        mooseSetConsentIntoContextFunc
 	setTokenRenewDateCurrentState   mooseSetTokenRenewDateFunc
-	setProtectionUserPreference         mooseSetProtectionUserPrefFunc
-	setProtectionCurrentState           mooseSetProtectionCurrentFunc
-	unsetProtectionCurrentState         mooseUnsetProtectionCurrentFunc
+	setProtectionUserPreference     mooseSetProtectionUserPrefFunc
+	setProtectionCurrentState       mooseSetProtectionCurrentFunc
+	unsetProtectionCurrentState     mooseUnsetProtectionCurrentFunc
 	setCustomDNSMeta                mooseSetCustomDNSMetaFunc
 	setCustomDNSValue               mooseSetCustomDNSValueFunc
 	unsetServerDomainCurrentState   mooseUnsetContextFunc
@@ -171,9 +171,9 @@ func NewSubscriber(
 			setAppConsentLevel:              moose.MooseNordvpnappSetConsentLevel,
 			setConsentUserPreference:        moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel,
 			setTokenRenewDateCurrentState:   moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTokenRenewDateValue,
-			setProtectionUserPreference:         moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue,
-			setProtectionCurrentState:           moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
-			unsetProtectionCurrentState:         moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
+			setProtectionUserPreference:     moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue,
+			setProtectionCurrentState:       moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
+			unsetProtectionCurrentState:     moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
 			setCustomDNSMeta:                moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledMeta,
 			setCustomDNSValue:               moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledValue,
 			unsetServerDomainCurrentState:   moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerDomainValue,

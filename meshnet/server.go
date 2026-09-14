@@ -1885,8 +1885,8 @@ func (s *Server) connect(
 	connectingStartTime = time.Now()
 
 	disconnectSender := events.NewDisconnectSender(events.DataDisconnect{
-		Protocol:             cfg.AutoConnectData.Protocol,
-		Technology:           cfg.Technology,
+		Protocol:           cfg.AutoConnectData.Protocol,
+		Technology:         cfg.Technology,
 		RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
 	}, s.daemonEvents.Service.Disconnect.Publish)
 

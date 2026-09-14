@@ -256,7 +256,7 @@ def set_technology_and_protocol(tech, proto, obfuscation):
 # Tests do not break on reordering when using this.
 def set_real_time_protection(dns):
     try:
-        print(sh.nordvpn.set.cybersec(dns))
+        print(sh.nordvpn.set.protection(dns))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 

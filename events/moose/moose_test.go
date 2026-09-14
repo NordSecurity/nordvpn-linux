@@ -651,96 +651,96 @@ func TestNotifyDNS(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name                   string
-		dnsIPs                 []string
-		mooseMetaErrCode       uint32
-		mooseValueErrCode      uint32
+		name                       string
+		dnsIPs                     []string
+		mooseMetaErrCode           uint32
+		mooseValueErrCode          uint32
 		mooseProtectionUserPrefErr uint32
 		mooseProtectionCurrentErr  uint32
-		expectErr              bool
-		expectMetaCalled       bool
-		expectValueCalled      bool
+		expectErr                  bool
+		expectMetaCalled           bool
+		expectValueCalled          bool
 		expectProtectionCalled     bool
 		expectedProtectionValue    bool
 	}{
 		{
-			name:               "no DNS IPs - custom DNS disabled, protection not touched",
-			dnsIPs:             []string{},
-			mooseMetaErrCode:   0,
-			mooseValueErrCode:  0,
-			expectErr:          false,
-			expectMetaCalled:   true,
-			expectValueCalled:  true,
+			name:                   "no DNS IPs - custom DNS disabled, protection not touched",
+			dnsIPs:                 []string{},
+			mooseMetaErrCode:       0,
+			mooseValueErrCode:      0,
+			expectErr:              false,
+			expectMetaCalled:       true,
+			expectValueCalled:      true,
 			expectProtectionCalled: false, // protection only touched when custom DNS is enabled
 		},
 		{
-			name:                   "single DNS IP - custom DNS enabled, protection disabled (not connected)",
+			name:                       "single DNS IP - custom DNS enabled, protection disabled (not connected)",
+			dnsIPs:                     []string{"1.1.1.1"},
+			mooseMetaErrCode:           0,
+			mooseValueErrCode:          0,
+			mooseProtectionUserPrefErr: 0,
+			mooseProtectionCurrentErr:  0,
+			expectErr:                  false,
+			expectMetaCalled:           true,
+			expectValueCalled:          true,
+			expectProtectionCalled:     true,
+			expectedProtectionValue:    false,
+		},
+		{
+			name:                       "multiple DNS IPs - custom DNS enabled, protection disabled (not connected)",
+			dnsIPs:                     []string{"1.1.1.1", "8.8.8.8"},
+			mooseMetaErrCode:           0,
+			mooseValueErrCode:          0,
+			mooseProtectionUserPrefErr: 0,
+			mooseProtectionCurrentErr:  0,
+			expectErr:                  false,
+			expectMetaCalled:           true,
+			expectValueCalled:          true,
+			expectProtectionCalled:     true,
+			expectedProtectionValue:    false,
+		},
+		{
+			name:                   "custom DNS meta setter fails - propagates error, protection not touched",
 			dnsIPs:                 []string{"1.1.1.1"},
-			mooseMetaErrCode:       0,
+			mooseMetaErrCode:       1,
 			mooseValueErrCode:      0,
-			mooseProtectionUserPrefErr: 0,
-			mooseProtectionCurrentErr:  0,
-			expectErr:              false,
+			expectErr:              true,
 			expectMetaCalled:       true,
-			expectValueCalled:      true,
-			expectProtectionCalled:     true,
-			expectedProtectionValue:    false,
-		},
-		{
-			name:                   "multiple DNS IPs - custom DNS enabled, protection disabled (not connected)",
-			dnsIPs:                 []string{"1.1.1.1", "8.8.8.8"},
-			mooseMetaErrCode:       0,
-			mooseValueErrCode:      0,
-			mooseProtectionUserPrefErr: 0,
-			mooseProtectionCurrentErr:  0,
-			expectErr:              false,
-			expectMetaCalled:       true,
-			expectValueCalled:      true,
-			expectProtectionCalled:     true,
-			expectedProtectionValue:    false,
-		},
-		{
-			name:               "custom DNS meta setter fails - propagates error, protection not touched",
-			dnsIPs:             []string{"1.1.1.1"},
-			mooseMetaErrCode:   1,
-			mooseValueErrCode:  0,
-			expectErr:          true,
-			expectMetaCalled:   true,
-			expectValueCalled:  false,
+			expectValueCalled:      false,
 			expectProtectionCalled: false, // setCustomDNS fails early
 		},
 		{
-			name:               "custom DNS value setter fails - propagates error, protection not touched",
-			dnsIPs:             []string{"1.1.1.1"},
-			mooseMetaErrCode:   0,
-			mooseValueErrCode:  1,
-			expectErr:          true,
-			expectMetaCalled:   true,
-			expectValueCalled:  true,
+			name:                   "custom DNS value setter fails - propagates error, protection not touched",
+			dnsIPs:                 []string{"1.1.1.1"},
+			mooseMetaErrCode:       0,
+			mooseValueErrCode:      1,
+			expectErr:              true,
+			expectMetaCalled:       true,
+			expectValueCalled:      true,
 			expectProtectionCalled: false, // setCustomDNS fails, so setProtection not called
 		},
 		{
-			name:                   "protection user pref setter fails - propagates error (not connected)",
-			dnsIPs:                 []string{"1.1.1.1"},
-			mooseMetaErrCode:       0,
-			mooseValueErrCode:      0,
+			name:                       "protection user pref setter fails - propagates error (not connected)",
+			dnsIPs:                     []string{"1.1.1.1"},
+			mooseMetaErrCode:           0,
+			mooseValueErrCode:          0,
 			mooseProtectionUserPrefErr: 12,
 			mooseProtectionCurrentErr:  0,
-			expectErr:              true,
-			expectMetaCalled:       true,
-			expectValueCalled:      true,
+			expectErr:                  true,
+			expectMetaCalled:           true,
+			expectValueCalled:          true,
 			expectProtectionCalled:     true,
 		},
 		{
-			name:                   "protection current setter fails - propagates error (not connected)",
-			dnsIPs:                 []string{"1.1.1.1"},
-			mooseMetaErrCode:       0,
-			mooseValueErrCode:      0,
+			name:                       "protection current setter fails - propagates error (not connected)",
+			dnsIPs:                     []string{"1.1.1.1"},
+			mooseMetaErrCode:           0,
+			mooseValueErrCode:          0,
 			mooseProtectionUserPrefErr: 0,
 			mooseProtectionCurrentErr:  1,
-			expectErr:              true,
-			expectMetaCalled:       true,
-			expectValueCalled:      true,
+			expectErr:                  true,
+			expectMetaCalled:           true,
+			expectValueCalled:          true,
 			expectProtectionCalled:     true,
 		},
 	}
@@ -783,8 +783,8 @@ func TestNotifyDNS(t *testing.T) {
 
 			assert.Equal(t, tt.expectMetaCalled, metaCalled)
 			assert.Equal(t, tt.expectValueCalled, valueCalled)
-			assert.Equal(t, tt.expectProtectionCalled, ProtectionUserPrefCalled)
-			assert.Equal(t, tt.expectProtectionCalled, ProtectionCurrentCalled)
+			assert.Equal(t, tt.expectProtectionCalled, protectionUserPrefCalled)
+			assert.Equal(t, tt.expectProtectionCalled, protectionCurrentCalled)
 
 			if tt.expectProtectionCalled && tt.mooseProtectionCurrentErr == 0 {
 				assert.Equal(t, tt.expectedProtectionValue, gotProtectionValue)
@@ -1283,7 +1283,7 @@ func TestNotifyConnect_Success_InvokesPostConnectContextSetters(t *testing.T) {
 	err := sub.NotifyConnect(events.DataConnect{
 		TargetServerGroupID:     config.ServerGroup_STANDARD_VPN_SERVERS,
 		TargetServerCountryCode: "us",
-		RealTimeProtection:    false,
+		RealTimeProtection:      false,
 		EventStatus:             events.StatusSuccess,
 	})
 
