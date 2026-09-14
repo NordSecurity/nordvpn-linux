@@ -177,9 +177,8 @@ PopupMetadata givePopupMetadata(PopupOrErrorCode code, {Object? userData}) {
       },
     ),
 
-    // Reconnect to apply obfuscation, post-quantum, virtual location changes
+    // Reconnect to apply post-quantum, virtual location changes
     // These are applied immediately and user is just informed to reconnect
-    PopupCodes.reconnectToChangeObfuscation ||
     PopupCodes.reconnectToChangePostQuantum ||
     PopupCodes.reconnectToChangeVirtualLocation => InfoPopupMetadata(
       id: PopupCodes.reconnectToChangeProtocol,

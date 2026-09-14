@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:nordvpn/data/models/app_settings.dart';
-import 'package:nordvpn/data/models/connect_arguments.dart';
 import 'package:nordvpn/data/models/pause.dart';
-import 'package:nordvpn/data/models/server_info.dart';
 import 'package:nordvpn/data/models/vpn_status.dart';
 import 'package:nordvpn/data/providers/recommended_server_provider.dart';
-import 'package:nordvpn/data/providers/vpn_settings_controller.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/data/repository/uievent_repository.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
@@ -86,7 +82,6 @@ final class _ConnectionCardButtonsState
     BuildContext context,
     RecommendedServerLocation? recommendedServerLocation,
   ) {
-    final settings = ref.watch(vpnSettingsControllerProvider).value;
     final buttonTheme = context.connectionCardTheme.buttonTheme;
 
     if (widget.vpnStatus.isConnected()) {
@@ -154,7 +149,7 @@ final class _ConnectionCardButtonsState
           extraItems: [
             ContextMenuItem(
               label: t.ui.reconnect,
-              onTap: () async => await _reconnect(settings),
+              onTap: () async => await _reconnect(),
             ),
           ],
         ),
@@ -165,18 +160,11 @@ final class _ConnectionCardButtonsState
       return [_buildConnectingStateButton(context)];
     }
 
-    return [
-      _buildDisconnectedStateButton(
-        context,
-        settings,
-        recommendedServerLocation,
-      ),
-    ];
+    return [_buildDisconnectedStateButton(context, recommendedServerLocation)];
   }
 
   Widget _buildDisconnectedStateButton(
     BuildContext context,
-    ApplicationSettings? settings,
     RecommendedServerLocation? recommendedServerLocation,
   ) {
     final buttonTheme = context.connectionCardTheme.buttonTheme;
@@ -186,11 +174,7 @@ final class _ConnectionCardButtonsState
         focusNode: _buttonFocusNode,
         onPressed: () async {
           // Quick connect
-          ConnectArguments? args;
-          if (settings?.obfuscatedServers == true) {
-            args = ConnectArguments();
-          }
-          await ref.read(vpnStatusControllerProvider.notifier).connect(args);
+          await ref.read(vpnStatusControllerProvider.notifier).connect(null);
         },
         style: buttonTheme.secureMyConnectionButtonStyle,
         child: Semantics(
@@ -226,11 +210,7 @@ final class _ConnectionCardButtonsState
     );
   }
 
-  Future<void> _reconnect(ApplicationSettings? settings) async {
-    if (settings?.obfuscatedServers == true) {
-      widget.vpnStatus.connectionParameters.group = ServerType.obfuscated
-          .toServerGroup();
-    }
+  Future<void> _reconnect() async {
     await ref
         .read(vpnStatusControllerProvider.notifier)
         .reconnect(widget.vpnStatus.connectionParameters);

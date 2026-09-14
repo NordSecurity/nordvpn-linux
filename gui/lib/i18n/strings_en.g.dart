@@ -1474,9 +1474,6 @@ class Translations$ui$en {
 	/// en: 'VPN Protocol'
 	String get vpnProtocol => 'VPN Protocol';
 
-	/// en: 'Obfuscate'
-	String get obfuscate => 'Obfuscate';
-
 	/// en: 'VPN Connection Status Notifications'
 	String get notificationsStatus => 'VPN Connection Status Notifications';
 
@@ -1690,8 +1687,8 @@ class Translations$ui$en {
 	/// en: 'Security and privacy'
 	String get securityAndPrivacy => 'Security and privacy';
 
-	/// en: 'Allowlist, DNS, LAN discovery, obfuscation, firewall'
-	String get securityAndPrivacySubtitle => 'Allowlist, DNS, LAN discovery, obfuscation, firewall';
+	/// en: 'Allowlist, DNS, LAN discovery, firewall'
+	String get securityAndPrivacySubtitle => 'Allowlist, DNS, LAN discovery, firewall';
 
 	/// en: 'Appearance'
 	String get appearance => 'Appearance';
@@ -1782,12 +1779,6 @@ class Translations$ui$en {
 
 	/// en: 'Activate next-generation encryption that protects your data from threats posed by quantum computing.'
 	String get postQuantumDescription => 'Activate next-generation encryption that protects your data from threats posed by quantum computing.';
-
-	/// en: 'Avoid detection by traffic sensors in restricted networks while using a VPN. When enabled, only obfuscated servers are available.'
-	String get obfuscationDescription => 'Avoid detection by traffic sensors in restricted networks while using a VPN. When enabled, only obfuscated servers are available.';
-
-	/// en: 'Obfuscation'
-	String get obfuscation => 'Obfuscation';
 
 	/// en: 'Add'
 	String get add => 'Add';
@@ -2682,7 +2673,6 @@ extension on Translations {
 			'ui.settings' => 'Settings',
 			'ui.launchAppAtStartup' => 'Launch at Startup',
 			'ui.vpnProtocol' => 'VPN Protocol',
-			'ui.obfuscate' => 'Obfuscate',
 			'ui.notificationsStatus' => 'VPN Connection Status Notifications',
 			'ui.firewall' => 'Firewall',
 			'ui.firewallDescription' => 'Allow the use of the system firewall. When enabled, you can attach a firewall mark to VPN packets for custom firewall rules.',
@@ -2733,9 +2723,9 @@ extension on Translations {
 			'ui.citiesAvailable' => ({required Object n}) => '${n} cities available',
 			'ui.virtual' => 'Virtual',
 			'ui.dedicatedIp' => 'Dedicated IP',
+			'ui.dedicatedServer' => 'Dedicated Server',
 			_ => null,
 		} ?? switch (path) {
-			'ui.dedicatedServer' => 'Dedicated Server',
 			'ui.doubleVpn' => 'Double VPN',
 			'ui.onionOverVpn' => 'Onion over VPN',
 			'ui.p2p' => 'P2P',
@@ -2755,7 +2745,7 @@ extension on Translations {
 			'ui.invalidFormat' => 'Invalid format',
 			'ui.servers' => 'Servers',
 			'ui.securityAndPrivacy' => 'Security and privacy',
-			'ui.securityAndPrivacySubtitle' => 'Allowlist, DNS, LAN discovery, obfuscation, firewall',
+			'ui.securityAndPrivacySubtitle' => 'Allowlist, DNS, LAN discovery, firewall',
 			'ui.appearance' => 'Appearance',
 			'ui.light' => 'Light',
 			'ui.dark' => 'Dark',
@@ -2786,8 +2776,6 @@ extension on Translations {
 			'ui.routingDescription' => 'Use custom routing rules instead of the default VPN configuration.',
 			'ui.postQuantumVpn' => 'Post-quantum encryption',
 			'ui.postQuantumDescription' => 'Activate next-generation encryption that protects your data from threats posed by quantum computing.',
-			'ui.obfuscationDescription' => 'Avoid detection by traffic sensors in restricted networks while using a VPN. When enabled, only obfuscated servers are available.',
-			'ui.obfuscation' => 'Obfuscation',
 			'ui.add' => 'Add',
 			'ui.customDnsEntries' => ({required Object n}) => 'Custom DNS: ${n}/3',
 			'ui.addUpTo3DnsServers' => 'Add up to 3 DNS servers',

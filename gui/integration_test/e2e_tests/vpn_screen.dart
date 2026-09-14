@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/pb/daemon/servers.pb.dart';
+import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart' as settings;
 
 import '../../test/utils/finders.dart';
 import '../../test/utils/test_helpers.dart';
@@ -117,7 +118,7 @@ void runVpnScreenTests() async {
       );
 
       // Trigger settings change
-      await app.setObfuscatedServers(true);
+      await app.setTechnology(settings.Technology.NORDWHISPER);
 
       await mainScreen.waitUntilFound(
         find.textContaining("Bucharest, Romania"),
@@ -129,7 +130,7 @@ void runVpnScreenTests() async {
         cityName: "Dallas",
       );
 
-      await app.setObfuscatedServers(false);
+      await app.setTechnology(settings.Technology.NORDLYNX);
 
       await mainScreen.waitUntilFound(
         find.textContaining("Dallas, United States"),

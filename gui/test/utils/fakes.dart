@@ -26,7 +26,6 @@ VpnStatus fakeVpnStatus({
   ConnectionState status = ConnectionState.DISCONNECTED,
   VpnProtocol protocol = VpnProtocol.nordlynx,
   ServerGroup group = ServerGroup.UNDEFINED,
-  bool isObfuscated = false,
 }) {
   return VpnStatus(
     ip: null,
@@ -36,7 +35,6 @@ VpnStatus fakeVpnStatus({
     status: status,
     protocol: protocol,
     isVirtualLocation: false,
-    isObfuscated: isObfuscated,
     connectionParameters: ConnectionParameters(
       source: ConnectionSource.MANUAL,
       group: group,
