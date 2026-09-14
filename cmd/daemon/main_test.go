@@ -54,7 +54,7 @@ func TestBuildTpServersAndResolver(t *testing.T) {
 
 	server := mock.NewHTTPTestServer(t, []mock.Handler{
 		{
-			Pattern: core.ThreatProtectionLiteURL,
+			Pattern: core.RealTimeProtectionURL,
 			Fn: func() ([]byte, *mock.HTTPError) {
 				// simulate that fetching takes more time, also gives time to check fetched value
 				time.Sleep(time.Millisecond * 20)
@@ -72,7 +72,7 @@ func TestBuildTpServersAndResolver(t *testing.T) {
 	server.Start()
 	defer server.Close()
 
-	tp, resolver := buildTpServersAndResolver(
+	tp, resolver := buildProtectionServersAndResolver(
 		"test-agent",
 		server.URL(),
 		http.DefaultClient,

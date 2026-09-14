@@ -33,7 +33,7 @@ message Settings {
   uint32 fwmark = 8;
   consent.ConsentMode analytics_consent = 9;
   repeated string dns = 10;
-  bool threat_protection_lite = 11;
+  bool real_time_protection = 11;
   config.Protocol protocol = 12;
   bool lan_discovery = 13;
   Allowlist allowlist = 14;

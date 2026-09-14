@@ -23,6 +23,7 @@ import (
 var dnsMock config.DNS = config.DNS{"0.0.0.0", "8.8.8.8", "1.1.1.1"}
 var currentDNSMock config.DNS = config.DNS{"131.244.140.126", "194.182.108.28", "124.83.117.225"}
 
+
 type mockPublisherSubscriberDNS struct {
 	eventPublished bool
 }
@@ -41,8 +42,8 @@ func TestSetDNS_Success(t *testing.T) {
 		currentDNS          config.DNS
 		expectedDNS         config.DNS
 		expectedDNSInConfig config.DNS
-		tpl                 bool
-		expectedTPL         bool
+		protection                 bool
+		expectedProtection         bool
 	}{
 		{
 			name:                "set new DNS",
@@ -79,21 +80,21 @@ func TestSetDNS_Success(t *testing.T) {
 			expectedDNSInConfig: nil,
 		},
 		{
-			name:                "remove custom dns ipv4 tpl",
+			name:                "remove custom dns ipv4 protection",
 			requestedDNS:        nil,
 			currentDNS:          dnsMock,
-			expectedDNS:         mock.TplNameserversV4,
+			expectedDNS:         mock.ProtectionNameserversV4,
 			expectedDNSInConfig: nil,
-			tpl:                 true,
-			expectedTPL:         true,
+			protection:                 true,
+			expectedProtection:         true,
 		},
 		{
-			name:                "overwrite tpl ipv4",
+			name:                "overwrite protection ipv4",
 			requestedDNS:        dnsMock,
 			expectedDNS:         dnsMock,
 			expectedDNSInConfig: dnsMock,
-			tpl:                 true,
-			expectedTPL:         false,
+			protection:                 true,
+			expectedProtection:         false,
 		},
 	}
 
@@ -112,7 +113,7 @@ func TestSetDNS_Success(t *testing.T) {
 			configManager.SaveWith(func(c config.Config) config.Config {
 				c.AutoConnectData = config.AutoConnectData{
 					DNS:                  test.currentDNS,
-					ThreatProtectionLite: test.tpl,
+					RealTimeProtection: test.protection,
 				}
 
 				return c
@@ -145,8 +146,8 @@ func TestSetDNS_Success(t *testing.T) {
 			configManager.Load(&cfg)
 			assert.Equal(t, test.expectedDNSInConfig, cfg.AutoConnectData.DNS,
 				"Invalid DNS was saved in the configuration.")
-			assert.Equal(t, test.expectedTPL, cfg.AutoConnectData.ThreatProtectionLite,
-				"Threat protection lite was not properly configured after enabling DNS.")
+			assert.Equal(t, test.expectedProtection, cfg.AutoConnectData.RealTimeProtection,
+				"Real time protection was not properly configured after enabling DNS.")
 		})
 	}
 }

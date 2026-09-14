@@ -97,7 +97,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 				City:                 parameters.City,
 				Group:                parameters.Group,
 				Protocol:             cfg.AutoConnectData.Protocol,
-				ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
+				RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
 				Obfuscate:            cfg.AutoConnectData.Obfuscate,
 				DNS:                  cfg.AutoConnectData.DNS,
 				Allowlist:            cfg.AutoConnectData.Allowlist,

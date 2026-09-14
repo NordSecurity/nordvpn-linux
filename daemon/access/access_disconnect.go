@@ -44,7 +44,7 @@ func Disconnect(input DisconnectInput) (bool, error) {
 			Protocol:             cfg.AutoConnectData.Protocol,
 			EventStatus:          status,
 			Technology:           cfg.Technology,
-			ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
+			RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
 			Duration:             time.Since(startTime),
 			Error:                err,
 			RecommendationUUID:   input.RecommendationUUID,

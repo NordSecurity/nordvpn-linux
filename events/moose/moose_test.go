@@ -454,7 +454,7 @@ func TestHandleTokenRenewDateChange(t *testing.T) {
 	}
 }
 
-func TestNotifyThreatProtectionLite_CallsUserPreferenceSetter(t *testing.T) {
+func TestNotifyRealTimeProtection_CallsUserPreferenceSetter(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
@@ -483,7 +483,7 @@ func TestNotifyThreatProtectionLite_CallsUserPreferenceSetter(t *testing.T) {
 			mooseUserPrefErrCode:  0,
 			expectNotifyErr:       false,
 			expectPrefCalled:      true,
-			expectCustomDNSCalled: false, // TP Lite disabled, so custom DNS is not touched
+			expectCustomDNSCalled: false, // protection disabled, so custom DNS is not touched
 		},
 	}
 
@@ -496,7 +496,7 @@ func TestNotifyThreatProtectionLite_CallsUserPreferenceSetter(t *testing.T) {
 
 			s := &Subscriber{
 				mooseFuncs: mooseFunctions{
-					setTPLiteUserPreference: func(v bool) uint32 {
+					setProtectionUserPreference: func(v bool) uint32 {
 						prefCalled = true
 						gotPref = v
 						return tt.mooseUserPrefErrCode
@@ -513,10 +513,10 @@ func TestNotifyThreatProtectionLite_CallsUserPreferenceSetter(t *testing.T) {
 			}
 
 			// make sure we don't hit the "Current State" call path:
-			// `NotifyThreatProtectionLite` only sets Current State when connectionStartTime.IsZero().
+			// `NotifyRealTimeProtection` only sets Current State when connectionStartTime.IsZero().
 			s.connectionStartTime = time.Now()
 
-			err := s.NotifyThreatProtectionLite(tt.enabled)
+			err := s.NotifyRealTimeProtection(tt.enabled)
 
 			assert.Equal(t, tt.expectPrefCalled, prefCalled)
 			if tt.expectPrefCalled {
@@ -655,93 +655,93 @@ func TestNotifyDNS(t *testing.T) {
 		dnsIPs                 []string
 		mooseMetaErrCode       uint32
 		mooseValueErrCode      uint32
-		mooseTPLiteUserPrefErr uint32
-		mooseTPLiteCurrentErr  uint32
+		mooseProtectionUserPrefErr uint32
+		mooseProtectionCurrentErr  uint32
 		expectErr              bool
 		expectMetaCalled       bool
 		expectValueCalled      bool
-		expectTPLiteCalled     bool
-		expectedTPLiteValue    bool
+		expectProtectionCalled     bool
+		expectedProtectionValue    bool
 	}{
 		{
-			name:               "no DNS IPs - custom DNS disabled, TP Lite not touched",
+			name:               "no DNS IPs - custom DNS disabled, protection not touched",
 			dnsIPs:             []string{},
 			mooseMetaErrCode:   0,
 			mooseValueErrCode:  0,
 			expectErr:          false,
 			expectMetaCalled:   true,
 			expectValueCalled:  true,
-			expectTPLiteCalled: false, // TP Lite only touched when custom DNS is enabled
+			expectProtectionCalled: false, // protection only touched when custom DNS is enabled
 		},
 		{
-			name:                   "single DNS IP - custom DNS enabled, TP Lite disabled (not connected)",
+			name:                   "single DNS IP - custom DNS enabled, protection disabled (not connected)",
 			dnsIPs:                 []string{"1.1.1.1"},
 			mooseMetaErrCode:       0,
 			mooseValueErrCode:      0,
-			mooseTPLiteUserPrefErr: 0,
-			mooseTPLiteCurrentErr:  0,
+			mooseProtectionUserPrefErr: 0,
+			mooseProtectionCurrentErr:  0,
 			expectErr:              false,
 			expectMetaCalled:       true,
 			expectValueCalled:      true,
-			expectTPLiteCalled:     true,
-			expectedTPLiteValue:    false,
+			expectProtectionCalled:     true,
+			expectedProtectionValue:    false,
 		},
 		{
-			name:                   "multiple DNS IPs - custom DNS enabled, TP Lite disabled (not connected)",
+			name:                   "multiple DNS IPs - custom DNS enabled, protection disabled (not connected)",
 			dnsIPs:                 []string{"1.1.1.1", "8.8.8.8"},
 			mooseMetaErrCode:       0,
 			mooseValueErrCode:      0,
-			mooseTPLiteUserPrefErr: 0,
-			mooseTPLiteCurrentErr:  0,
+			mooseProtectionUserPrefErr: 0,
+			mooseProtectionCurrentErr:  0,
 			expectErr:              false,
 			expectMetaCalled:       true,
 			expectValueCalled:      true,
-			expectTPLiteCalled:     true,
-			expectedTPLiteValue:    false,
+			expectProtectionCalled:     true,
+			expectedProtectionValue:    false,
 		},
 		{
-			name:               "custom DNS meta setter fails - propagates error, TP Lite not touched",
+			name:               "custom DNS meta setter fails - propagates error, protection not touched",
 			dnsIPs:             []string{"1.1.1.1"},
 			mooseMetaErrCode:   1,
 			mooseValueErrCode:  0,
 			expectErr:          true,
 			expectMetaCalled:   true,
 			expectValueCalled:  false,
-			expectTPLiteCalled: false, // setCustomDNS fails early
+			expectProtectionCalled: false, // setCustomDNS fails early
 		},
 		{
-			name:               "custom DNS value setter fails - propagates error, TP Lite not touched",
+			name:               "custom DNS value setter fails - propagates error, protection not touched",
 			dnsIPs:             []string{"1.1.1.1"},
 			mooseMetaErrCode:   0,
 			mooseValueErrCode:  1,
 			expectErr:          true,
 			expectMetaCalled:   true,
 			expectValueCalled:  true,
-			expectTPLiteCalled: false, // setCustomDNS fails, so setTPLite not called
+			expectProtectionCalled: false, // setCustomDNS fails, so setProtection not called
 		},
 		{
-			name:                   "TP Lite user pref setter fails - propagates error (not connected)",
+			name:                   "protection user pref setter fails - propagates error (not connected)",
 			dnsIPs:                 []string{"1.1.1.1"},
 			mooseMetaErrCode:       0,
 			mooseValueErrCode:      0,
-			mooseTPLiteUserPrefErr: 12,
-			mooseTPLiteCurrentErr:  0,
+			mooseProtectionUserPrefErr: 12,
+			mooseProtectionCurrentErr:  0,
 			expectErr:              true,
 			expectMetaCalled:       true,
 			expectValueCalled:      true,
-			expectTPLiteCalled:     true,
+			expectProtectionCalled:     true,
 		},
 		{
-			name:                   "TP Lite current setter fails - propagates error (not connected)",
+			name:                   "protection current setter fails - propagates error (not connected)",
 			dnsIPs:                 []string{"1.1.1.1"},
 			mooseMetaErrCode:       0,
 			mooseValueErrCode:      0,
-			mooseTPLiteUserPrefErr: 0,
-			mooseTPLiteCurrentErr:  1,
+			mooseProtectionUserPrefErr: 0,
+			mooseProtectionCurrentErr:  1,
 			expectErr:              true,
 			expectMetaCalled:       true,
 			expectValueCalled:      true,
-			expectTPLiteCalled:     true,
+			expectProtectionCalled:     true,
 		},
 	}
 
@@ -749,9 +749,9 @@ func TestNotifyDNS(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			metaCalled := false
 			valueCalled := false
-			tpLiteUserPrefCalled := false
-			tpLiteCurrentCalled := false
-			var gotTPLiteValue bool
+			protectionUserPrefCalled := false
+			protectionCurrentCalled := false
+			var gotProtectionValue bool
 
 			s := &Subscriber{
 				mooseFuncs: mooseFunctions{
@@ -763,19 +763,19 @@ func TestNotifyDNS(t *testing.T) {
 						valueCalled = true
 						return tt.mooseValueErrCode
 					},
-					setTPLiteUserPreference: func(v bool) uint32 {
-						tpLiteUserPrefCalled = true
-						return tt.mooseTPLiteUserPrefErr
+					setProtectionUserPreference: func(v bool) uint32 {
+						protectionUserPrefCalled = true
+						return tt.mooseProtectionUserPrefErr
 					},
-					setTPLiteCurrentState: func(v bool) uint32 {
-						tpLiteCurrentCalled = true
-						gotTPLiteValue = v
-						return tt.mooseTPLiteCurrentErr
+					setProtectionCurrentState: func(v bool) uint32 {
+						protectionCurrentCalled = true
+						gotProtectionValue = v
+						return tt.mooseProtectionCurrentErr
 					},
 				},
 			}
 
-			// Ensure we're in "not connected" state so TP Lite current state is set
+			// Ensure we're in "not connected" state so protection current state is set
 			s.connectionStartTime = time.Time{}
 
 			data := events.DataDNS{Ips: tt.dnsIPs}
@@ -783,11 +783,11 @@ func TestNotifyDNS(t *testing.T) {
 
 			assert.Equal(t, tt.expectMetaCalled, metaCalled)
 			assert.Equal(t, tt.expectValueCalled, valueCalled)
-			assert.Equal(t, tt.expectTPLiteCalled, tpLiteUserPrefCalled)
-			assert.Equal(t, tt.expectTPLiteCalled, tpLiteCurrentCalled)
+			assert.Equal(t, tt.expectProtectionCalled, ProtectionUserPrefCalled)
+			assert.Equal(t, tt.expectProtectionCalled, ProtectionCurrentCalled)
 
-			if tt.expectTPLiteCalled && tt.mooseTPLiteCurrentErr == 0 {
-				assert.Equal(t, tt.expectedTPLiteValue, gotTPLiteValue)
+			if tt.expectProtectionCalled && tt.mooseProtectionCurrentErr == 0 {
+				assert.Equal(t, tt.expectedProtectionValue, gotProtectionValue)
 			}
 
 			if tt.expectErr {
@@ -1081,7 +1081,7 @@ func TestNotifyConnect_Success_DedicatedIPByHostname_ContextValueIsUserTarget(t 
 	) uint32 {
 		return 0
 	}
-	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.setProtectionCurrentState = func(_ bool) uint32 { return 0 }
 	sub.mooseFuncs.unsetServerDomainCurrentState = func() uint32 { return 0 }
 	sub.mooseFuncs.unsetRecommendationUuid = func() uint32 { return 0 }
 	sub.mooseFuncs.setServerGroupCurrentState = func(group moose.NordvpnappServerGroup) uint32 {
@@ -1124,7 +1124,7 @@ func TestNotifyConnect_Success_EmptyTargetServerGroup_UnsetsServerGroupContext(t
 	) uint32 {
 		return 0
 	}
-	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.setProtectionCurrentState = func(_ bool) uint32 { return 0 }
 	sub.mooseFuncs.setServerGroupCurrentState = func(_ moose.NordvpnappServerGroup) uint32 {
 		setCalls++
 		return 0
@@ -1255,13 +1255,13 @@ func TestNotifyConnect_Success_InvokesPostConnectContextSetters(t *testing.T) {
 		return 0
 	}
 
-	var tpLiteCalls, isOnVpnCalls, countryCalls, groupCalls int
-	var capturedTPLite, capturedIsOnVpn bool
+	var protectionCalls, isOnVpnCalls, countryCalls, groupCalls int
+	var capturedProtection, capturedIsOnVpn bool
 	var capturedCountry string
 	var capturedGroup moose.NordvpnappServerGroup
-	sub.mooseFuncs.setTPLiteCurrentState = func(enabled bool) uint32 {
-		capturedTPLite = enabled
-		tpLiteCalls++
+	sub.mooseFuncs.setProtectionCurrentState = func(enabled bool) uint32 {
+		capturedProtection = enabled
+		protectionCalls++
 		return 0
 	}
 	sub.mooseFuncs.setIsOnVpnCurrentState = func(onVpn bool) uint32 {
@@ -1283,16 +1283,16 @@ func TestNotifyConnect_Success_InvokesPostConnectContextSetters(t *testing.T) {
 	err := sub.NotifyConnect(events.DataConnect{
 		TargetServerGroupID:     config.ServerGroup_STANDARD_VPN_SERVERS,
 		TargetServerCountryCode: "us",
-		ThreatProtectionLite:    false,
+		RealTimeProtection:    false,
 		EventStatus:             events.StatusSuccess,
 	})
 
 	assert.NilError(t, err)
-	assert.Equal(t, 1, tpLiteCalls)
+	assert.Equal(t, 1, protectionCalls)
 	assert.Equal(t, 1, isOnVpnCalls)
 	assert.Equal(t, 1, countryCalls)
 	assert.Equal(t, 1, groupCalls)
-	assert.Equal(t, false, capturedTPLite)
+	assert.Equal(t, false, capturedProtection)
 	assert.Equal(t, true, capturedIsOnVpn)
 	assert.Equal(t, "us", capturedCountry)
 	assert.Equal(t, moose.NordvpnappServerGroupStandard, capturedGroup)
@@ -1564,7 +1564,7 @@ func TestReportAutoConnectTarget_AccumulatesErrors(t *testing.T) {
 }
 
 func noopDisconnectAmbientMooseFuncs(sub *Subscriber) {
-	sub.mooseFuncs.unsetTPLiteCurrentState = func() uint32 { return 0 }
+	sub.mooseFuncs.unsetProtectionCurrentState = func() uint32 { return 0 }
 	sub.mooseFuncs.setServerCountryCurrentState = func(_ string) uint32 { return 0 }
 	sub.mooseFuncs.setServerGroupCurrentState = func(_ moose.NordvpnappServerGroup) uint32 { return 0 }
 	sub.mooseFuncs.unsetServerGroupCurrentState = func() uint32 { return 0 }
@@ -1718,7 +1718,7 @@ func TestNotifyConnect_Success_DedicatedIP_SetsGroupAndKeepsDependentsEmpty(t *t
 		sendConnectCallOrder = nextCall
 		return 0
 	}
-	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.setProtectionCurrentState = func(_ bool) uint32 { return 0 }
 	sub.mooseFuncs.setServerGroupCurrentState = func(group moose.NordvpnappServerGroup) uint32 {
 		nextCall++
 		groupCallOrder = nextCall
@@ -1836,7 +1836,7 @@ func TestNotifyConnect_Success_StandardVPN_SetsServerDomainAndCity(t *testing.T)
 	category.Set(t, category.Unit)
 	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
-	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.setProtectionCurrentState = func(_ bool) uint32 { return 0 }
 	sub.mooseFuncs.sendConnect = func(
 		_ moose.EventParams,
 		_ moose.TargetConnectionParams,
@@ -1882,7 +1882,7 @@ func TestNotifyConnect_Success_SensitiveGroup_SuppressesServerDomainButSetsCity(
 	category.Set(t, category.Unit)
 	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
-	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.setProtectionCurrentState = func(_ bool) uint32 { return 0 }
 	sub.mooseFuncs.unsetServerDomainCurrentState = func() uint32 { return 0 }
 	sub.mooseFuncs.unsetRecommendationUuid = func() uint32 { return 0 }
 	sub.mooseFuncs.sendConnect = func(
@@ -1932,7 +1932,7 @@ func TestNotifyConnect_Success_NonSensitiveEmptyDomain_RefreshesServerDomain(t *
 	category.Set(t, category.Unit)
 	sub := NewSubscriber("", nil, nil, nil, config.BuildTarget{}, "", "", "")
 	noopDisconnectAmbientMooseFuncs(sub)
-	sub.mooseFuncs.setTPLiteCurrentState = func(_ bool) uint32 { return 0 }
+	sub.mooseFuncs.setProtectionCurrentState = func(_ bool) uint32 { return 0 }
 	sub.mooseFuncs.sendConnect = func(
 		_ moose.EventParams,
 		_ moose.TargetConnectionParams,
@@ -2252,7 +2252,7 @@ func TestNotifyDisconnect_VPNConnReason(t *testing.T) {
 			}
 			// NotifyDisconnect also updates context state after sending; no-op those so the test
 			// does not depend on the native moose context.
-			sub.mooseFuncs.unsetTPLiteCurrentState = func() uint32 { return 0 }
+			sub.mooseFuncs.unsetProtectionCurrentState = func() uint32 { return 0 }
 			sub.mooseFuncs.setServerCountryCurrentState = func(_ string) uint32 { return 0 }
 			sub.mooseFuncs.unsetServerGroupCurrentState = func() uint32 { return 0 }
 			sub.mooseFuncs.setIsOnVpnCurrentState = func(_ bool) uint32 { return 0 }

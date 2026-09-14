@@ -93,7 +93,7 @@ service Daemon {
 
   // ==================== Privacy & Security ====================
   rpc SetAnalytics(SetGenericRequest) returns (Payload);
-  rpc SetThreatProtectionLite(SetThreatProtectionLiteRequest) returns (SetThreatProtectionLiteResponse);
+  rpc SetRealTimeProtection(SetRealTimeProtectionRequest) returns (SetRealTimeProtectionResponse);
 
   // ==================== System & Monitoring ====================
   rpc Ping(Empty) returns (PingResponse);

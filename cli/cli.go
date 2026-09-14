@@ -756,7 +756,7 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 			Name:         "protection",
 			Aliases:      []string{"protect"},
 			Usage:        SetRealTimeProtectionUsageText,
-			Action:       cmd.SetThreatProtectionLite,
+			Action:       cmd.SetRealTimeProtection,
 			BashComplete: cmd.SetBoolAutocomplete,
 			ArgsUsage:    SetRealTimeProtectionArgsUsageText,
 			Description:  SetRealTimeProtectionDescription,

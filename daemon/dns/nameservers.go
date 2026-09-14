@@ -15,13 +15,13 @@ import (
 const (
 	primaryNameserver4                       = "103.86.96.100"
 	secondaryNameserver4                     = "103.86.99.100"
-	threatProtectionLitePrimaryNameserver4   = "103.86.96.108"
-	threatProtectionLiteSecondaryNameserver4 = "103.86.99.108"
+	realTimeProtectionPrimaryNameserver4   = "103.86.96.108"
+	realTimeProtectionSecondaryNameserver4 = "103.86.99.108"
 )
 
 var (
 	defaultTpServers = []string{
-		threatProtectionLitePrimaryNameserver4, threatProtectionLiteSecondaryNameserver4,
+		realTimeProtectionPrimaryNameserver4, realTimeProtectionSecondaryNameserver4,
 	}
 	defaultServers = []string{primaryNameserver4, secondaryNameserver4}
 )
@@ -30,7 +30,7 @@ type CalculateRetryDelayForAttempt func(attempt int) time.Duration
 type ServersFetcher func() (*core.NameServers, error)
 
 type Getter interface {
-	Get(isThreatProtectionLite bool) []string
+	Get(isRealTimeProtection bool) []string
 	LookupIP(host string) ([]net.IP, error)
 }
 
@@ -44,8 +44,8 @@ func NewNameServers() *NameServers {
 }
 
 // Get nameservers selected by the given criteria.
-func (n *NameServers) Get(isThreatProtectionLite bool) []string {
-	if isThreatProtectionLite {
+func (n *NameServers) Get(isRealTimeProtection bool) []string {
+	if isRealTimeProtection {
 		return n.getTpServers()
 	}
 
@@ -65,9 +65,9 @@ func (n *NameServers) LookupIP(host string) ([]net.IP, error) {
 	return net.LookupIP(host)
 }
 
-// FetchTPServers it is a blocking operation and fetches the TP servers until is successful.
+// FetchProtectionServers it is a blocking operation and fetches the protection servers until is successful.
 // It uses exponential backoff between retries.
-func (n *NameServers) FetchTPServers(fetcher ServersFetcher, timeoutFn CalculateRetryDelayForAttempt) error {
+func (n *NameServers) FetchProtectionServers(fetcher ServersFetcher, timeoutFn CalculateRetryDelayForAttempt) error {
 	if fetcher == nil || timeoutFn == nil {
 		return errors.New("fetcher parameters cannot be nil")
 	}

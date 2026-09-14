@@ -41,7 +41,7 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 		},
 		Meshnet:              cfg.Mesh,
 		Dns:                  cfg.AutoConnectData.DNS,
-		ThreatProtectionLite: cfg.AutoConnectData.ThreatProtectionLite,
+		RealTimeProtection: cfg.AutoConnectData.RealTimeProtection,
 		Protocol:             cfg.AutoConnectData.Protocol,
 		LanDiscovery:         cfg.LanDiscovery,
 		Allowlist: &pb.Allowlist{

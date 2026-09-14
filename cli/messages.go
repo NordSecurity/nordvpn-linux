@@ -48,7 +48,7 @@ Example: nordvpn set %s on`
 	AutoConnectOnObfuscatedServerObfuscateOff   = "Turn on obfuscation to connect to obfuscated servers."
 	SetAutoConnectForceOff                      = "Auto-connect was turned off because the setting change is incompatible with your current auto-connect preferences. Please turn on auto-connect again if you wish to continue using it."
 
-	SetThreatProtectionLiteDisableDNS = "Disabling DNS."
+	SetRealTimeProtectionDisableDNS = "Disabling DNS."
 	SetRealTimeProtectionAlreadySet   = "Real-time protection is already set to `%s`."
 
 	SetDefaultsSuccess = "Settings were successfully restored to defaults."
