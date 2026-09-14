@@ -10,7 +10,7 @@ import (
 
 const noFwMark uint32 = 0
 
-func lookupAddress(addr string, dns string, protocol string, fwmark uint32) ([]netip.Addr, error) {
+func lookupAddress(addr string, dns string, protocol string, fwmark uint32, ctx context.Context) ([]netip.Addr, error) {
 	resolver := net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
@@ -29,7 +29,7 @@ func lookupAddress(addr string, dns string, protocol string, fwmark uint32) ([]n
 			return dialer.DialContext(ctx, protocol, hostAndPortAddress)
 		},
 	}
-	ipAddrs, err := resolver.LookupIPAddr(context.Background(), addr)
+	ipAddrs, err := resolver.LookupIPAddr(ctx, addr)
 	if err != nil {
 		return nil, fmt.Errorf("looking addr ip up: %w", err)
 	}

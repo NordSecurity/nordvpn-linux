@@ -64,7 +64,7 @@ func createH1Transport(
 					return nil, fmt.Errorf("malformed address: %s", addr)
 				}
 
-				ips, err := resolver.Resolve(domain)
+				ips, err := resolver.Resolve(domain, ctx)
 				if err != nil {
 					return nil, fmt.Errorf("resolving domain: %s", err)
 				}
@@ -74,11 +74,13 @@ func createH1Transport(
 				} else {
 					newAddr = ip.String()
 				}
-				return dialer.DialContext(
+
+				conn, err := dialer.DialContext(
 					ctx,
 					netw,
 					strings.ReplaceAll(addr, domain, newAddr),
 				)
+				return conn, fmt.Errorf("connecting: %s", err)
 			},
 			TLSHandshakeTimeout: request.TransportTimeout,
 		}
@@ -151,7 +153,7 @@ func createH3Transport(resolver network.DNSResolver, fwmark uint32) func() http.
 					if err != nil {
 						return nil, fmt.Errorf("port conversion failed: %s", portStr)
 					}
-					ips, err := resolver.Resolve(domain)
+					ips, err := resolver.Resolve(domain, ctx)
 					if err != nil {
 						return nil, fmt.Errorf("resolving domain: %s", err)
 					}
@@ -162,7 +164,7 @@ func createH3Transport(resolver network.DNSResolver, fwmark uint32) func() http.
 					udpAddr := net.UDPAddrFromAddrPort(udpAddrPort)
 					c, err := quicTransport.DialEarly(ctx, udpAddr, tlsCfg, cfg)
 					if err != nil {
-						return nil, err
+						return nil, fmt.Errorf("connecting: %s", err)
 					}
 					return c, nil
 				},

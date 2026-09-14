@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -23,7 +24,7 @@ type workingResolver struct {
 	IP string
 }
 
-func (w workingResolver) Resolve(string) ([]netip.Addr, error) {
+func (w workingResolver) Resolve(string, context.Context) ([]netip.Addr, error) {
 	if w.IP != "" {
 		return []netip.Addr{netip.MustParseAddr(w.IP)}, nil
 	}
