@@ -13,7 +13,6 @@ rm -rf "${lib_root}/current"
 
 pushd "${WORKDIR}/build/foss/libtelio"
 rustup target add aarch64-unknown-linux-gnu \
-    aarch64-unknown-linux-gnu \
     arm-unknown-linux-gnueabi \
     armv7-unknown-linux-gnueabihf \
     i686-unknown-linux-gnu
