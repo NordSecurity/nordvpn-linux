@@ -40,7 +40,7 @@ final class DaemonStatusCode {
   static const dnsListModified = 5002;
   static const tooManyValues = 5003;
   static const invalidDnsAddress = 5004;
-  static const tpLiteDisabled = 5005;
+  static const protectionDisabled = 5005;
   static const alreadyExists = 5006;
   static const restartDaemonRequiredForFwMark = 5007;
   static const grpcTimeout = 5008;

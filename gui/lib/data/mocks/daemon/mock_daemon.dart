@@ -289,11 +289,11 @@ final class MockDaemon extends DaemonServiceBase {
   }
 
   @override
-  Future<SetThreatProtectionLiteResponse> setThreatProtectionLite(
+  Future<SetRealTimeProtectionResponse> setRealTimeProtection(
     ServiceCall call,
-    SetThreatProtectionLiteRequest request,
+    SetRealTimeProtectionRequest request,
   ) {
-    return appSettings.setThreatProtectionLite(request);
+    return appSettings.setRealTimeProtection(request);
   }
 
   @override
