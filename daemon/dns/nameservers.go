@@ -15,8 +15,8 @@ import (
 const (
 	primaryNameserver4                       = "103.86.96.100"
 	secondaryNameserver4                     = "103.86.99.100"
-	threatProtectionLitePrimaryNameserver4   = "103.86.96.96"
-	threatProtectionLiteSecondaryNameserver4 = "103.86.99.99"
+	threatProtectionLitePrimaryNameserver4   = "103.86.96.108"
+	threatProtectionLiteSecondaryNameserver4 = "103.86.99.108"
 )
 
 var (

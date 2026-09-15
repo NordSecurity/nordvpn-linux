@@ -8,8 +8,8 @@ import (
 )
 
 var TplNameserversV4 config.DNS = []string{
-	"103.86.96.96",
-	"103.86.99.99",
+	"103.86.96.108",
+	"103.86.99.108",
 }
 
 var DefaultNameserversV4 config.DNS = []string{
