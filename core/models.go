@@ -280,37 +280,6 @@ type Server struct {
 	IPRecords            []ServerIPRecord `json:"ips"`
 }
 
-// ServerObfuscationStatus is the return status of IsServerObfuscated
-type ServerObfuscationStatus int
-
-const (
-	// ServerObfuscated status returned when server is obfuscated
-	ServerObfuscated ServerObfuscationStatus = iota
-	// ServerNotObfuscated status returned when server is not obfuscated
-	ServerNotObfuscated
-	// NotAServerName returned when server with such name has not been found
-	// (there is no hostname beginning with given server tag)
-	NotAServerName
-)
-
-// IsServerObfuscated returns ServerObfuscationStatus for a given server tag
-func IsServerObfuscated(servers Servers, serverTag string) ServerObfuscationStatus {
-	serverIndex := slices.IndexFunc(servers, func(server Server) bool {
-		serverName := strings.Split(server.Hostname, ".")[0]
-		return serverName == serverTag
-	})
-
-	if serverIndex == -1 {
-		return NotAServerName
-	}
-
-	if IsObfuscated()(servers[serverIndex]) {
-		return ServerObfuscated
-	}
-
-	return ServerNotObfuscated
-}
-
 // Predicate function used in algorithms like filter.
 type Predicate func(Server) bool
 
@@ -348,14 +317,6 @@ func IsConnectableVia(tech ServerTechnology) Predicate {
 	}
 }
 
-// IsObfuscated returns a filter for keeping only obfuscated servers.
-func IsObfuscated() Predicate {
-	return func(s Server) bool {
-		return IsConnectableVia(OpenVPNUDPObfuscated)(s) ||
-			IsConnectableVia(OpenVPNTCPObfuscated)(s)
-	}
-}
-
 // IsConnectableWithProtocol behaves like IsConnectableVia, but also includes protocol.
 func IsConnectableWithProtocol(tech config.Technology, proto config.Protocol) Predicate {
 	return func(s Server) bool {
@@ -364,12 +325,10 @@ func IsConnectableWithProtocol(tech config.Technology, proto config.Protocol) Pr
 			return IsConnectableVia(WireguardTech)(s)
 		case config.Technology_OPENVPN:
 			if proto == config.Protocol_UDP {
-				return IsConnectableVia(OpenVPNUDP)(s) ||
-					IsConnectableVia(OpenVPNUDPObfuscated)(s)
+				return IsConnectableVia(OpenVPNUDP)(s)
 			}
 			if proto == config.Protocol_TCP {
-				return IsConnectableVia(OpenVPNTCP)(s) ||
-					IsConnectableVia(OpenVPNTCPObfuscated)(s)
+				return IsConnectableVia(OpenVPNTCP)(s)
 			}
 		case config.Technology_NORDWHISPER:
 			return IsConnectableVia(NordWhisperTech)(s)
