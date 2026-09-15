@@ -38,6 +38,7 @@ table inet nordvpn {
 		meta mark 0x0000e1f1 ct mark set meta mark accept comment "mark connection for socket with SO_MARK"
 		tcp sport @tcp_allowlist meta mark set 0x0000e1f1 accept comment "from allowlist TCP ports"
 		udp sport @udp_allowlist meta mark set 0x0000e1f1 accept comment "from allowlist UDP ports"
+		oifname "nordlynx" ip saddr != 10.5.0.2 drop comment "Drop non tunnel source ip packets that are going through tunnel interface"
 		oifname "nordlynx" accept comment "local to VPN"
 	}
 
