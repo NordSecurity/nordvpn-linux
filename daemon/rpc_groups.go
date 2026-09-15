@@ -23,7 +23,6 @@ func (r *RPC) Groups(ctx context.Context, in *pb.Empty) (*pb.ServerGroupsList, e
 	groups, err := r.dm.Groups(
 		cfg.Technology,
 		cfg.AutoConnectData.Protocol,
-		cfg.AutoConnectData.Obfuscate,
 		cfg.VirtualLocation.Get(),
 	)
 	if err != nil {

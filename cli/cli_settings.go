@@ -43,9 +43,6 @@ func (c *cmd) Settings(ctx *cli.Context) error {
 	fmt.Printf("User Consent: %s\n", nstrings.UserConsent(settings.AnalyticsConsent))
 	fmt.Printf("Kill Switch: %+v\n", nstrings.GetBoolLabel(settings.GetKillSwitch()))
 	fmt.Printf("Real-time protection: %+v\n", nstrings.GetBoolLabel(settings.ThreatProtectionLite))
-	if settings.Technology == config.Technology_OPENVPN {
-		fmt.Printf("Obfuscate: %+v\n", nstrings.GetBoolLabel(settings.GetObfuscate()))
-	}
 	fmt.Printf("Notify: %+v\n", nstrings.GetBoolLabel(settings.UserSettings.Notify))
 	fmt.Printf("Tray: %+v\n", nstrings.GetBoolLabel(settings.UserSettings.Tray))
 	fmt.Printf("Auto-connect: %+v\n", nstrings.GetBoolLabel(settings.AutoConnectData.Enabled))

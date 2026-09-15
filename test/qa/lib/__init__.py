@@ -30,15 +30,10 @@ STANDARD_TECHNOLOGIES_NO_NORDWHISPER = [
     ("nordlynx", "", ""),
 ]
 
-# Used for test parametrization, when the same test has to be run for obfuscated technologies.
+# Legacy XOR OpenVPN. Retire with LVPN-10940.
 OBFUSCATED_TECHNOLOGIES = [
     # technology, protocol, obfuscation,
     ("openvpn", "udp", "on"),
-    ("openvpn", "tcp", "on"),
-]
-
-OBFUSCATED_TCP = [
-    # technology, protocol, obfuscation,
     ("openvpn", "tcp", "on"),
 ]
 
@@ -49,8 +44,7 @@ STANDARD_TECHNOLOGIES_NO_MESHNET = [
     ("nordwhisper", "", ""),
 ]
 
-TECHNOLOGIES_NO_MESHNET = OBFUSCATED_TECHNOLOGIES + STANDARD_TECHNOLOGIES_NO_MESHNET if IS_NIGHTLY \
-    else OBFUSCATED_TCP + STANDARD_TECHNOLOGIES_NO_MESHNET
+TECHNOLOGIES_NO_MESHNET = list(STANDARD_TECHNOLOGIES_NO_MESHNET)
 
 # Used for test parametrization, when the tested functionality does not work with obfuscated.
 OVPN_STANDARD_TECHNOLOGIES = [
@@ -60,9 +54,8 @@ OVPN_STANDARD_TECHNOLOGIES = [
 ]
 
 # Used for test parametrization, when the same test has to be run for all technologies.
-
-TECHNOLOGIES = OBFUSCATED_TECHNOLOGIES + STANDARD_TECHNOLOGIES if IS_NIGHTLY \
-    else OBFUSCATED_TCP + STANDARD_TECHNOLOGIES
+# Obfuscation is a NordWhisper property since LVPN-10929, so there are no obfuscated rows to add.
+TECHNOLOGIES = list(STANDARD_TECHNOLOGIES)
 
 TECHNOLOGIES_BASIC1 = [
     ("nordlynx", "", ""),
@@ -99,8 +92,8 @@ DEDICATED_IP_GROUPS = [
     "Dedicated_IP"
 ]
 
-# Used for test parametrization, when the tested functionality only works with obfuscated OPENVPN.
-OVPN_OBFUSCATED_GROUPS = [
+# Used for test parametrization of the Obfuscated_Servers group, which NordWhisper aliases for its standard servers.
+OBFUSCATED_GROUPS = [
     "Obfuscated_Servers"
 ]
 
@@ -226,9 +219,12 @@ class Defer:
         print(self.command())
 
 
-def set_technology_and_protocol(tech, proto, obfuscation):
+def set_technology_and_protocol(tech, proto, obfuscation):  # noqa: ARG001
     """
-    Allows setting technology, protocol and obfuscation regardless of whether it is already set or not.
+    Allows setting technology and protocol regardless of whether they are already set or not.
+
+    The obfuscation argument is only kept so the (tech, proto, obfuscation) parametrization tuples
+    still unpack, but obfuscation is no longer settable from the CLI.
 
     Tests do not break on reordering when using this.
     """
@@ -241,12 +237,6 @@ def set_technology_and_protocol(tech, proto, obfuscation):
     if proto:
         try:
             print(sh.nordvpn.set.protocol(proto))
-        except sh.ErrorReturnCode_1 as ex:
-            print("WARNING:", ex)
-
-    if obfuscation:
-        try:
-            print(sh.nordvpn.set.obfuscate(obfuscation))
         except sh.ErrorReturnCode_1 as ex:
             print("WARNING:", ex)
 

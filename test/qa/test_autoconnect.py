@@ -140,8 +140,8 @@ def test_autoconnect_to_ovpn_group(tech, proto, obfuscated, group):
     autoconnect_base_test(group)
 
 
-@pytest.mark.parametrize("group", lib.OVPN_OBFUSCATED_GROUPS)
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
+@pytest.mark.parametrize("group", lib.OBFUSCATED_GROUPS)
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.NORDWHISPER_TECHNOLOGY)
 def test_autoconnect_to_obfuscated_group(tech, proto, obfuscated, group):
     """Manual TC: LVPN-410"""
 
@@ -193,6 +193,10 @@ def test_autoconnect_to_unavailable_groups(tech, proto, obfuscated):
     unavailable_groups = daemon.get_unavailable_groups()
 
     for group in unavailable_groups:
+        # TODO(LVPN-10935)
+        if group == "Obfuscated_Servers" and tech == "nordwhisper":
+            continue
+
         with pytest.raises(sh.ErrorReturnCode_1) as ex:
             sh_no_tty.nordvpn.set.autoconnect.on(group)
 
@@ -200,6 +204,7 @@ def test_autoconnect_to_unavailable_groups(tech, proto, obfuscated):
         assert lib.is_connect_unsuccessful(ex), "Connection should be unsuccessful"
 
 
+@pytest.mark.skip("obfuscation is a technology since LVPN-10929, guard re-added in LVPN-11099")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 def test_prevent_autoconnect_enable_to_non_obfuscated_servers_when_obfuscation_is_on(tech, proto, obfuscated):
     """Manual TC: LVPN-8581"""
@@ -221,6 +226,7 @@ def test_prevent_autoconnect_enable_to_non_obfuscated_servers_when_obfuscation_i
         assert network.is_disconnected(), "Network should be disconnected"
 
 
+@pytest.mark.skip("obfuscation is a technology since LVPN-10929, guard re-added in LVPN-11099")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
 def test_prevent_obfuscate_disable_with_autoconnect_enabled_to_obfuscated_server(tech, proto, obfuscated):
     """Manual TC: LVPN-5847"""
@@ -239,6 +245,7 @@ def test_prevent_obfuscate_disable_with_autoconnect_enabled_to_obfuscated_server
     assert "Obfuscate: enabled" in sh.nordvpn.settings(), "Obfuscate should be enabled"
 
 
+@pytest.mark.skip("XOR servers are unconnectable on every technology since LVPN-10929, retire with LVPN-10940")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
 def test_prevent_autoconnect_enable_to_obfuscated_servers_when_obfuscation_is_off(tech, proto, obfuscated):
     """Manual TC: LVPN-8591"""
@@ -257,6 +264,7 @@ def test_prevent_autoconnect_enable_to_obfuscated_servers_when_obfuscation_is_of
     assert network.is_disconnected(), "Network should be disconnected"
 
 
+@pytest.mark.skip("autoconnect obfuscation validation removed in LVPN-10929, re-added in LVPN-11099")
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
 def test_prevent_obfuscate_enable_with_autoconnect_set_to_nonobfuscated(tech, proto, obfuscated):
     """Manual TC: LVPN-5848"""

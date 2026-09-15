@@ -37,16 +37,9 @@ func TestAutoconnect(t *testing.T) {
 		expectedError                   error
 	}{
 		{
-			testName:       "autoconnect works for OpenVPN, obfuscate = off",
+			testName:       "autoconnect works for OpenVPN",
 			server:         "",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
-			returnCode:     internal.CodeSuccess,
-			eventPublished: true,
-		},
-		{
-			testName:       "autoconnect works for OpenVPN, obfuscate = on",
-			server:         "",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: true, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
 			returnCode:     internal.CodeSuccess,
 			eventPublished: true,
 		},
@@ -65,16 +58,16 @@ func TestAutoconnect(t *testing.T) {
 			eventPublished: true,
 		},
 		{
-			testName:       "autoconnect works for country code using OpenVPN and obfuscate = off",
+			testName:       "autoconnect works for country code de using OpenVPN",
 			server:         "de",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
 			returnCode:     internal.CodeSuccess,
 			eventPublished: true,
 		},
 		{
-			testName:       "autoconnect works for country code using OpenVPN and obfuscate = on",
+			testName:       "autoconnect works for country code lt using OpenVPN",
 			server:         "lt",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: true, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
 			returnCode:     internal.CodeSuccess,
 			eventPublished: true,
 		},
@@ -114,18 +107,19 @@ func TestAutoconnect(t *testing.T) {
 			eventPublished: true,
 		},
 		{
-			testName:       "works for server name using OpenVPN, obfuscate = off",
+			testName:       "works for server name using OpenVPN",
 			server:         "fr1",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
 			returnCode:     internal.CodeSuccess,
 			eventPublished: true,
 		},
 		{
-			testName:       "works for server name using OpenVPN, obfuscate = on",
+			// lt17 only speaks the legacy XOR technologies, which are not connectable any more
+			testName:       "fails for legacy XOR only server using OpenVPN",
 			server:         "lt17",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: true, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
-			returnCode:     internal.CodeSuccess,
-			eventPublished: true,
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
+			expectedError:  internal.ErrServerIsUnavailable,
+			eventPublished: false,
 		},
 		{
 			testName:       "fails for invalid name server name using Nordlynx",
@@ -133,20 +127,6 @@ func TestAutoconnect(t *testing.T) {
 			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
 			eventPublished: false,
 			expectedError:  internal.ErrTagDoesNotExist,
-		},
-		{
-			testName:       "fails when connecting to obfuscated OpenVPN server using OpenVPN and obfuscate = off",
-			server:         "lt17",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
-			returnCode:     internal.CodeAutoConnectServerObfuscated,
-			eventPublished: false,
-		},
-		{
-			testName:       "fails when connecting to regular OpenVPN server using OpenVPN and obfuscate = on",
-			server:         "lt15",
-			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: true, Protocol: config.Protocol_TCP}, Technology: config.Technology_OPENVPN},
-			returnCode:     internal.CodeAutoConnectServerNotObfuscated,
-			eventPublished: false,
 		},
 		{
 			testName:             "works for dedicated ip if subscription is not expired",
@@ -291,15 +271,50 @@ func TestAutoconnect(t *testing.T) {
 	}
 }
 
+func TestAutoconnect_ObfuscatedGroupNeedsNordWhisper(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	for _, tech := range []config.Technology{config.Technology_OPENVPN, config.Technology_NORDLYNX} {
+		t.Run(tech.String(), func(t *testing.T) {
+			mockConfigManager := newMockConfigManager()
+			mockConfigManager.c.Technology = tech
+			mockPublisherSubscriber := events.MockPublisherSubscriber[bool]{}
+			dm := DataManager{
+				serversData: ServersData{Servers: core_test.ServersList()},
+				countryData: CountryData{Countries: core_test.CountriesList()},
+			}
+			r := RPC{
+				cm:                 mockConfigManager,
+				ac:                 &testauth.AuthCheckerMock{LoggedIn: true},
+				events:             &events.Events{Settings: &events.SettingsEvents{Autoconnect: &mockPublisherSubscriber}},
+				dm:                 &dm,
+				remoteConfigGetter: mock.NewRemoteConfigMock(),
+				serversAPI:         core_test.NewMockServersAPI(),
+			}
+
+			resp, err := r.SetAutoConnect(context.Background(), &pb.SetAutoconnectRequest{
+				Enabled:     true,
+				ServerGroup: "obfuscated_servers",
+			})
+
+			assert.Equal(t, internal.ErrServerIsUnavailable, err)
+			assert.Nil(t, resp)
+			assert.Equal(t, config.ServerGroup_UNDEFINED, mockConfigManager.c.AutoConnectData.Group,
+				"nothing must be saved when the target cannot be served")
+			assert.False(t, mockPublisherSubscriber.EventPublished)
+		})
+	}
+}
+
 func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		testName     string
-		serverGroup  string
-		tag          string
-		isObfuscated bool
-		expected     config.AutoConnectData
+		testName    string
+		serverGroup string
+		tag         string
+		technology  config.Technology
+		expected    config.AutoConnectData
 	}{
 		{
 			testName:    "for standard",
@@ -312,10 +327,10 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 			expected:    config.AutoConnectData{Group: config.ServerGroup_P2P},
 		},
 		{
-			testName:     "for obfuscated servers",
-			serverGroup:  "obfuscated_servers",
-			isObfuscated: true,
-			expected:     config.AutoConnectData{Group: config.ServerGroup_OBFUSCATED},
+			testName:    "for obfuscated servers over nordwhisper",
+			serverGroup: "obfuscated_servers",
+			technology:  config.Technology_NORDWHISPER,
+			expected:    config.AutoConnectData{Group: config.ServerGroup_OBFUSCATED},
 		},
 		{
 			testName:    "for double_vpn",
@@ -361,11 +376,10 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 				Autoconnect: &mockPublisherSubscriber,
 			},
 		}
-
-		if test.isObfuscated {
-			mockConfigManager.c.Technology = config.Technology_OPENVPN
-			mockConfigManager.c.AutoConnectData.Obfuscate = true
+		if test.technology != config.Technology_UNKNOWN_TECHNOLOGY {
+			mockConfigManager.c.Technology = test.technology
 		}
+
 		dm := DataManager{
 			serversData: ServersData{
 				Servers: core_test.ServersList(),
