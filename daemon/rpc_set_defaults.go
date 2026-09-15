@@ -51,6 +51,7 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 			switch result.Err {
 			case internal.ErrNotLoggedIn:
 				log.Info("trying to log out with set defaults, user already logged out")
+				result.Status = internal.CodeSuccess
 			default:
 				log.Error("error while trying to logout:", result.Err)
 				return &pb.Payload{
@@ -60,7 +61,7 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 		}
 
 		switch result.Status {
-		case internal.CodeSuccess, internal.CodeTokenStillValid, 0:
+		case internal.CodeSuccess, internal.CodeTokenStillValid:
 			log.Info("set defaults logout successful")
 		default:
 			log.Error("logout returned non success return code", result.Status)

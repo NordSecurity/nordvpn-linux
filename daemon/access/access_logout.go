@@ -159,7 +159,7 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 	}
 	// Only show special message if user logged in with token and logged out with revoke token
 	if input.RevokeToken && isRevokeSuccessful && isLoggedInWithManualToken {
-		return LogoutResult{Status: internal.CodeRevokedAccessToken, Err: nil}
+		return LogoutResult{Status: internal.CodeTokenRevokedSuccessfully, Err: nil}
 	}
 
 	return LogoutResult{Status: internal.CodeSuccess, Err: nil}

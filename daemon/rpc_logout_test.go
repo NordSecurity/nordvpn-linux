@@ -57,7 +57,7 @@ func TestLogout_Token(t *testing.T) {
 			name:              "Revoke token while logged in with token",
 			revokeToken:       true,
 			loggedInWithToken: true,
-			result:            internal.CodeRevokedAccessToken,
+			result:            internal.CodeTokenRevokedSuccessfully,
 		},
 		{
 			name:              "Revoke token while logged in with oauth",
