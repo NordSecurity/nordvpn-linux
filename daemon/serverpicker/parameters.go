@@ -1,6 +1,8 @@
 package serverpicker
 
 import (
+	"strings"
+
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/core"
 )
@@ -49,4 +51,13 @@ func GetServerParameters(serverTag string, groupTag string, countries core.Count
 
 	parameters.City = city.Name
 	return parameters
+}
+
+func IsP2PGroup(tag string, group string) bool {
+	tag = strings.ToLower(strings.TrimSpace(tag))
+	group = strings.ToLower(strings.TrimSpace(group))
+	if strings.Contains(tag, "p2p") || group == "p2p" {
+		return true
+	}
+	return false
 }
