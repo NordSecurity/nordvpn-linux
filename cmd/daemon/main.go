@@ -190,8 +190,8 @@ func main() {
 		}
 	}
 
-	if err := daemon.MigrateDeprecatedRegionalAutoconnect(fsystem); err != nil {
-		log.Warn("failed to migrate regional autoconnect group:", err)
+	if err := daemon.MigrateDeprecatedGroupsAutoconnect(fsystem); err != nil {
+		log.Warn("failed to migrate deprecated autoconnect groups:", err)
 	}
 
 	// Events

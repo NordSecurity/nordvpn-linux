@@ -384,6 +384,21 @@ func (r *RPC) doAutoConnect() error {
 		return errAutoConnectDisabled
 	}
 
+	// Migration of deprecated groups failed at init
+	if config.IsDeprecatedP2PGroup(cfg.AutoConnectData.Group) || serverpicker.IsP2PGroup(cfg.AutoConnectData.ServerTag, "") {
+		// Try to migrate again
+		err := MigrateDeprecatedGroupsAutoconnect(r.cm)
+		if err != nil {
+			log.Warn("failed to migrate deprecated groups in doAutoConnect")
+		}
+
+		// Cleanup for current connection
+		cfg.AutoConnectData.Group = config.ServerGroup_UNDEFINED
+		if cfg.AutoConnectData.Country == "" && cfg.AutoConnectData.City == "" {
+			cfg.AutoConnectData.ServerTag = ""
+		}
+	}
+
 	if cfg.Technology == config.Technology_NORDWHISPER && !features.NordWhisperEnabled {
 		log.Debug("technology was configured to NordWhisper, but NordWhisper was disabled, switching to NordLynx")
 		if err := r.fallbackTechnology(config.Technology_NORDLYNX); err != nil {

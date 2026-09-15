@@ -148,8 +148,8 @@ def test_status_change_technology_and_protocol(
         "target_tech", "target_proto", "target_obfuscated", "target_group",
         "source_tech", "source_proto", "source_obfuscated", "source_group",
     ],
-    ordered_source=[[(*tech, group) for tech, group in product(lib.STANDARD_TECHNOLOGIES, lib.ADDITIONAL_GROUPS[-2:])]],
-    randomized_source=[[(*tech, group) for tech, group in product(lib.STANDARD_TECHNOLOGIES, lib.ADDITIONAL_GROUPS[-2:])]],
+    ordered_source=[[(*tech, group) for tech, group in product(lib.STANDARD_TECHNOLOGIES, lib.ADDITIONAL_GROUPS[-1:])]],
+    randomized_source=[[(*tech, group) for tech, group in product(lib.STANDARD_TECHNOLOGIES, lib.ADDITIONAL_GROUPS[-1:])]],
     generate_all=IS_NIGHTLY,
     id_pattern="{source_tech}-{source_proto}-{source_obfuscated}-"
                "{target_tech}-{target_proto}-{target_obfuscated}-"

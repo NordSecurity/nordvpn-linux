@@ -8,15 +8,15 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
-// MigrateDeprecatedRegionalAutoconnect removes the deprecated regional group from autoconnect.
+// MigrateDeprecatedGroupsAutoconnect removes the deprecated regional and P2P groups from autoconnect.
 // If it was the only target, ServerTag is cleared so autoconnect falls back to quick connect.
 // The migration is idempotent.
-func MigrateDeprecatedRegionalAutoconnect(cm config.Manager) error {
+func MigrateDeprecatedGroupsAutoconnect(cm config.Manager) error {
 	var cfg config.Config
 	if err := cm.Load(&cfg); err != nil {
 		return fmt.Errorf("loading config: %w", err)
 	}
-	if !config.IsRegionalGroup(cfg.AutoConnectData.Group) {
+	if !config.IsRegionalGroup(cfg.AutoConnectData.Group) && !config.IsDeprecatedP2PGroup(cfg.AutoConnectData.Group) {
 		return nil
 	}
 	return cm.SaveWith(func(c config.Config) config.Config {

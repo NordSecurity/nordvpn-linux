@@ -173,8 +173,8 @@ $ \fBnordvpn connect AU\fR
 \fBExample \&5. Connect to a server in a specific group\fR
 .RS 4
 .nf
-$ \fBnordvpn connect P2P\fR
-$ \fBnordvpn connect The_Americas\fR
+$ \fBnordvpn connect Double_VPN\fR
+$ \fBnordvpn connect Onion_Over_VPN\fR
 $ \fBnordvpn connect Dedicated_IP\fR
 .fi
 .RE
@@ -182,7 +182,7 @@ $ \fBnordvpn connect Dedicated_IP\fR
 \fBExample \&6. Connect to a server in a specific group and country\fR
 .RS 4
 .nf
-$ \fBnordvpn connect --group P2P Germany\fR
+$ \fBnordvpn connect --group Onion_Over_VPN Netherlands\fR
 .fi
 .RE
 .PP

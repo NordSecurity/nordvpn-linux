@@ -32,6 +32,10 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		}, nil
 	}
 
+	if serverpicker.IsP2PGroup(in.ServerTag, in.ServerGroup) {
+		return &pb.Payload{Type: internal.CodeP2PDeprecated}, nil
+	}
+
 	if in.GetEnabled() && serverpicker.IsDedicatedServer(in.ServerTag, in.ServerGroup) {
 		if !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
 			return &pb.Payload{Type: internal.CodeGroupNonexisting}, nil
