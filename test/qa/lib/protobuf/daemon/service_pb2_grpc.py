@@ -174,11 +174,6 @@ class DaemonStub(object):
                 request_serializer=set__pb2.SetTechnologyRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
-        self.SetObfuscate = channel.unary_unary(
-                '/pb.Daemon/SetObfuscate',
-                request_serializer=set__pb2.SetGenericRequest.SerializeToString,
-                response_deserializer=common__pb2.Payload.FromString,
-                _registered_method=True)
         self.SetPostQuantum = channel.unary_unary(
                 '/pb.Daemon/SetPostQuantum',
                 request_serializer=set__pb2.SetGenericRequest.SerializeToString,
@@ -459,12 +454,6 @@ class DaemonServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def SetTechnology(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def SetObfuscate(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -755,11 +744,6 @@ def add_DaemonServicer_to_server(servicer, server):
             'SetTechnology': grpc.unary_unary_rpc_method_handler(
                     servicer.SetTechnology,
                     request_deserializer=set__pb2.SetTechnologyRequest.FromString,
-                    response_serializer=common__pb2.Payload.SerializeToString,
-            ),
-            'SetObfuscate': grpc.unary_unary_rpc_method_handler(
-                    servicer.SetObfuscate,
-                    request_deserializer=set__pb2.SetGenericRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
             ),
             'SetPostQuantum': grpc.unary_unary_rpc_method_handler(
@@ -1540,33 +1524,6 @@ class Daemon(object):
             target,
             '/pb.Daemon/SetTechnology',
             set__pb2.SetTechnologyRequest.SerializeToString,
-            common__pb2.Payload.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def SetObfuscate(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/pb.Daemon/SetObfuscate',
-            set__pb2.SetGenericRequest.SerializeToString,
             common__pb2.Payload.FromString,
             options,
             channel_credentials,
