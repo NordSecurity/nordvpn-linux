@@ -113,7 +113,6 @@ const Settings$json = {
       '6': '.pb.Allowlist',
       '10': 'allowlist'
     },
-    {'1': 'obfuscate', '3': 15, '4': 1, '5': 8, '10': 'obfuscate'},
     {'1': 'virtualLocation', '3': 16, '4': 1, '5': 8, '10': 'virtualLocation'},
     {'1': 'postquantum_vpn', '3': 17, '4': 1, '5': 8, '10': 'postquantumVpn'},
     {
@@ -127,6 +126,10 @@ const Settings$json = {
     {'1': 'arp_ignore', '3': 19, '4': 1, '5': 8, '10': 'arpIgnore'},
     {'1': 'ech', '3': 20, '4': 1, '5': 8, '10': 'ech'},
   ],
+  '9': [
+    {'1': 15, '2': 16},
+  ],
+  '10': ['obfuscate'],
 };
 
 /// Descriptor for `Settings`. Decode as a `google.protobuf.DescriptorProto`.
@@ -140,11 +143,11 @@ final $typed_data.Uint8List settingsDescriptor = $convert.base64Decode(
     'CgNkbnMYCiADKAlSA2RucxI0ChZ0aHJlYXRfcHJvdGVjdGlvbl9saXRlGAsgASgIUhR0aHJlYX'
     'RQcm90ZWN0aW9uTGl0ZRIsCghwcm90b2NvbBgMIAEoDjIQLmNvbmZpZy5Qcm90b2NvbFIIcHJv'
     'dG9jb2wSIwoNbGFuX2Rpc2NvdmVyeRgNIAEoCFIMbGFuRGlzY292ZXJ5EisKCWFsbG93bGlzdB'
-    'gOIAEoCzINLnBiLkFsbG93bGlzdFIJYWxsb3dsaXN0EhwKCW9iZnVzY2F0ZRgPIAEoCFIJb2Jm'
-    'dXNjYXRlEigKD3ZpcnR1YWxMb2NhdGlvbhgQIAEoCFIPdmlydHVhbExvY2F0aW9uEicKD3Bvc3'
-    'RxdWFudHVtX3ZwbhgRIAEoCFIOcG9zdHF1YW50dW1WcG4SPQoNdXNlcl9zZXR0aW5ncxgSIAEo'
-    'CzIYLnBiLlVzZXJTcGVjaWZpY1NldHRpbmdzUgx1c2VyU2V0dGluZ3MSHQoKYXJwX2lnbm9yZR'
-    'gTIAEoCFIJYXJwSWdub3JlEhAKA2VjaBgUIAEoCFIDZWNo');
+    'gOIAEoCzINLnBiLkFsbG93bGlzdFIJYWxsb3dsaXN0EigKD3ZpcnR1YWxMb2NhdGlvbhgQIAEo'
+    'CFIPdmlydHVhbExvY2F0aW9uEicKD3Bvc3RxdWFudHVtX3ZwbhgRIAEoCFIOcG9zdHF1YW50dW'
+    '1WcG4SPQoNdXNlcl9zZXR0aW5ncxgSIAEoCzIYLnBiLlVzZXJTcGVjaWZpY1NldHRpbmdzUgx1'
+    'c2VyU2V0dGluZ3MSHQoKYXJwX2lnbm9yZRgTIAEoCFIJYXJwSWdub3JlEhAKA2VjaBgUIAEoCF'
+    'IDZWNoSgQIDxAQUglvYmZ1c2NhdGU=');
 
 @$core.Deprecated('Use userSpecificSettingsDescriptor instead')
 const UserSpecificSettings$json = {

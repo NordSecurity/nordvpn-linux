@@ -230,13 +230,6 @@ class DaemonClient extends $grpc.Client {
     return $createUnaryCall(_$setTechnology, request, options: options);
   }
 
-  $grpc.ResponseFuture<$0.Payload> setObfuscate(
-    $15.SetGenericRequest request, {
-    $grpc.CallOptions? options,
-  }) {
-    return $createUnaryCall(_$setObfuscate, request, options: options);
-  }
-
   $grpc.ResponseFuture<$0.Payload> setPostQuantum(
     $15.SetGenericRequest request, {
     $grpc.CallOptions? options,
@@ -545,11 +538,6 @@ class DaemonClient extends $grpc.Client {
       $grpc.ClientMethod<$15.SetTechnologyRequest, $0.Payload>(
           '/pb.Daemon/SetTechnology',
           ($15.SetTechnologyRequest value) => value.writeToBuffer(),
-          $0.Payload.fromBuffer);
-  static final _$setObfuscate =
-      $grpc.ClientMethod<$15.SetGenericRequest, $0.Payload>(
-          '/pb.Daemon/SetObfuscate',
-          ($15.SetGenericRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
   static final _$setPostQuantum =
       $grpc.ClientMethod<$15.SetGenericRequest, $0.Payload>(
@@ -860,14 +848,6 @@ abstract class DaemonServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) =>
             $15.SetTechnologyRequest.fromBuffer(value),
-        ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetGenericRequest, $0.Payload>(
-        'SetObfuscate',
-        setObfuscate_Pre,
-        false,
-        false,
-        ($core.List<$core.int> value) =>
-            $15.SetGenericRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$15.SetGenericRequest, $0.Payload>(
         'SetPostQuantum',
@@ -1264,14 +1244,6 @@ abstract class DaemonServiceBase extends $grpc.Service {
 
   $async.Future<$0.Payload> setTechnology(
       $grpc.ServiceCall call, $15.SetTechnologyRequest request);
-
-  $async.Future<$0.Payload> setObfuscate_Pre($grpc.ServiceCall $call,
-      $async.Future<$15.SetGenericRequest> $request) async {
-    return setObfuscate($call, await $request);
-  }
-
-  $async.Future<$0.Payload> setObfuscate(
-      $grpc.ServiceCall call, $15.SetGenericRequest request);
 
   $async.Future<$0.Payload> setPostQuantum_Pre($grpc.ServiceCall $call,
       $async.Future<$15.SetGenericRequest> $request) async {
