@@ -48,7 +48,6 @@ func configToProtobuf(cfg *config.Config, uid int64) *pb.Settings {
 			Ports:   &ports,
 			Subnets: subnets,
 		},
-		Obfuscate:       cfg.AutoConnectData.Obfuscate,
 		VirtualLocation: cfg.VirtualLocation.Get(),
 		UserSettings: &pb.UserSpecificSettings{
 			Uid:    uid,
