@@ -62,7 +62,7 @@ func TestRPCGroups(t *testing.T) {
 	}
 }
 
-func TestRPCGroups_RegionalGroupsFiltered(t *testing.T) {
+func TestRPCGroups_DeprecatedGroupsFiltered(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	dm := testNewDataManager()
@@ -79,7 +79,14 @@ func TestRPCGroups_RegionalGroupsFiltered(t *testing.T) {
 			Technologies: core.Technologies{
 				{ID: core.WireguardTech, Pivot: core.Pivot{Status: core.Online}},
 			},
-			Groups: core.Groups{{ID: config.ServerGroup_P2P, Title: "P2P"}},
+			Groups: core.Groups{{ID: 15, Title: "P2P"}},
+		},
+		{
+			Status: core.Online,
+			Technologies: core.Technologies{
+				{ID: core.WireguardTech, Pivot: core.Pivot{Status: core.Online}},
+			},
+			Groups: core.Groups{{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double_VPN"}},
 		},
 	}
 
@@ -99,7 +106,7 @@ func TestRPCGroups_RegionalGroupsFiltered(t *testing.T) {
 
 	assert.Equal(t, internal.CodeSuccess, payload.Type)
 	assert.Equal(t, 1, len(payload.Servers))
-	assert.Equal(t, "P2P", payload.Servers[0].Name)
+	assert.Equal(t, "Double_VPN", payload.Servers[0].Name)
 }
 
 func TestRPCGroups_Successful(t *testing.T) {
@@ -136,7 +143,6 @@ func TestRPCGroups_Successful(t *testing.T) {
 			expected: []*pb.ServerGroup{
 				{Name: "Dedicated_IP", VirtualLocation: false},
 				{Name: "Double_VPN", VirtualLocation: false},
-				{Name: "P2P", VirtualLocation: false},
 				{Name: "Standard_VPN_Servers", VirtualLocation: false},
 				{Name: "Dedicated_Server", VirtualLocation: false},
 			},
@@ -150,7 +156,6 @@ func TestRPCGroups_Successful(t *testing.T) {
 			expected: []*pb.ServerGroup{
 				{Name: "Dedicated_IP", VirtualLocation: false},
 				{Name: "Double_VPN", VirtualLocation: false},
-				{Name: "P2P", VirtualLocation: false},
 				{Name: "Standard_VPN_Servers", VirtualLocation: false},
 			},
 		},
@@ -163,7 +168,6 @@ func TestRPCGroups_Successful(t *testing.T) {
 			expected: []*pb.ServerGroup{
 				{Name: "Dedicated_IP", VirtualLocation: false},
 				{Name: "Double_VPN", VirtualLocation: false},
-				{Name: "P2P", VirtualLocation: false},
 				{Name: "Standard_VPN_Servers", VirtualLocation: false},
 				{Name: "Dedicated_Server", VirtualLocation: false},
 			},

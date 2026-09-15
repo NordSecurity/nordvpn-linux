@@ -328,7 +328,6 @@ func TestItemValueToString(t *testing.T) {
 		{pb.UIEvent_OBFUSCATED, "obfuscated"},
 		{pb.UIEvent_ONION_OVER_VPN, "onion_over_vpn"},
 		{pb.UIEvent_DOUBLE_VPN, "double_vpn"},
-		{pb.UIEvent_P2P, "p2p"},
 		{pb.UIEvent_PAUSE_5_MIN, "5_minutes"},
 		{pb.UIEvent_PAUSE_15_MIN, "15_minutes"},
 		{pb.UIEvent_PAUSE_30_MIN, "30_minutes"},

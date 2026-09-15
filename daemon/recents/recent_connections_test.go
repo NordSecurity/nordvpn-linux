@@ -218,7 +218,7 @@ func TestRecentConnectionsStore_Find_AllFieldsMustMatch(t *testing.T) {
 	base := Model{
 		Country:            "USA",
 		City:               "New York",
-		Group:              config.ServerGroup_P2P,
+		Group:              config.ServerGroup_ONION_OVER_VPN,
 		CountryCode:        "US",
 		SpecificServerName: "US #1234",
 		SpecificServer:     "us1234",
@@ -668,7 +668,7 @@ func TestRecentConnectionsStore_Add_SpecificServerWithGroup(t *testing.T) {
 	conn1 := Model{
 		SpecificServerName: "uk1234",
 		SpecificServer:     "uk1234",
-		Group:              config.ServerGroup_P2P,
+		Group:              config.ServerGroup_ONION_OVER_VPN,
 		ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 	}
 

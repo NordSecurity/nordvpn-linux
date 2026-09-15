@@ -14,6 +14,7 @@ const (
 	ServerUnavailableErrorMessage = "The specified server is not available at the moment or does not support your connection settings."
 	TagNonexistentErrorMessage    = "The specified server does not exist."
 	GroupNonexistentErrorMessage  = "The specified group does not exist."
+	P2PDeprecatedMessage          = "P2P group is no longer available. All servers now support P2P."
 	FilterNonExistentErrorMessage = "The specified filter does not exist."
 	DoubleGroupErrorMessage       = "You cannot connect to a group and set the group option at the same time."
 

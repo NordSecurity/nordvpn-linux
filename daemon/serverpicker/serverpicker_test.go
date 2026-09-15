@@ -166,29 +166,29 @@ func TestResolveServerGroup(t *testing.T) {
 			err:           nil,
 		},
 		{
-			input:         NewSearchParams("", "p2p", ""),
-			expectedGroup: config.ServerGroup_P2P,
+			input:         NewSearchParams("", "double_vpn", ""),
+			expectedGroup: config.ServerGroup_DOUBLE_VPN,
 			err:           nil,
 		},
 		{
-			input:         NewSearchParams("p2p", "", ""),
+			input:         NewSearchParams("double_vpn", "", ""),
 			tagChanged:    true,
-			expectedGroup: config.ServerGroup_P2P,
+			expectedGroup: config.ServerGroup_DOUBLE_VPN,
 			err:           nil,
 		},
 		{
-			input:         NewSearchParams("p2p", "p2p", ""),
+			input:         NewSearchParams("double_vpn", "double_vpn", ""),
 			expectedGroup: config.ServerGroup_UNDEFINED,
 			err:           internal.ErrDoubleGroup,
 		},
 		{
-			input:         NewSearchParams("p2p", "quantum_vpn", ""),
+			input:         NewSearchParams("double_vpn", "quantum_vpn", ""),
 			expectedGroup: config.ServerGroup_UNDEFINED,
 			err:           internal.ErrGroupDoesNotExist,
 		},
 		{
-			input:         NewSearchParams("quantum_vpn", "p2p", ""),
-			expectedGroup: config.ServerGroup_P2P,
+			input:         NewSearchParams("quantum_vpn", "double_vpn", ""),
+			expectedGroup: config.ServerGroup_DOUBLE_VPN,
 			err:           nil,
 		},
 		{
@@ -197,7 +197,7 @@ func TestResolveServerGroup(t *testing.T) {
 			err:           nil,
 		},
 		{
-			input:         NewSearchParams("p2p us1234", "", ""),
+			input:         NewSearchParams("double_vpn us1234", "", ""),
 			expectedGroup: config.ServerGroup_UNDEFINED,
 			err:           nil,
 		},
@@ -242,7 +242,7 @@ func TestGroupConvert(t *testing.T) {
 		},
 		{
 			"P2P",
-			config.ServerGroup_P2P,
+			config.ServerGroup_UNDEFINED,
 		},
 		{
 			"Europe",
@@ -261,7 +261,7 @@ func TestGroupConvert(t *testing.T) {
 			config.ServerGroup_UNDEFINED,
 		},
 		{
-			"neflix & chill",
+			"netflix & chill",
 			config.ServerGroup_UNDEFINED,
 		},
 	}
@@ -416,8 +416,8 @@ func TestServerTagFromString(t *testing.T) {
 				},
 			},
 			tag:      "",
-			group:    config.ServerGroup_P2P,
-			expected: core.ServerTag{Action: core.ServerBySpeed, ID: int64(config.ServerGroup_P2P)},
+			group:    config.ServerGroup_DOUBLE_VPN,
+			expected: core.ServerTag{Action: core.ServerBySpeed, ID: int64(config.ServerGroup_DOUBLE_VPN)},
 			hasError: false,
 		},
 		{
@@ -445,7 +445,7 @@ func TestServerTagFromString(t *testing.T) {
 				},
 			},
 			tag:      "Spain",
-			group:    config.ServerGroup_P2P,
+			group:    config.ServerGroup_DOUBLE_VPN,
 			expected: core.ServerTag{Action: core.ServerByCountry, ID: 202},
 			hasError: false,
 		},
@@ -717,15 +717,15 @@ func TestGetServerParameters(t *testing.T) {
 	}{
 		{
 			name:     "group found for group name",
-			group:    "p2p",
+			group:    "double_vpn",
 			tag:      "",
-			expected: ServerParameters{Group: config.ServerGroup_P2P},
+			expected: ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
 		},
 		{
 			name:     "group name is in tag field",
 			group:    "",
-			tag:      "p2p",
-			expected: ServerParameters{Group: config.ServerGroup_P2P},
+			tag:      "double_vpn",
+			expected: ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
 		},
 		{
 			name:     "country name",
@@ -741,9 +741,9 @@ func TestGetServerParameters(t *testing.T) {
 		},
 		{
 			name:     "country code + group",
-			group:    "p2p",
+			group:    "double_vpn",
 			tag:      "De",
-			expected: ServerParameters{Group: config.ServerGroup_P2P, Country: "Germany", CountryCode: "DE"},
+			expected: ServerParameters{Group: config.ServerGroup_DOUBLE_VPN, Country: "Germany", CountryCode: "DE"},
 		},
 		{
 			name:     "city name",
@@ -765,9 +765,9 @@ func TestGetServerParameters(t *testing.T) {
 		},
 		{
 			name:     "country code + city + group",
-			group:    "p2p",
+			group:    "double_vpn",
 			tag:      "de berlin",
-			expected: ServerParameters{Group: config.ServerGroup_P2P, Country: "Germany", CountryCode: "DE", City: "Berlin"},
+			expected: ServerParameters{Group: config.ServerGroup_DOUBLE_VPN, Country: "Germany", CountryCode: "DE", City: "Berlin"},
 		},
 		{
 			name:     "server name",
@@ -777,9 +777,9 @@ func TestGetServerParameters(t *testing.T) {
 		},
 		{
 			name:     "server name + group",
-			group:    "p2p",
+			group:    "double_vpn",
 			tag:      "de123",
-			expected: ServerParameters{Group: config.ServerGroup_P2P, ServerName: "de123"},
+			expected: ServerParameters{Group: config.ServerGroup_DOUBLE_VPN, ServerName: "de123"},
 		},
 	}
 
@@ -900,22 +900,22 @@ func TestNewSearchParams(t *testing.T) {
 		{
 			name:           "plain values are kept as is",
 			tag:            "it rome",
-			group:          "P2P",
+			group:          "Double_VPN",
 			excludedServer: "it1.nordvpn.com",
 			expected: SearchParams{
 				Tag:            "it rome",
-				Group:          "P2P",
+				Group:          "Double_VPN",
 				ExcludedServer: "it1.nordvpn.com",
 			},
 		},
 		{
 			name:           "leading and trailing whitespace is trimmed from tag and group",
 			tag:            "  it rome  ",
-			group:          "  P2P ",
+			group:          "  Double_VPN ",
 			excludedServer: "it1.nordvpn.com",
 			expected: SearchParams{
 				Tag:            "it rome",
-				Group:          "P2P",
+				Group:          "Double_VPN",
 				ExcludedServer: "it1.nordvpn.com",
 			},
 		},

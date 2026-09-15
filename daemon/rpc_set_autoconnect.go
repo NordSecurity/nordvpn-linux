@@ -3,6 +3,7 @@ package daemon
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
 	"github.com/NordSecurity/nordvpn-linux/config/remote"
@@ -30,6 +31,11 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		return &pb.Payload{
 			Type: internal.CodeNothingToDo,
 		}, nil
+	}
+
+	gr := strings.ToLower(strings.TrimSpace(in.ServerGroup))
+	if gr == "p2p" {
+		return &pb.Payload{Type: internal.CodeP2PDeprecated}, nil
 	}
 
 	if in.GetEnabled() && serverpicker.IsDedicatedServer(in.ServerTag, in.ServerGroup) {

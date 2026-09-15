@@ -824,7 +824,6 @@ func TestHasSensitiveServerGroup(t *testing.T) {
 			name: "no_sensitive_groups",
 			groups: []config.ServerGroup{
 				config.ServerGroup_STANDARD_VPN_SERVERS,
-				config.ServerGroup_P2P,
 			},
 			want: false,
 		},
@@ -1389,11 +1388,11 @@ func TestReportAutoConnectTarget(t *testing.T) {
 		},
 		{
 			name:        "specialty group target - no tag",
-			ac:          config.AutoConnectData{Group: config.ServerGroup_P2P},
+			ac:          config.AutoConnectData{Group: config.ServerGroup_DOUBLE_VPN},
 			wantPref:    moose.NordvpnappConnectionPreferenceSpecific,
 			wantCountry: "",
 			wantCity:    "",
-			wantGroup:   moose.NordvpnappServerGroupP2p,
+			wantGroup:   moose.NordvpnappServerGroupDoubleVpn,
 		},
 		{
 			name:      "group - onion over vpn",
