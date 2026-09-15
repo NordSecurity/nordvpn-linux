@@ -36,33 +36,32 @@ class SetErrorCode extends $pb.ProtobufEnum {
   const SetErrorCode._(super.value, super.name);
 }
 
-class SetThreatProtectionLiteStatus extends $pb.ProtobufEnum {
-  static const SetThreatProtectionLiteStatus TPL_CONFIGURED =
-      SetThreatProtectionLiteStatus._(
-          0, _omitEnumNames ? '' : 'TPL_CONFIGURED');
-  static const SetThreatProtectionLiteStatus TPL_CONFIGURED_DNS_RESET =
-      SetThreatProtectionLiteStatus._(
-          1, _omitEnumNames ? '' : 'TPL_CONFIGURED_DNS_RESET');
+class SetRealTimeProtectionStatus extends $pb.ProtobufEnum {
+  static const SetRealTimeProtectionStatus RTP_CONFIGURED =
+      SetRealTimeProtectionStatus._(0, _omitEnumNames ? '' : 'RTP_CONFIGURED');
+  static const SetRealTimeProtectionStatus RTP_CONFIGURED_DNS_RESET =
+      SetRealTimeProtectionStatus._(
+          1, _omitEnumNames ? '' : 'RTP_CONFIGURED_DNS_RESET');
 
-  static const $core.List<SetThreatProtectionLiteStatus> values =
-      <SetThreatProtectionLiteStatus>[
-    TPL_CONFIGURED,
-    TPL_CONFIGURED_DNS_RESET,
+  static const $core.List<SetRealTimeProtectionStatus> values =
+      <SetRealTimeProtectionStatus>[
+    RTP_CONFIGURED,
+    RTP_CONFIGURED_DNS_RESET,
   ];
 
-  static final $core.List<SetThreatProtectionLiteStatus?> _byValue =
+  static final $core.List<SetRealTimeProtectionStatus?> _byValue =
       $pb.ProtobufEnum.$_initByValueList(values, 1);
-  static SetThreatProtectionLiteStatus? valueOf($core.int value) =>
+  static SetRealTimeProtectionStatus? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 
-  const SetThreatProtectionLiteStatus._(super.value, super.name);
+  const SetRealTimeProtectionStatus._(super.value, super.name);
 }
 
 class SetDNSStatus extends $pb.ProtobufEnum {
   static const SetDNSStatus DNS_CONFIGURED =
       SetDNSStatus._(0, _omitEnumNames ? '' : 'DNS_CONFIGURED');
-  static const SetDNSStatus DNS_CONFIGURED_TPL_RESET =
-      SetDNSStatus._(1, _omitEnumNames ? '' : 'DNS_CONFIGURED_TPL_RESET');
+  static const SetDNSStatus DNS_CONFIGURED_RTP_RESET =
+      SetDNSStatus._(1, _omitEnumNames ? '' : 'DNS_CONFIGURED_RTP_RESET');
   static const SetDNSStatus INVALID_DNS_ADDRESS =
       SetDNSStatus._(2, _omitEnumNames ? '' : 'INVALID_DNS_ADDRESS');
   static const SetDNSStatus TOO_MANY_VALUES =
@@ -70,7 +69,7 @@ class SetDNSStatus extends $pb.ProtobufEnum {
 
   static const $core.List<SetDNSStatus> values = <SetDNSStatus>[
     DNS_CONFIGURED,
-    DNS_CONFIGURED_TPL_RESET,
+    DNS_CONFIGURED_RTP_RESET,
     INVALID_DNS_ADDRESS,
     TOO_MANY_VALUES,
   ];

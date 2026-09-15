@@ -24,7 +24,7 @@ func TestFilesystem(t *testing.T) {
 		{
 			name: "autoconnect data is saved",
 			f: func(c Config) Config {
-				c.AutoConnectData.ThreatProtectionLite = true
+				c.AutoConnectData.RealTimeProtection = true
 				return c
 			},
 		},

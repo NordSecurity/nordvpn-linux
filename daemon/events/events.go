@@ -52,7 +52,7 @@ func NewEvents(
 	killswitch events.PublishSubcriber[bool],
 	autoconnect events.PublishSubcriber[bool],
 	dns events.PublishSubcriber[events.DataDNS],
-	tplite events.PublishSubcriber[bool],
+	protection events.PublishSubcriber[bool],
 	protocol events.PublishSubcriber[config.Protocol],
 	allowlist events.PublishSubcriber[events.DataAllowlist],
 	technology events.PublishSubcriber[config.Technology],
@@ -80,22 +80,22 @@ func NewEvents(
 ) *Events {
 	return &Events{
 		Settings: &SettingsEvents{
-			Killswitch:           killswitch,
-			Autoconnect:          autoconnect,
-			DNS:                  dns,
-			ThreatProtectionLite: tplite,
-			Protocol:             protocol,
-			Allowlist:            allowlist,
-			Technology:           technology,
-			Obfuscate:            obfuscate,
-			Firewall:             firewall,
-			Routing:              routing,
-			Notify:               notify,
-			Meshnet:              meshnet,
-			Defaults:             defaults,
-			LANDiscovery:         lanDiscovery,
-			VirtualLocation:      virtualLocation,
-			PostquantumVPN:       postquantumVpn,
+			Killswitch:         killswitch,
+			Autoconnect:        autoconnect,
+			DNS:                dns,
+			RealTimeProtection: protection,
+			Protocol:           protocol,
+			Allowlist:          allowlist,
+			Technology:         technology,
+			Obfuscate:          obfuscate,
+			Firewall:           firewall,
+			Routing:            routing,
+			Notify:             notify,
+			Meshnet:            meshnet,
+			Defaults:           defaults,
+			LANDiscovery:       lanDiscovery,
+			VirtualLocation:    virtualLocation,
+			PostquantumVPN:     postquantumVpn,
 		},
 		Service: &ServiceEvents{
 			Connect:               connect,
@@ -136,7 +136,7 @@ type SettingsPublisher interface {
 	NotifyKillswitch(bool) error
 	NotifyAutoconnect(bool) error
 	NotifyDNS(events.DataDNS) error
-	NotifyThreatProtectionLite(bool) error
+	NotifyRealTimeProtection(bool) error
 	NotifyProtocol(config.Protocol) error
 	NotifyAllowlist(events.DataAllowlist) error
 	NotifyTechnology(config.Technology) error
@@ -152,29 +152,29 @@ type SettingsPublisher interface {
 }
 
 type SettingsEvents struct {
-	Killswitch           events.PublishSubcriber[bool]
-	Autoconnect          events.PublishSubcriber[bool]
-	DNS                  events.PublishSubcriber[events.DataDNS]
-	ThreatProtectionLite events.PublishSubcriber[bool]
-	Protocol             events.PublishSubcriber[config.Protocol]
-	Allowlist            events.PublishSubcriber[events.DataAllowlist]
-	Technology           events.PublishSubcriber[config.Technology]
-	Obfuscate            events.PublishSubcriber[bool]
-	Firewall             events.PublishSubcriber[bool]
-	Routing              events.PublishSubcriber[bool]
-	Notify               events.PublishSubcriber[bool]
-	Meshnet              events.PublishSubcriber[bool]
-	Defaults             events.PublishSubcriber[any]
-	LANDiscovery         events.PublishSubcriber[bool]
-	VirtualLocation      events.PublishSubcriber[bool]
-	PostquantumVPN       events.PublishSubcriber[bool]
+	Killswitch         events.PublishSubcriber[bool]
+	Autoconnect        events.PublishSubcriber[bool]
+	DNS                events.PublishSubcriber[events.DataDNS]
+	RealTimeProtection events.PublishSubcriber[bool]
+	Protocol           events.PublishSubcriber[config.Protocol]
+	Allowlist          events.PublishSubcriber[events.DataAllowlist]
+	Technology         events.PublishSubcriber[config.Technology]
+	Obfuscate          events.PublishSubcriber[bool]
+	Firewall           events.PublishSubcriber[bool]
+	Routing            events.PublishSubcriber[bool]
+	Notify             events.PublishSubcriber[bool]
+	Meshnet            events.PublishSubcriber[bool]
+	Defaults           events.PublishSubcriber[any]
+	LANDiscovery       events.PublishSubcriber[bool]
+	VirtualLocation    events.PublishSubcriber[bool]
+	PostquantumVPN     events.PublishSubcriber[bool]
 }
 
 func (s *SettingsEvents) Subscribe(to SettingsPublisher) {
 	s.Killswitch.Subscribe(to.NotifyKillswitch)
 	s.Autoconnect.Subscribe(to.NotifyAutoconnect)
 	s.DNS.Subscribe(to.NotifyDNS)
-	s.ThreatProtectionLite.Subscribe(to.NotifyThreatProtectionLite)
+	s.RealTimeProtection.Subscribe(to.NotifyRealTimeProtection)
 	s.Protocol.Subscribe(to.NotifyProtocol)
 	s.Allowlist.Subscribe(to.NotifyAllowlist)
 	s.Technology.Subscribe(to.NotifyTechnology)
@@ -226,7 +226,7 @@ func (s *SettingsEvents) Publish(cfg config.Config) {
 	s.Routing.Publish(cfg.Routing.Get())
 	s.Autoconnect.Publish(cfg.AutoConnect)
 	s.DNS.Publish(events.DataDNS{Ips: cfg.AutoConnectData.DNS})
-	s.ThreatProtectionLite.Publish(cfg.AutoConnectData.ThreatProtectionLite)
+	s.RealTimeProtection.Publish(cfg.AutoConnectData.RealTimeProtection)
 	s.Protocol.Publish(cfg.AutoConnectData.Protocol)
 	s.Allowlist.Publish(events.DataAllowlist{
 		TCPPorts: cfg.AutoConnectData.Allowlist.Ports.TCP.ToSlice(),

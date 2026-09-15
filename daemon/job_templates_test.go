@@ -26,7 +26,7 @@ type mockTemplateCDN struct {
 	getCalls int
 }
 
-func (*mockTemplateCDN) FetchThreatProtectionLite() (*core.NameServers, error) { return nil, nil }
+func (*mockTemplateCDN) FetchRealTimeProtection() (*core.NameServers, error) { return nil, nil }
 
 func (*mockTemplateCDN) GetRemoteFile(string) ([]byte, error) { return nil, nil }
 

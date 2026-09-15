@@ -752,22 +752,11 @@ func getSetSubcommands(cmd *cmd, isMeshnetEnabled bool) []*cli.Command {
 				},
 			},
 		},
-		// TODO: remove in v6
-		{
-			Name:         "threatprotectionlite",
-			Aliases:      []string{"tplite", "tpl", "cybersec"},
-			Usage:        SetRealTimeProtectionUsageText,
-			Action:       cmd.SetThreatProtectionLite,
-			BashComplete: cmd.SetBoolAutocomplete,
-			ArgsUsage:    SetRealTimeProtectionArgsUsageText,
-			Description:  SetRealTimeProtectionDescription,
-			Hidden:       true,
-		},
 		{
 			Name:         "protection",
 			Aliases:      []string{"protect"},
 			Usage:        SetRealTimeProtectionUsageText,
-			Action:       cmd.SetThreatProtectionLite,
+			Action:       cmd.SetRealTimeProtection,
 			BashComplete: cmd.SetBoolAutocomplete,
 			ArgsUsage:    SetRealTimeProtectionArgsUsageText,
 			Description:  SetRealTimeProtectionDescription,

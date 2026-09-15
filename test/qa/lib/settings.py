@@ -92,7 +92,7 @@ def dns_visible_in_settings(dns: list) -> bool:
     return all(entry in current_dns_settings for entry in dns)
 
 
-def is_tpl_enabled():
+def is_rtp_enabled():
     return Settings().get("Real-time protection") == "enabled"
 
 

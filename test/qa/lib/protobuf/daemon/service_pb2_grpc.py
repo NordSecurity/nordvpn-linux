@@ -279,10 +279,10 @@ class DaemonStub(object):
                 request_serializer=set__pb2.SetGenericRequest.SerializeToString,
                 response_deserializer=common__pb2.Payload.FromString,
                 _registered_method=True)
-        self.SetThreatProtectionLite = channel.unary_unary(
-                '/pb.Daemon/SetThreatProtectionLite',
-                request_serializer=set__pb2.SetThreatProtectionLiteRequest.SerializeToString,
-                response_deserializer=set__pb2.SetThreatProtectionLiteResponse.FromString,
+        self.SetRealTimeProtection = channel.unary_unary(
+                '/pb.Daemon/SetRealTimeProtection',
+                request_serializer=set__pb2.SetRealTimeProtectionRequest.SerializeToString,
+                response_deserializer=set__pb2.SetRealTimeProtectionResponse.FromString,
                 _registered_method=True)
         self.Ping = channel.unary_unary(
                 '/pb.Daemon/Ping',
@@ -595,7 +595,7 @@ class DaemonServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SetThreatProtectionLite(self, request, context):
+    def SetRealTimeProtection(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -862,10 +862,10 @@ def add_DaemonServicer_to_server(servicer, server):
                     request_deserializer=set__pb2.SetGenericRequest.FromString,
                     response_serializer=common__pb2.Payload.SerializeToString,
             ),
-            'SetThreatProtectionLite': grpc.unary_unary_rpc_method_handler(
-                    servicer.SetThreatProtectionLite,
-                    request_deserializer=set__pb2.SetThreatProtectionLiteRequest.FromString,
-                    response_serializer=set__pb2.SetThreatProtectionLiteResponse.SerializeToString,
+            'SetRealTimeProtection': grpc.unary_unary_rpc_method_handler(
+                    servicer.SetRealTimeProtection,
+                    request_deserializer=set__pb2.SetRealTimeProtectionRequest.FromString,
+                    response_serializer=set__pb2.SetRealTimeProtectionResponse.SerializeToString,
             ),
             'Ping': grpc.unary_unary_rpc_method_handler(
                     servicer.Ping,
@@ -2119,7 +2119,7 @@ class Daemon(object):
             _registered_method=True)
 
     @staticmethod
-    def SetThreatProtectionLite(request,
+    def SetRealTimeProtection(request,
             target,
             options=(),
             channel_credentials=None,
@@ -2132,9 +2132,9 @@ class Daemon(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/pb.Daemon/SetThreatProtectionLite',
-            set__pb2.SetThreatProtectionLiteRequest.SerializeToString,
-            set__pb2.SetThreatProtectionLiteResponse.FromString,
+            '/pb.Daemon/SetRealTimeProtection',
+            set__pb2.SetRealTimeProtectionRequest.SerializeToString,
+            set__pb2.SetRealTimeProtectionResponse.FromString,
             options,
             channel_credentials,
             insecure,

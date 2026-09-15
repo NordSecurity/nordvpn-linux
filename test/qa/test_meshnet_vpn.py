@@ -111,14 +111,14 @@ def test_set_defaults_when_connected_2nd_set(tech, proto, obfuscated):
     daemon.restart() # Temporary solution to avoid Firewall staying enabled in settings - LVPN-4121
 
     sh_no_tty.nordvpn.set.firewall("off")
-    sh_no_tty.nordvpn.set.tpl("on")
+    sh_no_tty.nordvpn.set.protection("on")
 
     sh_no_tty.nordvpn.connect()
     assert "Status: Connected" in sh_no_tty.nordvpn.status(), "Status should show connected"
 
     assert not settings.is_firewall_enabled(), "Firewall should be disabled"
     assert settings.is_meshnet_enabled(), "Meshnet should be enabled"
-    assert settings.is_tpl_enabled(), "TPL should be enabled"
+    assert settings.is_rtp_enabled(), "RTP should be enabled"
 
     if obfuscated == "on":
         assert settings.is_obfuscated_enabled(), "Obfuscation should be enabled when set to on"

@@ -17,7 +17,7 @@ description: |
   * **Secure connection.** Without encryption, your online traffic is vulnerable. NordVPN encrypts
     your connection to stop malicious actors from potentially stealing data.
   * **URL scanner.** Never visit dangerous sites by accident (such as through phishing links). Once
-    turned on, Threat Protection Lite will block access to known malicious pages.
+    turned on, Real Time Protection will block access to known malicious pages.
   * **Kill Switch.** Prevent leaks when you unexpectedly lose connection to NordVPN. Kill Switch
     automatically cuts off online access until your VPN connection is restored.
   * **Specialty servers.** Get even more security from our Double VPN servers. Access the Tor
@@ -38,8 +38,8 @@ description: |
 
   * **SmartPlay.** Safely stream your favorite content from home with no extra steps. Thanks to
     NordVPN's SmartPlay, simply connect to a VPN server in your country and enjoy.
-  * **Ad blocker.** Browse the web without ads getting in your way. Turn on our Threat Protection
-    Lite feature for Linux to block ads before they load.
+  * **Ad blocker.** Browse the web without ads getting in your way. Turn on our Real Time
+    Protection feature for Linux to block ads before they load.
   * **Meshnet.** Join up to 60 devices together to create an encrypted private network for secure
     file sharing, project collaboration, and LAN gaming.
   * **Optimized for speed.** All VPNs slow you down — but with NordVPN's infrastructure and

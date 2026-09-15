@@ -382,13 +382,11 @@ class DaemonClient extends $grpc.Client {
     return $createUnaryCall(_$setAnalytics, request, options: options);
   }
 
-  $grpc.ResponseFuture<$15.SetThreatProtectionLiteResponse>
-      setThreatProtectionLite(
-    $15.SetThreatProtectionLiteRequest request, {
+  $grpc.ResponseFuture<$15.SetRealTimeProtectionResponse> setRealTimeProtection(
+    $15.SetRealTimeProtectionRequest request, {
     $grpc.CallOptions? options,
   }) {
-    return $createUnaryCall(_$setThreatProtectionLite, request,
-        options: options);
+    return $createUnaryCall(_$setRealTimeProtection, request, options: options);
   }
 
   /// ==================== System & Monitoring ====================
@@ -647,12 +645,11 @@ class DaemonClient extends $grpc.Client {
           '/pb.Daemon/SetAnalytics',
           ($15.SetGenericRequest value) => value.writeToBuffer(),
           $0.Payload.fromBuffer);
-  static final _$setThreatProtectionLite = $grpc.ClientMethod<
-          $15.SetThreatProtectionLiteRequest,
-          $15.SetThreatProtectionLiteResponse>(
-      '/pb.Daemon/SetThreatProtectionLite',
-      ($15.SetThreatProtectionLiteRequest value) => value.writeToBuffer(),
-      $15.SetThreatProtectionLiteResponse.fromBuffer);
+  static final _$setRealTimeProtection = $grpc.ClientMethod<
+          $15.SetRealTimeProtectionRequest, $15.SetRealTimeProtectionResponse>(
+      '/pb.Daemon/SetRealTimeProtection',
+      ($15.SetRealTimeProtectionRequest value) => value.writeToBuffer(),
+      $15.SetRealTimeProtectionResponse.fromBuffer);
   static final _$ping = $grpc.ClientMethod<$0.Empty, $18.PingResponse>(
       '/pb.Daemon/Ping',
       ($0.Empty value) => value.writeToBuffer(),
@@ -1023,15 +1020,15 @@ abstract class DaemonServiceBase extends $grpc.Service {
         ($core.List<$core.int> value) =>
             $15.SetGenericRequest.fromBuffer(value),
         ($0.Payload value) => value.writeToBuffer()));
-    $addMethod($grpc.ServiceMethod<$15.SetThreatProtectionLiteRequest,
-            $15.SetThreatProtectionLiteResponse>(
-        'SetThreatProtectionLite',
-        setThreatProtectionLite_Pre,
+    $addMethod($grpc.ServiceMethod<$15.SetRealTimeProtectionRequest,
+            $15.SetRealTimeProtectionResponse>(
+        'SetRealTimeProtection',
+        setRealTimeProtection_Pre,
         false,
         false,
         ($core.List<$core.int> value) =>
-            $15.SetThreatProtectionLiteRequest.fromBuffer(value),
-        ($15.SetThreatProtectionLiteResponse value) => value.writeToBuffer()));
+            $15.SetRealTimeProtectionRequest.fromBuffer(value),
+        ($15.SetRealTimeProtectionResponse value) => value.writeToBuffer()));
     $addMethod($grpc.ServiceMethod<$0.Empty, $18.PingResponse>(
         'Ping',
         ping_Pre,
@@ -1435,14 +1432,14 @@ abstract class DaemonServiceBase extends $grpc.Service {
   $async.Future<$0.Payload> setAnalytics(
       $grpc.ServiceCall call, $15.SetGenericRequest request);
 
-  $async.Future<$15.SetThreatProtectionLiteResponse>
-      setThreatProtectionLite_Pre($grpc.ServiceCall $call,
-          $async.Future<$15.SetThreatProtectionLiteRequest> $request) async {
-    return setThreatProtectionLite($call, await $request);
+  $async.Future<$15.SetRealTimeProtectionResponse> setRealTimeProtection_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$15.SetRealTimeProtectionRequest> $request) async {
+    return setRealTimeProtection($call, await $request);
   }
 
-  $async.Future<$15.SetThreatProtectionLiteResponse> setThreatProtectionLite(
-      $grpc.ServiceCall call, $15.SetThreatProtectionLiteRequest request);
+  $async.Future<$15.SetRealTimeProtectionResponse> setRealTimeProtection(
+      $grpc.ServiceCall call, $15.SetRealTimeProtectionRequest request);
 
   $async.Future<$18.PingResponse> ping_Pre(
       $grpc.ServiceCall $call, $async.Future<$0.Empty> $request) async {

@@ -13,15 +13,15 @@ import (
 )
 
 const (
-	primaryNameserver4                       = "103.86.96.100"
-	secondaryNameserver4                     = "103.86.99.100"
-	threatProtectionLitePrimaryNameserver4   = "103.86.96.108"
-	threatProtectionLiteSecondaryNameserver4 = "103.86.99.108"
+	primaryNameserver4                     = "103.86.96.100"
+	secondaryNameserver4                   = "103.86.99.100"
+	realTimeProtectionPrimaryNameserver4   = "103.86.96.108"
+	realTimeProtectionSecondaryNameserver4 = "103.86.99.108"
 )
 
 var (
-	defaultTpServers = []string{
-		threatProtectionLitePrimaryNameserver4, threatProtectionLiteSecondaryNameserver4,
+	defaultRtpServers = []string{
+		realTimeProtectionPrimaryNameserver4, realTimeProtectionSecondaryNameserver4,
 	}
 	defaultServers = []string{primaryNameserver4, secondaryNameserver4}
 )
@@ -30,13 +30,13 @@ type CalculateRetryDelayForAttempt func(attempt int) time.Duration
 type ServersFetcher func() (*core.NameServers, error)
 
 type Getter interface {
-	Get(isThreatProtectionLite bool) []string
+	Get(isRealTimeProtection bool) []string
 	LookupIP(host string) ([]net.IP, error)
 }
 
 type NameServers struct {
-	// Pointer to the List of TP servers fetched from cloud
-	tpServers atomic.Pointer[[]string]
+	// Pointer to the List of RTP servers fetched from cloud
+	rtpServers atomic.Pointer[[]string]
 }
 
 func NewNameServers() *NameServers {
@@ -44,30 +44,30 @@ func NewNameServers() *NameServers {
 }
 
 // Get nameservers selected by the given criteria.
-func (n *NameServers) Get(isThreatProtectionLite bool) []string {
-	if isThreatProtectionLite {
-		return n.getTpServers()
+func (n *NameServers) Get(isRealTimeProtection bool) []string {
+	if isRealTimeProtection {
+		return n.getRtpServers()
 	}
 
 	return shuffleNameservers(slices.Clone(defaultServers))
 }
 
-func (n *NameServers) getTpServers() []string {
-	servers := n.tpServers.Load()
+func (n *NameServers) getRtpServers() []string {
+	servers := n.rtpServers.Load()
 	if servers != nil && len(*servers) != 0 {
 		return shuffleNameservers(slices.Clone(*servers))
 	}
 
-	return shuffleNameservers(slices.Clone(defaultTpServers))
+	return shuffleNameservers(slices.Clone(defaultRtpServers))
 }
 
 func (n *NameServers) LookupIP(host string) ([]net.IP, error) {
 	return net.LookupIP(host)
 }
 
-// FetchTPServers it is a blocking operation and fetches the TP servers until is successful.
+// FetchProtectionServers it is a blocking operation and fetches the protection servers until is successful.
 // It uses exponential backoff between retries.
-func (n *NameServers) FetchTPServers(fetcher ServersFetcher, timeoutFn CalculateRetryDelayForAttempt) error {
+func (n *NameServers) FetchProtectionServers(fetcher ServersFetcher, timeoutFn CalculateRetryDelayForAttempt) error {
 	if fetcher == nil || timeoutFn == nil {
 		return errors.New("fetcher parameters cannot be nil")
 	}
@@ -76,15 +76,15 @@ func (n *NameServers) FetchTPServers(fetcher ServersFetcher, timeoutFn Calculate
 		servers, err := fetcher()
 		if err == nil && len(servers.Servers) > 0 {
 			// copy to ensure pointer is not later modified from outside
-			log.Info("TP servers updated to", servers.Servers)
+			log.Info("RTP servers updated to", servers.Servers)
 			s := slices.Clone(servers.Servers)
-			n.tpServers.Store(&s)
+			n.rtpServers.Store(&s)
 
 			break
 		}
 
 		tryAfterDuration := timeoutFn(retry)
-		log.Errorf("failed to fetch TP servers. retry(%d) servers after %v: %v", retry, tryAfterDuration, err)
+		log.Errorf("failed to fetch RTP servers. retry(%d) servers after %v: %v", retry, tryAfterDuration, err)
 		<-time.After(tryAfterDuration)
 	}
 

@@ -53,9 +53,9 @@ type (
 	mooseConsentFunc                      func(moose.UserConsent) uint32
 	mooseSetConsentIntoContextFunc        func(moose.NordvpnappConsentLevel) uint32
 	mooseSetTokenRenewDateFunc            func(int32) uint32
-	mooseSetTPLiteUserPrefFunc            func(bool) uint32
-	mooseSetTPLiteCurrentFunc             func(bool) uint32
-	mooseUnsetTPLiteCurrentFunc           func() uint32
+	mooseSetProtectionUserPrefFunc        func(bool) uint32
+	mooseSetProtectionCurrentFunc         func(bool) uint32
+	mooseUnsetProtectionCurrentFunc       func() uint32
 	mooseSetCustomDNSMetaFunc             func(string) uint32
 	mooseSetCustomDNSValueFunc            func(bool) uint32
 	mooseUnsetContextFunc                 func() uint32
@@ -99,9 +99,9 @@ type mooseFunctions struct {
 	setAppConsentLevel              mooseConsentFunc
 	setConsentUserPreference        mooseSetConsentIntoContextFunc
 	setTokenRenewDateCurrentState   mooseSetTokenRenewDateFunc
-	setTPLiteUserPreference         mooseSetTPLiteUserPrefFunc
-	setTPLiteCurrentState           mooseSetTPLiteCurrentFunc
-	unsetTPLiteCurrentState         mooseUnsetTPLiteCurrentFunc
+	setProtectionUserPreference     mooseSetProtectionUserPrefFunc
+	setProtectionCurrentState       mooseSetProtectionCurrentFunc
+	unsetProtectionCurrentState     mooseUnsetProtectionCurrentFunc
 	setCustomDNSMeta                mooseSetCustomDNSMetaFunc
 	setCustomDNSValue               mooseSetCustomDNSValueFunc
 	unsetServerDomainCurrentState   mooseUnsetContextFunc
@@ -171,9 +171,9 @@ func NewSubscriber(
 			setAppConsentLevel:              moose.MooseNordvpnappSetConsentLevel,
 			setConsentUserPreference:        moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesConsentLevel,
 			setTokenRenewDateCurrentState:   moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateTokenRenewDateValue,
-			setTPLiteUserPreference:         moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue,
-			setTPLiteCurrentState:           moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
-			unsetTPLiteCurrentState:         moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
+			setProtectionUserPreference:     moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesThreatProtectionLiteEnabledValue,
+			setProtectionCurrentState:       moose.NordvpnappSetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
+			unsetProtectionCurrentState:     moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateThreatProtectionLiteEnabledValue,
 			setCustomDNSMeta:                moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledMeta,
 			setCustomDNSValue:               moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesCustomDnsEnabledValue,
 			unsetServerDomainCurrentState:   moose.NordvpnappUnsetContextApplicationNordvpnappConfigCurrentStateServerDomainValue,
@@ -417,8 +417,8 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		log.Moose.Warn("failed to restore token renew date:", err)
 	}
 
-	if err := s.response(s.mooseFuncs.setTPLiteUserPreference(cfg.AutoConnectData.ThreatProtectionLite)); err != nil {
-		return fmt.Errorf("setting TP Lite in user preferences: %w", err)
+	if err := s.response(s.mooseFuncs.setProtectionUserPreference(cfg.AutoConnectData.RealTimeProtection)); err != nil {
+		return fmt.Errorf("setting protection in user preferences: %w", err)
 	}
 
 	// Report the configured auto-connect target at startup / on consent so the
@@ -476,10 +476,10 @@ func (s *Subscriber) NotifyDNS(data events.DataDNS) error {
 		return fmt.Errorf("updating custom DNS context: %w", err)
 	}
 
-	// Custom DNS is not compatible with TP Lite - if Custom DNS is enabled, TP Lite should be off
+	// Custom DNS is not compatible with Real time protection - if Custom DNS is enabled, Real time protection should be off
 	if len(data.Ips) > 0 {
-		if err := s.setTPLite(false); err != nil {
-			return fmt.Errorf("disabling TP Lite after custom DNS was set: %w", err)
+		if err := s.setProtection(false); err != nil {
+			return fmt.Errorf("disabling protection after custom DNS was set: %w", err)
 		}
 	}
 
@@ -781,36 +781,36 @@ func (s *Subscriber) NotifyObfuscate(data bool) error {
 
 func (s *Subscriber) NotifyPeerUpdate([]string) error { return nil }
 
-func (s *Subscriber) NotifyThreatProtectionLite(isTPLiteEnabled bool) error {
-	if err := s.setTPLite(isTPLiteEnabled); err != nil {
-		return fmt.Errorf("setting TP Lite state (enabled=%v): %w", isTPLiteEnabled, err)
+func (s *Subscriber) NotifyRealTimeProtection(isProtectionEnabled bool) error {
+	if err := s.setProtection(isProtectionEnabled); err != nil {
+		return fmt.Errorf("setting protection state (enabled=%v): %w", isProtectionEnabled, err)
 	}
 
-	// TP Lite is not compatible with custom DNS - if TP Lite is on, Custom DNS should be off
-	if isTPLiteEnabled {
+	// Real time protection is not compatible with custom DNS - if Real time protection is on, Custom DNS should be off
+	if isProtectionEnabled {
 		disable := events.DataDNS{} // empty custom DNS
 		if err := s.setCustomDNS(disable); err != nil {
-			return fmt.Errorf("disabling custom DNS after TP Lite was enabled: %w", err)
+			return fmt.Errorf("disabling custom DNS after protection was enabled: %w", err)
 		}
 	}
 
 	return nil
 }
 
-func (s *Subscriber) setTPLite(isTPLiteEnabled bool) error {
+func (s *Subscriber) setProtection(isProtectionEnabled bool) error {
 	var errs []error
 	// User Preferences field in moose context is used to see what's the setting
 	// user selected - no matter if VPN is actively used or not.
-	if err := s.response(s.mooseFuncs.setTPLiteUserPreference(isTPLiteEnabled)); err != nil {
-		log.Moose.Warn("failed to set TP Lite in User Preferences:", err)
-		errs = append(errs, fmt.Errorf("setting TP Lite user preference (enabled=%v): %w", isTPLiteEnabled, err))
+	if err := s.response(s.mooseFuncs.setProtectionUserPreference(isProtectionEnabled)); err != nil {
+		log.Moose.Warn("failed to set protection in User Preferences:", err)
+		errs = append(errs, fmt.Errorf("setting protection user preference (enabled=%v): %w", isProtectionEnabled, err))
 	}
 
-	// We are also checking if TP Lite is **actively** used, this is tracked in Current State field.
-	// On disconnect (see `NotifyDisconnect`), we are unsetting TP Lite In Current State in the context,
+	// We are also checking if Real time protection is **actively** used, this is tracked in Current State field.
+	// On disconnect (see `NotifyDisconnect`), we are unsetting Real time protection In Current State in the context,
 	// because it stops being actively used after user disconnects.
 	if s.connectionStartTime.IsZero() {
-		errs = append(errs, s.response(s.mooseFuncs.setTPLiteCurrentState(isTPLiteEnabled)))
+		errs = append(errs, s.response(s.mooseFuncs.setProtectionCurrentState(isProtectionEnabled)))
 	}
 
 	return errors.Join(errs...)
@@ -977,7 +977,7 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 			ConnectionFunnel:     connectionFunnel,
 			VpnConnectionTrigger: vpnConnectionTrigger,
 		},
-		threatProtectionLiteToInternalType(data.ThreatProtectionLite),
+		realTimeProtectionToInternalType(data.RealTimeProtection),
 		exceptionCode,
 		recommendationUUID,
 		nil,
@@ -987,8 +987,8 @@ func (s *Subscriber) NotifyConnect(data events.DataConnect) error {
 	}
 
 	if data.EventStatus == events.StatusSuccess {
-		if err := s.response(s.mooseFuncs.setTPLiteCurrentState(data.ThreatProtectionLite)); err != nil {
-			return fmt.Errorf("setting TP Lite current state after successful connect (enabled=%v): %w", data.ThreatProtectionLite, err)
+		if err := s.response(s.mooseFuncs.setProtectionCurrentState(data.RealTimeProtection)); err != nil {
+			return fmt.Errorf("setting protection current state after successful connect (enabled=%v): %w", data.RealTimeProtection, err)
 		}
 
 		if err := s.response(s.mooseFuncs.setIsOnVpnCurrentState(true)); err != nil {
@@ -1093,9 +1093,9 @@ func (s *Subscriber) NotifyDisconnect(data events.DataDisconnect) error {
 			data.EventStatus, connectionDuration, err)
 	}
 
-	// Unset TP Lite in Current State - user disconnected so TP Lite is not **actively** used
-	if err := s.response(s.mooseFuncs.unsetTPLiteCurrentState()); err != nil {
-		return fmt.Errorf("unsetting TP Lite current state after disconnect: %w", err)
+	// Unset Real time protection in Current State - user disconnected so Real time protection is not **actively** used
+	if err := s.response(s.mooseFuncs.unsetProtectionCurrentState()); err != nil {
+		return fmt.Errorf("unsetting protection current state after disconnect: %w", err)
 	}
 
 	if err := s.response(s.mooseFuncs.setServerCountryCurrentState(UnavailableEventParameterValue)); err != nil {
@@ -1861,8 +1861,8 @@ func (s *Subscriber) reportAutoConnectTarget(ac config.AutoConnectData) error {
 	return errors.Join(errs...)
 }
 
-// threatProtectionLiteToInternalType converts thread protection lite to the internal representation
-func threatProtectionLiteToInternalType(enabled bool) moose.NordvpnappOptBool {
+// realTimeProtectionToInternalType converts real time protection to the internal representation
+func realTimeProtectionToInternalType(enabled bool) moose.NordvpnappOptBool {
 	if enabled {
 		return moose.NordvpnappOptBoolTrue
 	}
