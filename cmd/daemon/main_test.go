@@ -41,8 +41,8 @@ func TestBuildClientAPIAndSessionStores(t *testing.T) {
 	}
 }
 
-// Test that TP nameservers and resolver are build
-func TestBuildTpServersAndResolver(t *testing.T) {
+// Test that real time protection nameservers and resolver are build
+func TestBuildProtectionServersAndResolver(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	var wg sync.WaitGroup
@@ -72,7 +72,7 @@ func TestBuildTpServersAndResolver(t *testing.T) {
 	server.Start()
 	defer server.Close()
 
-	tp, resolver := buildProtectionServersAndResolver(
+	rtp, resolver := buildProtectionServersAndResolver(
 		"test-agent",
 		server.URL(),
 		http.DefaultClient,
@@ -89,7 +89,7 @@ func TestBuildTpServersAndResolver(t *testing.T) {
 	)
 
 	assert.False(t, fetched.Load(), "fetcher must not be executed when building the objects")
-	assert.NotNil(t, tp)
+	assert.NotNil(t, rtp)
 	assert.NotNil(t, resolver)
 
 	wg.Wait()
@@ -98,11 +98,11 @@ func TestBuildTpServersAndResolver(t *testing.T) {
 
 	// retry several times, until the internal members are sync
 	for retry := 0; retry < 5; retry++ {
-		if slices.Contains(tp.Get(true), serversList[0]) {
+		if slices.Contains(rtp.Get(true), serversList[0]) {
 			break
 		}
 		time.Sleep(time.Millisecond * 2)
 	}
 
-	assert.ElementsMatch(t, serversList, tp.Get(true))
+	assert.ElementsMatch(t, serversList, rtp.Get(true))
 }

@@ -554,7 +554,7 @@ def test_settings_are_kept_after_reboot():
         assert app_settings.get(key) == expected, f"{key} is incorrect after reboot '{expected}'"
 
     assert app_settings.get("Firewall Mark") == "0x1234", "Firewall mark is not kept after reboot"
-    assert app_settings.get("DNS") == "disabled", "DNS must be disabled because TP is enabled"
+    assert app_settings.get("DNS") == "disabled", "DNS must be disabled because RTP is enabled"
 
     # set DNS and reboot the system
     assert "DNS has been successfully set to '1.1.1.1'." in sh.nordvpn.set("dns", "1.1.1.1"), "Failed to set custom DNS"

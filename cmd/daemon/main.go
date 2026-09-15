@@ -894,7 +894,7 @@ func buildProtectionServersAndResolver(
 ) (*dns.NameServers, network.DNSResolver) {
 	cdn := core.NewCDNAPI(userAgent, cdnUrl, httpClientSimple, validator)
 	protectionServers := dns.NewNameServers()
-	// fetch async the TP servers, because FetchTPServers will retry until is successful
+	// fetch async the real time protection servers, because FetchProtectionServers will retry until is successful
 	go protectionServers.FetchProtectionServers(cdn.FetchRealTimeProtection, timeoutFn)
 
 	resolver := network.NewResolver(protectionServers, fwmark, serviceEvents)

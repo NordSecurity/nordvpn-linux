@@ -20,7 +20,7 @@ const (
 )
 
 var (
-	defaultTpServers = []string{
+	defaultRtpServers = []string{
 		realTimeProtectionPrimaryNameserver4, realTimeProtectionSecondaryNameserver4,
 	}
 	defaultServers = []string{primaryNameserver4, secondaryNameserver4}
@@ -35,8 +35,8 @@ type Getter interface {
 }
 
 type NameServers struct {
-	// Pointer to the List of TP servers fetched from cloud
-	tpServers atomic.Pointer[[]string]
+	// Pointer to the List of RTP servers fetched from cloud
+	rtpServers atomic.Pointer[[]string]
 }
 
 func NewNameServers() *NameServers {
@@ -46,19 +46,19 @@ func NewNameServers() *NameServers {
 // Get nameservers selected by the given criteria.
 func (n *NameServers) Get(isRealTimeProtection bool) []string {
 	if isRealTimeProtection {
-		return n.getTpServers()
+		return n.getRtpServers()
 	}
 
 	return shuffleNameservers(slices.Clone(defaultServers))
 }
 
-func (n *NameServers) getTpServers() []string {
-	servers := n.tpServers.Load()
+func (n *NameServers) getRtpServers() []string {
+	servers := n.rtpServers.Load()
 	if servers != nil && len(*servers) != 0 {
 		return shuffleNameservers(slices.Clone(*servers))
 	}
 
-	return shuffleNameservers(slices.Clone(defaultTpServers))
+	return shuffleNameservers(slices.Clone(defaultRtpServers))
 }
 
 func (n *NameServers) LookupIP(host string) ([]net.IP, error) {
@@ -76,15 +76,15 @@ func (n *NameServers) FetchProtectionServers(fetcher ServersFetcher, timeoutFn C
 		servers, err := fetcher()
 		if err == nil && len(servers.Servers) > 0 {
 			// copy to ensure pointer is not later modified from outside
-			log.Info("TP servers updated to", servers.Servers)
+			log.Info("RTP servers updated to", servers.Servers)
 			s := slices.Clone(servers.Servers)
-			n.tpServers.Store(&s)
+			n.rtpServers.Store(&s)
 
 			break
 		}
 
 		tryAfterDuration := timeoutFn(retry)
-		log.Errorf("failed to fetch TP servers. retry(%d) servers after %v: %v", retry, tryAfterDuration, err)
+		log.Errorf("failed to fetch RTP servers. retry(%d) servers after %v: %v", retry, tryAfterDuration, err)
 		<-time.After(tryAfterDuration)
 	}
 

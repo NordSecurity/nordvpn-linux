@@ -45,19 +45,19 @@ func TestNameservers(t *testing.T) {
 		expected           []string
 	}{
 		{
-			name:               "default DNS servers, TP=false",
+			name:               "default DNS servers, RTP=false",
 			realTimeProtection: false,
-			initial:            defaultTpServers,
+			initial:            defaultRtpServers,
 			expected:           defaultServers,
 		},
 		{
-			name:               "fetch TP list and return it",
+			name:               "fetch RTP list and return it",
 			realTimeProtection: true,
-			initial:            defaultTpServers,
-			expected:           defaultTpServers,
+			initial:            defaultRtpServers,
+			expected:           defaultRtpServers,
 		},
 		{
-			name:               "fetched servers are returned for TP servers",
+			name:               "fetched servers are returned for RTP servers",
 			realTimeProtection: true,
 			initial:            []string{"1.2.3.4"},
 			expected:           []string{"1.2.3.4"},
@@ -66,7 +66,7 @@ func TestNameservers(t *testing.T) {
 			name:               "empty initial list",
 			realTimeProtection: true,
 			initial:            nil,
-			expected:           defaultTpServers,
+			expected:           defaultRtpServers,
 		},
 	}
 
@@ -75,7 +75,7 @@ func TestNameservers(t *testing.T) {
 			servers := NewNameServers()
 
 			// before fetching the servers from the API check the default values
-			assert.ElementsMatch(t, defaultTpServers, servers.Get(true))
+			assert.ElementsMatch(t, defaultRtpServers, servers.Get(true))
 			assert.ElementsMatch(t, defaultServers, servers.Get(false))
 
 			var wg sync.WaitGroup
@@ -153,10 +153,10 @@ func TestNameserversNotCrashingWithNilServersFetcher(t *testing.T) {
 	nameservers := NewNameServers()
 	assert.Error(t, nameservers.FetchProtectionServers(nil, nil))
 	// check that the default servers are returned
-	assert.ElementsMatch(t, defaultTpServers, nameservers.Get(true))
+	assert.ElementsMatch(t, defaultRtpServers, nameservers.Get(true))
 }
 
-func TestNameserversRetriesToFetchTPOnError(t *testing.T) {
+func TestNameserversRetriesToFetchRTPOnError(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	servers := []string{"1.2.3.4"}

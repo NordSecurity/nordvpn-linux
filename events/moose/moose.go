@@ -476,7 +476,7 @@ func (s *Subscriber) NotifyDNS(data events.DataDNS) error {
 		return fmt.Errorf("updating custom DNS context: %w", err)
 	}
 
-	// Custom DNS is not compatible with Real time protetion - if Custom DNS is enabled, Real time protection should be off
+	// Custom DNS is not compatible with Real time protection - if Custom DNS is enabled, Real time protection should be off
 	if len(data.Ips) > 0 {
 		if err := s.setProtection(false); err != nil {
 			return fmt.Errorf("disabling protection after custom DNS was set: %w", err)
@@ -1861,7 +1861,7 @@ func (s *Subscriber) reportAutoConnectTarget(ac config.AutoConnectData) error {
 	return errors.Join(errs...)
 }
 
-// realTimeProtectionToInternalType converts thread protection lite to the internal representation
+// realTimeProtectionToInternalType converts real time protection to the internal representation
 func realTimeProtectionToInternalType(enabled bool) moose.NordvpnappOptBool {
 	if enabled {
 		return moose.NordvpnappOptBoolTrue

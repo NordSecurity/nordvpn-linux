@@ -21,7 +21,7 @@ part 'vpn_settings_controller.g.dart';
 //   and Custom DNS is set, if user allows resetting Custom DNS, this "error"
 //   will happen
 // - protectionDisabled - error that happens when enabling Custom DNS and Real time
-//   Protection is enabled, if user allows disabling TP, this "error" will
+//   Protection is enabled, if user allows disabling RTP, this "error" will
 //   happen
 const _popupIgnoreCodes = [
   DaemonStatusCode.success,
