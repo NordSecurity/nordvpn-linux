@@ -116,7 +116,7 @@ And to run a single test:
 `mage test:qaDocker fileshare test_accept`
 
 It is possible to run multiple categories with one command by adding all the
-categories as the first argument in a string seperated by spaces:
+categories as the first argument in a string separated by spaces:
 
 `mage test:qaDocker "fileshare meshnet" test`
 
