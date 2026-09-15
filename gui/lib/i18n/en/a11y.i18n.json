@@ -13,5 +13,6 @@
   "expandibleEntryExpanded": "Expanded",
   "expandibleEntryCollapsed": "Collapsed",
   "clear": "Clear",
-  "popupWithContent": "$title. $message"
+  "popupWithContent": "$title. $message",
+  "linkWithinPopup": "Link $name"
 }
