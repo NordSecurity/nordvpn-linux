@@ -37,3 +37,22 @@ wait_for_daemon() {
         sleep 1
     done
 }
+
+redirect_logs() {
+    local log_path="${LOGS_FOLDER}"/daemon.log
+
+    mkdir -p "$(dirname "$log_path")"
+    touch "$log_path"
+    chmod 777 "$log_path"
+
+    sudo mkdir -p /etc/systemd/system/snap.nordvpn.nordvpnd.service.d
+
+    cat <<EOF | sudo tee /etc/systemd/system/snap.nordvpn.nordvpnd.service.d/override.conf > /dev/null
+[Service]
+StandardOutput=append:$log_path
+StandardError=append:$log_path
+EOF
+
+    sudo systemctl daemon-reload
+    sudo systemctl restart snap.nordvpn.nordvpnd.service
+}
