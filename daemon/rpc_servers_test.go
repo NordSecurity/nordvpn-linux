@@ -526,13 +526,7 @@ func TestLegacyXORServersNeverSurface(t *testing.T) {
 			assert.NoError(t, err)
 			countries := resp.GetServers().GetServersByCountry()
 			assert.Len(t, countries, 1, "only the standard server's country is expected")
-			for _, country := range countries {
-				for _, city := range country.Cities {
-					for _, server := range city.Servers {
-						assert.NotEqual(t, legacyXOR.Hostname, server.HostName)
-					}
-				}
-			}
+			assert.NotContains(t, fmt.Sprint(countries), legacyXOR.Hostname)
 
 			groups, err := dm.Groups(test.tech, test.proto, true)
 			assert.NoError(t, err)
@@ -598,13 +592,8 @@ func TestObfuscatedGroupNeverComesFromAServerTag(t *testing.T) {
 
 			resp, err := r.GetServers(context.Background(), &pb.Empty{})
 			assert.NoError(t, err)
-			for _, country := range resp.GetServers().GetServersByCountry() {
-				for _, city := range country.Cities {
-					for _, server := range city.Servers {
-						assert.NotContains(t, server.ServerGroups, config.ServerGroup_OBFUSCATED)
-					}
-				}
-			}
+			assert.NotContains(t, fmt.Sprint(resp.GetServers().GetServersByCountry()),
+				config.ServerGroup_OBFUSCATED.String())
 		})
 	}
 }
