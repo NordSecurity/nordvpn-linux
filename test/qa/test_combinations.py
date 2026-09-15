@@ -105,6 +105,7 @@ def test_connect_country_and_city(tech, proto, obfuscated, country, city):
     generate_all=IS_NIGHTLY,
     id_pattern="{source_tech}-{source_proto}-{source_obfuscated}-"
               "{target_tech}-{target_proto}-{target_obfuscated}",
+    always_pair=lib.NORDWHISPER_TECHNOLOGY[0]
 )
 def test_status_change_technology_and_protocol(
         source_tech,
