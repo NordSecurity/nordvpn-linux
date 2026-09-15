@@ -5,5 +5,5 @@ package pb;
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
 
 message LogoutRequest {
-  bool persist_token = 1;
+    bool revoke_token = 1;
 }

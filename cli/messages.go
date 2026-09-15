@@ -11,11 +11,13 @@ You can use NordVPN on 10 devices at the same time.`
 	ClaimOnlinePurchaseFailure = `Payment failed.
 We couldn’t process your payment. Please try again.`
 
-	LoginSuccess          = "Welcome to NordVPN! You can now connect to the VPN by using '%s connect'."
-	LogoutSuccess         = "You're logged out."
-	LogoutTokenSuccess    = "You have been logged out. To keep your account secure, we've revoked your current access token. If you want to reuse your next access token despite the potential risks, use the --" + flagPersistToken + " option when logging out."
-	LogoutUsageText       = "Logs you out"
-	PersistTokenUsageText = "Keep your current access token valid after logging out."
+	LoginSuccess              = "Welcome to NordVPN! You can now connect to the VPN by using '%s connect'."
+	LogoutSuccess             = "You're logged out."
+	LogoutTokenSuccess        = "You are logged out. Your access token is still valid and can be used to log in again.\nTo revoke it: log in with the same token, then run `nordvpn logout --revoke-token`\nManage tokens: https://my.nordaccount.com/dashboard/nordvpn/access-tokens"
+	LogoutUsageText           = "Logs you out"
+	LogoutTokenAlreadyInvalid = "Token already revoked or expired: You are logged out. Your access token was already invalid, so there was nothing to revoke."
+	LogoutRevokeTokenSuccess  = "You are logged out. Access token revoked."
+	RevokeTokenUsageText      = "Revoke your long living token after logging out"
 
 	MsgNordVPNGroup = "By default, all users who are members of the 'nordvpn' group have permission to control the NordVPN application.\nTo limit access exclusively to the root user, remove all users from the 'nordvpn' group."
 
