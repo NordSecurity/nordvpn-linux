@@ -37,11 +37,6 @@ func TestItemValueFromServerGroupString(t *testing.T) {
 			expected: pb.UIEvent_DOUBLE_VPN,
 		},
 		{
-			name:     "p2p",
-			group:    "p2p",
-			expected: pb.UIEvent_P2P,
-		},
-		{
 			name:     "empty string",
 			group:    "",
 			expected: pb.UIEvent_ITEM_VALUE_UNSPECIFIED,

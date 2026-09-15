@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/config"
@@ -278,6 +279,11 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	prelimParams := serverpicker.GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
 	r.RequestedConnParams.Set(source, serverpicker.ServerParameters{Group: prelimParams.Group})
 	r.connectionInfo.SetInitialConnecting()
+
+	gr := strings.ToLower(strings.TrimSpace(in.ServerGroup))
+	if gr == "p2p" {
+		return true, srv.Send(&pb.Payload{Type: internal.CodeP2PDeprecated})
+	}
 
 	if serverpicker.IsDedicatedServer(in.ServerTag, in.ServerGroup) {
 		// first, check if feature is enabled at all

@@ -56,7 +56,7 @@ message UIEvent {
     OBFUSCATED             = 5;
     ONION_OVER_VPN         = 6;
     DOUBLE_VPN             = 7;
-    P2P                    = 8;
+    reserved 8;
     //values for handling pause functionality analytics
     PAUSE_5_MIN      = 9;
     PAUSE_15_MIN     = 10;

@@ -188,6 +188,8 @@ func (c *cmd) Connect(ctx *cli.Context) error {
 			rpcErr = errors.New(c.injectLinkIntoMessage(client.DedicatedServersSetupURL, client.DedicatedServersSetupURLLogin, DedicatedServersNoServersAvailable))
 		case internal.CodeConnectionLimitReached:
 			rpcErr = errors.New(client.ENSConnectionLimitReached(core.CLIAppID))
+		case internal.CodeP2PDeprecated:
+			rpcErr = errors.New(internal.P2PDeprecatedMessage)
 		case internal.CodeVPNRunning:
 			color.Yellow(client.ConnectConnected)
 		case internal.CodeNothingToDo:

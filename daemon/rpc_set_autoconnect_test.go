@@ -307,11 +307,6 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 			expected:    config.AutoConnectData{Group: config.ServerGroup_STANDARD_VPN_SERVERS},
 		},
 		{
-			testName:    "for p2p",
-			serverGroup: "p2p",
-			expected:    config.AutoConnectData{Group: config.ServerGroup_P2P},
-		},
-		{
 			testName:     "for obfuscated servers",
 			serverGroup:  "obfuscated_servers",
 			isObfuscated: true,
@@ -330,8 +325,8 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 		{
 			testName:    "group name is in tag",
 			serverGroup: "",
-			tag:         "p2p",
-			expected:    config.AutoConnectData{Group: config.ServerGroup_P2P, ServerTag: "p2p"},
+			tag:         "double_vpn",
+			expected:    config.AutoConnectData{Group: config.ServerGroup_DOUBLE_VPN, ServerTag: "double_vpn"},
 		},
 		{
 			testName: "for country name",
@@ -346,8 +341,8 @@ func TestAutoconnect_SavesCorrectAutoconnectData(t *testing.T) {
 		{
 			testName:    "for country code, city name and group",
 			tag:         "de berlin",
-			serverGroup: "p2p",
-			expected:    config.AutoConnectData{Group: config.ServerGroup_P2P, Country: "Germany", CountryCode: "DE", City: "Berlin", ServerTag: "de berlin"},
+			serverGroup: "double_vpn",
+			expected:    config.AutoConnectData{Group: config.ServerGroup_DOUBLE_VPN, Country: "Germany", CountryCode: "DE", City: "Berlin", ServerTag: "de berlin"},
 		},
 	}
 
