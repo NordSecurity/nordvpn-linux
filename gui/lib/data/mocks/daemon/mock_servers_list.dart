@@ -76,7 +76,6 @@ final class MockServersList {
     const obfuscatedGroups = [config.ServerGroup.OBFUSCATED];
 
     const standardGroups = [
-      config.ServerGroup.P2P,
       config.ServerGroup.STANDARD_VPN_SERVERS,
     ];
 

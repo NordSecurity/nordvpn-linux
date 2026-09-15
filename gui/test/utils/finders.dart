@@ -193,12 +193,6 @@ Finder onionOverVpnGroupTile() {
   return onionOverVpnGroupTile;
 }
 
-Finder p2pGroupTile() {
-  final p2pGroupTile = find.byKey(ServerListWidgetKeys.p2p);
-  expect(p2pGroupTile, findsOne);
-  return p2pGroupTile;
-}
-
 // Find the gesture area from an OnOffSwitch
 Finder tapAreaInOnOffSwitch(Finder onOffSwitch) {
   expect(onOffSwitch, findsOneWidget);

@@ -52,7 +52,6 @@ class RecentConnection {
     cfg.ServerGroup.DOUBLE_VPN: t.ui.doubleVpn,
     cfg.ServerGroup.ONION_OVER_VPN: t.ui.onionOverVpn,
     cfg.ServerGroup.STANDARD_VPN_SERVERS: t.ui.standardVpnServer,
-    cfg.ServerGroup.P2P: t.ui.p2p,
     cfg.ServerGroup.OBFUSCATED: t.ui.obfuscatedServers,
     cfg.ServerGroup.DEDICATED_IP: t.ui.dedicatedIp,
     cfg.ServerGroup.DEDICATED_SERVER: t.ui.dedicatedServer,
