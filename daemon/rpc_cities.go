@@ -24,7 +24,6 @@ func (r *RPC) Cities(ctx context.Context, in *pb.CitiesRequest) (*pb.ServerGroup
 		cfg.Technology,
 		cfg.AutoConnectData.Protocol,
 		cfg.AutoConnectData.Obfuscate,
-		cfg.VirtualLocation.Get(),
 	)
 	if err != nil {
 		log.Error("failed to get cities for", in.GetCountry(), err)

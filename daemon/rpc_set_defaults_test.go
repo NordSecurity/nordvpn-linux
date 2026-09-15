@@ -75,7 +75,6 @@ func TestResetToDefaults_PauseVariants(t *testing.T) {
 						Obfuscate:            &daemonevents.MockPublisherSubscriber[bool]{},
 						Notify:               &daemonevents.MockPublisherSubscriber[bool]{},
 						LANDiscovery:         &daemonevents.MockPublisherSubscriber[bool]{},
-						VirtualLocation:      &daemonevents.MockPublisherSubscriber[bool]{},
 						PostquantumVPN:       &daemonevents.MockPublisherSubscriber[bool]{},
 						Defaults:             &daemonevents.MockPublisherSubscriber[any]{},
 					},

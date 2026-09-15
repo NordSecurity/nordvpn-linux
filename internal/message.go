@@ -1,7 +1,7 @@
 package internal
 
 const (
-	ConnectSuccess           = "You are connected to %s (%s)%s!"
+	ConnectSuccess           = "You are connected to %s (%s)!"
 	ConnectSuccessNoHostname = "You are connected to %s!"
 	ReconnectSuccess         = "You have been reconnected to %s (%s)"
 	DisconnectSuccess        = "You are disconnected from NordVPN."
@@ -19,7 +19,4 @@ const (
 
 	// UnhandledMessage represents the default message for unhandled errors
 	UnhandledMessage = "Something went wrong. Please try again. If the problem persists, contact our customer support."
-
-	// Error message when the server is a virtual location, but user has virtual-location off
-	SpecifiedServerIsVirtualLocation = "Please enable virtual location access to connect to this server."
 )
