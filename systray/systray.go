@@ -410,11 +410,6 @@ func (item *MenuItem) update() {
 	addOrUpdateMenuItem(item)
 }
 
-// close closes a clicked channel
-func (item *MenuItem) close() {
-	close(item.ClickedCh)
-}
-
 func systrayMenuItemSelected(id uint32) {
 	menuItemsLock.RLock()
 	item, ok := menuItems[id]

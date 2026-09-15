@@ -781,6 +781,11 @@ func (t *winTray) showMenu() error {
 		return ErrTrayNotReadyYet
 	}
 
+	select {
+	case TrayOpenedCh <- struct{}{}:
+	default:
+	}
+
 	const (
 		TPM_BOTTOMALIGN = 0x0020
 		TPM_LEFTALIGN   = 0x0000
