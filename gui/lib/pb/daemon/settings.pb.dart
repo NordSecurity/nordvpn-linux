@@ -210,7 +210,6 @@ class Settings extends $pb.GeneratedMessage {
     $4.Protocol? protocol,
     $core.bool? lanDiscovery,
     $0.Allowlist? allowlist,
-    $core.bool? obfuscate,
     $core.bool? virtualLocation,
     $core.bool? postquantumVpn,
     UserSpecificSettings? userSettings,
@@ -232,7 +231,6 @@ class Settings extends $pb.GeneratedMessage {
     if (protocol != null) result.protocol = protocol;
     if (lanDiscovery != null) result.lanDiscovery = lanDiscovery;
     if (allowlist != null) result.allowlist = allowlist;
-    if (obfuscate != null) result.obfuscate = obfuscate;
     if (virtualLocation != null) result.virtualLocation = virtualLocation;
     if (postquantumVpn != null) result.postquantumVpn = postquantumVpn;
     if (userSettings != null) result.userSettings = userSettings;
@@ -272,7 +270,6 @@ class Settings extends $pb.GeneratedMessage {
     ..aOB(13, _omitFieldNames ? '' : 'lanDiscovery')
     ..aOM<$0.Allowlist>(14, _omitFieldNames ? '' : 'allowlist',
         subBuilder: $0.Allowlist.create)
-    ..aOB(15, _omitFieldNames ? '' : 'obfuscate')
     ..aOB(16, _omitFieldNames ? '' : 'virtualLocation',
         protoName: 'virtualLocation')
     ..aOB(17, _omitFieldNames ? '' : 'postquantumVpn')
@@ -415,59 +412,50 @@ class Settings extends $pb.GeneratedMessage {
   @$pb.TagNumber(14)
   $0.Allowlist ensureAllowlist() => $_ensure(12);
 
-  @$pb.TagNumber(15)
-  $core.bool get obfuscate => $_getBF(13);
-  @$pb.TagNumber(15)
-  set obfuscate($core.bool value) => $_setBool(13, value);
-  @$pb.TagNumber(15)
-  $core.bool hasObfuscate() => $_has(13);
-  @$pb.TagNumber(15)
-  void clearObfuscate() => $_clearField(15);
-
   @$pb.TagNumber(16)
-  $core.bool get virtualLocation => $_getBF(14);
+  $core.bool get virtualLocation => $_getBF(13);
   @$pb.TagNumber(16)
-  set virtualLocation($core.bool value) => $_setBool(14, value);
+  set virtualLocation($core.bool value) => $_setBool(13, value);
   @$pb.TagNumber(16)
-  $core.bool hasVirtualLocation() => $_has(14);
+  $core.bool hasVirtualLocation() => $_has(13);
   @$pb.TagNumber(16)
   void clearVirtualLocation() => $_clearField(16);
 
   @$pb.TagNumber(17)
-  $core.bool get postquantumVpn => $_getBF(15);
+  $core.bool get postquantumVpn => $_getBF(14);
   @$pb.TagNumber(17)
-  set postquantumVpn($core.bool value) => $_setBool(15, value);
+  set postquantumVpn($core.bool value) => $_setBool(14, value);
   @$pb.TagNumber(17)
-  $core.bool hasPostquantumVpn() => $_has(15);
+  $core.bool hasPostquantumVpn() => $_has(14);
   @$pb.TagNumber(17)
   void clearPostquantumVpn() => $_clearField(17);
 
   @$pb.TagNumber(18)
-  UserSpecificSettings get userSettings => $_getN(16);
+  UserSpecificSettings get userSettings => $_getN(15);
   @$pb.TagNumber(18)
   set userSettings(UserSpecificSettings value) => $_setField(18, value);
   @$pb.TagNumber(18)
-  $core.bool hasUserSettings() => $_has(16);
+  $core.bool hasUserSettings() => $_has(15);
   @$pb.TagNumber(18)
   void clearUserSettings() => $_clearField(18);
   @$pb.TagNumber(18)
-  UserSpecificSettings ensureUserSettings() => $_ensure(16);
+  UserSpecificSettings ensureUserSettings() => $_ensure(15);
 
   @$pb.TagNumber(19)
-  $core.bool get arpIgnore => $_getBF(17);
+  $core.bool get arpIgnore => $_getBF(16);
   @$pb.TagNumber(19)
-  set arpIgnore($core.bool value) => $_setBool(17, value);
+  set arpIgnore($core.bool value) => $_setBool(16, value);
   @$pb.TagNumber(19)
-  $core.bool hasArpIgnore() => $_has(17);
+  $core.bool hasArpIgnore() => $_has(16);
   @$pb.TagNumber(19)
   void clearArpIgnore() => $_clearField(19);
 
   @$pb.TagNumber(20)
-  $core.bool get ech => $_getBF(18);
+  $core.bool get ech => $_getBF(17);
   @$pb.TagNumber(20)
-  set ech($core.bool value) => $_setBool(18, value);
+  set ech($core.bool value) => $_setBool(17, value);
   @$pb.TagNumber(20)
-  $core.bool hasEch() => $_has(18);
+  $core.bool hasEch() => $_has(17);
   @$pb.TagNumber(20)
   void clearEch() => $_clearField(20);
 }

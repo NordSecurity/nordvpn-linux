@@ -65,7 +65,6 @@ func (ti *Instance) handleSettingsChangeState(st *pb.AppState_SettingsChange) bo
 	changed := ti.setSettings(st.SettingsChange)
 	// identify whether we need to also update connections
 	ti.connSensor.Set(connectionSettings{
-		Obfuscated:      st.SettingsChange.Obfuscate,
 		Protocol:        st.SettingsChange.Protocol,
 		Technology:      st.SettingsChange.Technology,
 		VirtualLocation: st.SettingsChange.VirtualLocation,
