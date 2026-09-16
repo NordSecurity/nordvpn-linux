@@ -8,8 +8,9 @@ def collect():
     link_layer_info = os.popen("sudo ip link").read() #sh.sudo.ip.link()
     network_interface_info = os.popen("sudo ip addr").read() #sh.sudo.ip.addr()
     routing_info = os.popen("sudo ip route").read() #sh.sudo.ip.route()
-    firewall_info = os.popen("sudo iptables -S").read() #sh.sudo.iptables("-S")
+    firewall_info = os.popen("sudo nft list ruleset -a")
     nameserver_info = os.popen("sudo cat /etc/resolv.conf").read() #sh.sudo.cat("/etc/resolv.conf")
+    conntrack = os.popen("sudo conntrack -L")
 
     # without `ww` we cannot see full process lines, as it is cut off early
     processes = sh.ps("-efww")
@@ -29,6 +30,8 @@ def collect():
             str(nameserver_info),
             "Processes:",
             str(processes),
+            "conntrack",
+            str(conntrack),
             "-------------------end of system-information--------------------",
         ]
     )
