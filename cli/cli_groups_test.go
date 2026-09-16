@@ -33,7 +33,7 @@ func TestGroupsList(t *testing.T) {
 		{
 			name:     "groups list",
 			expected: "P2P\nDouble_VPN",
-			groups:   []*pb.ServerGroup{{Name: "P2P", VirtualLocation: false}, {Name: "Double_VPN", VirtualLocation: false}},
+			groups:   []*pb.ServerGroup{{Name: "P2P"}, {Name: "Double_VPN"}},
 		},
 	}
 

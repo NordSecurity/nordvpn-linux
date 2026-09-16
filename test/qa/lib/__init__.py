@@ -1,6 +1,5 @@
 import re
 import time
-import random
 import os
 from collections.abc import Callable
 from enum import Enum
@@ -352,22 +351,6 @@ def poll(func, attempts: int = 3, sleep: float = 1.0):
         time.sleep(sleep)
 
 
-def get_virtual_countries() -> list[str]:
-    """Returns all virtual in the output of `nordvpn countries` command."""
-    countries_output = sh.nordvpn.countries().stdout.decode("utf-8")
-
-    # This pattern captures all substring starting with \x1b\[94m[ that are single words. It should capture all of the
-    # virtual server names, as in the terminal output they are colored blue.
-    pattern = r"\x1b\[94m\w+\x1b\[0m"
-    matches = re.findall(pattern, countries_output)
-
-    countries = []
-    for match in matches:
-        country = match.replace("\x1b[94m","").replace("\x1b[0m","")
-        countries.append(country)
-
-    return countries
-
 class CommandExecutor:
     def __init__(self, ssh_client = None):
         self.ssh_client = ssh_client
@@ -397,14 +380,6 @@ def technology_to_upper_camel_case(tech: str) -> str:
 def squash_whitespace(text: str) -> str:
     """Normalize whitespace by collapsing all sequences of whitespace into single spaces."""
     return ' '.join(text.split())
-
-
-def get_random_virtual_country() -> str:
-    """Return one random virtual country from `nordvpn countries` output."""
-    virtual_countries = get_virtual_countries()
-    assert len(virtual_countries) > 0, "Virtual countries list should not be empty"
-    virtual_country = random.choice(virtual_countries)
-    return virtual_country
 
 
 def retry_on_exc(attempts=3, delay=2, raise_exc=True):

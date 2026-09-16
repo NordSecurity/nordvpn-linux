@@ -217,7 +217,6 @@ class AppStateChange {
     }
 
     return currentSettings.obfuscatedServers != newSettings.obfuscatedServers ||
-        currentSettings.virtualServers != newSettings.virtualServers ||
         currentSettings.protocol != newSettings.protocol;
   }
 

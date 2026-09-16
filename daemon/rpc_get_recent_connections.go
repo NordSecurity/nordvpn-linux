@@ -38,11 +38,6 @@ func (r *RPC) GetRecentConnections(
 			continue
 		}
 
-		// filter by virtual location setting
-		if !cfg.VirtualLocation.Get() && v.IsVirtual {
-			continue
-		}
-
 		if config.IsRegionalGroup(v.Group) {
 			continue
 		}
@@ -55,7 +50,6 @@ func (r *RPC) GetRecentConnections(
 			SpecificServerName: v.SpecificServerName,
 			Group:              v.Group,
 			ConnectionType:     v.ConnectionType,
-			IsVirtual:          v.IsVirtual,
 		}
 		rcValues = append(rcValues, item)
 	}

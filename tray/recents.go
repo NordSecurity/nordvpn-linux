@@ -28,7 +28,6 @@ type RecentConnection struct {
 	SpecificServerName string
 	SpecificServer     string
 	ConnectionType     config.ServerSelectionRule
-	VirtualLocation    bool
 }
 
 var groupTitles = map[config.ServerGroup]string{
@@ -50,13 +49,6 @@ func formatGroupTitle(group config.ServerGroup) string {
 		return ""
 	}
 	return value
-}
-
-func tryApplyVirtualLocationSuffix(label string, isVirtualLoc bool) string {
-	if label == "" || !isVirtualLoc {
-		return label
-	}
-	return fmt.Sprintf("%s - Virtual", label)
 }
 
 func makeDisplayLabel(conn *RecentConnection) string {
@@ -199,7 +191,6 @@ func (m *recentConnectionsManager) UpdateRecentConnections() error {
 			SpecificServerName: conn.SpecificServerName,
 			SpecificServer:     conn.SpecificServer,
 			ConnectionType:     conn.ConnectionType,
-			VirtualLocation:    conn.IsVirtual,
 		})
 	}
 

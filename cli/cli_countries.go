@@ -24,15 +24,13 @@ func (c *cmd) Countries(ctx *cli.Context) error {
 		return formatError(err)
 	}
 
-	footer := footerForServerGroupsList(resp.Servers)
 	countryList, err := columns(resp.Servers,
 		serverNameLen,
 		formatServerName,
-		footer,
 	)
 	if err != nil {
 		log.Error(err)
-		countries, _ := formatTable(resp.Servers, serverNameLen, formatServerName, 1, footer)
+		countries, _ := formatTable(resp.Servers, serverNameLen, formatServerName, 1)
 		fmt.Println(countries)
 	} else {
 		fmt.Println(countryList)

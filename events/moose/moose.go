@@ -427,6 +427,11 @@ func (s *Subscriber) Init(consent config.AnalyticsConsent) error {
 		log.Moose.Warn("failed to report auto-connect target during Init:", err)
 	}
 
+	// This is just a cleanup and needs to be removed in the near future
+	if err := s.response(moose.NordvpnappUnsetContextApplicationNordvpnappConfigUserPreferencesVirtualServerEnabledValue()); err != nil {
+		log.Moose.Warn("failed to cleanup virtual server location from context: %w", err)
+	}
+
 	return nil
 }
 
@@ -516,13 +521,6 @@ func (s *Subscriber) NotifyRouting(data bool) error {
 func (s *Subscriber) NotifyLANDiscovery(data bool) error {
 	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesLocalNetworkDiscoveryAllowedValue(data)); err != nil {
 		return fmt.Errorf("setting LAN discovery preference (allowed=%v): %w", data, err)
-	}
-	return nil
-}
-
-func (s *Subscriber) NotifyVirtualLocation(data bool) error {
-	if err := s.response(moose.NordvpnappSetContextApplicationNordvpnappConfigUserPreferencesVirtualServerEnabledValue(data)); err != nil {
-		return fmt.Errorf("setting virtual location preference (enabled=%v): %w", data, err)
 	}
 	return nil
 }

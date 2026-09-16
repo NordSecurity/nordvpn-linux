@@ -487,21 +487,6 @@ def test_status_connected(tech, proto, obfuscated):
     disconnect_base_test()
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
-def test_connect_to_virtual_server(tech, proto, obfuscated):
-    """Manual TC: LVPN-5316"""
-
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-    sh.nordvpn.set("virtual-location", "on")
-    virtual_countries = lib.get_virtual_countries()
-
-    assert len(virtual_countries) > 0, "Virtual countries should be available"
-    country = random.choice(virtual_countries)
-
-    connect_base_test((tech, proto, obfuscated), country)
-    disconnect_base_test()
-
-
 @pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES_BASIC1)
 def test_connect_to_post_quantum_server(tech, proto, obfuscated):
     """Manual TC: LVPN-5794"""
@@ -573,36 +558,6 @@ def test_connect_to_dedicated_ip(tech, proto, obfuscated):
     assert "nordlynx" not in sh.ip.a() and "nordtun" not in sh.ip.a(), "VPN interfaces should be removed"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
-def test_connect_fails_virtual_location_disabled(tech, proto, obfuscated):
-    """Manual TC: LVPN-8533"""
-
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    virtual_country = lib.get_random_virtual_country()
-
-    sh.nordvpn.set("virtual-location", "off")
-
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(get_alias(), virtual_country)
-
-    assert "Please enable virtual location access to connect to this server." in ex.value.stdout.decode(), "Should show virtual location disabled error"
-
-
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
-def test_obfuscation_prevents_virtual_location_connection(tech, proto, obfuscated):
-    """Manual TC: LVPN-5771"""
-
-    virtual_country = lib.get_random_virtual_country()
-
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn(get_alias(), virtual_country)
-
-    assert "The specified server is not available at the moment or does not support your connection settings." in ex.value.stdout.decode(), "Should show server unavailable error"
-
-
 @pytest.mark.parametrize(("reconnect", "pause"), [(True, True), (True, False), (False, False)])
 def test_ens_connection_limit(reconnect: bool, pause: bool):
     """Test ENS connection limit"""
@@ -644,3 +599,13 @@ def test_ens_connection_limit(reconnect: bool, pause: bool):
 
         assert "Disconnected" in sh.nordvpn.status(), "Wrong status"
         assert network.is_available(), "Network should be available"
+
+
+@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
+def test_connect_to_virtual_server(tech, proto, obfuscated):
+    lib.set_technology_and_protocol(tech, proto, obfuscated)
+
+    server_info = server.get_random_virtual_server(tech, proto, obfuscated)
+    connect_base_test((tech, proto, obfuscated), server_info.hostname.split(".")[0], server_info.name, server_info.hostname)
+
+    disconnect_base_test()

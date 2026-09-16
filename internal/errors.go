@@ -48,7 +48,6 @@ var (
 	// ErrAnalyticsConsentMissing is returned when user tries to login via tray
 	// but settings analytics consent failed for some reason. This should not happen.
 	ErrAnalyticsConsentMissing = errors.New("analytics consent is required before continuing")
-	ErrVirtualServerSelected   = errors.New(SpecifiedServerIsVirtualLocation)
 	ErrNoNetWhenLoggingIn      = errors.New("You’re offline.\nWe can’t run this action without an internet connection. Please check it and try again.")
 
 	// WARN: The error messages below are also used to detect error states in GUI.
