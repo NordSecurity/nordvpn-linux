@@ -12,6 +12,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/daemon/events"
 	"github.com/NordSecurity/nordvpn-linux/daemon/pb"
+	"github.com/NordSecurity/nordvpn-linux/daemon/serverpicker"
 	event "github.com/NordSecurity/nordvpn-linux/events"
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/log"
@@ -23,6 +24,10 @@ import (
 // dedicatedServersGroupTitle is the group title used for the "Dedicated Server" specialty group.
 // It is assumed to be always present.
 const dedicatedServersGroupTitle = "Dedicated server"
+
+// obfuscatedServersGroupTitle is the group title reported for the synthesized "Obfuscated Servers"
+// group. No server carries that group anymore, so the title is not taken from the API.
+const obfuscatedServersGroupTitle = "Obfuscated Servers"
 
 type InsightsDataManager interface {
 	GetInsightsData() InsightsData
@@ -352,6 +357,7 @@ func (dm *DataManager) Groups(
 	defer dm.mu.Unlock()
 	groupsSet := mapset.NewSet[string]()
 	result := []*pb.ServerGroup{}
+	hasStandardServers := false
 	for _, server := range dm.serversData.Servers {
 		if !core.IsConnectableVia(serverTechnology)(server) {
 			continue
@@ -362,6 +368,10 @@ func (dm *DataManager) Groups(
 		}
 
 		for _, group := range server.Groups {
+			if group.ID == config.ServerGroup_STANDARD_VPN_SERVERS {
+				hasStandardServers = true
+			}
+
 			if groupsSet.Contains(group.Title) {
 				continue
 			}
@@ -370,8 +380,8 @@ func (dm *DataManager) Groups(
 				continue
 			}
 
-			// the current obfuscated group is not viable any more. Only the OVPN XOR servers carry
-			// it and they should not be connectable
+			// the obfuscated group is never taken from the server tags. Only the OVPN XOR servers
+			// carry that tag, and those are not connectable anymore.
 			if group.ID == config.ServerGroup_OBFUSCATED {
 				continue
 			}
@@ -382,6 +392,14 @@ func (dm *DataManager) Groups(
 			item := &pb.ServerGroup{Name: internal.Title(group.Title), VirtualLocation: false}
 			result = append(result, item)
 		}
+	}
+
+	// only NordWhisper is aliased as the obfuscated group, under the standard servers
+	if serverpicker.IsObfuscatedTech(technology) && hasStandardServers {
+		result = append(result, &pb.ServerGroup{
+			Name:            internal.Title(obfuscatedServersGroupTitle),
+			VirtualLocation: false,
+		})
 	}
 
 	sort.Slice(result, func(i, j int) bool {
