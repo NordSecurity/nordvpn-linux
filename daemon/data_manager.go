@@ -357,7 +357,6 @@ func (dm *DataManager) Groups(
 	defer dm.mu.Unlock()
 	groupsSet := mapset.NewSet[string]()
 	result := []*pb.ServerGroup{}
-	hasStandardServers := false
 	for _, server := range dm.serversData.Servers {
 		if !core.IsConnectableVia(serverTechnology)(server) {
 			continue
@@ -368,10 +367,6 @@ func (dm *DataManager) Groups(
 		}
 
 		for _, group := range server.Groups {
-			if group.ID == config.ServerGroup_STANDARD_VPN_SERVERS {
-				hasStandardServers = true
-			}
-
 			if groupsSet.Contains(group.Title) {
 				continue
 			}
@@ -395,7 +390,7 @@ func (dm *DataManager) Groups(
 	}
 
 	// only NordWhisper is aliased as the obfuscated group, under the standard servers
-	if serverpicker.IsObfuscatedTech(technology) && hasStandardServers {
+	if serverpicker.IsObfuscatedTech(technology) {
 		result = append(result, &pb.ServerGroup{
 			Name:            internal.Title(obfuscatedServersGroupTitle),
 			VirtualLocation: false,

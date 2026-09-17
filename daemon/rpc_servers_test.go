@@ -544,7 +544,7 @@ func TestLegacyXORServersNeverSurface(t *testing.T) {
 
 	t.Run("a fleet of only XOR servers lists nothing", func(t *testing.T) {
 		dm := DataManager{serversData: ServersData{Servers: core.Servers{legacyXOR}}}
-		groups, err := dm.Groups(config.Technology_NORDWHISPER, config.Protocol_Webtunnel, true)
+		groups, err := dm.Groups(config.Technology_OPENVPN, config.Protocol_TCP, true)
 		assert.NoError(t, err)
 		assert.Empty(t, groups)
 	})

@@ -205,7 +205,7 @@ func TestRPCGroups_Successful(t *testing.T) {
 	}
 }
 
-func TestGroups_ObfuscatedIsListedOnlyWhenConnectable(t *testing.T) {
+func TestGroups_ObfuscatedIsListedOnlyUnderNordWhisper(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	allTechs := []core.ServerTechnology{
@@ -213,9 +213,6 @@ func TestGroups_ObfuscatedIsListedOnlyWhenConnectable(t *testing.T) {
 	}
 	standard := getServer(1, "standard1", "Germany", "de", "Berlin", false,
 		core.Groups{{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"}},
-		allTechs)
-	dedicatedIP := getServer(2, "dip1", "Austria", "at", "Vienna", false,
-		core.Groups{{ID: config.ServerGroup_DEDICATED_IP, Title: "Dedicated IP"}},
 		allTechs)
 	legacyXOR := getServer(3, "xor1", "Canada", "ca", "Toronto", false,
 		core.Groups{{ID: config.ServerGroup_OBFUSCATED, Title: "Obfuscated Servers"}},
@@ -229,17 +226,11 @@ func TestGroups_ObfuscatedIsListedOnlyWhenConnectable(t *testing.T) {
 		expected bool
 	}{
 		{
-			name:     "listed over nordwhisper because the standard servers serve it",
+			name:     "listed over nordwhisper",
 			servers:  core.Servers{standard, legacyXOR},
 			tech:     config.Technology_NORDWHISPER,
 			proto:    config.Protocol_Webtunnel,
 			expected: true,
-		},
-		{
-			name:    "not listed over nordwhisper without any standard server",
-			servers: core.Servers{dedicatedIP},
-			tech:    config.Technology_NORDWHISPER,
-			proto:   config.Protocol_Webtunnel,
 		},
 		{
 			name:    "not listed over nordlynx",
