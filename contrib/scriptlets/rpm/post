@@ -69,9 +69,6 @@ case "$1" in
                 [[ -e /usr/sbin/ip ]] || ln -s /sbin/ip /usr/sbin/ip || :
             ;;
         esac
-        if [[ "$DEFAULT_USER" ]]; then
-            su -c 'source /usr/share/bash-completion/completions/nordvpn' "${DEFAULT_USER}" &>/dev/null || :
-        fi
 
         echo "$installSuccess"
         echo "$quickTutorial"
