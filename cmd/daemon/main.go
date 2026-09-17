@@ -615,6 +615,17 @@ func main() {
 	consentChecker.PrepareDaemonIfConsentNotCompleted()
 
 	sharedContext := sharedctx.New()
+	recentConnections := recents.NewRecentConnectionsStore(
+		internal.RecentVPNConnectionsFilename,
+		&internal.StdFilesystemHandle{},
+		func() {
+			dataUpdateEvents.RecentsUpdate.Publish(events.DataRecentsChanged{})
+		},
+	)
+	if err = recentConnections.MigrateDeprecatedP2PGroup(); err != nil {
+		log.Error("failed to migrate deprecated P2P group from recent connections:", err)
+	}
+
 	rpc := daemon.NewRPC(
 		internal.Environment(Environment),
 		authChecker,
@@ -641,13 +652,7 @@ func main() {
 		rcConfig,
 		connectionInfo,
 		consentChecker,
-		recents.NewRecentConnectionsStore(
-			internal.RecentVPNConnectionsFilename,
-			&internal.StdFilesystemHandle{},
-			func() {
-				dataUpdateEvents.RecentsUpdate.Publish(events.DataRecentsChanged{})
-			},
-		),
+		recentConnections,
 		dataUpdateEvents,
 		pauseEvents,
 		deviceKeyManager,

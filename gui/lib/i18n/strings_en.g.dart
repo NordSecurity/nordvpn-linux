@@ -747,6 +747,12 @@ class Translations$cities$en {
 
 	/// en: 'Lome'
 	String get lome => 'Lome';
+
+	/// en: 'Calgary'
+	String get calgary => 'Calgary';
+
+	/// en: 'Saint John'
+	String get saint_john => 'Saint John';
 }
 
 // Path: countries
@@ -2446,6 +2452,8 @@ extension on Translations {
 			'cities.dodoma' => 'Dodoma',
 			'cities.sanaa' => 'Sanaa',
 			'cities.lome' => 'Lome',
+			'cities.calgary' => 'Calgary',
+			'cities.saint_john' => 'Saint John',
 			'countries.AL' => 'Albania',
 			'countries.DZ' => 'Algeria',
 			'countries.AD' => 'Andorra',
@@ -2728,10 +2736,10 @@ extension on Translations {
 			'ui.citiesAvailable' => ({required Object n}) => '${n} cities available',
 			'ui.dedicatedIp' => 'Dedicated IP',
 			'ui.dedicatedServer' => 'Dedicated Server',
-			'ui.doubleVpn' => 'Double VPN',
-			'ui.onionOverVpn' => 'Onion over VPN',
 			_ => null,
 		} ?? switch (path) {
+			'ui.doubleVpn' => 'Double VPN',
+			'ui.onionOverVpn' => 'Onion over VPN',
 			'ui.obfuscated' => 'Obfuscated',
 			'ui.obfuscatedServers' => 'Obfuscated Servers',
 			'ui.selectServerForDip' => 'Pick a location for your IP',

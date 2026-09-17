@@ -1294,3 +1294,147 @@ func TestRecentConnectionsStore_EventPublisher_ConcurrentOperations(t *testing.T
 	assert.Greater(t, finalCount, 0, "Should have published events for successful operations")
 	assert.LessOrEqual(t, finalCount, operations, "Should not publish more events than operations")
 }
+
+func TestRecentConnectionsStore_Migrations(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	fs := fs.NewSystemFileHandleMock(t)
+	notifyCount := 0
+	store := NewRecentConnectionsStore("/test/path", &fs, func() { notifyCount++ })
+
+	noNeedToBeDropped1 := Model{Country: "France", ConnectionType: config.ServerSelectionRule_COUNTRY, Group: config.ServerGroup_UNDEFINED}
+	noNeedToBeDropped2 := Model{Country: "Spain", ConnectionType: config.ServerSelectionRule_COUNTRY, Group: config.ServerGroup_UNDEFINED}
+
+	tests := []struct {
+		name         string
+		initial      []Model
+		expected     []Model
+		expectNotify int
+		description  string
+	}{
+		{
+			name: "non-deprecated connections are preserved, deprecated GROUP is removed",
+			initial: []Model{
+				noNeedToBeDropped1,
+				{
+					Country:        "Italy",
+					ConnectionType: config.ServerSelectionRule_GROUP,
+					Group:          15, // P2P group
+				},
+				noNeedToBeDropped2,
+			},
+			expected: []Model{
+				noNeedToBeDropped2,
+				noNeedToBeDropped1,
+			},
+			expectNotify: 1,
+			description:  "GROUP connections with the P2P group are dropped",
+		},
+		{
+			name: "COUNTRY_WITH_GROUP is converted to COUNTRY",
+			initial: []Model{
+				noNeedToBeDropped1,
+				{
+					Country:        "Italy",
+					ConnectionType: config.ServerSelectionRule_COUNTRY_WITH_GROUP,
+					Group:          15, // P2P group
+				},
+				noNeedToBeDropped2,
+			},
+			expected: []Model{
+				noNeedToBeDropped2,
+				{
+					Country:        "Italy",
+					ConnectionType: config.ServerSelectionRule_COUNTRY,
+					Group:          config.ServerGroup_UNDEFINED,
+				},
+				noNeedToBeDropped1,
+			},
+			expectNotify: 1,
+			description:  "P2P group is stripped and the rule falls back to COUNTRY",
+		},
+		{
+			name: "SPECIFIC_SERVER_WITH_GROUP is converted to CITY",
+			initial: []Model{
+				noNeedToBeDropped1,
+				{
+					Country:        "Italy",
+					City:           "Rome",
+					ConnectionType: config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
+					Group:          15, // P2P group
+				},
+				noNeedToBeDropped2,
+			},
+			expected: []Model{
+				noNeedToBeDropped2,
+				{
+					Country:        "Italy",
+					City:           "Rome",
+					ConnectionType: config.ServerSelectionRule_CITY,
+					Group:          config.ServerGroup_UNDEFINED,
+				},
+				noNeedToBeDropped1,
+			},
+			expectNotify: 1,
+			description:  "P2P group is stripped and the rule falls back to CITY",
+		},
+		{
+			name: "duplicates created by the cleanup are removed",
+			initial: []Model{
+				noNeedToBeDropped1,
+				{Country: "Italy", ConnectionType: config.ServerSelectionRule_COUNTRY},
+				{
+					Country:        "Italy",
+					ConnectionType: config.ServerSelectionRule_COUNTRY_WITH_GROUP,
+					Group:          15, // P2P group
+				},
+				noNeedToBeDropped2,
+			},
+			expected: []Model{
+				noNeedToBeDropped2,
+				{
+					Country:        "Italy",
+					ConnectionType: config.ServerSelectionRule_COUNTRY,
+					Group:          config.ServerGroup_UNDEFINED,
+				},
+				noNeedToBeDropped1,
+			},
+			expectNotify: 1,
+			description:  "converted COUNTRY_WITH_GROUP collapses into the existing COUNTRY entry",
+		},
+		{
+			name: "no deprecated connections leaves store untouched and does not notify",
+			initial: []Model{
+				noNeedToBeDropped1,
+				noNeedToBeDropped2,
+			},
+			expected: []Model{
+				noNeedToBeDropped2,
+				noNeedToBeDropped1,
+			},
+			expectNotify: 0,
+			description:  "migration is a no-op when nothing is deprecated",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Cleanup
+			require.NoError(t, store.Clean())
+			for _, conn := range tt.initial {
+				require.NoError(t, store.Add(conn))
+			}
+			notifyCount = 0
+
+			// Migrate
+			require.NoError(t, store.MigrateDeprecatedP2PGroup())
+
+			// Checks
+			assert.Equal(t, tt.expectNotify, notifyCount, tt.description)
+			connections, err := store.Get()
+			require.NoError(t, err, tt.description)
+			assert.Equal(t, len(tt.expected), len(connections), tt.description)
+			assert.Equal(t, tt.expected, connections, tt.description)
+		})
+	}
+}
