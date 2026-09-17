@@ -1,5 +1,4 @@
 from config import group_pb2 as _group_pb2
-from config import technology_pb2 as _technology_pb2
 import server_selection_rule_pb2 as _server_selection_rule_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor

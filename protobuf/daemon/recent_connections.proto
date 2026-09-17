@@ -3,7 +3,6 @@ syntax = "proto3";
 package pb;
 
 import "config/group.proto";
-import "config/technology.proto";
 import "server_selection_rule.proto";
 
 option go_package = "github.com/NordSecurity/nordvpn-linux/daemon/pb";
