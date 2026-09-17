@@ -108,7 +108,7 @@ COUNTRIES = [
     "Germany",
     "Netherlands",
     "United_States",
-    "France",
+    "Canada",
 ]
 
 # Used for test parametrization, when the same test has to be run for different countries.
