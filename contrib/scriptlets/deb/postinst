@@ -111,10 +111,6 @@ case "$1" in
             ;;
         esac
 
-        if [[ "$DEFAULT_USER" ]]; then
-            su -c 'source /usr/share/bash-completion/completions/nordvpn' "${DEFAULT_USER}" &>/dev/null || true
-        fi
-
         # Message will be shown only on fresh install (after purge)
         if [[ ! "$2" ]]; then
             echo "$installSuccess"
