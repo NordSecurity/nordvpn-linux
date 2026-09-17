@@ -367,6 +367,10 @@ func (dm *DataManager) Groups(
 				continue
 			}
 
+			if config.IsDeprecatedP2PGroup(group.ID) {
+				continue
+			}
+
 			groupsSet.Add(group.Title)
 			item := &pb.ServerGroup{Name: internal.Title(group.Title)}
 			result = append(result, item)

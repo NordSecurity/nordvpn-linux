@@ -71,9 +71,6 @@ func (d *deterministicServersAPI) RecommendedServers(filter core.ServersFilter, 
 	if filter.Tag.Action == core.ServerByCountry {
 		switch filter.Tag.ID {
 		case 4:
-			if filter.Group == config.ServerGroup_P2P {
-				return getServersByID(allServers, 2), nil, nil
-			}
 			return getServersByID(allServers, 2), nil, nil
 		case 2:
 			return getServersByID(allServers, 1), nil, nil
@@ -92,17 +89,11 @@ func (d *deterministicServersAPI) RecommendedServers(filter core.ServersFilter, 
 	}
 
 	if filter.Tag.Action == core.ServerByCity {
-		if filter.Group == config.ServerGroup_P2P {
-			return getServersByID(allServers, 2), nil, nil
-		}
 		return getServersByID(allServers, 2), nil, nil
 	}
 
 	if filter.Tag.Action == core.ServerByUnknown && filter.Group != config.ServerGroup_UNDEFINED {
 		switch filter.Group {
-		case config.ServerGroup_P2P:
-
-			return getServersByID(allServers, 3), nil, nil
 		case config.ServerGroup_DEDICATED_IP:
 
 			return getServersByID(allServers, 7), nil, nil
@@ -497,10 +488,10 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 		},
 		{
 			name:        "Group connection adds to recent",
-			serverGroup: "P2P",
+			serverGroup: "Double_VPN",
 			expectedRecentConn: &recents.Model{
 				// Group connections only store the group, no geographic data
-				Group:              config.ServerGroup_P2P,
+				Group:              config.ServerGroup_DOUBLE_VPN,
 				ConnectionType:     config.ServerSelectionRule_GROUP,
 				ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
 			},
@@ -515,12 +506,12 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 		{
 			name:        "Country with group adds to recent",
 			serverTag:   "germany",
-			serverGroup: "P2P",
+			serverGroup: "Double_VPN",
 			expectedRecentConn: &recents.Model{
 				Country:            "Germany",
 				CountryCode:        "DE",
 				City:               "Berlin",
-				Group:              config.ServerGroup_P2P,
+				Group:              config.ServerGroup_DOUBLE_VPN,
 				ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 				ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
 			},
@@ -529,12 +520,12 @@ func TestRPCConnect_RecentConnections(t *testing.T) {
 		{
 			name:        "Country with city with group adds to recent",
 			serverTag:   "germany berlin",
-			serverGroup: "P2P",
+			serverGroup: "Double_VPN",
 			expectedRecentConn: &recents.Model{
 				Country:            "Germany",
 				CountryCode:        "DE",
 				City:               "Berlin",
-				Group:              config.ServerGroup_P2P,
+				Group:              config.ServerGroup_DOUBLE_VPN,
 				ConnectionType:     config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
 				ServerTechnologies: []core.ServerTechnology{core.OpenVPNUDP},
 			},
@@ -646,14 +637,14 @@ func TestRPCConnect_RecentConnectionsOnFailure_MultipleConnectionsPreserved(t *t
 	err = rpc.Connect(&pb.ConnectRequest{ServerTag: "france"}, server)
 	assert.NoError(t, err)
 
-	// Now try to connect to a P2P server but it fails (making networker fail)
+	// Now try to connect to a Double_VPN server but it fails (making networker fail)
 	rpc.netw = testnetworker.Failing{}
 	rpc.factory = func(config.Technology) (vpn.VPN, error) {
 		return &mock.FailingVPN{}, nil
 	}
 
 	server = &mockRPCServer{}
-	err = rpc.Connect(&pb.ConnectRequest{ServerGroup: "P2P"}, server)
+	err = rpc.Connect(&pb.ConnectRequest{ServerGroup: "Double_VPN"}, server)
 	assert.NoError(t, err)
 	assert.Equal(t, internal.CodeFailure, server.msg.Type)
 
@@ -967,15 +958,6 @@ func Test_determineServerGroup(t *testing.T) {
 			want:   config.ServerGroup_NETFLIX_USA,
 		},
 		{
-			name: "Group is P2P returns matching group",
-			server: core.Server{Groups: []core.Group{
-				{ID: config.ServerGroup_P2P, Title: "P2P"},
-				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
-			}},
-			params: serverpicker.ServerParameters{Group: config.ServerGroup_P2P},
-			want:   config.ServerGroup_P2P,
-		},
-		{
 			name: "Group is ULTRA_FAST_TV returns matching group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_ULTRA_FAST_TV, Title: "Ultra Fast TV"},
@@ -1010,7 +992,7 @@ func Test_determineServerGroup(t *testing.T) {
 		{
 			name: "Group is not set (zero value), server has multiple groups",
 			server: core.Server{Groups: []core.Group{
-				{ID: config.ServerGroup_P2P, Title: "P2P"},
+				{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double_VPN"},
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 			}},
 			params: serverpicker.ServerParameters{},

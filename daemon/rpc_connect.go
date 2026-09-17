@@ -275,6 +275,11 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	if err := r.cm.Load(&cfg); err != nil {
 		log.Error(err)
 	}
+
+	if serverpicker.IsP2PGroup(in.ServerTag, in.ServerGroup) {
+		return true, srv.Send(&pb.Payload{Type: internal.CodeP2PDeprecated})
+	}
+
 	prelimParams := serverpicker.GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
 	r.RequestedConnParams.Set(source, serverpicker.ServerParameters{Group: prelimParams.Group})
 	r.connectionInfo.SetInitialConnecting()
