@@ -23,7 +23,7 @@ func (c *cmd) Logout(ctx *cli.Context) error {
 		ItemType:      pb.UIEvent_CLICK,
 	})
 
-	revokeToken := ctx.IsSet(flagRevokeToken)
+	revokeToken := ctx.Bool(flagRevokeToken)
 
 	payload, err := c.client.Logout(context.Background(), &pb.LogoutRequest{
 		RevokeToken: revokeToken,

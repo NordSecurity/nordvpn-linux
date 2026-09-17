@@ -20,8 +20,8 @@ const (
 )
 
 func (c *cmd) SetDefaults(ctx *cli.Context) error {
-	logout := ctx.IsSet(flagLogout)
-	offKillswitch := ctx.IsSet(flagOffKillswitch)
+	logout := ctx.Bool(flagLogout)
+	offKillswitch := ctx.Bool(flagOffKillswitch)
 
 	resp, err := c.client.SetDefaults(context.Background(), &pb.SetDefaultsRequest{NoLogout: !logout, OffKillswitch: offKillswitch})
 	if err != nil {

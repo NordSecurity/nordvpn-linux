@@ -47,17 +47,17 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 			DeviceKeyInvalidator:         r.dedicatedServerKeyManager,
 		})
 
-		if result.Err != nil {
-			switch result.Err {
-			case internal.ErrNotLoggedIn:
-				log.Info("trying to log out with set defaults, user already logged out")
-				result.Status = internal.CodeSuccess
-			default:
-				log.Error("error while trying to logout:", result.Err)
-				return &pb.Payload{
-					Type: internal.CodeFailure,
-				}, nil
-			}
+		switch result.Err {
+		case nil:
+			// do nothing
+		case internal.ErrNotLoggedIn:
+			log.Info("trying to log out with set defaults, user already logged out")
+			result.Status = internal.CodeSuccess
+		default:
+			log.Error("error while trying to logout:", result.Err)
+			return &pb.Payload{
+				Type: internal.CodeFailure,
+			}, nil
 		}
 
 		switch result.Status {

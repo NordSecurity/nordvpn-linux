@@ -125,8 +125,9 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 			default:
 				return LogoutResult{Status: internal.CodeFailure, Err: nil}
 			}
+		} else {
+			isRevokeSuccessful = true
 		}
-		isRevokeSuccessful = true
 	}
 	// Logout endpoint does not work with manual token created via UCP, always returns a 404 after deletion
 	if !isLoggedInWithManualToken {

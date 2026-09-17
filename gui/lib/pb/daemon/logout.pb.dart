@@ -38,7 +38,7 @@ class LogoutRequest extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'LogoutRequest',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'pb'),
       createEmptyInstance: create)
-    ..aOB(1, _omitFieldNames ? '' : 'revokeToken')
+    ..aOB(2, _omitFieldNames ? '' : 'revokeToken')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -60,14 +60,14 @@ class LogoutRequest extends $pb.GeneratedMessage {
       $pb.GeneratedMessage.$_defaultFor<LogoutRequest>(create);
   static LogoutRequest? _defaultInstance;
 
-  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   $core.bool get revokeToken => $_getBF(0);
-  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   set revokeToken($core.bool value) => $_setBool(0, value);
-  @$pb.TagNumber(1)
+  @$pb.TagNumber(2)
   $core.bool hasRevokeToken() => $_has(0);
-  @$pb.TagNumber(1)
-  void clearRevokeToken() => $_clearField(1);
+  @$pb.TagNumber(2)
+  void clearRevokeToken() => $_clearField(2);
 }
 
 const $core.bool _omitFieldNames =
