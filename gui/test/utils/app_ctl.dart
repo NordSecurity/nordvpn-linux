@@ -141,13 +141,6 @@ final class AppCtl {
     await refreshAppState();
   }
 
-  Future<void> setObfuscatedServers(bool enabled) async {
-    await appSettings.setSettings(technology: Technology.OPENVPN);
-    await appSettings.setSettings(obfuscate: enabled);
-
-    await refreshAppState();
-  }
-
   Future<void> waitForUiUpdates({
     Duration duration = const Duration(milliseconds: 100),
     Duration timeout = const Duration(seconds: 5),
