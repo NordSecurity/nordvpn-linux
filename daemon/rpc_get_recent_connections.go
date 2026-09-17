@@ -42,6 +42,13 @@ func (r *RPC) GetRecentConnections(
 			continue
 		}
 
+		if config.IsDeprecatedP2PGroup(v.Group) {
+			v.Group = config.ServerGroup_UNDEFINED
+			if v.Country == "" && v.City == "" {
+				continue
+			}
+		}
+
 		item := &pb.RecentConnectionModel{
 			Country:            v.Country,
 			CountryCode:        v.CountryCode,

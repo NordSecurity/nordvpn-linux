@@ -167,6 +167,83 @@ func (r *RecentConnectionsStore) Clean() error {
 	return nil
 }
 
+func (r *RecentConnectionsStore) MigrateDeprecatedP2PGroup() error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if err := r.checkExistence(); err != nil {
+		// If the file didn't exist, checkExistence will create a clean one
+		return nil
+	}
+
+	connections, err := r.load()
+	if err != nil {
+		log.Recents.Warnf("migrating deprecated P2P group from recent VPN connection: %s", err)
+		if saveErr := r.save([]Model{}); saveErr != nil {
+			return errors.Join(
+				fmt.Errorf("migrating deprecated P2P group from recent vpn connection: %w", err),
+				fmt.Errorf("recreating recent connections file: %w", saveErr))
+		}
+		return nil
+	}
+
+	changed := false
+
+	// Remove the recent connection entries that have only group
+	// Clean entries that have group and country or specific server
+	firstStage := make([]Model, 0, len(connections))
+	for i := range connections {
+		if !config.IsDeprecatedP2PGroup(connections[i].Group) {
+			firstStage = append(firstStage, connections[i])
+			continue
+		}
+
+		if connections[i].ConnectionType == config.ServerSelectionRule_GROUP {
+			changed = true
+			continue
+		}
+
+		if connections[i].ConnectionType == config.ServerSelectionRule_COUNTRY_WITH_GROUP {
+			connections[i].ConnectionType = config.ServerSelectionRule_COUNTRY
+		}
+		if connections[i].ConnectionType == config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP {
+			connections[i].ConnectionType = config.ServerSelectionRule_SPECIFIC_SERVER
+		}
+
+		connections[i].Group = config.ServerGroup_UNDEFINED
+		changed = true
+		slices.Sort(connections[i].ServerTechnologies)
+		firstStage = append(firstStage, connections[i])
+	}
+
+	// Remove duplicates after the cleanup
+	secondStage := make([]Model, 0, len(firstStage))
+	for _, c := range firstStage {
+		isDuplicate := slices.ContainsFunc(secondStage, func(kept Model) bool {
+			return kept.Equals(c)
+		})
+		if isDuplicate {
+			changed = true
+			continue
+		}
+		secondStage = append(secondStage, c)
+	}
+
+	if !changed {
+		return nil
+	}
+
+	if err := r.save(secondStage); err != nil {
+		return fmt.Errorf("migrating deprecated P2P group from recent connections: %w", err)
+	}
+
+	if r.onDataChangedFunc != nil {
+		r.onDataChangedFunc()
+	}
+
+	return nil
+}
+
 func (r *RecentConnectionsStore) save(values []Model) error {
 	data, err := json.Marshal(values)
 	if err != nil {
