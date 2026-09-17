@@ -1,7 +1,7 @@
 import os
 
 import sh
-
+from lib import logging
 
 def collect():
     """Collect system information and return as multiline string."""
@@ -10,10 +10,12 @@ def collect():
     routing_info = os.popen("sudo ip route").read() #sh.sudo.ip.route()
     firewall_info = os.popen("sudo nft list ruleset -a").read()
     nameserver_info = os.popen("sudo cat /etc/resolv.conf").read() #sh.sudo.cat("/etc/resolv.conf")
-    conntrack = os.popen("sudo conntrack -L").read()
 
     # without `ww` we cannot see full process lines, as it is cut off early
     processes = sh.ps("-efww")
+
+    conntrack = os.popen("sudo conntrack -L").read()
+    logging.log(data=f"conntrack: \n{conntrack}")
 
     return "\n".join(
         [
@@ -30,8 +32,6 @@ def collect():
             str(nameserver_info),
             "Processes:",
             str(processes),
-            "conntrack",
-            str(conntrack),
             "-------------------end of system-information--------------------",
         ]
     )
