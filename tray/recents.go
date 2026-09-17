@@ -31,6 +31,19 @@ type RecentConnection struct {
 	VirtualLocation    bool
 }
 
+func NewRecentConnection(conn *pb.RecentConnectionModel) RecentConnection {
+	return RecentConnection{
+		Country:            conn.Country,
+		City:               conn.City,
+		Group:              conn.Group,
+		CountryCode:        conn.CountryCode,
+		SpecificServerName: conn.SpecificServerName,
+		SpecificServer:     conn.SpecificServer,
+		ConnectionType:     conn.ConnectionType,
+		VirtualLocation:    conn.IsVirtual,
+	}
+}
+
 var groupTitles = map[config.ServerGroup]string{
 	config.ServerGroup_DOUBLE_VPN:           "Double VPN",
 	config.ServerGroup_ONION_OVER_VPN:       "Onion Over VPN",
@@ -191,16 +204,7 @@ func (m *recentConnectionsManager) UpdateRecentConnections() error {
 	// Convert gRPC models to tray models
 	connections := make([]RecentConnection, 0, len(resp.Connections))
 	for _, conn := range resp.Connections {
-		connections = append(connections, RecentConnection{
-			Country:            conn.Country,
-			City:               conn.City,
-			Group:              conn.Group,
-			CountryCode:        conn.CountryCode,
-			SpecificServerName: conn.SpecificServerName,
-			SpecificServer:     conn.SpecificServer,
-			ConnectionType:     conn.ConnectionType,
-			VirtualLocation:    conn.IsVirtual,
-		})
+		connections = append(connections, NewRecentConnection(conn))
 	}
 
 	m.mu.Lock()

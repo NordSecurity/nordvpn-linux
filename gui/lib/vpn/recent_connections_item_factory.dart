@@ -14,7 +14,7 @@ import 'package:nordvpn/vpn/server_item_image.dart';
 import 'package:nordvpn/widgets/custom_list_tile.dart';
 
 /// The two title lines shown on a recent connection item.
-typedef _TitleParts = ({String primary, String? secondary});
+typedef TitleParts = ({String primary, String? secondary});
 
 /// Factory for building list items for recent connections
 final class RecentConnectionsItemFactory {
@@ -31,11 +31,11 @@ final class RecentConnectionsItemFactory {
     final appTheme = context.appTheme;
     final serversListTheme = context.serversListTheme;
 
-    final isSpecialtyServer = _isSpecialtyServer(model);
+    final isSpecialtyServer = isASpecialtyServer(model);
 
     // Pre-compute connect arguments to avoid recalculation on each tap
     final connectArgs = _buildConnectArgs(model, isSpecialtyServer);
-    final titleParts = _buildTitleParts(model, isSpecialtyServer);
+    final titleParts = buildTitleParts(model, isSpecialtyServer);
 
     return MergeSemantics(
       child: CustomListTile(
@@ -53,12 +53,12 @@ final class RecentConnectionsItemFactory {
     );
   }
 
-  bool _isSpecialtyServer(RecentConnection model) =>
+  static bool isASpecialtyServer(RecentConnection model) =>
       model.group != ServerGroup.UNDEFINED &&
       model.group != ServerGroup.STANDARD_VPN_SERVERS;
 
   String semanticsLabelFor(RecentConnection model) {
-    final parts = _buildTitleParts(model, _isSpecialtyServer(model));
+    final parts = buildTitleParts(model, isASpecialtyServer(model));
     final details = parts.secondary == null
         ? parts.primary
         : "${parts.primary}, ${parts.secondary}";
@@ -90,9 +90,12 @@ final class RecentConnectionsItemFactory {
         : const Icon(Icons.history);
   }
 
-  _TitleParts _buildTitleParts(RecentConnection model, bool isSpecialtyServer) {
+  static TitleParts buildTitleParts(
+    RecentConnection model,
+    bool isSpecialtyServer,
+  ) {
     if (isSpecialtyServer) {
-      if (model.country.isNotEmpty) {
+      if (model.countryCode.isNotEmpty) {
         final country = Country.fromCodeOrName(model.countryCode);
         final city = model.city;
         final location = city.isEmpty ? t.ui.fastest : City(city).localizedName;
@@ -140,7 +143,7 @@ final class RecentConnectionsItemFactory {
     return (primary: country.localizedName, secondary: t.ui.fastest);
   }
 
-  Widget _buildTitle(AppTheme appTheme, _TitleParts parts) {
+  Widget _buildTitle(AppTheme appTheme, TitleParts parts) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -152,7 +155,7 @@ final class RecentConnectionsItemFactory {
     );
   }
 
-  String _maybeAddVirtualLabel(String text, bool isVirtual) {
+  static String _maybeAddVirtualLabel(String text, bool isVirtual) {
     return isVirtual ? "$text - ${t.ui.virtual}" : text;
   }
 

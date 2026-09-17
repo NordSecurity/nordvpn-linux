@@ -71,14 +71,16 @@ void main() {
       isObfuscated: false,
       serverType: t.ui.doubleVpn,
     ),
-    ( // todo: change this later when OVPN drops obfuscation
+    (
+      // todo: change this later when OVPN drops obfuscation
       name: "the obfuscated group is still labelled as obfuscated",
       protocol: VpnProtocol.openVpnTcp,
       group: ServerGroup.OBFUSCATED,
       isObfuscated: true,
       serverType: t.ui.obfuscated,
     ),
-    ( // todo: change this later when OVPN drops obfuscation
+    (
+      // todo: change this later when OVPN drops obfuscation
       name: "the daemon obfuscated flag alone does not add a label",
       protocol: VpnProtocol.openVpnTcp,
       group: ServerGroup.UNDEFINED,
