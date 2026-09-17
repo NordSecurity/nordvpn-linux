@@ -19,6 +19,9 @@ import 'package:nordvpn/widgets/dynamic_theme_image.dart';
 
 // Factory for building the ListItem for servers
 final class ServerListItemFactory {
+  static const specialtyTitleKey = Key("specialtyServerTitle");
+  static const specialtyDescriptionKey = Key("specialtyServerDescription");
+
   final ImagesManager imagesManager;
 
   ServerListItemFactory({required this.imagesManager});
@@ -159,9 +162,13 @@ final class ServerListItemFactory {
         shouldHighlight: (status) =>
             status.connectionParameters.group == type.toServerGroup(),
       ),
-      title: Text(labelForServerType(type), style: styleTitle),
+      title: Text(
+        labelForServerType(type),
+        key: specialtyTitleKey,
+        style: styleTitle,
+      ),
       subtitle: (subtitle != null)
-          ? Text(subtitle, style: styleSubtitle)
+          ? Text(subtitle, key: specialtyDescriptionKey, style: styleSubtitle)
           : null,
       onTap: () => onTap(ConnectArguments(specialtyGroup: type)),
       trailing: servers.isNotEmpty

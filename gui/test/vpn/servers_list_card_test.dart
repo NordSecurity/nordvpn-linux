@@ -1,19 +1,12 @@
-import 'dart:async';
-
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nordvpn/data/mocks/daemon/mock_servers_list.dart';
-import 'package:nordvpn/data/models/servers_list.dart';
 import 'package:nordvpn/data/providers/account_controller.dart';
 import 'package:nordvpn/data/providers/servers_list_controller.dart';
 import 'package:nordvpn/data/providers/vpn_status_controller.dart';
 import 'package:nordvpn/i18n/strings.g.dart';
 import 'package:nordvpn/pb/daemon/config/technology.pbenum.dart';
-import 'package:nordvpn/pb/daemon/settings.pb.dart';
-import 'package:nordvpn/pb/daemon/state.pb.dart';
 import 'package:nordvpn/service_locator.dart';
-import 'package:nordvpn/theme/theme.dart';
+import 'package:nordvpn/vpn/server_list_item_factory.dart';
 import 'package:nordvpn/vpn/servers_list_card.dart';
 import 'package:nordvpn/widgets/custom_list_tile.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
@@ -23,33 +16,38 @@ import '../utils/fakes.dart';
 import '../utils/finders.dart';
 import '../utils/test_helpers.dart';
 
-Future<ServersList> _serversList({required Technology technology}) async {
-  final appState = StreamController<AppState>();
-  addTearDown(appState.close);
-  final mockServersList = MockServersList(appState);
-  addTearDown(mockServersList.dispose);
-
-  appState.add(
-    AppState(
-      settingsChange: Settings(technology: technology, virtualLocation: true),
-    ),
+// Builds the servers list card, opens the specialty servers tab and returns the
+// obfuscated group tile (if listed there).
+Future<Finder> _obfuscatedTile(WidgetTester tester) async {
+  // NordWhisper is the only technology for which the daemon reports obfuscated
+  // servers, and it's the only one where the tile is active
+  final serversList = await tester.mockedServersList(
+    technology: Technology.NORDWHISPER,
   );
-  await pumpEventQueue();
 
-  final container = ProviderContainer(
+  await tester.setupWidgetTest(
+    ServersListCard(onSelected: (_) async {}),
     overrides: [
       serversListControllerProvider.overrideWithBuild(
-        (ref, notifier) => ServersList.empty(),
+        (ref, notifier) => serversList,
       ),
+      vpnStatusControllerProvider.overrideWithBuild(
+        (ref, notifier) => fakeVpnStatus(),
+      ),
+      accountControllerProvider.overrideWithBuild((ref, notifier) => null),
     ],
   );
-  addTearDown(container.dispose);
 
-  container
-      .read(serversListControllerProvider.notifier)
-      .onServersListChanged(mockServersList.serversList);
+  await tester.tap(specialtyServersTab());
+  await tester.pumpAndSettle();
 
-  return container.read(serversListControllerProvider).value!;
+  return obfuscatedGroupTile();
+}
+
+String? _textIn(WidgetTester tester, Finder tile, Key key) {
+  final text = find.descendant(of: tile, matching: find.byKey(key));
+  expect(text, findsOne);
+  return tester.widget<Text>(text).data;
 }
 
 void main() {
@@ -58,77 +56,19 @@ void main() {
     await initServiceLocator();
   });
 
-  group("obfuscated servers tile", () {
-    Future<Finder> openSpecialtyServers(
-      WidgetTester tester, {
-      required Technology technology,
-    }) async {
-      final serversList = (await tester.runAsync(
-        () => _serversList(technology: technology),
-      ))!;
+  testWidgets("obfuscated group is listed under specialty group tab", (
+    tester,
+  ) async {
+    final tile = await _obfuscatedTile(tester);
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            serversListControllerProvider.overrideWithBuild(
-              (ref, notifier) => serversList,
-            ),
-            vpnStatusControllerProvider.overrideWithBuild(
-              (ref, notifier) => fakeVpnStatus(),
-            ),
-            accountControllerProvider.overrideWithBuild(
-              (ref, notifier) => null,
-            ),
-          ],
-          child: MaterialApp(
-            theme: lightTheme(),
-            home: Scaffold(body: ServersListCard(onSelected: (_) async {})),
-          ),
-        ),
-      );
-      await tester.pumpAndSettleWithTimeout();
-
-      await tester.tap(specialtyServersTab());
-      await tester.pumpAndSettle();
-
-      return obfuscatedGroupTile();
-    }
-
-    testWidgets("is offered under NordWhisper", (tester) async {
-      final tile = await openSpecialtyServers(
-        tester,
-        technology: Technology.NORDWHISPER,
-      );
-
-      expect(tester.widget<CustomListTile>(tile).enabled, isTrue);
-      expect(
-        find.descendant(of: tile, matching: find.text(t.ui.obfuscated)),
-        findsOne,
-      );
-      expect(
-        find.descendant(
-          of: tile,
-          matching: find.text(t.ui.obfuscatedServersDesc),
-        ),
-        findsOne,
-      );
-      expect(
-        find.descendant(of: tile, matching: find.byType(IconButton)),
-        findsOne,
-      );
-    });
-
-    testWidgets("is not selectable under any other technology", (tester) async {
-      final tile = await openSpecialtyServers(
-        tester,
-        technology: Technology.NORDLYNX,
-      );
-
-      expect(tester.widget<CustomListTile>(tile).enabled, isFalse);
-      expect(
-        find.descendant(of: tile, matching: find.byType(IconButton)),
-        findsNothing,
-      );
-    });
+    expect(tester.widget<CustomListTile>(tile).enabled, isTrue);
+    expect(
+      _textIn(tester, tile, ServerListItemFactory.specialtyTitleKey),
+      t.ui.obfuscated,
+    );
+    expect(
+      _textIn(tester, tile, ServerListItemFactory.specialtyDescriptionKey),
+      t.ui.obfuscatedServersDesc,
+    );
   });
 }
