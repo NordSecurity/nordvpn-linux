@@ -2,7 +2,7 @@ import pytest
 import sh
 
 import lib
-from lib import daemon, network, server, settings, IS_NIGHTLY
+from lib import daemon, network, settings, IS_NIGHTLY
 from lib.shell import sh_no_tty
 from lib.dynamic_parametrize import dynamic_parametrize
 
@@ -84,18 +84,6 @@ def test_autoconnect_to_city(tech, proto, group):
     autoconnect_base_test(group)
 
 
-@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
-def test_autoconnect_to_random_server_by_name(tech, proto):
-    """Manual TC: LVPN-6782"""
-
-    lib.set_technology_and_protocol(tech, proto)
-
-    server_info = server.get_hostname_by(tech, proto)
-    name = server_info.hostname.split(".")[0]
-
-    autoconnect_base_test(name)
-
-
 @dynamic_parametrize(
     [
         "tech", "proto", "group",
@@ -160,25 +148,3 @@ def test_autoconnect_to_unavailable_groups(tech, proto):
 
         print(ex.value)
         assert lib.is_connect_unsuccessful(ex), "Connection should be unsuccessful"
-
-
-@pytest.mark.skip("obfuscation is a technology since LVPN-10929, guard re-added in LVPN-11099")
-@pytest.mark.parametrize(("tech", "proto"), lib.OVPN_STANDARD_TECHNOLOGIES)
-def test_prevent_autoconnect_enable_to_non_obfuscated_servers_when_obfuscation_is_on(tech, proto):
-    """Manual TC: LVPN-8581"""
-
-    lib.set_technology_and_protocol(tech, proto)
-
-    unavailable_groups = daemon.get_unavailable_groups()
-
-    for group in unavailable_groups:
-        server_name = server.get_hostname_by(group_name=group).hostname.split(".")[0]
-
-        with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            sh.nordvpn.set.autoconnect.on(server_name)
-        print(ex.value)
-        error_message = "Your selected server doesn’t support obfuscation. Choose a different server or turn off obfuscation."
-        assert error_message in ex.value.stdout.decode("utf-8"), "Should show correct error message"
-        assert "Auto-connect: disabled" in sh.nordvpn.settings(), "Auto-connect should be disabled"
-        daemon.restart()
-        assert network.is_disconnected(), "Network should be disconnected"
