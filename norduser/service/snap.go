@@ -55,7 +55,7 @@ func (n NorduserSnap) stopAll(disable bool) {
 			continue
 		}
 
-		//parsed value is within uint32 range
+		// parsed value is within uint32 range
 		// #nosec G115
 		if err := process.NewNorduserGRPCProcessManager(uint32(uidInt)).StopProcess(disable); err != nil {
 			log.Error("Failed to stop norduserd for uid: ", uid)

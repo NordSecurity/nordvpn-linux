@@ -37,7 +37,8 @@ func (m *Middleware) AddUnaryMiddleware(middleware UnaryMiddleware) {
 func (m *Middleware) StreamIntercept(srv any,
 	ss grpc.ServerStream,
 	info *grpc.StreamServerInfo,
-	handler grpc.StreamHandler) error {
+	handler grpc.StreamHandler,
+) error {
 	for _, m := range m.streamMiddleware {
 		if err := m(srv, ss, info); err != nil {
 			return err

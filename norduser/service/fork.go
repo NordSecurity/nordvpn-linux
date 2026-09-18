@@ -288,7 +288,7 @@ func (s *systemGIDProvider) GetNordvpnGid() (uint32, error) {
 		return 0, errors.New("negative gid cannot be converted to uint32")
 	}
 
-	//no gosec violation, current Linux distributions use GID lower than uint32 max value
+	// no gosec violation, current Linux distributions use GID lower than uint32 max value
 	// #nosec G115
 	return uint32(gid), nil
 }

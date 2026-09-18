@@ -15,8 +15,10 @@ type MachineIDGetter interface {
 	GetMachineID() uuid.UUID
 }
 
-type FileReader func(fileName string) ([]byte, error)
-type HostNameReader func() (name string, err error)
+type (
+	FileReader     func(fileName string) ([]byte, error)
+	HostNameReader func() (name string, err error)
+)
 
 type generatorFn func() ([]byte, error)
 
@@ -185,7 +187,6 @@ func (getter *MachineID) readCPUSerial() ([]byte, error) {
 	}
 
 	val, err := getValueForKey(string(data), "Serial", ":")
-
 	if err != nil {
 		return nil, fmt.Errorf("no serial number found for CPU %w", err)
 	}

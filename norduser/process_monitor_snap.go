@@ -10,7 +10,8 @@ import (
 )
 
 func (n *NorduserProcessMonitor) stopForDeletedGroupMembers(currentGroupMembers []string,
-	newGroupMembers []string) []string {
+	newGroupMembers []string,
+) []string {
 	groupMembersUpdate := []string{}
 	for _, username := range currentGroupMembers {
 		if slices.Contains(newGroupMembers, username) {
