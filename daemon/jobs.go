@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -339,6 +340,45 @@ func (r *RPC) fallbackDedicatedServer(cfg config.Config) config.Config {
 		}); err != nil {
 			log.Error("failed to save config after a fallback from dedicated server:", err)
 		}
+	}
+
+	return cfg
+}
+
+// fallbackSpecificServer checks if autoconnect target is a specific server. If it is, it sets the target to it's
+// country/city.
+//
+// Autconnect to a specific server was deprecated in version 6.0.0.
+func (r *RPC) fallbackSpecificServer(cfg config.Config) config.Config {
+	if cfg.AutoConnectData.ServerTag == "" {
+		return cfg
+	}
+
+	if !serverpicker.IsServerTag(cfg.AutoConnectData.ServerTag) {
+		return cfg
+	}
+
+	serversData := r.dm.GetServersData()
+	serverIndex := slices.IndexFunc(serversData.Servers, func(server core.Server) bool {
+		return serverpicker.MatchTagToHostname(cfg.AutoConnectData.ServerTag, server)
+	})
+
+	cfg.AutoConnectData.ServerTag = ""
+	if serverIndex != -1 {
+		log.Info("autoconnection target set to a specific server tag, falling back to server's country/city")
+		server := serversData.Servers[serverIndex]
+		cfg.AutoConnectData.City = server.Country().City.Name
+		cfg.AutoConnectData.Country = server.Country().Name
+		cfg.AutoConnectData.ServerTag = strings.ToLower(server.Country().City.Name)
+	} else {
+		log.Warn("autoconnection target set to a specific server tag, server not found, falling back to fastest server")
+	}
+
+	if err := r.cm.SaveWith(func(c config.Config) config.Config {
+		c.AutoConnectData = cfg.AutoConnectData
+		return c
+	}); err != nil {
+		log.Error("failed to save config after a fallback from specific server:", err)
 	}
 
 	return cfg
