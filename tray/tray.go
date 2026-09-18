@@ -8,7 +8,6 @@ import (
 	"slices"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/NordSecurity/nordvpn-linux/alert"
@@ -112,24 +111,22 @@ func sortedConnections(sgs []*pb.ServerGroup) []Server {
 }
 
 type Instance struct {
-	client                pb.DaemonClient
-	fileshare             FileshareManager
-	accountInfo           accountInfo
-	debugMode             bool
-	n                     alert.Notifier
-	renderChan            chan struct{}
-	initialDataLoadChan   chan struct{}
-	iconConnected         string
-	iconDisconnected      string
-	state                 trayState
-	quitChan              chan<- norduser.StopRequest
-	stateListener         *stateListener
-	connSensor            *connectionSettingsChangeSensor
-	recentConnections     *recentConnectionsManager
-	checkboxSync          *CheckboxSynchronizer
-	isVisible             atomic.Bool
-	stopVisibilityMonitor chan struct{}
-	openURI               URIOpener
+	client              pb.DaemonClient
+	fileshare           FileshareManager
+	accountInfo         accountInfo
+	debugMode           bool
+	n                   alert.Notifier
+	renderChan          chan struct{}
+	initialDataLoadChan chan struct{}
+	iconConnected       string
+	iconDisconnected    string
+	state               trayState
+	quitChan            chan<- norduser.StopRequest
+	stateListener       *stateListener
+	connSensor          *connectionSettingsChangeSensor
+	recentConnections   *recentConnectionsManager
+	checkboxSync        *CheckboxSynchronizer
+	openURI             URIOpener
 }
 
 type URIOpener func(string) error
@@ -178,14 +175,13 @@ func NewTrayInstance(
 	}
 
 	obj := &Instance{
-		client:                client,
-		fileshare:             NewFileshareManager(),
-		quitChan:              quitChan,
-		connSensor:            newConnectionSettingsChangeSensor(),
-		recentConnections:     newRecentConnectionsManager(client),
-		checkboxSync:          NewCheckboxSynchronizer(),
-		stopVisibilityMonitor: make(chan struct{}),
-		openURI:               openURI,
+		client:            client,
+		fileshare:         NewFileshareManager(),
+		quitChan:          quitChan,
+		connSensor:        newConnectionSettingsChangeSensor(),
+		recentConnections: newRecentConnectionsManager(client),
+		checkboxSync:      NewCheckboxSynchronizer(),
+		openURI:           openURI,
 	}
 	obj.n = &gatedNotifier{
 		Notifier: n,
@@ -199,26 +195,8 @@ func NewTrayInstance(
 	// information if notifications are allowed or not
 	obj.n.Mute()
 
-	obj.isVisible.Store(false)
 	obj.stateListener = newStateListener(client, obj.onDaemonStateEvent)
 	return obj
-}
-
-func (ti *Instance) MonitorTrayVisibility() {
-	for {
-		select {
-		case <-systray.TrayOpenedCh:
-			ti.isVisible.Store(true)
-		case <-systray.TrayClosedCh:
-			ti.isVisible.Store(false)
-		case <-ti.stopVisibilityMonitor:
-			return
-		}
-	}
-}
-
-func (ti *Instance) StopVisibilityMonitor() {
-	ti.stopVisibilityMonitor <- struct{}{}
 }
 
 func (ti *Instance) WaitInitialTrayStatus() Status {
@@ -359,6 +337,9 @@ func (ti *Instance) rebuildTray() {
 	ti.state.mu.RLock()
 	defer ti.state.mu.RUnlock()
 
+	// appindicator warmup
+	systray.Refresh()
+
 	// called functions must not contain Lock or RLock calls
 	ti.updateIcon()
 	buildConnectionSection(ti)
@@ -368,5 +349,7 @@ func (ti *Instance) rebuildTray() {
 	buildDaemonErrorSection(ti)
 	addDebugSection(ti)
 	buildQuitButton(ti)
+
+	// finalizing refresh
 	systray.Refresh()
 }
