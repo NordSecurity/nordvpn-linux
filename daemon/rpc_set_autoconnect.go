@@ -14,6 +14,12 @@ import (
 )
 
 func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) (*pb.Payload, error) {
+	if serverpicker.IsServerTag(in.GetServerTag()) {
+		return &pb.Payload{
+			Type: internal.CodeAutoconnectToSpecificServer,
+		}, nil
+	}
+
 	if ok, err := r.ac.IsLoggedIn(); !ok {
 		if errors.Is(err, core.ErrUnauthorized) {
 			return nil, err

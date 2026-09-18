@@ -1,5 +1,4 @@
 import random
-import warnings
 
 import pytest
 import sh
@@ -85,18 +84,6 @@ def test_autoconnect_to_city(tech, proto, obfuscated, group):
 
     lib.set_technology_and_protocol(tech, proto, obfuscated)
     autoconnect_base_test(group)
-
-
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_autoconnect_to_random_server_by_name(tech, proto, obfuscated):
-    """Manual TC: LVPN-6782"""
-
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    server_info = server.get_hostname_by(tech, proto, obfuscated)
-    name = server_info.hostname.split(".")[0]
-
-    autoconnect_base_test(name)
 
 
 @dynamic_parametrize(
@@ -198,90 +185,3 @@ def test_autoconnect_to_unavailable_groups(tech, proto, obfuscated):
 
         print(ex.value)
         assert lib.is_connect_unsuccessful(ex), "Connection should be unsuccessful"
-
-
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
-def test_prevent_autoconnect_enable_to_non_obfuscated_servers_when_obfuscation_is_on(tech, proto, obfuscated):
-    """Manual TC: LVPN-8581"""
-
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    unavailable_groups = daemon.get_unavailable_groups()
-
-    for group in unavailable_groups:
-        server_name = server.get_hostname_by(group_name=group).hostname.split(".")[0]
-
-        with pytest.raises(sh.ErrorReturnCode_1) as ex:
-            sh.nordvpn.set.autoconnect.on(server_name)
-        print(ex.value)
-        error_message = "Your selected server doesn’t support obfuscation. Choose a different server or turn off obfuscation."
-        assert error_message in ex.value.stdout.decode("utf-8"), "Should show correct error message"
-        assert "Auto-connect: disabled" in sh.nordvpn.settings(), "Auto-connect should be disabled"
-        daemon.restart()
-        assert network.is_disconnected(), "Network should be disconnected"
-
-
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OBFUSCATED_TECHNOLOGIES)
-def test_prevent_obfuscate_disable_with_autoconnect_enabled_to_obfuscated_server(tech, proto, obfuscated):
-    """Manual TC: LVPN-5847"""
-
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    server_name = server.get_hostname_by(group_name="Obfuscated_Servers").hostname.split(".")[0]
-    sh.nordvpn.set.autoconnect.on(server_name)
-
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        sh.nordvpn.set.obfuscate.off()
-    print(ex.value)
-    error_message = "We couldn’t turn off obfuscation because your current auto-connect server is obfuscated by default. " \
-        + "Set a different server for auto-connect, then turn off obfuscation."
-    assert error_message in ex.value.stdout.decode("utf-8"), "Should show correct error message"
-    assert "Obfuscate: enabled" in sh.nordvpn.settings(), "Obfuscate should be enabled"
-
-
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.STANDARD_TECHNOLOGIES)
-def test_prevent_autoconnect_enable_to_obfuscated_servers_when_obfuscation_is_off(tech, proto, obfuscated):
-    """Manual TC: LVPN-8591"""
-
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    with pytest.raises(sh.ErrorReturnCode_1) as ex:
-        server_name = server.get_hostname_by(group_name="Obfuscated_Servers").hostname.split(".")[0]
-        sh.nordvpn.set.autoconnect.on(server_name)
-    print(ex.value)
-    error_message = "Turn on obfuscation to connect to obfuscated servers."
-    assert error_message in ex.value.stdout.decode("utf-8"), "Should show turn on obfuscation error"
-    assert "Auto-connect: disabled" in sh.nordvpn.settings(), "Auto-connect should be disabled"
-
-    daemon.restart()
-    assert network.is_disconnected(), "Network should be disconnected"
-
-
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.OVPN_STANDARD_TECHNOLOGIES)
-def test_prevent_obfuscate_enable_with_autoconnect_set_to_nonobfuscated(tech, proto, obfuscated):
-    """Manual TC: LVPN-5848"""
-
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
-
-    # TODO(LVPN-10389): restore Dedicated_Server group once the infrastructure is ready
-    available_groups = [g for g in str(sh.nordvpn.groups(_tty_out=False)).strip().split() if g != "Dedicated_Server"]
-
-    for group in available_groups:
-        if group == "Dedicated_IP":
-            server_name = server.get_dedicated_ip().hostname.split(".")[0]
-        else:
-            server_info = server.get_hostname_by(tech, proto, obfuscated, group, exclude_dip=True)
-            if server_info is None:
-                warnings.warn(f"no non-DIP servers available for group {group}", stacklevel=2)
-                continue
-            server_name = server_info.hostname.split(".")[0]
-
-        sh.nordvpn.set.autoconnect.on(server_name)
-
-        with pytest.raises(sh.ErrorReturnCode_1) as ex:
-             sh.nordvpn.set.obfuscate.on()
-        print(ex.value)
-        error_message = "We couldn’t turn on obfuscation because the current auto-connect server doesn’t support it. " \
-            + "Set a different server for auto-connect to use obfuscation."
-        assert error_message in ex.value.stdout.decode("utf-8"), "Should show correct error message"
-        assert "Obfuscate: disabled" in sh.nordvpn.settings(), "Obfuscate should be disabled"
