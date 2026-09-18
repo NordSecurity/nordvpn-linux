@@ -30,6 +30,18 @@ func MatchTagToHostname(tag string, server core.Server) bool {
 	return strings.EqualFold(tag, strings.Split(server.Hostname, ".")[0])
 }
 
+func IsServerTag(tag string) bool {
+	if strings.EqualFold(tag, "uk") {
+		tag = "gb"
+	}
+
+	return tagRegExp.MatchString(tag)
+}
+
+func MatchTagToHostname(tag string, server core.Server) bool {
+	return strings.EqualFold(tag, strings.Split(server.Hostname, ".")[0])
+}
+
 func resolveServerGroup(input *SearchParams, obfuscated bool) (config.ServerGroup, error) {
 	tagServerGroup := groupConvert(input.Tag)
 	flagServerGroup := groupConvert(input.Group)
