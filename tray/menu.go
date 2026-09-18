@@ -338,7 +338,7 @@ func buildPauseMenu(ti *Instance) {
 }
 
 func buildPauseTimer(ti *Instance) {
-	initialValue := ti.state.pauseRemainingSec
+	initialValue := ti.state.pauseRemainingMin
 	if initialValue <= 0 {
 		return
 	}
@@ -349,7 +349,7 @@ func buildPauseTimer(ti *Instance) {
 	timer.Disable()
 
 	go func() {
-		ticker := time.NewTicker(time.Second)
+		ticker := time.NewTicker(time.Minute)
 		defer ticker.Stop()
 
 		currentValue := initialValue
@@ -362,33 +362,30 @@ func buildPauseTimer(ti *Instance) {
 			case <-ticker.C:
 				ti.state.mu.Lock()
 
-				currentValue = ti.state.pauseRemainingSec
+				currentValue = ti.state.pauseRemainingMin
 				if currentValue > 0 {
 					currentValue--
-					ti.state.pauseRemainingSec = currentValue
+					ti.state.pauseRemainingMin = currentValue
 				}
 
 				ti.state.mu.Unlock()
 
-				if ti.isVisible.Load() {
-					timer.SetTitleQuiet(
-						buildTimerString(currentValue),
-					)
-				}
+				timer.SetTitleQuiet(
+					buildTimerString(currentValue),
+				)
 			}
 		}
 	}()
 }
 
-func buildTimerString(remaining int) string {
-	hours := remaining / 3600
-	minutes := (remaining % 3600) / 60
-	seconds := remaining % 60
+func buildTimerString(remainingMin int) string {
+	hours := remainingMin / 60
+	minutes := remainingMin % 60
 
 	if hours > 0 {
-		return fmt.Sprintf("VPN connection resumes in %02d:%02d:%02d", hours, minutes, seconds)
+		return fmt.Sprintf("VPN connection resumes in %02d:%02d", hours, minutes)
 	} else {
-		return fmt.Sprintf("VPN connection resumes in %02d:%02d", minutes, seconds)
+		return fmt.Sprintf("VPN connection resumes in %02d", minutes)
 	}
 }
 
