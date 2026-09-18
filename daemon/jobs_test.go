@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
+	"strings"
 	"testing"
 	"time"
 
@@ -475,6 +476,97 @@ func TestDoAutoConnect_SetsRequestedConnectionParams(t *testing.T) {
 
 			params := rpc.RequestedConnParams.Get()
 			assert.Equal(t, test.expectedParams, params)
+		})
+	}
+}
+
+func Test_fallbackSpecificServer(t *testing.T) {
+	category.Set(t, category.Unit)
+
+	testServerTag := "ts123"
+	testCountryName := "Test Country"
+	testCityName := "Test City"
+
+	testServerLocation := core.Locations{
+		core.Location{
+			Country: core.Country{
+				Name: testCountryName,
+				City: core.City{
+					Name: testCityName,
+				},
+			},
+		},
+	}
+
+	testServer := core.Server{
+		Hostname:  testServerTag + ".nordvpn.com",
+		Locations: testServerLocation,
+	}
+
+	testServersList := core.Servers{testServer}
+
+	tests := []struct {
+		name                string
+		serversList         core.Servers
+		currentServerTag    string
+		expectedTag         string
+		expectedCountryName string
+		expectedCityName    string
+	}{
+		{
+			name:                "server set to specific, fallback to country",
+			currentServerTag:    testServerTag,
+			serversList:         testServersList,
+			expectedTag:         strings.ToLower(testCityName),
+			expectedCountryName: testCountryName,
+			expectedCityName:    testCityName,
+		},
+		{
+			name:             "server set to country, no fallback",
+			currentServerTag: strings.ToLower(testCountryName),
+			serversList:      testServersList,
+			expectedTag:      strings.ToLower(testCountryName),
+		},
+		{
+			name:             "server set to city, no fallback",
+			currentServerTag: strings.ToLower(testCityName),
+			serversList:      testServersList,
+			expectedTag:      strings.ToLower(testCityName),
+		},
+		{
+			name:             "server tag empty, no fallback",
+			currentServerTag: "",
+			serversList:      testServersList,
+		},
+		{
+			name:             "server set to specific, server not found, fallback to fastest",
+			currentServerTag: testServerTag,
+			serversList:      core.Servers{},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			rpc := testRPC()
+
+			dm := rpc.dm
+			dm.serversData = ServersData{
+				Servers: test.serversList,
+			}
+
+			cfg := config.Config{
+				AutoConnectData: config.AutoConnectData{
+					ServerTag: test.currentServerTag,
+				},
+			}
+			cfg = rpc.fallbackSpecificServer(cfg)
+
+			assert.Equal(t, test.expectedTag, cfg.AutoConnectData.ServerTag,
+				"Invalid server tag saved in local config after fallback.")
+			assert.Equal(t, test.expectedCountryName, cfg.AutoConnectData.Country,
+				"Invalid country saved in local config after fallback.")
+			assert.Equal(t, test.expectedCityName, cfg.AutoConnectData.City,
+				"Invalid city saved in local config after fallback.")
 		})
 	}
 }
