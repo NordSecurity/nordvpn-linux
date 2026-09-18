@@ -1294,3 +1294,133 @@ func TestRecentConnectionsStore_EventPublisher_ConcurrentOperations(t *testing.T
 	assert.Greater(t, finalCount, 0, "Should have published events for successful operations")
 	assert.LessOrEqual(t, finalCount, operations, "Should not publish more events than operations")
 }
+
+func TestRecentConnectionsStore_Migrate_PreservesNonDeprecated(t *testing.T) {
+	category.Set(t, category.Unit)
+	fs := fs.NewSystemFileHandleMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	france := Model{Country: "France", ConnectionType: config.ServerSelectionRule_COUNTRY}
+	deprecated := Model{
+		Country:        "Italy",
+		ConnectionType: config.ServerSelectionRule_GROUP,
+		Group:          15, // P2P group
+	}
+
+	require.NoError(t, store.Add(france))
+	require.NoError(t, store.Add(deprecated))
+
+	require.NoError(t, store.MigrateDeprecatedP2PGroup())
+
+	connections, err := store.Get()
+	require.NoError(t, err)
+	require.Len(t, connections, 1)
+	assert.Equal(t, france, connections[0])
+}
+
+func TestRecentConnectionsStore_Migrate_CleansCountryWithGroup(t *testing.T) {
+	category.Set(t, category.Unit)
+	fs := fs.NewSystemFileHandleMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	require.NoError(t, store.Add(Model{
+		Country:        "Italy",
+		ConnectionType: config.ServerSelectionRule_COUNTRY_WITH_GROUP,
+		Group:          15, // P2P group
+	}))
+
+	require.NoError(t, store.MigrateDeprecatedP2PGroup())
+
+	connections, err := store.Get()
+	require.NoError(t, err)
+	require.Len(t, connections, 1)
+	assert.Equal(t, config.ServerSelectionRule_COUNTRY, connections[0].ConnectionType)
+	assert.Equal(t, config.ServerGroup_UNDEFINED, connections[0].Group)
+	assert.Equal(t, "Italy", connections[0].Country)
+}
+
+func TestRecentConnectionsStore_Migrate_CleansSpecificServerWithGroup(t *testing.T) {
+	category.Set(t, category.Unit)
+	fs := fs.NewSystemFileHandleMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	require.NoError(t, store.Add(Model{
+		Country:        "Italy",
+		City:           "Rome",
+		ConnectionType: config.ServerSelectionRule_SPECIFIC_SERVER_WITH_GROUP,
+		Group:          15, // P2P group
+	}))
+
+	require.NoError(t, store.MigrateDeprecatedP2PGroup())
+
+	connections, err := store.Get()
+	require.NoError(t, err)
+	require.Len(t, connections, 1)
+	assert.Equal(t, config.ServerSelectionRule_SPECIFIC_SERVER, connections[0].ConnectionType)
+	assert.Equal(t, config.ServerGroup_UNDEFINED, connections[0].Group)
+	assert.Equal(t, "Rome", connections[0].City)
+	assert.Equal(t, "Italy", connections[0].Country)
+}
+
+func TestRecentConnectionsStore_Migrate_RemovesDuplicatesAfterCleanup(t *testing.T) {
+	category.Set(t, category.Unit)
+	fs := fs.NewSystemFileHandleMock(t)
+	store := NewRecentConnectionsStore("/test/path", &fs, nil)
+
+	require.NoError(t, store.Add(Model{Country: "France", ConnectionType: config.ServerSelectionRule_COUNTRY}))
+	require.NoError(t, store.Add(Model{Country: "Italy", ConnectionType: config.ServerSelectionRule_COUNTRY}))
+	require.NoError(t, store.Add(Model{
+		Country:        "Italy",
+		ConnectionType: config.ServerSelectionRule_COUNTRY_WITH_GROUP,
+		Group:          15, // P2P group
+	}))
+
+	require.NoError(t, store.MigrateDeprecatedP2PGroup())
+
+	connections, err := store.Get()
+	require.NoError(t, err)
+	require.Len(t, connections, 2)
+	assert.Equal(t, "Italy", connections[0].Country)
+	assert.Equal(t, config.ServerSelectionRule_COUNTRY, connections[0].ConnectionType)
+	assert.Equal(t, config.ServerGroup_UNDEFINED, connections[0].Group)
+	assert.Equal(t, "France", connections[1].Country)
+}
+
+func TestRecentConnectionsStore_Migrate_NoDeprecated_DoesNotNotify(t *testing.T) {
+	category.Set(t, category.Unit)
+	fs := fs.NewSystemFileHandleMock(t)
+
+	called := 0
+	store := NewRecentConnectionsStore("/test/path", &fs, func() { called++ })
+
+	france := Model{Country: "France", ConnectionType: config.ServerSelectionRule_COUNTRY}
+	require.NoError(t, store.Add(france))
+	called = 0
+
+	require.NoError(t, store.MigrateDeprecatedP2PGroup())
+
+	assert.Equal(t, 0, called)
+	connections, err := store.Get()
+	require.NoError(t, err)
+	require.Len(t, connections, 1)
+	assert.Equal(t, france, connections[0])
+}
+
+func TestRecentConnectionsStore_Migrate_NotifiesOnChange(t *testing.T) {
+	category.Set(t, category.Unit)
+	fs := fs.NewSystemFileHandleMock(t)
+
+	called := 0
+	store := NewRecentConnectionsStore("/test/path", &fs, func() { called++ })
+
+	require.NoError(t, store.Add(Model{
+		Country:        "Italy",
+		ConnectionType: config.ServerSelectionRule_COUNTRY_WITH_GROUP,
+		Group:          15, // P2P group
+	}))
+	called = 0
+
+	require.NoError(t, store.MigrateDeprecatedP2PGroup())
+
+	assert.Equal(t, 1, called)
+}
