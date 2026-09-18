@@ -188,6 +188,81 @@ func buildVagrantEnv() (VagrantEnv, error) {
 	return vagrantEnv, nil
 }
 
+// copyDirFromVM - copies all files from a directory in the VM to the host
+func copyDirFromVM(vagrantEnv VagrantEnv, remotePath, localPath string) error {
+	// List all files in the remote directory
+	listCmd := exec.Command("vagrant", "ssh", vagrantEnv.BoxName, "-c", fmt.Sprintf("find %s -type f", remotePath))
+	listCmd.Dir = vagrantEnv.VagrantFileDir
+	listCmd.Env = append(os.Environ(),
+		fmt.Sprintf("WORKDIR=%s", vagrantEnv.Cwd),
+		fmt.Sprintf("SNAP_TEST_BOX_URL=%s", vagrantEnv.CustomBoxUrl),
+		fmt.Sprintf("SNAP_TEST_BOX_USER=%s", vagrantEnv.CustomBoxUser.getValue()),
+		fmt.Sprintf("SNAP_TEST_BOX_PASS=%s", vagrantEnv.CustomBoxPass.getValue()),
+	)
+
+	output, err := listCmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to list files in %s: %w", remotePath, err)
+	}
+
+	files := strings.Split(strings.TrimSpace(string(output)), "\n")
+	// Skip the first line (Vagrant's "Using box:..." message)
+	if len(files) > 0 {
+		files = files[1:]
+	}
+	if len(files) == 0 || (len(files) == 1 && files[0] == "") {
+		return fmt.Errorf("no files found in %s", remotePath)
+	}
+
+	fmt.Printf("Found %d files to copy from %s\n", len(files), remotePath)
+
+	// Copy each file
+	for _, remoteFile := range files {
+		remoteFile = strings.TrimSpace(remoteFile)
+		if remoteFile == "" {
+			continue
+		}
+
+		// Calculate the local path, preserving directory structure
+		relPath := strings.TrimPrefix(remoteFile, remotePath)
+		relPath = strings.TrimPrefix(relPath, "/")
+		localFile := path.Join(localPath, relPath)
+
+		// Read file from VM
+		catCmd := exec.Command("vagrant", "ssh", vagrantEnv.BoxName, "-c", fmt.Sprintf("cat %s", remoteFile))
+		catCmd.Dir = vagrantEnv.VagrantFileDir
+		catCmd.Env = append(os.Environ(),
+			fmt.Sprintf("WORKDIR=%s", vagrantEnv.Cwd),
+			fmt.Sprintf("SNAP_TEST_BOX_URL=%s", vagrantEnv.CustomBoxUrl),
+			fmt.Sprintf("SNAP_TEST_BOX_USER=%s", vagrantEnv.CustomBoxUser.getValue()),
+			fmt.Sprintf("SNAP_TEST_BOX_PASS=%s", vagrantEnv.CustomBoxPass.getValue()),
+		)
+
+		fileContent, err := catCmd.Output()
+		if err != nil {
+			fmt.Printf("Warning: failed to copy %s: %v\n", remoteFile, err)
+			continue
+		}
+
+		// Create local directory if needed
+		localDir := path.Dir(localFile)
+		if err := os.MkdirAll(localDir, 0755); err != nil {
+			fmt.Printf("Warning: failed to create directory %s: %v\n", localDir, err)
+			continue
+		}
+
+		// Write to local file
+		if err := os.WriteFile(localFile, fileContent, 0644); err != nil {
+			fmt.Printf("Warning: failed to write %s: %v\n", localFile, err)
+			continue
+		}
+
+		fmt.Printf("  Copied %s -> %s (%d bytes)\n", remoteFile, localFile, len(fileContent))
+	}
+
+	return nil
+}
+
 // RunInVM - executes the commands using vagrant ssh in a VM.
 // It will also setup, configure and start(+stop) the VM using vagrant
 func RunInVM(args ...string) error {
@@ -209,5 +284,14 @@ func RunInVM(args ...string) error {
 	for i := range args {
 		arguments[i] = fmt.Sprintf("%q", args[i]) // adds double quotes to the arguments
 	}
-	return runCommandInVM(vagrantEnv, arguments)
+
+	testErr := runCommandInVM(vagrantEnv, arguments)
+
+	// Copy /dist/logs directory contents
+	logsDirPath := path.Join(vagrantEnv.Cwd, "dist", "logs")
+	if err := copyDirFromVM(vagrantEnv, "/vagrant/dist/logs", logsDirPath); err != nil {
+		fmt.Println("Warning: failed to copy files from logs directory:", err)
+	}
+
+	return testErr
 }
