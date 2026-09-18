@@ -122,7 +122,7 @@ const (
 
 type DataConnect struct {
 	IsMeshnetPeer           bool
-	ThreatProtectionLite    bool
+	RealTimeProtection      bool
 	Protocol                config.Protocol
 	DurationMs              int
 	ServerFromAPI           bool
@@ -206,7 +206,7 @@ type DataDisconnect struct {
 	EventStatus           TypeEventStatus
 	Technology            config.Technology
 	TargetServerSelection config.ServerSelectionRule
-	ThreatProtectionLite  bool
+	RealTimeProtection    bool
 	ByUser                bool
 	Duration              time.Duration
 	Error                 error

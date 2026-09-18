@@ -73,8 +73,8 @@ NORDWHISPER_TECHNOLOGY = [
     ("nordwhisper", "", ""),
 ]
 
-# Used for test parametrization, when the same test has to be run for different threat protection lite settings.
-THREAT_PROTECTION_LITE = [
+# Used for test parametrization, when the same test has to be run for different real time protection settings.
+REAL_TIME_PROTECTION = [
     "on",
     "off",
 ]
@@ -250,12 +250,12 @@ def set_technology_and_protocol(tech, proto, obfuscation):
             print("WARNING:", ex)
 
 
-# Allows setting threat protection lite regardless of whether it is already set or not.
+# Allows setting real time protection regardless of whether it is already set or not.
 #
 # Tests do not break on reordering when using this.
-def set_threat_protection_lite(dns):
+def set_real_time_protection(dns):
     try:
-        print(sh.nordvpn.set.cybersec(dns))
+        print(sh.nordvpn.set.protection(dns))
     except sh.ErrorReturnCode_1 as ex:
         print("WARNING:", ex)
 

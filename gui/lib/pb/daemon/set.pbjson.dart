@@ -30,27 +30,27 @@ final $typed_data.Uint8List setErrorCodeDescriptor = $convert.base64Decode(
     'CgxTZXRFcnJvckNvZGUSCwoHRkFJTFVSRRAAEhAKDENPTkZJR19FUlJPUhABEg8KC0FMUkVBRF'
     'lfU0VUEAI=');
 
-@$core.Deprecated('Use setThreatProtectionLiteStatusDescriptor instead')
-const SetThreatProtectionLiteStatus$json = {
-  '1': 'SetThreatProtectionLiteStatus',
+@$core.Deprecated('Use setRealTimeProtectionStatusDescriptor instead')
+const SetRealTimeProtectionStatus$json = {
+  '1': 'SetRealTimeProtectionStatus',
   '2': [
-    {'1': 'TPL_CONFIGURED', '2': 0},
-    {'1': 'TPL_CONFIGURED_DNS_RESET', '2': 1},
+    {'1': 'RTP_CONFIGURED', '2': 0},
+    {'1': 'RTP_CONFIGURED_DNS_RESET', '2': 1},
   ],
 };
 
-/// Descriptor for `SetThreatProtectionLiteStatus`. Decode as a `google.protobuf.EnumDescriptorProto`.
-final $typed_data.Uint8List setThreatProtectionLiteStatusDescriptor =
+/// Descriptor for `SetRealTimeProtectionStatus`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List setRealTimeProtectionStatusDescriptor =
     $convert.base64Decode(
-        'Ch1TZXRUaHJlYXRQcm90ZWN0aW9uTGl0ZVN0YXR1cxISCg5UUExfQ09ORklHVVJFRBAAEhwKGF'
-        'RQTF9DT05GSUdVUkVEX0ROU19SRVNFVBAB');
+        'ChtTZXRSZWFsVGltZVByb3RlY3Rpb25TdGF0dXMSEgoOUlRQX0NPTkZJR1VSRUQQABIcChhSVF'
+        'BfQ09ORklHVVJFRF9ETlNfUkVTRVQQAQ==');
 
 @$core.Deprecated('Use setDNSStatusDescriptor instead')
 const SetDNSStatus$json = {
   '1': 'SetDNSStatus',
   '2': [
     {'1': 'DNS_CONFIGURED', '2': 0},
-    {'1': 'DNS_CONFIGURED_TPL_RESET', '2': 1},
+    {'1': 'DNS_CONFIGURED_RTP_RESET', '2': 1},
     {'1': 'INVALID_DNS_ADDRESS', '2': 2},
     {'1': 'TOO_MANY_VALUES', '2': 3},
   ],
@@ -58,8 +58,8 @@ const SetDNSStatus$json = {
 
 /// Descriptor for `SetDNSStatus`. Decode as a `google.protobuf.EnumDescriptorProto`.
 final $typed_data.Uint8List setDNSStatusDescriptor = $convert.base64Decode(
-    'CgxTZXRETlNTdGF0dXMSEgoORE5TX0NPTkZJR1VSRUQQABIcChhETlNfQ09ORklHVVJFRF9UUE'
-    'xfUkVTRVQQARIXChNJTlZBTElEX0ROU19BRERSRVNTEAISEwoPVE9PX01BTllfVkFMVUVTEAM=');
+    'CgxTZXRETlNTdGF0dXMSEgoORE5TX0NPTkZJR1VSRUQQABIcChhETlNfQ09ORklHVVJFRF9SVF'
+    'BfUkVTRVQQARIXChNJTlZBTElEX0ROU19BRERSRVNTEAISEwoPVE9PX01BTllfVkFMVUVTEAM=');
 
 @$core.Deprecated('Use setProtocolStatusDescriptor instead')
 const SetProtocolStatus$json = {
@@ -130,29 +130,29 @@ const SetUint32Request$json = {
 final $typed_data.Uint8List setUint32RequestDescriptor = $convert
     .base64Decode('ChBTZXRVaW50MzJSZXF1ZXN0EhQKBXZhbHVlGAEgASgNUgV2YWx1ZQ==');
 
-@$core.Deprecated('Use setThreatProtectionLiteRequestDescriptor instead')
-const SetThreatProtectionLiteRequest$json = {
-  '1': 'SetThreatProtectionLiteRequest',
+@$core.Deprecated('Use setRealTimeProtectionRequestDescriptor instead')
+const SetRealTimeProtectionRequest$json = {
+  '1': 'SetRealTimeProtectionRequest',
   '2': [
     {
-      '1': 'threat_protection_lite',
+      '1': 'real_time_protection',
       '3': 1,
       '4': 1,
       '5': 8,
-      '10': 'threatProtectionLite'
+      '10': 'realTimeProtection'
     },
   ],
 };
 
-/// Descriptor for `SetThreatProtectionLiteRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List setThreatProtectionLiteRequestDescriptor =
+/// Descriptor for `SetRealTimeProtectionRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List setRealTimeProtectionRequestDescriptor =
     $convert.base64Decode(
-        'Ch5TZXRUaHJlYXRQcm90ZWN0aW9uTGl0ZVJlcXVlc3QSNAoWdGhyZWF0X3Byb3RlY3Rpb25fbG'
-        'l0ZRgBIAEoCFIUdGhyZWF0UHJvdGVjdGlvbkxpdGU=');
+        'ChxTZXRSZWFsVGltZVByb3RlY3Rpb25SZXF1ZXN0EjAKFHJlYWxfdGltZV9wcm90ZWN0aW9uGA'
+        'EgASgIUhJyZWFsVGltZVByb3RlY3Rpb24=');
 
-@$core.Deprecated('Use setThreatProtectionLiteResponseDescriptor instead')
-const SetThreatProtectionLiteResponse$json = {
-  '1': 'SetThreatProtectionLiteResponse',
+@$core.Deprecated('Use setRealTimeProtectionResponseDescriptor instead')
+const SetRealTimeProtectionResponse$json = {
+  '1': 'SetRealTimeProtectionResponse',
   '2': [
     {
       '1': 'error_code',
@@ -164,13 +164,13 @@ const SetThreatProtectionLiteResponse$json = {
       '10': 'errorCode'
     },
     {
-      '1': 'set_threat_protection_lite_status',
+      '1': 'set_real_time_protection_status',
       '3': 2,
       '4': 1,
       '5': 14,
-      '6': '.pb.SetThreatProtectionLiteStatus',
+      '6': '.pb.SetRealTimeProtectionStatus',
       '9': 0,
-      '10': 'setThreatProtectionLiteStatus'
+      '10': 'setRealTimeProtectionStatus'
     },
   ],
   '8': [
@@ -178,33 +178,24 @@ const SetThreatProtectionLiteResponse$json = {
   ],
 };
 
-/// Descriptor for `SetThreatProtectionLiteResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List setThreatProtectionLiteResponseDescriptor =
-    $convert.base64Decode(
-        'Ch9TZXRUaHJlYXRQcm90ZWN0aW9uTGl0ZVJlc3BvbnNlEjEKCmVycm9yX2NvZGUYASABKA4yEC'
-        '5wYi5TZXRFcnJvckNvZGVIAFIJZXJyb3JDb2RlEm0KIXNldF90aHJlYXRfcHJvdGVjdGlvbl9s'
-        'aXRlX3N0YXR1cxgCIAEoDjIhLnBiLlNldFRocmVhdFByb3RlY3Rpb25MaXRlU3RhdHVzSABSHX'
-        'NldFRocmVhdFByb3RlY3Rpb25MaXRlU3RhdHVzQgoKCHJlc3BvbnNl');
+/// Descriptor for `SetRealTimeProtectionResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List setRealTimeProtectionResponseDescriptor = $convert.base64Decode(
+    'Ch1TZXRSZWFsVGltZVByb3RlY3Rpb25SZXNwb25zZRIxCgplcnJvcl9jb2RlGAEgASgOMhAucG'
+    'IuU2V0RXJyb3JDb2RlSABSCWVycm9yQ29kZRJnCh9zZXRfcmVhbF90aW1lX3Byb3RlY3Rpb25f'
+    'c3RhdHVzGAIgASgOMh8ucGIuU2V0UmVhbFRpbWVQcm90ZWN0aW9uU3RhdHVzSABSG3NldFJlYW'
+    'xUaW1lUHJvdGVjdGlvblN0YXR1c0IKCghyZXNwb25zZQ==');
 
 @$core.Deprecated('Use setDNSRequestDescriptor instead')
 const SetDNSRequest$json = {
   '1': 'SetDNSRequest',
   '2': [
     {'1': 'dns', '3': 2, '4': 3, '5': 9, '10': 'dns'},
-    {
-      '1': 'threat_protection_lite',
-      '3': 3,
-      '4': 1,
-      '5': 8,
-      '10': 'threatProtectionLite'
-    },
   ],
 };
 
 /// Descriptor for `SetDNSRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List setDNSRequestDescriptor = $convert.base64Decode(
-    'Cg1TZXRETlNSZXF1ZXN0EhAKA2RucxgCIAMoCVIDZG5zEjQKFnRocmVhdF9wcm90ZWN0aW9uX2'
-    'xpdGUYAyABKAhSFHRocmVhdFByb3RlY3Rpb25MaXRl');
+final $typed_data.Uint8List setDNSRequestDescriptor =
+    $convert.base64Decode('Cg1TZXRETlNSZXF1ZXN0EhAKA2RucxgCIAMoCVIDZG5z');
 
 @$core.Deprecated('Use setDNSResponseDescriptor instead')
 const SetDNSResponse$json = {

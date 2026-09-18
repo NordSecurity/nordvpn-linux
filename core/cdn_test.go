@@ -27,7 +27,7 @@ func TestCdnApi(t *testing.T) {
 	cdnApi, cancel := setupCdnApi()
 	assert.NotNil(t, cdnApi)
 
-	nameservers, err := cdnApi.FetchThreatProtectionLite()
+	nameservers, err := cdnApi.FetchRealTimeProtection()
 	assert.NoError(t, err)
 	assert.NotNil(t, nameservers)
 
