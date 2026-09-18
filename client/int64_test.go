@@ -12,7 +12,7 @@ func TestInterfaceToInt64(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		info     interface{}
+		info     any
 		expected int64
 	}{
 		{int64(123), 123},

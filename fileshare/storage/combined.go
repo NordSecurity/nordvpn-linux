@@ -2,6 +2,7 @@ package storage
 
 import (
 	"errors"
+	"maps"
 	"os"
 	"time"
 
@@ -31,9 +32,7 @@ func (c *Combined) Load() (map[string]*pb.Transfer, error) {
 
 	jsonTransfers, err := c.json.Load()
 	if err == nil {
-		for key, value := range jsonTransfers {
-			libdropTransfers[key] = value
-		}
+		maps.Copy(libdropTransfers, jsonTransfers)
 	} else if !errors.Is(err, os.ErrNotExist) {
 		log.Errorf("json history file corrupted: %s", err)
 	}

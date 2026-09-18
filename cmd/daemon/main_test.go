@@ -97,7 +97,7 @@ func TestBuildTpServersAndResolver(t *testing.T) {
 	assert.True(t, fetched.Load(), "servers were fetched")
 
 	// retry several times, until the internal members are sync
-	for retry := 0; retry < 5; retry++ {
+	for range 5 {
 		if slices.Contains(tp.Get(true), serversList[0]) {
 			break
 		}

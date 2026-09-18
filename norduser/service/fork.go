@@ -51,7 +51,7 @@ func handlePsError(out []byte, err error) error {
 
 func parseNorduserPIDs(psOutput string) []int {
 	pids := []int{}
-	for _, pidStr := range strings.Split(psOutput, "\n") {
+	for pidStr := range strings.SplitSeq(psOutput, "\n") {
 		pidStr = strings.TrimSpace(pidStr)
 		if pidStr == "" {
 			continue
@@ -79,7 +79,7 @@ func getRunningNorduserPIDs() ([]int, error) {
 }
 
 func findPIDOfUID(uids string, desiredUID uint32) int {
-	for _, uidPid := range strings.Split(uids, "\n") {
+	for uidPid := range strings.SplitSeq(uids, "\n") {
 		var pid int
 		var uid int
 		n, err := fmt.Sscanf(uidPid, "%d%d", &uid, &pid)
@@ -151,11 +151,9 @@ func (c *ChildProcessNorduser) Enable(uid uint32, gid uint32, home string) (err 
 		return fmt.Errorf("starting the process: %w", err)
 	}
 
-	c.wg.Add(1)
-	go func() {
+	c.wg.Go(func() {
 		_ = cmd.Wait()
-		c.wg.Done()
-	}()
+	})
 
 	return nil
 }
@@ -208,7 +206,7 @@ func (c *ChildProcessNorduser) StopAll() {
 		}
 	}
 
-	doneChan := make(chan interface{})
+	doneChan := make(chan any)
 	go func() {
 		c.wg.Wait()
 		doneChan <- struct{}{}
@@ -290,7 +288,7 @@ func (s *systemGIDProvider) GetNordvpnGid() (uint32, error) {
 		return 0, errors.New("negative gid cannot be converted to uint32")
 	}
 
-	//no gosec violation, current Linux distributions use GID lower than uint32 max value
+	// no gosec violation, current Linux distributions use GID lower than uint32 max value
 	// #nosec G115
 	return uint32(gid), nil
 }

@@ -227,7 +227,7 @@ func TestGetTransfers(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 10, len(transfers))
 	// Check if ordered
-	for i := 0; i < 9; i++ {
+	for i := range 9 {
 		assert.True(t, transfers[i].Created.AsTime().Before(transfers[i+1].Created.AsTime()))
 	}
 
@@ -350,8 +350,7 @@ func TestTransferProgress(t *testing.T) {
 	assert.Equal(t, expectedProgress, progressEvent.Transferred)
 
 	waitGroup := sync.WaitGroup{}
-	waitGroup.Add(1)
-	go func() {
+	waitGroup.Go(func() {
 		eventManager.Event(
 			Event{
 				Kind: EventKindFileDownloaded{
@@ -385,9 +384,7 @@ func TestTransferProgress(t *testing.T) {
 				},
 			},
 		)
-
-		waitGroup.Done()
-	}()
+	})
 
 	progressEvent = <-progCh
 	assert.Equal(t, pb.Status_SUCCESS, progressEvent.Status)
@@ -1348,7 +1345,7 @@ func TestEventsFlow(t *testing.T) {
 	// otherwise it's not chunked properly, as the size is not divisable by chunkSize(1026 % 8 = 2)
 	numProgressEvents := numEvents - uint64(len(events))
 
-	for i := uint64(0); i < numProgressEvents; i++ {
+	for i := range numProgressEvents {
 		events = append(events,
 			Event{
 				Kind: EventKindFileProgress{
@@ -1365,9 +1362,9 @@ func TestEventsFlow(t *testing.T) {
 	}
 
 	chunks := make([][]Event, chunkCount)
-	for i := uint64(0); i < chunkCount; i++ {
+	for i := range chunkCount {
 		chunks[i] = make([]Event, chunkSize)
-		for j := uint64(0); j < chunkSize; j++ {
+		for j := range chunkSize {
 			chunks[i][j] = events[(i*chunkSize)+j]
 		}
 	}
@@ -1394,7 +1391,7 @@ func TestEventsFlow(t *testing.T) {
 					em.Event(chunk...)
 				}
 				lastProgress := uint32(0)
-				for i := uint64(0); i < numProgressEvents; i++ {
+				for range numProgressEvents {
 					prog := <-progCh
 					if prog.Transferred < lastProgress {
 						t.Fatalf("unexpected `lastProgress` bigger than new `progress.Transferred`. it doesn't go in order: %d > %d", lastProgress, prog.Transferred)

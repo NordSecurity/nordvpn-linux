@@ -7,8 +7,8 @@ import (
 )
 
 func findVariable(name string, environment string) string {
-	variables := strings.Split(environment, "\000")
-	for _, variable := range variables {
+	variables := strings.SplitSeq(environment, "\000")
+	for variable := range variables {
 		split := strings.Split(variable, "=")
 		if len(split) < 1 {
 			continue

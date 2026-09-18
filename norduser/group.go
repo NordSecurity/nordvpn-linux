@@ -13,7 +13,7 @@ import (
 func findGroupEntry(groups string, groupName string) string {
 	r, _ := regexp.Compile(fmt.Sprintf("^%s:", groupName))
 
-	for _, groupEntry := range strings.Split(groups, "\n") {
+	for groupEntry := range strings.SplitSeq(groups, "\n") {
 		if r.MatchString(groupEntry) {
 			return groupEntry
 		}
@@ -75,7 +75,7 @@ func (osGetter) getUserID(username string) (userIDs, error) {
 		return userIDs{}, fmt.Errorf("looking up user: %w", err)
 	}
 
-	//both uid and gid are base-10 numbers
+	// both uid and gid are base-10 numbers
 	uid, err := strconv.ParseUint(user.Uid, 10, 32)
 	if err != nil {
 		return userIDs{}, fmt.Errorf("converting uid string to int: %w", err)

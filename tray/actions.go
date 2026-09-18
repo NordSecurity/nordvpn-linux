@@ -26,7 +26,7 @@ func getDesktopEnvironment() ([]string, error) {
 	if err != nil {
 		return environment, err
 	}
-	for _, line := range strings.Split(string(out), "\n") {
+	for line := range strings.SplitSeq(string(out), "\n") {
 		if strings.HasPrefix(line, "DISPLAY=") ||
 			strings.HasPrefix(line, "WAYLAND_DISPLAY=") ||
 			strings.HasPrefix(line, "XAUTHORITY=") ||

@@ -19,7 +19,7 @@ func TestContext_TryExecuteWith(t *testing.T) {
 	}
 
 	testExecute := func(ctx *Context, success bool) {
-		for i := 0; i < 2; i++ {
+		for range 2 {
 			executed := false
 			assert.Equal(t,
 				success,

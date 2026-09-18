@@ -20,14 +20,22 @@ func TestGetLatestVersion(t *testing.T) {
 		input    []semver.Version
 		expected semver.Version
 	}{
-		{[]semver.Version{*semver.New("1.2.3-0"),
-			*semver.New("3.0.0-3"),
-			*semver.New("0.1.3-1"),
-			*semver.New("10.12.19-39")},
-			*semver.New("10.12.19-39")},
-		{[]semver.Version{*semver.New("3.0.0-0"),
-			*semver.New("3.0.0-1")},
-			*semver.New("3.0.0-1")},
+		{
+			[]semver.Version{
+				*semver.New("1.2.3-0"),
+				*semver.New("3.0.0-3"),
+				*semver.New("0.1.3-1"),
+				*semver.New("10.12.19-39"),
+			},
+			*semver.New("10.12.19-39"),
+		},
+		{
+			[]semver.Version{
+				*semver.New("3.0.0-0"),
+				*semver.New("3.0.0-1"),
+			},
+			*semver.New("3.0.0-1"),
+		},
 	}
 
 	for _, item := range tests {
@@ -39,8 +47,10 @@ func TestGetLatestVersion(t *testing.T) {
 func TestParseDebianVersions(t *testing.T) {
 	category.Set(t, category.File)
 
-	expected := []string{"2.2.0-0", "2.1.0-1", "3.0.0-2", "2.1.0-2", "2.0.0-0", "2.2.0-3", "3.0.0-4",
-		"2.1.0-5", "2.1.0-4", "2.1.0-0", "2.2.0-2", "3.0.0-1", "2.2.0-1", "3.0.0-3", "2.1.0-3"}
+	expected := []string{
+		"2.2.0-0", "2.1.0-1", "3.0.0-2", "2.1.0-2", "2.0.0-0", "2.2.0-3", "3.0.0-4",
+		"2.1.0-5", "2.1.0-4", "2.1.0-0", "2.2.0-2", "3.0.0-1", "2.2.0-1", "3.0.0-3", "2.1.0-3",
+	}
 	data, err := internal.FileRead(TestdataPath + TestVersionDeb)
 	assert.NoError(t, err)
 	parsed := ParseDebianVersions(data)
@@ -52,8 +62,10 @@ func TestParseDebianVersions(t *testing.T) {
 func TestParseRpmVersions(t *testing.T) {
 	category.Set(t, category.File)
 
-	expected := []string{"2.2.0-2", "3.0.0-4", "2.1.0-5", "2.1.0-1", "2.1.0-3", "2.1.0-2", "2.1.0-4",
-		"2.2.0-3", "2.1.0-0", "3.0.0-3", "2.2.0-0", "2.2.0-1", "2.0.0-1", "3.0.0-1", "3.0.0-2"}
+	expected := []string{
+		"2.2.0-2", "3.0.0-4", "2.1.0-5", "2.1.0-1", "2.1.0-3", "2.1.0-2", "2.1.0-4",
+		"2.2.0-3", "2.1.0-0", "3.0.0-3", "2.2.0-0", "2.2.0-1", "2.0.0-1", "3.0.0-1", "3.0.0-2",
+	}
 	data, err := internal.FileRead(TestdataPath + TestVersionRpm)
 	if err != nil {
 		t.Fatalf("ParseRpmVersions failed. Got error reading test file: %v.\n", err)
@@ -225,7 +237,7 @@ func TestParseRpmVersions_EdgeCases(t *testing.T) {
 				// Create a large input with many versions
 				var builder strings.Builder
 				builder.WriteString(`<?xml version="1.0" encoding="UTF-8"?>`)
-				for i := 0; i < 100; i++ {
+				for i := range 100 {
 					builder.WriteString(fmt.Sprintf(`<package arch="x86_64" name="nordvpn" pkgid="test1"><version epoch="0" rel="%d" ver="1.0.%d" /></package>`, i%100, i%100))
 				}
 				return []byte(builder.String())

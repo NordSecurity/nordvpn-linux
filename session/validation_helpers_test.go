@@ -1,6 +1,7 @@
 package session
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -504,7 +505,7 @@ func TestValidateExpiry_TimeBoundary(t *testing.T) {
 		pastTime := time.Now().Add(-time.Hour)
 
 		done := make(chan bool, 10)
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			go func(i int) {
 				if i%2 == 0 {
 					err := ValidateExpiry(futureTime)
@@ -517,7 +518,7 @@ func TestValidateExpiry_TimeBoundary(t *testing.T) {
 			}(i)
 		}
 
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			<-done
 		}
 	})
@@ -540,12 +541,12 @@ func TestValidateAccessTokenFormat_ExactLengthBoundaries(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		token := ""
+		var token strings.Builder
 		for i := 0; i < tc.length; i++ {
-			token += "a"
+			token.WriteString("a")
 		}
 
-		err := ValidateAccessTokenFormat(token)
+		err := ValidateAccessTokenFormat(token.String())
 		if tc.wantErr {
 			assert.Error(t, err)
 		} else {

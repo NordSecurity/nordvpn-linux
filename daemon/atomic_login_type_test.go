@@ -66,11 +66,11 @@ func TestAtomicLoginTypeConcurrency(t *testing.T) {
 	iterations := 1000
 
 	// Writers
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			for j := 0; j < iterations; j++ {
+			for range iterations {
 				if id%2 == 0 {
 					alt.set(pb.LoginType_LoginType_LOGIN)
 				} else {
@@ -81,27 +81,23 @@ func TestAtomicLoginTypeConcurrency(t *testing.T) {
 	}
 
 	// Readers
-	for i := 0; i < 10; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for j := 0; j < iterations; j++ {
+	for range 10 {
+		wg.Go(func() {
+			for range iterations {
 				_ = alt.get()
 				_ = alt.isUnknown()
 				_ = alt.wasStarted()
 			}
-		}()
+		})
 	}
 
 	// Reseters
-	for i := 0; i < 5; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range 5 {
+		wg.Go(func() {
 			for j := 0; j < iterations/10; j++ {
 				alt.reset()
 			}
-		}()
+		})
 	}
 
 	wg.Wait()

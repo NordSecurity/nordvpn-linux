@@ -67,7 +67,7 @@ func (m *mockMqttClient) OptionsReader() mqtt.ClientOptionsReader {
 	})
 }
 
-func (m *mockMqttClient) Publish(topic string, qos byte, retained bool, payload interface{}) mqtt.Token {
+func (m *mockMqttClient) Publish(topic string, qos byte, retained bool, payload any) mqtt.Token {
 	return &mockMqttToken{}
 }
 
@@ -180,7 +180,7 @@ func TestStartStopNotificationClient(t *testing.T) {
 		},
 	}
 
-	mgmtChan := make(chan interface{})
+	mgmtChan := make(chan any)
 	go func() {
 		for {
 			<-mgmtChan
@@ -300,9 +300,9 @@ func TestConnectionCancellation(t *testing.T) {
 
 		t.Run(test.name, func(t *testing.T) {
 			ctx, cancelFunc := context.WithCancel(context.Background())
-			connectedChan := make(chan interface{})
+			connectedChan := make(chan any)
 			go func() {
-				notificationClient.connect(&mockMqttClient, false, ctx, make(chan<- interface{}), make(chan<- mqtt.Client))
+				notificationClient.connect(&mockMqttClient, false, ctx, make(chan<- any), make(chan<- mqtt.Client))
 				connectedChan <- true
 			}()
 
@@ -403,7 +403,7 @@ func TestCreateClientOptions(t *testing.T) {
 				resolver:          tt.resolver,
 			}
 
-			mgmtChan := make(chan interface{}, 10)
+			mgmtChan := make(chan any, 10)
 			opts, err := client.createClientOptions(
 				creds, mgmtChan, context.Background(),
 			)
@@ -438,7 +438,7 @@ func TestCreateClientOptionsInvalidEndpoint(t *testing.T) {
 		Endpoint: "://invalid",
 	}
 
-	mgmtChan := make(chan interface{}, 10)
+	mgmtChan := make(chan any, 10)
 	_, err := client.createClientOptions(
 		creds, mgmtChan, context.Background(),
 	)
@@ -459,7 +459,7 @@ func TestCreateClientOptionsEndpointWithoutPort(t *testing.T) {
 		Endpoint: "ssl://mqtt.example.com",
 	}
 
-	mgmtChan := make(chan interface{}, 10)
+	mgmtChan := make(chan any, 10)
 	opts, err := client.createClientOptions(
 		creds, mgmtChan, context.Background(),
 	)

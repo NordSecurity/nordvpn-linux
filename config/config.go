@@ -51,8 +51,8 @@ type Config struct {
 	MachineID       uuid.UUID           `json:"machine_id,omitempty"`
 	LanDiscovery    bool                `json:"lan_discovery"`
 	RemoteConfig    string              `json:"remote_config,omitempty"`
-	RCLastUpdate    time.Time           `json:"rc_last_update,omitempty"`
-	ARPIgnore       TrueField           `json:"arp_ignore,omitempty"`
+	RCLastUpdate    time.Time           `json:"rc_last_update"`
+	ARPIgnore       TrueField           `json:"arp_ignore"`
 	DeviceUUID      uuid.UUID           `json:"device_uuid"`
 }
 
@@ -84,13 +84,13 @@ type AutoConnectData struct {
 	ThreatProtectionLite bool      `json:"cybersec,omitempty"`
 	Obfuscate            bool      `json:"obfuscate,omitempty"`
 	DNS                  DNS       `json:"dns,omitempty"`
-	Allowlist            Allowlist `json:"allowlist,omitempty"`
+	Allowlist            Allowlist `json:"allowlist"`
 	// LegacyAllowlist is the allowlist saved by versions before 6.0.0, under the
 	// "whitelist" key. Exists for the migration purposes only, and can be removed in the future.
 	LegacyAllowlist *Allowlist `json:"whitelist,omitempty"`
 	PostquantumVpn  bool       `json:"postquantum_vpn"`
 	// ECH controls the NordWhisper Encrypted Client Hello feature. True by default.
-	ECH TrueField `json:"ech,omitempty"`
+	ECH TrueField `json:"ech"`
 }
 
 type DNS []string
@@ -109,7 +109,7 @@ type NCData struct {
 	Username       string    `json:"username,omitempty"`
 	Password       string    `json:"password,omitempty"`
 	Endpoint       string    `json:"endpoint,omitempty"`
-	ExpirationDate time.Time `json:"timestamp,omitempty"`
+	ExpirationDate time.Time `json:"timestamp"`
 }
 
 type meshnet struct {

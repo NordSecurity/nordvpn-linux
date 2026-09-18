@@ -59,10 +59,10 @@ func (e *vpnConnectionErrorEvent) ToDebuggerEvent() *events.DebuggerEvent {
 	jsonData, err := json.Marshal(e)
 	if err != nil {
 		log.Error("failed to marshal ENS connection error event:", err)
-		jsonData = []byte(fmt.Sprintf(
+		jsonData = fmt.Appendf(nil,
 			`{"namespace":"%s","subscope":"%s","event":"%s","code":"%s","error":"marshal_error"}`,
 			e.Namespace, e.Subscope, e.Event, e.Code,
-		))
+		)
 	}
 	return events.NewDebuggerEvent(string(jsonData)).
 		WithKeyBasedContextPaths(
