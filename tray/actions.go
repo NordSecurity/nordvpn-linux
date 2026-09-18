@@ -213,7 +213,7 @@ func (ti *Instance) watchGUIInstallation(ctx context.Context) {
 	}
 }
 
-func (ti *Instance) logout(persistToken bool) bool {
+func (ti *Instance) logout() bool {
 	// #nosec G104 -- fire-and-forget analytics
 	ti.client.ReportUIEvent(context.Background(), &pb.UIEvent{
 		FormReference: pb.UIEvent_TRAY,
@@ -222,7 +222,8 @@ func (ti *Instance) logout(persistToken bool) bool {
 		ItemType:      pb.UIEvent_CLICK,
 	})
 	resp, err := ti.client.Logout(context.Background(), &pb.LogoutRequest{
-		PersistToken: persistToken,
+		// only possible to use as true in the CLI
+		RevokeToken: false,
 	})
 	if err != nil {
 		ti.n.Alert(fmt.Sprintf("Logout error: %s", err)).Show()
@@ -232,7 +233,7 @@ func (ti *Instance) logout(persistToken bool) bool {
 	switch resp.Type {
 	case internal.CodeSuccess:
 		return true
-	case internal.CodeTokenInvalidated:
+	case internal.CodeTokenStillValid:
 		return true
 	default:
 		ti.n.Alert(cli.CheckYourInternetConnMessage).Show()
