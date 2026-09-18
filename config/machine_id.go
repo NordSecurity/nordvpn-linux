@@ -272,7 +272,7 @@ func (getter *MachineID) fallbackGenerateUUID() uuid.UUID {
 
 func getValueForKey(fileContent string, key string, delim string) (string, error) {
 	trimmedKey := strings.TrimSpace(key)
-	for _, line := range strings.Split(fileContent, "\n") {
+	for line := range strings.SplitSeq(fileContent, "\n") {
 		parts := strings.SplitN(line, delim, 2)
 		if len(parts) != 2 {
 			continue

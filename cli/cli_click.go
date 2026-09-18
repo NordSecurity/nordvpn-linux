@@ -17,7 +17,7 @@ import (
 )
 
 func waitForInput(timeout bool) {
-	inputChan := make(chan interface{})
+	inputChan := make(chan any)
 	go func() {
 		_, _ = bufio.NewReader(os.Stdin).ReadBytes('\n')
 		close(inputChan)

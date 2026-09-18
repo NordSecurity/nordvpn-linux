@@ -145,7 +145,7 @@ func TestPenalty(t *testing.T) {
 		if item.hubscore == 0 {
 			hubScore = nil
 		}
-		for i := 0; i < 500; i++ {
+		for range 500 {
 			// run through some different random values
 			item.randomComponent = randFloat(time.Now().UnixNano(), 0, 0.001)
 			got, gotPartial := penalty(item.obfuscated, item.d, item.dmin, item.dmax, item.t, item.tmin, item.tmax,

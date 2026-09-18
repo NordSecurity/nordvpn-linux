@@ -13,7 +13,7 @@ import (
 func findGroupEntry(groups string, groupName string) string {
 	r, _ := regexp.Compile(fmt.Sprintf("^%s:", groupName))
 
-	for _, groupEntry := range strings.Split(groups, "\n") {
+	for groupEntry := range strings.SplitSeq(groups, "\n") {
 		if r.MatchString(groupEntry) {
 			return groupEntry
 		}

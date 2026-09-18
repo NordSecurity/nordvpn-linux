@@ -111,7 +111,7 @@ func (c *cmd) MeshPeerList(ctx *cli.Context) error {
 	}
 	if ctx.IsSet(flagFilter) {
 		condition := ""
-		for _, value := range strings.Split(ctx.String(flagFilter), ",") {
+		for value := range strings.SplitSeq(ctx.String(flagFilter), ",") {
 			filtersFunc, ok := availableFilters[value]
 			if !ok {
 				return formatError(errors.New(internal.FilterNonExistentErrorMessage))

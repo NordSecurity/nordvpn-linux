@@ -944,7 +944,7 @@ func collectDesktopEnvironment(logf logFunc) string {
 		return fmt.Sprintf("loginctl error: %v\n", err)
 	}
 	var b strings.Builder
-	for _, session := range strings.Split(
+	for session := range strings.SplitSeq(
 		strings.TrimSpace(string(output)), "\n",
 	) {
 		fields := strings.Fields(session)
@@ -1119,7 +1119,7 @@ func createDiagnosticsFile(rootDir *os.Root) (*os.File, error) {
 		return f, nil
 	}
 
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		var b [4]byte
 		if _, err := rand.Read(b[:]); err != nil {
 			return nil, err

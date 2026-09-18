@@ -144,7 +144,7 @@ func (r *RPC) StartRemoteConfigLoaderJob(
 	// on first try - load remote config in non-blocking goroutine
 	go func(rcl remote.ConfigLoader) {
 		// try to load remote config 5 times with exponential backoff
-		for i := 0; i < 5; i++ {
+		for i := range 5 {
 			err := rcl.Load()
 			if err == nil {
 				return

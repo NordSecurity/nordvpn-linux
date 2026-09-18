@@ -37,7 +37,7 @@ func CreateSignature(privateKey *rsa.PrivateKey, data string) (string, error) {
 
 func getSHA256Hash(data []byte) []byte {
 	sum := sha256.Sum256(data)
-	return []byte(fmt.Sprintf("%x", sum))
+	return fmt.Appendf(nil, "%x", sum)
 }
 
 type signerOpts struct{}

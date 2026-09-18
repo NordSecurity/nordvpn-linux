@@ -36,7 +36,7 @@ func (n *NorduserProcessMonitor) stopForDeletedGroupMembers(currentGroupMembers 
 
 // WaitForLogout will send over logoutChan when user under the username logs out(i.e there are no remaining user
 // processes for that user).
-func WaitForLogout(username string, logoutChan chan<- interface{}) error {
+func WaitForLogout(username string, logoutChan chan<- any) error {
 	watcher, err := filewatch.GetFileWatcher(utmpFilePath)
 	if err != nil {
 		return fmt.Errorf("creating a fsnotify watcher for utmp file: %w", err)

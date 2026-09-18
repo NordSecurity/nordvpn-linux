@@ -88,7 +88,7 @@ func TestNameservers(t *testing.T) {
 			wg.Wait()
 
 			// retry several times to fetch the servers, because at first attempt internal members might not be stored
-			for retry := 0; retry < 2; retry++ {
+			for range 2 {
 				if slices.Contains(servers.Get(test.threatProtectionLite), test.expected[0]) {
 					break
 				}
