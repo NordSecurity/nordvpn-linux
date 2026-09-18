@@ -7,7 +7,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 )
 
-var ProtectionNameserversV4 config.DNS = []string{
+var RealTimeProtectionNameserversV4 config.DNS = []string{
 	"103.86.96.108",
 	"103.86.99.108",
 }
@@ -28,7 +28,7 @@ func (md *DNSGetter) Get(isRealTimeProtection bool) []string {
 		return md.Names
 	}
 	if isRealTimeProtection {
-		nameservers := ProtectionNameserversV4
+		nameservers := RealTimeProtectionNameserversV4
 		return nameservers
 	}
 

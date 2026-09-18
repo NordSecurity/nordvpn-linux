@@ -284,7 +284,7 @@ func main() {
 	}
 	log.Info("CDN URL:", cdnUrl)
 
-	realTimeProtectionServers, resolver := buildProtectionServersAndResolver(
+	realTimeProtectionServers, resolver := buildRTPServersAndResolver(
 		userAgent,
 		cdnUrl,
 		httpClientSimple,
@@ -883,7 +883,7 @@ func buildClientAPIAndSessionStores(
 	return smartAPI, builder
 }
 
-func buildProtectionServersAndResolver(
+func buildRTPServersAndResolver(
 	userAgent string,
 	cdnUrl string,
 	httpClientSimple *http.Client,
@@ -895,7 +895,7 @@ func buildProtectionServersAndResolver(
 	cdn := core.NewCDNAPI(userAgent, cdnUrl, httpClientSimple, validator)
 	protectionServers := dns.NewNameServers()
 	// fetch async the real time protection servers, because FetchProtectionServers will retry until is successful
-	go protectionServers.FetchProtectionServers(cdn.FetchRealTimeProtection, timeoutFn)
+	go protectionServers.FetchRTPServers(cdn.FetchRealTimeProtection, timeoutFn)
 
 	resolver := network.NewResolver(protectionServers, fwmark, serviceEvents)
 	return protectionServers, resolver

@@ -47,14 +47,14 @@ func TestNameservers(t *testing.T) {
 		{
 			name:               "default DNS servers, RTP=false",
 			realTimeProtection: false,
-			initial:            defaultRtpServers,
+			initial:            defaultRTPServers,
 			expected:           defaultServers,
 		},
 		{
 			name:               "fetch RTP list and return it",
 			realTimeProtection: true,
-			initial:            defaultRtpServers,
-			expected:           defaultRtpServers,
+			initial:            defaultRTPServers,
+			expected:           defaultRTPServers,
 		},
 		{
 			name:               "fetched servers are returned for RTP servers",
@@ -66,7 +66,7 @@ func TestNameservers(t *testing.T) {
 			name:               "empty initial list",
 			realTimeProtection: true,
 			initial:            nil,
-			expected:           defaultRtpServers,
+			expected:           defaultRTPServers,
 		},
 	}
 
@@ -75,12 +75,12 @@ func TestNameservers(t *testing.T) {
 			servers := NewNameServers()
 
 			// before fetching the servers from the API check the default values
-			assert.ElementsMatch(t, defaultRtpServers, servers.Get(true))
+			assert.ElementsMatch(t, defaultRTPServers, servers.Get(true))
 			assert.ElementsMatch(t, defaultServers, servers.Get(false))
 
 			var wg sync.WaitGroup
 			wg.Add(1)
-			go servers.FetchProtectionServers(wrapServersList(test.initial, &wg), func(attempt int) time.Duration {
+			go servers.FetchRTPServers(wrapServersList(test.initial, &wg), func(attempt int) time.Duration {
 				assert.True(t, len(test.initial) == 0, "this must be called only when test.initial is empty")
 				return time.Minute
 			})
@@ -127,7 +127,7 @@ func TestNameserversRandomness(t *testing.T) {
 			servers := NewNameServers()
 
 			// fetch in blocking mode
-			servers.FetchProtectionServers(wrapServersList(test.initial, nil), func(attempt int) time.Duration { return time.Minute })
+			servers.FetchRTPServers(wrapServersList(test.initial, nil), func(attempt int) time.Duration { return time.Minute })
 
 			nameservers1 := servers.Get(test.realTimeProtection)
 			nameservers2 := servers.Get(test.realTimeProtection)
@@ -151,9 +151,9 @@ func TestNameserversRandomness(t *testing.T) {
 func TestNameserversNotCrashingWithNilServersFetcher(t *testing.T) {
 	category.Set(t, category.Unit)
 	nameservers := NewNameServers()
-	assert.Error(t, nameservers.FetchProtectionServers(nil, nil))
+	assert.Error(t, nameservers.FetchRTPServers(nil, nil))
 	// check that the default servers are returned
-	assert.ElementsMatch(t, defaultRtpServers, nameservers.Get(true))
+	assert.ElementsMatch(t, defaultRTPServers, nameservers.Get(true))
 }
 
 func TestNameserversRetriesToFetchRTPOnError(t *testing.T) {
@@ -167,7 +167,7 @@ func TestNameserversRetriesToFetchRTPOnError(t *testing.T) {
 	nameservers := NewNameServers()
 
 	// run as blocking the fetch because there is no need to fetch in parallel and is successful after number of "retries"
-	nameservers.FetchProtectionServers(
+	nameservers.FetchRTPServers(
 		func() (*core.NameServers, error) {
 			// return error for `retries` times, before returning servers list
 			if retries.Load() == 0 {

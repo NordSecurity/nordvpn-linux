@@ -20,7 +20,7 @@ const (
 )
 
 var (
-	defaultRtpServers = []string{
+	defaultRTPServers = []string{
 		realTimeProtectionPrimaryNameserver4, realTimeProtectionSecondaryNameserver4,
 	}
 	defaultServers = []string{primaryNameserver4, secondaryNameserver4}
@@ -46,28 +46,28 @@ func NewNameServers() *NameServers {
 // Get nameservers selected by the given criteria.
 func (n *NameServers) Get(isRealTimeProtection bool) []string {
 	if isRealTimeProtection {
-		return n.getRtpServers()
+		return n.getRTPServers()
 	}
 
 	return shuffleNameservers(slices.Clone(defaultServers))
 }
 
-func (n *NameServers) getRtpServers() []string {
+func (n *NameServers) getRTPServers() []string {
 	servers := n.rtpServers.Load()
 	if servers != nil && len(*servers) != 0 {
 		return shuffleNameservers(slices.Clone(*servers))
 	}
 
-	return shuffleNameservers(slices.Clone(defaultRtpServers))
+	return shuffleNameservers(slices.Clone(defaultRTPServers))
 }
 
 func (n *NameServers) LookupIP(host string) ([]net.IP, error) {
 	return net.LookupIP(host)
 }
 
-// FetchProtectionServers it is a blocking operation and fetches the protection servers until is successful.
+// FetchRTPServers it is a blocking operation and fetches the real time protection servers until is successful.
 // It uses exponential backoff between retries.
-func (n *NameServers) FetchProtectionServers(fetcher ServersFetcher, timeoutFn CalculateRetryDelayForAttempt) error {
+func (n *NameServers) FetchRTPServers(fetcher ServersFetcher, timeoutFn CalculateRetryDelayForAttempt) error {
 	if fetcher == nil || timeoutFn == nil {
 		return errors.New("fetcher parameters cannot be nil")
 	}

@@ -20,8 +20,8 @@ var (
 	// ErrInvalidOwnerID indicates that the owner ID is invalid or empty.
 	ErrInvalidOwnerID = errors.New("invalid owner id")
 
-	// ErrMissingTrustedPassResponse indicates that rtp credentials response is missing
-	ErrMissingTrustedPassResponse = errors.New("rtp creds renewal api returned nil response")
+	// ErrMissingTrustedPassResponse indicates that trustedPass credentials response is missing
+	ErrMissingTrustedPassResponse = errors.New("trustedPass creds renewal api returned nil response")
 
 	// ErrInvalidRenewToken indicates that the renew token has invalid format.
 	ErrInvalidRenewToken = errors.New("invalid renew token")

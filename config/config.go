@@ -81,7 +81,7 @@ type AutoConnectData struct {
 	Group       ServerGroup
 	Protocol    Protocol `json:"protocol,omitempty"`
 	// TODO: rename json key when v6 comes out.
-	RealTimeProtection bool      `json:"cybersec,omitempty"`
+	RealTimeProtection bool      `json:"realtimeprotection,omitempty"`
 	Obfuscate          bool      `json:"obfuscate,omitempty"`
 	DNS                DNS       `json:"dns,omitempty"`
 	Allowlist          Allowlist `json:"allowlist,omitempty"`
