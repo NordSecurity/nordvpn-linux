@@ -80,7 +80,7 @@ def is_internet_reachable(ip_address="1.1.1.1", port=443, retry=5) -> bool:
             return True
         except Exception as e:  # noqa: BLE001
             logging.log(f"is_internet_reachable failed {ip_address}: {e}")
-            res = sh.sudo.nft.list.ruleset()
+            res = sh.sudo.nft.list.ruleset("-a")
             logging.log(f"is_internet_reachable {res}")
             raise
     result = retry_on_exc(attempts=retry, delay=1, raise_exc=False)(_check)()
@@ -100,12 +100,12 @@ def is_internet_reachable_outside_vpn(retry=5, ip_address="1.0.0.1") -> bool:
     return bool(result)
 
 
-def _is_dns_resolvable(domain="nordvpn.com", retry=5) -> bool:
+def _is_dns_resolvable(domain="nordvpn.com", retry=5, nameserver="103.86.96.100") -> bool:
     """Returns True when domain resolution is working."""
     def _check():
         try:
             resolver = dns.resolver.Resolver()
-            resolver.nameservers = ["103.86.96.100"]  # specify server so it will not get the result from the docker host
+            resolver.nameservers = [nameserver]  # specify server so it will not get the result from the docker host
             answer = resolver.resolve(domain, "A", lifetime=5)
             logging.log(f"_is_dns_resolvable: DNS {domain} - {answer}")
             return True
@@ -127,6 +127,10 @@ def is_not_available(retry=5) -> bool:
     has_internet = is_internet_reachable(retry=retry, ip_address="8.8.8.8")
     dns_works = _is_dns_resolvable(retry=retry)
     logging.log(f"is_not_available internet {has_internet}, DNS: {dns_works}")
+    if has_internet or dns_works:
+        # add extra logging to understand more about the system
+        _is_dns_resolvable(domain="example.com", retry=1, nameserver="1.0.0.1")
+        _is_dns_resolvable(retry=1)
     return not has_internet and not dns_works
 
 

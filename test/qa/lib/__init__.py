@@ -108,7 +108,7 @@ COUNTRIES = [
     "Germany",
     "Netherlands",
     "United_States",
-    "France",
+    "Canada",
 ]
 
 # Used for test parametrization, when the same test has to be run for different countries.
@@ -116,7 +116,7 @@ COUNTRY_CODES = [
     "de",
     "nl",
     "us",
-    "fr",
+    "ca"
 ]
 
 # Used for test parametrization, when the same test has to be run for different cities.
@@ -124,7 +124,7 @@ CITIES = [
     "Frankfurt",
     "Amsterdam",
     "New_York",
-    "Paris",
+    "Toronto"
 ]
 
 EXPECTED_CONSENT_MESSAGE = """
