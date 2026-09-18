@@ -241,7 +241,7 @@ class VpnSettingsRepository {
         case SetDNSStatus.DNS_CONFIGURED:
           break;
         case SetDNSStatus.DNS_CONFIGURED_RTP_RESET:
-          return DaemonStatusCode.protectionDisabled;
+          return DaemonStatusCode.realTimeProtectionDisabled;
 
         case SetDNSStatus.INVALID_DNS_ADDRESS:
           return DaemonStatusCode.invalidDnsAddress;

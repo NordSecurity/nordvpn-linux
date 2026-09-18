@@ -23,33 +23,33 @@ func TestSetRealTimeProtection_Success(t *testing.T) {
 	dns := []string{"0.0.0.0", "8.8.8.8", "1.1.1.1"}
 
 	tests := []struct {
-		testName          string
-		desiredProtection bool
-		currentProtection bool
-		currentDNS        []string
-		expectedDNS       []string
-		expectedStatus    pb.SetRealTimeProtectionStatus
+		testName       string
+		desiredRTP     bool
+		currentRTP     bool
+		currentDNS     []string
+		expectedDNS    []string
+		expectedStatus pb.SetRealTimeProtectionStatus
 	}{
 		{
-			testName:          "set rtp ipv4",
-			desiredProtection: true,
-			expectedDNS:       mock.ProtectionNameserversV4,
-			expectedStatus:    pb.SetRealTimeProtectionStatus_RTP_CONFIGURED,
+			testName:       "set rtp ipv4",
+			desiredRTP:     true,
+			expectedDNS:    mock.RealTimeProtectionNameserversV4,
+			expectedStatus: pb.SetRealTimeProtectionStatus_RTP_CONFIGURED,
 		},
 		{
-			testName:          "set rtp reset dns ipv4",
-			desiredProtection: true,
-			currentDNS:        dns,
-			expectedDNS:       mock.ProtectionNameserversV4,
-			expectedStatus:    pb.SetRealTimeProtectionStatus_RTP_CONFIGURED_DNS_RESET,
+			testName:       "set rtp reset dns ipv4",
+			desiredRTP:     true,
+			currentDNS:     dns,
+			expectedDNS:    mock.RealTimeProtectionNameserversV4,
+			expectedStatus: pb.SetRealTimeProtectionStatus_RTP_CONFIGURED_DNS_RESET,
 		},
 		{
-			testName:          "set rtp off ipv4",
-			desiredProtection: false,
-			currentProtection: true,
-			currentDNS:        mock.ProtectionNameserversV4,
-			expectedDNS:       mock.DefaultNameserversV4,
-			expectedStatus:    pb.SetRealTimeProtectionStatus_RTP_CONFIGURED,
+			testName:       "set rtp off ipv4",
+			desiredRTP:     false,
+			currentRTP:     true,
+			currentDNS:     mock.RealTimeProtectionNameserversV4,
+			expectedDNS:    mock.DefaultNameserversV4,
+			expectedStatus: pb.SetRealTimeProtectionStatus_RTP_CONFIGURED,
 		},
 	}
 
@@ -65,7 +65,7 @@ func TestSetRealTimeProtection_Success(t *testing.T) {
 
 			configManager.SaveWith(func(c config.Config) config.Config {
 				c.AutoConnectData = config.AutoConnectData{
-					RealTimeProtection: test.currentProtection,
+					RealTimeProtection: test.currentRTP,
 					DNS:                test.currentDNS,
 				}
 
@@ -85,7 +85,7 @@ func TestSetRealTimeProtection_Success(t *testing.T) {
 			}
 
 			resp, err := rpc.SetRealTimeProtection(context.Background(),
-				&pb.SetRealTimeProtectionRequest{RealTimeProtection: test.desiredProtection})
+				&pb.SetRealTimeProtectionRequest{RealTimeProtection: test.desiredRTP})
 
 			assert.Nil(t, err, "RPC ended with error.")
 			assert.IsType(t,
@@ -101,7 +101,7 @@ func TestSetRealTimeProtection_Success(t *testing.T) {
 			var config config.Config
 			configManager.Load(&config)
 
-			assert.Equal(t, test.desiredProtection, config.AutoConnectData.RealTimeProtection,
+			assert.Equal(t, test.desiredRTP, config.AutoConnectData.RealTimeProtection,
 				"Real time protection was not saved in the config.")
 			assert.Equal(t, true, protectionPublisher.EventPublished, "protection set event was not published.")
 		})
@@ -112,41 +112,41 @@ func TestSetRealTimeProtection_Error(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		testName          string
-		desiredProtection bool
-		currentProtection bool
-		setDnsErr         error
-		writeConfigErr    error
-		expectedResponse  *pb.SetRealTimeProtectionResponse
+		testName         string
+		desiredRTP       bool
+		currentRTP       bool
+		setDnsErr        error
+		writeConfigErr   error
+		expectedResponse *pb.SetRealTimeProtectionResponse
 	}{
 		{
-			testName:          "already set on",
-			desiredProtection: true,
-			currentProtection: true,
+			testName:   "already set on",
+			desiredRTP: true,
+			currentRTP: true,
 			expectedResponse: &pb.SetRealTimeProtectionResponse{
 				Response: &pb.SetRealTimeProtectionResponse_ErrorCode{ErrorCode: pb.SetErrorCode_ALREADY_SET},
 			},
 		},
 		{
-			testName:          "already set off",
-			desiredProtection: false,
-			currentProtection: false,
+			testName:   "already set off",
+			desiredRTP: false,
+			currentRTP: false,
 			expectedResponse: &pb.SetRealTimeProtectionResponse{
 				Response: &pb.SetRealTimeProtectionResponse_ErrorCode{ErrorCode: pb.SetErrorCode_ALREADY_SET},
 			},
 		},
 		{
-			testName:          "set dns error",
-			desiredProtection: true,
-			setDnsErr:         fmt.Errorf("Failed to set dns."),
+			testName:   "set dns error",
+			desiredRTP: true,
+			setDnsErr:  fmt.Errorf("Failed to set dns."),
 			expectedResponse: &pb.SetRealTimeProtectionResponse{
 				Response: &pb.SetRealTimeProtectionResponse_ErrorCode{ErrorCode: pb.SetErrorCode_CONFIG_ERROR},
 			},
 		},
 		{
-			testName:          "save config error",
-			desiredProtection: true,
-			writeConfigErr:    fmt.Errorf("Failed to save config"),
+			testName:       "save config error",
+			desiredRTP:     true,
+			writeConfigErr: fmt.Errorf("Failed to save config"),
 			expectedResponse: &pb.SetRealTimeProtectionResponse{
 				Response: &pb.SetRealTimeProtectionResponse_ErrorCode{ErrorCode: pb.SetErrorCode_CONFIG_ERROR},
 			},
@@ -166,7 +166,7 @@ func TestSetRealTimeProtection_Error(t *testing.T) {
 
 			configManager.SaveWith(func(c config.Config) config.Config {
 				c.AutoConnectData = config.AutoConnectData{
-					RealTimeProtection: test.currentProtection,
+					RealTimeProtection: test.currentRTP,
 					DNS:                mock.DefaultNameserversV4,
 				}
 
@@ -177,8 +177,8 @@ func TestSetRealTimeProtection_Error(t *testing.T) {
 				SetDNSErr: test.setDnsErr,
 			}
 			dnsGetter := mock.DNSGetter{}
-			protectionPublisher := &events.MockPublisherSubscriber[bool]{}
-			publisher := events.SettingsEvents{RealTimeProtection: protectionPublisher}
+			rtpPublisher := &events.MockPublisherSubscriber[bool]{}
+			publisher := events.SettingsEvents{RealTimeProtection: rtpPublisher}
 
 			rpc := RPC{
 				cm:          configManager,
@@ -188,7 +188,7 @@ func TestSetRealTimeProtection_Error(t *testing.T) {
 			}
 
 			resp, err := rpc.SetRealTimeProtection(context.Background(),
-				&pb.SetRealTimeProtectionRequest{RealTimeProtection: test.desiredProtection})
+				&pb.SetRealTimeProtectionRequest{RealTimeProtection: test.desiredRTP})
 
 			assert.Nil(t, err, "RPC ended with error.")
 			assert.Equal(t, resp, test.expectedResponse, resp, "Invalid RPC response.")

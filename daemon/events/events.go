@@ -78,21 +78,21 @@ func NewEvents(
 ) *Events {
 	return &Events{
 		Settings: &SettingsEvents{
-			Killswitch:           killswitch,
-			Autoconnect:          autoconnect,
-			DNS:                  dns,
+			Killswitch:         killswitch,
+			Autoconnect:        autoconnect,
+			DNS:                dns,
 			RealTimeProtection: protection,
-			Protocol:             protocol,
-			Allowlist:            allowlist,
-			Technology:           technology,
-			Obfuscate:            obfuscate,
-			Firewall:             firewall,
-			Routing:              routing,
-			Notify:               notify,
-			Meshnet:              meshnet,
-			Defaults:             defaults,
-			LANDiscovery:         lanDiscovery,
-			PostquantumVPN:       postquantumVpn,
+			Protocol:           protocol,
+			Allowlist:          allowlist,
+			Technology:         technology,
+			Obfuscate:          obfuscate,
+			Firewall:           firewall,
+			Routing:            routing,
+			Notify:             notify,
+			Meshnet:            meshnet,
+			Defaults:           defaults,
+			LANDiscovery:       lanDiscovery,
+			PostquantumVPN:     postquantumVpn,
 		},
 		Service: &ServiceEvents{
 			Connect:               connect,
@@ -148,21 +148,21 @@ type SettingsPublisher interface {
 }
 
 type SettingsEvents struct {
-	Killswitch           events.PublishSubcriber[bool]
-	Autoconnect          events.PublishSubcriber[bool]
-	DNS                  events.PublishSubcriber[events.DataDNS]
+	Killswitch         events.PublishSubcriber[bool]
+	Autoconnect        events.PublishSubcriber[bool]
+	DNS                events.PublishSubcriber[events.DataDNS]
 	RealTimeProtection events.PublishSubcriber[bool]
-	Protocol             events.PublishSubcriber[config.Protocol]
-	Allowlist            events.PublishSubcriber[events.DataAllowlist]
-	Technology           events.PublishSubcriber[config.Technology]
-	Obfuscate            events.PublishSubcriber[bool]
-	Firewall             events.PublishSubcriber[bool]
-	Routing              events.PublishSubcriber[bool]
-	Notify               events.PublishSubcriber[bool]
-	Meshnet              events.PublishSubcriber[bool]
-	Defaults             events.PublishSubcriber[any]
-	LANDiscovery         events.PublishSubcriber[bool]
-	PostquantumVPN       events.PublishSubcriber[bool]
+	Protocol           events.PublishSubcriber[config.Protocol]
+	Allowlist          events.PublishSubcriber[events.DataAllowlist]
+	Technology         events.PublishSubcriber[config.Technology]
+	Obfuscate          events.PublishSubcriber[bool]
+	Firewall           events.PublishSubcriber[bool]
+	Routing            events.PublishSubcriber[bool]
+	Notify             events.PublishSubcriber[bool]
+	Meshnet            events.PublishSubcriber[bool]
+	Defaults           events.PublishSubcriber[any]
+	LANDiscovery       events.PublishSubcriber[bool]
+	PostquantumVPN     events.PublishSubcriber[bool]
 }
 
 func (s *SettingsEvents) Subscribe(to SettingsPublisher) {

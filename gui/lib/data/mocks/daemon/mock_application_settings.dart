@@ -34,7 +34,7 @@ final class MockApplicationSettings extends CancelableDelayed {
   int? errorCode;
   SetErrorCode? errorLanDiscovery;
   SetErrorCode? errorSetProtocol;
-  SetErrorCode? errorProtection;
+  SetErrorCode? errorRealTimeProtection;
   SetErrorCode? errorDns;
 
   SettingsResponse get settings => _settings;
@@ -47,7 +47,7 @@ final class MockApplicationSettings extends CancelableDelayed {
       technology: value.hasTechnology() ? value.technology : null,
       obfuscate: value.hasObfuscate() ? value.obfuscate : null,
     );
-  }
+}
 
   Future<Payload> setSettings({
     ConsentMode? analyticsConsent,
@@ -308,8 +308,8 @@ final class MockApplicationSettings extends CancelableDelayed {
       throw error!;
     }
 
-    if (errorProtection != null) {
-      return SetRealTimeProtectionResponse(errorCode: errorProtection!);
+    if (errorRealTimeProtection != null) {
+      return SetRealTimeProtectionResponse(errorCode: errorRealTimeProtection!);
     }
 
     bool replaceDns =
@@ -350,14 +350,14 @@ final class MockApplicationSettings extends CancelableDelayed {
       return SetDNSResponse(setDnsStatus: SetDNSStatus.TOO_MANY_VALUES);
     }
 
-    final hasProtection = _settings.data.realTimeProtection;
+    final hasRealTimeProtection = _settings.data.realTimeProtection;
 
     final res = await setSettings(realTimeProtection: false, dns: request.dns);
     if (res.type.toInt() != DaemonStatusCode.success) {
       return SetDNSResponse(errorCode: SetErrorCode.FAILURE);
     }
 
-    if (hasProtection) {
+    if (hasRealTimeProtection) {
       return SetDNSResponse(
         setDnsStatus: SetDNSStatus.DNS_CONFIGURED_RTP_RESET,
       );

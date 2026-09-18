@@ -42,7 +42,7 @@ func TestBuildClientAPIAndSessionStores(t *testing.T) {
 }
 
 // Test that real time protection nameservers and resolver are build
-func TestBuildProtectionServersAndResolver(t *testing.T) {
+func TestBuildRTPServersAndResolver(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	var wg sync.WaitGroup
@@ -72,7 +72,7 @@ func TestBuildProtectionServersAndResolver(t *testing.T) {
 	server.Start()
 	defer server.Close()
 
-	rtp, resolver := buildProtectionServersAndResolver(
+	rtp, resolver := buildRTPServersAndResolver(
 		"test-agent",
 		server.URL(),
 		http.DefaultClient,
