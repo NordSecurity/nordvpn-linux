@@ -3,9 +3,6 @@ package openvpn
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/vishvananda/netlink"
 
@@ -14,6 +11,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/internal"
 	"github.com/NordSecurity/nordvpn-linux/internal/analytics"
 	"github.com/NordSecurity/nordvpn-linux/log"
+	"github.com/NordSecurity/nordvpn-linux/sysinfo"
 )
 
 const (
@@ -26,33 +24,18 @@ const (
 	linkKindUnknown = "unknown"
 )
 
-// dcoLinkKinds lists link types used by OpenVPN DCO tunnel interfaces.
-var dcoLinkKinds = map[string]bool{
-	"ovpn-dco": true, // out-of-tree DKMS module, used by OpenVPN 2.6.x
-	"ovpn":     true, // in-tree module (kernel >= 6.16), used by OpenVPN 2.7+
-}
-
-// dcoModuleSysfsDir exists while the out-of-tree ovpn-dco kernel module is
-// loaded, whether or not the tunnel uses it.
-// We don't check the built-in ovpn module because OpenVPN 2.6.x can't use it.
-// Revisit this when OpenVPN 2.7 is available.
-const dcoModuleSysfsDir = "/sys/module/ovpn_dco_v2"
-
 // dcoStatusEvent is the debugger-event payload describing whether a successful
 // OpenVPN connection runs with kernel data channel offload (DCO).
 type dcoStatusEvent struct {
 	Namespace string `json:"namespace"`
 	Subscope  string `json:"subscope"`
 	Event     string `json:"event"`
-	// DCOActive reports whether a DCO kernel module is in use.
-	DCOActive bool `json:"dco_active"`
 	// LinkKind is the tunnel interface's link kind.
+	// out of tree module is not supported by OpenVPN 2.7+
+	// in-tree module (kernel >= 6.16), used by OpenVPN 2.7+ : ovpn
+	// non dco interface : tuntap
 	LinkKind string `json:"link_kind"`
-	// ModuleAvailable reports whether the out-of-tree DCO kernel module is
-	// loaded, regardless of use.
-	ModuleAvailable bool `json:"module_available"`
-	// ModuleVersion is the loaded module's version.
-	ModuleVersion string `json:"module_version,omitempty"`
+	KernelVersion string `json:"module_version,omitempty"`
 }
 
 func getLinkKind() (string, error) {
@@ -60,6 +43,7 @@ func getLinkKind() (string, error) {
 	if err != nil {
 		return "", err
 	}
+	log.Debug("DCO: printing link type: ", link.Type())
 	return link.Type(), nil
 }
 
@@ -70,20 +54,14 @@ func newDCOStatusEvent() *dcoStatusEvent {
 		log.Error("reading tunnel interface link kind:", err)
 		linkKind = linkKindUnknown
 	}
+	kernelVersion := sysinfo.GetKernelVersion()
 
 	event := &dcoStatusEvent{
 		Namespace: ovpnNamespace,
 		Subscope:  ovpnSubscope,
 		Event:     dcoStatusEventName,
-		DCOActive: dcoLinkKinds[linkKind],
 		LinkKind:  linkKind,
-	}
-
-	if internal.FileExists(dcoModuleSysfsDir) {
-		event.ModuleAvailable = true
-		if version, err := os.ReadFile(filepath.Join(dcoModuleSysfsDir, "version")); err == nil {
-			event.ModuleVersion = strings.TrimSpace(string(version))
-		}
+		KernelVersion: kernelVersion,
 	}
 	return event
 }
@@ -111,8 +89,8 @@ func (e *dcoStatusEvent) ToDebuggerEvent() *events.DebuggerEvent {
 		log.Error("failed to marshal dco status event:", err)
 		// Fallback
 		jsonData = fmt.Appendf(nil,
-			`{"namespace":"%s","subscope":"%s","event":"%s","dco_active":%t,"module_available":%t,"error":"marshal_error"}`,
-			ovpnNamespace, ovpnSubscope, dcoStatusEventName, e.DCOActive, e.ModuleAvailable,
+			`{"namespace":"%s","subscope":"%s","event":"%s","error":"marshal_error"}`,
+			ovpnNamespace, ovpnSubscope, dcoStatusEventName,
 		)
 	}
 	return events.NewDebuggerEvent(string(jsonData)).
@@ -120,9 +98,7 @@ func (e *dcoStatusEvent) ToDebuggerEvent() *events.DebuggerEvent {
 			events.ContextValue{Path: ovpnContextPathPrefix + ".namespace", Value: e.Namespace},
 			events.ContextValue{Path: ovpnContextPathPrefix + ".subscope", Value: e.Subscope},
 			events.ContextValue{Path: ovpnContextPathPrefix + ".event", Value: e.Event},
-			events.ContextValue{Path: ovpnContextPathPrefix + ".dco_active", Value: e.DCOActive},
 			events.ContextValue{Path: ovpnContextPathPrefix + ".link_kind", Value: e.LinkKind},
-			events.ContextValue{Path: ovpnContextPathPrefix + ".module_available", Value: e.ModuleAvailable},
 		).
 		WithGlobalContextPaths(analytics.MergeContextPaths()...)
 }
