@@ -57,18 +57,23 @@ type VagrantEnv struct {
 	CustomBoxPass   secret // custom box password
 }
 
+// appendVagrantEnv creates environment variables needed for vagrant commands
+func appendVagrantEnv(vagrantEnv VagrantEnv) []string {
+	return append(os.Environ(),
+		fmt.Sprintf("WORKDIR=%s", vagrantEnv.Cwd),
+		fmt.Sprintf("SNAP_TEST_BOX_URL=%s", vagrantEnv.CustomBoxUrl),
+		fmt.Sprintf("SNAP_TEST_BOX_USER=%s", vagrantEnv.CustomBoxUser.getValue()),
+		fmt.Sprintf("SNAP_TEST_BOX_PASS=%s", vagrantEnv.CustomBoxPass.getValue()),
+	)
+}
+
 // runVagrantCmd - run vagrant commands
 func runVagrantCmd(vagrantEnv VagrantEnv, args ...string) error {
 	cmd := exec.Command("vagrant", args...)
 	cmd.Dir = vagrantEnv.VagrantFileDir
 
 	// add all the needed environment variables to run vagrant commands
-	cmd.Env = append(os.Environ(),
-		fmt.Sprintf("WORKDIR=%s", vagrantEnv.Cwd),
-		fmt.Sprintf("SNAP_TEST_BOX_URL=%s", vagrantEnv.CustomBoxUrl),
-		fmt.Sprintf("SNAP_TEST_BOX_USER=%s", vagrantEnv.CustomBoxUser.getValue()),
-		fmt.Sprintf("SNAP_TEST_BOX_PASS=%s", vagrantEnv.CustomBoxPass.getValue()),
-	)
+	cmd.Env = appendVagrantEnv(vagrantEnv)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -195,12 +200,7 @@ func copyDirFromVM(vagrantEnv VagrantEnv, remotePath, localPath string) error {
 	// List all files in the remote directory
 	listCmd := exec.Command("vagrant", "ssh", vagrantEnv.BoxName, "-c", fmt.Sprintf("find %s -type f", remotePath))
 	listCmd.Dir = vagrantEnv.VagrantFileDir
-	listCmd.Env = append(os.Environ(),
-		fmt.Sprintf("WORKDIR=%s", vagrantEnv.Cwd),
-		fmt.Sprintf("SNAP_TEST_BOX_URL=%s", vagrantEnv.CustomBoxUrl),
-		fmt.Sprintf("SNAP_TEST_BOX_USER=%s", vagrantEnv.CustomBoxUser.getValue()),
-		fmt.Sprintf("SNAP_TEST_BOX_PASS=%s", vagrantEnv.CustomBoxPass.getValue()),
-	)
+	listCmd.Env = appendVagrantEnv(vagrantEnv)
 
 	output, err := listCmd.Output()
 	if err != nil {
@@ -233,12 +233,7 @@ func copyDirFromVM(vagrantEnv VagrantEnv, remotePath, localPath string) error {
 		// Read file from VM
 		catCmd := exec.Command("vagrant", "ssh", vagrantEnv.BoxName, "-c", fmt.Sprintf("cat %q", remoteFile))
 		catCmd.Dir = vagrantEnv.VagrantFileDir
-		catCmd.Env = append(os.Environ(),
-			fmt.Sprintf("WORKDIR=%s", vagrantEnv.Cwd),
-			fmt.Sprintf("SNAP_TEST_BOX_URL=%s", vagrantEnv.CustomBoxUrl),
-			fmt.Sprintf("SNAP_TEST_BOX_USER=%s", vagrantEnv.CustomBoxUser.getValue()),
-			fmt.Sprintf("SNAP_TEST_BOX_PASS=%s", vagrantEnv.CustomBoxPass.getValue()),
-		)
+		catCmd.Env = appendVagrantEnv(vagrantEnv)
 
 		fileContent, err := catCmd.Output()
 		if err != nil {
