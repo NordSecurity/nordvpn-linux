@@ -22,7 +22,6 @@ void main() {
     required VpnProtocol protocol,
     ConnectionState state = ConnectionState.CONNECTED,
     ServerGroup group = ServerGroup.UNDEFINED,
-    bool isObfuscated = false,
   }) {
     return VpnStatus(
       ip: "127.0.0.1",
@@ -32,7 +31,6 @@ void main() {
       status: state,
       protocol: protocol,
       isVirtualLocation: false,
-      isObfuscated: isObfuscated,
       connectionParameters: ConnectionParameters(
         source: ConnectionSource.MANUAL,
         group: group,
@@ -54,21 +52,18 @@ void main() {
       name: "NordWhisper is labelled as obfuscated",
       protocol: VpnProtocol.nordWhisper,
       group: ServerGroup.UNDEFINED,
-      isObfuscated: false,
       serverType: t.ui.obfuscated,
     ),
     (
       name: "a plain NordLynx connection has no server type",
       protocol: VpnProtocol.nordlynx,
       group: ServerGroup.UNDEFINED,
-      isObfuscated: false,
       serverType: null,
     ),
     (
       name: "a specialty group is labelled with its own name",
       protocol: VpnProtocol.nordlynx,
       group: ServerGroup.DOUBLE_VPN,
-      isObfuscated: false,
       serverType: t.ui.doubleVpn,
     ),
     (
@@ -76,7 +71,6 @@ void main() {
       name: "the obfuscated group is still labelled as obfuscated",
       protocol: VpnProtocol.openVpnTcp,
       group: ServerGroup.OBFUSCATED,
-      isObfuscated: true,
       serverType: t.ui.obfuscated,
     ),
     (
@@ -84,7 +78,6 @@ void main() {
       name: "the daemon obfuscated flag alone does not add a label",
       protocol: VpnProtocol.openVpnTcp,
       group: ServerGroup.UNDEFINED,
-      isObfuscated: true,
       serverType: null,
     ),
   ];
@@ -96,7 +89,6 @@ void main() {
           vpnStatus: vpnStatus(
             protocol: testCase.protocol,
             group: testCase.group,
-            isObfuscated: testCase.isObfuscated,
           ),
         ),
       );

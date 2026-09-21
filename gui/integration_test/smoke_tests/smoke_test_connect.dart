@@ -12,17 +12,12 @@ void runQuickConnectTest(
   String name,
   Technology technology,
   Protocol protocol, {
-  bool? obfuscate,
   String? country,
   String? server,
   String? serverCountry,
 }) {
   testWidgets("- $name", (tester) async {
     final settings = Settings(technology: technology, protocol: protocol);
-
-    if (obfuscate != null) {
-      settings.obfuscate = obfuscate;
-    }
 
     final app = await tester.setupIntegrationTests(appSettings: settings);
 
@@ -58,18 +53,10 @@ void runQuickConnectTest(
       timeout: Duration(seconds: 10),
     );
 
-    if (obfuscate != null) {
-      final isConnectedToObfuscated = find.descendant(
-        of: vpnStatusCard(),
-        matching: find.textContaining(t.ui.obfuscated),
-      );
-      expect(isConnectedToObfuscated, findsOneWidget);
-    } else {
-      await tester.pumpUntilFound(
-        find.text(t.ui.secured),
-        timeout: Duration(seconds: 10),
-      );
-    }
+    await tester.pumpUntilFound(
+      find.text(t.ui.secured),
+      timeout: Duration(seconds: 10),
+    );
 
     if (country != null) {
       final isCountryConnected = find.descendant(
@@ -106,24 +93,8 @@ void runConnectSmokeTests() {
     // Manual TCID: LVPN-6273
     runQuickConnectTest('openvpn tcp', Technology.OPENVPN, Protocol.TCP);
 
-    // Manual TCID: LVPN-6276
-    runQuickConnectTest(
-      'openvpn obfuscation tcp',
-      Technology.OPENVPN,
-      Protocol.TCP,
-      obfuscate: true,
-    );
-
     // Manual TCID: LVPN-6274
     runQuickConnectTest('openvpn udp', Technology.OPENVPN, Protocol.UDP);
-
-    // Manual TCID: LVPN-6275
-    runQuickConnectTest(
-      'openvpn obfuscation udp',
-      Technology.OPENVPN,
-      Protocol.UDP,
-      obfuscate: true,
-    );
   });
   group("Quick connect Smoke Tests", () {
     // Manual TCID: LVPN-6362
@@ -150,30 +121,12 @@ void runConnectSmokeTests() {
       country: "France",
     );
 
-    // Manual TCID: LVPN-6366
-    runQuickConnectTest(
-      'openvpn obfuscation tcp specific country',
-      Technology.OPENVPN,
-      Protocol.TCP,
-      obfuscate: true,
-      country: "Canada",
-    );
-
     // Manual TCID: LVPN-6364
     runQuickConnectTest(
       'openvpn udp specific country',
       Technology.OPENVPN,
       Protocol.UDP,
       country: "France",
-    );
-
-    // Manual TCID: LVPN-6365
-    runQuickConnectTest(
-      'openvpn obfuscation udp specific country',
-      Technology.OPENVPN,
-      Protocol.UDP,
-      obfuscate: true,
-      country: "Canada",
     );
   });
   group("Quick connect Smoke Tests", () {
@@ -204,16 +157,6 @@ void runConnectSmokeTests() {
       serverCountry: "Germany",
     );
 
-    // Manual TCID: LVPN-7721
-    runQuickConnectTest(
-      'openvpn obfuscated tcp specific server',
-      Technology.OPENVPN,
-      Protocol.TCP,
-      obfuscate: true,
-      server: "#2",
-      serverCountry: "Italy",
-    );
-
     // Manual TCID: LVPN-7718
     runQuickConnectTest(
       'openvpn udp specific server',
@@ -221,16 +164,6 @@ void runConnectSmokeTests() {
       Protocol.UDP,
       server: "#12",
       serverCountry: "Germany",
-    );
-
-    // Manual TCID: LVPN-7720
-    runQuickConnectTest(
-      'openvpn obfuscated udp specific server',
-      Technology.OPENVPN,
-      Protocol.UDP,
-      obfuscate: true,
-      server: "#2",
-      serverCountry: "Italy",
     );
   });
 }

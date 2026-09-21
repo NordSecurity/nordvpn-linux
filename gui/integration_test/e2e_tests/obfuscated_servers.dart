@@ -14,7 +14,7 @@ void runObfuscatedServersTests() async {
       final app = await tester.setupIntegrationTests();
 
       final vpnScreen = await app.goToVpnScreen();
-      await app.setObfuscatedServers(true);
+      await app.setTechnology(Technology.NORDWHISPER);
 
       await vpnScreen.quickConnect();
 
