@@ -35,6 +35,14 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 	}
 
 	if !in.NoLogout {
+		if err := r.ncClient.Stop(); err != nil {
+			log.Warn("error stoping notification center client:", err)
+		}
+
+		if !r.ncClient.Revoke() {
+			log.Warn("error revoking notification center token")
+		}
+
 		result := access.Logout(access.LogoutInput{
 			AuthChecker:                  r.ac,
 			CredentialsAPI:               r.credentialsAPI,
