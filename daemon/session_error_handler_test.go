@@ -879,17 +879,15 @@ func TestSessionErrorHandler_ConcurrentLogoutPrevention(t *testing.T) {
 	numGoroutines := 5
 	startSignal := make(chan struct{})
 
-	for i := 0; i < numGoroutines; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range numGoroutines {
+		wg.Go(func() {
 			<-startSignal
 			atomic.AddInt32(&handlerCalls, 1)
 			handlers := errorRegistry.GetHandlers(core.ErrUnauthorized)
 			for _, handler := range handlers {
 				handler(core.ErrUnauthorized)
 			}
-		}()
+		})
 	}
 
 	close(startSignal)
@@ -1006,20 +1004,16 @@ func TestSessionErrorHandler_ConcurrentAPICallsWithErrors(t *testing.T) {
 
 	startSignal := make(chan struct{})
 
-	for i := 0; i < numGoroutines; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range numGoroutines {
+		wg.Go(func() {
 			<-startSignal
 			_, _ = smartAPI.CurrentUser()
-		}()
+		})
 
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			<-startSignal
 			_, _ = smartAPI.Services()
-		}()
+		})
 	}
 
 	close(startSignal)

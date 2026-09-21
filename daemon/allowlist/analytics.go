@@ -226,10 +226,10 @@ func (e *OperationEvent) ToDebuggerEvent() *events.DebuggerEvent {
 	if err != nil {
 		log.Error("failed to marshal operation-event:", err)
 		// Fallback: provide basic information we know for certain
-		jsonData = []byte(fmt.Sprintf(
+		jsonData = fmt.Appendf(nil,
 			`{"namespace":"%s","subscope":"%s","event":"%s","operation":"%s","result":"%s","error":"marshal_error"}`,
 			e.Namespace, e.Subscope, e.Event, e.Operation, e.Result,
-		))
+		)
 	}
 	return events.NewDebuggerEvent(string(jsonData)).
 		WithKeyBasedContextPaths(
@@ -256,10 +256,10 @@ func (e *SnapshotEvent) ToDebuggerEvent() *events.DebuggerEvent {
 	if err != nil {
 		log.Error("failed to marshal snapshot-event:", err)
 		// Fallback: provide basic information we know for certain
-		jsonData = []byte(fmt.Sprintf(
+		jsonData = fmt.Appendf(nil,
 			`{"namespace":"%s","subscope":"%s","event":"%s","error":"marshal_error"}`,
 			e.Namespace, e.Subscope, e.Event,
-		))
+		)
 	}
 	return events.NewDebuggerEvent(string(jsonData)).
 		WithKeyBasedContextPaths(

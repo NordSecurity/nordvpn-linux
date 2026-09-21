@@ -26,10 +26,10 @@ func Timezone() string {
 }
 
 func extractZone(input []byte) string {
-	for _, line := range strings.Split(string(input), "\n") {
+	for line := range strings.SplitSeq(string(input), "\n") {
 		prefix := "Timezone="
-		if strings.HasPrefix(line, prefix) {
-			return strings.TrimPrefix(line, prefix)
+		if after, ok := strings.CutPrefix(line, prefix); ok {
+			return after
 		}
 	}
 	return ""

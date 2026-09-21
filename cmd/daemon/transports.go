@@ -203,7 +203,7 @@ func validateHTTPTransportsString(val string) []string {
 	}
 	finalVal := []string{}
 	val = strings.ToLower(val)
-	for _, item := range strings.Split(val, ",") {
+	for item := range strings.SplitSeq(val, ",") {
 		if slices.Contains(validTransportTypes, item) {
 			finalVal = append(finalVal, item)
 		} else {

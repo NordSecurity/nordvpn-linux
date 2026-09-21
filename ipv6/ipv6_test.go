@@ -80,7 +80,7 @@ func TestGetRulesFrom(t *testing.T) {
 // parametersFrom parse output and put values into map
 func parametersFrom(output []byte) (map[string]int, error) {
 	rules := map[string]int{}
-	for _, line := range strings.Split(string(output), "\n") {
+	for line := range strings.SplitSeq(string(output), "\n") {
 		if line == "" {
 			continue
 		}

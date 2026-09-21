@@ -31,7 +31,7 @@ func readTagFromOSRelease(r io.Reader, tag string) (string, error) {
 		return "", err
 	}
 
-	for _, line := range bytes.Split(data, []byte("\n")) {
+	for line := range bytes.SplitSeq(data, []byte("\n")) {
 		key, value, ok := bytes.Cut(line, []byte("="))
 		if !ok {
 			continue

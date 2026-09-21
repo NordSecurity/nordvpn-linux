@@ -167,7 +167,7 @@ func makeTransfer(transferID string, fileCount int, makeBigNames bool) *pb.Trans
 	}
 
 	var files []*pb.File
-	for i := 0; i < fileCount; i++ {
+	for i := range fileCount {
 		filePath := fmt.Sprintf("%s-%d", strings.Repeat("A", nameSize), i)
 		files = append(files, &pb.File{
 			Id:     fmt.Sprintf("%s-%d", "asdf845sad84fsadf485sa5d487", i),
@@ -230,7 +230,7 @@ func makeLegacyTransfer(transferID string, dirLevels, fileCount int, makeBigName
 		nameSize = 200
 	}
 
-	for i := 0; i < dirLevels; i++ {
+	for i := range dirLevels {
 		dirName := fmt.Sprintf("%s-%d", strings.Repeat("A", nameSize), i)
 		if crrDir == nil {
 			crrDir = &pb.File{
@@ -251,7 +251,7 @@ func makeLegacyTransfer(transferID string, dirLevels, fileCount int, makeBigName
 		}
 	}
 
-	for i := 0; i < fileCount; i++ {
+	for i := range fileCount {
 		fileID := fmt.Sprintf("%s-%d", strings.Repeat("A", nameSize), i)
 		crrDir.Children[fileID] = &pb.File{
 			Id:   fileID,
