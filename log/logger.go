@@ -20,6 +20,7 @@ const showCallerAsSource = 4
 
 const (
 	levelUnknown logLevel = iota
+	levelTrace
 	levelDebug
 	levelInfo
 	levelWarn
@@ -29,6 +30,7 @@ const (
 )
 
 const (
+	tracePrefix   = "[Trace]"
 	debugPrefix   = "[Debug]"
 	infoPrefix    = "[Info]"
 	warningPrefix = "[Warning]"
@@ -38,6 +40,8 @@ const (
 
 func (l logLevel) String() string {
 	switch l {
+	case levelTrace:
+		return "trace"
 	case levelDebug:
 		return "debug"
 	case levelInfo:
@@ -106,6 +110,10 @@ func NewLogger(prefix string) *Logger {
 
 func (l *Logger) Prefix() string { return l.prefix }
 
+func (l *Logger) Trace(v ...any) { logAt(levelTrace, tracePrefix, prepend(l.prefix, v)) }
+func (l *Logger) Tracef(format string, v ...any) {
+	logAtf(levelTrace, tracePrefix, l.prefix+" "+format, v)
+}
 func (l *Logger) Debug(v ...any) { logAt(levelDebug, debugPrefix, prepend(l.prefix, v)) }
 func (l *Logger) Debugf(format string, v ...any) {
 	logAtf(levelDebug, debugPrefix, l.prefix+" "+format, v)
@@ -132,6 +140,8 @@ func prepend(prefix string, v []any) []any {
 	return append([]any{prefix}, v...)
 }
 
+func Trace(v ...any)                 { logAt(levelTrace, tracePrefix, v) }
+func Tracef(format string, v ...any) { logAtf(levelTrace, tracePrefix, format, v) }
 func Debug(v ...any)                 { logAt(levelDebug, debugPrefix, v) }
 func Debugf(format string, v ...any) { logAtf(levelDebug, debugPrefix, format, v) }
 func Info(v ...any)                  { logAt(levelInfo, infoPrefix, v) }
