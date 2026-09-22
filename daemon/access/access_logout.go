@@ -80,7 +80,7 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 
 	var cfg config.Config
 	if err := input.ConfigManager.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("loading config:", err)
 		return LogoutResult{Status: internal.CodeFailure, Err: nil}
 	}
 
@@ -90,12 +90,12 @@ func Logout(input LogoutInput) (logoutResult LogoutResult) {
 	}
 
 	if err := input.Netw.UnSetMesh(); err != nil && !errors.Is(err, networker.ErrMeshNotActive) {
-		log.Error(err)
+		log.Error("unsetting meshnet:", err)
 		return LogoutResult{Status: internal.CodeFailure, Err: nil}
 	}
 
 	if err := input.NcClient.Stop(); err != nil {
-		log.Warn(err)
+		log.Warn("stopping notification center client:", err)
 	}
 
 	tokenData, ok := cfg.TokensData[cfg.AutoConnectData.ID]
@@ -204,12 +204,12 @@ func ForceLogoutWithoutToken(input ForceLogoutWithoutTokenInput) (logoutResult L
 	}
 
 	if err := input.Netw.UnSetMesh(); err != nil && !errors.Is(err, networker.ErrMeshNotActive) {
-		log.Error(err)
+		log.Error("unsetting meshnet:", err)
 		return LogoutResult{Status: internal.CodeFailure, Err: nil}
 	}
 
 	if err := input.NcClient.Stop(); err != nil {
-		log.Warn(err)
+		log.Warn("stopping notification center client:", err)
 	}
 
 	if err := input.ConfigManager.SaveWith(clearConfigData()); err != nil {

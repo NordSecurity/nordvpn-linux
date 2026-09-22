@@ -23,7 +23,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("loading config:", err)
 	}
 
 	if !cfg.AutoConnect && !in.GetEnabled() {
@@ -106,7 +106,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 			}
 			return c
 		}); err != nil {
-			log.Error(err)
+			log.Error("saving autoconnect config:", err)
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil
@@ -116,7 +116,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 			c.AutoConnect = in.GetEnabled()
 			return c
 		}); err != nil {
-			log.Error(err)
+			log.Error("saving autoconnect config:", err)
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil

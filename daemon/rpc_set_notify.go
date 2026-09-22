@@ -12,13 +12,13 @@ import (
 func (r *RPC) SetNotify(ctx context.Context, in *pb.SetNotifyRequest) (*pb.Payload, error) {
 	cred, err := internal.UcredFromContext(ctx)
 	if err != nil {
-		log.Error("SetNotify:", err)
+		log.Error("getting user credentials from context:", err)
 		return &pb.Payload{Type: internal.CodeInternalError}, nil
 	}
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("loading config:", err)
 	}
 
 	notifyStatus := !cfg.UsersData.NotifyOff[int64(cred.Uid)]
@@ -41,7 +41,7 @@ func (r *RPC) SetNotify(ctx context.Context, in *pb.SetNotifyRequest) (*pb.Paylo
 			c.UsersData.NotifyOff[int64(cred.Uid)] = true
 			return c
 		}); err != nil {
-			log.Error(err)
+			log.Error("saving notify-off config:", err)
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil
@@ -51,7 +51,7 @@ func (r *RPC) SetNotify(ctx context.Context, in *pb.SetNotifyRequest) (*pb.Paylo
 			delete(c.UsersData.NotifyOff, int64(cred.Uid))
 			return c
 		}); err != nil {
-			log.Error(err)
+			log.Error("saving notify-on config:", err)
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil

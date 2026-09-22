@@ -147,7 +147,7 @@ func main() {
 		go func() {
 			// #nosec G114 -- not used in production
 			if err := http.ListenAndServe(fmt.Sprintf(":%d", Port), nil); err != nil {
-				log.Error(err)
+				log.Error("pprof server:", err)
 			}
 		}()
 	}
@@ -184,7 +184,7 @@ func main() {
 
 	var cfg config.Config
 	if err := fsystem.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("loading config:", err)
 		if err := fsystem.Reset(false, false); err != nil {
 			log.Fatal(err)
 		}
@@ -846,15 +846,15 @@ func assignMooseDBPermissions(eventsDbPath string) error {
 	}
 	// Change permission of the existing DB, because older versions had read for everyone
 	if err := os.Chmod(eventsDbPath, permissions); err != nil {
-		log.Error(err)
+		log.Error("changing events db permissions:", err)
 	}
 
 	if gid, err := internal.GetNordvpnGid(); err == nil {
 		if err := os.Chown(eventsDbPath, os.Getuid(), gid); err != nil {
-			log.Error(err)
+			log.Error("changing events db owner:", err)
 		}
 	} else {
-		log.Error(err)
+		log.Error("getting nordvpn gid:", err)
 	}
 	return nil
 }

@@ -74,7 +74,7 @@ func CleanUpIptables() error {
 		for _, table := range tableNames {
 			out, err := getRuleOutput(iptableVersion, table)
 			if err != nil {
-				log.Error(err)
+				log.Error("getting iptables rules:", err)
 				continue
 			}
 			rules := string(out)

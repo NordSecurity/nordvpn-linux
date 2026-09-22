@@ -17,14 +17,14 @@ var adjustAutoconnectCfgOnce sync.Once
 func (r *RPC) Settings(ctx context.Context, in *pb.Empty) (*pb.SettingsResponse, error) {
 	cred, err := internal.UcredFromContext(ctx)
 	if err != nil {
-		log.Error("Settings:", err)
+		log.Error("getting user credentials from context:", err)
 		return &pb.SettingsResponse{Type: internal.CodeFailure}, nil
 	}
 	uid := int64(cred.Uid)
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("loading config:", err)
 		return &pb.SettingsResponse{
 			Type: internal.CodeConfigError,
 		}, nil

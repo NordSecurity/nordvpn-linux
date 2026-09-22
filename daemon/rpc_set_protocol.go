@@ -11,7 +11,7 @@ import (
 func (r *RPC) SetProtocol(ctx context.Context, in *pb.SetProtocolRequest) (*pb.SetProtocolResponse, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("loading config:", err)
 	}
 
 	if cfg.AutoConnectData.Protocol == in.Protocol {
@@ -34,7 +34,7 @@ func (r *RPC) SetProtocol(ctx context.Context, in *pb.SetProtocolRequest) (*pb.S
 		c.AutoConnectData.Protocol = in.GetProtocol()
 		return c
 	}); err != nil {
-		log.Error(err)
+		log.Error("saving protocol config:", err)
 		return &pb.SetProtocolResponse{
 			Response: &pb.SetProtocolResponse_ErrorCode{
 				ErrorCode: pb.SetErrorCode_CONFIG_ERROR,

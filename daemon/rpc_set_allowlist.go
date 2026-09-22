@@ -146,7 +146,7 @@ func (r *RPC) getNewAllowlist(req *pb.SetAllowlistRequest, forceRemoveNarrower, 
 
 func (r *RPC) handleNewAllowlist(allowlist config.Allowlist) int64 {
 	if err := r.netw.SetAllowlist(allowlist); err != nil {
-		log.Error(err)
+		log.Error("applying allowlist to networker:", err)
 		return internal.CodeFailure
 	}
 
@@ -154,7 +154,7 @@ func (r *RPC) handleNewAllowlist(allowlist config.Allowlist) int64 {
 		c.AutoConnectData.Allowlist = allowlist
 		return c
 	}); err != nil {
-		log.Error(err)
+		log.Error("saving allowlist config:", err)
 		return internal.CodeConfigError
 	}
 

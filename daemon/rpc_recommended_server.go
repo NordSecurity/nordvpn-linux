@@ -12,7 +12,7 @@ import (
 func (r *RPC) RecommendedServer(ctx context.Context, in *pb.Empty) (*pb.RecommendedServerLocation, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("loading config:", err)
 		return &pb.RecommendedServerLocation{}, nil
 	}
 	insights := r.dm.GetInsightsData().Insights

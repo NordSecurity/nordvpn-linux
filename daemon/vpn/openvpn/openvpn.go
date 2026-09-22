@@ -491,7 +491,7 @@ func stage2Handler(
 			}
 			err := ovpn.manager.Auth(username, password)
 			if err != nil {
-				log.Error(err)
+				log.Error("OpenVPN management auth:", err)
 			}
 		case *gopenvpn.StateEvent:
 			event := e
@@ -514,12 +514,12 @@ func stage2Handler(
 			case vpn.ConnectedState:
 				ip, err := netip.ParseAddr(event.LocalTunnelAddr())
 				if err != nil {
-					log.Error(err)
+					log.Error("parsing OpenVPN tunnel local address:", err)
 				}
 
 				tunnel, err := tunnel.Find(ip)
 				if err != nil {
-					log.Error(err)
+					log.Error("finding tunnel interface for OpenVPN:", err)
 				}
 				ovpn.setTun(tunnel) // might set to nil and crash
 			}
