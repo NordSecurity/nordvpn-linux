@@ -7,7 +7,6 @@ import (
 
 	"github.com/NordSecurity/nordvpn-linux/core"
 	"github.com/NordSecurity/nordvpn-linux/internal"
-	"github.com/NordSecurity/nordvpn-linux/log"
 )
 
 // updateTemplateCache downloads the config template to cachePath unless the cached copy matches
@@ -39,20 +38,8 @@ func updateTemplateCache(cdn core.CDN, variant core.OvpnTemplateVariant, cachePa
 	return nil
 }
 
-func JobTemplates(cdn core.CDN) func() {
-	// ovpnTemplates maps every OpenVPN config template variant to the file it is cached in.
-	var ovpnTemplates = map[core.OvpnTemplateVariant]string{
-		core.OvpnTemplateStandard:   internal.OvpnTemplatePath,
-		core.OvpnTemplateObfuscated: internal.OvpnObfsTemplatePath,
-	}
-
-	return func() {
-		for variant, cachePath := range ovpnTemplates {
-			go func() {
-				if err := updateTemplateCache(cdn, variant, cachePath); err != nil {
-					log.Warn("updating config template cache:", err)
-				}
-			}()
-		}
+func JobTemplates(cdn core.CDN) func() error {
+	return func() error {
+		return updateTemplateCache(cdn, core.OvpnTemplateStandard, internal.OvpnTemplatePath)
 	}
 }

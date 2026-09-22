@@ -223,7 +223,6 @@ parts:
     organize:
       countries.dat: var/lib/nordvpn/data/countries.dat
       ovpn_template.xslt: var/lib/nordvpn/data/ovpn_template.xslt
-      ovpn_xor_template.xslt: var/lib/nordvpn/data/ovpn_xor_template.xslt
       servers.dat: var/lib/nordvpn/data/servers.dat
     stage:
       - var/lib/nordvpn/data/*

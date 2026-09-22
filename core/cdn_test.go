@@ -284,7 +284,6 @@ func TestCDNAPI_FetchConfigTemplate_PathByVariant(t *testing.T) {
 		wantPath string
 	}{
 		{"standard", OvpnTemplateStandard, ovpnTemplateURL},
-		{"obfuscated", OvpnTemplateObfuscated, ovpnObfsTemplateURL},
 	}
 
 	for _, test := range tests {

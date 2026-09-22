@@ -43,7 +43,6 @@ type ServerData struct {
 	Hostname            string // used in openvpn server certificate validation
 	Protocol            config.Protocol
 	NordLynxPublicKey   string
-	Obfuscated          bool
 	OpenVPNVersion      string
 	PostQuantum         bool
 	NordWhisperPort     int64
