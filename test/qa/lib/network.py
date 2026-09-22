@@ -80,7 +80,7 @@ def is_internet_reachable(ip_address="1.1.1.1", port=443, retry=5) -> bool:
             return True
         except Exception as e:  # noqa: BLE001
             logging.log(f"is_internet_reachable failed {ip_address}: {e}")
-            res = sh.sudo.nft.list.ruleset("-a")
+            res = sh.sudo.nft.list.ruleset()
             logging.log(f"is_internet_reachable {res}")
             raise
     result = retry_on_exc(attempts=retry, delay=1, raise_exc=False)(_check)()
