@@ -124,7 +124,7 @@ def test_repeated_login():
 def test_expired_account_connect():
     """Manual TC: LVPN-1407"""
 
-    lib.set_technology_and_protocol("openvpn", "udp", "off")
+    lib.set_technology_and_protocol("openvpn", "udp")
 
     output = login.login_as("expired")
     print(output)

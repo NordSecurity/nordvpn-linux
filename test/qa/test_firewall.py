@@ -24,12 +24,12 @@ def setup_module(module):  # noqa: ARG001
     firewall.setup_port_sock_server(None)
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_connected_firewall_disable(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_connected_firewall_disable(tech, proto):
     """Manual TC: LVPN-688"""
 
     with lib.Defer(sh.nordvpn.disconnect):
-        lib.set_technology_and_protocol(tech, proto, obfuscated)
+        lib.set_technology_and_protocol(tech, proto)
 
         lib.set_firewall("on")
         assert not firewall.is_active(), "Firewall should not be active before connecting"
@@ -44,12 +44,12 @@ def test_connected_firewall_disable(tech, proto, obfuscated):
     assert not firewall.is_active(), "Firewall should be inactive after disconnecting"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_connected_firewall_enable(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_connected_firewall_enable(tech, proto):
     """Manual TC: LVPN-693"""
 
     with lib.Defer(sh.nordvpn.disconnect):
-        lib.set_technology_and_protocol(tech, proto, obfuscated)
+        lib.set_technology_and_protocol(tech, proto)
 
         lib.set_firewall("off")
         assert not firewall.is_active(), "Firewall should not be active when disabled"
@@ -64,12 +64,12 @@ def test_connected_firewall_enable(tech, proto, obfuscated):
     assert not firewall.is_active(), "Firewall should be inactive after disconnecting"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_firewall_disable_connect(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_firewall_disable_connect(tech, proto):
     """Manual TC: LVPN-598"""
 
     with lib.Defer(sh.nordvpn.disconnect):
-        lib.set_technology_and_protocol(tech, proto, obfuscated)
+        lib.set_technology_and_protocol(tech, proto)
 
         lib.set_firewall("off")
         assert not firewall.is_active(), "Firewall should not be active when disabled"
@@ -81,12 +81,12 @@ def test_firewall_disable_connect(tech, proto, obfuscated):
     assert not firewall.is_active(), "Firewall should be inactive after disconnecting"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_firewall_enable_connect(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_firewall_enable_connect(tech, proto):
     """Manual TC: LVPN-593"""
 
     with lib.Defer(sh.nordvpn.disconnect):
-        lib.set_technology_and_protocol(tech, proto, obfuscated)
+        lib.set_technology_and_protocol(tech, proto)
 
         lib.set_firewall("on")
         assert not firewall.is_active(), "Firewall should not be active before connecting"
@@ -103,20 +103,19 @@ def test_firewall_enable_connect(tech, proto, obfuscated):
     [
         "tech",
         "proto",
-        "obfuscated",
         "port",
     ],
     ordered_source=[lib.TECHNOLOGIES],
     randomized_source=[lib.PORTS],
     generate_all=IS_NIGHTLY,
-    id_pattern="{tech}-{proto}-{obfuscated}-{port.protocol}-{port.value}",
+    id_pattern="{tech}-{proto}-{port.protocol}-{port.value}",
 )
-def test_firewall_02_allowlist_port(tech, proto, obfuscated, port):
+def test_firewall_02_allowlist_port(tech, proto, port):
     """Manual TC: LVPN-8722"""
 
     with lib.Defer(lib.flush_allowlist):
         with lib.Defer(sh.nordvpn.disconnect):
-            lib.set_technology_and_protocol(tech, proto, obfuscated)
+            lib.set_technology_and_protocol(tech, proto)
 
             lib.set_firewall("on")
             allowlist.add_ports_to_allowlist([port])
@@ -140,21 +139,20 @@ def test_firewall_02_allowlist_port(tech, proto, obfuscated, port):
     [
         "tech",
         "proto",
-        "obfuscated",
         "ports",
     ],
     ordered_source=[lib.TECHNOLOGIES],
     randomized_source=[lib.PORTS_RANGE],
     generate_all=IS_NIGHTLY,
-    id_pattern="{tech}-{proto}-{obfuscated}-{ports.protocol}-{ports.value}",
+    id_pattern="{tech}-{proto}-{ports.protocol}-{ports.value}",
 )
 @pytest.mark.skipif(daemon.is_under_snap(), reason="No peer in Snap env") # TODO: LVPN-11026
-def test_firewall_03_allowlist_ports_range(tech, proto, obfuscated, ports):
+def test_firewall_03_allowlist_ports_range(tech, proto, ports):
     """Manual TC: LVPN-8725"""
 
     with lib.Defer(lib.flush_allowlist):
         with lib.Defer(sh.nordvpn.disconnect):
-            lib.set_technology_and_protocol(tech, proto, obfuscated)
+            lib.set_technology_and_protocol(tech, proto)
 
             lib.set_firewall("on")
             allowlist.add_ports_to_allowlist([ports])
@@ -173,14 +171,14 @@ def test_firewall_03_allowlist_ports_range(tech, proto, obfuscated, ports):
     assert not firewall.is_active(), "Firewall is not configured"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("subnet", lib.SUBNETS)
-def test_firewall_05_allowlist_subnet(tech, proto, obfuscated, subnet):
+def test_firewall_05_allowlist_subnet(tech, proto, subnet):
     """Manual TC: LVPN-8724"""
 
     with lib.Defer(lib.flush_allowlist):
         with lib.Defer(sh.nordvpn.disconnect):
-            lib.set_technology_and_protocol(tech, proto, obfuscated)
+            lib.set_technology_and_protocol(tech, proto)
 
             lib.set_firewall("on")
             allowlist.add_subnet_to_allowlist([subnet])
@@ -196,12 +194,12 @@ def test_firewall_05_allowlist_subnet(tech, proto, obfuscated, subnet):
     assert not firewall.is_ip_routed_via_VPN([subnet]), "Whitelisted port is not routed thru VPN"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_firewall_06_with_killswitch(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_firewall_06_with_killswitch(tech, proto):
     """Manual TC: LVPN-8726"""
 
     with lib.Defer(sh.nordvpn.set.killswitch.off):
-        lib.set_technology_and_protocol(tech, proto, obfuscated)
+        lib.set_technology_and_protocol(tech, proto)
 
         lib.set_firewall("on")
         assert not firewall.is_active(), "Firewall should not be active before killswitch is enabled"
@@ -211,13 +209,13 @@ def test_firewall_06_with_killswitch(tech, proto, obfuscated):
     assert not firewall.is_active(), "Firewall should be inactive after killswitch is disabled"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_firewall_07_with_killswitch_while_connected(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_firewall_07_with_killswitch_while_connected(tech, proto):
     """Manual TC: LVPN-8727"""
 
     with lib.Defer(sh.nordvpn.set.killswitch.off):
         with lib.Defer(sh.nordvpn.disconnect):
-            lib.set_technology_and_protocol(tech, proto, obfuscated)
+            lib.set_technology_and_protocol(tech, proto)
 
             lib.set_firewall("on")
             assert not firewall.is_active(), "Firewall should not be active before killswitch is enabled"
@@ -235,14 +233,14 @@ def test_firewall_07_with_killswitch_while_connected(tech, proto, obfuscated):
     assert not firewall.is_active(), "Firewall should be inactive after killswitch is disabled"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 @pytest.mark.parametrize("before_connect", [True, False])
-def test_firewall_lan_discovery(tech, proto, obfuscated, before_connect):
+def test_firewall_lan_discovery(tech, proto, before_connect):
     """Manual TC: LVPN-8947"""
 
     with lib.Defer(lambda: sh.nordvpn.set("lan-discovery", "off", _ok_code=(0, 1))):
         with lib.Defer(sh.nordvpn.disconnect):
-            lib.set_technology_and_protocol(tech, proto, obfuscated)
+            lib.set_technology_and_protocol(tech, proto)
             rand_lan_subnet = random.choice(firewall.LAN_DISCOVERY_SUBNETS)
 
             if before_connect:
@@ -260,13 +258,13 @@ def test_firewall_lan_discovery(tech, proto, obfuscated, before_connect):
             assert firewall.is_ip_routed_via_VPN([rand_lan_subnet])
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_firewall_lan_allowlist_interaction(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_firewall_lan_allowlist_interaction(tech, proto):
     """Manual TC: LVPN-8941"""
 
     with lib.Defer(lambda: sh.nordvpn.set("lan-discovery", "off", _ok_code=(0, 1))):
         with lib.Defer(sh.nordvpn.disconnect):
-            lib.set_technology_and_protocol(tech, proto, obfuscated)
+            lib.set_technology_and_protocol(tech, proto)
 
             sh.nordvpn.connect()
 
@@ -284,15 +282,15 @@ def test_firewall_lan_allowlist_interaction(tech, proto, obfuscated):
             assert firewall.is_ip_routed_via_VPN([ip_not_in_subnet])
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_firewall_lan_allowlist_work_together(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_firewall_lan_allowlist_work_together(tech, proto):
     """Manual TC: LVPN-10010"""
 
     with lib.Defer(lambda: sh.nordvpn.set("lan-discovery", "off", _ok_code=(0, 1))):
         with lib.Defer(sh.nordvpn.disconnect):
             subnet = "1.1.1.1/32"
             with lib.Defer(lambda: sh.nordvpn.allowlist.remove.subnet(subnet, _ok_code=(0, 1))):
-                lib.set_technology_and_protocol(tech, proto, obfuscated)
+                lib.set_technology_and_protocol(tech, proto)
 
                 sh.nordvpn.allowlist.add.subnet(subnet)
                 sh.nordvpn.set("lan-discovery", "on")
@@ -301,9 +299,9 @@ def test_firewall_lan_allowlist_work_together(tech, proto, obfuscated):
                 assert firewall.is_ip_routed_via_VPN(["1.0.0.1"]), "Not whitelisted subnet is going through VPN"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 @pytest.mark.skipif(daemon.is_under_snap(), reason="No peer in Snap env") # TODO: LVPN-11026
-def test_firewall_dns_udp_53_to_lan_resolver_dropped(tech, proto, obfuscated):
+def test_firewall_dns_udp_53_to_lan_resolver_dropped(tech, proto):
     """
     Verify UDP port 53 to the local resolver is dropped when VPN is connected.
 
@@ -318,7 +316,7 @@ def test_firewall_dns_udp_53_to_lan_resolver_dropped(tech, proto, obfuscated):
     :raises AssertionError: If UDP port 53 is not reachable after VPN,
      or if it is reachable while VPN is connected.
     """
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
@@ -333,8 +331,8 @@ def test_firewall_dns_udp_53_to_lan_resolver_dropped(tech, proto, obfuscated):
 
 
 @pytest.mark.skipif(daemon.is_under_snap(), reason="No peer in Snap env") # TODO: LVPN-11026
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_firewall_dns_tcp_53_to_lan_resolver_dropped(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_firewall_dns_tcp_53_to_lan_resolver_dropped(tech, proto):
     """
     Verify TCP port 53 to the local resolver is dropped when VPN is connected.
 
@@ -350,7 +348,7 @@ def test_firewall_dns_tcp_53_to_lan_resolver_dropped(tech, proto, obfuscated):
     :raises AssertionError: If TCP port 53 is not reachable after VPN,
      or if it is reachable while VPN is connected.
     """
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
@@ -363,8 +361,8 @@ def test_firewall_dns_tcp_53_to_lan_resolver_dropped(tech, proto, obfuscated):
         "TCP port 53 must be reachable again after disconnecting from VPN"
     )
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_firewall_tcp_established_connection_response_accepted_via_tunnel(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_firewall_tcp_established_connection_response_accepted_via_tunnel(tech, proto):
     """
     Verify that response traffic for an established TCP connection is accepted via the tunnel.
 
@@ -381,7 +379,7 @@ def test_firewall_tcp_established_connection_response_accepted_via_tunnel(tech, 
 
      :raises AssertionError: If HTTP request does not return a valid response code or no tunnel packets were captured.
     """
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
     host = "nordvpn.com"
 
     with lib.Defer(sh.nordvpn.disconnect):
@@ -416,8 +414,8 @@ def test_firewall_tcp_established_connection_response_accepted_via_tunnel(tech, 
         )
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_firewall_outgoing_and_incoming_loopback_accepted(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_firewall_outgoing_and_incoming_loopback_accepted(tech, proto):
     """
     Verify loopback traffic is accepted when VPN is connected.
 
@@ -434,7 +432,7 @@ def test_firewall_outgoing_and_incoming_loopback_accepted(tech, proto, obfuscate
     """
     local_http_port = 18080
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()
@@ -463,8 +461,8 @@ def test_firewall_outgoing_and_incoming_loopback_accepted(tech, proto, obfuscate
                 http_server.kill()
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
-def test_firewall_tcp_to_lan_host_goes_via_tunnel(tech, proto, obfuscated):
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
+def test_firewall_tcp_to_lan_host_goes_via_tunnel(tech, proto):
     """
     Verify TCP traffic to a LAN host routes through the VPN tunnel and not the physical interface.
 
@@ -482,7 +480,7 @@ def test_firewall_tcp_to_lan_host_goes_via_tunnel(tech, proto, obfuscated):
     """
     other_lan_ip = network.get_default_gateway()
 
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+    lib.set_technology_and_protocol(tech, proto)
 
     with lib.Defer(sh.nordvpn.disconnect):
         sh.nordvpn.connect()

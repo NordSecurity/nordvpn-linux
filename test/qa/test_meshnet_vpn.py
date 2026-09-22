@@ -103,10 +103,10 @@ def test_connect_set_mesh_off():
 
 
 @pytest.mark.xfail(condition=meshnet.is_meshnet_test_disabled_from_run(), reason="Run only in nightly")
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), lib.TECHNOLOGIES)
+@pytest.mark.parametrize(("tech", "proto"), lib.TECHNOLOGIES)
 # This doesn't directly test meshnet, but it uses it
-def test_set_defaults_when_connected_2nd_set(tech, proto, obfuscated):
-    lib.set_technology_and_protocol(tech, proto, obfuscated)
+def test_set_defaults_when_connected_2nd_set(tech, proto):
+    lib.set_technology_and_protocol(tech, proto)
 
     daemon.restart() # Temporary solution to avoid Firewall staying enabled in settings - LVPN-4121
 
@@ -119,11 +119,6 @@ def test_set_defaults_when_connected_2nd_set(tech, proto, obfuscated):
     assert not settings.is_firewall_enabled(), "Firewall should be disabled"
     assert settings.is_meshnet_enabled(), "Meshnet should be enabled"
     assert settings.is_tpl_enabled(), "TPL should be enabled"
-
-    if obfuscated == "on":
-        assert settings.is_obfuscated_enabled(), "Obfuscation should be enabled when set to on"
-    else:
-        assert not settings.is_obfuscated_enabled(), "Obfuscation should be disabled when set to off"
 
     assert "Settings were successfully restored to defaults." in sh_no_tty.nordvpn.set.defaults("--logout"), "Settings restore should show success message"
 

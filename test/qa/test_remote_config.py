@@ -879,7 +879,7 @@ def test_killswitch_enabled_does_not_affect_cdn_with_firewall_mark(
         assert res == "exists", f"File {os.path} should exist after kill-switch was enabled"
 
 
-@pytest.mark.parametrize(("tech", "proto", "obfuscated"), STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
+@pytest.mark.parametrize(("tech", "proto"), STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
 def test_ech_disabled_for_not_allowed_technology(
         clean_cache_files,  # noqa: ARG001
         daemon_log_cursor: int,
@@ -887,7 +887,6 @@ def test_ech_disabled_for_not_allowed_technology(
         daemon_log_reader: LogReader,
         tech,
         proto,
-        obfuscated,
 ):
     """
     Test to verify ECH is disabled for technologies that are not allowed.
@@ -896,14 +895,13 @@ def test_ech_disabled_for_not_allowed_technology(
       1. Apply connection configuration for the parametrized combination:
          - technology
          - protocol
-         - obfuscation
       2. Connect to VPN.
       3. Verify that the ECH message ('RC_USE_ECH_MESSAGE') is NOT present in the daemon log.
       4. Disconnect from VPN.
 
     :raises AssertionError: If the expected log message 'RC_USE_ECH_MESSAGE' is found in the daemon log
    """
-    set_technology_and_protocol(tech, proto, obfuscated)
+    set_technology_and_protocol(tech, proto)
 
     sh.nordvpn.connect()
 
@@ -931,7 +929,7 @@ def test_ech_enabled_for_allowed_technology(
 
     :raises AssertionError: If the expected log message 'RC_USE_ECH_MESSAGE' is not found in the daemon log
    """
-    set_technology_and_protocol("nordwhisper", "", "")
+    set_technology_and_protocol("nordwhisper", "")
 
     sh.nordvpn.connect()
 
@@ -993,7 +991,7 @@ def test_local_config_usage_ech_state(
             cursor=cursor,
         ), f"Expected {RC_USE_LOCAL_CONFIG_MESSAGE} message indicating local config usage not found in the logs."
 
-        set_technology_and_protocol("nordwhisper", "", "")
+        set_technology_and_protocol("nordwhisper", "")
 
         sh.nordvpn.connect()
 
@@ -1057,7 +1055,7 @@ def test_ech_disabled_with_local_rc_usage_then_reenabled_after_revert(
             cursor=cursor,
         ), f"Expected {RC_USE_LOCAL_CONFIG_MESSAGE} message indicating local config usage not found in the logs."
 
-        set_technology_and_protocol("nordwhisper", "", "")
+        set_technology_and_protocol("nordwhisper", "")
 
         sh.nordvpn.connect()
 
@@ -1144,7 +1142,7 @@ def test_local_config_usage_missing_enable_ech_field(
             cursor=cursor,
         ), f"Expected {RC_USE_LOCAL_CONFIG_MESSAGE} message indicating local config usage not found in the logs."
 
-        set_technology_and_protocol("nordwhisper", "", "")
+        set_technology_and_protocol("nordwhisper", "")
 
         sh.nordvpn.connect()
 

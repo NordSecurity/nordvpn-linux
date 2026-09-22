@@ -13,58 +13,50 @@ FILE_HASH_UTILITY = "sha256sum"
 
 API_EXTERNAL_IP = "https://api.nordvpn.com/v1/helpers/ips/insights"
 
-# Used for test parametrization, when the tested functionality does not work with obfuscated.
+# Used for test parametrization, when the same test has to be run for every technology.
 STANDARD_TECHNOLOGIES = [
-    # technology, protocol, obfuscation,
-    ("openvpn", "udp", "off"),
-    ("openvpn", "tcp", "off"),
-    ("nordlynx", "", ""),
-    ("nordwhisper", "", ""),
+    # technology, protocol
+    ("openvpn", "udp"),
+    ("openvpn", "tcp"),
+    ("nordlynx", ""),
+    ("nordwhisper", ""),
 ]
 
-# Used for test parametrization, when the tested functionality does not work with obfuscated and NordWhisper.
+# Used for test parametrization, when the tested functionality does not work with NordWhisper.
 STANDARD_TECHNOLOGIES_NO_NORDWHISPER = [
-    # technology, protocol, obfuscation,
-    ("openvpn", "udp", "off"),
-    ("openvpn", "tcp", "off"),
-    ("nordlynx", "", ""),
-]
-
-# Legacy XOR OpenVPN. Retire with LVPN-10940.
-OBFUSCATED_TECHNOLOGIES = [
-    # technology, protocol, obfuscation,
-    ("openvpn", "udp", "on"),
-    ("openvpn", "tcp", "on"),
+    # technology, protocol
+    ("openvpn", "udp"),
+    ("openvpn", "tcp"),
+    ("nordlynx", ""),
 ]
 
 STANDARD_TECHNOLOGIES_NO_MESHNET = [
-    # technology, protocol, obfuscation,
-    ("openvpn", "udp", "off"),
-    ("openvpn", "tcp", "off"),
-    ("nordwhisper", "", ""),
+    # technology, protocol
+    ("openvpn", "udp"),
+    ("openvpn", "tcp"),
+    ("nordwhisper", ""),
 ]
 
 TECHNOLOGIES_NO_MESHNET = list(STANDARD_TECHNOLOGIES_NO_MESHNET)
 
-# Used for test parametrization, when the tested functionality does not work with obfuscated.
+# Used for test parametrization, when the tested functionality only works with OpenVPN.
 OVPN_STANDARD_TECHNOLOGIES = [
-    # technology, protocol, obfuscation,
-    ("openvpn", "udp", "off"),
-    ("openvpn", "tcp", "off"),
+    # technology, protocol
+    ("openvpn", "udp"),
+    ("openvpn", "tcp"),
 ]
 
 # Used for test parametrization, when the same test has to be run for all technologies.
-# Obfuscation is a NordWhisper property since LVPN-10929, so there are no obfuscated rows to add.
 TECHNOLOGIES = list(STANDARD_TECHNOLOGIES)
 
 TECHNOLOGIES_BASIC1 = [
-    ("nordlynx", "", ""),
+    ("nordlynx", ""),
 ]
 TECHNOLOGIES_BASIC2 = [
-    ("openvpn", "udp", "off"),
+    ("openvpn", "udp"),
 ]
 NORDWHISPER_TECHNOLOGY = [
-    ("nordwhisper", "", ""),
+    ("nordwhisper", ""),
 ]
 
 # Used for test parametrization, when the same test has to be run for different threat protection lite settings.
@@ -73,7 +65,7 @@ THREAT_PROTECTION_LITE = [
     "off",
 ]
 
-# Used for test parametrization, when the tested functionality does not work with obfuscated.
+# Used for test parametrization, when the same test has to be run for different server groups.
 ADDITIONAL_GROUPS = [
     "Double_VPN",
     "Onion_Over_VPN",
@@ -87,7 +79,7 @@ ADDITIONAL_GROUPS_NORDWHISPER = [
     "P2P",
 ]
 
-# Used for test parametrization, when the tested functionality only works with non-obfuscated OPENVPN.
+# Used for test parametrization of the Dedicated IP group.
 DEDICATED_IP_GROUPS = [
     "Dedicated_IP"
 ]
@@ -219,12 +211,9 @@ class Defer:
         print(self.command())
 
 
-def set_technology_and_protocol(tech, proto, obfuscation):  # noqa: ARG001
+def set_technology_and_protocol(tech, proto):
     """
     Allows setting technology and protocol regardless of whether they are already set or not.
-
-    The obfuscation argument is only kept so the (tech, proto, obfuscation) parametrization tuples
-    still unpack, but obfuscation is no longer settable from the CLI.
 
     Tests do not break on reordering when using this.
     """

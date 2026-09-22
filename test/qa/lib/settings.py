@@ -94,11 +94,6 @@ def get_current_connection_protocol():
     return settings.get("Protocol").lower()
 
 
-def is_obfuscated_enabled():
-    """Returns True, if Obfuscate is enabled in application settings."""
-    return Settings().get("Obfuscate") == "enabled"
-
-
 def is_meshnet_enabled():
     """Return True when Meshnet is enabled."""
     return Settings().get("Meshnet") == "enabled"
