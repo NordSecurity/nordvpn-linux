@@ -389,7 +389,7 @@ func (r *RPC) doAutoConnect() error {
 		// Try to migrate again
 		err := MigrateDeprecatedGroupsAutoconnect(r.cm)
 		if err != nil {
-			log.Warn("failed to migrate deprecated groups in doAutoConnect")
+			log.Warn("failed to migrate deprecated groups in doAutoConnect", err)
 		}
 
 		// Cleanup for current connection

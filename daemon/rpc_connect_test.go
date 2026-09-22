@@ -379,6 +379,42 @@ func TestRPCConnect(t *testing.T) {
 			},
 			resp: internal.CodeDedicatedIPServiceButNoServers,
 		},
+		{
+			name:        "Connects using p2p group as flag",
+			serverTag:   "",
+			serverGroup: "p2p",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			resp: internal.CodeP2PDeprecated,
+		},
+		{
+			name:        "Connects using p2p group as tag",
+			serverTag:   "p2p",
+			serverGroup: "",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			resp: internal.CodeP2PDeprecated,
+		},
+		{
+			name:        "Connects using p2p group and country as tag",
+			serverTag:   "de p2p",
+			serverGroup: "",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			resp: internal.CodeP2PDeprecated,
+		},
+		{
+			name:        "Connects using p2p group as flag and country as tag",
+			serverTag:   "de",
+			serverGroup: "p2p",
+			factory: func(config.Technology) (vpn.VPN, error) {
+				return &mock.WorkingVPN{}, nil
+			},
+			resp: internal.CodeP2PDeprecated,
+		},
 	}
 
 	for _, test := range tests {

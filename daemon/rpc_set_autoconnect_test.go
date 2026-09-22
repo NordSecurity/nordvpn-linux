@@ -27,7 +27,9 @@ func TestAutoconnect(t *testing.T) {
 	tests := []struct {
 		testName                        string
 		server                          string
+		group                           string
 		config                          config.Config
+		disable                         bool
 		isDedicatedIPExpired            bool
 		isDedicatedServerExpired        bool
 		isDedicatedServerFeatureEnabled bool
@@ -234,6 +236,37 @@ func TestAutoconnect(t *testing.T) {
 			returnCode:                      internal.CodeDedicatedServersPq,
 			eventPublished:                  false,
 		},
+		{
+			testName:       "fails to connect using p2p server tag",
+			server:         "p2p",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			returnCode:     internal.CodeP2PDeprecated,
+			eventPublished: false,
+		},
+		{
+			testName:       "fails to connect using p2p server group",
+			server:         "",
+			group:          "p2p",
+			config:         config.Config{AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			returnCode:     internal.CodeP2PDeprecated,
+			eventPublished: false,
+		},
+		{
+			testName:       "works disabling autoconnect using p2p server tag",
+			server:         "p2p",
+			disable:        true,
+			config:         config.Config{AutoConnect: true, AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			returnCode:     internal.CodeSuccess,
+			eventPublished: true,
+		},
+		{
+			testName:       "works disabling autoconnect using p2p server group",
+			group:          "p2p",
+			disable:        true,
+			config:         config.Config{AutoConnect: true, AutoConnectData: config.AutoConnectData{Obfuscate: false, Protocol: config.Protocol_UDP}, Technology: config.Technology_NORDLYNX},
+			returnCode:     internal.CodeSuccess,
+			eventPublished: true,
+		},
 	}
 
 	for _, test := range tests {
@@ -274,9 +307,10 @@ func TestAutoconnect(t *testing.T) {
 				DedicatedServerRegistrationData: &devicekey.DedicatedServersConnectionData{},
 			},
 			remoteConfigGetter: mockRemoteConfig}
-		request := pb.SetAutoconnectRequest{Enabled: true}
+		request := pb.SetAutoconnectRequest{Enabled: !test.disable}
 
 		request.ServerTag = test.server
+		request.ServerGroup = test.group
 		mockConfigManager.c = test.config
 
 		t.Run(test.testName, func(t *testing.T) {

@@ -32,7 +32,7 @@ func (r *RPC) SetAutoConnect(ctx context.Context, in *pb.SetAutoconnectRequest) 
 		}, nil
 	}
 
-	if serverpicker.IsP2PGroup(in.ServerTag, in.ServerGroup) {
+	if in.GetEnabled() && serverpicker.IsP2PGroup(in.ServerTag, in.ServerGroup) {
 		return &pb.Payload{Type: internal.CodeP2PDeprecated}, nil
 	}
 
