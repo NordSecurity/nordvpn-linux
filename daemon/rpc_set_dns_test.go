@@ -36,13 +36,13 @@ func TestSetDNS_Success(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name                string
-		requestedDNS        config.DNS
-		currentDNS          config.DNS
-		expectedDNS         config.DNS
-		expectedDNSInConfig config.DNS
-		tpl                 bool
-		expectedTPL         bool
+		name                       string
+		requestedDNS               config.DNS
+		currentDNS                 config.DNS
+		expectedDNS                config.DNS
+		expectedDNSInConfig        config.DNS
+		realTimeProtection         bool
+		expectedRealTimeProtection bool
 	}{
 		{
 			name:                "set new DNS",
@@ -79,21 +79,21 @@ func TestSetDNS_Success(t *testing.T) {
 			expectedDNSInConfig: nil,
 		},
 		{
-			name:                "remove custom dns ipv4 tpl",
-			requestedDNS:        nil,
-			currentDNS:          dnsMock,
-			expectedDNS:         mock.TplNameserversV4,
-			expectedDNSInConfig: nil,
-			tpl:                 true,
-			expectedTPL:         true,
+			name:                       "remove custom dns ipv4 rtp",
+			requestedDNS:               nil,
+			currentDNS:                 dnsMock,
+			expectedDNS:                mock.RealTimeProtectionNameserversV4,
+			expectedDNSInConfig:        nil,
+			realTimeProtection:         true,
+			expectedRealTimeProtection: true,
 		},
 		{
-			name:                "overwrite tpl ipv4",
-			requestedDNS:        dnsMock,
-			expectedDNS:         dnsMock,
-			expectedDNSInConfig: dnsMock,
-			tpl:                 true,
-			expectedTPL:         false,
+			name:                       "overwrite rtp ipv4",
+			requestedDNS:               dnsMock,
+			expectedDNS:                dnsMock,
+			expectedDNSInConfig:        dnsMock,
+			realTimeProtection:         true,
+			expectedRealTimeProtection: false,
 		},
 	}
 
@@ -111,8 +111,8 @@ func TestSetDNS_Success(t *testing.T) {
 
 			configManager.SaveWith(func(c config.Config) config.Config {
 				c.AutoConnectData = config.AutoConnectData{
-					DNS:                  test.currentDNS,
-					ThreatProtectionLite: test.tpl,
+					DNS:                test.currentDNS,
+					RealTimeProtection: test.realTimeProtection,
 				}
 
 				return c
@@ -145,8 +145,8 @@ func TestSetDNS_Success(t *testing.T) {
 			configManager.Load(&cfg)
 			assert.Equal(t, test.expectedDNSInConfig, cfg.AutoConnectData.DNS,
 				"Invalid DNS was saved in the configuration.")
-			assert.Equal(t, test.expectedTPL, cfg.AutoConnectData.ThreatProtectionLite,
-				"Threat protection lite was not properly configured after enabling DNS.")
+			assert.Equal(t, test.expectedRealTimeProtection, cfg.AutoConnectData.RealTimeProtection,
+				"Real time protection was not properly configured after enabling DNS.")
 		})
 	}
 }

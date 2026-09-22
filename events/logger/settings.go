@@ -45,8 +45,8 @@ func (l *DaemonSettingsSubscriber) NotifyKillswitch(data bool) error {
 	return nil
 }
 
-func (l *DaemonSettingsSubscriber) NotifyThreatProtectionLite(data bool) error {
-	printSettingsChange("ThreatProtectionLite", boolToString(data))
+func (l *DaemonSettingsSubscriber) NotifyRealTimeProtection(data bool) error {
+	printSettingsChange("RealTimeProtection", boolToString(data))
 	return nil
 }
 

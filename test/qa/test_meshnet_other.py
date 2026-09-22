@@ -46,14 +46,14 @@ def test_set_defaults_when_logged_in_2nd_set(tech, proto, obfuscated):
 
     sh_no_tty.nordvpn.set.fwmark("0xe2f2")
     sh_no_tty.nordvpn.set.killswitch("on")
-    sh_no_tty.nordvpn.set.tpl("on")
+    sh_no_tty.nordvpn.set.protection("on")
     sh_no_tty.nordvpn.set.autoconnect("on")
     sh_no_tty.nordvpn.set("lan-discovery", "on")
 
     assert settings.is_meshnet_enabled(), "Meshnet should be enabled"
     assert "0xe1f1" not in  sh_no_tty.nordvpn.settings(), "Default fwmark should not be present"
     assert daemon.is_killswitch_on(), "Killswitch should be enabled"
-    assert settings.is_tpl_enabled(), "TPL should be enabled"
+    assert settings.is_rtp_enabled(), "RTP should be enabled"
     assert settings.is_autoconnect_enabled(), "Autoconnect should be enabled"
     assert settings.is_lan_discovery_enabled(), "LAN discovery should be enabled"
 
@@ -76,14 +76,14 @@ def test_set_defaults_when_logged_out_1st_set(tech, proto, obfuscated):
     sh_no_tty.nordvpn.set.killswitch("on")
     sh_no_tty.nordvpn.set("lan-discovery", "on")
     sh_no_tty.nordvpn.set.analytics("off")
-    sh_no_tty.nordvpn.set.tpl("on")
+    sh_no_tty.nordvpn.set.protection("on")
 
     assert settings.is_meshnet_enabled(), "Meshnet should be enabled"
     assert "0xe1f1" not in  sh_no_tty.nordvpn.settings(), "Default fwmark should not be present"
     assert daemon.is_killswitch_on(), "Killswitch should be enabled"
     assert settings.is_lan_discovery_enabled(), "LAN discovery should be enabled"
     assert settings.is_user_consent_declared(), "User consent should be declared"
-    assert settings.is_tpl_enabled(), "TPL should be enabled"
+    assert settings.is_rtp_enabled(), "RTP should be enabled"
 
     if obfuscated == "on":
         assert settings.is_obfuscated_enabled(), "Obfuscation should be enabled when set to on"

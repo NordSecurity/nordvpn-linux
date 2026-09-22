@@ -431,13 +431,13 @@ def test_set_defaults_no_logout_connected(tech, proto, obfuscated):
     lib.set_technology_and_protocol(tech, proto, obfuscated)
 
     sh.nordvpn.set("notify", "off")
-    sh.nordvpn.set("tpl", "on")
+    sh.nordvpn.set("protection", "on")
 
     sh.nordvpn.connect()
 
     assert "Status: Connected" in sh.nordvpn.status(), "Status should show Connected"
     assert not settings.is_notify_enabled(), "Notifications should be disabled"
-    assert settings.is_tpl_enabled(), "TPL should be enabled"
+    assert settings.is_rtp_enabled(), "RTP should be enabled"
 
     assert settings.MSG_SET_DEFAULTS in sh.nordvpn.set.defaults(), "Defaults reset message should be shown"
 
@@ -505,7 +505,7 @@ def test_settings_are_kept_after_reboot():
         (("firewall", "off"),         "Firewall has been successfully set to 'disabled'.",               "Firewall",               "disabled"),
         (("routing", "off"),          "Routing has been successfully set to 'disabled'.",                "Routing",                "disabled"),
         (("analytics", "off"),        "Analytics has been successfully set to 'disabled'.",              "User Consent",           "disabled"),
-        (("tpl", "on"),               "Real-time protection has been successfully set to 'enabled'.",    "Real-time protection",   "enabled"),
+        (("protection", "on"),        "Real-time protection has been successfully set to 'enabled'.",    "Real-time protection",   "enabled"),
         (("notify", "off"),           "Notifications are set to 'disabled' successfully.",               "Notify",                 "disabled"),
         (("tray", "off"),             "Tray set to 'disabled' successfully.",                            "Tray",                   "disabled"),
         (("autoconnect", "on"),       "Auto-connect has been successfully set to 'enabled'.",            "Auto-connect",           "enabled"),
@@ -526,7 +526,7 @@ def test_settings_are_kept_after_reboot():
         assert app_settings.get(key) == expected, f"{key} is incorrect after reboot '{expected}'"
 
     assert app_settings.get("Firewall Mark") == "0x1234", "Firewall mark is not kept after reboot"
-    assert app_settings.get("DNS") == "disabled", "DNS must be disabled because TP is enabled"
+    assert app_settings.get("DNS") == "disabled", "DNS must be disabled because RTP is enabled"
 
     # set DNS and reboot the system
     assert "DNS has been successfully set to '1.1.1.1'." in sh.nordvpn.set("dns", "1.1.1.1"), "Failed to set custom DNS"

@@ -39,34 +39,34 @@ func TestNameservers(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name                 string
-		threatProtectionLite bool
-		initial              []string
-		expected             []string
+		name               string
+		realTimeProtection bool
+		initial            []string
+		expected           []string
 	}{
 		{
-			name:                 "default DNS servers, TP=false",
-			threatProtectionLite: false,
-			initial:              defaultTpServers,
-			expected:             defaultServers,
+			name:               "default DNS servers, RTP=false",
+			realTimeProtection: false,
+			initial:            defaultRTPServers,
+			expected:           defaultServers,
 		},
 		{
-			name:                 "fetch TP list and return it",
-			threatProtectionLite: true,
-			initial:              defaultTpServers,
-			expected:             defaultTpServers,
+			name:               "fetch RTP list and return it",
+			realTimeProtection: true,
+			initial:            defaultRTPServers,
+			expected:           defaultRTPServers,
 		},
 		{
-			name:                 "fetched servers are returned for TP servers",
-			threatProtectionLite: true,
-			initial:              []string{"1.2.3.4"},
-			expected:             []string{"1.2.3.4"},
+			name:               "fetched servers are returned for RTP servers",
+			realTimeProtection: true,
+			initial:            []string{"1.2.3.4"},
+			expected:           []string{"1.2.3.4"},
 		},
 		{
-			name:                 "empty initial list",
-			threatProtectionLite: true,
-			initial:              nil,
-			expected:             defaultTpServers,
+			name:               "empty initial list",
+			realTimeProtection: true,
+			initial:            nil,
+			expected:           defaultRTPServers,
 		},
 	}
 
@@ -75,12 +75,12 @@ func TestNameservers(t *testing.T) {
 			servers := NewNameServers()
 
 			// before fetching the servers from the API check the default values
-			assert.ElementsMatch(t, defaultTpServers, servers.Get(true))
+			assert.ElementsMatch(t, defaultRTPServers, servers.Get(true))
 			assert.ElementsMatch(t, defaultServers, servers.Get(false))
 
 			var wg sync.WaitGroup
 			wg.Add(1)
-			go servers.FetchTPServers(wrapServersList(test.initial, &wg), func(attempt int) time.Duration {
+			go servers.FetchRTPServers(wrapServersList(test.initial, &wg), func(attempt int) time.Duration {
 				assert.True(t, len(test.initial) == 0, "this must be called only when test.initial is empty")
 				return time.Minute
 			})
@@ -89,12 +89,12 @@ func TestNameservers(t *testing.T) {
 
 			// retry several times to fetch the servers, because at first attempt internal members might not be stored
 			for retry := 0; retry < 2; retry++ {
-				if slices.Contains(servers.Get(test.threatProtectionLite), test.expected[0]) {
+				if slices.Contains(servers.Get(test.realTimeProtection), test.expected[0]) {
 					break
 				}
 				time.Sleep(time.Millisecond * 2)
 			}
-			assert.ElementsMatch(t, test.expected, servers.Get(test.threatProtectionLite))
+			assert.ElementsMatch(t, test.expected, servers.Get(test.realTimeProtection))
 		})
 	}
 }
@@ -103,21 +103,21 @@ func TestNameserversRandomness(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	tests := []struct {
-		name                 string
-		threatProtectionLite bool
-		initial              []string
-		expected             []string
+		name               string
+		realTimeProtection bool
+		initial            []string
+		expected           []string
 	}{
 		{
-			name:                 "randomness",
-			threatProtectionLite: true,
+			name:               "randomness",
+			realTimeProtection: true,
 			initial: []string{
 				"1.1.1.1", "1.0.0.1", "8.8.8.8", "8.8.4.4",
-				threatProtectionLitePrimaryNameserver4, threatProtectionLitePrimaryNameserver4,
+				realTimeProtectionPrimaryNameserver4, realTimeProtectionSecondaryNameserver4,
 			},
 			expected: []string{
 				"1.1.1.1", "1.0.0.1", "8.8.8.8", "8.8.4.4",
-				threatProtectionLitePrimaryNameserver4, threatProtectionLitePrimaryNameserver4,
+				realTimeProtectionPrimaryNameserver4, realTimeProtectionSecondaryNameserver4,
 			},
 		},
 	}
@@ -127,10 +127,10 @@ func TestNameserversRandomness(t *testing.T) {
 			servers := NewNameServers()
 
 			// fetch in blocking mode
-			servers.FetchTPServers(wrapServersList(test.initial, nil), func(attempt int) time.Duration { return time.Minute })
+			servers.FetchRTPServers(wrapServersList(test.initial, nil), func(attempt int) time.Duration { return time.Minute })
 
-			nameservers1 := servers.Get(test.threatProtectionLite)
-			nameservers2 := servers.Get(test.threatProtectionLite)
+			nameservers1 := servers.Get(test.realTimeProtection)
+			nameservers2 := servers.Get(test.realTimeProtection)
 
 			// Make sure they contain the expected elements
 			assert.ElementsMatch(t, test.expected, nameservers1)
@@ -140,7 +140,7 @@ func TestNameserversRandomness(t *testing.T) {
 			// Generate a third one and if that has the same order
 			// with the first two, then we have a problem with shuffle
 			if reflect.DeepEqual(nameservers1, nameservers2) {
-				nameservers3 := servers.Get(test.threatProtectionLite)
+				nameservers3 := servers.Get(test.realTimeProtection)
 				assert.ElementsMatch(t, test.expected, nameservers3)
 				assert.NotEqual(t, nameservers1, nameservers3)
 			}
@@ -151,12 +151,12 @@ func TestNameserversRandomness(t *testing.T) {
 func TestNameserversNotCrashingWithNilServersFetcher(t *testing.T) {
 	category.Set(t, category.Unit)
 	nameservers := NewNameServers()
-	assert.Error(t, nameservers.FetchTPServers(nil, nil))
+	assert.Error(t, nameservers.FetchRTPServers(nil, nil))
 	// check that the default servers are returned
-	assert.ElementsMatch(t, defaultTpServers, nameservers.Get(true))
+	assert.ElementsMatch(t, defaultRTPServers, nameservers.Get(true))
 }
 
-func TestNameserversRetriesToFetchTPOnError(t *testing.T) {
+func TestNameserversRetriesToFetchRTPOnError(t *testing.T) {
 	category.Set(t, category.Unit)
 
 	servers := []string{"1.2.3.4"}
@@ -167,7 +167,7 @@ func TestNameserversRetriesToFetchTPOnError(t *testing.T) {
 	nameservers := NewNameServers()
 
 	// run as blocking the fetch because there is no need to fetch in parallel and is successful after number of "retries"
-	nameservers.FetchTPServers(
+	nameservers.FetchRTPServers(
 		func() (*core.NameServers, error) {
 			// return error for `retries` times, before returning servers list
 			if retries.Load() == 0 {

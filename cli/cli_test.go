@@ -28,8 +28,8 @@ func TestCLICommands(t *testing.T) {
 			Name: "set",
 			Subcommands: []*cli.Command{
 				{
-					Name:    "threatprotectionlite",
-					Aliases: []string{"tplite", "tpl", "cybersec"},
+					Name:    "protection",
+					Aliases: []string{"protect"},
 				},
 				{
 					Name: "defaults",
@@ -100,8 +100,8 @@ func TestCLICommands(t *testing.T) {
 		},
 		{
 			name:     "works with aliases",
-			appArgs:  []string{"nordvp", "set", "tpl"},
-			expected: ctx.App.Name + " set threatprotectionlite",
+			appArgs:  []string{"nordvp", "set", "protect"},
+			expected: ctx.App.Name + " set protection",
 		},
 		{
 			name:     "works with more subcommands levels",

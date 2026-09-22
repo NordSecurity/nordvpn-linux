@@ -206,7 +206,7 @@ class Settings extends $pb.GeneratedMessage {
     $core.int? fwmark,
     $3.ConsentMode? analyticsConsent,
     $core.Iterable<$core.String>? dns,
-    $core.bool? threatProtectionLite,
+    $core.bool? realTimeProtection,
     $4.Protocol? protocol,
     $core.bool? lanDiscovery,
     $0.Allowlist? allowlist,
@@ -226,8 +226,8 @@ class Settings extends $pb.GeneratedMessage {
     if (fwmark != null) result.fwmark = fwmark;
     if (analyticsConsent != null) result.analyticsConsent = analyticsConsent;
     if (dns != null) result.dns.addAll(dns);
-    if (threatProtectionLite != null)
-      result.threatProtectionLite = threatProtectionLite;
+    if (realTimeProtection != null)
+      result.realTimeProtection = realTimeProtection;
     if (protocol != null) result.protocol = protocol;
     if (lanDiscovery != null) result.lanDiscovery = lanDiscovery;
     if (allowlist != null) result.allowlist = allowlist;
@@ -264,7 +264,7 @@ class Settings extends $pb.GeneratedMessage {
     ..aE<$3.ConsentMode>(9, _omitFieldNames ? '' : 'analyticsConsent',
         enumValues: $3.ConsentMode.values)
     ..pPS(10, _omitFieldNames ? '' : 'dns')
-    ..aOB(11, _omitFieldNames ? '' : 'threatProtectionLite')
+    ..aOB(11, _omitFieldNames ? '' : 'realTimeProtection')
     ..aE<$4.Protocol>(12, _omitFieldNames ? '' : 'protocol',
         enumValues: $4.Protocol.values)
     ..aOB(13, _omitFieldNames ? '' : 'lanDiscovery')
@@ -374,13 +374,13 @@ class Settings extends $pb.GeneratedMessage {
   $pb.PbList<$core.String> get dns => $_getList(8);
 
   @$pb.TagNumber(11)
-  $core.bool get threatProtectionLite => $_getBF(9);
+  $core.bool get realTimeProtection => $_getBF(9);
   @$pb.TagNumber(11)
-  set threatProtectionLite($core.bool value) => $_setBool(9, value);
+  set realTimeProtection($core.bool value) => $_setBool(9, value);
   @$pb.TagNumber(11)
-  $core.bool hasThreatProtectionLite() => $_has(9);
+  $core.bool hasRealTimeProtection() => $_has(9);
   @$pb.TagNumber(11)
-  void clearThreatProtectionLite() => $_clearField(11);
+  void clearRealTimeProtection() => $_clearField(11);
 
   @$pb.TagNumber(12)
   $4.Protocol get protocol => $_getN(10);

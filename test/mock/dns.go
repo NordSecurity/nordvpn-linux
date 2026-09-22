@@ -7,7 +7,7 @@ import (
 	"github.com/NordSecurity/nordvpn-linux/config"
 )
 
-var TplNameserversV4 config.DNS = []string{
+var RealTimeProtectionNameserversV4 config.DNS = []string{
 	"103.86.96.108",
 	"103.86.99.108",
 }
@@ -23,12 +23,12 @@ type DNSGetter struct {
 	Names             []string
 }
 
-func (md *DNSGetter) Get(isThreatProtectionLite bool) []string {
+func (md *DNSGetter) Get(isRealTimeProtection bool) []string {
 	if len(md.Names) != 0 {
 		return md.Names
 	}
-	if isThreatProtectionLite {
-		nameservers := TplNameserversV4
+	if isRealTimeProtection {
+		nameservers := RealTimeProtectionNameserversV4
 		return nameservers
 	}
 
