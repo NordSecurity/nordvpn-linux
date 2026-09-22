@@ -383,10 +383,12 @@ func buildTimerString(remainingMin int) string {
 	minutes := remainingMin % 60
 
 	if hours > 0 {
-		return fmt.Sprintf("VPN connection resumes in %02d:%02d", hours, minutes)
-	} else {
-		return fmt.Sprintf("VPN connection resumes in %02d", minutes)
+		if minutes > 0 {
+			return fmt.Sprintf("VPN connection resumes in %dh %dmin", hours, minutes)
+		}
+		return fmt.Sprintf("VPN connection resumes in %dh", hours)
 	}
+	return fmt.Sprintf("VPN connection resumes in %dmin", minutes)
 }
 
 func handlePauseClick(ti *Instance, item *systray.MenuItem, pauseLength pauseLength) {

@@ -125,15 +125,15 @@ func Test_buildTimerString(t *testing.T) {
 		remainingMin int
 		expected     string
 	}{
-		{name: "zero minutes", remainingMin: 0, expected: "VPN connection resumes in 00"},
-		{name: "single digit minutes", remainingMin: 5, expected: "VPN connection resumes in 05"},
-		{name: "ten minutes", remainingMin: 10, expected: "VPN connection resumes in 10"},
-		{name: "59 minutes", remainingMin: 59, expected: "VPN connection resumes in 59"},
-		{name: "1 hour 0 minutes", remainingMin: 60, expected: "VPN connection resumes in 01:00"},
-		{name: "1 hour 5 minutes", remainingMin: 65, expected: "VPN connection resumes in 01:05"},
-		{name: "2 hours 30 minutes", remainingMin: 150, expected: "VPN connection resumes in 02:30"},
-		{name: "24 hours", remainingMin: 1440, expected: "VPN connection resumes in 24:00"},
-		{name: "99 hours 59 minutes", remainingMin: 5999, expected: "VPN connection resumes in 99:59"},
+		{name: "zero minutes", remainingMin: 0, expected: "VPN connection resumes in 0min"},
+		{name: "single digit minutes", remainingMin: 5, expected: "VPN connection resumes in 5min"},
+		{name: "ten minutes", remainingMin: 10, expected: "VPN connection resumes in 10min"},
+		{name: "59 minutes", remainingMin: 59, expected: "VPN connection resumes in 59min"},
+		{name: "1 hour", remainingMin: 60, expected: "VPN connection resumes in 1h"},
+		{name: "1 hour 5 minutes", remainingMin: 65, expected: "VPN connection resumes in 1h 5min"},
+		{name: "2 hours 30 minutes", remainingMin: 150, expected: "VPN connection resumes in 2h 30min"},
+		{name: "24 hours", remainingMin: 1440, expected: "VPN connection resumes in 24h"},
+		{name: "99 hours 59 minutes", remainingMin: 5999, expected: "VPN connection resumes in 99h 59min"},
 	}
 
 	for _, tt := range tests {
