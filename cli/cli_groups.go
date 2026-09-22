@@ -31,7 +31,7 @@ func (c *cmd) Groups(ctx *cli.Context) error {
 	)
 
 	if err != nil {
-		log.Error(err)
+		log.Error("formatting groups as columns:", err)
 		countries, _ := formatTable(resp.Servers, serverNameLen, formatServerName, 1)
 		fmt.Println(countries)
 	} else {

@@ -212,7 +212,7 @@ func (dm *DataManager) SetVersionData(version semver.Version, newerAvailable boo
 	dm.versionData.version = version
 	dm.versionData.newerVersionAvailable = newerAvailable
 	if err := dm.versionData.save(); err != nil {
-		log.Warn(err)
+		log.Warn("saving version data:", err)
 	}
 }
 

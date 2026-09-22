@@ -202,6 +202,9 @@ func (netw *Combined) Start(
 	enableLocalTraffic bool,
 	disconnectCallback events.DisconnectCallback,
 ) error {
+	log.Netw.Tracef("server=%q protocol=%v obfuscated=%v postquantum=%v alreadyConnected=%v",
+		serverData.Hostname, serverData.Protocol,
+		serverData.Obfuscated, serverData.PostQuantum, netw.isConnectedToVPN())
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 
@@ -228,8 +231,10 @@ func (netw *Combined) Start(
 	netw.allowlist = allowlist
 	netw.enableLocalTraffic = enableLocalTraffic
 	if netw.isConnectedToVPN() {
+		log.Netw.Tracef("already connected to VPN, restarting connection to server")
 		return netw.restart(ctx, creds, serverData, nameservers, disconnectCallback)
 	}
+	log.Netw.Tracef("no active VPN connection, starting fresh connection")
 	return netw.start(ctx, creds, serverData, allowlist, nameservers)
 }
 
@@ -237,21 +242,21 @@ func (netw *Combined) Start(
 func failureRecover(netw *Combined) {
 	if !netw.isMeshnetSet {
 		if err := netw.policyRouter.CleanupRouting(); err != nil {
-			log.Error(err)
+			log.Error("failure recovery: cleaning up routing rules:", err)
 		}
 	}
 
 	if err := netw.router.Flush(); err != nil {
-		log.Error(err)
+		log.Error("failure recovery: flushing routes:", err)
 	}
 
 	if err := netw.vpnet.Stop(); err != nil {
-		log.Error(err)
+		log.Error("failure recovery: stopping VPN:", err)
 	}
 
 	if netw.isNetworkSet && netw.KillSwitchState == disabledByUser {
 		if err := netw.unsetNetwork(); err != nil {
-			log.Error(err)
+			log.Error("failure recovery: unsetting network:", err)
 		}
 	}
 
@@ -259,7 +264,7 @@ func failureRecover(netw *Combined) {
 		firewall.WithTunnelInterface("", netip.Addr{}),
 	)
 	if err := netw.configureFirewall(cfg); err != nil {
-		log.Error(err)
+		log.Error("failure recovery: configuring firewall:", err)
 	}
 
 	netw.unblockIPv6()
@@ -291,6 +296,7 @@ func (netw *Combined) start(
 		}
 	}()
 
+	log.Netw.Trace("blocking IPv6, configuring firewall, then starting VPN")
 	netw.publisher.Publish("starting vpn")
 
 	// Always disable IPv6 with sysctl in the system
@@ -312,12 +318,14 @@ func (netw *Combined) start(
 		return fmt.Errorf("configuring firewall before vpn start: %w", err)
 	}
 
+	log.Netw.Tracef("calling vpnet.Start for server=%q", serverData.Hostname)
 	if err = netw.vpnet.Start(ctx, creds, serverData); err != nil {
 		if err := netw.vpnet.Stop(); err != nil {
-			log.Error(err)
+			log.Error("stopping VPN after start failure:", err)
 		}
 		return err
 	}
+	log.Netw.Trace("VPN started, setting up routing rules")
 	netw.publisher.Publish("Setting the routing rules up")
 
 	// if routing rules were set - they will be adjusted as needed
@@ -329,6 +337,7 @@ func (netw *Combined) start(
 		return err
 	}
 
+	log.Netw.Tracef("configuring network, nameserverCount=%d", len(nameservers))
 	if err = netw.configureNetwork(serverData, nameservers); err != nil {
 		return err
 	}
@@ -353,6 +362,7 @@ func (netw *Combined) start(
 		return fmt.Errorf("configuring firewall: %w", err)
 	}
 
+	log.Netw.Tracef("vpn up, tunnelInterface=%q", tunnelInterface)
 	netw.isVpnSet = true
 	netw.lastServer = serverData
 	netw.lastCreds = creds
@@ -432,7 +442,7 @@ func (netw *Combined) restart(
 
 	// remove default route
 	if err := netw.router.Flush(); err != nil {
-		log.Warn(err)
+		log.Warn("flushing default route before restart:", err)
 	}
 
 	stopStartTime := time.Now()
@@ -451,7 +461,7 @@ func (netw *Combined) restart(
 	}
 	if err = netw.vpnet.Start(ctx, creds, serverData); err != nil {
 		if err := netw.vpnet.Stop(); err != nil {
-			log.Error(err)
+			log.Error("stopping VPN after restart failure:", err)
 		}
 		return err
 	}
@@ -496,6 +506,7 @@ func (netw *Combined) restart(
 
 // Stop VPN connection and clean up network after it stopped.
 func (netw *Combined) Stop() error {
+	log.Netw.Tracef("isVpnSet=%v isMeshnetSet=%v", netw.isVpnSet, netw.isMeshnetSet)
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 	if netw.isVpnSet {
@@ -513,6 +524,7 @@ func (netw *Combined) stop() error {
 	if netw.vpnet == nil {
 		return errNilVPN
 	}
+	log.Netw.Tracef("unsetting DNS, cleaning up routing, server=%q", netw.lastServer.Hostname)
 	netw.publisher.Publish("stopping network configuration")
 
 	netw.unblockIPv6()
@@ -523,10 +535,12 @@ func (netw *Combined) stop() error {
 	}
 	netw.publisher.Publish("removing route to tunnel")
 	if !netw.isMeshnetSet {
+		log.Netw.Trace("meshnet not active, cleaning up routing rules")
 		if err := netw.policyRouter.CleanupRouting(); err != nil {
-			log.Warn(err)
+			log.Warn("cleaning up routing rules during stop:", err)
 		}
 	} else {
+		log.Netw.Trace("meshnet active, adjusting routing rules instead of cleaning up")
 		// if routing rules were set - they will be adjusted as needed
 		if err = netw.policyRouter.SetupRoutingRules(
 			true, // by default, enableLocalTraffic=true
@@ -539,7 +553,7 @@ func (netw *Combined) stop() error {
 
 	netw.publisher.Publish("removing route to the vpn server")
 	if err := netw.router.Flush(); err != nil {
-		log.Warn(err)
+		log.Warn("flushing routes during stop:", err)
 	}
 
 	netw.publisher.Publish("stopping vpn")
@@ -683,20 +697,20 @@ func (netw *Combined) EnableRouting() {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 	if err := netw.policyRouter.Enable(); err != nil {
-		log.Warn(err)
+		log.Warn("enabling policy routing:", err)
 	}
 
 	tableID := netw.policyRouter.TableID()
 	if err := netw.allowlistRouter.Enable(tableID); err != nil {
-		log.Warn(err)
+		log.Warn("enabling allowlist routing:", err)
 	}
 
 	if err := netw.router.Enable(tableID); err != nil {
-		log.Warn(err)
+		log.Warn("enabling default routing:", err)
 	}
 
 	if err := netw.peerRouter.Enable(tableID); err != nil {
-		log.Warn(err)
+		log.Warn("enabling peer routing:", err)
 	}
 }
 
@@ -704,19 +718,19 @@ func (netw *Combined) DisableRouting() {
 	netw.mu.Lock()
 	defer netw.mu.Unlock()
 	if err := netw.allowlistRouter.Disable(); err != nil {
-		log.Warn(err)
+		log.Warn("disabling allowlist routing:", err)
 	}
 
 	if err := netw.router.Disable(); err != nil {
-		log.Warn(err)
+		log.Warn("disabling default routing:", err)
 	}
 
 	if err := netw.peerRouter.Disable(); err != nil {
-		log.Warn(err)
+		log.Warn("disabling peer routing:", err)
 	}
 
 	if err := netw.policyRouter.Disable(); err != nil {
-		log.Warn(err)
+		log.Warn("disabling policy routing:", err)
 	}
 }
 
@@ -960,31 +974,31 @@ func (netw *Combined) setMesh(
 		if err != nil {
 			if routingRulesSet {
 				if err := netw.policyRouter.CleanupRouting(); err != nil {
-					log.Error(err)
+					log.Error("meshnet setup failure recovery: cleaning up routing rules:", err)
 				}
 			}
 
 			if err := netw.ipForwardSetter.Unset(); err != nil {
-				log.Error(err)
+				log.Error("meshnet setup failure recovery: unsetting ip forward:", err)
 			}
 
 			cfg := netw.fwConfig.CopyWith(
 				firewall.WithMeshnetInfo(nil),
 			)
 			if err := netw.configureFirewall(cfg); err != nil {
-				log.Error(err)
+				log.Error("meshnet setup failure recovery: configuring firewall:", err)
 			}
 
 			if err := netw.dnsHostSetter.UnsetHosts(); err != nil {
-				log.Error(err)
+				log.Error("meshnet setup failure recovery: unsetting DNS hosts:", err)
 			}
 
 			if err := netw.peerRouter.Flush(); err != nil {
-				log.Error(err)
+				log.Error("meshnet setup failure recovery: flushing peer routes:", err)
 			}
 
 			if err := netw.mesh.Disable(); err != nil {
-				log.Error(err)
+				log.Error("meshnet setup failure recovery: disabling mesh:", err)
 			}
 		}
 	}()
@@ -993,7 +1007,7 @@ func (netw *Combined) setMesh(
 	// be destroyed, therefore it's safe just to flush it here
 	if netw.isVpnSet {
 		if err := netw.router.Flush(); err != nil {
-			log.Warn(err)
+			log.Warn("flushing default route before mesh enable:", err)
 		}
 	}
 
@@ -1046,7 +1060,7 @@ func (netw *Combined) setMesh(
 		firewall.WithMeshnetInfo(firewall.NewMeshInfo(netw.cfg, netw.mesh.Tun().Interface().Name)),
 	)
 	// If nordlynx was used as vpnet, the interface will change IP, we refresh it here
-	var tunnelIP, ok = netip.Addr{}, false
+	tunnelIP, ok := netip.Addr{}, false
 	if netw.isVpnSet {
 		if tunnelIP, ok = netw.vpnet.Tun().IP(); ok {
 			newCfg = newCfg.CopyWith(
@@ -1069,7 +1083,7 @@ func (netw *Combined) setMesh(
 
 func (netw *Combined) refresh(cfg mesh.MachineMap) error {
 	if err := netw.dnsHostSetter.UnsetHosts(); err != nil {
-		log.Warn(err)
+		log.Warn("unsetting DNS hosts before mesh refresh:", err)
 	}
 
 	if err := netw.mesh.Refresh(cfg); err != nil {
@@ -1163,7 +1177,7 @@ func (netw *Combined) unSetMesh() error {
 	// be destroyed, therefore it's safe just to flush it here
 	if netw.isVpnSet {
 		if err := netw.router.Flush(); err != nil {
-			log.Warn(err)
+			log.Warn("flushing default route before mesh disable:", err)
 		}
 	}
 

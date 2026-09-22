@@ -62,10 +62,10 @@ func (r *Router) SetupRoutingRules(
 		}
 
 		if err := removeSuppressRule(); err != nil {
-			log.Error(err)
+			log.Error("routing setup failure recovery: removing suppress rule:", err)
 		}
 		if err := removeFwmarkRule(r.fwmark); err != nil {
-			log.Error(err)
+			log.Error("routing setup failure recovery: removing fwmark rule:", err)
 		}
 		r.removeAllowSubnetRules()
 	}()
@@ -105,7 +105,7 @@ func (r *Router) SetupRoutingRules(
 	} else {
 		if err := removeSuppressRule(); err != nil {
 			// in case of cleanup - do not propagate error if rule does not exist
-			log.Warn(err)
+			log.Warn("removing suppress rule:", err)
 		}
 	}
 
@@ -177,11 +177,11 @@ func (r *Router) CleanupRouting() error {
 	defer r.mu.Unlock()
 
 	if err := removeSuppressRule(); err != nil {
-		log.Warn(err)
+		log.Warn("removing suppress rule during cleanup:", err)
 	}
 
 	if err := removeFwmarkRule(r.fwmark); err != nil {
-		log.Warn(err)
+		log.Warn("removing fwmark rule during cleanup:", err)
 	}
 
 	// Remove allowlist subnet routing rules
@@ -208,7 +208,7 @@ func (r *Router) removeAllowSubnetRules() {
 			continue
 		}
 		if err := removeAllowSubnetRule(priority, subnetIPNet); err != nil {
-			log.Error(err)
+			log.Error("removing allow subnet rule:", err)
 		}
 	}
 

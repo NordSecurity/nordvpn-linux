@@ -100,10 +100,11 @@ func (r *RPC) reconnectOnServerMaintenance(
 	srv pb.Daemon_ConnectServer,
 	endpointFromEvent string,
 ) (bool, error) {
+	log.RPCConnect.Trace("checking if maintenance event still applies")
 	currConn, isCurrConnActive := r.netw.GetConnectionParameters()
 	eventIsForDifferentServer := !currConn.EndpointEqual(endpointFromEvent)
 	if !isCurrConnActive || eventIsForDifferentServer {
-		log.Debug("ignoring maintenance event, connection has changed since ENS check")
+		log.RPCConnect.Debug("ignoring maintenance event, connection has changed since ENS check")
 		return false, nil
 	}
 
@@ -187,7 +188,7 @@ func determineServerSelectionRule(params serverpicker.ServerParameters) config.S
 	}
 
 	// Fallback for any unexpected combination
-	log.Warn("Failed to determine 'server-selection-rule':", params,
+	log.RPCConnect.Warn("failed to determine 'server-selection-rule':", params,
 		". Defaulting to :", config.ServerSelectionRule_NONE)
 	return config.ServerSelectionRule_NONE
 }
@@ -195,7 +196,7 @@ func determineServerSelectionRule(params serverpicker.ServerParameters) config.S
 func (r *RPC) isVPNExpired() int64 {
 	vpnExpired, err := r.ac.IsVPNExpired()
 	if err != nil {
-		log.Error("checking VPN expiration: ", err)
+		log.RPCConnect.Error("checking VPN expiration: ", err)
 		return internal.CodeTokenRenewError
 	} else if vpnExpired {
 		return internal.CodeAccountExpired
@@ -217,30 +218,35 @@ func (r *RPC) connectWithStoredServerSelection(
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.RPCConnect.Error("loading config:", err)
 		return false, fmt.Errorf("reading config: %w", err)
 	}
 	r.connectionInfo.SetInitialConnecting()
 
 	if core.IsServerDedicated(*r.lastServerSelection.Server) {
+		log.RPCConnect.Tracef("dedicated server, checking feature flag and technology compatibility")
 		// first, check if feature is enabled at all
 		if !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
+			log.RPCConnect.Trace("dedicated server feature is disabled, rejecting reconnect")
 			// if user is trying to connect here while this feature is disabled,
 			// show general error because anyways he should not get here
 			return true, srv.Send(&pb.Payload{Type: internal.CodeFailure})
 		}
 		// second, if feature is enabled, check if technology is correct
 		if cfg.Technology != config.Technology_NORDLYNX {
+			log.RPCConnect.Tracef("dedicated server requires NordLynx, current technology=%v", cfg.Technology)
 			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
 		}
 		// third, if technology is correct, check if post quantum is enabled(pq is not supported for dedicated servers)
 		if cfg.AutoConnectData.PostquantumVpn {
+			log.RPCConnect.Trace("post-quantum VPN is not supported for dedicated servers")
 			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersPq})
 		}
 	}
 
 	expirationCheckResult := r.isVPNExpired()
 	if expirationCheckResult != internal.CodeSuccess {
+		log.RPCConnect.Tracef("VPN subscription check failed: code=%v", expirationCheckResult)
 		return true, srv.Send(&pb.Payload{Type: expirationCheckResult})
 	}
 	return r.connect(ctx,
@@ -262,6 +268,14 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	excludedServer string,
 	vpnConnReason events.VPNConnectionReason,
 ) (didFail bool, retErr error) {
+	log.RPCConnect.Tracef(
+		"connecting with params serverTag=%q serverGroup=%q excludedServer=%q source=%v reason=%v",
+		in.GetServerTag(),
+		in.GetServerGroup(),
+		excludedServer,
+		source,
+		vpnConnReason,
+	)
 	pauseDuration := r.pauseManager.CancelReconnection()
 	if ok, err := r.ac.IsLoggedIn(); !ok {
 		if errors.Is(err, core.ErrUnauthorized) {
@@ -276,7 +290,7 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.RPCConnect.Error("loading config:", err)
 	}
 
 	prelimParams := serverpicker.GetServerParameters(in.GetServerTag(), in.GetServerGroup(), r.dm.GetCountryData().Countries)
@@ -284,18 +298,22 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 	r.connectionInfo.SetInitialConnecting()
 
 	if serverpicker.IsDedicatedServer(in.ServerTag, in.ServerGroup) {
+		log.RPCConnect.Tracef("dedicated server requested, checking feature flag and technology compatibility")
 		// first, check if feature is enabled at all
 		if !r.remoteConfigGetter.IsFeatureEnabled(remote.FeatureDedicatedServer) {
+			log.RPCConnect.Trace("dedicated server feature is disabled, rejecting connect")
 			// if user is trying to connect here while this feature is disabled,
 			// show general error because anyways he should not get here
 			return true, srv.Send(&pb.Payload{Type: internal.CodeGroupNonexisting})
 		}
 		// second, if feature is enabled, check if technology is correct
 		if cfg.Technology != config.Technology_NORDLYNX {
+			log.RPCConnect.Tracef("dedicated server requires NordLynx, current technology=%v", cfg.Technology)
 			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersNoNordlynx})
 		}
 		// third, if technology is correct, check if post quantum is enabled(pq is not supported for dedicated servers)
 		if cfg.AutoConnectData.PostquantumVpn {
+			log.RPCConnect.Trace("post-quantum VPN is not supported for dedicated servers")
 			return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersPq})
 		}
 	}
@@ -306,10 +324,12 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 
 	expirationCheckResult := r.isVPNExpired()
 	if expirationCheckResult != internal.CodeSuccess {
+		log.RPCConnect.Tracef("VPN subscription check failed: code=%v", expirationCheckResult)
 		return true, srv.Send(&pb.Payload{Type: expirationCheckResult})
 	}
 
 	if cfg.Technology == config.Technology_NORDWHISPER && !features.NordWhisperEnabled {
+		log.RPCConnect.Trace("NordWhisper is configured but disabled by compile flag, rejecting connect")
 		return true, srv.Send(&pb.Payload{Type: internal.CodeTechnologyDisabled})
 	}
 
@@ -320,9 +340,20 @@ func (r *RPC) connectWithParameters(ctx context.Context,
 
 	inputServerTag := internal.RemoveNonAlphanumeric(in.GetServerTag())
 
-	log.Debugf("picking servers for %v technology, input serverTag=%q serverGroup=%q, server excluded from lookup=%q",
-		cfg.Technology, in.GetServerTag(), in.GetServerGroup(), excludedServer)
+	log.RPCConnect.Debugf(
+		"picking servers for %v technology, input serverTag=%q serverGroup=%q, server excluded from lookup=%q",
+		cfg.Technology,
+		in.GetServerTag(),
+		in.GetServerGroup(),
+		excludedServer,
+	)
 
+	log.RPCConnect.Tracef(
+		"selecting server, technology=%v obfuscate=%v postquantum=%v",
+		cfg.Technology,
+		cfg.AutoConnectData.Obfuscate,
+		cfg.AutoConnectData.PostquantumVpn,
+	)
 	serverSelection, err := selectServer(r, &insights, cfg, inputServerTag, in.GetServerGroup(), excludedServer)
 	if err != nil {
 		var errorCode *internal.ErrorWithCode
@@ -362,9 +393,22 @@ func (r *RPC) connect(
 	pauseDuration time.Duration,
 	vpnConnReason events.VPNConnectionReason,
 ) (didFail bool, retErr error) {
+	isDedicated := false
+	if serverSelection.Server != nil {
+		isDedicated = core.IsServerDedicated(*serverSelection.Server)
+	}
+
+	log.RPCConnect.Tracef("connecting technology=%v protocol=%v obfuscated=%v postquantum=%v dedicated=%v",
+		cfg.Technology,
+		cfg.AutoConnectData.Protocol,
+		cfg.AutoConnectData.Obfuscate,
+		cfg.AutoConnectData.PostquantumVpn,
+		isDedicated,
+	)
+
 	country, err := serverSelection.Server.Locations.Country()
 	if err != nil {
-		log.Error(err)
+		log.RPCConnect.Error("getting server country:", err)
 	}
 	tokenData := cfg.TokensData[cfg.AutoConnectData.ID]
 	creds := vpn.Credentials{
@@ -382,7 +426,7 @@ func (r *RPC) connect(
 			serverSelection.Server.DedicatedServerUUID,
 		)
 		if err != nil {
-			log.Error("fetching dedicated server connection data:", err)
+			log.RPCConnect.Error("fetching dedicated server connection data:", err)
 			switch {
 			case errors.Is(err, core.ErrDedicatedServersSessionMaxLimitReached):
 				return true, srv.Send(&pb.Payload{Type: internal.CodeDedicatedServersSessionMaxLimitReached})
@@ -407,14 +451,14 @@ func (r *RPC) connect(
 
 	ip, err := serverSelection.Server.IPv4()
 	if err != nil {
-		log.Error(err)
+		log.RPCConnect.Error("getting server IPv4 address:", err)
 		return false, internal.ErrUnhandled
 	}
 	r.endpoint = network.NewIPv4Endpoint(ip)
 
 	subnet, err := r.endpoint.Network()
 	if err != nil {
-		log.Error(err)
+		log.RPCConnect.Error("getting server network subnet:", err)
 		return false, internal.ErrUnhandled
 	}
 
@@ -491,7 +535,7 @@ func (r *RPC) connect(
 	}
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnecting, Data: data}); err != nil {
-		log.Error(err)
+		log.RPCConnect.Error("sending connecting status to client:", err)
 	}
 
 	disconnectSender := events.NewDisconnectSender(events.DataDisconnect{
@@ -502,6 +546,7 @@ func (r *RPC) connect(
 		VPNConnReason:      vpnConnReason,
 	}, r.events.Service.Disconnect.Publish)
 
+	log.RPCConnect.Tracef("starting networker for server=%q", serverData.Hostname)
 	err = r.netw.Start(
 		ctx,
 		creds,
@@ -520,7 +565,7 @@ func (r *RPC) connect(
 		if connectionEstablished && isRecentConnectionSupported(event.TargetServerSelection) {
 			recentModel, err := buildRecentConnectionModel(event, parameters, serverSelection.Server, r.dm, cfg)
 			if err != nil {
-				log.Warn("Failed to build recent VPN connection model:", err)
+				log.RPCConnect.Warn("failed to build recent VPN connection model:", err)
 				return
 			}
 			r.recentVPNConnStore.AddPending(recentModel)
@@ -546,11 +591,12 @@ func (r *RPC) connect(
 			Type: t,
 			Data: data,
 		}); err != nil {
-			log.Error(err)
+			log.RPCConnect.Error("sending connection failure status to client:", err)
 		}
 		return false, nil
 	}
 
+	log.RPCConnect.Tracef("network started successfully, durationMs=%d", getElapsedTime(connectingStartTime))
 	event.EventStatus = events.StatusSuccess
 	event.DurationMs = getElapsedTime(connectingStartTime)
 
@@ -560,7 +606,7 @@ func (r *RPC) connect(
 	r.events.Service.FirstTimeOpened.Publish(struct{}{})
 
 	if err := srv.Send(&pb.Payload{Type: internal.CodeConnected, Data: data}); err != nil {
-		log.Error(err)
+		log.RPCConnect.Error("sending connected status to client:", err)
 	}
 
 	return false, nil

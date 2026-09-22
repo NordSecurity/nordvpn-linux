@@ -13,7 +13,7 @@ import (
 func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.Payload, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("loading config:", err)
 		return &pb.Payload{Type: internal.CodeFailure}, nil
 	}
 
@@ -31,7 +31,7 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 
 	// No error check in case mesh isn't even turned on
 	if err := r.netw.UnSetMesh(); err != nil {
-		log.Warn(err)
+		log.Warn("unsetting meshnet:", err)
 	}
 
 	if !in.NoLogout {
@@ -80,7 +80,7 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 	}
 
 	if err := r.cm.Reset(in.NoLogout, in.OffKillswitch); err != nil {
-		log.Error(err)
+		log.Error("resetting config:", err)
 		return &pb.Payload{
 			Type: internal.CodeConfigError,
 		}, nil
@@ -93,12 +93,12 @@ func (r *RPC) SetDefaults(ctx context.Context, in *pb.SetDefaultsRequest) (*pb.P
 	}
 
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("loading config after reset:", err)
 	}
 
 	v, err := r.factory(cfg.Technology)
 	if err != nil {
-		log.Error(err)
+		log.Error("creating VPN factory:", err)
 		return &pb.Payload{
 			Type: internal.CodeConfigError,
 		}, nil

@@ -39,7 +39,7 @@ func (Subscriber) NotifyInfo(data string) error {
 // NotifyError logs an error with an error prefix in production and
 // dev builds
 func (Subscriber) NotifyError(err error) error {
-	log.Error(err)
+	log.Error("event error:", err)
 	return nil
 }
 

@@ -12,7 +12,7 @@ import (
 func (r *RPC) SetTray(ctx context.Context, in *pb.SetTrayRequest) (*pb.Payload, error) {
 	cred, err := internal.UcredFromContext(ctx)
 	if err != nil {
-		log.Error("SetTray:", err)
+		log.Error("getting user credentials from context:", err)
 		return &pb.Payload{Type: internal.CodeInternalError}, nil
 	}
 
@@ -20,7 +20,7 @@ func (r *RPC) SetTray(ctx context.Context, in *pb.SetTrayRequest) (*pb.Payload, 
 
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("loading config:", err)
 	}
 
 	trayStatus := !cfg.UsersData.TrayOff[uid]
@@ -43,7 +43,7 @@ func (r *RPC) SetTray(ctx context.Context, in *pb.SetTrayRequest) (*pb.Payload, 
 			c.UsersData.TrayOff[uid] = true
 			return c
 		}); err != nil {
-			log.Error(err)
+			log.Error("saving tray-off config:", err)
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil
@@ -53,7 +53,7 @@ func (r *RPC) SetTray(ctx context.Context, in *pb.SetTrayRequest) (*pb.Payload, 
 			delete(c.UsersData.TrayOff, uid)
 			return c
 		}); err != nil {
-			log.Error(err)
+			log.Error("saving tray-on config:", err)
 			return &pb.Payload{
 				Type: internal.CodeConfigError,
 			}, nil

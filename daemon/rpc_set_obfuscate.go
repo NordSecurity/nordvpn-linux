@@ -14,7 +14,7 @@ import (
 func (r *RPC) SetObfuscate(ctx context.Context, in *pb.SetGenericRequest) (*pb.Payload, error) {
 	var cfg config.Config
 	if err := r.cm.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("loading config:", err)
 	}
 
 	if cfg.AutoConnectData.Obfuscate == in.GetEnabled() {
@@ -45,7 +45,7 @@ func (r *RPC) SetObfuscate(ctx context.Context, in *pb.SetGenericRequest) (*pb.P
 		c.AutoConnectData.Obfuscate = in.GetEnabled()
 		return c
 	}); err != nil {
-		log.Error(err)
+		log.Error("saving obfuscate config:", err)
 		return &pb.Payload{
 			Type: internal.CodeConfigError,
 		}, nil

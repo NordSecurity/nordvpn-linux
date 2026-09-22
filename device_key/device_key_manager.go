@@ -133,7 +133,7 @@ func (d *DeviceKeyManagerImpl) CheckAndRegisterMeshnet() bool {
 
 	var cfg config.Config
 	if err := d.configManager.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("loading config:", err)
 		return false
 	}
 
@@ -148,7 +148,7 @@ func (d *DeviceKeyManagerImpl) CheckAndRegisterMeshnet() bool {
 	}
 
 	if err := d.configManager.SaveWith(keyConfig(*newConfig)); err != nil {
-		log.Error(err)
+		log.Error("saving config:", err)
 		return false
 	}
 
@@ -191,7 +191,7 @@ type registerFunc func(deviceKey string,
 func (d *DeviceKeyManagerImpl) registerDedicatedServer(force bool) *DedicatedServersConnectionData {
 	var cfg config.Config
 	if err := d.configManager.Load(&cfg); err != nil {
-		log.Error(err)
+		log.Error("loading config:", err)
 		return nil
 	}
 

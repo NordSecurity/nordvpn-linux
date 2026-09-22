@@ -42,9 +42,12 @@ func (fw *Firewall) Configure(config Config) error {
 	defer fw.mu.Unlock()
 
 	if !fw.enabled {
+		log.FW.Trace("fw configuration skipped, firewall is disabled")
 		return nil
 	}
 
+	log.FW.Tracef("killSwitch=%v meshnet=%v tunnel=%q",
+		config.KillSwitch, config.MeshnetInfo != nil, config.TunnelInterface)
 	log.FW.Info("configuring firewall")
 	if internal.IsDevEnv(fw.appEnvironment) {
 		log.FW.Debug("configure fw from", internal.GetStack())
@@ -69,6 +72,7 @@ func (fw *Firewall) Enable() error {
 	defer fw.mu.Unlock()
 
 	log.FW.Info("enabling firewall")
+	log.FW.Tracef("currentEnabled=%v", fw.enabled)
 
 	if fw.enabled {
 		return NewError(ErrFirewallAlreadyEnabled)
@@ -84,6 +88,7 @@ func (fw *Firewall) Disable() error {
 	defer fw.mu.Unlock()
 
 	log.FW.Info("disabling firewall")
+	log.FW.Tracef("currentEnabled=%v", fw.enabled)
 
 	if !fw.enabled {
 		return NewError(ErrFirewallAlreadyDisabled)
