@@ -35,3 +35,7 @@ func (t TrueField) Get() bool {
 	}
 	return true
 }
+
+func (f TrueField) Equal(other TrueField) bool {
+	return f.Get() == other.Get()
+}
