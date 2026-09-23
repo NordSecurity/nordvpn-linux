@@ -133,7 +133,7 @@ def test_nordwhisper_autoconnect_to_additional_group(tech, proto, group):
 @pytest.mark.parametrize("group", lib.DEDICATED_IP_GROUPS)
 @pytest.mark.parametrize(("tech", "proto"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
 def test_autoconnect_to_ovpn_group(tech, proto, group):
-    """Manual TC: LVPN-563"""
+    """Manual TC: LVPN-6786"""
 
     lib.set_technology_and_protocol(tech, proto)
     autoconnect_base_test(group)
@@ -142,7 +142,7 @@ def test_autoconnect_to_ovpn_group(tech, proto, group):
 @pytest.mark.parametrize("group", lib.OBFUSCATED_GROUPS)
 @pytest.mark.parametrize(("tech", "proto"), lib.NORDWHISPER_TECHNOLOGY)
 def test_autoconnect_to_obfuscated_group(tech, proto, group):
-    """Manual TC: LVPN-410"""
+    """Manual TC: LVPN-6786"""
 
     lib.set_technology_and_protocol(tech, proto)
     autoconnect_base_test(group)

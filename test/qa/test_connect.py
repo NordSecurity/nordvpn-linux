@@ -107,7 +107,7 @@ def test_connect_to_group_random_server_by_name_additional(tech, proto, group):
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS_NORDWHISPER)
 @pytest.mark.parametrize(("tech", "proto"), lib.NORDWHISPER_TECHNOLOGY)
 def test_nordwhisper_connect_to_group_random_server_by_name_additional(tech, proto, group):
-    """Manual TC: LVPN-8855"""
+    """Manual TC: LVPN-8847"""
 
     lib.set_technology_and_protocol(tech, proto)
 
@@ -204,7 +204,7 @@ def test_connect_to_group_additional(tech, proto, group):
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS_NORDWHISPER)
 @pytest.mark.parametrize(("tech", "proto"), lib.NORDWHISPER_TECHNOLOGY)
 def test_nordwhisper_connect_to_group_additional(tech, proto, group):
-    """Manual TC: LVPN-8069"""
+    """Manual TC: LVPN-838"""
 
     lib.set_technology_and_protocol(tech, proto)
 
@@ -215,7 +215,7 @@ def test_nordwhisper_connect_to_group_additional(tech, proto, group):
 @pytest.mark.parametrize("group", lib.DEDICATED_IP_GROUPS)
 @pytest.mark.parametrize(("tech", "proto"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
 def test_connect_to_group_ovpn(tech, proto, group):
-    """Manual TC: LVPN-668"""
+    """Manual TC: LVPN-838"""
 
     lib.set_technology_and_protocol(tech, proto)
 
@@ -226,7 +226,7 @@ def test_connect_to_group_ovpn(tech, proto, group):
 @pytest.mark.parametrize("group", lib.OBFUSCATED_GROUPS)
 @pytest.mark.parametrize(("tech", "proto"), lib.NORDWHISPER_TECHNOLOGY)
 def test_connect_to_group_obfuscated(tech, proto, group):
-    """Manual TC: LVPN-762"""
+    """Manual TC: LVPN-838"""
 
     lib.set_technology_and_protocol(tech, proto)
 
@@ -261,7 +261,7 @@ def test_connect_to_flag_group_additional(tech, proto, group):
 @pytest.mark.parametrize("group", lib.ADDITIONAL_GROUPS_NORDWHISPER)
 @pytest.mark.parametrize(("tech", "proto"), lib.NORDWHISPER_TECHNOLOGY)
 def test_nordwhisper_connect_to_flag_group_additional(tech, proto, group):
-    """Manual TC: LVPN-8614"""
+    """Manual TC: LVPN-8615"""
 
     lib.set_technology_and_protocol(tech, proto)
 
@@ -278,7 +278,7 @@ def test_nordwhisper_connect_to_flag_group_additional(tech, proto, group):
 @pytest.mark.parametrize("group", lib.DEDICATED_IP_GROUPS)
 @pytest.mark.parametrize(("tech", "proto"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
 def test_connect_to_flag_group_ovpn(tech, proto, group):
-    """Manual TC: LVPN-8623"""
+    """Manual TC: LVPN-8615"""
 
     lib.set_technology_and_protocol(tech, proto)
 
@@ -295,7 +295,7 @@ def test_connect_to_flag_group_ovpn(tech, proto, group):
 @pytest.mark.parametrize("group", lib.OBFUSCATED_GROUPS)
 @pytest.mark.parametrize(("tech", "proto"), lib.NORDWHISPER_TECHNOLOGY)
 def test_connect_to_flag_group_obfuscated(tech, proto, group):
-    """Manual TC: LVPN-8629"""
+    """Manual TC: LVPN-8615"""
 
     lib.set_technology_and_protocol(tech, proto)
 
@@ -552,7 +552,7 @@ def test_check_routing_table_for_lan():
 
 @pytest.mark.parametrize(("tech", "proto"), lib.STANDARD_TECHNOLOGIES_NO_NORDWHISPER)
 def test_connect_to_dedicated_ip(tech, proto):
-    """Manual TC: LVPN-651"""
+    """Manual TC: LVPN-8847"""
 
     lib.set_technology_and_protocol(tech, proto)
 

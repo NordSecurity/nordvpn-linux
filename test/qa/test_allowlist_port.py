@@ -103,7 +103,7 @@ def test_allowlist_does_not_create_new_routes_when_adding_deleting_port_connecte
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_port_twice_disconnected(tech, proto, port):
-    """Manual TC: LVPN-759"""
+    """Manual TC: LVPN-8958"""
 
     lib.set_technology_and_protocol(tech, proto)
 
@@ -192,7 +192,7 @@ def test_allowlist_port_and_remove_disconnected(tech, proto, port):
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_port_and_remove_connected(tech, proto, port):
-    """Manual TC: LVPN-8958"""
+    """Manual TC: LVPN-8959"""
 
     lib.set_technology_and_protocol(tech, proto)
 
@@ -218,7 +218,7 @@ def test_allowlist_port_and_remove_connected(tech, proto, port):
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_port_remove_nonexistent_disconnected(tech, proto, port):
-    """Manual TC: LVPN-728"""
+    """Manual TC: LVPN-8960"""
 
     lib.set_technology_and_protocol(tech, proto)
 
@@ -272,7 +272,7 @@ def test_allowlist_port_remove_nonexistent_connected(tech, proto, port):
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_port_range_remove_nonexistent_disconnected(tech, proto, port):
-    """Manual TC: LVPN-3779"""
+    """Manual TC: LVPN-8961"""
 
     port_range = port.value.split(":")
 
@@ -330,7 +330,7 @@ def test_allowlist_port_range_remove_nonexistent_connected(tech, proto, port):
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_port_range_twice_disconnected(tech, proto, port):
-    """Manual TC: LVPN-3789"""
+    """Manual TC: LVPN-8962"""
 
     lib.set_technology_and_protocol(tech, proto)
 
@@ -376,7 +376,7 @@ def test_allowlist_port_range_twice_connected(tech, proto, port):
     always_pair=lib.TECHNOLOGIES_BASIC1[0],
 )
 def test_allowlist_port_range_when_port_from_range_already_allowlisted_disconnected(tech, proto, port):
-    """Manual TC: LVPN-724"""
+    """Manual TC: LVPN-8963"""
 
     port_range = port.value.split(":")
     random_port_from_port_range = str(random.randint(int(port_range[0]), int(port_range[1])))
