@@ -195,7 +195,8 @@ func NewMarkedUDPConn(fwmark uint32) (*net.UDPConn, error) {
 	return pc.(*net.UDPConn), nil
 }
 
-var validTransportTypes = []string{"http1", "http3"}
+// TODO: Remove the code in the future - LVPN-11168
+var validTransportTypes = []string{"http1"}
 
 func validateHTTPTransportsString(val string) []string {
 	if val == "" {
