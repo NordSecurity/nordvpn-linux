@@ -908,13 +908,94 @@ func Test_determineServerSelectionRule(t *testing.T) {
 	}
 }
 
+// nordWhisperServer returns an online server reachable over NordWhisper with the given groups.
+func nordWhisperServer(groups ...core.Group) core.Server {
+	return core.Server{
+		Status:       core.Online,
+		Technologies: core.Technologies{{ID: core.NordWhisperTech, Pivot: core.Pivot{Status: core.Online}}},
+		Groups:       groups,
+	}
+}
+
 func Test_determineServerGroup(t *testing.T) {
+	standardOnly := nordWhisperServer(
+		core.Group{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
+	)
+
 	tests := []struct {
 		name   string
 		server core.Server
 		params serverpicker.ServerParameters
-		want   config.ServerGroup
+		// tech defaults to UNKNOWN_TECHNOLOGY, i.e. a non-obfuscating technology
+		tech config.Technology
+		want config.ServerGroup
 	}{
+		{
+			name:   "NordWhisper with no requested group is attributed to Obfuscated",
+			server: standardOnly,
+			params: serverpicker.ServerParameters{},
+			tech:   config.Technology_NORDWHISPER,
+			want:   config.ServerGroup_OBFUSCATED,
+		},
+		{
+			name:   "NordWhisper with requested Obfuscated group the server does not carry",
+			server: standardOnly,
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_OBFUSCATED},
+			tech:   config.Technology_NORDWHISPER,
+			want:   config.ServerGroup_OBFUSCATED,
+		},
+		{
+			name:   "NordWhisper with requested group the server does not carry",
+			server: standardOnly,
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_P2P},
+			tech:   config.Technology_NORDWHISPER,
+			want:   config.ServerGroup_OBFUSCATED,
+		},
+		{
+			name: "NordWhisper with requested specialty group the server carries keeps that group",
+			server: nordWhisperServer(
+				core.Group{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
+				core.Group{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double VPN"},
+			),
+			params: serverpicker.ServerParameters{Group: config.ServerGroup_DOUBLE_VPN},
+			tech:   config.Technology_NORDWHISPER,
+			want:   config.ServerGroup_DOUBLE_VPN,
+		},
+		{
+			name: "NordWhisper with a non-standard server is not Obfuscated",
+			server: nordWhisperServer(
+				core.Group{ID: config.ServerGroup_DOUBLE_VPN, Title: "Double VPN"},
+			),
+			params: serverpicker.ServerParameters{},
+			tech:   config.Technology_NORDWHISPER,
+			want:   config.ServerGroup_UNDEFINED,
+		},
+		{
+			name: "NordWhisper technology with a server not reachable over NordWhisper is not Obfuscated",
+			server: core.Server{Groups: []core.Group{
+				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
+			}},
+			params: serverpicker.ServerParameters{},
+			tech:   config.Technology_NORDWHISPER,
+			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
+		},
+		{
+			name:   "NordLynx with no requested group falls back to standard group",
+			server: standardOnly,
+			params: serverpicker.ServerParameters{},
+			tech:   config.Technology_NORDLYNX,
+			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
+		},
+		{
+			name: "OpenVPN XOR tag is ignored",
+			server: core.Server{Groups: []core.Group{
+				{ID: config.ServerGroup_OBFUSCATED, Title: "Obfuscated"},
+				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
+			}},
+			params: serverpicker.ServerParameters{},
+			tech:   config.Technology_OPENVPN,
+			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
+		},
 		{
 			name: "Group is UNDEFINED falls back to standard group",
 			server: core.Server{Groups: []core.Group{
@@ -934,13 +1015,14 @@ func Test_determineServerGroup(t *testing.T) {
 			want:   config.ServerGroup_DOUBLE_VPN,
 		},
 		{
-			name: "Group is OBFUSCATED returns matching group",
+			name: "Requested OBFUSCATED on an XOR-tagged server under OpenVPN falls back to standard",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 				{ID: config.ServerGroup_OBFUSCATED, Title: "Obfuscated"},
 			}},
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_OBFUSCATED},
-			want:   config.ServerGroup_OBFUSCATED,
+			tech:   config.Technology_OPENVPN,
+			want:   config.ServerGroup_STANDARD_VPN_SERVERS,
 		},
 		{
 			name: "Group is DEDICATED_IP returns matching group",
@@ -994,12 +1076,13 @@ func Test_determineServerGroup(t *testing.T) {
 			want:   config.ServerGroup_UNDEFINED,
 		},
 		{
-			name: "Server has only one group, params group matches",
+			name: "XOR-only server is attributed to no group",
 			server: core.Server{Groups: []core.Group{
 				{ID: config.ServerGroup_OBFUSCATED, Title: "Obfuscated"},
 			}},
 			params: serverpicker.ServerParameters{Group: config.ServerGroup_OBFUSCATED},
-			want:   config.ServerGroup_OBFUSCATED,
+			tech:   config.Technology_OPENVPN,
+			want:   config.ServerGroup_UNDEFINED,
 		},
 		{
 			name: "Group is not set (zero value), server has multiple groups",
@@ -1019,7 +1102,7 @@ func Test_determineServerGroup(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := determineTargetServerGroup(&tt.server, tt.params); got != tt.want {
+			if got := determineTargetServerGroup(&tt.server, tt.params, tt.tech); got != tt.want {
 				t.Errorf("determineServerGroup() = %v, want %v", got, tt.want)
 			}
 		})
@@ -1410,7 +1493,7 @@ func Test_serverGroupIDs_ExtractsAllIDs(t *testing.T) {
 		{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
 	}}
 
-	got := determineServerGroupIDs(&server)
+	got := determineServerGroupIDs(&server, config.Technology_NORDLYNX)
 
 	want := []config.ServerGroup{
 		config.ServerGroup_DEDICATED_IP,
@@ -1419,11 +1502,24 @@ func Test_serverGroupIDs_ExtractsAllIDs(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
+func Test_serverGroupIDs_NordWhisper_IncludesObfuscated(t *testing.T) {
+	category.Set(t, category.Unit)
+	server := nordWhisperServer(
+		core.Group{ID: config.ServerGroup_STANDARD_VPN_SERVERS, Title: "Standard VPN servers"},
+	)
+
+	got := determineServerGroupIDs(&server, config.Technology_NORDWHISPER)
+
+	// the target group attributed to the same connection is contained in the offered groups
+	assert.Equal(t, []config.ServerGroup{config.ServerGroup_STANDARD_VPN_SERVERS, config.ServerGroup_OBFUSCATED}, got)
+	assert.Contains(t, got, determineTargetServerGroup(&server, serverpicker.ServerParameters{}, config.Technology_NORDWHISPER))
+}
+
 func Test_serverGroupIDs_EmptyGroups_ReturnsEmptySlice(t *testing.T) {
 	category.Set(t, category.Unit)
 	server := core.Server{Groups: []core.Group{}}
 
-	got := determineServerGroupIDs(&server)
+	got := determineServerGroupIDs(&server, config.Technology_NORDLYNX)
 
 	assert.Equal(t, 0, len(got))
 }
@@ -1432,7 +1528,7 @@ func Test_serverGroupIDs_NilGroups_ReturnsEmptySlice(t *testing.T) {
 	category.Set(t, category.Unit)
 	server := core.Server{}
 
-	got := determineServerGroupIDs(&server)
+	got := determineServerGroupIDs(&server, config.Technology_NORDLYNX)
 
 	assert.Equal(t, 0, len(got))
 }
