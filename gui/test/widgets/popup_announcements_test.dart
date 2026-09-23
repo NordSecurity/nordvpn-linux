@@ -129,7 +129,8 @@ void main() {
         announced,
         t.a11y.popupWithContent(
           title: title,
-          message: "Check the ${t.a11y.linkWithinPopup(name: "test name URL")}.",
+          message:
+              "Check the ${t.a11y.linkWithinPopup(name: "test name URL")}.",
         ),
       );
       expect(announced, isNot(contains("example.com")));

@@ -25,7 +25,6 @@ final class InfoPopup extends Popup {
         Semantics(
           container: true,
           child: RichTextMarkdownLinks(
-            text: message(ref),
             markdown: infoMetadata.parsedMessage(ref),
             key: Popup.messageKey,
             style: theme.textSecondary,
