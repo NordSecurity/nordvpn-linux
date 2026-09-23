@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:nordvpn/theme/interactive_list_view_theme.dart';
 import 'package:searchable_listview/searchable_listview.dart';
+import 'package:nordvpn/i18n/strings.g.dart';
 
 // A list with a text field to support filtering the items
 final class InteractiveListView extends StatefulWidget {
@@ -74,7 +76,17 @@ class _InteractiveListViewState extends State<InteractiveListView> {
     if (widget.showEmptyListAtStartup &&
         widget.filter(query, widget.items).isEmpty) {
       setState(() {});
+      _announceNoResults(query);
     }
+  }
+
+  void _announceNoResults(String query) {
+    final message = '${t.ui.noResultsFor} "$query"';
+    SemanticsService.sendAnnouncement(
+      View.of(context),
+      message,
+      Directionality.of(context),
+    );
   }
 
   @override
