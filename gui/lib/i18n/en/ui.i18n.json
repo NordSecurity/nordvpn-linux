@@ -4,6 +4,7 @@
   "specialServers": "Specialty servers",
   "cities": "Cities",
   "noResults": "No results found.",
+  "noResultsFor": "No results found for ",
   "waitingToConnectToDaemon": "Connecting to the daemon...",
   "fetchingData": "Fetching data",
   "failedToFetchData": "Failed to fetch data",
